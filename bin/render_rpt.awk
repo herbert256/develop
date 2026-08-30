@@ -385,15 +385,16 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             cls = (cls != "" ? cls " clps" : "clps")
         }
     }
-    # acct/site/login/host/ptn/app/dom cells link to the entity's
+    # acct/site/login/host/lgc/ptn/app/dom cells link to the entity's
     # detail page; "(pseudo)" values and @{nolink=1} cells stay plain
     if (!total && rawtext != "" && substr(rawtext, 1, 1) != "(" && !nolink && \
         (kind == "acct" || kind == "site" || kind == "login" || kind == "host" || \
-         kind == "ptn" || kind == "app" || kind == "dom")) {
+         kind == "lgc" || kind == "ptn" || kind == "app" || kind == "dom")) {
         if (kind == "acct") sd = "accounts"
         else if (kind == "site") sd = "subscriptions"
         else if (kind == "login") sd = "logins"
         else if (kind == "host") sd = "hosts"
+        else if (kind == "lgc") sd = "logicals"
         else if (kind == "ptn") sd = "partners"
         else if (kind == "app") sd = "applications"
         else sd = "domains"

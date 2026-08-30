@@ -443,6 +443,7 @@ _status_table() {
         case $member in
             subscriptions) ebase=subscription ;; accounts) ebase=account ;;
             hosts) ebase=remote-host ;;         logins) ebase=login ;;
+            logicals) ebase=logical ;;
             partners) ebase=partner ;;          applications) ebase=application ;;
             domains) ebase=domain ;;
         esac
@@ -476,15 +477,15 @@ _status_table() {
             # page, so those cells keep a single link. The Server column links
             # the Server view (the blue names), which the +Server scope offers.
             h_tot="$ent-all.html"
-            # ...EXCEPT the three PDA rows, whose Total keeps its own COVERAGE
-            # CELL page (restored 2026-07): the configured partners /
-            # applications / domains with their direction, member accounts,
+            # ...EXCEPT the Logical + three PDA rows, whose Total keeps its own
+            # COVERAGE CELL page (restored 2026-07): the configured logical
+            # flows / partners / applications / domains with their direction, member accounts,
             # result and last transfer. The Entities All view is a different
             # list — it counts what the logs carry — so Total needs the
             # configured-side page. Falls back to the Entities view when the
             # cell page is absent (an env with no PDA coverage TSVs).
             case $member in
-                partners|applications|domains)
+                logicals|partners|applications|domains)
                     [ -f "docs/$cov$member-configured.html" ] && h_tot="$cov$member-configured.html" ;;
             esac
             h_seen="$ent-seen.html";     h_seenoff="$ent-seen-transfer.html"
@@ -531,7 +532,8 @@ write_status_pair() {
     _status_table "$cov" "Flow manager entities" \
         "Subscriptions:subscriptions:_subscriptions" \
         "Accounts:accounts:_accounts" "Hosts:hosts:_hosts" "Logins:logins:_logins"
-    _status_table "$cov" "Partners, Domains &amp; Applications" \
+    _status_table "$cov" "Logical, Partners, Domains &amp; Applications" \
+        "Logical:logicals:_logicals" \
         "Partners:partners:_partners" "Domains:domains:_domains" "Applications:applications:_apps"
     printf '</div>\n'
 }
@@ -909,7 +911,7 @@ write_log_facts() {
 write_env_block() {
     local env=$1
     # The two result-status tables (copied from the Flow manager Entities /
-    # Partners, Domains & Applications analyses pages), side by side with
+    # Logical, Partners, Domains & Applications analyses pages), side by side with
     # coverage links — a status snapshot at the TOP of the landing page.
     if [ -f "$HOME_ENV_DATA/analyses/reports/home.rpt" ] || [ -f "$HOME_ENV_DATA/flow-manager/base/_subscriptions.tsv" ]; then
         write_status_pair "$env/coverage/"
@@ -1468,7 +1470,7 @@ analyses/use-case-definitions.html|Use case definitions|Each use case explained 
 analyses/use-case-patterns.html|Use case patterns|The accounts grouped by their subscription mix (e.g. UC2 (1) UC4 (1)).||
 analyses/accounts.html|Accounts (analyses)|The configured accounts analysed against the FlowManager configuration.||
 analyses/cronjobs.html|Cronjobs|The subscriptions polling schedules (cron expressions) in human terms.||
-analyses/first-seen.html|First seen|On what day each partner, subscription, account, login and remote host was first seen in the transfer logs.||
+analyses/first-seen.html|First seen|On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.||
 analyses/first-seen-both.html|First seen (both logs)|On what day each entity was first seen across BOTH the transfer and the server logs.||
 analyses/acc-vs-prod-summary.html|Acceptance vs production|The two environments entity name sets compared per type — only in Acceptance, in both, or only in Production — with each side's Files and the set/dormancy Summary.|dormant, promotion, summary|dormant, promotion, summary
 analyses/whitelist-audit.html|Whitelist audit|Whitelisted partner IPs vs the addresses actually connecting: used, connect-only, never seen (prunable), plus sources without any whitelist entry.|whitelist, AllowIP, IP, prune, attack surface, unused|whitelist, AllowIP, prune
@@ -1686,7 +1688,7 @@ write_sitemap() {
         printf '</ul></div>\n'
         # the per-entity detail pages: one page per configured-or-logged entity
         printf '<div class="smcard"><h3>Entity detail pages</h3><ul>\n'
-        for sub in accounts:account subscriptions:subscription logins:login hosts:remote-host \
+        for sub in accounts:account subscriptions:subscription logins:login hosts:remote-host logicals:logical \
                    partners:partner applications:application domains:domain; do
             base=${sub#*:}; sub=${sub%%:*}
             # an entity type can have ZERO names (production 2026-08: no
@@ -1738,7 +1740,7 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
     local area=transfer rpt t i
     case $2 in
         details|showseen|coverage|entities|partners-domains-applications|incoming-connections) return 0 ;;
-        first-seen)      printf 'First seen\tAnalyses\tanalyses/first-seen.html\tOn what day each partner, subscription, account, login and remote host was first seen in the transfer logs.\n'; return 0 ;;
+        first-seen)      printf 'First seen\tAnalyses\tanalyses/first-seen.html\tOn what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.\n'; return 0 ;;
         cross-reference) printf 'Cross References\tAnalyses\tanalyses/xref/cross-account-subscriptions.html\tEvery pair of the eight entities cross-tabulated both ways — which appear together on a transfer, which are configured but never seen.\n'; return 0 ;;
         # the analyses PUBLISH writers render several pages each — one row per
         # page that exists (the insight pages have no .rpt to read a title from)

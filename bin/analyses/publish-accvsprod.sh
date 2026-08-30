@@ -69,161 +69,19 @@ _home_status_block() {   # $1 = acceptance | production
             # whose figures a table shows)
             envcap = (env == "acceptance") ? "Acceptance" : "Production"
             sub(/class="h2row">Flow manager entities/, "class=\"h2row\">" envcap ": Flow manager entities")
-            sub(/class="h2row">Partners, Domains/, "class=\"h2row\">" envcap ": Partners, Domains")
+            sub(/class="h2row">Logical, Partners, Domains/, "class=\"h2row\">" envcap ": Logical, Partners, Domains")
             print
             if (depth <= 0) exit
         }
     ' docs/index.html
 }
 
-# ---- Logical names (2026-08-30, user request): one env's FlowIDs condensed
-# into logical flow groups, one name per group, always 3 parts. Three passes:
-# 1) GROUP — FIRST rule for 4-part FlowIDs (2026-08-30, user request): when
-#    the 3rd part is the 3rd part of TWO OR MORE 4-part FlowIDs, the 4th
-#    part drops (SI_GOUDMIJN_INSHARED_{HEMA,HEMAPOLIS,INSHARED,POLIS} ->
-#    one SI_GOUDMIJN_INSHARED). Then: 4-part FlowIDs sharing their first 3
-#    parts (the bare 3-part name
-#    joins when it exists) fold onto those 3 parts; a 3-part FlowID whose
-#    digit-tailed part, stripped (a trailing "-" trimmed with the digits),
-#    duplicates another stripped name or an existing FlowID folds onto the
-#    stripped form; a 4-part FlowID whose numeric-only part, removed,
-#    duplicates another folds onto the removed form. A SINGLE-part FlowID
-#    (all dashes — the monitor's INFRA-MONITOR-UC1..4) gets the same
-#    digit-tail rule on the whole name (2026-08-30): the four fold onto
-#    INFRA-MONITOR-UC. A FlowID of FIVE OR MORE parts (2026-08-30, user
-#    request — the AB_NAS_FIS_BSM_BU_A_AH family) folds onto its LONGEST
-#    part-prefix (3+ parts) that EXISTS as a FlowID: the eight long
-#    AB_NAS_FIS_BSM_* names join the bare AB_NAS_FIS_BSM, and the reshape
-#    renders the group AB_NAS_FIS-BSM. A fixed input/logical.txt mapping is
-#    also honoured for the GROUP name a fold lands on, so one line can pin
-#    a whole family's final form.
-# 2) RESHAPE to 3 parts by position, informed by the 3-part logicals'
-#    vocabulary (their 2nd/3rd parts): AAA_BBB -> AAA_AAA_BBB; 4 parts whose
-#    4th is a known 3rd -> AAA_BBB-CCC_DDD; 4 parts whose 2nd is a known
-#    2nd -> AAA_BBB_CCC-DDD; 5 parts whose 5th is a known 3rd ->
-#    AAA_BBB-CCC-DDD_EEE.
-# 3) FORCE the rest to 3 parts (vocabulary refreshed): the first part 2..n
-#    that is a known 3rd part becomes the 3rd, everything else after part 1
-#    joining as the 2nd; else a known 2nd part becomes the 2nd, the rest
-#    joining as the 3rd; else first and last kept, the middle joined. Joins
-#    use "-" — which is why the Logical pages render UNFOLDED (the hyphen is
-#    semantic there, marking combined parts).
-# input/logical.txt (2026-08-30, user request): FIXED FlowID -> Logical
-# transforms, two whitespace-separated columns (# comments, blank lines
-# ignored), shared by both environments. A listed FlowID takes its given
-# Logical VERBATIM — no grouping, no 3-part reshape — and only the rest go
-# through the derivation below. A missing file is a no-op.
-_logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per line
-    [ -f "$1" ] || return 0
-    awk -F'\t' -v LF="input/logical.txt" '
-        BEGIN {
-            while ((getline fl < LF) > 0) {
-                if (fl ~ /^[ \t]*#/ || fl ~ /^[ \t]*$/) continue
-                nf2 = split(fl, fa, /[ \t]+/)
-                if (nf2 >= 2 && fa[1] != "" && fa[2] != "") FIX[fa[1]] = fa[2]
-            }
-            close(LF)
-        }
-        function joindash(P, n, skip, from,   r, m) { r = ""
-            for (m = from; m <= n; m++) { if (m == skip) continue; r = (r == "" ? P[m] : r "-" P[m]) }
-            return r }
-        function rejoin(P, n, skip,   r, m) { r = ""
-            for (m = 1; m <= n; m++) { if (m == skip) continue; r = (r == "" ? P[m] : r "_" P[m]) }
-            return r }
-        function replaced(P, n, at, s,   r, m, t) { r = ""
-            for (m = 1; m <= n; m++) { t = (m == at ? s : P[m]); r = (r == "" ? t : r "_" t) }
-            return r }
-        function digitstrip(p,   s) { s = p; if (sub(/[0-9]+$/, "", s)) sub(/-+$/, "", s); return s }
-        # INTAKE NORMALIZATION (2026-08-30): the estate mixes "-" and "_"
-        # spellings of one name (the family matches everything sepfolded),
-        # but this derivation splits on "_" alone — a dash-spelled sibling
-        # parsed into different part counts and every grouping rule missed
-        # it. Group on the "_"-folded form; a FIXED mapping still matches
-        # the RAW spelling too. The reshape re-adds dashes for its joins.
-        $1 != "" { raw = $1
-            if (raw in FIX) { fixed[FIX[raw]] = 1; next }
-            nm0 = raw; gsub(/-/, "_", nm0)
-            name[++nn] = nm0; exists[nm0] = 1 }
-        END {
-            # pass 1a: count the reductions
-            for (i = 1; i <= nn; i++) {
-                n = split(name[i], P, "_")
-                if (n == 4) {
-                    cnt1[P[1] "_" P[2] "_" P[3]]++
-                    cnt3rd[P[3]]++                    # 3rd parts across the 4-part FlowIDs
-                    for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) cnt3[rejoin(P, n, j)]++
-                } else if (n == 3) third3[P[3]] = 1   # 3rd parts of the 3-part FlowIDs
-                if (n == 3)
-                    for (j = 1; j <= n; j++) { s = digitstrip(P[j])
-                        if (s != P[j] && s != "") cnt2[replaced(P, n, j, s)]++ }
-                else if (n == 1) { s = digitstrip(P[1])
-                    if (s != P[1] && s != "") cnt2[s]++ }
-            }
-            # pass 1b: assign each FlowID its group name — a FIXED mapping
-            # (input/logical.txt) wins outright and skips the reshape passes
-            for (i = 1; i <= nn; i++) {
-                nm = name[i]
-                if (nm in FIX) { fixed[FIX[nm]] = 1; continue }
-                n = split(nm, P, "_"); lg = nm
-                if (n == 4) {
-                    pre = P[1] "_" P[2] "_" P[3]
-                    # the FIRST 4-part rule (2026-08-30, user precedence):
-                    # dropping the 4th part gives an EXISTING 3-part FlowID
-                    # -> that 3-part name is the logical (the
-                    # AB_SNOWFLAKE_HYPOPORT_{MORTG,PIPE,SPREAD} family joins
-                    # its bare AB_SNOWFLAKE_HYPOPORT)
-                    if (pre in exists) lg = pre
-                    # then: a 3rd part that is the 3rd part of 2+ 4-part
-                    # FlowIDs — or of any 3-PART FlowID (the restated rule)
-                    else if (cnt3rd[P[3]] >= 2 || (P[3] in third3)) lg = pre
-                    else if (cnt1[pre] >= 2) lg = pre
-                    else for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) {
-                        c = rejoin(P, n, j)
-                        if (cnt3[c] >= 2 || (c in exists)) { lg = c; break } }
-                } else if (n == 3)
-                    for (j = 1; j <= n; j++) { s = digitstrip(P[j])
-                        if (s != P[j] && s != "") { c = replaced(P, n, j, s)
-                            if (cnt2[c] >= 2 || (c in exists)) { lg = c; break } } }
-                else if (n == 1) { s = digitstrip(P[1])
-                    if (s != P[1] && s != "" && (cnt2[s] >= 2 || (s in exists))) lg = s }
-                else if (n >= 5)
-                    # fold onto the LONGEST part-prefix (3+ parts) that
-                    # exists as a FlowID of its own
-                    for (k = n - 1; k >= 3; k--) {
-                        pre = P[1]
-                        for (m = 2; m <= k; m++) pre = pre "_" P[m]
-                        if (pre in exists) { lg = pre; break }
-                    }
-                # a fixed mapping for the GROUP a fold landed on wins too
-                if (lg in FIX) { fixed[FIX[lg]] = 1; continue }
-                lset[lg] = 1
-            }
-            # pass 2: reshape to 3 parts by position
-            for (l in lset) { n = split(l, P, "_"); if (n == 3) { k2[P[2]] = 1; k3[P[3]] = 1 } }
-            for (l in lset) {
-                n = split(l, P, "_"); nl = l
-                if (n == 2) nl = P[1] "_" P[1] "_" P[2]
-                else if (n == 4 && (P[4] in k3)) nl = P[1] "_" P[2] "-" P[3] "_" P[4]
-                else if (n == 4 && (P[2] in k2)) nl = P[1] "_" P[2] "_" P[3] "-" P[4]
-                else if (n == 5 && (P[5] in k3)) nl = P[1] "_" P[2] "-" P[3] "-" P[4] "_" P[5]
-                lset2[nl] = 1
-            }
-            # pass 3: force what is left to 3 parts
-            split("", k2); split("", k3)
-            for (l in lset2) { n = split(l, P, "_"); if (n == 3) { k2[P[2]] = 1; k3[P[3]] = 1 } }
-            for (l in lset2) {
-                n = split(l, P, "_"); nl = l
-                if (n > 3) {
-                    done = 0
-                    for (j = 2; j <= n && !done; j++) if (P[j] in k3) { nl = P[1] "_" joindash(P, n, j, 2) "_" P[j]; done = 1 }
-                    for (j = 2; j <= n && !done; j++) if (P[j] in k2) { nl = P[1] "_" P[j] "_" joindash(P, n, j, 2); done = 1 }
-                    if (!done) nl = P[1] "_" joindash(P, n - 1, 0, 2) "_" P[n]
-                }
-                print nl
-            }
-            for (f in fixed) print f          # the fixed logicals, verbatim
-        }' "$1" | LC_ALL=C sort -u
-}
+# ---- Logical: since 2026-08-31 a FULL entity — the derivation (FlowIDs
+# condensed into logical flow groups, input/logical.txt pins honoured) lives
+# in bin/flow-manager.sh, which writes base/_logicals.tsv (the name list this
+# page family reads like every other base) and the FlowID -> Logical map
+# xref/_profiles-logicals.tsv. The Logical pages link detail pages
+# (details/logicals/) and take activity from logical.rpt like the PDA types.
 
 write_acc_vs_prod_pages() {
     # whitelist: NO detail pages/slugmap — the name set is each env's
@@ -234,9 +92,10 @@ write_acc_vs_prod_pages() {
     # base/_profiles.tsv — the ONE page family where a profile surfaces (the
     # CLAUDE.md transfer-profile gotcha names this exception). NOSLUG like the
     # whitelist: no detail pages.
-    # logicals (2026-08-30, user request): the FlowIDs condensed further into
-    # LOGICAL flow groups (_logicals_from above); NOSLUG and unlinked like
-    # flowids, its name lists derived at publish time — no cache of its own.
+    # logicals: the FlowIDs condensed further into LOGICAL flow groups —
+    # since 2026-08-31 a real base cache (base/_logicals.tsv, derived by
+    # bin/flow-manager.sh) with detail pages and its own entity report,
+    # so it renders like the PDA types (linked cells, activity split).
     local types=(accounts subscriptions logins hosts partners domains applications whitelist flowids logicals)
     local labels=("Accounts" "Subscriptions" "Logins" "Hosts" "Partners" "Domains" "Applications" "Whitelist" "FlowID" "Logical")
     local bases=(_accounts _subscriptions _logins _hosts _partners _domains _apps _white _profiles _logicals)
@@ -244,7 +103,7 @@ write_acc_vs_prod_pages() {
     # .rpt (first-table ROWs — the same source ranking.sh lifts from), matched
     # case aside. Since 2026-08-30 the activity feeds ONLY the Summary page's
     # dormancy split — the entity pages themselves render name-only.
-    local rpts=(account subscription login remote-host partner domain application "" "" "")
+    local rpts=(account subscription login remote-host partner domain application "" "" logical)
     # difference (2026-08-29): the Only-acceptance and Only-production sets
     # side by side as two independent name-sorted columns of ONE table — the
     # promotion diff at a glance. Its tab sits AFTER Summary in the view row.
@@ -270,20 +129,12 @@ write_acc_vs_prod_pages() {
     # no slugmaps at all (fresh clone before the transfer reports) -> no pages
     [ -d "data/acceptance/transfer/reports/details" ] || [ -d "data/production/transfer/reports/details" ] || return 0
     tmp=$(mktemp)
-    # the Logical name lists, derived per env from the FlowID cache (the
-    # accvsprod stamp already watches flow-manager/base, so freshness holds)
-    local alog plog
-    alog=$(mktemp); plog=$(mktemp)
-    _logicals_from "data/acceptance/flow-manager/base/_profiles.tsv" > "$alog"
-    _logicals_from "data/production/flow-manager/base/_profiles.tsv" > "$plog"
     for ti in "${!types[@]}"; do
         t=${types[$ti]}
         am="data/acceptance/transfer/reports/details/$t/_slugmap.tsv"; [ -f "$am" ] || am=""
         pm="data/production/transfer/reports/details/$t/_slugmap.tsv"; [ -f "$pm" ] || pm=""
         ab="data/acceptance/flow-manager/base/${bases[$ti]}.tsv"; [ -f "$ab" ] || ab=""
         pb="data/production/flow-manager/base/${bases[$ti]}.tsv"; [ -f "$pb" ] || pb=""
-        # logicals: no cache — the derived per-env lists stand in as the base
-        if [ "$t" = logicals ]; then ab="$alog"; pb="$plog"; fi
         local ar="" pr=""
         if [ -n "${rpts[$ti]}" ]; then
             ar="data/acceptance/transfer/reports/${rpts[$ti]}.rpt"; [ -f "$ar" ] || ar=""
@@ -297,7 +148,7 @@ write_acc_vs_prod_pages() {
             pr="data/production/transfer/reports/coverage/whitelist-files.tsv"; [ -f "$pr" ] || pr=""
         fi
         local hasact=0; { [ -n "$ar" ] || [ -n "$pr" ]; } && hasact=1
-        local noslug=0; case $t in whitelist|flowids|logicals) noslug=1 ;; esac
+        local noslug=0; case $t in whitelist|flowids) noslug=1 ;; esac
         # _/- SEPARATOR FOLD (2026-08-29, user decision — THIS report family
         # only; site-wide the separator stays an identity): the two envs
         # spell one flow's name with _ or - interchangeably, so the cross-env
@@ -443,7 +294,7 @@ write_acc_vs_prod_pages() {
                     # its own fold note too: the shared one promises links
                     printf '<p class="subtitle">The FlowIDs known to each environment — the <code>customAttribute_FlowIdentifier</code> values of its configured subscriptions: only in Acceptance, in both, or only in Production. A flow&#8217;s UC subscriptions share one FlowID, so this compares the environments by flow rather than by subscription. The <code>_</code> and <code>-</code> separators are treated as the same character: names are matched across the environments ignoring the difference and are all shown in the <code>_</code> spelling.</p>\n'
                 elif [ "$t" = logicals ]; then
-                    printf '<p class="subtitle">The Logical flows known to each environment — the FlowIDs condensed into logical groups: numbered variants and per-label branches of one flow fold into a single name, normalized to three <code>_</code>-separated parts (a <code>-</code> inside a part marks parts the normalization combined). Only in Acceptance, in both, or only in Production.</p>\n'
+                    printf '<p class="subtitle">The Logical flows known to each environment — the FlowIDs condensed into logical groups: numbered variants and per-label branches of one flow fold into a single name, normalized to three <code>_</code>-separated parts (a <code>-</code> inside a part marks parts the normalization combined). Only in Acceptance, in both, or only in Production. Every name links its own environment&#8217;s detail page.</p>\n'
                 else
                     # name-only pages (2026-08-30, user choice — the FlowID
                     # look family-wide): no Files column, no result colors;
@@ -453,11 +304,12 @@ write_acc_vs_prod_pages() {
                     printf '<p class="subtitle">The %s known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production.%s%s</p>\n' "${labels[$ti]}" "$linknote" "$foldnote"
                 fi
                 printf '<div class="tablewrap"><table class="fit">\n'
-                # ONE column for the unlinked derived types in the Both view
-                # (2026-08-30, user request): a FlowID/Logical in the Both
-                # set is the SAME string on both sides — no slug, no tint —
-                # so two identical columns said nothing
-                onecol=0; case $t in flowids|logicals) onecol=1 ;; esac
+                # ONE column for the unlinked derived FlowID type in the Both
+                # view (2026-08-30, user request): a FlowID in the Both set is
+                # the SAME string on both sides — no slug, no tint — so two
+                # identical columns said nothing. (Logical left this rule
+                # 2026-08-31: its cells link each env's own detail page.)
+                onecol=0; case $t in flowids) onecol=1 ;; esac
                 if [ "$onecol" = 1 ] && [ "$v" = both ]; then
                     printf '<tr><th>%s</th></tr>\n' "${labels[$ti]}"
                 elif [ "$v" = both ] || [ "$v" = difference ] || [ "$v" = all ]; then
@@ -498,7 +350,7 @@ write_acc_vs_prod_pages() {
                     view == "prd" && ($1 == "p" || $1 == "b") { n++
                         printf "<tr>%s</tr>\n", cell("production", $6, $7) }
                     view == "both" && $1 == "b" { n++
-                        # onecol (flowids/logicals): the one shared spelling, once
+                        # onecol (flowids): the one shared spelling, once
                         if (onecol) printf "<tr>%s</tr>\n", cell("acceptance", $3, $4)
                         else printf "<tr>%s%s</tr>\n", cell("acceptance", $3, $4), cell("production", $6, $7) }
                     # difference: ONE ROW PER NAME — an entity exists in only
@@ -523,7 +375,7 @@ write_acc_vs_prod_pages() {
             } > "$out"
         done
     done
-    rm -f "$tmp" "$alog" "$plog"
+    rm -f "$tmp"
 
     # ---- the Summary page (acc-vs-prod-summary.html): the home status tables of both envs + the per-type set/dormancy figures
     # Per type the three set sizes plus the Both set's ACTIVITY split (busy in
