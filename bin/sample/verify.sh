@@ -69,6 +69,19 @@ for env in acceptance production; do
     # the monitor dashboard flag
     check $([ -f "data/$env/dashboards/reports/monitor.rpt" ] && echo 0 || echo 1) "[$env] monitor.rpt missing"
 
+    # the Logical entity derivation (bin/flow-manager.sh): every configured
+    # FlowID maps to exactly one Logical, the entity report exists, and every
+    # derived name is 3 "_"-parts or a fixed input/logical.txt target
+    nmap=$(rows "data/$env/flow-manager/xref/_profiles-logicals.tsv")
+    nprof=$(rows "data/$env/flow-manager/base/_profiles.tsv")
+    check $([ "$nmap" -eq "$nprof" ] && echo 0 || echo 1) "[$env] FlowID map rows $nmap != profiles $nprof"
+    n=$(rpt_rows "data/$env/transfer/reports/logical.rpt")
+    check $([ "$n" -gt 0 ] && echo 0 || echo 1) "[$env] logical.rpt has 0 rows"
+    n=$(awk -F'\t' 'FNR == NR { if ($0 !~ /^[ \t]*#/ && $0 !~ /^[ \t]*$/) { n2 = split($0, fa, /[ \t]+/); if (n2 >= 2 && fa[2] != "") fix[fa[2]] = 1 }; next }
+        !($1 in fix) && split($1, P, "_") != 3 { n++ } END { print n + 0 }' \
+        input/logical.txt "data/$env/flow-manager/base/_logicals.tsv" 2>/dev/null || echo 0)
+    check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] $n logical name(s) not 3-part and not pinned"
+
     # planted reports carry rows
     for rpt in expired waiting went-quiet duplicate-files; do
         n=$(rpt_rows "data/$env/transfer/reports/$rpt.rpt")

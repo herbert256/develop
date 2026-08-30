@@ -184,10 +184,12 @@ configured-vs-seen analyses from the transfer outputs + config caches (no parse 
 ### bin/flow-manager.sh — the pre-parse config step
 
 Extracts from `input/<env>/flow-manager/{partners,subscriptions}.json`: `data/<env>/flow-manager/base/`
-— the 9 entity lists (`name⇥direction⇥result`: `_accounts _logins _hosts _white _subscriptions
-_profiles` + the derived PDA `_partners _apps _domains`; result filled later by the two build
-steps) — and `data/<env>/flow-manager/xref/` — the pair caches: every pair of the nine items BOTH
-WAYS (72 files; unconfigured = empty), plus `_subscriptions-patterns`, `_subscriptions-flowdir`
+— the 10 entity lists (`name⇥direction⇥result`: `_accounts _logins _hosts _white _subscriptions
+_profiles` + the derived `_logicals` (the FlowIDs condensed into logical flow groups,
+`input/logical.txt` pins honoured) and PDA `_partners _apps _domains`; result filled later by the
+two build steps) — and `data/<env>/flow-manager/xref/` — the pair caches: every pair of the ten
+items BOTH WAYS (90 files; unconfigured = empty — `_profiles-logicals` doubles as the FlowID →
+Logical MAP every report attributes a File’s profile column through), plus `_subscriptions-patterns`, `_subscriptions-flowdir`
 (out|in|relay), `_subscriptions-ucderived` (2026-08: the use case DERIVED for a non-UC-named
 subscription from flowdir × the pattern's one partner verb — out+pull=UC2, out+push=UC1,
 in+push=UC4, in+pull=UC3; both/neither verb = no row; consumers: the detail Features "Use case"
@@ -200,7 +202,9 @@ Nothing downstream reads the JSONs directly (except `publish-insights.sh`); ever
 not base/, whose result column is recolored AFTER the parse. `flow-manager.sh` early-exits when
 every cache is newer than the exports and itself; a missing cache degrades to an empty list.
 **PDA derivation** (partners/domains/applications from the account names) is owned here too — the
-split/merge rules are in ARCHITECTURE.md; never introduce a length rule. The coverage TSVs
+split/merge rules are in ARCHITECTURE.md; never introduce a length rule — and so is the
+**Logical derivation** (FlowID families → three-part group names; a `-` inside a part marks
+parts the derivation combined, which is why Logical names are never separator-folded). The coverage TSVs
 `data/<env>/transfer/reports/coverage/*.tsv` are the materialized product (`ensure_pda_tsvs`).
 
 ### bin/dashboards/ and bin/day/
@@ -303,7 +307,7 @@ the full-range restore lands back on the baked numbers.
 
 **Persistence.** From/To persists per AREA (sessionStorage, `report-area` meta). Search and sort
 persist per REPORT (`report-key` meta = the report basename) — EXCEPT the Entities pages, whose
-sort is shared across the seven entities (localStorage, 1-hour sliding expiry). Default sort: a
+sort is shared across the eight entities (localStorage, 1-hour sliding expiry). Default sort: a
 first column holding dates opens DESCENDING (a page default — a stored user sort wins). URL
 overrides, each persisting like a user action: `?axway_sort=COL[:DIR]`, `?axway_search=` (kept in
 sync via `history.replaceState`; the EMPTY form CLEARS a remembered search — every link out of a
@@ -475,7 +479,7 @@ after-last-transfer rule, so expired PLUS a newer server-log Error/Warn is still
 Counting `_transfers.tsv` rows over-counts (~3x) and double-counts volume.
 **Count/volume/failure/timing reports read `$FILES`**; **per-row dimension reports read
 `$PARSED`** and count rows, their count column labelled **"Transfers"** ("Files" is reserved for
-per-CoreId counts). The seven ENTITIES reports share one Summary/Detail layout counting distinct
+per-CoreId counts). The eight ENTITIES reports share one Summary/Detail layout counting distinct
 CoreIds (`login.sh`/`subscription.sh`/`remote-host.sh` join `$PARSED`→`$FILES` deduped per
 `(entity,CoreId)` — per-entity counts can sum to more than the distinct total).
 
@@ -652,7 +656,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   day dashboard, its Total row carries the label), then Files (In · Out · Ok · Error · Error %;
   the In/Out split is the movement direction, `_files.tsv` col 17; the count column is gone —
   In + Out carries it), Duration (p50 · p75 · p90 · p95), Red/Green switch and First seen
-  (Partners · Subscriptions · Accounts), each under its own `<h2>` and NONE carrying a Date
+  (Logical · Partners · Subscriptions · Accounts), each under its own `<h2>` and NONE carrying a Date
   column. All five list the same days in the same order so the rows align on the spine — which is
   why they are all `data-nosort` and the 14-day cap is lifted by ONE shared "Show all" button
   under the flex row (setupShowAll uncaps every capped table in its adjacent wrapper).
@@ -694,12 +698,12 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   "Error" and the two mood boxes are deliberately not reasons and a flow in several cause boxes
   takes the one its newest own Error/Warn line classifies to. The REASON is descriptive, not a
   verdict: the colour still never rests on a line attributed to no flow; Last file comes from `_files.tsv`.
-- **The Entities pages**: 7 entities x 10 views under `docs/<env>/transfer/entities/`, one shared
+- **The Entities pages**: 8 entities x 10 views under `docs/<env>/transfer/entities/`, one shared
   layout assembled at publish time from the entity `.rpt` + the coverage TSVs; the
   +Server/Transfer SCOPE decides whether a server-log sighting counts as seen; sort is shared
-  across the seven entities (localStorage, 1-hour sliding expiry, stored by column label).
+  across the eight entities (localStorage, 1-hour sliding expiry, stored by column label).
 - **The detail pages** (`details.sh` → `details_lib.sh`/`details_writer.awk`): one page per entity
-  of the seven types, every configured name gets one; slugs via the comprehensive `_slugmap.tsv`;
+  of the eight types, every configured name gets one; slugs via the comprehensive `_slugmap.tsv`;
   no From/To, no search box, no RECALC.
 - **The special pages**: Entity Search (rows ship as DATA in `search-data.js`; the Type cell is
   read by INDEX in report.js — adding a column means shifting it), the SIX File search pages
@@ -835,11 +839,16 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 - **`transfer-profile` is PARSE-INTERNAL ONLY** — no pages, no xref tables, no
   Entities/coverage/search rows, no result colour, no column KIND. What remains is plumbing the
   parse needs (cache columns, the reverse config fallback, the XREF vote) — dropping it would
-  silently delete ~4% of Files via the no-subscription skip. **Do not surface a profile in a
-  report or page.** ONE exception (2026-08-30, user request): the acc-vs-prod **FlowID** and
-  **Logical** pages (`publish-accvsprod.sh`) compare the two envs' `customAttribute_FlowIdentifier`
-  VALUE sets from `base/_profiles.tsv` (Logical = those values condensed into flow groups) —
-  name lists only, still no detail pages/colours/KIND.
+  silently delete ~4% of Files via the no-subscription skip. **Do not surface a RAW profile in a
+  report or page.** Two layers sit ABOVE the profile and ARE surfaced: the acc-vs-prod **FlowID**
+  pages (`publish-accvsprod.sh`, 2026-08-30) compare the two envs' `customAttribute_FlowIdentifier`
+  VALUE sets from `base/_profiles.tsv` — name lists only, no detail pages/colours/KIND — and
+  **Logical** (2026-08-31, user request), those values condensed into logical flow groups, which is
+  a FULL first-class entity with Partner parity: `base/_logicals.tsv`, the xref pairs (incl. the
+  `_profiles-logicals` FlowID → Logical map), the Entities views (`entities/logical-*.html`),
+  detail pages (`details/logicals/`), coverage, search, ranking, first-seen, cross references,
+  result colours and the KIND token `lgc`. The profile itself stays parse-internal — Logical
+  surfaces the flow GROUP, never a raw profile value.
 
 ## Directory layout
 
@@ -853,7 +862,8 @@ THIS repo committed IN FULL, sample CSVs included (the whole estate is synthetic
 naming one organisation — flow-manager's merge rule 4 + the subscription-name fallback retry)
 and `input/rename.txt` (DISPLAY renames, applied to the rendered pages by the build's last
 step — see the manual re-publish gotcha) and `input/logical.txt` (fixed FlowID → Logical
-transforms for the acc-vs-prod Logical pages; a listed FlowID skips the derivation), plus a
+transforms feeding the Logical entity derivation — owned by `bin/flow-manager.sh` since Logical
+became a full entity, and one of its freshness deps; a listed FlowID skips the derivation), plus a
 README.txt per directory. Gitignored: the `data/` root and `/build/`. A step script that
 only `bin/build.sh` ever invokes lives in **`bin/build/`** — the placement rule; the sample-data
 generator lives in **`bin/sample/`** (guarded by the marker, seeds in `bin/sample/seed/`).

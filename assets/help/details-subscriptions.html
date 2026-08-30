@@ -28,7 +28,7 @@
 <p>When a page carries both green (logged) and red (configured-only) rows, the tint tells them apart at a glance. The Activity per day table leads with the Files count; the Subscription breakdown comes first below it, and the Account breakdown renders right under the Incoming/Outgoing connections tables.</p>
 <h2>How it's computed</h2>
 <p>The KPI line adds this subscription's rank and share among all subscriptions, failure rate, volume, and cadence, plus processed-transfer performance where a duration is recorded. Every count on the page is in <strong>Files</strong>, counted as distinct (subscription, CoreId) pairs — a File touching several subscriptions counts once on each subscription's page. Server-side connection failures (login/handshake attempts that never became a transfer) are not on this page — see the server area's Connection failures report.</p>
-<p class="range">A Partner, Application or Domain breakdown holding exactly one row is folded away: the name appears as a row in the Features table instead, keeping its link and colour.</p>
+<p class="range">A Partner, Application, Domain or Logical breakdown holding exactly one row is folded away: the name appears as a row in the Features table instead, keeping its link and colour.</p>
 </main>
 </body>
 </html>

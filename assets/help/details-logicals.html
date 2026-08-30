@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Help: Entity coverage — Cloud Reports</title>
+<title>Help: Logical Flow Details — Cloud Reports</title>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
@@ -11,22 +11,17 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Entity coverage</h1>
+<h1>Logical Flow Details</h1>
 <h2>What this shows</h2>
-<p>One row per configured partner, answering one question per direction: <strong>is the connection to this partner actually working?</strong> Rows carry TWO colors only &mdash; <strong>green</strong> = covered (listed first), <strong>red</strong> = not covered; this verdict overrules the usual partner status colors on this page. A partner configured for <strong>Both</strong> directions is covered only when In AND Out both work; a side with no configured connections has nothing to prove and counts as covered.</p>
-<h2>What counts as proof</h2>
-<p>A side is <strong>covered</strong> when at least one of these holds:</p>
-<p><strong>Files</strong> &mdash; at least one real logical transfer moved on that side (the partner's Files split by its connection direction). If even one of ten configured outgoing connections moves files, Out is covered.</p>
-<p><strong>Out &middot; Polls</strong> &mdash; a UC3 remote poll succeeded: the server logged <code>Applying the search pattern '&hellip;' for transfer site '&hellip;': N file(s) were found&hellip;</code> That message only appears when ST could connect and list the partner's remote folder &mdash; 0 files found still proves the connection works. Counted per subscription by the Remote Polls report and rolled up to the subscription's partner.</p>
-<p><strong>In &middot; Logons</strong> &mdash; the partner's system successfully authenticated: the server logged <code>User with login name "FE&hellip;", associated with account "&hellip;", successfully authenticated over SSH&hellip;</code> Counted per account by the Auth activity report and rolled up to the account's partner &mdash; the connection works even when no file was submitted.</p>
-<h2>The rule buttons</h2>
-<p>The buttons on the left pick the <strong>entity</strong> (Accounts, Logical, Partners, Domains, Applications); the ones to their right pick the <strong>rule</strong> &mdash; what a side must show to count as covered:</p>
-<p><strong>Current</strong> (the default) &mdash; the connection works <em>now</em>: the most recent File that way was delivered OK, or a successful logon / poll proves the link.</p>
-<p><strong>Once</strong> &mdash; the connection has <em>ever</em> worked: a File moved that way at all, or a logon / poll succeeded.</p>
-<p><strong>OK transfers</strong> &mdash; the strictest view, about the transfer rather than the link: the most recent File itself must have been delivered OK; the logon and poll proofs do not count here.</p>
-<p><strong>Difference between Current &amp; Once</strong> &mdash; only the regressions: entities covered under <em>Once</em> but not under <em>Current</em>. The connection worked at some point and the most recent attempt did not, so every row is red by construction; the row count is exactly Once's covered count minus Current's.</p>
-<h2>Columns</h2>
-<p><strong>Subs</strong> = the partner's configured subscriptions per side (a both-ways subscription counts on both sides). <strong>Files</strong> = real logical transfers on that side. <strong>Logons</strong> / <strong>Polls</strong> = the server-log proof counts described above. This is a full-period status report &mdash; it carries no date filter.</p>
+<p>This is the per-logical-flow detail page &mdash; one page per <strong>logical flow</strong>: a FlowID family of the configured subscriptions condensed to one three-part name (a <code>-</code> inside a part marks parts the derivation combined; a fixed mapping in <code>input/logical.txt</code> wins verbatim). It opens with a one-line KPI summary, then Activity per day, a breakdown of every dimension the flow's transfers touch (subscription, account, login, remote host, domain, application, partner), the latest Files and the load tables. A file belongs to a logical flow through its FlowID attribution, unioned with its subscription&rsquo;s configured logical(s).</p>
+<p>The subscription / account / login / remote host tables are cross-referenced against the FlowManager configuration: every name configured for this flow is listed, whether it appears in the logs or not &mdash; <strong>green</strong> rows have logged data, <strong>red</strong> rows are configured but never seen, each linking to its own detail page.</p>
+<h2>Last error(s)</h2>
+<p>Directly above the <strong>Features</strong> table, a page carries a <strong>Last error(s)</strong> table whenever any subscription it moves files with has something wrong on it: one row per such subscription &mdash; its <em>most recent</em> error, newest first &mdash; with the date and time, the subscription and the file. Clicking anywhere on a row opens that file&rsquo;s error page, with every transfer leg and the server log of the failure.</p>
+<h2>Direction, page colors and never-seen pages</h2>
+<p>Every configured logical flow has a page &mdash; seen in the logs or not. The page background color says the same at a glance: <strong>light brown</strong> = seen &amp; in, <strong>light blue</strong> = seen &amp; out, <strong>light gray</strong> = seen &amp; both/unknown, <strong>light yellow</strong> = never seen &amp; in, <strong>light orange</strong> = never seen &amp; out, <strong>light purple</strong> = never seen &amp; both/unknown.</p>
+<h2>How it's computed</h2>
+<p>The KPI line reports this flow's rank and share of traffic among all logical flows, its failure rate, total volume and cadence, plus processed-transfer performance where durations are recorded. Every count is in <strong>Files</strong>: one per logical transfer, split by its delivered (final-row) outcome, volume counted once per file.</p>
+<p class="range">A Partner, Application, Domain or Logical breakdown holding exactly one row is folded away: the name appears as a row in the Features table instead, keeping its link and colour.</p>
 </main>
 </body>
 </html>

@@ -193,7 +193,7 @@ the detail page with the "Only seen in the server log" INTRO + a LOGCARD.
 ## Report groups (full lists)
 
 Transfer groups: **topview** · **entity-search** · **account-login-site** "Entities"
-(subscription · partner · account · login · remote-host · domain · application) · **time**
+(subscription · logical · partner · account · login · remote-host · domain · application) · **time**
 "Activity over Time" (activity · punctuality) · **volume-files** "Volume, Sizes & Files" (volume ·
 files · top-transfers) · **failures** "Failures & Retries" (failure-rate leader ·
 episodes · retries · failure-heatmap) · **flow-shape** "Patterns" (file-journey ·
@@ -460,18 +460,18 @@ Every status cell opens the **Transfer > Entities view whose row
 count IS that figure**, in the scope the "including server log" switch is in (ON = the bare
 `+Server` pages, OFF = `-transfer`); the Transfer column links `<e>-seen-transfer`, the Server
 column `<e>-server`; the percentage columns link too; a 0 renders as an empty cell (inert). The
-three PDA **Total** cells link the coverage cell pages
+four Logical/PDA **Total** cells link the coverage cell pages
 `docs/<env>/coverage/<member>-configured.html` (written by `bin/analyses/reports/coverage.sh` +
 `render_coverage_pages`, help slug `coverage`). `check_status_consistency` verifies every figure
 against the tinted (`data-res`) row count of its target view. The "configured names actually SEEN"
-figure comes from `bin/analyses/reports/home.sh` → `home.rpt` (seven `SEEN⇥member⇥count` lines;
-the PDA members re-run their both-ways merge over `coverage/<member>.tsv`), consumed by
+figure comes from `bin/analyses/reports/home.sh` → `home.rpt` (eight `SEEN⇥member⇥count` lines;
+the derived Logical/PDA members re-run their both-ways merge over `coverage/<member>.tsv`), consumed by
 `_status_table` and `seen-in-server-log.sh` — why that report runs last.
 
 ## The Entities report pages
 
-Seven entity reports — subscription, partner, account, login, remote-host, domain, application
-(group `account-login-site`, label "Entities") — each rendered as TEN pages under
+Eight entity reports — subscription, logical, partner, account, login, remote-host, domain,
+application (group `account-login-site`, label "Entities") — each rendered as TEN pages under
 `docs/<env>/transfer/entities/` by `render_entity_report`: `<entity>-{all,ok,error,server}.html` +
 `<entity>-{seen,not-seen,warning}[-transfer].html`.
 
@@ -504,7 +504,7 @@ site-wide RESULT (`entity_res_block` — one definition, shared with tints and s
 not-seen names come from showseen's `coverage/*.tsv`, so Entities and Show Seen can never
 disagree. Every view carries `datereset`.
 
-**SORT is SHARED across the seven entities with a 1-hour sliding expiry** — the one localStorage
+**SORT is SHARED across the eight entities with a 1-hour sliding expiry** — the one localStorage
 in report.js (`entLoad`/`entSave`/`entTouch`/`entResolve`), stored by COLUMN LABEL, never index
 (column 0 = the sentinel `#name`); a label the view lacks leaves the entry intact and that page
 keeps its own default.
@@ -512,12 +512,13 @@ keeps its own default.
 **`showseen.sh` is a DATA producer only** — its four `showseen-*.rpt` are unpublished
 intermediates feeding the status figures; its `coverage/*.tsv` feed the entity not-seen rows. It
 lifts figures straight from the entity summary `.rpt`s (subscriptions = prefix match, others exact
-name match, case aside). Runs after `details.sh` (needs the slugmaps). No PDA members.
+name match, case aside). Runs after `details.sh` (needs the slugmaps). No Logical/PDA members
+(their Seen figures come from the coverage-TSV union path instead).
 
 ## Per-entity detail pages
 
 `details.sh` → `data/<env>/transfer/reports/details/<sub>/<slug>.rpt` →
-`docs/<env>/details/<sub>/…`, one page per entity of the seven types, counting Files; plus
+`docs/<env>/details/<sub>/…`, one page per entity of the eight types, counting Files; plus
 `details/incoming_connections/` and `details/partner-groups/`. **Every name from `base/` (except
 `_white.tsv`) gets a page, seen or not**, plus every logged entity.
 
@@ -791,8 +792,8 @@ row links inside it.
   exact; `p50`/`p90` nearest-rank over per-day histograms QUANTIZED TO THE humandur
   DISPLAY GRID, so the shown figure equals the exact one), retints via `data-thr`
   (`le:A:B`/`ge:A:B`), and restores the baked value and class at the full range.
-- **Cross References** — `cross-reference.sh` → 42 pages in `docs/<env>/analyses/xref/`: every
-  pair of the seven entities both ways, existence only (no counts/drills/date filter); rows =
+- **Cross References** — `cross-reference.sh` → 56 pages in `docs/<env>/analyses/xref/`: every
+  pair of the eight entities both ways, existence only (no counts/drills/date filter); rows =
   seen-together pairs + configured-never-seen (`@data:seen`); table `group`; each cell tinted by
   its own entity's RESULT; two full entity NAV rows (row 1 first entity, row 2 second).
 - **Seen in server log** — `transfer/seen-in-server-log.html` (+ `transfer/seenlog/` breakdowns),
@@ -832,12 +833,14 @@ row links inside it.
   transfer-profile surfaces: the envs' `customAttribute_FlowIdentifier` value sets from
   `base/_profiles.tsv`, second in the type row and in the Summary's Per-entity table (after
   Subscriptions, per user choice). ALL types render NAME-ONLY since 2026-08-30 (user choice):
-  no Files columns, no result tints — cells still link the detail pages (FlowID/Logical/Whitelist
+  no Files columns, no result tints — cells still link the detail pages (FlowID/Whitelist
   have none); the entity-report activity feeds only the Summary's dormancy split. The **Logical**
-  type (2026-08-30) condenses the FlowIDs into logical flow groups (`_logicals_from`, derived at
-  publish time, no cache): pass 1 GROUPS (shared 4-part prefixes; digit-tailed or numeric-only
-  parts whose removal collides), passes 2–3 NORMALIZE every name to three `_`-parts, joining
-  combined parts with `-` — which is why the Logical pages render UNFOLDED.
+  type (2026-08-30; a FULL entity since 2026-08-31) condenses the FlowIDs into logical flow
+  groups — the derivation lives in `bin/flow-manager.sh` (which writes `base/_logicals.tsv` +
+  the `_profiles-logicals` FlowID → Logical map): pass 1 GROUPS (shared 4-part prefixes;
+  digit-tailed or numeric-only parts whose removal collides), passes 2–3 NORMALIZE every name to
+  three `_`-parts, joining combined parts with `-` — which is why Logical names render UNFOLDED
+  site-wide. These pages read the cache like every base and link `details/logicals/`.
 - **UC status** — the four `uc<n>-status` reports merged into ONE tabbed report `uc-status`
   (server-area `.rpt`s; its `SUBS_GROUP_REPORTS` entry `server:uc-status` — the full value is
   `" server:uc-status server:uc2-visits transfer:account-sharing transfer:twins "` — routes its PAGES to
