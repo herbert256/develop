@@ -90,7 +90,13 @@ _home_status_block() {   # $1 = acceptance | production
 #    duplicates another folds onto the removed form. A SINGLE-part FlowID
 #    (all dashes — the monitor's INFRA-MONITOR-UC1..4) gets the same
 #    digit-tail rule on the whole name (2026-08-30): the four fold onto
-#    INFRA-MONITOR-UC.
+#    INFRA-MONITOR-UC. A FlowID of FIVE OR MORE parts (2026-08-30, user
+#    request — the AB_NAS_FIS_BSM_BU_A_AH family) folds onto its LONGEST
+#    part-prefix (3+ parts) that EXISTS as a FlowID: the eight long
+#    AB_NAS_FIS_BSM_* names join the bare AB_NAS_FIS_BSM, and the reshape
+#    renders the group AB_NAS_FIS-BSM. A fixed input/logical.txt mapping is
+#    also honoured for the GROUP name a fold lands on, so one line can pin
+#    a whole family's final form.
 # 2) RESHAPE to 3 parts by position, informed by the 3-part logicals'
 #    vocabulary (their 2nd/3rd parts): AAA_BBB -> AAA_AAA_BBB; 4 parts whose
 #    4th is a known 3rd -> AAA_BBB-CCC_DDD; 4 parts whose 2nd is a known
@@ -164,6 +170,16 @@ _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per lin
                             if (cnt2[c] >= 2 || (c in exists)) { lg = c; break } } }
                 else if (n == 1) { s = digitstrip(P[1])
                     if (s != P[1] && s != "" && (cnt2[s] >= 2 || (s in exists))) lg = s }
+                else if (n >= 5)
+                    # fold onto the LONGEST part-prefix (3+ parts) that
+                    # exists as a FlowID of its own
+                    for (k = n - 1; k >= 3; k--) {
+                        pre = P[1]
+                        for (m = 2; m <= k; m++) pre = pre "_" P[m]
+                        if (pre in exists) { lg = pre; break }
+                    }
+                # a fixed mapping for the GROUP a fold landed on wins too
+                if (lg in FIX) { fixed[FIX[lg]] = 1; continue }
                 lset[lg] = 1
             }
             # pass 2: reshape to 3 parts by position
