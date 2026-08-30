@@ -134,6 +134,15 @@ END {
         printf "\n    },\n" > SJSON
         printf "    \"flowId\": \"%s\",\n", S_flow[si] > SJSON
         printf "    \"flowName\": \"%s\",\n", jesc(S_site[si]) > SJSON
+        # tags: the real export carries free-form tags — plant a business-line
+        # tag ("BL_" + the FlowID's first part) on most subscriptions beside
+        # the sample marker; every 7th gets none, the analyses Subscriptions
+        # page's blank-BL case
+        nbl = split(S_prof[si], BLP, "_")
+        if (si % 7 != 0 && nbl > 0 && BLP[1] != "")
+            printf "    \"tags\": [\"BL_%s\", \"sample-estate\"],\n", jesc(BLP[1]) > SJSON
+        else
+            printf "    \"tags\": [\"sample-estate\"],\n" > SJSON
         printf "    \"status\": {\"code\": \"DEPLOYED\", \"timestamp\": 1787000000000},\n" > SJSON
         printf "    \"domains\": [{\"businessId\": \"c25c8684-4ecc-40fc-9d8b-85e39cbf91f2\", \"name\": \"Default\"}],\n" > SJSON
         printf "    \"type\": \"Subscription\"\n  }" > SJSON

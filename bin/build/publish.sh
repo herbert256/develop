@@ -1468,6 +1468,7 @@ write_report_finder() {
 analyses/use-cases.html|Use cases|The UC flow templates: each use case with its subscriptions and template status.||
 analyses/use-case-definitions.html|Use case definitions|Each use case explained — who connects, which way the file travels, and what triggers it.||
 analyses/use-case-patterns.html|Use case patterns|The accounts grouped by their subscription mix (e.g. UC2 (1) UC4 (1)).||
+analyses/subscriptions.html|Subscriptions (analyses)|Every configured subscription with its FlowID, use case, account, endpoint, BL tag and derived Logical / Partner / Domain / Application groups.|mapping, flowid, tags, BL|mapping, BL tag
 analyses/accounts.html|Accounts (analyses)|The configured accounts analysed against the FlowManager configuration.||
 analyses/cronjobs.html|Cronjobs|The subscriptions polling schedules (cron expressions) in human terms.||
 analyses/first-seen.html|First seen|On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.||
@@ -1607,9 +1608,10 @@ write_sitemap() {
         printf '<li><a href="file-search-24-hours.html">File search</a></li>\n'
         printf '<li><a href="transfer/seen-in-server-log.html">Seen in server log</a></li>\n'
         printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Configuration <span class="smcount">13</span></h3><ul>\n'
+        printf '<div class="smcard"><h3>Configuration <span class="smcount">14</span></h3><ul>\n'
         printf '<li><a href="analyses/use-cases.html">Use Case</a></li>\n'
         printf '<li><a href="analyses/uc2-visits.html">UC2 pickup visits</a></li>\n'
+        printf '<li><a href="analyses/subscriptions.html">Subscriptions</a></li>\n'
         printf '<li><a href="analyses/accounts.html">Accounts</a></li>\n'
         printf '<li><a href="analyses/account-sharing.html">Account sharing</a></li>\n'
         printf '<li><a href="analyses/twins.html">Twins</a></li>\n'

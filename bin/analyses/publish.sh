@@ -956,6 +956,133 @@ write_use_case_patterns_page() {
     } > "$out"
 }
 
+# ---- the Subscriptions page (docs/analyses/subscriptions.html) --------------
+# The per-subscription configuration mapping (2026-08-30, user request): EVERY
+# configured subscription on one row with its FlowID (customAttribute_
+# FlowIdentifier), use case (the UC<n> name prefix, else the flow-manager
+# DERIVED one), account, endpoint (the login the partner connects in with, or
+# the remote host we dial out to), BL tag (the subscriptions.json tags[] entry
+# starting with "BL" — jq over the SKIP-filtered export, like
+# write_accounts_page) and the derived Logical / Partner / Domain /
+# Application groups — the config caches joined onto one row each. Every name
+# links its detail page; rows tint by the subscription result. The roster is
+# the pristine configured snapshot (base/.configured.tsv — the base cache
+# gains discovered names after the build's append steps), falling back to the
+# base cache minus the parse-synthetic UCx_ names on a pre-snapshot tree.
+write_subscriptions_page() {
+    local out="$ADIR/subscriptions.html" S="$FM_CONFIG_DIR/subscriptions.json"
+    local B="$DATA/flow-manager/base" X="$DATA/flow-manager/xref" DET="$DATA/transfer/reports/details"
+    [ -f "$B/_subscriptions.tsv" ] || { rm -f "$out"; return 0; }
+    # the BL tag(s) per subscription; several join ", ", none = blank cell
+    local blmap; blmap=$(mktemp "${TMPDIR:-/tmp}/subbl.XXXXXX")
+    if command -v jq >/dev/null 2>&1 && [ -f "$S" ]; then
+        jq -r '.[] | .name as $n | [(.tags // [])[] | select(startswith("BL"))] | select(length > 0) | "\($n)\t\(join(", "))"' "$S" > "$blmap" 2>/dev/null || : > "$blmap"
+    fi
+    local conf="$B/.configured.tsv"; [ -f "$conf" ] || conf=""
+    local args=() f d
+    for f in _subscriptions-profiles _subscriptions-ucderived _subscriptions-accounts \
+             _subscriptions-logins _subscriptions-hosts _subscriptions-logicals \
+             _subscriptions-partners _subscriptions-domains _subscriptions-apps; do
+        [ -f "$X/$f.tsv" ] && args+=("$X/$f.tsv")
+    done
+    for d in subscriptions accounts logins hosts logicals partners domains applications; do
+        [ -f "$DET/$d/_slugmap.tsv" ] && args+=("$DET/$d/_slugmap.tsv")
+    done
+    local rows
+    rows=$(LC_ALL=C awk -F'\t' -v BLM="$blmap" -v CONF="$conf" '
+        function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+        # per-subscription value sets, deduped per (map, sub, value)
+        function addv(M, tag, s, v,   k2) {
+            if (s == "" || v == "") return
+            k2 = toupper(s)
+            if (!((tag SUBSEP k2 SUBSEP toupper(v)) in dupv)) { dupv[tag SUBSEP k2 SUBSEP toupper(v)] = 1; M[k2] = M[k2] US v }
+        }
+        # one name -> its detail link (no slugmap entry, or sub2 "" = plain)
+        function lnk(sub2, nm,   k2) {
+            k2 = toupper(nm)
+            if (sub2 != "" && ((sub2 SUBSEP k2) in SLUG))
+                return "<a href=\"../details/" sub2 "/" SLUG[sub2 SUBSEP k2] ".html\">" e(nm) "</a>"
+            return e(nm)
+        }
+        # a \x1f set -> sorted, each value linked, ", "-joined
+        function cell(sub2, set,   A2, n2, i2, j2, t3, o2) {
+            if (set == "") return ""
+            n2 = split(substr(set, 2), A2, US)
+            for (i2 = 2; i2 <= n2; i2++) { t3 = A2[i2]
+                for (j2 = i2 - 1; j2 >= 1 && A2[j2] > t3; j2--) A2[j2+1] = A2[j2]
+                A2[j2+1] = t3 }
+            o2 = ""
+            for (i2 = 1; i2 <= n2; i2++) o2 = o2 (o2 == "" ? "" : ", ") lnk(sub2, A2[i2])
+            return o2
+        }
+        BEGIN { US = sprintf("%c", 31)
+            while ((getline l < BLM) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") BLT[toupper(a[1])] = a[2] }
+            close(BLM)
+            if (CONF != "") { while ((getline l < CONF) > 0) { n = split(l, a, "\t")
+                    if (n >= 2 && a[1] == "_subscriptions" && a[2] != "" && !(toupper(a[2]) in seenr)) { seenr[toupper(a[2])] = 1; RN[++nr] = a[2] } }
+                close(CONF) }
+        }
+        FILENAME ~ /base\/_subscriptions\.tsv$/ { RES[toupper($1)] = $3
+            if (CONF == "" && $1 !~ /^UCx_/ && $1 != "" && !(toupper($1) in seenr)) { seenr[toupper($1)] = 1; RN[++nr] = $1 }
+            next }
+        FILENAME ~ /details\/subscriptions\/_slugmap\.tsv$/ { SLUG["subscriptions" SUBSEP toupper($1)] = $2; next }
+        FILENAME ~ /details\/accounts\/_slugmap\.tsv$/      { SLUG["accounts"      SUBSEP toupper($1)] = $2; next }
+        FILENAME ~ /details\/logins\/_slugmap\.tsv$/        { SLUG["logins"        SUBSEP toupper($1)] = $2; next }
+        FILENAME ~ /details\/hosts\/_slugmap\.tsv$/         { SLUG["hosts"         SUBSEP toupper($1)] = $2; next }
+        FILENAME ~ /details\/logicals\/_slugmap\.tsv$/      { SLUG["logicals"      SUBSEP toupper($1)] = $2; next }
+        FILENAME ~ /details\/partners\/_slugmap\.tsv$/      { SLUG["partners"      SUBSEP toupper($1)] = $2; next }
+        FILENAME ~ /details\/domains\/_slugmap\.tsv$/       { SLUG["domains"       SUBSEP toupper($1)] = $2; next }
+        FILENAME ~ /details\/applications\/_slugmap\.tsv$/  { SLUG["applications"  SUBSEP toupper($1)] = $2; next }
+        FILENAME ~ /_subscriptions-profiles\.tsv$/  { addv(FID, "f", $1, $2); next }
+        FILENAME ~ /_subscriptions-ucderived\.tsv$/ { if ($1 != "" && $2 != "") UCD[toupper($1)] = $2; next }
+        FILENAME ~ /_subscriptions-accounts\.tsv$/  { addv(ACC, "a", $1, $2); next }
+        FILENAME ~ /_subscriptions-logins\.tsv$/    { addv(LGN, "l", $1, $2); next }
+        FILENAME ~ /_subscriptions-hosts\.tsv$/     { addv(HST, "h", $1, $2); next }
+        FILENAME ~ /_subscriptions-logicals\.tsv$/  { addv(LGC, "g", $1, $2); next }
+        FILENAME ~ /_subscriptions-partners\.tsv$/  { addv(PTN, "p", $1, $2); next }
+        FILENAME ~ /_subscriptions-domains\.tsv$/   { addv(DOM, "d", $1, $2); next }
+        FILENAME ~ /_subscriptions-apps\.tsv$/      { addv(APP, "z", $1, $2); next }
+        END {
+            for (i = 1; i <= nr; i++) { nm = RN[i]; k = toupper(nm)
+                # UCx: the name prefix wins; else the flow-manager derived one
+                uc = ""
+                if (match(nm, /^UC[0-9]+/)) uc = substr(nm, RSTART, RLENGTH)
+                else if (k in UCD) uc = UCD[k]
+                ep = cell("logins", (k in LGN) ? LGN[k] : "")
+                hp = cell("hosts",  (k in HST) ? HST[k] : "")
+                epc = ep ((ep != "" && hp != "") ? ", " : "") hp
+                res = (k in RES) ? RES[k] : ""
+                tr = "<tr"
+                if (res == "green" || res == "orange" || res == "red" || res == "blue") tr = tr " data-res=\"" res "\""
+                print k "\t" tr "><td>" lnk("subscriptions", nm) "</td>" \
+                    "<td>" cell("", (k in FID) ? FID[k] : "") "</td>" \
+                    "<td>" uc "</td>" \
+                    "<td class=\"wrap\">" cell("accounts", (k in ACC) ? ACC[k] : "") "</td>" \
+                    "<td class=\"wrap\">" epc "</td>" \
+                    "<td>" e((k in BLT) ? BLT[k] : "") "</td>" \
+                    "<td>" cell("logicals", (k in LGC) ? LGC[k] : "") "</td>" \
+                    "<td class=\"wrap\">" cell("partners", (k in PTN) ? PTN[k] : "") "</td>" \
+                    "<td>" cell("domains", (k in DOM) ? DOM[k] : "") "</td>" \
+                    "<td>" cell("applications", (k in APP) ? APP[k] : "") "</td></tr>"
+            }
+        }' ${args[@]+"${args[@]}"} "$B/_subscriptions.tsv" \
+        | LC_ALL=C sort -t"$(printf '\t')" -k1,1 | cut -f2-)
+    rm -f "$blmap"
+    local n; n=$(printf '%s' "$rows" | grep -c '<tr' || true)
+    {
+        html_head "Subscriptions" "../assets/style.css" "" "" "subscriptions" "" "" "sort-fresh"
+        printf '<h1>Subscriptions</h1>\n'
+        analyses_group_tabs subscriptions.html
+        printf '<p class="subtitle">Every configured subscription on one row &mdash; its <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code>), <strong>use case</strong> (the <code>UC&lt;n&gt;</code> name prefix, else the derived one), <strong>account</strong>, <strong>endpoint</strong> (the login the partner connects in with, or the remote host we dial out to), <strong>BL</strong> tag (the export&rsquo;s <code>tags</code> entry starting with <code>BL</code>) and the derived <strong>Logical</strong> / <strong>Partner</strong> / <strong>Domain</strong> / <strong>Application</strong> groups. Every name links its detail page; rows tint by the subscription&rsquo;s result &mdash; <strong>green</strong> last transfer OK, <strong>orange</strong> never seen, <strong>red</strong> last transfer Error, <strong>blue</strong> server-log only.</p>\n'
+        printf '<div class="tablewrap"><table class="index fit">\n'
+        printf '<tr><th>Subscription</th><th>FlowID</th><th>UCx</th><th>Account</th><th>Endpoint</th><th>BL</th><th>Logical</th><th>Partner</th><th>Domain</th><th>Application</th></tr>\n'
+        [ -n "$rows" ] && printf '%s\n' "$rows"
+        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$n"
+        printf '</table></div>\n'
+        printf '</body>\n</html>\n'
+    } > "$out"
+}
+
 # ---- the Accounts page (docs/analyses/accounts.html) — account + comm-profile checks
 # A comm profile (partners.json communicationProfiles[]) defines how ST talks to
 # ONE partner endpoint. Its name is coded <TYPE>_<partner>_<AUTH>: the PREFIX is
@@ -1622,6 +1749,7 @@ write_analyses_index() {
         printf '<tr><th colspan="2">Configuration</th></tr>\n'
         [ -f "$ADIR/use-cases.html" ] && printf '<tr><td><a href="use-cases.html">Use cases</a></td><td class="desc">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; Total, Server (server-log only), Not seen, Error and OK per use case; tabs for the <strong>Use Case definitions</strong> (who connects, which way the file travels, what triggers it) and the <strong>Use Case patterns</strong> (the accounts grouped by their subscription mix, e.g. <code>UC2 (1) UC4 (1)</code>).</td></tr>\n'
         [ -f "$ADIR/uc2-visits.html" ] && printf '<tr><td><a href="uc2-visits.html">UC2 pickup visits</a></td><td class="desc">What each UC2 partner actually does when it connects: collected, two-way exchange, delivery-only (the UC4 twin) or empty-handed visits.</td></tr>\n'
+        [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured subscription on one row: FlowID, use case, account, endpoint, BL tag and the derived Logical / Partner / Domain / Application groups.</td></tr>\n'
         [ -f "$ADIR/accounts.html" ] && printf '<tr><td><a href="accounts.html">Accounts</a></td><td class="desc">The accounts (partners) and their communication profiles &mdash; naming vs configured type/auth, insecure and unrestricted endpoints, conflicting host/whitelist setup, plus account &amp; login integrity checks (non-standard or shared logins, password profiles without a password, and more).</td></tr>\n'
         [ -f "$ADIR/account-sharing.html" ] && printf '<tr><td><a href="account-sharing.html">Account sharing</a></td><td class="desc">Which accounts serve more than one subscription, and in what shape: UC2+UC4 mailbox pairs, UC1+UC3 outbound pairs, fan-outs and both-directions accounts.</td></tr>\n'
         [ -f "$ADIR/twins.html" ] && printf '<tr><td><a href="twins.html">Twins</a></td><td class="desc">Every twin pair on one page: subscriptions that are the same flow configured the opposite way (naming slips highlighted) and the accounts spelled with both separators.</td></tr>\n'
@@ -1660,6 +1788,7 @@ render_first_seen_pages # docs/first-seen/*.html, before the First seen table li
 write_use_cases_page
 write_use_case_definitions_page
 write_use_case_patterns_page
+write_subscriptions_page
 write_accounts_page
 write_cronjobs_page
 write_first_seen_page 1

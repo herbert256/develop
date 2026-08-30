@@ -2098,7 +2098,7 @@ ANALYSES_MENU='<a class="ddtop" href="@analyses/index.html">Start page</a><a hre
 _analyses_groups() {
     printf '%s\n' \
         "Coverage & seen|../transfer/entity-coverage-accounts.html=Entity coverage|first-seen.html=First seen|data-diff.html=Since yesterday|../file-search-24-hours.html=File search|../transfer/seen-in-server-log.html=Seen in server log" \
-        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|accounts.html=Accounts|account-sharing.html=Account sharing|twins.html=Twins|cronjobs.html=Cronjobs|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
+        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|accounts.html=Accounts|account-sharing.html=Account sharing|twins.html=Twins|cronjobs.html=Cronjobs|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
         "Partners|partner-scorecard.html=Partner scorecard|blast-radius.html=Blast radius|app-partners.html=Application dependencies|partner-lifecycle.html=Partner lifecycle" \
         "Boxes|accounts-in-boxes.html=Accounts in boxes|subscriptions-in-boxes.html=Subscriptions in boxes|triage.html=Triage" \
         "Errors|failed.html=Failed Subscriptions|failing-reasons.html=Error reasons"
