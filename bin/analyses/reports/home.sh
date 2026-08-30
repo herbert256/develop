@@ -9,9 +9,9 @@
 #
 #   SEEN<TAB><member><TAB><count>
 #
-# for the seven members of the two status tables — the four Flow manager
-# entities (subscriptions, accounts, hosts, logins) and the three derived PDA
-# ones (partners, domains, applications).
+# for the eight members of the two status tables — the four Flow manager
+# entities (subscriptions, accounts, hosts, logins) and the four derived ones
+# (logicals, partners, domains, applications).
 #
 # WHY ONLY THIS. bin/build/publish.sh's _status_table computes every other figure
 # straight from data/<env>/flow-manager/base/<member>.tsv (Total = rows,
@@ -30,7 +30,7 @@
 #
 # The classic four lift the number from their Show Seen member report — the
 # canonical config-coverage count, so the home and Show Seen can never
-# disagree. The PDA three re-run the both-ways MERGE over their coverage TSV:
+# disagree. The derived four re-run the both-ways MERGE over their coverage TSV:
 # an organisation configured in both directions is ONE row, so its seen count
 # cannot be summed from the per-direction rows.
 #
@@ -39,23 +39,23 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 OUT="$REPORTS_DIR/home.rpt"
 
-# Materialize the three derived PDA coverage TSVs. Kept here (it used to sit
+# Materialize the four derived Logical/PDA coverage TSVs. Kept here (it used to sit
 # in partners-domains-applications.sh) because entity-search.sh reads them —
 # see the ordering note in bin/analyses/reports.sh.
 ensure_pda_tsvs
 
-# Inputs: the four classic members' Show Seen INTRO counts and the three PDA
-# coverage TSVs ensure_pda_tsvs just re-derived (cov_put keeps their mtime when
+# Inputs: the four classic members' Show Seen INTRO counts and the four
+# derived coverage TSVs ensure_pda_tsvs just re-derived (cov_put keeps their mtime when
 # nothing changed, so this guard is not defeated by the call above).
 deps=()
 for m in subscriptions accounts hosts logins; do
     [ -f "$DATA/transfer/reports/showseen-$m.rpt" ] && deps+=("$DATA/transfer/reports/showseen-$m.rpt")
 done
-for m in partners domains applications; do
+for m in logicals partners domains applications; do
     [ -f "$COVSRC/$m.tsv" ] && deps+=("$COVSRC/$m.tsv")
 done
-# the union rule reads the three PDA entity reports too (pda_seen_total)
-for m in partner domain application; do
+# the union rule reads the four derived entity reports too (pda_seen_total)
+for m in logical partner domain application; do
     [ -f "$DATA/transfer/reports/$m.rpt" ] && deps+=("$DATA/transfer/reports/$m.rpt")
 done
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" ${deps[@]+"${deps[@]}"}
@@ -130,11 +130,11 @@ pda_seen_total() {   # $1 = member  $2 = its coverage TSV  $3 = its base cache  
             s = $2; sub(/.*Seen: /, "", s); sub(/[^0-9].*/, "", s); print s; exit }' "$rpt")
         [ -n "$seen" ] && printf 'SEEN\t%s\t%s\n' "$m" "$seen"
     done
-    # the three derived PDA members
-    for m in partners domains applications; do
+    # the four derived Logical/PDA members
+    for m in logicals partners domains applications; do
         tsv="$COVSRC/$m.tsv"
         [ -f "$tsv" ] || continue
-        case $m in partners) bc=_partners; er=partner ;; domains) bc=_domains; er=domain ;; *) bc=_apps; er=application ;; esac
+        case $m in logicals) bc=_logicals; er=logical ;; partners) bc=_partners; er=partner ;; domains) bc=_domains; er=domain ;; *) bc=_apps; er=application ;; esac
         printf 'SEEN\t%s\t%s\n' "$m" "$(pda_seen_total "$m" "$tsv" "$DATA/flow-manager/base/$bc.tsv" "$DATA/transfer/reports/$er.rpt")"
     done
 } | cov_put "$OUT"     # content-compared: home.rpt carries no FOOT timestamp, and

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# first-seen.sh — the First seen analysis: for five entity types (partner,
-# subscription, account, login, remote host), the calendar day each CONFIGURED
+# first-seen.sh — the First seen analysis: for six entity types (logical,
+# partner, subscription, account, login, remote host), the calendar day each CONFIGURED
 # name was FIRST seen — plus, on top, the names never seen and the names seen
 # WITHOUT a dated transfer of their own. The universe and the seen split are
 # the COVERAGE TSVs (showseen's healed universe — the same files behind the
@@ -32,15 +32,15 @@
 #
 #   -> data/analyses/reports/first-seen.rpt        the Transfer-only page spec
 #   -> data/analyses/reports/first-seen-both.rpt   the both-logs page spec
-#      (each: SEEN / NOTSEEN / NODATE / ROW / TOTAL lines, columns partners
-#      subscriptions accounts logins hosts)
+#      (each: SEEN / NOTSEEN / NODATE / ROW / TOTAL lines, columns logicals
+#      partners subscriptions accounts logins hosts)
 #   -> data/first-seen/<type>-<key>.rpt            one per NONZERO cell (key =
 #      YYYY-MM-DD | notseen | nodate | seen | total; the both-logs cells carry
 #      a both- key prefix and a 6th ROW field = Transfer, or Server for a blue
 #      name dated via its crosses) — rendered into docs/first-seen/ by
 #      bin/analyses/publish.sh, like the coverage cells.
 #
-# Sources: the coverage TSVs (transfer/reports/coverage/{partners,
+# Sources: the coverage TSVs (transfer/reports/coverage/{logicals,partners,
 # subscriptions,accounts,logins,hosts}.tsv — the seen flags; the partner
 # endpoint-alias rows, link col hosts/…, are skipped), the transfer parse
 # caches — _files.tsv (accounts col 3, partners col 20 unioned with the
@@ -48,7 +48,7 @@
 # _transfers.tsv (subscriptions col 6, logins col 5, hosts
 # col 16, date/time cols 11/12) — for the DATES, plus the
 # data/flow-manager/base entity lists (configured names + direction + result),
-# the 10 xref pair caches among the five types, and the comprehensive
+# the 15 xref pair caches among the six types (+ the FlowID map), and the comprehensive
 # detail-page slugmaps (links; a name with no map entry renders unlinked).
 # Date matching: exact, case aside — subscriptions by prefix (a configured
 # name matches the logged site values it prefixes).
@@ -76,22 +76,24 @@ COV="$DATA/transfer/reports/coverage"
 # another caller)
 ensure_pda_tsvs
 srcs=()
-for f in _partners _subscriptions _accounts _logins _hosts; do
+for f in _logicals _partners _subscriptions _accounts _logins _hosts; do
     [ -f "$BASE/$f.tsv" ] && srcs+=("$BASE/$f.tsv")
 done
-for f in partners subscriptions accounts logins hosts; do
+for f in logicals partners subscriptions accounts logins hosts; do
     [ -f "$COV/$f.tsv" ] && srcs+=("$COV/$f.tsv")
 done
-for d in partners subscriptions accounts logins hosts; do
+for d in logicals partners subscriptions accounts logins hosts; do
     [ -f "$DET/$d/_slugmap.tsv" ] && srcs+=("$DET/$d/_slugmap.tsv")
 done
-# the 10 cross-reference pairs among the five types (one direction each — the
+# the 15 cross-reference pairs among the six types (one direction each — the
 # loader stores both ways). Optional: without them the blue names simply stay
-# in the both view's Not seen.
+# in the both view's Not seen. Plus _subscriptions-logicals + the FlowID map
+# (_profiles-logicals) for the logical DATE attribution.
 for f in _partners-accounts _partners-subscriptions _partners-logins _partners-hosts \
          _accounts-subscriptions _accounts-logins _accounts-hosts \
          _subscriptions-logins _subscriptions-hosts _logins-hosts \
-         _subscriptions-partners; do
+         _logicals-accounts _logicals-subscriptions _logicals-logins _logicals-hosts _logicals-partners \
+         _subscriptions-partners _subscriptions-logicals _profiles-logicals; do
     [ -f "$XREF/$f.tsv" ] && srcs+=("$XREF/$f.tsv")
 done
 
@@ -154,6 +156,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
             }
         return s
     }
+    FILENAME ~ /base\/_logicals\.tsv$/      { conf("logicals",      $1, $2, $3); next }
     FILENAME ~ /base\/_partners\.tsv$/      { conf("partners",      $1, $2, $3); next }
     # "UCx_<account>" = the parse-time SYNTHETIC subscription for transfers no
     # attribution pass could place (bin/transfer/parse.sh). It reaches the base
@@ -183,16 +186,25 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
         else covput("partners", $1, $3)
         next
     }
+    FILENAME ~ /coverage\/logicals\.tsv$/     { covput("logicals",      $1, $3); next }
     FILENAME ~ /coverage\/subscriptions\.tsv$/ { if ($1 ~ /^UCx_/) next; covput("subscriptions", $1, $3); next }
     FILENAME ~ /coverage\/accounts\.tsv$/      { covput("accounts",      $1, $3); next }
     FILENAME ~ /coverage\/logins\.tsv$/        { covput("logins",        $1, $3); next }
     FILENAME ~ /coverage\/hosts\.tsv$/         { covput("hosts",         $1, $3); next }
+    FILENAME ~ /details\/logicals\/_slugmap\.tsv$/       { smap["logicals"      SUBSEP toupper($1)] = "logicals/" $2;       next }
     FILENAME ~ /details\/partners\/_slugmap\.tsv$/       { smap["partners"      SUBSEP toupper($1)] = "partners/" $2;       next }
     FILENAME ~ /details\/subscriptions\/_slugmap\.tsv$/ { smap["subscriptions" SUBSEP toupper($1)] = "subscriptions/" $2; next }
     FILENAME ~ /details\/accounts\/_slugmap\.tsv$/       { smap["accounts"      SUBSEP toupper($1)] = "accounts/" $2;       next }
     FILENAME ~ /details\/logins\/_slugmap\.tsv$/         { smap["logins"        SUBSEP toupper($1)] = "logins/" $2;         next }
     FILENAME ~ /details\/hosts\/_slugmap\.tsv$/          { smap["hosts"         SUBSEP toupper($1)] = "hosts/" $2;          next }
     FILENAME ~ /xref\/_subscriptions-partners\.tsv$/ { if ($1 != "" && $2 != "") SUBP2[toupper($1)] = SUBP2[toupper($1)] SUBSEP $2; next }
+    FILENAME ~ /xref\/_subscriptions-logicals\.tsv$/ { if ($1 != "" && $2 != "") SUBL2[toupper($1)] = SUBL2[toupper($1)] SUBSEP $2; next }
+    FILENAME ~ /xref\/_profiles-logicals\.tsv$/      { if ($1 != "" && $2 != "") PLG[toupper($1)] = $2; next }
+    FILENAME ~ /xref\/_logicals-accounts\.tsv$/      { addx("logicals", $1, "accounts", $2);      next }
+    FILENAME ~ /xref\/_logicals-subscriptions\.tsv$/ { addx("logicals", $1, "subscriptions", $2); next }
+    FILENAME ~ /xref\/_logicals-logins\.tsv$/        { addx("logicals", $1, "logins", $2);        next }
+    FILENAME ~ /xref\/_logicals-hosts\.tsv$/         { addx("logicals", $1, "hosts", $2);         next }
+    FILENAME ~ /xref\/_logicals-partners\.tsv$/      { addx("logicals", $1, "partners", $2);      next }
     FILENAME ~ /xref\/_partners-accounts\.tsv$/      { addx("partners", $1, "accounts", $2);      next }
     FILENAME ~ /xref\/_partners-subscriptions\.tsv$/ { addx("partners", $1, "subscriptions", $2); next }
     FILENAME ~ /xref\/_partners-logins\.tsv$/        { addx("partners", $1, "logins", $2);        next }
@@ -213,6 +225,13 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
         if ($12 != "" && (toupper($12) in SUBP2)) {
             n9 = split(substr(SUBP2[toupper($12)], 2), Z9, SUBSEP)
             for (i9 = 1; i9 <= n9; i9++) upd("partners", Z9[i9], $4, $5)
+        }
+        # logical = the profile (col 13) through the FlowID map, UNIONED with
+        # the subscription'\''s configured logical(s) — cf. pda-entities.sh
+        if ($13 != "" && (toupper($13) in PLG)) upd("logicals", PLG[toupper($13)], $4, $5)
+        if ($12 != "" && (toupper($12) in SUBL2)) {
+            n8 = split(substr(SUBL2[toupper($12)], 2), Z8, SUBSEP)
+            for (i8 = 1; i8 <= n8; i8++) upd("logicals", Z8[i8], $4, $5)
         }
         next
     }
@@ -238,7 +257,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
         # prefix), for a blue name in view 2 the oldest first-transfer of its
         # xref crosses. Seen without a date -> the "nodate" bucket, so the
         # day rows + nodate always sum to Seen.
-        nt = split("partners subscriptions accounts logins hosts", TL, " ")
+        nt = split("logicals partners subscriptions accounts logins hosts", TL, " ")
         for (i = 1; i <= nt; i++) {
             t = TL[i]
             for (j = 1; j <= cn[t]; j++) {
@@ -280,7 +299,8 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     # specs. The stream sorts view 1 (transfer-only) before view 2 (both logs);
     # the both-logs cell files carry a both- key prefix and a 6th ROW field.
     function lbl(t) {
-        return (t == "partners") ? "Partners" : (t == "subscriptions") ? "Subscriptions" : \
+        return (t == "logicals") ? "Logical" : \
+               (t == "partners") ? "Partners" : (t == "subscriptions") ? "Subscriptions" : \
                (t == "accounts") ? "Accounts" : (t == "logins") ? "Logins" : "Hosts"
     }
     function celltitle(v, t, key, n) {
@@ -362,12 +382,12 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     }
     END {
         flushcell(); flushtotal(cvt); flushseen(cvt)
-        nt = split("partners subscriptions accounts logins hosts", TL, " ")
+        nt = split("logicals partners subscriptions accounts logins hosts", TL, " ")
         # ordered day list (shared by both views)
         nd = 0; for (d in alldates) days[++nd] = d
         for (i = 2; i <= nd; i++) { v = days[i]; j = i - 1; while (j >= 1 && days[j] > v) { days[j+1] = days[j]; j-- } days[j+1] = v }
-        pagespec(1, MAIN,  "On what day each configured partner, subscription, account, login and remote host was first seen in the transfer logs — the same Seen/Not seen split as the home status tables. Per column: Seen + Not seen = Total; the day rows plus the no-date row sum to Seen.")
-        pagespec(2, MAIN2, "On what day each configured partner, subscription, account, login and remote host was first seen — including the server-log-only (blue) names, each dated by the OLDEST first transfer of its cross-referenced entities. Per column: Seen + Not seen = Total; the day rows plus the no-date row sum to Seen.")
+        pagespec(1, MAIN,  "On what day each configured logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs — the same Seen/Not seen split as the home status tables. Per column: Seen + Not seen = Total; the day rows plus the no-date row sum to Seen.")
+        pagespec(2, MAIN2, "On what day each configured logical flow, partner, subscription, account, login and remote host was first seen — including the server-log-only (blue) names, each dated by the OLDEST first transfer of its cross-referenced entities. Per column: Seen + Not seen = Total; the day rows plus the no-date row sum to Seen.")
     }
 '
 # The awk wrote both pages to .tmp (after the per-cell rpts); the renames here

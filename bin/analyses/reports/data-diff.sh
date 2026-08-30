@@ -183,9 +183,10 @@ tables=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
 
 # ---- T4: first seen, from the first-seen ledger ------------------------------
 #   name <TAB> link <TAB> first_ts <TAB> typelabel   (ledger ROW: name dir seen link ts)
-t4=$(for typ in partners subscriptions accounts logins hosts; do
+t4=$(for typ in logicals partners subscriptions accounts logins hosts; do
     # balanced (pattern) form: a bare `pattern)` inside $(...) trips bash 3.2's parser
     case $typ in
+        (logicals) lbl="Logical" ;;
         (partners) lbl="Partner" ;; (subscriptions) lbl="Subscription" ;;
         (accounts) lbl="Account" ;; (logins) lbl="Login" ;; (hosts) lbl="Remote host" ;;
     esac
@@ -310,7 +311,7 @@ s3_ok=0
         printf 'ROW\t@{colspan=4}Nothing new — no configured entity carried its first-ever File on %s or %s.\n' "$D" "$G"
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t\n' "$n4"
-    printf 'NOTE\tConfigured partners, subscriptions, accounts, logins and remote hosts whose FIRST-EVER File is on **%s** or **%s**, read from the first-seen ledger (the same per-day cells behind the **First seen** analysis). A name'\''s first sighting is a one-off event — it appears here once and then only lives on that page.\n' "$D" "$G"
+    printf 'NOTE\tConfigured logical flows, partners, subscriptions, accounts, logins and remote hosts whose FIRST-EVER File is on **%s** or **%s**, read from the first-seen ledger (the same per-day cells behind the **First seen** analysis). A name'\''s first sighting is a one-off event — it appears here once and then only lives on that page.\n' "$D" "$G"
 
     # ---- T5 ----
     printf 'TABLE\tNew unknown/blue names\twide\tnofilter\n'

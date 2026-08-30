@@ -165,6 +165,7 @@ render_coverage_pages() {
         resfile=""
         case $member in
             subscriptions) resfile="$DATA/flow-manager/base/_subscriptions.tsv" ;;
+            logicals)      resfile="$DATA/flow-manager/base/_logicals.tsv" ;;
             accounts)      resfile="$DATA/flow-manager/base/_accounts.tsv" ;;
             logins)        resfile="$DATA/flow-manager/base/_logins.tsv" ;;
             hosts)         resfile="$DATA/flow-manager/base/_hosts.tsv" ;;
@@ -179,6 +180,7 @@ render_coverage_pages() {
         # members render a Direction column, so only they need one)
         local msubf=""
         case $member in
+            logicals)      msubf="$DATA/flow-manager/xref/_logicals-subscriptions.tsv" ;;
             partners)      msubf="$DATA/flow-manager/xref/_partners-subscriptions.tsv" ;;
             applications)  msubf="$DATA/flow-manager/xref/_apps-subscriptions.tsv" ;;
             domains)       msubf="$DATA/flow-manager/xref/_domains-subscriptions.tsv" ;;
@@ -203,12 +205,14 @@ render_coverage_pages() {
         {
             html_head "$title" "../assets/style.css" "" "HOME" "coverage"
             esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
-            if [ "$member" = partners ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the partners counted in this cell of the Partners row (Partners, Domains &amp; Applications table). An In partner is a whitelist-derived cluster of accounts; an Out partner is named from its accounts&rsquo; partner segment and covers its configured endpoint(s), listed as members.</p>\n'
+            if [ "$member" = logicals ]; then
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the logical flows counted in this cell of the Logical row (Logical, Partners, Domains &amp; Applications table). A logical flow is a FlowID family condensed to one three-part name (a hyphen marks parts the derivation combined); its members are the configured subscriptions that carry those FlowIDs.</p>\n'
+            elif [ "$member" = partners ]; then
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the partners counted in this cell of the Partners row (Logical, Partners, Domains &amp; Applications table). An In partner is a whitelist-derived cluster of accounts; an Out partner is named from its accounts&rsquo; partner segment and covers its configured endpoint(s), listed as members.</p>\n'
             elif [ "$member" = applications ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the applications counted in this cell of the Applications row (Partners, Domains &amp; Applications table). An application is the middle segment of the account naming convention (domain-application-partner), so this list is name-derived; an application active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the applications counted in this cell of the Applications row (Logical, Partners, Domains &amp; Applications table). An application is the middle segment of the account naming convention (domain-application-partner), so this list is name-derived; an application active in both directions counts once per side.</p>\n'
             elif [ "$member" = domains ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the business domains counted in this cell of the Domains row (Partners, Domains &amp; Applications table). The domain is the first segment of the account naming convention (domain-application-partner), so this list is name-derived; a domain active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the business domains counted in this cell of the Domains row (Logical, Partners, Domains &amp; Applications table). The domain is the first segment of the account naming convention (domain-application-partner), so this list is name-derived; a domain active in both directions counts once per side.</p>\n'
             else
                 printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the items counted in this cell of the Entities table.</p>\n'
             fi
@@ -238,6 +242,8 @@ render_coverage_pages() {
                 # UC1..UC4: the partner's configured subscriptions per use case
                 # (from the partners-subscriptions xref; a 0 renders EMPTY)
                 printf '<tr><th>Partner</th>%s<th>Accounts</th><th>Endpoints</th><th>Whitelisted IPs</th>%s<th class="num">UC1</th><th class="num">UC2</th><th class="num">UC3</th><th class="num">UC4</th></tr>\n' "$hdir" "$htail"
+            elif [ "$member" = logicals ]; then
+                printf '<tr><th>Logical flow</th>%s<th>Subscriptions</th><th>Endpoints</th>%s</tr>\n' "$hdir" "$htail"
             elif [ "$member" = applications ]; then
                 printf '<tr><th>Application</th>%s<th>Accounts</th><th>Endpoints</th>%s</tr>\n' "$hdir" "$htail"
             elif [ "$member" = domains ]; then
@@ -252,7 +258,9 @@ render_coverage_pages() {
             # their configured host(s) instead, from the accounts-hosts
             # cache (either can carry several — joined with a comma).
             # ipc: only partners carry the Whitelisted IPs column.
-            local alf="" ahost="" lmap="" hmap="" ptf=0
+            local alf="" ahost="" lmap="" hmap="" ptf=0 mw=account
+            # logicals: the members are SUBSCRIPTIONS (no endpoint annotation)
+            case $member in logicals) ptf=1; mw=subscription ;; esac
             case $member in partners|applications|domains)
                 ptf=1
                 [ -f $DATA/flow-manager/xref/_accounts-logins.tsv ] && alf="$DATA/flow-manager/xref/_accounts-logins.tsv"
@@ -264,7 +272,7 @@ render_coverage_pages() {
             esac
             printf '%s\n' "$rows" | awk -F'\t' -v wl="$([ "$member" = whitelist ] && echo 1 || echo 0)" \
                 -v pt="$ptf" -v dc="$dircol" -v lc="$ltcol" \
-                -v ipc="$([ "$member" = partners ] && echo 1 || echo 0)" -v aw="$awfile" -v alf="$alf" -v ahf="$ahost" \
+                -v ipc="$([ "$member" = partners ] && echo 1 || echo 0)" -v aw="$awfile" -v alf="$alf" -v ahf="$ahost" -v mw="$mw" \
                 -v lmap="$lmap" -v hmap="$hmap" -v resf="$resfile" -v grpf="$grpmapc" \
                 -v fdf="$DATA/flow-manager/xref/_subscriptions-flowdir.tsv" -v msub="$msubf" '
                 function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
@@ -370,7 +378,7 @@ render_coverage_pages() {
                         }
                         nend += rend
                         if (n2 > 0) {
-                            ms = "<details><summary>" n2 " account" (n2 > 1 ? "s" : "") "</summary>" ms "</details>"
+                            ms = "<details><summary>" n2 " " mw (n2 > 1 ? "s" : "") "</summary>" ms "</details>"
                             es = (rend > 0) ? "<details><summary>" rend " endpoint" (rend == 1 ? "" : "s") "</summary>" es "</details>" : "&ndash;"
                         }
                         # the cluster whitelist (col 8, partners only): collapsed to
@@ -427,7 +435,7 @@ render_coverage_pages() {
                         wtot = (ipc == 1) ? "<td>" (nips+0) " IPs</td>" : ""
                         uctot = ""
                         if (ipc == 1) for (ud = 1; ud <= 4; ud++) uctot = uctot "<td class=\"num\">" (uct[ud] > 0 ? uct[ud] : "") "</td>"
-                        printf "<tr class=\"total\"><td>Total (%d)</td>%s<td>%d account(s)</td><td>%d endpoint(s)</td>%s%s%s</tr>\n", nrows+0, dcell, nmem+0, nend+0, wtot, tail, uctot
+                        printf "<tr class=\"total\"><td>Total (%d)</td>%s<td>%d " mw "(s)</td><td>%d endpoint(s)</td>%s%s%s</tr>\n", nrows+0, dcell, nmem+0, nend+0, wtot, tail, uctot
                     }
                     else
                         printf "<tr class=\"total\"><td>Total (%d)</td>%s%s</tr>\n", nrows+0, dcell, tail
@@ -445,7 +453,7 @@ write_first_seen_page() {   # $1 view: 1 = transfer-only (default), 2 = both log
     local view=${1:-1} base kp note
     if [ "$view" = 2 ]; then
         base="first-seen-both"; kp="both-"
-        note='Seen means seen in the <strong>transfer</strong> logs or flagged <strong>blue</strong> (server-log only): a blue name never transferred, so it shows the <strong>oldest first transfer of its cross-referenced entities</strong> (its account, subscription, login, host or partner from the FlowManager config) — the day its surrounding flow first became active. The cell pages tag those rows <strong>Server</strong>. Each count links the list of items behind it.'
+        note='Seen means seen in the <strong>transfer</strong> logs or flagged <strong>blue</strong> (server-log only): a blue name never transferred, so it shows the <strong>oldest first transfer of its cross-referenced entities</strong> (its account, subscription, login, host, logical flow or partner from the FlowManager config) — the day its surrounding flow first became active. The cell pages tag those rows <strong>Server</strong>. Each count links the list of items behind it.'
     else
         base="first-seen"; kp=""
         note='Seen means seen in the <strong>transfer</strong> logs: an entity that only ever appears in the server log counts as Not seen here (its rows are tinted light blue on the cell pages). Each count links the list of items behind it.'
@@ -463,7 +471,7 @@ write_first_seen_page() {   # $1 view: 1 = transfer-only (default), 2 = both log
             printf '<td class="num">%s</td>' "$ESC"
         fi
     }
-    local members=(partners subscriptions accounts logins hosts)
+    local members=(logicals partners subscriptions accounts logins hosts)
     {
         html_head "First seen" "../assets/style.css" "" "ANALYSES" "first-seen"
         printf '<h1>First seen</h1>\n'
@@ -478,7 +486,7 @@ write_first_seen_page() {   # $1 view: 1 = transfer-only (default), 2 = both log
         # NOT class="index": index tables get report.js whole-row links, which
         # would make the Date cell navigate to the row's first cell page.
         printf '<div class="tablewrap"><table class="fit" data-nosort="1">\n'
-        local thead='<tr><th></th><th class="num">Partners</th><th class="num">Subscriptions</th><th class="num">Accounts</th><th class="num">Logins</th><th class="num">Hosts</th></tr>'
+        local thead='<tr><th></th><th class="num">Logical</th><th class="num">Partners</th><th class="num">Subscriptions</th><th class="num">Accounts</th><th class="num">Logins</th><th class="num">Hosts</th></tr>'
         printf '%s\n' "$thead"
         # the Total row renders TWICE — above the Not seen row and as the
         # footer — so the column totals are in view from the top
@@ -488,20 +496,20 @@ write_first_seen_page() {   # $1 view: 1 = transfer-only (default), 2 = both log
             for m in "${members[@]}"; do i=$((i+1)); eval "fscell \"\$t$i\" $m ${kp}total"; done
             printf '</tr>\n'
         }
-        local t1 t2 t3 t4 t5
-        IFS=$'\t' read -r _ t1 t2 t3 t4 t5 <<<"$(grep -m1 $'^TOTAL\t' "$rpt")"
+        local t1 t2 t3 t4 t5 t6
+        IFS=$'\t' read -r _ t1 t2 t3 t4 t5 t6 <<<"$(grep -m1 $'^TOTAL\t' "$rpt")"
         total_row
-        local tag d v1 v2 v3 v4 v5 i
-        while IFS=$'\t' read -r tag d v1 v2 v3 v4 v5; do
+        local tag d v1 v2 v3 v4 v5 v6 i
+        while IFS=$'\t' read -r tag d v1 v2 v3 v4 v5 v6; do
             case $tag in
                 SEEN)
                     # SEEN/NOTSEEN carry no date column: shift the read fields
-                    v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
+                    v6=$v5; v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
                     printf '<tr data-res="green"><td>Seen</td>'
                     i=0; for m in "${members[@]}"; do i=$((i+1)); eval "fscell \"\$v$i\" $m ${kp}seen"; done
                     printf '</tr>\n' ;;
                 NOTSEEN)
-                    v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
+                    v6=$v5; v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
                     printf '<tr data-res="orange"><td>Not seen</td>'
                     i=0; for m in "${members[@]}"; do i=$((i+1)); eval "fscell \"\$v$i\" $m ${kp}notseen"; done
                     printf '</tr>\n' ;;
@@ -510,7 +518,7 @@ write_first_seen_page() {   # $1 view: 1 = transfer-only (default), 2 = both log
                     # clean-poll greens, sibling-credited names, undated
                     # blues): they count into Seen, so the day rows + this
                     # row sum to the Seen row
-                    v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
+                    v6=$v5; v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
                     printf '<tr data-res="green"><td>Seen, no date</td>'
                     i=0; for m in "${members[@]}"; do i=$((i+1)); eval "fscell \"\$v$i\" $m ${kp}nodate"; done
                     printf '</tr>\n' ;;
@@ -1607,7 +1615,7 @@ write_analyses_index() {
         local rpt base t d
         printf '<tr><th colspan="2">Coverage &amp; seen</th></tr>\n'
         [ -f "$DOCS/transfer/entity-coverage-accounts.html" ] && printf '<tr><td><a href="../transfer/entity-coverage-accounts.html">Entity coverage</a></td><td class="desc">Per account, partner, domain or application: does each configured direction actually work &mdash; proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out).</td></tr>\n'
-        [ -f "$ADIR/first-seen.html" ] && printf '<tr><td><a href="first-seen.html">First seen</a></td><td class="desc">On what day each partner, subscription, account, login and remote host was first seen in the transfer logs &mdash; the configured names never seen there on top; every count links its item list.</td></tr>\n'
+        [ -f "$ADIR/first-seen.html" ] && printf '<tr><td><a href="first-seen.html">First seen</a></td><td class="desc">On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs &mdash; the configured names never seen there on top; every count links its item list.</td></tr>\n'
         [ -f "$ADIR/data-diff.html" ] && printf '<tr><td><a href="data-diff.html">Since yesterday</a></td><td class="desc">The data diff against the newest log day: new red flips, flows that just crossed the quiet threshold, recoveries, first-seen entities by name and new server-log-only names.</td></tr>\n'
         [ -f "$DOCS/file-search-24-hours.html" ] && printf '<tr><td><a href="../file-search-24-hours.html">File search</a></td><td class="desc">Find a File by its file name &mdash; date, subscription, size and CoreId, OK rows green and Error rows red; six windows (24 hours through a month), each searched with its own Search button and the query carried between them.</td></tr>\n'
         [ -f "$DOCS/transfer/seen-in-server-log.html" ] && printf '<tr><td><a href="../transfer/seen-in-server-log.html">Seen in server log</a></td><td class="desc">The entities that appear in the SERVER log only (blue): their seed messages, what happened, and the status rollups with the blue deltas.</td></tr>\n'

@@ -4,12 +4,12 @@
 # Entities and Partners, Domains & Applications tables, holding exactly the
 # items that cell counts.
 #
-#   -> data/coverage/<member>-configured.rpt   (partners / applications / domains)
+#   -> data/coverage/<member>-configured.rpt   (logicals / partners / applications / domains)
 #
 # Source: showseen.sh's per-member coverage TSVs (data/transfer/reports/
 # coverage/<member>.tsv — name, dir I/O, seen, detail link, last-transaction
 # timestamp, last outcome F/P; whitelist.tsv the same with IPs and no link)
-# plus the three derived TSVs this script materializes via ensure_pda_tsvs.
+# plus the four derived TSVs this script materializes via ensure_pda_tsvs.
 # Each .rpt carries TITLE / MEMBER / KEY / LTCOL / DIRCOL directives and the
 # filtered, sorted ROW lines (the raw coverage-TSV fields); the publish
 # script (bin/analyses/publish.sh) renders each into docs/coverage/. A zero
@@ -23,21 +23,22 @@ source "$SCRIPT_DIR/../lib.sh"
 [ -d "$COVSRC" ] || exit 0
 ensure_pda_tsvs
 
-# Three outputs (one Configured cell per PDA member), so all three must exist
-# before the mtime check on the first one can speak for them. Inputs: the PDA
+# Four outputs (one Configured cell per Logical/PDA member), so all four must
+# exist before the mtime check on the first one can speak for them. Inputs: the
 # coverage TSVs just re-derived (cov_put keeps their mtime when unchanged), the
 # base caches carrying the result colours, and the detail-page slugmaps.
 deps=()
-for m in partners applications domains; do
+for m in logicals partners applications domains; do
     [ -f "$COVSRC/$m.tsv" ] && deps+=("$COVSRC/$m.tsv")
 done
-for b in _partners _apps _domains; do
+for b in _logicals _partners _apps _domains; do
     [ -f "$DATA/flow-manager/base/$b.tsv" ] && deps+=("$DATA/flow-manager/base/$b.tsv")
 done
-for d in partners applications domains; do
+for d in logicals partners applications domains; do
     [ -f "$DATA/transfer/reports/details/$d/_slugmap.tsv" ] && deps+=("$DATA/transfer/reports/details/$d/_slugmap.tsv")
 done
-if [ -f "$COVRPT_DIR/partners-configured.rpt" ] && [ -f "$COVRPT_DIR/applications-configured.rpt" ] \
+if [ -f "$COVRPT_DIR/logicals-configured.rpt" ] && [ -f "$COVRPT_DIR/partners-configured.rpt" ] \
+   && [ -f "$COVRPT_DIR/applications-configured.rpt" ] \
    && [ -f "$COVRPT_DIR/domains-configured.rpt" ]; then
     skip_if_fresh "$COVRPT_DIR/partners-configured.rpt" "${BASH_SOURCE[0]}" ${deps[@]+"${deps[@]}"}
 fi
@@ -46,13 +47,14 @@ rm -f "$COVRPT_DIR"/*.rpt
 npages=0
 # (the whitelist member was REMOVED 2026-07: the Whitelist row is gone from
 # the entities page and the home, so its cell pages had nothing linking them)
-# RESTORED 2026-07, restricted: only the three PDA members and only the
-# CONFIGURED (All) cell — the home page's three PDA Total links are the
-# doors, and nothing else links a coverage cell any more.
-for member in partners applications domains; do
+# RESTORED 2026-07, restricted: only the Logical + three PDA members and only
+# the CONFIGURED (All) cell — the home page's four Total links in that group
+# are the doors, and nothing else links a coverage cell any more.
+for member in logicals partners applications domains; do
     tsv="$COVSRC/$member.tsv"
     [ -f "$tsv" ] || continue
     mlabel="$(printf '%s' "${member:0:1}" | tr '[:lower:]' '[:upper:]')${member:1}"
+    [ "$member" = logicals ] && mlabel="Logical flows"
     [ "$member" = partners ] && mlabel="External Partners"
     [ "$member" = applications ] && mlabel="Internal Applications"
     [ "$member" = domains ] && mlabel="Internal Domains"
@@ -65,6 +67,7 @@ for member in partners applications domains; do
     case $member in
         subscriptions) sbf=_subscriptions ;; accounts) sbf=_accounts ;;
         logins) sbf=_logins ;; hosts) sbf=_hosts ;;
+        logicals) sbf=_logicals ;;
         partners) sbf=_partners ;; applications) sbf=_apps ;; domains) sbf=_domains ;;
     esac
     bluef="$DATA/flow-manager/base/$sbf.tsv"; { [ -n "$sbf" ] && [ -f "$bluef" ]; } || bluef=/dev/null
@@ -197,7 +200,7 @@ for member in partners applications domains; do
                 END{ for (i = 1; i <= n; i++)
                     if ((dm == "" || index(dm, dr[i]) > 0) && (s == "" || sn[i] == s) && (o == "" || oc[i] == o))
                         printf "%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\n", nm[i], dr[i], sn[i], lk[i], ts[i], oc[i], mem[i], ips[i] }' "$tsv")
-        elif [ -z "$dirf" ] && { [ "$member" = applications ] || [ "$member" = domains ]; }; then
+        elif [ -z "$dirf" ] && { [ "$member" = applications ] || [ "$member" = domains ] || [ "$member" = logicals ]; }; then
             rows=$(awk -F'\t' -v s="$seenf" -v o="$outf" -v dm="$mdirf" '
                 BEGIN{ US = sprintf("%c", 31) }
                 { if ($1 in idx) { i = idx[$1]

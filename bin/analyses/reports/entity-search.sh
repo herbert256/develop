@@ -107,12 +107,13 @@ hostname_pairs() {
 }
 
 # The pages cover EVERYTHING — every logged entity plus every configured name
-# (details.sh writes a page per config name, seen or not), for all eight types.
+# (details.sh writes a page per config name, seen or not), for all nine types.
 seen_rows=$( {
     collect accounts          "Account"
     collect subscriptions    "Subscription"
     collect logins            "Login"
     collect hosts             "Remote Host"
+    collect logicals          "Logical"
     collect partners          "Partner"
     collect applications      "Application"
     collect domains           "Domain"
@@ -218,17 +219,17 @@ whitelist_ips=$( { printf '%s\n' "$seen_rows" | awk -F'\t' '$2=="Account" { prin
       print $3 "\tWhitelist\t" (s==""?"":"accounts") "\t" s "\t0" }')
 
 # ---- merge, sort by TYPE then name (case-folded) -----------------------------
-# Row order: Partner, Account, Login, Host, IP (Remote Host (IP) + Whitelist
-# share one slot, interleaved by address), Subscription, Domain, Application,
-# Flow — name-sorted within each type. (The PDA entities come from their
+# Row order: Logical, Partner, Account, Login, Host, IP (Remote Host (IP) +
+# Whitelist share one slot, interleaved by address), Subscription, Domain,
+# Application, Flow — name-sorted within each type. (The PDA entities come from their
 # detail pages via collect(), like the classic five — no separate config-list
 # source anymore.)
 rows=$(printf '%s\n%s\n%s\n%s\n' "$seen_rows" "$host_ip_aliases" "$whitelist_ips" "$location_rows" \
        | grep -v '^$' | awk -F'\t' '
-           BEGIN { r["Partner"]=1; r["Account"]=2; r["Login"]=3; r["Remote Host"]=4
-                   r["Remote Host (IP)"]=5; r["Whitelist"]=5
-                   r["Subscription"]=6; r["Domain"]=7; r["Application"]=8
-                   r["Source"]=9; r["Target"]=10 }
+           BEGIN { r["Logical"]=1; r["Partner"]=2; r["Account"]=3; r["Login"]=4; r["Remote Host"]=5
+                   r["Remote Host (IP)"]=6; r["Whitelist"]=6
+                   r["Subscription"]=7; r["Domain"]=8; r["Application"]=9
+                   r["Source"]=10; r["Target"]=11 }
            { rk=r[$2]; if (rk == "") rk=99; print rk "\t" $0 }' \
        | LC_ALL=C sort -t$'\t' -k1,1n -k2,2 -k7,7 -f | cut -f2-)
 # The -k7,7 tiebreak orders Source/Target rows that share a PATH by their
@@ -239,7 +240,7 @@ rows=$(printf '%s\n%s\n%s\n%s\n' "$seen_rows" "$host_ip_aliases" "$whitelist_ips
 # Type label -> the entity report basename that holds its counts.
 typebase() { case $1 in
     Account) echo account ;; Subscription) echo subscription ;; Login) echo login ;;
-    "Remote Host") echo remote-host ;;
+    "Remote Host") echo remote-host ;; Logical) echo logical ;;
     Partner) echo partner ;; Application) echo application ;; Domain) echo domain ;; esac; }
 
 # Emit "TYPE<TAB>name<TAB>count<TAB>failed<TAB>processed<TAB>ccf<TAB>ccp"
@@ -247,7 +248,7 @@ typebase() { case $1 in
 # @data:coreids-{failed,processed} drill lists, reused verbatim for the drill.
 count_lookup() {
     local tl base f
-    for tl in "Account" "Subscription" "Login" "Remote Host" "Partner" "Application" "Domain"; do
+    for tl in "Account" "Subscription" "Login" "Remote Host" "Logical" "Partner" "Application" "Domain"; do
         base=$(typebase "$tl"); f="$REPORTS_DIR/$base.rpt"; [ -f "$f" ] || continue
         awk -F'\t' -v tl="$tl" '
             /^TABLE\t/ { t++ }
@@ -276,7 +277,7 @@ count_lookup() {
 res_lookup() {
     local spec t f
     for spec in "Account:_accounts" "Subscription:_subscriptions" "Login:_logins" \
-                "Remote Host:_hosts" "Partner:_partners" \
+                "Remote Host:_hosts" "Logical:_logicals" "Partner:_partners" \
                 "Application:_apps" "Domain:_domains" "Whitelist:_white"; do
         t=${spec%:*}; f="$CONFIG_BASE/${spec##*:}.tsv"
         if [ -f "$f" ]; then
@@ -320,7 +321,7 @@ OUT="$REPORTS_DIR/entity-search.rpt"
 # (render_entity_report's ghost rows). A missing TSV degrades to count-only.
 cov_lookup() {
     local spec f
-    for spec in "Partner:partners" "Application:applications" "Domain:domains" "Remote Host:hosts"; do
+    for spec in "Logical:logicals" "Partner:partners" "Application:applications" "Domain:domains" "Remote Host:hosts"; do
         f="$REPORTS_DIR/coverage/${spec#*:}.tsv"
         [ -f "$f" ] || continue
         LC_ALL=C awk -F'\t' -v t="${spec%%:*}" '
@@ -341,13 +342,14 @@ cov_lookup() {
 # tuple join keys case-folded).
 seen_lookup() {
     [ -f "$FILES" ] || return 0
-    awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$CONFIG_XREF/_accounts-apps.tsv" '
+    awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$CONFIG_XREF/_accounts-apps.tsv" \
+        -v PLMAP="$CONFIG_XREF/_profiles-logicals.tsv" -v SLMAP="$CONFIG_XREF/_subscriptions-logicals.tsv" '
         function uni_load(f, M,   l, z, n, k) {
             while ((getline l < f) > 0) { n = split(l, z, "\t")
                 if (n >= 2 && z[1] != "" && z[2] != "") { k = toupper(z[1])
                     M[k] = M[k] (M[k] == "" ? "" : "\037") z[2] } }
             close(f) }
-        BEGIN { uni_load(SPMAP, SP); uni_load(APMAP, AP) }
+        BEGIN { uni_load(SPMAP, SP); uni_load(APMAP, AP); uni_load(PLMAP, PL); uni_load(SLMAP, SL) }
         function upd(t, nm,   k) {
             if (nm == "") return
             k = t "\t" toupper(nm)
@@ -362,6 +364,9 @@ seen_lookup() {
             upds("Partner", p)
             a = $18; if ($3 != "" && (toupper($3) in AP)) a = a (a == "" ? "" : "\037") AP[toupper($3)]
             upds("Application", a)
+            lg = ""; if ($13 != "" && (toupper($13) in PL)) lg = PL[toupper($13)]
+            if ($12 != "" && (toupper($12) in SL)) lg = lg (lg == "" ? "" : "\037") SL[toupper($12)]
+            upds("Logical", lg)
         }
         END { for (k in best) print k "\t" ts[k] }
     ' "$FILES"
@@ -397,7 +402,7 @@ tuples=$( {
         # PDA + Source/Target seen: refresh from the summary counts so the page
         # META and the entity summaries cannot drift. A sibling-credited name
         # (no counts of its own, coverage TSV says seen) stays SEEN.
-        if (type=="Partner" || type=="Application" || type=="Domain")
+        if (type=="Partner" || type=="Application" || type=="Domain" || type=="Logical")
             seen = (has || ((type SUBSEP toupper(name)) in covseen)) ? 1 : 0
         else if (type=="Source" || type=="Target") seen = has ? 1 : 0
         else if (type=="Remote Host" && seen != "1" && ((type SUBSEP toupper(name)) in covseen)) seen = 1
@@ -513,7 +518,7 @@ IFS=$'\t' read -r tsc tsf tsp <<< "$(printf '%s\n' "$tuples" | awk -F'\t' '{c+=$
 
 {
     printf 'TITLE\tSearch\n'
-    printf 'DESC\tSearch every account, subscription, login, remote host, partner, application, domain and subscription source/target path by name — with its Error/OK split and when it last moved a file.\n'
+    printf 'DESC\tSearch every account, subscription, login, remote host, logical flow, partner, application, domain and subscription source/target path by name — with its Error/OK split and when it last moved a file.\n'
     printf 'INTRO\tType in the box below to search **every configured or logged entity by name** — the checkboxes narrow the kinds (none checked = all). Wildcards and operators are explained right under the box; rows tint by each entity'\''s status.\n'
     # ONE page, one table (no All/Seen/Not-Seen tab pages, no intro/notes —
     # the how-to lives on the help page). The `esearch` modifier makes

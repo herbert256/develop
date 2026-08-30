@@ -4,8 +4,8 @@
 # the transfer pages, like cross-reference.sh): per ENTITY, is each configured
 # direction actually WORKING?
 #
-# TWO selectors, so 4 x 4 = 16 pages:
-#   entity  Accounts (default) · Partners · Domains · Applications  (report_tabs)
+# TWO selectors, so 5 x 4 = 20 pages:
+#   entity  Accounts (default) · Logical · Partners · Domains · Applications  (report_tabs)
 #   rule    Current (default) · Once · OK transfers ·
 #           Difference between Current & Once                       (a report NAV)
 # The RULE rides on the basename like duration/duration-all: entity-coverage,
@@ -37,7 +37,9 @@
 # It was Partner-only until 2026-07; the coverage question is the same for any
 # entity that owns subscriptions, so the whole computation is now driven by a
 # per-entity SPEC (base list, the two xref directions, the account rollup and
-# the direct attribution column of _files.tsv) and runs four times.
+# the direct attribution column of _files.tsv) and runs five times. The
+# Logical view resolves its direct column (13, the profile/FlowID) through
+# the xref/_profiles-logicals.tsv map — an unmapped value abstains.
 #
 #   IN  covered  = at least one real incoming File (a file moved), OR a
 #                  successful SSH logon by one of the entity's accounts —
@@ -98,9 +100,11 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', building entity coverage..." >
 
 # view:label:base:entity->subs:subs->entity:account->entity:$FILES col:KIND
 # The account->entity map is "-" on the Accounts view (identity) and the
-# $FILES column is that view's DIRECT attribution (col 3/18/19/20).
+# $FILES column is that view's DIRECT attribution (col 3/13/18/19/20; the
+# Logical view resolves col 13 through the FlowID map).
 SPECS=(
     "accounts:Accounts:_accounts:_accounts-subscriptions:_subscriptions-accounts:-:3:acct"
+    "logicals:Logical:_logicals:_logicals-subscriptions:_subscriptions-logicals:_accounts-logicals:13:lgc"
     "partners:Partners:_partners:_partners-subscriptions:_subscriptions-partners:_accounts-partners:20:ptn"
     "domains:Domains:_domains:_domains-subscriptions:_subscriptions-domains:_accounts-domains:19:dom"
     "applications:Applications:_apps:_apps-subscriptions:_subscriptions-apps:_accounts-apps:18:app"
@@ -142,9 +146,9 @@ IFS=: read -r RKEY RLABEL RBASE <<< "$rule"
 OUT="$REPORTS_DIR/$RBASE.rpt"
 {
 printf 'TITLE\tEntity coverage\n'
-printf 'DESC\tPer account, partner, domain or application: covered (green) or not (red) — each side proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out); a side with no configured connections is trivially covered.\n'
+printf 'DESC\tPer account, logical flow, partner, domain or application: covered (green) or not (red) — each side proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out); a side with no configured connections is trivially covered.\n'
 printf 'INTRO\tIs the connection for each entity WORKING? A side is **covered** when at least one real File moved that way, or when the server log proves the connection: **In** — one of the entity'"'"'s accounts **successfully authenticated over SSH**; **Out** — a **UC3 remote poll succeeded** (the "Applying the search pattern" message appears only when the remote listing worked — 0 files found still proves the connection). A side with **no configured connections** is covered by definition, and a **both** entity needs In AND Out working. Two colors only — **green** = covered (listed first), **red** = not covered; this verdict overrules the usual status colors here. The buttons below pick the **entity**; the ones to their right pick the **rule**. *Current* and *Once* are about the **communication**, so a successful SSH logon or UC3 poll proves a side on its own — most-recently, and ever. *OK transfers* is about the **transfer**: neither proof counts there, the most recent File itself must have been delivered OK. *Difference between Current & Once* lists only the regressions — entities covered under *Once* but not under *Current*: the connection worked at some point, and the most recent attempt did not.\n'
-printf 'KEYWORDS\tcoverage,covered,working,proof,logon,poll,account,partner,domain,application\n'
+printf 'KEYWORDS\tcoverage,covered,working,proof,logon,poll,account,logical,partner,domain,application\n'
 
 for spec in "${SPECS[@]}"; do
     IFS=: read -r _key label base es se ae fcol kind <<< "$spec"
@@ -155,8 +159,11 @@ for spec in "${SPECS[@]}"; do
     [ -f "$SE" ] || SE=/dev/null
     ident=0
     if [ "$ae" = "-" ]; then ident=1; AE=/dev/null; elif [ ! -f "$AE" ]; then AE=/dev/null; fi
+    # the Logical view's direct column holds the FlowID — resolve through the map
+    VMAP=""
+    [ "$_key" = logicals ] && [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv"
 
-    awk -F'\t' -v EB="$EB" -v SB="$SB" -v ES="$ES" -v SE="$SE" -v AE="$AE" \
+    awk -F'\t' -v EB="$EB" -v SB="$SB" -v ES="$ES" -v SE="$SE" -v AE="$AE" -v VMAP="$VMAP" \
         -v AUTH="$AUTH" -v POLL="$POLL" -v FCOL="$fcol" -v IDENT="$ident" -v RULE="$RKEY" '
         function stripattr(v) { sub(/^@\{[^}]*\}/, "", v); return v }
         BEGIN {
@@ -179,6 +186,8 @@ for spec in "${SPECS[@]}"; do
             # own count rather than a rollup.
             if (!IDENT) { while ((getline l < AE) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") ACCP[toupper(a[1])] = ACCP[toupper(a[1])] SUBSEP toupper(a[2]) }
                           close(AE) }
+            if (VMAP != "") { while ((getline l < VMAP) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "" && a[2] != "") VM[toupper(a[1])] = a[2] }
+                              close(VMAP) }
             t = 0
             while ((getline l < AUTH) > 0) {
                 n = split(l, a, "\t")
@@ -212,7 +221,9 @@ for spec in "${SPECS[@]}"; do
         # entities uncovered despite real traffic (cf. pda-entities.sh).
         {
             split("", FP)
-            if ($FCOL != "") FP[toupper($FCOL)] = 1
+            if ($FCOL != "") { v9 = $FCOL
+                if (VMAP != "") v9 = ((toupper(v9) in VM) ? VM[toupper(v9)] : "")
+                if (v9 != "") FP[toupper(v9)] = 1 }
             if ($12 != "") { m = split(substr(SUBP[toupper($12)], 2), PL, SUBSEP); for (i = 1; i <= m; i++) FP[PL[i]] = 1 }
             # OK vs Error follows the site-wide outcome policy: Error is
             # Failed or Expired, everything else (incl. Waiting) is OK.
@@ -287,7 +298,7 @@ for spec in "${SPECS[@]}"; do
                 printf "STAT\tred\t%d (%.0f%%)\tNot covered\n", tr+0, (tot > 0 ? 100 * tr / tot : 0)
             }
             printf "GHEAD\t@{colspan=2}\t@{colspan=3,class=gband gsep}In\t@{colspan=3,class=gband gsep}Out\n"
-            printf "HEAD\t%s\tDirection\tSubs\tFiles\tLogons\tSubs\tFiles\tPolls\n", substr(LABEL, 1, length(LABEL) - 1)
+            printf "HEAD\t%s\tDirection\tSubs\tFiles\tLogons\tSubs\tFiles\tPolls\n", (LABEL == "Logical" ? LABEL : substr(LABEL, 1, length(LABEL) - 1))
             printf "KIND\t%s\ttext\tnum\tnum\tnum\tnum\tnum\tnum\n", KIND
             for (i = 1; i <= nbuf; i++) print BUF[i]
             printf "TOTAL\tTotal (%d %s)\t\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\n", \

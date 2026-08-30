@@ -273,12 +273,12 @@ daily_loglines_tsv() {   # $1 = env data root, e.g. data/acceptance
             hasdur[dd] = 1
             next
         }
-        # the First seen group: one count per entity type (Partners
-        # Subscriptions Accounts Logins Hosts, ROW fields 3-7) joined by
+        # the First seen group: one count per entity type (Logicals Partners
+        # Subscriptions Accounts Logins Hosts, ROW fields 3-8) joined by
         # date; the SEEN/NOTSEEN summary lines fail the ROW match
         FILENAME ~ /first-seen\.rpt$/ {
             if ($1 != "ROW" || $2 !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) next
-            for (p = 0; p < 5; p++) fs[$2, p] = $(3+p)
+            for (p = 0; p < 6; p++) fs[$2, p] = $(3+p)
             hasfs = 1
             next
         }
@@ -314,7 +314,7 @@ daily_loglines_tsv() {   # $1 = env data root, e.g. data/acceptance
                 else             printf "\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-"
                 # a day the first-seen report does not list (or a missing
                 # report) renders like a 0: blank cells
-                for (p = 0; p < 5; p++) printf "\t%s", (hasfs && (d, p) in fs ? fs[d, p] : "-")
+                for (p = 0; p < 6; p++) printf "\t%s", (hasfs && (d, p) in fs ? fs[d, p] : "-")
                 printf "\t%s\t%s", (hassw && (d in swr) ? swr[d] : "-"), (hassw && (d in swg) ? swg[d] : "-")
                 printf "\n"
             }
@@ -322,7 +322,7 @@ daily_loglines_tsv() {   # $1 = env data root, e.g. data/acceptance
             # stores it for the Total row and skips it as a day)
             printf "TOTAL\t-\t-\t-\t-\t-\t-\t-"
             for (p = 0; p < 5; p++) printf "\t%s\t%s", (dtv[p] == "" ? "-" : dtc[p]), (dtv[p] == "" ? "-" : dtv[p])
-            printf "\t-\t-\t-\t-\t-\t-\t-\n"
+            printf "\t-\t-\t-\t-\t-\t-\t-\t-\n"
         }
     ' "${files[@]}"
     [ -n "$swf" ] && rm -f "$swf"
@@ -1032,7 +1032,7 @@ write_env_block() {
         printf '<div class="tablewrap"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
         printf '<tr><th class="blank"></th></tr>\n'
         rown=0
-        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsp fss fsa fsl fsh swr swg; do
+        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg; do
             [ -n "$d" ] && [ "$d" != "TOTAL" ] || continue
             _daycell "$d"; rown=$((rown + 1)); trc=""
             [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
@@ -1047,7 +1047,7 @@ write_env_block() {
         printf '<div class="tablewrap"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
         printf '<tr><th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Recovered</th><th class="num">Error</th><th class="num">Error %%</th></tr>\n'
         rown=0
-        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsp fss fsa fsl fsh swr swg; do
+        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg; do
             [ -n "$d" ] && [ "$d" != "TOTAL" ] || continue
             rown=$((rown + 1)); trc=""
             [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
@@ -1106,7 +1106,7 @@ write_env_block() {
         printf '<div class="tablewrap"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
         printf '<tr><th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th></tr>\n'
         rown=0
-        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsp fss fsa fsl fsh swr swg; do
+        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg; do
             [ -n "$d" ] || continue
             # the sentinel LAST line: the overall duration percentiles for
             # the Total row (a percentile cannot be summed)
@@ -1138,7 +1138,7 @@ write_env_block() {
         printf '<div class="tablewrap"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
         printf '<tr><th class="num">Red</th><th class="num">Green</th></tr>\n'
         rown=0
-        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsp fss fsa fsl fsh swr swg; do
+        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg; do
             [ -n "$d" ] && [ "$d" != "TOTAL" ] || continue
             rown=$((rown + 1)); trc=""
             [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
@@ -1171,16 +1171,16 @@ write_env_block() {
         # —— First seen (from analyses/first-seen.html) ——
         printf '<div class="sxscol">\n<h2>First seen</h2>\n'
         printf '<div class="tablewrap"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
-        printf '<tr><th class="num">Partners</th><th class="num">Subscriptions</th><th class="num">Accounts</th></tr>\n'
+        printf '<tr><th class="num">Logical</th><th class="num">Partners</th><th class="num">Subscriptions</th><th class="num">Accounts</th></tr>\n'
         rown=0
-        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsp fss fsa fsl fsh swr swg; do
+        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg; do
             [ -n "$d" ] && [ "$d" != "TOTAL" ] || continue
             rown=$((rown + 1)); trc=""
             [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
             printf '<tr%s>' "$trc"
             # a count links that day's first-seen list when the page exists
             # (a page exists only for a day with names); 0 renders blank
-            for c in "partners:$fsp" "subscriptions:$fss" "accounts:$fsa"; do
+            for c in "logicals:$fsg" "partners:$fsp" "subscriptions:$fss" "accounts:$fsa"; do
                 v=${c#*:}
                 if [ "$v" = "-" ] || [ "$v" = 0 ] || [ -z "$v" ]; then printf '<td class="num"></td>'; continue; fi
                 esc "$(dotify "$v")"
@@ -1195,11 +1195,11 @@ write_env_block() {
         # above plus the report's no-date bucket sum to it); each links its
         # <type>-seen list, whose row count IS that figure
         if [ -f "$HOME_ENV_DATA/analyses/reports/first-seen.rpt" ]; then
-            IFS=$'\t' read -r c fsps fsss fsas fsls fshs \
+            IFS=$'\t' read -r c fsgs fsps fsss fsas fsls fshs \
                 <<< "$(awk -F'\t' '$1=="SEEN"{print; exit}' "$HOME_ENV_DATA/analyses/reports/first-seen.rpt")"
         fi
         local fstot=""
-        for c in "partners:$fsps" "subscriptions:$fsss" "accounts:$fsas"; do
+        for c in "logicals:$fsgs" "partners:$fsps" "subscriptions:$fsss" "accounts:$fsas"; do
             v=${c#*:}
             if [ -z "$v" ] || [ "$v" = 0 ]; then fstot="$fstot<td class=\"num\"></td>"; continue; fi
             esc "$(dotify "$v")"
