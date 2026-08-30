@@ -164,8 +164,8 @@ rm -f "$OUT"/_*.tsv   # legacy flat layout (pre base/xref split) — regenerable
 # 2026-08-31, the LOGICAL derivation below (the FlowIDs condensed into logical
 # flow groups, a FULL entity) — nothing else; do not surface a raw profile in
 # a report or a page.
-ENTITY_CACHES="accounts logins hosts white subscriptions profiles logicals partners apps domains"
-ITEMS="accounts subscriptions profiles logins hosts logicals partners apps domains white"
+ENTITY_CACHES="accounts logins hosts white subscriptions profiles logicals partners apps domains bl"
+ITEMS="accounts subscriptions profiles logins hosts logicals partners apps domains bl white"
 CANON_PAIRS=$(
     seen=""
     for a in $ITEMS; do
@@ -996,6 +996,30 @@ for _e in partners apps domains; do
 done
 unset _e _m
 
+# ------------------------------------------- BL (the business-line tag)
+# The subscriptions.json tags[] entry starting with "BL" as a FULL entity
+# (2026-08-31, user request), LAST in the Logical/Partners/Domains/
+# Applications group. The spine is the SUBSCRIPTION: a subscription carries
+# its BL tag(s) verbatim (BL_FIN — never stripped; several tags = several
+# rows), and every other bl pair cache is composed from the subscription
+# pairs. Placed AFTER the PDA section (its _subscriptions-{partners,apps,
+# domains} inputs must exist) and BEFORE the mirror loop.
+{   if command -v jq >/dev/null 2>&1 && [ -f "$SKIPDIR/subscriptions.json" ]; then
+        jq -r '.[] | .name as $n | (.tags // [])[] | select(startswith("BL")) | [$n, .] | @tsv' \
+            "$SKIPDIR/subscriptions.json" 2>/dev/null || true
+    fi
+} | LC_ALL=C sort -u > "$XREF/_subscriptions-bl.tsv"
+cut -f2 "$XREF/_subscriptions-bl.tsv" | LC_ALL=C sort -u > "$BASE/_bl.tsv"
+xcompose "$XREF/_subscriptions-bl.tsv" _accounts-subscriptions.tsv      2 RIGHT accounts-bl
+xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-logins.tsv        1 RIGHT logins-bl
+xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-hosts.tsv         1 RIGHT hosts-bl
+xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-profiles.tsv      1 RIGHT profiles-bl
+xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-logicals.tsv      1 RIGHT logicals-bl
+xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-partners.tsv      1 RIGHT partners-bl
+xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-apps.tsv          1 RIGHT apps-bl
+xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-domains.tsv       1 RIGHT domains-bl
+xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-white.tsv         1 LEFT  bl-white
+
 # ----------------------------- mirrors: every cross reference exists both ways
 # Each canonical _a-b.tsv gets its column-swapped twin _b-a.tsv (sorted on
 # the new left column), so joins never need to know the fixed item order.
@@ -1024,6 +1048,7 @@ adddir accounts      "$XREF/_accounts-logins.tsv"      "$XREF/_accounts-hosts.ts
 adddir subscriptions "$XREF/_subscriptions-logins.tsv" "$XREF/_subscriptions-hosts.tsv"
 adddir profiles      "$XREF/_profiles-logins.tsv"      "$XREF/_profiles-hosts.tsv"
 adddir logicals      "$XREF/_logicals-logins.tsv"      "$XREF/_logicals-hosts.tsv"
+adddir bl            "$XREF/_bl-logins.tsv"            "$XREF/_bl-hosts.tsv"
 awk -F'\t' '{ print $1 "\tin"  }' "$BASE/_logins.tsv" > "$BASE/_logins.tsv.tmp" && mv "$BASE/_logins.tsv.tmp" "$BASE/_logins.tsv"
 awk -F'\t' '{ print $1 "\tout" }' "$BASE/_hosts.tsv"  > "$BASE/_hosts.tsv.tmp"  && mv "$BASE/_hosts.tsv.tmp"  "$BASE/_hosts.tsv"
 awk -F'\t' '{ print $1 "\tin"  }' "$BASE/_white.tsv"  > "$BASE/_white.tsv.tmp"  && mv "$BASE/_white.tsv.tmp"  "$BASE/_white.tsv"
@@ -1087,4 +1112,4 @@ LC_ALL=C sort -o "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv.tmp"
 if cmp -s "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv" 2>/dev/null
 then rm -f "$BASE/.configured.tsv.tmp"; else mv "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv"; fi
 
-echo "flow-manager.sh: wrote 10 entity caches to data/flow-manager/base/ + 90 pair caches (every pair both ways) + the patterns and templates maps to data/flow-manager/xref/" >&2
+echo "flow-manager.sh: wrote 11 entity caches to data/flow-manager/base/ + 110 pair caches (every pair both ways) + the patterns and templates maps to data/flow-manager/xref/" >&2
