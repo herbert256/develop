@@ -134,7 +134,16 @@ _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per lin
             for (m = 1; m <= n; m++) { t = (m == at ? s : P[m]); r = (r == "" ? t : r "_" t) }
             return r }
         function digitstrip(p,   s) { s = p; if (sub(/[0-9]+$/, "", s)) sub(/-+$/, "", s); return s }
-        $1 != "" { name[++nn] = $1; exists[$1] = 1 }
+        # INTAKE NORMALIZATION (2026-08-30): the estate mixes "-" and "_"
+        # spellings of one name (the family matches everything sepfolded),
+        # but this derivation splits on "_" alone — a dash-spelled sibling
+        # parsed into different part counts and every grouping rule missed
+        # it. Group on the "_"-folded form; a FIXED mapping still matches
+        # the RAW spelling too. The reshape re-adds dashes for its joins.
+        $1 != "" { raw = $1
+            if (raw in FIX) { fixed[FIX[raw]] = 1; next }
+            nm0 = raw; gsub(/-/, "_", nm0)
+            name[++nn] = nm0; exists[nm0] = 1 }
         END {
             # pass 1a: count the reductions
             for (i = 1; i <= nn; i++) {
@@ -143,7 +152,8 @@ _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per lin
                     cnt1[P[1] "_" P[2] "_" P[3]]++
                     cnt3rd[P[3]]++                    # 3rd parts across the 4-part FlowIDs
                     for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) cnt3[rejoin(P, n, j)]++
-                } else if (n == 3)
+                } else if (n == 3) third3[P[3]] = 1   # 3rd parts of the 3-part FlowIDs
+                if (n == 3)
                     for (j = 1; j <= n; j++) { s = digitstrip(P[j])
                         if (s != P[j] && s != "") cnt2[replaced(P, n, j, s)]++ }
                 else if (n == 1) { s = digitstrip(P[1])
@@ -158,8 +168,9 @@ _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per lin
                 if (n == 4) {
                     pre = P[1] "_" P[2] "_" P[3]
                     # the FIRST 4-part rule: a 3rd part that is the 3rd part
-                    # of 2+ 4-part FlowIDs drops the 4th part
-                    if (cnt3rd[P[3]] >= 2) lg = pre
+                    # of 2+ 4-part FlowIDs — or of any 3-PART FlowID
+                    # (2026-08-30, the restated rule) — drops the 4th part
+                    if (cnt3rd[P[3]] >= 2 || (P[3] in third3)) lg = pre
                     else if (cnt1[pre] >= 2 || (pre in exists)) lg = pre
                     else for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) {
                         c = rejoin(P, n, j)
