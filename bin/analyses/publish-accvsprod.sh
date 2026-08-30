@@ -98,9 +98,22 @@ _home_status_block() {   # $1 = acceptance | production
 #    joining as the 3rd; else first and last kept, the middle joined. Joins
 #    use "-" — which is why the Logical pages render UNFOLDED (the hyphen is
 #    semantic there, marking combined parts).
+# input/logical.txt (2026-08-30, user request): FIXED FlowID -> Logical
+# transforms, two whitespace-separated columns (# comments, blank lines
+# ignored), shared by both environments. A listed FlowID takes its given
+# Logical VERBATIM — no grouping, no 3-part reshape — and only the rest go
+# through the derivation below. A missing file is a no-op.
 _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per line
     [ -f "$1" ] || return 0
-    awk -F'\t' '
+    awk -F'\t' -v LF="input/logical.txt" '
+        BEGIN {
+            while ((getline fl < LF) > 0) {
+                if (fl ~ /^[ \t]*#/ || fl ~ /^[ \t]*$/) continue
+                nf2 = split(fl, fa, /[ \t]+/)
+                if (nf2 >= 2 && fa[1] != "" && fa[2] != "") FIX[fa[1]] = fa[2]
+            }
+            close(LF)
+        }
         function joindash(P, n, skip, from,   r, m) { r = ""
             for (m = from; m <= n; m++) { if (m == skip) continue; r = (r == "" ? P[m] : r "-" P[m]) }
             return r }
@@ -125,9 +138,12 @@ _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per lin
                 else if (n == 1) { s = digitstrip(P[1])
                     if (s != P[1] && s != "") cnt2[s]++ }
             }
-            # pass 1b: assign each FlowID its group name
+            # pass 1b: assign each FlowID its group name — a FIXED mapping
+            # (input/logical.txt) wins outright and skips the reshape passes
             for (i = 1; i <= nn; i++) {
-                nm = name[i]; n = split(nm, P, "_"); lg = nm
+                nm = name[i]
+                if (nm in FIX) { fixed[FIX[nm]] = 1; continue }
+                n = split(nm, P, "_"); lg = nm
                 if (n == 4) {
                     pre = P[1] "_" P[2] "_" P[3]
                     if (cnt1[pre] >= 2 || (pre in exists)) lg = pre
@@ -165,6 +181,7 @@ _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per lin
                 }
                 print nl
             }
+            for (f in fixed) print f          # the fixed logicals, verbatim
         }' "$1" | LC_ALL=C sort -u
 }
 

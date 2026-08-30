@@ -105,6 +105,7 @@ cp "$TPL_DIR/blacklist.txt" input/blacklist.txt
 cp "$TPL_DIR/skip.txt" input/skip.txt
 cp "$TPL_DIR/partner-aliases.tsv" input/partner-aliases.tsv
 cp "$TPL_DIR/rename.txt" input/rename.txt
+cp "$TPL_DIR/logical.txt" input/logical.txt
 
 cat > input/README.txt <<'EOF'
 input/ — the SAMPLE ESTATE: fully synthetic Axway SecureTransport exports for

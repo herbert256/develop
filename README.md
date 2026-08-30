@@ -98,7 +98,8 @@ and every convention, see **`CLAUDE.md`**; deep subsystem notes live in
   small); regenerate with `bin/sample/generate.sh`. Root policy files:
   `input/blacklist.txt`, `input/skip.txt`, `input/partner-aliases.tsv` and
   `input/rename.txt` (display renames — shown instead of the real names at
-  publish time, the data untouched).
+  publish time, the data untouched) and `input/logical.txt` (fixed FlowID →
+  Logical transforms for the Logical pages).
 - `data/<env>/` — regenerable caches and `.rpt` files (gitignored).
   `rm -rf data/` is safe and never touches the exports.
 - `docs/` — the rendered site, PURE build output: every build clears its

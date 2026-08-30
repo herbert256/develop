@@ -1,0 +1,14 @@
+# input/logical.txt — FIXED FlowID -> Logical transforms for the Logical
+# pages (bin/analyses/publish-accvsprod.sh _logicals_from), shared by both
+# environments. Two whitespace-separated columns, # comments and blank
+# lines ignored:
+#
+#     <FlowID> <Logical>
+#
+# A listed FlowID takes its given Logical VERBATIM — no grouping and no
+# 3-part reshape; only unlisted FlowIDs go through the derivation. Use it
+# where the algorithm's mechanical shape is wrong for a flow.
+#
+# SAMPLE ESTATE: the 2-token WA_VDN would mechanically double into
+# WA_WA_VDN — the fixed form names its middle part properly.
+WA_VDN WA_CLEARING_VDN

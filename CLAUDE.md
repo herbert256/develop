@@ -852,7 +852,9 @@ THIS repo committed IN FULL, sample CSVs included (the whole estate is synthetic
 `input/{blacklist,skip}.txt`, the hand-curated `input/partner-aliases.tsv` (partner tokens
 naming one organisation — flow-manager's merge rule 4 + the subscription-name fallback retry)
 and `input/rename.txt` (DISPLAY renames, applied to the rendered pages by the build's last
-step — see the manual re-publish gotcha), plus a README.txt per directory. Gitignored: the `data/` root and `/build/`. A step script that
+step — see the manual re-publish gotcha) and `input/logical.txt` (fixed FlowID → Logical
+transforms for the acc-vs-prod Logical pages; a listed FlowID skips the derivation), plus a
+README.txt per directory. Gitignored: the `data/` root and `/build/`. A step script that
 only `bin/build.sh` ever invokes lives in **`bin/build/`** — the placement rule; the sample-data
 generator lives in **`bin/sample/`** (guarded by the marker, seeds in `bin/sample/seed/`).
 
