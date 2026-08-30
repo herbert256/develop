@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# runtime.sh — refresh the RUNTIME repo from this DEVELOP repo, then rebuild
-# its site from its own (real) data:
+# bin/runtime.sh — refresh the RUNTIME repo from this DEVELOP repo, then
+# rebuild its site from its own (real) data:
 #
-#   ./runtime.sh /path/to/runtime
+#   bin/runtime.sh /path/to/runtime
 #
 #   1. sync the develop-maintained code into the runtime checkout:
 #      bin/ and assets/ (rsync -a --delete: exec bits kept, deletions
@@ -16,15 +16,17 @@
 #
 # NEVER synced: input/ (the runtime repo's REAL, irreplaceable exports and
 # its own policy files — develop's are sample-flavoured), README.md,
-# .gitignore (runtime keeps ignoring its *.csv bulk), data/, docs/, build/,
-# and this script itself (root-level, outside bin/ — that is deliberate).
+# .gitignore (runtime keeps ignoring its *.csv bulk), data/, docs/, build/.
+# Living in bin/, this script IS synced to runtime — harmless there: the
+# self-target and sample-marker guards below refuse every misuse, and running
+# it only makes sense from the develop checkout.
 # No git operations either way: committing in runtime stays manual.
 #
 set -euo pipefail
-DEV="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEV="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [ $# -ne 1 ]; then
-    echo "usage: ./runtime.sh <path-to-runtime-repo>" >&2
+    echo "usage: bin/runtime.sh <path-to-runtime-repo>" >&2
     exit 2
 fi
 RT="$(cd "$1" 2>/dev/null && pwd)" || { echo "runtime.sh: $1 is not a directory." >&2; exit 2; }

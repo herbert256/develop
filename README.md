@@ -17,13 +17,14 @@ This project lives in two sibling repos that share ALL code but never data:
   README. **AI must never read or edit the runtime repo.** Preview:
   **http://localhost/runtime/**.
 
-Code flows one way, develop → runtime, via **`./runtime.sh
+Code flows one way, develop → runtime, via **`bin/runtime.sh
 <path-to-runtime>`**: it syncs `bin/` + `assets/` (+ `.gitattributes`) into
 the runtime checkout and then runs that checkout's `bin/fresh.sh`, rebuilding
 the runtime site from its own real data. It never touches `input/`, and the
 committed `input/.sample-estate` marker (checked by `bin/sample/generate.sh`,
 absent in runtime by construction) makes it impossible for the generator to
-overwrite real exports.
+overwrite real exports. The sync carries the script itself into runtime's
+`bin/`, where its own guards (self-target, sample-marker) make it inert.
 
 ## What it publishes
 

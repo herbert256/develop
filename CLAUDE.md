@@ -22,9 +22,9 @@ is where every change happens and holds ONLY the **SAMPLE ESTATE**: synthetic in
 (seed `AXWAY_SAMPLE_SEED`), committed, regenerable; `bin/sample/verify.sh` asserts a built site
 covers every planted scenario. **runtime** is the operational twin with the REAL exports —
 **never read, edit or build it from an AI session**; it has no CLAUDE.md by design. Code flows
-one way via the repo-root `./runtime.sh <path-to-runtime>` (syncs `bin/` + `assets/` +
-`.gitattributes`, removes CLAUDE/ARCHITECTURE there, runs its `bin/fresh.sh`); `runtime.sh`
-itself stays out of `bin/` so it is never synced. The committed `input/.sample-estate` marker
+one way via `bin/runtime.sh <path-to-runtime>` (syncs `bin/` + `assets/` + `.gitattributes`,
+removes CLAUDE/ARCHITECTURE there, runs its `bin/fresh.sh`); the sync carries the script into
+runtime's `bin/` too, where its self-target and marker guards make it inert. The committed `input/.sample-estate` marker
 gates the generator — absent in runtime, so it can never clobber real exports. Local preview:
 develop at `http://localhost/develop/`, runtime at `http://localhost/runtime/`.
 
@@ -830,9 +830,9 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 
 ## Directory layout
 
-Every pipeline script lives under **`bin/`**; the committed repo top is `bin/ assets/ docs/`,
-the three `.md` docs, `.gitignore`/`.gitattributes`, the root `runtime.sh` (the develop→runtime
-code sync — root-level ON PURPOSE, so a `bin/` sync never carries it) and **`input/`** — in
+Every pipeline script lives under **`bin/`** — `bin/runtime.sh` (the develop→runtime code
+sync) included; the committed repo top is `bin/ assets/ docs/`,
+the three `.md` docs, `.gitignore`/`.gitattributes` and **`input/`** — in
 THIS repo committed IN FULL, sample CSVs included (the whole estate is synthetic and small;
 `bin/sample/generate.sh` rewrites it). `input/` holds the flow-manager JSONs, the `ip/` and
 `renames/` maps, the `.sample-estate` marker + `.sample/` spec, the two policy files
