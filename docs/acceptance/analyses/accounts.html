@@ -44,22 +44,20 @@
 <h2>Naming inconsistencies (0)</h2>
 <p class="range">No inconsistencies &mdash; every profile&rsquo;s auth suffix matches its configured authentication.</p>
 <h2>Breaking naming rules (1)</h2>
-<p class="range">An <strong>incoming</strong> account (the partner connects to us) separates its name parts with <code>-</code>; an <strong>outgoing</strong> one (we connect to the partner) uses <code>_</code>. The same flow configured both ways therefore appears twice, once in each spelling &mdash; <code>DPL-AXINI-AO-IMPRESS</code> inbound and <code>DPL_AXINI-AO_IMPRESS</code> outbound. The separator is read the way the partner derivation reads it: <code>_</code> wins unless splitting on <code>-</code> yields more parts, so an internal hyphen inside one part (<code>AIM-FIN_TREASURY-SP</code>) is not mistaken for the separator.</p>
+<p class="range">An <strong>incoming</strong> account (the partner connects to us) separates its name parts with <code>-</code>; an <strong>outgoing</strong> one (we connect to the partner) uses <code>_</code>. The same flow configured both ways therefore appears twice, once in each spelling &mdash; <code>DPL-AXINI-AO-IMPRESS</code> inbound and <code>DPL_AXINI-AO_IMPRESS</code> outbound. The separator is read <code>_</code>-primary: <code>_</code> wins unless splitting on <code>-</code> yields more parts, so an internal hyphen inside one part (<code>AIM-FIN_TREASURY-SP</code>) is not mistaken for the separator. (A NAMING audit only &mdash; since the logical-based derivation the partner/domain/application entities no longer come from account names.)</p>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Account</th><th>Direction</th><th>Separator used</th><th>Expected</th></tr>
 <tr data-res="orange"><td><code>ZG_HOOLI_GEKKO</code></td><td>incoming</td><td><code>_</code></td><td><code>-</code></td></tr>
 </table></div>
 <p class="range">113 of 114 directional accounts follow the rule. A break is a naming slip rather than a fault &mdash; the flow still works &mdash; but it hides the pairing: the twin spelling is how an incoming and an outgoing half of the same flow are recognised as one route.</p>
-<h2>Not clear domain-application-partner (4)</h2>
-<p class="range">An account name is meant to read <strong>domain / application / partner</strong> &mdash; <code>ODV_MAIA_AKZO</code> is domain <code>ODV</code>, application <code>MAIA</code>, partner <code>AKZO</code>. These accounts could not be resolved into all three. The check does not re-read the names: it asks the derivation itself what it managed to assign, so a blank column is a value the rest of the site genuinely does not have for that account.</p>
+<h2>Not clear domain-application-partner (2)</h2>
+<p class="range">An account is meant to be connected to a <strong>logical flow</strong>, whose three-part name reads <strong>domain_application_partner</strong> &mdash; <code>ODV_MAIA_AKZO</code> is domain <code>ODV</code>, application <code>MAIA</code>, partner <code>AKZO</code>. These accounts could not be resolved into all three. The check does not re-read any names: it asks the derivation itself what it managed to assign, so a blank column is a value the rest of the site genuinely does not have for that account.</p>
 <div class="tablewrap"><table class="index fit">
-<tr><th>Account</th><th class="num">Parts</th><th>Domain</th><th>Application</th><th>Partner</th><th>Missing</th><th>Why</th></tr>
-<tr data-res="blue"><td><code>CB_STARK_WAYNE</code></td><td class="num">3</td><td>CB</td><td>&mdash;</td><td>WAYNE</td><td>application</td><td>three parts, but one is not a recognised value</td></tr>
-<tr data-res="orange"><td><code>OLD-MIGRATION-GLOBEX</code></td><td class="num">3</td><td>&mdash;</td><td>&mdash;</td><td>GLOBEX</td><td>domain, application</td><td>three parts, but one is not a recognised value</td></tr>
-<tr data-res="green"><td><code>WA-VDN</code></td><td class="num">2</td><td>WA</td><td>&mdash;</td><td>VDN</td><td>application</td><td>only two parts — one of the three has no slot</td></tr>
-<tr data-res="orange"><td><code>ZG_HOOLI_GEKKO</code></td><td class="num">3</td><td>ZG</td><td>&mdash;</td><td>HOOLI</td><td>application</td><td>three parts, but one is not a recognised value</td></tr>
+<tr><th>Account</th><th>Domain</th><th>Application</th><th>Partner</th><th>Missing</th><th>Why</th></tr>
+<tr data-res="green"><td><code>INFRA_ST-MONITOR_INFRA</code></td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>domain, application, partner</td><td>its logical flow has a pinned short name — no domain/application/partner parts</td></tr>
+<tr data-res="orange"><td><code>OLD-MIGRATION-GLOBEX</code></td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>domain, application, partner</td><td>not connected to any logical flow (no subscription of this account carries a FlowID)</td></tr>
 </table></div>
-<p class="range">112 of 116 accounts resolve to all three. A gap is not a fault &mdash; the flow works either way &mdash; but the account is then absent from that entity&rsquo;s Files, coverage and cross-reference figures, so a partner can look quieter than it is.</p>
+<p class="range">114 of 116 accounts resolve to all three. A gap is not a fault &mdash; the flow works either way &mdash; but the account is then absent from that entity&rsquo;s Files, coverage and cross-reference figures, so a partner can look quieter than it is.</p>
 <h2>FTP endpoints (1) &mdash; insecure</h2>
 <p class="range"><strong>FTP transfers credentials and data in clear text</strong> and cannot use a public key, so these are the site&rsquo;s only insecure profiles. They are also exactly the 1 profiles outside the <code>PWD</code>/<code>KEY</code> naming convention above (their name ends in a partner tag and their <code>clientAuthentication</code> is unset). Migrating them to SFTP would close the last plaintext links.</p>
 <div class="tablewrap"><table class="index fit">

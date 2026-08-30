@@ -11,27 +11,22 @@
 <body>
 <div class="topbar" data-eb="../../" data-b="../../../" data-env="acceptance" data-help="partner-groups" data-twin="../../../production/404.html"></div>
 <h1>Partner group <span class="mono">WONKA</span></h1>
-<p class="subtitle">FlowManager configures these as separate accounts, but the grouping logic ties them to ONE partner organisation. This page shows the evidence it used. See the <a href="../../../help/partner-groups.html">help page</a> for how partner groups are formed.</p>
-<div><div class="stat"><span class="stat-v">4</span><span class="stat-l">Member partners</span></div><div class="stat"><span class="stat-v">both</span><span class="stat-l">Connection</span></div><div class="stat"><span class="stat-v">23</span><span class="stat-l">Merge facts</span></div></div>
+<p class="subtitle">FlowManager configures these as separate logical flows, but the grouping logic ties them to ONE partner organisation. This page shows the evidence it used. See the <a href="../../../help/partner-groups.html">help page</a> for how partner groups are formed.</p>
+<div><div class="stat"><span class="stat-v">2</span><span class="stat-l">Member partners</span></div><div class="stat"><span class="stat-v">both</span><span class="stat-l">Connection</span></div><div class="stat"><span class="stat-v">9</span><span class="stat-l">Merge facts</span></div></div>
 <h2>Member partner codes</h2>
-<p class="subtitle">Each partner code is a segment of the account name(s) it was taken from &mdash; usually the last part.</p>
+<p class="subtitle">Each partner code is the last part of the logical flow name(s) it derives from; the accounts listed are the accounts behind those flows.</p>
 <div class="tablewrap"><table class="fit">
-<tr><th>Partner code</th><th>From account name(s)</th></tr>
-<tr><td class="mono">TDI</td><td class="mono">CDV-KRP-TDI-WONKA</td></tr>
+<tr><th>Partner code</th><th>Accounts behind the code</th></tr>
 <tr><td class="mono">WNK</td><td class="mono">CB_MARKETING_WNK</td></tr>
-<tr><td class="mono">WONKA</td><td class="mono">AIM_QUOTES_WONKA, CD_COSMOS_WONKA, CD_PRINTMGMT_WONKA</td></tr>
-<tr><td class="mono">WONKA-PUO</td><td class="mono">AIM_SAPPO_WONKA-PUO</td></tr>
+<tr><td class="mono">WONKA</td><td class="mono">AIM_QUOTES_WONKA, AIM_SAPPO_WONKA-PUO, CDV-KRP-TDI-WONKA, CD_COSMOS_WONKA, CD_PRINTMGMT_WONKA</td></tr>
 </table></div>
 <h2>Why these partners are one group</h2>
 <div class="tablewrap"><table class="fit">
 <tr><th>Partners</th><th>How they are linked</th><th>Evidence</th></tr>
-<tr><td class="mono">TDI &harr; WNK</td><td>An outbound account dials a host whose IP an inbound partner whitelists</td><td>Outbound account CB_MARKETING_WNK (partner WNK) connects to sftp.wonka.example (IP 198.51.100.80), whitelisted by inbound account CDV-KRP-TDI-WONKA (partner TDI) <span class="mask">(+3 more)</span></td></tr>
-<tr><td class="mono">TDI &harr; WONKA</td><td>An outbound account dials a host whose IP an inbound partner whitelists</td><td>Outbound account AIM_QUOTES_WONKA (partner WONKA) connects to sftp.wonka.example (IP 198.51.100.80), whitelisted by inbound account CDV-KRP-TDI-WONKA (partner TDI) <span class="mask">(+11 more)</span></td></tr>
-<tr><td class="mono">TDI &harr; WONKA</td><td>Rule 4</td><td>Curated alias: TDI and WONKA name the same organisation (input/partner-aliases.tsv)</td></tr>
-<tr><td class="mono">TDI &harr; WONKA-PUO</td><td>An outbound account dials a host whose IP an inbound partner whitelists</td><td>Outbound account AIM_SAPPO_WONKA-PUO (partner WONKA-PUO) connects to sftp.wonka.example (IP 198.51.100.80), whitelisted by inbound account CDV-KRP-TDI-WONKA (partner TDI) <span class="mask">(+3 more)</span></td></tr>
-<tr><td class="mono">WNK &harr; WONKA</td><td>Rule 4</td><td>Curated alias: WNK and WONKA name the same organisation (input/partner-aliases.tsv)</td></tr>
-<tr><td class="mono">WONKA &harr; WONKA-PUO</td><td>Rule 4</td><td>Curated alias: WONKA-PUO and WONKA name the same organisation (input/partner-aliases.tsv)</td></tr>
+<tr><td class="mono">WNK &harr; WONKA</td><td>Their logical flows connect to the same configured host</td><td>Logical flows AIM_QUOTES_WONKA (partner WONKA) and CB_MARKETING_WNK (partner WNK) both connect to configured host sftp.wonka.example <span class="mask">(+3 more)</span></td></tr>
+<tr><td class="mono">WNK &harr; WONKA</td><td>One partner's host resolves to an IP the other whitelists</td><td>Logical flow CB_MARKETING_WNK (partner WNK) connects to sftp.wonka.example (IP 198.51.100.80), which logical flow CDV_KRP-TDI_WONKA (partner WONKA) whitelists <span class="mask">(+3 more)</span></td></tr>
+<tr><td class="mono">WNK &harr; WONKA</td><td>Curated alias (input/partner-aliases.tsv)</td><td>Curated alias: WNK and WONKA name the same organisation (input/partner-aliases.tsv)</td></tr>
 </table></div>
-<p class="range">Partner grouping is name-derived then merged by shared whitelist IPs and endpoint domains (see <a href="../../../help/partner-groups.html">help</a>). Back to the <a href="../partners/wonka.html">WONKA partner page</a> or the <a href="../../transfer/entities/partner-seen.html">Partners list</a>.</p>
+<p class="range">Partner grouping derives from the logical flow names (the last part is the partner code), merged by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases (see <a href="../../../help/partner-groups.html">help</a>). Back to the <a href="../partners/wonka.html">WONKA partner page</a> or the <a href="../../transfer/entities/partner-seen.html">Partners list</a>.</p>
 </body>
 </html>

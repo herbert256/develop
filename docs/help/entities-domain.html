@@ -15,7 +15,7 @@
 <h2>What this shows</h2>
 <p>One row per business domain — the same identities as the Logical, Partners, Domains & Applications page's Domains row: how many Files it exchanged, how many failed vs. processed, the volume, and the first/last day it was active. A <strong>Summary</strong> tab lists every domain; a <strong>Detail</strong> tab breaks the same figures down per domain per day.</p>
 <h2>How it's computed</h2>
-<p>The domain is the FIRST token of the account naming convention <code>&lt;domain&gt;-&lt;application&gt;-&lt;partner&gt;</code> (AB, ODV, ZG, APS, &hellip;); every File inherits it from its account, so this is name-derived and best-effort — a File under a single-token account name (no domain segment) is not counted here. Domain names are groupings, not logged entities, so they carry no link — there is no domain detail page.</p>
+<p>The domain is the FIRST part of the three-part logical flow name <code>domain_application_partner</code> (AB, ODV, ZG, APS, &hellip;); every File inherits it from its account, so this is name-derived and best-effort — a File under a single-token account name (no domain segment) is not counted here. Domain names are groupings, not logged entities, so they carry no link — there is no domain detail page.</p>
 <p>Both tabs support click-to-expand on an Error/OK cell for that outcome's 10 most recent Files.</p>
 <h2>The tab row: views and scope</h2>
 <p>The tab row carries three groups: the <strong>entity type</strong> (Subscriptions, Logical, Partners, Accounts, Logins, Hosts, Domains, Applications), then the <strong>view</strong>, then the <strong>scope</strong>. Switching one keeps the other two, so you can walk from entity to entity without losing the view you were reading.</p>
