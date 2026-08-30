@@ -46,7 +46,21 @@ mkdir -p build
 exec > >(tee build/fresh.log) 2>&1
 
 echo "fresh.sh: clearing data/ and docs/ ..." >&2
-rm -rf data docs
+# Finder can drop a .DS_Store into a directory WHILE rm walks the tree — the
+# rm then fails with "Directory not empty" although everything else is gone.
+# Sweep the .DS_Store files and try again; the LAST attempt runs with stderr
+# visible, so a genuine failure (permissions, an open file) still aborts the
+# script with rm's own message (set -e).
+clear_tree() {
+    local d=$1 attempt
+    for attempt in 1 2; do
+        rm -rf "$d" 2>/dev/null && return 0
+        find "$d" -name .DS_Store -delete 2>/dev/null || true
+    done
+    rm -rf "$d"
+}
+clear_tree data
+clear_tree docs
 
 echo "fresh.sh: seeding docs/ from assets/ ..." >&2
 mkdir -p docs/assets docs/help

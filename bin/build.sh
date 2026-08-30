@@ -122,10 +122,21 @@ printf '%s\n' "$$" > "$BUILD_LOCK/pid"
 # pages (see assets/README.txt); .nojekyll and topbar-data.js stay generated
 # (ensure_assets). A SCOPED run clears only its env tree — the other env's
 # pages and the shared root artifacts survive until their own build.
+# rm -rf with a .DS_Store retry: Finder can drop one into a directory WHILE
+# rm walks the tree ("Directory not empty") — sweep them and try again; the
+# last attempt keeps stderr, so a genuine failure still stops the build.
+clear_tree() {
+    local d=$1 attempt
+    for attempt in 1 2; do
+        rm -rf "$d" 2>/dev/null && return 0
+        find "$d" -name .DS_Store -delete 2>/dev/null || true
+    done
+    rm -rf "$d"
+}
 case $BUILD_SCOPE in
-    both)       rm -rf docs ;;
-    acceptance) rm -rf docs/acceptance ;;
-    production) rm -rf docs/production ;;
+    both)       clear_tree docs ;;
+    acceptance) clear_tree docs/acceptance ;;
+    production) clear_tree docs/production ;;
 esac
 mkdir -p docs/assets docs/help
 cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js docs/assets/
