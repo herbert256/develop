@@ -2,15 +2,18 @@
 #
 # not-in-flow-manager.sh — "Not in Flow Manager" (Failures & Retries group):
 # one row for every entity VALUE that appears in the transfer log but is NOT in
-# the current FlowManager configuration — all EIGHT entity lists checked:
+# the current FlowManager configuration — all NINE entity lists checked:
 #   Account      _files col 3   vs base/_accounts.tsv        (exact)
 #   Subscription _files col 12  vs base/_subscriptions.tsv   (configured name PREFIXES the logged value — the showseen rule)
 #   Login        _files col 14  vs base/_logins.tsv          (exact)
 #   Host         _files col 15, connection col 16 == out, vs base/_hosts.tsv (exact; hosts are OUTBOUND endpoints)
 #   Whitelist    _files col 15, connection col 16 == in,  vs base/_white.tsv (exact; the INCOMING source addresses)
+#   Logical      _files col 13 resolved through the FlowID map vs base/_logicals.tsv
+#                (an UNMAPPED profile value is NOT surfaced — the raw profile
+#                stays parse-internal, so these rows are empty by construction)
 #   Partner      _files col 20  vs base/_partners.tsv        (exact)
 #   Application  _files col 18  vs base/_apps.tsv            (exact)
-#   Domain       _files col 19  vs base/_domains.tsv         (exact)
+#   Domain       _files col 19  vs base/_domains.tsv        (exact)
 # All matching is case-insensitive. Counts are Files (one logical transfer per
 # CoreId). A missing base cache
 # degrades to an empty configured list (everything logged shows), like showseen.
@@ -36,7 +39,7 @@ skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FM_INPUT_DIR/partners.json" "$FM_INPU
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 B="$CONFIG_BASE"
-for _b in _accounts _subscriptions _logins _hosts _white _partners _apps _domains; do
+for _b in _accounts _subscriptions _logins _hosts _white _logicals _partners _apps _domains; do
     eval "f$_b=\"$B/$_b.tsv\""
 done
 # The base caches are AMENDED after flow-manager wrote them: result.sh
@@ -50,7 +53,7 @@ done
 if [ -f "$B/.configured.tsv" ]; then
     TMP=$(mktemp -d "${TMPDIR:-/tmp}/axnifm.XXXXXX")
     trap 'rm -rf "$TMP"' EXIT
-    for _b in _accounts _subscriptions _logins _hosts _white _partners _apps _domains; do
+    for _b in _accounts _subscriptions _logins _hosts _white _logicals _partners _apps _domains; do
         awk -F'\t' -v t="$_b" '$1 == t { print $2 }' "$B/.configured.tsv" > "$TMP/$_b.tsv"
         eval "f$_b=\"$TMP/$_b.tsv\""
     done
@@ -61,14 +64,17 @@ fi
 # — then sort by type order / Files desc / name and format the .rpt.
 awk -F'\t' \
     -v ACC="$f_accounts" -v SUB="$f_subscriptions" -v LOG="$f_logins" -v HST="$f_hosts" \
-    -v WHT="$f_white" -v PTN="$f_partners" -v APP="$f_apps" -v DOM="$f_domains" '
+    -v WHT="$f_white" -v LGC="$f_logicals" -v PTN="$f_partners" -v APP="$f_apps" -v DOM="$f_domains" \
+    -v PLM="$CONFIG_XREF/_profiles-logicals.tsv" '
     function load(t, f,   l, a) {
         while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") cfg[t SUBSEP toupper(a[1])] = 1 }
         close(f)
     }
     BEGIN {
         load(1, ACC); load(3, LOG); load(4, HST); load(5, WHT)
-        load(6, PTN); load(7, APP); load(8, DOM)
+        load(6, LGC); load(7, PTN); load(8, APP); load(9, DOM)
+        while ((getline l < PLM) > 0) { split(l, a, "\t"); if (a[1] != "" && a[2] != "") PL[toupper(a[1])] = a[2] }
+        close(PLM)
         # configured subscription names as a LIST (prefix matching)
         while ((getline l < SUB) > 0) { split(l, a, "\t"); if (a[1] != "") SN[++ns] = toupper(a[1]) }
         close(SUB)
@@ -98,9 +104,11 @@ awk -F'\t' \
         if ($14 != "" && !((3 SUBSEP toupper($14)) in cfg)) add(3, $14)
         if ($15 != "" && $16 == "out" && !((4 SUBSEP toupper($15)) in cfg)) add(4, $15)
         if ($15 != "" && $16 == "in"  && !((5 SUBSEP toupper($15)) in cfg)) add(5, $15)
-        if ($20 != "" && !((6 SUBSEP toupper($20)) in cfg)) add(6, $20)
-        if ($18 != "" && !((7 SUBSEP toupper($18)) in cfg)) add(7, $18)
-        if ($19 != "" && !((8 SUBSEP toupper($19)) in cfg)) add(8, $19)
+        if ($13 != "" && (toupper($13) in PL)) { lg9 = PL[toupper($13)]
+            if (!((6 SUBSEP toupper(lg9)) in cfg)) add(6, lg9) }
+        if ($20 != "" && !((7 SUBSEP toupper($20)) in cfg)) add(7, $20)
+        if ($18 != "" && !((8 SUBSEP toupper($18)) in cfg)) add(8, $18)
+        if ($19 != "" && !((9 SUBSEP toupper($19)) in cfg)) add(9, $19)
     }
     END {
         for (i = 1; i <= nk; i++) { k = ord[i]
@@ -123,11 +131,11 @@ awk -F'\t' \
         return sprintf("%.2f %s", v, u[i])
     }
     BEGIN {
-        split("Account|Subscription|Login|Host|Whitelist|Partner|Application|Domain", TL, "|")
-        split("accounts|subscriptions|logins|hosts||partners|applications|domains", SD, "|")
+        split("Account|Subscription|Login|Host|Whitelist|Logical|Partner|Application|Domain", TL, "|")
+        split("accounts|subscriptions|logins|hosts||logicals|partners|applications|domains", SD, "|")
         printf "TITLE\tNot in Flow Manager\n"
-        printf "DESC\tEvery entity value seen in the transfer logs that the current FlowManager configuration does not know — all eight entity lists checked.\n"
-        printf "INTRO\tEvery entity VALUE that appears in the transfer logs but is **not in the current FlowManager configuration** — checked against all eight configured lists (accounts, subscriptions, logins, hosts, whitelist, partners, applications, domains). These are the flows running outside the configuration: test uploads, renamed or deleted config objects, or unlisted partner addresses.\n"
+        printf "DESC\tEvery entity value seen in the transfer logs that the current FlowManager configuration does not know — all nine entity lists checked.\n"
+        printf "INTRO\tEvery entity VALUE that appears in the transfer logs but is **not in the current FlowManager configuration** — checked against all nine configured lists (accounts, subscriptions, logins, hosts, whitelist, logical flows, partners, applications, domains). These are the flows running outside the configuration: test uploads, renamed or deleted config objects, or unlisted partner addresses.\n"
         printf "TABLE\tLogged but not configured\twide\tgroup\n"
         printf "HEAD\tType\tName\tFiles\tError\tOK\tVolume\tFirst seen\tLast seen\n"
         printf "KIND\ttext\ttext\tnum\tnumfailed\tnumprocessed\tnum\ttext\ttext\n"

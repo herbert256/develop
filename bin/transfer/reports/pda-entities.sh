@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 #
-# pda-entities.sh — the three PDA entities as Entities reports, one .rpt per
-# dimension from the logical-transfer cache (each File carries its partner /
-# application / domain attribution, _files.tsv cols 20 / 18 / 19):
-#   partner.rpt  application.rpt  domain.rpt
+# pda-entities.sh — the Logical + three PDA entities as Entities reports, one
+# .rpt per dimension from the logical-transfer cache (each File carries its
+# partner / application / domain attribution, _files.tsv cols 20 / 18 / 19;
+# the Logical resolves the profile column 13 through the FlowID map,
+# xref/_profiles-logicals.tsv):
+#   logical.rpt  partner.rpt  application.rpt  domain.rpt
 # Each is the exact account.sh shape — a summary per name (Files, Failed,
 # Processed, Volume, % of Files, First/Last seen) plus a per-day detail — so
 # showseen.sh and entity-search.sh can lift counts/buckets/drill from the
 # summaries exactly like the classic five. The name column is plain text:
-# the PDA entities link to their own detail pages.
+# these entities link to their own detail pages.
 #
 # Usage:
-#   ./pda-entities.sh    # reads input/*.csv (via the caches), writes data/{partner,application,domain}.rpt
+#   ./pda-entities.sh    # reads input/*.csv (via the caches), writes data/{logical,partner,application,domain}.rpt
 #
 set -euo pipefail
 
@@ -27,24 +29,26 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 mkdir -p "$REPORTS_DIR"
 ensure_parsed
-# one script, THREE outputs — skip only when ALL are fresh (guarding just
+# one script, FOUR outputs — skip only when ALL are fresh (guarding just
 # partner.rpt left application/domain.rpt stale after a mid-loop failure)
 _pda_fresh=1
-for _o in partner application domain; do
+for _o in logical partner application domain; do
     _f="$REPORTS_DIR/$_o.rpt"
     if ! { [ -f "$_f" ] && ! [ "$PARSED" -nt "$_f" ] && ! [ "$FILES" -nt "$_f" ] && ! [ "${BASH_SOURCE[0]}" -nt "$_f" ]; }; then
         _pda_fresh=0; break
     fi
 done
 if [ "$_pda_fresh" = 1 ]; then
-    echo "  partner/application/domain.rpt are up to date; skipping." >&2
+    echo "  logical/partner/application/domain.rpt are up to date; skipping." >&2
     exit 0
 fi
 unset _pda_fresh _o _f
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-for dim in partner application domain; do
+for dim in logical partner application domain; do
     case $dim in
+        logical)     col=13; title="Logical";      chead="Logical"; nkind=lgc
+                     attr="the file's logical flow group (its FlowID condensed to a 3-part group name — data/flow-manager/base/_logicals.tsv)" ;;
         partner)     col=20; title="Partners";     chead="Partner"; nkind=ptn
                      attr="the file's partner organisation (its endpoint, or its account's whitelist cluster — data/flow-manager/base/_partners.tsv)" ;;
         application) col=18; title="Applications"; chead="Application"; nkind=app
@@ -72,21 +76,31 @@ for dim in partner application domain; do
     # Domains stay single-valued (part 1 of the name — never doubles).
     UMAP=""; UKEY=0
     case $dim in
+        logical)     [ -f "$CONFIG_XREF/_subscriptions-logicals.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-logicals.tsv"; UKEY=12; } ;;
         partner)     [ -f "$CONFIG_XREF/_subscriptions-partners.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-partners.tsv"; UKEY=12; } ;;
         application) [ -f "$CONFIG_XREF/_accounts-apps.tsv" ] && { UMAP="$CONFIG_XREF/_accounts-apps.tsv"; UKEY=3; } ;;
     esac
-    agg=$(awk -F'\t' -v C="$col" -v UMAP="$UMAP" -v UK="$UKEY" "$COREIDS_AWK"'
+    # the logical dim's DIRECT attribution is the profile column resolved
+    # through the FlowID map — an unmapped or blank profile abstains (the
+    # union via the subscription may still count the File)
+    VMAP=""
+    [ "$dim" = logical ] && [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv"
+    agg=$(awk -F'\t' -v C="$col" -v UMAP="$UMAP" -v UK="$UKEY" -v VMAP="$VMAP" "$COREIDS_AWK"'
         function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
             while (v >= 1024 && i < 6) { v /= 1024; i++ }
             return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
         BEGIN {
             if (UMAP != "") { while ((getline l < UMAP) > 0) { n2 = split(l, z, "\t")
                 if (n2 >= 2 && z[1] != "" && z[2] != "") sp[toupper(z[1])] = sp[toupper(z[1])] (sp[toupper(z[1])] == "" ? "" : "\037") z[2] } close(UMAP) }
+            if (VMAP != "") { while ((getline l < VMAP) > 0) { n2 = split(l, z, "\t")
+                if (n2 >= 2 && z[1] != "" && z[2] != "") vm[toupper(z[1])] = z[2] } close(VMAP) }
         }
         $4 == "" { next }
         {
             delete P; np2 = 0
-            if ($C != "") { P[$C] = 1; np2++ }
+            if ($C != "") { v = $C
+                if (VMAP != "") v = ((toupper($C) in vm) ? vm[toupper($C)] : "")
+                if (v != "") { P[v] = 1; np2++ } }
             if (UMAP != "" && $UK != "" && (toupper($UK) in sp)) {
                 n2 = split(sp[toupper($UK)], z, "\037")
                 for (i2 = 1; i2 <= n2; i2++) if (!(z[i2] in P)) { P[z[i2]] = 1; np2++ }
@@ -144,7 +158,9 @@ for dim in partner application domain; do
     {
         printf 'TITLE\t%s\n' "$title"
         printf 'DESC\tFiles per %s: a summary and a per-day detail, both split into Error/OK.\n' "$dim"
-        printf 'INTRO\tEvery %s with its **Files** (one per CoreId), Error/OK split, volume and last sighting — derived from the account names (and, for partners, the endpoint/whitelist merge). The view tabs switch between logged (**Seen**), configured (**All** / **Not seen**), the status subsets (**OK** / **Warning** / **Error**) and the server-log-only ones (**Server**); the scope tabs decide whether a server-log sighting counts as seen (**+Server**, the default) or not (**Transfer**) — rows tint by each %s'\''s status.\n' "$dim" "$dim"
+        src="derived from the account names (and, for partners, the endpoint/whitelist merge)"
+        [ "$dim" = logical ] && src="derived from the FlowIDs, condensed into logical flow groups"
+        printf 'INTRO\tEvery %s with its **Files** (one per CoreId), Error/OK split, volume and last sighting — %s. The view tabs switch between logged (**Seen**), configured (**All** / **Not seen**), the status subsets (**OK** / **Warning** / **Error**) and the server-log-only ones (**Server**); the scope tabs decide whether a server-log sighting counts as seen (**+Server**, the default) or not (**Transfer**) — rows tint by each %s'\''s status.\n' "$dim" "$src" "$dim"
 
         printf 'TABLE\tSummary per %s\twide\n' "$chead"
         printf 'HEAD\t%s\tFiles\tError\tOK\tVolume\tFirst seen\tLast seen\n' "$chead"
@@ -161,7 +177,7 @@ for dim in partner application domain; do
         printf 'TOTAL\t@{colspan=2}Total (%s row(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\n' \
             "$detail_row_count" "$tot_records" "$tot_failed" "$tot_processed"
 
-        printf 'NOTE\tCounts Files — one logical transfer each; the %s is %s. Names link to the partner / application / domain detail pages. Volume is the file counted once; First/Last seen stay full-period under the date filter. **The Total row counts each File once** (the site-wide distinct figure); a narrowed date range re-totals over the per-%s rows, whose union attribution can claim one File for several %ss — so a filtered Total can run slightly higher than the distinct figure it replaces, and snaps back to it at the full range. Click an Error or OK count for that outcome'\''s 10 most recent Files (newest first).\n' "$dim" "$attr" "$dim" "$dim"
+        printf 'NOTE\tCounts Files — one logical transfer each; the %s is %s. Names link to the logical / partner / application / domain detail pages. Volume is the file counted once; First/Last seen stay full-period under the date filter. **The Total row counts each File once** (the site-wide distinct figure); a narrowed date range re-totals over the per-%s rows, whose union attribution can claim one File for several %ss — so a filtered Total can run slightly higher than the distinct figure it replaces, and snaps back to it at the full range. Click an Error or OK count for that outcome'\''s 10 most recent Files (newest first).\n' "$dim" "$attr" "$dim" "$dim"
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "Data written to $OUT ($summary_row_count $dim(s), $tot_records file(s))." >&2

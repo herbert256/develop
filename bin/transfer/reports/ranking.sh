@@ -5,7 +5,7 @@
 #
 #   Files · Volume · Errors · Duration · Throughput
 #
-# One table per entity TYPE (the seven of them are the report's tab row), each
+# One table per entity TYPE (the eight of them are the report's tab row), each
 # metric contributing TWO columns — the position (#1 = the top of that metric)
 # and the value behind it — with a column-group divider between the pairs, so
 # five rankings read side by side without running together.
@@ -62,6 +62,7 @@ SPECS="SITE:Subscriptions:site:subscription:_subscriptions
 ACC:Accounts:acct:account:_accounts
 LOGIN:Logins:login:login:_logins
 HOST:Remote hosts:host:remote host:_hosts
+LGC:Logical:lgc:logical flow:_logicals
 PTN:Partners:ptn:partner:_partners
 APP:Applications:app:application:_apps
 DOM:Domains:dom:domain:_domains"
@@ -120,7 +121,7 @@ EOF
 
     printf 'NOTE\tPositions are per entity TYPE: a subscription is ranked among subscriptions, never against an account. **#1** means the most Files, the most bytes, the highest error percentage, the fastest average duration and the highest throughput — so a **high** position on Errors is bad news while a high position on Throughput is good. An entity with no measurable duration (nothing timed) shows **-** for Duration and Throughput. Sorted on the Files position by default; every column sorts.\n'
     printf 'NOTE\tThe same five positions appear on each entity'"'"'s own detail page, in its **Ranking** box — this page is that box for every entity at once, which is what makes the outliers visible: the flow that is #1 by volume but #40 by throughput, or the account whose error position is far worse than its file position. Every row of that box links back here: it opens this page at the entity type it belongs to, sorted on the metric that was clicked and scrolled to that entity'"'"'s own outlined row, so the position it names is read with the neighbours around it.\n'
-    printf 'SUMMARY\tRanked entities: %s across 7 types\n' "$nall"
+    printf 'SUMMARY\tRanked entities: %s across 8 types\n' "$nall"
     printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
