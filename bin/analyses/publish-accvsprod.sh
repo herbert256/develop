@@ -83,7 +83,10 @@ _home_status_block() {   # $1 = acceptance | production
 #    digit-tailed part, stripped (a trailing "-" trimmed with the digits),
 #    duplicates another stripped name or an existing FlowID folds onto the
 #    stripped form; a 4-part FlowID whose numeric-only part, removed,
-#    duplicates another folds onto the removed form.
+#    duplicates another folds onto the removed form. A SINGLE-part FlowID
+#    (all dashes — the monitor's INFRA-MONITOR-UC1..4) gets the same
+#    digit-tail rule on the whole name (2026-08-30): the four fold onto
+#    INFRA-MONITOR-UC.
 # 2) RESHAPE to 3 parts by position, informed by the 3-part logicals'
 #    vocabulary (their 2nd/3rd parts): AAA_BBB -> AAA_AAA_BBB; 4 parts whose
 #    4th is a known 3rd -> AAA_BBB-CCC_DDD; 4 parts whose 2nd is a known
@@ -119,6 +122,8 @@ _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per lin
                 } else if (n == 3)
                     for (j = 1; j <= n; j++) { s = digitstrip(P[j])
                         if (s != P[j] && s != "") cnt2[replaced(P, n, j, s)]++ }
+                else if (n == 1) { s = digitstrip(P[1])
+                    if (s != P[1] && s != "") cnt2[s]++ }
             }
             # pass 1b: assign each FlowID its group name
             for (i = 1; i <= nn; i++) {
@@ -133,6 +138,8 @@ _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per lin
                     for (j = 1; j <= n; j++) { s = digitstrip(P[j])
                         if (s != P[j] && s != "") { c = replaced(P, n, j, s)
                             if (cnt2[c] >= 2 || (c in exists)) { lg = c; break } } }
+                else if (n == 1) { s = digitstrip(P[1])
+                    if (s != P[1] && s != "" && (cnt2[s] >= 2 || (s in exists))) lg = s }
                 lset[lg] = 1
             }
             # pass 2: reshape to 3 parts by position
