@@ -31,11 +31,22 @@ function tagval(t,   s) { s = "," TAGS ","; if (!match(s, "," t "=[^,]*,")) retu
 # ---- emitters ---------------------------------------------------------------
 # NOTE %.0f, never %d, on the absolute-ms values (~2e14): mawk's %d may cast
 # through a 32-bit int on some builds; %.0f is exact for integers in doubles.
+#
+# THE WINDOW CLAMP: any event past the last calendar day's midnight is
+# DROPPED — a retry burst, next-day recovery, partner collect or monitor
+# tail that would cross the window end simply loses its later legs, exactly
+# what a real export cut mid-flight looks like. Without it a handful of
+# spilled legs minted a transferLog for the day AFTER the window, and the
+# home page's day spine gained a first row no logical File backs (four
+# empty cells beside a lone date).
 function T(abs, dur, st, af, lf, sf, dir, ab, pr, fn, sz, ho, po, mo, ic, se, sid, resub, prraw, ss) {
+    if (abs >= (J1 + 1) * 86400000) { uuid4(); return }   # burn the tid draw: the
+                                                          # PRNG stream stays aligned
     printf "T\t%.0f\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%.0f\n", \
         abs, dur, st, af, lf, sf, dir, ab, pr, fn, sz, ho, po, mo, ic, se, sid, uuid4(), CID, resub, prraw, ss > OUT
 }
 function S(abs, lvl, comp, sid, msg) {
+    if (abs >= (J1 + 1) * 86400000) return
     gsub(/\t/, " ", msg)
     printf "S\t%.0f\t%s\t%s\t%s\t%s\n", abs, lvl, comp, sid, msg > OUT
 }

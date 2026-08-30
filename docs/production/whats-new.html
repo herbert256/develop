@@ -15,7 +15,31 @@
 <h2>New reports</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Report</th><th>Area</th><th>Description</th></tr>
-<tr><td>(none)</td><td></td><td></td></tr>
+<tr><td><a href="analyses/acc-vs-prod-summary.html">Acceptance vs production</a></td><td>Analyses</td><td class="desc">The two environments’ entities compared per type, with each side’s activity and the promotion gaps.</td></tr>
+<tr><td><a href="analyses/account-sharing.html">Account sharing</a></td><td>Analyses</td><td class="desc">An account is a partner relation, and one relation often carries several flows</td></tr>
+<tr><td><a href="analyses/accounts-in-boxes.html">Accounts in boxes</a></td><td>Analyses</td><td class="desc">Every configured account boxed by what is true of the subscriptions connected to it.</td></tr>
+<tr><td><a href="analyses/app-partners.html">Application dependencies</a></td><td>Analyses</td><td class="desc">Every internal application seen in the logs, by how many external partner organisations it depends on — and how well each of those pairs actually runs</td></tr>
+<tr><td><a href="analyses/blast-radius.html">Endpoint blast radius</a></td><td>Analyses</td><td class="desc">An endpoint outage is never one flow</td></tr>
+<tr><td><a href="analyses/cleanup-backlog.html">Cleanup backlog</a></td><td>Analyses</td><td class="desc">Every cleanup signal the site computes, merged into one ranked list and ordered safest-first: an object whose row is green never showed ANY traffic…</td></tr>
+<tr><td><a href="analyses/config-hygiene.html">Config hygiene</a></td><td>Analyses</td><td class="desc">The cleanup backlog — likely-duplicate twins and orphaned objects nothing references.</td></tr>
+<tr><td><a href="analyses/data-diff.html">Since yesterday</a></td><td>Analyses</td><td class="desc">The newest data day is 2026-08-29 (the latest date across the transfer and server parse caches); everything below is judged against 2026-08-29 or 2…</td></tr>
+<tr><td><a href="analyses/failed.html">Failed Subscriptions</a></td><td>Analyses</td><td class="desc"></td></tr>
+<tr><td><a href="analyses/failing-reasons.html">Error reasons</a></td><td>Analyses</td><td class="desc"></td></tr>
+<tr><td><a href="analyses/first-seen.html">First seen</a></td><td>Analyses</td><td class="desc">On what day each partner, subscription, account, login and remote host was first seen in the transfer logs.</td></tr>
+<tr><td><a href="analyses/partner-lifecycle.html">Partner lifecycle</a></td><td>Analyses</td><td class="desc">A partner relation has three quiet failure modes, and each one looks different in the data</td></tr>
+<tr><td><a href="analyses/partner-scorecard.html">Partner scorecard</a></td><td>Analyses</td><td class="desc">One number per partner relation, worst first — and every ingredient of that number in its own column, so a low score is never a mystery</td></tr>
+<tr><td><a href="analyses/triage.html">Triage</a></td><td>Analyses</td><td class="desc">One worklist instead of six symptom pages: 9 subscription(s) currently need eyes — 3 are red (last File failed, or server-log evidence after the la…</td></tr>
+<tr><td><a href="analyses/twins.html">Twins</a></td><td>Analyses</td><td class="desc">The Twin rows of the detail pages, collated</td></tr>
+<tr><td><a href="analyses/uc-status-uc1.html">UC status</a></td><td>Analyses</td><td class="desc">Every configured subscription classified per use case, one tab each: UC1 (the partner pushes a file in), UC2 (we stage, the partner collects), UC3 …</td></tr>
+<tr><td><a href="analyses/uc2-visits.html">UC2 pickup visits</a></td><td>Analyses</td><td class="desc">A pickup account's SSH logons group into visits (a gap of more than 30 minutes starts a new one); every visit is classified by what its window show…</td></tr>
+<tr><td><a href="analyses/whitelist-audit.html">Whitelist audit</a></td><td>Analyses</td><td class="desc">Whitelisted partner IPs vs the addresses actually connecting — used, connect-only or prunable.</td></tr>
+<tr><td><a href="analyses/xref/cross-account-subscriptions.html">Cross References</a></td><td>Analyses</td><td class="desc">Every pair of the eight entities cross-tabulated both ways — which appear together on a transfer, which are configured but never seen.</td></tr>
+<tr><td><a href="search.html">Search</a></td><td>Transfer</td><td class="desc">Type in the box below to search every configured or logged entity by name — the checkboxes narrow the kinds (none checked = all)</td></tr>
+<tr><td><a href="server/capacity-pesit-per-day.html">Capacity &amp; sessions</a></td><td>Server</td><td class="desc">How busy the platform is and what it cleans up: PeSIT activity — logins, transfers, resets, ceiling hits and diagnostic codes — and the file retent…</td></tr>
+<tr><td><a href="server/connections-by-protocol.html">Connections</a></td><td>Server</td><td class="desc">Both directions of the connection story in one report</td></tr>
+<tr><td><a href="server/deploy-errors.html">Deploy errors</a></td><td>Server</td><td class="desc">Two server-log lines, both a deployment mistake rather than a runtime fault</td></tr>
+<tr><td><a href="server/errors-per-day.html">Errors</a></td><td>Server</td><td class="desc">The errors and warnings of the server log from every angle, in one report: levels per day and per component, when they happen (hour of day, weekday…</td></tr>
+<tr><td><a href="server/failure-flows.html">Failure reasons per flow</a></td><td>Server</td><td class="desc">173 of the 243 server-log ERROR records (71.2%) name a flow: 16 subscription(s), 16 subscription-and-reason pair(s), classified with the same reaso…</td></tr>
 </table></div>
 <h2>Changed reports</h2>
 <div class="tablewrap"><table class="index fit">
