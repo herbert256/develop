@@ -307,7 +307,7 @@ write_acc_vs_prod_pages() {
                     printf '<tr><th>%s</th></tr>\n' "${labels[$ti]}"
                 fi
                 onecol=0; [ "$t" = flowids ] && onecol=1
-                awk -F'\t' -v view="$v" -v sub2="$t" -v hasact="$hasact" -v onecol="$onecol" -v OK='&#10004;' '
+                awk -F'\t' -v view="$v" -v sub2="$t" -v hasact="$hasact" -v onecol="$onecol" -v OK='&#10004;' -v NO='&#10008;' '
                     function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
                     function isres(r) { return r == "green" || r == "orange" || r == "red" || r == "blue" }
                     function cell(env, name, slug, res,   cls, inner) {
@@ -332,9 +332,11 @@ write_acc_vs_prod_pages() {
                         sl = ""; se = ""
                         if ($4 != "") { sl = $4; se = "acceptance" }
                         else if ($7 != "") { sl = $7; se = "production" }
+                        # present = green OK sign, ABSENT = red X sign
+                        # (2026-08-30, user request — an empty cell before)
                         printf "<tr>%s<td class=\"ctr%s\">%s</td><td class=\"ctr%s\">%s</td></tr>\n", \
-                            cell(se, nm, sl, ""), ($1 != "p" ? " processed" : ""), ($1 != "p" ? OK : ""), \
-                            ($1 != "a" ? " processed" : ""), ($1 != "a" ? OK : "")
+                            cell(se, nm, sl, ""), ($1 != "p" ? " processed" : " failed"), ($1 != "p" ? OK : NO), \
+                            ($1 != "a" ? " processed" : " failed"), ($1 != "a" ? OK : NO)
                         if ($1 != "p") naA++
                         if ($1 != "a") npA++
                         n++; next }
