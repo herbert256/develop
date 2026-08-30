@@ -78,7 +78,11 @@ _home_status_block() {   # $1 = acceptance | production
 
 # ---- Logical names (2026-08-30, user request): one env's FlowIDs condensed
 # into logical flow groups, one name per group, always 3 parts. Three passes:
-# 1) GROUP — 4-part FlowIDs sharing their first 3 parts (the bare 3-part name
+# 1) GROUP — FIRST rule for 4-part FlowIDs (2026-08-30, user request): when
+#    the 3rd part is the 3rd part of TWO OR MORE 4-part FlowIDs, the 4th
+#    part drops (SI_GOUDMIJN_INSHARED_{HEMA,HEMAPOLIS,INSHARED,POLIS} ->
+#    one SI_GOUDMIJN_INSHARED). Then: 4-part FlowIDs sharing their first 3
+#    parts (the bare 3-part name
 #    joins when it exists) fold onto those 3 parts; a 3-part FlowID whose
 #    digit-tailed part, stripped (a trailing "-" trimmed with the digits),
 #    duplicates another stripped name or an existing FlowID folds onto the
@@ -131,6 +135,7 @@ _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per lin
                 n = split(name[i], P, "_")
                 if (n == 4) {
                     cnt1[P[1] "_" P[2] "_" P[3]]++
+                    cnt3rd[P[3]]++                    # 3rd parts across the 4-part FlowIDs
                     for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) cnt3[rejoin(P, n, j)]++
                 } else if (n == 3)
                     for (j = 1; j <= n; j++) { s = digitstrip(P[j])
@@ -146,7 +151,10 @@ _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per lin
                 n = split(nm, P, "_"); lg = nm
                 if (n == 4) {
                     pre = P[1] "_" P[2] "_" P[3]
-                    if (cnt1[pre] >= 2 || (pre in exists)) lg = pre
+                    # the FIRST 4-part rule: a 3rd part that is the 3rd part
+                    # of 2+ 4-part FlowIDs drops the 4th part
+                    if (cnt3rd[P[3]] >= 2) lg = pre
+                    else if (cnt1[pre] >= 2 || (pre in exists)) lg = pre
                     else for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) {
                         c = rejoin(P, n, j)
                         if (cnt3[c] >= 2 || (c in exists)) { lg = c; break } }
