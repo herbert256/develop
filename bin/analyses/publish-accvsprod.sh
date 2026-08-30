@@ -167,11 +167,16 @@ _logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per lin
                 n = split(nm, P, "_"); lg = nm
                 if (n == 4) {
                     pre = P[1] "_" P[2] "_" P[3]
-                    # the FIRST 4-part rule: a 3rd part that is the 3rd part
-                    # of 2+ 4-part FlowIDs — or of any 3-PART FlowID
-                    # (2026-08-30, the restated rule) — drops the 4th part
-                    if (cnt3rd[P[3]] >= 2 || (P[3] in third3)) lg = pre
-                    else if (cnt1[pre] >= 2 || (pre in exists)) lg = pre
+                    # the FIRST 4-part rule (2026-08-30, user precedence):
+                    # dropping the 4th part gives an EXISTING 3-part FlowID
+                    # -> that 3-part name is the logical (the
+                    # AB_SNOWFLAKE_HYPOPORT_{MORTG,PIPE,SPREAD} family joins
+                    # its bare AB_SNOWFLAKE_HYPOPORT)
+                    if (pre in exists) lg = pre
+                    # then: a 3rd part that is the 3rd part of 2+ 4-part
+                    # FlowIDs — or of any 3-PART FlowID (the restated rule)
+                    else if (cnt3rd[P[3]] >= 2 || (P[3] in third3)) lg = pre
+                    else if (cnt1[pre] >= 2) lg = pre
                     else for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) {
                         c = rejoin(P, n, j)
                         if (cnt3[c] >= 2 || (c in exists)) { lg = c; break } }
