@@ -275,11 +275,13 @@ write_config_hygiene_page() {
 }
 
 # ---- 7b. Double — one name, two roles ---------------------------------------
-# Names configured as BOTH an application and a partner (the PDA derivation
-# legitimately creates both: a relay's middle token is simultaneously the
-# internal system and the external party, or the same organisation appears as
-# the middle segment of one account name and the trailing segment of another),
-# plus the subscriptions whose config connects them to TWO partner groups.
+# Names configured as BOTH an application and a partner (the logical-based
+# PDA derivation legitimately creates both: a relay's counterparty token is
+# the middle part of one logical flow name and the last part of another —
+# the internal system of one flow IS the external party of the other),
+# plus the subscriptions whose config connects them to TWO partner groups
+# (rarer under the logical derivation — a subscription usually carries one
+# FlowID — so an empty second table is normal).
 # 2026-07: folded into the Config hygiene page (both are configuration smells);
 # emits the two Double sections to stdout, called by write_config_hygiene_page.
 emit_double_sections() {

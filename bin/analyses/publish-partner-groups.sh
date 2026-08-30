@@ -5,13 +5,15 @@
 #
 #   docs/<env>/details/partner-groups/<slug>.html
 #
-# A "group" partner (a name like GBA_TT_XXLLNC) is several partner tokens that
-# bin/flow-manager.sh's PDA pass-2 union-find combined. That step records the
-# merge EVIDENCE it used into two caches (per env):
+# A "group" partner (a name like GBA_TT_XXLLNC) is several partner tokens —
+# the LAST parts of logical flow names — that bin/flow-manager.sh's PDA
+# union-find combined (shared host / shared whitelist IP / whitelisted host
+# IP / curated alias). That step records the merge EVIDENCE it used into
+# these caches (per env):
 #   data/<env>/flow-manager/xref/_partner-groups.tsv         group / members / direction
 #   data/<env>/flow-manager/xref/_partner-group-why.tsv      group / A / B / rule / evidence line
-#   data/<env>/flow-manager/xref/_partner-group-accounts.tsv group / token / account (which
-#                                                            account NAME each partner code derives from)
+#   data/<env>/flow-manager/xref/_partner-group-accounts.tsv group / token / account (the
+#                                                            accounts behind each code's logical flows)
 # This script renders one page per group from them; the slug is the partner's
 # own detail-page slug (data/<env>/transfer/reports/details/partners/_slugmap.tsv)
 # so the group icon on the Entities Partner pages (render_rpt.awk's grpicons)
@@ -70,7 +72,7 @@ while IFS=$'\t' read -r gname members direction; do
     {
         html_head "Partner group $gname" "../../assets/style.css" "" "" "partner-groups"
         printf '<h1>Partner group <span class="mono">%s</span></h1>\n' "$gesc"
-        printf '<p class="subtitle">FlowManager configures these as separate accounts, but the grouping logic ties them to ONE partner organisation. This page shows the evidence it used. See the <a href="../../../help/partner-groups.html">help page</a> for how partner groups are formed.</p>\n'
+        printf '<p class="subtitle">FlowManager configures these as separate logical flows, but the grouping logic ties them to ONE partner organisation. This page shows the evidence it used. See the <a href="../../../help/partner-groups.html">help page</a> for how partner groups are formed.</p>\n'
 
         # KPI stat row
         printf '<div>'
@@ -79,11 +81,11 @@ while IFS=$'\t' read -r gname members direction; do
         printf '<div class="stat"><span class="stat-v">%s</span><span class="stat-l">Merge facts</span></div>' "$nfacts"
         printf '</div>\n'
 
-        # Members — each partner code beside the account NAME(s) it derives from
-        # (the code is a segment of the account name), so the derivation is clear.
+        # Members — each partner code beside the account(s) behind its logical
+        # flows, so the derivation is clear.
         printf '<h2>Member partner codes</h2>\n'
-        printf '<p class="subtitle">Each partner code is a segment of the account name(s) it was taken from &mdash; usually the last part.</p>\n'
-        printf '<div class="tablewrap"><table class="fit">\n<tr><th>Partner code</th><th>From account name(s)</th></tr>\n'
+        printf '<p class="subtitle">Each partner code is the last part of the logical flow name(s) it derives from; the accounts listed are the accounts behind those flows.</p>\n'
+        printf '<div class="tablewrap"><table class="fit">\n<tr><th>Partner code</th><th>Accounts behind the code</th></tr>\n'
         awk -F'\t' -v G="$gname" -v MEMBERS="$members" '
             function e(s){ gsub(/&/,"\\&amp;",s); gsub(/</,"\\&lt;",s); gsub(/>/,"\\&gt;",s); return s }
             $1==G { n[$2]++; if(n[$2]<=8) lst[$2]=lst[$2] (lst[$2]==""?"":", ") e($3) }
@@ -103,9 +105,10 @@ while IFS=$'\t' read -r gname members direction; do
         awk -F'\t' -v G="$gname" '
             function e(s){ gsub(/&/,"\\&amp;",s); gsub(/</,"\\&lt;",s); gsub(/>/,"\\&gt;",s); gsub(/"/,"\\&quot;",s); return s }
             function rlabel(r){
-                if(r==1) return "An outbound account dials a host whose IP an inbound partner whitelists"
-                if(r==2) return "Two inbound partners allow the same whitelist IP"
-                if(r==3) return "An outbound account\x27s host domain matches the partner name"
+                if(r==1) return "Their logical flows connect to the same configured host"
+                if(r==2) return "Their logical flows whitelist the same IP"
+                if(r==3) return "One partner\x27s host resolves to an IP the other whitelists"
+                if(r==4) return "Curated alias (input/partner-aliases.tsv)"
                 return "Rule " r }
             $1==G {
                 key=$2 SUBSEP $3 SUBSEP $4
@@ -119,7 +122,7 @@ while IFS=$'\t' read -r gname members direction; do
         ' "$WHYF"
         printf '</table></div>\n'
 
-        printf '<p class="range">Partner grouping is name-derived then merged by shared whitelist IPs and endpoint domains (see <a href="../../../help/partner-groups.html">help</a>). Back to the <a href="../partners/%s.html">%s partner page</a> or the <a href="../../transfer/entities/partner-seen.html">Partners list</a>.</p>\n' "$slug" "$gesc"
+        printf '<p class="range">Partner grouping derives from the logical flow names (the last part is the partner code), merged by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases (see <a href="../../../help/partner-groups.html">help</a>). Back to the <a href="../partners/%s.html">%s partner page</a> or the <a href="../../transfer/entities/partner-seen.html">Partners list</a>.</p>\n' "$slug" "$gesc"
         printf '</body>\n</html>\n'
     } > "$out"
     n=$((n + 1))

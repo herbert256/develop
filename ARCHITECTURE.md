@@ -213,67 +213,54 @@ capacity) · **srv-routing** "Routing & Polling" (remote-poll · transfer-site-m
 
 `bin/flow-manager.sh` is the SINGLE OWNER; downstream only joins coverage data on.
 
-*Split* (`pda_split`): the UPPER-CASED account name splits on `_` (an internal `-` stays inside a
-part); a `_`/`-` twin borrows its `_`-spelled sibling; when `_` yields 2 parts but `-` yields 3,
-`-` wins. *Then, in order*: (1) a ONE-PART name IS its partner (2026-08-29 — production names 41
-real accounts after the org directly: EUROPORT, QUION, STATER; a lone HELPER token — the union of
-the two qualifier lists, `pda_ishelper` — stays skipped — UNLESS the token is DECLARED a real
-organisation by a SINGLE-token line in `input/partner-aliases.tsv` (2026-08-29: `P2P` is the
-FINMID flows' real counterparty, so it leaves both qualifier lists everywhere: the one-part
-account `P2P` IS partner P2P and 3-part `APS_FINMID_P2P*` derives partner P2P, not the
-part-2-is-partner qualifier rule)); (2)
-strip trailing digits unless the part ends in `42` OR fewer than two characters would remain
-(`P5` stays `P5` — it must never collapse to `P`; 2026-08-29 audit fix); (3) drop fully-numeric
-parts; (4) while >3
-parts remove the first of `PWD DEST SRC CCP P2P`, then `SA IR OTHER DWH RRE PUO`; (5) at 4 parts
-drop the 4th — unless it is a known partner (`pda_known`: IPSOS/DSM/FRISS/ROTAFORM/IMPRESS), then
-keep the 4th, drop the 3rd. **Never a length rule** — short real partner codes (TT, P5, ASR) must
-survive. A one-part account contributes NO domain or application — only its subscriptions' names
-can (the fallback below).
+**THE BASE IS THE LOGICAL ENTITY** (2026-08-30, user request — this replaced the account-NAME
+derivation wholesale). The Logical derivation (FlowID families condensed to three-part group
+names, `input/logical.txt` pins honoured) runs FIRST; the PDA pass consumes its map
+(`xref/_profiles-logicals.tsv`). An unpinned Logical name has exactly three `_`-parts `D_A_P`:
 
-Then domain = part 1, application = part 2, partner = part 3; special cases: 2 parts both >5 chars
-→ BOTH partners — UNLESS the pair is a KNOWN SINGLE ORG (`pda_onepartner`, 2026-08-29:
-`SUCCESS_FACTORS` stays one partner of that name; `RABOBANK_INSURANCE`/`RABOBANK_INTEGRATION`
-keep `RABOBANK` — the second token is a descriptor, not an org); a 3rd part
-`PWD/DEST/SRC/CCP/P2P` → part 2 is application AND partner; the
-UC5–UC8 RELAYS (`rly[]`, `^UC[5678]_`) are `domain_partner_partner` — part 2 is a SECOND partner,
-no application.
+- **part 1 = the DOMAIN**, **part 2 = the APPLICATION**, **part 3 = the PARTNER token**.
+- A pinned Logical with any other part count (the monitor's `INFRA-MONITOR-UC`) contributes
+  NOTHING — no domain, no application, no partner.
+- Directions: a logical is `in` when any of its FlowIDs carries a login, `out` when any carries
+  a host; a domain/application/partner's direction is the union of its member logicals' sides
+  (`""` when none has either — the schema allows it).
 
-*Pass 2* merges partner tokens into groups (to a fixpoint) when: an Out account's host IP is
-whitelisted for an In account; In accounts share a whitelist IP; an Out host's second-level domain
-equals a group; or (rule 4, 2026-08-29) the pair is in the HAND-CURATED alias map
-`input/partner-aliases.tsv` (COMMITTED; token⇥token = one organisation — EVILLAGE/DEPLOYTEQ,
-ERNSTYOUNG/EY, SAPSF/SUCCESSF/SUCCESS_FACTORS, the SCHUBERGPHILIS variants; an alias whose token the estate never derived
-no-ops). The subscription-name fallback retries an unresolved partner token through the same
-aliases. Group name = member tokens sorted A–Z `_`-joined — UNLESS every member has a direct
-alias pair with ONE token (an alias STAR; a member equal to the token needs no pair), then the
-group takes that token as its name (2026-08-29: the SCHUBERGPHILIS variants all alias member
-SCHUBERGPHILIS; the Peko groups' members all alias RABOBANK_PEKO, a pure NAME the estate never
-derives — an alias to an underived token merges nothing, so such rows only name). A group with
-any member outside the star keeps the joined name; candidates are scanned sorted, so a tie is
-deterministic. Direction = union of member sides. Evidence → `_partner-group-*.tsv`, rendered under `docs/<env>/details/partner-groups/`.
-**A SUBSCRIPTION-LESS partner is PRUNED** (2026-08-29): a partner whose accounts carry no
-subscription (config residue — an account with no flows) is dropped from the base list, every
-canonical pair cache and the group evidence before the mirror loop; the keep-list is
-`_subscriptions-partners.tsv`, so a partner with any flow stays.
-`_accounts-partners.tsv` maps account → group(s); `_hosts-partners.tsv` maps configured host →
-its Out account's group.
+*Partner merge* (union-find over the part-3 tokens; each firing records an evidence edge for the
+partner-group "why" pages):
 
-**The SUBSCRIPTION-NAME FALLBACK** (2026-08-29): a subscription whose ACCOUNT yields no
-domain/application/partner still carries the triple in its OWN `UCx_<domain>_<application>_
-<partner>` name. flow-manager derives the missing links from the UC-stripped name with the same
-pda cleanup (domain = part 1 at 2+ parts; application = part 2 at 3+ parts, never for a UC5–8
-relay; partner = the pda partner token, connected ONLY when it resolves to an EXISTING partner —
-an exact base name or a merged group's member token: the fallback fills links, it never invents
-organisations). New domain/application names ARE appended to their base lists (that namespace is
-name-derived by design), direction = the union of the contributing subscriptions' sides. It runs
-before the mirror loop, so the `_X-subscriptions` twins carry the added pairs.
+1. **Same host** — two tokens' logical flows connect to the same configured host.
+2. **Shared whitelist IP** — their logical flows whitelist the same IP.
+3. **Whitelisted host IP** — one token's host resolves (via the forward-DNS map, or a raw-IP
+   endpoint verbatim) to an IP another token's logical flows whitelist.
+4. **Curated alias** — a pair in `input/partner-aliases.tsv` (`variant⇥CANONICAL`).
 
-Applications and domains share ONE namespace: Total counts UNIQUE names; coverage merges a
-both-ways name into one "In + Out" row. `bin/analyses/lib.sh` materializes
-`data/<env>/transfer/reports/coverage/{partners,applications,domains}.tsv` (`ensure_pda_tsvs` —
-why `entity-search.sh` runs after `home.sh`).
+No fixpoint loop: no rule reads group state, and union-find keeps every merge transitive. The
+group NAME is the sorted member tokens joined with `_` — unless the alias STAR names it: when
+every member has a direct alias pair with ONE candidate token, that token wins, and a candidate
+appearing on the RIGHT side of a pair outranks the rest (`WONKA` beats its variant `WNK`);
+sorted order breaks remaining ties. Multi-member groups are recorded in
+`xref/_partner-groups.tsv` (name/members/direction), `_partner-group-why.tsv`
+(group/tokenA/tokenB/rule 1-4/evidence sentence) and `_partner-group-accounts.tsv`
+(group/token/the accounts behind the token's logical flows) — the partner-groups pages render
+them (`bin/analyses/publish-partner-groups.sh`).
 
+*Composition*: every partner/app/domain pair cache is COMPOSED through the FlowID — the pass
+emits `_profiles-{partners,apps,domains}` (FlowID → value) and `_logicals-{partners,apps,domains}`
+plus the within-logical pairs (`_partners-apps`, `_partners-domains`, `_apps-domains`), and
+`xcompose` joins the entity→profile pairs with those maps into
+`_{accounts,subscriptions,logins,hosts}-{partners,apps,domains}` and `_{partners,apps,domains}-white`.
+A multi-flow account can map to several partners/applications (the relay case) — the parse's
+two-group abstain and the site-wide union attribution handle it exactly as before.
+
+*Retired machinery* (2026-08-30): the three `pda_split` copies and every name rule, the
+subscription-name fallback (`ptn_resolve`), the transitive `sjoin` pairs (exact by construction
+now — everything joins through the FlowID) and the subscription-less-partner prune (vacuous:
+every partner descends from a subscription's FlowID by construction). The single-token
+"real organisation" lines in `input/partner-aliases.tsv` are tolerated but inert.
+
+Applications and domains share ONE name space with the same machinery: base lists
+`_apps.tsv`/`_domains.tsv`, the coverage TSVs `coverage/{partners,applications,domains}.tsv`
+(`ensure_pda_tsvs` in `bin/analyses/lib.sh`) and the per-member coverage cell pages.
 ## bin/dashboards/ — the Overview
 
 `reports.sh` writes the page-spec `overview.rpt` (KPI + CARD/CARDALT + TOP lines); `publish.sh`

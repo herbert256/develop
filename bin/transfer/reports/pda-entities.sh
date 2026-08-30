@@ -50,11 +50,11 @@ for dim in logical partner application domain; do
         logical)     col=13; title="Logical";      chead="Logical"; nkind=lgc
                      attr="the file's logical flow group (its FlowID condensed to a 3-part group name — data/flow-manager/base/_logicals.tsv)" ;;
         partner)     col=20; title="Partners";     chead="Partner"; nkind=ptn
-                     attr="the file's partner organisation (its endpoint, or its account's whitelist cluster — data/flow-manager/base/_partners.tsv)" ;;
+                     attr="the file's partner organisation (part 3 of its logical flow name, merged into organisations — data/flow-manager/base/_partners.tsv)" ;;
         application) col=18; title="Applications"; chead="Application"; nkind=app
-                     attr="the application segment of the file's account name (data/flow-manager/base/_apps.tsv)" ;;
+                     attr="part 2 of the file's logical flow name (data/flow-manager/base/_apps.tsv)" ;;
         domain)      col=19; title="Domains";      chead="Domain"; nkind=dom
-                     attr="the domain segment of the file's account name (data/flow-manager/base/_domains.tsv)" ;;
+                     attr="part 1 of the file's logical flow name (data/flow-manager/base/_domains.tsv)" ;;
     esac
     OUT="$REPORTS_DIR/$dim.rpt"
 
@@ -158,7 +158,7 @@ for dim in logical partner application domain; do
     {
         printf 'TITLE\t%s\n' "$title"
         printf 'DESC\tFiles per %s: a summary and a per-day detail, both split into Error/OK.\n' "$dim"
-        src="derived from the account names (and, for partners, the endpoint/whitelist merge)"
+        src="derived from the logical flow names (and, for partners, the endpoint/whitelist/alias merge)"
         [ "$dim" = logical ] && src="derived from the FlowIDs, condensed into logical flow groups"
         printf 'INTRO\tEvery %s with its **Files** (one per CoreId), Error/OK split, volume and last sighting — %s. The view tabs switch between logged (**Seen**), configured (**All** / **Not seen**), the status subsets (**OK** / **Warning** / **Error**) and the server-log-only ones (**Server**); the scope tabs decide whether a server-log sighting counts as seen (**+Server**, the default) or not (**Transfer**) — rows tint by each %s'\''s status.\n' "$dim" "$src" "$dim"
 

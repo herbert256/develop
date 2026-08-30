@@ -1215,8 +1215,9 @@ mv "$ttmp" "$FILES"
 # direction of the file's subscription (col 12) from _subscriptions-flowdir
 # ("out" = the file leaves us, "in" = it enters us; a relay or unmapped
 # subscription stays blank) — the two diverge on pull flows (UC2: connection
-# in, movement out; UC3: connection out, movement in); app/domain = the
-# account name's segments (the xref caches), partner = the file's remote host
+# in, movement out; UC3: connection out, movement in); app/domain = parts
+# 2/1 of the logical flow name (the xref caches, joined via the FlowID),
+# partner = the file's remote host
 # (col 15) resolved through _hosts-partners.tsv to its partner ORGANISATION —
 # an In file's host is the partner's connecting address, never a configured
 # endpoint, so it falls back to the account's partner org (kept only when
@@ -1341,15 +1342,16 @@ col  name       rule
                 leaves us; target_working_dir -> "in": it enters us): "in",
                 "out", or "" (relay subscription, or no/unmapped subscription).
                 Diverges from connection on pull flows (UC2 in/out, UC3 out/in).
- 18  app        the application segment of the account name (token 2 of
-                <domain>-<application>-<partner>); when the account name
-                yields none, the file's SUBSCRIPTION name can (the flow-manager
-                fallback map, unambiguous only); "" when neither does
- 19  domain     the domain segment (token 1), with the same subscription-name
-                fallback; "" when neither name has one
- 20  partner    the partner ORGANISATION (as named in data/flow-manager/base/
-                _partners.tsv): the file's host resolved via the configured
-                endpoints, else the account's unambiguous partner org; "" else
+ 18  app        the file's APPLICATION — part 2 of its logical flow name
+                (domain_application_partner), joined via the account's
+                FlowIDs; when the account map yields none, the SUBSCRIPTION
+                map can (unambiguous only); "" when neither does
+ 19  domain     the DOMAIN — part 1 of the logical flow name, with the same
+                subscription fallback; "" when neither map has one
+ 20  partner    the partner ORGANISATION (part 3 of the logical flow name,
+                merged — as named in data/flow-manager/base/_partners.tsv):
+                the file's host resolved via the configured endpoints, else
+                the account's unambiguous partner org; "" else
  21  wait_ms    UC2 pickup wait, in ms: the gap between the staging leg ending
                 (the last Inbound routing row's start + duration) and the FIRST
                 collect leg starting — the time the file sat staged waiting for

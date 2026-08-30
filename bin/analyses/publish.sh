@@ -208,11 +208,11 @@ render_coverage_pages() {
             if [ "$member" = logicals ]; then
                 printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the logical flows counted in this cell of the Logical row (Logical, Partners, Domains &amp; Applications table). A logical flow is a FlowID family condensed to one three-part name (a hyphen marks parts the derivation combined); its members are the configured subscriptions that carry those FlowIDs.</p>\n'
             elif [ "$member" = partners ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the partners counted in this cell of the Partners row (Logical, Partners, Domains &amp; Applications table). An In partner is a whitelist-derived cluster of accounts; an Out partner is named from its accounts&rsquo; partner segment and covers its configured endpoint(s), listed as members.</p>\n'
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the partners counted in this cell of the Partners row (Logical, Partners, Domains &amp; Applications table). A partner is the last part of the logical flow names (domain_application_partner), merged into one organisation by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases; its configured endpoint(s) and member accounts are listed.</p>\n'
             elif [ "$member" = applications ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the applications counted in this cell of the Applications row (Logical, Partners, Domains &amp; Applications table). An application is the middle segment of the account naming convention (domain-application-partner), so this list is name-derived; an application active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the applications counted in this cell of the Applications row (Logical, Partners, Domains &amp; Applications table). An application is the middle part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; an application active in both directions counts once per side.</p>\n'
             elif [ "$member" = domains ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the business domains counted in this cell of the Domains row (Logical, Partners, Domains &amp; Applications table). The domain is the first segment of the account naming convention (domain-application-partner), so this list is name-derived; a domain active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the business domains counted in this cell of the Domains row (Logical, Partners, Domains &amp; Applications table). The domain is the first part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; a domain active in both directions counts once per side.</p>\n'
             else
                 printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the items counted in this cell of the Entities table.</p>\n'
             fi
@@ -1136,38 +1136,38 @@ write_accounts_page() {
     IFS=$'\t' read -r _ nm_ok nm_bad nm_none <<< "$(printf '%s\n' "$nm_rows" | grep '^#')"
     nm_rows=$(printf '%s\n' "$nm_rows" | grep -v '^#' || true)
 
-    # ---- PDA completeness: an account name is meant to read
-    # domain / application / partner. Rather than re-deriving that here, ask the
-    # DERIVATION what it managed to assign — the three xref caches
-    # bin/flow-manager.sh writes. An account missing any of the three could not
-    # be resolved cleanly, and the part count says why (1 part = nothing to
-    # split, 2 = no room for all three, 4+ = an extra token forces a choice).
+    # ---- PDA completeness: an account is meant to be connected to a LOGICAL
+    # flow, whose three-part name D_A_P is where the domain / application /
+    # partner come from (the 2026-08-30 logical-based derivation). Rather than
+    # re-deriving that here, ask the DERIVATION what it managed to assign — the
+    # three xref caches bin/flow-manager.sh composes through the FlowID. The
+    # why is binary: no FlowID at all (no subscription of the account carries
+    # one), or a FlowID whose logical is a pinned short name (input/logical.txt
+    # — no domain/application/partner slots).
     local pda_rows pda_bad
     pda_rows=$(awk -F'\t' '
         FILENAME ~ /-domains/  { D[toupper($1)] = $2; next }
         FILENAME ~ /-apps/     { A[toupper($1)] = $2; next }
         FILENAME ~ /-partners/ { P[toupper($1)] = $2; next }
+        FILENAME ~ /_accounts-profiles/ { F[toupper($1)] = 1; next }
         $1 != "#" && $1 != "" {
             k = toupper($1)
             if ((k in D) && (k in A) && (k in P)) { ok++; next }
-            nu = split($1, u, "_"); nd = split($1, d, "-")
-            n = (nu > 1 && nu >= nd) ? nu : ((nd > 1) ? nd : 1)
             miss = ""
             if (!(k in D)) miss = miss "domain, "
             if (!(k in A)) miss = miss "application, "
             if (!(k in P)) miss = miss "partner, "
             sub(/, $/, "", miss)
-            why = (n == 1) ? "a single token — nothing to split" \
-                : (n == 2) ? "only two parts — one of the three has no slot" \
-                : (n >= 4) ? sprintf("%d parts — the extra token forces a choice", n) \
-                : "three parts, but one is not a recognised value"
-            printf "%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", $1, n, \
+            why = (k in F) ? "its logical flow has a pinned short name — no domain/application/partner parts" \
+                : "not connected to any logical flow (no subscription of this account carries a FlowID)"
+            printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", $1, \
                    (k in D ? D[k] : ""), (k in A ? A[k] : ""), (k in P ? P[k] : ""), miss, why, $3
             bad++
         }
         END { printf "#\t%d\t%d\n", ok+0, bad+0 }' \
         "$DATA/flow-manager/xref/_accounts-domains.tsv" "$DATA/flow-manager/xref/_accounts-apps.tsv" \
-        "$DATA/flow-manager/xref/_accounts-partners.tsv" "$DATA/flow-manager/base/_accounts.tsv")
+        "$DATA/flow-manager/xref/_accounts-partners.tsv" "$DATA/flow-manager/xref/_accounts-profiles.tsv" \
+        "$DATA/flow-manager/base/_accounts.tsv")
     local pda_ok
     IFS=$'\t' read -r _ pda_ok pda_bad <<< "$(printf '%s\n' "$pda_rows" | grep '^#')"
     pda_rows=$(printf '%s\n' "$pda_rows" | grep -v '^#' || true)
@@ -1322,7 +1322,7 @@ write_accounts_page() {
             printf '<p class="range">No inconsistencies &mdash; every profile&rsquo;s auth suffix matches its configured authentication.</p>\n'
         fi
         printf '<h2>Breaking naming rules (%s)</h2>\n' "$(dotify "${nm_bad:-0}")"
-        printf '<p class="range">An <strong>incoming</strong> account (the partner connects to us) separates its name parts with <code>-</code>; an <strong>outgoing</strong> one (we connect to the partner) uses <code>_</code>. The same flow configured both ways therefore appears twice, once in each spelling &mdash; <code>DPL-AXINI-AO-IMPRESS</code> inbound and <code>DPL_AXINI-AO_IMPRESS</code> outbound. The separator is read the way the partner derivation reads it: <code>_</code> wins unless splitting on <code>-</code> yields more parts, so an internal hyphen inside one part (<code>AIM-FIN_TREASURY-SP</code>) is not mistaken for the separator.</p>\n'
+        printf '<p class="range">An <strong>incoming</strong> account (the partner connects to us) separates its name parts with <code>-</code>; an <strong>outgoing</strong> one (we connect to the partner) uses <code>_</code>. The same flow configured both ways therefore appears twice, once in each spelling &mdash; <code>DPL-AXINI-AO-IMPRESS</code> inbound and <code>DPL_AXINI-AO_IMPRESS</code> outbound. The separator is read <code>_</code>-primary: <code>_</code> wins unless splitting on <code>-</code> yields more parts, so an internal hyphen inside one part (<code>AIM-FIN_TREASURY-SP</code>) is not mistaken for the separator. (A NAMING audit only &mdash; since the logical-based derivation the partner/domain/application entities no longer come from account names.)</p>\n'
         if [ "${nm_bad:-0}" -gt 0 ]; then
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Direction</th><th>Separator used</th><th>Expected</th></tr>\n'
             printf '%s\n' "$nm_rows" | tr '\t' '\037' | while IFS=$'\037' read -r nm dir prim want res; do
@@ -1339,18 +1339,18 @@ write_accounts_page() {
             printf '<p class="range">No breaks &mdash; all %s directional accounts follow the rule.</p>\n' "$(dotify "${nm_ok:-0}")"
         fi
         printf '<h2>Not clear domain-application-partner (%s)</h2>\n' "$(dotify "${pda_bad:-0}")"
-        printf '<p class="range">An account name is meant to read <strong>domain / application / partner</strong> &mdash; <code>ODV_MAIA_AKZO</code> is domain <code>ODV</code>, application <code>MAIA</code>, partner <code>AKZO</code>. These accounts could not be resolved into all three. The check does not re-read the names: it asks the derivation itself what it managed to assign, so a blank column is a value the rest of the site genuinely does not have for that account.</p>\n'
+        printf '<p class="range">An account is meant to be connected to a <strong>logical flow</strong>, whose three-part name reads <strong>domain_application_partner</strong> &mdash; <code>ODV_MAIA_AKZO</code> is domain <code>ODV</code>, application <code>MAIA</code>, partner <code>AKZO</code>. These accounts could not be resolved into all three. The check does not re-read any names: it asks the derivation itself what it managed to assign, so a blank column is a value the rest of the site genuinely does not have for that account.</p>\n'
         if [ "${pda_bad:-0}" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th class="num">Parts</th><th>Domain</th><th>Application</th><th>Partner</th><th>Missing</th><th>Why</th></tr>\n'
+            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Domain</th><th>Application</th><th>Partner</th><th>Missing</th><th>Why</th></tr>\n'
             # \037, not TAB: a TAB is IFS whitespace, so consecutive empty
             # fields (a missing domain/application/partner is exactly that)
             # collapse on read and shift every later column.
-            printf '%s\n' "$pda_rows" | tr '\t' '\037' | while IFS=$'\037' read -r nm np dm ap pt miss why res; do
+            printf '%s\n' "$pda_rows" | tr '\t' '\037' | while IFS=$'\037' read -r nm dm ap pt miss why res; do
                 [ -n "$nm" ] || continue
                 esc "$nm"; nme=$ESC; esc "$dm"; dme=$ESC; esc "$ap"; ape=$ESC; esc "$pt"; pte=$ESC
                 esc "$miss"; mse=$ESC; esc "$why"; whe=$ESC
-                printf '<tr data-res="%s"><td><code>%s</code></td><td class="num">%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n' \
-                    "${res:-orange}" "$nme" "$np" "${dme:-&mdash;}" "${ape:-&mdash;}" "${pte:-&mdash;}" "$mse" "$whe"
+                printf '<tr data-res="%s"><td><code>%s</code></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n' \
+                    "${res:-orange}" "$nme" "${dme:-&mdash;}" "${ape:-&mdash;}" "${pte:-&mdash;}" "$mse" "$whe"
             done
             printf '</table></div>\n'
             printf '<p class="range">%s of %s accounts resolve to all three. A gap is not a fault &mdash; the flow works either way &mdash; but the account is then absent from that entity&rsquo;s Files, coverage and cross-reference figures, so a partner can look quieter than it is.</p>\n' \

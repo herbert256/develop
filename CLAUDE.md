@@ -201,10 +201,14 @@ Nothing downstream reads the JSONs directly (except `publish-insights.sh`); ever
 `ensure_config`. Transfer's `ensure_parsed` watches the **xref** cache mtimes only — deliberately
 not base/, whose result column is recolored AFTER the parse. `flow-manager.sh` early-exits when
 every cache is newer than the exports and itself; a missing cache degrades to an empty list.
-**PDA derivation** (partners/domains/applications from the account names) is owned here too — the
-split/merge rules are in ARCHITECTURE.md; never introduce a length rule — and so is the
-**Logical derivation** (FlowID families → three-part group names; a `-` inside a part marks
-parts the derivation combined, which is why Logical names are never separator-folded). The coverage TSVs
+**PDA derivation** is owned here too and is LOGICAL-BASED (2026-08-30, user request): the
+three-part Logical name `D_A_P` gives part 1 = domain, part 2 = application, part 3 = partner
+token; partner tokens merge (same host / shared whitelist IP / whitelisted host IP / curated
+alias — details in ARCHITECTURE.md), and every partner/app/domain pair cache is composed
+through the FlowID. The account-name split machinery, the subscription-name fallback and the
+prune are RETIRED. So is the **Logical derivation** itself (FlowID families → three-part group
+names; a `-` inside a part marks parts the derivation combined, which is why Logical names are
+never separator-folded) — it runs FIRST, the PDA pass consumes it. The coverage TSVs
 `data/<env>/transfer/reports/coverage/*.tsv` are the materialized product (`ensure_pda_tsvs`).
 
 ### bin/dashboards/ and bin/day/
@@ -488,7 +492,7 @@ CoreIds (`login.sh`/`subscription.sh`/`remote-host.sh` join `$PARSED`→`$FILES`
 by abstention). **APPLICATION = the same union via the ACCOUNT** (col 3 on
 `xref/_accounts-apps.tsv` ∪ col 18). Applied in EVERY partner/application-counting consumer
 (`details_lib.sh` carries the shared `SP_MAP`/`AP_MAP`). Domains stay single-valued (part 1 of
-the name).
+the logical flow name — parse col 19 keeps one).
 
 ### Server parse — _parse.tsv
 
@@ -859,7 +863,8 @@ THIS repo committed IN FULL, sample CSVs included (the whole estate is synthetic
 `bin/sample/generate.sh` rewrites it). `input/` holds the flow-manager JSONs, the `ip/` and
 `renames/` maps, the `.sample-estate` marker + `.sample/` spec, the two policy files
 `input/{blacklist,skip}.txt`, the hand-curated `input/partner-aliases.tsv` (partner tokens
-naming one organisation — flow-manager's merge rule 4 + the subscription-name fallback retry)
+naming one organisation — flow-manager's merge rule 4, `variant⇥CANONICAL`; the right side
+also names the merged group via the alias star)
 and `input/rename.txt` (DISPLAY renames, applied to the rendered pages by the build's last
 step — see the manual re-publish gotcha) and `input/logical.txt` (fixed FlowID → Logical
 transforms feeding the Logical entity derivation — owned by `bin/flow-manager.sh` since Logical

@@ -246,7 +246,7 @@ external_partners_tsv() {
 # Internal-application figures for the root index's one-row "Internal
 # Applications" table — the same shape and machinery as External Partners.
 # The application names come from bin/flow-manager.sh's _accounts-apps.tsv cache
-# (the MIDDLE segment of <domain>-<application>-<partner> account names);
+# (the MIDDLE part of the three-part logical flow names, joined via the account);
 # this only joins the coverage TSV onto it. One row per (application,
 # direction) into $COVSRC/applications.tsv — the partner coverage shape with
 # an empty whitelist column — aggregating that direction's accounts: seen
@@ -320,8 +320,8 @@ internal_apps_tsv() {
 }
 
 # Internal-domain figures for the root index's one-row "Internal Domains"
-# table — External Partners' shape again, one level up the naming convention:
-# the domain (the FIRST token of <domain>-<application>-<partner>) comes from
+# table — External Partners' shape again, one level up:
+# the domain (the FIRST part of the three-part logical flow name) comes from
 # bin/flow-manager.sh's _accounts-domains.tsv cache. One row per (domain,
 # direction) into $COVSRC/domains.tsv, the applications.tsv shape exactly.
 internal_domains_tsv() {
