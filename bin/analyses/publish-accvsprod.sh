@@ -147,27 +147,24 @@ write_acc_vs_prod_pages() {
         fi
         local hasact=0; { [ -n "$ar" ] || [ -n "$pr" ]; } && hasact=1
         local noslug=0; case $t in whitelist) noslug=1 ;; esac
-        # _/- SEPARATOR FOLD (2026-08-29, user decision — THIS report family
-        # only; site-wide the separator stays an identity): the two envs
-        # spell one flow's name with _ or - interchangeably, so the cross-env
-        # match folds - onto _ (on top of the case fold) and every name
-        # DISPLAYS in the _ spelling; links keep each env's own raw slug.
-        # NOT for hosts (DNS names — the hyphen is the real character),
-        # whitelist (IP addresses) or logicals (the hyphen marks parts the
-        # derivation combined — folding it would undo the 3-part shape).
-        local fold=1; case $t in hosts|whitelist|logicals) fold=0 ;; esac
-        # one line per name (case- and separator-folded): cls a|b|p, KEY,
+        # the _/- SEPARATOR FOLD was REMOVED (2026-08-31, user request):
+        # names match on the REAL spelling (case aside, the site-wide rule)
+        # and display verbatim — _ and - are different names again, so a
+        # cross-env spelling difference shows as two Only-rows instead of
+        # one matched row.
+        local fold=0
+        # one line per name (case-folded key, real spelling kept): cls a|b|p, KEY,
         # acceptance name/slug/result, production name/slug/result, then the
         # activity columns: acceptance files/volume, production files/volume
         awk -v OFS='\t' -v AM="$am" -v PM="$pm" -v AB="$ab" -v PB="$pb" -v NOSLUG="$noslug" -v AR="$ar" -v PR="$pr" -v FOLD="$fold" '
-            function sepfold(v) { if (FOLD) gsub(/-/, "_", v); return v }   # the DISPLAY spelling: every - shown as _
-            function nkey(v) { return toupper(sepfold(v)) }                # the MATCH key: case + separator folded
+            function sepfold(v) { if (FOLD) gsub(/-/, "_", v); return v }   # identity since 2026-08-31 (fold=0 always): the REAL spelling
+            function nkey(v) { return toupper(sepfold(v)) }                # the MATCH key: case folded only
             function padkey(v,   o) {   # IPv4 -> zero-padded octets (address order); else UPPER
                 if (v ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/) { split(v, o, "."); return sprintf("%03d%03d%03d%03d", o[1], o[2], o[3], o[4]) }
                 return toupper(v)
             }
-            # the NOSLUG key: padkey for the whitelist (FOLD=0 — addresses),
-            # nkey otherwise (the same fold the linked types use)
+            # the NOSLUG key: padkey for the whitelist (addresses sort in
+            # address order); nkey otherwise
             function lkey(v) { return FOLD ? nkey(v) : padkey(v) }
             function load(map, f,   l, a) { if (f == "") return
                 while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") map[nkey(a[1])] = a[1] "\t" a[2] }
@@ -213,7 +210,7 @@ write_acc_vs_prod_pages() {
                     # 2026-08-30, when the colors left the family — plain
                     # key order now, which for the whitelist is address order)
                     sk = k
-                    # display in the _ spelling (sepfold; raw for hosts/IPs);
+                    # display in the REAL spelling;
                     # the slugs stay each env raw ones, so links keep working.
                     # Activity is keyed on the SAME folded key as the maps.
                     print cls, sk, sepfold(na), ns, RA[k], sepfold(pn), ps, RP[k], (k in AF ? AF[k] : ""), AV[k], (k in PF ? PF[k] : ""), PV[k]
@@ -276,7 +273,6 @@ write_acc_vs_prod_pages() {
                 html_head "Acceptance vs production" "../assets/style.css" "" "ANALYSES" "acc-vs-prod"
                 printf '<h1>Acceptance vs production</h1>\n'
                 local foldnote=""
-                [ "$fold" = 1 ] && foldnote=" The <code>_</code> and <code>-</code> separators are treated as the same character: names are matched across the environments ignoring the difference and are all shown in the <code>_</code> spelling (each link still opens that environment's own page)."
                 # The button rows go DIRECTLY under the <h1>, above the prose —
                 # navigation first, everywhere on the site (see the group tab
                 # bar rule in CLAUDE.md). This family carries its own type/view
@@ -441,7 +437,7 @@ write_acc_vs_prod_pages() {
 
 # ---- Subscriptions vs partners (acc-vs-prod-subs-partners.html, 2026-08-29):
 # the subscriptions present in BOTH environments (matched like the rest of
-# the family: case + separator folded) whose PARTNER sets differ between
+# the family: case folded, real spellings since 2026-08-31) whose PARTNER sets differ between
 # the environments, with each environment's own partner(s) and account(s).
 # Sets compare on the folded partner names; every name links its own
 # environment's detail page. The audit's finding 6 context: a differing
@@ -469,14 +465,14 @@ write_subs_partners_page() {
         -v PPS="data/production/transfer/reports/details/partners/_slugmap.tsv" \
         -v AAS="data/acceptance/transfer/reports/details/accounts/_slugmap.tsv" \
         -v PAS="data/production/transfer/reports/details/accounts/_slugmap.tsv" '
-        function sepfold(v) { gsub(/-/, "_", v); return v }
-        function nkey(v) { return toupper(sepfold(v)) }
+        function sepfold(v) { return v }   # the _/- fold was REMOVED 2026-08-31: real spellings
+        function nkey(v) { return toupper(v) }   # the MATCH key: case folded only
         function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
         function loadmap(map, f,   l, a) { if (f == "") return
             while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") map[nkey(a[1])] = a[1] "\t" a[2] }
             close(f) }
-        # subscription -> value pairs: per folded subscription key the DISTINCT
-        # values (folded), display names kept in first-seen spelling
+        # subscription -> value pairs: per case-folded subscription key the
+        # DISTINCT values, display names kept in first-seen spelling
         function loadpairs(names, keys, dup, f,   l, a, sk, vk) { if (f == "") return
             while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] == "" || a[2] == "") continue
                 sk = nkey(a[1]); vk = nkey(a[2])
