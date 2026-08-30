@@ -23,8 +23,9 @@ is where every change happens and holds ONLY the **SAMPLE ESTATE**: synthetic in
 covers every planted scenario. **runtime** is the operational twin with the REAL exports —
 **never read, edit or build it from an AI session**; it has no CLAUDE.md by design. Code flows
 one way via `bin/runtime.sh <path-to-runtime>` (syncs `bin/` + `assets/` + `.gitattributes`,
-removes CLAUDE/ARCHITECTURE there, runs its `bin/fresh.sh`); the sync carries the script into
-runtime's `bin/` too, where its self-target and marker guards make it inert. The committed `input/.sample-estate` marker
+removes CLAUDE/ARCHITECTURE there, runs its `bin/fresh.sh`); the sync EXCLUDES the develop-only
+tooling — `bin/runtime.sh` itself and `bin/sample/` — and deletes stale copies of them in the
+target, so runtime's `bin/` carries pipeline code only. The committed `input/.sample-estate` marker
 gates the generator — absent in runtime, so it can never clobber real exports. Local preview:
 develop at `http://localhost/develop/`, runtime at `http://localhost/runtime/`.
 

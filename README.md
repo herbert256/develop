@@ -23,8 +23,9 @@ the runtime checkout and then runs that checkout's `bin/fresh.sh`, rebuilding
 the runtime site from its own real data. It never touches `input/`, and the
 committed `input/.sample-estate` marker (checked by `bin/sample/generate.sh`,
 absent in runtime by construction) makes it impossible for the generator to
-overwrite real exports. The sync carries the script itself into runtime's
-`bin/`, where its own guards (self-target, sample-marker) make it inert.
+overwrite real exports. The sync EXCLUDES the develop-only tooling —
+`bin/runtime.sh` itself and `bin/sample/` — and removes any copy an earlier
+refresh left behind, so runtime's `bin/` carries pipeline code only.
 
 ## What it publishes
 

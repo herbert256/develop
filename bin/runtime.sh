@@ -16,10 +16,10 @@
 #
 # NEVER synced: input/ (the runtime repo's REAL, irreplaceable exports and
 # its own policy files — develop's are sample-flavoured), README.md,
-# .gitignore (runtime keeps ignoring its *.csv bulk), data/, docs/, build/.
-# Living in bin/, this script IS synced to runtime — harmless there: the
-# self-target and sample-marker guards below refuse every misuse, and running
-# it only makes sense from the develop checkout.
+# .gitignore (runtime keeps ignoring its *.csv bulk), data/, docs/, build/ —
+# and, inside bin/, THIS SCRIPT and bin/sample/ (develop-only tooling: the
+# sync excludes them, and --delete-excluded removes any copy an earlier
+# refresh left in the runtime checkout).
 # No git operations either way: committing in runtime stays manual.
 #
 set -euo pipefail
@@ -51,7 +51,11 @@ if [ -d "$RT/data/.buildlock" ]; then
 fi
 
 echo "runtime.sh: syncing bin/ and assets/ -> $RT ..." >&2
-rsync -a --delete --exclude=.DS_Store "$DEV/bin/" "$RT/bin/"
+# /runtime.sh and /sample/ are anchored to the bin/ transfer root; the
+# --delete-excluded also REMOVES them from the target when a prior refresh
+# copied them there
+rsync -a --delete --delete-excluded --exclude=.DS_Store \
+      --exclude=/runtime.sh --exclude=/sample/ "$DEV/bin/" "$RT/bin/"
 rsync -a --delete --exclude=.DS_Store "$DEV/assets/" "$RT/assets/"
 cp "$DEV/.gitattributes" "$RT/.gitattributes"
 
