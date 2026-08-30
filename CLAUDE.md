@@ -245,7 +245,9 @@ it automatically — see below) · `nosort` · `sxs`
 noun) · `seenmode=all|seen|notseen` · `seenword=` (the Show-Seen intro noun) · `heat` (hour ×
 weekday heatmap, re-tinted by quartile on a date change) · `pct=` (per-column % recompute spec) ·
 `gsep=` (0-based columns that start a column group — pairs with `GHEAD`) · `pager=N` (client-side
-pagination) · `topsel=N` (top-N re-select: the rows are the full candidate set — per qualifying
+pagination) · `zerohide=M` (on a NARROWED range, hide a data row whose re-aggregated bucket
+metric M sums to 0 — a "Recovered 0" row says nothing; the full-range restore brings it back;
+the recovered-files tables) · `topsel=N` (top-N re-select: the rows are the full candidate set — per qualifying
 date its own top N, value-descending, each row `@data:date` + `@data:val`, rows past the global
 top N baked `@data:dhide=1` — and report.js re-picks the visible N for the selected range) ·
 `period=` (the date period the table aggregates, appended to the `<h2>` as a muted span;

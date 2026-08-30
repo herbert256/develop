@@ -446,6 +446,8 @@
       return;
     }
     var drows = dataRows(table), aggs = [];
+    var zh = table.getAttribute("data-zerohide");
+    zh = zh == null || zh === "" ? null : +zh;
     drows.forEach(function (r, x) { aggs[x] = aggBuckets(r.getAttribute("data-buckets"), lo, hi); });
     drows.forEach(function (r, x) {
       // A seenrows row (data-seen INSIDE a data-seenrows table — the detail
@@ -457,7 +459,12 @@
         r.setAttribute("data-seen", aggs[x].days > 0 ? "1" : "0");
         r.setAttribute("data-dhide", "0");
       } else {
-        r.setAttribute("data-dhide", aggs[x].days > 0 ? "0" : "1");
+        var hide = !(aggs[x].days > 0);
+        // zerohide=<m>: a row whose metric <m> re-sums to 0 over the range
+        // says nothing on this page ("Recovered 0") — hide it like a row the
+        // range left without days; the full-range restore brings it back
+        if (!hide && zh !== null && !(aggs[x].sum[zh] > 0)) hide = true;
+        r.setAttribute("data-dhide", hide ? "1" : "0");
       }
       applyRowVis(r);
     });

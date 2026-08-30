@@ -119,7 +119,7 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     printf 'STAT\twhite\t%s\tProtocols\t@data:tok=uniq\t@data:sb=%s\n' "$nprot" "$sbp"
     printf 'STAT\twhite\t%s\tDays\t@data:tok=sum\t@data:sb=%s\n' "$ndays" "$sbd"
 
-    printf 'TABLE\tPer subscription\tkeephead\n'
+    printf 'TABLE\tPer subscription\tkeephead\tzerohide=0\n'
     printf 'HEAD\tSubscription\tRecovered\tFiles\tRecovered %%\n'
     printf 'KIND\tsite\tnumwarn\tnum\tnum\n'
     printf 'RECALC\t-\ts0\ts1\tp0.1\n'
@@ -128,7 +128,7 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     printf 'TOTAL\tTotal\t@{class=num warn}%s\t@{class=num}%s\t@{class=num}%s%%\n' "$tR" "$sFC" "$sshare"
     printf 'NOTE\t**Recovered %%** = the share of that subscription'\''s Files (in the whole loaded window) that needed a retry to get through — a high share on a busy flow points at a flaky endpoint that succeeds on the second try. The Files column counts ALL of the subscription'\''s Files, whatever their outcome; only subscriptions with at least one recovered File are listed.\n'
 
-    printf 'TABLE\tPer protocol\n'
+    printf 'TABLE\tPer protocol\tzerohide=0\n'
     printf 'HEAD\tProtocol\tRecovered\tFailed legs healed\tFailed legs\tHealed %%\n'
     printf 'KIND\ttext\tnumwarn\tnum\tnum\tnum\n'
     printf 'RECALC\t-\ts0\ts1\ts2\tp1.2\n'

@@ -542,6 +542,11 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             # extra padding, style.css). Pairs with the GHEAD banner row.
             else if (index(mi, "gsep=") == 1)     { n2g = split(substr(mi, 6), GSA, ","); for (g2 = 1; g2 <= n2g; g2++) gsepset[GSA[g2] + 0] = 1 }
             else if (index(mi, "pager=") == 1)    tattr = tattr " data-pager=\"" substr(mi, 7) "\""
+            # zerohide=<m>: while the date range is NARROWED, hide a data row
+            # whose re-aggregated bucket metric <m> sums to 0 — a "0 of this
+            # page's subject in the window" row says nothing (report.js
+            # recalcTable; the full-range restore brings every row back)
+            else if (index(mi, "zerohide=") == 1) tattr = tattr " data-zerohide=\"" substr(mi, 10) "\""
             # topsel=<N>: a top-N table whose rows are the CANDIDATE set (each
             # with @data:date + @data:val, value-descending; rows past N baked
             # @data:dhide=1) — report.js recalcTopsel re-picks the visible N
