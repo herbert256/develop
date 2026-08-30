@@ -98,8 +98,11 @@ write_acc_vs_prod_pages() {
     # difference (2026-08-29): the Only-acceptance and Only-production sets
     # side by side as two independent name-sorted columns of ONE table — the
     # promotion diff at a glance. Its tab sits AFTER Summary in the view row.
-    local views=(acceptance both production difference)
-    local vlabels=("Only ACC" "Both" "Only PRD" "Difference")
+    # all (2026-08-30, user request): the FIRST view button — the union of
+    # both sets, Name + one centered green OK sign per environment the name
+    # exists in. The Both view stays the Entities default.
+    local views=(all acceptance both production difference)
+    local vlabels=("All" "Only ACC" "Both" "Only PRD" "Difference")
     # the FAMILY NAV (2026-08-30, user choice): row 1 everywhere is
     # Summary / Entities / Subscriptions vs partners; the type row (this
     # order) and the view row show ONLY inside Entities, whose landing —
@@ -232,13 +235,13 @@ write_acc_vs_prod_pages() {
                 else erow+="<a class=\"tab\" href=\"acc-vs-prod-$t2-$v.html\">${labels[$t2i]}</a>"; fi
             done
             vrow=""
-            for tj in 0 1 2; do
+            for tj in 0 1 2 3; do
                 vl="${vlabels[$tj]}"   # plain labels — no counts on the view buttons (2026-08-29)
                 if [ "$tj" = "$vi" ]; then vrow+="<span class=\"tab active\">$vl</span>"
                 else vrow+="<a class=\"tab\" href=\"acc-vs-prod-$t-${views[$tj]}.html\">$vl</a>"; fi
             done
-            if [ "$v" = difference ]; then vrow+="<span class=\"tab active\">${vlabels[3]}</span>"
-            else vrow+="<a class=\"tab\" href=\"acc-vs-prod-$t-difference.html\">${vlabels[3]}</a>"; fi
+            if [ "$v" = difference ]; then vrow+="<span class=\"tab active\">${vlabels[4]}</span>"
+            else vrow+="<a class=\"tab\" href=\"acc-vs-prod-$t-difference.html\">${vlabels[4]}</a>"; fi
             {
                 html_head "Acceptance vs production" "../assets/style.css" "" "ANALYSES" "acc-vs-prod"
                 printf '<h1>Acceptance vs production</h1>\n'
@@ -263,7 +266,12 @@ write_acc_vs_prod_pages() {
                     printf '<p class="subtitle">The %s known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production. Row colors are the standard entity results; in the Both view each column links and tints its own environment.%s%s</p>\n' "${labels[$ti]}" "$foldnote" "$actnote"
                 fi
                 printf '<div class="tablewrap"><table class="fit">\n'
-                if [ "$hasact" = 1 ]; then
+                if [ "$v" = all ]; then
+                    # the All view (2026-08-30): every name once, a centered
+                    # green OK sign per environment it exists in — no Files
+                    # columns, whatever the type
+                    printf '<tr><th>Name</th><th class="ctr">Acceptance</th><th class="ctr">Production</th></tr>\n'
+                elif [ "$hasact" = 1 ]; then
                     if [ "$v" = both ] || [ "$v" = difference ]; then
                         printf '<tr><th>Acceptance</th><th class="num">Files</th><th>Production</th><th class="num">Files</th></tr>\n'
                     else
@@ -281,7 +289,7 @@ write_acc_vs_prod_pages() {
                     printf '<tr><th>%s</th></tr>\n' "${labels[$ti]}"
                 fi
                 onecol=0; [ "$t" = flowids ] && onecol=1
-                awk -F'\t' -v view="$v" -v sub2="$t" -v hasact="$hasact" -v onecol="$onecol" '
+                awk -F'\t' -v view="$v" -v sub2="$t" -v hasact="$hasact" -v onecol="$onecol" -v OK='&#10004;' '
                     function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
                     function isres(r) { return r == "green" || r == "orange" || r == "red" || r == "blue" }
                     function cell(env, name, slug, res,   cls, inner) {
@@ -297,6 +305,21 @@ write_acc_vs_prod_pages() {
                         if (!hasact) return ""
                         return "<td class=\"num\">" e(f) "</td>"
                     }
+                    # the All view: one row per name (the union stream is
+                    # globally name-sorted); the name links its acceptance
+                    # detail page when it has one, else production'\''s; a
+                    # centered green OK per environment the name exists in
+                    view == "all" {
+                        nm = ($1 == "p") ? $6 : $3
+                        sl = ""; se = ""
+                        if ($4 != "") { sl = $4; se = "acceptance" }
+                        else if ($7 != "") { sl = $7; se = "production" }
+                        printf "<tr>%s<td class=\"ctr%s\">%s</td><td class=\"ctr%s\">%s</td></tr>\n", \
+                            cell(se, nm, sl, ""), ($1 != "p" ? " processed" : ""), ($1 != "p" ? OK : ""), \
+                            ($1 != "a" ? " processed" : ""), ($1 != "a" ? OK : "")
+                        if ($1 != "p") naA++
+                        if ($1 != "a") npA++
+                        n++; next }
                     view == "acceptance" && $1 == "a" {
                         printf "<tr%s>%s%s</tr>\n", (isres($5) ? " data-res=\"" $5 "\"" : ""), cell("acceptance", $3, $4, ""), act($9); af += $9; n++ }
                     view == "production" && $1 == "p" {
@@ -316,6 +339,10 @@ write_acc_vs_prod_pages() {
                     view == "difference" && $1 == "p" { nP++; pf += $11
                         printf "<tr>%s%s%s%s</tr>\n", "<td class=\"cl\"></td>", (hasact ? "<td class=\"num\"></td>" : ""), cell("production", $6, $7, $8), act($11) }
                     END {
+                        if (view == "all") {
+                            printf "<tr class=\"total\"><td>Total (%d)</td><td class=\"ctr\">%d</td><td class=\"ctr\">%d</td></tr>\n", n + 0, naA + 0, npA + 0
+                            exit
+                        }
                         if (view == "difference") {
                             if (hasact)
                                 printf "<tr class=\"total\"><td>Total (%d / %d)</td><td class=\"num\">%d</td><td></td><td class=\"num\">%d</td></tr>\n", nA + 0, nP + 0, af, pf
