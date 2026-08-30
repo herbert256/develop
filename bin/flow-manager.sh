@@ -125,6 +125,10 @@ SKIPFILE="$ROOT/input/skip.txt"
 # token<TAB>token pairs naming ONE organisation — pass-2 merge rule 4 and the
 # subscription-name fallback's resolution retry. See the file's header.
 ALIASF="$ROOT/input/partner-aliases.tsv"
+# the FIXED FlowID -> Logical transforms (input/logical.txt, COMMITTED, shared
+# by both envs) — consumed by the LOGICAL derivation block below; a pin edit
+# re-derives the caches (and, through them, everything downstream).
+LOGICALF="$ROOT/input/logical.txt"
 source "$ROOT/bin/skiplist.sh"   # skip_values() — the ONE reader for input/skip.txt
 SKIPDIR="$OUT/filtered"                 # the filtered partners/subscriptions/templates.json
 # The skipped-config sidecar lives INSIDE filtered/ (NOT directly in $OUT) so
@@ -145,10 +149,12 @@ rm -f "$OUT"/_*.tsv   # legacy flat layout (pre base/xref split) — regenerable
 # config fallback keys on the FlowIdentifier, and the profile is one of the five
 # XREF single-value voters. Dropping it from the parse costs 4,883 Files (4.1%)
 # that would lose their subscription and be skipped, so _profiles.tsv and the
-# _*-profiles / _profiles-* pair caches stay. They feed the parse and nothing
-# else; do not surface them in a report or a page.
-ENTITY_CACHES="accounts logins hosts white subscriptions profiles partners apps domains"
-ITEMS="accounts subscriptions profiles logins hosts partners apps domains white"
+# _*-profiles / _profiles-* pair caches stay. They feed the parse — and, since
+# 2026-08-31, the LOGICAL derivation below (the FlowIDs condensed into logical
+# flow groups, a FULL entity) — nothing else; do not surface a raw profile in
+# a report or a page.
+ENTITY_CACHES="accounts logins hosts white subscriptions profiles logicals partners apps domains"
+ITEMS="accounts subscriptions profiles logins hosts logicals partners apps domains white"
 CANON_PAIRS=$(
     seen=""
     for a in $ITEMS; do
@@ -185,7 +191,8 @@ for f in $ENTITY_CACHES $PAIR_CACHES; do
     if [ ! -f "$out" ] || [ "$PARTNERS" -nt "$out" ] || [ "$SUBS" -nt "$out" ] \
        || [ "${BASH_SOURCE[0]}" -nt "$out" ] \
        || { [ -f "$SKIPFILE" ] && [ "$SKIPFILE" -nt "$out" ]; } \
-       || { [ -f "$ALIASF" ] && [ "$ALIASF" -nt "$out" ]; }; then fresh=0; break; fi
+       || { [ -f "$ALIASF" ] && [ "$ALIASF" -nt "$out" ]; } \
+       || { [ -f "$LOGICALF" ] && [ "$LOGICALF" -nt "$out" ]; }; then fresh=0; break; fi
 done
 # The filtered exports + the skipped-config sidecar must exist (a changed
 # skip.txt is caught above; a manually removed filtered/ dir heals here).
@@ -1091,6 +1098,189 @@ if [ -s "$PKEEP" ]; then
 fi
 rm -f "$PKEEP"
 
+# ---- LOGICAL flow groups (2026-08-30 acc-vs-prod; FULL entity 2026-08-31) ----
+# One env's FlowIDs (base/_profiles.tsv = the customAttribute_FlowIdentifier
+# values) condensed into logical flow groups, one name per group, always 3
+# parts. Three passes:
+# 1) GROUP — FIRST rule for 4-part FlowIDs (2026-08-30, user request): when
+#    the 3rd part is the 3rd part of TWO OR MORE 4-part FlowIDs, the 4th
+#    part drops (SI_GOUDMIJN_INSHARED_{HEMA,HEMAPOLIS,INSHARED,POLIS} ->
+#    one SI_GOUDMIJN_INSHARED). Then: 4-part FlowIDs sharing their first 3
+#    parts (the bare 3-part name joins when it exists) fold onto those 3
+#    parts; a 3-part FlowID whose digit-tailed part, stripped (a trailing
+#    "-" trimmed with the digits), duplicates another stripped name or an
+#    existing FlowID folds onto the stripped form; a 4-part FlowID whose
+#    numeric-only part, removed, duplicates another folds onto the removed
+#    form. A SINGLE-part FlowID (all dashes — the monitor's
+#    INFRA-MONITOR-UC1..4) gets the same digit-tail rule on the whole name
+#    (2026-08-30): the four fold onto INFRA-MONITOR-UC. A FlowID of FIVE OR
+#    MORE parts (2026-08-30, user request — the AB_NAS_FIS_BSM_BU_A_AH
+#    family) folds onto its LONGEST part-prefix (3+ parts) that EXISTS as a
+#    FlowID: the eight long AB_NAS_FIS_BSM_* names join the bare
+#    AB_NAS_FIS_BSM, and the reshape renders the group AB_NAS_FIS-BSM. A
+#    fixed input/logical.txt mapping is also honoured for the GROUP name a
+#    fold lands on, so one line can pin a whole family's final form.
+# 2) RESHAPE to 3 parts by position, informed by the 3-part logicals'
+#    vocabulary (their 2nd/3rd parts): AAA_BBB -> AAA_AAA_BBB; 4 parts whose
+#    4th is a known 3rd -> AAA_BBB-CCC_DDD; 4 parts whose 2nd is a known
+#    2nd -> AAA_BBB_CCC-DDD; 5 parts whose 5th is a known 3rd ->
+#    AAA_BBB-CCC-DDD_EEE.
+# 3) FORCE the rest to 3 parts (vocabulary refreshed): the first part 2..n
+#    that is a known 3rd part becomes the 3rd, everything else after part 1
+#    joining as the 2nd; else a known 2nd part becomes the 2nd, the rest
+#    joining as the 3rd; else first and last kept, the middle joined. Joins
+#    use "-" — which is why Logical names render UNFOLDED everywhere (the
+#    hyphen is semantic, marking combined parts).
+# input/logical.txt: FIXED FlowID -> Logical transforms, two whitespace-
+# separated columns (# comments, blank lines ignored), shared by both
+# environments. A listed FlowID takes its given Logical VERBATIM — no
+# grouping, no 3-part reshape — and only the rest go through the derivation.
+# A missing file is a no-op.
+#
+# Output: xref/_profiles-logicals.tsv — the FlowID -> Logical MAP, one row
+# per configured FlowID (the canonical profiles/logicals pair; every report
+# that attributes a File's profile column resolves through it) — plus
+# base/_logicals.tsv (direction/result appended below like every base) and
+# the 8 other canonical logicals pair caches, composed from the profiles
+# pairs. Placed AFTER the partner prune (the composed _logicals-partners
+# must not resurrect pruned partners) and BEFORE the mirror loop (every
+# canonical file must exist — possibly empty — for the mirrors).
+awk -F'\t' -v LF="$LOGICALF" '
+    BEGIN {
+        while ((getline fl < LF) > 0) {
+            if (fl ~ /^[ \t]*#/ || fl ~ /^[ \t]*$/) continue
+            nf2 = split(fl, fa, /[ \t]+/)
+            if (nf2 >= 2 && fa[1] != "" && fa[2] != "") FIX[fa[1]] = fa[2]
+        }
+        close(LF)
+    }
+    function joindash(P, n, skip, from,   r, m) { r = ""
+        for (m = from; m <= n; m++) { if (m == skip) continue; r = (r == "" ? P[m] : r "-" P[m]) }
+        return r }
+    function rejoin(P, n, skip,   r, m) { r = ""
+        for (m = 1; m <= n; m++) { if (m == skip) continue; r = (r == "" ? P[m] : r "_" P[m]) }
+        return r }
+    function replaced(P, n, at, s,   r, m, t) { r = ""
+        for (m = 1; m <= n; m++) { t = (m == at ? s : P[m]); r = (r == "" ? t : r "_" t) }
+        return r }
+    function digitstrip(p,   s) { s = p; if (sub(/[0-9]+$/, "", s)) sub(/-+$/, "", s); return s }
+    # INTAKE NORMALIZATION (2026-08-30): the estate mixes "-" and "_"
+    # spellings of one name (the family matches everything sepfolded),
+    # but this derivation splits on "_" alone — a dash-spelled sibling
+    # parsed into different part counts and every grouping rule missed
+    # it. Group on the "_"-folded form; a FIXED mapping still matches
+    # the RAW spelling too. The reshape re-adds dashes for its joins.
+    $1 != "" { raw = $1; nn++
+        raws[nn] = raw
+        if (raw in FIX) { finalfix[nn] = FIX[raw]; next }
+        nm0 = raw; gsub(/-/, "_", nm0)
+        name[nn] = nm0; exists[nm0] = 1 }
+    END {
+        # pass 1a: count the reductions
+        for (i = 1; i <= nn; i++) {
+            if (i in finalfix) continue
+            n = split(name[i], P, "_")
+            if (n == 4) {
+                cnt1[P[1] "_" P[2] "_" P[3]]++
+                cnt3rd[P[3]]++                    # 3rd parts across the 4-part FlowIDs
+                for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) cnt3[rejoin(P, n, j)]++
+            } else if (n == 3) third3[P[3]] = 1   # 3rd parts of the 3-part FlowIDs
+            if (n == 3)
+                for (j = 1; j <= n; j++) { s = digitstrip(P[j])
+                    if (s != P[j] && s != "") cnt2[replaced(P, n, j, s)]++ }
+            else if (n == 1) { s = digitstrip(P[1])
+                if (s != P[1] && s != "") cnt2[s]++ }
+        }
+        # pass 1b: assign each FlowID its group name — a FIXED mapping
+        # (input/logical.txt) wins outright and skips the reshape passes
+        for (i = 1; i <= nn; i++) {
+            if (i in finalfix) continue
+            nm = name[i]
+            n = split(nm, P, "_"); lg = nm
+            if (n == 4) {
+                pre = P[1] "_" P[2] "_" P[3]
+                # the FIRST 4-part rule (2026-08-30, user precedence):
+                # dropping the 4th part gives an EXISTING 3-part FlowID
+                # -> that 3-part name is the logical (the
+                # AB_SNOWFLAKE_HYPOPORT_{MORTG,PIPE,SPREAD} family joins
+                # its bare AB_SNOWFLAKE_HYPOPORT)
+                if (pre in exists) lg = pre
+                # then: a 3rd part that is the 3rd part of 2+ 4-part
+                # FlowIDs — or of any 3-PART FlowID (the restated rule)
+                else if (cnt3rd[P[3]] >= 2 || (P[3] in third3)) lg = pre
+                else if (cnt1[pre] >= 2) lg = pre
+                else for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) {
+                    c = rejoin(P, n, j)
+                    if (cnt3[c] >= 2 || (c in exists)) { lg = c; break } }
+            } else if (n == 3)
+                for (j = 1; j <= n; j++) { s = digitstrip(P[j])
+                    if (s != P[j] && s != "") { c = replaced(P, n, j, s)
+                        if (cnt2[c] >= 2 || (c in exists)) { lg = c; break } } }
+            else if (n == 1) { s = digitstrip(P[1])
+                if (s != P[1] && s != "" && (cnt2[s] >= 2 || (s in exists))) lg = s }
+            else if (n >= 5)
+                # fold onto the LONGEST part-prefix (3+ parts) that
+                # exists as a FlowID of its own
+                for (k = n - 1; k >= 3; k--) {
+                    pre = P[1]
+                    for (m = 2; m <= k; m++) pre = pre "_" P[m]
+                    if (pre in exists) { lg = pre; break }
+                }
+            # a fixed mapping for the GROUP a fold landed on wins too
+            if (lg in FIX) { finalfix[i] = FIX[lg]; continue }
+            grpof[i] = lg; lset[lg] = 1
+        }
+        # pass 2: reshape to 3 parts by position
+        for (l in lset) { n = split(l, P, "_"); if (n == 3) { k2[P[2]] = 1; k3[P[3]] = 1 } }
+        for (l in lset) {
+            n = split(l, P, "_"); nl = l
+            if (n == 2) nl = P[1] "_" P[1] "_" P[2]
+            else if (n == 4 && (P[4] in k3)) nl = P[1] "_" P[2] "-" P[3] "_" P[4]
+            else if (n == 4 && (P[2] in k2)) nl = P[1] "_" P[2] "_" P[3] "-" P[4]
+            else if (n == 5 && (P[5] in k3)) nl = P[1] "_" P[2] "-" P[3] "-" P[4] "_" P[5]
+            map2[l] = nl; lset2[nl] = 1
+        }
+        # pass 3: force what is left to 3 parts
+        split("", k2); split("", k3)
+        for (l in lset2) { n = split(l, P, "_"); if (n == 3) { k2[P[2]] = 1; k3[P[3]] = 1 } }
+        for (l in lset2) {
+            n = split(l, P, "_"); nl = l
+            if (n > 3) {
+                done = 0
+                for (j = 2; j <= n && !done; j++) if (P[j] in k3) { nl = P[1] "_" joindash(P, n, j, 2) "_" P[j]; done = 1 }
+                for (j = 2; j <= n && !done; j++) if (P[j] in k2) { nl = P[1] "_" P[j] "_" joindash(P, n, j, 2); done = 1 }
+                if (!done) nl = P[1] "_" joindash(P, n - 1, 0, 2) "_" P[n]
+            }
+            map3[l] = nl
+        }
+        # the map: every configured FlowID -> its final Logical
+        for (i = 1; i <= nn; i++)
+            print raws[i] "\t" ((i in finalfix) ? finalfix[i] : map3[map2[grpof[i]]])
+    }' "$BASE/_profiles.tsv" | LC_ALL=C sort -u > "$XREF/_profiles-logicals.tsv"
+cut -f2 "$XREF/_profiles-logicals.tsv" | LC_ALL=C sort -u > "$BASE/_logicals.tsv"
+# the other 8 canonical logicals pairs: the profiles pairs composed with the
+# map (a pair row whose FlowID maps joins that FlowID's Logical; the file is
+# ALWAYS written — possibly empty — for the mirror loop)
+lmap() {   # $1 input pair cache  $2 profile column (1|2)  $3 LEFT|RIGHT (where the logical lands)  $4 output pair name
+    {   if [ -f "$XREF/$1" ]; then
+            awk -F'\t' -v pc="$2" -v side="$3" '
+                FILENAME == ARGV[1] { if ($1 != "" && $2 != "") LG[toupper($1)] = $2; next }
+                { p = (pc == 1) ? $1 : $2; o = (pc == 1) ? $2 : $1
+                  if (toupper(p) in LG) { l = LG[toupper(p)]
+                      if (side == "LEFT") print l "\t" o; else print o "\t" l } }
+            ' "$XREF/_profiles-logicals.tsv" "$XREF/$1"
+        fi
+    } | LC_ALL=C sort -u > "$XREF/_$4.tsv"
+}
+lmap _accounts-profiles.tsv      2 RIGHT accounts-logicals
+lmap _subscriptions-profiles.tsv 2 RIGHT subscriptions-logicals
+lmap _profiles-logins.tsv        1 RIGHT logins-logicals
+lmap _profiles-hosts.tsv         1 RIGHT hosts-logicals
+lmap _profiles-partners.tsv      1 LEFT  logicals-partners
+lmap _profiles-apps.tsv          1 LEFT  logicals-apps
+lmap _profiles-domains.tsv       1 LEFT  logicals-domains
+lmap _profiles-white.tsv         1 LEFT  logicals-white
+
 # ----------------------------- mirrors: every cross reference exists both ways
 # Each canonical _a-b.tsv gets its column-swapped twin _b-a.tsv (sorted on
 # the new left column), so joins never need to know the fixed item order.
@@ -1118,6 +1308,7 @@ adddir() {   # $1 base name  $2 in-side pair cache  $3 out-side pair cache (col 
 adddir accounts      "$XREF/_accounts-logins.tsv"      "$XREF/_accounts-hosts.tsv"
 adddir subscriptions "$XREF/_subscriptions-logins.tsv" "$XREF/_subscriptions-hosts.tsv"
 adddir profiles      "$XREF/_profiles-logins.tsv"      "$XREF/_profiles-hosts.tsv"
+adddir logicals      "$XREF/_logicals-logins.tsv"      "$XREF/_logicals-hosts.tsv"
 awk -F'\t' '{ print $1 "\tin"  }' "$BASE/_logins.tsv" > "$BASE/_logins.tsv.tmp" && mv "$BASE/_logins.tsv.tmp" "$BASE/_logins.tsv"
 awk -F'\t' '{ print $1 "\tout" }' "$BASE/_hosts.tsv"  > "$BASE/_hosts.tsv.tmp"  && mv "$BASE/_hosts.tsv.tmp"  "$BASE/_hosts.tsv"
 awk -F'\t' '{ print $1 "\tin"  }' "$BASE/_white.tsv"  > "$BASE/_white.tsv.tmp"  && mv "$BASE/_white.tsv.tmp"  "$BASE/_white.tsv"
@@ -1181,4 +1372,4 @@ LC_ALL=C sort -o "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv.tmp"
 if cmp -s "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv" 2>/dev/null
 then rm -f "$BASE/.configured.tsv.tmp"; else mv "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv"; fi
 
-echo "flow-manager.sh: wrote 9 entity caches to data/flow-manager/base/ + 72 pair caches (every pair both ways) + the patterns and templates maps to data/flow-manager/xref/" >&2
+echo "flow-manager.sh: wrote 10 entity caches to data/flow-manager/base/ + 90 pair caches (every pair both ways) + the patterns and templates maps to data/flow-manager/xref/" >&2
