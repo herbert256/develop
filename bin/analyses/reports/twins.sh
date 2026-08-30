@@ -85,18 +85,18 @@ combos=$(awk -F'\t' '
 
 {
     printf 'TITLE\tTwins\n'
-    printf 'DESC\tEvery twin pair on one page: subscriptions that are the same flow configured the opposite way (by name, by account, or by spelling-twin accounts — with the naming slips listed first), and the accounts spelled with both separators.\n'
-    printf 'INTRO\tThe **Twin** rows of the detail pages, collated. A **subscription twin** is the same flow configured the opposite way — the UC2+UC4 mailbox pair or the UC1+UC3 outbound pair — detected by **name** (same body, opposite side), by **account** (the pair sharing one account), or via **spelling-twin accounts**; a pair the account proves but the names do NOT match is a **naming slip**. An **account twin** is one partner relation configured twice, under both separator spellings.\n'
+    printf 'DESC\tEvery twin pair on one page: subscriptions that are the same flow configured the opposite way (by name, by shared login, or by spelling-twin accounts — with the naming slips listed first), and the accounts spelled with both separators.\n'
+    printf 'INTRO\tThe **Twin** rows of the detail pages, collated. A **subscription twin** is the same flow configured the opposite way — the UC2+UC4 mailbox pair or the UC1+UC3 outbound pair — detected by **name** (same body, opposite side), by **login** (the UC2+UC4 pair sharing one FE login — the partner&#8217;s actual credential; the login-less UC1+UC3 mirror pairs on its account instead), or via **spelling-twin accounts**; a pair the login or account proves but the names do NOT match is a **naming slip**. An **account twin** is one partner relation configured twice, under both separator spellings.\n'
     # the first STAT row doubles as the table's filters: the total box carries an
     # empty pf key (shows all rows), the detection boxes narrow to their rule.
-    # Name-matched / Same account / Twin account count rows CARRYING that
-    # evidence (the rules union, so the boxes overlap and need not sum to the
-    # total). The naming slips have no box of their own — they are the Same
-    # account rows without a name match, labelled in the Detected by column and
-    # sorted first.
+    # Name-matched / Shared login-account / Twin account count rows CARRYING
+    # that evidence (the rules union, so the boxes overlap and need not sum to
+    # the total). The naming slips have no box of their own — they are the
+    # shared login/account rows without a name match, labelled in the Detected
+    # by column and sorted first.
     printf 'STAT\twhite\t%s\tSubscription twin pairs\t\n' "$n_sub"
     printf 'STAT\twhite\t%s\tName-matched\tdet-name\n' "$n_name"
-    printf 'STAT\twhite\t%s\tSame account\tdet-sameacct\n' "$n_same"
+    printf 'STAT\twhite\t%s\tShared login/account\tdet-sameacct\n' "$n_same"
     printf 'STAT\twhite\t%s\tTwin account\tdet-twinacct\n' "$n_twin"
     # second STAT row: the twins grouped by use-case pair (each box's two lines
     # name both use cases); the SUBTITLE forces the break after the first row
@@ -118,15 +118,17 @@ combos=$(awk -F'\t' '
     # bulk; name order within each — the sort key is emitted, then stripped
     awk -F'\t' -v SLF="$SLF" '
         function lbl(r) {
-            if (r == "C")        return "Same account only — naming slip"
+            # C = the shared FE login (UC2+UC4) or the exact-pair account
+            # (the login-less UC1+UC3 mirror) — 2026-08-30
+            if (r == "C")        return "Shared login/account only — naming slip"
             if (index(r, "B")) {
-                if (index(r, "C") && index(r, "A")) return "Name + account + spelling twins"
-                if (index(r, "C")) return "Name + same account"
+                if (index(r, "C") && index(r, "A")) return "Name + shared login/account + spelling twins"
+                if (index(r, "C")) return "Name + shared login/account"
                 if (index(r, "A")) return "Name + spelling-twin accounts"
                 return "Name match"
             }
             if (r == "A")        return "Spelling-twin accounts"
-            if (r == "AC")       return "Same account + spelling twins"
+            if (r == "AC")       return "Shared login/account + spelling twins"
             return r
         }
         function rank(r) { if (r == "C") return 0; if (!index(r, "B")) return 1; return 2 }
@@ -193,7 +195,7 @@ combos=$(awk -F'\t' '
                 close(ALF) }
         $1 != "" && $2 != "" { printf "ROW\t@{alink=accounts/%s}%s\t@{alink=accounts/%s}%s\t%s\n", $1, $1, $2, $2, logcell($1, $2) }' "$TWA"
     printf 'TOTAL\tTotal (%s pair(s))\t\t\n' "$n_acc"
-    printf 'NOTE\tEach pair is listed ONCE (the relation is symmetric; the detail pages carry it on both sides). The subscription rules are unioned, so one pair can be proven several ways; a pair proven ONLY by the shared account means the two flows belong together while their names disagree — the rename backlog. The account twins are the `-`/`_` double configurations the Separator collision analysis and Config hygiene also track; renaming one side merges the pair.\n'
+    printf 'NOTE\tEach pair is listed ONCE (the relation is symmetric; the detail pages carry it on both sides). The subscription rules are unioned, so one pair can be proven several ways; a pair proven ONLY by the shared login (or, for the login-less UC1+UC3 mirror, the shared account) means the two flows belong together while their names disagree — the rename backlog. The account twins are the `-`/`_` double configurations the Separator collision analysis and Config hygiene also track; renaming one side merges the pair.\n'
     printf 'KEYWORDS\ttwin,twins,pair,mailbox,uc2,uc4,uc1,uc3,separator,spelling,naming slip,rename\n'
     printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

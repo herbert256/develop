@@ -417,13 +417,16 @@ awk -F'\t' '$1 == "ACC" { print $2 }' "$_pdir/agg" | LC_ALL=C sort -u \
 #      is the side test because this is a rule about the NAME; it agrees with
 #      xref/_subscriptions-flowdir.tsv on 523 of 524 subscriptions, and the one
 #      disagreement is a singleton under normalization, so it is in no group either.
-#   C: the same ACCOUNT carries both a UC2 (partner collects) and a UC4 (partner
-#      delivers) subscription -> the pair are twins regardless of name (2026-08):
-#      the one FE connection serves both directions of that partner's mailbox —
-#      the very fact the Twin row surfaces. Catches the pairs rule B misses on a
-#      naming slip (an FI/FE swap, an abbreviated body); resolved through the
-#      xref, never by name, like rule A. The OUTBOUND mirror is included only as
-#      an EXACT pair — an account whose two subscriptions are one UC1 and one
+#   C: the same LOGIN serves both a UC2 (partner collects) and a UC4 (partner
+#      delivers) subscription -> the pair are twins regardless of name
+#      (2026-08-30, user decision — the join WAS the shared account): the FE
+#      credential is the partner's actual connection, so one login delivering
+#      AND collecting IS the mailbox pair, even when the two flows sit on
+#      different accounts. Catches the pairs rule B misses on a naming slip
+#      (an FI/FE swap, an abbreviated body); resolved through the xref
+#      (_logins-subscriptions), never by name. The OUTBOUND mirror keeps the
+#      ACCOUNT join (UC1/UC3 flows carry no login at all) and only as an
+#      EXACT pair — an account whose two subscriptions are one UC1 and one
 #      UC3 and nothing else: outbound accounts can fan out to dozens of flows,
 #      where same-account pairing would link every UC1 with every UC3, but the
 #      exact pair is as unambiguous as the mailbox case.
@@ -433,8 +436,9 @@ awk -F'\t' '$1 == "ACC" { print $2 }' "$_pdir/agg" | LC_ALL=C sort -u \
 _twf="$_pdir/twins"
 _asf="$CONFIG_XREF/_accounts-subscriptions.tsv"; [ -f "$_asf" ] || _asf=/dev/null
 _saf="$CONFIG_XREF/_subscriptions-accounts.tsv"; [ -f "$_saf" ] || _saf=/dev/null
+_lsf="$CONFIG_XREF/_logins-subscriptions.tsv";   [ -f "$_lsf" ] || _lsf=/dev/null
 _bsf="$CONFIG_BASE/_subscriptions.tsv";          [ -f "$_bsf" ] || _bsf=/dev/null
-awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v PF="$_pdir/twins-pairs" '
+awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_lsf" -v PF="$_pdir/twins-pairs" '
     FILENAME == TWF { i = index($0, "\t")                    # account -> twin account(s)
                       if (i > 1) TWA[substr($0, 1, i - 1)] = substr($0, i + 1); next }
     FILENAME == ASF { NSUB[$1]++; SUB1[$1] = $2                # account -> #subs, and the last one
@@ -444,6 +448,8 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v PF="$_pdi
     # subscript before evaluating the right side, so a membership test is true
     # on the FIRST insert and every value would carry a leading separator.
     FILENAME == SAF { SACC[$1] = (SACC[$1] == "" ? "" : SACC[$1] "\037") $2; next }   # sub -> account(s)
+    FILENAME == LSF { if (LSUB[$1] == "") LORD[++nlord] = $1                # login -> subscription(s)
+                      LSUB[$1] = (LSUB[$1] == "" ? "" : LSUB[$1] "\037") $2; next }
     { SUBS[$1] = 1 }                                          # base/_subscriptions.tsv: the universe
     # r = the detecting rule letter (A/B/C), accumulated per ORDERED pair for
     # the persisted pair map (the Twins analysis) — dedup per letter
@@ -484,15 +490,25 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v PF="$_pdi
                 if (i == j) continue
                 si = side(V[i]); sj = side(V[j])
                 if (si != "" && sj != "" && si != sj) addtwin(V[i], V[j], "B") } }
-        # --- rule C --- walked in ASF FILE order (AORD), never hash order, so
-        # a multi-account subscription accumulates its twins deterministically
-        for (ai = 1; ai <= naord; ai++) {
-            n = split(ASUB[AORD[ai]], V, "\037")
+        # --- rule C --- the UC2+UC4 mailbox pair joins on its shared LOGIN
+        # (2026-08-30; was the shared account) — walked in LSF FILE order
+        # (LORD), never hash order, so a multi-flow login accumulates its
+        # twins deterministically
+        for (li = 1; li <= nlord; li++) {
+            n = split(LSUB[LORD[li]], V, "\037")
             for (i = 1; i <= n; i++) for (j = 1; j <= n; j++) {
                 if (i == j) continue
                 if (V[i] ~ /^UC2/ && V[j] ~ /^UC4/) { addtwin(V[i], V[j], "C"); addtwin(V[j], V[i], "C") }
-                # the outbound mirror: ONLY as the account'\''s exact pair
-                if (n == 2 && V[i] ~ /^UC1/ && V[j] ~ /^UC3/) { addtwin(V[i], V[j], "C"); addtwin(V[j], V[i], "C") }
+            }
+        }
+        # the outbound mirror keeps the ACCOUNT join (UC1/UC3 carry no
+        # login): ONLY as the account'\''s exact UC1+UC3 pair
+        for (ai = 1; ai <= naord; ai++) {
+            n = split(ASUB[AORD[ai]], V, "\037")
+            if (n != 2) continue
+            for (i = 1; i <= n; i++) for (j = 1; j <= n; j++) {
+                if (i == j) continue
+                if (V[i] ~ /^UC1/ && V[j] ~ /^UC3/) { addtwin(V[i], V[j], "C"); addtwin(V[j], V[i], "C") }
             }
         }
         for (s in T) print s, T[s]
@@ -500,7 +516,7 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v PF="$_pdi
         # map below (hash order here — the shell sorts)
         for (k in SEEN) { split(k, P2, SUBSEP); print "P", P2[1], P2[2], RT[P2[1], P2[2]] > PF }
         close(PF)
-    }' "$_twf" "$_asf" "$_saf" "$_bsf" \
+    }' "$_twf" "$_asf" "$_saf" "$_lsf" "$_bsf" \
   | LC_ALL=C sort > "$_pdir/twins-site"
 
 # ---- persist the twin PAIR maps (the Twins analysis reads them) --------------

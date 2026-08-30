@@ -654,10 +654,12 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   — the UNION of rule A (the connected account — resolved through
   `xref/_subscriptions-accounts.tsv`, **never by name** — has a separator twin and both accounts
   have exactly ONE subscription; relays skipped), rule B (strip `UC<n>_`, fold `-` onto `_`,
-  names equal, one side UC3/UC4 and the other UC1/UC2) and rule C (2026-08: the same ACCOUNT
-  carries both a UC2 and a UC4 subscription — or EXACTLY one UC1 and one UC3 and nothing else —
-  twins regardless of name, resolved through the
-  xref; catches rule B's naming-slip misses). Invariants after any change: the relation is
+  names equal, one side UC3/UC4 and the other UC1/UC2) and rule C (2026-08-30: the same LOGIN
+  serves both a UC2 and a UC4 subscription — the join WAS the shared account; the FE credential
+  is the partner's actual connection, so the pair holds across accounts — or the same ACCOUNT
+  carries EXACTLY one UC1 and one UC3 and nothing else, the login-less outbound mirror keeping
+  the account join — twins regardless of name, resolved through the
+  xref (`_logins-subscriptions` / `_accounts-subscriptions`); catches rule B's naming-slip misses). Invariants after any change: the relation is
   SYMMETRIC and every rule B/C pair is in↔out by flowdir (a rule-A spelling pair can join two
   same-movement flows — the EQUENS UC3/UC4 pair does); an env without any qualifying pair must degrade
   to no rows. The cell is `@{alink=…}`, tinted by the TWIN's own result.
