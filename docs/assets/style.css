@@ -246,6 +246,15 @@ td.cl { padding:0; }
 td.cl > a { display:block; padding:8px 12px; }
 th { background-color:#20344a; color:#fff; }
 th a { color:#fff; }                    /* linked column headers (traffic matrix) stay readable on the dark bar */
+/* CSV download (report.js setupCsvBtn): a small hotspot in the upper-right
+   corner of every table's LAST header cell — faint until the header row is
+   hovered; clicking it downloads the table (as filtered + sorted) as .csv.
+   The host th is the positioning context; the extra right padding keeps the
+   hotspot clear of the header text and its sort arrow. */
+th.csvhost { position:relative; padding-right:2.4rem; }
+.csvbtn { position:absolute; top:0; right:0; padding:0 0.3rem 0.2rem; font-size:0.65rem; font-weight:normal;
+          color:#fff; opacity:0.3; cursor:pointer; user-select:none; -webkit-user-select:none; }
+tr:hover .csvbtn, .csvbtn:hover { opacity:0.9; }
 tr:nth-child(even) { background-color:#f2f2f2; }
 tr:hover { background-color:#e8f0fe; }
 tr.total td { font-weight:bold; background-color:#dde4ec; border-top:2px solid #20344a; }

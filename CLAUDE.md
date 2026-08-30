@@ -622,6 +622,9 @@ table is wrapped in `<div class="tablewrap">` (report.js `tunit()` returns it) a
 TOTAL footer** — "Total (N rows)" + a sum per numeric column, aligned like the column;
 non-additive columns blank; humanized cells parsed back and re-summed; report.js re-totals over
 visible rows (`recomputeTotals`/`writeRecalc`/`recalcSeen`); top-N tables total the shown rows.
+**Every table downloads as CSV** (2026-08-30, report.js `setupCsvBtn`): a faint "csv" hotspot in
+the upper-right corner of the LAST header cell exports the table as shown — filtered, sorted,
+displayed text, totals excluded — client-side (Blob), no server round-trip.
 
 **SUBSCRIPTION ROW TINTS on the SERVER pages** (2026-08, `RPT_SUBTINT` → render_rpt.awk's
 `subtint`): the server publish passes the `base/_subscriptions.tsv` + `_accounts.tsv` caches, and
@@ -833,9 +836,10 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   Entities/coverage/search rows, no result colour, no column KIND. What remains is plumbing the
   parse needs (cache columns, the reverse config fallback, the XREF vote) — dropping it would
   silently delete ~4% of Files via the no-subscription skip. **Do not surface a profile in a
-  report or page.** ONE exception (2026-08-30, user request): the acc-vs-prod **FlowID** pages
-  (`publish-accvsprod.sh`) compare the two envs' `customAttribute_FlowIdentifier` VALUE sets
-  from `base/_profiles.tsv` — name lists only, still no detail pages/colours/KIND.
+  report or page.** ONE exception (2026-08-30, user request): the acc-vs-prod **FlowID** and
+  **Logical** pages (`publish-accvsprod.sh`) compare the two envs' `customAttribute_FlowIdentifier`
+  VALUE sets from `base/_profiles.tsv` (Logical = those values condensed into flow groups) —
+  name lists only, still no detail pages/colours/KIND.
 
 ## Directory layout
 

@@ -34,11 +34,10 @@ fi
 
 # ---- Acceptance vs production (docs/analyses/acc-vs-prod-<type>-<view>.html) --
 # The two environments' entity name sets compared per type — the comprehensive
-# detail-page slugmaps, so every configured OR logged name counts. Three views:
-# Only acceptance / Both / Only production; the Both view shows one column per
-# environment, EACH cell linked to that env's own detail page and tinted by
-# that env's result (td.res-*); the single-env views tint the whole row
-# (tr[data-res]) from that env's base caches. Names are matched case aside;
+# detail-page slugmaps, so every configured OR logged name counts. NAME-ONLY
+# pages since 2026-08-30 (user choice — the FlowID look family-wide): no Files
+# columns and no result tints anywhere; each cell still links that env's own
+# detail page where the type has them. Names are matched case aside;
 # each column shows its env's own spelling. NOTE each env's copy is generated
 # in that env's publish pass, reading the OTHER env's caches as they are on
 # disk — in a full build the production copy is fully fresh and the acceptance
@@ -77,6 +76,91 @@ _home_status_block() {   # $1 = acceptance | production
     ' docs/index.html
 }
 
+# ---- Logical names (2026-08-30, user request): one env's FlowIDs condensed
+# into logical flow groups, one name per group, always 3 parts. Three passes:
+# 1) GROUP — 4-part FlowIDs sharing their first 3 parts (the bare 3-part name
+#    joins when it exists) fold onto those 3 parts; a 3-part FlowID whose
+#    digit-tailed part, stripped (a trailing "-" trimmed with the digits),
+#    duplicates another stripped name or an existing FlowID folds onto the
+#    stripped form; a 4-part FlowID whose numeric-only part, removed,
+#    duplicates another folds onto the removed form.
+# 2) RESHAPE to 3 parts by position, informed by the 3-part logicals'
+#    vocabulary (their 2nd/3rd parts): AAA_BBB -> AAA_AAA_BBB; 4 parts whose
+#    4th is a known 3rd -> AAA_BBB-CCC_DDD; 4 parts whose 2nd is a known
+#    2nd -> AAA_BBB_CCC-DDD; 5 parts whose 5th is a known 3rd ->
+#    AAA_BBB-CCC-DDD_EEE.
+# 3) FORCE the rest to 3 parts (vocabulary refreshed): the first part 2..n
+#    that is a known 3rd part becomes the 3rd, everything else after part 1
+#    joining as the 2nd; else a known 2nd part becomes the 2nd, the rest
+#    joining as the 3rd; else first and last kept, the middle joined. Joins
+#    use "-" — which is why the Logical pages render UNFOLDED (the hyphen is
+#    semantic there, marking combined parts).
+_logicals_from() {   # $1 = a base/_profiles.tsv; emits one Logical name per line
+    [ -f "$1" ] || return 0
+    awk -F'\t' '
+        function joindash(P, n, skip, from,   r, m) { r = ""
+            for (m = from; m <= n; m++) { if (m == skip) continue; r = (r == "" ? P[m] : r "-" P[m]) }
+            return r }
+        function rejoin(P, n, skip,   r, m) { r = ""
+            for (m = 1; m <= n; m++) { if (m == skip) continue; r = (r == "" ? P[m] : r "_" P[m]) }
+            return r }
+        function replaced(P, n, at, s,   r, m, t) { r = ""
+            for (m = 1; m <= n; m++) { t = (m == at ? s : P[m]); r = (r == "" ? t : r "_" t) }
+            return r }
+        function digitstrip(p,   s) { s = p; if (sub(/[0-9]+$/, "", s)) sub(/-+$/, "", s); return s }
+        $1 != "" { name[++nn] = $1; exists[$1] = 1 }
+        END {
+            # pass 1a: count the reductions
+            for (i = 1; i <= nn; i++) {
+                n = split(name[i], P, "_")
+                if (n == 4) {
+                    cnt1[P[1] "_" P[2] "_" P[3]]++
+                    for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) cnt3[rejoin(P, n, j)]++
+                } else if (n == 3)
+                    for (j = 1; j <= n; j++) { s = digitstrip(P[j])
+                        if (s != P[j] && s != "") cnt2[replaced(P, n, j, s)]++ }
+            }
+            # pass 1b: assign each FlowID its group name
+            for (i = 1; i <= nn; i++) {
+                nm = name[i]; n = split(nm, P, "_"); lg = nm
+                if (n == 4) {
+                    pre = P[1] "_" P[2] "_" P[3]
+                    if (cnt1[pre] >= 2 || (pre in exists)) lg = pre
+                    else for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) {
+                        c = rejoin(P, n, j)
+                        if (cnt3[c] >= 2 || (c in exists)) { lg = c; break } }
+                } else if (n == 3)
+                    for (j = 1; j <= n; j++) { s = digitstrip(P[j])
+                        if (s != P[j] && s != "") { c = replaced(P, n, j, s)
+                            if (cnt2[c] >= 2 || (c in exists)) { lg = c; break } } }
+                lset[lg] = 1
+            }
+            # pass 2: reshape to 3 parts by position
+            for (l in lset) { n = split(l, P, "_"); if (n == 3) { k2[P[2]] = 1; k3[P[3]] = 1 } }
+            for (l in lset) {
+                n = split(l, P, "_"); nl = l
+                if (n == 2) nl = P[1] "_" P[1] "_" P[2]
+                else if (n == 4 && (P[4] in k3)) nl = P[1] "_" P[2] "-" P[3] "_" P[4]
+                else if (n == 4 && (P[2] in k2)) nl = P[1] "_" P[2] "_" P[3] "-" P[4]
+                else if (n == 5 && (P[5] in k3)) nl = P[1] "_" P[2] "-" P[3] "-" P[4] "_" P[5]
+                lset2[nl] = 1
+            }
+            # pass 3: force what is left to 3 parts
+            split("", k2); split("", k3)
+            for (l in lset2) { n = split(l, P, "_"); if (n == 3) { k2[P[2]] = 1; k3[P[3]] = 1 } }
+            for (l in lset2) {
+                n = split(l, P, "_"); nl = l
+                if (n > 3) {
+                    done = 0
+                    for (j = 2; j <= n && !done; j++) if (P[j] in k3) { nl = P[1] "_" joindash(P, n, j, 2) "_" P[j]; done = 1 }
+                    for (j = 2; j <= n && !done; j++) if (P[j] in k2) { nl = P[1] "_" P[j] "_" joindash(P, n, j, 2); done = 1 }
+                    if (!done) nl = P[1] "_" joindash(P, n - 1, 0, 2) "_" P[n]
+                }
+                print nl
+            }
+        }' "$1" | LC_ALL=C sort -u
+}
+
 write_acc_vs_prod_pages() {
     # whitelist: NO detail pages/slugmap — the name set is each env's
     # base/_white.tsv itself (NOSLUG mode below: unlinked cells, IPv4 keys
@@ -85,22 +169,26 @@ write_acc_vs_prod_pages() {
     # VALUES of each env's subscriptions.json, read from the config cache
     # base/_profiles.tsv — the ONE page family where a profile surfaces (the
     # CLAUDE.md transfer-profile gotcha names this exception). NOSLUG like the
-    # whitelist (no detail pages), name-only (no activity report) and untinted
-    # (the profiles' result column stays "unknown").
-    local types=(accounts subscriptions logins hosts partners domains applications whitelist flowids)
-    local labels=("Accounts" "Subscriptions" "Logins" "Hosts" "Partners" "Domains" "Applications" "Whitelist" "FlowID")
-    local bases=(_accounts _subscriptions _logins _hosts _partners _domains _apps _white _profiles)
+    # whitelist: no detail pages.
+    # logicals (2026-08-30, user request): the FlowIDs condensed further into
+    # LOGICAL flow groups (_logicals_from above); NOSLUG and unlinked like
+    # flowids, its name lists derived at publish time — no cache of its own.
+    local types=(accounts subscriptions logins hosts partners domains applications whitelist flowids logicals)
+    local labels=("Accounts" "Subscriptions" "Logins" "Hosts" "Partners" "Domains" "Applications" "Whitelist" "FlowID" "Logical")
+    local bases=(_accounts _subscriptions _logins _hosts _partners _domains _apps _white _profiles _logicals)
     # ACTIVITY per env: each name's Files/Volume from that env's entity summary
     # .rpt (first-table ROWs — the same source ranking.sh lifts from), matched
-    # case aside. Whitelist (no entity report) has no activity source and keeps
-    # the name-only layout.
-    local rpts=(account subscription login remote-host partner domain application "" "")
+    # case aside. Since 2026-08-30 the activity feeds ONLY the Summary page's
+    # dormancy split — the entity pages themselves render name-only.
+    local rpts=(account subscription login remote-host partner domain application "" "" "")
     # difference (2026-08-29): the Only-acceptance and Only-production sets
     # side by side as two independent name-sorted columns of ONE table — the
     # promotion diff at a glance. Its tab sits AFTER Summary in the view row.
-    # all (2026-08-30, user request): the FIRST view button — the union of
-    # both sets, Name + one centered green OK sign per environment the name
-    # exists in. acc / prd (2026-08-30, user request): ONE environment's FULL
+    # all (2026-08-30, user request; relaid same day): the FIRST view button —
+    # the union of both sets in the DIFFERENCE layout: one row per name, the
+    # Acceptance/Production column(s) filled where the name exists — a
+    # Both-set row fills BOTH sides (the ✔/✘ sign form lasted a morning).
+    # acc / prd (2026-08-30, user request): ONE environment's FULL
     # set (its only-set plus the Both set), the single-env layout; the
     # existing -acceptance/-production pages stay the ONLY-sets under their
     # old URLs, relabelled "Only Acceptance"/"Only Production" (spelled out,
@@ -111,19 +199,27 @@ write_acc_vs_prod_pages() {
     # Summary / Entities / Subscriptions vs partners; the type row (this
     # order) and the view row show ONLY inside Entities, whose landing —
     # and the view row's default — is Subscriptions at the Both view.
-    local taborder=(subscriptions flowids accounts logins hosts partners domains applications whitelist)
+    local taborder=(subscriptions flowids logicals accounts logins hosts partners domains applications whitelist)
     local ent_home="acc-vs-prod-subscriptions-both.html"
     local ti vi tj t v tmp na nb np am pm ab pb trow vrow vl out
     local sumtmp; sumtmp=$(mktemp)   # per-type counts + active-name lists for the Summary page
     # no slugmaps at all (fresh clone before the transfer reports) -> no pages
     [ -d "data/acceptance/transfer/reports/details" ] || [ -d "data/production/transfer/reports/details" ] || return 0
     tmp=$(mktemp)
+    # the Logical name lists, derived per env from the FlowID cache (the
+    # accvsprod stamp already watches flow-manager/base, so freshness holds)
+    local alog plog
+    alog=$(mktemp); plog=$(mktemp)
+    _logicals_from "data/acceptance/flow-manager/base/_profiles.tsv" > "$alog"
+    _logicals_from "data/production/flow-manager/base/_profiles.tsv" > "$plog"
     for ti in "${!types[@]}"; do
         t=${types[$ti]}
         am="data/acceptance/transfer/reports/details/$t/_slugmap.tsv"; [ -f "$am" ] || am=""
         pm="data/production/transfer/reports/details/$t/_slugmap.tsv"; [ -f "$pm" ] || pm=""
         ab="data/acceptance/flow-manager/base/${bases[$ti]}.tsv"; [ -f "$ab" ] || ab=""
         pb="data/production/flow-manager/base/${bases[$ti]}.tsv"; [ -f "$pb" ] || pb=""
+        # logicals: no cache — the derived per-env lists stand in as the base
+        if [ "$t" = logicals ]; then ab="$alog"; pb="$plog"; fi
         local ar="" pr=""
         if [ -n "${rpts[$ti]}" ]; then
             ar="data/acceptance/transfer/reports/${rpts[$ti]}.rpt"; [ -f "$ar" ] || ar=""
@@ -137,22 +233,20 @@ write_acc_vs_prod_pages() {
             pr="data/production/transfer/reports/coverage/whitelist-files.tsv"; [ -f "$pr" ] || pr=""
         fi
         local hasact=0; { [ -n "$ar" ] || [ -n "$pr" ]; } && hasact=1
-        local noslug=0; case $t in whitelist|flowids) noslug=1 ;; esac
-        # whitelist only: NOSLUG rows order by result color first; flowids —
-        # the other NOSLUG type — has no result and keeps plain name order
-        local csort=0; [ "$t" = whitelist ] && csort=1
+        local noslug=0; case $t in whitelist|flowids|logicals) noslug=1 ;; esac
         # _/- SEPARATOR FOLD (2026-08-29, user decision — THIS report family
         # only; site-wide the separator stays an identity): the two envs
         # spell one flow's name with _ or - interchangeably, so the cross-env
         # match folds - onto _ (on top of the case fold) and every name
         # DISPLAYS in the _ spelling; links keep each env's own raw slug.
-        # NOT for hosts (DNS names — the hyphen is the real character) or
-        # whitelist (IP addresses).
-        local fold=1; case $t in hosts|whitelist) fold=0 ;; esac
+        # NOT for hosts (DNS names — the hyphen is the real character),
+        # whitelist (IP addresses) or logicals (the hyphen marks parts the
+        # derivation combined — folding it would undo the 3-part shape).
+        local fold=1; case $t in hosts|whitelist|logicals) fold=0 ;; esac
         # one line per name (case- and separator-folded): cls a|b|p, KEY,
         # acceptance name/slug/result, production name/slug/result, then the
         # activity columns: acceptance files/volume, production files/volume
-        awk -v OFS='\t' -v AM="$am" -v PM="$pm" -v AB="$ab" -v PB="$pb" -v NOSLUG="$noslug" -v CSORT="$csort" -v AR="$ar" -v PR="$pr" -v FOLD="$fold" '
+        awk -v OFS='\t' -v AM="$am" -v PM="$pm" -v AB="$ab" -v PB="$pb" -v NOSLUG="$noslug" -v AR="$ar" -v PR="$pr" -v FOLD="$fold" '
             function sepfold(v) { if (FOLD) gsub(/-/, "_", v); return v }   # the DISPLAY spelling: every - shown as _
             function nkey(v) { return toupper(sepfold(v)) }                # the MATCH key: case + separator folded
             function padkey(v,   o) {   # IPv4 -> zero-padded octets (address order); else UPPER
@@ -202,11 +296,10 @@ write_acc_vs_prod_pages() {
                     na = ns = pn = ps = ""
                     if (k in A) { split(A[k], aa, "\t"); na = aa[1]; ns = aa[2] }
                     if (k in P) { split(P[k], pp, "\t"); pn = pp[1]; ps = pp[2] }
-                    # CSORT (whitelist): rows order by RESULT color — red,
-                    # green, blue, orange (unknown last) — then address order
+                    # (the whitelist rows ordered by result COLOR first until
+                    # 2026-08-30, when the colors left the family — plain
+                    # key order now, which for the whitelist is address order)
                     sk = k
-                    if (CSORT) { r5 = (cls == "p") ? RP[k] : RA[k]
-                        sk = ((r5 == "red") ? 0 : (r5 == "green") ? 1 : (r5 == "blue") ? 2 : (r5 == "orange") ? 3 : 4) k }
                     # display in the _ spelling (sepfold; raw for hosts/IPs);
                     # the slugs stay each env raw ones, so links keep working.
                     # Activity is keyed on the SAME folded key as the maps.
@@ -242,29 +335,34 @@ write_acc_vs_prod_pages() {
             # THIS type (2026-08-30, user request; the "(nnn)" form lasted an
             # hour): All = the union, Acceptance/Production = that env's full
             # set, Difference = the two only-sets together
+            # the view row DISPLAY order (2026-08-30, user choice): three
+            # sections split by a .tabsep gap — the union cuts (All /
+            # Difference), then the full per-env sets (Acceptance /
+            # Production), then the disjoint split (Only Acceptance / Both /
+            # Only Production)
+            local vorder=(all difference @gap acc prd @gap acceptance both production)
             vrow=""
-            local vcnt
-            for tj in 0 1 2 3 4 5; do
-                case ${views[$tj]} in
+            local vcnt vt vti
+            for vt in "${vorder[@]}"; do
+                if [ "$vt" = "@gap" ]; then vrow+="<span class=\"tabsep\"></span>"; continue; fi
+                for vti in "${!views[@]}"; do [ "${views[$vti]}" = "$vt" ] && break; done
+                case $vt in
                     all)        vcnt=$((na + nb + np)) ;;
                     acc)        vcnt=$((na + nb)) ;;
                     acceptance) vcnt=$na ;;
                     both)       vcnt=$nb ;;
                     production) vcnt=$np ;;
                     prd)        vcnt=$((nb + np)) ;;
+                    difference) vcnt=$((na + np)) ;;
                 esac
-                vl="${vlabels[$tj]} - $vcnt"
-                if [ "$tj" = "$vi" ]; then vrow+="<span class=\"tab active\">$vl</span>"
-                else vrow+="<a class=\"tab\" href=\"acc-vs-prod-$t-${views[$tj]}.html\">$vl</a>"; fi
+                vl="${vlabels[$vti]} - $vcnt"
+                if [ "$vt" = "$v" ]; then vrow+="<span class=\"tab active\">$vl</span>"
+                else vrow+="<a class=\"tab\" href=\"acc-vs-prod-$t-$vt.html\">$vl</a>"; fi
             done
-            vl="${vlabels[6]} - $((na + np))"
-            if [ "$v" = difference ]; then vrow+="<span class=\"tab active\">$vl</span>"
-            else vrow+="<a class=\"tab\" href=\"acc-vs-prod-$t-difference.html\">$vl</a>"; fi
             {
                 html_head "Acceptance vs production" "../assets/style.css" "" "ANALYSES" "acc-vs-prod"
                 printf '<h1>Acceptance vs production</h1>\n'
-                local actnote="" foldnote=""
-                [ "$hasact" = 1 ] && actnote=" The Files column shows each environment's own logged activity over its data window — a name in both environments that is busy in one and blank in the other is dormant there."
+                local foldnote=""
                 [ "$fold" = 1 ] && foldnote=" The <code>_</code> and <code>-</code> separators are treated as the same character: names are matched across the environments ignoring the difference and are all shown in the <code>_</code> spelling (each link still opens that environment's own page)."
                 # The button rows go DIRECTLY under the <h1>, above the prose —
                 # navigation first, everywhere on the site (see the group tab
@@ -275,120 +373,93 @@ write_acc_vs_prod_pages() {
                 printf '<p class="tabs">%s</p>\n' "$erow"
                 printf '<p class="tabs">%s</p>\n' "$vrow"
                 # flowids: its own subtitle — configured-only (no logged
-                # names), no row colors and no links, so the standard text
-                # would promise what these rows do not have
+                # names) and no detail pages, so the standard text would
+                # promise links these rows do not have
                 if [ "$t" = flowids ]; then
                     # its own fold note too: the shared one promises links
                     printf '<p class="subtitle">The FlowIDs known to each environment — the <code>customAttribute_FlowIdentifier</code> values of its configured subscriptions: only in Acceptance, in both, or only in Production. A flow&#8217;s UC subscriptions share one FlowID, so this compares the environments by flow rather than by subscription. The <code>_</code> and <code>-</code> separators are treated as the same character: names are matched across the environments ignoring the difference and are all shown in the <code>_</code> spelling.</p>\n'
+                elif [ "$t" = logicals ]; then
+                    printf '<p class="subtitle">The Logical flows known to each environment — the FlowIDs condensed into logical groups: numbered variants and per-label branches of one flow fold into a single name, normalized to three <code>_</code>-separated parts (a <code>-</code> inside a part marks parts the normalization combined). Only in Acceptance, in both, or only in Production.</p>\n'
                 else
-                    printf '<p class="subtitle">The %s known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production. Row colors are the standard entity results; in the Both view each column links and tints its own environment.%s%s</p>\n' "${labels[$ti]}" "$foldnote" "$actnote"
+                    # name-only pages (2026-08-30, user choice — the FlowID
+                    # look family-wide): no Files column, no result colors;
+                    # the links to the detail pages stay (whitelist has none)
+                    local linknote=""
+                    [ "$noslug" = 0 ] && linknote=" Every name links its own environment&#8217;s detail page."
+                    printf '<p class="subtitle">The %s known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production.%s%s</p>\n' "${labels[$ti]}" "$linknote" "$foldnote"
                 fi
                 printf '<div class="tablewrap"><table class="fit">\n'
-                if [ "$v" = all ]; then
-                    # the All view (2026-08-30): every name once, a centered
-                    # green OK sign per environment it exists in — no Files
-                    # columns, whatever the type
-                    printf '<tr><th>Name</th><th class="ctr">Acceptance</th><th class="ctr">Production</th></tr>\n'
-                elif [ "$hasact" = 1 ]; then
-                    if [ "$v" = both ] || [ "$v" = difference ]; then
-                        printf '<tr><th>Acceptance</th><th class="num">Files</th><th>Production</th><th class="num">Files</th></tr>\n'
-                    else
-                        printf '<tr><th>%s</th><th class="num">Files</th></tr>\n' "${labels[$ti]}"
-                    fi
-                elif [ "$t" = flowids ] && [ "$v" = both ]; then
-                    # ONE column (2026-08-30, user request): a FlowID in the
-                    # Both set is the SAME string on both sides — no slug, no
-                    # tint, both displayed in the folded `_` spelling — so two
-                    # identical columns said nothing
-                    printf '<tr><th>FlowID</th></tr>\n'
-                elif [ "$v" = both ] || [ "$v" = difference ]; then
+                # ONE column for the unlinked derived types in the Both view
+                # (2026-08-30, user request): a FlowID/Logical in the Both
+                # set is the SAME string on both sides — no slug, no tint —
+                # so two identical columns said nothing
+                onecol=0; case $t in flowids|logicals) onecol=1 ;; esac
+                if [ "$onecol" = 1 ] && [ "$v" = both ]; then
+                    printf '<tr><th>%s</th></tr>\n' "${labels[$ti]}"
+                elif [ "$v" = both ] || [ "$v" = difference ] || [ "$v" = all ]; then
                     printf '<tr><th>Acceptance</th><th>Production</th></tr>\n'
                 else
                     printf '<tr><th>%s</th></tr>\n' "${labels[$ti]}"
                 fi
-                onecol=0; [ "$t" = flowids ] && onecol=1
-                awk -F'\t' -v view="$v" -v sub2="$t" -v hasact="$hasact" -v onecol="$onecol" -v OK='&#10004;' -v NO='&#10008;' '
+                # NAME-ONLY rendering (2026-08-30, user choice — the FlowID
+                # look family-wide): no Files cells, no result tints; every
+                # cell still links its environment's own detail page where the
+                # type has them. The activity in the stream ($9/$11) now feeds
+                # only the Summary's dormancy split.
+                awk -F'\t' -v view="$v" -v sub2="$t" -v onecol="$onecol" '
                     function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
-                    function isres(r) { return r == "green" || r == "orange" || r == "red" || r == "blue" }
-                    function cell(env, name, slug, res,   cls, inner) {
+                    function cell(env, name, slug,   inner) {
                         inner = e(name)
                         if (slug != "") inner = "<a href=\"../../" env "/details/" sub2 "/" slug ".html\">" inner "</a>"
-                        cls = "cl"; if (isres(res)) cls = cls " res-" res
-                        return "<td class=\"" cls "\">" inner "</td>"
+                        return "<td class=\"cl\">" inner "</td>"
                     }
-                    # the ACTIVITY cell (Files) of one env; a name with no
-                    # logged activity in that env renders blank (the Volume
-                    # column was removed 2026-08-29)
-                    function act(f) {
-                        if (!hasact) return ""
-                        return "<td class=\"num\">" e(f) "</td>"
-                    }
-                    # the All view: one row per name (the union stream is
-                    # globally name-sorted); the name links its acceptance
-                    # detail page when it has one, else production'\''s; a
-                    # centered green OK per environment the name exists in
-                    view == "all" {
-                        nm = ($1 == "p") ? $6 : $3
-                        sl = ""; se = ""
-                        if ($4 != "") { sl = $4; se = "acceptance" }
-                        else if ($7 != "") { sl = $7; se = "production" }
-                        # present = green OK sign, ABSENT = red X sign
-                        # (2026-08-30, user request — an empty cell before)
-                        printf "<tr>%s<td class=\"ctr%s\">%s</td><td class=\"ctr%s\">%s</td></tr>\n", \
-                            cell(se, nm, sl, ""), ($1 != "p" ? " processed" : " failed"), ($1 != "p" ? OK : NO), \
-                            ($1 != "a" ? " processed" : " failed"), ($1 != "a" ? OK : NO)
-                        if ($1 != "p") naA++
-                        if ($1 != "a") npA++
-                        n++; next }
-                    view == "acceptance" && $1 == "a" {
-                        printf "<tr%s>%s%s</tr>\n", (isres($5) ? " data-res=\"" $5 "\"" : ""), cell("acceptance", $3, $4, ""), act($9); af += $9; n++ }
-                    view == "production" && $1 == "p" {
-                        printf "<tr%s>%s%s</tr>\n", (isres($8) ? " data-res=\"" $8 "\"" : ""), cell("production", $6, $7, ""), act($11); pf += $11; n++ }
-                    # acc / prd: ONE environment'\''s FULL set (only-set + Both),
-                    # the single-env layout and tint
-                    view == "acc" && ($1 == "a" || $1 == "b") {
-                        printf "<tr%s>%s%s</tr>\n", (isres($5) ? " data-res=\"" $5 "\"" : ""), cell("acceptance", $3, $4, ""), act($9); af += $9; n++ }
-                    view == "prd" && ($1 == "p" || $1 == "b") {
-                        printf "<tr%s>%s%s</tr>\n", (isres($8) ? " data-res=\"" $8 "\"" : ""), cell("production", $6, $7, ""), act($11); pf += $11; n++ }
-                    view == "both" && $1 == "b" {
-                        # onecol (flowids): the one shared spelling, once
-                        if (onecol) printf "<tr>%s</tr>\n", cell("acceptance", $3, $4, $5)
-                        else printf "<tr>%s%s%s%s</tr>\n", cell("acceptance", $3, $4, $5), act($9), cell("production", $6, $7, $8), act($11)
-                        af += $9; pf += $11; n++ }
+                    # the All view (relaid 2026-08-30, user request): the
+                    # DIFFERENCE layout over the union — one row per name in
+                    # the one global alphabet, each side filled where the name
+                    # exists, so a Both-set row fills BOTH columns and an
+                    # only-set row leaves the other side empty
+                    view == "all" && $1 == "a" { n++
+                        printf "<tr>%s<td class=\"cl\"></td></tr>\n", cell("acceptance", $3, $4); next }
+                    view == "all" && $1 == "b" { n++
+                        printf "<tr>%s%s</tr>\n", cell("acceptance", $3, $4), cell("production", $6, $7); next }
+                    view == "all" && $1 == "p" { n++
+                        printf "<tr><td class=\"cl\"></td>%s</tr>\n", cell("production", $6, $7); next }
+                    view == "acceptance" && $1 == "a" { n++
+                        printf "<tr>%s</tr>\n", cell("acceptance", $3, $4) }
+                    view == "production" && $1 == "p" { n++
+                        printf "<tr>%s</tr>\n", cell("production", $6, $7) }
+                    # acc / prd: ONE environment'\''s FULL set (only-set + Both)
+                    view == "acc" && ($1 == "a" || $1 == "b") { n++
+                        printf "<tr>%s</tr>\n", cell("acceptance", $3, $4) }
+                    view == "prd" && ($1 == "p" || $1 == "b") { n++
+                        printf "<tr>%s</tr>\n", cell("production", $6, $7) }
+                    view == "both" && $1 == "b" { n++
+                        # onecol (flowids/logicals): the one shared spelling, once
+                        if (onecol) printf "<tr>%s</tr>\n", cell("acceptance", $3, $4)
+                        else printf "<tr>%s%s</tr>\n", cell("acceptance", $3, $4), cell("production", $6, $7) }
                     # difference: ONE ROW PER NAME — an entity exists in only
                     # ONE environment here, so its row fills only that side
                     # (the other column stays empty). The input stream is
                     # globally name-sorted, so the rows interleave in one
                     # alphabet, each name at its proper position.
-                    view == "difference" && $1 == "a" { nA++; af += $9
-                        printf "<tr>%s%s<td class=\"cl\"></td>%s</tr>\n", cell("acceptance", $3, $4, $5), act($9), (hasact ? "<td class=\"num\"></td>" : "") }
-                    view == "difference" && $1 == "p" { nP++; pf += $11
-                        printf "<tr>%s%s%s%s</tr>\n", "<td class=\"cl\"></td>", (hasact ? "<td class=\"num\"></td>" : ""), cell("production", $6, $7, $8), act($11) }
+                    view == "difference" && $1 == "a" { nA++
+                        printf "<tr>%s<td class=\"cl\"></td></tr>\n", cell("acceptance", $3, $4) }
+                    view == "difference" && $1 == "p" { nP++
+                        printf "<tr><td class=\"cl\"></td>%s</tr>\n", cell("production", $6, $7) }
                     END {
-                        if (view == "all") {
-                            printf "<tr class=\"total\"><td>Total (%d)</td><td class=\"ctr\">%d</td><td class=\"ctr\">%d</td></tr>\n", n + 0, naA + 0, npA + 0
-                            exit
-                        }
                         if (view == "difference") {
-                            if (hasact)
-                                printf "<tr class=\"total\"><td>Total (%d / %d)</td><td class=\"num\">%d</td><td></td><td class=\"num\">%d</td></tr>\n", nA + 0, nP + 0, af, pf
-                            else
-                                printf "<tr class=\"total\"><td>Total (%d / %d)</td><td></td></tr>\n", nA + 0, nP + 0
+                            printf "<tr class=\"total\"><td>Total (%d / %d)</td><td></td></tr>\n", nA + 0, nP + 0
                             exit
                         }
-                        if (!hasact) { printf "<tr class=\"total\"><td>Total (%d)</td>%s</tr>\n", n + 0, (view == "both" && !onecol ? "<td></td>" : ""); exit }
-                        if (view == "both")
-                            printf "<tr class=\"total\"><td>Total (%d)</td><td class=\"num\">%d</td><td></td><td class=\"num\">%d</td></tr>\n", n + 0, af, pf
-                        else
-                            printf "<tr class=\"total\"><td>Total (%d)</td><td class=\"num\">%d</td></tr>\n", n + 0, (view == "acceptance" || view == "acc" ? af : pf)
+                        two = (view == "all" || (view == "both" && !onecol))
+                        printf "<tr class=\"total\"><td>Total (%d)</td>%s</tr>\n", n + 0, (two ? "<td></td>" : "")
                     }' "$tmp"
                 printf '</table></div>\n'
-                [ "$t" = flowids ] || printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = seen in the server log only. An untinted name was logged but is not configured.</p>\n'
                 printf '</body>\n</html>\n'
             } > "$out"
         done
     done
-    rm -f "$tmp"
+    rm -f "$tmp" "$alog" "$plog"
 
     # ---- the Summary page (acc-vs-prod-summary.html): the home status tables of both envs + the per-type set/dormancy figures
     # Per type the three set sizes plus the Both set's ACTIVITY split (busy in
@@ -424,7 +495,7 @@ write_acc_vs_prod_pages() {
         # the Per-entity ROW order (2026-08-29, user choice; FlowID after
         # Subscriptions 2026-08-30) — independent of the types[] array, which
         # keeps driving the pages and the tab row
-        local sumorder=(subscriptions flowids partners accounts logins hosts domains applications whitelist)
+        local sumorder=(subscriptions flowids logicals partners accounts logins hosts domains applications whitelist)
         for t in "${sumorder[@]}"; do
             for ti in "${!types[@]}"; do [ "${types[$ti]}" = "$t" ] && break; done
             awk -F'\t' -v FS2='|' -v T="$t" -v LBL="${labels[$ti]}" '

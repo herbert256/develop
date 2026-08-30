@@ -13,21 +13,19 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Acceptance vs production</h1>
 <h2>What this shows</h2>
-<p>The <strong>two environments&rsquo; entities compared by name</strong>, one page per entity type (Accounts, Subscriptions, Logins, Hosts, Partners, Domains, Applications, Whitelist). An entity counts here when the environment knows it at all &mdash; configured in FlowManager <em>or</em> seen in the logs.</p>
-<h2>The three views</h2>
-<p>The second button row splits the names into three disjoint sets:</p>
-<p><strong>Only acceptance</strong> &mdash; names known to Acceptance but not to Production.<br>
-<strong>Both</strong> &mdash; names known to both environments, shown as two columns: the Acceptance column links that environment&rsquo;s detail page, the Production column the other&rsquo;s &mdash; so both sides are one click away. Each column is tinted by its <em>own</em> environment&rsquo;s result, so a flow that is healthy in Acceptance but failing in Production shows green next to red.<br>
-<strong>Only production</strong> &mdash; names known to Production but not to Acceptance.</p>
-<p>Names are matched case-insensitively; each column shows its environment&rsquo;s own spelling. The button labels carry the three counts.</p>
-<h2>Activity columns</h2>
-<p>Next to each name, <strong>Files</strong> and <strong>Volume</strong> show that environment&rsquo;s own logged activity over its data window (lifted from the environment&rsquo;s entity reports, so the figures always agree with them). A blank pair means the name is configured but never logged there — so in the Both view, a flow that is busy on one side and blank on the other is <em>dormant</em> in that environment, which the name comparison alone cannot show. Whitelist has no entity report, so that type keeps the name-only layout. The total row sums the Files column per environment.</p>
+<p>The <strong>two environments&rsquo; entities compared by name</strong>, one page per entity type (Subscriptions, FlowID, Logical, Accounts, Logins, Hosts, Partners, Domains, Applications, Whitelist). An entity counts here when the environment knows it at all &mdash; configured in FlowManager <em>or</em> seen in the logs. The pages are <strong>name-only lists</strong>: no activity figures and no result colors &mdash; every name links its own environment&rsquo;s detail page (FlowID, Logical and Whitelist have none), so each side is one click away. <strong>FlowID</strong> compares the <code>customAttribute_FlowIdentifier</code> values of the configured subscriptions &mdash; a flow&rsquo;s UC subscriptions share one FlowID, so it compares the environments by flow rather than by subscription. <strong>Logical</strong> condenses the FlowIDs one step further: numbered variants and per-label branches of one flow fold into a single logical name, normalized to three <code>_</code>-separated parts (a <code>-</code> inside a part marks parts the normalization combined).</p>
+<h2>The views</h2>
+<p>The view button row cuts the union of the two name sets differently per button:</p>
+<p><strong>All</strong> &mdash; every name once, in one alphabet; the Acceptance and Production columns are filled where the name exists (a name in both fills both).<br>
+<strong>Acceptance</strong> / <strong>Production</strong> &mdash; one environment&rsquo;s full set.<br>
+<strong>Only Acceptance</strong> / <strong>Only Production</strong> &mdash; names known to one environment but not the other.<br>
+<strong>Both</strong> &mdash; names known to both environments, one column per environment.<br>
+<strong>Difference</strong> &mdash; the two only-sets interleaved in one alphabet, each name filling only its own side.</p>
+<p>Names are matched case-insensitively; each column shows its environment&rsquo;s own spelling. The button labels carry the counts.</p>
 <h2>The Summary view</h2>
-<p>The fourth button, <strong>Summary</strong>, is the verdict layer: per type the three set sizes plus the Both set&rsquo;s activity split (busy in both, or dormant in exactly one environment), followed by the two <strong>promotion gaps</strong> &mdash; the top flows <em>active</em> in production that acceptance does not know at all (untestable: production traffic with no acceptance twin to test against) and the top flows active in acceptance never promoted to production.</p>
+<p><strong>Summary</strong> is the verdict layer: both environments&rsquo; home status tables, then per type the set sizes plus the Both set&rsquo;s activity split (busy in both, or dormant in exactly one environment &mdash; drawn from each environment&rsquo;s entity reports, the one place activity still appears in this family).</p>
 <h2>Subscriptions vs partners</h2>
 <p>The last button of the type row opens a cross-view: the subscriptions present in <strong>both</strong> environments whose <strong>partners differ</strong> between Acceptance and Production, with each environment&rsquo;s own partner(s) and account(s) beside them, every name linking its own environment&rsquo;s detail page. Read a difference with care: it can be a real configuration gap, but it can also be the per-environment partner <em>grouping</em> &mdash; the same organisations merged into one group on one side and kept as separate partners on the other.</p>
-<h2>Colors</h2>
-<p>The standard entity results: <strong>green</strong> = last transfer OK, <strong>red</strong> = last transfer Error (or server-log errors after it), <strong>orange</strong> = configured but never seen, <strong>blue</strong> = seen in the server log only. An untinted name was logged but is not configured.</p>
 <h2>Freshness</h2>
 <p>Each environment&rsquo;s copy of these pages is generated during that environment&rsquo;s build pass and reads the other environment&rsquo;s data as it is on disk at that moment &mdash; after a full build the Production copy is fully fresh and the Acceptance copy may lag the other side by one build.</p>
 </main>

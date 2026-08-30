@@ -4,68 +4,67 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Acceptance vs production</title>
-<link rel="stylesheet" href="../../assets/style.css?v=2344470360">
+<link rel="stylesheet" href="../../assets/style.css?v=205134439">
 <script src="../../assets/topbar-data.js?v=2737332728" defer></script>
-<script src="../../assets/report.js?v=2344470360" defer></script>
+<script src="../../assets/report.js?v=205134439" defer></script>
 </head>
 <body>
 <div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="acc-vs-prod" data-twin="../../acceptance/analyses/acc-vs-prod-whitelist-both.html"></div>
 <h1>Acceptance vs production <span class="grouptag">&larr; Acceptance vs production &larr; Analyses</span></h1>
 <p class="tabs"><a class="tab" href="acc-vs-prod-summary.html">Summary</a><span class="tab active">Entities</span><a class="tab" href="acc-vs-prod-subs-partners.html">Subscriptions vs partners</a></p>
-<p class="tabs"><a class="tab" href="acc-vs-prod-subscriptions-both.html">Subscriptions</a><a class="tab" href="acc-vs-prod-accounts-both.html">Accounts</a><a class="tab" href="acc-vs-prod-logins-both.html">Logins</a><a class="tab" href="acc-vs-prod-hosts-both.html">Hosts</a><a class="tab" href="acc-vs-prod-partners-both.html">Partners</a><a class="tab" href="acc-vs-prod-domains-both.html">Domains</a><a class="tab" href="acc-vs-prod-applications-both.html">Applications</a><span class="tab active">Whitelist</span></p>
-<p class="tabs"><a class="tab" href="acc-vs-prod-whitelist-acceptance.html">Only ACC</a><span class="tab active">Both</span><a class="tab" href="acc-vs-prod-whitelist-production.html">Only PRD</a><a class="tab" href="acc-vs-prod-whitelist-difference.html">Difference</a></p>
-<p class="subtitle">The Whitelist known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production. Row colors are the standard entity results; in the Both view each column links and tints its own environment. The Files column shows each environment's own logged activity over its data window — a name in both environments that is busy in one and blank in the other is dormant there.</p>
+<p class="tabs"><a class="tab" href="acc-vs-prod-subscriptions-both.html">Subscriptions</a><a class="tab" href="acc-vs-prod-flowids-both.html">FlowID</a><a class="tab" href="acc-vs-prod-logicals-both.html">Logical</a><a class="tab" href="acc-vs-prod-accounts-both.html">Accounts</a><a class="tab" href="acc-vs-prod-logins-both.html">Logins</a><a class="tab" href="acc-vs-prod-hosts-both.html">Hosts</a><a class="tab" href="acc-vs-prod-partners-both.html">Partners</a><a class="tab" href="acc-vs-prod-domains-both.html">Domains</a><a class="tab" href="acc-vs-prod-applications-both.html">Applications</a><span class="tab active">Whitelist</span></p>
+<p class="tabs"><a class="tab" href="acc-vs-prod-whitelist-all.html">All - 118</a><a class="tab" href="acc-vs-prod-whitelist-difference.html">Difference - 71</a><span class="tabsep"></span><a class="tab" href="acc-vs-prod-whitelist-acc.html">Acceptance - 118</a><a class="tab" href="acc-vs-prod-whitelist-prd.html">Production - 47</a><span class="tabsep"></span><a class="tab" href="acc-vs-prod-whitelist-acceptance.html">Only Acceptance - 71</a><span class="tab active">Both - 47</span><a class="tab" href="acc-vs-prod-whitelist-production.html">Only Production - 0</a></p>
+<p class="subtitle">The Whitelist known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production.</p>
 <div class="tablewrap"><table class="fit">
-<tr><th>Acceptance</th><th class="num">Files</th><th>Production</th><th class="num">Files</th></tr>
-<tr><td class="cl res-green">198.51.100.10</td><td class="num">4549</td><td class="cl res-green">198.51.100.10</td><td class="num">1189</td></tr>
-<tr><td class="cl res-green">198.51.100.11</td><td class="num">4559</td><td class="cl res-green">198.51.100.11</td><td class="num">1180</td></tr>
-<tr><td class="cl res-green">198.51.100.12</td><td class="num">4552</td><td class="cl res-green">198.51.100.12</td><td class="num">1183</td></tr>
-<tr><td class="cl res-green">198.51.100.13</td><td class="num">4591</td><td class="cl res-green">198.51.100.13</td><td class="num">1194</td></tr>
-<tr><td class="cl res-green">198.51.100.20</td><td class="num">610</td><td class="cl res-green">198.51.100.20</td><td class="num">157</td></tr>
-<tr><td class="cl res-green">198.51.100.21</td><td class="num">617</td><td class="cl res-green">198.51.100.21</td><td class="num">153</td></tr>
-<tr><td class="cl res-green">198.51.100.22</td><td class="num">613</td><td class="cl res-green">198.51.100.22</td><td class="num">156</td></tr>
-<tr><td class="cl res-green">198.51.100.40</td><td class="num">526</td><td class="cl res-green">198.51.100.40</td><td class="num">218</td></tr>
-<tr><td class="cl res-green">198.51.100.41</td><td class="num">539</td><td class="cl res-green">198.51.100.41</td><td class="num">225</td></tr>
-<tr><td class="cl res-green">198.51.100.80</td><td class="num">2434</td><td class="cl res-green">198.51.100.80</td><td class="num">934</td></tr>
-<tr><td class="cl res-green">198.51.100.81</td><td class="num">2414</td><td class="cl res-green">198.51.100.81</td><td class="num">925</td></tr>
-<tr><td class="cl res-green">198.51.100.82</td><td class="num">2426</td><td class="cl res-green">198.51.100.82</td><td class="num">927</td></tr>
-<tr><td class="cl res-green">198.51.100.83</td><td class="num">2432</td><td class="cl res-green">198.51.100.83</td><td class="num">919</td></tr>
-<tr><td class="cl res-green">198.51.100.110</td><td class="num">113</td><td class="cl res-green">198.51.100.110</td><td class="num">42</td></tr>
-<tr><td class="cl res-green">198.51.100.111</td><td class="num">109</td><td class="cl res-green">198.51.100.111</td><td class="num">45</td></tr>
-<tr><td class="cl res-green">203.0.113.20</td><td class="num">1101</td><td class="cl res-blue">203.0.113.20</td><td class="num">317</td></tr>
-<tr><td class="cl res-green">203.0.113.21</td><td class="num">1106</td><td class="cl res-blue">203.0.113.21</td><td class="num">317</td></tr>
-<tr><td class="cl res-green">203.0.113.22</td><td class="num">1096</td><td class="cl res-blue">203.0.113.22</td><td class="num">317</td></tr>
-<tr><td class="cl res-green">203.0.113.23</td><td class="num">1103</td><td class="cl res-blue">203.0.113.23</td><td class="num">317</td></tr>
-<tr><td class="cl res-blue">198.51.100.30</td><td class="num">370</td><td class="cl res-blue">198.51.100.30</td><td class="num">156</td></tr>
-<tr><td class="cl res-blue">198.51.100.31</td><td class="num">370</td><td class="cl res-blue">198.51.100.31</td><td class="num">156</td></tr>
-<tr><td class="cl res-blue">198.51.100.32</td><td class="num">370</td><td class="cl res-blue">198.51.100.32</td><td class="num">156</td></tr>
-<tr><td class="cl res-blue">198.51.100.33</td><td class="num">370</td><td class="cl res-blue">198.51.100.33</td><td class="num">156</td></tr>
-<tr><td class="cl res-blue">203.0.113.110</td><td class="num">424</td><td class="cl res-blue">203.0.113.110</td><td class="num">61</td></tr>
-<tr><td class="cl res-blue">203.0.113.111</td><td class="num">424</td><td class="cl res-blue">203.0.113.111</td><td class="num">61</td></tr>
-<tr><td class="cl res-blue">203.0.113.112</td><td class="num">424</td><td class="cl res-blue">203.0.113.112</td><td class="num">61</td></tr>
-<tr><td class="cl res-blue">203.0.113.235</td><td class="num"></td><td class="cl res-blue">203.0.113.235</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">192.0.2.77</td><td class="num">6245</td><td class="cl res-orange">192.0.2.77</td><td class="num">3205</td></tr>
-<tr><td class="cl res-orange">198.51.100.60</td><td class="num">83</td><td class="cl res-orange">198.51.100.60</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.61</td><td class="num">83</td><td class="cl res-orange">198.51.100.61</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.170</td><td class="num"></td><td class="cl res-orange">198.51.100.170</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.171</td><td class="num"></td><td class="cl res-orange">198.51.100.171</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.175</td><td class="num"></td><td class="cl res-orange">198.51.100.175</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.176</td><td class="num"></td><td class="cl res-orange">198.51.100.176</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.180</td><td class="num"></td><td class="cl res-orange">198.51.100.180</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.181</td><td class="num"></td><td class="cl res-orange">198.51.100.181</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.185</td><td class="num"></td><td class="cl res-orange">198.51.100.185</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.186</td><td class="num"></td><td class="cl res-orange">198.51.100.186</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.195</td><td class="num"></td><td class="cl res-orange">198.51.100.195</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.196</td><td class="num"></td><td class="cl res-orange">198.51.100.196</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.205</td><td class="num"></td><td class="cl res-orange">198.51.100.205</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.206</td><td class="num"></td><td class="cl res-orange">198.51.100.206</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.220</td><td class="num"></td><td class="cl res-orange">198.51.100.220</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">198.51.100.221</td><td class="num"></td><td class="cl res-orange">198.51.100.221</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">203.0.113.205</td><td class="num"></td><td class="cl res-orange">203.0.113.205</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">203.0.113.206</td><td class="num"></td><td class="cl res-orange">203.0.113.206</td><td class="num"></td></tr>
-<tr><td class="cl res-orange">203.0.113.236</td><td class="num"></td><td class="cl res-orange">203.0.113.236</td><td class="num"></td></tr>
-<tr class="total"><td>Total (47)</td><td class="num">44653</td><td></td><td class="num">14727</td></tr>
+<tr><th>Acceptance</th><th>Production</th></tr>
+<tr><td class="cl">192.0.2.77</td><td class="cl">192.0.2.77</td></tr>
+<tr><td class="cl">198.51.100.10</td><td class="cl">198.51.100.10</td></tr>
+<tr><td class="cl">198.51.100.11</td><td class="cl">198.51.100.11</td></tr>
+<tr><td class="cl">198.51.100.12</td><td class="cl">198.51.100.12</td></tr>
+<tr><td class="cl">198.51.100.13</td><td class="cl">198.51.100.13</td></tr>
+<tr><td class="cl">198.51.100.20</td><td class="cl">198.51.100.20</td></tr>
+<tr><td class="cl">198.51.100.21</td><td class="cl">198.51.100.21</td></tr>
+<tr><td class="cl">198.51.100.22</td><td class="cl">198.51.100.22</td></tr>
+<tr><td class="cl">198.51.100.30</td><td class="cl">198.51.100.30</td></tr>
+<tr><td class="cl">198.51.100.31</td><td class="cl">198.51.100.31</td></tr>
+<tr><td class="cl">198.51.100.32</td><td class="cl">198.51.100.32</td></tr>
+<tr><td class="cl">198.51.100.33</td><td class="cl">198.51.100.33</td></tr>
+<tr><td class="cl">198.51.100.40</td><td class="cl">198.51.100.40</td></tr>
+<tr><td class="cl">198.51.100.41</td><td class="cl">198.51.100.41</td></tr>
+<tr><td class="cl">198.51.100.60</td><td class="cl">198.51.100.60</td></tr>
+<tr><td class="cl">198.51.100.61</td><td class="cl">198.51.100.61</td></tr>
+<tr><td class="cl">198.51.100.80</td><td class="cl">198.51.100.80</td></tr>
+<tr><td class="cl">198.51.100.81</td><td class="cl">198.51.100.81</td></tr>
+<tr><td class="cl">198.51.100.82</td><td class="cl">198.51.100.82</td></tr>
+<tr><td class="cl">198.51.100.83</td><td class="cl">198.51.100.83</td></tr>
+<tr><td class="cl">198.51.100.110</td><td class="cl">198.51.100.110</td></tr>
+<tr><td class="cl">198.51.100.111</td><td class="cl">198.51.100.111</td></tr>
+<tr><td class="cl">198.51.100.170</td><td class="cl">198.51.100.170</td></tr>
+<tr><td class="cl">198.51.100.171</td><td class="cl">198.51.100.171</td></tr>
+<tr><td class="cl">198.51.100.175</td><td class="cl">198.51.100.175</td></tr>
+<tr><td class="cl">198.51.100.176</td><td class="cl">198.51.100.176</td></tr>
+<tr><td class="cl">198.51.100.180</td><td class="cl">198.51.100.180</td></tr>
+<tr><td class="cl">198.51.100.181</td><td class="cl">198.51.100.181</td></tr>
+<tr><td class="cl">198.51.100.185</td><td class="cl">198.51.100.185</td></tr>
+<tr><td class="cl">198.51.100.186</td><td class="cl">198.51.100.186</td></tr>
+<tr><td class="cl">198.51.100.195</td><td class="cl">198.51.100.195</td></tr>
+<tr><td class="cl">198.51.100.196</td><td class="cl">198.51.100.196</td></tr>
+<tr><td class="cl">198.51.100.205</td><td class="cl">198.51.100.205</td></tr>
+<tr><td class="cl">198.51.100.206</td><td class="cl">198.51.100.206</td></tr>
+<tr><td class="cl">198.51.100.220</td><td class="cl">198.51.100.220</td></tr>
+<tr><td class="cl">198.51.100.221</td><td class="cl">198.51.100.221</td></tr>
+<tr><td class="cl">203.0.113.20</td><td class="cl">203.0.113.20</td></tr>
+<tr><td class="cl">203.0.113.21</td><td class="cl">203.0.113.21</td></tr>
+<tr><td class="cl">203.0.113.22</td><td class="cl">203.0.113.22</td></tr>
+<tr><td class="cl">203.0.113.23</td><td class="cl">203.0.113.23</td></tr>
+<tr><td class="cl">203.0.113.110</td><td class="cl">203.0.113.110</td></tr>
+<tr><td class="cl">203.0.113.111</td><td class="cl">203.0.113.111</td></tr>
+<tr><td class="cl">203.0.113.112</td><td class="cl">203.0.113.112</td></tr>
+<tr><td class="cl">203.0.113.205</td><td class="cl">203.0.113.205</td></tr>
+<tr><td class="cl">203.0.113.206</td><td class="cl">203.0.113.206</td></tr>
+<tr><td class="cl">203.0.113.235</td><td class="cl">203.0.113.235</td></tr>
+<tr><td class="cl">203.0.113.236</td><td class="cl">203.0.113.236</td></tr>
+<tr class="total"><td>Total (47)</td><td></td></tr>
 </table></div>
-<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = seen in the server log only. An untinted name was logged but is not configured.</p>
 </body>
 </html>

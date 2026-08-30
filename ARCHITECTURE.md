@@ -828,7 +828,16 @@ row links inside it.
   cron expressions as prose.
 - **`publish-accvsprod.sh`** writes the per-type acceptance-vs-production pages +
   `acc-vs-prod-summary.html`. Deliberately not in `_analyses_groups` — it keeps its own type/view
-  rows directly under the `<h1>`.
+  rows directly under the `<h1>`. The **FlowID** type (2026-08-30) is the one place a
+  transfer-profile surfaces: the envs' `customAttribute_FlowIdentifier` value sets from
+  `base/_profiles.tsv`, second in the type row and in the Summary's Per-entity table (after
+  Subscriptions, per user choice). ALL types render NAME-ONLY since 2026-08-30 (user choice):
+  no Files columns, no result tints — cells still link the detail pages (FlowID/Logical/Whitelist
+  have none); the entity-report activity feeds only the Summary's dormancy split. The **Logical**
+  type (2026-08-30) condenses the FlowIDs into logical flow groups (`_logicals_from`, derived at
+  publish time, no cache): pass 1 GROUPS (shared 4-part prefixes; digit-tailed or numeric-only
+  parts whose removal collides), passes 2–3 NORMALIZE every name to three `_`-parts, joining
+  combined parts with `-` — which is why the Logical pages render UNFOLDED.
 - **UC status** — the four `uc<n>-status` reports merged into ONE tabbed report `uc-status`
   (server-area `.rpt`s; its `SUBS_GROUP_REPORTS` entry `server:uc-status` — the full value is
   `" server:uc-status server:uc2-visits transfer:account-sharing transfer:twins "` — routes its PAGES to

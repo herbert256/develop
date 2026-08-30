@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Acceptance vs production</title>
+<link rel="stylesheet" href="../../assets/style.css?v=205134439">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=205134439" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="acc-vs-prod" data-twin="../../production/analyses/acc-vs-prod-logicals-acceptance.html"></div>
+<h1>Acceptance vs production <span class="grouptag">&larr; Acceptance vs production &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="acc-vs-prod-summary.html">Summary</a><span class="tab active">Entities</span><a class="tab" href="acc-vs-prod-subs-partners.html">Subscriptions vs partners</a></p>
+<p class="tabs"><a class="tab" href="acc-vs-prod-subscriptions-acceptance.html">Subscriptions</a><a class="tab" href="acc-vs-prod-flowids-acceptance.html">FlowID</a><span class="tab active">Logical</span><a class="tab" href="acc-vs-prod-accounts-acceptance.html">Accounts</a><a class="tab" href="acc-vs-prod-logins-acceptance.html">Logins</a><a class="tab" href="acc-vs-prod-hosts-acceptance.html">Hosts</a><a class="tab" href="acc-vs-prod-partners-acceptance.html">Partners</a><a class="tab" href="acc-vs-prod-domains-acceptance.html">Domains</a><a class="tab" href="acc-vs-prod-applications-acceptance.html">Applications</a><a class="tab" href="acc-vs-prod-whitelist-acceptance.html">Whitelist</a></p>
+<p class="tabs"><a class="tab" href="acc-vs-prod-logicals-all.html">All - 119</a><a class="tab" href="acc-vs-prod-logicals-difference.html">Difference - 87</a><span class="tabsep"></span><a class="tab" href="acc-vs-prod-logicals-acc.html">Acceptance - 112</a><a class="tab" href="acc-vs-prod-logicals-prd.html">Production - 39</a><span class="tabsep"></span><span class="tab active">Only Acceptance - 80</span><a class="tab" href="acc-vs-prod-logicals-both.html">Both - 32</a><a class="tab" href="acc-vs-prod-logicals-production.html">Only Production - 7</a></p>
+<p class="subtitle">The Logical flows known to each environment — the FlowIDs condensed into logical groups: numbered variants and per-label branches of one flow fold into a single name, normalized to three <code>_</code>-separated parts (a <code>-</code> inside a part marks parts the normalization combined). Only in Acceptance, in both, or only in Production.</p>
+<div class="tablewrap"><table class="fit">
+<tr><th>Logical</th></tr>
+<tr><td class="cl">AB_CREDITREG_WEYLAND</td></tr>
+<tr><td class="cl">AB_EKDSI_STARK</td></tr>
+<tr><td class="cl">AB_EXPORT_WAYNE</td></tr>
+<tr><td class="cl">AB_HRDATA_WEYLAND</td></tr>
+<tr><td class="cl">AB_POLIS_UMBRELLA</td></tr>
+<tr><td class="cl">AB_PORTAL_ABSTERGO</td></tr>
+<tr><td class="cl">AB_SCAN_MONARCH</td></tr>
+<tr><td class="cl">AB_TDRS_PRIMATECH</td></tr>
+<tr><td class="cl">AIM_QUOTES_WONKA</td></tr>
+<tr><td class="cl">AIM_SAPPO_WONKA-PUO</td></tr>
+<tr><td class="cl">APS_RISK_TYRELL</td></tr>
+<tr><td class="cl">APS_SETTLE_P2P</td></tr>
+<tr><td class="cl">APS_STREAM_SOYLENT</td></tr>
+<tr><td class="cl">APS_TELEM_GEKKO</td></tr>
+<tr><td class="cl">CB_ISOLATED_SOYLENT</td></tr>
+<tr><td class="cl">CB_MARKETING_WNK</td></tr>
+<tr><td class="cl">CB_QUOTES_GEKKO</td></tr>
+<tr><td class="cl">CB_STARK_WAYNE</td></tr>
+<tr><td class="cl">CDV_STREAM_ABSTERGO</td></tr>
+<tr><td class="cl">CDV_STREAM_DUFF</td></tr>
+<tr><td class="cl">CD_ARIVA_BLUTH</td></tr>
+<tr><td class="cl">CD_ARIVA_DUNDER</td></tr>
+<tr><td class="cl">CD_ARIVA_SABRE</td></tr>
+<tr><td class="cl">CD_BATCH_MASSIVE</td></tr>
+<tr><td class="cl">CD_INVOICE_VANDELAY</td></tr>
+<tr><td class="cl">DPL_AUDITLOG_DUNDER</td></tr>
+<tr><td class="cl">DPL_POLIS_TYRELL</td></tr>
+<tr><td class="cl">DPL_RENSEI_SOYLENT</td></tr>
+<tr><td class="cl">DPL_STREAM_UMBRELLA</td></tr>
+<tr><td class="cl">FIN_BILLING_GLOBEXX</td></tr>
+<tr><td class="cl">FIN_FACTS_MASSIVE</td></tr>
+<tr><td class="cl">FIN_LEDGER_GLOBEX</td></tr>
+<tr><td class="cl">FIN_NAS_VANDELAY</td></tr>
+<tr><td class="cl">FIN_PORTAL_DUFF</td></tr>
+<tr><td class="cl">FIN_TREASURY_GEKKO</td></tr>
+<tr><td class="cl">FS_IFRS_WAYNE</td></tr>
+<tr><td class="cl">FS_PENSION_DUNDER</td></tr>
+<tr><td class="cl">FS_SAPBODS_PRIMATECH</td></tr>
+<tr><td class="cl">FS_STMT_APERTURE</td></tr>
+<tr><td class="cl">HR_AFAS_GEKKO</td></tr>
+<tr><td class="cl">HR_LAKE_BLACKMESA</td></tr>
+<tr><td class="cl">HR_MATCH_VANDELAY</td></tr>
+<tr><td class="cl">HR_PAYROLL_INITECH</td></tr>
+<tr><td class="cl">HR_PENSION_OSCORP</td></tr>
+<tr><td class="cl">IT_ARCHIVE_ZORG</td></tr>
+<tr><td class="cl">IT_BILLING_BLUTH</td></tr>
+<tr><td class="cl">IT_CRM_STARK</td></tr>
+<tr><td class="cl">IT_DISPATCH_INITECH</td></tr>
+<tr><td class="cl">IT_FACTS_HOOLI</td></tr>
+<tr><td class="cl">IT_LEDGER_HOOLI</td></tr>
+<tr><td class="cl">IT_MAIA_SOYLENT</td></tr>
+<tr><td class="cl">IT_TDRS_BLUTH</td></tr>
+<tr><td class="cl">ODV_ARE_APERTURE</td></tr>
+<tr><td class="cl">ODV_DMS_CYBERDYNE</td></tr>
+<tr><td class="cl">ODV_EMIS_ZORG</td></tr>
+<tr><td class="cl">ODV_MAIA_PIEDPIPER</td></tr>
+<tr><td class="cl">ODV_MERLIJN_SABRE</td></tr>
+<tr><td class="cl">ODV_RISK_TYRELL</td></tr>
+<tr><td class="cl">SI_PORTAL_OSCORP</td></tr>
+<tr><td class="cl">SI_ROS_SABRE</td></tr>
+<tr><td class="cl">SI_SAPBHP_APERTURE</td></tr>
+<tr><td class="cl">SI_TELEMETRY_STARK</td></tr>
+<tr><td class="cl">SI_VPS_VDN</td></tr>
+<tr><td class="cl">SYNT_ITP_APERTURE</td></tr>
+<tr><td class="cl">SYNT_NAS_TYRELL</td></tr>
+<tr><td class="cl">WA_BATCH_WAYNE</td></tr>
+<tr><td class="cl">WA_CRM_PIEDPIPER</td></tr>
+<tr><td class="cl">WA_SENSOR_STARK</td></tr>
+<tr><td class="cl">WA_TELEMATICS_MONARCH</td></tr>
+<tr><td class="cl">WA_WA_VDN</td></tr>
+<tr><td class="cl">WA_ZKA_ABSTERGO</td></tr>
+<tr><td class="cl">ZG_BULK_DUNDER</td></tr>
+<tr><td class="cl">ZG_CIVIL_DUNDER</td></tr>
+<tr><td class="cl">ZG_DMS_PRIMATECH</td></tr>
+<tr><td class="cl">ZG_HOOLI_GEKKO</td></tr>
+<tr><td class="cl">ZG_PGBMATCH_APERTURE</td></tr>
+<tr><td class="cl">ZK_ARIVA_OSCORP</td></tr>
+<tr><td class="cl">ZK_CLAIMS_BLACKMESA</td></tr>
+<tr><td class="cl">ZK_IKAZ_BLACKMESA</td></tr>
+<tr><td class="cl">ZK_SENSOR_SOYLENT</td></tr>
+<tr class="total"><td>Total (80)</td></tr>
+</table></div>
+</body>
+</html>

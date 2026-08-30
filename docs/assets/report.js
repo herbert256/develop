@@ -2997,6 +2997,103 @@
     }
   }
 
+  // ---- CSV download (2026-08-30, user request): every table exports itself
+  // as a .csv via a small hotspot in the UPPER-RIGHT CORNER of the LAST
+  // header cell — faint until the header is hovered (style.css .csvbtn); its
+  // click never reaches the th's sort handler. The export is the table AS
+  // SHOWN: the field header row plus the rows the active search/date/view
+  // filters leave visible (pager-hidden rows count as visible — the pager is
+  // pure presentation), in the current sort order; total rows stay out (a
+  // spreadsheet recomputes them, and mixed-in totals break sorting there).
+  // Cells export their DISPLAYED text — stacked <br> lines joined with "; ",
+  // the clines ⋯ marker and the sort arrow skipped — UTF-8 with BOM, CRLF.
+  function csvCellText(cell) {
+    var out = "";
+    (function walk(n) {
+      var i, c, cl;
+      for (i = 0; i < n.childNodes.length; i++) {
+        c = n.childNodes[i];
+        if (c.nodeType === 3) { out += c.nodeValue; continue; }
+        if (c.nodeType !== 1) continue;
+        if (c.tagName === "BR") { out += "; "; continue; }
+        cl = " " + c.className + " ";
+        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" ce ") >= 0) continue;
+        // skip what CSS hides: the von/voff toggle twin not in effect, a
+        // collapsed clines middle — the export is the cell AS DISPLAYED
+        try { if (window.getComputedStyle && getComputedStyle(c).display === "none") continue; } catch (err) {}
+        walk(c);
+      }
+    })(cell);
+    return out.replace(/\u00a0/g, " ").replace(/\s+/g, " ").replace(/^ | $/g, "");
+  }
+  function csvField(s) { return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  function tableCsv(table) {
+    var hr = headerRow(table), rows = dataRows(table), lines = [], i;
+    function line(tr) {
+      var out = [], j;
+      for (j = 0; j < tr.cells.length; j++) out.push(csvField(csvCellText(tr.cells[j])));
+      return out.join(",");
+    }
+    if (hr) lines.push(line(hr));
+    for (i = 0; i < rows.length; i++) if (rows[i].style.display !== "none") lines.push(line(rows[i]));
+    return "\ufeff" + lines.join("\r\n") + "\r\n";
+  }
+  // <page basename>[-<its h2 slug> | -<n>].csv — the heading names the file
+  // when the table has one; multiple heading-less tables number themselves.
+  function csvName(table) {
+    // a page served as its directory ("/", the home) has no basename, and
+    // "index" says nothing — those pages name the file by the heading alone
+    // (2026-08-30, user request: no "table-" fallback prefix)
+    var base = (location.pathname.split("/").pop() || "").replace(/\.html?$/, "");
+    if (base === "index") base = "";
+    var el = tunit(table).previousElementSibling, ttl = "", tg, i, c;
+    while (el) {
+      tg = el.tagName ? el.tagName.toLowerCase() : "";
+      if (tg === "h2") {
+        // the heading's OWN text — direct text nodes only, so an embedded
+        // button (srvtoggle) or muted period span stays out of the filename
+        for (i = 0; i < el.childNodes.length; i++) { c = el.childNodes[i]; if (c.nodeType === 3) ttl += c.nodeValue; }
+        if (!ttl.replace(/\s+/g, "")) ttl = el.textContent;
+        break;
+      }
+      if (tg === "h1" || (tg === "div" && (" " + el.className + " ").indexOf(" tablewrap ") >= 0)) break;
+      el = el.previousElementSibling;
+    }
+    var slug = ttl.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+    if (!slug) {
+      var all = document.getElementsByTagName("table"), idx = -1, n = 0, i;
+      for (i = 0; i < all.length; i++) { if (all[i] === table) idx = n; n++; }
+      if (n > 1 && idx >= 0) slug = String(idx + 1);
+    }
+    if (base && slug) return base + "-" + slug + ".csv";
+    return (base || slug || "table") + ".csv";
+  }
+  function downloadCsv(table) {
+    var blob = new Blob([tableCsv(table)], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = csvName(table);
+    document.body.appendChild(a);   // Firefox needs the anchor in the DOM
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+  function setupCsvBtn(table) {
+    var hr = headerRow(table); if (!hr || !hr.cells.length) return;
+    var th = hr.cells[hr.cells.length - 1];
+    var b = document.createElement("span");
+    b.className = "csvbtn";
+    b.textContent = "csv";
+    b.title = "Download this table as CSV";
+    b.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();   // never reach the th's sort handler
+      downloadCsv(table);
+    });
+    th.className += (th.className ? " " : "") + "csvhost";
+    th.appendChild(b);
+  }
+
   function init() {
     buildTopbar();          // FIRST: setupEnvSwitch/setupSrvToggle bind into the bar
     entTouch();             // Entities: slide the shared sort's hour on every view
@@ -3015,6 +3112,7 @@
       initSeen(tables[i]);    // Show-Seen tables: remember originals + full-period seen flag
       if (tables[i].getAttribute("data-heat")) initHeat(tables[i]);   // heatmap: remember each cell's text + tint
       recomputeTotals(tables[i]);  // fold the skipped rows out of the totals (non-bucket tables)
+      setupCsvBtn(tables[i]);      // the CSV-download hotspot in the last header cell's corner
     }
     setupPager();
     // SVG chart anchors (the per-day charts' clickable day columns): navigate

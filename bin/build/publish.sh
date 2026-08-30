@@ -1656,9 +1656,9 @@ write_sitemap() {
         printf '<li><a href="analyses/failed.html">Failed Subscriptions</a></li>\n'
         printf '<li><a href="analyses/failing-reasons.html">Error reasons</a></li>\n'
         printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Acceptance vs production <span class="smcount">10</span></h3><ul>\n'
+        printf '<div class="smcard"><h3>Acceptance vs production <span class="smcount">12</span></h3><ul>\n'
         local avp
-        for avp in accounts:Accounts subscriptions:Subscriptions logins:Logins hosts:Hosts \
+        for avp in accounts:Accounts subscriptions:Subscriptions flowids:FlowID logicals:Logical logins:Logins hosts:Hosts \
                    partners:Partners domains:Domains applications:Applications whitelist:Whitelist; do
             printf '<li><a href="analyses/acc-vs-prod-%s-both.html">%s</a></li>\n' "${avp%%:*}" "${avp#*:}"
         done
