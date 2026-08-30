@@ -188,12 +188,20 @@ BEGIN {
     # ---- the calendar -------------------------------------------------------
     ns = split(knob(pfx "_spikes"), SPK, " ")
     storm = knob(pfx "_storm")
+    srnd(hash(ENV "|calendar"))
     for (j = J0; j <= J1; j++) {
         d = fromjdn(j); dow = j % 7                    # jdn%7: 5,6 = Sat,Sun
         f = (dow >= 5) ? knob("weekend_factor") + 0 : 1.0
         flags = ""
         for (i = 1; i <= ns; i++) if (SPK[i] == d) { f *= 2.6; flags = "spike" }
         if (d == storm) flags = flags (flags == "" ? "" : ",") "storm"
+        # SLOW PLATFORM days (~1 in 14): the store-and-forward gaps stretch by
+        # the given factor, pushing that day's Duration percentiles into
+        # minutes — the extremes the day tables and the anomalies report feed
+        # on. One is PINNED into the newest fortnight so the home page's
+        # default 14-day view always shows a minutes-scale row.
+        sl = rnd()
+        if (flags == "" && (sl < 0.07 || j == J1 - 5)) flags = "slow:" (8 + rint(18))
         printf "%s\t%d\t%s\t%.3f\t%s\n", ENV, j, d, f, flags > CAL
     }
 

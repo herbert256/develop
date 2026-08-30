@@ -14,75 +14,74 @@
 <body>
 <div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="expired" data-twin="../../acceptance/transfer/expired.html"></div>
 <h1>Expired</h1>
-<p class="range">A <strong>UC2</strong> file waits <strong>staged</strong> until the partner collects it — and the nightly File Maintenance retention sweep (03:00, ~11 days) deletes whatever nobody picked up: outcome <strong>Expired</strong>, never delivered. <strong>115</strong> File(s) went that way, <strong>5.0%</strong> of every staged file whose fate is already decided, worth <strong>66.3 MB</strong> that never reached a partner. The per-subscription view is on <strong>Waiting</strong>.</p>
-<div class="stat stat-red"><span class="stat-v">115</span><span class="stat-l">Expired Files</span></div>
-<div class="stat"><span class="stat-v">5.0%</span><span class="stat-l">of resolved staged Files</span></div>
-<div class="stat"><span class="stat-v">66.3 MB</span><span class="stat-l">Never-delivered volume</span></div>
-<div class="stat"><span class="stat-v">10.9 d</span><span class="stat-l">Average staged to deleted</span></div>
-<div class="stat stat-orange"><span class="stat-v">59</span><span class="stat-l">Still waiting (in window)</span></div>
+<p class="range">A <strong>UC2</strong> file waits <strong>staged</strong> until the partner collects it — and the nightly File Maintenance retention sweep (03:00, ~11 days) deletes whatever nobody picked up: outcome <strong>Expired</strong>, never delivered. <strong>103</strong> File(s) went that way, <strong>4.5%</strong> of every staged file whose fate is already decided, worth <strong>61.4 MB</strong> that never reached a partner. The per-subscription view is on <strong>Waiting</strong>.</p>
+<div class="stat stat-red"><span class="stat-v">103</span><span class="stat-l">Expired Files</span></div>
+<div class="stat"><span class="stat-v">4.5%</span><span class="stat-l">of resolved staged Files</span></div>
+<div class="stat"><span class="stat-v">61.4 MB</span><span class="stat-l">Never-delivered volume</span></div>
+<div class="stat"><span class="stat-v">11.0 d</span><span class="stat-l">Average staged to deleted</span></div>
+<div class="stat stat-orange"><span class="stat-v">63</span><span class="stat-l">Still waiting (in window)</span></div>
 <div class="tablewrap"><table data-nofilter="1" data-nosearch="1">
 <tr><th>Staged to deleted</th><th class="num">Files</th><th class="num">Share</th></tr>
-<tr><td>10 day(s)</td><td class="num">38</td><td class="num">33.0%</td></tr>
-<tr><td>11 day(s)</td><td class="num">48</td><td class="num">41.7%</td></tr>
-<tr><td>12 day(s)</td><td class="num">29</td><td class="num">25.2%</td></tr>
-<tr class="total"><td>Total (3 row(s))</td><td class="num">115</td><td class="num">100.0%</td></tr>
+<tr><td>10 day(s)</td><td class="num">36</td><td class="num">35.0%</td></tr>
+<tr><td>11 day(s)</td><td class="num">32</td><td class="num">31.1%</td></tr>
+<tr><td>12 day(s)</td><td class="num">35</td><td class="num">34.0%</td></tr>
+<tr class="total"><td>Total (3 row(s))</td><td class="num">103</td><td class="num">100.0%</td></tr>
 </table></div>
 <p class="note">Calendar days between the staging start and the deletion: ONE global retention (~11 days) — the sweep runs at 03:00, so a file staged before 03:00 expires on calendar day 11, a later one on day 10-11. No account deviates (see the per-account average below), so retention is <strong>not</strong> configured per partner.</p>
 <h2>Accounts the expired files belong to</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1" data-restint="1">
 <tr><th>Account</th><th>Partner</th><th class="num">Expired</th><th class="num">Collected</th><th class="num">Waiting</th><th class="num">Pickup rate</th><th class="num">Avg age</th><th class="num">Volume</th><th>First staged</th><th>Last staged</th><th>Last deletion</th></tr>
-<tr data-res="orange"><td class="cl"><a href="../details/accounts/aps-vida-umbrella.html">APS-VIDA-UMBRELLA</a></td><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td class="num failed">58</td><td class="num processed">122</td><td class="num warn">25</td><td class="num">68%</td><td class="num">11.0 d</td><td class="num">60.0 MB</td><td>2026-07-26 16:07:01</td><td>2026-08-18 16:34:14</td><td>2026-08-29 03:07:50</td></tr>
-<tr data-res="orange"><td class="cl"><a href="../details/accounts/it-sapbhp-gekko.html">IT-SAPBHP-GEKKO</a></td><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td class="num failed">36</td><td class="num processed">47</td><td class="num warn">10</td><td class="num">57%</td><td class="num">10.9 d</td><td class="num">4.3 MB</td><td>2026-07-26 09:53:29</td><td>2026-08-18 15:07:21</td><td>2026-08-29 03:01:02</td></tr>
-<tr data-res="orange"><td class="cl"><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td class="num failed">12</td><td class="num processed">254</td><td class="num warn">6</td><td class="num">95%</td><td class="num">10.6 d</td><td class="num">258.4 KB</td><td>2026-07-27 07:03:32</td><td>2026-08-18 14:19:01</td><td>2026-08-29 03:03:10</td></tr>
-<tr data-res="orange"><td class="cl"><a href="../details/accounts/it-ekdsi-cyberdyne.html">IT-EKDSI-CYBERDYNE</a></td><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td class="num failed">6</td><td class="num processed">111</td><td class="num warn">1</td><td class="num">95%</td><td class="num">11.2 d</td><td class="num">1.0 MB</td><td>2026-08-03 15:47:27</td><td>2026-08-18 15:43:40</td><td>2026-08-29 03:08:16</td></tr>
-<tr data-res="orange"><td class="cl"><a href="../details/accounts/zg-match-hooli.html">ZG-MATCH-HOOLI</a></td><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num failed">3</td><td class="num processed">39</td><td class="num warn z"></td><td class="num">93%</td><td class="num">10.0 d</td><td class="num">738.5 KB</td><td>2026-07-30 16:31:17</td><td>2026-08-11 16:56:27</td><td>2026-08-21 03:09:40</td></tr>
-<tr class="total"><td>Total (5 account(s))</td><td></td><td class="num failed">115</td><td class="num processed">573</td><td class="num warn">42</td><td class="num">83%</td><td class="num"></td><td class="num">66.3 MB</td><td></td><td></td><td></td></tr>
+<tr data-res="orange"><td class="cl"><a href="../details/accounts/aps-vida-umbrella.html">APS-VIDA-UMBRELLA</a></td><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td class="num failed">59</td><td class="num processed">115</td><td class="num warn">31</td><td class="num">66%</td><td class="num">11.0 d</td><td class="num">48.3 MB</td><td>2026-07-27 07:44:47</td><td>2026-08-17 07:17:27</td><td>2026-08-29 03:03:59</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../details/accounts/it-sapbhp-gekko.html">IT-SAPBHP-GEKKO</a></td><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td class="num failed">27</td><td class="num processed">59</td><td class="num warn">7</td><td class="num">69%</td><td class="num">11.0 d</td><td class="num">9.4 MB</td><td>2026-07-27 09:51:17</td><td>2026-08-19 15:36:12</td><td>2026-08-29 03:09:02</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td class="num failed">11</td><td class="num processed">256</td><td class="num warn">5</td><td class="num">96%</td><td class="num">11.0 d</td><td class="num">2.6 MB</td><td>2026-07-27 07:53:12</td><td>2026-08-17 07:21:37</td><td>2026-08-29 03:01:02</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../details/accounts/it-ekdsi-cyberdyne.html">IT-EKDSI-CYBERDYNE</a></td><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td class="num failed">4</td><td class="num processed">111</td><td class="num warn">3</td><td class="num">97%</td><td class="num">10.5 d</td><td class="num">394.7 KB</td><td>2026-07-30 08:42:53</td><td>2026-08-17 15:49:46</td><td>2026-08-27 03:00:14</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../details/accounts/zg-match-hooli.html">ZG-MATCH-HOOLI</a></td><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num failed">2</td><td class="num processed">40</td><td class="num warn z"></td><td class="num">95%</td><td class="num">10.5 d</td><td class="num">652.4 KB</td><td>2026-07-30 16:57:12</td><td>2026-08-07 08:04:04</td><td>2026-08-17 03:09:21</td></tr>
+<tr class="total"><td>Total (5 account(s))</td><td></td><td class="num failed">103</td><td class="num processed">581</td><td class="num warn">46</td><td class="num">85%</td><td class="num"></td><td class="num">61.4 MB</td><td></td><td></td><td></td></tr>
 </table></div>
 <p class="note">Pickup rate = Collected / (Collected + Expired) for the same account — how often this partner actually fetches what is staged for it. <strong>Red</strong> rows never collected a single file (a dead pickup flow: everything staged for them expires); <strong>orange</strong> rows collect some and let the rest expire. Waiting = staged within the last ~11 days, still collectable.</p>
 <h2>Expiries per sweep night</h2>
 <div class="tablewrap"><table data-nofilter="1">
 <tr><th>Deletion night</th><th class="num">Files expired</th><th class="num">Volume</th><th class="num">Accounts</th></tr>
-<tr><td>2026-08-06</td><td class="num">5</td><td class="num">2.6 MB</td><td class="num">2</td></tr>
-<tr><td>2026-08-07</td><td class="num">6</td><td class="num">3.2 MB</td><td class="num">3</td></tr>
-<tr><td>2026-08-08</td><td class="num">4</td><td class="num">3.9 MB</td><td class="num">2</td></tr>
-<tr><td>2026-08-09</td><td class="num">6</td><td class="num">2.4 MB</td><td class="num">3</td></tr>
-<tr><td>2026-08-10</td><td class="num">5</td><td class="num">436.4 KB</td><td class="num">2</td></tr>
-<tr><td>2026-08-11</td><td class="num">4</td><td class="num">4.0 MB</td><td class="num">3</td></tr>
-<tr><td>2026-08-12</td><td class="num">5</td><td class="num">5.2 MB</td><td class="num">2</td></tr>
-<tr><td>2026-08-13</td><td class="num">6</td><td class="num">3.5 MB</td><td class="num">3</td></tr>
-<tr><td>2026-08-14</td><td class="num">5</td><td class="num">2.8 MB</td><td class="num">3</td></tr>
-<tr><td>2026-08-15</td><td class="num">9</td><td class="num">3.1 MB</td><td class="num">4</td></tr>
-<tr><td>2026-08-16</td><td class="num">6</td><td class="num">4.6 MB</td><td class="num">2</td></tr>
-<tr><td>2026-08-17</td><td class="num">3</td><td class="num">3.9 MB</td><td class="num">1</td></tr>
-<tr><td>2026-08-18</td><td class="num">5</td><td class="num">3.6 MB</td><td class="num">2</td></tr>
-<tr><td>2026-08-19</td><td class="num">2</td><td class="num">3.7 MB</td><td class="num">2</td></tr>
-<tr><td>2026-08-20</td><td class="num">3</td><td class="num">613.8 KB</td><td class="num">2</td></tr>
-<tr><td>2026-08-21</td><td class="num">8</td><td class="num">3.2 MB</td><td class="num">3</td></tr>
-<tr><td>2026-08-22</td><td class="num">4</td><td class="num">1.9 MB</td><td class="num">2</td></tr>
-<tr><td>2026-08-23</td><td class="num">5</td><td class="num">584.9 KB</td><td class="num">4</td></tr>
-<tr><td>2026-08-24</td><td class="num">2</td><td class="num">350.0 KB</td><td class="num">2</td></tr>
-<tr><td>2026-08-25</td><td class="num">6</td><td class="num">2.6 MB</td><td class="num">2</td></tr>
-<tr><td>2026-08-26</td><td class="num">1</td><td class="num">1.3 MB</td><td class="num">1</td></tr>
-<tr><td>2026-08-27</td><td class="num">3</td><td class="num">903.0 KB</td><td class="num">2</td></tr>
-<tr><td>2026-08-28</td><td class="num">3</td><td class="num">375.0 KB</td><td class="num">3</td></tr>
-<tr><td>2026-08-29</td><td class="num">9</td><td class="num">7.6 MB</td><td class="num">4</td></tr>
-<tr class="total"><td>Total (24 night(s))</td><td class="num failed">115</td><td class="num">66.3 MB</td><td class="num"></td></tr>
+<tr><td>2026-08-06</td><td class="num">1</td><td class="num">66.8 KB</td><td class="num">1</td></tr>
+<tr><td>2026-08-07</td><td class="num">6</td><td class="num">2.1 MB</td><td class="num">3</td></tr>
+<tr><td>2026-08-08</td><td class="num">4</td><td class="num">1.3 MB</td><td class="num">2</td></tr>
+<tr><td>2026-08-09</td><td class="num">8</td><td class="num">1.8 MB</td><td class="num">4</td></tr>
+<tr><td>2026-08-10</td><td class="num">4</td><td class="num">1.1 MB</td><td class="num">3</td></tr>
+<tr><td>2026-08-11</td><td class="num">4</td><td class="num">4.2 MB</td><td class="num">2</td></tr>
+<tr><td>2026-08-12</td><td class="num">5</td><td class="num">2.7 MB</td><td class="num">3</td></tr>
+<tr><td>2026-08-13</td><td class="num">4</td><td class="num">3.9 MB</td><td class="num">2</td></tr>
+<tr><td>2026-08-14</td><td class="num">7</td><td class="num">7.0 MB</td><td class="num">1</td></tr>
+<tr><td>2026-08-15</td><td class="num">2</td><td class="num">1.9 MB</td><td class="num">2</td></tr>
+<tr><td>2026-08-16</td><td class="num">4</td><td class="num">2.4 MB</td><td class="num">2</td></tr>
+<tr><td>2026-08-17</td><td class="num">8</td><td class="num">15.3 MB</td><td class="num">4</td></tr>
+<tr><td>2026-08-18</td><td class="num">2</td><td class="num">639.4 KB</td><td class="num">1</td></tr>
+<tr><td>2026-08-19</td><td class="num">3</td><td class="num">1.9 MB</td><td class="num">2</td></tr>
+<tr><td>2026-08-20</td><td class="num">4</td><td class="num">2.3 MB</td><td class="num">2</td></tr>
+<tr><td>2026-08-21</td><td class="num">3</td><td class="num">220.3 KB</td><td class="num">3</td></tr>
+<tr><td>2026-08-22</td><td class="num">6</td><td class="num">3.0 MB</td><td class="num">3</td></tr>
+<tr><td>2026-08-24</td><td class="num">12</td><td class="num">5.2 MB</td><td class="num">3</td></tr>
+<tr><td>2026-08-25</td><td class="num">5</td><td class="num">2.3 MB</td><td class="num">3</td></tr>
+<tr><td>2026-08-26</td><td class="num">4</td><td class="num">311.1 KB</td><td class="num">2</td></tr>
+<tr><td>2026-08-27</td><td class="num">2</td><td class="num">240.4 KB</td><td class="num">2</td></tr>
+<tr><td>2026-08-28</td><td class="num">1</td><td class="num">16.8 KB</td><td class="num">1</td></tr>
+<tr><td>2026-08-29</td><td class="num">4</td><td class="num">1.4 MB</td><td class="num">3</td></tr>
+<tr class="total"><td>Total (23 night(s))</td><td class="num failed">103</td><td class="num">61.4 MB</td><td class="num"></td></tr>
 </table></div>
 <p class="note">Each row is one 03:00 File Maintenance run and what it removed unclaimed. A missing night means that sweep deleted nothing — nothing staged ~11 days earlier went uncollected. The Accounts column is per night and not additive (one account expires files on many nights), so the Total leaves it blank.</p>
 <h2>Staged on which weekday - expired vs collected</h2>
 <div class="tablewrap"><table data-nofilter="1" data-nosearch="1">
 <tr><th>Staged on</th><th class="num">Expired</th><th class="num">Collected</th><th class="num">Expired share</th></tr>
-<tr><td>Monday</td><td class="num failed">34</td><td class="num processed">319</td><td class="num">10%</td></tr>
-<tr><td>Tuesday</td><td class="num failed">25</td><td class="num processed">324</td><td class="num">7%</td></tr>
-<tr><td>Wednesday</td><td class="num failed">17</td><td class="num processed">353</td><td class="num">5%</td></tr>
-<tr><td>Thursday</td><td class="num failed">10</td><td class="num processed">334</td><td class="num">3%</td></tr>
-<tr><td>Friday</td><td class="num failed">18</td><td class="num processed">334</td><td class="num">5%</td></tr>
-<tr><td>Saturday</td><td class="num failed">3</td><td class="num processed">255</td><td class="num">1%</td></tr>
-<tr><td>Sunday</td><td class="num failed">8</td><td class="num processed">248</td><td class="num">3%</td></tr>
-<tr class="total"><td>Total (7 weekday(s))</td><td class="num failed">115</td><td class="num processed">2167</td><td class="num">5%</td></tr>
+<tr><td>Monday</td><td class="num failed">24</td><td class="num processed">327</td><td class="num">7%</td></tr>
+<tr><td>Tuesday</td><td class="num failed">14</td><td class="num processed">329</td><td class="num">4%</td></tr>
+<tr><td>Wednesday</td><td class="num failed">23</td><td class="num processed">345</td><td class="num">6%</td></tr>
+<tr><td>Thursday</td><td class="num failed">14</td><td class="num processed">335</td><td class="num">4%</td></tr>
+<tr><td>Friday</td><td class="num failed">18</td><td class="num processed">336</td><td class="num">5%</td></tr>
+<tr><td>Saturday</td><td class="num failed">7</td><td class="num processed">253</td><td class="num">3%</td></tr>
+<tr><td>Sunday</td><td class="num failed">3</td><td class="num processed">250</td><td class="num">1%</td></tr>
+<tr class="total"><td>Total (7 weekday(s))</td><td class="num failed">103</td><td class="num processed">2175</td><td class="num">5%</td></tr>
 </table></div>
 <p class="note">The weekday the file was <strong>STAGED</strong> (not deleted). NOTE one account can dominate this split — check the per-account table before reading a weekday pattern as partner behaviour.</p>
 <p class="note">Source: the transfer parse cache (_files.tsv) — outcome <strong>Expired</strong> and the col-22 deletion timestamp set by <strong>bin/expire-files.sh</strong> from the server log's &quot;File Maintenance … finished. Deleted files […]&quot; lines (the deletion leaves NO transfer-log record). Collected = staged files with a pickup (col 21); the sweep also removes already-collected staged copies — routine cleanup, not counted here. Expired files count as <strong>Error</strong> on every report; Waiting files count as <strong>OK</strong>.</p>
-<div class="summary">Expired: 115 Files (5.0% of resolved staged)  |  Volume: 66.3 MB  |  Average staged to deleted: 10.9 d  |  Still waiting: 59</div>
+<div class="summary">Expired: 103 Files (4.5% of resolved staged)  |  Volume: 61.4 MB  |  Average staged to deleted: 11.0 d  |  Still waiting: 63</div>
 </body>
 </html>

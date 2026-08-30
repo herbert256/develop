@@ -82,7 +82,24 @@ function fname_of(abs,   d, t, ex, i) {
 function fsize(   s) {
     if (rnd() < 0.012) return 0                    # the zero-byte tail
     s = int(rexp(SIZEM)); if (s < 20) s = 20
+    # the BIG-FILE tail (~2.5%): tens of MB — with the size-aware leg
+    # durations these alone push a day's p95 toward the minute mark
+    if (rnd() < 0.025) s = int(s * (30 + rexp(80)))
+    if (s > 400000000) s = 400000000
     return s
+}
+# a transfer leg's duration grows with the file: bytes / throughput(bytes per
+# ms) — ssh ~2-4 MB/s, pesit ~6-10 MB/s, ftp ~1-2 MB/s
+function szdur(sz, thr) { return int(sz / thr) }
+function sshthr() { return 2000 + rint(2000) }
+function pesitthr() { return 6000 + rint(4000) }
+# an inter-leg store-and-forward gap: the base few seconds, times the day's
+# SLOW-PLATFORM factor (GAPF, from the calendar), plus the occasional
+# routing-queue stall — common on a slow day, rare otherwise
+function gapms(b,   g) {
+    g = b * (GAPF > 1 ? GAPF : 1)
+    if (rnd() < (GAPF > 1 ? 0.3 : 0.035)) g += 30000 + rexp(150000)
+    return int(g)
 }
 function fmode() { return (hastag("ascii") && rnd() < 0.4) ? "ASCII" : (rnd() < 0.0005 ? "unknown" : "BINARY") }
 function inicap() {
@@ -165,15 +182,15 @@ function routing_T(abs, dur, dir, st, sid, fn, sz, mo) {
 function uc1_file(t0,   fn, sz, mo, ic, sidp, sids, d1, d2, i, tt, ok, late) {
     fn = fname_of(t0); sz = fsize(); mo = fmode(); ic = inicap()
     sidp = sesshex(); sids = sesshex()
-    d1 = 300 + int(rexp(900))
+    d1 = 300 + int(rexp(900)) + szdur(sz, pesitthr())
     ok = (rnd() >= FAILP)
     if (hastag("stormy") && STORM) ok = (rnd() < 0.25)
     if (ic == "BL" || ic == "ER") ok = 0
     if (ok) {
         pesit_T(t0, d1, "Inbound", "P", sidp, fn, sz, mo, ic)
         s_pesit_ok(t0, sidp)
-        d2 = 500 + int(rexp(2500))
-        ssh_T(t0 + d1 + 2500 + int(rexp(2000)), d2, "Outbound", "P", sids, fn, sz, "Server", "SECURETRANSPORT", "UNKNOWN", sitefield(), hostspelled(), mo, "NP", (hastag("resub") && rnd() < 0.12 ? "true" : "false"))
+        d2 = 500 + int(rexp(2500)) + szdur(sz, sshthr())
+        ssh_T(t0 + d1 + gapms(2500 + rexp(2000)), d2, "Outbound", "P", sids, fn, sz, "Server", "SECURETRANSPORT", "UNKNOWN", sitefield(), hostspelled(), mo, "NP", (hastag("resub") && rnd() < 0.12 ? "true" : "false"))
         s_initconn(t0 + d1 + 2000, sids)
     } else if (ic == "BL" || ic == "ER") {
         # the AV verdict kills the file on its inbound leg (one-legged)
@@ -199,9 +216,9 @@ function uc1_file(t0,   fn, sz, mo, ic, sidp, sids, d1, d2, i, tt, ok, late) {
 function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj) {
     fn = fname_of(t0); sz = fsize(); mo = fmode()
     sidst = sesshex()
-    d1 = 150 + int(rexp(400)); d2 = 40 + int(rexp(120)); d3 = 80 + int(rexp(150))
+    d1 = 150 + int(rexp(400)) + szdur(sz, pesitthr()); d2 = 40 + int(rexp(120)); d3 = 80 + int(rexp(150))
     pesit_T(t0, d1, "Inbound", "P", sidst, fn, sz, mo, "AL")
-    tr = t0 + d1 + 1500 + int(rexp(1500))
+    tr = t0 + d1 + gapms(1500 + rexp(1500))
     # the routing pair's timestamps OVERLAP AND INVERT (outbound starts first)
     routing_T(tr + 44, d2, "Inbound",  "P", sidst, fn, sz, mo)
     routing_T(tr,      d3, "Outbound", "P", sidst, fn, sz, mo)
@@ -229,13 +246,13 @@ function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj)
 function uc3_file(t0,   fn, sz, mo, ic, sids, sidp, d1, d2, i, tt, ok) {
     fn = fname_of(t0); sz = fsize(); mo = fmode(); ic = inicap()
     sids = sesshex(); sidp = sesshex()
-    d1 = 400 + int(rexp(2500))
+    d1 = 400 + int(rexp(2500)) + szdur(sz, sshthr())
     ok = (rnd() >= FAILP)
     if (ok) {
         s_poll(t0 - 4000 - rint(4000), sids, 1 + rint(3))
         ssh_T(t0, d1, "Inbound", "P", sids, fn, sz, "Server", ACCT, "UNKNOWN", sitefield(), hostspelled(), mo, ic, "false")
-        d2 = 300 + int(rexp(700))
-        pesit_T(t0 + d1 + 1200 + int(rexp(1500)), d2, "Outbound", "P", sidp, fn, sz, mo, "NP")
+        d2 = 300 + int(rexp(700)) + szdur(sz, pesitthr())
+        pesit_T(t0 + d1 + gapms(1200 + rexp(1500)), d2, "Outbound", "P", sidp, fn, sz, mo, "NP")
         s_pesit_ok(t0 + d1 + 1200, sidp)
     } else if (hastag("pollfail") || rnd() < 0.35) {
         # the pure poll failure: inbound retries only, no outbound leg at all
@@ -260,7 +277,7 @@ function uc3_file(t0,   fn, sz, mo, ic, sids, sidp, d1, d2, i, tt, ok) {
 function uc4_file(t0,   fn, sz, mo, ic, sids, sidp, d1, d2, i, tt, ok, sf) {
     fn = fname_of(t0); sz = fsize(); mo = fmode(); ic = inicap()
     sids = hastag("shareduc4") ? SHARESID : sesshex(); sidp = sesshex()
-    d1 = 300 + int(rexp(1800))
+    d1 = 300 + int(rexp(1800)) + szdur(sz, sshthr())
     ok = (rnd() >= FAILP)
     if (ic == "BL" || ic == "ER") ok = 0
     sf = sitefield(); NOPROF = 0
@@ -270,8 +287,8 @@ function uc4_file(t0,   fn, sz, mo, ic, sids, sidp, d1, d2, i, tt, ok, sf) {
     s_authok(t0 - 1100 - rint(300), sids, anyip())
     if (ok) {
         ssh_T(t0, d1, "Inbound", "P", sids, fn, sz, "User", ACCT "@" LOGIN, LOGIN, sf, hostspelled(), mo, ic, "false")
-        d2 = 200 + int(rexp(500))
-        pesit_T(t0 + d1 + 900 + int(rexp(900)), d2, "Outbound", "P", (hastag("ucx") ? sesshex() : sidp), fn, sz, mo, "NP")
+        d2 = 200 + int(rexp(500)) + szdur(sz, pesitthr())
+        pesit_T(t0 + d1 + gapms(900 + rexp(900)), d2, "Outbound", "P", (hastag("ucx") ? sesshex() : sidp), fn, sz, mo, "NP")
         if (!hastag("ucx")) s_pesit_ok(t0 + d1 + 900, sidp)
         s_arpair(t0 + d1 + 500, sids, fn)
         NOPROF = 0
@@ -479,6 +496,8 @@ function cd_ms(   a) { if (substr(SCHED,1,3) != "cd:") return 21600000
 BEGIN { RET_LO = 10; RET_HI = 12 }
 FILENAME == CAL {
     CJ[++NCAL] = $2; CD[NCAL] = $3; CF[NCAL] = $4; CT[NCAL] = $5
+    CG[NCAL] = 1
+    if (match($5, /slow:[0-9]+/)) CG[NCAL] = substr($5, RSTART + 5, RLENGTH - 5) + 0
     if (NCAL == 1) J0R = $2 + 0
     J1 = $2 + 0
     next
@@ -511,6 +530,7 @@ FILENAME == CAL {
         base = jd * 86400000
         srnd(hash(ENVN "|ev|" SITE "|" jd))
         STORM = (CT[ci] ~ /storm/)
+        GAPF = CG[ci]
         # a historical rename: the EARLY window logs the old name
         LOGSITE = (OLDNAME != "" && jd < J0R + 14) ? OLDNAME : SITE
         flow_day_ambient(jd, base)

@@ -15,11 +15,11 @@
 <div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="size-profile" data-twin="../../production/transfer/size-profile.html"></div>
 <h1>Size Profile <span class="grouptag">&larr; Volume, Sizes &amp; Files &larr; Transfer</span></h1>
 <p class="tabs"><a class="tab" href="volume-per-day.html">Volume</a><a class="tab" href="files-by-size.html"></a><a class="tab" href="top-transfers.html">Largest files</a><a class="tab" href="route-throughput.html">Route throughput</a><span class="tab active">Size profile</span><a class="tab" href="ranking-subscriptions.html">Ranking</a></p>
-<p class="range">What each flow's files weigh, over the <strong>81</strong> subscriptions with <strong>20+ Files</strong> (of 30424 Files total). Two findings: <strong>1</strong> flows whose typical file size <strong>changed regime</strong> — the median of their first half of files vs their second half (chronological) drifted by <strong>3× or more</strong> in either direction — and <strong>6</strong> flows shipping <strong>stubs</strong>: 10%+ of their files smaller than max(1 KB, 1% of the flow's own median).</p>
+<p class="range">What each flow's files weigh, over the <strong>81</strong> subscriptions with <strong>20+ Files</strong> (of 30424 Files total). Two findings: <strong>0</strong> flows whose typical file size <strong>changed regime</strong> — the median of their first half of files vs their second half (chronological) drifted by <strong>3× or more</strong> in either direction — and <strong>6</strong> flows shipping <strong>stubs</strong>: 10%+ of their files smaller than max(1 KB, 1% of the flow's own median).</p>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Subscription</th><th class="num">Files</th><th class="num">Median (all)</th><th class="num">Median (1st half)</th><th class="num">Median (2nd half)</th><th class="num">Drift</th></tr>
-<tr><td class="cl"><a href="../details/subscriptions/ucx-odv-are-aperture.html">UCx_ODV-ARE-APERTURE</a></td><td class="num">44</td><td class="num">28.54 KB</td><td class="num">15.07 KB</td><td class="num">48.91 KB</td><td class="num">3.25×</td></tr>
-<tr class="total"><td>Total (1 subscription(s))</td><td class="num">44</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+<tr><td colspan="6">No flow's median size drifted by 3× or more.</td></tr>
+<tr class="total"><td>Total (0 subscriptions)</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
 </table></div>
 <p class="note">The halves are the flow's OWN files split by count in chronological order (not calendar halves), so a burst-shaped flow is still compared fairly. Drift = 2nd-half median / 1st-half median; ∞ marks a flow whose first-half median was 0 bytes. A regime change is worth understanding — a new file format, a changed upstream export, or content replaced by placeholders — but is not by itself an error.</p>
 <h2>Stub shippers</h2>
@@ -29,11 +29,11 @@
 <tr><td class="cl"><a href="../details/subscriptions/uc2-infra-st-monitor-infra.html">UC2-INFRA_ST-MONITOR_INFRA</a></td><td class="num">3136</td><td class="num">3136</td><td class="num">100.0%</td><td class="num">1.00 KB</td><td class="num">16 B</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc4-infra-st-monitor-infra.html">UC4-INFRA_ST-MONITOR_INFRA</a></td><td class="num">3136</td><td class="num">3136</td><td class="num">100.0%</td><td class="num">1.00 KB</td><td class="num">16 B</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc3-infra-st-monitor-infra.html">UC3-INFRA_ST-MONITOR_INFRA</a></td><td class="num">3109</td><td class="num">3109</td><td class="num">100.0%</td><td class="num">1.00 KB</td><td class="num">16 B</td></tr>
-<tr><td class="cl"><a href="../details/subscriptions/uc3-it-dispatch-initech.html">UC3_IT_DISPATCH_INITECH</a></td><td class="num">85</td><td class="num">34</td><td class="num">40.0%</td><td class="num">1.00 KB</td><td class="num">1.50 KB</td></tr>
-<tr><td class="cl"><a href="../details/subscriptions/uc4-it-tdrs-bluth.html">UC4_IT_TDRS_BLUTH</a></td><td class="num">87</td><td class="num">12</td><td class="num">13.8%</td><td class="num">1.00 KB</td><td class="num">7.09 KB</td></tr>
-<tr class="total"><td>Total (6 subscription(s))</td><td class="num">12711</td><td class="num">12585</td><td class="num">99.0%</td><td class="num"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc3-it-dispatch-initech.html">UC3_IT_DISPATCH_INITECH</a></td><td class="num">85</td><td class="num">28</td><td class="num">32.9%</td><td class="num">1.00 KB</td><td class="num">1.63 KB</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc4-it-tdrs-bluth.html">UC4_IT_TDRS_BLUTH</a></td><td class="num">87</td><td class="num">11</td><td class="num">12.6%</td><td class="num">1.00 KB</td><td class="num">7.07 KB</td></tr>
+<tr class="total"><td>Total (6 subscription(s))</td><td class="num">12711</td><td class="num">12578</td><td class="num">99.0%</td><td class="num"></td><td class="num"></td></tr>
 </table></div>
 <p class="note">A <strong>stub</strong> is a file smaller than max(1 KB, 1% of the flow's median size) — the per-flow limit is in the Stub limit column. <strong>Two-regime flows are often legitimate</strong>: a data file plus a 0-byte semaphore/flag companion produces a steady ~50% stub share by design. This table shows the mix so an UNEXPECTED stub surge (real content replaced by empties) stands out — it is informational, not an alarm list.</p>
-<div class="summary">Profiled flows: 81  |  Regime changes: 1  |  Stub shippers: 6</div>
+<div class="summary">Profiled flows: 81  |  Regime changes: 0  |  Stub shippers: 6</div>
 </body>
 </html>

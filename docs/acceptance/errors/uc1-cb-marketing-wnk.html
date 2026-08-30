@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Failed subscription: UC1_CB_MARKETING_WNK - Connection failures</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="failed" data-twin="../../production/404.html"></div>
+<h1>Failed subscription: UC1_CB_MARKETING_WNK - Connection failures</h1>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>Subscription</td><td class="res-red cl"><a href="../details/subscriptions/uc1-cb-marketing-wnk.html">UC1_CB_MARKETING_WNK</a></td></tr>
+<tr><td>Account</td><td class="res-red cl"><a href="../details/accounts/cb-marketing-wnk.html">CB_MARKETING_WNK</a></td></tr>
+<tr><td>Last server error</td><td>2026-08-29 09:08:26.242</td></tr>
+<p class="range">This subscription is red for what the SERVER log shows — its newest File ended OK and the server log erred AFTER it, so its failed-File pages are older history. Below: <strong>the server log of the connection that logged the reddening error</strong> (2026-08-29 09:08:26.242) — the whole conversation, oldest first.</p>
+</table></div>
+<div class="tablewrap"><table class="wide" data-restint="1" data-nosort="1" data-nosearch="1">
+<tr><th>Date &amp; time</th><th>Level</th><th>Line</th></tr>
+<tr data-res="red"><td>2026-08-29 09:08:19.670</td><td>Error</td><td><pre>Connection failure while UC1_CD_COSMOS_WONKA_CD_COSMOS_WONKA_SCP_CD_COSMOS_WONKA_PWD tried to connect to remote host sftp.wonka.example:22 as user CD_COSMOS_WONKA: com.maverick.ssh.SshException: Connection timed out</pre></td></tr>
+<tr data-res="red"><td>2026-08-29 09:08:26.242</td><td>Error</td><td><pre>Connection failure while UC1_CD_COSMOS_WONKA_CD_COSMOS_WONKA_SCP_CD_COSMOS_WONKA_PWD tried to connect to remote host sftp.wonka.example:22 as user CD_COSMOS_WONKA: com.maverick.ssh.SshException: Connection timed out</pre></td></tr>
+<tr class="total"><td>Total (2 line(s))</td><td></td><td></td></tr>
+</table></div>
+<p class="report-link"><a href="../analyses/failed.html" target="_blank" rel="noopener">Back to Failed Subscriptions</a></p>
+</body>
+</html>
