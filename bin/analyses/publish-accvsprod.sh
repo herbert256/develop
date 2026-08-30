@@ -87,23 +87,21 @@ write_acc_vs_prod_pages() {
     # whitelist: NO detail pages/slugmap — the name set is each env's
     # base/_white.tsv itself (NOSLUG mode below: unlinked cells, IPv4 keys
     # padded so addresses compare and sort in address order)
-    # flowids (2026-08-30, user request): the customAttribute_FlowIdentifier
-    # VALUES of each env's subscriptions.json, read from the config cache
-    # base/_profiles.tsv — the ONE page family where a profile surfaces (the
-    # CLAUDE.md transfer-profile gotcha names this exception). NOSLUG like the
-    # whitelist: no detail pages.
-    # logicals: the FlowIDs condensed further into LOGICAL flow groups —
+    # (the FlowID type was REMOVED 2026-08-30, user request — Logical, its
+    # condensed successor and a full entity, covers the flow comparison; no
+    # raw profile value surfaces anywhere any more)
+    # logicals: the FlowIDs condensed into LOGICAL flow groups —
     # since 2026-08-31 a real base cache (base/_logicals.tsv, derived by
     # bin/flow-manager.sh) with detail pages and its own entity report,
     # so it renders like the PDA types (linked cells, activity split).
-    local types=(accounts subscriptions logins hosts partners domains applications whitelist flowids logicals)
-    local labels=("Accounts" "Subscriptions" "Logins" "Hosts" "Partners" "Domains" "Applications" "Whitelist" "FlowID" "Logical")
-    local bases=(_accounts _subscriptions _logins _hosts _partners _domains _apps _white _profiles _logicals)
+    local types=(accounts subscriptions logins hosts partners domains applications whitelist logicals)
+    local labels=("Accounts" "Subscriptions" "Logins" "Hosts" "Partners" "Domains" "Applications" "Whitelist" "Logical")
+    local bases=(_accounts _subscriptions _logins _hosts _partners _domains _apps _white _logicals)
     # ACTIVITY per env: each name's Files/Volume from that env's entity summary
     # .rpt (first-table ROWs — the same source ranking.sh lifts from), matched
     # case aside. Since 2026-08-30 the activity feeds ONLY the Summary page's
     # dormancy split — the entity pages themselves render name-only.
-    local rpts=(account subscription login remote-host partner domain application "" "" logical)
+    local rpts=(account subscription login remote-host partner domain application "" logical)
     # difference (2026-08-29): the Only-acceptance and Only-production sets
     # side by side as two independent name-sorted columns of ONE table — the
     # promotion diff at a glance. Its tab sits AFTER Summary in the view row.
@@ -122,7 +120,7 @@ write_acc_vs_prod_pages() {
     # Summary / Entities / Subscriptions vs partners; the type row (this
     # order) and the view row show ONLY inside Entities, whose landing —
     # and the view row's default — is Subscriptions at the Both view.
-    local taborder=(subscriptions flowids logicals accounts logins hosts partners domains applications whitelist)
+    local taborder=(subscriptions logicals accounts logins hosts partners domains applications whitelist)
     local ent_home="acc-vs-prod-subscriptions-both.html"
     local ti vi tj t v tmp na nb np am pm ab pb trow vrow vl out
     local sumtmp; sumtmp=$(mktemp)   # per-type counts + active-name lists for the Summary page
@@ -148,7 +146,7 @@ write_acc_vs_prod_pages() {
             pr="data/production/transfer/reports/coverage/whitelist-files.tsv"; [ -f "$pr" ] || pr=""
         fi
         local hasact=0; { [ -n "$ar" ] || [ -n "$pr" ]; } && hasact=1
-        local noslug=0; case $t in whitelist|flowids) noslug=1 ;; esac
+        local noslug=0; case $t in whitelist) noslug=1 ;; esac
         # _/- SEPARATOR FOLD (2026-08-29, user decision — THIS report family
         # only; site-wide the separator stays an identity): the two envs
         # spell one flow's name with _ or - interchangeably, so the cross-env
@@ -169,12 +167,12 @@ write_acc_vs_prod_pages() {
                 return toupper(v)
             }
             # the NOSLUG key: padkey for the whitelist (FOLD=0 — addresses),
-            # nkey for flowids (FOLD=1 — the same fold the linked types use)
+            # nkey otherwise (the same fold the linked types use)
             function lkey(v) { return FOLD ? nkey(v) : padkey(v) }
             function load(map, f,   l, a) { if (f == "") return
                 while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") map[nkey(a[1])] = a[1] "\t" a[2] }
                 close(f) }
-            # NOSLUG (whitelist, flowids): the base cache IS the name list — no slug
+            # NOSLUG (whitelist): the base cache IS the name list — no slug
             function loadnames(map, f,   l, a) { if (f == "") return
                 while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") map[lkey(a[1])] = a[1] "\t" }
                 close(f) }
@@ -287,13 +285,9 @@ write_acc_vs_prod_pages() {
                 printf '<p class="tabs">%s</p>\n' "$trow"
                 printf '<p class="tabs">%s</p>\n' "$erow"
                 printf '<p class="tabs">%s</p>\n' "$vrow"
-                # flowids: its own subtitle — configured-only (no logged
-                # names) and no detail pages, so the standard text would
-                # promise links these rows do not have
-                if [ "$t" = flowids ]; then
-                    # its own fold note too: the shared one promises links
-                    printf '<p class="subtitle">The FlowIDs known to each environment — the <code>customAttribute_FlowIdentifier</code> values of its configured subscriptions: only in Acceptance, in both, or only in Production. A flow&#8217;s UC subscriptions share one FlowID, so this compares the environments by flow rather than by subscription. The <code>_</code> and <code>-</code> separators are treated as the same character: names are matched across the environments ignoring the difference and are all shown in the <code>_</code> spelling.</p>\n'
-                elif [ "$t" = logicals ]; then
+                # logicals: its own subtitle — the derivation deserves a
+                # sentence of its own
+                if [ "$t" = logicals ]; then
                     printf '<p class="subtitle">The Logical flows known to each environment — the FlowIDs condensed into logical groups: numbered variants and per-label branches of one flow fold into a single name, normalized to three <code>_</code>-separated parts (a <code>-</code> inside a part marks parts the normalization combined). Only in Acceptance, in both, or only in Production. Every name links its own environment&#8217;s detail page.</p>\n'
                 else
                     # name-only pages (2026-08-30, user choice — the FlowID
@@ -304,12 +298,9 @@ write_acc_vs_prod_pages() {
                     printf '<p class="subtitle">The %s known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production.%s%s</p>\n' "${labels[$ti]}" "$linknote" "$foldnote"
                 fi
                 printf '<div class="tablewrap"><table class="fit">\n'
-                # ONE column for the unlinked derived FlowID type in the Both
-                # view (2026-08-30, user request): a FlowID in the Both set is
-                # the SAME string on both sides — no slug, no tint — so two
-                # identical columns said nothing. (Logical left this rule
-                # 2026-08-31: its cells link each env's own detail page.)
-                onecol=0; case $t in flowids) onecol=1 ;; esac
+                # (the ONE-column Both view went with the FlowID type — every
+                # remaining type renders two linked columns)
+                onecol=0
                 if [ "$onecol" = 1 ] && [ "$v" = both ]; then
                     printf '<tr><th>%s</th></tr>\n' "${labels[$ti]}"
                 elif [ "$v" = both ] || [ "$v" = difference ] || [ "$v" = all ]; then
@@ -350,7 +341,7 @@ write_acc_vs_prod_pages() {
                     view == "prd" && ($1 == "p" || $1 == "b") { n++
                         printf "<tr>%s</tr>\n", cell("production", $6, $7) }
                     view == "both" && $1 == "b" { n++
-                        # onecol (flowids): the one shared spelling, once
+                        # onecol (retired with the FlowID type): the one shared spelling, once
                         if (onecol) printf "<tr>%s</tr>\n", cell("acceptance", $3, $4)
                         else printf "<tr>%s%s</tr>\n", cell("acceptance", $3, $4), cell("production", $6, $7) }
                     # difference: ONE ROW PER NAME — an entity exists in only
@@ -411,7 +402,7 @@ write_acc_vs_prod_pages() {
         # the Per-entity ROW order (2026-08-29, user choice; FlowID after
         # Subscriptions 2026-08-30) — independent of the types[] array, which
         # keeps driving the pages and the tab row
-        local sumorder=(subscriptions flowids logicals partners accounts logins hosts domains applications whitelist)
+        local sumorder=(subscriptions logicals partners accounts logins hosts domains applications whitelist)
         for t in "${sumorder[@]}"; do
             for ti in "${!types[@]}"; do [ "${types[$ti]}" = "$t" ] && break; done
             awk -F'\t' -v FS2='|' -v T="$t" -v LBL="${labels[$ti]}" '

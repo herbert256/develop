@@ -819,12 +819,12 @@ row links inside it.
   cron expressions as prose.
 - **`publish-accvsprod.sh`** writes the per-type acceptance-vs-production pages +
   `acc-vs-prod-summary.html`. Deliberately not in `_analyses_groups` — it keeps its own type/view
-  rows directly under the `<h1>`. The **FlowID** type (2026-08-30) is the one place a
-  transfer-profile surfaces: the envs' `customAttribute_FlowIdentifier` value sets from
-  `base/_profiles.tsv`, second in the type row and in the Summary's Per-entity table (after
-  Subscriptions, per user choice). ALL types render NAME-ONLY since 2026-08-30 (user choice):
-  no Files columns, no result tints — cells still link the detail pages (FlowID/Whitelist
-  have none); the entity-report activity feeds only the Summary's dormancy split. The **Logical**
+  rows directly under the `<h1>`. (The **FlowID** type — the raw
+  `customAttribute_FlowIdentifier` value sets — was REMOVED 2026-08-30, user request: Logical,
+  its condensed successor, covers the by-flow comparison and no raw profile value surfaces
+  anywhere.) ALL types render NAME-ONLY since 2026-08-30 (user choice):
+  no Files columns, no result tints — cells still link the detail pages (Whitelist
+  has none); the entity-report activity feeds only the Summary's dormancy split. The **Logical**
   type (2026-08-30; a FULL entity since 2026-08-31) condenses the FlowIDs into logical flow
   groups — the derivation lives in `bin/flow-manager.sh` (which writes `base/_logicals.tsv` +
   the `_profiles-logicals` FlowID → Logical map): pass 1 GROUPS (shared 4-part prefixes;

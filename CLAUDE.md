@@ -844,10 +844,10 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   Entities/coverage/search rows, no result colour, no column KIND. What remains is plumbing the
   parse needs (cache columns, the reverse config fallback, the XREF vote) — dropping it would
   silently delete ~4% of Files via the no-subscription skip. **Do not surface a RAW profile in a
-  report or page.** Two layers sit ABOVE the profile and ARE surfaced: the acc-vs-prod **FlowID**
-  pages (`publish-accvsprod.sh`, 2026-08-30) compare the two envs' `customAttribute_FlowIdentifier`
-  VALUE sets from `base/_profiles.tsv` — name lists only, no detail pages/colours/KIND — and
-  **Logical** (2026-08-31, user request), those values condensed into logical flow groups, which is
+  report or page.** ONE layer sits ABOVE the profile and IS surfaced:
+  **Logical** (2026-08-31, user request), the `customAttribute_FlowIdentifier` values condensed
+  into logical flow groups (the acc-vs-prod **FlowID** pages that showed the raw values were
+  REMOVED 2026-08-30, user request — no raw profile value surfaces anywhere), which is
   a FULL first-class entity with Partner parity: `base/_logicals.tsv`, the xref pairs (incl. the
   `_profiles-logicals` FlowID → Logical map), the Entities views (`entities/logical-*.html`),
   detail pages (`details/logicals/`), coverage, search, ranking, first-seen, cross references,
