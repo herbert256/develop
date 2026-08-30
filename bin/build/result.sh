@@ -637,6 +637,7 @@ rollup logicals logicals-subscriptions
 rollup partners partners-subscriptions
 rollup apps     apps-subscriptions
 rollup domains  domains-subscriptions
+rollup bl       bl-subscriptions
 
 # ---- blue-evidence files -----------------------------------------------------
 # For every entity the rollups left BLUE (server-log-seen, never in the transfer
@@ -649,7 +650,7 @@ BLUEDIR="$ROOT/data/$AXWAY_ENV/blue"
 EVID="$BLUEDIR/_evidence.tsv"
 # (no whitelisted-ip entry: IPs have no detail pages, so nothing ever read
 # blue/whitelisted-ip/*.txt — dropped 2026-07)
-for _bt in account:accounts subscription:subscriptions login:logins host:hosts application:apps domain:domains logical:logicals partner:partners; do
+for _bt in account:accounts subscription:subscriptions login:logins host:hosts application:apps domain:domains logical:logicals partner:partners bl:bl; do
     _ty=${_bt%%:*}; _bf="$BASE/_${_bt#*:}.tsv"; _dir="$BLUEDIR/$_ty"
     rm -rf "$_dir"
     { [ -f "$_bf" ] && [ -f "$EVID" ] && awk -F'\t' '$3=="blue"{f=1} END{exit !f}' "$_bf"; } || continue
@@ -673,8 +674,8 @@ if [ -s "$POLLOK" ] && [ -f "$EVID" ]; then
 fi
 
 # ---- report ------------------------------------------------------------------
-for f in subscriptions accounts logins hosts white logicals partners apps domains; do
+for f in subscriptions accounts logins hosts white logicals partners apps domains bl; do
     [ -f "$BASE/_$f.tsv" ] || continue
     awk -F'\t' -v n="$f" '{ c[$3]++ } END { printf "  _%s.tsv: %d green, %d red, %d orange, %d blue, %d unknown\n", n, c["green"]+0, c["red"]+0, c["orange"]+0, c["blue"]+0, c["unknown"]+0 }' "$BASE/_$f.tsv" >&2
 done
-echo "result.sh: result column filled for the 9 base caches." >&2
+echo "result.sh: result column filled for the 10 base caches." >&2

@@ -320,13 +320,18 @@ fi
 # to the newfiles row's own date/time). newfiles cols: 3 account 4 date 5 time
 # 13 profile 18 app 19 domain 20 partner; the profile resolves to its Logical
 # through the FlowID map. Appended to $tmp.evid.
-awk -F'\t' -v OFS='\t' -v PLM="$XREF/_profiles-logicals.tsv" '
+awk -F'\t' -v OFS='\t' -v PLM="$XREF/_profiles-logicals.tsv" -v SBL="$XREF/_subscriptions-bl.tsv" '
     BEGIN { while ((getline pl9 < PLM) > 0) { n9 = split(pl9, p9, "\t")
                 if (n9 >= 2 && p9[1] != "" && p9[2] != "") PM[toupper(p9[1])] = p9[2] }
-            close(PLM) }
+            close(PLM)
+            while ((getline pl9 < SBL) > 0) { n9 = split(pl9, p9, "\t")
+                if (n9 >= 2 && p9[1] != "" && p9[2] != "") BM[toupper(p9[1])] = BM[toupper(p9[1])] "\037" p9[2] }
+            close(SBL) }
     FILENAME==ARGV[1] && $1=="account" { if ($3 > adt[$2]) { adt[$2]=$3; amsg[$2]=$4 }; next }
     FILENAME==ARGV[2] { ac=toupper($3); when=$4 " " $5; m=(ac in amsg)?amsg[ac]:""
         if ($13!="" && (toupper($13) in PM)) print "logical", toupper(PM[toupper($13)]), when, m
+        if ($12!="" && (toupper($12) in BM)) { nb9=split(substr(BM[toupper($12)],2),B9,"\037")
+            for (ib9=1; ib9<=nb9; ib9++) print "bl", toupper(B9[ib9]), when, m }
         if ($18!="") print "application", toupper($18), when, m
         if ($19!="") print "domain",      toupper($19), when, m
         if ($20!="") print "partner",     toupper($20), when, m }
@@ -343,7 +348,7 @@ if ! cmp -s "$newfiles" "$BLUE_TSV" 2>/dev/null; then
 fi
 
 # ---------------------------------------------------------------------------
-# Step F — the BLUE recolor. For each of the 9 entity types, the enriched
+# Step F — the BLUE recolor. For each of the 10 entity types, the enriched
 # values (newfiles cols) that appear on NO REAL _files.tsv row are the
 # server-log-only entities -> result = blue in base/*.tsv (add a row with an
 # empty direction if the name is somehow absent from base; today every one is
@@ -461,6 +466,7 @@ recolor 14 _logins         ''          _logins-subscriptions     "$lg_logins"
 recolor 15 _hosts          skipwhite   _hosts-subscriptions
 recolor 15 _white          onlywhite   _white-subscriptions      "$lg_ips"
 recolor 13 _logicals       ''          _logicals-subscriptions   '' "$XREF/_profiles-logicals.tsv"
+recolor 12 _bl             ''          _bl-subscriptions         '' "$XREF/_subscriptions-bl.tsv"
 recolor 18 _apps           ''          _apps-subscriptions
 recolor 19 _domains        ''          _domains-subscriptions
 recolor 20 _partners       ''          _partners-subscriptions
