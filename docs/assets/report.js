@@ -771,6 +771,7 @@
     // Every type box starts OFF; with NO box checked the search covers EVERY
     // kind — a checked box narrows to the checked kinds only.
     var TYPES = [
+      { label: "Logical",      types: ["Logical"],                     on: false },
       { label: "Partner",      types: ["Partner"],                     on: false },
       { label: "Subscription", types: ["Subscription"],                on: false },
       { label: "Account",      types: ["Account"],                     on: false },

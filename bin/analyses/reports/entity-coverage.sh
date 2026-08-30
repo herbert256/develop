@@ -104,7 +104,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', building entity coverage..." >
 # Logical view resolves col 13 through the FlowID map).
 SPECS=(
     "accounts:Accounts:_accounts:_accounts-subscriptions:_subscriptions-accounts:-:3:acct"
-    "logicals:Logical:_logicals:_logicals-subscriptions:_subscriptions-logicals:_accounts-logicals:13:lgc"
+    "logical:Logical:_logicals:_logicals-subscriptions:_subscriptions-logicals:_accounts-logicals:13:lgc"
     "partners:Partners:_partners:_partners-subscriptions:_subscriptions-partners:_accounts-partners:20:ptn"
     "domains:Domains:_domains:_domains-subscriptions:_subscriptions-domains:_accounts-domains:19:dom"
     "applications:Applications:_apps:_apps-subscriptions:_subscriptions-apps:_accounts-apps:18:app"
@@ -161,7 +161,7 @@ for spec in "${SPECS[@]}"; do
     if [ "$ae" = "-" ]; then ident=1; AE=/dev/null; elif [ ! -f "$AE" ]; then AE=/dev/null; fi
     # the Logical view's direct column holds the FlowID — resolve through the map
     VMAP=""
-    [ "$_key" = logicals ] && [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv"
+    [ "$_key" = logical ] && [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv"
 
     awk -F'\t' -v EB="$EB" -v SB="$SB" -v ES="$ES" -v SE="$SE" -v AE="$AE" -v VMAP="$VMAP" \
         -v AUTH="$AUTH" -v POLL="$POLL" -v FCOL="$fcol" -v IDENT="$ident" -v RULE="$RKEY" '
