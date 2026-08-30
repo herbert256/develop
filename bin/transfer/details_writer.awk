@@ -240,14 +240,14 @@ function sum_ent(lbl, sub2, vals,   n, i, V) {
     n = usplit(vals, V)
     for (i = 1; i <= n; i++) if (V[i] != "") emitl("ROW\t" lbl "\t@{alink=" sub2 "/" V[i] "}" V[i])
 }
-# the Domain / Application / Partner group rows ("Label\tName" \x1f-joined)
+# the Domain / Application / Logical / Partner group rows ("Label\tName" \x1f-joined)
 function sum_groups(rows,   n, i, V, i1, gt, gn, gs) {
     n = usplit(rows, V)
     for (i = 1; i <= n; i++) {
         i1 = index(V[i], "\t"); if (i1 == 0) continue
         gt = substr(V[i], 1, i1 - 1); gn = substr(V[i], i1 + 1)
         if (gn == "") continue
-        gs = (gt == "Domain") ? "domains" : (gt == "Application") ? "applications" : "partners"
+        gs = (gt == "Domain") ? "domains" : (gt == "Application") ? "applications" : (gt == "Logical") ? "logicals" : "partners"
         emitl("ROW\t" gt "\t@{alink=" gs "/" gn "}" gn)
     }
 }
@@ -431,7 +431,7 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
     }
     # seen pages: the Features table (configuration only), suppressed when it
     # would carry nothing
-    if (pend_t == "SITE" || pend_t == "ACC" || x_ip != "" || x_oneacct != "" || x_onedom != "" || x_oneapp != "" || x_oneptn != "" || nca > 0) {
+    if (pend_t == "SITE" || pend_t == "ACC" || x_ip != "" || x_oneacct != "" || x_onedom != "" || x_oneapp != "" || x_onelgc != "" || x_oneptn != "" || nca > 0) {
         emitl("TABLE\tFeatures"); emitl("HEAD\tItem\tValue"); emitl("KIND\ttext\ttext")
         if (ucd != "") emitl("ROW\tUse case\t@{href=../../analyses/use-cases.html}" ucd)
         dupacct = 0
@@ -446,6 +446,7 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
         if (pend_t == "SITE") sum_config()
         if (x_onedom != "") emitl("ROW\tDomain\t@{alink=domains/" x_onedom "}" x_onedom)
         if (x_oneapp != "") emitl("ROW\tApplication\t@{alink=applications/" x_oneapp "}" x_oneapp)
+        if (x_onelgc != "") emitl("ROW\tLogical\t@{alink=logicals/" x_onelgc "}" x_onelgc)
         if (x_oneptn != "") emitl("ROW\tPartner\t@{alink=partners/" x_oneptn "}" x_oneptn)
         if (pend_t == "SITE") sum_locations()
     }
@@ -540,6 +541,8 @@ function rank_buckets(   i, d, np, P, j, s, tn, tm, tb) {
 }
 
 # ===== the section table heads ===============================================
+# the Logical+PDA quad pages (their dimension tables always render, restint'd)
+function quadp() { return (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM" || pend_t == "LGC") }
 function dim_table(lbl, kind, mods, title) {
     emitl("TABLE\t" title (mods != "" ? "\t" mods : ""))
     if (TMODE == 1) {
@@ -593,10 +596,11 @@ function start_table(s,   WEH, WEK) {
         if (TMODE == 1) { emitl("HEAD\tAccount\tLogin\tHost\t" cntlabel "\tIn - Error\tIn - OK\tOut - Error\tOut - OK\tVolume"); emitl("KIND\tacct\tlogin\thost\tnum\tnumfailed\tnumprocessed\tnumfailed\tnumprocessed\tnum") }
         else            { emitl("HEAD\tAccount\tLogin\tHost\t" cntlabel "\tError\tOK\tVolume"); emitl("KIND\tacct\tlogin\thost\tnum\tnumfailed\tnumprocessed\tnum") }
     }
-    else if (s == "2.81") dim_table("Domain", "dom", (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM") ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "Domains")
-    else if (s == "2.82") dim_table("Application", "app", (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM") ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "Applications")
-    else if (s == "2.83") dim_table("Partner", "ptn", (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM") ? "seenrows\trestint" : "seenrows", "Partners")
-    # the trio pages' Logins (3) and Hosts (4) tables (2026-08-29): sxs=5
+    else if (s == "2.81") dim_table("Domain", "dom", quadp() ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "Domains")
+    else if (s == "2.82") dim_table("Application", "app", quadp() ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "Applications")
+    else if (s == "2.83") dim_table("Logical", "lgc", quadp() ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "Logical")
+    else if (s == "2.84") dim_table("Partner", "ptn", quadp() ? "seenrows\trestint" : "seenrows", "Partners")
+    # the Logical+PDA pages' Logins (3) and Hosts (4) tables (2026-08-29): sxs=5
     # joins them into the Domains/Applications flex row; no restint — these
     # rows carry no result payload, seenrows tints green/red alone
     else if (s == "3") dim_table("Login", "login", "seenrows\tsxs=5", "Logins")
@@ -787,14 +791,15 @@ function login_sxs_row(   i, act0, act1, lg0, lg1, ic0, ic1, n2) {
 # first column (the dim_table shapes); the sxs pair partner of a folded
 # table simply renders alone. Up to three folds per page.
 function fold_single_dims(   pass9, i, j, t0, t1, hl, lbl, nr9, name9, fe0, fe1, n2, C3, trio9, d0) {
-    trio9 = (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM")
-    for (pass9 = 1; pass9 <= 5; pass9++) {   # a trio page can fold up to 4 dims + slack
+    trio9 = (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM" || pend_t == "LGC")
+    for (pass9 = 1; pass9 <= 6; pass9++) {   # a quad page can fold up to 5 dims + slack
         t0 = 0; lbl = ""
         for (i = 1; i < npg; i++) {
             if (index(PG[i], "TABLE\t") != 1) continue
             hl = PG[i + 1] "\t"   # trailing TAB: a strip_page()d never-seen table is name-column-only (HEAD\tDomain, no tab), and the match must cover both shapes
             if      (index(hl, "HEAD\tDomain\t") == 1)      lbl = "Domain"
             else if (index(hl, "HEAD\tApplication\t") == 1) lbl = "Application"
+            else if (index(hl, "HEAD\tLogical\t") == 1)     lbl = "Logical"
             else if (index(hl, "HEAD\tPartner\t") == 1)     lbl = "Partner"
             else if (trio9 && index(hl, "HEAD\tLogin\t") == 1)       lbl = "Login"   # the trio pages' Logins/Hosts tables (2026-08-29)
             else if (trio9 && index(hl, "HEAD\tRemote Host\t") == 1) lbl = "Host"
@@ -809,7 +814,7 @@ function fold_single_dims(   pass9, i, j, t0, t1, hl, lbl, nr9, name9, fe0, fe1,
         # the dim column linked via its KIND; the Features cell links via
         # alink instead (slugmap-resolved — no entry, no link)
         if (index(name9, "@{") != 1)
-            name9 = "@{alink=" ((lbl == "Domain") ? "domains" : (lbl == "Application") ? "applications" : (lbl == "Login") ? "logins" : (lbl == "Host") ? "hosts" : "partners") "/" name9 "}" name9
+            name9 = "@{alink=" ((lbl == "Domain") ? "domains" : (lbl == "Application") ? "applications" : (lbl == "Logical") ? "logicals" : (lbl == "Login") ? "logins" : (lbl == "Host") ? "hosts" : "partners") "/" name9 "}" name9
         fe0 = 0
         for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\tFeatures") == 1) { fe0 = i; break }
         if (fe0 == 0) {
@@ -1157,7 +1162,7 @@ function reset_entity() {
     split("", LE); nle = 0
     busy_day = "-"; busy_cnt = 0
     x_blue = ""; x_grpfold = ""
-    x_oneacct = ""; x_onedom = ""; x_oneapp = ""; x_oneptn = ""
+    x_oneacct = ""; x_onedom = ""; x_oneapp = ""; x_oneptn = ""; x_onelgc = ""
     tot_recs = ""; tot_f = ""; tot_p = ""; tot_h = ""; tot_first = ""; tot_last = ""; tot_pct = ""
     tot_share = ""; tot_rank = ""; tot_n = ""; tot_act = ""; tot_idle = ""
     tot_largest = ""; tot_avg = ""; tot_srank = ""; tot_erank = ""; tot_duravg = "-"; tot_sshare = ""
@@ -1172,6 +1177,7 @@ BEGIN {
     else if (TYPE == "SITE")  { label = "Subscription"; typenoun = "subscriptions"; sdir = "subscriptions"; bt = "subscription"; rk = "subscriptions" }
     else if (TYPE == "LOGIN") { label = "Login";        typenoun = "logins";        sdir = "logins";        bt = "login";        rk = "logins" }
     else if (TYPE == "HOST")  { label = "Remote Host";  typenoun = "remote hosts";  sdir = "hosts";         bt = "host";         rk = "hosts" }
+    else if (TYPE == "LGC")   { label = "Logical";      typenoun = "logical flows"; sdir = "";              bt = "logical";      rk = "logical" }
     else if (TYPE == "PTN")   { label = "Partner";      typenoun = "partners";      sdir = "";              bt = "partner";      rk = "partners" }
     else if (TYPE == "APP")   { label = "Application";  typenoun = "applications";  sdir = "";              bt = "application";  rk = "applications" }
     else                      { label = "Domain";       typenoun = "domains";       sdir = "";              bt = "domain";       rk = "domains" }
@@ -1270,7 +1276,7 @@ NF < 4 { next }
         IS_BLUE = (A[6] == "1") ? 1 : 0
         a_cfgacct = A[22]; a_acl = A[23]; a_ach = A[24]; a_conn = A[25]; a_bannerdt = A[26]; a_grp = A[27]
         a_suba = A[28]; a_subl = A[29]; a_subh = A[30]; a_nosub = A[31]; a_twin = A[32]
-        x_oneacct = A[8]; x_onedom = A[9]; x_oneapp = A[10]; x_oneptn = A[11]
+        x_oneacct = A[8]; x_onedom = A[9]; x_oneapp = A[10]; x_oneptn = A[11]; x_onelgc = A[33]
         if (t == "SITE") {
             a_sdh = A[12]; a_sda = A[13]; a_sdl = A[14]
             a_cron = A[15]; a_cronh = A[16]
@@ -1281,17 +1287,17 @@ NF < 4 { next }
             a_flowdir = ""; a_local = ""; a_lmask = ""; a_remote = ""; a_rmask = ""
             x_blue = ""
         }
-        # config Domain/Application/Partner groups: SITE folds them via
-        # sum_config; the PDA trio renders them as own tables; every other
-        # type folds them into Features via x_grpfold
+        # config Domain/Application/Logical/Partner groups: SITE folds them
+        # via sum_config; the LGC/PDA quad renders them as own tables; every
+        # other type folds them into Features via x_grpfold
         x_grpfold = ""
-        if (t != "SITE" && t != "PTN" && t != "APP" && t != "DOM" && a_grp != "") {
+        if (t != "SITE" && t != "PTN" && t != "APP" && t != "DOM" && t != "LGC" && a_grp != "") {
             ng = usplit(a_grp, GV)
             for (gi = 1; gi <= ng; gi++) {
                 i1 = index(GV[gi], "\t"); if (i1 == 0) continue
                 gt = substr(GV[gi], 1, i1 - 1); gn = substr(GV[gi], i1 + 1)
                 if (gn == "") continue
-                gs = (gt == "Domain") ? "domains" : (gt == "Application") ? "applications" : "partners"
+                gs = (gt == "Domain") ? "domains" : (gt == "Application") ? "applications" : (gt == "Logical") ? "logicals" : "partners"
                 x_grpfold = x_grpfold (x_grpfold == "" ? "" : "\n") "ROW\t" gt "\t@{alink=" gs "/" gn "}" gn
             }
         }
@@ -1405,7 +1411,7 @@ NF < 4 { next }
         if (sec == "2.6") emitl(sprintf("ROW\t%s\t%s\t%s\t@data:res=%s", ipcell, win, wout, ($9 != "" ? $9 : "orange")))
         else emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t@data:res=%s", ipcell, win, wout, namecell, ($9 != "" ? $9 : "orange")))
     }
-    else if (sec == "2" || sec == "2.8" || sec == "2.81" || sec == "2.82" || sec == "2.83") {
+    else if (sec == "2" || sec == "2.8" || sec == "2.81" || sec == "2.82" || sec == "2.83" || sec == "2.84") {
         resm = ""; extra = ""
         if ($4 == "green" || $4 == "orange" || $4 == "red" || $4 == "blue") resm = "\t@data:res=" $4
         if (sec == "2") {

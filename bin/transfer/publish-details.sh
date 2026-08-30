@@ -219,7 +219,7 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
 # slugmap sub names, plus "white" for the Whitelisted IPs cells (KIND ip).
 RESMAP_FILES=""
 for _rm in accounts:_accounts subscriptions:_subscriptions logins:_logins hosts:_hosts \
-           partners:_partners applications:_apps domains:_domains white:_white; do
+           logicals:_logicals partners:_partners applications:_apps domains:_domains white:_white; do
     [ -s "$DATA/flow-manager/base/${_rm#*:}.tsv" ] && RESMAP_FILES+="${RESMAP_FILES:+ }${_rm%%:*}=$DATA/flow-manager/base/${_rm#*:}.tsv"
 done
 unset _rm
@@ -244,6 +244,8 @@ dt_pids+=("$!")
 render_details logins "Login Details" &
 dt_pids+=("$!")
 render_details hosts "Remote Host Details" &
+dt_pids+=("$!")
+render_details logicals "Logical Details" &
 dt_pids+=("$!")
 render_details partners "Partner Details" &
 dt_pids+=("$!")

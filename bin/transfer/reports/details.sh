@@ -93,15 +93,16 @@ ACC_DIR="$REPORTS_DIR/details/accounts"
 SITE_DIR="$REPORTS_DIR/details/subscriptions"
 LOGIN_DIR="$REPORTS_DIR/details/logins"
 HOST_DIR="$REPORTS_DIR/details/hosts"
+LGC_DIR="$REPORTS_DIR/details/logicals"
 PTN_DIR="$REPORTS_DIR/details/partners"
 APP_DIR="$REPORTS_DIR/details/applications"
 DOM_DIR="$REPORTS_DIR/details/domains"
 # Optional CLI argument: narrow the run to ONE type (ACC SITE LOGIN HOST
-# PTN APP DOM) — only that type's dir is cleared and rewritten; the shared
+# LGC PTN APP DOM) — only that type's dir is cleared and rewritten; the shared
 # prep still runs in full (it is what the writer consumes).
 ONLY_TYPE="${1:-}"
 for _spec in "ACC:$ACC_DIR" "SITE:$SITE_DIR" "LOGIN:$LOGIN_DIR" "HOST:$HOST_DIR" \
-             "PTN:$PTN_DIR" "APP:$APP_DIR" "DOM:$DOM_DIR"; do
+             "LGC:$LGC_DIR" "PTN:$PTN_DIR" "APP:$APP_DIR" "DOM:$DOM_DIR"; do
     _d=${_spec#*:}
     mkdir -p "$_d"
     if [ -z "$ONLY_TYPE" ] || [ "${_spec%%:*}" = "$ONLY_TYPE" ]; then
@@ -158,14 +159,16 @@ IPMAP="$_pdir/ipmap"
 #   (the dwell-time.sh distribution per entity; the Protocol/AV Scan dims
 #   were removed 2026-07; the 7 secparams Security table too) · 13 direction ·
 #   15 mode · 2.8 account · 2.81 domain · 2.82
-#   application · 2.83 partner (the PDA dims — single-value ones fold into
-#   Features EXCEPT on PARTNER pages, whose Domain/Application ALWAYS render
+#   application · 2.83 logical · 2.84 partner (the quad dims — single-value
+#   ones fold into Features EXCEPT on the LGC/PTN/APP/DOM pages, whose
+#   dimension tables ALWAYS render
 #   as own tables listing all config-connected values via insert_config_rows;
 #   the Groups fact table is gone; the page order:
 #   Subscription comes FIRST after the day table; Account renders right under
 #   the Outgoing connections table (sec 2.8, moved from the bottom 2026-07);
-#   the PDA dims follow right under the Account table — renumbered 20/21/22
-#   -> 2.81/2.82/2.83 in 2026-07). Rows: value count
+#   the quad dims follow right under the Account table — renumbered 20/21/22
+#   -> 2.81/2.82/2.83 in 2026-07; Logical took 2.83 and Partner moved to
+#   2.84 in 2026-08-31). Rows: value count
 #   failed processed vol, sortkey=inv(count). The ENTITY sections (2/3/4/2.8/19)
 #   are cross-referenced against the FlowManager config (insert_config_rows):
 #   the configured-but-never-logged partners are appended as red 5-field rows
@@ -200,16 +203,16 @@ IPMAP="$_pdir/ipmap"
 # (whitelist_rows — the 2.6/2.7 section producer — now runs INSIDE the
 # concurrent producer group below instead of blocking here first)
 
-# The Groups table: each entity's Domain / Application / Partner attribution
-# from the xref caches (one combined map, one lookup per page). The PDA pages
-# (partner/application/domain) are included too — each gets the OTHER two
-# dimensions (the self-dimension xref file, e.g. _apps-apps.tsv, does not exist,
+# The Groups table: each entity's Domain / Application / Logical / Partner
+# attribution from the xref caches (one combined map, one lookup per page). The
+# Logical+PDA pages are included too — each gets the OTHER dimensions (the
+# self-dimension xref file, e.g. _apps-apps.tsv, does not exist,
 # so the -f guard skips it). "TYPE<TAB>name<TAB>label<TAB>group".
 grpmap=$(
     for _gspec in "ACC:accounts" "SITE:subscriptions" "LOGIN:logins" "HOST:hosts" \
-                  "PTN:partners" "APP:apps" "DOM:domains"; do
+                  "LGC:logicals" "PTN:partners" "APP:apps" "DOM:domains"; do
         _gt=${_gspec%%:*}; _git=${_gspec#*:}
-        for _gg in domains:Domain apps:Application partners:Partner; do
+        for _gg in domains:Domain apps:Application logicals:Logical partners:Partner; do
             _gf="$CONFIG_XREF/_${_git}-${_gg%%:*}.tsv"
             if [ -f "$_gf" ]; then
                 LC_ALL=C awk -F'\t' -v t="$_gt" -v lbl="${_gg#*:}" -v OFS='\t' '$1 != "" && $2 != "" { print t, $1, lbl, $2 }' "$_gf"
@@ -239,7 +242,7 @@ MOVMAP="$_pdir/movmap"
 movsrc=()
 if [ -f "$CONFIG_XREF/_subscriptions-flowdir.tsv" ]; then
     movsrc=("$CONFIG_XREF/_subscriptions-flowdir.tsv")
-    for _mf in accounts logins hosts partners apps domains; do
+    for _mf in accounts logins hosts logicals partners apps domains; do
         [ -f "$CONFIG_XREF/_${_mf}-subscriptions.tsv" ] && movsrc+=("$CONFIG_XREF/_${_mf}-subscriptions.tsv")
     done
 fi
@@ -257,6 +260,7 @@ if [ ${#movsrc[@]} -gt 0 ]; then
         FILENAME ~ /_accounts-subscriptions\.tsv$/  { pr("ACC"); next }
         FILENAME ~ /_logins-subscriptions\.tsv$/    { pr("LOGIN"); next }
         FILENAME ~ /_hosts-subscriptions\.tsv$/     { pr("HOST"); next }
+        FILENAME ~ /_logicals-subscriptions\.tsv$/  { pr("LGC"); next }
         FILENAME ~ /_partners-subscriptions\.tsv$/  { pr("PTN"); next }
         FILENAME ~ /_apps-subscriptions\.tsv$/      { pr("APP"); next }
         FILENAME ~ /_domains-subscriptions\.tsv$/   { pr("DOM"); next }
@@ -560,7 +564,7 @@ done
 # independent; the ONE_DIMS arrays carry an od prefix so the programs cannot
 # collide, and rule ORDER keeps the original semantics (a `next` in the SITE
 # rule only skips lines the ONE_DIMS rule could never match — $1=="SITE" is
-# excluded there for sections 3/2.8, and no SITE 2.81-2.83 rows exist).
+# excluded there for sections 3/2.8, and no SITE 2.81-2.84 rows exist).
 awk -F'\t' \
     -v XL="$CONFIG_XREF/_subscriptions-logins.tsv" -v XH="$CONFIG_XREF/_subscriptions-hosts.tsv" \
     -v SDOUT="$_pdir/sitedims" -v ODOUT="$_pdir/onedims" '
@@ -575,7 +579,7 @@ awk -F'\t' \
         lst[e SUBSEP s]=lst[e SUBSEP s] (lst[e SUBSEP s]==""?"":US) v
     }
     $1=="SITE" && !(($2) in eidx) { eidx[$2]=++ne; el[ne]=$2 }   # never-seen pages fold their config rows too
-    (($3==2.81 && $1!="PTN" && $1!="APP") || ($3==2.82 && $1!="PTN" && $1!="DOM") || ($3==2.83 && $1!="APP" && $1!="DOM") || (($3==3 || $3==2.8) && $1!="SITE")) && $5!="" {
+    (($3==2.81 && $1!="PTN" && $1!="APP" && $1!="LGC") || ($3==2.82 && $1!="PTN" && $1!="DOM" && $1!="LGC") || ($3==2.83 && $1!="PTN" && $1!="APP" && $1!="DOM") || ($3==2.84 && $1!="APP" && $1!="DOM" && $1!="LGC") || (($3==3 || $3==2.8) && $1!="SITE")) && $5!="" {
         odk=$1 SUBSEP $2 SUBSEP $3 SUBSEP toupper($5); if(odk in odseen) next; odseen[odk]=1
         odke=$1 SUBSEP $2 SUBSEP $3; odcnt[odke]++; odval[odke]=$5 }
     END{ for(i=1;i<=ne;i++){ e=el[i]; eu=toupper(e)
@@ -629,6 +633,8 @@ fi
 # 27 grp_rows("Label\tName" \x1f-joined) 28 sub_accts 29 sub_logins 30 sub_hosts
 #  31 nosub  32 twin (ACC: the other separator spelling(s) of this name;
 #                     SITE: the same flow in the opposite file direction)
+# 33 onelgc (the Logical single-value fold — APPENDED 2026-08-31 so fields
+#            1-32 keep their positions; the writer reads the stream by index)
 # PASS B (2026-07 head merge): the annotation pass ALSO applies the drop
 # rules and writes the per-type stream/annotation slices directly — the two
 # whole-stream filter passes and the two separate split passes folded in
@@ -698,7 +704,7 @@ LC_ALL=C awk -F'\t' \
         loadmap(XREF "/_subscriptions-hosts.tsv",    SBH, "SBH")
         firstmap(BASE "/_accounts.tsv", RES, 3, "ACC|");   firstmap(BASE "/_subscriptions.tsv", RES, 3, "SITE|")
         firstmap(BASE "/_logins.tsv", RES, 3, "LOGIN|");   firstmap(BASE "/_hosts.tsv", RES, 3, "HOST|")
-        firstmap(BASE "/_partners.tsv", RES, 3, "PTN|")
+        firstmap(BASE "/_partners.tsv", RES, 3, "PTN|");   firstmap(BASE "/_logicals.tsv", RES, 3, "LGC|")
         firstmap(BASE "/_apps.tsv", RES, 3, "APP|");       firstmap(BASE "/_domains.tsv", RES, 3, "DOM|")
         # 1-to-1 pair caches: distinct RAW $2 values per up($1), like the old
         # `awk | sort -u` (count in P2N, single value in P2V)
@@ -731,7 +737,7 @@ LC_ALL=C awk -F'\t' \
         # grpmap -> ordered "Label\tName" rows per (type,upname), _compute_grows order
         vf = GRF; while ((getline l < vf) > 0) { n = split(l, a2, "\t"); if (n < 4) continue
             k = a2[1] "|" up(a2[2]); if ((k, a2[3], a2[4]) in gdup) continue; gdup[k, a2[3], a2[4]] = 1
-            o = (a2[3] == "Domain") ? 1 : (a2[3] == "Application") ? 2 : 3
+            o = (a2[3] == "Domain") ? 1 : (a2[3] == "Application") ? 2 : (a2[3] == "Logical") ? 3 : 4
             gc[k, o]++; grows[k, o, gc[k, o]] = a2[3] "\t" a2[4] }
         close(vf)
     }
@@ -758,7 +764,11 @@ LC_ALL=C awk -F'\t' \
         k4 = t "|" e "|2.8";  od1 = (k4 in OD) ? OD[k4] : ""
         k4 = t "|" e "|2.81"; od2 = (k4 in OD) ? OD[k4] : ""
         k4 = t "|" e "|2.82"; od3 = (k4 in OD) ? OD[k4] : ""
-        k4 = t "|" e "|2.83"; od4 = (k4 in OD) ? OD[k4] : ""
+        # od4 stays the PARTNER fold (field 11 — the writer reads the stream
+        # positionally), which is section 2.84 since the 2026-08-31 renumber;
+        # the LOGICAL fold (2.83) is APPENDED as field 33, never inserted
+        k4 = t "|" e "|2.84"; od4 = (k4 in OD) ? OD[k4] : ""
+        k4 = t "|" e "|2.83"; od5 = (k4 in OD) ? OD[k4] : ""
         sdh = ""; sda = ""; sdl = ""; cr = ""; crh = ""
         fdir = ""; lloc = ""; lmask = ""; rloc = ""; rmask = ""
         suba = ""; subl = ""; subh = ""
@@ -793,7 +803,7 @@ LC_ALL=C awk -F'\t' \
             close(f)
         }
         grp = ""
-        for (o = 1; o <= 3; o++) for (i = 1; i <= gc[t "|" U, o]; i++) grp = grp (grp == "" ? "" : "\037") grows[t "|" U, o, i]
+        for (o = 1; o <= 4; o++) for (i = 1; i <= gc[t "|" U, o]; i++) grp = grp (grp == "" ? "" : "\037") grows[t "|" U, o, i]
         # ACCOUNT pages: is this account wired into ANY subscription? P2N counts
         # the distinct _accounts-subscriptions.tsv partners, so 0 means no
         # subscription references it — such an account can never move a file,
@@ -813,13 +823,13 @@ LC_ALL=C awk -F'\t' \
                (t == "SITE" && (e in TWINS)) ? TWINS[e] : ""
         af = SDIR "/a." t
         if (af != aprev) { if (aprev != "") close(aprev); aprev = af }
-        printf "%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\n", \
-            t, e, base, mv, resv, isblue, sblue, od1, od2, od3, od4, sdh, sda, sdl, cr, crh, fdir, lloc, lmask, rloc, rmask, cfa, acl, ach, conn, bdt, grp, suba, subl, subh, nosub, twin > af
+        printf "%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\n", \
+            t, e, base, mv, resv, isblue, sblue, od1, od2, od3, od4, sdh, sda, sdl, cr, crh, fdir, lloc, lmask, rloc, rmask, cfa, acl, ach, conn, bdt, grp, suba, subl, subh, nosub, twin, od5 > af
         }
         # ---- the drop rules (the two former filter passes) + the s. slice ---
         if ($3 == 13) next
         if ($1 == "SITE" && ($3 == 3 || $3 == 4 || $3 == 2.8)) next
-        if (($3 == 3 || $3 == 2.8 || $3 == 2.81 || $3 == 2.82 || $3 == 2.83) && (($1 "|" $2 "|" $3) in OD)) next
+        if (($3 == 3 || $3 == 2.8 || $3 == 2.81 || $3 == 2.82 || $3 == 2.83 || $3 == 2.84) && (($1 "|" $2 "|" $3) in OD)) next
         sf = SDIR "/s." $1
         if (sf != sprev) { if (sprev != "") close(sprev); sprev = sf }
         print > sf
@@ -949,10 +959,10 @@ BLUEDIR="${CONFIG_BASE%/flow-manager/base}/blue"
 # The stream and annotation slices are written per type by PASS B above (the
 # sort leads with TYPE, so both are TYPE-contiguous and slice cleanly), and
 # bin/transfer/details_writer.awk streams each slice in its own background
-# job — the eight types render concurrently instead of one long sequential
+# job — the nine types render concurrently instead of one long sequential
 # pass. Slicing preserves per-type order exactly, so the output is
 # byte-identical to the former single loop. An optional CLI argument narrows
-# the run to ONE type (ACC SITE LOGIN HOST PTN APP DOM) for iterating on
+# the run to ONE type (ACC SITE LOGIN HOST LGC PTN APP DOM) for iterating on
 # a single family; the shared prep above still runs — it is what the writers
 # consume — and the OTHER types' pages are left untouched by the dir cleanup
 # only on such a narrowed run (the full run cleared them up top).
@@ -964,15 +974,15 @@ mkdir -p "$RANKDIR"
 # a type with ZERO entities writes no sidecar — clear the previous run's
 # (respecting the ONLY_TYPE narrowing), or a stale set survives forever and
 # the Ranking report folds a dead estate's rows into a fresh page
-for _ty9 in ACC SITE LOGIN HOST PTN APP DOM; do
+for _ty9 in ACC SITE LOGIN HOST LGC PTN APP DOM; do
     if [ -z "$ONLY_TYPE" ] || [ "$_ty9" = "$ONLY_TYPE" ]; then rm -f "$RANKDIR/$_ty9.tsv"; fi
 done
-for _ty in ACC SITE LOGIN HOST PTN APP DOM; do
+for _ty in ACC SITE LOGIN HOST LGC PTN APP DOM; do
     if [ -n "$ONLY_TYPE" ] && [ "$_ty" != "$ONLY_TYPE" ]; then continue; fi
     [ -s "$STREAMDIR/s.$_ty" ] || continue
     case $_ty in
         ACC) _od=$ACC_DIR ;; SITE) _od=$SITE_DIR ;; LOGIN) _od=$LOGIN_DIR ;;
-        HOST) _od=$HOST_DIR ;; PTN) _od=$PTN_DIR ;; APP) _od=$APP_DIR ;; DOM) _od=$DOM_DIR ;;
+        HOST) _od=$HOST_DIR ;; LGC) _od=$LGC_DIR ;; PTN) _od=$PTN_DIR ;; APP) _od=$APP_DIR ;; DOM) _od=$DOM_DIR ;;
     esac
     LC_ALL=C awk -F'\t' -v TYPE="$_ty" -v ANN="$STREAMDIR/a.$_ty" -v OUTDIR="$_od" \
         -v RANKOUT="$RANKDIR/$_ty.tsv" \
@@ -1003,4 +1013,4 @@ cat "$STREAMDIR"/log.* >&2 2>/dev/null || true
 [ -z "$ONLY_TYPE" ] && touch "$STAMP"
 
 count_files=$(find "$REPORTS_DIR/details" -name '*.rpt' | wc -l | tr -d ' ')
-echo "Wrote $count_files detail file(s) across accounts/subscriptions/logins/hosts/partners/applications/domains." >&2
+echo "Wrote $count_files detail file(s) across accounts/subscriptions/logins/hosts/logicals/partners/applications/domains." >&2
