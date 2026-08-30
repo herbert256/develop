@@ -94,6 +94,12 @@ write_acc_vs_prod_pages() {
     # promotion diff at a glance. Its tab sits AFTER Summary in the view row.
     local views=(acceptance both production difference)
     local vlabels=("Only ACC" "Both" "Only PRD" "Difference")
+    # the FAMILY NAV (2026-08-30, user choice): row 1 everywhere is
+    # Summary / Entities / Subscriptions vs partners; the type row (this
+    # order) and the view row show ONLY inside Entities, whose landing —
+    # and the view row's default — is Subscriptions at the Both view.
+    local taborder=(subscriptions accounts logins hosts partners domains applications whitelist)
+    local ent_home="acc-vs-prod-subscriptions-both.html"
     local ti vi tj t v tmp na nb np am pm ab pb trow vrow vl out
     local sumtmp; sumtmp=$(mktemp)   # per-type counts + active-name lists for the Summary page
     # no slugmaps at all (fresh clone before the transfer reports) -> no pages
@@ -200,13 +206,19 @@ write_acc_vs_prod_pages() {
         for vi in "${!views[@]}"; do
             v=${views[$vi]}
             out="$ADIR/acc-vs-prod-$t-$v.html"
-            # Summary LEADS the type row (2026-08-29 — moved out of the view row)
+            # ROW 1 (2026-08-30): Summary / Entities / Subscriptions vs
+            # partners — Entities is the ACTIVE one on every per-type page
             trow="<a class=\"tab\" href=\"acc-vs-prod-summary.html\">Summary</a>"
-            for tj in "${!types[@]}"; do
-                if [ "$tj" = "$ti" ]; then trow+="<span class=\"tab active\">${labels[$tj]}</span>"
-                else trow+="<a class=\"tab\" href=\"acc-vs-prod-${types[$tj]}-$v.html\">${labels[$tj]}</a>"; fi
-            done
+            trow+="<span class=\"tab active\">Entities</span>"
             trow+="<a class=\"tab\" href=\"acc-vs-prod-subs-partners.html\">Subscriptions vs partners</a>"
+            # ROW 2 (Entities only): the entity types in the taborder, the
+            # current one active; switching type KEEPS the current view
+            erow=""
+            for t2 in "${taborder[@]}"; do
+                for t2i in "${!types[@]}"; do [ "${types[$t2i]}" = "$t2" ] && break; done
+                if [ "$t2" = "$t" ]; then erow+="<span class=\"tab active\">${labels[$t2i]}</span>"
+                else erow+="<a class=\"tab\" href=\"acc-vs-prod-$t2-$v.html\">${labels[$t2i]}</a>"; fi
+            done
             vrow=""
             for tj in 0 1 2; do
                 vl="${vlabels[$tj]}"   # plain labels — no counts on the view buttons (2026-08-29)
@@ -227,6 +239,7 @@ write_acc_vs_prod_pages() {
                 # rows instead of a _analyses_groups row, but the position rule
                 # is the same.
                 printf '<p class="tabs">%s</p>\n' "$trow"
+                printf '<p class="tabs">%s</p>\n' "$erow"
                 printf '<p class="tabs">%s</p>\n' "$vrow"
                 printf '<p class="subtitle">The %s known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production. Row colors are the standard entity results; in the Both view each column links and tints its own environment.%s%s</p>\n' "${labels[$ti]}" "$foldnote" "$actnote"
                 printf '<div class="tablewrap"><table class="fit">\n'
@@ -304,26 +317,13 @@ write_acc_vs_prod_pages() {
     {
         html_head "Acceptance vs production" "../assets/style.css" "" "ANALYSES" "acc-vs-prod"
         printf '<h1>Acceptance vs production — summary</h1>\n'
-        # the SAME two tab rows as the per-type pages (2026-08-29): row 1 the
-        # eight types (all links — no type is current here), row 2 the view
-        # row with Summary the ACTIVE one; the view links land on the first
-        # type (accounts), the row's natural leader. No per-type counts on
-        # this page — the Per-type table below carries them all.
-        # Summary LEADS the type row, ACTIVE here (2026-08-29)
+        # ROW 1 only (2026-08-30): Summary ACTIVE / Entities (landing on the
+        # default Subscriptions-Both view) / Subscriptions vs partners — the
+        # type and view rows show only inside Entities.
         trow="<span class=\"tab active\">Summary</span>"
-        for tj in "${!types[@]}"; do
-            trow+="<a class=\"tab\" href=\"acc-vs-prod-${types[$tj]}-both.html\">${labels[$tj]}</a>"
-        done
+        trow+="<a class=\"tab\" href=\"$ent_home\">Entities</a>"
         trow+="<a class=\"tab\" href=\"acc-vs-prod-subs-partners.html\">Subscriptions vs partners</a>"
         printf '<p class="tabs">%s</p>\n' "$trow"
-        # plain labels — no counts on the view buttons (2026-08-29; the
-        # Per-type table below carries every figure)
-        vrow=""
-        for tj in 0 1 2; do
-            vrow+="<a class=\"tab\" href=\"acc-vs-prod-${types[0]}-${views[$tj]}.html\">${vlabels[$tj]}</a>"
-        done
-        vrow+="<a class=\"tab\" href=\"acc-vs-prod-${types[0]}-difference.html\">${vlabels[3]}</a>"
-        printf '<p class="tabs">%s</p>\n' "$vrow"
         # (no subtitle — removed 2026-08-29 with the "Per type" heading and
         # the activity foot note: the summary is tables only)
         # the HOME status tables of both environments lead the page (2026-08-29):
@@ -390,18 +390,12 @@ write_subs_partners_page() {
     local psm="data/production/transfer/reports/details/subscriptions/_slugmap.tsv"
     [ -f "$asm" ] && [ -f "$psm" ] || return 0
     local out="$ADIR/acc-vs-prod-subs-partners.html"
-    local trow="<a class=\"tab\" href=\"acc-vs-prod-summary.html\">Summary</a>" t2
-    for t2 in accounts:Accounts subscriptions:Subscriptions logins:Logins hosts:Hosts \
-              partners:Partners domains:Domains applications:Applications whitelist:Whitelist; do
-        trow+="<a class=\"tab\" href=\"acc-vs-prod-${t2%%:*}-both.html\">${t2#*:}</a>"
-    done
+    # ROW 1 only (2026-08-30): Summary / Entities (the default
+    # Subscriptions-Both landing) / Subscriptions vs partners ACTIVE — the
+    # type and view rows show only inside Entities.
+    local trow="<a class=\"tab\" href=\"acc-vs-prod-summary.html\">Summary</a>"
+    trow+="<a class=\"tab\" href=\"acc-vs-prod-subscriptions-both.html\">Entities</a>"
     trow+="<span class=\"tab active\">Subscriptions vs partners</span>"
-    # the view row mirrors the family's; its links land on the Subscriptions
-    # views — this page's parent type — none active here
-    local vrow="" v2
-    for v2 in acceptance:"Only ACC" both:Both production:"Only PRD" difference:Difference; do
-        vrow+="<a class=\"tab\" href=\"acc-vs-prod-subscriptions-${v2%%:*}.html\">${v2#*:}</a>"
-    done
     local rows; rows=$(mktemp)
     awk -v OFS='\t' \
         -v ASM="$asm" -v PSM="$psm" \
@@ -476,7 +470,6 @@ write_subs_partners_page() {
         html_head "Acceptance vs production" "../assets/style.css" "" "ANALYSES" "acc-vs-prod"
         printf '<h1>Acceptance vs production</h1>\n'
         printf '<p class="tabs">%s</p>\n' "$trow"
-        printf '<p class="tabs">%s</p>\n' "$vrow"
         printf '<p class="subtitle">The subscriptions present in <strong>both</strong> environments (matched ignoring case and the <code>_</code>/<code>-</code> difference) whose <strong>partners differ</strong> between Acceptance and Production, with each environment&#8217;s own partner(s) and account(s). Every name links its own environment&#8217;s detail page. A difference can be a real configuration gap — or the per-environment partner grouping: one merged group on one side, separate partners on the other.</p>\n'
         printf '<div class="tablewrap"><table class="fit">\n'
         printf '<tr><th>Subscription</th><th>Partners ACC</th><th>Partners PRD</th><th>Account ACC</th><th>Account PRD</th></tr>\n'
