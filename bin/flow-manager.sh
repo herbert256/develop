@@ -64,10 +64,13 @@
 #                                  Use-cases analyses pages.
 #
 # ... plus the three PDA entities (base/_partners, _apps, _domains.tsv — each
-# "name<TAB>direction" with direction in/both/out; see the PDA section below)
-# and their cross references against the other entities, all joined via the
-# account: accounts/subscriptions/profiles/logins/hosts x partners/apps/
-# domains, partners-apps/partners-domains/apps-domains, and the *-white joins.
+# "name<TAB>direction"; see the PDA section below), derived from the LOGICAL
+# flow names (part 1 = domain, part 2 = application, part 3 = partner token;
+# partners merged by shared host / whitelist IP / whitelisted host IP /
+# curated alias) and their cross references against the other entities, all
+# composed through the FlowID: accounts/subscriptions/profiles/logins/hosts x
+# partners/apps/domains, partners-apps/partners-domains/apps-domains, and the
+# *-white joins.
 #
 # The whole set is rebuilt in one go, and the run EARLY-EXITS when every output
 # is newer than both exports and this script — bin/build.sh calls flow-manager.sh
@@ -514,590 +517,6 @@ awk -F'\t' '
     }
 ' "$XREF/_subscriptions-flowdir.tsv" "$XREF/_subscriptions-patterns.tsv" > "$XREF/_subscriptions-ucderived.tsv"
 
-# ------------------------------------------- partners / apps / domains (PDA)
-# The three PDA entities behind the home page's "Partners, Domains &
-# Applications" table, derived HERE so the caches are the single source
-# (bin/build/publish.sh consumes them and only adds the Seen/Result enrichment).
-# Each base file is "name<TAB>direction" with direction in / both / out.
-#
-#   _partners.tsv  one row per partner GROUP, name-derived then merged (see the
-#                  partner-derivation block below). Pass 1: the partner is the
-#                  3rd part of the upper-cased account name, split on _ (primary),
-#                  an internal - kept inside the part verbatim; a _/- twin borrows
-#                  its _-spelled sibling to split; when the _ split gives 2 parts
-#                  but - gives 3, - is the structural separator (use it); leading
-#                  digits stripped; a UC5-UC8 relay links two partners, so its
-#                  part-2 token is a 2nd partner). Pass 2 merges partner tokens to a
-#                  fixpoint when (1) an Out account's host IP is whitelisted for an
-#                  In account, (2) In accounts share a whitelist IP, or (3) an Out
-#                  account's host second-level domain equals a partner group.
-#                  Group name = the member tokens joined with '_', sorted;
-#                  direction = the union of the member accounts' sides.
-#   _apps.tsv      the MIDDLE segment of <domain>-<application>-<partner>
-#                  account names (token 2 after the qualifier walk; two-token
-#                  names carry no app). _domains.tsv — the FIRST token.
-#                  Direction = the union of the name's accounts' configured
-#                  sides (login = in, hosts = out; only classified accounts
-#                  contribute, matching the home page).
-#
-# Endpoint addresses come from the endpoint itself (raw IPs) and from
-# input/<env>/ip/ip-hosts.tsv — the forward-DNS answers this pass writes, plus
-# whatever bin/transfer/parse.sh's rule (b) learned from real outgoing traffic.
-# The map is machine-maintained; nothing here is hand-written. The early-exit
-# above watches its content, so a changed address re-derives the partner links.
-# Forward-resolve every configured endpoint and publish the address<->endpoint
-# map (bin/ip.sh). This runs ONLY when flow-manager.sh actually rebuilds — it
-# early-exits when its caches are newer than the exports — so it is not a
-# per-build DNS cost. It replaces the former fwd/<name>.txt tree, which was only
-# ever written when ABSENT, so a changed A record was never picked up.
-#
-# ip_put UNIONS with what is already there, so an address bin/transfer/parse.sh
-# learned from real traffic (rule b) survives a re-resolution that no longer
-# returns it — the log rows naming that address still need it. base/_hosts.tsv is
-# passed as the KEEP list, which prunes endpoints that have left the config and
-# is what keeps the union bounded.
-EPS="$OUT/.eps.tmp"
-# _hosts.tsv is canonically lowercase already (the jq extraction ascii_downcase's
-# it) and is still SINGLE-COLUMN here — the direction column is appended much
-# later — so this is a defensive fold, done once instead of per endpoint.
-awk -F'\t' '{ print tolower($1) }' "$BASE/_hosts.tsv" > "$EPS"
-IPSEED="$OUT/.ipseed.tmp"; : > "$IPSEED"
-while IFS= read -r epl; do
-    [ -n "$epl" ] || continue
-    case $epl in [0-9]*.[0-9]*.[0-9]*.[0-9]*) continue ;; esac   # a raw-IP endpoint names nothing
-    if command -v host >/dev/null 2>&1; then
-        host -W 2 "$epl" 2>/dev/null | awk -v h="$epl" '/has address/ { print $NF "\t" h }' >> "$IPSEED" || true
-    fi
-done < "$EPS"
-rm -f "$EPS"
-ip_put "$BASE/_hosts.tsv" < "$IPSEED"
-rm -f "$IPSEED"
-
-# The PDA both-ways linking needs endpoint -> its address(es): ip-hosts.tsv with
-# the columns swapped. (It used to be built from the reverse cache, whose
-# non-endpoint rows could never match an endpoint and were pure noise.)
-PDAIP="$OUT/.pda.ipmap.tmp"
-: > "$PDAIP"
-[ -f "$IP_HOSTS_FILE" ] && awk -F'\t' '$1 != "" && $2 != "" { print $2 "\t" $1 }' "$IP_HOSTS_FILE" > "$PDAIP"
-
-# Remember the DNS content this build derived from — the early-exit compares
-# against it (see pda_dns_fingerprint above). Written AFTER ip_put so freshly
-# resolved endpoints are included.
-pda_dns_fingerprint > "$OUT/.pda-dns.cksum"
-
-# Name-first partner grouping. pda_split() splits each account name into parts on
-# the UNDERSCORE (primary) separator (an internal - stays inside a part verbatim;
-# a _/- twin borrows its _-spelled sibling; a 2-part _ split that is a 3-part -
-# split uses -), then runs the shared PDA cleanup sequence: a one-part name IS
-# its partner (2026-08-29; a lone helper token stays skipped);
-# strip a part's trailing digits unless it ends 42; drop a numeric part and a
-# bared trailing separator; while >3 parts drop PWD/DEST/SRC/CCP/P2P then
-# SA/IR/OTHER/DWH/RRE/PUO; 4 parts -> drop the 4th, UNLESS it is a known partner
-# (pda_known: IPSOS/DSM/FRISS/ROTAFORM/IMPRESS) — then keep it and drop the 3rd.
-# partner = part 3 (2 parts both
-# >5 chars -> BOTH partners; 3 parts whose 3rd is a qualifier -> part 2 is app +
-# partner). A UC5-UC8 RELAY links two partners, so its part-2 token becomes a
-# SECOND partner and the account gets no application. Pass 2 merges partner groups until
-# a fixpoint via three rules: (1) an Out account whose host IP is whitelisted
-# for an In account; (2) In accounts sharing a whitelist IP; (3) an Out account
-# whose host second-level domain equals a partner group. Group name = the
-# member tokens joined with '_', sorted. Emits the partner base file
-# (name<TAB>direction) plus the two DIRECT pair caches (account -> group;
-# configured host spelling -> group); the account-joined caches below derive
-# everything else from them.
-awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v XAP="$OUT/.pda.ap.tmp" -v XHP="$OUT/.pda.hp.tmp" \
-    -v WHYF="$XREF/.pda.why.tmp" -v GRPF="$XREF/.pda.groups.tmp" -v GAF="$XREF/.pda.gacct.tmp" \
-    -v ALIASF="$ALIASF" '
-    function strip(s){ sub(/^[0-9]+/,"",s); return s }
-    # ---- group-merge EVIDENCE (why two partner tokens are combined) ----
-    # Each rule firing that links two DIFFERENT tokens records one edge; the
-    # group is resolved at END (find()) after the fixpoint. Deduped by signature.
-    function recordev(rule, ta, tb, txt,   sig){ if(ta==""||tb==""||ta==tb) return
-        sig=rule SUBSEP ta SUBSEP tb SUBSEP txt; if(sig in seenev) return; seenev[sig]=1
-        EVN++; EVA[EVN]=ta; EVB[EVN]=tb; EVR[EVN]=rule; EVT[EVN]=txt }
-    # underscore-primary: _ is the structural separator whenever the name has one,
-    # so an internal - stays inside a part; "" when the name has neither
-    function primsep(nm,  t,a){ t=nm; a=gsub(/_/,"_",t)
-        if(a>0) return "_"; if(nm ~ /-/) return "-"; return "" }
-    # split into top-level parts on the primary (underscore) separator, the minority
-    # - staying inside a segment. But when the _ split yields only 2 parts while the
-    # - split yields 3, the - is the real structural separator (an internal _ sat
-    # inside a segment, e.g. AIM-FIN_TREASURY-SCHUBERGPHILLIS) -> use it, to reach 3
-    # parts. Drop trailing pure-number parts; fill PARTS[]; return count.
-    function parts(nm,  sep,n,cu,ch,t){ sub(/@.*/,"",nm); nm=toupper(nm); sep=primsep(nm)
-        if(sep==""){ PARTS[1]=nm; return 1 }
-        if(sep=="_"){ t=nm; cu=gsub(/_/,"_",t); t=nm; ch=gsub(/-/,"-",t)
-            if(cu==1 && ch==2) sep="-" }
-        n=split(nm,PARTS,(sep=="_")?"_":"-"); while(n>=2 && PARTS[n] ~ /^[0-9]+$/) n--; return n }
-    # ---- the extra PDA cleanup sequence, applied to the split parts ----
-    # qualifier tokens dropped ONLY when there are more than 3 parts; the first
-    # five ALSO trigger the 3-part "part 2 is application & partner" rule.
-    function pda_isq3(b){ return !(b in REALORG) && (b=="PWD"||b=="DEST"||b=="SRC"||b=="CCP"||b=="P2P") }   # a DECLARED real org (partner-aliases.tsv single-token line) is never a qualifier
-    # known partners that appear ONLY as the 4th (last) part of a
-    # domain·app·subcategory·partner name — keep the 4th, drop the 3rd (not detectable
-    # from config structure, so hardcoded; see the 4-parts rule below).
-    function pda_known(b){ return (b=="IPSOS"||b=="DSM"||b=="FRISS"||b=="ROTAFORM"||b=="IMPRESS") }
-    # helper tokens that must never stand ALONE as a partner (they are flow
-    # qualifiers, not organisations) — the union of the two pda_rmq lists
-    function pda_ishelper(b){ return pda_isq3(b) || (!(b in REALORG) && (b=="SA"||b=="IR"||b=="OTHER"||b=="DWH"||b=="RRE"||b=="PUO")) }
-    function pda_onepartner(j){ if(j=="SUCCESS_FACTORS") return "SUCCESS_FACTORS"
-        if(j=="RABOBANK_INSURANCE" || j=="RABOBANK_INTEGRATION") return "RABOBANK"
-        return "" }
-    function pda_rmq(tok,  i,j){ if(PDN<=3 || (tok in REALORG)) return
-        for(i=1;i<=PDN;i++) if(PDP[i]==tok){ for(j=i;j<PDN;j++) PDP[j]=PDP[j+1]; PDN--; return } }
-    # pda_split(name): split on the primary separator, then the sequence — strip
-    # trailing digits (unless the part ends 42), drop a fully-numeric part, trim a
-    # bared trailing separator, drop the qualifiers while >3 parts, drop the 4th of
-    # 4. Fills PDP[1..PDN]; sets PD_SKIP / PD_BOTHP / PD_APPPART. Readers take
-    # domain=PDP[1], application=PDP[2], partner=PDP[3] (see the two callers).
-    # A ONE-PART name IS its partner (2026-08-29, production estate: 41 real
-    # accounts are named after the org directly — EUROPORT, QUION, STATER;
-    # formerly rule 1 skipped them and they had no partner at all) — unless
-    # the lone token is a helper (P2P etc.), which stays skipped.
-    function pda_split(name,  n,i,j,p,q){
-        PD_SKIP=0; PD_BOTHP=0; PD_APPPART=0; PDN=0; split("", PDP)   # CLEAR the array — a stale higher entry from the previous account must never survive (the 2026-08-29 audit phantom-partner fix)
-        n=parts(name)
-        j=0
-        for(i=1;i<=n;i++){ p=PARTS[i]
-            if(p !~ /42$/ && p ~ /[0-9]$/){ q=p; sub(/[0-9]+$/,"",q); if(length(q)>=2) p=q }   # strip trailing digits (keep ...42; keep a short code like P5 whole — stripping must leave 2+ chars)
-            if(p ~ /^[0-9]+$/) continue                      # drop a fully-numeric part
-            sub(/[_-]+$/,"",p); if(p=="") continue           # trim a bared trailing separator
-            PDP[++j]=p }
-        PDN=j; if(PDN==0){ PD_SKIP=1; return }
-        pda_rmq("PWD"); pda_rmq("DEST"); pda_rmq("SRC"); pda_rmq("CCP"); pda_rmq("P2P")
-        pda_rmq("SA"); pda_rmq("IR"); pda_rmq("OTHER"); pda_rmq("DWH"); pda_rmq("RRE"); pda_rmq("PUO")
-        if(PDN==4){ if(pda_known(PDP[4])) PDP[3]=PDP[4]; PDN=3 }   # 4 parts: 4th a known partner -> keep it (drop 3rd), else drop the 4th
-        if(PDN==1 && pda_ishelper(PDP[1])){ PD_SKIP=1; return }    # a lone helper token is no partner
-        if(PDN==2 && pda_onepartner(PDP[1] "_" PDP[2]) != ""){ PDP[1]=pda_onepartner(PDP[1] "_" PDP[2]); PDN=1 }   # a KNOWN single-org 2-part name is ONE partner (2026-08-29: SUCCESS_FACTORS; RABOBANK_* keep RABOBANK)
-        if(PDN==2 && length(PDP[1])>5 && length(PDP[2])>5) PD_BOTHP=1
-        if(PDN==3 && pda_isq3(PDP[3])) PD_APPPART=1 }
-    # the partner PART is the token verbatim, an internal - kept (strip leading digits)
-    function resolve(p){ return strip(p) }
-    function ingroup(p,  m,S,i){ if(p in groupset) return 1
-        m=split(p,S,/[_-]/); for(i=1;i<=m;i++) if(S[i] in groupset) return 1; return 0 }
-    function find(x){ if(!(x in par)) par[x]=x; while(par[x]!=x){par[x]=par[par[x]]; x=par[x]} return x }
-    function uni(a,b,  ra,rb){ if(a==""||b=="") return; ra=find(a); rb=find(b); if(ra!=rb){par[ra]=rb; nmerge++} }
-    # second-level domain of a host (label before the final TLD label), UPPERCASE
-    function sldof(h,  n,L){ if(h ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/) return ""
-        n=split(toupper(h),L,"."); if(n<2) return ""; return L[n-1] }
-    BEGIN { US=sprintf("%c",31)
-        # the hand-curated alias pairs (input/partner-aliases.tsv; "#" = comment)
-        nal=0
-        while ((getline l4 < ALIASF) > 0) { if (l4 ~ /^#/ || l4 == "") continue
-            n4=split(l4,a4x,"\t"); if(n4>=2 && a4x[1]!="" && a4x[2]!=""){ ++nal; AL1[nal]=toupper(a4x[1]); AL2[nal]=toupper(a4x[2]) }
-            else if(n4==1 && a4x[1]!="") REALORG[toupper(a4x[1])]=1 }   # a SINGLE-token line DECLARES a real organisation: the token leaves the helper/qualifier lists (P2P)
-        close(ALIASF) }
-    FILENAME ~ /_accounts-logins\.tsv$/        { inacc[$1]=1; next }
-    FILENAME ~ /_accounts-hosts\.tsv$/         { outacc[$1]=1; ah[$1]=ah[$1] US $2; next }
-    FILENAME ~ /_accounts-white\.tsv$/         { wlall[$2]=1; ipacc[$2]=ipacc[$2] US $1; next }
-    FILENAME ~ /_accounts-subscriptions\.tsv$/ { if($2~/^UC[5678]_/)rly[$1]=1; next }
-    FILENAME ~ /_accounts\.tsv$/               { acc[++na]=$1; next }
-    { cand[$1]=cand[$1] US $2 }   # PDAIP: endpoint-lower -> candidate IP(s)
-    END {
-        # underscore-primary source: a _/- twin uses its _-spelled sibling to split
-        # for BOTH members, so the internal - is preserved on the hyphen twin too
-        for(i=1;i<=na;i++){ a=acc[i]; fk=toupper(a); gsub(/_/,"-",fk); if(a ~ /_/ && !(fk in usrc)) usrc[fk]=a }
-        for(i=1;i<=na;i++){ a=acc[i]; fk=toupper(a); gsub(/_/,"-",fk); srcof[a]=(fk in usrc)?usrc[fk]:a }
-        # partner token(s) per account via the extra PDA sequence: the
-        # both-partner rule and the UC5-UC8 RELAYS add a SECOND token (a relay
-        # links two partners, so its part-2 token is a partner, not an app).
-        for(i=1;i<=na;i++){ a=acc[i]
-            pda_split(srcof[a]); if(PD_SKIP || PDN<1) continue
-            pt=(PDN==1)?PDP[1]:((PDN>=3 && !PD_APPPART)?PDP[3]:PDP[2])
-            prim[a]=pt; tl=pt
-            if(PD_BOTHP && PDP[1]!="" && PDP[1]!=pt) tl=tl US PDP[1]              # both partner
-            if((a in rly) && PDN>=2 && PDP[2]!="" && PDP[2]!=pt && index(US tl US, US PDP[2] US)==0) tl=tl US PDP[2]   # PDN>=2: a one-part relay account has no second token (belt to the split(\"\",PDP) braces)
-            ptoks[a]=tl; m=split(tl,TL,US); for(j=1;j<=m;j++) find(TL[j]) }
-        # Rule 4 (2026-08-29) — the HAND-CURATED ALIAS MAP: two tokens naming
-        # ONE organisation merge, the file cited as evidence. Only tokens the
-        # estate actually DERIVED merge (an alias to an absent token no-ops);
-        # applied once before the fixpoint — union-find keeps it transitive.
-        for (ai=1; ai<=nal; ai++) { a4=AL1[ai]; b4=AL2[ai]
-            if ((a4 in par) && (b4 in par)) {
-                recordev(4, a4, b4, "Curated alias: " a4 " and " b4 " name the same organisation (input/partner-aliases.tsv)")
-                uni(a4, b4) } }
-        # pass 2 — merge groups; repeat until nothing more combines
-        do { nmerge=0
-            for(ip in ipacc){ n=split(substr(ipacc[ip],2),AA,US); first=""; firstacct=""     # Rule 2
-                for(k=1;k<=n;k++){ a=AA[k]; if((a in inacc) && (a in prim)){
-                    if(first==""){ first=prim[a]; firstacct=a }
-                    else { recordev(2, prim[a], first, "Inbound accounts " a " (partner " prim[a] ") and " firstacct " (partner " first ") both whitelist IP " ip)
-                           uni(prim[a],first) } } } }
-            for(i=1;i<=na;i++){ a=acc[i]; if(!(a in outacc) || !(a in ah) || !(a in prim)) continue   # Rule 1
-                nh=split(substr(ah[a],2),HH,US)
-                for(h=1;h<=nh;h++){ host=HH[h]; hl=tolower(host)
-                    if(host ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/) ipl=host; else ipl=(hl in cand)?substr(cand[hl],2):""
-                    if(ipl=="") continue
-                    ni=split(ipl,IPS,US)
-                    for(pp=1;pp<=ni;pp++){ ip=IPS[pp]; if(!(ip in wlall)) continue
-                        n=split(substr(ipacc[ip],2),AA,US)
-                        for(k=1;k<=n;k++){ ina=AA[k]; if((ina in inacc) && (ina in prim)){
-                            recordev(1, prim[a], prim[ina], "Outbound account " a " (partner " prim[a] ") connects to " host " (IP " ip "), whitelisted by inbound account " ina " (partner " prim[ina] ")")
-                            uni(prim[a],prim[ina]) } } } } }
-            for(i=1;i<=na;i++){ a=acc[i]; if(!(a in outacc) || !(a in ah) || !(a in prim)) continue   # Rule 3
-                nh=split(substr(ah[a],2),HH,US)
-                for(h=1;h<=nh;h++){ sld=sldof(HH[h]); if(sld=="" || !(sld in par)) continue
-                    if(find(sld)!=find(prim[a])){
-                        recordev(3, prim[a], sld, "Outbound account " a " (partner " prim[a] ") connects to host " HH[h] ", whose domain " sld " matches partner " sld)
-                        uni(prim[a],sld) } } }
-        } while(nmerge>0 && ++pass<100)
-        # group name = sorted-unique member tokens joined by - ; direction = union
-        for(i=1;i<=na;i++){ a=acc[i]; if(!(a in ptoks)) continue
-            m=split(ptoks[a],TL,US); for(j=1;j<=m;j++){ r=find(TL[j]); memb[r]=memb[r] US TL[j]
-                if(a in inacc) gI[r]=1; if(a in outacc) gO[r]=1 } }
-        for(r in memb){ delete seen; m=split(substr(memb[r],2),TT,US); c=0
-            for(k=1;k<=m;k++) if(!(TT[k] in seen)){ seen[TT[k]]=1; ARR[++c]=TT[k] }
-            for(x=2;x<=c;x++){ v=ARR[x]; y=x-1; while(y>=1 && ARR[y]>v){ARR[y+1]=ARR[y];y--} ARR[y+1]=v }
-            gn=ARR[1]; for(x=2;x<=c;x++) gn=gn "_" ARR[x]
-            # CANONICAL GROUP NAME (2026-08-29): when EVERY member has a direct
-            # alias pair (input/partner-aliases.tsv) with ONE token — a member
-            # itself (the SchubergPhilis star: the variants all alias
-            # SCHUBERGPHILIS) or a pure NAME the estate never derives (the
-            # RABOBANK_PEKO case: every member of both envs Peko groups
-            # aliases RABOBANK_PEKO, which exists only in the alias file) —
-            # the group takes that token as its name instead of the joined
-            # list. A member equal to the token needs no pair; a group with
-            # any member outside the alias set (CLANG in
-            # CLANG_DEPLOYTEQ_EVILLAGE) keeps the joined name. Candidates =
-            # the members plus every token paired with one, scanned in sorted
-            # order so a tie is deterministic.
-            if(c>1){
-                delete CAND
-                for(x=1;x<=c;x++){ CAND[ARR[x]]=1
-                    for(ai2=1;ai2<=nal;ai2++){ if(AL1[ai2]==ARR[x]) CAND[AL2[ai2]]=1; if(AL2[ai2]==ARR[x]) CAND[AL1[ai2]]=1 } }
-                nc2=0; for(cn in CAND) CARR[++nc2]=cn
-                for(x=2;x<=nc2;x++){ v2=CARR[x]; y=x-1; while(y>=1 && CARR[y]>v2){CARR[y+1]=CARR[y];y--} CARR[y+1]=v2 }
-                for(x=1;x<=nc2;x++){ cn=CARR[x]; ok2=1
-                    for(y=1;y<=c && ok2;y++){ if(ARR[y]==cn) continue
-                        ok2=0
-                        for(ai2=1;ai2<=nal;ai2++) if((AL1[ai2]==cn && AL2[ai2]==ARR[y]) || (AL2[ai2]==cn && AL1[ai2]==ARR[y])){ ok2=1; break } }
-                    if(ok2){ gn=cn; break } } }
-            gname[r]=gn
-            # a GROUP = more than one member token; record it (name / members / direction)
-            if(c>1){ mm=ARR[1]; for(x=2;x<=c;x++) mm=mm "," ARR[x]
-                MULTI[r]=1
-                print gn "\t" mm "\t" ((gI[r]&&gO[r])?"both":(gI[r]?"in":"out")) > GRPF } }
-        # emit the partner base rows (group -> direction)
-        for(r in memb) print gname[r] "\t" ((gI[r]&&gO[r])?"both":(gI[r]?"in":"out")) > BP
-        # account -> group (a UC5-UC8 relay emits BOTH its groups)
-        for(i=1;i<=na;i++){ a=acc[i]; if(!(a in ptoks)) continue
-            m=split(ptoks[a],TL,US); delete gseen
-            for(j=1;j<=m;j++){ g=gname[find(TL[j])]; if(!(g in gseen)){ gseen[g]=1; print a "\t" g > XAP } } }
-        # configured host spelling -> group (of the owning Out account)
-        for(i=1;i<=na;i++){ a=acc[i]; if(!(a in outacc) || !(a in ah) || !(a in prim)) continue
-            g=gname[find(prim[a])]; nh=split(substr(ah[a],2),HH,US)
-            for(h=1;h<=nh;h++) print HH[h] "\t" g > XHP }
-        # partner token -> the account NAME it derives from (the group-page
-        # Member table Account column: which part of the account name = the code);
-        # multi-member groups only. group / token / account
-        for(i=1;i<=na;i++){ a=acc[i]; if(!(a in ptoks)) continue
-            m=split(ptoks[a],TL,US)
-            for(j=1;j<=m;j++){ t=TL[j]; r=find(t); if(r in MULTI) print gname[r] "\t" t "\t" a > GAF } }
-        # resolve each merge-evidence edge to its final group name (why combined):
-        # group / token pair (A<=B) / rule / human evidence line
-        for(e=1;e<=EVN;e++){ ra=find(EVA[e]); if(ra!=find(EVB[e])) continue
-            ta=EVA[e]; tb=EVB[e]; if(ta>tb){ tt=ta; ta=tb; tb=tt }
-            print gname[ra] "\t" ta "\t" tb "\t" EVR[e] "\t" EVT[e] > WHYF }
-    }
-' "$XREF/_accounts-logins.tsv" "$XREF/_accounts-hosts.tsv" "$XREF/_accounts-white.tsv" \
-  "$XREF/_accounts-subscriptions.tsv" "$BASE/_accounts.tsv" "$PDAIP"
-LC_ALL=C sort -u "$BASE/.pda.partners.tmp" 2>/dev/null > "$BASE/_partners.tsv" || : > "$BASE/_partners.tsv"
-LC_ALL=C sort -u "$OUT/.pda.ap.tmp" 2>/dev/null > "$XREF/_accounts-partners.tsv" || : > "$XREF/_accounts-partners.tsv"
-LC_ALL=C sort -u "$OUT/.pda.hp.tmp" 2>/dev/null > "$XREF/_hosts-partners.tsv" || : > "$XREF/_hosts-partners.tsv"
-# the partner GROUPS (multi-member) and the per-group merge evidence (why combined)
-LC_ALL=C sort -u "$XREF/.pda.groups.tmp" 2>/dev/null > "$XREF/_partner-groups.tsv" || : > "$XREF/_partner-groups.tsv"
-LC_ALL=C sort -u "$XREF/.pda.why.tmp"    2>/dev/null > "$XREF/_partner-group-why.tsv" || : > "$XREF/_partner-group-why.tsv"
-LC_ALL=C sort -u "$XREF/.pda.gacct.tmp"  2>/dev/null > "$XREF/_partner-group-accounts.tsv" || : > "$XREF/_partner-group-accounts.tsv"
-rm -f "$BASE/.pda.partners.tmp" "$OUT/.pda.ap.tmp" "$OUT/.pda.hp.tmp" "$PDAIP" "$XREF/.pda.groups.tmp" "$XREF/.pda.why.tmp" "$XREF/.pda.gacct.tmp"
-
-# apps + domains: name-derived from the CLASSIFIED configured accounts (an
-# account with no comm profile has no direction and, matching the home page,
-# contributes nothing). Emits the two base files + the account pair caches.
-awk -F'\t' -v BA="$BASE/.pda.apps.tmp" -v BD="$BASE/.pda.domains.tmp" \
-           -v XA="$OUT/.pda.aa.tmp" -v XD="$OUT/.pda.ad.tmp" -v ALIASF="$ALIASF" '
-    # only the REAL-ORG declarations are needed here (the pair rows drive the
-    # partner pass); loaded so the shared pda_* trio behaves identically
-    BEGIN { while ((getline l4 < ALIASF) > 0) { if (l4 ~ /^#/ || l4 == "") continue
-            n4=split(l4,a4x,"\t"); if(n4==1 && a4x[1]!="") REALORG[toupper(a4x[1])]=1 }
-        close(ALIASF) }
-    function strip(s){ sub(/^[0-9]+/,"",s); return s }
-    function primsep(nm,  t,a){ t=nm; a=gsub(/_/,"_",t)
-        if(a>0) return "_"; if(nm ~ /-/) return "-"; return "" }
-    function parts(nm,  sep,n,cu,ch,t){ sub(/@.*/,"",nm); nm=toupper(nm); sep=primsep(nm)
-        if(sep==""){ PARTS[1]=nm; return 1 }
-        if(sep=="_"){ t=nm; cu=gsub(/_/,"_",t); t=nm; ch=gsub(/-/,"-",t)
-            if(cu==1 && ch==2) sep="-" }
-        n=split(nm,PARTS,(sep=="_")?"_":"-"); while(n>=2 && PARTS[n] ~ /^[0-9]+$/) n--; return n }
-    # same PDA cleanup sequence as the partner block above (kept in sync)
-    function pda_isq3(b){ return !(b in REALORG) && (b=="PWD"||b=="DEST"||b=="SRC"||b=="CCP"||b=="P2P") }   # a DECLARED real org (partner-aliases.tsv single-token line) is never a qualifier
-    # known partners that appear ONLY as the 4th (last) part of a
-    # domain·app·subcategory·partner name — keep the 4th, drop the 3rd (not detectable
-    # from config structure, so hardcoded; see the 4-parts rule below).
-    function pda_known(b){ return (b=="IPSOS"||b=="DSM"||b=="FRISS"||b=="ROTAFORM"||b=="IMPRESS") }
-    function pda_ishelper(b){ return pda_isq3(b) || (!(b in REALORG) && (b=="SA"||b=="IR"||b=="OTHER"||b=="DWH"||b=="RRE"||b=="PUO")) }
-    function pda_onepartner(j){ if(j=="SUCCESS_FACTORS") return "SUCCESS_FACTORS"
-        if(j=="RABOBANK_INSURANCE" || j=="RABOBANK_INTEGRATION") return "RABOBANK"
-        return "" }
-    function pda_rmq(tok,  i,j){ if(PDN<=3 || (tok in REALORG)) return
-        for(i=1;i<=PDN;i++) if(PDP[i]==tok){ for(j=i;j<PDN;j++) PDP[j]=PDP[j+1]; PDN--; return } }
-    function pda_split(name,  n,i,j,p,q){
-        PD_SKIP=0; PD_BOTHP=0; PD_APPPART=0; PDN=0; split("", PDP)   # CLEAR the array — a stale higher entry from the previous account must never survive (the 2026-08-29 audit phantom-partner fix)
-        n=parts(name)
-        j=0
-        for(i=1;i<=n;i++){ p=PARTS[i]
-            if(p !~ /42$/ && p ~ /[0-9]$/){ q=p; sub(/[0-9]+$/,"",q); if(length(q)>=2) p=q }   # keep ...42 and short codes like P5 (see copy 1)
-            if(p ~ /^[0-9]+$/) continue
-            sub(/[_-]+$/,"",p); if(p=="") continue
-            PDP[++j]=p }
-        PDN=j; if(PDN==0){ PD_SKIP=1; return }
-        pda_rmq("PWD"); pda_rmq("DEST"); pda_rmq("SRC"); pda_rmq("CCP"); pda_rmq("P2P")
-        pda_rmq("SA"); pda_rmq("IR"); pda_rmq("OTHER"); pda_rmq("DWH"); pda_rmq("RRE"); pda_rmq("PUO")
-        if(PDN==4){ if(pda_known(PDP[4])) PDP[3]=PDP[4]; PDN=3 }
-        if(PDN==1 && pda_ishelper(PDP[1])){ PD_SKIP=1; return }   # one-part names ARE partners since 2026-08-29 — but never a lone helper token
-        if(PDN==2 && pda_onepartner(PDP[1] "_" PDP[2]) != ""){ PDP[1]=pda_onepartner(PDP[1] "_" PDP[2]); PDN=1 }   # a KNOWN single-org 2-part name is ONE partner (2026-08-29: SUCCESS_FACTORS; RABOBANK_* keep RABOBANK)
-        if(PDN==2 && length(PDP[1])>5 && length(PDP[2])>5) PD_BOTHP=1
-        if(PDN==3 && pda_isq3(PDP[3])) PD_APPPART=1 }
-    # UC5-UC8 are direct relays (two same-kind endpoints, no CFT) and every one
-    # of them links TWO PARTNERS — not the application/partner pair UC1-UC4 use.
-    # So for a relay the part-2 token is a partner (see the partner pass) and
-    # the account contributes NO application; only its domain (part 1) is taken.
-    FILENAME ~ /_accounts-subscriptions\.tsv$/ { if($2~/^UC[5678]_/)rly[$1]=1; next }
-    FILENAME ~ /_accounts-logins\.tsv$/ { inacc[$1]=1; next }
-    FILENAME ~ /_accounts-hosts\.tsv$/  { outacc[$1]=1; next }
-    {
-        a=$1; d=((a in outacc)?"O":"")((a in inacc)?"I":""); if(d=="") next   # BOTH letters when the account has hosts AND logins (2026-08-29 audit: out-only starved the both side)
-        pda_split(a); if(PD_SKIP || PD_BOTHP) next          # both-partner names have no domain/app
-        if(PDN>=2){ domd[PDP[1]]=domd[PDP[1]] d; print a "\t" PDP[1] > XD }             # domain = part 1
-        if(PDN>=3 && !(a in rly)){ appd[PDP[2]]=appd[PDP[2]] d; print a "\t" PDP[2] > XA }   # app = part 2 (a UC5-UC8 relay has no application: part 2 is its second partner)
-    }
-    END {
-        for(k in appd) print k "\t" ((index(appd[k],"I") && index(appd[k],"O"))?"both":(index(appd[k],"I")?"in":"out")) > BA
-        for(k in domd) print k "\t" ((index(domd[k],"I") && index(domd[k],"O"))?"both":(index(domd[k],"I")?"in":"out")) > BD
-    }
-' "$XREF/_accounts-subscriptions.tsv" "$XREF/_accounts-logins.tsv" "$XREF/_accounts-hosts.tsv" "$BASE/_accounts.tsv"
-LC_ALL=C sort -u "$BASE/.pda.apps.tmp"    2>/dev/null > "$BASE/_apps.tsv"    || : > "$BASE/_apps.tsv"
-LC_ALL=C sort -u "$BASE/.pda.domains.tmp" 2>/dev/null > "$BASE/_domains.tsv" || : > "$BASE/_domains.tsv"
-LC_ALL=C sort -u "$OUT/.pda.aa.tmp" 2>/dev/null > "$XREF/_accounts-apps.tsv"    || : > "$XREF/_accounts-apps.tsv"
-LC_ALL=C sort -u "$OUT/.pda.ad.tmp" 2>/dev/null > "$XREF/_accounts-domains.tsv" || : > "$XREF/_accounts-domains.tsv"
-rm -f "$BASE/.pda.apps.tmp" "$BASE/.pda.domains.tmp" "$OUT/.pda.aa.tmp" "$OUT/.pda.ad.tmp"
-
-# The account-joined pair caches: everything else follows from the account
-# maps just written. ajoin LEFTFILE RIGHTFILE OUT — both files are
-# account<TAB>value pairs; emits "leftvalue<TAB>rightvalue" for every account
-# they share (the fixed entity order picks which side is LEFT).
-ajoin() {   # $1 acct->left pairs  $2 acct->right pairs  $3 output name
-  awk -F'\t' '
-    FNR==NR { r[$1]=r[$1] "\037" $2; next }
-    ($1 in r) { n=split(substr(r[$1],2),R,"\037"); for (i=1;i<=n;i++) print $2 "\t" R[i] }
-  ' "$XREF/$2" "$XREF/$1" | LC_ALL=C sort -u > "$XREF/_$3.tsv"
-}
-ajoin _accounts-subscriptions.tsv _accounts-partners.tsv subscriptions-partners
-ajoin _accounts-subscriptions.tsv _accounts-apps.tsv     subscriptions-apps
-ajoin _accounts-subscriptions.tsv _accounts-domains.tsv  subscriptions-domains
-ajoin _accounts-profiles.tsv      _accounts-partners.tsv profiles-partners
-ajoin _accounts-profiles.tsv      _accounts-apps.tsv     profiles-apps
-ajoin _accounts-profiles.tsv      _accounts-domains.tsv  profiles-domains
-ajoin _accounts-logins.tsv        _accounts-partners.tsv logins-partners
-ajoin _accounts-logins.tsv        _accounts-apps.tsv     logins-apps
-ajoin _accounts-logins.tsv        _accounts-domains.tsv  logins-domains
-ajoin _accounts-hosts.tsv         _accounts-apps.tsv     hosts-apps
-ajoin _accounts-hosts.tsv         _accounts-domains.tsv  hosts-domains
-ajoin _accounts-partners.tsv      _accounts-apps.tsv     partners-apps
-ajoin _accounts-partners.tsv      _accounts-domains.tsv  partners-domains
-ajoin _accounts-apps.tsv          _accounts-domains.tsv  apps-domains
-ajoin _accounts-partners.tsv      _accounts-white.tsv    partners-white
-ajoin _accounts-apps.tsv          _accounts-white.tsv    apps-white
-ajoin _accounts-domains.tsv       _accounts-white.tsv    domains-white
-
-# ---- SUBSCRIPTION-NAME FALLBACK (2026-08-29) --------------------------------
-# A subscription whose ACCOUNT name yields no domain/application/partner (the
-# one-part accounts: EUROPORT, QUION, …) still carries the full triple in its
-# OWN name — UCx_<domain>_<application>_<partner> (production: 605 of 611 have
-# >=3 parts after the UC prefix). For every base subscription MISSING one of
-# the three links, derive it from the UC-stripped name with the SAME pda
-# cleanup: domain = part 1 (2+ parts), application = part 2 (3+ parts, never
-# for a UC5-8 relay, whose part 2 is a second partner), partner = the pda
-# partner token — connected ONLY when it resolves to an EXISTING partner (an
-# exact base name, or a member token of a merged group): the fallback fills
-# links, it never invents organisations. NEW domain/application names ARE
-# appended to their base lists (that namespace is name-derived by design),
-# direction = the union of the contributing subscriptions' comm-profile
-# sides. Runs BEFORE the mirror loop, so every _X-subscriptions twin picks
-# the added pairs up.
-awk -F'\t' -v OFS='\t' \
-    -v SPADD="$XREF/.pda.spadd.tmp" -v SDADD="$XREF/.pda.sdadd.tmp" -v SAADD="$XREF/.pda.saadd.tmp" \
-    -v BAADD="$BASE/.pda.appadd.tmp" -v BDADD="$BASE/.pda.domadd.tmp" -v ALIASF="$ALIASF" '
-    function strip(s){ sub(/^[0-9]+/,"",s); return s }
-    function primsep(nm,  t,a){ t=nm; a=gsub(/_/,"_",t)
-        if(a>0) return "_"; if(nm ~ /-/) return "-"; return "" }
-    function parts(nm,  sep,n,cu,ch,t){ sub(/@.*/,"",nm); nm=toupper(nm); sep=primsep(nm)
-        if(sep==""){ PARTS[1]=nm; return 1 }
-        if(sep=="_"){ t=nm; cu=gsub(/_/,"_",t); t=nm; ch=gsub(/-/,"-",t)
-            if(cu==1 && ch==2) sep="-" }
-        n=split(nm,PARTS,(sep=="_")?"_":"-"); while(n>=2 && PARTS[n] ~ /^[0-9]+$/) n--; return n }
-    # the shared PDA cleanup sequence (kept in sync with the two blocks above)
-    function pda_isq3(b){ return !(b in REALORG) && (b=="PWD"||b=="DEST"||b=="SRC"||b=="CCP"||b=="P2P") }   # a DECLARED real org (partner-aliases.tsv single-token line) is never a qualifier
-    function pda_known(b){ return (b=="IPSOS"||b=="DSM"||b=="FRISS"||b=="ROTAFORM"||b=="IMPRESS") }
-    function pda_ishelper(b){ return pda_isq3(b) || (!(b in REALORG) && (b=="SA"||b=="IR"||b=="OTHER"||b=="DWH"||b=="RRE"||b=="PUO")) }
-    function pda_onepartner(j){ if(j=="SUCCESS_FACTORS") return "SUCCESS_FACTORS"
-        if(j=="RABOBANK_INSURANCE" || j=="RABOBANK_INTEGRATION") return "RABOBANK"
-        return "" }
-    function pda_rmq(tok,  i,j){ if(PDN<=3 || (tok in REALORG)) return
-        for(i=1;i<=PDN;i++) if(PDP[i]==tok){ for(j=i;j<PDN;j++) PDP[j]=PDP[j+1]; PDN--; return } }
-    function pda_split(name,  n,i,j,p,q){
-        PD_SKIP=0; PD_BOTHP=0; PD_APPPART=0; PDN=0; split("", PDP)   # CLEAR the array — a stale higher entry from the previous account must never survive (the 2026-08-29 audit phantom-partner fix)
-        n=parts(name)
-        j=0
-        for(i=1;i<=n;i++){ p=PARTS[i]
-            if(p !~ /42$/ && p ~ /[0-9]$/){ q=p; sub(/[0-9]+$/,"",q); if(length(q)>=2) p=q }   # keep ...42 and short codes like P5 (see copy 1)
-            if(p ~ /^[0-9]+$/) continue
-            sub(/[_-]+$/,"",p); if(p=="") continue
-            PDP[++j]=p }
-        PDN=j; if(PDN==0){ PD_SKIP=1; return }
-        pda_rmq("PWD"); pda_rmq("DEST"); pda_rmq("SRC"); pda_rmq("CCP"); pda_rmq("P2P")
-        pda_rmq("SA"); pda_rmq("IR"); pda_rmq("OTHER"); pda_rmq("DWH"); pda_rmq("RRE"); pda_rmq("PUO")
-        if(PDN==4){ if(pda_known(PDP[4])) PDP[3]=PDP[4]; PDN=3 }
-        if(PDN==1 && pda_ishelper(PDP[1])){ PD_SKIP=1; return }
-        if(PDN==2 && pda_onepartner(PDP[1] "_" PDP[2]) != ""){ PDP[1]=pda_onepartner(PDP[1] "_" PDP[2]); PDN=1 }   # a KNOWN single-org 2-part name is ONE partner (2026-08-29: SUCCESS_FACTORS; RABOBANK_* keep RABOBANK)
-        if(PDN==2 && length(PDP[1])>5 && length(PDP[2])>5) PD_BOTHP=1
-        if(PDN==3 && pda_isq3(PDP[3])) PD_APPPART=1 }
-    function dirword(f){ return (index(f,"I") && index(f,"O")) ? "both" : (index(f,"I") ? "in" : (index(f,"O") ? "out" : "")) }
-    # resolve a partner TOKEN to an existing partner: exact base name, else a
-    # merged group member token, else the same two lookups through the token
-    # ALIASES (input/partner-aliases.tsv — EVILLAGE resolves to DEPLOYTEQ)
-    function ptn_resolve(tk,   r7, ai7, o7) {
-        if (tk == "") return ""
-        if (tk in pset) return tk
-        if (tk in tok2grp) return tok2grp[tk]
-        for (ai7=1; ai7<=nal; ai7++) { o7 = ""
-            if (AL1[ai7] == tk) o7 = AL2[ai7]; else if (AL2[ai7] == tk) o7 = AL1[ai7]
-            if (o7 == "") continue
-            if (o7 in pset) return o7
-            if (o7 in tok2grp) return tok2grp[o7] }
-        return "" }
-    BEGIN { nal=0
-        while ((getline l4 < ALIASF) > 0) { if (l4 ~ /^#/ || l4 == "") continue
-            n4=split(l4,a4x,"\t"); if(n4>=2 && a4x[1]!="" && a4x[2]!=""){ ++nal; AL1[nal]=toupper(a4x[1]); AL2[nal]=toupper(a4x[2]) }
-            else if(n4==1 && a4x[1]!="") REALORG[toupper(a4x[1])]=1 }   # a SINGLE-token line DECLARES a real organisation: the token leaves the helper/qualifier lists (P2P)
-        close(ALIASF) }
-    FILENAME ~ /_subscriptions-partners\.tsv$/ { hasp[$1]=1; next }
-    FILENAME ~ /_subscriptions-domains\.tsv$/  { hasd[$1]=1; next }
-    FILENAME ~ /_subscriptions-apps\.tsv$/     { hasa[$1]=1; next }
-    FILENAME ~ /_partners\.tsv$/               { pset[$1]=1; next }               # base: name / direction
-    FILENAME ~ /_partner-groups\.tsv$/         { n2=split($2,MM,","); for(i2=1;i2<=n2;i2++) tok2grp[MM[i2]]=$1; next }
-    FILENAME ~ /_subscriptions-logins\.tsv$/   { insub[$1]=1; next }
-    FILENAME ~ /_subscriptions-hosts\.tsv$/    { outsub[$1]=1; next }
-    {   # base _subscriptions.tsv: one name per line (direction appended later)
-        s=$1; if(s=="") next
-        if((s in hasp) && (s in hasd) && (s in hasa)) next
-        nm=s; sub(/^UC[0-9Xx]+[_-]/, "", nm)
-        if(nm==s || nm=="") next            # only a UC-named subscription carries the triple
-        pda_split(nm); if(PD_SKIP) next
-        dch=((s in insub)?"I":"")((s in outsub)?"O":"")
-        dom=""; app2=""; pt=""; pt2=""
-        if(PD_BOTHP){ pt=PDP[2]; pt2=PDP[1] }
-        else {
-            if(PDN>=2) dom=PDP[1]
-            # PD_APPPART (3rd token a qualifier): part 2 is application AND
-            # partner — the app fill applies to it too (2026-08-29 fix; only
-            # a UC5-8 relay has no application, its part 2 a second partner)
-            if(PDN>=3 && s !~ /^UC[5678]/) app2=PDP[2]
-            pt=(PDN==1)?PDP[1]:((PDN>=3 && !PD_APPPART)?PDP[3]:PDP[2]) }
-        if(!(s in hasd) && dom!=""){ print s, dom > SDADD; domd2[dom]=domd2[dom] dch }
-        if(!(s in hasa) && app2!=""){ print s, app2 > SAADD; appd2[app2]=appd2[app2] dch }
-        if(!(s in hasp)){
-            rp=ptn_resolve(pt)
-            if(rp!="") print s, rp > SPADD
-            if(pt2!=""){ rp2=ptn_resolve(pt2)
-                if(rp2!="" && rp2!=rp) print s, rp2 > SPADD } }
-    }
-    END {
-        for(k in appd2) print k, dirword(appd2[k]) > BAADD
-        for(k in domd2) print k, dirword(domd2[k]) > BDADD
-    }
-' "$XREF/_subscriptions-partners.tsv" "$XREF/_subscriptions-domains.tsv" "$XREF/_subscriptions-apps.tsv" \
-  "$BASE/_partners.tsv" "$XREF/_partner-groups.tsv" \
-  "$XREF/_subscriptions-logins.tsv" "$XREF/_subscriptions-hosts.tsv" "$BASE/_subscriptions.tsv"
-# merge the additions (sort -u dedups a re-run); a base append adds only NEW names
-for _sf in spadd:subscriptions-partners sdadd:subscriptions-domains saadd:subscriptions-apps; do
-    _add="$XREF/.pda.${_sf%%:*}.tmp"; _dst="$XREF/_${_sf#*:}.tsv"
-    [ -f "$_add" ] || continue
-    cat "$_add" "$_dst" 2>/dev/null | LC_ALL=C sort -u > "$_dst.tmp" && mv "$_dst.tmp" "$_dst"
-    rm -f "$_add"
-done
-for _sf in appadd:apps domadd:domains; do
-    _add="$BASE/.pda.${_sf%%:*}.tmp"; _dst="$BASE/_${_sf#*:}.tsv"
-    [ -f "$_add" ] || continue
-    # a base append adds NEW names AND widens an existing one to "both" when
-    # the fallback saw the other side (2026-08-29 audit: add-only left e.g.
-    # domain IPO one-sided forever)
-    awk -F'\t' 'BEGIN{OFS="\t"}
-        FNR==NR { ad2[$1]=$2; next }
-        { if(($1 in ad2) && ad2[$1]!="" && $2!="" && $2!=ad2[$1]) $2="both"
-          seen[$1]=1; print; next }
-        END { for(k in ad2) if(!(k in seen)) print k, ad2[k] }' "$_add" "$_dst" \
-        | LC_ALL=C sort -u > "$_dst.tmp" && mv "$_dst.tmp" "$_dst"
-    rm -f "$_add"
-done
-
-# TRANSITIVE PAIRS THROUGH THE SUBSCRIPTION (2026-08-29): the X-Y pair caches
-# above join through the ACCOUNT maps, so a one-part account's flows — whose
-# domain/application exist only via the subscription-name fallback — left its
-# partner/login/host unconnected to them (the EUROPORT partner page showed
-# no Domains and no Applications despite 7 subscriptions carrying both).
-# Join the same pairs through the SUBSCRIPTION maps as well and UNION them
-# into the canonical caches; the mirror loop below then carries the twins.
-# The ACCOUNT maps stay untouched: _accounts-apps/domains feed the parse's
-# per-file attribution (cols 18/19) and must keep their name-derived meaning
-# (since 2026-08-29 the parse ALSO falls back to _subscriptions-apps/domains
-# for a file whose account derives nothing — the audit's AUTOMODUS_RIJCOACH
-# contradiction: coverage counted its Files, the detail page said never seen).
-sjoin() {   # $1 subs->left pairs  $2 subs->right pairs  $3 canonical output pair name
-  awk -F'\t' '
-    FNR==NR { r[$1]=r[$1] "\037" $2; next }
-    ($1 in r) { n=split(substr(r[$1],2),R,"\037"); for (i=1;i<=n;i++) print $2 "\t" R[i] }
-  ' "$XREF/$2" "$XREF/$1" | cat - "$XREF/_$3.tsv" 2>/dev/null | LC_ALL=C sort -u > "$XREF/_$3.tsv.tmp" \
-      && mv "$XREF/_$3.tsv.tmp" "$XREF/_$3.tsv"
-}
-sjoin _subscriptions-partners.tsv _subscriptions-apps.tsv    partners-apps
-sjoin _subscriptions-partners.tsv _subscriptions-domains.tsv partners-domains
-sjoin _subscriptions-apps.tsv     _subscriptions-domains.tsv apps-domains
-sjoin _subscriptions-logins.tsv   _subscriptions-apps.tsv    logins-apps
-sjoin _subscriptions-logins.tsv   _subscriptions-domains.tsv logins-domains
-sjoin _subscriptions-hosts.tsv    _subscriptions-apps.tsv    hosts-apps
-sjoin _subscriptions-hosts.tsv    _subscriptions-domains.tsv hosts-domains
-
-# ---- PRUNE SUBSCRIPTION-LESS PARTNERS (2026-08-29, user decision) -----------
-# A partner whose accounts carry NO subscription moves no files and never
-# will — config residue (an account with no flows: INFRA, TT, INDEPENDER,
-# REASULT). Drop it from the base list, every canonical pair cache and the
-# group evidence BEFORE the mirror loop, so the estate forgets it
-# consistently. Keep-list = _subscriptions-partners.tsv (the account join
-# UNION the subscription-name fallback): a partner with ANY flow stays. An
-# EMPTY keep-list (no subscriptions at all — never a real config) prunes
-# nothing rather than everything.
-PKEEP="$XREF/.pda.pkeep.tmp"
-cut -f2 "$XREF/_subscriptions-partners.tsv" 2>/dev/null | LC_ALL=C sort -u > "$PKEEP" || : > "$PKEEP"
-if [ -s "$PKEEP" ]; then
-    prune_ptn() {   # $1 file  $2 partner column (1|2)
-        [ -f "$1" ] || return 0
-        awk -F'\t' -v c="$2" 'FNR==NR { k[$1]=1; next } ($c in k)' "$PKEEP" "$1" > "$1.tmp" \
-            && mv "$1.tmp" "$1"
-    }
-    prune_ptn "$BASE/_partners.tsv" 1
-    prune_ptn "$XREF/_accounts-partners.tsv" 2
-    prune_ptn "$XREF/_hosts-partners.tsv" 2
-    prune_ptn "$XREF/_profiles-partners.tsv" 2
-    prune_ptn "$XREF/_logins-partners.tsv" 2
-    prune_ptn "$XREF/_partners-apps.tsv" 1
-    prune_ptn "$XREF/_partners-domains.tsv" 1
-    prune_ptn "$XREF/_partners-white.tsv" 1
-    prune_ptn "$XREF/_partner-groups.tsv" 1
-    prune_ptn "$XREF/_partner-group-why.tsv" 1
-    prune_ptn "$XREF/_partner-group-accounts.tsv" 1
-fi
-rm -f "$PKEEP"
-
 # ---- LOGICAL flow groups (2026-08-30 acc-vs-prod; FULL entity 2026-08-31) ----
 # One env's FlowIDs (base/_profiles.tsv = the customAttribute_FlowIdentifier
 # values) condensed into logical flow groups, one name per group, always 3
@@ -1141,10 +560,12 @@ rm -f "$PKEEP"
 # per configured FlowID (the canonical profiles/logicals pair; every report
 # that attributes a File's profile column resolves through it) — plus
 # base/_logicals.tsv (direction/result appended below like every base) and
-# the 8 other canonical logicals pair caches, composed from the profiles
-# pairs. Placed AFTER the partner prune (the composed _logicals-partners
-# must not resurrect pruned partners) and BEFORE the mirror loop (every
-# canonical file must exist — possibly empty — for the mirrors).
+# the entity->logical pair caches, composed from the profiles pairs.
+# Placed BEFORE the PDA section: the PDA derivation now STARTS from this
+# map (the Logical is the base — part 1 = domain, part 2 = application,
+# part 3 = partner token). The _logicals-{partners,apps,domains} pairs are
+# emitted by the PDA pass itself. Every composed file is ALWAYS written —
+# possibly empty — for the mirror and freshness loops (set -e).
 awk -F'\t' -v LF="$LOGICALF" '
     BEGIN {
         while ((getline fl < LF) > 0) {
@@ -1258,28 +679,299 @@ awk -F'\t' -v LF="$LOGICALF" '
             print raws[i] "\t" ((i in finalfix) ? finalfix[i] : map3[map2[grpof[i]]])
     }' "$BASE/_profiles.tsv" | LC_ALL=C sort -u > "$XREF/_profiles-logicals.tsv"
 cut -f2 "$XREF/_profiles-logicals.tsv" | LC_ALL=C sort -u > "$BASE/_logicals.tsv"
-# the other 8 canonical logicals pairs: the profiles pairs composed with the
-# map (a pair row whose FlowID maps joins that FlowID's Logical; the file is
-# ALWAYS written — possibly empty — for the mirror loop)
-lmap() {   # $1 input pair cache  $2 profile column (1|2)  $3 LEFT|RIGHT (where the logical lands)  $4 output pair name
-    {   if [ -f "$XREF/$1" ]; then
-            awk -F'\t' -v pc="$2" -v side="$3" '
-                FILENAME == ARGV[1] { if ($1 != "" && $2 != "") LG[toupper($1)] = $2; next }
+# xcompose MAPFILE PAIRFILE PCOL SIDE OUT — join a profile-keyed pair cache
+# with a profile->value map (multi-valued safe; the join is RAW — every
+# consumer file carries the same jq-extracted FlowID spellings); the mapped
+# value lands LEFT or RIGHT of the pair file's other column. The output is
+# ALWAYS written (possibly empty).
+xcompose() {
+    {   if [ -f "$1" ] && [ -f "$XREF/$2" ]; then
+            awk -F'\t' -v pc="$3" -v side="$4" '
+                FILENAME == ARGV[1] { if ($1 != "" && $2 != "") MP[$1] = MP[$1] "\037" $2; next }
                 { p = (pc == 1) ? $1 : $2; o = (pc == 1) ? $2 : $1
-                  if (toupper(p) in LG) { l = LG[toupper(p)]
-                      if (side == "LEFT") print l "\t" o; else print o "\t" l } }
-            ' "$XREF/_profiles-logicals.tsv" "$XREF/$1"
+                  if (p in MP) { n = split(substr(MP[p], 2), V, "\037")
+                      for (i = 1; i <= n; i++) if (side == "LEFT") print V[i] "\t" o
+                                               else                print o "\t" V[i] } }
+            ' "$1" "$XREF/$2"
         fi
-    } | LC_ALL=C sort -u > "$XREF/_$4.tsv"
+    } | LC_ALL=C sort -u > "$XREF/_$5.tsv"
 }
-lmap _accounts-profiles.tsv      2 RIGHT accounts-logicals
-lmap _subscriptions-profiles.tsv 2 RIGHT subscriptions-logicals
-lmap _profiles-logins.tsv        1 RIGHT logins-logicals
-lmap _profiles-hosts.tsv         1 RIGHT hosts-logicals
-lmap _profiles-partners.tsv      1 LEFT  logicals-partners
-lmap _profiles-apps.tsv          1 LEFT  logicals-apps
-lmap _profiles-domains.tsv       1 LEFT  logicals-domains
-lmap _profiles-white.tsv         1 LEFT  logicals-white
+xcompose "$XREF/_profiles-logicals.tsv" _accounts-profiles.tsv      2 RIGHT accounts-logicals
+xcompose "$XREF/_profiles-logicals.tsv" _subscriptions-profiles.tsv 2 RIGHT subscriptions-logicals
+xcompose "$XREF/_profiles-logicals.tsv" _profiles-logins.tsv        1 RIGHT logins-logicals
+xcompose "$XREF/_profiles-logicals.tsv" _profiles-hosts.tsv         1 RIGHT hosts-logicals
+xcompose "$XREF/_profiles-logicals.tsv" _profiles-white.tsv         1 LEFT  logicals-white
+
+# ------------------------------------------- partners / apps / domains (PDA)
+# The three PDA entities behind the home page's "Logical, Partners, Domains &
+# Applications" table, derived HERE so the caches are the single source
+# (bin/build/publish.sh consumes them and only adds the Seen/Result
+# enrichment). Each base file is "name<TAB>direction" with direction in /
+# both / out ("" when none of the member flows has a login or host side).
+#
+# THE BASE IS THE LOGICAL ENTITY (2026-08-30, user request — replacing the
+# account-NAME derivation: the pda_split machinery, the subscription-name
+# fallback, the transitive sjoin pairs and the subscription-less-partner
+# prune are all RETIRED). An unpinned Logical name has exactly three
+# "_"-parts D_A_P:
+#   part 1 = the DOMAIN, part 2 = the APPLICATION, part 3 = the PARTNER token.
+# A pinned Logical with any other part count (input/logical.txt — the
+# monitor's INFRA-MONITOR-UC) contributes NOTHING. Domains and applications
+# are done there; PARTNER TOKENS then MERGE (union-find; combined name = the
+# sorted member tokens joined with "_") when
+#   (1) their logical flows connect to the same configured host,
+#   (2) their logical flows whitelist the same IP,
+#   (3) one partner's host resolves to an IP another partner whitelists,
+#   (4) a hand-curated alias pair names them one organisation
+#       (input/partner-aliases.tsv — which also still supplies the CANONICAL
+#       group name via the alias star, so a merged group can be called
+#       GLOBEX instead of GLOBEX_GLOBEXX).
+# Every partner/app/domain pair cache is COMPOSED through the FlowID (the
+# entity->profile pairs joined with the _profiles-{partners,apps,domains}
+# maps this pass emits), so the whole estate joins through one spine:
+# profile -> logical -> D/A/P. There is NO PRUNE any more — every partner
+# descends from a subscription's FlowID by construction, so a
+# subscription-less partner cannot exist.
+# Endpoint addresses come from the endpoint itself (raw IPs) and from
+# input/<env>/ip/ip-hosts.tsv — the forward-DNS answers this pass writes, plus
+# whatever bin/transfer/parse.sh's rule (b) learned from real outgoing traffic.
+# The map is machine-maintained; nothing here is hand-written. The early-exit
+# above watches its content, so a changed address re-derives the partner links.
+# Forward-resolve every configured endpoint and publish the address<->endpoint
+# map (bin/ip.sh). This runs ONLY when flow-manager.sh actually rebuilds — it
+# early-exits when its caches are newer than the exports — so it is not a
+# per-build DNS cost. It replaces the former fwd/<name>.txt tree, which was only
+# ever written when ABSENT, so a changed A record was never picked up.
+#
+# ip_put UNIONS with what is already there, so an address bin/transfer/parse.sh
+# learned from real traffic (rule b) survives a re-resolution that no longer
+# returns it — the log rows naming that address still need it. base/_hosts.tsv is
+# passed as the KEEP list, which prunes endpoints that have left the config and
+# is what keeps the union bounded.
+EPS="$OUT/.eps.tmp"
+# _hosts.tsv is canonically lowercase already (the jq extraction ascii_downcase's
+# it) and is still SINGLE-COLUMN here — the direction column is appended much
+# later — so this is a defensive fold, done once instead of per endpoint.
+awk -F'\t' '{ print tolower($1) }' "$BASE/_hosts.tsv" > "$EPS"
+IPSEED="$OUT/.ipseed.tmp"; : > "$IPSEED"
+while IFS= read -r epl; do
+    [ -n "$epl" ] || continue
+    case $epl in [0-9]*.[0-9]*.[0-9]*.[0-9]*) continue ;; esac   # a raw-IP endpoint names nothing
+    if command -v host >/dev/null 2>&1; then
+        host -W 2 "$epl" 2>/dev/null | awk -v h="$epl" '/has address/ { print $NF "\t" h }' >> "$IPSEED" || true
+    fi
+done < "$EPS"
+rm -f "$EPS"
+ip_put "$BASE/_hosts.tsv" < "$IPSEED"
+rm -f "$IPSEED"
+
+# The PDA both-ways linking needs endpoint -> its address(es): ip-hosts.tsv with
+# the columns swapped. (It used to be built from the reverse cache, whose
+# non-endpoint rows could never match an endpoint and were pure noise.)
+PDAIP="$OUT/.pda.ipmap.tmp"
+: > "$PDAIP"
+[ -f "$IP_HOSTS_FILE" ] && awk -F'\t' '$1 != "" && $2 != "" { print $2 "\t" $1 }' "$IP_HOSTS_FILE" > "$PDAIP"
+
+# Remember the DNS content this build derived from — the early-exit compares
+# against it (see pda_dns_fingerprint above). Written AFTER ip_put so freshly
+# resolved endpoints are included.
+pda_dns_fingerprint > "$OUT/.pda-dns.cksum"
+
+awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$BASE/.pda.domains.tmp" \
+    -v FP="$OUT/.pda.fp.tmp" -v FA="$OUT/.pda.fa.tmp" -v FD="$OUT/.pda.fd.tmp" \
+    -v LGP="$OUT/.pda.lp.tmp" -v LGA="$OUT/.pda.la.tmp" -v LGD="$OUT/.pda.ld.tmp" \
+    -v PAP="$OUT/.pda.pap.tmp" -v PDM="$OUT/.pda.pdm.tmp" -v ADM="$OUT/.pda.adm.tmp" \
+    -v WHYF="$XREF/.pda.why.tmp" -v GRPF="$XREF/.pda.groups.tmp" -v GAF="$XREF/.pda.gacct.tmp" \
+    -v ALIASF="$ALIASF" '
+    # ---- group-merge EVIDENCE (why two partner tokens are combined) ----
+    # Each rule firing that links two DIFFERENT tokens records one edge; the
+    # group is resolved at END (find()). Deduped by signature.
+    function recordev(rule, ta, tb, txt,   sig){ if(ta==""||tb==""||ta==tb) return
+        sig=rule SUBSEP ta SUBSEP tb SUBSEP txt; if(sig in seenev) return; seenev[sig]=1
+        EVN++; EVA[EVN]=ta; EVB[EVN]=tb; EVR[EVN]=rule; EVT[EVN]=txt }
+    function find(x){ if(!(x in par)) par[x]=x; while(par[x]!=x){par[x]=par[par[x]]; x=par[x]} return x }
+    function uni(a,b,  ra,rb){ if(a==""||b=="") return; ra=find(a); rb=find(b); if(ra!=rb){par[ra]=rb; nmerge++} }
+    # I/O letter soup -> the base direction word ("" = no side known)
+    function dirw(s,  i2,o2){ i2=(index(s,"I")>0); o2=(index(s,"O")>0)
+        return (i2&&o2)?"both":(i2?"in":(o2?"out":"")) }
+    BEGIN { US=sprintf("%c",31)
+        # the hand-curated alias pairs (input/partner-aliases.tsv; "#" =
+        # comment). A SINGLE-token line used to declare a real organisation
+        # for the retired name-split helper lists — tolerated and INERT now.
+        nal=0
+        while ((getline l4 < ALIASF) > 0) { if (l4 ~ /^#/ || l4 == "") continue
+            n4=split(l4,a4x,"\t"); if(n4>=2 && a4x[1]!="" && a4x[2]!=""){ ++nal; AL1[nal]=toupper(a4x[1]); AL2[nal]=toupper(a4x[2]); AL2SET[AL2[nal]]=1 } }
+        close(ALIASF) }
+    FILENAME ~ /_profiles-logicals\.tsv$/ { if($1==""||$2=="") next
+        if(!($2 in lseen)){ lseen[$2]=1; lg[++nl]=$2 }
+        fl[$2]=fl[$2] US $1; next }
+    FILENAME ~ /_profiles-logins\.tsv$/   { pin[$1]=1; next }
+    FILENAME ~ /_profiles-hosts\.tsv$/    { ph[$1]=ph[$1] US $2; next }
+    FILENAME ~ /_profiles-white\.tsv$/    { pwl[$1]=pwl[$1] US $2; next }
+    FILENAME ~ /_accounts-profiles\.tsv$/ { pacc[$2]=pacc[$2] US $1; next }
+    { cand[$1]=cand[$1] US $2 }   # PDAIP: endpoint-lower -> candidate IP(s)
+    END {
+        # per LOGICAL (map-file order — sorted, so deterministic): its FlowID
+        # set, side (in = any FlowID with a login, out = any with a host),
+        # host set and whitelist set, unioned over the FlowIDs
+        for(i=1;i<=nl;i++){ l=lg[i]
+            nf=split(substr(fl[l],2),FF,US)
+            for(j=1;j<=nf;j++){ f=FF[j]
+                if(f in pin) lI[l]=1
+                if(f in ph){ lO[l]=1; nh=split(substr(ph[f],2),HH,US)
+                    for(h=1;h<=nh;h++) if(!((l SUBSEP HH[h]) in hs)){ hs[l SUBSEP HH[h]]=1; lh[l]=lh[l] US HH[h] } }
+                if(f in pwl){ nw=split(substr(pwl[f],2),WW,US)
+                    for(w=1;w<=nw;w++) if(!((l SUBSEP WW[w]) in ws)){ ws[l SUBSEP WW[w]]=1; lw[l]=lw[l] US WW[w] } } }
+            # THE 3-PART GATE: only a D_A_P name contributes — a pinned
+            # short (or long) name has no domain/application/partner slots
+            if(split(l,S,"_")!=3) continue
+            dom[l]=S[1]; app[l]=S[2]; tok[l]=S[3]; find(S[3])
+            side=((l in lI)?"I":"")((l in lO)?"O":"")
+            domd[S[1]]=domd[S[1]] side; appd[S[2]]=appd[S[2]] side
+            nh=split(substr(lh[l],2),HH,US); for(h=1;h<=nh;h++) hidx[HH[h]]=hidx[HH[h]] US S[3] "|" l
+            nw=split(substr(lw[l],2),WW,US); for(w=1;w<=nw;w++) widx[WW[w]]=widx[WW[w]] US S[3] "|" l }
+        # Rule 4 FIRST — the HAND-CURATED ALIAS MAP: two tokens naming ONE
+        # organisation merge, the file cited as evidence. Only tokens the
+        # estate actually DERIVED merge (an alias to an absent token no-ops).
+        # NO fixpoint loop anywhere: no rule reads group state, and
+        # union-find keeps every merge transitive.
+        for (ai=1; ai<=nal; ai++) { a4=AL1[ai]; b4=AL2[ai]
+            if ((a4 in par) && (b4 in par)) {
+                recordev(4, a4, b4, "Curated alias: " a4 " and " b4 " name the same organisation (input/partner-aliases.tsv)")
+                uni(a4, b4) } }
+        # Rule 1 — two partners'"'"' logical flows connect to the same configured host
+        for(hh in hidx){ n=split(substr(hidx[hh],2),AA,US)
+            for(k=2;k<=n;k++) for(m=1;m<k;m++){ split(AA[m],X,"|"); split(AA[k],Y,"|")
+                if(X[1]==Y[1]) continue
+                recordev(1, Y[1], X[1], "Logical flows " X[2] " (partner " X[1] ") and " Y[2] " (partner " Y[1] ") both connect to configured host " hh)
+                uni(X[1],Y[1]) } }
+        # Rule 2 — two partners'"'"' logical flows whitelist the same IP
+        for(ww in widx){ n=split(substr(widx[ww],2),AA,US)
+            for(k=2;k<=n;k++) for(m=1;m<k;m++){ split(AA[m],X,"|"); split(AA[k],Y,"|")
+                if(X[1]==Y[1]) continue
+                recordev(2, Y[1], X[1], "Logical flows " X[2] " (partner " X[1] ") and " Y[2] " (partner " Y[1] ") both whitelist IP " ww)
+                uni(X[1],Y[1]) } }
+        # Rule 3 — a partner'"'"'s host resolves to an IP another partner whitelists
+        # (a raw-IP endpoint is its own address; named hosts resolve via the
+        # forward-DNS map built above)
+        for(i=1;i<=nl;i++){ l=lg[i]; if(!(l in tok)) continue
+            nh=split(substr(lh[l],2),HH,US)
+            for(h=1;h<=nh;h++){ hh=HH[h]
+                if(hh ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/) ipl=US hh; else ipl=(hh in cand)?cand[hh]:""
+                ni=split(substr(ipl,2),IPS,US)
+                for(p=1;p<=ni;p++){ ip=IPS[p]; if(!(ip in widx)) continue
+                    n=split(substr(widx[ip],2),AA,US)
+                    for(k=1;k<=n;k++){ split(AA[k],Y,"|"); if(Y[1]==tok[l]) continue
+                        recordev(3, tok[l], Y[1], "Logical flow " l " (partner " tok[l] ") connects to " hh " (IP " ip "), which logical flow " Y[2] " (partner " Y[1] ") whitelists")
+                        uni(tok[l],Y[1]) } } } }
+        # groups: members + direction = the union of the member LOGICALS'"'"' sides
+        for(i=1;i<=nl;i++){ l=lg[i]; if(!(l in tok)) continue
+            r=find(tok[l]); if(index(US memb[r] US, US tok[l] US)==0) memb[r]=memb[r] US tok[l]
+            if(l in lI) gI[r]=1; if(l in lO) gO[r]=1 }
+        # group name = sorted-unique member tokens joined by _ ; the
+        # hand-curated alias STAR can override it with ONE canonical token
+        for(r in memb){ delete seen; m=split(substr(memb[r],2),TT,US); c=0
+            for(k=1;k<=m;k++) if(!(TT[k] in seen)){ seen[TT[k]]=1; ARR[++c]=TT[k] }
+            for(x=2;x<=c;x++){ v=ARR[x]; y=x-1; while(y>=1 && ARR[y]>v){ARR[y+1]=ARR[y];y--} ARR[y+1]=v }
+            gn=ARR[1]; for(x=2;x<=c;x++) gn=gn "_" ARR[x]
+            # CANONICAL GROUP NAME (2026-08-29): when EVERY member has a direct
+            # alias pair (input/partner-aliases.tsv) with ONE token — a member
+            # itself (the SchubergPhilis star) or a pure NAME the estate never
+            # derives (the RABOBANK_PEKO case) — the group takes that token as
+            # its name instead of the joined list. Candidates = the members
+            # plus every token paired with one, scanned in sorted order so a
+            # tie is deterministic.
+            if(c>1){
+                delete CAND
+                for(x=1;x<=c;x++){ CAND[ARR[x]]=1
+                    for(ai2=1;ai2<=nal;ai2++){ if(AL1[ai2]==ARR[x]) CAND[AL2[ai2]]=1; if(AL2[ai2]==ARR[x]) CAND[AL1[ai2]]=1 } }
+                nc2=0; for(cn in CAND) CARR[++nc2]=cn
+                for(x=2;x<=nc2;x++){ v2=CARR[x]; y=x-1; while(y>=1 && CARR[y]>v2){CARR[y+1]=CARR[y];y--} CARR[y+1]=v2 }
+                # the alias file convention is variant<TAB>CANONICAL: a
+                # candidate appearing on the RIGHT side of a pair outranks
+                # the rest (WONKA beats its variant WNK — with two members
+                # both qualify, and bare sorted order picked the variant);
+                # sorted order breaks the remaining ties
+                fnd=0
+                for(p2s=1;p2s<=2 && !fnd;p2s++)
+                for(x=1;x<=nc2 && !fnd;x++){ cn=CARR[x]
+                    if(p2s==1 && !(cn in AL2SET)) continue
+                    if(p2s==2 &&  (cn in AL2SET)) continue
+                    ok2=1
+                    for(y=1;y<=c && ok2;y++){ if(ARR[y]==cn) continue
+                        ok2=0
+                        for(ai2=1;ai2<=nal;ai2++) if((AL1[ai2]==cn && AL2[ai2]==ARR[y]) || (AL2[ai2]==cn && AL1[ai2]==ARR[y])){ ok2=1; break } }
+                    if(ok2){ gn=cn; fnd=1 } } }
+            gname[r]=gn
+            # a GROUP = more than one member token; record it (name / members / direction)
+            if(c>1){ mm=ARR[1]; for(x=2;x<=c;x++) mm=mm "," ARR[x]
+                MULTI[r]=1
+                print gn "\t" mm "\t" dirw(((gI[r])?"I":"") ((gO[r])?"O":"")) > GRPF } }
+        # the partner base rows (group -> direction)
+        for(r in memb) print gname[r] "\t" dirw(((gI[r])?"I":"") ((gO[r])?"O":"")) > BP
+        # the apps / domains base rows (part 2 / part 1 -> direction)
+        for(k in appd) print k "\t" dirw(appd[k]) > BA
+        for(k in domd) print k "\t" dirw(domd[k]) > BD
+        # the maps and within-logical pairs: FlowID -> group/app/domain,
+        # Logical -> group/app/domain, partners-apps / partners-domains /
+        # apps-domains (co-members of one logical), and the group-page
+        # Member table rows (group / token / account — the accounts behind
+        # the token'"'"'s logical flows; multi-member groups only)
+        for(i=1;i<=nl;i++){ l=lg[i]; if(!(l in tok)) continue
+            g=gname[find(tok[l])]
+            print l "\t" g > LGP; print l "\t" app[l] > LGA; print l "\t" dom[l] > LGD
+            print g "\t" app[l] > PAP; print g "\t" dom[l] > PDM; print app[l] "\t" dom[l] > ADM
+            nf=split(substr(fl[l],2),FF,US)
+            for(j=1;j<=nf;j++){ f=FF[j]
+                print f "\t" g > FP; print f "\t" app[l] > FA; print f "\t" dom[l] > FD }
+            if(find(tok[l]) in MULTI){
+                for(j=1;j<=nf;j++){ na2=split(substr(pacc[FF[j]],2),PA,US)
+                    for(m=1;m<=na2;m++) print g "\t" tok[l] "\t" PA[m] > GAF } } }
+        # resolve each merge-evidence edge to its final group name (why
+        # combined): group / token pair (A<=B) / rule / human evidence line
+        for(e=1;e<=EVN;e++){ ra=find(EVA[e]); if(ra!=find(EVB[e])) continue
+            ta=EVA[e]; tb=EVB[e]; if(ta>tb){ tt=ta; ta=tb; tb=tt }
+            print gname[ra] "\t" ta "\t" tb "\t" EVR[e] "\t" EVT[e] > WHYF }
+    }
+' "$XREF/_profiles-logicals.tsv" "$XREF/_profiles-logins.tsv" "$XREF/_profiles-hosts.tsv" \
+  "$XREF/_profiles-white.tsv" "$XREF/_accounts-profiles.tsv" "$PDAIP"
+LC_ALL=C sort -u "$BASE/.pda.partners.tmp" 2>/dev/null > "$BASE/_partners.tsv" || : > "$BASE/_partners.tsv"
+LC_ALL=C sort -u "$BASE/.pda.apps.tmp"     2>/dev/null > "$BASE/_apps.tsv"     || : > "$BASE/_apps.tsv"
+LC_ALL=C sort -u "$BASE/.pda.domains.tmp"  2>/dev/null > "$BASE/_domains.tsv"  || : > "$BASE/_domains.tsv"
+# the partner GROUPS (multi-member) and the per-group merge evidence (why combined)
+LC_ALL=C sort -u "$XREF/.pda.groups.tmp" 2>/dev/null > "$XREF/_partner-groups.tsv" || : > "$XREF/_partner-groups.tsv"
+LC_ALL=C sort -u "$XREF/.pda.why.tmp"    2>/dev/null > "$XREF/_partner-group-why.tsv" || : > "$XREF/_partner-group-why.tsv"
+LC_ALL=C sort -u "$XREF/.pda.gacct.tmp"  2>/dev/null > "$XREF/_partner-group-accounts.tsv" || : > "$XREF/_partner-group-accounts.tsv"
+# the FlowID -> P/A/D maps (the composition spine), the Logical pairs and
+# the within-logical pairs
+LC_ALL=C sort -u "$OUT/.pda.fp.tmp"  2>/dev/null > "$XREF/_profiles-partners.tsv" || : > "$XREF/_profiles-partners.tsv"
+LC_ALL=C sort -u "$OUT/.pda.fa.tmp"  2>/dev/null > "$XREF/_profiles-apps.tsv"     || : > "$XREF/_profiles-apps.tsv"
+LC_ALL=C sort -u "$OUT/.pda.fd.tmp"  2>/dev/null > "$XREF/_profiles-domains.tsv"  || : > "$XREF/_profiles-domains.tsv"
+LC_ALL=C sort -u "$OUT/.pda.lp.tmp"  2>/dev/null > "$XREF/_logicals-partners.tsv" || : > "$XREF/_logicals-partners.tsv"
+LC_ALL=C sort -u "$OUT/.pda.la.tmp"  2>/dev/null > "$XREF/_logicals-apps.tsv"     || : > "$XREF/_logicals-apps.tsv"
+LC_ALL=C sort -u "$OUT/.pda.ld.tmp"  2>/dev/null > "$XREF/_logicals-domains.tsv"  || : > "$XREF/_logicals-domains.tsv"
+LC_ALL=C sort -u "$OUT/.pda.pap.tmp" 2>/dev/null > "$XREF/_partners-apps.tsv"     || : > "$XREF/_partners-apps.tsv"
+LC_ALL=C sort -u "$OUT/.pda.pdm.tmp" 2>/dev/null > "$XREF/_partners-domains.tsv"  || : > "$XREF/_partners-domains.tsv"
+LC_ALL=C sort -u "$OUT/.pda.adm.tmp" 2>/dev/null > "$XREF/_apps-domains.tsv"      || : > "$XREF/_apps-domains.tsv"
+rm -f "$BASE/.pda.partners.tmp" "$BASE/.pda.apps.tmp" "$BASE/.pda.domains.tmp" \
+      "$OUT"/.pda.fp.tmp "$OUT"/.pda.fa.tmp "$OUT"/.pda.fd.tmp \
+      "$OUT"/.pda.lp.tmp "$OUT"/.pda.la.tmp "$OUT"/.pda.ld.tmp \
+      "$OUT"/.pda.pap.tmp "$OUT"/.pda.pdm.tmp "$OUT"/.pda.adm.tmp \
+      "$XREF/.pda.groups.tmp" "$XREF/.pda.why.tmp" "$XREF/.pda.gacct.tmp" "$PDAIP"
+
+# every remaining partner/app/domain pair cache is COMPOSED through the
+# FlowID: the entity->profile pairs joined with the _profiles-<X> maps
+# (replaces the retired ajoin/sjoin/fallback machinery — the transitive
+# pairs are now exact by construction, everything joins through the FlowID)
+for _e in partners apps domains; do
+    _m="$XREF/_profiles-$_e.tsv"
+    xcompose "$_m" _accounts-profiles.tsv      2 RIGHT "accounts-$_e"
+    xcompose "$_m" _subscriptions-profiles.tsv 2 RIGHT "subscriptions-$_e"
+    xcompose "$_m" _profiles-logins.tsv        1 RIGHT "logins-$_e"
+    xcompose "$_m" _profiles-hosts.tsv         1 RIGHT "hosts-$_e"
+    xcompose "$_m" _profiles-white.tsv         1 LEFT  "$_e-white"
+done
+unset _e _m
 
 # ----------------------------- mirrors: every cross reference exists both ways
 # Each canonical _a-b.tsv gets its column-swapped twin _b-a.tsv (sorted on
