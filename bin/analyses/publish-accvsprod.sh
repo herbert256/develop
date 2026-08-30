@@ -81,14 +81,20 @@ write_acc_vs_prod_pages() {
     # whitelist: NO detail pages/slugmap — the name set is each env's
     # base/_white.tsv itself (NOSLUG mode below: unlinked cells, IPv4 keys
     # padded so addresses compare and sort in address order)
-    local types=(accounts subscriptions logins hosts partners domains applications whitelist)
-    local labels=("Accounts" "Subscriptions" "Logins" "Hosts" "Partners" "Domains" "Applications" "Whitelist")
-    local bases=(_accounts _subscriptions _logins _hosts _partners _domains _apps _white)
+    # flowids (2026-08-30, user request): the customAttribute_FlowIdentifier
+    # VALUES of each env's subscriptions.json, read from the config cache
+    # base/_profiles.tsv — the ONE page family where a profile surfaces (the
+    # CLAUDE.md transfer-profile gotcha names this exception). NOSLUG like the
+    # whitelist (no detail pages), name-only (no activity report) and untinted
+    # (the profiles' result column stays "unknown").
+    local types=(accounts subscriptions logins hosts partners domains applications whitelist flowids)
+    local labels=("Accounts" "Subscriptions" "Logins" "Hosts" "Partners" "Domains" "Applications" "Whitelist" "FlowID")
+    local bases=(_accounts _subscriptions _logins _hosts _partners _domains _apps _white _profiles)
     # ACTIVITY per env: each name's Files/Volume from that env's entity summary
     # .rpt (first-table ROWs — the same source ranking.sh lifts from), matched
     # case aside. Whitelist (no entity report) has no activity source and keeps
     # the name-only layout.
-    local rpts=(account subscription login remote-host partner domain application "")
+    local rpts=(account subscription login remote-host partner domain application "" "")
     # difference (2026-08-29): the Only-acceptance and Only-production sets
     # side by side as two independent name-sorted columns of ONE table — the
     # promotion diff at a glance. Its tab sits AFTER Summary in the view row.
@@ -98,7 +104,7 @@ write_acc_vs_prod_pages() {
     # Summary / Entities / Subscriptions vs partners; the type row (this
     # order) and the view row show ONLY inside Entities, whose landing —
     # and the view row's default — is Subscriptions at the Both view.
-    local taborder=(subscriptions accounts logins hosts partners domains applications whitelist)
+    local taborder=(subscriptions flowids accounts logins hosts partners domains applications whitelist)
     local ent_home="acc-vs-prod-subscriptions-both.html"
     local ti vi tj t v tmp na nb np am pm ab pb trow vrow vl out
     local sumtmp; sumtmp=$(mktemp)   # per-type counts + active-name lists for the Summary page
@@ -124,7 +130,10 @@ write_acc_vs_prod_pages() {
             pr="data/production/transfer/reports/coverage/whitelist-files.tsv"; [ -f "$pr" ] || pr=""
         fi
         local hasact=0; { [ -n "$ar" ] || [ -n "$pr" ]; } && hasact=1
-        local noslug=0; [ "$t" = whitelist ] && noslug=1
+        local noslug=0; case $t in whitelist|flowids) noslug=1 ;; esac
+        # whitelist only: NOSLUG rows order by result color first; flowids —
+        # the other NOSLUG type — has no result and keeps plain name order
+        local csort=0; [ "$t" = whitelist ] && csort=1
         # _/- SEPARATOR FOLD (2026-08-29, user decision — THIS report family
         # only; site-wide the separator stays an identity): the two envs
         # spell one flow's name with _ or - interchangeably, so the cross-env
@@ -136,22 +145,25 @@ write_acc_vs_prod_pages() {
         # one line per name (case- and separator-folded): cls a|b|p, KEY,
         # acceptance name/slug/result, production name/slug/result, then the
         # activity columns: acceptance files/volume, production files/volume
-        awk -v OFS='\t' -v AM="$am" -v PM="$pm" -v AB="$ab" -v PB="$pb" -v NOSLUG="$noslug" -v AR="$ar" -v PR="$pr" -v FOLD="$fold" '
+        awk -v OFS='\t' -v AM="$am" -v PM="$pm" -v AB="$ab" -v PB="$pb" -v NOSLUG="$noslug" -v CSORT="$csort" -v AR="$ar" -v PR="$pr" -v FOLD="$fold" '
             function sepfold(v) { if (FOLD) gsub(/-/, "_", v); return v }   # the DISPLAY spelling: every - shown as _
             function nkey(v) { return toupper(sepfold(v)) }                # the MATCH key: case + separator folded
             function padkey(v,   o) {   # IPv4 -> zero-padded octets (address order); else UPPER
                 if (v ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/) { split(v, o, "."); return sprintf("%03d%03d%03d%03d", o[1], o[2], o[3], o[4]) }
                 return toupper(v)
             }
+            # the NOSLUG key: padkey for the whitelist (FOLD=0 — addresses),
+            # nkey for flowids (FOLD=1 — the same fold the linked types use)
+            function lkey(v) { return FOLD ? nkey(v) : padkey(v) }
             function load(map, f,   l, a) { if (f == "") return
                 while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") map[nkey(a[1])] = a[1] "\t" a[2] }
                 close(f) }
-            # NOSLUG (whitelist): the base cache IS the name list — no slug
+            # NOSLUG (whitelist, flowids): the base cache IS the name list — no slug
             function loadnames(map, f,   l, a) { if (f == "") return
-                while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") map[padkey(a[1])] = a[1] "\t" }
+                while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") map[lkey(a[1])] = a[1] "\t" }
                 close(f) }
             function loadres(map, f,   l, a) { if (f == "") return
-                while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") map[NOSLUG ? padkey(a[1]) : nkey(a[1])] = a[3] }
+                while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") map[NOSLUG ? lkey(a[1]) : nkey(a[1])] = a[3] }
                 close(f) }
             # the env entity summary .rpt: first-table ROWs -> Files ($3) and
             # the humanized Volume ($6) per folded name key. Files SUM on a
@@ -183,10 +195,10 @@ write_acc_vs_prod_pages() {
                     na = ns = pn = ps = ""
                     if (k in A) { split(A[k], aa, "\t"); na = aa[1]; ns = aa[2] }
                     if (k in P) { split(P[k], pp, "\t"); pn = pp[1]; ps = pp[2] }
-                    # NOSLUG (whitelist): rows order by RESULT color — red,
+                    # CSORT (whitelist): rows order by RESULT color — red,
                     # green, blue, orange (unknown last) — then address order
                     sk = k
-                    if (NOSLUG) { r5 = (cls == "p") ? RP[k] : RA[k]
+                    if (CSORT) { r5 = (cls == "p") ? RP[k] : RA[k]
                         sk = ((r5 == "red") ? 0 : (r5 == "green") ? 1 : (r5 == "blue") ? 2 : (r5 == "orange") ? 3 : 4) k }
                     # display in the _ spelling (sepfold; raw for hosts/IPs);
                     # the slugs stay each env raw ones, so links keep working.
@@ -241,7 +253,15 @@ write_acc_vs_prod_pages() {
                 printf '<p class="tabs">%s</p>\n' "$trow"
                 printf '<p class="tabs">%s</p>\n' "$erow"
                 printf '<p class="tabs">%s</p>\n' "$vrow"
-                printf '<p class="subtitle">The %s known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production. Row colors are the standard entity results; in the Both view each column links and tints its own environment.%s%s</p>\n' "${labels[$ti]}" "$foldnote" "$actnote"
+                # flowids: its own subtitle — configured-only (no logged
+                # names), no row colors and no links, so the standard text
+                # would promise what these rows do not have
+                if [ "$t" = flowids ]; then
+                    # its own fold note too: the shared one promises links
+                    printf '<p class="subtitle">The FlowIDs known to each environment — the <code>customAttribute_FlowIdentifier</code> values of its configured subscriptions: only in Acceptance, in both, or only in Production. A flow&#8217;s UC subscriptions share one FlowID, so this compares the environments by flow rather than by subscription. The <code>_</code> and <code>-</code> separators are treated as the same character: names are matched across the environments ignoring the difference and are all shown in the <code>_</code> spelling.</p>\n'
+                else
+                    printf '<p class="subtitle">The %s known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production. Row colors are the standard entity results; in the Both view each column links and tints its own environment.%s%s</p>\n' "${labels[$ti]}" "$foldnote" "$actnote"
+                fi
                 printf '<div class="tablewrap"><table class="fit">\n'
                 if [ "$hasact" = 1 ]; then
                     if [ "$v" = both ] || [ "$v" = difference ]; then
@@ -249,12 +269,19 @@ write_acc_vs_prod_pages() {
                     else
                         printf '<tr><th>%s</th><th class="num">Files</th></tr>\n' "${labels[$ti]}"
                     fi
+                elif [ "$t" = flowids ] && [ "$v" = both ]; then
+                    # ONE column (2026-08-30, user request): a FlowID in the
+                    # Both set is the SAME string on both sides — no slug, no
+                    # tint, both displayed in the folded `_` spelling — so two
+                    # identical columns said nothing
+                    printf '<tr><th>FlowID</th></tr>\n'
                 elif [ "$v" = both ] || [ "$v" = difference ]; then
                     printf '<tr><th>Acceptance</th><th>Production</th></tr>\n'
                 else
                     printf '<tr><th>%s</th></tr>\n' "${labels[$ti]}"
                 fi
-                awk -F'\t' -v view="$v" -v sub2="$t" -v hasact="$hasact" '
+                onecol=0; [ "$t" = flowids ] && onecol=1
+                awk -F'\t' -v view="$v" -v sub2="$t" -v hasact="$hasact" -v onecol="$onecol" '
                     function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
                     function isres(r) { return r == "green" || r == "orange" || r == "red" || r == "blue" }
                     function cell(env, name, slug, res,   cls, inner) {
@@ -275,7 +302,10 @@ write_acc_vs_prod_pages() {
                     view == "production" && $1 == "p" {
                         printf "<tr%s>%s%s</tr>\n", (isres($8) ? " data-res=\"" $8 "\"" : ""), cell("production", $6, $7, ""), act($11); pf += $11; n++ }
                     view == "both" && $1 == "b" {
-                        printf "<tr>%s%s%s%s</tr>\n", cell("acceptance", $3, $4, $5), act($9), cell("production", $6, $7, $8), act($11); af += $9; pf += $11; n++ }
+                        # onecol (flowids): the one shared spelling, once
+                        if (onecol) printf "<tr>%s</tr>\n", cell("acceptance", $3, $4, $5)
+                        else printf "<tr>%s%s%s%s</tr>\n", cell("acceptance", $3, $4, $5), act($9), cell("production", $6, $7, $8), act($11)
+                        af += $9; pf += $11; n++ }
                     # difference: ONE ROW PER NAME — an entity exists in only
                     # ONE environment here, so its row fills only that side
                     # (the other column stays empty). The input stream is
@@ -293,14 +323,14 @@ write_acc_vs_prod_pages() {
                                 printf "<tr class=\"total\"><td>Total (%d / %d)</td><td></td></tr>\n", nA + 0, nP + 0
                             exit
                         }
-                        if (!hasact) { printf "<tr class=\"total\"><td>Total (%d)</td>%s</tr>\n", n + 0, (view == "both" ? "<td></td>" : ""); exit }
+                        if (!hasact) { printf "<tr class=\"total\"><td>Total (%d)</td>%s</tr>\n", n + 0, (view == "both" && !onecol ? "<td></td>" : ""); exit }
                         if (view == "both")
                             printf "<tr class=\"total\"><td>Total (%d)</td><td class=\"num\">%d</td><td></td><td class=\"num\">%d</td></tr>\n", n + 0, af, pf
                         else
                             printf "<tr class=\"total\"><td>Total (%d)</td><td class=\"num\">%d</td></tr>\n", n + 0, (view == "acceptance" ? af : pf)
                     }' "$tmp"
                 printf '</table></div>\n'
-                printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = seen in the server log only. An untinted name was logged but is not configured.</p>\n'
+                [ "$t" = flowids ] || printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = seen in the server log only. An untinted name was logged but is not configured.</p>\n'
                 printf '</body>\n</html>\n'
             } > "$out"
         done
@@ -338,9 +368,10 @@ write_acc_vs_prod_pages() {
         # of this one logical page show different sequences (2026-08-29)
         printf '<h2>Per entity</h2>\n<div class="tablewrap"><table class="fit" data-nosort="1">\n'
         printf '<tr><th>Type</th><th class="num gsepw">ACC</th><th class="num">PRD</th><th class="num gsepw">Only ACC</th><th class="num">Both</th><th class="num">Only PRD</th><th class="num gsepw">Both: active acc only</th><th class="num">Both: active in both</th><th class="num">Both: active prod only</th></tr>\n'
-        # the Per-entity ROW order (2026-08-29, user choice) — independent of
-        # the types[] array, which keeps driving the pages and the tab row
-        local sumorder=(subscriptions partners accounts logins hosts domains applications whitelist)
+        # the Per-entity ROW order (2026-08-29, user choice; FlowID after
+        # Subscriptions 2026-08-30) — independent of the types[] array, which
+        # keeps driving the pages and the tab row
+        local sumorder=(subscriptions flowids partners accounts logins hosts domains applications whitelist)
         for t in "${sumorder[@]}"; do
             for ti in "${!types[@]}"; do [ "${types[$ti]}" = "$t" ] && break; done
             awk -F'\t' -v FS2='|' -v T="$t" -v LBL="${labels[$ti]}" '
