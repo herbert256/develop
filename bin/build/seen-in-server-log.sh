@@ -80,6 +80,7 @@ rm -rf "$ROOT/data/fakes"
 awk -F'\t' '
     { if ($3  != "" && !s[3,  toupper($3)]++)  print 3  "\t" toupper($3)
       if ($12 != "" && !s[12, toupper($12)]++) print 12 "\t" toupper($12)
+      if ($13 != "" && !s[13, toupper($13)]++) print 13 "\t" toupper($13)
       if ($14 != "" && !s[14, toupper($14)]++) print 14 "\t" toupper($14)
       if ($15 != "" && !s[15, toupper($15)]++) print 15 "\t" toupper($15)
       if ($18 != "" && !s[18, toupper($18)]++) print 18 "\t" toupper($18)
@@ -314,13 +315,18 @@ else
     ' "${pda_caches[@]}" "$dedup" > "$newfiles"
 fi
 
-# blue-evidence for application/domain/partner: derived from the account, so they
-# inherit the account seed's server-log line (the account's message, keyed to the
-# newfiles row's own date/time). newfiles cols: 3 account 4 date 5 time 18 app
-# 19 domain 20 partner. Appended to $tmp.evid.
-awk -F'\t' -v OFS='\t' '
+# blue-evidence for application/domain/partner/logical: derived from the account,
+# so they inherit the account seed's server-log line (the account's message, keyed
+# to the newfiles row's own date/time). newfiles cols: 3 account 4 date 5 time
+# 13 profile 18 app 19 domain 20 partner; the profile resolves to its Logical
+# through the FlowID map. Appended to $tmp.evid.
+awk -F'\t' -v OFS='\t' -v PLM="$XREF/_profiles-logicals.tsv" '
+    BEGIN { while ((getline pl9 < PLM) > 0) { n9 = split(pl9, p9, "\t")
+                if (n9 >= 2 && p9[1] != "" && p9[2] != "") PM[toupper(p9[1])] = p9[2] }
+            close(PLM) }
     FILENAME==ARGV[1] && $1=="account" { if ($3 > adt[$2]) { adt[$2]=$3; amsg[$2]=$4 }; next }
     FILENAME==ARGV[2] { ac=toupper($3); when=$4 " " $5; m=(ac in amsg)?amsg[ac]:""
+        if ($13!="" && (toupper($13) in PM)) print "logical", toupper(PM[toupper($13)]), when, m
         if ($18!="") print "application", toupper($18), when, m
         if ($19!="") print "domain",      toupper($19), when, m
         if ($20!="") print "partner",     toupper($20), when, m }
@@ -337,7 +343,7 @@ if ! cmp -s "$newfiles" "$BLUE_TSV" 2>/dev/null; then
 fi
 
 # ---------------------------------------------------------------------------
-# Step F — the BLUE recolor. For each of the 8 entity types, the enriched
+# Step F — the BLUE recolor. For each of the 9 entity types, the enriched
 # values (newfiles cols) that appear on NO REAL _files.tsv row are the
 # server-log-only entities -> result = blue in base/*.tsv (add a row with an
 # empty direction if the name is somehow absent from base; today every one is
@@ -363,6 +369,10 @@ recolor() {   # $1 = newfiles/_files entity column   $2 = base file basename
     [ -f "$bf" ] || return 0
     [ -n "${4:-}" ] && [ -f "$XREF/$4.tsv" ] && pair="$XREF/$4.tsv"
     local extra="${5:-$tmp.noextra}"   # optional list of extra blue-candidate names (SSH-logon logins/accounts/IPs)
+    # $6 = optional value map (the _logicals pass: FlowID -> Logical) —
+    # candidate AND real-seen values resolve through it; an unmapped value
+    # evidences nothing and is skipped.
+    local pmapf="${6:-}"
     # The UC3 CLEAN-POLL greens (data/<env>/blue/_greenpoll.tsv, written by
     # bin/build/result.sh): subscriptions with no transfer row that result.sh
     # deliberately colours GREEN because the server log shows them polling
@@ -372,7 +382,11 @@ recolor() {   # $1 = newfiles/_files entity column   $2 = base file basename
     # flip from live evidence each run, so this file only stops the churn; it
     # never decides a colour.
     local gpoll="$DATA/blue/_greenpoll.tsv"; [ -f "$gpoll" ] || gpoll="$tmp.noextra"
-    awk -F'\t' -v OFS='\t' -v col="$col" -v mode="$mode" '
+    awk -F'\t' -v OFS='\t' -v col="$col" -v mode="$mode" -v PMAPF="$pmapf" '
+        BEGIN { if (PMAPF != "") { while ((getline pl9 < PMAPF) > 0) {
+                    n9 = split(pl9, p9, "\t")
+                    if (n9 >= 2 && p9[1] != "" && p9[2] != "") PM[toupper(p9[1])] = p9[2] }
+                close(PMAPF) } }
         # any connected subscription with real transfer data -> the entity is
         # already seen through it, so it must not be marked blue
         function subseen(k,   n2, A, i2) {
@@ -382,9 +396,13 @@ recolor() {   # $1 = newfiles/_files entity column   $2 = base file basename
         }
         FILENAME==ARGV[1] { if (mode == "skipwhite" && $11 == "BLUE: whitelisted IP") next
                             if (mode == "onlywhite" && $11 != "BLUE: whitelisted IP") next
-                            if ($col!="") { u=toupper($col); if (!(u in fk)) { fk[u]=$col; ord[++nf]=u } } next }  # enriched (blue-candidate) values
+                            v = $col
+                            if (v != "" && PMAPF != "") v = ((toupper(v) in PM) ? PM[toupper(v)] : "")
+                            if (v != "") { u=toupper(v); if (!(u in fk)) { fk[u]=v; ord[++nf]=u } } next }  # enriched (blue-candidate) values
         FILENAME==ARGV[2] { # the distinct real _files values ($tmp.fseen: col<TAB>UPPER value)
-                            if ($1 == col) rk[$2]=1
+                            if ($1 == col) { v2 = $2
+                                if (PMAPF != "") v2 = ((v2 in PM) ? toupper(PM[v2]) : "")
+                                if (v2 != "") rk[v2]=1 }
                             if ($1 == 12)  sd[$2]=1
                             next }
         FILENAME==ARGV[3] { if ($1!="" && $2!="") xs[toupper($1)] = xs[toupper($1)] SUBSEP toupper($2); next }    # entity -> its configured subscriptions
@@ -442,6 +460,7 @@ recolor 12 _subscriptions
 recolor 14 _logins         ''          _logins-subscriptions     "$lg_logins"
 recolor 15 _hosts          skipwhite   _hosts-subscriptions
 recolor 15 _white          onlywhite   _white-subscriptions      "$lg_ips"
+recolor 13 _logicals       ''          _logicals-subscriptions   '' "$XREF/_profiles-logicals.tsv"
 recolor 18 _apps           ''          _apps-subscriptions
 recolor 19 _domains        ''          _domains-subscriptions
 recolor 20 _partners       ''          _partners-subscriptions

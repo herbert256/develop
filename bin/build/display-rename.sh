@@ -21,8 +21,8 @@
 # query IS renamed, deliberately: the client search runs over the DISPLAYED
 # text, so the carried query must show the new value too.
 #
-# The entity column (subscription account login host partner application
-# domain profile any) is documentation and validation; the value match is
+# The entity column (subscription account login host logical partner
+# application domain profile any) is documentation and validation; the value match is
 # what rewrites. A missing or empty rename.txt is a no-op. MANUAL-REPUBLISH
 # GOTCHA: like crosslink.sh, this runs only in bin/build.sh — a manual
 # per-area publish shows real values until the next build.
@@ -40,7 +40,7 @@ rules=$(awk '
     /^[ \t]*#/ || /^[ \t]*$/ { next }
     {
         if (NF != 3) { printf "display-rename: line %d: %d column(s), need 3 — skipped\n", NR, NF > "/dev/stderr"; next }
-        if ($1 !~ /^(subscription|account|login|host|partner|application|domain|profile|any)$/) {
+        if ($1 !~ /^(subscription|account|login|host|logical|partner|application|domain|profile|any)$/) {
             printf "display-rename: line %d: unknown entity \"%s\" — skipped\n", NR, $1 > "/dev/stderr"; next }
         if ($2 !~ /^[A-Za-z0-9_.-]+$/ || $3 !~ /^[A-Za-z0-9_.-]+$/) {
             printf "display-rename: line %d: value outside the name alphabet — skipped\n", NR > "/dev/stderr"; next }

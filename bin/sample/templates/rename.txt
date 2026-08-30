@@ -8,7 +8,7 @@
 #
 #     <entity> <old_value> <new_value>
 #
-# entity: subscription account login host partner application domain
+# entity: subscription account login host logical partner application domain
 #         profile any     (documentation + validation; the value matches)
 # Values on the name alphabet [A-Za-z0-9_.-]; matching is boundary-aware,
 # so an old value never matches inside a longer name.
