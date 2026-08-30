@@ -1054,8 +1054,17 @@ write_subscriptions_page() {
                 res = (k in RES) ? RES[k] : ""
                 tr = "<tr"
                 if (res == "green" || res == "orange" || res == "red" || res == "blue") tr = tr " data-res=\"" res "\""
-                print k "\t" tr "><td>" lnk("subscriptions", nm) "</td>" \
-                    "<td>" cell("", (k in FID) ? FID[k] : "") "</td>" \
+                # the FlowID cell IS the row identity (2026-08-30, user
+                # request: no Subscription column) — it links the
+                # subscription detail page, so the row keeps its door; the
+                # sort key is the PLAIN FlowID text (the anchor would sort
+                # every row on the shared href prefix), name as tiebreak
+                fidtxt = cell("", (k in FID) ? FID[k] : "")
+                fid = fidtxt
+                if (fid != "" && ("subscriptions" SUBSEP k) in SLUG)
+                    fid = "<a href=\"../details/subscriptions/" SLUG["subscriptions" SUBSEP k] ".html\">" fidtxt "</a>"
+                print toupper(fidtxt == "" ? nm : fidtxt) "\t" k "\t" tr ">" \
+                    "<td>" fid "</td>" \
                     "<td>" uc "</td>" \
                     "<td class=\"wrap\">" cell("accounts", (k in ACC) ? ACC[k] : "") "</td>" \
                     "<td class=\"wrap\">" epc "</td>" \
@@ -1066,18 +1075,18 @@ write_subscriptions_page() {
                     "<td>" cell("applications", (k in APP) ? APP[k] : "") "</td></tr>"
             }
         }' ${args[@]+"${args[@]}"} "$B/_subscriptions.tsv" \
-        | LC_ALL=C sort -t"$(printf '\t')" -k1,1 | cut -f2-)
+        | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 | cut -f3-)
     rm -f "$blmap"
     local n; n=$(printf '%s' "$rows" | grep -c '<tr' || true)
     {
         html_head "Subscriptions" "../assets/style.css" "" "" "subscriptions" "" "" "sort-fresh"
         printf '<h1>Subscriptions</h1>\n'
         analyses_group_tabs subscriptions.html
-        printf '<p class="subtitle">Every configured subscription on one row &mdash; its <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code>), <strong>use case</strong> (the <code>UC&lt;n&gt;</code> name prefix, else the derived one), <strong>account</strong>, <strong>endpoint</strong> (the login the partner connects in with, or the remote host we dial out to), <strong>BL</strong> tag (the export&rsquo;s <code>tags</code> entry starting with <code>BL</code>) and the derived <strong>Logical</strong> / <strong>Partner</strong> / <strong>Domain</strong> / <strong>Application</strong> groups. Every name links its detail page; rows tint by the subscription&rsquo;s result &mdash; <strong>green</strong> last transfer OK, <strong>orange</strong> never seen, <strong>red</strong> last transfer Error, <strong>blue</strong> server-log only.</p>\n'
+        printf '<p class="subtitle">Every configured subscription on one row, keyed by its <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code> &mdash; the cell links the subscription&rsquo;s own detail page; a flow&rsquo;s UC subscriptions share one FlowID, so a FlowID can carry several rows), with its <strong>use case</strong> (the <code>UC&lt;n&gt;</code> name prefix, else the derived one), <strong>account</strong>, <strong>endpoint</strong> (the login the partner connects in with, or the remote host we dial out to), <strong>BL</strong> tag (the export&rsquo;s <code>tags</code> entry starting with <code>BL</code>) and the derived <strong>Logical</strong> / <strong>Partner</strong> / <strong>Domain</strong> / <strong>Application</strong> groups. Every other name links its detail page too; rows tint by the subscription&rsquo;s result &mdash; <strong>green</strong> last transfer OK, <strong>orange</strong> never seen, <strong>red</strong> last transfer Error, <strong>blue</strong> server-log only.</p>\n'
         printf '<div class="tablewrap"><table class="index fit">\n'
-        printf '<tr><th>Subscription</th><th>FlowID</th><th>UCx</th><th>Account</th><th>Endpoint</th><th>BL</th><th>Logical</th><th>Partner</th><th>Domain</th><th>Application</th></tr>\n'
+        printf '<tr><th>FlowID</th><th>UCx</th><th>Account</th><th>Endpoint</th><th>BL</th><th>Logical</th><th>Partner</th><th>Domain</th><th>Application</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
-        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$n"
+        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$n"
         printf '</table></div>\n'
         printf '</body>\n</html>\n'
     } > "$out"
