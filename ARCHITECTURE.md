@@ -218,7 +218,10 @@ derivation wholesale). The Logical derivation (FlowID families condensed to thre
 names, `input/logical.txt` pins honoured) runs FIRST; the PDA pass consumes its map
 (`xref/_profiles-logicals.tsv`). An unpinned Logical name has exactly three `_`-parts `D_A_P`:
 
-- **part 1 = the DOMAIN**, **part 2 = the APPLICATION**, **part 3 = the PARTNER token**.
+- **part 1 = the DOMAIN**, **part 2 = the APPLICATION**, **part 3 = the PARTNER token** —
+  each first passed through its hand-curated FROM→TO replacement map
+  (`input/logical_{domains,apps,partners}.txt`; exact match on the UPPERCASE part, the Logical
+  name itself untouched; two partner tokens replaced to one value simply fold, no group needed).
 - A pinned Logical with any other part count (the monitor's `INFRA-MONITOR-UC`) contributes
   NOTHING — no domain, no application, no partner.
 - Directions: a logical is `in` when any of its FlowIDs carries a login, `out` when any carries

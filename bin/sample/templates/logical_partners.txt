@@ -1,0 +1,11 @@
+# input/logical_partners.txt — hand-curated PART REPLACEMENTS for the Logical-based
+# PDA derivation (bin/flow-manager.sh), shared by both environments: the
+# third part of a three-part Logical name (D_A_P) equal to FROM is
+# replaced by TO before it becomes the Partner token (the value that enters the partner MERGE — rules 1-4 and the alias star see the replaced token).
+# Two whitespace-separated columns, # comments and blank lines ignored:
+#
+#     <FROM> <TO>
+#
+# The match is EXACT (Logical parts are UPPERCASE). The Logical entity name
+# itself is untouched — only the derived entity changes. An empty file is a
+# no-op.

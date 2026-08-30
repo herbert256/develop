@@ -132,6 +132,14 @@ ALIASF="$ROOT/input/partner-aliases.tsv"
 # by both envs) — consumed by the LOGICAL derivation block below; a pin edit
 # re-derives the caches (and, through them, everything downstream).
 LOGICALF="$ROOT/input/logical.txt"
+# the three PART-REPLACEMENT maps for the Logical-based PDA derivation
+# (input/logical_{domains,apps,partners}.txt — FROM<ws>TO per line): part
+# 1/2/3 of a three-part Logical name equal to FROM becomes TO before it
+# turns into the domain / application / partner-merge token. The Logical
+# entity name itself is untouched. Freshness deps like the others.
+LOGDOMF="$ROOT/input/logical_domains.txt"
+LOGAPPF="$ROOT/input/logical_apps.txt"
+LOGPTNF="$ROOT/input/logical_partners.txt"
 source "$ROOT/bin/skiplist.sh"   # skip_values() — the ONE reader for input/skip.txt
 SKIPDIR="$OUT/filtered"                 # the filtered partners/subscriptions/templates.json
 # The skipped-config sidecar lives INSIDE filtered/ (NOT directly in $OUT) so
@@ -195,7 +203,10 @@ for f in $ENTITY_CACHES $PAIR_CACHES; do
        || [ "${BASH_SOURCE[0]}" -nt "$out" ] \
        || { [ -f "$SKIPFILE" ] && [ "$SKIPFILE" -nt "$out" ]; } \
        || { [ -f "$ALIASF" ] && [ "$ALIASF" -nt "$out" ]; } \
-       || { [ -f "$LOGICALF" ] && [ "$LOGICALF" -nt "$out" ]; }; then fresh=0; break; fi
+       || { [ -f "$LOGICALF" ] && [ "$LOGICALF" -nt "$out" ]; } \
+       || { [ -f "$LOGDOMF" ] && [ "$LOGDOMF" -nt "$out" ]; } \
+       || { [ -f "$LOGAPPF" ] && [ "$LOGAPPF" -nt "$out" ]; } \
+       || { [ -f "$LOGPTNF" ] && [ "$LOGPTNF" -nt "$out" ]; }; then fresh=0; break; fi
 done
 # The filtered exports + the skipped-config sidecar must exist (a changed
 # skip.txt is caught above; a manually removed filtered/ dir heals here).
@@ -782,7 +793,7 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
     -v LGP="$OUT/.pda.lp.tmp" -v LGA="$OUT/.pda.la.tmp" -v LGD="$OUT/.pda.ld.tmp" \
     -v PAP="$OUT/.pda.pap.tmp" -v PDM="$OUT/.pda.pdm.tmp" -v ADM="$OUT/.pda.adm.tmp" \
     -v WHYF="$XREF/.pda.why.tmp" -v GRPF="$XREF/.pda.groups.tmp" -v GAF="$XREF/.pda.gacct.tmp" \
-    -v ALIASF="$ALIASF" '
+    -v ALIASF="$ALIASF" -v LDF="$LOGDOMF" -v LAF="$LOGAPPF" -v LPF="$LOGPTNF" '
     # ---- group-merge EVIDENCE (why two partner tokens are combined) ----
     # Each rule firing that links two DIFFERENT tokens records one edge; the
     # group is resolved at END (find()). Deduped by signature.
@@ -794,7 +805,13 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
     # I/O letter soup -> the base direction word ("" = no side known)
     function dirw(s,  i2,o2){ i2=(index(s,"I")>0); o2=(index(s,"O")>0)
         return (i2&&o2)?"both":(i2?"in":(o2?"out":"")) }
+    # a hand-curated FROM<ws>TO replacement map (missing file = no-op)
+    function loadrep(f, M,   l9, n9, a9){ while((getline l9 < f) > 0){
+            if(l9 ~ /^[ \t]*#/ || l9 ~ /^[ \t]*$/) continue
+            n9=split(l9, a9, /[ \t]+/); if(n9>=2 && a9[1]!="" && a9[2]!="") M[a9[1]]=a9[2] }
+        close(f) }
     BEGIN { US=sprintf("%c",31)
+        loadrep(LDF, DREP); loadrep(LAF, AREP); loadrep(LPF, PREP)
         # the hand-curated alias pairs (input/partner-aliases.tsv; "#" =
         # comment). A SINGLE-token line used to declare a real organisation
         # for the retired name-split helper lists — tolerated and INERT now.
@@ -825,6 +842,12 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
             # THE 3-PART GATE: only a D_A_P name contributes — a pinned
             # short (or long) name has no domain/application/partner slots
             if(split(l,S,"_")!=3) continue
+            # the hand-curated PART replacements (input/logical_*.txt): the
+            # replaced value is what becomes the entity / the merge token —
+            # the Logical name itself is untouched
+            if(S[1] in DREP) S[1]=DREP[S[1]]
+            if(S[2] in AREP) S[2]=AREP[S[2]]
+            if(S[3] in PREP) S[3]=PREP[S[3]]
             dom[l]=S[1]; app[l]=S[2]; tok[l]=S[3]; find(S[3])
             side=((l in lI)?"I":"")((l in lO)?"O":"")
             domd[S[1]]=domd[S[1]] side; appd[S[2]]=appd[S[2]] side

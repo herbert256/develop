@@ -868,7 +868,11 @@ also names the merged group via the alias star)
 and `input/rename.txt` (DISPLAY renames, applied to the rendered pages by the build's last
 step — see the manual re-publish gotcha) and `input/logical.txt` (fixed FlowID → Logical
 transforms feeding the Logical entity derivation — owned by `bin/flow-manager.sh` since Logical
-became a full entity, and one of its freshness deps; a listed FlowID skips the derivation), plus a
+became a full entity, and one of its freshness deps; a listed FlowID skips the derivation) and
+`input/logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
+Logical-based PDA derivation: part 1/2/3 of a three-part Logical name is replaced before it
+becomes the domain / application / partner-merge token — the Logical name itself is untouched;
+freshness deps too), plus a
 README.txt per directory. Gitignored: the `data/` root and `/build/`. A step script that
 only `bin/build.sh` ever invokes lives in **`bin/build/`** — the placement rule; the sample-data
 generator lives in **`bin/sample/`** (guarded by the marker, seeds in `bin/sample/seed/`).
