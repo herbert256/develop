@@ -9,8 +9,9 @@
 #
 # Invoked by bin/build.sh at the end of a successful chain, and ONLY in the
 # runtime checkout (build.sh gates on the ABSENT input/.sample-estate marker
-# — the develop repo carries the marker and skips this). Old archives are
-# deliberately left in place; *.7z is gitignored in both repos.
+# — the develop repo carries the marker and skips this). A fresh build
+# (bin/fresh.sh) clears build/ wholesale, archives included (2026-08-30) —
+# the ~/cloud/ copies are the keepers; *.7z is gitignored in both repos.
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
