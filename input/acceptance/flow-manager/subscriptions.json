@@ -1,0 +1,3497 @@
+[
+  {
+    "businessId": "2e6a694f-0051-4d3c-af88-6e22b8d1d63b",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/2e6a694f-0051-4d3c-af88-6e22b8d1d63b",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_FIN_BILLING_GLOBEX",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "2e6a694f-0051-4d3c-af88-0000par00000", "name": "FIN_BILLING_GLOBEX", "comProfileId": "c4b418f2-e547-4a0e-ac94-e18e4c468d83",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "2e6a694f-0051-4d3c-af88-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FIN_BILLING_GLOBEX",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/FIN_BILLING_GLOBEX/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "d7fba138-828c-4bf6-a449-78f544075f00",
+    "flowName": "UC1_FIN_BILLING_GLOBEX",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "8df21a01-4c18-4ee8-b6cf-54b972ea8b24",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/8df21a01-4c18-4ee8-b6cf-54b972ea8b24",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_FIN_LEDGER_GLOBEX",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "8df21a01-4c18-4ee8-b6cf-0000par00000", "name": "FIN_LEDGER_GLOBEX", "comProfileId": "0a59994c-89d2-453e-88bc-96e089db8a9c",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "8df21a01-4c18-4ee8-b6cf-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FIN_LEDGER_GLOBEX",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/FIN_LEDGER_GLOBEX/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "01b0cfdc-93bb-4db9-818e-3b8a13ab5bdf",
+    "flowName": "UC1_FIN_LEDGER_GLOBEX",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "72e13c4b-8bf5-496d-a44f-fb5b16b36265",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/72e13c4b-8bf5-496d-a44f-fb5b16b36265",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_FIN_BILLING_GLOBEXX",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "72e13c4b-8bf5-496d-a44f-0000par00000", "name": "FIN_BILLING_GLOBEXX", "comProfileId": "07469b3f-45d5-4a54-b913-2fdc34cf2e5a",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "72e13c4b-8bf5-496d-a44f-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FIN_BILLING_GLOBEXX",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/FIN_BILLING_GLOBEXX/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "c5f2a083-2e3f-4653-899d-3925b53e2dde",
+    "flowName": "UC1_FIN_BILLING_GLOBEXX",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "047060fd-bb13-4e60-b6bd-8751f93d5008",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/047060fd-bb13-4e60-b6bd-8751f93d5008",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_CD_PRINTMGMT_WONKA",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "047060fd-bb13-4e60-b6bd-0000par00000", "name": "CD_PRINTMGMT_WONKA", "comProfileId": "4436432e-8345-4566-b92a-2a0e23295f0a",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "047060fd-bb13-4e60-b6bd-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CD_PRINTMGMT_WONKA",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/CD_PRINTMGMT_WONKA/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "2a2b7d11-1b0c-4d2d-bb6a-2cf88f6cfc48",
+    "flowName": "UC1_CD_PRINTMGMT_WONKA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "150d3273-5bcc-4d0f-9f7a-829e8399efa6",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/150d3273-5bcc-4d0f-9f7a-829e8399efa6",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_CD_COSMOS_WONKA",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "150d3273-5bcc-4d0f-9f7a-0000par00000", "name": "CD_COSMOS_WONKA", "comProfileId": "88497e3e-3bf5-4552-9f57-74f85d3abfdb",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "150d3273-5bcc-4d0f-9f7a-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CD_COSMOS_WONKA",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/CD_COSMOS_WONKA/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "5612e387-e868-40f6-b61c-ff47c838d8ea",
+    "flowName": "UC1_CD_COSMOS_WONKA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "c5ff158b-7fd5-4b0a-867c-4897c5fac4f9",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/c5ff158b-7fd5-4b0a-867c-4897c5fac4f9",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_IT_ARCHIVE_INITECH",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "c5ff158b-7fd5-4b0a-867c-0000par00000", "name": "IT_ARCHIVE_INITECH", "comProfileId": "baba102a-4d8b-4e71-bd7a-a4b315b4df79",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "c5ff158b-7fd5-4b0a-867c-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_ARCHIVE_INITECH",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/IT_ARCHIVE_INITECH/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "01978a38-74ec-4438-b7fa-c7519d908852",
+    "flowName": "UC1_IT_ARCHIVE_INITECH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "f27a409e-77a0-4c10-93df-357a14db4003",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/f27a409e-77a0-4c10-93df-357a14db4003",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_HR_PAYROLL_INITECH",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "f27a409e-77a0-4c10-93df-0000par00000", "name": "HR_PAYROLL_INITECH", "comProfileId": "a1bec6ea-3f04-42f0-867b-93620946ecd7",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "f27a409e-77a0-4c10-93df-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "HR_PAYROLL_INITECH",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/HR_PAYROLL_INITECH/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "e9e0a6cc-ad02-4975-a252-24c0db2ff898",
+    "flowName": "UC1_HR_PAYROLL_INITECH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "663a7d3c-1c3b-4732-b5ee-863cfa332f63",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/663a7d3c-1c3b-4732-b5ee-863cfa332f63",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_AB_CLAIMS_UMBRELLA",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "663a7d3c-1c3b-4732-b5ee-0000par00000", "name": "AB_CLAIMS_UMBRELLA", "comProfileId": "4d28a89c-bcff-4409-aa3b-33491c801b20",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "663a7d3c-1c3b-4732-b5ee-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AB_CLAIMS_UMBRELLA",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/AB_CLAIMS_UMBRELLA/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "f180208f-b46a-4a2e-b681-9e7bc56f0de1",
+    "flowName": "UC1_AB_CLAIMS_UMBRELLA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "9de7d6f8-53c0-47ce-b7ff-b9fa074aa033",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/9de7d6f8-53c0-47ce-b7ff-b9fa074aa033",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_AB_POLIS_UMBRELLA",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "9de7d6f8-53c0-47ce-b7ff-0000par00000", "name": "AB_POLIS_UMBRELLA", "comProfileId": "8b25376a-473e-45e6-a945-9850c3903e19",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "9de7d6f8-53c0-47ce-b7ff-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AB_POLIS_UMBRELLA",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/AB_POLIS_UMBRELLA/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "c4db31d0-5218-4ca4-92ce-52da887f6fb4",
+    "flowName": "UC1_AB_POLIS_UMBRELLA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "4fc51271-d8b2-4b5a-9c99-be70e52a375a",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/4fc51271-d8b2-4b5a-9c99-be70e52a375a",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_ZG_PENSION_HOOLI",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "4fc51271-d8b2-4b5a-9c99-0000par00000", "name": "ZG_PENSION_HOOLI", "comProfileId": "094f3ae2-e1ea-4ea2-8ca4-d34be27708c7",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "4fc51271-d8b2-4b5a-9c99-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZG_PENSION_HOOLI",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/ZG_PENSION_HOOLI/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "f3bb7a9a-52eb-4ee3-b830-15e6dc937555",
+    "flowName": "UC1_ZG_PENSION_HOOLI",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "1f527f3a-ca63-43fb-9984-5fbbfa48a74c",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/1f527f3a-ca63-43fb-9984-5fbbfa48a74c",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_IT_CRM_STARK",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "1f527f3a-ca63-43fb-9984-0000par00000", "name": "IT_CRM_STARK", "comProfileId": "76c6eb8d-8c43-4a5a-8531-cda257472ef1",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "1f527f3a-ca63-43fb-9984-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_CRM_STARK",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/IT_CRM_STARK/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "98700813-4343-40fb-9d54-2ba2d32e712c",
+    "flowName": "UC1_IT_CRM_STARK",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "f33e8c5f-b8d7-46c1-84fd-31b6c14ef352",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/f33e8c5f-b8d7-46c1-84fd-31b6c14ef352",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_APS_RISK_TYRELL",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "f33e8c5f-b8d7-46c1-84fd-0000par00000", "name": "APS_RISK_TYRELL", "comProfileId": "912fd3f1-b10b-45ba-9eec-0254d93d4b44",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "f33e8c5f-b8d7-46c1-84fd-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "APS_RISK_TYRELL",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/APS_RISK_TYRELL/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "c8832546-392b-44fc-b55f-5ca6ad1d7ca0",
+    "flowName": "UC1_APS_RISK_TYRELL",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "34577100-c257-4f0d-bb38-149eafd8a315",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/34577100-c257-4f0d-bb38-149eafd8a315",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_CD_INVOICE_VANDELAY",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "34577100-c257-4f0d-bb38-0000par00000", "name": "CD_INVOICE_VANDELAY", "comProfileId": "ca88b114-c33d-4e28-a6d7-7383a0cfad3f",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "34577100-c257-4f0d-bb38-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CD_INVOICE_VANDELAY",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/CD_INVOICE_VANDELAY/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "67d35970-f636-453e-82c0-e4d59c8a2ed7",
+    "flowName": "UC1_CD_INVOICE_VANDELAY",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "65c31791-3bbf-4b6f-862f-2ea582b95b4f",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/65c31791-3bbf-4b6f-862f-2ea582b95b4f",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_SI_PORTAL_OSCORP",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "65c31791-3bbf-4b6f-862f-0000par00000", "name": "SI_PORTAL_OSCORP", "comProfileId": "d1a48849-adef-43a6-8a2f-6ae257a92acc",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "65c31791-3bbf-4b6f-862f-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "SI_PORTAL_OSCORP",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/SI_PORTAL_OSCORP/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "6bb7dcbe-6b22-4abf-9e98-6859d893ba08",
+    "flowName": "UC1_SI_PORTAL_OSCORP",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "fd8eb418-d27c-4d55-a585-7ffb69758657",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/fd8eb418-d27c-4d55-a585-7ffb69758657",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_WA_BATCH_WAYNE",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "fd8eb418-d27c-4d55-a585-0000par00000", "name": "WA_BATCH_WAYNE", "comProfileId": "d90e650d-4d1b-44f0-a2c1-a8254998d0bf",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "fd8eb418-d27c-4d55-a585-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "WA_BATCH_WAYNE",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/WA_BATCH_WAYNE/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "e9d05f25-b5d1-4cc6-b401-6fca51d315cf",
+    "flowName": "UC1_WA_BATCH_WAYNE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "4c33bbb5-8204-4f6d-b37e-5e1605e4f1c6",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/4c33bbb5-8204-4f6d-b37e-5e1605e4f1c6",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_FS_MORTGAGE_SABRE",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "4c33bbb5-8204-4f6d-b37e-0000par00000", "name": "FS_MORTGAGE_SABRE", "comProfileId": "0abe6286-6037-4c93-a53d-3709663be480",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "4c33bbb5-8204-4f6d-b37e-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FS_MORTGAGE_SABRE",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/FS_MORTGAGE_SABRE/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "a4f10691-46a6-4524-aed6-ef8801180135",
+    "flowName": "UC1_FS_MORTGAGE_SABRE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "0aa4b41a-394a-44ce-899c-da38a54d7a66",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/0aa4b41a-394a-44ce-899c-da38a54d7a66",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_DPL_AUDITLOG_DUNDER",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "0aa4b41a-394a-44ce-899c-0000par00000", "name": "DPL_AUDITLOG_DUNDER", "comProfileId": "c11573b0-4359-4913-baa7-9ef782cacab0",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "0aa4b41a-394a-44ce-899c-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "DPL_AUDITLOG_DUNDER",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/DPL_AUDITLOG_DUNDER/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "7306cf5a-3879-4a64-9cc7-3c33730149ad",
+    "flowName": "UC1_DPL_AUDITLOG_DUNDER",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "afd5fbbf-e2f9-44a7-bb2a-64a74ee75953",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/afd5fbbf-e2f9-44a7-bb2a-64a74ee75953",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_CB_MARKETING_WNK",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "afd5fbbf-e2f9-44a7-bb2a-0000par00000", "name": "CB_MARKETING_WNK", "comProfileId": "78be0f8e-71b0-4f16-801b-d6b4e9000172",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "afd5fbbf-e2f9-44a7-bb2a-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CB_MARKETING_WNK",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/CB_MARKETING_WNK/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "5572dd22-074a-4910-90fe-970dfc1751a3",
+    "flowName": "UC1_CB_MARKETING_WNK",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "1d8fd36a-f3ce-472a-ab46-4b622b388572",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/1d8fd36a-f3ce-472a-ab46-4b622b388572",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_ODV_DMS_CYBERDYNE",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "1d8fd36a-f3ce-472a-ab46-0000par00000", "name": "ODV_DMS_CYBERDYNE", "comProfileId": "1cb33c75-2a50-41d3-8024-9628580a1bb9",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "1d8fd36a-f3ce-472a-ab46-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ODV_DMS_CYBERDYNE",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/ODV_DMS_CYBERDYNE/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "73a58dfe-34a3-4e4d-b97a-d6876406f48c",
+    "flowName": "UC1_ODV_DMS_CYBERDYNE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "0a8e0b7d-3efd-4849-81a0-1b0e4255febc",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/0a8e0b7d-3efd-4849-81a0-1b0e4255febc",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_IT_LEDGER_HOOLI",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "0a8e0b7d-3efd-4849-81a0-0000par00000", "name": "IT_LEDGER_HOOLI", "comProfileId": "26520e36-0e97-4106-8334-93648eeeadf2",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "0a8e0b7d-3efd-4849-81a0-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_LEDGER_HOOLI",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/IT_LEDGER_HOOLI/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "0f23db9f-d5fa-4405-9330-0b4e518b8fa2",
+    "flowName": "UC1_IT_LEDGER_HOOLI",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "133d408f-86d4-4d1f-99b7-3db4094e0cf1",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/133d408f-86d4-4d1f-99b7-3db4094e0cf1",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_APS_STREAM_SOYLENT",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "133d408f-86d4-4d1f-99b7-0000par00000", "name": "APS_STREAM_SOYLENT", "comProfileId": "da40a3e3-b318-4f85-932d-585fd5ee3ab4",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "133d408f-86d4-4d1f-99b7-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "APS_STREAM_SOYLENT",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/APS_STREAM_SOYLENT/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "1b191f7a-90ca-4c2a-84f5-0c2eb5d5bc3c",
+    "flowName": "UC1_APS_STREAM_SOYLENT",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "520e50d4-c2c1-4380-82df-3487c1779396",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/520e50d4-c2c1-4380-82df-3487c1779396",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_AB_HRDATA_WEYLAND",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "520e50d4-c2c1-4380-82df-0000par00000", "name": "AB_HRDATA_WEYLAND", "comProfileId": "94394ef2-fbb9-4390-a898-ed8de1c4457e",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "520e50d4-c2c1-4380-82df-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AB_HRDATA_WEYLAND",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/AB_HRDATA_WEYLAND/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "e2fc207c-ae5d-480d-8c44-52252766d21c",
+    "flowName": "UC1_AB_HRDATA_WEYLAND",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "bd819665-fa69-41fb-bfb5-2a222b5ba4f9",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/bd819665-fa69-41fb-bfb5-2a222b5ba4f9",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_SYNT_ITP_APERTURE",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "bd819665-fa69-41fb-bfb5-0000par00000", "name": "SYNT_ITP_APERTURE", "comProfileId": "0dd6950c-54b1-4380-baec-caedc488f192",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "bd819665-fa69-41fb-bfb5-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "SYNT_ITP_APERTURE",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/SYNT_ITP_APERTURE/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "70fcd85b-6e8a-43b9-a643-c1dc941e4109",
+    "flowName": "UC1_SYNT_ITP_APERTURE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "3c9d89dd-313f-42a3-b010-aaa413de8a84",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/3c9d89dd-313f-42a3-b010-aaa413de8a84",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_FIN_TREASURY_GEKKO",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "3c9d89dd-313f-42a3-b010-0000par00000", "name": "FIN_TREASURY_GEKKO", "comProfileId": "fde614aa-d993-45ef-839a-937ccd51a20d",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "3c9d89dd-313f-42a3-b010-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FIN_TREASURY_GEKKO",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/FIN_TREASURY_GEKKO/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "2e3b23fe-0f63-4608-8017-93b698e523d8",
+    "flowName": "UC1_FIN_TREASURY_GEKKO",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "5123eeb5-d871-41e2-9040-61ac6ada2ddb",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/5123eeb5-d871-41e2-9040-61ac6ada2ddb",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_ZK_CLAIMS_BLACKMESA",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "5123eeb5-d871-41e2-9040-0000par00000", "name": "ZK_CLAIMS_BLACKMESA", "comProfileId": "8b486352-dc57-4d83-91ec-f41a14577994",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "5123eeb5-d871-41e2-9040-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZK_CLAIMS_BLACKMESA",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/ZK_CLAIMS_BLACKMESA/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "c7473d90-f19b-406d-a6bb-1dcad0a27089",
+    "flowName": "UC1_ZK_CLAIMS_BLACKMESA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "bea28396-0992-485a-99ad-8a2c6da9a334",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/bea28396-0992-485a-99ad-8a2c6da9a334",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_AIM_SAPPO_WONKA-PUO",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "bea28396-0992-485a-99ad-0000par00000", "name": "AIM_SAPPO_WONKA-PUO", "comProfileId": "b4bd0a6c-39b6-4e41-bd2c-1851a0493ee2",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "bea28396-0992-485a-99ad-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AIM_SAPPO_WONKA-PUO",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/AIM_SAPPO_WONKA-PUO/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "740b91bf-c9bd-49b2-9a2d-23269ceda905",
+    "flowName": "UC1_AIM_SAPPO_WONKA-PUO",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "f71afbb9-5eb0-487d-b383-2b0974b13247",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/f71afbb9-5eb0-487d-b383-2b0974b13247",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_CDV_STREAM_DUFF",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "f71afbb9-5eb0-487d-b383-0000par00000", "name": "CDV_STREAM_DUFF", "comProfileId": "d8e5c6a2-d48b-401e-8959-d53326f72ae6",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "f71afbb9-5eb0-487d-b383-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CDV_STREAM_DUFF",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/CDV_STREAM_DUFF/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "a09f2db3-548b-478a-8a7c-6fda8ee83060",
+    "flowName": "UC1_CDV_STREAM_DUFF",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "cf58db71-163d-4329-bc96-bc7de984feba",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/cf58db71-163d-4329-bc96-bc7de984feba",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_IT_HEARTBEAT_INITECH",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "cf58db71-163d-4329-bc96-0000par00000", "name": "IT_HEARTBEAT_INITECH", "comProfileId": "9ce19031-882a-4aa4-899a-50a87051f22f",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "cf58db71-163d-4329-bc96-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_HEARTBEAT_INITECH",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/IT_HEARTBEAT_INITECH/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "2fff1697-428a-4784-9186-b4178a183dd6",
+    "flowName": "UC1_IT_HEARTBEAT_INITECH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "a7712aa6-2ed8-46c5-8706-211cc12f0c66",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/a7712aa6-2ed8-46c5-8706-211cc12f0c66",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_APS_TELEM_GEKKO",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "a7712aa6-2ed8-46c5-8706-0000par00000", "name": "APS_TELEM_GEKKO", "comProfileId": "1258503e-5486-453b-97d3-0734014ec982",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "a7712aa6-2ed8-46c5-8706-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "APS_TELEM_GEKKO",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/APS_TELEM_GEKKO/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "dac5e8ef-a86a-404e-834e-a9d366e16def",
+    "flowName": "UC1_APS_TELEM_GEKKO",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "92492c35-4e5e-4247-9a21-a34d27ca555f",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/92492c35-4e5e-4247-9a21-a34d27ca555f",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_FIN_CLAIMS_MONARCH",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "92492c35-4e5e-4247-9a21-0000par00000", "name": "FIN_CLAIMS_MONARCH", "comProfileId": "dbc3093b-2ec9-4c4a-b3e1-99b563a4aba6",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "92492c35-4e5e-4247-9a21-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FIN_CLAIMS_MONARCH",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/FIN_CLAIMS_MONARCH/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "73d9bc3b-f0d6-47c3-9e14-928da3e66410",
+    "flowName": "UC1_FIN_CLAIMS_MONARCH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "83e97011-a922-4f89-b13b-1d1c2760508b",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/83e97011-a922-4f89-b13b-1d1c2760508b",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_HR_ARCHIVE_ZORG",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "83e97011-a922-4f89-b13b-0000par00000", "name": "HR_ARCHIVE_ZORG", "comProfileId": "0e9adf37-abb4-4f57-9ddd-ccdb46ae5747",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "83e97011-a922-4f89-b13b-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "HR_ARCHIVE_ZORG",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/HR_ARCHIVE_ZORG/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "be68bafe-a73b-4234-9a94-1e10d473e1f4",
+    "flowName": "UC1_HR_ARCHIVE_ZORG",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "b4f7e5cf-90c9-49bd-aa80-92cb8cd66e30",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/b4f7e5cf-90c9-49bd-aa80-92cb8cd66e30",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_IT_BILLING_BLUTH",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "b4f7e5cf-90c9-49bd-aa80-0000par00000", "name": "IT_BILLING_BLUTH", "comProfileId": "298d2375-0b8e-4bba-93d8-cf0be3fcc00f",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "b4f7e5cf-90c9-49bd-aa80-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_BILLING_BLUTH",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/IT_BILLING_BLUTH/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "917dc688-4286-488f-8159-9d4bc14b5184",
+    "flowName": "UC1_IT_BILLING_BLUTH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "89d66517-0336-4dd8-98c4-f0b4d9e3cfa6",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/89d66517-0336-4dd8-98c4-f0b4d9e3cfa6",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_ZG_DMS_PRIMATECH",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "89d66517-0336-4dd8-98c4-0000par00000", "name": "ZG_DMS_PRIMATECH", "comProfileId": "c126de00-d518-4550-86f1-525feb580987",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "89d66517-0336-4dd8-98c4-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZG_DMS_PRIMATECH",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/ZG_DMS_PRIMATECH/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "5aaba4ac-2d9c-48ec-90cf-8944d6a10cd5",
+    "flowName": "UC1_ZG_DMS_PRIMATECH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "4d25e7d2-c716-4a43-b2d8-4a615654b4d1",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/4d25e7d2-c716-4a43-b2d8-4a615654b4d1",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_AB_PORTAL_ABSTERGO",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "4d25e7d2-c716-4a43-b2d8-0000par00000", "name": "AB_PORTAL_ABSTERGO", "comProfileId": "1f21b064-9f30-4126-b9e2-09bbe61065e1",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "4d25e7d2-c716-4a43-b2d8-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AB_PORTAL_ABSTERGO",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/AB_PORTAL_ABSTERGO/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "82d6c792-4ed4-460b-a2ef-f879ea2cf15a",
+    "flowName": "UC1_AB_PORTAL_ABSTERGO",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "923cdb2e-da60-4d4c-a304-7e3b87639efe",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/923cdb2e-da60-4d4c-a304-7e3b87639efe",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_CD_BATCH_MASSIVE",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "923cdb2e-da60-4d4c-a304-0000par00000", "name": "CD_BATCH_MASSIVE", "comProfileId": "36a99311-57a8-4e2e-bf70-b2ada2a26852",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "923cdb2e-da60-4d4c-a304-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CD_BATCH_MASSIVE",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/CD_BATCH_MASSIVE/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "3e413923-5fb8-439c-bd65-4fc8e0e76bc2",
+    "flowName": "UC1_CD_BATCH_MASSIVE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "2f302d3c-c2d0-4f27-be30-5e5815a92a03",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/2f302d3c-c2d0-4f27-be30-5e5815a92a03",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_WA_CRM_PIEDPIPER",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "2f302d3c-c2d0-4f27-be30-0000par00000", "name": "WA_CRM_PIEDPIPER", "comProfileId": "390b17f3-6982-4e0a-9ea1-e3ceff8aca61",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "2f302d3c-c2d0-4f27-be30-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "WA_CRM_PIEDPIPER",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/WA_CRM_PIEDPIPER/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "e479daec-c005-4b28-a6e6-d8f4ad052991",
+    "flowName": "UC1_WA_CRM_PIEDPIPER",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "e012d7df-84cc-489e-9efc-057e97fd9f1d",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/e012d7df-84cc-489e-9efc-057e97fd9f1d",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_FS_PENSION_DUNDER",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "e012d7df-84cc-489e-9efc-0000par00000", "name": "FS_PENSION_DUNDER", "comProfileId": "3f41d358-50c5-4c7d-8187-d2054ba82f89",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "e012d7df-84cc-489e-9efc-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FS_PENSION_DUNDER",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/FS_PENSION_DUNDER/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "2f9a4ba2-82be-4a85-aeff-758ef01cfe5a",
+    "flowName": "UC1_FS_PENSION_DUNDER",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "4e3c67e8-ba5c-41f7-95be-a93b9fc299bf",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/4e3c67e8-ba5c-41f7-95be-a93b9fc299bf",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_APS_INVOICE_STARK",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "4e3c67e8-ba5c-41f7-95be-0000par00000", "name": "APS_INVOICE_STARK", "comProfileId": "d9908bb3-b8ce-41c4-84cd-12b41baa60a1",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "4e3c67e8-ba5c-41f7-95be-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "APS_INVOICE_STARK",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/APS_INVOICE_STARK/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "dc05ccc6-ea6f-4306-a9dc-2bbc73a42b9c",
+    "flowName": "UC1_APS_INVOICE_STARK",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "ac5d4e3e-0466-4035-afcf-466b581a3b63",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/ac5d4e3e-0466-4035-afcf-466b581a3b63",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_ODV_RISK_TYRELL",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "ac5d4e3e-0466-4035-afcf-0000par00000", "name": "ODV_RISK_TYRELL", "comProfileId": "0b740348-791e-4af8-80a3-b176e86d75e1",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "ac5d4e3e-0466-4035-afcf-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ODV_RISK_TYRELL",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/ODV_RISK_TYRELL/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "326dc7b9-681a-4a2f-b8be-0b590664c66f",
+    "flowName": "UC1_ODV_RISK_TYRELL",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "233af4f0-bdc0-4c4f-ac71-525b0bd4ae7c",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/233af4f0-bdc0-4c4f-ac71-525b0bd4ae7c",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_APS_VIDA_UMBRELLA",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "233af4f0-bdc0-4c4f-ac71-0000par00000", "name": "APS-VIDA-UMBRELLA", "comProfileId": "5edd31e2-2be8-491a-9d20-1f09881cecb8",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "233af4f0-bdc0-4c4f-ac71-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "APS_VIDA_UMBRELLA",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/APS_VIDA_UMBRELLA/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "664427fc-3e0a-4135-b765-3f0c5f07ea28",
+    "flowName": "UC2_APS_VIDA_UMBRELLA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "2ce58a1c-421c-45b9-a7da-dbbbde282a2a",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/2ce58a1c-421c-45b9-a7da-dbbbde282a2a",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_IT_SAPBHP_GEKKO",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "2ce58a1c-421c-45b9-a7da-0000par00000", "name": "IT-SAPBHP-GEKKO", "comProfileId": "56119750-35db-4d56-bea8-ca2c3474d560",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "2ce58a1c-421c-45b9-a7da-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_SAPBHP_GEKKO",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/IT_SAPBHP_GEKKO/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "4ed2d2cc-58a7-4644-969b-681ffd74e18d",
+    "flowName": "UC2_IT_SAPBHP_GEKKO",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "a6d1fc5c-1f88-4510-8a88-ce8f3471f73c",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/a6d1fc5c-1f88-4510-8a88-ce8f3471f73c",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_WA_VDN",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "a6d1fc5c-1f88-4510-8a88-0000par00000", "name": "WA-VDN", "comProfileId": "86b77ead-9099-42ec-ad1d-620d68b545fe",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "a6d1fc5c-1f88-4510-8a88-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "WA_VDN",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/WA_VDN/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "becee2e5-2d67-4f84-bd36-70c1bcae4e9e",
+    "flowName": "UC2_WA_VDN",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "28362710-cb16-41c7-8a04-4e0812485ac2",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/28362710-cb16-41c7-8a04-4e0812485ac2",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_SI_VPS_VDN",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "28362710-cb16-41c7-8a04-0000par00000", "name": "SI-VPS-VDN", "comProfileId": "9905271b-773f-4d88-ab8a-76e5f0cbde28",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "28362710-cb16-41c7-8a04-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "SI_VPS_VDN",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/SI_VPS_VDN/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "70e241bc-d12f-4953-a682-692faafe12d4",
+    "flowName": "UC2_SI_VPS_VDN",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "cbaf68af-ee4e-44ab-8429-2049ca194657",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/cbaf68af-ee4e-44ab-8429-2049ca194657",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_IT_EKDSI_CYBERDYNE",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "cbaf68af-ee4e-44ab-8429-0000par00000", "name": "IT-EKDSI-CYBERDYNE", "comProfileId": "2eac2439-551f-49c8-a3fc-299235d8252d",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "cbaf68af-ee4e-44ab-8429-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_EKDSI_CYBERDYNE",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/IT_EKDSI_CYBERDYNE/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "1ed8f88b-74ca-4b0c-b677-f341472de92a",
+    "flowName": "UC2_IT_EKDSI_CYBERDYNE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "182c063c-5f92-49d1-86d7-873064ea5a65",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/182c063c-5f92-49d1-86d7-873064ea5a65",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_CD_ARIVA_BLUTH",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "182c063c-5f92-49d1-86d7-0000par00000", "name": "CD-ARIVA-BLUTH", "comProfileId": "ddf130d5-0295-48e1-b879-e56be521dfd6",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "182c063c-5f92-49d1-86d7-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CD_ARIVA_BLUTH",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/CD_ARIVA_BLUTH/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "801e36b5-bc64-4817-ac96-28cb62ac1ead",
+    "flowName": "UC2_CD_ARIVA_BLUTH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "2248a66f-c1be-4e1e-966c-2ee7421ae2bc",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/2248a66f-c1be-4e1e-966c-2ee7421ae2bc",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_CD_ARIVA_DUNDER",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "2248a66f-c1be-4e1e-966c-0000par00000", "name": "CD-ARIVA-DUNDER", "comProfileId": "d8f1d263-7ef1-4053-9226-aec5421acfb0",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "2248a66f-c1be-4e1e-966c-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CD_ARIVA_DUNDER",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/CD_ARIVA_DUNDER/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "6688ab22-75cd-40e3-97f8-c2707fa0f67f",
+    "flowName": "UC2_CD_ARIVA_DUNDER",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "7da8a731-b4c4-4b91-a19b-972932b1182a",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/7da8a731-b4c4-4b91-a19b-972932b1182a",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_CD_ARIVA_SABRE",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "7da8a731-b4c4-4b91-a19b-0000par00000", "name": "CD-ARIVA-SABRE", "comProfileId": "aa87c1d9-cd6f-44f2-88c1-1d750941ca8a",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "7da8a731-b4c4-4b91-a19b-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CD_ARIVA_SABRE",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/CD_ARIVA_SABRE/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "ce6446e3-e23b-4920-b343-b099358cb1bf",
+    "flowName": "UC2_CD_ARIVA_SABRE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "b4e954b9-52bf-492a-8832-6d77b812b292",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/b4e954b9-52bf-492a-8832-6d77b812b292",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_ODV_MAIA_PIEDPIPER",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "b4e954b9-52bf-492a-8832-0000par00000", "name": "ODV-MAIA-PIEDPIPER", "comProfileId": "b1b0ce68-1bff-4083-98de-862380ae2825",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "b4e954b9-52bf-492a-8832-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ODV_MAIA_PIEDPIPER",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/ODV_MAIA_PIEDPIPER/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "9abdf464-d744-4e9b-8375-427e94e15e9d",
+    "flowName": "UC2_ODV_MAIA_PIEDPIPER",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "2e1ff867-590b-4f5d-9b61-2d5bd3470295",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/2e1ff867-590b-4f5d-9b61-2d5bd3470295",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_ZG_MATCH_HOOLI",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "2e1ff867-590b-4f5d-9b61-0000par00000", "name": "ZG-MATCH-HOOLI", "comProfileId": "9b73d144-dc6d-4818-8247-d3cbb5fcf3c1",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "2e1ff867-590b-4f5d-9b61-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZG_MATCH_HOOLI",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/ZG_MATCH_HOOLI/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "cce1e674-ee62-4843-b816-52920250d455",
+    "flowName": "UC2_ZG_MATCH_HOOLI",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "58177530-ccf3-4830-b383-e29e32cbae12",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/58177530-ccf3-4830-b383-e29e32cbae12",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_DPL_POLIS_TYRELL",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "58177530-ccf3-4830-b383-0000par00000", "name": "DPL-POLIS-TYRELL", "comProfileId": "30b5e682-a00c-4903-89da-43126e649b23",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "58177530-ccf3-4830-b383-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "DPL_POLIS_TYRELL",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/DPL_POLIS_TYRELL/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "66d96705-a149-4e63-ac63-31bffa448680",
+    "flowName": "UC2_DPL_POLIS_TYRELL",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "d318d9ad-00e4-49b3-9b68-54f328551c6d",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/d318d9ad-00e4-49b3-9b68-54f328551c6d",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_FS_STMT_APERTURE",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "d318d9ad-00e4-49b3-9b68-0000par00000", "name": "FS-STMT-APERTURE", "comProfileId": "481845f1-e64f-44f8-990c-e9da2163fdc7",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "d318d9ad-00e4-49b3-9b68-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FS_STMT_APERTURE",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/FS_STMT_APERTURE/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "a7c5a0b4-b66b-45ba-bea0-086292870aa4",
+    "flowName": "UC2_FS_STMT_APERTURE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "f29143d5-73c7-440e-8f15-1232c74f5115",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/f29143d5-73c7-440e-8f15-1232c74f5115",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_CB_VIDA_WAYNE",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "f29143d5-73c7-440e-8f15-0000par00000", "name": "CB-VIDA-WAYNE", "comProfileId": "572c0d2d-085d-42cf-92fe-1a448079bdce",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "f29143d5-73c7-440e-8f15-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CB_VIDA_WAYNE",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/CB_VIDA_WAYNE/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "e790ac93-fc0b-45e6-a060-f7ac7becc882",
+    "flowName": "UC2_CB_VIDA_WAYNE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "c90709ab-ee24-4b73-b2f6-4ed2db71ee8e",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/c90709ab-ee24-4b73-b2f6-4ed2db71ee8e",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_IT_MAIA_SOYLENT",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "c90709ab-ee24-4b73-b2f6-0000par00000", "name": "IT-MAIA-SOYLENT", "comProfileId": "d41f7b2b-4dbb-4373-b2ea-56e0bd4511d8",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "c90709ab-ee24-4b73-b2f6-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_MAIA_SOYLENT",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/IT_MAIA_SOYLENT/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "b44e79a6-881f-4bc8-af43-6d9826ef29da",
+    "flowName": "UC2_IT_MAIA_SOYLENT",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "d750f2d0-7134-44be-9aea-e12d6e79cccf",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/d750f2d0-7134-44be-9aea-e12d6e79cccf",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_AB_EKDSI_STARK",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "d750f2d0-7134-44be-9aea-0000par00000", "name": "AB-EKDSI-STARK", "comProfileId": "3a298f36-283b-458a-adb9-53cb360ace6f",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "d750f2d0-7134-44be-9aea-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AB_EKDSI_STARK",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/AB_EKDSI_STARK/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "10a089f1-3b95-4c9f-a27b-162e44817335",
+    "flowName": "UC2_AB_EKDSI_STARK",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "cf8e86df-d445-4082-9809-eaa3b28e9d16",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/cf8e86df-d445-4082-9809-eaa3b28e9d16",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_ZK_ARIVA_OSCORP",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "cf8e86df-d445-4082-9809-0000par00000", "name": "ZK-ARIVA-OSCORP", "comProfileId": "39b342d0-a125-4928-bbb8-27c23654db3a",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "cf8e86df-d445-4082-9809-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZK_ARIVA_OSCORP",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/ZK_ARIVA_OSCORP/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "0378cc13-0128-40f3-a347-3761d15fe9e5",
+    "flowName": "UC2_ZK_ARIVA_OSCORP",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "b9a0bc21-3bab-4720-a47d-04b80ac53cee",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/b9a0bc21-3bab-4720-a47d-04b80ac53cee",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_HR_MATCH_VANDELAY",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "b9a0bc21-3bab-4720-a47d-0000par00000", "name": "HR-MATCH-VANDELAY", "comProfileId": "6b620958-8b18-415c-8cfc-321938366d27",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "b9a0bc21-3bab-4720-a47d-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "HR_MATCH_VANDELAY",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/HR_MATCH_VANDELAY/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "b9f4465d-be29-497b-851e-7f6cbd816f7a",
+    "flowName": "UC2_HR_MATCH_VANDELAY",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "f3e283df-dbdc-475d-ad74-265ae6ce0f16",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/f3e283df-dbdc-475d-ad74-265ae6ce0f16",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_SI_SAPBHP_APERTURE",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "f3e283df-dbdc-475d-ad74-0000par00000", "name": "SI-SAPBHP-APERTURE", "comProfileId": "7df3fc15-cdb6-4731-99c2-b3052cfaff82",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "f3e283df-dbdc-475d-ad74-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "SI_SAPBHP_APERTURE",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/SI_SAPBHP_APERTURE/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "473528f0-bb07-4ffe-9579-e358ccfe3b5b",
+    "flowName": "UC2_SI_SAPBHP_APERTURE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "224ccfac-2d4a-4772-b9e1-179e9bfb8a25",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/224ccfac-2d4a-4772-b9e1-179e9bfb8a25",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_APS_FMGENLOG_CYBERDYNE",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "224ccfac-2d4a-4772-b9e1-0000par00000", "name": "APS_FMGENLOG_CYBERDYNE", "comProfileId": "8b861f00-547f-48e4-81d5-097b75c8d96c",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "224ccfac-2d4a-4772-b9e1-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "APS_FMGENLOG_CYBERDYNE",
+      "target_working_dir": "/data/cft/in/APS_FMGENLOG_CYBERDYNE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 15 7 ? * *"
+    },
+    "flowId": "024bc770-a009-4ef8-9cd5-253de6866c21",
+    "flowName": "UC3_APS_FMGENLOG_CYBERDYNE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "7e58ece8-7c44-4727-8893-0da1df961c40",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/7e58ece8-7c44-4727-8893-0da1df961c40",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_AB_NAS_GLOBEX",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "7e58ece8-7c44-4727-8893-0000par00000", "name": "AB_NAS_GLOBEX", "comProfileId": "d31121d0-ef35-480b-9eda-981ae36fcb1a",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "7e58ece8-7c44-4727-8893-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AB_NAS_GLOBEX",
+      "target_working_dir": "/data/cft/in/AB_NAS_GLOBEX",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 5/15 * * * ?"
+    },
+    "flowId": "799fb71f-64e7-4b14-b8ba-5a3aac2f6e4c",
+    "flowName": "UC3_AB_NAS_GLOBEX",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "292ffb01-2c15-4458-a919-327e10061f3d",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/292ffb01-2c15-4458-a919-327e10061f3d",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_APS_SYSHUB_SOYLENT",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "292ffb01-2c15-4458-a919-0000par00000", "name": "APS_SYSHUB_SOYLENT", "comProfileId": "004c968b-973c-4e9b-b4ac-66bfa1374cea",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "292ffb01-2c15-4458-a919-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "APS_SYSHUB_SOYLENT",
+      "target_working_dir": "/data/cft/in/APS_SYSHUB_SOYLENT",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 30 8 ? * *"
+    },
+    "flowId": "a17cf4a1-86ce-4436-b65a-af44c5bba8ec",
+    "flowName": "UC3_APS_SYSHUB_SOYLENT",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "12586b03-acce-436c-b426-52a7856b6b75",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/12586b03-acce-436c-b426-52a7856b6b75",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_FIN_LEDGER_GLOBEX",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "12586b03-acce-436c-b426-0000par00000", "name": "FIN_LEDGER_GLOBEX", "comProfileId": "07ef17c4-71b7-4ca8-8d8d-5a5dc54c0ea9",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "12586b03-acce-436c-b426-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FIN_LEDGER_GLOBEX",
+      "target_working_dir": "/data/cft/in/FIN_LEDGER_GLOBEX",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 0 8 ? * *"
+    },
+    "flowId": "005e3b1b-9f0c-4e71-9447-572bdc42899e",
+    "flowName": "UC3_FIN_LEDGER_GLOBEX",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "ca9e7416-7cd7-4419-911c-8c1cbbc6d83f",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/ca9e7416-7cd7-4419-911c-8c1cbbc6d83f",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_APS_SETTLE_P2P1",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "ca9e7416-7cd7-4419-911c-0000par00000", "name": "APS_SETTLE_P2P1", "comProfileId": "21542f58-7979-435a-8d31-06c194deaf59",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "ca9e7416-7cd7-4419-911c-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "APS_SETTLE_P2P1",
+      "target_working_dir": "/data/cft/in/APS_SETTLE_P2P1",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 15 * * * ?"
+    },
+    "flowId": "7524adc5-74b7-49af-b9fc-51fb6dea4637",
+    "flowName": "UC3_APS_SETTLE_P2P1",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "8533e7b8-f164-415e-b64b-42abefcac8bb",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/8533e7b8-f164-415e-b64b-42abefcac8bb",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_APS_SETTLE_P2P2",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "8533e7b8-f164-415e-b64b-0000par00000", "name": "APS_SETTLE_P2P2", "comProfileId": "99d72cfb-1eb0-4dba-812e-514e0360cee8",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "8533e7b8-f164-415e-b64b-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "APS_SETTLE_P2P2",
+      "target_working_dir": "/data/cft/in/APS_SETTLE_P2P2",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 55 6 ? * *"
+    },
+    "flowId": "0ff2f9af-6fb1-4f8d-ad99-19bb482f2cc6",
+    "flowName": "UC3_APS_SETTLE_P2P2",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "035b8c76-b41e-41f7-96f4-89d4e1cc35b2",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/035b8c76-b41e-41f7-96f4-89d4e1cc35b2",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_FIN_FACTS_MASSIVE",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "035b8c76-b41e-41f7-96f4-0000par00000", "name": "FIN_FACTS_MASSIVE", "comProfileId": "4afe7c26-c730-4536-b209-c81f81cc8eca",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "035b8c76-b41e-41f7-96f4-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FIN_FACTS_MASSIVE",
+      "target_working_dir": "/data/cft/in/FIN_FACTS_MASSIVE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 5/15 * * * ?"
+    },
+    "flowId": "1b18f8d0-263b-416c-8f7c-92bdd7e10105",
+    "flowName": "UC3_FIN_FACTS_MASSIVE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "40dacc5c-cfda-404d-99f6-0abe7a72efe1",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/40dacc5c-cfda-404d-99f6-0abe7a72efe1",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_ZG_PGBMATCH_APERTURE",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "40dacc5c-cfda-404d-99f6-0000par00000", "name": "ZG_PGBMATCH_APERTURE", "comProfileId": "b6a4d026-9178-4967-8898-7f9d563e157c",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "40dacc5c-cfda-404d-99f6-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZG_PGBMATCH_APERTURE",
+      "target_working_dir": "/data/cft/in/ZG_PGBMATCH_APERTURE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 15 5 ? * *"
+    },
+    "flowId": "7d91c2cd-4c68-474b-a7da-32483c3caeba",
+    "flowName": "UC3_ZG_PGBMATCH_APERTURE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "d5231ab1-9660-49e0-9bd1-79cf237b7b0a",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/d5231ab1-9660-49e0-9bd1-79cf237b7b0a",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_SI_TELEMETRY_STARK",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "d5231ab1-9660-49e0-9bd1-0000par00000", "name": "SI_TELEMETRY_STARK", "comProfileId": "de318d90-0355-4d82-a7c4-cb7ee8fc1c32",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "d5231ab1-9660-49e0-9bd1-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "SI_TELEMETRY_STARK",
+      "target_working_dir": "/data/cft/in/SI_TELEMETRY_STARK",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 59 * * * ?"
+    },
+    "flowId": "433c491d-19ef-4c37-a9a4-b28fef257caf",
+    "flowName": "UC3_SI_TELEMETRY_STARK",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "d6e3e4c1-4618-4d53-98c3-1c2a25f4da1d",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/d6e3e4c1-4618-4d53-98c3-1c2a25f4da1d",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_ODV_MERLIJN_SABRE_D",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "d6e3e4c1-4618-4d53-98c3-0000par00000", "name": "ODV_MERLIJN_SABRE_D", "comProfileId": "d167c7bb-ea61-49e4-a5aa-2b1c687cc1d8",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "d6e3e4c1-4618-4d53-98c3-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ODV_MERLIJN_SABRE_D",
+      "target_working_dir": "/data/cft/in/ODV_MERLIJN_SABRE_D",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 5/15 * * * ?"
+    },
+    "flowId": "f89a6601-fbff-42e6-9bbd-dddde543c75d",
+    "flowName": "UC3_ODV_MERLIJN_SABRE_D",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "cf869ba6-eba1-4bdc-9c31-610c7c95471e",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/cf869ba6-eba1-4bdc-9c31-610c7c95471e",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_ODV_MERLIJN_SABRE_I",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "cf869ba6-eba1-4bdc-9c31-0000par00000", "name": "ODV_MERLIJN_SABRE_I", "comProfileId": "0cbffedc-1fc6-424d-87b0-a53d7008228d",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "cf869ba6-eba1-4bdc-9c31-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ODV_MERLIJN_SABRE_I",
+      "target_working_dir": "/data/cft/in/ODV_MERLIJN_SABRE_I",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 52 * * * ?"
+    },
+    "flowId": "1269e6e1-c749-497c-b224-8b47226fe0bd",
+    "flowName": "UC3_ODV_MERLIJN_SABRE_I",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "11c1b0f0-8d41-4aad-9b61-1759e7a7ba0f",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/11c1b0f0-8d41-4aad-9b61-1759e7a7ba0f",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_ZK_IKAZ_BLACKMESA",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "11c1b0f0-8d41-4aad-9b61-0000par00000", "name": "ZK_IKAZ_BLACKMESA", "comProfileId": "3b7319e2-85b3-4b06-854f-b5e0bac8c674",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "11c1b0f0-8d41-4aad-9b61-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZK_IKAZ_BLACKMESA",
+      "target_working_dir": "/data/cft/in/ZK_IKAZ_BLACKMESA",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 25 6 ? * *"
+    },
+    "flowId": "50fe84b8-4d38-4b32-a9dd-22795490f73e",
+    "flowName": "UC3_ZK_IKAZ_BLACKMESA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "65346114-84b5-49e8-b074-081e2af0fe97",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/65346114-84b5-49e8-b074-081e2af0fe97",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_CDV_STREAM_DUFF_I",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "65346114-84b5-49e8-b074-0000par00000", "name": "CDV_STREAM_DUFF_I", "comProfileId": "70a6abf6-a5ea-4a86-9c52-60d83af5c874",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "65346114-84b5-49e8-b074-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CDV_STREAM_DUFF_I",
+      "target_working_dir": "/data/cft/in/CDV_STREAM_DUFF_I",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "f8342b64-c409-43d7-afd8-3ef28b6e1437",
+    "flowName": "UC3_CDV_STREAM_DUFF_I",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "98d371b6-6eae-496f-a4a2-40d82fe72857",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/98d371b6-6eae-496f-a4a2-40d82fe72857",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_AB_CREDITREG_WEYLAND",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "98d371b6-6eae-496f-a4a2-0000par00000", "name": "AB_CREDITREG_WEYLAND", "comProfileId": "8e08de6b-5c9e-4bcf-b11f-22eb945c4647",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "98d371b6-6eae-496f-a4a2-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AB_CREDITREG_WEYLAND",
+      "target_working_dir": "/data/cft/in/AB_CREDITREG_WEYLAND",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 49 * * * ?"
+    },
+    "flowId": "f286543f-353c-40d3-919a-c9901eaf82cd",
+    "flowName": "UC3_AB_CREDITREG_WEYLAND",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "cb72bf19-1dbf-4f0f-a9f0-066e2cb55eb3",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/cb72bf19-1dbf-4f0f-a9f0-066e2cb55eb3",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_HR_AFAS_GEKKO",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "cb72bf19-1dbf-4f0f-a9f0-0000par00000", "name": "HR_AFAS_GEKKO", "comProfileId": "5d22654f-405f-4458-a1fc-8be177397b0e",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "cb72bf19-1dbf-4f0f-a9f0-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "HR_AFAS_GEKKO",
+      "target_working_dir": "/data/cft/in/HR_AFAS_GEKKO",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "aebe4aa7-424a-4312-bf6e-d7d2374a10e3",
+    "flowName": "UC3_HR_AFAS_GEKKO",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "0385271b-7d27-49e8-8d26-0ff06eaa8e2a",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/0385271b-7d27-49e8-8d26-0ff06eaa8e2a",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_IT_DISPATCH_INITECH",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "0385271b-7d27-49e8-8d26-0000par00000", "name": "IT_DISPATCH_INITECH", "comProfileId": "8a8fc78a-432d-465f-877b-dc224dca448e",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "0385271b-7d27-49e8-8d26-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_DISPATCH_INITECH",
+      "target_working_dir": "/data/cft/in/IT_DISPATCH_INITECH",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 0 6 ? * *"
+    },
+    "flowId": "98680656-21e1-4473-8dac-f83bed3c064a",
+    "flowName": "UC3_IT_DISPATCH_INITECH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "04630150-5781-4d87-8d99-22a04f4c1001",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/04630150-5781-4d87-8d99-22a04f4c1001",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_WA_TELEMATICS_MONARCH",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "04630150-5781-4d87-8d99-0000par00000", "name": "WA_TELEMATICS_MONARCH", "comProfileId": "ed496445-1f29-4f6b-8783-4c00af97fe28",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "04630150-5781-4d87-8d99-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "WA_TELEMATICS_MONARCH",
+      "target_working_dir": "/data/cft/in/WA_TELEMATICS_MONARCH",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 20 6 ? * *"
+    },
+    "flowId": "d858a18b-ae55-46f3-a9ca-54deca4056ca",
+    "flowName": "UC3_WA_TELEMATICS_MONARCH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "0ae02dc8-b4f6-49dd-9b5a-338c54635eaf",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/0ae02dc8-b4f6-49dd-9b5a-338c54635eaf",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_CB_QUOTES_GEKKO",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "0ae02dc8-b4f6-49dd-9b5a-0000par00000", "name": "CB_QUOTES_GEKKO", "comProfileId": "3cb2d236-0ade-49f6-b1a4-dcc11082eea5",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "0ae02dc8-b4f6-49dd-9b5a-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CB_QUOTES_GEKKO",
+      "target_working_dir": "/data/cft/in/CB_QUOTES_GEKKO",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 16 * * * ?"
+    },
+    "flowId": "8aa3f0a6-2ce1-4754-aa8e-0b44c566ccde",
+    "flowName": "UC3_CB_QUOTES_GEKKO",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "5b1e2991-17fb-4716-bf1a-48ff76b56759",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/5b1e2991-17fb-4716-bf1a-48ff76b56759",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_IT_RECON_HOOLI",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "5b1e2991-17fb-4716-bf1a-0000par00000", "name": "IT_RECON_HOOLI", "comProfileId": "1da031cd-bd85-49b0-9f99-f81a9d5fd7c3",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "5b1e2991-17fb-4716-bf1a-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_RECON_HOOLI",
+      "target_working_dir": "/data/cft/in/IT_RECON_HOOLI",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 40 * * * ?"
+    },
+    "flowId": "00dddc00-9449-47e3-9dad-0a9dfb7e1753",
+    "flowName": "UC3_IT_RECON_HOOLI",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "71d976cd-c68c-4437-809d-b7353590959f",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/71d976cd-c68c-4437-809d-b7353590959f",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_FS_SAPBODS_PRIMATECH_D",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "71d976cd-c68c-4437-809d-0000par00000", "name": "FS_SAPBODS_PRIMATECH_D", "comProfileId": "129d2e16-bcce-489a-8c44-f2aaa76e535b",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "71d976cd-c68c-4437-809d-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FS_SAPBODS_PRIMATECH_D",
+      "target_working_dir": "/data/cft/in/FS_SAPBODS_PRIMATECH_D",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 14 * * * ?"
+    },
+    "flowId": "5d3aa9d8-e4fc-486f-82af-5a99016740aa",
+    "flowName": "UC3_FS_SAPBODS_PRIMATECH_D",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "5c9fcc5c-dcee-4b28-bb0c-f24dd8080b56",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/5c9fcc5c-dcee-4b28-bb0c-f24dd8080b56",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_FS_SAPBODS_PRIMATECH_I",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "5c9fcc5c-dcee-4b28-bb0c-0000par00000", "name": "FS_SAPBODS_PRIMATECH_I", "comProfileId": "57a14291-3e54-416d-b143-2f6b559df77f",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "5c9fcc5c-dcee-4b28-bb0c-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FS_SAPBODS_PRIMATECH_I",
+      "target_working_dir": "/data/cft/in/FS_SAPBODS_PRIMATECH_I",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 28 * * * ?"
+    },
+    "flowId": "09a294ba-7dd7-4ae9-96f6-009d5c794a84",
+    "flowName": "UC3_FS_SAPBODS_PRIMATECH_I",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "e53d10cf-8870-471d-9699-54c7f39b6982",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/e53d10cf-8870-471d-9699-54c7f39b6982",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_FS_SAPBODS_PRIMATECH_M",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "e53d10cf-8870-471d-9699-0000par00000", "name": "FS_SAPBODS_PRIMATECH_M", "comProfileId": "f53eec8c-0c59-4bb0-b20f-6006475d479c",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "e53d10cf-8870-471d-9699-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FS_SAPBODS_PRIMATECH_M",
+      "target_working_dir": "/data/cft/in/FS_SAPBODS_PRIMATECH_M",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 39 * * * ?"
+    },
+    "flowId": "c6c21d6f-91b8-4018-9a62-1f070bbb5266",
+    "flowName": "UC3_FS_SAPBODS_PRIMATECH_M",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "ba23547a-4aae-417f-86aa-264998fbb1a1",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/ba23547a-4aae-417f-86aa-264998fbb1a1",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_CDV_STREAM_ABSTERGO",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "ba23547a-4aae-417f-86aa-0000par00000", "name": "CDV_STREAM_ABSTERGO", "comProfileId": "ec6cc408-eb8a-4e91-b768-26ace73d664c",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "ba23547a-4aae-417f-86aa-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CDV_STREAM_ABSTERGO",
+      "target_working_dir": "/data/cft/in/CDV_STREAM_ABSTERGO",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 23 * * * ?"
+    },
+    "flowId": "949e40f1-9d60-43fc-a21c-5f7d19c78503",
+    "flowName": "UC3_CDV_STREAM_ABSTERGO",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "45bc432f-ec89-4553-90d0-c14340c4186b",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/45bc432f-ec89-4553-90d0-c14340c4186b",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_APS_FMREPLERR_CYBERDYNE",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "45bc432f-ec89-4553-90d0-0000par00000", "name": "APS_FMREPLERR_CYBERDYNE", "comProfileId": "1e990b3a-235d-4db8-919f-27225df5a9be",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "45bc432f-ec89-4553-90d0-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "APS_FMREPLERR_CYBERDYNE",
+      "target_working_dir": "/data/cft/in/APS_FMREPLERR_CYBERDYNE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 15 8 ? * *"
+    },
+    "flowId": "3ad3fa19-8870-4a75-bb86-36efb05350bb",
+    "flowName": "UC3_APS_FMREPLERR_CYBERDYNE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "a12f35c7-ca46-4d68-96d3-7b38bf00a34c",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/a12f35c7-ca46-4d68-96d3-7b38bf00a34c",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_ODV_EMIS_ZORG",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "a12f35c7-ca46-4d68-96d3-0000par00000", "name": "ODV_EMIS_ZORG", "comProfileId": "02ce4707-23ca-4d03-b002-6103142077d3",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "a12f35c7-ca46-4d68-96d3-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ODV_EMIS_ZORG",
+      "target_working_dir": "/data/cft/in/ODV_EMIS_ZORG",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 0 * * * ?"
+    },
+    "flowId": "5e5e7450-61b3-43e7-833f-3d0c03561a02",
+    "flowName": "UC3_ODV_EMIS_ZORG",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "9e87cb5d-7895-49f8-b705-01192d513bcd",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/9e87cb5d-7895-49f8-b705-01192d513bcd",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_ZG_IKAZ_BLUTH",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "9e87cb5d-7895-49f8-b705-0000par00000", "name": "ZG_IKAZ_BLUTH", "comProfileId": "23d72631-5e1b-4752-b40c-69a624aa3944",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "9e87cb5d-7895-49f8-b705-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZG_IKAZ_BLUTH",
+      "target_working_dir": "/data/cft/in/ZG_IKAZ_BLUTH",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 36 * * * ?"
+    },
+    "flowId": "e9000676-2ebc-44f6-84c3-6a63c89e35fd",
+    "flowName": "UC3_ZG_IKAZ_BLUTH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "7c23f6a0-a2fd-4b92-84f8-833a5ab7ad6b",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/7c23f6a0-a2fd-4b92-84f8-833a5ab7ad6b",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_AB_EXPORT_WAYNE",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "7c23f6a0-a2fd-4b92-84f8-0000par00000", "name": "AB_EXPORT_WAYNE", "comProfileId": "897f29a6-82f8-4732-b60a-65913eacbeb5",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "7c23f6a0-a2fd-4b92-84f8-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AB_EXPORT_WAYNE",
+      "target_working_dir": "/data/cft/in/AB_EXPORT_WAYNE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 25 5 ? * *"
+    },
+    "flowId": "18cd4fc5-157f-4710-8c70-41eea81ba362",
+    "flowName": "UC3_AB_EXPORT_WAYNE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "aceb8963-00bd-488a-a213-dc3286c25311",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/aceb8963-00bd-488a-a213-dc3286c25311",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_IT_FACTS_HOOLI",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "aceb8963-00bd-488a-a213-0000par00000", "name": "IT_FACTS_HOOLI", "comProfileId": "940a4f35-597c-4f20-b940-86fa9de28bd7",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "aceb8963-00bd-488a-a213-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_FACTS_HOOLI",
+      "target_working_dir": "/data/cft/in/IT_FACTS_HOOLI",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "32788f29-e592-404e-8cca-d2ea00ef7d5e",
+    "flowName": "UC3_IT_FACTS_HOOLI",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "a8be737f-b867-48e7-994b-76299b64d1d1",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/a8be737f-b867-48e7-994b-76299b64d1d1",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_DPL_STREAM_UMBRELLA",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "a8be737f-b867-48e7-994b-0000par00000", "name": "DPL_STREAM_UMBRELLA", "comProfileId": "fdbdb4e2-61ba-40c4-a796-a29e5418f99f",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "a8be737f-b867-48e7-994b-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "DPL_STREAM_UMBRELLA",
+      "target_working_dir": "/data/cft/in/DPL_STREAM_UMBRELLA",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 40 5 ? * *"
+    },
+    "flowId": "a9a9cde4-6d07-40b1-a64f-fa868a9283bf",
+    "flowName": "UC3_DPL_STREAM_UMBRELLA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "b8a453bb-4c77-4329-ae25-e83d2f9ba1b0",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/b8a453bb-4c77-4329-ae25-e83d2f9ba1b0",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_SYNT_NAS_TYRELL",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "b8a453bb-4c77-4329-ae25-0000par00000", "name": "SYNT_NAS_TYRELL", "comProfileId": "30b4a964-10a1-4d2a-b8d1-e97a55d0d67b",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "b8a453bb-4c77-4329-ae25-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "SYNT_NAS_TYRELL",
+      "target_working_dir": "/data/cft/in/SYNT_NAS_TYRELL",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 42 * * * ?"
+    },
+    "flowId": "76aaae86-ee43-4710-ad2f-952a17b83707",
+    "flowName": "UC3_SYNT_NAS_TYRELL",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "521d229f-25c3-448c-8930-db5df095ec9e",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/521d229f-25c3-448c-8930-db5df095ec9e",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_AIM_QUOTES_WONKA",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "521d229f-25c3-448c-8930-0000par00000", "name": "AIM_QUOTES_WONKA", "comProfileId": "9a9c7b7d-808e-4fea-ac3a-cf47779e4e2c",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "521d229f-25c3-448c-8930-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AIM_QUOTES_WONKA",
+      "target_working_dir": "/data/cft/in/AIM_QUOTES_WONKA",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 10 7 ? * *"
+    },
+    "flowId": "cee54dc3-60d0-4fba-8b58-d9efff09d1d6",
+    "flowName": "UC3_AIM_QUOTES_WONKA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "5c969658-8460-4e79-8377-71926915027c",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/5c969658-8460-4e79-8377-71926915027c",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3_FIN_NAS_VANDELAY",
+    "patternName": "C0002_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "5c969658-8460-4e79-8377-0000par00000", "name": "FIN_NAS_VANDELAY", "comProfileId": "5a43f95c-38d9-4540-9374-e62b52699157",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "5c969658-8460-4e79-8377-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FIN_NAS_VANDELAY",
+      "target_working_dir": "/data/cft/in/FIN_NAS_VANDELAY",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 53 * * * ?"
+    },
+    "flowId": "1c717936-080b-4474-a046-a41c4a82c260",
+    "flowName": "UC3_FIN_NAS_VANDELAY",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "d03aa69a-ce45-4468-9ef8-0f5c6c1773b2",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/d03aa69a-ce45-4468-9ef8-0f5c6c1773b2",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_APS_COSMOS_GLOBEX",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "d03aa69a-ce45-4468-9ef8-0000par00000", "name": "APS-COSMOS-GLOBEX", "comProfileId": "dd104720-bc0c-4c34-8475-1a0c1881c462",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "d03aa69a-ce45-4468-9ef8-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "APS_COSMOS_GLOBEX",
+      "target_working_dir": "/data/cft/in/APS-COSMOS-GLOBEX",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "2455897b-eee6-4738-bd89-c68ac8cfb94a",
+    "flowName": "UC4_APS_COSMOS_GLOBEX",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "e6d1cda7-93c1-4a11-b129-7ab9362e3cec",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/e6d1cda7-93c1-4a11-b129-7ab9362e3cec",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_CDV_KRP-TDI_WONKA",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "e6d1cda7-93c1-4a11-b129-0000par00000", "name": "CDV-KRP-TDI-WONKA", "comProfileId": "c62760d1-489c-4203-baf8-85329aa635db",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "e6d1cda7-93c1-4a11-b129-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CDV_KRP-TDI_WONKA",
+      "target_working_dir": "/data/cft/in/CDV-KRP-TDI-WONKA",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "794e2536-343b-44a9-8cf0-8cefdf51711f",
+    "flowName": "UC4_CDV_KRP-TDI_WONKA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "472de92a-cbaf-468a-b4ab-0dd142942049",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/472de92a-cbaf-468a-b4ab-0dd142942049",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_IT_EKDSI_CYBERDYNE",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "472de92a-cbaf-468a-b4ab-0000par00000", "name": "IT-EKDSI-CYBERDYNE", "comProfileId": "ca194657-2eac-4243-99c8-81693fc72992",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "472de92a-cbaf-468a-b4ab-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_EKDSI_CYBERDYNE",
+      "target_working_dir": "/data/cft/in/IT-EKDSI-CYBERDYNE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "2e727c3f-1ed8-4f88-9b0c-f52d6774f341",
+    "flowName": "UC4_IT_EKDSI_CYBERDYNE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "9a7f354c-3b2b-4a68-862f-11de097235b1",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/9a7f354c-3b2b-4a68-862f-11de097235b1",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_AIM_LAKE_PIEDPIPER",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "9a7f354c-3b2b-4a68-862f-0000par00000", "name": "AIM-LAKE-PIEDPIPER", "comProfileId": "fff686bd-1d47-4564-9532-0205b3c6962f",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "9a7f354c-3b2b-4a68-862f-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AIM_LAKE_PIEDPIPER",
+      "target_working_dir": "/data/cft/in/AIM-LAKE-PIEDPIPER",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "814df507-c640-49e9-afdc-ee004dc36f71",
+    "flowName": "UC4_AIM_LAKE_PIEDPIPER",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "c7608198-2d1b-45bc-a244-4ee867c9c7a5",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/c7608198-2d1b-45bc-a244-4ee867c9c7a5",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_ZG_ZKA_HOOLI",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "c7608198-2d1b-45bc-a244-0000par00000", "name": "ZG-ZKA-HOOLI", "comProfileId": "43ae85a8-ec99-43ab-a349-646eaf2cad8f",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "c7608198-2d1b-45bc-a244-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZG_ZKA_HOOLI",
+      "target_working_dir": "/data/cft/in/ZG-ZKA-HOOLI",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "f9644d0d-b5fc-4c6d-9dc4-73590776dd67",
+    "flowName": "UC4_ZG_ZKA_HOOLI",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "a74a1092-ea1b-49bf-ba90-c74ef69a1810",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/a74a1092-ea1b-49bf-ba90-c74ef69a1810",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_ODV_ARE_APERTURE",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "a74a1092-ea1b-49bf-ba90-0000par00000", "name": "ODV-ARE-APERTURE", "comProfileId": "ea456489-683b-42a0-a926-79e602a0640b",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "a74a1092-ea1b-49bf-ba90-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ODV_ARE_APERTURE",
+      "target_working_dir": "/data/cft/in/ODV-ARE-APERTURE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "447f18d2-a532-491e-b090-2cd84fbb93a6",
+    "flowName": "UC4_ODV_ARE_APERTURE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "a74a1092-ea1b-49bf-ba90-c74ef69a1810",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/a74a1092-ea1b-49bf-ba90-c74ef69a1810",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_ODV_ARE_APERTURE2",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "a74a1092-ea1b-49bf-ba90-0000par00000", "name": "ODV-ARE-APERTURE", "comProfileId": "ea456489-683b-42a0-a926-79e602a0640b",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "a74a1092-ea1b-49bf-ba90-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ODV_ARE_APERTURE2",
+      "target_working_dir": "/data/cft/in/ODV-ARE-APERTURE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "447f18d2-a532-491e-b090-2cd84fbb93a6",
+    "flowName": "UC4_ODV_ARE_APERTURE2",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "7f90c9fb-95a6-4052-a411-fdc6fd752985",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/7f90c9fb-95a6-4052-a411-fdc6fd752985",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_ZK_MIAZ_INITECH",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "7f90c9fb-95a6-4052-a411-0000par00000", "name": "ZK-MIAZ-INITECH", "comProfileId": "0341e1f6-f892-45b6-a556-adcf31d75562",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "7f90c9fb-95a6-4052-a411-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZK_MIAZ_INITECH",
+      "target_working_dir": "/data/cft/in/ZK-MIAZ-INITECH",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "1350ec6b-7c7d-4f7f-b636-691b8e7208bc",
+    "flowName": "UC4_ZK_MIAZ_INITECH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "c35cdb3c-615e-4848-b6d5-16b5c6fa7d0b",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/c35cdb3c-615e-4848-b6d5-16b5c6fa7d0b",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_WA_SENSOR_STARK",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "c35cdb3c-615e-4848-b6d5-0000par00000", "name": "WA-SENSOR-STARK", "comProfileId": "813b6d3c-a064-41f4-98db-3e94a242b20f",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "c35cdb3c-615e-4848-b6d5-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "WA_SENSOR_STARK",
+      "target_working_dir": "/data/cft/in/WA-SENSOR-STARK",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "e3b87025-bdf5-431f-8430-91fd985b808d",
+    "flowName": "UC4_WA_SENSOR_STARK",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "28e78999-be62-437b-9eb1-7ed77bcdd6e5",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/28e78999-be62-437b-9eb1-7ed77bcdd6e5",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_CD_INVOICE_VANDELAY",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "28e78999-be62-437b-9eb1-0000par00000", "name": "CD-INVOICE-VANDELAY", "comProfileId": "6f5415bd-466d-4d80-96c1-fd3887b85a98",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "28e78999-be62-437b-9eb1-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CD_INVOICE_VANDELAY",
+      "target_working_dir": "/data/cft/in/CD-INVOICE-VANDELAY",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "5bc37ff4-98d7-4701-b438-b5bd8c932ffb",
+    "flowName": "UC4_CD_INVOICE_VANDELAY",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "21a22480-8aef-4512-9738-1e52c08c55c7",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/21a22480-8aef-4512-9738-1e52c08c55c7",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_SI_ROS_SABRE",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "21a22480-8aef-4512-9738-0000par00000", "name": "SI-ROS-SABRE", "comProfileId": "a793cc54-d783-4eea-8d5d-46506a40b9a0",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "21a22480-8aef-4512-9738-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "SI_ROS_SABRE",
+      "target_working_dir": "/data/cft/in/SI-ROS-SABRE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "64f4f740-a726-4f01-85f7-cbfa9f3b0522",
+    "flowName": "UC4_SI_ROS_SABRE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "fe5af036-a4a9-46e4-bc4c-17460f5734ed",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/fe5af036-a4a9-46e4-bc4c-17460f5734ed",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_HR_PENSION_OSCORP",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "fe5af036-a4a9-46e4-bc4c-0000par00000", "name": "HR-PENSION-OSCORP", "comProfileId": "b6721158-b3a9-440d-bb2a-d6079d66bf02",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "fe5af036-a4a9-46e4-bc4c-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "HR_PENSION_OSCORP",
+      "target_working_dir": "/data/cft/in/HR-PENSION-OSCORP",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "1a0d7442-abf2-4ba7-bfcd-ebccb1f54e94",
+    "flowName": "UC4_HR_PENSION_OSCORP",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "39a9bc35-7069-4111-bc30-750480d3d8a5",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/39a9bc35-7069-4111-bc30-750480d3d8a5",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_IT_TDRS_BLUTH",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "39a9bc35-7069-4111-bc30-0000par00000", "name": "IT-TDRS-BLUTH", "comProfileId": "70c33673-e92a-4d4f-ba67-37c85d55b2af",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "39a9bc35-7069-4111-bc30-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_TDRS_BLUTH",
+      "target_working_dir": "/data/cft/in/IT-TDRS-BLUTH",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "3c86926f-c7f7-4615-a81d-80dc0cc7e0b7",
+    "flowName": "UC4_IT_TDRS_BLUTH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "399d78d2-3b70-467c-b54c-8c6c0ff47cb4",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/399d78d2-3b70-467c-b54c-8c6c0ff47cb4",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_ZG_CIVIL_DUNDER",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "399d78d2-3b70-467c-b54c-0000par00000", "name": "ZG-CIVIL-DUNDER", "comProfileId": "163e455e-2f82-4191-9aba-2ce2c00b4717",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "399d78d2-3b70-467c-b54c-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZG_CIVIL_DUNDER",
+      "target_working_dir": "/data/cft/in/ZG-CIVIL-DUNDER",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "2bea2cfe-035d-4ec6-81b4-b4cceb803ed9",
+    "flowName": "UC4_ZG_CIVIL_DUNDER",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "4ecda3a9-add0-44e7-abae-e1c023bea63f",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/4ecda3a9-add0-44e7-abae-e1c023bea63f",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_ZG_BULK_DUNDER",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "4ecda3a9-add0-44e7-abae-0000par00000", "name": "ZG-BULK-DUNDER", "comProfileId": "a111811c-64d8-4a92-9bb0-1ce93a82434d",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "4ecda3a9-add0-44e7-abae-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZG_BULK_DUNDER",
+      "target_working_dir": "/data/cft/in/ZG-BULK-DUNDER",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "3266cdaa-75e9-416b-aaa3-1d3472e27232",
+    "flowName": "UC4_ZG_BULK_DUNDER",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "1ee18086-e1aa-48a9-ada5-dabb42779f3f",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/1ee18086-e1aa-48a9-ada5-dabb42779f3f",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_AB_SCAN_MONARCH",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "1ee18086-e1aa-48a9-ada5-0000par00000", "name": "AB-SCAN-MONARCH", "comProfileId": "1f3d0beb-a386-4db7-a6f0-796a4ea3b956",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "1ee18086-e1aa-48a9-ada5-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AB_SCAN_MONARCH",
+      "target_working_dir": "/data/cft/in/AB-SCAN-MONARCH",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "02efaf9d-a120-4593-a31c-484333e4e506",
+    "flowName": "UC4_AB_SCAN_MONARCH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "433c2381-0167-44bc-9075-9d57dc138477",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/433c2381-0167-44bc-9075-9d57dc138477",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_CB_ISOLATED_SOYLENT",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "433c2381-0167-44bc-9075-0000par00000", "name": "CB-ISOLATED-SOYLENT", "comProfileId": "c27efbe2-deb2-4a70-9c91-f28d22e255e5",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "433c2381-0167-44bc-9075-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CB_ISOLATED_SOYLENT",
+      "target_working_dir": "/data/cft/in/CB-ISOLATED-SOYLENT",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "971792b2-1a00-4365-911a-d0e83774ccea",
+    "flowName": "UC4_CB_ISOLATED_SOYLENT",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "433c2381-0167-44bc-9075-9d57dc138477",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/433c2381-0167-44bc-9075-9d57dc138477",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_CB_ISOLATED_SOYLENT2",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "433c2381-0167-44bc-9075-0000par00000", "name": "CB-ISOLATED-SOYLENT", "comProfileId": "c27efbe2-deb2-4a70-9c91-f28d22e255e5",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "433c2381-0167-44bc-9075-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CB_ISOLATED_SOYLENT2",
+      "target_working_dir": "/data/cft/in/CB-ISOLATED-SOYLENT",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "971792b2-1a00-4365-911a-d0e83774ccea",
+    "flowName": "UC4_CB_ISOLATED_SOYLENT2",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "92870aa4-d318-4d9a-89b3-71bfb68e54f3",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/92870aa4-d318-4d9a-89b3-71bfb68e54f3",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_FS_STMT_APERTURE_IN",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "92870aa4-d318-4d9a-89b3-0000par00000", "name": "FS-STMT-APERTURE", "comProfileId": "28551c6d-4818-445f-b4f8-6d6b90c6e9da",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "92870aa4-d318-4d9a-89b3-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FS_STMT_APERTURE_IN",
+      "target_working_dir": "/data/cft/in/FS-STMT-APERTURE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "2a1787bd-a7c5-4a0b-a5ba-c5d4ea010862",
+    "flowName": "UC4_FS_STMT_APERTURE_IN",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "fb2bdb4a-e5c9-40be-8d77-8bae71b3db41",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/fb2bdb4a-e5c9-40be-8d77-8bae71b3db41",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_DPL_RENSEI_SOYLENT",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "fb2bdb4a-e5c9-40be-8d77-0000par00000", "name": "DPL-RENSEI-SOYLENT", "comProfileId": "c6adb428-e545-42ca-a854-54cbe175ca04",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "fb2bdb4a-e5c9-40be-8d77-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "DPL_RENSEI_SOYLENT",
+      "target_working_dir": "/data/cft/in/DPL-RENSEI-SOYLENT",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "c9d48fea-8493-4f44-a76b-2b791be3edf3",
+    "flowName": "UC4_DPL_RENSEI_SOYLENT",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "702ee40b-af2a-40f6-9030-274be24124f2",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/702ee40b-af2a-40f6-9030-274be24124f2",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_CD_ZIBA_GEKKO",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "702ee40b-af2a-40f6-9030-0000par00000", "name": "CD-ZIBA-GEKKO", "comProfileId": "c2a9ec4f-5067-4a29-b11a-fd6cdad09859",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "702ee40b-af2a-40f6-9030-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CD_ZIBA_GEKKO",
+      "target_working_dir": "/data/cft/in/CD-ZIBA-GEKKO",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "cbb37f22-ca23-4cee-92f6-a2cbf4c4890f",
+    "flowName": "UC4_CD_ZIBA_GEKKO",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "39c756a4-3769-4d63-8569-5603ecabcf16",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/39c756a4-3769-4d63-8569-5603ecabcf16",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_FS_IFRS_WAYNE",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "39c756a4-3769-4d63-8569-0000par00000", "name": "FS-IFRS-WAYNE", "comProfileId": "c8fbf2e9-ba41-429a-8250-b71755ca48c6",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "39c756a4-3769-4d63-8569-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FS_IFRS_WAYNE",
+      "target_working_dir": "/data/cft/in/FS-IFRS-WAYNE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "38d411ce-2a39-441b-ba11-1d0c3889e49d",
+    "flowName": "UC4_FS_IFRS_WAYNE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "54473e90-9421-43ea-86bb-f4ffa9463b9f",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/54473e90-9421-43ea-86bb-f4ffa9463b9f",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_AB_TDRS_PRIMATECH",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "54473e90-9421-43ea-86bb-0000par00000", "name": "AB-TDRS-PRIMATECH", "comProfileId": "682853f5-fb0e-45a5-b052-10a1bcaba354",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "54473e90-9421-43ea-86bb-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "AB_TDRS_PRIMATECH",
+      "target_working_dir": "/data/cft/in/AB-TDRS-PRIMATECH",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "be9fe61b-0924-4302-b913-20f4acab3120",
+    "flowName": "UC4_AB_TDRS_PRIMATECH",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "82c7ec5e-3840-4fd6-ae9e-1628cf25a573",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/82c7ec5e-3840-4fd6-ae9e-1628cf25a573",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_ZK_SENSOR_SOYLENT",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "82c7ec5e-3840-4fd6-ae9e-0000par00000", "name": "ZK-SENSOR-SOYLENT", "comProfileId": "4ced69e9-5543-4b0a-a999-5a5b479ef474",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "82c7ec5e-3840-4fd6-ae9e-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZK_SENSOR_SOYLENT",
+      "target_working_dir": "/data/cft/in/ZK-SENSOR-SOYLENT",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "c1ef5f20-5cf9-40a5-8396-abbcf0b8f43b",
+    "flowName": "UC4_ZK_SENSOR_SOYLENT",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "debaab64-5c28-463a-9e8a-7f3db42b78fe",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/debaab64-5c28-463a-9e8a-7f3db42b78fe",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_HR_LAKE_BLACKMESA",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "debaab64-5c28-463a-9e8a-0000par00000", "name": "HR-LAKE-BLACKMESA", "comProfileId": "964b44af-40e6-4cad-b6f8-433c51afd1e9",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "debaab64-5c28-463a-9e8a-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "HR_LAKE_BLACKMESA",
+      "target_working_dir": "/data/cft/in/HR-LAKE-BLACKMESA",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "d125db3e-d030-422c-b488-8298d9089ec9",
+    "flowName": "UC4_HR_LAKE_BLACKMESA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "368031bc-320f-47af-a627-806acbd8fcb5",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/368031bc-320f-47af-a627-806acbd8fcb5",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_WA_ZKA_ABSTERGO",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "368031bc-320f-47af-a627-0000par00000", "name": "WA-ZKA-ABSTERGO", "comProfileId": "fbd98339-137a-4d9f-bdb7-f8f35b2246a6",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "368031bc-320f-47af-a627-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "WA_ZKA_ABSTERGO",
+      "target_working_dir": "/data/cft/in/WA-ZKA-ABSTERGO",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "08af3223-b594-4189-a88d-943fe7673292",
+    "flowName": "UC4_WA_ZKA_ABSTERGO",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "815b95dd-090a-4780-a380-504df3dfb947",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/815b95dd-090a-4780-a380-504df3dfb947",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_DPL_SCAN_CYBERDYNE",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "815b95dd-090a-4780-a380-0000par00000", "name": "DPL-SCAN-CYBERDYNE", "comProfileId": "0551294a-e072-47bc-9d81-9dd265e5b55c",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "815b95dd-090a-4780-a380-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "DPL_SCAN_CYBERDYNE",
+      "target_working_dir": "/data/cft/in/DPL-SCAN-CYBERDYNE",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "6f4d6951-496b-43f2-9bcf-8227e2c25a8f",
+    "flowName": "UC4_DPL_SCAN_CYBERDYNE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "621011ae-e84a-4869-8a08-990fb2766696",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/621011ae-e84a-4869-8a08-990fb2766696",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_IT_ARCHIVE_ZORG",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "621011ae-e84a-4869-8a08-0000par00000", "name": "IT-ARCHIVE-ZORG", "comProfileId": "22d8c6c3-59a0-4188-8c98-8275dfc6502a",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "621011ae-e84a-4869-8a08-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_ARCHIVE_ZORG",
+      "target_working_dir": "/data/cft/in/IT-ARCHIVE-ZORG",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "a50cd168-28f6-4501-96cb-03ee09ec6fb3",
+    "flowName": "UC4_IT_ARCHIVE_ZORG",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "7db798de-1f45-4faf-ae33-521df4bc899d",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/7db798de-1f45-4faf-ae33-521df4bc899d",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_FIN_PORTAL_DUFF",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "7db798de-1f45-4faf-ae33-0000par00000", "name": "FIN-PORTAL-DUFF", "comProfileId": "a7cdc3bc-9b3e-408d-9e2b-ada936032772",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "7db798de-1f45-4faf-ae33-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "FIN_PORTAL_DUFF",
+      "target_working_dir": "/data/cft/in/FIN-PORTAL-DUFF",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "0a00bca7-81c9-4e87-aec7-96f9b8ed0527",
+    "flowName": "UC4_FIN_PORTAL_DUFF",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "6725d23b-524e-4949-b606-f247205b56fa",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/6725d23b-524e-4949-b606-f247205b56fa",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC5_CB_STARK_WAYNE",
+    "patternName": "PARTNER_PULL_ST_PARTNER_PUSH",
+    "participants": [
+      {"businessId": "6725d23b-524e-4949-b606-0000par00000", "name": "CB_STARK_WAYNE", "comProfileId": "43fc67e7-89ec-4ef0-8931-f294d90a33f0",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "6725d23b-524e-4949-b606-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CB_STARK_WAYNE",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 0 6 ? * *"
+    },
+    "flowId": "ee6cf5c1-8aeb-4826-a125-c363b2904019",
+    "flowName": "UC5_CB_STARK_WAYNE",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "497359bf-47a6-4e52-a5db-3f21bea42e7b",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/497359bf-47a6-4e52-a5db-3f21bea42e7b",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC8_ZG_HOOLI_GEKKO",
+    "patternName": "PARTNER_PUSH_ST_PARTNER_PUSH",
+    "participants": [
+      {"businessId": "497359bf-47a6-4e52-a5db-0000par00000", "name": "ZG_HOOLI_GEKKO", "comProfileId": "af40a231-554e-484e-b255-1518f8e59b20",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "497359bf-47a6-4e52-a5db-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "ZG_HOOLI_GEKKO"
+    },
+    "flowId": "f4b5c690-57ac-4df3-957d-82520374f016",
+    "flowName": "UC8_ZG_HOOLI_GEKKO",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "18328b5e-e7d6-4ca6-88bc-381b7e60d0ef",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/18328b5e-e7d6-4ca6-88bc-381b7e60d0ef",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1-INFRA_ST-MONITOR_INFRA",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "18328b5e-e7d6-4ca6-88bc-0000par00000", "name": "INFRA_ST-MONITOR_INFRA", "comProfileId": "2c6a1d48-8cf2-4a44-a31a-52645373d99c",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "18328b5e-e7d6-4ca6-88bc-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "INFRA-MONITOR-UC1",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/INFRA-MONITOR-UC1/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "32d5624f-6ab6-4d41-95f8-0772dc2bc613",
+    "flowName": "UC1-INFRA_ST-MONITOR_INFRA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "7c0eadc4-3e94-495f-85b2-7b755f002d00",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/7c0eadc4-3e94-495f-85b2-7b755f002d00",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2-INFRA_ST-MONITOR_INFRA",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "7c0eadc4-3e94-495f-85b2-0000par00000", "name": "INFRA_ST-MONITOR_INFRA", "comProfileId": "8bb28b3b-0533-469d-9377-718640eae00c",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "7c0eadc4-3e94-495f-85b2-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "INFRA-MONITOR-UC2",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/INFRA-MONITOR-UC2/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "35f4360c-89aa-400a-81cd-3ad5b4874175",
+    "flowName": "UC2-INFRA_ST-MONITOR_INFRA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "dfebd02a-9552-4619-92a8-becf3fa18911",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/dfebd02a-9552-4619-92a8-becf3fa18911",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC3-INFRA_ST-MONITOR_INFRA",
+    "patternName": "C0003_HYBRID_PULL_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "dfebd02a-9552-4619-92a8-0000par00000", "name": "INFRA_ST-MONITOR_INFRA", "comProfileId": "eafaf92f-7d73-42f7-83d4-90a82e61e67c",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "dfebd02a-9552-4619-92a8-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "INFRA-MONITOR-UC3",
+      "target_working_dir": "/data/cft/in/INFRA_ST-MONITOR_INFRA",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 5/30 * * * ?"
+    },
+    "flowId": "391209c9-a89e-42d4-bda1-6e398ce3bcd7",
+    "flowName": "UC3-INFRA_ST-MONITOR_INFRA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "43c7f290-ec10-42d2-9f9e-022a2042e522",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/43c7f290-ec10-42d2-9f9e-022a2042e522",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4-INFRA_ST-MONITOR_INFRA",
+    "patternName": "C0004_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "43c7f290-ec10-42d2-9f9e-0000par00000", "name": "INFRA_ST-MONITOR_INFRA", "comProfileId": "4a426722-f5b3-4f50-8431-afca1bd7ecec",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "43c7f290-ec10-42d2-9f9e-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "INFRA-MONITOR-UC4",
+      "target_working_dir": "/data/cft/in/INFRA_ST-MONITOR_INFRA",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "3c31dd86-c792-459d-a975-a19d653f3839",
+    "flowName": "UC4-INFRA_ST-MONITOR_INFRA",
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  }
+]

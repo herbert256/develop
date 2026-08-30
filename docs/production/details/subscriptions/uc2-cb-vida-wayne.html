@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IN/OUT: Subscription: UC2_CB_VIDA_WAYNE</title>
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body class="res-orange">
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="production" data-help="details-subscriptions" data-twin="../../../acceptance/details/subscriptions/uc2-cb-vida-wayne.html"></div>
+<h1>IN/OUT: Subscription: UC2_CB_VIDA_WAYNE</h1>
+<p class="range"><strong>Quiet.</strong> Nothing has been collected and nothing has expired. Either there has been nothing to collect, the partner collects over CFT (which cannot be seen from here), or its visits have so far come up empty. <strong>UC2 status</strong> calls this <strong>Nothing</strong>.</p>
+<h2>Pickup information</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>First pickup</td><td>—</td></tr>
+<tr><td>Last pickup</td><td>—</td></tr>
+<tr><td>Total pickups</td><td>0</td></tr>
+<tr><td>Pickups with actual files</td><td>0</td></tr>
+<tr><td>Total files picked up</td><td>0</td></tr>
+<tr><td>Current waiting files</td><td>0</td></tr>
+<tr><td>Expired files</td><td>0</td></tr>
+<tr><td>Pickup pattern</td><td>—</td></tr>
+</table></div>
+<p class="note">A <strong>pickup</strong> is a successful SSH logon by this flow's pickup account (server log), shared across that account's UC2 subscriptions; a partner collecting over CFT logs none. A visit in which the account <strong>only delivered</strong> files — its UC4 twin flow handing files over — is not a pickup: its logons are shown on their own row and excluded from every other figure. <strong>Files picked up</strong> counts this subscription's collected Files (transfer log); the page's OK figure also counts staged files still <strong>Waiting</strong>, so OK = picked up + waiting — the two match once nothing is left waiting. <strong>With actual files</strong> counts the pickups that collected at least one of them — each collected file credits the logon that took it (the newest at or before its collect stamp). <strong>Current waiting / Expired files</strong> are this flow's own staged files by outcome, as in the Waiting/Expired table. The <strong>pattern</strong> reads the typical spacing of the pickups. <strong>Connection shared with UC4 drop</strong> appears only on hard proof: one and the same technical SSH connection (the transfer log's Session ID) both delivered and collected a file — a delivery over a separate connection, even seconds apart in the same visit, does not count.</p>
+<h2>Features</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>Use case</td><td class="cl"><a href="../../analyses/use-cases.html">UC2 - We are the server; the partner connects in and collects a file from us</a></td></tr>
+<tr><td>Login</td><td class="res-orange cl"><a href="../logins/fe035917.html">FE035917</a></td></tr>
+<tr><td>Account</td><td class="res-orange cl"><a href="../accounts/cb-vida-wayne.html">CB-VIDA-WAYNE</a></td></tr>
+<tr><td>Domain</td><td class="res-orange cl"><a href="../domains/cb.html">CB</a></td></tr>
+<tr><td>Application</td><td class="res-orange cl"><a href="../applications/vida.html">VIDA</a></td></tr>
+<tr><td>Partner</td><td class="res-orange cl"><a href="../partners/wayne.html">WAYNE</a></td></tr>
+<tr><td>From</td><td>-</td></tr>
+<tr><td>To</td><td>/</td></tr>
+</table></div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Incoming connections</h2>
+<div class="tablewrap"><table data-fold="orange|{n} IPs in whitelist without traffic">
+<tr><th>IP</th><th class="num">In</th><th class="num">Out</th></tr>
+<tr data-res="orange"><td><code>198.51.100.60</code></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="orange"><td><code>198.51.100.61</code></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="orange"><td><code>198.51.100.195</code></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="orange"><td><code>198.51.100.196</code></td><td class="num"></td><td class="num"></td></tr>
+</table></div>
+</div>
+</div>
+</body>
+</html>

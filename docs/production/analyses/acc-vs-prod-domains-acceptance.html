@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Acceptance vs production</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="acc-vs-prod" data-twin="../../acceptance/analyses/acc-vs-prod-domains-acceptance.html"></div>
+<h1>Acceptance vs production <span class="grouptag">&larr; Acceptance vs production &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="acc-vs-prod-summary.html">Summary</a><a class="tab" href="acc-vs-prod-accounts-acceptance.html">Accounts</a><a class="tab" href="acc-vs-prod-subscriptions-acceptance.html">Subscriptions</a><a class="tab" href="acc-vs-prod-logins-acceptance.html">Logins</a><a class="tab" href="acc-vs-prod-hosts-acceptance.html">Hosts</a><a class="tab" href="acc-vs-prod-partners-acceptance.html">Partners</a><span class="tab active">Domains</span><a class="tab" href="acc-vs-prod-applications-acceptance.html">Applications</a><a class="tab" href="acc-vs-prod-whitelist-acceptance.html">Whitelist</a><a class="tab" href="acc-vs-prod-subs-partners.html">Subscriptions vs partners</a></p>
+<p class="tabs"><span class="tab active">Only ACC</span><a class="tab" href="acc-vs-prod-domains-both.html">Both</a><a class="tab" href="acc-vs-prod-domains-production.html">Only PRD</a><a class="tab" href="acc-vs-prod-domains-difference.html">Difference</a></p>
+<p class="subtitle">The Domains known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production. Row colors are the standard entity results; in the Both view each column links and tints its own environment. The <code>_</code> and <code>-</code> separators are treated as the same character: names are matched across the environments ignoring the difference and are all shown in the <code>_</code> spelling (each link still opens that environment's own page). The Files column shows each environment's own logged activity over its data window — a name in both environments that is busy in one and blank in the other is dormant there.</p>
+<div class="tablewrap"><table class="fit">
+<tr><th>Domains</th><th class="num">Files</th></tr>
+<tr data-res="red"><td class="cl"><a href="../../acceptance/details/domains/si.html">SI</a></td><td class="num">351</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../../acceptance/details/domains/synt.html">SYNT</a></td><td class="num">70</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../../acceptance/details/domains/wa.html">WA</a></td><td class="num">434</td></tr>
+<tr class="total"><td>Total (3)</td><td class="num">855</td></tr>
+</table></div>
+<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = seen in the server log only. An untinted name was logged but is not configured.</p>
+</body>
+</html>

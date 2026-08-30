@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OUT/IN: Subscription: UC3_AIM_QUOTES_WONKA</title>
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body class="res-blue">
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="acceptance" data-help="details-subscriptions" data-twin="../../../production/404.html"></div>
+<h1>OUT/IN: Subscription: UC3_AIM_QUOTES_WONKA</h1>
+<p class="alert">Never pulled a file, and the poll is failing</p>
+<p class="range">No File has ever reached the transfer log, and the server log's latest word is that we could not retrieve: <strong>20</strong> failure lines, latest 2026-08-29 — a connection failure, or a directory listing that failed once connected. <strong>UC3 status</strong> calls this <strong>server - error</strong>.</p>
+<p class="range"><strong>Next move: network</strong> — either side; start with reachability.</p>
+<div class="logcard"><span class="lc-when">2026-08-29 11:44:51.493</span><span class="lc-msg">Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host</span></div>
+<h2>Features</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>Use case</td><td class="cl"><a href="../../analyses/use-cases.html">UC3 - We are the client and receive a file from the partner</a></td></tr>
+<tr><td>Remote host</td><td class="res-red cl"><a href="../hosts/sftp-wonka-example.html">sftp.wonka.example</a></td></tr>
+<tr><td>Account</td><td class="res-blue cl"><a href="../accounts/aim-quotes-wonka.html">AIM_QUOTES_WONKA</a></td></tr>
+<tr><td>Domain</td><td class="res-red cl"><a href="../domains/aim.html">AIM</a></td></tr>
+<tr><td>Application</td><td class="res-orange cl"><a href="../applications/quotes.html">QUOTES</a></td></tr>
+<tr><td>Partner</td><td class="res-red cl"><a href="../partners/wonka.html">WONKA</a></td></tr>
+<tr><td>Cron</td><td>0 10 7 ? * *</td></tr>
+<tr><td>Schedule</td><td>Daily at 07:10</td></tr>
+<tr><td>From</td><td>/outbox<span class="mask">/*</span></td></tr>
+<tr><td>To</td><td>/data/cft/in/AIM_QUOTES_WONKA</td></tr>
+</table></div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Outgoing connections</h2>
+<div class="tablewrap"><table data-fold="orange|{n} hosts configured without traffic">
+<tr><th>IP</th><th class="num">In</th><th class="num">Out</th><th>Name</th></tr>
+<tr data-res="orange"><td><code>198.51.100.80, 198.51.100.81, 198.51.100.82, 198.51.100.83</code></td><td class="num"></td><td class="num"></td><td class="res-red cl"><a href="../hosts/sftp-wonka-example.html"><code>sftp.wonka.example</code></a></td></tr>
+</table></div>
+</div>
+</div>
+<h2>Last server log messages</h2>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Date</th><th>Time</th><th>Level</th><th>Component</th><th>Message</th></tr>
+<tr class="total"><td>Total (26 line(s))</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>2026-08-29</td><td>11:44:51.493</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host 30426a774d52677963644339742b5470385a6f6a536b364a706e7967346847585262665073647a306f</td></tr>
+<tr><td>2026-08-29</td><td>10:44:51.493</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD': 0 file(s) were found of which 0 matched the pattern. 42547a4a784867346b5a346e304268496f4d55675a584a38437152653466394d5530594c32744e5867464d3d</td></tr>
+<tr><td>2026-08-29</td><td>10:44:50.835</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD' evaluated to: '*' 42547a4a784867346b5a346e304268496f4d55675a584a38437152653466394d5530594c32744e5867464d3d</td></tr>
+<tr><td>2026-08-25</td><td>12:57:09.334</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host 376e4944734a51507a42614247562b64677a704336465032474e6339464c7538722b665847657a6958</td></tr>
+<tr><td>2026-08-25</td><td>11:57:09.334</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD': 0 file(s) were found of which 0 matched the pattern. 772b64356146453849477761644e506c754565523674364164464d4d416f33786a38757056586f61634d313d</td></tr>
+<tr><td>2026-08-25</td><td>11:57:08.954</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD' evaluated to: '*' 772b64356146453849477761644e506c754565523674364164464d4d416f33786a38757056586f61634d313d</td></tr>
+<tr><td>2026-08-24</td><td>10:31:41.106</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host 6358327368705856764936677857654d61326b69697a56556f525a4d55576d372f48336f5965365444</td></tr>
+<tr><td>2026-08-24</td><td>09:31:41.106</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD': 0 file(s) were found of which 0 matched the pattern. 7454792b426b4f36466b465a464a31354a4a6f77304467546a55374a525450426b6c65716e6e2b5630546a3d</td></tr>
+<tr><td>2026-08-24</td><td>09:31:40.633</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD' evaluated to: '*' 7454792b426b4f36466b465a464a31354a4a6f77304467546a55374a525450426b6c65716e6e2b5630546a3d</td></tr>
+<tr><td>2026-08-20</td><td>11:56:28.194</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host 696277513374787367673562675a6749434552682f73724e78674d4a4f434633507057736565585831</td></tr>
+<tr><td>2026-08-20</td><td>10:56:28.194</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD': 0 file(s) were found of which 0 matched the pattern. 686c454f666636783364615869344b4b796150706363316736523439562f742f6d496576756d58445378643d</td></tr>
+<tr><td>2026-08-20</td><td>10:56:27.747</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD' evaluated to: '*' 686c454f666636783364615869344b4b796150706363316736523439562f742f6d496576756d58445378643d</td></tr>
+<tr><td>2026-08-16</td><td>13:08:46.035</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host 6f41566a586b694a3346526635774b386d6552416f4f41355047316c63727463704d577a356659456a</td></tr>
+<tr><td>2026-08-16</td><td>12:08:46.035</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD': 0 file(s) were found of which 0 matched the pattern. 5151752f49646531624a534b4d45346e34545a612b796d6b5673797264496f6b3251304e4e5178465034473d</td></tr>
+<tr><td>2026-08-16</td><td>12:08:45.466</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD' evaluated to: '*' 5151752f49646531624a534b4d45346e34545a612b796d6b5673797264496f6b3251304e4e5178465034473d</td></tr>
+<tr><td>2026-08-11</td><td>12:08:04.894</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host 503039776949446d6a6a77365331736e4a76366774316251365a6c786c6a46574e324d495166373542</td></tr>
+<tr><td>2026-08-11</td><td>11:08:04.894</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD': 0 file(s) were found of which 0 matched the pattern. 423256554f3355714a67374852767a4c38704b7967676845783465637865647934626c546d6668754664763d</td></tr>
+<tr><td>2026-08-11</td><td>11:08:04.258</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD' evaluated to: '*' 423256554f3355714a67374852767a4c38704b7967676845783465637865647934626c546d6668754664763d</td></tr>
+<tr><td>2026-08-07</td><td>13:32:51.982</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host 56333256334d6439553876324234746978386e674b757849446f597567506c536359724c5866592b7a</td></tr>
+<tr><td>2026-08-07</td><td>12:32:51.982</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD': 0 file(s) were found of which 0 matched the pattern. 314a6e6c73792f6838595046766549626c3779724a35335149316251314b3778372b6c58746636626a36703d</td></tr>
+<tr><td>2026-08-07</td><td>12:32:51.372</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD' evaluated to: '*' 314a6e6c73792f6838595046766549626c3779724a35335149316251314b3778372b6c58746636626a36703d</td></tr>
+<tr><td>2026-08-02</td><td>12:19:41.594</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host 394e4b524e6b55676e6e6d5a4651344650616a65612b4d5444522f61384445324c45446b446766634f</td></tr>
+<tr><td>2026-08-02</td><td>11:19:41.594</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD': 0 file(s) were found of which 0 matched the pattern. 67496d613850756a636a6434416d634e463346376b6c4e6f706646364f2b4f6c4c767232655a725a334a413d</td></tr>
+<tr><td>2026-08-02</td><td>11:19:41.169</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD' evaluated to: '*' 67496d613850756a636a6434416d634e463346376b6c4e6f706646364f2b4f6c4c767232655a725a334a413d</td></tr>
+<tr><td>2026-07-29</td><td>13:44:28.682</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host 44514431696f7633592f6c567a543642346e51653433694c4d68795833766b79626d696f4a6738672f</td></tr>
+<tr><td>2026-07-28</td><td>11:19:00.454</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host 6b42796559493139554646306655617779714c2b666c6e70756b766d46366378757536356267445273</td></tr>
+</table></div>
+</body>
+</html>

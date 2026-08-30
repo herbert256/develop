@@ -1,0 +1,13 @@
+# input/skip.txt — the SKIP LIST: a matched rule DROPS THE WHOLE RECORD
+# (matched cache rows go to _skipped.tsv for the Skipped report). TSV:
+#   <field> <rule> <value>
+#   field: account | login | site | message | any
+#   rule:  contains (default, case-insensitive) | exact | regex
+# A line with no TAB is the legacy short form: any contains <line>.
+# Read only through bin/skiplist.sh. See CLAUDE.md, "The attribution chain".
+#
+# SAMPLE ESTATE: the generator plants traffic each rule catches — the
+# heartbeat flow, the ACMETEST file names and a migration service account.
+any	contains	HEARTBEAT
+any	contains	ACMETEST
+account	exact	SVC_MIGRATION

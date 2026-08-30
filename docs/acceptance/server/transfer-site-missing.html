@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transfer site missing</title>
+<meta name="report-dates" content="2026-06-23,2026-06-24,2026-06-25,2026-06-26,2026-06-27,2026-06-28,2026-06-29,2026-06-30,2026-07-01,2026-07-02,2026-07-03,2026-07-04,2026-07-05,2026-07-06,2026-07-07,2026-07-08,2026-07-09,2026-07-10,2026-07-11,2026-07-12,2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22,2026-07-23,2026-07-24,2026-07-25,2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="acceptance-server">
+<meta name="report-key" content="transfer-site-missing">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-transfer-site-missing" data-twin="../../production/server/transfer-site-missing.html"></div>
+<h1>Transfer site missing <span class="grouptag">&larr; Routing &amp; Polling &larr; Server</span></h1>
+<p class="tabs"><a class="tab" href="remote-poll.html">Remote Polls</a><span class="tab active">Transfer site missing</span></p>
+<p class="range"><strong>&quot;Transfer site ID is not present in environment. Using host, port and user: …&quot;</strong> — SecureTransport ran a transfer with <strong>no transfer site</strong> in its environment and fell back to the communication profile's raw <strong>host, port and user</strong>. The transfer still moves, so this is a <strong>configuration gap</strong> rather than a runtime failure: a route or profile that lost its transfer-site reference. It is the one server-log message that names NO flow — it says the transfer carried no site — so the rows here are <strong>endpoints</strong>, not subscriptions.</p>
+<p class="range"><strong>26 warning(s)</strong> in the log window. Hosts that have moved a file OK <strong>since</strong> their newest warning are <strong>not listed</strong>: a later OK transfer through the same endpoint says the gap is closed. That cleared <strong>1</strong> host(s) carrying <strong>16</strong> warning(s).</p>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Host</th><th class="num">Warnings</th><th>Users</th><th>Ports</th><th>First</th><th>Last</th></tr>
+<tr data-loglines="2026-08-29 09:14:37.194  Warning TM  Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT2026-08-22 03:23:40.173  Warning TM  Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT2026-08-15 12:37:48.508  Warning TM  Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT2026-08-08 04:16:06.791  Warning TM  Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT2026-08-01 20:04:46.551  Warning TM  Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT2026-07-25 06:27:37.827  Warning TM  Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT2026-07-18 23:29:37.782  Warning TM  Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT2026-07-11 17:48:12.102  Warning TM  Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT2026-07-04 16:40:44.091  Warning TM  Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT2026-06-27 01:22:45.362  Warning TM  Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT"><td>sftp-legacy.acme.example</td><td class="num warn">10</td><td>C208-MFT</td><td>22</td><td>2026-06-27 01:22:45.362</td><td>2026-08-29 09:14:37.194</td></tr>
+<tr class="total"><td>Total (1 host(s))</td><td class="num warn">10</td><td></td><td></td><td></td><td></td></tr>
+</table></div>
+<p class="note">The host, port and user are the values the fallback used, read from the message itself. A host appears once however many flows use it: the message names none of them, which is the point — with no transfer site there is nothing to attribute it to. Click a row to expand its 10 most recent warnings.</p>
+<p class="note">Why it matters: the connection is made on profile values alone, so nothing about it is governed by the subscription — no site-level routing, no site-level limits. It also leaves the endpoint carrying evidence no flow can own, which is why <strong>bin/build/result.sh</strong> reddens a host on unattributable ERRORS only and leaves these warnings to this page.</p>
+</body>
+</html>

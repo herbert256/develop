@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Help: UC1 status — Cloud Reports</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Cloud</a><span class="envpair"><a class="envswitch" data-target="acceptance">Acceptance</a><span class="envsep">/</span><a class="envswitch" data-target="production">Production</a></span><span class="entgroup"><a class="entlabel" href="../acceptance/transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../acceptance/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../acceptance/file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/transfer/index.html">Start page</a><a href="../acceptance/transfer/topview.html">Top view</a><a href="../acceptance/transfer/entities/subscription-all.html">Entities</a><a href="../acceptance/transfer/file-journey-patterns.html">Patterns</a><a href="../acceptance/transfer/activity-per-day.html">Activity over Time</a><a href="../acceptance/transfer/volume-per-day.html">Volume, Sizes &amp; Files</a><a href="../acceptance/transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../acceptance/transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../acceptance/transfer/anomalies.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/server/index.html">Start page</a><a href="../acceptance/server/topview.html">Top view</a><a href="../acceptance/server/errors-per-day.html">Errors</a><a href="../acceptance/server/pickups.html">Transfers &amp; Delivery</a><a href="../acceptance/server/logons-incoming.html">Logons &amp; Connections</a><a href="../acceptance/server/ssh-security.html">Security</a><a href="../acceptance/server/platform-health.html">Operations &amp; Capacity</a><a href="../acceptance/server/remote-poll.html">Routing &amp; Polling</a><a href="../acceptance/server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/analyses/index.html">Start page</a><a href="../acceptance/transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../acceptance/analyses/use-cases.html">Configuration</a><a href="../acceptance/analyses/partner-scorecard.html">Partners</a><a href="../acceptance/analyses/accounts-in-boxes.html">Boxes</a><a href="../acceptance/analyses/failed.html">Errors</a><a href="../acceptance/analyses/acc-vs-prod-summary.html">Acceptance vs production</a></div></div></nav><a class="dashlink" href="../acceptance/dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../acceptance/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../acceptance/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>UC1 status</h1>
+<h2>What this shows</h2>
+<p>Every configured <strong>UC1</strong> subscription — the push use case, where <em>we</em> are the client and send a file out to the partner as soon as one appears — in exactly one of six statuses. It is one of a set of four: <a href="server-uc2-status.html">UC2 status</a> does the same for the flows the partner collects from us, <a href="server-uc3-status.html">UC3 status</a> for the ones we poll and pull, and <a href="server-uc4-status.html">UC4 status</a> for the ones the partner delivers to us. The info boxes above the table give the count per status. One row per subscription:</p>
+<ul>
+<li><strong>Status</strong> — one of six, a complete partition (see below).</li>
+<li><strong>Subscription</strong> — the configured name, linking to its detail page.</li>
+<li><strong>Files</strong> / <strong>OK</strong> / <strong>Error</strong> / <strong>Last file</strong> — the transfer-log history: logical transfers pushed out, split by outcome, and the date of the newest one. All blank on a subscription the transfer log has never seen.</li>
+<li><strong>Route runs</strong> — how often Advanced Routing started this subscription's route. A UC1 push is one route run per file, so this is roughly "how often did we have something to send".</li>
+<li><strong>Problems</strong> — server-log lines saying the send could not be made, or that the partner could not be reached at all.</li>
+<li><strong>Last log</strong> — the newest server-log line of either kind. It answers "is this flow still running at all", so on a <strong>server - error</strong> row it can be newer than the failures the drill shows: the route still runs, it just last failed earlier.</li>
+</ul>
+<h2>The six statuses</h2>
+<p>The first three are the <strong>transfer-log</strong> verdict, read off the subscription's site-wide result colour:</p>
+<ul>
+<li><strong>ok</strong> (green) — its latest File was delivered. The flow is working.</li>
+<li><strong>error</strong> (red) — its latest File failed <em>and</em> it has never once delivered an OK File in the window. Nothing here ever worked, which points at the configuration or a partner side that was never finished rather than at something that broke.</li>
+<li><strong>ok -> error</strong> (red, was green) — its latest File failed, but it <em>has</em> delivered OK Files before: a regression. Something that used to work stopped, so there is a change to find.</li>
+</ul>
+<p>Then the <strong>blue</strong> subscriptions — seen in the server log, never once in the transfer log. They have no transfer history at all, so the log's own lines are the only evidence there is:</p>
+<ul>
+<li><strong>server - error</strong> — a failure names the subscription: <em>Could not send file</em>, <em>An error occurred while sending</em>, a routing step that <em>finished with error</em>, or a <em>Connection failure</em> reaching the partner in the first place.</li>
+<li><strong>server - no result</strong> — the server log has seen the subscription, but no failure <em>names</em> it. It can still have been marked blue on a line attributed to its host or account rather than to itself — acceptance's single case is a failed test connection to the partner host — and its detail page shows that line.</li>
+</ul>
+<p>And last, the largest:</p>
+<ul>
+<li><strong>not seen</strong> (orange) — configured, and never observed in <em>either</em> log. Not a failure so much as an open question: a flow that was set up and never used, or one whose partner side was never finished. On acceptance this is 97 of 185 subscriptions, more than half the report.</li>
+</ul>
+<h2>How it's computed</h2>
+<p>The roster is every <code>UC1</code> name in the FlowManager subscription export, so a subscription appears whether or not it has ever run. Green/red/blue/orange is the site-wide <strong>result</strong> colour; Files/OK/Error come from the transfer cache (<code>_files.tsv</code>), and the route signals from the server parse cache.</p>
+<p><strong>error vs ok -> error</strong> is a per-<em>File</em> question, not a per-day one: right after any OK File the subscription <em>was</em> green, so a red subscription with even one OK File in the window counts as a regression. That is deliberately finer than <a href="from-green-to-red.html">From green to red</a>, which buckets by whole days and so misses a flow that fails at the end of every day while still delivering within them.</p>
+<p>The server counts come from the Advanced Routing (<code>AR…</code>) lines, which carry the route name in their <em>second</em> bracket group (<code>AR<i>n</i>: [account] [route] …</code>), plus the two client-side failures that mean we never reached the partner at all.</p>
+<h2>How it differs from UC3 status</h2>
+<p>Two deliberate differences, both because a push is not a pull:</p>
+<ul>
+<li><strong>There is no "no files" status.</strong> UC3 polls, so "the poll worked and there was nothing to fetch" is a real and common state with its own log line. A UC1 push is triggered by a file <em>appearing</em>, so no file simply means no route run and no log line — there is nothing to report.</li>
+<li><strong>"not seen" is a first-class status here</strong>, not the safety net it is on UC3 status. More than half the UC1 subscriptions are in it; UC3 has none at all, so its box stays hidden there.</li>
+</ul>
+<p>The blue split also needs no tie-breaker. On UC3 two rival explanations — empty polls and failures — compete on the same subscription, so the most recent line arbitrates. Here only one explanation is on offer, so a blue subscription either has a failure or it does not.</p>
+<h2>Why it matters</h2>
+<p>A UC1 flow is the one where <em>we</em> are the active party, so a failure is ours to fix: our route ran, our send failed, our connection was refused. That makes the red and <strong>server - error</strong> rows directly actionable in a way an inbound flow's are not. The large <strong>not seen</strong> block is a different question and worth a periodic look — configuration that has never carried a file is either waiting on a partner or should not be there, and either way it is quietly counted as part of the estate.</p>
+</main>
+</main>
+
+
+</body>
+</html>

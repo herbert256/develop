@@ -1,0 +1,39 @@
+# bin/sample/seed/partners.tsv — the fake partner-organisation vocabulary.
+# One row per external org: TOKEN <TAB> HOST <TAB> IP1 <TAB> NIPS <TAB> CLASS
+#   TOKEN  the PDA partner token accounts/sites carry (UPPERCASE, no helper
+#          tokens: PWD DEST SRC CCP SA IR OTHER DWH RRE PUO stay qualifiers)
+#   HOST   the org's endpoint for OUT-side flows (RFC 2606 .example TLD)
+#   IP1    first address of its RFC 5737 TEST-NET slice (inbound sources +
+#          whitelist entries come from here)
+#   NIPS   slice width (IP1 .. IP1+NIPS-1)
+#   CLASS  the org's visit rhythm: hourly | daily | business | erratic | night
+GLOBEX	sftp.globex.example	198.51.100.10	4	hourly
+INITECH	files.initech.example	198.51.100.20	3	business
+UMBRELLA	mft.umbrella.example	198.51.100.30	4	daily
+HOOLI	transfer.hooli.example	198.51.100.40	2	business
+STARK	sftp.stark.example	198.51.100.50	3	erratic
+WAYNE	ftp.wayne.example	198.51.100.60	2	night
+TYRELL	exchange.tyrell.example	198.51.100.70	3	daily
+WONKA	sftp.wonka.example	198.51.100.80	4	hourly
+OSCORP	mft.oscorp.example	198.51.100.90	2	business
+VANDELAY	imports.vandelay.example	198.51.100.100	3	daily
+PIEDPIPER	box.piedpiper.example	198.51.100.110	2	erratic
+MASSIVE	sftp.massive.example	198.51.100.120	3	business
+SOYLENT	feeds.soylent.example	203.0.113.10	3	daily
+CYBERDYNE	sftp.cyberdyne.example	203.0.113.20	4	hourly
+WEYLAND	mft.weyland.example	203.0.113.30	2	night
+BLUTH	docs.bluth.example	203.0.113.40	2	erratic
+DUNDER	paper.dunder.example	203.0.113.50	3	business
+SABRE	sftp.sabre.example	203.0.113.60	2	daily
+PRIMATECH	files.primatech.example	203.0.113.70	3	business
+ABSTERGO	sftp.abstergo.example	203.0.113.80	2	daily
+APERTURE	science.aperture.example	203.0.113.90	3	hourly
+BLACKMESA	sftp.blackmesa.example	203.0.113.100	2	erratic
+GEKKO	trades.gekko.example	203.0.113.110	3	business
+DUFF	brew.duff.example	203.0.113.120	2	daily
+ZORG	sftp.zorg.example	203.0.113.130	2	night
+MONARCH	wings.monarch.example	203.0.113.140	2	business
+P2P	clearing.p2p.example	203.0.113.150	2	daily
+GLOBEXX	sftp.globex.example	198.51.100.10	4	hourly
+WNK	sftp.wonka.example	198.51.100.80	4	hourly
+WONKA-PUO	sftp.wonka.example	198.51.100.80	4	hourly

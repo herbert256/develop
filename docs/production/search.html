@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Search</title>
+<meta name="report-key" content="entity-search">
+<link rel="stylesheet" href="../assets/style.css?v=3733426975">
+<script src="../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="search-data.js?v=54010363" defer></script>
+<script src="../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="" data-b="../" data-env="production" data-help="entity-search" data-twin="../acceptance/search.html"></div>
+<h1>Search</h1>
+<p class="range">Type in the box below to search <strong>every configured or logged entity by name</strong> — the checkboxes narrow the kinds (none checked = all). Wildcards and operators are explained right under the box; rows tint by each entity's status.</p>
+<div class="tablewrap"><table class="wide" data-start-empty="1" data-esearch="1">
+<tr><th>Name</th><th>Direction</th><th>Type</th><th class="num">Error</th><th class="num">OK</th><th>Last seen</th></tr>
+<tr class="total"><td>Total (287 rows)</td><td></td><td></td><td class="num failed">1513</td><td class="num processed">90466</td><td></td></tr>
+</table></div>
+<p class="note">Row colors: <strong>green</strong> = last transfer OK (or, for a row with no status, one that moved files), <strong>red</strong> = last transfer Error or server-log errors after the last OK transfer, <strong>orange</strong> = configured but never seen (or moved no files), <strong>blue</strong> = surfaced only in the Server logs.</p>
+</body>
+</html>

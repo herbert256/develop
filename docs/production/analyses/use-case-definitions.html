@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Use Case definitions</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="use-cases" data-twin="../../acceptance/analyses/use-case-definitions.html"></div>
+<h1>Use Case definitions <span class="grouptag">&larr; Configuration &larr; Analyses</span></h1>
+<p class="tabs"><span class="tab active">Use cases</span><a class="tab" href="uc2-visits.html">UC2 pickup visits</a><a class="tab" href="accounts.html">Accounts</a><a class="tab" href="account-sharing.html">Account sharing</a><a class="tab" href="twins.html">Twins</a><a class="tab" href="cronjobs.html">Cronjobs</a><a class="tab" href="config-hygiene.html">Config hygiene</a><a class="tab" href="whitelist-audit.html">Whitelist audit</a><a class="tab" href="cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="../transfer/sources-and-targets.html">Sources and Targets</a><a class="tab" href="../transfer/skipped.html">Skipped</a><a class="tab" href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a><a class="tab" href="xref/cross-account-subscriptions.html">Cross References</a></p>
+<p class="subtitle">What each UC&lt;n&gt; prefix means. <strong>UC1&ndash;UC4</strong> bridge one partner to our internal application; <strong>UC5&ndash;UC8</strong> are direct relays with no CFT leg, one per source/target push-pull combination &mdash; each links <strong>two partners</strong>, which is why a relay account is named <code>domain_partner_partner</code> rather than the <code>domain_application_partner</code> of UC1&ndash;UC4; UC6 and UC7 have a <strong>published template but no subscriptions yet</strong> (their rows are template-derived). <strong>Trigger</strong> is what starts the flow: <em>OpsWise</em> = our OpsWise automation initiates (UC1, UC8), <em>Partner</em> = the partner connects in (UC2, UC4, UC7), <em>Cronjob</em> = a Quartz receive scheduler polls the partner (UC3, and the pull side of UC5/UC6). The operational counts per use case are on the <strong>Use Case traffic</strong> tab; the flow templates behind them are in the <strong>Templates</strong> table below.</p>
+<p class="tabs"><a class="tab" href="use-cases.html">Use Case traffic</a><span class="tab active">Use Case definitions</span><a class="tab" href="use-case-patterns.html">Use Case patterns</a><a class="tab" href="uc-status-uc1.html">Use Case Status</a></p>
+<div class="tablewrap"><table class="index fit" data-nosearch="1">
+<tr><th>Use Case</th><th>Trigger</th><th>We are</th><th>We</th><th>Description</th></tr>
+<tr><td><a href="../use-cases/uc1-total.html">UC1</a></td><td><a href="../use-cases/uc1-total.html">OpsWise</a></td><td><a href="../use-cases/uc1-total.html">Client</a></td><td><a href="../use-cases/uc1-total.html">Send</a></td><td>We are the client and send a file to the partner</td></tr>
+<tr><td><a href="../use-cases/uc2-total.html">UC2</a></td><td><a href="../use-cases/uc2-total.html">Partner</a></td><td><a href="../use-cases/uc2-total.html">Server</a></td><td><a href="../use-cases/uc2-total.html">Send</a></td><td>We are the server; the partner connects in and collects a file from us</td></tr>
+<tr><td><a href="../use-cases/uc3-total.html">UC3</a></td><td><a href="../use-cases/uc3-total.html">Cronjob</a></td><td><a href="../use-cases/uc3-total.html">Client</a></td><td><a href="../use-cases/uc3-total.html">Receive</a></td><td>We are the client and receive a file from the partner</td></tr>
+<tr><td><a href="../use-cases/uc4-total.html">UC4</a></td><td><a href="../use-cases/uc4-total.html">Partner</a></td><td><a href="../use-cases/uc4-total.html">Server</a></td><td><a href="../use-cases/uc4-total.html">Receive</a></td><td>We are the server; the partner connects in and delivers a file to us</td></tr>
+<tr><td><a href="../use-cases/none-total.html">(none)</a></td><td></td><td></td><td></td><td></td></tr>
+<tr class="total"><td>Total (5 use cases)</td><td></td><td></td><td></td><td></td></tr>
+</table></div>
+<p class="range">Consistency check: every configured subscription&rsquo;s direction matches its UC prefix (UC1/UC3/UC5 outbound, UC2/UC4/UC7 inbound; the mixed relays UC6/UC8 are exempt) &mdash; <strong>no exceptions</strong>.</p>
+</body>
+</html>

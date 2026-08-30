@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cross Reference: Application - Account</title>
+<meta name="report-key" content="cross-application">
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="production" data-help="cross-reference" data-twin="../../../acceptance/analyses/xref/cross-application-account.html"></div>
+<h1>Cross Reference: Application - Account <span class="grouptag">&larr; Configuration &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="../use-cases.html">Use cases</a><a class="tab" href="../uc2-visits.html">UC2 pickup visits</a><a class="tab" href="../accounts.html">Accounts</a><a class="tab" href="../account-sharing.html">Account sharing</a><a class="tab" href="../twins.html">Twins</a><a class="tab" href="../cronjobs.html">Cronjobs</a><a class="tab" href="../config-hygiene.html">Config hygiene</a><a class="tab" href="../whitelist-audit.html">Whitelist audit</a><a class="tab" href="../cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="../../transfer/sources-and-targets.html">Sources and Targets</a><a class="tab" href="../../transfer/skipped.html">Skipped</a><a class="tab" href="../../transfer/not-in-flow-manager.html">Not in Flow Manager</a><span class="tab active">Cross References</span></p>
+<p class="range">Which Application goes with which other entity: every pair seen together on at least one log row, PLUS the configured pairs that never appear (an analysis of relationships — no counts, no dates). The two tab rows pick the pair of entity types; each cell tints by its own entity's status (green = last transfer OK, orange = never seen, red = Error, blue = server-log only).</p>
+<p class="tabs"><span class="tab disabled">Account</span><a class="tab" href="cross-login-account.html">Login</a><a class="tab" href="cross-subscription-account.html">Subscriptions</a><a class="tab" href="cross-host-account.html">Hosts</a><a class="tab" href="cross-partner-account.html">Partners</a><span class="tab active">Applications</span><a class="tab" href="cross-domain-account.html">Domains</a></p>
+<p class="tabs"><span class="tab active">Account</span><a class="tab" href="cross-application-login.html">Login</a><a class="tab" href="cross-application-subscriptions.html">Subscriptions</a><a class="tab" href="cross-application-hosts.html">Hosts</a><a class="tab" href="cross-application-partners.html">Partners</a><span class="tab disabled">Applications</span><a class="tab" href="cross-application-domains.html">Domains</a><span class="tabsep"></span><a class="tab" href="cross-account-applications.html">Swap</a></p>
+<div class="tablewrap"><table class="grouped">
+<tr><th>Application</th><th>Account</th></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/applications/archive.html">ARCHIVE</a></td><td class="res-orange cl"><a href="../../details/accounts/hr-archive-zorg.html">HR_ARCHIVE_ZORG</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/applications/archive.html">ARCHIVE</a></td><td class="res-green cl"><a href="../../details/accounts/it-archive-initech.html">IT_ARCHIVE_INITECH</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/billing.html">BILLING</a></td><td class="res-green cl"><a href="../../details/accounts/fin-billing-globex.html">FIN_BILLING_GLOBEX</a></td></tr>
+<tr data-seen="1"><td class="res-red cl"><a href="../../details/applications/claims.html">CLAIMS</a></td><td class="res-red cl"><a href="../../details/accounts/ab-claims-umbrella.html">AB_CLAIMS_UMBRELLA</a></td></tr>
+<tr data-seen="0"><td class="res-red cl"><a href="../../details/applications/claims.html">CLAIMS</a></td><td class="res-orange cl"><a href="../../details/accounts/fin-claims-monarch.html">FIN_CLAIMS_MONARCH</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/cosmos.html">COSMOS</a></td><td class="res-green cl"><a href="../../details/accounts/aps-cosmos-globex.html">APS-COSMOS-GLOBEX</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/cosmos.html">COSMOS</a></td><td class="res-green cl"><a href="../../details/accounts/cd-cosmos-wonka.html">CD_COSMOS_WONKA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/ekdsi.html">EKDSI</a></td><td class="res-green cl"><a href="../../details/accounts/it-ekdsi-cyberdyne.html">IT-EKDSI-CYBERDYNE</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/applications/export.html">EXPORT</a></td><td class="res-orange cl"><a href="../../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/feeds.html">FEEDS</a></td><td class="res-green cl"><a href="../../details/accounts/rec-feeds-soylent.html">REC_FEEDS_SOYLENT</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/fmgenlog.html">FMGENLOG</a></td><td class="res-green cl"><a href="../../details/accounts/aps-fmgenlog-cyberdyne.html">APS_FMGENLOG_CYBERDYNE</a></td></tr>
+<tr data-seen="0"><td class="res-blue cl"><a href="../../details/applications/fmreplerr.html">FMREPLERR</a></td><td class="res-blue cl"><a href="../../details/accounts/aps-fmreplerr-cyberdyne.html">APS_FMREPLERR_CYBERDYNE</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/applications/ikaz.html">IKAZ</a></td><td class="res-orange cl"><a href="../../details/accounts/zg-ikaz-bluth.html">ZG_IKAZ_BLUTH</a></td></tr>
+<tr data-seen="0"><td class="res-blue cl"><a href="../../details/applications/invoice.html">INVOICE</a></td><td class="res-blue cl"><a href="../../details/accounts/aps-invoice-stark.html">APS_INVOICE_STARK</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/krp.html">KRP</a></td><td class="res-green cl"><a href="../../details/accounts/cdv-krp-tdi-wonka.html">CDV-KRP-TDI-WONKA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/lake.html">LAKE</a></td><td class="res-green cl"><a href="../../details/accounts/aim-lake-piedpiper.html">AIM-LAKE-PIEDPIPER</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/match.html">MATCH</a></td><td class="res-green cl"><a href="../../details/accounts/zg-match-hooli.html">ZG-MATCH-HOOLI</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/merlijn.html">MERLIJN</a></td><td class="res-green cl"><a href="../../details/accounts/odv-merlijn-sabre-d.html">ODV_MERLIJN_SABRE_D</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/miaz.html">MIAZ</a></td><td class="res-green cl"><a href="../../details/accounts/zk-miaz-initech.html">ZK-MIAZ-INITECH</a></td></tr>
+<tr data-seen="1"><td class="res-red cl"><a href="../../details/applications/mortgage.html">MORTGAGE</a></td><td class="res-red cl"><a href="../../details/accounts/fs-mortgage-sabre.html">FS_MORTGAGE_SABRE</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/nas.html">NAS</a></td><td class="res-green cl"><a href="../../details/accounts/ab-nas-globex.html">AB_NAS_GLOBEX</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/payments.html">PAYMENTS</a></td><td class="res-green cl"><a href="../../details/accounts/inv-payments-hooli.html">INV-PAYMENTS-HOOLI</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/pension.html">PENSION</a></td><td class="res-green cl"><a href="../../details/accounts/zg-pension-hooli.html">ZG_PENSION_HOOLI</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/postings.html">POSTINGS</a></td><td class="res-green cl"><a href="../../details/accounts/gl-postings-gekko.html">GL_POSTINGS_GEKKO</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/printmgmt.html">PRINTMGMT</a></td><td class="res-green cl"><a href="../../details/accounts/cd-printmgmt-wonka.html">CD_PRINTMGMT_WONKA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/recon.html">RECON</a></td><td class="res-green cl"><a href="../../details/accounts/it-recon-hooli.html">IT_RECON_HOOLI</a></td></tr>
+<tr data-seen="1"><td class="res-red cl"><a href="../../details/applications/roster.html">ROSTER</a></td><td class="res-red cl"><a href="../../details/accounts/hr-roster-umbrella.html">HR_ROSTER_UMBRELLA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/sapbhp.html">SAPBHP</a></td><td class="res-green cl"><a href="../../details/accounts/it-sapbhp-gekko.html">IT-SAPBHP-GEKKO</a></td></tr>
+<tr data-seen="0"><td class="res-blue cl"><a href="../../details/applications/scan.html">SCAN</a></td><td class="res-blue cl"><a href="../../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/st-monitor.html">ST-MONITOR</a></td><td class="res-green cl"><a href="../../details/accounts/infra-st-monitor-infra.html">INFRA_ST-MONITOR_INFRA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/sync.html">SYNC</a></td><td class="res-green cl"><a href="../../details/accounts/crm-sync-initech.html">CRM-SYNC-INITECH</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/syshub.html">SYSHUB</a></td><td class="res-green cl"><a href="../../details/accounts/aps-syshub-soylent.html">APS_SYSHUB_SOYLENT</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/applications/vida.html">VIDA</a></td><td class="res-green cl"><a href="../../details/accounts/aps-vida-umbrella.html">APS-VIDA-UMBRELLA</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/applications/vida.html">VIDA</a></td><td class="res-orange cl"><a href="../../details/accounts/cb-vida-wayne.html">CB-VIDA-WAYNE</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/applications/ziba.html">ZIBA</a></td><td class="res-orange cl"><a href="../../details/accounts/cd-ziba-gekko.html">CD-ZIBA-GEKKO</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/applications/zka.html">ZKA</a></td><td class="res-green cl"><a href="../../details/accounts/zg-zka-hooli.html">ZG-ZKA-HOOLI</a></td></tr>
+<tr class="total"><td colspan="2">Total (36 pair(s))</td></tr>
+</table></div>
+<p class="note">An analysis of the cross references, not a traffic report. Each cell is colored by that entity result: <strong>light green</strong> = last transfer OK, <strong>light orange</strong> = configured but never seen, <strong>light red</strong> = last transfer Error, <strong>light blue</strong> = surfaced only by the Server → Transfer step (bin/build/seen-in-server-log.sh) with no real transfer. The entities are per-leg attributes (a leg inherits its File's partner/application/domain attribution); pairs where either value is blacklisted or unattributed are not listed. There is no date filter here — seen means seen anywhere in the loaded logs.</p>
+</body>
+</html>

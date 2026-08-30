@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Analyses</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="index" data-twin="../../production/analyses/index.html"></div>
+<h1>Analyses</h1>
+<p class="subtitle">Configuration vs reality, across both logs: which configured names are actually seen, and what belongs together.</p>
+<div class="tablewrap"><table class="index" data-nosort="1">
+<tr><th colspan="2">Coverage &amp; seen</th></tr>
+<tr><td><a href="../transfer/entity-coverage-accounts.html">Entity coverage</a></td><td class="desc">Per account, partner, domain or application: does each configured direction actually work &mdash; proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out).</td></tr>
+<tr><td><a href="first-seen.html">First seen</a></td><td class="desc">On what day each partner, subscription, account, login and remote host was first seen in the transfer logs &mdash; the configured names never seen there on top; every count links its item list.</td></tr>
+<tr><td><a href="data-diff.html">Since yesterday</a></td><td class="desc">The data diff against the newest log day: new red flips, flows that just crossed the quiet threshold, recoveries, first-seen entities by name and new server-log-only names.</td></tr>
+<tr><td><a href="../file-search-24-hours.html">File search</a></td><td class="desc">Find a File by its file name &mdash; date, subscription, size and CoreId, OK rows green and Error rows red; six windows (24 hours through a month), each searched with its own Search button and the query carried between them.</td></tr>
+<tr><td><a href="../transfer/seen-in-server-log.html">Seen in server log</a></td><td class="desc">The entities that appear in the SERVER log only (blue): their seed messages, what happened, and the status rollups with the blue deltas.</td></tr>
+<tr><th colspan="2">Configuration</th></tr>
+<tr><td><a href="use-cases.html">Use cases</a></td><td class="desc">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; Total, Server (server-log only), Not seen, Error and OK per use case; tabs for the <strong>Use Case definitions</strong> (who connects, which way the file travels, what triggers it) and the <strong>Use Case patterns</strong> (the accounts grouped by their subscription mix, e.g. <code>UC2 (1) UC4 (1)</code>).</td></tr>
+<tr><td><a href="uc2-visits.html">UC2 pickup visits</a></td><td class="desc">What each UC2 partner actually does when it connects: collected, two-way exchange, delivery-only (the UC4 twin) or empty-handed visits.</td></tr>
+<tr><td><a href="accounts.html">Accounts</a></td><td class="desc">The accounts (partners) and their communication profiles &mdash; naming vs configured type/auth, insecure and unrestricted endpoints, conflicting host/whitelist setup, plus account &amp; login integrity checks (non-standard or shared logins, password profiles without a password, and more).</td></tr>
+<tr><td><a href="account-sharing.html">Account sharing</a></td><td class="desc">Which accounts serve more than one subscription, and in what shape: UC2+UC4 mailbox pairs, UC1+UC3 outbound pairs, fan-outs and both-directions accounts.</td></tr>
+<tr><td><a href="twins.html">Twins</a></td><td class="desc">Every twin pair on one page: subscriptions that are the same flow configured the opposite way (naming slips highlighted) and the accounts spelled with both separators.</td></tr>
+<tr><td><a href="cronjobs.html">Cronjobs</a></td><td class="desc">The configured polling schedules (UC3 &mdash; ST pulls from the partner), each Quartz cron expression translated to plain English.</td></tr>
+<tr><td><a href="config-hygiene.html">Config hygiene</a></td><td class="desc">The cleanup backlog: likely-duplicate twins (case / separator folds) and orphaned objects nothing references.</td></tr>
+<tr><td><a href="whitelist-audit.html">Whitelist audit</a></td><td class="desc">Whitelisted partner IPs vs the addresses actually connecting: used, connect-only, never seen (prunable), and the sources without any whitelist entry.</td></tr>
+<tr><td><a href="../transfer/sources-and-targets.html">Sources and Targets</a></td><td class="desc">The From/To folder paths of every subscription (shown &ldquo;path @ host&rdquo; for remote endpoints, like Search): values used as both a source and a target, and sources/targets shared by more than one subscription.</td></tr>
+<tr><td><a href="../transfer/skipped.html">Skipped</a></td><td class="desc">The accounts and subscriptions ignored because their name matches the skip list (<code>input/skip.txt</code>) &mdash; removed from the config and both logs so no report counts them &mdash; plus the skipped transfer/server log-line counts.</td></tr>
+<tr><td><a href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a></td><td class="desc">Every entity value seen in the transfer logs that the current FlowManager configuration does not know &mdash; all eight entity lists checked.</td></tr>
+<tr><td><a href="xref/cross-account-subscriptions.html">Cross References</a></td><td class="desc">Every pair of the eight entities cross-tabulated, both ways &mdash; which values appear together on at least one transfer, the configured-but-never-seen pairs flagged.</td></tr>
+<tr><td><a href="cleanup-backlog.html">Cleanup backlog</a></td><td class="desc">Every cleanup signal merged into one ranked decommission-candidate list, safest first &mdash; config orphans, never-seen subscriptions, unused whitelist addresses, cron-less polls and long-quiet entities.</td></tr>
+<tr><th colspan="2">Partners</th></tr>
+<tr><td><a href="partner-scorecard.html">Partner scorecard</a></td><td class="desc">One composite health score per partner relation, worst first &mdash; error share, trend, pickup wait, security posture, endpoint redundancy and silence, every component its own column, with the traffic-concentration panel.</td></tr>
+<tr><td><a href="blast-radius.html">Blast radius</a></td><td class="desc">What stops when a remote host dies: the Files, subscriptions, applications and partners behind every outbound endpoint, sole-endpoint partners flagged.</td></tr>
+<tr><td><a href="app-partners.html">Application dependencies</a></td><td class="desc">Which external partners each internal application exchanges Files with &mdash; the dependency matrix with traffic weights and dead pairs at 100% Error.</td></tr>
+<tr><td><a href="partner-lifecycle.html">Partner lifecycle</a></td><td class="desc">The quiet failure modes of a partner relation: configured but never live, gone quiet after real history, and still transferring on ever fewer flows.</td></tr>
+<tr><th colspan="2">Boxes</th></tr>
+<tr><td><a href="accounts-in-boxes.html">Accounts in boxes</a></td><td class="desc">Every configured account boxed by what is true of the subscriptions connected to it &mdash; the account view of Subscriptions in boxes, joined through the FlowManager configuration rather than by name.</td></tr>
+<tr><td><a href="subscriptions-in-boxes.html">Subscriptions in boxes</a></td><td class="desc">Every subscription boxed by what is true of it &mdash; its status (OK, Seen, Not seen, Error, Server log only) or any of fifteen problem signals &mdash; one column per box, each cell linking into its report or entity view.</td></tr>
+<tr><td><a href="triage.html">Triage</a></td><td class="desc">The ranked action list: every subscription that is red, holds staged Files about to expire, or just fell silent &mdash; newest flips on the busiest flows first; the per-symptom pages stay the deep-dives.</td></tr>
+<tr><th colspan="2">Errors</th></tr>
+<tr><td><a href="failed.html">Failed Subscriptions</a></td><td class="desc">Every failing subscription with its evidence &mdash; the newest failed File of each (drilling into its transfer legs and server log), plus the flows failing in the server log only; view buttons switch to per-leg-count and full-history views.</td></tr>
+<tr><td><a href="failing-reasons.html">Error reasons</a></td><td class="desc">Every possible Reason of the Failed Subscriptions pages &mdash; how many currently red subscriptions carry it and the newest occurrence; a nonzero row opens the red subscriptions behind it.</td></tr>
+<tr><th colspan="2">Acceptance vs production</th></tr>
+<tr><td><a href="acc-vs-prod-summary.html">Acceptance vs production</a></td><td class="desc">The two environments&rsquo; entities compared by name, per type &mdash; only in Acceptance, in both (one linked column per environment, with each side&rsquo;s Files/volume), or only in Production &mdash; opening on the Summary.</td></tr>
+</table></div>
+</body>
+</html>

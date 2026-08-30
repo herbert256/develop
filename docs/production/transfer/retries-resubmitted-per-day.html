@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Retries &amp; resubmissions</title>
+<meta name="report-dates" content="2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="production-transfer">
+<meta name="report-key" content="retries">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="retry" data-twin="../../acceptance/transfer/retries-resubmitted-per-day.html"></div>
+<h1>Retries &amp; resubmissions <span class="grouptag">&larr; Failures &amp; Retries &larr; Transfer</span></h1>
+<p class="tabs"><a class="tab" href="failure-rate-accounts.html">Failure rate</a><a class="tab" href="episodes.html">Episodes</a><span class="tab active">Retries &amp; resubmissions</span><a class="tab" href="recovered.html">Recovered flows</a><a class="tab" href="recovered-files.html">Recovered files</a><a class="tab" href="failure-heatmap.html">Failure heatmap</a><span class="tabsep"></span><a class="tab" href="retries-failing-flows.html">Failing flows</a><a class="tab" href="retries-legs-before-success.html">Legs before success</a><a class="tab" href="retries-gave-up.html">Gave up</a><a class="tab" href="retries-retry-spacing.html">Retry spacing</a><a class="tab" href="retries-failing-side.html">Failing side</a><span class="tab active">Resubmitted per day</span><a class="tab" href="retries-per-subscription.html">Per subscription</a><a class="tab" href="retries-resubmission-outcomes.html">Resubmission outcomes</a></p>
+<p class="range">Everything about transfers that did not succeed at the first attempt: the <strong>failing flows</strong> (by failure count, with successes and last failure), the <strong>retry anatomy</strong> — how many failed legs before delivery or before giving up, the spacing between attempts and <strong>which side fails</strong> — and the <strong>manual resubmissions</strong> (Resubmitted=true legs), per day and per subscription.</p>
+<div class="tablewrap"><table data-nofilter="1" data-nosort="1">
+<tr><th>Date</th><th class="num">Resubmitted legs</th><th class="num">Error</th><th class="num">OK</th><th class="num">Files</th></tr>
+<tr><td colspan="5">No resubmitted legs in this data window.</td></tr>
+<tr class="total"><td>Total</td><td class="num">0</td><td class="num failed z"></td><td class="num processed z"></td><td class="num">0</td></tr>
+</table></div>
+<p class="note">The SERVER log's own resubmission trail — &quot;Error while resubmitting transfer&quot; vs &quot;Resubmission successfully executed&quot; lines, per day. None in this data window.</p>
+</body>
+</html>

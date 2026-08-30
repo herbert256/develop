@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sources and Targets</title>
+<meta name="report-key" content="sources-and-targets">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="sources-and-targets" data-twin="../../acceptance/transfer/sources-and-targets.html"></div>
+<h1>Sources and Targets <span class="grouptag">&larr; Configuration &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="../analyses/use-cases.html">Use cases</a><a class="tab" href="../analyses/uc2-visits.html">UC2 pickup visits</a><a class="tab" href="../analyses/accounts.html">Accounts</a><a class="tab" href="../analyses/account-sharing.html">Account sharing</a><a class="tab" href="../analyses/twins.html">Twins</a><a class="tab" href="../analyses/cronjobs.html">Cronjobs</a><a class="tab" href="../analyses/config-hygiene.html">Config hygiene</a><a class="tab" href="../analyses/whitelist-audit.html">Whitelist audit</a><a class="tab" href="../analyses/cleanup-backlog.html">Cleanup backlog</a><span class="tab active">Sources and Targets</span><a class="tab" href="skipped.html">Skipped</a><a class="tab" href="not-in-flow-manager.html">Not in Flow Manager</a><a class="tab" href="../analyses/xref/cross-account-subscriptions.html">Cross References</a></p>
+<p class="range">Every subscription reads from a <strong>source</strong> folder and writes to a <strong>target</strong> folder; a remote-partner endpoint shows its host after an <strong>@</strong> (exactly as on the Search page). Three tables: paths that serve as <strong>both</strong> a source and a target (internal hand-offs), <strong>sources</strong> used by more than one subscription, and <strong>targets</strong> used by more than one subscription. Each row links to the subscription and is tinted by its status.</p>
+<h2>Values used as both a Source and a Target</h2>
+<div class="tablewrap"><table class="wide grouped">
+<tr><th>Value</th><th>Role</th><th>Subscription</th><th class="num">Error</th><th class="num">OK</th></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Source</td><td class="cl"><a href="../details/subscriptions/uc4-infra-st-monitor-infra.html">UC4-INFRA_ST-MONITOR_INFRA</a></td><td class="num failed z"></td><td class="num processed">1611</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/crm-sync-initech.html">CRM_SYNC_INITECH</a></td><td class="num failed">1</td><td class="num processed">56</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/inv-payments-hooli.html">INV_PAYMENTS_HOOLI</a></td><td class="num failed">2</td><td class="num processed">87</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/rec-feeds-soylent.html">REC_FEEDS_SOYLENT</a></td><td class="num failed">2</td><td class="num processed">46</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc3-ab-nas-globex.html">UC3_AB_NAS_GLOBEX</a></td><td class="num failed">4</td><td class="num processed">155</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc3-aps-fmgenlog-cyberdyne.html">UC3_APS_FMGENLOG_CYBERDYNE</a></td><td class="num failed">9</td><td class="num processed">308</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc3-aps-fmreplerr-cyberdyne.html">UC3_APS_FMREPLERR_CYBERDYNE</a></td><td class="num failed"></td><td class="num processed"></td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc3-aps-syshub-soylent.html">UC3_APS_SYSHUB_SOYLENT</a></td><td class="num failed">6</td><td class="num processed">85</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc3-it-recon-hooli.html">UC3_IT_RECON_HOOLI</a></td><td class="num failed">2</td><td class="num processed">51</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc3-odv-merlijn-sabre-d.html">UC3_ODV_MERLIJN_SABRE_D</a></td><td class="num failed">1</td><td class="num processed">34</td></tr>
+<tr data-res="orange"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc3-zg-ikaz-bluth.html">UC3_ZG_IKAZ_BLUTH</a></td><td class="num failed"></td><td class="num processed"></td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc4-aim-lake-piedpiper.html">UC4_AIM_LAKE_PIEDPIPER</a></td><td class="num failed">3</td><td class="num processed">84</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc4-aps-cosmos-globex.html">UC4_APS_COSMOS_GLOBEX</a></td><td class="num failed">6</td><td class="num processed">584</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc4-cdv-krp-tdi-wonka.html">UC4_CDV_KRP-TDI_WONKA</a></td><td class="num failed">1</td><td class="num processed">228</td></tr>
+<tr data-res="orange"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc4-cd-ziba-gekko.html">UC4_CD_ZIBA_GEKKO</a></td><td class="num failed"></td><td class="num processed"></td></tr>
+<tr data-res="blue"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc4-dpl-scan-cyberdyne.html">UC4_DPL_SCAN_CYBERDYNE</a></td><td class="num failed"></td><td class="num processed"></td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc4-zg-zka-hooli.html">UC4_ZG_ZKA_HOOLI</a></td><td class="num failed z"></td><td class="num processed">86</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td>Target</td><td class="cl"><a href="../details/subscriptions/uc4-zk-miaz-initech.html">UC4_ZK_MIAZ_INITECH</a></td><td class="num failed z"></td><td class="num processed">46</td></tr>
+<tr class="total"><td>Total (18 rows)</td><td></td><td></td><td class="num failed">37</td><td class="num processed">3461</td></tr>
+</table></div>
+<h2>Sources used by multiple subscriptions</h2>
+<div class="tablewrap"><table class="wide grouped">
+<tr><th>Source</th><th>Subscription</th><th class="num">Error</th><th class="num">OK</th></tr>
+<tr class="total"><td>Total (0 rows)</td><td></td><td class="num failed z"></td><td class="num processed z"></td></tr>
+</table></div>
+<h2>Targets used by multiple subscriptions</h2>
+<div class="tablewrap"><table class="wide grouped">
+<tr><th>Target</th><th>Subscription</th><th class="num">Error</th><th class="num">OK</th></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/stmt-export-globex-01.html">STMT_EXPORT_GLOBEX_01</a></td><td class="num failed">3</td><td class="num processed">29</td></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/stmt-export-globex-02.html">STMT_EXPORT_GLOBEX_02</a></td><td class="num failed">2</td><td class="num processed">65</td></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/stmt-export-globex-03.html">STMT_EXPORT_GLOBEX_03</a></td><td class="num failed">1</td><td class="num processed">33</td></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/stmt-export-globex-04.html">STMT_EXPORT_GLOBEX_04</a></td><td class="num failed">1</td><td class="num processed">29</td></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/stmt-export-globex-05.html">STMT_EXPORT_GLOBEX_05</a></td><td class="num failed z"></td><td class="num processed">39</td></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/stmt-export-globex-06.html">STMT_EXPORT_GLOBEX_06</a></td><td class="num failed">3</td><td class="num processed">32</td></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/stmt-export-globex-07.html">STMT_EXPORT_GLOBEX_07</a></td><td class="num failed">2</td><td class="num processed">33</td></tr>
+<tr data-res="orange"><td>/</td><td class="cl"><a href="../details/subscriptions/stmt-export-globex-08.html">STMT_EXPORT_GLOBEX_08</a></td><td class="num failed"></td><td class="num processed"></td></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/uc2-infra-st-monitor-infra.html">UC2-INFRA_ST-MONITOR_INFRA</a></td><td class="num failed z"></td><td class="num processed">1611</td></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/uc2-aps-vida-umbrella.html">UC2_APS_VIDA_UMBRELLA</a></td><td class="num failed">58</td><td class="num processed">147</td></tr>
+<tr data-res="orange"><td>/</td><td class="cl"><a href="../details/subscriptions/uc2-cb-vida-wayne.html">UC2_CB_VIDA_WAYNE</a></td><td class="num failed"></td><td class="num processed"></td></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/uc2-it-ekdsi-cyberdyne.html">UC2_IT_EKDSI_CYBERDYNE</a></td><td class="num failed">6</td><td class="num processed">112</td></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/uc2-it-sapbhp-gekko.html">UC2_IT_SAPBHP_GEKKO</a></td><td class="num failed">36</td><td class="num processed">57</td></tr>
+<tr data-res="green"><td>/</td><td class="cl"><a href="../details/subscriptions/uc2-zg-match-hooli.html">UC2_ZG_MATCH_HOOLI</a></td><td class="num failed">3</td><td class="num processed">39</td></tr>
+<tr data-res="red"><td>/ @ mft.umbrella.example</td><td class="cl"><a href="../details/subscriptions/hr-roster-umbrella.html">HR_ROSTER_UMBRELLA</a></td><td class="num failed">1</td><td class="num processed">43</td></tr>
+<tr data-res="red"><td>/ @ mft.umbrella.example</td><td class="cl"><a href="../details/subscriptions/uc1-ab-claims-umbrella.html">UC1_AB_CLAIMS_UMBRELLA</a></td><td class="num failed">3</td><td class="num processed">109</td></tr>
+<tr data-res="green"><td>/ @ sftp.wonka.example</td><td class="cl"><a href="../details/subscriptions/uc1-cd-cosmos-wonka.html">UC1_CD_COSMOS_WONKA</a></td><td class="num failed">10</td><td class="num processed">574</td></tr>
+<tr data-res="green"><td>/ @ sftp.wonka.example</td><td class="cl"><a href="../details/subscriptions/uc1-cd-printmgmt-wonka.html">UC1_CD_PRINTMGMT_WONKA</a></td><td class="num failed">13</td><td class="num processed">272</td></tr>
+<tr data-res="green"><td>/data/cft/in/INFRA_ST-MONITOR_INFRA</td><td class="cl"><a href="../details/subscriptions/uc3-infra-st-monitor-infra.html">UC3-INFRA_ST-MONITOR_INFRA</a></td><td class="num failed z"></td><td class="num processed">1594</td></tr>
+<tr data-res="green"><td>/data/cft/in/INFRA_ST-MONITOR_INFRA</td><td class="cl"><a href="../details/subscriptions/uc4-infra-st-monitor-infra.html">UC4-INFRA_ST-MONITOR_INFRA</a></td><td class="num failed z"></td><td class="num processed">1611</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/crm-sync-initech.html">CRM_SYNC_INITECH</a></td><td class="num failed">1</td><td class="num processed">56</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/inv-payments-hooli.html">INV_PAYMENTS_HOOLI</a></td><td class="num failed">2</td><td class="num processed">87</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/rec-feeds-soylent.html">REC_FEEDS_SOYLENT</a></td><td class="num failed">2</td><td class="num processed">46</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc3-ab-nas-globex.html">UC3_AB_NAS_GLOBEX</a></td><td class="num failed">4</td><td class="num processed">155</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc3-aps-fmgenlog-cyberdyne.html">UC3_APS_FMGENLOG_CYBERDYNE</a></td><td class="num failed">9</td><td class="num processed">308</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc3-aps-fmreplerr-cyberdyne.html">UC3_APS_FMREPLERR_CYBERDYNE</a></td><td class="num failed"></td><td class="num processed"></td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc3-aps-syshub-soylent.html">UC3_APS_SYSHUB_SOYLENT</a></td><td class="num failed">6</td><td class="num processed">85</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc3-it-recon-hooli.html">UC3_IT_RECON_HOOLI</a></td><td class="num failed">2</td><td class="num processed">51</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc3-odv-merlijn-sabre-d.html">UC3_ODV_MERLIJN_SABRE_D</a></td><td class="num failed">1</td><td class="num processed">34</td></tr>
+<tr data-res="orange"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc3-zg-ikaz-bluth.html">UC3_ZG_IKAZ_BLUTH</a></td><td class="num failed"></td><td class="num processed"></td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc4-aim-lake-piedpiper.html">UC4_AIM_LAKE_PIEDPIPER</a></td><td class="num failed">3</td><td class="num processed">84</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc4-aps-cosmos-globex.html">UC4_APS_COSMOS_GLOBEX</a></td><td class="num failed">6</td><td class="num processed">584</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc4-cdv-krp-tdi-wonka.html">UC4_CDV_KRP-TDI_WONKA</a></td><td class="num failed">1</td><td class="num processed">228</td></tr>
+<tr data-res="orange"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc4-cd-ziba-gekko.html">UC4_CD_ZIBA_GEKKO</a></td><td class="num failed"></td><td class="num processed"></td></tr>
+<tr data-res="blue"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc4-dpl-scan-cyberdyne.html">UC4_DPL_SCAN_CYBERDYNE</a></td><td class="num failed"></td><td class="num processed"></td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc4-zg-zka-hooli.html">UC4_ZG_ZKA_HOOLI</a></td><td class="num failed z"></td><td class="num processed">86</td></tr>
+<tr data-res="green"><td>/outbox/*</td><td class="cl"><a href="../details/subscriptions/uc4-zk-miaz-initech.html">UC4_ZK_MIAZ_INITECH</a></td><td class="num failed z"></td><td class="num processed">46</td></tr>
+<tr class="total"><td>Total (37 rows)</td><td></td><td class="num failed">179</td><td class="num processed">8279</td></tr>
+</table></div>
+<p class="note">A <strong>remote</strong> source/target (an endpoint we dial) carries its partner host after <strong>@</strong>; a local SecureTransport path has none. A value in the first table is written by one subscription and read by another — an internal hand-off. Error/OK are each subscription's own transfer outcome.</p>
+</body>
+</html>

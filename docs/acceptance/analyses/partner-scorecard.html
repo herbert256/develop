@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Partner scorecard</title>
+<meta name="report-dates" content="2026-06-23,2026-06-24,2026-06-25,2026-06-26,2026-06-27,2026-06-28,2026-06-29,2026-06-30,2026-07-01,2026-07-02,2026-07-03,2026-07-04,2026-07-05,2026-07-06,2026-07-07,2026-07-08,2026-07-09,2026-07-10,2026-07-11,2026-07-12,2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22,2026-07-23,2026-07-24,2026-07-25,2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-key" content="partner-scorecard">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="partner-scorecard" data-twin="../../production/analyses/partner-scorecard.html"></div>
+<h1>Partner scorecard <span class="grouptag">&larr; Partners &larr; Analyses</span></h1>
+<p class="tabs"><span class="tab active">Partner scorecard</span><a class="tab" href="blast-radius.html">Blast radius</a><a class="tab" href="app-partners.html">Application dependencies</a><a class="tab" href="partner-lifecycle.html">Partner lifecycle</a></p>
+<p class="range">One number per partner relation, worst first — and every ingredient of that number in its own column, so a low score is never a mystery. The concentration boxes show why a plain count ranking misleads: the top partner alone carries <strong>41.2%</strong> of all Files. The side-by-side tables below expose the volume-vs-count blind spot: <strong>CYBERDYNE</strong> is the biggest byte mover (1.21 GB) with an Error share of <strong>4.1%</strong>, yet by file count it ranks only #4 — a count-ranked view buries it under the high-frequency movers.</p>
+<div class="stat"><span class="stat-v">26</span><span class="stat-l">Partners seen</span></div>
+<div class="stat"><span class="stat-v">23</span><span class="stat-l">Scored (&gt;= 100 Files)</span></div>
+<div class="stat stat-orange"><span class="stat-v">41.2%</span><span class="stat-l">Top-1 share of Files</span></div>
+<div class="stat stat-orange"><span class="stat-v">70.9%</span><span class="stat-l">Top-3 share</span></div>
+<div class="stat stat-orange"><span class="stat-v">89.4%</span><span class="stat-l">Top-10 share</span></div>
+<div class="stat stat-red"><span class="stat-v">0.732</span><span class="stat-l">Gini coefficient</span></div>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Partner</th><th class="num">Score</th><th class="num">Files</th><th class="num">Error %</th><th>Trend (14d)</th><th class="num">Volume</th><th>Avg pickup wait</th><th>Weakest security</th><th class="num">Hosts</th><th>Direction</th><th>Last seen</th></tr>
+<tr data-res="orange"><td class="cl"><a href="../details/partners/oscorp.html">OSCORP</a></td><td class="num">65</td><td class="num">133</td><td class="num">21.8</td><td>▲ +18.5 pp</td><td class="num">55.32 MB</td><td>-</td><td>ssh-rsa + TLSv1.2 (16%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../details/partners/soylent.html">SOYLENT</a></td><td class="num">67</td><td class="num">588</td><td class="num">29.3</td><td>▼ -4.3 pp</td><td class="num">97.04 MB</td><td>-</td><td>ssh-rsa + TLSv1.2 (23%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/stark.html">STARK</a></td><td class="num">70</td><td class="num">320</td><td class="num">20.3</td><td>▲ +10.5 pp</td><td class="num">62.58 MB</td><td>-</td><td>ssh-rsa + TLSv1.2 (27%)</td><td class="num">1</td><td>two-way</td><td>2026-08-28</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td class="num">73</td><td class="num">890</td><td class="num">23.3</td><td>▼ -22.3 pp</td><td class="num">60.78 MB</td><td>0.7 h</td><td>ssh-rsa (9%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/bluth.html">BLUTH</a></td><td class="num">77</td><td class="num">113</td><td class="num">22.1</td><td>▼ -16.6 pp</td><td class="num">1.45 MB</td><td>0.7 h</td><td>ssh-rsa + TLSv1.2 (20%)</td><td class="num"></td><td>in</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td class="num">78</td><td class="num">653</td><td class="num">18.1</td><td>▼ -6.4 pp</td><td class="num">219.27 MB</td><td>0.5 h</td><td>ssh-rsa + TLSv1.2 (15%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/aperture.html">APERTURE</a></td><td class="num">80</td><td class="num">499</td><td class="num">16.2</td><td>▼ -6.6 pp</td><td class="num">161.92 MB</td><td>0.6 h</td><td>ssh-rsa + TLSv1.2 (19%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/monarch.html">MONARCH</a></td><td class="num">80</td><td class="num">183</td><td class="num">16.4</td><td>―</td><td class="num">39.00 MB</td><td>-</td><td>ssh-rsa + TLSv1.2 (21%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/vandelay.html">VANDELAY</a></td><td class="num">83</td><td class="num">151</td><td class="num">12.6</td><td>▼ -5.5 pp</td><td class="num">35.42 MB</td><td>-</td><td>ssh-rsa + TLSv1.2 (22%)</td><td class="num">1</td><td>two-way</td><td>2026-08-28</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/weyland.html">WEYLAND</a></td><td class="num">83</td><td class="num">165</td><td class="num">12.7</td><td>▼ -12.6 pp</td><td class="num">69.05 MB</td><td>-</td><td>ssh-rsa + TLSv1.2 (23%)</td><td class="num">1</td><td>out</td><td>2026-08-28</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/tyrell.html">TYRELL</a></td><td class="num">84</td><td class="num">298</td><td class="num">12.4</td><td>▼ -1.9 pp</td><td class="num">198.26 MB</td><td>0.5 h</td><td>ssh-rsa (17%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/sabre.html">SABRE</a></td><td class="num">86</td><td class="num">489</td><td class="num">8.6</td><td>▲ +3.1 pp</td><td class="num">78.75 MB</td><td>0.6 h</td><td>ssh-rsa + TLSv1.2 (21%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/initech.html">INITECH</a></td><td class="num">90</td><td class="num">681</td><td class="num">5.9</td><td>―</td><td class="num">112.78 MB</td><td>-</td><td>ssh-rsa + TLSv1.2 (20%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td class="num">92</td><td class="num">1598</td><td class="num">4.1</td><td>―</td><td class="num">1.21 GB</td><td>0.6 h</td><td>ssh-rsa + TLSv1.2 (19%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/duff.html">DUFF</a></td><td class="num">93</td><td class="num">153</td><td class="num">2.6</td><td>▼ -3.6 pp</td><td class="num">86.03 MB</td><td>-</td><td>ssh-rsa + TLSv1.2 (20%)</td><td class="num">1</td><td>out</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td class="num">93</td><td class="num">6185</td><td class="num">2.7</td><td>―</td><td class="num">1000.25 MB</td><td>-</td><td>ssh-rsa + TLSv1.2 (21%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">93</td><td class="num">725</td><td class="num">3.2</td><td>▼ -1.8 pp</td><td class="num">246.33 MB</td><td>0.6 h</td><td>ssh-rsa + TLSv1.2 (19%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/wonka.html">WONKA</a></td><td class="num">93</td><td class="num">2836</td><td class="num">3.0</td><td>―</td><td class="num">910.20 MB</td><td>-</td><td>ssh-rsa + TLSv1.2 (19%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/dunder.html">DUNDER</a></td><td class="num">94</td><td class="num">251</td><td class="num">2.0</td><td>▼ -1.3 pp</td><td class="num">46.63 MB</td><td>0.5 h</td><td>ssh-rsa + TLSv1.2 (18%)</td><td class="num">1</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/p2p.html">P2P</a></td><td class="num">94</td><td class="num">156</td><td class="num">1.9</td><td>―</td><td class="num">27.71 MB</td><td>-</td><td>ssh-rsa + TLSv1.2 (23%)</td><td class="num">1</td><td>out</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/piedpiper.html">PIEDPIPER</a></td><td class="num">94</td><td class="num">305</td><td class="num">3.3</td><td>▲ +2.9 pp</td><td class="num">85.21 MB</td><td>0.6 h</td><td>ssh-rsa + TLSv1.2 (17%)</td><td class="num"></td><td>in</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/vdn.html">VDN</a></td><td class="num">94</td><td class="num">253</td><td class="num">5.9</td><td>▼ -4.5 pp</td><td class="num">69.53 MB</td><td>0.6 h</td><td>ssh-rsa (9%)</td><td class="num"></td><td>in</td><td>2026-08-29</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/infra.html">INFRA</a></td><td class="num">98</td><td class="num">12539</td><td class="num">0.2</td><td>―</td><td class="num">195.92 KB</td><td>0.1 h</td><td>ssh-rsa (40%)</td><td class="num">2</td><td>two-way</td><td>2026-08-29</td></tr>
+<tr class="total"><td>Total (23 partner(s))</td><td class="num"></td><td class="num">30164</td><td class="num"></td><td></td><td class="num">4.79 GB</td><td></td><td></td><td class="num"></td><td></td><td></td></tr>
+</table></div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Top 10 by volume</h2>
+<div class="tablewrap"><table data-nofilter="1" data-nosearch="1" data-nosort="1">
+<tr><th>Partner</th><th class="num">Files</th><th class="num">Volume</th><th class="num">Error %</th></tr>
+<tr><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td class="num">1598</td><td class="num">1.21 GB</td><td class="num">4.1</td></tr>
+<tr><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td class="num">6185</td><td class="num">1000.25 MB</td><td class="num">2.7</td></tr>
+<tr><td class="cl"><a href="../details/partners/wonka.html">WONKA</a></td><td class="num">2836</td><td class="num">910.20 MB</td><td class="num">3.0</td></tr>
+<tr><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">725</td><td class="num">246.33 MB</td><td class="num">3.2</td></tr>
+<tr><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td class="num">653</td><td class="num">219.27 MB</td><td class="num">18.1</td></tr>
+<tr><td class="cl"><a href="../details/partners/tyrell.html">TYRELL</a></td><td class="num">298</td><td class="num">198.26 MB</td><td class="num">12.4</td></tr>
+<tr><td class="cl"><a href="../details/partners/aperture.html">APERTURE</a></td><td class="num">499</td><td class="num">161.92 MB</td><td class="num">16.2</td></tr>
+<tr><td class="cl"><a href="../details/partners/initech.html">INITECH</a></td><td class="num">681</td><td class="num">112.78 MB</td><td class="num">5.9</td></tr>
+<tr><td class="cl"><a href="../details/partners/soylent.html">SOYLENT</a></td><td class="num">588</td><td class="num">97.04 MB</td><td class="num">29.3</td></tr>
+<tr><td class="cl"><a href="../details/partners/duff.html">DUFF</a></td><td class="num">153</td><td class="num">86.03 MB</td><td class="num">2.6</td></tr>
+<tr class="total"><td>Total (10 partner(s))</td><td class="num">14216</td><td class="num"></td><td class="num"></td></tr>
+</table></div>
+</div>
+<div class="sxscol">
+<h2>Top 10 by Files</h2>
+<div class="tablewrap"><table data-nofilter="1" data-nosearch="1" data-nosort="1">
+<tr><th>Partner</th><th class="num">Files</th><th class="num">Volume</th><th class="num">Error %</th></tr>
+<tr><td class="cl"><a href="../details/partners/infra.html">INFRA</a></td><td class="num">12539</td><td class="num">195.92 KB</td><td class="num">0.2</td></tr>
+<tr><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td class="num">6185</td><td class="num">1000.25 MB</td><td class="num">2.7</td></tr>
+<tr><td class="cl"><a href="../details/partners/wonka.html">WONKA</a></td><td class="num">2836</td><td class="num">910.20 MB</td><td class="num">3.0</td></tr>
+<tr><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td class="num">1598</td><td class="num">1.21 GB</td><td class="num">4.1</td></tr>
+<tr><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td class="num">890</td><td class="num">60.78 MB</td><td class="num">23.3</td></tr>
+<tr><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">725</td><td class="num">246.33 MB</td><td class="num">3.2</td></tr>
+<tr><td class="cl"><a href="../details/partners/initech.html">INITECH</a></td><td class="num">681</td><td class="num">112.78 MB</td><td class="num">5.9</td></tr>
+<tr><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td class="num">653</td><td class="num">219.27 MB</td><td class="num">18.1</td></tr>
+<tr><td class="cl"><a href="../details/partners/soylent.html">SOYLENT</a></td><td class="num">588</td><td class="num">97.04 MB</td><td class="num">29.3</td></tr>
+<tr><td class="cl"><a href="../details/partners/aperture.html">APERTURE</a></td><td class="num">499</td><td class="num">161.92 MB</td><td class="num">16.2</td></tr>
+<tr class="total"><td>Total (10 partner(s))</td><td class="num">27194</td><td class="num"></td><td class="num"></td></tr>
+</table></div>
+</div>
+</div>
+<p class="note">The score starts at <strong>100 minus the Error %</strong> (Failed or Expired Files — the heaviest weight by far) and deducts: <strong>0.5 points per percentage point</strong> the last-14-days Error % worsened against the 14 days before (capped at 15; improving never adds), <strong>5 points</strong> when the average UC2 partner pickup wait exceeds 24 h, up to <strong>5 points</strong> scaled by the share of transfer legs on a weak security parameter (ssh-rsa host key or TLSv1.2), <strong>3 points</strong> when everything we send the partner rides a single outbound endpoint, and <strong>10 points</strong> when the partner has been quiet for 14+ days — all measured against the newest log day, then clamped to 0-100. Every component sits in its own column, so the arithmetic is checkable per row. Partner attribution is the site-wide UNION rule (the subscription's configured partners unioned with the parse attribution); the concentration boxes cover all seen partners, the scorecard only those with at least 100 Files.</p>
+<div class="summary">Partners seen: 26  |  Scored: 23  |  Top-1 share: 41.2%  |  Top-10 share: 89.4%  |  Gini: 0.732</div>
+</body>
+</html>

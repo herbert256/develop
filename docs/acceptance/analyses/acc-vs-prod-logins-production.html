@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Acceptance vs production</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="acc-vs-prod" data-twin="../../production/analyses/acc-vs-prod-logins-production.html"></div>
+<h1>Acceptance vs production <span class="grouptag">&larr; Acceptance vs production &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="acc-vs-prod-summary.html">Summary</a><a class="tab" href="acc-vs-prod-accounts-production.html">Accounts</a><a class="tab" href="acc-vs-prod-subscriptions-production.html">Subscriptions</a><span class="tab active">Logins</span><a class="tab" href="acc-vs-prod-hosts-production.html">Hosts</a><a class="tab" href="acc-vs-prod-partners-production.html">Partners</a><a class="tab" href="acc-vs-prod-domains-production.html">Domains</a><a class="tab" href="acc-vs-prod-applications-production.html">Applications</a><a class="tab" href="acc-vs-prod-whitelist-production.html">Whitelist</a><a class="tab" href="acc-vs-prod-subs-partners.html">Subscriptions vs partners</a></p>
+<p class="tabs"><a class="tab" href="acc-vs-prod-logins-acceptance.html">Only ACC</a><a class="tab" href="acc-vs-prod-logins-both.html">Both</a><span class="tab active">Only PRD</span><a class="tab" href="acc-vs-prod-logins-difference.html">Difference</a></p>
+<p class="subtitle">The Logins known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production. Row colors are the standard entity results; in the Both view each column links and tints its own environment. The <code>_</code> and <code>-</code> separators are treated as the same character: names are matched across the environments ignoring the difference and are all shown in the <code>_</code> spelling (each link still opens that environment's own page). The Files column shows each environment's own logged activity over its data window — a name in both environments that is busy in one and blank in the other is dormant there.</p>
+<div class="tablewrap"><table class="fit">
+<tr><th>Logins</th><th class="num">Files</th></tr>
+<tr data-res="green"><td class="cl"><a href="../../production/details/logins/fe028473.html">FE028473</a></td><td class="num">46</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../../production/details/logins/fe035917.html">FE035917</a></td><td class="num"></td></tr>
+<tr data-res="green"><td class="cl"><a href="../../production/details/logins/fe102183.html">FE102183</a></td><td class="num">42</td></tr>
+<tr data-res="green"><td class="cl"><a href="../../production/details/logins/fe120234.html">FE120234</a></td><td class="num">229</td></tr>
+<tr data-res="green"><td class="cl"><a href="../../production/details/logins/fe135991.html">FE135991</a></td><td class="num">93</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../../production/details/logins/fe343512.html">FE343512</a></td><td class="num">272</td></tr>
+<tr data-res="green"><td class="cl"><a href="../../production/details/logins/fe442302.html">FE442302</a></td><td class="num">205</td></tr>
+<tr data-res="green"><td class="cl"><a href="../../production/details/logins/fe465621.html">FE465621</a></td><td class="num">57</td></tr>
+<tr data-res="green"><td class="cl"><a href="../../production/details/logins/fe537563.html">FE537563</a></td><td class="num">87</td></tr>
+<tr data-res="blue"><td class="cl"><a href="../../production/details/logins/fe579565.html">FE579565</a></td><td class="num"></td></tr>
+<tr data-res="green"><td class="cl"><a href="../../production/details/logins/fe702442.html">FE702442</a></td><td class="num">86</td></tr>
+<tr data-res="green"><td class="cl"><a href="../../production/details/logins/fe716133.html">FE716133</a></td><td class="num">118</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../../production/details/logins/fe748281.html">FE748281</a></td><td class="num"></td></tr>
+<tr data-res="green"><td class="cl"><a href="../../production/details/logins/fe761781.html">FE761781</a></td><td class="num">89</td></tr>
+<tr data-res="green"><td class="cl"><a href="../../production/details/logins/fe796481.html">FE796481</a></td><td class="num">590</td></tr>
+<tr class="total"><td>Total (15)</td><td class="num">1914</td></tr>
+</table></div>
+<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = seen in the server log only. An untinted name was logged but is not configured.</p>
+</body>
+</html>

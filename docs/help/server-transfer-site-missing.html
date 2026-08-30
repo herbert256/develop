@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Help: Transfer site missing — Cloud Reports</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Cloud</a><span class="envpair"><a class="envswitch" data-target="acceptance">Acceptance</a><span class="envsep">/</span><a class="envswitch" data-target="production">Production</a></span><span class="entgroup"><a class="entlabel" href="../acceptance/transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../acceptance/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../acceptance/file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/transfer/index.html">Start page</a><a href="../acceptance/transfer/topview.html">Top view</a><a href="../acceptance/transfer/entities/subscription-all.html">Entities</a><a href="../acceptance/transfer/file-journey-patterns.html">Patterns</a><a href="../acceptance/transfer/activity-per-day.html">Activity over Time</a><a href="../acceptance/transfer/volume-per-day.html">Volume, Sizes &amp; Files</a><a href="../acceptance/transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../acceptance/transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../acceptance/transfer/anomalies.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/server/index.html">Start page</a><a href="../acceptance/server/topview.html">Top view</a><a href="../acceptance/server/errors-per-day.html">Errors</a><a href="../acceptance/server/pickups.html">Transfers &amp; Delivery</a><a href="../acceptance/server/logons-incoming.html">Logons &amp; Connections</a><a href="../acceptance/server/ssh-security.html">Security</a><a href="../acceptance/server/platform-health.html">Operations &amp; Capacity</a><a href="../acceptance/server/remote-poll.html">Routing &amp; Polling</a><a href="../acceptance/server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/analyses/index.html">Start page</a><a href="../acceptance/transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../acceptance/analyses/use-cases.html">Configuration</a><a href="../acceptance/analyses/partner-scorecard.html">Partners</a><a href="../acceptance/analyses/accounts-in-boxes.html">Boxes</a><a href="../acceptance/analyses/failed.html">Errors</a><a href="../acceptance/analyses/acc-vs-prod-summary.html">Acceptance vs production</a></div></div></nav><a class="dashlink" href="../acceptance/dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../acceptance/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../acceptance/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Transfer site missing</h1>
+<h2>What this shows</h2>
+<p>Endpoints where SecureTransport ran a transfer with <strong>no transfer site in its environment</strong> and fell back to the communication profile&rsquo;s raw host, port and user. The server log says so literally:</p>
+<p class="mono">Transfer site ID is not present in environment. Using host, port and user: <em>host</em>:<em>port</em>:<em>user</em></p>
+<p>The transfer still moves &mdash; the fallback works &mdash; so this is a <strong>configuration gap</strong> rather than a runtime failure: a route or profile that lost its transfer-site reference. What it costs is everything the subscription would have governed: with no site there is no site-level routing and no site-level limit, and the connection is made on profile values alone.</p>
+<h2>Why the rows are hosts</h2>
+<p>Because that is all the message names. This is the one server-log line that identifies <em>no flow at all</em> &mdash; it reports the absence of the very thing that would tie the connection to a subscription, and neither the message nor its session mentions one. Listing it per endpoint is the most precise thing the log supports; a host appears once however many subscriptions use it.</p>
+<p>That property is why the line is here rather than anywhere else. It sits in the endpoint&rsquo;s server-log ring, where it once counted as evidence against <em>every</em> subscription configured for that host. The colour rules now redden a host only on unattributable <strong>Errors</strong>, and these are Warnings, so they had no home until this page.</p>
+<h2>Recovered endpoints are not listed</h2>
+<p>A host that has moved a file <strong>OK since</strong> its newest warning is dropped: a later OK transfer through the same endpoint says the gap is closed. It is the same &ldquo;recovered since&rdquo; test <a href="server-deploy-errors.html">Deploy errors</a> applies to a configuration defect, and the intro says how many hosts were cleared that way &mdash; in acceptance it is usually most of them, which is what makes the remainder worth reading.</p>
+<h2>The columns</h2>
+<ul>
+<li><strong>Host</strong> &mdash; the endpoint the fallback connected to, linked to its detail page.</li>
+<li><strong>Warnings</strong> &mdash; how many times it happened.</li>
+<li><strong>Users</strong> and <strong>Ports</strong> &mdash; the other fallback values, read from the message itself. Several users on one host usually means several profiles share the endpoint and more than one has lost its site reference.</li>
+<li><strong>First</strong> / <strong>Last</strong> &mdash; the window the warnings span. A tight burst is a change that went wrong; a long tail is a gap nobody has noticed.</li>
+</ul>
+<p>Click a row to expand its 10 most recent warnings.</p>
+<h2>How it relates to the other pages</h2>
+<p><a href="server-deploy-errors.html">Deploy errors</a> covers the configuration defects that <em>stop</em> a flow (an abandoned route, a profile that cannot receive); this page covers the one that quietly degrades it instead. <a href="server-remote-poll.html">Remote Polls</a> is its neighbour in this group.</p>
+</main>
+</body>
+</html>

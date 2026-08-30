@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#
+# fresh.sh — the FULL FRESH BUILD in one command (2026-08-29): wipe every
+# derived tree and rebuild both environments from the raw inputs.
+#
+#   1. clear data/  — every parse cache, report and stamp (documented safe:
+#                     input/ holds everything irreplaceable)
+#   2. clear docs/  — the whole published site
+#   3. seed docs/   — the hand-authored files from the repo-root assets/
+#                     (style.css / report.js / slotchart.js / file-search.js
+#                     -> docs/assets/, assets/help/ -> docs/help/)
+#   4. bin/build.sh — the whole chain, both environments (build.sh re-clears
+#                     its scope and re-seeds on its own; the explicit steps
+#                     above make THIS script's contract obvious and cover a
+#                     build.sh that dies before its own clear)
+#
+# No arguments — a fresh build is always BOTH environments (a scoped wipe
+# would delete the other env's data without rebuilding it).
+#
+# Usage:
+#   bin/fresh.sh
+#
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+if [ $# -gt 0 ]; then
+    printf 'bin/fresh.sh takes no arguments (a fresh build is always both environments).\n' >&2
+    exit 2
+fi
+
+# refuse to pull the trees out from under a RUNNING build (rm -rf data would
+# also delete its lock) — same liveness test as build.sh's own lock
+if [ -d data/.buildlock ]; then
+    lock_pid=$(cat data/.buildlock/pid 2>/dev/null || true)
+    if [ -n "$lock_pid" ] && kill -0 "$lock_pid" 2>/dev/null; then
+        printf 'bin/fresh.sh: a build (PID %s) is running — refusing to wipe under it.\n' "$lock_pid" >&2
+        exit 1
+    fi
+fi
+
+# every line of this run — fresh.sh's own steps and the whole build behind
+# the exec — also lands in build/fresh.log (the per-run log dir; never the
+# repo root). The tee holds the fd across the exec, so build.sh's output
+# keeps flowing into it.
+mkdir -p build
+exec > >(tee build/fresh.log) 2>&1
+
+echo "fresh.sh: clearing data/ and docs/ ..." >&2
+rm -rf data docs
+
+echo "fresh.sh: seeding docs/ from assets/ ..." >&2
+mkdir -p docs/assets docs/help
+cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js docs/assets/
+cp -R assets/help/. docs/help/
+
+exec bin/build.sh

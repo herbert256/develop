@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Since yesterday</title>
+<meta name="report-dates" content="2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-key" content="data-diff">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="data-diff" data-twin="../../acceptance/analyses/data-diff.html"></div>
+<h1>Since yesterday <span class="grouptag">&larr; Coverage &amp; seen &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="../transfer/entity-coverage-accounts.html">Entity coverage</a><a class="tab" href="first-seen.html">First seen</a><span class="tab active">Since yesterday</span><a class="tab" href="../file-search-24-hours.html">File search</a><a class="tab" href="../transfer/seen-in-server-log.html">Seen in server log</a></p>
+<p class="range">The newest data day is <strong>2026-08-29</strong> (the latest date across the transfer and server parse caches); everything below is judged against <strong>2026-08-29 or 2026-08-28</strong> — the exports arrive in batches, so a change late on 2026-08-28 may only surface in the next export. This page diffs the <strong>DATA</strong>; the report catalog's changes live on <strong>What's new</strong>.</p>
+<div class="stat"><span class="stat-v">2026-08-29</span><span class="stat-l">Newest data day</span></div>
+<div class="stat stat-red"><span class="stat-v">3</span><span class="stat-l">new red flips</span></div>
+<div class="stat stat-orange"><span class="stat-v">0</span><span class="stat-l">newly quiet</span></div>
+<div class="stat stat-green"><span class="stat-v">2</span><span class="stat-l">recovered</span></div>
+<div class="stat"><span class="stat-v">0</span><span class="stat-l">first seen</span></div>
+<div class="stat stat-blue"><span class="stat-v">3</span><span class="stat-l">new unknown names</span></div>
+<h2>New red flips</h2>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Subscription</th><th>When</th><th>Failing since</th><th class="num">Consecutive failures</th><th class="num">Files</th><th>Evidence</th></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-fs-mortgage-sabre.html">UC1_FS_MORTGAGE_SABRE</a></td><td>2026-08-29 16:21:39</td><td>2026-08-29 16:21:39</td><td class="num">1</td><td class="num">86</td><td>1 consecutive failure(s); last OK 2026-08-28 11:40:49</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/hr-roster-umbrella.html">HR_ROSTER_UMBRELLA</a></td><td>2026-08-29 06:06:04.614</td><td>-</td><td class="num">0</td><td class="num">44</td><td>last File OK (2026-08-29 00:01:09) — server-log evidence after it</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-ab-claims-umbrella.html">UC1_AB_CLAIMS_UMBRELLA</a></td><td>2026-08-29 06:05:53</td><td>2026-08-29 06:05:53</td><td class="num">1</td><td class="num">112</td><td>1 consecutive failure(s); last OK 2026-08-28 17:14:01</td></tr>
+<tr class="total"><td>Total (3 rows)</td><td></td><td></td><td class="num">2</td><td class="num">242</td><td></td></tr>
+</table></div>
+<p class="note">Red subscriptions whose server-log evidence stamp (blue/_redflip.tsv) or newest FAILING File is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong> — the freshest breakage. A chronically failing flow fails again every day and so stays listed; its old <strong>Failing since</strong> date gives it away. <strong>From green to red</strong> tells each flip's full story.</p>
+<h2>Newly quiet</h2>
+<div class="tablewrap"><table data-nofilter="1">
+<tr><th>Subscription</th><th>Last File</th><th class="num">Days ago</th><th class="num">Files carried</th><th>Evidence</th></tr>
+<tr><td colspan="5">Nothing new — no flow crossed the went-quiet threshold within the last data day.</td></tr>
+<tr class="total"><td>Total (0 rows)</td><td></td><td class="num"></td><td class="num">0</td><td></td></tr>
+</table></div>
+<p class="note">Flows whose last File is exactly <strong>8 days</strong> before the transfer window end (<strong>2026-08-29</strong>): <strong>Went quiet</strong> flags a flow once its silence exceeds 7 days, so these crossed that line within the last data day — the freshest silences, before they fade into old news.</p>
+<h2>Recovered</h2>
+<div class="tablewrap"><table data-nofilter="1">
+<tr><th>Subscription</th><th>Recovered</th><th>Failed until</th><th class="num">OK since recovery</th><th>Evidence</th></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-cd-printmgmt-wonka.html">UC1_CD_PRINTMGMT_WONKA</a></td><td>2026-08-29 12:32:52</td><td>2026-08-29 06:18:06</td><td class="num">1</td><td>failed until 2026-08-29 06:18:06, 1 OK File(s) since — 13 Error in the flow's history</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-fin-billing-globex.html">UC1_FIN_BILLING_GLOBEX</a></td><td>2026-08-28 11:51:46</td><td>2026-08-28 11:51:43</td><td class="num">25</td><td>failed until 2026-08-28 11:51:43, 25 OK File(s) since — 23 Error in the flow's history</td></tr>
+<tr class="total"><td>Total (2 rows)</td><td></td><td></td><td class="num">26</td><td></td></tr>
+</table></div>
+<p class="note">Green flows whose FIRST OK File after their last failure is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong>: they were failing, and started working again since yesterday. Waiting counts as OK, Expired as Error — the site-wide outcome policy.</p>
+<h2>First seen</h2>
+<div class="tablewrap"><table data-nofilter="1">
+<tr><th>Type</th><th>Name</th><th>Date</th><th>Evidence</th></tr>
+<tr><td colspan="4">Nothing new — no configured entity carried its first-ever File on 2026-08-29 or 2026-08-28.</td></tr>
+<tr class="total"><td>Total (0 rows)</td><td></td><td></td><td></td></tr>
+</table></div>
+<p class="note">Configured partners, subscriptions, accounts, logins and remote hosts whose FIRST-EVER File is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong>, read from the first-seen ledger (the same per-day cells behind the <strong>First seen</strong> analysis). A name's first sighting is a one-off event — it appears here once and then only lives on that page.</p>
+<h2>New unknown/blue names</h2>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Type</th><th>Name</th><th>Mentioned</th><th>Evidence</th></tr>
+<tr><td>Subscription</td><td class="cl"><a href="../details/subscriptions/uc3-aps-fmreplerr-cyberdyne.html">UC3_APS_FMREPLERR_CYBERDYNE</a></td><td>2026-08-29 06:59:08.378</td><td>Applying the search pattern '*' for transfer site 'UC3_APS_FMREPLERR_CYBERDYNE_APS_FMREPLERR_CYBERDYNE_SCP_APS_FMREPLERR_CYBERDYNE_': 0 file(s) were found of...</td></tr>
+<tr><td>Account</td><td class="cl"><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td><td>2026-08-28 11:27:03.803</td><td>[Ssh Default] User with login name &quot;FE579565&quot;, associated with account &quot;DPL-SCAN-CYBERDYNE@FE579565&quot;, successfully authenticated over SSH by local authentica...</td></tr>
+<tr><td>Login</td><td class="cl"><a href="../details/logins/fe579565.html">FE579565</a></td><td>2026-08-28 11:27:03.803</td><td>[Ssh Default] User with login name &quot;FE579565&quot;, associated with account &quot;DPL-SCAN-CYBERDYNE@FE579565&quot;, successfully authenticated over SSH by local authentica...</td></tr>
+<tr class="total"><td>Total (3 rows)</td><td></td><td></td><td></td></tr>
+</table></div>
+<p class="note">Names the server log mentions with NO transfer of their own (the data/unknown sidecars — the same set that seeds the blue result colour) whose newest mention is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong>. A configured name here is blue (server-seen, never transferred); an unconfigured one is a stranger knocking — <strong>Seen in server log</strong> has the full lists.</p>
+<div class="summary">Since yesterday (2026-08-29/2026-08-28): 3 red flip(s), 0 newly quiet, 2 recovered, 0 first seen, 3 new unknown name(s)</div>
+</body>
+</html>

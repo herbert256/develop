@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Acceptance vs production</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="acc-vs-prod" data-twin="../../acceptance/analyses/acc-vs-prod-whitelist-difference.html"></div>
+<h1>Acceptance vs production <span class="grouptag">&larr; Acceptance vs production &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="acc-vs-prod-summary.html">Summary</a><a class="tab" href="acc-vs-prod-accounts-difference.html">Accounts</a><a class="tab" href="acc-vs-prod-subscriptions-difference.html">Subscriptions</a><a class="tab" href="acc-vs-prod-logins-difference.html">Logins</a><a class="tab" href="acc-vs-prod-hosts-difference.html">Hosts</a><a class="tab" href="acc-vs-prod-partners-difference.html">Partners</a><a class="tab" href="acc-vs-prod-domains-difference.html">Domains</a><a class="tab" href="acc-vs-prod-applications-difference.html">Applications</a><span class="tab active">Whitelist</span><a class="tab" href="acc-vs-prod-subs-partners.html">Subscriptions vs partners</a></p>
+<p class="tabs"><a class="tab" href="acc-vs-prod-whitelist-acceptance.html">Only ACC</a><a class="tab" href="acc-vs-prod-whitelist-both.html">Both</a><a class="tab" href="acc-vs-prod-whitelist-production.html">Only PRD</a><span class="tab active">Difference</span></p>
+<p class="subtitle">The Whitelist known to each environment (configured or logged, matched by name): only in Acceptance, in both, or only in Production. Row colors are the standard entity results; in the Both view each column links and tints its own environment. The Files column shows each environment's own logged activity over its data window — a name in both environments that is busy in one and blank in the other is dormant there.</p>
+<div class="tablewrap"><table class="fit">
+<tr><th>Acceptance</th><th class="num">Files</th><th>Production</th><th class="num">Files</th></tr>
+<tr><td class="cl res-red">198.51.100.90</td><td class="num">101</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-red">198.51.100.91</td><td class="num">98</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-red">203.0.113.11</td><td class="num">497</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">198.51.100.50</td><td class="num">216</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">198.51.100.51</td><td class="num">216</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">198.51.100.52</td><td class="num">227</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">198.51.100.100</td><td class="num">111</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">198.51.100.101</td><td class="num">107</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">198.51.100.102</td><td class="num">107</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.10</td><td class="num">499</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.12</td><td class="num">492</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.40</td><td class="num">51</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.41</td><td class="num">36</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.50</td><td class="num">117</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.51</td><td class="num">118</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.52</td><td class="num">122</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.60</td><td class="num">426</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.61</td><td class="num">430</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.90</td><td class="num">214</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.91</td><td class="num">219</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.92</td><td class="num">216</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.140</td><td class="num">122</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-green">203.0.113.141</td><td class="num">126</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-blue">198.51.100.70</td><td class="num">228</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-blue">198.51.100.71</td><td class="num">228</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-blue">198.51.100.72</td><td class="num">228</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-blue">203.0.113.120</td><td class="num">153</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-blue">203.0.113.121</td><td class="num">153</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-blue">203.0.113.130</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-blue">203.0.113.131</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-blue">203.0.113.160</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-blue">203.0.113.161</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-blue">203.0.113.231</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">198.51.100.190</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">198.51.100.191</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">198.51.100.200</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">198.51.100.201</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">198.51.100.210</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">198.51.100.211</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">198.51.100.215</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">198.51.100.216</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.70</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.71</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.72</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.80</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.81</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.100</td><td class="num">90</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.101</td><td class="num">90</td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.162</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.163</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.170</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.171</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.175</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.176</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.180</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.181</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.185</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.186</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.190</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.191</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.195</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.196</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.200</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.201</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.210</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.211</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.215</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.216</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.220</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.221</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr><td class="cl res-orange">203.0.113.230</td><td class="num"></td><td class="cl"></td><td class="num"></td></tr>
+<tr class="total"><td>Total (71 / 0)</td><td class="num">6038</td><td></td><td class="num">0</td></tr>
+</table></div>
+<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = seen in the server log only. An untinted name was logged but is not configured.</p>
+</body>
+</html>

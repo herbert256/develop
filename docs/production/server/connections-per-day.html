@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connections</title>
+<meta name="report-dates" content="2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="production-server">
+<meta name="report-key" content="connections">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="server-inbound-connections" data-twin="../../acceptance/server/connections-per-day.html"></div>
+<h1>Connections <span class="grouptag">&larr; Logons &amp; Connections &larr; Server</span></h1>
+<p class="tabs"><a class="tab" href="logons-incoming.html">Logons</a><span class="tab active">Connections</span><span class="tabsep"></span><a class="tab" href="connections-by-protocol.html">By protocol</a><span class="tab active">Per day</span><a class="tab" href="connections-by-account.html">By account</a><a class="tab" href="connections-by-address.html">By address</a><a class="tab" href="connections-whitelist-usage.html">Whitelist usage</a><a class="tab" href="connections-failure-reasons.html">Failure reasons</a><a class="tab" href="connections-by-remote-host.html">By remote host</a><a class="tab" href="connections-test-connections.html">Test connections</a><a class="tab" href="connections-host-keys.html">Host keys</a><a class="tab" href="connections-test-outcomes.html">Test outcomes</a></p>
+<p class="range">Both directions of the connection story in one report. <strong>Inbound</strong>: who connects in to SecureTransport, over which protocol, from which addresses, and how the whitelist policies are used. <strong>Outbound</strong>: why and where our own connections fail — the failure-reason breakdown, the per-remote-host view and the test connections.</p>
+<div class="tablewrap"><table class="wide">
+<tr><th>Date</th><th class="num">SSH</th><th class="num">PESIT</th><th class="num">FTP</th><th class="num">Other</th><th class="num">Total</th></tr>
+<tr><td>2026-07-26</td><td class="num">22</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">22</td></tr>
+<tr><td>2026-07-27</td><td class="num">82</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">82</td></tr>
+<tr><td>2026-07-28</td><td class="num">56</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">56</td></tr>
+<tr><td>2026-07-29</td><td class="num">70</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">70</td></tr>
+<tr><td>2026-07-30</td><td class="num">82</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">82</td></tr>
+<tr><td>2026-07-31</td><td class="num">79</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">79</td></tr>
+<tr><td>2026-08-01</td><td class="num">19</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">19</td></tr>
+<tr><td>2026-08-02</td><td class="num">16</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">16</td></tr>
+<tr><td>2026-08-03</td><td class="num">71</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">71</td></tr>
+<tr><td>2026-08-04</td><td class="num">89</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">89</td></tr>
+<tr><td>2026-08-05</td><td class="num">111</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">111</td></tr>
+<tr><td>2026-08-06</td><td class="num">57</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">57</td></tr>
+<tr><td>2026-08-07</td><td class="num">68</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">68</td></tr>
+<tr><td>2026-08-08</td><td class="num">21</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">21</td></tr>
+<tr><td>2026-08-09</td><td class="num">18</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">18</td></tr>
+<tr><td>2026-08-10</td><td class="num">77</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">77</td></tr>
+<tr><td>2026-08-11</td><td class="num">64</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">64</td></tr>
+<tr><td>2026-08-12</td><td class="num">191</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">191</td></tr>
+<tr><td>2026-08-13</td><td class="num">87</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">87</td></tr>
+<tr><td>2026-08-14</td><td class="num">88</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">88</td></tr>
+<tr><td>2026-08-15</td><td class="num">15</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">15</td></tr>
+<tr><td>2026-08-16</td><td class="num">19</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">19</td></tr>
+<tr><td>2026-08-17</td><td class="num">82</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">82</td></tr>
+<tr><td>2026-08-18</td><td class="num">81</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">81</td></tr>
+<tr><td>2026-08-19</td><td class="num">78</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">78</td></tr>
+<tr><td>2026-08-20</td><td class="num">65</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">65</td></tr>
+<tr><td>2026-08-21</td><td class="num">73</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">73</td></tr>
+<tr><td>2026-08-22</td><td class="num">21</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">21</td></tr>
+<tr><td>2026-08-23</td><td class="num">22</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">22</td></tr>
+<tr><td>2026-08-24</td><td class="num">57</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">57</td></tr>
+<tr><td>2026-08-25</td><td class="num">69</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">69</td></tr>
+<tr><td>2026-08-26</td><td class="num">80</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">80</td></tr>
+<tr><td>2026-08-27</td><td class="num">80</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">80</td></tr>
+<tr><td>2026-08-28</td><td class="num">77</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">77</td></tr>
+<tr><td>2026-08-29</td><td class="num">15</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">15</td></tr>
+<tr class="total"><td>Total (35 day(s))</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num">2202</td></tr>
+</table></div>
+<p class="note">The daily protocol mix. A protocol falling silent, or a sudden connection spike from one day to the next, stands out here first.</p>
+<p class="note">How the explicit test connections failed: the &quot;Error during test connection&quot; reason tail, as logged.</p>
+</body>
+</html>

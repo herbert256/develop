@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Whitelist audit</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="whitelist-audit"></div>
+<h1>Whitelist audit</h1>
+<p class="tabs"><a class="tab" href="use-cases.html">Use cases</a><a class="tab" href="uc2-visits.html">UC2 pickup visits</a><a class="tab" href="accounts.html">Accounts</a><a class="tab" href="account-sharing.html">Account sharing</a><a class="tab" href="twins.html">Twins</a><a class="tab" href="cronjobs.html">Cronjobs</a><a class="tab" href="config-hygiene.html">Config hygiene</a><span class="tab active">Whitelist audit</span><a class="tab" href="cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="../transfer/sources-and-targets.html">Sources and Targets</a><a class="tab" href="../transfer/skipped.html">Skipped</a><a class="tab" href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a><a class="tab" href="xref/cross-account-subscriptions.html">Cross References</a></p>
+<p class="subtitle">Every whitelisted partner IP against what actually connects: <strong>Used</strong> carried real Files, <strong>Connects only</strong> shows server-log connections but no transfer, <strong>Never seen</strong> is prunable attack surface. The second table is the reverse: source addresses that carried traffic without a whitelist entry.</p>
+<div><div class="stat"><span class="stat-v">47</span><span class="stat-l">Whitelisted IPs</span></div><div class="stat stat-green"><span class="stat-v">15</span><span class="stat-l">Used (Files)</span></div><div class="stat"><span class="stat-v">7</span><span class="stat-l">Connect only</span></div><div class="stat stat-red"><span class="stat-v">25</span><span class="stat-l">Never seen</span></div></div>
+<h2>Active whitelisted addresses</h2>
+<div class="tablewrap"><table class="fit">
+<tr><th>IP</th><th>Allowing accounts</th><th class="num">Files</th><th class="num">Server connections</th><th>Last File</th><th>Verdict</th></tr>
+<tr data-res="green"><td class="mono">198.51.100.10</td><td>APS-COSMOS-GLOBEX, STMT-EXPORT-GLOBEX</td><td class="num">151</td><td class="num">219</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.11</td><td>APS-COSMOS-GLOBEX, STMT-EXPORT-GLOBEX</td><td class="num">154</td><td class="num">216</td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.12</td><td>APS-COSMOS-GLOBEX, STMT-EXPORT-GLOBEX</td><td class="num">137</td><td class="num">200</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.13</td><td>APS-COSMOS-GLOBEX, STMT-EXPORT-GLOBEX</td><td class="num">148</td><td class="num">222</td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.20</td><td>CRM-SYNC-INITECH, ZK-MIAZ-INITECH</td><td class="num">36</td><td class="num">37</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.21</td><td>CRM-SYNC-INITECH, ZK-MIAZ-INITECH</td><td class="num">36</td><td class="num">40</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.22</td><td>CRM-SYNC-INITECH, ZK-MIAZ-INITECH</td><td class="num">31</td><td class="num">42</td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="orange"><td class="mono">198.51.100.30</td><td>APS-VIDA-UMBRELLA</td><td class="num"></td><td class="num">42</td><td>-</td><td>Connects only — no Files</td></tr>
+<tr data-res="orange"><td class="mono">198.51.100.31</td><td>APS-VIDA-UMBRELLA</td><td class="num"></td><td class="num">31</td><td>-</td><td>Connects only — no Files</td></tr>
+<tr data-res="orange"><td class="mono">198.51.100.32</td><td>APS-VIDA-UMBRELLA</td><td class="num"></td><td class="num">44</td><td>-</td><td>Connects only — no Files</td></tr>
+<tr data-res="orange"><td class="mono">198.51.100.33</td><td>APS-VIDA-UMBRELLA</td><td class="num"></td><td class="num">35</td><td>-</td><td>Connects only — no Files</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.40</td><td>INV-PAYMENTS-HOOLI, ZG-MATCH-HOOLI, ZG-ZKA-HOOLI</td><td class="num">87</td><td class="num">41</td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.41</td><td>INV-PAYMENTS-HOOLI, ZG-MATCH-HOOLI, ZG-ZKA-HOOLI</td><td class="num">88</td><td class="num">39</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.80</td><td>CDV-KRP-TDI-WONKA</td><td class="num">63</td><td class="num">241</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.81</td><td>CDV-KRP-TDI-WONKA</td><td class="num">56</td><td class="num">211</td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.82</td><td>CDV-KRP-TDI-WONKA</td><td class="num">54</td><td class="num">188</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.83</td><td>CDV-KRP-TDI-WONKA</td><td class="num">56</td><td class="num">206</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.110</td><td>AIM-LAKE-PIEDPIPER</td><td class="num">44</td><td class="num"></td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.111</td><td>AIM-LAKE-PIEDPIPER</td><td class="num">43</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="orange"><td class="mono">203.0.113.110</td><td>CD-ZIBA-GEKKO, IT-SAPBHP-GEKKO</td><td class="num"></td><td class="num">20</td><td>-</td><td>Connects only — no Files</td></tr>
+<tr data-res="orange"><td class="mono">203.0.113.111</td><td>CD-ZIBA-GEKKO, IT-SAPBHP-GEKKO</td><td class="num"></td><td class="num">12</td><td>-</td><td>Connects only — no Files</td></tr>
+<tr data-res="orange"><td class="mono">203.0.113.112</td><td>CD-ZIBA-GEKKO, IT-SAPBHP-GEKKO</td><td class="num"></td><td class="num">27</td><td>-</td><td>Connects only — no Files</td></tr>
+</table></div>
+<h2>Unused whitelist entries per account</h2>
+<div class="tablewrap"><table class="fit">
+<tr><th>Account</th><th class="num">Whitelisted IPs</th><th class="num">Active</th><th class="num">Never seen</th></tr>
+<tr data-res="red"><td>DPL-SCAN-CYBERDYNE</td><td class="num">6</td><td class="num">0</td><td class="num">6</td></tr>
+<tr data-res="red"><td>IT-EKDSI-CYBERDYNE</td><td class="num">6</td><td class="num">0</td><td class="num">6</td></tr>
+<tr data-res="red"><td>CB-VIDA-WAYNE</td><td class="num">4</td><td class="num">0</td><td class="num">4</td></tr>
+<tr data-res="orange"><td>AIM-LAKE-PIEDPIPER</td><td class="num">4</td><td class="num">2</td><td class="num">2</td></tr>
+<tr data-res="orange"><td>APS-COSMOS-GLOBEX</td><td class="num">6</td><td class="num">4</td><td class="num">2</td></tr>
+<tr data-res="orange"><td>APS-VIDA-UMBRELLA</td><td class="num">6</td><td class="num">4</td><td class="num">2</td></tr>
+<tr data-res="orange"><td>CD-ZIBA-GEKKO</td><td class="num">5</td><td class="num">3</td><td class="num">2</td></tr>
+<tr data-res="orange"><td>CDV-KRP-TDI-WONKA</td><td class="num">6</td><td class="num">4</td><td class="num">2</td></tr>
+<tr data-res="orange"><td>IT-SAPBHP-GEKKO</td><td class="num">5</td><td class="num">3</td><td class="num">2</td></tr>
+<tr data-res="orange"><td>ZG-MATCH-HOOLI</td><td class="num">4</td><td class="num">2</td><td class="num">2</td></tr>
+<tr data-res="orange"><td>ZG-ZKA-HOOLI</td><td class="num">4</td><td class="num">2</td><td class="num">2</td></tr>
+<tr data-res="orange"><td>ZK-MIAZ-INITECH</td><td class="num">5</td><td class="num">3</td><td class="num">2</td></tr>
+<tr data-res="orange"><td>CRM-SYNC-INITECH</td><td class="num">4</td><td class="num">3</td><td class="num">1</td></tr>
+<tr data-res="red"><td>INFRA_ST-MONITOR_INFRA</td><td class="num">1</td><td class="num">0</td><td class="num">1</td></tr>
+<tr data-res="orange"><td>INV-PAYMENTS-HOOLI</td><td class="num">3</td><td class="num">2</td><td class="num">1</td></tr>
+<tr data-res="orange"><td>STMT-EXPORT-GLOBEX</td><td class="num">5</td><td class="num">4</td><td class="num">1</td></tr>
+</table></div>
+<h2>Sources without a whitelist entry</h2>
+<div class="tablewrap"><table class="fit">
+<tr><th>Address</th><th class="num">Files</th><th class="num">Server connections</th><th>Last File</th></tr>
+<tr><td class="mono">198.51.100.50</td><td class="num"></td><td class="num">3</td><td>-</td></tr>
+<tr><td class="mono">198.51.100.51</td><td class="num"></td><td class="num">1</td><td>-</td></tr>
+<tr><td class="mono">198.51.100.52</td><td class="num"></td><td class="num">3</td><td>-</td></tr>
+<tr><td class="mono">203.0.113.60</td><td class="num"></td><td class="num">42</td><td>-</td></tr>
+<tr><td class="mono">203.0.113.61</td><td class="num"></td><td class="num">40</td><td>-</td></tr>
+<tr><td class="mono">filetransfer.acme.example</td><td class="num">1611</td><td class="num"></td><td>2026-08-29</td></tr>
+<tr><td class="mono">unknown</td><td class="num">2341</td><td class="num"></td><td>2026-08-29</td></tr>
+</table></div>
+<p class="range">Whitelist from the partner AllowIP configuration (<span class="mono">base/_white.tsv</span>); observed Files from the transfer logs (inbound-connection source addresses), server connections from the server <strong>Inbound Connections</strong> report. Internal cluster addresses can appear among the unlisted sources — they connect over PeSIT without needing a whitelist entry. A named (non-IP) source is an already-resolved hostname.</p>
+</body>
+</html>

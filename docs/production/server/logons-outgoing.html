@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Logons</title>
+<meta name="report-dates" content="2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="production-server">
+<meta name="report-key" content="logons">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="server-logon" data-twin="../../acceptance/server/logons-outgoing.html"></div>
+<h1>Logons <span class="grouptag">&larr; Logons &amp; Connections &larr; Server</span></h1>
+<p class="tabs"><span class="tab active">Logons</span><a class="tab" href="connections-by-protocol.html">Connections</a><span class="tabsep"></span><a class="tab" href="logons-incoming.html">Incoming</a><span class="tab active">Outgoing</span><a class="tab" href="logons-near-misses.html">Near misses</a><a class="tab" href="logons-scanners.html">Scanners</a><a class="tab" href="logons-by-account.html">By account</a><a class="tab" href="logons-by-source-ip.html">By source IP</a><a class="tab" href="logons-certificates.html">Certificates</a><a class="tab" href="logons-key-mismatches.html">Key mismatches</a><a class="tab" href="logons-lockouts.html">Lockouts</a><a class="tab" href="logons-outbound-key-failures.html">Outbound key failures</a></p>
+<p class="range">The whole SSH authentication story in one report: the <strong>incoming screening funnel</strong> per login, the <strong>successful logons</strong> per account and source IP (with shared-certificate detection), the <strong>key-authentication failures</strong> — key mismatches and account lockouts — and our <strong>outbound</strong> authentication failures at partner systems.</p>
+<div class="tablewrap"><table class="wide" data-drill-unit="log line" data-recalc="- - s0 s1 s2 s3 s4 - - -">
+<tr><th>Remote host</th><th>User</th><th class="num">Failures</th><th class="num">Password</th><th class="num">Key</th><th class="num">Certificate</th><th class="num">Other</th><th>Reason (last seen)</th><th>First</th><th>Last</th></tr>
+<tr class="total"><td colspan="2">Total (0 pair(s))</td><td class="num failed z"></td><td class="num failed z"></td><td class="num failed z"></td><td class="num failed z"></td><td class="num failed z"></td><td class="num"></td><td></td><td></td></tr>
+</table></div>
+<p class="note">Counts are LOG LINES (one per screened logon / failed attempt), not transfers. Incoming logins link to their detail page when one exists; an Outgoing host or user known from the transfer logs links too. A persistent Outgoing failure usually means an expired password or key for that partner. The Failures total splits into <strong>Password</strong> (wrong/expired password), <strong>Key</strong> (publickey refused), <strong>Certificate</strong> (the FTPS refusals &quot;530 Need certificate authentication&quot; and &quot;534 Policy requires valid SSL Client certificate&quot; — the partner demands or rejects our TLS client certificate) and <strong>Other</strong> (the residue, e.g. &quot;530 User cannot log in&quot;); a 0 renders empty.</p>
+<p class="note">SecureTransport failing to authenticate TO a partner with a public key (&quot;Publickey authentication was cancelled/failed&quot;), per remote host (a host known from the transfer logs links to its detail page).</p>
+</body>
+</html>

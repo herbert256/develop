@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OUT/IN: Subscription: UC3_ODV_EMIS_ZORG</title>
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body class="res-green">
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="acceptance" data-help="details-subscriptions" data-twin="../../../production/404.html"></div>
+<h1>OUT/IN: Subscription: UC3_ODV_EMIS_ZORG</h1>
+<p class="range"><strong>Working, nothing to fetch.</strong> We poll this partner on schedule and the connection, the credentials and the remote directory are all fine — <strong>56</strong> polls so far — but no file has ever been there to collect, so nothing has reached the transfer log. <strong>UC3 status</strong> calls this <strong>ok</strong> (the clean-poll rule: a verified working poll is green).</p>
+<div class="logcard"><span class="lc-when">2026-08-29 06:29:52.188</span><span class="lc-msg">Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern.</span></div>
+<h2>Features</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>Use case</td><td class="cl"><a href="../../analyses/use-cases.html">UC3 - We are the client and receive a file from the partner</a></td></tr>
+<tr><td>Remote host</td><td class="res-orange cl"><a href="../hosts/sftp-zorg-example.html">sftp.zorg.example</a></td></tr>
+<tr><td>Account</td><td class="res-blue cl"><a href="../accounts/odv-emis-zorg.html">ODV_EMIS_ZORG</a></td></tr>
+<tr><td>Domain</td><td class="res-orange cl"><a href="../domains/odv.html">ODV</a></td></tr>
+<tr><td>Application</td><td class="res-blue cl"><a href="../applications/emis.html">EMIS</a></td></tr>
+<tr><td>Partner</td><td class="res-blue cl"><a href="../partners/zorg.html">ZORG</a></td></tr>
+<tr><td>Cron</td><td>0 0 * * * ?</td></tr>
+<tr><td>Schedule</td><td>Every hour</td></tr>
+<tr><td>From</td><td>/outbox<span class="mask">/*</span></td></tr>
+<tr><td>To</td><td>/data/cft/in/ODV_EMIS_ZORG</td></tr>
+</table></div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Outgoing connections</h2>
+<div class="tablewrap"><table data-fold="orange|{n} hosts configured without traffic">
+<tr><th>IP</th><th class="num">In</th><th class="num">Out</th><th>Name</th></tr>
+<tr data-res="orange"><td><code>203.0.113.130, 203.0.113.131</code></td><td class="num"></td><td class="num"></td><td class="res-orange cl"><a href="../hosts/sftp-zorg-example.html"><code>sftp.zorg.example</code></a></td></tr>
+</table></div>
+</div>
+</div>
+<h2>Last server log messages</h2>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Date</th><th>Time</th><th>Level</th><th>Component</th><th>Message</th></tr>
+<tr class="total"><td>Total (25 line(s))</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>2026-08-29</td><td>06:29:52.188</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 426d314565684b635241352f7542585a5939705266734f316a4c506e6e59795263376866757878317149483d</td></tr>
+<tr><td>2026-08-29</td><td>06:29:51.513</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 426d314565684b635241352f7542585a5939705266734f316a4c506e6e59795263376866757878317149483d</td></tr>
+<tr><td>2026-08-28</td><td>06:27:02.827</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 57373573397348597656346d716d727a6348484c315268367a374d3453764353457369782b48734e7833723d</td></tr>
+<tr><td>2026-08-28</td><td>06:27:02.458</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 57373573397348597656346d716d727a6348484c315268367a374d3453764353457369782b48734e7833723d</td></tr>
+<tr><td>2026-08-27</td><td>06:24:13.466</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 71503954623246564e71344e6d4c2f4e68526c464c32304143714a4a3948535374636a444e646e6c356d503d</td></tr>
+<tr><td>2026-08-27</td><td>06:24:13.004</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 71503954623246564e71344e6d4c2f4e68526c464c32304143714a4a3948535374636a444e646e6c356d503d</td></tr>
+<tr><td>2026-08-26</td><td>06:16:28.811</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 5938684739365144666a73422f4b67464c39383465332f4b765841654637496738672b74493134617144783d</td></tr>
+<tr><td>2026-08-26</td><td>06:16:28.507</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 5938684739365144666a73422f4b67464c39383465332f4b765841654637496738672b74493134617144783d</td></tr>
+<tr><td>2026-08-24</td><td>06:10:50.090</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 426c715637514d38624e725033554935555234734c436d564e31364162716e684e4241516f68764b3567353d</td></tr>
+<tr><td>2026-08-24</td><td>06:10:49.600</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 426c715637514d38624e725033554935555234734c436d564e31364162716e684e4241516f68764b3567353d</td></tr>
+<tr><td>2026-08-23</td><td>06:08:00.730</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 5635753861624b3436697133793663555a62586d686f3562646b3352474333693278426934347168414f643d</td></tr>
+<tr><td>2026-08-23</td><td>06:08:00.146</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 5635753861624b3436697133793663555a62586d686f3562646b3352474333693278426934347168414f643d</td></tr>
+<tr><td>2026-08-22</td><td>06:05:11.369</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 714f796b346c48315933716575667775646c3167334e4d6873553069785a476a65684330484f6c354839423d</td></tr>
+<tr><td>2026-08-22</td><td>06:05:10.692</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 714f796b346c48315933716575667775646c3167334e4d6873553069785a476a65684330484f6c354839423d</td></tr>
+<tr><td>2026-08-21</td><td>06:02:22.008</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 2b69324c58774678324d704771454549697554624e79666e3744787a6378576a48524547586b685150726c3d</td></tr>
+<tr><td>2026-08-21</td><td>06:02:21.637</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 2b69324c58774678324d704771454549697554624e79666e3744787a6378576a48524547586b685150726c3d</td></tr>
+<tr><td>2026-08-20</td><td>06:59:32.648</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 5433367a32374475556870746d7159696d3478566a5979734b79754448496c6b774346586e36636f57614a3d</td></tr>
+<tr><td>2026-08-20</td><td>06:59:32.184</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 5433367a32374475556870746d7159696d3478566a5979734b79754448496c6b774346586e36636f57614a3d</td></tr>
+<tr><td>2026-08-19</td><td>06:56:43.287</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 6f4d2f615647427279326f56685073397243515035394679616872557967316b597947703352582f644a743d</td></tr>
+<tr><td>2026-08-19</td><td>06:56:42.730</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 6f4d2f615647427279326f56685073397243515035394679616872557967316b597947703352582f644a743d</td></tr>
+<tr><td>2026-08-18</td><td>06:53:53.927</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 3867444330522b6e514d6f3864304158764d754a5169593470516f6c6433456c42694837476e54586c33523d</td></tr>
+<tr><td>2026-08-18</td><td>06:53:53.276</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 3867444330522b6e514d6f3864304158764d754a5169593470516f6c6433456c42694837476e54586c33523d</td></tr>
+<tr><td>2026-08-17</td><td>06:51:04.566</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 523148705362386b75686e6b5a5a55787a574d446d49722b34416c324950556c7153494e57394f76736d313d</td></tr>
+<tr><td>2026-08-17</td><td>06:51:04.222</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD' evaluated to: '*' 523148705362386b75686e6b5a5a55787a574d446d49722b34416c324950556c7153494e57394f76736d313d</td></tr>
+<tr><td>2026-08-15</td><td>06:40:30.550</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern. 543277455471464f6676622b75394a446a4d427751754b4e30635a633762613068486b49687261386c78373d</td></tr>
+</table></div>
+</body>
+</html>

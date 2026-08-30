@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Retries &amp; resubmissions</title>
+<meta name="report-dates" content="2026-06-23,2026-06-24,2026-06-25,2026-06-26,2026-06-27,2026-06-28,2026-06-29,2026-06-30,2026-07-01,2026-07-02,2026-07-03,2026-07-04,2026-07-05,2026-07-06,2026-07-07,2026-07-08,2026-07-09,2026-07-10,2026-07-11,2026-07-12,2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22,2026-07-23,2026-07-24,2026-07-25,2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="acceptance-transfer">
+<meta name="report-key" content="retries">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="retry" data-twin="../../production/transfer/retries-per-subscription.html"></div>
+<h1>Retries &amp; resubmissions <span class="grouptag">&larr; Failures &amp; Retries &larr; Transfer</span></h1>
+<p class="tabs"><a class="tab" href="failure-rate-accounts.html">Failure rate</a><a class="tab" href="episodes.html">Episodes</a><span class="tab active">Retries &amp; resubmissions</span><a class="tab" href="recovered.html">Recovered flows</a><a class="tab" href="recovered-files.html">Recovered files</a><a class="tab" href="failure-heatmap.html">Failure heatmap</a><span class="tabsep"></span><a class="tab" href="retries-failing-flows.html">Failing flows</a><a class="tab" href="retries-legs-before-success.html">Legs before success</a><a class="tab" href="retries-gave-up.html">Gave up</a><a class="tab" href="retries-retry-spacing.html">Retry spacing</a><a class="tab" href="retries-failing-side.html">Failing side</a><a class="tab" href="retries-resubmitted-per-day.html">Resubmitted per day</a><span class="tab active">Per subscription</span><a class="tab" href="retries-resubmission-outcomes.html">Resubmission outcomes</a></p>
+<p class="range">Everything about transfers that did not succeed at the first attempt: the <strong>failing flows</strong> (by failure count, with successes and last failure), the <strong>retry anatomy</strong> — how many failed legs before delivery or before giving up, the spacing between attempts and <strong>which side fails</strong> — and the <strong>manual resubmissions</strong> (Resubmitted=true legs), per day and per subscription.</p>
+<div class="tablewrap"><table data-drill-unit="File" data-recalc="- s0 - - -">
+<tr><th>Subscription</th><th class="num">Resubmitted legs</th><th class="num">Files</th><th>First</th><th>Last</th></tr>
+<tr data-buckets="2026-08-13:1,2026-07-27:1,2026-08-14:1" data-coreids="2026-08-14 14:11:34.730  88850cde-f1e3-480a-b263-062ee64a2bfb,2026-08-13 16:11:05.699  dabb5ef8-029b-41e7-9517-fd55d89aa460,2026-07-27 14:41:57.158  16009347-1fe1-4f55-af7a-cfc07a60455f"><td>UC1_ZK_CLAIMS_BLACKMESA <a class="dlicon" href="../details/subscriptions/uc1-zk-claims-blackmesa.html" title="Open the detail page">&#8599;</a></td><td class="num">3</td><td class="num">3</td><td>2026-07-27</td><td>2026-08-14</td></tr>
+<tr class="total"><td>Total</td><td class="num">3</td><td class="num">3</td><td></td><td></td></tr>
+</table></div>
+<p class="note">Click a row for that subscription's 10 most recent resubmitted Files. Error/OK is the LEG's own status — an OK resubmitted leg is the retry that finally worked. Files and First/Last stay full-period under a narrowed date range.</p>
+<p class="note">The SERVER log's own resubmission trail — &quot;Error while resubmitting transfer&quot; vs &quot;Resubmission successfully executed&quot; lines, per day. None in this data window.</p>
+</body>
+</html>

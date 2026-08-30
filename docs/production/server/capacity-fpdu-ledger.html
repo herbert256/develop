@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Capacity &amp; sessions</title>
+<meta name="report-dates" content="2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="production-server">
+<meta name="report-key" content="capacity">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="server-pesit" data-twin="../../acceptance/server/capacity-fpdu-ledger.html"></div>
+<h1>Capacity &amp; sessions <span class="grouptag">&larr; Operations &amp; Capacity &larr; Server</span></h1>
+<p class="tabs"><a class="tab" href="platform-health.html">Platform health</a><span class="tab active">Capacity &amp; sessions</span><span class="tabsep"></span><a class="tab" href="capacity-pesit-per-day.html">PeSIT per day</a><a class="tab" href="capacity-pesit-problems.html">PeSIT problems</a><a class="tab" href="capacity-problem-types.html">Problem types</a><a class="tab" href="capacity-diagnostic-codes.html">Diagnostic codes</a><span class="tab active">FPDU ledger</span><a class="tab" href="capacity-local-deletes.html">Local deletes</a><a class="tab" href="capacity-remote-deletes.html">Remote deletes</a><a class="tab" href="capacity-maintenance.html">Maintenance</a></p>
+<p class="range">How busy the platform is and what it cleans up: <strong>PeSIT activity</strong> — logins, transfers, resets, ceiling hits and diagnostic codes — and the <strong>file retention / cleanup</strong> sweeps per account and remote directory. (The session-concurrency view went with the session bookkeeping lines the server parse now drops — 2026-08.)</p>
+<div class="tablewrap"><table data-nofilter="1" data-nosort="1" data-recalc="- - - s0 %0 - - -">
+<tr><th>FPDU</th><th>diagCode</th><th>Result</th><th class="num">Log lines</th><th class="num">Share</th><th>Typical text</th><th>First</th><th>Last</th></tr>
+<tr><td colspan="8"><code>No Info-level FPDU confirmations in this data window.</code></td></tr>
+<tr class="total"><td>Total (0 combination(s))</td><td></td><td></td><td class="num">0</td><td class="num">100.0%</td><td></td><td></td><td></td></tr>
+</table></div>
+<p class="note">Every PeSIT protocol confirmation the TM component logs while acting as PeSIT CLIENT (ST → CFT), per FPDU kind and diagCode — connectionConfirmation (session setup), sendFileConfirmation (per file sent) and abortIndication (transfer torn down). These are <strong>Info-level</strong> lines, so a refusal here is INVISIBLE to the error reports: diagCode <strong>309</strong> is the CFT refusing the session (&quot;Too many connections&quot;), <strong>310</strong> a network-incident abort, <strong>214</strong> a checkpoint mismatch on restart, <strong>0</strong> success. The Problem types table above counts the E-level wrappers of the SAME failures — this ledger counts only Info lines, so the two never double-count. Click a row for its 10 most recent lines.</p>
+<p class="note">&quot;Start File Maintenance …&quot; vs &quot;File Maintenance … finished.&quot; A finish is only logged when the sweep actually deleted files, so far fewer finishes than starts is normal (most runs find nothing to remove). A big gap for one account, or none finishing, is worth a look.</p>
+</body>
+</html>

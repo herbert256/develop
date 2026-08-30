@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Config hygiene</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="config-hygiene"></div>
+<h1>Config hygiene</h1>
+<p class="tabs"><a class="tab" href="use-cases.html">Use cases</a><a class="tab" href="uc2-visits.html">UC2 pickup visits</a><a class="tab" href="accounts.html">Accounts</a><a class="tab" href="account-sharing.html">Account sharing</a><a class="tab" href="twins.html">Twins</a><a class="tab" href="cronjobs.html">Cronjobs</a><span class="tab active">Config hygiene</span><a class="tab" href="whitelist-audit.html">Whitelist audit</a><a class="tab" href="cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="../transfer/sources-and-targets.html">Sources and Targets</a><a class="tab" href="../transfer/skipped.html">Skipped</a><a class="tab" href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a><a class="tab" href="xref/cross-account-subscriptions.html">Cross References</a></p>
+<p class="subtitle">The cleanup backlog: likely-duplicate <strong>twins</strong> (names identical once case and the <span class="mono">-</span>/<span class="mono">_</span> separators are folded &mdash; configured as separate entities, usually one is legacy) and <strong>orphans</strong> (objects nothing references: accounts without a subscription, hosts and logins no subscription uses, whitelist entries no account allows). Not in Flow Manager covers the reverse direction &mdash; logged values missing from the configuration.</p>
+<div><div class="stat"><span class="stat-v">4</span><span class="stat-l">Findings</span></div></div>
+<div class="tablewrap"><table class="fit">
+<tr><th>Category</th><th>Item</th><th>Detail</th></tr>
+<tr data-res="orange"><td>Account without subscriptions</td><td class="cl"><a href="../details/accounts/old-migration-globex.html">OLD-MIGRATION-GLOBEX</a></td><td>no subscription references this account</td></tr>
+<tr data-res="green"><td>Host referenced by no subscription</td><td class="cl"><a href="../details/hosts/unknown.html">unknown</a></td><td>configured endpoint, no subscription uses it</td></tr>
+<tr data-res="green"><td>Account twins</td><td class="cl"><a href="../details/accounts/cd-invoice-vandelay.html">CD-INVOICE-VANDELAY</a></td><td>twin of CD_INVOICE_VANDELAY</td></tr>
+<tr data-res="red"><td>Account twins</td><td class="cl"><a href="../details/accounts/cd-invoice-vandelay-2.html">CD_INVOICE_VANDELAY</a></td><td>twin of CD-INVOICE-VANDELAY</td></tr>
+</table></div>
+<p class="range">Twins fold case and the <span class="mono">-</span>/<span class="mono">_</span> separators (the known real phenomenon: <span class="mono">FRE-SAPCD-&hellip;</span> vs <span class="mono">FRE_SAPCD_&hellip;</span> configured as separate flows). Orphan checks use the cross-reference pair caches; rows are tinted by each entity&rsquo;s standard result color, so a green &ldquo;twin&rdquo; pair is two entities that BOTH work &mdash; deliberate, not legacy.</p>
+<h2>Server-log config defects</h2>
+<p class="range">Three recurring single-cause families from the server log, each fixable with one configuration change: transfer profiles missing their <strong>Receive File As</strong> field (every incoming transfer of that profile errors), configured hosts <strong>DNS cannot resolve</strong>, and the recurring server-tuning warning.</p>
+<h3>Profiles that cannot receive</h3>
+<div class="tablewrap"><table class="fit">
+<tr><th>Transfer profile</th><th class="num">Errors</th><th>First</th><th>Last</th></tr>
+<tr><td class="cl"><span class="mono">SI_ROS_SABRE</span></td><td class="num">64</td><td>2026-06-23</td><td>2026-08-28</td></tr>
+<tr class="total"><td>Total (1 profile(s))</td><td class="num">64</td><td></td><td></td></tr>
+</table></div>
+<p class="range">The profile is missing its <strong>Receive File As</strong> field, so every incoming transfer that uses it errors. Profiles are internal flow plumbing and have no page of their own.</p>
+<h3>DNS-dead configured hosts</h3>
+<div class="tablewrap"><table class="fit">
+<tr><th>Host</th><th class="num">Failed lookups</th><th>First</th><th>Last</th></tr>
+<tr><td colspan="4">None in this window.</td></tr>
+<tr class="total"><td>Total (0 host(s))</td><td class="num">0</td><td></td><td></td></tr>
+</table></div>
+<p class="range">A configured endpoint name DNS cannot resolve. A Last date near the window end means it is STILL failing; a single-day range was a transient.</p>
+<h3>Server tuning warnings</h3>
+<div class="tablewrap"><table class="fit">
+<tr><th>Setting</th><th class="num">Warnings</th><th>First</th><th>Last</th></tr>
+<tr><td class="cl"><span class="mono">Server.ProtocolCommands.batchSize</span></td><td class="num">10</td><td>2026-06-26</td><td>2026-08-28</td></tr>
+<tr class="total"><td>Total (1 setting(s))</td><td class="num">10</td><td></td><td></td></tr>
+</table></div>
+<h2>Double &mdash; one name, two roles</h2>
+<p class="range">The first table lists every name configured as BOTH an <strong>application</strong> and a <strong>partner</strong> &mdash; two separate entities with their own detail pages, counts and result colors. The second lists the subscriptions whose configuration connects them to <strong>two partner groups</strong>. Each row names the accounts that put the name in each role.</p>
+<div><div class="stat"><span class="stat-v">0</span><span class="stat-l">Names with both roles</span></div><div class="stat"><span class="stat-v">2</span><span class="stat-l">Subscriptions with two partners</span></div></div>
+<h2>Application and partner sharing one name</h2>
+<div class="tablewrap"><table class="fit">
+<tr><th>Name</th><th>Partner accounts</th><th>Application accounts</th></tr>
+<tr><td colspan="3">No name is configured as both an application and a partner.</td></tr>
+</table></div>
+<h2>Subscriptions connected to two partners</h2>
+<div class="tablewrap"><table class="fit">
+<tr><th>Subscription</th><th>Partners</th></tr>
+<tr><td class="cl res-blue"><a href="../details/subscriptions/uc5-cb-stark-wayne.html">UC5_CB_STARK_WAYNE</a></td><td><a href="../details/partners/stark.html">STARK</a>, <a href="../details/partners/wayne.html">WAYNE</a></td></tr>
+<tr><td class="cl res-orange"><a href="../details/subscriptions/uc8-zg-hooli-gekko.html">UC8_ZG_HOOLI_GEKKO</a></td><td><a href="../details/partners/gekko.html">GEKKO</a>, <a href="../details/partners/hooli.html">HOOLI</a></td></tr>
+</table></div>
+<p class="range">Both roles are CORRECT products of the account naming convention, not collisions: a <strong>relay</strong> makes the middle token the internal system and the external party at once (the UC5 rule, and the 3-part <span class="mono">&hellip;_P2P</span> special; a UC8 relay reclassifies the partner token as an application), an account like <span class="mono">DOM_TOKEN_TOKEN</span> simply repeats the token, and the remaining cases are one organisation appearing as the middle segment of one account name and the trailing segment of another. A subscription with two partners comes from the same rules: a two-partner account name or a UC5 relay whose application token is also a partner.</p>
+</body>
+</html>

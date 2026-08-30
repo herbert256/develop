@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Failed subscription: UC1_FIN_LEDGER_GLOBEX - Connection failures</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="failed" data-twin="../../production/404.html"></div>
+<h1>Failed subscription: UC1_FIN_LEDGER_GLOBEX - Connection failures</h1>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>File name</td><td>AcmeFIN_LEDGER_GLOBEX_20260822049904_214922.zip</td></tr>
+<tr><td>CoreId</td><td class="mono">2bd34bf7-751b-4514-9036-f1d5f1f3a5c1</td></tr>
+<tr><td>Date/time</td><td>2026-08-22 13:51:44.593</td></tr>
+<tr><td>Subscription</td><td class="res-red cl"><a href="../details/subscriptions/uc1-fin-ledger-globex.html">UC1_FIN_LEDGER_GLOBEX</a></td></tr>
+<tr><td>Remote host</td><td class="res-red cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td></tr>
+<tr><td>Account</td><td class="res-red cl"><a href="../details/accounts/fin-ledger-globex.html">FIN_LEDGER_GLOBEX</a></td></tr>
+</table></div>
+<div class="tablewrap"><table class="wide" data-nosearch="1">
+<tr><th>Status</th><th>Direction</th><th>Protocol</th><th class="num">Size</th><th>Date &amp; time</th><th class="num">Duration</th><th>Remote host</th><th>Transfer ID</th></tr>
+<tr><td>Failed Subtransmission</td><td>inbound</td><td>pesit</td><td class="num">210.89 KB</td><td>2026-08-22 13:51:44.593</td><td class="num">544 ms</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>f4880ef8-fd67-4acf-9bbe-2bfcaf0f1830</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-22 13:51:47.637</td><td class="num">294 ms</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>1c6fbf6e-ed4c-4438-91c0-366cfc24abb2</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-22 13:51:54.256</td><td class="num">430 ms</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>1b4be691-573d-485d-b245-1b34f6392dbe</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-22 13:52:04.621</td><td class="num">1.18 s</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>381777c8-143b-445e-87a6-31a2b7fc25cc</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-22 13:52:22.212</td><td class="num">866 ms</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>3951148c-3007-4241-93c1-4564e0464298</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-22 13:52:46.839</td><td class="num">262 ms</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>4dd9fb74-9dc2-436a-8d4e-b8bb1dfb66ba</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-22 13:53:22.432</td><td class="num">3.46 s</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>bf6b1ed3-c4c4-4476-96ae-5d6c88e984f1</code></td></tr>
+</table></div>
+<div class="tablewrap"><table class="wide" data-restint="1" data-nosort="1" data-nosearch="1">
+<tr><th>Date &amp; time</th><th>Level</th><th>Line</th></tr>
+<tr data-res="red"><td>2026-08-22 13:51:47.737</td><td>Error</td><td><pre>Connection failure while UC1_FIN_LEDGER_GLOBEX_FIN_LEDGER_GLOBEX_SCP_FIN_LEDGER_GLOBEX_PWD tried to connect to remote host sftp.globex.example:22 as user FIN_LEDGER_GLOBEX: com.maverick.ssh.SshException: Connection timed out</pre></td></tr>
+<tr data-res="red"><td>2026-08-22 13:51:54.356</td><td>Error</td><td><pre>Connection failure while UC1_FIN_LEDGER_GLOBEX_FIN_LEDGER_GLOBEX_SCP_FIN_LEDGER_GLOBEX_PWD tried to connect to remote host sftp.globex.example:22 as user FIN_LEDGER_GLOBEX: com.maverick.ssh.SshException: Connection timed out</pre></td></tr>
+<tr class="total"><td>Total (2 line(s))</td><td></td><td></td></tr>
+</table></div>
+<p class="report-link"><a href="../analyses/failed.html" target="_blank" rel="noopener">Back to Failed Subscriptions</a></p>
+</body>
+</html>

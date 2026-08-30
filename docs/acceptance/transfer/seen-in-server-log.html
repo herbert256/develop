@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Seen in server log</title>
+<meta name="report-key" content="seen-in-server-log">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="seen-in-server-log" data-twin="../../production/transfer/seen-in-server-log.html"></div>
+<h1>Seen in server log <span class="grouptag">&larr; Coverage &amp; seen &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="entity-coverage-accounts.html">Entity coverage</a><a class="tab" href="../analyses/first-seen.html">First seen</a><a class="tab" href="../analyses/data-diff.html">Since yesterday</a><a class="tab" href="../analyses/../file-search-24-hours.html">File search</a><span class="tab active">Seen in server log</span></p>
+<p class="range">Entities that appear in <strong>server-log</strong> runtime messages (Transfer Manager lines) but have no record in the <strong>transfer log</strong> are marked <strong>blue</strong> — a 4th result state — in the base result column (build step `bin/build/seen-in-server-log.sh`), so they surface in the entity reports, detail pages and coverage views as *server-log only* (the <strong>Server</strong> bucket) with no fabricated transfer. This page is the audit of that step: <strong>52</strong> entities are currently marked blue, every one accounted for in the <strong>Why blue</strong> matrix below. The TM-message seeds materialized <strong>17</strong> injected tuples — <strong>4</strong> from account seeds, <strong>0</strong> login, <strong>11</strong> subscription, <strong>0</strong> host, <strong>2</strong> whitelisted IP; an entity discovered only by its <strong>successful SSH logons</strong> (the logon rule — no TM tuple exists) is claimed <strong>Direct</strong> in the matrix with the logon line as its evidence. The two tables below are the result-status rollups from the <strong>Flow manager Entities</strong> and <strong>Partners, Domains &amp; Applications</strong> analyses pages (Seen = configured entities with at least one transfer OR a blue server-log sighting; Error / Warning / Ok = red / orange / green by each seen entity's last transaction); a <strong>(+n)</strong> or <strong>(−n)</strong> on a figure is how much the blue marking moved it — the Seen column gains the blue count, and the entities leave Warning (they are no longer *never seen*). In the list, each entry is two rows — the server-log message that proved the entity alive, then its blue attribution: the seed plus everything the FlowManager cross-references could unambiguously fill in (a truncated subscription name is canonicalized to the configured name it uniquely prefixes). A host or whitelisted-IP seed that ties to no account, login, subscription or flow is dropped — as is a whitelisted-IP seed whose partner already has transfer data (an unused alternate address is not a server-log discovery) — and two seeds enriching to the same entity combination collapse into one row.</p>
+<div class="sxs">
+<div class="sxscol">
+<h2>Flow manager entities</h2>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Entity</th><th class="num">Configured</th><th class="num">Seen</th><th class="num">Error</th><th class="num">Warning</th><th class="num">Ok</th></tr>
+<tr><td>Subscriptions</td><td class="num">125</td><td class="num">98 (+15)</td><td class="num st-err">11 (+3)</td><td class="num st-warn">27 (-15)</td><td class="num st-ok">78 (+3)</td></tr>
+<tr><td>Accounts</td><td class="num">116</td><td class="num">90 (+15)</td><td class="num st-err">9 (+3)</td><td class="num st-warn">26 (-16)</td><td class="num st-ok">66 (-2)</td></tr>
+<tr><td>Hosts</td><td class="num">29</td><td class="num">24</td><td class="num st-err">6 (+1)</td><td class="num st-warn">13 (-1)</td><td class="num st-ok">10</td></tr>
+<tr><td>Logins</td><td class="num">44</td><td class="num">32 (+4)</td><td class="num st-err">2 (+1)</td><td class="num st-warn">12 (-5)</td><td class="num st-ok">26</td></tr>
+<tr><td>Whitelist</td><td class="num">118</td><td class="num">60 (+18)</td><td class="num st-err">3</td><td class="num st-warn">58 (-18)</td><td class="num st-ok">39</td></tr>
+</table></div>
+</div>
+<div class="sxscol">
+<h2>Partners, Domains &amp; Applications</h2>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Entity</th><th class="num">Configured</th><th class="num">Seen</th><th class="num">Error</th><th class="num">Warning</th><th class="num">Ok</th></tr>
+<tr><td>Partners</td><td class="num">29</td><td class="num">29 (+3)</td><td class="num st-err">7 (+1)</td><td class="num st-warn">14 (-3)</td><td class="num st-ok">5 (-1)</td></tr>
+<tr><td>Domains</td><td class="num">18</td><td class="num">18</td><td class="num st-err">7 (+1)</td><td class="num st-warn">10 (-1)</td><td class="num st-ok">1</td></tr>
+<tr><td>Applications</td><td class="num">67</td><td class="num">64 (+3)</td><td class="num st-err">8 (+2)</td><td class="num st-warn">27 (-4)</td><td class="num st-ok">29 (-1)</td></tr>
+</table></div>
+</div>
+</div>
+<h2>Why blue — direct sighting or a connected seed</h2>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Entity type</th><th class="num">Total</th><th class="num">Direct</th><th class="num">Account</th><th class="num">Login</th><th class="num">Subscription</th><th class="num">Host</th><th class="num">Whitelisted IP</th></tr>
+<tr><td>Accounts</td><td class="num cl"><a href="seenlog/accounts-all.html">15</a></td><td class="num cl"><a href="seenlog/accounts-direct.html">6</a></td><td class="num"></td><td class="num"></td><td class="num cl"><a href="seenlog/accounts-subscription.html">9</a></td><td class="num"></td><td class="num"></td></tr>
+<tr><td>Logins</td><td class="num cl"><a href="seenlog/logins-all.html">4</a></td><td class="num cl"><a href="seenlog/logins-direct.html">4</a></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+<tr><td>Subscriptions</td><td class="num cl"><a href="seenlog/subscriptions-all.html">9</a></td><td class="num cl"><a href="seenlog/subscriptions-direct.html">5</a></td><td class="num cl"><a href="seenlog/subscriptions-account.html">3</a></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num cl"><a href="seenlog/subscriptions-white.html">1</a></td></tr>
+<tr><td>Hosts</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+<tr><td>Whitelisted IPs</td><td class="num cl"><a href="seenlog/white-all.html">18</a></td><td class="num cl"><a href="seenlog/white-direct.html">18</a></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+<tr><td>Partners</td><td class="num cl"><a href="seenlog/partners-all.html">3</a></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num cl"><a href="seenlog/partners-subscription.html">2</a></td><td class="num"></td><td class="num cl"><a href="seenlog/partners-white.html">1</a></td></tr>
+<tr><td>Domains</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+<tr><td>Applications</td><td class="num cl"><a href="seenlog/applications-all.html">3</a></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num cl"><a href="seenlog/applications-subscription.html">3</a></td><td class="num"></td><td class="num"></td></tr>
+<tr class="total"><td>Total (8 types)</td><td class="num cl"><a href="seenlog/all-all.html">52</a></td><td class="num cl"><a href="seenlog/all-direct.html">33</a></td><td class="num cl"><a href="seenlog/all-account.html">3</a></td><td class="num">0</td><td class="num cl"><a href="seenlog/all-subscription.html">14</a></td><td class="num">0</td><td class="num cl"><a href="seenlog/all-white.html">2</a></td></tr>
+</table></div>
+<p class="note">Why each blue entity is blue — every entity is counted exactly ONCE: under <strong>Direct</strong> when its own name appears in its type's server-log seed list (the raw sightings, before duplicate seeds collapse) OR when only its <strong>successful SSH logons</strong> discovered it (the logon rule — no TM tuple exists; its evidence line is the logon), otherwise under the seed type of the first surviving seed tuple that reached it through the FlowManager cross-reference enrichment (later seeds reaching an already-claimed entity are skipped). Partners, Domains and Applications are derived attributions — never a TM seed themselves, so a Direct entry there is an SSH-logon-era rollup discovery. <strong>Total</strong> = the sum of the other columns = the type's blue entities. Every nonzero cell links a page listing the entities it counts with their claiming server-log lines.</p>
+<h2>What happened — server-log messages grouped</h2>
+<div class="tablewrap"><table class="wide">
+<tr><th class="num">Count</th><th>Server-log message shape</th></tr>
+<tr><td class="num">6</td><td class="cl"><a href="#shape-1">Applying the search pattern '…' for transfer site '…': N file(s) were found of which N matched the pattern.</a></td></tr>
+<tr><td class="num">6</td><td class="cl"><a href="#shape-2">[Ssh Default] User with login name &quot;…&quot;, associated with account &quot;…&quot;, successfully authenticated over SSH by local authentication agent. Remote address: IP. Connection security parameters: …</a></td></tr>
+<tr><td class="num">5</td><td class="cl"><a href="#shape-3">Error during transfer operation: Error occurred while listing files from partner &lt;site&gt; defined in account &lt;account&gt;. Connection closed by the remote host</a></td></tr>
+<tr class="total"><td class="num">17</td><td>Total (3 distinct shape(s))</td></tr>
+</table></div>
+<p class="note">The seed's latest server-log message, grouped into shapes: quoted values, IPs, UUIDs and numbers are normalized away so like events cluster. <strong>Click a shape</strong> to jump to its own injected-transfers table below. Click a column header to re-sort.</p>
+<h2 id="shape-1">Server-log entities — Applying the search pattern '…' for transfer site '…': N file(s) were found of which N matched the pattern.</h2>
+<div class="tablewrap"><table class="wide" data-nosearch="1">
+<tr><th>Seed</th><th>Account</th><th>Login</th><th>Subscription</th><th>Remote Host</th><th>Date &amp; time</th></tr>
+<tr><td colspan="6" class="bluemsg">Applying the search pattern '*' for transfer site 'UC3_APS_FMREPLERR_CYBERDYNE_APS_FMREPLERR_CYBERDYNE_SCP_APS_FMREPLERR_CYBERDYNE_': 0 file(s) were found of which 0 matched the pattern.</td></tr>
+<tr><td>subscription</td><td class="cl"><a href="../details/accounts/aps-fmreplerr-cyberdyne.html">APS_FMREPLERR_CYBERDYNE</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc3-aps-fmreplerr-cyberdyne.html">UC3_APS_FMREPLERR_CYBERDYNE</a></td><td></td><td>2026-08-28 09:09:08.762</td></tr>
+<tr><td colspan="6" class="bluemsg">Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern.</td></tr>
+<tr><td>subscription</td><td class="cl"><a href="../details/accounts/cdv-stream-abstergo.html">CDV_STREAM_ABSTERGO</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc3-cdv-stream-abstergo.html">UC3_CDV_STREAM_ABSTERGO</a></td><td></td><td>2026-08-29 06:57:57.940</td></tr>
+<tr><td colspan="6" class="bluemsg">Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern.</td></tr>
+<tr><td>subscription</td><td class="cl"><a href="../details/accounts/fs-sapbods-primatech-d.html">FS_SAPBODS_PRIMATECH_D</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc3-fs-sapbods-primatech-d.html">UC3_FS_SAPBODS_PRIMATECH_D</a></td><td></td><td>2026-08-28 06:22:10.534</td></tr>
+<tr><td colspan="6" class="bluemsg">Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_I_FS_SAPBODS_PRIMATECH_I_SCP_FS_SAPBODS_PRIMATECH_I_PWD': 0 file(s) were found of which 0 matched the pattern.</td></tr>
+<tr><td>subscription</td><td class="cl"><a href="../details/accounts/fs-sapbods-primatech-i.html">FS_SAPBODS_PRIMATECH_I</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc3-fs-sapbods-primatech-i.html">UC3_FS_SAPBODS_PRIMATECH_I</a></td><td></td><td>2026-08-29 06:53:04.272</td></tr>
+<tr><td colspan="6" class="bluemsg">Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_M_FS_SAPBODS_PRIMATECH_M_SCP_FS_SAPBODS_PRIMATECH_M_KEY': 0 file(s) were found of which 0 matched the pattern.</td></tr>
+<tr><td>subscription</td><td class="cl"><a href="../details/accounts/fs-sapbods-primatech-m.html">FS_SAPBODS_PRIMATECH_M</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc3-fs-sapbods-primatech-m.html">UC3_FS_SAPBODS_PRIMATECH_M</a></td><td></td><td>2026-08-29 06:27:31.773</td></tr>
+<tr><td colspan="6" class="bluemsg">Applying the search pattern '*' for transfer site 'UC3_ODV_EMIS_ZORG_ODV_EMIS_ZORG_SCP_ODV_EMIS_ZORG_PWD': 0 file(s) were found of which 0 matched the pattern.</td></tr>
+<tr><td>subscription</td><td class="cl"><a href="../details/accounts/odv-emis-zorg.html">ODV_EMIS_ZORG</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc3-odv-emis-zorg.html">UC3_ODV_EMIS_ZORG</a></td><td></td><td>2026-08-29 06:29:52.188</td></tr>
+<tr class="total"><td>Total (6 entity(ies))</td><td></td><td></td><td></td><td></td><td></td></tr>
+</table></div>
+<h2 id="shape-2">Server-log entities — [Ssh Default] User with login name &quot;…&quot;, associated with account &quot;…&quot;, successfully authenticated over SSH by local authentication agent. Remote address: IP. Connection security parameters: …</h2>
+<div class="tablewrap"><table class="wide" data-nosearch="1">
+<tr><th>Seed</th><th>Account</th><th>Login</th><th>Subscription</th><th>Remote Host</th><th>Date &amp; time</th></tr>
+<tr><td colspan="6" class="bluemsg">[Ssh Default] User with login name &quot;FE479667&quot;, associated with account &quot;DPL-SCAN-CYBERDYNE@FE479667&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.21. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>account</td><td class="cl"><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td><td class="cl"><a href="../details/logins/fe479667.html">FE479667</a></td><td class="cl"><a href="../details/subscriptions/uc4-dpl-scan-cyberdyne.html">UC4_DPL_SCAN_CYBERDYNE</a></td><td></td><td>2026-08-28 10:57:06.838</td></tr>
+<tr><td colspan="6" class="bluemsg">[Ssh Default] User with login name &quot;FE155237&quot;, associated with account &quot;FIN-PORTAL-DUFF@FE155237&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.121. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-s</td></tr>
+<tr><td>account</td><td class="cl"><a href="../details/accounts/fin-portal-duff.html">FIN-PORTAL-DUFF</a></td><td class="cl"><a href="../details/logins/fe155237.html">FE155237</a></td><td class="cl"><a href="../details/subscriptions/uc4-fin-portal-duff.html">UC4_FIN_PORTAL_DUFF</a></td><td></td><td>2026-08-28 13:26:15.879</td></tr>
+<tr><td colspan="6" class="bluemsg">[Ssh Default] User with login name &quot;FE437991&quot;, associated with account &quot;IT-ARCHIVE-ZORG@FE437991&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.130. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-s</td></tr>
+<tr><td>account</td><td class="cl"><a href="../details/accounts/it-archive-zorg.html">IT-ARCHIVE-ZORG</a></td><td class="cl"><a href="../details/logins/fe437991.html">FE437991</a></td><td class="cl"><a href="../details/subscriptions/uc4-it-archive-zorg.html">UC4_IT_ARCHIVE_ZORG</a></td><td></td><td>2026-08-28 10:06:52.676</td></tr>
+<tr><td colspan="6" class="bluemsg">[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.90. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>account</td><td class="cl"><a href="../details/accounts/si-sapbhp-aperture.html">SI-SAPBHP-APERTURE</a></td><td class="cl"><a href="../details/logins/fe397484.html">FE397484</a></td><td class="cl"><a href="../details/subscriptions/uc2-si-sapbhp-aperture.html">UC2_SI_SAPBHP_APERTURE</a></td><td></td><td>2026-08-29 12:12:25.161</td></tr>
+<tr><td colspan="6" class="bluemsg">[Ssh Default] User with login name &quot;FE437991&quot;, associated with account &quot;IT-ARCHIVE-ZORG@FE437991&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.130. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-s</td></tr>
+<tr><td>whitelisted IP</td><td class="cl"><a href="../details/accounts/it-archive-zorg.html">IT-ARCHIVE-ZORG</a></td><td class="cl"><a href="../details/logins/fe437991.html">FE437991</a></td><td class="cl"><a href="../details/subscriptions/uc4-it-archive-zorg.html">UC4_IT_ARCHIVE_ZORG</a></td><td>203.0.113.130</td><td>2026-08-28 10:06:52.676</td></tr>
+<tr><td colspan="6" class="bluemsg">[Ssh Default] User with login name &quot;FE437991&quot;, associated with account &quot;IT-ARCHIVE-ZORG@FE437991&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.131. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-s</td></tr>
+<tr><td>whitelisted IP</td><td class="cl"><a href="../details/accounts/it-archive-zorg.html">IT-ARCHIVE-ZORG</a></td><td class="cl"><a href="../details/logins/fe437991.html">FE437991</a></td><td class="cl"><a href="../details/subscriptions/uc4-it-archive-zorg.html">UC4_IT_ARCHIVE_ZORG</a></td><td>203.0.113.131</td><td>2026-08-27 13:14:44.448</td></tr>
+<tr class="total"><td>Total (6 entity(ies))</td><td></td><td></td><td></td><td></td><td></td></tr>
+</table></div>
+<h2 id="shape-3">Server-log entities — Error during transfer operation: Error occurred while listing files from partner &lt;site&gt; defined in account &lt;account&gt;. Connection closed by the remote host</h2>
+<div class="tablewrap"><table class="wide" data-nosearch="1">
+<tr><th>Seed</th><th>Account</th><th>Login</th><th>Subscription</th><th>Remote Host</th><th>Date &amp; time</th></tr>
+<tr><td colspan="6" class="bluemsg">Error during transfer operation: Error occurred while listing files from partner UC3_AIM_QUOTES_WONKA_AIM_QUOTES_WONKA_SCP_AIM_QUOTES_WONKA_PWD defined in account AIM_QUOTES_WONKA. Connection closed by the remote host</td></tr>
+<tr><td>subscription</td><td class="cl"><a href="../details/accounts/aim-quotes-wonka.html">AIM_QUOTES_WONKA</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc3-aim-quotes-wonka.html">UC3_AIM_QUOTES_WONKA</a></td><td></td><td>2026-08-29 11:44:51.493</td></tr>
+<tr><td colspan="6" class="bluemsg">Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host</td></tr>
+<tr><td>subscription</td><td class="cl"><a href="../details/accounts/aps-invoice-stark.html">APS_INVOICE_STARK</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc1-aps-invoice-stark.html">UC1_APS_INVOICE_STARK</a></td><td></td><td>2026-08-27 11:04:18.461</td></tr>
+<tr><td colspan="6" class="bluemsg">Error during transfer operation: Error occurred while listing files from partner UC5_CB_STARK_WAYNE_CB_STARK_WAYNE_SCP_CB_STARK_WAYNE_PWD defined in account CB_STARK_WAYNE. Connection closed by the remote host</td></tr>
+<tr><td>subscription</td><td class="cl"><a href="../details/accounts/cb-stark-wayne.html">CB_STARK_WAYNE</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc5-cb-stark-wayne.html">UC5_CB_STARK_WAYNE</a></td><td></td><td>2026-08-28 11:15:28.640</td></tr>
+<tr><td colspan="6" class="bluemsg">Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host</td></tr>
+<tr><td>subscription</td><td class="cl"><a href="../details/accounts/fin-nas-vandelay.html">FIN_NAS_VANDELAY</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc3-fin-nas-vandelay.html">UC3_FIN_NAS_VANDELAY</a></td><td></td><td>2026-08-29 14:11:15.292</td></tr>
+<tr><td colspan="6" class="bluemsg">Error during transfer operation: Error occurred while listing files from partner UC1_ODV_RISK_TYRELL_ODV_RISK_TYRELL_SCP_ODV_RISK_TYRELL_PWD defined in account ODV_RISK_TYRELL. Connection closed by the remote host</td></tr>
+<tr><td>subscription</td><td class="cl"><a href="../details/accounts/odv-risk-tyrell.html">ODV_RISK_TYRELL</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc1-odv-risk-tyrell.html">UC1_ODV_RISK_TYRELL</a></td><td></td><td>2026-08-27 11:49:28.636</td></tr>
+<tr class="total"><td>Total (5 entity(ies))</td><td></td><td></td><td></td><td></td><td></td></tr>
+</table></div>
+<p class="note">One table per message shape (most frequent first). Each entry is two rows: the seed's most recent server-log line (the one the blue marking is dated to; truncated to 300 characters), then the entity's blue attribution. No transfer is fabricated — the entity is simply marked <strong>blue</strong> (result = blue) in the base result column, so the per-row dimension reports (protocol, AV scan, ciphers, …) never see it and only the entity, time and coverage views count it (in the <strong>Server</strong> bucket).</p>
+</body>
+</html>

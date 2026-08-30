@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Failed subscription: UC1_FIN_BILLING_GLOBEX - Connection failures</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="failed" data-twin="../../acceptance/404.html"></div>
+<h1>Failed subscription: UC1_FIN_BILLING_GLOBEX - Connection failures</h1>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>File name</td><td>AcmeFIN_BILLING_GLOBEX_20260827021814_838115.txt.pgp</td></tr>
+<tr><td>CoreId</td><td class="mono">d9559b75-5622-40d7-b6cf-aadc8b2e9196</td></tr>
+<tr><td>Date/time</td><td>2026-08-27 06:03:34.830</td></tr>
+<tr><td>Subscription</td><td class="res-green cl"><a href="../details/subscriptions/uc1-fin-billing-globex.html">UC1_FIN_BILLING_GLOBEX</a></td></tr>
+<tr><td>Remote host</td><td class="res-green cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td></tr>
+<tr><td>Account</td><td class="res-green cl"><a href="../details/accounts/fin-billing-globex.html">FIN_BILLING_GLOBEX</a></td></tr>
+</table></div>
+<div class="tablewrap"><table class="wide" data-nosearch="1">
+<tr><th>Status</th><th>Direction</th><th>Protocol</th><th class="num">Size</th><th>Date &amp; time</th><th class="num">Duration</th><th>Remote host</th><th>Transfer ID</th></tr>
+<tr><td>Failed Subtransmission</td><td>inbound</td><td>pesit</td><td class="num">10.13 KB</td><td>2026-08-27 06:03:34.830</td><td class="num">426 ms</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>da8ac0c7-7288-4489-9659-c383f6a08b04</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-27 06:03:37.756</td><td class="num">1.01 s</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>bdd63ded-b3b0-4f9f-99c6-0bd0b4f685dc</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-27 06:03:44.607</td><td class="num">532 ms</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>472a5634-a163-4839-9590-9ddb95a313f8</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-27 06:03:54.527</td><td class="num">598 ms</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>25e64507-06b5-48e5-b121-676e9f356bea</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-27 06:04:10.426</td><td class="num">1.10 s</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>b72a2dae-0cc3-4e3a-87e6-b786d5d9b093</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-27 06:04:36.419</td><td class="num">257 ms</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>2bbb21e1-3ea9-4ced-907a-9e0d70fb9196</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-27 06:05:11.858</td><td class="num">1.01 s</td><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td><code>a1f35d72-eaf4-44c7-ad36-caef19614e4e</code></td></tr>
+</table></div>
+<div class="tablewrap"><table class="wide" data-restint="1" data-nosort="1" data-nosearch="1">
+<tr><th>Date &amp; time</th><th>Level</th><th>Line</th></tr>
+<tr data-res="red"><td>2026-08-27 06:03:37.856</td><td>Error</td><td><pre>Connection failure while UC1_FIN_BILLING_GLOBEX_FIN_BILLING_GLOBEX_SCP_FIN_BILLING_GLOBEX_KEY tried to connect to remote host sftp.globex.example:22 as user FIN_BILLING_GLOBEX: com.maverick.ssh.SshException: Connection timed out</pre></td></tr>
+<tr data-res="red"><td>2026-08-27 06:03:44.707</td><td>Error</td><td><pre>Connection failure while UC1_FIN_BILLING_GLOBEX_FIN_BILLING_GLOBEX_SCP_FIN_BILLING_GLOBEX_KEY tried to connect to remote host sftp.globex.example:22 as user FIN_BILLING_GLOBEX: com.maverick.ssh.SshException: Connection timed out</pre></td></tr>
+<tr class="total"><td>Total (2 line(s))</td><td></td><td></td></tr>
+</table></div>
+<p class="report-link"><a href="../analyses/failed.html" target="_blank" rel="noopener">Back to Failed Subscriptions</a></p>
+</body>
+</html>

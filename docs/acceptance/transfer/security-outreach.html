@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Security outreach</title>
+<meta name="report-dates" content="2026-06-23,2026-06-24,2026-06-25,2026-06-26,2026-06-27,2026-06-28,2026-06-29,2026-06-30,2026-07-01,2026-07-02,2026-07-03,2026-07-04,2026-07-05,2026-07-06,2026-07-07,2026-07-08,2026-07-09,2026-07-10,2026-07-11,2026-07-12,2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22,2026-07-23,2026-07-24,2026-07-25,2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="acceptance-transfer">
+<meta name="report-key" content="security-outreach">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="security-outreach" data-twin="../../production/transfer/security-outreach.html"></div>
+<h1>Security outreach <span class="grouptag">&larr; Protocol &amp; Security &larr; Transfer</span></h1>
+<p class="tabs"><a class="tab" href="protocol-protocol.html">Protocol, Direction &amp; Mode</a><a class="tab" href="security-params-tls-version.html">Security Parameters</a><span class="tab active">Security outreach</span><a class="tab" href="av-scan-breakdown.html">AV Scan</a><a class="tab" href="connection-efficiency.html">Connection efficiency</a></p>
+<p class="range">Two SecurityParameters values in this data are DEPRECATED: <strong>Public Key ssh-rsa</strong> (an RSA key still signing with SHA-1 — modern OpenSSH disables it by default) and <strong>Protocol TLSv1.2</strong> (the legacy TLS version). This is the OUTREACH view of the Security parameters report: which partner still connects with a deprecated value, who already cut over to a modern one, and who runs a mixed fleet. &quot;Still using&quot; means seen in the <strong>last 7 days</strong> of the window (dataset end: 2026-08-30).</p>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Partner</th><th>Deprecated parameter</th><th class="num">Transfers</th><th>First seen</th><th>Last seen</th></tr>
+<tr><td class="cl"><a href="../details/partners/infra.html">INFRA</a></td><td>Public Key: ssh-rsa</td><td class="num">12492</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td>Public Key: ssh-rsa</td><td class="num">2302</td><td>2026-06-23</td><td>2026-08-30</td></tr>
+<tr><td class="cl"><a href="../details/partners/wonka.html">WONKA</a></td><td>Public Key: ssh-rsa</td><td class="num">1096</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td>Public Key: ssh-rsa</td><td class="num">558</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td>TLS version: TLSv1.2</td><td class="num">501</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td>Public Key: ssh-rsa</td><td class="num">273</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/soylent.html">SOYLENT</a></td><td>Public Key: ssh-rsa</td><td class="num">273</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/initech.html">INITECH</a></td><td>Public Key: ssh-rsa</td><td class="num">267</td><td>2026-06-23</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td>Public Key: ssh-rsa</td><td class="num">249</td><td>2026-06-23</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td>Public Key: ssh-rsa</td><td class="num">233</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/stark.html">STARK</a></td><td>Public Key: ssh-rsa</td><td class="num">212</td><td>2026-06-23</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/aperture.html">APERTURE</a></td><td>Public Key: ssh-rsa</td><td class="num">206</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td>TLS version: TLSv1.2</td><td class="num">196</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/sabre.html">SABRE</a></td><td>Public Key: ssh-rsa</td><td class="num">176</td><td>2026-06-23</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/tyrell.html">TYRELL</a></td><td>Public Key: ssh-rsa</td><td class="num">147</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/sabre.html">SABRE</a></td><td>TLS version: TLSv1.2</td><td class="num">107</td><td>2026-06-24</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/piedpiper.html">PIEDPIPER</a></td><td>Public Key: ssh-rsa</td><td class="num">93</td><td>2026-06-24</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/wonka.html">WONKA</a></td><td>TLS version: TLSv1.2</td><td class="num">92</td><td>2026-06-23</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/vdn.html">VDN</a></td><td>Public Key: ssh-rsa</td><td class="num">87</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/weyland.html">WEYLAND</a></td><td>Public Key: ssh-rsa</td><td class="num">82</td><td>2026-06-24</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/vandelay.html">VANDELAY</a></td><td>Public Key: ssh-rsa</td><td class="num">81</td><td>2026-06-23</td><td>2026-08-27</td></tr>
+<tr><td class="cl"><a href="../details/partners/dunder.html">DUNDER</a></td><td>Public Key: ssh-rsa</td><td class="num">79</td><td>2026-06-23</td><td>2026-08-27</td></tr>
+<tr><td class="cl"><a href="../details/partners/soylent.html">SOYLENT</a></td><td>TLS version: TLSv1.2</td><td class="num">65</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/monarch.html">MONARCH</a></td><td>Public Key: ssh-rsa</td><td class="num">63</td><td>2026-06-24</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/aperture.html">APERTURE</a></td><td>TLS version: TLSv1.2</td><td class="num">62</td><td>2026-06-24</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/duff.html">DUFF</a></td><td>Public Key: ssh-rsa</td><td class="num">59</td><td>2026-06-25</td><td>2026-08-27</td></tr>
+<tr><td class="cl"><a href="../details/partners/bluth.html">BLUTH</a></td><td>TLS version: TLSv1.2</td><td class="num">58</td><td>2026-06-24</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td>TLS version: TLSv1.2</td><td class="num">52</td><td>2026-06-24</td><td>2026-08-26</td></tr>
+<tr><td class="cl"><a href="../details/partners/oscorp.html">OSCORP</a></td><td>Public Key: ssh-rsa</td><td class="num">52</td><td>2026-06-24</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/bluth.html">BLUTH</a></td><td>Public Key: ssh-rsa</td><td class="num">47</td><td>2026-06-23</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/partners/p2p.html">P2P</a></td><td>Public Key: ssh-rsa</td><td class="num">45</td><td>2026-06-24</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/stark.html">STARK</a></td><td>TLS version: TLSv1.2</td><td class="num">42</td><td>2026-06-23</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/massive.html">MASSIVE</a></td><td>Public Key: ssh-rsa</td><td class="num">37</td><td>2026-06-26</td><td>2026-08-27</td></tr>
+<tr><td class="cl"><a href="../details/partners/wayne.html">WAYNE</a></td><td>Public Key: ssh-rsa</td><td class="num">36</td><td>2026-06-24</td><td>2026-08-26</td></tr>
+<tr><td class="cl"><a href="../details/partners/oscorp.html">OSCORP</a></td><td>TLS version: TLSv1.2</td><td class="num">31</td><td>2026-06-25</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/initech.html">INITECH</a></td><td>TLS version: TLSv1.2</td><td class="num">30</td><td>2026-06-29</td><td>2026-08-27</td></tr>
+<tr><td class="cl"><a href="../details/partners/monarch.html">MONARCH</a></td><td>TLS version: TLSv1.2</td><td class="num">30</td><td>2026-06-24</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/p2p.html">P2P</a></td><td>TLS version: TLSv1.2</td><td class="num">30</td><td>2026-06-23</td><td>2026-08-27</td></tr>
+<tr><td class="cl"><a href="../details/partners/blackmesa.html">BLACKMESA</a></td><td>Public Key: ssh-rsa</td><td class="num">29</td><td>2026-06-25</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/dunder.html">DUNDER</a></td><td>TLS version: TLSv1.2</td><td class="num">26</td><td>2026-07-03</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/partners/massive.html">MASSIVE</a></td><td>TLS version: TLSv1.2</td><td class="num">24</td><td>2026-06-24</td><td>2026-08-25</td></tr>
+<tr><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td>TLS version: TLSv1.2</td><td class="num">23</td><td>2026-06-27</td><td>2026-08-26</td></tr>
+<tr><td class="cl"><a href="../details/partners/weyland.html">WEYLAND</a></td><td>TLS version: TLSv1.2</td><td class="num">19</td><td>2026-06-26</td><td>2026-08-27</td></tr>
+<tr><td class="cl"><a href="../details/partners/blackmesa.html">BLACKMESA</a></td><td>TLS version: TLSv1.2</td><td class="num">12</td><td>2026-06-23</td><td>2026-08-25</td></tr>
+<tr><td class="cl"><a href="../details/partners/vandelay.html">VANDELAY</a></td><td>TLS version: TLSv1.2</td><td class="num">10</td><td>2026-07-03</td><td>2026-08-26</td></tr>
+<tr><td class="cl"><a href="../details/partners/duff.html">DUFF</a></td><td>TLS version: TLSv1.2</td><td class="num">7</td><td>2026-06-29</td><td>2026-08-28</td></tr>
+<tr class="total"><td>Total (46 rows)</td><td></td><td class="num">20691</td><td></td><td></td></tr>
+</table></div>
+<p class="note">One row per (partner, deprecated parameter) seen in the <strong>last 7 days</strong> — the partners to contact about an upgrade. Transfers counts every leg in the window negotiated with that value, so the busiest offenders sort to the top. A partner that stopped using the value earlier in the window (a completed cutover) is NOT listed here — the Upgrades table below carries it.</p>
+<h2>Upgrades in the window</h2>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Partner</th><th>Deprecated parameter</th><th>Upgraded to</th><th>Old last seen</th><th>New first seen</th><th>Cutover</th></tr>
+<tr><td class="cl"><a href="../details/partners/aperture.html">APERTURE</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/aperture.html">APERTURE</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/blackmesa.html">BLACKMESA</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/blackmesa.html">BLACKMESA</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-25</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/bluth.html">BLUTH</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/bluth.html">BLUTH</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/duff.html">DUFF</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-27</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/duff.html">DUFF</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/dunder.html">DUNDER</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-27</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/dunder.html">DUNDER</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-26</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-30</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-26</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/initech.html">INITECH</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/initech.html">INITECH</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-27</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/massive.html">MASSIVE</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-27</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/massive.html">MASSIVE</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-25</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/monarch.html">MONARCH</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/monarch.html">MONARCH</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/oscorp.html">OSCORP</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/oscorp.html">OSCORP</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/p2p.html">P2P</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/p2p.html">P2P</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-27</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/piedpiper.html">PIEDPIPER</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/piedpiper.html">PIEDPIPER</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-21</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/sabre.html">SABRE</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/sabre.html">SABRE</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/soylent.html">SOYLENT</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/soylent.html">SOYLENT</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/stark.html">STARK</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/stark.html">STARK</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/tyrell.html">TYRELL</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/vandelay.html">VANDELAY</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-27</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/vandelay.html">VANDELAY</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-26</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/vdn.html">VDN</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-29</td><td>2026-06-24</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/wayne.html">WAYNE</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-26</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/weyland.html">WEYLAND</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/weyland.html">WEYLAND</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-27</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/wonka.html">WONKA</a></td><td>Public Key: ssh-rsa</td><td>rsa-sha2-256</td><td>2026-08-29</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr><td class="cl"><a href="../details/partners/wonka.html">WONKA</a></td><td>TLS version: TLSv1.2</td><td>TLSv1.3</td><td>2026-08-28</td><td>2026-06-23</td><td class="failed">mixed fleet</td></tr>
+<tr class="total"><td>Total (46 upgrade pairs, 46 mixed)</td><td></td><td></td><td></td><td></td><td></td></tr>
+</table></div>
+<p class="note">Every partner that used a deprecated value AND a modern value of the same parameter in the window. A <strong>clean cutover</strong> shows its date — the modern value's first sighting, on or after the deprecated value's last (same-day switches count as clean). <strong>Mixed fleet</strong> means the deprecated value kept appearing after the modern one started — typically several client systems or keys on the partner side, only some of them upgraded; those partners also stay on the outreach list above while the old value keeps showing up.</p>
+<h2>Deprecated-parameter timeline</h2>
+<div class="tablewrap"><table data-nofilter="1" data-nosearch="1">
+<tr><th>Deprecated parameter</th><th class="num">Partners still on it</th><th class="num">Partners in window</th><th class="num">Transfers</th><th>Newest seen</th></tr>
+<tr><td>Public Key: ssh-rsa</td><td class="num warn">26</td><td class="num">26</td><td class="num">19274</td><td>2026-08-30</td></tr>
+<tr><td>TLS version: TLSv1.2</td><td class="num warn">20</td><td class="num">21</td><td class="num">1457</td><td>2026-08-29</td></tr>
+<tr class="total"><td>Total (2 parameters)</td><td class="num warn">46</td><td class="num"></td><td class="num">20731</td><td></td></tr>
+</table></div>
+<p class="note">Why these two count as deprecated: <strong>ssh-rsa</strong> is the SSH signature algorithm that pairs an RSA key with <strong>SHA-1</strong> — broken enough that OpenSSH disables it by default since 8.8; the same RSA key works fine with the rsa-sha2-256/-512 algorithms, so this is a partner-side software/config upgrade, not a new key. <strong>TLSv1.2</strong> is the legacy TLS version; TLSv1.3 is current. Reading the Public Key rows: an OUTBOUND leg (we connect out) shows the REMOTE SERVER's host key — the partner must upgrade their server — while an INBOUND leg shows the connecting CLIENT's authentication key, so the fix sits in the partner's client software. Partners use the site-wide UNION attribution (a leg counts for every partner of its subscription plus the host-resolved one).</p>
+<div class="summary">Still using a deprecated parameter: 46 partner/parameter pair(s), 20691 transfer(s)  |  Upgrade pairs seen: 46 (46 mixed fleet)  |  Deprecated transfers in window: 20731  |  Dataset end: 2026-08-30</div>
+</body>
+</html>

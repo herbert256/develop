@@ -1,0 +1,14 @@
+# input/partner-aliases.tsv — hand-curated partner tokens naming ONE
+# organisation (bin/flow-manager.sh merge rule 4 + the subscription-name
+# fallback retry). Two TAB-separated tokens = one organisation; a SINGLE
+# token on its own line DECLARES that token a real organisation (it leaves
+# the helper/qualifier lists everywhere).
+#
+# SAMPLE ESTATE: the misspelled GLOBEXX accounts are GLOBEX; the WONKA
+# variants form an alias STAR (the merged group takes the star's name); P2P
+# is the SETTLE clearing flows' real counterparty, not a qualifier.
+GLOBEXX	GLOBEX
+WONKA-PUO	WONKA
+WNK	WONKA
+TDI	WONKA
+P2P

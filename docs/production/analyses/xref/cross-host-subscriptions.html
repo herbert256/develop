@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cross Reference: Remote Host - Subscriptions</title>
+<meta name="report-key" content="cross-host">
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="production" data-help="cross-reference" data-twin="../../../acceptance/analyses/xref/cross-host-subscriptions.html"></div>
+<h1>Cross Reference: Remote Host - Subscriptions <span class="grouptag">&larr; Configuration &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="../use-cases.html">Use cases</a><a class="tab" href="../uc2-visits.html">UC2 pickup visits</a><a class="tab" href="../accounts.html">Accounts</a><a class="tab" href="../account-sharing.html">Account sharing</a><a class="tab" href="../twins.html">Twins</a><a class="tab" href="../cronjobs.html">Cronjobs</a><a class="tab" href="../config-hygiene.html">Config hygiene</a><a class="tab" href="../whitelist-audit.html">Whitelist audit</a><a class="tab" href="../cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="../../transfer/sources-and-targets.html">Sources and Targets</a><a class="tab" href="../../transfer/skipped.html">Skipped</a><a class="tab" href="../../transfer/not-in-flow-manager.html">Not in Flow Manager</a><span class="tab active">Cross References</span></p>
+<p class="range">Which Remote Host goes with which other entity: every pair seen together on at least one log row, PLUS the configured pairs that never appear (an analysis of relationships — no counts, no dates). The two tab rows pick the pair of entity types; each cell tints by its own entity's status (green = last transfer OK, orange = never seen, red = Error, blue = server-log only).</p>
+<p class="tabs"><a class="tab" href="cross-account-subscriptions.html">Account</a><a class="tab" href="cross-login-subscriptions.html">Login</a><span class="tab disabled">Subscriptions</span><span class="tab active">Hosts</span><a class="tab" href="cross-partner-subscriptions.html">Partners</a><a class="tab" href="cross-application-subscriptions.html">Applications</a><a class="tab" href="cross-domain-subscriptions.html">Domains</a></p>
+<p class="tabs"><a class="tab" href="cross-host-account.html">Account</a><a class="tab" href="cross-host-login.html">Login</a><span class="tab active">Subscriptions</span><span class="tab disabled">Hosts</span><a class="tab" href="cross-host-partners.html">Partners</a><a class="tab" href="cross-host-applications.html">Applications</a><a class="tab" href="cross-host-domains.html">Domains</a><span class="tabsep"></span><a class="tab" href="cross-subscription-hosts.html">Swap</a></p>
+<div class="tablewrap"><table class="grouped">
+<tr><th>Remote Host</th><th>Subscription</th></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/hosts/docs-bluth-example.html">docs.bluth.example</a></td><td class="res-orange cl"><a href="../../details/subscriptions/uc3-zg-ikaz-bluth.html">UC3_ZG_IKAZ_BLUTH</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/rec-feeds-soylent.html">REC_FEEDS_SOYLENT</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-aps-syshub-soylent.html">UC3_APS_SYSHUB_SOYLENT</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/files-initech-example.html">files.initech.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-it-archive-initech.html">UC1_IT_ARCHIVE_INITECH</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/filetransfer-acme-example.html">filetransfer.acme.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-infra-st-monitor-infra.html">UC1-INFRA_ST-MONITOR_INFRA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/filetransfer-acme-example.html">filetransfer.acme.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-infra-st-monitor-infra.html">UC3-INFRA_ST-MONITOR_INFRA</a></td></tr>
+<tr data-seen="1"><td class="res-red cl"><a href="../../details/hosts/mft-umbrella-example.html">mft.umbrella.example</a></td><td class="res-red cl"><a href="../../details/subscriptions/hr-roster-umbrella.html">HR_ROSTER_UMBRELLA</a></td></tr>
+<tr data-seen="1"><td class="res-red cl"><a href="../../details/hosts/mft-umbrella-example.html">mft.umbrella.example</a></td><td class="res-red cl"><a href="../../details/subscriptions/uc1-ab-claims-umbrella.html">UC1_AB_CLAIMS_UMBRELLA</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/hosts/sftp-cyberdyne-example.html">sftp.cyberdyne.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-aps-fmgenlog-cyberdyne.html">UC3_APS_FMGENLOG_CYBERDYNE</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/hosts/sftp-cyberdyne-example.html">sftp.cyberdyne.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-aps-fmreplerr-cyberdyne.html">UC3_APS_FMREPLERR_CYBERDYNE</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-fin-billing-globex.html">UC1_FIN_BILLING_GLOBEX</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-ab-nas-globex.html">UC3_AB_NAS_GLOBEX</a></td></tr>
+<tr data-seen="1"><td class="res-red cl"><a href="../../details/hosts/sftp-sabre-example.html">sftp.sabre.example</a></td><td class="res-red cl"><a href="../../details/subscriptions/uc1-fs-mortgage-sabre.html">UC1_FS_MORTGAGE_SABRE</a></td></tr>
+<tr data-seen="1"><td class="res-red cl"><a href="../../details/hosts/sftp-sabre-example.html">sftp.sabre.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-odv-merlijn-sabre-d.html">UC3_ODV_MERLIJN_SABRE_D</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/hosts/sftp-stark-example.html">sftp.stark.example</a></td><td class="res-blue cl"><a href="../../details/subscriptions/uc1-aps-invoice-stark.html">UC1_APS_INVOICE_STARK</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/sftp-wonka-example.html">sftp.wonka.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-cd-cosmos-wonka.html">UC1_CD_COSMOS_WONKA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/sftp-wonka-example.html">sftp.wonka.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-cd-printmgmt-wonka.html">UC1_CD_PRINTMGMT_WONKA</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/hosts/sftp-zorg-example.html">sftp.zorg.example</a></td><td class="res-orange cl"><a href="../../details/subscriptions/uc1-hr-archive-zorg.html">UC1_HR_ARCHIVE_ZORG</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/trades-gekko-example.html">trades.gekko.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/gl-postings-gekko.html">GL_POSTINGS_GEKKO</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/transfer-hooli-example.html">transfer.hooli.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-zg-pension-hooli.html">UC1_ZG_PENSION_HOOLI</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/transfer-hooli-example.html">transfer.hooli.example</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-it-recon-hooli.html">UC3_IT_RECON_HOOLI</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/unknown.html">unknown</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-infra-st-monitor-infra.html">UC1-INFRA_ST-MONITOR_INFRA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/hosts/unknown.html">unknown</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-infra-st-monitor-infra.html">UC3-INFRA_ST-MONITOR_INFRA</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/hosts/wings-monarch-example.html">wings.monarch.example</a></td><td class="res-orange cl"><a href="../../details/subscriptions/uc1-fin-claims-monarch.html">UC1_FIN_CLAIMS_MONARCH</a></td></tr>
+<tr class="total"><td colspan="2">Total (24 pair(s))</td></tr>
+</table></div>
+<p class="note">An analysis of the cross references, not a traffic report. Each cell is colored by that entity result: <strong>light green</strong> = last transfer OK, <strong>light orange</strong> = configured but never seen, <strong>light red</strong> = last transfer Error, <strong>light blue</strong> = surfaced only by the Server → Transfer step (bin/build/seen-in-server-log.sh) with no real transfer. The entities are per-leg attributes (a leg inherits its File's partner/application/domain attribution); pairs where either value is blacklisted or unattributed are not listed. There is no date filter here — seen means seen anywhere in the loaded logs.</p>
+</body>
+</html>

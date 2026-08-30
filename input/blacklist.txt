@@ -1,0 +1,24 @@
+# input/blacklist.txt — platform-internal pseudo-values BLANKED at parse time
+# (the row is kept; only the entity attribution goes). TSV: <field> <rule> <value>
+#   field: account | login | site | host
+#   rule:  drop (blank on exact match) | keep (an ERE every kept value must match)
+# Read only through bin/blacklist.sh; part of parser_sig — an edit forces a
+# full reparse. See CLAUDE.md, "The attribution chain".
+#
+# SAMPLE ESTATE (bin/sample/): the internal platform values below are the
+# generator's own — the ST virtual account, the CFT hub login, and the
+# cluster's RFC 5737 addresses.
+account	drop	SECURETRANSPORT
+login	drop	SECURETRANSPORT
+login	drop	P00001_CFT01
+login	drop	*nobody
+login	drop	UNKNOWN
+# every real subscription follows the UC naming convention; anything else in
+# the site field ("Clone - ..." artifacts, profile echoes) is blanked
+site	keep	^UC
+# the internal cluster: the ST node, the CFT hub pair and the legacy address
+host	drop	localhost
+host	drop	192.0.2.20
+host	drop	192.0.2.21
+host	drop	192.0.2.40
+host	drop	192.0.2.76

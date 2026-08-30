@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>One-Legged Transfers</title>
+<meta name="report-dates" content="2026-06-23,2026-06-24,2026-06-25,2026-06-26,2026-06-27,2026-06-28,2026-06-29,2026-06-30,2026-07-01,2026-07-02,2026-07-03,2026-07-04,2026-07-05,2026-07-06,2026-07-07,2026-07-08,2026-07-09,2026-07-10,2026-07-11,2026-07-12,2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22,2026-07-23,2026-07-24,2026-07-25,2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="acceptance-transfer">
+<meta name="report-key" content="pirates">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="pirates" data-twin="../../production/transfer/pirates-details.html"></div>
+<h1>One-Legged Transfers</h1>
+<p class="range"><strong>Pirates</strong> — logical transfers (CoreIds) that have only <strong>one leg</strong> (one technical row). A complete transfer is store-and-forward: an <strong>Inbound</strong> leg (partner → ST) and an <strong>Outbound</strong> leg (ST → partner). A single-leg CoreId is one-sided — the counterpart leg never happened — so the file never made the full crossing. <strong>Details</strong> counts them per subscription; <strong>Top view</strong> the count per day.</p>
+<p class="tabs"><span class="tab active">Details</span><a class="tab" href="pirates-top-view.html">Top view</a></p>
+<div class="tablewrap"><table>
+<tr><th>Subscription</th><th class="num">Count</th><th>First date</th><th>Last date</th></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-infra-st-monitor-infra.html">UC1-INFRA_ST-MONITOR_INFRA</a></td><td class="num">20</td><td>2026-06-29</td><td>2026-08-24</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-hr-payroll-initech.html">UC1_HR_PAYROLL_INITECH</a></td><td class="num">13</td><td>2026-06-25</td><td>2026-08-20</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc4-ab-scan-monarch.html">UC4_AB_SCAN_MONARCH</a></td><td class="num">12</td><td>2026-06-30</td><td>2026-08-28</td></tr>
+<tr class="total"><td>Total (3 subscription(s))</td><td class="num">45</td><td></td><td></td></tr>
+</table></div>
+<p class="note">One row per subscription: how many of its transfers were single-leg, and the first and last date one occurred. Single-leg transfers do not complete the store-and-forward, so they end up <strong>Error</strong>. The Subscription links to its detail page.</p>
+<div class="summary">Single-leg (pirate) transfers: 45</div>
+</body>
+</html>

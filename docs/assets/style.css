@@ -1,0 +1,904 @@
+/* Axway log reports — shared stylesheet.
+   Hand-authored source; build.sh copies this to docs/assets/style.css.
+   One theme for every report + landing page (the old per-report inline styles
+   and the split.html variant are consolidated here). */
+
+/* ---- base ---- */
+/* Site-wide text scale: 90% of the browser default. Every font-size on the
+   site is rem-based, so this one root declaration scales ALL text (and the
+   rem-based spacing with it) proportionally. */
+html { font-size: 90%; }
+/* No top margin: the top bar sits flush at y=0; padding gives the rest of the
+   body its spacing (the bar cancels the L/R padding with negative margins).
+   padding-top clears the fixed top bar so content isn't hidden. The bottom
+   padding is ordinary breathing room now — the fixed footer bar was removed
+   2026-07 along with its build link and timestamp. */
+body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 1.4rem; background:#f7f7f9; color:#222; }
+
+/* ---- site-wide top bar (fixed to the viewport, flush to the top) ---- */
+/* position:fixed (not sticky) so it doesn't rubber-band with the content on
+   overscroll; body padding-top reserves its height. */
+.topbar { position:fixed; top:0; left:0; right:0; z-index:20; display:flex; justify-content:space-between; align-items:center;
+          flex-wrap:wrap; gap:0.3rem 1.5rem; padding:0.7rem 2rem; background:#20344a;
+          box-shadow:0 2px 4px rgba(0,0,0,0.2);
+          min-height:1.25rem; }   /* the runtime-bar placeholder is EMPTY until report.js fills it — keep the strip at full height */
+/* SIX evenly-spaced parts (2026-07 redesign): brand · env pair · Entities +
+   search · the three report dropdowns · the Dashboard link · the right icons.
+   The bar's justify-content:space-between distributes the leftover space
+   evenly — no part carries a pushing margin, so the first part sits on the
+   left border and the last on the right. */
+.topbar .nav { display:flex; align-items:center; gap:0.4rem 1.4rem; }
+.topbar .nav a { color:#fff; font-size:0.95rem; }   /* help pages' plain area links (report pages use .dd dropdowns instead) */
+.topbar .nav a:hover { text-decoration:underline; }
+.topbar .brand { color:#fff; font-weight:bold; font-size:1.05rem; }
+.topbar .brand:hover { text-decoration:underline; }
+/* the ENVIRONMENT label right after the brand (report.js setupEnvSwitch):
+   on env pages a link to this page's twin in the other environment, on the
+   shared home the Acceptance/Production toggle for the baked env blocks */
+/* The env pair "Acceptance / Production": the ACTIVE env (.envcur) bold &
+   bright and not clickable, the other a dimmer switch link. */
+.topbar .envpair { font-size:0.95rem; white-space:nowrap; }
+.topbar .envpair .envsep { color:rgba(255,255,255,0.4); margin:0 0.5rem; }
+.topbar a.envswitch { color:rgba(255,255,255,0.6); cursor:pointer; }
+.topbar a.envswitch:hover { color:#fff; text-decoration:underline; }
+.topbar .envpair .envcur { color:#ffd9a0; font-weight:bold; cursor:default; text-decoration:none; }
+.topbar .envpair a.envcur:hover { color:#ffd9a0; text-decoration:none; }
+.topbar .tright { color:#fff; font-size:0.95rem; white-space:nowrap; }
+/* hover dropdowns of report links (left-anchored: the menus live on the bar's left side) */
+.dd { position:relative; }
+/* the plain Dashboard link between the dropdowns and the right icons (ONE
+   dashboard page — no dropdown); dressed like a .ddlabel so the bar reads
+   as one family */
+.topbar a.dashlink { color:#fff; font-size:0.95rem; white-space:nowrap; }
+.topbar a.dashlink:hover { text-decoration:underline; }
+.dd .ddlabel { color:#fff; font-size:0.95rem; cursor:default; user-select:none; }
+.dd:hover .ddlabel { text-decoration:underline; }
+.dd .ddm { position:absolute; top:100%; left:0; display:none; min-width:210px; max-height:75vh; overflow:auto;
+           background:#fff; border:1px solid #b9c4d0; border-radius:0 0 4px 4px; box-shadow:0 4px 10px rgba(0,0,0,0.3); z-index:30; }
+.dd:hover .ddm, .dd:focus-within .ddm { display:block; }
+.dd .ddm a { display:block; padding:6px 14px; color:#20344a; font-size:0.9rem; white-space:nowrap; }
+.dd .ddm a:hover { background:#e8f0fe; text-decoration:none; }
+.dd .ddm a.ddtop { font-weight:bold; border-bottom:1px solid #ddd; }   /* "Start page" -> area index */
+
+
+/* the three right icons travel as ONE flex part (part 6), so space-between
+   pins the group as a whole to the right border */
+.topbar .tr-group { display:flex; align-items:center; gap:0.55rem; }   /* the three right icons: even, tight spacing */
+/* the Entities link + search icon pair (part 3) — one flex part, inner gap
+   only (the icon links straight to Entity Search) */
+.topbar .entgroup { display:flex; align-items:center; gap:1rem; white-space:nowrap; }
+.topbar .entlabel { color:#fff; font-size:0.9rem; }
+.topbar .entlabel:hover { text-decoration:underline; }
+/* the search magnifier: a circle icon matching the help icon */
+.topbar .searchbtn { display:inline-flex; align-items:center; justify-content:center; flex:none;
+                   width:1.7rem; height:1.7rem; border-radius:50%; background:rgba(255,255,255,0.18);
+                   color:#fff; font-size:0.92rem; line-height:1; }
+.topbar .searchbtn:hover { background:rgba(255,255,255,0.35); text-decoration:none; }
+
+/* ---- Site map (docs/<env>/sitemap.html, bin/publish.sh write_sitemap) ----
+   One column per AREA, one card per report GROUP: the group name on top, the
+   member reports tree-listed under it with monospace connectors. Each area
+   carries its own accent color on the card left border. */
+.smgrid { display:flex; flex-wrap:wrap; gap:0 1.4rem; align-items:flex-start; }
+.smarea { flex:1 1 17rem; min-width:16rem; max-width:26rem; }
+.smarea > h2 { margin:0.4rem 0 0.8rem; padding-bottom:0.3rem; border-bottom:2px solid #20344a; }
+.smcard { background:#fff; border:1px solid #dde3ea; border-left:4px solid #20344a; border-radius:6px;
+          padding:0.55rem 0.9rem 0.6rem; margin:0 0 0.8rem; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
+.smcard h3 { margin:0; font-size:0.95rem; color:#20344a; }
+.smcard h3 a { color:inherit; }
+.smcard .smcount { color:#8a94a1; font-weight:normal; font-size:0.78rem; margin-left:0.45rem; }
+.smcard ul { list-style:none; margin:0.35rem 0 0; padding:0; font-size:0.9rem; }
+.smcard li { margin:0.12rem 0; padding-left:1.35rem; position:relative; }
+.smcard li::before { content:"\251C\2500"; position:absolute; left:0.1rem; color:#b6bfc9;
+                     font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.78rem; }
+.smcard li:last-child::before { content:"\2514\2500"; }
+.sm-transfer .smcard { border-left-color:#3c6e9f; }
+.sm-server   .smcard { border-left-color:#7a5ea6; }
+.sm-dash     .smcard { border-left-color:#2f8f6b; }
+.sm-ana      .smcard { border-left-color:#c07a2e; }
+.sm-tools    .smcard { border-left-color:#8a94a1; }
+.topbar .helpbtn { display:inline-flex; align-items:center; justify-content:center; flex:none;
+                   width:1.7rem; height:1.7rem; border-radius:50%; background:rgba(255,255,255,0.18);
+                   color:#fff; font-weight:bold; font-size:1.05rem; line-height:1; }
+.topbar .helpbtn:hover { background:rgba(255,255,255,0.35); text-decoration:none; }
+
+/* ---- STAT info boxes (.rpt STAT directive — Partner Coverage's Total /
+   Covered / Not covered row); consecutive boxes sit side by side ---- */
+.stat { display:inline-block; min-width:9.5rem; margin:0 0.8rem 1.1rem 0; padding:0.55rem 1.1rem 0.6rem;
+        background:#fff; border:1px solid #dde3ea; border-radius:6px; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
+.stat .stat-v { display:block; font-size:1.5rem; font-weight:bold; color:#20344a; line-height:1.15; }
+.stat .stat-l { display:block; font-size:0.8rem; color:#66707c; margin-top:0.1rem; }
+.stat-green  { background:#e4f6e4; border-color:#bcdcbc; }
+.stat-red    { background:#fde3e3; border-color:#e8c0c0; }
+.stat-orange { background:#fff3d6; border-color:#e8d9b0; }
+/* the site-wide BLUE (seen in the server log only) as an info box — UC3 status
+   uses it for the two statuses a blue subscription can be in */
+.stat-blue   { background:#d3e6fb; border-color:#b3cde8; }
+/* clickable stat FILTER boxes (Subscriptions in boxes: each box narrows
+   the table to that report's rows, the left box shows all — report.js
+   setupStatFilter). The active box carries the top-bar blue as a border. */
+.stat[data-pf] { cursor:pointer; user-select:none; }
+.stat[data-pf]:hover { border-color:#20344a; }
+.stat.pfon { border:2px solid #20344a; padding:calc(0.55rem - 1px) calc(1.1rem - 1px) calc(0.6rem - 1px); }
+/* Subscriptions in boxes: FIFTEEN boxes, so they get their own narrower width
+   instead of the site-wide `min-width:9.5rem` + content-box sizing, which let
+   each box grow to its label and left 170px boxes laid out 7+7+1 — a single
+   box stranded on a third row. box-sizing:border-box is what makes `width` an
+   exact outer width, so all fifteen are identical whatever their label.
+   10.5rem is the floor with slack: the longest label ("Trouble after success")
+   measures 110px, plus 2x1.1rem padding and the border needs 142px, and below
+   ~137px it wraps to two lines and drags its box out of the row. The 2px .pfon
+   border costs no width here — border-box absorbs it. */
+.pfboxes .stat { box-sizing:border-box; min-width:0; width:10.5rem; }
+/* the explanation of the ACTIVE filter box, between the boxes and the table:
+   one paragraph per box is baked, only the .pfshow one is displayed and
+   setupStatFilter moves that class along with .pfon. Without JS the baked
+   pair (the "all" box and its paragraph) is what shows. */
+/* Subscriptions in boxes only: THIRTEEN box columns beside 70+ character
+   subscription names, so this one table renders at 90%. Scoped to .pftable —
+   the site-wide `table { width:auto }` means every other table is exactly as
+   wide as its content and must not shrink. */
+.pftable { font-size:90%; }
+/* Even at 90% the thirteen box columns take ~930px, and a 75-character
+   subscription name then pushes the last of them out of the wrapper. Give the
+   name column a DEFINITE width and let the few names that exceed it wrap.
+   Deliberate exception to the site-wide `th, td { white-space:nowrap }`.
+   `width` (not `max-width` alone) is load-bearing: these names are
+   underscore-joined with no space to break at, so `anywhere` drops the
+   column's min-content width to one character and auto table layout then
+   squeezes it far below what the space allows — wrapping EVERY row instead of
+   the long ones. With the width fixed, 35 of 524 names wrap, none past two
+   lines, and the table still clears the wrapper by ~50px at 1512px. */
+.pftable td:first-child { white-space:normal; overflow-wrap:anywhere; width:31rem; max-width:31rem; }
+.pfdesc { display:none; }
+.pfdesc.pfshow { display:block; border-left:3px solid #dde3ea; padding-left:0.8rem; }
+
+h1 { color:#20344a; margin:0 0 1.1rem; }   /* tight to the top bar above, more breathing room below */
+h1 .grouptag { font-size:0.55em; font-weight:400; color:#6b7785; margin-left:0.5em; white-space:nowrap; }   /* the analyses group a report belongs to, appended to its title */
+h2 .h2period { white-space:nowrap; }   /* the date period a table aggregates (period= TABLE modifier); report.js keeps it on the selected range. Deliberately UNSTYLED otherwise: it reads as part of the heading */
+h2 { color:#20344a; font-size:1.1rem; margin-top:1.8rem; }
+/* an anchored heading (TABLE anchor=…): a jump to it lands clear of the fixed top bar */
+h2[id] { scroll-margin-top:3.6rem; }
+.subtitle { color:#5a6b7d; font-size:1rem; margin:0 0 1.2rem; }
+.range { margin-bottom:1.2rem; font-size:0.95rem; color:#444; }
+.range strong { color:#20344a; }
+/* ALERT directive (render_rpt.awk): a prominent red banner at the top of a
+   page — e.g. the detail pages' "errors in the server log after the last
+   transfer" warning. */
+.alert { margin:0 0 1.2rem; padding:0.6rem 1rem; font-size:0.95rem; font-weight:bold;
+         color:#8a1c1c; background:#fde3e3; border:1px solid #e8b0b0; border-left:4px solid #c0392b; border-radius:4px; }
+.alert strong { color:#8a1c1c; }
+/* WARN directive (render_rpt.awk): ALERT's amber sibling. ALERT is the RUNTIME
+   register (errors logged after the last transfer); WARN is the CONFIGURATION
+   register — a page that is structurally wrong rather than failing — so it
+   takes the site's warning colour, the same orange the result tints use. */
+.alert.warn { color:#7a4a00; background:#fdf0dc; border-color:#e8c99a; border-left-color:#d98c1f; }
+.alert.warn strong { color:#7a4a00; }
+/* LOGCARD directive (render_rpt.awk): one raw log line in a card of its own —
+   the evidencing server-log message under a blue (server-log-only) detail
+   page's INTRO. Timestamp above, the message verbatim in monospace below;
+   a long message wraps rather than widening the page. */
+.logcard { display:inline-block; max-width:100%; margin:-0.6rem 0 1.3rem; padding:0.55rem 0.9rem;
+           background:#fff; border:1px solid #b8d0e8; border-left:4px solid #5b86ad; border-radius:4px; }
+.logcard .lc-when { display:block; font-size:0.8rem; color:#66707c; margin-bottom:0.2rem; }
+.logcard .lc-msg { display:block; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+                   font-size:0.85rem; color:#20344a; white-space:pre-wrap; overflow-wrap:anywhere; }
+a { color:#20344a; text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* ---- tables ---- */
+/* Tables shrink to their CONTENT: columns are exactly as wide as their widest
+   value + padding, never stretched to fill a fixed table width. A table wider
+   than the page still scrolls inside its .tablewrap. */
+table { border-collapse:collapse; width:auto; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin:0; }
+table.fit { width:auto; }   /* historical alias — every table shrinks to content now */
+tr.rowlink { cursor:pointer; }   /* index rows are fully clickable (report.js setupIndexRows) */
+tr.rowlink td:empty { cursor:auto; }   /* ...except empty cells — not click targets */
+/* A row carrying data-dhide=1 is hidden by ATTRIBUTE, so a writer can bake it
+   (the topsel candidate rows past the top N start hidden without a script
+   running); report.js applyRowVis keeps the attribute and the inline style in
+   step, so the runtime date filter and this rule never disagree. */
+tr[data-dhide="1"] { display:none; }
+/* Every table is wrapped in .tablewrap so a table wider than the page scrolls
+   inside its own box — the page body never scrolls sideways (the top bar
+   are fixed). The wrapper carries the table's outer spacing. */
+.tablewrap { overflow-x:auto; margin-top:0.5rem; padding-bottom:3px; }
+.tablewrap + h2 { margin-top:2rem; }
+.tablewrap + .tablewrap { margin-top:1.8rem; }   /* title-less stacked tables (detail-page breakdowns) need breathing room */
+
+/* Side-by-side tables (render_rpt `sxs` modifier): a flex row of columns, each
+   column holding one table's <h2> + .tablewrap so the heading stays above its
+   own table. NOWRAP + top-align keeps both titles on the SAME row (the group
+   scrolls sideways inside its own box if the pair is wider than the page,
+   rather than dropping the second table below the first). */
+.sxs { display:flex; flex-wrap:nowrap; gap:0 2.5rem; align-items:flex-start; overflow-x:auto; }
+.sxs .sxscol { flex:0 0 auto; }
+.sxs .sxscol > h2:first-child { margin-top:1.6rem; }
+/* the home's five aligned per-day tables (the Date spine + Files / Duration /
+   Red-Green switch / First seen): the same day must stay on the same line in
+   every table, so every row needs ONE height — an all-empty row (and the
+   spine's empty header cell) would otherwise collapse to its padding, an
+   empty cell having no line box. A no-break space via ::before gives every
+   empty cell that line box without touching the markup. */
+table.dayrows th:empty::before, table.dayrows td:empty::before { content:"\00a0"; }
+/* the Date spine's header cell is BLANK — painted like the page (the spine
+   carries a header row only so its rows align with the four data tables').
+   border-COLOR instead of border:none keeps the geometry identical; the
+   bottom edge keeps the shared #ddd line above the first date row. */
+table.dayrows th.blank { background:#f7f7f9; border-color:#f7f7f9; border-bottom-color:#ddd; }
+/* …and the spine's own "Date" <h2> shows no title either — visibility
+   keeps its box, so the five tables still start level. */
+.sxs .sxscol > h2.blank { visibility:hidden; }
+th, td { border:1px solid #ddd; padding:8px 12px; text-align:left; white-space:nowrap; }
+th.num, td.num { text-align:right; }
+/* the detail-page Metrics table: bold full-width group headers (Date / Files /
+   Transfers / Size / Rank) and indented sub-metric rows */
+td.metgrp { font-weight:bold; background:#eef2f6; color:#20344a; }
+td.metsub { padding-left:1.9rem; }
+/* fake-transfers list: the server-log message row above each injected entry
+   (render_rpt full-width cell). Muted + monospace so it reads as the source
+   line; a heavier top border marks where each 2-row entry begins, and the
+   message wraps instead of stretching the table. */
+td.bluemsg { background:#eef2f6; color:#556; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:.85em; white-space:normal; border-top:2px solid #b8c2cc; }
+/* a cell whose whole value is ONE link (class cl, set by the renderer): the
+   entire cell is the click target — the td padding moves onto the block <a> */
+td.cl { padding:0; }
+td.cl > a { display:block; padding:8px 12px; }
+th { background-color:#20344a; color:#fff; }
+th a { color:#fff; }                    /* linked column headers (traffic matrix) stay readable on the dark bar */
+tr:nth-child(even) { background-color:#f2f2f2; }
+tr:hover { background-color:#e8f0fe; }
+tr.total td { font-weight:bold; background-color:#dde4ec; border-top:2px solid #20344a; }
+td.failed { background-color:#fde3e3; }
+/* analyses Status columns: Error / Warning / Ok counts of the result field */
+td.st-err  { background-color:#fde3e3; }
+td.st-warn { background-color:#fdf1dc; }
+td.st-ok   { background-color:#e4f6e4; }
+/* analyses combined Configured cells: the configured total on top, the Seen
+   (light green) and Not seen (light red) values side by side below it */
+td.stack { padding:0; vertical-align:top; }
+td.stack .cfg { padding:4px 12px; text-align:center; min-height:1.05em; }   /* spans the Seen/Not-seen pair, centered */
+td.stack .split { display:flex; }
+td.stack .split > div { flex:1 1 50%; padding:4px 12px; text-align:right; min-height:1.05em; }
+/* the entities.html 3-way split cells: Server (blue) | Transfer (green) | Not
+   seen (red)  and  OK (green) | Server (blue) | Error (red) — three columns */
+td.stack .split3 { display:flex; }
+td.stack .split3 > div { flex:1 1 33.33%; padding:4px 9px; text-align:right; min-height:1.05em; }
+td.stack .sn { background-color:#e4f6e4; }
+td.stack .ns { background-color:#fde3e3; }
+td.stack .srv { background-color:#d3e6fb; }   /* seen via the server (fake-files) — blue */
+td.processed { background-color:#e4f6e4; }
+td.failed.z, td.processed.z { background-color:transparent; }   /* a 0 value: no red/green tint (cell is blanked) */
+/* Show Seen "All" tables: tint NOT-SEEN rows light red so they stand out; SEEN rows
+   stay untinted so their Error (red) / OK (green) cells show the standard
+   per-cell colours. Scoped to the "all" view — the Seen/Not-Seen views also carry
+   data-seen (for the date filter's re-partitioning) but stay untinted. */
+table[data-seenmode="all"] tr[data-seen="0"] td { background-color:#fde3e3; }
+/* Detail-page entity tables (seenrows): the rows cross-reference the FlowManager
+   config — green = the pair has logged data (in the selected range), red = a
+   configured partner with none. The Error/OK cells keep their own tints
+   (excluded from the green rule); a blanked-0 cell in a red row goes red with it
+   (these rules sit after the .z reset above, so they win the source-order tie). */
+table[data-seenrows] tr[data-seen="1"] td:not(.failed):not(.processed) { background-color:#e4f6e4; }
+table[data-seenrows] tr[data-seen="0"] td { background-color:#fde3e3; }
+/* a NO-TRAFFIC row that carries its entity's OWN result (@data:res — the
+   detail pages' Account table config rows) tints the WHOLE row that color
+   instead of the generic config-only red */
+table[data-seenrows] tr[data-seen="0"][data-res="green"] td  { background-color:#e4f6e4; }
+table[data-seenrows] tr[data-seen="0"][data-res="orange"] td { background-color:#fdf1dc; }
+table[data-seenrows] tr[data-seen="0"][data-res="red"] td    { background-color:#fde3e3; }
+table[data-seenrows] tr[data-seen="0"][data-res="blue"] td   { background-color:#d3e6fb; }
+/* A 0-blanked Error/OK cell (td.failed.z / td.processed.z, normally
+   transparent) must not punch a white hole into a green SEEN row — it takes
+   the row's light green (an empty Error cell = zero errors = good). */
+table[data-seenrows] tr[data-seen="1"] td.failed.z,
+table[data-seenrows] tr[data-seen="1"] td.processed.z { background-color:#e4f6e4; }
+/* restint tables (the Partner pages' Domain and Application tables): the row's
+   data-res RESULT color paints the WHOLE row, seen rows included — it beats
+   the seenrows green above by source order. Non-zero Error/OK cells keep their
+   outcome tint (excluded here); a 0-blanked outcome cell follows the row. */
+table[data-restint] tr[data-res="green"] td:not(.failed):not(.processed)  { background-color:#e4f6e4; }
+table[data-restint] tr[data-res="orange"] td:not(.failed):not(.processed) { background-color:#fdf1dc; }
+table[data-restint] tr[data-res="red"] td:not(.failed):not(.processed)    { background-color:#fde3e3; }
+table[data-restint] tr[data-res="blue"] td:not(.failed):not(.processed)   { background-color:#d3e6fb; }
+table[data-restint] tr[data-res="green"] td.failed.z,
+table[data-restint] tr[data-res="green"] td.processed.z  { background-color:#e4f6e4; }
+table[data-restint] tr[data-res="orange"] td.failed.z,
+table[data-restint] tr[data-res="orange"] td.processed.z { background-color:#fdf1dc; }
+table[data-restint] tr[data-res="red"] td.failed.z,
+table[data-restint] tr[data-res="red"] td.processed.z    { background-color:#fde3e3; }
+table[data-restint] tr[data-res="blue"] td.failed.z,
+table[data-restint] tr[data-res="blue"] td.processed.z   { background-color:#d3e6fb; }
+/* Detail-page body tint by the entity's configured direction + seen-ness
+   (details.sh META dirclass -> the <body> class; -x = both or unknown). */
+body.dir-seen-in     { background-color:#f1e7d8; }   /* light brown  — seen, in      */
+body.dir-seen-out    { background-color:#e2eef8; }   /* light blue   — seen, out     */
+body.dir-seen-x      { background-color:#ececec; }   /* light gray   — seen, both/?  */
+body.dir-notseen-in  { background-color:#fbf4d5; }   /* light yellow — not seen, in  */
+body.dir-notseen-out { background-color:#fbe6cd; }   /* light orange — not seen, out */
+body.dir-notseen-x   { background-color:#eee2f6; }   /* light purple — not seen, both/? */
+td.warn { background-color:#fff3d6; }   /* amber — server-log Warnings (Top view) */
+td.warn:empty { background-color:transparent; }   /* an EMPTY warn cell carries no signal — no tint (Top view State's blank Waiting) */
+/* KIND pre — a raw log line kept verbatim (the failed-file error pages' server
+   log table). ONE LOGGED LINE = ONE RENDERED LINE (2026-08): plain `pre` keeps
+   the logged spacing AND does not wrap, so a line is read left-to-right as it
+   was written instead of folding into a paragraph — a wrapped 400-character
+   JSON payload made every row a different height and buried where one line
+   ended and the next began. It used to wrap at a 70ch cap; both are gone, so
+   the table sizes to its longest payload and scrolls sideways inside its
+   .tablewrap like every other wide table on the site. */
+/* @{class=mono} — a monospace CELL (the failed-file facts table's CoreId).
+   The KIND `mono` wraps its value in <code>; this is the per-cell twin for
+   a column whose other rows are prose. */
+td.mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+td pre { margin:0; white-space:pre; font-size:0.85rem; line-height:1.35; }
+/* ?axway_row= — the row a detail page's Ranking link points at (report.js
+   markUrlRow). An OUTLINE in the header navy, not a background: the Ranking
+   tables are restint, so every row already carries its entity's result colour
+   and a fill would either fight it or hide it. */
+tr.rowmark td { border-top:2px solid #20344a; border-bottom:2px solid #20344a; }
+tr.rowmark td:first-child { border-left:2px solid #20344a; font-weight:600; }
+tr.rowmark td:last-child { border-right:2px solid #20344a; }
+/* column separator: extra whitespace + a faint rule (e.g. between the session
+   shape columns and the count columns on Session Statistics). */
+th.sep, td.sep { border-left:2px solid #c9d2dc; padding-left:1.8rem; }
+/* spacer column (the root-index Entities table): a borderless page-background
+   column BETWEEN the Entity / Configured / Seen / Result groups, so each group
+   reads as its own block. The opaque page background masks the row striping
+   and the hover tint (both sit on the tr) so the gap never colors. */
+th.spc, td.spc { border:none; background:#f7f7f9; padding:0; width:1.2rem; min-width:1.2rem; }
+th.ctr { text-align:center; }   /* a header spanning a cell pair, centered over it (Result Total/In/Out) */
+td.ctr { text-align:center; }   /* a centered data cell (the Subscriptions-with-problems flag cells) */
+/* the Subscriptions-in-boxes cell: the box name in RED, linking into its report.
+   A text glyph, not the ⚠️ emoji it replaced (2026-07) — an emoji-presentation
+   character renders from the system emoji font and ignores color.
+   .pfok is the one box that is not a problem (OK = the newest File was
+   delivered), so it takes the site's green instead. */
+a.pfx { color:#c0392b; font-weight:700; font-size:1.1em; text-decoration:none; }
+a.pfx:hover { color:#96281b; }
+a.pfx.pfok { color:#1e7e34; }
+a.pfx.pfok:hover { color:#155d27; }
+/* .pfneu: the Seen box — a fact, not a verdict, so neither the flag red nor
+   the OK green */
+a.pfx.pfneu { color:#566573; }
+a.pfx.pfneu:hover { color:#39434e; }
+td.wrap { white-space:normal; max-width:46rem; }   /* a long list cell (partner coverage pages' member accounts) wraps instead of stretching the row */
+/* collapsed list cell (partner coverage pages' Whitelisted IPs): the summary
+   shows just the count, the native disclosure triangle + pointer say "click
+   to open"; the expanded address list gets a little air above. */
+td details summary { cursor:pointer; user-select:none; white-space:nowrap; }
+td details[open] summary { margin-bottom:0.3rem; }
+/* start-empty tables (Entity Search): the renderer pre-stamps every data row
+   data-shide="1" — the same state report.js's empty search sets — so the FIRST
+   PAINT is already empty instead of flashing thousands of rows until the
+   script runs. Once a search matches, report.js flips the attribute to "0"
+   (and manages inline display), so this rule simply stops applying. */
+table[data-start-empty="1"] tr[data-shide="1"] { display:none; }
+
+/* ---- expandable drill-down (Transfer Patterns row; Arrived/Left cells) ---- */
+.expandable { cursor:pointer; }
+/* visible affordance: a drillable CELL is dotted-underlined, so it no longer
+   looks identical to the same-colored cells that don't drill */
+td.expandable { text-decoration:underline dotted; text-underline-offset:2px; }
+tr.expandable.expanded td, td.expandable.expanded { background-color:#e8f0fe; }
+td.coreid-cell { background:#f7f9fc; font-size:0.85rem; padding:8px 10px; }
+.coreid-head { font-weight:bold; color:#20344a; margin-bottom:0.35rem; }
+.coreid-item { font-family:"SFMono-Regular",Consolas,Menlo,monospace; padding:1px 0; color:#333; }
+/* Entity Search: a Source/Target path used by >1 subscription is one aggregate
+   row "<path> (N)"; a disclosure triangle marks it, and it expands into
+   per-subscription rows (tr.subrow — indented, keeping their own data-res tint
+   via the generic tr[data-res] rules). */
+table[data-esearch] tr.expandable > td:first-child::before { content:"\25B8\00a0"; color:#5a6b8c; }
+table[data-esearch] tr.expandable.expanded > td:first-child::before { content:"\25BE\00a0"; }
+tr.subrow td.subname { padding-left:2.2rem; }
+tr.subrow td.subname::before { content:"\21B3\00a0"; color:#8a94a6; }
+
+/* ---- wide table variant (historical: tables now size to content) ---- */
+table.wide { width:auto; }
+table.wide th, table.wide td { padding:6px 10px; }
+table.wide td.cl { padding:0; }
+table.wide td.cl > a { padding:6px 10px; }
+td.file { max-width:480px; overflow:hidden; text-overflow:ellipsis; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.85rem; }
+code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+/* communication-profile JSON pages (bin/comm-profiles.sh + bin/json2html.awk):
+   a scrollable, syntax-highlighted pretty-printed JSON block. */
+/* multi-line cell (e.g. a transfer's row pattern): stacked lines, monospace */
+td.lines { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.85rem; white-space:nowrap; line-height:1.4; }
+/* fold summary row (report.js setupRowFold — the detail pages' Incoming IPs:
+   the unused-whitelist rows collapse behind this one clickable row; its
+   data-res carries the folded rows' tint) */
+tr.foldrow td { cursor:pointer; font-style:italic; user-select:none; }
+/* collapsible lines cell (KIND clines, e.g. patterns' Pattern and Last 10 files
+   columns): loads collapsed to first line + ellipsis + last line; a click
+   toggles .open on the td (report.js setupCollapsible) */
+td.clps { cursor:pointer; }
+td.clps .cm { display:none; }
+td.clps .ce { color:#888; }
+td.clps:hover .ce { color:#20344a; }
+td.clps.open .cm { display:inline; }
+td.clps.open .ce { display:none; }
+
+/* ---- heatmap tiers (hourly.sh hour x weekday: quartiles of the busiest cell) ---- */
+td.heat1 { background-color:#e8f0fe; }
+td.heat2 { background-color:#c2d7f3; }
+td.heat3 { background-color:#93b9e6; }
+td.heat4 { background-color:#5e93cf; color:#fff; }
+
+/* ---- load bar (class-driven width; no inline style) ---- */
+td.bar { width:240px; }
+td.bar span { display:block; height:14px; min-width:1px; background:#20344a; border-radius:2px; width:var(--w,0); }
+.w0{--w:0%}.w5{--w:5%}.w10{--w:10%}.w15{--w:15%}.w20{--w:20%}.w25{--w:25%}
+.w30{--w:30%}.w35{--w:35%}.w40{--w:40%}.w45{--w:45%}.w50{--w:50%}.w55{--w:55%}
+.w60{--w:60%}.w65{--w:65%}.w70{--w:70%}.w75{--w:75%}.w80{--w:80%}.w85{--w:85%}
+.w90{--w:90%}.w95{--w:95%}.w100{--w:100%}
+
+/* ---- misc chrome ---- */
+.note { font-size:0.85rem; color:#666; margin:0.4rem 0 0; }
+.report-link { font-size:0.9rem; margin:0.7rem 0 0; }
+.report-link a { display:inline-block; color:#20344a; font-weight:bold; text-decoration:none; border-bottom:1px solid #20344a; padding-bottom:1px; }
+.report-link a:hover { color:#3a5a80; border-bottom-color:#3a5a80; }
+.filter-note { font-size:0.85rem; color:#8a5a00; background:#fff6e0; border:1px solid #f0d9a0; border-radius:4px; padding:4px 10px; margin:0.6rem 0 0; max-width:800px; }
+.summary { margin-top:1.5rem; font-size:0.95rem; color:#444; }
+.generated { margin-top:2rem; font-size:0.8rem; color:#888; }
+
+/* ---- per-table page tabs ---- */
+.tabs { margin:0 0 1.2rem; }
+.tabs + .tabs { margin-top:-0.7rem; }   /* second tab row (grouped reports) sits close under the first */
+.tabs.herotabs2 { display:none; }   /* the dashboard hero's optional 2nd button row: hidden until its group is picked (report.js shows one) */
+.tabs .tabsep { display:inline-block; width:4.5rem; }   /* extra gap between the nav sections (entity | Summary/Detail) */
+.tab { display:inline-block; padding:3px 11px; margin:0 0.3rem 0.3rem 0; border:1px solid #ddd; border-radius:4px; background:#fff; color:#20344a; font-size:0.9rem; }
+a.tab:hover { background:#e8f0fe; text-decoration:none; }
+.tab.active { background:#20344a; color:#fff; border-color:#20344a; }
+.tab.disabled { background:#f5f6f7; color:#a9b2bc; border-color:#e8eaed; cursor:default; }   /* the entity already taken by the other cross-reference row */
+.tabs.seenfilter .tab { cursor:pointer; }   /* the detail pages' client-side All/Seen/Not-seen view buttons */
+/* Selector-group filters (coverage partners page, report.js setupSelFilter):
+   real <button>s styled as tabs — reset the UA button font, tighter group gap */
+.tabs.selrow .sel-l { margin-right:0.5rem; color:#5f6b78; font-size:0.9rem; }
+.tabs.selrow .tab { cursor:pointer; font:inherit; font-size:0.9rem; }
+.tabs.selrow .tabsep { width:2rem; }
+/* Column GROUPS (the gsep= TABLE modifier + the GHEAD banner row — Top view
+   IDs): a group's first column carries a left divider + extra padding; the
+   banner cells are centered over their group. */
+/* the "gap": a thick left border in the PAGE background color visibly breaks
+   the table's border grid before each section (plain padding only widens the
+   cell — with full cell borders that never reads as space) */
+th.gsep, td.gsep { border-left:10px solid #f7f7f9; }
+/* the WIDE column-group gap (the acc-vs-prod summary Per-type table) */
+th.gsepw, td.gsepw { border-left:28px solid #f7f7f9; }
+th.gband { text-align:center; }
+/* tint-only Error/OK columns (KIND numerr/numok — same colors as failed/
+   processed, but without those class names so the drill binding stays on
+   the one real failed/processed pair; 0 values blank like them) */
+td.errc { background-color:#fde3e3; }
+td.okc { background-color:#e4f6e4; }
+td.errc.z, td.okc.z { background-color:transparent; }
+/* Home-page status tables: the "including server log" switch (bin/publish.sh
+   _status_table; report.js setupSrvToggle). Default OFF: the Transfer/Server
+   columns (.colsrv) and the server-inclusive .von figures hide; the switch
+   adds .srvon on the .sxscol to show them and hide the .voff variants. */
+.h2row { display:flex; align-items:center; justify-content:space-between; gap:1em; }
+button.srvtoggle { padding:3px 11px; border:1px solid #ddd; border-radius:4px; background:#fff; color:#20344a; font:inherit; font-size:0.78rem; cursor:pointer; white-space:nowrap; }
+button.srvtoggle:hover { background:#e8f0fe; }
+button.srvtoggle[aria-pressed="true"] { background:#20344a; color:#fff; border-color:#20344a; }
+.sxscol .colsrv { display:none; }
+.sxscol.srvon .colsrv { display:table-cell; }
+.sxscol.srvon .colns { display:none; }   /* the OFF view's Not seen column (Total − transfer-Seen) */
+.sxscol .von { display:none; }
+.sxscol.srvon .von { display:inline; }
+.sxscol.srvon .voff { display:none; }
+.tablewrap + .tabs.seenfilter { margin-top:1rem; }   /* the bar sits below the Activity per day table */
+.tabs.herotabs { margin:0 0 0.7rem; }       /* day pages: the hero chart's Start/End time switch (report.js setupHeroToggle) */
+.tabs.herotabs .tab, .tabs.herotabs2 .tab, .tabs.scalebtns .tab { cursor:pointer; }
+.tabs.herotabs .tab:hover:not(.active), .tabs.herotabs2 .tab:hover:not(.active), .tabs.scalebtns .tab:hover:not(.active) { background:#e8f0fe; }   /* span tabs get no a.tab:hover — give the hero rows their own feedback */
+.dash-grid .card.althero { display:none; }  /* the End-time hero card: hidden until the switch picks it */
+/* day pages: the previous/next-day buttons flank the centered title on one row.
+   1fr auto 1fr keeps the title page-centered whatever the two button widths. */
+.daynav { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:1rem; margin:0 0 1.1rem; }
+.daynav h1 { text-align:center; margin:0; }
+.daynav .daybtn:first-child { justify-self:start; }   /* previous day -> left edge */
+.daynav .daybtn:last-child { justify-self:end; }       /* next day -> right edge */
+.daybtn { display:inline-block; padding:0.55rem 1.15rem; border:1px solid #ccd3db; border-radius:6px; background:#fff; color:#20344a; font-size:1.05rem; font-weight:600; white-space:nowrap; }
+a.daybtn:hover { background:#e8f0fe; text-decoration:none; }
+.daybtn.disabled { color:#b3bcc6; background:#f5f6f7; border-color:#e8eaed; cursor:default; }   /* no such prev/next day */
+/* the centered cross-link row below the day title (other area this day + the dashboards) */
+.daylinks { display:flex; justify-content:center; flex-wrap:wrap; gap:0.6rem; margin:0 0 1.4rem; }
+.daylink { display:inline-block; padding:0.4rem 0.9rem; border:1px solid #ccd3db; border-radius:6px; background:#fff; color:#20344a; font-size:0.9rem; font-weight:600; white-space:nowrap; }
+a.daylink:hover { background:#e8f0fe; text-decoration:none; }
+/* the Search page's collapsible configuration panel (report.js setupSearchConfig) */
+.searchcfg { margin:0 0 1.2rem; }
+/* the Search page controls: the view buttons and type checkboxes first, the
+   search INPUT row below them (adopted from the div.controls row setupSearch
+   builds) ALONE on its own line, with the syntax hint on the line below it */
+.searchcfg .essearch { margin:0.6rem 0 0.2rem; font-size:0.9rem; color:#444;
+                       display:flex; align-items:center; flex-wrap:wrap; gap:0.3rem 0; }
+.searchcfg .essearch label { margin:0 0.35rem 0 0; }
+.searchcfg .essearch input.search { font:inherit; padding:2px 1.5rem 2px 6px; min-width:22rem; max-width:100%; }
+.searchcfg .essearchhint { margin:0 0 0.2rem; }                  /* the syntax hint on its OWN line, below the search box */
+.searchcfg .essearchhint .searchhint { margin-left:0; }          /* flush-left on its own line (override the "to the right" left margin) */
+.searchhint { display:inline-block; font-size:0.8rem; color:#777; margin:0 0 0 0.9rem; vertical-align:middle; }   /* the search syntax hint, to the RIGHT of the search box (Entity Search + Report finder) */
+/* Row 1: the type checkboxes flush left, the four view buttons on the SAME line
+   pushed to the RIGHT (margin-left:auto) with extra space before them. */
+.searchcfg .cfgline { display:flex; align-items:center; flex-wrap:wrap; row-gap:0.35rem; margin:0.2rem 0 0.5rem; }
+.searchcfg .cfgline .cfgtypes { margin:0; }
+.searchcfg .cfgtypes label { margin:0 0.2rem 0 0; white-space:nowrap; cursor:pointer; }   /* tight spacing between the type checkboxes */
+.searchcfg .cfgtypes label input { margin-right:0.18rem; }
+
+/* ---- interactive controls (report.js) ---- */
+.controls { margin:0 0 1.2rem; font-size:0.9rem; color:#444; }
+.controls label { margin:0 0.35rem 0 0; }
+.controls label + select { margin-right:0.45rem; }   /* tight From <-> To pair (2026-08) */
+.controls label.sep { margin-left:1rem; }   /* extra gap before "Search" when it shares the row with From/To */
+.controls select { font:inherit; padding:2px 4px; }
+.controls button.daterange { margin:0 0.3rem 0 0; padding:2px 10px; border:1px solid #ddd; border-radius:4px; background:#fff; color:#20344a; font:inherit; font-size:0.85rem; cursor:pointer; white-space:nowrap; }
+.controls button.daterange:first-of-type { margin-left:0.3rem; }   /* small gap after the To pulldown */
+.controls button.daterange:hover { background:#e8f0fe; }
+.controls button.daterange:disabled { color:#a9b2bc; border-color:#e8eaed; background:#f5f6f7; cursor:default; }
+.controls button.daterange:disabled:hover { background:#f5f6f7; }
+/* the preset whose range is the current selection: the group tab bars' active
+   look (.tab.active), not bold */
+.controls button.daterange.active { background:#20344a; color:#fff; border-color:#20344a; }
+.controls button.daterange.active:hover { background:#20344a; }
+.controls input.search { font:inherit; padding:2px 1.5rem 2px 6px; min-width:18rem; max-width:100%; }
+/* search box with a right-aligned clear "×" (shown only when the box has text) */
+.search-wrap { position:relative; display:inline-block; max-width:100%; }
+.search-clear { position:absolute; right:0.4rem; top:50%; transform:translateY(-50%); display:none;
+                cursor:pointer; color:#888; font-size:1.1rem; line-height:1; padding:0 0.15rem; user-select:none; }
+.search-clear:hover { color:#20344a; }
+/* On a report page the Search box now leads the controls row; keep extra space
+   between it and the From/To pulldowns, and put the syntax hint on its own line
+   just below (flush-left under the box), like the Search page. */
+.controls .search-wrap.sepafter { margin-right:2rem; }
+.controlshint { margin:-0.8rem 0 1.2rem; }
+.controlshint .searchhint { margin-left:0; }
+th.sortable { cursor:pointer; }
+th.sortable:hover { background-color:#2c4a6b; }
+.arrow { font-size:0.75em; }
+
+/* ---- landing pages ---- */
+table.index { max-width:none; }
+td.desc { color:#444; white-space:normal; }
+/* .card base — the dashboards' chart/KPI cards build on it (.dash-grid .card);
+   the root index's section-card links are gone (navigation is the top-bar
+   dropdowns). */
+.card { display:block; background:#fff; border:1px solid #ddd; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);
+        padding:1.1rem 1.3rem; text-decoration:none; color:inherit;
+        transition:box-shadow 0.12s ease, border-color 0.12s ease, transform 0.12s ease; }
+.card h2 { margin:0 0 0.35rem; color:#20344a; font-size:1.2rem; }
+.card p { color:#444; font-size:0.95rem; line-height:1.45; margin:0 0 0.9rem; }
+
+/* ---- the root index (body.home): the two ENVIRONMENT blocks ---- */
+/* The home bakes one .envblock per environment (acceptance + production) and
+   shows only the ACTIVE one — default acceptance; report.js setupEnvSwitch
+   stamps .env-production on <body> when Production is picked (the .srvon
+   pattern). */
+body.home .envblock.env-production { display:none; }
+body.home.env-production .envblock.env-production { display:block; }
+body.home.env-production .envblock.env-acceptance { display:none; }
+
+/* ---- the root index (body.home): every part centered ---- */
+/* Headings/prose center via text-align; the block parts (the .sxs status pair,
+   the tables) center as content-width boxes with auto margins — max-width:100%
+   keeps an over-wide box scrolling from its LEFT edge inside .tablewrap/.sxs
+   instead of clipping (a centered overflowing flex row is unreachable). */
+body.home h1, body.home .subtitle, body.home h2 { text-align:center; }
+/* the "Still failing" note under its heading: one muted, centered sentence
+   stating the rule the table follows (home only — the report pages carry their
+   prose as INTRO lines). Width-capped so it wraps like a paragraph rather than
+   running the width of a wide table. */
+body.home p.hnote { text-align:center; color:#5a6673; font-size:0.92rem;
+                    max-width:70ch; margin:0.2rem auto 0.9rem; }
+body.home .sxs { width:max-content; max-width:100%; margin-left:auto; margin-right:auto; }
+body.home .tablewrap table { margin-left:auto; margin-right:auto; }
+/* ---- help pages (docs/help/*.html) ----
+   Hand-authored, persistent prose — the publish scripts never touch docs/help/
+   (see CLAUDE.md). Reuses the site's h1/h2/a styling; adds just the reading-
+   width wrapper, list spacing, the back-link and the bottom link to general.html. */
+.help-content { max-width:720px; line-height:1.55; }
+.help-content h2 { margin-top:1.9rem; }
+.help-content ul, .help-content ol { padding-left:1.3rem; }
+.help-content li { margin:0.35rem 0; }
+.help-content code { background:#eef1f5; border-radius:3px; padding:0.1rem 0.35rem; font-size:0.9em; }
+.help-back { display:inline-block; margin-bottom:1rem; font-size:0.9rem; color:#5a6b7d; }
+.help-back.help-generic { margin-left:1.4rem; }   /* the top "Generic help" link, next to Back */
+
+/* ======================================================================
+   Graphical dashboards (docs/dashboards/*.html) — KPI cards + SVG charts.
+   Charts are inline SVG with presentation-attribute colours; everything
+   below is layout + typography only (no colours leak into the markup).
+   ====================================================================== */
+.dash { max-width:1180px; margin:0 auto; }
+.dash > h1 { text-align:center; }   /* the dashboards pages center their title (the day pages' .daynav h1 centers itself) */
+/* the home per-day table opens capped to the newest 14 days (rows + Total carry
+   capx while the table carries cap14); the "Show all" button below lifts it */
+table.cap14 tr.capx { display:none; }
+.showallbtn { display:block; margin:0.6rem auto 1.4rem; padding:3px 14px; border:1px solid #ddd; border-radius:4px; background:#fff; color:#20344a; font:inherit; font-size:0.85rem; cursor:pointer; }
+.showallbtn:hover { background:#e8f0fe; }
+.dash > .controls { text-align:center; }   /* the date row right under it centers with it */
+.dash-intro { color:#5a6b7d; font-size:1rem; margin:-0.4rem 0 1.5rem; max-width:70ch; }
+.dash-intro strong { color:#20344a; }
+.dash-intro a, .dash-intro a strong { color:#3b6ea5; }   /* linked dashboard names read as links (the strong rule above would swallow the anchor color) */
+.dash-intro a:hover { text-decoration:underline; }
+
+/* Third top-bar dropdown reuses .dd/.ddm; the pill variant highlights it. */
+
+/* KPI cards */
+.kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.9rem; margin:0 0 1.4rem; }
+.kpi { position:relative; background:#fff; border:1px solid #e4e9ef; border-radius:10px; padding:0.9rem 1rem 0.85rem 1.15rem;
+       box-shadow:0 1px 3px rgba(20,40,70,0.06); overflow:hidden; }
+.kpi::before { content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:#3b82c4; }
+.kpi-val { font-size:1.75rem; font-weight:700; color:#20344a; line-height:1.1; letter-spacing:-0.02em; }
+.kpi-lbl { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em; color:#7a8894; margin-top:0.2rem; font-weight:600; }
+.kpi-sub { font-size:0.8rem; color:#9aa7b4; margin-top:0.15rem; }
+/* same-weekday delta tucked behind the big number (kept neutral: on Errors/Warnings a rise is not "good") */
+.kpi-delta { margin-left:0.4rem; font-size:0.85rem; font-weight:600; color:#94a2af; letter-spacing:0; white-space:nowrap; vertical-align:0.08em; }
+/* caption over each KPI band on the combined day page (Transfer log / Server log) */
+.kpi-blue::before   { background:#3b82c4; } .kpi-blue   .kpi-val { color:#2c6aa0; }
+.kpi-green::before  { background:#3f9d52; } .kpi-green  .kpi-val { color:#2f7d40; }
+.kpi-red::before    { background:#df5a4c; } .kpi-red    .kpi-val { color:#c14638; }
+.kpi-amber::before  { background:#e8a13a; } .kpi-amber  .kpi-val { color:#b97c1e; }
+.kpi-purple::before { background:#7d63c6; } .kpi-purple .kpi-val { color:#5f47a6; }
+
+/* chart cards grid */
+.dash-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1.1rem; }
+.dash-grid .card { background:#fff; border:1px solid #e4e9ef; border-radius:12px; padding:1rem 1.1rem 1.15rem;
+                   box-shadow:0 1px 3px rgba(20,40,70,0.06); min-width:0; position:relative; }
+.dash-grid .card.span2 { grid-column:1 / -1; }
+/* The whole dashboard tile is a link: every chart card and KPI tile carries
+   exactly ONE anchor (its title / label), stretched over the tile so the full
+   card — chart included — is clickable, not just the text. */
+.card-h h3 a::after, .kpi-lbl a::after { content:""; position:absolute; left:0; top:0; right:0; bottom:0; }
+/* a card whose chart carries its own per-point links (the per-day charts'
+   clickable day columns): the chartbox sits ABOVE the stretched title link,
+   so inside the plot the day column wins the click, elsewhere the card link */
+.card.ptlinks .chartbox { position:relative; z-index:1; }
+.dash-grid .card:hover, .kpi:hover { border-color:#20344a; box-shadow:0 4px 14px rgba(0,0,0,0.16); }
+.card-h { display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; margin-bottom:0.6rem; }
+.card-h h3 { margin:0; font-size:1rem; color:#20344a; font-weight:700; flex:0 0 auto; }
+/* the sub WRAPS. It used to be white-space:nowrap, which was fine while every
+   sub was a short phrase; the cumulative-seen and UC-status cards carry a
+   sentence, and a nowrap sub sets a min-content width far past the card, so it
+   ran off the right edge AND squeezed the h3 into a 3-line column. */
+.card-h .card-sub { font-size:0.82rem; color:#9aa7b4; text-align:right; min-width:0; }
+.chartbox { width:100%; position:relative; }
+/* the bottom-right "full report" link inside a dashboard chart (render_card) */
+.card-more { position:absolute; right:10px; bottom:6px; font-size:0.78rem; color:#5b7590;
+             text-decoration:none; background:rgba(255,255,255,0.85); padding:0 4px; border-radius:4px; z-index:2; }
+.card-more:hover { color:#20344a; text-decoration:underline; }
+.chartbox .svg { display:block; width:100%; height:auto; font-family:Arial,Helvetica,sans-serif; }
+.svg-vbar, .svg-area { height:210px; }
+.svg-vbar { height:200px; }
+
+/* in-chart SVG text roles */
+.c-big  { font-size:24px; font-weight:700; letter-spacing:-0.01em; }
+.c-cap  { font-size:11px; text-transform:uppercase; letter-spacing:0.06em; }
+.c-lbl  { font-size:12.5px; }
+.c-val  { font-size:12px; font-weight:600; }
+.c-axis { font-size:10.5px; }
+
+.dash-foot { margin:1.6rem 0 0; font-size:0.85rem; color:#9aa7b4; }
+.dash-foot a { color:#3b6ea5; }
+
+@media (max-width:720px){ .dash-grid { grid-template-columns:1fr; } .dash-grid .card.span2 { grid-column:auto; } }
+.svg-gauge { height:180px; } .svg-heat { height:auto; max-height:440px; }
+.c-gbig { font-size:32px; font-weight:700; letter-spacing:-0.02em; }
+
+/* Zero-result empty state: report.js updateEmptyState() renders this under a
+   table whose every row is hidden — names the cause (query miss, type/Seen
+   filters, date range) and the recovery. */
+.empty-state { font-size:0.9rem; color:#666; font-style:italic; padding:0.6rem 0.75rem;
+               border:1px dashed #c9d4df; border-top:none; background:#fafbfc; }
+.empty-state .es-hint { font-style:normal; color:#8a5a00; }
+
+/* Accessible chart data (dashboards): each SVG carries a root <title>/<desc>
+   via aria-labelledby; this <details> under it exposes the same numbers as a
+   real table (emitted by dashboards/bin/charts_lib.sh). */
+.chart-data { margin-top:0.55rem; font-size:0.82rem; }
+.chart-data summary { cursor:pointer; color:#3b6ea5; }
+.chart-data .cd-wrap { max-height:260px; overflow:auto; margin-top:0.4rem; }
+.chart-data table { border-collapse:collapse; }
+.chart-data th, .chart-data td { padding:2px 12px 2px 0; text-align:left; border-bottom:1px solid #e9edf2; font-weight:normal; }
+.chart-data th { color:#33475b; font-weight:600; }
+.chart-data th.num, .chart-data td.num { text-align:right; }
+
+/* FlowManager deep-link icon: a second, small anchor next to an entity name
+   (detail pages; render_rpt.awk fmicon). Muted until hovered. */
+.fmlink { text-decoration:none; font-size:0.78em; opacity:0.5; }
+.fmlink:hover { opacity:1; text-decoration:none; }
+/* Partner-GROUP icon: a small anchor after a grouped partner's name (the
+   Entities Partner pages; render_rpt.awk gicon) linking to the page that
+   explains why those partner codes were merged into one group. */
+.grpicon { text-decoration:none; font-size:0.78em; opacity:0.5; }
+.grpicon:hover { opacity:1; text-decoration:none; }
+/* the detail-page link icon on ROW-DRILL rows: the row click drills, the
+   small arrow after the entity name opens its detail page */
+.dlicon { text-decoration:none; font-size:0.85em; opacity:0.55; padding:0 0.15rem; }
+.dlicon:hover { opacity:1; text-decoration:none; }
+h1 .fmlink { font-size:0.5em; vertical-align:middle; }
+/* Config-JSON source icon: sits next to the FlowManager link (render_rpt.awk
+   jsonicon) on account/subscription pages and name cells. Monospace braces. */
+/* File filter/mask appended to a directory (the Subscription Features table's
+   Local/Remote location cells; render_rpt.awk @{mask=…}) — a distinct green so
+   the pattern reads apart from the path it follows. */
+.mask { color:#157a48; font-weight:700; }
+
+/* Entity Search control rows (report.js setupSearchConfig): the type checkboxes,
+   the four view buttons, and the search box are each on their OWN line, stacked
+   and left-aligned. */
+.searchcfg .tabs { display:flex; align-items:center; flex-wrap:wrap; gap:0.3rem 0; }
+
+/* Coverage cell pages: rows tinted by the entity RESULT (the base caches'
+   third field, bin/result.sh) — green / orange / red (data-res on the row,
+   set by analyses/bin/publish.sh). */
+tr[data-res="green"] td  { background-color:#e4f6e4; }
+tr[data-res="orange"] td { background-color:#fdf1dc; }
+tr[data-res="red"] td    { background-color:#fde3e3; }
+/* BLUE = an entity made visible ONLY by the fake-files.sh Server->Transfer step
+   (data/fakes/<entity>.tsv); it overrides the green/orange/red result tint so a
+   fabricated sighting is never read as a real failure. */
+tr[data-res="blue"] td   { background-color:#d3e6fb; }
+/* inside a result-tinted row the Error/OK cells keep their OWN tints where
+   they carry a value; an EMPTY cell (zero-blanked .z or a config-only row's
+   blank) takes the row tint instead of a stripe or a white hole */
+tr[data-res] td.failed:not(:empty) { background-color:#fde3e3; }
+tr[data-res] td.processed:not(:empty) { background-color:#e4f6e4; }
+tr[data-res="green"] td.failed.z,  tr[data-res="green"] td.processed.z  { background-color:#e4f6e4; }
+tr[data-res="orange"] td.failed.z, tr[data-res="orange"] td.processed.z { background-color:#fdf1dc; }
+tr[data-res="red"] td.failed.z,    tr[data-res="red"] td.processed.z    { background-color:#fde3e3; }
+tr[data-res="blue"] td.failed.z,   tr[data-res="blue"] td.processed.z   { background-color:#d3e6fb; }
+/* Cronjobs: an Observed cell CONTRADICTING its configured schedule (wrong slot,
+   or a continuous schedule seen only ~daily). The tr[data-res] variant outranks
+   the generic row tints above so the alarm survives the row colour. */
+td.obsbad, tr[data-res] td.obsbad { background-color:#8b1a1a; color:#fff; }
+/* Detail pages: the fixed section header (report.js setupSectionTabs) —
+   the h1 + one anchor tab per section (one per side-by-side row), pinned
+   under the fixed top bar; report.js inserts a spacer holding its place in
+   the flow, and background inherits the page's res- / dir- body tint. */
+.detailhead { position:fixed; top:3.2rem; left:0; right:0; z-index:15; background-color:inherit;
+              padding:0.15rem 2rem 0.6rem; box-shadow:0 2px 4px rgba(0,0,0,0.08); }
+.detailhead h1 { margin:0 0 0.5rem; }
+.detailhead .sectabs { margin:0; }
+/* per-day pages (docs/day/): "Problems this day" (above) and "Remarkable facts"
+   (below) are a MATCHED pair of boxed lists — one .dayboxlist layout, same width,
+   both inside .dash so they align vertically; each keeps its own accent colour. */
+ul.dayboxlist { list-style:none; margin:0.5rem 0 1.4rem; padding:0.7rem 1.1rem; max-width:62rem; border:1px solid #dde3ea; border-left:4px solid #20344a; border-radius:6px; background:#fff; }
+ul.dayboxlist li { margin:0.4rem 0; line-height:1.4; }
+ul.dayproblems { border-color:#e6d7d7; border-left-color:#d9534f; background:#fdf7f7; }   /* problems: red accent */
+ul.dayproblems a.problink { font-weight:600; }
+ul.dayproblems .probdesc { color:#555; }
+ul.dayfacts { border-left-color:#3c6e9f; background:#f6f9fc; }   /* facts: blue accent */
+/* the day pages' six Top-5 tables (bin/day/publish.sh tops_html): the five
+   biggest PARTNERS and SUBSCRIPTIONS of that day by Files, Volume and Errors,
+   as a 2-column grid — partners left, subscriptions right, one metric per row.
+   Each card is PINNED to its column (.dt-p / .dt-s) rather than auto-placed, so
+   a metric with nothing on one side (a clean day has no Errors) leaves a hole
+   instead of pulling the other side across. Each box reuses .card so it matches
+   the chart cards above it. */
+/* minmax(0,1fr), NOT 1fr: a plain 1fr track cannot shrink below its
+   min-content, and an unbreakable 50-character entity name blew the last column
+   clean off the page. The name cell wraps instead of scrolling — a narrow box
+   with a horizontal scrollbar is unusable. */
+.daytop { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.1rem; margin:0 0 1.4rem; align-items:start; }
+.daytop .dt-p { grid-column:1; }
+.daytop .dt-s { grid-column:2; }
+.daytop .card { padding:0.75rem 1rem 0.85rem; }
+.daytop h3 { margin:0 0 0.45rem; font-size:0.95rem; color:#20344a; }
+.daytop table { width:100%; table-layout:fixed; border-collapse:collapse; font-size:0.9rem; margin:0; }
+.daytop td.num, .daytop th.num { width:6.5rem; }   /* fixed layout: give the value column a floor */
+/* the header bar keeps the site's `th { background:#20344a; color:#fff }` — an
+   earlier mid-grey override here left grey text on the dark bar. Vertical
+   padding is SYMMETRIC so the label sits centred in the bar instead of hugging
+   its top edge. */
+.daytop th { text-align:left; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;
+             font-weight:600; padding:0.32rem 0.45rem; line-height:1.2;
+             border:none; white-space:nowrap; }
+.daytop th.num, .daytop td.num { text-align:right; white-space:nowrap; }
+/* white-space:normal beats the site-wide `th, td { white-space:nowrap }`:
+   report tables size to content and scroll, but a 50-character name in a
+   third-width box has to WRAP. overflow-wrap gives it break points, since
+   these names have none the browser would otherwise use. */
+.daytop td { padding:0.24rem 0.3rem; border:none; border-bottom:1px solid #f0f3f7;
+             white-space:normal; overflow-wrap:anywhere; }
+.daytop td.num { color:#20344a; font-variant-numeric:tabular-nums; }
+.daytop tr:last-child td { border-bottom:none; }
+.daytop .seemore { display:inline-block; margin-top:0.55rem; font-size:0.85rem; font-weight:600; }
+@media (max-width:900px){ .daytop { grid-template-columns:1fr; }
+                          .daytop .dt-p, .daytop .dt-s { grid-column:auto; } }
+
+/* Transfer Duration, per-day table: the cell's UNIT carries the tint, so a
+   column reads at a glance — seconds green, minutes orange, hours (and days,
+   should a tier ever be added) red. Emitted by duration.sh's hdc(); the same
+   palette as the result tints below, but a separate class: this says "how
+   long", not "is it healthy". */
+td.dur-s { background-color:#e4f6e4; }
+td.dur-m { background-color:#fdf1dc; }
+td.dur-h { background-color:#fde3e3; }
+
+/* entity CELLS tinted by their own result (cross-reference pages + the
+   detail pages' entity/Groups/whitelist cells) */
+td.res-green  { background-color:#e4f6e4; }
+td.res-orange { background-color:#fdf1dc; }
+td.res-red    { background-color:#fde3e3; }
+td.res-blue   { background-color:#d3e6fb; }   /* fake-introduced entity (data/fakes) */
+/* inside a seenrows table the row tint has higher specificity — these
+   overrides keep the entity cell's own result color winning */
+table[data-seenrows] tr[data-seen] td.res-green:not(.failed):not(.processed)  { background-color:#e4f6e4; }
+table[data-seenrows] tr[data-seen] td.res-orange:not(.failed):not(.processed) { background-color:#fdf1dc; }
+table[data-seenrows] tr[data-seen] td.res-red:not(.failed):not(.processed)    { background-color:#fde3e3; }
+table[data-seenrows] tr[data-seen] td.res-blue:not(.failed):not(.processed)   { background-color:#d3e6fb; }
+/* A NOT-SEEN (data-seen=0) row's plain numeric cells (Files / Volume) fall to
+   line 155's flat not-seen red — yet its entity cell (above) and its empty
+   Error/OK cells (the data-res .z rules) already follow the row's RESULT. So on
+   the configured-never-seen (orange) and server-log-only (blue) rows Files and
+   Volume stuck out red against an otherwise orange/blue row. Tint the WHOLE
+   not-seen row by its result so it reads as one colour. (A red result already
+   matches line 155's red; green is left to the date-filter re-tint.) */
+table[data-seenrows] tr[data-seen="0"][data-res="orange"] td { background-color:#fdf1dc; }
+table[data-seenrows] tr[data-seen="0"][data-res="blue"]   td { background-color:#d3e6fb; }
+
+/* Detail-page body tint by the entity's RESULT (the base caches' third
+   field, bin/result.sh): light green / light orange / light red. Entities
+   without a result keep the older dir-* tints above. These are kept PALER than
+   the matching cell tints (td.res-* above) so a cell of the same result never
+   dissolves into the page background — its colour always reads against it. */
+body.res-green  { background-color:#eef9ee; }
+body.res-orange { background-color:#fdf7ea; }
+body.res-red    { background-color:#fdeeee; }
+body.res-blue   { background-color:#e9f2fd; }   /* entity seen only via fake-files.sh */
+
+/* Client-side pagination (data-pager, the detail pages' Activity per day
+   table): pager-hidden rows use a CLASS, not inline display, so report.js's
+   totals/recalc still count them. The pager itself is a tfoot row INSIDE the
+   table, tinted apart from the data rows. */
+tr.pghide { display:none; }
+tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
+/* The pager row spans the whole table, which on a WIDE table (Latest 100 Files)
+   is wider than the viewport — a spread flex bar then pushes Previous/Next to the
+   far edges, one always off-screen inside the .tablewrap's horizontal scroll. So
+   keep the controls a COMPACT inline group and stick it to the left so both stay
+   on-screen and clickable at any scroll position. */
+.pagerbar { display:inline-flex; align-items:center; gap:1.4rem; position:sticky; left:0; }
+.pagerbar .pagerinfo { color:#5a6b7d; font-size:0.85rem; }
+.pagerbar .tab { cursor:pointer; }
+.pagerbar .tab.disabled { cursor:default; }
+
+/* Report finder: the per-report keyword line (KEYWORDS directive + table
+   headings/column names, bin/publish.sh finder_row) — muted second line under
+   the intro so a match on a word invisible in the intro is explainable. */
+.rfkw { display:block; margin-top:2px; color:#8a97a5; font-size:0.8rem; }
+
+/* The slots charts (svg_slots): the floating slot tooltip that report.js
+   setupSlotTips builds inside the .chartbox (position:relative). One label
+   line + a swatch/name/value row per series, last series first. */
+.dbtip { position:absolute; pointer-events:none; display:none; z-index:5; min-width:150px;
+  background:#fff; border:1px solid #cfd7de; border-radius:6px;
+  box-shadow:0 2px 8px rgba(30,50,70,.15); padding:7px 10px; font-size:12px; color:#33475b; }
+.dbtip b { display:block; margin-bottom:4px; }
+.dbtip .r { display:flex; justify-content:space-between; gap:12px; line-height:1.5; }
+.dbtip .r i { font-style:normal; color:#8a97a4; }
+.dbtip .r .sw { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; }
+
+/* The slots charts (svg_slots): three baked styles per card — the off class
+   hides the two unpicked ones — and the Line/Bar/Solid switcher pinned
+   bottom-right of the chartbox (report.js setupChartStyle). */
+.chartbox .svg.off { display:none; }
+/* The chart switch rows — the interval (dashboards only: 6h / 12h / 1 day)
+   and the Line/Bar/Solid style — sit BELOW the plot on one right-aligned line.
+   They used to float over the bottom-right corner of the chartbox, crowding
+   the x-axis labels (2026-07). */
+/* The chart FOOTER row: the "Data table" toggle on the left, the interval and
+   Line/Bar/Solid switches on the right, on ONE line under the plot (2026-07 —
+   slotchart.js moves the <details> in here after every redraw). align-items
+   flex-start keeps the buttons level with the summary when the table is open. */
+.chartbtns { display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:flex-start; gap:0.3rem 1.5rem; margin:0.3rem 0 0.1rem; position:relative; z-index:2; }
+.chartbtns .tabs { margin:0; }
+.chartbtns .ivbtns { margin-right:auto; }   /* the interval (period) row sits LEFT; scale + style stay right */
+.chartbtns .chart-data { flex:1 1 auto; min-width:0; margin:0; align-self:center; }
+.chartbtns .chart-data[open] { align-self:flex-start; }
+.stylebtns .tab, .ivbtns .tab { cursor:pointer; }
+/* .pfbreak: line break between the inline-block boxes — the status boxes
+   (Total…Server log only) sit on the first line(s), the problem boxes start
+   on a fresh one */
+.pfboxes .pfbreak { display:block; width:100%; height:0; }
+
+/* the dashboards' date controls, joined to the hero's footer rows (report.js
+   dashboards mode): the LEFT item of the row, before the interval buttons */

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Help: Recovered files — Cloud Reports</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Cloud</a></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Recovered files</h1>
+<h2>What this shows</h2>
+<p>A <strong>recovered File</strong> carried at least one failed transfer leg and still finished OK — a retry delivered it. It is the same rule behind the amber Recovered column on the Top view, the home page and the subscription detail pages, so the figures line up exactly: the File counts under Files/Ok while its failed legs count under Transfers/Error. OK follows the site-wide outcome policy (Processed or Waiting; Failed and Expired are not OK), and everything is attributed to the File's start day.</p>
+<h2>The three tables</h2>
+<p><strong>Per subscription</strong> answers which flows heal themselves: the Files column counts all of the subscription's Files, Recovered % the share of them that needed a retry — a high share on a busy flow points at a flaky endpoint that succeeds on the second try. Only subscriptions with at least one recovered File are listed.</p>
+<p><strong>Per protocol</strong> looks at the failed leg's protocol — where the healed failure actually happened, not what finally delivered the File. Healed % compares the failed legs that belonged to recovered Files against all failed legs of that protocol: how often a failure there turns out to be transient. A File whose failed legs span two protocols counts once under each.</p>
+<p><strong>Per day</strong> lists only the days with at least one recovery (the Top view shows every day); the Date cell opens that day's page.</p>
+<p>Every row expands on click into its 10 most recent recovered Files, newest first. The From/To range re-aggregates the two upper tables from their per-day buckets; the drill lists always show the full period.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connections</title>
+<meta name="report-dates" content="2026-06-23,2026-06-24,2026-06-25,2026-06-26,2026-06-27,2026-06-28,2026-06-29,2026-06-30,2026-07-01,2026-07-02,2026-07-03,2026-07-04,2026-07-05,2026-07-06,2026-07-07,2026-07-08,2026-07-09,2026-07-10,2026-07-11,2026-07-12,2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22,2026-07-23,2026-07-24,2026-07-25,2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="acceptance-server">
+<meta name="report-key" content="connections">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-inbound-connections" data-twin="../../production/server/connections-per-day.html"></div>
+<h1>Connections <span class="grouptag">&larr; Logons &amp; Connections &larr; Server</span></h1>
+<p class="tabs"><a class="tab" href="logons-incoming.html">Logons</a><span class="tab active">Connections</span><span class="tabsep"></span><a class="tab" href="connections-by-protocol.html">By protocol</a><span class="tab active">Per day</span><a class="tab" href="connections-by-account.html">By account</a><a class="tab" href="connections-by-address.html">By address</a><a class="tab" href="connections-whitelist-usage.html">Whitelist usage</a><a class="tab" href="connections-failure-reasons.html">Failure reasons</a><a class="tab" href="connections-by-remote-host.html">By remote host</a><a class="tab" href="connections-test-connections.html">Test connections</a><a class="tab" href="connections-host-keys.html">Host keys</a><a class="tab" href="connections-test-outcomes.html">Test outcomes</a></p>
+<p class="range">Both directions of the connection story in one report. <strong>Inbound</strong>: who connects in to SecureTransport, over which protocol, from which addresses, and how the whitelist policies are used. <strong>Outbound</strong>: why and where our own connections fail — the failure-reason breakdown, the per-remote-host view and the test connections.</p>
+<div class="tablewrap"><table class="wide">
+<tr><th>Date</th><th class="num">SSH</th><th class="num">PESIT</th><th class="num">FTP</th><th class="num">Other</th><th class="num">Total</th></tr>
+<tr><td>2026-06-23</td><td class="num">132</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">132</td></tr>
+<tr><td>2026-06-24</td><td class="num">146</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">146</td></tr>
+<tr><td>2026-06-25</td><td class="num">149</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">149</td></tr>
+<tr><td>2026-06-26</td><td class="num">173</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">173</td></tr>
+<tr><td>2026-06-27</td><td class="num">33</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">33</td></tr>
+<tr><td>2026-06-28</td><td class="num">36</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">36</td></tr>
+<tr><td>2026-06-29</td><td class="num">162</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">162</td></tr>
+<tr><td>2026-06-30</td><td class="num">171</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">171</td></tr>
+<tr><td>2026-07-01</td><td class="num">114</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">114</td></tr>
+<tr><td>2026-07-02</td><td class="num">134</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">134</td></tr>
+<tr><td>2026-07-03</td><td class="num">142</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">142</td></tr>
+<tr><td>2026-07-04</td><td class="num">40</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">40</td></tr>
+<tr><td>2026-07-05</td><td class="num">40</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">40</td></tr>
+<tr><td>2026-07-06</td><td class="num">144</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">144</td></tr>
+<tr><td>2026-07-07</td><td class="num">136</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">136</td></tr>
+<tr><td>2026-07-08</td><td class="num">156</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">156</td></tr>
+<tr><td>2026-07-09</td><td class="num">173</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">173</td></tr>
+<tr><td>2026-07-10</td><td class="num">117</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">117</td></tr>
+<tr><td>2026-07-11</td><td class="num">29</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">29</td></tr>
+<tr><td>2026-07-12</td><td class="num">34</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">34</td></tr>
+<tr><td>2026-07-13</td><td class="num">155</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">155</td></tr>
+<tr><td>2026-07-14</td><td class="num">168</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">168</td></tr>
+<tr><td>2026-07-15</td><td class="num">118</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">118</td></tr>
+<tr><td>2026-07-16</td><td class="num">140</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">140</td></tr>
+<tr><td>2026-07-17</td><td class="num">157</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">157</td></tr>
+<tr><td>2026-07-18</td><td class="num">45</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">45</td></tr>
+<tr><td>2026-07-19</td><td class="num">28</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">28</td></tr>
+<tr><td>2026-07-20</td><td class="num">127</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">127</td></tr>
+<tr><td>2026-07-21</td><td class="num">141</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">141</td></tr>
+<tr><td>2026-07-22</td><td class="num">151</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">151</td></tr>
+<tr><td>2026-07-23</td><td class="num">450</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">450</td></tr>
+<tr><td>2026-07-24</td><td class="num">123</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">123</td></tr>
+<tr><td>2026-07-25</td><td class="num">30</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">30</td></tr>
+<tr><td>2026-07-26</td><td class="num">40</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">40</td></tr>
+<tr><td>2026-07-27</td><td class="num">163</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">163</td></tr>
+<tr><td>2026-07-28</td><td class="num">118</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">118</td></tr>
+<tr><td>2026-07-29</td><td class="num">131</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">131</td></tr>
+<tr><td>2026-07-30</td><td class="num">151</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">151</td></tr>
+<tr><td>2026-07-31</td><td class="num">160</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">160</td></tr>
+<tr><td>2026-08-01</td><td class="num">37</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">37</td></tr>
+<tr><td>2026-08-02</td><td class="num">34</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">34</td></tr>
+<tr><td>2026-08-03</td><td class="num">144</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">144</td></tr>
+<tr><td>2026-08-04</td><td class="num">164</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">164</td></tr>
+<tr><td>2026-08-05</td><td class="num">169</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">169</td></tr>
+<tr><td>2026-08-06</td><td class="num">118</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">118</td></tr>
+<tr><td>2026-08-07</td><td class="num">133</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">133</td></tr>
+<tr><td>2026-08-08</td><td class="num">36</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">36</td></tr>
+<tr><td>2026-08-09</td><td class="num">43</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">43</td></tr>
+<tr><td>2026-08-10</td><td class="num">157</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">157</td></tr>
+<tr><td>2026-08-11</td><td class="num">129</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">129</td></tr>
+<tr><td>2026-08-12</td><td class="num">143</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">143</td></tr>
+<tr><td>2026-08-13</td><td class="num">157</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">157</td></tr>
+<tr><td>2026-08-14</td><td class="num">166</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">166</td></tr>
+<tr><td>2026-08-15</td><td class="num">30</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">30</td></tr>
+<tr><td>2026-08-16</td><td class="num">36</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">36</td></tr>
+<tr><td>2026-08-17</td><td class="num">153</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">153</td></tr>
+<tr><td>2026-08-18</td><td class="num">403</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">403</td></tr>
+<tr><td>2026-08-19</td><td class="num">149</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">149</td></tr>
+<tr><td>2026-08-20</td><td class="num">130</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">130</td></tr>
+<tr><td>2026-08-21</td><td class="num">143</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">143</td></tr>
+<tr><td>2026-08-22</td><td class="num">41</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">41</td></tr>
+<tr><td>2026-08-23</td><td class="num">44</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">44</td></tr>
+<tr><td>2026-08-24</td><td class="num">116</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">116</td></tr>
+<tr><td>2026-08-25</td><td class="num">133</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">133</td></tr>
+<tr><td>2026-08-26</td><td class="num">139</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">139</td></tr>
+<tr><td>2026-08-27</td><td class="num">162</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">162</td></tr>
+<tr><td>2026-08-28</td><td class="num">153</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">153</td></tr>
+<tr><td>2026-08-29</td><td class="num">31</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">31</td></tr>
+<tr class="total"><td>Total (68 day(s))</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num">8350</td></tr>
+</table></div>
+<p class="note">The daily protocol mix. A protocol falling silent, or a sudden connection spike from one day to the next, stands out here first.</p>
+<p class="note">How the explicit test connections failed: the &quot;Error during test connection&quot; reason tail, as logged.</p>
+</body>
+</html>

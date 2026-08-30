@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IN/OUT: Subscription: UC2_SI_SAPBHP_APERTURE</title>
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body class="res-blue">
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="acceptance" data-help="details-subscriptions" data-twin="../../../production/404.html"></div>
+<h1>IN/OUT: Subscription: UC2_SI_SAPBHP_APERTURE</h1>
+<p class="alert">The partner connects, but nothing is ever staged</p>
+<p class="range">The partner DOES connect to collect, but the application has <strong>never staged a single file</strong> for it. The partner side is fine; the source side is dormant or broken. <strong>UC2 status</strong> calls this <strong>No files</strong>.</p>
+<h2>Pickup information</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>First pickup</td><td>2026-06-23 09:25:09</td></tr>
+<tr><td>Last pickup</td><td>2026-08-29 12:12:25</td></tr>
+<tr><td>Total pickups</td><td>21</td></tr>
+<tr><td>Pickups with actual files</td><td>0</td></tr>
+<tr><td>Total files picked up</td><td>0</td></tr>
+<tr><td>Current waiting files</td><td>0</td></tr>
+<tr><td>Expired files</td><td>0</td></tr>
+<tr><td>Pickup pattern</td><td>Every 4 days</td></tr>
+</table></div>
+<p class="note">A <strong>pickup</strong> is a successful SSH logon by this flow's pickup account (server log), shared across that account's UC2 subscriptions; a partner collecting over CFT logs none. A visit in which the account <strong>only delivered</strong> files — its UC4 twin flow handing files over — is not a pickup: its logons are shown on their own row and excluded from every other figure. <strong>Files picked up</strong> counts this subscription's collected Files (transfer log); the page's OK figure also counts staged files still <strong>Waiting</strong>, so OK = picked up + waiting — the two match once nothing is left waiting. <strong>With actual files</strong> counts the pickups that collected at least one of them — each collected file credits the logon that took it (the newest at or before its collect stamp). <strong>Current waiting / Expired files</strong> are this flow's own staged files by outcome, as in the Waiting/Expired table. The <strong>pattern</strong> reads the typical spacing of the pickups. <strong>Connection shared with UC4 drop</strong> appears only on hard proof: one and the same technical SSH connection (the transfer log's Session ID) both delivered and collected a file — a delivery over a separate connection, even seconds apart in the same visit, does not count.</p>
+<div class="logcard"><span class="lc-when">2026-08-29 12:12:25.161</span><span class="lc-msg">[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.90. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-sha2-256; Public Key: ssh-rsa.</span></div>
+<h2>Features</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>Use case</td><td class="cl"><a href="../../analyses/use-cases.html">UC2 - We are the server; the partner connects in and collects a file from us</a></td></tr>
+<tr><td>Login</td><td class="res-blue cl"><a href="../logins/fe397484.html">FE397484</a></td></tr>
+<tr><td>Account</td><td class="res-blue cl"><a href="../accounts/si-sapbhp-aperture.html">SI-SAPBHP-APERTURE</a></td></tr>
+<tr><td>Domain</td><td class="res-red cl"><a href="../domains/si.html">SI</a></td></tr>
+<tr><td>Application</td><td class="res-orange cl"><a href="../applications/sapbhp.html">SAPBHP</a></td></tr>
+<tr><td>Partner</td><td class="res-red cl"><a href="../partners/aperture.html">APERTURE</a></td></tr>
+<tr><td>From</td><td>/data/cft/out/SI_SAPBHP_APERTURE/in</td></tr>
+<tr><td>To</td><td>/</td></tr>
+</table></div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Incoming connections</h2>
+<div class="tablewrap"><table data-fold="orange|{n} IPs in whitelist without traffic">
+<tr><th>IP</th><th class="num">In</th><th class="num">Out</th></tr>
+<tr data-res="orange"><td class="cl"><a href="../incoming_connections/203-0-113-90.html"><code>203.0.113.90</code></a></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="orange"><td class="cl"><a href="../incoming_connections/203-0-113-91.html"><code>203.0.113.91</code></a></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="orange"><td class="cl"><a href="../incoming_connections/203-0-113-92.html"><code>203.0.113.92</code></a></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="orange"><td><code>203.0.113.195</code></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="orange"><td><code>203.0.113.196</code></td><td class="num"></td><td class="num"></td></tr>
+</table></div>
+</div>
+</div>
+<h2>Last server log messages — account SI-SAPBHP-APERTURE</h2>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Date</th><th>Time</th><th>Level</th><th>Component</th><th>Message</th></tr>
+<tr class="total"><td>Total (25 line(s))</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>2026-08-29</td><td>12:12:25.161</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.90. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-08-29</td><td>12:12:24.161</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.92', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 716d6a39474653503536344a376e785238463042777673696e4f744f586a5564</td></tr>
+<tr><td>2026-08-25</td><td>13:24:43.002</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.91. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-08-25</td><td>13:24:42.002</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.90', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 5a524e7577453254646e78386c7a6675433939795246646e43706f3866735043</td></tr>
+<tr><td>2026-08-21</td><td>09:16:10.090</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.91. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-08-21</td><td>09:16:09.090</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.90', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 4e6a672b4f2f684b506646364369302f73506c7336647a7a5a6d6c776a597442</td></tr>
+<tr><td>2026-08-20</td><td>12:24:01.862</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.90. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-08-20</td><td>12:24:00.862</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.91', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 4b343043316573494c2b613571655a544754764b307a59476631557430444551</td></tr>
+<tr><td>2026-08-16</td><td>13:36:19.703</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.90. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-08-16</td><td>13:36:18.703</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.92', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 346a657a6563514d76715373547149774d4d3537564a4a4c36514f62384d2f31</td></tr>
+<tr><td>2026-08-12</td><td>09:27:46.790</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.90. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-08-12</td><td>09:27:45.790</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.92', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 7331774538583744686a6d71785a64413164673039696658524e4c504134647a</td></tr>
+<tr><td>2026-08-11</td><td>12:35:38.562</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.92. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-08-11</td><td>12:35:37.562</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.92', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 704b46496b324742654237715a56435551697154333445715863364d516a3144</td></tr>
+<tr><td>2026-08-07</td><td>08:27:05.650</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.92. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-08-07</td><td>08:27:04.650</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.92', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 6463585a427878345135516f3245596b3530524d67526133755a334155505442</td></tr>
+<tr><td>2026-08-03</td><td>09:39:23.491</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.92. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-08-03</td><td>09:39:22.491</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.90', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 4d48424b72765639306d4961675147432f736239426e4c374a30797563584f6d</td></tr>
+<tr><td>2026-08-02</td><td>12:47:15.262</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.91. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-08-02</td><td>12:47:14.262</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.91', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 4a62574f534f673677456461484d725761776c633739774f4f44687274436c32</td></tr>
+<tr><td>2026-07-29</td><td>08:38:42.350</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.91. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-07-29</td><td>08:38:41.350</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.90', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 39756f66774a4c796a3878596c37426d44434d566a5747626c41656677754430</td></tr>
+<tr><td>2026-07-25</td><td>09:51:00.191</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.91. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+<tr><td>2026-07-25</td><td>09:50:59.191</td><td>Info</td><td>TM</td><td>[Ssh Default] Allowed user 'FE397484' from address '203.0.113.91', corresponding account 'SI-SAPBHP-APERTURE@FE397484' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level. 735a53505a4976324770704c504876444a365747467333664162594e35332b5a</td></tr>
+<tr><td>2026-07-24</td><td>12:58:51.963</td><td>Info</td><td>TM</td><td>[Ssh Default] User with login name &quot;FE397484&quot;, associated with account &quot;SI-SAPBHP-APERTURE@FE397484&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.90. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac</td></tr>
+</table></div>
+</body>
+</html>

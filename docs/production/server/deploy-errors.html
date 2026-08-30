@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deploy errors</title>
+<meta name="report-dates" content="2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="production-server">
+<meta name="report-key" content="deploy-errors">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="server-deploy-errors" data-twin="../../acceptance/server/deploy-errors.html"></div>
+<h1>Deploy errors</h1>
+<p class="range">Two server-log lines, both a <strong>deployment mistake</strong> rather than a runtime fault. <strong>&quot;Step configuration suggests to stop further route execution&quot;</strong> (ARSP0001) means a routing step failed and its configuration told SecureTransport to <strong>abandon the rest of the route</strong> — nothing downstream ran for that file. <strong>&quot;…is used for incoming transfer, but 'Receive File As' field not set&quot;</strong> means a PeSIT transfer profile is missing one field, so <strong>every incoming transfer of that flow errors</strong>; the row names the <strong>subscription</strong> the profile belongs to, since the message itself names only the platform account. The <strong>Cause</strong> column says which applies. One row per <strong>account</strong>, or per <strong>subscription</strong> where the line names the platform account SECURETRANSPORT; newest problem first. <strong>Only the unresolved ones are listed</strong>: an entity that had an <strong>OK File after its last such message</strong> is left out, because something has got through since — and a <strong>UC3 subscription whose poll succeeded after it</strong> is left out too, even when the poll found nothing: the listing works again. Of <strong>0</strong> entities with a message, <strong>0</strong> recovered and <strong>0</strong> are listed.</p>
+<div class="tablewrap"><table class="wide" data-sort-init="4:-1" data-restint="1">
+<tr><th>Account or subscription</th><th>Type</th><th>Cause</th><th class="num">Messages</th><th>Last message</th></tr>
+<tr class="total"><td>Total (0 entities)</td><td></td><td></td><td class="num">0</td><td></td></tr>
+</table></div>
+<p class="note">The entity is the <strong>account</strong> the line names, or the <strong>subscription</strong> when that account is the platform's own SECURETRANSPORT — blacklisted everywhere else on the site, so it would make a useless row. An account's <strong>@FE…</strong> endpoint suffix is stripped, as the transfer parse strips it, so the name links to its detail page.</p>
+<p class="note">Only UNRESOLVED entities appear: one whose last message is followed by an <strong>OK File</strong> has recovered and is left out — as has a <strong>UC3 subscription</strong> whose last message is followed by a <strong>successful poll</strong>, files or no files. The comparison is exact to the millisecond, so a recovery on the SAME day still counts.</p>
+<p class="note">A <strong>Receive File As</strong> row names the subscription its transfer profile belongs to: the message names the platform account `SECURETRANSPORT`, and a transfer profile is internal flow plumbing with no page of its own. <strong>Config hygiene</strong> lists the same defect per profile, including the ones already recovered.</p>
+</body>
+</html>

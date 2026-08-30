@@ -1,0 +1,9 @@
+# Shell scripts must stay LF so they parse under bash (incl. Git Bash on Windows
+# and macOS bash 3.2). A CRLF script body breaks heredoc/here-string parsing.
+*.sh text eol=lf
+# The awk renderer (bin/render_rpt.awk) must stay LF for the same reason.
+*.awk text eol=lf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+windows/**/*.txt text eol=crlf
+*.docx binary

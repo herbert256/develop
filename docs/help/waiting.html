@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Help: Waiting Files — Cloud Reports</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Cloud</a><span class="envpair"><a class="envswitch" data-target="acceptance">Acceptance</a><span class="envsep">/</span><a class="envswitch" data-target="production">Production</a></span><span class="entgroup"><a class="entlabel" href="../acceptance/transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../acceptance/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../acceptance/file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/transfer/index.html">Start page</a><a href="../acceptance/transfer/topview.html">Top view</a><a href="../acceptance/transfer/entities/subscription-all.html">Entities</a><a href="../acceptance/transfer/file-journey-patterns.html">Patterns</a><a href="../acceptance/transfer/activity-per-day.html">Activity over Time</a><a href="../acceptance/transfer/volume-per-day.html">Volume, Sizes &amp; Files</a><a href="../acceptance/transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../acceptance/transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../acceptance/transfer/anomalies.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/server/index.html">Start page</a><a href="../acceptance/server/topview.html">Top view</a><a href="../acceptance/server/errors-per-day.html">Errors</a><a href="../acceptance/server/pickups.html">Transfers &amp; Delivery</a><a href="../acceptance/server/logons-incoming.html">Logons &amp; Connections</a><a href="../acceptance/server/ssh-security.html">Security</a><a href="../acceptance/server/platform-health.html">Operations &amp; Capacity</a><a href="../acceptance/server/remote-poll.html">Routing &amp; Polling</a><a href="../acceptance/server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/analyses/index.html">Start page</a><a href="../acceptance/transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../acceptance/analyses/use-cases.html">Configuration</a><a href="../acceptance/analyses/partner-scorecard.html">Partners</a><a href="../acceptance/analyses/accounts-in-boxes.html">Boxes</a><a href="../acceptance/analyses/failed.html">Errors</a><a href="../acceptance/analyses/acc-vs-prod-summary.html">Acceptance vs production</a></div></div></nav><a class="dashlink" href="../acceptance/dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../acceptance/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../acceptance/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Waiting Files</h1>
+<h2>What this shows</h2>
+<p>A <strong>UC2</strong> flow is one the partner <em>collects from us</em>. Such a file does not travel in the usual two legs — it has <strong>four</strong>:</p>
+<ol>
+<li>Inbound / PeSIT — the file arrives from the internal CFT</li>
+<li>Outbound / routing — internal staging, within seconds of leg 1</li>
+<li>Inbound / routing — the file lands in the pickup area</li>
+<li>Outbound / SSH — the partner dials in and collects it (later; sometimes repeatedly)</li>
+</ol>
+<p>Between legs 3 and 4 the file just sits <em>staged</em>, waiting for the partner. A file whose last leg is the staging one carries the outcome <strong>Waiting</strong> — arrived and ready, but not collected yet. That is not an error; it may simply mean the partner has not polled since the file arrived. A staged file the partner never collects does not wait forever, though: the nightly <strong>File Maintenance</strong> retention sweep (around 03:00, ~11 days after staging) deletes it — those files carry the outcome <strong>Expired</strong>, with the deletion timestamp in the <em>Expired</em> field. An expired file was never delivered and can no longer be collected. Four tables:</p>
+<ul>
+<li><strong>Waiting now — per subscription</strong> — which subscriptions have staged Files nobody collected <em>that are still on disk</em>: how many, oldest and newest staging moment, and how long the oldest has been waiting. Sorted oldest-waiting first — the top rows are the ones to chase.</li>
+<li><strong>Files waiting the longest</strong> — the individual staged Files, oldest first.</li>
+<li><strong>Expired — deleted before pickup</strong> — per subscription, the staged Files the retention sweep removed before any pickup: never delivered.</li>
+<li><strong>Pickup wait — collected files</strong> — for the files that <em>were</em> collected: how long the partner took (median / average / max, and how many were picked up within an hour, within a day, or later).</li>
+</ul>
+<h2>How it's computed</h2>
+<p>A logical transfer (all records sharing one CoreId) whose final leg is a successfully processed Inbound routing leg is Waiting. "Waiting for" counts from the staging moment to the dataset's last record — a file may well have been collected right after the export was taken. When a later export contains the collect leg, the file flips to OK (or Error) on the next build automatically.</p>
+<p>The deletion of an expired file leaves <em>no trace in the transfer log</em> — the evidence is only the server log's "File Maintenance … finished. Deleted files […]" lines. A build step joins those onto the Waiting files (same account and file name, deletion dated after the staging) and marks the matches Expired. On every report a Waiting file counts as <strong>OK</strong> (a normal in-window state) and an Expired file counts as <strong>Error</strong> (never delivered); this page is where the two states are visible individually.</p>
+<p>The pickup wait — from the staging leg ending to the first collect leg starting — is <strong>excluded from every Duration figure</strong> on this site: a UC2 file's Duration is the arrival work (legs 1–3) plus the collect transfer itself, not the hours the partner let it sit. When a partner collects the same file several times, the idle time between collects is excluded too.</p>
+<h2>Why the date filter is off</h2>
+<p>Waiting is a state at the end of the data window, not a per-day statistic — narrowing the range would fake "waiting" files that were collected later. The page always shows the full period (like Stale Accounts and Failure Episodes).</p>
+<h2>How it relates to the other reports</h2>
+<p><a href="episodes.html">Failure Episodes</a> shows flows that are broken; this page shows flows that are merely <em>uncollected</em> — the delivery side did its work. <a href="duration.html">Transfer Duration</a> benefits from the same split: without it, a UC2 file that sat staged for three days would count as a three-day transfer.</p>
+<p>The <strong>Staged backlog</strong> table reconstructs the day-by-day staged-but-uncollected inventory: a file occupies every day from staging until pickup or deletion, so the curve&rsquo;s last day equals the Waiting count. <strong>Will expire next</strong> lists Waiting files staged nine days or more &mdash; the retention sweep deletes staged copies after about eleven days, so these are the partners to call today.</p>
+<p>The <strong>percentile table</strong> rolls collected pickups up to the partner (median, p95, max, and near-misses that waited over eight days); the <strong>weekly table</strong> tracks the median and average wait per staged week for the ten busiest subscriptions &mdash; a rising average flags a partner that paused collecting long before files start expiring.</p>
+</main>
+</body>
+</html>

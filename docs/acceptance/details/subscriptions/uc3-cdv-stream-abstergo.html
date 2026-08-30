@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OUT/IN: Subscription: UC3_CDV_STREAM_ABSTERGO</title>
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body class="res-green">
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="acceptance" data-help="details-subscriptions" data-twin="../../../production/404.html"></div>
+<h1>OUT/IN: Subscription: UC3_CDV_STREAM_ABSTERGO</h1>
+<p class="range"><strong>Working, nothing to fetch.</strong> We poll this partner on schedule and the connection, the credentials and the remote directory are all fine — <strong>55</strong> polls so far — but no file has ever been there to collect, so nothing has reached the transfer log. <strong>UC3 status</strong> calls this <strong>ok</strong> (the clean-poll rule: a verified working poll is green).</p>
+<div class="logcard"><span class="lc-when">2026-08-29 06:57:57.940</span><span class="lc-msg">Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern.</span></div>
+<h2>Features</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>Use case</td><td class="cl"><a href="../../analyses/use-cases.html">UC3 - We are the client and receive a file from the partner</a></td></tr>
+<tr><td>Remote host</td><td class="res-orange cl"><a href="../hosts/sftp-abstergo-example.html">sftp.abstergo.example</a></td></tr>
+<tr><td>Account</td><td class="res-blue cl"><a href="../accounts/cdv-stream-abstergo.html">CDV_STREAM_ABSTERGO</a></td></tr>
+<tr><td>Domain</td><td class="res-orange cl"><a href="../domains/cdv.html">CDV</a></td></tr>
+<tr><td>Application</td><td class="res-orange cl"><a href="../applications/stream.html">STREAM</a></td></tr>
+<tr><td>Partner</td><td class="res-blue cl"><a href="../partners/abstergo.html">ABSTERGO</a></td></tr>
+<tr><td>Cron</td><td>0 23 * * * ?</td></tr>
+<tr><td>Schedule</td><td>Every hour at :23</td></tr>
+<tr><td>From</td><td>/outbox<span class="mask">/*</span></td></tr>
+<tr><td>To</td><td>/data/cft/in/CDV_STREAM_ABSTERGO</td></tr>
+</table></div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Outgoing connections</h2>
+<div class="tablewrap"><table data-fold="orange|{n} hosts configured without traffic">
+<tr><th>IP</th><th class="num">In</th><th class="num">Out</th><th>Name</th></tr>
+<tr data-res="orange"><td><code>203.0.113.80, 203.0.113.81</code></td><td class="num"></td><td class="num"></td><td class="res-orange cl"><a href="../hosts/sftp-abstergo-example.html"><code>sftp.abstergo.example</code></a></td></tr>
+</table></div>
+</div>
+</div>
+<h2>Last server log messages</h2>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Date</th><th>Time</th><th>Level</th><th>Component</th><th>Message</th></tr>
+<tr class="total"><td>Total (25 line(s))</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>2026-08-29</td><td>06:57:57.940</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 4a506761653849596f373531534a32585766755369624750364f3869305a4a5a61377571766f37777946353d</td></tr>
+<tr><td>2026-08-29</td><td>06:57:57.573</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 4a506761653849596f373531534a32585766755369624750364f3869305a4a5a61377571766f37777946353d</td></tr>
+<tr><td>2026-08-28</td><td>06:55:08.580</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 656b6b4339484756475135644e764b7862704d4d34425a564a2b357a66775961447276382f2b3349357a643d</td></tr>
+<tr><td>2026-08-28</td><td>06:55:08.119</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 656b6b4339484756475135644e764b7862704d4d34425a564a2b357a66775961447276382f2b3349357a643d</td></tr>
+<tr><td>2026-08-27</td><td>06:52:19.219</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 79346f70625245536b6c34454a55654d667a72474f6d73625a7432454b496f627362774f505679664269423d</td></tr>
+<tr><td>2026-08-27</td><td>06:52:18.665</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 79346f70625245536b6c34454a55654d667a72474f6d73625a7432454b496f627362774f505679664269423d</td></tr>
+<tr><td>2026-08-25</td><td>06:41:45.204</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 3035514563674d38567a7366653454644f70667a344d4b71564a7171395475706a514d4b5a432b743575483d</td></tr>
+<tr><td>2026-08-25</td><td>06:41:44.715</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 3035514563674d38567a7366653454644f70667a344d4b71564a7171395475706a514d4b5a432b743575483d</td></tr>
+<tr><td>2026-08-24</td><td>06:38:55.843</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 4a4f567237724b357a4a724761646e34547a2b744f7965776b346e376f7239704d414e62705935454163723d</td></tr>
+<tr><td>2026-08-24</td><td>06:38:55.260</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 4a4f567237724b357a4a724761646e34547a2b744f7965776b346e376f7239704d414e62705935454163723d</td></tr>
+<tr><td>2026-08-23</td><td>06:36:06.482</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 64695a536132493152657275574337535839636e6b587831306e6b4d54434e7130774f7435763063494c503d</td></tr>
+<tr><td>2026-08-23</td><td>06:36:05.806</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 64695a536132493152657275574337535839636e6b587831306e6b4d54434e7130774f7435763063494c503d</td></tr>
+<tr><td>2026-08-22</td><td>06:33:17.122</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 7933643635414779767a7156526f50736347366936394537445768642b6163726468502f4a46773050357a3d</td></tr>
+<tr><td>2026-08-22</td><td>06:33:16.753</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 7933643635414779767a7156526f50736347366936394537445768642b6163726468502f4a46773050357a3d</td></tr>
+<tr><td>2026-08-20</td><td>06:27:38.401</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 62676c4a325742727264706b4a7933686c6133576e4871486831622f554a3873754253696f796d6a6557373d</td></tr>
+<tr><td>2026-08-20</td><td>06:27:37.845</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 62676c4a325742727264706b4a7933686c6133576e4871486831622f554a3873754253696f796d6a6557373d</td></tr>
+<tr><td>2026-08-19</td><td>06:24:49.040</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 7730717756682f6e4a79704c46594c37706b56513974394d786b59512f684c7358785430344969366c46663d</td></tr>
+<tr><td>2026-08-19</td><td>06:24:48.390</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 7730717756682f6e4a79704c46594c37706b56513974394d786b59512f684c7358785430344969366c46663d</td></tr>
+<tr><td>2026-08-18</td><td>06:21:59.679</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 454a75593073396b6e486f7a4139665675757a4b5453515341545668713462742f68554749656453747a443d</td></tr>
+<tr><td>2026-08-18</td><td>06:21:59.336</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 454a75593073396b6e486f7a4139665675757a4b5453515341545668713462742f68554749656453747a443d</td></tr>
+<tr><td>2026-08-16</td><td>06:11:25.664</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 474b57793136464f5956634e5668566e646b6f333935756938764a486445683733577743544d70666c2f4a3d</td></tr>
+<tr><td>2026-08-16</td><td>06:11:24.986</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 474b57793136464f5956634e5668566e646b6f333935756938764a486445683733577743544d70666c2f4a3d</td></tr>
+<tr><td>2026-08-15</td><td>06:08:36.303</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 616661615446444c3271633152477042687548785465426e4c664759496277386747785469696b337375743d</td></tr>
+<tr><td>2026-08-15</td><td>06:08:35.931</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD' evaluated to: '*' 616661615446444c3271633152477042687548785465426e4c664759496277386747785469696b337375743d</td></tr>
+<tr><td>2026-08-14</td><td>06:05:46.943</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_CDV_STREAM_ABSTERGO_CDV_STREAM_ABSTERGO_SCP_CDV_STREAM_ABSTERGO_PWD': 0 file(s) were found of which 0 matched the pattern. 767a664279514249552f62634e7239636d346c7270445674624f44707a7a41384933796c7934674f3063523d</td></tr>
+</table></div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connections</title>
+<meta name="report-dates" content="2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="production-server">
+<meta name="report-key" content="connections">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="server-inbound-connections" data-twin="../../acceptance/server/connections-whitelist-usage.html"></div>
+<h1>Connections <span class="grouptag">&larr; Logons &amp; Connections &larr; Server</span></h1>
+<p class="tabs"><a class="tab" href="logons-incoming.html">Logons</a><span class="tab active">Connections</span><span class="tabsep"></span><a class="tab" href="connections-by-protocol.html">By protocol</a><a class="tab" href="connections-per-day.html">Per day</a><a class="tab" href="connections-by-account.html">By account</a><a class="tab" href="connections-by-address.html">By address</a><span class="tab active">Whitelist usage</span><a class="tab" href="connections-failure-reasons.html">Failure reasons</a><a class="tab" href="connections-by-remote-host.html">By remote host</a><a class="tab" href="connections-test-connections.html">Test connections</a><a class="tab" href="connections-host-keys.html">Host keys</a><a class="tab" href="connections-test-outcomes.html">Test outcomes</a></p>
+<p class="range">Both directions of the connection story in one report. <strong>Inbound</strong>: who connects in to SecureTransport, over which protocol, from which addresses, and how the whitelist policies are used. <strong>Outbound</strong>: why and where our own connections fail — the failure-reason breakdown, the per-remote-host view and the test connections.</p>
+<div class="tablewrap"><table data-recalc="- s0 - - -">
+<tr><th>Policy</th><th class="num">Allowed</th><th class="num">Accounts</th><th>First</th><th>Last</th></tr>
+<tr data-buckets="2026-07-26:19,2026-07-27:78,2026-07-28:67,2026-07-29:61,2026-07-30:72,2026-07-31:77,2026-08-01:19,2026-08-02:18,2026-08-03:60,2026-08-04:68,2026-08-05:81,2026-08-06:65,2026-08-07:65,2026-08-08:24,2026-08-09:22,2026-08-10:61,2026-08-11:55,2026-08-12:162,2026-08-13:71,2026-08-14:60,2026-08-15:22,2026-08-16:18,2026-08-17:66,2026-08-18:70,2026-08-19:59,2026-08-20:53,2026-08-21:70,2026-08-22:20,2026-08-23:20,2026-08-24:68,2026-08-25:65,2026-08-26:73,2026-08-27:79,2026-08-28:66,2026-08-29:18"><td>Generic Whitelisting</td><td class="num">1972</td><td class="num">13</td><td>2026-07-26</td><td>2026-08-29</td></tr>
+<tr class="total"><td>Total (1 polic(ies))</td><td class="num">1972</td><td class="num"></td><td></td><td></td></tr>
+</table></div>
+<p class="note">Which Login Restriction Policy the &quot;Allowed user … corresponding policy name&quot; screening lines actually matched — the policies doing the work, next to Logon's per-login funnel. Accounts is the distinct accounts allowed under that policy (whole period).</p>
+<p class="note">How the explicit test connections failed: the &quot;Error during test connection&quot; reason tail, as logged.</p>
+</body>
+</html>

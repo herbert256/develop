@@ -1,0 +1,978 @@
+[
+  {
+    "businessId": "8e8b4f72-fdc9-4a1b-9a62-3188e26b02a3",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/8e8b4f72-fdc9-4a1b-9a62-3188e26b02a3",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "03f8921b-68f6-40fb-83b3-fb910d8f42e5",
+        "name": "SCP_FIN_BILLING_GLOBEX_KEY",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "hosts": ["sftp.globex.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "FIN_BILLING_GLOBEX",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "0dab8550-587c-4645-8d87-1334e20e10ac",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/0dab8550-587c-4645-8d87-1334e20e10ac",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "f7e6363f-9e4b-46bf-a17e-afc1b40e2e50",
+        "name": "SCP_CD_COSMOS_WONKA_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["sftp.wonka.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "CD_COSMOS_WONKA",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "85afb2e1-d823-4f79-af85-0d617aeb1614",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/85afb2e1-d823-4f79-af85-0d617aeb1614",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "8379bc57-06f5-4c52-9049-4411e472146b",
+        "name": "SCP_CD_PRINTMGMT_WONKA_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["sftp.wonka.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "CD_PRINTMGMT_WONKA",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "12d583e2-aa02-483c-acfc-1a87d4cb86cb",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/12d583e2-aa02-483c-acfc-1a87d4cb86cb",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "f9fd8953-d13a-455e-9499-beb6d6fd94da",
+        "name": "SCP_IT_ARCHIVE_INITECH_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["files.initech.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "IT_ARCHIVE_INITECH",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "83a61598-ca9e-488d-9bfb-b0df1449e628",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/83a61598-ca9e-488d-9bfb-b0df1449e628",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "8c6c21c5-40af-4af5-815a-4d4cddc9d082",
+        "name": "SCP_AB_CLAIMS_UMBRELLA_KEY",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "hosts": ["mft.umbrella.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "AB_CLAIMS_UMBRELLA",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "5b149110-e051-41d6-ac37-9fe181511859",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/5b149110-e051-41d6-ac37-9fe181511859",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "6c92f30f-8f0d-4dab-838d-672e13c645d4",
+        "name": "SCP_ZG_PENSION_HOOLI_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["transfer.hooli.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "ZG_PENSION_HOOLI",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "4bc43144-9ae9-4471-96d2-d4a341ccc0ef",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/4bc43144-9ae9-4471-96d2-d4a341ccc0ef",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "d65b2060-b1c8-4cc8-b955-4757c16cc335",
+        "name": "SCP_FS_MORTGAGE_SABRE_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["sftp.sabre.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "FS_MORTGAGE_SABRE",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "4a6e8e00-ae25-400d-a6e0-81d22babf9dc",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/4a6e8e00-ae25-400d-a6e0-81d22babf9dc",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.30", "AllowIP2": "198.51.100.31", "AllowIP3": "198.51.100.32", "AllowIP4": "198.51.100.33", "AllowIP5": "198.51.100.180", "AllowIP6": "198.51.100.181", "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "7bb72d1b-81ee-445f-bad0-8e4583b35ec7",
+        "name": "CCP_APS-VIDA-UMBRELLA_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE442302", "loginName": "FE442302",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "4a6e8e00-ae25-400d-a6e0-login00age", "name": "FE442302", "type": "LOGIN", "login": "FE442302", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "APS-VIDA-UMBRELLA",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "670f2e57-8287-483e-9248-8163abc79ea5",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/670f2e57-8287-483e-9248-8163abc79ea5",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "203.0.113.110", "AllowIP2": "203.0.113.111", "AllowIP3": "203.0.113.112", "AllowIP4": "203.0.113.205", "AllowIP5": "203.0.113.206", "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "352fa697-1850-4688-ab4e-bce034af0043",
+        "name": "CCP_IT-SAPBHP-GEKKO_KEY",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "login": "FE135991", "loginName": "FE135991",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "670f2e57-8287-483e-9248-login00age", "name": "FE135991", "type": "LOGIN", "login": "FE135991", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "IT-SAPBHP-GEKKO",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "28b19af4-2bf2-4560-bed6-ac24720caad6",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/28b19af4-2bf2-4560-bed6-ac24720caad6",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "203.0.113.20", "AllowIP2": "203.0.113.21", "AllowIP3": "203.0.113.22", "AllowIP4": "203.0.113.23", "AllowIP5": "203.0.113.235", "AllowIP6": "203.0.113.236", "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "e6ad8690-6bee-4db2-a7a8-8065a44dd917",
+        "name": "CCP_IT-EKDSI-CYBERDYNE_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE716133", "loginName": "FE716133",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "28b19af4-2bf2-4560-bed6-login00age", "name": "FE716133", "type": "LOGIN", "login": "FE716133", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "IT-EKDSI-CYBERDYNE",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "5d14f43e-3efc-451e-9aa7-ce69806c5d1c",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/5d14f43e-3efc-451e-9aa7-ce69806c5d1c",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.40", "AllowIP2": "198.51.100.41", "AllowIP3": "198.51.100.185", "AllowIP4": "198.51.100.186", "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "54a3aaf1-bc80-4860-b2aa-6e8a512578ef",
+        "name": "CCP_ZG-MATCH-HOOLI_KEY",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "login": "FE102183", "loginName": "FE102183",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "5d14f43e-3efc-451e-9aa7-login00age", "name": "FE102183", "type": "LOGIN", "login": "FE102183", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "ZG-MATCH-HOOLI",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "6037d2e1-c75f-430b-a64f-ff884114c5b8",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/6037d2e1-c75f-430b-a64f-ff884114c5b8",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "7c9141fd-55d3-4afe-bfdd-8eb403c32b9a",
+        "name": "SCP_APS_FMGENLOG_CYBERDYNE_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["sftp.cyberdyne.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "APS_FMGENLOG_CYBERDYNE",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "2c0fb196-1da1-444d-b96d-4b0eaa576caf",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/2c0fb196-1da1-444d-b96d-4b0eaa576caf",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "8bdf1842-96eb-4438-91ec-8e0d06bbe141",
+        "name": "SCP_AB_NAS_GLOBEX_KEY",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "hosts": ["sftp.globex.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "AB_NAS_GLOBEX",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "d7120348-8306-4022-b9b3-b1c671300c8e",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/d7120348-8306-4022-b9b3-b1c671300c8e",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "8689a2bd-3f90-40fb-8587-5857bcae80c2",
+        "name": "SCP_APS_SYSHUB_SOYLENT_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["feeds.soylent.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "APS_SYSHUB_SOYLENT",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "10d280bc-ec34-4839-b2cc-9045a6c4a98f",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/10d280bc-ec34-4839-b2cc-9045a6c4a98f",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "bb36121d-3c91-4914-a78d-17d61c3e68dd",
+        "name": "SCP_ODV_MERLIJN_SABRE_D_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["sftp.sabre.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "ODV_MERLIJN_SABRE_D",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "2facfdb4-3cca-42ec-b4bf-66f84bdc752e",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/2facfdb4-3cca-42ec-b4bf-66f84bdc752e",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "e24bd056-da5f-4963-bade-84c8785d4700",
+        "name": "SCP_IT_RECON_HOOLI_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["transfer.hooli.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "IT_RECON_HOOLI",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "af49032f-087d-44a6-9f1c-0a7477329c1e",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/af49032f-087d-44a6-9f1c-0a7477329c1e",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.10", "AllowIP2": "198.51.100.11", "AllowIP3": "198.51.100.12", "AllowIP4": "198.51.100.13", "AllowIP5": "198.51.100.170", "AllowIP6": "198.51.100.171", "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "a1bae5a9-d8e5-4be7-9fba-a6b9f37f339e",
+        "name": "CCP_APS-COSMOS-GLOBEX_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE796481", "loginName": "FE796481",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "af49032f-087d-44a6-9f1c-login00age", "name": "FE796481", "type": "LOGIN", "login": "FE796481", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "APS-COSMOS-GLOBEX",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "eeb76c7c-71e3-42a5-a8d7-4fc94e49dba6",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/eeb76c7c-71e3-42a5-a8d7-4fc94e49dba6",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.80", "AllowIP2": "198.51.100.81", "AllowIP3": "198.51.100.82", "AllowIP4": "198.51.100.83", "AllowIP5": "198.51.100.205", "AllowIP6": "198.51.100.206", "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "8ad2ff59-6575-41b7-963d-11df75a5a518",
+        "name": "CCP_CDV-KRP-TDI-WONKA_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE120234", "loginName": "FE120234",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "eeb76c7c-71e3-42a5-a8d7-login00age", "name": "FE120234", "type": "LOGIN", "login": "FE120234", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "CDV-KRP-TDI-WONKA",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "f5d7321b-b365-4c3a-8663-538c181cdafc",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/f5d7321b-b365-4c3a-8663-538c181cdafc",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.110", "AllowIP2": "198.51.100.111", "AllowIP3": "198.51.100.220", "AllowIP4": "198.51.100.221", "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "59f5f65b-d549-4b89-991c-2467ee8eed03",
+        "name": "CCP_AIM-LAKE-PIEDPIPER_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE537563", "loginName": "FE537563",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "f5d7321b-b365-4c3a-8663-login00age", "name": "FE537563", "type": "LOGIN", "login": "FE537563", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "AIM-LAKE-PIEDPIPER",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "d5ede043-5146-40c3-9532-40722819bcbf",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/d5ede043-5146-40c3-9532-40722819bcbf",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.40", "AllowIP2": "198.51.100.41", "AllowIP3": "198.51.100.185", "AllowIP4": "198.51.100.186", "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "e87997f1-860a-4fc9-b8a6-dc7870e230a4",
+        "name": "CCP_ZG-ZKA-HOOLI_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE702442", "loginName": "FE702442",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "d5ede043-5146-40c3-9532-login00age", "name": "FE702442", "type": "LOGIN", "login": "FE702442", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "ZG-ZKA-HOOLI",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "48711a68-bb0f-4d69-a5dd-af0ed0fa0774",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/48711a68-bb0f-4d69-a5dd-af0ed0fa0774",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.20", "AllowIP2": "198.51.100.21", "AllowIP3": "198.51.100.22", "AllowIP4": "198.51.100.175", "AllowIP5": "198.51.100.176", "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "86d80613-d7b0-46aa-9e87-70d2fc364816",
+        "name": "CCP_ZK-MIAZ-INITECH_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE028473", "loginName": "FE028473",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "48711a68-bb0f-4d69-a5dd-login00age", "name": "FE028473", "type": "LOGIN", "login": "FE028473", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "ZK-MIAZ-INITECH",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "be9560f3-f279-4fc2-9c99-bceffa8f0042",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/be9560f3-f279-4fc2-9c99-bceffa8f0042",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.10", "AllowIP2": "198.51.100.11", "AllowIP3": "198.51.100.12", "AllowIP4": "198.51.100.13", "AllowIP5": "198.51.100.170", "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "93f0a306-200e-4789-bf3d-bdfa69746c75",
+        "name": "CCP_STMT-EXPORT-GLOBEX_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE343512", "loginName": "FE343512",
+        "fingerPrintVerified": false, "customAuthentication": false
+      },
+      {
+        "businessId": "93f0a306-200e-4789-bf3d-bdfa69746c75",
+        "name": "CCP_STMT-EXPORT-GLOBEX_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE343512", "loginName": "FE343512",
+        "fingerPrintVerified": false, "customAuthentication": false
+      },
+      {
+        "businessId": "93f0a306-200e-4789-bf3d-bdfa69746c75",
+        "name": "CCP_STMT-EXPORT-GLOBEX_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE343512", "loginName": "FE343512",
+        "fingerPrintVerified": false, "customAuthentication": false
+      },
+      {
+        "businessId": "93f0a306-200e-4789-bf3d-bdfa69746c75",
+        "name": "CCP_STMT-EXPORT-GLOBEX_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE343512", "loginName": "FE343512",
+        "fingerPrintVerified": false, "customAuthentication": false
+      },
+      {
+        "businessId": "93f0a306-200e-4789-bf3d-bdfa69746c75",
+        "name": "CCP_STMT-EXPORT-GLOBEX_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE343512", "loginName": "FE343512",
+        "fingerPrintVerified": false, "customAuthentication": false
+      },
+      {
+        "businessId": "93f0a306-200e-4789-bf3d-bdfa69746c75",
+        "name": "CCP_STMT-EXPORT-GLOBEX_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE343512", "loginName": "FE343512",
+        "fingerPrintVerified": false, "customAuthentication": false
+      },
+      {
+        "businessId": "93f0a306-200e-4789-bf3d-bdfa69746c75",
+        "name": "CCP_STMT-EXPORT-GLOBEX_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE343512", "loginName": "FE343512",
+        "fingerPrintVerified": false, "customAuthentication": false
+      },
+      {
+        "businessId": "93f0a306-200e-4789-bf3d-bdfa69746c75",
+        "name": "CCP_STMT-EXPORT-GLOBEX_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE343512", "loginName": "FE343512",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "be9560f3-f279-4fc2-9c99-login00age", "name": "FE343512", "type": "LOGIN", "login": "FE343512", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "STMT-EXPORT-GLOBEX",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "35b1fe6c-815c-4cf3-8347-2a05e0ac558a",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/35b1fe6c-815c-4cf3-8347-2a05e0ac558a",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.40", "AllowIP2": "198.51.100.41", "AllowIP3": "198.51.100.185", "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "1018cc0c-4f47-4e4c-939c-cea61c7c2ab2",
+        "name": "CCP_INV-PAYMENTS-HOOLI_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE761781", "loginName": "FE761781",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "35b1fe6c-815c-4cf3-8347-login00age", "name": "FE761781", "type": "LOGIN", "login": "FE761781", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "INV-PAYMENTS-HOOLI",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "6121fcaa-1d52-42e5-8358-209fcac3da04",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/6121fcaa-1d52-42e5-8358-209fcac3da04",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "91d15a06-7963-4942-a822-af67cca2deef",
+        "name": "SCP_REC_FEEDS_SOYLENT_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["feeds.soylent.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "REC_FEEDS_SOYLENT",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "90fdfc75-693f-4b8b-8ef0-fd09957c0592",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/90fdfc75-693f-4b8b-8ef0-fd09957c0592",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "62e3652e-dc8d-4b5e-a837-ce4677604697",
+        "name": "SCP_GL_POSTINGS_GEKKO_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["trades.gekko.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "GL_POSTINGS_GEKKO",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "d0939dea-9ae7-4cd5-9b0a-680966f6a9a2",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/d0939dea-9ae7-4cd5-9b0a-680966f6a9a2",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.20", "AllowIP2": "198.51.100.21", "AllowIP3": "198.51.100.22", "AllowIP4": "198.51.100.175", "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "ade20b86-b1a3-4542-92fa-a624af970bac",
+        "name": "CCP_CRM-SYNC-INITECH_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE465621", "loginName": "FE465621",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "d0939dea-9ae7-4cd5-9b0a-login00age", "name": "FE465621", "type": "LOGIN", "login": "FE465621", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "CRM-SYNC-INITECH",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "a6a9c839-5657-49c6-ac62-1c5fa5340df6",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/a6a9c839-5657-49c6-ac62-1c5fa5340df6",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "a9f0ee58-f044-41bc-a0d4-6a5d3c4b96e8",
+        "name": "SCP_HR_ROSTER_UMBRELLA_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["mft.umbrella.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "HR_ROSTER_UMBRELLA",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "eace922f-820f-4b96-9420-4c8b50b5bf7a",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/eace922f-820f-4b96-9420-4c8b50b5bf7a",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "1b078264-b279-4337-9aff-b3b824ed6107",
+        "name": "SCP_FIN_CLAIMS_MONARCH_KEY",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "hosts": ["wings.monarch.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "FIN_CLAIMS_MONARCH",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "c6f3ac59-2808-459c-8386-c883369f13d6",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/c6f3ac59-2808-459c-8386-c883369f13d6",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "1a49cde7-20ec-46d3-836c-8cf13ad18275",
+        "name": "SCP_ZG_IKAZ_BLUTH_KEY",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "hosts": ["docs.bluth.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "ZG_IKAZ_BLUTH",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "a0b0a57c-7dbf-4aea-b487-a3655779ccb7",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/a0b0a57c-7dbf-4aea-b487-a3655779ccb7",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "203.0.113.110", "AllowIP2": "203.0.113.111", "AllowIP3": "203.0.113.112", "AllowIP4": "203.0.113.205", "AllowIP5": "203.0.113.206", "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "00d747c9-17f4-4a16-a215-76aad33d7e01",
+        "name": "CCP_CD-ZIBA-GEKKO_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE748281", "loginName": "FE748281",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "a0b0a57c-7dbf-4aea-b487-login00age", "name": "FE748281", "type": "LOGIN", "login": "FE748281", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "CD-ZIBA-GEKKO",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "d5d6d574-ef92-48f4-bf80-c0d2351e73c3",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/d5d6d574-ef92-48f4-bf80-c0d2351e73c3",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.60", "AllowIP2": "198.51.100.61", "AllowIP3": "198.51.100.195", "AllowIP4": "198.51.100.196", "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "1eb90c03-c956-43c9-b285-ffed2816c999",
+        "name": "CCP_CB-VIDA-WAYNE_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE035917", "loginName": "FE035917",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "d5d6d574-ef92-48f4-bf80-login00age", "name": "FE035917", "type": "LOGIN", "login": "FE035917", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "CB-VIDA-WAYNE",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "e9abdb32-b321-43f2-b40d-eaaba0e12493",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/e9abdb32-b321-43f2-b40d-eaaba0e12493",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "7e389738-0e0b-40c4-a003-07a39d82c5bc",
+        "name": "SCP_HR_ARCHIVE_ZORG_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["sftp.zorg.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "HR_ARCHIVE_ZORG",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "1c9b1d3f-33eb-48a9-bf39-35294ada43d2",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/1c9b1d3f-33eb-48a9-bf39-35294ada43d2",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "342acb45-328c-4b8b-83eb-fbbfce988d2f",
+        "name": "SCP_APS_FMREPLERR_CYBERDYNE_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["sftp.cyberdyne.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "APS_FMREPLERR_CYBERDYNE",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "01cd6daa-dd32-4113-8da7-d6b7b8a1879b",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/01cd6daa-dd32-4113-8da7-d6b7b8a1879b",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "203.0.113.20", "AllowIP2": "203.0.113.21", "AllowIP3": "203.0.113.22", "AllowIP4": "203.0.113.23", "AllowIP5": "203.0.113.235", "AllowIP6": "203.0.113.236", "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "5f5098e7-9873-4de1-a16b-c034a0ae0c30",
+        "name": "CCP_DPL-SCAN-CYBERDYNE_KEY",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "login": "FE579565", "loginName": "FE579565",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "01cd6daa-dd32-4113-8da7-login00age", "name": "FE579565", "type": "LOGIN", "login": "FE579565", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "DPL-SCAN-CYBERDYNE",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "46bbdb45-b2d7-4751-9a43-9ad8e5959f0b",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/46bbdb45-b2d7-4751-9a43-9ad8e5959f0b",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "a52d498e-0a5f-41f9-a8e5-230276db3f56",
+        "name": "SCP_APS_INVOICE_STARK_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["sftp.stark.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "APS_INVOICE_STARK",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "d646b898-0437-4e4b-b5dd-9d00a37ffbe7",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/d646b898-0437-4e4b-b5dd-9d00a37ffbe7",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "192.0.2.77", "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "f8b41128-777c-484d-8fbf-e349df554938",
+        "name": "SCP_INFRA-MONITOR-UC1_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["filetransfer.acme.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      },
+      {
+        "businessId": "57fc7f1b-efbc-44a7-801c-026bcccb4fa8",
+        "name": "CCP_INFRA_ST-MONITOR_INFRA_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE000000", "loginName": "FE000000",
+        "fingerPrintVerified": false, "customAuthentication": false
+      },
+      {
+        "businessId": "b744ed0e-67fc-4100-b079-218dba425619",
+        "name": "SCP_INFRA-MONITOR-UC3_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["filetransfer.acme.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      },
+      {
+        "businessId": "168c5b01-e03d-4d59-b0d6-40afa7b85c89",
+        "name": "CCP_INFRA_ST-MONITOR_INFRA_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE000000", "loginName": "FE000000",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "d646b898-0437-4e4b-b5dd-login00age", "name": "FE000000", "type": "LOGIN", "login": "FE000000", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "INFRA_ST-MONITOR_INFRA",
+    "tags": ["sample-estate"]
+  }
+]

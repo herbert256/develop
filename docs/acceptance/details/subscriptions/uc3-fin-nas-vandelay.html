@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OUT/IN: Subscription: UC3_FIN_NAS_VANDELAY</title>
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body class="res-blue">
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="acceptance" data-help="details-subscriptions" data-twin="../../../production/404.html"></div>
+<h1>OUT/IN: Subscription: UC3_FIN_NAS_VANDELAY</h1>
+<p class="alert">Never pulled a file, and the poll is failing</p>
+<p class="range">No File has ever reached the transfer log, and the server log's latest word is that we could not retrieve: <strong>17</strong> failure lines, latest 2026-08-29 — a connection failure, or a directory listing that failed once connected. <strong>UC3 status</strong> calls this <strong>server - error</strong>.</p>
+<p class="range"><strong>Next move: network</strong> — either side; start with reachability.</p>
+<div class="logcard"><span class="lc-when">2026-08-29 14:11:15.292</span><span class="lc-msg">Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host</span></div>
+<h2>Features</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>Use case</td><td class="cl"><a href="../../analyses/use-cases.html">UC3 - We are the client and receive a file from the partner</a></td></tr>
+<tr><td>Remote host</td><td class="res-red cl"><a href="../hosts/imports-vandelay-example.html">imports.vandelay.example</a></td></tr>
+<tr><td>Account</td><td class="res-blue cl"><a href="../accounts/fin-nas-vandelay.html">FIN_NAS_VANDELAY</a></td></tr>
+<tr><td>Domain</td><td class="res-red cl"><a href="../domains/fin.html">FIN</a></td></tr>
+<tr><td>Application</td><td class="res-orange cl"><a href="../applications/nas.html">NAS</a></td></tr>
+<tr><td>Partner</td><td class="res-red cl"><a href="../partners/vandelay.html">VANDELAY</a></td></tr>
+<tr><td>Cron</td><td>0 53 * * * ?</td></tr>
+<tr><td>Schedule</td><td>Every hour at :53</td></tr>
+<tr><td>From</td><td>/outbox<span class="mask">/*</span></td></tr>
+<tr><td>To</td><td>/data/cft/in/FIN_NAS_VANDELAY</td></tr>
+</table></div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Outgoing connections</h2>
+<div class="tablewrap"><table data-fold="orange|{n} hosts configured without traffic">
+<tr><th>IP</th><th class="num">In</th><th class="num">Out</th><th>Name</th></tr>
+<tr data-res="orange"><td><code>198.51.100.100, 198.51.100.101, 198.51.100.102</code></td><td class="num"></td><td class="num"></td><td class="res-red cl"><a href="../hosts/imports-vandelay-example.html"><code>imports.vandelay.example</code></a></td></tr>
+</table></div>
+</div>
+</div>
+<h2>Last server log messages</h2>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Date</th><th>Time</th><th>Level</th><th>Component</th><th>Message</th></tr>
+<tr class="total"><td>Total (26 line(s))</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>2026-08-29</td><td>14:11:15.292</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host 45364d633248444c69524e58787568532f6a6c364c656a2b4d6f30736a3270467862313957314d4243</td></tr>
+<tr><td>2026-08-29</td><td>13:11:15.292</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD': 0 file(s) were found of which 0 matched the pattern. 50544a2b6846623374794f584b46444568735241396d6d3159756a386636524f51477379345165516c4f573d</td></tr>
+<tr><td>2026-08-29</td><td>13:11:14.848</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD' evaluated to: '*' 50544a2b6846623374794f584b46444568735241396d6d3159756a386636524f51477379345165516c4f573d</td></tr>
+<tr><td>2026-08-28</td><td>11:45:47.064</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host 6d713746736f4a526558733263764242356d67617a4e6f637573783879426845466a4d4f6f31547976</td></tr>
+<tr><td>2026-08-28</td><td>10:45:47.064</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD': 0 file(s) were found of which 0 matched the pattern. 4d6f6543496b6d3170516a5879416f593777626533384c4964395335776c7064527663304b67304c3856453d</td></tr>
+<tr><td>2026-08-28</td><td>10:45:46.526</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD' evaluated to: '*' 4d6f6543496b6d3170516a5879416f593777626533384c4964395335776c7064527663304b67304c3856453d</td></tr>
+<tr><td>2026-08-24</td><td>12:58:04.905</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host 735167594d6636753237453631477332644167346275394a4c5361592f714a7067484d564332556664</td></tr>
+<tr><td>2026-08-24</td><td>11:58:04.905</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD': 0 file(s) were found of which 0 matched the pattern. 3754497a796a4b354e39634a624e5832436f6c515a53384e34594d6e34756b4367347853704b4f4e3563743d</td></tr>
+<tr><td>2026-08-24</td><td>11:58:04.245</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD' evaluated to: '*' 3754497a796a4b354e39634a624e5832436f6c515a53384e34594d6e34756b4367347853704b4f4e3563743d</td></tr>
+<tr><td>2026-08-20</td><td>14:22:51.992</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host 79545a38686a55466d5544326a4b7478464f4e34346e544255684e5636576f6b7670725a4933776a50</td></tr>
+<tr><td>2026-08-20</td><td>13:22:51.992</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD': 0 file(s) were found of which 0 matched the pattern. 766c6145506531772f3177493538734772364d4a4272535a50564a62376143426a617957774a6e3758366e3d</td></tr>
+<tr><td>2026-08-20</td><td>13:22:51.359</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD' evaluated to: '*' 766c6145506531772f3177493538734772364d4a4272535a50564a62376143426a617957774a6e3758366e3d</td></tr>
+<tr><td>2026-08-19</td><td>11:57:23.764</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host 5544496c5845624c69616a56504c4e672f524a5967565a66336c4b6b4968676a447844716133345637</td></tr>
+<tr><td>2026-08-19</td><td>10:57:23.764</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD': 0 file(s) were found of which 0 matched the pattern. 73367649333841753854464867345261462b576e37423373566c35594d465a516a446958435a2b327642573d</td></tr>
+<tr><td>2026-08-19</td><td>10:57:23.437</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD' evaluated to: '*' 73367649333841753854464867345261462b576e37423373566c35594d465a516a446958435a2b327642573d</td></tr>
+<tr><td>2026-08-15</td><td>13:09:41.605</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host 6170743433374d6f362f375a6f6934556a724a334932754d554c3041564c4949655644793033344371</td></tr>
+<tr><td>2026-08-15</td><td>12:09:41.605</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD': 0 file(s) were found of which 0 matched the pattern. 626c5a3567376b79664139364b4541334c33675a63586f78772f7a47554f55317a4d33316844593572492b3d</td></tr>
+<tr><td>2026-08-15</td><td>12:09:41.157</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD' evaluated to: '*' 626c5a3567376b79664139364b4541334c33675a63586f78772f7a47554f55317a4d33316844593572492b3d</td></tr>
+<tr><td>2026-08-11</td><td>14:34:28.693</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host 67736d634d2b6d2f71583656576c35514c3532336d77454564616e3951336f45743369313734564763</td></tr>
+<tr><td>2026-08-11</td><td>13:34:28.693</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD': 0 file(s) were found of which 0 matched the pattern. 4f33724b2b325070533452346f7a56483149485346772b39483877355936797a317534366f43786d4b6d353d</td></tr>
+<tr><td>2026-08-11</td><td>13:34:28.271</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD' evaluated to: '*' 4f33724b2b325070533452346f7a56483149485346772b39483877355936797a317534366f43786d4b6d353d</td></tr>
+<tr><td>2026-08-06</td><td>13:21:18.306</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host 49433659695864682b4379346139457a70577932312f655064444e707372486f636a364f6e35636b33</td></tr>
+<tr><td>2026-08-06</td><td>12:21:18.306</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD': 0 file(s) were found of which 0 matched the pattern. 3632712f50542b72794466713537703556466269676355566f6d5a6b7874456f4666395a5a38696b6530513d</td></tr>
+<tr><td>2026-08-06</td><td>12:21:17.669</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD' evaluated to: '*' 3632712f50542b72794466713537703556466269676355566f6d5a6b7874456f4666395a5a38696b6530513d</td></tr>
+<tr><td>2026-08-02</td><td>14:46:05.393</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host 4e467a38336134357561787a4a424776536b6631543430486d54416d6e586e6a73465a527435356f6f</td></tr>
+<tr><td>2026-07-28</td><td>13:45:24.253</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC3_FIN_NAS_VANDELAY_FIN_NAS_VANDELAY_SCP_FIN_NAS_VANDELAY_PWD defined in account FIN_NAS_VANDELAY. Connection closed by the remote host 3035624a432b59576235504f69466f613130495659665165526c777977502f655076506d4635636547</td></tr>
+</table></div>
+</body>
+</html>

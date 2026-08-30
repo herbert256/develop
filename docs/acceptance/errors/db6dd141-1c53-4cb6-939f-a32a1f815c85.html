@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Failed subscription: UC1_CD_PRINTMGMT_WONKA - Connection failures</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="failed" data-twin="../../production/404.html"></div>
+<h1>Failed subscription: UC1_CD_PRINTMGMT_WONKA - Connection failures</h1>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>File name</td><td>AcmeCD_PRINTMGMT_WONKA_20260819031214_285111.dat</td></tr>
+<tr><td>CoreId</td><td class="mono">db6dd141-1c53-4cb6-939f-a32a1f815c85</td></tr>
+<tr><td>Date/time</td><td>2026-08-19 08:40:14.574</td></tr>
+<tr><td>Subscription</td><td class="res-green cl"><a href="../details/subscriptions/uc1-cd-printmgmt-wonka.html">UC1_CD_PRINTMGMT_WONKA</a></td></tr>
+<tr><td>Remote host</td><td class="res-red cl"><a href="../details/hosts/sftp-wonka-example.html">sftp.wonka.example</a></td></tr>
+<tr><td>Account</td><td class="res-green cl"><a href="../details/accounts/cd-printmgmt-wonka.html">CD_PRINTMGMT_WONKA</a></td></tr>
+</table></div>
+<div class="tablewrap"><table class="wide" data-nosearch="1">
+<tr><th>Status</th><th>Direction</th><th>Protocol</th><th class="num">Size</th><th>Date &amp; time</th><th class="num">Duration</th><th>Remote host</th><th>Transfer ID</th></tr>
+<tr><td>Failed Subtransmission</td><td>inbound</td><td>pesit</td><td class="num">214.75 KB</td><td>2026-08-19 08:40:14.574</td><td class="num">956 ms</td><td class="cl"><a href="../details/hosts/sftp-wonka-example.html">sftp.wonka.example</a></td><td><code>cda39d7c-6625-41ce-8543-67c4a7a6c277</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-19 08:40:18.030</td><td class="num">415 ms</td><td class="cl"><a href="../details/hosts/sftp-wonka-example.html">sftp.wonka.example</a></td><td><code>052a42a3-0d3d-44d6-9aad-baa331e8884d</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-19 08:40:25.405</td><td class="num">1.22 s</td><td class="cl"><a href="../details/hosts/sftp-wonka-example.html">sftp.wonka.example</a></td><td><code>782b523e-7873-4c92-ab59-6736351a7db4</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-19 08:40:37.495</td><td class="num">349 ms</td><td class="cl"><a href="../details/hosts/sftp-wonka-example.html">sftp.wonka.example</a></td><td><code>d292a08e-d39a-42a2-833f-0a2e8dcad5b8</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-19 08:40:53.866</td><td class="num">229 ms</td><td class="cl"><a href="../details/hosts/sftp-wonka-example.html">sftp.wonka.example</a></td><td><code>fb922f35-4e92-4871-8e6f-66e7ebe8f053</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-19 08:41:18.150</td><td class="num">563 ms</td><td class="cl"><a href="../details/hosts/sftp-wonka-example.html">sftp.wonka.example</a></td><td><code>939671e9-979b-47c8-9656-a4623de9a50f</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">0 B</td><td>2026-08-19 08:41:54.687</td><td class="num">1.26 s</td><td class="cl"><a href="../details/hosts/sftp-wonka-example.html">sftp.wonka.example</a></td><td><code>7f07ce7f-309d-4d13-90f5-e810aea793da</code></td></tr>
+</table></div>
+<div class="tablewrap"><table class="wide" data-restint="1" data-nosort="1" data-nosearch="1">
+<tr><th>Date &amp; time</th><th>Level</th><th>Line</th></tr>
+<tr data-res="red"><td>2026-08-19 08:40:18.130</td><td>Error</td><td><pre>Connection failure while UC1_CD_PRINTMGMT_WONKA_CD_PRINTMGMT_WONKA_SCP_CD_PRINTMGMT_WONKA_PWD tried to connect to remote host sftp.wonka.example:22 as user CD_PRINTMGMT_WONKA: com.maverick.ssh.SshException: Connection timed out</pre></td></tr>
+<tr data-res="red"><td>2026-08-19 08:40:25.505</td><td>Error</td><td><pre>Connection failure while UC1_CD_PRINTMGMT_WONKA_CD_PRINTMGMT_WONKA_SCP_CD_PRINTMGMT_WONKA_PWD tried to connect to remote host sftp.wonka.example:22 as user CD_PRINTMGMT_WONKA: com.maverick.ssh.SshException: Connection timed out</pre></td></tr>
+<tr class="total"><td>Total (2 line(s))</td><td></td><td></td></tr>
+</table></div>
+<p class="report-link"><a href="../analyses/failed.html" target="_blank" rel="noopener">Back to Failed Subscriptions</a></p>
+</body>
+</html>

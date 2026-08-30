@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OUT/OUT: Subscription: UC1_APS_INVOICE_STARK</title>
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body class="res-blue">
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="acceptance" data-help="details-subscriptions" data-twin="../../../production/details/subscriptions/uc1-aps-invoice-stark.html"></div>
+<h1>OUT/OUT: Subscription: UC1_APS_INVOICE_STARK</h1>
+<p class="alert">Never transferred a file, and the send is failing</p>
+<p class="range">No File has ever reached the transfer log. The server log explains why: <strong>15</strong> failure lines name this flow, latest 2026-08-27 — the send could not be made, or the partner could not be reached at all. <strong>UC1 status</strong> calls this <strong>server - error</strong>.</p>
+<div class="logcard"><span class="lc-when">2026-08-27 11:04:18.461</span><span class="lc-msg">Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host</span></div>
+<h2>Features</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>Use case</td><td class="cl"><a href="../../analyses/use-cases.html">UC1 - We are the client and send a file to the partner</a></td></tr>
+<tr><td>Remote host</td><td class="res-red cl"><a href="../hosts/sftp-stark-example.html">sftp.stark.example</a></td></tr>
+<tr><td>Account</td><td class="res-blue cl"><a href="../accounts/aps-invoice-stark.html">APS_INVOICE_STARK</a></td></tr>
+<tr><td>Domain</td><td class="res-orange cl"><a href="../domains/aps.html">APS</a></td></tr>
+<tr><td>Application</td><td class="res-red cl"><a href="../applications/invoice.html">INVOICE</a></td></tr>
+<tr><td>Partner</td><td class="res-red cl"><a href="../partners/stark.html">STARK</a></td></tr>
+<tr><td>From</td><td>/data/cft/out/APS_INVOICE_STARK/in</td></tr>
+<tr><td>To</td><td>/</td></tr>
+</table></div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Outgoing connections</h2>
+<div class="tablewrap"><table data-fold="orange|{n} hosts configured without traffic">
+<tr><th>IP</th><th class="num">In</th><th class="num">Out</th><th>Name</th></tr>
+<tr data-res="orange"><td><code>198.51.100.50, 198.51.100.51, 198.51.100.52</code></td><td class="num"></td><td class="num"></td><td class="res-red cl"><a href="../hosts/sftp-stark-example.html"><code>sftp.stark.example</code></a></td></tr>
+</table></div>
+</div>
+</div>
+<h2>Last server log messages</h2>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Date</th><th>Time</th><th>Level</th><th>Component</th><th>Message</th></tr>
+<tr class="total"><td>Total (15 line(s))</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>2026-08-27</td><td>11:04:18.461</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 505a4e525636336f39596a485a5a564556325937636d5a377a5061485a2b3476316c756e4b6364</td></tr>
+<tr><td>2026-08-23</td><td>12:16:36.302</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 572b796b31786f465539384c7977413434525a614649746e5131456a6d6e6754514a75766b6464</td></tr>
+<tr><td>2026-08-18</td><td>11:15:55.161</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 3979617841574a694262616d4d30696a626842364b764a2b384930767665334f7a7a6c44386542</td></tr>
+<tr><td>2026-08-14</td><td>12:28:13.002</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 45582f46674e362f594179716b4d4d582f38425a795165715a74644c3949667a4f586c4c586542</td></tr>
+<tr><td>2026-08-09</td><td>11:27:31.862</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 724c6e5372786163466552462b517543694d71343333364245414e58472f33757842636776666c</td></tr>
+<tr><td>2026-08-05</td><td>12:39:49.703</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 78774d6c4c6f4c356344704a586e5932466e7158665a4f74696d337a546f65534d6c636e4a676d</td></tr>
+<tr><td>2026-07-31</td><td>11:39:08.562</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 596b3079574e73574a69496a787236686f3354336b4171454e356e416467324e7650533868674a</td></tr>
+<tr><td>2026-07-27</td><td>12:51:26.403</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 664a5a463245647a6747676e4b436c564c5354574e682f7772665163714a64794b7a534537684b</td></tr>
+<tr><td>2026-07-22</td><td>11:50:45.262</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 47394253426f2b514e6c2b436b48484175693831534962485779416f7a41317474644a59546874</td></tr>
+<tr><td>2026-07-18</td><td>13:15:32.350</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 4d4137325873596e3939392b534b4938587770317643782f66427a6c75735670392f6f6361684b</td></tr>
+<tr><td>2026-07-13</td><td>12:02:21.963</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 7a574f797345504b526f316857695466304e6c302f524c4b667261524b68304d72724130476953</td></tr>
+<tr><td>2026-07-09</td><td>13:27:09.050</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 355a49574348706842423063466c556264625330644b68436f364e4f464e5549374d65344d6975</td></tr>
+<tr><td>2026-07-04</td><td>12:13:58.663</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 68766254586768455672732f4a39662b36344f7a7361384e6f6b7a356842307370343251346a32</td></tr>
+<tr><td>2026-06-30</td><td>13:38:45.751</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 6e795633746a376246457237334268366a4737794b545346787a6d326274556f356156552b6a53</td></tr>
+<tr><td>2026-06-25</td><td>12:25:35.364</td><td class="failed">Error</td><td>TM</td><td>Error during transfer operation: Error occurred while listing files from partner UC1_APS_INVOICE_STARK_APS_INVOICE_STARK_SCP_APS_INVOICE_STARK_PWD defined in account APS_INVOICE_STARK. Connection closed by the remote host 50496f7a4337792b59766a65375a7364426a33785a69735178644d6833697a4c6f477474716b61</td></tr>
+</table></div>
+</body>
+</html>

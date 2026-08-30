@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Help: Missing cronjobs — Cloud Reports</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Cloud</a><span class="envpair"><a class="envswitch" data-target="acceptance">Acceptance</a><span class="envsep">/</span><a class="envswitch" data-target="production">Production</a></span><span class="entgroup"><a class="entlabel" href="../acceptance/transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../acceptance/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../acceptance/file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/transfer/index.html">Start page</a><a href="../acceptance/transfer/topview.html">Top view</a><a href="../acceptance/transfer/entities/subscription-all.html">Entities</a><a href="../acceptance/transfer/file-journey-patterns.html">Patterns</a><a href="../acceptance/transfer/activity-per-day.html">Activity over Time</a><a href="../acceptance/transfer/volume-per-day.html">Volume, Sizes &amp; Files</a><a href="../acceptance/transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../acceptance/transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../acceptance/transfer/anomalies.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/server/index.html">Start page</a><a href="../acceptance/server/topview.html">Top view</a><a href="../acceptance/server/errors-per-day.html">Errors</a><a href="../acceptance/server/pickups.html">Transfers &amp; Delivery</a><a href="../acceptance/server/logons-incoming.html">Logons &amp; Connections</a><a href="../acceptance/server/ssh-security.html">Security</a><a href="../acceptance/server/platform-health.html">Operations &amp; Capacity</a><a href="../acceptance/server/remote-poll.html">Routing &amp; Polling</a><a href="../acceptance/server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/analyses/index.html">Start page</a><a href="../acceptance/transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../acceptance/analyses/use-cases.html">Configuration</a><a href="../acceptance/analyses/partner-scorecard.html">Partners</a><a href="../acceptance/analyses/accounts-in-boxes.html">Boxes</a><a href="../acceptance/analyses/failed.html">Errors</a><a href="../acceptance/analyses/acc-vs-prod-summary.html">Acceptance vs production</a></div></div></nav><a class="dashlink" href="../acceptance/dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../acceptance/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../acceptance/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Missing cronjobs</h1>
+<h2>What this shows</h2>
+<p>A subscription that can only ever run on a <strong>timer</strong>, with no timer configured. Where we are the client and <em>pull</em> from the partner — <strong>UC3</strong>, and <strong>UC5</strong>'s pull side — a Quartz cron expression is what makes SecureTransport connect and collect. Nothing else triggers the flow. Without one the subscription is complete in every other respect and simply never runs.</p>
+<ul>
+<li><strong>Subscription</strong> — the configured name, linking to its detail page.</li>
+<li><strong>Use case</strong> — its <code>UC&lt;n&gt;</code> prefix, always one of the cron-triggered ones.</li>
+</ul>
+<p>The schedules that <em>are</em> configured, each translated to plain English, are on <a href="cronjobs.html">Cronjobs</a>. This page was that page's last table until 2026-07, when it became a report of its own — it answers a different question, and it belongs in the same worklist as the other subscription problems.</p>
+<h2>How it's computed</h2>
+<p>Straight from <code>subscriptions.json</code>: take every subscription whose use-case prefix is cron-triggered (the trigger comes from the shared use-case table, so this list follows the use-case definitions rather than being hardcoded here), then keep the ones with <em>no</em> parameter whose name contains <code>cron</code> holding a non-empty value. UC1 is a client use case too, but it pushes on directory scanning rather than on a timer, so it is never flagged.</p>
+<p>It is pure configuration — no log is read — so the answer is the same whatever date range you are looking at, and the page carries no date filter.</p>
+<h2>Why it matters</h2>
+<p>This is the quietest failure mode on the site. Every other signal on <a href="subscriptions-in-boxes.html">Subscriptions in boxes</a> needs the flow to have run at least once: something has to connect, or fail, or stage a file before there is anything to notice. A subscription with no cron expression never gets that far. It raises no error, writes no transfer record, and touches neither log — so it is invisible to every report that works from observed activity, and it can sit in the configuration indefinitely looking exactly like a flow that simply has nothing to fetch.</p>
+<p>The fix is usually a one-line configuration change; the cost of not noticing is that a partner's files are never collected at all. That asymmetry is why it gets its own column on the problems worklist.</p>
+</main>
+<h2>Notes</h2>
+<p>Every schedule listed is enabled, and none are configured to skip holidays. The number in the <strong>Schedule</strong> column is what the timer will actually do; the raw expression is kept alongside it so it can be cross-checked against the FlowManager configuration. Type in the search box to find a subscription; click a column header to sort.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Applications</title>
+<meta name="report-dates" content="2026-06-23,2026-06-24,2026-06-25,2026-06-26,2026-06-27,2026-06-28,2026-06-29,2026-06-30,2026-07-01,2026-07-02,2026-07-03,2026-07-04,2026-07-05,2026-07-06,2026-07-07,2026-07-08,2026-07-09,2026-07-10,2026-07-11,2026-07-12,2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22,2026-07-23,2026-07-24,2026-07-25,2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="acceptance-transfer">
+<meta name="report-key" content="application">
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="acceptance" data-help="entities-application" data-twin="../../../production/transfer/entities/application-not-seen.html"></div>
+<h1>Applications <span class="grouptag">&larr; Entities &larr; Transfer</span></h1>
+<p class="tabs"><a class="tab" href="subscription-not-seen.html">Subscriptions</a><a class="tab" href="partner-not-seen.html">Partners</a><a class="tab" href="account-not-seen.html">Accounts</a><a class="tab" href="login-not-seen.html">Logins</a><a class="tab" href="remote-host-not-seen.html">Hosts</a><a class="tab" href="domain-not-seen.html">Domains</a><span class="tab active">Applications</span><span class="tabsep"></span><a class="tab" href="application-all.html">All</a><a class="tab" href="application-seen.html">Seen</a><span class="tab active">Not seen</span><a class="tab" href="application-ok.html">OK</a><a class="tab" href="application-warning.html">Warning</a><a class="tab" href="application-error.html">Error</a><a class="tab" href="application-server.html">Server</a><span class="tabsep"></span><a class="tab" href="application-not-seen-transfer.html">Transfer</a><span class="tab active">+Server</span></p>
+<p class="range">Every application with its <strong>Files</strong> (one per CoreId), Error/OK split, volume and last sighting — derived from the account names (and, for partners, the endpoint/whitelist merge). The view tabs switch between logged (<strong>Seen</strong>), configured (<strong>All</strong> / <strong>Not seen</strong>), the status subsets (<strong>OK</strong> / <strong>Warning</strong> / <strong>Error</strong>) and the server-log-only ones (<strong>Server</strong>); the scope tabs decide whether a server-log sighting counts as seen (<strong>+Server</strong>, the default) or not (<strong>Transfer</strong>) — rows tint by each application's status.</p>
+<div class="tablewrap"><table class="wide" data-seenrows="1" data-sort-init="0:asc">
+<tr><th>Application</th><th>Direction</th></tr>
+<tr class="total"><td>Total (3 application(s))</td><td></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/applications/export.html">EXPORT</a></td><td>out/in</td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/applications/ifrs.html">IFRS</a></td><td>in/in</td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/applications/ziba.html">ZIBA</a></td><td>in/in</td></tr>
+</table></div>
+<p class="note">Configured in FlowManager but never seen in this log window. Every name links to its detail page, which lists the configured cross-references.</p>
+<p class="note">Counts Files — one logical transfer each; the application is the application segment of the file's account name (data/flow-manager/base/_apps.tsv). Names link to the partner / application / domain detail pages. Volume is the file counted once; First/Last seen stay full-period under the date filter. <strong>The Total row counts each File once</strong> (the site-wide distinct figure); a narrowed date range re-totals over the per-application rows, whose union attribution can claim one File for several applications — so a filtered Total can run slightly higher than the distinct figure it replaces, and snaps back to it at the full range. Click an Error or OK count for that outcome's 10 most recent Files (newest first).</p>
+</body>
+</html>

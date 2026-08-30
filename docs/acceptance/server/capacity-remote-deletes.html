@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Capacity &amp; sessions</title>
+<meta name="report-dates" content="2026-06-23,2026-06-24,2026-06-25,2026-06-26,2026-06-27,2026-06-28,2026-06-29,2026-06-30,2026-07-01,2026-07-02,2026-07-03,2026-07-04,2026-07-05,2026-07-06,2026-07-07,2026-07-08,2026-07-09,2026-07-10,2026-07-11,2026-07-12,2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22,2026-07-23,2026-07-24,2026-07-25,2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="acceptance-server">
+<meta name="report-key" content="capacity">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-pesit" data-twin="../../production/server/capacity-remote-deletes.html"></div>
+<h1>Capacity &amp; sessions <span class="grouptag">&larr; Operations &amp; Capacity &larr; Server</span></h1>
+<p class="tabs"><a class="tab" href="platform-health.html">Platform health</a><span class="tab active">Capacity &amp; sessions</span><span class="tabsep"></span><a class="tab" href="capacity-pesit-per-day.html">PeSIT per day</a><a class="tab" href="capacity-pesit-problems.html">PeSIT problems</a><a class="tab" href="capacity-problem-types.html">Problem types</a><a class="tab" href="capacity-diagnostic-codes.html">Diagnostic codes</a><a class="tab" href="capacity-fpdu-ledger.html">FPDU ledger</a><a class="tab" href="capacity-local-deletes.html">Local deletes</a><span class="tab active">Remote deletes</span><a class="tab" href="capacity-maintenance.html">Maintenance</a></p>
+<p class="range">How busy the platform is and what it cleans up: <strong>PeSIT activity</strong> — logins, transfers, resets, ceiling hits and diagnostic codes — and the <strong>file retention / cleanup</strong> sweeps per account and remote directory. (The session-concurrency view went with the session bookkeeping lines the server parse now drops — 2026-08.)</p>
+<div class="tablewrap"><table class="wide" data-recalc="- s0 - -">
+<tr><th>Remote directory</th><th class="num">Files deleted</th><th>First seen</th><th>Last seen</th></tr>
+<tr class="total"><td>Total (0 directory(ies))</td><td class="num">0</td><td></td><td></td></tr>
+</table></div>
+<p class="note">&quot;Deleting remote file: &lt;file&gt; under &lt;dir&gt;.&quot; — files removed from a partner folder after they were picked up, grouped by the remote directory.</p>
+<p class="note">&quot;Start File Maintenance …&quot; vs &quot;File Maintenance … finished.&quot; A finish is only logged when the sweep actually deleted files, so far fewer finishes than starts is normal (most runs find nothing to remove). A big gap for one account, or none finishing, is worth a look.</p>
+</body>
+</html>

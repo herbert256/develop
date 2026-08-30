@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connections</title>
+<meta name="report-dates" content="2026-06-23,2026-06-24,2026-06-25,2026-06-26,2026-06-27,2026-06-28,2026-06-29,2026-06-30,2026-07-01,2026-07-02,2026-07-03,2026-07-04,2026-07-05,2026-07-06,2026-07-07,2026-07-08,2026-07-09,2026-07-10,2026-07-11,2026-07-12,2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22,2026-07-23,2026-07-24,2026-07-25,2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="acceptance-server">
+<meta name="report-key" content="connections">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-inbound-connections" data-twin="../../production/server/connections-host-keys.html"></div>
+<h1>Connections <span class="grouptag">&larr; Logons &amp; Connections &larr; Server</span></h1>
+<p class="tabs"><a class="tab" href="logons-incoming.html">Logons</a><span class="tab active">Connections</span><span class="tabsep"></span><a class="tab" href="connections-by-protocol.html">By protocol</a><a class="tab" href="connections-per-day.html">Per day</a><a class="tab" href="connections-by-account.html">By account</a><a class="tab" href="connections-by-address.html">By address</a><a class="tab" href="connections-whitelist-usage.html">Whitelist usage</a><a class="tab" href="connections-failure-reasons.html">Failure reasons</a><a class="tab" href="connections-by-remote-host.html">By remote host</a><a class="tab" href="connections-test-connections.html">Test connections</a><span class="tab active">Host keys</span><a class="tab" href="connections-test-outcomes.html">Test outcomes</a></p>
+<p class="range">Both directions of the connection story in one report. <strong>Inbound</strong>: who connects in to SecureTransport, over which protocol, from which addresses, and how the whitelist policies are used. <strong>Outbound</strong>: why and where our own connections fail — the failure-reason breakdown, the per-remote-host view and the test connections.</p>
+<div class="tablewrap"><table class="wide" data-recalc="- - s0 - -">
+<tr><th>Presented fingerprint</th><th>Expected fingerprint</th><th class="num">Warnings</th><th>First</th><th>Last</th></tr>
+<tr data-buckets="2026-08-22:2,2026-07-17:2,2026-08-13:2,2026-08-26:2,2026-07-19:2,2026-06-26:2,2026-07-13:2,2026-07-14:4,2026-07-01:2,2026-08-27:2,2026-07-23:2,2026-07-10:2,2026-07-31:2,2026-08-18:4,2026-08-04:2" data-loglines="2026-08-27 06:45:41.379  Error TM  Wrong server fingerprint: got 07, expected 07:83:06:65:ac:c4:5a:97:58:a1:8e:29:df:95:b9:31.2026-08-27 06:45:32.777  Error TM  Wrong server fingerprint: got 07, expected 07:83:06:65:ac:c4:5a:97:58:a1:8e:29:df:95:b9:31.2026-08-26 06:34:36.383  Error TM  Wrong server fingerprint: got 07, expected 07:83:06:65:ac:c4:5a:97:58:a1:8e:29:df:95:b9:31.2026-08-26 06:34:27.734  Error TM  Wrong server fingerprint: got 07, expected 07:83:06:65:ac:c4:5a:97:58:a1:8e:29:df:95:b9:31.2026-08-22 12:32:45.772  Error TM  Wrong server fingerprint: got 07, expected 07:83:06:65:ac:c4:5a:97:58:a1:8e:29:df:95:b9:31.2026-08-22 12:32:37.115  Error TM  Wrong server fingerprint: got 07, expected 07:83:06:65:ac:c4:5a:97:58:a1:8e:29:df:95:b9:31.2026-08-18 17:30:55.244  Error TM  Wrong server fingerprint: got 07, expected 07:83:06:65:ac:c4:5a:97:58:a1:8e:29:df:95:b9:31.2026-08-18 17:30:46.579  Error TM  Wrong server fingerprint: got 07, expected 07:83:06:65:ac:c4:5a:97:58:a1:8e:29:df:95:b9:31.2026-08-18 12:40:37.538  Error TM  Wrong server fingerprint: got 07, expected 07:83:06:65:ac:c4:5a:97:58:a1:8e:29:df:95:b9:31.2026-08-18 12:40:28.947  Error TM  Wrong server fingerprint: got 07, expected 07:83:06:65:ac:c4:5a:97:58:a1:8e:29:df:95:b9:31."><td><code>07</code></td><td><code>07:83:06:65:ac:c4:5a:97:58:a1:8e:29:df:95:b9:31</code></td><td class="num warn">34</td><td>2026-06-26</td><td>2026-08-27</td></tr>
+<tr class="total"><td>Total (1 pair(s))</td><td></td><td class="num warn">34</td><td></td><td></td></tr>
+</table></div>
+<p class="note">The &quot;Wrong server fingerprint: got X, expected Y&quot; warnings, per fingerprint pair: a partner endpoint presenting an SSH host key that does not match the stored known-host entry. One presented key (`07`) accounts for <strong>34</strong> of the <strong>34</strong> warning(s), checked against <strong>1</strong> different expected keys — ONE endpoint presenting a NEW key that many stored entries no longer match (a server-side key rotation), not many endpoints drifting at once. A short &quot;got&quot; value is the log itself truncating; shown as logged. Click a pair for its 10 most recent warnings.</p>
+<p class="note">How the explicit test connections failed: the &quot;Error during test connection&quot; reason tail, as logged.</p>
+</body>
+</html>

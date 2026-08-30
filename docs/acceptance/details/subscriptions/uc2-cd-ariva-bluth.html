@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IN/OUT: Subscription: UC2_CD_ARIVA_BLUTH</title>
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body class="res-green">
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="acceptance" data-help="details-subscriptions" data-twin="../../../production/404.html"></div>
+<h1>IN/OUT: Subscription: UC2_CD_ARIVA_BLUTH</h1>
+<p class="range"><strong>Collecting, with losses.</strong> The partner does connect and collect, yet files have still expired uncollected — both outcomes on the one flow, so it works without being healthy. <strong>UC2 status</strong> calls this <strong>Both</strong>; the tables below have the figures.</p>
+<h2>Pickup information</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>First pickup</td><td>2026-06-23 07:52:21</td></tr>
+<tr><td>Last pickup</td><td>2026-08-29 07:58:30</td></tr>
+<tr><td>Total pickups</td><td>63</td></tr>
+<tr><td>Pickups with actual files</td><td>25</td></tr>
+<tr><td>Total files picked up</td><td>25</td></tr>
+<tr><td>Current waiting files</td><td>0</td></tr>
+<tr><td>Expired files</td><td>1</td></tr>
+<tr><td>Pickup pattern</td><td>Every 21 hours</td></tr>
+</table></div>
+<p class="note">A <strong>pickup</strong> is a successful SSH logon by this flow's pickup account (server log), shared across that account's UC2 subscriptions; a partner collecting over CFT logs none. A visit in which the account <strong>only delivered</strong> files — its UC4 twin flow handing files over — is not a pickup: its logons are shown on their own row and excluded from every other figure. <strong>Files picked up</strong> counts this subscription's collected Files (transfer log); the page's OK figure also counts staged files still <strong>Waiting</strong>, so OK = picked up + waiting — the two match once nothing is left waiting. <strong>With actual files</strong> counts the pickups that collected at least one of them — each collected file credits the logon that took it (the newest at or before its collect stamp). <strong>Current waiting / Expired files</strong> are this flow's own staged files by outcome, as in the Waiting/Expired table. The <strong>pattern</strong> reads the typical spacing of the pickups. <strong>Connection shared with UC4 drop</strong> appears only on hard proof: one and the same technical SSH connection (the transfer log's Session ID) both delivered and collected a file — a delivery over a separate connection, even seconds apart in the same visit, does not count.</p>
+<h2>Features</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>Use case</td><td class="cl"><a href="../../analyses/use-cases.html">UC2 - We are the server; the partner connects in and collects a file from us</a></td></tr>
+<tr><td>Login</td><td class="res-green cl"><a href="../logins/fe007857.html">FE007857</a></td></tr>
+<tr><td>Account</td><td class="res-green cl"><a href="../accounts/cd-ariva-bluth.html">CD-ARIVA-BLUTH</a></td></tr>
+<tr><td>Domain</td><td class="res-red cl"><a href="../domains/cd.html">CD</a></td></tr>
+<tr><td>Application</td><td class="res-orange cl"><a href="../applications/ariva.html">ARIVA</a></td></tr>
+<tr><td>Partner</td><td class="res-orange cl"><a href="../partners/bluth.html">BLUTH</a></td></tr>
+<tr><td>From</td><td>/data/cft/out/CD_ARIVA_BLUTH/in</td></tr>
+<tr><td>To</td><td>/</td></tr>
+</table></div>
+<h2>Waiting/Expired</h2>
+<div class="tablewrap"><table data-restint="1" data-nosearch="1">
+<tr><th>State</th><th class="num">Files</th><th>First staged</th><th>Last staged</th></tr>
+<tr data-res="red"><td>Expired files</td><td class="num">1</td><td>2026-07-24</td><td>2026-07-24</td></tr>
+</table></div>
+<h2>Activity per day</h2>
+<div class="tablewrap"><table data-pager="10">
+<tr><th>Date</th><th class="num">Files</th><th class="num">Error</th><th class="num">Recovered</th><th class="num">OK</th><th class="num">Volume</th><th class="num">Duration</th></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-06-25 18:09:48.106  7016b643-0c23-4f84-8236-48d1ad42eaf9"><td>2026-06-25</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">31.24 KB</td><td class="num">3.48 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-06-30 18:53:56.404  7548e224-c915-4837-91b3-c8078226b5c6"><td>2026-06-30</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">6.42 KB</td><td class="num">3.70 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-02 18:51:18.285  0af6a2c6-9d0e-43a5-975e-76f49c98e74a"><td>2026-07-02</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">36.41 KB</td><td class="num">5.79 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-06 18:49:51.549  b57694f8-3442-4dd5-a144-7b95ad472dfa"><td>2026-07-06</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">2.56 KB</td><td class="num">6.53 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-09 07:10:05.887  3214cb25-0ebb-4228-8367-7dfd75742fd4"><td>2026-07-09</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">2.41 KB</td><td class="num">2.08 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-10 07:10:06.083  345cb7c7-70db-469c-8814-1ad99de3cb22"><td>2026-07-10</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">2.35 KB</td><td class="num">2.86 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-16 07:07:55.979  341ea311-d3a8-4de5-aeec-21cbb6e9b52b"><td>2026-07-16</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">16.91 KB</td><td class="num">4.31 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-21 07:35:16.259  f89381fe-7ae8-4508-86c3-5d01ff91ad54"><td>2026-07-21</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">27.28 KB</td><td class="num">2.49 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-23 18:57:05.461  32e43b85-c1a8-4251-9128-448734094757"><td>2026-07-23</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">30.43 KB</td><td class="num">8.39 s</td></tr>
+<tr data-coreids-failed="2026-07-24 18:26:43.777  5d84b812-a775-40dd-9fa2-c5b0b8349904" data-coreids-processed=""><td>2026-07-24</td><td class="num">1</td><td class="num failed">1</td><td class="num warn"></td><td class="num processed z"></td><td class="num">38.24 KB</td><td class="num">2.56 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-31 18:14:26.038  63455a47-22bc-4748-a904-20a67a79d332"><td>2026-07-31</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">3.65 KB</td><td class="num">3.44 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-03 07:44:48.208  dc2bc62b-46db-40ec-9d4a-6be5c1d72034"><td>2026-08-03</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">6.63 KB</td><td class="num">3.40 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-04 18:46:27.224  1ade1767-ab71-4886-bb3b-576498e38274"><td>2026-08-04</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">15.38 KB</td><td class="num">3.99 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-06 07:13:43.156  5c0c3bd0-f842-4c91-a8b6-ef5f4e5a1539"><td>2026-08-06</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">14.30 KB</td><td class="num">5.10 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-08 18:07:35.225  722a5400-0635-48e9-9a2a-c8ebe62da170"><td>2026-08-08</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">11.47 KB</td><td class="num">9.06 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-10 07:33:57.690  daf25e9f-34db-4558-9f86-8ea23ef6b261"><td>2026-08-10</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">13.94 KB</td><td class="num">2.96 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-11 07:03:36.006  0592db2b-1aa8-43e4-9dff-0fcac322040d"><td>2026-08-11</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">17.20 KB</td><td class="num">3.81 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-14 18:25:37.003  8590efb1-5344-4ac7-9d7c-1b0913cba853"><td>2026-08-14</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">63.71 KB</td><td class="num">7.34 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-17 07:23:44.708  2ef63d01-4bdb-42da-bbdd-7ee0d97b1b7f"><td>2026-08-17</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">6.51 KB</td><td class="num">4.89 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-18 07:46:45.004  dcdc2c49-ae08-4b2a-ac6b-8c906115c74f"><td>2026-08-18</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">40.78 KB</td><td class="num">3.40 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-20 18:52:02.120  59996cb8-d442-4568-9d2e-34d748993991"><td>2026-08-20</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">52.14 KB</td><td class="num">3.62 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-21 18:21:40.436  8439e945-ba0f-43f4-9ba7-b600ccc48b3d"><td>2026-08-21</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">92.11 KB</td><td class="num">3.47 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-24 18:50:35.384  041a5eea-6b75-4f98-a714-397959478042"><td>2026-08-24</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">4.98 KB</td><td class="num">2.42 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-26 07:50:47.375  4c0fa68a-bf72-4da6-90d8-fa0d9de825d3"><td>2026-08-26</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">17.71 KB</td><td class="num">7.38 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-28 07:10:49.918  830081b9-a80f-485f-8de3-d8bc49e41d6a"><td>2026-08-28</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">4.74 KB</td><td class="num">5.75 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-29 07:40:28.234  ada0fe45-8ddc-46ec-8c5c-59e5ce0f6f16"><td>2026-08-29</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">6.81 KB</td><td class="num">6.21 s</td></tr>
+<tr class="total"><td>Total (26 day(s))</td><td class="num">26</td><td class="num failed">1</td><td class="num warn"></td><td class="num processed">25</td><td class="num">566.33 KB</td><td class="num">4.55 s</td></tr>
+</table></div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Incoming connections</h2>
+<div class="tablewrap"><table data-fold="orange|{n} IPs in whitelist without traffic">
+<tr><th>IP</th><th class="num">In</th><th class="num">Out</th></tr>
+<tr data-res="orange"><td class="cl"><a href="../incoming_connections/203-0-113-40.html"><code>203.0.113.40</code></a></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="orange"><td class="cl"><a href="../incoming_connections/203-0-113-41.html"><code>203.0.113.41</code></a></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="orange"><td><code>203.0.113.170</code></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="orange"><td><code>203.0.113.171</code></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="red"><td><code>-</code></td><td class="num"></td><td class="num">26</td></tr>
+</table></div>
+</div>
+</div>
+<h2>Latest 500 Files</h2>
+<div class="tablewrap"><table class="wide" data-pager="20" data-restint="1">
+<tr><th>Date</th><th>State</th><th>Direction</th><th class="num">Size</th><th class="num">Throughput</th><th class="num">Duration</th><th>File</th><th>CoreId</th></tr>
+<tr data-res="green"><td>2026-08-29 07:40:28.234</td><td>Delivered</td><td>in/out</td><td class="num">6.81 KB</td><td class="num">1.10 KB/s</td><td class="num">6.21 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260829027628_146584.csv</code></td><td><code>ada0fe45-8ddc-46ec-8c5c-59e5ce0f6f16</code></td></tr>
+<tr data-res="green"><td>2026-08-28 07:10:49.918</td><td>Delivered</td><td>in/out</td><td class="num">4.74 KB</td><td class="num">844 B/s</td><td class="num">5.75 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260828025849_055851.xml</code></td><td><code>830081b9-a80f-485f-8de3-d8bc49e41d6a</code></td></tr>
+<tr data-res="green"><td>2026-08-26 07:50:47.375</td><td>Delivered</td><td>in/out</td><td class="num">17.71 KB</td><td class="num">2.40 KB/s</td><td class="num">7.38 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260826028247_620116.zip</code></td><td><code>4c0fa68a-bf72-4da6-90d8-fa0d9de825d3</code></td></tr>
+<tr data-res="green"><td>2026-08-24 18:50:35.384</td><td>Delivered</td><td>in/out</td><td class="num">4.98 KB</td><td class="num">2.06 KB/s</td><td class="num">2.42 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260824067835_606062.zip</code></td><td><code>041a5eea-6b75-4f98-a714-397959478042</code></td></tr>
+<tr data-res="green"><td>2026-08-21 18:21:40.436</td><td>Delivered</td><td>in/out</td><td class="num">92.11 KB</td><td class="num">26.56 KB/s</td><td class="num">3.47 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260821066100_333864.xml</code></td><td><code>8439e945-ba0f-43f4-9ba7-b600ccc48b3d</code></td></tr>
+<tr data-res="green"><td>2026-08-20 18:52:02.120</td><td>Delivered</td><td>in/out</td><td class="num">52.14 KB</td><td class="num">14.39 KB/s</td><td class="num">3.62 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260820067922_243131.txt.pgp</code></td><td><code>59996cb8-d442-4568-9d2e-34d748993991</code></td></tr>
+<tr data-res="green"><td>2026-08-18 07:46:45.004</td><td>Delivered</td><td>in/out</td><td class="num">40.78 KB</td><td class="num">11.98 KB/s</td><td class="num">3.40 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260818028005_280228.csv</code></td><td><code>dcdc2c49-ae08-4b2a-ac6b-8c906115c74f</code></td></tr>
+<tr data-res="green"><td>2026-08-17 07:23:44.708</td><td>Delivered</td><td>in/out</td><td class="num">6.51 KB</td><td class="num">1.33 KB/s</td><td class="num">4.89 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260817026624_862742.csv</code></td><td><code>2ef63d01-4bdb-42da-bbdd-7ee0d97b1b7f</code></td></tr>
+<tr data-res="green"><td>2026-08-14 18:25:37.003</td><td>Delivered</td><td>in/out</td><td class="num">63.71 KB</td><td class="num">8.68 KB/s</td><td class="num">7.34 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260814066337_008107.dat</code></td><td><code>8590efb1-5344-4ac7-9d7c-1b0913cba853</code></td></tr>
+<tr data-res="green"><td>2026-08-11 07:03:36.006</td><td>Delivered</td><td>in/out</td><td class="num">17.20 KB</td><td class="num">4.52 KB/s</td><td class="num">3.81 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260811025416_339678.csv</code></td><td><code>0592db2b-1aa8-43e4-9dff-0fcac322040d</code></td></tr>
+<tr data-res="green"><td>2026-08-10 07:33:57.690</td><td>Delivered</td><td>in/out</td><td class="num">13.94 KB</td><td class="num">4.71 KB/s</td><td class="num">2.96 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260810027237_248945.xml</code></td><td><code>daf25e9f-34db-4558-9f86-8ea23ef6b261</code></td></tr>
+<tr data-res="green"><td>2026-08-08 18:07:35.225</td><td>Delivered</td><td>in/out</td><td class="num">11.47 KB</td><td class="num">1.27 KB/s</td><td class="num">9.06 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260808065255_503191.xml</code></td><td><code>722a5400-0635-48e9-9a2a-c8ebe62da170</code></td></tr>
+<tr data-res="green"><td>2026-08-06 07:13:43.156</td><td>Delivered</td><td>in/out</td><td class="num">14.30 KB</td><td class="num">2.81 KB/s</td><td class="num">5.10 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260806026023_799157.txt.pgp</code></td><td><code>5c0c3bd0-f842-4c91-a8b6-ef5f4e5a1539</code></td></tr>
+<tr data-res="green"><td>2026-08-04 18:46:27.224</td><td>Delivered</td><td>in/out</td><td class="num">15.38 KB</td><td class="num">3.85 KB/s</td><td class="num">3.99 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260804067587_231070.csv</code></td><td><code>1ade1767-ab71-4886-bb3b-576498e38274</code></td></tr>
+<tr data-res="green"><td>2026-08-03 07:44:48.208</td><td>Delivered</td><td>in/out</td><td class="num">6.63 KB</td><td class="num">1.95 KB/s</td><td class="num">3.40 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260803027888_526958.xml</code></td><td><code>dc2bc62b-46db-40ec-9d4a-6be5c1d72034</code></td></tr>
+<tr data-res="green"><td>2026-07-31 18:14:26.038</td><td>Delivered</td><td>in/out</td><td class="num">3.65 KB</td><td class="num">1.06 KB/s</td><td class="num">3.44 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260731065666_561126.xml</code></td><td><code>63455a47-22bc-4748-a904-20a67a79d332</code></td></tr>
+<tr data-res="red"><td>2026-07-24 18:26:43.777</td><td>Expired</td><td>in/out</td><td class="num">38.24 KB</td><td class="num">14.97 KB/s</td><td class="num">2.56 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260724066403_532773.csv</code></td><td><code>5d84b812-a775-40dd-9fa2-c5b0b8349904</code></td></tr>
+<tr data-res="green"><td>2026-07-23 18:57:05.461</td><td>Delivered</td><td>in/out</td><td class="num">30.43 KB</td><td class="num">3.63 KB/s</td><td class="num">8.39 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260723068225_442040.zip</code></td><td><code>32e43b85-c1a8-4251-9128-448734094757</code></td></tr>
+<tr data-res="green"><td>2026-07-21 07:35:16.259</td><td>Delivered</td><td>in/out</td><td class="num">27.28 KB</td><td class="num">10.95 KB/s</td><td class="num">2.49 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260721027316_784088.txt.pgp</code></td><td><code>f89381fe-7ae8-4508-86c3-5d01ff91ad54</code></td></tr>
+<tr data-res="green"><td>2026-07-16 07:07:55.979</td><td>Delivered</td><td>in/out</td><td class="num">16.91 KB</td><td class="num">3.92 KB/s</td><td class="num">4.31 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260716025675_720053.zip</code></td><td><code>341ea311-d3a8-4de5-aeec-21cbb6e9b52b</code></td></tr>
+<tr data-res="green"><td>2026-07-10 07:10:06.083</td><td>Delivered</td><td>in/out</td><td class="num">2.35 KB</td><td class="num">841 B/s</td><td class="num">2.86 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260710025806_175656.pdf.pgp</code></td><td><code>345cb7c7-70db-469c-8814-1ad99de3cb22</code></td></tr>
+<tr data-res="green"><td>2026-07-09 07:10:05.887</td><td>Delivered</td><td>in/out</td><td class="num">2.41 KB</td><td class="num">1.16 KB/s</td><td class="num">2.08 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260709025805_172080.pdf.pgp</code></td><td><code>3214cb25-0ebb-4228-8367-7dfd75742fd4</code></td></tr>
+<tr data-res="green"><td>2026-07-06 18:49:51.549</td><td>Delivered</td><td>in/out</td><td class="num">2.56 KB</td><td class="num">401 B/s</td><td class="num">6.53 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260706067791_725867.csv</code></td><td><code>b57694f8-3442-4dd5-a144-7b95ad472dfa</code></td></tr>
+<tr data-res="green"><td>2026-07-02 18:51:18.285</td><td>Delivered</td><td>in/out</td><td class="num">36.41 KB</td><td class="num">6.29 KB/s</td><td class="num">5.79 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260702067878_362936.xml</code></td><td><code>0af6a2c6-9d0e-43a5-975e-76f49c98e74a</code></td></tr>
+<tr data-res="green"><td>2026-06-30 18:53:56.404</td><td>Delivered</td><td>in/out</td><td class="num">6.42 KB</td><td class="num">1.73 KB/s</td><td class="num">3.70 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260630068036_812528.pdf.pgp</code></td><td><code>7548e224-c915-4837-91b3-c8078226b5c6</code></td></tr>
+<tr data-res="green"><td>2026-06-25 18:09:48.106</td><td>Delivered</td><td>in/out</td><td class="num">31.24 KB</td><td class="num">8.99 KB/s</td><td class="num">3.48 s</td><td><code>AcmeCD_ARIVA_BLUTH_20260625065388_122921.pdf.pgp</code></td><td><code>7016b643-0c23-4f84-8236-48d1ad42eaf9</code></td></tr>
+</table></div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Load by weekday</h2>
+<div class="tablewrap"><table>
+<tr><th>Weekday</th><th class="num">Files</th><th class="num">Error</th><th class="num">OK</th><th class="num">Volume</th></tr>
+<tr><td>Monday</td><td class="num">5</td><td class="num failed z"></td><td class="num processed">5</td><td class="num">34.62 KB</td></tr>
+<tr><td>Tuesday</td><td class="num">5</td><td class="num failed z"></td><td class="num processed">5</td><td class="num">107.06 KB</td></tr>
+<tr><td>Wednesday</td><td class="num">1</td><td class="num failed z"></td><td class="num processed">1</td><td class="num">17.71 KB</td></tr>
+<tr><td>Thursday</td><td class="num">7</td><td class="num failed z"></td><td class="num processed">7</td><td class="num">183.84 KB</td></tr>
+<tr><td>Friday</td><td class="num">6</td><td class="num failed">1</td><td class="num processed">5</td><td class="num">204.81 KB</td></tr>
+<tr><td>Saturday</td><td class="num">2</td><td class="num failed z"></td><td class="num processed">2</td><td class="num">18.28 KB</td></tr>
+</table></div>
+</div>
+<div class="sxscol">
+<h2>Load by hour</h2>
+<div class="tablewrap"><table>
+<tr><th>Hour</th><th class="num">Files</th><th class="num">Error</th><th class="num">OK</th><th class="num">Volume</th></tr>
+<tr><td>07:00</td><td class="num">13</td><td class="num failed z"></td><td class="num processed">13</td><td class="num">177.58 KB</td></tr>
+<tr><td>18:00</td><td class="num">13</td><td class="num failed">1</td><td class="num processed">12</td><td class="num">388.75 KB</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Duration</h2>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>min</td><td>40 ms</td></tr>
+<tr><td>avg</td><td>345 ms</td></tr>
+<tr><td>max</td><td>2.05 s</td></tr>
+<tr><td>p50</td><td>213 ms</td></tr>
+<tr><td>p95</td><td>1.07 s</td></tr>
+<tr><td>p99</td><td>1.56 s</td></tr>
+</table></div>
+</div>
+<div class="sxscol">
+<h2>Size</h2>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Volume</td><td>566.33 KB</td></tr>
+<tr><td>Throughput</td><td>62.50 KB/s</td></tr>
+<tr><td>Average</td><td>21.78 KB</td></tr>
+<tr><td>Largest</td><td>92.11 KB</td></tr>
+</table></div>
+</div>
+<div class="sxscol">
+<h2>Date</h2>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>First seen</td><td>2026-06-25 18:09:48.106</td></tr>
+<tr><td>Last seen</td><td>2026-08-29 07:40:28.234</td></tr>
+<tr><td>Busiest day</td><td>2026-06-25</td></tr>
+<tr><td>Active</td><td>26 day(s), idle 0 day(s)</td></tr>
+</table></div>
+</div>
+<div class="sxscol">
+<h2>Ranking - 83 subscriptions</h2>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Type</th><th class="num">Position</th><th class="num">Unit</th></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=1:1&amp;axway_row=UC2_CD_ARIVA_BLUTH">Files</a></td><td class="num">#81</td><td class="num">26 - 0.1%</td></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=3:1&amp;axway_row=UC2_CD_ARIVA_BLUTH">Volume</a></td><td class="num">#77</td><td class="num">566.33 KB - 0.0%</td></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=5:1&amp;axway_row=UC2_CD_ARIVA_BLUTH">Errors</a></td><td class="num">#45</td><td class="num">3.8%</td></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=7:1&amp;axway_row=UC2_CD_ARIVA_BLUTH">Duration</a></td><td class="num">#3</td><td class="num">345 ms</td></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=9:1&amp;axway_row=UC2_CD_ARIVA_BLUTH">Throughput</a></td><td class="num">#58</td><td class="num">62.50 KB/s</td></tr>
+</table></div>
+</div>
+</div>
+<h2>Last OK transfer — AcmeCD_ARIVA_BLUTH_20260829027628_146584.csv</h2>
+<div class="tablewrap"><table class="wide" data-nosearch="1">
+<tr><th>Status</th><th>Direction</th><th>Protocol</th><th class="num">Size</th><th>Date &amp; time</th><th class="num">Duration</th><th>Remote host</th><th>Transfer ID</th></tr>
+<tr><td>Processed</td><td>inbound</td><td>pesit</td><td class="num">6.81 KB</td><td>2026-08-29 07:40:28.234</td><td class="num">533 ms</td><td class="res-green cl"><a href="../hosts/unknown.html">unknown</a></td><td><code>9dd0ff21-00f6-4168-9ad5-1c9accdf4d25</code></td></tr>
+<tr><td>Processed</td><td>inbound</td><td>routing</td><td class="num">6.81 KB</td><td>2026-08-29 07:40:34.151</td><td class="num">61 ms</td><td class="res-green cl"><a href="../hosts/unknown.html">unknown</a></td><td><code>38d400e7-3fc4-4758-b23a-892e4225a1ef</code></td></tr>
+<tr><td>Processed</td><td>outbound</td><td>routing</td><td class="num">6.81 KB</td><td>2026-08-29 07:40:34.107</td><td class="num">242 ms</td><td class="res-green cl"><a href="../hosts/unknown.html">unknown</a></td><td><code>39d50063-8eb3-49e6-8507-a682d3eab007</code></td></tr>
+<tr><td>Processed</td><td>outbound</td><td>ssh</td><td class="num">6.81 KB</td><td>2026-08-29 07:58:31.286</td><td class="num">232 ms</td><td>203.0.113.40</td><td><code>40a3c54f-fa65-41bd-8fe7-13bb63c68388</code></td></tr>
+</table></div>
+<div class="tablewrap"><table class="wide" data-restint="1" data-nosort="1" data-nosearch="1">
+<tr><th>Date &amp; time</th><th>Level</th><th>Line</th></tr>
+<tr><td>2026-08-29 07:40:32.737</td><td>Info</td><td><pre>[Ssh Default] Initializing route: {UC2_CD_ARIVA_BLUTH}</pre></td></tr>
+<tr><td>2026-08-29 07:58:30.086</td><td>Info</td><td><pre>[Ssh Default] Allowed user 'FE007857' from address '203.0.113.41', corresponding account 'CD-ARIVA-BLUTH@FE007857' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.</pre></td></tr>
+<tr><td>2026-08-29 07:58:30.286</td><td>Info</td><td><pre>[Ssh Default] User with login name &quot;FE007857&quot;, associated with account &quot;CD-ARIVA-BLUTH@FE007857&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 203.0.113.40. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-sha2-256; Public Key: ssh-rsa.</pre></td></tr>
+</table></div>
+<h2>Last server log messages</h2>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Date</th><th>Time</th><th>Level</th><th>Component</th><th>Message</th></tr>
+<tr class="total"><td>Total (7 line(s))</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>2026-08-28</td><td>07:10:54.194</td><td>Info</td><td>TM</td><td>[Ssh Default] Initializing route: {UC2_CD_ARIVA_BLUTH} 4d366c7164544456546e6f784f5a6753446a6870743750675262514e69774f5775336a7a326939775464723d</td></tr>
+<tr><td>2026-08-26</td><td>07:50:52.592</td><td>Info</td><td>TM</td><td>[Ssh Default] Initializing route: {UC2_CD_ARIVA_BLUTH} 6e377843444f724c71374c57314741665230486b775251426d2b7074536f6f57574e7970514f594966316a3d</td></tr>
+<tr><td>2026-08-03</td><td>07:44:48.883</td><td>Info</td><td>TM</td><td>[Ssh Default] Initializing route: {UC2_CD_ARIVA_BLUTH} 463373337a325776367a325367795546336d2f7537372f3876734b356650505739613059765447383956393d</td></tr>
+<tr><td>2026-07-24</td><td>18:26:45.138</td><td>Info</td><td>TM</td><td>[Ssh Default] Initializing route: {UC2_CD_ARIVA_BLUTH} 617569596579736e6666747779496a79376e7242305744623147594179687a33455739357071706152426a3d</td></tr>
+<tr><td>2026-07-23</td><td>18:57:11.120</td><td>Info</td><td>TM</td><td>[Ssh Default] Initializing route: {UC2_CD_ARIVA_BLUTH} 42636e324232703275716c76475236444e6e7979672f6a312f736976582b566c354d59476e494a646865713d</td></tr>
+<tr><td>2026-07-02</td><td>18:51:22.044</td><td>Info</td><td>TM</td><td>[Ssh Default] Initializing route: {UC2_CD_ARIVA_BLUTH} 53345a58357a5331484d4d722b4776756d71514c2b654b5054464b73692b2f56383546566155776459552f3d</td></tr>
+<tr><td>2026-06-25</td><td>18:09:49.568</td><td>Info</td><td>TM</td><td>[Ssh Default] Initializing route: {UC2_CD_ARIVA_BLUTH} 59695951322f6e764c63397455307a6233546c35647637464573574b7670784443723868555648564b43563d</td></tr>
+</table></div>
+</body>
+</html>

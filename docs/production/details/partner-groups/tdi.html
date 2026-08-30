@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Partner group TDI</title>
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="production" data-help="partner-groups" data-twin="../../../acceptance/404.html"></div>
+<h1>Partner group <span class="mono">TDI</span></h1>
+<p class="subtitle">FlowManager configures these as separate accounts, but the grouping logic ties them to ONE partner organisation. This page shows the evidence it used. See the <a href="../../../help/partner-groups.html">help page</a> for how partner groups are formed.</p>
+<div><div class="stat"><span class="stat-v">2</span><span class="stat-l">Member partners</span></div><div class="stat"><span class="stat-v">both</span><span class="stat-l">Connection</span></div><div class="stat"><span class="stat-v">9</span><span class="stat-l">Merge facts</span></div></div>
+<h2>Member partner codes</h2>
+<p class="subtitle">Each partner code is a segment of the account name(s) it was taken from &mdash; usually the last part.</p>
+<div class="tablewrap"><table class="fit">
+<tr><th>Partner code</th><th>From account name(s)</th></tr>
+<tr><td class="mono">TDI</td><td class="mono">CDV-KRP-TDI-WONKA</td></tr>
+<tr><td class="mono">WONKA</td><td class="mono">CD_COSMOS_WONKA, CD_PRINTMGMT_WONKA</td></tr>
+</table></div>
+<h2>Why these partners are one group</h2>
+<div class="tablewrap"><table class="fit">
+<tr><th>Partners</th><th>How they are linked</th><th>Evidence</th></tr>
+<tr><td class="mono">TDI &harr; WONKA</td><td>An outbound account dials a host whose IP an inbound partner whitelists</td><td>Outbound account CD_COSMOS_WONKA (partner WONKA) connects to sftp.wonka.example (IP 198.51.100.80), whitelisted by inbound account CDV-KRP-TDI-WONKA (partner TDI) <span class="mask">(+7 more)</span></td></tr>
+<tr><td class="mono">TDI &harr; WONKA</td><td>Rule 4</td><td>Curated alias: TDI and WONKA name the same organisation (input/partner-aliases.tsv)</td></tr>
+</table></div>
+<p class="range">Partner grouping is name-derived then merged by shared whitelist IPs and endpoint domains (see <a href="../../../help/partner-groups.html">help</a>). Back to the <a href="../partners/tdi.html">TDI partner page</a> or the <a href="../../transfer/entities/partner-seen.html">Partners list</a>.</p>
+</body>
+</html>

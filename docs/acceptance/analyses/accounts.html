@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Accounts</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body class="sort-fresh">
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="accounts" data-twin="../../production/analyses/accounts.html"></div>
+<h1>Accounts <span class="grouptag">&larr; Configuration &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="use-cases.html">Use cases</a><a class="tab" href="uc2-visits.html">UC2 pickup visits</a><span class="tab active">Accounts</span><a class="tab" href="account-sharing.html">Account sharing</a><a class="tab" href="twins.html">Twins</a><a class="tab" href="cronjobs.html">Cronjobs</a><a class="tab" href="config-hygiene.html">Config hygiene</a><a class="tab" href="whitelist-audit.html">Whitelist audit</a><a class="tab" href="cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="../transfer/sources-and-targets.html">Sources and Targets</a><a class="tab" href="../transfer/skipped.html">Skipped</a><a class="tab" href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a><a class="tab" href="xref/cross-account-subscriptions.html">Cross References</a></p>
+<p class="subtitle">An <strong>account</strong> (a partner in the FlowManager config) talks to us through one or more <strong>communication profiles</strong>, each defining how one endpoint connects. This page checks the accounts, their login names and their profiles for configuration slips. A profile name is coded <code>&lt;TYPE&gt;_&lt;partner&gt;_&lt;AUTH&gt;</code>: the <strong>prefix</strong> is the connection type &mdash; <code>SCP</code>/<code>SSCP</code> = server (ST connects out to the partner), <code>CCP</code> = client (the partner connects in) &mdash; and the <strong>suffix</strong> is the authentication &mdash; <code>PWD</code> = password, <code>KEY</code> = public key. Below, both are checked against each profile&rsquo;s real <code>type</code> and <code>clientAuthentication</code>, followed by the account &amp; login checks.</p>
+<div class="sxs">
+<div class="sxscol"><h2>Connection type</h2><div class="tablewrap"><table class="index fit">
+<tr><th>Type</th><th class="num">Profiles</th></tr>
+<tr><td>Server &mdash; we connect out to the partner</td><td class="num">73</td></tr>
+<tr><td>Client &mdash; the partner connects in to us</td><td class="num">50</td></tr>
+<tr class="total"><td>Total</td><td class="num">123</td></tr>
+</table></div></div>
+<div class="sxscol"><h2>Protocol</h2><div class="tablewrap"><table class="index fit">
+<tr><th>Protocol</th><th class="num">Profiles</th></tr>
+<tr><td>SFTP &mdash; secure</td><td class="num">122</td></tr>
+<tr data-res="red"><td>FTP &mdash; <strong>insecure</strong></td><td class="num">1</td></tr>
+<tr class="total"><td>Total</td><td class="num">123</td></tr>
+</table></div></div>
+</div>
+<h2>Type &mdash; the name prefix</h2>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Prefix</th><th>Meaning</th><th class="num">Profiles</th><th>Configured type</th></tr>
+<tr><td>SCP</td><td>Server comm profile</td><td class="num">73</td><td>SERVER</td></tr>
+<tr><td>CCP</td><td>Client comm profile</td><td class="num">50</td><td>CLIENT</td></tr>
+</table></div>
+<p class="range">Every profile&rsquo;s prefix matches its configured <code>type</code> &mdash; <strong>123 of 123 consistent</strong>, no exceptions.</p>
+<h2>Authentication &mdash; the name suffix</h2>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Suffix</th><th>Meaning</th><th class="num">Profiles</th><th class="num">Match auth</th><th class="num">Mismatch</th></tr>
+<tr><td>PWD</td><td>password</td><td class="num">83</td><td class="num st-ok">83</td><td class="num"></td></tr>
+<tr><td>KEY</td><td>public key</td><td class="num">40</td><td class="num st-ok">40</td><td class="num"></td></tr>
+<tr><td>(other)</td><td>no PWD/KEY suffix (the FTP endpoints, below)</td><td class="num">0</td><td class="num"></td><td class="num"></td></tr>
+</table></div>
+<h2>Naming inconsistencies (0)</h2>
+<p class="range">No inconsistencies &mdash; every profile&rsquo;s auth suffix matches its configured authentication.</p>
+<h2>Breaking naming rules (1)</h2>
+<p class="range">An <strong>incoming</strong> account (the partner connects to us) separates its name parts with <code>-</code>; an <strong>outgoing</strong> one (we connect to the partner) uses <code>_</code>. The same flow configured both ways therefore appears twice, once in each spelling &mdash; <code>DPL-AXINI-AO-IMPRESS</code> inbound and <code>DPL_AXINI-AO_IMPRESS</code> outbound. The separator is read the way the partner derivation reads it: <code>_</code> wins unless splitting on <code>-</code> yields more parts, so an internal hyphen inside one part (<code>AIM-FIN_TREASURY-SP</code>) is not mistaken for the separator.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Account</th><th>Direction</th><th>Separator used</th><th>Expected</th></tr>
+<tr data-res="orange"><td><code>ZG_HOOLI_GEKKO</code></td><td>incoming</td><td><code>_</code></td><td><code>-</code></td></tr>
+</table></div>
+<p class="range">113 of 114 directional accounts follow the rule. A break is a naming slip rather than a fault &mdash; the flow still works &mdash; but it hides the pairing: the twin spelling is how an incoming and an outgoing half of the same flow are recognised as one route.</p>
+<h2>Not clear domain-application-partner (4)</h2>
+<p class="range">An account name is meant to read <strong>domain / application / partner</strong> &mdash; <code>ODV_MAIA_AKZO</code> is domain <code>ODV</code>, application <code>MAIA</code>, partner <code>AKZO</code>. These accounts could not be resolved into all three. The check does not re-read the names: it asks the derivation itself what it managed to assign, so a blank column is a value the rest of the site genuinely does not have for that account.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Account</th><th class="num">Parts</th><th>Domain</th><th>Application</th><th>Partner</th><th>Missing</th><th>Why</th></tr>
+<tr data-res="blue"><td><code>CB_STARK_WAYNE</code></td><td class="num">3</td><td>CB</td><td>&mdash;</td><td>WAYNE</td><td>application</td><td>three parts, but one is not a recognised value</td></tr>
+<tr data-res="orange"><td><code>OLD-MIGRATION-GLOBEX</code></td><td class="num">3</td><td>&mdash;</td><td>&mdash;</td><td>GLOBEX</td><td>domain, application</td><td>three parts, but one is not a recognised value</td></tr>
+<tr data-res="green"><td><code>WA-VDN</code></td><td class="num">2</td><td>WA</td><td>&mdash;</td><td>VDN</td><td>application</td><td>only two parts — one of the three has no slot</td></tr>
+<tr data-res="orange"><td><code>ZG_HOOLI_GEKKO</code></td><td class="num">3</td><td>ZG</td><td>&mdash;</td><td>HOOLI</td><td>application</td><td>three parts, but one is not a recognised value</td></tr>
+</table></div>
+<p class="range">112 of 116 accounts resolve to all three. A gap is not a fault &mdash; the flow works either way &mdash; but the account is then absent from that entity&rsquo;s Files, coverage and cross-reference figures, so a partner can look quieter than it is.</p>
+<h2>FTP endpoints (1) &mdash; insecure</h2>
+<p class="range"><strong>FTP transfers credentials and data in clear text</strong> and cannot use a public key, so these are the site&rsquo;s only insecure profiles. They are also exactly the 1 profiles outside the <code>PWD</code>/<code>KEY</code> naming convention above (their name ends in a partner tag and their <code>clientAuthentication</code> is unset). Migrating them to SFTP would close the last plaintext links.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Communication profile</th><th>Name suffix</th><th>Authentication</th></tr>
+<tr data-res="red"><td><code>SCP_AB_CREDITREG_WEYLAND_PWD</code></td><td>PWD</td><td>PASSWORD</td></tr>
+</table></div>
+<h2>Incoming partners without IP whitelisting (1)</h2>
+<p class="range">An <strong>incoming</strong> partner (a CLIENT profile &mdash; it connects in to us) should be restricted by an <code>AllowIP</code> whitelist. The following 1 have none, so any source IP could attempt to connect, relying on authentication alone (weakest when that is a password).</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Partner</th><th>Protocol</th><th>Authentication</th><th>Status</th></tr>
+<tr data-res="red"><td>ZG_HOOLI_GEKKO</td><td>SFTP</td><td>PASSWORD</td><td>never seen</td></tr>
+</table></div>
+<h2>Remote hosts with conflicting setup</h2>
+<p class="range">A remote host reached from more than one profile should be configured the same way everywhere. Checking <strong>every</strong> host-intrinsic connection attribute, <strong>1 host(s)</strong> differ across <strong>2 attribute(s)</strong> &mdash; one table per differing attribute below. A port pair means one is probably stale; a host-key pair (verification or stored key) is a security gap: one connection is protected against a man-in-the-middle, the other is not. Per-account client credentials are excluded (they are not a property of the host). Each distinct value is a row, grouped by host.</p>
+<h3>Port (1 host(s))</h3>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Remote host</th><th>Value</th><th>Profiles</th></tr>
+<tr data-res="red"><td><code>mft.weyland.example</code></td><td>21</td><td>SCP_AB_CREDITREG_WEYLAND_PWD</td></tr>
+<tr data-res="red"><td></td><td>22</td><td>SCP_AB_HRDATA_WEYLAND_PWD</td></tr>
+</table></div>
+<h3>Protocol (1 host(s))</h3>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Remote host</th><th>Value</th><th>Profiles</th></tr>
+<tr data-res="red"><td><code>mft.weyland.example</code></td><td>FTP</td><td>SCP_AB_CREDITREG_WEYLAND_PWD</td></tr>
+<tr data-res="red"><td></td><td>SFTP</td><td>SCP_AB_HRDATA_WEYLAND_PWD</td></tr>
+</table></div>
+<h2>Whitelisted IPs with conflicting incoming setup</h2>
+<p class="range">The inbound mirror of the check above: a source IP whitelisted for more than one incoming (CLIENT) partner should present the same way. Checking <strong>every</strong> incoming attribute, <strong>33 IP(s)</strong> differ across <strong>1 attribute(s)</strong> &mdash; one table per differing attribute below. Often deliberate (one source, per-account credentials), but worth confirming. Per-account logins are excluded. Each distinct value is a row, grouped by IP.</p>
+<h3>Authentication (33 IP(s))</h3>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Whitelisted IP</th><th>Value</th><th>Partners</th></tr>
+<tr data-res="orange"><td><code>198.51.100.100</code></td><td>PASSWORD</td><td>CD-INVOICE-VANDELAY</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>HR-MATCH-VANDELAY</td></tr>
+<tr data-res="orange"><td><code>198.51.100.101</code></td><td>PASSWORD</td><td>CD-INVOICE-VANDELAY</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>HR-MATCH-VANDELAY</td></tr>
+<tr data-res="orange"><td><code>198.51.100.102</code></td><td>PASSWORD</td><td>CD-INVOICE-VANDELAY</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>HR-MATCH-VANDELAY</td></tr>
+<tr data-res="orange"><td><code>198.51.100.110</code></td><td>PASSWORD</td><td>ODV-MAIA-PIEDPIPER</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>AIM-LAKE-PIEDPIPER</td></tr>
+<tr data-res="orange"><td><code>198.51.100.111</code></td><td>PASSWORD</td><td>ODV-MAIA-PIEDPIPER</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>AIM-LAKE-PIEDPIPER</td></tr>
+<tr data-res="orange"><td><code>198.51.100.195</code></td><td>PASSWORD</td><td>CB-VIDA-WAYNE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>FS-IFRS-WAYNE</td></tr>
+<tr data-res="orange"><td><code>198.51.100.196</code></td><td>PASSWORD</td><td>CB-VIDA-WAYNE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>FS-IFRS-WAYNE</td></tr>
+<tr data-res="orange"><td><code>198.51.100.210</code></td><td>PASSWORD</td><td>ZK-ARIVA-OSCORP</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>HR-PENSION-OSCORP</td></tr>
+<tr data-res="orange"><td><code>198.51.100.211</code></td><td>PASSWORD</td><td>ZK-ARIVA-OSCORP</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>HR-PENSION-OSCORP</td></tr>
+<tr data-res="orange"><td><code>198.51.100.215</code></td><td>PASSWORD</td><td>CD-INVOICE-VANDELAY</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>HR-MATCH-VANDELAY</td></tr>
+<tr data-res="orange"><td><code>198.51.100.216</code></td><td>PASSWORD</td><td>CD-INVOICE-VANDELAY</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>HR-MATCH-VANDELAY</td></tr>
+<tr data-res="orange"><td><code>198.51.100.220</code></td><td>PASSWORD</td><td>ODV-MAIA-PIEDPIPER</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>AIM-LAKE-PIEDPIPER</td></tr>
+<tr data-res="orange"><td><code>198.51.100.221</code></td><td>PASSWORD</td><td>ODV-MAIA-PIEDPIPER</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>AIM-LAKE-PIEDPIPER</td></tr>
+<tr data-res="orange"><td><code>198.51.100.60</code></td><td>PASSWORD</td><td>CB-VIDA-WAYNE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>FS-IFRS-WAYNE</td></tr>
+<tr data-res="orange"><td><code>198.51.100.61</code></td><td>PASSWORD</td><td>CB-VIDA-WAYNE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>FS-IFRS-WAYNE</td></tr>
+<tr data-res="orange"><td><code>198.51.100.90</code></td><td>PASSWORD</td><td>ZK-ARIVA-OSCORP</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>HR-PENSION-OSCORP</td></tr>
+<tr data-res="orange"><td><code>198.51.100.91</code></td><td>PASSWORD</td><td>ZK-ARIVA-OSCORP</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>HR-PENSION-OSCORP</td></tr>
+<tr data-res="orange"><td><code>203.0.113.10</code></td><td>PASSWORD</td><td>DPL-RENSEI-SOYLENT, IT-MAIA-SOYLENT, ZK-SENSOR-SOYLENT</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>CB-ISOLATED-SOYLENT</td></tr>
+<tr data-res="orange"><td><code>203.0.113.11</code></td><td>PASSWORD</td><td>DPL-RENSEI-SOYLENT, IT-MAIA-SOYLENT, ZK-SENSOR-SOYLENT</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>CB-ISOLATED-SOYLENT</td></tr>
+<tr data-res="orange"><td><code>203.0.113.12</code></td><td>PASSWORD</td><td>DPL-RENSEI-SOYLENT, IT-MAIA-SOYLENT, ZK-SENSOR-SOYLENT</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>CB-ISOLATED-SOYLENT</td></tr>
+<tr data-res="orange"><td><code>203.0.113.195</code></td><td>PASSWORD</td><td>ODV-ARE-APERTURE, SI-SAPBHP-APERTURE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>FS-STMT-APERTURE</td></tr>
+<tr data-res="orange"><td><code>203.0.113.196</code></td><td>PASSWORD</td><td>ODV-ARE-APERTURE, SI-SAPBHP-APERTURE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>FS-STMT-APERTURE</td></tr>
+<tr data-res="orange"><td><code>203.0.113.20</code></td><td>PASSWORD</td><td>DPL-SCAN-CYBERDYNE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>IT-EKDSI-CYBERDYNE</td></tr>
+<tr data-res="orange"><td><code>203.0.113.21</code></td><td>PASSWORD</td><td>DPL-SCAN-CYBERDYNE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>IT-EKDSI-CYBERDYNE</td></tr>
+<tr data-res="orange"><td><code>203.0.113.22</code></td><td>PASSWORD</td><td>DPL-SCAN-CYBERDYNE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>IT-EKDSI-CYBERDYNE</td></tr>
+<tr data-res="orange"><td><code>203.0.113.23</code></td><td>PASSWORD</td><td>DPL-SCAN-CYBERDYNE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>IT-EKDSI-CYBERDYNE</td></tr>
+<tr data-res="orange"><td><code>203.0.113.230</code></td><td>PASSWORD</td><td>DPL-RENSEI-SOYLENT, IT-MAIA-SOYLENT, ZK-SENSOR-SOYLENT</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>CB-ISOLATED-SOYLENT</td></tr>
+<tr data-res="orange"><td><code>203.0.113.231</code></td><td>PASSWORD</td><td>DPL-RENSEI-SOYLENT, IT-MAIA-SOYLENT, ZK-SENSOR-SOYLENT</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>CB-ISOLATED-SOYLENT</td></tr>
+<tr data-res="orange"><td><code>203.0.113.235</code></td><td>PASSWORD</td><td>DPL-SCAN-CYBERDYNE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>IT-EKDSI-CYBERDYNE</td></tr>
+<tr data-res="orange"><td><code>203.0.113.236</code></td><td>PASSWORD</td><td>DPL-SCAN-CYBERDYNE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>IT-EKDSI-CYBERDYNE</td></tr>
+<tr data-res="orange"><td><code>203.0.113.90</code></td><td>PASSWORD</td><td>ODV-ARE-APERTURE, SI-SAPBHP-APERTURE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>FS-STMT-APERTURE</td></tr>
+<tr data-res="orange"><td><code>203.0.113.91</code></td><td>PASSWORD</td><td>ODV-ARE-APERTURE, SI-SAPBHP-APERTURE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>FS-STMT-APERTURE</td></tr>
+<tr data-res="orange"><td><code>203.0.113.92</code></td><td>PASSWORD</td><td>ODV-ARE-APERTURE, SI-SAPBHP-APERTURE</td></tr>
+<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>FS-STMT-APERTURE</td></tr>
+</table></div>
+<h2>Account &amp; login checks</h2>
+<p class="subtitle">Configuration checks on the accounts and the login names their communication profiles use.</p>
+<h3>Non-standard login names (0)</h3>
+<p class="range">Every incoming login is a standard <code>FE&lt;digits&gt;</code> name.</p>
+<h3>Login used by more than one account (1)</h3>
+<p class="range">A login should belong to one account. These 1 are configured on several &mdash; often <code>-</code>/<code>_</code> spelling twins of the same partner, but worth confirming.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Login</th><th class="num">Accounts</th><th>On</th></tr>
+<tr data-res="orange"><td><code>FE001111</code></td><td class="num">2</td><td>ZG-BULK-DUNDER, ZG-CIVIL-DUNDER</td></tr>
+</table></div>
+<h3>Communication profiles with more than one host (0)</h3>
+<p class="range">Every communication profile resolves to a single host.</p>
+<h3>Incoming password profiles with no stored password (0)</h3>
+<p class="range">Every incoming password profile has a stored password.</p>
+<h3>Accounts with more than one communication profile (6)</h3>
+<p class="range">An account normally has one endpoint. These 6 carry several &mdash; confirm they are intentional (a profile named for a <em>different</em> account is a likely mix-up).</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Account</th><th class="num">Profiles</th><th>Communication profiles</th></tr>
+<tr data-res="orange"><td>CB-ISOLATED-SOYLENT</td><td class="num">2</td><td><code>CCP_CB-ISOLATED-SOYLENT_KEY | CCP_CB-ISOLATED-SOYLENT_KEY</code></td></tr>
+<tr data-res="orange"><td>FIN_LEDGER_GLOBEX</td><td class="num">2</td><td><code>SCP_FIN_LEDGER_GLOBEX_PWD | SCP_FIN_LEDGER_GLOBEX_KEY</code></td></tr>
+<tr data-res="orange"><td>FS-STMT-APERTURE</td><td class="num">2</td><td><code>CCP_FS-STMT-APERTURE_KEY | CCP_FS-STMT-APERTURE_PWD</code></td></tr>
+<tr data-res="orange"><td>INFRA_ST-MONITOR_INFRA</td><td class="num">4</td><td><code>SCP_INFRA-MONITOR-UC1_PWD | CCP_INFRA_ST-MONITOR_INFRA_PWD | SCP_INFRA-MONITOR-UC3_PWD | CCP_INFRA_ST-MONITOR_INFRA_PWD</code></td></tr>
+<tr data-res="orange"><td>IT-EKDSI-CYBERDYNE</td><td class="num">2</td><td><code>CCP_IT-EKDSI-CYBERDYNE_KEY | CCP_IT-EKDSI-CYBERDYNE_PWD</code></td></tr>
+<tr data-res="orange"><td>ODV-ARE-APERTURE</td><td class="num">2</td><td><code>CCP_ODV-ARE-APERTURE_PWD | CCP_ODV-ARE-APERTURE_PWD</code></td></tr>
+</table></div>
+<h3>Login / login-name mismatch (0)</h3>
+<p class="range">Every <code>login</code> matches its <code>loginName</code>.</p>
+</body>
+</html>

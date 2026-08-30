@@ -1,0 +1,25 @@
+# What stays OUT of git — everything derived:
+#   data/   — regenerable build data: data/<env>/<area>/cache (tokenized *.tsv)
+#             and data/<env>/<area>/reports (generated *.rpt). Safe to delete
+#             wholesale; parse.sh + the report scripts rebuild it from input/.
+# input/ is committed IN FULL in this DEVELOP repo — the sample CSVs included:
+# the whole estate is synthetic (bin/sample/generate.sh) and small, so a fresh
+# clone builds the complete site. (The RUNTIME repo keeps its own .gitignore
+# with the *.csv rule — its real exports are bulk and never pushed.)
+# The rendered docs/ site is committed.
+data/
+
+# bin/build.sh's per-run artifacts: the HTML build report (index.html) and the
+# raw per-step logs it embeds. Local only, rewritten every run, safe to delete.
+# LEADING SLASH: anchored to the repo root on purpose. A bare "build/" also
+# matches bin/build/ — the tracked step scripts only bin/build.sh invokes — so a
+# NEW script added there would be silently ignored instead of committed.
+/build/
+
+# Local archives (e.g. a zipped-up docs/ for sharing) — never part of the build.
+*.zip
+*.7z
+
+# Finder metadata. Also in most machines' global excludes, but carried here so
+# a clone without one stays clean too.
+.DS_Store

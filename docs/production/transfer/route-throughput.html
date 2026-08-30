@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Route Throughput</title>
+<meta name="report-dates" content="2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="production-transfer">
+<meta name="report-key" content="route-throughput">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="route-throughput" data-twin="../../acceptance/transfer/route-throughput.html"></div>
+<h1>Route Throughput <span class="grouptag">&larr; Volume, Sizes &amp; Files &larr; Transfer</span></h1>
+<p class="tabs"><a class="tab" href="volume-per-day.html">Volume</a><a class="tab" href="files-by-size.html"></a><a class="tab" href="top-transfers.html">Largest files</a><span class="tab active">Route throughput</span><a class="tab" href="size-profile.html">Size profile</a><a class="tab" href="ranking-subscriptions.html">Ranking</a></p>
+<p class="range">How fast the bytes actually move, per <strong>route</strong> (subscription x protocol x direction). Only legs that measure a real rate count: <strong>duration &gt; 500 ms</strong> and <strong>size &gt; 1 MB</strong> — <strong>418</strong> such Transfers, moving <strong>739.72 MB</strong> in <strong>14.3 min</strong> of wire time (<strong>0.86 MB/s</strong> overall). Slowest routes first: a PeSIT route at 0.2 MB/s and an SFTP route at 40 MB/s are both normal, but a route far below its protocol peers is worth a look. The Trend column compares the first half of the observed window with the second.</p>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Subscription</th><th>Protocol</th><th>Direction</th><th class="num">Transfers</th><th class="num">Volume</th><th class="num">Wire time</th><th class="num">MB/s</th><th>Trend (MB/s)</th></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc3-odv-merlijn-sabre-d.html">UC3_ODV_MERLIJN_SABRE_D</a></td><td>ssh</td><td>inbound</td><td class="num">1</td><td class="num">1.03 MB</td><td class="num">5.76 s</td><td class="num">0.18</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc3-aps-fmgenlog-cyberdyne.html">UC3_APS_FMGENLOG_CYBERDYNE</a></td><td>ssh</td><td>inbound</td><td class="num">7</td><td class="num">8.68 MB</td><td class="num">39.59 s</td><td class="num">0.22</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc3-it-recon-hooli.html">UC3_IT_RECON_HOOLI</a></td><td>ssh</td><td>inbound</td><td class="num">1</td><td class="num">1.05 MB</td><td class="num">3.17 s</td><td class="num">0.33</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/gl-postings-gekko.html">GL_POSTINGS_GEKKO</a></td><td>pesit</td><td>inbound</td><td class="num">2</td><td class="num">2.19 MB</td><td class="num">5.93 s</td><td class="num">0.37</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-cd-cosmos-wonka.html">UC1_CD_COSMOS_WONKA</a></td><td>ssh</td><td>outbound</td><td class="num">71</td><td class="num">107.18 MB</td><td class="num">3.7 min</td><td class="num">0.48</td><td><code>0.46 → 0.51  →</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/gl-postings-gekko.html">GL_POSTINGS_GEKKO</a></td><td>ssh</td><td>outbound</td><td class="num">3</td><td class="num">3.39 MB</td><td class="num">7.04 s</td><td class="num">0.48</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/crm-sync-initech.html">CRM_SYNC_INITECH</a></td><td>ssh</td><td>inbound</td><td class="num">5</td><td class="num">7.76 MB</td><td class="num">15.62 s</td><td class="num">0.50</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-zg-pension-hooli.html">UC1_ZG_PENSION_HOOLI</a></td><td>ssh</td><td>outbound</td><td class="num">2</td><td class="num">2.55 MB</td><td class="num">5.00 s</td><td class="num">0.51</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-fs-mortgage-sabre.html">UC1_FS_MORTGAGE_SABRE</a></td><td>ssh</td><td>outbound</td><td class="num">5</td><td class="num">5.59 MB</td><td class="num">10.71 s</td><td class="num">0.52</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc3-ab-nas-globex.html">UC3_AB_NAS_GLOBEX</a></td><td>ssh</td><td>inbound</td><td class="num">18</td><td class="num">29.79 MB</td><td class="num">46.50 s</td><td class="num">0.64</td><td><code>0.79 → 0.27  ↓</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/inv-payments-hooli.html">INV_PAYMENTS_HOOLI</a></td><td>ssh</td><td>inbound</td><td class="num">4</td><td class="num">6.48 MB</td><td class="num">9.92 s</td><td class="num">0.65</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-cd-printmgmt-wonka.html">UC1_CD_PRINTMGMT_WONKA</a></td><td>ssh</td><td>outbound</td><td class="num">4</td><td class="num">4.25 MB</td><td class="num">6.37 s</td><td class="num">0.67</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc4-cdv-krp-tdi-wonka.html">UC4_CDV_KRP-TDI_WONKA</a></td><td>ssh</td><td>inbound</td><td class="num">54</td><td class="num">94.57 MB</td><td class="num">2.4 min</td><td class="num">0.67</td><td><code>0.72 → 0.61  →</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc4-aps-cosmos-globex.html">UC4_APS_COSMOS_GLOBEX</a></td><td>ssh</td><td>inbound</td><td class="num">4</td><td class="num">5.46 MB</td><td class="num">7.57 s</td><td class="num">0.72</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/hr-roster-umbrella.html">HR_ROSTER_UMBRELLA</a></td><td>pesit</td><td>inbound</td><td class="num">3</td><td class="num">4.08 MB</td><td class="num">5.65 s</td><td class="num">0.72</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-it-ekdsi-cyberdyne.html">UC2_IT_EKDSI_CYBERDYNE</a></td><td>pesit</td><td>inbound</td><td class="num">1</td><td class="num">1.03 MB</td><td class="num">1.32 s</td><td class="num">0.78</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-cd-printmgmt-wonka.html">UC1_CD_PRINTMGMT_WONKA</a></td><td>pesit</td><td>inbound</td><td class="num">2</td><td class="num">2.04 MB</td><td class="num">2.60 s</td><td class="num">0.78</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc3-odv-merlijn-sabre-d.html">UC3_ODV_MERLIJN_SABRE_D</a></td><td>pesit</td><td>outbound</td><td class="num">1</td><td class="num">1.03 MB</td><td class="num">1.29 s</td><td class="num">0.80</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/hr-roster-umbrella.html">HR_ROSTER_UMBRELLA</a></td><td>ssh</td><td>outbound</td><td class="num">3</td><td class="num">4.08 MB</td><td class="num">4.55 s</td><td class="num">0.90</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc4-aim-lake-piedpiper.html">UC4_AIM_LAKE_PIEDPIPER</a></td><td>ssh</td><td>inbound</td><td class="num">38</td><td class="num">105.26 MB</td><td class="num">1.9 min</td><td class="num">0.94</td><td><code>0.99 → 0.89  →</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-cd-cosmos-wonka.html">UC1_CD_COSMOS_WONKA</a></td><td>pesit</td><td>inbound</td><td class="num">51</td><td class="num">74.87 MB</td><td class="num">1.1 min</td><td class="num">1.12</td><td><code>1.05 → 1.22  →</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc3-aps-fmgenlog-cyberdyne.html">UC3_APS_FMGENLOG_CYBERDYNE</a></td><td>pesit</td><td>outbound</td><td class="num">4</td><td class="num">4.94 MB</td><td class="num">4.15 s</td><td class="num">1.19</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/inv-payments-hooli.html">INV_PAYMENTS_HOOLI</a></td><td>pesit</td><td>outbound</td><td class="num">3</td><td class="num">4.57 MB</td><td class="num">3.72 s</td><td class="num">1.23</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-fs-mortgage-sabre.html">UC1_FS_MORTGAGE_SABRE</a></td><td>pesit</td><td>inbound</td><td class="num">4</td><td class="num">4.52 MB</td><td class="num">3.30 s</td><td class="num">1.37</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-zg-pension-hooli.html">UC1_ZG_PENSION_HOOLI</a></td><td>pesit</td><td>inbound</td><td class="num">1</td><td class="num">1.13 MB</td><td class="num">780 ms</td><td class="num">1.45</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc4-cdv-krp-tdi-wonka.html">UC4_CDV_KRP-TDI_WONKA</a></td><td>pesit</td><td>outbound</td><td class="num">33</td><td class="num">56.86 MB</td><td class="num">36.40 s</td><td class="num">1.56</td><td><code>1.77 → 1.39  ↓</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-it-ekdsi-cyberdyne.html">UC2_IT_EKDSI_CYBERDYNE</a></td><td>ssh</td><td>outbound</td><td class="num">1</td><td class="num">1.03 MB</td><td class="num">568 ms</td><td class="num">1.82</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc3-ab-nas-globex.html">UC3_AB_NAS_GLOBEX</a></td><td>pesit</td><td>outbound</td><td class="num">12</td><td class="num">22.34 MB</td><td class="num">12.19 s</td><td class="num">1.83</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-aps-vida-umbrella.html">UC2_APS_VIDA_UMBRELLA</a></td><td>routing</td><td>outbound</td><td class="num">4</td><td class="num">7.89 MB</td><td class="num">4.23 s</td><td class="num">1.86</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc4-aps-cosmos-globex.html">UC4_APS_COSMOS_GLOBEX</a></td><td>pesit</td><td>outbound</td><td class="num">3</td><td class="num">3.80 MB</td><td class="num">2.03 s</td><td class="num">1.87</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-aps-vida-umbrella.html">UC2_APS_VIDA_UMBRELLA</a></td><td>pesit</td><td>inbound</td><td class="num">29</td><td class="num">48.08 MB</td><td class="num">23.72 s</td><td class="num">2.03</td><td><code>2.22 → 1.90  →</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/crm-sync-initech.html">CRM_SYNC_INITECH</a></td><td>pesit</td><td>outbound</td><td class="num">3</td><td class="num">5.26 MB</td><td class="num">2.45 s</td><td class="num">2.15</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-aps-vida-umbrella.html">UC2_APS_VIDA_UMBRELLA</a></td><td>ssh</td><td>outbound</td><td class="num">16</td><td class="num">30.69 MB</td><td class="num">14.26 s</td><td class="num">2.15</td><td><code>1.43 → 2.74  ↑</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-aps-vida-umbrella.html">UC2_APS_VIDA_UMBRELLA</a></td><td>routing</td><td>inbound</td><td class="num">1</td><td class="num">1.49 MB</td><td class="num">542 ms</td><td class="num">2.74</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc4-aim-lake-piedpiper.html">UC4_AIM_LAKE_PIEDPIPER</a></td><td>pesit</td><td>outbound</td><td class="num">23</td><td class="num">72.50 MB</td><td class="num">24.56 s</td><td class="num">2.95</td><td><code>2.52 → 3.90  ↑</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-zg-match-hooli.html">UC2_ZG_MATCH_HOOLI</a></td><td>routing</td><td>outbound</td><td class="num">1</td><td class="num">2.26 MB</td><td class="num">532 ms</td><td class="num">4.24</td><td><code>-</code></td></tr>
+<tr class="total"><td>Total (36 route(s))</td><td></td><td></td><td class="num">418</td><td class="num">739.72 MB</td><td class="num">14.3 min</td><td class="num">0.86</td><td></td></tr>
+</table></div>
+<p class="note">MB/s = the route's counted bytes divided by its summed leg durations (a volume-weighted rate, so one big slow file outweighs ten quick ones). The <strong>500 ms / 1 MB floors</strong> drop the legs whose measured rate is mostly session setup and rounding. A leg's duration is the log record's own wire time — the store-and-forward dwell BETWEEN legs is never in it (the Store-and-Forward report measures that). Trend: first-half vs second-half MB/s of the window; shown when both halves have at least 3 Transfers.</p>
+<h2>Per protocol</h2>
+<div class="tablewrap"><table data-nofilter="1">
+<tr><th>Protocol</th><th class="num">Transfers</th><th class="num">Volume</th><th class="num">Wire time</th><th class="num">MB/s</th></tr>
+<tr><td>ssh</td><td class="num">237</td><td class="num">418.85 MB</td><td class="num">10.9 min</td><td class="num">0.64</td></tr>
+<tr><td>pesit</td><td class="num">175</td><td class="num">309.24 MB</td><td class="num">3.3 min</td><td class="num">1.57</td></tr>
+<tr><td>routing</td><td class="num">6</td><td class="num">11.64 MB</td><td class="num">5.31 s</td><td class="num">2.19</td></tr>
+<tr class="total"><td>Total (3 protocol(s))</td><td class="num">418</td><td class="num">739.72 MB</td><td class="num">14.3 min</td><td class="num">0.86</td></tr>
+</table></div>
+<p class="note">The same figures rolled up per protocol — the fair baseline for a route: PeSIT throttles far below SFTP by design. `routing` is the internal store-and-forward leg between the inbound and outbound sides.</p>
+<div class="summary">Routes: 36  |  Measured Transfers: 418  |  Volume: 739.72 MB  |  Overall: 0.86 MB/s</div>
+</body>
+</html>

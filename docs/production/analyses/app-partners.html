@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Application dependencies</title>
+<meta name="report-dates" content="2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-key" content="app-partners">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="app-partners" data-twin="../../acceptance/analyses/app-partners.html"></div>
+<h1>Application dependencies <span class="grouptag">&larr; Partners &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="partner-scorecard.html">Partner scorecard</a><a class="tab" href="blast-radius.html">Blast radius</a><span class="tab active">Application dependencies</span><a class="tab" href="partner-lifecycle.html">Partner lifecycle</a></p>
+<p class="range">Every internal application seen in the logs, by how many <strong>external partner organisations</strong> it depends on — and how well each of those pairs actually runs. The most exposed application is <strong>COSMOS</strong> with <strong>2</strong> partners (0 of those pairs at 100% Error). Applications derive from the account NAMES (the middle token of the domain-application-partner convention), so this attribution is <strong>heuristic by design</strong> — good enough to see exposure and failing pairs, but not a configuration export. Both directions use the site-wide UNION rules: a File counts for every application of its account and every partner of its subscription.</p>
+<div class="stat"><span class="stat-v">27</span><span class="stat-l">Applications seen</span></div>
+<div class="stat"><span class="stat-v">28</span><span class="stat-l">Dependency pairs</span></div>
+<div class="stat stat-red"><span class="stat-v">0</span><span class="stat-l">Pairs at 100% Error</span></div>
+<div class="tablewrap"><table data-nofilter="1">
+<tr><th>Application</th><th class="num">Partners</th><th class="num">Files</th><th class="num">Worst pair Error %</th><th class="num">Pairs at 100% Error</th></tr>
+<tr><td class="cl"><a href="../details/applications/cosmos.html">COSMOS</a></td><td class="num">2</td><td class="num">1174</td><td class="num">1.7</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/archive.html">ARCHIVE</a></td><td class="num">1</td><td class="num">121</td><td class="num">1.7</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/billing.html">BILLING</a></td><td class="num">1</td><td class="num">880</td><td class="num">2.6</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/claims.html">CLAIMS</a></td><td class="num">1</td><td class="num">112</td><td class="num">2.7</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/ekdsi.html">EKDSI</a></td><td class="num">1</td><td class="num">118</td><td class="num">5.1</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/export.html">EXPORT</a></td><td class="num">1</td><td class="num">272</td><td class="num">4.4</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/feeds.html">FEEDS</a></td><td class="num">1</td><td class="num">48</td><td class="num">4.2</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/fmgenlog.html">FMGENLOG</a></td><td class="num">1</td><td class="num">317</td><td class="num">2.8</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/krp.html">KRP</a></td><td class="num">1</td><td class="num">229</td><td class="num">0.4</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/lake.html">LAKE</a></td><td class="num">1</td><td class="num">87</td><td class="num">3.4</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/match.html">MATCH</a></td><td class="num">1</td><td class="num">42</td><td class="num">7.1</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/merlijn.html">MERLIJN</a></td><td class="num">1</td><td class="num">35</td><td class="num">2.9</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/miaz.html">MIAZ</a></td><td class="num">1</td><td class="num">46</td><td class="num">0.0</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/mortgage.html">MORTGAGE</a></td><td class="num">1</td><td class="num">86</td><td class="num">4.7</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/nas.html">NAS</a></td><td class="num">1</td><td class="num">159</td><td class="num">2.5</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/payments.html">PAYMENTS</a></td><td class="num">1</td><td class="num">89</td><td class="num">2.2</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/pension.html">PENSION</a></td><td class="num">1</td><td class="num">81</td><td class="num">1.2</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/postings.html">POSTINGS</a></td><td class="num">1</td><td class="num">61</td><td class="num">3.3</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/printmgmt.html">PRINTMGMT</a></td><td class="num">1</td><td class="num">285</td><td class="num">4.6</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/recon.html">RECON</a></td><td class="num">1</td><td class="num">53</td><td class="num">3.8</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/roster.html">ROSTER</a></td><td class="num">1</td><td class="num">44</td><td class="num">2.3</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/sapbhp.html">SAPBHP</a></td><td class="num">1</td><td class="num">93</td><td class="num">38.7</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/st-monitor.html">ST-MONITOR</a></td><td class="num">1</td><td class="num">6433</td><td class="num">0.1</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/sync.html">SYNC</a></td><td class="num">1</td><td class="num">57</td><td class="num">1.8</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/syshub.html">SYSHUB</a></td><td class="num">1</td><td class="num">91</td><td class="num">6.6</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/vida.html">VIDA</a></td><td class="num">1</td><td class="num">205</td><td class="num">28.3</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/zka.html">ZKA</a></td><td class="num">1</td><td class="num">86</td><td class="num">0.0</td><td class="num"></td></tr>
+<tr class="total"><td>Total (27 application(s))</td><td class="num">28</td><td class="num">11304</td><td class="num"></td><td class="num">0</td></tr>
+</table></div>
+<h2>The dependency pairs</h2>
+<div class="tablewrap"><table data-nofilter="1" data-pager="50">
+<tr><th>Application</th><th>Partner</th><th class="num">Files</th><th class="num">Error %</th><th>Last seen</th></tr>
+<tr><td class="cl"><a href="../details/applications/archive.html">ARCHIVE</a></td><td class="cl"><a href="../details/partners/initech.html">INITECH</a></td><td class="num">121</td><td class="num">1.7</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/billing.html">BILLING</a></td><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td class="num">880</td><td class="num">2.6</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/claims.html">CLAIMS</a></td><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td class="num">112</td><td class="num">2.7</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/cosmos.html">COSMOS</a></td><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td class="num">590</td><td class="num">1.0</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/cosmos.html">COSMOS</a></td><td class="cl"><a href="../details/partners/tdi.html">TDI</a></td><td class="num">584</td><td class="num">1.7</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/ekdsi.html">EKDSI</a></td><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td class="num">118</td><td class="num">5.1</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/export.html">EXPORT</a></td><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td class="num">272</td><td class="num">4.4</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/feeds.html">FEEDS</a></td><td class="cl"><a href="../details/partners/soylent.html">SOYLENT</a></td><td class="num">48</td><td class="num">4.2</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/applications/fmgenlog.html">FMGENLOG</a></td><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td class="num">317</td><td class="num">2.8</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/krp.html">KRP</a></td><td class="cl"><a href="../details/partners/tdi.html">TDI</a></td><td class="num">229</td><td class="num">0.4</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/lake.html">LAKE</a></td><td class="cl"><a href="../details/partners/piedpiper.html">PIEDPIPER</a></td><td class="num">87</td><td class="num">3.4</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/match.html">MATCH</a></td><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">42</td><td class="num">7.1</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/merlijn.html">MERLIJN</a></td><td class="cl"><a href="../details/partners/sabre.html">SABRE</a></td><td class="num">35</td><td class="num">2.9</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/applications/miaz.html">MIAZ</a></td><td class="cl"><a href="../details/partners/initech.html">INITECH</a></td><td class="num">46</td><td class="num">0.0</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/mortgage.html">MORTGAGE</a></td><td class="cl"><a href="../details/partners/sabre.html">SABRE</a></td><td class="num">86</td><td class="num">4.7</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/nas.html">NAS</a></td><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td class="num">159</td><td class="num">2.5</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/payments.html">PAYMENTS</a></td><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">89</td><td class="num">2.2</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/applications/pension.html">PENSION</a></td><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">81</td><td class="num">1.2</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/postings.html">POSTINGS</a></td><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td class="num">61</td><td class="num">3.3</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/printmgmt.html">PRINTMGMT</a></td><td class="cl"><a href="../details/partners/tdi.html">TDI</a></td><td class="num">285</td><td class="num">4.6</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/recon.html">RECON</a></td><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">53</td><td class="num">3.8</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/applications/roster.html">ROSTER</a></td><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td class="num">44</td><td class="num">2.3</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/sapbhp.html">SAPBHP</a></td><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td class="num">93</td><td class="num">38.7</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/st-monitor.html">ST-MONITOR</a></td><td class="cl"><a href="../details/partners/infra.html">INFRA</a></td><td class="num">6433</td><td class="num">0.1</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/sync.html">SYNC</a></td><td class="cl"><a href="../details/partners/initech.html">INITECH</a></td><td class="num">57</td><td class="num">1.8</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/applications/syshub.html">SYSHUB</a></td><td class="cl"><a href="../details/partners/soylent.html">SOYLENT</a></td><td class="num">91</td><td class="num">6.6</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/vida.html">VIDA</a></td><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td class="num">205</td><td class="num">28.3</td><td>2026-08-29</td></tr>
+<tr><td class="cl"><a href="../details/applications/zka.html">ZKA</a></td><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">86</td><td class="num">0.0</td><td>2026-08-29</td></tr>
+<tr class="total"><td>Total (28 pair(s))</td><td></td><td class="num">11304</td><td class="num"></td><td></td></tr>
+</table></div>
+<p class="note">A pair's Error % is the Failed-or-Expired share of its Files (the site-wide outcome policy: Waiting counts as OK, Expired as Error). The per-application Files column sums its pairs, so a File shared by two partners counts twice there — exposure, not throughput. A red row runs at 100% Error: the dependency exists in the logs but never works — usually a decommissioned counterparty still being retried.</p>
+<div class="summary">Applications: 27  |  Dependency pairs: 28  |  Pairs at 100% Error: 0</div>
+</body>
+</html>

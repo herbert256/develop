@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UC1 — Seen (in the transfer or server logs)</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="use-cases" data-twin="../../production/use-cases/uc1-seen.html"></div>
+<h1>UC1 — Seen (in the transfer or server logs)</h1>
+<p class="range"><a href="../analyses/use-cases.html">&larr; Back to Use Case traffic</a> &mdash; the subscriptions counted in this cell of the Use Case traffic table.</p>
+<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = surfaced only by the Server &rarr; Transfer step.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Subscription</th><th>Direction</th><th>Status</th></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-infra-st-monitor-infra.html">UC1-INFRA_ST-MONITOR_INFRA</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-ab-claims-umbrella.html">UC1_AB_CLAIMS_UMBRELLA</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="red"><td><a href="../details/subscriptions/uc1-ab-hrdata-weyland.html">UC1_AB_HRDATA_WEYLAND</a></td><td>out/out</td><td>Error</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-ab-polis-umbrella.html">UC1_AB_POLIS_UMBRELLA</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="red"><td><a href="../details/subscriptions/uc1-aim-sappo-wonka-puo.html">UC1_AIM_SAPPO_WONKA-PUO</a></td><td>out/out</td><td>Error</td></tr>
+<tr data-res="blue"><td><a href="../details/subscriptions/uc1-aps-invoice-stark.html">UC1_APS_INVOICE_STARK</a></td><td>out/out</td><td>Server</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-aps-risk-tyrell.html">UC1_APS_RISK_TYRELL</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-aps-stream-soylent.html">UC1_APS_STREAM_SOYLENT</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-aps-telem-gekko.html">UC1_APS_TELEM_GEKKO</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-cb-marketing-wnk.html">UC1_CB_MARKETING_WNK</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-cdv-stream-duff.html">UC1_CDV_STREAM_DUFF</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-cd-cosmos-wonka.html">UC1_CD_COSMOS_WONKA</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="red"><td><a href="../details/subscriptions/uc1-cd-invoice-vandelay.html">UC1_CD_INVOICE_VANDELAY</a></td><td>out/out</td><td>Error</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-cd-printmgmt-wonka.html">UC1_CD_PRINTMGMT_WONKA</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-dpl-auditlog-dunder.html">UC1_DPL_AUDITLOG_DUNDER</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-fin-billing-globex.html">UC1_FIN_BILLING_GLOBEX</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="red"><td><a href="../details/subscriptions/uc1-fin-billing-globexx.html">UC1_FIN_BILLING_GLOBEXX</a></td><td>out/out</td><td>Error</td></tr>
+<tr data-res="red"><td><a href="../details/subscriptions/uc1-fin-ledger-globex.html">UC1_FIN_LEDGER_GLOBEX</a></td><td>out/out</td><td>Error</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-fin-treasury-gekko.html">UC1_FIN_TREASURY_GEKKO</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-fs-mortgage-sabre.html">UC1_FS_MORTGAGE_SABRE</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-hr-payroll-initech.html">UC1_HR_PAYROLL_INITECH</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-it-archive-initech.html">UC1_IT_ARCHIVE_INITECH</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-it-crm-stark.html">UC1_IT_CRM_STARK</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-it-ledger-hooli.html">UC1_IT_LEDGER_HOOLI</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-odv-dms-cyberdyne.html">UC1_ODV_DMS_CYBERDYNE</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="blue"><td><a href="../details/subscriptions/uc1-odv-risk-tyrell.html">UC1_ODV_RISK_TYRELL</a></td><td>out/out</td><td>Server</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-si-portal-oscorp.html">UC1_SI_PORTAL_OSCORP</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-synt-itp-aperture.html">UC1_SYNT_ITP_APERTURE</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-wa-batch-wayne.html">UC1_WA_BATCH_WAYNE</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-zg-pension-hooli.html">UC1_ZG_PENSION_HOOLI</a></td><td>out/out</td><td>OK</td></tr>
+<tr data-res="green"><td><a href="../details/subscriptions/uc1-zk-claims-blackmesa.html">UC1_ZK_CLAIMS_BLACKMESA</a></td><td>out/out</td><td>OK</td></tr>
+<tr class="total"><td>Total (31)</td><td></td><td></td></tr>
+</table></div>
+</body>
+</html>

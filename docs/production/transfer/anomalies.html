@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anomalies</title>
+<meta name="report-dates" content="2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="production-transfer">
+<meta name="report-key" content="anomalies">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="anomalies" data-twin="../../acceptance/transfer/anomalies.html"></div>
+<h1>Anomalies <span class="grouptag">&larr; Performance &larr; Transfer</span></h1>
+<p class="tabs"><span class="tab active">Anomalies</span><a class="tab" href="duration.html">Duration</a><a class="tab" href="dwell-time.html">Store-and-forward</a><a class="tab" href="duration-trend.html">Duration trend</a></p>
+<p class="range">Every calendar day (the <strong>Daily</strong> table) and every hour (the <strong>Hourly</strong> table below it) is compared against its TYPICAL value — the median across the window days, weekdays and weekends baselined separately. A finding must beat a multiple of its typical (4× for hours; 4× for daily Error rate and Duration, 2× for daily Files and Volume) plus an absolute floor per signal, so quiet-window noise never flags. <strong>Value/Peak</strong> is the flagged figure, <strong>× typical</strong> the figure vs the baseline; <strong>red</strong> rows are ≥10× typical (or a silence), <strong>orange</strong> the rest. The Date links open the day page with the matching chart view selected — and each day page links back here only when that day has findings of its own.</p>
+<h2 id="daily">Daily — unusual days</h2>
+<div class="tablewrap"><table class="wide">
+<tr><th>Date</th><th>What</th><th class="num">Value</th><th class="num">Typical</th><th class="num">× typical</th><th class="num">Files</th><th class="num">Error</th></tr>
+<tr class="total"><td>Total (0 rows)</td><td></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+</table></div>
+<p class="note">Signals per calendar day vs the typical day: <strong>Error rate</strong> (≥10%, ≥20 Files, ≥4× typical), <strong>Duration</strong> (avg per OK File ≥5 min, ≥20 OK Files, ≥4×), <strong>Files spike</strong> (≥100 Files, ≥2×), <strong>Files drop</strong> (≤¼ of a ≥100-Files typical), <strong>Silence</strong> (a calendar day with NO transfers where ≥20 are typical — missing days are walked via the calendar), <strong>Volume</strong> (≥200 MB, ≥2×).</p>
+<h2 id="hourly">Hourly — unusual hours</h2>
+<div class="tablewrap"><table class="wide" data-pager="50">
+<tr><th>Date</th><th>Hours</th><th>What</th><th class="num">Peak</th><th class="num">Typical</th><th class="num">× typical</th><th class="num">Files</th><th class="num">Error</th></tr>
+<tr data-res="red"><td class="cl"><a href="../day/2026-08-06.html?axway_hero=Error%20%25%20Files">2026-08-06</a></td><td><code>09:00-09:59</code></td><td>Error rate</td><td class="num">25%</td><td class="num">0.0%</td><td class="num">12.5</td><td class="num">12</td><td class="num failed">3</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../day/2026-08-03.html?axway_hero=Error%20%25%20Files">2026-08-03</a></td><td><code>07:00-07:59</code></td><td>Error rate</td><td class="num">26%</td><td class="num">5.6%</td><td class="num">4.7</td><td class="num">23</td><td class="num failed">6</td></tr>
+<tr data-res="red"><td class="cl"><a href="../day/2026-08-03.html?axway_hero=Error%20%25%20Files">2026-08-03</a></td><td><code>15:00-15:59</code></td><td>Error rate</td><td class="num">29%</td><td class="num">0.0%</td><td class="num">14.7</td><td class="num">17</td><td class="num failed">5</td></tr>
+<tr class="total"><td>Total (3 rows)</td><td></td><td></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+</table></div>
+<p class="note">Signals per start hour: <strong>Error rate</strong> (≥25% and ≥5 Files), <strong>Duration</strong> (avg per OK File ≥5 min, ≥5 OK Files), <strong>Files spike</strong> (≥30 Files), <strong>Silence</strong> (0 Files in an hour that typically moves ≥20), <strong>Volume</strong> (≥100 MB) — each also ≥4× its typical. Consecutive flagged hours merge into one episode.</p>
+<p class="note">End-of-window caution: on the newest day the outbound legs of just-arrived files may not be exported yet, which can flag late hours or the whole day as Error rate — recheck after the next log export.</p>
+</body>
+</html>

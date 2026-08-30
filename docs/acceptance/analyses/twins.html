@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Twins</title>
+<meta name="report-dates" content="2026-06-23,2026-06-24,2026-06-25,2026-06-26,2026-06-27,2026-06-28,2026-06-29,2026-06-30,2026-07-01,2026-07-02,2026-07-03,2026-07-04,2026-07-05,2026-07-06,2026-07-07,2026-07-08,2026-07-09,2026-07-10,2026-07-11,2026-07-12,2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22,2026-07-23,2026-07-24,2026-07-25,2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-key" content="twins">
+<link rel="stylesheet" href="../../assets/style.css?v=3733426975">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="twins" data-twin="../../production/analyses/twins.html"></div>
+<h1>Twins <span class="grouptag">&larr; Configuration &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="use-cases.html">Use cases</a><a class="tab" href="uc2-visits.html">UC2 pickup visits</a><a class="tab" href="accounts.html">Accounts</a><a class="tab" href="account-sharing.html">Account sharing</a><span class="tab active">Twins</span><a class="tab" href="cronjobs.html">Cronjobs</a><a class="tab" href="config-hygiene.html">Config hygiene</a><a class="tab" href="whitelist-audit.html">Whitelist audit</a><a class="tab" href="cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="../transfer/sources-and-targets.html">Sources and Targets</a><a class="tab" href="../transfer/skipped.html">Skipped</a><a class="tab" href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a><a class="tab" href="xref/cross-account-subscriptions.html">Cross References</a></p>
+<p class="range">The <strong>Twin</strong> rows of the detail pages, collated. A <strong>subscription twin</strong> is the same flow configured the opposite way — the UC2+UC4 mailbox pair or the UC1+UC3 outbound pair — detected by <strong>name</strong> (same body, opposite side), by <strong>account</strong> (the pair sharing one account), or via <strong>spelling-twin accounts</strong>; a pair the account proves but the names do NOT match is a <strong>naming slip</strong>. An <strong>account twin</strong> is one partner relation configured twice, under both separator spellings.</p>
+<div class="stat" data-pf=""><span class="stat-v">8</span><span class="stat-l">Subscription twin pairs</span></div>
+<div class="stat" data-pf="det-name"><span class="stat-v">7</span><span class="stat-l">Name-matched</span></div>
+<div class="stat" data-pf="det-sameacct"><span class="stat-v">4</span><span class="stat-l">Same account</span></div>
+<div class="stat" data-pf="det-twinacct"><span class="stat-v">1</span><span class="stat-l">Twin account</span></div>
+<p class="subtitle">Subscription twins by use-case pair</p>
+<div class="stat" data-pf="pair-uc2uc4"><span class="stat-v">3</span><span class="stat-l">UC4 (in/in)<br>UC2 (in/out)</span></div>
+<div class="stat" data-pf="pair-uc1uc3"><span class="stat-v">2</span><span class="stat-l">UC1 (out/out)<br>UC3 (out/in)</span></div>
+<div class="stat" data-pf="pair-uc1uc4"><span class="stat-v">2</span><span class="stat-l">UC4 (in/in)<br>UC1 (out/out)</span></div>
+<div class="stat" data-pf="pair-uc2uc3"><span class="stat-v">1</span><span class="stat-l">UC2 (in/out)<br>UC3 (out/in)</span></div>
+<div class="tablewrap"><table class="wide" data-nofilter="1" data-pf-noun="pair">
+<tr><th>Subscription</th><th>Twin</th><th>Direction</th><th>Direction</th><th>Login</th><th>Detected by</th></tr>
+<tr data-pf="det-sameacct pair-uc2uc4"><td class="cl"><a href="../details/subscriptions/uc4-fs-stmt-aperture-in.html"><code>UC4_FS_STMT_APERTURE_IN</code></a></td><td class="cl"><a href="../details/subscriptions/uc2-fs-stmt-aperture.html"><code>UC2_FS_STMT_APERTURE</code></a></td><td>in/in</td><td>in/out</td><td class="cl cl"><a href="../details/logins/fe264343.html"><a href="../details/logins/fe264343.html">FE264343</a></a></td><td>Same account only — naming slip</td></tr>
+<tr data-pf="det-name pair-uc1uc3"><td class="cl"><a href="../details/subscriptions/uc1-infra-st-monitor-infra.html"><code>UC1-INFRA_ST-MONITOR_INFRA</code></a></td><td class="cl"><a href="../details/subscriptions/uc3-infra-st-monitor-infra.html"><code>UC3-INFRA_ST-MONITOR_INFRA</code></a></td><td>out/out</td><td>out/in</td><td>-</td><td>Name match</td></tr>
+<tr data-pf="det-name det-sameacct pair-uc1uc3"><td class="cl"><a href="../details/subscriptions/uc1-fin-ledger-globex.html"><code>UC1_FIN_LEDGER_GLOBEX</code></a></td><td class="cl"><a href="../details/subscriptions/uc3-fin-ledger-globex.html"><code>UC3_FIN_LEDGER_GLOBEX</code></a></td><td>out/out</td><td>out/in</td><td>-</td><td>Name + same account</td></tr>
+<tr data-pf="det-name pair-uc2uc3"><td class="cl"><a href="../details/subscriptions/uc2-infra-st-monitor-infra.html"><code>UC2-INFRA_ST-MONITOR_INFRA</code></a></td><td class="cl"><a href="../details/subscriptions/uc3-infra-st-monitor-infra.html"><code>UC3-INFRA_ST-MONITOR_INFRA</code></a></td><td>in/out</td><td>out/in</td><td class="cl cl"><a href="../details/logins/fe000000.html"><a href="../details/logins/fe000000.html">FE000000</a></a></td><td>Name match</td></tr>
+<tr data-pf="det-name det-sameacct pair-uc2uc4"><td class="cl"><a href="../details/subscriptions/uc4-infra-st-monitor-infra.html"><code>UC4-INFRA_ST-MONITOR_INFRA</code></a></td><td class="cl"><a href="../details/subscriptions/uc2-infra-st-monitor-infra.html"><code>UC2-INFRA_ST-MONITOR_INFRA</code></a></td><td>in/in</td><td>in/out</td><td class="cl cl"><a href="../details/logins/fe000000.html"><a href="../details/logins/fe000000.html">FE000000</a></a></td><td>Name + same account</td></tr>
+<tr data-pf="det-name pair-uc1uc4"><td class="cl"><a href="../details/subscriptions/uc4-infra-st-monitor-infra.html"><code>UC4-INFRA_ST-MONITOR_INFRA</code></a></td><td class="cl"><a href="../details/subscriptions/uc1-infra-st-monitor-infra.html"><code>UC1-INFRA_ST-MONITOR_INFRA</code></a></td><td>in/in</td><td>out/out</td><td class="cl cl"><a href="../details/logins/fe000000.html"><a href="../details/logins/fe000000.html">FE000000</a></a></td><td>Name match</td></tr>
+<tr data-pf="det-name det-twinacct pair-uc1uc4"><td class="cl"><a href="../details/subscriptions/uc4-cd-invoice-vandelay.html"><code>UC4_CD_INVOICE_VANDELAY</code></a></td><td class="cl"><a href="../details/subscriptions/uc1-cd-invoice-vandelay.html"><code>UC1_CD_INVOICE_VANDELAY</code></a></td><td>in/in</td><td>out/out</td><td class="cl cl"><a href="../details/logins/fe457602.html"><a href="../details/logins/fe457602.html">FE457602</a></a></td><td>Name + spelling-twin accounts</td></tr>
+<tr data-pf="det-name det-sameacct pair-uc2uc4"><td class="cl"><a href="../details/subscriptions/uc4-it-ekdsi-cyberdyne.html"><code>UC4_IT_EKDSI_CYBERDYNE</code></a></td><td class="cl"><a href="../details/subscriptions/uc2-it-ekdsi-cyberdyne.html"><code>UC2_IT_EKDSI_CYBERDYNE</code></a></td><td>in/in</td><td>in/out</td><td class="cl cl"><a href="../details/logins/fe616236.html"><a href="../details/logins/fe616236.html">FE616236</a></a></td><td>Name + same account</td></tr>
+<tr class="total"><td>Total (8 pair(s))</td><td></td><td></td><td></td><td></td><td></td></tr>
+</table></div>
+<h2>Account twins (separator spellings)</h2>
+<div class="tablewrap"><table data-nofilter="1">
+<tr><th>Account</th><th>Twin</th><th>Login</th></tr>
+<tr><td class="cl"><a href="../details/accounts/cd-invoice-vandelay.html"><code>CD-INVOICE-VANDELAY</code></a></td><td class="cl"><a href="../details/accounts/cd-invoice-vandelay-2.html"><code>CD_INVOICE_VANDELAY</code></a></td><td class="cl cl"><a href="../details/logins/fe457602.html"><a href="../details/logins/fe457602.html">FE457602</a></a></td></tr>
+<tr class="total"><td>Total (1 pair(s))</td><td></td><td></td></tr>
+</table></div>
+<p class="note">Each pair is listed ONCE (the relation is symmetric; the detail pages carry it on both sides). The subscription rules are unioned, so one pair can be proven several ways; a pair proven ONLY by the shared account means the two flows belong together while their names disagree — the rename backlog. The account twins are the `-`/`_` double configurations the Separator collision analysis and Config hygiene also track; renaming one side merges the pair.</p>
+</body>
+</html>

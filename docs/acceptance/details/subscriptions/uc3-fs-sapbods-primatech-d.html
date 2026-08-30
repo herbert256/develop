@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OUT/IN: Subscription: UC3_FS_SAPBODS_PRIMATECH_D</title>
+<link rel="stylesheet" href="../../../assets/style.css?v=3733426975">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=3733426975" defer></script>
+</head>
+<body class="res-green">
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="acceptance" data-help="details-subscriptions" data-twin="../../../production/404.html"></div>
+<h1>OUT/IN: Subscription: UC3_FS_SAPBODS_PRIMATECH_D</h1>
+<p class="range"><strong>Working, nothing to fetch.</strong> We poll this partner on schedule and the connection, the credentials and the remote directory are all fine — <strong>53</strong> polls so far — but no file has ever been there to collect, so nothing has reached the transfer log. <strong>UC3 status</strong> calls this <strong>ok</strong> (the clean-poll rule: a verified working poll is green).</p>
+<div class="logcard"><span class="lc-when">2026-08-28 06:22:10.534</span><span class="lc-msg">Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern.</span></div>
+<h2>Features</h2>
+<div class="tablewrap"><table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>Use case</td><td class="cl"><a href="../../analyses/use-cases.html">UC3 - We are the client and receive a file from the partner</a></td></tr>
+<tr><td>Remote host</td><td class="res-orange cl"><a href="../hosts/files-primatech-example.html">files.primatech.example</a></td></tr>
+<tr><td>Account</td><td class="res-blue cl"><a href="../accounts/fs-sapbods-primatech-d.html">FS_SAPBODS_PRIMATECH_D</a></td></tr>
+<tr><td>Domain</td><td class="res-orange cl"><a href="../domains/fs.html">FS</a></td></tr>
+<tr><td>Application</td><td class="res-blue cl"><a href="../applications/sapbods.html">SAPBODS</a></td></tr>
+<tr><td>Partner</td><td class="res-blue cl"><a href="../partners/primatech.html">PRIMATECH</a></td></tr>
+<tr><td>Cron</td><td>0 14 * * * ?</td></tr>
+<tr><td>Schedule</td><td>Every hour at :14</td></tr>
+<tr><td>From</td><td>/outbox<span class="mask">/*</span></td></tr>
+<tr><td>To</td><td>/data/cft/in/FS_SAPBODS_PRIMATECH_D</td></tr>
+</table></div>
+<div class="sxs">
+<div class="sxscol">
+<h2>Outgoing connections</h2>
+<div class="tablewrap"><table data-fold="orange|{n} hosts configured without traffic">
+<tr><th>IP</th><th class="num">In</th><th class="num">Out</th><th>Name</th></tr>
+<tr data-res="orange"><td><code>203.0.113.70, 203.0.113.71, 203.0.113.72</code></td><td class="num"></td><td class="num"></td><td class="res-orange cl"><a href="../hosts/files-primatech-example.html"><code>files.primatech.example</code></a></td></tr>
+</table></div>
+</div>
+</div>
+<h2>Last server log messages</h2>
+<div class="tablewrap"><table class="wide" data-nofilter="1">
+<tr><th>Date</th><th>Time</th><th>Level</th><th>Component</th><th>Message</th></tr>
+<tr class="total"><td>Total (25 line(s))</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>2026-08-28</td><td>06:22:10.534</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 7655437371732f7a47733477376f746d2f70627a632f6a4250502b4d756b4c3342655a6d42574c7443512f3d</td></tr>
+<tr><td>2026-08-28</td><td>06:22:09.974</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 7655437371732f7a47733477376f746d2f70627a632f6a4250502b4d756b4c3342655a6d42574c7443512f3d</td></tr>
+<tr><td>2026-08-27</td><td>06:19:21.174</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 456f4755493339766b423359334e4242457a3575796b3248652b37645a376134714f6234527347464a2f6b3d</td></tr>
+<tr><td>2026-08-27</td><td>06:19:20.521</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 456f4755493339766b423359334e4242457a3575796b3248652b37645a376134714f6234527347464a2f6b3d</td></tr>
+<tr><td>2026-08-26</td><td>06:11:36.519</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 78567148713749643336734c514d693476665167476c42514c72797968765147355331694c4557363663463d</td></tr>
+<tr><td>2026-08-26</td><td>06:11:36.024</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 78567148713749643336734c514d693476665167476c42514c72797968765147355331694c4557363663463d</td></tr>
+<tr><td>2026-08-25</td><td>06:08:47.158</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 477175754a474761565072794d7832537a707561634c5557616176444d4867476844323062615353434b703d</td></tr>
+<tr><td>2026-08-25</td><td>06:08:46.570</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 477175754a474761565072794d7832537a707561634c5557616176444d4867476844323062615353434b703d</td></tr>
+<tr><td>2026-08-23</td><td>06:03:08.437</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 7654333948624254523571424538654838397250495736693534706c69322f487a6a355837484942526f783d</td></tr>
+<tr><td>2026-08-23</td><td>06:03:08.062</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 7654333948624254523571424538654838397250495736693534706c69322f487a6a355837484942526f783d</td></tr>
+<tr><td>2026-08-22</td><td>06:00:19.076</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 446e376b6c6d2f50764f71702f68796841484a4a65374e6e496f6d324e4e5049625436704c64455a5957573d</td></tr>
+<tr><td>2026-08-22</td><td>06:00:18.608</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 446e376b6c6d2f50764f71702f68796841484a4a65374e6e496f6d324e4e5049625436704c64455a5957573d</td></tr>
+<tr><td>2026-08-21</td><td>06:57:29.716</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 59382f4d4578394d4e6a70513747473846516e443167677458586a48346c654945443737617a2f776646363d</td></tr>
+<tr><td>2026-08-21</td><td>06:57:29.154</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 59382f4d4578394d4e6a70513747473846516e443167677458586a48346c654945443737617a2f776646363d</td></tr>
+<tr><td>2026-08-19</td><td>06:51:50.994</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 426c4962434835464a4e6f66795276774f6b6b33687248353231646f4f55394b566b3965366732667569433d</td></tr>
+<tr><td>2026-08-19</td><td>06:51:50.645</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 426c4962434835464a4e6f66795276774f6b6b33687248353231646f4f55394b566b3965366732667569433d</td></tr>
+<tr><td>2026-08-18</td><td>06:49:01.634</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 57354d43685232436f696f487532444b537543783351612b466b613535724e4b2b552b774b32783332516d3d</td></tr>
+<tr><td>2026-08-18</td><td>06:49:01.192</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 57354d43685232436f696f487532444b537543783351612b466b613535724e4b2b552b774b32783332516d3d</td></tr>
+<tr><td>2026-08-17</td><td>06:46:12.273</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 714f51712f63302b47336e757162586c583467724e3274455555584b6b44644c6d452f435a4d7350392f4b3d</td></tr>
+<tr><td>2026-08-17</td><td>06:46:11.738</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 714f51712f63302b47336e757162586c583467724e3274455555584b6b44644c6d452f435a4d7350392f4b3d</td></tr>
+<tr><td>2026-08-16</td><td>06:38:27.618</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 5836306468672f735977626844613463436b33656833344f42414f6773335459314a6173556b39457563733d</td></tr>
+<tr><td>2026-08-16</td><td>06:38:27.241</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 5836306468672f735977626844613463436b33656833344f42414f6773335459314a6173556b39457563733d</td></tr>
+<tr><td>2026-08-14</td><td>06:32:48.897</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 426a39726632376c55616177376c67524b3430534e43655a67664942436d79614770635030517a303935303d</td></tr>
+<tr><td>2026-08-14</td><td>06:32:48.333</td><td>Info</td><td>TM</td><td>Remote files pattern of transfer site: 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY' evaluated to: '*' 426a39726632376c55616177376c67524b3430534e43655a67664942436d79614770635030517a303935303d</td></tr>
+<tr><td>2026-08-13</td><td>06:29:59.536</td><td>Info</td><td>TM</td><td>Applying the search pattern '*' for transfer site 'UC3_FS_SAPBODS_PRIMATECH_D_FS_SAPBODS_PRIMATECH_D_SCP_FS_SAPBODS_PRIMATECH_D_KEY': 0 file(s) were found of which 0 matched the pattern. 563442542b41346979766159324b30725043534d6a6e7866764f4653742b4361765a6568456e764c456f593d</td></tr>
+</table></div>
+</body>
+</html>

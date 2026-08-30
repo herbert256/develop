@@ -1,0 +1,18 @@
+# bin/sample/seed/knobs.tsv — the generator's tunables. KEY <TAB> VALUE.
+# Dates are ISO; per-env keys are prefixed acc_/prd_.
+acc_start	2026-06-23
+acc_days	68
+prd_start	2026-07-26
+prd_days	35
+# volume scale: multiplies every flow's files/day mean
+scale	1.0
+# UC2 staging retention window (days) before the File Maintenance sweep
+retention_lo	10
+retention_hi	12
+# calendar accents: spike days (x2-3 volume) and the retry-storm day
+acc_spikes	2026-07-23 2026-08-18
+acc_storm	2026-07-06
+prd_spikes	2026-08-12
+prd_storm	2026-08-05
+# weekend volume factor
+weekend_factor	0.25
