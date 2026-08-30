@@ -349,10 +349,21 @@ write_acc_vs_prod_pages() {
                 # no activity data) stays a dash
                 function z(v) { return (v + 0 == 0) ? "" : v }
                 function nz(v) { return (v == "" || v == "-") ? "-" : z(v) }
+                # every FILLED cell opens the per-type page nearest its figure
+                # (2026-08-30): the env totals and only-sets their side'\''s view,
+                # the Both set and its activity split the Both view; an empty
+                # or dashed cell stays inert, the home-table convention
+                function lc(cls, v, view) {
+                    if (v == "" || v == "-") return "<td class=\"" cls "\">" v "</td>"
+                    return "<td class=\"" cls "\"><a href=\"acc-vs-prod-" T "-" view ".html\">" v "</a></td>"
+                }
                 $1 == "SUM" && $2 == T { ba = $3; bp = $4; bb = $5 }
                 index($0, "CNT|" T "|") == 1 { split($0, c, "|"); na = c[3]; nb = c[4]; np = c[5] }
-                END { printf "<tr><td><a href=\"acc-vs-prod-%s-both.html\">%s</a></td><td class=\"num gsepw\">%s</td><td class=\"num\">%s</td><td class=\"num gsepw\">%s</td><td class=\"num\">%s</td><td class=\"num\">%s</td><td class=\"num gsepw\">%s</td><td class=\"num\">%s</td><td class=\"num\">%s</td></tr>\n", \
-                    T, e(LBL), z(na+nb), z(nb+np), z(na+0), z(nb+0), z(np+0), nz(ba), nz(bb), nz(bp) }
+                END { printf "<tr><td><a href=\"acc-vs-prod-%s-both.html\">%s</a></td>%s%s%s%s%s%s%s%s</tr>\n", \
+                    T, e(LBL), \
+                    lc("num gsepw", z(na+nb), "acceptance"), lc("num", z(nb+np), "production"), \
+                    lc("num gsepw", z(na+0), "acceptance"), lc("num", z(nb+0), "both"), lc("num", z(np+0), "production"), \
+                    lc("num gsepw", nz(ba), "both"), lc("num", nz(bb), "both"), lc("num", nz(bp), "both") }
             ' "$sumtmp"
         done
         printf '</table></div>\n'
