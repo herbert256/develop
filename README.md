@@ -96,7 +96,9 @@ and every convention, see **`CLAUDE.md`**; deep subsystem notes live in
   address↔endpoint map — owned by `bin/ip.sh`; no reverse DNS anywhere) and
   `input/<env>/renames/`. All committed in this repo (they are synthetic and
   small); regenerate with `bin/sample/generate.sh`. Root policy files:
-  `input/blacklist.txt`, `input/skip.txt`, `input/partner-aliases.tsv`.
+  `input/blacklist.txt`, `input/skip.txt`, `input/partner-aliases.tsv` and
+  `input/rename.txt` (display renames — shown instead of the real names at
+  publish time, the data untouched).
 - `data/<env>/` — regenerable caches and `.rpt` files (gitignored).
   `rm -rf data/` is safe and never touches the exports.
 - `docs/` — the rendered site, PURE build output: every build clears its

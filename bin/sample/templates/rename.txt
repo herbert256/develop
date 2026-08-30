@@ -1,0 +1,20 @@
+# input/rename.txt — DISPLAY renames, applied at PUBLISH TIME only (the
+# bin/build/display-rename.sh sweep, the build's last page-touching step):
+# the new value is SHOWN on every rendered page and client-side search
+# payload instead of the real value; the parse caches, the .rpt files and
+# every join keep the real name, and the links (slug-based) keep working.
+#
+# Three whitespace-separated columns, # comments and blank lines ignored:
+#
+#     <entity> <old_value> <new_value>
+#
+# entity: subscription account login host partner application domain
+#         profile any     (documentation + validation; the value matches)
+# Values on the name alphabet [A-Za-z0-9_.-]; matching is boundary-aware,
+# so an old value never matches inside a longer name.
+#
+# Example (the shape this file exists for — folding a monster relay name):
+#     subscription UC8_HR_X_SAPSF_SRC_HR_X_SAPSF_HR_X_SAPSF_DEST UC8_HR_X_SAPSF
+#
+# SAMPLE ESTATE: the monitor's service login shows a speaking name.
+login FE000000 FE-MONITOR

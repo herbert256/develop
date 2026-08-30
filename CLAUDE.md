@@ -139,7 +139,11 @@ bash -n script.sh                     # syntax check — there is no test suite
 ```
 
 **Manual re-publish gotcha**: `publish-partner-groups.sh` and `publish-accvsprod.sh` run OUTSIDE
-the per-area publishes; skipping them after a publish sweep leaves their pages missing.
+the per-area publishes; skipping them after a publish sweep leaves their pages missing. The
+DISPLAY-RENAME sweep (`bin/build/display-rename.sh`, `input/rename.txt` — presentation renames
+applied to the RENDERED pages as the build's last page-touching step; caches/.rpt keep the real
+values, slugs/links untouched) also runs only in `bin/build.sh`: a manually republished page
+shows real values until the next build.
 **Iterating on HTML/CSS**: edit `assets/style.css`/`assets/report.js` (NOT the docs copies) and
 run `bin/build.sh` — it clears+seeds docs/ and re-renders everything. A MANUAL per-area publish
 reads the docs/assets copies, so after an assets/ edit copy the file over (or run the build);
@@ -829,7 +833,9 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   Entities/coverage/search rows, no result colour, no column KIND. What remains is plumbing the
   parse needs (cache columns, the reverse config fallback, the XREF vote) — dropping it would
   silently delete ~4% of Files via the no-subscription skip. **Do not surface a profile in a
-  report or page.**
+  report or page.** ONE exception (2026-08-30, user request): the acc-vs-prod **FlowID** pages
+  (`publish-accvsprod.sh`) compare the two envs' `customAttribute_FlowIdentifier` VALUE sets
+  from `base/_profiles.tsv` — name lists only, still no detail pages/colours/KIND.
 
 ## Directory layout
 
@@ -839,9 +845,10 @@ the three `.md` docs, `.gitignore`/`.gitattributes` and **`input/`** — in
 THIS repo committed IN FULL, sample CSVs included (the whole estate is synthetic and small;
 `bin/sample/generate.sh` rewrites it). `input/` holds the flow-manager JSONs, the `ip/` and
 `renames/` maps, the `.sample-estate` marker + `.sample/` spec, the two policy files
-`input/{blacklist,skip}.txt` and the hand-curated `input/partner-aliases.tsv` (partner tokens
-naming one organisation — flow-manager's merge rule 4 + the subscription-name fallback retry),
-plus a README.txt per directory. Gitignored: the `data/` root and `/build/`. A step script that
+`input/{blacklist,skip}.txt`, the hand-curated `input/partner-aliases.tsv` (partner tokens
+naming one organisation — flow-manager's merge rule 4 + the subscription-name fallback retry)
+and `input/rename.txt` (DISPLAY renames, applied to the rendered pages by the build's last
+step — see the manual re-publish gotcha), plus a README.txt per directory. Gitignored: the `data/` root and `/build/`. A step script that
 only `bin/build.sh` ever invokes lives in **`bin/build/`** — the placement rule; the sample-data
 generator lives in **`bin/sample/`** (guarded by the marker, seeds in `bin/sample/seed/`).
 
