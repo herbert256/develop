@@ -809,6 +809,14 @@ fi
 # the webserver's error page.
 run_step "publish: cross-link the environment switch"    bin/build/crosslink.sh
 
+# ---- RUNTIME-ONLY: the shareable site archive (2026-08-30) ------------------
+# In the runtime checkout — recognized by the ABSENT input/.sample-estate
+# marker, which only the develop repo carries — every completed build packs
+# docs/ into build/st-reports_YYYY-MM-DD_HHMM.7z and copies it to ~/cloud/.
+if [ ! -f input/.sample-estate ]; then
+    run_step "archive: st-reports .7z -> build/ + ~/cloud/"  bin/build/st-reports-archive.sh
+fi
+
 # (The docs/build.html publish was REMOVED 2026-08-29 — the report lives only
 # in build/index.html, written by the EXIT trap. The former stage-4 git
 # commit + push was removed 2026-07: the build only renders; committing and
