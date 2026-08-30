@@ -258,8 +258,8 @@ for k in $KEYS; do
     OUT="$REPORTS_DIR/file-search-$k.rpt"
     {
         printf 'TITLE\tFile search — %s — %s\n' "$TL" "$span"
-        printf 'DESC\tSearch %s by file name — date, subscription, size and CoreId; OK rows green, Error rows red.\n' "$wdesc"
-        printf 'INTRO\tSearch %s by file name. Rows tint by outcome — **green** = OK (Delivered or Waiting), **red** = Error (Failed or Expired); a red row with an error page opens it, every other row opens its subscription.%s\n' "$wdesc" "$capnote"
+        printf 'DESC\tSearch %s by file name or CoreId — date, subscription, size and CoreId; OK rows green, Error rows red.\n' "$wdesc"
+        printf 'INTRO\tSearch %s by file name or CoreId. Rows tint by outcome — **green** = OK (Delivered or Waiting), **red** = Error (Failed or Expired); a red row with an error page opens it, every other row opens its subscription.%s\n' "$wdesc" "$capnote"
         printf 'KEYWORDS\tfile,filename,file name,search,find,lookup,coreid,delivered,errored,waiting,expired,size,%s\n' "$TL"
         nav_row "$k"
         printf 'TABLE\t\twide\trestint\tnosort\tnosearch\tnofilter\n'

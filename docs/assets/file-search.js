@@ -24,7 +24,7 @@
 
    Behaviour:
    - builds the controls row (input + Search button + count) above the table;
-   - matching is on the FILE NAME only, case-insensitive; `*` = any run,
+   - matching is on the FILE NAME and the CoreId, case-insensitive; `*` = any run,
      `?` = one character, several space-separated words must ALL match;
    - an ERROR row with its own error page (flag E): every cell and the whole
      row open errors/<coreid>.html; every other row follows its
@@ -71,9 +71,13 @@
     }
     var rows = splitLines(R);
     var keys = new Array(rows.length);          // the lower-cased name per row
+    var kcore = new Array(rows.length);         // the lower-cased CoreId per row
     for (i = 0; i < rows.length; i++) {
       p = rows[i].indexOf("\t");
       keys[i] = (p < 0 ? rows[i] : rows[i].slice(0, p)).toLowerCase();
+      // the CoreId is the second-to-last field (the trailing flag may be "")
+      p = rows[i].lastIndexOf("\t");
+      kcore[i] = p < 0 ? "" : rows[i].slice(rows[i].lastIndexOf("\t", p - 1) + 1, p).toLowerCase();
     }
 
     // ---- the controls row, above the table wrap -------------------------
@@ -82,13 +86,13 @@
     bar.className = "controls";
     var box = document.createElement("input");
     box.type = "text"; box.className = "search";
-    box.placeholder = "Search by file name…";
+    box.placeholder = "Search by file name or CoreId…";
     box.title = "Wildcards: ? = one character, * = any run; several space-separated words must all match";
     var btn = document.createElement("button");
     btn.type = "button"; btn.className = "daterange"; btn.textContent = "Search";
     var count = document.createElement("span");
     count.className = "searchhint";
-    var idle = rows.length + " files searchable — type a name and press Search";
+    var idle = rows.length + " files searchable — type a file name or CoreId and press Search";
     count.textContent = idle;
     bar.appendChild(box); bar.appendChild(btn); bar.appendChild(count);
     wrap.parentNode.insertBefore(bar, wrap);
@@ -178,7 +182,8 @@
       var frag = document.createDocumentFragment(), shown = 0, total = 0, r, ok;
       for (r = 0; r < rows.length; r++) {
         ok = true;
-        for (t = 0; t < ms.length && ok; t++) ok = ms[t](keys[r]);
+        // a term matches on the file NAME or the CoreId; all terms must match
+        for (t = 0; t < ms.length && ok; t++) ok = ms[t](keys[r]) || ms[t](kcore[r]);
         if (!ok) continue;
         total++;
         if (shown < SHOW) {
