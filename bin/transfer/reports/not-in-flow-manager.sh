@@ -2,7 +2,7 @@
 #
 # not-in-flow-manager.sh — "Not in Flow Manager" (Failures & Retries group):
 # one row for every entity VALUE that appears in the transfer log but is NOT in
-# the current FlowManager configuration — all NINE entity lists checked:
+# the current FlowManager configuration — all TEN entity lists checked:
 #   Account      _files col 3   vs base/_accounts.tsv        (exact)
 #   Subscription _files col 12  vs base/_subscriptions.tsv   (configured name PREFIXES the logged value — the showseen rule)
 #   Login        _files col 14  vs base/_logins.tsv          (exact)
@@ -39,7 +39,7 @@ skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FM_INPUT_DIR/partners.json" "$FM_INPU
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 B="$CONFIG_BASE"
-for _b in _accounts _subscriptions _logins _hosts _white _logicals _partners _apps _domains; do
+for _b in _accounts _subscriptions _logins _hosts _white _logicals _partners _apps _domains _bl; do
     eval "f$_b=\"$B/$_b.tsv\""
 done
 # The base caches are AMENDED after flow-manager wrote them: result.sh
@@ -53,7 +53,7 @@ done
 if [ -f "$B/.configured.tsv" ]; then
     TMP=$(mktemp -d "${TMPDIR:-/tmp}/axnifm.XXXXXX")
     trap 'rm -rf "$TMP"' EXIT
-    for _b in _accounts _subscriptions _logins _hosts _white _logicals _partners _apps _domains; do
+    for _b in _accounts _subscriptions _logins _hosts _white _logicals _partners _apps _domains _bl; do
         awk -F'\t' -v t="$_b" '$1 == t { print $2 }' "$B/.configured.tsv" > "$TMP/$_b.tsv"
         eval "f$_b=\"$TMP/$_b.tsv\""
     done
@@ -64,17 +64,19 @@ fi
 # — then sort by type order / Files desc / name and format the .rpt.
 awk -F'\t' \
     -v ACC="$f_accounts" -v SUB="$f_subscriptions" -v LOG="$f_logins" -v HST="$f_hosts" \
-    -v WHT="$f_white" -v LGC="$f_logicals" -v PTN="$f_partners" -v APP="$f_apps" -v DOM="$f_domains" \
-    -v PLM="$CONFIG_XREF/_profiles-logicals.tsv" '
+    -v WHT="$f_white" -v LGC="$f_logicals" -v PTN="$f_partners" -v APP="$f_apps" -v DOM="$f_domains" -v BLB="$f_bl" \
+    -v PLM="$CONFIG_XREF/_profiles-logicals.tsv" -v SBLM="$CONFIG_XREF/_subscriptions-bl.tsv" '
     function load(t, f,   l, a) {
         while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") cfg[t SUBSEP toupper(a[1])] = 1 }
         close(f)
     }
     BEGIN {
         load(1, ACC); load(3, LOG); load(4, HST); load(5, WHT)
-        load(6, LGC); load(7, PTN); load(8, APP); load(9, DOM)
+        load(6, LGC); load(7, PTN); load(8, APP); load(9, DOM); load(10, BLB)
         while ((getline l < PLM) > 0) { split(l, a, "\t"); if (a[1] != "" && a[2] != "") PL[toupper(a[1])] = a[2] }
         close(PLM)
+        while ((getline l < SBLM) > 0) { split(l, a, "\t"); if (a[1] != "" && a[2] != "") SBL[toupper(a[1])] = SBL[toupper(a[1])] "\037" a[2] }
+        close(SBLM)
         # configured subscription names as a LIST (prefix matching)
         while ((getline l < SUB) > 0) { split(l, a, "\t"); if (a[1] != "") SN[++ns] = toupper(a[1]) }
         close(SUB)
@@ -109,6 +111,8 @@ awk -F'\t' \
         if ($20 != "" && !((7 SUBSEP toupper($20)) in cfg)) add(7, $20)
         if ($18 != "" && !((8 SUBSEP toupper($18)) in cfg)) add(8, $18)
         if ($19 != "" && !((9 SUBSEP toupper($19)) in cfg)) add(9, $19)
+        if ($12 != "" && (toupper($12) in SBL)) { nb9 = split(substr(SBL[toupper($12)], 2), B9, "\037")
+            for (ib9 = 1; ib9 <= nb9; ib9++) if (!((10 SUBSEP toupper(B9[ib9])) in cfg)) add(10, B9[ib9]) }
     }
     END {
         for (i = 1; i <= nk; i++) { k = ord[i]
@@ -131,11 +135,11 @@ awk -F'\t' \
         return sprintf("%.2f %s", v, u[i])
     }
     BEGIN {
-        split("Account|Subscription|Login|Host|Whitelist|Logical|Partner|Application|Domain", TL, "|")
-        split("accounts|subscriptions|logins|hosts||logicals|partners|applications|domains", SD, "|")
+        split("Account|Subscription|Login|Host|Whitelist|Logical|Partner|Application|Domain|BL", TL, "|")
+        split("accounts|subscriptions|logins|hosts||logicals|partners|applications|domains|bl", SD, "|")
         printf "TITLE\tNot in Flow Manager\n"
-        printf "DESC\tEvery entity value seen in the transfer logs that the current FlowManager configuration does not know — all nine entity lists checked.\n"
-        printf "INTRO\tEvery entity VALUE that appears in the transfer logs but is **not in the current FlowManager configuration** — checked against all nine configured lists (accounts, subscriptions, logins, hosts, whitelist, logical flows, partners, applications, domains). These are the flows running outside the configuration: test uploads, renamed or deleted config objects, or unlisted partner addresses.\n"
+        printf "DESC\tEvery entity value seen in the transfer logs that the current FlowManager configuration does not know — all ten entity lists checked.\n"
+        printf "INTRO\tEvery entity VALUE that appears in the transfer logs but is **not in the current FlowManager configuration** — checked against all ten configured lists (accounts, subscriptions, logins, hosts, whitelist, logical flows, partners, applications, domains, BL tags). These are the flows running outside the configuration: test uploads, renamed or deleted config objects, or unlisted partner addresses.\n"
         printf "TABLE\tLogged but not configured\twide\tgroup\n"
         printf "HEAD\tType\tName\tFiles\tError\tOK\tVolume\tFirst seen\tLast seen\n"
         printf "KIND\ttext\ttext\tnum\tnumfailed\tnumprocessed\tnum\ttext\ttext\n"

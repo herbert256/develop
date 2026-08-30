@@ -32,20 +32,20 @@ ensure_parsed
 # one script, FOUR outputs — skip only when ALL are fresh (guarding just
 # partner.rpt left application/domain.rpt stale after a mid-loop failure)
 _pda_fresh=1
-for _o in logical partner application domain; do
+for _o in logical partner application domain bl; do
     _f="$REPORTS_DIR/$_o.rpt"
     if ! { [ -f "$_f" ] && ! [ "$PARSED" -nt "$_f" ] && ! [ "$FILES" -nt "$_f" ] && ! [ "${BASH_SOURCE[0]}" -nt "$_f" ]; }; then
         _pda_fresh=0; break
     fi
 done
 if [ "$_pda_fresh" = 1 ]; then
-    echo "  logical/partner/application/domain.rpt are up to date; skipping." >&2
+    echo "  logical/partner/application/domain/bl.rpt are up to date; skipping." >&2
     exit 0
 fi
 unset _pda_fresh _o _f
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-for dim in logical partner application domain; do
+for dim in logical partner application domain bl; do
     case $dim in
         logical)     col=13; title="Logical";      chead="Logical"; nkind=lgc
                      attr="the file's logical flow group (its FlowID condensed to a 3-part group name — data/flow-manager/base/_logicals.tsv)" ;;
@@ -55,6 +55,8 @@ for dim in logical partner application domain; do
                      attr="part 2 of the file's logical flow name (data/flow-manager/base/_apps.tsv)" ;;
         domain)      col=19; title="Domains";      chead="Domain"; nkind=dom
                      attr="part 1 of the file's logical flow name (data/flow-manager/base/_domains.tsv)" ;;
+        bl)          col=12; title="BL";           chead="BL"; nkind=bl
+                     attr="the subscription's BL tag from subscriptions.json (data/flow-manager/base/_bl.tsv)" ;;
     esac
     OUT="$REPORTS_DIR/$dim.rpt"
 
@@ -79,12 +81,17 @@ for dim in logical partner application domain; do
         logical)     [ -f "$CONFIG_XREF/_subscriptions-logicals.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-logicals.tsv"; UKEY=12; } ;;
         partner)     [ -f "$CONFIG_XREF/_subscriptions-partners.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-partners.tsv"; UKEY=12; } ;;
         application) [ -f "$CONFIG_XREF/_accounts-apps.tsv" ] && { UMAP="$CONFIG_XREF/_accounts-apps.tsv"; UKEY=3; } ;;
+        bl)          [ -f "$CONFIG_XREF/_subscriptions-bl.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-bl.tsv"; UKEY=12; } ;;
     esac
-    # the logical dim's DIRECT attribution is the profile column resolved
-    # through the FlowID map — an unmapped or blank profile abstains (the
-    # union via the subscription may still count the File)
+    # the logical/bl dims'"'"' DIRECT attribution is a column resolved through a
+    # map (logical: the profile col 13 through the FlowID map; bl: the
+    # subscription col 12 through the tag map) — an unmapped or blank value
+    # abstains (the union may still count the File)
     VMAP=""
-    [ "$dim" = logical ] && [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv"
+    case $dim in
+        logical) [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv" ;;
+        bl)      [ -f "$CONFIG_XREF/_subscriptions-bl.tsv" ] && VMAP="$CONFIG_XREF/_subscriptions-bl.tsv" ;;
+    esac
     agg=$(awk -F'\t' -v C="$col" -v UMAP="$UMAP" -v UK="$UKEY" -v VMAP="$VMAP" "$COREIDS_AWK"'
         function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
             while (v >= 1024 && i < 6) { v /= 1024; i++ }
