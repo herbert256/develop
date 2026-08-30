@@ -24,8 +24,10 @@ out="build/st-reports_${stamp}.7z"
 mkdir -p build
 rm -f "$out"
 
-# 7z's per-file listing is noise in the build report — keep its summary only
-7z a -t7z -mx9 -pboika "$out" docs >/dev/null
+# 7z's per-file listing is noise in the build report — keep its summary only.
+# -mhe=on encrypts the archive HEADERS too: without the password not even the
+# page names are listable.
+7z a -t7z -mx9 -mhe=on -pboika "$out" docs >/dev/null
 
 mkdir -p "$HOME/cloud"
 cp "$out" "$HOME/cloud/"
