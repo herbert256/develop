@@ -234,14 +234,26 @@ write_acc_vs_prod_pages() {
                 if [ "$t2" = "$t" ]; then erow+="<span class=\"tab active\">${labels[$t2i]}</span>"
                 else erow+="<a class=\"tab\" href=\"acc-vs-prod-$t2-$v.html\">${labels[$t2i]}</a>"; fi
             done
+            # every view button carries "(nnn)" — that page's row count for
+            # THIS type (2026-08-30, user request; counts were dropped
+            # 2026-08-29 and are back on request): All = the union,
+            # Difference = the two only-sets together
             vrow=""
+            local vcnt
             for tj in 0 1 2 3; do
-                vl="${vlabels[$tj]}"   # plain labels — no counts on the view buttons (2026-08-29)
+                case ${views[$tj]} in
+                    all)        vcnt=$((na + nb + np)) ;;
+                    acceptance) vcnt=$na ;;
+                    both)       vcnt=$nb ;;
+                    production) vcnt=$np ;;
+                esac
+                vl="${vlabels[$tj]} ($vcnt)"
                 if [ "$tj" = "$vi" ]; then vrow+="<span class=\"tab active\">$vl</span>"
                 else vrow+="<a class=\"tab\" href=\"acc-vs-prod-$t-${views[$tj]}.html\">$vl</a>"; fi
             done
-            if [ "$v" = difference ]; then vrow+="<span class=\"tab active\">${vlabels[4]}</span>"
-            else vrow+="<a class=\"tab\" href=\"acc-vs-prod-$t-difference.html\">${vlabels[4]}</a>"; fi
+            vl="${vlabels[4]} ($((na + np)))"
+            if [ "$v" = difference ]; then vrow+="<span class=\"tab active\">$vl</span>"
+            else vrow+="<a class=\"tab\" href=\"acc-vs-prod-$t-difference.html\">$vl</a>"; fi
             {
                 html_head "Acceptance vs production" "../assets/style.css" "" "ANALYSES" "acc-vs-prod"
                 printf '<h1>Acceptance vs production</h1>\n'
