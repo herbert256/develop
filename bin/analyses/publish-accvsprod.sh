@@ -100,9 +100,13 @@ write_acc_vs_prod_pages() {
     # promotion diff at a glance. Its tab sits AFTER Summary in the view row.
     # all (2026-08-30, user request): the FIRST view button — the union of
     # both sets, Name + one centered green OK sign per environment the name
-    # exists in. The Both view stays the Entities default.
-    local views=(all acceptance both production difference)
-    local vlabels=("All" "Only ACC" "Both" "Only PRD" "Difference")
+    # exists in. acc / prd (2026-08-30, user request): ONE environment's FULL
+    # set (its only-set plus the Both set), the single-env layout; the
+    # existing -acceptance/-production pages stay the ONLY-sets under their
+    # old URLs, relabelled "Only Acceptance"/"Only Production" (spelled out,
+    # not ACC/PRD). The Both view stays the Entities default.
+    local views=(all acc acceptance both production prd difference)
+    local vlabels=("All" "Acceptance" "Only Acceptance" "Both" "Only Production" "Production" "Difference")
     # the FAMILY NAV (2026-08-30, user choice): row 1 everywhere is
     # Summary / Entities / Subscriptions vs partners; the type row (this
     # order) and the view row show ONLY inside Entities, whose landing —
@@ -234,24 +238,26 @@ write_acc_vs_prod_pages() {
                 if [ "$t2" = "$t" ]; then erow+="<span class=\"tab active\">${labels[$t2i]}</span>"
                 else erow+="<a class=\"tab\" href=\"acc-vs-prod-$t2-$v.html\">${labels[$t2i]}</a>"; fi
             done
-            # every view button carries "(nnn)" — that page's row count for
-            # THIS type (2026-08-30, user request; counts were dropped
-            # 2026-08-29 and are back on request): All = the union,
-            # Difference = the two only-sets together
+            # every view button carries "- nnn" — that page's row count for
+            # THIS type (2026-08-30, user request; the "(nnn)" form lasted an
+            # hour): All = the union, Acceptance/Production = that env's full
+            # set, Difference = the two only-sets together
             vrow=""
             local vcnt
-            for tj in 0 1 2 3; do
+            for tj in 0 1 2 3 4 5; do
                 case ${views[$tj]} in
                     all)        vcnt=$((na + nb + np)) ;;
+                    acc)        vcnt=$((na + nb)) ;;
                     acceptance) vcnt=$na ;;
                     both)       vcnt=$nb ;;
                     production) vcnt=$np ;;
+                    prd)        vcnt=$((nb + np)) ;;
                 esac
-                vl="${vlabels[$tj]} ($vcnt)"
+                vl="${vlabels[$tj]} - $vcnt"
                 if [ "$tj" = "$vi" ]; then vrow+="<span class=\"tab active\">$vl</span>"
                 else vrow+="<a class=\"tab\" href=\"acc-vs-prod-$t-${views[$tj]}.html\">$vl</a>"; fi
             done
-            vl="${vlabels[4]} ($((na + np)))"
+            vl="${vlabels[6]} - $((na + np))"
             if [ "$v" = difference ]; then vrow+="<span class=\"tab active\">$vl</span>"
             else vrow+="<a class=\"tab\" href=\"acc-vs-prod-$t-difference.html\">$vl</a>"; fi
             {
@@ -336,6 +342,12 @@ write_acc_vs_prod_pages() {
                         printf "<tr%s>%s%s</tr>\n", (isres($5) ? " data-res=\"" $5 "\"" : ""), cell("acceptance", $3, $4, ""), act($9); af += $9; n++ }
                     view == "production" && $1 == "p" {
                         printf "<tr%s>%s%s</tr>\n", (isres($8) ? " data-res=\"" $8 "\"" : ""), cell("production", $6, $7, ""), act($11); pf += $11; n++ }
+                    # acc / prd: ONE environment'\''s FULL set (only-set + Both),
+                    # the single-env layout and tint
+                    view == "acc" && ($1 == "a" || $1 == "b") {
+                        printf "<tr%s>%s%s</tr>\n", (isres($5) ? " data-res=\"" $5 "\"" : ""), cell("acceptance", $3, $4, ""), act($9); af += $9; n++ }
+                    view == "prd" && ($1 == "p" || $1 == "b") {
+                        printf "<tr%s>%s%s</tr>\n", (isres($8) ? " data-res=\"" $8 "\"" : ""), cell("production", $6, $7, ""), act($11); pf += $11; n++ }
                     view == "both" && $1 == "b" {
                         # onecol (flowids): the one shared spelling, once
                         if (onecol) printf "<tr>%s</tr>\n", cell("acceptance", $3, $4, $5)
@@ -366,7 +378,7 @@ write_acc_vs_prod_pages() {
                         if (view == "both")
                             printf "<tr class=\"total\"><td>Total (%d)</td><td class=\"num\">%d</td><td></td><td class=\"num\">%d</td></tr>\n", n + 0, af, pf
                         else
-                            printf "<tr class=\"total\"><td>Total (%d)</td><td class=\"num\">%d</td></tr>\n", n + 0, (view == "acceptance" ? af : pf)
+                            printf "<tr class=\"total\"><td>Total (%d)</td><td class=\"num\">%d</td></tr>\n", n + 0, (view == "acceptance" || view == "acc" ? af : pf)
                     }' "$tmp"
                 printf '</table></div>\n'
                 [ "$t" = flowids ] || printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = seen in the server log only. An untinted name was logged but is not configured.</p>\n'
@@ -431,7 +443,7 @@ write_acc_vs_prod_pages() {
                 index($0, "CNT|" T "|") == 1 { split($0, c, "|"); na = c[3]; nb = c[4]; np = c[5] }
                 END { printf "<tr><td><a href=\"acc-vs-prod-%s-both.html\">%s</a></td>%s%s%s%s%s%s%s%s</tr>\n", \
                     T, e(LBL), \
-                    lc("num gsepw", z(na+nb), "acceptance"), lc("num", z(nb+np), "production"), \
+                    lc("num gsepw", z(na+nb), "acc"), lc("num", z(nb+np), "prd"), \
                     lc("num gsepw", z(na+0), "acceptance"), lc("num", z(nb+0), "both"), lc("num", z(np+0), "production"), \
                     lc("num gsepw", nz(ba), "both"), lc("num", nz(bb), "both"), lc("num", nz(bp), "both") }
             ' "$sumtmp"
