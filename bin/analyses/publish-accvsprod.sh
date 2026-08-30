@@ -395,10 +395,11 @@ write_acc_vs_prod_pages() {
         # of this one logical page show different sequences (2026-08-29)
         printf '<h2>Per entity</h2>\n<div class="tablewrap"><table class="fit" data-nosort="1">\n'
         printf '<tr><th>Type</th><th class="num gsepw">ACC</th><th class="num">PRD</th><th class="num gsepw">Only ACC</th><th class="num">Both</th><th class="num">Only PRD</th><th class="num gsepw">Both: active acc only</th><th class="num">Both: active in both</th><th class="num">Both: active prod only</th></tr>\n'
-        # the Per-entity ROW order (2026-08-29, user choice; FlowID after
-        # Subscriptions 2026-08-30) — independent of the types[] array, which
-        # keeps driving the pages and the tab row
-        local sumorder=(subscriptions logicals partners accounts logins hosts domains applications whitelist)
+        # the Per-entity ROW order (2026-08-31, user choice: the home-page
+        # order — the FM four, then the Logical/PDA group, Whitelist last) —
+        # independent of the types[] array, which keeps driving the pages
+        # and the tab row
+        local sumorder=(subscriptions accounts hosts logins logicals partners domains applications whitelist)
         for t in "${sumorder[@]}"; do
             for ti in "${!types[@]}"; do [ "${types[$ti]}" = "$t" ] && break; done
             awk -F'\t' -v FS2='|' -v T="$t" -v LBL="${labels[$ti]}" '
