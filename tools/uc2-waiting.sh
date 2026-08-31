@@ -1,29 +1,25 @@
 #!/usr/bin/env bash
 #
-# tools/split-transfers.sh — STANDALONE helper (2026-08-31, user request):
-# split a raw SecureTransport transfer-log export (transferLog_*.csv, the
-# same files that live under input/<env>/transfer/) into two CSVs, one row
-# per CoreId, each output row being the COMPLETE input row:
+# tools/uc2-waiting.sh — STANDALONE helper (2026-08-31, user request; split
+# out of the former split-transfers.sh, and the detection corrected to the
+# site's own Waiting shape): from a raw SecureTransport transfer-log export
+# (transferLog_*.csv, the files under input/<env>/transfer/) write
 #
-#   one_leg.csv       every CoreId that has exactly ONE leg (one record row);
-#                     the output row is that single leg.
 #   uc2_waiting.csv   every CoreId whose LAST leg (by Start Time) is an
-#                     Outbound leg with protocol 'routing'; the output row is
-#                     that last leg.
+#                     INBOUND leg with protocol 'routing' — a UC2 file
+#                     staged for the partner and not collected; the output
+#                     row is that last leg, verbatim.
 #
-# Runs under Git for Windows bash (plain bash + awk + sort, no site libs, no
-# GNU extensions); works the same on macOS/Linux. Handles quoted commas and
-# CRLF line endings; columns are resolved BY HEADER NAME (CoreId, Direction,
-# Protocol, Start Time), so column reshuffles in the export do not break it.
-# Both outputs get the header row and keep the input's row text verbatim
-# (minus a trailing CR).
+# Runs under Git for Windows bash (plain bash + awk, no site libs, no GNU
+# extensions); works the same on macOS/Linux. Handles quoted commas and CRLF
+# line endings; columns are resolved BY HEADER NAME (CoreId, Direction,
+# Protocol, Start Time). The output gets the header row; several input files
+# are treated as ONE data set (a file staged in one day's export and
+# collected in the next then correctly drops out). Written into the CURRENT
+# directory, overwriting an existing uc2_waiting.csv.
 #
 # Usage:
-#   tools/split-transfers.sh transferLog_06-23.csv [more.csv ...]
-#
-# Several input files are treated as ONE data set (an export split over days
-# still yields one row per CoreId). The two CSVs are written into the
-# CURRENT directory, overwriting existing ones.
+#   tools/uc2-waiting.sh transferLog_06-23.csv [more.csv ...]
 #
 set -euo pipefail
 
@@ -35,7 +31,7 @@ for f in "$@"; do
     [ -f "$f" ] || { echo "$(basename "$0"): no such file: $f" >&2; exit 1; }
 done
 
-awk -v ONE="one_leg.csv" -v UC2="uc2_waiting.csv" '
+awk -v OUT="uc2_waiting.csv" '
     # ---- CSV field splitter (quoted commas, "" escapes) — the same logic
     # the site parser uses, so both read an export identically -------------
     function split_csv(line,    n, i, c, inquotes, cur) {
@@ -77,18 +73,17 @@ awk -v ONE="one_leg.csv" -v UC2="uc2_waiting.csv" '
                     else if (h == "Start Time") c_time = i
                 }
                 if (!c_core || !c_dir || !c_prot || !c_time) {
-                    print "split-transfers: header is missing CoreId / Direction / Protocol / Start Time" > "/dev/stderr"
+                    print "uc2-waiting: header is missing CoreId / Direction / Protocol / Start Time" > "/dev/stderr"
                     exit 1
                 }
             }
             next
         }
         if ($0 == "") next
-        n = split_csv($0)
+        split_csv($0)
         core = trim(field[c_core])
         if (core == "" || core == "CoreId") next
-        cnt[core]++
-        if (!(core in ord)) { ord[++nc] = core }
+        if (!(core in bestk)) ord[++nc] = core
         # the LAST leg by Start Time (ties: the first row seen at that time)
         k = timekey(field[c_time])
         if (!(core in bestk) || k > bestk[core]) {
@@ -99,15 +94,13 @@ awk -v ONE="one_leg.csv" -v UC2="uc2_waiting.csv" '
         }
     }
     END {
-        print header > ONE
-        print header > UC2
-        n1 = 0; n2 = 0
+        print header > OUT
+        n2 = 0
         for (i = 1; i <= nc; i++) { core = ord[i]
-            if (cnt[core] == 1) { print lastrow[core] > ONE; n1++ }
-            if (tolower(lastdir[core]) == "outbound" && tolower(lastprot[core]) == "routing") {
-                print lastrow[core] > UC2; n2++
+            if (tolower(lastdir[core]) == "inbound" && tolower(lastprot[core]) == "routing") {
+                print lastrow[core] > OUT; n2++
             }
         }
-        printf "split-transfers: %d CoreId(s) in, %d -> one_leg.csv, %d -> uc2_waiting.csv\n", nc, n1, n2 > "/dev/stderr"
+        printf "uc2-waiting: %d CoreId(s) in, %d -> uc2_waiting.csv\n", nc, n2 > "/dev/stderr"
     }
 ' "$@"
