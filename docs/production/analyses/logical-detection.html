@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Logical detection</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3944911837">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3944911837" defer></script>
+</head>
+<body class="sort-fresh">
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="logical-detection" data-twin="../../acceptance/analyses/logical-detection.html"></div>
+<h1>Logical detection <span class="grouptag">&larr; Configuration &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="use-cases.html">Use cases</a><a class="tab" href="uc2-visits.html">UC2 pickup visits</a><a class="tab" href="subscriptions.html">Subscriptions</a><span class="tab active">Logical detection</span><a class="tab" href="accounts.html">Accounts</a><a class="tab" href="account-sharing.html">Account sharing</a><a class="tab" href="twins.html">Twins</a><a class="tab" href="cronjobs.html">Cronjobs</a><a class="tab" href="config-hygiene.html">Config hygiene</a><a class="tab" href="whitelist-audit.html">Whitelist audit</a><a class="tab" href="cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="../transfer/sources-and-targets.html">Sources and Targets</a><a class="tab" href="../transfer/skipped.html">Skipped</a><a class="tab" href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a><a class="tab" href="xref/cross-account-subscriptions.html">Cross References</a></p>
+<p class="subtitle">How every configured <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code> value) detected to its <strong>Logical</strong> flow group &mdash; one row per FlowID with the <strong>rule trail</strong> the derivation applied, in firing order: the separator normalization, the grouping rule (variant folds, digit tails, prefix folds), an <code>input/logical.txt</code> pin, and the 3-part reshape. <em>3 parts &mdash; kept as-is</em> means the FlowID needed no work at all. The Logical cell links its detail page; rows tint by the Logical&rsquo;s result.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>FlowID</th><th>Logical</th><th>Rules</th></tr>
+<tr data-res="green"><td><code>AB_CLAIMS_UMBRELLA</code></td><td><a href="../details/logicals/ab-claims-umbrella.html">AB_CLAIMS_UMBRELLA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>AB_NAS_GLOBEX</code></td><td><a href="../details/logicals/ab-nas-globex.html">AB_NAS_GLOBEX</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>AIM_LAKE_PIEDPIPER</code></td><td><a href="../details/logicals/aim-lake-piedpiper.html">AIM_LAKE_PIEDPIPER</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>APS_COSMOS_GLOBEX</code></td><td><a href="../details/logicals/aps-cosmos-globex.html">APS_COSMOS_GLOBEX</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>APS_FMGENLOG_CYBERDYNE</code></td><td><a href="../details/logicals/aps-fmgenlog-cyberdyne.html">APS_FMGENLOG_CYBERDYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>APS_FMREPLERR_CYBERDYNE</code></td><td><a href="../details/logicals/aps-fmreplerr-cyberdyne.html">APS_FMREPLERR_CYBERDYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>APS_INVOICE_STARK</code></td><td><a href="../details/logicals/aps-invoice-stark.html">APS_INVOICE_STARK</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>APS_SYSHUB_SOYLENT</code></td><td><a href="../details/logicals/aps-syshub-soylent.html">APS_SYSHUB_SOYLENT</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>APS_VIDA_UMBRELLA</code></td><td><a href="../details/logicals/aps-vida-umbrella.html">APS_VIDA_UMBRELLA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>CB_VIDA_WAYNE</code></td><td><a href="../details/logicals/cb-vida-wayne.html">CB_VIDA_WAYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CDV_KRP-TDI_WONKA</code></td><td><a href="../details/logicals/cdv-krp-tdi-wonka.html">CDV_KRP-TDI_WONKA</a></td><td class="wrap">separators normalized; 4 parts: parts 2+3 combined (4th is a known 3rd part)</td></tr>
+<tr data-res="green"><td><code>CD_COSMOS_WONKA</code></td><td><a href="../details/logicals/cd-cosmos-wonka.html">CD_COSMOS_WONKA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="red"><td><code>CD_PRINTMGMT_WONKA</code></td><td><a href="../details/logicals/cd-printmgmt-wonka.html">CD_PRINTMGMT_WONKA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>CD_ZIBA_GEKKO</code></td><td><a href="../details/logicals/cd-ziba-gekko.html">CD_ZIBA_GEKKO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CRM_SYNC_INITECH</code></td><td><a href="../details/logicals/crm-sync-initech.html">CRM_SYNC_INITECH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>DPL_SCAN_CYBERDYNE</code></td><td><a href="../details/logicals/dpl-scan-cyberdyne.html">DPL_SCAN_CYBERDYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>FIN_BILLING_GLOBEX</code></td><td><a href="../details/logicals/fin-billing-globex.html">FIN_BILLING_GLOBEX</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>FIN_CLAIMS_MONARCH</code></td><td><a href="../details/logicals/fin-claims-monarch.html">FIN_CLAIMS_MONARCH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>FS_MORTGAGE_SABRE</code></td><td><a href="../details/logicals/fs-mortgage-sabre.html">FS_MORTGAGE_SABRE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>GL_POSTINGS_GEKKO</code></td><td><a href="../details/logicals/gl-postings-gekko.html">GL_POSTINGS_GEKKO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>HR_ARCHIVE_ZORG</code></td><td><a href="../details/logicals/hr-archive-zorg.html">HR_ARCHIVE_ZORG</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>HR_ROSTER_UMBRELLA</code></td><td><a href="../details/logicals/hr-roster-umbrella.html">HR_ROSTER_UMBRELLA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>INFRA-MONITOR-UC1</code></td><td><a href="../details/logicals/infra-monitor-uc.html">INFRA-MONITOR-UC</a></td><td class="wrap">separators normalized; digit tail stripped from part 3; group name pinned in input/logical.txt</td></tr>
+<tr data-res="green"><td><code>INFRA-MONITOR-UC2</code></td><td><a href="../details/logicals/infra-monitor-uc.html">INFRA-MONITOR-UC</a></td><td class="wrap">separators normalized; digit tail stripped from part 3; group name pinned in input/logical.txt</td></tr>
+<tr data-res="green"><td><code>INFRA-MONITOR-UC3</code></td><td><a href="../details/logicals/infra-monitor-uc.html">INFRA-MONITOR-UC</a></td><td class="wrap">separators normalized; digit tail stripped from part 3; group name pinned in input/logical.txt</td></tr>
+<tr data-res="green"><td><code>INFRA-MONITOR-UC4</code></td><td><a href="../details/logicals/infra-monitor-uc.html">INFRA-MONITOR-UC</a></td><td class="wrap">separators normalized; digit tail stripped from part 3; group name pinned in input/logical.txt</td></tr>
+<tr data-res="green"><td><code>INV_PAYMENTS_HOOLI</code></td><td><a href="../details/logicals/inv-payments-hooli.html">INV_PAYMENTS_HOOLI</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>IT_ARCHIVE_INITECH</code></td><td><a href="../details/logicals/it-archive-initech.html">IT_ARCHIVE_INITECH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>IT_EKDSI_CYBERDYNE</code></td><td><a href="../details/logicals/it-ekdsi-cyberdyne.html">IT_EKDSI_CYBERDYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>IT_RECON_HOOLI</code></td><td><a href="../details/logicals/it-recon-hooli.html">IT_RECON_HOOLI</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>IT_SAPBHP_GEKKO</code></td><td><a href="../details/logicals/it-sapbhp-gekko.html">IT_SAPBHP_GEKKO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ODV_MERLIJN_SABRE_D</code></td><td><a href="../details/logicals/odv-merlijn-sabre.html">ODV_MERLIJN_SABRE</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="red"><td><code>REC_FEEDS_SOYLENT</code></td><td><a href="../details/logicals/rec-feeds-soylent.html">REC_FEEDS_SOYLENT</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>STMT_EXPORT_GLOBEX_01</code></td><td><a href="../details/logicals/stmt-export-globex.html">STMT_EXPORT_GLOBEX</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="orange"><td><code>STMT_EXPORT_GLOBEX_02</code></td><td><a href="../details/logicals/stmt-export-globex.html">STMT_EXPORT_GLOBEX</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="orange"><td><code>STMT_EXPORT_GLOBEX_03</code></td><td><a href="../details/logicals/stmt-export-globex.html">STMT_EXPORT_GLOBEX</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="orange"><td><code>STMT_EXPORT_GLOBEX_04</code></td><td><a href="../details/logicals/stmt-export-globex.html">STMT_EXPORT_GLOBEX</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="orange"><td><code>STMT_EXPORT_GLOBEX_05</code></td><td><a href="../details/logicals/stmt-export-globex.html">STMT_EXPORT_GLOBEX</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="orange"><td><code>STMT_EXPORT_GLOBEX_06</code></td><td><a href="../details/logicals/stmt-export-globex.html">STMT_EXPORT_GLOBEX</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="orange"><td><code>STMT_EXPORT_GLOBEX_07</code></td><td><a href="../details/logicals/stmt-export-globex.html">STMT_EXPORT_GLOBEX</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="orange"><td><code>STMT_EXPORT_GLOBEX_08</code></td><td><a href="../details/logicals/stmt-export-globex.html">STMT_EXPORT_GLOBEX</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="orange"><td><code>ZG_IKAZ_BLUTH</code></td><td><a href="../details/logicals/zg-ikaz-bluth.html">ZG_IKAZ_BLUTH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZG_MATCH_HOOLI</code></td><td><a href="../details/logicals/zg-match-hooli.html">ZG_MATCH_HOOLI</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZG_PENSION_HOOLI</code></td><td><a href="../details/logicals/zg-pension-hooli.html">ZG_PENSION_HOOLI</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZG_ZKA_HOOLI</code></td><td><a href="../details/logicals/zg-zka-hooli.html">ZG_ZKA_HOOLI</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZK_MIAZ_INITECH</code></td><td><a href="../details/logicals/zk-miaz-initech.html">ZK_MIAZ_INITECH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr class="total"><td>Total (46)</td><td></td><td></td></tr>
+</table></div>
+</body>
+</html>

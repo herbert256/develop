@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Help: Logical detection — Cloud Reports</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Cloud</a><span class="envpair"><a class="envswitch" data-target="acceptance">Acceptance</a><span class="envsep">/</span><a class="envswitch" data-target="production">Production</a></span><span class="entgroup"><a class="entlabel" href="../acceptance/transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../acceptance/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../acceptance/file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/transfer/index.html">Start page</a><a href="../acceptance/transfer/topview.html">Top view</a><a href="../acceptance/transfer/entities/subscription-all.html">Entities</a><a href="../acceptance/transfer/file-journey-patterns.html">Patterns</a><a href="../acceptance/transfer/activity-per-day.html">Activity over Time</a><a href="../acceptance/transfer/volume-per-day.html">Volume, Sizes &amp; Files</a><a href="../acceptance/transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../acceptance/transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../acceptance/transfer/anomalies.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/server/index.html">Start page</a><a href="../acceptance/server/topview.html">Top view</a><a href="../acceptance/server/errors-per-day.html">Errors</a><a href="../acceptance/server/pickups.html">Transfers &amp; Delivery</a><a href="../acceptance/server/logons-incoming.html">Logons &amp; Connections</a><a href="../acceptance/server/ssh-security.html">Security</a><a href="../acceptance/server/platform-health.html">Operations &amp; Capacity</a><a href="../acceptance/server/remote-poll.html">Routing &amp; Polling</a><a href="../acceptance/server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../acceptance/analyses/index.html">Start page</a><a href="../acceptance/transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../acceptance/analyses/use-cases.html">Configuration</a><a href="../acceptance/analyses/partner-scorecard.html">Partners</a><a href="../acceptance/analyses/accounts-in-boxes.html">Boxes</a><a href="../acceptance/analyses/failed.html">Errors</a><a href="../acceptance/analyses/acc-vs-prod-summary.html">Acceptance vs production</a></div></div></nav><a class="dashlink" href="../acceptance/dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../acceptance/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../acceptance/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Logical detection</h1>
+<h2>What this shows</h2>
+<p>One row per configured <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code> value of the subscriptions): the <strong>Logical</strong> flow group it detected to, and the <strong>rule trail</strong> the derivation applied to get there &mdash; in firing order, <code>;</code>-separated. The Logical cell links its detail page, and rows tint by the Logical&rsquo;s result.</p>
+<h2>The rules</h2>
+<ul>
+<li><strong>separators normalized</strong> &mdash; before any splitting, <code>-</code> folds to <code>_</code>, doubled separators collapse and edge separators trim.</li>
+<li><strong>4 parts: &hellip; dropped / shared / numeric</strong> &mdash; the variant-fold family: a 4-part FlowID joins its bare 3-part name, a shared 3rd part, a shared first-3 prefix, or drops a purely numeric part.</li>
+<li><strong>digit tail stripped</strong> &mdash; numbered variants (<code>&hellip;2</code>) fold onto the stripped form when it exists or 2+ share it.</li>
+<li><strong>5+ parts: longest existing prefix</strong> &mdash; a long FlowID joins the longest 3+-part prefix that is itself a FlowID.</li>
+<li><strong>pinned in input/logical.txt</strong> &mdash; a fixed mapping took the Logical verbatim (also shown when the pin caught the folded spelling, or the group name a fold landed on).</li>
+<li><strong>2/4/5 parts: &hellip; combined</strong> &mdash; the 3-part reshape: parts joined with <code>-</code> (the hyphen marks combined parts, which is why Logical names are never separator-folded), guided by the known 2nd/3rd-part vocabulary.</li>
+<li><strong>forced: &hellip;</strong> &mdash; nothing else fit: the first part stays, a known 2nd/3rd part anchors, the rest combines.</li>
+<li><strong>3 parts &mdash; kept as-is</strong> &mdash; the FlowID needed no work.</li>
+</ul>
+<h2>How it&rsquo;s computed</h2>
+<p>The trail is written by the derivation itself (<code>bin/flow-manager.sh</code> &rarr; <code>xref/_logical-rules.tsv</code>) as it derives the FlowID &rarr; Logical map, so this page and the pipeline can never disagree.</p>
+</main>
+</body>
+</html>

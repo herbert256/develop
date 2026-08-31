@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Logical detection</title>
+<link rel="stylesheet" href="../../assets/style.css?v=3944911837">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=3944911837" defer></script>
+</head>
+<body class="sort-fresh">
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="logical-detection" data-twin="../../production/analyses/logical-detection.html"></div>
+<h1>Logical detection <span class="grouptag">&larr; Configuration &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="use-cases.html">Use cases</a><a class="tab" href="uc2-visits.html">UC2 pickup visits</a><a class="tab" href="subscriptions.html">Subscriptions</a><span class="tab active">Logical detection</span><a class="tab" href="accounts.html">Accounts</a><a class="tab" href="account-sharing.html">Account sharing</a><a class="tab" href="twins.html">Twins</a><a class="tab" href="cronjobs.html">Cronjobs</a><a class="tab" href="config-hygiene.html">Config hygiene</a><a class="tab" href="whitelist-audit.html">Whitelist audit</a><a class="tab" href="cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="../transfer/sources-and-targets.html">Sources and Targets</a><a class="tab" href="../transfer/skipped.html">Skipped</a><a class="tab" href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a><a class="tab" href="xref/cross-account-subscriptions.html">Cross References</a></p>
+<p class="subtitle">How every configured <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code> value) detected to its <strong>Logical</strong> flow group &mdash; one row per FlowID with the <strong>rule trail</strong> the derivation applied, in firing order: the separator normalization, the grouping rule (variant folds, digit tails, prefix folds), an <code>input/logical.txt</code> pin, and the 3-part reshape. <em>3 parts &mdash; kept as-is</em> means the FlowID needed no work at all. The Logical cell links its detail page; rows tint by the Logical&rsquo;s result.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>FlowID</th><th>Logical</th><th>Rules</th></tr>
+<tr data-res="green"><td><code>AB_CLAIMS_UMBRELLA</code></td><td><a href="../details/logicals/ab-claims-umbrella.html">AB_CLAIMS_UMBRELLA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>AB_CREDITREG_WEYLAND</code></td><td><a href="../details/logicals/ab-creditreg-weyland.html">AB_CREDITREG_WEYLAND</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>AB_EKDSI_STARK</code></td><td><a href="../details/logicals/ab-ekdsi-stark.html">AB_EKDSI_STARK</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>AB_EXPORT_WAYNE</code></td><td><a href="../details/logicals/ab-export-wayne.html">AB_EXPORT_WAYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="red"><td><code>AB_HRDATA_WEYLAND</code></td><td><a href="../details/logicals/ab-hrdata-weyland.html">AB_HRDATA_WEYLAND</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>AB_NAS_GLOBEX</code></td><td><a href="../details/logicals/ab-nas-globex.html">AB_NAS_GLOBEX</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="red"><td><code>AB_POLIS_UMBRELLA</code></td><td><a href="../details/logicals/ab-polis-umbrella.html">AB_POLIS_UMBRELLA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>AB_PORTAL_ABSTERGO</code></td><td><a href="../details/logicals/ab-portal-abstergo.html">AB_PORTAL_ABSTERGO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>AB_SCAN_MONARCH</code></td><td><a href="../details/logicals/ab-scan-monarch.html">AB_SCAN_MONARCH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>AB_TDRS_PRIMATECH</code></td><td><a href="../details/logicals/ab-tdrs-primatech.html">AB_TDRS_PRIMATECH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>AIM_LAKE_PIEDPIPER</code></td><td><a href="../details/logicals/aim-lake-piedpiper.html">AIM_LAKE_PIEDPIPER</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>AIM_QUOTES_WONKA</code></td><td><a href="../details/logicals/aim-quotes-wonka.html">AIM_QUOTES_WONKA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="red"><td><code>AIM_SAPPO_WONKA-PUO</code></td><td><a href="../details/logicals/aim-sappo-wonka.html">AIM_SAPPO_WONKA</a></td><td class="wrap">separators normalized; 4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="green"><td><code>APS_COSMOS_GLOBEX</code></td><td><a href="../details/logicals/aps-cosmos-globex.html">APS_COSMOS_GLOBEX</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="red"><td><code>APS_FMGENLOG_CYBERDYNE</code></td><td><a href="../details/logicals/aps-fmgenlog-cyberdyne.html">APS_FMGENLOG_CYBERDYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>APS_FMREPLERR_CYBERDYNE</code></td><td><a href="../details/logicals/aps-fmreplerr-cyberdyne.html">APS_FMREPLERR_CYBERDYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>APS_INVOICE_STARK</code></td><td><a href="../details/logicals/aps-invoice-stark.html">APS_INVOICE_STARK</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>APS_RISK_TYRELL</code></td><td><a href="../details/logicals/aps-risk-tyrell.html">APS_RISK_TYRELL</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>APS_SETTLE_P2P1</code></td><td><a href="../details/logicals/aps-settle-p2p.html">APS_SETTLE_P2P</a></td><td class="wrap">digit tail stripped from part 3</td></tr>
+<tr data-res="green"><td><code>APS_SETTLE_P2P2</code></td><td><a href="../details/logicals/aps-settle-p2p.html">APS_SETTLE_P2P</a></td><td class="wrap">digit tail stripped from part 3</td></tr>
+<tr data-res="red"><td><code>APS_STREAM_SOYLENT</code></td><td><a href="../details/logicals/aps-stream-soylent.html">APS_STREAM_SOYLENT</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>APS_SYSHUB_SOYLENT</code></td><td><a href="../details/logicals/aps-syshub-soylent.html">APS_SYSHUB_SOYLENT</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>APS_TELEM_GEKKO</code></td><td><a href="../details/logicals/aps-telem-gekko.html">APS_TELEM_GEKKO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>APS_VIDA_UMBRELLA</code></td><td><a href="../details/logicals/aps-vida-umbrella.html">APS_VIDA_UMBRELLA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>CB_ISOLATED_SOYLENT</code></td><td><a href="../details/logicals/cb-isolated-soylent.html">CB_ISOLATED_SOYLENT</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>CB_ISOLATED_SOYLENT2</code></td><td><a href="../details/logicals/cb-isolated-soylent.html">CB_ISOLATED_SOYLENT</a></td><td class="wrap">digit tail stripped from part 3</td></tr>
+<tr data-res="red"><td><code>CB_MARKETING_WNK</code></td><td><a href="../details/logicals/cb-marketing-wnk.html">CB_MARKETING_WNK</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CB_QUOTES_GEKKO</code></td><td><a href="../details/logicals/cb-quotes-gekko.html">CB_QUOTES_GEKKO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>CB_STARK_WAYNE</code></td><td><a href="../details/logicals/cb-stark-wayne.html">CB_STARK_WAYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>CB_VIDA_WAYNE</code></td><td><a href="../details/logicals/cb-vida-wayne.html">CB_VIDA_WAYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CDV_KRP-TDI_WONKA</code></td><td><a href="../details/logicals/cdv-krp-tdi-wonka.html">CDV_KRP-TDI_WONKA</a></td><td class="wrap">separators normalized; 4 parts: parts 2+3 combined (4th is a known 3rd part)</td></tr>
+<tr data-res="blue"><td><code>CDV_STREAM_ABSTERGO</code></td><td><a href="../details/logicals/cdv-stream-abstergo.html">CDV_STREAM_ABSTERGO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CDV_STREAM_DUFF</code></td><td><a href="../details/logicals/cdv-stream-duff.html">CDV_STREAM_DUFF</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CDV_STREAM_DUFF_I</code></td><td><a href="../details/logicals/cdv-stream-duff.html">CDV_STREAM_DUFF</a></td><td class="wrap">4 parts: the bare 3-part name exists - 4th part dropped</td></tr>
+<tr data-res="green"><td><code>CD_ARIVA_BLUTH</code></td><td><a href="../details/logicals/cd-ariva-bluth.html">CD_ARIVA_BLUTH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CD_ARIVA_DUNDER</code></td><td><a href="../details/logicals/cd-ariva-dunder.html">CD_ARIVA_DUNDER</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CD_ARIVA_SABRE</code></td><td><a href="../details/logicals/cd-ariva-sabre.html">CD_ARIVA_SABRE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>CD_BATCH_MASSIVE</code></td><td><a href="../details/logicals/cd-batch-massive.html">CD_BATCH_MASSIVE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CD_COSMOS_WONKA</code></td><td><a href="../details/logicals/cd-cosmos-wonka.html">CD_COSMOS_WONKA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CD_INVOICE_VANDELAY</code></td><td><a href="../details/logicals/cd-invoice-vandelay.html">CD_INVOICE_VANDELAY</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CD_PRINTMGMT_WONKA</code></td><td><a href="../details/logicals/cd-printmgmt-wonka.html">CD_PRINTMGMT_WONKA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>CD_QUOTES_STARK</code></td><td><a href="../details/logicals/cd-quotes-stark.html">CD_QUOTES_STARK</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>CD_ZIBA_GEKKO</code></td><td><a href="../details/logicals/cd-ziba-gekko.html">CD_ZIBA_GEKKO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>DPL_AUDITLOG_DUNDER</code></td><td><a href="../details/logicals/dpl-auditlog-dunder.html">DPL_AUDITLOG_DUNDER</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>DPL_POLIS_TYRELL</code></td><td><a href="../details/logicals/dpl-polis-tyrell.html">DPL_POLIS_TYRELL</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>DPL_RENSEI_SOYLENT</code></td><td><a href="../details/logicals/dpl-rensei-soylent.html">DPL_RENSEI_SOYLENT</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>DPL_SCAN_CYBERDYNE</code></td><td><a href="../details/logicals/dpl-scan-cyberdyne.html">DPL_SCAN_CYBERDYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>DPL_STREAM_UMBRELLA</code></td><td><a href="../details/logicals/dpl-stream-umbrella.html">DPL_STREAM_UMBRELLA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>FIN_BILLING_GLOBEX</code></td><td><a href="../details/logicals/fin-billing-globex.html">FIN_BILLING_GLOBEX</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>FIN_BILLING_GLOBEXX</code></td><td><a href="../details/logicals/fin-billing-globexx.html">FIN_BILLING_GLOBEXX</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>FIN_CLAIMS_MONARCH</code></td><td><a href="../details/logicals/fin-claims-monarch.html">FIN_CLAIMS_MONARCH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="red"><td><code>FIN_FACTS_MASSIVE</code></td><td><a href="../details/logicals/fin-facts-massive.html">FIN_FACTS_MASSIVE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>FIN_LEDGER_GLOBEX</code></td><td><a href="../details/logicals/fin-ledger-globex.html">FIN_LEDGER_GLOBEX</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>FIN_NAS_VANDELAY</code></td><td><a href="../details/logicals/fin-nas-vandelay.html">FIN_NAS_VANDELAY</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>FIN_PORTAL_DUFF</code></td><td><a href="../details/logicals/fin-portal-duff.html">FIN_PORTAL_DUFF</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>FIN_TREASURY_GEKKO</code></td><td><a href="../details/logicals/fin-treasury-gekko.html">FIN_TREASURY_GEKKO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>FS_IFRS_WAYNE</code></td><td><a href="../details/logicals/fs-ifrs-wayne.html">FS_IFRS_WAYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>FS_MORTGAGE_SABRE</code></td><td><a href="../details/logicals/fs-mortgage-sabre.html">FS_MORTGAGE_SABRE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>FS_PENSION_DUNDER</code></td><td><a href="../details/logicals/fs-pension-dunder.html">FS_PENSION_DUNDER</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>FS_SAPBODS_PRIMATECH_D</code></td><td><a href="../details/logicals/fs-sapbods-primatech.html">FS_SAPBODS_PRIMATECH</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="blue"><td><code>FS_SAPBODS_PRIMATECH_I</code></td><td><a href="../details/logicals/fs-sapbods-primatech.html">FS_SAPBODS_PRIMATECH</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="blue"><td><code>FS_SAPBODS_PRIMATECH_M</code></td><td><a href="../details/logicals/fs-sapbods-primatech.html">FS_SAPBODS_PRIMATECH</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="green"><td><code>FS_STMT_APERTURE</code></td><td><a href="../details/logicals/fs-stmt-aperture.html">FS_STMT_APERTURE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>FS_STMT_APERTURE_IN</code></td><td><a href="../details/logicals/fs-stmt-aperture.html">FS_STMT_APERTURE</a></td><td class="wrap">4 parts: the bare 3-part name exists - 4th part dropped</td></tr>
+<tr data-res="green"><td><code>HR_AFAS_GEKKO</code></td><td><a href="../details/logicals/hr-afas-gekko.html">HR_AFAS_GEKKO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>HR_ARCHIVE_ZORG</code></td><td><a href="../details/logicals/hr-archive-zorg.html">HR_ARCHIVE_ZORG</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>HR_LAKE_BLACKMESA</code></td><td><a href="../details/logicals/hr-lake-blackmesa.html">HR_LAKE_BLACKMESA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>HR_MATCH_VANDELAY</code></td><td><a href="../details/logicals/hr-match-vandelay.html">HR_MATCH_VANDELAY</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>HR_PAYROLL_INITECH</code></td><td><a href="../details/logicals/hr-payroll-initech.html">HR_PAYROLL_INITECH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>HR_PENSION_OSCORP</code></td><td><a href="../details/logicals/hr-pension-oscorp.html">HR_PENSION_OSCORP</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>INFRA-MONITOR-UC1</code></td><td><a href="../details/logicals/infra-monitor-uc.html">INFRA-MONITOR-UC</a></td><td class="wrap">separators normalized; digit tail stripped from part 3; group name pinned in input/logical.txt</td></tr>
+<tr data-res="green"><td><code>INFRA-MONITOR-UC2</code></td><td><a href="../details/logicals/infra-monitor-uc.html">INFRA-MONITOR-UC</a></td><td class="wrap">separators normalized; digit tail stripped from part 3; group name pinned in input/logical.txt</td></tr>
+<tr data-res="green"><td><code>INFRA-MONITOR-UC3</code></td><td><a href="../details/logicals/infra-monitor-uc.html">INFRA-MONITOR-UC</a></td><td class="wrap">separators normalized; digit tail stripped from part 3; group name pinned in input/logical.txt</td></tr>
+<tr data-res="green"><td><code>INFRA-MONITOR-UC4</code></td><td><a href="../details/logicals/infra-monitor-uc.html">INFRA-MONITOR-UC</a></td><td class="wrap">separators normalized; digit tail stripped from part 3; group name pinned in input/logical.txt</td></tr>
+<tr data-res="green"><td><code>IT_ARCHIVE_INITECH</code></td><td><a href="../details/logicals/it-archive-initech.html">IT_ARCHIVE_INITECH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>IT_ARCHIVE_ZORG</code></td><td><a href="../details/logicals/it-archive-zorg.html">IT_ARCHIVE_ZORG</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>IT_BILLING_BLUTH</code></td><td><a href="../details/logicals/it-billing-bluth.html">IT_BILLING_BLUTH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>IT_CRM_STARK</code></td><td><a href="../details/logicals/it-crm-stark.html">IT_CRM_STARK</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>IT_DISPATCH_INITECH</code></td><td><a href="../details/logicals/it-dispatch-initech.html">IT_DISPATCH_INITECH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>IT_EKDSI_CYBERDYNE</code></td><td><a href="../details/logicals/it-ekdsi-cyberdyne.html">IT_EKDSI_CYBERDYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>IT_FACTS_HOOLI</code></td><td><a href="../details/logicals/it-facts-hooli.html">IT_FACTS_HOOLI</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>IT_LEDGER_HOOLI</code></td><td><a href="../details/logicals/it-ledger-hooli.html">IT_LEDGER_HOOLI</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>IT_MAIA_SOYLENT</code></td><td><a href="../details/logicals/it-maia-soylent.html">IT_MAIA_SOYLENT</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>IT_RECON_HOOLI</code></td><td><a href="../details/logicals/it-recon-hooli.html">IT_RECON_HOOLI</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>IT_SAPBHP_GEKKO</code></td><td><a href="../details/logicals/it-sapbhp-gekko.html">IT_SAPBHP_GEKKO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>IT_TDRS_BLUTH</code></td><td><a href="../details/logicals/it-tdrs-bluth.html">IT_TDRS_BLUTH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ODV_ARE_APERTURE</code></td><td><a href="../details/logicals/odv-are-aperture.html">ODV_ARE_APERTURE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ODV_ARE_APERTURE2</code></td><td><a href="../details/logicals/odv-are-aperture.html">ODV_ARE_APERTURE</a></td><td class="wrap">digit tail stripped from part 3</td></tr>
+<tr data-res="green"><td><code>ODV_DMS_CYBERDYNE</code></td><td><a href="../details/logicals/odv-dms-cyberdyne.html">ODV_DMS_CYBERDYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>ODV_EMIS_ZORG</code></td><td><a href="../details/logicals/odv-emis-zorg.html">ODV_EMIS_ZORG</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ODV_MAIA_PIEDPIPER</code></td><td><a href="../details/logicals/odv-maia-piedpiper.html">ODV_MAIA_PIEDPIPER</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ODV_MERLIJN_SABRE_D</code></td><td><a href="../details/logicals/odv-merlijn-sabre.html">ODV_MERLIJN_SABRE</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="green"><td><code>ODV_MERLIJN_SABRE_I</code></td><td><a href="../details/logicals/odv-merlijn-sabre.html">ODV_MERLIJN_SABRE</a></td><td class="wrap">4 parts: 3rd part is a known 3rd part - 4th part dropped</td></tr>
+<tr data-res="blue"><td><code>ODV_RISK_TYRELL</code></td><td><a href="../details/logicals/odv-risk-tyrell.html">ODV_RISK_TYRELL</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>SI_PORTAL_OSCORP</code></td><td><a href="../details/logicals/si-portal-oscorp.html">SI_PORTAL_OSCORP</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>SI_ROS_SABRE</code></td><td><a href="../details/logicals/si-ros-sabre.html">SI_ROS_SABRE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="blue"><td><code>SI_SAPBHP_APERTURE</code></td><td><a href="../details/logicals/si-sapbhp-aperture.html">SI_SAPBHP_APERTURE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>SI_TELEMETRY_STARK</code></td><td><a href="../details/logicals/si-telemetry-stark.html">SI_TELEMETRY_STARK</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>SI_VPS_VDN</code></td><td><a href="../details/logicals/si-vps-vdn.html">SI_VPS_VDN</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>SYNT_ITP_APERTURE</code></td><td><a href="../details/logicals/synt-itp-aperture.html">SYNT_ITP_APERTURE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>SYNT_NAS_TYRELL</code></td><td><a href="../details/logicals/synt-nas-tyrell.html">SYNT_NAS_TYRELL</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>WA_BATCH_WAYNE</code></td><td><a href="../details/logicals/wa-batch-wayne.html">WA_BATCH_WAYNE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>WA_CRM_PIEDPIPER</code></td><td><a href="../details/logicals/wa-crm-piedpiper.html">WA_CRM_PIEDPIPER</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>WA_SENSOR_STARK</code></td><td><a href="../details/logicals/wa-sensor-stark.html">WA_SENSOR_STARK</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>WA_TELEMATICS_MONARCH</code></td><td><a href="../details/logicals/wa-telematics-monarch.html">WA_TELEMATICS_MONARCH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>WA_VDN</code></td><td><a href="../details/logicals/wa-clearing-vdn.html">WA_CLEARING_VDN</a></td><td class="wrap">pinned in input/logical.txt</td></tr>
+<tr data-res="orange"><td><code>WA_ZKA_ABSTERGO</code></td><td><a href="../details/logicals/wa-zka-abstergo.html">WA_ZKA_ABSTERGO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZG_BULK_DUNDER</code></td><td><a href="../details/logicals/zg-bulk-dunder.html">ZG_BULK_DUNDER</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZG_CIVIL_DUNDER</code></td><td><a href="../details/logicals/zg-civil-dunder.html">ZG_CIVIL_DUNDER</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>ZG_DMS_PRIMATECH</code></td><td><a href="../details/logicals/zg-dms-primatech.html">ZG_DMS_PRIMATECH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>ZG_HOOLI_GEKKO</code></td><td><a href="../details/logicals/zg-hooli-gekko.html">ZG_HOOLI_GEKKO</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>ZG_IKAZ_BLUTH</code></td><td><a href="../details/logicals/zg-ikaz-bluth.html">ZG_IKAZ_BLUTH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZG_MATCH_HOOLI</code></td><td><a href="../details/logicals/zg-match-hooli.html">ZG_MATCH_HOOLI</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZG_PENSION_HOOLI</code></td><td><a href="../details/logicals/zg-pension-hooli.html">ZG_PENSION_HOOLI</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZG_PGBMATCH_APERTURE</code></td><td><a href="../details/logicals/zg-pgbmatch-aperture.html">ZG_PGBMATCH_APERTURE</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZG_ZKA_HOOLI</code></td><td><a href="../details/logicals/zg-zka-hooli.html">ZG_ZKA_HOOLI</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>ZK_ARIVA_OSCORP</code></td><td><a href="../details/logicals/zk-ariva-oscorp.html">ZK_ARIVA_OSCORP</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZK_CLAIMS_BLACKMESA</code></td><td><a href="../details/logicals/zk-claims-blackmesa.html">ZK_CLAIMS_BLACKMESA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZK_IKAZ_BLACKMESA</code></td><td><a href="../details/logicals/zk-ikaz-blackmesa.html">ZK_IKAZ_BLACKMESA</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="green"><td><code>ZK_MIAZ_INITECH</code></td><td><a href="../details/logicals/zk-miaz-initech.html">ZK_MIAZ_INITECH</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr data-res="orange"><td><code>ZK_SENSOR_SOYLENT</code></td><td><a href="../details/logicals/zk-sensor-soylent.html">ZK_SENSOR_SOYLENT</a></td><td class="wrap">3 parts - kept as-is</td></tr>
+<tr class="total"><td>Total (121)</td><td></td><td></td></tr>
+</table></div>
+</body>
+</html>
