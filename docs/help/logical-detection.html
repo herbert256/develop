@@ -17,7 +17,7 @@
 <h2>The rules</h2>
 <ul>
 <li><strong>separators normalized</strong> &mdash; before any splitting, <code>-</code> folds to <code>_</code>, doubled separators collapse and edge separators trim.</li>
-<li><strong>4 parts: &hellip; dropped / shared / numeric</strong> &mdash; the variant-fold family: a 4-part FlowID joins its bare 3-part name, a shared 3rd part, a shared first-3 prefix, or drops a purely numeric part.</li>
+<li><strong>4 parts: &hellip; dropped / shared / numeric</strong> &mdash; the variant-fold family: a 4-part FlowID joins its bare 3-part name, a shared 3rd part, a shared first-3 prefix, or drops a purely numeric part. Exception: when the <em>4th</em> part is itself a known 3rd part of a 3-part FlowID, nothing is dropped &mdash; the reshape keeps the first and last parts and combines the 2nd and 3rd instead.</li>
 <li><strong>digit tail stripped</strong> &mdash; numbered variants (<code>&hellip;2</code>) fold onto the stripped form when it exists or 2+ share it.</li>
 <li><strong>5+ parts: longest existing prefix</strong> &mdash; a long FlowID joins the longest 3+-part prefix that is itself a FlowID.</li>
 <li><strong>pinned in input/logical.txt</strong> &mdash; a fixed mapping took the Logical verbatim (also shown when the pin caught the folded spelling, or the group name a fold landed on).</li>
