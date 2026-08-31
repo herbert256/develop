@@ -535,7 +535,10 @@ awk -F'\t' '
 # 1) GROUP — FIRST rule for 4-part FlowIDs (2026-08-30, user request): when
 #    the 3rd part is the 3rd part of TWO OR MORE 4-part FlowIDs, the 4th
 #    part drops (SI_GOUDMIJN_INSHARED_{HEMA,HEMAPOLIS,INSHARED,POLIS} ->
-#    one SI_GOUDMIJN_INSHARED). Then: 4-part FlowIDs sharing their first 3
+#    one SI_GOUDMIJN_INSHARED) — UNLESS the 4TH part is itself a known 3rd
+#    part of a 3-part FlowID (2026-08-31, user rule): then the FlowID is a
+#    full D_A1_A2_P shape, no grouping, and the reshape keeps first and
+#    last and combines parts 2+3 (DPL_AXINI-AO_IMPRESS stays itself). Then: 4-part FlowIDs sharing their first 3
 #    parts (the bare 3-part name joins when it exists) fold onto those 3
 #    parts; a 3-part FlowID whose digit-tailed part, stripped (a trailing
 #    "-" trimmed with the digits), duplicates another stripped name or an
@@ -645,6 +648,13 @@ awk -F'\t' -v LF="$LOGICALF" '
                 # AB_SNOWFLAKE_HYPOPORT_{MORTG,PIPE,SPREAD} family joins
                 # its bare AB_SNOWFLAKE_HYPOPORT)
                 if (pre in exists) { lg = pre; R1[i] = "4 parts: the bare 3-part name exists - 4th part dropped" }
+                # the 4TH part being itself a known 3rd part of a 3-part
+                # FlowID means this is a full D_A1_A2_P shape, NOT a variant
+                # to group (2026-08-31, user rule): no drop here — the
+                # reshape keeps first and last and combines parts 2+3
+                # (DPL_AXINI_AO_IMPRESS -> DPL_AXINI-AO_IMPRESS, where the
+                # old 3rd-part rule dropped IMPRESS for the shared AO)
+                else if (P[4] in third3) { }
                 # then: a 3rd part that is the 3rd part of 2+ 4-part
                 # FlowIDs — or of any 3-PART FlowID (the restated rule)
                 else if (cnt3rd[P[3]] >= 2 || (P[3] in third3)) { lg = pre; R1[i] = "4 parts: 3rd part is a known 3rd part - 4th part dropped" }
