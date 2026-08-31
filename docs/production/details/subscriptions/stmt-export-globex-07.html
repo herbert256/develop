@@ -11,16 +11,17 @@
 <body class="res-green">
 <div class="topbar" data-eb="../../" data-b="../../../" data-env="production" data-help="details-subscriptions" data-twin="../../../acceptance/404.html"></div>
 <h1>IN/OUT: Subscription: STMT_EXPORT_GLOBEX_07</h1>
+<p class="range"><strong>Healthy.</strong> Files are staged and the partner collects them. <strong>UC2 status</strong> calls this <strong>OK</strong>.</p>
 <h2>Pickup information</h2>
 <div class="tablewrap"><table>
 <tr><th>Item</th><th>Value</th></tr>
 <tr><td>First pickup</td><td>2026-07-26 05:46:22</td></tr>
 <tr><td>Last pickup</td><td>2026-08-29 09:24:24</td></tr>
 <tr><td>Total pickups</td><td>393</td></tr>
-<tr><td>Pickups with actual files</td><td>33</td></tr>
+<tr><td>Pickups with actual files</td><td>32</td></tr>
 <tr><td>Total files picked up</td><td>33</td></tr>
-<tr><td>Current waiting files</td><td>0</td></tr>
-<tr><td>Expired files</td><td>2</td></tr>
+<tr><td>Current waiting files</td><td>2</td></tr>
+<tr><td>Expired files</td><td>0</td></tr>
 <tr><td>Pickup pattern</td><td>Hourly</td></tr>
 </table></div>
 <p class="note">A <strong>pickup</strong> is a successful SSH logon by this flow's pickup account (server log), shared across that account's UC2 subscriptions; a partner collecting over CFT logs none. A visit in which the account <strong>only delivered</strong> files — its UC4 twin flow handing files over — is not a pickup: its logons are shown on their own row and excluded from every other figure. <strong>Files picked up</strong> counts this subscription's collected Files (transfer log); the page's OK figure also counts staged files still <strong>Waiting</strong>, so OK = picked up + waiting — the two match once nothing is left waiting. <strong>With actual files</strong> counts the pickups that collected at least one of them — each collected file credits the logon that took it (the newest at or before its collect stamp). <strong>Current waiting / Expired files</strong> are this flow's own staged files by outcome, as in the Waiting/Expired table. The <strong>pattern</strong> reads the typical spacing of the pickups. <strong>Connection shared with UC4 drop</strong> appears only on hard proof: one and the same technical SSH connection (the transfer log's Session ID) both delivered and collected a file — a delivery over a separate connection, even seconds apart in the same visit, does not count.</p>
@@ -28,127 +29,122 @@
 <div class="tablewrap"><table>
 <tr><th>Item</th><th>Value</th></tr>
 <tr><td>Use case</td><td class="cl"><a href="../../analyses/use-cases.html">UC2 - We are the server; the partner connects in and collects a file from us (derived from the configured pattern and direction)</a></td></tr>
-<tr><td>Login</td><td class="res-orange cl"><a href="../logins/fe343512.html">FE343512</a></td></tr>
-<tr><td>Account</td><td class="res-orange cl"><a href="../accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
-<tr><td>Domain</td><td class="res-orange cl"><a href="../domains/stmt.html">STMT</a></td></tr>
-<tr><td>Application</td><td class="res-orange cl"><a href="../applications/export.html">EXPORT</a></td></tr>
-<tr><td>Logical</td><td class="res-orange cl"><a href="../logicals/stmt-export-globex.html">STMT_EXPORT_GLOBEX</a></td></tr>
-<tr><td>Partner</td><td class="res-orange cl"><a href="../partners/globex.html">GLOBEX</a></td></tr>
+<tr><td>Login</td><td class="res-green cl"><a href="../logins/fe343512.html">FE343512</a></td></tr>
+<tr><td>Account</td><td class="res-green cl"><a href="../accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
+<tr><td>Domain</td><td class="res-green cl"><a href="../domains/stmt.html">STMT</a></td></tr>
+<tr><td>Application</td><td class="res-green cl"><a href="../applications/export.html">EXPORT</a></td></tr>
+<tr><td>Logical</td><td class="res-green cl"><a href="../logicals/stmt-export-globex.html">STMT_EXPORT_GLOBEX</a></td></tr>
+<tr><td>Partner</td><td class="res-green cl"><a href="../partners/globex.html">GLOBEX</a></td></tr>
 <tr><td>From</td><td>-</td></tr>
 <tr><td>To</td><td>/</td></tr>
 </table></div>
 <h2>Waiting/Expired</h2>
 <div class="tablewrap"><table data-restint="1" data-nosearch="1">
 <tr><th>State</th><th class="num">Files</th><th>First staged</th><th>Last staged</th></tr>
-<tr data-res="red"><td>Expired files</td><td class="num">2</td><td>2026-08-05</td><td>2026-08-10</td></tr>
+<tr data-res="orange"><td>Waiting files</td><td class="num">2</td><td>2026-08-20</td><td>2026-08-20</td></tr>
 </table></div>
 <h2>Activity per day</h2>
 <div class="tablewrap"><table data-pager="10">
 <tr><th>Date</th><th class="num">Files</th><th class="num">Error</th><th class="num">Recovered</th><th class="num">OK</th><th class="num">Volume</th><th class="num">Duration</th></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-07-26 14:40:42.090  fe848f73-e9c2-4c64-b421-781f6fbb82a0"><td>2026-07-26</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">9.58 KB</td><td class="num">4.24 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-07-27 07:13:04.685  918a1467-8a7b-4c49-96ba-e604494ed1a4,2026-07-27 07:04:07.591  8f7bfad9-e108-4f4d-80b0-8581e94f7758"><td>2026-07-27</td><td class="num">2</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">2</td><td class="num">24.15 KB</td><td class="num">2.65 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-07-28 14:25:11.797  df238328-beb8-43be-9400-2e7cffc9ed2e"><td>2026-07-28</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">28.40 KB</td><td class="num">4.23 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-07-29 14:31:18.308  52c935b6-408e-469f-ac77-963adc2cce1b"><td>2026-07-29</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">6.39 KB</td><td class="num">6.31 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-07-30 14:00:56.624  7d69b242-265b-452b-aaf1-176260571fc8"><td>2026-07-30</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">9.23 KB</td><td class="num">2.83 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-07-31 14:30:34.940  a80a2ece-0c28-43b7-a96a-988be4837174"><td>2026-07-31</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">12.36 KB</td><td class="num">3.25 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-01 14:57:12.982  96bc4048-476d-44fc-a637-653b1e329c70"><td>2026-08-01</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">107.96 KB</td><td class="num">5.07 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-03 07:59:29.888  27eaa474-bd8e-4f5c-b4d7-1c0471066678"><td>2026-08-03</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">24.46 KB</td><td class="num">3.77 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-04 07:29:08.205  528a2100-a35b-4de8-b350-9d2cf532b824"><td>2026-08-04</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">29.92 KB</td><td class="num">5.50 s</td></tr>
-<tr data-coreids-failed="2026-08-05 14:29:14.168  4e56fd68-d021-463a-b86d-9bfa3c9c4bb2" data-coreids-processed=""><td>2026-08-05</td><td class="num">1</td><td class="num failed">1</td><td class="num warn"></td><td class="num processed z"></td><td class="num">11.82 KB</td><td class="num">5.33 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-06 14:52:14.464  fc3cecb0-324f-4e8a-b8fb-a9a9c437f782"><td>2026-08-06</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">74.17 KB</td><td class="num">6.75 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-07 07:19:44.422  a6d0c742-fa28-4823-9ba6-bb4761a203a0"><td>2026-08-07</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">23.87 KB</td><td class="num">2.85 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-08 07:49:22.738  d17043cf-dff5-46af-aa1f-3c70e5ce554c"><td>2026-08-08</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">29.21 KB</td><td class="num">3.43 s</td></tr>
-<tr data-coreids-failed="2026-08-10 14:13:22.465  53882949-8d13-4eed-87ea-1b301180167f" data-coreids-processed="2026-08-10 14:33:12.039  7db65c87-bae9-42ba-b11c-2559290cd905"><td>2026-08-10</td><td class="num">2</td><td class="num failed">1</td><td class="num warn"></td><td class="num processed">1</td><td class="num">87.51 KB</td><td class="num">4.06 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-11 14:36:22.762  016e1891-ef40-473d-8878-28e0991bc24f"><td>2026-08-11</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">15.58 KB</td><td class="num">2.89 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-12 14:16:57.308  ecfc9e05-5a68-493a-bec8-0a14d46a90d2,2026-08-12 07:47:56.003  7bf13600-7728-40df-b405-4111f67d9bfd"><td>2026-08-12</td><td class="num">2</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">2</td><td class="num">159.76 KB</td><td class="num">3.50 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-13 07:17:34.319  a691b28d-5cf5-4f6c-b27f-c23a7aa9eda9"><td>2026-08-13</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">176.30 KB</td><td class="num">10.29 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-14 14:45:23.651  0b22e669-15c8-402b-aa21-51ef2feac5c0,2026-08-14 07:16:32.881  603e8f7f-db02-4970-ae73-1b671cf95b6c"><td>2026-08-14</td><td class="num">2</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">2</td><td class="num">11.54 KB</td><td class="num">3.3 min</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-17 14:37:48.852  2577d55c-998f-4833-994e-617d6b458ad1"><td>2026-08-17</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">9.89 MB</td><td class="num">5.49 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-18 07:06:31.652  626d2302-708c-408f-b910-c3767d34e4bc"><td>2026-08-18</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">2.45 KB</td><td class="num">4.76 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-19 07:29:31.948  1054124a-d2b9-48de-b99e-d12504ce908d"><td>2026-08-19</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">32.58 KB</td><td class="num">4.49 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-20 07:52:32.245  be3a0192-34e6-412e-aa2b-ded58c683c5d"><td>2026-08-20</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">8.79 KB</td><td class="num">5.12 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-21 14:36:22.117  cff8c78d-30c2-4263-a334-661e7bf4d181,2026-08-21 14:14:33.152  39f5168b-3013-448c-add9-ea7b652d9547"><td>2026-08-21</td><td class="num">2</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">2</td><td class="num">3.27 MB</td><td class="num">4.83 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-24 07:24:33.430  75d4beb2-bd9b-426c-bc62-1594aad2eb9f,2026-08-24 07:14:00.894  5c60b486-c974-4e5b-befa-f59a753b9261"><td>2026-08-24</td><td class="num">2</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">2</td><td class="num">49.68 KB</td><td class="num">2.5 min</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-25 14:34:55.381  7a79b9bf-c7f5-4c94-bd1a-6ac08ca21832"><td>2026-08-25</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">2.19 MB</td><td class="num">4.35 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-26 14:04:33.697  a519364b-adc2-4b20-8b93-ebe910ce69de"><td>2026-08-26</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">31.16 KB</td><td class="num">3.76 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-27 07:22:41.135  1f390c03-b632-4a7f-aac3-796b70815ecb"><td>2026-08-27</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">77.20 KB</td><td class="num">2.78 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-28 07:45:41.431  cd20fb4b-185f-42cf-9b51-871af81c0a9b"><td>2026-08-28</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">21.40 KB</td><td class="num">4.12 s</td></tr>
-<tr data-coreids-failed="" data-coreids-processed="2026-08-29 07:08:41.728  7b06ea93-7a8c-4b1f-8bdf-94ca7fb6b66b"><td>2026-08-29</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">3.27 KB</td><td class="num">4.35 s</td></tr>
-<tr class="total"><td>Total (29 day(s))</td><td class="num">35</td><td class="num failed">2</td><td class="num warn"></td><td class="num processed">33</td><td class="num">16.38 MB</td><td class="num">23.84 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-26 07:40:08.362  245553ab-175f-4674-9c8a-f8404296c675"><td>2026-07-26</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">14.96 KB</td><td class="num">5.04 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-27 07:03:08.658  d23b42f3-798c-4ec4-9d17-05efca317245"><td>2026-07-27</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">127.85 KB</td><td class="num">4.79 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-28 07:15:15.770  1fd4b1b4-adc8-4638-8a5e-4e6780ab8dd0"><td>2026-07-28</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">3.85 KB</td><td class="num">3.96 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-29 14:49:26.549  73e764c7-5bec-4e76-8321-82eb5117f363,2026-07-29 07:28:59.561  cebcc071-7361-4048-ac1d-9fff56f79a73"><td>2026-07-29</td><td class="num">2</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">2</td><td class="num">9.52 KB</td><td class="num">6.05 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-30 07:58:37.877  f95c3cfe-592e-4ed4-aa96-2128db23ec1f"><td>2026-07-30</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">8.36 KB</td><td class="num">2.85 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-07-31 07:24:16.659  29877f8c-d450-4f27-ac07-7776177b9141"><td>2026-07-31</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">64.88 KB</td><td class="num">3.17 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-03 07:57:11.141  a3dd2f2f-f061-4905-b47c-25c9ebd232d0"><td>2026-08-03</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">23.02 KB</td><td class="num">3.90 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-04 14:56:17.845  e1203cac-5d05-4065-8e3d-ae3535e44083"><td>2026-08-04</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">8.29 KB</td><td class="num">4.88 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-05 14:19:18.141  8f072bf4-bf32-48b5-becb-bbe5bd7fec54"><td>2026-08-05</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">52.97 KB</td><td class="num">3.30 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-06 14:42:18.437  3ced1b3c-215f-4104-af58-c99445199824"><td>2026-08-06</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">16.22 KB</td><td class="num">2.84 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-07 14:17:25.675  22c351fe-2cfb-41cc-ab4b-c50ddc6ecff8"><td>2026-08-07</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">22.46 KB</td><td class="num">2.3 min</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-09 14:40:26.142  e653688d-19f6-4918-9dba-2d6b0ac80b50"><td>2026-08-09</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">3.31 MB</td><td class="num">56.62 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-10 14:03:26.439  943957d5-7c23-4167-8e48-3b1b9263b720"><td>2026-08-10</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">11.61 KB</td><td class="num">4.28 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-11 14:15:58.939  cd444430-c42e-4bfc-b531-c9aeed1d16a8"><td>2026-08-11</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">51.94 KB</td><td class="num">4.40 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-12 14:45:37.255  f7e4c0bc-a9fb-4a88-b3ab-4ad771486854,2026-08-12 14:03:00.302  a10bed00-9ddd-4558-82d5-b3b27878493e,2026-08-12 07:31:41.401  14538915-cd74-49c3-b9ec-a783ba9c58ec,2026-08-12 07:18:47.258  10d3c5dd-3d4c-468a-9b5c-17e9c8e7da51,2026-08-12 07:07:10.878  994ae3a6-b711-4e56-a684-4854b540acb7"><td>2026-08-12</td><td class="num">5</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">5</td><td class="num">183.13 KB</td><td class="num">5.05 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-13 14:12:27.328  9dec25ad-a2ab-4a56-aff0-642a2932ba91"><td>2026-08-13</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">2.86 KB</td><td class="num">5.32 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-17 14:13:23.451  7fe35187-9213-4251-a51e-a09c8deb52bb,2026-08-17 07:35:30.105  a16a6018-cc61-41dc-a8f3-6b42e6105728"><td>2026-08-17</td><td class="num">2</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">2</td><td class="num">115.93 KB</td><td class="num">3.75 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-18 14:56:35.625  a31f518e-5f9c-4309-bf6d-e361fe16855e"><td>2026-08-18</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">25.84 KB</td><td class="num">3.10 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-19 14:19:35.922  510540d6-c1ca-4b58-affb-f11085b1312e"><td>2026-08-19</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">5.59 KB</td><td class="num">2.94 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-20 14:10:23.420  087bf4db-6370-46b8-a3b0-e6287185d87b,2026-08-20 07:04:25.053  214bd5bd-7dc8-4d80-b460-eebb72934c2d"><td>2026-08-20</td><td class="num">2</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">2</td><td class="num">70.90 KB</td><td class="num">3.27 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-21 07:34:03.369  4beb5249-6394-4c0c-b2d9-6fe4f6bf9dd9"><td>2026-08-21</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">8.96 KB</td><td class="num">5.46 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-23 07:51:37.107  089efdf6-4a7e-4c97-8232-27cfa41ae070"><td>2026-08-23</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">22.18 KB</td><td class="num">3.68 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-24 07:14:37.403  b685ed3e-acab-44e6-b2bf-357f2bb58c41"><td>2026-08-24</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">3.69 KB</td><td class="num">30.29 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-25 14:33:52.608  e7c4f883-811b-44c3-a851-557f136f07d2,2026-08-25 07:32:36.634  f66c447b-fac8-463d-8cbf-7485076ee489"><td>2026-08-25</td><td class="num">2</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">2</td><td class="num">35.97 KB</td><td class="num">2.68 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-27 07:12:45.108  5fea3a8f-a542-4cfa-9121-9956f164ff6c"><td>2026-08-27</td><td class="num">1</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">1</td><td class="num">16.63 KB</td><td class="num">5.44 s</td></tr>
+<tr data-coreids-failed="" data-coreids-processed="2026-08-28 14:17:12.517  ba2e3cc3-5808-4a02-b636-c3d5df6c653e,2026-08-28 07:35:45.405  0dd129d7-0770-4549-91af-a70578feab3d"><td>2026-08-28</td><td class="num">2</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">2</td><td class="num">16.37 KB</td><td class="num">4.45 s</td></tr>
+<tr class="total"><td>Total (26 day(s))</td><td class="num">35</td><td class="num failed z"></td><td class="num warn"></td><td class="num processed">35</td><td class="num">4.21 MB</td><td class="num">10.27 s</td></tr>
 </table></div>
 <div class="sxs">
 <div class="sxscol">
 <h2>Incoming connections</h2>
 <div class="tablewrap"><table data-fold="orange|{n} IPs in whitelist without traffic">
 <tr><th>IP</th><th class="num">In</th><th class="num">Out</th></tr>
-<tr data-res="orange"><td class="cl"><a href="../incoming_connections/198-51-100-10.html"><code>198.51.100.10</code></a></td><td class="num"></td><td class="num"></td></tr>
-<tr data-res="orange"><td class="cl"><a href="../incoming_connections/198-51-100-11.html"><code>198.51.100.11</code></a></td><td class="num"></td><td class="num"></td></tr>
-<tr data-res="orange"><td class="cl"><a href="../incoming_connections/198-51-100-12.html"><code>198.51.100.12</code></a></td><td class="num"></td><td class="num"></td></tr>
-<tr data-res="orange"><td class="cl"><a href="../incoming_connections/198-51-100-13.html"><code>198.51.100.13</code></a></td><td class="num"></td><td class="num"></td></tr>
+<tr data-res="green"><td class="cl"><a href="../incoming_connections/198-51-100-10.html"><code>198.51.100.10</code></a></td><td class="num"></td><td class="num">9</td></tr>
+<tr data-res="green"><td class="cl"><a href="../incoming_connections/198-51-100-11.html"><code>198.51.100.11</code></a></td><td class="num"></td><td class="num">6</td></tr>
+<tr data-res="green"><td class="cl"><a href="../incoming_connections/198-51-100-12.html"><code>198.51.100.12</code></a></td><td class="num"></td><td class="num">9</td></tr>
+<tr data-res="green"><td class="cl"><a href="../incoming_connections/198-51-100-13.html"><code>198.51.100.13</code></a></td><td class="num"></td><td class="num">9</td></tr>
 <tr data-res="orange"><td><code>198.51.100.170</code></td><td class="num"></td><td class="num"></td></tr>
-<tr data-res="red"><td><code>-</code></td><td class="num"></td><td class="num">35</td></tr>
 </table></div>
 </div>
 </div>
 <h2>Latest 500 Files</h2>
 <div class="tablewrap"><table class="wide" data-pager="20" data-restint="1">
 <tr><th>Date</th><th>State</th><th>Direction</th><th class="num">Size</th><th class="num">Throughput</th><th class="num">Duration</th><th>File</th><th>CoreId</th></tr>
-<tr data-res="green"><td>2026-08-29 07:08:41.728</td><td>Delivered</td><td>in/out</td><td class="num">3.27 KB</td><td class="num">770 B/s</td><td class="num">4.35 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260829025721_595492.dat</code></td><td><code>7b06ea93-7a8c-4b1f-8bdf-94ca7fb6b66b</code></td></tr>
-<tr data-res="green"><td>2026-08-28 07:45:41.431</td><td>Delivered</td><td>in/out</td><td class="num">21.40 KB</td><td class="num">5.20 KB/s</td><td class="num">4.12 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260828027941_178006.dat</code></td><td><code>cd20fb4b-185f-42cf-9b51-871af81c0a9b</code></td></tr>
-<tr data-res="green"><td>2026-08-27 07:22:41.135</td><td>Delivered</td><td>in/out</td><td class="num">77.20 KB</td><td class="num">27.81 KB/s</td><td class="num">2.78 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260827026561_760520.pdf.pgp</code></td><td><code>1f390c03-b632-4a7f-aac3-796b70815ecb</code></td></tr>
-<tr data-res="green"><td>2026-08-26 14:04:33.697</td><td>Delivered</td><td>in/out</td><td class="num">31.16 KB</td><td class="num">8.28 KB/s</td><td class="num">3.76 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260826050673_901426.dat</code></td><td><code>a519364b-adc2-4b20-8b93-ebe910ce69de</code></td></tr>
-<tr data-res="green"><td>2026-08-25 14:34:55.381</td><td>Delivered</td><td>in/out</td><td class="num">2.19 MB</td><td class="num">514.27 KB/s</td><td class="num">4.35 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260825052495_810693.pdf.pgp</code></td><td><code>7a79b9bf-c7f5-4c94-bd1a-6ac08ca21832</code></td></tr>
-<tr data-res="green"><td>2026-08-24 07:24:33.430</td><td>Delivered</td><td>in/out</td><td class="num">28.04 KB</td><td class="num">469 B/s</td><td class="num">1.0 min</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260824026673_905884.txt.pgp</code></td><td><code>75d4beb2-bd9b-426c-bc62-1594aad2eb9f</code></td></tr>
-<tr data-res="green"><td>2026-08-24 07:14:00.894</td><td>Delivered</td><td>in/out</td><td class="num">21.63 KB</td><td class="num">91 B/s</td><td class="num">4.0 min</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260824026040_305264.dat</code></td><td><code>5c60b486-c974-4e5b-befa-f59a753b9261</code></td></tr>
-<tr data-res="green"><td>2026-08-21 14:36:22.117</td><td>Delivered</td><td>in/out</td><td class="num">3.22 MB</td><td class="num">854.72 KB/s</td><td class="num">3.86 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260821052582_447762.csv</code></td><td><code>cff8c78d-30c2-4263-a334-661e7bf4d181</code></td></tr>
-<tr data-res="green"><td>2026-08-21 14:14:33.152</td><td>Delivered</td><td>in/out</td><td class="num">48.15 KB</td><td class="num">8.30 KB/s</td><td class="num">5.80 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260821051273_209594.csv</code></td><td><code>39f5168b-3013-448c-add9-ea7b652d9547</code></td></tr>
-<tr data-res="green"><td>2026-08-20 07:52:32.245</td><td>Delivered</td><td>in/out</td><td class="num">8.79 KB</td><td class="num">1.72 KB/s</td><td class="num">5.12 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260820028352_235941.pdf.pgp</code></td><td><code>be3a0192-34e6-412e-aa2b-ded58c683c5d</code></td></tr>
-<tr data-res="green"><td>2026-08-19 07:29:31.948</td><td>Delivered</td><td>in/out</td><td class="num">32.58 KB</td><td class="num">7.25 KB/s</td><td class="num">4.49 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260819026971_818455.pdf.pgp</code></td><td><code>1054124a-d2b9-48de-b99e-d12504ce908d</code></td></tr>
-<tr data-res="green"><td>2026-08-18 07:06:31.652</td><td>Delivered</td><td>in/out</td><td class="num">2.45 KB</td><td class="num">528 B/s</td><td class="num">4.76 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260818025591_400969.csv</code></td><td><code>626d2302-708c-408f-b910-c3767d34e4bc</code></td></tr>
-<tr data-res="green"><td>2026-08-17 14:37:48.852</td><td>Delivered</td><td>in/out</td><td class="num">9.89 MB</td><td class="num">1.80 MB/s</td><td class="num">5.49 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260817052668_084831.csv</code></td><td><code>2577d55c-998f-4833-994e-617d6b458ad1</code></td></tr>
-<tr data-res="green"><td>2026-08-14 14:45:23.651</td><td>Delivered</td><td>in/out</td><td class="num">5.76 KB</td><td class="num">15 B/s</td><td class="num">6.3 min</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260814053123_128848.dat</code></td><td><code>0b22e669-15c8-402b-aa21-51ef2feac5c0</code></td></tr>
-<tr data-res="green"><td>2026-08-14 07:16:32.881</td><td>Delivered</td><td>in/out</td><td class="num">5.78 KB</td><td class="num">391 B/s</td><td class="num">15.13 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260814026192_885688.csv</code></td><td><code>603e8f7f-db02-4970-ae73-1b671cf95b6c</code></td></tr>
-<tr data-res="green"><td>2026-08-13 07:17:34.319</td><td>Delivered</td><td>in/out</td><td class="num">176.30 KB</td><td class="num">17.13 KB/s</td><td class="num">10.29 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260813026254_635042.xml</code></td><td><code>a691b28d-5cf5-4f6c-b27f-c23a7aa9eda9</code></td></tr>
-<tr data-res="green"><td>2026-08-12 14:16:57.308</td><td>Delivered</td><td>in/out</td><td class="num">83.89 KB</td><td class="num">34.85 KB/s</td><td class="num">2.41 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260812051417_025220.csv</code></td><td><code>ecfc9e05-5a68-493a-bec8-0a14d46a90d2</code></td></tr>
-<tr data-res="green"><td>2026-08-12 07:47:56.003</td><td>Delivered</td><td>in/out</td><td class="num">75.87 KB</td><td class="num">16.50 KB/s</td><td class="num">4.60 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260812028076_544309.txt.pgp</code></td><td><code>7bf13600-7728-40df-b405-4111f67d9bfd</code></td></tr>
-<tr data-res="green"><td>2026-08-11 14:36:22.762</td><td>Delivered</td><td>in/out</td><td class="num">15.58 KB</td><td class="num">5.40 KB/s</td><td class="num">2.89 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260811052582_876389.csv</code></td><td><code>016e1891-ef40-473d-8878-28e0991bc24f</code></td></tr>
-<tr data-res="green"><td>2026-08-10 14:33:12.039</td><td>Delivered</td><td>in/out</td><td class="num">36.70 KB</td><td class="num">7.05 KB/s</td><td class="num">5.21 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260810052392_291195.zip</code></td><td><code>7db65c87-bae9-42ba-b11c-2559290cd905</code></td></tr>
-<tr data-res="red"><td>2026-08-10 14:13:22.465</td><td>Expired</td><td>in/out</td><td class="num">50.81 KB</td><td class="num">17.40 KB/s</td><td class="num">2.92 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260810051202_458904.csv</code></td><td><code>53882949-8d13-4eed-87ea-1b301180167f</code></td></tr>
-<tr data-res="green"><td>2026-08-08 07:49:22.738</td><td>Delivered</td><td>in/out</td><td class="num">29.21 KB</td><td class="num">8.51 KB/s</td><td class="num">3.43 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260808028162_181378.txt.pgp</code></td><td><code>d17043cf-dff5-46af-aa1f-3c70e5ce554c</code></td></tr>
-<tr data-res="green"><td>2026-08-07 07:19:44.422</td><td>Delivered</td><td>in/out</td><td class="num">23.87 KB</td><td class="num">8.36 KB/s</td><td class="num">2.85 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260807026384_090645.pdf.pgp</code></td><td><code>a6d0c742-fa28-4823-9ba6-bb4761a203a0</code></td></tr>
-<tr data-res="green"><td>2026-08-06 14:52:14.464</td><td>Delivered</td><td>in/out</td><td class="num">74.17 KB</td><td class="num">10.98 KB/s</td><td class="num">6.75 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260806053534_186783.pdf.pgp</code></td><td><code>fc3cecb0-324f-4e8a-b8fb-a9a9c437f782</code></td></tr>
-<tr data-res="red"><td>2026-08-05 14:29:14.168</td><td>Expired</td><td>in/out</td><td class="num">11.82 KB</td><td class="num">2.22 KB/s</td><td class="num">5.33 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260805052154_769296.pdf.pgp</code></td><td><code>4e56fd68-d021-463a-b86d-9bfa3c9c4bb2</code></td></tr>
-<tr data-res="green"><td>2026-08-04 07:29:08.205</td><td>Delivered</td><td>in/out</td><td class="num">29.92 KB</td><td class="num">5.44 KB/s</td><td class="num">5.50 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260804026948_731589.dat</code></td><td><code>528a2100-a35b-4de8-b350-9d2cf532b824</code></td></tr>
-<tr data-res="green"><td>2026-08-03 07:59:29.888</td><td>Delivered</td><td>in/out</td><td class="num">24.46 KB</td><td class="num">6.48 KB/s</td><td class="num">3.77 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260803028769_640857.csv</code></td><td><code>27eaa474-bd8e-4f5c-b4d7-1c0471066678</code></td></tr>
-<tr data-res="green"><td>2026-08-01 14:57:12.982</td><td>Delivered</td><td>in/out</td><td class="num">107.96 KB</td><td class="num">21.29 KB/s</td><td class="num">5.07 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260801053832_099353.xml</code></td><td><code>96bc4048-476d-44fc-a637-653b1e329c70</code></td></tr>
-<tr data-res="green"><td>2026-07-31 14:30:34.940</td><td>Delivered</td><td>in/out</td><td class="num">12.36 KB</td><td class="num">3.80 KB/s</td><td class="num">3.25 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260731052234_368658.pdf.pgp</code></td><td><code>a80a2ece-0c28-43b7-a96a-988be4837174</code></td></tr>
-<tr data-res="green"><td>2026-07-30 14:00:56.624</td><td>Delivered</td><td>in/out</td><td class="num">9.23 KB</td><td class="num">3.26 KB/s</td><td class="num">2.83 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260730050456_277925.csv</code></td><td><code>7d69b242-265b-452b-aaf1-176260571fc8</code></td></tr>
-<tr data-res="green"><td>2026-07-29 14:31:18.308</td><td>Delivered</td><td>in/out</td><td class="num">6.39 KB</td><td class="num">1.01 KB/s</td><td class="num">6.31 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260729052278_187193.zip</code></td><td><code>52c935b6-408e-469f-ac77-963adc2cce1b</code></td></tr>
-<tr data-res="green"><td>2026-07-28 14:25:11.797</td><td>Delivered</td><td>in/out</td><td class="num">28.40 KB</td><td class="num">6.71 KB/s</td><td class="num">4.23 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260728051911_429409.txt.pgp</code></td><td><code>df238328-beb8-43be-9400-2e7cffc9ed2e</code></td></tr>
-<tr data-res="green"><td>2026-07-27 07:13:04.685</td><td>Delivered</td><td>in/out</td><td class="num">19.45 KB</td><td class="num">6.31 KB/s</td><td class="num">3.08 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260727025984_409745.csv</code></td><td><code>918a1467-8a7b-4c49-96ba-e604494ed1a4</code></td></tr>
-<tr data-res="green"><td>2026-07-27 07:04:07.591</td><td>Delivered</td><td>in/out</td><td class="num">4.71 KB</td><td class="num">2.11 KB/s</td><td class="num">2.23 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260727025447_432147.txt.pgp</code></td><td><code>8f7bfad9-e108-4f4d-80b0-8581e94f7758</code></td></tr>
-<tr data-res="green"><td>2026-07-26 14:40:42.090</td><td>Delivered</td><td>in/out</td><td class="num">9.58 KB</td><td class="num">2.26 KB/s</td><td class="num">4.24 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260726052842_828137.xml</code></td><td><code>fe848f73-e9c2-4c64-b421-781f6fbb82a0</code></td></tr>
+<tr data-res="green"><td>2026-08-28 14:17:12.517</td><td>Delivered</td><td>in/out</td><td class="num">15.78 KB</td><td class="num">4.15 KB/s</td><td class="num">3.80 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260828051432_262709.csv</code></td><td><code>ba2e3cc3-5808-4a02-b636-c3d5df6c653e</code></td></tr>
+<tr data-res="green"><td>2026-08-28 07:35:45.405</td><td>Delivered</td><td>in/out</td><td class="num">610 B</td><td class="num">119 B/s</td><td class="num">5.11 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260828027345_976390.zip</code></td><td><code>0dd129d7-0770-4549-91af-a70578feab3d</code></td></tr>
+<tr data-res="green"><td>2026-08-27 07:12:45.108</td><td>Delivered</td><td>in/out</td><td class="num">16.63 KB</td><td class="num">3.06 KB/s</td><td class="num">5.44 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260827025965_558905.txt.pgp</code></td><td><code>5fea3a8f-a542-4cfa-9121-9956f164ff6c</code></td></tr>
+<tr data-res="green"><td>2026-08-25 14:33:52.608</td><td>Delivered</td><td>in/out</td><td class="num">11.97 KB</td><td class="num">3.85 KB/s</td><td class="num">3.11 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260825052432_257221.csv</code></td><td><code>e7c4f883-811b-44c3-a851-557f136f07d2</code></td></tr>
+<tr data-res="green"><td>2026-08-25 07:32:36.634</td><td>Delivered</td><td>in/out</td><td class="num">24.00 KB</td><td class="num">10.62 KB/s</td><td class="num">2.26 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260825027156_473379.dat</code></td><td><code>f66c447b-fac8-463d-8cbf-7485076ee489</code></td></tr>
+<tr data-res="green"><td>2026-08-24 07:14:37.403</td><td>Delivered</td><td>in/out</td><td class="num">3.69 KB</td><td class="num">124 B/s</td><td class="num">30.29 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260824026077_704269.xml</code></td><td><code>b685ed3e-acab-44e6-b2bf-357f2bb58c41</code></td></tr>
+<tr data-res="green"><td>2026-08-23 07:51:37.107</td><td>Delivered</td><td>in/out</td><td class="num">22.18 KB</td><td class="num">6.03 KB/s</td><td class="num">3.68 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260823028297_286784.xml</code></td><td><code>089efdf6-4a7e-4c97-8232-27cfa41ae070</code></td></tr>
+<tr data-res="green"><td>2026-08-21 07:34:03.369</td><td>Delivered</td><td>in/out</td><td class="num">8.96 KB</td><td class="num">1.64 KB/s</td><td class="num">5.46 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260821027243_110447.dat</code></td><td><code>4beb5249-6394-4c0c-b2d9-6fe4f6bf9dd9</code></td></tr>
+<tr data-res="orange"><td>2026-08-20 14:10:23.420</td><td>Waiting</td><td>in/out</td><td class="num">64.75 KB</td><td class="num">22.87 KB/s</td><td class="num">2.83 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260820051023_007566.pdf.pgp</code></td><td><code>087bf4db-6370-46b8-a3b0-e6287185d87b</code></td></tr>
+<tr data-res="orange"><td>2026-08-20 07:04:25.053</td><td>Waiting</td><td>in/out</td><td class="num">6.15 KB</td><td class="num">1.65 KB/s</td><td class="num">3.72 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260820025465_019715.csv</code></td><td><code>214bd5bd-7dc8-4d80-b460-eebb72934c2d</code></td></tr>
+<tr data-res="green"><td>2026-08-19 14:19:35.922</td><td>Delivered</td><td>in/out</td><td class="num">5.59 KB</td><td class="num">1.90 KB/s</td><td class="num">2.94 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260819051575_616839.txt.pgp</code></td><td><code>510540d6-c1ca-4b58-affb-f11085b1312e</code></td></tr>
+<tr data-res="green"><td>2026-08-18 14:56:35.625</td><td>Delivered</td><td>in/out</td><td class="num">25.84 KB</td><td class="num">8.34 KB/s</td><td class="num">3.10 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260818053795_199354.txt.pgp</code></td><td><code>a31f518e-5f9c-4309-bf6d-e361fe16855e</code></td></tr>
+<tr data-res="green"><td>2026-08-17 14:13:23.451</td><td>Delivered</td><td>in/out</td><td class="num">15.39 KB</td><td class="num">4.00 KB/s</td><td class="num">3.85 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260817051203_660783.zip</code></td><td><code>7fe35187-9213-4251-a51e-a09c8deb52bb</code></td></tr>
+<tr data-res="green"><td>2026-08-17 07:35:30.105</td><td>Delivered</td><td>in/out</td><td class="num">100.55 KB</td><td class="num">27.60 KB/s</td><td class="num">3.64 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260817027330_747515.pdf.pgp</code></td><td><code>a16a6018-cc61-41dc-a8f3-6b42e6105728</code></td></tr>
+<tr data-res="green"><td>2026-08-13 14:12:27.328</td><td>Delivered</td><td>in/out</td><td class="num">2.86 KB</td><td class="num">550 B/s</td><td class="num">5.32 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260813051147_509746.txt.pgp</code></td><td><code>9dec25ad-a2ab-4a56-aff0-642a2932ba91</code></td></tr>
+<tr data-res="green"><td>2026-08-12 14:45:37.255</td><td>Delivered</td><td>in/out</td><td class="num">68.48 KB</td><td class="num">13.71 KB/s</td><td class="num">4.99 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260812053137_206995.xml</code></td><td><code>f7e4c0bc-a9fb-4a88-b3ab-4ad771486854</code></td></tr>
+<tr data-res="green"><td>2026-08-12 14:03:00.302</td><td>Delivered</td><td>in/out</td><td class="num">31.73 KB</td><td class="num">3.93 KB/s</td><td class="num">8.07 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260812050580_481759.dat</code></td><td><code>a10bed00-9ddd-4558-82d5-b3b27878493e</code></td></tr>
+<tr data-res="green"><td>2026-08-12 07:31:41.401</td><td>Delivered</td><td>in/out</td><td class="num">5.21 KB</td><td class="num">1.55 KB/s</td><td class="num">3.36 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260812027101_073251.txt.pgp</code></td><td><code>14538915-cd74-49c3-b9ec-a783ba9c58ec</code></td></tr>
+<tr data-res="green"><td>2026-08-12 07:18:47.258</td><td>Delivered</td><td>in/out</td><td class="num">35.86 KB</td><td class="num">10.97 KB/s</td><td class="num">3.27 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260812026327_085597.dat</code></td><td><code>10d3c5dd-3d4c-468a-9b5c-17e9c8e7da51</code></td></tr>
+<tr data-res="green"><td>2026-08-12 07:07:10.878</td><td>Delivered</td><td>in/out</td><td class="num">41.85 KB</td><td class="num">7.55 KB/s</td><td class="num">5.54 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260812025630_148649.pdf.pgp</code></td><td><code>994ae3a6-b711-4e56-a684-4854b540acb7</code></td></tr>
+<tr data-res="green"><td>2026-08-11 14:15:58.939</td><td>Delivered</td><td>in/out</td><td class="num">51.94 KB</td><td class="num">11.80 KB/s</td><td class="num">4.40 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260811051358_116262.txt.pgp</code></td><td><code>cd444430-c42e-4bfc-b531-c9aeed1d16a8</code></td></tr>
+<tr data-res="green"><td>2026-08-10 14:03:26.439</td><td>Delivered</td><td>in/out</td><td class="num">11.61 KB</td><td class="num">2.71 KB/s</td><td class="num">4.28 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260810050606_257289.dat</code></td><td><code>943957d5-7c23-4167-8e48-3b1b9263b720</code></td></tr>
+<tr data-res="green"><td>2026-08-09 14:40:26.142</td><td>Delivered</td><td>in/out</td><td class="num">3.31 MB</td><td class="num">59.85 KB/s</td><td class="num">56.62 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260809052826_839802.dat</code></td><td><code>e653688d-19f6-4918-9dba-2d6b0ac80b50</code></td></tr>
+<tr data-res="green"><td>2026-08-07 14:17:25.675</td><td>Delivered</td><td>in/out</td><td class="num">22.46 KB</td><td class="num">167 B/s</td><td class="num">2.3 min</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260807051445_753330.txt.pgp</code></td><td><code>22c351fe-2cfb-41cc-ab4b-c50ddc6ecff8</code></td></tr>
+<tr data-res="green"><td>2026-08-06 14:42:18.437</td><td>Delivered</td><td>in/out</td><td class="num">16.22 KB</td><td class="num">5.72 KB/s</td><td class="num">2.84 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260806052938_985167.txt.pgp</code></td><td><code>3ced1b3c-215f-4104-af58-c99445199824</code></td></tr>
+<tr data-res="green"><td>2026-08-05 14:19:18.141</td><td>Delivered</td><td>in/out</td><td class="num">52.97 KB</td><td class="num">16.03 KB/s</td><td class="num">3.30 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260805051558_567681.txt.pgp</code></td><td><code>8f072bf4-bf32-48b5-becb-bbe5bd7fec54</code></td></tr>
+<tr data-res="green"><td>2026-08-04 14:56:17.845</td><td>Delivered</td><td>in/out</td><td class="num">8.29 KB</td><td class="num">1.70 KB/s</td><td class="num">4.88 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260804053777_150195.txt.pgp</code></td><td><code>e1203cac-5d05-4065-8e3d-ae3535e44083</code></td></tr>
+<tr data-res="green"><td>2026-08-03 07:57:11.141</td><td>Delivered</td><td>in/out</td><td class="num">23.02 KB</td><td class="num">5.91 KB/s</td><td class="num">3.90 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260803028631_303542.pdf.pgp</code></td><td><code>a3dd2f2f-f061-4905-b47c-25c9ebd232d0</code></td></tr>
+<tr data-res="green"><td>2026-07-31 07:24:16.659</td><td>Delivered</td><td>in/out</td><td class="num">64.88 KB</td><td class="num">20.47 KB/s</td><td class="num">3.17 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260731026656_480251.pdf.pgp</code></td><td><code>29877f8c-d450-4f27-ac07-7776177b9141</code></td></tr>
+<tr data-res="green"><td>2026-07-30 07:58:37.877</td><td>Delivered</td><td>in/out</td><td class="num">8.36 KB</td><td class="num">2.94 KB/s</td><td class="num">2.85 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260730028717_940610.pdf.pgp</code></td><td><code>f95c3cfe-592e-4ed4-aa96-2128db23ec1f</code></td></tr>
+<tr data-res="green"><td>2026-07-29 14:49:26.549</td><td>Delivered</td><td>in/out</td><td class="num">3.91 KB</td><td class="num">746 B/s</td><td class="num">5.37 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260729053366_689724.dat</code></td><td><code>73e764c7-5bec-4e76-8321-82eb5117f363</code></td></tr>
+<tr data-res="green"><td>2026-07-29 07:28:59.561</td><td>Delivered</td><td>in/out</td><td class="num">5.61 KB</td><td class="num">852 B/s</td><td class="num">6.74 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260729026939_849877.csv</code></td><td><code>cebcc071-7361-4048-ac1d-9fff56f79a73</code></td></tr>
+<tr data-res="green"><td>2026-07-28 07:15:15.770</td><td>Delivered</td><td>in/out</td><td class="num">3.85 KB</td><td class="num">994 B/s</td><td class="num">3.96 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260728026115_227794.csv</code></td><td><code>1fd4b1b4-adc8-4638-8a5e-4e6780ab8dd0</code></td></tr>
+<tr data-res="green"><td>2026-07-27 07:03:08.658</td><td>Delivered</td><td>in/out</td><td class="num">127.85 KB</td><td class="num">26.67 KB/s</td><td class="num">4.79 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260727025388_208130.dat</code></td><td><code>d23b42f3-798c-4ec4-9d17-05efca317245</code></td></tr>
+<tr data-res="green"><td>2026-07-26 07:40:08.362</td><td>Delivered</td><td>in/out</td><td class="num">14.96 KB</td><td class="num">2.97 KB/s</td><td class="num">5.04 s</td><td><code>AcmeSTMT_EXPORT_GLOBEX_20260726027608_790644.dat</code></td><td><code>245553ab-175f-4674-9c8a-f8404296c675</code></td></tr>
 </table></div>
 <div class="sxs">
 <div class="sxscol">
 <h2>Load by weekday</h2>
 <div class="tablewrap"><table>
 <tr><th>Weekday</th><th class="num">Files</th><th class="num">Error</th><th class="num">OK</th><th class="num">Volume</th></tr>
-<tr><td>Monday</td><td class="num">8</td><td class="num failed">1</td><td class="num processed">7</td><td class="num">10.07 MB</td></tr>
-<tr><td>Tuesday</td><td class="num">5</td><td class="num failed z"></td><td class="num processed">5</td><td class="num">2.26 MB</td></tr>
-<tr><td>Wednesday</td><td class="num">6</td><td class="num failed">1</td><td class="num processed">5</td><td class="num">241.71 KB</td></tr>
-<tr><td>Thursday</td><td class="num">5</td><td class="num failed z"></td><td class="num processed">5</td><td class="num">345.69 KB</td></tr>
-<tr><td>Friday</td><td class="num">7</td><td class="num failed z"></td><td class="num processed">7</td><td class="num">3.34 MB</td></tr>
-<tr><td>Saturday</td><td class="num">3</td><td class="num failed z"></td><td class="num processed">3</td><td class="num">140.44 KB</td></tr>
-<tr><td>Sunday</td><td class="num">1</td><td class="num failed z"></td><td class="num processed">1</td><td class="num">9.58 KB</td></tr>
+<tr><td>Monday</td><td class="num">6</td><td class="num failed z"></td><td class="num processed">6</td><td class="num">282.11 KB</td></tr>
+<tr><td>Tuesday</td><td class="num">6</td><td class="num failed z"></td><td class="num processed">6</td><td class="num">125.89 KB</td></tr>
+<tr><td>Wednesday</td><td class="num">9</td><td class="num failed z"></td><td class="num processed">9</td><td class="num">251.21 KB</td></tr>
+<tr><td>Thursday</td><td class="num">6</td><td class="num failed z"></td><td class="num processed">6</td><td class="num">114.97 KB</td></tr>
+<tr><td>Friday</td><td class="num">5</td><td class="num failed z"></td><td class="num processed">5</td><td class="num">112.68 KB</td></tr>
+<tr><td>Sunday</td><td class="num">3</td><td class="num failed z"></td><td class="num processed">3</td><td class="num">3.35 MB</td></tr>
 </table></div>
 </div>
 <div class="sxscol">
 <h2>Load by hour</h2>
 <div class="tablewrap"><table>
 <tr><th>Hour</th><th class="num">Files</th><th class="num">Error</th><th class="num">OK</th><th class="num">Volume</th></tr>
-<tr><td>07:00</td><td class="num">17</td><td class="num failed z"></td><td class="num processed">17</td><td class="num">584.93 KB</td></tr>
-<tr><td>14:00</td><td class="num">18</td><td class="num failed">2</td><td class="num processed">16</td><td class="num">15.81 MB</td></tr>
+<tr><td>07:00</td><td class="num">18</td><td class="num failed z"></td><td class="num processed">18</td><td class="num">514.19 KB</td></tr>
+<tr><td>14:00</td><td class="num">17</td><td class="num failed z"></td><td class="num processed">17</td><td class="num">3.71 MB</td></tr>
 </table></div>
 </div>
 </div>
@@ -157,65 +153,64 @@
 <h2>Duration</h2>
 <div class="tablewrap"><table data-nosearch="1">
 <tr><th>Metric</th><th>Value</th></tr>
-<tr><td>min</td><td>40 ms</td></tr>
-<tr><td>avg</td><td>407 ms</td></tr>
-<tr><td>max</td><td>2.54 s</td></tr>
+<tr><td>min</td><td>42 ms</td></tr>
+<tr><td>avg</td><td>368 ms</td></tr>
+<tr><td>max</td><td>2.23 s</td></tr>
 <tr><td>p50</td><td>280 ms</td></tr>
-<tr><td>p95</td><td>1.23 s</td></tr>
-<tr><td>p99</td><td>1.84 s</td></tr>
+<tr><td>p95</td><td>983 ms</td></tr>
+<tr><td>p99</td><td>1.47 s</td></tr>
 </table></div>
 </div>
 <div class="sxscol">
 <h2>Size</h2>
 <div class="tablewrap"><table data-nosearch="1">
 <tr><th>Metric</th><th>Value</th></tr>
-<tr><td>Volume</td><td>16.38 MB</td></tr>
-<tr><td>Throughput</td><td>1.17 MB/s</td></tr>
-<tr><td>Average</td><td>479.37 KB</td></tr>
-<tr><td>Largest</td><td>9.89 MB</td></tr>
+<tr><td>Volume</td><td>4.21 MB</td></tr>
+<tr><td>Throughput</td><td>337.60 KB/s</td></tr>
+<tr><td>Average</td><td>123.21 KB</td></tr>
+<tr><td>Largest</td><td>3.31 MB</td></tr>
 </table></div>
 </div>
 <div class="sxscol">
 <h2>Date</h2>
 <div class="tablewrap"><table data-nosearch="1">
 <tr><th>Metric</th><th>Value</th></tr>
-<tr><td>First seen</td><td>2026-07-26 14:40:42.090</td></tr>
-<tr><td>Last seen</td><td>2026-08-29 07:08:41.728</td></tr>
-<tr><td>Busiest day</td><td>2026-07-27</td></tr>
-<tr><td>Active</td><td>29 day(s), idle 0 day(s)</td></tr>
+<tr><td>First seen</td><td>2026-07-26 07:40:08.362</td></tr>
+<tr><td>Last seen</td><td>2026-08-28 14:17:12.517</td></tr>
+<tr><td>Busiest day</td><td>2026-08-12</td></tr>
+<tr><td>Active</td><td>26 day(s), idle 1 day(s)</td></tr>
 </table></div>
 </div>
 <div class="sxscol">
-<h2>Ranking - 37 subscriptions</h2>
+<h2>Ranking - 38 subscriptions</h2>
 <div class="tablewrap"><table data-nosearch="1">
 <tr><th>Type</th><th class="num">Position</th><th class="num">Unit</th></tr>
-<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=1:1&amp;axway_row=STMT_EXPORT_GLOBEX_07">Files</a></td><td class="num">#32</td><td class="num">35 - 0.3%</td></tr>
-<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=3:1&amp;axway_row=STMT_EXPORT_GLOBEX_07">Volume</a></td><td class="num">#22</td><td class="num">16.38 MB - 0.3%</td></tr>
-<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=5:1&amp;axway_row=STMT_EXPORT_GLOBEX_07">Errors</a></td><td class="num">#5</td><td class="num">5.7%</td></tr>
-<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=7:1&amp;axway_row=STMT_EXPORT_GLOBEX_07">Duration</a></td><td class="num">#9</td><td class="num">407 ms</td></tr>
-<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=9:1&amp;axway_row=STMT_EXPORT_GLOBEX_07">Throughput</a></td><td class="num">#6</td><td class="num">1.17 MB/s</td></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=1:1&amp;axway_row=STMT_EXPORT_GLOBEX_07">Files</a></td><td class="num">#31</td><td class="num">35 - 0.3%</td></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=3:1&amp;axway_row=STMT_EXPORT_GLOBEX_07">Volume</a></td><td class="num">#30</td><td class="num">4.21 MB - 0.1%</td></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=5:1&amp;axway_row=STMT_EXPORT_GLOBEX_07">Errors</a></td><td class="num">#38</td><td class="num">0.0%</td></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=7:1&amp;axway_row=STMT_EXPORT_GLOBEX_07">Duration</a></td><td class="num">#6</td><td class="num">368 ms</td></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=9:1&amp;axway_row=STMT_EXPORT_GLOBEX_07">Throughput</a></td><td class="num">#17</td><td class="num">337.60 KB/s</td></tr>
 </table></div>
 </div>
 </div>
-<h2>Last OK transfer — AcmeSTMT_EXPORT_GLOBEX_20260829025721_595492.dat</h2>
+<h2>Last OK transfer — AcmeSTMT_EXPORT_GLOBEX_20260828051432_262709.csv</h2>
 <div class="tablewrap"><table class="wide" data-nosearch="1">
 <tr><th>Status</th><th>Direction</th><th>Protocol</th><th class="num">Size</th><th>Date &amp; time</th><th class="num">Duration</th><th>Remote host</th><th>Transfer ID</th></tr>
-<tr><td>Processed</td><td>inbound</td><td>routing</td><td class="num">3.27 KB</td><td>2026-08-29 07:08:45.020</td><td class="num">132 ms</td><td class="res-green cl"><a href="../hosts/unknown.html">unknown</a></td><td><code>d979b5b3-04c6-499b-9066-3e6f0510926d</code></td></tr>
-<tr><td>Processed</td><td>inbound</td><td>pesit</td><td class="num">3.27 KB</td><td>2026-08-29 07:08:41.728</td><td class="num">1.23 s</td><td class="res-green cl"><a href="../hosts/unknown.html">unknown</a></td><td><code>6609f2e3-2a8c-45fb-b717-a6bdfa39e222</code></td></tr>
-<tr><td>Processed</td><td>outbound</td><td>routing</td><td class="num">3.27 KB</td><td>2026-08-29 07:08:44.976</td><td class="num">406 ms</td><td class="res-green cl"><a href="../hosts/unknown.html">unknown</a></td><td><code>f7e4a590-9df1-4622-84ea-8c84605bf723</code></td></tr>
-<tr><td>Processed</td><td>outbound</td><td>ssh</td><td class="num">3.27 KB</td><td>2026-08-29 07:26:55.385</td><td class="num">925 ms</td><td>198.51.100.11</td><td><code>12d44f94-bd15-4aea-863e-f482af3a1590</code></td></tr>
+<tr><td>Processed</td><td>inbound</td><td>pesit</td><td class="num">15.78 KB</td><td>2026-08-28 14:17:12.517</td><td class="num">1.47 s</td><td>198.51.100.13</td><td><code>e7f6f1ea-74da-4d22-833d-e54fb63c1fee</code></td></tr>
+<tr><td>Processed</td><td>inbound</td><td>routing</td><td class="num">15.78 KB</td><td>2026-08-28 14:17:16.160</td><td class="num">42 ms</td><td>198.51.100.13</td><td><code>69528fa4-620b-4c62-aef3-f7a32c675b1c</code></td></tr>
+<tr><td>Processed</td><td>outbound</td><td>routing</td><td class="num">15.78 KB</td><td>2026-08-28 14:17:16.116</td><td class="num">239 ms</td><td>198.51.100.13</td><td><code>731f0ea6-e46e-4ff3-aa7f-76e2f7a2d416</code></td></tr>
+<tr><td>Processed</td><td>outbound</td><td>ssh</td><td class="num">15.78 KB</td><td>2026-08-28 14:21:49.211</td><td class="num">116 ms</td><td>198.51.100.13</td><td><code>fb75f4a9-8894-4c2e-9f7b-40bbea1a67a6</code></td></tr>
 </table></div>
 <div class="tablewrap"><table class="wide" data-restint="1" data-nosort="1" data-nosearch="1">
 <tr><th>Date &amp; time</th><th>Level</th><th>Line</th></tr>
-<tr><td>2026-08-29 07:08:43.951</td><td>Info</td><td><pre>[Ssh Default] Initializing route: {STMT-EXPORT-GLOBEX}</pre></td></tr>
-<tr><td>2026-08-29 07:26:54.185</td><td>Info</td><td><pre>[Ssh Default] Allowed user 'FE343512' from address '198.51.100.13', corresponding account 'STMT-EXPORT-GLOBEX@FE343512' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.</pre></td></tr>
-<tr><td>2026-08-29 07:26:54.385</td><td>Info</td><td><pre>[Ssh Default] User with login name &quot;FE343512&quot;, associated with account &quot;STMT-EXPORT-GLOBEX@FE343512&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 198.51.100.13. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-sha2-256; Public Key: ssh-rsa.</pre></td></tr>
+<tr><td>2026-08-28 14:17:15.180</td><td>Info</td><td><pre>[Ssh Default] Initializing route: {STMT_EXPORT_GLOBEX_07}</pre></td></tr>
+<tr><td>2026-08-28 14:21:48.011</td><td>Info</td><td><pre>[Ssh Default] Allowed user 'FE343512' from address '198.51.100.10', corresponding account 'STMT-EXPORT-GLOBEX@FE343512' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.</pre></td></tr>
+<tr><td>2026-08-28 14:21:48.211</td><td>Info</td><td><pre>[Ssh Default] User with login name &quot;FE343512&quot;, associated with account &quot;STMT-EXPORT-GLOBEX@FE343512&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 198.51.100.12. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-sha2-256; Public Key: ssh-rsa.</pre></td></tr>
 </table></div>
 <h2>Last server log messages</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Date</th><th>Time</th><th>Level</th><th>Component</th><th>Message</th></tr>
-<tr class="total"><td>Total (25 line(s))</td><td></td><td></td><td></td><td></td></tr>
-<tr><td>2026-08-28</td><td>14:17:15.180</td><td>Info</td><td>TM</td><td>[Ssh Default] Initializing route: {STMT_EXPORT_GLOBEX_07} 2f322f333277545654664b773267556543684e57477a336c79484368507075567979794b59786c55374d633d</td></tr>
+<tr class="total"><td>Total (24 line(s))</td><td></td><td></td><td></td><td></td></tr>
 <tr><td>2026-08-28</td><td>07:35:48.722</td><td>Info</td><td>TM</td><td>[Ssh Default] Initializing route: {STMT_EXPORT_GLOBEX_07} 6c6d50666b6730507268456e427867797952513972794575317071723849533655426f556b634d775972313d</td></tr>
 <tr><td>2026-08-27</td><td>07:12:48.259</td><td>Info</td><td>TM</td><td>[Ssh Default] Initializing route: {STMT_EXPORT_GLOBEX_07} 44676c45336d442b6f79762f51784a697a6a67546d4a4c645a344d637178496261486c61453733773561763d</td></tr>
 <tr><td>2026-08-25</td><td>14:33:53.867</td><td>Info</td><td>TM</td><td>[Ssh Default] Initializing route: {STMT_EXPORT_GLOBEX_07} 6b4d4f324f36302b522b586f2b63614b577766304433663064485464634e686d6d526e59765573427053413d</td></tr>

@@ -8,10 +8,10 @@
 <script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
 <script src="../../../assets/report.js?v=1789795972" defer></script>
 </head>
-<body class="res-red">
+<body class="res-green">
 <div class="topbar" data-eb="../../" data-b="../../../" data-env="production" data-help="details-subscriptions" data-twin="../../../acceptance/404.html"></div>
 <h1>OUT/IN: Subscription: REC_FEEDS_SOYLENT</h1>
-<p class="alert">ERROR IN SERVER LOG AFTER LAST TRANSFER - SEE <a href="#srv-log-error">'Server log error'</a></p>
+<p class="range"><strong>Working.</strong> We poll this partner and pull what is waiting: <strong>48</strong> Files, the latest on <strong>2026-08-28</strong> (45 OK, 3 error), from <strong>818</strong> polls. A high empty-poll count (<strong>773</strong>) is normal — a schedule fires far more often than a file appears. <strong>UC3 status</strong> calls this <strong>ok</strong>.</p>
 <h2>Activity per day</h2>
 <div class="tablewrap"><table data-pager="10">
 <tr><th>Date</th><th class="num">Files</th><th class="num">Error</th><th class="num">Recovered</th><th class="num">OK</th><th class="num">Volume</th><th class="num">Duration</th></tr>
@@ -49,13 +49,13 @@
 <div class="tablewrap"><table>
 <tr><th>Item</th><th>Value</th></tr>
 <tr><td>Use case</td><td class="cl"><a href="../../analyses/use-cases.html">UC3 - We are the client and receive a file from the partner (derived from the configured pattern and direction)</a></td></tr>
-<tr><td>Remote host</td><td class="res-red cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td></tr>
-<tr><td>Account</td><td class="res-red cl"><a href="../accounts/rec-feeds-soylent.html">REC_FEEDS_SOYLENT</a></td></tr>
-<tr><td>Domain</td><td class="res-red cl"><a href="../domains/rec.html">REC</a></td></tr>
-<tr><td>Application</td><td class="res-red cl"><a href="../applications/feeds.html">FEEDS</a></td></tr>
-<tr><td>Logical</td><td class="res-red cl"><a href="../logicals/rec-feeds-soylent.html">REC_FEEDS_SOYLENT</a></td></tr>
-<tr><td>Partner</td><td class="res-red cl"><a href="../partners/soylent.html">SOYLENT</a></td></tr>
-<tr><td>BL</td><td class="res-red cl"><a href="../bl/bl-rec.html">BL_REC</a></td></tr>
+<tr><td>Remote host</td><td class="res-green cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td></tr>
+<tr><td>Account</td><td class="res-green cl"><a href="../accounts/rec-feeds-soylent.html">REC_FEEDS_SOYLENT</a></td></tr>
+<tr><td>Domain</td><td class="res-green cl"><a href="../domains/rec.html">REC</a></td></tr>
+<tr><td>Application</td><td class="res-green cl"><a href="../applications/feeds.html">FEEDS</a></td></tr>
+<tr><td>Logical</td><td class="res-green cl"><a href="../logicals/rec-feeds-soylent.html">REC_FEEDS_SOYLENT</a></td></tr>
+<tr><td>Partner</td><td class="res-green cl"><a href="../partners/soylent.html">SOYLENT</a></td></tr>
+<tr><td>BL</td><td class="res-green cl"><a href="../bl/bl-rec.html">BL_REC</a></td></tr>
 <tr><td>Cron</td><td>0 19 * * * ?</td></tr>
 <tr><td>Schedule</td><td>Every hour at :19</td></tr>
 <tr><td>From</td><td>-</td></tr>
@@ -66,7 +66,7 @@
 <h2>Outgoing connections</h2>
 <div class="tablewrap"><table data-fold="orange|{n} hosts configured without traffic">
 <tr><th>IP</th><th class="num">In</th><th class="num">Out</th><th>Name</th></tr>
-<tr data-res="green"><td><code>203.0.113.10, 203.0.113.11, 203.0.113.12</code></td><td class="num">48</td><td class="num"></td><td class="res-red cl"><a href="../hosts/feeds-soylent-example.html"><code>feeds.soylent.example</code></a></td></tr>
+<tr data-res="green"><td><code>203.0.113.10, 203.0.113.11, 203.0.113.12</code></td><td class="num">48</td><td class="num"></td><td class="res-green cl"><a href="../hosts/feeds-soylent-example.html"><code>feeds.soylent.example</code></a></td></tr>
 </table></div>
 </div>
 </div>
@@ -207,32 +207,26 @@
 </table></div>
 </div>
 <div class="sxscol">
-<h2>Ranking - 37 subscriptions</h2>
+<h2>Ranking - 38 subscriptions</h2>
 <div class="tablewrap"><table data-nosearch="1">
 <tr><th>Type</th><th class="num">Position</th><th class="num">Unit</th></tr>
-<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=1:1&amp;axway_row=REC_FEEDS_SOYLENT">Files</a></td><td class="num">#27</td><td class="num">48 - 0.4%</td></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=1:1&amp;axway_row=REC_FEEDS_SOYLENT">Files</a></td><td class="num">#26</td><td class="num">48 - 0.4%</td></tr>
 <tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=3:1&amp;axway_row=REC_FEEDS_SOYLENT">Volume</a></td><td class="num">#25</td><td class="num">13.28 MB - 0.3%</td></tr>
 <tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=5:1&amp;axway_row=REC_FEEDS_SOYLENT">Errors</a></td><td class="num">#4</td><td class="num">6.2%</td></tr>
-<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=7:1&amp;axway_row=REC_FEEDS_SOYLENT">Duration</a></td><td class="num">#21</td><td class="num">1.99 s</td></tr>
+<tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=7:1&amp;axway_row=REC_FEEDS_SOYLENT">Duration</a></td><td class="num">#22</td><td class="num">1.99 s</td></tr>
 <tr><td class="cl"><a href="../../transfer/ranking-subscriptions.html?axway_sort=9:1&amp;axway_row=REC_FEEDS_SOYLENT">Throughput</a></td><td class="num">#27</td><td class="num">147.23 KB/s</td></tr>
 </table></div>
 </div>
 </div>
-<h2 id="srv-log-error">Server log error</h2>
-<div class="tablewrap"><table class="wide" data-restint="1" data-nosort="1" data-nosearch="1">
-<tr><th>Date &amp; time</th><th>Level</th><th>Line</th></tr>
-<tr data-res="red"><td>2026-08-28 23:50:20.493</td><td>Error</td><td><pre>Connection failure while UC3_APS_SYSHUB_SOYLENT_APS_SYSHUB_SOYLENT_SCP_APS_SYSHUB_SOYLENT_PWD tried to connect to remote host feeds.soylent.example:22 as user APS_SYSHUB_SOYLENT: com.maverick.ssh.SshException: Connection timed out</pre></td></tr>
-<tr data-res="red"><td>2026-08-29 00:06:33.513</td><td>Error</td><td><pre>Connection failure while UC3_APS_SYSHUB_SOYLENT_APS_SYSHUB_SOYLENT_SCP_APS_SYSHUB_SOYLENT_PWD tried to connect to remote host feeds.soylent.example:22 as user APS_SYSHUB_SOYLENT: com.maverick.ssh.SshException: Connection timed out</pre></td></tr>
-</table></div>
 <h2>Last error — AcmeREC_FEEDS_SOYLENT_20260813004752_763787.txt.pgp</h2>
 <div class="tablewrap"><table class="wide" data-nosearch="1">
 <tr><th>Status</th><th>Direction</th><th>Protocol</th><th class="num">Size</th><th>Date &amp; time</th><th class="num">Duration</th><th>Remote host</th><th>Transfer ID</th></tr>
-<tr><td>Failed Subtransmission</td><td>inbound</td><td>ssh</td><td class="num">73.27 KB</td><td>2026-08-13 01:19:12.600</td><td class="num">892 ms</td><td class="res-red cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>4fdea881-e4c5-44d1-ba9b-383bba37ac1d</code></td></tr>
-<tr><td>Failed</td><td>outbound</td><td>pesit</td><td class="num">0 B</td><td>2026-08-13 01:19:15.492</td><td class="num">1.1 min</td><td class="res-red cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>879000ff-88ee-4d2a-abea-bd3ba483cc5f</code></td></tr>
-<tr><td>Failed</td><td>outbound</td><td>pesit</td><td class="num">0 B</td><td>2026-08-13 01:30:35.363</td><td class="num">58.87 s</td><td class="res-red cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>eee26c15-0653-458e-a7b8-88344b0c28fb</code></td></tr>
-<tr><td>Failed</td><td>outbound</td><td>pesit</td><td class="num">0 B</td><td>2026-08-13 01:49:57.623</td><td class="num">1.5 min</td><td class="res-red cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>1309cfde-3591-4d29-88fc-8195814e6343</code></td></tr>
-<tr><td>Failed</td><td>outbound</td><td>pesit</td><td class="num">0 B</td><td>2026-08-13 02:21:19.707</td><td class="num">57.50 s</td><td class="res-red cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>d85ca6c9-e4a7-4cff-821c-6b79f003826b</code></td></tr>
-<tr><td>Failed</td><td>outbound</td><td>pesit</td><td class="num">0 B</td><td>2026-08-13 02:56:48.766</td><td class="num">1.0 min</td><td class="res-red cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>ac09b51a-ff73-4eaf-8b18-f559ae5bf5bd</code></td></tr>
+<tr><td>Failed Subtransmission</td><td>inbound</td><td>ssh</td><td class="num">73.27 KB</td><td>2026-08-13 01:19:12.600</td><td class="num">892 ms</td><td class="res-green cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>4fdea881-e4c5-44d1-ba9b-383bba37ac1d</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>pesit</td><td class="num">0 B</td><td>2026-08-13 01:19:15.492</td><td class="num">1.1 min</td><td class="res-green cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>879000ff-88ee-4d2a-abea-bd3ba483cc5f</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>pesit</td><td class="num">0 B</td><td>2026-08-13 01:30:35.363</td><td class="num">58.87 s</td><td class="res-green cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>eee26c15-0653-458e-a7b8-88344b0c28fb</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>pesit</td><td class="num">0 B</td><td>2026-08-13 01:49:57.623</td><td class="num">1.5 min</td><td class="res-green cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>1309cfde-3591-4d29-88fc-8195814e6343</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>pesit</td><td class="num">0 B</td><td>2026-08-13 02:21:19.707</td><td class="num">57.50 s</td><td class="res-green cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>d85ca6c9-e4a7-4cff-821c-6b79f003826b</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>pesit</td><td class="num">0 B</td><td>2026-08-13 02:56:48.766</td><td class="num">1.0 min</td><td class="res-green cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>ac09b51a-ff73-4eaf-8b18-f559ae5bf5bd</code></td></tr>
 </table></div>
 <div class="tablewrap"><table class="wide" data-restint="1" data-nosort="1" data-nosearch="1">
 <tr><th>Date &amp; time</th><th>Level</th><th>Line</th></tr>
@@ -243,8 +237,8 @@
 <h2>Last OK transfer — AcmeREC_FEEDS_SOYLENT_20260828058753_092536.csv</h2>
 <div class="tablewrap"><table class="wide" data-nosearch="1">
 <tr><th>Status</th><th>Direction</th><th>Protocol</th><th class="num">Size</th><th>Date &amp; time</th><th class="num">Duration</th><th>Remote host</th><th>Transfer ID</th></tr>
-<tr><td>Processed</td><td>inbound</td><td>ssh</td><td class="num">2.78 MB</td><td>2026-08-28 16:19:13.805</td><td class="num">1.51 s</td><td class="res-red cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>8ff928b0-478e-4e94-978b-7dbe7f0d369e</code></td></tr>
-<tr><td>Processed</td><td>outbound</td><td>pesit</td><td class="num">2.78 MB</td><td>2026-08-28 16:19:18.417</td><td class="num">2.56 s</td><td class="res-red cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>668f4705-9aa2-4218-9304-bb70ca23ef4d</code></td></tr>
+<tr><td>Processed</td><td>inbound</td><td>ssh</td><td class="num">2.78 MB</td><td>2026-08-28 16:19:13.805</td><td class="num">1.51 s</td><td class="res-green cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>8ff928b0-478e-4e94-978b-7dbe7f0d369e</code></td></tr>
+<tr><td>Processed</td><td>outbound</td><td>pesit</td><td class="num">2.78 MB</td><td>2026-08-28 16:19:18.417</td><td class="num">2.56 s</td><td class="res-green cl"><a href="../hosts/feeds-soylent-example.html">feeds.soylent.example</a></td><td><code>668f4705-9aa2-4218-9304-bb70ca23ef4d</code></td></tr>
 </table></div>
 <div class="tablewrap"><table class="wide" data-restint="1" data-nosort="1" data-nosearch="1">
 <tr><th>Date &amp; time</th><th>Level</th><th>Line</th></tr>

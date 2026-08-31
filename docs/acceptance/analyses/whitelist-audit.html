@@ -13,10 +13,11 @@
 <h1>Whitelist audit <span class="grouptag">&larr; Configuration &larr; Analyses</span></h1>
 <p class="tabs"><a class="tab" href="use-cases.html">Use cases</a><a class="tab" href="uc2-visits.html">UC2 pickup visits</a><a class="tab" href="subscriptions.html">Subscriptions</a><a class="tab" href="logical-detection.html">Logical detection</a><a class="tab" href="accounts.html">Accounts</a><a class="tab" href="account-sharing.html">Account sharing</a><a class="tab" href="twins.html">Twins</a><a class="tab" href="cronjobs.html">Cronjobs</a><a class="tab" href="config-hygiene.html">Config hygiene</a><span class="tab active">Whitelist audit</span><a class="tab" href="cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="../transfer/sources-and-targets.html">Sources and Targets</a><a class="tab" href="../transfer/skipped.html">Skipped</a><a class="tab" href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a><a class="tab" href="xref/cross-account-subscriptions.html">Cross References</a></p>
 <p class="subtitle">Every whitelisted partner IP against what actually connects: <strong>Used</strong> carried real Files, <strong>Connects only</strong> shows server-log connections but no transfer, <strong>Never seen</strong> is prunable attack surface. The second table is the reverse: source addresses that carried traffic without a whitelist entry.</p>
-<div><div class="stat"><span class="stat-v">118</span><span class="stat-l">Whitelisted IPs</span></div><div class="stat stat-green"><span class="stat-v">42</span><span class="stat-l">Used (Files)</span></div><div class="stat"><span class="stat-v">14</span><span class="stat-l">Connect only</span></div><div class="stat stat-red"><span class="stat-v">62</span><span class="stat-l">Never seen</span></div></div>
+<div><div class="stat"><span class="stat-v">118</span><span class="stat-l">Whitelisted IPs</span></div><div class="stat stat-green"><span class="stat-v">55</span><span class="stat-l">Used (Files)</span></div><div class="stat"><span class="stat-v">4</span><span class="stat-l">Connect only</span></div><div class="stat stat-red"><span class="stat-v">59</span><span class="stat-l">Never seen</span></div></div>
 <h2>Active whitelisted addresses</h2>
 <div class="tablewrap"><table class="fit">
 <tr><th>IP</th><th>Allowing accounts</th><th class="num">Files</th><th class="num">Server connections</th><th>Last File</th><th>Verdict</th></tr>
+<tr data-res="green"><td class="mono">192.0.2.77</td><td>INFRA_ST-MONITOR_INFRA</td><td class="num">6245</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.10</td><td>APS-COSMOS-GLOBEX</td><td class="num">527</td><td class="num">829</td><td>2026-08-29</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.11</td><td>APS-COSMOS-GLOBEX</td><td class="num">537</td><td class="num">839</td><td>2026-08-29</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.12</td><td>APS-COSMOS-GLOBEX</td><td class="num">530</td><td class="num">788</td><td>2026-08-29</td><td>Used</td></tr>
@@ -24,20 +25,20 @@
 <tr data-res="green"><td class="mono">198.51.100.20</td><td>ZK-MIAZ-INITECH</td><td class="num">25</td><td class="num">155</td><td>2026-08-28</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.21</td><td>ZK-MIAZ-INITECH</td><td class="num">32</td><td class="num">160</td><td>2026-08-27</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.22</td><td>ZK-MIAZ-INITECH</td><td class="num">28</td><td class="num">166</td><td>2026-08-26</td><td>Used</td></tr>
-<tr data-res="orange"><td class="mono">198.51.100.30</td><td>APS-VIDA-UMBRELLA</td><td class="num"></td><td class="num">93</td><td>-</td><td>Connects only — no Files</td></tr>
-<tr data-res="orange"><td class="mono">198.51.100.31</td><td>APS-VIDA-UMBRELLA</td><td class="num"></td><td class="num">94</td><td>-</td><td>Connects only — no Files</td></tr>
-<tr data-res="orange"><td class="mono">198.51.100.32</td><td>APS-VIDA-UMBRELLA</td><td class="num"></td><td class="num">77</td><td>-</td><td>Connects only — no Files</td></tr>
-<tr data-res="orange"><td class="mono">198.51.100.33</td><td>APS-VIDA-UMBRELLA</td><td class="num"></td><td class="num">94</td><td>-</td><td>Connects only — no Files</td></tr>
-<tr data-res="green"><td class="mono">198.51.100.40</td><td>ZG-MATCH-HOOLI, ZG-ZKA-HOOLI</td><td class="num">105</td><td class="num">153</td><td>2026-08-29</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">198.51.100.41</td><td>ZG-MATCH-HOOLI, ZG-ZKA-HOOLI</td><td class="num">118</td><td class="num">146</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.30</td><td>APS-VIDA-UMBRELLA</td><td class="num">57</td><td class="num">93</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.31</td><td>APS-VIDA-UMBRELLA</td><td class="num">61</td><td class="num">94</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.32</td><td>APS-VIDA-UMBRELLA</td><td class="num">66</td><td class="num">77</td><td>2026-08-27</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.33</td><td>APS-VIDA-UMBRELLA</td><td class="num">94</td><td class="num">94</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.40</td><td>ZG-MATCH-HOOLI, ZG-ZKA-HOOLI</td><td class="num">138</td><td class="num">153</td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.41</td><td>ZG-MATCH-HOOLI, ZG-ZKA-HOOLI</td><td class="num">161</td><td class="num">146</td><td>2026-08-28</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.50</td><td>AB-EKDSI-STARK, WA-SENSOR-STARK</td><td class="num">17</td><td class="num">26</td><td>2026-08-27</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.51</td><td>AB-EKDSI-STARK, WA-SENSOR-STARK</td><td class="num">21</td><td class="num">27</td><td>2026-08-28</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.52</td><td>AB-EKDSI-STARK, WA-SENSOR-STARK</td><td class="num">14</td><td class="num">38</td><td>2026-08-25</td><td>Used</td></tr>
 <tr data-res="orange"><td class="mono">198.51.100.60</td><td>CB-VIDA-WAYNE, FS-IFRS-WAYNE</td><td class="num"></td><td class="num">39</td><td>-</td><td>Connects only — no Files</td></tr>
 <tr data-res="orange"><td class="mono">198.51.100.61</td><td>CB-VIDA-WAYNE, FS-IFRS-WAYNE</td><td class="num"></td><td class="num">43</td><td>-</td><td>Connects only — no Files</td></tr>
-<tr data-res="orange"><td class="mono">198.51.100.70</td><td>DPL-POLIS-TYRELL</td><td class="num"></td><td class="num">75</td><td>-</td><td>Connects only — no Files</td></tr>
-<tr data-res="orange"><td class="mono">198.51.100.71</td><td>DPL-POLIS-TYRELL</td><td class="num"></td><td class="num">66</td><td>-</td><td>Connects only — no Files</td></tr>
-<tr data-res="orange"><td class="mono">198.51.100.72</td><td>DPL-POLIS-TYRELL</td><td class="num"></td><td class="num">78</td><td>-</td><td>Connects only — no Files</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.70</td><td>DPL-POLIS-TYRELL</td><td class="num">25</td><td class="num">75</td><td>2026-08-25</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.71</td><td>DPL-POLIS-TYRELL</td><td class="num">16</td><td class="num">66</td><td>2026-08-21</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.72</td><td>DPL-POLIS-TYRELL</td><td class="num">16</td><td class="num">78</td><td>2026-08-27</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.80</td><td>CDV-KRP-TDI-WONKA</td><td class="num">144</td><td class="num">556</td><td>2026-08-28</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.81</td><td>CDV-KRP-TDI-WONKA</td><td class="num">124</td><td class="num">530</td><td>2026-08-28</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.82</td><td>CDV-KRP-TDI-WONKA</td><td class="num">136</td><td class="num">555</td><td>2026-08-29</td><td>Used</td></tr>
@@ -47,32 +48,34 @@
 <tr data-res="green"><td class="mono">198.51.100.100</td><td>CD-INVOICE-VANDELAY, HR-MATCH-VANDELAY</td><td class="num">20</td><td class="num">19</td><td>2026-08-27</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.101</td><td>CD-INVOICE-VANDELAY, HR-MATCH-VANDELAY</td><td class="num">21</td><td class="num">24</td><td>2026-08-28</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">198.51.100.102</td><td>CD-INVOICE-VANDELAY, HR-MATCH-VANDELAY</td><td class="num">23</td><td class="num">26</td><td>2026-08-27</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">198.51.100.110</td><td>AIM-LAKE-PIEDPIPER, ODV-MAIA-PIEDPIPER</td><td class="num">113</td><td class="num"></td><td>2026-08-28</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">198.51.100.111</td><td>AIM-LAKE-PIEDPIPER, ODV-MAIA-PIEDPIPER</td><td class="num">109</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.110</td><td>AIM-LAKE-PIEDPIPER, ODV-MAIA-PIEDPIPER</td><td class="num">153</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">198.51.100.111</td><td>AIM-LAKE-PIEDPIPER, ODV-MAIA-PIEDPIPER</td><td class="num">149</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">203.0.113.10</td><td>CB-ISOLATED-SOYLENT, DPL-RENSEI-SOYLENT, IT-MAIA-SOYLENT, … (4)</td><td class="num">42</td><td class="num">56</td><td>2026-08-29</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">203.0.113.11</td><td>CB-ISOLATED-SOYLENT, DPL-RENSEI-SOYLENT, IT-MAIA-SOYLENT, … (4)</td><td class="num">50</td><td class="num">57</td><td>2026-08-28</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">203.0.113.12</td><td>CB-ISOLATED-SOYLENT, DPL-RENSEI-SOYLENT, IT-MAIA-SOYLENT, … (4)</td><td class="num">46</td><td class="num">77</td><td>2026-08-29</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.20</td><td>DPL-SCAN-CYBERDYNE, IT-EKDSI-CYBERDYNE</td><td class="num">70</td><td class="num">58</td><td>2026-08-28</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.21</td><td>DPL-SCAN-CYBERDYNE, IT-EKDSI-CYBERDYNE</td><td class="num">75</td><td class="num">61</td><td>2026-08-29</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.22</td><td>DPL-SCAN-CYBERDYNE, IT-EKDSI-CYBERDYNE</td><td class="num">65</td><td class="num">53</td><td>2026-08-28</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.23</td><td>DPL-SCAN-CYBERDYNE, IT-EKDSI-CYBERDYNE</td><td class="num">72</td><td class="num">48</td><td>2026-08-28</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.40</td><td>CD-ARIVA-BLUTH, IT-TDRS-BLUTH</td><td class="num">38</td><td class="num"></td><td>2026-08-27</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.41</td><td>CD-ARIVA-BLUTH, IT-TDRS-BLUTH</td><td class="num">49</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.50</td><td>CD-ARIVA-DUNDER, ZG-BULK-DUNDER, ZG-CIVIL-DUNDER</td><td class="num">54</td><td class="num">25</td><td>2026-08-29</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.51</td><td>CD-ARIVA-DUNDER, ZG-BULK-DUNDER, ZG-CIVIL-DUNDER</td><td class="num">50</td><td class="num">20</td><td>2026-08-28</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.52</td><td>CD-ARIVA-DUNDER, ZG-BULK-DUNDER, ZG-CIVIL-DUNDER</td><td class="num">52</td><td class="num">21</td><td>2026-08-28</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.60</td><td>CD-ARIVA-SABRE, SI-ROS-SABRE</td><td class="num">41</td><td class="num">113</td><td>2026-08-29</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.61</td><td>CD-ARIVA-SABRE, SI-ROS-SABRE</td><td class="num">45</td><td class="num">107</td><td>2026-08-28</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.90</td><td>FS-STMT-APERTURE, ODV-ARE-APERTURE, SI-SAPBHP-APERTURE</td><td class="num">78</td><td class="num">28</td><td>2026-08-28</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.91</td><td>FS-STMT-APERTURE, ODV-ARE-APERTURE, SI-SAPBHP-APERTURE</td><td class="num">85</td><td class="num"></td><td>2026-08-28</td><td>Used</td></tr>
-<tr data-res="green"><td class="mono">203.0.113.92</td><td>FS-STMT-APERTURE, ODV-ARE-APERTURE, SI-SAPBHP-APERTURE</td><td class="num">78</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
-<tr data-res="orange"><td class="mono">203.0.113.110</td><td>CD-ZIBA-GEKKO, IT-SAPBHP-GEKKO</td><td class="num"></td><td class="num">77</td><td>-</td><td>Connects only — no Files</td></tr>
-<tr data-res="orange"><td class="mono">203.0.113.111</td><td>CD-ZIBA-GEKKO, IT-SAPBHP-GEKKO</td><td class="num"></td><td class="num">93</td><td>-</td><td>Connects only — no Files</td></tr>
-<tr data-res="orange"><td class="mono">203.0.113.112</td><td>CD-ZIBA-GEKKO, IT-SAPBHP-GEKKO</td><td class="num"></td><td class="num">93</td><td>-</td><td>Connects only — no Files</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.20</td><td>DPL-SCAN-CYBERDYNE, IT-EKDSI-CYBERDYNE</td><td class="num">147</td><td class="num">58</td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.21</td><td>DPL-SCAN-CYBERDYNE, IT-EKDSI-CYBERDYNE</td><td class="num">134</td><td class="num">61</td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.22</td><td>DPL-SCAN-CYBERDYNE, IT-EKDSI-CYBERDYNE</td><td class="num">133</td><td class="num">53</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.23</td><td>DPL-SCAN-CYBERDYNE, IT-EKDSI-CYBERDYNE</td><td class="num">137</td><td class="num">48</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.40</td><td>CD-ARIVA-BLUTH, IT-TDRS-BLUTH</td><td class="num">48</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.41</td><td>CD-ARIVA-BLUTH, IT-TDRS-BLUTH</td><td class="num">64</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.50</td><td>CD-ARIVA-DUNDER, ZG-BULK-DUNDER, ZG-CIVIL-DUNDER</td><td class="num">61</td><td class="num">25</td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.51</td><td>CD-ARIVA-DUNDER, ZG-BULK-DUNDER, ZG-CIVIL-DUNDER</td><td class="num">55</td><td class="num">20</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.52</td><td>CD-ARIVA-DUNDER, ZG-BULK-DUNDER, ZG-CIVIL-DUNDER</td><td class="num">67</td><td class="num">21</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.60</td><td>CD-ARIVA-SABRE, SI-ROS-SABRE</td><td class="num">53</td><td class="num">113</td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.61</td><td>CD-ARIVA-SABRE, SI-ROS-SABRE</td><td class="num">49</td><td class="num">107</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.90</td><td>FS-STMT-APERTURE, ODV-ARE-APERTURE, SI-SAPBHP-APERTURE</td><td class="num">116</td><td class="num">28</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.91</td><td>FS-STMT-APERTURE, ODV-ARE-APERTURE, SI-SAPBHP-APERTURE</td><td class="num">122</td><td class="num"></td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.92</td><td>FS-STMT-APERTURE, ODV-ARE-APERTURE, SI-SAPBHP-APERTURE</td><td class="num">121</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.110</td><td>CD-ZIBA-GEKKO, IT-SAPBHP-GEKKO</td><td class="num">46</td><td class="num">77</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.111</td><td>CD-ZIBA-GEKKO, IT-SAPBHP-GEKKO</td><td class="num">46</td><td class="num">93</td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.112</td><td>CD-ZIBA-GEKKO, IT-SAPBHP-GEKKO</td><td class="num">53</td><td class="num">93</td><td>2026-08-29</td><td>Used</td></tr>
 <tr data-res="orange"><td class="mono">203.0.113.120</td><td>FIN-PORTAL-DUFF</td><td class="num"></td><td class="num">39</td><td>-</td><td>Connects only — no Files</td></tr>
 <tr data-res="orange"><td class="mono">203.0.113.121</td><td>FIN-PORTAL-DUFF</td><td class="num"></td><td class="num">45</td><td>-</td><td>Connects only — no Files</td></tr>
 <tr data-res="green"><td class="mono">203.0.113.140</td><td>AB-SCAN-MONARCH</td><td class="num">56</td><td class="num"></td><td>2026-08-27</td><td>Used</td></tr>
 <tr data-res="green"><td class="mono">203.0.113.141</td><td>AB-SCAN-MONARCH</td><td class="num">62</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.160</td><td>SI-VPS-VDN, WA-VDN</td><td class="num">117</td><td class="num"></td><td>2026-08-28</td><td>Used</td></tr>
+<tr data-res="green"><td class="mono">203.0.113.161</td><td>SI-VPS-VDN, WA-VDN</td><td class="num">119</td><td class="num"></td><td>2026-08-29</td><td>Used</td></tr>
 </table></div>
 <h2>Unused whitelist entries per account</h2>
 <div class="tablewrap"><table class="fit">
@@ -80,8 +83,6 @@
 <tr data-res="red"><td>AB-TDRS-PRIMATECH</td><td class="num">5</td><td class="num">0</td><td class="num">5</td></tr>
 <tr data-res="red"><td>HR-LAKE-BLACKMESA</td><td class="num">4</td><td class="num">0</td><td class="num">4</td></tr>
 <tr data-res="red"><td>IT-ARCHIVE-ZORG</td><td class="num">4</td><td class="num">0</td><td class="num">4</td></tr>
-<tr data-res="red"><td>SI-VPS-VDN</td><td class="num">4</td><td class="num">0</td><td class="num">4</td></tr>
-<tr data-res="red"><td>WA-VDN</td><td class="num">4</td><td class="num">0</td><td class="num">4</td></tr>
 <tr data-res="red"><td>WA-ZKA-ABSTERGO</td><td class="num">4</td><td class="num">0</td><td class="num">4</td></tr>
 <tr data-res="orange"><td>AB-EKDSI-STARK</td><td class="num">5</td><td class="num">3</td><td class="num">2</td></tr>
 <tr data-res="orange"><td>AB-SCAN-MONARCH</td><td class="num">4</td><td class="num">2</td><td class="num">2</td></tr>
@@ -112,7 +113,9 @@
 <tr data-res="orange"><td>ODV-MAIA-PIEDPIPER</td><td class="num">4</td><td class="num">2</td><td class="num">2</td></tr>
 <tr data-res="orange"><td>SI-ROS-SABRE</td><td class="num">4</td><td class="num">2</td><td class="num">2</td></tr>
 <tr data-res="orange"><td>SI-SAPBHP-APERTURE</td><td class="num">5</td><td class="num">3</td><td class="num">2</td></tr>
+<tr data-res="orange"><td>SI-VPS-VDN</td><td class="num">4</td><td class="num">2</td><td class="num">2</td></tr>
 <tr data-res="orange"><td>WA-SENSOR-STARK</td><td class="num">5</td><td class="num">3</td><td class="num">2</td></tr>
+<tr data-res="orange"><td>WA-VDN</td><td class="num">4</td><td class="num">2</td><td class="num">2</td></tr>
 <tr data-res="orange"><td>ZG-BULK-DUNDER</td><td class="num">5</td><td class="num">3</td><td class="num">2</td></tr>
 <tr data-res="orange"><td>ZG-CIVIL-DUNDER</td><td class="num">5</td><td class="num">3</td><td class="num">2</td></tr>
 <tr data-res="orange"><td>ZG-MATCH-HOOLI</td><td class="num">4</td><td class="num">2</td><td class="num">2</td></tr>
@@ -120,15 +123,12 @@
 <tr data-res="orange"><td>ZK-ARIVA-OSCORP</td><td class="num">4</td><td class="num">2</td><td class="num">2</td></tr>
 <tr data-res="orange"><td>ZK-MIAZ-INITECH</td><td class="num">5</td><td class="num">3</td><td class="num">2</td></tr>
 <tr data-res="orange"><td>ZK-SENSOR-SOYLENT</td><td class="num">5</td><td class="num">3</td><td class="num">2</td></tr>
-<tr data-res="red"><td>INFRA_ST-MONITOR_INFRA</td><td class="num">1</td><td class="num">0</td><td class="num">1</td></tr>
 </table></div>
 <h2>Sources without a whitelist entry</h2>
 <div class="tablewrap"><table class="fit">
 <tr><th>Address</th><th class="num">Files</th><th class="num">Server connections</th><th>Last File</th></tr>
 <tr><td class="mono">203.0.113.30</td><td class="num"></td><td class="num">27</td><td>-</td></tr>
 <tr><td class="mono">203.0.113.31</td><td class="num"></td><td class="num">30</td><td>-</td></tr>
-<tr><td class="mono">filetransfer.acme.example</td><td class="num">3136</td><td class="num"></td><td>2026-08-29</td></tr>
-<tr><td class="mono">unknown</td><td class="num">4919</td><td class="num"></td><td>2026-08-29</td></tr>
 </table></div>
 <p class="range">Whitelist from the partner AllowIP configuration (<span class="mono">base/_white.tsv</span>); observed Files from the transfer logs (inbound-connection source addresses), server connections from the server <strong>Inbound Connections</strong> report. Internal cluster addresses can appear among the unlisted sources — they connect over PeSIT without needing a whitelist entry. A named (non-IP) source is an already-resolved hostname.</p>
 </body>

@@ -15,16 +15,15 @@
 <h1>Endpoint blast radius <span class="grouptag">&larr; Partners &larr; Analyses</span></h1>
 <p class="tabs"><a class="tab" href="partner-scorecard.html">Partner scorecard</a><span class="tab active">Blast radius</span><a class="tab" href="app-partners.html">Application dependencies</a><a class="tab" href="partner-lifecycle.html">Partner lifecycle</a></p>
 <p class="range">An endpoint outage is never one flow. The first table answers <strong>&quot;if this host dies, what stops?&quot;</strong> — one row per outbound endpoint we dial, everything behind it counted; a <strong>red</strong> row is the sole recorded endpoint of at least one partner, so there is no second address to fail over to. The redundancy table turns the same census around per partner: <strong>2</strong> partner(s) ride a single endpoint, <strong>8</strong> have more than one, and <strong>0</strong> are inbound-only — they dial us, so no endpoint of theirs can strand us (a legitimate class, not a gap). The last table lists the endpoints shared by several partner organisations: one address, several relationships in the blast radius.</p>
-<div class="stat"><span class="stat-v">11</span><span class="stat-l">Outbound endpoints</span></div>
+<div class="stat"><span class="stat-v">10</span><span class="stat-l">Outbound endpoints</span></div>
 <div class="stat"><span class="stat-v">10</span><span class="stat-l">Partners seen</span></div>
 <div class="stat stat-red"><span class="stat-v">2</span><span class="stat-l">Single-endpoint partners</span></div>
 <div class="stat stat-green"><span class="stat-v">8</span><span class="stat-l">Multi-endpoint partners</span></div>
 <div class="stat"><span class="stat-v">0</span><span class="stat-l">Inbound-only partners</span></div>
-<div class="stat stat-orange"><span class="stat-v">1</span><span class="stat-l">Shared endpoints</span></div>
+<div class="stat stat-orange"><span class="stat-v">0</span><span class="stat-l">Shared endpoints</span></div>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Host</th><th class="num">Files</th><th class="num">Volume</th><th class="num">Subscriptions</th><th class="num">Applications</th><th class="num">Domains</th><th class="num">Partners</th><th>Partner(s)</th><th>Sole endpoint for</th></tr>
-<tr><td class="cl"><a href="../details/hosts/unknown.html">unknown</a></td><td class="num">1617</td><td class="num">25.27 KB</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="lines">-</td><td>-</td></tr>
-<tr><td class="cl"><a href="../details/hosts/filetransfer-acme-example.html">filetransfer.acme.example</a></td><td class="num">1594</td><td class="num">24.91 KB</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="lines">-</td><td>-</td></tr>
+<tr><td class="cl"><a href="../details/hosts/filetransfer-acme-example.html">filetransfer.acme.example</a></td><td class="num">3207</td><td class="num">50.11 KB</td><td class="num">2</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="lines">-</td><td>-</td></tr>
 <tr><td class="cl"><a href="../details/hosts/sftp-globex-example.html">sftp.globex.example</a></td><td class="num">1039</td><td class="num">575.55 MB</td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num">1</td><td class="lines">GLOBEX</td><td>-</td></tr>
 <tr><td class="cl"><a href="../details/hosts/sftp-wonka-example.html">sftp.wonka.example</a></td><td class="num">869</td><td class="num">1.24 GB</td><td class="num">2</td><td class="num">2</td><td class="num">1</td><td class="num">1</td><td class="lines">WONKA</td><td>-</td></tr>
 <tr><td class="cl"><a href="../details/hosts/sftp-cyberdyne-example.html">sftp.cyberdyne.example</a></td><td class="num">317</td><td class="num">200.69 MB</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="lines">CYBERDYNE</td><td>-</td></tr>
@@ -34,30 +33,30 @@
 <tr><td class="cl"><a href="../details/hosts/files-initech-example.html">files.initech.example</a></td><td class="num">121</td><td class="num">11.84 MB</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="lines">INITECH</td><td>-</td></tr>
 <tr data-res="red"><td class="cl"><a href="../details/hosts/sftp-sabre-example.html">sftp.sabre.example</a></td><td class="num">121</td><td class="num">83.60 MB</td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num">1</td><td class="lines">SABRE</td><td>1 partner(s)</td></tr>
 <tr><td class="cl"><a href="../details/hosts/trades-gekko-example.html">trades.gekko.example</a></td><td class="num">61</td><td class="num">34.55 MB</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="lines">GEKKO</td><td>-</td></tr>
-<tr class="total"><td>Total (11 host(s))</td><td class="num">6168</td><td class="num">2.36 GB</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td></td><td></td></tr>
+<tr class="total"><td>Total (10 host(s))</td><td class="num">6164</td><td class="num">2.36 GB</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td></td><td></td></tr>
 </table></div>
 <h2>Partner redundancy</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1" data-restint="1">
 <tr><th>Partner</th><th>Class</th><th class="num">Endpoints</th><th>Endpoint(s)</th><th class="num">Files</th></tr>
 <tr data-res="orange"><td class="cl"><a href="../details/partners/sabre.html">SABRE</a></td><td>single endpoint</td><td class="num">1</td><td class="lines">sftp.sabre.example</td><td class="num">121</td></tr>
 <tr data-res="orange"><td class="cl"><a href="../details/partners/soylent.html">SOYLENT</a></td><td>single endpoint</td><td class="num">1</td><td class="lines">feeds.soylent.example</td><td class="num">139</td></tr>
-<tr data-res="green"><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td>multiple endpoints</td><td class="num">2</td><td class="lines">sftp.cyberdyne.example<br>unknown</td><td class="num">435</td></tr>
-<tr data-res="green"><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td>multiple endpoints</td><td class="num">2</td><td class="lines">trades.gekko.example<br>unknown</td><td class="num">154</td></tr>
-<tr data-res="green"><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td>multiple endpoints</td><td class="num">6</td><td class="lines clps">sftp.globex.example<br><span class="ce">&#8943;<br></span><span class="cm">unknown<br>198.51.100.10<br>198.51.100.13<br>198.51.100.12<br></span>198.51.100.11</td><td class="num">1901</td></tr>
-<tr data-res="green"><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td>multiple endpoints</td><td class="num">4</td><td class="lines clps">198.51.100.40<br><span class="ce">&#8943;<br></span><span class="cm">transfer.hooli.example<br>unknown<br></span>198.51.100.41</td><td class="num">351</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td>multiple endpoints</td><td class="num">5</td><td class="lines clps">sftp.cyberdyne.example<br><span class="ce">&#8943;<br></span><span class="cm">203.0.113.21<br>203.0.113.23<br>203.0.113.22<br></span>203.0.113.20</td><td class="num">435</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td>multiple endpoints</td><td class="num">4</td><td class="lines clps">trades.gekko.example<br><span class="ce">&#8943;<br></span><span class="cm">203.0.113.110<br>203.0.113.111<br></span>203.0.113.112</td><td class="num">154</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td>multiple endpoints</td><td class="num">5</td><td class="lines clps">sftp.globex.example<br><span class="ce">&#8943;<br></span><span class="cm">198.51.100.10<br>198.51.100.12<br>198.51.100.13<br></span>198.51.100.11</td><td class="num">1901</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td>multiple endpoints</td><td class="num">3</td><td class="lines clps">198.51.100.40<br><span class="ce">&#8943;<br></span><span class="cm">transfer.hooli.example<br></span>198.51.100.41</td><td class="num">351</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/partners/initech.html">INITECH</a></td><td>multiple endpoints</td><td class="num">4</td><td class="lines clps">198.51.100.22<br><span class="ce">&#8943;<br></span><span class="cm">198.51.100.20<br>files.initech.example<br></span>198.51.100.21</td><td class="num">224</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/partners/piedpiper.html">PIEDPIPER</a></td><td>multiple endpoints</td><td class="num">2</td><td class="lines">198.51.100.110<br>198.51.100.111</td><td class="num">87</td></tr>
-<tr data-res="green"><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td>multiple endpoints</td><td class="num">2</td><td class="lines">unknown<br>mft.umbrella.example</td><td class="num">361</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td>multiple endpoints</td><td class="num">5</td><td class="lines clps">mft.umbrella.example<br><span class="ce">&#8943;<br></span><span class="cm">198.51.100.30<br>198.51.100.31<br>198.51.100.33<br></span>198.51.100.32</td><td class="num">361</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/partners/wonka.html">WONKA</a></td><td>multiple endpoints</td><td class="num">5</td><td class="lines clps">sftp.wonka.example<br><span class="ce">&#8943;<br></span><span class="cm">198.51.100.83<br>198.51.100.81<br>198.51.100.80<br></span>198.51.100.82</td><td class="num">1098</td></tr>
 <tr class="total"><td>Total (10 partner(s))</td><td></td><td class="num"></td><td></td><td class="num">4871</td></tr>
 </table></div>
 <h2>Shared endpoints</h2>
 <div class="tablewrap"><table data-nofilter="1" data-nosearch="1">
 <tr><th>Host</th><th class="num">Partners</th><th>Partner(s)</th><th class="num">Files</th></tr>
-<tr><td class="cl"><a href="../details/hosts/unknown.html">unknown</a></td><td class="num">5</td><td class="lines clps">UMBRELLA<br><span class="ce">&#8943;<br></span><span class="cm">GLOBEX<br>CYBERDYNE<br>HOOLI<br></span>GEKKO</td><td class="num">730</td></tr>
-<tr class="total"><td>Total (1 host(s))</td><td class="num"></td><td></td><td class="num">730</td></tr>
+<tr><td colspan="4">No endpoint serves more than one partner.</td></tr>
+<tr class="total"><td>Total (0 host(s))</td><td class="num"></td><td></td><td class="num"></td></tr>
 </table></div>
 <p class="note">The first table counts OUT-connection Files only (the endpoints we dial); its Subscriptions/Applications/Domains/Partners columns are distinct counts over those Files, applications and partners by the site-wide UNION attribution. The redundancy and sharing views count each partner's distinct recorded endpoints over ALL its Files — for an inbound flow that is the partner's recorded source address, and a partner with no endpoint recorded anywhere is the inbound-only class. &quot;Sole endpoint for&quot; flags the hosts that are the ONLY recorded endpoint of at least one partner: losing that address strands those partners entirely.</p>
-<div class="summary">Outbound endpoints: 11  |  Single-endpoint partners: 2  |  Multi-endpoint: 8  |  Inbound-only: 0  |  Shared endpoints: 1</div>
+<div class="summary">Outbound endpoints: 10  |  Single-endpoint partners: 2  |  Multi-endpoint: 8  |  Inbound-only: 0  |  Shared endpoints: 0</div>
 </body>
 </html>

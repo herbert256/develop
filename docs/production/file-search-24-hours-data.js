@@ -21,10 +21,10 @@ UC1_ZG_PENSION_HOOLI	uc1-zg-pension-hooli
 UC3_AB_NAS_GLOBEX	uc3-ab-nas-globex
 UC4_ZK_MIAZ_INITECH	uc4-zk-miaz-initech
 UC2_ZG_MATCH_HOOLI	uc2-zg-match-hooli
-STMT_EXPORT_GLOBEX_05	stmt-export-globex-05
+STMT_EXPORT_GLOBEX_06	stmt-export-globex-06
 UC2_APS_VIDA_UMBRELLA	uc2-aps-vida-umbrella
 STMT_EXPORT_GLOBEX_02	stmt-export-globex-02
-STMT_EXPORT_GLOBEX_07	stmt-export-globex-07
+STMT_EXPORT_GLOBEX_08	stmt-export-globex-08
 UC1_CD_PRINTMGMT_WONKA	uc1-cd-printmgmt-wonka
 UC1_AB_CLAIMS_UMBRELLA	uc1-ab-claims-umbrella
 UC3_APS_SYSHUB_SOYLENT	uc3-aps-syshub-soylent
