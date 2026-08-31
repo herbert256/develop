@@ -1048,8 +1048,9 @@ unset _e _m
 # (2026-08-31, user request), LAST in the Logical/Partners/Domains/
 # Applications group. The spine is the SUBSCRIPTION: a subscription carries
 # its BL tag(s) verbatim (BL_FIN — never stripped; several tags = several
-# rows) UNIONED with its input/BL.txt rows ("<subscription> <BL number>",
-# several per subscription allowed — 2026-08-31, user request; the name must
+# rows) UNIONED with its input/BL.txt rows ("<subscription> <BL>[,<BL>...]" —
+# the numbers comma-separated in the second field; one-per-line rows still
+# read — 2026-08-31, user request; the name must
 # be a configured subscription of THIS env, matched case-insensitively with
 # the configured spelling kept, unknown names reported and skipped), and every
 # other bl pair cache is composed from the subscription pairs. Placed AFTER
@@ -1067,8 +1068,12 @@ unset _e _m
               n = split(l, a, /[ \t]+/)
               if (n < 2 || a[1] == "" || a[2] == "") next
               k = toupper(a[1])
-              if (k in CFG) print CFG[k] "\t" a[2]
-              else { unk++; if (unk <= 8) ul = ul (ul == "" ? "" : ", ") a[1] } }
+              if (!(k in CFG)) { unk++; if (unk <= 8) ul = ul (ul == "" ? "" : ", ") a[1]; next }
+              # the BL list: fields 2..n rejoined (a space after a comma
+              # splits a field), then split on commas, blanks dropped
+              v = a[2]; for (j = 3; j <= n; j++) v = v a[j]
+              m = split(v, B, ",")
+              for (j = 1; j <= m; j++) if (B[j] != "") print CFG[k] "\t" B[j] }
             END { if (unk) printf "flow-manager.sh: [%s] input/BL.txt: %d row(s) name a subscription this environment does not configure (skipped): %s%s\n", ENVN, unk, ul, (unk > 8 ? ", ..." : "") > "/dev/stderr" }
         ' "$BASE/_subscriptions.tsv" "$BLF"
     fi

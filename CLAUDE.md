@@ -877,8 +877,8 @@ and `input/rename.txt` (DISPLAY renames, applied to the rendered pages by the bu
 step — see the manual re-publish gotcha) and `input/logical.txt` (fixed FlowID → Logical
 transforms feeding the Logical entity derivation — owned by `bin/flow-manager.sh` since Logical
 became a full entity, and one of its freshness deps; a listed FlowID skips the derivation) and
-`input/BL.txt` (BL numbers per subscription, `<subscription> <BL number>`, several lines per
-subscription allowed — a SECOND source of BL entities beside the subscriptions.json tags,
+`input/BL.txt` (BL numbers per subscription, `<subscription> <BL>[,<BL>...]` — several numbers
+comma-separated in the second field — a SECOND source of BL entities beside the subscriptions.json tags,
 unioned in `bin/flow-manager.sh`; the real file lives in runtime's `input/`, develop's is the
 sample template) and
 `input/logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
