@@ -445,7 +445,7 @@ _status_table() {
             hosts) ebase=remote-host ;;         logins) ebase=login ;;
             logicals) ebase=logical ;;
             partners) ebase=partner ;;          applications) ebase=application ;;
-            domains) ebase=domain ;;
+            domains) ebase=domain ;;            bl) ebase=bl ;;
         esac
         local ent="${cov%coverage/}transfer/entities/$ebase"
         if [ -n "$ebase" ] && [ -f "docs/$ent-all.html" ]; then
@@ -532,9 +532,10 @@ write_status_pair() {
     _status_table "$cov" "Flow manager entities" \
         "Subscriptions:subscriptions:_subscriptions" \
         "Accounts:accounts:_accounts" "Hosts:hosts:_hosts" "Logins:logins:_logins"
-    _status_table "$cov" "Logical, Partners, Domains &amp; Applications" \
+    _status_table "$cov" "Logical, Partners, Domains, Applications &amp; BL" \
         "Logical:logicals:_logicals" \
-        "Partners:partners:_partners" "Domains:domains:_domains" "Applications:applications:_apps"
+        "Partners:partners:_partners" "Domains:domains:_domains" "Applications:applications:_apps" \
+        "BL:bl:_bl"
     printf '</div>\n'
 }
 
@@ -911,7 +912,7 @@ write_log_facts() {
 write_env_block() {
     local env=$1
     # The two result-status tables (copied from the Flow manager Entities /
-    # Logical, Partners, Domains & Applications analyses pages), side by side with
+    # Logical, Partners, Domains, Applications & BL analyses pages), side by side with
     # coverage links — a status snapshot at the TOP of the landing page.
     if [ -f "$HOME_ENV_DATA/analyses/reports/home.rpt" ] || [ -f "$HOME_ENV_DATA/flow-manager/base/_subscriptions.tsv" ]; then
         write_status_pair "$env/coverage/"
@@ -1660,10 +1661,10 @@ write_sitemap() {
         printf '<li><a href="analyses/failed.html">Failed Subscriptions</a></li>\n'
         printf '<li><a href="analyses/failing-reasons.html">Error reasons</a></li>\n'
         printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Acceptance vs production <span class="smcount">11</span></h3><ul>\n'
+        printf '<div class="smcard"><h3>Acceptance vs production <span class="smcount">12</span></h3><ul>\n'
         local avp
         for avp in accounts:Accounts subscriptions:Subscriptions logicals:Logical logins:Logins hosts:Hosts \
-                   partners:Partners domains:Domains applications:Applications whitelist:Whitelist; do
+                   partners:Partners domains:Domains applications:Applications bl:BL whitelist:Whitelist; do
             printf '<li><a href="analyses/acc-vs-prod-%s-both.html">%s</a></li>\n' "${avp%%:*}" "${avp#*:}"
         done
         printf '<li><a href="analyses/acc-vs-prod-subs-partners.html">Subscriptions vs partners</a></li>\n'
@@ -1691,7 +1692,7 @@ write_sitemap() {
         # the per-entity detail pages: one page per configured-or-logged entity
         printf '<div class="smcard"><h3>Entity detail pages</h3><ul>\n'
         for sub in accounts:account subscriptions:subscription logins:login hosts:remote-host logicals:logical \
-                   partners:partner applications:application domains:domain; do
+                   partners:partner applications:application domains:domain bl:bl; do
             base=${sub#*:}; sub=${sub%%:*}
             # an entity type can have ZERO names (production 2026-08: no
             # DNS-named hosts at all) — a missing slugmap is a valid state,

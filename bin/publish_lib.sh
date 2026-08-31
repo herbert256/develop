@@ -293,7 +293,7 @@ CUR_DATES=""
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
-transfer_order=(topview subscription account login remote-host logical partner application domain entity-search file-journey file-in-file-out activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency anomalies duration duration-all duration-minmax duration-all-minmax dwell-time duration-trend account-sharing twins)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency anomalies duration duration-all duration-minmax duration-all-minmax dwell-time duration-trend account-sharing twins)
 server_order=(topview errors failure-flows pickups uc-status uc2-visits went-kaput site-failures logons connections ssh-security platform-health capacity deploy-errors remote-poll transfer-site-missing no-remote-dir no-remote-files missing-entities)
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -362,15 +362,16 @@ cross_tabs() { printf '%s' "$1"; }   # $1 = "Ent|Ent|..."
 # report-specific knowledge the renderer needs.
 report_tabs() {
     case $1 in
-        account|login|subscription|remote-host|logical|partner|application|domain) echo "All|Seen|Not seen|OK|Warning|Error|Server" ;;   # Entities group (pages under docs/<area>/entities/; default = All via first_page). Every view is listed so member-row links resolve to the same view (member_page_for_label) — Server included, though it is offered only in the +Server scope; the SCOPE (Transfer | +Server, a third tab group) rides on the filename suffix, added by render_entity_report.
-        cross-account)      cross_tabs "Login|Subscriptions|Hosts|Logical|Partners|Applications|Domains" ;;
-        cross-login)        cross_tabs "Account|Subscriptions|Hosts|Logical|Partners|Applications|Domains" ;;
-        cross-subscription) cross_tabs "Account|Login|Hosts|Logical|Partners|Applications|Domains" ;;
-        cross-host)         cross_tabs "Account|Login|Subscriptions|Logical|Partners|Applications|Domains" ;;
-        cross-logical)      cross_tabs "Account|Login|Subscriptions|Hosts|Partners|Applications|Domains" ;;
-        cross-partner)      cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Applications|Domains" ;;
-        cross-application)  cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Partners|Domains" ;;
-        cross-domain)       cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Partners|Applications" ;;
+        account|login|subscription|remote-host|logical|partner|application|domain|bl) echo "All|Seen|Not seen|OK|Warning|Error|Server" ;;   # Entities group (pages under docs/<area>/entities/; default = All via first_page). Every view is listed so member-row links resolve to the same view (member_page_for_label) — Server included, though it is offered only in the +Server scope; the SCOPE (Transfer | +Server, a third tab group) rides on the filename suffix, added by render_entity_report.
+        cross-account)      cross_tabs "Login|Subscriptions|Hosts|Logical|Partners|Applications|Domains|BL" ;;
+        cross-login)        cross_tabs "Account|Subscriptions|Hosts|Logical|Partners|Applications|Domains|BL" ;;
+        cross-subscription) cross_tabs "Account|Login|Hosts|Logical|Partners|Applications|Domains|BL" ;;
+        cross-host)         cross_tabs "Account|Login|Subscriptions|Logical|Partners|Applications|Domains|BL" ;;
+        cross-logical)      cross_tabs "Account|Login|Subscriptions|Hosts|Partners|Applications|Domains|BL" ;;
+        cross-partner)      cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Applications|Domains|BL" ;;
+        cross-application)  cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Partners|Domains|BL" ;;
+        cross-domain)       cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Partners|Applications|BL" ;;
+        cross-bl)           cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Partners|Applications|Domains" ;;
         volume)        echo "Per day|By direction|Top accounts|Went silent|Growers|Shrinkers" ;;   # 2026-07 Tier 3: + trend
         files)         echo "By size|Empty files|By type|Duplicates" ;;
         went-quiet)    echo "Subscriptions|Accounts" ;;   # 2026-07 Tier 3: + stale-accounts
@@ -389,11 +390,11 @@ report_tabs() {
         protocol)      echo "Protocol|Direction|Crosstab|Action By|Direction x Action|Mode" ;;   # the 2026-07 merge: + direction-action's Action By/Crosstab tables + the Mode split
         av-scan)       echo "Breakdown|Per day|Per protocol|Blocked|Not performed|Not first inbound" ;;
         security-params) echo "TLS version|Cipher|Cipher suite|MAC|Key Exchange|Public Key" ;;   # 2026-08: one tab per attribute; the report always emits all six tables (empty when absent) so the count matches in every env. Protocol table dropped — the protocol report owns it.
-        ranking)       echo "Subscriptions|Accounts|Logins|Hosts|Logical|Partners|Applications|Domains" ;;   # the 8 entity types, in ranking.sh's SPECS order
+        ranking)       echo "Subscriptions|Accounts|Logins|Hosts|Logical|Partners|Applications|Domains|BL" ;;   # the 9 entity types, in ranking.sh's SPECS order
         # (anomalies had "Hourly|Daily" until 2026-08 — the two granularities
         # now share ONE page, Daily first, so the report is not split)
         pirates)       echo "Details|Top view" ;;   # the single-leg list + the count per day
-        entity-coverage|entity-coverage-ok|entity-coverage-once|entity-coverage-diff) echo "Accounts|Logical|Partners|Domains|Applications" ;;   # one coverage table per entity; Accounts is the default (first_page). The RULE is a third row, riding on the basename like duration/duration-all.
+        entity-coverage|entity-coverage-ok|entity-coverage-once|entity-coverage-diff) echo "Accounts|Logical|Partners|Domains|Applications|BL" ;;   # one coverage table per entity; Accounts is the default (first_page). The RULE is a third row, riding on the basename like duration/duration-all.
         *)             echo "" ;;
     esac
 }
@@ -408,13 +409,13 @@ group_members() {
         topview)             echo "topview" ;;
         entity-search)       echo "entity-search" ;;
         time)                echo "activity punctuality expected-arrival" ;;   # 2026-07: day/weekly/hourly/weekday merged into activity; 2026-08: + expected-arrival
-        account-login-site)  echo "subscription logical partner account login remote-host domain application" ;;
+        account-login-site)  echo "subscription logical partner account login remote-host domain application bl" ;;
         volume-files)        echo "volume files top-transfers route-throughput size-profile ranking" ;;   # ranking retired 2026-07; 2026-08: + route-throughput/size-profile
         failures)            echo "failure-rate episodes retries recovered recovered-files failure-heatmap" ;;   # from-green-to-red/only-red/waiting/expired/pirates/went-quiet are boxes-only (BOXES_ONLY_REPORTS); 2026-08: + recovered (the good-news mirror) + recovered-files (the per-File Recovered analysis)
         flow-shape)          echo "file-journey file-in-file-out" ;;   # 2026-07: patterns/arrived-left/legs-count/protocol-journey merged into file-journey; attempts/resubmissions into retries
         protocol-security)   echo "protocol security-params security-outreach av-scan connection-efficiency" ;;   # 2026-08: + security-outreach/connection-efficiency
         performance-session) echo "anomalies duration dwell-time duration-trend" ;;   # 2026-08: + duration-trend
-        cross)               echo "cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain" ;;
+        cross)               echo "cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl" ;;
         srv-overview)        echo "topview" ;;
         srv-errors)          echo "errors failure-flows" ;;      # 2026-07: errors-day/error-timing/error-reasons/top-messages merged; 2026-08: + failure-flows (per-flow reason matrix)
         srv-transfers)       echo "pickups" ;;   # transfer-outcomes + file-freshness went with the dropped JSON bookend lines (2026-08)
@@ -430,13 +431,13 @@ group_of() {   # $1 area (transfer|server)  $2 report basename -> group id (empt
         topview)             if [ "$1" = server ]; then echo "srv-overview"; else echo "topview"; fi ;;   # both areas have a topview report
         entity-search)       echo "entity-search" ;;
         activity|punctuality|expected-arrival)   echo "time" ;;
-        account|login|subscription|remote-host|logical|partner|application|domain) echo "account-login-site" ;;
+        account|login|subscription|remote-host|logical|partner|application|domain|bl) echo "account-login-site" ;;
         volume|files|top-transfers|route-throughput|size-profile|ranking) echo "volume-files" ;;
         failure-rate|episodes|retries|recovered|recovered-files|failure-heatmap) echo "failures" ;;   # missing-cronjobs is NOT here (boxes-only); the boxes-only reports return "" so their pages carry NO group row
         file-journey|file-in-file-out) echo "flow-shape" ;;
         protocol|security-params|security-outreach|av-scan|connection-efficiency) echo "protocol-security" ;;
         dwell-time|duration|duration-all|duration-minmax|duration-all-minmax|anomalies|duration-trend)     echo "performance-session" ;;   # the duration-* siblings: Duration's All-transfers / Percentage views (not group MEMBERS — they share Duration's slot)
-        cross-account|cross-login|cross-subscription|cross-host|cross-logical|cross-partner|cross-application|cross-domain) echo "cross" ;;
+        cross-account|cross-login|cross-subscription|cross-host|cross-logical|cross-partner|cross-application|cross-domain|cross-bl) echo "cross" ;;
                 errors) echo "srv-errors" ;;
         failure-flows) echo "srv-errors" ;;
         pickups) echo "srv-transfers" ;;
@@ -473,15 +474,15 @@ group_label() {
 group_desc() {
     case $1 in
         topview)             echo "The whole transfer log at a glance: per day, the Files and Transfers counts with their Ok/Error split and error rate, plus the Files by their final state (Processed/Failed/Waiting/Expired)." ;;
-        entity-search)       echo "Search every account, subscription, login, remote host, logical flow, partner, application and domain by name — with its Files count, Error/OK, and whether it appears in the server logs." ;;
+        entity-search)       echo "Search every account, subscription, login, remote host, logical flow, partner, application, domain and BL tag by name — with its Files count, Error/OK, and whether it appears in the server logs." ;;
         time)                echo "Files per calendar day, the week-over-week trend, and load by hour of day and day of week, plus each subscription's arrival punctuality — late files and missed expected days." ;;
-        account-login-site)  echo "Files per subscription, logical flow, partner, account, login, remote host, domain and application — each with a summary and per-day detail." ;;
+        account-login-site)  echo "Files per subscription, logical flow, partner, account, login, remote host, domain, application and BL tag — each with a summary and per-day detail." ;;
         volume-files)        echo "Data volume per day and account, the size distribution (with the empty-but-OK deliveries), per-subscription growers and shrinkers, file types, the largest/slowest transfers, and every entity ranked by Files, Volume and Error rate." ;;
         failures)            echo "The last failed files, failure rate per account, destination subscription and day, failure episodes with their time to recovery, resubmissions, accounts gone quiet, and the day-by-hour failure heatmap." ;;
         flow-shape)          echo "The row/status shape of each File: patterns, arrival vs departure, legs per File, the protocol route, retry anatomy, the manually resubmitted legs, and the partner-to-partner handovers where a file arrives from one partner and the same filename leaves to another." ;;
         protocol-security)   echo "Transfers by protocol, direction, action-by and transfer mode (BINARY/ASCII) with crosstabs, the connection security parameters (ciphers, TLS versions), and the anti-virus scan outcomes." ;;
         performance-session) echo "Detected unusual hours and days (anomalies), how long transfers take end to end, and the store-and-forward wait inside SecureTransport." ;;
-        cross)               echo "Which pairs of the eight entities belong together — green pairs appear in the transfer logs, red pairs are configured but never logged. Pick the first entity in the top row, the second below." ;;
+        cross)               echo "Which pairs of the nine entities belong together — green pairs appear in the transfer logs, red pairs are configured but never logged. Pick the first entity in the top row, the second below." ;;
         srv-overview)        echo "The server log at a glance: the wide per-day dashboard (records, level split, per-component activity)." ;;
         srv-errors)          echo "The error side of the server log: the Info/Warning/Error split per day and by hour/weekday, error reasons classified into failure buckets, and the most-repeated warn/error message shapes." ;;
         srv-transfers)       echo "The server's own view of the deliveries: which staged files the partners actually came to collect, and when." ;;
@@ -515,8 +516,10 @@ member_label() {   # row-1 tab text for a grouped report
         remote-host) echo "Hosts" ;;
         logical) echo "Logical" ;;
         partner) echo "Partners" ;; application) echo "Applications" ;; domain) echo "Domains" ;;
+        bl) echo "BL" ;;
         cross-logical) echo "Logical" ;;
         cross-partner) echo "Partners" ;; cross-application) echo "Applications" ;; cross-domain) echo "Domains" ;;
+        cross-bl) echo "BL" ;;
 
         volume) echo "Volume" ;; trend) echo "Growers & shrinkers" ;; size-dist) echo "Size distribution" ;;
         file-type) echo "File types" ;; top-transfers) echo "Largest files" ;; duplicate-files) echo "Duplicate files" ;;
@@ -542,7 +545,7 @@ first_page() {
     # The Entities reports live in the entities/ subdir and open on ALL
     # (logged + configured — the 2026-07 default; formerly Seen).
     case $1 in
-        account|login|subscription|remote-host|logical|partner|application|domain)
+        account|login|subscription|remote-host|logical|partner|application|domain|bl)
             echo "entities/$1-all.html"; return ;;
         entity-search) echo "../search.html"; return ;;    # published at the ENV ROOT (renamed 2026-07)
     esac
@@ -968,7 +971,7 @@ combine_group_nav() { [ -n "$(group_of "$1" "$2")" ]; }   # $1 area  $2 report n
 help_slug_for() {   # $1 area (transfer|server)  $2 report basename
     local area=$1 n=$2
     case $n in
-        account|login|subscription|remote-host|logical|partner|application|domain) echo "entities-$n" ;;
+        account|login|subscription|remote-host|logical|partner|application|domain|bl) echo "entities-$n" ;;
         skipped-*)                                                      echo "skipped" ;;   # the per-value Skipped pages share one help page
         failed-*)                                                       echo "failed" ;;    # the Failed Subscriptions view pages share one help page
         failing-reasons-*)                                              echo "failing-reasons" ;;  # the per-reason drill pages share the Error reasons help page
@@ -994,7 +997,7 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
 
 # ---- Entities reports: views x scope ----------------------------------------
 # Each Entities report renders TEN pages into docs/<area>/entities/
-# (8 entities -> 80 pages), with three tab groups on the nav row: the entity
+# (9 entities -> 90 pages), with three tab groups on the nav row: the entity
 # members, the views, and the scope.
 #   views  All | Seen | Not seen | OK | Warning | Error [| Server]
 #   scope  Transfer | +Server   (2026-07; Transfer and Server used to be two of
@@ -1042,6 +1045,7 @@ entity_cov_base() {
         account) echo accounts ;;  login) echo logins ;;  subscription) echo subscriptions ;;
         remote-host) echo hosts ;;  logical) echo logicals ;;
         partner) echo partners ;;  application) echo applications ;; domain) echo domains ;;
+        bl) echo bl ;;
     esac
 }
 # Reduce an Entities block to its FIRST (Name) column only: drop the Files/Error/
@@ -1099,7 +1103,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     case $name in
         subscription) bluebase=_subscriptions ;; account) bluebase=_accounts ;; login) bluebase=_logins ;;
         remote-host) bluebase=_hosts ;; logical) bluebase=_logicals ;; partner) bluebase=_partners ;;
-        application) bluebase=_apps ;; domain) bluebase=_domains ;;
+        application) bluebase=_apps ;; domain) bluebase=_domains ;; bl) bluebase=_bl ;;
     esac
     local bluef="$DATA/flow-manager/base/$bluebase.tsv"
     { [ -n "$bluebase" ] && [ -f "$bluef" ] && [ "${ncols:-0}" -gt 0 ]; } || bluef=""
@@ -1174,7 +1178,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     case $name in
         subscription) resb=_subscriptions ;; account) resb=_accounts ;; login) resb=_logins ;;
         remote-host) resb=_hosts ;; logical) resb=_logicals ;; partner) resb=_partners ;;
-        application) resb=_apps ;; domain) resb=_domains ;;
+        application) resb=_apps ;; domain) resb=_domains ;; bl) resb=_bl ;;
     esac
     [ -n "$resb" ] && resfile="$DATA/flow-manager/base/$resb.tsv"
     [ -f "$resfile" ] || resfile=""
@@ -1389,6 +1393,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
         partner) _dbase=_partners; _dsub=_partners-subscriptions ;;
         application) _dbase=_apps; _dsub=_apps-subscriptions ;;
         domain) _dbase=_domains;  _dsub=_domains-subscriptions ;;
+        bl) _dbase=_bl;           _dsub=_bl-subscriptions ;;
     esac
     if [ -n "$_dbase" ] && [ -f "$DATA/flow-manager/base/$_dbase.tsv" ]; then
         local _ebase="$DATA/flow-manager/base/$_dbase.tsv"
@@ -1745,7 +1750,7 @@ render_report() {   # $1 area  $2 name  $3 rpt
     case $name in cross-*|entity-search|seen-in-server-log|entity-coverage|entity-coverage-*|sources-and-targets|skipped|skipped-*) CUR_DATES="" ;; esac
     # The Entities reports have their own four-page renderer (see above).
     case $name in
-        account|login|subscription|remote-host|logical|partner|application|domain)
+        account|login|subscription|remote-host|logical|partner|application|domain|bl)
             render_entity_report "$area" "$name" "$rpt" "$rlabel" "$hslug" "$rkey"
             CUR_DATES=$saved_dates
             return ;;
@@ -1830,7 +1835,7 @@ render_report() {   # $1 area  $2 name  $3 rpt
         done
         # The cross reports' tables are one per SECOND entity. They render TWO
         # full entity rows — row 1 picks the FIRST entity, row 2 the SECOND —
-        # each listing all 8 entities in the same canonical order (the group
+        # each listing all 9 entities in the same canonical order (the group
         # member order). An entity can't cross itself, so each row grays out
         # the entity the OTHER row has selected (NAV state 2: unlinked, dimmed).
         case $name in cross-*)

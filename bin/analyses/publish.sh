@@ -173,6 +173,7 @@ render_coverage_pages() {
             partners)      resfile="$DATA/flow-manager/base/_partners.tsv" ;;
             applications)  resfile="$DATA/flow-manager/base/_apps.tsv" ;;
             domains)       resfile="$DATA/flow-manager/base/_domains.tsv" ;;
+            bl)            resfile="$DATA/flow-manager/base/_bl.tsv" ;;
         esac
         [ -f "$resfile" ] || resfile=""
         # the <member>-subscriptions xref: the movement half of the Direction
@@ -184,6 +185,7 @@ render_coverage_pages() {
             partners)      msubf="$DATA/flow-manager/xref/_partners-subscriptions.tsv" ;;
             applications)  msubf="$DATA/flow-manager/xref/_apps-subscriptions.tsv" ;;
             domains)       msubf="$DATA/flow-manager/xref/_domains-subscriptions.tsv" ;;
+            bl)            msubf="$DATA/flow-manager/xref/_bl-subscriptions.tsv" ;;
         esac
         [ -f "$msubf" ] || msubf=""
         # PARTNER GROUPS (2026-07): a partner that is a merged group carries the
@@ -206,13 +208,15 @@ render_coverage_pages() {
             html_head "$title" "../assets/style.css" "" "HOME" "coverage"
             esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
             if [ "$member" = logicals ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the logical flows counted in this cell of the Logical row (Logical, Partners, Domains &amp; Applications table). A logical flow is a FlowID family condensed to one three-part name (a hyphen marks parts the derivation combined); its members are the configured subscriptions that carry those FlowIDs.</p>\n'
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the logical flows counted in this cell of the Logical row (Logical, Partners, Domains, Applications &amp; BL table). A logical flow is a FlowID family condensed to one three-part name (a hyphen marks parts the derivation combined); its members are the configured subscriptions that carry those FlowIDs.</p>\n'
             elif [ "$member" = partners ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the partners counted in this cell of the Partners row (Logical, Partners, Domains &amp; Applications table). A partner is the last part of the logical flow names (domain_application_partner), merged into one organisation by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases; its configured endpoint(s) and member accounts are listed.</p>\n'
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the partners counted in this cell of the Partners row (Logical, Partners, Domains, Applications &amp; BL table). A partner is the last part of the logical flow names (domain_application_partner), merged into one organisation by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases; its configured endpoint(s) and member accounts are listed.</p>\n'
             elif [ "$member" = applications ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the applications counted in this cell of the Applications row (Logical, Partners, Domains &amp; Applications table). An application is the middle part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; an application active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the applications counted in this cell of the Applications row (Logical, Partners, Domains, Applications &amp; BL table). An application is the middle part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; an application active in both directions counts once per side.</p>\n'
             elif [ "$member" = domains ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the business domains counted in this cell of the Domains row (Logical, Partners, Domains &amp; Applications table). The domain is the first part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; a domain active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the business domains counted in this cell of the Domains row (Logical, Partners, Domains, Applications &amp; BL table). The domain is the first part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; a domain active in both directions counts once per side.</p>\n'
+            elif [ "$member" = bl ]; then
+                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the BL tags counted in this cell of the BL row (Logical, Partners, Domains, Applications &amp; BL table). A BL is a subscriptions.json tags entry starting with BL, kept verbatim; its members are the configured subscriptions that carry the tag, and a tag active in both directions counts once per side.</p>\n'
             else
                 printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the items counted in this cell of the Entities table.</p>\n'
             fi
@@ -244,6 +248,8 @@ render_coverage_pages() {
                 printf '<tr><th>Partner</th>%s<th>Accounts</th><th>Endpoints</th><th>Whitelisted IPs</th>%s<th class="num">UC1</th><th class="num">UC2</th><th class="num">UC3</th><th class="num">UC4</th></tr>\n' "$hdir" "$htail"
             elif [ "$member" = logicals ]; then
                 printf '<tr><th>Logical flow</th>%s<th>Subscriptions</th><th>Endpoints</th>%s</tr>\n' "$hdir" "$htail"
+            elif [ "$member" = bl ]; then
+                printf '<tr><th>BL</th>%s<th>Subscriptions</th><th>Endpoints</th>%s</tr>\n' "$hdir" "$htail"
             elif [ "$member" = applications ]; then
                 printf '<tr><th>Application</th>%s<th>Accounts</th><th>Endpoints</th>%s</tr>\n' "$hdir" "$htail"
             elif [ "$member" = domains ]; then
@@ -259,8 +265,8 @@ render_coverage_pages() {
             # cache (either can carry several — joined with a comma).
             # ipc: only partners carry the Whitelisted IPs column.
             local alf="" ahost="" lmap="" hmap="" ptf=0 mw=account
-            # logicals: the members are SUBSCRIPTIONS (no endpoint annotation)
-            case $member in logicals) ptf=1; mw=subscription ;; esac
+            # logicals/bl: the members are SUBSCRIPTIONS (no endpoint annotation)
+            case $member in logicals|bl) ptf=1; mw=subscription ;; esac
             case $member in partners|applications|domains)
                 ptf=1
                 [ -f $DATA/flow-manager/xref/_accounts-logins.tsv ] && alf="$DATA/flow-manager/xref/_accounts-logins.tsv"
@@ -962,8 +968,8 @@ write_use_case_patterns_page() {
 # FlowIdentifier), use case (the UC<n> name prefix, else the flow-manager
 # DERIVED one), account, endpoint (the login the partner connects in with, or
 # the remote host we dial out to), BL tag (the subscriptions.json tags[] entry
-# starting with "BL" — jq over the SKIP-filtered export, like
-# write_accounts_page) and the derived Logical / Partner / Domain /
+# starting with "BL" — the _subscriptions-bl xref cache, since 2026-08-31 a
+# full entity whose cell links its detail page) and the derived Logical / Partner / Domain /
 # Application groups — the config caches joined onto one row each. Every name
 # links its detail page; rows tint by the subscription result. The roster is
 # the pristine configured snapshot (base/.configured.tsv — the base cache
@@ -973,23 +979,19 @@ write_subscriptions_page() {
     local out="$ADIR/subscriptions.html" S="$FM_CONFIG_DIR/subscriptions.json"
     local B="$DATA/flow-manager/base" X="$DATA/flow-manager/xref" DET="$DATA/transfer/reports/details"
     [ -f "$B/_subscriptions.tsv" ] || { rm -f "$out"; return 0; }
-    # the BL tag(s) per subscription; several join ", ", none = blank cell
-    local blmap; blmap=$(mktemp "${TMPDIR:-/tmp}/subbl.XXXXXX")
-    if command -v jq >/dev/null 2>&1 && [ -f "$S" ]; then
-        jq -r '.[] | .name as $n | [(.tags // [])[] | select(startswith("BL"))] | select(length > 0) | "\($n)\t\(join(", "))"' "$S" > "$blmap" 2>/dev/null || : > "$blmap"
-    fi
     local conf="$B/.configured.tsv"; [ -f "$conf" ] || conf=""
     local args=() f d
     for f in _subscriptions-profiles _subscriptions-ucderived _subscriptions-accounts \
              _subscriptions-logins _subscriptions-hosts _subscriptions-logicals \
-             _subscriptions-partners _subscriptions-domains _subscriptions-apps; do
+             _subscriptions-partners _subscriptions-domains _subscriptions-apps \
+             _subscriptions-bl; do
         [ -f "$X/$f.tsv" ] && args+=("$X/$f.tsv")
     done
-    for d in subscriptions accounts logins hosts logicals partners domains applications; do
+    for d in subscriptions accounts logins hosts logicals partners domains applications bl; do
         [ -f "$DET/$d/_slugmap.tsv" ] && args+=("$DET/$d/_slugmap.tsv")
     done
     local rows
-    rows=$(LC_ALL=C awk -F'\t' -v BLM="$blmap" -v CONF="$conf" '
+    rows=$(LC_ALL=C awk -F'\t' -v CONF="$conf" '
         function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
         # per-subscription value sets, deduped per (map, sub, value)
         function addv(M, tag, s, v,   k2) {
@@ -1016,8 +1018,6 @@ write_subscriptions_page() {
             return o2
         }
         BEGIN { US = sprintf("%c", 31)
-            while ((getline l < BLM) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") BLT[toupper(a[1])] = a[2] }
-            close(BLM)
             if (CONF != "") { while ((getline l < CONF) > 0) { n = split(l, a, "\t")
                     if (n >= 2 && a[1] == "_subscriptions" && a[2] != "" && !(toupper(a[2]) in seenr)) { seenr[toupper(a[2])] = 1; RN[++nr] = a[2] } }
                 close(CONF) }
@@ -1033,6 +1033,7 @@ write_subscriptions_page() {
         FILENAME ~ /details\/partners\/_slugmap\.tsv$/      { SLUG["partners"      SUBSEP toupper($1)] = $2; next }
         FILENAME ~ /details\/domains\/_slugmap\.tsv$/       { SLUG["domains"       SUBSEP toupper($1)] = $2; next }
         FILENAME ~ /details\/applications\/_slugmap\.tsv$/  { SLUG["applications"  SUBSEP toupper($1)] = $2; next }
+        FILENAME ~ /details\/bl\/_slugmap\.tsv$/            { SLUG["bl"            SUBSEP toupper($1)] = $2; next }
         FILENAME ~ /_subscriptions-profiles\.tsv$/  { addv(FID, "f", $1, $2); next }
         FILENAME ~ /_subscriptions-ucderived\.tsv$/ { if ($1 != "" && $2 != "") UCD[toupper($1)] = $2; next }
         FILENAME ~ /_subscriptions-accounts\.tsv$/  { addv(ACC, "a", $1, $2); next }
@@ -1042,6 +1043,7 @@ write_subscriptions_page() {
         FILENAME ~ /_subscriptions-partners\.tsv$/  { addv(PTN, "p", $1, $2); next }
         FILENAME ~ /_subscriptions-domains\.tsv$/   { addv(DOM, "d", $1, $2); next }
         FILENAME ~ /_subscriptions-apps\.tsv$/      { addv(APP, "z", $1, $2); next }
+        FILENAME ~ /_subscriptions-bl\.tsv$/        { addv(BLE, "b", $1, $2); next }
         END {
             for (i = 1; i <= nr; i++) { nm = RN[i]; k = toupper(nm)
                 # UCx: the name prefix wins; else the flow-manager derived one
@@ -1072,11 +1074,10 @@ write_subscriptions_page() {
                     "<td>" cell("domains", (k in DOM) ? DOM[k] : "") "</td>" \
                     "<td>" cell("applications", (k in APP) ? APP[k] : "") "</td>" \
                     "<td class=\"wrap\">" epc "</td>" \
-                    "<td>" e((k in BLT) ? BLT[k] : "") "</td></tr>"
+                    "<td>" cell("bl", (k in BLE) ? BLE[k] : "") "</td></tr>"
             }
         }' ${args[@]+"${args[@]}"} "$B/_subscriptions.tsv" \
         | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3 | cut -f4-)
-    rm -f "$blmap"
     local n; n=$(printf '%s' "$rows" | grep -c '<tr' || true)
     {
         html_head "Subscriptions" "../assets/style.css" "" "" "subscriptions" "" "" "sort-fresh"

@@ -82,6 +82,9 @@ _home_status_block() {   # $1 = acceptance | production
 # page family reads like every other base) and the FlowID -> Logical map
 # xref/_profiles-logicals.tsv. The Logical pages link detail pages
 # (details/logicals/) and take activity from logical.rpt like the PDA types.
+# ---- BL (2026-08-31, user request): the subscriptions.json tags entry
+# starting with BL, a full entity too — base/_bl.tsv, details/bl/ and bl.rpt
+# feed its pages exactly like Logical.
 
 write_acc_vs_prod_pages() {
     # whitelist: NO detail pages/slugmap — the name set is each env's
@@ -94,14 +97,14 @@ write_acc_vs_prod_pages() {
     # since 2026-08-31 a real base cache (base/_logicals.tsv, derived by
     # bin/flow-manager.sh) with detail pages and its own entity report,
     # so it renders like the PDA types (linked cells, activity split).
-    local types=(accounts subscriptions logins hosts partners domains applications whitelist logicals)
-    local labels=("Accounts" "Subscriptions" "Logins" "Hosts" "Partners" "Domains" "Applications" "Whitelist" "Logical")
-    local bases=(_accounts _subscriptions _logins _hosts _partners _domains _apps _white _logicals)
+    local types=(accounts subscriptions logins hosts partners domains applications whitelist logicals bl)
+    local labels=("Accounts" "Subscriptions" "Logins" "Hosts" "Partners" "Domains" "Applications" "Whitelist" "Logical" "BL")
+    local bases=(_accounts _subscriptions _logins _hosts _partners _domains _apps _white _logicals _bl)
     # ACTIVITY per env: each name's Files/Volume from that env's entity summary
     # .rpt (first-table ROWs — the same source ranking.sh lifts from), matched
     # case aside. Since 2026-08-30 the activity feeds ONLY the Summary page's
     # dormancy split — the entity pages themselves render name-only.
-    local rpts=(account subscription login remote-host partner domain application "" logical)
+    local rpts=(account subscription login remote-host partner domain application "" logical bl)
     # difference (2026-08-29): the Only-acceptance and Only-production sets
     # side by side as two independent name-sorted columns of ONE table — the
     # promotion diff at a glance. Its tab sits AFTER Summary in the view row.
@@ -120,7 +123,7 @@ write_acc_vs_prod_pages() {
     # Summary / Entities / Subscriptions vs partners; the type row (this
     # order) and the view row show ONLY inside Entities, whose landing —
     # and the view row's default — is Subscriptions at the Both view.
-    local taborder=(subscriptions logicals accounts logins hosts partners domains applications whitelist)
+    local taborder=(subscriptions logicals accounts logins hosts partners domains applications bl whitelist)
     local ent_home="acc-vs-prod-subscriptions-both.html"
     local ti vi tj t v tmp na nb np am pm ab pb trow vrow vl out
     local sumtmp; sumtmp=$(mktemp)   # per-type counts + active-name lists for the Summary page
@@ -399,7 +402,7 @@ write_acc_vs_prod_pages() {
         # order — the FM four, then the Logical/PDA group, Whitelist last) —
         # independent of the types[] array, which keeps driving the pages
         # and the tab row
-        local sumorder=(subscriptions accounts hosts logins logicals partners domains applications whitelist)
+        local sumorder=(subscriptions accounts hosts logins logicals partners domains applications bl whitelist)
         for t in "${sumorder[@]}"; do
             for ti in "${!types[@]}"; do [ "${types[$ti]}" = "$t" ] && break; done
             awk -F'\t' -v FS2='|' -v T="$t" -v LBL="${labels[$ti]}" '
