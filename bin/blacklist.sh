@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# bin/blacklist.sh — the ONE reader for input/blacklist.txt, the platform-internal
+# bin/blacklist.sh — the ONE reader for input/<env>/blacklist.txt, the platform-internal
 # pseudo-entities (see that file's header for the format and the why).
 #
 # SOURCED, not run. Defines:
-#   BLACKLIST_FILE  the path (shared across environments — it is platform
-#                   policy, not per-env data)
+#   BLACKLIST_FILE  the path (input/<env>/blacklist.txt — per environment since
+#                   2026-08-31, user request; platform policy differs per estate)
 #   BLACKLIST_AWK   awk functions to inject into a program with string
 #                   concatenation, the COREIDS_AWK / LOGLINES_AWK idiom:
 #
@@ -33,7 +33,11 @@
 # at parse time.
 #
 SCRIPT_DIR_BL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BLACKLIST_FILE="${BLACKLIST_FILE:-$(cd "$SCRIPT_DIR_BL/.." && pwd)/input/blacklist.txt}"
+# PER ENVIRONMENT since 2026-08-31 (user request): input/<env>/blacklist.txt —
+# the two estates are different platforms with different internal values.
+# $AXWAY_ENV comes from bin/env.sh (sourced here when the caller has not).
+[ -n "${AXWAY_ENV:-}" ] || source "$SCRIPT_DIR_BL/env.sh"
+BLACKLIST_FILE="${BLACKLIST_FILE:-$(cd "$SCRIPT_DIR_BL/.." && pwd)/input/$AXWAY_ENV/blacklist.txt}"
 export BLACKLIST_FILE
 
 # NOTE: no single quotes inside this program — it is carried in a

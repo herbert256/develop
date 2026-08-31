@@ -2,7 +2,7 @@
 #
 # skipped.sh — "Skipped" (an ANALYSES report published with the transfer pages,
 # like entity-coverage.sh): the accounts and subscriptions IGNORED because
-# their name matches the shared skip list (input/skip.txt), plus a count of the
+# their name matches the environment's skip list (input/<env>/skip.txt), plus a count of the
 # transfer- and server-log records set aside for the same reason.
 #
 # Writes ONE overview report (skipped.rpt) plus ONE report PER skip value
@@ -26,7 +26,7 @@ mkdir -p "$REPORTS_DIR"
 CFG_SKIP="$CONFIG_DIR/filtered/_skipped.tsv"   # data/<env>/flow-manager/filtered/_skipped.tsv (type<TAB>name)
 T_SKIP="$DATA/transfer/_skipped.tsv"       # skipped transfer records
 S_SKIP="$DATA/server/_skipped.tsv"         # skipped server records
-SKIPFILE="$ROOT/input/skip.txt"            # the rules (shared across envs)
+SKIPFILE="$ROOT/input/$AXWAY_ENV/skip.txt" # the rules (per environment since 2026-08-31)
 source "$ROOT/bin/skiplist.sh"             # SKIPLIST_AWK (sl_load/sl_match) — the ONE reader
 
 # All the inputs are parse-time products (the two _skipped.tsv sidecars and the
@@ -89,8 +89,8 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         # report with a fresh mtime for skip_if_fresh to trust. ----
         main = outdir "/skipped.rpt.tmp"
         printf "TITLE\tSkipped\n" > main
-        printf "DESC\tThe accounts and subscriptions ignored because their name matches the skip list (input/skip.txt), plus the transfer- and server-log records set aside for the same reason.\n" > main
-        printf "INTRO\tNames matching the **skip list** (**input/skip.txt** — %s) are removed at parse time — from the FlowManager config, the transfer logs and the server logs alike — so **no other report counts them**. Matching is a case-insensitive **substring** of the account or subscription name. The buttons below give a per-value report; this page lists them all.\n", (tokens == "" ? "(empty)" : tokens) > main
+        printf "DESC\tThe accounts and subscriptions ignored because their name matches the skip list (input/%s/skip.txt), plus the transfer- and server-log records set aside for the same reason.\n", ENVIRON["AXWAY_ENV"] > main
+        printf "INTRO\tNames matching the **skip list** (**input/%s/skip.txt**, this environment'\''s own — %s) are removed at parse time — from the FlowManager config, the transfer logs and the server logs alike — so **no other report counts them**. Matching is a case-insensitive **substring** of the account or subscription name. The buttons below give a per-value report; this page lists them all.\n", ENVIRON["AXWAY_ENV"], (tokens == "" ? "(empty)" : tokens) > main
         printf "KEYWORDS\tskip, skipped, ignore, ignored, exclude, excluded, filter, filtered, skip.txt, %s\n", tokens > main
         # totals across all values
         for (i = 1; i <= nt; i++) { TA += nacc[i]; TS += nsub[i]; TT += tcnt[i]; TV += scnt[i] }
@@ -98,7 +98,7 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         printf "STAT\twhite\t%d\tSkipped subscriptions\n", TS + 0 > main
         printf "STAT\twhite\t%d\tSkipped transfer log lines\n", TT + 0 > main
         printf "STAT\twhite\t%d\tSkipped server log lines\n", TV + 0 > main
-        if (nt == 0) printf "NOTE\tThe skip list (input/skip.txt) is empty — nothing was skipped.\n" > main
+        if (nt == 0) printf "NOTE\tThe skip list (input/<env>/skip.txt) is empty — nothing was skipped.\n" > main
 
         for (i = 1; i <= nt; i++) {
             # per-value section on the overview
@@ -107,7 +107,7 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
             pv = outdir "/skipped-" SLUG[i] ".rpt"
             printf "TITLE\tSkipped: %s\n", ORIG[i] > pv
             printf "DESC\tThe accounts, subscriptions and log records skipped because their name matches the skip token \"%s\".\n", ORIG[i] > pv
-            printf "INTRO\tEverything removed at parse time because its account or subscription name contains **%s** (a case-insensitive substring of the skip list, input/skip.txt).\n", ORIG[i] > pv
+            printf "INTRO\tEverything removed at parse time because its account or subscription name contains **%s** (a case-insensitive substring of the skip list, input/<env>/skip.txt).\n", ORIG[i] > pv
             printf "KEYWORDS\tskip, skipped, %s\n", ORIG[i] > pv
             printf "STAT\twhite\t%d\tSkipped accounts\n", nacc[i] + 0 > pv
             printf "STAT\twhite\t%d\tSkipped subscriptions\n", nsub[i] + 0 > pv

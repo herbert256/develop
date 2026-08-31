@@ -89,20 +89,20 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"   # INPUT_DIR, CACHE_DIR, IP_DIR, CONFIG_DIR, PARSED (= $CACHE_DIR/_transfers.tsv), FILES
-source "$ROOT/bin/blacklist.sh"   # BLACKLIST_FILE + BLACKLIST_AWK (bl_load/bl_blank) — input/blacklist.txt
+source "$ROOT/bin/blacklist.sh"   # BLACKLIST_FILE + BLACKLIST_AWK (bl_load/bl_blank) — input/<env>/blacklist.txt
 source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK (rn_load/rn_canon) — input/<env>/renames/
-source "$ROOT/bin/skiplist.sh"    # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/skip.txt
+source "$ROOT/bin/skiplist.sh"    # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/<env>/skip.txt
 PARSED0="$CACHE_DIR/_transfers0.tsv"   # raw (blacklisted, UNpropagated) cache — the incremental merge base
 SESSMAP="$CACHE_DIR/_sessionsites.tsv" # session -> subscription, learned from the server log (bin/session-sites.sh)
 LEGEND="$CACHE_DIR/_transfers.txt"
-# SKIP LIST (input/skip.txt, shared across envs): a record whose ATTRIBUTED
+# SKIP LIST (input/<env>/skip.txt, per environment): a record whose ATTRIBUTED
 # account (col 4) or subscription/site (col 6) name contains a skip token
 # (case-insensitive substring) is dropped from _transfers.tsv (so no report,
 # _files.tsv counts it) and set aside in _skipped.tsv for the
 # "Skipped" analyses report. Applied in the DERIVE step below (after the
 # propagation/config fallback fills the attribution), which runs every parse —
 # so the sidecar always reflects the full cache. See bin/flow-manager.sh.
-SKIPFILE="$ROOT/input/skip.txt"
+SKIPFILE="$ROOT/input/$AXWAY_ENV/skip.txt"   # per environment since 2026-08-31
 SKIPOUT="$DATA/transfer/_skipped.tsv"   # skipped _transfers.tsv rows (verbatim)
 # NO-SUBSCRIPTION / HTTP SKIP (narrowed 2026-08): additionally, a CoreId whose
 # EVERY row still has no site (col 6) after all attribution passes — or with an
@@ -161,7 +161,7 @@ in_manifest()    { cut -f1 "$MANIFEST" | grep -qxF "$(basename "$1")"; }
 # changed parser (or a cache with no recorded version) forces a full reparse, so
 # editing parse.sh actually re-tokenizes instead of reusing a stale cache.
 PSIG="$CACHE_DIR/_transfers.parser"
-# The parser SIGNATURE covers input/blacklist.txt and the RENAME MAP as well as
+# The parser SIGNATURE covers input/<env>/blacklist.txt and the RENAME MAP as well as
 # this script: the blacklist decides what gets blanked and the map decides which
 # logged subscription name folds to which current one, so changing either
 # changes the cache just as
@@ -1026,7 +1026,7 @@ rm -f "$tmp.nosub"
 # insensitive substring). Zero tokens -> nothing skipped, empty sidecar.
 mkdir -p "$(dirname "$SKIPOUT")"
 : > "$tmp.skip"
-# The rules come from input/skip.txt via bin/skiplist.sh — the ONE reader, so
+# The rules come from input/<env>/skip.txt via bin/skiplist.sh — the ONE reader, so
 # the transfer parse, the server parse, flow-manager and the Skipped report all
 # agree what a rule means. LOGIN (col 5) is tested alongside account (4) and
 # site (6): a field-specific "login" rule can target it, and an "any" rule

@@ -71,7 +71,7 @@ for env in acceptance production; do
 
     # the Logical entity derivation (bin/flow-manager.sh): every configured
     # FlowID maps to exactly one Logical, the entity report exists, and every
-    # derived name is 3 "_"-parts or a fixed input/logical.txt target
+    # derived name is 3 "_"-parts or a fixed input/<env>/logical.txt target
     nmap=$(rows "data/$env/flow-manager/xref/_profiles-logicals.tsv")
     nprof=$(rows "data/$env/flow-manager/base/_profiles.tsv")
     check $([ "$nmap" -eq "$nprof" ] && echo 0 || echo 1) "[$env] FlowID map rows $nmap != profiles $nprof"
@@ -79,17 +79,23 @@ for env in acceptance production; do
     check $([ "$n" -gt 0 ] && echo 0 || echo 1) "[$env] logical.rpt has 0 rows"
     n=$(awk -F'\t' 'FNR == NR { if ($0 !~ /^[ \t]*#/ && $0 !~ /^[ \t]*$/) { n2 = split($0, fa, /[ \t]+/); if (n2 >= 2 && fa[2] != "") fix[fa[2]] = 1 }; next }
         !($1 in fix) && split($1, P, "_") != 3 { n++ } END { print n + 0 }' \
-        input/logical.txt "data/$env/flow-manager/base/_logicals.tsv" 2>/dev/null || echo 0)
+        "input/$env/logical.txt" "data/$env/flow-manager/base/_logicals.tsv" 2>/dev/null || echo 0)
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] $n logical name(s) not 3-part and not pinned"
 
     # the BL entity (subscriptions.json tags entries starting with BL): the
     # subscription -> tag map is non-empty and the entity report has rows
     n=$(rows "data/$env/flow-manager/xref/_subscriptions-bl.tsv")
     check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] _subscriptions-bl.tsv is empty"
-    # input/BL.txt rows join the tags (union, several per subscription): the
-    # GLOBEX billing flow carries its BL_FIN tag AND the two planted numbers
+    # input/<env>/BL.txt rows join the tags (union, several per subscription):
+    # the GLOBEX billing flow carries its BL_FIN tag AND the two planted numbers
     n=$(awk -F'\t' '$1=="UC1_FIN_BILLING_GLOBEX"' "data/$env/flow-manager/xref/_subscriptions-bl.tsv" 2>/dev/null | wc -l | tr -d ' ')
-    check $([ "${n:-0}" -ge 3 ] && echo 0 || echo 1) "[$env] UC1_FIN_BILLING_GLOBEX has $n BL row(s), expected >= 3 (tag + input/BL.txt)"
+    check $([ "${n:-0}" -ge 3 ] && echo 0 || echo 1) "[$env] UC1_FIN_BILLING_GLOBEX has $n BL row(s), expected >= 3 (tag + input/$env/BL.txt)"
+    # the nine policy files are PER ENVIRONMENT (2026-08-31): present in the
+    # env dir, and none left at the input root
+    for pf in blacklist.txt skip.txt rename.txt logical.txt logical_domains.txt logical_apps.txt logical_partners.txt BL.txt partner-aliases.tsv; do
+        check $([ -f "input/$env/$pf" ] && echo 0 || echo 1) "[$env] input/$env/$pf missing"
+        check $([ ! -e "input/$pf" ] && echo 0 || echo 1) "input/$pf still at the input root (per-environment since 2026-08-31)"
+    done
     n=$(rpt_rows "data/$env/transfer/reports/bl.rpt")
     check $([ "$n" -gt 0 ] && echo 0 || echo 1) "[$env] bl.rpt has 0 rows"
 

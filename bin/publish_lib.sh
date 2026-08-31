@@ -23,7 +23,7 @@ set -euo pipefail
 # resolve — regardless of which publish script sourced us (BASH_SOURCE points here).
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-source bin/skiplist.sh    # SKIPLIST_FILE  — input/skip.txt (the ONE skip list)
+source bin/skiplist.sh    # SKIPLIST_FILE  — input/<env>/skip.txt (the ONE skip list, per environment)
 source bin/fastawk.sh   # route unqualified `awk` to mawk when installed (see bin/fastawk.sh)
 source bin/env.sh       # resolve $AXWAY_ENV (acceptance|production, default production)
 
@@ -39,7 +39,7 @@ DATA="data/$SITE_ENV"
 CSS_SRC="docs/assets/style.css"   # hand-authored + published in ONE place (see ensure_assets)
 # The FlowManager config exports every raw-JSON reader (the
 # accounts / cronjobs insight pages, publish-insights.sh) should read: the
-# SKIP-filtered copies bin/flow-manager.sh writes (input/skip.txt) when they
+# SKIP-filtered copies bin/flow-manager.sh writes (input/<env>/skip.txt) when they
 # exist, else the raw exports. (Repo-root-relative — publish_lib.sh cd's to ROOT.)
 FM_CONFIG_DIR="input/$SITE_ENV/flow-manager"
 [ -f "$DATA/flow-manager/filtered/partners.json" ] && FM_CONFIG_DIR="$DATA/flow-manager/filtered"
@@ -2316,15 +2316,15 @@ _hdr_with_nav() {
         { print; if ($1 == "TITLE") emit() }
         END { emit() }'
 }
-# The skip-list values (input/skip.txt): "TOKEN<TAB>slug" per line. The slug is
+# The skip-list values (input/<env>/skip.txt): "TOKEN<TAB>slug" per line. The slug is
 # the per-value report basename suffix (skipped-<slug>). Used by the Skipped
 # button row, the report finder and the sitemap.
 skipped_tokens() {
-    # The VALUES of every skip rule + its page slug. Reads input/skip.txt through
+    # The VALUES of every skip rule + its page slug. Reads input/<env>/skip.txt through
     # the shared format (bin/skiplist.sh): a three-field rule contributes its
     # value (field 3), a legacy bare token itself, and "#" comments/blanks are
     # dropped — so the button row and sitemap show the rules, not the file.
-    local f="${SKIPLIST_FILE:-input/skip.txt}" l s
+    local f="${SKIPLIST_FILE:-input/$AXWAY_ENV/skip.txt}" l s   # per environment since 2026-08-31
     [ -f "$f" ] || return 0
     while IFS= read -r l || [ -n "$l" ]; do
         l=${l%$'\r'}

@@ -93,7 +93,8 @@
 #
 SCRIPT_DIR_RN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_RN="$(cd "$SCRIPT_DIR_RN/.." && pwd)"
-RENAMES_DIR="$ROOT_RN/input/${AXWAY_ENV:-acceptance}/renames"
+[ -n "${AXWAY_ENV:-}" ] || source "$SCRIPT_DIR_RN/env.sh"   # the env default lives in ONE place (production since 2026-08-31)
+RENAMES_DIR="$ROOT_RN/input/$AXWAY_ENV/renames"
 RENAMES_FILE="$RENAMES_DIR/subscriptions.tsv"
 RENAMES_PROF="$RENAMES_DIR/profiles.tsv"
 RENAMES_SNAP="$RENAMES_DIR/flowid-names.tsv"

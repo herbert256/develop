@@ -1,4 +1,4 @@
-# input/rename.txt — DISPLAY renames, applied at PUBLISH TIME only (the
+# input/<env>/rename.txt — DISPLAY renames, applied at PUBLISH TIME only (the
 # bin/build/display-rename.sh sweep, the build's last page-touching step):
 # the new value is SHOWN on every rendered page and client-side search
 # payload instead of the real value; the parse caches, the .rpt files and

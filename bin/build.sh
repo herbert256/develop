@@ -712,6 +712,12 @@ if [ "$BUILD_SCOPE" != both ] && [ "$HAVE_ACC$HAVE_PROD" = "00" ]; then
 fi
 printf '\n=== build scope: %s (report -> %s) ===\n' "$BUILD_SCOPE" "$REPORT" >&2
 
+# the nine policy files became PER ENVIRONMENT on 2026-08-31 (user request);
+# a checkout that still carries them at input/ (runtime, whose input/ the code
+# sync never touches) has them copied into every env dir and the shared copy
+# removed — BEFORE the config step reads them. A no-op once migrated.
+run_step "input: move the shared policy files into input/<env>/ (one-time)" bin/build/migrate-input.sh
+
 # Config/hostname steps of BOTH envs first. These no longer CONTEND — the
 # address<->endpoint map is per-env (input/<env>/ip/), so the cross-env write
 # that forced this order is gone. PARALLEL when both envs are present
@@ -821,10 +827,10 @@ fi
 run_step "publish: cross-link the environment switch"    bin/build/crosslink.sh
 
 # The DISPLAY RENAME sweep (2026-08-30) — the LAST page-touching step, after
-# crosslink, so nothing rewrites a page behind it: input/rename.txt's
+# crosslink, so nothing rewrites a page behind it: input/<env>/rename.txt's
 # presentation renames land on the rendered pages and the client data
 # payloads; the caches and .rpt files keep the real values.
-run_step "publish: display renames (input/rename.txt)"   bin/build/display-rename.sh
+run_step "publish: display renames (input/<env>/rename.txt)"   bin/build/display-rename.sh
 
 # ---- RUNTIME-ONLY: the shareable site archive (2026-08-30) ------------------
 # In the runtime checkout — recognized by the ABSENT input/.sample-estate

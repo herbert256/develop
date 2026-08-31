@@ -1,4 +1,4 @@
-# input/logical_domains.txt — hand-curated PART REPLACEMENTS for the Logical-based
+# input/<env>/logical_domains.txt — hand-curated PART REPLACEMENTS for the Logical-based
 # PDA derivation (bin/flow-manager.sh), shared by both environments: the
 # first part of a three-part Logical name (D_A_P) equal to FROM is
 # replaced by TO before it becomes the Domain.

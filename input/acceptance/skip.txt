@@ -1,4 +1,4 @@
-# input/skip.txt — the SKIP LIST: a matched rule DROPS THE WHOLE RECORD
+# input/<env>/skip.txt — the SKIP LIST: a matched rule DROPS THE WHOLE RECORD
 # (matched cache rows go to _skipped.tsv for the Skipped report). TSV:
 #   <field> <rule> <value>
 #   field: account | login | site | message | any

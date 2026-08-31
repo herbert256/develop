@@ -1,4 +1,4 @@
-# input/BL.txt — BL numbers per subscription, a SECOND source beside the
+# input/<env>/BL.txt — BL numbers per subscription, a SECOND source beside the
 # subscriptions.json tags[] entries starting with "BL" (2026-08-31, user
 # request). Two whitespace-separated columns, # comments and blank lines
 # ignored, shared by both environments:

@@ -141,7 +141,7 @@ bash -n script.sh                     # syntax check — there is no test suite
 
 **Manual re-publish gotcha**: `publish-partner-groups.sh` and `publish-accvsprod.sh` run OUTSIDE
 the per-area publishes; skipping them after a publish sweep leaves their pages missing. The
-DISPLAY-RENAME sweep (`bin/build/display-rename.sh`, `input/rename.txt` — presentation renames
+DISPLAY-RENAME sweep (`bin/build/display-rename.sh`, `input/<env>/rename.txt` — presentation renames
 applied to the RENDERED pages as the build's last page-touching step; caches/.rpt keep the real
 values, slugs/links untouched) also runs only in `bin/build.sh`: a manually republished page
 shows real values until the next build.
@@ -154,7 +154,7 @@ a publish SKIPS when its stamp is fresh — the docs asset copies are deps, anyt
 **Incremental parsing.** `parse.sh` (both areas) keeps a manifest (basename + byte size per
 input) and tokenizes only what is new: the transfer side `sort -m`-merges into the CoreId-sorted
 cache (byte-identical to a full parse), the server side appends; a changed/removed manifested
-file — or **editing `parse.sh` / `input/blacklist.txt`** (cksums in `_*.parser`) — forces a full
+file — or **editing `parse.sh` / `input/<env>/blacklist.txt`** (cksums in `_*.parser`) — forces a full
 reparse. `reports.sh` does not parse; each report calls `ensure_parsed`.
 
 **Incremental publishing.** Each publish writes `data/<env>/.publish/<name>.stamp` and skips when
@@ -187,7 +187,7 @@ configured-vs-seen analyses from the transfer outputs + config caches (no parse 
 Extracts from `input/<env>/flow-manager/{partners,subscriptions}.json`: `data/<env>/flow-manager/base/`
 — the 11 entity lists (`name⇥direction⇥result`: `_accounts _logins _hosts _white _subscriptions
 _profiles` + the derived `_logicals` (the FlowIDs condensed into logical flow groups,
-`input/logical.txt` pins honoured), PDA `_partners _apps _domains` and `_bl` (2026-08-31, user
+`input/<env>/logical.txt` pins honoured), PDA `_partners _apps _domains` and `_bl` (2026-08-31, user
 request: the subscriptions.json `tags` entries starting with `BL`, kept verbatim — a full entity,
 LAST in the Logical/Partners/Domains/Applications group everywhere it renders; a File belongs to
 a BL through its SUBSCRIPTION); result filled later by the
@@ -405,7 +405,8 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
   not configured at all (this is how the caches once grew to 696 rows for 568 flows). A row
   survives when it is in `base/.configured.tsv` (the snapshot `flow-manager.sh` takes BEFORE
   either step appends), still blue this run, or backed by real transfer data.
-1. **Blacklist** — `input/blacklist.txt` (COMMITTED; TSV `<field>⇥drop|keep⇥<value>`) BLANKS
+1. **Blacklist** — `input/<env>/blacklist.txt` (PER ENVIRONMENT since 2026-08-31, user request —
+   like every policy file; COMMITTED in develop; TSV `<field>⇥drop|keep⇥<value>`) BLANKS
    platform-internal values (row kept), read only through the sourced `bin/blacklist.sh`;
    `parser_sig` cksums it so an edit forces a full reparse. **The configuration outranks the site
    keep rule** (2026-08-31 audit): a clean, rename-folded site value that names a configured
@@ -441,7 +442,7 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    `UCx_` prefix; it surfaces on not-in-flow-manager.
 6. **NO-SUBSCRIPTION / HTTP SKIP** — a CoreId with neither site nor ACCOUNT anywhere, or any
    http leg, is dropped from both caches; its raw CSV lines go to `_skipped.csv`. Distinct from
-   the `input/skip.txt` SKIP LIST (same layout as the blacklist, but DROPS THE WHOLE RECORD;
+   the `input/<env>/skip.txt` SKIP LIST (same layout as the blacklist, but DROPS THE WHOLE RECORD;
    read only through the sourced `bin/skiplist.sh`; matched cache rows → `_skipped.tsv`).
 
 A changed subscriptions.json re-derives `_transfers.tsv` (export → flow-manager cache mtimes →
@@ -548,7 +549,7 @@ matching**: each daemon stamps `[Ssh Default] ` / `[Pesit Default] ` / `[Ftp Def
 anchored rule would otherwise match the bare form and miss the tagged twin of the same line. Only
 a `<Word> Default` tag is stripped — the odd `[server #173 @…]` lines keep their text — and every
 rule then covers both forms, which is why no rule names a tag.
-Deliberately NOT `input/skip.txt`: a skip rule archives its records for the Skipped report, which
+Deliberately NOT `input/<env>/skip.txt`: a skip rule archives its records for the Skipped report, which
 is the cost this filter exists to avoid. Editing the list changes `parser_sig`, so the next run
 reparses in full. **Four server reports read those lines and were removed with them**:
 `concurrency` (a `capacity` component), `event-feed` (a `platform-health` component), and
@@ -900,18 +901,20 @@ the three `.md` docs, `.gitignore`/`.gitattributes` and **`input/`** — in
 THIS repo committed IN FULL, sample CSVs included (the whole estate is synthetic and small;
 `bin/sample/generate.sh` rewrites it). `input/` holds the flow-manager JSONs, the `ip/` and
 `renames/` maps, the `.sample-estate` marker + `.sample/` spec, the two policy files
-`input/{blacklist,skip}.txt`, the hand-curated `input/partner-aliases.tsv` (partner tokens
+and — **PER ENVIRONMENT since 2026-08-31 (user request), under `input/<env>/`**:
+the hand-curated `partner-aliases.tsv` (partner tokens
 naming one organisation — flow-manager's merge rule 4, `variant⇥CANONICAL`; the right side
-also names the merged group via the alias star)
-and `input/rename.txt` (DISPLAY renames, applied to the rendered pages by the build's last
-step — see the manual re-publish gotcha) and `input/logical.txt` (fixed FlowID → Logical
+also names the merged group via the alias star),
+`blacklist.txt` + `skip.txt` (see the attribution chain),
+`rename.txt` (DISPLAY renames, applied to that environment's rendered pages by the build's last
+step — the shared root pages take both envs' rules; see the manual re-publish gotcha), `logical.txt` (fixed FlowID → Logical
 transforms feeding the Logical entity derivation — owned by `bin/flow-manager.sh` since Logical
-became a full entity, and one of its freshness deps; a listed FlowID skips the derivation) and
-`input/BL.txt` (BL numbers per subscription, `<subscription> <BL>[,<BL>...]` — several numbers
+became a full entity, and one of its freshness deps; a listed FlowID skips the derivation),
+`BL.txt` (BL numbers per subscription, `<subscription> <BL>[,<BL>...]` — several numbers
 comma-separated in the second field — a SECOND source of BL entities beside the subscriptions.json tags,
-unioned in `bin/flow-manager.sh`; the real file lives in runtime's `input/`, develop's is the
-sample template) and
-`input/logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
+unioned in `bin/flow-manager.sh`; the real files live in runtime's `input/<env>/`, develop's are
+the sample template) and
+`logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
 Logical-based PDA derivation: part 1/2/3 of a three-part Logical name is replaced before it
 becomes the domain / application / partner-merge token — the Logical name itself is untouched;
 freshness deps too), plus a
@@ -946,8 +949,11 @@ All data lives under two roots at the repo top (`data/` gitignored wholesale; un
 the `*.csv` exports are gitignored):
 
 - `input/<env>/{transfer,server}/*.csv` + `input/<env>/flow-manager/*.json` — the raw exports
-  (irreplaceable); `templates.json` optional. `input/blacklist.txt` (COMMITTED) and
-  `input/skip.txt` — see the attribution chain.
+  (irreplaceable); `templates.json` optional. `input/<env>/blacklist.txt` and
+  `input/<env>/skip.txt` — see the attribution chain. **`bin/build/migrate-input.sh`** (the
+  build's first step) moves a checkout's pre-2026-08-31 shared copies of the nine policy files
+  into every env dir once — runtime's `input/` is never synced, so its real files migrate at its
+  next build (same content into both envs; the user splits them afterwards).
 - `input/<env>/renames/` — `subscriptions.tsv` (old⇥current) and `flowid-names.tsv` (the previous
   export's `flowId`⇥name snapshot). **Machine-maintained, never hand-written**; under `input/`
   for the same reason as the DNS map — once an export is overwritten its names cannot be

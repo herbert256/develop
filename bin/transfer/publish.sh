@@ -61,7 +61,7 @@ for name in "${transfer_order[@]}"; do
 done
 
 # The per-value Skipped reports (skipped-<slug>.rpt) are DYNAMIC — one per
-# input/skip.txt value, not in transfer_order — so render whatever skipped.sh
+# input/<env>/skip.txt value, not in transfer_order — so render whatever skipped.sh
 # produced (the button row + finder/sitemap entries come from skipped_tokens).
 for rpt in "$DATA"/transfer/reports/skipped-*.rpt; do
     [ -f "$rpt" ] || continue

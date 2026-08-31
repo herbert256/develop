@@ -1003,7 +1003,7 @@ write_logical_detection_page() {
         html_head "Logical detection" "../assets/style.css" "" "" "logical-detection" "" "" "sort-fresh"
         printf '<h1>Logical detection</h1>\n'
         analyses_group_tabs logical-detection.html
-        printf '<p class="subtitle">How every configured <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code> value) detected to its <strong>Logical</strong> flow group &mdash; one row per FlowID with the <strong>rule trail</strong> the derivation applied, in firing order: the separator normalization, the grouping rule (variant folds, digit tails, prefix folds), an <code>input/logical.txt</code> pin, and the 3-part reshape. <em>3 parts &mdash; kept as-is</em> means the FlowID needed no work at all. The Logical cell links its detail page; rows tint by the Logical&rsquo;s result.</p>\n'
+        printf '<p class="subtitle">How every configured <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code> value) detected to its <strong>Logical</strong> flow group &mdash; one row per FlowID with the <strong>rule trail</strong> the derivation applied, in firing order: the separator normalization, the grouping rule (variant folds, digit tails, prefix folds), an <code>input/&lt;env&gt;/logical.txt</code> pin, and the 3-part reshape. <em>3 parts &mdash; kept as-is</em> means the FlowID needed no work at all. The Logical cell links its detail page; rows tint by the Logical&rsquo;s result.</p>\n'
         printf '<div class="tablewrap"><table class="index fit">\n'
         printf '<tr><th>FlowID</th><th>Logical</th><th>Rules</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
@@ -1194,7 +1194,7 @@ write_accounts_page() {
     # re-deriving that here, ask the DERIVATION what it managed to assign — the
     # three xref caches bin/flow-manager.sh composes through the FlowID. The
     # why is binary: no FlowID at all (no subscription of the account carries
-    # one), or a FlowID whose logical is a pinned short name (input/logical.txt
+    # one), or a FlowID whose logical is a pinned short name (input/<env>/logical.txt
     # — no domain/application/partner slots).
     local pda_rows pda_bad
     pda_rows=$(awk -F'\t' '
@@ -1824,7 +1824,7 @@ write_analyses_index() {
         [ -f "$ADIR/config-hygiene.html" ] && printf '<tr><td><a href="config-hygiene.html">Config hygiene</a></td><td class="desc">The cleanup backlog: likely-duplicate twins (case / separator folds) and orphaned objects nothing references.</td></tr>\n'
         [ -f "$ADIR/whitelist-audit.html" ] && printf '<tr><td><a href="whitelist-audit.html">Whitelist audit</a></td><td class="desc">Whitelisted partner IPs vs the addresses actually connecting: used, connect-only, never seen (prunable), and the sources without any whitelist entry.</td></tr>\n'
         [ -f "$DOCS/transfer/sources-and-targets.html" ] && printf '<tr><td><a href="../transfer/sources-and-targets.html">Sources and Targets</a></td><td class="desc">The From/To folder paths of every subscription (shown &ldquo;path @ host&rdquo; for remote endpoints, like Search): values used as both a source and a target, and sources/targets shared by more than one subscription.</td></tr>\n'
-        [ -f "$DOCS/transfer/skipped.html" ] && printf '<tr><td><a href="../transfer/skipped.html">Skipped</a></td><td class="desc">The accounts and subscriptions ignored because their name matches the skip list (<code>input/skip.txt</code>) &mdash; removed from the config and both logs so no report counts them &mdash; plus the skipped transfer/server log-line counts.</td></tr>\n'
+        [ -f "$DOCS/transfer/skipped.html" ] && printf '<tr><td><a href="../transfer/skipped.html">Skipped</a></td><td class="desc">The accounts and subscriptions ignored because their name matches the skip list (<code>input/&lt;env&gt;/skip.txt</code>) &mdash; removed from the config and both logs so no report counts them &mdash; plus the skipped transfer/server log-line counts.</td></tr>\n'
         [ -f "$DOCS/transfer/not-in-flow-manager.html" ] && printf '<tr><td><a href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a></td><td class="desc">Every entity value seen in the transfer logs that the current FlowManager configuration does not know &mdash; all eight entity lists checked.</td></tr>\n'
         printf '<tr><td><a href="%s">Cross References</a></td><td class="desc">Every pair of the eight entities cross-tabulated, both ways &mdash; which values appear together on at least one transfer, the configured-but-never-seen pairs flagged.</td></tr>\n' "$(group_home cross)"
         [ -f "$ADIR/cleanup-backlog.html" ] && printf '<tr><td><a href="cleanup-backlog.html">Cleanup backlog</a></td><td class="desc">Every cleanup signal merged into one ranked decommission-candidate list, safest first &mdash; config orphans, never-seen subscriptions, unused whitelist addresses, cron-less polls and long-quiet entities.</td></tr>\n'

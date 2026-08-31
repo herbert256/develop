@@ -35,12 +35,13 @@ in the area orchestrators and feed the boxes and day pages.
 
 ## The attribution chain (parse time, in this order)
 
-1. **Blacklist — ONE file, `input/blacklist.txt`** (TSV `<field>⇥drop|keep⇥<value>`: `drop`
+1. **Blacklist — ONE file per environment, `input/<env>/blacklist.txt`** (per environment since
+   2026-08-31, user request; TSV `<field>⇥drop|keep⇥<value>`: `drop`
    blanks on exact match, `keep` = a regex every kept value must match), read through the sourced
    **`bin/blacklist.sh`** (`BLACKLIST_FILE` + `BLACKLIST_AWK`) by its two script consumers —
    transfer `parse.sh` (the authoritative blanking) and server `unknown-entities.sh` — plus the
    generated `docs/assets/blacklist-data.js`.
-   COMMITTED (`.gitignore` has `!input/blacklist.txt` — platform policy, not site data);
+   COMMITTED in develop (the whole `input/` tree is, CSVs included; runtime keeps its own);
    `parser_sig` cksums it so an edit forces a full reparse. Blanked (row kept): account
    `SECURETRANSPORT`; any filled site NOT starting with `UC` (catches the `Clone - …` artifacts);
    logins `SECURETRANSPORT`/`P14303_CFT01`/`*nobody`/`UNKNOWN`; the internal cluster hosts
@@ -115,7 +116,7 @@ in the area orchestrators and feed the boxes and day pages.
    passes — or an http leg on any row (web-UI hand traffic) — is dropped from
    `_transfers.tsv`/`_files.tsv`; its raw
    CSV lines go verbatim to `data/<env>/transfer/_skipped.csv`, recomputed each derive (a later
-   export adding a subscription leg brings the CoreId back). Distinct from the **`input/skip.txt`
+   export adding a subscription leg brings the CoreId back). Distinct from the **`input/<env>/skip.txt`
    SKIP LIST**: same layout as the blacklist but a matched rule DROPS THE WHOLE RECORD (field
    `account|login|site|message|any`; rule `contains` default case-insensitive | `exact` | `regex`;
    no TAB = `any contains <line>`; matched formatted cache rows go to `_skipped.tsv`).
@@ -130,8 +131,11 @@ in the area orchestrators and feed the boxes and day pages.
 1. **`bin/build/seen-in-server-log.sh`** marks entities appearing in the server logs (TM runtime
    lines) but never in the transfer logs **blue** (a real base value the normal tint path renders;
    style.css `#d3e6fb`). The blue set: enrich each `data/<env>/unknown/*` sidecar seed via the
-   xref caches (single-value vote, fixpoint; a truncated site seed canonicalizes to its unique
-   configured prefix match; a host seed enriching to nothing is dropped; duplicates collapse); per
+   xref caches (single-value vote, fixpoint; a site seed canonicalizes to a configured subscription
+   — a TRUNCATED token to the unique configured name it prefixes, an EXTENDED token (the ST
+   transfer-site shape `<subscription>_SFTP_SERVER_<partner>`, 2026-08-31) to the longest
+   configured name it continues past at a name-part boundary; a host seed enriching to nothing is
+   dropped; duplicates collapse); per
    entity type, the enriched values on NO real `_files.tsv` row are blue. A NON-subscription
    candidate whose connected subscriptions include one with real transfer data is skipped (its own
    column merely went unattributed — only a subscription's orange means truly never-seen).
@@ -228,7 +232,7 @@ capacity) · **srv-routing** "Routing & Polling" (remote-poll · transfer-site-m
 
 **BL** (2026-08-31, user request) is the group's FIFTH, LAST member — not PDA-derived: a BL
 entity is a `subscriptions.json` `tags` entry starting with `BL`, the tag text kept VERBATIM
-(`BL_FIN` stays `BL_FIN`) — UNIONED with `input/BL.txt` rows (`<subscription> <BL>[,<BL>...]`,
+(`BL_FIN` stays `BL_FIN`) — UNIONED with `input/<env>/BL.txt` rows (`<subscription> <BL>[,<BL>...]`,
 the numbers comma-separated in the second field; names matched case-insensitively against the env's configured
 subscriptions, unknown ones reported and skipped). `xref/_subscriptions-bl.tsv` (subscription ⇥
 BL, one row per BL of the subscription) is the map; `base/_bl.tsv` the entity list; the composed pair caches ride
@@ -241,16 +245,16 @@ data-diff deliberately exclude it (their set is the six classic+Logical types).
 
 **THE BASE IS THE LOGICAL ENTITY** (2026-08-30, user request — this replaced the account-NAME
 derivation wholesale). The Logical derivation (FlowID families condensed to three-part group
-names, `input/logical.txt` pins honoured) runs FIRST; the PDA pass consumes its map
+names, `input/<env>/logical.txt` pins honoured) runs FIRST; the PDA pass consumes its map
 (`xref/_profiles-logicals.tsv`). Before ANY splitting a FlowID is separator-normalized
 (2026-08-31, user request): `-` folds to `_`, doubled separators collapse and edge separators
 trim — a raw `-_` run or a trailing `-` otherwise split into an empty part and the reshape
-joined it into a dangling-dash artifact; a `input/logical.txt` pin matches the raw spelling
+joined it into a dangling-dash artifact; an `input/<env>/logical.txt` pin matches the raw spelling
 first, then the folded one. An unpinned Logical name has exactly three `_`-parts `D_A_P`:
 
 - **part 1 = the DOMAIN**, **part 2 = the APPLICATION**, **part 3 = the PARTNER token** —
   each first passed through its hand-curated FROM→TO replacement map
-  (`input/logical_{domains,apps,partners}.txt`; exact match on the UPPERCASE part, the Logical
+  (`input/<env>/logical_{domains,apps,partners}.txt`; exact match on the UPPERCASE part, the Logical
   name itself untouched; two partner tokens replaced to one value simply fold, no group needed).
 - A pinned Logical with any other part count (the monitor's `INFRA-MONITOR-UC`) contributes
   NOTHING — no domain, no application, no partner.
@@ -265,7 +269,7 @@ partner-group "why" pages):
 2. **Shared whitelist IP** — their logical flows whitelist the same IP.
 3. **Whitelisted host IP** — one token's host resolves (via the forward-DNS map, or a raw-IP
    endpoint verbatim) to an IP another token's logical flows whitelist.
-4. **Curated alias** — a pair in `input/partner-aliases.tsv` (`variant⇥CANONICAL`).
+4. **Curated alias** — a pair in `input/<env>/partner-aliases.tsv` (`variant⇥CANONICAL`).
 
 No fixpoint loop: no rule reads group state, and union-find keeps every merge transitive. The
 group NAME is the sorted member tokens joined with `_` — unless the alias STAR names it: when
@@ -289,7 +293,7 @@ two-group abstain and the site-wide union attribution handle it exactly as befor
 subscription-name fallback (`ptn_resolve`), the transitive `sjoin` pairs (exact by construction
 now — everything joins through the FlowID) and the subscription-less-partner prune (vacuous:
 every partner descends from a subscription's FlowID by construction). The single-token
-"real organisation" lines in `input/partner-aliases.tsv` are tolerated but inert.
+"real organisation" lines in `input/<env>/partner-aliases.tsv` are tolerated but inert.
 
 Applications and domains share ONE name space with the same machinery: base lists
 `_apps.tsv`/`_domains.tsv`, the coverage TSVs `coverage/{partners,applications,domains}.tsv`

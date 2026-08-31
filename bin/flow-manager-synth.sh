@@ -78,7 +78,7 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 mkdir -p "$OUTDIR"
 
-LC_ALL=C awk -v SUBSJ="$OUTDIR/subscriptions.json.tmp" -v PARTJ="$OUTDIR/partners.json.tmp" -v BL="input/blacklist.txt" '
+LC_ALL=C awk -v SUBSJ="$OUTDIR/subscriptions.json.tmp" -v PARTJ="$OUTDIR/partners.json.tmp" -v BL="input/$AXWAY_ENV/blacklist.txt" '
     function split_csv(line,    n, i, c, inquotes, cur) {
         delete field
         n = 0; cur = ""; inquotes = 0

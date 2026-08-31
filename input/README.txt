@@ -11,11 +11,14 @@ Layout (per environment, acceptance/ + production/):
   server/        logEntry_MM-DD.csv    (one per day, newest-first rows)
   renames/       machine-maintained rename maps (bin/renames.sh)
   ip/            the address<->endpoint map (bin/ip.sh)
-Root: blacklist.txt + skip.txt (platform policy, see CLAUDE.md) and
-partner-aliases.tsv (partner tokens naming one organisation).
-
-BL.txt              BL numbers per subscription ("<subscription> <BL>[,<BL>...]", several numbers
-                    comma-separated in the second field) — a second source of BL entities beside the
-                    subscriptions.json tags; bin/flow-manager.sh unions the two. Shared by both
-                    environments; this develop copy is the SAMPLE template (bin/sample/templates/),
-                    the real one lives in the runtime checkout's input/.
+  blacklist.txt  platform-internal values blanked at parse time (see CLAUDE.md)
+  skip.txt       the SKIP LIST — a matched rule drops the whole record
+  rename.txt     DISPLAY renames, applied to that environment's rendered pages
+  logical.txt    fixed FlowID -> Logical pins for the Logical derivation
+  logical_{domains,apps,partners}.txt  PART replacements for the PDA derivation
+  BL.txt         BL numbers per subscription ("<subscription> <BL>[,<BL>...]"),
+                 a second source of BL entities beside the subscriptions.json tags
+  partner-aliases.tsv  partner tokens naming one organisation (merge rule 4)
+The nine policy files are PER ENVIRONMENT since 2026-08-31 (user request);
+bin/build/migrate-input.sh moves a checkout's old shared copies into the env
+dirs once.

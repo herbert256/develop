@@ -111,8 +111,9 @@ BASE="$OUT/base"   # the 6 entity lists
 XREF="$OUT/xref"   # the 16 pair/attribute caches
 mkdir -p "$BASE" "$XREF"
 
-# ---- SKIP LIST (input/skip.txt) --------------------------------------------
-# input/skip.txt is a SHARED (env-independent) list of tokens (CRG, SWIFT, …).
+# ---- SKIP LIST (input/<env>/skip.txt) ---------------------------------------
+# input/<env>/skip.txt is the env's list of tokens (CRG, SWIFT, …) — PER
+# ENVIRONMENT since 2026-08-31 (user request), like every policy file below.
 # Any configured account or subscription whose NAME contains a token (case-
 # insensitive SUBSTRING) is IGNORED — removed from the config here (so every
 # base/xref/PDA derivation excludes it) AND from both log parses. To keep every
@@ -123,28 +124,29 @@ mkdir -p "$BASE" "$XREF"
 # FM_INPUT_DIR). The skipped config names are recorded in _skipped.tsv for the
 # "Skipped" analyses report. cmp-guarded writes keep mtimes stable so the
 # downstream freshness checks don't re-fire on a no-change run.
-SKIPFILE="$ROOT/input/skip.txt"
-# the HAND-CURATED partner alias map (input/partner-aliases.tsv, COMMITTED):
-# token<TAB>token pairs naming ONE organisation — pass-2 merge rule 4 and the
-# subscription-name fallback's resolution retry. See the file's header.
-ALIASF="$ROOT/input/partner-aliases.tsv"
-# the FIXED FlowID -> Logical transforms (input/logical.txt, COMMITTED, shared
-# by both envs) — consumed by the LOGICAL derivation block below; a pin edit
+SKIPFILE="$ROOT/input/$AXWAY_ENV/skip.txt"
+# the HAND-CURATED partner alias map (input/<env>/partner-aliases.tsv, per
+# environment since 2026-08-31 like every policy file): token<TAB>token pairs
+# naming ONE organisation — pass-2 merge rule 4 and the subscription-name
+# fallback's resolution retry. See the file's header.
+ALIASF="$ROOT/input/$AXWAY_ENV/partner-aliases.tsv"
+# the FIXED FlowID -> Logical transforms (input/<env>/logical.txt, COMMITTED
+# in develop) — consumed by the LOGICAL derivation block below; a pin edit
 # re-derives the caches (and, through them, everything downstream).
-LOGICALF="$ROOT/input/logical.txt"
+LOGICALF="$ROOT/input/$AXWAY_ENV/logical.txt"
 # the three PART-REPLACEMENT maps for the Logical-based PDA derivation
-# (input/logical_{domains,apps,partners}.txt — FROM<ws>TO per line): part
-# 1/2/3 of a three-part Logical name equal to FROM becomes TO before it
+# (input/<env>/logical_{domains,apps,partners}.txt — FROM<ws>TO per line):
+# part 1/2/3 of a three-part Logical name equal to FROM becomes TO before it
 # turns into the domain / application / partner-merge token. The Logical
 # entity name itself is untouched. Freshness deps like the others.
-LOGDOMF="$ROOT/input/logical_domains.txt"
-LOGAPPF="$ROOT/input/logical_apps.txt"
-LOGPTNF="$ROOT/input/logical_partners.txt"
-# the BL numbers per subscription (input/BL.txt, COMMITTED, shared by both
-# envs — 2026-08-31, user request): a second source beside the subscriptions
-# .json tags, unioned into _subscriptions-bl; a freshness dep like the rest
-BLF="$ROOT/input/BL.txt"
-source "$ROOT/bin/skiplist.sh"   # skip_values() — the ONE reader for input/skip.txt
+LOGDOMF="$ROOT/input/$AXWAY_ENV/logical_domains.txt"
+LOGAPPF="$ROOT/input/$AXWAY_ENV/logical_apps.txt"
+LOGPTNF="$ROOT/input/$AXWAY_ENV/logical_partners.txt"
+# the BL numbers per subscription (input/<env>/BL.txt — 2026-08-31, user
+# request): a second source beside the subscriptions.json tags, unioned into
+# _subscriptions-bl; a freshness dep like the rest
+BLF="$ROOT/input/$AXWAY_ENV/BL.txt"
+source "$ROOT/bin/skiplist.sh"   # skip_values() — the ONE reader for input/<env>/skip.txt
 SKIPDIR="$OUT/filtered"                 # the filtered partners/subscriptions/templates.json
 # The skipped-config sidecar lives INSIDE filtered/ (NOT directly in $OUT) so
 # the legacy "rm -f $OUT/_*.tsv" cleanup below never deletes it — putting it in
@@ -556,7 +558,7 @@ awk -F'\t' '
 #    family) folds onto its LONGEST part-prefix (3+ parts) that EXISTS as a
 #    FlowID: the eight long AB_NAS_FIS_BSM_* names join the bare
 #    AB_NAS_FIS_BSM, and the reshape renders the group AB_NAS_FIS-BSM. A
-#    fixed input/logical.txt mapping is also honoured for the GROUP name a
+#    fixed input/<env>/logical.txt mapping is also honoured for the GROUP name a
 #    fold lands on, so one line can pin a whole family's final form.
 # 2) RESHAPE to 3 parts by position, informed by the 3-part logicals'
 #    vocabulary (their 2nd/3rd parts): AAA_BBB -> AAA_AAA_BBB; 4 parts whose
@@ -569,9 +571,9 @@ awk -F'\t' '
 #    joining as the 3rd; else first and last kept, the middle joined. Joins
 #    use "-" — which is why Logical names render UNFOLDED everywhere (the
 #    hyphen is semantic, marking combined parts).
-# input/logical.txt: FIXED FlowID -> Logical transforms, two whitespace-
-# separated columns (# comments, blank lines ignored), shared by both
-# environments. A listed FlowID takes its given Logical VERBATIM — no
+# input/<env>/logical.txt: FIXED FlowID -> Logical transforms, two whitespace-
+# separated columns (# comments, blank lines ignored), one file per
+# environment. A listed FlowID takes its given Logical VERBATIM — no
 # grouping, no 3-part reshape — and only the rest go through the derivation.
 # A missing file is a no-op.
 #
@@ -620,8 +622,8 @@ awk -F'\t' -v LF="$LOGICALF" '
         nm0 = raw; gsub(/-/, "_", nm0); gsub(/_+/, "_", nm0)
         sub(/^_/, "", nm0); sub(/_$/, "", nm0)
         if (nm0 != raw) IR[nn] = "separators normalized"
-        if (raw in FIX)      { finalfix[nn] = FIX[raw]; PINR[nn] = "pinned in input/logical.txt"; next }
-        else if (nm0 in FIX) { finalfix[nn] = FIX[nm0]; PINR[nn] = "pinned in input/logical.txt (folded spelling)"; next }
+        if (raw in FIX)      { finalfix[nn] = FIX[raw]; PINR[nn] = "pinned in input/<env>/logical.txt"; next }
+        else if (nm0 in FIX) { finalfix[nn] = FIX[nm0]; PINR[nn] = "pinned in input/<env>/logical.txt (folded spelling)"; next }
         name[nn] = nm0; exists[nm0] = 1 }
     END {
         # pass 1a: count the reductions — per DISTINCT folded name (2026-08-31:
@@ -645,7 +647,7 @@ awk -F'\t' -v LF="$LOGICALF" '
                 if (s != P[1] && s != "") cnt2[s]++ }
         }
         # pass 1b: assign each FlowID its group name — a FIXED mapping
-        # (input/logical.txt) wins outright and skips the reshape passes
+        # (input/<env>/logical.txt) wins outright and skips the reshape passes
         for (i = 1; i <= nn; i++) {
             if (i in finalfix) continue
             nm = name[i]
@@ -692,7 +694,7 @@ awk -F'\t' -v LF="$LOGICALF" '
                 }
             # a fixed mapping for the GROUP a fold landed on wins too
             if (lg in FIX) { finalfix[i] = FIX[lg]
-                PINR[i] = (R1[i] != "" ? R1[i] "; " : "") "group name pinned in input/logical.txt"; continue }
+                PINR[i] = (R1[i] != "" ? R1[i] "; " : "") "group name pinned in input/<env>/logical.txt"; continue }
             grpof[i] = lg; lset[lg] = 1
         }
         # pass 2: reshape to 3 parts by position
@@ -773,7 +775,7 @@ xcompose "$XREF/_profiles-logicals.tsv" _profiles-white.tsv         1 LEFT  logi
 # prune are all RETIRED). An unpinned Logical name has exactly three
 # "_"-parts D_A_P:
 #   part 1 = the DOMAIN, part 2 = the APPLICATION, part 3 = the PARTNER token.
-# A pinned Logical with any other part count (input/logical.txt — the
+# A pinned Logical with any other part count (input/<env>/logical.txt — the
 # monitor's INFRA-MONITOR-UC) contributes NOTHING. Domains and applications
 # are done there; PARTNER TOKENS then MERGE (union-find; combined name = the
 # sorted member tokens joined with "_") when
@@ -781,7 +783,7 @@ xcompose "$XREF/_profiles-logicals.tsv" _profiles-white.tsv         1 LEFT  logi
 #   (2) their logical flows whitelist the same IP,
 #   (3) one partner's host resolves to an IP another partner whitelists,
 #   (4) a hand-curated alias pair names them one organisation
-#       (input/partner-aliases.tsv — which also still supplies the CANONICAL
+#       (input/<env>/partner-aliases.tsv — which also still supplies the CANONICAL
 #       group name via the alias star, so a merged group can be called
 #       GLOBEX instead of GLOBEX_GLOBEXX).
 # Every partner/app/domain pair cache is COMPOSED through the FlowID (the
@@ -859,7 +861,7 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
         close(f) }
     BEGIN { US=sprintf("%c",31)
         loadrep(LDF, DREP); loadrep(LAF, AREP); loadrep(LPF, PREP)
-        # the hand-curated alias pairs (input/partner-aliases.tsv; "#" =
+        # the hand-curated alias pairs (input/<env>/partner-aliases.tsv; "#" =
         # comment). A SINGLE-token line used to declare a real organisation
         # for the retired name-split helper lists — tolerated and INERT now.
         nal=0
@@ -907,7 +909,7 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
         # union-find keeps every merge transitive.
         for (ai=1; ai<=nal; ai++) { a4=AL1[ai]; b4=AL2[ai]
             if ((a4 in par) && (b4 in par)) {
-                recordev(4, a4, b4, "Curated alias: " a4 " and " b4 " name the same organisation (input/partner-aliases.tsv)")
+                recordev(4, a4, b4, "Curated alias: " a4 " and " b4 " name the same organisation (input/<env>/partner-aliases.tsv)")
                 uni(a4, b4) } }
         # Rule 1 — two partners'"'"' logical flows connect to the same configured host
         for(hh in hidx){ n=split(substr(hidx[hh],2),AA,US)
@@ -945,7 +947,7 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
             for(x=2;x<=c;x++){ v=ARR[x]; y=x-1; while(y>=1 && ARR[y]>v){ARR[y+1]=ARR[y];y--} ARR[y+1]=v }
             gn=ARR[1]; for(x=2;x<=c;x++) gn=gn "_" ARR[x]
             # CANONICAL GROUP NAME (2026-08-29): when EVERY member has a direct
-            # alias pair (input/partner-aliases.tsv) with ONE token — a member
+            # alias pair (input/<env>/partner-aliases.tsv) with ONE token — a member
             # itself (the SchubergPhilis star) or a pure NAME the estate never
             # derives (the RABOBANK_PEKO case) — the group takes that token as
             # its name instead of the joined list. Candidates = the members
@@ -1048,7 +1050,7 @@ unset _e _m
 # (2026-08-31, user request), LAST in the Logical/Partners/Domains/
 # Applications group. The spine is the SUBSCRIPTION: a subscription carries
 # its BL tag(s) verbatim (BL_FIN — never stripped; several tags = several
-# rows) UNIONED with its input/BL.txt rows ("<subscription> <BL>[,<BL>...]" —
+# rows) UNIONED with its input/<env>/BL.txt rows ("<subscription> <BL>[,<BL>...]" —
 # the numbers comma-separated in the second field; one-per-line rows still
 # read — 2026-08-31, user request; the name must
 # be a configured subscription of THIS env, matched case-insensitively with
@@ -1074,7 +1076,7 @@ unset _e _m
               v = a[2]; for (j = 3; j <= n; j++) v = v a[j]
               m = split(v, B, ",")
               for (j = 1; j <= m; j++) if (B[j] != "") print CFG[k] "\t" B[j] }
-            END { if (unk) printf "flow-manager.sh: [%s] input/BL.txt: %d row(s) name a subscription this environment does not configure (skipped): %s%s\n", ENVN, unk, ul, (unk > 8 ? ", ..." : "") > "/dev/stderr" }
+            END { if (unk) printf "flow-manager.sh: [%s] input/%s/BL.txt: %d row(s) name a subscription this environment does not configure (skipped): %s%s\n", ENVN, ENVN, unk, ul, (unk > 8 ? ", ..." : "") > "/dev/stderr" }
         ' "$BASE/_subscriptions.tsv" "$BLF"
     fi
 } | LC_ALL=C sort -u > "$XREF/_subscriptions-bl.tsv"

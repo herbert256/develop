@@ -1,4 +1,4 @@
-# input/logical.txt — FIXED FlowID -> Logical transforms for the Logical
+# input/<env>/logical.txt — FIXED FlowID -> Logical transforms for the Logical
 # entity derivation (bin/flow-manager.sh), shared by both environments. A
 # pinned Logical that is not a three-part D_A_P name also opts its family
 # OUT of the partner/domain/application derivation (it contributes nothing). Two whitespace-separated columns, # comments and blank

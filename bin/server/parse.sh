@@ -49,18 +49,18 @@ set -euo pipefail
 # any working directory; input/ and data/ sit one level up, at server/.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"   # INPUT_DIR, CACHE_DIR, IP_DIR, CONFIG_DIR, PARSED (= $CACHE_DIR/_parse.tsv)
-source "$ROOT/bin/skiplist.sh"   # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/skip.txt
+source "$ROOT/bin/skiplist.sh"   # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/<env>/skip.txt
 source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK (rn_load/rn_canon) — input/<env>/renames/
 OUT="$CACHE_DIR/_parse.tsv"
 LEGEND="$CACHE_DIR/_parse.txt"
-# SKIP LIST (input/skip.txt, shared across envs): a server-log record whose
+# SKIP LIST (input/<env>/skip.txt, per environment): a server-log record whose
 # MESSAGE (col 5) contains a skip token (case-insensitive substring) is dropped
 # from _parse.tsv (so no server report counts it) and set aside in _skipped.tsv
 # for the "Skipped" analyses report. skip.txt is folded into the parser
 # signature below, so a changed skip list forces a full reparse — the sidecar is
 # then rebuilt from scratch (a full parse truncates it; an incremental appends).
 # See bin/flow-manager.sh.
-SKIPFILE="$ROOT/input/skip.txt"
+SKIPFILE="$ROOT/input/$AXWAY_ENV/skip.txt"   # per environment since 2026-08-31
 SKIPOUT="$DATA/server/_skipped.tsv"     # skipped _parse.tsv rows (verbatim)
 # awk splits stdin into kept rows (stdout) and skipped rows (>> the file passed
 # as -v sc=…). A skip.txt-less run keeps everything.
@@ -99,7 +99,7 @@ MANIFEST="$CACHE_DIR/_parse.files"
 manifest_entry() { printf '%s\t%s\n' "$(basename "$1")" "$(wc -c < "$1" | tr -d ' ')"; }
 in_manifest()    { cut -f1 "$MANIFEST" | grep -qxF "$(basename "$1")"; }
 
-# Parser-version guard: record a checksum of THIS script (and input/skip.txt,
+# Parser-version guard: record a checksum of THIS script (and input/<env>/skip.txt,
 # so a changed skip list forces a full reparse — the skipped rows are removed at
 # cache-assembly time, so the sidecar must be rebuilt end to end) alongside the
 # cache. A changed parser (or a cache with no recorded version) forces a full
@@ -203,7 +203,7 @@ TOK_PROG=$(cat <<'AWK_EOF'
 # reach the cache, the per-entity mention rings, the drill-downs or the
 # failed-file error pages.
 #
-# This is deliberately NOT input/skip.txt: a skip-list rule sets its records
+# This is deliberately NOT input/<env>/skip.txt: a skip-list rule sets its records
 # aside in the skipped file for the Skipped report, and archiving 8M lines of
 # boilerplate would cost the disk and time this filter exists to save. The skip
 # list stays what it is — traffic that is real but unwanted in the statistics.

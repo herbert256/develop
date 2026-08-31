@@ -77,7 +77,7 @@ _home_status_block() {   # $1 = acceptance | production
 }
 
 # ---- Logical: since 2026-08-31 a FULL entity — the derivation (FlowIDs
-# condensed into logical flow groups, input/logical.txt pins honoured) lives
+# condensed into logical flow groups, input/<env>/logical.txt pins honoured) lives
 # in bin/flow-manager.sh, which writes base/_logicals.tsv (the name list this
 # page family reads like every other base) and the FlowID -> Logical map
 # xref/_profiles-logicals.tsv. The Logical pages link detail pages

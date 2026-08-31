@@ -1,7 +1,7 @@
-# input/logical_domains.txt — hand-curated PART REPLACEMENTS for the Logical-based
+# input/<env>/logical_partners.txt — hand-curated PART REPLACEMENTS for the Logical-based
 # PDA derivation (bin/flow-manager.sh), shared by both environments: the
-# first part of a three-part Logical name (D_A_P) equal to FROM is
-# replaced by TO before it becomes the Domain.
+# third part of a three-part Logical name (D_A_P) equal to FROM is
+# replaced by TO before it becomes the Partner token (the value that enters the partner MERGE — rules 1-4 and the alias star see the replaced token).
 # Two whitespace-separated columns, # comments and blank lines ignored:
 #
 #     <FROM> <TO>

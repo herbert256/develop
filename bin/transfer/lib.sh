@@ -53,7 +53,7 @@ INPUT_DIR="$ROOT/input/$AXWAY_ENV/$AREA"
 IP_DIR="$ROOT/input/$AXWAY_ENV/ip"                            # PER ENV (the two estates share no endpoints)
 source "$ROOT/bin/ip.sh"         # IP_HOSTS_FILE (input/<env>/ip/ip-hosts.tsv) + ip_put
 FM_INPUT_DIR="$ROOT/input/$AXWAY_ENV/flow-manager"            # the env's FlowManager config exports
-# When bin/flow-manager.sh has written SKIP-filtered copies (input/skip.txt),
+# When bin/flow-manager.sh has written SKIP-filtered copies (input/<env>/skip.txt),
 # every raw-JSON reader prefers them so the skipped accounts/subscriptions are
 # excluded everywhere, not just from the base/xref caches.
 [ -f "$DATA/flow-manager/filtered/partners.json" ] && FM_INPUT_DIR="$DATA/flow-manager/filtered"

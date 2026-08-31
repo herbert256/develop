@@ -1,4 +1,4 @@
-# input/partner-aliases.tsv — hand-curated partner tokens naming ONE
+# input/<env>/partner-aliases.tsv — hand-curated partner tokens naming ONE
 # organisation (bin/flow-manager.sh merge rule 4). Two TAB-separated tokens =
 # one organisation, variant<TAB>CANONICAL (the right side outranks the rest
 # when the alias star names a merged group). A SINGLE token on its own line

@@ -108,7 +108,7 @@ while IFS=$'\t' read -r gname members direction; do
                 if(r==1) return "Their logical flows connect to the same configured host"
                 if(r==2) return "Their logical flows whitelist the same IP"
                 if(r==3) return "One partner\x27s host resolves to an IP the other whitelists"
-                if(r==4) return "Curated alias (input/partner-aliases.tsv)"
+                if(r==4) return "Curated alias (input/<env>/partner-aliases.tsv)"
                 return "Rule " r }
             $1==G {
                 key=$2 SUBSEP $3 SUBSEP $4
