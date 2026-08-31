@@ -179,7 +179,7 @@ CANON_PAIRS=$(
     done
 )
 MIRROR_PAIRS=$(printf '%s\n' $CANON_PAIRS | awk -F'-' '{ print $2 "-" $1 }')
-PAIR_CACHES="$(printf '%s ' $CANON_PAIRS $MIRROR_PAIRS)subscriptions-patterns subscriptions-flowdir subscriptions-ucderived"
+PAIR_CACHES="$(printf '%s ' $CANON_PAIRS $MIRROR_PAIRS)subscriptions-patterns subscriptions-flowdir subscriptions-ucderived logical-rules"
 
 # The PDA both-ways links read the address<->endpoint map, and their output
 # depends only on its content — which is now EXACTLY the configured endpoints'
@@ -611,8 +611,9 @@ awk -F'\t' -v LF="$LOGICALF" '
         raws[nn] = raw
         nm0 = raw; gsub(/-/, "_", nm0); gsub(/_+/, "_", nm0)
         sub(/^_/, "", nm0); sub(/_$/, "", nm0)
-        if (raw in FIX)      { finalfix[nn] = FIX[raw]; next }
-        else if (nm0 in FIX) { finalfix[nn] = FIX[nm0]; next }
+        if (nm0 != raw) IR[nn] = "separators normalized"
+        if (raw in FIX)      { finalfix[nn] = FIX[raw]; PINR[nn] = "pinned in input/logical.txt"; next }
+        else if (nm0 in FIX) { finalfix[nn] = FIX[nm0]; PINR[nn] = "pinned in input/logical.txt (folded spelling)"; next }
         name[nn] = nm0; exists[nm0] = 1 }
     END {
         # pass 1a: count the reductions
@@ -643,40 +644,41 @@ awk -F'\t' -v LF="$LOGICALF" '
                 # -> that 3-part name is the logical (the
                 # AB_SNOWFLAKE_HYPOPORT_{MORTG,PIPE,SPREAD} family joins
                 # its bare AB_SNOWFLAKE_HYPOPORT)
-                if (pre in exists) lg = pre
+                if (pre in exists) { lg = pre; R1[i] = "4 parts: the bare 3-part name exists - 4th part dropped" }
                 # then: a 3rd part that is the 3rd part of 2+ 4-part
                 # FlowIDs — or of any 3-PART FlowID (the restated rule)
-                else if (cnt3rd[P[3]] >= 2 || (P[3] in third3)) lg = pre
-                else if (cnt1[pre] >= 2) lg = pre
+                else if (cnt3rd[P[3]] >= 2 || (P[3] in third3)) { lg = pre; R1[i] = "4 parts: 3rd part is a known 3rd part - 4th part dropped" }
+                else if (cnt1[pre] >= 2) { lg = pre; R1[i] = "4 parts: first 3 parts shared by 2+ FlowIDs - 4th part dropped" }
                 else for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) {
                     c = rejoin(P, n, j)
-                    if (cnt3[c] >= 2 || (c in exists)) { lg = c; break } }
+                    if (cnt3[c] >= 2 || (c in exists)) { lg = c; R1[i] = "4 parts: numeric part " j " dropped"; break } }
             } else if (n == 3)
                 for (j = 1; j <= n; j++) { s = digitstrip(P[j])
                     if (s != P[j] && s != "") { c = replaced(P, n, j, s)
-                        if (cnt2[c] >= 2 || (c in exists)) { lg = c; break } } }
+                        if (cnt2[c] >= 2 || (c in exists)) { lg = c; R1[i] = "digit tail stripped from part " j; break } } }
             else if (n == 1) { s = digitstrip(P[1])
-                if (s != P[1] && s != "" && (cnt2[s] >= 2 || (s in exists))) lg = s }
+                if (s != P[1] && s != "" && (cnt2[s] >= 2 || (s in exists))) { lg = s; R1[i] = "single part: digit tail stripped" } }
             else if (n >= 5)
                 # fold onto the LONGEST part-prefix (3+ parts) that
                 # exists as a FlowID of its own
                 for (k = n - 1; k >= 3; k--) {
                     pre = P[1]
                     for (m = 2; m <= k; m++) pre = pre "_" P[m]
-                    if (pre in exists) { lg = pre; break }
+                    if (pre in exists) { lg = pre; R1[i] = "5+ parts: folded onto the longest existing prefix"; break }
                 }
             # a fixed mapping for the GROUP a fold landed on wins too
-            if (lg in FIX) { finalfix[i] = FIX[lg]; continue }
+            if (lg in FIX) { finalfix[i] = FIX[lg]
+                PINR[i] = (R1[i] != "" ? R1[i] "; " : "") "group name pinned in input/logical.txt"; continue }
             grpof[i] = lg; lset[lg] = 1
         }
         # pass 2: reshape to 3 parts by position
         for (l in lset) { n = split(l, P, "_"); if (n == 3) { k2[P[2]] = 1; k3[P[3]] = 1 } }
         for (l in lset) {
             n = split(l, P, "_"); nl = l
-            if (n == 2) nl = P[1] "_" P[1] "_" P[2]
-            else if (n == 4 && (P[4] in k3)) nl = P[1] "_" P[2] "-" P[3] "_" P[4]
-            else if (n == 4 && (P[2] in k2)) nl = P[1] "_" P[2] "_" P[3] "-" P[4]
-            else if (n == 5 && (P[5] in k3)) nl = P[1] "_" P[2] "-" P[3] "-" P[4] "_" P[5]
+            if (n == 2) { nl = P[1] "_" P[1] "_" P[2]; M2R[l] = "2 parts: first part doubled (domain = application)" }
+            else if (n == 4 && (P[4] in k3)) { nl = P[1] "_" P[2] "-" P[3] "_" P[4]; M2R[l] = "4 parts: parts 2+3 combined (4th is a known 3rd part)" }
+            else if (n == 4 && (P[2] in k2)) { nl = P[1] "_" P[2] "_" P[3] "-" P[4]; M2R[l] = "4 parts: parts 3+4 combined (2nd is a known 2nd part)" }
+            else if (n == 5 && (P[5] in k3)) { nl = P[1] "_" P[2] "-" P[3] "-" P[4] "_" P[5]; M2R[l] = "5 parts: middle parts combined (5th is a known 3rd part)" }
             map2[l] = nl; lset2[nl] = 1
         }
         # pass 3: force what is left to 3 parts
@@ -686,16 +688,30 @@ awk -F'\t' -v LF="$LOGICALF" '
             n = split(l, P, "_"); nl = l
             if (n > 3) {
                 done = 0
-                for (j = 2; j <= n && !done; j++) if (P[j] in k3) { nl = P[1] "_" joindash(P, n, j, 2) "_" P[j]; done = 1 }
-                for (j = 2; j <= n && !done; j++) if (P[j] in k2) { nl = P[1] "_" P[j] "_" joindash(P, n, j, 2); done = 1 }
-                if (!done) nl = P[1] "_" joindash(P, n - 1, 0, 2) "_" P[n]
+                for (j = 2; j <= n && !done; j++) if (P[j] in k3) { nl = P[1] "_" joindash(P, n, j, 2) "_" P[j]; M3R[l] = "forced: part " j " is a known 3rd part, the rest combined as the 2nd"; done = 1 }
+                for (j = 2; j <= n && !done; j++) if (P[j] in k2) { nl = P[1] "_" P[j] "_" joindash(P, n, j, 2); M3R[l] = "forced: part " j " is a known 2nd part, the rest combined as the 3rd"; done = 1 }
+                if (!done) { nl = P[1] "_" joindash(P, n - 1, 0, 2) "_" P[n]; M3R[l] = "forced: first and last kept, the middle combined" }
             }
             map3[l] = nl
         }
-        # the map: every configured FlowID -> its final Logical
-        for (i = 1; i <= nn; i++)
-            print raws[i] "\t" ((i in finalfix) ? finalfix[i] : map3[map2[grpof[i]]])
-    }' "$BASE/_profiles.tsv" | LC_ALL=C sort -u > "$XREF/_profiles-logicals.tsv"
+        # the map: every configured FlowID -> its final Logical, third
+        # column = the rule trail that produced it ("; "-joined, the
+        # Logical-detection analyses page renders it — 2026-08-31)
+        for (i = 1; i <= nn; i++) {
+            if (i in finalfix) { fin = finalfix[i]; rt = PINR[i] }
+            else {
+                l = grpof[i]; fin = map3[map2[l]]
+                rt = ""
+                if (R1[i] != "") rt = R1[i]
+                if (M2R[l] != "") rt = rt (rt == "" ? "" : "; ") M2R[l]
+                if (M3R[map2[l]] != "") rt = rt (rt == "" ? "" : "; ") M3R[map2[l]]
+                if (rt == "") rt = "3 parts - kept as-is"
+            }
+            if (IR[i] != "") rt = IR[i] "; " rt
+            print raws[i] "\t" fin "\t" rt
+        }
+    }' "$BASE/_profiles.tsv" | LC_ALL=C sort -u > "$XREF/_logical-rules.tsv"
+cut -f1,2 "$XREF/_logical-rules.tsv" > "$XREF/_profiles-logicals.tsv"
 cut -f2 "$XREF/_profiles-logicals.tsv" | LC_ALL=C sort -u > "$BASE/_logicals.tsv"
 # xcompose MAPFILE PAIRFILE PCOL SIDE OUT — join a profile-keyed pair cache
 # with a profile->value map (multi-valued safe; the join is RAW — every

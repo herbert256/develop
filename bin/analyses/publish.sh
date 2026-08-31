@@ -971,6 +971,48 @@ write_use_case_patterns_page() {
     } > "$out"
 }
 
+# ---- the Logical detection page (docs/analyses/logical-detection.html) ------
+# One row per configured FlowID (2026-08-31, user request): the FlowID, the
+# Logical it detected to, and the rule trail that produced it — the third
+# column of xref/_logical-rules.tsv, written by the derivation itself in
+# bin/flow-manager.sh, so page and pipeline can never disagree. Rows tint by
+# the Logical result; the Logical cell links its detail page.
+write_logical_detection_page() {
+    local out="$ADIR/logical-detection.html"
+    local rules="$DATA/flow-manager/xref/_logical-rules.tsv"
+    local lmap="$DATA/transfer/reports/details/logicals/_slugmap.tsv"
+    local lbase="$DATA/flow-manager/base/_logicals.tsv"
+    [ -s "$rules" ] || { rm -f "$out"; return 0; }
+    [ -f "$lmap" ] || lmap=/dev/null
+    [ -f "$lbase" ] || lbase=/dev/null
+    local rows n
+    rows=$(LC_ALL=C awk -F'\t' -v LM="$lmap" -v LB="$lbase" '
+        function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+        BEGIN { while ((getline l < LM) > 0) { split(l, a, "\t"); if (a[1] != "") slug[toupper(a[1])] = a[2] } close(LM)
+                while ((getline l < LB) > 0) { n2 = split(l, a, "\t"); if (n2 >= 3 && a[1] != "") res[toupper(a[1])] = a[3] } close(LB) }
+        NF >= 3 {
+            k = toupper($2); tr = "<tr"
+            r = res[k]
+            if (r == "green" || r == "orange" || r == "red" || r == "blue") tr = tr " data-res=\"" r "\""
+            lc = e($2)
+            if (k in slug) lc = "<a href=\"../details/logicals/" slug[k] ".html\">" lc "</a>"
+            print tr "><td><code>" e($1) "</code></td><td>" lc "</td><td class=\"wrap\">" e($3) "</td></tr>"
+        }' "$rules")
+    n=$(printf '%s' "$rows" | grep -c '<tr' || true)
+    {
+        html_head "Logical detection" "../assets/style.css" "" "" "logical-detection" "" "" "sort-fresh"
+        printf '<h1>Logical detection</h1>\n'
+        analyses_group_tabs logical-detection.html
+        printf '<p class="subtitle">How every configured <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code> value) detected to its <strong>Logical</strong> flow group &mdash; one row per FlowID with the <strong>rule trail</strong> the derivation applied, in firing order: the separator normalization, the grouping rule (variant folds, digit tails, prefix folds), an <code>input/logical.txt</code> pin, and the 3-part reshape. <em>3 parts &mdash; kept as-is</em> means the FlowID needed no work at all. The Logical cell links its detail page; rows tint by the Logical&rsquo;s result.</p>\n'
+        printf '<div class="tablewrap"><table class="index fit">\n'
+        printf '<tr><th>FlowID</th><th>Logical</th><th>Rules</th></tr>\n'
+        [ -n "$rows" ] && printf '%s\n' "$rows"
+        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td></tr>\n' "$n"
+        printf '</table></div>\n'
+        printf '</body>\n</html>\n'
+    } > "$out"
+}
+
 # ---- the Subscriptions page (docs/analyses/subscriptions.html) --------------
 # The per-subscription configuration mapping (2026-08-30, user request): EVERY
 # configured subscription on one row with its FlowID (customAttribute_
@@ -1769,6 +1811,7 @@ write_analyses_index() {
         [ -f "$ADIR/use-cases.html" ] && printf '<tr><td><a href="use-cases.html">Use cases</a></td><td class="desc">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; Total, Server (server-log only), Not seen, Error and OK per use case; tabs for the <strong>Use Case definitions</strong> (who connects, which way the file travels, what triggers it) and the <strong>Use Case patterns</strong> (the accounts grouped by their subscription mix, e.g. <code>UC2 (1) UC4 (1)</code>).</td></tr>\n'
         [ -f "$ADIR/uc2-visits.html" ] && printf '<tr><td><a href="uc2-visits.html">UC2 pickup visits</a></td><td class="desc">What each UC2 partner actually does when it connects: collected, two-way exchange, delivery-only (the UC4 twin) or empty-handed visits.</td></tr>\n'
         [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured subscription on one row: FlowID, use case, account, endpoint, BL tag and the derived Logical / Partner / Domain / Application groups.</td></tr>\n'
+        [ -f "$ADIR/logical-detection.html" ] && printf '<tr><td><a href="logical-detection.html">Logical detection</a></td><td class="desc">How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID.</td></tr>\n'
         [ -f "$ADIR/accounts.html" ] && printf '<tr><td><a href="accounts.html">Accounts</a></td><td class="desc">The accounts (partners) and their communication profiles &mdash; naming vs configured type/auth, insecure and unrestricted endpoints, conflicting host/whitelist setup, plus account &amp; login integrity checks (non-standard or shared logins, password profiles without a password, and more).</td></tr>\n'
         [ -f "$ADIR/account-sharing.html" ] && printf '<tr><td><a href="account-sharing.html">Account sharing</a></td><td class="desc">Which accounts serve more than one subscription, and in what shape: UC2+UC4 mailbox pairs, UC1+UC3 outbound pairs, fan-outs and both-directions accounts.</td></tr>\n'
         [ -f "$ADIR/twins.html" ] && printf '<tr><td><a href="twins.html">Twins</a></td><td class="desc">Every twin pair on one page: subscriptions that are the same flow configured the opposite way (naming slips highlighted) and the accounts spelled with both separators.</td></tr>\n'
@@ -1808,6 +1851,7 @@ write_use_cases_page
 write_use_case_definitions_page
 write_use_case_patterns_page
 write_subscriptions_page
+write_logical_detection_page
 write_accounts_page
 write_cronjobs_page
 write_first_seen_page 1
