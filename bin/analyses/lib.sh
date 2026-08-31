@@ -288,42 +288,29 @@ external_partners_tsv() {
 # an empty whitelist column — aggregating that direction's accounts: seen
 # when any is, Result = the latest transaction. An application active in
 # both directions counts once per side, exactly like a both-ways partner.
-internal_apps_tsv() {
-    local cov="$COVSRC/accounts.tsv" aa="$DATA/flow-manager/xref/_accounts-apps.tsv"
-    local amap="$DATA/transfer/reports/details/applications/_slugmap.tsv"
-    local abase="$DATA/flow-manager/base/_apps.tsv"
-    # the SUBSCRIPTION-derived names (the flow-manager fallback, 2026-08-29):
-    # an application no account maps to still needs a coverage row, or the
-    # base name is absent from this TSV and the ghost rules (home
-    # pda_seen_total, the Entities publish) call it SEEN — production showed
-    # 132 "seen" applications with zero logs. Seen for those rows comes from
-    # their SUBSCRIPTIONS' coverage; members are the owning account(s).
-    local sa="$DATA/flow-manager/xref/_subscriptions-apps.tsv"
-    local sacc="$DATA/flow-manager/xref/_subscriptions-accounts.tsv"
-    local scov="$COVSRC/subscriptions.tsv"
-    [ -f "$cov" ] && [ -f "$aa" ] || return 0
-    [ -f "$amap" ] || amap=/dev/null
-    [ -f "$abase" ] || abase=/dev/null
-    [ -f "$sa" ] || sa=/dev/null
-    [ -f "$sacc" ] || sacc=/dev/null
-    [ -f "$scov" ] || scov=/dev/null
-    awk -F'\t' -v bluef="$abase" '
+# One derived member's coverage TSV on the SUBSCRIPTION spine (2026-08-31):
+# members = the subscriptions the xref pair cache connects to the name, side
+# from the subscription's coverage row, seen when any member subscription is,
+# Result = the latest transaction; blue names count as seen. The former
+# applications/domains builders walked the ACCOUNT coverage instead, so one
+# seen hybrid production account (serving many flows) marked every one of its
+# applications seen — the same over-attribution the parse-time union had.
+#   $1 = the _subscriptions-<item>.tsv pair cache   $2 = details slug subdir
+#   $3 = the base cache (blue set)                  $4 = the output TSV name
+_sub_spine_tsv() {
+    local scov="$COVSRC/subscriptions.tsv" sl="$1" lmap="$DATA/transfer/reports/details/$2/_slugmap.tsv" lbase="$3" out="$4"
+    [ -f "$scov" ] && [ -f "$sl" ] || return 0
+    [ -f "$lmap" ] || lmap=/dev/null
+    [ -f "$lbase" ] || lbase=/dev/null
+    awk -F'\t' -v bluef="$lbase" -v MAPF="$sl" -v SUB="$2" '
         BEGIN { US = sprintf("%c", 31)
-            # server-log-only (blue) applications count as SEEN — the Server
-            # bucket counts them, so Seen must too (their accounts are blue, i.e.
-            # never seen in the transfer logs, so the coverage join below misses them).
             while ((getline l < bluef) > 0) { nb=split(l,ba,"\t"); if (nb>=3 && ba[3]=="blue") blue[toupper(ba[1])]=1 } close(bluef) }
-        FILENAME ~ /_slugmap\.tsv$/ { aslug[$1]=$2; next }   # application name -> detail-page slug
-        FILENAME ~ /_accounts-apps\.tsv$/ { app[$1]=((app[$1] != "") ? app[$1] US : "") $2
-                                            na=split(app[$1], av, US); for(ai=1; ai<=na; ai++) fromacct[av[ai]]=1; next }   # an account can map to MORE than one application (UC8 relays); test emptiness not membership (mawk assignment trap)
-        FILENAME ~ /_subscriptions-apps\.tsv$/     { if($1!="" && $2!="") sapp[$1]=((sapp[$1]!="")?sapp[$1] US:"") $2; next }
-        FILENAME ~ /_subscriptions-accounts\.tsv$/ { if($1!="" && $2!="") sacct[$1]=((sacct[$1]!="")?sacct[$1] US:"") $2; next }
-        FILENAME ~ /coverage\/subscriptions\.tsv$/ { sdir[$1]=$2; sseen[$1]=$3; sts5[$1]=$5; soc6[$1]=$6; next }
-        ($2=="I" || $2=="O" || $2=="B") { acov[$1]=$4 }   # every account row: name -> covlink (the fallback rows link members through it)
-        ($2=="I" || $2=="O" || $2=="B") && ($1 in app) {
-            # B (a both-ways account) counts once per SIDE, like a both-ways partner
-            ns2=0; if($2=="I" || $2=="B") S2[++ns2]="I"; if($2=="O" || $2=="B") S2[++ns2]="O"
-            na=split(app[$1], av, US)
+        FILENAME ~ /_slugmap\.tsv$/ { lslug[$1]=$2; next }
+        FILENAME == MAPF { if($1!="" && $2!="") slg[$1]=((slg[$1]!="")?slg[$1] US:"") $2; next }
+        {   d2=$2; if (d2!="I" && d2!="O" && d2!="B") next
+            if (!($1 in slg)) next
+            ns2=0; if(d2=="I" || d2=="B") S2[++ns2]="I"; if(d2=="O" || d2=="B") S2[++ns2]="O"
+            na=split(slg[$1], av, US)
             for(ai=1; ai<=na; ai++) for(si=1; si<=ns2; si++){
                 k=av[ai] SUBSEP S2[si]
                 n[k]++; mem[k]=mem[k] US $1 "|" $4
@@ -332,90 +319,19 @@ internal_apps_tsv() {
             }
         }
         END{
-            # rows for the subscription-derived names the account path never
-            # emits: side from the subscription, seen from ITS coverage row
-            for (s in sapp) {
-                d2 = sdir[s]; if (d2 != "I" && d2 != "O" && d2 != "B") continue
-                ns2=0; if(d2=="I"||d2=="B") S2[++ns2]="I"; if(d2=="O"||d2=="B") S2[++ns2]="O"
-                na=split(sapp[s], av, US)
-                for(ai=1; ai<=na; ai++){ a2=av[ai]
-                    if (a2 in fromacct) continue
-                    for(si=1; si<=ns2; si++){ k=a2 SUBSEP S2[si]
-                        n[k]++
-                        nax=split(sacct[s], AC2, US)
-                        for(x2=1; x2<=nax; x2++){ mk2=k SUBSEP AC2[x2]
-                            if(!(mk2 in m2seen)){ m2seen[mk2]=1
-                                mem[k]=mem[k] US AC2[x2] "|" ((AC2[x2] in acov)?acov[AC2[x2]]:"") } }
-                        if (sseen[s]==1){ seen[k]=1
-                            if (sts5[s]!="" && sts5[s]>lts[k]){ lts[k]=sts5[s]; loc[k]=soc6[s] } }
-                    } } }
             for(k in n){ split(k,x,SUBSEP)
                 if(toupper(x[1]) in blue) seen[k]=1
-                printf "%s\t%s\t%d\t%s\t%s\t%s\t%s\t\n", x[1], x[2], seen[k]+0, ((x[1] in aslug) ? "applications/" aslug[x[1]] : ""), lts[k], loc[k], substr(mem[k],2) }
-        }' "$amap" "$aa" "$sa" "$sacc" "$scov" "$cov" | LC_ALL=C sort -t$'\t' -k1,1 -k2,2 | cov_put "$COVSRC/applications.tsv"
+                printf "%s\t%s\t%d\t%s\t%s\t%s\t%s\t\n", x[1], x[2], seen[k]+0, ((x[1] in lslug) ? SUB "/" lslug[x[1]] : ""), lts[k], loc[k], substr(mem[k],2) }
+        }' "$lmap" "$sl" "$scov" | LC_ALL=C sort -t$'\t' -k1,1 -k2,2 | cov_put "$COVSRC/$out.tsv"
 }
+internal_apps_tsv()    { _sub_spine_tsv "$DATA/flow-manager/xref/_subscriptions-apps.tsv"    applications "$DATA/flow-manager/base/_apps.tsv"    applications; }
 
 # Internal-domain figures for the root index's one-row "Internal Domains"
 # table — External Partners' shape again, one level up:
 # the domain (the FIRST part of the three-part logical flow name) comes from
 # bin/flow-manager.sh's _accounts-domains.tsv cache. One row per (domain,
 # direction) into $COVSRC/domains.tsv, the applications.tsv shape exactly.
-internal_domains_tsv() {
-    local cov="$COVSRC/accounts.tsv" ad="$DATA/flow-manager/xref/_accounts-domains.tsv"
-    local dmap="$DATA/transfer/reports/details/domains/_slugmap.tsv"
-    local dbase="$DATA/flow-manager/base/_domains.tsv"
-    # subscription-derived names — see internal_apps_tsv (the same ghost fix)
-    local sd="$DATA/flow-manager/xref/_subscriptions-domains.tsv"
-    local sacc="$DATA/flow-manager/xref/_subscriptions-accounts.tsv"
-    local scov="$COVSRC/subscriptions.tsv"
-    [ -f "$cov" ] && [ -f "$ad" ] || return 0
-    [ -f "$dmap" ] || dmap=/dev/null
-    [ -f "$dbase" ] || dbase=/dev/null
-    [ -f "$sd" ] || sd=/dev/null
-    [ -f "$sacc" ] || sacc=/dev/null
-    [ -f "$scov" ] || scov=/dev/null
-    awk -F'\t' -v bluef="$dbase" '
-        BEGIN { US = sprintf("%c", 31)
-            # server-log-only (blue) domains count as SEEN (see internal_apps_tsv)
-            while ((getline l < bluef) > 0) { nb=split(l,ba,"\t"); if (nb>=3 && ba[3]=="blue") blue[toupper(ba[1])]=1 } close(bluef) }
-        FILENAME ~ /_slugmap\.tsv$/ { dslug[$1]=$2; next }   # domain name -> detail-page slug
-        FILENAME ~ /_accounts-domains\.tsv$/ { dm[$1]=$2; fromacct[$2]=1; next }
-        FILENAME ~ /_subscriptions-domains\.tsv$/  { if($1!="" && $2!="") sdom[$1]=((sdom[$1]!="")?sdom[$1] US:"") $2; next }
-        FILENAME ~ /_subscriptions-accounts\.tsv$/ { if($1!="" && $2!="") sacct[$1]=((sacct[$1]!="")?sacct[$1] US:"") $2; next }
-        FILENAME ~ /coverage\/subscriptions\.tsv$/ { sdir[$1]=$2; sseen[$1]=$3; sts5[$1]=$5; soc6[$1]=$6; next }
-        ($2=="I" || $2=="O" || $2=="B") { acov[$1]=$4 }   # every account row: name -> covlink (the fallback rows link members through it)
-        ($2=="I" || $2=="O" || $2=="B") && ($1 in dm) {
-            # B (a both-ways account) counts once per SIDE, like a both-ways partner
-            ns2=0; if($2=="I" || $2=="B") S2[++ns2]="I"; if($2=="O" || $2=="B") S2[++ns2]="O"
-            for(si=1; si<=ns2; si++){
-                k=dm[$1] SUBSEP S2[si]
-                n[k]++; mem[k]=mem[k] US $1 "|" $4
-                if($3==1){ seen[k]=1
-                    if($5!="" && $5>lts[k]){ lts[k]=$5; loc[k]=$6 } }
-            }
-        }
-        END{
-            # rows for the subscription-derived names — see internal_apps_tsv
-            for (s in sdom) {
-                d2 = sdir[s]; if (d2 != "I" && d2 != "O" && d2 != "B") continue
-                ns2=0; if(d2=="I"||d2=="B") S2[++ns2]="I"; if(d2=="O"||d2=="B") S2[++ns2]="O"
-                na=split(sdom[s], av, US)
-                for(ai=1; ai<=na; ai++){ a2=av[ai]
-                    if (a2 in fromacct) continue
-                    for(si=1; si<=ns2; si++){ k=a2 SUBSEP S2[si]
-                        n[k]++
-                        nax=split(sacct[s], AC2, US)
-                        for(x2=1; x2<=nax; x2++){ mk2=k SUBSEP AC2[x2]
-                            if(!(mk2 in m2seen)){ m2seen[mk2]=1
-                                mem[k]=mem[k] US AC2[x2] "|" ((AC2[x2] in acov)?acov[AC2[x2]]:"") } }
-                        if (sseen[s]==1){ seen[k]=1
-                            if (sts5[s]!="" && sts5[s]>lts[k]){ lts[k]=sts5[s]; loc[k]=soc6[s] } }
-                    } } }
-            for(k in n){ split(k,x,SUBSEP)
-                if(toupper(x[1]) in blue) seen[k]=1
-                printf "%s\t%s\t%d\t%s\t%s\t%s\t%s\t\n", x[1], x[2], seen[k]+0, ((x[1] in dslug) ? "domains/" dslug[x[1]] : ""), lts[k], loc[k], substr(mem[k],2) }
-        }' "$dmap" "$ad" "$sd" "$sacc" "$scov" "$cov" | LC_ALL=C sort -t$'\t' -k1,1 -k2,2 | cov_put "$COVSRC/domains.tsv"
-}
+internal_domains_tsv() { _sub_spine_tsv "$DATA/flow-manager/xref/_subscriptions-domains.tsv" domains      "$DATA/flow-manager/base/_domains.tsv" domains; }
 
 cov_label() {   # $1 cell key -> human title part
     case $1 in

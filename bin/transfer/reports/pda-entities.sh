@@ -71,16 +71,16 @@ for dim in logical partner application domain bl; do
     #                — a UC5 relay / both-partner file belongs to BOTH
     #                organisations, and the both-partner case carries an
     #                EMPTY col 20 (the parse abstains on a two-group account)
-    #   application: col 3 (account) joined on _accounts-apps — a UC8 relay
-    #                account carries TWO applications (its partner token is
-    #                really an application), but parse.sh'\''s col 18 holds
-    #                only ONE (last map row wins), silently starving the other
+    #   application: col 12 (subscription) joined on _subscriptions-apps —
+    #                the FlowID spine (2026-08-31; the former ACCOUNT union
+    #                credited every File of a shared hybrid production
+    #                account to every application the account touches)
     # Domains stay single-valued (part 1 of the name — never doubles).
     UMAP=""; UKEY=0
     case $dim in
         logical)     [ -f "$CONFIG_XREF/_subscriptions-logicals.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-logicals.tsv"; UKEY=12; } ;;
         partner)     [ -f "$CONFIG_XREF/_subscriptions-partners.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-partners.tsv"; UKEY=12; } ;;
-        application) [ -f "$CONFIG_XREF/_accounts-apps.tsv" ] && { UMAP="$CONFIG_XREF/_accounts-apps.tsv"; UKEY=3; } ;;
+        application) [ -f "$CONFIG_XREF/_subscriptions-apps.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-apps.tsv"; UKEY=12; } ;;   # the SUBSCRIPTION spine (2026-08-31; the account union over-credited shared production accounts)
         bl)          [ -f "$CONFIG_XREF/_subscriptions-bl.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-bl.tsv"; UKEY=12; } ;;
     esac
     # the logical/bl dims'"'"' DIRECT attribution is a column resolved through a

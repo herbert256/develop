@@ -1241,8 +1241,12 @@ else
     awk -F'\t' 'BEGIN{OFS="\t"; AMB=sprintf("%c",1)}
         FILENAME ~ /_accounts-logins\.tsv$/        { al[toupper($1)]=1; next }
         FILENAME ~ /_accounts-hosts\.tsv$/         { ah[toupper($1)]=1; next }
-        FILENAME ~ /_accounts-apps\.tsv$/          { aa[toupper($1)]=$2; next }
-        FILENAME ~ /_accounts-domains\.tsv$/       { ad[toupper($1)]=$2; next }
+        # the ACCOUNT app/domain maps are a FALLBACK only (2026-08-31): a hybrid
+        # production account serves MANY flows, so the account application
+        # is ambiguous there — AMB, no fill — and the SUBSCRIPTION maps below
+        # (subscription -> FlowID -> Logical -> app/domain, 1:1) come first
+        FILENAME ~ /_accounts-apps\.tsv$/          { k=toupper($1); if(!(k in aa)) aa[k]=$2; else if(aa[k]!=$2) aa[k]=AMB; next }
+        FILENAME ~ /_accounts-domains\.tsv$/       { k=toupper($1); if(!(k in ad)) ad[k]=$2; else if(ad[k]!=$2) ad[k]=AMB; next }
         # the SUBSCRIPTION app/domain maps (2026-08-29 audit fix): a one-part
         # account derives no app/domain, but its subscription name can (the
         # flow-manager fallback) — cols 18/19 join these when the account map
@@ -1272,8 +1276,8 @@ else
             if(h!="" && (h in hp)) p=hp[h]
             else if((a in ap) && ap[a]!=AMB) p=ap[a]
             w=$16; NF=15
-            a18=(a in aa)?aa[a]:""; if(a18=="" && s!="" && (s in sa) && sa[s]!=AMB) a18=sa[s]
-            d19=(a in ad)?ad[a]:""; if(d19=="" && s!="" && (s in sdo) && sdo[s]!=AMB) d19=sdo[s]
+            a18=""; if(s!="" && (s in sa) && sa[s]!=AMB) a18=sa[s]; if(a18=="" && (a in aa) && aa[a]!=AMB) a18=aa[a]
+            d19=""; if(s!="" && (s in sdo) && sdo[s]!=AMB) d19=sdo[s]; if(d19=="" && (a in ad) && ad[a]!=AMB) d19=ad[a]
             print $0, d, m, a18, d19, p, w, ""
         }
     ' "${pda_caches[@]}" "$FILES" > "$ttmp"

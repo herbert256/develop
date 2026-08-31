@@ -14,9 +14,11 @@
 # (col 20) — mirrors pda-entities.sh: a UC5 relay / both-partner file belongs
 # to BOTH organisations, and the both-partner case carries an EMPTY col 20
 # (the account maps to two groups, so the parse abstains). Likewise a File
-# counts for EVERY application of its ACCOUNT (col 3 joined on
-# xref/_accounts-apps.tsv) unioned with col 18 — a UC8 relay account carries
-# TWO applications while parse.sh keeps only one (last map row wins).
+# counts for every application of its SUBSCRIPTION (col 12 joined on
+# xref/_subscriptions-apps.tsv — the FlowID spine, 1:1) unioned with col 18.
+# NOT the account any more (2026-08-31): a hybrid production account serves
+# many flows, so the account union credited every File of it to every
+# application the account touches.
 # And a File counts for EVERY logical flow group of its profile (col 13
 # resolved through xref/_profiles-logicals.tsv — the FlowID map) UNIONED with
 # its subscription'\''s logicals (col 12 on xref/_subscriptions-logicals.tsv).
@@ -27,7 +29,7 @@
 #   awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK"'...'
 SP_MAP="$CONFIG_XREF/_subscriptions-partners.tsv"
 [ -f "$SP_MAP" ] || SP_MAP=""
-AP_MAP="$CONFIG_XREF/_accounts-apps.tsv"
+AP_MAP="$CONFIG_XREF/_subscriptions-apps.tsv"
 [ -f "$AP_MAP" ] || AP_MAP=""
 PL_MAP="$CONFIG_XREF/_profiles-logicals.tsv"
 [ -f "$PL_MAP" ] || PL_MAP=""
@@ -142,7 +144,7 @@ compute_extras() {
     FNR == 1 { fno++ }
     fno == 1 { if($1 != "#") rip[$1] = rip[$1] (rip[$1]==""?"":" ") $2; next }   # hostname -> raw IP(s)
     fno == 2 { pu6 = sp_union($20, $12)                                          # partner / application / logical / BL = the UNION sets, \037-joined
-               au6 = ap_union($18, $3)
+               au6 = ap_union($18, $12)
                lu6 = lg_union($13, $12)
                bu6 = bl_union($12)
                if(pu6 != "") fptn[$1] = pu6; if(au6 != "") fapp[$1] = au6; if($19 != "") fdom[$1] = $19
@@ -303,7 +305,7 @@ whitelist_rows() {
         FILENAME ~ /_files\.tsv$/ {   # $FILES: the logged PDA + Logical attributions ...
             nu6 = split(sp_union($20, $12), PU6, "\037")   # partner / application / logical = the UNION sets
             for (iu6 = 1; iu6 <= nu6; iu6++) seen["6" SUBSEP toupper(PU6[iu6])] = PU6[iu6]
-            na6 = split(ap_union($18, $3), AU6, "\037")
+            na6 = split(ap_union($18, $12), AU6, "\037")
             for (iu6 = 1; iu6 <= na6; iu6++) seen["7" SUBSEP toupper(AU6[iu6])] = AU6[iu6]
             nl6 = split(lg_union($13, $12), LU6, "\037")
             for (iu6 = 1; iu6 <= nl6; iu6++) seen["9" SUBSEP toupper(LU6[iu6])] = LU6[iu6]
@@ -847,7 +849,7 @@ aggregate_files() {
             }
     FNR == 1 { fno++ }
     fno == 1 { toc[$1]=$2; tac[$1]=$3; tdt[$1]=$4; ttm[$1]=$5; tsk[$1]=$6; tjd[$1]=$7; tsz[$1]=$8; tdur[$1]=$9; tfl[$1]=$11; tmv[$1]=$17
-               tfd[$1]=$16; tsite[$1]=$12; tpt[$1]=sp_union($20,$12); tap[$1]=ap_union($18,$3); tlg[$1]=lg_union($13,$12); tbl[$1]=bl_union($12); tdm[$1]=$19; next }   # _files.tsv by CoreId (col 16 = connection; col 12 = subscription, for the file-movement lookup; partner/application/logical = UNION sets)
+               tfd[$1]=$16; tsite[$1]=$12; tpt[$1]=sp_union($20,$12); tap[$1]=ap_union($18,$12); tlg[$1]=lg_union($13,$12); tbl[$1]=bl_union($12); tdm[$1]=$19; next }   # _files.tsv by CoreId (col 16 = connection; col 12 = subscription, for the file-movement lookup; partner/application/logical = UNION sets)
     {   # _transfers.tsv, CoreId-sorted: collect the group'\''s entity & dimension values
       if($1 != curcid){ if(curcid!="") flush(); curcid=$1; g_inend=-1; g_outst=-1 }
       # store-and-forward dwell inputs (mirrors dwell-time.sh): the group'\''s

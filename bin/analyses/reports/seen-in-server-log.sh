@@ -377,7 +377,7 @@ if [ -f "$BLUE_TSV" ]; then
         FILENAME ~ /_hosts\.tsv$/         { if ($3 == "blue") bl("host"); next }
         FILENAME ~ /_white\.tsv$/         { if ($3 == "blue") bl("whitelisted IP"); next }
         FILENAME ~ /_subscriptions-partners\.tsv$/ { if ($1 != "" && $2 != "") SUBP[toupper($1)] = SUBP[toupper($1)] SUBSEP $2; next }
-        FILENAME ~ /_accounts-apps\.tsv$/ { if ($1 != "" && $2 != "") ACAP[toupper($1)] = ACAP[toupper($1)] SUBSEP $2; next }
+        FILENAME ~ /_subscriptions-apps\.tsv$/ { if ($1 != "" && $2 != "") ACAP[toupper($1)] = ACAP[toupper($1)] SUBSEP $2; next }
         FILENAME ~ /_subscriptions-logicals\.tsv$/ { if ($1 != "" && $2 != "") SUBL[toupper($1)] = SUBL[toupper($1)] SUBSEP $2; next }
         FILENAME ~ /_profiles-logicals\.tsv$/ { if ($1 != "" && $2 != "") PLGM[toupper($1)] = $2; next }
         FILENAME ~ /_subscriptions-bl\.tsv$/ { if ($1 != "" && $2 != "") SUBB[toupper($1)] = SUBB[toupper($1)] SUBSEP $2; next }
@@ -421,8 +421,8 @@ if [ -f "$BLUE_TSV" ]; then
                 nps = split(substr(SUBP[toupper($12)], 2), PLZ, SUBSEP)
                 for (ips = 1; ips <= nps; ips++) reg("partner", PLZ[ips])
             }
-            if ($3 != "" && (toupper($3) in ACAP)) {
-                nps = split(substr(ACAP[toupper($3)], 2), PLZ, SUBSEP)
+            if ($12 != "" && (toupper($12) in ACAP)) {   # application = via the SUBSCRIPTION (2026-08-31)
+                nps = split(substr(ACAP[toupper($12)], 2), PLZ, SUBSEP)
                 for (ips = 1; ips <= nps; ips++) reg("application", PLZ[ips])
             }
             if ($12 != "" && (toupper($12) in SUBB)) {
@@ -461,7 +461,7 @@ if [ -f "$BLUE_TSV" ]; then
       "$BASE_DIR/_hosts.tsv" "$BASE_DIR/_white.tsv" \
       "$BASE_DIR/_logicals.tsv" "$BASE_DIR/_partners.tsv" "$BASE_DIR/_domains.tsv" "$BASE_DIR/_apps.tsv" \
       "$BASE_DIR/_bl.tsv" \
-      "$CONFIG_XREF/_subscriptions-partners.tsv" "$CONFIG_XREF/_accounts-apps.tsv" \
+      "$CONFIG_XREF/_subscriptions-partners.tsv" "$CONFIG_XREF/_subscriptions-apps.tsv" \
       "$CONFIG_XREF/_subscriptions-logicals.tsv" "$CONFIG_XREF/_profiles-logicals.tsv" \
       "$CONFIG_XREF/_subscriptions-bl.tsv" \
       ${sidecar_deps[@]+"${sidecar_deps[@]}"} "$BLUE_EVID" "$BLUE_TSV")

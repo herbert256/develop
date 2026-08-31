@@ -288,7 +288,8 @@ n_blue=$(wc -l < "$dedup" | tr -d ' ')
 
 pda_caches=()
 for cf in "$XREF/_accounts-logins.tsv" "$XREF/_accounts-hosts.tsv" "$XREF/_accounts-apps.tsv" \
-          "$XREF/_accounts-domains.tsv" "$XREF/_accounts-partners.tsv" "$XREF/_hosts-partners.tsv"; do
+          "$XREF/_accounts-domains.tsv" "$XREF/_accounts-partners.tsv" "$XREF/_hosts-partners.tsv" \
+          "$XREF/_subscriptions-apps.tsv" "$XREF/_subscriptions-domains.tsv"; do
     [ -f "$cf" ] && pda_caches+=("$cf")
 done
 newfiles="$tmp.newfiles"
@@ -300,8 +301,12 @@ else
     awk -F'\t' 'BEGIN{OFS="\t"; AMB=sprintf("%c",1)}
         FILENAME ~ /_accounts-logins\.tsv$/   { al[toupper($1)]=1; next }
         FILENAME ~ /_accounts-hosts\.tsv$/    { ah[toupper($1)]=1; next }
-        FILENAME ~ /_accounts-apps\.tsv$/     { aa[toupper($1)]=$2; next }
-        FILENAME ~ /_accounts-domains\.tsv$/  { ad[toupper($1)]=$2; next }
+        # app/domain: the tuple SUBSCRIPTION first (the FlowID spine, 1:1),
+        # the account only as an unambiguous fallback (2026-08-31)
+        FILENAME ~ /_accounts-apps\.tsv$/     { k=toupper($1); if(!(k in aa)) aa[k]=$2; else if(aa[k]!=$2) aa[k]=AMB; next }
+        FILENAME ~ /_accounts-domains\.tsv$/  { k=toupper($1); if(!(k in ad)) ad[k]=$2; else if(ad[k]!=$2) ad[k]=AMB; next }
+        FILENAME ~ /_subscriptions-apps\.tsv$/    { k=toupper($1); if(!(k in sa)) sa[k]=$2; else if(sa[k]!=$2) sa[k]=AMB; next }
+        FILENAME ~ /_subscriptions-domains\.tsv$/ { k=toupper($1); if(!(k in sd)) sd[k]=$2; else if(sd[k]!=$2) sd[k]=AMB; next }
         FILENAME ~ /_accounts-partners\.tsv$/ { k=toupper($1); if(!(k in ap)) ap[k]=$2; else if(ap[k]!=$2) ap[k]=AMB; next }
         FILENAME ~ /_hosts-partners\.tsv$/    { hp[tolower($1)]=$2; next }
         {
@@ -310,7 +315,10 @@ else
             p=""
             if(h!="" && (h in hp)) p=hp[h]
             else if((a in ap) && ap[a]!=AMB) p=ap[a]
-            print $0, d, "", (a in aa)?aa[a]:"", (a in ad)?ad[a]:"", p
+            s=toupper($12)
+            a18=""; if(s!="" && (s in sa) && sa[s]!=AMB) a18=sa[s]; if(a18=="" && (a in aa) && aa[a]!=AMB) a18=aa[a]
+            d19=""; if(s!="" && (s in sd) && sd[s]!=AMB) d19=sd[s]; if(d19=="" && (a in ad) && ad[a]!=AMB) d19=ad[a]
+            print $0, d, "", a18, d19, p
         }
     ' "${pda_caches[@]}" "$dedup" > "$newfiles"
 fi

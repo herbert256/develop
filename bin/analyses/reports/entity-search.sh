@@ -338,12 +338,12 @@ cov_lookup() {
 # login col 14, host col 15 (the same map serves the Whitelist / IP-alias
 # rows — an in-side raw IP sits in that column), domain col 19; PARTNER =
 # col 20 ∪ col 12 over _subscriptions-partners and APPLICATION = col 18 ∪
-# col 3 over _accounts-apps — the union attribution every partner/application
+# col 12 over _subscriptions-apps — the union attribution every partner/application
 # consumer applies. Emits "TYPE<TAB>NAME<TAB>stamp", the name uppercased (the
 # tuple join keys case-folded).
 seen_lookup() {
     [ -f "$FILES" ] || return 0
-    awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$CONFIG_XREF/_accounts-apps.tsv" \
+    awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$CONFIG_XREF/_subscriptions-apps.tsv" \
         -v PLMAP="$CONFIG_XREF/_profiles-logicals.tsv" -v SLMAP="$CONFIG_XREF/_subscriptions-logicals.tsv" \
         -v SBMAP="$CONFIG_XREF/_subscriptions-bl.tsv" '
         function uni_load(f, M,   l, z, n, k) {
@@ -364,7 +364,7 @@ seen_lookup() {
             upd("Login", $14); upd("Remote Host", $15); upd("Domain", $19)
             p = $20; if ($12 != "" && (toupper($12) in SP)) p = p (p == "" ? "" : "\037") SP[toupper($12)]
             upds("Partner", p)
-            a = $18; if ($3 != "" && (toupper($3) in AP)) a = a (a == "" ? "" : "\037") AP[toupper($3)]
+            a = $18; if ($12 != "" && (toupper($12) in AP)) a = a (a == "" ? "" : "\037") AP[toupper($12)]
             upds("Application", a)
             lg = ""; if ($13 != "" && (toupper($13) in PL)) lg = PL[toupper($13)]
             if ($12 != "" && (toupper($12) in SL)) lg = lg (lg == "" ? "" : "\037") SL[toupper($12)]

@@ -71,7 +71,7 @@ ent_unk()   { case $1 in acct) echo accounts;; login) echo logins;; site) echo s
 # One pass: per row, record every unordered entity pair (e1 < e2 in ENTS
 # order) that appears — existence only, no counting. Emits TAB lines:
 #   e1 e2 v1 v2
-agg=$(awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$CONFIG_XREF/_accounts-apps.tsv" \
+agg=$(awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$CONFIG_XREF/_subscriptions-apps.tsv" \
     -v PLMAP="$CONFIG_XREF/_profiles-logicals.tsv" -v SLMAP="$CONFIG_XREF/_subscriptions-logicals.tsv" \
     -v SBMAP="$CONFIG_XREF/_subscriptions-bl.tsv" '
     function uload(f6, M6,   l6, z6, n6) {
@@ -88,14 +88,14 @@ agg=$(awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$
     BEGIN { split("acct login site host lgc ptn app dom bl", E, " ")
         # UNION attribution (cf. pda-entities.sh): partner = _files col 20 ∪
         # the subscription'\''s configured partner(s) (a both-partner file
-        # carries an empty col 20); application = col 18 ∪ the account'\''s
-        # configured application(s) (a UC8 relay account carries two, the
-        # parse keeps one); logical = col 13 through the FlowID map ∪ the
+        # carries an empty col 20); application = col 18 ∪ the subscription'\''s
+        # configured application(s) (the FlowID spine — 2026-08-31, no longer
+        # the account'\''s); logical = col 13 through the FlowID map ∪ the
         # subscription'\''s configured logical(s)
         uload(SPMAP, sp); uload(APMAP, ap2); uload(PLMAP, pl); uload(SLMAP, sl); uload(SBMAP, sb) }
     NR == FNR {   # CoreId -> the PDA attribution (both rows inherit) + connection side
         pu6 = ujoin($20, $12, sp); if (pu6 != "") ptn[$1] = pu6
-        au6 = ujoin($18, $3, ap2); if (au6 != "") app[$1] = au6
+        au6 = ujoin($18, $12, ap2); if (au6 != "") app[$1] = au6
         lg0 = ""; if ($13 != "" && (toupper($13) in pl)) lg0 = pl[toupper($13)]
         lu6 = ujoin(lg0, $12, sl); if (lu6 != "") lgc[$1] = lu6
         bu6 = ujoin("", $12, sb); if (bu6 != "") blv[$1] = bu6

@@ -494,9 +494,12 @@ CoreIds (`login.sh`/`subscription.sh`/`remote-host.sh` join `$PARSED`→`$FILES`
 
 **PARTNER = UNION attribution**: a File counts for EVERY partner of its subscription (col 12 on
 `xref/_subscriptions-partners.tsv`) unioned with col 20 (alone it misses both-partner files, empty
-by abstention). **APPLICATION = the same union via the ACCOUNT** (col 3 on
-`xref/_accounts-apps.tsv` ∪ col 18). Applied in EVERY partner/application-counting consumer
-(`details_lib.sh` carries the shared `SP_MAP`/`AP_MAP`). Domains stay single-valued (part 1 of
+by abstention). **APPLICATION = the same union via the SUBSCRIPTION** (col 12 on
+`xref/_subscriptions-apps.tsv` ∪ col 18 — the FlowID spine, 1:1; until 2026-08-31 it rode the
+ACCOUNT, and a hybrid production account serving many flows credited every File of it to every
+application the account touches). Applied in EVERY partner/application-counting consumer
+(`details_lib.sh` carries the shared `SP_MAP`/`AP_MAP`); the parse fills cols 18/19 from the
+subscription first, the account map only when unambiguous. Domains stay single-valued (part 1 of
 the logical flow name — parse col 19 keeps one).
 
 ### Server parse — _parse.tsv
