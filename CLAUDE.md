@@ -198,7 +198,9 @@ subscription → BL tag map), plus `_subscriptions-patterns`, `_subscriptions-fl
 (out|in|relay), `_subscriptions-ucderived` (2026-08: the use case DERIVED for a non-UC-named
 subscription from flowdir × the pattern's one partner verb — out+pull=UC2, out+push=UC1,
 in+push=UC4, in+pull=UC3; both/neither verb = no row; consumers: the detail Features "Use case"
-row and the UC2/UC4 status selection), `_{accounts,subscriptions}-fmlink`,
+row and every use-case-gated consumer — the UC1–UC4 status rosters, the UC3 clean-poll keep
+and its clears, missing-cronjobs, account-sharing, twins, the twin rules; until 2026-08-31 most
+read the name prefix alone and silently dropped the hybrid flows), `_{accounts,subscriptions}-fmlink`,
 `_partner-group{s,-why,-accounts}` and `_templates.tsv` (optional export). It also forward-resolves the configured hosts into
 `input/<env>/ip/`.
 
@@ -378,7 +380,13 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    previous run's `flowId`→name snapshot, so a rename records itself. Both files live under
    `input/` — the previous export's names are irreplaceable once it is overwritten, the
    `ip-hosts.tsv` argument. APPEND-ONLY, and a pair that would merge two flows or reuse a current
-   name is REFUSED. `parser_sig` cksums the maps and `ensure_parsed` watches them, so recording a
+   name is REFUSED — and so is a pair whose OLD name the export STILL CONFIGURES (2026-08-31
+   audit): a flowId is NOT unique per subscription (one flow, several subscribers — eight on the
+   production `STMT_EXPORT_GLOBEX` flow), and join(1) over a shared key emitted the cartesian
+   product, whose off-diagonal rows all read as renames (`_01 → _02`, `_03 → _01`, …) and rotated
+   every File of the account onto the neighbouring flow. The diff now joins only keys unique on
+   both sides, and `_rn_prune` drops such pairs from the existing maps on every config run,
+   naming each on stderr. `parser_sig` cksums the maps and `ensure_parsed` watches them, so recording a
    rename re-tokenizes. **The PROFILE has its own map** (`profiles.tsv`): the profile is what the
    reverse config fallback attributes a leg by, and an unmatched one cost 7,743 CoreIds their
    subscription (the no-subscription skip then dropped ~4.6% of Files). The SERVER side folds too
@@ -399,7 +407,13 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
   either step appends), still blue this run, or backed by real transfer data.
 1. **Blacklist** — `input/blacklist.txt` (COMMITTED; TSV `<field>⇥drop|keep⇥<value>`) BLANKS
    platform-internal values (row kept), read only through the sourced `bin/blacklist.sh`;
-   `parser_sig` cksums it so an edit forces a full reparse. **report.js has no client-side
+   `parser_sig` cksums it so an edit forces a full reparse. **The configuration outranks the site
+   keep rule** (2026-08-31 audit): a clean, rename-folded site value that names a configured
+   subscription (`base/.configured.tsv`, its names part of `parser_sig`) is kept whatever its
+   shape — the production hybrid flows carry no UC prefix, and the `^UC` shape test blanked their
+   correctly logged subscription on every row; the shape test applies only to values the config
+   does not know. The literal `UNKNOWN` remote host is blanked in code (a placeholder, not an
+   endpoint). **report.js has no client-side
    blacklist net and must not gain one** — a config-side leak is filtered in `bin/flow-manager.sh`.
 2. **CoreId-group propagation** — blanks fill from the first row in the group that carries a
    value; the unpropagated stream stays as `_transfers0.tsv`, the incremental merge/dedup base.
@@ -459,8 +473,11 @@ A **logical transfer** = all records sharing one CoreId (commonly 2–7 rows). `
 - **col 16** = the CONNECTION side (`in`/`out`/`""`); **col 17** = the FILE-MOVEMENT direction
   (col 12 joined on `xref/_subscriptions-flowdir.tsv` — the ONE place that join is done); they
   diverge on pull flows.
-- **col 20** = the file's host via `_hosts-partners.tsv`, else the account's unambiguous org (a
-  two-group account abstains).
+- **col 20** = the file's SUBSCRIPTION via `_subscriptions-partners.tsv` when it names ONE
+  partner (a both-partner subscription abstains), else its host via `_hosts-partners.tsv`, else
+  the account's unambiguous org (a two-group account abstains) — every map AMB-guarded
+  (2026-08-31). **col 13** is the profile of the row that donated col 12, so one row never names
+  two flows (a relay CoreId has legs on two).
 
 **Outcome (col 2), the last-leg rules**: **Waiting** = ≥3 legs ending on the staging leg
 (Inbound+`routing`) — a UC2 file staged, not collected; a later export with the collect leg
@@ -595,7 +612,10 @@ as much an account or a login — serves many subscriptions, so taking the newes
 `_err_warn` ring reddened EVERY flow configured for it — one bad endpoint, a dozen false reds all
 carrying the same evidence stamp. `result.sh` `_build_ringattr` attributes each host/account/login
 ring line to the ONE flow it concerns and writes `blue/_ringattr.tsv` (subscription ⇥ newest
-attributed E stamp), which the flip reads instead of the rings: first the UC token in the MESSAGE,
+attributed E stamp), which the flip reads instead of the rings: first a CONFIGURED NAME in the
+MESSAGE (every name-shaped token, tail-stripped and rename-folded, against the roster — not only
+a UC-prefixed one, since 2026-08-31: the production hybrid flows carry no UC prefix, so the
+precise channel abstained on them and the wholesale join decided),
 else the SESSION (`_parse.tsv` col 6, the connection id) voted from the parse cache's own lines,
 else — **the session join** (2026-08) — that session's transfer LEGS: `_transfers.tsv` col 24
 carries the same id and col 6 the site the attribution chain gave the leg (canonical since parse
@@ -611,8 +631,15 @@ row that is already red; a forward-address ring's residue lands on its endpoint.
 present in environment" shape. Acceptance: 1,128 ring E-lines, 975 attributed (340 distinct
 sessions, 191 parse-voted + 62 more by the session join); the five false-red `UC1_IT_ADF_RABOBANK_*`
 sisters all carried the one stamp that belongs to `_NSPP` alone. The detail-page banner still
-reads its 1-to-1 connected rings wholesale — it shows the log; the COLOUR rests only on
-attributed lines.
+reads its 1-to-1 connected rings wholesale — 1-to-1 BOTH WAYS since 2026-08-31 (the connected
+entity must serve this flow alone) — it shows the log; the COLOUR rests only on attributed
+lines. **A ring owner serving SEVERAL flows** (2026-08-31 audit): the loose went-kaput join
+(`_build_kaputflip`, promoted to the colour 2026-08-22) counts a shared account's, login's or
+host's ring only when its newest line is about the CONNECTION itself (`flip-reason.awk`:
+Connection failures, Wrong server fingerprint, Login errors (out) — the credential/endpoint every
+flow on it uses is broken); a flow-level line on a shared owner reaches the colour only through
+`_build_ringattr`, which names the flow. `went-kaput.sh` applies the same rule to its page and
+to the `_kaput-evidence.tsv` the home Reason reads. 1:1 owners are unchanged.
 
 The SAME evidence also **keeps a UC3 green** (2026-08): the after-last-transfer red flip is
 skipped when a successful poll is NEWER than the E-level stamp that would have flipped it — a

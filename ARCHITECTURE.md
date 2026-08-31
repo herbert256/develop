@@ -144,7 +144,9 @@ in the area orchestrators and feed the boxes and day pages.
    RED when the server log holds an E-level line NEWER than that last transfer. The evidence is
    its own `_err_warn` ring plus every connected host/account/login ring LINE `_build_ringattr`
    attributes to THIS flow (`blue/_ringattr.tsv`): each of those entities serves other flows too,
-   so a connected ring never counts wholesale. A line attributes by the UC token in its MESSAGE,
+   so a connected ring never counts wholesale. A line attributes by a CONFIGURED NAME in its
+   MESSAGE (every name-shaped token, tail-stripped and rename-folded, roster-checked — not only
+   a UC-prefixed token, since 2026-08-31: the hybrid production flows carry no UC prefix),
    else by its SESSION — voted from the parse cache's own lines, then joined against
    `_transfers.tsv` col 24 (the same connection id; col 6 is the leg's site, canonical since
    parse time; legs naming two sites resolve to neither). What attributes to NOTHING goes
@@ -153,13 +155,24 @@ in the area orchestrators and feed the boxes and day pages.
    failure, a PeSIT profile complaint naming only the account — unless it moved a file OK since
    (hosts count OUT-side files only) and never over an already-red row. The detail page's
    "ERRORS IN SERVER LOG AFTER LAST TRANSFER" banner still reads its 1-to-1 connected rings
-   wholesale — it shows the log. **The trouble-after-success flip (2026-08-22)** adds the LOOSE
+   wholesale — 1-to-1 BOTH WAYS since 2026-08-31: the connected entity must serve this flow alone
+   (`details.sh` checks the reverse `P2N` count), or one line in a hybrid account's ring landed
+   on all eight of its subscription pages with a red ALERT each — it shows the log. **The
+   trouble-after-success flip (2026-08-22)** adds the LOOSE
    join to the colour after all: `_build_kaputflip` (`blue/_kaputflip.tsv`) takes each flow's
    newest connected account/login/single-host-ring E line WHOLESALE (forward addresses included —
    the went-kaput join), classifies that one newest message with `flip-reason.awk` and drops the
    flow entirely when it reads as a DEPLOY defect (Route stopped / Receive File As not set —
    those stay green, on the Deploy errors report); the surviving stamp merges into the same
-   after-last-transfer test, clean-poll keep included. So a Trouble-after-success flow arrives
+   after-last-transfer test, clean-poll keep included. **A ring owner serving SEVERAL flows
+   counts only for a CONNECTION-level line** (2026-08-31 audit — Connection failures, Wrong
+   server fingerprint, Login errors (out): the credential/endpoint every flow on it uses is
+   broken); a flow-level line on a shared account/login/host concerns one of its flows and
+   reaches the colour only through `_build_ringattr`. Before, eight production flows on one
+   hybrid account all went red on one sibling's route error with one shared evidence stamp —
+   the failure `_build_ringattr` was written to kill, reintroduced by the loose join.
+   `went-kaput.sh` applies the identical rule (page + evidence sidecar), so the two stay in
+   step; 1:1 owners are unchanged. So a Trouble-after-success flow arrives
    on the home "Failing subscriptions in Server log" table RED; the went-kaput page keeps only
    the deploy-classified and poll-cleared remainder. **The UC3 clean-poll
    exception (2026-08)**: a would-be-blue UC3 subscription whose
@@ -580,10 +593,16 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   is OWNED by `bin/flow-manager.sh` (`xref/_subscriptions-ucderived.tsv`); `details.sh` reads it
   (`uc_desc()` fallback), and **uc2-status.sh / uc4-status.sh count a derived flow like a
   prefix-named one**, which is what puts it in `uc2-pickups.tsv` and gives its detail page the
-  "Pickup information" table. The uc2-status TABLE stays account-keyed, so an account owning
-  MANY UC2 flows (production: one account, 350) carries one verdict row —
-  `subscription-verdict.awk`'s END fallback writes the bare Pickup information table for every
-  sidecar flow without a verdict of its own.
+  "Pickup information" table. The uc2-status TABLE is one row per (account, UC2 subscription)
+  PAIR since 2026-08-31 (it was one row per ACCOUNT labelled with its alphabetically-first UC2
+  flow: production showed 7 of 14 flows, and a broken flow hid behind a healthy sibling's
+  "Both"): staged / collected / expired are the flow's own from `_files.tsv` (expiries
+  attributed per flow when any flow of the account has them, the account's server-side deletion
+  evidence — shared — otherwise), the pickup-attempt logons are the account's (the partner logs
+  on to the account), and the per-hour sidecar walks the same pairs. uc4-status credits an
+  account-level server line to EVERY UC4 flow of the account (union attribution; the STAT totals
+  count each line once) instead of one arbitrary flow. `subscription-verdict.awk`'s END fallback
+  still writes the bare Pickup information table for every sidecar flow without a verdict.
 - **The "Last OK transfer" section** (2026-08, SITE pages, directly above "Last server log
   messages"): the flow's newest PROCESSED File — deliberately NOT the outcome policy's OK
   (2026-08): a UC2 file still Waiting is staged, not transferred, and showed 3 staging legs where
@@ -688,8 +707,9 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   every row tinted by the item's RESULT. Every entity cell is tinted by its own RESULT
   (`RESMAP_FILES`, set around `render_details` only).
 - "Last server log messages" (bottom of every page): the entity's 25 recent + 10 recent Error/Warn
-  lines, plus on SEEN pages the Error/Warn of its 1-to-1 connected entities after its last
-  transfer (ACCOUNT pages fold in their logins'/hosts' lines). Any Error/Warn after the last
+  lines, plus on SEEN pages the Error/Warn of its 1-to-1 connected entities — 1-to-1 BOTH WAYS
+  (2026-08-31): a connected account/login/host serving other flows too is not merged — after its
+  last transfer (ACCOUNT pages fold in their logins'/hosts' lines). Any Error/Warn after the last
   transfer opens a red ALERT banner. Only the five classic types have per-name caches.
 
 report.js `hideEmptyTables()` (detail pages only) hides emptied sections; `setupSectionTabs()`
