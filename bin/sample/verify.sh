@@ -104,6 +104,23 @@ for env in acceptance production; do
         # for login B's flow — while PARCEL (flow A) is covered
         st=$(awk -F'\t' '$1=="ROW" && $2=="PARCELX" { print ($0 ~ /@data:res=red/) ? "red" : "notred"; exit }' "data/$env/transfer/reports/entity-coverage.rpt" 2>/dev/null)
         check $([ "$st" = "red" ] && echo 0 || echo 1) "[$env] entity-coverage PARCELX is '${st:-absent}', expected red / not covered (multi-FE logon-proof scoping)"
+        # the MULTI-HOST account (2026-08-31): CD_ROUTE_WONKA carries TWO
+        # endpoints, and its _ALT flow logs half its rows as the raw ADDRESS.
+        # The endpoint vote rides the SUBSCRIPTION, so those rows must resolve
+        # to the alt endpoint — never stay a raw IP (which would invent an
+        # address-shaped host entity).
+        n=$(awk -F'\t' '$1=="CD_ROUTE_WONKA"' "data/$env/flow-manager/xref/_accounts-hosts.tsv" 2>/dev/null | wc -l | tr -d ' ')
+        check $([ "${n:-0}" -eq 2 ] && echo 0 || echo 1) "[$env] CD_ROUTE_WONKA has $n host(s), expected 2 (the multi-host account)"
+        alth=$(awk -F'\t' '$1=="CD_ROUTE_WONKA" && $2 ~ /^sftp2\./ { print $2; exit }' "data/$env/flow-manager/xref/_accounts-hosts.tsv" 2>/dev/null)
+        n=$(awk -F'\t' '$12=="UC3_CD_ROUTE_WONKA_ALT" && $15 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ { n++ } END { print n+0 }' "$F")
+        check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] UC3_CD_ROUTE_WONKA_ALT has $n file(s) with a RAW IP host (the multi-host endpoint vote failed)"
+        n=$(awk -F'\t' -v h="${alth:-none}" '$12=="UC3_CD_ROUTE_WONKA_ALT" && $15==h { n++ } END { print n+0 }' "$F")
+        check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] UC3_CD_ROUTE_WONKA_ALT has 0 file(s) on its own endpoint '${alth:-absent}'"
+        # the endpoint's NEWER address is seeded into no map (see
+        # bin/sample/generate.sh): the parse must LEARN it from the logged
+        # rows, which only an unpoisoned endpoint vote does
+        n=$(awk -F'\t' -v h="${alth:-none}" '$2==h { n++ } END { print n+0 }' "input/$env/ip/ip-hosts.tsv" 2>/dev/null)
+        check $([ "${n:-0}" -ge 2 ] && echo 0 || echo 1) "[$env] ip-hosts.tsv maps $n address(es) to '${alth:-absent}', expected 2 (the parse must LEARN the endpoint's second address — a multi-host account must not poison the endpoint vote)"
     fi
     # the nine policy files are PER ENVIRONMENT (2026-08-31): present in the
     # env dir, and none left at the input root

@@ -506,15 +506,20 @@ awk -F'\t' '
         sd9 = (s != "" && (s in sside)) ? sside[s] : (((a in ah) || !(a in al)) ? "out" : "in")
         if (sd9 == "out") {                                                # OUT: we dial the endpoint
             out[ip] = 1
-            # WHO knows the endpoint. Entity propagation runs AFTER this pass,
-            # so plenty of rows still carry a blank account — the SUBSCRIPTION
-            # stands in for it there, naming the same configured endpoint of the
-            # same flow. The account is asked first (more specific); only when
-            # the row has none does the subscription vote. A row identified by
-            # neither casts no vote at all — counting it as "no host" would make
-            # every IP look ambiguous.
-            if (a != "" && (a in ahost))      vote(ip, ahost[a])
-            else if (s != "" && (s in shost)) vote(ip, shost[s])
+            # WHO knows the endpoint. The SUBSCRIPTION is asked first
+            # (2026-08-31, user question — an account can now carry SEVERAL
+            # configured hosts): a flow has ONE endpoint, so its subscription
+            # names it precisely, while a multi-host account is \001-ambiguous
+            # and, asked first, POISONED the address for every flow of that
+            # account — the endpoint was then never recorded in
+            # input/<env>/ip/, and the logged raw IP stayed raw in col 15,
+            # inventing an address-shaped "host" entity. The account still
+            # votes for the rows the propagation has not yet given a site
+            # (this pass runs BEFORE it). A row identified by neither casts no
+            # vote at all — counting it as "no host" would make every IP look
+            # ambiguous.
+            if (s != "" && (s in shost))      vote(ip, shost[s])
+            else if (a != "" && (a in ahost)) vote(ip, ahost[a])
         } else in_[ip] = 1
     }
     END {
@@ -547,13 +552,14 @@ echo "Endpoint addresses: $b_wrote new outgoing address(es) recorded from the co
 hmap="$tmp.hosts"
 {
     printf '#\t#\n'
-    # THE ACCOUNT'S OWN ENDPOINT WINS. Several configured endpoints can share one
+    # THE FLOW'S OWN ENDPOINT WINS. Several configured endpoints can share one
     # address — sftp.deployteq.net, sftp.myclang.com and sftp.nl2.myclang.com all
     # answer on 52.28.68.191 here — and the address alone cannot say which of them
-    # a transfer used; only the row's account can. The sides pass above already
-    # resolved that vote per address, so it is the primary map and ip-hosts.tsv
-    # only fills the addresses it left undecided. Picking from ip-hosts.tsv alone
-    # attributed 189 files to the wrong partner.
+    # a transfer used; only the row's own flow can (its SUBSCRIPTION, else its
+    # account — see the sides pass above, which resolved that vote per address).
+    # So it is the primary map and ip-hosts.tsv only fills the addresses it left
+    # undecided. Picking from ip-hosts.tsv alone attributed 189 files to the
+    # wrong partner.
     awk -F'\t' -v MAP="$ip_in" '
         FILENAME == MAP && MAP != "/dev/null" { if ($1 != "" && $2 != "" && !($1 in m)) m[$1] = $2; next }
         $1 == "OUT" && $3 != "" && $3 != $2 { s[$2] = $3 }

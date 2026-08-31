@@ -74,7 +74,12 @@ for env in "${envs[@]}"; do
     # ip-hosts.tsv: every OUT-side endpoint's address rows, in bin/ip.sh
     # ip_put's exact order (zero-padded octet sort key), so the parse's own
     # union pass is a byte-level no-op and the file's mtime stays put.
-    awk -F'\t' '$3 != "A" && $19 != "" { n = split($20, a, ";"); for (i = 1; i <= n; i++) print a[i] "\t" $19 }' \
+    # (an "ownhost" flow — the MULTI-HOST account scenario — seeds only its
+    # FIRST address: the second is the endpoint's newer one, deliberately
+    # UNKNOWN to the map so the parse has to learn it from the logged rows)
+    awk -F'\t' '$3 != "A" && $19 != "" { n = split($20, a, ";")
+                    if ($30 ~ /(^|,)ownhost(,|$)/) n = 1
+                    for (i = 1; i <= n; i++) print a[i] "\t" $19 }' \
         "$IN/.sample/_estate.tsv" \
         | awk -F'\t' '{ split($1, o, "."); printf "%03d%03d%03d%03d\t%s\t%s\t%s\n", o[1], o[2], o[3], o[4], $2, $1, $2 }' \
         | LC_ALL=C sort -u | cut -f3- > "$IN/ip/ip-hosts.tsv"

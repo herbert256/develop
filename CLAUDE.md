@@ -357,8 +357,12 @@ within a file). Full detail in ARCHITECTURE.md.
 
 Column 8 is the real file basename (CSV field 10 "File" holds the account name on outbound rows —
 not used). Raw columns are carried verbatim so each report keeps its own fold/parse. Col 16: an
-IPv4 on a row whose account is OUT-side or unknown is replaced by the configured endpoint it maps
-to (`input/<env>/ip/ip-hosts.tsv`); an IN-side row KEEPS the raw source IP. No reverse DNS. The
+IPv4 on an OUT-side row is replaced by the configured endpoint it maps to
+(`input/<env>/ip/ip-hosts.tsv`); an IN-side row KEEPS the raw source IP. Which side a row is on,
+and which endpoint an address belongs to, are decided by the row's SUBSCRIPTION first and its
+account only as a fallback (2026-08-31): an account may be configured BOTH ways *and* with
+SEVERAL hosts, so asked first it mislabelled a hybrid account's inbound rows and — being
+ambiguous — poisoned the endpoint vote for every flow of a multi-host account. No reverse DNS. The
 source CSV field indices (both logs) are in ARCHITECTURE.md ("Parse reference"); timestamps are
 `MM/DD/YYYY HH:MM:SS.mmm`. Date arithmetic uses awk Julian-day helpers (`jdn()` etc.), never
 `date`; `dur_ms()` sums the compound Duration values into ms, `humandur()` formats back. Exact

@@ -308,6 +308,38 @@
     "tags": ["sample-estate"]
   },
   {
+    "businessId": "6c67f679-ae26-458f-a0a9-4740cc474deb",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/6c67f679-ae26-458f-a0a9-4740cc474deb",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "c59b75b5-f831-486c-9879-eab3c29b67d5",
+        "name": "SCP_CD_ROUTE_WONKA_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["sftp.wonka.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      },
+      {
+        "businessId": "db14392b-4d69-4305-8e62-6bcc2c789739",
+        "name": "SCP_CD_ROUTE_WONKA_ALT_KEY",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "hosts": ["sftp2.wonka.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "CD_ROUTE_WONKA",
+    "tags": ["sample-estate"]
+  },
+  {
     "businessId": "6037d2e1-c75f-430b-a64f-ff884114c5b8",
     "meta": {
       "href": "https://flowmanager.acme.example:443/api/v2/partners/6037d2e1-c75f-430b-a64f-ff884114c5b8",

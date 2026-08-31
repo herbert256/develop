@@ -93,6 +93,21 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
         login = acct_login(acct)
     }
     if (hastag(tags, "mixedspell")) spell = "mixed"
+    # a flow with its OWN endpoint on a shared account (the production
+    # MULTI-HOST shape, 2026-08-31): the account carries several configured
+    # hosts, so the ACCOUNT cannot name the endpoint behind a logged address —
+    # the SUBSCRIPTION must (bin/transfer/parse.sh, the sides pass). The alt
+    # endpoint gets its own address from the org's unseen region (+3: unique
+    # per org, used by nothing else), so the two endpoints never share one.
+    if (hastag(tags, "ownhost") && host != "") {
+        sub(/^[^.]+/, "&2", host)
+        # TWO addresses from the org's unseen region (+3, +4: unique per org,
+        # used by nothing else). bin/sample/generate.sh seeds only the FIRST
+        # into input/<env>/ip/ip-hosts.tsv — the second is the endpoint's
+        # newer address, which the PARSE must learn from the logged rows
+        # (rule b), and only an unpoisoned endpoint vote ever records it.
+        ips = PBASE[oi] "." (PUNSEEN[oi] + 3) ";" PBASE[oi] "." (PUNSEEN[oi] + 4)
+    }
     # one login serving several accounts (the Account-sharing report's rows)
     if (hastag(tags, "sharelogin")) login = "FE001111"
     # a flow with its OWN login on a shared account (the production MULTI-FE
@@ -409,6 +424,13 @@ function build_production() {
     # never logs on — login A's logons prove nothing for it).
     addf(2, "CD",  "PARCEL",   "BLUTH",    "",  3, 0.02, "")
     addf(2, "CD",  "PARCELX",  "BLUTH",    "",  0, 0, "noxfer,ownlogin", "CD-PARCEL-BLUTH")
+    # the MULTI-HOST ACCOUNT (2026-08-31, user question): one account, TWO
+    # configured endpoints — flow A on the org's endpoint, flow B on its own
+    # (mixedspell, so half its rows log the raw ADDRESS). The endpoint vote
+    # must still name each address precisely: the ambiguous account must not
+    # poison what the subscription knows.
+    addf(1, "CD",  "ROUTE",    "WONKA",    "",     3, 0.02, "")
+    addf(3, "CD",  "ROUTE",    "WONKA",    "_ALT", 2, 0.02, "ownhost,mixedspell", "CD_ROUTE_WONKA")
     addf(3, "APS", "FMGENLOG", "CYBERDYNE","", 12, 0.04, "")
     addf(3, "AB",  "NAS",      "GLOBEX",   "",  6, 0.03, "")
     addf(3, "APS", "SYSHUB",   "SOYLENT",  "",  3, 0.03, "")
