@@ -226,6 +226,13 @@ table.dayrows th:empty::before, table.dayrows td:empty::before { content:"\00a0"
 table.dayrows tr > *:nth-child(2), table.dayrows tr > *:nth-child(8),
 table.dayrows tr > *:nth-child(12), table.dayrows tr > *:nth-child(14) { border-left:10px solid #f7f7f9; }
 table.dayrows tr.gbrow > th:nth-child(n+2) { border-left:10px solid #f7f7f9; }
+/* the banner row floats its group titles on the page — no dark bar, no frame
+   (the table background is #fff, so "transparent" must be painted in the
+   page color; the retired Date spine's th.blank recipe). The 10px left
+   border widths above stay, keeping the collapsed column edges aligned. */
+table.dayrows tr.gbrow > th { background:#f7f7f9; color:#20344a; border-color:#f7f7f9; }
+/* without the "Per day" <h2> the wrapper carries the section gap itself */
+.tablewrap.perday { margin-top:1.6rem; }
 th, td { border:1px solid #ddd; padding:8px 12px; text-align:left; white-space:nowrap; }
 th.num, td.num { text-align:right; }
 /* the detail-page Metrics table: bold full-width group headers (Date / Files /

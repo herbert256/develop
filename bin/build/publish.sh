@@ -1020,8 +1020,7 @@ write_env_block() {
         local dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 dtot=""
         local fsp fss fsa fsl fsh fsps=0 fsss=0 fsas=0 fsls=0 fshs=0
         local swr swg swrs=0 swgs=0 dcc=""
-        printf '<h2>Per day</h2>\n'
-        printf '<div class="tablewrap"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
+        printf '<div class="tablewrap perday"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
         printf '<tr class="gbrow"><th></th><th class="gband" colspan="6">Files</th><th class="gband" colspan="4">Duration</th><th class="gband" colspan="2">Red/Green switch</th><th class="gband" colspan="4">First seen</th></tr>\n'
         printf '<tr><th>Date</th><th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Recovered</th><th class="num">Error</th><th class="num">Error %%</th><th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th><th class="num">Red</th><th class="num">Green</th><th class="num">Logical</th><th class="num">Partners</th><th class="num">Subscriptions</th><th class="num">Accounts</th></tr>\n'
         rown=0
