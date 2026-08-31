@@ -98,7 +98,8 @@ pda_seen_total() {   # $1 = member  $2 = its coverage TSV  $3 = its base cache  
             if (tb == 1 && $1 == "ROW") { nm = $2; sub(/^@\{[^}]*\}/, "", nm); if (nm != "") S[toupper(nm)] = 1 }
             next
         }
-        FILENAME == ARGV[2] { if ($1 != "") { k = toupper($1); if (!(k in B)) { B[k] = 1; ord[++nb] = k } }; next }
+        FILENAME == ARGV[2] { if ($1 != "") { k = toupper($1); if (!(k in B)) { B[k] = 1; ord[++nb] = k }
+                                              if ($3 == "blue") BLU[k] = 1 }; next }
         {                                          # the coverage TSV: the never-seen determination
             if (mem == "partners" && $4 ~ /^hosts\//) next
             k = toupper($1)
@@ -109,10 +110,18 @@ pda_seen_total() {   # $1 = member  $2 = its coverage TSV  $3 = its base cache  
             for (k in S) seen[k] = 1               # union-attributed names (logged, configured or not)
             for (i = 1; i <= nb; i++) { k = ord[i]
                 if (k in seen) continue
-                # never-seen = a coverage row says 0 and nothing else vouches;
-                # a base name ABSENT from the coverage TSV is a ghost -> seen
-                if ((k in cov) && cov[k] == 0) continue
-                seen[k] = 1
+                # a coverage row vouches when it says 1 (the UC3 clean-poll
+                # greens included); a base name ABSENT from the coverage TSV
+                # (an evidence-free "ghost" — since 2026-08-31 only a flow
+                # configured with NO login and NO host produces one: its
+                # direction-less rows are skipped by every derived-coverage
+                # builder) is seen ONLY when the server log vouches (blue).
+                # The old ghost->seen rule made a config-only env show
+                # nonzero Seen; render_entity_report splits its ghost rows
+                # the same way (coverage-vouched -> Seen, evidence-free ->
+                # Not seen), so figure and view stay in lockstep.
+                if ((k in cov) && cov[k] == 1) { seen[k] = 1; continue }
+                if (!(k in cov) && (k in BLU)) seen[k] = 1
             }
             s = 0; for (k in seen) s++
             print s + 0

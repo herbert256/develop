@@ -1121,30 +1121,48 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
         srows=$(printf '%s\n' "$sumblk" | grep $'^ROW\t' || true)
         stotal=$(printf '%s\n' "$sumblk" | grep -m1 $'^TOTAL\t' || true)
     fi
-    # GHOST rows — configured names in NEITHER set: the coverage TSV marks
-    # them seen (their evidence lives on a sibling group's row — a shared
-    # endpoint whose Files went to the co-tenant org, or one org of a
-    # two-partner account) yet no File is attributed to them in the Summary.
-    # Without these the All view silently dropped them (128 of 131 partners);
-    # they render as blank rows, tinted by their base RESULT like every row.
-    local ghrows="" ngh=0 ghbase="$DATA/flow-manager/base/${bluebase:-none}.tsv"
+    # GHOST rows — configured names in NEITHER set: no report row, not blue
+    # (bluerows folded into srows above), and no coverage row at all. Since
+    # the Logical-based derivations (2026-08-30) key every coverage TSV by
+    # the real member names this set is EMPTY on a healthy estate — what
+    # still lands here is either a flow the COVERAGE TSV vouches for without
+    # a report row (a UC3 clean-poll green: seen-with-blank-counts — VOUCHED,
+    # stays on Seen exactly as before) or a flow configured with NO login and
+    # NO host, whose direction-less rows every derived-coverage builder skips
+    # — NO coverage row, NO evidence: that one belongs on NOT SEEN
+    # (2026-08-31, user report: a config-only env showed 6% of Domains "Seen"
+    # with zero logs — the old rule counted the evidence-free ghosts as seen,
+    # and the home figure with them). Both kinds still render on All as blank
+    # configured rows, tinted by their base RESULT like every row.
+    local ghrows="" ghnsrows="" ngh=0 nghns=0 _ghall=""
+    local ghbase="$DATA/flow-manager/base/${bluebase:-none}.tsv"
     if [ -n "$bluebase" ] && [ -f "$ghbase" ] && [ "${ncols:-0}" -gt 0 ]; then
-        ghrows=$(printf '%s\n%s\n' "$srows" "$nsrows" | LC_ALL=C awk -F'\t' -v nc="$ncols" -v basef="$ghbase" '
+        _ghall=$(printf '%s\n%s\n' "$srows" "$nsrows" | LC_ALL=C awk -F'\t' -v nc="$ncols" -v basef="$ghbase" \
+            -v covf="${covf:-}" -v mem="$name" '
             $1 == "ROW" { have[toupper($2)] = 1 }
-            END { while ((getline l < basef) > 0) { split(l, a, "\t")
-                      if (a[1] != "" && !(toupper(a[1]) in have)) {
-                          printf "ROW\t%s", a[1]
-                          for (c = 2; c <= nc; c++) printf "\t"
-                          printf "\t@data:seen=1\n" } } close(basef) }')
+            END {
+                if (covf != "") { while ((getline l < covf) > 0) { n2 = split(l, a, "\t")
+                        if (mem == "partner" && n2 >= 4 && a[4] ~ /^hosts\//) continue
+                        if (a[1] != "" && a[3] == "1") covseen[toupper(a[1])] = 1 }
+                    close(covf) }
+                while ((getline l < basef) > 0) { split(l, a, "\t")
+                    if (a[1] != "" && !(toupper(a[1]) in have)) {
+                        v = (toupper(a[1]) in covseen) ? 1 : 0
+                        printf "%d\tROW\t%s", v, a[1]
+                        for (c = 2; c <= nc; c++) printf "\t"
+                        printf "\t@data:seen=%d\n", v } } close(basef) }')
+        ghrows=$(printf '%s\n' "$_ghall" | { grep $'^1\t' || true; } | cut -f2-)
+        ghnsrows=$(printf '%s\n' "$_ghall" | { grep $'^0\t' || true; } | cut -f2-)
     fi
     local nseen nns
     nseen=$(printf '%s' "$srows" | grep -c $'^ROW\t' || true)
     nns=$(printf '%s' "$nsrows" | grep -c $'^ROW\t' || true)
     ngh=$(printf '%s' "$ghrows" | grep -c $'^ROW\t' || true)
+    nghns=$(printf '%s' "$ghnsrows" | grep -c $'^ROW\t' || true)
     # TOTAL variants: patch the "(N" count; the Not seen total keeps only the label
     local tot_all tot_ns
-    tot_all=$(printf '%s\n' "$stotal" | LC_ALL=C awk -F'\t' -v OFS='\t' -v n="$((nseen + nns + ngh))" '{ sub(/\([0-9,]+/, "(" n, $2); print }')
-    tot_ns=$(printf '%s\n' "$stotal" | LC_ALL=C awk -F'\t' -v n="$nns" '{ sub(/\([0-9,]+/, "(" n, $2); printf "TOTAL\t%s", $2; for (i = 3; i <= NF; i++) printf "\t"; print "" }')
+    tot_all=$(printf '%s\n' "$stotal" | LC_ALL=C awk -F'\t' -v OFS='\t' -v n="$((nseen + nns + ngh + nghns))" '{ sub(/\([0-9,]+/, "(" n, $2); print }')
+    tot_ns=$(printf '%s\n' "$stotal" | LC_ALL=C awk -F'\t' -v n="$((nns + nghns))" '{ sub(/\([0-9,]+/, "(" n, $2); printf "TOTAL\t%s", $2; for (i = 3; i <= NF; i++) printf "\t"; print "" }')
     # TABLE-line variants: view suffix on the heading plus per-view modifiers.
     # SORT (sort=COL:DIR -> data-sort-init): every view that CARRIES the count
     # columns opens on Files DESCENDING (sort=1:-1) — the busiest entity first,
@@ -1170,6 +1188,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     [ -n "$srows" ]  && all_rows=$(printf '%s\n' "$srows" | sed $'s/$/\t@data:seen=1/')
     [ -n "$nsrows" ] && all_rows+=${all_rows:+$'\n'}$nsrows
     [ -n "$ghrows" ] && all_rows+=${all_rows:+$'\n'}$ghrows
+    [ -n "$ghnsrows" ] && all_rows+=${all_rows:+$'\n'}$ghnsrows
     [ -n "$all_rows" ] && all_rows=$(printf '%s\n' "$all_rows" | LC_ALL=C sort -t$'\t' -k3,3nr -k2,2f -k2,2)
     # the All view tints every row by the entity RESULT (the base caches'
     # third field, bin/build/result.sh): @data:res green / orange / red -> the
@@ -1209,6 +1228,13 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
               if (r == "green" || r == "orange" || r == "red" || r == "blue") print $0, "@data:res=" r
               else print }' -)
     fi
+    if [ -n "$ghnsrows" ] && [ -n "$resfile" ]; then
+        ghnsrows=$(printf '%s\n' "$ghnsrows" | LC_ALL=C awk -F'\t' -v OFS='\t' -v resf="$resfile" '
+            BEGIN { while ((getline l < resf) > 0) { split(l, a, "\t"); res[toupper(a[1])] = a[3] } close(resf) }
+            { r = res[toupper($2)]
+              if (r == "green" || r == "orange" || r == "red" || r == "blue") print $0, "@data:res=" r
+              else print }' -)
+    fi
     # The blue rows added above already carry @data:res=blue, so the tint pass
     # passes them through untouched and only tints the real seen rows
     # (green/orange/red) and the never-seen rows.
@@ -1243,11 +1269,11 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # default explicit and marks the sorted header.)
     sumblk_tinted=$(printf '%s\n' "$sumblk_tinted" | LC_ALL=C awk -F'\t' -v OFS='\t' '
         $1 == "TABLE" && !done { $0 = $0 OFS "sort=1:-1" OFS "datereset"; done = 1 } { print }')
-    # The GHOST rows belong on SEEN as well (2026-07): the coverage TSVs — and
-    # with them showseen, the analyses figures and the status tables' Seen
-    # column — count these names as seen; listing them only on All made the
-    # Seen view show FEWER entities than the figure linking it (2 hosts, 128
-    # partners). Blank but for the name and their result tint, like on All.
+    # The VOUCHED ghost rows belong on SEEN (2026-07): the coverage TSV — and
+    # with it showseen, the analyses figures and the status tables' Seen
+    # column — counts these names as seen (e.g. the UC3 clean-poll greens,
+    # seen-with-blank-counts). The EVIDENCE-FREE ghosts go to Not seen
+    # instead (2026-08-31); pda_seen_total moved in lockstep.
     if [ -n "$ghrows" ]; then
         sumblk_tinted=$(printf '%s\n' "$sumblk_tinted" | LC_ALL=C awk -F'\t' -v OFS='\t' -v gr="$ghrows" -v ng="$ngh" '
             $1=="TOTAL" {
@@ -1265,8 +1291,13 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     blk_all+=$'\n'"NOTE"$'\t'"Row colors: **light green** = last transfer OK, **light orange** = configured but never seen, **light red** = last transfer Error (or server-log Errors/Warnings after the last OK transfer), **light blue** = surfaced only by the Server → Transfer step (bin/build/seen-in-server-log.sh) with no real transfer. For entity types other than subscriptions the result rolls up from the connected subscriptions; configured-but-never-seen rows keep blank counts. A green/red-tinted row with BLANK counts was seen only through a sibling group — a shared endpoint whose Files are credited to the co-tenant, or one side of a two-partner account name. An UNTINTED row was logged but is not configured in FlowManager — it has no result to color by."
     [ -n "$snotes" ] && blk_all+=$'\n'"$snotes"
     shead_ns=$(printf '%s\n' "$shead" | grep -v $'^RECALC\t' || true)   # no buckets -> no RECALC -> no From/To on this page
+    local nsrows_gh=$nsrows
+    if [ -n "$ghnsrows" ]; then
+        nsrows_gh=${nsrows:+$nsrows$'\n'}$ghnsrows
+        nsrows_gh=$(printf '%s\n' "$nsrows_gh" | LC_ALL=C sort -t$'\t' -k2,2f -k2,2)
+    fi
     blk_ns="$(tbl_variant "configured, never seen" "seenrows sort=0:1")"$'\n'"$shead_ns"$'\n'"$tot_ns"
-    [ -n "$nsrows" ] && blk_ns+=$'\n'"$nsrows"
+    [ -n "$nsrows_gh" ] && blk_ns+=$'\n'"$nsrows_gh"
     blk_ns+=$'\n'"NOTE"$'\t'"Configured in FlowManager but never seen in this log window. Every name links to its detail page, which lists the configured cross-references."
     blk_ns=$(printf '%s\n' "$blk_ns" | entities_name_only)   # Not seen: name column only
     # ---- TRANSFER SCOPE: Seen and Not seen ---------------------------------
@@ -1289,12 +1320,12 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # moves into Not seen/Warning"), and exactly what the Warning (transfer)
     # view above already does; keeping the blue here made the two views of ONE
     # scope disagree about the same rows (2026-08-15 audit D2).
-    local blk_ns_tr nsrows_tr=$nsrows nns_tr=$nns tot_ns_tr bluens
+    local blk_ns_tr nsrows_tr=$nsrows_gh nns_tr=$((nns + nghns)) tot_ns_tr bluens
     if [ -n "$bluerows" ]; then
         bluens=$(printf '%s\n' "$bluerows" | LC_ALL=C sed $'s/@data:res=blue/@data:res=orange/; s/$/\t@data:seen=0/')
-        nsrows_tr=${nsrows:+$nsrows$'\n'}$bluens
+        nsrows_tr=${nsrows_gh:+$nsrows_gh$'\n'}$bluens
         nsrows_tr=$(printf '%s\n' "$nsrows_tr" | LC_ALL=C sort -t$'\t' -k2,2f -k2,2)
-        nns_tr=$((nns + nblue))
+        nns_tr=$((nns + nghns + nblue))
     fi
     tot_ns_tr=$(printf '%s\n' "$stotal" | LC_ALL=C awk -F'\t' -v n="$nns_tr" '{ sub(/\([0-9,]+/, "(" n, $2); printf "TOTAL\t%s", $2; for (i = 3; i <= NF; i++) printf "\t"; print "" }')
     blk_ns_tr="$(tbl_variant "never seen in the transfer log" "seenrows sort=0:1")"$'\n'"$shead_ns"$'\n'"$tot_ns_tr"
