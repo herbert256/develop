@@ -14,7 +14,7 @@
 <body>
 <div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="waiting" data-twin="../../acceptance/transfer/waiting.html"></div>
 <h1>Waiting Files</h1>
-<p class="range">A UC2 file is COLLECTED by the partner: it arrives from CFT in three quick legs (PeSIT in, routing out, routing in), then sits STAGED until the partner dials in over SSH and picks it up. A file still staged at the end of the data window has outcome <strong>Waiting</strong> — not an error, just not collected yet. A staged file the nightly File Maintenance retention sweep (~11 days) DELETED before any pickup is <strong>Expired</strong> — never delivered. Right now <strong>63</strong> File(s) across <strong>8</strong> subscription(s) are waiting (oldest staged <strong>2026-07-27 13:31:47 (UC2-INFRA_ST-MONITOR_INFRA)</strong>), <strong>103</strong> File(s) across <strong>9</strong> subscription(s) have expired, and <strong>2175</strong> staged File(s) were collected. The pickup wait is EXCLUDED from every UC2 Duration figure on this site. Below the four state tables: the day-by-day <strong>staged backlog</strong> curve (peak <strong>67</strong> file(s) on 2026-08-28), the <strong>Will expire next</strong> call list, and the per-partner and per-week <strong>pickup-wait</strong> statistics. Click a row for the 10 most recent Files.</p>
+<p class="range">A UC2 file is COLLECTED by the partner: it arrives from CFT in three quick legs (PeSIT in, routing out, routing in), then sits STAGED until the partner dials in over SSH and picks it up. A file still staged at the end of the data window has outcome <strong>Waiting</strong> — not an error, just not collected yet. A staged file the nightly File Maintenance retention sweep (~11 days) DELETED before any pickup is <strong>Expired</strong> — never delivered. Right now <strong>63</strong> File(s) across <strong>8</strong> subscription(s) are waiting (oldest staged <strong>2026-07-27 13:31:47 (UC2-INFRA_ST-MONITOR_INFRA)</strong>), <strong>108</strong> File(s) across <strong>10</strong> subscription(s) have expired, and <strong>2262</strong> staged File(s) were collected. The pickup wait is EXCLUDED from every UC2 Duration figure on this site. Below the four state tables: the day-by-day <strong>staged backlog</strong> curve (peak <strong>68</strong> file(s) on 2026-08-12), the <strong>Will expire next</strong> call list, and the per-partner and per-week <strong>pickup-wait</strong> statistics. Click a row for the 10 most recent Files.</p>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Subscription</th><th class="num">Waiting Files</th><th>Oldest staged</th><th>Waiting for</th><th>Newest staged</th><th class="num">Collected</th></tr>
 <tr data-coreids="2026-08-24 08:02:26.276  967392c7-818e-4a1b-aeae-3b597b9575ce,2026-08-22 17:01:45.551  c677c509-e2d3-4b40-a32c-2d4b99545e4c,2026-08-19 15:31:53.616  06a693e4-6306-4379-b0d5-e5fbdfe279f7,2026-08-16 17:01:42.919  39e1f5dd-a785-40e5-a068-e4a4d83e08d6,2026-08-14 00:31:36.243  017b4ec5-9f73-43b1-85a0-51197c433037,2026-08-11 08:35:25.770  a7e73175-23e4-4835-87e2-692fccc5ab4b,2026-08-08 15:32:16.435  dcca5a06-6765-41b3-be9b-5eae1ba250ec,2026-08-07 06:31:57.404  0b898092-13e5-4423-9faf-aaa000712c42,2026-08-03 02:03:31.960  7137de61-e564-43b5-982f-afeb9cafae14,2026-08-02 01:01:49.355  ffb23589-dedb-4161-81c4-b5914d984733"><td>UC2-INFRA_ST-MONITOR_INFRA <a class="dlicon" href="../details/subscriptions/uc2-infra-st-monitor-infra.html" title="Open the detail page">&#8599;</a></td><td class="num warn">17</td><td>2026-07-27 13:31:47</td><td>33d 10h</td><td>2026-08-24 08:02:26</td><td class="num">1594</td></tr>
@@ -89,14 +89,15 @@
 <tr><th>Subscription</th><th class="num">Expired Files</th><th>First staged</th><th>Last staged</th><th>Last deletion</th></tr>
 <tr data-coreids="2026-08-17 07:17:27.811  808ddf70-3a19-46ee-8f42-ebd65f38632d,2026-08-17 07:00:28.543  97a62702-0b84-4313-b7bd-f5f2128d169b,2026-08-16 07:48:21.431  4a0db841-d748-4b9e-8a77-ad7a5c13fb10,2026-08-14 16:41:28.346  efa0f81e-950e-4f05-a51e-75ab486364a5,2026-08-14 16:13:47.893  23d03527-9acb-4a51-9e3b-3c985ca424c3,2026-08-14 07:10:39.216  e98e932d-9906-48bc-a864-b478572699fa,2026-08-14 07:02:38.993  c5935052-6321-4420-9061-c673cc0ff2bc,2026-08-13 07:48:36.745  c879a273-6054-4639-a3ad-0f03c9982c5f,2026-08-12 16:53:55.755  5dd3f562-2ff3-40af-9bf9-e5f93fc33d4e,2026-08-12 16:43:20.229  fd3dbcdf-077a-4fb7-ba27-5eb0a8d6b46d"><td>UC2_APS_VIDA_UMBRELLA <a class="dlicon" href="../details/subscriptions/uc2-aps-vida-umbrella.html" title="Open the detail page">&#8599;</a></td><td class="num warn">59</td><td>2026-07-27 07:44:47</td><td>2026-08-17 07:17:27</td><td>2026-08-29 03:03:59.133</td></tr>
 <tr data-coreids="2026-08-19 15:36:12.450  53c359e3-532b-44cf-a738-2346d8d31164,2026-08-17 15:46:56.867  d81c17f7-93bc-4254-a871-c2a8daa855a9,2026-08-17 15:03:08.888  bdd8ceae-2cf1-4b49-982d-a0dfa223d1e0,2026-08-16 15:52:41.880  4ccfcc05-63d4-4fd5-8ef4-54e19cca97c6,2026-08-15 15:23:03.564  222f4f78-7e07-4149-807b-d3b9189e461a,2026-08-14 09:30:21.898  8b519544-ca50-47de-b7a7-4ff6df0360a5,2026-08-13 09:45:58.706  8b876bf7-5aad-4225-85e3-5aabadd46ff9,2026-08-12 15:02:48.569  d2e9ec16-d6ca-49a2-98f4-437205c48add,2026-08-12 09:32:42.796  978a098e-54f0-4922-8dcb-516633465955,2026-08-12 09:25:57.707  123c4001-1bd3-4ec3-977a-6bd46465291d"><td>UC2_IT_SAPBHP_GEKKO <a class="dlicon" href="../details/subscriptions/uc2-it-sapbhp-gekko.html" title="Open the detail page">&#8599;</a></td><td class="num warn">27</td><td>2026-07-27 09:51:17</td><td>2026-08-19 15:36:12</td><td>2026-08-29 03:09:02.907</td></tr>
-<tr data-coreids="2026-08-12 07:19:38.952  b219c209-0daf-4976-a27b-b63c2440f0a6,2026-08-10 07:39:24.381  167c67d7-76d9-4a6b-85a8-65d6d9542a02,2026-08-06 14:19:09.848  97974508-3a3f-41a4-9ed8-c693e8b88cdb,2026-07-30 14:31:28.283  3db41be8-3f54-4e47-ae91-c9881288c756"><td>STMT_EXPORT_GLOBEX_04 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-04.html" title="Open the detail page">&#8599;</a></td><td class="num warn">4</td><td>2026-07-30 14:31:28</td><td>2026-08-12 07:19:38</td><td>2026-08-22 03:09:40.183</td></tr>
+<tr data-coreids="2026-08-13 15:04:05.591  e19e7e0c-8536-4a48-bdd6-f0af931549b3,2026-08-13 09:53:22.495  322410e3-cc96-4976-8e9c-bff83579cb23,2026-08-06 09:41:26.627  7255307a-9d78-438c-a9f6-6e8625b5c15e,2026-08-05 15:20:28.341  50bf4dc0-85df-40f4-941e-2dbd031ff8e1,2026-07-30 15:44:18.634  509193c6-e748-4344-ab88-b7c8cb23a337"><td>UC2_CD_PARCEL_BLUTH <a class="dlicon" href="../details/subscriptions/uc2-cd-parcel-bluth.html" title="Open the detail page">&#8599;</a></td><td class="num warn">5</td><td>2026-07-30 15:44:18</td><td>2026-08-13 15:04:05</td><td>2026-08-23 03:01:32.756</td></tr>
+<tr data-coreids="2026-08-12 07:19:38.952  b219c209-0daf-4976-a27b-b63c2440f0a6,2026-08-10 07:39:24.381  167c67d7-76d9-4a6b-85a8-65d6d9542a02,2026-08-06 14:19:09.848  97974508-3a3f-41a4-9ed8-c693e8b88cdb,2026-07-30 14:31:28.283  3db41be8-3f54-4e47-ae91-c9881288c756"><td>STMT_EXPORT_GLOBEX_04 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-04.html" title="Open the detail page">&#8599;</a></td><td class="num warn">4</td><td>2026-07-30 14:31:28</td><td>2026-08-12 07:19:38</td><td>2026-08-22 03:09:46.052</td></tr>
 <tr data-coreids="2026-08-17 15:49:46.808  72a60c4a-d6f1-4a2f-98b7-fb2d484606f1,2026-08-12 15:08:37.412  6be877ac-d678-461b-a7d1-2afc23dda24d,2026-08-11 15:27:25.349  3ed11eb2-4e60-4c1c-87f0-786670cb5a17,2026-07-30 08:42:53.958  80c4c5e6-baed-42da-ba7e-bbe353adc13f"><td>UC2_IT_EKDSI_CYBERDYNE <a class="dlicon" href="../details/subscriptions/uc2-it-ekdsi-cyberdyne.html" title="Open the detail page">&#8599;</a></td><td class="num warn">4</td><td>2026-07-30 08:42:53</td><td>2026-08-17 15:49:46</td><td>2026-08-27 03:00:14.923</td></tr>
-<tr data-coreids="2026-08-17 07:21:37.621  891ca07f-fd50-4bd1-86d4-a5e2c6d62135,2026-08-14 14:35:51.465  cffa2c3e-9f3b-4184-86af-315cb61d2a2b"><td>STMT_EXPORT_GLOBEX_01 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-01.html" title="Open the detail page">&#8599;</a></td><td class="num warn">2</td><td>2026-08-14 14:35:51</td><td>2026-08-17 07:21:37</td><td>2026-08-29 03:01:02.527</td></tr>
-<tr data-coreids="2026-08-08 14:07:29.819  791ea7d1-a6da-4343-938a-3fa704110021,2026-07-27 07:53:12.632  12ec717f-689c-413e-8375-25da4b1412e7"><td>STMT_EXPORT_GLOBEX_06 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-06.html" title="Open the detail page">&#8599;</a></td><td class="num warn">2</td><td>2026-07-27 07:53:12</td><td>2026-08-08 14:07:29</td><td>2026-08-19 03:07:49.907</td></tr>
-<tr data-coreids="2026-08-10 14:13:22.465  53882949-8d13-4eed-87ea-1b301180167f,2026-08-05 14:29:14.168  4e56fd68-d021-463a-b86d-9bfa3c9c4bb2"><td>STMT_EXPORT_GLOBEX_08 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-08.html" title="Open the detail page">&#8599;</a></td><td class="num warn">2</td><td>2026-08-05 14:29:14</td><td>2026-08-10 14:13:22</td><td>2026-08-22 03:09:40.183</td></tr>
+<tr data-coreids="2026-08-17 07:21:37.621  891ca07f-fd50-4bd1-86d4-a5e2c6d62135,2026-08-14 14:35:51.465  cffa2c3e-9f3b-4184-86af-315cb61d2a2b"><td>STMT_EXPORT_GLOBEX_01 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-01.html" title="Open the detail page">&#8599;</a></td><td class="num warn">2</td><td>2026-08-14 14:35:51</td><td>2026-08-17 07:21:37</td><td>2026-08-29 03:08:16.576</td></tr>
+<tr data-coreids="2026-08-08 14:07:29.819  791ea7d1-a6da-4343-938a-3fa704110021,2026-07-27 07:53:12.632  12ec717f-689c-413e-8375-25da4b1412e7"><td>STMT_EXPORT_GLOBEX_06 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-06.html" title="Open the detail page">&#8599;</a></td><td class="num warn">2</td><td>2026-07-27 07:53:12</td><td>2026-08-08 14:07:29</td><td>2026-08-19 03:00:00.513</td></tr>
+<tr data-coreids="2026-08-10 14:13:22.465  53882949-8d13-4eed-87ea-1b301180167f,2026-08-05 14:29:14.168  4e56fd68-d021-463a-b86d-9bfa3c9c4bb2"><td>STMT_EXPORT_GLOBEX_08 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-08.html" title="Open the detail page">&#8599;</a></td><td class="num warn">2</td><td>2026-08-05 14:29:14</td><td>2026-08-10 14:13:22</td><td>2026-08-22 03:09:46.052</td></tr>
 <tr data-coreids="2026-08-07 08:04:04.987  32267f7b-6c07-47e7-a996-dbeafa44c4a5,2026-07-30 16:57:12.694  79e86e5e-f786-4a2f-a656-88952201946a"><td>UC2_ZG_MATCH_HOOLI <a class="dlicon" href="../details/subscriptions/uc2-zg-match-hooli.html" title="Open the detail page">&#8599;</a></td><td class="num warn">2</td><td>2026-07-30 16:57:12</td><td>2026-08-07 08:04:04</td><td>2026-08-17 03:09:21.671</td></tr>
-<tr data-coreids="2026-07-31 07:04:24.606  aae9dca4-b271-441c-a8c2-b74c1940d285"><td>STMT_EXPORT_GLOBEX_05 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-05.html" title="Open the detail page">&#8599;</a></td><td class="num warn">1</td><td>2026-07-31 07:04:24</td><td>2026-07-31 07:04:24</td><td>2026-08-12 03:08:16.576</td></tr>
-<tr class="total"><td>Total (9 subscriptions)</td><td class="num warn">103</td><td></td><td></td><td></td></tr>
+<tr data-coreids="2026-07-31 07:04:24.606  aae9dca4-b271-441c-a8c2-b74c1940d285"><td>STMT_EXPORT_GLOBEX_05 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-05.html" title="Open the detail page">&#8599;</a></td><td class="num warn">1</td><td>2026-07-31 07:04:24</td><td>2026-07-31 07:04:24</td><td>2026-08-12 03:09:11.978</td></tr>
+<tr class="total"><td>Total (10 subscriptions)</td><td class="num warn">108</td><td></td><td></td><td></td></tr>
 </table></div>
 <p class="note">Staged Files the nightly <strong>File Maintenance</strong> retention sweep deleted (~11 days after staging) before any partner pickup — <strong>never delivered</strong>, and no longer collectable. The deletion timestamp comes from the server log (there is NO transfer-log record of the deletion) and is stored as the <strong>Expired</strong> field (_files.tsv col 22) by the bin/expire-files.sh build step. Expired Files count as <strong>Error</strong> on every report. Click a row for the 10 most recent expired Files.</p>
 <h2>Pickup wait — collected files, per subscription</h2>
@@ -105,6 +106,7 @@
 <tr><td class="cl"><a href="../details/subscriptions/uc2-infra-st-monitor-infra.html">UC2-INFRA_ST-MONITOR_INFRA</a></td><td class="num">1594</td><td>3 min</td><td>5 min</td><td>33 min</td><td class="num processed">1594</td><td class="num">0</td><td class="num warn z"></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc2-aps-vida-umbrella.html">UC2_APS_VIDA_UMBRELLA</a></td><td class="num">115</td><td>27 min</td><td>36 min</td><td>2h 44m</td><td class="num processed">94</td><td class="num">21</td><td class="num warn z"></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc2-it-ekdsi-cyberdyne.html">UC2_IT_EKDSI_CYBERDYNE</a></td><td class="num">111</td><td>29 min</td><td>38 min</td><td>3h 16m</td><td class="num processed">94</td><td class="num">17</td><td class="num warn z"></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-cd-parcel-bluth.html">UC2_CD_PARCEL_BLUTH</a></td><td class="num">87</td><td>21 min</td><td>31 min</td><td>2h 30m</td><td class="num processed">74</td><td class="num">13</td><td class="num warn z"></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc2-it-sapbhp-gekko.html">UC2_IT_SAPBHP_GEKKO</a></td><td class="num">59</td><td>26 min</td><td>34 min</td><td>2h 0m</td><td class="num processed">51</td><td class="num">8</td><td class="num warn z"></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc2-zg-match-hooli.html">UC2_ZG_MATCH_HOOLI</a></td><td class="num">40</td><td>21 min</td><td>36 min</td><td>1h 55m</td><td class="num processed">29</td><td class="num">11</td><td class="num warn z"></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-06.html">STMT_EXPORT_GLOBEX_06</a></td><td class="num">36</td><td>25 min</td><td>40 min</td><td>2h 8m</td><td class="num processed">26</td><td class="num">10</td><td class="num warn z"></td></tr>
@@ -115,7 +117,7 @@
 <tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-01.html">STMT_EXPORT_GLOBEX_01</a></td><td class="num">30</td><td>33 min</td><td>36 min</td><td>1h 54m</td><td class="num processed">24</td><td class="num">6</td><td class="num warn z"></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-04.html">STMT_EXPORT_GLOBEX_04</a></td><td class="num">30</td><td>31 min</td><td>51 min</td><td>3h 17m</td><td class="num processed">21</td><td class="num">9</td><td class="num warn z"></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-05.html">STMT_EXPORT_GLOBEX_05</a></td><td class="num">28</td><td>19 min</td><td>30 min</td><td>2h 4m</td><td class="num processed">24</td><td class="num">4</td><td class="num warn z"></td></tr>
-<tr class="total"><td>Total (13 subscriptions)</td><td class="num">2175</td><td></td><td></td><td></td><td class="num processed">2074</td><td class="num">101</td><td class="num warn z"></td></tr>
+<tr class="total"><td>Total (14 subscriptions)</td><td class="num">2262</td><td></td><td></td><td></td><td class="num processed">2148</td><td class="num">114</td><td class="num warn z"></td></tr>
 </table></div>
 <p class="note">How long the partner took to collect: from the staging leg ending to the FIRST collect leg starting (repeat collects of the same File count once). This wait is what parse.sh excludes from the UC2 Duration figures.</p>
 <h2>Staged backlog over time</h2>
@@ -124,30 +126,30 @@
 <tr><td>2026-07-27</td><td class="num">9</td><td>2.1 MB</td></tr>
 <tr><td>2026-07-28</td><td class="num">17</td><td>5.0 MB</td></tr>
 <tr><td>2026-07-29</td><td class="num">21</td><td>5.1 MB</td></tr>
-<tr><td>2026-07-30</td><td class="num">30</td><td>6.5 MB</td></tr>
-<tr><td>2026-07-31</td><td class="num">36</td><td>11.8 MB</td></tr>
-<tr><td>2026-08-01</td><td class="num">39</td><td>13.3 MB</td></tr>
-<tr><td>2026-08-02</td><td class="num">40</td><td>13.3 MB</td></tr>
-<tr><td>2026-08-03</td><td class="num">49</td><td>23.0 MB</td></tr>
-<tr><td>2026-08-04</td><td class="num">54</td><td>26.2 MB</td></tr>
-<tr><td>2026-08-05</td><td class="num">59</td><td>29.5 MB</td></tr>
-<tr><td>2026-08-06</td><td class="num">61</td><td>32.1 MB</td></tr>
-<tr><td>2026-08-07</td><td class="num">62</td><td>42.0 MB</td></tr>
-<tr><td>2026-08-08</td><td class="num">64</td><td>42.3 MB</td></tr>
-<tr><td>2026-08-09</td><td class="num">58</td><td>42.6 MB</td></tr>
-<tr><td>2026-08-10</td><td class="num">58</td><td>42.7 MB</td></tr>
-<tr><td>2026-08-11</td><td class="num">58</td><td>38.8 MB</td></tr>
-<tr><td>2026-08-12</td><td class="num">66</td><td>43.4 MB</td></tr>
-<tr><td>2026-08-13</td><td class="num">64</td><td>39.6 MB</td></tr>
-<tr><td>2026-08-14</td><td class="num">64</td><td>35.7 MB</td></tr>
-<tr><td>2026-08-15</td><td class="num">63</td><td>33.8 MB</td></tr>
-<tr><td>2026-08-16</td><td class="num">62</td><td>31.5 MB</td></tr>
-<tr><td>2026-08-17</td><td class="num">60</td><td>17.8 MB</td></tr>
-<tr><td>2026-08-18</td><td class="num">60</td><td>18.0 MB</td></tr>
-<tr><td>2026-08-19</td><td class="num">62</td><td>18.4 MB</td></tr>
-<tr><td>2026-08-20</td><td class="num">62</td><td>17.0 MB</td></tr>
-<tr><td>2026-08-21</td><td class="num">65</td><td>19.7 MB</td></tr>
-<tr><td>2026-08-22</td><td class="num">60</td><td>16.7 MB</td></tr>
+<tr><td>2026-07-30</td><td class="num">31</td><td>7.3 MB</td></tr>
+<tr><td>2026-07-31</td><td class="num">37</td><td>12.6 MB</td></tr>
+<tr><td>2026-08-01</td><td class="num">40</td><td>14.1 MB</td></tr>
+<tr><td>2026-08-02</td><td class="num">41</td><td>14.1 MB</td></tr>
+<tr><td>2026-08-03</td><td class="num">50</td><td>23.8 MB</td></tr>
+<tr><td>2026-08-04</td><td class="num">55</td><td>27.1 MB</td></tr>
+<tr><td>2026-08-05</td><td class="num">61</td><td>30.3 MB</td></tr>
+<tr><td>2026-08-06</td><td class="num">64</td><td>33.6 MB</td></tr>
+<tr><td>2026-08-07</td><td class="num">65</td><td>43.5 MB</td></tr>
+<tr><td>2026-08-08</td><td class="num">67</td><td>43.9 MB</td></tr>
+<tr><td>2026-08-09</td><td class="num">60</td><td>43.4 MB</td></tr>
+<tr><td>2026-08-10</td><td class="num">60</td><td>43.5 MB</td></tr>
+<tr><td>2026-08-11</td><td class="num">60</td><td>39.6 MB</td></tr>
+<tr><td>2026-08-12</td><td class="num">68</td><td>44.2 MB</td></tr>
+<tr><td>2026-08-13</td><td class="num">68</td><td>41.5 MB</td></tr>
+<tr><td>2026-08-14</td><td class="num">68</td><td>37.6 MB</td></tr>
+<tr><td>2026-08-15</td><td class="num">67</td><td>35.7 MB</td></tr>
+<tr><td>2026-08-16</td><td class="num">65</td><td>33.4 MB</td></tr>
+<tr><td>2026-08-17</td><td class="num">63</td><td>19.7 MB</td></tr>
+<tr><td>2026-08-18</td><td class="num">62</td><td>19.1 MB</td></tr>
+<tr><td>2026-08-19</td><td class="num">64</td><td>19.5 MB</td></tr>
+<tr><td>2026-08-20</td><td class="num">64</td><td>18.1 MB</td></tr>
+<tr><td>2026-08-21</td><td class="num">67</td><td>20.8 MB</td></tr>
+<tr><td>2026-08-22</td><td class="num">62</td><td>17.8 MB</td></tr>
 <tr><td>2026-08-23</td><td class="num">63</td><td>20.7 MB</td></tr>
 <tr><td>2026-08-24</td><td class="num">58</td><td>18.7 MB</td></tr>
 <tr><td>2026-08-25</td><td class="num">63</td><td>45.7 MB</td></tr>
@@ -157,7 +159,7 @@
 <tr><td>2026-08-29</td><td class="num">63</td><td>56.8 MB</td></tr>
 <tr class="total"><td>Total (34 days)</td><td class="num"></td><td></td></tr>
 </table></div>
-<p class="note">The staged-but-uncollected inventory, reconstructed per day: every staged File occupies the days from its staging day up to (not including) the day the partner collected it or the retention sweep deleted it — a same-day pickup never sits in the overnight inventory, and a still-Waiting File occupies through the window end, so the LAST day equals the Waiting count above (<strong>63</strong>). Peak backlog: <strong>67</strong> file(s) on <strong>2026-08-28</strong>. Volume is the staged bytes sitting in inventory that day.</p>
+<p class="note">The staged-but-uncollected inventory, reconstructed per day: every staged File occupies the days from its staging day up to (not including) the day the partner collected it or the retention sweep deleted it — a same-day pickup never sits in the overnight inventory, and a still-Waiting File occupies through the window end, so the LAST day equals the Waiting count above (<strong>63</strong>). Peak backlog: <strong>68</strong> file(s) on <strong>2026-08-12</strong>. Volume is the staged bytes sitting in inventory that day.</p>
 <h2>Will expire next</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1" data-restint="1">
 <tr><th>Subscription</th><th class="num">Files at risk</th><th>Oldest staged</th><th>Age</th></tr>
@@ -176,9 +178,10 @@
 <tr><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td class="num">256</td><td>23 min</td><td>1h 30m</td><td>3h 17m</td><td class="num warn z"></td></tr>
 <tr><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td class="num">115</td><td>27 min</td><td>1h 35m</td><td>2h 44m</td><td class="num warn z"></td></tr>
 <tr><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td class="num">111</td><td>29 min</td><td>2h 5m</td><td>3h 16m</td><td class="num warn z"></td></tr>
+<tr><td class="cl"><a href="../details/partners/bluth.html">BLUTH</a></td><td class="num">87</td><td>21 min</td><td>1h 19m</td><td>2h 30m</td><td class="num warn z"></td></tr>
 <tr><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td class="num">59</td><td>26 min</td><td>1h 38m</td><td>2h 0m</td><td class="num warn z"></td></tr>
 <tr><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">40</td><td>21 min</td><td>1h 48m</td><td>1h 55m</td><td class="num warn z"></td></tr>
-<tr class="total"><td>Total (6 partners)</td><td class="num">2175</td><td></td><td></td><td></td><td class="num warn z"></td></tr>
+<tr class="total"><td>Total (7 partners)</td><td class="num">2262</td><td></td><td></td><td></td><td class="num warn z"></td></tr>
 </table></div>
 <p class="note">Collected Files rolled up to the PARTNER (the site-wide UNION attribution: a File counts for every partner of its subscription plus the host-resolved one, so the partner counts can sum past the collected total). Median = the typical pickup, <strong>p95</strong> = the slow tail, and <strong>Waited over 8 days</strong> are the near-misses — collected, but within a couple of days of the ~11-day retention sweep. A partner with a fat p95 or near-misses is one pause away from the Expired table.</p>
 <h2>Pickup wait per week — busiest subscriptions</h2>
@@ -202,6 +205,12 @@
 <tr><td class="cl"><a href="../details/subscriptions/uc2-it-ekdsi-cyberdyne.html">UC2_IT_EKDSI_CYBERDYNE</a></td><td>2026-08-10</td><td class="num">30</td><td>25 min</td><td>37 min</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc2-it-ekdsi-cyberdyne.html">UC2_IT_EKDSI_CYBERDYNE</a></td><td>2026-08-17</td><td class="num">17</td><td>27 min</td><td>31 min</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc2-it-ekdsi-cyberdyne.html">UC2_IT_EKDSI_CYBERDYNE</a></td><td>2026-08-24</td><td class="num">24</td><td>28 min</td><td>41 min</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-cd-parcel-bluth.html">UC2_CD_PARCEL_BLUTH</a></td><td>2026-07-20</td><td class="num">1</td><td>24 min</td><td>24 min</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-cd-parcel-bluth.html">UC2_CD_PARCEL_BLUTH</a></td><td>2026-07-27</td><td class="num">14</td><td>25 min</td><td>34 min</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-cd-parcel-bluth.html">UC2_CD_PARCEL_BLUTH</a></td><td>2026-08-03</td><td class="num">15</td><td>16 min</td><td>29 min</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-cd-parcel-bluth.html">UC2_CD_PARCEL_BLUTH</a></td><td>2026-08-10</td><td class="num">20</td><td>30 min</td><td>35 min</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-cd-parcel-bluth.html">UC2_CD_PARCEL_BLUTH</a></td><td>2026-08-17</td><td class="num">19</td><td>19 min</td><td>30 min</td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc2-cd-parcel-bluth.html">UC2_CD_PARCEL_BLUTH</a></td><td>2026-08-24</td><td class="num">18</td><td>16 min</td><td>26 min</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc2-it-sapbhp-gekko.html">UC2_IT_SAPBHP_GEKKO</a></td><td>2026-07-20</td><td class="num">1</td><td>36 min</td><td>36 min</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc2-it-sapbhp-gekko.html">UC2_IT_SAPBHP_GEKKO</a></td><td>2026-07-27</td><td class="num">12</td><td>44 min</td><td>41 min</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc2-it-sapbhp-gekko.html">UC2_IT_SAPBHP_GEKKO</a></td><td>2026-08-03</td><td class="num">12</td><td>22 min</td><td>31 min</td></tr>
@@ -235,14 +244,9 @@
 <tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-08.html">STMT_EXPORT_GLOBEX_08</a></td><td>2026-08-10</td><td class="num">7</td><td>11 min</td><td>17 min</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-08.html">STMT_EXPORT_GLOBEX_08</a></td><td>2026-08-17</td><td class="num">6</td><td>21 min</td><td>30 min</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-08.html">STMT_EXPORT_GLOBEX_08</a></td><td>2026-08-24</td><td class="num">7</td><td>41 min</td><td>39 min</td></tr>
-<tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-03.html">STMT_EXPORT_GLOBEX_03</a></td><td>2026-07-27</td><td class="num">7</td><td>26 min</td><td>43 min</td></tr>
-<tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-03.html">STMT_EXPORT_GLOBEX_03</a></td><td>2026-08-03</td><td class="num">7</td><td>1h 9m</td><td>1h 6m</td></tr>
-<tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-03.html">STMT_EXPORT_GLOBEX_03</a></td><td>2026-08-10</td><td class="num">7</td><td>22 min</td><td>29 min</td></tr>
-<tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-03.html">STMT_EXPORT_GLOBEX_03</a></td><td>2026-08-17</td><td class="num">7</td><td>8 min</td><td>23 min</td></tr>
-<tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-03.html">STMT_EXPORT_GLOBEX_03</a></td><td>2026-08-24</td><td class="num">4</td><td>11 min</td><td>19 min</td></tr>
-<tr class="total"><td>Total (56 subscription-weeks)</td><td></td><td class="num">2087</td><td></td><td></td></tr>
+<tr class="total"><td>Total (57 subscription-weeks)</td><td></td><td class="num">2142</td><td></td><td></td></tr>
 </table></div>
 <p class="note">The pickup wait per <strong>staged week</strong> (Monday-start) for the 10 subscriptions with the most collected Files, busiest first. The median shows the typical pickup; the <strong>average</strong> exposes a pause — a partner that stops collecting for days drags the average up long before the median moves, then both fall back once the backlog is cleared. Subscriptions whose staged Files were never collected have no pickup waits and are absent (the Waiting/Expired tables above carry them).</p>
-<div class="summary">Waiting Files: 63 across 8 subscription(s)  |  Expired (deleted before pickup): 103  |  Oldest staged: 2026-07-27 13:31:47  |  Collected pickups: 2175  |  Peak backlog: 67  |  Expiring next: 25 File(s) in 5 subscription(s)  |  Waited over 8 days: 0  |  Dataset end: 2026-08-29 23:35:08</div>
+<div class="summary">Waiting Files: 63 across 8 subscription(s)  |  Expired (deleted before pickup): 108  |  Oldest staged: 2026-07-27 13:31:47  |  Collected pickups: 2262  |  Peak backlog: 68  |  Expiring next: 25 File(s) in 5 subscription(s)  |  Waited over 8 days: 0  |  Dataset end: 2026-08-29 23:35:08</div>
 </body>
 </html>

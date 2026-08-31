@@ -14,11 +14,11 @@
 <div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="blast-radius" data-twin="../../acceptance/analyses/blast-radius.html"></div>
 <h1>Endpoint blast radius <span class="grouptag">&larr; Partners &larr; Analyses</span></h1>
 <p class="tabs"><a class="tab" href="partner-scorecard.html">Partner scorecard</a><span class="tab active">Blast radius</span><a class="tab" href="app-partners.html">Application dependencies</a><a class="tab" href="partner-lifecycle.html">Partner lifecycle</a></p>
-<p class="range">An endpoint outage is never one flow. The first table answers <strong>&quot;if this host dies, what stops?&quot;</strong> — one row per outbound endpoint we dial, everything behind it counted; a <strong>red</strong> row is the sole recorded endpoint of at least one partner, so there is no second address to fail over to. The redundancy table turns the same census around per partner: <strong>2</strong> partner(s) ride a single endpoint, <strong>8</strong> have more than one, and <strong>0</strong> are inbound-only — they dial us, so no endpoint of theirs can strand us (a legitimate class, not a gap). The last table lists the endpoints shared by several partner organisations: one address, several relationships in the blast radius.</p>
+<p class="range">An endpoint outage is never one flow. The first table answers <strong>&quot;if this host dies, what stops?&quot;</strong> — one row per outbound endpoint we dial, everything behind it counted; a <strong>red</strong> row is the sole recorded endpoint of at least one partner, so there is no second address to fail over to. The redundancy table turns the same census around per partner: <strong>2</strong> partner(s) ride a single endpoint, <strong>9</strong> have more than one, and <strong>0</strong> are inbound-only — they dial us, so no endpoint of theirs can strand us (a legitimate class, not a gap). The last table lists the endpoints shared by several partner organisations: one address, several relationships in the blast radius.</p>
 <div class="stat"><span class="stat-v">10</span><span class="stat-l">Outbound endpoints</span></div>
-<div class="stat"><span class="stat-v">10</span><span class="stat-l">Partners seen</span></div>
+<div class="stat"><span class="stat-v">11</span><span class="stat-l">Partners seen</span></div>
 <div class="stat stat-red"><span class="stat-v">2</span><span class="stat-l">Single-endpoint partners</span></div>
-<div class="stat stat-green"><span class="stat-v">8</span><span class="stat-l">Multi-endpoint partners</span></div>
+<div class="stat stat-green"><span class="stat-v">9</span><span class="stat-l">Multi-endpoint partners</span></div>
 <div class="stat"><span class="stat-v">0</span><span class="stat-l">Inbound-only partners</span></div>
 <div class="stat stat-orange"><span class="stat-v">0</span><span class="stat-l">Shared endpoints</span></div>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
@@ -40,6 +40,7 @@
 <tr><th>Partner</th><th>Class</th><th class="num">Endpoints</th><th>Endpoint(s)</th><th class="num">Files</th></tr>
 <tr data-res="orange"><td class="cl"><a href="../details/partners/sabre.html">SABRE</a></td><td>single endpoint</td><td class="num">1</td><td class="lines">sftp.sabre.example</td><td class="num">121</td></tr>
 <tr data-res="orange"><td class="cl"><a href="../details/partners/soylent.html">SOYLENT</a></td><td>single endpoint</td><td class="num">1</td><td class="lines">feeds.soylent.example</td><td class="num">139</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/partners/bluth.html">BLUTH</a></td><td>multiple endpoints</td><td class="num">2</td><td class="lines">203.0.113.41<br>203.0.113.40</td><td class="num">92</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td>multiple endpoints</td><td class="num">5</td><td class="lines clps">sftp.cyberdyne.example<br><span class="ce">&#8943;<br></span><span class="cm">203.0.113.21<br>203.0.113.23<br>203.0.113.22<br></span>203.0.113.20</td><td class="num">435</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/partners/gekko.html">GEKKO</a></td><td>multiple endpoints</td><td class="num">4</td><td class="lines clps">trades.gekko.example<br><span class="ce">&#8943;<br></span><span class="cm">203.0.113.110<br>203.0.113.111<br></span>203.0.113.112</td><td class="num">154</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/partners/globex.html">GLOBEX</a></td><td>multiple endpoints</td><td class="num">5</td><td class="lines clps">sftp.globex.example<br><span class="ce">&#8943;<br></span><span class="cm">198.51.100.10<br>198.51.100.12<br>198.51.100.13<br></span>198.51.100.11</td><td class="num">1901</td></tr>
@@ -48,7 +49,7 @@
 <tr data-res="green"><td class="cl"><a href="../details/partners/piedpiper.html">PIEDPIPER</a></td><td>multiple endpoints</td><td class="num">2</td><td class="lines">198.51.100.110<br>198.51.100.111</td><td class="num">87</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td>multiple endpoints</td><td class="num">5</td><td class="lines clps">mft.umbrella.example<br><span class="ce">&#8943;<br></span><span class="cm">198.51.100.30<br>198.51.100.31<br>198.51.100.33<br></span>198.51.100.32</td><td class="num">361</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/partners/wonka.html">WONKA</a></td><td>multiple endpoints</td><td class="num">5</td><td class="lines clps">sftp.wonka.example<br><span class="ce">&#8943;<br></span><span class="cm">198.51.100.83<br>198.51.100.81<br>198.51.100.80<br></span>198.51.100.82</td><td class="num">1098</td></tr>
-<tr class="total"><td>Total (10 partner(s))</td><td></td><td class="num"></td><td></td><td class="num">4871</td></tr>
+<tr class="total"><td>Total (11 partner(s))</td><td></td><td class="num"></td><td></td><td class="num">4963</td></tr>
 </table></div>
 <h2>Shared endpoints</h2>
 <div class="tablewrap"><table data-nofilter="1" data-nosearch="1">
@@ -57,6 +58,6 @@
 <tr class="total"><td>Total (0 host(s))</td><td class="num"></td><td></td><td class="num"></td></tr>
 </table></div>
 <p class="note">The first table counts OUT-connection Files only (the endpoints we dial); its Subscriptions/Applications/Domains/Partners columns are distinct counts over those Files, applications and partners by the site-wide UNION attribution. The redundancy and sharing views count each partner's distinct recorded endpoints over ALL its Files — for an inbound flow that is the partner's recorded source address, and a partner with no endpoint recorded anywhere is the inbound-only class. &quot;Sole endpoint for&quot; flags the hosts that are the ONLY recorded endpoint of at least one partner: losing that address strands those partners entirely.</p>
-<div class="summary">Outbound endpoints: 10  |  Single-endpoint partners: 2  |  Multi-endpoint: 8  |  Inbound-only: 0  |  Shared endpoints: 0</div>
+<div class="summary">Outbound endpoints: 10  |  Single-endpoint partners: 2  |  Multi-endpoint: 9  |  Inbound-only: 0  |  Shared endpoints: 0</div>
 </body>
 </html>
