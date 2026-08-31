@@ -221,6 +221,11 @@ tr[data-dhide="1"] { display:none; }
    empty cell having no line box. A no-break space via ::before gives every
    empty cell that line box without touching the markup. */
 table.dayrows th:empty::before, table.dayrows td:empty::before { content:"\00a0"; }
+/* the Date spine's blank header must keep a text line box even when it is no
+   longer :empty — setupCsvBtn drops the csv hotspot into it (2026-08-30), and
+   without the \00a0 the header collapses to padding height and the spine's
+   rows sit half a row above the four data tables' */
+table.dayrows th.blank::before { content:"\00a0"; }
 /* the Date spine's header cell is BLANK — painted like the page (the spine
    carries a header row only so its rows align with the four data tables').
    border-COLOR instead of border:none keeps the geometry identical; the
