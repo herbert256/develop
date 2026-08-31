@@ -91,11 +91,15 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
                 mark=""
                 if((j==mn || !(fromjdn(j-1) in C)) && FI[d] > "02:00:00") mark=" (partial start)"
                 if((j==mx || !(fromjdn(j+1) in C)) && LA[d] < "22:00:00") mark=(mark==""?" (partial end)":" (partial)")
-                printf "R1\tROW\t@{href=../day/%s.html}%s%s\t%s\t%s\t%d\t%d\t%s\t%d\t%s%%\t%d\t%d\t%d\t%s%%\t%d\t%d\t%s\t%d\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
+                # a nonzero Waiting / Expired cell opens its report (2026-08-31,
+                # user request); zero stays a plain blank / 0
+                wcell = (WW[d]+0>0 ? "@{href=waiting.html}" (WW[d]+0) : "")
+                xcell = (WX[d]+0>0 ? "@{href=expired.html}" (WX[d]+0) : "0")
+                printf "R1\tROW\t@{href=../day/%s.html}%s%s\t%s\t%s\t%d\t%d\t%s\t%d\t%s%%\t%d\t%d\t%d\t%s%%\t%d\t%d\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
                     d, d, mark, fi, la, \
                     C[d], P[d]+0, (RVF[d]+0>0 ? RVF[d]+0 : ""), F[d]+0, pr(F[d]+0, C[d]), \
                     TC[d]+0, TP2[d]+0, TF2[d]+0, pr(TF2[d]+0, TC[d]+0), \
-                    WP[d]+0, WF[d]+0, (WW[d]+0>0 ? WW[d]+0 : ""), WX[d]+0, \
+                    WP[d]+0, WF[d]+0, wcell, xcell, \
                     buildlist(top[d SUBSEP "F"]), buildlist(top[d SUBSEP "P"])
             } else {
                 printf "R1\tROW\t%s\t-\t-\t0\t0\t\t0\t0.0%%\t0\t0\t0\t0.0%%\t0\t0\t\t0\n", d   # empty Waiting/Recovered cells: blank
@@ -128,12 +132,14 @@ IFS='|' read -r _ tC tP tRVF tF tfp tT tTP tTF ttp wP wF wW wX ndays \
     printf 'GHEAD\t@{colspan=3}\t@{colspan=5,class=gband gsep}Files\t@{colspan=4,class=gband gsep}Transfers\t@{colspan=4,class=gband gsep}State\n'
     printf 'HEAD\tDate\tFirst\tLast\tCount\tOk\tRecovered\tError\tError %%\tCount\tOk\tError\tError %%\tProcessed\tFailed\tWaiting\tExpired\n'
     printf 'KIND\ttext\ttext\ttext\tnum\tnumprocessed\tnumwarn\tnumfailed\tnum\tnum\tnumok\tnumerr\tnum\tnumok\tnumerr\tnumwarn\tnumerr\n'
-    wW_cell="@{class=num warn}"; [ "${wW:-0}" -gt 0 ] && wW_cell="@{class=num warn}$wW"   # 0 -> blank (td.warn:empty drops the tint)
+    # a nonzero Waiting / Expired total opens its report too (2026-08-31)
+    wW_cell="@{class=num warn}"; [ "${wW:-0}" -gt 0 ] && wW_cell="@{class=num warn,href=waiting.html}$wW"   # 0 -> blank (td.warn:empty drops the tint)
+    wX_cell="@{class=num errc}$wX"; [ "${wX:-0}" -gt 0 ] && wX_cell="@{class=num errc,href=expired.html}$wX"
     tRVF_cell="@{class=num warn}"; [ "${tRVF:-0}" -gt 0 ] && tRVF_cell="@{class=num warn}$tRVF"   # 0 -> blank (td.warn:empty drops the tint)
-    printf 'TOTAL\t%s\t\t\t@{class=num}%s\t@{class=num processed}%s\t%s\t@{class=num failed}%s\t@{class=num}%s%%\t@{class=num}%s\t@{class=num okc}%s\t@{class=num errc}%s\t@{class=num}%s%%\t@{class=num okc}%s\t@{class=num errc}%s\t%s\t@{class=num errc}%s\n' \
-        "$total_label" "$tC" "$tP" "$tRVF_cell" "$tF" "$tfp" "$tT" "$tTP" "$tTF" "$ttp" "$wP" "$wF" "$wW_cell" "$wX"
+    printf 'TOTAL\t%s\t\t\t@{class=num}%s\t@{class=num processed}%s\t%s\t@{class=num failed}%s\t@{class=num}%s%%\t@{class=num}%s\t@{class=num okc}%s\t@{class=num errc}%s\t@{class=num}%s%%\t@{class=num okc}%s\t@{class=num errc}%s\t%s\t%s\n' \
+        "$total_label" "$tC" "$tP" "$tRVF_cell" "$tF" "$tfp" "$tT" "$tTP" "$tTF" "$ttp" "$wP" "$wF" "$wW_cell" "$wX_cell"
     printf '%s\n' "$rows"
-    printf 'NOTE\t**Files** = logical transfers (all rows sharing one CoreId, Ok when the final row processed), **Transfers** = physical log rows (one per transfer leg). **Recovered** counts the Files that carried at least one failed leg yet still finished OK — the failure was healed by a retry, so those Files sit under Files/Ok while their failed legs sit under Transfers/Error. The **State** columns split the same Files by their final state: on the reports Processed + Waiting count as **OK** and Failed + Expired as **Error** — Waiting is a live state (those files can still be collected, see the Waiting Files report); Expired files were deleted unclaimed ~11 days after staging. Sessions have their own reports (see Session Topview). Click a Files Ok / Error cell for that day'\''s 10 most recent Files.\n'
+    printf 'NOTE\t**Files** = logical transfers (all rows sharing one CoreId, Ok when the final row processed), **Transfers** = physical log rows (one per transfer leg). **Recovered** counts the Files that carried at least one failed leg yet still finished OK — the failure was healed by a retry, so those Files sit under Files/Ok while their failed legs sit under Transfers/Error. The **State** columns split the same Files by their final state: on the reports Processed + Waiting count as **OK** and Failed + Expired as **Error** — Waiting is a live state (those files can still be collected, see the Waiting Files report); Expired files were deleted unclaimed ~11 days after staging. Sessions have their own reports (see Session Topview). Click a Files Ok / Error cell for that day'\''s 10 most recent Files; a nonzero **Waiting** / **Expired** cell opens that report.\n'
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

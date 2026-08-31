@@ -51,7 +51,9 @@ IFS=$'\t' read -r _ n_rows t_pk t_wf t_f t_wt t_xp t_dl <<< "$tot"
     printf 'TITLE\tPickups\n'
     printf 'DESC\tEvery UC2 (partner collects from us) flow'\''s pickup figures side by side: first/last pickup, pickup logons, collected files, waiting and expired files, the pickup cadence and the UC4 shared-connection flag.\n'
     printf 'INTRO\tOne row per **UC2** (partner collects from us) subscription — the detail pages'\'' **Pickup information** tables collated. A **pickup** is a successful SSH logon by the flow'\''s pickup account (shared across that account'\''s UC2 subscriptions); a visit that only **delivered** files (the UC4 twin flow) is not a pickup — its logons count in the **Delivered-only logons** column. **With files** counts the pickups that collected at least one file of the subscription (each collected file credits the logon that took it); **Files picked up** matches the flow'\''s OK figure; **Waiting**/**Expired** are its staged files by outcome. **UC4 drop** = proven same-connection two-way traffic: at least one technical SSH connection (transfer-log Session ID) both delivered and collected a file (see the UC2 pickup visits analysis). A partner collecting over CFT/PESIT logs no SSH pickup, so its logon columns stay empty while files still move.\n'
-    printf 'TABLE\tPickups per UC2 subscription\twide\tnofilter\n'
+    # default sort: Pickups (column 3, 0-based) descending — 2026-08-31, user
+    # request; sort=, never nosort, so the header clicks keep working
+    printf 'TABLE\tPickups per UC2 subscription\twide\tnofilter\tsort=3:-1\n'
     printf 'HEAD\tSubscription\tFirst pickup\tLast pickup\tPickups\tWith files\tFiles picked up\tWaiting\tExpired\tPattern\tDelivered-only logons\tUC4 drop\n'
     printf 'KIND\tmono\ttext\ttext\tnum\tnum\tnumprocessed\tnum\tnumfailed\ttext\tnum\ttext\n'
     printf '%s\n' "$rows"

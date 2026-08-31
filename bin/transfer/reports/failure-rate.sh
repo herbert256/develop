@@ -82,7 +82,9 @@ render_rows() {
               $2, $3, $4, $5, $6, $7, $8, ccp }'
 }
 
-acc_rows=$(render_rows "ACC"  -t'|' -k6,6nr -k3,3nr)
+# accounts with ZERO errors are not listed (2026-08-31, user request) — the
+# table is a failure ranking; zerohide=1 keeps a narrowed date range clean too
+acc_rows=$(render_rows "ACC"  -t'|' -k6,6nr -k3,3nr | awk -F'\t' '$4+0 > 0')
 site_rows=$(render_rows "SITE" -t'|' -k6,6nr -k3,3nr)
 day_rows=$(render_rows "DAY"  -t'|' -k2,2)
 
@@ -100,7 +102,7 @@ total_row=$(printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class
     printf 'INTRO\tOverall **%s%%** of Files failed (**%s** of **%s**). A File counts as Error when its final row did not deliver.\n' \
         "$tot_pct" "$tot_failed" "$tot_total"
 
-    printf 'TABLE\tFailure rate per account\n'
+    printf 'TABLE\tFailure rate per account\tzerohide=1\n'
     printf 'HEAD\tAccount\tFiles\tError\tOK\tError %%\n'
     printf 'KIND\tacct\tnum\tnumfailed\tnumprocessed\tnum\n'
     printf 'RECALC\t-\ts0\ts1\ts2\tp1.0\n'
@@ -118,7 +120,7 @@ total_row=$(printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class
     printf 'RECALC\t-\ts0\ts1\ts2\tp1.0\n'
     printf '%s\n' "$day_rows"; printf '%s\n' "$total_row"
 
-    printf 'NOTE\tCounts Files — one logical transfer each; a File counts as Error when its final row did not deliver (the delivered rule). The Subscriptions entity pages count individual transfers (legs) by default, so their Error figures differ from the per-subscription numbers here. Click an Error or OK count for that outcome'\''s 10 most recent Files (newest first).\n'
+    printf 'NOTE\tCounts Files — one logical transfer each; a File counts as Error when its final row did not deliver (the delivered rule). The account table lists only accounts with at least one Error. The Subscriptions entity pages count individual transfers (legs) by default, so their Error figures differ from the per-subscription numbers here. Click an Error or OK count for that outcome'\''s 10 most recent Files (newest first).\n'
     printf 'SUMMARY\tOverall File failure rate: %s%% (%s of %s)\n' "$tot_pct" "$tot_failed" "$tot_total"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

@@ -94,31 +94,35 @@ heat_rows=$(printf '%s\n' "$agg" | grep $'^HROW\t\|^HTOT\t' | sed 's/^HROW\t/ROW
     printf 'INTRO\t**%s** Files (one logical transfer each), **%s** failed (**%s%%**). Below: the failure split by **hour of day**, by **weekday**, and a **heatmap** of failures per hour × weekday — darker cells are more failures. Click an Error count for that bucket'\''s 10 most recent failed Files.\n' \
         "$t_tot" "$t_fail" "$tot_pct"
 
-    printf 'TABLE\tBy hour of day\n'
+    printf 'TABLE\tBy hour of day\tzerohide=1\n'
     printf 'HEAD\tHour\tFiles\tError\tError %%\tFailures\n'
     printf 'KIND\ttext\tnum\tnumfailed\tnum\tbar\n'
     printf 'RECALC\t-\ts0\ts1\tp1.0\tb1\n'
     # The Error % arrives with the row (the agg awk rounds it); the bar width is
     # plain shell arithmetic — so the loop forks nothing per row.
+    # Rows with ZERO errors are not listed (2026-08-31, user request) — the
+    # page is about failures; zerohide=1 keeps a narrowed range clean too.
     while IFS='|' read -r _ hh tot fail pct bk drill; do
         [ -z "$hh" ] && continue
+        [ "${fail:-0}" -eq 0 ] && continue
         width=$(( fail * 100 / max_f ))
         printf 'ROW\t%s:00\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\n' "$hh" "$tot" "$fail" "$pct" "$width" "$bk" "$drill"
     done <<< "$(printf '%s\n' "$agg" | grep '^HOUR|')"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s%%\t\n' "$t_tot" "$t_fail" "$tot_pct"
-    printf 'NOTE\tFiles by the hour of their start time, all days combined; the Failures bar is that hour'\''s failed count relative to the busiest hour. Re-aggregates over the selected dates. Click an Error count for its 10 most recent failed Files.\n'
+    printf 'NOTE\tFiles by the hour of their start time, all days combined; the Failures bar is that hour'\''s failed count relative to the busiest hour. Hours with zero errors are not listed. Re-aggregates over the selected dates. Click an Error count for its 10 most recent failed Files.\n'
 
-    printf 'TABLE\tBy weekday\n'
+    printf 'TABLE\tBy weekday\tzerohide=1\n'
     printf 'HEAD\tWeekday\tFiles\tError\tError %%\tFailures\n'
     printf 'KIND\ttext\tnum\tnumfailed\tnum\tbar\n'
     printf 'RECALC\t-\ts0\ts1\tp1.0\tb1\n'
     while IFS='|' read -r _ w tot fail pct bk drill; do
         [ -z "$w" ] && continue
+        [ "${fail:-0}" -eq 0 ] && continue
         width=$(( fail * 100 / wd_maxf ))
         printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\n' "${wdname[$w]}" "$tot" "$fail" "$pct" "$width" "$bk" "$drill"
     done <<< "$(printf '%s\n' "$agg" | grep '^WD|')"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s%%\t\n' "$t_tot" "$t_fail" "$tot_pct"
-    printf 'NOTE\tThe same counts by day of week (Monday first). Re-aggregates over the selected dates.\n'
+    printf 'NOTE\tThe same counts by day of week (Monday first). Weekdays with zero errors are not listed. Re-aggregates over the selected dates.\n'
 
     printf 'TABLE\tHour × weekday failure heatmap\theat\n'
     printf 'HEAD\tHour\tMonday\tTuesday\tWednesday\tThursday\tFriday\tSaturday\tSunday\n'

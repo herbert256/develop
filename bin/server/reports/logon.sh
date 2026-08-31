@@ -94,7 +94,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 #   R   <TAB> user <TAB> a t d n b k l <TAB> buckets <TAB> 7 drill fields
 #   OUT <TAB> count <TAB> host <TAB> user <TAB> reason <TAB> buckets <TAB> first <TAB> last <TAB> loglines
 #   KN  <TAB> name <TAB> count <TAB> nips <TAB> top-ip (n) <TAB> configured <TAB> first <TAB> last <TAB> buckets <TAB> loglines   (FE-namespace door knockers)
-#   SC  <TAB> name <TAB> count <TAB> nips <TAB> first <TAB> last <TAB> buckets <TAB> loglines                                     (scanner door knockers)
+#   SC  <TAB> name <TAB> count <TAB> nips <TAB> ips (", "-joined, "-" = none) <TAB> first <TAB> last <TAB> buckets <TAB> loglines  (scanner door knockers)
 #   DKT <TAB> total <TAB> nnames
 #   TOT <TAB> a t d n b k l totals <TAB> outbound_total
 # The drill fields are \x1f-joined "date time  Level Component  message"
@@ -111,6 +111,16 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
         p = index(substr(rest, 2), q)
         if (p <= 0) return ""
         return substr(rest, 2, p - 1)
+    }
+    # sortjoin(s): a SUBSEP-joined set as a ", "-separated SORTED list —
+    # sorted so the output never depends on awk hash order (the scanner IPs
+    # column, 2026-08-31, user request)
+    function sortjoin(s,   n9, A9, i9, j9, v9, o9) {
+        n9 = split(s, A9, SUBSEP)
+        for (i9 = 2; i9 <= n9; i9++) { v9 = A9[i9]; j9 = i9 - 1; while (j9 >= 1 && A9[j9] > v9) { A9[j9+1] = A9[j9]; j9-- } A9[j9+1] = v9 }
+        o9 = ""
+        for (i9 = 1; i9 <= n9; i9++) o9 = o9 (o9 == "" ? "" : ", ") A9[i9]
+        return o9
     }
     function last5(p,   s, a4, n, i, out) {
         s = lastlines(p); n = split(s, a4, _US); out = ""
@@ -252,13 +262,18 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
         # top source IP per FE-namespace name (ties break on the address)
         for (x in dkip) { split(x, a5, SUBSEP)
             if (a5[1] ~ /^FE[0-9]+$/ && (dkip[x] > tipn[a5[1]] || (dkip[x] == tipn[a5[1]] && a5[2] < tip[a5[1]]))) { tipn[a5[1]] = dkip[x]; tip[a5[1]] = a5[2] } }
+        # the scanner names distinct source ADDRESSES, ", "-joined per name
+        # (the IPs column — 2026-08-31, user request); collected here in hash
+        # order, sortjoin() below makes the list deterministic
+        for (x in dkip) { split(x, a5, SUBSEP)
+            if (a5[1] !~ /^FE[0-9]+$/) scip[a5[1]] = scip[a5[1]] (scip[a5[1]] == "" ? "" : SUBSEP) a5[2] }
         nkn = 0
         for (u in dkc) { nkn++
             if (u ~ /^FE[0-9]+$/)
                 printf "KN\t%s\t%d\t%d\t%s (%d)\t%s\t%s\t%s\t%s\t%s\n", u, dkc[u], dkips[u]+0, tip[u], tipn[u]+0, \
                     ((u in klog) ? "yes" : "no"), dkf[u], dkl[u], (dkb[u] == "" ? "-" : dkb[u]), lastlines("DK" SUBSEP u)
             else
-                printf "SC\t%s\t%d\t%d\t%s\t%s\t%s\t%s\n", u, dkc[u], dkips[u]+0, dkf[u], dkl[u], \
+                printf "SC\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\n", u, dkc[u], dkips[u]+0, (scip[u] == "" ? "-" : sortjoin(scip[u])), dkf[u], dkl[u], \
                     (dkb[u] == "" ? "-" : dkb[u]), lastlines("DK" SUBSEP u)
         }
         printf "DKT\t%d\t%d\n", dkT+0, nkn+0
@@ -354,12 +369,13 @@ near_rows() {
 }
 n_scan=0; scan_att=0
 scan_rows() {
-    while IFS=$'\t' read -r _ name count nips fst lst bkt lines; do
+    while IFS=$'\t' read -r _ name count nips ips fst lst bkt lines; do
         [ -n "$name" ] || continue
         [ "$bkt" = "-" ] && bkt=""
+        [ "$ips" = "-" ] && ips=""
         n_scan=$((n_scan + 1)); scan_att=$((scan_att + count))
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' \
-            "$name" "$count" "$nips" "$fst" "$lst" "$bkt" "$lines"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' \
+            "$name" "$count" "$nips" "$ips" "$fst" "$lst" "$bkt" "$lines"
     done <<< "$(printf '%s\n' "$agg" | grep $'^SC\t' | LC_ALL=C sort -t"$(printf '\t')" -k3,3nr -k2,2 | awk 'NR <= 25')"
 }
 
@@ -423,20 +439,20 @@ out_rows() {
     printf 'NOTE\tThe unconsumed screening family (User "u" is not associated with any account. Remote address: ip), RESTRICTED to names matching the configured **FE-number namespace** (`FE` + digits) — someone knocking with names that look exactly like this platform'\''s real logins, from a HANDFUL of addresses (compare the scanner table below). **Configured login = yes** is the alarming case: the name IS defined in Flow Manager, yet the server maps it to no account — either a provisioning gap (login configured, account association missing) or a partner using a decommissioned name. Rows are red-tinted; Source IPs stays full-period under a date filter. Click a row for its 10 most recent lines.\n'
 
     if [ "${dk_tot:-0}" -gt 0 ]; then
-        printf 'TABLE\tDoor knockers — scanner names\twide\tnoagg=2\tdrill=log line\n'
+        printf 'TABLE\tDoor knockers — scanner names\twide\tnoagg=2,3\tdrill=log line\n'
     else
         printf 'TABLE\tDoor knockers — scanner names\tnofilter\tnosort\n'
     fi
-    printf 'HEAD\tUsername\tAttempts\tSource IPs\tFirst\tLast\n'
-    printf 'KIND\tmono\tnumfailed\tnum\ttext\ttext\n'
-    printf 'RECALC\t-\ts0\t-\t-\t-\n'
+    printf 'HEAD\tUsername\tAttempts\tSource IPs\tIPs\tFirst\tLast\n'
+    printf 'KIND\tmono\tnumfailed\tnum\ttext\ttext\ttext\n'
+    printf 'RECALC\t-\ts0\t-\t-\t-\t-\n'
     if [ "${dk_tot:-0}" -gt 0 ]; then
         scan_rows
     else
-        printf 'ROW\t@{colspan=5}No door-knocker lines in this data window.\n'
+        printf 'ROW\t@{colspan=6}No door-knocker lines in this data window.\n'
     fi
-    printf 'TOTAL\tTotal (top %s of %s name(s))\t@{class=num failed}%s\t\t\t\n' "$n_scan" "${dk_names:-0}" "$scan_att"
-    printf 'NOTE\tThe same "not associated with any account" family for every OTHER name — the internet background noise (root, admin, user, test, …) probing over many source addresses. The 25 most-tried names are shown of **%s** distinct name(s) and **%s** attempt(s) in all; the total row sums the SHOWN rows only. These names never get past the account lookup, so they appear in no other logon column.\n' "${dk_names:-0}" "${dk_tot:-0}"
+    printf 'TOTAL\tTotal (top %s of %s name(s))\t@{class=num failed}%s\t\t\t\t\n' "$n_scan" "${dk_names:-0}" "$scan_att"
+    printf 'NOTE\tThe same "not associated with any account" family for every OTHER name — the internet background noise (root, admin, user, test, …) probing over many source addresses. The **IPs** column lists that name'\''s distinct source addresses (full period, like the Source IPs count). The 25 most-tried names are shown of **%s** distinct name(s) and **%s** attempt(s) in all; the total row sums the SHOWN rows only. These names never get past the account lookup, so they appear in no other logon column.\n' "${dk_names:-0}" "${dk_tot:-0}"
 
     printf 'SUMMARY\tLogins: %s  |  Allowed: %s  |  Authenticated: %s  |  Disallowed: %s  |  No account: %s names (%s attempts)  |  Bad key: %s  |  Key failures: %s  |  Locked: %s  |  Outbound auth failures: %s (%s pairs)  |  Door knockers: %s attempts (%s names, %s near-miss)\n' \
         "$nrows" "$atot" "$ttot" "$dtot" "$nnames" "$ntot" "$btot" "$ktot" "$ltot" "$ototal" "$n_pairs" "${dk_tot:-0}" "${dk_names:-0}" "$n_near"
