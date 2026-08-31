@@ -581,7 +581,7 @@ td.desc { color:#444; white-space:normal; }
 
 /* ---- the root index (body.home): the two ENVIRONMENT blocks ---- */
 /* The home bakes one .envblock per environment (acceptance + production) and
-   shows only the ACTIVE one — default acceptance; report.js setupEnvSwitch
+   shows only the ACTIVE one — default production (body bakes env-production); report.js setupEnvSwitch
    stamps .env-production on <body> when Production is picked (the .srvon
    pattern). */
 body.home .envblock.env-production { display:none; }
