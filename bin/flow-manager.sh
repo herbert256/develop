@@ -596,16 +596,23 @@ awk -F'\t' -v LF="$LOGICALF" '
         for (m = 1; m <= n; m++) { t = (m == at ? s : P[m]); r = (r == "" ? t : r "_" t) }
         return r }
     function digitstrip(p,   s) { s = p; if (sub(/[0-9]+$/, "", s)) sub(/-+$/, "", s); return s }
-    # INTAKE NORMALIZATION (2026-08-30): the estate mixes "-" and "_"
-    # spellings of one name (the family matches everything sepfolded),
-    # but this derivation splits on "_" alone — a dash-spelled sibling
-    # parsed into different part counts and every grouping rule missed
-    # it. Group on the "_"-folded form; a FIXED mapping still matches
-    # the RAW spelling too. The reshape re-adds dashes for its joins.
+    # INTAKE NORMALIZATION (2026-08-30; hardened 2026-08-31, user request:
+    # "before splitting a FlowID into parts, replace - with _"): the estate
+    # mixes "-" and "_" spellings of one name (the family matches
+    # everything sepfolded), but this derivation splits on "_" alone — a
+    # dash-spelled sibling parsed into different part counts and every
+    # grouping rule missed it. Group on the "_"-folded form, with DOUBLED
+    # separators collapsed and edge separators trimmed — a raw "-_" run or
+    # a trailing "-" otherwise splits into an EMPTY part, which the
+    # reshape then joins into a dangling-dash artifact ("PEGAWBA-"). A
+    # FIXED mapping matches the RAW spelling first, then the folded one.
+    # The reshape re-adds dashes for its joins.
     $1 != "" { raw = $1; nn++
         raws[nn] = raw
-        if (raw in FIX) { finalfix[nn] = FIX[raw]; next }
-        nm0 = raw; gsub(/-/, "_", nm0)
+        nm0 = raw; gsub(/-/, "_", nm0); gsub(/_+/, "_", nm0)
+        sub(/^_/, "", nm0); sub(/_$/, "", nm0)
+        if (raw in FIX)      { finalfix[nn] = FIX[raw]; next }
+        else if (nm0 in FIX) { finalfix[nn] = FIX[nm0]; next }
         name[nn] = nm0; exists[nm0] = 1 }
     END {
         # pass 1a: count the reductions

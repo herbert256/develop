@@ -227,7 +227,11 @@ data-diff deliberately exclude it (their set is the six classic+Logical types).
 **THE BASE IS THE LOGICAL ENTITY** (2026-08-30, user request — this replaced the account-NAME
 derivation wholesale). The Logical derivation (FlowID families condensed to three-part group
 names, `input/logical.txt` pins honoured) runs FIRST; the PDA pass consumes its map
-(`xref/_profiles-logicals.tsv`). An unpinned Logical name has exactly three `_`-parts `D_A_P`:
+(`xref/_profiles-logicals.tsv`). Before ANY splitting a FlowID is separator-normalized
+(2026-08-31, user request): `-` folds to `_`, doubled separators collapse and edge separators
+trim — a raw `-_` run or a trailing `-` otherwise split into an empty part and the reshape
+joined it into a dangling-dash artifact; a `input/logical.txt` pin matches the raw spelling
+first, then the folded one. An unpinned Logical name has exactly three `_`-parts `D_A_P`:
 
 - **part 1 = the DOMAIN**, **part 2 = the APPLICATION**, **part 3 = the PARTNER token** —
   each first passed through its hand-curated FROM→TO replacement map
