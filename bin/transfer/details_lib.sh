@@ -420,7 +420,8 @@ insert_config_rows() {
              _partners-logicals _apps-logicals _domains-logicals \
              _bl-accounts _bl-subscriptions _bl-logins _bl-hosts \
              _bl-domains _bl-apps _bl-logicals _bl-partners \
-             _partners-bl _apps-bl _domains-bl _logicals-bl; do
+             _partners-bl _apps-bl _domains-bl _logicals-bl \
+             _accounts-domains _accounts-apps _accounts-logicals _accounts-partners _accounts-bl; do
         [ -f "$CONFIG_XREF/$f.tsv" ] && caches+=("$CONFIG_XREF/$f.tsv")
     done
     if [ ${#caches[@]} -eq 0 ]; then cat; return 0; fi
@@ -552,7 +553,7 @@ insert_config_rows() {
         # 5-field line (empty count field) is the writer'\''s config-row marker.
         function flushsec(t, e, s,   plist, n, arr, i, j, u, ku, m, M, MK, MU) {
             if (s == od[t]) return
-            if ((s == 3 || s == 4) && t != "PTN" && t != "APP" && t != "DOM" && t != "LGC" && t != "BL") return   # Logins/Hosts tables: Logical+PDA+BL pages only
+            if ((s == 3 || s == 4) && t != "PTN" && t != "APP" && t != "DOM" && t != "LGC" && t != "BL" && t != "ACC") return   # Logins/Hosts tables: Logical+PDA+BL+Account pages
             plist = partners(t, e, s); if (plist == "") return
             n = split(plist, arr, US); m = 0
             for (i = 1; i <= n; i++) {
@@ -637,6 +638,13 @@ insert_config_rows() {
         FILENAME ~ /_apps-bl\.tsv$/                { addcp("APP",$1,2.85,$2); next }
         FILENAME ~ /_domains-bl\.tsv$/             { addcp("DOM",$1,2.85,$2); next }
         FILENAME ~ /_logicals-bl\.tsv$/            { addcp("LGC",$1,2.85,$2); next }
+        # the ACCOUNT pages'"'"' own quad sections (2026-08-31, user request:
+        # accounts render their dims like the Logical+PDA pages)
+        FILENAME ~ /_accounts-domains\.tsv$/       { addcp("ACC",$1,2.81,$2); next }
+        FILENAME ~ /_accounts-apps\.tsv$/          { addcp("ACC",$1,2.82,$2); next }
+        FILENAME ~ /_accounts-logicals\.tsv$/      { addcp("ACC",$1,2.83,$2); next }
+        FILENAME ~ /_accounts-partners\.tsv$/      { addcp("ACC",$1,2.84,$2); next }
+        FILENAME ~ /_accounts-bl\.tsv$/            { addcp("ACC",$1,2.85,$2); next }
         {   # the sorted agg stream: insert each section'\''s config rows when the
             # stream moves past it (all its logged rows are collected by then)
             t = $1; e = $2; s3 = $3 + 0
@@ -645,7 +653,7 @@ insert_config_rows() {
             if (s3 in ISSEC) { seen[s3 SUBSEP toupper($5)] = 1; if (s3 == 2) L3 = (L3 == "" ? toupper($5) : L3 US toupper($5)) }
             if (s3 == 2.8) $4 = accf4($5)   # logged Account rows get the Login/Host payload too (OFS is TAB)
             if (s3 == 2)  $4 = "S|" subpfx($5) "|" subres($5)   # logged Subscription rows: Direction + row-tint color
-            if ((s3 == 2.81 || s3 == 2.82 || s3 == 2.83 || s3 == 2.84 || s3 == 2.85) && (t == "PTN" || t == "APP" || t == "DOM" || t == "LGC" || t == "BL")) $4 = pdares(s3, $5)   # logged quad-dim rows on the quad pages: the row-tint color
+            if ((s3 == 2.81 || s3 == 2.82 || s3 == 2.83 || s3 == 2.84 || s3 == 2.85) && (t == "PTN" || t == "APP" || t == "DOM" || t == "LGC" || t == "BL" || t == "ACC")) $4 = pdares(s3, $5)   # logged quad-dim rows on the quad+Account pages: the row-tint color
             if (s3 == 2) bucket2($5, $0); else print
         }
         END { endflush(curt, cure) }
@@ -755,7 +763,7 @@ aggregate_files() {
       # (their Features table folds Domain/Application/Partner via _sum_config)
       for(dv in gDIM){ split(dv,a2,SUBSEP); if(a2[1]==od[ty]) continue
         if(ty=="SITE" && a2[1]+0>2.8 && a2[1]+0<3) continue
-        if((a2[1]+0==3 || a2[1]+0==4) && ty!="PTN" && ty!="APP" && ty!="DOM" && ty!="LGC" && ty!="BL") continue   # the Login/Host dims feed the Logical+PDA+BL pages only
+        if((a2[1]+0==3 || a2[1]+0==4) && ty!="PTN" && ty!="APP" && ty!="DOM" && ty!="LGC" && ty!="BL" && ty!="ACC") continue   # the Login/Host dims feed the Logical+PDA+BL+Account pages
         bump(ty,ent,a2[1],a2[2]) } }
     function flush(   v){
       day=tdt[curcid]; if(day=="") { split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0; return }

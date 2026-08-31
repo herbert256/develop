@@ -307,12 +307,11 @@ function twin_features_rows(   n, i, V, sd) {
     for (i = 1; i <= n; i++) if (V[i] != "") emitl("ROW\tTwin\t@{alink=" sd "/" V[i] "}" V[i])
 }
 # ACCOUNT pages only: the configured FE login / host Features rows.
-function acct_features_rows(   n, i, V) {
-    n = usplit(a_acl, V)
-    for (i = 1; i <= n; i++) if (V[i] != "") emitl("ROW\tLogin\t@{alink=logins/" V[i] "}" V[i])
-    n = usplit(a_ach, V)
-    for (i = 1; i <= n; i++) if (V[i] != "") emitl("ROW\tHost\t@{alink=hosts/" V[i] "}" V[i])
-}
+# (acct_features_rows — the ACC Features Login/Host rows — was retired
+# 2026-08-31, user request: accounts render their Logins/Hosts (and quad
+# dims) as side-by-side tables like the Logical+PDA pages; a single-value
+# table folds back into Features via fold_single_dims. a_acl/a_ach still
+# feed page_srv_log.)
 
 # The Last error(s) table (2026-08), first thing on every NON-subscription page
 # that has one: for each subscription this entity moves files with and that has
@@ -424,7 +423,6 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
             emitl("TABLE\tFeatures"); emitl("HEAD\tItem\tValue"); emitl("KIND\ttext\ttext")
             for (i = 1; i <= nca; i++) if (CA[i] != "") emitl("ROW\tAccount\t@{alink=accounts/" CA[i] "}" CA[i])
             twin_features_rows()
-            acct_features_rows()
             if (x_grpfold != "") { npg++; PG[npg] = x_grpfold }
         }
         return
@@ -442,7 +440,6 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
         if (x_oneacct != "" && !dupacct) emitl("ROW\tAccount\t@{alink=accounts/" x_oneacct "}" x_oneacct)
         if (x_ip != "") emitl("ROW\tIP\t" x_ip)
         twin_features_rows()
-        acct_features_rows()
         if (pend_t == "SITE") sum_config()
         if (x_onedom != "") emitl("ROW\tDomain\t@{alink=domains/" x_onedom "}" x_onedom)
         if (x_oneapp != "") emitl("ROW\tApplication\t@{alink=applications/" x_oneapp "}" x_oneapp)
@@ -543,7 +540,7 @@ function rank_buckets(   i, d, np, P, j, s, tn, tm, tb) {
 
 # ===== the section table heads ===============================================
 # the Logical+PDA quad pages (their dimension tables always render, restint'd)
-function quadp() { return (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM" || pend_t == "LGC" || pend_t == "BL") }
+function quadp() { return (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM" || pend_t == "LGC" || pend_t == "BL" || pend_t == "ACC") }
 function dim_table(lbl, kind, mods, title) {
     emitl("TABLE\t" title (mods != "" ? "\t" mods : ""))
     if (TMODE == 1) {
@@ -600,7 +597,7 @@ function start_table(s,   WEH, WEK) {
     else if (s == "2.81") dim_table("Domain", "dom", quadp() ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "Domains")
     else if (s == "2.82") dim_table("Application", "app", quadp() ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "Applications")
     else if (s == "2.83") dim_table("Logical", "lgc", quadp() ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "Logical")
-    else if (s == "2.84") dim_table("Partner", "ptn", quadp() ? "seenrows\trestint" : "seenrows", "Partners")
+    else if (s == "2.84") dim_table("Partner", "ptn", (pend_t == "ACC") ? "seenrows\tsxs=5\trestint" : (quadp() ? "seenrows\trestint" : "seenrows"), "Partners")
     else if (s == "2.85") dim_table("BL", "bl", quadp() ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "BL")
     # the Logical+PDA pages' Logins (3) and Hosts (4) tables (2026-08-29): sxs=5
     # joins them into the Domains/Applications flex row; no restint — these
@@ -793,8 +790,8 @@ function login_sxs_row(   i, act0, act1, lg0, lg1, ic0, ic1, n2) {
 # first column (the dim_table shapes); the sxs pair partner of a folded
 # table simply renders alone. Up to three folds per page.
 function fold_single_dims(   pass9, i, j, t0, t1, hl, lbl, nr9, name9, fe0, fe1, n2, C3, trio9, d0) {
-    trio9 = (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM" || pend_t == "LGC" || pend_t == "BL")
-    for (pass9 = 1; pass9 <= 6; pass9++) {   # a quad page can fold up to 5 dims + slack
+    trio9 = (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM" || pend_t == "LGC" || pend_t == "BL" || pend_t == "ACC")
+    for (pass9 = 1; pass9 <= 8; pass9++) {   # an Account page can fold up to 7 dims (5 quads + Login + Host) + slack
         t0 = 0; lbl = ""
         for (i = 1; i < npg; i++) {
             if (index(PG[i], "TABLE\t") != 1) continue
@@ -817,7 +814,7 @@ function fold_single_dims(   pass9, i, j, t0, t1, hl, lbl, nr9, name9, fe0, fe1,
         # the dim column linked via its KIND; the Features cell links via
         # alink instead (slugmap-resolved — no entry, no link)
         if (index(name9, "@{") != 1)
-            name9 = "@{alink=" ((lbl == "Domain") ? "domains" : (lbl == "Application") ? "applications" : (lbl == "Logical") ? "logicals" : (lbl == "Login") ? "logins" : (lbl == "Host") ? "hosts" : "partners") "/" name9 "}" name9
+            name9 = "@{alink=" ((lbl == "Domain") ? "domains" : (lbl == "Application") ? "applications" : (lbl == "Logical") ? "logicals" : (lbl == "BL") ? "bl" : (lbl == "Login") ? "logins" : (lbl == "Host") ? "hosts" : "partners") "/" name9 "}" name9
         fe0 = 0
         for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\tFeatures") == 1) { fe0 = i; break }
         if (fe0 == 0) {
@@ -1295,7 +1292,7 @@ NF < 4 { next }
         # via sum_config; the LGC/PDA quad renders them as own tables; every
         # other type folds them into Features via x_grpfold
         x_grpfold = ""
-        if (t != "SITE" && t != "PTN" && t != "APP" && t != "DOM" && t != "LGC" && t != "BL" && a_grp != "") {
+        if (t != "SITE" && t != "PTN" && t != "APP" && t != "DOM" && t != "LGC" && t != "BL" && t != "ACC" && a_grp != "") {
             ng = usplit(a_grp, GV)
             for (gi = 1; gi <= ng; gi++) {
                 i1 = index(GV[gi], "\t"); if (i1 == 0) continue

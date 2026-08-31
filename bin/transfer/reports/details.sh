@@ -581,7 +581,7 @@ awk -F'\t' \
         lst[e SUBSEP s]=lst[e SUBSEP s] (lst[e SUBSEP s]==""?"":US) v
     }
     $1=="SITE" && !(($2) in eidx) { eidx[$2]=++ne; el[ne]=$2 }   # never-seen pages fold their config rows too
-    (($3==2.81 && $1!="PTN" && $1!="APP" && $1!="LGC" && $1!="BL") || ($3==2.82 && $1!="PTN" && $1!="DOM" && $1!="LGC" && $1!="BL") || ($3==2.83 && $1!="PTN" && $1!="APP" && $1!="DOM" && $1!="BL") || ($3==2.84 && $1!="APP" && $1!="DOM" && $1!="LGC" && $1!="BL") || ($3==2.85 && $1!="PTN" && $1!="APP" && $1!="DOM" && $1!="LGC") || (($3==3 || $3==2.8) && $1!="SITE")) && $5!="" {
+    (($3==2.81 && $1!="PTN" && $1!="APP" && $1!="LGC" && $1!="BL" && $1!="ACC") || ($3==2.82 && $1!="PTN" && $1!="DOM" && $1!="LGC" && $1!="BL" && $1!="ACC") || ($3==2.83 && $1!="PTN" && $1!="APP" && $1!="DOM" && $1!="BL" && $1!="ACC") || ($3==2.84 && $1!="APP" && $1!="DOM" && $1!="LGC" && $1!="BL" && $1!="ACC") || ($3==2.85 && $1!="PTN" && $1!="APP" && $1!="DOM" && $1!="LGC" && $1!="ACC") || ($3==2.8 && $1!="SITE")) && $5!="" {
         odk=$1 SUBSEP $2 SUBSEP $3 SUBSEP toupper($5); if(odk in odseen) next; odseen[odk]=1
         odke=$1 SUBSEP $2 SUBSEP $3; odcnt[odke]++; odval[odke]=$5 }
     END{ for(i=1;i<=ne;i++){ e=el[i]; eu=toupper(e)
