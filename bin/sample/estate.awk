@@ -403,8 +403,12 @@ function build_production() {
     # logins — flow A active on the account login, flow B on its OWN login
     # and never used. uc2-status must read flow B as "Nothing", never
     # "No files": the other login's logons are no pickup evidence for it.
+    # PARCELX, not PARCEL2 (no digit tail): the Logical derivation folds a
+    # digit-tail FlowID into the base family, and flow B must keep its OWN
+    # application so entity-coverage can show it NOT covered (its login
+    # never logs on — login A's logons prove nothing for it).
     addf(2, "CD",  "PARCEL",   "BLUTH",    "",  3, 0.02, "")
-    addf(2, "CD",  "PARCEL2",  "BLUTH",    "",  0, 0, "noxfer,ownlogin", "CD-PARCEL-BLUTH")
+    addf(2, "CD",  "PARCELX",  "BLUTH",    "",  0, 0, "noxfer,ownlogin", "CD-PARCEL-BLUTH")
     addf(3, "APS", "FMGENLOG", "CYBERDYNE","", 12, 0.04, "")
     addf(3, "AB",  "NAS",      "GLOBEX",   "",  6, 0.03, "")
     addf(3, "APS", "SYSHUB",   "SOYLENT",  "",  3, 0.03, "")

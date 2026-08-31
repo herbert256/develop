@@ -86,6 +86,15 @@ ensure_parsed
 SB="$CONFIG_BASE/_subscriptions.tsv"
 AUTH="$SERVER_REPORTS/auth-activity.rpt"
 POLL="$SERVER_REPORTS/remote-poll.rpt"
+# the per-(account, login) logon sidecar (auth-activity.sh, 2026-08-31): on a
+# MULTI-FE account (several configured logins) the In-side logon proof is
+# composed per LOGIN — login -> its in-side subscriptions -> entities — since
+# a logon by login A proves nothing for login B's flows. Missing sidecar
+# (older data) = fall back to the account-wide composition.
+AUTHL="$SERVER_REPORTS/auth-logins.tsv"; AUTHLOK=1
+[ -f "$AUTHL" ] || { AUTHL=/dev/null; AUTHLOK=0; }
+LSF2="$CONFIG_XREF/_logins-subscriptions.tsv"; [ -f "$LSF2" ] || LSF2=/dev/null
+ALF2="$CONFIG_XREF/_accounts-logins.tsv";      [ -f "$ALF2" ] || ALF2=/dev/null
 [ -f "$CONFIG_BASE/_accounts.tsv" ] || { echo "No base caches — skipping." >&2; rm -f "$OUT"; exit 0; }
 for f in SB AUTH POLL; do eval "[ -f \"\$$f\" ] || $f=/dev/null"; done
 
@@ -95,7 +104,7 @@ for f in SB AUTH POLL; do eval "[ -f \"\$$f\" ] || $f=/dev/null"; done
 for _rb in entity-coverage-ok entity-coverage-once entity-coverage-diff; do
     [ -f "$REPORTS_DIR/$_rb.rpt" ] || rm -f "$OUT"
 done
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$CONFIG_BASE" "$CONFIG_XREF" "$AUTH" "$POLL"
+skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$CONFIG_BASE" "$CONFIG_XREF" "$AUTH" "$AUTHL" "$POLL"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', building entity coverage..." >&2
 
 # view:label:base:entity->subs:subs->entity:account->entity:$FILES col:KIND
@@ -171,7 +180,8 @@ for spec in "${SPECS[@]}"; do
     esac
 
     awk -F'\t' -v EB="$EB" -v SB="$SB" -v ES="$ES" -v SE="$SE" -v AE="$AE" -v VMAP="$VMAP" -v ASF="$ASF" \
-        -v AUTH="$AUTH" -v POLL="$POLL" -v FCOL="$fcol" -v IDENT="$ident" -v RULE="$RKEY" '
+        -v AUTH="$AUTH" -v POLL="$POLL" -v AUTHL="$AUTHL" -v AUTHLOK="$AUTHLOK" -v LSF2="$LSF2" -v ALF2="$ALF2" \
+        -v FCOL="$fcol" -v IDENT="$ident" -v RULE="$RKEY" '
         function stripattr(v) { sub(/^@\{[^}]*\}/, "", v); return v }
         BEGIN {
             FS = "\t"
@@ -196,7 +206,12 @@ for spec in "${SPECS[@]}"; do
             # account with one live inbound flow and four dead ones marked the
             # In side of all five entities covered.
             if (!IDENT) { while ((getline l < ASF) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "" && a[2] != "") ASUB[toupper(a[1])] = ASUB[toupper(a[1])] SUBSEP toupper(a[2]) }
-                          close(ASF) }
+                          close(ASF)
+                          # the multi-FE maps (see the AUTHL comment up top)
+                          while ((getline l < LSF2) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "" && a[2] != "") LSUB[toupper(a[1])] = LSUB[toupper(a[1])] SUBSEP toupper(a[2]) }
+                          close(LSF2)
+                          while ((getline l < ALF2) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") aln[toupper(a[1])]++ }
+                          close(ALF2) }
             if (VMAP != "") { while ((getline l < VMAP) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "" && a[2] != "") VM[toupper(a[1])] = a[2] }
                               close(VMAP) }
             t = 0
@@ -206,6 +221,8 @@ for spec in "${SPECS[@]}"; do
                 if (a[1] != "ROW" || t != 1) continue
                 acct = toupper(stripattr(a[2])); c = a[3] + 0
                 if (IDENT) { logons[acct] += c; continue }
+                # a MULTI-FE account takes the per-login path below instead
+                if (AUTHLOK + 0 == 1 && aln[acct] + 0 >= 2) continue
                 m = split(substr(ASUB[acct], 2), PL, SUBSEP)
                 for (i = 1; i <= m; i++) { s9 = PL[i]; d9 = SD[s9]
                     if (d9 != "in" && d9 != "both") continue          # a logon proves the In side only
@@ -213,6 +230,21 @@ for spec in "${SPECS[@]}"; do
                     for (j = 1; j <= m2; j++) logons[PL2[j]] += c }
             }
             close(AUTH)
+            # the multi-FE accounts: the logon proof per LOGIN, from the
+            # auth-logins.tsv sidecar — login -> its in-side subscriptions ->
+            # entities (single-login accounts took the account path above)
+            if (!IDENT && AUTHLOK + 0 == 1) {
+                while ((getline l < AUTHL) > 0) {
+                    n = split(l, a, "\t"); if (n < 3 || a[1] == "" || a[2] == "") continue
+                    acct = toupper(a[1]); if (aln[acct] + 0 < 2) continue
+                    m = split(substr(LSUB[toupper(a[2])], 2), PL, SUBSEP)
+                    for (i = 1; i <= m; i++) { s9 = PL[i]; d9 = SD[s9]
+                        if (d9 != "in" && d9 != "both") continue
+                        m2 = split(substr(SUBP[s9], 2), PL2, SUBSEP)
+                        for (j = 1; j <= m2; j++) logons[PL2[j]] += a[3] + 0 }
+                }
+                close(AUTHL)
+            }
             t = 0
             while ((getline l < POLL) > 0) {
                 n = split(l, a, "\t")

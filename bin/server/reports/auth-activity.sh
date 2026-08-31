@@ -78,6 +78,12 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
             if (acct == "") acct = "(blank)"
             ip = ""; if (match(m, /Remote address: [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/)) ip = substr(m, RSTART + 16, RLENGTH - 16)
             if (ip == "") ip = "(none)"
+            # the LOGIN the line names — the auth-logins.tsv sidecar (2026-08-31,
+            # the multi-FE accounts): entity-coverage composes the In-side
+            # logon proof per login there, since a logon by login A proves
+            # nothing for login B flows on the same account
+            lgn = ""; if (match(m, /login name "[^"]*"/)) lgn = substr(m, RSTART + 12, RLENGTH - 13)
+            if (lgn != "") al9[acct SUBSEP lgn]++
             tot++
             ac[acct]++; ipc[ip]++
             aip[acct SUBSEP ip] = 1; ipa[ip SUBSEP acct] = 1
@@ -123,9 +129,15 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
         naccts = 0; for (x in ac)  { naccts++; printf "AC\t%s%s\t%d\t%d\t%s\t%s\t%s\t%s\n", acctlink(x), x, ac[x], nip[x]+0, abk[x], afst[x], alst[x], lastlines("A" SUBSEP x) }
         nips = 0;   for (x in ipc) { nips++;   printf "IP\t%s\t%d\t%d\t%s\t%s\t%s\t%s\n", x, ipc[x], nac[x]+0, ibk[x], ifst[x], ilst[x], lastlines("I" SUBSEP x) }
         for (x in cc) printf "CT\t%s\t%d\t%d\t%s\t%s\t%s\t%s\n", x, cc[x], cn[x]+0, cbk[x], cfst[x], clst[x], lastlines("C" SUBSEP x)
+        for (x in al9) { split(x, a9, SUBSEP); printf "AL\t%s\t%s\t%d\n", a9[1], a9[2], al9[x] }   # hash order — the shell sorts the sidecar
         printf "TOT\t%d\t%d\t%d\n", tot+0, naccts+0, nips+0
     }
 ' <(known_names KA "$TACCT") "$PARSED")
+
+# the per-(account, login) sidecar (see the AL comment above): account <TAB>
+# login <TAB> successful logons. Sorted (never awk hash order), atomic.
+AUTHL_OUT="$REPORTS_DIR/auth-logins.tsv"
+printf '%s\n' "$agg" | { grep $'^AL\t' || true; } | cut -f2- | LC_ALL=C sort > "$AUTHL_OUT.tmp" && mv "$AUTHL_OUT.tmp" "$AUTHL_OUT"
 
 IFS=$'\t' read -r _ tot naccts nips <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ "${tot:-0}" -eq 0 ]; then

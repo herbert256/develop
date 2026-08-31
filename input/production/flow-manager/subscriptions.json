@@ -324,27 +324,27 @@
     "type": "Subscription"
   },
   {
-    "businessId": "75932724-c9cb-44a3-8c59-8b396c1a376e",
+    "businessId": "5eb6404a-e318-4458-8ab4-47595ef3ca22",
     "meta": {
-      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/75932724-c9cb-44a3-8c59-8b396c1a376e",
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/5eb6404a-e318-4458-8ab4-47595ef3ca22",
       "createdTimestamp": 1780000000000,
       "modifiedTimestamp": 1787000000000
     },
-    "name": "UC2_CD_PARCEL2_BLUTH",
+    "name": "UC2_CD_PARCELX_BLUTH",
     "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
     "participants": [
-      {"businessId": "75932724-c9cb-44a3-8c59-0000par00000", "name": "CD-PARCEL-BLUTH", "comProfileId": "50f2625a-19bd-4ecd-8416-1c84475ea7a7",
+      {"businessId": "5eb6404a-e318-4458-8ab4-0000par00000", "name": "CD-PARCEL-BLUTH", "comProfileId": "bfa39131-2936-4ad4-9a86-70d47961f92e",
        "role": "target", "protocol": "SFTP", "participantType": "partner"},
-      {"businessId": "75932724-c9cb-44a3-8c59-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+      {"businessId": "5eb6404a-e318-4458-8ab4-0000hub00000", "name": "g2c_hub", "comProfileId": null,
        "role": "hub", "protocol": "PESIT", "participantType": "application"}
     ],
     "parameters": {
-      "customAttribute_FlowIdentifier": "CD_PARCEL2_BLUTH",
+      "customAttribute_FlowIdentifier": "CD_PARCELX_BLUTH",
       "target_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_send_remote_directory": "/"
     },
-    "flowId": "efda0011-744f-4130-b6de-cf3086ae3545",
-    "flowName": "UC2_CD_PARCEL2_BLUTH",
+    "flowId": "d6a78db7-143d-4eed-8fc0-90bedda187fe",
+    "flowName": "UC2_CD_PARCELX_BLUTH",
     "tags": ["BL_CD", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],

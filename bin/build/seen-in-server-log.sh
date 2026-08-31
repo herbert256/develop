@@ -13,10 +13,13 @@
 # The old overlay (a fabricated Failed _files/_transfers row per entity + a
 # data/fakes/<type>.tsv membership list consulted at publish time) is replaced
 # by a real `blue` value in the base result column that the normal result-tint
-# path already renders. Every server-log-only entity today is ALREADY a
-# configured name in base/*.tsv, so this step is a pure RECOLOR (it will append
-# a blue row for a name absent from base, but that case does not currently
-# arise).
+# path already renders. Every server-log-only entity is normally ALREADY a
+# configured name in base/*.tsv, so this step is a pure RECOLOR; a name still
+# absent from base after the site canonicalization below (Step B) is appended
+# as a blue row with an EMPTY direction — no config, no connection side, so its
+# page title reads "?/…". The 2026-08-31 case: a transfer-SITE token
+# "<subscription>_SFTP_SERVER_<partner>" that EXTENDED a configured name; the
+# EXTENDED rule now folds those onto the subscription.
 #
 # Sources: the data/unknown/{accounts,logins,sites,hosts,white}.tsv sidecars
 # written by the five server unknown-* reports (one row per unknown entity:
@@ -27,8 +30,10 @@
 # The blue SET (which names go blue) is computed exactly as the old data/fakes
 # set was: enrich each seed via the data/flow-manager/xref pair caches (the same
 # single-value vote as transfer parse.sh's xref_fill, iterated to a fixpoint;
-# HOST is never a fill target; a site seed is first canonicalized to the unique
-# configured subscription it prefixes), then for each of the 7 entity types the
+# HOST is never a fill target; a site seed is first canonicalized to a
+# configured subscription — the unique one it is a TRUNCATED prefix of, else the
+# longest one it EXTENDS at a name-part boundary, the ST transfer-site shape
+# "<subscription>_SFTP_SERVER_<partner>"), then for each of the 7 entity types the
 # enriched values that appear on NO REAL _files.tsv row are the blue names.
 #   - a HOST or WHITELISTED-IP seed that enriches to NOTHING (no account/
 #     login/subscription/profile) is DROPPED, not counted.
@@ -207,26 +212,49 @@ if [ ${#sidecars[@]} -gt 0 ]; then
                 if (w == "") next
             }
             else {
-                # site seeds: server messages truncate long names — canonicalize
-                # to the configured subscription when the token is exactly one,
-                # or extends to exactly one (exact match wins; ambiguity keeps
-                # the token as logged).
+                # site seeds: canonicalize the logged token to a configured
+                # subscription. Exact match wins; then two shapes, in order:
+                #   TRUNCATED — server messages cut long names, so the token is
+                #   a prefix of a configured name: take it when it extends to
+                #   exactly one (ambiguity keeps the token as logged).
+                #   EXTENDED (2026-08-31) — the message names the SecureTransport
+                #   transfer SITE, "<subscription>_SFTP_SERVER_<partner>", so a
+                #   configured name is a prefix of the token: take the LONGEST
+                #   configured name the token continues past at a NAME-PART
+                #   BOUNDARY (the details.sh movement fallback plus the bounded
+                #   prefix rule of the 2026-08-31 audit — UC2_X_CLIX never
+                #   stands for UC2_X_CLIX2_…). Before this rule such a site was
+                #   appended as its own blue base row with no connection side
+                #   (a "?/OUT" page title) while the real subscription stayed
+                #   orange.
                 s = name
                 if (!(toupper(name) in cidx)) {
                     hits = 0
                     for (i = 1; i <= ns; i++) if (index(csub[i], name) == 1) { hits++; cs = csub[i] }
                     if (hits == 1) s = cs
+                    else if (hits == 0) {
+                        xl = 0; xu = toupper(name)
+                        for (i = 1; i <= ns; i++) { xc = toupper(csub[i])
+                            if (length(xc) > xl && index(xu, xc) == 1 && substr(xu, length(xc) + 1, 1) !~ /[A-Za-z0-9]/) { xl = length(xc); cs = csub[i] } }
+                        if (xl > 0) s = cs
+                    }
                 }
             }
             # fixpoint: parse.sh fill order (site — the hub — then account,
             # login, profile), repeated until a pass adds nothing. Host is
             # never filled (parse.sh precedent) but votes as a source.
+            # LOGIN: never for a flow the config gives NO login (2026-08-31
+            # audit, the parse.sh guard verbatim): with the subscription known
+            # and login-less, the S voter abstains and the A voter credited
+            # the account single login to the tuple — a login the server
+            # never mentioned gained blue evidence. A multi-FE account (several
+            # logins, production 2026-08-31) abstains via A on its own.
             changed = 1
             for (iter = 1; iter <= 5 && changed; iter++) {
                 changed = 0
                 if (s == "") { v = xref_fill("S", a, l, "", h, p, w); if (v != "") { s = v; changed = 1 } }
                 if (a == "") { v = xref_fill("A", "", l, s, h, p, w); if (v != "") { a = v; changed = 1 } }
-                if (l == "") { v = xref_fill("L", a, "", s, h, p, w); if (v != "") { l = v; changed = 1 } }
+                if (l == "" && !(s != "" && !(("S" SUBSEP "L" SUBSEP toupper(s)) in xn))) { v = xref_fill("L", a, "", s, h, p, w); if (v != "") { l = v; changed = 1 } }
                 if (p == "") { v = xref_fill("P", a, l, s, h, "", w); if (v != "") { p = v; changed = 1 } }
             }
             if (a != "" || l != "" || s != "" || p != "") enriched++

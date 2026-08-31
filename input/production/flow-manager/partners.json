@@ -289,18 +289,18 @@
         "fingerPrintVerified": false, "customAuthentication": false
       },
       {
-        "businessId": "50f2625a-19bd-4ecd-8416-1c84475ea7a7",
-        "name": "CCP_CD-PARCEL-BLUTH_PWD",
+        "businessId": "bfa39131-2936-4ad4-9a86-70d47961f92e",
+        "name": "CCP_CD-PARCEL-BLUTH_KEY",
         "type": "CLIENT", "protocol": "SFTP", "enabled": true,
-        "clientAuthentication": "PASSWORD",
-        "login": "FE801547", "loginName": "FE801547",
+        "clientAuthentication": "PUBLIC_KEY",
+        "login": "FE359263", "loginName": "FE359263",
         "fingerPrintVerified": false, "customAuthentication": false
       }
     ],
     "credentials": [
       {"businessId": "66494a94-7bae-4124-a05b-login00age", "name": "FE133269", "type": "LOGIN", "login": "FE133269", "hasPassword": true,
        "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}},
-      {"businessId": "66494a94-7bae-4124-a05b-login01age", "name": "FE801547", "type": "LOGIN", "login": "FE801547", "hasPassword": true,
+      {"businessId": "66494a94-7bae-4124-a05b-login01age", "name": "FE359263", "type": "LOGIN", "login": "FE359263", "hasPassword": true,
        "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
     ],
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],

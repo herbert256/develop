@@ -97,8 +97,13 @@ for env in acceptance production; do
     if [ "$env" = production ]; then
         n=$(awk -F'\t' '$1=="CD-PARCEL-BLUTH"' "data/$env/flow-manager/xref/_accounts-logins.tsv" 2>/dev/null | wc -l | tr -d ' ')
         check $([ "${n:-0}" -eq 2 ] && echo 0 || echo 1) "[$env] CD-PARCEL-BLUTH has $n login(s), expected 2 (the multi-FE account)"
-        st=$(awk -F'\t' '$1=="ROW" && index($0, "UC2_CD_PARCEL2_BLUTH") { s=$2; sub(/^@\{[^}]*\}/, "", s); print s; exit }' "data/$env/server/reports/uc2-status.rpt" 2>/dev/null)
-        check $([ "$st" = "Nothing" ] && echo 0 || echo 1) "[$env] UC2_CD_PARCEL2_BLUTH uc2-status is '${st:-absent}', expected Nothing (multi-FE login scoping)"
+        st=$(awk -F'\t' '$1=="ROW" && index($0, "UC2_CD_PARCELX_BLUTH") { s=$2; sub(/^@\{[^}]*\}/, "", s); print s; exit }' "data/$env/server/reports/uc2-status.rpt" 2>/dev/null)
+        check $([ "$st" = "Nothing" ] && echo 0 || echo 1) "[$env] UC2_CD_PARCELX_BLUTH uc2-status is '${st:-absent}', expected Nothing (multi-FE login scoping)"
+        # ... and entity-coverage: the quiet flow's own application PARCELX
+        # must be NOT covered (red) — login A's logons are no In-side proof
+        # for login B's flow — while PARCEL (flow A) is covered
+        st=$(awk -F'\t' '$1=="ROW" && $2=="PARCELX" { print ($0 ~ /@data:res=red/) ? "red" : "notred"; exit }' "data/$env/transfer/reports/entity-coverage.rpt" 2>/dev/null)
+        check $([ "$st" = "red" ] && echo 0 || echo 1) "[$env] entity-coverage PARCELX is '${st:-absent}', expected red / not covered (multi-FE logon-proof scoping)"
     fi
     # the nine policy files are PER ENVIRONMENT (2026-08-31): present in the
     # env dir, and none left at the input root
