@@ -106,6 +106,42 @@ logicals_tsv() {
         }' "$lmap" "$sl" "$scov" | LC_ALL=C sort -t$'\t' -k1,1 -k2,2 | cov_put "$COVSRC/logicals.tsv"
 }
 
+# BL figures — the logicals_tsv shape with the same SUBSCRIPTION member
+# source: a BL entity is a subscriptions.json tags entry starting with BL, so
+# its members ARE the subscriptions carrying the tag
+# (xref/_subscriptions-bl.tsv). One row per (bl, direction) into
+# $COVSRC/bl.tsv; server-log-only (blue) BL tags count as SEEN likewise.
+bl_tsv() {
+    local scov="$COVSRC/subscriptions.tsv" sl="$DATA/flow-manager/xref/_subscriptions-bl.tsv"
+    local lmap="$DATA/transfer/reports/details/bl/_slugmap.tsv"
+    local lbase="$DATA/flow-manager/base/_bl.tsv"
+    [ -f "$scov" ] && [ -f "$sl" ] || return 0
+    [ -f "$lmap" ] || lmap=/dev/null
+    [ -f "$lbase" ] || lbase=/dev/null
+    awk -F'\t' -v bluef="$lbase" '
+        BEGIN { US = sprintf("%c", 31)
+            while ((getline l < bluef) > 0) { nb=split(l,ba,"\t"); if (nb>=3 && ba[3]=="blue") blue[toupper(ba[1])]=1 } close(bluef) }
+        FILENAME ~ /_slugmap\.tsv$/ { lslug[$1]=$2; next }   # BL name -> detail-page slug
+        FILENAME ~ /_subscriptions-bl\.tsv$/ { if($1!="" && $2!="") slg[$1]=((slg[$1]!="")?slg[$1] US:"") $2; next }
+        {   # coverage/subscriptions.tsv: name dir seen link ts outcome
+            d2=$2; if (d2!="I" && d2!="O" && d2!="B") next
+            if (!($1 in slg)) next
+            ns2=0; if(d2=="I" || d2=="B") S2[++ns2]="I"; if(d2=="O" || d2=="B") S2[++ns2]="O"
+            na=split(slg[$1], av, US)
+            for(ai=1; ai<=na; ai++) for(si=1; si<=ns2; si++){
+                k=av[ai] SUBSEP S2[si]
+                n[k]++; mem[k]=mem[k] US $1 "|" $4
+                if($3==1){ seen[k]=1
+                    if($5!="" && $5>lts[k]){ lts[k]=$5; loc[k]=$6 } }
+            }
+        }
+        END{
+            for(k in n){ split(k,x,SUBSEP)
+                if(toupper(x[1]) in blue) seen[k]=1
+                printf "%s\t%s\t%d\t%s\t%s\t%s\t%s\t\n", x[1], x[2], seen[k]+0, ((x[1] in lslug) ? "bl/" lslug[x[1]] : ""), lts[k], loc[k], substr(mem[k],2) }
+        }' "$lmap" "$sl" "$scov" | LC_ALL=C sort -t$'\t' -k1,1 -k2,2 | cov_put "$COVSRC/bl.tsv"
+}
+
 # External-partner figures for the root index's one-row "External Partners"
 # table. The partner ORGANISATIONS (In clusters, Out endpoints, both-ways
 # linked pairs) are derived by bin/flow-manager.sh — data/flow-manager/base/_partners.tsv
@@ -449,4 +485,5 @@ ensure_pda_tsvs() {
     external_partners_tsv   # $COVSRC/partners.tsv (skipped likewise)
     internal_apps_tsv       # $COVSRC/applications.tsv (skipped likewise)
     internal_domains_tsv    # $COVSRC/domains.tsv (skipped likewise)
+    bl_tsv                  # $COVSRC/bl.tsv (skipped likewise)
 }

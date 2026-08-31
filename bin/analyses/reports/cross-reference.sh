@@ -1,30 +1,31 @@
 #!/usr/bin/env bash
 #
-# cross-reference.sh — Entities Cross References: WHICH pairs of the eight
+# cross-reference.sh — Entities Cross References: WHICH pairs of the nine
 # entities (account, login, subscription, remote host, logical, partner,
-# application, domain) belong together — an ANALYSIS
+# application, domain, BL) belong together — an ANALYSIS
 # of the cross references, not a traffic report. Each table lists every (X, Y)
 # pair, two columns only: the pairs appearing together in the transfer logs
 # plus the pairs configured in the FlowManager exports (the both-ways
 # data/flow-manager/xref caches) that never logged. Each CELL is tinted by
 # its own entity's RESULT (the base caches' third field — green / orange /
 # red). No counts, no drill-downs, and the pages carry no date filter
-# (render_report clears CUR_DATES for cross-*). Writes eight
+# (render_report clears CUR_DATES for cross-*). Writes nine
 # data files —
 #   cross-account.rpt  cross-login.rpt  cross-subscription.rpt
 #   cross-host.rpt  cross-logical.rpt
-#   cross-partner.rpt  cross-application.rpt  cross-domain.rpt
-# — each holding seven tables (the other seven entities), which publish_lib.sh
-# splits into 56 pages. The page's two nav rows are the two selectors: row 1
+#   cross-partner.rpt  cross-application.rpt  cross-domain.rpt  cross-bl.rpt
+# — each holding eight tables (the other eight entities), which publish_lib.sh
+# splits into 72 pages. The page's two nav rows are the two selectors: row 1
 # (group members) picks the FIRST entity, row 2 (table tabs) the SECOND; each
 # row grays out the other row's pick, so a pair is never crossed with itself.
 #
 # A pair is "seen" when both values appear on ONE technical row; a row
-# inherits its File's partner / application / domain / logical attribution
-# (cols 20 / 18 / 19 / 13-through-the-FlowID-map).
+# inherits its File's partner / application / domain / logical / BL
+# attribution (cols 20 / 18 / 19 / 13-through-the-FlowID-map /
+# 12-through-the-tag-map).
 # Pairs where either value is blank (the parse-time blacklist, or a File
 # without the attribution) are not listed. The pair data is symmetric, so the
-# 28 unordered combinations are computed once and emitted into both
+# 36 unordered combinations are computed once and emitted into both
 # orientations.
 #
 # Usage:
@@ -57,21 +58,22 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Fixed entity order — drives the combos, the table order in each rpt, and
 # must match publish_lib.sh's report_tabs labels for the cross-* reports.
-ENTS="acct login site host lgc ptn app dom"
+ENTS="acct login site host lgc ptn app dom bl"
 
-ent_rpt()   { case $1 in acct) echo cross-account;; login) echo cross-login;; site) echo cross-subscription;; host) echo cross-host;; lgc) echo cross-logical;; ptn) echo cross-partner;; app) echo cross-application;; dom) echo cross-domain;; esac }
-ent_tab()   { case $1 in acct) echo "Account";; login) echo "Login";; site) echo "Subscriptions";; host) echo "Hosts";; lgc) echo "Logical";; ptn) echo "Partners";; app) echo "Applications";; dom) echo "Domains";; esac }
-ent_col()   { case $1 in acct) echo "Account";; login) echo "Login";; site) echo "Subscription";; host) echo "Remote Host";; lgc) echo "Logical";; ptn) echo "Partner";; app) echo "Application";; dom) echo "Domain";; esac }
-ent_kind()  { case $1 in acct) echo acct;; login) echo login;; site) echo site;; host) echo host;; lgc) echo lgc;; ptn) echo ptn;; app) echo app;; dom) echo dom;; esac }   # every entity type links to its detail pages
-ent_xref()  { case $1 in acct) echo accounts;; login) echo logins;; site) echo subscriptions;; host) echo hosts;; lgc) echo logicals;; ptn) echo partners;; app) echo apps;; dom) echo domains;; esac }   # data/flow-manager/xref item names
-ent_base()  { case $1 in acct) echo _accounts;; login) echo _logins;; site) echo _subscriptions;; host) echo _hosts;; lgc) echo _logicals;; ptn) echo _partners;; app) echo _apps;; dom) echo _domains;; esac }   # base cache (name/direction/result) per entity
+ent_rpt()   { case $1 in acct) echo cross-account;; login) echo cross-login;; site) echo cross-subscription;; host) echo cross-host;; lgc) echo cross-logical;; ptn) echo cross-partner;; app) echo cross-application;; dom) echo cross-domain;; bl) echo cross-bl;; esac }
+ent_tab()   { case $1 in acct) echo "Account";; login) echo "Login";; site) echo "Subscriptions";; host) echo "Hosts";; lgc) echo "Logical";; ptn) echo "Partners";; app) echo "Applications";; dom) echo "Domains";; bl) echo "BL";; esac }
+ent_col()   { case $1 in acct) echo "Account";; login) echo "Login";; site) echo "Subscription";; host) echo "Remote Host";; lgc) echo "Logical";; ptn) echo "Partner";; app) echo "Application";; dom) echo "Domain";; bl) echo "BL";; esac }
+ent_kind()  { case $1 in acct) echo acct;; login) echo login;; site) echo site;; host) echo host;; lgc) echo lgc;; ptn) echo ptn;; app) echo app;; dom) echo dom;; bl) echo bl;; esac }   # every entity type links to its detail pages
+ent_xref()  { case $1 in acct) echo accounts;; login) echo logins;; site) echo subscriptions;; host) echo hosts;; lgc) echo logicals;; ptn) echo partners;; app) echo apps;; dom) echo domains;; bl) echo bl;; esac }   # data/flow-manager/xref item names
+ent_base()  { case $1 in acct) echo _accounts;; login) echo _logins;; site) echo _subscriptions;; host) echo _hosts;; lgc) echo _logicals;; ptn) echo _partners;; app) echo _apps;; dom) echo _domains;; bl) echo _bl;; esac }   # base cache (name/direction/result) per entity
 ent_unk()   { case $1 in acct) echo accounts;; login) echo logins;; site) echo sites;; host) echo hosts;; *) echo "";; esac }   # data/unknown sidecar (the fake-file SEED lists) per entity
 
 # One pass: per row, record every unordered entity pair (e1 < e2 in ENTS
 # order) that appears — existence only, no counting. Emits TAB lines:
 #   e1 e2 v1 v2
 agg=$(awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$CONFIG_XREF/_accounts-apps.tsv" \
-    -v PLMAP="$CONFIG_XREF/_profiles-logicals.tsv" -v SLMAP="$CONFIG_XREF/_subscriptions-logicals.tsv" '
+    -v PLMAP="$CONFIG_XREF/_profiles-logicals.tsv" -v SLMAP="$CONFIG_XREF/_subscriptions-logicals.tsv" \
+    -v SBMAP="$CONFIG_XREF/_subscriptions-bl.tsv" '
     function uload(f6, M6,   l6, z6, n6) {
         while ((getline l6 < f6) > 0) { n6 = split(l6, z6, "\t")
             if (n6 >= 2 && z6[1] != "" && z6[2] != "")
@@ -83,19 +85,20 @@ agg=$(awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$
             for (i6 = 1; i6 <= n6; i6++) if (index("\037" r6 "\037", "\037" UZ6[i6] "\037") == 0)
                 r6 = r6 (r6 == "" ? "" : "\037") UZ6[i6] }
         return r6 }
-    BEGIN { split("acct login site host lgc ptn app dom", E, " ")
+    BEGIN { split("acct login site host lgc ptn app dom bl", E, " ")
         # UNION attribution (cf. pda-entities.sh): partner = _files col 20 ∪
         # the subscription'\''s configured partner(s) (a both-partner file
         # carries an empty col 20); application = col 18 ∪ the account'\''s
         # configured application(s) (a UC8 relay account carries two, the
         # parse keeps one); logical = col 13 through the FlowID map ∪ the
         # subscription'\''s configured logical(s)
-        uload(SPMAP, sp); uload(APMAP, ap2); uload(PLMAP, pl); uload(SLMAP, sl) }
+        uload(SPMAP, sp); uload(APMAP, ap2); uload(PLMAP, pl); uload(SLMAP, sl); uload(SBMAP, sb) }
     NR == FNR {   # CoreId -> the PDA attribution (both rows inherit) + connection side
         pu6 = ujoin($20, $12, sp); if (pu6 != "") ptn[$1] = pu6
         au6 = ujoin($18, $3, ap2); if (au6 != "") app[$1] = au6
         lg0 = ""; if ($13 != "" && (toupper($13) in pl)) lg0 = pl[toupper($13)]
         lu6 = ujoin(lg0, $12, sl); if (lu6 != "") lgc[$1] = lu6
+        bu6 = ujoin("", $12, sb); if (bu6 != "") blv[$1] = bu6
         if ($19 != "") dom[$1] = $19
         cn[$1] = $16
         next }
@@ -110,9 +113,10 @@ agg=$(awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$
         np6 = split(ptn[$1], PT6, "\037"); if (np6 == 0) { PT6[1] = ""; np6 = 1 }
         na6 = split(app[$1], AP6, "\037"); if (na6 == 0) { AP6[1] = ""; na6 = 1 }
         nl6 = split(lgc[$1], LG6, "\037"); if (nl6 == 0) { LG6[1] = ""; nl6 = 1 }
-        for (p6 = 1; p6 <= np6; p6++) for (a6 = 1; a6 <= na6; a6++) for (l6 = 1; l6 <= nl6; l6++) {
-            V["ptn"] = PT6[p6]; V["app"] = AP6[a6]; V["lgc"] = LG6[l6]
-            for (i = 1; i <= 7; i++) for (j = i + 1; j <= 8; j++) {
+        nb6 = split(blv[$1], BV6, "\037"); if (nb6 == 0) { BV6[1] = ""; nb6 = 1 }
+        for (p6 = 1; p6 <= np6; p6++) for (a6 = 1; a6 <= na6; a6++) for (l6 = 1; l6 <= nl6; l6++) for (b6 = 1; b6 <= nb6; b6++) {
+            V["ptn"] = PT6[p6]; V["app"] = AP6[a6]; V["lgc"] = LG6[l6]; V["bl"] = BV6[b6]
+            for (i = 1; i <= 8; i++) for (j = i + 1; j <= 9; j++) {
                 va = V[E[i]]; vb = V[E[j]]
                 if (va == "" || vb == "") continue
                 seen[E[i] "\t" E[j] "\t" va "\t" vb] = 1
@@ -132,7 +136,7 @@ agg=$(awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$
 # — tagged @data:seen (informational). Configured pairs match the logged
 # values exactly, case aside.
 #
-# All 42 tables come out of ONE pass over the agg stream. (The old per-pair
+# All 72 tables come out of ONE pass over the agg stream. (The old per-pair
 # emit_pair_table shape re-scanned agg 42 times — ~478k re-read lines — and
 # forked ~12 $(case-fn) subshells per pair, ~700 forks per run.) The case
 # functions above stay as the single source of the per-entity attributes;
@@ -166,11 +170,11 @@ trap 'rm -rf "$TMP"' EXIT
 #           land next to each other instead of pages apart, the same rule
 #           report.js applies when you click the column. The raw names still
 #           break every tie, so the order stays total and deterministic;
-#   awk #2  loads the 8 base result caches + the 4 data/unknown seed lists
+#   awk #2  loads the 9 base result caches + the 4 data/unknown seed lists
 #           ONCE (not per pair), renders the tinted ROW lines and writes
 #           each first entity's six ready table blocks to $TMP/tables-<ent>.
 printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' -v XD="$CONFIG_XREF" -v XREFS="$XREFS" '
-    BEGIN { ne = split("acct login site host lgc ptn app dom", E, " ")
+    BEGIN { ne = split("acct login site host lgc ptn app dom bl", E, " ")
             split(XREFS, XR, " ")
             for (i = 1; i <= ne; i++) IDX[E[i]] = i }
     # fields 6/7 are SORT KEYS ONLY (cut off before awk #2): the name with _
@@ -203,7 +207,7 @@ printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' -v XD="$CONFIG_XREF" -v XREFS="$XR
   | awk -F'\t' -v CB="$CONFIG_BASE" -v UD="$UNKNOWN_DIR" -v TMP="$TMP" \
         -v KINDS="$KINDS" -v BASES="$BASES" -v UNKS="$UNKS" -v COLS="$COLS" -v TABS="$TABS" '
     BEGIN {
-        ne = split("acct login site host lgc ptn app dom", E, " ")
+        ne = split("acct login site host lgc ptn app dom bl", E, " ")
         split(KINDS, KD, " "); split(BASES, BS, " ")
         split(UNKS, UK, "|"); split(COLS, CL, "|"); split(TABS, TB, "|")
         # each CELL is tinted by ITS OWN entity result (the base caches third
@@ -257,10 +261,10 @@ for x in $ENTS; do
         printf 'DESC\tEvery %s pair with each other entity — logged pairs plus the configured-but-never-logged ones; each cell is tinted by that entity'\''s result (green = last transfer OK, orange = never seen, red = Error).\n' "$xcol"
         printf 'INTRO\tWhich %s goes with which other entity: every pair seen together on at least one log row, PLUS the configured pairs that never appear (an analysis of relationships — no counts, no dates). The two tab rows pick the pair of entity types; each cell tints by its own entity'\''s status (green = last transfer OK, orange = never seen, red = Error, blue = server-log only).\n' "$xcol"
         cat "$TMP/tables-$x"
-        printf 'NOTE\tAn analysis of the cross references, not a traffic report. Each cell is colored by that entity result: **light green** = last transfer OK, **light orange** = configured but never seen, **light red** = last transfer Error, **light blue** = surfaced only by the Server \342\206\222 Transfer step (bin/build/seen-in-server-log.sh) with no real transfer. The entities are per-leg attributes (a leg inherits its File'\''s partner/application/domain/logical attribution); pairs where either value is blacklisted or unattributed are not listed. There is no date filter here — seen means seen anywhere in the loaded logs.\n'
+        printf 'NOTE\tAn analysis of the cross references, not a traffic report. Each cell is colored by that entity result: **light green** = last transfer OK, **light orange** = configured but never seen, **light red** = last transfer Error, **light blue** = surfaced only by the Server \342\206\222 Transfer step (bin/build/seen-in-server-log.sh) with no real transfer. The entities are per-leg attributes (a leg inherits its File'\''s partner/application/domain/logical/BL attribution); pairs where either value is blacklisted or unattributed are not listed. There is no date filter here — seen means seen anywhere in the loaded logs.\n'
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     count=$((count + 1))
 done
 
-echo "Data written to $REPORTS_DIR/cross-*.rpt ($count file(s), 7 crosstabs each)." >&2
+echo "Data written to $REPORTS_DIR/cross-*.rpt ($count file(s), 8 crosstabs each)." >&2

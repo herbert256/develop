@@ -101,13 +101,15 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', building entity coverage..." >
 # view:label:base:entity->subs:subs->entity:account->entity:$FILES col:KIND
 # The account->entity map is "-" on the Accounts view (identity) and the
 # $FILES column is that view's DIRECT attribution (col 3/13/18/19/20; the
-# Logical view resolves col 13 through the FlowID map).
+# Logical view resolves col 13 through the FlowID map, the BL view col 12
+# through the subscription->BL tag map).
 SPECS=(
     "accounts:Accounts:_accounts:_accounts-subscriptions:_subscriptions-accounts:-:3:acct"
     "logical:Logical:_logicals:_logicals-subscriptions:_subscriptions-logicals:_accounts-logicals:13:lgc"
     "partners:Partners:_partners:_partners-subscriptions:_subscriptions-partners:_accounts-partners:20:ptn"
     "domains:Domains:_domains:_domains-subscriptions:_subscriptions-domains:_accounts-domains:19:dom"
     "applications:Applications:_apps:_apps-subscriptions:_subscriptions-apps:_accounts-apps:18:app"
+    "bl:BL:_bl:_bl-subscriptions:_subscriptions-bl:_accounts-bl:12:bl"
 )
 
 now=$(date '+%Y-%m-%d %H:%M:%S')
@@ -146,9 +148,9 @@ IFS=: read -r RKEY RLABEL RBASE <<< "$rule"
 OUT="$REPORTS_DIR/$RBASE.rpt"
 {
 printf 'TITLE\tEntity coverage\n'
-printf 'DESC\tPer account, logical flow, partner, domain or application: covered (green) or not (red) — each side proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out); a side with no configured connections is trivially covered.\n'
+printf 'DESC\tPer account, logical flow, partner, domain, application or BL: covered (green) or not (red) — each side proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out); a side with no configured connections is trivially covered.\n'
 printf 'INTRO\tIs the connection for each entity WORKING? A side is **covered** when at least one real File moved that way, or when the server log proves the connection: **In** — one of the entity'"'"'s accounts **successfully authenticated over SSH**; **Out** — a **UC3 remote poll succeeded** (the "Applying the search pattern" message appears only when the remote listing worked — 0 files found still proves the connection). A side with **no configured connections** is covered by definition, and a **both** entity needs In AND Out working. Two colors only — **green** = covered (listed first), **red** = not covered; this verdict overrules the usual status colors here. The buttons below pick the **entity**; the ones to their right pick the **rule**. *Current* and *Once* are about the **communication**, so a successful SSH logon or UC3 poll proves a side on its own — most-recently, and ever. *OK transfers* is about the **transfer**: neither proof counts there, the most recent File itself must have been delivered OK. *Difference between Current & Once* lists only the regressions — entities covered under *Once* but not under *Current*: the connection worked at some point, and the most recent attempt did not.\n'
-printf 'KEYWORDS\tcoverage,covered,working,proof,logon,poll,account,logical,partner,domain,application\n'
+printf 'KEYWORDS\tcoverage,covered,working,proof,logon,poll,account,logical,partner,domain,application,bl\n'
 
 for spec in "${SPECS[@]}"; do
     IFS=: read -r _key label base es se ae fcol kind <<< "$spec"
@@ -159,9 +161,13 @@ for spec in "${SPECS[@]}"; do
     [ -f "$SE" ] || SE=/dev/null
     ident=0
     if [ "$ae" = "-" ]; then ident=1; AE=/dev/null; elif [ ! -f "$AE" ]; then AE=/dev/null; fi
-    # the Logical view's direct column holds the FlowID — resolve through the map
+    # the Logical view's direct column holds the FlowID, the BL view's the
+    # subscription — each resolves through its map
     VMAP=""
-    [ "$_key" = logical ] && [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv"
+    case $_key in
+        logical) [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv" ;;
+        bl)      [ -f "$CONFIG_XREF/_subscriptions-bl.tsv" ] && VMAP="$CONFIG_XREF/_subscriptions-bl.tsv" ;;
+    esac
 
     awk -F'\t' -v EB="$EB" -v SB="$SB" -v ES="$ES" -v SE="$SE" -v AE="$AE" -v VMAP="$VMAP" \
         -v AUTH="$AUTH" -v POLL="$POLL" -v FCOL="$fcol" -v IDENT="$ident" -v RULE="$RKEY" '
@@ -298,7 +304,7 @@ for spec in "${SPECS[@]}"; do
                 printf "STAT\tred\t%d (%.0f%%)\tNot covered\n", tr+0, (tot > 0 ? 100 * tr / tot : 0)
             }
             printf "GHEAD\t@{colspan=2}\t@{colspan=3,class=gband gsep}In\t@{colspan=3,class=gband gsep}Out\n"
-            printf "HEAD\t%s\tDirection\tSubs\tFiles\tLogons\tSubs\tFiles\tPolls\n", (LABEL == "Logical" ? LABEL : substr(LABEL, 1, length(LABEL) - 1))
+            printf "HEAD\t%s\tDirection\tSubs\tFiles\tLogons\tSubs\tFiles\tPolls\n", (LABEL == "Logical" || LABEL == "BL" ? LABEL : substr(LABEL, 1, length(LABEL) - 1))
             printf "KIND\t%s\ttext\tnum\tnum\tnum\tnum\tnum\tnum\n", KIND
             for (i = 1; i <= nbuf; i++) print BUF[i]
             printf "TOTAL\tTotal (%d %s)\t\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\n", \

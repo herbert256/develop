@@ -59,7 +59,7 @@ done
 # classic coverage TSVs (showseen — Seen counts) and the analyses pda.rpt (PDA
 # Seen); a rerun of any of them must refresh this page too.
 extra_deps=()
-for bf in _subscriptions _accounts _hosts _logins _logicals _partners _domains _apps; do
+for bf in _subscriptions _accounts _hosts _logins _logicals _partners _domains _apps _bl; do
     [ -f "$CONFIG_BASE/$bf.tsv" ] && extra_deps+=("$CONFIG_BASE/$bf.tsv")
 done
 for cv in subscriptions accounts hosts logins; do
@@ -306,6 +306,7 @@ seen_cell() {   # $1 base file  $2 coverage/member name  $3 _files seen column (
             partners)     dlt=$(pda_seen_delta partners 1 _partners _hosts) ;;
             applications) dlt=$(pda_seen_delta applications 0 _apps) ;;
             domains)      dlt=$(pda_seen_delta domains 0 _domains) ;;
+            bl)           dlt=$(pda_seen_delta bl 0 _bl) ;;
         esac
         dcell "$st" "$(( st - ${dlt:-0} ))"
     fi
@@ -316,7 +317,7 @@ seen_cell() {   # $1 base file  $2 coverage/member name  $3 _files seen column (
 # seed — or INDIRECT — a seed of another type enriched to it through the xref
 # vote. One awk pass over the base caches (the post-guard blue sets) and
 # the fake tuples: rows = every blue-carrying type (the five seedable ones
-# plus the derived Logical / Partners / Domains / Applications, which are
+# plus the derived Logical / Partners / Domains / Applications / BL, which are
 # never a seed themselves), columns = Total + Direct + one per seed type. Each blue
 # entity is claimed ONCE: Direct when its own
 # name appears in its type's raw seed list, else by the FIRST tuple that
@@ -379,10 +380,12 @@ if [ -f "$BLUE_TSV" ]; then
         FILENAME ~ /_accounts-apps\.tsv$/ { if ($1 != "" && $2 != "") ACAP[toupper($1)] = ACAP[toupper($1)] SUBSEP $2; next }
         FILENAME ~ /_subscriptions-logicals\.tsv$/ { if ($1 != "" && $2 != "") SUBL[toupper($1)] = SUBL[toupper($1)] SUBSEP $2; next }
         FILENAME ~ /_profiles-logicals\.tsv$/ { if ($1 != "" && $2 != "") PLGM[toupper($1)] = $2; next }
+        FILENAME ~ /_subscriptions-bl\.tsv$/ { if ($1 != "" && $2 != "") SUBB[toupper($1)] = SUBB[toupper($1)] SUBSEP $2; next }
         FILENAME ~ /_logicals\.tsv$/      { if ($3 == "blue") bl("logical"); next }
         FILENAME ~ /_partners\.tsv$/      { if ($3 == "blue") bl("partner"); next }
         FILENAME ~ /_domains\.tsv$/       { if ($3 == "blue") bl("domain"); next }
         FILENAME ~ /_apps\.tsv$/          { if ($3 == "blue") bl("application"); next }
+        FILENAME ~ /_bl\.tsv$/           { if ($3 == "blue") bl("bl"); next }
         # the RAW seed lists (pre-dedup) decide DIRECT — the deduped tuples
         # would credit a combined login+account sighting to one type only
         FILENAME ~ /unknown\/accounts\.tsv$/ { sdload("account"); next }
@@ -422,6 +425,10 @@ if [ -f "$BLUE_TSV" ]; then
                 nps = split(substr(ACAP[toupper($3)], 2), PLZ, SUBSEP)
                 for (ips = 1; ips <= nps; ips++) reg("application", PLZ[ips])
             }
+            if ($12 != "" && (toupper($12) in SUBB)) {
+                nps = split(substr(SUBB[toupper($12)], 2), PLZ, SUBSEP)
+                for (ips = 1; ips <= nps; ips++) reg("bl", PLZ[ips])
+            }
         }
         END {
             # Any blue entity claimed by NO tuple and NO raw seed — the Step-F0
@@ -438,8 +445,8 @@ if [ -f "$BLUE_TSV" ]; then
                 print rt9 "\tD\t" rw9 "\t" rt9 "\t" rw9 "\t" \
                     ((k in evd) ? evd[k] : "") "\t" ((k in evm) ? evm[k] : "") > cf
             }
-            n = split("account|login|subscription|host|whitelisted IP|logical|partner|domain|application", T, "|")
-            split("Accounts|Logins|Subscriptions|Hosts|Whitelisted IPs|Logical|Partners|Domains|Applications", D, "|")
+            n = split("account|login|subscription|host|whitelisted IP|logical|partner|domain|application|bl", T, "|")
+            split("Accounts|Logins|Subscriptions|Hosts|Whitelisted IPs|Logical|Partners|Domains|Applications|BL", D, "|")
             nc = split("account|login|subscription|host|whitelisted IP", C, "|")
             for (i = 1; i <= n; i++) {
                 dct = cnt[T[i] SUBSEP "D"] + 0
@@ -453,8 +460,10 @@ if [ -f "$BLUE_TSV" ]; then
     ' "$BASE_DIR/_accounts.tsv" "$BASE_DIR/_logins.tsv" "$BASE_DIR/_subscriptions.tsv" \
       "$BASE_DIR/_hosts.tsv" "$BASE_DIR/_white.tsv" \
       "$BASE_DIR/_logicals.tsv" "$BASE_DIR/_partners.tsv" "$BASE_DIR/_domains.tsv" "$BASE_DIR/_apps.tsv" \
+      "$BASE_DIR/_bl.tsv" \
       "$CONFIG_XREF/_subscriptions-partners.tsv" "$CONFIG_XREF/_accounts-apps.tsv" \
       "$CONFIG_XREF/_subscriptions-logicals.tsv" "$CONFIG_XREF/_profiles-logicals.tsv" \
+      "$CONFIG_XREF/_subscriptions-bl.tsv" \
       ${sidecar_deps[@]+"${sidecar_deps[@]}"} "$BLUE_EVID" "$BLUE_TSV")
 fi
 
@@ -482,9 +491,9 @@ if [ -s "$CLAIMS" ]; then
     LC_ALL=C sort -t"$TAB" -k1,1 -k3,3 "$CLAIMS" | awk -F'\t' \
         -v dir="$SEENLOG_DIR" -v ts="$(date '+%Y-%m-%d %H:%M:%S')" '
         BEGIN {
-            nr = split("account|login|subscription|host|whitelisted IP|logical|partner|domain|application|", RT, "|")   # RT[10] = "" = all rows
-            split("accounts|logins|subscriptions|hosts|white|logicals|partners|domains|applications|all", RSL, "|")
-            split("Blue Accounts|Blue Logins|Blue Subscriptions|Blue Hosts|Blue Whitelisted IPs|Blue Logical|Blue Partners|Blue Domains|Blue Applications|All blue entities", RLB, "|")
+            nr = split("account|login|subscription|host|whitelisted IP|logical|partner|domain|application|bl|", RT, "|")   # RT[11] = "" = all rows
+            split("accounts|logins|subscriptions|hosts|white|logicals|partners|domains|applications|bl|all", RSL, "|")
+            split("Blue Accounts|Blue Logins|Blue Subscriptions|Blue Hosts|Blue Whitelisted IPs|Blue Logical|Blue Partners|Blue Domains|Blue Applications|Blue BL|All blue entities", RLB, "|")
             nc = split("|D|account|login|subscription|host|whitelisted IP", CT, "|")                            # CT[1] = "" = all origins
             split("all|direct|account|login|subscription|host|white", CSL, "|")
             split("all origins|direct sighting|account seed|login seed|subscription seed|host seed|whitelisted IP seed", CLB, "|")
@@ -495,12 +504,13 @@ if [ -s "$CLAIMS" ]; then
             lbl["whitelisted IP"] = "Whitelisted IP"
             lbl["logical"] = "Logical"
             lbl["partner"] = "Partner"; lbl["domain"] = "Domain"
-            lbl["application"] = "Application"
+            lbl["application"] = "Application"; lbl["bl"] = "BL"
             ds["account"] = "accounts"; ds["login"] = "logins"
             ds["subscription"] = "subscriptions"; ds["host"] = "hosts"
             ds["logical"] = "logicals"
             ds["partner"] = "partners"
             ds["domain"] = "domains"; ds["application"] = "applications"
+            ds["bl"] = "bl"
             ds["whitelisted IP"] = "incoming_connections"   # the sighted-IP detail pages
         }
         {
@@ -582,20 +592,21 @@ emit_status_table() {
 {
     printf 'TITLE\tSeen in server log\n'
     printf 'DESC\tThe server-log-only entities marked blue — what was detected, and the server-log line that proved it alive.\n'
-    printf 'INTRO\tEntities that appear in **server-log** runtime messages (Transfer Manager lines) but have no record in the **transfer log** are marked **blue** — a 4th result state — in the base result column (build step `bin/build/seen-in-server-log.sh`), so they surface in the entity reports, detail pages and coverage views as *server-log only* (the **Server** bucket) with no fabricated transfer. This page is the audit of that step: **%s** entities are currently marked blue, every one accounted for in the **Why blue** matrix below. The TM-message seeds materialized **%s** injected tuples — **%s** from account seeds, **%s** login, **%s** subscription, **%s** host, **%s** whitelisted IP; an entity discovered only by its **successful SSH logons** (the logon rule — no TM tuple exists) is claimed **Direct** in the matrix with the logon line as its evidence. The two tables below are the result-status rollups from the **Flow manager Entities** and **Logical, Partners, Domains & Applications** analyses pages (Seen = configured entities with at least one transfer OR a blue server-log sighting; Error / Warning / Ok = red / orange / green by each seen entity'"'"'s last transaction); a **(+n)** or **(−n)** on a figure is how much the blue marking moved it — the Seen column gains the blue count, and the entities leave Warning (they are no longer *never seen*). In the list, each entry is two rows — the server-log message that proved the entity alive, then its blue attribution: the seed plus everything the FlowManager cross-references could unambiguously fill in (a truncated subscription name is canonicalized to the configured name it uniquely prefixes). A host or whitelisted-IP seed that ties to no account, login, subscription or flow is dropped — as is a whitelisted-IP seed whose partner already has transfer data (an unused alternate address is not a server-log discovery) — and two seeds enriching to the same entity combination collapse into one row.\n' \
+    printf 'INTRO\tEntities that appear in **server-log** runtime messages (Transfer Manager lines) but have no record in the **transfer log** are marked **blue** — a 4th result state — in the base result column (build step `bin/build/seen-in-server-log.sh`), so they surface in the entity reports, detail pages and coverage views as *server-log only* (the **Server** bucket) with no fabricated transfer. This page is the audit of that step: **%s** entities are currently marked blue, every one accounted for in the **Why blue** matrix below. The TM-message seeds materialized **%s** injected tuples — **%s** from account seeds, **%s** login, **%s** subscription, **%s** host, **%s** whitelisted IP; an entity discovered only by its **successful SSH logons** (the logon rule — no TM tuple exists) is claimed **Direct** in the matrix with the logon line as its evidence. The two tables below are the result-status rollups from the **Flow manager Entities** and **Logical, Partners, Domains, Applications & BL** analyses pages (Seen = configured entities with at least one transfer OR a blue server-log sighting; Error / Warning / Ok = red / orange / green by each seen entity'"'"'s last transaction); a **(+n)** or **(−n)** on a figure is how much the blue marking moved it — the Seen column gains the blue count, and the entities leave Warning (they are no longer *never seen*). In the list, each entry is two rows — the server-log message that proved the entity alive, then its blue attribution: the seed plus everything the FlowManager cross-references could unambiguously fill in (a truncated subscription name is canonicalized to the configured name it uniquely prefixes). A host or whitelisted-IP seed that ties to no account, login, subscription or flow is dropped — as is a whitelisted-IP seed whose partner already has transfer data (an unused alternate address is not a server-log discovery) — and two seeds enriching to the same entity combination collapse into one row.\n' \
         "$n_blue" "$n" "$n_acct" "$n_login" "$n_site" "$n_host" "$n_white"
     emit_status_table 'Flow manager entities' \
         'Subscriptions:_subscriptions::subscriptions:12' \
         'Accounts:_accounts:accounts:accounts:3' 'Hosts:_hosts:hosts:hosts:15' 'Logins:_logins:logins:logins:14' \
         'Whitelist:_white:white:white:15'
-    emit_status_table 'Logical, Partners, Domains & Applications' \
+    emit_status_table 'Logical, Partners, Domains, Applications & BL' \
         'Logical:_logicals:logicals:logicals:' \
-        'Partners:_partners:partners:partners:' 'Domains:_domains:domains:domains:' 'Applications:_apps:apps:applications:'
+        'Partners:_partners:partners:partners:' 'Domains:_domains:domains:domains:' 'Applications:_apps:apps:applications:' \
+        'BL:_bl:bl:bl:'
     if [ -n "$blue_matrix" ]; then
         printf 'TABLE\tWhy blue — direct sighting or a connected seed\tnosearch\n'
         printf 'HEAD\tEntity type\tTotal\tDirect\tAccount\tLogin\tSubscription\tHost\tWhitelisted IP\n'
         printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
-        mrow=(accounts logins subscriptions hosts white logicals partners domains applications)
+        mrow=(accounts logins subscriptions hosts white logicals partners domains applications bl)
         mcol=(all direct account login subscription host white)
         tt=0; t0=0; t1=0; t2=0; t3=0; t4=0; t5=0; nbmr=0
         while IFS=$'\t' read -r lbl tot d c1 c2 c3 c4 c5; do
@@ -628,7 +639,7 @@ emit_status_table() {
         printf 'TOTAL\tTotal (%s types)\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$nbmr" \
             "$(tot_cell "$tt" all)" "$(tot_cell "$t0" direct)" "$(tot_cell "$t1" account)" \
             "$(tot_cell "$t2" login)" "$(tot_cell "$t3" subscription)" "$(tot_cell "$t4" host)" "$(tot_cell "$t5" white)"
-        printf 'NOTE\tWhy each blue entity is blue — every entity is counted exactly ONCE: under **Direct** when its own name appears in its type'\''s server-log seed list (the raw sightings, before duplicate seeds collapse) OR when only its **successful SSH logons** discovered it (the logon rule — no TM tuple exists; its evidence line is the logon), otherwise under the seed type of the first surviving seed tuple that reached it through the FlowManager cross-reference enrichment (later seeds reaching an already-claimed entity are skipped). Logical, Partners, Domains and Applications are derived attributions — never a TM seed themselves, so a Direct entry there is an SSH-logon-era rollup discovery. **Total** = the sum of the other columns = the type'\''s blue entities. Every nonzero cell links a page listing the entities it counts with their claiming server-log lines.\n'
+        printf 'NOTE\tWhy each blue entity is blue — every entity is counted exactly ONCE: under **Direct** when its own name appears in its type'\''s server-log seed list (the raw sightings, before duplicate seeds collapse) OR when only its **successful SSH logons** discovered it (the logon rule — no TM tuple exists; its evidence line is the logon), otherwise under the seed type of the first surviving seed tuple that reached it through the FlowManager cross-reference enrichment (later seeds reaching an already-claimed entity are skipped). Logical, Partners, Domains, Applications and BL are derived attributions — never a TM seed themselves, so a Direct entry there is an SSH-logon-era rollup discovery. **Total** = the sum of the other columns = the type'\''s blue entities. Every nonzero cell links a page listing the entities it counts with their claiming server-log lines.\n'
     fi
     if [ -n "$shapes_ranked" ]; then
         printf 'TABLE\tWhat happened — server-log messages grouped\twide\n'

@@ -11,7 +11,7 @@
 #
 # for the eight members of the two status tables — the four Flow manager
 # entities (subscriptions, accounts, hosts, logins) and the four derived ones
-# (logicals, partners, domains, applications).
+# (logicals, partners, domains, applications, bl).
 #
 # WHY ONLY THIS. bin/build/publish.sh's _status_table computes every other figure
 # straight from data/<env>/flow-manager/base/<member>.tsv (Total = rows,
@@ -51,11 +51,11 @@ deps=()
 for m in subscriptions accounts hosts logins; do
     [ -f "$DATA/transfer/reports/showseen-$m.rpt" ] && deps+=("$DATA/transfer/reports/showseen-$m.rpt")
 done
-for m in logicals partners domains applications; do
+for m in logicals partners domains applications bl; do
     [ -f "$COVSRC/$m.tsv" ] && deps+=("$COVSRC/$m.tsv")
 done
-# the union rule reads the four derived entity reports too (pda_seen_total)
-for m in logical partner domain application; do
+# the union rule reads the five derived entity reports too (pda_seen_total)
+for m in logical partner domain application bl; do
     [ -f "$DATA/transfer/reports/$m.rpt" ] && deps+=("$DATA/transfer/reports/$m.rpt")
 done
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" ${deps[@]+"${deps[@]}"}
@@ -130,11 +130,11 @@ pda_seen_total() {   # $1 = member  $2 = its coverage TSV  $3 = its base cache  
             s = $2; sub(/.*Seen: /, "", s); sub(/[^0-9].*/, "", s); print s; exit }' "$rpt")
         [ -n "$seen" ] && printf 'SEEN\t%s\t%s\n' "$m" "$seen"
     done
-    # the four derived Logical/PDA members
-    for m in logicals partners domains applications; do
+    # the five derived Logical/PDA/BL members
+    for m in logicals partners domains applications bl; do
         tsv="$COVSRC/$m.tsv"
         [ -f "$tsv" ] || continue
-        case $m in logicals) bc=_logicals; er=logical ;; partners) bc=_partners; er=partner ;; domains) bc=_domains; er=domain ;; *) bc=_apps; er=application ;; esac
+        case $m in logicals) bc=_logicals; er=logical ;; partners) bc=_partners; er=partner ;; domains) bc=_domains; er=domain ;; bl) bc=_bl; er=bl ;; *) bc=_apps; er=application ;; esac
         printf 'SEEN\t%s\t%s\n' "$m" "$(pda_seen_total "$m" "$tsv" "$DATA/flow-manager/base/$bc.tsv" "$DATA/transfer/reports/$er.rpt")"
     done
 } | cov_put "$OUT"     # content-compared: home.rpt carries no FOOT timestamp, and
