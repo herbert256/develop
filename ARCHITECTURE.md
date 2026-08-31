@@ -436,20 +436,19 @@ pipe-delimited aggs the loglines field goes LAST so embedded `|` survives).
 ## The home page
 
 `bin/build/publish.sh` writes the centered shared home (body class `home`): the two status tables
-plus the per-day figures — FIVE side-by-side tables in one `.sxs` flex row (2026-08): a shared
-DATE spine first (its cells link the day dashboard, its Total row carries the "Total" label, its
-own `<h2>` and header cell are blanked — `h2.blank`/`th.blank`, boxes kept so the rows stay level),
-then Files, Duration, Red/Green switch and First seen, each under its own `<h2>` and none
-carrying a Date column. All five list the same days in the same order (the transfer
-`topview.rpt`'s days only — all four data groups are transfer-derived, so a server-only day, the
-server export running a day ahead of the transfer export, would render a fully empty row) so the
-rows align on the spine — which is why every table is
-`data-nosort` (sorting one alone would desync it) and why the cap is shared: **capped to the
-newest 14 days** (2026-08), the older rows and the Total rows carrying class `capx`, hidden
-while a table carries `cap14`, and ONE "Show all" button under the flex row (baked only when
-there are more than 14 days) lifts the cap from all five at once — report.js `setupShowAll`
-uncaps every capped table inside the button's adjacent wrapper (a button under a single
-`.tablewrap` still finds just its own). The baked Totals keep the full-window figures, since
+plus the per-day figures — ONE wide "Per day" table (2026-08-31, user request; the 2026-08
+five-table `.sxs` flex row with its blanked Date spine is retired — it could fall out of
+row-sync whenever a header's height changed, which the csv-hotspot did): a `gband` banner row
+(Files · Duration · Red/Green switch · First seen) over a shared Date column whose cells link
+the day dashboard; the group dividers are POSITIONAL CSS on `table.dayrows` (columns 2/8/12/14
++ the `gbrow` banner cells), so adding a column means moving them. The days are the transfer
+`topview.rpt`'s only — all four data groups are transfer-derived, so a server-only day (the
+server export running a day ahead of the transfer export) would render a fully empty row. The
+table is `data-nosort` — **capped to the newest 14 days** (2026-08), the older rows and the
+Total row carrying class `capx`, hidden while the table carries `cap14` (a sort would
+interleave the class-hidden oldest rows), and the "Show all" button under the tablewrap (baked
+only when there are more than 14 days) lifts the cap — report.js `setupShowAll` uncaps every
+capped table inside the button's adjacent wrapper. The baked Total keeps the full-window figures, since
 `recomputeTotals` counts inline display only; the First-seen counts join `first-seen.rpt` by date —
 its summary lines stay out of the day rows, and each First-seen Total cell shows the report's
 SEEN figure — equal to the status tables' Transfer-scope Seen by construction, the day cells

@@ -659,15 +659,18 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
 
 - **The home page** (`bin/build/publish.sh`): the two status tables — every cell opens the
   Entities view whose row count IS that figure, in the active scope; `check_status_consistency`
-  verifies each figure; the SEEN figures come from `home.rpt`. The per-day figures are FIVE
-  side-by-side tables in one `.sxs` row (2026-08): a shared DATE spine first (its cells link the
-  day dashboard, its Total row carries the label), then Files (In · Out · Ok · Error · Error %;
-  the In/Out split is the movement direction, `_files.tsv` col 17; the count column is gone —
-  In + Out carries it), Duration (p50 · p75 · p90 · p95), Red/Green switch and First seen
-  (Logical · Partners · Subscriptions · Accounts), each under its own `<h2>` and NONE carrying a Date
-  column. All five list the same days in the same order so the rows align on the spine — which is
-  why they are all `data-nosort` and the 14-day cap is lifted by ONE shared "Show all" button
-  under the flex row (setupShowAll uncaps every capped table in its adjacent wrapper).
+  verifies each figure; the SEEN figures come from `home.rpt`. The per-day figures are ONE wide
+  "Per day" table (2026-08-31, user request — the 2026-08 five-table flex row with its Date
+  spine is retired: it could fall out of row-sync whenever a header's height changed): a `gband`
+  banner row (Files · Duration · Red/Green switch · First seen) over a shared Date column (its
+  cells link the day dashboard), then the group columns — Files (In · Out · Ok · Recovered ·
+  Error · Error %; the In/Out split is the movement direction, `_files.tsv` col 17; the count
+  column is gone — In + Out carries it), Duration (p50 · p75 · p90 · p95), Red/Green switch
+  (Red · Green) and First seen (Logical · Partners · Subscriptions · Accounts). Group dividers
+  are POSITIONAL CSS on `table.dayrows` (columns 2/8/12/14 + the `gbrow` banner cells — adding
+  a column means moving them). Still `data-nosort` (the 14-day cap hides the OLDEST rows by
+  class, which a sort would interleave); the cap is lifted by the "Show all" button under the
+  tablewrap (setupShowAll uncaps every capped table in its adjacent wrapper).
   **Red/Green switch** (2026-08): how many
   subscriptions FLIPPED that day, Red = green→red and Green = red→green, from a
   (subscription, sortkey) walk of `_files.tsv` in `daily_loglines_tsv`. The comparison is
