@@ -685,13 +685,20 @@ bg_env_chain() {
 }
 
 # ---- RUNTIME-ONLY: ingest a delivered update BEFORE anything parses ---------
-# A ~/cloud/update.7z (packed elsewhere with the st-reports archive password)
-# carries fresh exports; st-reports-update.sh copies its six input/ dirs onto
-# the checkout and removes the archive — see the script header. It runs
-# BEFORE the HAVE_ACC/HAVE_PROD detection just below, so an update delivering
-# an environment's first exports enables it in the same build. Develop (the
-# .sample-estate marker) never ingests — its estate is generated.
+# TWO inboxes, both carrying an update.7z (packed elsewhere with the
+# st-reports archive password) whose six input/ dirs are copied onto the
+# checkout and whose archive is removed after a successful copy — see the
+# script headers:
+#   1. the GIT EXCHANGE repo at ~/exchange/ (2026-08-31, user request):
+#      exchange-in.sh pulls it first, ingests its update.7z, and pushes the
+#      consumption; st-reports-archive.sh pushes the built site back there
+#      at the end of the build.
+#   2. the ~/cloud/ drop folder (st-reports-update.sh without an argument).
+# Both run BEFORE the HAVE_ACC/HAVE_PROD detection just below, so an update
+# delivering an environment's first exports enables it in the same build.
+# Develop (the .sample-estate marker) never ingests — its estate is generated.
 if [ ! -f input/.sample-estate ]; then
+    run_step "exchange: pull ~/exchange/ + ingest its update.7z" bin/build/exchange-in.sh
     run_step "update: ingest ~/cloud/update.7z -> input/"  bin/build/st-reports-update.sh
 fi
 
@@ -835,9 +842,11 @@ run_step "publish: display renames (input/<env>/rename.txt)"   bin/build/display
 # ---- RUNTIME-ONLY: the shareable site archive (2026-08-30) ------------------
 # In the runtime checkout — recognized by the ABSENT input/.sample-estate
 # marker, which only the develop repo carries — every completed build packs
-# docs/ into build/st-reports_YYYY-MM-DD_HHMM.7z and copies it to ~/cloud/.
+# docs/ into build/st-reports_YYYY-MM-DD_HHMM.7z, copies it to ~/cloud/ and
+# pushes it into the ~/exchange/ git repo as the stable st-reports.7z
+# (2026-08-31, user request).
 if [ ! -f input/.sample-estate ]; then
-    run_step "archive: st-reports .7z -> build/ + ~/cloud/"  bin/build/st-reports-archive.sh
+    run_step "archive: st-reports .7z -> build/ + ~/cloud/ + ~/exchange/"  bin/build/st-reports-archive.sh
 fi
 
 # (The docs/build.html publish was REMOVED 2026-08-29 — the report lives only

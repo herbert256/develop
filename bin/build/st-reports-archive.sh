@@ -2,10 +2,12 @@
 #
 # st-reports-archive.sh — RUNTIME-ONLY build step (2026-08-30): pack the
 # rendered site into a password-protected archive and drop a copy in the
-# cloud-sync folder:
+# cloud-sync folder — and, since 2026-08-31 (user request), commit + push it
+# into the git exchange repo at ~/exchange/ as the stable st-reports.7z:
 #
 #   build/st-reports_YYYY-MM-DD_HHMM.7z   (7z -mx9, whole docs/ tree)
 #   ~/cloud/st-reports_YYYY-MM-DD_HHMM.7z (copy)
+#   ~/exchange/st-reports.7z              (stable name, committed + pushed)
 #
 # Invoked by bin/build.sh at the end of a successful chain, and ONLY in the
 # runtime checkout (build.sh gates on the ABSENT input/.sample-estate marker
@@ -58,3 +60,28 @@ rm -f "$out"
 mkdir -p "$HOME/cloud"
 cp "$out" "$HOME/cloud/"
 echo "Wrote $out ($(du -h "$out" | cut -f1 | tr -d ' ')) and copied it to ~/cloud/." >&2
+
+# ---- the git exchange copy (2026-08-31, user request) -----------------------
+# The same archive into the exchange repo at ~/exchange/ under the STABLE
+# name st-reports.7z, committed and pushed: the receiving side always finds
+# the newest site there (a timestamped name per build would grow the repo
+# without bound — the stamp lives in build/ and ~/cloud/, and in the pages
+# themselves). Pull first so a concurrent drop on the other side never makes
+# the push non-fast-forward; every failure here is a WARNING — the archive is
+# already safe in build/ and ~/cloud/, and a local commit goes out with the
+# next build's push. No ~/exchange/ git repo = quiet skip.
+EX="${AXWAY_EXCHANGE_DIR:-$HOME/exchange}"
+if [ -d "$EX/.git" ]; then
+    cp "$out" "$EX/st-reports.7z"
+    git -C "$EX" pull --rebase --autostash --quiet 2>/dev/null \
+        || echo "st-reports-archive: WARNING - exchange pull failed (offline?) — pushing on top of the local state." >&2
+    if [ -n "$(git -C "$EX" status --porcelain)" ]; then
+        git -C "$EX" add -A
+        git -C "$EX" commit --quiet -m "st-reports ${stamp}"
+    fi
+    if git -C "$EX" push --quiet 2>/dev/null; then
+        echo "st-reports-archive: st-reports.7z pushed to the exchange repo." >&2
+    else
+        echo "st-reports-archive: WARNING - exchange push failed (offline?) — the commit is local and goes out with the next build." >&2
+    fi
+fi
