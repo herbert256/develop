@@ -25,7 +25,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 source bin/skiplist.sh    # SKIPLIST_FILE  — input/skip.txt (the ONE skip list)
 source bin/fastawk.sh   # route unqualified `awk` to mawk when installed (see bin/fastawk.sh)
-source bin/env.sh       # resolve $AXWAY_ENV (acceptance|production, default acceptance)
+source bin/env.sh       # resolve $AXWAY_ENV (acceptance|production, default production)
 
 # The active ENVIRONMENT: every publish run renders ONE env's site tree
 # (docs/<env>/…) from that env's data tree (data/<env>/…). The shared root
@@ -655,15 +655,16 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
     #   base    = path back to the DOCS root (one level higher) — the shared
     #             artifacts: assets/, help/, index.html (home)
     # On a SITE_ENV-less page (the shared root home, the local build report)
-    # base = the caller's prefix as-is and envbase points into acceptance/ (the
-    # default env; report.js rewrites the links when Production is active).
+    # base = the caller's prefix as-is and envbase points into production/ (the
+    # default env since 2026-08-31, user request; report.js rewrites the links
+    # when Acceptance is the active choice).
     local envbase=${2%assets/style.css}
     local base envpair
     if [ -n "${SITE_ENV:-}" ]; then
         base="${envbase}../"
     else
         base=$envbase
-        envbase="${base}acceptance/"
+        envbase="${base}production/"
     fi
     local home=${base}index.html                         # home = the SHARED root index
     printf '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>%s</title>\n' "$ESC"
@@ -742,12 +743,13 @@ render_topbar() {
 # which is also why a scope switch re-renders nothing.)
 # The top bar for an ENV-NEUTRAL shared page (the local build report, help/…) whose
 # docs-root prefix is $1: SITE_ENV-less, so the env pair toggles like the home's
-# and the in-env links point into acceptance/ (report.js rewrites them when
-# Production is active; on these pages the switch is inert — one page, no env
-# data — which is fine, UI consistency matters more). $2 = help slug.
+# and the in-env links point into production/ (the default env; report.js
+# rewrites them when Acceptance is the active choice; on these pages the
+# switch is inert — one page, no env data — which is fine, UI consistency
+# matters more). $2 = help slug.
 render_shared_topbar() {
     local base=$1 helpslug=${2:-}
-    local envbase="${base}acceptance/"
+    local envbase="${base}production/"
     local envpair='<a class="envswitch" data-target="acceptance">Acceptance</a><span class="envsep">/</span><a class="envswitch" data-target="production">Production</a>'
     render_topbar "$base" "$envbase" "$envpair" "$helpslug"
 }

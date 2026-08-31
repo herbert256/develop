@@ -32,7 +32,8 @@ develop at `http://localhost/develop/`, runtime at `http://localhost/runtime/`.
 ## Environments (acceptance + production)
 
 Two environments side by side, selected by **`AXWAY_ENV`** (`acceptance`|`production`, default
-`acceptance`) via the sourced **`bin/env.sh`**. **Every input/data/docs path in this document is
+`production` since 2026-08-31 — the shared home opens on Production and the shared pages root their
+links there; a script run without the variable acts on production) via the sourced **`bin/env.sh`**. **Every input/data/docs path in this document is
 per-environment**: `input/<env>/…`, `data/<env>/…`, `docs/<env>/…`. Shared only: `data/.awkshim`
 and the docs-root artifacts (`index.html` — the ONE shared home —, `404.html`,
 `assets/`, `help/`, `.nojekyll`).

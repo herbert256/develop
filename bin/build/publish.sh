@@ -7,7 +7,7 @@
 #                                     holding the two result-status tables and
 #                                     the log-files table; the top-bar env
 #                                     label toggles which block shows
-#                                     (report.js, default acceptance).
+#                                     (report.js, default production).
 #                                     Always rewritten reading BOTH envs from
 #                                     disk, so per-env build passes are
 #                                     idempotent.
@@ -56,9 +56,9 @@ fi
 
 # Give the hand-authored help pages the EXACT site top bar + footer (the user
 # asked for one consistent interface). The help BODY stays hand-authored; only
-# the chrome is regenerated — render_shared_topbar, env-neutral (acceptance-
-# rooted, inert env switch). Runs in the ACCEPTANCE pass only (the default env,
-# like the shared home). A leftover footer bar from before its 2026-07 removal
+# the chrome is regenerated — render_shared_topbar, env-neutral (production-
+# rooted, inert env switch). Runs in the PRODUCTION pass only (the default env
+# since 2026-08-31, like the shared home). A leftover footer bar from before its 2026-07 removal
 # is DROPPED here, so the hand-authored help pages need no manual edit.
 # This is the one publish step that writes into docs/help/ (see CLAUDE.md).
 apply_help_chrome() {
@@ -1870,7 +1870,7 @@ write_whats_new() {
 # The SHARED root 404 page (docs/404.html) — what GitHub Pages (and any
 # webserver configured for it) serves for a URL that matches nothing at all,
 # instead of the stock error page. Same chrome as the shared home
-# (SITE_ENV-less: acceptance-rooted menus).
+# (SITE_ENV-less: production-rooted menus).
 # SELF-CONTAINED on purpose: Pages serves this page AT THE REQUESTED URL
 # (any depth), so relative hrefs — stylesheet included — would resolve
 # against the missing page's directory and 404 too. Inline style only, and
@@ -1897,7 +1897,8 @@ write_root_404() {
 # The root landing page — the ONE SHARED page serving BOTH environments:
 # everything centered (body class "home", style.css), one .envblock per env
 # with that env's status snapshot + log-files table. CSS shows the ACTIVE
-# env's block only (default acceptance); the top-bar env label toggles it
+# env's block only (default production since 2026-08-31 — baked as body class
+# env-production so the first paint is right); the top-bar env label toggles it
 # client-side (report.js setupEnvSwitch, sessionStorage "axway-env") and
 # rewrites the topbar's env-scoped links. Always written to the DOCS ROOT and
 # always reads BOTH envs from disk, so the per-env build passes are idempotent
@@ -1907,10 +1908,10 @@ write_root_index() {
     local out="docs/index.html"
     {
         # the home is the shared page: SITE_ENV empty makes html_head emit
-        # root-depth shared links + acceptance-rooted menus (a local shadows
+        # root-depth shared links + production-rooted menus (a local shadows
         # the sourced global for this call only)
         local SITE_ENV=""
-        html_head "Cloud Reports" "assets/style.css" "" "" "index" "" "" "home"
+        html_head "Cloud Reports" "assets/style.css" "" "" "index" "" "" "home env-production"
         printf '<h1>Cloud Reports</h1>\n'
         local env
         for env in acceptance production; do
@@ -1992,8 +1993,8 @@ tag_analyses_group_h1s
 tag_transfer_group_h1s
 tag_server_group_h1s
 
-# The shared help pages' chrome (acceptance pass only — the default env's menus).
-[ "${SITE_ENV:-}" = acceptance ] && apply_help_chrome
+# The shared help pages' chrome (production pass only — the default env's menus).
+[ "${SITE_ENV:-}" = production ] && apply_help_chrome
 
 echo "Wrote index pages (root + transfer${SERVER_MENU:+ + server})." >&2
 

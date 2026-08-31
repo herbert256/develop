@@ -89,7 +89,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed (see bin/fastawk.sh)
-source "$ROOT/bin/env.sh"       # resolve $AXWAY_ENV (acceptance|production, default acceptance)
+source "$ROOT/bin/env.sh"       # resolve $AXWAY_ENV (acceptance|production, default production)
 IP_DIR="$ROOT/input/$AXWAY_ENV/ip"                 # PER ENV (the two estates share no endpoints)
 source "$ROOT/bin/ip.sh"        # IP_HOSTS_FILE (input/<env>/ip/ip-hosts.tsv) + ip_put
 source "$ROOT/bin/renames.sh"  # RENAMES_FILE (input/<env>/renames/) + fm_snapshot_renames

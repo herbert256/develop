@@ -12,10 +12,10 @@
 #
 # Every entry script sources this right next to bin/fastawk.sh. The env comes
 # from $AXWAY_ENV (bin/build.sh exports it per loop pass); a standalone script
-# run without it defaults to acceptance, so the repo convention that every
+# run without it defaults to production (2026-08-31, user request; was acceptance), so the repo convention that every
 # script takes no arguments is preserved.
 #
-AXWAY_ENV="${AXWAY_ENV:-acceptance}"
+AXWAY_ENV="${AXWAY_ENV:-production}"
 case $AXWAY_ENV in
     acceptance|production) ;;
     *) echo "AXWAY_ENV must be 'acceptance' or 'production' (got '$AXWAY_ENV')" >&2; exit 1 ;;

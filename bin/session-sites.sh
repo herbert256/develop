@@ -40,13 +40,13 @@
 # bin/build.sh suppresses that call on its first parse (the server cache is
 # mid-rewrite beside it) and runs this step itself after the parse barrier.
 #
-# Usage:  bin/session-sites.sh      (env from $AXWAY_ENV, default acceptance)
+# Usage:  bin/session-sites.sh      (env from $AXWAY_ENV, default production)
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed
-source "$ROOT/bin/env.sh"       # resolve $AXWAY_ENV (acceptance|production, default acceptance)
+source "$ROOT/bin/env.sh"       # resolve $AXWAY_ENV (acceptance|production, default production)
 source "$ROOT/bin/renames.sh"   # RENAMES_FILE + RENAMES_AWK (rn_canon: old name -> current)
 
 DATA="$ROOT/data/$AXWAY_ENV"

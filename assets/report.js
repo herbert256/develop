@@ -2825,10 +2825,10 @@
   //    live ?axway_search). A page the crosslink pass has not touched (a
   //    partial local publish) falls back to the plain pathname swap.
   //  - On the shared root home (body.home): the label shows the ACTIVE env
-  //    (sessionStorage "axway-env", default acceptance) and clicking toggles
+  //    (sessionStorage "axway-env", default production) and clicking toggles
   //    it — body gains/loses .env-production so CSS swaps the baked .envblock
   //    tables, and the topbar's env-scoped links (dropdown menus, Entities,
-  //    the search form action — emitted acceptance-rooted) are rewritten to
+  //    the search form action — emitted production-rooted) are rewritten to
   //    the active env.
   // ---- The RUNTIME top bar (2026-07) ---------------------------------------
   // Every html_head page bakes only `<div class="topbar" data-eb=… data-b=…
@@ -2949,7 +2949,7 @@
     function active() {
       var v = "";
       try { v = sessionStorage.getItem(KEY) || ""; } catch (e) {}
-      return v === "production" ? "production" : "acceptance";
+      return v === "acceptance" ? "acceptance" : "production";   // default production (2026-08-31, user request)
     }
     function apply(e) {
       var body = document.body;
