@@ -12,7 +12,7 @@
 <script src="../../assets/report.js?v=3944911837" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="topview" data-twin="../../production/transfer/topview.html"></div>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="topview"></div>
 <h1>Top view <span class="grouptag">&larr; Top view &larr; Transfer</span></h1>
 <p class="range">Every day of the loaded transfer log on one row — the day counted as <strong>Files</strong> (one per CoreId — the site-wide counting unit) split into Ok/Error with its error rate plus <strong>Recovered</strong> (Files that carried a failed leg but still finished OK — a retry delivered them), the day counted as <strong>Transfers</strong> (physical log rows) with the same Ok/Error split, and the same Files by their <strong>final state</strong>: <strong>Processed</strong> (delivered), <strong>Failed</strong>, <strong>Waiting</strong> (UC2 staged for pickup, not collected yet) and <strong>Expired</strong> (the retention sweep deleted the staged copy before any pickup — never delivered). Newest day on top; the Date cell opens that day's page.</p>
 <div class="tablewrap"><table class="wide" data-total-top="1" data-date-reset="1" data-pct="7:6:3;11:10:8">
