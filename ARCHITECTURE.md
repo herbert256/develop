@@ -215,8 +215,10 @@ capacity) · **srv-routing** "Routing & Polling" (remote-poll · transfer-site-m
 
 **BL** (2026-08-31, user request) is the group's FIFTH, LAST member — not PDA-derived: a BL
 entity is a `subscriptions.json` `tags` entry starting with `BL`, the tag text kept VERBATIM
-(`BL_FIN` stays `BL_FIN`). `xref/_subscriptions-bl.tsv` (subscription ⇥ tag, one row per BL tag
-of the subscription) is the map; `base/_bl.tsv` the entity list; the composed pair caches ride
+(`BL_FIN` stays `BL_FIN`) — UNIONED with `input/BL.txt` rows (`<subscription> <BL number>`,
+several per subscription; names matched case-insensitively against the env's configured
+subscriptions, unknown ones reported and skipped). `xref/_subscriptions-bl.tsv` (subscription ⇥
+BL, one row per BL of the subscription) is the map; `base/_bl.tsv` the entity list; the composed pair caches ride
 the SUBSCRIPTION spine (`_accounts-bl` … `_bl-white`, via xcompose). Attribution everywhere is
 `bl_union(col 12)` — a File counts for every BL tag of its subscription; direction/result roll
 up from the subscriptions like every derived member. Everywhere the group renders (Entities,

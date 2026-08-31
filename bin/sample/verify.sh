@@ -86,6 +86,10 @@ for env in acceptance production; do
     # subscription -> tag map is non-empty and the entity report has rows
     n=$(rows "data/$env/flow-manager/xref/_subscriptions-bl.tsv")
     check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] _subscriptions-bl.tsv is empty"
+    # input/BL.txt rows join the tags (union, several per subscription): the
+    # GLOBEX billing flow carries its BL_FIN tag AND the two planted numbers
+    n=$(awk -F'\t' '$1=="UC1_FIN_BILLING_GLOBEX"' "data/$env/flow-manager/xref/_subscriptions-bl.tsv" 2>/dev/null | wc -l | tr -d ' ')
+    check $([ "${n:-0}" -ge 3 ] && echo 0 || echo 1) "[$env] UC1_FIN_BILLING_GLOBEX has $n BL row(s), expected >= 3 (tag + input/BL.txt)"
     n=$(rpt_rows "data/$env/transfer/reports/bl.rpt")
     check $([ "$n" -gt 0 ] && echo 0 || echo 1) "[$env] bl.rpt has 0 rows"
 

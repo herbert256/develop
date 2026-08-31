@@ -13,3 +13,9 @@ Layout (per environment, acceptance/ + production/):
   ip/            the address<->endpoint map (bin/ip.sh)
 Root: blacklist.txt + skip.txt (platform policy, see CLAUDE.md) and
 partner-aliases.tsv (partner tokens naming one organisation).
+
+BL.txt              BL numbers per subscription ("<subscription> <BL number>", several lines per
+                    subscription allowed) — a second source of BL entities beside the
+                    subscriptions.json tags; bin/flow-manager.sh unions the two. Shared by both
+                    environments; this develop copy is the SAMPLE template (bin/sample/templates/),
+                    the real one lives in the runtime checkout's input/.

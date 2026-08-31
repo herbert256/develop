@@ -109,6 +109,7 @@ cp "$TPL_DIR/logical.txt" input/logical.txt
 cp "$TPL_DIR/logical_domains.txt" input/logical_domains.txt
 cp "$TPL_DIR/logical_apps.txt" input/logical_apps.txt
 cp "$TPL_DIR/logical_partners.txt" input/logical_partners.txt
+cp "$TPL_DIR/BL.txt" input/BL.txt
 
 cat > input/README.txt <<'EOF'
 input/ — the SAMPLE ESTATE: fully synthetic Axway SecureTransport exports for

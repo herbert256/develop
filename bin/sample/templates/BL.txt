@@ -1,0 +1,19 @@
+# input/BL.txt — BL numbers per subscription, a SECOND source beside the
+# subscriptions.json tags[] entries starting with "BL" (2026-08-31, user
+# request). Two whitespace-separated columns, # comments and blank lines
+# ignored, shared by both environments:
+#
+#     <subscription name> <BL number>
+#
+# A subscription may appear on several lines (several BL numbers); the BL
+# entity set of a subscription is the UNION of its tags and its lines here.
+# The name must be a CONFIGURED subscription of the environment being built
+# (matched case-insensitively, the configured spelling kept); a row naming an
+# unknown subscription is reported and skipped.
+#
+# SAMPLE ESTATE: a few numbers on synthetic flows — GLOBEX billing carries
+# two on top of its BL_FIN tag (the multi-BL case), the others one each.
+UC1_FIN_BILLING_GLOBEX   BL10001
+UC1_FIN_BILLING_GLOBEX   BL10002
+UC1_AB_CLAIMS_UMBRELLA   BL10003
+UC3_CD_QUOTES_STARK      BL10004

@@ -140,6 +140,10 @@ LOGICALF="$ROOT/input/logical.txt"
 LOGDOMF="$ROOT/input/logical_domains.txt"
 LOGAPPF="$ROOT/input/logical_apps.txt"
 LOGPTNF="$ROOT/input/logical_partners.txt"
+# the BL numbers per subscription (input/BL.txt, COMMITTED, shared by both
+# envs — 2026-08-31, user request): a second source beside the subscriptions
+# .json tags, unioned into _subscriptions-bl; a freshness dep like the rest
+BLF="$ROOT/input/BL.txt"
 source "$ROOT/bin/skiplist.sh"   # skip_values() — the ONE reader for input/skip.txt
 SKIPDIR="$OUT/filtered"                 # the filtered partners/subscriptions/templates.json
 # The skipped-config sidecar lives INSIDE filtered/ (NOT directly in $OUT) so
@@ -206,7 +210,8 @@ for f in $ENTITY_CACHES $PAIR_CACHES; do
        || { [ -f "$LOGICALF" ] && [ "$LOGICALF" -nt "$out" ]; } \
        || { [ -f "$LOGDOMF" ] && [ "$LOGDOMF" -nt "$out" ]; } \
        || { [ -f "$LOGAPPF" ] && [ "$LOGAPPF" -nt "$out" ]; } \
-       || { [ -f "$LOGPTNF" ] && [ "$LOGPTNF" -nt "$out" ]; }; then fresh=0; break; fi
+       || { [ -f "$LOGPTNF" ] && [ "$LOGPTNF" -nt "$out" ]; } \
+       || { [ -f "$BLF" ] && [ "$BLF" -nt "$out" ]; }; then fresh=0; break; fi
 done
 # The filtered exports + the skipped-config sidecar must exist (a changed
 # skip.txt is caught above; a manually removed filtered/ dir heals here).
@@ -1043,12 +1048,29 @@ unset _e _m
 # (2026-08-31, user request), LAST in the Logical/Partners/Domains/
 # Applications group. The spine is the SUBSCRIPTION: a subscription carries
 # its BL tag(s) verbatim (BL_FIN — never stripped; several tags = several
-# rows), and every other bl pair cache is composed from the subscription
-# pairs. Placed AFTER the PDA section (its _subscriptions-{partners,apps,
-# domains} inputs must exist) and BEFORE the mirror loop.
+# rows) UNIONED with its input/BL.txt rows ("<subscription> <BL number>",
+# several per subscription allowed — 2026-08-31, user request; the name must
+# be a configured subscription of THIS env, matched case-insensitively with
+# the configured spelling kept, unknown names reported and skipped), and every
+# other bl pair cache is composed from the subscription pairs. Placed AFTER
+# the PDA section (its _subscriptions-{partners,apps,domains} inputs must
+# exist) and BEFORE the mirror loop.
 {   if command -v jq >/dev/null 2>&1 && [ -f "$SKIPDIR/subscriptions.json" ]; then
         jq -r '.[] | .name as $n | (.tags // [])[] | select(startswith("BL")) | [$n, .] | @tsv' \
             "$SKIPDIR/subscriptions.json" 2>/dev/null || true
+    fi
+    if [ -s "$BLF" ] && [ -f "$BASE/_subscriptions.tsv" ]; then
+        awk -F'\t' -v BLF="$BLF" -v ENVN="$AXWAY_ENV" '
+            FILENAME != BLF { if ($1 != "") CFG[toupper($1)] = $1; next }
+            { l = $0; sub(/\r$/, "", l); sub(/^[ \t]+/, "", l)
+              if (l ~ /^#/ || l == "") next
+              n = split(l, a, /[ \t]+/)
+              if (n < 2 || a[1] == "" || a[2] == "") next
+              k = toupper(a[1])
+              if (k in CFG) print CFG[k] "\t" a[2]
+              else { unk++; if (unk <= 8) ul = ul (ul == "" ? "" : ", ") a[1] } }
+            END { if (unk) printf "flow-manager.sh: [%s] input/BL.txt: %d row(s) name a subscription this environment does not configure (skipped): %s%s\n", ENVN, unk, ul, (unk > 8 ? ", ..." : "") > "/dev/stderr" }
+        ' "$BASE/_subscriptions.tsv" "$BLF"
     fi
 } | LC_ALL=C sort -u > "$XREF/_subscriptions-bl.tsv"
 cut -f2 "$XREF/_subscriptions-bl.tsv" | LC_ALL=C sort -u > "$BASE/_bl.tsv"
