@@ -485,7 +485,7 @@ _status_table() {
             # configured-side page. Falls back to the Entities view when the
             # cell page is absent (an env with no PDA coverage TSVs).
             case $member in
-                logicals|partners|applications|domains)
+                logicals|partners|applications|domains|bl)
                     [ -f "docs/$cov$member-configured.html" ] && h_tot="$cov$member-configured.html" ;;
             esac
             h_seen="$ent-seen.html";     h_seenoff="$ent-seen-transfer.html"
