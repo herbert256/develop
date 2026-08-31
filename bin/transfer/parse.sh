@@ -132,6 +132,7 @@ CFG_AAPP="$CONFIG_XREF/_accounts-apps.tsv"           # account <TAB> application
 CFG_ADOM="$CONFIG_XREF/_accounts-domains.tsv"        # account <TAB> domain
 CFG_SAPP="$CONFIG_XREF/_subscriptions-apps.tsv"      # subscription <TAB> application (incl. the subscription-name fallback)
 CFG_SDOM="$CONFIG_XREF/_subscriptions-domains.tsv"   # subscription <TAB> domain     (cols 18/19 fall back to these when the account derives none)
+CFG_SPTN="$CONFIG_XREF/_subscriptions-partners.tsv"  # subscription <TAB> partner organisation (the precise key; col 20 first)
 CFG_APTN="$CONFIG_XREF/_accounts-partners.tsv"       # account <TAB> partner organisation
 CFG_HPTN="$CONFIG_XREF/_hosts-partners.tsv"          # configured host <TAB> partner organisation
 CFG_FLOW="$CONFIG_XREF/_subscriptions-flowdir.tsv"   # subscription <TAB> out|in|relay (file-movement direction)
@@ -164,8 +165,16 @@ PSIG="$CACHE_DIR/_transfers.parser"
 # this script: the blacklist decides what gets blanked and the map decides which
 # logged subscription name folds to which current one, so changing either
 # changes the cache just as
-# surely as changing the code, and must force the same full reparse.
-parser_sig=$(cat "${BASH_SOURCE[0]}" "$BLACKLIST_FILE" "$RENAMES_FILE" "$RENAMES_PROF" 2>/dev/null | cksum | awk '{print $1"_"$2}')
+# surely as changing the code, and must force the same full reparse. The
+# CONFIGURED SUBSCRIPTION NAMES are in it too (2026-08-31): the tokenizer keeps
+# a logged site that names a configured subscription whatever its shape, so a
+# subscription added to the export changes what an old row tokenizes to. Names
+# only, from the pre-discovery snapshot — never base/_subscriptions.tsv, whose
+# result column is recoloured every build and whose discovered rows are logged
+# values, not configuration.
+CFG_CONF="$CONFIG_BASE/.configured.tsv"   # <list> <TAB> <name>: the config lists BEFORE either colour step appends
+parser_sig=$( { cat "${BASH_SOURCE[0]}" "$BLACKLIST_FILE" "$RENAMES_FILE" "$RENAMES_PROF" 2>/dev/null
+                awk -F'\t' '$1 == "_subscriptions" { print $2 }' "$CFG_CONF" 2>/dev/null; } | cksum | awk '{print $1"_"$2}')
 
 # CONFIG-ONLY ESTATE (2026-08): an env with the flow-manager exports but not a
 # single log CSV is a legitimate state — a fresh clone carries only the JSONs
@@ -270,8 +279,12 @@ else
     src_files=("${files[@]}")
     echo "Parsing ${#src_files[@]} file(s) into $PARSED0 ..." >&2
 fi
-awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" "$BLACKLIST_AWK$RENAMES_AWK"'
-    BEGIN { bl_load(BLF); rn_load(RNF, RNP) }
+awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CFGC="$CFG_CONF" "$BLACKLIST_AWK$RENAMES_AWK"'
+    BEGIN { bl_load(BLF); rn_load(RNF, RNP)
+            # the configured subscription names (case-folded): a logged site
+            # naming one is kept whatever its shape — see the site rule below
+            while ((getline cl < CFGC) > 0) { split(cl, ca, "\t"); if (ca[1] == "_subscriptions" && ca[2] != "") cfgsub[toupper(ca[2])] = 1 }
+            close(CFGC) }
     function split_csv(line,    n, i, c, inquotes, cur) {
         delete field                     # clear stale cells from a prior (short) row
         n = 0; cur = ""; inquotes = 0
@@ -340,18 +353,11 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" "$BLA
             if (bl_blank("login", login)) login = ""
         }
         site = field[7]
-        # A filled subscription MUST start with "UC" (every real subscription
-        # follows the UCn naming convention): any other value — P14303_CFT01,
-        # "none", "Clone - ..." config artifacts — is ignored (blanked, row
-        # kept), so it never reaches _files.tsv or a report. The propagation /
-        # config fallbacks below may then recover the real subscription.
-        if (bl_blank("site", site)) site = ""
         # Subscriptions are logged as <name>_SCP_<tail> (or _SSCP_ / _CCP_);
         # the tail is truncated to varying lengths across exports, so keep only the
         # stable part BEFORE the _SCP_ / _SSCP_ / _CCP_ marker (the clean configured
         # subscription name — matches the config export). Centralized here so every
         # report, cache and detail page sees the canonical name.
-        else if ((scp = index(site, "_SSCP_")) > 0 || (scp = index(site, "_SCP_")) > 0 || (scp = index(site, "_CCP_")) > 0) site = substr(site, 1, scp - 1)
         # RENAMES (2026-08): a log line keeps the name that was current when it
         # was written, so an export that renames a subscription would otherwise
         # split its history in two — the configured half joining nothing and
@@ -361,7 +367,24 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" "$BLA
         # one name per flow. The map is input/<env>/renames/subscriptions.tsv
         # (bin/renames.sh, machine-maintained by the config step); it is part of
         # parser_sig, so recording a rename re-tokenizes the whole cache.
-        if (site != "") site = rn_canon(site)
+        cs = site
+        if ((scp = index(cs, "_SSCP_")) > 0 || (scp = index(cs, "_SCP_")) > 0 || (scp = index(cs, "_CCP_")) > 0) cs = substr(cs, 1, scp - 1)
+        if (cs != "") cs = rn_canon(cs)
+        # THE CONFIGURATION OUTRANKS THE SHAPE TEST (2026-08-31 audit): a clean
+        # name that IS a configured subscription is kept whatever it looks
+        # like. The blacklist keep rule (^UC — every acceptance flow follows
+        # the UCn naming convention) is a SHAPE test for values the config
+        # does not know: P14303_CFT01, "none", "Clone - ..." artifacts and
+        # profile echoes are blanked (row kept) so they never reach _files.tsv
+        # or a report, and the propagation / config fallbacks may then recover
+        # the real subscription. Applied to the RAW value BEFORE the config
+        # test, it blanked the correctly logged subscription of every
+        # production hybrid flow (no UC prefix) on every row — the ground
+        # truth thrown away, the flow then INFERRED, and a bad profile fold
+        # decided it unopposed.
+        if (cs != "" && (toupper(cs) in cfgsub)) site = cs
+        else if (bl_blank("site", site)) site = ""
+        else site = cs
         size = field[19]; if (size !~ /^[0-9]+$/) size = 0
         dur = dur_ms(field[25]); dur = (dur < 0) ? -1 : int(dur + 0.5)     # ms (integer), -1 if none
 
@@ -450,6 +473,7 @@ sides_f="$tmp.sides"
 al_f="$CFG_AL"; [ -f "$al_f" ] || al_f=/dev/null
 ah_f="$CFG_AH"; [ -f "$ah_f" ] || ah_f=/dev/null
 sh_f="$CFG_SH"; [ -f "$sh_f" ] || sh_f=/dev/null
+sb_f="$CFG_SUBS"; [ -f "$sb_f" ] || sb_f=/dev/null
 awk -F'\t' '
     function vote(ip, h) {                                                 # one endpoint candidate for ip
         if (h == "" ) return
@@ -470,9 +494,17 @@ awk -F'\t' '
         if (!(s in shost)) shost[s] = $2; else if (shost[s] != $2) shost[s] = "\001"
         next
     }
+    FILENAME == ARGV[4] { if ($1 != "" && ($2 == "in" || $2 == "out")) sside[toupper($1)] = $2; next }   # subscription -> its comm-profile side
     $16 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ {
         ip = $16; a = toupper($4); s = toupper($6)
-        if ((a in ah) || !(a in al)) {                                     # OUT: we dial the endpoint
+        # THE SUBSCRIPTION SIDE FIRST (2026-08-31 audit), the account rule only
+        # for a row without one (or a both-ways subscription): a hybrid
+        # production account carries hosts AND logins, so by the account
+        # rule every one of its rows — the partner-delivered ones included —
+        # counted as Out, and the partner INCOMING address was recorded under
+        # the account configured endpoint in input/<env>/ip/, permanently.
+        sd9 = (s != "" && (s in sside)) ? sside[s] : (((a in ah) || !(a in al)) ? "out" : "in")
+        if (sd9 == "out") {                                                # OUT: we dial the endpoint
             out[ip] = 1
             # WHO knows the endpoint. Entity propagation runs AFTER this pass,
             # so plenty of rows still carry a blank account — the SUBSCRIPTION
@@ -488,7 +520,7 @@ awk -F'\t' '
     END {
         for (ip in in_) if (!(ip in out)) print "IN\t" ip
         for (ip in out) print "OUT\t" ip "\t" (((ip in cand) && cand[ip] != "\001") ? cand[ip] : "")
-    }' "$al_f" "$ah_f" "$sh_f" "$tmp.raw" | LC_ALL=C sort > "$sides_f"
+    }' "$al_f" "$ah_f" "$sh_f" "$sb_f" "$tmp.raw" | LC_ALL=C sort > "$sides_f"
 
 # ---- OUTGOING: record the configured host for any address not yet mapped ----
 # No DNS here: WE dial these endpoints, so the configuration already knows the
@@ -540,11 +572,13 @@ rm -f "$sides_f"
 # PDA both-ways linking read the .txt files regardless).
 al_f="$CFG_AL"; [ -f "$al_f" ] || al_f=/dev/null
 ah_f="$CFG_AH"; [ -f "$ah_f" ] || ah_f=/dev/null
+sb_f="$CFG_SUBS"; [ -f "$sb_f" ] || sb_f=/dev/null
 awk -F'\t' -v OFS='\t' -v BLF="$BLACKLIST_FILE" "$BLACKLIST_AWK"'
     BEGIN { bl_load(BLF) }
     FILENAME == ARGV[1] { if ($1 != "") al[toupper($1)] = 1; next }   # account -> has logins (In side)
     FILENAME == ARGV[2] { if ($1 != "") ah[toupper($1)] = 1; next }   # account -> has hosts  (Out side; wins, like the _files join)
     FILENAME == ARGV[3] { map[$1] = $2; next }
+    FILENAME == ARGV[4] { if ($1 != "" && ($2 == "in" || $2 == "out")) sside[toupper($1)] = $2; next }   # subscription -> its comm-profile side (base _subscriptions.tsv col 2)
     {
         # ENDPOINTS ARE CANONICALLY LOWERCASE (site-wide rule): the logged
         # value and the substituted endpoint name alike.
@@ -552,13 +586,22 @@ awk -F'\t' -v OFS='\t' -v BLF="$BLACKLIST_FILE" "$BLACKLIST_AWK"'
         # host blacklist: internal cluster nodes are blanked (row kept). Applied
         # here, AFTER the cache fill, so the blacklisted IPs keep their
         # transfer/hostnames/ entries (unknown-hosts uses them as known transfer IPs).
-        if (bl_blank("host", $16)) $16 = ""
+        # The literal UNKNOWN is the platform placeholder for "no remote host
+        # logged" (2026-08-31 audit: it was 35 % of the production Files and
+        # had become a discovered, green host ENTITY) — blank, like the
+        # UNKNOWN profile.
+        if ($16 == "unknown" || bl_blank("host", $16)) $16 = ""
         else if ($16 in map) {
-            a = toupper($4)
-            if ((a in ah) || !(a in al)) $16 = tolower(map[$16])
+            # the SUBSCRIPTION side first (2026-08-31 audit): a hybrid
+            # production account carries hosts AND logins, so the account
+            # rule alone called every one of its rows Out and renamed the
+            # INCOMING partner address to a configured endpoint
+            s = toupper($6); a = toupper($4)
+            sd9 = (s != "" && (s in sside)) ? sside[s] : (((a in ah) || !(a in al)) ? "out" : "in")
+            if (sd9 == "out") $16 = tolower(map[$16])
         }
         print
-    }' "$al_f" "$ah_f" "$hmap" "$tmp.raw" > "$tmp.mapped"
+    }' "$al_f" "$ah_f" "$hmap" "$sb_f" "$tmp.raw" > "$tmp.mapped"
 
 # Sort AFTER the mapping (the keys — coreid, direction — are untouched by it),
 # so an incremental chunk merged with `sort -m` lands byte-identical to a full
@@ -658,7 +701,10 @@ smap="$tmp.submap"
     printf '#\n'   # sentinel: keeps the map file non-empty so awk file routing stays safe
     if [ -f "$CFG_SUBS" ] && [ -f "$CFG_AS" ] && [ -f "$CFG_SP" ] && [ -f "$CFG_PAT" ]; then
         awk -F'\t' '
-            FILENAME ~ /_accounts-subscriptions\.tsv$/ { if (!($2 in acct)) acct[$2] = $1; next }
+            # a two-account subscription (the relays) fills NO account: the
+            # config is ambiguous there and a silent first-wins pick sent the
+            # partner-push-via-CFT groups of one partner to the other
+            FILENAME ~ /_accounts-subscriptions\.tsv$/ { if (!($2 in acct)) acct[$2] = $1; else if (acct[$2] != $1) acct[$2] = ""; next }
             FILENAME ~ /_subscriptions-profiles\.tsv$/ { prof[$1] = $2; next }
             FILENAME ~ /_subscriptions-patterns\.tsv$/ { pat[$1] = $2; next }
             {   # _subscriptions.tsv: one configured subscription per line (col 1 = name, col 2 = direction)
@@ -714,6 +760,7 @@ awk -F'\t' -v OFS='\t' '
     # Resolve a profile to its subscription, breaking a multi-claim tie on the
     # direction of the group pesit leg. Returns "" when it cannot be decided.
     function resolve_site(p, in_, out_,   i, want, hits, cand) {
+        p = toupper(p)   # the P records are keyed case-folded, like every other map in this program
         if (p == "" || !(p in pn)) return ""
         if (pn[p] == 1) return psub[p, 1]
         want = (in_ && !out_) ? "IN" : ((out_ && !in_) ? "OUT" : "")
@@ -758,7 +805,13 @@ awk -F'\t' -v OFS='\t' '
         # own field never votes for itself (passed as "").
         if (gs == "") { gs = xref_fill("S", ga, gl, "", gh, gp); if (gs != "") xgain["site"]++ }
         if (ga == "") { ga = xref_fill("A", "", gl, gs, gh, gp); if (ga != "") xgain["account"]++ }
-        if (gl == "") { gl = xref_fill("L", ga, "", gs, gh, gp); if (gl != "") xgain["login"]++ }
+        # LOGIN: never for a flow the config gives NO login (2026-08-31 audit).
+        # A hybrid production account has one comm-profile login (its one
+        # inbound flow) beside several login-less flows; the S voter abstains
+        # on those (no S:L row is abstention, not conflict) and the A voter
+        # then credited every one of them to a login that never authenticated
+        # for them. The subscription being known and login-less is decisive.
+        if (gl == "" && !(gs != "" && !(("S" SUBSEP "L" SUBSEP toupper(gs)) in xn))) { gl = xref_fill("L", ga, "", gs, gh, gp); if (gl != "") xgain["login"]++ }
         if (gp == "") { gp = xref_fill("P", ga, gl, gs, gh, ""); if (gp != "") xgain["profile"]++ }
         # FLOWDIR fallback (2026-08): still no subscription, but the group has
         # an account and its legs agree on a movement side — if the account has
@@ -828,8 +881,9 @@ awk -F'\t' -v OFS='\t' '
             if (($21 == "" || $21 == "UNKNOWN") && gp != "") $21 = gp
             # forward fallback: subscription -> owning account / flow profile
             if ($6 != "") {
-                if ($4 == "" && ($6 in cacct) && cacct[$6] != "") $4 = cacct[$6]
-                if (($21 == "" || $21 == "UNKNOWN") && ($6 in cprof) && cprof[$6] != "") $21 = cprof[$6]
+                u6 = toupper($6)
+                if ($4 == "" && (u6 in cacct) && cacct[u6] != "") $4 = cacct[u6]
+                if (($21 == "" || $21 == "UNKNOWN") && (u6 in cprof) && cprof[u6] != "") $21 = cprof[u6]
             }
             # A lone leg is an incomplete transfer: a CoreId must carry both an
             # Inbound and an Outbound leg, so a group of ONE row never actually
@@ -842,8 +896,12 @@ awk -F'\t' -v OFS='\t' '
         nb = 0; ga = ""; gl = ""; gs = ""; gh = ""; gp = ""; gpin = 0; gpout = 0; gmv = ""; gss = ""; gppin = 0
     }
     NR == FNR {
-        if ($1 == "S") { cacct[$2] = $3; cprof[$2] = $4 }
-        else if ($1 == "P") { i = ++pn[$2]; psub[$2, i] = $3; pdir[$2, i] = $4 }
+        # keyed CASE-FOLDED like the X records and every downstream map
+        # (2026-08-31 audit: these two were the only exact-case joins in the
+        # chain — an export spelling a name differently from the log missed
+        # silently and the group fell through to a weaker fallback)
+        if ($1 == "S") { cacct[toupper($2)] = $3; cprof[toupper($2)] = $4 }
+        else if ($1 == "P") { pk = toupper($2); i = ++pn[pk]; psub[pk, i] = $3; pdir[pk, i] = $4 }
         else if ($1 == "F") { kk = $2 SUBSEP $3; fdn[kk]++; fdsub[kk] = $4 }
         else if ($1 == "Z") { zsite[$2] = $3 }
         else if ($1 == "X") {
@@ -1157,17 +1215,28 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED" | awk -F'\t' '
         else if (rows >= 2 && last_dir == "Outbound" && last_st == "Processed") {
             if (mv == "out" && (last_proto == "ssh" || last_proto == "ftp" || last_proto == "ftps")) oc = "Processed"
             else if (mv == "in" && last_proto == "pesit") oc = "Processed"
+            # a RELAY (partner -> ST -> partner, no folder or hybrid side)
+            # delivers on whichever protocol the last leg used — it has no
+            # movement side to match (2026-08-31 audit: it could never be
+            # Processed, so the first relay to carry traffic would have read
+            # 100 % Error)
+            else if (mv == "relay" && (last_proto == "ssh" || last_proto == "ftp" || last_proto == "ftps" || last_proto == "pesit")) oc = "Processed"
         }
+        # the profile of the row that DONATED the subscription (col 13 from
+        # the same leg as col 12), the group first profile only when that row
+        # carries none: a relay CoreId legitimately has legs on two flows, and
+        # last-row site beside first-row profile named two flows on one row
+        pf9 = (sprof != "") ? sprof : gprof
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", \
             prev, oc, f_acct, f_date, f_time, \
-            f_sortkey, f_jdn, maxsize, durtot, rows, f_file, last_site, gprof, f_login, f_host, wait
+            f_sortkey, f_jdn, maxsize, durtot, rows, f_file, last_site, pf9, f_login, f_host, wait
     }
-    FILENAME ~ /_subscriptions-flowdir\.tsv$/ { if ($2 == "in" || $2 == "out") fd[toupper($1)] = $2; next }
+    FILENAME ~ /_subscriptions-flowdir\.tsv$/ { if ($2 == "in" || $2 == "out" || $2 == "relay") fd[toupper($1)] = $2; next }
     {
         if ($1 != prev) {
             flush()
             prev=$1; f_acct=""; f_date=""; f_time=""; f_sortkey=""; f_jdn=""; f_file=$8
-            maxsize=0; durtot=0; rows=0; gprof=""; last_site=""; f_login=""; f_host=""
+            maxsize=0; durtot=0; rows=0; gprof=""; sprof=""; last_site=""; f_login=""; f_host=""
             l_jdn=""; l_time=""; l_dur=0
             arr_jdn=""; arr_time=""; arr_dur=0; pick_jdn=""; pick_time=""; pick_sum=0
         }
@@ -1196,8 +1265,8 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED" | awk -F'\t' '
         # has an account (recovers the real account when the first row ran as
         # the blanked service account) and the LAST row with a real site.
         if (f_acct == "" && $4 != "") f_acct = $4
-        if ($6 != "") last_site = $6                   # destination = last non-blank site
-        if (gprof == "" && $21 != "" && $21 != "UNKNOWN") gprof = $21   # the naming row wins (rows never disagree)
+        if ($6 != "") { last_site = $6; sprof = ($21 != "" && $21 != "UNKNOWN") ? $21 : "" }   # destination = last non-blank site, and ITS profile
+        if (gprof == "" && $21 != "" && $21 != "UNKNOWN") gprof = $21   # the first naming row, the fallback
         if (f_login == "" && $5  != "") f_login = $5
         if (f_host  == "" && $16 != "") f_host  = $16
     }
@@ -1217,10 +1286,12 @@ mv "$ttmp" "$FILES"
 # subscription stays blank) — the two diverge on pull flows (UC2: connection
 # in, movement out; UC3: connection out, movement in); app/domain = parts
 # 2/1 of the logical flow name (the xref caches, joined via the FlowID),
-# partner = the file's remote host
+# partner = the file's SUBSCRIPTION resolved through _subscriptions-partners.tsv
+# (the precise key — a both-partner subscription is ambiguous and abstains;
+# 2026-08-31 audit), else its remote host
 # (col 15) resolved through _hosts-partners.tsv to its partner ORGANISATION —
 # an In file's host is the partner's connecting address, never a configured
-# endpoint, so it falls back to the account's partner org (kept only when
+# endpoint — else the account's partner org (kept only when
 # unambiguous: an account spanning several endpoint orgs stays blank when
 # the host decides nothing). Missing caches leave their column(s) empty, so
 # the cache always carries 22 columns. The collapse above emits the UC2
@@ -1231,7 +1302,7 @@ mv "$ttmp" "$FILES"
 # copy the server-log File Maintenance sweep deleted to outcome Expired and
 # fills col 22 with the deletion timestamp.
 pda_caches=()
-for cf in "$CFG_AL" "$CFG_AH" "$CFG_AAPP" "$CFG_ADOM" "$CFG_SAPP" "$CFG_SDOM" "$CFG_APTN" "$CFG_HPTN" "$CFG_FLOW" "$CFG_SUBS"; do
+for cf in "$CFG_AL" "$CFG_AH" "$CFG_AAPP" "$CFG_ADOM" "$CFG_SAPP" "$CFG_SDOM" "$CFG_SPTN" "$CFG_APTN" "$CFG_HPTN" "$CFG_FLOW" "$CFG_SUBS"; do
     [ -f "$cf" ] && pda_caches+=("$cf")
 done
 ttmp="$FILES.tmp.$$"
@@ -1254,8 +1325,13 @@ else
         # A subscription naming two apps/domains is ambiguous -> no fill.
         FILENAME ~ /_subscriptions-apps\.tsv$/     { k=toupper($1); if(!(k in sa)) sa[k]=$2; else if(sa[k]!=$2) sa[k]=AMB; next }
         FILENAME ~ /_subscriptions-domains\.tsv$/  { k=toupper($1); if(!(k in sdo)) sdo[k]=$2; else if(sdo[k]!=$2) sdo[k]=AMB; next }
+        # partner: the SUBSCRIPTION first (2026-08-31 audit — the precise key,
+        # like cols 18/19; a both-partner subscription is AMB and abstains),
+        # then the host, then the account; every map AMB-guarded — hp was the
+        # one bare last-row-wins map in this program
+        FILENAME ~ /_subscriptions-partners\.tsv$/ { k=toupper($1); if(!(k in sp)) sp[k]=$2; else if(sp[k]!=$2) sp[k]=AMB; next }
         FILENAME ~ /_accounts-partners\.tsv$/      { k=toupper($1); if(!(k in ap)) ap[k]=$2; else if(ap[k]!=$2) ap[k]=AMB; next }
-        FILENAME ~ /_hosts-partners\.tsv$/         { hp[tolower($1)]=$2; next }
+        FILENAME ~ /_hosts-partners\.tsv$/         { k=tolower($1); if(!(k in hp)) hp[k]=$2; else if(hp[k]!=$2) hp[k]=AMB; next }
         # RELAY is carried too (col 17 = in|out|relay|""): the Latest-100
         # Direction column on the detail pages renders it as "Relay", and it
         # used to get that by re-deriving this same xref cache itself. An empty
@@ -1273,7 +1349,8 @@ else
             d=(s!="" && (s in sd))?sd[s]:((a in ah)?"out":((a in al)?"in":""))
             m=(s!="" && (s in fd))?fd[s]:""
             p=""
-            if(h!="" && (h in hp)) p=hp[h]
+            if(s!="" && (s in sp) && sp[s]!=AMB) p=sp[s]
+            else if(h!="" && (h in hp) && hp[h]!=AMB) p=hp[h]
             else if((a in ap) && ap[a]!=AMB) p=ap[a]
             w=$16; NF=15
             a18=""; if(s!="" && (s in sa) && sa[s]!=AMB) a18=sa[s]; if(a18=="" && (a in aa) && aa[a]!=AMB) a18=aa[a]
@@ -1354,7 +1431,8 @@ col  name       rule
                 subscription fallback; "" when neither map has one
  20  partner    the partner ORGANISATION (part 3 of the logical flow name,
                 merged — as named in data/flow-manager/base/_partners.tsv):
-                the file's host resolved via the configured endpoints, else
+                the file's subscription when it names ONE partner, else the
+                file's host resolved via the configured endpoints, else
                 the account's unambiguous partner org; "" else
  21  wait_ms    UC2 pickup wait, in ms: the gap between the staging leg ending
                 (the last Inbound routing row's start + duration) and the FIRST

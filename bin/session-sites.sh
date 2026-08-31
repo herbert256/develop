@@ -95,8 +95,15 @@ awk -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
     {   # _parse.tsv: col 5 = message, col 6 = session
         if (!($6 in scan)) next
         m = $5
-        while (match(m, /UC[0-9]+_[A-Za-z0-9_-]+/)) {
+        # every name-shaped token, not only UC-prefixed ones (2026-08-31
+        # audit): the production hybrid flows carry no UC prefix, so the
+        # former UC[0-9]+_ pre-filter made this step blind to exactly the
+        # groups it exists to rescue. The configured-set test below is the
+        # real guard; the shape only bounds the scan. A logged _SCP_ tail is
+        # stripped first, as the transfer parse does.
+        while (match(m, /[A-Za-z][A-Za-z0-9_-]*[_-][A-Za-z0-9_-]+/)) {
             t = substr(m, RSTART, RLENGTH); m = substr(m, RSTART + RLENGTH)
+            sub(/_(SS?|C)CP_.*$/, "", t)
             t = rn_canon(t)
             if (toupper(t) in conf) {
                 t = conf[toupper(t)]                       # the export own spelling
