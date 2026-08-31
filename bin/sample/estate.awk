@@ -95,6 +95,9 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
     if (hastag(tags, "mixedspell")) spell = "mixed"
     # one login serving several accounts (the Account-sharing report's rows)
     if (hastag(tags, "sharelogin")) login = "FE001111"
+    # a flow with its OWN login on a shared account (the production MULTI-FE
+    # shape, 2026-08-31): the account carries several FE logins, one per flow
+    if (hastag(tags, "ownlogin")) login = acct_login(acct "|" site)
     # the VDN org is deliberately absent from partners.tsv (a partner-less
     # 2-token account exercising the PDA fallbacks) — dedicated addresses, so
     # the whitelist union-find can never merge it into a seeded org
@@ -396,6 +399,12 @@ function build_production() {
     addf(2, "IT",  "SAPBHP",   "GEKKO",    "",  3, 0.02, "expheavy")
     addf(2, "IT",  "EKDSI",    "CYBERDYNE","",  4, 0.02, "twinc")
     addf(2, "ZG",  "MATCH",    "HOOLI",    "",  1.5, 0.02, "")
+    # the MULTI-FE ACCOUNT (2026-08-31, user report): one account, TWO FE
+    # logins — flow A active on the account login, flow B on its OWN login
+    # and never used. uc2-status must read flow B as "Nothing", never
+    # "No files": the other login's logons are no pickup evidence for it.
+    addf(2, "CD",  "PARCEL",   "BLUTH",    "",  3, 0.02, "")
+    addf(2, "CD",  "PARCEL2",  "BLUTH",    "",  0, 0, "noxfer,ownlogin", "CD-PARCEL-BLUTH")
     addf(3, "APS", "FMGENLOG", "CYBERDYNE","", 12, 0.04, "")
     addf(3, "AB",  "NAS",      "GLOBEX",   "",  6, 0.03, "")
     addf(3, "APS", "SYSHUB",   "SOYLENT",  "",  3, 0.03, "")

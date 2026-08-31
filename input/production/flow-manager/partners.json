@@ -272,6 +272,42 @@
     "tags": ["sample-estate"]
   },
   {
+    "businessId": "66494a94-7bae-4124-a05b-1630b8eb7406",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/66494a94-7bae-4124-a05b-1630b8eb7406",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "203.0.113.40", "AllowIP2": "203.0.113.41", "AllowIP3": "203.0.113.170", "AllowIP4": "203.0.113.171", "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "8fda5ed3-9bad-4b24-8b25-310563497c7b",
+        "name": "CCP_CD-PARCEL-BLUTH_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE133269", "loginName": "FE133269",
+        "fingerPrintVerified": false, "customAuthentication": false
+      },
+      {
+        "businessId": "50f2625a-19bd-4ecd-8416-1c84475ea7a7",
+        "name": "CCP_CD-PARCEL-BLUTH_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE801547", "loginName": "FE801547",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "66494a94-7bae-4124-a05b-login00age", "name": "FE133269", "type": "LOGIN", "login": "FE133269", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}},
+      {"businessId": "66494a94-7bae-4124-a05b-login01age", "name": "FE801547", "type": "LOGIN", "login": "FE801547", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "CD-PARCEL-BLUTH",
+    "tags": ["sample-estate"]
+  },
+  {
     "businessId": "6037d2e1-c75f-430b-a64f-ff884114c5b8",
     "meta": {
       "href": "https://flowmanager.acme.example:443/api/v2/partners/6037d2e1-c75f-430b-a64f-ff884114c5b8",

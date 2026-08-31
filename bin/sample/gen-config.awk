@@ -22,9 +22,12 @@ function jesc(s) { gsub(/\\/, "\\\\", s); gsub(/"/, "\\\"", s); return s }
     S_site[NS] = site; S_acct[NS] = acct; S_prof[NS] = $7; S_flow[NS] = $12
     S_biz[NS] = $13; S_cp[NS] = $14; S_pat[NS] = $16; S_fdk[NS] = $17
     S_sched[NS] = $23; S_uc[NS] = uc; S_tags[NS] = $30; S_cred[NS] = $29
+    S_login[NS] = $6                                  # the FLOW's own login (a multi-FE account has several)
     # per-account aggregation
     ACPS[acct] = ACPS[acct] SUBSEP NS                 # comm profiles = one per flow
-    if ($6 != "") ALOGIN[acct] = $6
+    if ($6 != "" && !((acct, $6) in LSEEN)) { LSEEN[acct, $6] = 1
+        ALOGINS[acct] = ALOGINS[acct] SUBSEP $6       # every DISTINCT login (one credential each)
+        if (ALOGIN[acct] == "") ALOGIN[acct] = $6 }   # the first = the account's primary
     if ($31 != "") {
         n = split($31, w, ";")
         for (i = 1; i <= n; i++) if (!((acct, w[i]) in WSEEN)) { WSEEN[acct, w[i]] = 1; AWL[acct] = AWL[acct] SUBSEP w[i] }
@@ -69,7 +72,7 @@ END {
                 printf "        \"name\": \"CCP_%s_%s\",\n", jesc(acct), S_cred[si] > PJSON
                 printf "        \"type\": \"CLIENT\", \"protocol\": \"%s\", \"enabled\": true,\n", proto > PJSON
                 printf "        \"clientAuthentication\": \"%s\",\n", (S_cred[si] == "KEY" ? "PUBLIC_KEY" : "PASSWORD") > PJSON
-                printf "        \"login\": \"%s\", \"loginName\": \"%s\",\n", ALOGIN[acct], ALOGIN[acct] > PJSON
+                printf "        \"login\": \"%s\", \"loginName\": \"%s\",\n", (S_login[si] != "" ? S_login[si] : ALOGIN[acct]), (S_login[si] != "" ? S_login[si] : ALOGIN[acct]) > PJSON
                 printf "        \"fingerPrintVerified\": false, \"customAuthentication\": false\n      }" > PJSON
             }
         }
@@ -77,8 +80,9 @@ END {
         # credentials: the login credential + certificates (some expiring)
         printf "    \"credentials\": [" > PJSON
         cfirst = 1
-        if (ALOGIN[acct] != "") {
-            printf "\n      {\"businessId\": \"%s\", \"name\": \"%s\", \"type\": \"LOGIN\", \"login\": \"%s\", \"hasPassword\": true,\n       \"customAttributes\": {\"loginRestrictionPolicy\": \"Generic Whitelisting\"}}", substr(ABIZ[acct], 1, 24) "login00age", ALOGIN[acct], ALOGIN[acct] > PJSON
+        nlg = split(ALOGINS[acct], lgs, SUBSEP)       # lgs[1] is the empty lead-in
+        for (i = 2; i <= nlg; i++) {
+            printf "%s\n      {\"businessId\": \"%s\", \"name\": \"%s\", \"type\": \"LOGIN\", \"login\": \"%s\", \"hasPassword\": true,\n       \"customAttributes\": {\"loginRestrictionPolicy\": \"Generic Whitelisting\"}}", (cfirst ? "" : ","), substr(ABIZ[acct], 1, 24) "login" sprintf("%02d", i - 2) "age", lgs[i], lgs[i] > PJSON
             cfirst = 0
         }
         if (acct in ACREDEXP) {

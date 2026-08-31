@@ -297,6 +297,60 @@
     "type": "Subscription"
   },
   {
+    "businessId": "8848656e-452e-4ea9-92b6-ddc9c37eb054",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/8848656e-452e-4ea9-92b6-ddc9c37eb054",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_CD_PARCEL_BLUTH",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "8848656e-452e-4ea9-92b6-0000par00000", "name": "CD-PARCEL-BLUTH", "comProfileId": "8fda5ed3-9bad-4b24-8b25-310563497c7b",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "8848656e-452e-4ea9-92b6-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CD_PARCEL_BLUTH",
+      "target_hybrid_participant": "partner_sftp",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "f3fc41db-aa35-4bb7-9922-2b1b0cfe3735",
+    "flowName": "UC2_CD_PARCEL_BLUTH",
+    "tags": ["BL_CD", "sample-estate"],
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "75932724-c9cb-44a3-8c59-8b396c1a376e",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/75932724-c9cb-44a3-8c59-8b396c1a376e",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC2_CD_PARCEL2_BLUTH",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PULL_PARTNER",
+    "participants": [
+      {"businessId": "75932724-c9cb-44a3-8c59-0000par00000", "name": "CD-PARCEL-BLUTH", "comProfileId": "50f2625a-19bd-4ecd-8416-1c84475ea7a7",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "75932724-c9cb-44a3-8c59-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "CD_PARCEL2_BLUTH",
+      "target_hybrid_participant": "partner_sftp",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "efda0011-744f-4130-b6de-cf3086ae3545",
+    "flowName": "UC2_CD_PARCEL2_BLUTH",
+    "tags": ["BL_CD", "sample-estate"],
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
     "businessId": "a751b9f7-47dd-43e0-9dd9-a18291ff0227",
     "meta": {
       "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/a751b9f7-47dd-43e0-9dd9-a18291ff0227",
@@ -320,7 +374,7 @@
     },
     "flowId": "e18231b7-f457-49cc-805d-df15e7c7cb04",
     "flowName": "UC3_APS_FMGENLOG_CYBERDYNE",
-    "tags": ["BL_APS", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -378,7 +432,7 @@
     },
     "flowId": "1d0e8d55-f782-4b5b-b863-d8b44ff3edf7",
     "flowName": "UC3_APS_SYSHUB_SOYLENT",
-    "tags": ["sample-estate"],
+    "tags": ["BL_APS", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -520,7 +574,7 @@
     },
     "flowId": "ceca32b8-0956-41c4-98a1-d5ddc40a6ef6",
     "flowName": "UC4_AIM_LAKE_PIEDPIPER",
-    "tags": ["BL_AIM", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -576,7 +630,7 @@
     },
     "flowId": "5e2781a5-8cda-459e-8e1f-86c3765a171c",
     "flowName": "UC4_ZK_MIAZ_INITECH",
-    "tags": ["sample-estate"],
+    "tags": ["BL_ZK", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -711,7 +765,7 @@
     },
     "flowId": "1abb19a8-961d-472b-b95e-95612481a436",
     "flowName": "STMT_EXPORT_GLOBEX_05",
-    "tags": ["BL_STMT", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -765,7 +819,7 @@
     },
     "flowId": "1abb19a8-961d-472b-b95e-95612481a436",
     "flowName": "STMT_EXPORT_GLOBEX_07",
-    "tags": ["sample-estate"],
+    "tags": ["BL_STMT", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -904,7 +958,7 @@
     },
     "flowId": "06b6d80e-bd5f-4c49-9ff5-0ddea5c67ed4",
     "flowName": "CRM_SYNC_INITECH",
-    "tags": ["BL_CRM", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -958,7 +1012,7 @@
     },
     "flowId": "c9df7d4c-33c0-4bf0-8cb9-d14110cba9b7",
     "flowName": "UC1_FIN_CLAIMS_MONARCH",
-    "tags": ["sample-estate"],
+    "tags": ["BL_FIN", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -1098,7 +1152,7 @@
     },
     "flowId": "5413e5a3-6e50-47b6-986f-4c0d204c95a1",
     "flowName": "UC3_APS_FMREPLERR_CYBERDYNE",
-    "tags": ["BL_APS", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -1153,7 +1207,7 @@
     },
     "flowId": "4b3b2fb7-a6a4-4974-9f27-4caa676d357b",
     "flowName": "UC1_APS_INVOICE_STARK",
-    "tags": ["sample-estate"],
+    "tags": ["BL_APS", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"

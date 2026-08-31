@@ -90,6 +90,16 @@ for env in acceptance production; do
     # the GLOBEX billing flow carries its BL_FIN tag AND the two planted numbers
     n=$(awk -F'\t' '$1=="UC1_FIN_BILLING_GLOBEX"' "data/$env/flow-manager/xref/_subscriptions-bl.tsv" 2>/dev/null | wc -l | tr -d ' ')
     check $([ "${n:-0}" -ge 3 ] && echo 0 || echo 1) "[$env] UC1_FIN_BILLING_GLOBEX has $n BL row(s), expected >= 3 (tag + input/$env/BL.txt)"
+    # the MULTI-FE account (2026-08-31, user report): CD-PARCEL-BLUTH carries
+    # TWO logins; its quiet second flow (its own login, never used) must read
+    # Nothing — never "No files": the other login's logons are no pickup
+    # evidence for it (uc2-status login scoping)
+    if [ "$env" = production ]; then
+        n=$(awk -F'\t' '$1=="CD-PARCEL-BLUTH"' "data/$env/flow-manager/xref/_accounts-logins.tsv" 2>/dev/null | wc -l | tr -d ' ')
+        check $([ "${n:-0}" -eq 2 ] && echo 0 || echo 1) "[$env] CD-PARCEL-BLUTH has $n login(s), expected 2 (the multi-FE account)"
+        st=$(awk -F'\t' '$1=="ROW" && index($0, "UC2_CD_PARCEL2_BLUTH") { s=$2; sub(/^@\{[^}]*\}/, "", s); print s; exit }' "data/$env/server/reports/uc2-status.rpt" 2>/dev/null)
+        check $([ "$st" = "Nothing" ] && echo 0 || echo 1) "[$env] UC2_CD_PARCEL2_BLUTH uc2-status is '${st:-absent}', expected Nothing (multi-FE login scoping)"
+    fi
     # the nine policy files are PER ENVIRONMENT (2026-08-31): present in the
     # env dir, and none left at the input root
     for pf in blacklist.txt skip.txt rename.txt logical.txt logical_domains.txt logical_apps.txt logical_partners.txt BL.txt partner-aliases.tsv; do

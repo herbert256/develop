@@ -603,9 +603,17 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   "Both"): staged / collected / expired are the flow's own from `_files.tsv` (expiries
   attributed per flow when any flow of the account has them, the account's server-side deletion
   evidence — shared — otherwise), the pickup-attempt logons are the account's (the partner logs
-  on to the account), and the per-hour sidecar walks the same pairs. uc4-status credits an
+  on to the account), and the per-hour sidecar walks the same pairs. **MULTI-FE ACCOUNTS**
+  (2026-08-31, user report — new in production: one account carries SEVERAL FE logins, each a
+  different partner credential serving its own flows): on such an account every LOGON-derived
+  figure (attempts, visits, cadence, first/last pickup, the sidecar's Pickup information) is
+  scoped to the subscription's OWN login(s) — the same visit rules run per (account, login)
+  group — because a logon by login A used to make login B's quiet flows read "No files / the
+  partner connects, but nothing is ever staged" though THEIR partner never connected; they read
+  "Nothing" now. Single-login accounts are output-identical. uc4-status credits an
   account-level server line to EVERY UC4 flow of the account (union attribution; the STAT totals
-  count each line once) instead of one arbitrary flow. `subscription-verdict.awk`'s END fallback
+  count each line once) instead of one arbitrary flow — except that a logon/refusal NAMING a
+  login is, on a multi-FE account, credited only to the flows configured for that login. `subscription-verdict.awk`'s END fallback
   still writes the bare Pickup information table for every sidecar flow without a verdict.
 - **The "Last OK transfer" section** (2026-08, SITE pages, directly above "Last server log
   messages"): the flow's newest PROCESSED File — deliberately NOT the outcome policy's OK

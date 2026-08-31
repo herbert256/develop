@@ -72,6 +72,10 @@ XREF="$CONFIG_XREF/_accounts-subscriptions.tsv"   # account -> its subscriptions
 # counts as a UC2 flow here exactly like a UC2_-named one
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"
 [ -f "$UCDF" ] || UCDF=/dev/null
+# the MULTI-FE-ACCOUNT maps (2026-08-31, user report — see the awk BEGIN):
+# subscription -> its configured login(s), and how many logins the account has
+SLF="$CONFIG_XREF/_subscriptions-logins.tsv"; [ -f "$SLF" ] || SLF=/dev/null
+ALF="$CONFIG_XREF/_accounts-logins.tsv";      [ -f "$ALF" ] || ALF=/dev/null
 # The per-HOUR status sidecar for the Overview's UC2 status card — written HERE
 # because the classification lives here (cf. pesit-slots.tsv). date <TAB> hour
 # <TAB> the FIVE statuses in STACK order: ok, both, no-files, never-collected,
@@ -98,7 +102,11 @@ SLOTS_OUT="$REPORTS_DIR/uc2-slots.tsv"
 # "Connection shared with UC4 drop" row and the pickups report's UC4-drop
 # flag fire on it, never on the time-window visit classes (2026-08).)
 # Pickups are the ACCOUNT's classified PICKUP logons (shared across its UC2
-# subscriptions): a logon whose session only DELIVERED files (an Inbound ssh
+# subscriptions) — or, on an account carrying SEVERAL FE logins (production
+# 2026-08-31), the subscription's OWN LOGIN's: every logon-derived figure is
+# scoped per (account, login) group there, since each login is a different
+# partner credential and its logons say nothing about the other logins'
+# flows. A logon whose session only DELIVERED files (an Inbound ssh
 # row — the UC4 twin flow handing files over) is a delivery-logon, counted
 # separately and NOT a pickup (2026-08). Pickups-with-files counts the pickup
 # VISITS whose window collected a file of THIS subscription; files-picked-up is the subscription's Processed Files (so it matches
@@ -138,9 +146,81 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # (the account rides along as the row KEY — the guard below tests it — but it is
 # not rendered; only the subscription cell reaches the table)
 #   TOT <TAB> nnever <TAB> ncollects <TAB> total-expired <TAB> total-expired-never
-agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -v SL="$SLOTS_OUT" -v PKF="$PICKUPS_OUT" "$LOGLINES_AWK$LINK_AWK"'
-    BEGIN { while ((getline ucl < ucdf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[2] == "UC2") ucd[toupper(uca[1])] = 1 } close(ucdf) }
+agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -v slf="$SLF" -v alf="$ALF" -v SL="$SLOTS_OUT" -v PKF="$PICKUPS_OUT" "$LOGLINES_AWK$LINK_AWK"'
+    BEGIN { while ((getline ucl < ucdf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[2] == "UC2") ucd[toupper(uca[1])] = 1 } close(ucdf)
+            # MULTI-FE ACCOUNTS (2026-08-31, user report: new in production —
+            # one account carries SEVERAL FE logins, each serving its own
+            # flows): the subscription -> login map and the per-account login
+            # count. On an account with >= 2 configured logins every
+            # LOGON-derived figure (pickup attempts, visits, cadence,
+            # first/last pickup) is scoped to the subscription OWN login(s) —
+            # a partner connecting with login A is no pickup evidence for the
+            # flows of login B, which used to read "No files" (partner
+            # connects, nothing staged) though THEIR partner never connected.
+            # Single-login accounts keep the account rule, output-identical.
+            while ((getline ucl < slf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[1] != "" && uca[2] != "") SUBL[toupper(uca[1])] = SUBL[toupper(uca[1])] SUBSEP toupper(uca[2]) } close(slf)
+            while ((getline ucl < alf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[1] != "") aln[uca[1]]++ } close(alf) }
     function acctof(m,   a) { a=""; if (match(m, /[A-Za-z0-9_.-]+@FE[0-9]+/)) { a=substr(m,RSTART,RLENGTH); sub(/@.*/,"",a) } return a }
+    # the per-(account,login) GROUP classification: the same visit rules as
+    # the per-account loop in END, over the group own logon / delivery /
+    # collect minutes (multi-FE accounts only — groups register only there)
+    function classify_group(g,   nl, LG, m, nd, DM, nk, KM, nv, VB, VE, dj, kj, nat, lo, vi, hi, dhit, khit, li, k2, ATM, gh, dh, maxg, ng, half, c2, med, ns, SS, SE, maxd, meddur, gsp) {
+        nl = 0
+        if (g in lg0) for (m = lg0[g]; m <= lg1[g]; m++) if ((g SUBSEP m) in lgmG) LG[++nl] = m
+        if (nl == 0) return
+        nd = 0
+        if (g in adG0) for (m = adG0[g]; m <= adG1[g]; m++) if ((g SUBSEP m) in admnG) DM[++nd] = m
+        nk = 0
+        if (g in ck0) for (m = ck0[g]; m <= ck1[g]; m++) if ((g SUBSEP m) in cmG) KM[++nk] = m
+        nv = 0
+        for (li = 1; li <= nl; li++) { if (li == 1 || LG[li] - LG[li - 1] > 30) VB[++nv] = LG[li]; VE[nv] = li }
+        dj = 1; kj = 1; nat = 0; lo = 1
+        for (vi = 1; vi <= nv; vi++) {
+            hi = (vi < nv) ? VB[vi + 1] : 9999999999999
+            dhit = 0; while (dj <= nd && DM[dj] < hi) { if (DM[dj] >= VB[vi]) dhit = 1; dj++ }
+            khit = 0; while (kj <= nk && KM[kj] < hi) { if (KM[kj] >= VB[vi]) khit = 1; kj++ }
+            vt2G[g]++
+            if (dhit && khit) vb2G[g]++
+            else if (dhit)    vd2G[g]++
+            else if (khit)    vc2G[g]++
+            else              vn2G[g]++
+            for (li = lo; li <= VE[vi]; li++) {
+                k2 = g SUBSEP LG[li]
+                if (dhit && !khit) del2G[g] += lgcG[k2]
+                else { attG[g] += lgcG[k2]; ATM[++nat] = LG[li]
+                       hpaG[g SUBSEP int(LG[li] / 60)] = 1
+                       if (fatG[g] == "" || ftsG[k2] < fatG[g]) fatG[g] = ftsG[k2]
+                       if (latG[g] == "" || ltsG[k2] > latG[g]) latG[g] = ltsG[k2] }
+            }
+            lo = VE[vi] + 1
+        }
+        # cadence over the group pickup minutes — the two-scale rule of the
+        # per-account loop, verbatim
+        if (nat >= 3) {
+            maxg = 0; ng = 0
+            for (li = 2; li <= nat; li++) { gsp = ATM[li] - ATM[li - 1]; gh[gsp]++; ng++; if (gsp > maxg) maxg = gsp }
+            half = int(ng / 2) + 1; c2 = 0; med = 0
+            for (gsp = 1; gsp <= maxg; gsp++) if (gsp in gh) { c2 += gh[gsp]; if (c2 >= half) { med = gsp; break } }
+            ns = 0
+            for (li = 1; li <= nat; li++) {
+                if (li == 1 || ATM[li] - ATM[li - 1] > 30) { SS[++ns] = ATM[li]; SE[ns] = ATM[li] }
+                else SE[ns] = ATM[li]
+            }
+            if (ns >= 3) {
+                delete gh
+                maxg = 0; ng = 0; maxd = 0
+                for (li = 1; li <= ns; li++) { gsp = SE[li] - SS[li]; dh[gsp]++; if (gsp > maxd) maxd = gsp }
+                half = int((ns + 1) / 2); c2 = 0; meddur = 0
+                for (gsp = 0; gsp <= maxd; gsp++) if (gsp in dh) { c2 += dh[gsp]; if (c2 >= half) { meddur = gsp; break } }
+                if (meddur <= 15) {
+                    for (li = 2; li <= ns; li++) { gsp = SS[li] - SS[li - 1]; gh[gsp]++; ng++; if (gsp > maxg) maxg = gsp }
+                    half = int(ng / 2) + 1; c2 = 0
+                    for (gsp = 1; gsp <= maxg; gsp++) if (gsp in gh) { c2 += gh[gsp]; if (c2 >= half) { med = gsp; break } }
+                }
+            }
+            patG[g] = patron(med)
+        }
+    }
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
     function span(h) { if (hmin == "" || h < hmin) hmin = h; if (h > hmax) hmax = h }
@@ -198,7 +278,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                     # credit only one pickup session; materialized into the
                     # cmn minute set in END
                     cm = minof($11, $12)
-                    if (cm > ccm[$1] + 0) { ccm[$1] = cm; csu[$1] = su }
+                    if (cm > ccm[$1] + 0) { ccm[$1] = cm; csu[$1] = su; cac[$1] = $4; clg[$1] = toupper($5) }   # + the leg account/login (the multi-FE groups)
                     # SHARED-SESSION proof (2026-08): an ssh collect leg
                     # carries the technical connection id (col 24); a session
                     # in which the account ALSO delivered is counted once in
@@ -218,6 +298,12 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         if ($2 == "Inbound" && $10 == "ssh" && $4 != "" && ($4 in pickupacct) && $11 != "" && $12 ~ /^[0-9][0-9]:/) {
             dm = minof($11, $12)
             admn[$4 SUBSEP dm] = 1
+            # the multi-FE mirror: the delivery minute per (account, login) —
+            # the leg carries the login in col 5
+            if (aln[$4] + 0 >= 2 && $5 != "" && $5 != "UNKNOWN") { gd9 = $4 SUBSEP toupper($5)
+                admnG[gd9 SUBSEP dm] = 1
+                if (!(gd9 in adG0) || dm < adG0[gd9]) adG0[gd9] = dm
+                if (!(gd9 in adG1) || dm > adG1[gd9]) adG1[gd9] = dm }
             if (!($4 in ad0) || dm < ad0[$4]) ad0[$4] = dm
             if (!($4 in ad1) || dm > ad1[$4]) ad1[$4] = dm
             # the delivery side of the SHARED-SESSION pair (see the collect leg)
@@ -248,6 +334,14 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             # and it is a whitelist ADMISSION that can fire without successful
             # authentication — not a logon.
             a = acctof(m); if (a != "") { pk[a]++
+                # the multi-FE mirror: the same minute bookkeeping per
+                # (account, login) GROUP — recorded only for accounts with
+                # several configured logins, so memory stays proportional
+                lg9 = ""; if (match(m, /login name "[^"]*"/)) lg9 = toupper(substr(m, RSTART + 12, RLENGTH - 13))
+                g9 = ""
+                if (aln[a] + 0 >= 2) { g9 = a SUBSEP lg9
+                    pkG[g9]++
+                    if (!(g9 in GSEEN)) { GSEEN[g9] = 1; GRO[++ngr] = g9 } }
                 if (d != "" && $2 ~ /^[0-9][0-9]:/) {
                     hs = jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 24 + int(substr($2,1,2)); span(hs)
                     ts = $1 " " $2
@@ -258,6 +352,12 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                     if (lts[a SUBSEP lm] == "" || ts > lts[a SUBSEP lm]) lts[a SUBSEP lm] = ts
                     if (!(a in lm0) || lm < lm0[a]) lm0[a] = lm
                     if (!(a in lm1) || lm > lm1[a]) lm1[a] = lm
+                    if (g9 != "") { k9 = g9 SUBSEP lm
+                        lgmG[k9] = 1; lgcG[k9]++
+                        if (ftsG[k9] == "" || ts < ftsG[k9]) ftsG[k9] = ts
+                        if (ltsG[k9] == "" || ts > ltsG[k9]) ltsG[k9] = ts
+                        if (!(g9 in lg0) || lm < lg0[g9]) lg0[g9] = lm
+                        if (!(g9 in lg1) || lm > lg1[g9]) lg1[g9] = lm }
                 }
                 addline("PK" SUBSEP a, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200)) }
         }
@@ -273,6 +373,11 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             h9 = int(cm / 60); span(h9); hcs[su SUBSEP h9] = 1   # this flow'\''s collect HOURS (the per-hour sidecar)
             if (!(su in cm0) || cm < cm0[su]) cm0[su] = cm
             if (!(su in cm1) || cm > cm1[su]) cm1[su] = cm
+            # the multi-FE mirror: the collect minute per (account, login)
+            if (aln[cac[cid]] + 0 >= 2 && clg[cid] != "" && clg[cid] != "UNKNOWN") { gk9 = cac[cid] SUBSEP clg[cid]
+                cmG[gk9 SUBSEP cm] = 1
+                if (!(gk9 in ck0) || cm < ck0[gk9]) ck0[gk9] = cm
+                if (!(gk9 in ck1) || cm > ck1[gk9]) ck1[gk9] = cm }
         }
         # account-level collect minutes (any of the account'\''s UC2 subs) —
         # a logon that collected is a pickup even when it also delivered; the
@@ -378,6 +483,8 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 patA[a] = patron(med)
             }
         }
+        # the multi-FE groups get the same classification, per (account, login)
+        for (gi = 1; gi <= ngr; gi++) classify_group(GRO[gi])
         nnever=0; nnofiles=0; ncoll=0; nok=0; nnothing=0; tef=0; tefn=0; tpk=0
         # One pass over the (account, UC2 subscription) PAIRS — one row per
         # flow — a COMPLETE partition from the signals expired(e) /
@@ -410,14 +517,33 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             attr = (a in xany)                                   # expiries attributable per flow on this account
             e = attr ? (xpd[ps] + 0 > 0) : (a in aseen)
             efp = attr ? xpd[ps] + 0 : ef[a] + 0                 # the Expired column: this flow'\''s, or the account'\''s
-            p = (att[a]+0 > 0); sh = (subc[ps] + 0 > 0); c = (su in cm0)
+            # the LOGON-derived figures per pair (attP/delP/pkP/fatP/latP/
+            # patP + the visit classes): the subscription OWN login group(s)
+            # on a multi-FE account (scP=1), else the account figures — see
+            # the BEGIN comment. Stored per ps; the two sidecar walks reuse them.
+            scP[ps] = (aln[a] + 0 >= 2 && SUBL[su] != "") ? 1 : 0
+            if (scP[ps]) {
+                attP[ps]=0; delP[ps]=0; pkP[ps]=0; fatP[ps]=""; latP[ps]=""; patP[ps]=""
+                vtP[ps]=0; vcP[ps]=0; vbP[ps]=0; vdP[ps]=0; vnP[ps]=0
+                nls = split(substr(SUBL[su], 2), LS9, SUBSEP)
+                for (li9 = 1; li9 <= nls; li9++) { g9 = a SUBSEP LS9[li9]
+                    attP[ps] += attG[g9]; delP[ps] += del2G[g9]; pkP[ps] += pkG[g9]
+                    vtP[ps] += vt2G[g9]; vcP[ps] += vc2G[g9]; vbP[ps] += vb2G[g9]; vdP[ps] += vd2G[g9]; vnP[ps] += vn2G[g9]
+                    if (fatG[g9] != "" && (fatP[ps] == "" || fatG[g9] < fatP[ps])) fatP[ps] = fatG[g9]
+                    if (latG[g9] != "" && (latP[ps] == "" || latG[g9] > latP[ps])) latP[ps] = latG[g9]
+                    if (patP[ps] == "" && patG[g9] != "") patP[ps] = patG[g9]
+                }
+            } else { attP[ps] = att[a]+0; delP[ps] = del[a]+0; pkP[ps] = pk[a]+0
+                     fatP[ps] = fat[a]; latP[ps] = lat[a]; patP[ps] = patA[a]
+                     vtP[ps] = vt2[a]+0; vcP[ps] = vc2[a]+0; vbP[ps] = vb2[a]+0; vdP[ps] = vd2[a]+0; vnP[ps] = vn2[a]+0 }
+            p = (attP[ps] > 0); sh = (subc[ps] + 0 > 0); c = (su in cm0)
             if      (e && !c)         stc = 0
             else if (!e && p && !sh)  stc = 1
             else if (e &&  c)         stc = 2
             else if (!e && c && sh)   stc = 3
             else                      stc = 4
             dl = (stc==0 || stc==2) ? lastlines(a) : (stc==1 || stc==3) ? lastlines("PK" SUBSEP a) : ""
-            printf "A\t%d\t%s%s\t%s\t%d\t%s\t%s\t%d\t%s\t%s\n", stc, sublink(s), s, a, efp, (ps in sfst?sfst[ps]:"-"), (ps in slst?slst[ps]:"-"), att[a]+0, (lat[a]=="" ? "-" : substr(lat[a], 1, 10)), dl
+            printf "A\t%d\t%s%s\t%s\t%d\t%s\t%s\t%d\t%s\t%s\n", stc, sublink(s), s, a, efp, (ps in sfst?sfst[ps]:"-"), (ps in slst?slst[ps]:"-"), attP[ps], (latP[ps]=="" ? "-" : substr(latP[ps], 1, 10)), dl
             if (!(a in adone)) { adone[a] = 1; tef += ef[a]+0; tpk += att[a]+0 }   # account-level figures, once per account
             if      (stc==0) { nnever++; tefn += efp }
             else if (stc==1) nnofiles++
@@ -435,7 +561,9 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 for (i = 1; i <= npr; i++) {
                     split(pr[i], PA, SUBSEP); a = PA[1]; s = PA[2]; su = toupper(s); ps = a SUBSEP s
                     if ((a in xany) ? ((ps SUBSEP h) in hexs) : ((a SUBSEP h) in hex)) E[ps] = 1
-                    if ((a SUBSEP h) in hpa)  P[ps] = 1
+                    if (scP[ps]) { nls = split(substr(SUBL[su], 2), LS9, SUBSEP)
+                        for (li9 = 1; li9 <= nls; li9++) if (((a SUBSEP LS9[li9]) SUBSEP h) in hpaG) { P[ps] = 1; break } }
+                    else if ((a SUBSEP h) in hpa)  P[ps] = 1
                     if ((ps SUBSEP h) in hsts) S[ps] = 1
                     if ((su SUBSEP h) in hcs)  C[ps] = 1
                     if      (E[ps] && !C[ps])            stc = 0
@@ -455,9 +583,19 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         # order. The logon figures are the account'\''s (shared across its UC2
         # subs); wf and files-picked are this subscription'\''s own.
         for (i = 1; i <= npr; i++) {
-            split(pr[i], PA, SUBSEP); a = PA[1]; s = PA[2]; su = toupper(s)
+            split(pr[i], PA, SUBSEP); a = PA[1]; s = PA[2]; su = toupper(s); ps = a SUBSEP s
             nl = 0
-            if (a in lm0) for (m = lm0[a]; m <= lm1[a]; m++) if ((a SUBSEP m) in lgm) LG[++nl] = m
+            if (scP[ps]) {
+                # the pair logon minutes = the union over its login groups
+                mn9 = ""; mx9 = ""
+                nls = split(substr(SUBL[su], 2), LS9, SUBSEP)
+                for (li9 = 1; li9 <= nls; li9++) { g9 = a SUBSEP LS9[li9]
+                    if (g9 in lg0) { if (mn9 == "" || lg0[g9] < mn9) mn9 = lg0[g9]
+                                     if (mx9 == "" || lg1[g9] > mx9) mx9 = lg1[g9] } }
+                if (mn9 != "") for (m = mn9; m <= mx9; m++)
+                    for (li9 = 1; li9 <= nls; li9++) if (((a SUBSEP LS9[li9]) SUBSEP m) in lgmG) { LG[++nl] = m; break }
+            }
+            else if (a in lm0) for (m = lm0[a]; m <= lm1[a]; m++) if ((a SUBSEP m) in lgm) LG[++nl] = m
             nc = 0
             if (su in cm0) for (m = cm0[su]; m <= cm1[su]; m++) if ((su SUBSEP m) in cmn) CM[++nc] = m
             # PICKUPS with >=1 collect of THIS sub: each collect stamp
@@ -478,11 +616,11 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 if (hit) wf++
             }
             printf "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", s, a, \
-                (fat[a] == "" ? "-" : fat[a]), (lat[a] == "" ? "-" : lat[a]), \
-                att[a] + 0, wf, prc[a SUBSEP s] + 0, \
-                (patA[a] == "" ? "\342\200\224" : patA[a]), del[a] + 0, pk[a] + 0, \
-                vt2[a] + 0, vc2[a] + 0, vb2[a] + 0, vd2[a] + 0, vn2[a] + 0, \
-                wtg[a SUBSEP s] + 0, xpd[a SUBSEP s] + 0, shc[a] + 0 > PKF
+                (fatP[ps] == "" ? "-" : fatP[ps]), (latP[ps] == "" ? "-" : latP[ps]), \
+                attP[ps] + 0, wf, prc[ps] + 0, \
+                (patP[ps] == "" ? "\342\200\224" : patP[ps]), delP[ps] + 0, pkP[ps] + 0, \
+                vtP[ps] + 0, vcP[ps] + 0, vbP[ps] + 0, vdP[ps] + 0, vnP[ps] + 0, \
+                wtg[ps] + 0, xpd[ps] + 0, shc[a] + 0 > PKF
         }
         close(PKF)
         printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", nnever, nnofiles, ncoll, nok, nnothing, tef, tefn, tpk
@@ -544,7 +682,7 @@ rows=$(awk -F'\t' '
     printf '%s\n' "$rows"   # %s\n: $rows already ends in one, so this is the blank line before TOTAL
     printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t\t\t@{class=num}%s\t\n' \
         "$(( n_never + n_nofiles + n_coll + n_ok + n_nothing ))" "$t_ef" "$t_pk"
-    printf 'NOTE\tEvery **UC2** (collect-from-us) flow, classified. **Never collected** (red): File Maintenance deleted staged files and **nothing was ever collected** — logon visits alone do not count. **No files** (amber): the partner DOES log in to collect (pickups > 0) but the app **never staged a single file** — a dormant or broken source side. **Both** (green): the partner **provably collects** (Files in the transfer log) AND the odd file still expired — both outcomes on the one flow. **OK** (green): files collected, none expired — healthy. **Nothing** (plain): no collection and no expiry — a quiet flow, one whose partner collects over CFT (which logs no SSH pickup), or one whose visits have so far come up empty. Uncollected detection stays on the retention delete on purpose — arrival + no-pickup would flag almost every pickup flow, since CFT-collecting partners never log an SSH pickup; **No files** and **OK** need the SSH signal, so they only distinguish SFTP-collecting partners (a CFT partner with no expiry lands in **Nothing**). A logon whose session only **delivered** files (the account'\''s UC4 twin flow handing files over) is not a pickup and is not counted. **Arrived** dates come from the transfer log. One row per **flow**: an account serving several UC2 flows (the hybrid production accounts) lists each with its own staged, collected and expired Files, while the **Pickups** figures are the account'\''s — the partner logs on to the account, not to a flow. Click a row for its recent server-log lines.\n'
+    printf 'NOTE\tEvery **UC2** (collect-from-us) flow, classified. **Never collected** (red): File Maintenance deleted staged files and **nothing was ever collected** — logon visits alone do not count. **No files** (amber): the partner DOES log in to collect (pickups > 0) but the app **never staged a single file** — a dormant or broken source side. **Both** (green): the partner **provably collects** (Files in the transfer log) AND the odd file still expired — both outcomes on the one flow. **OK** (green): files collected, none expired — healthy. **Nothing** (plain): no collection and no expiry — a quiet flow, one whose partner collects over CFT (which logs no SSH pickup), or one whose visits have so far come up empty. Uncollected detection stays on the retention delete on purpose — arrival + no-pickup would flag almost every pickup flow, since CFT-collecting partners never log an SSH pickup; **No files** and **OK** need the SSH signal, so they only distinguish SFTP-collecting partners (a CFT partner with no expiry lands in **Nothing**). A logon whose session only **delivered** files (the account'\''s UC4 twin flow handing files over) is not a pickup and is not counted. **Arrived** dates come from the transfer log. One row per **flow**: an account serving several UC2 flows (the hybrid production accounts) lists each with its own staged, collected and expired Files, while the **Pickups** figures are the account'\''s — the partner logs on to the account, not to a flow. On an account carrying **several FE logins**, the Pickups figures are the flow'\''s own **login'\''s** instead: each login is a different partner credential, so its logons prove nothing about the other logins'\'' flows. Click a row for its recent server-log lines.\n'
 
     printf 'SUMMARY\tNever collected: %s  |  No files: %s  |  Both: %s  |  OK: %s  |  Nothing: %s  |  Files uncollected: %s\n' "$n_never" "$n_nofiles" "$n_coll" "$n_ok" "$n_nothing" "$t_efn"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
