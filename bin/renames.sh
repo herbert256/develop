@@ -68,13 +68,23 @@
 #                 export that changes it); the value returned is always the
 #                 export's own spelling.
 #
-# THE MAP IS APPEND-ONLY AND MUST STAY A FUNCTION. Two rules keep the fold
-# safe, both asserted by fm_snapshot_renames():
+# THE MAP IS APPEND-ONLY AND MUST STAY A FUNCTION. Three rules keep the fold
+# safe, all asserted by fm_snapshot_renames():
 #   - no two old names may map to one current name (that would MERGE flows);
 #   - a current name may never be some other flow's old name (that would send
-#     one flow's history to another).
-# A pair breaking either is refused with a warning rather than written, because
-# a wrong fold is unrecoverable once the logs have been parsed under it.
+#     one flow's history to another);
+#   - an OLD name may never be a name the export STILL CONFIGURES (2026-08-31
+#     audit): a rename is a name that went away. This rule also PRUNES the
+#     map on every config run — a line whose old name is configured today is
+#     dropped with a note — because the diff once wrote such pairs: a flowId
+#     is NOT unique per subscription (one flow, several subscribers — 8 of
+#     them on the production STMT_EXPORT_GLOBEX flow), and join(1) over a
+#     shared key emits the cartesian product, whose off-diagonal rows all
+#     read as "renames" (_01 -> _02, _03 -> _01, …) and rotated every File of
+#     the account onto the neighbouring flow. The diff now also only looks at
+#     keys unique on BOTH sides.
+# A pair breaking any rule is refused with a warning rather than written,
+# because a wrong fold is unrecoverable once the logs have been parsed under it.
 #
 # Consumers: bin/transfer/parse.sh (col 6, right where the _SCP_ tail is
 # stripped — the one canonicalisation point) and bin/server/parse.sh (the
@@ -180,6 +190,10 @@ fm_snapshot_renames() {   # $1 = subscriptions.json
         "$subs" 2>/dev/null | LC_ALL=C sort > "$tmp.now" || { rm -f "$tmp"*; return 0; }
     if [ ! -s "$tmp.now" ]; then rm -f "$tmp"*; return 0; fi
 
+    # rule 3 as a PRUNE: a recorded pair whose old name the export still
+    # configures is wrong by definition (see the header) — drop it, and say so
+    _rn_prune 2 "$RENAMES_FILE" subscription "$tmp"
+    _rn_prune 3 "$RENAMES_PROF" profile      "$tmp"
     if [ -s "$RENAMES_SNAP" ]; then
         _rn_record 2 "$RENAMES_FILE" subscription "$tmp"
         _rn_record 3 "$RENAMES_PROF" profile      "$tmp"
@@ -197,20 +211,29 @@ fm_snapshot_renames() {   # $1 = subscriptions.json
 _rn_record() {   # $1 col  $2 mapfile  $3 noun  $4 tmp prefix
     local col=$1 map=$2 noun=$3 tmp=$4 pairs added
     [ -f "$map" ] || : > "$map"
-    # join on the key, then compare that column old vs new. NOTE the join
-    # output layout: key, then the snapshot fields, then the export fields —
-    # so column N of the snapshot is $N and of the export is $(N + width - 1).
-    pairs=$(LC_ALL=C join -t"$(printf '\t')" "$RENAMES_SNAP" "$tmp.now" 2>/dev/null \
+    # join on the key — restricted to keys that are UNIQUE ON BOTH SIDES: a
+    # flowId shared by several subscriptions (one flow, many subscribers)
+    # would otherwise join as a cartesian product whose every off-diagonal
+    # row reads as a rename (the 2026-08-31 audit finding; see the header).
+    # Then compare that column old vs new. NOTE the join output layout: key,
+    # then the snapshot fields, then the export fields — so column N of the
+    # snapshot is $N and of the export is $(N + width - 1).
+    awk -F'\t' 'NR == FNR { c[$1]++; next } c[$1] == 1' "$RENAMES_SNAP" "$RENAMES_SNAP" > "$tmp.snap1"
+    awk -F'\t' 'NR == FNR { c[$1]++; next } c[$1] == 1' "$tmp.now" "$tmp.now" > "$tmp.now1"
+    pairs=$(LC_ALL=C join -t"$(printf '\t')" "$tmp.snap1" "$tmp.now1" 2>/dev/null \
         | awk -F'\t' -v c="$col" '{ o = $c; n = $(c + 2)
               if (o != "" && n != "" && o != n) print o "\t" n }')
     [ -n "$pairs" ] || return 0
     printf '%s\n' "$pairs" | LC_ALL=C sort -u > "$tmp.cand"
     # NEW[] indexes every name that is already the TARGET of a recorded pair,
-    # so the two safety rules see the map AND this run at once
-    awk -F'\t' -v MAP="$map" -v NOUN="$noun" '
+    # so the safety rules see the map AND this run at once; CUR[] is every
+    # name the export configures TODAY (rule 3)
+    awk -F'\t' -v MAP="$map" -v NOUN="$noun" -v NOW="$tmp.now" -v c="$col" '
         BEGIN { while ((getline l < MAP) > 0) { n = split(l, a, "\t")
                     if (n >= 2 && a[1] != "") { OLD[toupper(a[1])] = a[2]; NEW[toupper(a[2])] = a[1] } }
-                close(MAP) }
+                close(MAP)
+                while ((getline l < NOW) > 0) { n = split(l, a, "\t"); if (n >= c && a[c] != "") CUR[toupper(a[c])] = 1 }
+                close(NOW) }
         (toupper($1) in OLD) && OLD[toupper($1)] == $2 { next }   # already recorded
         {
             if ((toupper($1) in OLD) && OLD[toupper($1)] != $2) {
@@ -219,6 +242,10 @@ _rn_record() {   # $1 col  $2 mapfile  $3 noun  $4 tmp prefix
                 printf "renames: REFUSED %s %s -> %s (that name is already the current name of %s)\n", NOUN, $1, $2, NEW[toupper($2)] > "/dev/stderr"; next }
             if (toupper($1) in NEW) {
                 printf "renames: REFUSED %s %s -> %s (%s is the CURRENT name of %s)\n", NOUN, $1, $2, $1, NEW[toupper($1)] > "/dev/stderr"; next }
+            if (toupper($2) in OLD) {
+                printf "renames: REFUSED %s %s -> %s (%s is itself an OLD name, mapping to %s)\n", NOUN, $1, $2, $2, OLD[toupper($2)] > "/dev/stderr"; next }
+            if (toupper($1) in CUR) {
+                printf "renames: REFUSED %s %s -> %s (%s is a name the export still configures)\n", NOUN, $1, $2, $1 > "/dev/stderr"; next }
             OLD[toupper($1)] = $2; NEW[toupper($2)] = $1
             print
         }' "$tmp.cand" > "$tmp.acc"
@@ -226,6 +253,35 @@ _rn_record() {   # $1 col  $2 mapfile  $3 noun  $4 tmp prefix
     if [ "${added:-0}" -gt 0 ]; then
         cat "$tmp.acc" >> "$map"
         printf 'renames: %s %s rename(s) recorded in %s.\n' "$added" "$noun" "${map#*/input/}" >&2
+    fi
+    return 0
+}
+
+# _rn_prune — rule 3 applied to what is ALREADY in the map: drop every pair
+# whose old name the export configures today (a current name cannot be an old
+# one), naming each on stderr. The map keeps its order and every other line;
+# it is rewritten only when something goes, so a clean map keeps its mtime.
+# parser_sig cksums the maps, so a prune re-tokenizes the logs under the
+# corrected fold. $1 = column of $4.now, $2 = map file, $3 = noun, $4 = tmp prefix.
+_rn_prune() {   # $1 col  $2 mapfile  $3 noun  $4 tmp prefix
+    local col=$1 map=$2 noun=$3 tmp=$4 dropped
+    [ -s "$map" ] || return 0
+    : > "$tmp.keep"   # (a map losing EVERY line must still leave a file to move)
+    dropped=$(awk -F'\t' -v c="$col" -v OUT="$tmp.keep" -v NOUN="$noun" '
+        NR == FNR { if (NF >= c && $c != "") cur[toupper($c)] = 1; next }
+        {
+            n = split($0, a, "\t")
+            if (n >= 2 && a[1] != "" && (toupper(a[1]) in cur)) {
+                printf "renames: DROPPED %s %s -> %s from the map: %s is a name the export still configures, so it cannot be an old name (the shared-flowId join artefact)\n", NOUN, a[1], a[2], a[1] > "/dev/stderr"
+                d++; next }
+            print > OUT
+        }
+        END { close(OUT); printf "%d\n", d + 0 }' "$tmp.now" "$map")
+    if [ "${dropped:-0}" -gt 0 ]; then
+        mv "$tmp.keep" "$map"
+        printf 'renames: %s wrong %s pair(s) pruned from %s.\n' "$dropped" "$noun" "${map#*/input/}" >&2
+    else
+        rm -f "$tmp.keep"
     fi
     return 0
 }
