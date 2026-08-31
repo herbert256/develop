@@ -20,7 +20,7 @@
 <li><strong>4 parts: &hellip; dropped / shared / numeric</strong> &mdash; the variant-fold family: a 4-part FlowID joins its bare 3-part name, a shared 3rd part, a shared first-3 prefix, or drops a purely numeric part. Exception: when the <em>4th</em> part is itself a known 3rd part of a 3-part FlowID, nothing is dropped &mdash; the reshape keeps the first and last parts and combines the 2nd and 3rd instead.</li>
 <li><strong>digit tail stripped</strong> &mdash; numbered variants (<code>&hellip;2</code>) fold onto the stripped form when it exists or 2+ share it.</li>
 <li><strong>5+ parts: longest existing prefix</strong> &mdash; a long FlowID joins the longest 3+-part prefix that is itself a FlowID.</li>
-<li><strong>pinned in input/logical.txt</strong> &mdash; a fixed mapping took the Logical verbatim (also shown when the pin caught the folded spelling, or the group name a fold landed on).</li>
+<li><strong>pinned in input/&lt;env&gt;/logical.txt</strong> &mdash; a fixed mapping took the Logical verbatim (also shown when the pin caught the folded spelling, or the group name a fold landed on).</li>
 <li><strong>2/4/5 parts: &hellip; combined</strong> &mdash; the 3-part reshape: parts joined with <code>-</code> (the hyphen marks combined parts, which is why Logical names are never separator-folded), guided by the known 2nd/3rd-part vocabulary.</li>
 <li><strong>forced: &hellip;</strong> &mdash; nothing else fit: the first part stays, a known 2nd/3rd part anchors, the rest combines.</li>
 <li><strong>3 parts &mdash; kept as-is</strong> &mdash; the FlowID needed no work.</li>

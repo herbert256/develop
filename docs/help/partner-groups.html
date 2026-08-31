@@ -20,7 +20,7 @@
 <li><strong>Their logical flows connect to the same configured host</strong> &mdash; two flows delivering to (or collecting from) one endpoint belong to one partner.</li>
 <li><strong>Their logical flows whitelist the same IP</strong> &mdash; two inbound flows allowing the same source address are the same partner reaching us two ways.</li>
 <li><strong>One partner's host resolves to an IP another whitelists</strong> &mdash; the endpoint SecureTransport dials out to lands on an address an inbound flow's whitelist allows: the same partner, both directions.</li>
-<li><strong>A curated alias pair</strong> (<span class="mono">input/partner-aliases.tsv</span>) declares two tokens one organisation &mdash; the hand-maintained knowledge the infrastructure cannot prove.</li>
+<li><strong>A curated alias pair</strong> (<span class="mono">input/&lt;env&gt;/partner-aliases.tsv</span>) declares two tokens one organisation &mdash; the hand-maintained knowledge the infrastructure cannot prove.</li>
 </ul>
 <p>The group's name is its member codes joined with underscores, sorted alphabetically &mdash; unless the alias file supplies a canonical name every member aliases (the star), which then names the group. The per-group page groups the raw evidence by the pair of partner codes it links, showing one representative fact per pair with a count of the rest.</p>
 <h2>The Direction column</h2>
