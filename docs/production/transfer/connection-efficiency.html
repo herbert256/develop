@@ -15,7 +15,7 @@
 <div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="connection-efficiency" data-twin="../../acceptance/transfer/connection-efficiency.html"></div>
 <h1>Connection Efficiency <span class="grouptag">&larr; Protocol &amp; Security &larr; Transfer</span></h1>
 <p class="tabs"><a class="tab" href="protocol-protocol.html">Protocol, Direction &amp; Mode</a><a class="tab" href="security-params-tls-version.html">Security Parameters</a><a class="tab" href="security-outreach.html">Security outreach</a><a class="tab" href="av-scan-breakdown.html">AV Scan</a><span class="tab active">Connection efficiency</span></p>
-<p class="range">A <strong>session</strong> is one technical connection — an SFTP login, a PeSIT session — identified by the log's Session ID column (added to the exports 2026-08). One session can carry many Files, but on this platform it mostly does not: <strong>16200</strong> sessions carried <strong>16200</strong> Files (<strong>1.00</strong> Files per connection) and <strong>100.0%</strong> of all sessions moved a single File. <strong>11362</strong> sessions were User-initiated (the partner connected in), the rest Server-initiated; <strong>2</strong> record(s) without a usable Session ID are excluded. A session is attributed to the account of its first record.</p>
+<p class="range">A <strong>session</strong> is one technical connection — an SFTP login, a PeSIT session — identified by the log's Session ID column (added to the exports 2026-08). One session can carry many Files, but on this platform it mostly does not: <strong>16475</strong> sessions carried <strong>16475</strong> Files (<strong>1.00</strong> Files per connection) and <strong>100.0%</strong> of all sessions moved a single File. <strong>11447</strong> sessions were User-initiated (the partner connected in), the rest Server-initiated; <strong>2</strong> record(s) without a usable Session ID are excluded. A session is attributed to the account of its first record.</p>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Account</th><th class="num">Sessions</th><th class="num">Files</th><th class="num">Files per session</th><th class="num">Single-File sessions</th></tr>
 <tr><td class="cl"><a href="../details/accounts/infra-st-monitor-infra.html">INFRA_ST-MONITOR_INFRA</a></td><td class="num">6433</td><td class="num">6433</td><td class="num">1.00</td><td class="num">100.0%</td></tr>
@@ -27,9 +27,9 @@
 <tr><td class="cl"><a href="../details/accounts/cd-printmgmt-wonka.html">CD_PRINTMGMT_WONKA</a></td><td class="num">285</td><td class="num">285</td><td class="num">1.00</td><td class="num">100.0%</td></tr>
 <tr><td class="cl"><a href="../details/accounts/cdv-krp-tdi-wonka.html">CDV-KRP-TDI-WONKA</a></td><td class="num">229</td><td class="num">229</td><td class="num">1.00</td><td class="num">100.0%</td></tr>
 <tr><td class="cl"><a href="../details/accounts/it-ekdsi-cyberdyne.html">IT-EKDSI-CYBERDYNE</a></td><td class="num">229</td><td class="num">229</td><td class="num">1.00</td><td class="num">100.0%</td></tr>
-<tr class="total"><td>All sessions (platform, any initiator)</td><td class="num">16200</td><td class="num">16200</td><td class="num">1.00</td><td class="num">100.0%</td></tr>
+<tr class="total"><td>All sessions (platform, any initiator)</td><td class="num">16475</td><td class="num">16475</td><td class="num">1.00</td><td class="num">100.0%</td></tr>
 </table></div>
-<p class="note"><strong>User-initiated sessions only</strong> (the first record's Action By is User — the partner controls the reconnect behaviour), accounts with <strong>200+</strong> such sessions, least efficient first. A ratio of <strong>1.00</strong> means a fresh connection for every single File — at tens of thousands of sessions that is real overhead on both ends, and batching would cut it. The TOTAL row is the WHOLE platform (all 16200 sessions, any initiator), so it exceeds the sum of the 9 listed account(s).</p>
+<p class="note"><strong>User-initiated sessions only</strong> (the first record's Action By is User — the partner controls the reconnect behaviour), accounts with <strong>200+</strong> such sessions, least efficient first. A ratio of <strong>1.00</strong> means a fresh connection for every single File — at tens of thousands of sessions that is real overhead on both ends, and batching would cut it. The TOTAL row is the WHOLE platform (all 16475 sessions, any initiator), so it exceeds the sum of the 9 listed account(s).</p>
 <h2>Connection storms (top 20 accounts by peak starts per minute)</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Account</th><th class="num">Peak sessions/min</th><th>Minute</th><th class="num">Sessions</th></tr>
@@ -53,7 +53,7 @@
 <tr><td class="cl"><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td><td class="num">3</td><td><code>2026-08-12 07:28</code></td><td class="num">528</td></tr>
 <tr><td class="cl"><a href="../details/accounts/aim-lake-piedpiper.html">AIM-LAKE-PIEDPIPER</a></td><td class="num">2</td><td><code>2026-07-26 06:50</code></td><td class="num">174</td></tr>
 <tr><td class="cl"><a href="../details/accounts/cd-parcel-bluth.html">CD-PARCEL-BLUTH</a></td><td class="num">2</td><td><code>2026-08-12 09:50</code></td><td class="num">179</td></tr>
-<tr class="total"><td>Top 20 of 29 account(s)</td><td class="num"></td><td></td><td class="num">14633</td></tr>
+<tr class="total"><td>Top 20 of 30 account(s)</td><td class="num"></td><td></td><td class="num">14633</td></tr>
 </table></div>
 <p class="note">The most sessions one account STARTED inside a single minute (any initiator), and when. A three-digit peak is a client script opening a connection per file as fast as it can loop — harmless for one partner, but a load spike and a noisy-neighbour risk on shared listeners. Peak is a maximum, not additive; Sessions is the account's whole-window total.</p>
 <h2>Session failure anatomy (top 20 accounts by all-Error sessions)</h2>
@@ -64,6 +64,7 @@
 <tr><td class="cl"><a href="../details/accounts/aps-fmgenlog-cyberdyne.html">APS_FMGENLOG_CYBERDYNE</a></td><td class="num failed">12</td><td class="num warn z"></td><td class="num">0</td></tr>
 <tr><td class="cl"><a href="../details/accounts/cd-cosmos-wonka.html">CD_COSMOS_WONKA</a></td><td class="num failed">8</td><td class="num warn z"></td><td class="num">0</td></tr>
 <tr><td class="cl"><a href="../details/accounts/cdv-krp-tdi-wonka.html">CDV-KRP-TDI-WONKA</a></td><td class="num failed">5</td><td class="num warn z"></td><td class="num">5</td></tr>
+<tr><td class="cl"><a href="../details/accounts/cd-route-wonka.html">CD_ROUTE_WONKA</a></td><td class="num failed">5</td><td class="num warn z"></td><td class="num">0</td></tr>
 <tr><td class="cl"><a href="../details/accounts/ab-claims-umbrella.html">AB_CLAIMS_UMBRELLA</a></td><td class="num failed">4</td><td class="num warn z"></td><td class="num">0</td></tr>
 <tr><td class="cl"><a href="../details/accounts/aps-cosmos-globex.html">APS-COSMOS-GLOBEX</a></td><td class="num failed">4</td><td class="num warn z"></td><td class="num">4</td></tr>
 <tr><td class="cl"><a href="../details/accounts/aps-syshub-soylent.html">APS_SYSHUB_SOYLENT</a></td><td class="num failed">4</td><td class="num warn z"></td><td class="num">0</td></tr>
@@ -78,10 +79,9 @@
 <tr><td class="cl"><a href="../details/accounts/hr-roster-umbrella.html">HR_ROSTER_UMBRELLA</a></td><td class="num failed">1</td><td class="num warn z"></td><td class="num">0</td></tr>
 <tr><td class="cl"><a href="../details/accounts/inv-payments-hooli.html">INV-PAYMENTS-HOOLI</a></td><td class="num failed">1</td><td class="num warn z"></td><td class="num">1</td></tr>
 <tr><td class="cl"><a href="../details/accounts/zg-zka-hooli.html">ZG-ZKA-HOOLI</a></td><td class="num failed">1</td><td class="num warn z"></td><td class="num">1</td></tr>
-<tr><td class="cl"><a href="../details/accounts/zk-miaz-initech.html">ZK-MIAZ-INITECH</a></td><td class="num failed">1</td><td class="num warn z"></td><td class="num">1</td></tr>
-<tr class="total"><td>Top 20 of 20 account(s)</td><td class="num failed">97</td><td class="num warn z"></td><td class="num">14</td></tr>
+<tr class="total"><td>Top 20 of 21 account(s)</td><td class="num failed">101</td><td class="num warn z"></td><td class="num">13</td></tr>
 </table></div>
-<p class="note"><strong>All-Error</strong> = a session of 2+ records where every record failed (a connection that achieved nothing — platform-wide 97 such sessions). <strong>Mixed OK+Error</strong> = the session delivered some Files and failed others (platform-wide 0). <strong>Retry marathons</strong> = 8+ records, one single File, all Error: a client hammering the same broken transfer inside one connection (platform-wide 14). Per-record status is used here (a record is OK when its raw Status is Processed), not the per-File outcome.</p>
-<div class="summary">Sessions: 16200  |  Files/connection: 1.00  |  Single-File: 100.0%  |  All-Error sessions: 97</div>
+<p class="note"><strong>All-Error</strong> = a session of 2+ records where every record failed (a connection that achieved nothing — platform-wide 102 such sessions). <strong>Mixed OK+Error</strong> = the session delivered some Files and failed others (platform-wide 0). <strong>Retry marathons</strong> = 8+ records, one single File, all Error: a client hammering the same broken transfer inside one connection (platform-wide 14). Per-record status is used here (a record is OK when its raw Status is Processed), not the per-File outcome.</p>
+<div class="summary">Sessions: 16475  |  Files/connection: 1.00  |  Single-File: 100.0%  |  All-Error sessions: 102</div>
 </body>
 </html>

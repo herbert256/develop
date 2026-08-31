@@ -15,7 +15,7 @@
 <div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="duration-trend" data-twin="../../acceptance/transfer/duration-trend.html"></div>
 <h1>Duration Trend <span class="grouptag">&larr; Performance &larr; Transfer</span></h1>
 <p class="tabs"><a class="tab" href="anomalies.html">Anomalies</a><a class="tab" href="duration.html">Duration</a><a class="tab" href="dwell-time.html">Store-and-forward</a><span class="tab active">Duration trend</span></p>
-<p class="range">The <strong>11125</strong> delivered (OK) Files with a measured duration, window <strong>2026-07-26 → 2026-08-29</strong>, split at <strong>2026-08-12</strong>. Per subscription with <strong>15+ delivered Files in each half</strong>: the median duration per half and the ratio between them. <strong>3</strong> of the <strong>33</strong> comparable flows moved: <strong>3 got slower</strong> (ratio ≥ 1.3×) and <strong>0 got faster</strong> (ratio ≤ 0.7×). The average file size per half sits beside the medians — when the size grew with the duration, the flow is not degrading, the files are just bigger.</p>
+<p class="range">The <strong>11259</strong> delivered (OK) Files with a measured duration, window <strong>2026-07-26 → 2026-08-29</strong>, split at <strong>2026-08-12</strong>. Per subscription with <strong>15+ delivered Files in each half</strong>: the median duration per half and the ratio between them. <strong>3</strong> of the <strong>35</strong> comparable flows moved: <strong>3 got slower</strong> (ratio ≥ 1.3×) and <strong>0 got faster</strong> (ratio ≤ 0.7×). The average file size per half sits beside the medians — when the size grew with the duration, the flow is not degrading, the files are just bigger.</p>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Subscription</th><th class="num">Median (1st half)</th><th class="num">Median (2nd half)</th><th class="num">Ratio</th><th class="num">Avg size (1st)</th><th class="num">Avg size (2nd)</th><th>Files (1st / 2nd)</th></tr>
 <tr><td class="cl"><a href="../details/subscriptions/inv-payments-hooli.html">INV_PAYMENTS_HOOLI</a></td><td class="num">4.86 s</td><td class="num">6.80 s</td><td class="num">1.40×</td><td class="num">5.51 MB</td><td class="num">344.73 KB</td><td><code>46 / 42</code></td></tr>
@@ -32,6 +32,6 @@
 </table></div>
 <p class="note">Biggest speed-up first — usually good news (a fixed route, smaller files, an off-peak reschedule), but a sudden drop can also mean the flow now ships stubs instead of real content: check the size columns and the Size profile report.</p>
 <p class="note">Only <strong>delivered (Processed)</strong> Files count — a failed transfer's run time is a timeout artefact, not a trend. Duration is the File's wall-clock span (first record start to last record end, store-and-forward gap included). Medians use the nearest-rank method over each half; flows without 15 Files in both halves are not compared.</p>
-<div class="summary">Comparable flows: 33  |  Slower: 3  |  Faster: 0  |  Window: 2026-07-26 → 2026-08-29</div>
+<div class="summary">Comparable flows: 35  |  Slower: 3  |  Faster: 0  |  Window: 2026-07-26 → 2026-08-29</div>
 </body>
 </html>

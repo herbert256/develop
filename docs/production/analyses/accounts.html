@@ -16,43 +16,43 @@
 <div class="sxs">
 <div class="sxscol"><h2>Connection type</h2><div class="tablewrap"><table class="index fit">
 <tr><th>Type</th><th class="num">Profiles</th></tr>
-<tr><td>Server &mdash; we connect out to the partner</td><td class="num">22</td></tr>
+<tr><td>Server &mdash; we connect out to the partner</td><td class="num">24</td></tr>
 <tr><td>Client &mdash; the partner connects in to us</td><td class="num">26</td></tr>
-<tr class="total"><td>Total</td><td class="num">48</td></tr>
+<tr class="total"><td>Total</td><td class="num">50</td></tr>
 </table></div></div>
 <div class="sxscol"><h2>Protocol</h2><div class="tablewrap"><table class="index fit">
 <tr><th>Protocol</th><th class="num">Profiles</th></tr>
-<tr><td>SFTP &mdash; secure</td><td class="num">48</td></tr>
+<tr><td>SFTP &mdash; secure</td><td class="num">50</td></tr>
 <tr data-res="red"><td>FTP &mdash; <strong>insecure</strong></td><td class="num">0</td></tr>
-<tr class="total"><td>Total</td><td class="num">48</td></tr>
+<tr class="total"><td>Total</td><td class="num">50</td></tr>
 </table></div></div>
 </div>
 <h2>Type &mdash; the name prefix</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Prefix</th><th>Meaning</th><th class="num">Profiles</th><th>Configured type</th></tr>
 <tr><td>CCP</td><td>Client comm profile</td><td class="num">26</td><td>CLIENT</td></tr>
-<tr><td>SCP</td><td>Server comm profile</td><td class="num">22</td><td>SERVER</td></tr>
+<tr><td>SCP</td><td>Server comm profile</td><td class="num">24</td><td>SERVER</td></tr>
 </table></div>
-<p class="range">Every profile&rsquo;s prefix matches its configured <code>type</code> &mdash; <strong>48 of 48 consistent</strong>, no exceptions.</p>
+<p class="range">Every profile&rsquo;s prefix matches its configured <code>type</code> &mdash; <strong>50 of 50 consistent</strong>, no exceptions.</p>
 <h2>Authentication &mdash; the name suffix</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Suffix</th><th>Meaning</th><th class="num">Profiles</th><th class="num">Match auth</th><th class="num">Mismatch</th></tr>
-<tr><td>PWD</td><td>password</td><td class="num">39</td><td class="num st-ok">39</td><td class="num"></td></tr>
-<tr><td>KEY</td><td>public key</td><td class="num">9</td><td class="num st-ok">9</td><td class="num"></td></tr>
+<tr><td>PWD</td><td>password</td><td class="num">40</td><td class="num st-ok">40</td><td class="num"></td></tr>
+<tr><td>KEY</td><td>public key</td><td class="num">10</td><td class="num st-ok">10</td><td class="num"></td></tr>
 <tr><td>(other)</td><td>no PWD/KEY suffix (the FTP endpoints, below)</td><td class="num">0</td><td class="num"></td><td class="num"></td></tr>
 </table></div>
 <h2>Naming inconsistencies (0)</h2>
 <p class="range">No inconsistencies &mdash; every profile&rsquo;s auth suffix matches its configured authentication.</p>
 <h2>Breaking naming rules (0)</h2>
 <p class="range">An <strong>incoming</strong> account (the partner connects to us) separates its name parts with <code>-</code>; an <strong>outgoing</strong> one (we connect to the partner) uses <code>_</code>. The same flow configured both ways therefore appears twice, once in each spelling &mdash; <code>DPL-AXINI-AO-IMPRESS</code> inbound and <code>DPL_AXINI-AO_IMPRESS</code> outbound. The separator is read <code>_</code>-primary: <code>_</code> wins unless splitting on <code>-</code> yields more parts, so an internal hyphen inside one part (<code>AIM-FIN_TREASURY-SP</code>) is not mistaken for the separator. (A NAMING audit only &mdash; since the logical-based derivation the partner/domain/application entities no longer come from account names.)</p>
-<p class="range">No breaks &mdash; all 36 directional accounts follow the rule.</p>
+<p class="range">No breaks &mdash; all 37 directional accounts follow the rule.</p>
 <h2>Not clear domain-application-partner (1)</h2>
 <p class="range">An account is meant to be connected to a <strong>logical flow</strong>, whose three-part name reads <strong>domain_application_partner</strong> &mdash; <code>ODV_MAIA_AKZO</code> is domain <code>ODV</code>, application <code>MAIA</code>, partner <code>AKZO</code>. These accounts could not be resolved into all three. The check does not re-read any names: it asks the derivation itself what it managed to assign, so a blank column is a value the rest of the site genuinely does not have for that account.</p>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Account</th><th>Domain</th><th>Application</th><th>Partner</th><th>Missing</th><th>Why</th></tr>
 <tr data-res="green"><td><code>INFRA_ST-MONITOR_INFRA</code></td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>domain, application, partner</td><td>its logical flow has a pinned short name — no domain/application/partner parts</td></tr>
 </table></div>
-<p class="range">36 of 37 accounts resolve to all three. A gap is not a fault &mdash; the flow works either way &mdash; but the account is then absent from that entity&rsquo;s Files, coverage and cross-reference figures, so a partner can look quieter than it is.</p>
+<p class="range">37 of 38 accounts resolve to all three. A gap is not a fault &mdash; the flow works either way &mdash; but the account is then absent from that entity&rsquo;s Files, coverage and cross-reference figures, so a partner can look quieter than it is.</p>
 <h2>FTP endpoints (0) &mdash; insecure</h2>
 <p class="range"><strong>FTP transfers credentials and data in clear text</strong> and cannot use a public key, so these are the site&rsquo;s only insecure profiles. They are also exactly the 0 profiles outside the <code>PWD</code>/<code>KEY</code> naming convention above (their name ends in a partner tag and their <code>clientAuthentication</code> is unset). Migrating them to SFTP would close the last plaintext links.</p>
 <div class="tablewrap"><table class="index fit">
@@ -108,11 +108,12 @@
 <p class="range">Every communication profile resolves to a single host.</p>
 <h3>Incoming password profiles with no stored password (0)</h3>
 <p class="range">Every incoming password profile has a stored password.</p>
-<h3>Accounts with more than one communication profile (3)</h3>
-<p class="range">An account normally has one endpoint. These 3 carry several &mdash; confirm they are intentional (a profile named for a <em>different</em> account is a likely mix-up).</p>
+<h3>Accounts with more than one communication profile (4)</h3>
+<p class="range">An account normally has one endpoint. These 4 carry several &mdash; confirm they are intentional (a profile named for a <em>different</em> account is a likely mix-up).</p>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Account</th><th class="num">Profiles</th><th>Communication profiles</th></tr>
 <tr data-res="orange"><td>CD-PARCEL-BLUTH</td><td class="num">2</td><td><code>CCP_CD-PARCEL-BLUTH_PWD | CCP_CD-PARCEL-BLUTH_KEY</code></td></tr>
+<tr data-res="orange"><td>CD_ROUTE_WONKA</td><td class="num">2</td><td><code>SCP_CD_ROUTE_WONKA_PWD | SCP_CD_ROUTE_WONKA_ALT_KEY</code></td></tr>
 <tr data-res="orange"><td>INFRA_ST-MONITOR_INFRA</td><td class="num">4</td><td><code>SCP_INFRA-MONITOR-UC1_PWD | CCP_INFRA_ST-MONITOR_INFRA_PWD | SCP_INFRA-MONITOR-UC3_PWD | CCP_INFRA_ST-MONITOR_INFRA_PWD</code></td></tr>
 <tr data-res="orange"><td>STMT-EXPORT-GLOBEX</td><td class="num">8</td><td><code>CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD</code></td></tr>
 </table></div>
