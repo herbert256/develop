@@ -779,6 +779,7 @@
       { label: "Login",        types: ["Login"],                       on: false },
       { label: "Application",  types: ["Application"],                 on: false },
       { label: "Domain",       types: ["Domain"],                      on: false },
+      { label: "BL",           types: ["BL"],                          on: false },
       { label: "IP",           types: ["Remote Host (IP)", "Whitelist"], on: false },
       { label: "Source",       types: ["Source"],                      on: false },
       { label: "Target",       types: ["Target"],                      on: false }

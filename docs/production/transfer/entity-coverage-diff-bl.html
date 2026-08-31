@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Entity coverage</title>
+<meta name="report-key" content="entity-coverage-diff">
+<link rel="stylesheet" href="../../assets/style.css?v=1298174428">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=1298174428" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="entity-coverage" data-twin="../../acceptance/transfer/entity-coverage-diff-bl.html"></div>
+<h1>Entity coverage <span class="grouptag">&larr; Coverage &amp; seen &larr; Analyses</span></h1>
+<p class="tabs"><span class="tab active">Entity coverage</span><a class="tab" href="../analyses/first-seen.html">First seen</a><a class="tab" href="../analyses/data-diff.html">Since yesterday</a><a class="tab" href="../analyses/../file-search-24-hours.html">File search</a><a class="tab" href="seen-in-server-log.html">Seen in server log</a></p>
+<p class="range">Is the connection for each entity WORKING? A side is <strong>covered</strong> when at least one real File moved that way, or when the server log proves the connection: <strong>In</strong> — one of the entity's accounts <strong>successfully authenticated over SSH</strong>; <strong>Out</strong> — a <strong>UC3 remote poll succeeded</strong> (the &quot;Applying the search pattern&quot; message appears only when the remote listing worked — 0 files found still proves the connection). A side with <strong>no configured connections</strong> is covered by definition, and a <strong>both</strong> entity needs In AND Out working. Two colors only — <strong>green</strong> = covered (listed first), <strong>red</strong> = not covered; this verdict overrules the usual status colors here. The buttons below pick the <strong>entity</strong>; the ones to their right pick the <strong>rule</strong>. *Current* and *Once* are about the <strong>communication</strong>, so a successful SSH logon or UC3 poll proves a side on its own — most-recently, and ever. *OK transfers* is about the <strong>transfer</strong>: neither proof counts there, the most recent File itself must have been delivered OK. *Difference between Current &amp; Once* lists only the regressions — entities covered under *Once* but not under *Current*: the connection worked at some point, and the most recent attempt did not.</p>
+<p class="tabs"><a class="tab" href="entity-coverage-diff-accounts.html">Accounts</a><a class="tab" href="entity-coverage-diff-logical.html">Logical</a><a class="tab" href="entity-coverage-diff-partners.html">Partners</a><a class="tab" href="entity-coverage-diff-domains.html">Domains</a><a class="tab" href="entity-coverage-diff-applications.html">Applications</a><span class="tab active">BL</span><span class="tabsep"></span><a class="tab" href="entity-coverage-bl.html">Current</a><a class="tab" href="entity-coverage-once-bl.html">Once</a><a class="tab" href="entity-coverage-ok-bl.html">OK transfers</a><span class="tab active">Difference between Current &amp; Once</span></p>
+<div class="stat"><span class="stat-v">21</span><span class="stat-l">Total bl</span></div>
+<div class="stat stat-green"><span class="stat-v">19 (90%)</span><span class="stat-l">Covered once</span></div>
+<div class="stat stat-red"><span class="stat-v">0</span><span class="stat-l">Once but not Current</span></div>
+<div class="tablewrap"><table class="wide">
+<tr><th colspan="2"></th><th colspan="3" class="gband gsep">In</th><th colspan="3" class="gband gsep">Out</th></tr>
+<tr><th>BL</th><th>Direction</th><th class="num gsep">Subs</th><th class="num">Files</th><th class="num">Logons</th><th class="num gsep">Subs</th><th class="num">Files</th><th class="num">Polls</th></tr>
+<tr class="total"><td>Total (21 bl)</td><td></td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td></tr>
+</table></div>
+<p class="note">In proof: the server-log SSH logon lines (&quot;User with login name … associated with account … successfully authenticated&quot;), counted per account by the Auth activity report and rolled up to the account's entity — on the Accounts view that rollup is the identity. Out proof: the UC3 poll lines (&quot;Applying the search pattern … for transfer site …&quot;), counted per subscription by the Remote Polls report and rolled up to the subscription's entity. Files are real logical transfers, split by the connection side.</p>
+<p class="note">The Logons and Polls columns show on every view, but they only COUNT towards the verdict on *Current* and *Once* — on *OK transfers* the verdict rests on the most recent File alone.</p>
+<p class="note">Subs = the configured subscriptions per side (a both-ways subscription counts on both sides); a side with 0 Subs has nothing to prove and counts as covered.</p>
+</body>
+</html>

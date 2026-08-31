@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cross Reference: BL - Subscriptions</title>
+<meta name="report-key" content="cross-bl">
+<link rel="stylesheet" href="../../../assets/style.css?v=1298174428">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=1298174428" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="production" data-help="cross-reference" data-twin="../../../acceptance/analyses/xref/cross-bl-subscriptions.html"></div>
+<h1>Cross Reference: BL - Subscriptions <span class="grouptag">&larr; Configuration &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="../use-cases.html">Use cases</a><a class="tab" href="../uc2-visits.html">UC2 pickup visits</a><a class="tab" href="../subscriptions.html">Subscriptions</a><a class="tab" href="../accounts.html">Accounts</a><a class="tab" href="../account-sharing.html">Account sharing</a><a class="tab" href="../twins.html">Twins</a><a class="tab" href="../cronjobs.html">Cronjobs</a><a class="tab" href="../config-hygiene.html">Config hygiene</a><a class="tab" href="../whitelist-audit.html">Whitelist audit</a><a class="tab" href="../cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="../../transfer/sources-and-targets.html">Sources and Targets</a><a class="tab" href="../../transfer/skipped.html">Skipped</a><a class="tab" href="../../transfer/not-in-flow-manager.html">Not in Flow Manager</a><span class="tab active">Cross References</span></p>
+<p class="range">Which BL goes with which other entity: every pair seen together on at least one log row, PLUS the configured pairs that never appear (an analysis of relationships — no counts, no dates). The two tab rows pick the pair of entity types; each cell tints by its own entity's status (green = last transfer OK, orange = never seen, red = Error, blue = server-log only).</p>
+<p class="tabs"><a class="tab" href="cross-account-subscriptions.html">Account</a><a class="tab" href="cross-login-subscriptions.html">Login</a><span class="tab disabled">Subscriptions</span><a class="tab" href="cross-host-subscriptions.html">Hosts</a><a class="tab" href="cross-logical-subscriptions.html">Logical</a><a class="tab" href="cross-partner-subscriptions.html">Partners</a><a class="tab" href="cross-application-subscriptions.html">Applications</a><a class="tab" href="cross-domain-subscriptions.html">Domains</a><span class="tab active">BL</span></p>
+<p class="tabs"><a class="tab" href="cross-bl-account.html">Account</a><a class="tab" href="cross-bl-login.html">Login</a><span class="tab active">Subscriptions</span><a class="tab" href="cross-bl-hosts.html">Hosts</a><a class="tab" href="cross-bl-logical.html">Logical</a><a class="tab" href="cross-bl-partners.html">Partners</a><a class="tab" href="cross-bl-applications.html">Applications</a><a class="tab" href="cross-bl-domains.html">Domains</a><span class="tab disabled">BL</span><span class="tabsep"></span><a class="tab" href="cross-subscription-bl.html">Swap</a></p>
+<div class="tablewrap"><table class="grouped">
+<tr><th>BL</th><th>Subscription</th></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-ab.html">BL_AB</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-ab-claims-umbrella.html">UC1_AB_CLAIMS_UMBRELLA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-ab.html">BL_AB</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-ab-nas-globex.html">UC3_AB_NAS_GLOBEX</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-aim.html">BL_AIM</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc4-aim-lake-piedpiper.html">UC4_AIM_LAKE_PIEDPIPER</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-aps.html">BL_APS</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc2-aps-vida-umbrella.html">UC2_APS_VIDA_UMBRELLA</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-aps.html">BL_APS</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-aps-fmgenlog-cyberdyne.html">UC3_APS_FMGENLOG_CYBERDYNE</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/bl/bl-aps.html">BL_APS</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-aps-fmreplerr-cyberdyne.html">UC3_APS_FMREPLERR_CYBERDYNE</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-aps.html">BL_APS</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc4-aps-cosmos-globex.html">UC4_APS_COSMOS_GLOBEX</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/bl/bl-cb.html">BL_CB</a></td><td class="res-orange cl"><a href="../../details/subscriptions/uc2-cb-vida-wayne.html">UC2_CB_VIDA_WAYNE</a></td></tr>
+<tr data-seen="1"><td class="res-red cl"><a href="../../details/bl/bl-cd.html">BL_CD</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-cd-cosmos-wonka.html">UC1_CD_COSMOS_WONKA</a></td></tr>
+<tr data-seen="1"><td class="res-red cl"><a href="../../details/bl/bl-cd.html">BL_CD</a></td><td class="res-red cl"><a href="../../details/subscriptions/uc1-cd-printmgmt-wonka.html">UC1_CD_PRINTMGMT_WONKA</a></td></tr>
+<tr data-seen="0"><td class="res-red cl"><a href="../../details/bl/bl-cd.html">BL_CD</a></td><td class="res-orange cl"><a href="../../details/subscriptions/uc4-cd-ziba-gekko.html">UC4_CD_ZIBA_GEKKO</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-cdv.html">BL_CDV</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc4-cdv-krp-tdi-wonka.html">UC4_CDV_KRP-TDI_WONKA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-crm.html">BL_CRM</a></td><td class="res-green cl"><a href="../../details/subscriptions/crm-sync-initech.html">CRM_SYNC_INITECH</a></td></tr>
+<tr data-seen="0"><td class="res-blue cl"><a href="../../details/bl/bl-dpl.html">BL_DPL</a></td><td class="res-blue cl"><a href="../../details/subscriptions/uc4-dpl-scan-cyberdyne.html">UC4_DPL_SCAN_CYBERDYNE</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-fin.html">BL_FIN</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-fin-billing-globex.html">UC1_FIN_BILLING_GLOBEX</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-gl.html">BL_GL</a></td><td class="res-green cl"><a href="../../details/subscriptions/gl-postings-gekko.html">GL_POSTINGS_GEKKO</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-hr.html">BL_HR</a></td><td class="res-green cl"><a href="../../details/subscriptions/hr-roster-umbrella.html">HR_ROSTER_UMBRELLA</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/bl/bl-hr.html">BL_HR</a></td><td class="res-orange cl"><a href="../../details/subscriptions/uc1-hr-archive-zorg.html">UC1_HR_ARCHIVE_ZORG</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-infra-monitor-uc1.html">BL_INFRA-MONITOR-UC1</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-infra-st-monitor-infra.html">UC1-INFRA_ST-MONITOR_INFRA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-infra-monitor-uc2.html">BL_INFRA-MONITOR-UC2</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc2-infra-st-monitor-infra.html">UC2-INFRA_ST-MONITOR_INFRA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-infra-monitor-uc3.html">BL_INFRA-MONITOR-UC3</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-infra-st-monitor-infra.html">UC3-INFRA_ST-MONITOR_INFRA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-infra-monitor-uc4.html">BL_INFRA-MONITOR-UC4</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc4-infra-st-monitor-infra.html">UC4-INFRA_ST-MONITOR_INFRA</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-inv.html">BL_INV</a></td><td class="res-green cl"><a href="../../details/subscriptions/inv-payments-hooli.html">INV_PAYMENTS_HOOLI</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-it.html">BL_IT</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-it-archive-initech.html">UC1_IT_ARCHIVE_INITECH</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-it.html">BL_IT</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc2-it-ekdsi-cyberdyne.html">UC2_IT_EKDSI_CYBERDYNE</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-it.html">BL_IT</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc2-it-sapbhp-gekko.html">UC2_IT_SAPBHP_GEKKO</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-it.html">BL_IT</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-it-recon-hooli.html">UC3_IT_RECON_HOOLI</a></td></tr>
+<tr data-seen="1"><td class="res-green cl"><a href="../../details/bl/bl-odv.html">BL_ODV</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc3-odv-merlijn-sabre-d.html">UC3_ODV_MERLIJN_SABRE_D</a></td></tr>
+<tr data-seen="1"><td class="res-red cl"><a href="../../details/bl/bl-rec.html">BL_REC</a></td><td class="res-red cl"><a href="../../details/subscriptions/rec-feeds-soylent.html">REC_FEEDS_SOYLENT</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-stmt.html">BL_STMT</a></td><td class="res-green cl"><a href="../../details/subscriptions/stmt-export-globex-01.html">STMT_EXPORT_GLOBEX_01</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-stmt.html">BL_STMT</a></td><td class="res-green cl"><a href="../../details/subscriptions/stmt-export-globex-02.html">STMT_EXPORT_GLOBEX_02</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-stmt.html">BL_STMT</a></td><td class="res-green cl"><a href="../../details/subscriptions/stmt-export-globex-03.html">STMT_EXPORT_GLOBEX_03</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-stmt.html">BL_STMT</a></td><td class="res-green cl"><a href="../../details/subscriptions/stmt-export-globex-04.html">STMT_EXPORT_GLOBEX_04</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-stmt.html">BL_STMT</a></td><td class="res-green cl"><a href="../../details/subscriptions/stmt-export-globex-05.html">STMT_EXPORT_GLOBEX_05</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-stmt.html">BL_STMT</a></td><td class="res-green cl"><a href="../../details/subscriptions/stmt-export-globex-06.html">STMT_EXPORT_GLOBEX_06</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/bl/bl-stmt.html">BL_STMT</a></td><td class="res-orange cl"><a href="../../details/subscriptions/stmt-export-globex-08.html">STMT_EXPORT_GLOBEX_08</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-zg.html">BL_ZG</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc1-zg-pension-hooli.html">UC1_ZG_PENSION_HOOLI</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-zg.html">BL_ZG</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc2-zg-match-hooli.html">UC2_ZG_MATCH_HOOLI</a></td></tr>
+<tr data-seen="0"><td class="res-orange cl"><a href="../../details/bl/bl-zg.html">BL_ZG</a></td><td class="res-orange cl"><a href="../../details/subscriptions/uc3-zg-ikaz-bluth.html">UC3_ZG_IKAZ_BLUTH</a></td></tr>
+<tr data-seen="1"><td class="res-orange cl"><a href="../../details/bl/bl-zg.html">BL_ZG</a></td><td class="res-green cl"><a href="../../details/subscriptions/uc4-zg-zka-hooli.html">UC4_ZG_ZKA_HOOLI</a></td></tr>
+<tr class="total"><td colspan="2">Total (40 pair(s))</td></tr>
+</table></div>
+<p class="note">An analysis of the cross references, not a traffic report. Each cell is colored by that entity result: <strong>light green</strong> = last transfer OK, <strong>light orange</strong> = configured but never seen, <strong>light red</strong> = last transfer Error, <strong>light blue</strong> = surfaced only by the Server → Transfer step (bin/build/seen-in-server-log.sh) with no real transfer. The entities are per-leg attributes (a leg inherits its File's partner/application/domain/logical/BL attribution); pairs where either value is blacklisted or unattributed are not listed. There is no date filter here — seen means seen anywhere in the loaded logs.</p>
+</body>
+</html>

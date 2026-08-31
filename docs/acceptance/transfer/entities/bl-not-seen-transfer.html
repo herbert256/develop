@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BL</title>
+<meta name="report-dates" content="2026-06-23,2026-06-24,2026-06-25,2026-06-26,2026-06-27,2026-06-28,2026-06-29,2026-06-30,2026-07-01,2026-07-02,2026-07-03,2026-07-04,2026-07-05,2026-07-06,2026-07-07,2026-07-08,2026-07-09,2026-07-10,2026-07-11,2026-07-12,2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22,2026-07-23,2026-07-24,2026-07-25,2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
+<meta name="report-area" content="acceptance-transfer">
+<meta name="report-key" content="bl">
+<link rel="stylesheet" href="../../../assets/style.css?v=1298174428">
+<script src="../../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../../assets/report.js?v=1298174428" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../../" data-b="../../../" data-env="acceptance" data-help="entities-bl" data-twin="../../../production/transfer/entities/bl-not-seen-transfer.html"></div>
+<h1>BL <span class="grouptag">&larr; Entities &larr; Transfer</span></h1>
+<p class="tabs"><a class="tab" href="subscription-not-seen-transfer.html">Subscriptions</a><a class="tab" href="logical-not-seen-transfer.html">Logical</a><a class="tab" href="partner-not-seen-transfer.html">Partners</a><a class="tab" href="account-not-seen-transfer.html">Accounts</a><a class="tab" href="login-not-seen-transfer.html">Logins</a><a class="tab" href="remote-host-not-seen-transfer.html">Hosts</a><a class="tab" href="domain-not-seen-transfer.html">Domains</a><a class="tab" href="application-not-seen-transfer.html">Applications</a><span class="tab active">BL</span><span class="tabsep"></span><a class="tab" href="bl-all.html">All</a><a class="tab" href="bl-seen-transfer.html">Seen</a><span class="tab active">Not seen</span><a class="tab" href="bl-ok.html">OK</a><a class="tab" href="bl-warning-transfer.html">Warning</a><a class="tab" href="bl-error.html">Error</a><span class="tabsep"></span><span class="tab active">Transfer</span><a class="tab" href="bl-not-seen.html">+Server</a></p>
+<p class="range">Every bl with its <strong>Files</strong> (one per CoreId), Error/OK split, volume and last sighting — derived from the logical flow names (and, for partners, the endpoint/whitelist/alias merge). The view tabs switch between logged (<strong>Seen</strong>), configured (<strong>All</strong> / <strong>Not seen</strong>), the status subsets (<strong>OK</strong> / <strong>Warning</strong> / <strong>Error</strong>) and the server-log-only ones (<strong>Server</strong>); the scope tabs decide whether a server-log sighting counts as seen (<strong>+Server</strong>, the default) or not (<strong>Transfer</strong>) — rows tint by each bl's status.</p>
+<div class="tablewrap"><table class="wide" data-seenrows="1" data-sort-init="0:asc">
+<tr><th>BL</th><th>Direction</th></tr>
+<tr class="total"><td>Total (0 bl(s))</td><td></td></tr>
+</table></div>
+<p class="note">Configured in FlowManager but never seen in the <strong>transfer log</strong> in this window — including the entities that DID appear in the server log (the <strong>+Server</strong> scope counts those as seen and lists them under Seen). Every name links to its detail page, which lists the configured cross-references.</p>
+<p class="note">Counts Files — one logical transfer each; the bl is the subscription's BL tag from subscriptions.json (data/flow-manager/base/_bl.tsv). Names link to the logical / partner / application / domain detail pages. Volume is the file counted once; First/Last seen stay full-period under the date filter. <strong>The Total row counts each File once</strong> (the site-wide distinct figure); a narrowed date range re-totals over the per-bl rows, whose union attribution can claim one File for several bls — so a filtered Total can run slightly higher than the distinct figure it replaces, and snaps back to it at the full range. Click an Error or OK count for that outcome's 10 most recent Files (newest first).</p>
+</body>
+</html>
