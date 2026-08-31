@@ -684,6 +684,17 @@ bg_env_chain() {
     prod_step "[$AXWAY_ENV] publish: index pages"                          bin/build/publish.sh
 }
 
+# ---- RUNTIME-ONLY: ingest a delivered update BEFORE anything parses ---------
+# A ~/cloud/update.7z (packed elsewhere with the st-reports archive password)
+# carries fresh exports; st-reports-update.sh copies its six input/ dirs onto
+# the checkout and removes the archive — see the script header. It runs
+# BEFORE the HAVE_ACC/HAVE_PROD detection just below, so an update delivering
+# an environment's first exports enables it in the same build. Develop (the
+# .sample-estate marker) never ingests — its estate is generated.
+if [ ! -f input/.sample-estate ]; then
+    run_step "update: ingest ~/cloud/update.7z -> input/"  bin/build/st-reports-update.sh
+fi
+
 HAVE_ACC=0; HAVE_PROD=0
 [ -f input/acceptance/flow-manager/partners.json ] && [ -f input/acceptance/flow-manager/subscriptions.json ] && HAVE_ACC=1
 [ -f input/production/flow-manager/partners.json ] && [ -f input/production/flow-manager/subscriptions.json ] && HAVE_PROD=1
