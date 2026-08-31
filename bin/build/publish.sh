@@ -864,9 +864,18 @@ write_log_facts() {
                 if (smax=="" || d>smax) { smax=d; slt=$13 } }
             next
         }
+        # The transfer topview ROW (bin/transfer/reports/topview.sh HEAD):
+        # 3=First 4=Last 5=Files 10=Transfers (physical log rows) 13=Transfers
+        # Error %. Records = $10, the rows of the log itself — the server row
+        # counts its lines the same way. (NO apostrophes here: this comment
+        # sits INSIDE the single-quoted awk program.) NOT $13 (fixed 2026-08-31): that
+        # summed the daily error PERCENTAGES as "records" and treated every
+        # 0.0%-day as a day without records — a clean weekend became a "hole",
+        # and an env with no failed transfer at all (production) lost its
+        # Records / First / Last / Days cells entirely.
         FILENAME ~ /\/transfer\// {
             d=substr(dd,1,10)
-            if ($13+0 > 0) { td[d]=1; tpd++; tsum+=$13
+            if ($10+0 > 0) { td[d]=1; tpd++; tsum+=$10
                 if (tmin=="" || d<tmin) { tmin=d; tft=$3 }
                 if (tmax=="" || d>tmax) { tmax=d; tlt=$4 } }
         }

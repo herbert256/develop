@@ -459,7 +459,11 @@ SEEN figure — equal to the status tables' Transfer-scope Seen by construction,
 plus the report's no-date bucket summing to it — linking its `<type>-seen` list), plus the
 log-exports facts table (`write_log_facts`:
 per log the input-file count from the parse manifests `_parse.files`/`_transfers.files`, total
-records, first/last record stamp and the HOLES — span days with no record — from the topviews).
+records, first/last record stamp and the HOLES — span days with no record — from the topviews;
+Records = the log's own rows — the server topview's Records column, the transfer topview's
+Transfers Count (`$10`, one per physical leg), never a Files or percentage column: until
+2026-08-31 the transfer half read `$13`, the Transfers Error %, so a clean 0.0 % day counted as a
+hole and an env with no failed transfer showed the Transfer row without Records/First/Last/Days).
 Every status cell opens the **Transfer > Entities view whose row
 count IS that figure**, in the scope the "including server log" switch is in (ON = the bare
 `+Server` pages, OFF = `-transfer`); the Transfer column links `<e>-seen-transfer`, the Server
