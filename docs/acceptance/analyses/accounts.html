@@ -16,28 +16,28 @@
 <div class="sxs">
 <div class="sxscol"><h2>Connection type</h2><div class="tablewrap"><table class="index fit">
 <tr><th>Type</th><th class="num">Profiles</th></tr>
-<tr><td>Server &mdash; we connect out to the partner</td><td class="num">73</td></tr>
+<tr><td>Server &mdash; we connect out to the partner</td><td class="num">74</td></tr>
 <tr><td>Client &mdash; the partner connects in to us</td><td class="num">50</td></tr>
-<tr class="total"><td>Total</td><td class="num">123</td></tr>
+<tr class="total"><td>Total</td><td class="num">124</td></tr>
 </table></div></div>
 <div class="sxscol"><h2>Protocol</h2><div class="tablewrap"><table class="index fit">
 <tr><th>Protocol</th><th class="num">Profiles</th></tr>
 <tr><td>SFTP &mdash; secure</td><td class="num">122</td></tr>
-<tr data-res="red"><td>FTP &mdash; <strong>insecure</strong></td><td class="num">1</td></tr>
-<tr class="total"><td>Total</td><td class="num">123</td></tr>
+<tr data-res="red"><td>FTP &mdash; <strong>insecure</strong></td><td class="num">2</td></tr>
+<tr class="total"><td>Total</td><td class="num">124</td></tr>
 </table></div></div>
 </div>
 <h2>Type &mdash; the name prefix</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Prefix</th><th>Meaning</th><th class="num">Profiles</th><th>Configured type</th></tr>
-<tr><td>SCP</td><td>Server comm profile</td><td class="num">73</td><td>SERVER</td></tr>
+<tr><td>SCP</td><td>Server comm profile</td><td class="num">74</td><td>SERVER</td></tr>
 <tr><td>CCP</td><td>Client comm profile</td><td class="num">50</td><td>CLIENT</td></tr>
 </table></div>
-<p class="range">Every profile&rsquo;s prefix matches its configured <code>type</code> &mdash; <strong>123 of 123 consistent</strong>, no exceptions.</p>
+<p class="range">Every profile&rsquo;s prefix matches its configured <code>type</code> &mdash; <strong>124 of 124 consistent</strong>, no exceptions.</p>
 <h2>Authentication &mdash; the name suffix</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Suffix</th><th>Meaning</th><th class="num">Profiles</th><th class="num">Match auth</th><th class="num">Mismatch</th></tr>
-<tr><td>PWD</td><td>password</td><td class="num">83</td><td class="num st-ok">83</td><td class="num"></td></tr>
+<tr><td>PWD</td><td>password</td><td class="num">84</td><td class="num st-ok">84</td><td class="num"></td></tr>
 <tr><td>KEY</td><td>public key</td><td class="num">40</td><td class="num st-ok">40</td><td class="num"></td></tr>
 <tr><td>(other)</td><td>no PWD/KEY suffix (the FTP endpoints, below)</td><td class="num">0</td><td class="num"></td><td class="num"></td></tr>
 </table></div>
@@ -49,7 +49,7 @@
 <tr><th>Account</th><th>Direction</th><th>Separator used</th><th>Expected</th></tr>
 <tr data-res="orange"><td><code>ZG_HOOLI_GEKKO</code></td><td>incoming</td><td><code>_</code></td><td><code>-</code></td></tr>
 </table></div>
-<p class="range">113 of 114 directional accounts follow the rule. A break is a naming slip rather than a fault &mdash; the flow still works &mdash; but it hides the pairing: the twin spelling is how an incoming and an outgoing half of the same flow are recognised as one route.</p>
+<p class="range">114 of 115 directional accounts follow the rule. A break is a naming slip rather than a fault &mdash; the flow still works &mdash; but it hides the pairing: the twin spelling is how an incoming and an outgoing half of the same flow are recognised as one route.</p>
 <h2>Not clear domain-application-partner (2)</h2>
 <p class="range">An account is meant to be connected to a <strong>logical flow</strong>, whose three-part name reads <strong>domain_application_partner</strong> &mdash; <code>ODV_MAIA_AKZO</code> is domain <code>ODV</code>, application <code>MAIA</code>, partner <code>AKZO</code>. These accounts could not be resolved into all three. The check does not re-read any names: it asks the derivation itself what it managed to assign, so a blank column is a value the rest of the site genuinely does not have for that account.</p>
 <div class="tablewrap"><table class="index fit">
@@ -57,12 +57,13 @@
 <tr data-res="green"><td><code>INFRA_ST-MONITOR_INFRA</code></td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>domain, application, partner</td><td>its logical flow has a pinned short name — no domain/application/partner parts</td></tr>
 <tr data-res="orange"><td><code>OLD-MIGRATION-GLOBEX</code></td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>domain, application, partner</td><td>not connected to any logical flow (no subscription of this account carries a FlowID)</td></tr>
 </table></div>
-<p class="range">114 of 116 accounts resolve to all three. A gap is not a fault &mdash; the flow works either way &mdash; but the account is then absent from that entity&rsquo;s Files, coverage and cross-reference figures, so a partner can look quieter than it is.</p>
-<h2>FTP endpoints (1) &mdash; insecure</h2>
-<p class="range"><strong>FTP transfers credentials and data in clear text</strong> and cannot use a public key, so these are the site&rsquo;s only insecure profiles. They are also exactly the 1 profiles outside the <code>PWD</code>/<code>KEY</code> naming convention above (their name ends in a partner tag and their <code>clientAuthentication</code> is unset). Migrating them to SFTP would close the last plaintext links.</p>
+<p class="range">115 of 117 accounts resolve to all three. A gap is not a fault &mdash; the flow works either way &mdash; but the account is then absent from that entity&rsquo;s Files, coverage and cross-reference figures, so a partner can look quieter than it is.</p>
+<h2>FTP endpoints (2) &mdash; insecure</h2>
+<p class="range"><strong>FTP transfers credentials and data in clear text</strong> and cannot use a public key, so these are the site&rsquo;s only insecure profiles. They are also exactly the 2 profiles outside the <code>PWD</code>/<code>KEY</code> naming convention above (their name ends in a partner tag and their <code>clientAuthentication</code> is unset). Migrating them to SFTP would close the last plaintext links.</p>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Communication profile</th><th>Name suffix</th><th>Authentication</th></tr>
 <tr data-res="red"><td><code>SCP_AB_CREDITREG_WEYLAND_PWD</code></td><td>PWD</td><td>PASSWORD</td></tr>
+<tr data-res="red"><td><code>SCP_CD_QUOTES_STARK_PWD</code></td><td>PWD</td><td>PASSWORD</td></tr>
 </table></div>
 <h2>Incoming partners without IP whitelisting (1)</h2>
 <p class="range">An <strong>incoming</strong> partner (a CLIENT profile &mdash; it connects in to us) should be restricted by an <code>AllowIP</code> whitelist. The following 1 have none, so any source IP could attempt to connect, relying on authentication alone (weakest when that is a password).</p>
@@ -71,18 +72,22 @@
 <tr data-res="red"><td>ZG_HOOLI_GEKKO</td><td>SFTP</td><td>PASSWORD</td><td>never seen</td></tr>
 </table></div>
 <h2>Remote hosts with conflicting setup</h2>
-<p class="range">A remote host reached from more than one profile should be configured the same way everywhere. Checking <strong>every</strong> host-intrinsic connection attribute, <strong>1 host(s)</strong> differ across <strong>2 attribute(s)</strong> &mdash; one table per differing attribute below. A port pair means one is probably stale; a host-key pair (verification or stored key) is a security gap: one connection is protected against a man-in-the-middle, the other is not. Per-account client credentials are excluded (they are not a property of the host). Each distinct value is a row, grouped by host.</p>
-<h3>Port (1 host(s))</h3>
+<p class="range">A remote host reached from more than one profile should be configured the same way everywhere. Checking <strong>every</strong> host-intrinsic connection attribute, <strong>2 host(s)</strong> differ across <strong>2 attribute(s)</strong> &mdash; one table per differing attribute below. A port pair means one is probably stale; a host-key pair (verification or stored key) is a security gap: one connection is protected against a man-in-the-middle, the other is not. Per-account client credentials are excluded (they are not a property of the host). Each distinct value is a row, grouped by host.</p>
+<h3>Port (2 host(s))</h3>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Remote host</th><th>Value</th><th>Profiles</th></tr>
 <tr data-res="red"><td><code>mft.weyland.example</code></td><td>21</td><td>SCP_AB_CREDITREG_WEYLAND_PWD</td></tr>
 <tr data-res="red"><td></td><td>22</td><td>SCP_AB_HRDATA_WEYLAND_PWD</td></tr>
+<tr data-res="red"><td><code>sftp.stark.example</code></td><td>21</td><td>SCP_CD_QUOTES_STARK_PWD</td></tr>
+<tr data-res="red"><td></td><td>22</td><td>SCP_APS_INVOICE_STARK_PWD, SCP_IT_CRM_STARK_KEY, SCP_SI_TELEMETRY_STARK_KEY</td></tr>
 </table></div>
-<h3>Protocol (1 host(s))</h3>
+<h3>Protocol (2 host(s))</h3>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Remote host</th><th>Value</th><th>Profiles</th></tr>
 <tr data-res="red"><td><code>mft.weyland.example</code></td><td>FTP</td><td>SCP_AB_CREDITREG_WEYLAND_PWD</td></tr>
 <tr data-res="red"><td></td><td>SFTP</td><td>SCP_AB_HRDATA_WEYLAND_PWD</td></tr>
+<tr data-res="red"><td><code>sftp.stark.example</code></td><td>FTP</td><td>SCP_CD_QUOTES_STARK_PWD</td></tr>
+<tr data-res="red"><td></td><td>SFTP</td><td>SCP_APS_INVOICE_STARK_PWD, SCP_IT_CRM_STARK_KEY, SCP_SI_TELEMETRY_STARK_KEY</td></tr>
 </table></div>
 <h2>Whitelisted IPs with conflicting incoming setup</h2>
 <p class="range">The inbound mirror of the check above: a source IP whitelisted for more than one incoming (CLIENT) partner should present the same way. Checking <strong>every</strong> incoming attribute, <strong>33 IP(s)</strong> differ across <strong>1 attribute(s)</strong> &mdash; one table per differing attribute below. Often deliberate (one source, per-account credentials), but worth confirming. Per-account logins are excluded. Each distinct value is a row, grouped by IP.</p>

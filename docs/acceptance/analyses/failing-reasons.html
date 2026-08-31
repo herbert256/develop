@@ -17,6 +17,7 @@
 <p class="tabs undertabs"><span class="tab active">Subscriptions</span><a class="tab" href="failing-reasons-errors.html">Errors</a><span class="tabsep"></span><span class="tab active">Current</span><a class="tab" href="failing-reasons-history.html">History</a></p>
 <div class="tablewrap"><table data-nofilter="1" data-nosearch="1" data-rowlink="1">
 <tr><th>Reason</th><th class="num">Count</th><th>Last</th></tr>
+<tr><td>Pull via FTPS failed</td><td class="num"></td><td></td></tr>
 <tr><td>Wrong server fingerprint</td><td class="num"></td><td></td></tr>
 <tr data-href="failing-reasons-connection-failures.html"><td class="cl"><a href="failing-reasons-connection-failures.html">Connection failures</a></td><td class="num num cl"><a href="failing-reasons-connection-failures.html">5</a></td><td>2026-08-29 21:56:56.299</td></tr>
 <tr><td>Receive File As not set</td><td class="num"></td><td></td></tr>
@@ -34,7 +35,7 @@
 <tr><td>Routing step failed</td><td class="num"></td><td></td></tr>
 <tr><td>One-legged</td><td class="num"></td><td></td></tr>
 <tr><td>Failed Subtransmission</td><td class="num"></td><td></td></tr>
-<tr class="total"><td>Total (17 reasons)</td><td class="num">8</td><td></td></tr>
+<tr class="total"><td>Total (18 reasons)</td><td class="num">8</td><td></td></tr>
 </table></div>
 <p class="note">The row set is <strong>every Reason the Failed Subscriptions pages can show</strong> — the shared classifier vocabulary (bin/flip-reason.awk, in classifier order), <strong>One-legged</strong>, the raw last-leg status, plus whatever a server row carries — a reason with <strong>nothing counted stays listed with blank Count and Last</strong>, so a fault class disappearing from the estate is visible as an emptied row. The button rows above pick the view: <strong>Subscriptions</strong> counts flows once each (their newest failure or server verdict), <strong>Errors</strong> counts every individual failed File; <strong>Current</strong> keeps to the still-failing estate, <strong>History</strong> includes the recovered. This view: RED subscriptions only, one each — the same rows the default Failed Subscriptions view lists. A nonzero row opens the list behind the count.</p>
 </body>
