@@ -20,9 +20,11 @@
 # And a File counts for EVERY logical flow group of its profile (col 13
 # resolved through xref/_profiles-logicals.tsv — the FlowID map) UNIONED with
 # its subscription'\''s logicals (col 12 on xref/_subscriptions-logicals.tsv).
-# sp_union()/ap_union()/lg_union() return the \037-joined set; callers split
-# and loop. Inject as
-#   awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" "$SP_AWK"'...'
+# And a File counts for every BL tag of its SUBSCRIPTION (col 12 on
+# xref/_subscriptions-bl.tsv — no direct column of its own).
+# sp_union()/ap_union()/lg_union()/bl_union() return the \037-joined set;
+# callers split and loop. Inject as
+#   awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK"'...'
 SP_MAP="$CONFIG_XREF/_subscriptions-partners.tsv"
 [ -f "$SP_MAP" ] || SP_MAP=""
 AP_MAP="$CONFIG_XREF/_accounts-apps.tsv"
@@ -31,6 +33,8 @@ PL_MAP="$CONFIG_XREF/_profiles-logicals.tsv"
 [ -f "$PL_MAP" ] || PL_MAP=""
 SLG_MAP="$CONFIG_XREF/_subscriptions-logicals.tsv"
 [ -f "$SLG_MAP" ] || SLG_MAP=""
+BL_MAP="$CONFIG_XREF/_subscriptions-bl.tsv"
+[ -f "$BL_MAP" ] || BL_MAP=""
 SP_AWK='
     function uni_load(f6, M6,   l6, z6, n6) { if (f6 == "") return
         while ((getline l6 < f6) > 0) { n6 = split(l6, z6, "\t")
@@ -49,7 +53,8 @@ SP_AWK='
     function lg_union(p6, s6,   b6) { b6 = ""
         if (p6 != "" && (toupper(p6) in PLX)) b6 = PLX[toupper(p6)]
         return uni_join(b6, s6, SLGX) }
-    BEGIN { uni_load(SPMAP, SPX); uni_load(APMAP, APX); uni_load(PLMAP, PLX); uni_load(SLGMAP, SLGX) }
+    function bl_union(s6) { return uni_join("", s6, BLX) }
+    BEGIN { uni_load(SPMAP, SPX); uni_load(APMAP, APX); uni_load(PLMAP, PLX); uni_load(SLGMAP, SLGX); uni_load(BLMAP, BLX) }
 '
 # ===== direction lines (section -1) ==========================================
 # One line per entity carrying its configured DIRECTION (in/both/out; unknown
@@ -63,7 +68,7 @@ SP_AWK='
 # alone. Logged entities with no config line default to unknown in the writer.
 direction_rows() {
     local args=("$FILES" "$PARSED") b
-    for b in _accounts _subscriptions _logins _hosts _logicals _partners _apps _domains; do
+    for b in _accounts _subscriptions _logins _hosts _logicals _partners _apps _domains _bl; do
         [ -f "$CONFIG_BASE/$b.tsv" ] && args+=("$CONFIG_BASE/$b.tsv")
     done
     awk -F'\t' '
@@ -101,6 +106,7 @@ direction_rows() {
         FILENAME ~ /_partners\.tsv$/      { conf("PTN",   $1, $2); next }
         FILENAME ~ /_apps\.tsv$/          { conf("APP",   $1, $2); next }
         FILENAME ~ /_domains\.tsv$/       { conf("DOM",   $1, $2); next }
+        FILENAME ~ /_bl\.tsv$/            { conf("BL",    $1, $2); next }
         END { for (k in DIR) { split(k, a, SUBSEP); printf "%s\t%s\t-1\t0\t%s\n", a[1], a[2], DIR[k] } }
     ' "${args[@]}"
 }
@@ -114,7 +120,7 @@ direction_rows() {
 # Merged into the files stream. Perf is processed ROWS (as the "Processed
 # transfers" KPI reads).
 compute_extras() {
-  awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" "$SP_AWK"'
+  awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK"'
     function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
     function humandur(ms){ if(ms<1000) return sprintf("%d ms",ms); if(ms<60000) return sprintf("%.2f s",ms/1000); if(ms<3600000) return sprintf("%.1f min",ms/60000); return sprintf("%.2f h",ms/3600000) }
     function thr(bytes,ms){ return ms>0 ? human(bytes*1000/ms) "/s" : "-" }
@@ -135,21 +141,24 @@ compute_extras() {
                   pdn[k,dt]++; pdms[k,dt]+=dur; pdby[k,dt]+=size } }
     FNR == 1 { fno++ }
     fno == 1 { if($1 != "#") rip[$1] = rip[$1] (rip[$1]==""?"":" ") $2; next }   # hostname -> raw IP(s)
-    fno == 2 { pu6 = sp_union($20, $12)                                          # partner / application / logical = the UNION sets, \037-joined
+    fno == 2 { pu6 = sp_union($20, $12)                                          # partner / application / logical / BL = the UNION sets, \037-joined
                au6 = ap_union($18, $3)
                lu6 = lg_union($13, $12)
+               bu6 = bl_union($12)
                if(pu6 != "") fptn[$1] = pu6; if(au6 != "") fapp[$1] = au6; if($19 != "") fdom[$1] = $19
                if(lu6 != "") flgc[$1] = lu6
+               if(bu6 != "") fbl[$1] = bu6
                cn[$1] = $16; next }                                              # connection side (the HOST gate)
     {
       st=$3; sub(/ Subtransmission$/,"",st); pr2=(st=="Processed")
       # HOST entities are outbound endpoints only — see aggregate_files
       acct=$4; site=$6; login=$5; host=(cn[$1]=="out" ? $16 : ""); size=$9; dur=$15+0; dt=$11
       npt2=split(fptn[$1], PT2, "\037"); nap2=split(fapp[$1], AP2, "\037"); dm2=fdom[$1]
-      nlg2=split(flgc[$1], LG2, "\037")
+      nlg2=split(flgc[$1], LG2, "\037"); nbl2=split(fbl[$1], BL2, "\037")
       if(pr2 && dur>=0){ perf("ACC",acct); perf("SITE",site); perf("LOGIN",login); perf("HOST",host)
                          for(ip2=1;ip2<=nlg2;ip2++) perf("LGC",LG2[ip2])
-                         for(ip2=1;ip2<=npt2;ip2++) perf("PTN",PT2[ip2]); for(ip2=1;ip2<=nap2;ip2++) perf("APP",AP2[ip2]); perf("DOM",dm2) }
+                         for(ip2=1;ip2<=npt2;ip2++) perf("PTN",PT2[ip2]); for(ip2=1;ip2<=nap2;ip2++) perf("APP",AP2[ip2]); perf("DOM",dm2)
+                         for(ip2=1;ip2<=nbl2;ip2++) perf("BL",BL2[ip2]) }
       if(host!="") hseen[host]=1
     }
     END {
@@ -205,7 +214,7 @@ compute_extras() {
 # configured endpoint's address, which is the case worth showing.
 whitelist_rows() {
     local f
-    for f in accounts subscriptions logins hosts logicals partners apps domains; do
+    for f in accounts subscriptions logins hosts logicals partners apps domains bl; do
         [ -f "$CONFIG_XREF/_$f-white.tsv" ] || return 0
     done
     # ip -> endpoint, for the Incoming-connections Name column. One read of
@@ -223,10 +232,10 @@ whitelist_rows() {
     local ghf="$CONFIG_BASE/_hosts.tsv"; [ -f "$ghf" ] || ghf=/dev/null
     local hcaches=() hc
     for hc in _accounts-hosts _subscriptions-hosts _logins-hosts \
-              _logicals-hosts _partners-hosts _apps-hosts _domains-hosts; do
+              _logicals-hosts _partners-hosts _apps-hosts _domains-hosts _bl-hosts; do
         [ -f "$CONFIG_XREF/$hc.tsv" ] && hcaches+=("$CONFIG_XREF/$hc.tsv")
     done
-    awk -F'\t' -v IPMAP="$ipmap" -v FWDMAP="$fwdmap" -v GWF="$gwf" -v GHF="$ghf" -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" "$SP_AWK"'
+    awk -F'\t' -v IPMAP="$ipmap" -v FWDMAP="$fwdmap" -v GWF="$gwf" -v GHF="$ghf" -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK"'
         function isip(v){ return v ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ }
         function pad(ip,   o){ split(ip, o, "."); return sprintf("%03d%03d%03d%03d", o[1], o[2], o[3], o[4]) }
         # SORT KEY ONLY (field 4; the displayed cells are ipc/nmc). A hostname
@@ -282,6 +291,7 @@ whitelist_rows() {
         FILENAME ~ /_apps-white\.tsv$/          { wlx("7"); next }
         FILENAME ~ /_domains-white\.tsv$/       { wlx("8"); next }
         FILENAME ~ /_logicals-white\.tsv$/      { wlx("9"); next }
+        FILENAME ~ /_bl-white\.tsv$/            { wlx("10"); next }
         FILENAME ~ /_accounts-hosts\.tsv$/      { hx("1"); next }
         FILENAME ~ /_subscriptions-hosts\.tsv$/ { hx("2"); next }
         FILENAME ~ /_logins-hosts\.tsv$/        { hx("3"); next }
@@ -289,6 +299,7 @@ whitelist_rows() {
         FILENAME ~ /_apps-hosts\.tsv$/          { hx("7"); next }
         FILENAME ~ /_domains-hosts\.tsv$/       { hx("8"); next }
         FILENAME ~ /_logicals-hosts\.tsv$/      { hx("9"); next }
+        FILENAME ~ /_bl-hosts\.tsv$/            { hx("10"); next }
         FILENAME ~ /_files\.tsv$/ {   # $FILES: the logged PDA + Logical attributions ...
             nu6 = split(sp_union($20, $12), PU6, "\037")   # partner / application / logical = the UNION sets
             for (iu6 = 1; iu6 <= nu6; iu6++) seen["6" SUBSEP toupper(PU6[iu6])] = PU6[iu6]
@@ -296,6 +307,8 @@ whitelist_rows() {
             for (iu6 = 1; iu6 <= na6; iu6++) seen["7" SUBSEP toupper(AU6[iu6])] = AU6[iu6]
             nl6 = split(lg_union($13, $12), LU6, "\037")
             for (iu6 = 1; iu6 <= nl6; iu6++) seen["9" SUBSEP toupper(LU6[iu6])] = LU6[iu6]
+            nb6 = split(bl_union($12), BU6, "\037")
+            for (iu6 = 1; iu6 <= nb6; iu6++) seen["10" SUBSEP toupper(BU6[iu6])] = BU6[iu6]
             if ($19 != "") seen["8" SUBSEP toupper($19)] = $19
             # ... and the OBSERVED addresses per entity and connection side
             # (col 16), split by movement (col 17)
@@ -311,11 +324,13 @@ whitelist_rows() {
                     for (iu6 = 1; iu6 <= nu6; iu6++) obs("6", PU6[iu6])
                     for (iu6 = 1; iu6 <= na6; iu6++) obs("7", AU6[iu6]); obs("8", $19)
                     for (iu6 = 1; iu6 <= nl6; iu6++) obs("9", LU6[iu6])
+                    for (iu6 = 1; iu6 <= nb6; iu6++) obs("10", BU6[iu6])
                 } else if ($16 == "out") {
                     obso("1", $3); obso("2", $12); obso("3", $14); obso("4", $15)
                     for (iu6 = 1; iu6 <= nu6; iu6++) obso("6", PU6[iu6])
                     for (iu6 = 1; iu6 <= na6; iu6++) obso("7", AU6[iu6]); obso("8", $19)
                     for (iu6 = 1; iu6 <= nl6; iu6++) obso("9", LU6[iu6])
+                    for (iu6 = 1; iu6 <= nb6; iu6++) obso("10", BU6[iu6])
                 }
             }
             next
@@ -333,7 +348,7 @@ whitelist_rows() {
             # already covered (red: traffic outside the configuration).
             # Emission order is hash order, but the caller sorts the stream on
             # (type, entity, section, sortkey), so the output is deterministic.
-            T[1]="ACC"; T[2]="SITE"; T[3]="LOGIN"; T[4]="HOST"; T[6]="PTN"; T[7]="APP"; T[8]="DOM"; T[9]="LGC"
+            T[1]="ACC"; T[2]="SITE"; T[3]="LOGIN"; T[4]="HOST"; T[6]="PTN"; T[7]="APP"; T[8]="DOM"; T[9]="LGC"; T[10]="BL"
             for (k in W) {          # 2.6 Incoming: the configured whitelist ...
                 nm = (k in seen) ? seen[k] : CN[k]
                 split(k, a, SUBSEP)
@@ -373,6 +388,7 @@ whitelist_rows() {
       "$CONFIG_XREF/_logins-white.tsv" "$CONFIG_XREF/_hosts-white.tsv" \
       "$CONFIG_XREF/_logicals-white.tsv" "$CONFIG_XREF/_partners-white.tsv" \
       "$CONFIG_XREF/_apps-white.tsv" "$CONFIG_XREF/_domains-white.tsv" \
+      "$CONFIG_XREF/_bl-white.tsv" \
       "${hcaches[@]}" "$FILES" "$PARSED"
     rm -f "$ipmap" "$fwdmap"
 }
@@ -401,13 +417,16 @@ insert_config_rows() {
              _domains-accounts _domains-subscriptions _domains-logins _domains-hosts \
              _logicals-accounts _logicals-subscriptions _logicals-logins _logicals-hosts \
              _logicals-domains _logicals-apps _logicals-partners \
-             _partners-logicals _apps-logicals _domains-logicals; do
+             _partners-logicals _apps-logicals _domains-logicals \
+             _bl-accounts _bl-subscriptions _bl-logins _bl-hosts \
+             _bl-domains _bl-apps _bl-logicals _bl-partners \
+             _partners-bl _apps-bl _domains-bl _logicals-bl; do
         [ -f "$CONFIG_XREF/$f.tsv" ] && caches+=("$CONFIG_XREF/$f.tsv")
     done
     if [ ${#caches[@]} -eq 0 ]; then cat; return 0; fi
     awk -F'\t' -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" -v ACCRES="$CONFIG_BASE/_accounts.tsv" -v FLOWDF="$CONFIG_XREF/_subscriptions-flowdir.tsv" \
-        -v DOMB="$CONFIG_BASE/_domains.tsv" -v APPB="$CONFIG_BASE/_apps.tsv" -v PTNB="$CONFIG_BASE/_partners.tsv" -v LGB="$CONFIG_BASE/_logicals.tsv" '
-        BEGIN { US = sprintf("%c", 31); od["ACC"]=2.8; od["SITE"]=2; od["LOGIN"]=3; od["HOST"]=4
+        -v DOMB="$CONFIG_BASE/_domains.tsv" -v APPB="$CONFIG_BASE/_apps.tsv" -v PTNB="$CONFIG_BASE/_partners.tsv" -v LGB="$CONFIG_BASE/_logicals.tsv" -v BLB="$CONFIG_BASE/_bl.tsv" '
+        BEGIN { US = sprintf("%c", 31); od["ACC"]=2.8; od["SITE"]=2; od["LOGIN"]=3; od["HOST"]=4; od["BL"]=2.85
                 # section 4 (Remote Host dim) is GONE — the Outgoing connections
                 # table (2.7, whitelist_rows) covers the configured endpoints
                 # 2.81-2.84 = the Logical+PDA quad pages'"'"' Domain /
@@ -419,7 +438,7 @@ insert_config_rows() {
                 # their logins/hosts in Features (ACC) or the connection
                 # tables, and the section-4 removal note above still holds
                 # for them — the quad pages had NO login/host view at all.
-                nsec = split("2 2.8 2.81 2.82 2.83 2.84 3 4", SECS, " "); for (i = 1; i <= nsec; i++) ISSEC[SECS[i]+0] = 1
+                nsec = split("2 2.8 2.81 2.82 2.83 2.84 2.85 3 4", SECS, " "); for (i = 1; i <= nsec; i++) ISSEC[SECS[i]+0] = 1
                 # subscription -> RESULT color (base cache col 3) for the
                 # section-2 color ordering, + its CONNECTION side (col 2) for
                 # the Direction column
@@ -433,6 +452,7 @@ insert_config_rows() {
                 while ((getline l5 < APPB) > 0) { n5 = split(l5, a5, "\t"); if (n5 >= 3) PRES[toupper(a5[1])] = a5[3] } close(APPB)
                 while ((getline l5 < PTNB) > 0) { n5 = split(l5, a5, "\t"); if (n5 >= 3) TRES[toupper(a5[1])] = a5[3] } close(PTNB)
                 while ((getline l5 < LGB)  > 0) { n5 = split(l5, a5, "\t"); if (n5 >= 3) LRES[toupper(a5[1])] = a5[3] } close(LGB)
+                while ((getline l5 < BLB)  > 0) { n5 = split(l5, a5, "\t"); if (n5 >= 3) BRES[toupper(a5[1])] = a5[3] } close(BLB)
                 # subscription -> FILE-MOVEMENT direction (out|in|relay)
                 while ((getline l5 < FLOWDF) > 0) { if (split(l5, a5, "\t") >= 2) FLOWD[toupper(a5[1])] = a5[2] } close(FLOWDF)
                 OFS = "\t" }   # section-2/2.8 lines get their $4 rewritten below
@@ -468,7 +488,7 @@ insert_config_rows() {
         # the restint table modifier). An unknown item keeps the decorative
         # "z"+name payload (no tint).
         function pdares(s, nm,   u, r) {
-            u = toupper(nm); r = (s == 2.81) ? DRES[u] : (s == 2.82) ? PRES[u] : (s == 2.83) ? LRES[u] : TRES[u]
+            u = toupper(nm); r = (s == 2.81) ? DRES[u] : (s == 2.82) ? PRES[u] : (s == 2.83) ? LRES[u] : (s == 2.85) ? BRES[u] : TRES[u]
             return (r == "") ? "z" nm : r
         }
         # The subscription RESULT color, resolved via the config name (exact,
@@ -532,7 +552,7 @@ insert_config_rows() {
         # 5-field line (empty count field) is the writer'\''s config-row marker.
         function flushsec(t, e, s,   plist, n, arr, i, j, u, ku, m, M, MK, MU) {
             if (s == od[t]) return
-            if ((s == 3 || s == 4) && t != "PTN" && t != "APP" && t != "DOM" && t != "LGC") return   # Logins/Hosts tables: Logical+PDA pages only
+            if ((s == 3 || s == 4) && t != "PTN" && t != "APP" && t != "DOM" && t != "LGC" && t != "BL") return   # Logins/Hosts tables: Logical+PDA+BL pages only
             plist = partners(t, e, s); if (plist == "") return
             n = split(plist, arr, US); m = 0
             for (i = 1; i <= n; i++) {
@@ -557,7 +577,7 @@ insert_config_rows() {
                 f4 = "z" M[i]
                 if (s == 2.8) f4 = accf4(M[i])
                 if (s == 2)  f4 = "S|" subpfx(M[i]) "|" subres(M[i])
-                if (s == 2.81 || s == 2.82 || s == 2.83 || s == 2.84) f4 = pdares(s, M[i])
+                if (s == 2.81 || s == 2.82 || s == 2.83 || s == 2.84 || s == 2.85) f4 = pdares(s, M[i])
                 cline = sprintf("%s\t%s\t%s\t%s\t%s", t, e, s, f4, M[i])
                 if (s == 2) bucket2(M[i], cline); else print cline
             }
@@ -603,6 +623,20 @@ insert_config_rows() {
         FILENAME ~ /_logicals-domains\.tsv$/       { addcp("LGC",$1,2.81,$2); next }
         FILENAME ~ /_logicals-apps\.tsv$/          { addcp("LGC",$1,2.82,$2); next }
         FILENAME ~ /_logicals-partners\.tsv$/      { addcp("LGC",$1,2.84,$2); next }
+        # the BL pages'"'"' own config sections + the other quad pages'"'"' BL
+        # section (2.85) — the same one-way pattern
+        FILENAME ~ /_bl-accounts\.tsv$/            { addcp("BL",$1,2.8,$2); next }
+        FILENAME ~ /_bl-subscriptions\.tsv$/       { addcp("BL",$1,2,$2);  next }
+        FILENAME ~ /_bl-logins\.tsv$/              { addcp("BL",$1,3,$2);  next }
+        FILENAME ~ /_bl-hosts\.tsv$/               { addcp("BL",$1,4,$2);  next }
+        FILENAME ~ /_bl-domains\.tsv$/             { addcp("BL",$1,2.81,$2); next }
+        FILENAME ~ /_bl-apps\.tsv$/                { addcp("BL",$1,2.82,$2); next }
+        FILENAME ~ /_bl-logicals\.tsv$/            { addcp("BL",$1,2.83,$2); next }
+        FILENAME ~ /_bl-partners\.tsv$/            { addcp("BL",$1,2.84,$2); next }
+        FILENAME ~ /_partners-bl\.tsv$/            { addcp("PTN",$1,2.85,$2); next }
+        FILENAME ~ /_apps-bl\.tsv$/                { addcp("APP",$1,2.85,$2); next }
+        FILENAME ~ /_domains-bl\.tsv$/             { addcp("DOM",$1,2.85,$2); next }
+        FILENAME ~ /_logicals-bl\.tsv$/            { addcp("LGC",$1,2.85,$2); next }
         {   # the sorted agg stream: insert each section'\''s config rows when the
             # stream moves past it (all its logged rows are collected by then)
             t = $1; e = $2; s3 = $3 + 0
@@ -611,7 +645,7 @@ insert_config_rows() {
             if (s3 in ISSEC) { seen[s3 SUBSEP toupper($5)] = 1; if (s3 == 2) L3 = (L3 == "" ? toupper($5) : L3 US toupper($5)) }
             if (s3 == 2.8) $4 = accf4($5)   # logged Account rows get the Login/Host payload too (OFS is TAB)
             if (s3 == 2)  $4 = "S|" subpfx($5) "|" subres($5)   # logged Subscription rows: Direction + row-tint color
-            if ((s3 == 2.81 || s3 == 2.82 || s3 == 2.83 || s3 == 2.84) && (t == "PTN" || t == "APP" || t == "DOM" || t == "LGC")) $4 = pdares(s3, $5)   # logged quad-dim rows on the quad pages: the row-tint color
+            if ((s3 == 2.81 || s3 == 2.82 || s3 == 2.83 || s3 == 2.84 || s3 == 2.85) && (t == "PTN" || t == "APP" || t == "DOM" || t == "LGC" || t == "BL")) $4 = pdares(s3, $5)   # logged quad-dim rows on the quad pages: the row-tint color
             if (s3 == 2) bucket2($5, $0); else print
         }
         END { endflush(curt, cure) }
@@ -626,7 +660,7 @@ insert_config_rows() {
 # each dimension value is taken once. Rows are CoreId-contiguous (the cache is
 # CoreId-sorted), so a group is flushed at each CoreId boundary — memory-bounded.
 aggregate_files() {
-  awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" "$SP_AWK$COREIDS_AWK"'
+  awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK$COREIDS_AWK"'
     function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
     function humandur(ms){ if(ms<1000) return sprintf("%d ms",ms); if(ms<60000) return sprintf("%.2f s",ms/1000); if(ms<3600000) return sprintf("%.1f min",ms/60000); return sprintf("%.2f h",ms/3600000) }
     function thr(bytes,ms){ return ms>0 ? human(bytes*1000/ms) "/s" : "-" }
@@ -721,7 +755,7 @@ aggregate_files() {
       # (their Features table folds Domain/Application/Partner via _sum_config)
       for(dv in gDIM){ split(dv,a2,SUBSEP); if(a2[1]==od[ty]) continue
         if(ty=="SITE" && a2[1]+0>2.8 && a2[1]+0<3) continue
-        if((a2[1]+0==3 || a2[1]+0==4) && ty!="PTN" && ty!="APP" && ty!="DOM" && ty!="LGC") continue   # the Login/Host dims feed the Logical+PDA pages only
+        if((a2[1]+0==3 || a2[1]+0==4) && ty!="PTN" && ty!="APP" && ty!="DOM" && ty!="LGC" && ty!="BL") continue   # the Login/Host dims feed the Logical+PDA+BL pages only
         bump(ty,ent,a2[1],a2[2]) } }
     function flush(   v){
       day=tdt[curcid]; if(day=="") { split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0; return }
@@ -788,21 +822,24 @@ aggregate_files() {
       for(iu6=1;iu6<=nlu6;iu6++) gDIM[2.83 SUBSEP LU6[iu6]]=1
       npu6=split(tpt[curcid], PU6, "\037")
       for(iu6=1;iu6<=npu6;iu6++) gDIM[2.84 SUBSEP PU6[iu6]]=1
+      nbu6=split(tbl[curcid], BU6, "\037")
+      for(iu6=1;iu6<=nbu6;iu6++) gDIM[2.85 SUBSEP BU6[iu6]]=1
       if(tac[curcid]!="") ent_apply("ACC", tac[curcid])
       for(iu6=1;iu6<=nlu6;iu6++) ent_apply("LGC", LU6[iu6])
       for(iu6=1;iu6<=npu6;iu6++) ent_apply("PTN", PU6[iu6])
       for(iu6=1;iu6<=nau6;iu6++) ent_apply("APP", AU6[iu6])
       if(tdm[curcid]!="") ent_apply("DOM", tdm[curcid])
+      for(iu6=1;iu6<=nbu6;iu6++) ent_apply("BL", BU6[iu6])
       for(v in gLOGIN) ent_apply("LOGIN", v)
       for(v in gSITE)  ent_apply("SITE",  v)
       for(v in gHOST)  ent_apply("HOST",  v)
       split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0 }
     BEGIN { od["ACC"]=2.8; od["SITE"]=2; od["LOGIN"]=3; od["HOST"]=4
-            od["DOM"]=2.81; od["APP"]=2.82; od["LGC"]=2.83; od["PTN"]=2.84   # the quad dims (the former Groups table)
+            od["DOM"]=2.81; od["APP"]=2.82; od["LGC"]=2.83; od["PTN"]=2.84; od["BL"]=2.85   # the quad dims (the former Groups table)
             }
     FNR == 1 { fno++ }
     fno == 1 { toc[$1]=$2; tac[$1]=$3; tdt[$1]=$4; ttm[$1]=$5; tsk[$1]=$6; tjd[$1]=$7; tsz[$1]=$8; tdur[$1]=$9; tfl[$1]=$11; tmv[$1]=$17
-               tfd[$1]=$16; tsite[$1]=$12; tpt[$1]=sp_union($20,$12); tap[$1]=ap_union($18,$3); tlg[$1]=lg_union($13,$12); tdm[$1]=$19; next }   # _files.tsv by CoreId (col 16 = connection; col 12 = subscription, for the file-movement lookup; partner/application/logical = UNION sets)
+               tfd[$1]=$16; tsite[$1]=$12; tpt[$1]=sp_union($20,$12); tap[$1]=ap_union($18,$3); tlg[$1]=lg_union($13,$12); tbl[$1]=bl_union($12); tdm[$1]=$19; next }   # _files.tsv by CoreId (col 16 = connection; col 12 = subscription, for the file-movement lookup; partner/application/logical = UNION sets)
     {   # _transfers.tsv, CoreId-sorted: collect the group'\''s entity & dimension values
       if($1 != curcid){ if(curcid!="") flush(); curcid=$1; g_inend=-1; g_outst=-1 }
       # store-and-forward dwell inputs (mirrors dwell-time.sh): the group'\''s

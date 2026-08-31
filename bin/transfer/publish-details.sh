@@ -219,7 +219,7 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
 # slugmap sub names, plus "white" for the Whitelisted IPs cells (KIND ip).
 RESMAP_FILES=""
 for _rm in accounts:_accounts subscriptions:_subscriptions logins:_logins hosts:_hosts \
-           logicals:_logicals partners:_partners applications:_apps domains:_domains white:_white; do
+           logicals:_logicals partners:_partners applications:_apps domains:_domains bl:_bl white:_white; do
     [ -s "$DATA/flow-manager/base/${_rm#*:}.tsv" ] && RESMAP_FILES+="${RESMAP_FILES:+ }${_rm%%:*}=$DATA/flow-manager/base/${_rm#*:}.tsv"
 done
 unset _rm
@@ -232,7 +232,7 @@ unset _rm
 # (nor restores/persists the shared per-area range from these pages).
 CUR_DATES=""
 
-# IN PARALLEL (2026-07): the nine subdirs write disjoint docs/ subtrees and
+# IN PARALLEL (2026-07): the ten subdirs write disjoint docs/ subtrees and
 # every render temp is mktemp-unique, so each call runs in its own background
 # subshell (which also isolates the DLINK_BASE mutation). Serially this was
 # the slowest publish (~33 s); the wall clock is now the biggest subdir.
@@ -252,6 +252,8 @@ dt_pids+=("$!")
 render_details applications "Application Details" &
 dt_pids+=("$!")
 render_details domains "Domain Details" &
+dt_pids+=("$!")
+render_details bl "BL Details" &
 dt_pids+=("$!")
 render_details incoming_connections "Incoming Connection Details" &   # the sighted whitelisted IPs
 dt_pids+=("$!")

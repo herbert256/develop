@@ -247,7 +247,7 @@ function sum_groups(rows,   n, i, V, i1, gt, gn, gs) {
         i1 = index(V[i], "\t"); if (i1 == 0) continue
         gt = substr(V[i], 1, i1 - 1); gn = substr(V[i], i1 + 1)
         if (gn == "") continue
-        gs = (gt == "Domain") ? "domains" : (gt == "Application") ? "applications" : (gt == "Logical") ? "logicals" : "partners"
+        gs = (gt == "Domain") ? "domains" : (gt == "Application") ? "applications" : (gt == "Logical") ? "logicals" : (gt == "Partner") ? "partners" : "bl"
         emitl("ROW\t" gt "\t@{alink=" gs "/" gn "}" gn)
     }
 }
@@ -431,7 +431,7 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
     }
     # seen pages: the Features table (configuration only), suppressed when it
     # would carry nothing
-    if (pend_t == "SITE" || pend_t == "ACC" || x_ip != "" || x_oneacct != "" || x_onedom != "" || x_oneapp != "" || x_onelgc != "" || x_oneptn != "" || nca > 0) {
+    if (pend_t == "SITE" || pend_t == "ACC" || x_ip != "" || x_oneacct != "" || x_onedom != "" || x_oneapp != "" || x_onelgc != "" || x_oneptn != "" || x_onebl != "" || nca > 0) {
         emitl("TABLE\tFeatures"); emitl("HEAD\tItem\tValue"); emitl("KIND\ttext\ttext")
         if (ucd != "") emitl("ROW\tUse case\t@{href=../../analyses/use-cases.html}" ucd)
         dupacct = 0
@@ -448,6 +448,7 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
         if (x_oneapp != "") emitl("ROW\tApplication\t@{alink=applications/" x_oneapp "}" x_oneapp)
         if (x_onelgc != "") emitl("ROW\tLogical\t@{alink=logicals/" x_onelgc "}" x_onelgc)
         if (x_oneptn != "") emitl("ROW\tPartner\t@{alink=partners/" x_oneptn "}" x_oneptn)
+        if (x_onebl != "") emitl("ROW\tBL\t@{alink=bl/" x_onebl "}" x_onebl)
         if (pend_t == "SITE") sum_locations()
     }
 }
@@ -542,7 +543,7 @@ function rank_buckets(   i, d, np, P, j, s, tn, tm, tb) {
 
 # ===== the section table heads ===============================================
 # the Logical+PDA quad pages (their dimension tables always render, restint'd)
-function quadp() { return (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM" || pend_t == "LGC") }
+function quadp() { return (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM" || pend_t == "LGC" || pend_t == "BL") }
 function dim_table(lbl, kind, mods, title) {
     emitl("TABLE\t" title (mods != "" ? "\t" mods : ""))
     if (TMODE == 1) {
@@ -600,6 +601,7 @@ function start_table(s,   WEH, WEK) {
     else if (s == "2.82") dim_table("Application", "app", quadp() ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "Applications")
     else if (s == "2.83") dim_table("Logical", "lgc", quadp() ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "Logical")
     else if (s == "2.84") dim_table("Partner", "ptn", quadp() ? "seenrows\trestint" : "seenrows", "Partners")
+    else if (s == "2.85") dim_table("BL", "bl", quadp() ? "seenrows\tsxs=5\trestint" : "seenrows\tsxs=5", "BL")
     # the Logical+PDA pages' Logins (3) and Hosts (4) tables (2026-08-29): sxs=5
     # joins them into the Domains/Applications flex row; no restint — these
     # rows carry no result payload, seenrows tints green/red alone
@@ -791,7 +793,7 @@ function login_sxs_row(   i, act0, act1, lg0, lg1, ic0, ic1, n2) {
 # first column (the dim_table shapes); the sxs pair partner of a folded
 # table simply renders alone. Up to three folds per page.
 function fold_single_dims(   pass9, i, j, t0, t1, hl, lbl, nr9, name9, fe0, fe1, n2, C3, trio9, d0) {
-    trio9 = (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM" || pend_t == "LGC")
+    trio9 = (pend_t == "PTN" || pend_t == "APP" || pend_t == "DOM" || pend_t == "LGC" || pend_t == "BL")
     for (pass9 = 1; pass9 <= 6; pass9++) {   # a quad page can fold up to 5 dims + slack
         t0 = 0; lbl = ""
         for (i = 1; i < npg; i++) {
@@ -801,6 +803,7 @@ function fold_single_dims(   pass9, i, j, t0, t1, hl, lbl, nr9, name9, fe0, fe1,
             else if (index(hl, "HEAD\tApplication\t") == 1) lbl = "Application"
             else if (index(hl, "HEAD\tLogical\t") == 1)     lbl = "Logical"
             else if (index(hl, "HEAD\tPartner\t") == 1)     lbl = "Partner"
+            else if (index(hl, "HEAD\tBL\t") == 1)          lbl = "BL"
             else if (trio9 && index(hl, "HEAD\tLogin\t") == 1)       lbl = "Login"   # the trio pages' Logins/Hosts tables (2026-08-29)
             else if (trio9 && index(hl, "HEAD\tRemote Host\t") == 1) lbl = "Host"
             else continue
@@ -1162,7 +1165,7 @@ function reset_entity() {
     split("", LE); nle = 0
     busy_day = "-"; busy_cnt = 0
     x_blue = ""; x_grpfold = ""
-    x_oneacct = ""; x_onedom = ""; x_oneapp = ""; x_oneptn = ""; x_onelgc = ""
+    x_oneacct = ""; x_onedom = ""; x_oneapp = ""; x_oneptn = ""; x_onelgc = ""; x_onebl = ""
     tot_recs = ""; tot_f = ""; tot_p = ""; tot_h = ""; tot_first = ""; tot_last = ""; tot_pct = ""
     tot_share = ""; tot_rank = ""; tot_n = ""; tot_act = ""; tot_idle = ""
     tot_largest = ""; tot_avg = ""; tot_srank = ""; tot_erank = ""; tot_duravg = "-"; tot_sshare = ""
@@ -1180,7 +1183,8 @@ BEGIN {
     else if (TYPE == "LGC")   { label = "Logical";      typenoun = "logical flows"; sdir = "";              bt = "logical";      rk = "logical" }
     else if (TYPE == "PTN")   { label = "Partner";      typenoun = "partners";      sdir = "";              bt = "partner";      rk = "partners" }
     else if (TYPE == "APP")   { label = "Application";  typenoun = "applications";  sdir = "";              bt = "application";  rk = "applications" }
-    else                      { label = "Domain";       typenoun = "domains";       sdir = "";              bt = "domain";       rk = "domains" }
+    else if (TYPE == "DOM")   { label = "Domain";       typenoun = "domains";       sdir = "";              bt = "domain";       rk = "domains" }
+    else                      { label = "BL";           typenoun = "BL tags";       sdir = "";              bt = "bl";           rk = "bl" }
     desc = cntlabel " per day for this " label ", plus load, every other dimension and the largest " cntlabel " seen for it."
     SM = OUTDIR "/_slugmap.tsv"
     # the shared UC descriptions (bin/uc-cases.sh, dumped by details.sh so the
@@ -1276,7 +1280,7 @@ NF < 4 { next }
         IS_BLUE = (A[6] == "1") ? 1 : 0
         a_cfgacct = A[22]; a_acl = A[23]; a_ach = A[24]; a_conn = A[25]; a_bannerdt = A[26]; a_grp = A[27]
         a_suba = A[28]; a_subl = A[29]; a_subh = A[30]; a_nosub = A[31]; a_twin = A[32]
-        x_oneacct = A[8]; x_onedom = A[9]; x_oneapp = A[10]; x_oneptn = A[11]; x_onelgc = A[33]
+        x_oneacct = A[8]; x_onedom = A[9]; x_oneapp = A[10]; x_oneptn = A[11]; x_onelgc = A[33]; x_onebl = A[34]
         if (t == "SITE") {
             a_sdh = A[12]; a_sda = A[13]; a_sdl = A[14]
             a_cron = A[15]; a_cronh = A[16]
@@ -1291,13 +1295,13 @@ NF < 4 { next }
         # via sum_config; the LGC/PDA quad renders them as own tables; every
         # other type folds them into Features via x_grpfold
         x_grpfold = ""
-        if (t != "SITE" && t != "PTN" && t != "APP" && t != "DOM" && t != "LGC" && a_grp != "") {
+        if (t != "SITE" && t != "PTN" && t != "APP" && t != "DOM" && t != "LGC" && t != "BL" && a_grp != "") {
             ng = usplit(a_grp, GV)
             for (gi = 1; gi <= ng; gi++) {
                 i1 = index(GV[gi], "\t"); if (i1 == 0) continue
                 gt = substr(GV[gi], 1, i1 - 1); gn = substr(GV[gi], i1 + 1)
                 if (gn == "") continue
-                gs = (gt == "Domain") ? "domains" : (gt == "Application") ? "applications" : (gt == "Logical") ? "logicals" : "partners"
+                gs = (gt == "Domain") ? "domains" : (gt == "Application") ? "applications" : (gt == "Logical") ? "logicals" : (gt == "Partner") ? "partners" : "bl"
                 x_grpfold = x_grpfold (x_grpfold == "" ? "" : "\n") "ROW\t" gt "\t@{alink=" gs "/" gn "}" gn
             }
         }
@@ -1411,7 +1415,7 @@ NF < 4 { next }
         if (sec == "2.6") emitl(sprintf("ROW\t%s\t%s\t%s\t@data:res=%s", ipcell, win, wout, ($9 != "" ? $9 : "orange")))
         else emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t@data:res=%s", ipcell, win, wout, namecell, ($9 != "" ? $9 : "orange")))
     }
-    else if (sec == "2" || sec == "2.8" || sec == "2.81" || sec == "2.82" || sec == "2.83" || sec == "2.84") {
+    else if (sec == "2" || sec == "2.8" || sec == "2.81" || sec == "2.82" || sec == "2.83" || sec == "2.84" || sec == "2.85") {
         resm = ""; extra = ""
         if ($4 == "green" || $4 == "orange" || $4 == "red" || $4 == "blue") resm = "\t@data:res=" $4
         if (sec == "2") {
