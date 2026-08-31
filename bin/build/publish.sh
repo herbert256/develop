@@ -1962,7 +1962,12 @@ check_status_consistency() {
             echo "CONSISTENCY WARNING: home shows $num for $href but the page lists ${rows:-no} row(s)" >&2
             mism=$((mism+1))
         elif [ -n "${foot:-}" ] && [ "$foot" != "${num//./}" ]; then
-            echo "CONSISTENCY WARNING: home shows $num for $href but the page's Total footer says $foot — an untinted (unconfigured) row leaked into the view" >&2
+            # NAME the culprits (2026-08-31): the data rows without a
+            # data-res tint — the base cache has no row for them, so the
+            # log says which name leaked instead of sending the reader to
+            # the page to look for an uncoloured row
+            leak=$(perl -ne 'next if !/<tr\b/ || /class="total"/ || /data-res=/ || /<th/; if (m{<td[^>]*>(?:<a[^>]*>)?([^<]+)}) { print "$1\n" }' "$page" | head -5 | tr '\n' ' ')
+            echo "CONSISTENCY WARNING: home shows $num for $href but the page's Total footer says $foot — an untinted (unconfigured) row leaked into the view: ${leak:-(name not extracted)}" >&2
             mism=$((mism+1))
         fi
     done < <(perl -ne 'while (m{<a href="((?:acceptance|production)/transfer/entities/[a-z0-9-]+)\.html">([\d.]+)</a>}g) { print "$1\t$2\n" }' docs/index.html 2>/dev/null)
