@@ -12,8 +12,8 @@
 <script src="../../assets/report.js?v=3944911837" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="expected-arrival"></div>
-<h1>Expected Arrival</h1>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="expected-arrival" data-twin="../../acceptance/transfer/expected-arrival.html"></div>
+<h1>Expected Arrival <span class="grouptag">&larr; Activity over Time &larr; Transfer</span></h1>
 <p class="tabs"><a class="tab" href="activity-per-day.html">Activity</a><a class="tab" href="punctuality.html">Punctuality</a><span class="tab active">Expected arrival</span></p>
 <p class="range">A cadence model per subscription, built from the gaps between its <strong>active days</strong> (days with at least one File). Of the <strong>37</strong> modelable flows (<strong>5+ active days</strong>), <strong>0</strong> are <strong>OVERDUE by their own rhythm</strong>: silent longer than max(p90 gap + 1, median gap + 2) days, measured against the newest day in the data (<strong>2026-08-29</strong>). Unlike <strong>Went quiet</strong> (one fixed 7-day cutoff for every flow) and <strong>Punctuality</strong> (a time-of-day model for daily flows), this page compares each flow to its own day-to-day interval history — a weekly flow is not &quot;quiet&quot; after 5 days, and a twice-daily flow is overdue long before day 7. 0 flow(s) with fewer than 5 active days are not modelable and are left out.</p>
 <div class="tablewrap"><table class="wide" data-nofilter="1" data-restint="1">

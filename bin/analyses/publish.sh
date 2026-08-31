@@ -221,11 +221,12 @@ render_coverage_pages() {
                 printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the items counted in this cell of the Entities table.</p>\n'
             fi
             printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = surfaced only by the Server &rarr; Transfer step (bin/seen-in-server-log.sh) with no real transfer.</p>\n'
-            # partners Configured only: the three selector groups (report.js
-            # setupSelFilter) — Connection / Movement (the two halves of the
-            # Direction pair) and Use case; single-select per group, the
-            # groups combine with AND. Real <button>s: keyboard-operable.
-            if [ "$member" = partners ] && [ "$key" = configured ]; then
+            # the three selector groups (report.js setupSelFilter) —
+            # Connection / Movement (the two halves of the Direction pair)
+            # and Use case; single-select per group, the groups combine with
+            # AND. Real <button>s: keyboard-operable. On every one of the
+            # five unified pages (2026-08-31; was partners-only).
+            if [ "$key" = configured ]; then
                 printf '<p class="tabs selrow">'
                 printf '<span class="selgrp" data-sel="conn"><span class="sel-l">Connection</span><button type="button" class="tab active" data-v="">All</button><button type="button" class="tab" data-v="in">In</button><button type="button" class="tab" data-v="out">Out</button><button type="button" class="tab" data-v="both">Both</button></span>'
                 printf '<span class="tabsep"></span>'
@@ -239,46 +240,50 @@ render_coverage_pages() {
             [ "$dircol" = 1 ] && hdir='<th>Direction</th>'
             [ "$ltcol" = 1 ] && htail='<th>Last transfer</th>'
             [ "$ltcol" = 2 ] && htail=''   # no trailing column (partners Configured)
+            # ONE column set for all five derived members (2026-08-31, user
+            # request — the pages are exactly the same but for the first
+            # column's entity name): Direction, then Subscriptions / Accounts
+            # / Endpoints / Whitelisted IPs, then UC1..UC4.
+            local flabel=""
+            case $member in
+                logicals) flabel="Logical flow" ;; bl) flabel="BL" ;; partners) flabel="Partner" ;;
+                applications) flabel="Application" ;; domains) flabel="Domain" ;;
+            esac
             if [ "$member" = whitelist ]; then
                 [ "$ltcol" = 1 ] && htail='<th>Last inbound transfer</th>'
                 printf '<tr><th>IP</th><th>Allowed for account(s)</th>%s</tr>\n' "$htail"
-            elif [ "$member" = partners ]; then
-                # UC1..UC4: the partner's configured subscriptions per use case
-                # (from the partners-subscriptions xref; a 0 renders EMPTY)
-                printf '<tr><th>Partner</th>%s<th>Accounts</th><th>Endpoints</th><th>Whitelisted IPs</th>%s<th class="num">UC1</th><th class="num">UC2</th><th class="num">UC3</th><th class="num">UC4</th></tr>\n' "$hdir" "$htail"
-            elif [ "$member" = logicals ]; then
-                printf '<tr><th>Logical flow</th>%s<th>Subscriptions</th><th>Endpoints</th>%s</tr>\n' "$hdir" "$htail"
-            elif [ "$member" = bl ]; then
-                printf '<tr><th>BL</th>%s<th>Subscriptions</th><th>Endpoints</th>%s</tr>\n' "$hdir" "$htail"
-            elif [ "$member" = applications ]; then
-                printf '<tr><th>Application</th>%s<th>Accounts</th><th>Endpoints</th>%s</tr>\n' "$hdir" "$htail"
-            elif [ "$member" = domains ]; then
-                printf '<tr><th>Domain</th>%s<th>Accounts</th><th>Endpoints</th>%s</tr>\n' "$hdir" "$htail"
+            elif [ -n "$flabel" ]; then
+                printf '<tr><th>%s</th>%s<th>Subscriptions</th><th>Accounts</th><th>Endpoints</th><th>Whitelisted IPs</th>%s<th class="num">UC1</th><th class="num">UC2</th><th class="num">UC3</th><th class="num">UC4</th></tr>\n' "$flabel" "$hdir" "$htail"
             else
                 printf '<tr><th>Name</th>%s%s</tr>\n' "$hdir" "$htail"
             fi
-            # partners/applications/domains pages annotate each member
-            # account: In accounts with their configured login(s) —
-            # "NAME (FE000626)" — from bin/flow-manager.sh's accounts-logins
-            # pair cache; accounts without a login (the Out accounts) with
-            # their configured host(s) instead, from the accounts-hosts
-            # cache (either can carry several — joined with a comma).
-            # ipc: only partners carry the Whitelisted IPs column.
-            local alf="" ahost="" lmap="" hmap="" ptf=0 mw=account
-            # logicals/bl: the members are SUBSCRIPTIONS (no endpoint annotation)
-            case $member in logicals|bl) ptf=1; mw=subscription ;; esac
-            case $member in partners|applications|domains)
-                ptf=1
-                [ -f $DATA/flow-manager/xref/_accounts-logins.tsv ] && alf="$DATA/flow-manager/xref/_accounts-logins.tsv"
-                [ -f $DATA/flow-manager/xref/_accounts-hosts.tsv ] && ahost="$DATA/flow-manager/xref/_accounts-hosts.tsv"
-                # the Endpoints cell links each login/host to its detail
-                # page via the comprehensive slugmaps (no entry, no link)
-                [ -f $DATA/transfer/reports/details/logins/_slugmap.tsv ] && lmap="$DATA/transfer/reports/details/logins/_slugmap.tsv"
-                [ -f $DATA/transfer/reports/details/hosts/_slugmap.tsv ] && hmap="$DATA/transfer/reports/details/hosts/_slugmap.tsv" ;;
+            # every column of the five unified pages comes from the member's
+            # OWN xref pair caches (2026-08-31): _<item>-subscriptions (the
+            # Subscriptions cells + the Direction/UC machinery — msubf above),
+            # _<item>-accounts, _<item>-logins + _<item>-hosts (the Endpoints
+            # cells, each value linked through the login/host slugmaps) and
+            # _<item>-white (the Whitelisted IPs — partners keep their
+            # coverage-TSV col 8, whose Out-alias handling the xref lacks).
+            local lmap="" hmap="" ptf=0 amf="" elf="" ehf="" whf="" smap="" amap="" item=""
+            case $member in
+                logicals) item=logicals ;; partners) item=partners ;; applications) item=apps ;;
+                domains) item=domains ;; bl) item=bl ;;
             esac
+            if [ -n "$item" ]; then
+                ptf=1
+                [ -f "$DATA/flow-manager/xref/_$item-accounts.tsv" ] && amf="$DATA/flow-manager/xref/_$item-accounts.tsv"
+                [ -f "$DATA/flow-manager/xref/_$item-logins.tsv" ] && elf="$DATA/flow-manager/xref/_$item-logins.tsv"
+                [ -f "$DATA/flow-manager/xref/_$item-hosts.tsv" ] && ehf="$DATA/flow-manager/xref/_$item-hosts.tsv"
+                [ "$member" != partners ] && [ -f "$DATA/flow-manager/xref/_$item-white.tsv" ] && whf="$DATA/flow-manager/xref/_$item-white.tsv"
+                [ -f $DATA/transfer/reports/details/logins/_slugmap.tsv ] && lmap="$DATA/transfer/reports/details/logins/_slugmap.tsv"
+                [ -f $DATA/transfer/reports/details/hosts/_slugmap.tsv ] && hmap="$DATA/transfer/reports/details/hosts/_slugmap.tsv"
+                [ -f $DATA/transfer/reports/details/subscriptions/_slugmap.tsv ] && smap="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv"
+                [ -f $DATA/transfer/reports/details/accounts/_slugmap.tsv ] && amap="$DATA/transfer/reports/details/accounts/_slugmap.tsv"
+            fi
             printf '%s\n' "$rows" | awk -F'\t' -v wl="$([ "$member" = whitelist ] && echo 1 || echo 0)" \
                 -v pt="$ptf" -v dc="$dircol" -v lc="$ltcol" \
-                -v ipc="$([ "$member" = partners ] && echo 1 || echo 0)" -v aw="$awfile" -v alf="$alf" -v ahf="$ahost" -v mw="$mw" \
+                -v ipc="$([ "$member" = partners ] && echo 1 || echo 0)" -v aw="$awfile" \
+                -v amf="$amf" -v elf="$elf" -v ehf="$ehf" -v whf="$whf" -v smap="$smap" -v amap="$amap" \
                 -v lmap="$lmap" -v hmap="$hmap" -v resf="$resfile" -v grpf="$grpmapc" \
                 -v fdf="$DATA/flow-manager/xref/_subscriptions-flowdir.tsv" -v msub="$msubf" '
                 function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
@@ -297,12 +302,26 @@ render_coverage_pages() {
                     if (s == "") return e(p)
                     return "<a href=\"../details/" ((t == "l") ? "logins/" : "hosts/") s ".html\">" e(p) "</a>"
                 }
-                # a ", "-joined endpoint list -> each value linked
-                function eplist(ep, t,   k, i2, P, r) {
-                    k = split(ep, P, ", ")
-                    r = ""
-                    for (i2 = 1; i2 <= k; i2++) r = r (r == "" ? "" : ", ") eplink(P[i2], t)
-                    return r
+                function slink(v,   s) { s = sslug[v]
+                    if (s == "") return e(v)
+                    return "<a href=\"../details/subscriptions/" s ".html\">" e(v) "</a>" }
+                function alink2(v,   s) { s = aslug[v]
+                    if (s == "") return e(v)
+                    return "<a href=\"../details/accounts/" s ".html\">" e(v) "</a>" }
+                # a \x1f-joined raw list -> the collapsed linked cell (typ: s
+                # subscription, a account, e typed endpoint); CELLN carries
+                # the count out for the data-sortval and the footer sums
+                function listcell(raw, noun, typ,   n2, A2, i2, o2, v2) {
+                    CELLN = (raw == "") ? 0 : split(substr(raw, 2), A2, US)
+                    if (CELLN == 0) return ""
+                    o2 = ""
+                    for (i2 = 1; i2 <= CELLN; i2++) {
+                        if (typ == "s") v2 = slink(A2[i2])
+                        else if (typ == "a") v2 = alink2(A2[i2])
+                        else v2 = eplink(substr(A2[i2], 2), substr(A2[i2], 1, 1))
+                        o2 = o2 (o2 == "" ? "" : "<br>") v2
+                    }
+                    return "<details><summary>" CELLN " " noun (CELLN > 1 ? "s" : "") "</summary>" o2 "</details>"
                 }
                 BEGIN { US = sprintf("%c", 31)
                         # Direction = the CONNECTION/MOVEMENT pair (out/in). The
@@ -319,18 +338,33 @@ render_coverage_pages() {
                                 if (sv=="relay") { mvi[ku]=1; mvo[ku]=1 }
                                 else if (sv=="in") mvi[ku]=1
                                 else if (sv=="out") mvo[ku]=1
-                                # UC1..UC4 subscription counts per entity (the
-                                # partners page renders them; a pair appears
-                                # once per direction in the xref, so dedupe)
+                                # UC1..UC4 subscription counts per entity (all
+                                # five unified pages render them; a pair appears
+                                # once per direction in the xref, so dedupe) —
+                                # and the SAME deduped walk collects each
+                                # entity member subscriptions (raw names;
+                                # linked at row time once the slugmaps are in)
                                 su=toupper(a[2])
-                                if (su ~ /^UC[1-4][_-]/ && !ucdup[ku SUBSEP su]++) ucn[ku SUBSEP substr(su,3,1)]++ }
+                                if (!ssdup[ku SUBSEP su]++) { ssn[ku]++; ss[ku] = ss[ku] US a[2] }
+                                if (su ~ /^UC[1-4][_-]/) ucn[ku SUBSEP substr(su,3,1)]++ }
                             close(msub)
                         }
                     if (aw != "") { while ((getline line < aw) > 0) { split(line, a, "\t"); acc[a[2]] = (acc[a[2]] == "" ? a[1] : acc[a[2]] ", " a[1]) } close(aw) }
-                    if (alf != "") { while ((getline line < alf) > 0) { split(line, a, "\t"); lg[a[1]] = (lg[a[1]] == "" ? a[2] : lg[a[1]] ", " a[2]) } close(alf) }
-                    if (ahf != "") { while ((getline line < ahf) > 0) { split(line, a, "\t"); hs[a[1]] = (hs[a[1]] == "" ? a[2] : hs[a[1]] ", " a[2]) } close(ahf) }
+                    # the unified column sets, from the member own pair caches
+                    # (raw values, deduped per entity; endpoints carry a type
+                    # prefix — l login, h host — read back at render time)
+                    if (amf != "") { while ((getline line < amf) > 0) { k=split(line,a,"\t"); if (k>=2 && a[1]!="" && a[2]!="") { ku=toupper(a[1])
+                        if (!acdup[ku SUBSEP toupper(a[2])]++) { acn[ku]++; ac2[ku] = ac2[ku] US a[2] } } } close(amf) }
+                    if (elf != "") { while ((getline line < elf) > 0) { k=split(line,a,"\t"); if (k>=2 && a[1]!="" && a[2]!="") { ku=toupper(a[1])
+                        if (!epdup[ku SUBSEP toupper(a[2])]++) { epn[ku]++; epv[ku] = epv[ku] US "l" a[2] } } } close(elf) }
+                    if (ehf != "") { while ((getline line < ehf) > 0) { k=split(line,a,"\t"); if (k>=2 && a[1]!="" && a[2]!="") { ku=toupper(a[1])
+                        if (!epdup[ku SUBSEP toupper(a[2])]++) { epn[ku]++; epv[ku] = epv[ku] US "h" a[2] } } } close(ehf) }
+                    if (whf != "") { while ((getline line < whf) > 0) { k=split(line,a,"\t"); if (k>=2 && a[1]!="" && a[2]!="") { ku=toupper(a[1])
+                        if (!wdup[ku SUBSEP a[2]]++) { wn2[ku]++; wip[ku] = wip[ku] US a[2] } } } close(whf) }
                     if (lmap != "") { while ((getline line < lmap) > 0) { split(line, a, "\t"); lslug[a[1]] = a[2] } close(lmap) }
                     if (hmap != "") { while ((getline line < hmap) > 0) { split(line, a, "\t"); hslug[tolower(a[1])] = a[2] } close(hmap) }
+                    if (smap != "") { while ((getline line < smap) > 0) { split(line, a, "\t"); sslug[a[1]] = a[2] } close(smap) }
+                    if (amap != "") { while ((getline line < amap) > 0) { split(line, a, "\t"); aslug[a[1]] = a[2] } close(amap) }
                     if (resf != "") { while ((getline line < resf) > 0) { split(line, a, "\t"); res[toupper(a[1])] = a[3] } close(resf) }
                     if (grpf != "") { while ((getline line < grpf) > 0) { split(line, a, "\t"); grp[a[1]] = a[2] } close(grpf) } }
                 NF {
@@ -353,71 +387,47 @@ render_coverage_pages() {
                     if (wl == 1)
                         printf "<tr%s><td><code>%s</code></td><td>%s</td>%s</tr>\n", trattr, name, e(acc[$1]), tail
                     else if (pt == 1) {
-                        # the members (col 7, `account|covlink[|endpoint]`) render
-                        # as TWO cells — Accounts (each linked to its detail
-                        # page) and Endpoints (the baked-in Out endpoint, else
-                        # the configured login(s) — In — or host(s) — Out).
-                        # Endpoints are UNIQUE (2026-08): two accounts sharing
-                        # one configured endpoint list it once, so the cell is
-                        # deliberately NOT line-parallel with Accounts. Both
-                        # cells COLLAPSED to their count at page load (a click
-                        # discloses the list, like the IP cell).
+                        # ONE row shape for all five pages (2026-08-31, user
+                        # request): Subscriptions / Accounts / Endpoints from
+                        # the member own pair caches, each cell COLLAPSED to
+                        # its count (a click discloses the linked list);
+                        # Whitelisted IPs from col 8 on partners (its
+                        # Out-alias handling lives in the coverage TSV), from
+                        # the _<item>-white cache on the other four; then the
+                        # UC1..UC4 subscription counts.
                         nc = ($4 != "") ? "<a href=\"../details/" $4 ".html\">" name "</a>" : name
                         if (toupper($1) in grp)   # a merged partner group: the "why" page
                             nc = nc " <a class=\"grpicon\" href=\"../details/partner-groups/" grp[toupper($1)] ".html\" title=\"Why these partners form one group\">&#128279;</a>"
                         dir = dirpair(($2 == "I") ? "in" : (($2 == "B") ? "both" : "out"), $1)
-                        ms = ""; es = ""; rend = 0
-                        delete epseen
-                        n2 = split($7, M, US)
-                        if ($7 == "") n2 = 0
-                        nmem += n2
-                        for (i = 1; i <= n2; i++) {
-                            n3 = split(M[i], mp, "|")
-                            mc = e(mp[1])
-                            if (n3 >= 2 && mp[2] != "") mc = "<a href=\"../details/" mp[2] ".html\">" mc "</a>"
-                            ep = (n3 >= 3) ? mp[3] : ""; et = "h"
-                            if (ep == "" && (mp[1] in lg)) { ep = lg[mp[1]]; et = "l" }
-                            if (ep == "" && (mp[1] in hs)) ep = hs[mp[1]]
-                            ms = ms (ms == "" ? "" : "<br>") mc
-                            if (ep != "" && !(ep in epseen)) { epseen[ep] = 1; rend++
-                                es = es (es == "" ? "" : "<br>") eplist(ep, et) }
-                        }
-                        nend += rend
-                        if (n2 > 0) {
-                            ms = "<details><summary>" n2 " " mw (n2 > 1 ? "s" : "") "</summary>" ms "</details>"
-                            es = (rend > 0) ? "<details><summary>" rend " endpoint" (rend == 1 ? "" : "s") "</summary>" es "</details>" : "&ndash;"
-                        }
-                        # the cluster whitelist (col 8, partners only): collapsed to
-                        # its count, a click discloses the address list (<details>)
-                        wcell = ""
-                        if (ipc == 1) {
-                            nip = ($8 == "") ? 0 : split($8, W8, US)
-                            nips += nip
-                            ws = $8; gsub(US, ", ", ws)
-                            if (nip > 0) ws = "<details><summary>" nip " IP" (nip > 1 ? "s" : "") "</summary><code>" e(ws) "</code></details>"
-                            wcell = "<td class=\"wrap\" data-sortval=\"" nip "\">" ws "</td>"
-                        }
                         dcell = (dc == 1) ? "<td>" dir "</td>" : ""
-                        # UC1..UC4 cells (partners only, like the IP column);
-                        # a use case the partner has no subscription of stays EMPTY
-                        uccells = ""
-                        if (ipc == 1) {
-                            ku2 = toupper($1); ucl = ""
-                            for (ud = 1; ud <= 4; ud++) { uv = ucn[ku2 SUBSEP ud] + 0; uct[ud] += uv
-                                if (uv > 0) ucl = ucl (ucl == "" ? "" : " ") ud
-                                uccells = uccells "<td class=\"num\">" (uv > 0 ? uv : "") "</td>" }
-                            # the selector groups (report.js setupSelFilter)
-                            # filter on these: the two halves of the Direction
-                            # pair — mirroring what dirpair() renders — and
-                            # the UC token list mirroring the UC cells
-                            cvv = ($2 == "I") ? "in" : (($2 == "B") ? "both" : "out")
-                            mvv = (mvi[ku2] && mvo[ku2]) ? "both" : (mvi[ku2] ? "in" : (mvo[ku2] ? "out" : ""))
-                            trattr = trattr " data-conn=\"" cvv "\" data-move=\"" mvv "\" data-uc=\"" ucl "\""
-                        }
-                        # data-sortval = the collapsed count, so report.js sorts
-                        # the Accounts / Endpoints columns by count, not by the
-                        # concatenated summary+names text that parseNum cannot read
-                        printf "<tr%s><td>%s</td>%s<td class=\"wrap\" data-sortval=\"%d\">%s</td><td class=\"wrap\" data-sortval=\"%d\">%s</td>%s%s%s</tr>\n", trattr, nc, dcell, n2, ms, rend, es, wcell, tail, uccells
+                        ku2 = toupper($1)
+                        scell2 = listcell(ss[ku2], "subscription", "s"); nsub2 = CELLN; nsubs2 += CELLN
+                        scell2 = "<td class=\"wrap\" data-sortval=\"" nsub2 "\">" scell2 "</td>"
+                        acell2 = listcell(ac2[ku2], "account", "a"); nacc2 = CELLN; naccs2 += CELLN
+                        acell2 = "<td class=\"wrap\" data-sortval=\"" nacc2 "\">" acell2 "</td>"
+                        ecell2 = listcell(epv[ku2], "endpoint", "e"); nep2 = CELLN; nend += CELLN
+                        ecell2 = "<td class=\"wrap\" data-sortval=\"" nep2 "\">" ecell2 "</td>"
+                        if (ipc == 1) { nip = ($8 == "") ? 0 : split($8, W8, US); ws = $8 }
+                        else          { nip = wn2[ku2] + 0; ws = substr(wip[ku2], 2) }
+                        nips += nip
+                        gsub(US, ", ", ws)
+                        if (nip > 0) ws = "<details><summary>" nip " IP" (nip > 1 ? "s" : "") "</summary><code>" e(ws) "</code></details>"
+                        else ws = ""
+                        wcell = "<td class=\"wrap\" data-sortval=\"" nip "\">" ws "</td>"
+                        # UC1..UC4 cells; a use case the entity has no
+                        # subscription of stays EMPTY
+                        uccells = ""; ucl = ""
+                        for (ud = 1; ud <= 4; ud++) { uv = ucn[ku2 SUBSEP ud] + 0; uct[ud] += uv
+                            if (uv > 0) ucl = ucl (ucl == "" ? "" : " ") ud
+                            uccells = uccells "<td class=\"num\">" (uv > 0 ? uv : "") "</td>" }
+                        # the selector groups (report.js setupSelFilter)
+                        # filter on these: the two halves of the Direction
+                        # pair — mirroring what dirpair() renders — and the
+                        # UC token list mirroring the UC cells
+                        cvv = ($2 == "I") ? "in" : (($2 == "B") ? "both" : "out")
+                        mvv = (mvi[ku2] && mvo[ku2]) ? "both" : (mvi[ku2] ? "in" : (mvo[ku2] ? "out" : ""))
+                        trattr = trattr " data-conn=\"" cvv "\" data-move=\"" mvv "\" data-uc=\"" ucl "\""
+                        printf "<tr%s><td>%s</td>%s%s%s%s%s%s%s</tr>\n", trattr, nc, dcell, scell2, acell2, ecell2, wcell, tail, uccells
                     }
                     else {
                         nc = ($4 != "") ? "<a href=\"../details/" $4 ".html\">" name "</a>" : name
@@ -438,10 +448,9 @@ render_coverage_pages() {
                     if (wl == 1)
                         printf "<tr class=\"total\"><td>Total (%d)</td><td></td>%s</tr>\n", nrows+0, tail
                     else if (pt == 1) {
-                        wtot = (ipc == 1) ? "<td>" (nips+0) " IPs</td>" : ""
                         uctot = ""
-                        if (ipc == 1) for (ud = 1; ud <= 4; ud++) uctot = uctot "<td class=\"num\">" (uct[ud] > 0 ? uct[ud] : "") "</td>"
-                        printf "<tr class=\"total\"><td>Total (%d)</td>%s<td>%d " mw "(s)</td><td>%d endpoint(s)</td>%s%s%s</tr>\n", nrows+0, dcell, nmem+0, nend+0, wtot, tail, uctot
+                        for (ud = 1; ud <= 4; ud++) uctot = uctot "<td class=\"num\">" (uct[ud] > 0 ? uct[ud] : "") "</td>"
+                        printf "<tr class=\"total\"><td>Total (%d)</td>%s<td>%d subscription(s)</td><td>%d account(s)</td><td>%d endpoint(s)</td><td>%d IPs</td>%s%s</tr>\n", nrows+0, dcell, nsubs2+0, naccs2+0, nend+0, nips+0, tail, uctot
                     }
                     else
                         printf "<tr class=\"total\"><td>Total (%d)</td>%s%s</tr>\n", nrows+0, dcell, tail

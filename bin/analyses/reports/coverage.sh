@@ -288,7 +288,7 @@ for member in logicals partners applications domains bl; do
         # (2026-08) — the row tint already carries seen-ness there.
         ltcol=1 dircol=0
         [ "$seenf" = "0" ] && ltcol=0
-        [ "$member" = partners ] && [ "$key" = configured ] && ltcol=2
+        [ "$key" = configured ] && ltcol=2   # the five unified pages carry no trailing column (2026-08-31, user request)
         case $key in configured*|status-*) dircol=1 ;; esac
         {
             printf 'TITLE\t%s\n'  "$title"
