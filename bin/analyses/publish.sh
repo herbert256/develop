@@ -1116,11 +1116,13 @@ write_subscriptions_page() {
                 fid = fidtxt
                 if (fid != "" && ("subscriptions" SUBSEP k) in SLUG)
                     fid = "<a href=\"../details/subscriptions/" SLUG["subscriptions" SUBSEP k] ".html\">" fidtxt "</a>"
+                # column order UCx, Subscription, Logical, Account, Partner …
+                # (2026-08-31, user request — Logical before Account)
                 print toupper(uc) "\t" toupper(fidtxt == "" ? nm : fidtxt) "\t" k "\t" tr ">" \
                     "<td>" uc "</td>" \
                     "<td>" fid "</td>" \
-                    "<td class=\"wrap\">" cell("accounts", (k in ACC) ? ACC[k] : "") "</td>" \
                     "<td>" cell("logicals", (k in LGC) ? LGC[k] : "") "</td>" \
+                    "<td class=\"wrap\">" cell("accounts", (k in ACC) ? ACC[k] : "") "</td>" \
                     "<td class=\"wrap\">" cell("partners", (k in PTN) ? PTN[k] : "") "</td>" \
                     "<td>" cell("domains", (k in DOM) ? DOM[k] : "") "</td>" \
                     "<td>" cell("applications", (k in APP) ? APP[k] : "") "</td>" \
@@ -1134,9 +1136,9 @@ write_subscriptions_page() {
         html_head "Subscriptions" "../assets/style.css" "" "" "subscriptions" "" "" "sort-fresh"
         printf '<h1>Subscriptions</h1>\n'
         analyses_group_tabs subscriptions.html
-        printf '<p class="subtitle">Every configured subscription on one row, ordered by <strong>use case</strong> (the <code>UC&lt;n&gt;</code> name prefix, else the derived one). The <strong>Subscription</strong> column shows the flow&rsquo;s <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code>) and links the subscription&rsquo;s own detail page &mdash; a flow&rsquo;s UC subscriptions share one FlowID, so a FlowID can carry several rows. Then the <strong>account</strong> and the derived <strong>Logical</strong> / <strong>Partner</strong> / <strong>Domain</strong> / <strong>Application</strong> groups, the <strong>endpoint</strong> (the login the partner connects in with, or the remote host we dial out to) and the <strong>BL</strong> tag (the export&rsquo;s <code>tags</code> entry starting with <code>BL</code>). Every other name links its detail page too; rows tint by the subscription&rsquo;s result &mdash; <strong>green</strong> last transfer OK, <strong>orange</strong> never seen, <strong>red</strong> last transfer Error, <strong>blue</strong> server-log only.</p>\n'
+        printf '<p class="subtitle">Every configured subscription on one row, ordered by <strong>use case</strong> (the <code>UC&lt;n&gt;</code> name prefix, else the derived one). The <strong>Subscription</strong> column shows the flow&rsquo;s <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code>) and links the subscription&rsquo;s own detail page &mdash; a flow&rsquo;s UC subscriptions share one FlowID, so a FlowID can carry several rows. Then the derived <strong>Logical</strong> group, the <strong>account</strong>, the derived <strong>Partner</strong> / <strong>Domain</strong> / <strong>Application</strong> groups, the <strong>endpoint</strong> (the login the partner connects in with, or the remote host we dial out to) and the <strong>BL</strong> tag (the export&rsquo;s <code>tags</code> entry starting with <code>BL</code>). Every other name links its detail page too; rows tint by the subscription&rsquo;s result &mdash; <strong>green</strong> last transfer OK, <strong>orange</strong> never seen, <strong>red</strong> last transfer Error, <strong>blue</strong> server-log only.</p>\n'
         printf '<div class="tablewrap"><table class="index fit">\n'
-        printf '<tr><th>UCx</th><th>Subscription</th><th>Account</th><th>Logical</th><th>Partner</th><th>Domain</th><th>Application</th><th>Endpoint</th><th>BL</th></tr>\n'
+        printf '<tr><th>UCx</th><th>Subscription</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>Endpoint</th><th>BL</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
         printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$n"
         printf '</table></div>\n'
