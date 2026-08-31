@@ -464,12 +464,21 @@ insert_config_rows() {
         # BOTH, unknown -> "?". Resolved via the config name (exact, else the
         # showseen prefix rule), cached per value.
         function dlab(v) { return v=="in" ? "IN" : v=="out" ? "OUT" : (v=="both" || v=="relay") ? "BOTH" : "?" }
+        # THE PREFIX RULE, bounded (2026-08-31 audit): a configured name c
+        # stands for a logged value u only when u continues past c at a
+        # NAME-PART BOUNDARY (a non-alphanumeric character — a tail the parse
+        # did not strip), never mid-name: UC1_FIN_BILLING_GLOBEX is NOT a
+        # match for UC1_FIN_BILLING_GLOBEXX, nor UC4_ODV_ARE_APERTURE for
+        # …APERTURE2 — those are different flows, and the unbounded rule
+        # stamped the shorter flow'\''s accounts, logins, hosts and partners
+        # onto the longer flow'\''s page as configured rows.
+        function pfxok(u, c) { return (index(u, c) == 1 && substr(u, length(c) + 1, 1) !~ /[A-Za-z0-9]/) }
         function subpfx(nm,   u, i, c) {
             u = toupper(nm)
             if (u in PFC) return PFC[u]
             c = ""
             if (u in SDIR) c = u
-            else for (i = 1; i <= nres; i++) if (index(u, RESN[i]) == 1) { c = RESN[i]; break }
+            else for (i = 1; i <= nres; i++) if (pfxok(u, RESN[i])) { c = RESN[i]; break }
             PFC[u] = (c == "") ? "?/?" : dlab(SDIR[c]) "/" dlab(FLOWD[c])
             return PFC[u]
         }
@@ -503,7 +512,7 @@ insert_config_rows() {
             if (u in SRC) return SRC[u]
             r = ""
             if (u in RES) r = RES[u]
-            else for (i = 1; i <= nres; i++) if (index(u, RESN[i]) == 1) { r = RES[RESN[i]]; break }
+            else for (i = 1; i <= nres; i++) if (pfxok(u, RESN[i])) { r = RES[RESN[i]]; break }
             SRC[u] = r; return r
         }
         # The Subscription table (section 2) is ordered by the subscription
@@ -531,24 +540,25 @@ insert_config_rows() {
         function pair(t1, s1, t2, s2) { addcp(t1, $1, s2, $2); addcp(t2, $2, s1, $1) }
         # The configured partners of page entity e (type t) for dim section s.
         # A SITE page also merges every configured sub name that PREFIXES the
-        # logged site value (showseen.sh rule; usually the exact match already hit).
+        # logged site value at a name-part boundary (pfxok — showseen.sh
+        # rule; usually the exact match already hit).
         function partners(t, e, s,   u, res, i, x) {
             u = toupper(e); res = CP[t SUBSEP u SUBSEP s]
             if (t != "SITE") return res
             for (i = 1; i <= nsubs; i++) {
-                if (SUBS[i] == u || index(u, SUBS[i]) != 1) continue
+                if (SUBS[i] == u || !pfxok(u, SUBS[i])) continue
                 x = CP["SITE" SUBSEP SUBS[i] SUBSEP s]
                 if (x != "") res = (res == "" ? x : res US x)
             }
             return res
         }
         # Was configured partner p logged with this page (dim section s)? Dim 2
-        # (subscription) uses the prefix rule against the logged site values.
+        # (subscription) uses the bounded prefix rule against the logged site values.
         function isseen(s, p,   u, i, n, arr) {
             u = toupper(p)
             if (s != 2) return (s SUBSEP u) in seen
             n = split(L3, arr, US)
-            for (i = 1; i <= n; i++) if (index(arr[i], u) == 1) return 1
+            for (i = 1; i <= n; i++) if (arr[i] == u || pfxok(arr[i], u)) return 1
             return 0
         }
         # Emit the not-seen configured partners of section s, name-sorted. The

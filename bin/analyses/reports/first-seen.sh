@@ -144,15 +144,17 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     }
     # first transfer of the cross-referenced entity key k2 ("" if never seen);
     # a subscription cross falls back to the prefix rule against the logged
-    # site values (a configured name matches the logged values it prefixes)
-    function xfirst(k2,   s, t2, cu2, m, lk, P2) {
+    # site values — a configured name matches the logged values it prefixes
+    # at a NAME-PART BOUNDARY only (2026-08-31 audit: unbounded, a parent
+    # flow inherited the first-seen date of a longer-named sibling)
+    function xfirst(k2,   s, t2, cu2, m, lk, P2, v2) {
         if (k2 in first) return first[k2]
         split(k2, P2, SUBSEP); t2 = P2[1]; cu2 = P2[2]
         s = ""
         if (t2 == "subscriptions")
             for (m = 1; m <= ln[t2]; m++) {
-                lk = t2 SUBSEP lv[t2 SUBSEP m]
-                if (index(lv[t2 SUBSEP m], cu2) == 1 && (s == "" || first[lk] < s)) s = first[lk]
+                v2 = lv[t2 SUBSEP m]; lk = t2 SUBSEP v2
+                if (index(v2, cu2) == 1 && substr(v2, length(cu2) + 1, 1) !~ /[A-Za-z0-9]/ && (s == "" || first[lk] < s)) s = first[lk]
             }
         return s
     }

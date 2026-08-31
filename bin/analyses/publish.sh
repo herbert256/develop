@@ -1198,9 +1198,14 @@ write_accounts_page() {
     # — no domain/application/partner slots).
     local pda_rows pda_bad
     pda_rows=$(awk -F'\t' '
-        FILENAME ~ /-domains/  { D[toupper($1)] = $2; next }
-        FILENAME ~ /-apps/     { A[toupper($1)] = $2; next }
-        FILENAME ~ /-partners/ { P[toupper($1)] = $2; next }
+        # ALL of an account'\''s values, ", "-joined and deduped (2026-08-31
+        # audit: a plain m[$1]=$2 over these many-valued caches showed a
+        # hybrid production account, connected to three domains, with one)
+        function acc(M, k, v) { if (index("\037" M[k] "\037", "\037" v "\037") == 0) M[k] = (M[k] == "" ? v : M[k] "\037" v) }
+        function j(v) { gsub(/\037/, ", ", v); return v }
+        FILENAME ~ /-domains/  { acc(D, toupper($1), $2); next }
+        FILENAME ~ /-apps/     { acc(A, toupper($1), $2); next }
+        FILENAME ~ /-partners/ { acc(P, toupper($1), $2); next }
         FILENAME ~ /_accounts-profiles/ { F[toupper($1)] = 1; next }
         $1 != "#" && $1 != "" {
             k = toupper($1)
@@ -1213,7 +1218,7 @@ write_accounts_page() {
             why = (k in F) ? "its logical flow has a pinned short name — no domain/application/partner parts" \
                 : "not connected to any logical flow (no subscription of this account carries a FlowID)"
             printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", $1, \
-                   (k in D ? D[k] : ""), (k in A ? A[k] : ""), (k in P ? P[k] : ""), miss, why, $3
+                   (k in D ? j(D[k]) : ""), (k in A ? j(A[k]) : ""), (k in P ? j(P[k]) : ""), miss, why, $3
             bad++
         }
         END { printf "#\t%d\t%d\n", ok+0, bad+0 }' \

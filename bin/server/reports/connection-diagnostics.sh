@@ -100,6 +100,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
             h = "(unknown)"
             if (match(m, /remote host [^: ]+/)) h = substr(m, RSTART+12, RLENGTH-12)
             else if (match(m, /^Connection to [^: ]+/)) h = substr(m, RSTART+14, RLENGTH-14)
+            h = tolower(h)   # endpoints are canonically lowercase; the server occasionally logs one uppercased (see the header) — one row per endpoint, not per spelling
 
             tfail++
             rc[r]++; if (d!="") rd[r SUBSEP d]++

@@ -81,11 +81,14 @@ awk -F'\t' \
         while ((getline l < SUB) > 0) { split(l, a, "\t"); if (a[1] != "") SN[++ns] = toupper(a[1]) }
         close(SUB)
     }
-    # is the logged site value covered by a configured subscription (prefix rule)?
+    # is the logged site value covered by a configured subscription? Exact, or
+    # the configured name as a prefix ending at a NAME-PART BOUNDARY (a tail
+    # the parse did not strip) — never mid-name (2026-08-31 audit: a genuinely
+    # unconfigured UC4_X_Y2 was hidden because UC4_X_Y is configured).
     function subcfg(v,   u, i) {
         u = toupper(v)
         if (u in PFC) return PFC[u]
-        for (i = 1; i <= ns; i++) if (index(u, SN[i]) == 1) { PFC[u] = 1; return 1 }
+        for (i = 1; i <= ns; i++) if (u == SN[i] || (index(u, SN[i]) == 1 && substr(u, length(SN[i]) + 1, 1) !~ /[A-Za-z0-9]/)) { PFC[u] = 1; return 1 }
         PFC[u] = 0; return 0
     }
     function add(t, v,   k) {

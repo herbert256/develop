@@ -685,8 +685,13 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
         printf "ROW\t%s\t%s\t%s%s\n", z[1], z[2], z[3], res > f }
     BEGIN {
         resload(SUBRES, SRES); resload(ACCRES, ARES)
+        # ALL of a subscription'\''s accounts, ", "-joined (a relay has two —
+        # first-wins named one arbitrary account as fact; a multi-value cell
+        # simply renders unlinked)
         while ((getline l < SAX) > 0) { n = split(l, a, "\t")
-            if (n >= 2 && a[1] != "" && !(toupper(a[1]) in ACC)) ACC[toupper(a[1])] = a[2] }
+            if (n >= 2 && a[1] != "" && a[2] != "") { k9 = toupper(a[1])
+                if (ACC[k9] == "") ACC[k9] = a[2]
+                else if (index(", " ACC[k9] ", ", ", " a[2] ", ") == 0) ACC[k9] = ACC[k9] ", " a[2] } }
         close(SAX)
         # the reddening-session lines per subscription, already sorted by
         # (sub, date, time) — "date time \t Level \t message" per entry

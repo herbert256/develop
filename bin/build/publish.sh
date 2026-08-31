@@ -1970,7 +1970,12 @@ check_status_consistency() {
             echo "CONSISTENCY WARNING: home shows $num for $href but the page's Total footer says $foot — an untinted (unconfigured) row leaked into the view: ${leak:-(name not extracted)}" >&2
             mism=$((mism+1))
         fi
-    done < <(perl -ne 'while (m{<a href="((?:acceptance|production)/transfer/entities/[a-z0-9-]+)\.html">([\d.]+)</a>}g) { print "$1\t$2\n" }' docs/index.html 2>/dev/null)
+    done < <(perl -ne 'while (m{<a href="((?:acceptance|production)/(?:transfer/entities|coverage)/[a-z0-9-]+)\.html">([\d.]+)</a>}g) { print "$1\t$2\n" }' docs/index.html 2>/dev/null)
+    # (the coverage/ alternation, 2026-08-31 audit: the five derived Totals —
+    # Logical / Partners / Domains / Applications / BL — link a coverage cell
+    # page instead of an Entities view and escaped this gate; their pages
+    # carry the same tinted rows + "Total (N)" footer, so the comparison
+    # above applies unchanged)
     if [ "$mism" -gt 0 ]; then
         echo "CONSISTENCY WARNING: $mism home status figure(s) disagree with their linked pages — investigate, do not mask." >&2
     else

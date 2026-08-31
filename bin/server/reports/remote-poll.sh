@@ -122,6 +122,11 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             site = substr(m, RSTART + 19, RLENGTH - 20)              # strip "for transfer site '" and trailing "'"
             sub(/_(SS?|C)CP_.*$/, "", site)                           # -> clean subscription name (drop _SCP_ / _SSCP_ / _CCP_)
             if (site == "") next
+            # the CANONICAL name is the aggregation key (2026-08-31 audit):
+            # folded only at emit time, a truncated or pre-rename spelling
+            # made a second row under the same displayed name, each with half
+            # the polls and its own Empty %
+            site = sitecanon(site)
             matched = 0
             if (match(m, /of which [0-9]+ matched/)) matched = substr(m, RSTART + 9, RLENGTH - 17) + 0
             poll[site]++; tpoll++
@@ -172,7 +177,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             p2 = index(csite, " tried to connect to remote host "); if (p2 <= 1) next
             why = substr(csite, p2 + 33, 120)
             csite = substr(csite, 1, p2 - 1); sub(/_(SS?|C)CP_.*$/, "", csite)
-            if (csite != "") pfc[csite SUBSEP why]++
+            if (csite != "") pfc[sitecanon(csite) SUBSEP why]++
         } else if (m ~ /failure connecting to remote host /) {
             # auth-style failures name only host+user — keyed by HOST (the
             # consumer joins via the subscription'\''s configured host)

@@ -124,6 +124,16 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
     $1 == "KA" { kacct[$2] = 1; next }                       # known-account list       (first input)
     $1 == "KS" { ksite[$2] = 1; next }                       # known-subscription list  (first input)
     $1 == "KF" { okmax[$2] = $3; next }                      # last OK File per subscription (first input)
+    # the logged site (the server truncates names) -> the configured name the
+    # OK-File map is keyed by: exact, else the ONE known subscription it
+    # prefixes (2026-08-31 audit: a truncated name never met its own recovery
+    # evidence and stayed on the page for ever). Memoised.
+    function okkey(s,   k, c, hit) {
+        if (s in okmax) return s
+        if (s in OKM) return OKM[s]
+        c = 0; for (k in ksite) if (index(k, s) == 1) { c++; hit = k; if (c > 1) break }
+        return OKM[s] = (c == 1) ? hit : s
+    }
     # A SUCCESSFUL listing on the same site: "Applying the search pattern … for
     # transfer site SITE: N file(s) were found of which M matched" — the poll
     # reached the directory, even when it downloaded nothing. On a UC3 (pull)
@@ -187,7 +197,8 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
         # SURVIVORS only, so the totals, the per-day table and the INTRO all
         # describe what the page shows.
         for (k in c) { split(k, a, SUBSEP)
-            if (lsk[k] != "" && (a[1] in okmax) && okmax[a[1]] > lsk[k]) { nres++; nresf++; reserr += c[k]; continue }
+            ok9 = okkey(a[1])
+            if (lsk[k] != "" && (ok9 in okmax) && okmax[ok9] > lsk[k]) { nres++; nresf++; reserr += c[k]; continue }
             if (lsk[k] != "" && (a[1] ~ /^UC3/ || (toupper(a[1]) in ucd3)) && (a[1] in pollmax) && pollmax[a[1]] > lsk[k]) { nres++; nresp++; reserr += c[k]; continue }
             keep[k] = 1; tot += c[k]
             sseen[a[1]] = 1; aseen[a[2]] = 1; pseen[a[3]] = 1

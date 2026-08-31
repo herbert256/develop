@@ -170,7 +170,7 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
             NK++; KD[NK] = d; KV[NK] = v; IDX[d SUBSEP v] = NK
         }
         close(pairs)
-        while ((getline ln < spx) > 0) { m = split(ln, a, "\t"); if (m >= 2 && a[1] != "" && a[2] != "") part[a[1]] = (part[a[1]] == "" ? a[2] : part[a[1]] SUBSEP a[2]) }
+        while ((getline ln < spx) > 0) { m = split(ln, a, "\t"); if (m >= 2 && a[1] != "" && a[2] != "") { k9 = toupper(a[1]); part[k9] = (part[k9] == "" ? a[2] : part[k9] SUBSEP a[2]) } }   # case-folded like every other partner-union consumer
         close(spx)
     }
     { k = $1 SUBSEP $2; if (!(k in IDX)) next
@@ -199,7 +199,7 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
                 site = F[1]; h = F[2]; c = F[3] + 0; ff = F[4] + 0; ok = F[5] + 0
                 if (!(site in SSEEN)) { SSEEN[site] = 1; SL2[++ns] = site }
                 SC[site] += c; SFF[site] += ff; SOK[site] += ok
-                pl = (site in part) ? part[site] : ""
+                pl = (toupper(site) in part) ? part[toupper(site)] : ""
                 if (h != "") {
                     inpl = 0; np = split(pl, pa, SUBSEP)
                     for (j = 1; j <= np; j++) if (pa[j] == h) { inpl = 1; break }

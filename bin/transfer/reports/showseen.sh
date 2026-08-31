@@ -394,7 +394,12 @@ sub_tuples=$( {
     $1=="C" { sv[++nv]=$2; svu[nv]=toupper($2); cnt[nv]=$3; fail[nv]=$4; proc[nv]=$5; bkt[nv]=$6; cf[nv]=$7; cp[nv]=$8; next }
     $1=="O" { ovr[$2]=$3; next }
     $1=="N" { name=$2; if (name=="") next; nn=toupper(name); mi=0
-      for (i=1;i<=nv;i++) if (index(svu[i], nn)==1) { mi=i; break }   # clean sub name is a prefix of the site value
+      # the EXACT match first, then the clean sub name as a prefix of the site
+      # value ending at a NAME-PART BOUNDARY (2026-08-31 audit: unbounded and
+      # in count order, UC4_ODV_ARE_APERTURE could claim …APERTURE2 Files,
+      # buckets and link the moment the traffic swung)
+      for (i=1;i<=nv;i++) if (svu[i]==nn) { mi=i; break }
+      if (mi==0) for (i=1;i<=nv;i++) if (index(svu[i], nn)==1 && substr(svu[i], length(nn)+1, 1) !~ /[A-Za-z0-9]/) { mi=i; break }
       seenreal=(mi>0); s=(seenreal || $4=="blue" || $4=="green")?1:0   # blue = server-log-only, seen but blank counts; an unmatched GREEN is the UC3 clean-poll rule (result.sh), treated the same
       ps = pageslug(seenreal ? sv[mi] : name)
       print name "\t" s "\t" (seenreal?cnt[mi]:"") "\t" (seenreal?fail[mi]:"") "\t" (seenreal?proc[mi]:"") "\t" (seenreal?cf[mi]:"") "\t" (seenreal?cp[mi]:"") "\t" (seenreal?bkt[mi]:"") "\t" (ps != "" ? "subscriptions/" ps : "") }

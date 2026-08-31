@@ -96,13 +96,18 @@ trap '[ -n "${VERDICT_DIR:-}" ] && rm -rf "$VERDICT_DIR"' EXIT
 # not report-time: details.sh runs OVERLAPPING transfer phase 1, so reading
 # errors/*.rpt there would race failed.sh rebuilding them; here every
 # report is long finished. The map is slug -> newest failed CoreId (the .rpt
-# is newest-first, so the first red row of a subscription is its newest).
+# is newest-first, so the first red row of a subscription is its newest). The
+# slug comes from the comprehensive _slugmap.tsv, NEVER re-derived (2026-08-31
+# audit — CLAUDE.md'\''s rule for _srvsubs applies verbatim): slugify() has no
+# collision bump, so the second of a separator-twin pair (FRE-SAPCD-… /
+# FRE_SAPCD_…, whose page is …-2) shared the first twin'\''s key — the wrong
+# error page spliced onto one page, none onto the other.
 LASTERR_MAP=$(mktemp "${TMPDIR:-/tmp}/axlerr.XXXXXX")
 trap 'rm -f "$LASTERR_MAP"' EXIT
 if [ -f "$DATA/transfer/reports/failed-sub-all.rpt" ]; then
-    while IFS=$'\t' read -r _site _cid; do
-        [ -n "$_site" ] && printf '%s\t%s\n' "$(slugify "$_site")" "$_cid"
-    done <<< "$(awk -F'\t' '
+    _lsm="$_vsm"; [ -f "$_lsm" ] || _lsm=/dev/null
+    awk -F'\t' -v SM="$_lsm" 'BEGIN { while ((getline l < SM) > 0) { split(l, a, "\t"); if (a[1] != "" && a[2] != "") S[a[1]] = a[2] } close(SM) }
+        $1 != "" && ($1 in S) { print S[$1] "\t" $2 }' <<< "$(awk -F'\t' '
         $1 != "ROW" { next }
         # the row is Subscription / Date/time / Reason since 2026-08 — the
         # CoreId lives only in @data:href; @data:srv=1 = a server-failing
