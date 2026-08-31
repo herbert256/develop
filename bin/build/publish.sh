@@ -992,32 +992,27 @@ write_env_block() {
     local _hastx=""
     [ -n "$dl" ] && _hastx=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL" && $2!="" && $2!="-" { print 1; exit }')
     if [ -n "$_hastx" ]; then
-        # THE PER-DAY TABLES (2026-08): Files / Duration / Red/Green switch /
-        # First seen used to be column GROUPS of one wide table (a th.grp
-        # banner row + borderless .sp spacer columns); each is now its own
-        # table under its own <h2> like the other home tables, with ONE
-        # shared Date column as the FIRST table (its cells link the day's
-        # combined dashboard) — the four data tables carry no Date column of
-        # their own. The five sit in one .sxs/.sxscol flex row (the failing
-        # tables' idiom) and every table lists the same days in the same
-        # order, newest first, so the rows align on the Date spine. That
-        # alignment is why every table is data-nosort (sorting one table
-        # alone would desync it from the spine) and why the cap is released
-        # by ONE shared "Show all" button under the flex row — report.js
-        # setupShowAll uncaps every capped table inside the button's
-        # adjacent wrapper.
+        # THE PER-DAY TABLE (2026-08-31, user request — ONE table again):
+        # Files / Duration / Red/Green switch / First seen are column GROUPS
+        # of one wide table, a gband banner row over a shared Date column
+        # (its cells link the day's combined dashboard). The 2026-08 five-
+        # table flex row (a Date spine + four data tables) is gone: one
+        # table cannot fall out of row-sync, which the spine did whenever a
+        # header's height changed (the csv-hotspot regression). The group
+        # dividers are positional CSS on table.dayrows (columns 2/8/12/14 +
+        # the gbrow banner cells) — no per-cell class to keep in step.
         #
-        # THE 14-DAY CAP (2026-08): the tables open showing only the newest
+        # THE 14-DAY CAP (2026-08): the table opens showing only the newest
         # 14 days and NO Total row; the older rows and the Total carry class
-        # capx, hidden by CSS while the table carries cap14; the shared
-        # "Show all" button (baked only when there are more than 14 days)
-        # removes the cap from all five at once. The baked Total keeps the
-        # FULL-window figures — report.js recomputeTotals counts inline
+        # capx, hidden by CSS while the table carries cap14; the "Show all"
+        # button (baked only when there are more than 14 days) removes the
+        # cap — setupShowAll uncaps every capped table inside the button's
+        # adjacent wrapper, here the one tablewrap. The baked Total keeps
+        # the FULL-window figures — report.js recomputeTotals counts inline
         # display only, so the class-hidden rows never leave its sums. The
         # Total row only from 10 days up (2026-08): a short table's sums add
-        # nothing a glance does not already give. The Date spine carries the
-        # row's "Total" label; the data tables' Total rows hold only their
-        # figures.
+        # nothing a glance does not already give. Still data-nosort: the cap
+        # hides the OLDEST rows by class, which a user sort would interleave.
         local dcount capcls="" totcap="" rown=0 trc=""
         dcount=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL"' | wc -l | tr -d ' ')
         if [ "$dcount" -gt 14 ]; then capcls=" cap14"; totcap=" capx"; fi
@@ -1025,36 +1020,26 @@ write_env_block() {
         local dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 dtot=""
         local fsp fss fsa fsl fsh fsps=0 fsss=0 fsas=0 fsls=0 fshs=0
         local swr swg swrs=0 swgs=0 dcc=""
-        printf '<div class="sxs">\n'
-
-        # —— the shared Date spine (an <h2> and a header ROW of its own so
-        # its rows line up with the four data tables'; BOTH are blank — the
-        # h2 visibility-hidden (its box keeps the tables starting level),
-        # the header cell painted like the page, geometry untouched) ——
-        printf '<div class="sxscol">\n<h2 class="blank">Date</h2>\n'
+        printf '<h2>Per day</h2>\n'
         printf '<div class="tablewrap"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
-        printf '<tr><th class="blank"></th></tr>\n'
+        printf '<tr class="gbrow"><th></th><th class="gband" colspan="6">Files</th><th class="gband" colspan="4">Duration</th><th class="gband" colspan="2">Red/Green switch</th><th class="gband" colspan="4">First seen</th></tr>\n'
+        printf '<tr><th>Date</th><th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Recovered</th><th class="num">Error</th><th class="num">Error %%</th><th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th><th class="num">Red</th><th class="num">Green</th><th class="num">Logical</th><th class="num">Partners</th><th class="num">Subscriptions</th><th class="num">Accounts</th></tr>\n'
         rown=0
         while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg; do
-            [ -n "$d" ] && [ "$d" != "TOTAL" ] || continue
+            [ -n "$d" ] || continue
+            # the sentinel LAST line: the overall duration percentiles for
+            # the Total row (a percentile cannot be summed)
+            if [ "$d" = "TOTAL" ]; then
+                dtot=""
+                for c in "$dc50:$dv50" "$dc75:$dv75" "$dc90:$dv90" "$dc95:$dv95"; do
+                    dtot="$dtot$(_durcell "${c%%:*}" "${c#*:}")"
+                done
+                continue
+            fi
             _daycell "$d"; rown=$((rown + 1)); trc=""
             [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
-            printf '<tr%s><td>%s</td></tr>\n' "$trc" "$dcc"
-        done <<< "$dl"
-        [ "$dcount" -ge 10 ] && printf '<tr class="total%s"><td>Total</td></tr>\n' "$totcap"
-        printf '</table></div>\n'
-        printf '</div>\n'
-
-        # —— Files (from transfer/topview.html) ——
-        printf '<div class="sxscol">\n<h2>Files</h2>\n'
-        printf '<div class="tablewrap"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
-        printf '<tr><th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Recovered</th><th class="num">Error</th><th class="num">Error %%</th></tr>\n'
-        rown=0
-        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg; do
-            [ -n "$d" ] && [ "$d" != "TOTAL" ] || continue
-            rown=$((rown + 1)); trc=""
-            [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
-            printf '<tr%s>' "$trc"
+            printf '<tr%s><td>%s</td>' "$trc" "$dcc"
+            # —— Files (from transfer/topview.html) ——
             # Ok/Error tint like topview's cells, a 0 rendering as an empty
             # cell (the render_rpt.awk convention). A nonzero Error cell
             # links the Entities Subscriptions/ALL view narrowed to that day
@@ -1088,64 +1073,11 @@ write_env_block() {
             else
                 printf '<td class="num"></td><td class="num"></td><td class="num processed"></td><td class="num warn"></td><td class="num failed"></td><td class="num"></td>'
             fi
-            printf '</tr>\n'
-        done <<< "$dl"
-        esc "$(dotify "$fsum")"; local fst=$ESC
-        esc "$(dotify "$foksum")"; local fokt=$ESC; esc "$(dotify "$fersum")"; local fert=$ESC
-        local fpct=""
-        [ "$fsum" -gt 0 ] && fpct=$(awk -v e="$fersum" -v n="$fsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
-        local fint="" foutt=""
-        if [ "$finsum" -gt 0 ]; then esc "$(dotify "$finsum")"; fint=$ESC; fi
-        if [ "$foutsum" -gt 0 ]; then esc "$(dotify "$foutsum")"; foutt=$ESC; fi
-        local frvt=""
-        if [ "$frvsum" -gt 0 ]; then esc "$(dotify "$frvsum")"; frvt=$ESC; fi
-        [ "$dcount" -ge 10 ] && printf '<tr class="total%s"><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td></tr>\n' \
-            "$totcap" "$fint" "$foutt" "$fokt" "$frvt" "$fert" "$fpct"
-        printf '</table></div>\n'
-        printf '</div>\n'
-
-        # —— Duration (from transfer/duration.html) ——
-        printf '<div class="sxscol">\n<h2>Duration</h2>\n'
-        printf '<div class="tablewrap"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
-        printf '<tr><th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th></tr>\n'
-        rown=0
-        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg; do
-            [ -n "$d" ] || continue
-            # the sentinel LAST line: the overall duration percentiles for
-            # the Total row (a percentile cannot be summed)
-            if [ "$d" = "TOTAL" ]; then
-                dtot=""
-                for c in "$dc50:$dv50" "$dc75:$dv75" "$dc90:$dv90" "$dc95:$dv95"; do
-                    dtot="$dtot$(_durcell "${c%%:*}" "${c#*:}")"
-                done
-                continue
-            fi
-            rown=$((rown + 1)); trc=""
-            [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
-            printf '<tr%s>' "$trc"
-            # the day's p50/p75/p90/p95, tinted like that page's cells (p99
-            # removed 2026-08)
+            # —— Duration (from transfer/duration.html): the day's
+            # p50/p75/p90/p95, tinted like that page's cells ——
             _durcell "$dc50" "$dv50"; _durcell "$dc75" "$dv75"
             _durcell "$dc90" "$dv90"; _durcell "$dc95" "$dv95"
-            printf '</tr>\n'
-        done <<< "$dl"
-        # the Duration total = the report's own overall percentiles (a
-        # percentile cannot be summed); empty cells when the report is absent
-        [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'
-        [ "$dcount" -ge 10 ] && printf '<tr class="total%s">%s</tr>\n' "$totcap" "$dtot"
-        printf '</table></div>\n'
-        printf '</div>\n'
-
-        # —— Red/Green switch: subscriptions that FLIPPED that day ——
-        printf '<div class="sxscol">\n<h2>Red/Green switch</h2>\n'
-        printf '<div class="tablewrap"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
-        printf '<tr><th class="num">Red</th><th class="num">Green</th></tr>\n'
-        rown=0
-        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg; do
-            [ -n "$d" ] && [ "$d" != "TOTAL" ] || continue
-            rown=$((rown + 1)); trc=""
-            [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
-            printf '<tr%s>' "$trc"
+            # —— Red/Green switch: subscriptions that FLIPPED that day ——
             # Tinted like every other outcome pair on the site — red for the
             # flows that broke, green for the ones that recovered — and a 0
             # renders blank (the render_rpt.awk convention, class z). A
@@ -1161,28 +1093,9 @@ write_env_block() {
                 if [ -f "docs/$env/switches/$d.html" ]; then printf '<td class="num processed"><a href="%s/switches/%s.html#green">%s</a></td>' "$env" "$d" "$ESC"
                 else printf '<td class="num processed">%s</td>' "$ESC"; fi
                 swgs=$((swgs + swg)); fi
-            printf '</tr>\n'
-        done <<< "$dl"
-        # the switch totals: how many flips of each kind in the whole window
-        local swrt swgt
-        if [ "$swrs" -gt 0 ]; then esc "$(dotify "$swrs")"; swrt="<td class=\"num failed\">$ESC</td>"; else swrt='<td class="num failed z"></td>'; fi
-        if [ "$swgs" -gt 0 ]; then esc "$(dotify "$swgs")"; swgt="<td class=\"num processed\">$ESC</td>"; else swgt='<td class="num processed z"></td>'; fi
-        [ "$dcount" -ge 10 ] && printf '<tr class="total%s">%s%s</tr>\n' "$totcap" "$swrt" "$swgt"
-        printf '</table></div>\n'
-        printf '</div>\n'
-
-        # —— First seen (from analyses/first-seen.html) ——
-        printf '<div class="sxscol">\n<h2>First seen</h2>\n'
-        printf '<div class="tablewrap"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
-        printf '<tr><th class="num">Logical</th><th class="num">Partners</th><th class="num">Subscriptions</th><th class="num">Accounts</th></tr>\n'
-        rown=0
-        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg; do
-            [ -n "$d" ] && [ "$d" != "TOTAL" ] || continue
-            rown=$((rown + 1)); trc=""
-            [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
-            printf '<tr%s>' "$trc"
-            # a count links that day's first-seen list when the page exists
-            # (a page exists only for a day with names); 0 renders blank
+            # —— First seen (from analyses/first-seen.html): a count links
+            # that day's first-seen list when the page exists (a page exists
+            # only for a day with names); 0 renders blank ——
             for c in "logicals:$fsg" "partners:$fsp" "subscriptions:$fss" "accounts:$fsa"; do
                 v=${c#*:}
                 if [ "$v" = "-" ] || [ "$v" = 0 ] || [ -z "$v" ]; then printf '<td class="num"></td>'; continue; fi
@@ -1193,6 +1106,23 @@ write_env_block() {
             done
             printf '</tr>\n'
         done <<< "$dl"
+        # —— the ONE Total row (from 10 days up) ——
+        esc "$(dotify "$fsum")"; local fst=$ESC
+        esc "$(dotify "$foksum")"; local fokt=$ESC; esc "$(dotify "$fersum")"; local fert=$ESC
+        local fpct=""
+        [ "$fsum" -gt 0 ] && fpct=$(awk -v e="$fersum" -v n="$fsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
+        local fint="" foutt=""
+        if [ "$finsum" -gt 0 ]; then esc "$(dotify "$finsum")"; fint=$ESC; fi
+        if [ "$foutsum" -gt 0 ]; then esc "$(dotify "$foutsum")"; foutt=$ESC; fi
+        local frvt=""
+        if [ "$frvsum" -gt 0 ]; then esc "$(dotify "$frvsum")"; frvt=$ESC; fi
+        # the Duration total = the report's own overall percentiles (a
+        # percentile cannot be summed); empty cells when the report is absent
+        [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'
+        # the switch totals: how many flips of each kind in the whole window
+        local swrt swgt
+        if [ "$swrs" -gt 0 ]; then esc "$(dotify "$swrs")"; swrt="<td class=\"num failed\">$ESC</td>"; else swrt='<td class="num failed z"></td>'; fi
+        if [ "$swgs" -gt 0 ]; then esc "$(dotify "$swgs")"; swgt="<td class=\"num processed\">$ESC</td>"; else swgt='<td class="num processed z"></td>'; fi
         # the First-seen totals: the report's SEEN line — the SAME figure as
         # the status tables' Seen column in the Transfer scope (the day cells
         # above plus the report's no-date bucket sum to it); each links its
@@ -1210,12 +1140,11 @@ write_env_block() {
                 fstot="$fstot<td class=\"num\"><a href=\"$env/first-seen/${c%%:*}-seen.html\">$ESC</a></td>"
             else fstot="$fstot<td class=\"num\">$ESC</td>"; fi
         done
-        [ "$dcount" -ge 10 ] && printf '<tr class="total%s">%s</tr>\n' "$totcap" "$fstot"
+        [ "$dcount" -ge 10 ] && printf '<tr class="total%s"><td>Total</td><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td>%s%s%s%s</tr>\n' \
+            "$totcap" "$fint" "$foutt" "$fokt" "$frvt" "$fert" "$fpct" "$dtot" "$swrt" "$swgt" "$fstot"
         printf '</table></div>\n'
-        printf '</div>\n'
-        printf '</div>\n'
-        # the ONE shared "Show all": setupShowAll uncaps every capped table
-        # inside the .sxs row above it
+        # the "Show all": setupShowAll uncaps the capped table inside the
+        # tablewrap above it
         [ -n "$capcls" ] && printf '<button class="showallbtn" type="button">Show all</button>\n'
     fi
     write_failing_now "$env"
