@@ -214,26 +214,18 @@ tr[data-dhide="1"] { display:none; }
 .sxs { display:flex; flex-wrap:nowrap; gap:0 2.5rem; align-items:flex-start; overflow-x:auto; }
 .sxs .sxscol { flex:0 0 auto; }
 .sxs .sxscol > h2:first-child { margin-top:1.6rem; }
-/* the home's five aligned per-day tables (the Date spine + Files / Duration /
-   Red-Green switch / First seen): the same day must stay on the same line in
-   every table, so every row needs ONE height — an all-empty row (and the
-   spine's empty header cell) would otherwise collapse to its padding, an
-   empty cell having no line box. A no-break space via ::before gives every
-   empty cell that line box without touching the markup. */
+/* the home's ONE per-day table (2026-08-31 — the five-table flex row with
+   its Date spine is gone): Files / Duration / Red-Green switch / First seen
+   are column GROUPS of one wide table. An empty cell still gets a no-break
+   space via ::before so an all-empty row keeps the shared row height. */
 table.dayrows th:empty::before, table.dayrows td:empty::before { content:"\00a0"; }
-/* the Date spine's blank header must keep a text line box even when it is no
-   longer :empty — setupCsvBtn drops the csv hotspot into it (2026-08-30), and
-   without the \00a0 the header collapses to padding height and the spine's
-   rows sit half a row above the four data tables' */
-table.dayrows th.blank::before { content:"\00a0"; }
-/* the Date spine's header cell is BLANK — painted like the page (the spine
-   carries a header row only so its rows align with the four data tables').
-   border-COLOR instead of border:none keeps the geometry identical; the
-   bottom edge keeps the shared #ddd line above the first date row. */
-table.dayrows th.blank { background:#f7f7f9; border-color:#f7f7f9; border-bottom-color:#ddd; }
-/* …and the spine's own "Date" <h2> shows no title either — visibility
-   keeps its box, so the five tables still start level. */
-.sxs .sxscol > h2.blank { visibility:hidden; }
+/* the group dividers, POSITIONAL so the emit carries no per-cell class:
+   a group starts at columns 2 (Files) / 8 (Duration) / 12 (Red-Green) /
+   14 (First seen) on the header, data and Total rows — and on every cell
+   but the first of the gbrow banner row (its cells are one per group). */
+table.dayrows tr > *:nth-child(2), table.dayrows tr > *:nth-child(8),
+table.dayrows tr > *:nth-child(12), table.dayrows tr > *:nth-child(14) { border-left:10px solid #f7f7f9; }
+table.dayrows tr.gbrow > th:nth-child(n+2) { border-left:10px solid #f7f7f9; }
 th, td { border:1px solid #ddd; padding:8px 12px; text-align:left; white-space:nowrap; }
 th.num, td.num { text-align:right; }
 /* the detail-page Metrics table: bold full-width group headers (Date / Files /
