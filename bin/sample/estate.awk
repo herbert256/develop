@@ -83,7 +83,7 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
         host = PHOST[oi]; spell = "dns"
         n = PNIPS[oi]; ips = ""
         for (i = 0; i < n; i++) ips = ips (i ? ";" : "") PBASE[oi] "." (POCT[oi] + i)
-        port = (site ~ /CREDITREG/) ? 21 : 22
+        port = (site ~ /CREDITREG|CD_QUOTES_STARK/) ? 21 : 22
         login = ""
     } else {                                                  # the partner connects IN
         host = ""; spell = "ip"
@@ -298,6 +298,7 @@ function build_acceptance() {
     addf(3, "IT",  "DISPATCH", "INITECH",  "",  1.5, 0.04, "driftcron")
     addf(3, "WA",  "TELEMATICS","MONARCH", "",  1.2, 0.25, "reason=tracking")
     addf(3, "CB",  "QUOTES",   "GEKKO",    "",  1.2, 0.25, "reason=unavailable")
+    addf(3, "CD",  "QUOTES",   "STARK",    "",  1.2, 0.25, "reason=ftpspull")
     addf(3, "IT",  "RECON",    "HOOLI",    "",  2, 0.05, "recover")
     # clean-poll greens (poll works, nothing to fetch — no transfers ever)
     addf(3, "FS",  "SAPBODS",  "PRIMATECH","_D", 0, 0, "greenpoll")

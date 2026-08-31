@@ -150,6 +150,7 @@ function s_reason_err(abs, sid, fn,   r) {
     else if (r == "stfs")        S(abs, "E", "TM", sid, "Error during transfer operation: /.stfs/objects/2c/" substr(CID, 1, 8) " not found")
     else if (r == "tracking")    S(abs, "E", "TM", sid, "Error during transfer operation: Could not find file tracking entry for transfer " CID)
     else if (r == "unavailable") S(abs, "E", "TM", sid, "Error during transfer operation: 550 File unavailable, not found or busy")
+    else if (r == "ftpspull")    S(abs, "E", "TM", sid, "Error during transfer operation: Pull via FTPS failed for transfer site '" srvsite() "': 425 Unable to build data connection")
     else if (r == "postaction")  S(abs, "E", "TM", sid, "Error during post client action execution: post client action failed for file " fn)
     else if (r == "network")     S(abs, "E", "TM", sid, "Network error: Connection reset")
     else if (HOST != "")         S(abs, "E", "TM", sid, "Connection failure while " srvsite() " tried to connect to remote host " HOST ":" PORT " as user " ACCT ": com.maverick.ssh.SshException: Connection timed out")

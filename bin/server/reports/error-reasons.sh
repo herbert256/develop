@@ -43,9 +43,13 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
     {
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
         m = $5
+        # the verbatim "Pull via FTPS failed" string is its own bucket
+        # (2026-08-31, user request) — before every other family, so a line
+        # carrying it never reads as a generic connection/transfer error
+        if (m ~ /Pull via FTPS failed/)                             b = "Pull via FTPS failed"
         # a "Connection failure while ..." carrying a negative PeSIT response
         # is a refusal by the internal cluster CFT, NOT an unreachable partner
-        if (m ~ /^Connection failure while / && m ~ /Received negative /) b = "PESIT: negative response (internal CFT)"
+        else if (m ~ /^Connection failure while / && m ~ /Received negative /) b = "PESIT: negative response (internal CFT)"
         else if (m ~ /^Connection failure while /)                  b = "Connection failure (partner unreachable)"
         else if (match(m, /reason=[A-Z_]+/))                        b = "PESIT: " substr(m, RSTART + 7, RLENGTH - 7)
         else if (m ~ /Received negative /)                          b = "PESIT: negative response"

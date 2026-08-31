@@ -17,6 +17,9 @@
 # not read "Connection failures".
 function flip_reason(msg,   m) {
     m = tolower(msg)
+    # the FTPS pull leg failing wholesale (2026-08-31, user request): the
+    # verbatim message string IS the verdict, so it outranks every other rule
+    if (m ~ /pull via ftps failed/) return "Pull via FTPS failed"
     if (m ~ /wrong server fingerprint|host key|fingerprint mismatch/) return "Wrong server fingerprint"
     if (m ~ /connection failure|could not be established|failed to connect|failed to create connection|connection refused|connection timed out|connection reset|unable to connect/) return "Connection failures"
     if (m ~ /receive file as/) return "Receive File As not set"
