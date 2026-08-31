@@ -82,6 +82,13 @@ for env in acceptance production; do
         input/logical.txt "data/$env/flow-manager/base/_logicals.tsv" 2>/dev/null || echo 0)
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] $n logical name(s) not 3-part and not pinned"
 
+    # the BL entity (subscriptions.json tags entries starting with BL): the
+    # subscription -> tag map is non-empty and the entity report has rows
+    n=$(rows "data/$env/flow-manager/xref/_subscriptions-bl.tsv")
+    check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] _subscriptions-bl.tsv is empty"
+    n=$(rpt_rows "data/$env/transfer/reports/bl.rpt")
+    check $([ "$n" -gt 0 ] && echo 0 || echo 1) "[$env] bl.rpt has 0 rows"
+
     # planted reports carry rows
     for rpt in expired waiting went-quiet duplicate-files; do
         n=$(rpt_rows "data/$env/transfer/reports/$rpt.rpt")

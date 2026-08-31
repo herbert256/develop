@@ -184,12 +184,16 @@ configured-vs-seen analyses from the transfer outputs + config caches (no parse 
 ### bin/flow-manager.sh — the pre-parse config step
 
 Extracts from `input/<env>/flow-manager/{partners,subscriptions}.json`: `data/<env>/flow-manager/base/`
-— the 10 entity lists (`name⇥direction⇥result`: `_accounts _logins _hosts _white _subscriptions
+— the 11 entity lists (`name⇥direction⇥result`: `_accounts _logins _hosts _white _subscriptions
 _profiles` + the derived `_logicals` (the FlowIDs condensed into logical flow groups,
-`input/logical.txt` pins honoured) and PDA `_partners _apps _domains`; result filled later by the
-two build steps) — and `data/<env>/flow-manager/xref/` — the pair caches: every pair of the ten
-items BOTH WAYS (90 files; unconfigured = empty — `_profiles-logicals` doubles as the FlowID →
-Logical MAP every report attributes a File’s profile column through), plus `_subscriptions-patterns`, `_subscriptions-flowdir`
+`input/logical.txt` pins honoured), PDA `_partners _apps _domains` and `_bl` (2026-08-31, user
+request: the subscriptions.json `tags` entries starting with `BL`, kept verbatim — a full entity,
+LAST in the Logical/Partners/Domains/Applications group everywhere it renders; a File belongs to
+a BL through its SUBSCRIPTION); result filled later by the
+two build steps) — and `data/<env>/flow-manager/xref/` — the pair caches: every pair of the eleven
+items BOTH WAYS (110 files; unconfigured = empty — `_profiles-logicals` doubles as the FlowID →
+Logical MAP every report attributes a File’s profile column through, `_subscriptions-bl` as the
+subscription → BL tag map), plus `_subscriptions-patterns`, `_subscriptions-flowdir`
 (out|in|relay), `_subscriptions-ucderived` (2026-08: the use case DERIVED for a non-UC-named
 subscription from flowdir × the pattern's one partner verb — out+pull=UC2, out+push=UC1,
 in+push=UC4, in+pull=UC3; both/neither verb = no row; consumers: the detail Features "Use case"
@@ -311,7 +315,7 @@ the full-range restore lands back on the baked numbers.
 
 **Persistence.** From/To persists per AREA (sessionStorage, `report-area` meta). Search and sort
 persist per REPORT (`report-key` meta = the report basename) — EXCEPT the Entities pages, whose
-sort is shared across the eight entities (localStorage, 1-hour sliding expiry). Default sort: a
+sort is shared across the nine entities (localStorage, 1-hour sliding expiry). Default sort: a
 first column holding dates opens DESCENDING (a page default — a stored user sort wins). URL
 overrides, each persisting like a user action: `?axway_sort=COL[:DIR]`, `?axway_search=` (kept in
 sync via `history.replaceState`; the EMPTY form CLEARS a remembered search — every link out of a
@@ -483,7 +487,7 @@ after-last-transfer rule, so expired PLUS a newer server-log Error/Warn is still
 Counting `_transfers.tsv` rows over-counts (~3x) and double-counts volume.
 **Count/volume/failure/timing reports read `$FILES`**; **per-row dimension reports read
 `$PARSED`** and count rows, their count column labelled **"Transfers"** ("Files" is reserved for
-per-CoreId counts). The eight ENTITIES reports share one Summary/Detail layout counting distinct
+per-CoreId counts). The nine ENTITIES reports share one Summary/Detail layout counting distinct
 CoreIds (`login.sh`/`subscription.sh`/`remote-host.sh` join `$PARSED`→`$FILES` deduped per
 `(entity,CoreId)` — per-entity counts can sum to more than the distinct total).
 
@@ -702,12 +706,12 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   "Error" and the two mood boxes are deliberately not reasons and a flow in several cause boxes
   takes the one its newest own Error/Warn line classifies to. The REASON is descriptive, not a
   verdict: the colour still never rests on a line attributed to no flow; Last file comes from `_files.tsv`.
-- **The Entities pages**: 8 entities x 10 views under `docs/<env>/transfer/entities/`, one shared
+- **The Entities pages**: 9 entities x 10 views under `docs/<env>/transfer/entities/`, one shared
   layout assembled at publish time from the entity `.rpt` + the coverage TSVs; the
   +Server/Transfer SCOPE decides whether a server-log sighting counts as seen; sort is shared
-  across the eight entities (localStorage, 1-hour sliding expiry, stored by column label).
+  across the nine entities (localStorage, 1-hour sliding expiry, stored by column label).
 - **The detail pages** (`details.sh` → `details_lib.sh`/`details_writer.awk`): one page per entity
-  of the eight types, every configured name gets one; slugs via the comprehensive `_slugmap.tsv`;
+  of the nine types, every configured name gets one; slugs via the comprehensive `_slugmap.tsv`;
   no From/To, no search box, no RECALC.
 - **The special pages**: Entity Search (rows ship as DATA in `search-data.js`; the Type cell is
   read by INDEX in report.js — adding a column means shifting it), the SIX File search pages

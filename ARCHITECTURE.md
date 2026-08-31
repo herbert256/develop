@@ -213,6 +213,17 @@ capacity) · **srv-routing** "Routing & Polling" (remote-poll · transfer-site-m
 
 `bin/flow-manager.sh` is the SINGLE OWNER; downstream only joins coverage data on.
 
+**BL** (2026-08-31, user request) is the group's FIFTH, LAST member — not PDA-derived: a BL
+entity is a `subscriptions.json` `tags` entry starting with `BL`, the tag text kept VERBATIM
+(`BL_FIN` stays `BL_FIN`). `xref/_subscriptions-bl.tsv` (subscription ⇥ tag, one row per BL tag
+of the subscription) is the map; `base/_bl.tsv` the entity list; the composed pair caches ride
+the SUBSCRIPTION spine (`_accounts-bl` … `_bl-white`, via xcompose). Attribution everywhere is
+`bl_union(col 12)` — a File counts for every BL tag of its subscription; direction/result roll
+up from the subscriptions like every derived member. Everywhere the group renders (Entities,
+details section 2.85, coverage, cross references, ranking, search, acc-vs-prod, the home table —
+retitled "Logical, Partners, Domains, Applications & BL") BL is added LAST; first-seen and
+data-diff deliberately exclude it (their set is the six classic+Logical types).
+
 **THE BASE IS THE LOGICAL ENTITY** (2026-08-30, user request — this replaced the account-NAME
 derivation wholesale). The Logical derivation (FlowID families condensed to three-part group
 names, `input/logical.txt` pins honoured) runs FIRST; the PDA pass consumes its map
@@ -450,18 +461,18 @@ Every status cell opens the **Transfer > Entities view whose row
 count IS that figure**, in the scope the "including server log" switch is in (ON = the bare
 `+Server` pages, OFF = `-transfer`); the Transfer column links `<e>-seen-transfer`, the Server
 column `<e>-server`; the percentage columns link too; a 0 renders as an empty cell (inert). The
-four Logical/PDA **Total** cells link the coverage cell pages
+five Logical/PDA/BL **Total** cells link the coverage cell pages
 `docs/<env>/coverage/<member>-configured.html` (written by `bin/analyses/reports/coverage.sh` +
 `render_coverage_pages`, help slug `coverage`). `check_status_consistency` verifies every figure
 against the tinted (`data-res`) row count of its target view. The "configured names actually SEEN"
-figure comes from `bin/analyses/reports/home.sh` → `home.rpt` (eight `SEEN⇥member⇥count` lines;
+figure comes from `bin/analyses/reports/home.sh` → `home.rpt` (nine `SEEN⇥member⇥count` lines;
 the derived Logical/PDA members re-run their both-ways merge over `coverage/<member>.tsv`), consumed by
 `_status_table` and `seen-in-server-log.sh` — why that report runs last.
 
 ## The Entities report pages
 
-Eight entity reports — subscription, logical, partner, account, login, remote-host, domain,
-application (group `account-login-site`, label "Entities") — each rendered as TEN pages under
+Nine entity reports — subscription, logical, partner, account, login, remote-host, domain,
+application, bl (group `account-login-site`, label "Entities") — each rendered as TEN pages under
 `docs/<env>/transfer/entities/` by `render_entity_report`: `<entity>-{all,ok,error,server}.html` +
 `<entity>-{seen,not-seen,warning}[-transfer].html`.
 
@@ -494,7 +505,7 @@ site-wide RESULT (`entity_res_block` — one definition, shared with tints and s
 not-seen names come from showseen's `coverage/*.tsv`, so Entities and Show Seen can never
 disagree. Every view carries `datereset`.
 
-**SORT is SHARED across the eight entities with a 1-hour sliding expiry** — the one localStorage
+**SORT is SHARED across the nine entities with a 1-hour sliding expiry** — the one localStorage
 in report.js (`entLoad`/`entSave`/`entTouch`/`entResolve`), stored by COLUMN LABEL, never index
 (column 0 = the sentinel `#name`); a label the view lacks leaves the entry intact and that page
 keeps its own default.
@@ -508,7 +519,7 @@ name match, case aside). Runs after `details.sh` (needs the slugmaps). No Logica
 ## Per-entity detail pages
 
 `details.sh` → `data/<env>/transfer/reports/details/<sub>/<slug>.rpt` →
-`docs/<env>/details/<sub>/…`, one page per entity of the eight types, counting Files; plus
+`docs/<env>/details/<sub>/…`, one page per entity of the nine types, counting Files; plus
 `details/incoming_connections/` and `details/partner-groups/`. **Every name from `base/` (except
 `_white.tsv`) gets a page, seen or not**, plus every logged entity.
 
@@ -782,8 +793,8 @@ row links inside it.
   exact; `p50`/`p90` nearest-rank over per-day histograms QUANTIZED TO THE humandur
   DISPLAY GRID, so the shown figure equals the exact one), retints via `data-thr`
   (`le:A:B`/`ge:A:B`), and restores the baked value and class at the full range.
-- **Cross References** — `cross-reference.sh` → 56 pages in `docs/<env>/analyses/xref/`: every
-  pair of the eight entities both ways, existence only (no counts/drills/date filter); rows =
+- **Cross References** — `cross-reference.sh` → 72 pages in `docs/<env>/analyses/xref/`: every
+  pair of the nine entities both ways, existence only (no counts/drills/date filter); rows =
   seen-together pairs + configured-never-seen (`@data:seen`); table `group`; each cell tinted by
   its own entity's RESULT; two full entity NAV rows (row 1 first entity, row 2 second).
 - **Seen in server log** — `transfer/seen-in-server-log.html` (+ `transfer/seenlog/` breakdowns),

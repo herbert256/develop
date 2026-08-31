@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Help: Logical — Cloud Reports</title>
+<title>Help: BL — Cloud Reports</title>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
@@ -11,11 +11,11 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Logical</h1>
+<h1>BL</h1>
 <h2>What this shows</h2>
-<p>One row per <strong>logical flow</strong> — the FlowID families of the configured subscriptions condensed to one three-part name: how many Files moved for it, how many failed vs. processed, the volume, and the first/last day it was active. A <strong>Summary</strong> tab lists every logical flow; a <strong>Detail</strong> tab breaks the same figures down per flow per day. Every name links its detail page.</p>
+<p>One row per <strong>BL</strong> — a <code>tags</code> entry of a configured subscription (in the FlowManager export) starting with <code>BL</code>, kept verbatim: how many Files moved for it, how many failed vs. processed, the volume, and the first/last day it was active. A <strong>Summary</strong> tab lists every BL tag; a <strong>Detail</strong> tab breaks the same figures down per tag per day. Every name links its detail page.</p>
 <h2>How it's computed</h2>
-<p>Every configured subscription carries a FlowID (the <code>customAttribute_FlowIdentifier</code> value). The derivation condenses those FlowIDs into logical flow groups: numbered variants and per-label branches of one flow fold into a single name, normalized to three <code>_</code>-separated parts — a <code>-</code> inside a part marks parts the normalization combined, which is why these names are never separator-folded. A fixed mapping in <code>input/logical.txt</code> wins verbatim over the derivation. A File counts for a logical flow through its FlowID attribution, unioned with its subscription&rsquo;s configured logical(s) — the same union rule the partner and application figures use.</p>
+<p>A subscription&rsquo;s <code>tags</code> entries starting with <code>BL</code> (the business-line markers) become BL entities, the tag text kept verbatim — a subscription can carry several, and a subscription without one contributes to no BL. A File belongs to a BL through its <strong>subscription</strong>: every BL tag of the File&rsquo;s subscription counts it — the same union rule the partner and application figures use, with the subscription as the spine.</p>
 <p>Both tabs support click-to-expand on an Error/OK cell for that outcome's 10 most recent Files.</p>
 <h2>The tab row: views and scope</h2>
 <p>The tab row carries three groups: the <strong>entity type</strong> (Subscriptions, Logical, Partners, Accounts, Logins, Hosts, Domains, Applications, BL), then the <strong>view</strong>, then the <strong>scope</strong>. Switching one keeps the other two, so you can walk from entity to entity without losing the view you were reading.</p>
