@@ -127,7 +127,13 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 #   A <TAB> stc <TAB> <sub cell> <TAB> files <TAB> ok <TAB> err <TAB> last-file
 #           <TAB> polls <TAB> empty <TAB> problems <TAB> last-log <TAB> loglines
 #   TOT <TAB> n0..n6 <TAB> files <TAB> ok <TAB> err <TAB> polls <TAB> problems
-agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v gpv="$GPOLL" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK"'
+# the DERIVED use case map (bin/flow-manager.sh): a subscription with no UC
+# name prefix whose pattern + movement say UC3 (the production hybrid flows)
+# is a UC3 flow here exactly like a UC3_-named one (2026-08-31 audit — the
+# roster read the name alone and silently dropped them)
+UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
+agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v gpv="$GPOLL" -v ucdf="$UCDF" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK"'
+    BEGIN { while ((getline ucl < ucdf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[2] == "UC3") ucd[toupper(uca[1])] = 1 } close(ucdf) }
     # the logged site -> the clean subscription name (as the transfer parser does)
     function clean(s) { sub(/_(SS?|C)CP_.*$/, "", s); return s }
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
@@ -148,8 +154,8 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v gpv="$GPOLL" -
     }
     FILENAME == rfv { if ($1 != "" && $2 != "") rfd[toupper($1)] = $2; next }   # red-flip sidecar: name -> evidence stamp
     FILENAME == gpv { if ($1 != "") gp9[toupper($1)] = 1; next }                # clean-poll greens
-    FILENAME == sb {                                         # the configured UC3 roster
-        if ($1 !~ /^UC3/ || $1 == "") next
+    FILENAME == sb {                                         # the configured UC3 roster (UC3-named or derived)
+        if ($1 == "" || ($1 !~ /^UC3/ && !(toupper($1) in ucd))) next
         u = toupper($1); res[u] = $3; nm[u] = $1; R[++nr] = u
         next
     }

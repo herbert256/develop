@@ -54,9 +54,14 @@ TSITE="$TRANSFER_REPORTS/subscription.rpt"
 # result.sh's clean-poll rule (2026-08) but still has no transfer data — it
 # belongs here all the same. The every-poll-empty rule below keeps a REAL
 # green (one that transferred: some poll found files) out of the list.
+# UC3-named OR derived-UC3 (xref/_subscriptions-ucderived.tsv): the production
+# hybrid flows carry no UC prefix (2026-08-31 audit)
+UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
 blue_uc3() {
     [ -f "$SUBB" ] || return 0
-    awk -F'\t' '$1 ~ /^UC3/ && ($3 == "blue" || $3 == "green") && $1 != "" { print "KB\t" toupper($1) }' "$SUBB"
+    awk -F'\t' -v ucdf="$UCDF" '
+        BEGIN { while ((getline l < ucdf) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[2] == "UC3") ucd[toupper(a[1])] = 1 } close(ucdf) }
+        ($1 ~ /^UC3/ || (toupper($1) in ucd)) && ($3 == "blue" || $3 == "green") && $1 != "" { print "KB\t" toupper($1) }' "$SUBB"
 }
 # sitelink(): the logged name resolves to its detail page — exact, else the
 # unique known subscription it prefixes, else the raw name (alink resolves

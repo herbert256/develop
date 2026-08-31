@@ -114,8 +114,12 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 #   DIR <TAB> count <TAB> subscription <TAB> account <TAB> path <TAB> buckets <TAB> first <TAB> last <TAB> loglines
 #   DAY <TAB> date <TAB> count <TAB> nsubs
 #   TOT <TAB> errors <TAB> nsubs <TAB> naccounts <TAB> npaths <TAB> ndays <TAB> resolved rows <TAB> resolved errors
-agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
-    BEGIN { rn_load(RNF) }
+# the DERIVED use case map: a production hybrid flow carries no UC prefix, so
+# the UC3 poll-recovery test must ask the config, not the name (2026-08-31 audit)
+UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
+agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
+    BEGIN { rn_load(RNF)
+            while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf) }
     BEGIN { US = sprintf("%c", 31) }                         # the lines/clines cell separator
     $1 == "KA" { kacct[$2] = 1; next }                       # known-account list       (first input)
     $1 == "KS" { ksite[$2] = 1; next }                       # known-subscription list  (first input)
@@ -184,7 +188,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
         # describe what the page shows.
         for (k in c) { split(k, a, SUBSEP)
             if (lsk[k] != "" && (a[1] in okmax) && okmax[a[1]] > lsk[k]) { nres++; nresf++; reserr += c[k]; continue }
-            if (lsk[k] != "" && a[1] ~ /^UC3/ && (a[1] in pollmax) && pollmax[a[1]] > lsk[k]) { nres++; nresp++; reserr += c[k]; continue }
+            if (lsk[k] != "" && (a[1] ~ /^UC3/ || (toupper(a[1]) in ucd3)) && (a[1] in pollmax) && pollmax[a[1]] > lsk[k]) { nres++; nresp++; reserr += c[k]; continue }
             keep[k] = 1; tot += c[k]
             sseen[a[1]] = 1; aseen[a[2]] = 1; pseen[a[3]] = 1
         }

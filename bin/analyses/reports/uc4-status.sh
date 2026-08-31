@@ -40,10 +40,13 @@
 # THE SIGNALS ARE ACCOUNT-KEYED, not subscription-keyed. A partner connects to an
 # ACCOUNT; the subscription name barely appears in the server log (only the PeSIT
 # sendFileConfirmation of the onward internal leg carries it). So the roster is
-# joined to xref/_accounts-subscriptions.tsv, which for UC4 is strictly 1:1 in
-# both directions — 142 accounts, 142 subscriptions, none shared, none missing —
-# so every line attributes to exactly one subscription. Should that ever stop
-# being 1:1, an account's lines would count for each of its UC4 subscriptions.
+# joined to xref/_accounts-subscriptions.tsv. In acceptance that is 1:1 for UC4
+# (142 accounts, 142 subscriptions); a hybrid PRODUCTION account serves several
+# UC4 flows, and an account-level line then counts for EACH of them (union
+# attribution, like partners — the logon and the refusal are facts about the
+# connection every one of those flows uses; 2026-08-31 audit: a last-row-wins
+# account -> subscription map had credited every line to one arbitrary flow and
+# left its siblings "never observed"). The STAT totals count each LINE once.
 #   logon      "[Ssh Default] User with login name '<x>', associated with
 #              account '<y>', successfully authenticated over …" — ONE line
 #              per successful SSH logon (2026-08; the *Allowed user* line is a
@@ -141,8 +144,8 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v 
         u = toupper($1); res[u] = $3; nm[u] = $1; R[++nr] = u
         next
     }
-    FILENAME == xf {                                         # account -> its UC4 subscription
-        if (($2 ~ /^UC4/ || (toupper($2) in ucd)) && (toupper($2) in res)) asub[$1] = toupper($2)
+    FILENAME == xf {                                         # account -> its UC4 subscription(s), ALL of them
+        if (($2 ~ /^UC4/ || (toupper($2) in ucd)) && (toupper($2) in res)) asub[$1] = asub[$1] SUBSEP toupper($2)
         next
     }
     FILENAME == tf {                                         # transfer Files, joined by prefix
@@ -170,20 +173,25 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v 
         else if (m ~ /Disallowed user/) sig = "prob"
         else next
         a = acctof(m); if (a == "" || !(a in asub)) next
-        k = asub[a]
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
-        if (d != "" && d > llg[k]) llg[k] = d
-        if (sig == "logon") logon[k]++; else if (sig == "arr") arr[k]++; else prob[k]++
-        if (d != "" && $2 ~ /^[0-9][0-9]:/) {                # per-HOUR signals
-            hs = jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 24 + int(substr($2,1,2))
-            span(hs); hk = k SUBSEP hs
-            if (sig == "logon") slog[hk] = 1
-            else if (sig == "arr") sarr[hk] = 1
-            else sprob[hk] = 1
+        # the STAT totals count the line ONCE; the per-flow columns credit
+        # every UC4 flow of the account (see the header)
+        if (sig == "logon") tlgL++; else if (sig == "arr") tarL++; else tprL++
+        nk9 = split(substr(asub[a], 2), KS9, SUBSEP)
+        for (i9 = 1; i9 <= nk9; i9++) { k = KS9[i9]
+            if (d != "" && d > llg[k]) llg[k] = d
+            if (sig == "logon") logon[k]++; else if (sig == "arr") arr[k]++; else prob[k]++
+            if (d != "" && $2 ~ /^[0-9][0-9]:/) {                # per-HOUR signals
+                hs = jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 24 + int(substr($2,1,2))
+                span(hs); hk = k SUBSEP hs
+                if (sig == "logon") slog[hk] = 1
+                else if (sig == "arr") sarr[hk] = 1
+                else sprob[hk] = 1
+            }
+            # the drill carries the lines that DECIDE the status: refusals on their
+            # own key, so a refused row is not crowded out by routine logons
+            addline((sig == "prob" ? "E" : "L") SUBSEP k, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
         }
-        # the drill carries the lines that DECIDE the status: refusals on their
-        # own key, so a refused row is not crowded out by routine logons
-        addline((sig == "prob" ? "E" : "L") SUBSEP k, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
     }
     END {
         # statuses, worst first — the row sort is on this number
@@ -207,7 +215,7 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v 
             else                   stc = 6
             n[stc]++
             tf_ += files[k]+0; tok += ok[k]+0; ter += err[k]+0
-            tlg += logon[k]+0; tar += arr[k]+0; tpr += prob[k]+0
+            tlg = tlgL + 0; tar = tarL + 0; tpr = tprL + 0   # per LINE, not per credited flow
             dl = (stc == 2) ? lastlines("E" SUBSEP k) : lastlines("L" SUBSEP k)
             printf "A\t%d\t%s%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%s\t%s\n", stc, sublink(nm[k]), nm[k], \
                 files[k]+0, ok[k]+0, err[k]+0, (k in lfd ? lfd[k] : "-"), \

@@ -74,6 +74,9 @@ SH="$CONFIG_XREF/_subscriptions-hosts.tsv"
 SUBRES="$CONFIG_BASE/_subscriptions.tsv"
 EVID="$REPORTS_DIR/_kaput-evidence.tsv"
 IPH="$ROOT/input/$AXWAY_ENV/ip/ip-hosts.tsv"
+# the DERIVED use case map: a production hybrid flow carries no UC prefix, so
+# "is this a UC3" must ask the config, not the name (2026-08-31 audit)
+UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -108,10 +111,13 @@ trap 'rm -f "$rowfile" "$lastokf" "$pollf"' EXIT
 # MENTION caches (the same scan result.sh's POLLCAND uses; the _err_warn ring
 # is the ERROR ring, not the mention cache).
 {
+    # UC3-named OR derived-UC3 flows (see UCDF)
     if [ -d "$CACHE_DIR/subscriptions" ]; then
-        for _pf in "$CACHE_DIR/subscriptions"/UC3*.tsv; do
+        { awk -F'\t' '$1 ~ /^UC3/ { print $1 }' "$SUBRES"
+          awk -F'\t' '$2 == "UC3" { print $1 }' "$UCDF"
+          :; } 2>/dev/null | LC_ALL=C sort -u | while IFS= read -r _n; do
+            _pf="$CACHE_DIR/subscriptions/$_n.tsv"
             [ -f "$_pf" ] || continue
-            case $_pf in *_err_warn.tsv) continue ;; esac
             awk -F'\t' -v n="$(basename "$_pf" .tsv)" '
                 $5 ~ /Applying the search pattern/ && $5 ~ /for transfer site/ && $5 ~ /file\(s\)/ { t = $1 " " $2; if (t > p) p = t }
                 END { if (p != "") printf "%s\t%s\n", n, p }
@@ -158,7 +164,8 @@ mapargs+=("$lastokf")
 [ -f "$SH" ] && mapargs+=("$SH")
 [ -f "$IPH" ] && mapargs+=("$IPH")
 
-totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v rowfile="$rowfile" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" "$LOGLINES_AWK"'
+totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v rowfile="$rowfile" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" -v ucdf="$UCDF" "$LOGLINES_AWK"'
+    BEGIN { while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf) }
     function srcof(f) { return (f ~ /\/subscriptions\//) ? "Subscription" : (f ~ /\/accounts\//) ? "Account" : (f ~ /\/hosts\//) ? "Host" : "Login" }
     # the subscriptions this host ring speaks for: every single-host flow whose
     # host is this endpoint, or an endpoint this ADDRESS forwards to (hmap is
@@ -228,7 +235,7 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
             # means the flow has verified itself working since — the same
             # >= comparison result.sh trusts to keep a would-be-red UC3 green.
             # Red flows keep their evidence unconditionally (the home Reason).
-            if (ne[s] > 0 && col[toupper(s)] == "green" && toupper(s) ~ /^UC3/ \
+            if (ne[s] > 0 && col[toupper(s)] == "green" && (toupper(s) ~ /^UC3/ || (toupper(s) in ucd3)) \
                 && (toupper(s) in pol) && pol[toupper(s)] >= ldtE[s]) { npoll++; continue }
             ss = ""
             for (j = 1; j <= 4; j++) if (has[s, ord[j]]) ss = ss (ss == "" ? "" : ", ") ord[j]

@@ -86,10 +86,16 @@ POLLCAND="$BLUEDIR/_greenpoll.cand"   # candidates; stage 1 writes the final lis
 REDFLIP="$BLUEDIR/_redflip.tsv"
 mkdir -p "$BLUEDIR"
 {
+    # every UC3 flow: UC3-NAMED or DERIVED (xref/_subscriptions-ucderived.tsv;
+    # the production hybrid flows carry no UC prefix — 2026-08-31 audit: a
+    # UC3*.tsv glob built no candidate for them, so a cleanly polling hybrid
+    # pull flow could neither be kept green nor flip blue -> green)
     if [ -d "$SUBMENT" ]; then
-        for _pf in "$SUBMENT"/UC3*.tsv; do
+        { awk -F'\t' '$1 ~ /^UC3/ { print $1 }' "$BASE/_subscriptions.tsv"
+          [ -f "$XREF/_subscriptions-ucderived.tsv" ] && awk -F'\t' '$2 == "UC3" { print $1 }' "$XREF/_subscriptions-ucderived.tsv"
+          :; } 2>/dev/null | LC_ALL=C sort -u | while IFS= read -r _n; do
+            _pf="$SUBMENT/$_n.tsv"
             [ -f "$_pf" ] || continue
-            case $_pf in *_err_warn.tsv) continue ;; esac   # the per-name Error/Warn RING file, not a subscription's mention cache
             awk -F'\t' -v n="$(basename "$_pf" .tsv)" '
                 $5 ~ /Applying the search pattern/ && $5 ~ /for transfer site/ && $5 ~ /file\(s\)/ { t = $1 " " $2; if (t > p) p = t }
                 $3 == "E" { t = $1 " " $2; if (t > e) e = t }
@@ -198,12 +204,35 @@ _build_ringattr() {
         return 0
     fi
     tmp=$(mktemp "${TMPDIR:-/tmp}/axrattr.XXXXXX")
+    # subname(msg): the configured subscription a server-log line NAMES —
+    # every name-shaped token tried, tail-stripped and rename-folded, against
+    # the roster (base/_subscriptions.tsv, case-folded) — else the first
+    # UC-shaped token (the pre-2026-08-31 rule, kept so a line naming a
+    # decommissioned flow still attributes to that name instead of becoming
+    # an orphan of its ring), else "". The former UC[0-9]+ regex could not
+    # attribute a line to a production hybrid flow at all (no UC prefix), so
+    # on that estate the precise channel abstained and the wholesale
+    # went-kaput join decided the colour.
+    local SUBNAME_AWK='
+        function ros_load(f,   l9, a9) { while ((getline l9 < f) > 0) { split(l9, a9, "\t"); if (a9[1] != "") ROS[toupper(a9[1])] = a9[1] } close(f) }
+        function subname(msg,   m, t, u, uc) {
+            m = msg; uc = ""
+            while (match(m, /[A-Za-z][A-Za-z0-9_-]*[_-][A-Za-z0-9_-]+/)) {
+                t = substr(m, RSTART, RLENGTH); m = substr(m, RSTART + RLENGTH)
+                sub(/_(SS?|C)CP_.*$/, "", t)
+                t = rn_canon_pfx(t); u = toupper(t)
+                if (u in ROS) return ROS[u]
+                if (uc == "" && t ~ /^UC[0-9]+[_-]/) uc = t
+            }
+            return uc
+        }
+    '
     # pass 1: the message names it. Emits N (named), S (session to resolve) or
     # X (neither — SSHD/PESITD records carry no session at all): tag, stamp,
     # subscription-or-session, level, ring kind, ring name. A forward-address
     # ring belongs to its ENDPOINT (ip-hosts.tsv), so its residue lands there.
-    awk -F'\t' -v RNF="$RENAMES_FILE" -v IPH="$IPH_P" "$RENAMES_AWK"'
-        BEGIN { rn_load(RNF)
+    awk -F'\t' -v RNF="$RENAMES_FILE" -v IPH="$IPH_P" -v SUBB="$BASE/_subscriptions.tsv" "$RENAMES_AWK$SUBNAME_AWK"'
+        BEGIN { rn_load(RNF); ros_load(SUBB)
                 while ((getline l < IPH) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") ipm[a[1]] = tolower(a[2]) }
                 close(IPH) }
         FNR == 1 { nm = FILENAME; sub(/_err_warn\.tsv$/, "", nm)
@@ -211,9 +240,8 @@ _build_ringattr() {
                    sub(/.*\//, "", nm)
                    if (kind == "hosts" && (nm in ipm)) nm = ipm[nm] }
         { st = $1 " " $2
-          if (match($5, /UC[0-9]+[_-][A-Za-z0-9_-]+/)) {
-              t = substr($5, RSTART, RLENGTH); sub(/_(SS?|C)CP_.*$/, "", t)
-              print "N\t" st "\t" rn_canon_pfx(t) "\t" $3 "\t" kind "\t" nm; next }
+          sn = subname($5)
+          if (sn != "") { print "N\t" st "\t" sn "\t" $3 "\t" kind "\t" nm; next }
           if ($6 != "") { print "S\t" st "\t" $6 "\t" $3 "\t" kind "\t" nm; next }
           print "X\t" st "\t-\t" $3 "\t" kind "\t" nm }
     ' "${rings[@]}" > "$tmp.raw"
@@ -222,10 +250,10 @@ _build_ringattr() {
         awk -F'\t' '$1 == "S" { print $3 }' "$tmp.raw" | LC_ALL=C sort -u > "$tmp.sess"
         # pass 2: ONE pass over the parse cache for those sessions only
         if [ -f "$SRVC/_parse.tsv" ]; then
-            awk -F'\t' -v SF="$tmp.sess" -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
-                BEGIN { while ((getline l < SF) > 0) S[l] = 1; close(SF); rn_load(RNF) }
-                ($6 in S) && match($5, /UC[0-9]+[_-][A-Za-z0-9_-]+/) {
-                    t = substr($5, RSTART, RLENGTH); sub(/_(SS?|C)CP_.*$/, "", t); t = rn_canon_pfx(t)
+            awk -F'\t' -v SF="$tmp.sess" -v RNF="$RENAMES_FILE" -v SUBB="$BASE/_subscriptions.tsv" "$RENAMES_AWK$SUBNAME_AWK"'
+                BEGIN { while ((getline l < SF) > 0) S[l] = 1; close(SF); rn_load(RNF); ros_load(SUBB) }
+                ($6 in S) {
+                    t = subname($5); if (t == "") next
                     if (!(($6) in got)) { got[$6] = t; print $6 "\t" t }
                     else if (got[$6] != t) got[$6] = "\001" }   # a session naming two flows resolves to neither
                 END { for (k in got) if (got[k] == "\001") print k "\t\001" }

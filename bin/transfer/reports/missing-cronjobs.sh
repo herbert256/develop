@@ -43,7 +43,11 @@ if [ ! -f "$SUBJSON" ] || ! command -v jq >/dev/null 2>&1; then
     rm -f "$OUT"          # no config for this ENV — page not published
     exit 0
 fi
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SUBJSON" "$SCRIPT_DIR/../../uc-cases.sh"
+# the DERIVED use case map (bin/flow-manager.sh): a production hybrid flow
+# carries no UC prefix, so the name test alone made this page a false
+# all-clear for exactly the flows it exists to catch (2026-08-31 audit)
+UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
+skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SUBJSON" "$SCRIPT_DIR/../../uc-cases.sh" "$UCDF"
 
 # the cron-triggered use cases, from the one place that defines them
 cron_ucs=""
@@ -57,13 +61,15 @@ if [ -z "$cron_ucs" ]; then
 fi
 uclist=$(printf '%s' "$cron_ucs" | sed 's/|/, /g')
 
-# A subscription of a cron use case with NO parameter whose name contains "cron"
-# holding a non-empty value. Name-sorted, case-insensitively.
-rows=$(jq -r --arg re "^($cron_ucs)_" '
-        .[] | select(.name | test($re))
+# A subscription of a cron use case — UC-NAMED, or DERIVED as one (the
+# name -> use case object below, cron use cases only) — with NO parameter whose
+# name contains "cron" holding a non-empty value. Name-sorted, case-insensitively.
+ucd_json=$(awk -F'\t' -v re="^($cron_ucs)\$" 'BEGIN { printf "{" } $2 ~ re && $1 != "" { printf "%s\"%s\":\"%s\"", (n++ ? "," : ""), $1, $2 } END { printf "}" }' "$UCDF")
+rows=$(jq -r --arg re "^($cron_ucs)_" --argjson ucd "$ucd_json" '
+        .[] | select((.name | test($re)) or ($ucd[.name] != null))
         | select([.parameters // {} | to_entries[]
                   | select(.key | test("cron")) | select(.value != null and .value != "")] | length == 0)
-        | [ .name, (.name | capture("^(?<uc>UC[0-9]+)").uc) ] | @tsv
+        | [ .name, (if (.name | test($re)) then (.name | capture("^(?<uc>UC[0-9]+)").uc) else $ucd[.name] end) ] | @tsv
       ' "$SUBJSON" | LC_ALL=C sort -f)
 nmiss=$(printf '%s\n' "$rows" | grep -c . || true)
 

@@ -444,7 +444,12 @@ _asf="$CONFIG_XREF/_accounts-subscriptions.tsv"; [ -f "$_asf" ] || _asf=/dev/nul
 _saf="$CONFIG_XREF/_subscriptions-accounts.tsv"; [ -f "$_saf" ] || _saf=/dev/null
 _lsf="$CONFIG_XREF/_logins-subscriptions.tsv";   [ -f "$_lsf" ] || _lsf=/dev/null
 _bsf="$CONFIG_BASE/_subscriptions.tsv";          [ -f "$_bsf" ] || _bsf=/dev/null
-awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_lsf" -v PF="$_pdir/twins-pairs" '
+# the DERIVED use case map: a production hybrid flow carries no UC prefix, so
+# side()/the rule letters read the config where the name says nothing
+# (2026-08-31 audit — no hybrid flow could earn a twin at all)
+_ucf="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$_ucf" ] || _ucf=/dev/null
+awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_lsf" -v UCF="$_ucf" -v PF="$_pdir/twins-pairs" '
+    FILENAME == UCF { if ($1 != "" && $2 != "") UCD[toupper($1)] = $2; next }   # subscription -> derived use case
     FILENAME == TWF { i = index($0, "\t")                    # account -> twin account(s)
                       if (i > 1) TWA[substr($0, 1, i - 1)] = substr($0, i + 1); next }
     FILENAME == ASF { NSUB[$1]++; SUB1[$1] = $2                # account -> #subs, and the last one
@@ -462,13 +467,14 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_ls
     function addtwin(a, b, r) { if (a == "" || b == "" || a == b) return
                                 if (!((a, b) in SEEN)) { SEEN[a, b] = 1; T[a] = T[a] (T[a] == "" ? "" : "\037") b }
                                 if (index(RT[a, b], r) == 0) RT[a, b] = RT[a, b] r }
-    function side(n,   u) { if (!match(n, /^UC[0-9]+[-_]/)) return ""
-                            # ([-_]: the synthetic monitor spells its prefixes
-                            # with a dash — 2026-08, so its pairs earn rule B
-                            # like everything else)
-                            u = substr(n, 3, RLENGTH - 3) + 0
-                            if (u == 1 || u == 2) return "out"
-                            if (u == 3 || u == 4) return "in"
+    # the use case of a subscription: its UC name prefix ([-_] after the
+    # digits: the synthetic monitor spells its prefixes with a dash — 2026-08,
+    # so its pairs earn rule B like everything else), else the DERIVED one
+    function ucof(n,   u) { if (match(n, /^UC[0-9]+[-_]/)) return substr(n, 1, RLENGTH - 1)
+                            u = toupper(n); return (u in UCD) ? UCD[u] : "" }
+    function side(n,   u) { u = ucof(n)
+                            if (u == "UC1" || u == "UC2") return "out"
+                            if (u == "UC3" || u == "UC4") return "in"
                             return "" }
     function body(n) { sub(/^UC[0-9]+[-_]/, "", n); gsub(/-/, "_", n); return toupper(n) }   # [-_]: the monitor names spell the prefix with a dash
     END {
@@ -500,12 +506,15 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_ls
         # (2026-08-30; was the shared account) — walked in LSF FILE order
         # (LORD), never hash order, so a multi-flow login accumulates its
         # twins deterministically
+        # ... and ONLY as the login'\''s exact UC2+UC4 pair (2026-08-31 audit):
+        # a shared production login carrying several of each is not a
+        # mailbox pair, and the unguarded cross product asserted every
+        # UC2 x UC4 combination as "the same flow configured the opposite way"
         for (li = 1; li <= nlord; li++) {
             n = split(LSUB[LORD[li]], V, "\037")
-            for (i = 1; i <= n; i++) for (j = 1; j <= n; j++) {
-                if (i == j) continue
-                if (V[i] ~ /^UC2/ && V[j] ~ /^UC4/) { addtwin(V[i], V[j], "C"); addtwin(V[j], V[i], "C") }
-            }
+            n2 = 0; n4 = 0; i2 = 0; i4 = 0
+            for (i = 1; i <= n; i++) { u = ucof(V[i]); if (u == "UC2") { n2++; i2 = i } else if (u == "UC4") { n4++; i4 = i } }
+            if (n2 == 1 && n4 == 1) { addtwin(V[i2], V[i4], "C"); addtwin(V[i4], V[i2], "C") }
         }
         # the outbound mirror keeps the ACCOUNT join (UC1/UC3 carry no
         # login): ONLY as the account'\''s exact UC1+UC3 pair
@@ -514,7 +523,7 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_ls
             if (n != 2) continue
             for (i = 1; i <= n; i++) for (j = 1; j <= n; j++) {
                 if (i == j) continue
-                if (V[i] ~ /^UC1/ && V[j] ~ /^UC3/) { addtwin(V[i], V[j], "C"); addtwin(V[j], V[i], "C") }
+                if (ucof(V[i]) == "UC1" && ucof(V[j]) == "UC3") { addtwin(V[i], V[j], "C"); addtwin(V[j], V[i], "C") }
             }
         }
         for (s in T) print s, T[s]
@@ -522,7 +531,7 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_ls
         # map below (hash order here — the shell sorts)
         for (k in SEEN) { split(k, P2, SUBSEP); print "P", P2[1], P2[2], RT[P2[1], P2[2]] > PF }
         close(PF)
-    }' "$_twf" "$_asf" "$_saf" "$_lsf" "$_bsf" \
+    }' "$_ucf" "$_twf" "$_asf" "$_saf" "$_lsf" "$_bsf" \
   | LC_ALL=C sort > "$_pdir/twins-site"
 
 # ---- persist the twin PAIR maps (the Twins analysis reads them) --------------

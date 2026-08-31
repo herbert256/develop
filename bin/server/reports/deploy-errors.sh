@@ -70,6 +70,9 @@ FILES_TSV="$TRANSFER_CACHE/_files.tsv"
 [ -f "$FILES_TSV" ] || FILES_TSV=/dev/null
 PROFSUB="$CONFIG_XREF/_profiles-subscriptions.tsv"
 [ -f "$PROFSUB" ] || PROFSUB=/dev/null
+# the DERIVED use case map: a production hybrid flow carries no UC prefix, so
+# the UC3 poll-recovery clear must ask the config, not the name (2026-08-31 audit)
+UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
 # The transfer cache is a cross-area DEP: the "recovered since" test reads it,
 # so a transfer reparse has to re-trigger this report. The profile map is a
 # config dep: a re-derived xref changes which flow a message names.
@@ -81,8 +84,9 @@ TMP=$(mktemp -d "${TMPDIR:-/tmp}/axdep.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 
 # tuple: sortkey \t name \t messages \t last-message \t kind
-LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" "$RENAMES_AWK"'
-    BEGIN { rn_load(RNF, RNP) }
+LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v ucdf="$UCDF" "$RENAMES_AWK"'
+    BEGIN { rn_load(RNF, RNP)
+            while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf) }
     # "[A] [B]" -> the naming entity; sets ACC as a side effect.
     function ent(m,   p1, q1, a, rest, p2, q2, s) {
         p1 = index(m, "[");             if (!p1) return ""
@@ -181,7 +185,7 @@ LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v RN
             # the flow works again, files or no files — same tail-strip as the
             # poll side so the two name forms meet
             us = u; sub(/_(SS?|C)CP_.*$/, "", us)
-            if (KIND[u] == "Subscription" && substr(us, 1, 3) == "UC3" && (us in PMAX) && PMAX[us] > LASTK[u]) { cleared++; continue }
+            if (KIND[u] == "Subscription" && (substr(us, 1, 3) == "UC3" || (us in ucd3)) && (us in PMAX) && PMAX[us] > LASTK[u]) { cleared++; continue }
             cz = ((u in CRT) && (u in CFA)) ? "Route stopped + Receive File As" \
                  : ((u in CFA) ? "Receive File As not set" : "Route stopped")
             printf "%s\t%s\t%d\t%s\t%s\t%s\n", LASTK[u], DISP[u], N[u], LASTD[u], KIND[u], cz

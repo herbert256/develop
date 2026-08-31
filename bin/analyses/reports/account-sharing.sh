@@ -44,8 +44,14 @@ GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 # fixes the display order); accounts walked in xref FILE order into an
 # ordered roster, the final sort is kind, then subscription count desc
 # (inverted 3-digit key), then name.
-awk -F'\t' '
-    function ucof(s) { if (match(s, /^UC[0-9]+/)) return substr(s, 1, RLENGTH); return "other" }
+# the DERIVED use case map (bin/flow-manager.sh): a production hybrid flow
+# carries no UC prefix — read from the name alone, the estate's largest
+# shared account (eight derived-UC2 flows) landed in "Ungrouped flows" with
+# every UC column 0 (2026-08-31 audit)
+UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
+awk -F'\t' -v UCDF="$UCDF" '
+    function ucof(s) { if (match(s, /^UC[0-9]+/)) return substr(s, 1, RLENGTH); if (toupper(s) in UCD) return UCD[toupper(s)]; return "other" }
+    BEGIN { while ((getline l9 < UCDF) > 0) { split(l9, a9, "\t"); if (a9[1] != "" && a9[2] != "") UCD[toupper(a9[1])] = a9[2] } close(UCDF) }
     {
         if (ASUB[$1] == "") AORD[++na] = $1                  # emptiness test, not membership (mawk)
         ASUB[$1] = (ASUB[$1] == "" ? "" : ASUB[$1] "\037") $2
@@ -92,7 +98,7 @@ n_both=$(awk -F'\t' '$4 == "Both directions" { n++ } END { print n+0 }' "$OUT.ro
 {
     printf 'TITLE\tAccount sharing\n'
     printf 'DESC\tWhich accounts serve more than one subscription, and in what shape: the UC2+UC4 mailbox pair (one partner connection, drop + pickup), the UC1+UC3 outbound pair, outbound fan-outs — and the accounts mixing both directions.\n'
-    printf 'INTRO\tAn account is a partner relation, and one relation often carries **several flows**. The shapes are few: a **Mailbox pair** (exactly UC2 + UC4) is the partner'\''s inbound mailbox — ONE connection used to drop and pick up, which is why those pages carry the shared-connection notes; an **Outbound pair** (exactly UC1 + UC3) is the outbound mirror — we push to and poll the same partner; an **Outbound fan-out** runs several UC1/UC3 flows over one relation. **Both directions** on one account does not occur for real partners — the synthetic ST monitor account is the exception by design. Inbound sharing beyond the pair (two UC2s, two UC4s) does not occur at all.\n'
+    printf 'INTRO\tAn account is a partner relation, and one relation often carries **several flows**. The shapes are few: a **Mailbox pair** (exactly UC2 + UC4) is the partner'\''s inbound mailbox — ONE connection used to drop and pick up, which is why those pages carry the shared-connection notes; an **Outbound pair** (exactly UC1 + UC3) is the outbound mirror — we push to and poll the same partner; an **Outbound fan-out** runs several UC1/UC3 flows over one relation. **Both directions** on one account is rare for real partners — the synthetic ST monitor account has it by design. Inbound sharing beyond the pair (two UC2s, two UC4s) is the **Inbound (irregular)** kind: the hybrid production accounts, where one partner relation carries several flows.\n'
     printf 'STAT\twhite\t%s\tAccounts with subscriptions\n' "$n_total"
     printf 'STAT\twhite\t%s\tSingle subscription\n' "$n_single"
     printf 'STAT\twhite\t%s\tShared\n' "$n_shared"
@@ -106,7 +112,7 @@ n_both=$(awk -F'\t' '$4 == "Both directions" { n++ } END { print n+0 }' "$OUT.ro
     awk -F'\t' '{ printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", $3, $4, $5, $6, $7, $8, $9, $10, $11 }' "$OUT.rows"
     awk -F'\t' '{ n++; s1+=$5; s2+=$6; s3+=$7; s4+=$8; so+=$9; st+=$10 }
         END { printf "TOTAL\tTotal (%d account(s))\t\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t\n", n+0, s1+0, s2+0, s3+0, s4+0, so+0, st+0 }' "$OUT.rows"
-    printf 'NOTE\tThe kind reads the subscription NAMES'\'' UC prefix (UC1/UC3 = we connect out, UC2/UC4 = the partner connects in). Rows are ordered by kind, then by size. Single-subscription accounts (the majority) are counted in the boxes above but not listed. The login rides the account 1-to-1, so "same account" and "same FE login" describe the same sharing.\n'
+    printf 'NOTE\tThe kind reads the subscription NAMES'\'' UC prefix (UC1/UC3 = we connect out, UC2/UC4 = the partner connects in), or the use case DERIVED from the configuration for a flow without one (the hybrid production flows). Rows are ordered by kind, then by size. Single-subscription accounts (the majority) are counted in the boxes above but not listed. A login usually rides its account 1-to-1, so "same account" and "same FE login" describe the same sharing; a hybrid production account shares its one login across all its flows.\n'
     printf 'KEYWORDS\taccount,sharing,shared,mailbox,uc2,uc4,uc1,uc3,pair,fan-out,both directions,relation\n'
     printf 'FOOT\tGenerated on %s\n' "$GENDATE"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

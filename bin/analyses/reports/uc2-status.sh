@@ -42,9 +42,14 @@
 #
 # Reads data/_parse.tsv + the transfer _files.tsv cache; writes
 # data/uc2-status.rpt. The subscription cell links to its detail page.
-# The flow is KEYED by account (that is the token the server lines carry) but
-# the account is not a COLUMN: one account owns one UC2 subscription here, so
-# the name would only repeat what the subscription already says.
+# The server signals are KEYED by account (that is the token the server lines
+# carry); the ROWS are the (account, UC2 subscription) PAIRS — one per flow
+# (2026-08-31 audit: it was one row per ACCOUNT labelled with its
+# alphabetically-first UC2 flow, so a hybrid production account with eight
+# UC2 flows showed one, and a broken flow hid behind a healthy sibling). The
+# staged / collected / expired signals are this flow's own from the transfer
+# cache; the pickup-attempt (logon) figures are the account's, shared by its
+# flows — the partner logs on to the account. The account is not a column.
 #
 # Usage:
 #   ./uc2-status.sh
@@ -156,21 +161,26 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         return "Rarely"
     }
     FILENAME == xf {                                         # account -> its UC2 (collect-from-us) subscription
-        if ($2 ~ /^UC2/ || (toupper($2) in ucd)) { if (!($1 in pickupacct)) A[++na] = $1   # ordered roster for the sidecar walk
-                           pickupacct[$1] = 1; if (!($1 in uc2sub) || $2 < uc2sub[$1]) uc2sub[$1] = $2
-                           pr[++npr] = $1 SUBSEP $2; u2s[toupper($2)] = 1 }          # every (account, UC2 sub) pair, ordered
+        if ($2 ~ /^UC2/ || (toupper($2) in ucd)) { if (!($1 in pickupacct)) A[++na] = $1   # ordered roster for the visit classification
+                           pickupacct[$1] = 1
+                           pr[++npr] = $1 SUBSEP $2; u2s[toupper($2)] = 1 }          # every (account, UC2 sub) pair, ordered — the ROW roster
         next
     }
     FILENAME == tf {                                         # transfer _files.tsv: staged pickup files
         if ($12 != "" && $17 == "out") {                     # dest_site set, file movement OUT (collect from us)
-            a = $3; s = $12; d = $4
-            subc[a SUBSEP s]++                               # per (account, subscription) staged count
-            if ($2 == "Processed") { prc[a SUBSEP s]++; pco[$1] = 1 }   # collected (the page'\''s OK figure); CoreId feeds the collect-stamp filter
-            else if ($2 == "Waiting") wtg[a SUBSEP s]++      # staged, still waiting for pickup
-            else if ($2 == "Expired") xpd[a SUBSEP s]++      # expired uncollected (the retention sweep)
+            a = $3; s = $12; d = $4; ps = a SUBSEP s
+            subc[ps]++                                       # per (account, subscription) staged count
+            if ($2 == "Processed") { prc[ps]++; pco[$1] = 1 }   # collected (the page'\''s OK figure); CoreId feeds the collect-stamp filter
+            else if ($2 == "Waiting") wtg[ps]++              # staged, still waiting for pickup
+            else if ($2 == "Expired") { xpd[ps]++; xany[a] = 1   # expired uncollected (the retention sweep) — THIS flow'\''s own
+                # col 22 = the deletion stamp: the hour this flow'\''s expiry
+                # signal appears in the per-hour sidecar
+                if ($22 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:/) {
+                    hx = jdn(substr($22,1,4)+0, substr($22,6,2)+0, substr($22,9,2)+0) * 24 + int(substr($22,12,2)); span(hx); hexs[ps SUBSEP hx] = 1 } }
             stagedany[a] = 1                                 # this account staged >=1 pickup file
-            if (d != "") { if (!(a in afst)||d<afst[a]) afst[a]=d; if (!(a in alst)||d>alst[a]) alst[a]=d }
-            if ($5 ~ /^[0-9][0-9]:/) { hs = $7 * 24 + int(substr($5, 1, 2)); span(hs); hst[a SUBSEP hs] = 1 }
+            if (d != "") { if (!(a in afst)||d<afst[a]) afst[a]=d; if (!(a in alst)||d>alst[a]) alst[a]=d
+                           if (!(ps in sfst)||d<sfst[ps]) sfst[ps]=d; if (!(ps in slst)||d>slst[ps]) slst[ps]=d }
+            if ($5 ~ /^[0-9][0-9]:/) { hs = $7 * 24 + int(substr($5, 1, 2)); span(hs); hst[a SUBSEP hs] = 1; hsts[ps SUBSEP hs] = 1 }
         }
         next
     }
@@ -260,6 +270,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         for (cid in ccm) {
             su = csu[cid]; cm = ccm[cid]
             cmn[su SUBSEP cm] = 1
+            h9 = int(cm / 60); span(h9); hcs[su SUBSEP h9] = 1   # this flow'\''s collect HOURS (the per-hour sidecar)
             if (!(su in cm0) || cm < cm0[su]) cm0[su] = cm
             if (!(su in cm1) || cm > cm1[su]) cm1[su] = cm
         }
@@ -368,37 +379,47 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             }
         }
         nnever=0; nnofiles=0; ncoll=0; nok=0; nnothing=0; tef=0; tefn=0; tpk=0
-        # One pass over the UC2 (collect-from-us) accounts — a COMPLETE partition
-        # from the signals expired(e) / attempted(p) / staged-a-file(s) /
-        # COLLECTED(c). Since 2026-08 the collects side needs PROOF: c = at
-        # least one File of the account'\''s UC2 subs actually collected
-        # (transfer log), not mere logon evidence — a partner that visits but
-        # never takes anything no longer reads as "collecting". The attempt
-        # signal p keeps one job: distinguishing "No files" (the partner DOES
-        # come, nothing is ever staged). A pure-CFT collector behaves exactly
-        # as before: no visible collect legs, no SSH logons — Nothing, or
-        # Never collected once files expire.
+        # One pass over the (account, UC2 subscription) PAIRS — one row per
+        # flow — a COMPLETE partition from the signals expired(e) /
+        # attempted(p) / staged-a-file(sh) / COLLECTED(c). Since 2026-08 the
+        # collects side needs PROOF: c = at least one File of THIS flow
+        # actually collected (transfer log), not mere logon evidence — a
+        # partner that visits but never takes anything no longer reads as
+        # "collecting". The attempt signal p keeps one job: distinguishing
+        # "No files" (the partner DOES come, nothing is ever staged); it is
+        # the ACCOUNT'\''s, the SSH logon being to the account. A pure-CFT
+        # collector behaves exactly as before: no visible collect legs, no SSH
+        # logons — Nothing, or Never collected once files expire.
+        # The EXPIRY signal (2026-08-31): this flow'\''s own expired Files
+        # (the retention sweep joined onto ITS staged files, _files.tsv col 2)
+        # when any flow of the account has such attributable expiries; else
+        # the account'\''s server-side deletion evidence, which then holds for
+        # every flow of the account — attribute when possible, warn all when
+        # not. (A single-flow account reads exactly as before.)
         #   0 Never collected  e & !c        files expired, nothing ever collected
-        #   1 No files        !e &  p & !s   partner logs in but nothing was staged
+        #   1 No files        !e &  p & !sh  partner logs in but nothing was staged
         #   2 Both             e &  c        collects, and files still expired
-        #   3 OK              !e &  c &  s   collected and none expired — healthy
+        #   3 OK              !e &  c &  sh  collected and none expired — healthy
         #   4 Nothing          everything else (quiet, CFT-collected, or only
         #                      empty-handed visits so far)
         # Drill: deletes for the expiry rows, pickup logons for No files/OK,
-        # nothing for Nothing.
-        for (a in pickupacct) {
-            e = (a in aseen); p = (att[a]+0 > 0); s = (a in stagedany); c = (a in ak0)
-            if      (e && !c)        stc = 0
-            else if (!e && p && !s)  stc = 1
-            else if (e &&  c)        stc = 2
-            else if (!e && c && s)   stc = 3
-            else                     stc = 4
-            sub_ = (a in uc2sub) ? uc2sub[a] : ""
-            subd = (sub_=="") ? "(no pickup subscription)" : sub_
+        # nothing for Nothing. Walked over the ordered pr[] roster — never
+        # "for (a in ...)", awk hash order must not reach output.
+        for (i = 1; i <= npr; i++) {
+            split(pr[i], PA, SUBSEP); a = PA[1]; s = PA[2]; su = toupper(s); ps = a SUBSEP s
+            attr = (a in xany)                                   # expiries attributable per flow on this account
+            e = attr ? (xpd[ps] + 0 > 0) : (a in aseen)
+            efp = attr ? xpd[ps] + 0 : ef[a] + 0                 # the Expired column: this flow'\''s, or the account'\''s
+            p = (att[a]+0 > 0); sh = (subc[ps] + 0 > 0); c = (su in cm0)
+            if      (e && !c)         stc = 0
+            else if (!e && p && !sh)  stc = 1
+            else if (e &&  c)         stc = 2
+            else if (!e && c && sh)   stc = 3
+            else                      stc = 4
             dl = (stc==0 || stc==2) ? lastlines(a) : (stc==1 || stc==3) ? lastlines("PK" SUBSEP a) : ""
-            printf "A\t%d\t%s%s\t%s\t%d\t%s\t%s\t%d\t%s\t%s\n", stc, sublink(sub_), subd, a, ef[a]+0, (a in afst?afst[a]:"-"), (a in alst?alst[a]:"-"), att[a]+0, (lat[a]=="" ? "-" : substr(lat[a], 1, 10)), dl
-            tef += ef[a]+0; tpk += att[a]+0
-            if      (stc==0) { nnever++; tefn += ef[a]+0 }
+            printf "A\t%d\t%s%s\t%s\t%d\t%s\t%s\t%d\t%s\t%s\n", stc, sublink(s), s, a, efp, (ps in sfst?sfst[ps]:"-"), (ps in slst?slst[ps]:"-"), att[a]+0, (lat[a]=="" ? "-" : substr(lat[a], 1, 10)), dl
+            if (!(a in adone)) { adone[a] = 1; tef += ef[a]+0; tpk += att[a]+0 }   # account-level figures, once per account
+            if      (stc==0) { nnever++; tefn += efp }
             else if (stc==1) nnofiles++
             else if (stc==2) ncoll++
             else if (stc==3) nok++
@@ -406,22 +427,22 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         }
         # The per-hour sidecar: the SAME partition, over the cumulative signals as
         # they stood at the end of each hour (the pickup signal = the classified
-        # pickup hours, hpa). Walked NUMERICALLY over the ordered roster A[] —
+        # pickup hours, hpa). Walked NUMERICALLY over the ordered pr[] roster —
         # never "for (a in ...)", awk hash order must not reach output.
         if (hmin != "" && SL != "") {
             for (h = hmin; h <= hmax; h++) {
                 delete cnt
-                for (i = 1; i <= na; i++) {
-                    a = A[i]; hk = a SUBSEP h
-                    if (hk in hex) E[a] = 1
-                    if (hk in hpa) P[a] = 1
-                    if (hk in hst) S[a] = 1
-                    if (hk in hca) C[a] = 1
-                    if      (E[a] && !C[a])           stc = 0
-                    else if (!E[a] && P[a] && !S[a])  stc = 1
-                    else if (E[a] &&  C[a])           stc = 2
-                    else if (!E[a] && C[a] &&  S[a])  stc = 3
-                    else                              stc = 4
+                for (i = 1; i <= npr; i++) {
+                    split(pr[i], PA, SUBSEP); a = PA[1]; s = PA[2]; su = toupper(s); ps = a SUBSEP s
+                    if ((a in xany) ? ((ps SUBSEP h) in hexs) : ((a SUBSEP h) in hex)) E[ps] = 1
+                    if ((a SUBSEP h) in hpa)  P[ps] = 1
+                    if ((ps SUBSEP h) in hsts) S[ps] = 1
+                    if ((su SUBSEP h) in hcs)  C[ps] = 1
+                    if      (E[ps] && !C[ps])            stc = 0
+                    else if (!E[ps] && P[ps] && !S[ps])  stc = 1
+                    else if (E[ps] &&  C[ps])            stc = 2
+                    else if (!E[ps] && C[ps] &&  S[ps])  stc = 3
+                    else                                 stc = 4
                     cnt[stc]++
                 }
                 printf "%s\t%d\t%d\t%d\t%d\t%d\t%d\n", fromjdn(int(h/24)), h%24, \
@@ -523,7 +544,7 @@ rows=$(awk -F'\t' '
     printf '%s\n' "$rows"   # %s\n: $rows already ends in one, so this is the blank line before TOTAL
     printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t\t\t@{class=num}%s\t\n' \
         "$(( n_never + n_nofiles + n_coll + n_ok + n_nothing ))" "$t_ef" "$t_pk"
-    printf 'NOTE\tEvery **UC2** (collect-from-us) flow, classified. **Never collected** (red): File Maintenance deleted staged files and **nothing was ever collected** — logon visits alone do not count. **No files** (amber): the partner DOES log in to collect (pickups > 0) but the app **never staged a single file** — a dormant or broken source side. **Both** (green): the partner **provably collects** (Files in the transfer log) AND the odd file still expired — both outcomes on the one flow. **OK** (green): files collected, none expired — healthy. **Nothing** (plain): no collection and no expiry — a quiet flow, one whose partner collects over CFT (which logs no SSH pickup), or one whose visits have so far come up empty. Uncollected detection stays on the retention delete on purpose — arrival + no-pickup would flag almost every pickup flow, since CFT-collecting partners never log an SSH pickup; **No files** and **OK** need the SSH signal, so they only distinguish SFTP-collecting partners (a CFT partner with no expiry lands in **Nothing**). A logon whose session only **delivered** files (the account'\''s UC4 twin flow handing files over) is not a pickup and is not counted. **Arrived** dates come from the transfer log. Click a row for its recent server-log lines.\n'
+    printf 'NOTE\tEvery **UC2** (collect-from-us) flow, classified. **Never collected** (red): File Maintenance deleted staged files and **nothing was ever collected** — logon visits alone do not count. **No files** (amber): the partner DOES log in to collect (pickups > 0) but the app **never staged a single file** — a dormant or broken source side. **Both** (green): the partner **provably collects** (Files in the transfer log) AND the odd file still expired — both outcomes on the one flow. **OK** (green): files collected, none expired — healthy. **Nothing** (plain): no collection and no expiry — a quiet flow, one whose partner collects over CFT (which logs no SSH pickup), or one whose visits have so far come up empty. Uncollected detection stays on the retention delete on purpose — arrival + no-pickup would flag almost every pickup flow, since CFT-collecting partners never log an SSH pickup; **No files** and **OK** need the SSH signal, so they only distinguish SFTP-collecting partners (a CFT partner with no expiry lands in **Nothing**). A logon whose session only **delivered** files (the account'\''s UC4 twin flow handing files over) is not a pickup and is not counted. **Arrived** dates come from the transfer log. One row per **flow**: an account serving several UC2 flows (the hybrid production accounts) lists each with its own staged, collected and expired Files, while the **Pickups** figures are the account'\''s — the partner logs on to the account, not to a flow. Click a row for its recent server-log lines.\n'
 
     printf 'SUMMARY\tNever collected: %s  |  No files: %s  |  Both: %s  |  OK: %s  |  Nothing: %s  |  Files uncollected: %s\n' "$n_never" "$n_nofiles" "$n_coll" "$n_ok" "$n_nothing" "$t_efn"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
