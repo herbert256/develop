@@ -333,34 +333,54 @@ _build_kaputflip() {
     local _kfsh="$XREF/_subscriptions-hosts.tsv";    [ -f "$_kfsh" ] || _kfsh=/dev/null
     tmp=$(mktemp "${TMPDIR:-/tmp}/axkflip.XXXXXX")
     # pass 1: each ring's newest E line -> "kind <TAB> name <TAB> stamp <TAB> message"
+    # (a host ring name is folded lowercase like the pair-cache side it joins)
     awk -F'\t' '
         FNR == 1 { fdone = 0
             nm = FILENAME; sub(/_err_warn\.tsv$/, "", nm)
             kind = (nm ~ /\/accounts\//) ? "A" : (nm ~ /\/logins\//) ? "L" : "H"
-            sub(/^.*\//, "", nm) }
+            sub(/^.*\//, "", nm); if (kind == "H") nm = tolower(nm) }
         !fdone && $3 == "E" && NF >= 5 { printf "%s\t%s\t%s\t%s\n", kind, nm, $1 " " $2, substr($5, 1, 200); fdone = 1 }
     ' "${rings[@]}" > "$tmp"
     # pass 2: join per subscription (newest across its connected rings),
-    # classify that ONE newest message, drop the deploy verdicts
+    # classify that ONE newest message, drop the deploy verdicts.
+    # A RING OWNER SERVING SEVERAL FLOWS (2026-08-31 audit) speaks for all of
+    # them only when its newest line is about the CONNECTION itself — a
+    # connection failure, a rejected server key, an outbound authentication
+    # failure: the credential / endpoint every one of those flows uses is
+    # broken. A flow-level line (a route step, a missing directory, a PeSIT
+    # refusal …) on a shared account, login or host concerns ONE of its flows
+    # and reaches the colour only through _build_ringattr, which names it.
+    # Before, eight production flows on one hybrid account all went red on
+    # one sibling's route error, with one shared evidence stamp — the exact
+    # failure _build_ringattr was written to kill, reintroduced by this join.
+    # The 1:1 owners (most of acceptance) are unchanged. went-kaput.sh applies
+    # the same rule to its page and evidence sidecar.
     awk -F'\t' -v RINGS="$tmp" "$(cat "$ROOT/bin/flip-reason.awk")"'
+        function connlevel(r) { return (r == "Connection failures" || r == "Wrong server fingerprint" || r == "Login errors (out)") }
+        # the candidate ring k (owner serving own flows): its newest E line, if it may speak for s
+        function take(k, own,   r9) {
+            if (!(k in re) || re[k] <= best) return
+            if (own > 1) { r9 = flip_reason(rm[k]); if (!connlevel(r9)) return }
+            best = re[k]; msg = rm[k]
+        }
         FILENAME == RINGS { re[$1 SUBSEP $2] = $3; rm[$1 SUBSEP $2] = $4; next }
-        FILENAME ~ /_subscriptions-accounts\.tsv$/ { if ($1 != "" && $2 != "") SA[$1] = SA[$1] SUBSEP $2; next }
-        FILENAME ~ /_subscriptions-logins\.tsv$/   { if ($1 != "" && $2 != "") SL[$1] = SL[$1] SUBSEP $2; next }
-        FILENAME ~ /_subscriptions-hosts\.tsv$/    { if ($1 != "" && $2 != "") { nh[$1]++; vh[$1] = tolower($2) }; next }
+        FILENAME ~ /_subscriptions-accounts\.tsv$/ { if ($1 != "" && $2 != "") { SA[$1] = SA[$1] SUBSEP $2; AN[$2]++ }; next }
+        FILENAME ~ /_subscriptions-logins\.tsv$/   { if ($1 != "" && $2 != "") { SL[$1] = SL[$1] SUBSEP $2; LN[$2]++ }; next }
+        FILENAME ~ /_subscriptions-hosts\.tsv$/    { if ($1 != "" && $2 != "") { nh[$1]++; vh[$1] = tolower($2); HN[tolower($2)]++ }; next }
         FILENAME ~ /ip-hosts\.tsv$/ { if ($1 != "" && $2 != "") fw[tolower($2)] = fw[tolower($2)] SUBSEP $1; next }
         # base/_subscriptions.tsv: the roster
         {
             s = $1; if (s == "") next
             best = ""; msg = ""
             n = split(substr(SA[s], 2), Z, SUBSEP)
-            for (i = 1; i <= n; i++) { k = "A" SUBSEP Z[i]; if ((k in re) && re[k] > best) { best = re[k]; msg = rm[k] } }
+            for (i = 1; i <= n; i++) take("A" SUBSEP Z[i], AN[Z[i]] + 0)
             n = split(substr(SL[s], 2), Z, SUBSEP)
-            for (i = 1; i <= n; i++) { k = "L" SUBSEP Z[i]; if ((k in re) && re[k] > best) { best = re[k]; msg = rm[k] } }
+            for (i = 1; i <= n; i++) take("L" SUBSEP Z[i], LN[Z[i]] + 0)
             if (nh[s] + 0 == 1) {
                 h = vh[s]
-                k = "H" SUBSEP h; if ((k in re) && re[k] > best) { best = re[k]; msg = rm[k] }
+                take("H" SUBSEP h, HN[h] + 0)
                 n = split(substr(fw[h], 2), Z, SUBSEP)
-                for (i = 1; i <= n; i++) { k = "H" SUBSEP tolower(Z[i]); if ((k in re) && re[k] > best) { best = re[k]; msg = rm[k] } }
+                for (i = 1; i <= n; i++) take("H" SUBSEP tolower(Z[i]), HN[h] + 0)   # a forward address carries its endpoint fan-out
             }
             if (best == "") next
             r = flip_reason(msg)

@@ -801,6 +801,13 @@ LC_ALL=C awk -F'\t' \
             k = t "|" ct "|" U
             if (P2N[k] != 1) continue
             v = P2V[k]
+            # ... and 1-to-1 the OTHER way too (2026-08-31 audit): the
+            # connected entity must serve THIS page entity alone, or its
+            # ring speaks for other flows as well — a hybrid production
+            # account serves eight, and one line in its ring republished
+            # into all eight subscription pages with a red ALERT each
+            rt = (ct == "accounts") ? "ACC" : (ct == "logins") ? "LOGIN" : (ct == "hosts") ? "HOST" : "SITE"
+            if (P2N[rt "|" pt[t] "|" up(v)] + 0 != 1) continue
             if (ct == "hosts") {
                 f = SRV "/hosts/" v ".tsv"; if (nonempty(f)) conn = conn (conn == "" ? "" : "\037") f
                 nfw = split(fwd_ips(v), afw, "\037")

@@ -164,9 +164,18 @@ mapargs+=("$lastokf")
 [ -f "$SH" ] && mapargs+=("$SH")
 [ -f "$IPH" ] && mapargs+=("$IPH")
 
-totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v rowfile="$rowfile" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" -v ucdf="$UCDF" "$LOGLINES_AWK"'
+totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v rowfile="$rowfile" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" -v ucdf="$UCDF" "$(cat "$ROOT/bin/flip-reason.awk")$LOGLINES_AWK"'
     BEGIN { while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf) }
     function srcof(f) { return (f ~ /\/subscriptions\//) ? "Subscription" : (f ~ /\/accounts\//) ? "Account" : (f ~ /\/hosts\//) ? "Host" : "Login" }
+    # A RING OWNER SERVING SEVERAL FLOWS (2026-08-31 audit) speaks for all of
+    # them only when the line is about the CONNECTION itself (a connection
+    # failure, a rejected server key, an outbound authentication failure —
+    # the credential / endpoint every one of those flows uses is broken); a
+    # flow-level line on a shared account, login or host concerns ONE of its
+    # flows and is not an early warning for the others. The same rule keeps
+    # bin/build/result.sh _build_kaputflip (the colour) and this page (the
+    # warning + the home Reason sidecar) in step. 1:1 owners are unchanged.
+    function connlevel(r) { return (r == "Connection failures" || r == "Wrong server fingerprint" || r == "Login errors (out)") }
     # the subscriptions this host ring speaks for: every single-host flow whose
     # host is this endpoint, or an endpoint this ADDRESS forwards to (hmap is
     # built once, on the first host ring, since the maps are all read by then)
@@ -181,14 +190,19 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
     # the UC3 clean-poll stamps (see the builder above)
     FILENAME == pollf { if ($1 != "") pol[toupper($1)] = $2; next }
     FILENAME == lastokf { cut[$1] = $2; order[++nsub] = $1; next }
-    FILENAME == saf { if (($1 in cut) && $2 != "" && !pa[$1,$2]++) amap[$2] = (amap[$2] != "" ? amap[$2] "\t" : "") $1; next }
-    FILENAME == slf { if (($1 in cut) && $2 != "" && !pl[$1,$2]++) lmap[$2] = (lmap[$2] != "" ? lmap[$2] "\t" : "") $1; next }
+    # (atot/ltot/htot: how many flows the owner serves IN TOTAL, cut or not —
+    # the shared-owner test above)
+    FILENAME == saf { if ($1 != "" && $2 != "" && !pa2[$1,$2]++) atot[$2]++
+                      if (($1 in cut) && $2 != "" && !pa[$1,$2]++) amap[$2] = (amap[$2] != "" ? amap[$2] "\t" : "") $1; next }
+    FILENAME == slf { if ($1 != "" && $2 != "" && !pl2[$1,$2]++) ltot[$2]++
+                      if (($1 in cut) && $2 != "" && !pl[$1,$2]++) lmap[$2] = (lmap[$2] != "" ? lmap[$2] "\t" : "") $1; next }
     # subscription -> host, kept only while the subscription has exactly ONE
     # (result.sh reds on the same restriction: with two hosts configured, a
     # ring cannot be attributed to this flow)
-    FILENAME == shf { if (($1 in cut) && $2 != "" && !ph[$1,$2]++) { nhost[$1]++; vhost[$1] = tolower($2) }; next }
+    FILENAME == shf { if ($1 != "" && $2 != "" && !ph2[$1,$2]++) htot[tolower($2)]++
+                      if (($1 in cut) && $2 != "" && !ph[$1,$2]++) { nhost[$1]++; vhost[$1] = tolower($2) }; next }
     # endpoint -> its forward addresses: those rings are the same evidence
-    FILENAME == iphf { if ($1 != "" && $2 != "") fwd[tolower($2)] = fwd[tolower($2)] "\t" $1; next }
+    FILENAME == iphf { if ($1 != "" && $2 != "") { fwd[tolower($2)] = fwd[tolower($2)] "\t" $1; ipe[$1] = tolower($2) }; next }
     {
         if (FILENAME != curf) {                       # a new ring file: which subscription(s) own it?
             curf = FILENAME; csrc = srcof(curf)
@@ -197,8 +211,15 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
             else if (csrc == "Account") ntgt = (nm in amap) ? split(amap[nm], tgt, "\t") : 0
             else if (csrc == "Host")    ntgt = hostsubs(tolower(nm))
             else                        ntgt = (nm in lmap) ? split(lmap[nm], tgt, "\t") : 0
+            # how many flows this ring owner serves in total (a forward
+            # address counts as its endpoint)
+            if (csrc == "Account")   own = atot[nm] + 0
+            else if (csrc == "Login") own = ltot[nm] + 0
+            else if (csrc == "Host") { hn9 = tolower(nm); if (hn9 in ipe) hn9 = ipe[hn9]; own = htot[hn9] + 0 }
+            else own = 1
         }
         if (ntgt == 0) next
+        if (own > 1 && !connlevel(flip_reason($5))) next   # a shared owner: connection-level lines only
         dt = $1 " " $2
         for (i = 1; i <= ntgt; i++) {
             s = tgt[i]

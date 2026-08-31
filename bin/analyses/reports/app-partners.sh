@@ -12,12 +12,14 @@
 #                                       pair with Files, Error % and last
 #                                       seen — the full dependency matrix
 #
-# APPLICATION = the union attribution via the ACCOUNT (xref/_accounts-apps.tsv
-# on _files col 3 unioned with col 18); PARTNER = the union via the
-# subscription (xref/_subscriptions-partners.tsv on col 12 unioned with
-# col 20) — the site-wide rules. Applications derive from the account NAMES
-# (the PDA split of <domain>-<application>-<partner>), so the attribution is
-# heuristic BY DESIGN — good enough to see exposure, not a config export.
+# APPLICATION = the union attribution via the SUBSCRIPTION (xref/
+# _subscriptions-apps.tsv on _files col 12 unioned with col 18); PARTNER =
+# the same via xref/_subscriptions-partners.tsv on col 12 unioned with
+# col 20 — the site-wide rules (CLAUDE.md). Both ride the FlowID spine:
+# subscription -> FlowID -> Logical D_A_P. Until 2026-08-31 the application
+# side rode the ACCOUNT (_accounts-apps on col 3): a hybrid production account
+# serving many flows credited every File of it to every application the
+# account touches and invented dependency pairs.
 # Config/analysis page: every table is `nofilter`.
 #
 # Usage:
@@ -30,7 +32,7 @@ OUT="$REPORTS_DIR/app-partners.rpt"
 
 TF="$DATA/transfer/cache/_files.tsv"
 SPMAP="$DATA/flow-manager/xref/_subscriptions-partners.tsv"
-APMAP="$DATA/flow-manager/xref/_accounts-apps.tsv"
+APMAP="$DATA/flow-manager/xref/_subscriptions-apps.tsv"
 if [ ! -f "$TF" ]; then
     echo "app-partners: transfer cache missing; skipping." >&2
     rm -f "$OUT"
@@ -54,7 +56,7 @@ awk -F'\t' -v T1="$TMPD/t1.pre" -v T2="$TMPD/t2.pre" -v STATS="$TMPD/stats.tsv" 
     FILENAME ~ /_subscriptions-partners\.tsv$/ {
         if ($1 != "" && $2 != "") SP[toupper($1)] = SP[toupper($1)] (SP[toupper($1)] == "" ? "" : "\037") $2
         next }
-    FILENAME ~ /_accounts-apps\.tsv$/ {
+    FILENAME ~ /_subscriptions-apps\.tsv$/ {
         if ($1 != "" && $2 != "") AP[toupper($1)] = AP[toupper($1)] (AP[toupper($1)] == "" ? "" : "\037") $2
         next }
     {
@@ -63,7 +65,7 @@ awk -F'\t' -v T1="$TMPD/t1.pre" -v T2="$TMPD/t2.pre" -v STATS="$TMPD/stats.tsv" 
             for (i = 1; i <= n; i++) if (index("\037" pset "\037", "\037" Z[i] "\037") == 0)
                 pset = pset (pset == "" ? "" : "\037") Z[i] }
         aset = $18
-        if ($3 != "" && (toupper($3) in AP)) { n = split(AP[toupper($3)], Z, "\037")
+        if ($12 != "" && (toupper($12) in AP)) { n = split(AP[toupper($12)], Z, "\037")
             for (i = 1; i <= n; i++) if (index("\037" aset "\037", "\037" Z[i] "\037") == 0)
                 aset = aset (aset == "" ? "" : "\037") Z[i] }
         err = ($2 == "Failed" || $2 == "Expired") ? 1 : 0
@@ -105,7 +107,7 @@ EOF
 {
     printf 'TITLE\tApplication dependencies\n'
     printf 'DESC\tWhich external partner organisations each internal application exchanges Files with: partner count, Files and worst-pair Error %% per application, plus the full (application, partner) dependency matrix.\n'
-    printf 'INTRO\tEvery internal application seen in the logs, by how many **external partner organisations** it depends on — and how well each of those pairs actually runs. The most exposed application is **%s** with **%s** partners (%s of those pairs at 100%% Error). Applications derive from the account NAMES (the middle token of the domain-application-partner convention), so this attribution is **heuristic by design** — good enough to see exposure and failing pairs, but not a configuration export. Both directions use the site-wide UNION rules: a File counts for every application of its account and every partner of its subscription.\n' \
+    printf 'INTRO\tEvery internal application seen in the logs, by how many **external partner organisations** it depends on — and how well each of those pairs actually runs. The most exposed application is **%s** with **%s** partners (%s of those pairs at 100%% Error). Applications and partners are parts 2 and 3 of the logical flow name (domain_application_partner) a File'"'"'s subscription resolves to through its FlowID, so this attribution is only as good as that naming convention — good enough to see exposure and failing pairs, but not a configuration export. Both sides use the site-wide UNION rules: a File counts for every application and every partner of its subscription.\n' \
         "$x_app" "$x_ptn" "${x_full:-0}"
     printf 'STAT\twhite\t%s\tApplications seen\n' "$n_apps"
     printf 'STAT\twhite\t%s\tDependency pairs\n' "$n_pairs"

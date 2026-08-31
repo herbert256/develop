@@ -113,6 +113,7 @@ SPECS=(
 )
 
 now=$(date '+%Y-%m-%d %H:%M:%S')
+ASF="$CONFIG_XREF/_accounts-subscriptions.tsv"; [ -f "$ASF" ] || ASF=/dev/null   # the logon-proof composition (see the awk)
 
 # rule key : label : output basename
 # Button order leads with Current — "is this working NOW" is what these pages
@@ -169,7 +170,7 @@ for spec in "${SPECS[@]}"; do
         bl)      [ -f "$CONFIG_XREF/_subscriptions-bl.tsv" ] && VMAP="$CONFIG_XREF/_subscriptions-bl.tsv" ;;
     esac
 
-    awk -F'\t' -v EB="$EB" -v SB="$SB" -v ES="$ES" -v SE="$SE" -v AE="$AE" -v VMAP="$VMAP" \
+    awk -F'\t' -v EB="$EB" -v SB="$SB" -v ES="$ES" -v SE="$SE" -v AE="$AE" -v VMAP="$VMAP" -v ASF="$ASF" \
         -v AUTH="$AUTH" -v POLL="$POLL" -v FCOL="$fcol" -v IDENT="$ident" -v RULE="$RKEY" '
         function stripattr(v) { sub(/^@\{[^}]*\}/, "", v); return v }
         BEGIN {
@@ -187,11 +188,15 @@ for spec in "${SPECS[@]}"; do
             close(ES)
             while ((getline l < SE) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") SUBP[toupper(a[1])] = SUBP[toupper(a[1])] SUBSEP toupper(a[2]) }
             close(SE)
-            # account -> entity. On the Accounts view this is the IDENTITY (an
-            # account is its own account), so the logon proof is that account
-            # own count rather than a rollup.
-            if (!IDENT) { while ((getline l < AE) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") ACCP[toupper(a[1])] = ACCP[toupper(a[1])] SUBSEP toupper(a[2]) }
-                          close(AE) }
+            # account -> its subscriptions: the SSH-logon proof is composed
+            # account -> IN-side subscription -> entity (2026-08-31 audit). On
+            # the Accounts view the account is its own entity (IDENT), so the
+            # proof is that account own count. It used to roll up account ->
+            # entity over every entity of the account: a hybrid production
+            # account with one live inbound flow and four dead ones marked the
+            # In side of all five entities covered.
+            if (!IDENT) { while ((getline l < ASF) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "" && a[2] != "") ASUB[toupper(a[1])] = ASUB[toupper(a[1])] SUBSEP toupper(a[2]) }
+                          close(ASF) }
             if (VMAP != "") { while ((getline l < VMAP) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "" && a[2] != "") VM[toupper(a[1])] = a[2] }
                               close(VMAP) }
             t = 0
@@ -201,8 +206,11 @@ for spec in "${SPECS[@]}"; do
                 if (a[1] != "ROW" || t != 1) continue
                 acct = toupper(stripattr(a[2])); c = a[3] + 0
                 if (IDENT) { logons[acct] += c; continue }
-                m = split(substr(ACCP[acct], 2), PL, SUBSEP)
-                for (i = 1; i <= m; i++) logons[PL[i]] += c
+                m = split(substr(ASUB[acct], 2), PL, SUBSEP)
+                for (i = 1; i <= m; i++) { s9 = PL[i]; d9 = SD[s9]
+                    if (d9 != "in" && d9 != "both") continue          # a logon proves the In side only
+                    m2 = split(substr(SUBP[s9], 2), PL2, SUBSEP)
+                    for (j = 1; j <= m2; j++) logons[PL2[j]] += c }
             }
             close(AUTH)
             t = 0
@@ -211,9 +219,14 @@ for spec in "${SPECS[@]}"; do
                 if (a[1] == "TABLE") { t++; if (t > 1) break }
                 if (a[1] != "ROW" || t != 1) continue
                 site = toupper(stripattr(a[2])); c = a[3] + 0
+                # exact, else the ONE configured name the logged value
+                # prefixes/extends (the server truncates names) — an ambiguous
+                # token attributes to nothing (2026-08-31 audit: first-match
+                # handed one flow the poll proof of a sibling sharing its prefix)
                 cfg = ""
                 if (site in SD) cfg = site
-                else for (i = 1; i <= ns; i++) if (index(site, SN[i]) == 1) { cfg = SN[i]; break }
+                else { c9 = 0; for (i = 1; i <= ns; i++) if (index(site, SN[i]) == 1 || index(SN[i], site) == 1) { c9++; hit9 = SN[i] }
+                       if (c9 == 1) cfg = hit9 }
                 if (cfg == "") continue
                 m = split(substr(SUBP[cfg], 2), PL, SUBSEP)
                 for (i = 1; i <= m; i++) polls[PL[i]] += c

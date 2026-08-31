@@ -17,9 +17,12 @@
 #                        address outage with several organisations behind it
 #
 # PARTNER = UNION attribution (xref/_subscriptions-partners.tsv on _files
-# col 12 unioned with col 20); APPLICATION = the same union via the account
-# (xref/_accounts-apps.tsv on col 3 unioned with col 18). Domains are
-# single-valued (col 19). Config/analysis page: every table is `nofilter`.
+# col 12 unioned with col 20); APPLICATION = the same union via the
+# SUBSCRIPTION (xref/_subscriptions-apps.tsv on col 12 unioned with col 18 —
+# until 2026-08-31 it rode the ACCOUNT, and a hybrid production account
+# serving many flows inflated the Applications column of every endpoint it
+# uses). Domains are single-valued (col 19). Config/analysis page: every
+# table is `nofilter`.
 #
 # Usage:
 #   ./blast-radius.sh   # -> data/<env>/analyses/reports/blast-radius.rpt
@@ -31,7 +34,7 @@ OUT="$REPORTS_DIR/blast-radius.rpt"
 
 TF="$DATA/transfer/cache/_files.tsv"
 SPMAP="$DATA/flow-manager/xref/_subscriptions-partners.tsv"
-APMAP="$DATA/flow-manager/xref/_accounts-apps.tsv"
+APMAP="$DATA/flow-manager/xref/_subscriptions-apps.tsv"
 if [ ! -f "$TF" ]; then
     echo "blast-radius: transfer cache missing; skipping." >&2
     rm -f "$OUT"
@@ -58,7 +61,7 @@ awk -F'\t' -v T1="$TMPD/t1.pre" -v T2="$TMPD/t2.pre" -v T3="$TMPD/t3.pre" -v STA
     FILENAME ~ /_subscriptions-partners\.tsv$/ {
         if ($1 != "" && $2 != "") SP[toupper($1)] = SP[toupper($1)] (SP[toupper($1)] == "" ? "" : "\037") $2
         next }
-    FILENAME ~ /_accounts-apps\.tsv$/ {
+    FILENAME ~ /_subscriptions-apps\.tsv$/ {
         if ($1 != "" && $2 != "") AP[toupper($1)] = AP[toupper($1)] (AP[toupper($1)] == "" ? "" : "\037") $2
         next }
     {
@@ -67,7 +70,7 @@ awk -F'\t' -v T1="$TMPD/t1.pre" -v T2="$TMPD/t2.pre" -v T3="$TMPD/t3.pre" -v STA
             for (i = 1; i <= n; i++) if (index("\037" pset "\037", "\037" Z[i] "\037") == 0)
                 pset = pset (pset == "" ? "" : "\037") Z[i] }
         aset = $18
-        if ($3 != "" && (toupper($3) in AP)) { n = split(AP[toupper($3)], Z, "\037")
+        if ($12 != "" && (toupper($12) in AP)) { n = split(AP[toupper($12)], Z, "\037")
             for (i = 1; i <= n; i++) if (index("\037" aset "\037", "\037" Z[i] "\037") == 0)
                 aset = aset (aset == "" ? "" : "\037") Z[i] }
         np = split(pset, P, "\037")

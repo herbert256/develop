@@ -165,6 +165,16 @@ external_partners_tsv() {
     local cov="$COVSRC/accounts.tsv" hosts="$COVSRC/hosts.tsv"
     local pmap="$DATA/transfer/reports/details/partners/_slugmap.tsv"
     local pfake="$pbase"   # server-log-only (blue) partners are result==blue in the base cache
+    # SEEN / RESULT ride the SUBSCRIPTION (2026-08-31 audit): a partner is seen
+    # when one of ITS subscriptions on that side (xref/_subscriptions-partners,
+    # composed through the FlowID) is seen in the subscription coverage, and
+    # its Result is the latest of those. They rode the ACCOUNT coverage (In)
+    # and the ENDPOINT coverage (Out) before — one seen hybrid production
+    # account, serving many flows and many partners, marked every partner of
+    # the account seen with one shared timestamp, and an endpoint serving two
+    # partner groups did the same for both. MEMBERSHIP is unchanged (accounts
+    # In, account|endpoint triples Out) — only the verdict moved.
+    local scov="$COVSRC/subscriptions.tsv" spx="$DATA/flow-manager/xref/_subscriptions-partners.tsv"
     [ -f "$pbase" ] && [ -f "$ap" ] && [ -f "$cov" ] || return 0
     [ -f "$aw" ] || aw=/dev/null
     [ -f "$pw" ] || pw=/dev/null
@@ -172,26 +182,35 @@ external_partners_tsv() {
     [ -f "$pacc2" ] || pacc2=/dev/null
     [ -f "$pmap" ] || pmap=/dev/null
     [ -f "$pfake" ] || pfake=/dev/null
+    [ -f "$scov" ] || scov=/dev/null
+    [ -f "$spx" ] || spx=/dev/null
     {
         # In rows: one per in/both organisation. Members = the accounts the
         # config maps to the org, MINUS its endpoint-mapped Out accounts (a
         # member is In-configured or whitelisted — which keeps the rare
         # Out-configured account inside a whitelist cluster, the PLURALSIGHT
-        # pair). Seen/Result aggregate the IN-direction members only, so an
-        # outbound transfer can never set an In partner's status.
-        awk -F'\t' -v pfake="$pfake" '
+        # pair). Seen/Result come from the org's IN-side subscriptions only, so
+        # an outbound transfer can never set an In partner's status.
+        awk -F'\t' -v pfake="$pfake" -v SCOV="$scov" -v SPX="$spx" '
             BEGIN { US = sprintf("%c", 31)
                 # Fake/server-only partners (bin/build/seen-in-server-log.sh, data/fakes/partners.tsv)
                 # count as SEEN — the Server bucket already counts them, so Seen
                 # must too, or Transfer = Seen - Server under-counts. An account-
                 # seeded fake names an OUT partner but leaves its endpoint blank,
                 # so the endpoint-keyed seen below would miss it.
-                while ((getline l < pfake) > 0) { np=split(l,pa,"\t"); if (np>=3 && pa[3]=="blue") fake[toupper(pa[1])]=1 } }
+                while ((getline l < pfake) > 0) { np=split(l,pa,"\t"); if (np>=3 && pa[3]=="blue") fake[toupper(pa[1])]=1 } close(pfake)
+                while ((getline l < SPX) > 0) { np=split(l,pa,"\t"); if (np>=2 && pa[1]!="" && pa[2]!="") spx[pa[1]]=spx[pa[1]] US pa[2] } close(SPX) }
             FILENAME ~ /_slugmap\.tsv$/        { pslug[$1]=$2; next }   # partner name -> detail-page slug
             FILENAME ~ /_partners\.tsv$/       { if($2=="in" || $2=="both") indir[$1]=1; next }
             FILENAME ~ /_accounts-white\.tsv$/ { white[$1]=1; next }
             FILENAME ~ /_partners-white\.tsv$/ { if(!(($1 SUBSEP $2) in ipseen)){ ipseen[$1 SUBSEP $2]=1; cip[$1]=cip[$1] US $2 }; next }
-            FILENAME ~ /accounts\.tsv$/ { cov_dir[$1]=$2; cov_seen[$1]=$3; cov_link[$1]=$4; cov_ts[$1]=$5; cov_oc[$1]=$6; next }
+            FILENAME == SCOV {   # coverage/subscriptions.tsv: name dir seen link ts outcome — the In side only
+                if(($2!="I" && $2!="B") || $3!=1 || !($1 in spx)) next
+                np=split(substr(spx[$1],2), PX, US)
+                for(pi=1; pi<=np; pi++){ c=PX[pi]; if(!(c in indir)) continue
+                    seen[c]=1; if($5!="" && $5>lts[c]){ lts[c]=$5; loc[c]=$6 } }
+                next }
+            FILENAME ~ /accounts\.tsv$/ { cov_dir[$1]=$2; cov_link[$1]=$4; next }
             {   # _accounts-partners.tsv (account-sorted -> deterministic member order)
                 a=$1; c=$2
                 if(!(c in indir)) next
@@ -199,13 +218,11 @@ external_partners_tsv() {
                 # its In side makes it an In member like a plain I account
                 if(cov_dir[a]!="I" && cov_dir[a]!="B" && !(a in white)) next
                 mem[c]=mem[c] US a "|" cov_link[a]
-                if((cov_dir[a]=="I" || cov_dir[a]=="B") && cov_seen[a]==1){ seen[c]=1
-                    if(cov_ts[a]!="" && cov_ts[a]>lts[c]){ lts[c]=cov_ts[a]; loc[c]=cov_oc[a] } }
             }
             END { for(c in indir) {
                 if (toupper(c) in fake) seen[c] = 1
                 printf "%s\tI\t%d\t%s\t%s\t%s\t%s\t%s\n", c, seen[c]+0, ((c in pslug) ? "partners/" pslug[c] : ""), lts[c], loc[c], substr(mem[c],2), substr(cip[c],2) } }
-        ' "$pmap" "$pbase" "$aw" "$pw" "$cov" "$ap" | LC_ALL=C sort -t$'\t' -k1,1
+        ' "$pmap" "$pbase" "$aw" "$pw" "$scov" "$cov" "$ap" | LC_ALL=C sort -t$'\t' -k1,1
         # Out rows from coverage hosts.tsv + _hosts-partners.tsv. An endpoint
         # whose org is an In partner (a both-ways link) stays one row PER
         # ENDPOINT, named by the endpoint, col 8 = the In partner — the Total
@@ -219,10 +236,19 @@ external_partners_tsv() {
         # Endpoints column pair); an endpoint with no configured account
         # lists itself, linked to its host page.
         if [ -f "$hosts" ] && [ -f "$hp" ]; then
-            awk -F'\t' -v pfake="$pfake" '
+            awk -F'\t' -v pfake="$pfake" -v SCOV="$scov" -v SPX="$spx" '
                 BEGIN { US = sprintf("%c", 31)
                     # fake/server-only partners count as SEEN (see the In block)
-                    while ((getline l < pfake) > 0) { np=split(l,pa,"\t"); if (np>=3 && pa[3]=="blue") fake[toupper(pa[1])]=1 } }
+                    while ((getline l < pfake) > 0) { np=split(l,pa,"\t"); if (np>=3 && pa[3]=="blue") fake[toupper(pa[1])]=1 } close(pfake)
+                    while ((getline l < SPX) > 0) { np=split(l,pa,"\t"); if (np>=2 && pa[1]!="" && pa[2]!="") spx[pa[1]]=spx[pa[1]] US pa[2] } close(SPX) }
+                # the Out-side SUBSCRIPTION verdict per org (see the header): an
+                # org-keyed ("P") row and an endpoint-less org take it; an
+                # endpoint-keyed ("E") row IS the endpoint and keeps its own
+                FILENAME == SCOV {
+                    if(($2!="O" && $2!="B") || $3!=1 || !($1 in spx)) next
+                    np=split(substr(spx[$1],2), PX, US)
+                    for(pi=1; pi<=np; pi++){ c=PX[pi]; oseen[c]=1; if($5!="" && $5>ots[c]){ ots[c]=$5; ooc[c]=$6 } }
+                    next }
                 FILENAME ~ /_slugmap\.tsv$/        { pslug[$1]=$2; next }   # partner name -> detail-page slug
                 FILENAME ~ /_partners\.tsv$/       { if($2=="in" || $2=="both") inp[$1]=1
                                                      else if($2=="out" && $1 != "" && !($1 in outp)) { outp[$1]=1; outn[++no]=$1 }
@@ -241,7 +267,7 @@ external_partners_tsv() {
                       if ($3 == 1) seen[i] = 1
                       if ($5 != "" && $5 > ts[i]) { ts[i] = $5; oc[i] = $6 } }
                   else { i = idx[k] = ++n; seen[n] = $3; ts[n] = $5; oc[n] = $6; ln[n] = ""; mem[n] = ""
-                      if (substr(k,1,1) == "P") { nm[n] = o; lk[n] = ((o in pslug) ? "partners/" pslug[o] : "") }
+                      if (substr(k,1,1) == "P") { nm[n] = o; isP[n] = 1; lk[n] = ((o in pslug) ? "partners/" pslug[o] : "") }
                       else { nm[n] = $1; lk[n] = $4; if (o != "") ln[n] = o } }
                   el = tolower($1)
                   na = split(substr(ha[el], 2), A, US)
@@ -254,6 +280,7 @@ external_partners_tsv() {
                       mem[i] = mem[i] US A[j] "|" alk[A[j]] "|" $1
                   } } }
                 END { for (i = 1; i <= n; i++) {
+                    if (isP[i]) { seen[i] = (nm[i] in oseen) ? 1 : 0; ts[i] = ots[nm[i]]; oc[i] = ooc[nm[i]] }   # the subscription verdict
                     if (toupper(nm[i]) in fake) seen[i] = 1
                     printf "%s\tO\t%d\t%s\t%s\t%s\t%s\t%s\n", nm[i], seen[i]+0, lk[i], ts[i], oc[i], substr(mem[i],2), ln[i] }
                     # ENDPOINT-LESS Out orgs (2026-08-29): the rows above are
@@ -273,8 +300,8 @@ external_partners_tsv() {
                         if ((o in inp) || (("P" o) in idx)) continue
                         m = ""; nax = split(substr(pacc[o], 2), PA2, US)
                         for (j = 1; j <= nax; j++) m = m US PA2[j] "|" alk[PA2[j]] "|"
-                        printf "%s\tO\t%d\t%s\t\t\t%s\t\n", o, ((toupper(o) in fake) ? 1 : 0), ((o in pslug) ? "partners/" pslug[o] : ""), substr(m, 2) } }
-            ' "$pmap" "$pbase" "$hp" "$ahf" "$pacc2" "$cov" "$hosts"
+                        printf "%s\tO\t%d\t%s\t%s\t%s\t%s\t\n", o, (((o in oseen) || (toupper(o) in fake)) ? 1 : 0), ((o in pslug) ? "partners/" pslug[o] : ""), ots[o], ooc[o], substr(m, 2) } }
+            ' "$pmap" "$pbase" "$hp" "$ahf" "$pacc2" "$scov" "$cov" "$hosts"
         fi
     } | cov_put "$COVSRC/partners.tsv"
 }

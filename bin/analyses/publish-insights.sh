@@ -595,15 +595,21 @@ _subs_box_rows() {
         # That report already drops anything that recovered, so this box
         # inherits the UNRESOLVED reading like column 14. Its rows name an
         # ACCOUNT or a SUBSCRIPTION, so a subscription is flagged when it is
-        # named directly OR when one of its configured accounts is.
+        # named directly OR when one of its configured accounts is — and, for
+        # the account case, only when the flow itself has NOT moved a file OK
+        # after the row's last message (2026-08-31 audit: box 15 is the
+        # top-ranked home Reason, and an account row fanned onto every flow
+        # of a hybrid account put its healthy siblings in the red Deploy box).
         if [ -f "$SRPT/deploy-errors.rpt" ]; then
-            awk -F'\t' -v AS="$XREF/_accounts-subscriptions.tsv" -v SUBF="$FBASE/_subscriptions.tsv" '
+            _fc15="$FILESC"; [ -f "$_fc15" ] || _fc15=/dev/null
+            awk -F'\t' -v AS="$XREF/_accounts-subscriptions.tsv" -v SUBF="$FBASE/_subscriptions.tsv" -v FC="$_fc15" '
                 BEGIN { while ((getline l < AS) > 0) { n = split(l, a, "\t")
                             if (n >= 2 && a[1] != "") ASUB[toupper(a[1])] = ASUB[toupper(a[1])] "\037" a[2] }
                         close(AS)
                         while ((getline l < SUBF) > 0) { split(l, a, "\t")
                             if (a[1] != "") EST[toupper(a[1])] = 1 }
                         close(SUBF) }
+                FILENAME == FC { if ($12 != "" && $2 != "Failed" && $2 != "Expired" && $6 > lok[toupper($12)]) lok[toupper($12)] = $6; next }
                 $1 == "TABLE" { t++; next }
                 $1 != "ROW" || t != 1 { next }
                 { nm = $2; sub(/^@\{[^}]*\}/, "", nm); if (nm == "") next
@@ -612,9 +618,12 @@ _subs_box_rows() {
                   # a phantom row (the table rows are the union of the box
                   # lists) — send it through the account map instead.
                   if ($3 == "Subscription" && (k in EST)) { print "15\t" nm; next }
+                  # the row Last message (col 6, "YYYY-MM-DD HH:MM:SS.mmm") in the
+                  # _files.tsv sortkey shape; a flow with an OK File after it has recovered
+                  key = $6; if (key ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) key = substr(key, 1, 4) substr(key, 6, 2) substr(key, 9, 2) substr(key, 12); else key = ""
                   if (k in ASUB) { m = split(substr(ASUB[k], 2), S, "\037")
-                                   for (i = 1; i <= m; i++) if (S[i] != "") print "15\t" S[i] } }
-            ' "$SRPT/deploy-errors.rpt"
+                                   for (i = 1; i <= m; i++) if (S[i] != "" && (key == "" || lok[toupper(S[i])] == "" || lok[toupper(S[i])] < key)) print "15\t" S[i] } }
+            ' "$_fc15" "$SRPT/deploy-errors.rpt"
         fi
         :   # the tests above are the last commands; keep the exit status 0
 }

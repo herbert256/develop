@@ -289,7 +289,8 @@ n_blue=$(wc -l < "$dedup" | tr -d ' ')
 pda_caches=()
 for cf in "$XREF/_accounts-logins.tsv" "$XREF/_accounts-hosts.tsv" "$XREF/_accounts-apps.tsv" \
           "$XREF/_accounts-domains.tsv" "$XREF/_accounts-partners.tsv" "$XREF/_hosts-partners.tsv" \
-          "$XREF/_subscriptions-apps.tsv" "$XREF/_subscriptions-domains.tsv"; do
+          "$XREF/_subscriptions-apps.tsv" "$XREF/_subscriptions-domains.tsv" \
+          "$XREF/_subscriptions-partners.tsv" "$BASE/_subscriptions.tsv"; do
     [ -f "$cf" ] && pda_caches+=("$cf")
 done
 newfiles="$tmp.newfiles"
@@ -307,15 +308,23 @@ else
         FILENAME ~ /_accounts-domains\.tsv$/  { k=toupper($1); if(!(k in ad)) ad[k]=$2; else if(ad[k]!=$2) ad[k]=AMB; next }
         FILENAME ~ /_subscriptions-apps\.tsv$/    { k=toupper($1); if(!(k in sa)) sa[k]=$2; else if(sa[k]!=$2) sa[k]=AMB; next }
         FILENAME ~ /_subscriptions-domains\.tsv$/ { k=toupper($1); if(!(k in sd)) sd[k]=$2; else if(sd[k]!=$2) sd[k]=AMB; next }
+        # partner: subscription -> host -> account, every map AMB-guarded, and
+        # the connection side from the SUBSCRIPTION comm-profile side (base
+        # _subscriptions.tsv col 2) before the account rule — the parse-time
+        # rules for _files.tsv cols 16/20 (2026-08-31 audit: hp was the one
+        # bare last-row-wins map here, and a hybrid account carrying hosts AND
+        # logins always read "out")
         FILENAME ~ /_accounts-partners\.tsv$/ { k=toupper($1); if(!(k in ap)) ap[k]=$2; else if(ap[k]!=$2) ap[k]=AMB; next }
-        FILENAME ~ /_hosts-partners\.tsv$/    { hp[tolower($1)]=$2; next }
+        FILENAME ~ /_subscriptions-partners\.tsv$/ { k=toupper($1); if(!(k in sp)) sp[k]=$2; else if(sp[k]!=$2) sp[k]=AMB; next }
+        FILENAME ~ /_hosts-partners\.tsv$/    { k=tolower($1); if(!(k in hp)) hp[k]=$2; else if(hp[k]!=$2) hp[k]=AMB; next }
+        FILENAME ~ /base\/_subscriptions\.tsv$/ { if($2=="in"||$2=="out") scn[toupper($1)]=$2; next }
         {
-            a=toupper($3); h=tolower($15)
-            d=(a in ah)?"out":((a in al)?"in":"")
+            a=toupper($3); h=tolower($15); s=toupper($12)
+            d=(s!="" && (s in scn))?scn[s]:((a in ah)?"out":((a in al)?"in":""))
             p=""
-            if(h!="" && (h in hp)) p=hp[h]
+            if(s!="" && (s in sp) && sp[s]!=AMB) p=sp[s]
+            else if(h!="" && (h in hp) && hp[h]!=AMB) p=hp[h]
             else if((a in ap) && ap[a]!=AMB) p=ap[a]
-            s=toupper($12)
             a18=""; if(s!="" && (s in sa) && sa[s]!=AMB) a18=sa[s]; if(a18=="" && (a in aa) && aa[a]!=AMB) a18=aa[a]
             d19=""; if(s!="" && (s in sd) && sd[s]!=AMB) d19=sd[s]; if(d19=="" && (a in ad) && ad[a]!=AMB) d19=ad[a]
             print $0, d, "", a18, d19, p
@@ -323,11 +332,13 @@ else
     ' "${pda_caches[@]}" "$dedup" > "$newfiles"
 fi
 
-# blue-evidence for application/domain/partner/logical: derived from the account,
-# so they inherit the account seed's server-log line (the account's message, keyed
-# to the newfiles row's own date/time). newfiles cols: 3 account 4 date 5 time
-# 13 profile 18 app 19 domain 20 partner; the profile resolves to its Logical
-# through the FlowID map. Appended to $tmp.evid.
+# blue-evidence for application/domain/partner/logical/bl: the tuple's
+# SUBSCRIPTION seed line when it has one (the values ride the subscription
+# since 2026-08-31, so must the evidence — the account's newest line is about
+# some other flow of a hybrid account), else the account seed's line, keyed
+# to the newfiles row's own date/time. newfiles cols: 3 account 4 date 5 time
+# 12 subscription 13 profile 18 app 19 domain 20 partner; the profile resolves
+# to its Logical through the FlowID map. Appended to $tmp.evid.
 awk -F'\t' -v OFS='\t' -v PLM="$XREF/_profiles-logicals.tsv" -v SBL="$XREF/_subscriptions-bl.tsv" '
     BEGIN { while ((getline pl9 < PLM) > 0) { n9 = split(pl9, p9, "\t")
                 if (n9 >= 2 && p9[1] != "" && p9[2] != "") PM[toupper(p9[1])] = p9[2] }
@@ -335,8 +346,11 @@ awk -F'\t' -v OFS='\t' -v PLM="$XREF/_profiles-logicals.tsv" -v SBL="$XREF/_subs
             while ((getline pl9 < SBL) > 0) { n9 = split(pl9, p9, "\t")
                 if (n9 >= 2 && p9[1] != "" && p9[2] != "") BM[toupper(p9[1])] = BM[toupper(p9[1])] "\037" p9[2] }
             close(SBL) }
-    FILENAME==ARGV[1] && $1=="account" { if ($3 > adt[$2]) { adt[$2]=$3; amsg[$2]=$4 }; next }
-    FILENAME==ARGV[2] { ac=toupper($3); when=$4 " " $5; m=(ac in amsg)?amsg[ac]:""
+    FILENAME==ARGV[1] && $1=="account"      { if ($3 > adt[$2]) { adt[$2]=$3; amsg[$2]=$4 }; next }
+    FILENAME==ARGV[1] && $1=="subscription" { if ($3 > sdt[$2]) { sdt[$2]=$3; smsg[$2]=$4 }; next }
+    FILENAME==ARGV[1] { next }
+    FILENAME==ARGV[2] { ac=toupper($3); su=toupper($12); when=$4 " " $5
+        m=(su!="" && (su in smsg))?smsg[su]:((ac in amsg)?amsg[ac]:"")
         if ($13!="" && (toupper($13) in PM)) print "logical", toupper(PM[toupper($13)]), when, m
         if ($12!="" && (toupper($12) in BM)) { nb9=split(substr(BM[toupper($12)],2),B9,"\037")
             for (ib9=1; ib9<=nb9; ib9++) print "bl", toupper(B9[ib9]), when, m }

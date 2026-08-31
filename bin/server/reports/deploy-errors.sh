@@ -73,10 +73,12 @@ PROFSUB="$CONFIG_XREF/_profiles-subscriptions.tsv"
 # the DERIVED use case map: a production hybrid flow carries no UC prefix, so
 # the UC3 poll-recovery clear must ask the config, not the name (2026-08-31 audit)
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
+# account -> its subscriptions: the account-level recovery test below
+ASX="$CONFIG_XREF/_accounts-subscriptions.tsv"; [ -f "$ASX" ] || ASX=/dev/null
 # The transfer cache is a cross-area DEP: the "recovered since" test reads it,
 # so a transfer reparse has to re-trigger this report. The profile map is a
 # config dep: a re-derived xref changes which flow a message names.
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILES_TSV" "$PROFSUB"
+skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILES_TSV" "$PROFSUB" "$ASX"
 ensure_parsed
 ensure_config
 
@@ -84,9 +86,10 @@ TMP=$(mktemp -d "${TMPDIR:-/tmp}/axdep.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 
 # tuple: sortkey \t name \t messages \t last-message \t kind
-LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v ucdf="$UCDF" "$RENAMES_AWK"'
+LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v asx="$ASX" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v ucdf="$UCDF" "$RENAMES_AWK"'
     BEGIN { rn_load(RNF, RNP)
             while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf) }
+    FILENAME == asx { if ($1 != "" && $2 != "") ASUB[toupper($1)] = ASUB[toupper($1)] SUBSEP toupper($2); next }   # account -> subscriptions
     # "[A] [B]" -> the naming entity; sets ACC as a side effect.
     function ent(m,   p1, q1, a, rest, p2, q2, s) {
         p1 = index(m, "[");             if (!p1) return ""
@@ -124,7 +127,9 @@ LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v RN
         # so remember the newest poll per (tail-stripped) site for END
         if (index($5, "Applying the search pattern") > 0 && match($5, /for transfer site '\''[^'\'']*'\''/)) {
             ps = substr($5, RSTART + 19, RLENGTH - 20); sub(/_(SS?|C)CP_.*$/, "", ps)
-            if (ps != "") { pu = toupper(ps); d = $1; gsub(/-/, "", d); pk = d $2; if (pk > PMAX[pu]) PMAX[pu] = pk }
+            # folded like the LASTK keys (rn_canon_pfx below) — one side
+            # folded and the other raw never met (2026-08-31 audit)
+            if (ps != "") { pu = toupper(rn_canon_pfx(ps)); d = $1; gsub(/-/, "", d); pk = d $2; if (pk > PMAX[pu]) PMAX[pu] = pk }
             next
         }
         # the PeSIT receive-side gap (2026-08): one unset profile field and
@@ -174,12 +179,24 @@ LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v RN
     {                                           # _files.tsv: a later OK File clears it
         if ($2 == "Failed" || $2 == "Expired") next
         a = toupper($3); s = toupper($12); sk = $6
+        if (s != "" && sk > SOK[s]) SOK[s] = sk    # the newest OK File per subscription (the account test below)
         if (a != "" && (a in LASTK) && sk > LASTK[a]) CLR[a] = 1
         if (s != "" && (s in LASTK) && sk > LASTK[s]) CLR[s] = 1
     }
     END {
         for (u in N) {
             tot++
+            # an ACCOUNT-named defect (2026-08-31 audit): "any OK File of the
+            # account" let a busy healthy flow clear a route stopped on a
+            # sibling flow of the same hybrid account, for ever. It clears
+            # only when EVERY flow of the account that has ever moved a file
+            # has an OK File after the last message (dormant flows do not
+            # block); an account with no such flow keeps the any-File rule.
+            if (KIND[u] == "Account" && (u in ASUB)) {
+                m9 = split(substr(ASUB[u], 2), S9, SUBSEP); nact = 0; nrec = 0
+                for (i9 = 1; i9 <= m9; i9++) if (S9[i9] in SOK) { nact++; if (SOK[S9[i9]] > LASTK[u]) nrec++ }
+                if (nact > 0) { if (nact == nrec) CLR[u] = 1; else delete CLR[u] }
+            }
             if (u in CLR) { cleared++; continue }
             # UC3 poll-recovery: a successful poll AFTER the last message means
             # the flow works again, files or no files — same tail-strip as the
@@ -193,7 +210,7 @@ LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v RN
         for (up in UNMAP) nun++
         printf "%d\t%d\t%d\n", tot + 0, cleared + 0, nun + 0 > STATS
     }
-' "$PROFSUB" "$PARSED" "$FILES_TSV" | LC_ALL=C sort -r > "$TMP/rows"
+' "$ASX" "$PROFSUB" "$PARSED" "$FILES_TSV" | LC_ALL=C sort -r > "$TMP/rows"
 
 IFS=$'\t' read -r ntot ncleared nunmapped < "$TMP/stats"
 nlist=$(wc -l < "$TMP/rows" | tr -d ' ')
