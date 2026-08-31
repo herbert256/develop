@@ -619,9 +619,14 @@ awk -F'\t' -v LF="$LOGICALF" '
         else if (nm0 in FIX) { finalfix[nn] = FIX[nm0]; PINR[nn] = "pinned in input/logical.txt (folded spelling)"; next }
         name[nn] = nm0; exists[nm0] = 1 }
     END {
-        # pass 1a: count the reductions
+        # pass 1a: count the reductions — per DISTINCT folded name (2026-08-31:
+        # the "-" and "_" spellings of ONE FlowID fold to the same name and
+        # counted as a 2-member family, so the variant-drop rules fired on a
+        # family of one: DPL_AXINI-AO_IMPRESS + DPL_AXINI_AO_IMPRESS made
+        # cnt3rd[AO] 2 and dropped IMPRESS)
         for (i = 1; i <= nn; i++) {
             if (i in finalfix) continue
+            if (cdup[name[i]]++) continue
             n = split(name[i], P, "_")
             if (n == 4) {
                 cnt1[P[1] "_" P[2] "_" P[3]]++
@@ -648,17 +653,21 @@ awk -F'\t' -v LF="$LOGICALF" '
                 # AB_SNOWFLAKE_HYPOPORT_{MORTG,PIPE,SPREAD} family joins
                 # its bare AB_SNOWFLAKE_HYPOPORT)
                 if (pre in exists) { lg = pre; R1[i] = "4 parts: the bare 3-part name exists - 4th part dropped" }
+                # a REAL variant family — the same first 3 parts with 2+
+                # DISTINCT 4th parts — groups even when a 4th part happens
+                # to be a known 3rd part (2026-08-31: the keep-gate below
+                # split SI_GOUDMIJN_INSHARED-{POLIS,INSHARED} and the
+                # DIRIGENT/SPOTLER label families before this outranked it)
+                else if (cnt1[pre] >= 2) { lg = pre; R1[i] = "4 parts: first 3 parts shared by 2+ FlowIDs - 4th part dropped" }
                 # the 4TH part being itself a known 3rd part of a 3-part
-                # FlowID means this is a full D_A1_A2_P shape, NOT a variant
-                # to group (2026-08-31, user rule): no drop here — the
+                # FlowID — with NO variant family on this prefix — means a
+                # full D_A1_A2_P shape (2026-08-31, user rule): no drop, the
                 # reshape keeps first and last and combines parts 2+3
-                # (DPL_AXINI_AO_IMPRESS -> DPL_AXINI-AO_IMPRESS, where the
-                # old 3rd-part rule dropped IMPRESS for the shared AO)
+                # (DPL_AXINI-AO_IMPRESS stays DPL_AXINI-AO_IMPRESS)
                 else if (P[4] in third3) { }
                 # then: a 3rd part that is the 3rd part of 2+ 4-part
                 # FlowIDs — or of any 3-PART FlowID (the restated rule)
                 else if (cnt3rd[P[3]] >= 2 || (P[3] in third3)) { lg = pre; R1[i] = "4 parts: 3rd part is a known 3rd part - 4th part dropped" }
-                else if (cnt1[pre] >= 2) { lg = pre; R1[i] = "4 parts: first 3 parts shared by 2+ FlowIDs - 4th part dropped" }
                 else for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) {
                     c = rejoin(P, n, j)
                     if (cnt3[c] >= 2 || (c in exists)) { lg = c; R1[i] = "4 parts: numeric part " j " dropped"; break } }
