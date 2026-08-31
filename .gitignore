@@ -20,6 +20,12 @@ data/
 *.zip
 *.7z
 
+# Machine-local secrets (the st-reports archive password, generated on first
+# run by bin/build/st-reports-archive.sh). The folder also self-ignores via
+# its own .gitignore ("*"), so it stays untracked in the runtime checkout
+# too, whose .gitignore is maintained separately.
+input/secrets/
+
 # Finder metadata. Also in most machines' global excludes, but carried here so
 # a clone without one stays clean too.
 .DS_Store
