@@ -34,7 +34,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."
 
 UPD="${1:-$HOME/cloud/update.7z}"
-UPDD="${UPD/#$HOME/\~}"   # display form
+UPDD="${UPD/#$HOME/~}"   # display form
 [ -f "$UPD" ] || { echo "st-reports-update: no $UPDD — nothing to ingest." >&2; exit 0; }
 
 command -v 7z >/dev/null 2>&1 || { echo "st-reports-update: 7z not found (brew install p7zip)." >&2; exit 1; }
