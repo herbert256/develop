@@ -27,9 +27,14 @@ if [ ! -s "$PICKUPS" ]; then
 fi
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$PICKUPS"
 
-# One row per UC2 subscription, name order (the report is the per-page tables
-# collated — a lookup table, not a ranking; the columns sort client-side).
-rows=$(LC_ALL=C sort -t$'\t' -k1,1f "$PICKUPS" | awk -F'\t' '
+# One row per UC2 subscription. The rows are BAKED in Pickups-descending
+# order (sidecar col 5, name as the last tiebreak) because that is the
+# SECOND sort key the page opens on (2026-09-01, user request: Waiting desc,
+# then Pickups desc). report.js applies the table's own data-sort-init
+# (Waiting desc) with Array.prototype.sort, which is STABLE — "ties keep DOM
+# order" — so equal Waiting values stay in the order baked here. Change this
+# order and you silently change the page's secondary sort.
+rows=$(LC_ALL=C sort -t$'\t' -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' '
     function sublink(s) { return (s != "") ? "@{alink=subscriptions/" s "}" : "" }
     function stamp(s) { return (s == "" || s == "-") ? "\342\200\224" : substr(s, 1, 19) }
     {
@@ -51,9 +56,12 @@ IFS=$'\t' read -r _ n_rows t_pk t_wf t_f t_wt t_xp t_dl <<< "$tot"
     printf 'TITLE\tPickups\n'
     printf 'DESC\tEvery UC2 (partner collects from us) flow'\''s pickup figures side by side: first/last pickup, pickup logons, collected files, waiting and expired files, the pickup cadence and the UC4 shared-connection flag.\n'
     printf 'INTRO\tOne row per **UC2** (partner collects from us) subscription — the detail pages'\'' **Pickup information** tables collated. A **pickup** is a successful SSH logon by the flow'\''s pickup account (shared across that account'\''s UC2 subscriptions); a visit that only **delivered** files (the UC4 twin flow) is not a pickup — its logons count in the **Delivered-only logons** column. **With files** counts the pickups that collected at least one file of the subscription (each collected file credits the logon that took it); **Files picked up** matches the flow'\''s OK figure; **Waiting**/**Expired** are its staged files by outcome. **UC4 drop** = proven same-connection two-way traffic: at least one technical SSH connection (transfer-log Session ID) both delivered and collected a file (see the UC2 pickup visits analysis). A partner collecting over CFT/PESIT logs no SSH pickup, so its logon columns stay empty while files still move.\n'
-    # default sort: Pickups (column 3, 0-based) descending — 2026-08-31, user
-    # request; sort=, never nosort, so the header clicks keep working
-    printf 'TABLE\tPickups per UC2 subscription\twide\tnofilter\tsort=3:-1\n'
+    # default sort: Waiting (column 6, 0-based) descending, then Pickups
+    # (column 3) descending — 2026-09-01, user request. The primary key is
+    # this modifier; the secondary is the BAKED row order (see the sort
+    # feeding the awk above) preserved by report.js's stable sort. sort=,
+    # never nosort, so the header clicks keep working.
+    printf 'TABLE\tPickups per UC2 subscription\twide\tnofilter\tsort=6:-1\n'
     printf 'HEAD\tSubscription\tFirst pickup\tLast pickup\tPickups\tWith files\tFiles picked up\tWaiting\tExpired\tPattern\tDelivered-only logons\tUC4 drop\n'
     printf 'KIND\tmono\ttext\ttext\tnum\tnum\tnumprocessed\tnum\tnumfailed\ttext\tnum\ttext\n'
     printf '%s\n' "$rows"
