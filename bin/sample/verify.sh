@@ -97,6 +97,16 @@ for env in acceptance production; do
     n=$(awk -F'\t' '$2 ~ /^BL_/' "data/$env/flow-manager/xref/_subscriptions-bl-added.tsv" 2>/dev/null | wc -l | tr -d ' ')
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] _subscriptions-bl-added.tsv carries $n tag-style BL_ value(s) — those come from subscriptions.json and must not count as added"
     check $([ -f "docs/$env/analyses/added-bl.html" ] && echo 0 || echo 1) "[$env] docs/$env/analyses/added-bl.html missing"
+    # the EXTENDED transfer-site fold (2026-09-01, user report): a logged
+    # "<subscription>_<PROTO>_SERVER_<partner>" must be folded back onto its
+    # subscription — unfolded, the flow is unattributed, its movement is
+    # empty and the outcome rule can never say Processed
+    n=$(awk -F'\t' '$12 ~ /_SFTP_SERVER_/ { n++ } END { print n+0 }' "$F")
+    check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] $n file(s) keep an EXTENDED _SFTP_SERVER_ site (the fold did not fire)"
+    if [ "$env" = production ]; then
+        n=$(awk -F'\t' '$12=="UC3_APS_FMGENLOG_PIEDPIPER" && $2=="Processed" && $17=="in" { n++ } END { print n+0 }' "$F")
+        check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] the extended-site flow UC3_APS_FMGENLOG_PIEDPIPER has 0 Processed file(s) with movement 'in'"
+    fi
     # the MULTI-FE account (2026-08-31, user report): CD-PARCEL-BLUTH carries
     # TWO logins; its quiet second flow (its own login, never used) must read
     # Nothing — never "No files": the other login's logons are no pickup

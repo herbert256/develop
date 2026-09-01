@@ -281,10 +281,44 @@ else
 fi
 awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CFGC="$CFG_CONF" "$BLACKLIST_AWK$RENAMES_AWK"'
     BEGIN { bl_load(BLF); rn_load(RNF, RNP)
-            # the configured subscription names (case-folded): a logged site
-            # naming one is kept whatever its shape — see the site rule below
-            while ((getline cl < CFGC) > 0) { split(cl, ca, "\t"); if (ca[1] == "_subscriptions" && ca[2] != "") cfgsub[toupper(ca[2])] = 1 }
+            # the configured subscription names, case-folded -> the configured
+            # SPELLING: a logged site naming one is kept whatever its shape
+            # (see the site rule below), and site_extfold folds an EXTENDED
+            # one back onto it
+            while ((getline cl < CFGC) > 0) { split(cl, ca, "\t")
+                if (ca[1] == "_subscriptions" && ca[2] != "" && !(toupper(ca[2]) in cfgsub)) {
+                    cfgsub[toupper(ca[2])] = ca[2]; CFGN[++ncfg] = toupper(ca[2]) } }
             close(CFGC) }
+    # site_extfold — fold an EXTENDED transfer-site token back onto the
+    # subscription it names (2026-09-01, user report). ST logs some flows as
+    # "<subscription>_<PROTO>_SERVER_<partner>": that value is not a
+    # configured name, so the flow was attributed to nothing, its
+    # _files.tsv movement (col 17) stayed EMPTY, and the outcome rule — which
+    # needs the movement to match the protocol of the last leg — could not say
+    # Processed. Every one of those files read FAILED although both legs
+    # processed cleanly (production: 418 files over 13 flows; the server side
+    # already folds the same shape in bin/build/seen-in-server-log.sh).
+    # The LONGEST configured name the value extends at a name-part boundary
+    # wins, and the remainder must be that server/client comm-profile shape —
+    # so a genuinely different flow whose name merely starts with a configured
+    # one is never swallowed (it stays a logged-but-unconfigured subscription,
+    # exactly as before). Memoised per distinct value: the scan is O(names).
+    function site_extfold(v,   u, i, best, rest) {
+        u = toupper(v)
+        if (u in cfgsub) return v
+        if (u in EXTM) return EXTM[u]
+        best = ""
+        for (i = 1; i <= ncfg; i++) {
+            if (index(u, CFGN[i]) != 1) continue
+            if (substr(u, length(CFGN[i]) + 1, 1) != "_") continue
+            if (length(CFGN[i]) > length(best)) best = CFGN[i]
+        }
+        if (best != "") {
+            rest = substr(u, length(best) + 1)
+            if (rest ~ /^_[A-Z0-9]+_(SERVER|CLIENT)_/) return EXTM[u] = cfgsub[best]
+        }
+        return EXTM[u] = v
+    }
     function split_csv(line,    n, i, c, inquotes, cur) {
         delete field                     # clear stale cells from a prior (short) row
         n = 0; cur = ""; inquotes = 0
@@ -370,6 +404,7 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         cs = site
         if ((scp = index(cs, "_SSCP_")) > 0 || (scp = index(cs, "_SCP_")) > 0 || (scp = index(cs, "_CCP_")) > 0) cs = substr(cs, 1, scp - 1)
         if (cs != "") cs = rn_canon(cs)
+        if (cs != "") cs = site_extfold(cs)   # <subscription>_<PROTO>_SERVER_<partner> -> the subscription
         # THE CONFIGURATION OUTRANKS THE SHAPE TEST (2026-08-31 audit): a clean
         # name that IS a configured subscription is kept whatever it looks
         # like. The blacklist keep rule (^UC — every acceptance flow follows

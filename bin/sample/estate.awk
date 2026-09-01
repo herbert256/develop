@@ -431,6 +431,12 @@ function build_production() {
     # poison what the subscription knows.
     addf(1, "CD",  "ROUTE",    "WONKA",    "",     3, 0.02, "")
     addf(3, "CD",  "ROUTE",    "WONKA",    "_ALT", 2, 0.02, "ownhost,mixedspell", "CD_ROUTE_WONKA")
+    # the EXTENDED transfer-site shape (2026-09-01, user report): this flow's
+    # rows log "<subscription>_SFTP_SERVER_<partner>". The parse must fold
+    # that back onto the subscription — otherwise the flow is unattributed,
+    # its movement empty, and every File reads Failed although both legs
+    # processed cleanly.
+    addf(3, "APS", "FMGENLOG",  "PIEDPIPER", "",   4, 0.02, "extsite")
     addf(3, "APS", "FMGENLOG", "CYBERDYNE","", 12, 0.04, "")
     addf(3, "AB",  "NAS",      "GLOBEX",   "",  6, 0.03, "")
     addf(3, "APS", "SYSHUB",   "SOYLENT",  "",  3, 0.03, "")

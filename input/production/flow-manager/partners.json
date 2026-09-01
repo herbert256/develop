@@ -340,6 +340,30 @@
     "tags": ["sample-estate"]
   },
   {
+    "businessId": "a1b6f0ba-7bf3-4bfc-bb89-1c15cb3bab3b",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/a1b6f0ba-7bf3-4bfc-bb89-1c15cb3bab3b",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "6eeda235-766b-46c0-a5c2-650fc86824e2",
+        "name": "SCP_APS_FMGENLOG_PIEDPIPER_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["box.piedpiper.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "APS_FMGENLOG_PIEDPIPER",
+    "tags": ["sample-estate"]
+  },
+  {
     "businessId": "6037d2e1-c75f-430b-a64f-ff884114c5b8",
     "meta": {
       "href": "https://flowmanager.acme.example:443/api/v2/partners/6037d2e1-c75f-430b-a64f-ff884114c5b8",

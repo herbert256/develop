@@ -55,6 +55,11 @@ function S(abs, lvl, comp, sid, msg) {
 # the logged Transfer Site: clean name + _SCP_ tail, truncated to a varying
 # length like the real exports (never below the _SCP_ marker itself)
 function sitefield(   s, keep) {
+    # the EXTENDED transfer-site shape (2026-09-01, user report): ST logs some
+    # flows as "<subscription>_<PROTO>_SERVER_<partner>" — the parse folds it
+    # back onto the subscription, without which the flow is unattributed, its
+    # movement empty and every File reads Failed
+    if (hastag("extsite")) return LOGSITE "_SFTP_SERVER_" PTOK
     s = LOGSITE "_SCP_" PROF "_" CRED
     keep = 40 + rint(50)
     if (keep < length(LOGSITE) + 14) keep = length(LOGSITE) + 14

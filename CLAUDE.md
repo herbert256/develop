@@ -414,7 +414,16 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
 1. **Blacklist** — `input/<env>/blacklist.txt` (PER ENVIRONMENT since 2026-08-31, user request —
    like every policy file; COMMITTED in develop; TSV `<field>⇥drop|keep⇥<value>`) BLANKS
    platform-internal values (row kept), read only through the sourced `bin/blacklist.sh`;
-   `parser_sig` cksums it so an edit forces a full reparse. **The configuration outranks the site
+   `parser_sig` cksums it so an edit forces a full reparse. **The EXTENDED transfer-site fold**
+   (2026-09-01, user report): ST logs some flows as `<subscription>_<PROTO>_SERVER_<partner>` —
+   not a configured name, so the flow was attributed to NOTHING, its `_files.tsv` movement
+   (col 17) stayed empty and the outcome rule (which matches the movement against the last leg's
+   protocol) could never say Processed: **every one of those files read Failed** though both legs
+   processed cleanly (production: 418 files over 13 flows). `site_extfold` folds the value onto
+   the LONGEST configured name it extends at a name-part boundary, and only when the remainder is
+   that server/client comm-profile shape — a different flow whose name merely starts with a
+   configured one stays a logged-but-unconfigured subscription. `bin/build/seen-in-server-log.sh`
+   folds the same shape on the server side. **The configuration outranks the site
    keep rule** (2026-08-31 audit): a clean, rename-folded site value that names a configured
    subscription (`base/.configured.tsv`, its names part of `parser_sig`) is kept whatever its
    shape — the production hybrid flows carry no UC prefix, and the `^UC` shape test blanked their
