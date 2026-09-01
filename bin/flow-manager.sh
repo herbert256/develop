@@ -1044,11 +1044,13 @@ unset _e _m
 # other bl pair cache is composed from the subscription pairs. Placed AFTER
 # the PDA section (its _subscriptions-{partners,apps,domains} inputs must
 # exist) and BEFORE the mirror loop.
+_bltag="$XREF/.bl.tag.$$"; _bladd="$XREF/.bl.add.$$"
 {   if command -v jq >/dev/null 2>&1 && [ -f "$SKIPDIR/subscriptions.json" ]; then
         jq -r '.[] | .name as $n | (.tags // [])[] | select(startswith("BL")) | [$n, .] | @tsv' \
             "$SKIPDIR/subscriptions.json" 2>/dev/null || true
     fi
-    if [ -s "$BLF" ] && [ -f "$BASE/_subscriptions.tsv" ]; then
+} | LC_ALL=C sort -u > "$_bltag"
+{   if [ -s "$BLF" ] && [ -f "$BASE/_subscriptions.tsv" ]; then
         awk -F'\t' -v BLF="$BLF" -v ENVN="$AXWAY_ENV" '
             FILENAME != BLF { if ($1 != "") CFG[toupper($1)] = $1; next }
             { l = $0; sub(/\r$/, "", l); sub(/^[ \t]+/, "", l)
@@ -1065,7 +1067,16 @@ unset _e _m
             END { if (unk) printf "flow-manager.sh: [%s] input/%s/BL.txt: %d row(s) name a subscription this environment does not configure (skipped): %s%s\n", ENVN, ENVN, unk, ul, (unk > 8 ? ", ..." : "") > "/dev/stderr" }
         ' "$BASE/_subscriptions.tsv" "$BLF"
     fi
-} | LC_ALL=C sort -u > "$XREF/_subscriptions-bl.tsv"
+} | LC_ALL=C sort -u > "$_bladd"
+# the union is the cache; the BL.txt rows the tags do NOT already carry are
+# kept as their own sidecar (2026-09-01, user request) — the "Added BL"
+# Configuration page lists them, so a reader can see what the file adds on
+# top of subscriptions.json. Both sides spell the subscription as the config
+# does (the BL.txt reader maps its name through base/_subscriptions.tsv), so
+# a plain comm on the sorted pairs is exact.
+LC_ALL=C sort -mu "$_bltag" "$_bladd" > "$XREF/_subscriptions-bl.tsv"
+LC_ALL=C comm -13 "$_bltag" "$_bladd" > "$XREF/_subscriptions-bl-added.tsv"
+rm -f "$_bltag" "$_bladd"
 cut -f2 "$XREF/_subscriptions-bl.tsv" | LC_ALL=C sort -u > "$BASE/_bl.tsv"
 xcompose "$XREF/_subscriptions-bl.tsv" _accounts-subscriptions.tsv      2 RIGHT accounts-bl
 xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-logins.tsv        1 RIGHT logins-bl

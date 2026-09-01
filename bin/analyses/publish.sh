@@ -1013,6 +1013,71 @@ write_logical_detection_page() {
     } > "$out"
 }
 
+# ---- the Added BL page (docs/analyses/added-bl.html) ------------------------
+# The BL numbers input/<env>/BL.txt adds ON TOP of subscriptions.json
+# (2026-09-01, user request): one row per subscription with the BL values that
+# are NOT among its tags[] entries. bin/flow-manager.sh writes the difference
+# itself (xref/_subscriptions-bl-added.tsv, the BL.txt side minus the tag
+# side), so page and pipeline can never disagree. Every cell links its detail
+# page; rows tint by the subscription's result. The page is always written —
+# an environment whose file adds nothing says so.
+write_added_bl_page() {
+    local out="$ADIR/added-bl.html"
+    local add="$DATA/flow-manager/xref/_subscriptions-bl-added.tsv"
+    local smap="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv"
+    local bmap="$DATA/transfer/reports/details/bl/_slugmap.tsv"
+    local sbase="$DATA/flow-manager/base/_subscriptions.tsv"
+    [ -f "$add" ]   || add=/dev/null
+    [ -f "$smap" ]  || smap=/dev/null
+    [ -f "$bmap" ]  || bmap=/dev/null
+    [ -f "$sbase" ] || sbase=/dev/null
+    local rows n nbl
+    rows=$(LC_ALL=C awk -F'\t' -v SM="$smap" -v BM="$bmap" -v SB="$sbase" '
+        function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+        BEGIN { US = sprintf("%c", 31)
+            while ((getline l < SM) > 0) { split(l, a, "\t"); if (a[1] != "") sslug[toupper(a[1])] = a[2] } close(SM)
+            while ((getline l < BM) > 0) { split(l, a, "\t"); if (a[1] != "") bslug[toupper(a[1])] = a[2] } close(BM)
+            while ((getline l < SB) > 0) { n2 = split(l, a, "\t"); if (n2 >= 3 && a[1] != "") res[toupper(a[1])] = a[3] } close(SB) }
+        $1 != "" && $2 != "" {
+            k = toupper($1)
+            if (!(k in seen)) { seen[k] = 1; ORD[++n] = $1 }         # input order = sorted (the sidecar is sort -u)
+            if (index(US BL[k] US, US $2 US) == 0) { BL[k] = BL[k] US $2; nb[k]++ }
+        }
+        END {
+            for (i = 1; i <= n; i++) { s = ORD[i]; k = toupper(s)
+                sc = e(s)
+                if (k in sslug) sc = "<a href=\"../details/subscriptions/" sslug[k] ".html\">" sc "</a>"
+                m = split(substr(BL[k], 2), B, US); cell = ""
+                for (j = 1; j <= m; j++) { u = toupper(B[j]); bc = e(B[j])
+                    if (u in bslug) bc = "<a href=\"../details/bl/" bslug[u] ".html\">" bc "</a>"
+                    cell = cell (cell == "" ? "" : ", ") bc }
+                tr = "<tr"; r = res[k]
+                if (r == "green" || r == "orange" || r == "red" || r == "blue") tr = tr " data-res=\"" r "\""
+                printf "%s><td>%s</td><td class=\"wrap\">%s</td></tr>\n", tr, sc, cell
+                tot += nb[k] }
+            printf "#\t%d\n", tot + 0
+        }' "$add")
+    nbl=$(printf '%s\n' "$rows" | awk -F'\t' '$1 == "#" { print $2; f = 1 } END { if (!f) print 0 }')
+    rows=$(printf '%s\n' "$rows" | grep -v '^#' || true)
+    n=$(printf '%s' "$rows" | grep -c '<tr' || true)
+    {
+        html_head "Added BL" "../assets/style.css" "" "" "added-bl" "" "" "sort-fresh"
+        printf '<h1>Added BL</h1>\n'
+        analyses_group_tabs added-bl.html
+        printf '<p class="subtitle">The BL numbers <code>input/&lt;env&gt;/BL.txt</code> adds <strong>on top of</strong> <code>subscriptions.json</code> &mdash; one row per subscription with the values that are <strong>not</strong> among its <code>tags</code> entries. Both sources feed the BL entity (the pipeline unions them), so this page is the answer to &ldquo;what does the file contribute that the export does not?&rdquo;. A subscription whose BL numbers all come from its tags does not appear. Every cell links its detail page; rows tint by the subscription&rsquo;s result.</p>\n'
+        printf '<div class="tablewrap"><table class="index fit">\n'
+        printf '<tr><th>Subscription</th><th>BLs</th></tr>\n'
+        if [ -n "$rows" ]; then
+            printf '%s\n' "$rows"
+        else
+            printf '<tr><td colspan="2">Every BL number of this environment comes from the subscriptions.json <code>tags</code> &mdash; <code>input/&lt;env&gt;/BL.txt</code> adds none.</td></tr>\n'
+        fi
+        printf '<tr class="total"><td>Total (%s subscription(s), %s BL number(s))</td><td></td></tr>\n' "$n" "$nbl"
+        printf '</table></div>\n'
+        printf '</body>\n</html>\n'
+    } > "$out"
+}
+
 # ---- the Subscriptions page (docs/analyses/subscriptions.html) --------------
 # The per-FLOWID configuration mapping (2026-08-30, user request; the row
 # identity moved from the subscription to the FLOWID 2026-09-01, user
@@ -1885,6 +1950,7 @@ write_analyses_index() {
         [ -f "$ADIR/uc2-visits.html" ] && printf '<tr><td><a href="uc2-visits.html">UC2 pickup visits</a></td><td class="desc">What each UC2 partner actually does when it connects: collected, two-way exchange, delivery-only (the UC4 twin) or empty-handed visits.</td></tr>\n'
         [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured FlowID on one row: its use case(s), account, endpoint, BL tag and the derived Logical / Partner / Domain / Application groups.</td></tr>\n'
         [ -f "$ADIR/logical-detection.html" ] && printf '<tr><td><a href="logical-detection.html">Logical detection</a></td><td class="desc">How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID.</td></tr>\n'
+        [ -f "$ADIR/added-bl.html" ] && printf '<tr><td><a href="added-bl.html">Added BL</a></td><td class="desc">The BL numbers input/&lt;env&gt;/BL.txt adds on top of subscriptions.json — per subscription, the values that are not among its tags.</td></tr>\n'
         [ -f "$ADIR/accounts.html" ] && printf '<tr><td><a href="accounts.html">Accounts</a></td><td class="desc">The accounts (partners) and their communication profiles &mdash; naming vs configured type/auth, insecure and unrestricted endpoints, conflicting host/whitelist setup, plus account &amp; login integrity checks (non-standard or shared logins, password profiles without a password, and more).</td></tr>\n'
         [ -f "$ADIR/account-sharing.html" ] && printf '<tr><td><a href="account-sharing.html">Account sharing</a></td><td class="desc">Which accounts serve more than one subscription, and in what shape: UC2+UC4 mailbox pairs, UC1+UC3 outbound pairs, fan-outs and both-directions accounts.</td></tr>\n'
         [ -f "$ADIR/twins.html" ] && printf '<tr><td><a href="twins.html">Twins</a></td><td class="desc">Every twin pair on one page: subscriptions that are the same flow configured the opposite way (naming slips highlighted) and the accounts spelled with both separators.</td></tr>\n'
@@ -1925,6 +1991,7 @@ write_use_case_definitions_page
 write_use_case_patterns_page
 write_subscriptions_page
 write_logical_detection_page
+write_added_bl_page
 write_accounts_page
 write_cronjobs_page
 write_first_seen_page 1

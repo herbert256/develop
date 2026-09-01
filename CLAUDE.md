@@ -194,7 +194,8 @@ a BL through its SUBSCRIPTION); result filled later by the
 two build steps) — and `data/<env>/flow-manager/xref/` — the pair caches: every pair of the eleven
 items BOTH WAYS (110 files; unconfigured = empty — `_profiles-logicals` doubles as the FlowID →
 Logical MAP every report attributes a File’s profile column through, `_subscriptions-bl` as the
-subscription → BL tag map), plus `_subscriptions-patterns`, `_subscriptions-flowdir`
+subscription → BL tag map, and its sidecar `_subscriptions-bl-added.tsv` carries the
+`input/<env>/BL.txt` rows the `tags` do NOT hold — the Analyses → Configuration “Added BL” page), plus `_subscriptions-patterns`, `_subscriptions-flowdir`
 (out|in|relay), `_subscriptions-ucderived` (2026-08: the use case DERIVED for a non-UC-named
 subscription from flowdir × the pattern's one partner verb — out+pull=UC2, out+push=UC1,
 in+push=UC4, in+pull=UC3; both/neither verb = no row; consumers: the detail Features "Use case"
