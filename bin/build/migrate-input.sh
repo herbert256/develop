@@ -100,3 +100,17 @@ fi
 
 # the partner-aliases -> logical_partners fold, per environment (see above)
 for e in $envs; do fold_aliases "input/$e"; done
+
+# ---- what each environment actually carries (2026-09-01) --------------------
+# The policy files are per environment, and a MISSING one is silently the
+# empty rule set — flow-manager and the parses treat an absent file as "no
+# rules", so a file left behind by a hand-made migration costs its curation
+# without a word. Name them here, once, so the build report shows it. Not an
+# error: an environment may legitimately have nothing to say in a file.
+POLICY="BL.txt blacklist.txt logical.txt logical_apps.txt logical_domains.txt logical_partners.txt rename.txt skip.txt"
+for e in $envs; do
+    miss=""
+    for f in $POLICY; do [ -f "input/$e/$f" ] || miss="$miss $f"; done
+    [ -n "$miss" ] && echo "migrate-input: NOTE - input/$e/ has no$miss (an absent policy file = no rules for that environment)." >&2
+done
+:
