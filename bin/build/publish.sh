@@ -1067,9 +1067,16 @@ write_env_block() {
                     esc "$(dotify "$fout")"; printf '<td class="num">%s</td>' "$ESC"; foutsum=$((foutsum + fout)); fi
                 if [ "$fok" = "-" ] || [ "$fok" = 0 ]; then printf '<td class="num processed z"></td>'; else
                     esc "$(dotify "$fok")"; printf '<td class="num processed">%s</td>' "$ESC"; fi
-                # Recovered, amber like topview's cell; a 0/blank cell stays untinted (td.warn:empty)
+                # Recovered, amber like topview's cell; a 0/blank cell stays
+                # untinted (td.warn:empty). A nonzero cell opens the Recovered
+                # files report narrowed to that day (2026-09-01, user
+                # request), the way the Error cell beside it opens its view.
                 if [ "$frv" = "-" ] || [ "$frv" = 0 ] || [ -z "$frv" ]; then printf '<td class="num warn"></td>'; else
-                    esc "$(dotify "$frv")"; printf '<td class="num warn">%s</td>' "$ESC"; frvsum=$((frvsum + frv)); fi
+                    esc "$(dotify "$frv")"
+                    if [ -f "docs/$env/transfer/recovered-files.html" ]; then
+                        printf '<td class="num warn"><a href="%s/transfer/recovered-files.html?axway_date=%s">%s</a></td>' "$env" "$d" "$ESC"
+                    else printf '<td class="num warn">%s</td>' "$ESC"; fi
+                    frvsum=$((frvsum + frv)); fi
                 if [ "$fer" = "-" ] || [ "$fer" = 0 ]; then printf '<td class="num failed z"></td>'; else
                     esc "$(dotify "$fer")"
                     if [ -f "docs/$env/transfer/entities/subscription-all.html" ]; then
@@ -1123,7 +1130,9 @@ write_env_block() {
         if [ "$finsum" -gt 0 ]; then esc "$(dotify "$finsum")"; fint=$ESC; fi
         if [ "$foutsum" -gt 0 ]; then esc "$(dotify "$foutsum")"; foutt=$ESC; fi
         local frvt=""
-        if [ "$frvsum" -gt 0 ]; then esc "$(dotify "$frvsum")"; frvt=$ESC; fi
+        if [ "$frvsum" -gt 0 ]; then esc "$(dotify "$frvsum")"; frvt=$ESC
+            # the whole-window Recovered total opens the report unnarrowed
+            [ -f "docs/$env/transfer/recovered-files.html" ] && frvt="<a href=\"$env/transfer/recovered-files.html\">$ESC</a>"; fi
         # the Duration total = the report's own overall percentiles (a
         # percentile cannot be summed); empty cells when the report is absent
         [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'
