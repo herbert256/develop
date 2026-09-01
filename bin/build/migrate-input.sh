@@ -15,6 +15,11 @@
 #     input/skip.txt            -> input/<env>/skip.txt
 #     input/partner-aliases.tsv -> input/<env>/partner-aliases.tsv
 #
+# ... and a SECOND one-time migration since 2026-09-01 (user request):
+# input/<env>/partner-aliases.tsv is retired altogether, its curated pairs
+# folded into input/<env>/logical_partners.txt as PART REPLACEMENTS
+# (fold_aliases below).
+#
 # The develop repo moved its sample
 # copies in git; the RUNTIME checkout holds the real files at the old place and
 # bin/runtime.sh never syncs input/, so without this step its next build would
@@ -29,6 +34,42 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."
 
 FILES="BL.txt blacklist.txt logical.txt logical_apps.txt logical_domains.txt logical_partners.txt rename.txt skip.txt partner-aliases.tsv"
+
+# fold_aliases ENVDIR — the SECOND one-time migration (2026-09-01, user
+# request): input/<env>/partner-aliases.tsv is retired, its curated pairs
+# becoming PART REPLACEMENTS in input/<env>/logical_partners.txt. A pair
+# "variant<TAB>CANONICAL" says the two tokens name one organisation; as a
+# part replacement "VARIANT CANONICAL" the variant is rewritten to the
+# canonical BEFORE the partner token enters the merge, which subsumes both
+# the old merge rule 4 and the "alias star" that named the merged group.
+# Single-token lines were already inert and are dropped. Pairs already in
+# logical_partners.txt are not duplicated. The .tsv is removed only after
+# the replacements are safely written.
+fold_aliases() {
+    local ed=$1 al="$1/partner-aliases.tsv" lp="$1/logical_partners.txt" n
+    [ -f "$al" ] || return 0
+    [ -f "$lp" ] || : > "$lp"
+    n=$(awk -v LP="$lp" -v DT="$(date '+%Y-%m-%d')" '
+        BEGIN { while ((getline l < LP) > 0) {
+                    if (l ~ /^[ \t]*#/ || l ~ /^[ \t]*$/) continue
+                    if (split(l, a, /[ \t]+/) >= 2 && a[1] != "") have[toupper(a[1])] = 1 }
+                close(LP) }
+        /^[ \t]*#/ || /^[ \t]*$/ { next }
+        { n = split($0, a, "\t")
+          if (n < 2 || a[1] == "" || a[2] == "") next          # a single token was inert
+          f = toupper(a[1]); t = toupper(a[2])
+          if (f == t || (f in have)) next
+          have[f] = 1; PR[++np] = f "\t" t }
+        END { if (np) { printf "\n# folded from the retired partner-aliases.tsv (%s)\n", DT >> LP
+                        for (i = 1; i <= np; i++) { split(PR[i], b, "\t"); printf "%-28s %s\n", b[1], b[2] >> LP } }
+              print np + 0 }' "$al")
+    rm -f "$al"
+    if [ "${n:-0}" -gt 0 ]; then
+        echo "migrate-input: folded $n partner alias pair(s) into $lp; removed $al." >&2
+    else
+        echo "migrate-input: removed $al (no pair to fold — it was empty, comments only, or already folded)." >&2
+    fi
+}
 envs=""
 for e in acceptance production; do [ -d "input/$e" ] && envs="$envs $e"; done
 if [ -z "$envs" ]; then
@@ -56,3 +97,6 @@ if [ "$moved" -eq 0 ]; then
 else
     echo "migrate-input: $moved shared policy file(s) moved into$envs." >&2
 fi
+
+# the partner-aliases -> logical_partners fold, per environment (see above)
+for e in $envs; do fold_aliases "input/$e"; done

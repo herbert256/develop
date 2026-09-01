@@ -1014,15 +1014,22 @@ write_logical_detection_page() {
 }
 
 # ---- the Subscriptions page (docs/analyses/subscriptions.html) --------------
-# The per-subscription configuration mapping (2026-08-30, user request): EVERY
-# configured subscription on one row with its FlowID (customAttribute_
-# FlowIdentifier), use case (the UC<n> name prefix, else the flow-manager
-# DERIVED one), account, endpoint (the login the partner connects in with, or
-# the remote host we dial out to), BL tag (the subscriptions.json tags[] entry
-# starting with "BL" — the _subscriptions-bl xref cache, since 2026-08-31 a
-# full entity whose cell links its detail page) and the derived Logical / Partner / Domain /
-# Application groups — the config caches joined onto one row each. Every name
-# links its detail page; rows tint by the subscription result. The roster is
+# The per-FLOWID configuration mapping (2026-08-30, user request; the row
+# identity moved from the subscription to the FLOWID 2026-09-01, user
+# request): every configured FlowID (customAttribute_FlowIdentifier) on ONE
+# row with its use cases, account, endpoint (the login the partner connects
+# in with, or the remote host we dial out to), BL tag (the
+# subscriptions.json tags[] entry starting with "BL" — the
+# _subscriptions-bl xref cache, since 2026-08-31 a full entity whose cell
+# links its detail page) and the derived Logical / Partner / Domain /
+# Application groups — the config caches joined onto one row each.
+# A flow'"'"'s UC subscriptions SHARE one FlowID, so their rows fold into one
+# and every cell carries the UNION of their values: the UCx column (column
+# TWO since 2026-09-01, user request) lists every use case the FlowID
+# appears under, each linking that use case'"'"'s own subscription detail page.
+# Every name links its detail page; rows tint by the folded subscriptions'"'"'
+# result, rolled up the site-wide way (any red -> red, one shared value ->
+# that value, mixed -> orange). The roster is
 # the pristine configured snapshot (base/.configured.tsv — the base cache
 # gains discovered names after the build's append steps), falling back to the
 # base cache minus the parse-synthetic UCx_ names on a pre-snapshot tree.
@@ -1057,15 +1064,23 @@ write_subscriptions_page() {
                 return "<a href=\"../details/" sub2 "/" SLUG[sub2 SUBSEP k2] ".html\">" e(nm) "</a>"
             return e(nm)
         }
-        # a \x1f set -> sorted, each value linked, ", "-joined
-        function cell(sub2, set,   A2, n2, i2, j2, t3, o2) {
+        # "UC12" -> 12, so the UCx cell orders UC2 before UC10
+        function ucnum(u,   t) { t = u; sub(/^UC/, "", t); return t + 0 }
+        # a \x1f set -> sorted, DEDUPED, each value linked, ", "-joined.
+        # The dedupe is what lets a folded FlowID row simply CONCATENATE its
+        # subscriptions'"'"' sets (2026-09-01): addv() only dedupes per
+        # subscription, so two UC rows of one flow bring the same account
+        # twice.
+        function cell(sub2, set,   A2, n2, i2, j2, t3, o2, prev) {
             if (set == "") return ""
             n2 = split(substr(set, 2), A2, US)
             for (i2 = 2; i2 <= n2; i2++) { t3 = A2[i2]
                 for (j2 = i2 - 1; j2 >= 1 && A2[j2] > t3; j2--) A2[j2+1] = A2[j2]
                 A2[j2+1] = t3 }
-            o2 = ""
-            for (i2 = 1; i2 <= n2; i2++) o2 = o2 (o2 == "" ? "" : ", ") lnk(sub2, A2[i2])
+            o2 = ""; prev = ""
+            for (i2 = 1; i2 <= n2; i2++) { if (i2 > 1 && A2[i2] == prev) continue
+                prev = A2[i2]
+                o2 = o2 (o2 == "" ? "" : ", ") lnk(sub2, A2[i2]) }
             return o2
         }
         BEGIN { US = sprintf("%c", 31)
@@ -1096,38 +1111,89 @@ write_subscriptions_page() {
         FILENAME ~ /_subscriptions-apps\.tsv$/      { addv(APP, "z", $1, $2); next }
         FILENAME ~ /_subscriptions-bl\.tsv$/        { addv(BLE, "b", $1, $2); next }
         END {
+            # ---- fold the roster onto the FLOWID (2026-09-01, user request)
+            # A flow'"'"'s UC subscriptions share one FlowID, so they become ONE
+            # row: the group key is the FlowID cell text, and a subscription
+            # with no FlowID (or a rare multi-FlowID one, which keeps its own
+            # exact set as the key) still gets its own row. Every value set is
+            # CONCATENATED here and deduped by cell().
             for (i = 1; i <= nr; i++) { nm = RN[i]; k = toupper(nm)
-                # UCx: the name prefix wins; else the flow-manager derived one
+                fidtxt = cell("", (k in FID) ? FID[k] : "")
+                gk = (fidtxt != "" ? "F" SUBSEP toupper(fidtxt) : "N" SUBSEP k)
+                if (!(gk in gseen)) { gseen[gk] = 1; GK[++ng] = gk
+                    GFID[gk] = fidtxt; GNAME[gk] = nm }
+                GN[gk]++                       # subscriptions folded into the row
+                GSUB[gk] = k                   # the single member'"'"'s key (used when GN == 1)
+                GLGC[gk] = GLGC[gk] ((k in LGC) ? LGC[k] : "")
+                GACC[gk] = GACC[gk] ((k in ACC) ? ACC[k] : "")
+                GPTN[gk] = GPTN[gk] ((k in PTN) ? PTN[k] : "")
+                GDOM[gk] = GDOM[gk] ((k in DOM) ? DOM[k] : "")
+                GAPP[gk] = GAPP[gk] ((k in APP) ? APP[k] : "")
+                GBLE[gk] = GBLE[gk] ((k in BLE) ? BLE[k] : "")
+                GLGN[gk] = GLGN[gk] ((k in LGN) ? LGN[k] : "")
+                GHST[gk] = GHST[gk] ((k in HST) ? HST[k] : "")
+                # UCx: the name prefix wins; else the flow-manager derived one.
+                # One entry per DISTINCT use case, linking the subscription
+                # that carries it — the first one when two subscriptions of
+                # the row share a use case (they are reachable from the
+                # subscription Entities list either way).
                 uc = ""
                 if (match(nm, /^UC[0-9]+/)) uc = substr(nm, RSTART, RLENGTH)
                 else if (k in UCD) uc = UCD[k]
-                ep = cell("logins", (k in LGN) ? LGN[k] : "")
-                hp = cell("hosts",  (k in HST) ? HST[k] : "")
-                epc = ep ((ep != "" && hp != "") ? ", " : "") hp
+                uc = toupper(uc)
+                if (uc != "" && !((gk SUBSEP uc) in ucseen)) { ucseen[gk SUBSEP uc] = 1
+                    GUC[gk] = GUC[gk] US uc; GUCS[gk SUBSEP uc] = k }
+                # result: the site-wide rollup (bin/build/result.sh stage 2) —
+                # any red wins, one shared value carries, anything mixed is
+                # orange
                 res = (k in RES) ? RES[k] : ""
+                if (res != "") { GRES[gk SUBSEP res] = 1
+                    if (!(gk in GR1)) GR1[gk] = res; else if (GR1[gk] != res) GRMIX[gk] = 1 }
+            }
+            for (i = 1; i <= ng; i++) { gk = GK[i]
+                fidtxt = GFID[gk]; nm = GNAME[gk]
+                # the UCx cell, numerically ordered (UC2 before UC10)
+                nuc = split(substr(GUC[gk], 2), UA, US)
+                for (ua = 2; ua <= nuc; ua++) { uv = UA[ua]; utn = ucnum(uv)
+                    for (ub = ua - 1; ub >= 1 && ucnum(UA[ub]) > utn; ub--) UA[ub+1] = UA[ub]
+                    UA[ub+1] = uv }
+                ucc = ""; ucsort = ""
+                for (ua = 1; ua <= nuc; ua++) { uv = UA[ua]; utxt = e(uv)
+                    if ((gk SUBSEP uv) in GUCS && ("subscriptions" SUBSEP GUCS[gk SUBSEP uv]) in SLUG)
+                        utxt = "<a href=\"../details/subscriptions/" SLUG["subscriptions" SUBSEP GUCS[gk SUBSEP uv]] ".html\">" utxt "</a>"
+                    ucc = ucc (ucc == "" ? "" : ", ") utxt
+                    if (ua == 1) ucsort = sprintf("%03d", ucnum(uv)) }
+                ep = cell("logins", GLGN[gk]); hp = cell("hosts", GHST[gk])
+                epc = ep ((ep != "" && hp != "") ? ", " : "") hp
+                res = ""
+                if ((gk SUBSEP "red") in GRES) res = "red"
+                else if (!(gk in GRMIX)) res = GR1[gk]
+                else res = "orange"
                 tr = "<tr"
                 if (res == "green" || res == "orange" || res == "red" || res == "blue") tr = tr " data-res=\"" res "\""
                 # the Subscription cell (2026-08-30, user request): the
-                # FlowID text, linking the subscription detail page — the
-                # row identity. Baked order: UCx, then the PLAIN FlowID text
-                # (the anchor would sort every row on the shared href
-                # prefix), name as tiebreak.
-                fidtxt = cell("", (k in FID) ? FID[k] : "")
+                # FlowID text — the row identity. It links the subscription
+                # detail page while the row folds exactly ONE subscription;
+                # a folded row would have several, so there the UCx cell
+                # carries the per-use-case links instead. Baked order:
+                # lowest UCx, then the PLAIN FlowID text (the anchor would
+                # sort every row on the shared href prefix), name as tiebreak.
                 fid = fidtxt
-                if (fid != "" && ("subscriptions" SUBSEP k) in SLUG)
-                    fid = "<a href=\"../details/subscriptions/" SLUG["subscriptions" SUBSEP k] ".html\">" fidtxt "</a>"
-                # column order UCx, Subscription, Logical, Account, Partner …
-                # (2026-08-31, user request — Logical before Account)
-                print toupper(uc) "\t" toupper(fidtxt == "" ? nm : fidtxt) "\t" k "\t" tr ">" \
-                    "<td>" uc "</td>" \
+                if (fid != "" && GN[gk] == 1 && ("subscriptions" SUBSEP GSUB[gk]) in SLUG)
+                    fid = "<a href=\"../details/subscriptions/" SLUG["subscriptions" SUBSEP GSUB[gk]] ".html\">" fidtxt "</a>"
+                # column order Subscription, UCx, Logical, Account, Partner …
+                # (2026-09-01, user request — UCx second; 2026-08-31 — Logical
+                # before Account)
+                print ucsort "\t" toupper(fidtxt == "" ? nm : fidtxt) "\t" toupper(nm) "\t" tr ">" \
                     "<td>" fid "</td>" \
-                    "<td>" cell("logicals", (k in LGC) ? LGC[k] : "") "</td>" \
-                    "<td class=\"wrap\">" cell("accounts", (k in ACC) ? ACC[k] : "") "</td>" \
-                    "<td class=\"wrap\">" cell("partners", (k in PTN) ? PTN[k] : "") "</td>" \
-                    "<td>" cell("domains", (k in DOM) ? DOM[k] : "") "</td>" \
-                    "<td>" cell("applications", (k in APP) ? APP[k] : "") "</td>" \
+                    "<td>" ucc "</td>" \
+                    "<td>" cell("logicals", GLGC[gk]) "</td>" \
+                    "<td class=\"wrap\">" cell("accounts", GACC[gk]) "</td>" \
+                    "<td class=\"wrap\">" cell("partners", GPTN[gk]) "</td>" \
+                    "<td>" cell("domains", GDOM[gk]) "</td>" \
+                    "<td>" cell("applications", GAPP[gk]) "</td>" \
                     "<td class=\"wrap\">" epc "</td>" \
-                    "<td>" cell("bl", (k in BLE) ? BLE[k] : "") "</td></tr>"
+                    "<td>" cell("bl", GBLE[gk]) "</td></tr>"
             }
         }' ${args[@]+"${args[@]}"} "$B/_subscriptions.tsv" \
         | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3 | cut -f4-)
@@ -1136,9 +1202,9 @@ write_subscriptions_page() {
         html_head "Subscriptions" "../assets/style.css" "" "" "subscriptions" "" "" "sort-fresh"
         printf '<h1>Subscriptions</h1>\n'
         analyses_group_tabs subscriptions.html
-        printf '<p class="subtitle">Every configured subscription on one row, ordered by <strong>use case</strong> (the <code>UC&lt;n&gt;</code> name prefix, else the derived one). The <strong>Subscription</strong> column shows the flow&rsquo;s <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code>) and links the subscription&rsquo;s own detail page &mdash; a flow&rsquo;s UC subscriptions share one FlowID, so a FlowID can carry several rows. Then the derived <strong>Logical</strong> group, the <strong>account</strong>, the derived <strong>Partner</strong> / <strong>Domain</strong> / <strong>Application</strong> groups, the <strong>endpoint</strong> (the login the partner connects in with, or the remote host we dial out to) and the <strong>BL</strong> tag (the export&rsquo;s <code>tags</code> entry starting with <code>BL</code>). Every other name links its detail page too; rows tint by the subscription&rsquo;s result &mdash; <strong>green</strong> last transfer OK, <strong>orange</strong> never seen, <strong>red</strong> last transfer Error, <strong>blue</strong> server-log only.</p>\n'
+        printf '<p class="subtitle">Every configured <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code>) on one row, ordered by <strong>use case</strong>. A flow&rsquo;s UC subscriptions share one FlowID, so they fold into a single row and the <strong>UCx</strong> column lists <strong>every use case</strong> that FlowID appears under (the <code>UC&lt;n&gt;</code> name prefix, else the derived one), each linking that use case&rsquo;s own subscription detail page; the FlowID itself links the detail page when the row is a single subscription. Then the derived <strong>Logical</strong> group, the <strong>account</strong>, the derived <strong>Partner</strong> / <strong>Domain</strong> / <strong>Application</strong> groups, the <strong>endpoint</strong> (the login the partner connects in with, or the remote host we dial out to) and the <strong>BL</strong> tag (the export&rsquo;s <code>tags</code> entry starting with <code>BL</code>) &mdash; each cell the <strong>union</strong> over the folded subscriptions. Every other name links its detail page too; rows tint by the folded result &mdash; <strong>green</strong> last transfer OK, <strong>orange</strong> never seen or mixed, <strong>red</strong> one or more last transfers in Error, <strong>blue</strong> server-log only.</p>\n'
         printf '<div class="tablewrap"><table class="index fit">\n'
-        printf '<tr><th>UCx</th><th>Subscription</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>Endpoint</th><th>BL</th></tr>\n'
+        printf '<tr><th>Subscription</th><th>UCx</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>Endpoint</th><th>BL</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
         printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$n"
         printf '</table></div>\n'
@@ -1817,7 +1883,7 @@ write_analyses_index() {
         printf '<tr><th colspan="2">Configuration</th></tr>\n'
         [ -f "$ADIR/use-cases.html" ] && printf '<tr><td><a href="use-cases.html">Use cases</a></td><td class="desc">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; Total, Server (server-log only), Not seen, Error and OK per use case; tabs for the <strong>Use Case definitions</strong> (who connects, which way the file travels, what triggers it) and the <strong>Use Case patterns</strong> (the accounts grouped by their subscription mix, e.g. <code>UC2 (1) UC4 (1)</code>).</td></tr>\n'
         [ -f "$ADIR/uc2-visits.html" ] && printf '<tr><td><a href="uc2-visits.html">UC2 pickup visits</a></td><td class="desc">What each UC2 partner actually does when it connects: collected, two-way exchange, delivery-only (the UC4 twin) or empty-handed visits.</td></tr>\n'
-        [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured subscription on one row: FlowID, use case, account, endpoint, BL tag and the derived Logical / Partner / Domain / Application groups.</td></tr>\n'
+        [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured FlowID on one row: its use case(s), account, endpoint, BL tag and the derived Logical / Partner / Domain / Application groups.</td></tr>\n'
         [ -f "$ADIR/logical-detection.html" ] && printf '<tr><td><a href="logical-detection.html">Logical detection</a></td><td class="desc">How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID.</td></tr>\n'
         [ -f "$ADIR/accounts.html" ] && printf '<tr><td><a href="accounts.html">Accounts</a></td><td class="desc">The accounts (partners) and their communication profiles &mdash; naming vs configured type/auth, insecure and unrestricted endpoints, conflicting host/whitelist setup, plus account &amp; login integrity checks (non-standard or shared logins, password profiles without a password, and more).</td></tr>\n'
         [ -f "$ADIR/account-sharing.html" ] && printf '<tr><td><a href="account-sharing.html">Account sharing</a></td><td class="desc">Which accounts serve more than one subscription, and in what shape: UC2+UC4 mailbox pairs, UC1+UC3 outbound pairs, fan-outs and both-directions accounts.</td></tr>\n'

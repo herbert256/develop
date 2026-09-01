@@ -13,8 +13,8 @@
 # A mapping also applies to the GROUP NAME a fold lands on, so one line
 # pins a whole folded family's final form.
 #
-# SAMPLE ESTATE: the 2-token WA_VDN would mechanically double into
-# WA_WA_VDN — the fixed form names its middle part properly; the monitor
+# SAMPLE ESTATE: the 2-token WA_VDN would mechanically become
+# WA_UNKNOWN_VDN — the fixed form names its middle part properly; the monitor
 # family groups onto INFRA_MONITOR_UC (separators normalize to "_" for
 # grouping) and the pin keeps its native dashed spelling.
 WA_VDN WA_CLEARING_VDN

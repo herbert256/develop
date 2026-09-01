@@ -16,9 +16,10 @@ Layout (per environment, acceptance/ + production/):
   rename.txt     DISPLAY renames, applied to that environment's rendered pages
   logical.txt    fixed FlowID -> Logical pins for the Logical derivation
   logical_{domains,apps,partners}.txt  PART replacements for the PDA derivation
+                 (logical_partners.txt also carries the partner ALIASES —
+                 a variant token rewritten to its canonical organisation)
   BL.txt         BL numbers per subscription ("<subscription> <BL>[,<BL>...]"),
                  a second source of BL entities beside the subscriptions.json tags
-  partner-aliases.tsv  partner tokens naming one organisation (merge rule 4)
-The nine policy files are PER ENVIRONMENT since 2026-08-31 (user request);
+The eight policy files are PER ENVIRONMENT since 2026-08-31 (user request);
 bin/build/migrate-input.sh moves a checkout's old shared copies into the env
-dirs once.
+dirs once, and folds a retired partner-aliases.tsv into logical_partners.txt.

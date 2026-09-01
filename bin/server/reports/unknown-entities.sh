@@ -47,7 +47,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
-source "$ROOT/bin/blacklist.sh"   # BLACKLIST_FILE + BLACKLIST_AWK — the ONE blacklist (input/blacklist.txt)
+source "$ROOT/bin/blacklist.sh"   # BLACKLIST_FILE + BLACKLIST_AWK — the ONE blacklist (input/<env>/blacklist.txt)
 source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK — fold a logged name to its CURRENT one
 mkdir -p "$REPORTS_DIR" "$UNKNOWN_DIR"
 
@@ -331,7 +331,7 @@ agg=$(awk -F'\t' -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
         -v side_h="$SIDE_H" -v side_w="$SIDE_W" -v BLF="$BLACKLIST_FILE" \
         -v logon_raw="$TMPD/logon.raw" -v evid_raw="$TMPD/evid.raw" \
         "$LOGLINES_AWK$BLACKLIST_AWK"'
-    # Seeded from input/blacklist.txt via bin/blacklist.sh — the same file
+    # Seeded from input/<env>/blacklist.txt via bin/blacklist.sh — the same file
     # bin/transfer/parse.sh blanks with. Values the parse BLANKS can never
     # enter the cache-built known sets, yet server messages name them
     # constantly, so they are seeded as known here.

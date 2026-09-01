@@ -125,11 +125,10 @@ mkdir -p "$BASE" "$XREF"
 # "Skipped" analyses report. cmp-guarded writes keep mtimes stable so the
 # downstream freshness checks don't re-fire on a no-change run.
 SKIPFILE="$ROOT/input/$AXWAY_ENV/skip.txt"
-# the HAND-CURATED partner alias map (input/<env>/partner-aliases.tsv, per
-# environment since 2026-08-31 like every policy file): token<TAB>token pairs
-# naming ONE organisation — pass-2 merge rule 4 and the subscription-name
-# fallback's resolution retry. See the file's header.
-ALIASF="$ROOT/input/$AXWAY_ENV/partner-aliases.tsv"
+# RETIRED 2026-09-01 (user request): the hand-curated partner alias map
+# (input/<env>/partner-aliases.tsv) is folded into the PART REPLACEMENTS
+# below — bin/build/migrate-input.sh moves a checkout's pairs into
+# input/<env>/logical_partners.txt once. See the partner-merge header.
 # the FIXED FlowID -> Logical transforms (input/<env>/logical.txt, COMMITTED
 # in develop) — consumed by the LOGICAL derivation block below; a pin edit
 # re-derives the caches (and, through them, everything downstream).
@@ -208,7 +207,6 @@ for f in $ENTITY_CACHES $PAIR_CACHES; do
     if [ ! -f "$out" ] || [ "$PARTNERS" -nt "$out" ] || [ "$SUBS" -nt "$out" ] \
        || [ "${BASH_SOURCE[0]}" -nt "$out" ] \
        || { [ -f "$SKIPFILE" ] && [ "$SKIPFILE" -nt "$out" ]; } \
-       || { [ -f "$ALIASF" ] && [ "$ALIASF" -nt "$out" ]; } \
        || { [ -f "$LOGICALF" ] && [ "$LOGICALF" -nt "$out" ]; } \
        || { [ -f "$LOGDOMF" ] && [ "$LOGDOMF" -nt "$out" ]; } \
        || { [ -f "$LOGAPPF" ] && [ "$LOGAPPF" -nt "$out" ]; } \
@@ -549,9 +547,9 @@ awk -F'\t' '
 #    parts (the bare 3-part name joins when it exists) fold onto those 3
 #    parts; a 3-part FlowID whose digit-tailed part, stripped (a trailing
 #    "-" trimmed with the digits), duplicates another stripped name or an
-#    existing FlowID folds onto the stripped form; a 4-part FlowID whose
-#    numeric-only part, removed, duplicates another folds onto the removed
-#    form. A SINGLE-part FlowID (all dashes — the monitor's
+#    existing FlowID folds onto the stripped form. (Numeric-only parts
+#    above three parts are already gone — dropnum() at intake, below.)
+#    A SINGLE-part FlowID (all dashes — the monitor's
 #    INFRA-MONITOR-UC1..4) gets the same digit-tail rule on the whole name
 #    (2026-08-30): the four fold onto INFRA-MONITOR-UC. A FlowID of FIVE OR
 #    MORE parts (2026-08-30, user request — the AB_NAS_FIS_BSM_BU_A_AH
@@ -561,7 +559,9 @@ awk -F'\t' '
 #    fixed input/<env>/logical.txt mapping is also honoured for the GROUP name a
 #    fold lands on, so one line can pin a whole family's final form.
 # 2) RESHAPE to 3 parts by position, informed by the 3-part logicals'
-#    vocabulary (their 2nd/3rd parts): AAA_BBB -> AAA_AAA_BBB; 4 parts whose
+#    vocabulary (their 2nd/3rd parts): AAA_BBB -> AAA_UNKNOWN_BBB (2 parts
+#    name a domain and a partner, never an application — 2026-09-01, user
+#    request; the old AAA_AAA_BBB doubling invented one); 4 parts whose
 #    4th is a known 3rd -> AAA_BBB-CCC_DDD; 4 parts whose 2nd is a known
 #    2nd -> AAA_BBB_CCC-DDD; 5 parts whose 5th is a known 3rd ->
 #    AAA_BBB-CCC-DDD_EEE.
@@ -599,13 +599,24 @@ awk -F'\t' -v LF="$LOGICALF" '
     function joindash(P, n, skip, from,   r, m) { r = ""
         for (m = from; m <= n; m++) { if (m == skip) continue; r = (r == "" ? P[m] : r "-" P[m]) }
         return r }
-    function rejoin(P, n, skip,   r, m) { r = ""
-        for (m = 1; m <= n; m++) { if (m == skip) continue; r = (r == "" ? P[m] : r "_" P[m]) }
-        return r }
     function replaced(P, n, at, s,   r, m, t) { r = ""
         for (m = 1; m <= n; m++) { t = (m == at ? s : P[m]); r = (r == "" ? t : r "_" t) }
         return r }
     function digitstrip(p,   s) { s = p; if (sub(/[0-9]+$/, "", s)) sub(/-+$/, "", s); return s }
+    # ABOVE THREE PARTS every purely NUMERIC part goes (2026-09-01, user
+    # request). A number is never a domain, an application or a partner —
+    # it is a sequence tail on a name that already has its three parts
+    # (AB_EUROPORT_EQUENS-1 is the EQUENS flow, not a fourth-part
+    # variant), so dropping it lands the FlowID on the 3-part name its
+    # siblings already carry. Only ABOVE three parts: a 3-part FlowID
+    # keeps whatever shape it has, and a name that is numeric all the way
+    # down keeps its own (nothing would be left).
+    function dropnum(s,   k, P, r, m) { k = split(s, P, "_")
+        if (k <= 3) return s
+        r = ""
+        for (m = 1; m <= k; m++) { if (P[m] ~ /^[0-9]+$/) continue
+            r = (r == "" ? P[m] : r "_" P[m]) }
+        return (r == "" ? s : r) }
     # INTAKE NORMALIZATION (2026-08-30; hardened 2026-08-31, user request:
     # "before splitting a FlowID into parts, replace - with _"): the estate
     # mixes "-" and "_" spellings of one name (the family matches
@@ -614,15 +625,21 @@ awk -F'\t' -v LF="$LOGICALF" '
     # grouping rule missed it. Group on the "_"-folded form, with DOUBLED
     # separators collapsed and edge separators trimmed — a raw "-_" run or
     # a trailing "-" otherwise splits into an EMPTY part, which the
-    # reshape then joins into a dangling-dash artifact ("PEGAWBA-"). A
-    # FIXED mapping matches the RAW spelling first, then the folded one.
+    # reshape then joins into a dangling-dash artifact ("PEGAWBA-"). THEN
+    # dropnum() takes the numeric-only parts off anything above three
+    # parts. A FIXED mapping matches the RAW spelling first, then the
+    # separator-folded one, then the numeric-stripped one — so a pin
+    # written in any of the three spellings still catches its FlowID.
     # The reshape re-adds dashes for its joins.
     $1 != "" { raw = $1; nn++
         raws[nn] = raw
-        nm0 = raw; gsub(/-/, "_", nm0); gsub(/_+/, "_", nm0)
-        sub(/^_/, "", nm0); sub(/_$/, "", nm0)
-        if (nm0 != raw) IR[nn] = "separators normalized"
+        nmf = raw; gsub(/-/, "_", nmf); gsub(/_+/, "_", nmf)
+        sub(/^_/, "", nmf); sub(/_$/, "", nmf)
+        if (nmf != raw) IR[nn] = "separators normalized"
+        nm0 = dropnum(nmf)
+        if (nm0 != nmf) IR[nn] = (IR[nn] == "" ? "" : IR[nn] "; ") "numeric-only parts removed"
         if (raw in FIX)      { finalfix[nn] = FIX[raw]; PINR[nn] = "pinned in input/<env>/logical.txt"; next }
+        else if (nmf in FIX) { finalfix[nn] = FIX[nmf]; PINR[nn] = "pinned in input/<env>/logical.txt (folded spelling)"; next }
         else if (nm0 in FIX) { finalfix[nn] = FIX[nm0]; PINR[nn] = "pinned in input/<env>/logical.txt (folded spelling)"; next }
         name[nn] = nm0; exists[nm0] = 1 }
     END {
@@ -638,7 +655,6 @@ awk -F'\t' -v LF="$LOGICALF" '
             if (n == 4) {
                 cnt1[P[1] "_" P[2] "_" P[3]]++
                 cnt3rd[P[3]]++                    # 3rd parts across the 4-part FlowIDs
-                for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) cnt3[rejoin(P, n, j)]++
             } else if (n == 3) third3[P[3]] = 1   # 3rd parts of the 3-part FlowIDs
             if (n == 3)
                 for (j = 1; j <= n; j++) { s = digitstrip(P[j])
@@ -675,9 +691,9 @@ awk -F'\t' -v LF="$LOGICALF" '
                 # then: a 3rd part that is the 3rd part of 2+ 4-part
                 # FlowIDs — or of any 3-PART FlowID (the restated rule)
                 else if (cnt3rd[P[3]] >= 2 || (P[3] in third3)) { lg = pre; R1[i] = "4 parts: 3rd part is a known 3rd part - 4th part dropped" }
-                else for (j = 1; j <= n; j++) if (P[j] ~ /^[0-9]+$/) {
-                    c = rejoin(P, n, j)
-                    if (cnt3[c] >= 2 || (c in exists)) { lg = c; R1[i] = "4 parts: numeric part " j " dropped"; break } }
+                # (no numeric-part rule here: dropnum() took every
+                # numeric-only part off at intake, so a 4-part name can
+                # no longer carry one)
             } else if (n == 3)
                 for (j = 1; j <= n; j++) { s = digitstrip(P[j])
                     if (s != P[j] && s != "") { c = replaced(P, n, j, s)
@@ -701,7 +717,7 @@ awk -F'\t' -v LF="$LOGICALF" '
         for (l in lset) { n = split(l, P, "_"); if (n == 3) { k2[P[2]] = 1; k3[P[3]] = 1 } }
         for (l in lset) {
             n = split(l, P, "_"); nl = l
-            if (n == 2) { nl = P[1] "_" P[1] "_" P[2]; M2R[l] = "2 parts: first part doubled (domain = application)" }
+            if (n == 2) { nl = P[1] "_UNKNOWN_" P[2]; M2R[l] = "2 parts: UNKNOWN inserted as the application" }
             else if (n == 4 && (P[4] in k3)) { nl = P[1] "_" P[2] "-" P[3] "_" P[4]; M2R[l] = "4 parts: parts 2+3 combined (4th is a known 3rd part)" }
             else if (n == 4 && (P[2] in k2)) { nl = P[1] "_" P[2] "_" P[3] "-" P[4]; M2R[l] = "4 parts: parts 3+4 combined (2nd is a known 2nd part)" }
             else if (n == 5 && (P[5] in k3)) { nl = P[1] "_" P[2] "-" P[3] "-" P[4] "_" P[5]; M2R[l] = "5 parts: middle parts combined (5th is a known 3rd part)" }
@@ -781,11 +797,14 @@ xcompose "$XREF/_profiles-logicals.tsv" _profiles-white.tsv         1 LEFT  logi
 # sorted member tokens joined with "_") when
 #   (1) their logical flows connect to the same configured host,
 #   (2) their logical flows whitelist the same IP,
-#   (3) one partner's host resolves to an IP another partner whitelists,
-#   (4) a hand-curated alias pair names them one organisation
-#       (input/<env>/partner-aliases.tsv — which also still supplies the CANONICAL
-#       group name via the alias star, so a merged group can be called
-#       GLOBEX instead of GLOBEX_GLOBEXX).
+#   (3) one partner's host resolves to an IP another partner whitelists.
+# So every merge is DERIVED — the hand-curated side is now a PART REPLACEMENT
+# instead (input/<env>/logical_partners.txt, 2026-09-01, user request): a
+# curated variant is rewritten to its canonical token BEFORE the token enters
+# the merge, so the two never become a two-member group needing a name. That
+# subsumes the retired alias file whole — its merge rule 4 AND its "alias
+# star" (a group whose members all pointed at one canonical token is now
+# simply that one token).
 # Every partner/app/domain pair cache is COMPOSED through the FlowID (the
 # entity->profile pairs joined with the _profiles-{partners,apps,domains}
 # maps this pass emits), so the whole estate joins through one spine:
@@ -842,7 +861,7 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
     -v LGP="$OUT/.pda.lp.tmp" -v LGA="$OUT/.pda.la.tmp" -v LGD="$OUT/.pda.ld.tmp" \
     -v PAP="$OUT/.pda.pap.tmp" -v PDM="$OUT/.pda.pdm.tmp" -v ADM="$OUT/.pda.adm.tmp" \
     -v WHYF="$XREF/.pda.why.tmp" -v GRPF="$XREF/.pda.groups.tmp" -v GAF="$XREF/.pda.gacct.tmp" \
-    -v ALIASF="$ALIASF" -v LDF="$LOGDOMF" -v LAF="$LOGAPPF" -v LPF="$LOGPTNF" '
+    -v LDF="$LOGDOMF" -v LAF="$LOGAPPF" -v LPF="$LOGPTNF" '
     # ---- group-merge EVIDENCE (why two partner tokens are combined) ----
     # Each rule firing that links two DIFFERENT tokens records one edge; the
     # group is resolved at END (find()). Deduped by signature.
@@ -860,14 +879,7 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
             n9=split(l9, a9, /[ \t]+/); if(n9>=2 && a9[1]!="" && a9[2]!="") M[a9[1]]=a9[2] }
         close(f) }
     BEGIN { US=sprintf("%c",31)
-        loadrep(LDF, DREP); loadrep(LAF, AREP); loadrep(LPF, PREP)
-        # the hand-curated alias pairs (input/<env>/partner-aliases.tsv; "#" =
-        # comment). A SINGLE-token line used to declare a real organisation
-        # for the retired name-split helper lists — tolerated and INERT now.
-        nal=0
-        while ((getline l4 < ALIASF) > 0) { if (l4 ~ /^#/ || l4 == "") continue
-            n4=split(l4,a4x,"\t"); if(n4>=2 && a4x[1]!="" && a4x[2]!=""){ ++nal; AL1[nal]=toupper(a4x[1]); AL2[nal]=toupper(a4x[2]); AL2SET[AL2[nal]]=1 } }
-        close(ALIASF) }
+        loadrep(LDF, DREP); loadrep(LAF, AREP); loadrep(LPF, PREP) }
     FILENAME ~ /_profiles-logicals\.tsv$/ { if($1==""||$2=="") next
         if(!($2 in lseen)){ lseen[$2]=1; lg[++nl]=$2 }
         fl[$2]=fl[$2] US $1; next }
@@ -902,15 +914,10 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
             domd[S[1]]=domd[S[1]] side; appd[S[2]]=appd[S[2]] side
             nh=split(substr(lh[l],2),HH,US); for(h=1;h<=nh;h++) hidx[HH[h]]=hidx[HH[h]] US S[3] "|" l
             nw=split(substr(lw[l],2),WW,US); for(w=1;w<=nw;w++) widx[WW[w]]=widx[WW[w]] US S[3] "|" l }
-        # Rule 4 FIRST — the HAND-CURATED ALIAS MAP: two tokens naming ONE
-        # organisation merge, the file cited as evidence. Only tokens the
-        # estate actually DERIVED merge (an alias to an absent token no-ops).
+        # EVERY merge below is DERIVED from the configuration (the curated
+        # side is a PART REPLACEMENT applied above — see the header).
         # NO fixpoint loop anywhere: no rule reads group state, and
         # union-find keeps every merge transitive.
-        for (ai=1; ai<=nal; ai++) { a4=AL1[ai]; b4=AL2[ai]
-            if ((a4 in par) && (b4 in par)) {
-                recordev(4, a4, b4, "Curated alias: " a4 " and " b4 " name the same organisation (input/<env>/partner-aliases.tsv)")
-                uni(a4, b4) } }
         # Rule 1 — two partners'"'"' logical flows connect to the same configured host
         for(hh in hidx){ n=split(substr(hidx[hh],2),AA,US)
             for(k=2;k<=n;k++) for(m=1;m<k;m++){ split(AA[m],X,"|"); split(AA[k],Y,"|")
@@ -946,34 +953,13 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
             for(k=1;k<=m;k++) if(!(TT[k] in seen)){ seen[TT[k]]=1; ARR[++c]=TT[k] }
             for(x=2;x<=c;x++){ v=ARR[x]; y=x-1; while(y>=1 && ARR[y]>v){ARR[y+1]=ARR[y];y--} ARR[y+1]=v }
             gn=ARR[1]; for(x=2;x<=c;x++) gn=gn "_" ARR[x]
-            # CANONICAL GROUP NAME (2026-08-29): when EVERY member has a direct
-            # alias pair (input/<env>/partner-aliases.tsv) with ONE token — a member
-            # itself (the SchubergPhilis star) or a pure NAME the estate never
-            # derives (the RABOBANK_PEKO case) — the group takes that token as
-            # its name instead of the joined list. Candidates = the members
-            # plus every token paired with one, scanned in sorted order so a
-            # tie is deterministic.
-            if(c>1){
-                delete CAND
-                for(x=1;x<=c;x++){ CAND[ARR[x]]=1
-                    for(ai2=1;ai2<=nal;ai2++){ if(AL1[ai2]==ARR[x]) CAND[AL2[ai2]]=1; if(AL2[ai2]==ARR[x]) CAND[AL1[ai2]]=1 } }
-                nc2=0; for(cn in CAND) CARR[++nc2]=cn
-                for(x=2;x<=nc2;x++){ v2=CARR[x]; y=x-1; while(y>=1 && CARR[y]>v2){CARR[y+1]=CARR[y];y--} CARR[y+1]=v2 }
-                # the alias file convention is variant<TAB>CANONICAL: a
-                # candidate appearing on the RIGHT side of a pair outranks
-                # the rest (WONKA beats its variant WNK — with two members
-                # both qualify, and bare sorted order picked the variant);
-                # sorted order breaks the remaining ties
-                fnd=0
-                for(p2s=1;p2s<=2 && !fnd;p2s++)
-                for(x=1;x<=nc2 && !fnd;x++){ cn=CARR[x]
-                    if(p2s==1 && !(cn in AL2SET)) continue
-                    if(p2s==2 &&  (cn in AL2SET)) continue
-                    ok2=1
-                    for(y=1;y<=c && ok2;y++){ if(ARR[y]==cn) continue
-                        ok2=0
-                        for(ai2=1;ai2<=nal;ai2++) if((AL1[ai2]==cn && AL2[ai2]==ARR[y]) || (AL2[ai2]==cn && AL1[ai2]==ARR[y])){ ok2=1; break } }
-                    if(ok2){ gn=cn; fnd=1 } } }
+            # (the ALIAS STAR that could override this joined name with one
+            # canonical token went with the alias file, 2026-09-01: a curated
+            # variant is rewritten to its canonical token BEFORE the merge, so
+            # a group that the star would have named is now that single token
+            # and never reaches this branch. What is left here is a genuinely
+            # DERIVED group — several real organisations the configuration
+            # ties together — and the joined member list is its honest name.)
             gname[r]=gn
             # a GROUP = more than one member token; record it (name / members / direction)
             if(c>1){ mm=ARR[1]; for(x=2;x<=c;x++) mm=mm "," ARR[x]

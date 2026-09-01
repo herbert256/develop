@@ -269,15 +269,19 @@ partner-group "why" pages):
 2. **Shared whitelist IP** — their logical flows whitelist the same IP.
 3. **Whitelisted host IP** — one token's host resolves (via the forward-DNS map, or a raw-IP
    endpoint verbatim) to an IP another token's logical flows whitelist.
-4. **Curated alias** — a pair in `input/<env>/partner-aliases.tsv` (`variant⇥CANONICAL`).
+(A fourth rule, a **curated alias** pair in `input/<env>/partner-aliases.tsv`, was RETIRED
+2026-09-01 (user request): a curated variant is now rewritten to its canonical token by
+`input/<env>/logical_partners.txt` BEFORE the token enters the merge, so the two never form a
+group at all. `bin/build/migrate-input.sh` folds an old alias file into that one.)
 
 No fixpoint loop: no rule reads group state, and union-find keeps every merge transitive. The
-group NAME is the sorted member tokens joined with `_` — unless the alias STAR names it: when
-every member has a direct alias pair with ONE candidate token, that token wins, and a candidate
-appearing on the RIGHT side of a pair outranks the rest (`WONKA` beats its variant `WNK`);
-sorted order breaks remaining ties. Multi-member groups are recorded in
+group NAME is the sorted member tokens joined with `_`. (The **alias STAR** that could override
+that with one canonical token went with the alias file, 2026-09-01: a group whose members all
+pointed at one canonical token is now simply that one token — the part replacement fires before
+the merge — so what reaches the naming step is a genuinely DERIVED group of several real
+organisations, and the joined member list is its honest name.) Multi-member groups are recorded in
 `xref/_partner-groups.tsv` (name/members/direction), `_partner-group-why.tsv`
-(group/tokenA/tokenB/rule 1-4/evidence sentence) and `_partner-group-accounts.tsv`
+(group/tokenA/tokenB/rule 1-3/evidence sentence) and `_partner-group-accounts.tsv`
 (group/token/the accounts behind the token's logical flows) — the partner-groups pages render
 them (`bin/analyses/publish-partner-groups.sh`).
 
@@ -292,8 +296,9 @@ two-group abstain and the site-wide union attribution handle it exactly as befor
 *Retired machinery* (2026-08-30): the three `pda_split` copies and every name rule, the
 subscription-name fallback (`ptn_resolve`), the transitive `sjoin` pairs (exact by construction
 now — everything joins through the FlowID) and the subscription-less-partner prune (vacuous:
-every partner descends from a subscription's FlowID by construction). The single-token
-"real organisation" lines in `input/<env>/partner-aliases.tsv` are tolerated but inert.
+every partner descends from a subscription's FlowID by construction). Retired 2026-09-01: the
+whole `input/<env>/partner-aliases.tsv` file — merge rule 4, the alias star and its inert
+single-token lines — folded into `input/<env>/logical_partners.txt` as part replacements.
 
 Applications and domains share ONE name space with the same machinery: base lists
 `_apps.tsv`/`_domains.tsv`, the coverage TSVs `coverage/{partners,applications,domains}.tsv`
@@ -879,9 +884,13 @@ row links inside it.
   has none); the entity-report activity feeds only the Summary's dormancy split. The **Logical**
   type (2026-08-30; a FULL entity since 2026-08-31) condenses the FlowIDs into logical flow
   groups — the derivation lives in `bin/flow-manager.sh` (which writes `base/_logicals.tsv` +
-  the `_profiles-logicals` FlowID → Logical map): pass 1 GROUPS (shared 4-part prefixes;
-  digit-tailed or numeric-only parts whose removal collides), passes 2–3 NORMALIZE every name to
-  three `_`-parts, joining combined parts with `-` — which is why Logical names render UNFOLDED
+  the `_profiles-logicals` FlowID → Logical map): intake folds the separators and, ABOVE THREE
+  PARTS, drops every purely NUMERIC part (2026-09-01, user request — `AB_EUROPORT_EQUENS-1` is
+  the EQUENS flow, not a fourth-part variant); pass 1 GROUPS (shared 4-part prefixes,
+  digit-tailed parts whose removal collides), passes 2–3 NORMALIZE every name to
+  three `_`-parts, joining combined parts with `-` (a TWO-part name takes `UNKNOWN` as its
+  middle part — `WA_VDN` → `WA_UNKNOWN_VDN` — since two parts name a domain and a partner,
+  never an application) — which is why Logical names render UNFOLDED
   site-wide. These pages read the cache like every base and link `details/logicals/`.
 - **UC status** — the four `uc<n>-status` reports merged into ONE tabbed report `uc-status`
   (server-area `.rpt`s; its `SUBS_GROUP_REPORTS` entry `server:uc-status` — the full value is

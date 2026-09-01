@@ -8,7 +8,7 @@
 # A "group" partner (a name like GBA_TT_XXLLNC) is several partner tokens —
 # the LAST parts of logical flow names — that bin/flow-manager.sh's PDA
 # union-find combined (shared host / shared whitelist IP / whitelisted host
-# IP / curated alias). That step records the merge EVIDENCE it used into
+# IP / DNS). That step records the merge EVIDENCE it used into
 # these caches (per env):
 #   data/<env>/flow-manager/xref/_partner-groups.tsv         group / members / direction
 #   data/<env>/flow-manager/xref/_partner-group-why.tsv      group / A / B / rule / evidence line
@@ -108,7 +108,10 @@ while IFS=$'\t' read -r gname members direction; do
                 if(r==1) return "Their logical flows connect to the same configured host"
                 if(r==2) return "Their logical flows whitelist the same IP"
                 if(r==3) return "One partner\x27s host resolves to an IP the other whitelists"
-                if(r==4) return "Curated alias (input/<env>/partner-aliases.tsv)"
+                # (r==4, the curated alias pair, was RETIRED 2026-09-01: a
+                # curated variant is rewritten to its canonical token in
+                # input/<env>/logical_partners.txt BEFORE the merge, so it
+                # never forms a group. Every group here is DERIVED.)
                 return "Rule " r }
             $1==G {
                 key=$2 SUBSEP $3 SUBSEP $4

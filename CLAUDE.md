@@ -210,8 +210,9 @@ not base/, whose result column is recolored AFTER the parse. `flow-manager.sh` e
 every cache is newer than the exports and itself; a missing cache degrades to an empty list.
 **PDA derivation** is owned here too and is LOGICAL-BASED (2026-08-30, user request): the
 three-part Logical name `D_A_P` gives part 1 = domain, part 2 = application, part 3 = partner
-token; partner tokens merge (same host / shared whitelist IP / whitelisted host IP / curated
-alias — details in ARCHITECTURE.md), and every partner/app/domain pair cache is composed
+token; partner tokens merge (same host / shared whitelist IP / whitelisted host IP — every merge
+DERIVED since 2026-09-01, the curated alias file having become a part replacement; details in
+ARCHITECTURE.md), and every partner/app/domain pair cache is composed
 through the FlowID. The account-name split machinery, the subscription-name fallback and the
 prune are RETIRED. So is the **Logical derivation** itself (FlowID families → three-part group
 names; a `-` inside a part marks parts the derivation combined, which is why Logical names are
@@ -906,9 +907,6 @@ THIS repo committed IN FULL, sample CSVs included (the whole estate is synthetic
 `bin/sample/generate.sh` rewrites it). `input/` holds the flow-manager JSONs, the `ip/` and
 `renames/` maps, the `.sample-estate` marker + `.sample/` spec, the two policy files
 and — **PER ENVIRONMENT since 2026-08-31 (user request), under `input/<env>/`**:
-the hand-curated `partner-aliases.tsv` (partner tokens
-naming one organisation — flow-manager's merge rule 4, `variant⇥CANONICAL`; the right side
-also names the merged group via the alias star),
 `blacklist.txt` + `skip.txt` (see the attribution chain),
 `rename.txt` (DISPLAY renames, applied to that environment's rendered pages by the build's last
 step — the shared root pages take both envs' rules; see the manual re-publish gotcha), `logical.txt` (fixed FlowID → Logical
@@ -921,7 +919,12 @@ the sample template) and
 `logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
 Logical-based PDA derivation: part 1/2/3 of a three-part Logical name is replaced before it
 becomes the domain / application / partner-merge token — the Logical name itself is untouched;
-freshness deps too), plus a
+freshness deps too. **`logical_partners.txt` is also where PARTNER ALIASES live** since
+2026-09-01, user request: the retired `partner-aliases.tsv` said "these two tokens are one
+organisation" and merged them into a group; rewriting the variant to its canonical token here
+does the same earlier — the variant never becomes a token, so there is no group to name, and
+merge rule 4 plus the alias star went with it. `bin/build/migrate-input.sh` folds an old alias
+file into this one), plus a
 README.txt per directory. Gitignored: the `data/` root and `/build/`. A step script that
 only `bin/build.sh` ever invokes lives in **`bin/build/`** — the placement rule; the sample-data
 generator lives in **`bin/sample/`** (guarded by the marker, seeds in `bin/sample/seed/`).

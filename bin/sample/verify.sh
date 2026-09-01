@@ -124,10 +124,18 @@ for env in acceptance production; do
     fi
     # the nine policy files are PER ENVIRONMENT (2026-08-31): present in the
     # env dir, and none left at the input root
-    for pf in blacklist.txt skip.txt rename.txt logical.txt logical_domains.txt logical_apps.txt logical_partners.txt BL.txt partner-aliases.tsv; do
+    for pf in blacklist.txt skip.txt rename.txt logical.txt logical_domains.txt logical_apps.txt logical_partners.txt BL.txt; do
         check $([ -f "input/$env/$pf" ] && echo 0 || echo 1) "[$env] input/$env/$pf missing"
         check $([ ! -e "input/$pf" ] && echo 0 || echo 1) "input/$pf still at the input root (per-environment since 2026-08-31)"
     done
+    # partner-aliases.tsv is RETIRED (2026-09-01): its pairs live in
+    # logical_partners.txt as part replacements, so the misspelled GLOBEXX
+    # token must never surface as a partner entity of its own
+    check $([ ! -e "input/$env/partner-aliases.tsv" ] && echo 0 || echo 1) "[$env] input/$env/partner-aliases.tsv still exists (retired — fold it into logical_partners.txt)"
+    n=$(awk -F'\t' '$1=="GLOBEXX" { n++ } END { print n+0 }' "data/$env/flow-manager/base/_partners.tsv" 2>/dev/null)
+    check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] GLOBEXX is a partner entity of its own — the logical_partners.txt alias replacement did not fire"
+    n=$(awk -F'\t' '$1=="GLOBEX" { n++ } END { print n+0 }' "data/$env/flow-manager/base/_partners.tsv" 2>/dev/null)
+    check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "[$env] GLOBEX is not a partner entity (expected exactly 1 row)"
     n=$(rpt_rows "data/$env/transfer/reports/bl.rpt")
     check $([ "$n" -gt 0 ] && echo 0 || echo 1) "[$env] bl.rpt has 0 rows"
 
