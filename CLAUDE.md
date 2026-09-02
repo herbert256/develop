@@ -934,7 +934,9 @@ freshness deps too. **`logical_partners.txt` is also where PARTNER ALIASES live*
 organisation" and merged them into a group; rewriting the variant to its canonical token here
 does the same earlier — the variant never becomes a token, so there is no group to name, and
 merge rule 4 plus the alias star went with it. `bin/build/migrate-input.sh` folds an old alias
-file into this one), plus a
+file into this one; ONE HARD-CODED rule sits beside them in `bin/flow-manager.sh`, 2026-09-03,
+user request: a Logical whose name contains `STREAM` takes the partner `ACCEPTEMAIL`, exempt from
+the merges), plus a
 README.txt per directory. Gitignored: the `data/` root and `/build/`. A step script that
 only `bin/build.sh` ever invokes lives in **`bin/build/`** — the placement rule; the sample-data
 generator lives in **`bin/sample/`** (guarded by the marker, seeds in `bin/sample/seed/`).

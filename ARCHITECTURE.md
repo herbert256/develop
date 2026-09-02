@@ -272,7 +272,9 @@ partner-group "why" pages):
 (A fourth rule, a **curated alias** pair in `input/<env>/partner-aliases.tsv`, was RETIRED
 2026-09-01 (user request): a curated variant is now rewritten to its canonical token by
 `input/<env>/logical_partners.txt` BEFORE the token enters the merge, so the two never form a
-group at all. `bin/build/migrate-input.sh` folds an old alias file into that one.)
+group at all. `bin/build/migrate-input.sh` folds an old alias file into that one.) ONE HARD-CODED rule
+sits beside the replacements in `bin/flow-manager.sh` (2026-09-03, user request): a Logical whose name
+contains `STREAM` takes the partner `ACCEPTEMAIL`, a token the merges leave alone (`FIXED`).
 
 No fixpoint loop: no rule reads group state, and union-find keeps every merge transitive. The
 group NAME is the sorted member tokens joined with `_`. (The **alias STAR** that could override

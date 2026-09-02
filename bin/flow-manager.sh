@@ -885,11 +885,11 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
     # ---- group-merge EVIDENCE (why two partner tokens are combined) ----
     # Each rule firing that links two DIFFERENT tokens records one edge; the
     # group is resolved at END (find()). Deduped by signature.
-    function recordev(rule, ta, tb, txt,   sig){ if(ta==""||tb==""||ta==tb) return
+    function recordev(rule, ta, tb, txt,   sig){ if(ta==""||tb==""||ta==tb||(ta in FIXED)||(tb in FIXED)) return
         sig=rule SUBSEP ta SUBSEP tb SUBSEP txt; if(sig in seenev) return; seenev[sig]=1
         EVN++; EVA[EVN]=ta; EVB[EVN]=tb; EVR[EVN]=rule; EVT[EVN]=txt }
     function find(x){ if(!(x in par)) par[x]=x; while(par[x]!=x){par[x]=par[par[x]]; x=par[x]} return x }
-    function uni(a,b,  ra,rb){ if(a==""||b=="") return; ra=find(a); rb=find(b); if(ra!=rb){par[ra]=rb; nmerge++} }
+    function uni(a,b,  ra,rb){ if(a==""||b==""||(a in FIXED)||(b in FIXED)) return; ra=find(a); rb=find(b); if(ra!=rb){par[ra]=rb; nmerge++} }
     # I/O letter soup -> the base direction word ("" = no side known)
     function dirw(s,  i2,o2){ i2=(index(s,"I")>0); o2=(index(s,"O")>0)
         return (i2&&o2)?"both":(i2?"in":(o2?"out":"")) }
@@ -899,7 +899,8 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
             n9=split(l9, a9, /[ \t]+/); if(n9>=2 && a9[1]!="" && a9[2]!="") M[a9[1]]=a9[2] }
         close(f) }
     BEGIN { US=sprintf("%c",31)
-        loadrep(LDF, DREP); loadrep(LAF, AREP); loadrep(LPF, PREP) }
+        loadrep(LDF, DREP); loadrep(LAF, AREP); loadrep(LPF, PREP)
+        FIXED["ACCEPTEMAIL"]=1 }   # hard-coded partner tokens that never merge (see the STREAM rule)
     FILENAME ~ /_profiles-logicals\.tsv$/ { if($1==""||$2=="") next
         if(!($2 in lseen)){ lseen[$2]=1; lg[++nl]=$2 }
         fl[$2]=fl[$2] US $1; next }
@@ -929,6 +930,13 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
             if(S[1] in DREP) S[1]=DREP[S[1]]
             if(S[2] in AREP) S[2]=AREP[S[2]]
             if(S[3] in PREP) S[3]=PREP[S[3]]
+            # HARD-CODED partner rule (2026-09-03, user request): a Logical
+            # whose name contains STREAM belongs to the partner ACCEPTEMAIL,
+            # whatever its third part says — applied AFTER the curated
+            # replacements, so it outranks them; FIXED (BEGIN) keeps that
+            # token out of the host/IP merges below, so the partner stays
+            # exactly ACCEPTEMAIL
+            if(toupper(l) ~ /STREAM/) S[3]="ACCEPTEMAIL"
             dom[l]=S[1]; app[l]=S[2]; tok[l]=S[3]; find(S[3])
             side=((l in lI)?"I":"")((l in lO)?"O":"")
             domd[S[1]]=domd[S[1]] side; appd[S[2]]=appd[S[2]] side
