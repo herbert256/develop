@@ -322,6 +322,13 @@ table[data-restint] tr[data-res="red"] td.failed.z,
 table[data-restint] tr[data-res="red"] td.processed.z    { background-color:#fde3e3; }
 table[data-restint] tr[data-res="blue"] td.failed.z,
 table[data-restint] tr[data-res="blue"] td.processed.z   { background-color:#d3e6fb; }
+/* A NON-EMPTY Warning-count cell (td.warn — Logons / Incoming's Key failures
+   and Locked) keeps its amber inside a tinted row, exactly as the Error/OK
+   cells keep theirs; an empty one follows the row (2026-09-02). Same
+   specificity as the row rules above, later in source, so it wins. */
+table[data-seenrows] tr[data-seen] td.warn:not(:empty),
+table[data-restint] tr[data-res] td.warn:not(:empty),
+tr[data-res] td.warn:not(:empty) { background-color:#fff3d6; }
 /* Detail-page body tint by the entity's configured direction + seen-ness
    (details.sh META dirclass -> the <body> class; -x = both or unknown). */
 body.dir-seen-in     { background-color:#f1e7d8; }   /* light brown  — seen, in      */

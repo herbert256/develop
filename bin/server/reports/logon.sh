@@ -91,7 +91,7 @@ skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TACCT" "$THOST" "$LBASE" "$LOGONS_TSV
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Emits TAB-separated:
-#   R   <TAB> user <TAB> a t d n b k l <TAB> buckets <TAB> 7 drill fields
+#   R   <TAB> user <TAB> a t d n b k l <TAB> buckets <TAB> 7 drill fields <TAB> latest side (A T D N B K L) <TAB> its stamp
 #   OUT <TAB> count <TAB> host <TAB> user <TAB> reason <TAB> buckets <TAB> first <TAB> last <TAB> loglines
 #   KN  <TAB> name <TAB> count <TAB> nips <TAB> top-ip (n) <TAB> configured <TAB> first <TAB> last <TAB> buckets <TAB> loglines   (FE-namespace door knockers)
 #   SC  <TAB> name <TAB> count <TAB> nips <TAB> ips (", "-joined, "-" = none) <TAB> first <TAB> last <TAB> buckets <TAB> loglines  (scanner door knockers)
@@ -218,7 +218,13 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
         users[u] = 1
         cnt[side SUBSEP u]++; tot[side]++
         d = $1
-        if (d ~ /^[0-9][0-9][0-9][0-9]-/) { bk[u SUBSEP d SUBSEP side]++; days[u SUBSEP d] = 1 }
+        if (d ~ /^[0-9][0-9][0-9][0-9]-/) { bk[u SUBSEP d SUBSEP side]++; days[u SUBSEP d] = 1
+            # the newest stamp per side — the row tint (2026-09-02, user
+            # request) is the LATEST screening outcome of the login, compared by
+            # TIMESTAMP, never by cache order (the exports are newest-first
+            # within a file)
+            k2 = side SUBSEP u; ts = $1 " " $2
+            if (!(k2 in lts) || ts > lts[k2]) lts[k2] = ts }
         addline(side SUBSEP u, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
     }
     END {
@@ -235,7 +241,18 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
             for (i = 1; i <= ns; i++) line = line "\t" (cnt[S[i] SUBSEP u]+0)
             line = line "\t" (b[u] == "" ? "-" : b[u])
             for (i = 1; i <= ns; i++) { dr = last5(S[i] SUBSEP u); line = line "\t" (dr == "" ? "-" : dr) }
-            print line
+            # the LATEST screening side + its stamp: the side whose newest
+            # line is newest of all; an exact tie goes to Authenticated (the
+            # Allowed line of the same logon precedes it by milliseconds).
+            # The anonymous Auth-failed family needs no seat here: such a
+            # line is attributed to an Allowed line no authentication
+            # consumed, so that Allowed is already the newest event and the
+            # verdict is red either way.
+            lsd = ""; lst = ""
+            for (i = 1; i <= ns; i++) { k2 = S[i] SUBSEP u
+                if (!(k2 in lts)) continue
+                if (lst == "" || lts[k2] > lst || (lts[k2] == lst && S[i] == "T")) { lst = lts[k2]; lsd = S[i] } }
+            print line "\t" (lsd == "" ? "-" : lsd) "\t" (lst == "" ? "-" : lst)
         }
         # every CONFIGURED login the funnel never saw still gets a row
         # (2026-08, the seenrows convention): zero counts, no buckets, no
@@ -248,7 +265,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
             for (i = 1; i <= ns; i++) line = line "\t0"
             line = line "\t-"
             for (i = 1; i <= ns; i++) line = line "\t-"
-            print line
+            print line "\t-\t-"
         }
         for (x in ocd) { split(x, a2, SUBSEP); kk = a2[1] SUBSEP a2[2]
             obk[kk] = obk[kk] (obk[kk] == "" ? "" : ",") a2[3] ":" ocd[x] ":" (ocdc[x SUBSEP "p"]+0) ":" (ocdc[x SUBSEP "k"]+0) ":" (ocdc[x SUBSEP "c"]+0) ":" (ocdc[x SUBSEP "o"]+0) }
@@ -307,27 +324,37 @@ nnames=0
 # most rejections first, then no-account, bad keys, lockouts, key failures
 lgtot=0; aftot=0
 rows() {
-    while IFS=$'\t' read -r _ user a t d n b k l bkt d1 d2 d3 d4 d5 d6 d7 af9 lgf lgl lgn lgp; do
+    while IFS=$'\t' read -r _ user a t d n b k l bkt d1 d2 d3 d4 d5 d6 d7 lside lstamp af9 lgf lgl lgn lgp; do
         [ -n "$user" ] || continue
         [ "$bkt" = "-" ] && bkt=""
         [ "$d1" = "-" ] && d1=""; [ "$d2" = "-" ] && d2=""; [ "$d3" = "-" ] && d3=""; [ "$d4" = "-" ] && d4=""
         [ "$d5" = "-" ] && d5=""; [ "$d6" = "-" ] && d6=""; [ "$d7" = "-" ] && d7=""
-        # SEEN = any funnel activity at all (before the 0-blanking below);
-        # a zero-everything row is a configured login the funnel never saw
-        local sn9=0; [ $((a + t + d + n + b + k + l)) -gt 0 ] && sn9=1
+        [ "$af9" = "-" ] && af9=""
+        # SEEN = any funnel activity at all, the anonymous Auth-failed count
+        # included (before the 0-blanking below); a zero-everything row is a
+        # configured login the funnel never saw
+        local sn9=0; [ $((a + t + d + n + b + k + l + ${af9:-0})) -gt 0 ] && sn9=1
+        # THE ROW TINT (2026-09-02, user request) — @data:res on a restint
+        # table: ORANGE = never seen (every funnel column empty); GREEN = the
+        # login's LATEST screening line is a successful authentication; RED =
+        # its latest line is anything else (a refusal, a failure, or an
+        # Allowed that no authentication followed). A full-period verdict,
+        # like the logon-summary columns: a date range does not move it. The
+        # problem cells keep their own red/amber (the restint CSS).
+        local res9=red
+        if [ "$sn9" = 0 ]; then res9=orange; elif [ "$lside" = "T" ]; then res9=green; fi
         [ "$k" = "0" ] && k=""; [ "$l" = "0" ] && l=""   # blank the 0s at source too (render_rpt z-blanks warn zeros as well since 2026-08 — this keeps the raw .rpt readable)
         [ "${n:-0}" -gt 0 ] && nnames=$((nnames + 1))
         nrows=$((nrows + 1))
         [ "$lgn" = "-" ] && lgn=""
         [ -n "$lgn" ] && lgtot=$((lgtot + lgn))
-        [ "$af9" = "-" ] && af9=""
         [ -n "$af9" ] && aftot=$((aftot + af9))
         # column order Allowed, Disallowed, Authenticated (the 2026-07 swap): the
         # cells, their drill payloads and the RECALC tokens below all follow it.
         # Auth failed sits AFTER Locked: drill-cell-<i> binds cells 1-7
         # positionally, so the funnel block must not shift.
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:seen=%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\t@data:drill-cell-6=%s\t@data:drill-cell-7=%s\n' \
-            "$user" "$a" "$d" "$t" "$n" "$b" "$k" "$l" "$af9" "$lgf" "$lgl" "$lgn" "$lgp" "$sn9" "$bkt" "$d1" "$d3" "$d2" "$d4" "$d5" "$d6" "$d7"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:seen=%s\t@data:res=%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\t@data:drill-cell-6=%s\t@data:drill-cell-7=%s\n' \
+            "$user" "$a" "$d" "$t" "$n" "$b" "$k" "$l" "$af9" "$lgf" "$lgl" "$lgn" "$lgp" "$sn9" "$res9" "$bkt" "$d1" "$d3" "$d2" "$d4" "$d5" "$d6" "$d7"
     done <<< "$(printf '%s\n' "$agg" | grep $'^R\t' | LC_ALL=C sort -t"$(printf '\t')" -k5,5nr -k6,6nr -k7,7nr -k9,9nr -k8,8nr -k3,3nr -k2,2 \
         | awk -F'\t' -v OFS='\t' -v LG="$LOGONS_TSV" '
             # the per-login logon summary join (details.sh _logons.tsv): four
@@ -393,7 +420,7 @@ out_rows() {
 {
     printf 'TITLE\tLogon\n'
     printf 'DESC\tThe SSH logon story, both directions: the incoming screening funnel per login, and our outbound authentication failures at partners.\n'
-    printf 'INTRO\t**Incoming**: every SSH logon is screened by the server ("[Ssh Default] ..." TM lines), the columns following the logon funnel — **Allowed** = the source address passed the account whitelist; **Disallowed** = the address was rejected by the AllowIP whitelist; **Authenticated** = successful authentications (logged for every account, whitelisted or not, so it can exceed Allowed); **No account** = the username exists on no account (probing or misconfiguration); **Bad key** = a submitted key matching no certificate; **Key failures** = the repeated-key-failure counter that precedes a lockout; **Locked** = attempts blocked because the user is locked. **Auth failed** = the platform'\''s ANONYMOUS failure line ("Authentication failed using local.", no username, no address — a client that passed the whitelist and then failed without presenting an evaluable credential), attributed by TIMING: it counts for the login whose Allowed line it follows within one second, and a window holding two different logins'\'' Allowed lines counts for neither. **Every configured login is listed** (2026-08): a green row was seen by the screening, a red row is configured but never appeared in the SSH funnel — its logon-summary columns can still be filled by a login that authenticates over another protocol. The last four columns are the login'\''s **logon summary** (the detail pages'\'' Logons table): first and last successful authentication, the raw count and the typical spacing — counted over ANY protocol, so Logons can exceed the SSH-only Authenticated; a login that never authenticated reads **Never**, and these four keep their full-period values when a date range is selected. **Outgoing**: this server failing to authenticate AT a partner (expired passwords/keys, TLS policy). **Click a count** (Incoming) or **a row** (Outgoing) for the most recent log lines.\n'
+    printf 'INTRO\t**Incoming**: every SSH logon is screened by the server ("[Ssh Default] ..." TM lines), the columns following the logon funnel — **Allowed** = the source address passed the account whitelist; **Disallowed** = the address was rejected by the AllowIP whitelist; **Authenticated** = successful authentications (logged for every account, whitelisted or not, so it can exceed Allowed); **No account** = the username exists on no account (probing or misconfiguration); **Bad key** = a submitted key matching no certificate; **Key failures** = the repeated-key-failure counter that precedes a lockout; **Locked** = attempts blocked because the user is locked. **Auth failed** = the platform'\''s ANONYMOUS failure line ("Authentication failed using local.", no username, no address — a client that passed the whitelist and then failed without presenting an evaluable credential), attributed by TIMING: it counts for the login whose Allowed line it follows within one second, and a window holding two different logins'\'' Allowed lines counts for neither. **Every configured login is listed**, and **the row colour is the login'\''s LATEST screening outcome**: **green** when its newest funnel line is a successful authentication, **red** when the newest line is anything else — a refusal, a failure, or an Allowed that no authentication followed — and **orange** when the login is configured but never appeared in the SSH funnel (every funnel column empty; its logon-summary columns can still be filled by a login that authenticates over another protocol). The colour is a full-period verdict — a selected date range re-aggregates the counts but does not move it — and the problem cells keep their own red or amber inside a green row. The last four columns are the login'\''s **logon summary** (the detail pages'\'' Logons table): first and last successful authentication, the raw count and the typical spacing — counted over ANY protocol, so Logons can exceed the SSH-only Authenticated; a login that never authenticated reads **Never**, and these four keep their full-period values when a date range is selected. **Outgoing**: this server failing to authenticate AT a partner (expired passwords/keys, TLS policy). **Click a count** (Incoming) or **a row** (Outgoing) for the most recent log lines.\n'
     if [ "$cov_fss" != "-" ] && [ "$cov_fad" = "-" ]; then
         # the FULLY-blind case — SSH screening lines exist but not one Allowed
         # line in the whole window: the maximum undercount keeps its warning.
@@ -402,7 +429,10 @@ out_rows() {
         # the same thing on every visit while the window start ages out.)
         printf 'WARN\tNo "Allowed user" screening line appears anywhere in this log window (which starts %s). The Allowed column is blind for the WHOLE period while Authenticated covers it, so funnel comparisons undercount the screening stage throughout.\n' "$cov_fss"
     fi
-    printf 'TABLE\tIncoming\twide\tseenrows\tdrill=log line\n'
+    # seenrows keeps every row on the page under a date range (never hidden);
+    # restint paints each row its @data:res verdict (2026-09-02) — the CSS
+    # lets it beat the seenrows green/red, so the colour stays full-period
+    printf 'TABLE\tIncoming\twide\tseenrows\trestint\tdrill=log line\n'
     printf 'HEAD\tLogin\tAllowed\tDisallowed\tAuthenticated\tNo account\tBad key\tKey failures\tLocked\tAuth failed\tFirst logon\tLast logon\tLogons\tPattern\n'
     printf 'KIND\tlogin\tnumprocessed\tnumfailed\tnumprocessed\tnumfailed\tnumfailed\tnumwarn\tnumwarn\tnumfailed\ttext\ttext\tnum\ttext\n'
     printf 'RECALC\t-\ts0\ts2\ts1\ts3\ts4\ts5\ts6\tk\tk\tk\tk\tk\n'
