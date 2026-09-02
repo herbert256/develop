@@ -138,7 +138,7 @@ Layout (per environment, acceptance/ + production/):
   BL.txt         BL numbers per subscription ("<subscription> <BL>[,<BL>...]"),
                  a second source of BL entities beside the subscriptions.json tags
   logons_old.txt the FE logins' last logon on the OLD gateway ("<login> <stamp>"
-                 per line) — the FE status information page's Last Gateway column
+                 per line) — the FE overview page's Gateway column
 The eight policy files are PER ENVIRONMENT since 2026-08-31 (user request);
 bin/build/migrate-input.sh moves a checkout's old shared copies into the env
 dirs once, and folds a retired partner-aliases.tsv into logical_partners.txt.

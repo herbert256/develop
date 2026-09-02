@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 #
 # fe-overview.sh — "FE overview" (Analyses → Configuration, 2026-09-02, user
-# request): ONE page for what the "FE status information" and the "UC2 pickup
-# visits" pages showed separately — one row per FE login (the partner-side
-# credential the UC2 / UC4 flows are served through), the login's status
-# columns plus its pickup figures. Both older pages stay for now; this
-# script mirrors fe-status.sh's awk — keep the shared parts in sync until
-# the older page goes.
+# request): one row per FE login (the partner-side credential the UC2 / UC4
+# flows are served through) — the login's status columns plus its pickup
+# figures. It replaced the "FE status information" page (folded in and
+# removed 2026-09-02); the "UC2 pickup visits" page keeps the per-subscription
+# visit breakdown.
 #
 #   Login          every configured login (base/_logins.tsv roster); a login
 #                  that only input/<env>/logons_old.txt names is listed too —

@@ -1,7 +1,7 @@
 # input/<env>/logons_old.txt — the last logon of each FE login on the OLD
 # gateway, one login per line: "<login> <stamp>" (the first token is the
 # login, the rest of the line is shown as written on the Analyses ->
-# Configuration "FE status information" page). Hand-maintained, per
+# Configuration "FE overview" page). Hand-maintained, per
 # environment. SAMPLE data — the runtime repo carries the real file.
 FE000123  2026-09-02 14:35
 FE028473  2026-08-30 07:12

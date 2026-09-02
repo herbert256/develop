@@ -925,7 +925,7 @@ became a full entity, and one of its freshness deps; a listed FlowID skips the d
 `BL.txt` (BL numbers per subscription, `<subscription> <BL>[,<BL>...]` — several numbers
 comma-separated in the second field — a SECOND source of BL entities beside the subscriptions.json tags,
 unioned in `bin/flow-manager.sh`; the real files live in runtime's `input/<env>/`, develop's are
-the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Analyses → Configuration "FE status information" and "FE overview" pages' Last Gateway column; hand-maintained, sample template in develop) and
+the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Analyses → Configuration "FE overview" page's Gateway column; hand-maintained, sample template in develop) and
 `logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
 Logical-based PDA derivation: part 1/2/3 of a three-part Logical name is replaced before it
 becomes the domain / application / partner-merge token — the Logical name itself is untouched;
