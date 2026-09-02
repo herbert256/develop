@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Acceptance vs production</title>
+<link rel="stylesheet" href="../../assets/style.css?v=1840147731">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=1840147731" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="acc-vs-prod" data-twin="../../production/analyses/acc-vs-prod-logicals-all.html"></div>
+<h1>Acceptance vs production <span class="grouptag">&larr; Acceptance vs production &larr; Analyses</span></h1>
+<p class="tabs"><a class="tab" href="acc-vs-prod-summary.html">Summary</a><span class="tab active">Entities</span><a class="tab" href="acc-vs-prod-subs-partners.html">Subscriptions vs partners</a></p>
+<p class="tabs"><a class="tab" href="acc-vs-prod-subscriptions-all.html">Subscriptions</a><span class="tab active">Logical</span><a class="tab" href="acc-vs-prod-accounts-all.html">Accounts</a><a class="tab" href="acc-vs-prod-logins-all.html">Logins</a><a class="tab" href="acc-vs-prod-hosts-all.html">Hosts</a><a class="tab" href="acc-vs-prod-partners-all.html">Partners</a><a class="tab" href="acc-vs-prod-domains-all.html">Domains</a><a class="tab" href="acc-vs-prod-applications-all.html">Applications</a><a class="tab" href="acc-vs-prod-bl-all.html">BL</a><a class="tab" href="acc-vs-prod-whitelist-all.html">Whitelist</a></p>
+<p class="tabs"><span class="tab active">All - 120</span><a class="tab" href="acc-vs-prod-logicals-difference.html">Difference - 90</a><span class="tabsep"></span><a class="tab" href="acc-vs-prod-logicals-acc.html">Acceptance - 110</a><a class="tab" href="acc-vs-prod-logicals-prd.html">Production - 40</a><span class="tabsep"></span><a class="tab" href="acc-vs-prod-logicals-acceptance.html">Only Acceptance - 80</a><a class="tab" href="acc-vs-prod-logicals-both.html">Both - 30</a><a class="tab" href="acc-vs-prod-logicals-production.html">Only Production - 10</a></p>
+<p class="subtitle">The Logical flows known to each environment — the FlowIDs condensed into logical groups: numbered variants and per-label branches of one flow fold into a single name, normalized to three <code>_</code>-separated parts (a <code>-</code> inside a part marks parts the normalization combined). Only in Acceptance, in both, or only in Production. Every name links its own environment&#8217;s detail page.</p>
+<div class="tablewrap"><table class="fit">
+<tr><th>Acceptance</th><th>Production</th></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/ab-claims-umbrella.html">AB_CLAIMS_UMBRELLA</a></td><td class="cl"><a href="../../production/details/logicals/ab-claims-umbrella.html">AB_CLAIMS_UMBRELLA</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/ab-creditreg-weyland.html">AB_CREDITREG_WEYLAND</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/ab-ekdsi-stark.html">AB_EKDSI_STARK</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/ab-export-wayne.html">AB_EXPORT_WAYNE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/ab-hrdata-weyland.html">AB_HRDATA_WEYLAND</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/ab-nas-globex.html">AB_NAS_GLOBEX</a></td><td class="cl"><a href="../../production/details/logicals/ab-nas-globex.html">AB_NAS_GLOBEX</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/ab-polis-umbrella.html">AB_POLIS_UMBRELLA</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/ab-portal-abstergo.html">AB_PORTAL_ABSTERGO</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/ab-scan-monarch.html">AB_SCAN_MONARCH</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/ab-tdrs-primatech.html">AB_TDRS_PRIMATECH</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aim-lake-piedpiper.html">AIM_LAKE_PIEDPIPER</a></td><td class="cl"><a href="../../production/details/logicals/aim-lake-piedpiper.html">AIM_LAKE_PIEDPIPER</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aim-quotes-wonka.html">AIM_QUOTES_WONKA</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aim-sappo-wonka.html">AIM_SAPPO_WONKA</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aps-cosmos-globex.html">APS_COSMOS_GLOBEX</a></td><td class="cl"><a href="../../production/details/logicals/aps-cosmos-globex.html">APS_COSMOS_GLOBEX</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aps-fmgenlog-cyberdyne.html">APS_FMGENLOG_CYBERDYNE</a></td><td class="cl"><a href="../../production/details/logicals/aps-fmgenlog-cyberdyne.html">APS_FMGENLOG_CYBERDYNE</a></td></tr>
+<tr><td class="cl"></td><td class="cl"><a href="../../production/details/logicals/aps-fmgenlog-piedpiper.html">APS_FMGENLOG_PIEDPIPER</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aps-fmreplerr-cyberdyne.html">APS_FMREPLERR_CYBERDYNE</a></td><td class="cl"><a href="../../production/details/logicals/aps-fmreplerr-cyberdyne.html">APS_FMREPLERR_CYBERDYNE</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aps-invoice-stark.html">APS_INVOICE_STARK</a></td><td class="cl"><a href="../../production/details/logicals/aps-invoice-stark.html">APS_INVOICE_STARK</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aps-risk-tyrell.html">APS_RISK_TYRELL</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aps-settle-p2p.html">APS_SETTLE_P2P</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aps-stream-soylent.html">APS_STREAM_SOYLENT</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aps-syshub-soylent.html">APS_SYSHUB_SOYLENT</a></td><td class="cl"><a href="../../production/details/logicals/aps-syshub-soylent.html">APS_SYSHUB_SOYLENT</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aps-telem-gekko.html">APS_TELEM_GEKKO</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/aps-vida-umbrella.html">APS_VIDA_UMBRELLA</a></td><td class="cl"><a href="../../production/details/logicals/aps-vida-umbrella.html">APS_VIDA_UMBRELLA</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cb-isolated-soylent.html">CB_ISOLATED_SOYLENT</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cb-marketing-wnk.html">CB_MARKETING_WNK</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cb-quotes-gekko.html">CB_QUOTES_GEKKO</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cb-stark-wayne.html">CB_STARK_WAYNE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cb-vida-wayne.html">CB_VIDA_WAYNE</a></td><td class="cl"><a href="../../production/details/logicals/cb-vida-wayne.html">CB_VIDA_WAYNE</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cdv-krp-tdi-wonka.html">CDV_KRP-TDI_WONKA</a></td><td class="cl"><a href="../../production/details/logicals/cdv-krp-tdi-wonka.html">CDV_KRP-TDI_WONKA</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cdv-stream-abstergo.html">CDV_STREAM_ABSTERGO</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cdv-stream-duff.html">CDV_STREAM_DUFF</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cd-ariva-bluth.html">CD_ARIVA_BLUTH</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cd-ariva-dunder.html">CD_ARIVA_DUNDER</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cd-ariva-sabre.html">CD_ARIVA_SABRE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cd-batch-massive.html">CD_BATCH_MASSIVE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cd-cosmos-wonka.html">CD_COSMOS_WONKA</a></td><td class="cl"><a href="../../production/details/logicals/cd-cosmos-wonka.html">CD_COSMOS_WONKA</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cd-invoice-vandelay.html">CD_INVOICE_VANDELAY</a></td><td class="cl"></td></tr>
+<tr><td class="cl"></td><td class="cl"><a href="../../production/details/logicals/cd-parcelx-bluth.html">CD_PARCELX_BLUTH</a></td></tr>
+<tr><td class="cl"></td><td class="cl"><a href="../../production/details/logicals/cd-parcel-bluth.html">CD_PARCEL_BLUTH</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cd-printmgmt-wonka.html">CD_PRINTMGMT_WONKA</a></td><td class="cl"><a href="../../production/details/logicals/cd-printmgmt-wonka.html">CD_PRINTMGMT_WONKA</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cd-quotes-stark.html">CD_QUOTES_STARK</a></td><td class="cl"></td></tr>
+<tr><td class="cl"></td><td class="cl"><a href="../../production/details/logicals/cd-route-wonka.html">CD_ROUTE_WONKA</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/cd-ziba-gekko.html">CD_ZIBA_GEKKO</a></td><td class="cl"><a href="../../production/details/logicals/cd-ziba-gekko.html">CD_ZIBA_GEKKO</a></td></tr>
+<tr><td class="cl"></td><td class="cl"><a href="../../production/details/logicals/crm-sync-initech.html">CRM_SYNC_INITECH</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/dpl-auditlog-dunder.html">DPL_AUDITLOG_DUNDER</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/dpl-polis-tyrell.html">DPL_POLIS_TYRELL</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/dpl-rensei-soylent.html">DPL_RENSEI_SOYLENT</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/dpl-scan-cyberdyne.html">DPL_SCAN_CYBERDYNE</a></td><td class="cl"><a href="../../production/details/logicals/dpl-scan-cyberdyne.html">DPL_SCAN_CYBERDYNE</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/dpl-stream-umbrella.html">DPL_STREAM_UMBRELLA</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fin-billing-globex.html">FIN_BILLING_GLOBEX</a></td><td class="cl"><a href="../../production/details/logicals/fin-billing-globex.html">FIN_BILLING_GLOBEX</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fin-billing-globexx.html">FIN_BILLING_GLOBEXX</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fin-claims-monarch.html">FIN_CLAIMS_MONARCH</a></td><td class="cl"><a href="../../production/details/logicals/fin-claims-monarch.html">FIN_CLAIMS_MONARCH</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fin-facts-massive.html">FIN_FACTS_MASSIVE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fin-ledger-globex.html">FIN_LEDGER_GLOBEX</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fin-nas-vandelay.html">FIN_NAS_VANDELAY</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fin-portal-duff.html">FIN_PORTAL_DUFF</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fin-treasury-gekko.html">FIN_TREASURY_GEKKO</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fs-ifrs-wayne.html">FS_IFRS_WAYNE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fs-mortgage-sabre.html">FS_MORTGAGE_SABRE</a></td><td class="cl"><a href="../../production/details/logicals/fs-mortgage-sabre.html">FS_MORTGAGE_SABRE</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fs-pension-dunder.html">FS_PENSION_DUNDER</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fs-sapbods-primatech.html">FS_SAPBODS_PRIMATECH</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/fs-stmt-aperture.html">FS_STMT_APERTURE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"></td><td class="cl"><a href="../../production/details/logicals/gl-postings-gekko.html">GL_POSTINGS_GEKKO</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/hr-afas-gekko.html">HR_AFAS_GEKKO</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/hr-archive-zorg.html">HR_ARCHIVE_ZORG</a></td><td class="cl"><a href="../../production/details/logicals/hr-archive-zorg.html">HR_ARCHIVE_ZORG</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/hr-lake-blackmesa.html">HR_LAKE_BLACKMESA</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/hr-match-vandelay.html">HR_MATCH_VANDELAY</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/hr-payroll-initech.html">HR_PAYROLL_INITECH</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/hr-pension-oscorp.html">HR_PENSION_OSCORP</a></td><td class="cl"></td></tr>
+<tr><td class="cl"></td><td class="cl"><a href="../../production/details/logicals/hr-roster-umbrella.html">HR_ROSTER_UMBRELLA</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/infra-monitor-uc.html">INFRA-MONITOR-UC</a></td><td class="cl"><a href="../../production/details/logicals/infra-monitor-uc.html">INFRA-MONITOR-UC</a></td></tr>
+<tr><td class="cl"></td><td class="cl"><a href="../../production/details/logicals/inv-payments-hooli.html">INV_PAYMENTS_HOOLI</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-archive-initech.html">IT_ARCHIVE_INITECH</a></td><td class="cl"><a href="../../production/details/logicals/it-archive-initech.html">IT_ARCHIVE_INITECH</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-archive-zorg.html">IT_ARCHIVE_ZORG</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-billing-bluth.html">IT_BILLING_BLUTH</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-crm-stark.html">IT_CRM_STARK</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-dispatch-initech.html">IT_DISPATCH_INITECH</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-ekdsi-cyberdyne.html">IT_EKDSI_CYBERDYNE</a></td><td class="cl"><a href="../../production/details/logicals/it-ekdsi-cyberdyne.html">IT_EKDSI_CYBERDYNE</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-facts-hooli.html">IT_FACTS_HOOLI</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-ledger-hooli.html">IT_LEDGER_HOOLI</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-maia-soylent.html">IT_MAIA_SOYLENT</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-recon-hooli.html">IT_RECON_HOOLI</a></td><td class="cl"><a href="../../production/details/logicals/it-recon-hooli.html">IT_RECON_HOOLI</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-sapbhp-gekko.html">IT_SAPBHP_GEKKO</a></td><td class="cl"><a href="../../production/details/logicals/it-sapbhp-gekko.html">IT_SAPBHP_GEKKO</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/it-tdrs-bluth.html">IT_TDRS_BLUTH</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/odv-are-aperture.html">ODV_ARE_APERTURE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/odv-dms-cyberdyne.html">ODV_DMS_CYBERDYNE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/odv-emis-zorg.html">ODV_EMIS_ZORG</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/odv-maia-piedpiper.html">ODV_MAIA_PIEDPIPER</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/odv-merlijn-sabre.html">ODV_MERLIJN_SABRE</a></td><td class="cl"><a href="../../production/details/logicals/odv-merlijn-sabre.html">ODV_MERLIJN_SABRE</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/odv-risk-tyrell.html">ODV_RISK_TYRELL</a></td><td class="cl"></td></tr>
+<tr><td class="cl"></td><td class="cl"><a href="../../production/details/logicals/rec-feeds-soylent.html">REC_FEEDS_SOYLENT</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/si-portal-oscorp.html">SI_PORTAL_OSCORP</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/si-ros-sabre.html">SI_ROS_SABRE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/si-sapbhp-aperture.html">SI_SAPBHP_APERTURE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/si-telemetry-stark.html">SI_TELEMETRY_STARK</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/si-vps-vdn.html">SI_VPS_VDN</a></td><td class="cl"></td></tr>
+<tr><td class="cl"></td><td class="cl"><a href="../../production/details/logicals/stmt-export-globex.html">STMT_EXPORT_GLOBEX</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/synt-itp-aperture.html">SYNT_ITP_APERTURE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/synt-nas-tyrell.html">SYNT_NAS_TYRELL</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/wa-batch-wayne.html">WA_BATCH_WAYNE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/wa-clearing-vdn.html">WA_CLEARING_VDN</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/wa-crm-piedpiper.html">WA_CRM_PIEDPIPER</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/wa-sensor-stark.html">WA_SENSOR_STARK</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/wa-telematics-monarch.html">WA_TELEMATICS_MONARCH</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/wa-zka-abstergo.html">WA_ZKA_ABSTERGO</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zg-bulk-dunder.html">ZG_BULK_DUNDER</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zg-civil-dunder.html">ZG_CIVIL_DUNDER</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zg-dms-primatech.html">ZG_DMS_PRIMATECH</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zg-hooli-gekko.html">ZG_HOOLI_GEKKO</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zg-ikaz-bluth.html">ZG_IKAZ_BLUTH</a></td><td class="cl"><a href="../../production/details/logicals/zg-ikaz-bluth.html">ZG_IKAZ_BLUTH</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zg-match-hooli.html">ZG_MATCH_HOOLI</a></td><td class="cl"><a href="../../production/details/logicals/zg-match-hooli.html">ZG_MATCH_HOOLI</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zg-pension-hooli.html">ZG_PENSION_HOOLI</a></td><td class="cl"><a href="../../production/details/logicals/zg-pension-hooli.html">ZG_PENSION_HOOLI</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zg-pgbmatch-aperture.html">ZG_PGBMATCH_APERTURE</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zg-zka-hooli.html">ZG_ZKA_HOOLI</a></td><td class="cl"><a href="../../production/details/logicals/zg-zka-hooli.html">ZG_ZKA_HOOLI</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zk-ariva-oscorp.html">ZK_ARIVA_OSCORP</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zk-claims-blackmesa.html">ZK_CLAIMS_BLACKMESA</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zk-ikaz-blackmesa.html">ZK_IKAZ_BLACKMESA</a></td><td class="cl"></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zk-miaz-initech.html">ZK_MIAZ_INITECH</a></td><td class="cl"><a href="../../production/details/logicals/zk-miaz-initech.html">ZK_MIAZ_INITECH</a></td></tr>
+<tr><td class="cl"><a href="../../acceptance/details/logicals/zk-sensor-soylent.html">ZK_SENSOR_SOYLENT</a></td><td class="cl"></td></tr>
+<tr class="total"><td>Total (120)</td><td></td></tr>
+</table></div>
+</body>
+</html>

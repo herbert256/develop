@@ -11,8 +11,8 @@
 <script src="../../assets/report.js?v=1840147731" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="app-partners"></div>
-<h1>Application dependencies</h1>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="app-partners" data-twin="../../acceptance/analyses/app-partners.html"></div>
+<h1>Application dependencies <span class="grouptag">&larr; Partners &larr; Analyses</span></h1>
 <p class="tabs"><a class="tab" href="partner-scorecard.html">Partner scorecard</a><a class="tab" href="blast-radius.html">Blast radius</a><span class="tab active">Application dependencies</span><a class="tab" href="partner-lifecycle.html">Partner lifecycle</a></p>
 <p class="range">Every internal application seen in the logs, by how many <strong>external partner organisations</strong> it depends on — and how well each of those pairs actually runs. The most exposed application is <strong>COSMOS</strong> with <strong>2</strong> partners (0 of those pairs at 100% Error). Applications and partners are parts 2 and 3 of the logical flow name (domain_application_partner) a File's subscription resolves to through its FlowID, so this attribution is only as good as that naming convention — good enough to see exposure and failing pairs, but not a configuration export. Both sides use the site-wide UNION rules: a File counts for every application and every partner of its subscription.</p>
 <div class="stat"><span class="stat-v">28</span><span class="stat-l">Applications seen</span></div>

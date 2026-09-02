@@ -12,8 +12,8 @@
 <script src="../../assets/report.js?v=1840147731" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="anomalies"></div>
-<h1>Anomalies</h1>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="anomalies" data-twin="../../acceptance/transfer/anomalies.html"></div>
+<h1>Anomalies <span class="grouptag">&larr; Performance &larr; Transfer</span></h1>
 <p class="tabs"><span class="tab active">Anomalies</span><a class="tab" href="duration.html">Duration</a><a class="tab" href="dwell-time.html">Store-and-forward</a><a class="tab" href="duration-trend.html">Duration trend</a></p>
 <p class="range">Every calendar day (the <strong>Daily</strong> table) and every hour (the <strong>Hourly</strong> table below it) is compared against its TYPICAL value — the median across the window days, weekdays and weekends baselined separately. A finding must beat a multiple of its typical (4× for hours; 4× for daily Error rate and Duration, 2× for daily Files and Volume) plus an absolute floor per signal, so quiet-window noise never flags. <strong>Value/Peak</strong> is the flagged figure, <strong>× typical</strong> the figure vs the baseline; <strong>red</strong> rows are ≥10× typical (or a silence), <strong>orange</strong> the rest. The Date links open the day page with the matching chart view selected — and each day page links back here only when that day has findings of its own.</p>
 <h2 id="daily">Daily — unusual days</h2>

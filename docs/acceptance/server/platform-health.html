@@ -12,8 +12,8 @@
 <script src="../../assets/report.js?v=1840147731" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-cluster-health"></div>
-<h1>Platform health</h1>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-cluster-health" data-twin="../../production/server/platform-health.html"></div>
+<h1>Platform health <span class="grouptag">&larr; Operations &amp; Capacity &larr; Server</span></h1>
 <p class="tabs"><span class="tab active">Platform health</span><a class="tab" href="capacity-pesit-per-day.html">Capacity &amp; sessions</a></p>
 <p class="range">The health of the platform itself on one page — the infrastructure story the transfer figures never show: <strong>daemon lifecycle and cluster distress</strong> signals, <strong>stuck internal events</strong> (expired heartbeats and the recovery sweeps) and <strong>scheduler overruns</strong> (tasks skipped because the previous run was still going). (The Sentinel event-feed view went with the per-message acknowledgement lines the server parse now drops — 2026-08.)</p>
 <div class="tablewrap"><table class="wide" data-recalc="- s0 - - -">

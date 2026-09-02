@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Server Reports</title>
+<link rel="stylesheet" href="../../assets/style.css?v=1840147731">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=1840147731" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="index" data-twin="../../acceptance/server/index.html"></div>
+<h1>Server Reports</h1>
+<p class="range">First record: <strong>2026-07-26</strong> &nbsp;|&nbsp; Last record: <strong>2026-08-29</strong> &nbsp;|&nbsp; Records: <strong>55.529</strong></p>
+<p class="range"><a href="../search.html"><strong>Search</strong></a> &mdash; find any account, subscription, login, host or flow; its Server Log column covers this server data.</p>
+<div class="tablewrap"><table class="index" data-nosort="1">
+<tr><th colspan="2">Top view</th></tr>
+<tr><td><a href="topview.html">Top view</a></td><td class="desc">The whole server log at a glance: per day, the records, the Info/Warning/Error split and error rate, and how busy each component (TM, PESITD, SSHD) was.</td></tr>
+<tr><th colspan="2">Errors</th></tr>
+<tr><td><a href="errors-per-day.html">Errors</a></td><td class="desc">Server-log errors and warnings from every angle: levels per day and component, timing by hour and weekday, the failure-reason classification and the most-repeated message shapes.</td></tr>
+<tr><td><a href="failure-flows.html">Per flow</a></td><td class="desc">Server-log ERROR messages classified by reason and attributed to the subscription each message names, with the reason mix per ISO week.</td></tr>
+<tr><th colspan="2">Transfers &amp; Delivery</th></tr>
+<tr><td><a href="pickups.html">Pickups</a></td><td class="desc">Every UC2 (partner collects from us) flow's pickup figures side by side: first/last pickup, the last logon on the old gateway, pickup logons, collected files, waiting and expired files, the pickup cadence and the UC4 shared-connection flag.</td></tr>
+<tr><th colspan="2">Logons &amp; Connections</th></tr>
+<tr><td><a href="logons-incoming.html">Logons</a></td><td class="desc">The whole SSH authentication story: the incoming screening funnel, successful logons per account and source IP, shared-certificate detection, key mismatches, lockouts and our outbound auth failures.</td></tr>
+<tr><td><a href="connections-by-protocol.html">Connections</a></td><td class="desc">Who connects in (protocol, account, source address, whitelist usage) and why our outbound connections fail (failure reasons, per remote host, test connections).</td></tr>
+<tr><th colspan="2">Security</th></tr>
+<tr><td><a href="ssh-security.html">SSH security</a></td><td class="desc">Negotiated SSH ciphers, key-exchange, MACs and key algorithms with weak ones flagged, deprecated-parameter warnings, and session lifecycle problems.</td></tr>
+<tr><th colspan="2">Operations &amp; Capacity</th></tr>
+<tr><td><a href="platform-health.html">Platform health</a></td><td class="desc">The platform infrastructure story on one page: daemon lifecycle and cluster distress, stuck internal events and scheduler overruns.</td></tr>
+<tr><td><a href="capacity-pesit-per-day.html">Capacity &amp; sessions</a></td><td class="desc">PeSIT activity and its problem codes, and the file retention / cleanup sweeps.</td></tr>
+<tr><th colspan="2">Routing &amp; Polling</th></tr>
+<tr><td><a href="remote-poll.html">Remote Polls</a></td><td class="desc">Scheduled remote-poll effectiveness per subscription — how many polls pick up files versus how many find nothing (chronic empty polling that never reaches the transfer logs).</td></tr>
+<tr><td><a href="transfer-site-missing.html">Transfer site missing</a></td><td class="desc">Server-log warnings where a transfer ran with no transfer site in its environment and fell back to the raw host, port and user — per endpoint, hosts that have delivered OK since excluded.</td></tr>
+<tr><th colspan="2">Missing Entities</th></tr>
+<tr><td><a href="missing-entities-subscriptions.html">Missing entities</a></td><td class="desc">Entity values referenced in server-log messages but absent from the transfer logs — subscriptions, accounts, hosts, whitelisted addresses and logins, one tab each.</td></tr>
+</table></div>
+</body>
+</html>
