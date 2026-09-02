@@ -17,27 +17,27 @@
 <div class="sxscol"><h2>Connection type</h2><div class="tablewrap"><table class="index fit">
 <tr><th>Type</th><th class="num">Profiles</th></tr>
 <tr><td>Server &mdash; we connect out to the partner</td><td class="num">25</td></tr>
-<tr><td>Client &mdash; the partner connects in to us</td><td class="num">26</td></tr>
-<tr class="total"><td>Total</td><td class="num">51</td></tr>
+<tr><td>Client &mdash; the partner connects in to us</td><td class="num">25</td></tr>
+<tr class="total"><td>Total</td><td class="num">50</td></tr>
 </table></div></div>
 <div class="sxscol"><h2>Protocol</h2><div class="tablewrap"><table class="index fit">
 <tr><th>Protocol</th><th class="num">Profiles</th></tr>
-<tr><td>SFTP &mdash; secure</td><td class="num">51</td></tr>
+<tr><td>SFTP &mdash; secure</td><td class="num">50</td></tr>
 <tr data-res="red"><td>FTP &mdash; <strong>insecure</strong></td><td class="num">0</td></tr>
-<tr class="total"><td>Total</td><td class="num">51</td></tr>
+<tr class="total"><td>Total</td><td class="num">50</td></tr>
 </table></div></div>
 </div>
 <h2>Type &mdash; the name prefix</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Prefix</th><th>Meaning</th><th class="num">Profiles</th><th>Configured type</th></tr>
-<tr><td>CCP</td><td>Client comm profile</td><td class="num">26</td><td>CLIENT</td></tr>
+<tr><td>CCP</td><td>Client comm profile</td><td class="num">25</td><td>CLIENT</td></tr>
 <tr><td>SCP</td><td>Server comm profile</td><td class="num">25</td><td>SERVER</td></tr>
 </table></div>
-<p class="range">Every profile&rsquo;s prefix matches its configured <code>type</code> &mdash; <strong>51 of 51 consistent</strong>, no exceptions.</p>
+<p class="range">Every profile&rsquo;s prefix matches its configured <code>type</code> &mdash; <strong>50 of 50 consistent</strong>, no exceptions.</p>
 <h2>Authentication &mdash; the name suffix</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Suffix</th><th>Meaning</th><th class="num">Profiles</th><th class="num">Match auth</th><th class="num">Mismatch</th></tr>
-<tr><td>PWD</td><td>password</td><td class="num">41</td><td class="num st-ok">41</td><td class="num"></td></tr>
+<tr><td>PWD</td><td>password</td><td class="num">40</td><td class="num st-ok">40</td><td class="num"></td></tr>
 <tr><td>KEY</td><td>public key</td><td class="num">10</td><td class="num st-ok">10</td><td class="num"></td></tr>
 <tr><td>(other)</td><td>no PWD/KEY suffix (the FTP endpoints, below)</td><td class="num">0</td><td class="num"></td><td class="num"></td></tr>
 </table></div>
@@ -45,7 +45,7 @@
 <p class="range">No inconsistencies &mdash; every profile&rsquo;s auth suffix matches its configured authentication.</p>
 <h2>Breaking naming rules (0)</h2>
 <p class="range">An <strong>incoming</strong> account (the partner connects to us) separates its name parts with <code>-</code>; an <strong>outgoing</strong> one (we connect to the partner) uses <code>_</code>. The same flow configured both ways therefore appears twice, once in each spelling &mdash; <code>DPL-AXINI-AO-IMPRESS</code> inbound and <code>DPL_AXINI-AO_IMPRESS</code> outbound. The separator is read <code>_</code>-primary: <code>_</code> wins unless splitting on <code>-</code> yields more parts, so an internal hyphen inside one part (<code>AIM-FIN_TREASURY-SP</code>) is not mistaken for the separator. (A NAMING audit only &mdash; since the logical-based derivation the partner/domain/application entities no longer come from account names.)</p>
-<p class="range">No breaks &mdash; all 38 directional accounts follow the rule.</p>
+<p class="range">No breaks &mdash; all 37 directional accounts follow the rule.</p>
 <h2>Not clear domain-application-partner (1)</h2>
 <p class="range">An account is meant to be connected to a <strong>logical flow</strong>, whose three-part name reads <strong>domain_application_partner</strong> &mdash; <code>ODV_MAIA_AKZO</code> is domain <code>ODV</code>, application <code>MAIA</code>, partner <code>AKZO</code>. These accounts could not be resolved into all three. The check does not re-read any names: it asks the derivation itself what it managed to assign, so a blank column is a value the rest of the site genuinely does not have for that account.</p>
 <div class="tablewrap"><table class="index fit">
@@ -63,8 +63,8 @@
 <h2>Remote hosts with conflicting setup</h2>
 <p class="range">Every remote host used by more than one profile is configured identically &mdash; no conflicts.</p>
 <h2>Whitelisted IPs with conflicting incoming setup</h2>
-<p class="range">The inbound mirror of the check above: a source IP whitelisted for more than one incoming (CLIENT) partner should present the same way. Checking <strong>every</strong> incoming attribute, <strong>15 IP(s)</strong> differ across <strong>1 attribute(s)</strong> &mdash; one table per differing attribute below. Often deliberate (one source, per-account credentials), but worth confirming. Per-account logins are excluded. Each distinct value is a row, grouped by IP.</p>
-<h3>Authentication (15 IP(s))</h3>
+<p class="range">The inbound mirror of the check above: a source IP whitelisted for more than one incoming (CLIENT) partner should present the same way. Checking <strong>every</strong> incoming attribute, <strong>10 IP(s)</strong> differ across <strong>1 attribute(s)</strong> &mdash; one table per differing attribute below. Often deliberate (one source, per-account credentials), but worth confirming. Per-account logins are excluded. Each distinct value is a row, grouped by IP.</p>
+<h3>Authentication (10 IP(s))</h3>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Whitelisted IP</th><th>Value</th><th>Partners</th></tr>
 <tr data-res="orange"><td><code>198.51.100.185</code></td><td>PASSWORD</td><td>INV-PAYMENTS-HOOLI, ZG-ZKA-HOOLI</td></tr>
@@ -75,18 +75,8 @@
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>ZG-MATCH-HOOLI</td></tr>
 <tr data-res="orange"><td><code>198.51.100.41</code></td><td>PASSWORD</td><td>INV-PAYMENTS-HOOLI, ZG-ZKA-HOOLI</td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>ZG-MATCH-HOOLI</td></tr>
-<tr data-res="orange"><td><code>203.0.113.110</code></td><td>PASSWORD</td><td>CD-ZIBA-GEKKO</td></tr>
-<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>IT-SAPBHP-GEKKO</td></tr>
-<tr data-res="orange"><td><code>203.0.113.111</code></td><td>PASSWORD</td><td>CD-ZIBA-GEKKO</td></tr>
-<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>IT-SAPBHP-GEKKO</td></tr>
-<tr data-res="orange"><td><code>203.0.113.112</code></td><td>PASSWORD</td><td>CD-ZIBA-GEKKO</td></tr>
-<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>IT-SAPBHP-GEKKO</td></tr>
 <tr data-res="orange"><td><code>203.0.113.20</code></td><td>PASSWORD</td><td>IT-EKDSI-CYBERDYNE</td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>DPL-SCAN-CYBERDYNE</td></tr>
-<tr data-res="orange"><td><code>203.0.113.205</code></td><td>PASSWORD</td><td>CD-ZIBA-GEKKO</td></tr>
-<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>IT-SAPBHP-GEKKO</td></tr>
-<tr data-res="orange"><td><code>203.0.113.206</code></td><td>PASSWORD</td><td>CD-ZIBA-GEKKO</td></tr>
-<tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>IT-SAPBHP-GEKKO</td></tr>
 <tr data-res="orange"><td><code>203.0.113.21</code></td><td>PASSWORD</td><td>IT-EKDSI-CYBERDYNE</td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td>DPL-SCAN-CYBERDYNE</td></tr>
 <tr data-res="orange"><td><code>203.0.113.22</code></td><td>PASSWORD</td><td>IT-EKDSI-CYBERDYNE</td></tr>

@@ -13,10 +13,11 @@
 <div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="skipped" data-twin="../../production/transfer/skipped.html"></div>
 <h1>Skipped <span class="grouptag">&larr; Configuration &larr; Analyses</span></h1>
 <p class="tabs"><a class="tab" href="../analyses/use-cases.html">Use cases</a><a class="tab" href="../analyses/uc2-visits.html">UC2 pickup visits</a><a class="tab" href="../analyses/subscriptions.html">Subscriptions</a><a class="tab" href="../analyses/logical-detection.html">Logical detection</a><a class="tab" href="../analyses/added-bl.html">Added BL</a><a class="tab" href="../analyses/accounts.html">Accounts</a><a class="tab" href="../analyses/fe-overview.html">FE overview</a><a class="tab" href="../analyses/account-sharing.html">Account sharing</a><a class="tab" href="../analyses/twins.html">Twins</a><a class="tab" href="../analyses/cronjobs.html">Cronjobs</a><a class="tab" href="../analyses/config-hygiene.html">Config hygiene</a><a class="tab" href="../analyses/whitelist-audit.html">Whitelist audit</a><a class="tab" href="../analyses/cleanup-backlog.html">Cleanup backlog</a><a class="tab" href="sources-and-targets.html">Sources and Targets</a><span class="tab active">Skipped</span><a class="tab" href="not-in-flow-manager.html">Not in Flow Manager</a><a class="tab" href="../analyses/xref/cross-account-subscriptions.html">Cross References</a></p>
-<p class="range">Names matching the <strong>skip list</strong> (<strong>input/acceptance/skip.txt</strong>, this environment's own — HEARTBEAT, ACMETEST, SVC_MIGRATION) are removed at parse time — from the FlowManager config, the transfer logs and the server logs alike — so <strong>no other report counts them</strong>. Matching is a case-insensitive <strong>substring</strong> of the account or subscription name. The buttons below give a per-value report; this page lists them all.</p>
-<p class="tabs"><span class="tab active">All</span><a class="tab" href="skipped-heartbeat.html">HEARTBEAT</a><a class="tab" href="skipped-acmetest.html">ACMETEST</a><a class="tab" href="skipped-svc-migration.html">SVC_MIGRATION</a></p>
+<p class="range">Names matching the <strong>skip list</strong> (<strong>input/acceptance/skip.txt</strong>, this environment's own — HEARTBEAT, ACMETEST, SVC_MIGRATION, FE748281) are removed at parse time — from the FlowManager config, the transfer logs and the server logs alike — so <strong>no other report counts them</strong>. On the configuration side matching is a case-insensitive <strong>substring</strong> of the account, subscription or comm-profile login name (a skipped login loses its detail page); the log records follow the rule kind (contains, exact or regex). The buttons below give a per-value report; this page lists them all.</p>
+<p class="tabs"><span class="tab active">All</span><a class="tab" href="skipped-heartbeat.html">HEARTBEAT</a><a class="tab" href="skipped-acmetest.html">ACMETEST</a><a class="tab" href="skipped-svc-migration.html">SVC_MIGRATION</a><a class="tab" href="skipped-fe748281.html">FE748281</a></p>
 <div class="stat"><span class="stat-v">1</span><span class="stat-l">Skipped accounts</span></div>
 <div class="stat"><span class="stat-v">1</span><span class="stat-l">Skipped subscriptions</span></div>
+<div class="stat"><span class="stat-v">0</span><span class="stat-l">Skipped logins</span></div>
 <div class="stat"><span class="stat-v">206</span><span class="stat-l">Skipped transfer log lines</span></div>
 <div class="stat"><span class="stat-v">100</span><span class="stat-l">Skipped server log lines</span></div>
 <div class="stat"><span class="stat-v">0</span><span class="stat-l">Skipped no-subscription / http lines</span></div>
@@ -32,6 +33,12 @@
 <tr><td>UC1_IT_HEARTBEAT_INITECH</td></tr>
 <tr class="total"><td>Total (1 subscription)</td></tr>
 </table></div>
+<h2>Skipped logins — HEARTBEAT</h2>
+<div class="tablewrap"><table data-nosort="1">
+<tr><th>Login</th></tr>
+<tr><td class="desc">(none — no configured login matched HEARTBEAT)</td></tr>
+<tr class="total"><td>Total (0 logins)</td></tr>
+</table></div>
 <h2>Skipped accounts — ACMETEST</h2>
 <div class="tablewrap"><table data-nosort="1">
 <tr><th>Account</th></tr>
@@ -43,6 +50,12 @@
 <tr><th>Subscription</th></tr>
 <tr><td class="desc">(none — no configured subscription matched ACMETEST)</td></tr>
 <tr class="total"><td>Total (0 subscriptions)</td></tr>
+</table></div>
+<h2>Skipped logins — ACMETEST</h2>
+<div class="tablewrap"><table data-nosort="1">
+<tr><th>Login</th></tr>
+<tr><td class="desc">(none — no configured login matched ACMETEST)</td></tr>
+<tr class="total"><td>Total (0 logins)</td></tr>
 </table></div>
 <h2>Skipped accounts — SVC_MIGRATION</h2>
 <div class="tablewrap"><table data-nosort="1">
@@ -56,6 +69,30 @@
 <tr><td class="desc">(none — no configured subscription matched SVC_MIGRATION)</td></tr>
 <tr class="total"><td>Total (0 subscriptions)</td></tr>
 </table></div>
+<h2>Skipped logins — SVC_MIGRATION</h2>
+<div class="tablewrap"><table data-nosort="1">
+<tr><th>Login</th></tr>
+<tr><td class="desc">(none — no configured login matched SVC_MIGRATION)</td></tr>
+<tr class="total"><td>Total (0 logins)</td></tr>
+</table></div>
+<h2>Skipped accounts — FE748281</h2>
+<div class="tablewrap"><table data-nosort="1">
+<tr><th>Account</th></tr>
+<tr><td class="desc">(none — no configured account matched FE748281)</td></tr>
+<tr class="total"><td>Total (0 accounts)</td></tr>
+</table></div>
+<h2>Skipped subscriptions — FE748281</h2>
+<div class="tablewrap"><table data-nosort="1">
+<tr><th>Subscription</th></tr>
+<tr><td class="desc">(none — no configured subscription matched FE748281)</td></tr>
+<tr class="total"><td>Total (0 subscriptions)</td></tr>
+</table></div>
+<h2>Skipped logins — FE748281</h2>
+<div class="tablewrap"><table data-nosort="1">
+<tr><th>Login</th></tr>
+<tr><td class="desc">(none — no configured login matched FE748281)</td></tr>
+<tr class="total"><td>Total (0 logins)</td></tr>
+</table></div>
 <h2>No subscription / http — skipped transfer records</h2>
 <div class="tablewrap"><table class="wide">
 <tr><th>Date &amp; time</th><th>Reason</th><th>Status</th><th>Account</th><th>Login</th><th>Direction</th><th>Protocol</th><th>File</th><th class="num">Size</th><th>CoreId</th></tr>
@@ -63,6 +100,6 @@
 <tr class="total"><td>Total (0 record(s))</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="num"></td><td></td></tr>
 </table></div>
 <p class="note">The RAW transfer-log records of the CoreIds dropped at parse time because <strong>no leg</strong> carried a subscription or even an <strong>account</strong> (after the propagation and config/xref/flow-direction fallbacks — a record with an account is never dropped: it keeps the synthetic subscription <strong>UCx_account</strong> and counts everywhere except First seen and the coverage figures), or because a leg ran over <strong>http</strong> (web-UI hand traffic, never flow traffic). Kept verbatim in data/&lt;env&gt;/transfer/_skipped.csv; no other report counts these. Reason <strong>http</strong> = the CoreId has an http leg; otherwise <strong>no subscription</strong>.</p>
-<div class="summary">Skipped: 1 account(s), 1 subscription(s), 206 transfer line(s), 100 server line(s) across 3 value(s)</div>
+<div class="summary">Skipped: 1 account(s), 1 subscription(s), 0 login(s), 206 transfer line(s), 100 server line(s) across 4 value(s)</div>
 </body>
 </html>
