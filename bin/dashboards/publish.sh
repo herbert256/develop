@@ -113,6 +113,7 @@ render_card() {   # $1 chart id  $2 title  $3 sub  $4 href  $5 span  $6 chart  $
             # is already non-linear, so the toggle would be a dead button.
             case ${args[0]} in
                 dur|durfit) ;;
+                seen) svg+='<p class="tabs scalebtns"><span class="tab active" data-cscale="lin">Linear</span><span class="tab" data-cscale="log">Log</span></p>' ;;   # the seen graphs open LINEAR (2026-09-03, user request; slotchart.js scaleFor)
                 *) svg+='<p class="tabs scalebtns"><span class="tab" data-cscale="lin">Linear</span><span class="tab active" data-cscale="log">Log</span></p>' ;;
             esac
             svg+='<p class="tabs stylebtns"><span class="tab" data-cstyle="line">Line</span><span class="tab" data-cstyle="bar">Bar</span><span class="tab active" data-cstyle="solid">Solid</span></p>'
