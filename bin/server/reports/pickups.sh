@@ -81,6 +81,9 @@ rows=$(LC_ALL=C sort -t$'\t' -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' -v SL="$SL" 
 tot=$(printf '%s\n' "$rows" | grep $'^TOTFOOT\t')
 rows=$(printf '%s\n' "$rows" | grep -v $'^TOTFOOT\t' || true)
 IFS=$'\t' read -r _ n_rows t_pk t_wf t_f t_wt t_xp t_dl <<< "$tot"
+# a 0 total renders empty like the 0 cells above (2026-09-02, user request);
+# the outcome-kind totals z-blank themselves in the renderer
+nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"; fi; }
 
 {
     printf 'TITLE\tPickups\n'
@@ -97,7 +100,7 @@ IFS=$'\t' read -r _ n_rows t_pk t_wf t_f t_wt t_xp t_dl <<< "$tot"
     printf 'KIND\tmono\ttext\ttext\ttext\tnum\tnum\tnumprocessed\tnum\tnumfailed\ttext\tnum\ttext\n'
     printf '%s\n' "$rows"
     printf 'TOTAL\tTotal (%s subscription(s))\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num failed}%s\t\t@{class=num}%s\t\n' \
-        "$n_rows" "$t_pk" "$t_wf" "$t_f" "$t_wt" "$t_xp" "$t_dl"
+        "$n_rows" "$(nz "$t_pk")" "$(nz "$t_wf")" "$t_f" "$(nz "$t_wt")" "$t_xp" "$(nz "$t_dl")"
     printf 'NOTE\tThe logon figures (Pickups, Delivered-only logons, Pattern) are the pickup ACCOUNT'\''s and repeat on each of its UC2 subscriptions — except on an account carrying **several FE logins** (production), where they are the flow'\''s own **login'\''s**: each login is a different partner credential. UC4 drop stays account-level; With files, Files picked up, Waiting and Expired are each subscription'\''s own. The **UC4 drop** flag needs same-connection proof — one SSH session (transfer-log Session ID) that both delivered and collected; a partner that delivers and collects over separate connections, even in the same visit, does not raise it. **Last Gateway** joins the hand-maintained input/<env>/logons_old.txt ("<login> <stamp>" per line, shown as written) through the subscription'\''s configured login(s); a flow whose login the file does not name shows an em dash. The per-flow story — the visit classification and the shared-connection evidence — is on each subscription'\''s detail page and the UC2 pickup visits analysis.\n'
     printf 'SUMMARY\tFlows: %s  |  Pickups: %s  |  Files picked up: %s  |  Waiting: %s  |  Expired: %s\n' \
         "$n_rows" "$t_pk" "$t_f" "$t_wt" "$t_xp"
