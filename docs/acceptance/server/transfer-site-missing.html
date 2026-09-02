@@ -12,8 +12,8 @@
 <script src="../../assets/report.js?v=1840147731" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-transfer-site-missing"></div>
-<h1>Transfer site missing</h1>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-transfer-site-missing" data-twin="../../production/server/transfer-site-missing.html"></div>
+<h1>Transfer site missing <span class="grouptag">&larr; Routing &amp; Polling &larr; Server</span></h1>
 <p class="tabs"><a class="tab" href="remote-poll.html">Remote Polls</a><span class="tab active">Transfer site missing</span></p>
 <p class="range"><strong>&quot;Transfer site ID is not present in environment. Using host, port and user: …&quot;</strong> — SecureTransport ran a transfer with <strong>no transfer site</strong> in its environment and fell back to the communication profile's raw <strong>host, port and user</strong>. The transfer still moves, so this is a <strong>configuration gap</strong> rather than a runtime failure: a route or profile that lost its transfer-site reference. It is the one server-log message that names NO flow — it says the transfer carried no site — so the rows here are <strong>endpoints</strong>, not subscriptions.</p>
 <p class="range"><strong>34 warning(s)</strong> in the log window. Hosts that have moved a file OK <strong>since</strong> their newest warning are <strong>not listed</strong>: a later OK transfer through the same endpoint says the gap is closed. That cleared <strong>1</strong> host(s) carrying <strong>24</strong> warning(s).</p>

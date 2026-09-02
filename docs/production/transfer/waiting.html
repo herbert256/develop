@@ -12,7 +12,7 @@
 <script src="../../assets/report.js?v=1840147731" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="waiting"></div>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="waiting" data-twin="../../acceptance/transfer/waiting.html"></div>
 <h1>Waiting Files</h1>
 <p class="range">A UC2 file is COLLECTED by the partner: it arrives from CFT in three quick legs (PeSIT in, routing out, routing in), then sits STAGED until the partner dials in over SSH and picks it up. A file still staged at the end of the data window has outcome <strong>Waiting</strong> — not an error, just not collected yet. A staged file the nightly File Maintenance retention sweep (~11 days) DELETED before any pickup is <strong>Expired</strong> — never delivered. Right now <strong>63</strong> File(s) across <strong>8</strong> subscription(s) are waiting (oldest staged <strong>2026-07-27 13:31:47 (UC2-INFRA_ST-MONITOR_INFRA)</strong>), <strong>108</strong> File(s) across <strong>10</strong> subscription(s) have expired, and <strong>2262</strong> staged File(s) were collected. The pickup wait is EXCLUDED from every UC2 Duration figure on this site. Below the four state tables: the day-by-day <strong>staged backlog</strong> curve (peak <strong>68</strong> file(s) on 2026-08-12), the <strong>Will expire next</strong> call list, and the per-partner and per-week <strong>pickup-wait</strong> statistics. Click a row for the 10 most recent Files.</p>
 <div class="tablewrap"><table class="wide" data-nofilter="1">

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transfer Reports</title>
+<link rel="stylesheet" href="../../assets/style.css?v=1840147731">
+<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/report.js?v=1840147731" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="index" data-twin="../../production/transfer/index.html"></div>
+<h1>Transfer Reports</h1>
+<p class="range">First record: <strong>2026-06-23 00:09</strong> &nbsp;|&nbsp; Last record: <strong>2026-08-29 23:57</strong> &nbsp;|&nbsp; Files: <strong>30.488</strong></p>
+<div class="tablewrap"><table class="index" data-nosort="1">
+<tr><th colspan="2">Top view</th></tr>
+<tr><td><a href="topview.html">Top view</a></td><td class="desc">The whole transfer log at a glance, per day: logical Files (per CoreId) with their Count / Ok / Error split, error rate and the Recovered count, the physical Transfers (log rows) with the same Ok/Error split, and the same Files by their final state — Processed, Failed, Waiting and Expired.</td></tr>
+<tr><th colspan="2">Entities</th></tr>
+<tr><td><a href="entities/subscription-all.html">Subscriptions</a></td><td class="desc">Files per subscription: a per-subscription summary and a per-day detail, both split into Error/OK.</td></tr>
+<tr><td><a href="entities/logical-all.html">Logical</a></td><td class="desc">Files per logical: a summary and a per-day detail, both split into Error/OK.</td></tr>
+<tr><td><a href="entities/partner-all.html">Partners</a></td><td class="desc">Files per partner: a summary and a per-day detail, both split into Error/OK.</td></tr>
+<tr><td><a href="entities/account-all.html">Accounts</a></td><td class="desc">Files per account: a per-account summary and a per-day detail, both split into Error/OK.</td></tr>
+<tr><td><a href="entities/login-all.html">Logins</a></td><td class="desc">Files per login: a per-login summary and a per-day detail, both split into Error/OK.</td></tr>
+<tr><td><a href="entities/remote-host-all.html">Hosts</a></td><td class="desc">Files per remote host: a per-host summary and a per-day detail, both split into Error/OK.</td></tr>
+<tr><td><a href="entities/domain-all.html">Domains</a></td><td class="desc">Files per domain: a summary and a per-day detail, both split into Error/OK.</td></tr>
+<tr><td><a href="entities/application-all.html">Applications</a></td><td class="desc">Files per application: a summary and a per-day detail, both split into Error/OK.</td></tr>
+<tr><td><a href="entities/bl-all.html">BL</a></td><td class="desc">Files per bl: a summary and a per-day detail, both split into Error/OK.</td></tr>
+<tr><th colspan="2">Patterns</th></tr>
+<tr><td><a href="file-journey-patterns.html">File journey</a></td><td class="desc">The shape of each File through the platform: row/status patterns, leg counts, the ordered protocol chain, and how files arrive vs how they leave.</td></tr>
+<tr><td><a href="file-in-file-out.html">File in - File out</a></td><td class="desc">Partner-to-partner handovers carried by TWO subscriptions: a file arrives from one partner on an inbound subscription and the same filename leaves to another partner on an outbound one, copied across in between.</td></tr>
+<tr><th colspan="2">Activity over Time</th></tr>
+<tr><td><a href="activity-per-day.html">Activity</a></td><td class="desc">Files, Error/OK and volume per calendar day, ISO week, hour of day and weekday — one activity report, one tab per resolution.</td></tr>
+<tr><td><a href="punctuality.html">Punctuality</a></td><td class="desc">Arrival-time regularity per subscription: the typical arrival slot of flows with a rhythm, late arrivals, and expected days that passed without a file.</td></tr>
+<tr><td><a href="expected-arrival.html">Expected arrival</a></td><td class="desc">Each subscription judged against its OWN arrival rhythm: median and p90 gap between active days, current silence, and an OVERDUE verdict when the silence breaks the pattern — plus weekday-locked and long-period flows.</td></tr>
+<tr><th colspan="2">Volume, Sizes &amp; Files</th></tr>
+<tr><td><a href="volume-per-day.html">Volume</a></td><td class="desc">Data volume moved per day and top accounts, the per-transfer direction split, and the per-subscription trend: growers, shrinkers and flows gone silent.</td></tr>
+<tr><td><a href="files-by-size.html">Volume, Sizes &amp; Files</a></td><td class="desc">Files bucketed by transfer size (plus the empty files delivered OK), split per file extension, and the business filenames delivered more than once.</td></tr>
+<tr><td><a href="top-transfers.html">Largest files</a></td><td class="desc">The largest Files by size, with throughput and outcome.</td></tr>
+<tr><td><a href="route-throughput.html">Route throughput</a></td><td class="desc">Wire speed (MB/s) per subscription x protocol x direction, slowest routes first, with a per-protocol rollup and a first-half vs second-half trend.</td></tr>
+<tr><td><a href="size-profile.html">Size profile</a></td><td class="desc">Per-subscription file-size fingerprint: median size, first-half vs second-half drift, and the share of stub (near-empty) files.</td></tr>
+<tr><td><a href="ranking-subscriptions.html">Ranking</a></td><td class="desc">Where each entity stands against the others of its own type — its position on Files, Volume, Errors, Duration and Throughput, with the value behind every position.</td></tr>
+<tr><th colspan="2">Failures &amp; Retries</th></tr>
+<tr><td><a href="failure-rate-accounts.html">Failure rate</a></td><td class="desc">Failed vs total Files, as a percentage, per account, destination subscription and day.</td></tr>
+<tr><td><a href="episodes.html">Episodes</a></td><td class="desc">Consecutive failures collapsed into episodes: which subscriptions are broken right now (open incidents), how often each one breaks, and how long outages last before they recover.</td></tr>
+<tr><td><a href="retries-failing-flows.html">Retries &amp; resubmissions</a></td><td class="desc">Everything about retried and resubmitted transfers: failing flows, the retry anatomy of delivered and abandoned Files, retry spacing, which side fails, and the manual resubmissions.</td></tr>
+<tr><td><a href="recovered.html">Recovered flows</a></td><td class="desc">Subscriptions back to green after a red episode: their latest File is OK, but earlier in the window whole days ended on failures — did yesterday's fix work?</td></tr>
+<tr><td><a href="recovered-files.html">Recovered files</a></td><td class="desc">The Files that carried a failed transfer leg yet still finished OK — a retry delivered them: which subscriptions have them, which protocols the healed failures happened on, and on what days.</td></tr>
+<tr><td><a href="failure-heatmap.html">Failure heatmap</a></td><td class="desc">When transfers fail — by hour of day, by weekday, and an hour × weekday failure heatmap. Surfaces recurring failure windows that a per-day view hides.</td></tr>
+<tr><th colspan="2">Protocol &amp; Security</th></tr>
+<tr><td><a href="protocol-protocol.html">Protocol, Direction &amp; Mode</a></td><td class="desc">Transfers, Error/OK and volume by protocol and direction, the direction x action-by breakdown, and the BINARY/ASCII transfer mode split — the per-leg dimensions on one page.</td></tr>
+<tr><td><a href="security-params-tls-version.html">Security Parameters</a></td><td class="desc">Every attribute parsed from the SecurityParameters column, one view per attribute.</td></tr>
+<tr><td><a href="security-outreach.html">Security outreach</a></td><td class="desc">The partner call list for deprecated connection-security parameters: who still connects with ssh-rsa (SHA-1) keys or TLSv1.2, who already upgraded, and who runs a mixed fleet.</td></tr>
+<tr><td><a href="av-scan-breakdown.html">AV Scan</a></td><td class="desc">Anti-virus scan outcomes on the first Inbound leg of every File — the scan runs when a file enters the system.</td></tr>
+<tr><td><a href="connection-efficiency.html">Connection efficiency</a></td><td class="desc">How the technical connections (Session IDs) are used: Files per connection per account, connection storms per minute, and the anatomy of failing sessions.</td></tr>
+<tr><th colspan="2">Performance</th></tr>
+<tr><td><a href="anomalies.html">Anomalies</a></td><td class="desc">Detected unusual hours and days: error-rate spikes, duration surges, file-count spikes, drops and silences, and volume bursts — each compared to its typical value across the window.</td></tr>
+<tr><td><a href="duration.html">Duration</a></td><td class="desc">How long transfers take — per-day min/avg/median/max and percentiles, the longest transfers, a duration histogram and the slowest subscriptions. Delivered (Processed) Files only — the default; use the All transfers button to include failures.</td></tr>
+<tr><td><a href="dwell-time.html">Store-and-forward</a></td><td class="desc">How long a file waits inside SecureTransport between finishing its inbound leg and starting its outbound leg — the store-and-forward queue dwell time, which no other report measures.</td></tr>
+<tr><td><a href="duration-trend.html">Duration trend</a></td><td class="desc">Flows whose median transfer duration changed between the first and second half of the data window — slower and faster movers, with the average file size beside them.</td></tr>
+</table></div>
+</body>
+</html>

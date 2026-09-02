@@ -12,7 +12,7 @@
 <script src="../../assets/report.js?v=1840147731" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-went-kaput"></div>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-went-kaput" data-twin="../../production/server/went-kaput.html"></div>
 <h1>Trouble after Success</h1>
 <p class="range">Subscriptions whose <strong>last transfer was OK</strong> but which then logged an <strong>Error</strong> in the server log <strong>after</strong> that transfer — either the subscription itself or a connected login, account or remote host. A recent problem on a flow that last looked healthy. <strong>Errors only</strong> (2026-08): a Warning does not put a flow on this page — the warnings-only shape was the benign &quot;Transfer site ID is not present in environment&quot;, which has its own report in this group.</p>
 <p class="range"><strong>Still green only.</strong> The same evidence is what turns a flow RED site-wide, so a subscription this page would name that has already gone red is not an early warning any more — it is simply failing, and the <strong>home page</strong> lists every red flow with its reason. What is left here is the useful half: flows that still count as healthy and have started logging errors. <strong>3</strong> subscription(s) were left out this run for being red already. <strong>1</strong> UC3 subscription(s) were cleared by a successful poll no older than their newest error — &quot;0 file(s) were found&quot; is the flow verifying itself working, the same evidence that keeps a UC3 green site-wide.</p>

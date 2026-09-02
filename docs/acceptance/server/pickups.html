@@ -12,8 +12,8 @@
 <script src="../../assets/report.js?v=1840147731" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-pickups"></div>
-<h1>Pickups</h1>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="server-pickups" data-twin="../../production/server/pickups.html"></div>
+<h1>Pickups <span class="grouptag">&larr; Transfers &amp; Delivery &larr; Server</span></h1>
 <p class="range">One row per <strong>UC2</strong> (partner collects from us) subscription — the detail pages' <strong>Pickup information</strong> tables collated. A <strong>pickup</strong> is a successful SSH logon by the flow's pickup account (shared across that account's UC2 subscriptions); a visit that only <strong>delivered</strong> files (the UC4 twin flow) is not a pickup. <strong>Last Gateway</strong> is the flow's login's last logon on the OLD gateway, from input/&lt;env&gt;/logons_old.txt (the FE status information page's Last Gateway column). <strong>With files</strong> counts the pickups that collected at least one file of the subscription (each collected file credits the logon that took it); <strong>Files picked up</strong> matches the flow's OK figure; <strong>Waiting</strong>/<strong>Expired</strong> are its staged files by outcome, and <strong>Oldest waiting</strong> is how long the oldest staged file has been waiting — aged against the newest transfer in the log, so an unchanged export does not age between builds. A partner collecting over CFT/PESIT logs no SSH pickup, so its logon columns stay empty while files still move. Stamps show date and hh:mm; a 0 renders empty.</p>
 <div class="tablewrap"><table class="wide" data-nofilter="1" data-sort-init="7:-1" data-restint="1">
 <tr><th>Subscription</th><th>First pickup</th><th>Last pickup</th><th>Last Gateway</th><th class="num">Pickups</th><th class="num">With files</th><th class="num">Files picked up</th><th class="num">Waiting</th><th>Oldest waiting</th><th class="num">Expired</th><th>Pattern</th></tr>
