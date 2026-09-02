@@ -11,7 +11,7 @@
 # barrier). Plus ONE joined column (2026-09-02, user request): Last Gateway
 # — the flow's login(s)' last logon on the OLD gateway, from the
 # hand-maintained input/<env>/logons_old.txt (the FE status information
-# page's Gateway logon; same file, same tolerant format: first token = the
+# page's Last Gateway; same file, same tolerant format: first token = the
 # login, the rest of the line = the stamp as written) through the
 # subscription -> login xref; several logins join ", "-separated. The
 # stamps on this page show date + hh:mm.
@@ -85,7 +85,7 @@ IFS=$'\t' read -r _ n_rows t_pk t_wf t_f t_wt t_xp t_dl <<< "$tot"
 {
     printf 'TITLE\tPickups\n'
     printf 'DESC\tEvery UC2 (partner collects from us) flow'\''s pickup figures side by side: first/last pickup, the last logon on the old gateway, pickup logons, collected files, waiting and expired files, the pickup cadence and the UC4 shared-connection flag.\n'
-    printf 'INTRO\tOne row per **UC2** (partner collects from us) subscription — the detail pages'\'' **Pickup information** tables collated. A **pickup** is a successful SSH logon by the flow'\''s pickup account (shared across that account'\''s UC2 subscriptions); a visit that only **delivered** files (the UC4 twin flow) is not a pickup — its logons count in the **Delivered-only logons** column. **Last Gateway** is the flow'\''s login'\''s last logon on the OLD gateway, from input/<env>/logons_old.txt (the FE status information page'\''s Gateway logon). **With files** counts the pickups that collected at least one file of the subscription (each collected file credits the logon that took it); **Files picked up** matches the flow'\''s OK figure; **Waiting**/**Expired** are its staged files by outcome. **UC4 drop** = proven same-connection two-way traffic: at least one technical SSH connection (transfer-log Session ID) both delivered and collected a file (see the UC2 pickup visits analysis). A partner collecting over CFT/PESIT logs no SSH pickup, so its logon columns stay empty while files still move. Stamps show date and hh:mm.\n'
+    printf 'INTRO\tOne row per **UC2** (partner collects from us) subscription — the detail pages'\'' **Pickup information** tables collated. A **pickup** is a successful SSH logon by the flow'\''s pickup account (shared across that account'\''s UC2 subscriptions); a visit that only **delivered** files (the UC4 twin flow) is not a pickup — its logons count in the **Delivered-only logons** column. **Last Gateway** is the flow'\''s login'\''s last logon on the OLD gateway, from input/<env>/logons_old.txt (the FE status information page'\''s Last Gateway column). **With files** counts the pickups that collected at least one file of the subscription (each collected file credits the logon that took it); **Files picked up** matches the flow'\''s OK figure; **Waiting**/**Expired** are its staged files by outcome. **UC4 drop** = proven same-connection two-way traffic: at least one technical SSH connection (transfer-log Session ID) both delivered and collected a file (see the UC2 pickup visits analysis). A partner collecting over CFT/PESIT logs no SSH pickup, so its logon columns stay empty while files still move. Stamps show date and hh:mm.\n'
     # default sort: Waiting (column 7, 0-based — Last Gateway sits before it
     # since 2026-09-02) descending, then Pickups (column 4) descending —
     # 2026-09-01, user request. The primary key is this modifier; the

@@ -13,9 +13,9 @@
 #                  pair). A subscription's use case is its name prefix, else
 #                  the DERIVED one (xref/_subscriptions-ucderived.tsv, the
 #                  hybrid production flows); any other use case shows as well
-#   Last logon     the newest successful authentication on THIS platform, any
+#   Cloud          the newest successful authentication on THIS platform, any
 #                  protocol (bin/logons.sh — the detail pages' Logons figure)
-#   Gateway logon  the login's logon stamp on the OLD gateway, verbatim from
+#   Last Gateway   the login's logon stamp on the OLD gateway, verbatim from
 #                  input/<env>/logons_old.txt
 #   Files in/out   the login's Files in the transfer window (_files.tsv col
 #                  14) split by the FILE MOVEMENT (col 17): in = delivered to
@@ -33,7 +33,7 @@
 # input/<env>/logons_old.txt — one login per line, "<login> <stamp…>": the
 # first token (up to the first run of spaces, TABs, commas or semicolons) is
 # the login, matched case-insensitively; the rest of the line, trimmed, is
-# the Gateway logon cell as written. Blank lines and lines starting with #
+# the Last Gateway cell as written. Blank lines and lines starting with #
 # are ignored; CRLF is tolerated. A missing file is not an error — the
 # column simply stays empty.
 #
@@ -128,17 +128,17 @@ IFS=$'\t' read -r _ n_all n_uc2 n_uc4 n_both n_here n_never n_gw n_old n_in n_ou
 {
     printf 'TITLE\tFE status information\n'
     printf 'DESC\tEvery FE login on one line: its use cases (UC2, UC4 or the UC2/UC4 mailbox pair), the last logon on this platform, the last logon on the old gateway, and its Files in and out — the Waiting ones separately.\n'
-    printf 'INTRO\tOne row per **FE login** — the credential a partner connects with. **Use cases** are those of the login'\''s subscriptions: **UC2** (the partner picks up), **UC4** (the partner delivers) or **UC2/UC4** (both — the mailbox pair). **Last logon** is the newest successful authentication on THIS platform, over any protocol (the detail pages'\'' Logons figure; empty = no logon in the log window). **Gateway logon** is the login'\''s last logon on the OLD gateway, as recorded in input/<env>/logons_old.txt — a login listed there but not configured here still gets a row (untinted), so a partner not yet moved over stands out. **Files in** counts the login'\''s Files delivered to us (UC4) and **Files out** those picked up from us (UC2), over the transfer window; **Waiting** are the staged Files not yet collected. Rows are tinted by the login'\''s result colour — green delivering, red failing, orange configured but never seen. Every figure is full-period.\n'
+    printf 'INTRO\tOne row per **FE login** — the credential a partner connects with. **Use cases** are those of the login'\''s subscriptions: **UC2** (the partner picks up), **UC4** (the partner delivers) or **UC2/UC4** (both — the mailbox pair). **Cloud** is the newest successful authentication on THIS platform, over any protocol (the detail pages'\'' Logons figure; empty = no logon in the log window). **Last Gateway** is the login'\''s last logon on the OLD gateway, as recorded in input/<env>/logons_old.txt — a login listed there but not configured here still gets a row (untinted), so a partner not yet moved over stands out. **Files in** counts the login'\''s Files delivered to us (UC4) and **Files out** those picked up from us (UC2), over the transfer window; **Waiting** are the staged Files not yet collected. Rows are tinted by the login'\''s result colour — green delivering, red failing, orange configured but never seen. Every figure is full-period.\n'
     printf 'STAT\twhite\t%s\tLogins\n' "$n_all"
     printf 'STAT\twhite\t%s\tUC2\n' "$n_uc2"
     printf 'STAT\twhite\t%s\tUC4\n' "$n_uc4"
     printf 'STAT\twhite\t%s\tUC2/UC4\n' "$n_both"
     printf 'STAT\tgreen\t%s\tLogged on here\n' "$n_here"
     printf 'STAT\torange\t%s\tNever logged on here\n' "$n_never"
-    printf 'STAT\twhite\t%s\tGateway logon known\n' "$n_gw"
+    printf 'STAT\twhite\t%s\tLast Gateway known\n' "$n_gw"
     printf 'STAT\t%s\t%s\tOld gateway only\n' "$([ "$n_old" -gt 0 ] && echo orange || echo white)" "$n_old"
     printf 'TABLE\tFE logins\twide\tnofilter\trestint\n'
-    printf 'HEAD\tLogin\tUse cases\tLast logon\tGateway logon\tFiles in\tFiles out\tWaiting\n'
+    printf 'HEAD\tLogin\tUse cases\tCloud\tLast Gateway\tFiles in\tFiles out\tWaiting\n'
     printf 'KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumwarn\n'
     # sorted by login name; the sentinels swap back here, the result colour
     # becomes the row tint, an old-gateway-only login carries no tint
