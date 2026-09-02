@@ -90,8 +90,8 @@ awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS"
             u = ucof(a[2]); if (u == "") continue
             if (!((k SUBSEP u) in HAS)) { HAS[k SUBSEP u] = 1; UCL[k] = UCL[k] (UCL[k] == "" ? "" : SUBSEP) u } } close(LSUB)
         # the last successful authentication, any protocol — sidecar field 3
-        # ("-" = never), at display precision
-        while ((getline l < LOGONS) > 0) { n = split(l, a, "\t"); if (n >= 3 && a[1] != "" && a[3] != "-") LAST[toupper(a[1])] = substr(a[3], 1, 19) } close(LOGONS)
+        # ("-" = never), as date + hh:mm — the gateway stamp precision (2026-09-02, user request)
+        while ((getline l < LOGONS) > 0) { n = split(l, a, "\t"); if (n >= 3 && a[1] != "" && a[3] != "-") LAST[toupper(a[1])] = substr(a[3], 1, 16) } close(LOGONS)
         # the old gateway file (format: see the header)
         while ((getline l < OLD) > 0) {
             l = trim(l); if (l == "" || substr(l, 1, 1) == "#") continue
