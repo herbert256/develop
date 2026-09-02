@@ -15,17 +15,18 @@
 <h1>Partner lifecycle <span class="grouptag">&larr; Partners &larr; Analyses</span></h1>
 <p class="tabs"><a class="tab" href="partner-scorecard.html">Partner scorecard</a><a class="tab" href="blast-radius.html">Blast radius</a><a class="tab" href="app-partners.html">Application dependencies</a><span class="tab active">Partner lifecycle</span></p>
 <p class="range">A partner relation has three quiet failure modes, and each one looks different in the data. <strong>Configured, never live</strong> is the onboarding that never happened: the name and its subscriptions exist, no File ever flowed. <strong>Gone quiet</strong> is the opposite end — traffic that stopped: the partner has history, then 14+ days of silence (measured against the newest log day, <strong>2026-08-29</strong>). <strong>Shrinking</strong> is the subtle middle: the partner still transfers, but the number of its subscriptions actually carrying Files dropped by 2 or more between the previous 14 log days and the last 14 — flows are dying one by one while the relation as a whole still looks alive.</p>
-<div class="stat"><span class="stat-v">28</span><span class="stat-l">Configured partners</span></div>
+<div class="stat"><span class="stat-v">29</span><span class="stat-l">Configured partners</span></div>
 <div class="stat"><span class="stat-v">25</span><span class="stat-l">Seen (with Files)</span></div>
-<div class="stat stat-orange"><span class="stat-v">3</span><span class="stat-l">Never live</span></div>
+<div class="stat stat-orange"><span class="stat-v">4</span><span class="stat-l">Never live</span></div>
 <div class="stat stat-orange"><span class="stat-v">0</span><span class="stat-l">Gone quiet (14d+)</span></div>
 <div class="stat stat-red"><span class="stat-v">0</span><span class="stat-l">Shrinking</span></div>
 <div class="tablewrap"><table data-nofilter="1" data-restint="1">
 <tr><th>Partner</th><th>Direction</th><th class="num">Subscriptions</th></tr>
-<tr data-res="blue"><td class="cl"><a href="../details/partners/abstergo.html">ABSTERGO</a></td><td>both</td><td class="num">3</td></tr>
+<tr data-res="orange"><td class="cl"><a href="../details/partners/abstergo.html">ABSTERGO</a></td><td>both</td><td class="num">2</td></tr>
+<tr data-res="blue"><td class="cl"><a href="../details/partners/duff.html">DUFF</a></td><td>in</td><td class="num">1</td></tr>
 <tr data-res="blue"><td class="cl"><a href="../details/partners/primatech.html">PRIMATECH</a></td><td>both</td><td class="num">5</td></tr>
 <tr data-res="blue"><td class="cl"><a href="../details/partners/zorg.html">ZORG</a></td><td>both</td><td class="num">3</td></tr>
-<tr class="total"><td>Total (3 partner(s))</td><td></td><td class="num">11</td></tr>
+<tr class="total"><td>Total (4 partner(s))</td><td></td><td class="num">11</td></tr>
 </table></div>
 <h2>Gone quiet</h2>
 <div class="tablewrap"><table data-nofilter="1">
@@ -40,6 +41,6 @@
 <tr class="total"><td>Total (0 partner(s))</td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
 </table></div>
 <p class="note">Partner attribution is the site-wide UNION rule (the subscription's configured partners unioned with the parse attribution), so these figures match the Entities and coverage views. In the never-live table the row colour is the partner's standard result colour — <strong>orange</strong> never seen anywhere, <strong>blue</strong> seen in the server log only (a connection, still zero Files); its Subscriptions column counts the configured subscriptions waiting behind the name. &quot;Active subscription&quot; in the shrinking table means a distinct subscription with at least one File in the window — the drop threshold of 2 filters ordinary week-to-week noise.</p>
-<div class="summary">Configured: 28  |  Seen: 25  |  Never live: 3  |  Gone quiet: 0  |  Shrinking: 0</div>
+<div class="summary">Configured: 29  |  Seen: 25  |  Never live: 4  |  Gone quiet: 0  |  Shrinking: 0</div>
 </body>
 </html>
