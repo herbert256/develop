@@ -11,8 +11,8 @@
 <script src="../../assets/report.js?v=1840147731" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="blast-radius" data-twin="../../production/analyses/blast-radius.html"></div>
-<h1>Endpoint blast radius <span class="grouptag">&larr; Partners &larr; Analyses</span></h1>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="blast-radius"></div>
+<h1>Endpoint blast radius</h1>
 <p class="tabs"><a class="tab" href="partner-scorecard.html">Partner scorecard</a><span class="tab active">Blast radius</span><a class="tab" href="app-partners.html">Application dependencies</a><a class="tab" href="partner-lifecycle.html">Partner lifecycle</a></p>
 <p class="range">An endpoint outage is never one flow. The first table answers <strong>&quot;if this host dies, what stops?&quot;</strong> — one row per outbound endpoint we dial, everything behind it counted; a <strong>red</strong> row is the sole recorded endpoint of at least one partner, so there is no second address to fail over to. The redundancy table turns the same census around per partner: <strong>6</strong> partner(s) ride a single endpoint, <strong>19</strong> have more than one, and <strong>0</strong> are inbound-only — they dial us, so no endpoint of theirs can strand us (a legitimate class, not a gap). The last table lists the endpoints shared by several partner organisations: one address, several relationships in the blast radius.</p>
 <div class="stat"><span class="stat-v">23</span><span class="stat-l">Outbound endpoints</span></div>

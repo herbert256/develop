@@ -11,8 +11,8 @@
 <script src="../../assets/report.js?v=1840147731" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="partner-lifecycle" data-twin="../../production/analyses/partner-lifecycle.html"></div>
-<h1>Partner lifecycle <span class="grouptag">&larr; Partners &larr; Analyses</span></h1>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="partner-lifecycle"></div>
+<h1>Partner lifecycle</h1>
 <p class="tabs"><a class="tab" href="partner-scorecard.html">Partner scorecard</a><a class="tab" href="blast-radius.html">Blast radius</a><a class="tab" href="app-partners.html">Application dependencies</a><span class="tab active">Partner lifecycle</span></p>
 <p class="range">A partner relation has three quiet failure modes, and each one looks different in the data. <strong>Configured, never live</strong> is the onboarding that never happened: the name and its subscriptions exist, no File ever flowed. <strong>Gone quiet</strong> is the opposite end — traffic that stopped: the partner has history, then 14+ days of silence (measured against the newest log day, <strong>2026-08-29</strong>). <strong>Shrinking</strong> is the subtle middle: the partner still transfers, but the number of its subscriptions actually carrying Files dropped by 2 or more between the previous 14 log days and the last 14 — flows are dying one by one while the relation as a whole still looks alive.</p>
 <div class="stat"><span class="stat-v">28</span><span class="stat-l">Configured partners</span></div>

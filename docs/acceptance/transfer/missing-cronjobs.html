@@ -12,7 +12,7 @@
 <script src="../../assets/report.js?v=1840147731" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="missing-cronjobs" data-twin="../../production/transfer/missing-cronjobs.html"></div>
+<div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="missing-cronjobs"></div>
 <h1>Missing cronjobs</h1>
 <p class="range"><strong>3</strong> subscription(s) of a cron-triggered use case (<strong>UC3, UC5, UC6</strong>) have <strong>no cron expression</strong> configured, so nothing ever makes them poll the partner. Where we are the client and PULL, a Quartz cron expression is the ONLY thing that starts the flow — without one the subscription is complete in every other respect and simply never runs: no poll, no file, no error, and nothing in either log to notice. The schedules that ARE configured are on <strong>Cronjobs</strong>.</p>
 <div class="stat stat-red"><span class="stat-v">3</span><span class="stat-l">Missing a cronjob</span></div>
