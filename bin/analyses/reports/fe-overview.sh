@@ -216,20 +216,20 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
     printf 'STAT\t%s\t%s\tOld gateway only\n' "$([ "$n_old" -gt 0 ] && echo orange || echo white)" "$n_old"
     printf 'STAT\twhite\t%s\tPickups\n' "$n_pk"
     # default sort (user request): Waiting (column 7, 0-based) descending, then
-    # Files out descending, then Files in descending — the primary key is this modifier; the rest is
+    # Files out descending, then Files in descending, then Pickups descending — the primary key is this modifier; the rest is
     # the BAKED row order below, which report.js'\''s stable sort preserves (the
     # Pickups page'\''s mechanism). sort=, never nosort, so header clicks keep working.
     printf 'TABLE\tFE logins\twide\tnofilter\trestint\tsort=7:-1\n'
     printf 'HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\tPickup pattern\n'
     printf 'KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumprocessed\tnumwarn\tnumfailed\ttext\tnum\ttext\n'
-    # baked Files out DESC, then Files in DESC, then login name (the secondary sort keys — see the
+    # baked Files out DESC, then Files in DESC, then Pickups DESC, then login name (the secondary sort keys — see the
     # TABLE line); the sentinels swap back here, the result colour
     # becomes the row tint, an old-gateway-only login carries no tint. R
     # fields: 2 login 3 uc 4 cloud 5 gw 6 res 7 in 8 out 9 waiting 10 oldest
     # 11 expired 12 pickups 13 retrieved 14 pattern. The processed-kind count
     # passes its 0 through: the renderer z-blanks it (an empty non-z
     # processed cell would show the base green on an untinted row).
-    command grep $'^R\t' "$OUT.rows" | LC_ALL=C sort -t$'\t' -k8,8nr -k7,7nr -k2,2f | awk -F'\t' '
+    command grep $'^R\t' "$OUT.rows" | LC_ALL=C sort -t$'\t' -k8,8nr -k7,7nr -k12,12nr -k2,2f | awk -F'\t' '
         function z(v) { return (v + 0 == 0) ? "" : v }   # a 0 shows empty, like the z-blanked outcome cells
         { uc = ($3 == "-" ? "" : $3); last = ($4 == "-" ? "" : $4); gw = ($5 == "-" ? "" : $5)
           ow = ($10 == "-" ? "" : $10); pat = ($14 == "-" ? "" : $14)
