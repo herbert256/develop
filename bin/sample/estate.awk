@@ -317,6 +317,7 @@ function build_acceptance() {
     addf(3, "WA",  "TELEMATICS","MONARCH", "",  1.2, 0.25, "reason=tracking")
     addf(3, "CB",  "QUOTES",   "GEKKO",    "",  1.2, 0.25, "reason=unavailable")
     addf(3, "CD",  "QUOTES",   "STARK",    "",  1.2, 0.25, "reason=ftpspull")
+    addf(3, "AB",  "SNOWFLAKE","GLOBEX",   "",  1.2, 0.25, "reason=remdel")   # the download succeeds, the remote delete fails (2026-09-02)
     addf(3, "IT",  "RECON",    "HOOLI",    "",  2, 0.05, "recover")
     # clean-poll greens (poll works, nothing to fetch — no transfers ever)
     addf(3, "FS",  "SAPBODS",  "PRIMATECH","_D", 0, 0, "greenpoll")

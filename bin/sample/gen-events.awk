@@ -156,6 +156,11 @@ function s_reason_err(abs, sid, fn,   r) {
     else if (r == "tracking")    S(abs, "E", "TM", sid, "Error during transfer operation: Could not find file tracking entry for transfer " CID)
     else if (r == "unavailable") S(abs, "E", "TM", sid, "Error during transfer operation: 550 File unavailable, not found or busy")
     else if (r == "ftpspull")    S(abs, "E", "TM", sid, "Error during transfer operation: Pull via FTPS failed for transfer site '" srvsite() "': 425 Unable to build data connection")
+    # the post-download remote delete failing (2026-09-02): the Info line
+    # names the delete, the Error is what flip-reason.awk classifies
+    else if (r == "remdel")      { S(abs - 6, "I", "TM", sid, "Deleting remote file: " fn " under /outbox/download/.")
+                                   S(abs, "E", "TM", sid, "No such file: Cannot delete file.")
+                                   S(abs + 5, "E", "TM", sid, "Sub-transmission error.") }
     else if (r == "postaction")  S(abs, "E", "TM", sid, "Error during post client action execution: post client action failed for file " fn)
     else if (r == "network")     S(abs, "E", "TM", sid, "Network error: Connection reset")
     else if (HOST != "")         S(abs, "E", "TM", sid, "Connection failure while " srvsite() " tried to connect to remote host " HOST ":" PORT " as user " ACCT ": com.maverick.ssh.SshException: Connection timed out")

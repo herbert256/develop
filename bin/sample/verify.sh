@@ -192,7 +192,7 @@ for reason in "Connection failures" "Wrong server fingerprint" "No Dir" "Listing
               "Login errors (out)" "Route stopped" "Transfer site missing" "Receive File As not set" \
               "PeSIT transfer aborted" "PeSIT delivery refused" "Staged file missing" \
               "File Tracking entry missing" "Remote file unavailable" "Post-action failed" \
-              "Pull via FTPS failed"; do
+              "Pull via FTPS failed" "Remote delete failed"; do
     n=$(grep -l -- "$reason" data/acceptance/transfer/reports/failed*.rpt data/acceptance/transfer/reports/errors/*.rpt 2>/dev/null | wc -l | tr -d ' ')
     check $([ "$n" -gt 0 ] && echo 0 || echo 1) "[acceptance] reason \"$reason\" appears in no failed/error report"
 done

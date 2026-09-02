@@ -25,6 +25,12 @@ function flip_reason(msg,   m) {
     if (m ~ /receive file as/) return "Receive File As not set"
     if (m ~ /arsp0001|stop further route execution/) return "Route stopped"
     if (m ~ /authentication fail|password|publickey|public key|not authorized|login failed|permission denied/) return "Login errors (out)"
+    # The post-download DELETE of the remote file failing — "No such file:
+    # Cannot delete file." (the file was fetched, then vanished or proved
+    # undeletable at the partner): a delete problem, not a missing directory.
+    # BEFORE the "no such file" rule, which read it as No Dir (2026-09-02,
+    # user report on a UC3 flow whose 40 MB download had succeeded).
+    if (m ~ /cannot delete|could not delete|failed to delete|error deleting/) return "Remote delete failed"
     if (m ~ /no such file|no such directory|does not exist/) return "No Dir"
     if (m ~ /file unavailable|file not found|requested action not taken/) return "Remote file unavailable"
     if (m ~ /listing files|listing the files|list files/) return "Listing failed"
