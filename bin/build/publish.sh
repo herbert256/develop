@@ -1435,7 +1435,7 @@ analyses/blast-radius.html|Blast radius|What stops when a remote host dies: the 
 analyses/app-partners.html|Application dependencies|Which external partners each internal application exchanges Files with — the dependency matrix with traffic weights and dead pairs at 100% Error.|application, dependencies, partner, matrix, lineage, exposure|application, dependencies, lineage
 analyses/partner-lifecycle.html|Partner lifecycle|The quiet failure modes of a partner relation: configured but never live, gone quiet after real history, and still transferring on ever fewer flows.|partner, lifecycle, never live, quiet, shrinking, onboarding|partner, lifecycle, quiet
 analyses/cleanup-backlog.html|Cleanup backlog|Every cleanup signal merged into one ranked decommission-candidate list, safest first — config orphans, never-seen subscriptions, unused whitelist addresses, cron-less polls and long-quiet entities.|cleanup, backlog, decommission, orphans, unused, prune|cleanup, decommission, prune
-analyses/fe-overview.html|FE overview|Every FE login on one line: use cases, the last logon here and on the old gateway, Files in / out with the retrieved, Waiting and Expired ones, and its pickups with their cadence.|fe, login, overview, status, use case, uc2, uc4, last logon, gateway, migration, files, retrieved, waiting, expired, pickup, pattern|fe, login, overview, pickup
+analyses/fe-overview.html|Partners - Incoming|Every FE login on one line: use cases, the last logon here and on the old gateway, Files in / out with the retrieved, Waiting and Expired ones, and its pickups with their cadence.|partners, incoming, fe, login, overview, status, use case, uc2, uc4, last logon, gateway, migration, files, retrieved, waiting, expired, pickup, pattern|fe, login, overview, pickup
 file-search-24-hours.html|File search|Find a File by its file name — date, subscription, size and CoreId, OK rows green and Error rows red; six windows (24 hours through a month), each with its own Search button, the query carried between them.|file, search, file name, find, filename, lookup|file search, filename, find
 STATIC
     } > "$mf"
@@ -1565,7 +1565,7 @@ write_sitemap() {
         printf '<li><a href="analyses/logical-detection.html">Logical detection</a></li>\n'
         printf '<li><a href="analyses/added-bl.html">Added BL</a></li>\n'
         printf '<li><a href="analyses/accounts.html">Accounts</a></li>\n'
-        printf '<li><a href="analyses/fe-overview.html">FE overview</a></li>\n'
+        printf '<li><a href="analyses/fe-overview.html">Partners - Incoming</a></li>\n'
         printf '<li><a href="analyses/account-sharing.html">Account sharing</a></li>\n'
         printf '<li><a href="analyses/twins.html">Twins</a></li>\n'
         printf '<li><a href="analyses/cronjobs.html">Cronjobs</a></li>\n'

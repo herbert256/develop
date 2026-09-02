@@ -97,7 +97,7 @@ for env in acceptance production; do
     n=$(awk -F'\t' '$2 ~ /^BL_/' "data/$env/flow-manager/xref/_subscriptions-bl-added.tsv" 2>/dev/null | wc -l | tr -d ' ')
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] _subscriptions-bl-added.tsv carries $n tag-style BL_ value(s) — those come from subscriptions.json and must not count as added"
     check $([ -f "docs/$env/analyses/added-bl.html" ] && echo 0 || echo 1) "[$env] docs/$env/analyses/added-bl.html missing"
-    # FE overview (2026-09-02): the page exists and its rows carry the login tints
+    # Partners - Incoming (2026-09-02): the page exists and its rows carry the login tints
     check $([ -f "docs/$env/analyses/fe-overview.html" ] && echo 0 || echo 1) "[$env] docs/$env/analyses/fe-overview.html missing"
     n=$(command grep -c '@data:res=' "data/$env/analyses/reports/fe-overview.rpt" 2>/dev/null || echo 0)
     check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] fe-overview.rpt has 0 tinted rows"
@@ -130,7 +130,7 @@ for env in acceptance production; do
         check $([ "${n:-0}" -eq 2 ] && echo 0 || echo 1) "[$env] CD-PARCEL-BLUTH has $n login(s), expected 2 (the multi-FE account)"
         st=$(awk -F'\t' '$1=="ROW" && index($0, "UC2_CD_PARCELX_BLUTH") { s=$2; sub(/^@\{[^}]*\}/, "", s); print s; exit }' "data/$env/server/reports/uc2-status.rpt" 2>/dev/null)
         check $([ "$st" = "Nothing" ] && echo 0 || echo 1) "[$env] UC2_CD_PARCELX_BLUTH uc2-status is '${st:-absent}', expected Nothing (multi-FE login scoping)"
-        # FE overview (2026-09-02): the pickup sidecar joins to LOGINS, once per
+        # Partners - Incoming (2026-09-02): the pickup sidecar joins to LOGINS, once per
         # login and account — the multi-FE account's pickups land on FE133269
         # alone (FE359263 stays empty), and the 8-flow GLOBEX account's count
         # lands once on FE343512 (never the x8 per-subscription repeat)

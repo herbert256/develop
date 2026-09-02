@@ -258,7 +258,7 @@ SKIP_JSON=$({ skip_values account; skip_values site; } 2>/dev/null | LC_ALL=C so
 # The LOGIN rules (2026-09-03, user report: a "login exact X" rule left X's
 # configured login — and its detail page — in place): they drop the matching
 # comm profiles from the filtered partners, so every login extraction below
-# (base/_logins.tsv, the login pair caches, the detail pages, FE overview)
+# (base/_logins.tsv, the login pair caches, the detail pages, Partners - Incoming)
 # excludes them. The partner itself stays unless its own name matches.
 SKIP_LOGIN_JSON=$(skip_values login 2>/dev/null | LC_ALL=C sort -u \
     | jq -R -s 'split("\n") | map(select(length>0) | ascii_upcase)' 2>/dev/null || echo '[]')

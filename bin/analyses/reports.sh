@@ -86,7 +86,7 @@ run_bg "$SCRIPT_DIR/reports/blast-radius.sh"
 run_bg "$SCRIPT_DIR/reports/app-partners.sh"
 run_bg "$SCRIPT_DIR/reports/partner-lifecycle.sh"
 run_bg "$SCRIPT_DIR/reports/cleanup-backlog.sh"
-run_bg "$SCRIPT_DIR/reports/fe-overview.sh"          # FE overview: config + files cache + logon summary + input/<env>/logons_old.txt + the UC2 pickup sidecar (server pool output — bin/build.sh runs the server reports first)
+run_bg "$SCRIPT_DIR/reports/fe-overview.sh"          # Partners - Incoming: config + files cache + logon summary + input/<env>/logons_old.txt + the UC2 pickup sidecar (server pool output — bin/build.sh runs the server reports first)
 wait_all
 
 # wave 2 — the ensure_pda_tsvs chain, strictly in order (first-seen moved here

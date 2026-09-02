@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
-# fe-overview.sh — "FE overview" (Analyses → Configuration, 2026-09-02, user
-# request): one row per FE login (the partner-side credential the UC2 / UC4
+# fe-overview.sh — "Partners - Incoming" (Analyses → Configuration, 2026-09-02, user
+# request; named "FE overview" until 2026-09-03 — the file and page names keep
+# the old name so links stay valid), one row per FE login (the partner-side
+# credential the UC2 / UC4
 # flows are served through) — the login's status columns plus its pickup
 # figures. It replaced the "FE status information" page (folded in and
 # removed 2026-09-02); the "UC2 pickup visits" page keeps the per-subscription
@@ -202,7 +204,7 @@ IFS=$'\t' read -r _ n_all n_uc2 n_uc4 n_both n_here n_never n_gw n_old n_in n_ou
 nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"; fi; }
 
 {
-    printf 'TITLE\tFE overview\n'
+    printf 'TITLE\tPartners - Incoming\n'
     printf 'DESC\tEvery FE login on one line: its use cases, the last logon here and on the old gateway, its Files in and out with the retrieved, Waiting and Expired ones and how long the oldest has waited, and its pickups with their cadence.\n'
     # default sort (user request): Waiting (column 7, 0-based) descending, then
     # Files out descending, then Files in descending, then Pickups descending, then Cloud descending, then Gateway descending — the primary key is this modifier; the rest is
@@ -228,7 +230,7 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
     printf 'TOTAL\tTotal (%s rows)\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t@{class=num}%s\t\n' \
         "$n_all" "$(nz "$n_in")" "$(nz "$n_out")" "$n_ret" "$n_wait" "$n_exp" "$t_old" "$(nz "$n_pk")"
     printf 'NOTE\t**input/<env>/logons_old.txt** carries the old gateway'\''s logons, one login per line: the login, then its stamp ("FE000123  2026-09-02 14:35") — the first token is the login (case-insensitive), the rest of the line is shown as written; blank lines and # comments are ignored. The file is per environment and hand-maintained (like BL.txt); when it is missing the column stays empty. A subscription'\''s use case is its name prefix, or the use case DERIVED from the configuration for a flow without one (the hybrid production flows). Files in / Files out count Files (one per CoreId) attributed to the login by their movement direction — the home page'\''s In/Out split — over the whole transfer window; Files out holds every File staged for the login — retrieved, waiting, expired or (rarely) failed at pickup, so Retrieved + Waiting + Expired = Files out up to those failed pickups. **Oldest waiting** shows one unit, truncated ("5 days", "12 hours", "45 minutes", "10 seconds"), sorts by the exact age, and the Total row carries the oldest of all. **Pickups and Pickup pattern** come from the UC2 pickup sidecar (the data behind the UC2 status and UC2 pickup visits pages) and are taken ONCE per login: on the UC2 pickup visits page the account'\''s figures repeat on each of its UC2 subscriptions, so its totals run higher; on an account carrying several FE logins each login shows its own. Pickups counts LOGONS; the visit breakdown (collected, two-way, delivery-only, same-connection) stays on the UC2 pickup visits page. A login without a UC2 flow — or whose partner collects over CFT/PESIT and logs no SSH visit — leaves those cells empty while its Files still move.\n'
-    printf 'KEYWORDS\tfe,login,overview,status,use case,uc2,uc4,mailbox,last logon,gateway,old gateway,migration,files,in,out,retrieved,collected,waiting,expired,oldest,age,pickup,visit,pattern,cadence\n'
+    printf 'KEYWORDS\tpartners,incoming,fe,login,overview,status,use case,uc2,uc4,mailbox,last logon,gateway,old gateway,migration,files,in,out,retrieved,collected,waiting,expired,oldest,age,pickup,visit,pattern,cadence\n'
     printf 'FOOT\tGenerated on %s\n' "$GENDATE"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 rm -f "$OUT.rows"

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Help: FE overview — Cloud Reports</title>
+<title>Help: Partners - Incoming — Cloud Reports</title>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>FE overview</h1>
+<h1>Partners - Incoming</h1>
 <h2>What this shows</h2>
 <p>One row per <strong>FE login</strong> &mdash; the credential a partner connects with &mdash; the login roster with its pickup figures (the former FE status information page folded in). <strong>Use cases</strong> are those of the login&rsquo;s subscriptions: <strong>UC2</strong> (the partner picks up files from us), <strong>UC4</strong> (the partner delivers files to us) or <strong>UC2/UC4</strong> (both &mdash; the mailbox pair). <strong>Cloud</strong> is the newest successful authentication on <em>this</em> platform over any protocol (the detail pages&rsquo; Logons figure; empty when the log window holds none). <strong>Gateway</strong> is the login&rsquo;s last logon on the <em>old</em> gateway, from the hand-maintained file <code>input/&lt;env&gt;/logons_old.txt</code>. <strong>Files in</strong> counts the login&rsquo;s Files delivered to us and <strong>Files out</strong> those staged for it to pick up, over the whole transfer window; <strong>Retrieved</strong> those the partner actually collected &mdash; Retrieved + Waiting + Expired = Files out, up to the rare out-side File whose pickup failed (it counts in Files out only); <strong>Waiting</strong> are the staged Files not yet collected, <strong>Expired</strong> those the retention sweep deleted before any pickup, and <strong>Oldest waiting</strong> is how long the oldest staged file has waited, in one unit (&ldquo;5 days&rdquo;, &ldquo;12 hours&rdquo;, &hellip;), aged against the newest transfer in the log. <strong>Pickups</strong> counts the pickup logons (the detail page&rsquo;s Total pickups) and <strong>Pickup pattern</strong> their typical spacing (&ldquo;Hourly&rdquo;, &ldquo;Every 6 hours&rdquo;, &hellip;).</p>
 <h2>Reading the table</h2>
