@@ -205,16 +205,6 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
 {
     printf 'TITLE\tFE overview\n'
     printf 'DESC\tEvery FE login on one line: its use cases, the last logon here and on the old gateway, its Files in and out with the retrieved, Waiting and Expired ones and how long the oldest has waited, and its pickups with their cadence.\n'
-    printf 'INTRO\tOne row per **FE login** — the credential a partner connects with — combining the FE status information and the UC2 pickup visits pages. **Use cases** are those of the login'\''s subscriptions: **UC2** (the partner picks up), **UC4** (the partner delivers) or **UC2/UC4** (both — the mailbox pair). **Cloud** is the newest successful authentication on THIS platform, over any protocol (the detail pages'\'' Logons figure; empty = no logon in the log window). **Gateway** is the login'\''s last logon on the OLD gateway, as recorded in input/<env>/logons_old.txt — a login listed there but not configured here still gets a row (untinted), so a partner not yet moved over stands out (it counts in the Old gateway only box, not in Logins — the Logins box is the home page'\''s configured count). **Files in** counts the login'\''s Files delivered to us (UC4) and **Files out** those picked up from us (UC2), over the transfer window; **Retrieved** those the partner actually collected — Retrieved + Waiting + Expired = Files out, up to the rare out-side File whose pickup failed (it counts in Files out only); **Waiting** are the staged Files not yet collected, **Expired** those the retention sweep deleted before any pickup, and **Oldest waiting** is how long the oldest of them has waited — aged against the newest transfer in the log, so an unchanged export does not age between builds. **Pickups** counts the pickup logons (the detail page'\''s Total pickups) and **Pickup pattern** their typical spacing. Rows are tinted by the login'\''s result colour — green delivering, red failing, orange configured but never seen. Every figure is full-period; a 0 renders empty.\n'
-    printf 'STAT\twhite\t%s\tLogins\n' "$((n_all - n_old))"   # the CONFIGURED logins — the home page figure; an old-gateway-only login adds a row, not a login
-    printf 'STAT\twhite\t%s\tUC2\n' "$n_uc2"
-    printf 'STAT\twhite\t%s\tUC4\n' "$n_uc4"
-    printf 'STAT\twhite\t%s\tUC2/UC4\n' "$n_both"
-    printf 'STAT\tgreen\t%s\tLogged on here\n' "$n_here"
-    printf 'STAT\torange\t%s\tNever logged on here\n' "$n_never"
-    printf 'STAT\twhite\t%s\tGateway known\n' "$n_gw"
-    printf 'STAT\t%s\t%s\tOld gateway only\n' "$([ "$n_old" -gt 0 ] && echo orange || echo white)" "$n_old"
-    printf 'STAT\twhite\t%s\tPickups\n' "$n_pk"
     # default sort (user request): Waiting (column 7, 0-based) descending, then
     # Files out descending, then Files in descending, then Pickups descending, then Cloud descending, then Gateway descending — the primary key is this modifier; the rest is
     # the BAKED row order below, which report.js'\''s stable sort preserves (the
