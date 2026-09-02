@@ -59,7 +59,7 @@ if [ ! -f "$LBASE" ]; then
 fi
 # the logon summary: the server reports build it first in bin/build.sh; a
 # manual run builds it here (atomic, cmp-guarded). An env without a server
-# parse cache gets an EMPTY summary — every Last logon then reads Never.
+# parse cache gets an EMPTY summary — every Last logon then stays empty.
 ensure_logons "$SCACHE"
 LOGONS="$SCACHE/_logons.tsv"
 [ -f "$LSUB" ] || LSUB=/dev/null
@@ -128,7 +128,7 @@ IFS=$'\t' read -r _ n_all n_uc2 n_uc4 n_both n_here n_never n_gw n_old n_in n_ou
 {
     printf 'TITLE\tFE status information\n'
     printf 'DESC\tEvery FE login on one line: its use cases (UC2, UC4 or the UC2/UC4 mailbox pair), the last logon on this platform, the last logon on the old gateway, and its Files in and out — the Waiting ones separately.\n'
-    printf 'INTRO\tOne row per **FE login** — the credential a partner connects with. **Use cases** are those of the login'\''s subscriptions: **UC2** (the partner picks up), **UC4** (the partner delivers) or **UC2/UC4** (both — the mailbox pair). **Last logon** is the newest successful authentication on THIS platform, over any protocol (the detail pages'\'' Logons figure; **Never** = no logon in the log window). **Gateway logon** is the login'\''s last logon on the OLD gateway, as recorded in input/<env>/logons_old.txt — a login listed there but not configured here still gets a row (untinted), so a partner not yet moved over stands out. **Files in** counts the login'\''s Files delivered to us (UC4) and **Files out** those picked up from us (UC2), over the transfer window; **Waiting** are the staged Files not yet collected. Rows are tinted by the login'\''s result colour — green delivering, red failing, orange configured but never seen. Every figure is full-period.\n'
+    printf 'INTRO\tOne row per **FE login** — the credential a partner connects with. **Use cases** are those of the login'\''s subscriptions: **UC2** (the partner picks up), **UC4** (the partner delivers) or **UC2/UC4** (both — the mailbox pair). **Last logon** is the newest successful authentication on THIS platform, over any protocol (the detail pages'\'' Logons figure; empty = no logon in the log window). **Gateway logon** is the login'\''s last logon on the OLD gateway, as recorded in input/<env>/logons_old.txt — a login listed there but not configured here still gets a row (untinted), so a partner not yet moved over stands out. **Files in** counts the login'\''s Files delivered to us (UC4) and **Files out** those picked up from us (UC2), over the transfer window; **Waiting** are the staged Files not yet collected. Rows are tinted by the login'\''s result colour — green delivering, red failing, orange configured but never seen. Every figure is full-period.\n'
     printf 'STAT\twhite\t%s\tLogins\n' "$n_all"
     printf 'STAT\twhite\t%s\tUC2\n' "$n_uc2"
     printf 'STAT\twhite\t%s\tUC4\n' "$n_uc4"
@@ -143,9 +143,10 @@ IFS=$'\t' read -r _ n_all n_uc2 n_uc4 n_both n_here n_never n_gw n_old n_in n_ou
     # sorted by login name; the sentinels swap back here, the result colour
     # becomes the row tint, an old-gateway-only login carries no tint
     grep $'^R\t' "$OUT.rows" | LC_ALL=C sort -t$'\t' -k2,2f | awk -F'\t' '
-        { uc = ($3 == "-" ? "" : $3); last = ($4 == "-" ? "Never" : $4); gw = ($5 == "-" ? "" : $5)
+        { uc = ($3 == "-" ? "" : $3); last = ($4 == "-" ? "" : $4); gw = ($5 == "-" ? "" : $5)
+          fin = ($7 + 0 == 0 ? "" : $7); fout = ($8 + 0 == 0 ? "" : $8)   # a 0 shows empty (2026-09-02, user request), like the z-blanked outcome cells
           res = ($6 == "-" ? "" : "\t@data:res=" $6)
-          printf "ROW\t%s\t%s\t%s\t%s\t%d\t%d\t%d%s\n", $2, uc, last, gw, $7, $8, $9, res }'
+          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%d%s\n", $2, uc, last, gw, fin, fout, $9, res }'
     printf 'TOTAL\tTotal (%s logins)\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num warn}%s\n' "$n_all" "$n_in" "$n_out" "$n_wait"
     printf 'NOTE\t**input/<env>/logons_old.txt** carries the old gateway'\''s logons, one login per line: the login, then its stamp ("FE000123  2026-09-02 14:35") — the first token is the login (case-insensitive), the rest of the line is shown as written; blank lines and # comments are ignored. The file is per environment and hand-maintained (like BL.txt); when it is missing the column stays empty. A subscription'\''s use case is its name prefix, or the use case DERIVED from the configuration for a flow without one (the hybrid production flows). Files in / Files out count Files (one per CoreId) attributed to the login by their movement direction — the home page'\''s In/Out split — over the whole transfer window.\n'
     printf 'KEYWORDS\tfe,login,status,use case,uc2,uc4,mailbox,last logon,gateway,old gateway,migration,files,in,out,waiting,pickup\n'
