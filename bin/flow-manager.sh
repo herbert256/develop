@@ -246,18 +246,34 @@ fi
 # prefers data/<env>/flow-manager/filtered/ — excludes them. A cmp-guarded
 # write keeps the mtimes stable on a no-change run.
 mkdir -p "$SKIPDIR"
-# The configured objects this filters are ACCOUNTS and SUBSCRIPTIONS, so it
-# takes the values of the rules that apply to those fields (plus the "any"
-# ones) from bin/skiplist.sh — no second parse of the file format here.
+# The configured objects this filters are ACCOUNTS and SUBSCRIPTIONS (by name)
+# and the comm-profile LOGINS inside a partner, so it takes the values of the
+# rules that apply to those fields (plus the "any" ones) from bin/skiplist.sh —
+# no second parse of the file format here. The config side matches as a
+# case-insensitive SUBSTRING whatever the rule kind (contains/exact/regex are
+# the parse-time semantics).
 SKIP_JSON=$({ skip_values account; skip_values site; } 2>/dev/null | LC_ALL=C sort -u \
     | jq -R -s 'split("\n") | map(select(length>0) | ascii_upcase)' 2>/dev/null || echo '[]')
 [ -n "$SKIP_JSON" ] || SKIP_JSON='[]'
+# The LOGIN rules (2026-09-03, user report: a "login exact X" rule left X's
+# configured login — and its detail page — in place): they drop the matching
+# comm profiles from the filtered partners, so every login extraction below
+# (base/_logins.tsv, the login pair caches, the detail pages, FE overview)
+# excludes them. The partner itself stays unless its own name matches.
+SKIP_LOGIN_JSON=$(skip_values login 2>/dev/null | LC_ALL=C sort -u \
+    | jq -R -s 'split("\n") | map(select(length>0) | ascii_upcase)' 2>/dev/null || echo '[]')
+[ -n "$SKIP_LOGIN_JSON" ] || SKIP_LOGIN_JSON='[]'
 fm_commit() {   # $1 tmp path  $2 final path — keep mtime when unchanged; PID-unique tmp
     if cmp -s "$1" "$2" 2>/dev/null; then rm -f "$1"; else mv "$1" "$2"; fi
 }
-# keep only the array elements whose .name has NO skip token as a substring
-jq --argjson sk "$SKIP_JSON" \
-   '[ .[] | select( ((.name // "") | ascii_upcase) as $u | ($sk | any(. as $t | $u | contains($t))) | not ) ]' \
+# keep only the array elements whose .name has NO skip token as a substring —
+# and, inside a kept partner, only the comm profiles whose .login has no LOGIN
+# skip token as a substring
+jq --argjson sk "$SKIP_JSON" --argjson skl "$SKIP_LOGIN_JSON" \
+   '[ .[] | select( ((.name // "") | ascii_upcase) as $u | ($sk | any(. as $t | $u | contains($t))) | not )
+        | if (.communicationProfiles | type) == "array"
+          then .communicationProfiles |= map(select( ((.login // "") | ascii_upcase) as $u | ($skl | any(. as $t | $u | contains($t))) | not ))
+          else . end ]' \
    "$PARTNERS" > "$SKIPDIR/partners.json.$$.tmp" && fm_commit "$SKIPDIR/partners.json.$$.tmp" "$SKIPDIR/partners.json"
 jq --argjson sk "$SKIP_JSON" \
    '[ .[] | select( ((.name // "") | ascii_upcase) as $u | ($sk | any(. as $t | $u | contains($t))) | not ) ]' \
@@ -273,6 +289,10 @@ fi
 {
     jq -r --argjson sk "$SKIP_JSON" \
        '.[] | (.name // "") | select(. != "") | . as $n | (ascii_upcase) as $u | select($sk | any(. as $t | $u | contains($t))) | "Account\t\($n)"' "$PARTNERS"
+    # the comm-profile logins a LOGIN rule drops (of every partner — a skipped
+    # partner's logins go with it either way)
+    jq -r --argjson skl "$SKIP_LOGIN_JSON" \
+       '.[] | .communicationProfiles[]? | (.login // "") | select(. != "") | . as $n | (ascii_upcase) as $u | select($skl | any(. as $t | $u | contains($t))) | "Login\t\($n)"' "$PARTNERS"
     jq -r --argjson sk "$SKIP_JSON" \
        '.[] | (.name // "") | select(. != "") | . as $n | (ascii_upcase) as $u | select($sk | any(. as $t | $u | contains($t))) | "Subscription\t\($n)"' "$SUBS"
 } | LC_ALL=C sort -u > "$SKIP_SIDE.$$.tmp" && fm_commit "$SKIP_SIDE.$$.tmp" "$SKIP_SIDE"

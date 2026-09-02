@@ -101,6 +101,16 @@ for env in acceptance production; do
     check $([ -f "docs/$env/analyses/fe-overview.html" ] && echo 0 || echo 1) "[$env] docs/$env/analyses/fe-overview.html missing"
     n=$(command grep -c '@data:res=' "data/$env/analyses/reports/fe-overview.rpt" 2>/dev/null || echo 0)
     check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] fe-overview.rpt has 0 tinted rows"
+    # a LOGIN skip rule (2026-09-03, user report): the comm-profile login goes
+    # from the configuration — no roster row, no detail page — and the Skipped
+    # report lists it (the sample rule: login exact FE748281)
+    check $([ ! -f "docs/$env/details/logins/fe748281.html" ] && echo 0 || echo 1) "[$env] docs/$env/details/logins/fe748281.html exists — the login skip rule did not reach the config roster"
+    n=$(awk -F'\t' '$1=="FE748281"' "data/$env/flow-manager/base/_logins.tsv" 2>/dev/null | wc -l | tr -d ' ')
+    check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] base/_logins.tsv still lists FE748281 (login skip rule)"
+    if [ "$env" = production ]; then
+        n=$(awk -F'\t' '$1=="Login" && $2=="FE748281"' "data/$env/flow-manager/filtered/_skipped.tsv" 2>/dev/null | wc -l | tr -d ' ')
+        check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "[$env] filtered/_skipped.tsv has no Login row for FE748281"
+    fi
     # the EXTENDED transfer-site fold (2026-09-01, user report): a logged
     # "<subscription>_<PROTO>_SERVER_<partner>" must be folded back onto its
     # subscription — unfolded, the flow is unattributed, its movement is

@@ -457,7 +457,7 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    `UCx_` prefix; it surfaces on not-in-flow-manager.
 6. **NO-SUBSCRIPTION / HTTP SKIP** — a CoreId with neither site nor ACCOUNT anywhere, or any
    http leg, is dropped from both caches; its raw CSV lines go to `_skipped.csv`. Distinct from
-   the `input/<env>/skip.txt` SKIP LIST (same layout as the blacklist, but DROPS THE WHOLE RECORD;
+   the `input/<env>/skip.txt` SKIP LIST (same layout as the blacklist, but DROPS THE WHOLE RECORD — and, on the config side, the account, subscription or comm-profile LOGIN whose name contains the value, 2026-09-03;
    read only through the sourced `bin/skiplist.sh`; matched cache rows → `_skipped.tsv`).
 
 A changed subscriptions.json re-derives `_transfers.tsv` (export → flow-manager cache mtimes →

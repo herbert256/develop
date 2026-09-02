@@ -28,6 +28,13 @@
 #   of them hits); the server parse has only the message text, so it tests
 #   "message" — an "any" rule therefore still scrubs server lines mentioning
 #   the token, exactly as the flat token list did.
+#   CONFIG SIDE (bin/flow-manager.sh): account and site rules drop the partner
+#   / subscription whose NAME contains the value; login rules (2026-09-03) drop
+#   the matching comm-profile LOGIN inside a partner — with it its detail page
+#   and every login pair — the partner itself staying. "any" rules do all
+#   three. The config side matches a case-insensitive SUBSTRING whatever the
+#   rule kind; a server-log mention of a skipped login is scrubbed only by a
+#   "message" or "any" rule, so a login to hide completely wants "any".
 # RULES: contains (case-insensitive substring, the default) | exact
 #   (case-insensitive equality) | regex (an ERE, matched as written).
 #

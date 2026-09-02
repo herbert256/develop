@@ -46,8 +46,10 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
     # from bin/skiplist.sh, so a value here is caught by exactly the rule that
     # dropped it at parse time — including a field-specific or regex rule, which
     # a flat token scan could not express. Config NAMES are accounts and
-    # subscriptions, so they are tested against those fields.
+    # subscriptions, so they are tested against those fields; a config LOGIN
+    # (2026-09-03) against the login field.
     function tokof(v,   k) { k = sl_match("account", v); return k ? k : sl_match("site", v) }
+    function tokofl(v) { return sl_match("login", v) }
     BEGIN {
         sl_load(skf)
         nt = SL_N; tokens = ""
@@ -60,6 +62,7 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         if (cfg != "") {
             while ((getline l < cfg) > 0) {
                 n = split(l, a, "\t"); if (n < 2 || a[2] == "") continue
+                if (a[1] == "Login") { k = tokofl(a[2]); if (k > 0) LOG[k, ++nlog[k]] = a[2]; continue }
                 k = tokof(a[2]); if (k == 0) continue
                 if (a[1] == "Account")           { ACC[k, ++nacc[k]] = a[2] }
                 else if (a[1] == "Subscription") { SUB[k, ++nsub[k]] = a[2] }
@@ -89,13 +92,14 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         # report with a fresh mtime for skip_if_fresh to trust. ----
         main = outdir "/skipped.rpt.tmp"
         printf "TITLE\tSkipped\n" > main
-        printf "DESC\tThe accounts and subscriptions ignored because their name matches the skip list (input/%s/skip.txt), plus the transfer- and server-log records set aside for the same reason.\n", ENVIRON["AXWAY_ENV"] > main
-        printf "INTRO\tNames matching the **skip list** (**input/%s/skip.txt**, this environment'\''s own — %s) are removed at parse time — from the FlowManager config, the transfer logs and the server logs alike — so **no other report counts them**. Matching is a case-insensitive **substring** of the account or subscription name. The buttons below give a per-value report; this page lists them all.\n", ENVIRON["AXWAY_ENV"], (tokens == "" ? "(empty)" : tokens) > main
+        printf "DESC\tThe accounts, subscriptions and logins ignored because their name matches the skip list (input/%s/skip.txt), plus the transfer- and server-log records set aside for the same reason.\n", ENVIRON["AXWAY_ENV"] > main
+        printf "INTRO\tNames matching the **skip list** (**input/%s/skip.txt**, this environment'\''s own — %s) are removed at parse time — from the FlowManager config, the transfer logs and the server logs alike — so **no other report counts them**. On the configuration side matching is a case-insensitive **substring** of the account, subscription or comm-profile login name (a skipped login loses its detail page); the log records follow the rule kind (contains, exact or regex). The buttons below give a per-value report; this page lists them all.\n", ENVIRON["AXWAY_ENV"], (tokens == "" ? "(empty)" : tokens) > main
         printf "KEYWORDS\tskip, skipped, ignore, ignored, exclude, excluded, filter, filtered, skip.txt, %s\n", tokens > main
         # totals across all values
-        for (i = 1; i <= nt; i++) { TA += nacc[i]; TS += nsub[i]; TT += tcnt[i]; TV += scnt[i] }
+        for (i = 1; i <= nt; i++) { TA += nacc[i]; TS += nsub[i]; TL += nlog[i]; TT += tcnt[i]; TV += scnt[i] }
         printf "STAT\twhite\t%d\tSkipped accounts\n", TA + 0 > main
         printf "STAT\twhite\t%d\tSkipped subscriptions\n", TS + 0 > main
+        printf "STAT\twhite\t%d\tSkipped logins\n", TL + 0 > main
         printf "STAT\twhite\t%d\tSkipped transfer log lines\n", TT + 0 > main
         printf "STAT\twhite\t%d\tSkipped server log lines\n", TV + 0 > main
         if (nt == 0) printf "NOTE\tThe skip list (input/<env>/skip.txt) is empty — nothing was skipped.\n" > main
@@ -111,18 +115,19 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
             printf "KEYWORDS\tskip, skipped, %s\n", ORIG[i] > pv
             printf "STAT\twhite\t%d\tSkipped accounts\n", nacc[i] + 0 > pv
             printf "STAT\twhite\t%d\tSkipped subscriptions\n", nsub[i] + 0 > pv
+            printf "STAT\twhite\t%d\tSkipped logins\n", nlog[i] + 0 > pv
             printf "STAT\twhite\t%d\tSkipped transfer log lines\n", tcnt[i] + 0 > pv
             printf "STAT\twhite\t%d\tSkipped server log lines\n", scnt[i] + 0 > pv
             emit_value(pv, i, ORIG[i])
-            printf "SUMMARY\tSkipped for %s: %d account(s), %d subscription(s), %d transfer line(s), %d server line(s)\n", ORIG[i], nacc[i]+0, nsub[i]+0, tcnt[i]+0, scnt[i]+0 > pv
+            printf "SUMMARY\tSkipped for %s: %d account(s), %d subscription(s), %d login(s), %d transfer line(s), %d server line(s)\n", ORIG[i], nacc[i]+0, nsub[i]+0, nlog[i]+0, tcnt[i]+0, scnt[i]+0 > pv
             printf "FOOT\tGenerated on %s\n", now > pv
             close(pv)
         }
-        printf "SUMMARY\tSkipped: %d account(s), %d subscription(s), %d transfer line(s), %d server line(s) across %d value(s)\n", TA+0, TS+0, TT+0, TV+0, nt > main
+        printf "SUMMARY\tSkipped: %d account(s), %d subscription(s), %d login(s), %d transfer line(s), %d server line(s) across %d value(s)\n", TA+0, TS+0, TL+0, TT+0, TV+0, nt > main
         printf "FOOT\tGenerated on %s\n", now > main
         close(main)
     }
-    # emit the two tables (accounts, subscriptions) for token i to file f
+    # emit the three tables (accounts, subscriptions, logins) for token i to file f
     function emit_value(f, i, label,   j) {
         printf "TABLE\tSkipped accounts — %s\tnosort\tkeephead\n", label > f
         printf "HEAD\tAccount\n" > f
@@ -137,6 +142,15 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         if (nsub[i] + 0 == 0) printf "ROW\t@{class=desc}(none — no configured subscription matched %s)\n", label > f
         else for (j = 1; j <= nsub[i]; j++) printf "ROW\t%s\n", SUB[i, j] > f
         printf "TOTAL\tTotal (%d subscription%s)\n", nsub[i]+0, (nsub[i]+0 == 1 ? "" : "s") > f
+
+        # the comm-profile logins a LOGIN rule dropped from the configuration
+        # (bin/flow-manager.sh, 2026-09-03) — with them go their detail pages
+        printf "TABLE\tSkipped logins — %s\tnosort\n", label > f
+        printf "HEAD\tLogin\n" > f
+        printf "KIND\ttext\n" > f
+        if (nlog[i] + 0 == 0) printf "ROW\t@{class=desc}(none — no configured login matched %s)\n", label > f
+        else for (j = 1; j <= nlog[i]; j++) printf "ROW\t%s\n", LOG[i, j] > f
+        printf "TOTAL\tTotal (%d login%s)\n", nlog[i]+0, (nlog[i]+0 == 1 ? "" : "s") > f
     }
 ' </dev/null
 
