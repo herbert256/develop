@@ -49,6 +49,7 @@ rows=$(LC_ALL=C sort -t$'\t' -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' -v SL="$SL" 
     # date + hh:mm (2026-09-02, user request — the gateway stamp precision)
     function stamp(s) { return (s == "" || s == "-") ? "\342\200\224" : substr(s, 1, 16) }
     function trim(s) { sub(/^[ \t\r]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
+    function z(v) { return (v + 0 == 0) ? "" : v }   # a 0 count shows empty (2026-09-02, user request); the outcome columns z-blank themselves
     # the Last Gateway cell: the stamps of the subscription'"'"'s logins, in
     # xref order, deduplicated; an em dash when none is known
     function gateway(s,   n, L, i, k, o) {
@@ -71,8 +72,8 @@ rows=$(LC_ALL=C sort -t$'\t' -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' -v SL="$SL" 
         # which the account both delivered and collected — never the
         # time-window visit classes (2026-08)
         shared = ($18 + 0 > 0) ? "yes" : ""
-        printf "ROW\t%s%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%s\n", \
-            sublink($1), $1, stamp($3), stamp($4), gateway($1), $5, $6, $7, $16, $17, $8, $9, shared
+        printf "ROW\t%s%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%d\t%s\t%s\t%s\n", \
+            sublink($1), $1, stamp($3), stamp($4), gateway($1), z($5), z($6), $7, z($16), $17, $8, z($9), shared
         tp += $5; tw += $6; tf += $7; twt += $16; txp += $17; td += $9; nr++
     }
     END { printf "TOTFOOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", nr+0, tp+0, tw+0, tf+0, twt+0, txp+0, td+0 }
