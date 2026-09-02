@@ -156,8 +156,9 @@
   // scale: "log" (default) or "lin". A few series swing over three orders of
   // magnitude — a 22k-File batch dump next to a 2k day, 44k connections next
   // to a few hundred — and on a linear axis every ordinary slot is pressed
-  // flat against the floor, so log is the DEFAULT; the Linear/Log buttons
-  // switch, and the axis is never silent: the tick labels always carry the
+  // flat against the floor, so log is the DEFAULT — except the "seen" kind,
+  // which opens LINEAR (2026-09-03, user request; init()'s scaleFor); the
+  // Linear/Log buttons switch per kind, and the axis is never silent: the tick labels always carry the
   // log-spaced values (an unlabelled log axis misreads as linear). log10(v+1) so a
   // real zero stays on the floor. On a STACKED kind the segment tops are
   // log-placed, so the bands still order correctly but their heights are no
@@ -405,15 +406,27 @@
   function init() {
     var hosts = document.querySelectorAll("div.slotchart");
     if (!hosts.length) return;
-    var style = "solid", iv = "", scale = "log";
+    var style = "solid", iv = "";
+    // The axis scale is PER KIND (2026-09-03, user request): the "seen" graphs
+    // open LINEAR — a cumulative count of entities seen climbs gently and a
+    // log axis squashes exactly the growth they are there to show — every
+    // other kind opens on log (see draw()). A click on a card's Linear/Log
+    // buttons is remembered for that card's kind, so the seen graphs and the
+    // volume graphs each keep their own choice.
+    function scaleKey(kind) { return SCKEY + ":" + kind; }
+    function scaleFor(kind) {
+      try {
+        var sc = sessionStorage.getItem(scaleKey(kind));
+        if (sc === "lin" || sc === "log") return sc;
+      } catch (e) {}
+      return kind === "seen" ? "lin" : "log";
+    }
     // The interval sets of the two page kinds are DISJOINT (the overview counts
     // in hours, a day page in minutes), so each remembers its own pick under a
     // key suffixed with its base — otherwise a visit to the overview would
     // silently reset the day pages, and back.
     var ivkey = IKEY + "-" + (hosts[0].getAttribute("data-base") || "0");
     try {
-      var sc = sessionStorage.getItem(SCKEY);
-      if (sc === "lin" || sc === "log") scale = sc;
       var ss = sessionStorage.getItem(SKEY);
       if (ss === "line" || ss === "bar" || ss === "solid") style = ss;
       var si = sessionStorage.getItem(ivkey);
@@ -481,11 +494,15 @@
         // day PeSIT card, whose sidecar is 30-minute) draws its own base
         var card = cards[c], use = (iv && card._d[iv]) ? iv : card._base;
         if (!card._slots[use]) card._slots[use] = parse(card._d[use], card._spec.ns);
+        var scale = scaleFor(card._kind);
         card.innerHTML = draw(card._kind, style, clip(card._slots[use]), card._link, card._cid + style + use + scale + (RANGE ? RANGE.from + RANGE.to : ""), card._title, scale);
+        // the card's OWN Linear/Log row (a sibling inside its chartbox) shows
+        // the scale this card drew with — a per-kind choice, not a page-wide one
+        var sbar = card.parentNode && card.parentNode.querySelector(".scalebtns");
+        if (sbar) mark([sbar], "data-cscale", scale);
       }
       mark(document.querySelectorAll(".stylebtns"), "data-cstyle", style);
       mark(document.querySelectorAll(".ivbtns"), "data-civ", iv);
-      mark(document.querySelectorAll(".scalebtns"), "data-cscale", scale);
     }
     function mark(bars, attr, val) {
       for (var b = 0; b < bars.length; b++) {
@@ -506,7 +523,16 @@
     }
     bindRow(".stylebtns", "data-cstyle", SKEY, function (v) { style = v; });
     bindRow(".ivbtns", "data-civ", ivkey, function (v) { iv = v; });
-    bindRow(".scalebtns", "data-cscale", SCKEY, function (v) { scale = v; });
+    // the Linear/Log row stores its pick under the CARD'S KIND (see scaleFor)
+    var sbars = document.querySelectorAll(".scalebtns");
+    for (var sb = 0; sb < sbars.length; sb++) sbars[sb].addEventListener("click", function (e) {
+      var v = e.target && e.target.getAttribute && e.target.getAttribute("data-cscale");
+      if (!v) return;
+      var host = this.parentNode && this.parentNode.querySelector("div.slotchart");
+      var k = host ? (host.getAttribute("data-kind") || "count") : "count";
+      try { sessionStorage.setItem(scaleKey(k), v); } catch (e2) {}
+      render();
+    });
     window.slotchartSetRange = function (f, t, narrowed) {
       RANGE = narrowed && f && t ? { from: f, to: t, narrowed: true } : null;
       var av = autoIv(f, t);   // f/t carry the full-range dates on Reset too
