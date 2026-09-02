@@ -86,6 +86,7 @@ run_bg "$SCRIPT_DIR/reports/blast-radius.sh"
 run_bg "$SCRIPT_DIR/reports/app-partners.sh"
 run_bg "$SCRIPT_DIR/reports/partner-lifecycle.sh"
 run_bg "$SCRIPT_DIR/reports/cleanup-backlog.sh"
+run_bg "$SCRIPT_DIR/reports/fe-status.sh"            # FE status information: config + files cache + logon summary + input/<env>/logons_old.txt
 wait_all
 
 # wave 2 — the ensure_pda_tsvs chain, strictly in order (first-seen moved here

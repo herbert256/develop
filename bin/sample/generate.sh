@@ -109,7 +109,7 @@ done
 # the same template seeds both envs (the sample estates share their policy)
 for env in acceptance production; do
     [ -d "input/$env" ] || continue
-    for f in blacklist.txt skip.txt rename.txt logical.txt logical_domains.txt logical_apps.txt logical_partners.txt BL.txt; do
+    for f in blacklist.txt skip.txt rename.txt logical.txt logical_domains.txt logical_apps.txt logical_partners.txt BL.txt logons_old.txt; do
         cp "$TPL_DIR/$f" "input/$env/$f"
     done
 done
@@ -137,6 +137,8 @@ Layout (per environment, acceptance/ + production/):
                  a variant token rewritten to its canonical organisation)
   BL.txt         BL numbers per subscription ("<subscription> <BL>[,<BL>...]"),
                  a second source of BL entities beside the subscriptions.json tags
+  logons_old.txt the FE logins' last logon on the OLD gateway ("<login> <stamp>"
+                 per line) — the FE status information page's Gateway logon column
 The eight policy files are PER ENVIRONMENT since 2026-08-31 (user request);
 bin/build/migrate-input.sh moves a checkout's old shared copies into the env
 dirs once, and folds a retired partner-aliases.tsv into logical_partners.txt.
