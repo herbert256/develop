@@ -586,7 +586,7 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   (collected / collected+delivered / delivered-only / empty-handed), rendered by the **UC2
   pickup visits** analyses page (`bin/analyses/reports/uc2-visits.sh`, a `SUBS_GROUP_REPORTS`
   member in the Configuration group — it only formats the sidecar, so the three views cannot
-  disagree; runs after the server pool, behind `uc2-status.sh`). **The "Connection shared with
+  disagree; runs after the server pool, behind `uc2-status.sh`; the **FE overview** page, `bin/analyses/reports/fe-overview.sh`, joins the same sidecar onto LOGIN rows, once per login and account — 2026-09-02). **The "Connection shared with
   UC4 drop" row (and the UC4 pages' mirror INTRO, and the pickups report's UC4-drop flag) fires
   ONLY on sidecar col 18 — the SHARED-SESSION count**: distinct `_transfers.tsv` Session IDs
   (col 24, one id = one technical connection) in which the account both delivered (Inbound ssh)

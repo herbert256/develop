@@ -1435,6 +1435,7 @@ analyses/blast-radius.html|Blast radius|What stops when a remote host dies: the 
 analyses/app-partners.html|Application dependencies|Which external partners each internal application exchanges Files with — the dependency matrix with traffic weights and dead pairs at 100% Error.|application, dependencies, partner, matrix, lineage, exposure|application, dependencies, lineage
 analyses/partner-lifecycle.html|Partner lifecycle|The quiet failure modes of a partner relation: configured but never live, gone quiet after real history, and still transferring on ever fewer flows.|partner, lifecycle, never live, quiet, shrinking, onboarding|partner, lifecycle, quiet
 analyses/cleanup-backlog.html|Cleanup backlog|Every cleanup signal merged into one ranked decommission-candidate list, safest first — config orphans, never-seen subscriptions, unused whitelist addresses, cron-less polls and long-quiet entities.|cleanup, backlog, decommission, orphans, unused, prune|cleanup, decommission, prune
+analyses/fe-overview.html|FE overview|Every FE login on one line: use cases and subscriptions, the last logon here and on the old gateway, Files in / out with Waiting and Expired, and its UC2 pickup visits — pickups, collected, two-way, delivery-only and same-connection.|fe, login, overview, status, use case, uc2, uc4, subscriptions, last logon, gateway, migration, files, waiting, expired, pickup, visit, collect, deliver, same connection, pattern|fe, login, overview, pickup
 analyses/fe-status.html|FE status information|Every FE login on one line: its use cases (UC2, UC4 or the UC2/UC4 mailbox pair), the last logon on this platform, the last logon on the old gateway, and its Files in / out — the Waiting ones separately.|fe, login, status, use case, uc2, uc4, last logon, gateway, old gateway, migration, files, waiting|fe, login, status, gateway
 file-search-24-hours.html|File search|Find a File by its file name — date, subscription, size and CoreId, OK rows green and Error rows red; six windows (24 hours through a month), each with its own Search button, the query carried between them.|file, search, file name, find, filename, lookup|file search, filename, find
 STATIC
@@ -1558,13 +1559,14 @@ write_sitemap() {
         printf '<li><a href="file-search-24-hours.html">File search</a></li>\n'
         printf '<li><a href="transfer/seen-in-server-log.html">Seen in server log</a></li>\n'
         printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Configuration <span class="smcount">17</span></h3><ul>\n'
+        printf '<div class="smcard"><h3>Configuration <span class="smcount">18</span></h3><ul>\n'
         printf '<li><a href="analyses/use-cases.html">Use Case</a></li>\n'
         printf '<li><a href="analyses/uc2-visits.html">UC2 pickup visits</a></li>\n'
         printf '<li><a href="analyses/subscriptions.html">Subscriptions</a></li>\n'
         printf '<li><a href="analyses/logical-detection.html">Logical detection</a></li>\n'
         printf '<li><a href="analyses/added-bl.html">Added BL</a></li>\n'
         printf '<li><a href="analyses/accounts.html">Accounts</a></li>\n'
+        printf '<li><a href="analyses/fe-overview.html">FE overview</a></li>\n'
         printf '<li><a href="analyses/fe-status.html">FE status information</a></li>\n'
         printf '<li><a href="analyses/account-sharing.html">Account sharing</a></li>\n'
         printf '<li><a href="analyses/twins.html">Twins</a></li>\n'

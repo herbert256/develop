@@ -311,7 +311,7 @@ server_order=(topview errors failure-flows pickups uc-status uc2-visits went-kap
 # OWNERSHIP: bin/analyses/publish.sh renders them, NOT the area publishes —
 # it clears docs/<env>/analyses/*.html and runs AFTER both, so a page written
 # there by the transfer/server loop would be deleted again.
-SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:uc2-visits transfer:account-sharing transfer:twins analyses:triage analyses:data-diff analyses:partner-scorecard analyses:blast-radius analyses:app-partners analyses:partner-lifecycle analyses:cleanup-backlog analyses:fe-status "
+SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:uc2-visits transfer:account-sharing transfer:twins analyses:triage analyses:data-diff analyses:partner-scorecard analyses:blast-radius analyses:app-partners analyses:partner-lifecycle analyses:cleanup-backlog analyses:fe-overview analyses:fe-status "
 
 is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
     case $SUBS_GROUP_REPORTS in *:"$1 "*) return 0 ;; esac
@@ -2136,7 +2136,7 @@ ANALYSES_MENU='<a class="ddtop" href="@analyses/index.html">Start page</a><a hre
 _analyses_groups() {
     printf '%s\n' \
         "Coverage & seen|../transfer/entity-coverage-accounts.html=Entity coverage|first-seen.html=First seen|data-diff.html=Since yesterday|../file-search-24-hours.html=File search|../transfer/seen-in-server-log.html=Seen in server log" \
-        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|fe-status.html=FE status information|account-sharing.html=Account sharing|twins.html=Twins|cronjobs.html=Cronjobs|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
+        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|fe-overview.html=FE overview|fe-status.html=FE status information|account-sharing.html=Account sharing|twins.html=Twins|cronjobs.html=Cronjobs|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
         "Partners|partner-scorecard.html=Partner scorecard|blast-radius.html=Blast radius|app-partners.html=Application dependencies|partner-lifecycle.html=Partner lifecycle" \
         "Boxes|accounts-in-boxes.html=Accounts in boxes|subscriptions-in-boxes.html=Subscriptions in boxes|triage.html=Triage" \
         "Errors|failed.html=Failed Subscriptions|failing-reasons.html=Error reasons"
