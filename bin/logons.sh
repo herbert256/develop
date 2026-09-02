@@ -377,17 +377,21 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                     if (li == 1 || LG2[li] - LG2[li - 1] > 30) { SS2[++ns] = LG2[li]; SE2[ns] = LG2[li] }
                     else SE2[ns] = LG2[li]
                 }
-                if (ns >= 3) {
-                    maxd = 0
-                    for (li = 1; li <= ns; li++) { g = SE2[li] - SS2[li]; dh2[g]++; if (g > maxd) maxd = g }
-                    half = int((ns + 1) / 2); c2 = 0; meddur = 0
-                    for (g = 0; g <= maxd; g++) if (g in dh2) { c2 += dh2[g]; if (c2 >= half) { meddur = g; break } }
-                    if (meddur <= 15) {
-                        delete gh2; maxg = 0; ng = 0
-                        for (li = 2; li <= ns; li++) { g = SS2[li] - SS2[li - 1]; gh2[g]++; ng++; if (g > maxg) maxg = g }
-                        half = int(ng / 2) + 1; c2 = 0
-                        for (g = 1; g <= maxg; g++) if (g in gh2) { c2 += gh2[g]; if (c2 >= half) { med = g; break } }
-                    }
+                # the median visit SPAN, whatever the visit count (uc2-status.sh
+                # verbatim, 2026-09-03): short spans = a bursty client, whose
+                # cadence is a statement about VISITS — fewer than 3 visits is
+                # no cadence at all, so the label is the plain visit count; a
+                # sustained single visit keeps its real cadence
+                maxd = 0
+                for (li = 1; li <= ns; li++) { g = SE2[li] - SS2[li]; dh2[g]++; if (g > maxd) maxd = g }
+                half = int((ns + 1) / 2); c2 = 0; meddur = 0
+                for (g = 0; g <= maxd; g++) if (g in dh2) { c2 += dh2[g]; if (c2 >= half) { meddur = g; break } }
+                if (meddur <= 15 && ns < 3) return ns " visit" (ns == 1 ? "" : "s")
+                if (meddur <= 15) {
+                    delete gh2; maxg = 0; ng = 0
+                    for (li = 2; li <= ns; li++) { g = SS2[li] - SS2[li - 1]; gh2[g]++; ng++; if (g > maxg) maxg = g }
+                    half = int(ng / 2) + 1; c2 = 0
+                    for (g = 1; g <= maxg; g++) if (g in gh2) { c2 += gh2[g]; if (c2 >= half) { med = g; break } }
                 }
                 return patron(med)
             }

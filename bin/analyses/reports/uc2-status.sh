@@ -197,6 +197,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         # cadence over the group pickup minutes — the two-scale rule of the
         # per-account loop, verbatim
         if (nat >= 3) {
+            delete gh
             maxg = 0; ng = 0
             for (li = 2; li <= nat; li++) { gsp = ATM[li] - ATM[li - 1]; gh[gsp]++; ng++; if (gsp > maxg) maxg = gsp }
             half = int(ng / 2) + 1; c2 = 0; med = 0
@@ -206,19 +207,28 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 if (li == 1 || ATM[li] - ATM[li - 1] > 30) { SS[++ns] = ATM[li]; SE[ns] = ATM[li] }
                 else SE[ns] = ATM[li]
             }
-            if (ns >= 3) {
-                delete gh
-                maxg = 0; ng = 0; maxd = 0
-                for (li = 1; li <= ns; li++) { gsp = SE[li] - SS[li]; dh[gsp]++; if (gsp > maxd) maxd = gsp }
-                half = int((ns + 1) / 2); c2 = 0; meddur = 0
-                for (gsp = 0; gsp <= maxd; gsp++) if (gsp in dh) { c2 += dh[gsp]; if (c2 >= half) { meddur = gsp; break } }
+            # the median visit SPAN, whatever the visit count: short spans = a
+            # bursty client, whose cadence is a statement about VISITS — and
+            # fewer than 3 visits is no cadence at all (2026-09-03, user
+            # report: one burst of 6 connections read "Continuous"), so the
+            # label is then the plain visit count. A sustained single visit
+            # (a poller the 30-minute rule never splits) keeps its real cadence.
+            delete dh
+            maxd = 0
+            for (li = 1; li <= ns; li++) { gsp = SE[li] - SS[li]; dh[gsp]++; if (gsp > maxd) maxd = gsp }
+            half = int((ns + 1) / 2); c2 = 0; meddur = 0
+            for (gsp = 0; gsp <= maxd; gsp++) if (gsp in dh) { c2 += dh[gsp]; if (c2 >= half) { meddur = gsp; break } }
+            if (meddur <= 15 && ns < 3) patG[g] = ns " visit" (ns == 1 ? "" : "s")
+            else {
                 if (meddur <= 15) {
+                    delete gh
+                    maxg = 0; ng = 0
                     for (li = 2; li <= ns; li++) { gsp = SS[li] - SS[li - 1]; gh[gsp]++; ng++; if (gsp > maxg) maxg = gsp }
                     half = int(ng / 2) + 1; c2 = 0
                     for (gsp = 1; gsp <= maxg; gsp++) if (gsp in gh) { c2 += gh[gsp]; if (c2 >= half) { med = gsp; break } }
                 }
+                patG[g] = patron(med)
             }
-            patG[g] = patron(med)
         }
     }
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
@@ -467,20 +477,30 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                     if (li == 1 || ATM[li] - ATM[li - 1] > 30) { SS[++ns] = ATM[li]; SE[ns] = ATM[li] }
                     else SE[ns] = ATM[li]
                 }
-                if (ns >= 3) {
-                    delete gh
-                    maxg = 0; ng = 0; maxd = 0
-                    for (li = 1; li <= ns; li++) { g = SE[li] - SS[li]; dh[g]++; if (g > maxd) maxd = g }
-                    half = int((ns + 1) / 2); c2 = 0; meddur = 0
-                    for (g = 0; g <= maxd; g++) if (g in dh) { c2 += dh[g]; if (c2 >= half) { meddur = g; break } }
-                    delete dh
+                # the median visit SPAN, whatever the visit count: short spans
+                # = a bursty client, whose cadence is a statement about VISITS
+                # — and fewer than 3 visits is no cadence at all (2026-09-03,
+                # user report: one burst of 6 connections read "Continuous"),
+                # so the label is then the plain visit count. A sustained
+                # single visit (a poller the 30-minute rule never splits)
+                # keeps its real cadence. classify_group() mirrors this.
+                delete dh
+                maxd = 0
+                for (li = 1; li <= ns; li++) { g = SE[li] - SS[li]; dh[g]++; if (g > maxd) maxd = g }
+                half = int((ns + 1) / 2); c2 = 0; meddur = 0
+                for (g = 0; g <= maxd; g++) if (g in dh) { c2 += dh[g]; if (c2 >= half) { meddur = g; break } }
+                delete dh
+                if (meddur <= 15 && ns < 3) patA[a] = ns " visit" (ns == 1 ? "" : "s")
+                else {
                     if (meddur <= 15) {
+                        delete gh
+                        maxg = 0; ng = 0
                         for (li = 2; li <= ns; li++) { g = SS[li] - SS[li - 1]; gh[g]++; ng++; if (g > maxg) maxg = g }
                         half = int(ng / 2) + 1; c2 = 0
                         for (g = 1; g <= maxg; g++) if (g in gh) { c2 += gh[g]; if (c2 >= half) { med = g; break } }
                     }
+                    patA[a] = patron(med)
                 }
-                patA[a] = patron(med)
             }
         }
         # the multi-FE groups get the same classification, per (account, login)
