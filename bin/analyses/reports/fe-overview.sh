@@ -26,8 +26,9 @@
 #                  us (UC4), out = picked up from us (UC2) — the home page's
 #                  In/Out split; a File with no movement counts in neither;
 #                  a 0 renders empty
-#   Collected      the login's UC2 pickup VISITS that took at least one
-#                  staged file (see the sidecar note below)
+#   Retrieved      the out-side Files the partner actually collected (outcome
+#                  Processed): Retrieved + Waiting + Expired = Files out, up to
+#                  the rare out-side File whose pickup FAILED (in Files out only)
 #   Waiting        those staged and not yet collected (outcome Waiting)
 #   Expired        those the retention sweep deleted before any pickup
 #   Oldest waiting how long the login's OLDEST staged, uncollected File has
@@ -38,7 +39,7 @@
 #                  builds); @{sortval=<seconds>} keeps it numerically sortable
 #   Pickups, Pickup pattern — the pickup logons and their cadence
 #
-# The pickup figures (Collected, Pickups, Pickup pattern) come from the
+# The pickup figures (Pickups, Pickup pattern) come from the
 # uc2-pickups.tsv sidecar bin/analyses/reports/uc2-status.sh writes into the
 # SERVER reports dir (bin/build.sh runs the server reports before the
 # analyses reports, so the sidecar is complete here; a missing one leaves
@@ -146,7 +147,7 @@ awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS"
             if (!(k in IDX)) { IDX[k] = ++nr; NAME[nr] = u; RES[nr] = ""; OLDONLY[nr] = 1 }
             GW[k] = s } close(OLD)
         # the UC2 pickup sidecar (see the header): cols 1 subscription, 2
-        # account, 5 pickups, 8 pattern, 12 collect-only visits — ONCE per
+        # account, 5 pickups, 8 pattern — ONCE per
         # (login, account)
         while ((getline l < PICKUPS) > 0) { n = split(l, a, "\t"); if (n < 18 || a[1] == "") continue
             su = toupper(a[1]); if (!(su in SL)) continue
@@ -154,7 +155,7 @@ awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS"
             for (j = 1; j <= m; j++) { k = LG9[j]; key = k SUBSEP a[2]
                 if (key in PKSEEN) continue
                 PKSEEN[key] = 1
-                PK[k] += a[5]; VC[k] += a[12]
+                PK[k] += a[5]
                 if (!(k in PKBEST) || a[5] + 0 > PKBEST[k]) { PKBEST[k] = a[5] + 0; PAT[k] = a[8] } } } close(PICKUPS)
         NEWEST = 0
     }
@@ -163,7 +164,7 @@ awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS"
     # The newest stamp of ALL Files anchors the waiting ages.
     { if ($4 != "") { t9 = tsec($4, $5); if (t9 > NEWEST) NEWEST = t9 } else t9 = 0
       k = toupper($14); if (k == "" || !(k in IDX)) next
-      if ($17 == "in") FIN[k]++; else if ($17 == "out") FOUT[k]++
+      if ($17 == "in") FIN[k]++; else if ($17 == "out") { FOUT[k]++; if ($2 == "Processed") RET[k]++ }   # Retrieved = the collected out-side Files
       if ($2 == "Waiting") { WCNT[k]++; if (t9 > 0 && (!(k in WOLD) || t9 < WOLD[k])) WOLD[k] = t9 }
       else if ($2 == "Expired") XCNT[k]++ }
     END {
@@ -182,29 +183,29 @@ awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS"
             # the Oldest waiting cell with its sort key; "-" when nothing waits
             ow = "-"
             if (k in WOLD) { ag = NEWEST - WOLD[k]; if (ag < 0) ag = 0; ow = "@{sortval=" int(ag) "}" hage(ag); if (ag > gold) gold = ag }
-            # the pickup figures (0 when the login has no sidecar row); the
-            # pattern only where pickups exist (drops the sidecar placeholder)
-            pk = (k in PK) ? PK[k] + 0 : 0; vc = (k in VC) ? VC[k] + 0 : 0
+            # the pickup figures (0 when the login has no sidecar row) and the
+            # retrieved count; the pattern only where pickups exist (drops the sidecar placeholder)
+            pk = (k in PK) ? PK[k] + 0 : 0; ret = (k in RET) ? RET[k] + 0 : 0
             pat = (pk > 0 && (k in PAT)) ? PAT[k] : ""
-            s_pk += pk; s_vc += vc
+            s_pk += pk; s_ret += ret
             printf "R\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%s\n", \
                 NAME[i], nz(uc), ((k in LAST) ? LAST[k] : "-"), ((k in GW) ? nz(GW[k]) : "-"), nz(RES[i]), \
-                FIN[k] + 0, FOUT[k] + 0, WCNT[k] + 0, ow, XCNT[k] + 0, pk, vc, nz(pat)
+                FIN[k] + 0, FOUT[k] + 0, WCNT[k] + 0, ow, XCNT[k] + 0, pk, ret, nz(pat)
         }
         printf "S\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\n", nr, s_uc2 + 0, s_uc4 + 0, s_both + 0, s_here + 0, s_never + 0, s_gw + 0, s_old + 0, \
-            s_in + 0, s_out + 0, s_wait + 0, s_exp + 0, (gold >= 0 ? hage(gold) : "-"), s_pk + 0, s_vc + 0
+            s_in + 0, s_out + 0, s_wait + 0, s_exp + 0, (gold >= 0 ? hage(gold) : "-"), s_pk + 0, s_ret + 0
     }
 ' "$TF" > "$OUT.rows"
 
-IFS=$'\t' read -r _ n_all n_uc2 n_uc4 n_both n_here n_never n_gw n_old n_in n_out n_wait n_exp t_old n_pk n_vc <<< "$(command grep $'^S\t' "$OUT.rows")"
+IFS=$'\t' read -r _ n_all n_uc2 n_uc4 n_both n_here n_never n_gw n_old n_in n_out n_wait n_exp t_old n_pk n_ret <<< "$(command grep $'^S\t' "$OUT.rows")"
 [ "$t_old" = "-" ] && t_old=""   # the sentinel (a middle field — an empty one would shift the read)
 # a 0 total renders empty like the 0 cells (the outcome-kind totals z-blank themselves)
 nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"; fi; }
 
 {
     printf 'TITLE\tFE overview\n'
-    printf 'DESC\tEvery FE login on one line: its use cases, the last logon here and on the old gateway, its Files in and out with the collected, Waiting and Expired ones and how long the oldest has waited, and its pickups with their cadence.\n'
-    printf 'INTRO\tOne row per **FE login** — the credential a partner connects with — combining the FE status information and the UC2 pickup visits pages. **Use cases** are those of the login'\''s subscriptions: **UC2** (the partner picks up), **UC4** (the partner delivers) or **UC2/UC4** (both — the mailbox pair). **Cloud** is the newest successful authentication on THIS platform, over any protocol (the detail pages'\'' Logons figure; empty = no logon in the log window). **Gateway** is the login'\''s last logon on the OLD gateway, as recorded in input/<env>/logons_old.txt — a login listed there but not configured here still gets a row (untinted), so a partner not yet moved over stands out. **Files in** counts the login'\''s Files delivered to us (UC4) and **Files out** those picked up from us (UC2), over the transfer window; **Collected** its UC2 pickup visits that took at least one staged file (the SSH logons group into visits — a gap of more than 30 minutes starts a new one — each classified by what its window shows in the transfer log); **Waiting** are the staged Files not yet collected, **Expired** those the retention sweep deleted before any pickup, and **Oldest waiting** is how long the oldest of them has waited — aged against the newest transfer in the log, so an unchanged export does not age between builds. **Pickups** counts the pickup logons (the detail page'\''s Total pickups) and **Pickup pattern** their typical spacing. Rows are tinted by the login'\''s result colour — green delivering, red failing, orange configured but never seen. Every figure is full-period; a 0 renders empty.\n'
+    printf 'DESC\tEvery FE login on one line: its use cases, the last logon here and on the old gateway, its Files in and out with the retrieved, Waiting and Expired ones and how long the oldest has waited, and its pickups with their cadence.\n'
+    printf 'INTRO\tOne row per **FE login** — the credential a partner connects with — combining the FE status information and the UC2 pickup visits pages. **Use cases** are those of the login'\''s subscriptions: **UC2** (the partner picks up), **UC4** (the partner delivers) or **UC2/UC4** (both — the mailbox pair). **Cloud** is the newest successful authentication on THIS platform, over any protocol (the detail pages'\'' Logons figure; empty = no logon in the log window). **Gateway** is the login'\''s last logon on the OLD gateway, as recorded in input/<env>/logons_old.txt — a login listed there but not configured here still gets a row (untinted), so a partner not yet moved over stands out. **Files in** counts the login'\''s Files delivered to us (UC4) and **Files out** those picked up from us (UC2), over the transfer window; **Retrieved** those the partner actually collected — Retrieved + Waiting + Expired = Files out, up to the rare out-side File whose pickup failed (it counts in Files out only); **Waiting** are the staged Files not yet collected, **Expired** those the retention sweep deleted before any pickup, and **Oldest waiting** is how long the oldest of them has waited — aged against the newest transfer in the log, so an unchanged export does not age between builds. **Pickups** counts the pickup logons (the detail page'\''s Total pickups) and **Pickup pattern** their typical spacing. Rows are tinted by the login'\''s result colour — green delivering, red failing, orange configured but never seen. Every figure is full-period; a 0 renders empty.\n'
     printf 'STAT\twhite\t%s\tLogins\n' "$n_all"
     printf 'STAT\twhite\t%s\tUC2\n' "$n_uc2"
     printf 'STAT\twhite\t%s\tUC4\n' "$n_uc4"
@@ -214,14 +215,13 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
     printf 'STAT\twhite\t%s\tGateway known\n' "$n_gw"
     printf 'STAT\t%s\t%s\tOld gateway only\n' "$([ "$n_old" -gt 0 ] && echo orange || echo white)" "$n_old"
     printf 'STAT\twhite\t%s\tPickups\n' "$n_pk"
-    printf 'STAT\tgreen\t%s\tCollected\n' "$n_vc"
     printf 'TABLE\tFE logins\twide\tnofilter\trestint\n'
-    printf 'HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tCollected\tWaiting\tExpired\tOldest waiting\tPickups\tPickup pattern\n'
+    printf 'HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\tPickup pattern\n'
     printf 'KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumprocessed\tnumwarn\tnumfailed\ttext\tnum\ttext\n'
     # sorted by login name; the sentinels swap back here, the result colour
     # becomes the row tint, an old-gateway-only login carries no tint. R
     # fields: 2 login 3 uc 4 cloud 5 gw 6 res 7 in 8 out 9 waiting 10 oldest
-    # 11 expired 12 pickups 13 collected 14 pattern. The processed-kind count
+    # 11 expired 12 pickups 13 retrieved 14 pattern. The processed-kind count
     # passes its 0 through: the renderer z-blanks it (an empty non-z
     # processed cell would show the base green on an untinted row).
     command grep $'^R\t' "$OUT.rows" | LC_ALL=C sort -t$'\t' -k2,2f | awk -F'\t' '
@@ -232,11 +232,11 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
           printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s%s\n", \
               $2, uc, last, gw, z($7), z($8), $13, $9, $11, ow, z($12), pat, res }'
     printf 'TOTAL\tTotal (%s logins)\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t@{class=num}%s\t\n' \
-        "$n_all" "$(nz "$n_in")" "$(nz "$n_out")" "$n_vc" "$n_wait" "$n_exp" "$t_old" "$(nz "$n_pk")"
-    printf 'NOTE\t**input/<env>/logons_old.txt** carries the old gateway'\''s logons, one login per line: the login, then its stamp ("FE000123  2026-09-02 14:35") — the first token is the login (case-insensitive), the rest of the line is shown as written; blank lines and # comments are ignored. The file is per environment and hand-maintained (like BL.txt); when it is missing the column stays empty. A subscription'\''s use case is its name prefix, or the use case DERIVED from the configuration for a flow without one (the hybrid production flows). Files in / Files out count Files (one per CoreId) attributed to the login by their movement direction — the home page'\''s In/Out split — over the whole transfer window; Files out holds every File staged for the login — collected, waiting, expired or failed. **Oldest waiting** shows one unit, truncated ("5 days", "12 hours", "45 minutes", "10 seconds"), sorts by the exact age, and the Total row carries the oldest of all. **Collected, Pickups and Pickup pattern** come from the UC2 pickup sidecar (the data behind the UC2 status and UC2 pickup visits pages) and are taken ONCE per login: on the UC2 pickup visits page the account'\''s figures repeat on each of its UC2 subscriptions, so its totals run higher; on an account carrying several FE logins each login shows its own. Pickups counts LOGONS and so runs higher than Collected, which counts visits; the visit breakdown (two-way, delivery-only, same-connection) stays on the UC2 pickup visits page. A login without a UC2 flow — or whose partner collects over CFT/PESIT and logs no SSH visit — leaves those cells empty while its Files still move.\n'
-    printf 'KEYWORDS\tfe,login,overview,status,use case,uc2,uc4,mailbox,last logon,gateway,old gateway,migration,files,in,out,collected,waiting,expired,oldest,age,pickup,visit,pattern,cadence\n'
+        "$n_all" "$(nz "$n_in")" "$(nz "$n_out")" "$n_ret" "$n_wait" "$n_exp" "$t_old" "$(nz "$n_pk")"
+    printf 'NOTE\t**input/<env>/logons_old.txt** carries the old gateway'\''s logons, one login per line: the login, then its stamp ("FE000123  2026-09-02 14:35") — the first token is the login (case-insensitive), the rest of the line is shown as written; blank lines and # comments are ignored. The file is per environment and hand-maintained (like BL.txt); when it is missing the column stays empty. A subscription'\''s use case is its name prefix, or the use case DERIVED from the configuration for a flow without one (the hybrid production flows). Files in / Files out count Files (one per CoreId) attributed to the login by their movement direction — the home page'\''s In/Out split — over the whole transfer window; Files out holds every File staged for the login — retrieved, waiting, expired or (rarely) failed at pickup, so Retrieved + Waiting + Expired = Files out up to those failed pickups. **Oldest waiting** shows one unit, truncated ("5 days", "12 hours", "45 minutes", "10 seconds"), sorts by the exact age, and the Total row carries the oldest of all. **Pickups and Pickup pattern** come from the UC2 pickup sidecar (the data behind the UC2 status and UC2 pickup visits pages) and are taken ONCE per login: on the UC2 pickup visits page the account'\''s figures repeat on each of its UC2 subscriptions, so its totals run higher; on an account carrying several FE logins each login shows its own. Pickups counts LOGONS; the visit breakdown (collected, two-way, delivery-only, same-connection) stays on the UC2 pickup visits page. A login without a UC2 flow — or whose partner collects over CFT/PESIT and logs no SSH visit — leaves those cells empty while its Files still move.\n'
+    printf 'KEYWORDS\tfe,login,overview,status,use case,uc2,uc4,mailbox,last logon,gateway,old gateway,migration,files,in,out,retrieved,collected,waiting,expired,oldest,age,pickup,visit,pattern,cadence\n'
     printf 'FOOT\tGenerated on %s\n' "$GENDATE"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 rm -f "$OUT.rows"
 
-echo "Data written to $OUT ($n_all login(s): $n_uc2 UC2, $n_uc4 UC4, $n_both UC2/UC4; $n_here logged on here, $n_gw with a gateway logon, $n_old old-gateway only; $n_in in, $n_out out, $n_wait waiting, oldest ${t_old:-none}; $n_pk pickup(s), $n_vc collected)." >&2
+echo "Data written to $OUT ($n_all login(s): $n_uc2 UC2, $n_uc4 UC4, $n_both UC2/UC4; $n_here logged on here, $n_gw with a gateway logon, $n_old old-gateway only; $n_in in, $n_out out, $n_wait waiting, oldest ${t_old:-none}; $n_pk pickup(s), $n_ret retrieved)." >&2
