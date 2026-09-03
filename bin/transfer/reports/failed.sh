@@ -144,7 +144,7 @@ RFLIP="$DATA/blue/_redflip.tsv"
 KAPUT="$DATA/server/reports/_kaput-evidence.tsv"
 BOXES="$DATA/analyses/reports/_subs-boxes.tsv"
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRVLOG" "$CONFIG_BASE" "$LIB_DIR/../flip-reason.awk" \
-    "$RFLIP" "$KAPUT" "$BOXES"
+    "$RFLIP" "$KAPUT" "$BOXES" "$CONFIG_XREF/_subscriptions-partners.tsv"
 
 GEN=$(date '+%Y-%m-%d %H:%M:%S')
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axlastf.XXXXXX")
@@ -213,7 +213,8 @@ rm -rf "$ERRDIR"; mkdir -p "$ERRDIR"
 # ($TMP/paged) the list writer marks its links by.
 LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
     -v TOPF="$TMP/all" -v EXTRAF="$TMP/extra" -v LASTF="$TMP/lastst" -v PAGEDF="$TMP/paged" \
-    -v IDS="$TMP/ids" -v META="$TMP/meta" -v SESS="$TMP/sess" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" -v ACCRES="$CONFIG_BASE/_accounts.tsv" -v HSTRES="$CONFIG_BASE/_hosts.tsv" '
+    -v IDS="$TMP/ids" -v META="$TMP/meta" -v SESS="$TMP/sess" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" -v ACCRES="$CONFIG_BASE/_accounts.tsv" -v HSTRES="$CONFIG_BASE/_hosts.tsv" \
+    -v LGNRES="$CONFIG_BASE/_logins.tsv" -v PTNRES="$CONFIG_BASE/_partners.tsv" -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" '
     # The SUBSCRIPTION result colour (bin/build/result.sh fills the third
     # column of the base cache), so a row carries the state of the flow it
     # belongs to: red = still failing, green = it has delivered OK since,
@@ -221,7 +222,15 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
     # from the State column, which is about THIS File, and the more useful one
     # to scan for — the same tint the Ranking report and the Entities views
     # give the entity. A name the base cache does not know stays untinted.
-    BEGIN { resload(SUBRES, SRES); resload(ACCRES, ARES); resload(HSTRES, HRES) }
+    BEGIN { resload(SUBRES, SRES); resload(ACCRES, ARES); resload(HSTRES, HRES)
+        resload(LGNRES, LRES); resload(PTNRES, PRES); spload(SPMAP) }
+    # the subscription -> partner(s) map (the site-wide UNION attribution: a
+    # File belongs to every partner of its subscription), SUBSEP-joined
+    function spload(f9,   l9, n9, z9) {
+        while ((getline l9 < f9) > 0) { n9 = split(l9, z9, "\t")
+            if (n9 >= 2 && z9[1] != "" && z9[2] != "" && !((z9[1] SUBSEP z9[2]) in spseen)) {
+                spseen[z9[1] SUBSEP z9[2]] = 1; SPM[z9[1]] = SPM[z9[1]] SUBSEP z9[2] } }
+        close(f9) }
     function resload(f9, A9,   l9, n9, z9) {
         while ((getline l9 < f9) > 0) { n9 = split(l9, z9, "\t")
             if (n9 >= 3 && z9[1] != "") A9[toupper(z9[1])] = z9[3] }
@@ -297,6 +306,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
         # carries one, the rule _files.tsv cols 15/3 follow
         if (HOSTN[$1] == "" && $16 != "") HOSTN[$1] = $16
         if (ACCTN[$1] == "" && $4  != "") ACCTN[$1] = $4
+        if (LOGINN[$1] == "" && $5 != "") LOGINN[$1] = $5   # the login, the rule of _files.tsv col 14 (2026-09-03)
         LEG[$1] = LEG[$1] sprintf("ROW\t%s\t%s\t%s\t%s\t%s %s\t%s\t%s\t%s\n", \
             esc($3), esc($2), esc($10), humanbytes($9), esc($11), esc($12), humandur($15), esc($16), esc($23))
         NL[$1]++
@@ -343,8 +353,17 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
             printf "ROW\tCoreId\t@{class=mono}%s\n", c > f
             printf "ROW\tDate/time\t%s %s\n", SD[c], ST[c] > f
             printf "ROW\tSubscription\t%s\n", entcell(SRES, "subscriptions", SITE[c]) > f
-            printf "ROW\tRemote host\t%s\n", entcell(HRES, "hosts", HOSTN[c]) > f
-            printf "ROW\tAccount\t%s\n", entcell(ARES, "accounts", ACCTN[c]) > f
+            # Partner, Account, Login, Remote host — each only when the File
+            # carries one (2026-09-03, user request): the partner(s) of the
+            # subscription (one links like the other entities; several list
+            # plainly), the account / login / endpoint from the first leg
+            # that carries one
+            np9 = split(substr(SPM[SITE[c]], 2), PP9, SUBSEP)
+            if (np9 == 1) printf "ROW\tPartner\t%s\n", entcell(PRES, "partners", PP9[1]) > f
+            else if (np9 > 1) { pl9 = PP9[1]; for (q9 = 2; q9 <= np9; q9++) pl9 = pl9 ", " PP9[q9]; printf "ROW\tPartner\t%s\n", pl9 > f }
+            if (ACCTN[c] != "")  printf "ROW\tAccount\t%s\n", entcell(ARES, "accounts", ACCTN[c]) > f
+            if (LOGINN[c] != "") printf "ROW\tLogin\t%s\n", entcell(LRES, "logins", LOGINN[c]) > f
+            if (HOSTN[c] != "")  printf "ROW\tRemote host\t%s\n", entcell(HRES, "hosts", HOSTN[c]) > f
             # no TOTAL: an Item/Value facts table has nothing to total, and
             # an empty footer row would just draw a grey strip under it (the
             # detail pages\047 Features table omits it for the same reason)
