@@ -508,7 +508,7 @@ button.srvtoggle[aria-pressed="true"] { background:#20344a; color:#fff; border-c
 .sxscol.srvon .voff { display:none; }
 .tablewrap + .tabs.seenfilter { margin-top:1rem; }   /* the bar sits below the Activity per day table */
 .tabs.herotabs { margin:0 0 0.7rem; }       /* day pages: the hero chart's Start/End time switch (report.js setupHeroToggle) */
-.tabs.herotabs .tab, .tabs.herotabs2 .tab, .tabs.scalebtns .tab { cursor:pointer; }
+.tabs.herotabs .tab, .tabs.herotabs2 .tab, .tabs.scalebtns .tab, .tabs.switchbtns .tab { cursor:pointer; }   /* client-side button rows (spans, not links): the hero views, Linear/Log, the switch= table groups */
 .tabs.herotabs .tab:hover:not(.active), .tabs.herotabs2 .tab:hover:not(.active), .tabs.scalebtns .tab:hover:not(.active) { background:#e8f0fe; }   /* span tabs get no a.tab:hover — give the hero rows their own feedback */
 .dash-grid .card.althero { display:none; }  /* the End-time hero card: hidden until the switch picks it */
 /* day pages: the previous/next-day buttons flank the centered title on one row.
