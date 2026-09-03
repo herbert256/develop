@@ -587,23 +587,17 @@ _daycell() {   # $1 = date
 #                                     a RED row opens the flow's OWN error page
 #                                     (errors/<slug>.html, named by the
 #                                     subscription — failed.sh writes one for
-#                                     every table-2 red), a green early warning
-#                                     its DETAIL page.
+#                                     every table-2 red).
 #
 # Membership across the two is the RESULT COLOUR (bin/build/result.sh's third
 # column), not a report's selection, so the two together are still every red
 # flow — the split only decides which half a flow lands in.
 #
-# PLUS, in the second table (2026-08-22): the TROUBLE-AFTER-SUCCESS early
-# warnings — the still-GREEN flows whose connected server logs carry an
-# E-level line dated AFTER their last delivery (went-kaput.sh's
-# _kaput-evidence.tsv, the same evidence that page shows) — EXCEPT the ones
-# whose newest error classifies as a DEPLOY defect (Route stopped / Receive
-# File As not set): a config mistake belongs on the Deploy errors report, not
-# the failing worklist. Green rows tint green, their Reason is the classified
-# newest E line (bin/flip-reason.awk, the shared vocabulary), and they open
-# the detail page like the red rows. A warnings-only flow stays off (evidence
-# col 5 empty), exactly like the went-kaput page itself.
+# The TROUBLE-AFTER-SUCCESS early warnings — still-GREEN flows whose connected
+# server logs carry an E-level line dated after their last delivery — were
+# listed here too from 2026-08-22 to 2026-09-03 and are GONE (user request:
+# a green row under a "Failing" heading contradicts itself). They stay on the
+# went-kaput page, which is their report. Every row of both tables is RED.
 #
 # Two joins dress the second table, neither deciding membership: the Reason
 # (analyses/reports/_subs-boxes.tsv, written by publish-insights.sh; the
@@ -676,9 +670,8 @@ write_failing_now() {   # $1 = env
           printf "%s\t%s\t%s\t%s\t%s\n", $3, site, ($4 != "" ? $4 : "-"), pg, $3 }
     ' "$rpt" | LC_ALL=C sort -r | cut -f2-)
 
-    # --- table 2: every OTHER red subscription + the trouble-after-success
-    # early warnings (still-green flows with a post-delivery E line, deploy
-    # defects excluded — see the header) ------------------------------------
+    # --- table 2: every OTHER red subscription (the still-green early warnings
+    # that used to join them are gone since 2026-09-03 — see the header) ----
     rows2=$(awk -F'\t' -v BOXES="$boxes" -v FILESC="$filesc" -v KAP="$kaput" -v RF="$redflip" "$(cat bin/flip-reason.awk)"'
         BEGIN {
             while ((getline l < BOXES) > 0) { n = split(l, a, "\t")
@@ -697,22 +690,15 @@ write_failing_now() {   # $1 = env
                 if (a[6] > mx[k]) { mx[k] = a[6]; last[k] = a[4] " " a[5] } }
             close(FILESC)
             # the kaput evidence: name, latest stamp, sources, latest message,
-            # newest E-LEVEL message (empty = warnings only, not listed). The
-            # Reason is the classified newest E line; a DEPLOY verdict keeps
-            # the flow off this table (its report is Deploy errors), and an
-            # unclassifiable line still earns the generic label.
+            # newest E-LEVEL message (empty = warnings only). The Reason of a red row
+            # prefers this fresh verdict — the classified newest server E line
+            # (bin/flip-reason.awk, the shared vocabulary) — over the boxes join:
+            # a server-reddened flow must name the server error, not an old box.
             while ((getline l < KAP) > 0) { n = split(l, a, "\t")
                 if (n < 5 || a[1] == "" || a[5] == "") continue
                 r = flip_reason(a[5])
-                # kapall: the classified newest server E per flow, deploy
-                # verdicts INCLUDED — the red rows prefer this fresh verdict
-                # over the boxes join (a server-reddened flow must name the
-                # server error, not an old box). kap keeps the deploy drop:
-                # it gates which GREENS may enter the table at all.
                 if (r != "") kapall[toupper(a[1])] = r
-                kapts[toupper(a[1])] = a[2]     # the latest-evidence stamp (the green rows Last column)
-                if (r == "Route stopped" || r == "Receive File As not set") continue
-                kap[toupper(a[1])] = (r != "") ? r : "Trouble after success" }
+            }
             close(KAP)
         }
         FILENAME == ARGV[1] { if ($1 != "") intbl1[toupper($1)] = 1; next }   # the names table 1 took
@@ -731,11 +717,7 @@ write_failing_now() {   # $1 = env
                 (st != "-" ? st : "0000") "\t" $1, $1, st, \
                 (k in kapall ? kapall[k] : (k in why ? why[k] : "-"))
             next }
-        $3 == "green" && (toupper($1) in kap) {
-            k = toupper($1)
-            st = (k in kapts) ? kapts[k] : "-"
-            printf "%s\t%s\t%s\t%s\tgreen\n", \
-                (st != "-" ? st : "0000") "\t" $1, $1, st, kap[k] }' \
+        ' \
         <(printf '%s\n' "$rows1" | cut -f1) "$base" \
         | LC_ALL=C sort -t"$(printf '\t')" -k1,1r -k2,2 | cut -f3-)
 
@@ -807,7 +789,7 @@ write_failing_now() {   # $1 = env
             # writes one for every table-2 red (server-reddened or file-less),
             # holding the very server-log evidence this row's verdict rests
             # on. Existence-checked (the error slugs suffix on a twin
-            # collision); the green early warnings keep the detail page.
+            # collision); every row is red since 2026-09-03 (the early warnings went).
             [ "$lastf"  = "-" ] && lastf=""
             [ "$reason" = "-" ] && reason=""
             case $colr in red|green) ;; *) colr=red ;; esac
