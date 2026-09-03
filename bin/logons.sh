@@ -364,6 +364,17 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
             # collapsed into visits (a gap > 30 min starts one) when the
             # median visit span is short. Fewer than 3 minutes = "Rarely".
             # All work arrays are locals (the extra parameters).
+            # IRREGULAR (2026-09-03, user request): a median hides the spread. The
+            # cadence label stands only when the gaps behind it have a rhythm — at
+            # least six of ten within half and double the median; otherwise the
+            # spacing has no clear pattern and the label says so. A "Rarely" verdict
+            # (a median beyond 15 days) is kept as is: sparse is its own pattern.
+            function regspread(A, ng, med,   g9, w9) {
+                w9 = 0; for (g9 in A) if (g9 + 0 >= med / 2 && g9 + 0 <= med * 2) w9 += A[g9]
+                return (ng > 0 && w9 * 10 >= ng * 6) }
+            function label(med, A, ng,   l9) {
+                l9 = patron(med); if (l9 != "Rarely" && !regspread(A, ng, med)) return "Irregular"
+                return l9 }
             function cadence(LGM, key, lo, hi,   LG2, gh2, SS2, SE2, dh2, nl, li, m, g, maxg, ng, half, c2, med, ns, maxd, meddur) {
                 nl = 0
                 for (m = lo; m <= hi; m++) if ((key SUBSEP m) in LGM) LG2[++nl] = m
@@ -393,7 +404,7 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                     half = int(ng / 2) + 1; c2 = 0
                     for (g = 1; g <= maxg; g++) if (g in gh2) { c2 += gh2[g]; if (c2 >= half) { med = g; break } }
                 }
-                return patron(med)
+                return label(med, gh2, ng)
             }
         ' "$_lg_parse" > "$_lg_tmp"
     fi

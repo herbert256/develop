@@ -227,7 +227,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                     half = int(ng / 2) + 1; c2 = 0
                     for (gsp = 1; gsp <= maxg; gsp++) if (gsp in gh) { c2 += gh[gsp]; if (c2 >= half) { med = gsp; break } }
                 }
-                patG[g] = patron(med)
+                patG[g] = label(med, gh, ng)
             }
         }
     }
@@ -238,6 +238,17 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
     # logon/collect session matching both work at minute resolution)
     function minof(d, t) { return jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 1440 + substr(t,1,2) * 60 + substr(t,4,2) + 0 }
     # the cadence label from the MEDIAN gap between logon minutes
+    # IRREGULAR (2026-09-03, user request): a median hides the spread. The
+    # cadence label stands only when the gaps behind it have a rhythm — at
+    # least six of ten within half and double the median; otherwise the
+    # spacing has no clear pattern and the label says so. A "Rarely" verdict
+    # (a median beyond 15 days) is kept as is: sparse is its own pattern.
+    function regspread(A, ng, med,   g9, w9) {
+        w9 = 0; for (g9 in A) if (g9 + 0 >= med / 2 && g9 + 0 <= med * 2) w9 += A[g9]
+        return (ng > 0 && w9 * 10 >= ng * 6) }
+    function label(med, A, ng,   l9) {
+        l9 = patron(med); if (l9 != "Rarely" && !regspread(A, ng, med)) return "Irregular"
+        return l9 }
     function patron(m,   n) {
         if (m <= 0)   return "Rarely"   # never an em dash (2026-09-03, user request)
         if (m <= 2)   return "Continuous"
@@ -499,7 +510,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                         half = int(ng / 2) + 1; c2 = 0
                         for (g = 1; g <= maxg; g++) if (g in gh) { c2 += gh[g]; if (c2 >= half) { med = g; break } }
                     }
-                    patA[a] = patron(med)
+                    patA[a] = label(med, gh, ng)
                 }
             }
         }
