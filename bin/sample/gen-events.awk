@@ -378,6 +378,11 @@ function env_ambient(   ci, jd, base, i, n, k, sid, lst) {
         n = 2 + rint(6)
         for (i = 0; i < n; i++)
             S(base + rint(86400000), "I", "TM", sesshex(), "[Ssh Default] User \"" rpick("user admin test root ftpuser scan") "\" is not associated with any account. Remote address: 203.0.113." (240 + rint(15)))
+        # an UNCONFIGURED name the funnel itself rejects — the OTHER no-account
+        # wording, which feeds the Incoming funnel's No account column: logon.sh
+        # moves such a name to the Scanners tab (2026-09-04, user request).
+        # Planted without rint() so the RNG sequence stays as it was.
+        if (n >= 4) S(base + 25200000, "I", "TM", "", "[Ssh Default] Unable to find account with username: svc-backup")
         # the shared-certificate serial list (ssh-security's detector)
         if (NAL >= 3) {
             lst = AL_A[1] "@" AL_L[1] ", " AL_A[2] "@" AL_L[2] ", " AL_A[3] "@" AL_L[3]

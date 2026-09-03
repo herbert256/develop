@@ -121,6 +121,15 @@ for env in acceptance production; do
         n=$(awk -F'\t' '$12=="UC3_APS_FMGENLOG_PIEDPIPER" && $2=="Processed" && $17=="in" { n++ } END { print n+0 }' "$F")
         check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] the extended-site flow UC3_APS_FMGENLOG_PIEDPIPER has 0 Processed file(s) with movement 'in'"
     fi
+    # the UNCONFIGURED no-account name (2026-09-04): the funnel's own
+    # "Unable to find account with username: svc-backup" rejection is a door
+    # knocker — a Scanners row, never an Incoming row (it would be the one
+    # Incoming row without a detail page)
+    R="data/$env/server/reports/logon.rpt"
+    inc=$(awk -F'\t' '$1=="TABLE" { t=$2 } $1=="ROW" && t=="Incoming" && index($2, "svc-backup") { n++ } END { print n+0 }' "$R" 2>/dev/null)
+    scn=$(awk -F'\t' '$1=="TABLE" { t=$2 } $1=="ROW" && t ~ /scanner names/ && index($2, "svc-backup") { n++ } END { print n+0 }' "$R" 2>/dev/null)
+    check $([ "${inc:-1}" -eq 0 ] && echo 0 || echo 1) "[$env] logon Incoming lists svc-backup ($inc row(s)), expected none (unconfigured no-account name is a door knocker)"
+    check $([ "${scn:-0}" -ge 1 ] && echo 0 || echo 1) "[$env] logon Scanners lacks svc-backup, expected a row (the funnel no-account rejection)"
     # the MULTI-FE account (2026-08-31, user report): CD-PARCEL-BLUTH carries
     # TWO logins; its quiet second flow (its own login, never used) must read
     # Nothing — never "No files": the other login's logons are no pickup

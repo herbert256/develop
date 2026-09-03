@@ -217,6 +217,17 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
         if (bl_blank("login", u)) next
         users[u] = 1
         cnt[side SUBSEP u]++; tot[side]++
+        if (side == "N") {
+            # a No-account line of a name Flow Manager does not configure is
+            # door-knocker evidence logged with the funnel wording (2026-09-04,
+            # user request): its source address and drill line are kept so
+            # END can move such a name into the knocker tables
+            ipn = ""
+            if (match(m, /Remote address: *[^ ]+/)) { ipn = substr(m, RSTART, RLENGTH); sub(/^Remote address: */, "", ipn); sub(/[. ]*$/, "", ipn); sub(/^\//, "", ipn) }
+            else if (match(m, /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/)) ipn = substr(m, RSTART, RLENGTH)
+            if (ipn != "") nip[u SUBSEP ipn]++
+            addline("DK" SUBSEP u, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
+        }
         d = $1
         if (d ~ /^[0-9][0-9][0-9][0-9]-/) { bk[u SUBSEP d SUBSEP side]++; days[u SUBSEP d] = 1
             # the newest stamp per side — the row tint (2026-09-02, user
@@ -230,6 +241,34 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
     END {
         # column order — matches the HEAD/RECALC/drill-cell numbering below
         ns = split("A T D N B K L", S, " ")
+        # an UNCONFIGURED name whose only funnel evidence is No account is a
+        # door knocker the server logged with the funnel wording ("Unable to
+        # find account with username"), not a login of ours (2026-09-04, user
+        # request — it sat on Incoming as the one row without a detail page):
+        # no Incoming row, its count leaves the No account total, and it
+        # joins the knocker tables, folded with any "not associated" lines
+        # of the same name (its drill lines already sit under the DK key)
+        for (u in users) {
+            if (u in klog) continue
+            if ((cnt["N" SUBSEP u] + 0) == 0) continue
+            only = 1
+            for (i = 1; i <= ns; i++) if (S[i] != "N" && (cnt[S[i] SUBSEP u] + 0) > 0) { only = 0; break }
+            if (!only) continue
+            moved[u] = 1
+            tot["N"] -= cnt["N" SUBSEP u]
+            dkc[u] += cnt["N" SUBSEP u]; dkT += cnt["N" SUBSEP u]
+        }
+        for (x in nip) { split(x, a6, SUBSEP)
+            if (!(a6[1] in moved)) continue
+            if (!(x in dkip)) { dkip[x] = 0; dkips[a6[1]]++ }
+            dkip[x] += nip[x] }
+        for (k in days) { split(k, a6, SUBSEP)
+            if (!(a6[1] in moved)) continue
+            n6 = bk[k SUBSEP "N"] + 0
+            if (n6 == 0) continue
+            dkd[k] += n6
+            if (dkf[a6[1]] == "" || a6[2] < dkf[a6[1]]) dkf[a6[1]] = a6[2]
+            if (a6[2] > dkl[a6[1]]) dkl[a6[1]] = a6[2] }
         # per-user per-day buckets (entry order is hash order — report.js
         # consumes @data:buckets as a set, the one accepted variance)
         for (k in days) { split(k, a, SUBSEP)
@@ -237,6 +276,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
             for (i = 1; i <= ns; i++) s2 = s2 ":" (bk[k SUBSEP S[i]]+0)
             b[a[1]] = b[a[1]] (b[a[1]] == "" ? "" : ",") a[2] s2 }
         for (u in users) {
+            if (u in moved) continue            # a door knocker now (above)
             line = "R\t" u
             for (i = 1; i <= ns; i++) line = line "\t" (cnt[S[i] SUBSEP u]+0)
             line = line "\t" (b[u] == "" ? "-" : b[u])
@@ -420,7 +460,7 @@ out_rows() {
 {
     printf 'TITLE\tLogon\n'
     printf 'DESC\tThe SSH logon story, both directions: the incoming screening funnel per login, and our outbound authentication failures at partners.\n'
-    printf 'INTRO\t**Incoming**: every SSH logon is screened by the server ("[Ssh Default] ..." TM lines), the columns following the logon funnel — **Allowed** = the source address passed the account whitelist; **Disallowed** = the address was rejected by the AllowIP whitelist; **Authenticated** = successful authentications (logged for every account, whitelisted or not, so it can exceed Allowed); **No account** = the username exists on no account (probing or misconfiguration); **Bad key** = a submitted key matching no certificate; **Key failures** = the repeated-key-failure counter that precedes a lockout; **Locked** = attempts blocked because the user is locked. **Auth failed** = the platform'\''s ANONYMOUS failure line ("Authentication failed using local.", no username, no address — a client that passed the whitelist and then failed without presenting an evaluable credential), attributed by TIMING: it counts for the login whose Allowed line it follows within one second, and a window holding two different logins'\'' Allowed lines counts for neither. **Every configured login is listed**, and **the row colour is the login'\''s LATEST screening outcome**: **green** when its newest funnel line is a successful authentication, **red** when the newest line is anything else — a refusal, a failure, or an Allowed that no authentication followed — and **orange** when the login is configured but never appeared in the SSH funnel (every funnel column empty; its logon-summary columns can still be filled by a login that authenticates over another protocol). The colour is a full-period verdict — a selected date range re-aggregates the counts but does not move it — and the problem cells keep their own red or amber inside a green row. The last four columns are the login'\''s **logon summary** (the detail pages'\'' Logons table): first and last successful authentication, the raw count and the typical spacing — counted over ANY protocol, so Logons can exceed the SSH-only Authenticated; a login that never authenticated reads **Never**, and these four keep their full-period values when a date range is selected. **Outgoing**: this server failing to authenticate AT a partner (expired passwords/keys, TLS policy). **Click a count** (Incoming) or **a row** (Outgoing) for the most recent log lines.\n'
+    printf 'INTRO\t**Incoming**: every SSH logon is screened by the server ("[Ssh Default] ..." TM lines), the columns following the logon funnel — **Allowed** = the source address passed the account whitelist; **Disallowed** = the address was rejected by the AllowIP whitelist; **Authenticated** = successful authentications (logged for every account, whitelisted or not, so it can exceed Allowed); **No account** = the username exists on no account (a configured login the server does not know, or a misconfigured partner; a name Flow Manager does NOT configure that has nothing but No account hits is a door knocker and is listed on the Near misses / Scanners tabs instead); **Bad key** = a submitted key matching no certificate; **Key failures** = the repeated-key-failure counter that precedes a lockout; **Locked** = attempts blocked because the user is locked. **Auth failed** = the platform'\''s ANONYMOUS failure line ("Authentication failed using local.", no username, no address — a client that passed the whitelist and then failed without presenting an evaluable credential), attributed by TIMING: it counts for the login whose Allowed line it follows within one second, and a window holding two different logins'\'' Allowed lines counts for neither. **Every configured login is listed**, and **the row colour is the login'\''s LATEST screening outcome**: **green** when its newest funnel line is a successful authentication, **red** when the newest line is anything else — a refusal, a failure, or an Allowed that no authentication followed — and **orange** when the login is configured but never appeared in the SSH funnel (every funnel column empty; its logon-summary columns can still be filled by a login that authenticates over another protocol). The colour is a full-period verdict — a selected date range re-aggregates the counts but does not move it — and the problem cells keep their own red or amber inside a green row. The last four columns are the login'\''s **logon summary** (the detail pages'\'' Logons table): first and last successful authentication, the raw count and the typical spacing — counted over ANY protocol, so Logons can exceed the SSH-only Authenticated; a login that never authenticated reads **Never**, and these four keep their full-period values when a date range is selected. **Outgoing**: this server failing to authenticate AT a partner (expired passwords/keys, TLS policy). **Click a count** (Incoming) or **a row** (Outgoing) for the most recent log lines.\n'
     if [ "$cov_fss" != "-" ] && [ "$cov_fad" = "-" ]; then
         # the FULLY-blind case — SSH screening lines exist but not one Allowed
         # line in the whole window: the maximum undercount keeps its warning.
@@ -466,7 +506,7 @@ out_rows() {
         printf 'ROW\t@{colspan=7}No door-knocker lines in this data window.\n'
     fi
     printf 'TOTAL\tTotal (%s name(s))\t@{class=num failed}%s\t\t\t\t\t\n' "$n_near" "$near_att"
-    printf 'NOTE\tThe unconsumed screening family (User "u" is not associated with any account. Remote address: ip), RESTRICTED to names matching the configured **FE-number namespace** (`FE` + digits) — someone knocking with names that look exactly like this platform'\''s real logins, from a HANDFUL of addresses (compare the scanner table below). **Configured login = yes** is the alarming case: the name IS defined in Flow Manager, yet the server maps it to no account — either a provisioning gap (login configured, account association missing) or a partner using a decommissioned name. Rows are red-tinted; Source IPs stays full-period under a date filter. Click a row for its 10 most recent lines.\n'
+    printf 'NOTE\tThe unconsumed screening family (User "u" is not associated with any account. Remote address: ip), RESTRICTED to names matching the configured **FE-number namespace** (`FE` + digits) — someone knocking with names that look exactly like this platform'\''s real logins, from a HANDFUL of addresses (compare the scanner table below). **Configured login = yes** is the alarming case: the name IS defined in Flow Manager, yet the server maps it to no account — either a provisioning gap (login configured, account association missing) or a partner using a decommissioned name. Rows are red-tinted; Source IPs stays full-period under a date filter. Click a row for its 10 most recent lines. An unconfigured FE-namespace name the funnel itself rejected ("Unable to find account with username") counts here as well.\n'
 
     if [ "${dk_tot:-0}" -gt 0 ]; then
         printf 'TABLE\tDoor knockers — scanner names\twide\tnoagg=2,3\tdrill=log line\n'
@@ -482,7 +522,7 @@ out_rows() {
         printf 'ROW\t@{colspan=6}No door-knocker lines in this data window.\n'
     fi
     printf 'TOTAL\tTotal (top %s of %s name(s))\t@{class=num failed}%s\t\t\t\t\n' "$n_scan" "${dk_names:-0}" "$scan_att"
-    printf 'NOTE\tThe same "not associated with any account" family for every OTHER name — the internet background noise (root, admin, user, test, …) probing over many source addresses. The **IPs** column lists that name'\''s distinct source addresses (full period, like the Source IPs count). The 25 most-tried names are shown of **%s** distinct name(s) and **%s** attempt(s) in all; the total row sums the SHOWN rows only. These names never get past the account lookup, so they appear in no other logon column.\n' "${dk_names:-0}" "${dk_tot:-0}"
+    printf 'NOTE\tThe same "not associated with any account" family for every OTHER name — the internet background noise (root, admin, user, test, …) probing over many source addresses. The **IPs** column lists that name'\''s distinct source addresses (full period, like the Source IPs count). The 25 most-tried names are shown of **%s** distinct name(s) and **%s** attempt(s) in all; the total row sums the SHOWN rows only. These names never get past the account lookup, so they appear in no other logon column. A name Flow Manager does not configure that the funnel itself rejected (the "Unable to find account with username" wording, the Incoming No account column) is counted here too — never as an Incoming row.\n' "${dk_names:-0}" "${dk_tot:-0}"
 
     printf 'SUMMARY\tLogins: %s  |  Allowed: %s  |  Authenticated: %s  |  Disallowed: %s  |  No account: %s names (%s attempts)  |  Bad key: %s  |  Key failures: %s  |  Locked: %s  |  Outbound auth failures: %s (%s pairs)  |  Door knockers: %s attempts (%s names, %s near-miss)\n' \
         "$nrows" "$atot" "$ttot" "$dtot" "$nnames" "$ntot" "$btot" "$ktot" "$ltot" "$ototal" "$n_pairs" "${dk_tot:-0}" "${dk_names:-0}" "$n_near"
