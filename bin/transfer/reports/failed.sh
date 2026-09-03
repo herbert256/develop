@@ -154,7 +154,8 @@ RFLIP="$DATA/blue/_redflip.tsv"
 KAPUT="$DATA/server/reports/_kaput-evidence.tsv"
 BOXES="$DATA/analyses/reports/_subs-boxes.tsv"
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRVLOG" "$CONFIG_BASE" "$LIB_DIR/../flip-reason.awk" \
-    "$RFLIP" "$KAPUT" "$BOXES" "$CONFIG_XREF/_subscriptions-partners.tsv" "$FILESIDE"
+    "$RFLIP" "$KAPUT" "$BOXES" "$CONFIG_XREF/_subscriptions-partners.tsv" "$CONFIG_XREF/_subscriptions-logins.tsv" \
+    "$CONFIG_XREF/_subscriptions-hosts.tsv" "$FILESIDE"
 
 GEN=$(date '+%Y-%m-%d %H:%M:%S')
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axlastf.XXXXXX")
@@ -719,6 +720,8 @@ fi
 LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
     -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" -v ACCRES="$CONFIG_BASE/_accounts.tsv" \
     -v SAX="$CONFIG_XREF/_subscriptions-accounts.tsv" \
+    -v SPX="$CONFIG_XREF/_subscriptions-partners.tsv" -v SLX="$CONFIG_XREF/_subscriptions-logins.tsv" -v SHX="$CONFIG_XREF/_subscriptions-hosts.tsv" \
+    -v PTNRES="$CONFIG_BASE/_partners.tsv" -v LGNRES="$CONFIG_BASE/_logins.tsv" -v HSTRES="$CONFIG_BASE/_hosts.tsv" \
     -v MDIR="$DATA/server/cache/subscriptions" -v SLF="$TMP/srvsublines" '
     function resload(f9, A9,   l9, n9, z9) {
         while ((getline l9 < f9) > 0) { n9 = split(l9, z9, "\t")
@@ -749,16 +752,30 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
         split(dtlvlmsg, z, "\t")
         res = (z[2] == "Error") ? "\t@data:res=red" : ((z[2] == "Warning") ? "\t@data:res=orange" : "")
         printf "ROW\t%s\t%s\t%s%s\n", z[1], z[2], z[3], res > f }
+    # a subscription -> values pair cache into M[SUB] as a ", "-joined, deduped
+    # list (the facts table: one value links like an entity cell, several
+    # render as the plain list)
+    function joinload(f9, M,   l9, n9, a9, k9) {
+        while ((getline l9 < f9) > 0) { n9 = split(l9, a9, "\t")
+            if (n9 >= 2 && a9[1] != "" && a9[2] != "") { k9 = toupper(a9[1])
+                if (M[k9] == "") M[k9] = a9[2]
+                else if (index(", " M[k9] ", ", ", " a9[2] ", ") == 0) M[k9] = M[k9] ", " a9[2] } }
+        close(f9) }
+    # the facts row for one joined value set: absent -> no row (2026-09-03,
+    # user request); one value -> the tinted, linked entity cell; several ->
+    # the plain list
+    function factrow(f, label, v, A9, sub9) {
+        if (v == "") return
+        if (index(v, ", ") == 0) printf "ROW\t%s\t%s\n", label, entcell(A9, sub9, v) > f
+        else printf "ROW\t%s\t%s\n", label, v > f }
     BEGIN {
         resload(SUBRES, SRES); resload(ACCRES, ARES)
+        resload(PTNRES, PRES); resload(LGNRES, LRES); resload(HSTRES, HRES)
         # ALL of a subscription'\''s accounts, ", "-joined (a relay has two —
         # first-wins named one arbitrary account as fact; a multi-value cell
-        # simply renders unlinked)
-        while ((getline l < SAX) > 0) { n = split(l, a, "\t")
-            if (n >= 2 && a[1] != "" && a[2] != "") { k9 = toupper(a[1])
-                if (ACC[k9] == "") ACC[k9] = a[2]
-                else if (index(", " ACC[k9] ", ", ", " a[2] ", ") == 0) ACC[k9] = ACC[k9] ", " a[2] } }
-        close(SAX)
+        # simply renders unlinked) — and likewise its partners, logins and
+        # endpoints for the facts table
+        joinload(SAX, ACC); joinload(SPX, PTN); joinload(SLX, LGN); joinload(SHX, HST)
         # the reddening-session lines per subscription, already sorted by
         # (sub, date, time) — "date time \t Level \t message" per entry
         while ((getline l < SLF) > 0) { n = split(l, a, "\t")
@@ -779,7 +796,12 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
         printf "HEAD\tItem\tValue\n" > f
         printf "KIND\ttext\ttext\n" > f
         printf "ROW\tSubscription\t%s\n", entcell(SRES, "subscriptions", nm) > f
-        printf "ROW\tAccount\t%s\n", entcell(ARES, "accounts", (k in ACC) ? ACC[k] : "") > f
+        # Partner, Account, Login, Remote host — the subscription'\''s configured
+        # ones, each row only when the configuration has a value (2026-09-03)
+        factrow(f, "Partner",     (k in PTN) ? PTN[k] : "", PRES, "partners")
+        factrow(f, "Account",     (k in ACC) ? ACC[k] : "", ARES, "accounts")
+        factrow(f, "Login",       (k in LGN) ? LGN[k] : "", LRES, "logins")
+        factrow(f, "Remote host", (k in HST) ? HST[k] : "", HRES, "hosts")
         printf "ROW\tLast server error\t%s\n", (st != "" ? st : "-") > f
         pre = (kind == "P") \
             ? "This subscription is red for what the SERVER log shows — its newest File ended OK and the server log erred AFTER it, so its failed-File pages are older history." \
