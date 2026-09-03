@@ -239,7 +239,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
     function minof(d, t) { return jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 1440 + substr(t,1,2) * 60 + substr(t,4,2) + 0 }
     # the cadence label from the MEDIAN gap between logon minutes
     function patron(m,   n) {
-        if (m <= 0)   return "\342\200\224"
+        if (m <= 0)   return "Rarely"   # never an em dash (2026-09-03, user request)
         if (m <= 2)   return "Continuous"
         if (m < 58)   { n = int((m + 2.5) / 5) * 5; if (n < 5) n = 5; return "Every " n " minutes" }
         if (m <= 75)  return "Hourly"
@@ -638,7 +638,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             printf "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", s, a, \
                 (fatP[ps] == "" ? "-" : fatP[ps]), (latP[ps] == "" ? "-" : latP[ps]), \
                 attP[ps] + 0, wf, prc[ps] + 0, \
-                (patP[ps] == "" ? "\342\200\224" : patP[ps]), delP[ps] + 0, pkP[ps] + 0, \
+                (patP[ps] != "" ? patP[ps] : (attP[ps] + 0 > 0 ? "Rarely" : "")), delP[ps] + 0, pkP[ps] + 0, \
                 vtP[ps] + 0, vcP[ps] + 0, vbP[ps] + 0, vdP[ps] + 0, vnP[ps] + 0, \
                 wtg[ps] + 0, xpd[ps] + 0, shc[a] + 0 > PKF
         }
