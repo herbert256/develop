@@ -814,13 +814,17 @@ LC_ALL=C awk -F'\t' \
                 for (fi = 1; fi <= nfw; fi++) if (afw[fi] != "") { f = SRV "/hosts/" afw[fi] ".tsv"; if (nonempty(f)) conn = conn (conn == "" ? "" : "\037") f }
             } else { f = SRV "/" ct "/" v ".tsv"; if (nonempty(f)) conn = conn (conn == "" ? "" : "\037") f }
         }
-        # banner: MAX first-line "date time" over own + connected _err_warn files
+        # banner: the newest ERROR-level "date time" over own + connected
+        # _err_warn files — Errors only since 2026-09-03 (user request): the
+        # rings hold Warnings too, and a Warning alone raised "ERRORS IN SERVER
+        # LOG AFTER LAST TRANSFER". The rings are capped at 10 lines, newest
+        # first, so scanning them for the level is cheap.
         bdt = ""
         nb = split(conn, a2, "\037")
         for (i = 0; i <= nb; i++) {
             if (i == 0) { if (t in pt) f = SRV "/" pt[t] "/" e "_err_warn.tsv"; else continue }
             else { f = a2[i]; sub(/\.tsv$/, "_err_warn.tsv", f) }
-            if ((getline l < f) > 0) { n = split(l, b2, "\t"); if (n >= 2 && b2[1] " " b2[2] > bdt) bdt = b2[1] " " b2[2] }
+            while ((getline l < f) > 0) { n = split(l, b2, "\t"); if (n >= 3 && b2[3] == "E" && b2[1] " " b2[2] > bdt) bdt = b2[1] " " b2[2] }
             close(f)
         }
         grp = ""
