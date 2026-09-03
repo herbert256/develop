@@ -24,10 +24,10 @@
 #   The three siblings render beside duration.html, not as separate
 #   menu/index entries.
 #
-# Tables (per view): the per-day stats, the Top 50 longest Files, the
-# duration distribution (histogram buckets), and the slowest Subscriptions
-# by p95 duration — only the per-day table differs between the two column
-# views.
+# Tables (per view): the per-day stats and the slowest Subscriptions by p95
+# duration — only the per-day table differs between the two column views.
+# (The Top 50 longest Files and the duration distribution moved to their own
+# Performance pages 2026-09-03: duration-longest.sh, duration-distribution.sh.)
 #
 # The per-day stat columns are NOT additive across days, so they are marked
 # `noagg`: each day keeps its own value but a narrowed date range blanks their
@@ -44,7 +44,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 
-TOP_N=50     # longest individual Files to list
+# (TOP_N — the longest Files list — moved to duration-longest.sh 2026-09-03)
 TOP_SUB=25   # subscriptions in the "slowest by p95" table
 
 shopt -s nullglob
@@ -54,7 +54,7 @@ if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
 ensure_parsed
-# one script, TWO outputs (+ the duration/top per-transfer detail rpts) — skip
+# one script, FOUR outputs — skip
 # only when BOTH rpts are fresh and the top dir exists (pda-entities pattern)
 _dur_fresh=1
 for _f in "$REPORTS_DIR/duration.rpt" "$REPORTS_DIR/duration-minmax.rpt" \
@@ -63,7 +63,6 @@ for _f in "$REPORTS_DIR/duration.rpt" "$REPORTS_DIR/duration-minmax.rpt" \
         _dur_fresh=0; break
     fi
 done
-[ -d "$REPORTS_DIR/duration/top" ] || _dur_fresh=0
 if [ "$_dur_fresh" = 1 ]; then
     echo "  the four duration .rpt files are up to date; skipping." >&2
     exit 0
@@ -80,12 +79,11 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # ---- build one scope (two outputs) --------------------------------------------
 # Parameters via the calls below: OKONLY (1 = Processed only), OUT_MM/OUT_PP
-# (the Min/Avg/Max and Percentage .rpt of this scope), TOPDIR (the
-# per-transaction detail .rpt dir; "" = don't build them), TOPLINK (their
-# page-relative href base), NAV_MM/NAV_PP (the two button rows: OK/All then
+# (the Min/Avg/Max and Percentage .rpt of this scope), NAV_MM/NAV_PP (the two
+# button rows: OK/All then
 # Min-Avg-Max/Percentage), and the scope words for the DESC/INTRO/NOTE.
 build_view() {
-    local OKONLY=$1 OUT_MM=$2 OUT_PP=$3 TOPDIR=$4 TOPLINK=$5 NAV_MM=$6 NAV_PP=$7 SCOPE_DESC=$8 SCOPE_INTRO=$9 SCOPE_NOTE=${10}
+    local OKONLY=$1 OUT_MM=$2 OUT_PP=$3 NAV_MM=$4 NAV_PP=$5 SCOPE_DESC=$6 SCOPE_INTRO=$7 SCOPE_NOTE=$8
 
     # main pass: per-day + distribution + per-subscription stats. Tagged col 1:
     # 1=per-day min/avg/max, 2=per-day percentiles, D=distribution, S=subscription,
@@ -221,7 +219,7 @@ build_view() {
             _en=$NAV_MM; [ "$_eo" = "$OUT_PP" ] && _en=$NAV_PP
             {
                 printf 'TITLE\tTransfer Duration\n'
-                printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, the longest transfers, a duration histogram and the slowest subscriptions. %s\n' "$SCOPE_DESC"
+                printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, and the slowest subscriptions (the longest Files and the duration distribution have their own pages). %s\n' "$SCOPE_DESC"
                 printf 'INTRO\tNo Files with a measured duration in this view.\n'
                 printf '%s\n' "$_en"
                 printf 'TABLE\tTransfer duration\n'
@@ -235,30 +233,6 @@ build_view() {
         return 0
     fi
 
-    # top-N longest individual Files (separate cap, like top-transfers.sh).
-    # Cols 8/9 are cols 1/6 spelled out for display — appended AFTER the sort key
-    # and the unique CoreId, so neither the -k1,1nr key nor its whole-line
-    # tie-break changes.
-    local slow; slow=$(awk -F'\t' -v okonly="$OKONLY" '
-        function clean(s){ gsub(/[\t\r]/, " ", s); return s }
-        function humandur(ms) {
-            if (ms < 1000)    return sprintf("%d ms", ms)
-            if (ms < 60000)   return sprintf("%.2f s", ms/1000)
-            if (ms < 3600000) return sprintf("%.1f min", ms/60000)
-            return sprintf("%.2f h", ms/3600000)
-        }
-        function humanbytes(b,   u, i, v) {
-            split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
-            while (v >= 1024 && i < 6) { v /= 1024; i++ }
-            return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i])
-        }
-        okonly && ($2 == "Failed" || $2 == "Expired") { next }
-        { ms = $9 + 0; if (ms <= 0) next
-          a = clean($3); if (a == "") a = "(no account)"
-          s = clean($12); if (s == "") s = "(no subscription)"
-          sz = int($8)
-          printf "%d\t%s\t%s %s\t%s\t%s\t%d\t%s\t%s\t%s\n", ms, $1, $4, $5, a, s, sz, clean($11), humandur(ms), humanbytes(sz) }
-    ' "$FILES" | sort -t$'\t' -k1,1nr | awk -v n="$TOP_N" 'NR<=n')
 
     local _ g_n g_min g_avg g_max g_p10 g_p25 g_p50 g_p75 g_p90 g_p95 g_p99 g_days
     local u_min u_p50 u_p95 u_p99 u_max h_min h_p50 h_max h_p10 h_p25 h_p75 h_p90 h_p95 h_p99 h_avg h_p98
@@ -282,7 +256,6 @@ build_view() {
         for(i=2;i<=9;i++) row=row OFS "@data:drill-cell-" i "=" $(i+19)
         print row
     }')
-    local dist_rows; dist_rows=$(printf '%s\n' "$agg" | awk -F'\t' 'BEGIN{OFS="\t"} $1=="D"{ $1="ROW"; print }')
 
     # slowest subscriptions: sort by p95 (field 5) desc, cap, take the spellings
     # from cols 8-10. Nothing skips a row (a blank subscription reads as "(no
@@ -294,64 +267,12 @@ build_view() {
     sub_total=$(printf '%s\n' "$agg" | grep -c '^S'$'\t')
     shown_sub=$(( sub_total < TOP_SUB ? sub_total : TOP_SUB ))
 
-    # top-N longest ROWs. When TOPDIR is set (the OK view), the first 3 columns
-    # link to a per-transaction detail page; the All view lists them plain.
-    local slow_rows topmeta="" slow_n
-    slow_n=$(printf '%s\n' "$slow" | awk 'length($0) { n++ } END { print n+0 }')
-    if [ -n "$TOPDIR" ]; then
-        slow_rows=$(printf '%s\n' "$slow" | awk -F'\t' -v L="$TOPLINK" 'length($0) {
-            h = "@{href=" L "/" $2 ".html}"
-            printf "ROW\t%s%s\t%s%s\t%s%s\t%s\t%s\t%s\t%s\n", h, $1, h, $8, h, $3, $4, $5, $9, $7 }')
-        topmeta=$(printf '%s\n' "$slow" | awk -F'\t' 'length($0) { printf "%d\t%s\t%s\t%s\t%s\n", ++k, $2, $4, $5, $1 }')
-        [ -n "$topmeta" ] && topmeta+=$'\n'
-    else
-        slow_rows=$(printf '%s\n' "$slow" \
-            | awk -F'\t' 'length($0) { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", $1, $8, $3, $4, $5, $9, $7 }')
-    fi
-    [ -n "$slow_rows" ] && slow_rows+=$'\n'
-
-    # per-transaction detail .rpt files (OK view only) — one per top-N transfer.
-    if [ -n "$TOPDIR" ]; then
-        rm -rf "$TOPDIR"; mkdir -p "$TOPDIR"
-        printf '%s' "$topmeta" | awk -F'\t' -v OUTDIR="$TOPDIR" '
-            function humandur(ms){ ms=ms+0; if(ms<0)return "-"; if(ms<1000)return sprintf("%d ms",ms); if(ms<60000)return sprintf("%.2f s",ms/1000); if(ms<3600000)return sprintf("%.1f min",ms/60000); return sprintf("%.2f h",ms/3600000) }
-            function human(b,  u,i,v){ b=b+0; if(b<=0)return "0 B"; split("B KB MB GB TB PB",u," "); i=1; v=b; while(v>=1024&&i<6){v/=1024;i++}; return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
-            function nz(s){ return (s=="")?"-":s }
-            BEGIN { US=sprintf("%c",31) }
-            NR==FNR { rank[$2]=$1; macct[$2]=$3; msite[$2]=$4; mdur[$2]=$5; order[++nt]=$2; next }
-            ($1 in rank) {
-                k=$1; c=++cnt[k]
-                rows[k US c] = $13 US $2 US $3 US $11 US $12 US $15 US $9 US $10 US $5 US $16 US $20 US $8 US $23
-            }
-            END {
-                for (t=1; t<=nt; t++) {
-                    c=order[t]; out=OUTDIR "/" c ".rpt"; n=cnt[c]+0
-                    for (i=1;i<=n;i++) A[i]=rows[c US i]
-                    for (i=2;i<=n;i++){ v=A[i]; sk=v; sub(US".*","",sk); j=i-1
-                        while (j>=1){ p=A[j]; sub(US".*","",p); if(p>sk){A[j+1]=A[j];j--} else break } A[j+1]=v }
-                    split(A[n],L,US); oc=(L[3]!="Failed" && L[3]!="Expired")?"OK":"Error"
-                    acct=nz(macct[c]); site=nz(msite[c])
-                    printf "TITLE\tTransfer %s\n", c > out
-                    printf "INTRO\t**%d** record(s) for CoreId `%s`. Account **%s**, subscription **%s**, total duration **%s**, final outcome **%s**. Ranked #%s of the %d longest delivered transfers by total duration.\n", n, c, acct, site, humandur(mdur[c]), oc, rank[c], nt > out
-                    printf "TABLE\tAll records (chronological)\twide\tnosort\n" > out
-                    printf "HEAD\tDirection\tStatus\tDate\tTime\tDuration\tSize\tProtocol\tLogin\tRemote Host\tMode\tFile\tTransfer ID\n" > out
-                    printf "KIND\ttext\ttext\ttext\tmono\ttext\tnum\ttext\tmono\tmono\ttext\tfile\tmono\n" > out
-                    for (i=1;i<=n;i++){ split(A[i],F,US)
-                        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
-                            nz(F[2]),nz(F[3]),nz(F[4]),nz(F[5]),humandur(F[6]),human(F[7]),nz(F[8]),nz(F[9]),nz(F[10]),nz(F[11]),nz(F[12]),nz(F[13]) > out
-                    }
-                    printf "FOOT\tGenerated from _transfers.tsv (all records for this CoreId)\n" > out
-                    close(out); delete A
-                }
-            }
-        ' - "$PARSED"
-    fi
 
     emit_view() {   # $1 the .rpt to write  $2 its NAV line  $3 the view (mm|pp)
         local OUT=$1 NAVLINE=$2 VIEW=$3
     {
         printf 'TITLE\tTransfer Duration\n'
-        printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, the longest transfers, a duration histogram and the slowest subscriptions. %s\n' "$SCOPE_DESC"
+        printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, and the slowest subscriptions (the longest Files and the duration distribution have their own pages). %s\n' "$SCOPE_DESC"
         printf 'INTRO\tDuration of the **%s** Files over **%s** day(s). Overall **min %s**, **median (p50) %s**, **p95 %s**, **p99 %s**, **max %s**. %s The **Percentage** and **Min/Avg/Max** buttons switch the per-day columns; the stats are shown in **whole seconds, minutes or hours**, and a narrowed date range keeps each day but blanks the non-additive totals.\n' \
             "$g_n" "$g_days" "$u_min" "$u_p50" "$u_p95" "$u_p99" "$u_max" "$SCOPE_INTRO"
         printf '%s\n' "$NAVLINE"
@@ -374,19 +295,6 @@ build_view() {
                 "$g_days" "$g_n" "$h_p10" "$h_p25" "$h_p50" "$h_p75" "$h_p90" "$h_p95" "$h_p98" "$h_p99"
             printf '%s\n' "$perday_pp"
         fi
-
-        printf 'TABLE\tTop %s longest Files by duration\twide\n' "$TOP_N"
-        printf 'HEAD\tDuration (ms)\tDuration\tStart Time\tAccount\tDestination Subscription\tSize\tFile\n'
-        printf 'KIND\tnum\ttext\ttext\tacct\tsite\tnum\tfile\n'
-        printf '%s' "$slow_rows"
-        printf 'TOTAL\tTop %s of %s Files\t\t\t\t\t\t\n' "$slow_n" "$g_n"
-
-        printf 'TABLE\tDuration distribution\twide\n'
-        printf 'HEAD\tDuration bucket\tFiles\tShare\n'
-        printf 'KIND\ttext\tnum\tnum\n'
-        printf 'RECALC\t-\ts0\t%%0\n'
-        printf '%s\n' "$dist_rows"
-        printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}100.0%%\n' "$g_n"
 
         printf 'TABLE\tSlowest subscriptions (top %s by p95 duration)\twide\n' "$TOP_SUB"
         printf 'HEAD\tSubscription\tFiles\tMedian\tp95\tMax\n'
@@ -417,13 +325,13 @@ NAV_ALL_PP=$'NAV\t0|OK transfers|duration.html\t1|All transfers|duration-all.htm
 NAV_ALL_MM=$'NAV\t0|OK transfers|duration-minmax.html\t1|All transfers|duration-all-minmax.html\t@sep\t0|Percentage|duration-all.html\t1|Min/Avg/Max|duration-all-minmax.html'
 
 build_view 1 "$REPORTS_DIR/duration-minmax.rpt" "$REPORTS_DIR/duration.rpt" \
-    "$REPORTS_DIR/duration/top" "../transfers/duration/top" "$NAV_OK_MM" "$NAV_OK_PP" \
+    "$NAV_OK_MM" "$NAV_OK_PP" \
     "Delivered (Processed) Files only — the default; use the All transfers button to include failures." \
     "Only **Processed** Files count; Error transfers (mostly instant 0-byte attempts) are excluded so they do not flatten the statistics — switch to **All transfers** to include them." \
     "**Only Processed (OK) Files are counted** here (use the All transfers button to include failures). "
 
 build_view 0 "$REPORTS_DIR/duration-all-minmax.rpt" "$REPORTS_DIR/duration-all.rpt" \
-    "" "" "$NAV_ALL_MM" "$NAV_ALL_PP" \
+    "$NAV_ALL_MM" "$NAV_ALL_PP" \
     "ALL Files, including failed (Error) transfers." \
     "**All** Files count, including Error transfers — a failed transfer's duration is how long it ran before failing (e.g. a timeout), so long-hanging failures show up here (switch to **OK transfers** for delivered-only statistics)." \
     "**All Files are counted, including failed (Error) ones** — a failure's duration is how long it ran before giving up (use the OK transfers button for delivered-only). "

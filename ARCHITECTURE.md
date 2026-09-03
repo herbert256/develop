@@ -215,7 +215,7 @@ Transfer groups: **topview** · **entity-search** · **account-login-site** "Ent
 files · top-transfers) · **failures** "Failures & Retries" (failure-rate leader ·
 episodes · retries · failure-heatmap) · **flow-shape** "Patterns" (file-journey ·
 file-in-file-out) · **protocol-security** (protocol · security-params · av-scan) ·
-**performance-session** "Performance" (anomalies leader · duration · dwell-time; the
+**performance-session** "Performance" (anomalies leader · duration · duration-longest · duration-distribution (the two split off duration 2026-09-03) · dwell-time; the
 `duration-all` / `duration-minmax` / `duration-all-minmax` siblings share Duration's slot) ·
 **cross** "Cross References".
 

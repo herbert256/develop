@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Help: Transfer Duration — Cloud Reports</title>
+<title>Help: Duration distribution — Cloud Reports</title>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
@@ -11,21 +11,13 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Transfer Duration</h1>
-
+<h1>Duration distribution</h1>
 <h2>What this shows</h2>
-<p>Two selectors, switched with the button rows at the top. The scope: <strong>OK transfers</strong> (the default) counts only delivered (Processed) Files, so the statistics aren't skewed by failures; <strong>All transfers</strong> counts every File including failed ones &mdash; a failed transfer's duration is how long it ran before failing (a 2-hour timeout, say), so long-hanging failures show up there. The per-day columns: <strong>Percentage</strong> (the default) or <strong>Min/Avg/Max</strong>. The other tables are the same in every view; only the set of Files and the per-day columns differ. Within each scope, several views of how long transfers take:</p>
-<ul>
-<li><strong>Duration per day &mdash; percentiles</strong> &mdash; p10, p25, p50 (median), p75, p90, p95, p98 and p99 per day (the <strong>Percentage</strong> view, the default). A percentile says &ldquo;this share of transfers finished at or below this duration&rdquo;, so p95 = 95% of that day's transfers were at least this fast. Percentiles resist the single huge outlier that dominates the Max column.</li>
-<li><strong>Duration per day &mdash; Min / Avg / Median / Max</strong> &mdash; the shortest, mean, middle and longest transfer duration for each calendar day (the <strong>Min/Avg/Max</strong> view).</li>
-<li>The <strong>Top 50 longest Files</strong> and the <strong>Duration distribution</strong> moved to their own Performance pages, <em>Longest Files</em> and <em>Duration distribution</em> (2026-09-03).</li>
-<li><strong>Slowest subscriptions</strong> &mdash; the 25 subscriptions with the highest p95 duration, with their median, p95 and max.</li>
-</ul>
-
-<h2>How it's computed</h2>
-<p>The report counts <strong>Files</strong> (logical transfers &mdash; all records sharing one CoreId). On the <strong>OK transfers</strong> view it counts <strong>only those that were delivered</strong> (outcome <strong>Processed</strong>); Error transfers are excluded deliberately &mdash; most are instant 0-byte attempts that would flatten every statistic toward zero. The <strong>All transfers</strong> view drops that filter and counts every File with a measured duration, so failed/timed-out transfers are included (this is why a day's Max there can far exceed the OK view's &mdash; e.g. a transfer that hung for ~2h before failing).</p>
-<p>A File's duration is the summed duration of its records, in milliseconds. Duration in the raw logs is compound and mixed-unit (e.g. <code>574 ms</code>, <code>1.314 s</code>, <code>1 min 0.550 s</code>); it is normalised to milliseconds when the caches are built. The first two tables show these values <strong>in raw milliseconds</strong>, as requested; elsewhere durations are shown in readable units (s / min / h). Percentiles use the nearest-rank method.</p>
-<p>The <strong>per-day min / avg / max and percentile columns are not additive</strong>: you cannot re-derive a minimum, an average or a percentile by summing the daily ones. So when you narrow the date-range filter, each day row still shows its own value but the <em>total</em> row blanks those columns (shown as &ldquo;&ndash;&rdquo;). The Files count is additive and re-totals normally. The distribution re-counts its buckets over the chosen date range; the slowest-subscriptions Median and p95 stay at their full-period value (Files and Max re-aggregate), the same convention the Performance report uses.</p>
+<p>A histogram of the Files by <em>wall-clock</em> duration &mdash; from the first record start to the last record end, gaps and retry idle included &mdash; in seven bands: up to 100 ms, 1 s, 10 s, 1 min, 5 min, 30 min and beyond. Split off the Duration report 2026-09-03. Two views behind a button row: <strong>OK transfers</strong> (the default) counts delivered Files only; <strong>All transfers</strong> adds the failed ones, whose duration is how long they ran before giving up.</p>
+<h2>Reading the table</h2>
+<p><strong>Files</strong> is the count in the band and <strong>Share</strong> its part of the scope&rsquo;s Files. A From/To date range re-aggregates both from the per-day buckets each row carries. In the All view the failed transfers &mdash; mostly instant 0-byte attempts &mdash; pile up in the first band.</p>
+<h2>Related</h2>
+<p>The per-day statistics and percentiles are on the Duration page, the individual slowest transfers on the Longest Files page.</p>
 </main>
 </body>
 </html>
