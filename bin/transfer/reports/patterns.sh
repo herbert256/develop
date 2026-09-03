@@ -11,8 +11,8 @@
 #
 # TWO tables since 2026-09-03 (user request), one switch group on the page:
 # the pattern as above ("Protocol off", the default) and the pattern with the
-# leg's PROTOCOL as the first element of every line ("Protocol on":
-# "ssh / Outbound / Processed"). report.js shows one at a time behind a
+# leg's PROTOCOL as the second element of every line ("Protocol on":
+# "Outbound / ssh / Processed"). report.js shows one at a time behind a
 # button row (the TABLE switch= modifier). Both list the 5 most recent Files
 # of each pattern, each a LINK to that File's own page (docs/<env>/files/
 # <coreid>.html — the error-page layout for any outcome, written by
@@ -46,7 +46,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # Read the cache in row order (1=coreid; 2=direction so Inbound precedes Outbound;
 # 13=sortkey so retries are chronological). Build each CoreId's pattern from its
 # rows' "Direction / Status" (3=raw status) — and, for the second table, the
-# rows' "Protocol / Direction / Status" (10=protocol) — joined by \x1f (the
+# rows' "Direction / Protocol / Status" (10=protocol) — joined by \x1f (the
 # renderer turns it into line breaks), and count how many Files share each.
 # Emits one line per (variant, pattern): variant ⇥ files ⇥ legs ⇥ transfers ⇥
 # buckets ⇥ last-5 cell ⇥ pattern.
@@ -84,7 +84,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k13,13 "$PARSED" | awk -F'\t
         if ($1 != prev) { flush(); pat = ""; patp = ""; prev = $1; d = $11; csk = $13; cdisp = $11 " " $12; ccid = $1 }
         line = $2 " / " $3
         pat = (pat == "" ? line : pat US line)
-        linep = ($10 != "" ? $10 : "?") " / " $2 " / " $3
+        linep = $2 " / " ($10 != "" ? $10 : "?") " / " $3   # Direction / Protocol / Status (the protocol SECOND, 2026-09-03 user request)
         patp = (patp == "" ? linep : patp US linep)
     }
     END {
@@ -138,7 +138,7 @@ shown=$(printf '%s\n' "$agg" | awk -F'\t' -v n="$TOP_N" '$1 == "A" { c++ } END {
 {
     printf 'TITLE\tTransfer Patterns\n'
     printf 'DESC\tThe row/status shape of a File (the transfers sharing it) and how often each occurs.\n'
-    printf 'INTRO\tEach **File** is the set of records sharing it — an Inbound row, an Outbound row, and any retries. Every row is one distinct pattern of **Direction / Status** lines (in order). **Legs** = rows in the pattern, **Files** = Files with that shape, **Transfers** = their records. **Protocol on** puts each leg'\''s protocol first ("ssh / Outbound / Processed"), which splits a shape by the way it travelled. **Last 5 files** lists the pattern'\''s most recent Files, each opening the File'\''s own page — every leg and the server log behind it, the failed-file page layout for any outcome.\n'
+    printf 'INTRO\tEach **File** is the set of records sharing it — an Inbound row, an Outbound row, and any retries. Every row is one distinct pattern of **Direction / Status** lines (in order). **Legs** = rows in the pattern, **Files** = Files with that shape, **Transfers** = their records. **Protocol on** adds each leg'\''s protocol to its line ("Outbound / ssh / Processed"), which splits a shape by the way it travelled. **Last 5 files** lists the pattern'\''s most recent Files, each opening the File'\''s own page — every leg and the server log behind it, the failed-file page layout for any outcome.\n'
     printf 'TABLE\tTransfer patterns\tnosearch\tswitch=protocol:Protocol off\n'
     printf 'HEAD\tPattern\tLegs\tFiles\tTransfers\tLast 5 files\n'
     printf 'KIND\tclines\tnum\tnum\tnum\tclinks\n'
