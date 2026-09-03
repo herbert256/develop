@@ -117,10 +117,20 @@ VARIANTS="sub-all all-failing all-all"
 rm -f "$REPORTS_DIR/last-failed.rpt"           # the pre-rename output (2026-08)
 rm -f "$REPORTS_DIR"/failed-leg-*.rpt          # the removed Subscription-leg views (2026-08)
 ERRDIR="$REPORTS_DIR/errors"
+# The FILE pages (2026-09-03, user request): the same drill-page layout for
+# ANY outcome, one per CoreId the Transfer patterns page's "Last 5 files"
+# cells link — patterns.sh leaves the CoreId list in $FILESIDE (cmp-guarded;
+# it runs in the same report pool, so the build's failed.sh catch-up is the
+# run that sees the final list). Pages land in data/<env>/transfer/reports/
+# files/ (docs/<env>/files/), beside errors/ and never inside it: the
+# reason-evidence pass globs errors/ and must not read an OK File's page.
+FILEDIR="$REPORTS_DIR/files"
+FILESIDE="$REPORTS_DIR/_patterns-files.tsv"
 # A missing drill dir — or a missing variant list — forces a rebuild:
 # skip_if_fresh only tests the one .rpt, the same guard the pesit/uc-status
 # sidecars carry.
 [ -d "$ERRDIR" ] || rm -f "$OUT"
+[ -d "$FILEDIR" ] || rm -f "$OUT"
 for v in $VARIANTS; do [ -f "$REPORTS_DIR/failed-$v.rpt" ] || rm -f "$OUT"; done
 # The server parse cache is a dep (the "What the server log said" sections);
 # skip_if_fresh skips a missing dep, so an env without server logs still works.
@@ -144,7 +154,7 @@ RFLIP="$DATA/blue/_redflip.tsv"
 KAPUT="$DATA/server/reports/_kaput-evidence.tsv"
 BOXES="$DATA/analyses/reports/_subs-boxes.tsv"
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRVLOG" "$CONFIG_BASE" "$LIB_DIR/../flip-reason.awk" \
-    "$RFLIP" "$KAPUT" "$BOXES" "$CONFIG_XREF/_subscriptions-partners.tsv"
+    "$RFLIP" "$KAPUT" "$BOXES" "$CONFIG_XREF/_subscriptions-partners.tsv" "$FILESIDE"
 
 GEN=$(date '+%Y-%m-%d %H:%M:%S')
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axlastf.XXXXXX")
@@ -199,6 +209,25 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v endj="$ENDJ" '
 nextra=$(wc -l < "$TMP/extra" | tr -d ' ')
 
 rm -rf "$ERRDIR"; mkdir -p "$ERRDIR"
+rm -rf "$FILEDIR"; mkdir -p "$FILEDIR"
+# The FILE pages (see FILEDIR above): every CoreId patterns.sh listed, in the
+# 7-column shape of the lists above — a CoreId that already gets a drill
+# page as a failed File (the leg selection or the window guarantee) keeps
+# that page and receives a COPY under files/ at the end, so a "Last 5 files"
+# link never dangles and no CoreId is paged twice by the pass below.
+: > "$TMP/filepages"; : > "$TMP/fileset"; : > "$TMP/overlap"
+if [ -s "$FILESIDE" ]; then
+    LC_ALL=C awk -F'\t' -v OFS='\t' -v topf="$TMP/all" -v extraf="$TMP/extra" -v sidef="$FILESIDE" \
+        -v setf="$TMP/fileset" -v ovf="$TMP/overlap" '
+        BEGIN { while ((getline l < sidef) > 0) if (l != "") want[l] = 1; close(sidef)
+                while ((getline l < topf) > 0) { split(l, z, "\t"); if (z[8] ~ /L/) paged[z[2]] = 1 } close(topf)
+                while ((getline l < extraf) > 0) { split(l, z, "\t"); paged[z[2]] = 1 } close(extraf) }
+        ($1 in want) { if ($1 in paged) { print $1 > ovf; next }
+                       print $1 > setf
+                       print $6, $1, $12, $10, $4, $5, $2 }
+    ' "$FILES" | LC_ALL=C sort -r > "$TMP/filepages"
+fi
+nfilep=$(wc -l < "$TMP/filepages" | tr -d ' ')
 # pre-create the two sidecars the main awk fills — with no failed files it
 # writes neither, and the reason/list steps below still read them
 : > "$TMP/paged"; : > "$TMP/lastst"
@@ -214,7 +243,8 @@ rm -rf "$ERRDIR"; mkdir -p "$ERRDIR"
 LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
     -v TOPF="$TMP/all" -v EXTRAF="$TMP/extra" -v LASTF="$TMP/lastst" -v PAGEDF="$TMP/paged" \
     -v IDS="$TMP/ids" -v META="$TMP/meta" -v SESS="$TMP/sess" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" -v ACCRES="$CONFIG_BASE/_accounts.tsv" -v HSTRES="$CONFIG_BASE/_hosts.tsv" \
-    -v LGNRES="$CONFIG_BASE/_logins.tsv" -v PTNRES="$CONFIG_BASE/_partners.tsv" -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" '
+    -v LGNRES="$CONFIG_BASE/_logins.tsv" -v PTNRES="$CONFIG_BASE/_partners.tsv" -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" \
+    -v FILESF="$TMP/filepages" -v FILEDIR="$FILEDIR" '
     # The SUBSCRIPTION result colour (bin/build/result.sh fills the third
     # column of the base cache), so a row carries the state of the flow it
     # belongs to: red = still failing, green = it has delivered OK since,
@@ -290,6 +320,13 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
         WANT[$2] = 1
         next
     }
+    FILENAME == FILESF {                        # the FILE pages (any outcome): the
+        ord[++nord] = $2                        # Transfer patterns "Last 5 files" links
+        SITE[$2] = $3; LEGS[$2] = $4; SD[$2] = $5; ST[$2] = $6
+        OC[$2] = $7                             # Processed | Waiting | Failed | Expired
+        WANT[$2] = 1; FSET[$2] = 1              # -> FILEDIR, neutral wording, no list mark
+        next
+    }
     # the parse cache: the last-leg raw status for every failed CoreId (the
     # cache is CoreId-sorted, legs in cache order — last write wins, the same
     # last row pagereason reads off a drill page)
@@ -322,19 +359,24 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
     END {
         # the paged-CoreId set (the list writer links these rows) and the
         # last-leg raw status per failed CoreId (the reason pass, all lists)
-        for (i = 1; i <= nord; i++) print ord[i] > PAGEDF
+        for (i = 1; i <= nord; i++) if (!(ord[i] in FSET)) print ord[i] > PAGEDF   # a FILE page is no list link
         for (c in LASTST) print c "\t" LASTST[c] > LASTF
         close(PAGEDF); close(LASTF)
 
         for (i = 1; i <= nord; i++) {
             c = ord[i]
-            f = ERRDIR "/" c ".rpt"
+            f = ((c in FSET) ? FILEDIR : ERRDIR) "/" c ".rpt"
             # The page is named after the FILE, not the CoreId — a name says
             # which feed broke at a glance where an opaque id does not. The id
             # is still on the page (the intro below) since it is the value to
             # quote to Axway support, and it is still the page URL.
             nm = (FNAME[c] != "") ? FNAME[c] : c
-            if (OC[c] == "Expired") {
+            if (c in FSET) {
+                # a FILE page (any outcome, 2026-09-03): named by the File,
+                # the outcome stated, no verdict in the title
+                printf "TITLE\tFile: %s\n", nm > f
+                printf "DESC\tThe File %s of subscription %s (CoreId %s, outcome %s): every transfer leg and the server log behind it.\n", nm, SITE[c], c, (OC[c] != "" ? OC[c] : "unknown") > f
+            } else if (OC[c] == "Expired") {
                 printf "TITLE\tExpired pickup: %s\n", SITE[c] > f
                 printf "DESC\tThe expired File %s of subscription %s (CoreId %s): every transfer leg and the server log behind it.\n", nm, SITE[c], c > f
             } else {
@@ -385,7 +427,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
         }
         close(IDS); close(META); close(SESS)
     }
-' "$TMP/all" "$TMP/extra" "$PARSED"
+' "$TMP/all" "$TMP/extra" "$TMP/filepages" "$PARSED"
 # ---- The SERVER-FAILING set (2026-08) ---------------------------------------
 # Every RED subscription that is server-reddened (blue/_redflip.tsv) or has NO
 # failed File at all — exactly the home table-2 red membership. Computed
@@ -605,7 +647,11 @@ fi
 # WITHOUT them, so appending here keeps LINK/FOOT the last lines. `>>` is
 # deliberate (a fresh awk process'"'"'s `>` would truncate the finished pages).
 if [ -s "$TMP/meta" ]; then
-    LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" '
+    LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" -v FILEDIR="$FILEDIR" -v FSETF="$TMP/fileset" '
+        # the FILE pages live in FILEDIR (2026-09-03): the same sections, the
+        # page path and the back link decided per CoreId
+        BEGIN { while ((getline l9 < FSETF) > 0) if (l9 != "") FSET[l9] = 1; close(FSETF) }
+        function pdir(c9) { return ((c9 in FSET) ? FILEDIR : ERRDIR) }
         # srvlines: coreid, kind, date, time, level, comp, session, why, message
         # — sorted by coreid, kind, date, time, so each page is contiguous and
         # its lines are already in the order they happened. Read TWICE: the
@@ -624,7 +670,7 @@ if [ -s "$TMP/meta" ]; then
             next
         }
         {                                                             # writing pass
-            c = $1; f = ERRDIR "/" c ".rpt"
+            c = $1; f = pdir(c) "/" c ".rpt"
             if ($2 == "N" && ni[c] > 0) next          # the fallback is for pages nothing else matched
             if (c != prevc) {
                 if (prevc != "") { close_section(prevf); close(prevf) }
@@ -647,8 +693,9 @@ if [ -s "$TMP/meta" ]; then
         END {
             if (prevc != "") { close_section(prevf); close(prevf) }
             for (i = 1; i <= nm; i++) {
-                f = ERRDIR "/" MC[i] ".rpt"
-                printf "LINK\t../analyses/failed.html\tBack to Failed Subscriptions\n" >> f
+                f = pdir(MC[i]) "/" MC[i] ".rpt"
+                if (MC[i] in FSET) printf "LINK\t../transfer/file-journey-patterns.html\tBack to Transfer patterns\n" >> f
+                else printf "LINK\t../analyses/failed.html\tBack to Failed Subscriptions\n" >> f
                 printf "FOOT\tGenerated on %s\n", gen >> f
                 close(f)
             }
@@ -1122,4 +1169,12 @@ stats=$(awk -F'\t' '$2 == "I" { I[$1]++; nl++ } $2 == "N" { N[$1] = 1 }
                           for (c in N) nn++
                           printf "%d %d %d", ni + 0, nl + 0, nn + 0 }' "$TMP/srvlines" 2>/dev/null || echo "0 0 0")
 set -- $stats
+# the FILE pages of CoreIds that also got a failed-File drill page: a COPY of
+# that finished page (facts, legs, server log, LINK, FOOT) under files/, so
+# every "Last 5 files" link resolves
+while IFS= read -r ovc; do
+    [ -n "$ovc" ] && [ -f "$ERRDIR/$ovc.rpt" ] && cp "$ERRDIR/$ovc.rpt" "$FILEDIR/$ovc.rpt"
+done < "$TMP/overlap"
+nover=$(wc -l < "$TMP/overlap" | tr -d ' ')
+echo "File pages: $nfilep written to $FILEDIR/ + $nover copied from errors/ (the Transfer patterns links)." >&2
 echo "Data written to $OUT + 3 view variants ($nallf failed file(s), $nleg subscription/legs combination(s)) and $ERRDIR/ ($((nleg + nextra)) drill page(s), $nextra for the File search windows; server-log sections: $1 by session/id carrying $2 line(s), $3 on the time-window fallback)." >&2

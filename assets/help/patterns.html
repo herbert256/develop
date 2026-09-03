@@ -18,6 +18,8 @@
 <h2>How it's computed</h2>
 <p>Rows sharing a File are ordered Inbound-first, then by start time (so retries appear in the order they happened), and their "Direction / Status" lines are joined into one pattern string. The <strong>Legs</strong> column counts the lines in the pattern — the physical rows a matching File is made of. The <strong>Files</strong> column counts how many logical transfers matched that exact pattern. The <strong>Transfers</strong> column counts their individual physical rows — Files &times; Legs — so a two-leg pattern (Inbound + Outbound, no retries) contributes twice as many Transfers as Files.</p>
 <p>There are typically only a few dozen distinct patterns; the table is capped at the top 200 by frequency as a safety margin, and a note appears if any were cut off.</p>
+<h2>The Protocol switch and the Last 5 files</h2>
+<p>A second button row above the Patterns table switches between two groupings of the same Files (2026-09-03): <strong>Protocol off</strong> (the default) shows each pattern as its <em>Direction / Status</em> lines; <strong>Protocol on</strong> puts each leg&rsquo;s protocol first (&ldquo;ssh / Outbound / Processed&rdquo;), which splits a shape by the way it travelled &mdash; the same Files, more rows. The choice is remembered per report in this browser session. <strong>Last 5 files</strong> lists each pattern&rsquo;s five most recent Files (newest first, start date and CoreId); every entry opens the File&rsquo;s own page under <code>files/</code> &mdash; the failed-file page layout (the facts table, every transfer leg, the server log behind it) for a File of any outcome.</p>
 </main>
 </body>
 </html>

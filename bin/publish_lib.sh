@@ -805,13 +805,20 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
 # report-wide and go to FOOTER (rendered on every split page), as before.
 segment_rpt() {
     HEADER=""; FOOTER=""; NTAB=0; TBLOCK=()
-    local line dir phase="head" pending=""
+    local line dir phase="head" pending="" sw="" lastsw=""
     while IFS= read -r line || [ -n "$line" ]; do
         dir=${line%%$'\t'*}
         case $dir in
             TABLE)
                 if [ -n "$pending" ]; then TBLOCK[$NTAB]+=$'\n'"${pending%$'\n'}"; pending=""; fi
-                phase="tab"; NTAB=$((NTAB+1)); TBLOCK[$NTAB]="$line" ;;
+                # a switch=KEY table (2026-09-03) whose KEY the previous table of the
+                # block carries STAYS IN THAT BLOCK — one tab page, report.js
+                # shows one of the group at a time — so the tab count stays
+                # the count of switch GROUPS, not of tables
+                sw=""; case $line in *$'\t'switch=*) sw=${line##*$'\t'switch=}; sw=${sw%%$'\t'*}; sw=${sw%%:*} ;; esac
+                if [ "$phase" = tab ] && [ -n "$sw" ] && [ "$sw" = "$lastsw" ]; then TBLOCK[$NTAB]+=$'\n'"$line"
+                else phase="tab"; NTAB=$((NTAB+1)); TBLOCK[$NTAB]="$line"; fi
+                lastsw=$sw ;;
             NOTE|LINK)
                 if [ "$phase" = tab ]; then pending+="$line"$'\n'
                 else FOOTER+="$line"$'\n'; fi ;;

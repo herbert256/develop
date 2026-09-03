@@ -165,6 +165,26 @@ if [ ${#errp[@]} -gt 0 ]; then
     echo "Rendered docs/errors/ (${#errp[@]} failed-file page(s))." >&2
 fi
 
+# FILE pages (2026-09-03, user request): failed.sh also writes one .rpt per
+# CoreId the Transfer patterns page's "Last 5 files" cells link — ANY outcome,
+# the failed-file page layout — into data/<env>/transfer/reports/files/;
+# render each to docs/<env>/files/<coreid>.html, a sibling of errors/.
+shopt -s nullglob
+filp=("$DATA"/transfer/reports/files/*.rpt)
+shopt -u nullglob
+mkdir -p "$DOCS/files"
+rm -f "$DOCS"/files/*.html
+if [ ${#filp[@]} -gt 0 ]; then
+    CUR_DATES=""; DLINK_BASE="../details/"
+    for f in "${filp[@]}"; do
+        b=${f##*/}; b=${b%.rpt}
+        pub_run render_rpt "$f" "$DOCS/files/$b.html" "../assets/style.css" "../index.html" "TRANSFER" "" "failed"
+    done
+    pub_wait
+    CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
+    echo "Rendered docs/files/ (${#filp[@]} File page(s))." >&2
+fi
+
 # Redirect stubs were REMOVED 2026-07 (no backwards compatibility): the old
 # flat entities/showseen/session/topview-split/direction-action/mode/inout-gap/
 # entity-search/transfer-site URLs are gone — they 404.

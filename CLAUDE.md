@@ -772,7 +772,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   `docs/assets/file-search.js` — a Search button, never per-keystroke, the NAV row carrying
   `?q=` between the windows; 24 hours = the newest full day + the partial newest day, 48 hours
   = the second full day), the Report finder, the SIX Failed-transfers
-  view pages (+ per-CoreId error pages), Cross References, Seen in server log, Entity coverage
+  view pages (+ per-CoreId error pages, and since 2026-09-03 the FILE pages `docs/<env>/files/<coreid>.html` — the same layout for a File of ANY outcome, written by `failed.sh` for the CoreIds the Transfer patterns page's "Last 5 files" cells link, `_patterns-files.tsv`), Cross References, Seen in server log, Entity coverage
   (assert OK ⊆ Current ⊆ Once), whitelist-audit, config-hygiene, Cronjobs, acc-vs-prod, UC status
   (a Use-cases view; pages in analyses/).
 - **The Boxes pages** (subscriptions-in-boxes + accounts-in-boxes, written by publish-insights):

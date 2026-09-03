@@ -2694,6 +2694,60 @@
     if (window._slotRange && window._slotRange.narrowed)
       window.daytopSetRange(window._slotRange.from, window._slotRange.to, true);
   }
+  // Switch groups (2026-09-03): tables sharing data-switch="KEY" (the TABLE
+  // modifier switch=KEY:LABEL) are alternatives — one shows at a time. A
+  // button row built from their labels is inserted above the group's first
+  // table (above its <h2> when it has one); the pick is remembered per
+  // report + key (sessionStorage), the first table being the default. The
+  // hidden tables keep everything else (recalc, totals, search) — only their
+  // wrapper and heading are display:none.
+  function setupSwitches() {
+    var tables = document.querySelectorAll("table[data-switch]");
+    if (!tables.length) return;
+    var groups = {}, order = [];
+    for (var i = 0; i < tables.length; i++) {
+      var k = tables[i].getAttribute("data-switch");
+      if (!groups[k]) { groups[k] = []; order.push(k); }
+      groups[k].push(tables[i]);
+    }
+    for (var g = 0; g < order.length; g++) (function (key, members) {
+      if (members.length < 2) return;
+      var KEY = "axway-switch:" + pageKeyBase() + ":" + key;
+      var units = [], m;
+      for (m = 0; m < members.length; m++) {
+        var wrap = tunit(members[m]);
+        var h2 = wrap && wrap.previousElementSibling && wrap.previousElementSibling.tagName === "H2" ? wrap.previousElementSibling : null;
+        units.push({ label: members[m].getAttribute("data-switch-label") || ("Option " + (m + 1)), wrap: wrap, h2: h2 });
+      }
+      var bar = document.createElement("p");
+      bar.className = "tabs switchbtns";
+      for (m = 0; m < units.length; m++) {
+        var s = document.createElement("span");
+        s.className = "tab"; s.setAttribute("data-swl", String(m)); s.textContent = units[m].label;
+        bar.appendChild(s);
+      }
+      var anchor = units[0].h2 || units[0].wrap;
+      anchor.parentNode.insertBefore(bar, anchor);
+      function apply(idx) {
+        for (var j = 0; j < units.length; j++) {
+          var on = j === idx;
+          units[j].wrap.style.display = on ? "" : "none";
+          if (units[j].h2) units[j].h2.style.display = on ? "" : "none";
+          bar.children[j].className = "tab" + (on ? " active" : "");
+        }
+      }
+      var pick = 0;
+      try { var sv = sessionStorage.getItem(KEY); if (sv !== null && /^\d+$/.test(sv) && +sv < units.length) pick = +sv; } catch (e) {}
+      apply(pick);
+      bar.addEventListener("click", function (e) {
+        var v = e.target && e.target.getAttribute && e.target.getAttribute("data-swl");
+        if (v === null || v === undefined) return;
+        apply(+v);
+        try { sessionStorage.setItem(KEY, v); } catch (e2) {}
+      });
+    })(order[g], groups[order[g]]);
+  }
+
 
   // ---- "Show all" (the home per-day tables, capped to the newest 14 days) ----
   // The publish caps a table (class cap14) with the older rows and the
@@ -3139,6 +3193,7 @@
     setupSearch();
     setupIndexRows();    // whole-row links on the index tables
     setupShowAll();      // home: the per-day table's 14-day cap lifter
+    setupSwitches();     // switch=KEY table groups: one table of the group at a time behind a button row
     setupHeroToggle();   // overview + day pages: the hero view switch
     setupSrvToggle();    // home page: the status tables' "including server log" switch
     setupEnvSwitch();    // top bar: the Acceptance/Production label (twin-page link / home toggle)

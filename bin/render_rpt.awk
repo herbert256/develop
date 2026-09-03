@@ -338,7 +338,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         else if (kind == "numsep") cls = "num sep"
         else if (kind == "srv") cls = "srv"
         else if (kind == "file") cls = "file"
-        else if (kind == "lines" || kind == "clines") cls = "lines"
+        else if (kind == "lines" || kind == "clines" || kind == "clinks") cls = "lines"
         if (kind == "bar") {
             if (text ~ /^[0-9]+$/) { w = int((text + 2) / 5) * 5; if (w > 100) w = 100 }
             else w = 0
@@ -358,6 +358,16 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     if (gsephit) { cls = (cls != "" ? cls " gsep" : "gsep"); gsephit = 0 }
     rawtext = text
     text = esc(text)
+    # `clinks` (2026-09-03) = a clines cell whose every line is a LINK:
+    # "href|label" per \x1f line — a relative href (no scheme, no //) becomes
+    # <a>, anything else renders as the plain line; folds like clines below
+    if (!total && kind == "clinks") {
+        nln = split(rawtext, LNS, US); text = ""
+        for (li = 1; li <= nln; li++) { p = index(LNS[li], "|")
+            if (p > 1 && ok_href(substr(LNS[li], 1, p - 1)) && substr(LNS[li], 1, 1) != "/") lhtml = "<a href=\"" esc(substr(LNS[li], 1, p - 1)) "\">" esc(substr(LNS[li], p + 1)) "</a>"
+            else lhtml = esc(LNS[li])
+            text = text (li > 1 ? US : "") lhtml }
+    }
     if (maskv != "") text = text "<span class=\"mask\">" esc(maskv) "</span>"
     if (!total && kind == "mono") text = "<code>" text "</code>"
     # KIND pre: a raw log LINE, kept verbatim inside <pre> — the logged spacing
@@ -379,7 +389,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # CSS-hidden span.cm, the ellipsis in span.ce); class `clps` on the td is
     # the collapsed state, report.js toggles `open` on click (style.css swaps
     # the two spans). 1-2 lines render like a plain `lines` cell.
-    if (!total && kind == "clines") {
+    if (!total && (kind == "clines" || kind == "clinks")) {
         nln = split(text, LNS, US)
         if (nln <= 2) gsub(US, "<br>", text)
         else {
@@ -530,6 +540,12 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             else if (mi == "startempty") { tattr = tattr " data-start-empty=\"1\""; start_empty = 1 }
             else if (index(mi, "drill=") == 1)    tattr = tattr " data-drill-unit=\"" substr(mi, 7) "\""
             else if (index(mi, "sort=") == 1)     tattr = tattr " data-sort-init=\"" substr(mi, 6) "\""
+            # switch=KEY:LABEL (2026-09-03): tables sharing KEY form ONE switch
+            # group on the page — segment_rpt keeps them on one tab page and
+            # report.js (setupSwitches) shows one at a time behind a button
+            # row built from the labels, the first table being the default
+            else if (index(mi, "switch=") == 1) { sw = substr(mi, 8); p9 = index(sw, ":")
+                tattr = tattr " data-switch=\"" esc(p9 ? substr(sw, 1, p9 - 1) : sw) "\" data-switch-label=\"" esc(p9 ? substr(sw, p9 + 1) : sw) "\"" }
             else if (mi == "totaltop")   tattr = tattr " data-total-top=\"1\""
             else if (mi == "datereset")  tattr = tattr " data-date-reset=\"1\""
             else if (mi == "nofilter")   tattr = tattr " data-nofilter=\"1\""
