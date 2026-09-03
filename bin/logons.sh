@@ -386,7 +386,7 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 for (li = 1; li <= ns; li++) { g = SE2[li] - SS2[li]; dh2[g]++; if (g > maxd) maxd = g }
                 half = int((ns + 1) / 2); c2 = 0; meddur = 0
                 for (g = 0; g <= maxd; g++) if (g in dh2) { c2 += dh2[g]; if (c2 >= half) { meddur = g; break } }
-                if (meddur <= 15 && ns < 3) return ns " visit" (ns == 1 ? "" : "s")
+                if (meddur <= 15 && ns < 3) return (ns == 1 ? "Once" : patron(SS2[2] - SS2[1]))   # one visit: Once; two: the spacing between them (2026-09-03, user request)
                 if (meddur <= 15) {
                     delete gh2; maxg = 0; ng = 0
                     for (li = 2; li <= ns; li++) { g = SS2[li] - SS2[li - 1]; gh2[g]++; ng++; if (g > maxg) maxg = g }

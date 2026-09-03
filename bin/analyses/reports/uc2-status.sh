@@ -218,7 +218,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             for (li = 1; li <= ns; li++) { gsp = SE[li] - SS[li]; dh[gsp]++; if (gsp > maxd) maxd = gsp }
             half = int((ns + 1) / 2); c2 = 0; meddur = 0
             for (gsp = 0; gsp <= maxd; gsp++) if (gsp in dh) { c2 += dh[gsp]; if (c2 >= half) { meddur = gsp; break } }
-            if (meddur <= 15 && ns < 3) patG[g] = ns " visit" (ns == 1 ? "" : "s")
+            if (meddur <= 15 && ns < 3) patG[g] = (ns == 1 ? "Once" : patron(SS[2] - SS[1]))   # one visit: Once; two: the spacing between them (2026-09-03, user request)
             else {
                 if (meddur <= 15) {
                     delete gh
@@ -490,7 +490,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 half = int((ns + 1) / 2); c2 = 0; meddur = 0
                 for (g = 0; g <= maxd; g++) if (g in dh) { c2 += dh[g]; if (c2 >= half) { meddur = g; break } }
                 delete dh
-                if (meddur <= 15 && ns < 3) patA[a] = ns " visit" (ns == 1 ? "" : "s")
+                if (meddur <= 15 && ns < 3) patA[a] = (ns == 1 ? "Once" : patron(SS[2] - SS[1]))   # one visit: Once; two: the spacing between them (2026-09-03, user request)
                 else {
                     if (meddur <= 15) {
                         delete gh
