@@ -126,6 +126,10 @@ ERRDIR="$REPORTS_DIR/errors"
 # reason-evidence pass globs errors/ and must not read an OK File's page.
 FILEDIR="$REPORTS_DIR/files"
 FILESIDE="$REPORTS_DIR/_patterns-files.tsv"
+# ... and the Longest Files page's list (duration-longest.sh, 2026-09-03: every
+# File over one hour links its File page from its CoreId cell) — the two
+# sidecars are unioned below; either may be absent
+FILESIDE2="$REPORTS_DIR/_longest-files.tsv"
 # A missing drill dir — or a missing variant list — forces a rebuild:
 # skip_if_fresh only tests the one .rpt, the same guard the pesit/uc-status
 # sidecars carry.
@@ -155,7 +159,7 @@ KAPUT="$DATA/server/reports/_kaput-evidence.tsv"
 BOXES="$DATA/analyses/reports/_subs-boxes.tsv"
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRVLOG" "$CONFIG_BASE" "$LIB_DIR/../flip-reason.awk" \
     "$RFLIP" "$KAPUT" "$BOXES" "$CONFIG_XREF/_subscriptions-partners.tsv" "$CONFIG_XREF/_subscriptions-logins.tsv" \
-    "$CONFIG_XREF/_subscriptions-hosts.tsv" "$FILESIDE"
+    "$CONFIG_XREF/_subscriptions-hosts.tsv" "$FILESIDE" "$FILESIDE2"
 
 GEN=$(date '+%Y-%m-%d %H:%M:%S')
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axlastf.XXXXXX")
@@ -212,20 +216,26 @@ nextra=$(wc -l < "$TMP/extra" | tr -d ' ')
 rm -rf "$ERRDIR"; mkdir -p "$ERRDIR"
 rm -rf "$FILEDIR"; mkdir -p "$FILEDIR"
 # The FILE pages (see FILEDIR above): every CoreId patterns.sh listed, in the
-# 7-column shape of the lists above — a CoreId that already gets a drill
+# 8-column shape of the lists above (+ the source tag) — a CoreId that already gets a drill
 # page as a failed File (the leg selection or the window guarantee) keeps
 # that page and receives a COPY under files/ at the end, so a "Last 5 files"
 # link never dangles and no CoreId is paged twice by the pass below.
 : > "$TMP/filepages"; : > "$TMP/fileset"; : > "$TMP/overlap"
-if [ -s "$FILESIDE" ]; then
-    LC_ALL=C awk -F'\t' -v OFS='\t' -v topf="$TMP/all" -v extraf="$TMP/extra" -v sidef="$FILESIDE" \
+# the union of the two lists, each CoreId tagged with its source(s) — P =
+# Transfer patterns, L = Longest Files, PL = both — the back link(s) of its
+# page (the 8th column of the list rows below)
+{ [ -f "$FILESIDE" ] && sed 's/$/	P/' "$FILESIDE"; [ -f "$FILESIDE2" ] && sed 's/$/	L/' "$FILESIDE2"; true; } \
+    | LC_ALL=C awk -F'\t' '$1 != "" { s[$1] = s[$1] $2 } END { for (c in s) print c "\t" s[c] }' \
+    | LC_ALL=C sort > "$TMP/fileside"
+if [ -s "$TMP/fileside" ]; then
+    LC_ALL=C awk -F'\t' -v OFS='\t' -v topf="$TMP/all" -v extraf="$TMP/extra" -v sidef="$TMP/fileside" \
         -v setf="$TMP/fileset" -v ovf="$TMP/overlap" '
-        BEGIN { while ((getline l < sidef) > 0) if (l != "") want[l] = 1; close(sidef)
+        BEGIN { while ((getline l < sidef) > 0) { split(l, y, "\t"); if (y[1] != "") { want[y[1]] = 1; src[y[1]] = y[2] } } close(sidef)
                 while ((getline l < topf) > 0) { split(l, z, "\t"); if (z[8] ~ /L/) paged[z[2]] = 1 } close(topf)
                 while ((getline l < extraf) > 0) { split(l, z, "\t"); paged[z[2]] = 1 } close(extraf) }
         ($1 in want) { if ($1 in paged) { print $1 > ovf; next }
-                       print $1 > setf
-                       print $6, $1, $12, $10, $4, $5, $2 }
+                       print $1, src[$1] > setf
+                       print $6, $1, $12, $10, $4, $5, $2, src[$1] }
     ' "$FILES" | LC_ALL=C sort -r > "$TMP/filepages"
 fi
 nfilep=$(wc -l < "$TMP/filepages" | tr -d ' ')
@@ -325,6 +335,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
         ord[++nord] = $2                        # Transfer patterns "Last 5 files" links
         SITE[$2] = $3; LEGS[$2] = $4; SD[$2] = $5; ST[$2] = $6
         OC[$2] = $7                             # Processed | Waiting | Failed | Expired
+        SRC[$2] = $8                            # P (patterns) / L (longest) / PL: the back link(s)
         WANT[$2] = 1; FSET[$2] = 1              # -> FILEDIR, neutral wording, no list mark
         next
     }
@@ -651,7 +662,7 @@ if [ -s "$TMP/meta" ]; then
     LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" -v FILEDIR="$FILEDIR" -v FSETF="$TMP/fileset" '
         # the FILE pages live in FILEDIR (2026-09-03): the same sections, the
         # page path and the back link decided per CoreId
-        BEGIN { while ((getline l9 < FSETF) > 0) if (l9 != "") FSET[l9] = 1; close(FSETF) }
+        BEGIN { while ((getline l9 < FSETF) > 0) { split(l9, y9, "\t"); if (y9[1] != "") { FSET[y9[1]] = 1; FSRC[y9[1]] = y9[2] } } close(FSETF) }
         function pdir(c9) { return ((c9 in FSET) ? FILEDIR : ERRDIR) }
         # srvlines: coreid, kind, date, time, level, comp, session, why, message
         # — sorted by coreid, kind, date, time, so each page is contiguous and
@@ -695,7 +706,10 @@ if [ -s "$TMP/meta" ]; then
             if (prevc != "") { close_section(prevf); close(prevf) }
             for (i = 1; i <= nm; i++) {
                 f = pdir(MC[i]) "/" MC[i] ".rpt"
-                if (MC[i] in FSET) printf "LINK\t../transfer/file-journey-patterns.html\tBack to Transfer patterns\n" >> f
+                if (MC[i] in FSET) {            # one back link per list that named it
+                    if (FSRC[MC[i]] ~ /P/) printf "LINK\t../transfer/file-journey-patterns.html\tBack to Transfer patterns\n" >> f
+                    if (FSRC[MC[i]] ~ /L/) printf "LINK\t../transfer/duration-longest.html\tBack to Longest Files\n" >> f
+                }
                 else printf "LINK\t../analyses/failed.html\tBack to Failed Subscriptions\n" >> f
                 printf "FOOT\tGenerated on %s\n", gen >> f
                 close(f)

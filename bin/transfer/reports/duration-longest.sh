@@ -15,7 +15,10 @@
 #                  transfer's run time (a 2 h timeout) counts too; plain rows
 # Columns: Duration (sorting by the exact milliseconds via @{sortval}), Start
 # Time, CoreId, Destination Subscription, Size, File — the former "Duration
-# (ms)" and "Account" columns went with the split (user request).
+# (ms)" and "Account" columns went with the split (user request). A File over
+# ONE HOUR (either scope) also gets a File page docs/<env>/files/<coreid>.html
+# (the sidecar _longest-files.tsv, paged by failed.sh) — its CoreId cell opens
+# that instead of the record page (2026-09-03, user request).
 #
 # Usage:
 #   ./duration-longest.sh    # -> data/<env>/transfer/reports/duration-longest.rpt
@@ -28,6 +31,8 @@ source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/duration-longest.rpt"
 TOPDIR="$REPORTS_DIR/duration/top"         # the per-transfer record pages (OK list)
+FILESIDE="$REPORTS_DIR/_longest-files.tsv"  # the CoreIds over one hour → File pages (failed.sh)
+HOUR_MS=3600000                             # the File-page threshold (ms)
 TOPLINK="../transfers/duration/top"        # their href base from docs/<env>/transfer/
 TOP_N=50
 
@@ -40,6 +45,7 @@ fi
 ensure_parsed
 # the record-page dir is an output too: a missing one forces a rebuild
 [ -d "$TOPDIR" ] || rm -f "$OUT"
+[ -f "$FILESIDE" ] || rm -f "$OUT"
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
@@ -73,6 +79,17 @@ slow_ok=$(top_list 1); slow_all=$(top_list 0)
 n_ok=$(count_scope 1); n_all=$(count_scope 0)
 shown_ok=$(printf '%s\n' "$slow_ok" | awk 'length($0) { n++ } END { print n+0 }')
 shown_all=$(printf '%s\n' "$slow_all" | awk 'length($0) { n++ } END { print n+0 }')
+
+# the FILE-page list (2026-09-03, user request): every listed File over ONE
+# HOUR — either scope — gets a File page docs/<env>/files/<coreid>.html, the
+# errors-page layout for a File of any outcome; failed.sh writes it from this
+# sidecar (unioned with the Transfer patterns list) and the CoreId cell of
+# such a row opens it. cmp-guarded: an unchanged list keeps its mtime (a
+# failed.sh dep); an EMPTY list is valid (-f, not -s)
+{ printf '%s\n' "$slow_ok" "$slow_all"; } \
+    | awk -F'\t' -v HOUR="$HOUR_MS" 'length($0) && ($1 + 0) > HOUR { print $2 }' \
+    | LC_ALL=C sort -u > "$FILESIDE.tmp"
+if cmp -s "$FILESIDE.tmp" "$FILESIDE" 2>/dev/null; then rm -f "$FILESIDE.tmp"; else mv "$FILESIDE.tmp" "$FILESIDE"; fi
 
 # the per-transfer RECORD pages of the OK list: every _transfers.tsv record
 # of the CoreId, chronological — the page a Duration / Start Time / CoreId
@@ -118,15 +135,17 @@ fi
 # rows: Duration (sortval = the exact ms) ⇥ Start Time ⇥ CoreId ⇥ Subscription ⇥
 # Size ⇥ File; the OK rows link their record page from the first three cells
 rows_of() {   # $1 the list  $2 link base ("" = plain rows)
-    printf '%s\n' "$1" | awk -F'\t' -v L="$2" 'length($0) {
+    printf '%s\n' "$1" | awk -F'\t' -v L="$2" -v HOUR="$HOUR_MS" 'length($0) {
         h = (L != "") ? "href=" L "/" $2 ".html," : ""
-        printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t%s\t%s\t%s\n", h, $1, $7, h, $1, $3, h, $1, $2, $4, $8, $6 }'
+        # over one hour: the CoreId cell opens the FILE page instead
+        hc = (($1 + 0) > HOUR) ? "href=../files/" $2 ".html," : h
+        printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t%s\t%s\t%s\n", h, $1, $7, h, $1, $3, hc, $1, $2, $4, $8, $6 }'
 }
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 {
     printf 'TITLE\tLongest Files\n'
     printf 'DESC\tThe %s longest Files by wall-clock duration — delivered (OK) ones or every outcome — each opening its per-transfer record page.\n' "$TOP_N"
-    printf 'INTRO\tThe **%s longest Files** by **wall-clock duration** — from the first record start to the last record end, store-and-forward gaps and retry idle included. **OK transfers** (the default) lists delivered Files only; **All transfers** adds the failed ones, whose duration is how long they ran before giving up (a timeout shows here). Click a Duration, Start Time or CoreId cell of an OK row for the transfer'\''s **record page** — every record of that CoreId, chronological. The columns sort by the exact duration.\n' "$TOP_N"
+    printf 'INTRO\tThe **%s longest Files** by **wall-clock duration** — from the first record start to the last record end, store-and-forward gaps and retry idle included. **OK transfers** (the default) lists delivered Files only; **All transfers** adds the failed ones, whose duration is how long they ran before giving up (a timeout shows here). Click a Duration or Start Time cell of an OK row for the transfer'\''s **record page** — every record of that CoreId, chronological. A File that ran **longer than one hour** has its own **File page** (the error-page layout: facts, records and the server log of its connections) — its **CoreId** cell opens that; below one hour the CoreId opens the record page like the other cells. The columns sort by the exact duration.\n' "$TOP_N"
     printf 'TABLE\tTop %s longest Files by duration\twide\tswitch=scope:OK transfers\n' "$TOP_N"
     printf 'HEAD\tDuration\tStart Time\tCoreId\tDestination Subscription\tSize\tFile\n'
     printf 'KIND\ttext\ttext\tmono\tsite\tnum\tfile\n'
@@ -137,7 +156,7 @@ GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
     printf 'KIND\ttext\ttext\tmono\tsite\tnum\tfile\n'
     rows_of "$slow_all" ""
     printf 'TOTAL\tTop %s of %s Files\t\t\t\t\t\n' "$shown_all" "$n_all"
-    printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); its duration is the wall-clock span of those records, so it includes the store-and-forward wait inside SecureTransport and any retry idle. Error transfers are mostly instant 0-byte attempts, which is why the OK view is the default; the All view is where a long-hanging failure shows. The record pages exist for the OK list only.\n'
+    printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); its duration is the wall-clock span of those records, so it includes the store-and-forward wait inside SecureTransport and any retry idle. Error transfers are mostly instant 0-byte attempts, which is why the OK view is the default; the All view is where a long-hanging failure shows. The record pages exist for the OK list only; the File pages for every listed File over one hour, whatever its outcome.\n'
     printf 'KEYWORDS\tduration,longest,slowest,slow,top,wall-clock,record,coreid,transfer\n'
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$GENDATE" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
