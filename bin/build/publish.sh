@@ -1144,6 +1144,9 @@ write_env_block() {
         # the status tables' Seen column in the Transfer scope (the day cells
         # above plus the report's no-date bucket sum to it); each links its
         # <type>-seen list, whose row count IS that figure
+        # an env without the report (2026-09-03, production runtime: the build
+        # died on "fsgs: unbound variable" under set -u) shows empty cells
+        local fsgs="" fsps="" fsss="" fsas="" fsls="" fshs="" c
         if [ -f "$HOME_ENV_DATA/analyses/reports/first-seen.rpt" ]; then
             IFS=$'\t' read -r c fsgs fsps fsss fsas fsls fshs \
                 <<< "$(awk -F'\t' '$1=="SEEN"{print; exit}' "$HOME_ENV_DATA/analyses/reports/first-seen.rpt")"
