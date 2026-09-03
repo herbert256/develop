@@ -46,11 +46,12 @@
 #                  there are too few for a cadence (2026-09-03)
 #   Logon problems the Incoming logon funnel's problem counts for the login
 #                  (server/logons-incoming.html, via logon.sh's sidecar
-#                  _logon-problems.tsv): Disallowed, Bad key, Key failures,
-#                  Locked, Auth failed — the non-zero ones, one line each,
-#                  every line a link to the Incoming page with the login's row
-#                  marked (?axway_row=); sorts by the total (2026-09-04, user
-#                  request). Last column, after a group divider
+#                  _logon-problems.tsv): ONE number, Disallowed + Bad key +
+#                  Key failures + Locked + Auth failed (no breakdown — the
+#                  cell links the Incoming page with the login's row marked,
+#                  ?axway_row=, which has the five columns); a 0 renders
+#                  empty (2026-09-04, user request). Last column, after a
+#                  group divider
 #
 # The pickup figures (Pickups, Pickup pattern) come from the
 # uc2-pickups.tsv sidecar bin/analyses/reports/uc2-status.sh writes into the
@@ -211,18 +212,12 @@ awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS"
             pk = (k in PK) ? PK[k] + 0 : 0; ret = (k in RET) ? RET[k] + 0 : 0; err = (k in ECNT) ? ECNT[k] + 0 : 0
             pat = (pk > 0 && (k in PAT)) ? PAT[k] : ""
             s_pk += pk; s_ret += ret; s_err += err
-            # the Logon problems cell: one line per non-zero funnel problem
-            # (the Incoming page order — Disallowed, Bad key, Key failures,
-            # Locked, Auth failed), each a link to that page marking this
-            # login row (?axway_row=); the cell sorts by the problem total
-            pr = ""; pt = 0
-            pl = "../server/logons-incoming.html?axway_row=" NAME[i] "|"
-            if (PD[k] + 0 > 0)  { pr = pr (pr == "" ? "" : "\037") pl "Disallowed " PD[k]; pt += PD[k] }
-            if (PB[k] + 0 > 0)  { pr = pr (pr == "" ? "" : "\037") pl "Bad key " PB[k]; pt += PB[k] }
-            if (PKF[k] + 0 > 0) { pr = pr (pr == "" ? "" : "\037") pl "Key failures " PKF[k]; pt += PKF[k] }
-            if (PL[k] + 0 > 0)  { pr = pr (pr == "" ? "" : "\037") pl "Locked " PL[k]; pt += PL[k] }
-            if (PAF[k] + 0 > 0) { pr = pr (pr == "" ? "" : "\037") pl "Auth failed " PAF[k]; pt += PAF[k] }
-            if (pr != "") pr = "@{sortval=" pt "}" pr
+            # the Logon problems cell: ONE number (2026-09-04, user request —
+            # no breakdown), the sum of the five funnel problems (Disallowed,
+            # Bad key, Key failures, Locked, Auth failed), linking the Incoming
+            # page with this login row marked (?axway_row=); a 0 stays empty
+            pt = (PD[k] + 0) + (PB[k] + 0) + (PKF[k] + 0) + (PL[k] + 0) + (PAF[k] + 0)
+            pr = (pt > 0) ? "@{href=../server/logons-incoming.html?axway_row=" NAME[i] "}" pt : ""
             s_prob += pt
             printf "R\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%s\t%d\t%s\n", \
                 NAME[i], nz(uc), ((k in LAST) ? LAST[k] : "-"), ((k in GW) ? nz(GW[k]) : "-"), nz(RES[i]), \
@@ -249,7 +244,7 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
     # space before Cloud, Files in, Files out, Oldest waiting and Pickups (Error sits in the Files out group)
     printf 'TABLE\tFE logins\twide\tnofilter\trestint\tsort=8:-1\tgsep=2,4,5,10,11,13\n'
     printf 'HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tError\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\tPickup pattern\tLogon problems\n'
-    printf 'KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumfailed\ttext\tnum\ttext\tclinks\n'
+    printf 'KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumfailed\ttext\tnum\ttext\tnum\n'
     # baked Files out DESC, then Files in DESC, then Pickups DESC, then Cloud DESC, then Gateway DESC (no stamp last), then login name (the secondary sort keys — see the
     # TABLE line); the sentinels swap back here, the result colour
     # becomes the row tint, an old-gateway-only login carries no tint. R
@@ -267,7 +262,7 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
               $2, uc, last, gw, z($7), z($8), $15, $13, $9, $11, ow, z($12), pat, prob, res }'
     printf 'TOTAL\tTotal (%s rows)\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t@{class=num}%s\t\t%s\n' \
         "$n_all" "$(nz "$n_in")" "$(nz "$n_out")" "$n_err" "$n_ret" "$n_wait" "$n_exp" "$t_old" "$(nz "$n_pk")" "$(nz "$n_prob")"
-    printf 'NOTE\t**Logon problems** — the login'\''s problem counts from the Incoming logon funnel (the Server → Logons & Connections → Incoming page): **Disallowed** (the source address failed the whitelist), **Bad key** (a submitted key matching no certificate), **Key failures** (the repeated-key-failure counter), **Locked** (attempts blocked by a lockout) and **Auth failed** (the anonymous failure line attributed to this login by timing); only the non-zero ones show, full-period. Each line opens the Incoming page with this login'\''s row marked; the column sorts by the problem total.\n'
+    printf 'NOTE\t**Logon problems** — the login'\''s problem count from the Incoming logon funnel (the Server → Logons & Connections → Incoming page): Disallowed (the source address failed the whitelist) + Bad key (a submitted key matching no certificate) + Key failures (the repeated-key-failure counter) + Locked (attempts blocked by a lockout) + Auth failed (the anonymous failure line attributed to this login by timing), full-period; empty when there are none. Click it for the Incoming page with this login'\''s row marked — that page splits the count into its five columns.\n'
     printf 'NOTE\t**input/<env>/logons_old.txt** carries the old gateway'\''s logons, one login per line: the login, then its stamp ("FE000123  2026-09-02 14:35") — the first token is the login (case-insensitive), the rest of the line is shown as written; blank lines and # comments are ignored. The file is per environment and hand-maintained (like BL.txt); when it is missing the column stays empty. A subscription'\''s use case is its name prefix, or the use case DERIVED from the configuration for a flow without one (the hybrid production flows). Files in / Files out count Files (one per CoreId) attributed to the login by their movement direction — the home page'\''s In/Out split — over the whole transfer window; Files out holds every File staged for the login — retrieved, waiting, expired or failed at pickup. **Error** counts the Files that FAILED, delivered (in) or picked up (out); Expired stays its own column, so Retrieved + Waiting + Expired + the failed pickups = Files out. **Oldest waiting** shows one unit, truncated ("5 days", "12 hours", "45 minutes", "10 seconds"), sorts by the exact age, and the Total row carries the oldest of all. **Pickups and Pickup pattern** come from the UC2 pickup sidecar (the data behind the UC2 status and UC2 pickup visits pages) and are taken ONCE per login: on the UC2 pickup visits page the account'\''s figures repeat on each of its UC2 subscriptions, so its totals run higher; on an account carrying several FE logins each login shows its own. Pickups counts LOGONS (an SFTP client opens several connections per visit); the visits they group into — a gap of more than 30 minutes starts a new visit — are what **Pickup pattern** describes: the typical spacing of the visits (their connections'\'' own spacing for a sustained poller); with fewer than three short visits there is no cadence to name, so a lone visit reads "Once" and two visits read the spacing between them; **Irregular** means the gaps have no rhythm — fewer than six in ten fall within half and double the typical spacing. The visit breakdown (collected, two-way, delivery-only, same-connection) stays on the UC2 pickup visits page. A login without a UC2 flow — or whose partner collects over CFT/PESIT and logs no SSH visit — leaves those cells empty while its Files still move.\n'
     printf 'KEYWORDS\tpartners,incoming,fe,login,overview,status,use case,uc2,uc4,mailbox,last logon,gateway,old gateway,migration,files,in,out,retrieved,collected,waiting,expired,oldest,age,pickup,visit,pattern,cadence\n'
     printf 'FOOT\tGenerated on %s\n' "$GENDATE"
