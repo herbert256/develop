@@ -87,6 +87,7 @@ ensure_parsed
 # other having written it (the write is atomic and cmp-guarded).
 ensure_logons "$CACHE_DIR"
 LOGONS_TSV="$CACHE_DIR/_logons.tsv"
+[ -f "$REPORTS_DIR/_logon-problems.tsv" ] || rm -f "$OUT"   # the sidecar is an output too
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TACCT" "$THOST" "$LBASE" "$LOGONS_TSV" "$BLACKLIST_FILE"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
@@ -363,6 +364,11 @@ nrows=0
 nnames=0
 # most rejections first, then no-account, bad keys, lockouts, key failures
 lgtot=0; aftot=0
+# the per-login PROBLEM counts sidecar (2026-09-04, user request): login ⇥
+# Disallowed ⇥ Bad key ⇥ Key failures ⇥ Locked ⇥ Auth failed, one line per
+# Incoming row — the Partners - Incoming page's "Logon problems" column
+# (bin/analyses/reports/fe-overview.sh); staged here, cmp-guarded below
+PROBF="$OUT.problems.tmp"; : > "$PROBF"
 rows() {
     while IFS=$'\t' read -r _ user a t d n b k l bkt d1 d2 d3 d4 d5 d6 d7 lside lstamp af9 lgf lgl lgn lgp; do
         [ -n "$user" ] || continue
@@ -370,6 +376,7 @@ rows() {
         [ "$d1" = "-" ] && d1=""; [ "$d2" = "-" ] && d2=""; [ "$d3" = "-" ] && d3=""; [ "$d4" = "-" ] && d4=""
         [ "$d5" = "-" ] && d5=""; [ "$d6" = "-" ] && d6=""; [ "$d7" = "-" ] && d7=""
         [ "$af9" = "-" ] && af9=""
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$user" "$d" "$b" "$k" "$l" "${af9:-0}" >> "$PROBF"
         # SEEN = any funnel activity at all, the anonymous Auth-failed count
         # included (before the 0-blanking below); a zero-everything row is a
         # configured login the funnel never saw
@@ -528,5 +535,9 @@ out_rows() {
         "$nrows" "$atot" "$ttot" "$dtot" "$nnames" "$ntot" "$btot" "$ktot" "$ltot" "$ototal" "$n_pairs" "${dk_tot:-0}" "${dk_names:-0}" "$n_near"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the problem-counts sidecar (see rows()): cmp-guarded so an unchanged set
+# keeps its mtime — a Partners - Incoming freshness dep
+PROBLEMS="$REPORTS_DIR/_logon-problems.tsv"
+if cmp -s "$PROBF" "$PROBLEMS" 2>/dev/null; then rm -f "$PROBF"; else mv "$PROBF" "$PROBLEMS"; fi
 
 echo "Data written to $OUT ($nrows login(s): $atot allowed, $ttot authenticated, $dtot disallowed, $ntot no-account, $btot bad-key, $ktot key-failure, $ltot locked; $ototal outbound failure(s))." >&2

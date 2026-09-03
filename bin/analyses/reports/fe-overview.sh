@@ -44,6 +44,13 @@
 #                  they group into (a gap of more than 30 minutes starts a new
 #                  one) — "Once" for a lone visit, the spacing of two, when
 #                  there are too few for a cadence (2026-09-03)
+#   Logon problems the Incoming logon funnel's problem counts for the login
+#                  (server/logons-incoming.html, via logon.sh's sidecar
+#                  _logon-problems.tsv): Disallowed, Bad key, Key failures,
+#                  Locked, Auth failed — the non-zero ones, one line each,
+#                  every line a link to the Incoming page with the login's row
+#                  marked (?axway_row=); sorts by the total (2026-09-04, user
+#                  request). Last column, after a group divider
 #
 # The pickup figures (Pickups, Pickup pattern) come from the
 # uc2-pickups.tsv sidecar bin/analyses/reports/uc2-status.sh writes into the
@@ -89,6 +96,10 @@ TF="$DATA/transfer/cache/_files.tsv"
 SCACHE="$DATA/server/cache"
 OLD="$ROOT/input/$AXWAY_ENV/logons_old.txt"
 PICKUPS="$DATA/server/reports/uc2-pickups.tsv"   # uc2-status.sh's sidecar (server reports dir)
+# logon.sh's sidecar (2026-09-04, user request): login ⇥ Disallowed ⇥ Bad key ⇥
+# Key failures ⇥ Locked ⇥ Auth failed — the Incoming funnel's problem counts,
+# the "Logon problems" column (each line linking the Incoming page's row)
+PROBLEMS="$DATA/server/reports/_logon-problems.tsv"
 
 if [ ! -f "$LBASE" ]; then
     echo "fe-overview: no $LBASE (config not extracted) — page not published." >&2
@@ -105,7 +116,8 @@ LOGONS="$SCACHE/_logons.tsv"
 [ -f "$TF" ]      || TF=/dev/null
 [ -f "$OLD" ]     || OLD=/dev/null
 [ -f "$PICKUPS" ] || PICKUPS=/dev/null   # -f, not -s: an EMPTY sidecar is the valid no-pickup state
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$LBASE" "$LSUB" "$UCDF" "$TF" "$LOGONS" "$OLD" "$PICKUPS"
+[ -f "$PROBLEMS" ] || PROBLEMS=/dev/null   # same: no Incoming rows = no problems
+skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$LBASE" "$LSUB" "$UCDF" "$TF" "$LOGONS" "$OLD" "$PICKUPS" "$PROBLEMS"
 
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 
@@ -113,7 +125,7 @@ GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 # streamed, then one "R" line per login and one "S" line of stat figures.
 # The "-" sentinel keeps empty middle fields from collapsing (a TAB is IFS
 # whitespace — the CLAUDE.md gotcha); the row writer swaps them back.
-awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS" -v OLD="$OLD" -v PICKUPS="$PICKUPS" '
+awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS" -v OLD="$OLD" -v PICKUPS="$PICKUPS" -v PROBLEMS="$PROBLEMS" '
     function ucof(s) { if (match(s, /^UC[0-9]+/)) return substr(s, 1, RLENGTH); if (toupper(s) in UCD) return UCD[toupper(s)]; return "" }
     function trim(s) { sub(/^[ \t\r]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
     function nz(s) { return (s == "" ? "-" : s) }
@@ -163,6 +175,10 @@ awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS"
                 PKSEEN[key] = 1
                 PK[k] += a[5]
                 if (!(k in PKBEST) || a[5] + 0 > PKBEST[k]) { PKBEST[k] = a[5] + 0; PAT[k] = a[8] } } } close(PICKUPS)
+        # the logon-problem sidecar (see the header): the five Incoming funnel
+        # problem counts per login, keyed like the roster (upper-cased)
+        while ((getline l < PROBLEMS) > 0) { n = split(l, a, "\t"); if (n < 6 || a[1] == "") continue
+            k = toupper(a[1]); PD[k] = a[2] + 0; PB[k] = a[3] + 0; PKF[k] = a[4] + 0; PL[k] = a[5] + 0; PAF[k] = a[6] + 0 } close(PROBLEMS)
         NEWEST = 0
     }
     # the files cache on the command line: col 2 outcome, 4/5 date+time, 14
@@ -195,16 +211,29 @@ awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS"
             pk = (k in PK) ? PK[k] + 0 : 0; ret = (k in RET) ? RET[k] + 0 : 0; err = (k in ECNT) ? ECNT[k] + 0 : 0
             pat = (pk > 0 && (k in PAT)) ? PAT[k] : ""
             s_pk += pk; s_ret += ret; s_err += err
-            printf "R\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%s\t%d\n", \
+            # the Logon problems cell: one line per non-zero funnel problem
+            # (the Incoming page order — Disallowed, Bad key, Key failures,
+            # Locked, Auth failed), each a link to that page marking this
+            # login row (?axway_row=); the cell sorts by the problem total
+            pr = ""; pt = 0
+            pl = "../server/logons-incoming.html?axway_row=" NAME[i] "|"
+            if (PD[k] + 0 > 0)  { pr = pr (pr == "" ? "" : "\037") pl "Disallowed " PD[k]; pt += PD[k] }
+            if (PB[k] + 0 > 0)  { pr = pr (pr == "" ? "" : "\037") pl "Bad key " PB[k]; pt += PB[k] }
+            if (PKF[k] + 0 > 0) { pr = pr (pr == "" ? "" : "\037") pl "Key failures " PKF[k]; pt += PKF[k] }
+            if (PL[k] + 0 > 0)  { pr = pr (pr == "" ? "" : "\037") pl "Locked " PL[k]; pt += PL[k] }
+            if (PAF[k] + 0 > 0) { pr = pr (pr == "" ? "" : "\037") pl "Auth failed " PAF[k]; pt += PAF[k] }
+            if (pr != "") pr = "@{sortval=" pt "}" pr
+            s_prob += pt
+            printf "R\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%s\t%d\t%s\n", \
                 NAME[i], nz(uc), ((k in LAST) ? LAST[k] : "-"), ((k in GW) ? nz(GW[k]) : "-"), nz(RES[i]), \
-                FIN[k] + 0, FOUT[k] + 0, WCNT[k] + 0, ow, XCNT[k] + 0, pk, ret, nz(pat), err
+                FIN[k] + 0, FOUT[k] + 0, WCNT[k] + 0, ow, XCNT[k] + 0, pk, ret, nz(pat), err, nz(pr)
         }
-        printf "S\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%d\n", nr, s_uc2 + 0, s_uc4 + 0, s_both + 0, s_here + 0, s_never + 0, s_gw + 0, s_old + 0, \
-            s_in + 0, s_out + 0, s_wait + 0, s_exp + 0, (gold >= 0 ? hage(gold) : "-"), s_pk + 0, s_ret + 0, s_err + 0
+        printf "S\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\n", nr, s_uc2 + 0, s_uc4 + 0, s_both + 0, s_here + 0, s_never + 0, s_gw + 0, s_old + 0, \
+            s_in + 0, s_out + 0, s_wait + 0, s_exp + 0, (gold >= 0 ? hage(gold) : "-"), s_pk + 0, s_ret + 0, s_err + 0, s_prob + 0
     }
 ' "$TF" > "$OUT.rows"
 
-IFS=$'\t' read -r _ n_all n_uc2 n_uc4 n_both n_here n_never n_gw n_old n_in n_out n_wait n_exp t_old n_pk n_ret n_err <<< "$(command grep $'^S\t' "$OUT.rows")"
+IFS=$'\t' read -r _ n_all n_uc2 n_uc4 n_both n_here n_never n_gw n_old n_in n_out n_wait n_exp t_old n_pk n_ret n_err n_prob <<< "$(command grep $'^S\t' "$OUT.rows")"
 [ "$t_old" = "-" ] && t_old=""   # the sentinel (a middle field — an empty one would shift the read)
 # a 0 total renders empty like the 0 cells (the outcome-kind totals z-blank themselves)
 nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"; fi; }
@@ -218,14 +247,14 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
     # Pickups page'\''s mechanism). sort=, never nosort, so header clicks keep working.
     # gsep: the column GROUPS (2026-09-03, user request) — a divider + extra
     # space before Cloud, Files in, Files out, Oldest waiting and Pickups (Error sits in the Files out group)
-    printf 'TABLE\tFE logins\twide\tnofilter\trestint\tsort=8:-1\tgsep=2,4,5,10,11\n'
-    printf 'HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tError\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\tPickup pattern\n'
-    printf 'KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumfailed\ttext\tnum\ttext\n'
+    printf 'TABLE\tFE logins\twide\tnofilter\trestint\tsort=8:-1\tgsep=2,4,5,10,11,13\n'
+    printf 'HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tError\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\tPickup pattern\tLogon problems\n'
+    printf 'KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumfailed\ttext\tnum\ttext\tclinks\n'
     # baked Files out DESC, then Files in DESC, then Pickups DESC, then Cloud DESC, then Gateway DESC (no stamp last), then login name (the secondary sort keys — see the
     # TABLE line); the sentinels swap back here, the result colour
     # becomes the row tint, an old-gateway-only login carries no tint. R
     # fields: 2 login 3 uc 4 cloud 5 gw 6 res 7 in 8 out 9 waiting 10 oldest
-    # 11 expired 12 pickups 13 retrieved 14 pattern 15 error. The processed-kind count
+    # 11 expired 12 pickups 13 retrieved 14 pattern 15 error 16 logon problems. The processed-kind count
     # passes its 0 through: the renderer z-blanks it (an empty non-z
     # processed cell would show the base green on an untinted row).
     command grep $'^R\t' "$OUT.rows" | LC_ALL=C sort -t$'\t' -k8,8nr -k7,7nr -k12,12nr -k4,4r -k5,5r -k2,2f | awk -F'\t' '
@@ -233,10 +262,12 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
         { uc = ($3 == "-" ? "" : $3); last = ($4 == "-" ? "" : $4); gw = ($5 == "-" ? "" : $5)
           ow = ($10 == "-" ? "" : $10); pat = ($14 == "-" ? "" : $14)
           res = ($6 == "-" ? "" : "\t@data:res=" $6)
-          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%s\t%s\t%s%s\n", \
-              $2, uc, last, gw, z($7), z($8), $15, $13, $9, $11, ow, z($12), pat, res }'
-    printf 'TOTAL\tTotal (%s rows)\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t@{class=num}%s\t\n' \
-        "$n_all" "$(nz "$n_in")" "$(nz "$n_out")" "$n_err" "$n_ret" "$n_wait" "$n_exp" "$t_old" "$(nz "$n_pk")"
+          prob = ($16 == "-" ? "" : $16)
+          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s%s\n", \
+              $2, uc, last, gw, z($7), z($8), $15, $13, $9, $11, ow, z($12), pat, prob, res }'
+    printf 'TOTAL\tTotal (%s rows)\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t@{class=num}%s\t\t%s\n' \
+        "$n_all" "$(nz "$n_in")" "$(nz "$n_out")" "$n_err" "$n_ret" "$n_wait" "$n_exp" "$t_old" "$(nz "$n_pk")" "$(nz "$n_prob")"
+    printf 'NOTE\t**Logon problems** — the login'\''s problem counts from the Incoming logon funnel (the Server → Logons & Connections → Incoming page): **Disallowed** (the source address failed the whitelist), **Bad key** (a submitted key matching no certificate), **Key failures** (the repeated-key-failure counter), **Locked** (attempts blocked by a lockout) and **Auth failed** (the anonymous failure line attributed to this login by timing); only the non-zero ones show, full-period. Each line opens the Incoming page with this login'\''s row marked; the column sorts by the problem total.\n'
     printf 'NOTE\t**input/<env>/logons_old.txt** carries the old gateway'\''s logons, one login per line: the login, then its stamp ("FE000123  2026-09-02 14:35") — the first token is the login (case-insensitive), the rest of the line is shown as written; blank lines and # comments are ignored. The file is per environment and hand-maintained (like BL.txt); when it is missing the column stays empty. A subscription'\''s use case is its name prefix, or the use case DERIVED from the configuration for a flow without one (the hybrid production flows). Files in / Files out count Files (one per CoreId) attributed to the login by their movement direction — the home page'\''s In/Out split — over the whole transfer window; Files out holds every File staged for the login — retrieved, waiting, expired or failed at pickup. **Error** counts the Files that FAILED, delivered (in) or picked up (out); Expired stays its own column, so Retrieved + Waiting + Expired + the failed pickups = Files out. **Oldest waiting** shows one unit, truncated ("5 days", "12 hours", "45 minutes", "10 seconds"), sorts by the exact age, and the Total row carries the oldest of all. **Pickups and Pickup pattern** come from the UC2 pickup sidecar (the data behind the UC2 status and UC2 pickup visits pages) and are taken ONCE per login: on the UC2 pickup visits page the account'\''s figures repeat on each of its UC2 subscriptions, so its totals run higher; on an account carrying several FE logins each login shows its own. Pickups counts LOGONS (an SFTP client opens several connections per visit); the visits they group into — a gap of more than 30 minutes starts a new visit — are what **Pickup pattern** describes: the typical spacing of the visits (their connections'\'' own spacing for a sustained poller); with fewer than three short visits there is no cadence to name, so a lone visit reads "Once" and two visits read the spacing between them; **Irregular** means the gaps have no rhythm — fewer than six in ten fall within half and double the typical spacing. The visit breakdown (collected, two-way, delivery-only, same-connection) stays on the UC2 pickup visits page. A login without a UC2 flow — or whose partner collects over CFT/PESIT and logs no SSH visit — leaves those cells empty while its Files still move.\n'
     printf 'KEYWORDS\tpartners,incoming,fe,login,overview,status,use case,uc2,uc4,mailbox,last logon,gateway,old gateway,migration,files,in,out,retrieved,collected,waiting,expired,oldest,age,pickup,visit,pattern,cadence\n'
     printf 'FOOT\tGenerated on %s\n' "$GENDATE"

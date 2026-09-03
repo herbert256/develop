@@ -144,6 +144,11 @@ for env in acceptance production; do
         # alone (FE359263 stays empty), and the 8-flow GLOBEX account's count
         # lands once on FE343512 (never the x8 per-subscription repeat)
         R="data/$env/analyses/reports/fe-overview.rpt"; SC="data/$env/server/reports/uc2-pickups.tsv"
+        # the Logon problems column (2026-09-04): the sample plants Disallowed
+        # lines for configured logins, so at least one row carries a problem
+        # cell whose lines link the Incoming page
+        pc=$(awk -F'\t' '$1=="HEAD" { for (i=2;i<=NF;i++) if ($i=="Logon problems") c=i } $1=="ROW" && c && index($c, "logons-incoming.html?axway_row=") { n++ } END { print n+0 }' "$R" 2>/dev/null)
+        check $([ "${pc:-0}" -ge 1 ] && echo 0 || echo 1) "[$env] Partners - Incoming has $pc row(s) with a Logon problems cell, expected at least 1 (the Disallowed logins)"
         pk=$(awk -F'\t' '$1=="HEAD" { for (i = 2; i <= NF; i++) if ($i == "Pickups") c = i } $1=="ROW" && $2=="FE133269" { print $c+0; exit }' "$R" 2>/dev/null)
         sp=$(awk -F'\t' '$1=="UC2_CD_PARCEL_BLUTH" { print $5+0; exit }' "$SC" 2>/dev/null)
         check $([ "${pk:-0}" -gt 0 ] && [ "$pk" = "${sp:-x}" ] && echo 0 || echo 1) "[$env] fe-overview FE133269 pickups '${pk:-absent}' != sidecar UC2_CD_PARCEL_BLUTH '${sp:-absent}'"
