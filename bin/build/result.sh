@@ -19,6 +19,10 @@
 #     be green; the evidence is the subscription's own _err_warn ring plus
 #     every connected host/account/login ring LINE the attribution below
 #     pins on this flow — never a connected ring wholesale)
+#     … EXCEPT a UC3 flow whose newest evidence is its own "Connection
+#     failure while <flow> tried to connect …" line: that reds it only
+#     after THREE FAILED POLLS IN A ROW (2026-09-05, user rule — one or two
+#     failed polls are a blip; blue/_connhold.tsv lists the held flows)
 #
 # Stage 2 — every OTHER base file, rolled up from its connected subscriptions
 # via the data/flow-manager/xref/_<item>-subscriptions.tsv pair caches:
@@ -78,6 +82,18 @@ SUBMENT="$ROOT/data/$AXWAY_ENV/server/cache/subscriptions"
 BLUEDIR="$ROOT/data/$AXWAY_ENV/blue"
 POLLOK="$BLUEDIR/_greenpoll.tsv"
 POLLCAND="$BLUEDIR/_greenpoll.cand"   # candidates; stage 1 writes the final list
+# The UC3 CONNECTION-FAILURE STREAK (2026-09-05, user rule): a "Connection
+# failure while <UC3 flow> tried to connect to remote host …" line reds the
+# flow only when it happened on THREE POLLS IN A ROW — each such line is one
+# failed poll attempt, and one or two in a row are a blip the next poll
+# clears. CONNCAND carries, per UC3 flow whose NEWEST own E-level line is
+# such a failure: name <TAB> that stamp <TAB> the "|"-joined stamps of its
+# connection failures NEWER than its newest successful poll (from the
+# mention cache AND the Error/Warn ring, one entry per stamp). Stage 1
+# counts the ones newer than the last transfer as the streak. CONNHOLD is
+# the sidecar of flows the streak rule kept green (name, stamp, streak).
+CONNCAND="$BLUEDIR/_connfail.cand"
+CONNHOLD="$BLUEDIR/_connhold.tsv"
 # The red-flip sidecar (2026-08): every subscription the after-last-transfer
 # rule below flips green -> red, with the ring evidence stamp that did it
 # (name <TAB> "YYYY-MM-DD HH:MM:SS…"). The UC status per-hour walkers
@@ -85,6 +101,7 @@ POLLCAND="$BLUEDIR/_greenpoll.cand"   # candidates; stage 1 writes the final lis
 # evidence hour — the last sidecar row must equal the report's STAT figures.
 REDFLIP="$BLUEDIR/_redflip.tsv"
 mkdir -p "$BLUEDIR"
+: > "$CONNCAND"
 {
     # every UC3 flow: UC3-NAMED or DERIVED (xref/_subscriptions-ucderived.tsv;
     # the production hybrid flows carry no UC prefix — 2026-08-31 audit: a
@@ -96,16 +113,23 @@ mkdir -p "$BLUEDIR"
           :; } 2>/dev/null | LC_ALL=C sort -u | while IFS= read -r _n; do
             _pf="$SUBMENT/$_n.tsv"
             [ -f "$_pf" ] || continue
-            awk -F'\t' -v n="$(basename "$_pf" .tsv)" '
-                $5 ~ /Applying the search pattern/ && $5 ~ /for transfer site/ && $5 ~ /file\(s\)/ { t = $1 " " $2; if (t > p) p = t }
-                $3 == "E" { t = $1 " " $2; if (t > e) e = t }
+            _rf="$SUBMENT/${_n}_err_warn.tsv"; [ -f "$_rf" ] || _rf=/dev/null
+            awk -F'\t' -v n="$_n" -v cf="$CONNCAND" '
+                FILENAME == ARGV[1] && $5 ~ /Applying the search pattern/ && $5 ~ /for transfer site/ && $5 ~ /file\(s\)/ { t = $1 " " $2; if (t > p) p = t }
+                $3 == "E" { t = $1 " " $2
+                            iscf = ($5 ~ /^Connection failure while /) ? 1 : 0
+                            if (t > e) { e = t; ecf = iscf }
+                            if (iscf) cfs[t] = 1 }
                 # name <TAB> newest successful poll <TAB> 1 when no E-level
                 # mention is newer. The FLAG drives the blue rule (a UC3 that
                 # never transferred); the STAMP drives the green-keep below,
                 # where the comparison is against the red-flip evidence rather
                 # than against E-level mentions.
-                END { if (p != "") printf "%s\t%s\t%d\n", n, p, (p >= e ? 1 : 0) }
-            ' "$_pf"
+                END { if (p != "") printf "%s\t%s\t%d\n", n, p, (p >= e ? 1 : 0)
+                      # the connection-failure streak candidate (see CONNCAND)
+                      if (e != "" && ecf) { z = ""; for (t in cfs) if (t > p) z = z (z == "" ? "" : "|") t
+                                            printf "%s\t%s\t%s\n", n, e, z >> cf } }
+            ' "$_pf" "$_rf"
         done
     fi
 } > "$POLLCAND"
@@ -396,7 +420,7 @@ _build_kaputflip
 [ -f "$KAPUTFLIP" ] || : > "$KAPUTFLIP"
 [ -f "$RINGORPH" ] || : > "$RINGORPH"
 
-awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v srvc="$SRVC" '
+awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srvc="$SRVC" '
     # raise bdt to ring file f'\''s newest E-LEVEL line "date time" when newer
     # (the per-name rings are newest-first, so the first E met is the newest;
     # a missing file reads nothing). ERRORS ONLY (2026-08): a Warning must not
@@ -423,6 +447,7 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v srvc="$SRVC" '
                           next }   # UC3 clean-poll candidates (see above)
     FILENAME == ARGV[3] { if ($1 != "" && $2 != "") RA[toupper($1)] = $2; next }   # subscription -> newest connected-ring Error attributed to it
     FILENAME == ARGV[4] { if ($1 != "" && $2 != "") KF[toupper($1)] = $2; next }   # subscription -> newest LOOSE connected-ring Error (the went-kaput join; deploy-classified flows absent)
+    FILENAME == ARGV[5] { if ($1 != "" && $2 != "") { CFN[toupper($1)] = $2; CFS[toupper($1)] = $3 }; next }   # UC3 connection-failure streak candidates (see CONNCAND)
     {
         k = toupper($1)
         r = "orange"; expd = 0   # expd, not exp: exp() is an awk BUILT-IN
@@ -462,7 +487,23 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v srvc="$SRVC" '
             # rule above trusts for a UC3 that never transferred, applied to
             # one that has: the flip is skipped and the subscription stays
             # green (2026-08).
-            if (bdt != "" && bdt > lt[k] && !((k in pt) && pt[k] > bdt)) { r = "red"; print $1 "\t" bdt > rf }   # record the flip + its evidence stamp (the _redflip sidecar)
+            # THE UC3 CONNECTION-FAILURE STREAK (2026-09-05, user rule): when
+            # the newest evidence IS this flow'\''s own newest "Connection
+            # failure while <flow> tried to connect …" line, it reds the flow
+            # only after THREE failed polls in a row — its connection failures
+            # newer than the newest successful poll (CONNCAND) and newer than
+            # the last transfer. Fewer = HELD: the flow stays green and lands
+            # in the _connhold sidecar (the went-kaput page still shows it as
+            # trouble after success). Evidence of any other kind, or a newer
+            # line, flips as before.
+            due = (bdt != "" && bdt > lt[k] && !((k in pt) && pt[k] > bdt))
+            held = 0
+            if (due && (k in CFN) && CFN[k] == bdt) {
+                n3 = 0; m3 = split(CFS[k], Z3, "|")
+                for (i3 = 1; i3 <= m3; i3++) if (Z3[i3] != "" && Z3[i3] > lt[k]) n3++
+                if (n3 < 3) { held = 1; print $1 "\t" bdt "\t" n3 > ch }
+            }
+            if (due && !held) { r = "red"; print $1 "\t" bdt > rf }   # record the flip + its evidence stamp (the _redflip sidecar)
         }
         if ($3 == "blue" && r == "orange") r = "blue"   # preserve the server-log-only marking ONLY over orange — an entity whose own data says green/red is already seen (bin/build/seen-in-server-log.sh runs first)
         # The UC3 clean-poll rule: polling verified working, simply nothing
@@ -474,13 +515,15 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v srvc="$SRVC" '
         if ((r == "blue" || r == "orange") && (k in po)) { r = "green"; print $1 > gp }
         print $1 "\t" $2 "\t" r
     }
-' "$FILES" "$POLLCAND" "$RINGATTR" "$KAPUTFLIP" "$BASE/_subscriptions.tsv" > "$BASE/_subscriptions.tsv.tmp" \
+' "$FILES" "$POLLCAND" "$RINGATTR" "$KAPUTFLIP" "$CONNCAND" "$BASE/_subscriptions.tsv" > "$BASE/_subscriptions.tsv.tmp" \
     && commit_tmp "$BASE/_subscriptions.tsv"
 [ -f "$POLLOK.tmp" ] || : > "$POLLOK.tmp"   # no flips: an empty (not absent) sidecar
 commit_tmp "$POLLOK"
 [ -f "$REDFLIP.tmp" ] || : > "$REDFLIP.tmp"   # same rule for the red-flip sidecar
 commit_tmp "$REDFLIP"
-rm -f "$POLLCAND"
+[ -f "$CONNHOLD.tmp" ] || : > "$CONNHOLD.tmp"   # and for the connection-failure hold sidecar
+commit_tmp "$CONNHOLD"
+rm -f "$POLLCAND" "$CONNCAND"
 
 # ---- stage 2: everything else, rolled up from its subscriptions ------------
 # For each other base file, join its _<item>-subscriptions.tsv pair cache

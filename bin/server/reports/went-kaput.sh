@@ -45,7 +45,9 @@
 # in the home page's Reason column. Since 2026-08-22 the same evidence FLIPS
 # the flow red (bin/build/result.sh _build_kaputflip — the loose connected-
 # ring join promoted to the colour, deploy-classified flows excluded, the UC3
-# clean-poll keep applied), so a trouble-after-success flow normally arrives
+# clean-poll keep applied, and since 2026-09-05 a UC3 connection failure
+# counting only after THREE failed polls in a row — blue/_connhold.tsv), so a
+# trouble-after-success flow normally arrives
 # on the home "Failing subscriptions in Server log" table RED and leaves this
 # page through the still-green filter; what stays here is the deploy-
 # classified and poll-cleared remainder. bin/build/publish.sh's green-row
