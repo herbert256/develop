@@ -6,21 +6,25 @@
 #
 #   1. `git pull` the exchange repo at ~/exchange/ (rebase, autostash; a
 #      failed pull — offline, a conflict — is a WARNING: the build continues
-#      with the checkout as-is and update.7z is not touched).
-#   2. When ~/exchange/update.7z exists: ingest it exactly like the ~/cloud
-#      intake — bin/build/st-reports-update.sh with the file as its argument
-#      (unpack with input/secrets/st-reports.pass, copy the six
-#      input/<env>/{flow-manager,server,transfer}/ directories onto the
-#      checkout, delete the archive only after a fully successful copy; a bad
-#      archive FAILS the build and the file stays).
-#   3. Commit + push the consumption (the deleted update.7z), so the sending
-#      side sees it was taken. A failed push is a WARNING — the commit is
+#      with the checkout as-is and no archive is touched).
+#   2. EVERY *.7z in ~/exchange/ except the outbound st-reports*.7z is an
+#      update (2026-09-04: the inbox used to accept only the name update.7z,
+#      and deliveries named input.7z / logEntry_09-03.7z / Downloads.7z sat
+#      there unread while the site stayed stale). Each is ingested exactly
+#      like the ~/cloud intake — bin/build/st-reports-update.sh with the file
+#      as its argument (unpack with input/secrets/st-reports.pass, copy the
+#      exports onto input/<env>/{flow-manager,server,transfer}/ — the repo
+#      tree or loose CSV/JSON files routed by name, see that header — and
+#      delete the archive only after a fully successful copy; a bad archive
+#      FAILS the build and the file stays).
+#   3. Commit + push the consumption (the deleted archives), so the sending
+#      side sees they were taken. A failed push is a WARNING — the commit is
 #      local and goes out with the next build's push.
 #
 # No git repo at ~/exchange/ = the quiet no-op (this machine has no exchange
 # clone; AXWAY_EXCHANGE_DIR overrides the location, mainly for tests).
 # st-reports-archive.sh pushes the BUILT SITE back into the same repo at the
-# end of the build (st-reports.7z, stable name).
+# end of the build (st-reports.7z, stable name) — never an inbox file.
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,26 +37,39 @@ if [ ! -d "$EX/.git" ]; then
 fi
 
 if ! git -C "$EX" pull --rebase --autostash --quiet; then
-    echo "exchange-in: WARNING - git pull failed in $EX (offline? a conflict?) — continuing with the checkout as-is; update.7z is NOT touched this build." >&2
+    echo "exchange-in: WARNING - git pull failed in $EX (offline? a conflict?) — continuing with the checkout as-is; no archive is touched this build." >&2
     exit 0
 fi
 
-UPD="$EX/update.7z"
-if [ ! -f "$UPD" ]; then
-    echo "exchange-in: pulled $EX — no update.7z to ingest." >&2
+# ---- the inbox: every *.7z that is not our own outbound site archive -------
+updates=()
+for f in "$EX"/*.7z; do
+    [ -f "$f" ] || continue
+    case "$(basename "$f")" in
+        st-reports.7z|st-reports_*.7z) continue ;;
+    esac
+    updates+=("$f")
+done
+if [ ${#updates[@]} -eq 0 ]; then
+    echo "exchange-in: pulled $EX — no *.7z update to ingest." >&2
     exit 0
 fi
 
-# the shared intake (unpack, copy the six dirs, delete on success; a failure
-# exits 1 and keeps the file — the build stops rather than parse stale input)
-bin/build/st-reports-update.sh "$UPD"
+# the shared intake (unpack, copy, delete on success; a failure exits 1 and
+# keeps the file — the build stops rather than parse stale input)
+names=()
+for f in "${updates[@]}"; do
+    echo "exchange-in: ingesting $(basename "$f") ..." >&2
+    bin/build/st-reports-update.sh "$f"
+    names+=("$(basename "$f")")
+done
 
 if [ -n "$(git -C "$EX" status --porcelain)" ]; then
     git -C "$EX" add -A
-    git -C "$EX" commit --quiet -m "update.7z consumed by the runtime build $(date '+%Y-%m-%d %H:%M')"
+    git -C "$EX" commit --quiet -m "${names[*]} consumed by the runtime build $(date '+%Y-%m-%d %H:%M')"
 fi
 if git -C "$EX" push --quiet 2>/dev/null; then
-    echo "exchange-in: consumption pushed to the exchange repo." >&2
+    echo "exchange-in: consumption of ${names[*]} pushed to the exchange repo." >&2
 else
     echo "exchange-in: WARNING - push failed (offline?) — the consumption commit is local and goes out with the next build." >&2
 fi

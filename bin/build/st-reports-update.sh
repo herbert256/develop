@@ -1,29 +1,46 @@
 #!/usr/bin/env bash
 #
 # st-reports-update.sh — RUNTIME-ONLY build step (2026-08-31, user request):
-# ingest a delivered update.7z BEFORE anything parses. The archive path is
-# the optional $1 (bin/build/exchange-in.sh passes ~/exchange/update.7z, the
-# git-based inbox); without one it is the ~/cloud/update.7z drop. The archive
-# is packed elsewhere with the SAME password st-reports-archive.sh generates
-# (input/secrets/st-reports.pass) and carries fresh exports under the repo's
-# own input/ layout. When the file exists:
+# ingest a delivered update archive BEFORE anything parses. The archive path
+# is the optional $1 (bin/build/exchange-in.sh passes every *.7z of the
+# git-based inbox ~/exchange/, one call each); without one it is the
+# ~/cloud/update.7z drop. The archive is packed elsewhere with the SAME
+# password st-reports-archive.sh generates (input/secrets/st-reports.pass)
+# and carries fresh exports. When the file exists:
 #
 #   1. unpack it (password from input/secrets/st-reports.pass),
-#   2. copy the files of exactly these six directories onto the checkout's
-#      same directories (existing files overwritten — a re-delivered export
-#      replaces its older self, and the incremental parse manifests notice
-#      the changed sizes and reparse):
-#          input/acceptance/flow-manager/   input/production/flow-manager/
-#          input/acceptance/server/         input/production/server/
-#          input/acceptance/transfer/       input/production/transfer/
-#   3. delete the update.7z — only after a fully successful copy.
+#   2. copy the exports onto the checkout's input/ tree (existing files
+#      overwritten — a re-delivered export replaces its older self, and the
+#      incremental parse manifests notice the changed sizes and reparse).
+#      Two layouts are understood:
+#        a. the REPO TREE — the files of exactly these six directories,
+#           rooted at input/ or directly at the environment directories:
+#              input/acceptance/flow-manager/   input/production/flow-manager/
+#              input/acceptance/server/         input/production/server/
+#              input/acceptance/transfer/       input/production/transfer/
+#        b. LOOSE FILES (2026-09-04: deliveries like Downloads.7z holding a
+#           bare logEntry_09-03.csv + transferLog_09-03.csv) routed by name:
+#              logEntry*.csv      -> input/<env>/server/
+#              transferLog*.csv   -> input/<env>/transfer/
+#              partners.json, subscriptions.json -> input/<env>/flow-manager/
+#           The ENVIRONMENT of a loose file comes from its path inside the
+#           archive (a leading acceptance/ or production/ folder, with or
+#           without input/ above it) or else from the ARCHIVE NAME
+#           (production-Downloads.7z, acc_logs.7z: "prod"/"acc", any case).
+#           NEVER guessed: a loose file whose environment cannot be told
+#           FAILS the build and leaves the archive — a wrong guess would
+#           overwrite the other environment's irreplaceable export with
+#           this one. Rename the archive and rebuild.
+#           Any other loose file is listed and ignored.
+#   3. delete the archive — only after a fully successful copy.
 #
 # Nothing else in the archive is looked at: ip/, renames/, secrets/, the
 # policy files and anything outside the six directories are never touched.
-# No update.7z is the quiet no-op. A FAILURE (missing password file, wrong
-# password, corrupt archive, none of the six directories inside) fails the
-# build loudly and LEAVES the archive in place — building silently on stale
-# inputs is worse than stopping; fix or remove the file.
+# No archive is the quiet no-op. A FAILURE (missing password file, wrong
+# password, corrupt archive, nothing ingestible inside, an environment-less
+# loose file) fails the build loudly and LEAVES the archive in place —
+# building silently on stale inputs is worse than stopping; fix or remove
+# the file.
 #
 # Runs before the HAVE_ACC/HAVE_PROD detection in bin/build.sh, so an update
 # delivering an environment's FIRST flow-manager exports enables that
@@ -50,6 +67,7 @@ if ! 7z x -aoa -p"$pass" -o"$tmp" "$UPD" >/dev/null 2>&1; then
     exit 1
 fi
 
+# ---- a. the repo tree: the six directories ---------------------------------
 total=0
 for d in input/acceptance/flow-manager input/acceptance/server input/acceptance/transfer \
          input/production/flow-manager input/production/server input/production/transfer; do
@@ -67,8 +85,66 @@ for d in input/acceptance/flow-manager input/acceptance/server input/acceptance/
     echo "st-reports-update: $n file(s) -> $d/" >&2
 done
 
+# ---- b. loose files, routed by name -----------------------------------------
+# the environment the ARCHIVE NAME implies (empty = none)
+name_env=""
+lc=$(basename "$UPD" | tr '[:upper:]' '[:lower:]')
+case "$lc" in
+    *acc*prod*|*prod*acc*) echo "st-reports-update: $UPDD names BOTH environments — cannot route loose files by its name." >&2 ;;
+    *acc*)  name_env=acceptance ;;
+    *prod*) name_env=production ;;
+esac
+
+# route first, copy only when EVERY loose export has a home — a partial copy
+# followed by a failure would leave the checkout half-updated
+unrouted=()
+ignored=()
+plan_src=()
+plan_dst=()
+while IFS= read -r -d '' f; do
+    rel="${f#$tmp/}"
+    rel="${rel#input/}"
+    env="$name_env"
+    case "$rel" in
+        acceptance/*) env=acceptance; rel="${rel#acceptance/}" ;;
+        production/*) env=production; rel="${rel#production/}" ;;
+    esac
+    # files inside one of the three known subdirs were copied by pass a.
+    case "$rel" in
+        flow-manager/*|server/*|transfer/*) [ -n "$env" ] && continue ;;
+    esac
+    base=$(basename "$f")
+    sub=""
+    case "$base" in
+        logEntry*.csv)                     sub=server ;;
+        transferLog*.csv)                  sub=transfer ;;
+        partners.json|subscriptions.json)  sub=flow-manager ;;
+    esac
+    if [ -z "$sub" ]; then ignored+=("$rel"); continue; fi
+    if [ -z "$env" ]; then unrouted+=("$rel"); continue; fi
+    plan_src+=("$f")
+    plan_dst+=("input/$env/$sub/$base")
+done < <(find "$tmp" -type f ! -name '.DS_Store' -print0)
+
+if [ ${#ignored[@]} -gt 0 ]; then
+    echo "st-reports-update: ignored (not an export): ${ignored[*]}" >&2
+fi
+if [ ${#unrouted[@]} -gt 0 ]; then
+    echo "st-reports-update: $UPDD holds loose export(s) whose ENVIRONMENT cannot be told: ${unrouted[*]}" >&2
+    echo "st-reports-update: rename the archive to say which — e.g. production-$(basename "$UPD") or acceptance-$(basename "$UPD") — or pack them under acceptance/ or production/. The file stays; nothing was removed." >&2
+    exit 1
+fi
+i=0
+while [ $i -lt ${#plan_src[@]} ]; do
+    mkdir -p "$(dirname "${plan_dst[$i]}")"
+    cp -p "${plan_src[$i]}" "${plan_dst[$i]}"
+    total=$((total + 1))
+    echo "st-reports-update: ${plan_src[$i]#$tmp/} -> ${plan_dst[$i]}" >&2
+    i=$((i + 1))
+done
+
 if [ "$total" -eq 0 ]; then
-    echo "st-reports-update: $UPDD holds NONE of the six input directories — the file stays; check its layout (expected input/<env>/{flow-manager,server,transfer}/...)." >&2
+    echo "st-reports-update: $UPDD holds NO export at all — the file stays; check its layout (expected input/<env>/{flow-manager,server,transfer}/... or loose logEntry*.csv / transferLog*.csv / partners.json / subscriptions.json)." >&2
     exit 1
 fi
 rm -f "$UPD"
