@@ -19,10 +19,13 @@
 #     be green; the evidence is the subscription's own _err_warn ring plus
 #     every connected host/account/login ring LINE the attribution below
 #     pins on this flow — never a connected ring wholesale)
-#     … EXCEPT a UC3 flow whose newest evidence is its own "Connection
-#     failure while <flow> tried to connect …" line: that reds it only
-#     after THREE FAILED POLLS IN A ROW (2026-09-05, user rule — one or two
-#     failed polls are a blip; blue/_connhold.tsv lists the held flows)
+#     … EXCEPT a UC3 flow whose newest evidence is a "Connection failure
+#     while <flow> tried to connect …" line — its own, or a sibling's on
+#     the shared host/account ring: that reds it only after THREE FAILED
+#     POLLS IN A ROW of its own (2026-09-05, user rule — one or two failed
+#     polls are a blip); below three the connection failures are discounted
+#     and the newest other evidence decides; blue/_connhold.tsv lists the
+#     flows kept green by it
 #
 # Stage 2 — every OTHER base file, rolled up from its connected subscriptions
 # via the data/flow-manager/xref/_<item>-subscriptions.tsv pair caches:
@@ -86,12 +89,16 @@ POLLCAND="$BLUEDIR/_greenpoll.cand"   # candidates; stage 1 writes the final lis
 # failure while <UC3 flow> tried to connect to remote host …" line reds the
 # flow only when it happened on THREE POLLS IN A ROW — each such line is one
 # failed poll attempt, and one or two in a row are a blip the next poll
-# clears. CONNCAND carries, per UC3 flow whose NEWEST own E-level line is
-# such a failure: name <TAB> that stamp <TAB> the "|"-joined stamps of its
-# connection failures NEWER than its newest successful poll (from the
-# mention cache AND the Error/Warn ring, one entry per stamp). Stage 1
-# counts the ones newer than the last transfer as the streak. CONNHOLD is
-# the sidecar of flows the streak rule kept green (name, stamp, streak).
+# clears. CONNCAND carries, per UC3 flow with an own E-level line: name
+# <TAB> newest own E stamp <TAB> newest own NON-connection-failure E stamp
+# <TAB> newest successful poll <TAB> the "|"-joined stamps of its connection
+# failures (mention cache AND Error/Warn ring, one entry per stamp). Stage 1
+# recognises connection-failure evidence by those stamps — the flow's own
+# line, or the same failure kind arriving through a shared host/account
+# ring — counts the failures newer than the newest successful poll and the
+# last transfer as the streak, and below three DISCOUNTS the connection
+# failures: the newest of the remaining evidence decides. CONNHOLD is the
+# sidecar of flows the rule kept green (name, stamp, streak).
 CONNCAND="$BLUEDIR/_connfail.cand"
 CONNHOLD="$BLUEDIR/_connhold.tsv"
 # The red-flip sidecar (2026-08): every subscription the after-last-transfer
@@ -118,8 +125,8 @@ mkdir -p "$BLUEDIR"
                 FILENAME == ARGV[1] && $5 ~ /Applying the search pattern/ && $5 ~ /for transfer site/ && $5 ~ /file\(s\)/ { t = $1 " " $2; if (t > p) p = t }
                 $3 == "E" { t = $1 " " $2
                             iscf = ($5 ~ /^Connection failure while /) ? 1 : 0
-                            if (t > e) { e = t; ecf = iscf }
-                            if (iscf) cfs[t] = 1 }
+                            if (t > e) e = t
+                            if (iscf) cfs[t] = 1; else if (t > encf) encf = t }
                 # name <TAB> newest successful poll <TAB> 1 when no E-level
                 # mention is newer. The FLAG drives the blue rule (a UC3 that
                 # never transferred); the STAMP drives the green-keep below,
@@ -127,8 +134,8 @@ mkdir -p "$BLUEDIR"
                 # than against E-level mentions.
                 END { if (p != "") printf "%s\t%s\t%d\n", n, p, (p >= e ? 1 : 0)
                       # the connection-failure streak candidate (see CONNCAND)
-                      if (e != "" && ecf) { z = ""; for (t in cfs) if (t > p) z = z (z == "" ? "" : "|") t
-                                            printf "%s\t%s\t%s\n", n, e, z >> cf } }
+                      if (e != "") { z = ""; for (t in cfs) z = z (z == "" ? "" : "|") t
+                                     printf "%s\t%s\t%s\t%s\t%s\n", n, e, encf, p, z >> cf } }
             ' "$_pf" "$_rf"
         done
     fi
@@ -342,7 +349,7 @@ _build_ringattr
 # bdt via ringmax; this file carries only the connected-ring side. Host rings
 # join only for a single-host flow (two hosts = unattributable, as
 # everywhere), the endpoint's forward addresses included.
-KAPUTFLIP="$BLUEDIR/_kaputflip.tsv"   # subscription <TAB> newest connected-ring E stamp (deploy-classified flows absent)
+KAPUTFLIP="$BLUEDIR/_kaputflip.tsv"   # subscription <TAB> newest connected-ring E stamp <TAB> 1 = a connection failure (deploy-classified flows absent)
 _build_kaputflip() {
     local rings=() f tmp
     for f in "$SRVC"/accounts/*_err_warn.tsv "$SRVC"/logins/*_err_warn.tsv "$SRVC"/hosts/*_err_warn.tsv; do
@@ -409,7 +416,7 @@ _build_kaputflip() {
             if (best == "") next
             r = flip_reason(msg)
             if (r == "Route stopped" || r == "Receive File As not set") next
-            printf "%s\t%s\n", s, best
+            printf "%s\t%s\t%d\n", s, best, (r == "Connection failures" ? 1 : 0)   # col 3: the UC3 streak rule discounts a connection failure (stage 1)
         }
     ' "$tmp" "$_kfsa" "$_kfsl" "$_kfsh" "$IPH_P" "$BASE/_subscriptions.tsv" \
     | LC_ALL=C sort > "$KAPUTFLIP.tmp"
@@ -446,8 +453,10 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
                                           if ($2 != "") pt[toupper($1)] = $2 }   # newest successful poll, for the green-keep
                           next }   # UC3 clean-poll candidates (see above)
     FILENAME == ARGV[3] { if ($1 != "" && $2 != "") RA[toupper($1)] = $2; next }   # subscription -> newest connected-ring Error attributed to it
-    FILENAME == ARGV[4] { if ($1 != "" && $2 != "") KF[toupper($1)] = $2; next }   # subscription -> newest LOOSE connected-ring Error (the went-kaput join; deploy-classified flows absent)
-    FILENAME == ARGV[5] { if ($1 != "" && $2 != "") { CFN[toupper($1)] = $2; CFS[toupper($1)] = $3 }; next }   # UC3 connection-failure streak candidates (see CONNCAND)
+    FILENAME == ARGV[4] { if ($1 != "" && $2 != "") { KF[toupper($1)] = $2; KFC[toupper($1)] = $3 + 0 }; next }   # subscription -> newest LOOSE connected-ring Error (the went-kaput join; deploy-classified flows absent) + its connection-failure flag
+    FILENAME == ARGV[5] { if ($1 != "" && $2 != "") { u = toupper($1); UC3[u] = 1; ENCF[u] = $3; CFP[u] = $4
+                                                      m5 = split($5, Z5, "|"); for (i5 = 1; i5 <= m5; i5++) if (Z5[i5] != "") { cfset[u SUBSEP Z5[i5]] = 1; CFL[u] = CFL[u] SUBSEP Z5[i5] } }
+                          next }   # UC3 connection-failure streak candidates (see CONNCAND)
     {
         k = toupper($1)
         r = "orange"; expd = 0   # expd, not exp: exp() is an awk BUILT-IN
@@ -498,10 +507,27 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
             # line, flips as before.
             due = (bdt != "" && bdt > lt[k] && !((k in pt) && pt[k] > bdt))
             held = 0
-            if (due && (k in CFN) && CFN[k] == bdt) {
-                n3 = 0; m3 = split(CFS[k], Z3, "|")
-                for (i3 = 1; i3 <= m3; i3++) if (Z3[i3] != "" && Z3[i3] > lt[k]) n3++
-                if (n3 < 3) { held = 1; print $1 "\t" bdt "\t" n3 > ch }
+            if (due && (k in UC3)) {
+                # is the newest evidence a connection failure? The flow'\''s own
+                # line (its stamp is in the CONNCAND set — the attributed ring
+                # lines name the flow, so theirs are the same stamps), or the
+                # loose connected-ring line classified as one (a sibling flow
+                # failing on the shared host: the same endpoint, but THIS
+                # flow'\''s own polls decide its streak).
+                iscf = ((k SUBSEP bdt) in cfset) || ((k in KF) && KF[k] == bdt && KFC[k] == 1)
+                if (iscf) {
+                    n3 = 0; m3 = split(substr(CFL[k], 2), Z3, SUBSEP)
+                    for (i3 = 1; i3 <= m3; i3++) if (Z3[i3] > lt[k] && Z3[i3] > CFP[k]) n3++
+                    if (n3 < 3) {
+                        # DISCOUNT the connection failures: the newest of the
+                        # remaining evidence decides, by the same test
+                        b2 = ENCF[k]
+                        if ((k in RA) && !((k SUBSEP RA[k]) in cfset) && RA[k] > b2) b2 = RA[k]
+                        if ((k in KF) && KFC[k] != 1 && KF[k] > b2) b2 = KF[k]
+                        if (b2 != "" && b2 > lt[k] && !((k in pt) && pt[k] > b2)) bdt = b2
+                        else { held = 1; print $1 "\t" bdt "\t" n3 > ch }
+                    }
+                }
             }
             if (due && !held) { r = "red"; print $1 "\t" bdt > rf }   # record the flip + its evidence stamp (the _redflip sidecar)
         }

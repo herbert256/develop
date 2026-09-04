@@ -178,13 +178,16 @@ in the area orchestrators and feed the boxes and day pages.
    `went-kaput.sh` applies the identical rule (page + evidence sidecar), so the two stay in
    step; 1:1 owners are unchanged. So a Trouble-after-success flow arrives
    on the home "Failing subscriptions in Server log" table RED; the went-kaput page keeps only
-   the deploy-classified and poll-cleared remainder. **The UC3 connection-failure streak (2026-09-05, user rule)**: when the newest evidence is
-   the flow's OWN "Connection failure while <UC3 flow> tried to connect …" line, the flip waits
-   for THREE failed polls in a row — its connection failures newer than its newest successful
-   poll and than the last transfer (`_greenpoll.cand`'s sibling `_connfail.cand`, from the
-   per-name mention cache + Error/Warn ring). Fewer = the flow stays green and is listed in
+   the deploy-classified and poll-cleared remainder. **The UC3 connection-failure streak (2026-09-05, user rule)**: a "Connection failure while
+   <UC3 flow> tried to connect …" line reds a UC3 flow only after THREE failed polls in a row.
+   When the newest evidence is a connection failure — the flow's own line (its stamp is in
+   `_greenpoll.cand`'s sibling `_connfail.cand`, from the per-name mention cache + Error/Warn
+   ring), or a sibling's on the shared host/account ring (`_kaputflip.tsv` col 3 flags it) — the
+   flow's OWN failures newer than its newest successful poll and than the last transfer are the
+   streak; below three the connection failures are DISCOUNTED and the newest of the remaining
+   evidence decides by the usual test. Nothing left = the flow stays green, listed in
    `blue/_connhold.tsv` (name, stamp, streak); the went-kaput page still shows it as trouble
-   after success. Evidence of any other kind, or a newer line, flips as before. **The UC3 clean-poll
+   after success. Evidence of any other kind flips as before. **The UC3 clean-poll
    exception (2026-08)**: a would-be-blue UC3 subscription whose
    newest successful poll line ("Applying the search pattern … for transfer site '…': N file(s) …",
    per-name server mention cache) is no older than its newest E-level mention flips **GREEN** — the
