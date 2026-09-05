@@ -168,10 +168,10 @@
     for (i = 0; i < hr.cells.length; i++) {
       th = hr.cells[i];
       if (th === last) continue;
-      while ((b = th.querySelector(".csvbtn, .colbtn"))) last.appendChild(b);
+      while ((b = th.querySelector(".csvbtn, .colbtn, .pickbtn, .colpick"))) last.appendChild(b);
       th.className = th.className.replace(/ ?\bcsvhost\b/, "");
     }
-    if (last.querySelector(".csvbtn, .colbtn") && !/\bcsvhost\b/.test(last.className)) last.className += (last.className ? " " : "") + "csvhost";
+    if (last.querySelector(".csvbtn, .colbtn, .pickbtn") && !/\bcsvhost\b/.test(last.className)) last.className += (last.className ? " " : "") + "csvhost";
   }
   function applyOrder(table, hr, order) {
     var n = hr.cells.length, rows = table.rows, i, j, r, cs, byCi, sortedCi = null, sc, c;
@@ -187,7 +187,33 @@
     if (sortedCi !== null) { var np = colByCi(hr, sortedCi); if (np >= 0) table.setAttribute("data-sort-col", String(np)); }
     placeHotspots(table, hr);
     var rb = table.querySelector(".colbtn");
-    if (rb) rb.className = "colbtn" + (isIdentity(order) ? "" : " on");
+    if (rb) rb.className = "colbtn" + ((isIdentity(order) && !(table._colHidden || []).length) ? "" : " on");
+  }
+  // Hidden columns (the "cols" picker): the cells carry the hidden ATTRIBUTE —
+  // a class would not survive the className restores of the recalc paths.
+  function loadHidden(key, n) {
+    try {
+      var v = JSON.parse(localStorage.getItem(key) || "null"), out = [], i;
+      if (!v || !v.length) return [];
+      for (i = 0; i < v.length; i++) if (typeof v[i] === "number" && v[i] >= 0 && v[i] < n && out.indexOf(v[i]) < 0) out.push(v[i]);
+      return out.length >= n ? [] : out;   // never every column
+    } catch (e) { return []; }
+  }
+  function saveHidden(key, hidden) {
+    try { if (hidden.length) localStorage.setItem(key, JSON.stringify(hidden)); else localStorage.removeItem(key); } catch (e) {}
+  }
+  function applyHidden(table, hr, hidden) {
+    var n = hr.cells.length, rows = table.rows, i, j, r, cs, set = {}, c;
+    for (i = 0; i < hidden.length; i++) set[hidden[i]] = 1;
+    table._colHidden = hidden;
+    for (i = 0; i < rows.length; i++) {
+      r = rows[i]; cs = r.cells;
+      if (cs.length === 1 && !r.getElementsByTagName("th").length) continue;
+      if (cs.length !== n && isTotal(r) && hidden.length) splitSpans(r);
+      for (j = 0; j < cs.length; j++) { c = cs[j]; c.hidden = !!set[ciOf(c)]; }
+    }
+    var rb = table.querySelector(".colbtn");
+    if (rb) rb.className = "colbtn" + ((hidden.length || !isIdentity(curOrder(hr))) ? " on" : "");
   }
   function initColOrder(table) {
     var hr = headerRow(table); if (!hr) return;
@@ -199,18 +225,61 @@
       ci = 0;
       for (j = 0; j < cs.length; j++) { cs[j].setAttribute("data-ci", String(ci)); ci += cs[j].colSpan || 1; }
     }
-    var key = colOrderKey(table, hr);
+    var key = colOrderKey(table, hr), hkey = "colhide:" + key.slice(9), labels = [];
+    for (i = 0; i < n; i++) labels.push(hr.cells[i].textContent.replace(/[▲▼]/g, "").trim());
     // the ↺ hotspot (its home is the last header cell; placeHotspots keeps it there)
     var rb = document.createElement("span");
-    rb.className = "colbtn"; rb.textContent = "↺"; rb.title = "Restore the built column order";
+    rb.className = "colbtn"; rb.textContent = "↺"; rb.title = "Restore the built columns (order and visibility)";
     rb.addEventListener("click", function (e) {
       e.preventDefault(); e.stopPropagation();
       var idn = [], k; for (k = 0; k < n; k++) idn.push(k);
+      applyHidden(table, hr, []); saveHidden(hkey, []);
       applyOrder(table, hr, idn); saveOrder(key, idn, true);
     });
     hr.cells[n - 1].appendChild(rb);
+    // the "cols" hotspot + its picker: one checkbox per column, in the current order
+    var pb = document.createElement("span"), pop = document.createElement("div"), host = null;
+    pb.className = "pickbtn"; pb.textContent = "cols"; pb.title = "Choose the columns to show";
+    pop.className = "colpick";
+    function pickClose() { pop.className = "colpick"; if (host) { host.draggable = true; host = null; } }
+    function pickOpen() {
+      pop.innerHTML = "";
+      var hid = table._colHidden || [], k, th, ci, lab, cb;
+      for (k = 0; k < hr.cells.length; k++) {
+        th = hr.cells[k]; ci = ciOf(th);
+        lab = document.createElement("label"); cb = document.createElement("input"); cb.type = "checkbox";
+        cb.checked = hid.indexOf(ci) < 0; lab.className = cb.checked ? "" : "off";
+        lab.appendChild(cb); lab.appendChild(document.createTextNode(labels[ci] || ""));
+        (function (ci, lab, cb) {
+          cb.addEventListener("change", function () {
+            var cur = (table._colHidden || []).slice(), at = cur.indexOf(ci);
+            if (cb.checked) { if (at >= 0) cur.splice(at, 1); }
+            else { if (at < 0) cur.push(ci); if (cur.length >= n) { cur.pop(); cb.checked = true; return; } }   // never every column
+            lab.className = cb.checked ? "" : "off";
+            applyHidden(table, hr, cur); saveHidden(hkey, cur);
+          });
+        })(ci, lab, cb);
+        pop.appendChild(lab);
+      }
+      var all = document.createElement("span"); all.className = "cpall"; all.textContent = "show every column";
+      all.addEventListener("click", function () { applyHidden(table, hr, []); saveHidden(hkey, []); pickOpen(); });
+      pop.appendChild(all);
+      pop.className = "colpick open";
+      host = pop.parentNode; if (host && host.tagName === "TH") host.draggable = false;   // a checkbox inside a draggable would start a drag
+    }
+    pb.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      if (/\bopen\b/.test(pop.className)) pickClose(); else pickOpen();
+    });
+    pop.addEventListener("click", function (e) { e.stopPropagation(); });   // never the header's sort click
+    pop.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+    document.addEventListener("click", function (e) { if (/\bopen\b/.test(pop.className) && !pop.contains(e.target) && e.target !== pb) pickClose(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && /\bopen\b/.test(pop.className)) pickClose(); });
+    hr.cells[n - 1].appendChild(pb); hr.cells[n - 1].appendChild(pop);
     var stored = loadOrder(key, n);
     if (stored && !isIdentity(stored)) applyOrder(table, hr, stored);
+    var hidden = loadHidden(hkey, n);
+    if (hidden.length) applyHidden(table, hr, hidden);
     // drag a header: HTML5 drag and drop, the drop side decided by the pointer
     // half of the header it lands on
     var src = null;
@@ -1462,35 +1531,41 @@
   // use the raw name).
   function sepFold(s) { return s.toLowerCase().replace(/_/g, "-"); }
 
-  function sortTable(table, col, dir) {
+  // One sort key: {ci, dir} — ci the BUILT column index (a position on a
+  // table without data-ci), dir 1 asc / -1 desc. Several keys (shift-click)
+  // sort by the first and break its ties by the next.
+  function keyCell(tr, k) { return cellByCi(tr, k.ci) || tr.cells[k.ci]; }
+  function sortKeys(table, keys) {
     closeDetails(table);                 // drop drill-down rows so they don't get orphaned
     var rows = dataRows(table);
     ungroup(table);
-    // Ordinal label columns (size/duration/dwell buckets): every row carries
-    // data-ord (emitted by the report) — sort column 0 by that ordinal, so
-    // "1 KB - 10 KB" never lands between "1 MB" and "10 MB" lexically.
-    var hr0 = headerRow(table), useOrd = (hr0 && hr0.cells[col] ? ciOf(hr0.cells[col]) === 0 : col === 0) && rows.length > 0;
-    if (useOrd) for (var oi = 0; oi < rows.length; oi++)
-      if (rows[oi].getAttribute("data-ord") === null) { useOrd = false; break; }
-    var numeric = 0, seen = 0;
-    rows.forEach(function (tr) {
-      var c = tr.cells[col]; if (!c) return;
-      if (numKey(c) !== null) { numeric++; seen++; }   // a number (a 0-blanked "z" cell is 0)
-      else if (c.textContent.trim() !== "") seen++;    // genuine non-numeric text
-      // an EMPTY non-z cell is ABSENT, not text — excluded so it cannot drag the
-      // numeric ratio below half. Without this, a view with many blank cells (the
-      // Entities "all" pages: not-seen rows have no Volume / % of Files) misreads
-      // those columns as text and sorts "3.01 GB" before "540.66 MB".
+    keys.forEach(function (k) {
+      // Ordinal label columns (size/duration/dwell buckets): every row carries
+      // data-ord (emitted by the report) — sort the BUILT column 0 by that
+      // ordinal, so "1 KB - 10 KB" never lands between "1 MB" and "10 MB" lexically.
+      k.ord = k.ci === 0 && rows.length > 0;
+      if (k.ord) for (var oi = 0; oi < rows.length; oi++)
+        if (rows[oi].getAttribute("data-ord") === null) { k.ord = false; break; }
+      var numeric = 0, seen = 0;
+      rows.forEach(function (tr) {
+        var c = keyCell(tr, k); if (!c) return;
+        if (numKey(c) !== null) { numeric++; seen++; }   // a number (a 0-blanked "z" cell is 0)
+        else if (c.textContent.trim() !== "") seen++;    // genuine non-numeric text
+        // an EMPTY non-z cell is ABSENT, not text — excluded so it cannot drag the
+        // numeric ratio below half. Without this, a view with many blank cells (the
+        // Entities "all" pages: not-seen rows have no Volume / % of Files) misreads
+        // those columns as text and sorts "3.01 GB" before "540.66 MB".
+      });
+      k.num = seen > 0 && numeric >= seen / 2;
     });
-    var asNum = seen > 0 && numeric >= seen / 2;
-    rows.sort(function (a, b) {
-      if (useOrd) {
+    function cmp1(a, b, k) {
+      if (k.ord) {
         var oa = +a.getAttribute("data-ord"), ob = +b.getAttribute("data-ord");
-        return dir * (oa < ob ? -1 : oa > ob ? 1 : 0);
+        return k.dir * (oa < ob ? -1 : oa > ob ? 1 : 0);
       }
-      var ca = a.cells[col], cb = b.cells[col];
+      var ca = keyCell(a, k), cb = keyCell(b, k);
       var sa = ca ? ca.textContent.trim() : "", sb = cb ? cb.textContent.trim() : "", r;
-      if (asNum) {
+      if (k.num) {
         var ka = numKey(ca), kb = numKey(cb);     // 0-blanked -> 0; other non-numeric -> null
         if (ka === null && kb === null) r = 0;
         else if (ka === null) return 1;           // genuine non-numeric sinks last, BOTH directions
@@ -1513,7 +1588,11 @@
           r = ra < rb ? -1 : ra > rb ? 1 : 0;
         }
       }
-      return dir * r;
+      return k.dir * r;
+    }
+    rows.sort(function (a, b) {
+      for (var i = 0; i < keys.length; i++) { var r = cmp1(a, b, keys[i]); if (r) return r; }
+      return 0;
     });
     var body = table.tBodies[0] || table;
     if (table.getAttribute("data-total-top") === "1") {
@@ -1527,6 +1606,18 @@
     applyGroup(table);   // re-blank repeats in the new order
     repositionPairs(table);           // keep each message row above its (re-ordered) data row
     repage(table);                    // a sort reshuffles the pages
+    table._sortKeys = keys;
+  }
+  // position-based entry: col is the CURRENT header position
+  function sortTable(table, col, dir) {
+    var hr = headerRow(table), ci = (hr && hr.cells[col]) ? ciOf(hr.cells[col]) : col;
+    sortKeys(table, [{ ci: ci, dir: dir }]);
+  }
+  // re-apply whatever sort a table holds (after a re-aggregation)
+  function resort(table) {
+    if (table._sortKeys && table._sortKeys.length) { sortKeys(table, table._sortKeys); return; }
+    var sc = table.getAttribute("data-sort-col");
+    if (sc !== null) sortTable(table, parseInt(sc, 10), parseInt(table.getAttribute("data-sort-dir"), 10) || 1);
   }
 
   // The fold summary row ("N folded rows") is excluded from dataRows/totalRows,
@@ -1582,7 +1673,9 @@
     }
     return "sort:" + pageKeyBase() + ":" + label + ":" + n;
   }
-  function saveSort(table, col, dir) { try { sessionStorage.setItem(sortStoreKey(table), col + ":" + dir); } catch (e) {} }
+  function saveSort(table, keys) {   // "ci:dir,ci:dir" — the built index, primary key first
+    try { sessionStorage.setItem(sortStoreKey(table), keys.map(function (k) { return k.ci + ":" + k.dir; }).join(",")); } catch (e) {}
+  }
   function loadSort(table)           { try { return sessionStorage.getItem(sortStoreKey(table)); } catch (e) { return null; } }
 
   // ---- Transfer > Entities: ONE shared sort, an hour long ------------------
@@ -1668,15 +1761,22 @@
     var hr = headerRow(table); if (!hr) return;
     var ths = hr.cells;
     var origOrder = dataRows(table);      // .rpt order (colFirstDir samples it)
-    function applySort(col, dir) {
-      table.setAttribute("data-sort-col", String(col));
-      table.setAttribute("data-sort-dir", String(dir));
-      sortTable(table, col, dir);
+    var keys = [];                        // the active sort, primary key first
+    var SUP = ["", "", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"];
+    function applyKeys(ks) {
+      keys = ks;
+      var p = colByCi(hr, ks[0].ci); if (p < 0) p = ks[0].ci;
+      table.setAttribute("data-sort-col", String(p));
+      table.setAttribute("data-sort-dir", String(ks[0].dir));
+      sortKeys(table, ks);
       var arrows = hr.getElementsByClassName("arrow");
-      for (var j = 0; j < arrows.length; j++) arrows[j].textContent = "";
-      var a = ths[col].getElementsByClassName("arrow");
-      if (a[0]) a[0].textContent = dir > 0 ? " ▲" : " ▼";
+      for (var j = 0; j < arrows.length; j++) arrows[j].innerHTML = "";
+      ks.forEach(function (k, i) {
+        var th = cellByCi(hr, k.ci) || ths[k.ci], a = th && th.getElementsByClassName("arrow")[0];
+        if (a) a.innerHTML = (k.dir > 0 ? " ▲" : " ▼") + (i > 0 ? "<sup>" + (SUP[i + 1] || (i + 1)) + "</sup>" : "");
+      });
     }
+    function applySort(col, dir) { applyKeys([{ ci: ciOf(ths[col]), dir: dir }]); }   // col: a CURRENT position
     // (the former third-click "back to the original order" reset was REMOVED
     // 2026-07 — clicks now just toggle between the two directions)
     // First-click direction of a column: NUMERIC columns (counts, sizes,
@@ -1714,17 +1814,24 @@
         var arrow = document.createElement("span");
         arrow.className = "arrow";
         th.appendChild(arrow);
-        th.addEventListener("click", function () {
+        th.addEventListener("click", function (e) {
           col = th.cellIndex;   // the CURRENT position — a dragged column keeps its header
-          var same = table.getAttribute("data-sort-col") === String(col);
-          var f = colFirstDir(col);   // first-dir, then TOGGLE (no reset state)
-          var cur = same ? table.getAttribute("data-sort-dir") : null;
-          var dir = (same && cur === String(f)) ? -f : f;
-          applySort(col, dir);
+          var ci = ciOf(th), f = colFirstDir(col), dir, ks, ix = -1;
+          if (e.shiftKey && keys.length) {
+            // shift-click: ADD the column as the next key (or flip it if it is one)
+            ks = keys.slice();
+            ks.forEach(function (k, i) { if (k.ci === ci) ix = i; });
+            if (ix >= 0) ks[ix] = { ci: ci, dir: -ks[ix].dir }; else ks.push({ ci: ci, dir: f });
+            applyKeys(ks); dir = ks[0].dir;
+          } else {
+            var same = keys.length === 1 && keys[0].ci === ci;   // first-dir, then TOGGLE (no reset state)
+            dir = (same && keys[0].dir === f) ? -f : f;
+            applyKeys([{ ci: ci, dir: dir }]);
+          }
           // Entities pages write the SHARED hour-long entry instead of the
           // per-report one, so the pick carries to the next entity.
-          if (isEntitiesPage()) entSave(col, dir, ths);
-          else if (!SORT_FRESH) saveSort(table, ciOf(th), dir);   // survives unit switches + page revisits this session (stored by BUILT index)
+          if (isEntitiesPage()) entSave(colByCi(hr, keys[0].ci), keys[0].dir, ths);
+          else if (!SORT_FRESH) saveSort(table, keys);   // survives unit switches + page revisits this session (stored by BUILT index)
         });
       })(i, ths[i]);
     }
@@ -1760,7 +1867,7 @@
       urlSortDone = true;
       var udir = urlSort.dir || colFirstDir(urlSort.col);
       applySort(urlSort.col, udir);
-      if (!SORT_FRESH) saveSort(table, ciOf(ths[urlSort.col]), udir);
+      if (!SORT_FRESH) saveSort(table, keys);
       return;
     }
     // Entities pages: the shared hour-long entry REPLACES the per-report one
@@ -1773,9 +1880,13 @@
     }
     var stored = SORT_FRESH ? null : loadSort(table);
     if (stored) {
-      var sp = stored.split(":"), scol = parseInt(sp[0], 10), sdir = parseInt(sp[1], 10) || 1;
-      var spos = colByCi(hr, scol); if (spos >= 0) scol = spos;   // stored by built index -> current position
-      if (scol >= 0 && scol < ths.length) applySort(scol, sdir);
+      var ks = [], parts = stored.split(","), q;
+      for (q = 0; q < parts.length; q++) {
+        var sp = parts[q].split(":"), sci = parseInt(sp[0], 10), sdir = parseInt(sp[1], 10) || 1;
+        if (isNaN(sci)) continue;
+        if (colByCi(hr, sci) >= 0 || (!hr.cells[0].hasAttribute("data-ci") && sci >= 0 && sci < ths.length)) ks.push({ ci: sci, dir: sdir });
+      }
+      if (ks.length) applyKeys(ks);
     }
   }
 
@@ -2004,10 +2115,7 @@
       }
       if (searchReapply) searchReapply();   // re-evaluate the active search against the recalculated text
       for (t = 0; t < tables.length; t++) if (!tables[t].getAttribute("data-recalc") && !tables[t].getAttribute("data-heat")) recomputeTotals(tables[t]);   // recalcHeat owns their totals
-      for (t = 0; t < tables.length; t++) {                             // an active sort must hold on the re-aggregated values
-        var sc = tables[t].getAttribute("data-sort-col");
-        if (sc !== null) sortTable(tables[t], parseInt(sc, 10), parseInt(tables[t].getAttribute("data-sort-dir"), 10) || 1);
-      }
+      for (t = 0; t < tables.length; t++) resort(tables[t]);          // an active sort must hold on the re-aggregated values
       for (t = 0; t < tables.length; t++) applyGroup(tables[t]);        // re-blank on the visible set
       for (t = 0; t < tables.length; t++) markUnfiltered(tables[t], narrowed && !isDateAware(tables[t]));
       for (t = 0; t < tables.length; t++) updateEmptyState(tables[t]);
@@ -3085,12 +3193,184 @@
   // docs/assets/slotchart.js in 2026-07, with the charts themselves: the
   // tooltip has to be rebound on every redraw, so it belongs to the renderer.)
 
+  var TB_EB = "";   // the environment base of this page (buildTopbar) — the palette's link root
+
+  // ---- Dark / light theme (2026-09-05): the html data-theme attribute, the
+  // stylesheet's generated dark block (bin/darken-css.awk) does the rest. The
+  // choice lives in localStorage; unset = the system preference. The page head
+  // applies it before the stylesheet loads, so there is no light flash.
+  var THEME_KEY = "axway-theme";
+  function themeApply(t) {
+    if (!t) t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", t);
+    var b = document.querySelector(".themebtn");
+    if (b) b.title = t === "dark" ? "Switch to the light theme" : "Switch to the dark theme";
+  }
+  function setupTheme() {
+    var t = ""; try { t = localStorage.getItem(THEME_KEY) || ""; } catch (e) {}
+    themeApply(t);
+    var b = document.querySelector(".themebtn"); if (!b) return;
+    b.addEventListener("click", function (e) {
+      e.preventDefault();
+      var nt = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      try { localStorage.setItem(THEME_KEY, nt); } catch (x) {}
+      themeApply(nt);
+    });
+  }
+
+  // ---- Relative dates (2026-09-05): hovering a date cell (or the footer's
+  // "Generated on …") shows "3 days ago" as its tooltip. Lazy, by event
+  // delegation — nothing is touched until the pointer reaches the element.
+  function relTime(ms, hasTime) {
+    var n = new Date();                                   // the literal is server-local; compare in that frame
+    var nowLit = Date.UTC(n.getFullYear(), n.getMonth(), n.getDate(), n.getHours(), n.getMinutes(), n.getSeconds());
+    var days = Math.floor(nowLit / 86400000) - Math.floor(ms / 86400000), diff = nowLit - ms, v;
+    function pl(v, u) { return v + " " + u + (v === 1 ? "" : "s"); }
+    if (days < 0) return days === -1 ? "tomorrow" : "in " + pl(-days, "day");
+    if (hasTime && days === 0) {
+      if (diff < 60000) return "just now";
+      if (diff < 3600000) return pl(Math.floor(diff / 60000), "minute") + " ago";
+      return pl(Math.floor(diff / 3600000), "hour") + " ago";
+    }
+    if (days === 0) return "today";
+    if (days === 1) return "yesterday";
+    if (days < 14) return pl(days, "day") + " ago";
+    if (days < 61) { v = Math.floor(days / 7); return pl(v, "week") + " ago (" + days + " days)"; }
+    if (days < 365) { v = Math.floor(days / 30.44); return pl(v, "month") + " ago (" + days + " days)"; }
+    v = Math.floor(days / 365.25); return pl(v, "year") + " ago (" + days + " days)";
+  }
+  function setupRelDates() {
+    var re = /^(?:Generated on |Built |as of |Last poll |Last file )?(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}(?::\d{2})?))?(?:\s|$)/;
+    document.addEventListener("mouseover", function (e) {
+      var el = e.target, t, m, ms;
+      if (!el || el.nodeType !== 1 || el.hasAttribute("data-rel")) return;
+      if (!/^(TD|TH|SPAN|P|LI|STRONG|B|TIME|DIV|A|CODE|DD|DT|SMALL|EM)$/.test(el.tagName)) return;
+      t = el.textContent.trim(); if (t.length > 90) return;
+      m = re.exec(t); if (!m) return;
+      ms = parseDate(m[1] + (m[2] ? " " + (m[2].length === 5 ? m[2] + ":00" : m[2]) : ""));
+      if (ms === null) return;
+      el.setAttribute("data-rel", "1");
+      if (!el.title) el.title = relTime(ms, !!m[2]);
+    });
+  }
+
+  // ---- The command palette (2026-09-05): Ctrl+K / Cmd+K anywhere opens a
+  // box that finds REPORTS (the report finder's catalog, fetched once) and
+  // ENTITIES (search-data.js, the Entity Search payload, fetched once) of
+  // the current environment. Arrow keys move, Enter opens, Escape closes.
+  var PAL = null, palEl = null, palIn = null, palList = null, palItems = [], palAct = 0, palQ = "";
+  function palFold(s) { return s.toLowerCase().replace(/_/g, "-"); }
+  function palLoad(done) {
+    if (PAL) { done(); return; }
+    PAL = { reports: [], ents: [], pending: 2, err: "" };
+    function one() { if (--PAL.pending <= 0) done(); }
+    if (!window.fetch) { PAL.pending = 0; PAL.err = "no fetch in this browser"; done(); return; }
+    fetch(TB_EB + "report-finder.html").then(function (r) { return r.ok ? r.text() : ""; }).then(function (html) {
+      var doc = new DOMParser().parseFromString(html, "text/html"), rows = doc.querySelectorAll("tr[data-t]"), i, a, cells;
+      for (i = 0; i < rows.length; i++) {
+        a = rows[i].querySelector("a"); if (!a) continue; cells = rows[i].cells;
+        PAL.reports.push({ t: a.textContent.trim(), h: a.getAttribute("href") || "", s: cells[1] ? cells[1].textContent.trim() : "",
+                           x: palFold(a.textContent + " " + (rows[i].getAttribute("data-k") || "") + " " + (a.getAttribute("href") || "")) });
+      }
+      one();
+    }).catch(function () { PAL.err = "the report catalog could not be loaded"; one(); });
+    fetch(TB_EB + "search-data.js").then(function (r) { return r.ok ? r.text() : ""; }).then(function (txt) {
+      var lines = txt.split("\n"), i, m, ty, cellRe = /<td[^>]*>([\s\S]*?)<\/td>/g, m1, m3;
+      for (i = 0; i < lines.length; i++) {
+        if (lines[i].charAt(0) !== "<") continue;
+        m = /<a href="([^"]+)">([^<]*)<\/a>/.exec(lines[i]); if (!m) continue;
+        cellRe.lastIndex = 0; m1 = cellRe.exec(lines[i]); cellRe.exec(lines[i]); m3 = cellRe.exec(lines[i]);
+        ty = m3 ? m3[1].replace(/<[^>]*>/g, "").trim() : "";
+        PAL.ents.push({ t: m[2], h: m[1], s: ty, x: palFold(m[2]) });
+      }
+      one();
+    }).catch(function () { one(); });
+  }
+  function palMatch(list, q, cap) {
+    var toks = palFold(q).split(/\s+/).filter(Boolean), out = [], i, k, it, ok, sc;
+    if (!toks.length) return out;
+    for (i = 0; i < list.length; i++) {
+      it = list[i]; ok = true;
+      for (k = 0; k < toks.length; k++) if (it.x.indexOf(toks[k]) < 0) { ok = false; break; }
+      if (!ok) continue;
+      sc = palFold(it.t).indexOf(toks[0]) === 0 ? 0 : palFold(it.t).indexOf(toks[0]) > 0 ? 1 : 2;
+      out.push({ it: it, sc: sc });
+    }
+    out.sort(function (a, b) { return a.sc - b.sc || (a.it.t < b.it.t ? -1 : a.it.t > b.it.t ? 1 : 0); });
+    return out.slice(0, cap).map(function (o) { return o.it; });
+  }
+  function palRender() {
+    palList.innerHTML = ""; palItems = []; palAct = 0;
+    if (!PAL || PAL.pending > 0) { palList.innerHTML = '<li class="cpe">Loading…</li>'; return; }
+    var q = palQ.trim(), reps = palMatch(PAL.reports, q, 8), ents = palMatch(PAL.ents, q, 12), li;
+    function group(title, items, kind) {
+      if (!items.length) return;
+      li = document.createElement("li"); li.className = "cph"; li.textContent = title; palList.appendChild(li);
+      var seen = {}; items.forEach(function (it) { seen[it.t] = (seen[it.t] || 0) + 1; });
+      items.forEach(function (it) {
+        var e = document.createElement("li"); e.className = "cpi"; e.setAttribute("data-h", it.h);
+        e.innerHTML = '<span class="cpt"></span><span class="cps"></span>';
+        // a title the catalog carries several times (Entity coverage, one page
+        // per entity kind) gets its page name so the rows can be told apart
+        e.firstChild.textContent = it.t + (seen[it.t] > 1 ? " — " + it.h.replace(/^.*\//, "").replace(/\.html$/, "") : "");
+        e.lastChild.textContent = it.s;
+        e.addEventListener("click", function (ev) { palGo(it.h, ev.shiftKey || ev.ctrlKey || ev.metaKey); });
+        palList.appendChild(e); palItems.push(e);
+      });
+    }
+    group("Reports", reps, "r"); group("Entities", ents, "e");
+    if (!palItems.length) { li = document.createElement("li"); li.className = "cpe"; li.textContent = q ? "Nothing matches" + (PAL.err ? " (" + PAL.err + ")" : "") : "Type a report name, a keyword or an entity name"; palList.appendChild(li); }
+    palMark();
+  }
+  function palMark() {
+    for (var i = 0; i < palItems.length; i++) palItems[i].className = "cpi" + (i === palAct ? " act" : "");
+    if (palItems[palAct] && palItems[palAct].scrollIntoView) palItems[palAct].scrollIntoView({ block: "nearest" });
+  }
+  function palGo(h, newTab) {
+    if (!h) return;
+    var url = TB_EB + h;
+    if (newTab) window.open(url, "_blank"); else window.location.href = url;
+    palClose();
+  }
+  function palClose() { if (palEl) palEl.className = "cpal"; }
+  function palOpen() {
+    if (!palEl) {
+      palEl = document.createElement("div"); palEl.className = "cpal";
+      palEl.innerHTML = '<div class="cpbox"><input type="text" placeholder="Jump to a report or an entity…" spellcheck="false"><ul class="cplist"></ul>' +
+                        '<div class="cphint"><kbd>↑</kbd><kbd>↓</kbd> move &nbsp; <kbd>Enter</kbd> open &nbsp; <kbd>Shift+Enter</kbd> new tab &nbsp; <kbd>Esc</kbd> close</div></div>';
+      document.body.appendChild(palEl);
+      palIn = palEl.querySelector("input"); palList = palEl.querySelector(".cplist");
+      palEl.addEventListener("click", function (e) { if (e.target === palEl) palClose(); });
+      palIn.addEventListener("input", function () { palQ = palIn.value; palRender(); });
+      palIn.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowDown") { e.preventDefault(); if (palItems.length) { palAct = (palAct + 1) % palItems.length; palMark(); } }
+        else if (e.key === "ArrowUp") { e.preventDefault(); if (palItems.length) { palAct = (palAct - 1 + palItems.length) % palItems.length; palMark(); } }
+        else if (e.key === "Enter") { e.preventDefault(); var it = palItems[palAct]; if (it) palGo(it.getAttribute("data-h"), e.shiftKey || e.ctrlKey || e.metaKey); }
+        else if (e.key === "Escape") { e.preventDefault(); palClose(); }
+      });
+    }
+    palEl.className = "cpal open";
+    palIn.value = palQ; palIn.focus(); palIn.select();
+    palRender();
+    palLoad(palRender);
+  }
+  function setupPalette() {
+    if (!document.querySelector("div.topbar")) return;
+    document.addEventListener("keydown", function (e) {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        if (palEl && /\bopen\b/.test(palEl.className)) palClose(); else palOpen();
+      }
+    });
+  }
+
   function buildTopbar() {
     var tb = document.querySelector("div.topbar");
     if (!tb || tb.firstChild) return;                     // baked bar (help/build) — leave it
     var M = window.AXWAY_TB || {};
     var eb = tb.getAttribute("data-eb") || "";
     var b = tb.getAttribute("data-b") || "";
+    TB_EB = eb;
     var env = tb.getAttribute("data-env") || "";
     var help = tb.getAttribute("data-help") || "";
     var twin = tb.getAttribute("data-twin") || "";
@@ -3137,7 +3417,8 @@
         : (M.monitor && (M.monitor.acceptance || M.monitor.production)
             ? '<a class="dashlink monlink" style="display:none" href="' + eb + 'dashboards/monitor.html">Monitor</a>' : "")) +
       '<span class="tr-group">' +
-      '<a class="searchbtn" href="' + eb + 'report-finder.html" title="Report finder" aria-label="Report finder">🔎</a>' +
+      '<a class="searchbtn" href="' + eb + 'report-finder.html" title="Report finder (Ctrl+K / Cmd+K: quick jump from any page)" aria-label="Report finder">🔎</a>' +
+      '<a class="searchbtn themebtn" href="#" title="Dark / light theme" aria-label="Dark or light theme">◐</a>' +
       '<a class="searchbtn" href="' + eb + 'sitemap.html" title="Site map" aria-label="Site map">🗺</a>' +
       (help ? '<a class="helpbtn" href="' + b + "help/" + help + '.html" title="Help" aria-label="Help">?</a>' : "") +
       "</span>";
@@ -3265,7 +3546,7 @@
     var hr = headerRow(table), rows = dataRows(table), lines = [], i;
     function line(tr) {
       var out = [], j;
-      for (j = 0; j < tr.cells.length; j++) out.push(csvField(csvCellText(tr.cells[j])));
+      for (j = 0; j < tr.cells.length; j++) if (!tr.cells[j].hidden) out.push(csvField(csvCellText(tr.cells[j])));   // a picker-hidden column stays out
       return out.join(",");
     }
     if (hr) lines.push(line(hr));
@@ -3330,6 +3611,9 @@
 
   function init() {
     buildTopbar();          // FIRST: setupEnvSwitch/setupSrvToggle bind into the bar
+    setupTheme();           // the ◐ toggle (the head script already applied the choice)
+    setupRelDates();        // "3 days ago" tooltips on date cells, lazily
+    setupPalette();         // Ctrl+K / Cmd+K quick jump
     entTouch();             // Entities: slide the shared sort's hour on every view
     var tables = document.getElementsByTagName("table");
     for (var i = 0; i < tables.length; i++) {

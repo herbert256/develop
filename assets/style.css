@@ -266,11 +266,47 @@ tr:hover .csvbtn, .csvbtn:hover { opacity:0.9; }
 th.coldragging { opacity:0.45; }
 th.colover-l { box-shadow:inset 4px 0 0 #ffb300; }
 th.colover-r { box-shadow:inset -4px 0 0 #ffb300; }
-.colbtn { position:absolute; top:0; right:2.1rem; padding:0 0.3rem 0.2rem; font-size:0.75rem; font-weight:normal;
+/* the column PICKER ("cols", report.js initColOrder): a popover under the
+   last header cell with one checkbox per column; a hidden column's cells
+   carry the hidden attribute (survives the className restores of the
+   recalc paths, unlike a class). The hotspot row, right to left: csv ·
+   cols · ↺ (only while an order or a hidden set is active). */
+[hidden] { display:none !important; }
+th.csvhost { padding-right:4.2rem; }
+.pickbtn { position:absolute; top:0; right:2rem; padding:0 0.3rem 0.2rem; font-size:0.65rem; font-weight:normal;
+           color:#fff; opacity:0.3; cursor:pointer; user-select:none; -webkit-user-select:none; }
+tr:hover .pickbtn, .pickbtn:hover { opacity:0.9; }
+.colbtn { position:absolute; top:0; right:4.3rem; padding:0 0.3rem 0.2rem; font-size:0.75rem; font-weight:normal;
           color:#ffd36b; opacity:0.75; cursor:pointer; user-select:none; -webkit-user-select:none; display:none; }
 .colbtn.on { display:inline; }
 .colbtn:hover { opacity:1; }
-th.csvhost:has(.colbtn.on) { padding-right:3.8rem; }
+th.csvhost:has(.colbtn.on) { padding-right:6rem; }
+.colpick { display:none; position:absolute; top:100%; right:0; z-index:25; background:#fff; color:#222; border:1px solid #ddd;
+           border-radius:0 0 6px 6px; box-shadow:0 4px 10px rgba(0,0,0,0.25); padding:0.4rem 0.7rem; text-align:left;
+           font-weight:normal; font-size:0.85rem; white-space:nowrap; max-height:60vh; overflow:auto; cursor:default; }
+.colpick.open { display:block; }
+.colpick label { display:block; padding:0.15rem 0.2rem; cursor:pointer; }
+.colpick label.off { color:#8a94a1; }
+.colpick input { margin:0 0.45rem 0 0; vertical-align:middle; }
+.colpick .cpall { display:block; margin-top:0.3rem; padding-top:0.3rem; border-top:1px solid #ddd; color:#20344a; font-size:0.8rem; cursor:pointer; }
+/* the command PALETTE (report.js setupPalette, Ctrl+K / Cmd+K): a centred
+   box over a dimmed page — reports and entities of the current environment */
+.cpal { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.38); z-index:100; display:none; }
+.cpal.open { display:block; }
+.cpbox { width:44rem; max-width:92vw; margin:12vh auto 0; background:#fff; border:1px solid #ddd; border-radius:8px;
+         box-shadow:0 10px 30px rgba(0,0,0,0.35); overflow:hidden; }
+.cpbox input { width:100%; box-sizing:border-box; font:inherit; font-size:1.05rem; padding:0.7rem 0.9rem; border:0;
+               border-bottom:1px solid #ddd; outline:none; background:#fff; color:#222; }
+.cplist { list-style:none; margin:0; padding:0.3rem 0; max-height:58vh; overflow:auto; }
+.cplist li.cph { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em; color:#8a94a1; padding:0.5rem 0.9rem 0.15rem; }
+.cplist li.cpi { padding:0.35rem 0.9rem; cursor:pointer; display:flex; justify-content:space-between; gap:1rem; color:#20344a; }
+.cplist li.cpi.act, .cplist li.cpi:hover { background:#e8f0fe; }
+.cplist li.cpi .cps { color:#8a94a1; font-size:0.85rem; white-space:nowrap; }
+.cplist li.cpe { padding:0.5rem 0.9rem; color:#8a94a1; font-size:0.9rem; }
+.cphint { font-size:0.75rem; color:#8a94a1; padding:0.35rem 0.9rem 0.5rem; border-top:1px solid #ddd; }
+.cphint kbd { font:inherit; border:1px solid #ddd; border-radius:3px; padding:0 0.3rem; margin-right:0.2rem; }
+/* the sort arrow of a SECONDARY sort key carries its rank (shift-click) */
+th .arrow sup { font-size:0.65em; margin-left:0.1em; }
 tr:nth-child(even) { background-color:#f2f2f2; }
 tr:hover { background-color:#e8f0fe; }
 tr.total td { font-weight:bold; background-color:#dde4ec; border-top:2px solid #20344a; }

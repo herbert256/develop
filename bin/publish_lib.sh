@@ -691,6 +691,9 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
     # Search keeps the typed search when switching All / Seen / Not Seen. Pages
     # without it (details) fall back to pageKeyBase()'s basename derivation.
     [ -n "${7:-}" ] && printf '<meta name="report-key" content="%s">\n' "$7"
+    # the theme BEFORE the stylesheet: report.js is deferred, so without this
+    # a dark-theme reader would see every page flash light first (2026-09-05)
+    printf '%s\n' '<script>try{var t=localStorage.getItem("axway-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>'
     printf '<link rel="stylesheet" href="%sassets/style.css%s">\n<script src="%sassets/topbar-data.js%s" defer></script>\n<script src="%sassets/report.js%s" defer></script>\n' "$base" "${ASSET_VER:+?v=$ASSET_VER}" "$base" "${TB_VER:+?v=$TB_VER}" "$base" "${ASSET_VER:+?v=$ASSET_VER}"
     local _xs
     for _xs in ${9:-}; do printf '<script src="%sassets/%s%s" defer></script>\n' "$base" "$_xs" "${ASSET_VER:+?v=$ASSET_VER}"; done

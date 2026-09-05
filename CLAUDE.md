@@ -156,6 +156,18 @@ move. Not movable: a grouped header band (GHEAD), `data-heat`, the Boxes pages (
 Entity Search, `dayrows`, spacer columns, any spanned DATA row; a `nocolmove` TABLE modifier can be
 added if a report needs to opt out. New column-addressing code must use the built index.
 
+**Five more runtime features (2026-09-05, report.js)**: the column PICKER (`cols` hotspot beside
+csv; hidden cells carry the `hidden` ATTRIBUTE, never a class — the recalc paths restore classNames;
+stored `colhide:…` beside `colorder:…`; the CSV export skips hidden cells) · MULTI-KEY sort (`sortKeys`
+takes `[{ci, dir}]`, shift-click adds a key, arrows carry `<sup>` ranks; `sortTable(table, col, dir)`
+is the position-based wrapper, `resort()` re-applies a table's keys; saveSort stores "ci:dir,ci:dir")
+· the DARK theme (`data-theme` on `<html>`, localStorage `axway-theme`, unset = system; the dark CSS
+is GENERATED at publish from the light rules by `bin/darken-css.awk` — colour maps per property
+class, appended to docs/assets/style.css by build.sh/fresh.sh; a new light colour must be added to
+its maps; the page head applies the theme before the stylesheet, help pages carry the same inline
+line) · RELATIVE dates (`setupRelDates`, mouseover delegation, tooltip only) · the COMMAND palette
+(`setupPalette`, Ctrl/Cmd+K; fetches `<env>/report-finder.html` and `<env>/search-data.js` once).
+
 **Iterating on HTML/CSS**: edit `assets/style.css`/`assets/report.js` (NOT the docs copies) and
 run `bin/build.sh` — it clears+seeds docs/ and re-renders everything. A MANUAL per-area publish
 reads the docs/assets copies, so after an assets/ edit copy the file over (or run the build);

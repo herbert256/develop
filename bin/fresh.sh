@@ -76,6 +76,7 @@ clear_tree docs
 echo "fresh.sh: seeding docs/ from assets/ ..." >&2
 mkdir -p docs/assets docs/help
 cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js docs/assets/
+awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css   # the dark theme, generated from the light rules (2026-09-05)
 cp -R assets/help/. docs/help/
 
 exec bin/build.sh

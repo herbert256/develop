@@ -140,6 +140,7 @@ case $BUILD_SCOPE in
 esac
 mkdir -p docs/assets docs/help
 cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js docs/assets/
+awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css   # the dark theme, generated from the light rules (2026-09-05)
 cp -R assets/help/. docs/help/
 
 BUILD_DIR="build"
@@ -292,6 +293,7 @@ write_report() {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Build report — Cloud Reports</title>
 HTML
+        printf '%s\n' '<script>try{var t=localStorage.getItem("axway-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>'
         printf '<link rel="stylesheet" href="%sassets/style.css">\n' "$base"
         cat <<'HTML'
 <style>
