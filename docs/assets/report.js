@@ -76,6 +76,170 @@
     return (p && (" " + p.className + " ").indexOf(" tablewrap ") >= 0) ? p : t;
   }
 
+  // ---- Column order: drag a header left or right, remembered (2026-09-05) ----
+  // Every cell of a MOVABLE table carries data-ci, its column index in the
+  // BUILT order. Everything that addresses a column by number — the RECALC
+  // tokens, data-noagg / data-pct, the group column, the total label, the
+  // remembered sort — goes through that index (cellByCi / colByCi), so the
+  // DOM order is free to change under it. Rows added later (drill-downs, the
+  // pager, fold summaries, message rows) are single full-width cells and are
+  // never touched.
+  //
+  // A total row whose label spans columns is split on the FIRST move (the
+  // label keeps its own column, the covered ones become empty cells), so it
+  // keeps its baked look on a table nobody reorders.
+  //
+  // Fixed tables: a grouped header band (GHEAD), the hour x weekday heat map,
+  // the Boxes pages (their stat filter hides columns by position), Entity
+  // Search (builds its rows on demand), the day-rows layout and the root
+  // index (spacer columns), and any row whose spans cannot be split cleanly.
+  //
+  // The order is stored in localStorage — it must outlive the tab — under the
+  // report key (WITHOUT the environment: one report, one order on both) plus
+  // the built header labels, so a report whose columns change simply falls
+  // back to its built order. The ↺ hotspot in the last header cell (shown
+  // only while an order is active) restores the built order.
+  function cellByCi(tr, ci) {
+    var cs = tr.cells, i, k = String(ci);
+    for (i = 0; i < cs.length; i++) if (cs[i].getAttribute("data-ci") === k) return cs[i];
+    return null;
+  }
+  function ciOf(cell) {              // the built index of a cell (its position where not stamped)
+    var v = cell.getAttribute("data-ci");
+    return v === null ? cell.cellIndex : +v;
+  }
+  function colByCi(hr, ci) {         // built index -> current header position (-1: absent)
+    var c = cellByCi(hr, ci);
+    return c ? c.cellIndex : -1;
+  }
+  function cell0(tr) { return cellByCi(tr, 0) || tr.cells[0]; }   // the built first column's cell
+  function pageKeyNoEnv() { return pageKeyBase().replace(/^(acceptance|production):/, ""); }
+  function colMovable(table, hr) {
+    var n = hr.cells.length, i, j, r, cs, sum;
+    if (n < 2) return false;
+    if (table.getAttribute("data-heat") || table.getAttribute("data-esearch") || table.getAttribute("data-nocolmove")) return false;
+    if ((" " + table.className + " ").indexOf(" dayrows ") >= 0) return false;
+    if (table.querySelector("th[data-pf], th.spc, th.sp, td.spc, td.sp")) return false;
+    for (i = 0; i < table.rows.length; i++) {
+      r = table.rows[i]; cs = r.cells;
+      if (r.getElementsByTagName("th").length) {          // every header row must be flat
+        for (j = 0; j < cs.length; j++) if ((cs[j].colSpan || 1) > 1) return false;
+        continue;
+      }
+      if (cs.length === 1) continue;                      // full-width message / divider / drill row
+      sum = 0; for (j = 0; j < cs.length; j++) sum += cs[j].colSpan || 1;
+      if (sum !== n) return false;
+      if (cs.length !== n && !isTotal(r)) return false;   // a spanned DATA row cannot be split
+    }
+    return true;
+  }
+  function colOrderKey(table, hr) {
+    var labels = [], i;
+    for (i = 0; i < hr.cells.length; i++) labels.push(hr.cells[i].textContent.replace(/[▲▼]/g, "").trim());
+    return "colorder:" + pageKeyNoEnv() + ":" + labels.join("|");
+  }
+  function loadOrder(key, n) {
+    try {
+      var v = JSON.parse(localStorage.getItem(key) || "null"), seen = {}, i;
+      if (!v || v.length !== n) return null;
+      for (i = 0; i < n; i++) { if (typeof v[i] !== "number" || v[i] < 0 || v[i] >= n || seen[v[i]]) return null; seen[v[i]] = 1; }
+      return v;
+    } catch (e) { return null; }
+  }
+  function saveOrder(key, order, identity) {
+    try { if (identity) localStorage.removeItem(key); else localStorage.setItem(key, JSON.stringify(order)); } catch (e) {}
+  }
+  function isIdentity(order) { for (var i = 0; i < order.length; i++) if (order[i] !== i) return false; return true; }
+  function curOrder(hr) { var o = [], i; for (i = 0; i < hr.cells.length; i++) o.push(ciOf(hr.cells[i])); return o; }
+  function splitSpans(tr) {          // a spanned total label -> one cell per column
+    var cs = tr.cells, i, c, sp, k, e;
+    for (i = 0; i < cs.length; i++) {
+      c = cs[i]; sp = c.colSpan || 1; if (sp < 2) continue;
+      var base = ciOf(c); c.colSpan = 1;
+      for (k = 1; k < sp; k++) {
+        e = document.createElement("td"); e.setAttribute("data-ci", String(base + k)); e.setAttribute("data-orig", "");
+        if (c.nextSibling) tr.insertBefore(e, cs[i + k]); else tr.appendChild(e);
+      }
+    }
+  }
+  // Hotspots (csv, ↺) live in the LAST header cell: move them along.
+  function placeHotspots(table, hr) {
+    var last = hr.cells[hr.cells.length - 1], i, th, b;
+    for (i = 0; i < hr.cells.length; i++) {
+      th = hr.cells[i];
+      if (th === last) continue;
+      while ((b = th.querySelector(".csvbtn, .colbtn"))) last.appendChild(b);
+      th.className = th.className.replace(/ ?\bcsvhost\b/, "");
+    }
+    if (last.querySelector(".csvbtn, .colbtn") && !/\bcsvhost\b/.test(last.className)) last.className += (last.className ? " " : "") + "csvhost";
+  }
+  function applyOrder(table, hr, order) {
+    var n = hr.cells.length, rows = table.rows, i, j, r, cs, byCi, sortedCi = null, sc, c;
+    if (table.hasAttribute("data-sort-col")) { sc = hr.cells[+table.getAttribute("data-sort-col")]; if (sc) sortedCi = ciOf(sc); }
+    for (i = 0; i < rows.length; i++) {
+      r = rows[i]; cs = r.cells;
+      if (cs.length === 1 && !r.getElementsByTagName("th").length) continue;   // full-width rows stay
+      if (cs.length !== n && isTotal(r)) splitSpans(r);
+      if (cs.length !== n) continue;
+      byCi = {}; for (j = 0; j < cs.length; j++) byCi[ciOf(cs[j])] = cs[j];
+      for (j = 0; j < n; j++) { c = byCi[order[j]]; if (c) r.appendChild(c); }
+    }
+    if (sortedCi !== null) { var np = colByCi(hr, sortedCi); if (np >= 0) table.setAttribute("data-sort-col", String(np)); }
+    placeHotspots(table, hr);
+    var rb = table.querySelector(".colbtn");
+    if (rb) rb.className = "colbtn" + (isIdentity(order) ? "" : " on");
+  }
+  function initColOrder(table) {
+    var hr = headerRow(table); if (!hr) return;
+    if (!colMovable(table, hr)) return;
+    var n = hr.cells.length, i, j, r, cs, ci;
+    for (i = 0; i < table.rows.length; i++) {           // stamp the built index on every cell
+      r = table.rows[i]; cs = r.cells;
+      if (cs.length === 1 && !r.getElementsByTagName("th").length) continue;
+      ci = 0;
+      for (j = 0; j < cs.length; j++) { cs[j].setAttribute("data-ci", String(ci)); ci += cs[j].colSpan || 1; }
+    }
+    var key = colOrderKey(table, hr);
+    // the ↺ hotspot (its home is the last header cell; placeHotspots keeps it there)
+    var rb = document.createElement("span");
+    rb.className = "colbtn"; rb.textContent = "↺"; rb.title = "Restore the built column order";
+    rb.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var idn = [], k; for (k = 0; k < n; k++) idn.push(k);
+      applyOrder(table, hr, idn); saveOrder(key, idn, true);
+    });
+    hr.cells[n - 1].appendChild(rb);
+    var stored = loadOrder(key, n);
+    if (stored && !isIdentity(stored)) applyOrder(table, hr, stored);
+    // drag a header: HTML5 drag and drop, the drop side decided by the pointer
+    // half of the header it lands on
+    var src = null;
+    function clearOver() { for (var k = 0; k < hr.cells.length; k++) hr.cells[k].className = hr.cells[k].className.replace(/ ?\bcolover-[lr]\b/g, ""); }
+    for (i = 0; i < n; i++) (function (th) {
+      th.draggable = true;
+      th.addEventListener("dragstart", function (e) {
+        src = th; th.className += " coldragging";
+        try { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(ciOf(th))); } catch (x) {}
+      });
+      th.addEventListener("dragend", function () { if (src) src.className = src.className.replace(/ ?\bcoldragging\b/, ""); src = null; clearOver(); });
+      th.addEventListener("dragover", function (e) {
+        if (!src || src === th) return;
+        e.preventDefault(); try { e.dataTransfer.dropEffect = "move"; } catch (x) {}
+        var rc = th.getBoundingClientRect(), left = e.clientX < rc.left + rc.width / 2;
+        clearOver(); th.className += left ? " colover-l" : " colover-r";
+      });
+      th.addEventListener("dragleave", function () { th.className = th.className.replace(/ ?\bcolover-[lr]\b/g, ""); });
+      th.addEventListener("drop", function (e) {
+        if (!src || src === th) return;
+        e.preventDefault();
+        var rc = th.getBoundingClientRect(), left = e.clientX < rc.left + rc.width / 2;
+        var order = curOrder(hr), from = src.cellIndex, to = th.cellIndex + (left ? 0 : 1);
+        var moved = order.splice(from, 1)[0]; if (to > from) to--; order.splice(to, 0, moved);
+        clearOver(); applyOrder(table, hr, order); saveOrder(key, order, isIdentity(order));
+      });
+    })(hr.cells[i]);
+  }
+
   function headerRow(table) {
     // Prefer the FIELD header row: a th row whose cells carry no colspan. A
     // grouped-banner row (GHEAD, e.g. Top view IDs' Files/Transfers/Sessions
@@ -138,15 +302,16 @@
   function initGroup(table) {
     if (!isGrouped(table)) return;
     dataRows(table).forEach(function (tr) {
-      if (tr.cells[0] && !tr.hasAttribute("data-g")) tr.setAttribute("data-g", tr.cells[0].innerHTML);
+      var c0 = cell0(tr);
+      if (c0 && !tr.hasAttribute("data-g")) tr.setAttribute("data-g", c0.innerHTML);
     });
   }
   // Put the real value back into col 0 (undo blanking) — used before sorting.
   function ungroup(table) {
     if (!isGrouped(table)) return;
     dataRows(table).forEach(function (tr) {
-      var g = tr.getAttribute("data-g");
-      if (tr.cells[0] && g !== null) tr.cells[0].innerHTML = g;
+      var g = tr.getAttribute("data-g"), c0 = cell0(tr);
+      if (c0 && g !== null) c0.innerHTML = g;
     });
   }
   // Blank col 0 when it repeats the previous VISIBLE row's value.
@@ -154,7 +319,7 @@
     if (!isGrouped(table)) return;
     var last = null;
     dataRows(table).forEach(function (tr) {
-      var c = tr.cells[0]; if (!c) return;
+      var c = cell0(tr); if (!c) return;
       var g = tr.getAttribute("data-g"); if (g === null) g = c.innerHTML;
       if (tr.style.display === "none") { c.innerHTML = g; return; }  // hidden: keep real (unseen)
       if (g === last) { c.innerHTML = ""; } else { c.innerHTML = g; last = g; }
@@ -228,7 +393,7 @@
     // baked text restores at the full range
     var trs = totalRows(table);
     if (trs.length && trs[0].cells.length) {
-      var lc = trs[0].cells[0];
+      var lc = cell0(trs[0]);
       if (!lc.hasAttribute("data-tsl0")) lc.setAttribute("data-tsl0", lc.textContent);
       var lbl = narrowed ? ("Top " + shown + " of the selected days") : lc.getAttribute("data-tsl0");
       // data-orig too: recomputeTotals runs after this on the apply() path and
@@ -329,7 +494,8 @@
   }
   // Write one logical column of a row (colspans make cell index != column).
   function setColCell(tr, dcol, txt) {
-    var ci, c, span = 0;
+    var ci, c, span = 0, byci = cellByCi(tr, dcol);
+    if (byci) { byci.textContent = txt; return; }
     for (ci = 0; ci < tr.cells.length; ci++) {
       c = tr.cells[ci];
       if (span === dcol) { c.textContent = txt; return; }
@@ -391,7 +557,7 @@
   function writeRecalc(tr, toks, agg, colSum, colMax, colMaxA, isTot) {
     var dcol = 0, ci, c, span, tok, v, N, mx, w, oc, base, av;
     for (ci = 0; ci < tr.cells.length; ci++) {
-      c = tr.cells[ci]; span = c.colSpan || 1; tok = toks[dcol] || "-";
+      c = tr.cells[ci]; span = c.colSpan || 1; tok = toks[c.hasAttribute("data-ci") ? +c.getAttribute("data-ci") : dcol] || "-";
       if (tok.charAt(0) === "b" || tok.charAt(0) === "B") {
         if ((" " + c.className + " ").indexOf(" bar ") >= 0 || c.hasAttribute("data-origc")) {
           // b<N> = bar of sum(N) vs the column max; B<N> = bar of the
@@ -423,7 +589,7 @@
     }
   }
   function updateTotalLabel(tr, vis) {
-    var c = tr.cells[0]; if (!c) return;
+    var c = cell0(tr); if (!c) return;
     var o = c.getAttribute("data-orig"); if (o === null) o = c.textContent;
     if (/\(\s*[\d,]+/.test(o)) c.textContent = o.replace(/\((\s*)[\d,]+/, "($1" + vis);
   }
@@ -662,16 +828,33 @@
     // visible rows (num/den must be summed columns to the LEFT of the ratio).
     var pctMap = {}, pc = (table.getAttribute("data-pct") || "").split(";"), colPlain = {};
     for (var y = 0; y < pc.length; y++) if (pc[y]) { var pt = pc[y].split(":"); pctMap[+pt[0]] = [+pt[1], +pt[2]]; }
+    // the visible-row sums of every additive column FIRST (by built index):
+    // a moved ratio column may sit left of the columns it is computed from
+    trs.forEach(function (tr) {
+      var ci, cell, orig, dc, k, c, p;
+      for (ci = 0; ci < tr.cells.length; ci++) {
+        cell = tr.cells[ci]; dc = ciOf(cell);
+        orig = cell.getAttribute("data-orig"); if (orig === null) orig = cell.textContent;
+        if (asPlain(orig) === null || /^Totals?\b/.test(orig)) continue;
+        var plain0 = 0;
+        for (k = 0; k < visible.length; k++) {
+          c = cellByCi(visible[k], dc) || visible[k].cells[dc]; if (!c) continue;
+          p = asPlain(c.textContent.trim()); if (p !== null) plain0 += p;
+        }
+        colPlain[dc] = plain0;
+      }
+    });
     trs.forEach(function (tr) {
       var dataCol = 0, ci, cell, span, orig, isNum, isBytes;
       for (ci = 0; ci < tr.cells.length; ci++) {
         cell = tr.cells[ci]; span = cell.colSpan || 1;
+        if (cell.hasAttribute("data-ci")) dataCol = +cell.getAttribute("data-ci");   // moved columns: the BUILT index
         orig = cell.getAttribute("data-orig"); if (orig === null) orig = cell.textContent;
         isNum = asPlain(orig) !== null; isBytes = !isNum && asBytes(orig) !== null;
         // the Search page's footer label counts BOTH sides, always:
         // "N rows showed from a total of M rows" — M respects the type
         // checkboxes (setupSearchConfig stamps data-typecount per apply)
-        if (ci === 0 && table.getAttribute("data-esearch") && /^Totals?\b/.test(orig)) {
+        if (dataCol === 0 && table.getAttribute("data-esearch") && /^Totals?\b/.test(orig)) {
           var tot5 = parseInt(table.getAttribute("data-typecount"), 10);
           if (isNaN(tot5)) tot5 = drows.length;
           cell.textContent = visible.length + " rows showed from a total of " + tot5 + " rows";
@@ -679,7 +862,7 @@
         }
         if (hiddenCount === 0) {
           cell.textContent = orig;                                   // unfiltered -> exact original
-        } else if (/^Totals?\b/.test(orig) || (ci === 0 && orig !== "" && !isNum && !isBytes)) {
+        } else if (/^Totals?\b/.test(orig) || (dataCol === 0 && orig !== "" && !isNum && !isBytes)) {
           var lbl = orig.replace(/\((\s*)[\d,]+/, "($1" + visible.length);           // "Total (N …)"
           lbl = lbl.replace(/\b(for|over)\s+[\d,]+\s+days?\b/,                       // "Total(s) for N day(s)" (Top view), "… over N days" (concurrency)
                             "$1 " + visible.length + (visible.length === 1 ? " day" : " days"));
@@ -694,18 +877,11 @@
           var nd = pctMap[dataCol], den = colPlain[nd[1]];
           cell.textContent = (den ? (100 * ((colPlain[nd[0]]) || 0) / den).toFixed(1) : "0.0") + "%";
         } else if (isNum) {                                     // declared additive count
-          var plain = 0, k, p;
-          for (k = 0; k < visible.length; k++) {
-            var c = visible[k].cells[dataCol]; if (!c) continue;
-            p = asPlain(c.textContent.trim());
-            if (p !== null) plain += p;                         // blank / "-" / text cells contribute 0
-          }
-          colPlain[dataCol] = plain;                            // remember for any ratio column referencing it
-          cell.textContent = String(plain);
+          cell.textContent = String(colPlain[dataCol] || 0);   // summed in the first pass (blank / "-" / text cells contribute 0)
         } else if (isBytes) {                                   // declared additive volume
           var bytes = 0, k2, b;
           for (k2 = 0; k2 < visible.length; k2++) {
-            var c2 = visible[k2].cells[dataCol]; if (!c2) continue;
+            var c2 = cellByCi(visible[k2], dataCol) || visible[k2].cells[dataCol]; if (!c2) continue;
             b = asBytes(c2.textContent.trim());
             if (b !== null) bytes += b;
           }
@@ -1293,7 +1469,7 @@
     // Ordinal label columns (size/duration/dwell buckets): every row carries
     // data-ord (emitted by the report) — sort column 0 by that ordinal, so
     // "1 KB - 10 KB" never lands between "1 MB" and "10 MB" lexically.
-    var useOrd = col === 0 && rows.length > 0;
+    var hr0 = headerRow(table), useOrd = (hr0 && hr0.cells[col] ? ciOf(hr0.cells[col]) === 0 : col === 0) && rows.length > 0;
     if (useOrd) for (var oi = 0; oi < rows.length; oi++)
       if (rows[oi].getAttribute("data-ord") === null) { useOrd = false; break; }
     var numeric = 0, seen = 0;
@@ -1397,12 +1573,12 @@
   }
   function sortStoreKey(table) {
     var hr = headerRow(table);
-    var label = hr && hr.cells[0] ? hr.cells[0].textContent.replace(/[▲▼]/g, "").trim() : "";
+    var label = hr && cell0(hr) ? cell0(hr).textContent.replace(/[▲▼]/g, "").trim() : "";
     var tables = document.getElementsByTagName("table"), n = 0;
     for (var i = 0; i < tables.length; i++) {
       if (tables[i] === table) break;
       var h2 = headerRow(tables[i]);
-      if (h2 && h2.cells[0] && h2.cells[0].textContent.replace(/[▲▼]/g, "").trim() === label) n++;
+      if (h2 && cell0(h2) && cell0(h2).textContent.replace(/[▲▼]/g, "").trim() === label) n++;
     }
     return "sort:" + pageKeyBase() + ":" + label + ":" + n;
   }
@@ -1539,6 +1715,7 @@
         arrow.className = "arrow";
         th.appendChild(arrow);
         th.addEventListener("click", function () {
+          col = th.cellIndex;   // the CURRENT position — a dragged column keeps its header
           var same = table.getAttribute("data-sort-col") === String(col);
           var f = colFirstDir(col);   // first-dir, then TOGGLE (no reset state)
           var cur = same ? table.getAttribute("data-sort-dir") : null;
@@ -1547,7 +1724,7 @@
           // Entities pages write the SHARED hour-long entry instead of the
           // per-report one, so the pick carries to the next entity.
           if (isEntitiesPage()) entSave(col, dir, ths);
-          else if (!SORT_FRESH) saveSort(table, col, dir);   // survives unit switches + page revisits this session
+          else if (!SORT_FRESH) saveSort(table, ciOf(th), dir);   // survives unit switches + page revisits this session (stored by BUILT index)
         });
       })(i, ths[i]);
     }
@@ -1583,7 +1760,7 @@
       urlSortDone = true;
       var udir = urlSort.dir || colFirstDir(urlSort.col);
       applySort(urlSort.col, udir);
-      if (!SORT_FRESH) saveSort(table, urlSort.col, udir);
+      if (!SORT_FRESH) saveSort(table, ciOf(ths[urlSort.col]), udir);
       return;
     }
     // Entities pages: the shared hour-long entry REPLACES the per-report one
@@ -1597,6 +1774,7 @@
     var stored = SORT_FRESH ? null : loadSort(table);
     if (stored) {
       var sp = stored.split(":"), scol = parseInt(sp[0], 10), sdir = parseInt(sp[1], 10) || 1;
+      var spos = colByCi(hr, scol); if (spos >= 0) scol = spos;   // stored by built index -> current position
       if (scol >= 0 && scol < ths.length) applySort(scol, sdir);
     }
   }
@@ -3073,7 +3251,7 @@
         if (c.nodeType !== 1) continue;
         if (c.tagName === "BR") { out += "; "; continue; }
         cl = " " + c.className + " ";
-        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" ce ") >= 0) continue;
+        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" colbtn ") >= 0 || cl.indexOf(" ce ") >= 0) continue;   // the header hotspots (csv, ↺) are not header text
         // skip what CSS hides: the von/voff toggle twin not in effect, a
         // collapsed clines middle — the export is the cell AS DISPLAYED
         try { if (window.getComputedStyle && getComputedStyle(c).display === "none") continue; } catch (err) {}
@@ -3155,7 +3333,8 @@
     entTouch();             // Entities: slide the shared sort's hour on every view
     var tables = document.getElementsByTagName("table");
     for (var i = 0; i < tables.length; i++) {
-      initGroup(tables[i]);   // record real group values FIRST — before makeSortable's data-sort-init
+      initColOrder(tables[i]); // FIRST: stamp the built column index + apply a remembered column order
+      initGroup(tables[i]);   // record real group values — before makeSortable's data-sort-init
       bindPairs(tables[i]);   // bind 2-row message/data pairs BEFORE any sort restore
       makeSortable(tables[i]); // sorts/blanks col 0, which would otherwise memorize a blanked value
       applyGroup(tables[i]);

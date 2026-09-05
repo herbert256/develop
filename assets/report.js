@@ -3251,7 +3251,7 @@
         if (c.nodeType !== 1) continue;
         if (c.tagName === "BR") { out += "; "; continue; }
         cl = " " + c.className + " ";
-        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" ce ") >= 0) continue;
+        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" colbtn ") >= 0 || cl.indexOf(" ce ") >= 0) continue;   // the header hotspots (csv, ↺) are not header text
         // skip what CSS hides: the von/voff toggle twin not in effect, a
         // collapsed clines middle — the export is the cell AS DISPLAYED
         try { if (window.getComputedStyle && getComputedStyle(c).display === "none") continue; } catch (err) {}

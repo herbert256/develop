@@ -259,6 +259,18 @@ th.csvhost { position:relative; padding-right:2.4rem; }
 .csvbtn { position:absolute; top:0; right:0; padding:0 0.3rem 0.2rem; font-size:0.65rem; font-weight:normal;
           color:#fff; opacity:0.3; cursor:pointer; user-select:none; -webkit-user-select:none; }
 tr:hover .csvbtn, .csvbtn:hover { opacity:0.9; }
+/* Column order (report.js initColOrder): every header of a movable table is
+   draggable; while a header is dragged the drop side shows as an amber edge
+   on the header under the pointer. The ↺ hotspot sits left of "csv" in the
+   last header cell and appears only while a remembered order is active. */
+th.coldragging { opacity:0.45; }
+th.colover-l { box-shadow:inset 4px 0 0 #ffb300; }
+th.colover-r { box-shadow:inset -4px 0 0 #ffb300; }
+.colbtn { position:absolute; top:0; right:2.1rem; padding:0 0.3rem 0.2rem; font-size:0.75rem; font-weight:normal;
+          color:#ffd36b; opacity:0.75; cursor:pointer; user-select:none; -webkit-user-select:none; display:none; }
+.colbtn.on { display:inline; }
+.colbtn:hover { opacity:1; }
+th.csvhost:has(.colbtn.on) { padding-right:3.8rem; }
 tr:nth-child(even) { background-color:#f2f2f2; }
 tr:hover { background-color:#e8f0fe; }
 tr.total td { font-weight:bold; background-color:#dde4ec; border-top:2px solid #20344a; }

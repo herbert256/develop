@@ -206,8 +206,16 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             # and the same class thresholds punctuality.sh uses, plus the
             # polls-per-day so
             # a continuous poller is not shown as a one-a-day slot.
+            # The FIRST and the LAST active day are left out of the slot
+            # (2026-09-05, user request): the export window cuts into both,
+            # so their first poll is the first poll AFTER the cut, not the
+            # schedule firing. Fewer than three active days: all of them.
+            # The days count and the polls-per-day keep every active day.
+            for (i = 1; i <= no; i++) DS[i] = dz[i]
+            for (i = 2; i <= no; i++) { v = DS[i]; j2 = i - 1; while (j2 >= 1 && DS[j2] > v) { DS[j2+1] = DS[j2]; j2-- } DS[j2+1] = v }
+            lo9 = (no >= 3) ? 2 : 1; hi9 = (no >= 3) ? no - 1 : no
             n = 0
-            for (i = 1; i <= no; i++) { n++; PM[n] = fpm[s SUBSEP dz[i]] + 0 }
+            for (i = lo9; i <= hi9; i++) { n++; PM[n] = fpm[s SUBSEP DS[i]] + 0 }
             for (i = 2; i <= n; i++) { v = PM[i]; j2 = i - 1; while (j2 >= 1 && PM[j2] > v) { PM[j2+1] = PM[j2]; j2-- } PM[j2+1] = v }
             med = (n % 2) ? PM[(n + 1) / 2] : int((PM[n / 2] + PM[n / 2 + 1]) / 2)
             sum = 0; ss = 0
@@ -219,7 +227,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             else if (spread <= 180) cls = "Loose"
             else                    cls = "Irregular"
             printf "PT\t%s\t%d\t%d\t%02d:%02d\t%d\t%s\t%d\t%s\t%s\n", \
-                s, poll[s], n, int(med/60), med%60, spread, cls, int(poll[s]/n + 0.5), fst[s], lst[s]
+                s, poll[s], no, int(med/60), med%60, spread, cls, int(poll[s]/no + 0.5), fst[s], lst[s]
         }
         nlist = 0
         for (s in lc) { nlist++
