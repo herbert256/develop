@@ -557,6 +557,10 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             # row built from the labels, the first table being the default
             else if (index(mi, "switch=") == 1) { sw = substr(mi, 8); p9 = index(sw, ":"); this_swkey = (p9 ? substr(sw, 1, p9 - 1) : sw)
                 tattr = tattr " data-switch=\"" esc(this_swkey) "\" data-switch-label=\"" esc(p9 ? substr(sw, p9 + 1) : sw) "\"" }
+            # tab=KEY (2026-09-05): publish_lib's segment_rpt keeps consecutive
+            # tables sharing KEY on ONE tab page, stacked and all visible (the
+            # switch= group shows one at a time) — nothing to render here
+            else if (index(mi, "tab=") == 1) { }
             else if (mi == "totaltop")   tattr = tattr " data-total-top=\"1\""
             else if (mi == "datereset")  tattr = tattr " data-date-reset=\"1\""
             else if (mi == "nofilter")   tattr = tattr " data-nofilter=\"1\""

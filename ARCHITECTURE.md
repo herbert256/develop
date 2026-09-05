@@ -232,7 +232,7 @@ Server groups: **srv-overview** (topview) · **srv-errors** (errors) · **srv-tr
 "Transfers & Delivery" (pickups — the `transfers` merge went in 2026-08 with the JSON
 Transfer-start/end lines its two components read) · **srv-connections** (connections · logons) ·
 **srv-security** (ssh-security) · **srv-ops** "Operations & Capacity" (platform-health ·
-capacity) · **srv-routing** "Routing & Polling" (remote-poll · transfer-site-missing) ·
+capacity) · **srv-routing** "Routing" (transfer-site-missing; remote-poll an unpublished intermediate since 2026-09-05, its tables on the UC status / UC3 tab) ·
 **srv-missing** (missing-entities).
 
 ## PDA derivation (partners, domains, applications)
@@ -869,7 +869,7 @@ row links inside it.
   **OK transfers** = the most recent File itself OK — no server-log proof; **Difference between
   Current & Once** = the regressions list (worked once, not currently). Proofs (communication
   rules only): In = successful SSH logons (auth-activity.rpt), Out = successful UC3 remote polls
-  (remote-poll.rpt). Assert after a change, on all four views: **OK ⊆ Current ⊆ Once**. Accounts
+  (remote-poll.rpt — an unpublished intermediate since 2026-09-05; its polls table is copied onto the UC status / UC3 tab). Assert after a change, on all four views: **OK ⊆ Current ⊆ Once**. Accounts
   is the default entity. Two row colours only (green covered / red not); a side with 0 configured
   subscriptions is trivially covered. The STAT boxes sit AFTER each TABLE line (`segment_rpt`
   files them per tab). No date filter.
@@ -878,13 +878,18 @@ row links inside it.
   `config-hygiene` (case/separator twins + orphaned config objects; includes the "one name, two
   roles" double sections, `emit_double_sections`; orphans first, twins last). It also writes the
   two Boxes pages. Every page degrades gracefully when a source is missing.
-- **Cronjobs** (`cronjobs.html`, hand-written in the analyses publish): configured cron schedules
-  vs the OBSERVED firing — Matches/Drifts/Polls-no-files/Never fires. Observation reads the server
-  log first via `data/<env>/server/reports/poll-times.tsv` (the sidecar `remote-poll.sh` writes —
-  an empty poll leaves no transfer record), marked `· polls`, falling back to punctuality's
-  arrival slot `· files`; name matching exact-first then prefix BOTH ways (the server truncates
-  long site names); a missing sidecar forces a remote-poll rebuild. `bin/cron2human.awk` renders
-  cron expressions as prose.
+- **UC3 polling tables** (`bin/analyses/reports/uc3-polling.sh` → `uc3-polling.rpt`, merged behind
+  `uc3-status.rpt` with `tab=uc3` so they stack on `uc-status-uc3.html`, 2026-09-05 — the one
+  report about us polling partners; the Remote polls page and the hand-written Cronjobs page are
+  gone): the Polls by subscription and Remote directory listing failures tables copied from
+  `remote-poll.rpt`, then **Configured cronjobs** — the configured cron schedules (`bin/cron2human.awk`)
+  against the OBSERVED firing: the server log first via `data/<env>/server/reports/poll-times.tsv`
+  (the sidecar `remote-poll.sh` writes — an empty poll leaves no transfer record), falling back to
+  punctuality's arrival slot `· files`; name matching exact-first then prefix BOTH ways (the server
+  truncates long site names); a dark-red `obsbad` Observed cell contradicts its cron — and
+  **Schedules that never complete a poll** from `poll-failures.tsv` (S/C/L rows by site, A rows by
+  host via the subscription→host xref). A vanished input (no `remote-poll.rpt`, no config export)
+  drops the affected tables and the .rpt so the next build regenerates it.
 - **`publish-accvsprod.sh`** writes the per-type acceptance-vs-production pages +
   `acc-vs-prod-summary.html`. Deliberately not in `_analyses_groups` — it keeps its own type/view
   rows directly under the `<h1>`. (The **FlowID** type — the raw

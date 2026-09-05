@@ -118,7 +118,7 @@ mkdir -p "$BASE" "$XREF"
 # insensitive SUBSTRING) is IGNORED — removed from the config here (so every
 # base/xref/PDA derivation excludes it) AND from both log parses. To keep every
 # raw-JSON reader (this script's extraction, the accounts /
-# cronjobs insight page, details.sh) consistent, we write
+# UC3 cron table in uc3-polling.sh, details.sh) consistent, we write
 # FILTERED copies of the exports to data/<env>/flow-manager/filtered/ and every
 # reader prefers them (publish_lib.sh's FM_CONFIG_DIR, the two lib.sh
 # FM_INPUT_DIR). The skipped config names are recorded in _skipped.tsv for the

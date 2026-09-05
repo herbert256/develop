@@ -155,7 +155,8 @@ END {
 }
 
 # sched -> Quartz cron. The drift-cron flow's CONFIG says 06:00 while its
-# observed polls run later — the Cronjobs page's Drifts row.
+# observed polls run later — the dark-red Observed cell of the UC3 tab's
+# Configured cronjobs table.
 function cron_of(sched, tags,   a) {
     if (index("," tags ",", ",driftcron,") > 0) return "0 0 6 ? * *"
     if (sched == "grid15")                      return "0 5/30 * * * ?"

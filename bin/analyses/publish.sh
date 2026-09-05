@@ -4,7 +4,7 @@
 #
 #   docs/analyses/first-seen{,-both}.html   the First seen tables
 #   docs/analyses/use-cases.html + use-case-{definitions,patterns}.html
-#   docs/analyses/accounts.html, cronjobs.html
+#   docs/analyses/accounts.html
 #   docs/analyses/index.html                the analyses catalog page
 #   docs/first-seen/<member>-<key>.html     one page per First seen cell
 #   docs/use-cases/<uc>-<member>.html       one page per Use case cell
@@ -1692,234 +1692,9 @@ write_accounts_page() {
     } > "$out"
 }
 
-# ---- the Cronjobs page (docs/analyses/cronjobs.html) ------------------------
-# The polling schedules configured in subscriptions.json. Every one is a UC3
-# subscription — ST is the CLIENT: it connects to the partner's server on a
-# timer and pulls whatever is waiting. The schedule is a Quartz 6-field cron
-# expression (sec min hour day-of-month month day-of-week) in
-# .parameters.hybrid_partner_{sftp,ftp}_relay0_receive_scheduler_cron_expression;
-# bin/cron2human.awk (shared with the Subscription detail-page Summary)
-# translates it to plain English — a deterministic parse, no AI and no token
-# cost, so it works on a fresh clone. Skipped if the config export is absent.
-write_cronjobs_page() {
-    local out="$ADIR/cronjobs.html" S="$FM_CONFIG_DIR/subscriptions.json"   # SKIP-filtered when present
-    [ -f "$S" ] || { rm -f "$out"; return 0; }
-    local rows total sftp ftp distinct
-    rows=$(jq -r '
-        .[] | . as $s
-        | (["sftp","ftp"][] as $p
-           | ($s.parameters["hybrid_partner_\($p)_relay0_receive_scheduler_cron_expression"]) as $c
-           | select($c != null and $c != "")
-           | [ $s.name, ($p|ascii_upcase), $c ] | @tsv)
-      ' "$S" | awk -F'\t' -v CF=3 -f bin/cron2human.awk | LC_ALL=C sort -f)
-    # `grep -c .` exits 1 on zero matches — an env with NO cron-scheduled
-    # subscriptions (the production example data) must not abort the publish
-    # under set -e, so every count carries `|| true`.
-    total=$(printf '%s\n' "$rows" | grep -c . || true)
-    sftp=$(printf '%s\n' "$rows" | awk -F'\t' '$2=="SFTP"' | grep -c . || true)
-    ftp=$(printf '%s\n' "$rows"  | awk -F'\t' '$2=="FTP"'  | grep -c . || true)
-    distinct=$(printf '%s\n' "$rows" | cut -f3 | LC_ALL=C sort -u | grep -c . || true)
-    # Tint each configured row by the subscription's RESULT (base cache col 3:
-    # green/orange/red — and blue where it exists only via the Server->Transfer
-    # step, bin/build/seen-in-server-log.sh). Appended as a 5th field AFTER the counts above.
-    local csubs="$DATA/flow-manager/base/_subscriptions.tsv"; [ -f "$csubs" ] || csubs=/dev/null
-    # the "never completes a poll" rows (Observed "-"), collected by the row
-    # awk into a temp and rendered as the page's bottom table
-    local extmp; extmp=$(mktemp "${TMPDIR:-/tmp}/cronjobs-extra.XXXXXX")
-    rows=$(printf '%s\n' "$rows" | awk -F'\t' -v sf="$csubs" '
-        BEGIN {
-            while ((getline l < sf) > 0) { n = split(l, a, "\t"); if (n >= 3) res[toupper(a[1])] = a[3] }
-        }
-        NF { k = toupper($1)
-             c = (res[k]=="green"||res[k]=="orange"||res[k]=="red"||res[k]=="blue") ? res[k] : ""
-             print $0 "\t" c }')
-    {
-        html_head "Cronjobs" "../assets/style.css" "" "" "cronjobs" "" "" "sort-fresh"
-        printf '<h1>Cronjobs</h1>\n'
-        analyses_group_tabs cronjobs.html
-        printf '<p class="subtitle">The client polling schedules in <code>subscriptions.json</code>, joined against what actually happens. Where we are the <strong>client</strong> and pull from the partner (<strong>UC3</strong>, and <strong>UC5</strong>&rsquo;s pull side), ST connects to the partner&rsquo;s server on a timer and collects whatever is waiting; the schedule is a <a href="https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html" target="_blank" rel="noopener">Quartz</a> cron expression (<code>sec min hour day-of-month month day-of-week</code>), translated to plain English in the <strong>Schedule</strong> column. (UC1 is a client use case too, but pushes on directory scanning &mdash; no cron.) The <strong>Observed</strong> column says when the schedule actually fires: from the server log&rsquo;s poll lines where they exist, else from the file arrivals.</p>\n'
-        # Configured cronjobs + the observed firing (the former Schedule vs
-        # reality page, merged here 2026-08), each row tinted by its
-        # subscription result.
-        printf '<h2>Configured cronjobs</h2>\n'
-        printf '<p class="range"><strong>%s</strong> polling schedules &mdash; %s SFTP, %s FTP &mdash; across <strong>%s</strong> distinct cron expressions. All are enabled; none skip holidays. Rows are tinted by the subscription&rsquo;s last-transfer result &mdash; <strong>green</strong> OK, <strong>orange</strong> never seen, <strong>red</strong> Error, <strong>blue</strong> seen only in the server log.</p>\n' \
-            "$(dotify "$total")" "$(dotify "$sftp")" "$(dotify "$ftp")" "$(dotify "$distinct")"
-        printf '<div class="tablewrap"><table class="index fit">\n'
-        printf '<tr><th>Subscription</th><th>Cron expression</th><th>Schedule</th><th>Observed</th><th class="num">Polls</th><th class="num">Active days</th></tr>\n'
-        printf '%s\n' "$rows" | awk -F'\t' \
-            -v PUNCT="$DATA/transfer/reports/punctuality.rpt" \
-            -v POLLT="$DATA/server/reports/poll-times.tsv" \
-            -v PF="$DATA/server/reports/poll-failures.tsv" \
-            -v XSH="$DATA/flow-manager/xref/_subscriptions-hosts.tsv" \
-            -v EX="$extmp" \
-            -v SSM="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv" '
-            function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
-            # one numeric cron field -> "count:min" (how many values it fires
-            # at per cycle, and the smallest) — the Observed-vs-Schedule check
-            function finfo(fld, cycle,   a, np, parts, i, seg, b, x, k, set, cnt, mn, st, step) {
-                if (fld == "*" || fld == "?") return cycle ":0"
-                if (fld ~ /^[0-9]+$/) return "1:" (fld+0)
-                if (fld ~ /^([0-9]+|\*)\/[0-9]+$/) { split(fld, a, "/"); step = a[2]+0; st = (a[1] == "*" ? 0 : a[1]+0)
-                    if (step <= 0) return "1:" st
-                    cnt = 0; for (k = st; k < cycle; k += step) cnt++
-                    return cnt ":" st }
-                split("", set)
-                np = split(fld, parts, ",")
-                for (i = 1; i <= np; i++) { seg = parts[i]
-                    if (seg ~ /-/) { split(seg, a, "-"); b = a[1]+0; x = a[2]+0; for (k = b; k <= x; k++) set[k] = 1 }
-                    else set[seg+0] = 1 }
-                cnt = 0; mn = -1
-                for (k = 0; k < cycle; k++) if (k in set) { cnt++; if (mn < 0) mn = k }
-                return (cnt ? cnt : 1) ":" (mn < 0 ? 0 : mn)
-            }
-            # circular minute-of-day distance
-            function mdist(a, b,   d) { d = a - b; if (d < 0) d = -d; if (1440 - d < d) d = 1440 - d; return d }
-            # prefix either way (the server truncates long site names)
-            function pfx(a, b) { return substr(a, 1, length(b)) == b || substr(b, 1, length(a)) == a }
-            BEGIN {
-                US = sprintf("%c", 31)
-                while ((getline l < SSM) > 0) { split(l, a, "\t"); if (a[1] != "") SL[toupper(a[1])] = a[2] } close(SSM)
-                # punctuality rows: site, days, typical, window, class — the
-                # file-arrival fallback for schedules with no poll line
-                while ((getline l < PUNCT) > 0) {
-                    n = split(l, a, "\t")
-                    if (a[1] != "ROW" || a[2] ~ /^@\{colspan/) continue
-                    u = toupper(a[2])
-                    if (!(u in PD) || a[3]+0 > PD[u]) { PD[u] = a[3]+0; PT[u] = a[4]; PW[u] = a[5]; PC[u] = a[6] }
-                } close(PUNCT)
-                npu = 0; for (u in PD) { npu++; PU[npu] = u }
-                # poll-times.tsv (remote-poll.sh): name, polls, days, typical,
-                # spread(min), class, polls/day — the schedule firing in the
-                # SERVER log, empty polls included
-                while ((getline l < POLLT) > 0) {
-                    n = split(l, a, "\t")
-                    if (n < 7 || a[1] == "") continue
-                    u = toupper(a[1])
-                    if (!(u in QN) || a[2]+0 > QN[u]) { QN[u] = a[2]+0; QD[u] = a[3]+0
-                        QT[u] = a[4]; QW[u] = a[5]+0; QC[u] = a[6]; QPD[u] = a[7]+0 }
-                } close(POLLT)
-                nqu = 0; for (u in QN) { nqu++; QU[nqu] = u }
-                # poll-failures.tsv (remote-poll.sh): S/C/L rows keyed by site,
-                # A rows by HOST — per key the total count + the dominant reason
-                while ((getline l < PF) > 0) { n = split(l, a, "\t")
-                    if (n < 3) continue
-                    if (a[1] == "S")      { u = toupper(a[2]); if (PS[u] == "") PSU[++nps] = u; PS[u] += a[3] }
-                    else if (a[1] == "C") { u = toupper(a[2]); if (PC2[u] == "") PCU[++npc] = u
-                                            PC2[u] += a[3]; if (a[3]+0 > PCB[u]+0) { PCB[u] = a[3]+0; PCR[u] = a[4] } }
-                    else if (a[1] == "L") { u = toupper(a[2]); if (PL2[u] == "") PLU[++npl] = u
-                                            PL2[u] += a[3]; if (a[3]+0 > PLB[u]+0) { PLB[u] = a[3]+0; PLR[u] = a[4] } }
-                    else if (a[1] == "A") { PA2[a[2]] += a[3]
-                                            if (a[3]+0 > PAB[a[2]]+0) { PAB[a[2]] = a[3]+0; PAR[a[2]] = a[4] } }
-                } close(PF)
-                # subscription -> configured host(s), for the host-keyed A rows
-                while ((getline l < XSH) > 0) { split(l, a, "\t")
-                    if (a[1] != "" && a[2] != "") HS[toupper(a[1])] = HS[toupper(a[1])] " " a[2] }
-                close(XSH)
-            }
-            NF {
-                name = $1; cronx = $3; human = $4; color = $5
-                un = toupper(name)
-                # the schedule as numbers: expected firings/day E and the
-                # earliest daily fire (minute-of-day), unioned over the row'\''s
-                # cron expression(s) — dow only picks DAYS, so it is ignored
-                # (observed rates are per ACTIVE day too)
-                E = 0; early = -1
-                nx = split(cronx, CX, US)
-                for (i = 1; i <= nx; i++) {
-                    if (split(CX[i], CF2, /[ \t]+/) < 3) continue
-                    split(finfo(CF2[2], 60), A2, ":"); split(finfo(CF2[3], 24), A3, ":")
-                    E += A2[1] * A3[1]
-                    em = A3[2] * 60 + A2[2]
-                    if (early < 0 || em < early) early = em
-                }
-                # file-arrival observation (largest active-days prefix match)
-                odays = 0; otyp = ""; owin = ""; ocls = ""
-                for (i = 1; i <= npu; i++) { u = PU[i]
-                    if (substr(u, 1, length(un)) == un && PD[u] > odays) { odays = PD[u]; otyp = PT[u]; owin = PW[u]; ocls = PC[u] } }
-                # the poll footprint (prefix BOTH ways — the server truncates
-                # long site names); an exact name always wins
-                polls = 0
-                if (un in QN) qk = un
-                else {
-                    qk = ""
-                    for (i = 1; i <= nqu; i++) { u = QU[i]
-                        if ((substr(u, 1, length(un)) == un || substr(un, 1, length(u)) == u) && QN[u] > polls) { qk = u; polls = QN[u] } }
-                }
-                if (qk != "") { polls = QN[qk]
-                    if (polls > 0) { odays = QD[qk]
-                        ocell = (QPD[qk] <= 3) ? sprintf("%s &plusmn; %d min", QT[qk], QW[qk]) \
-                                               : sprintf("~%d polls/day", QPD[qk]) }
-                }
-                if (polls == 0) ocell = (otyp != "") ? e(otyp " " owin " (" ocls ")") " &middot; files" : "-"
-                # Observed vs Schedule: dark-red the cell when the evidence
-                # CONTRADICTS the cron — a slot schedule (<=3/day) whose median
-                # first poll sits off the earliest scheduled fire, a rate more
-                # than 3x off the expected one, or a continuous schedule seen
-                # only as a daily slot. File-arrival evidence is compared only
-                # for slot schedules (an interval poll collects whenever data
-                # appears); a "-" (never observed) is absence, not contradiction.
-                bad = 0
-                if (E > 0 && early >= 0) {
-                    if (polls > 0) {
-                        if (QPD[qk] > 3) { if (E <= 3 || QPD[qk] * 3 < E || QPD[qk] > E * 3) bad = 1 }
-                        else if (E > 3) bad = 1
-                        else { split(QT[qk], TT, ":")
-                               tol = 2 * QW[qk] + 5; if (tol < 20) tol = 20
-                               if (mdist(TT[1] * 60 + TT[2], early) > tol) bad = 1 }
-                    } else if (otyp != "" && E <= 3) {
-                        split(otyp, TT, ":")
-                        if (mdist(TT[1] * 60 + TT[2], early) > 30) bad = 1
-                    }
-                }
-                nm = e(name); if (un in SL) nm = "<a href=\"../details/subscriptions/" SL[un] ".html\">" nm "</a>"
-                ec = e(cronx); gsub(US, "</code><br><code>", ec)   # multi-line cron -> stacked
-                # an Observed "-" row: collect its failure evidence for the
-                # bottom table (once per subscription — protocols share it)
-                if (polls == 0 && otyp == "" && !(un in NEV)) {
-                    NEV[un] = 1
-                    st2 = 0; cf2 = 0; lf2 = 0; af2 = 0; best = 0; why = ""
-                    for (i = 1; i <= nps; i++) { u = PSU[i]
-                        if (pfx(u, un) && PS[u] > st2) st2 = PS[u] }
-                    for (i = 1; i <= npc; i++) { u = PCU[i]
-                        if (pfx(u, un)) { cf2 += PC2[u]
-                            if (PCB[u]+0 > best) { best = PCB[u]+0; why = PCR[u] } } }
-                    for (i = 1; i <= npl; i++) { u = PLU[i]
-                        if (pfx(u, un)) { lf2 += PL2[u]
-                            if (PLB[u]+0 > best) { best = PLB[u]+0; why = PLR[u] " (after connecting)" } } }
-                    nh2 = split(HS[un], HH, " ")
-                    for (i = 1; i <= nh2; i++) { h2 = HH[i]
-                        if (h2 != "" && (h2 in PA2)) { af2 += PA2[h2]
-                            if (PAB[h2]+0 > best) { best = PAB[h2]+0; why = PAR[h2] } } }
-                    tot2 = cf2 + lf2 + af2
-                    printf "%d\t%d\t%s\n", tot2, st2, \
-                        "<tr" (color != "" ? " data-res=\"" color "\"" : "") "><td class=\"cl\">" nm "</td><td class=\"num\">" (st2 ? st2 : "-") "</td><td class=\"num\">" (tot2 ? tot2 : "-") "</td><td>" (why != "" ? e(why) : "no failure line names this flow in the loaded logs") "</td></tr>" > EX
-                }
-                printf "<tr%s><td class=\"cl\">%s</td><td><code>%s</code></td><td>%s</td><td%s>%s</td><td class=\"num\">%s</td><td class=\"num\">%s</td></tr>\n", \
-                    (color != "" ? " data-res=\"" color "\"" : ""), nm, ec, e(human), (bad ? " class=\"obsbad\"" : ""), ocell, (polls ? polls : "-"), (odays ? odays : "-")
-            }'
-        printf '<tr class="total"><td>Total (%s cronjobs)</td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$(dotify "$total")"
-        printf '</table></div>\n'
-        printf '<p class="range">Observed slots come from the server log via the <a href="../server/remote-poll.html">Remote poll</a> report &mdash; the median of each day&rsquo;s FIRST poll, &plusmn; one standard deviation; a schedule firing more than 3&times; a day has no single slot and shows its poll rate instead. Slots marked <span class="mono">&middot; files</span> fall back to the transfer <strong>Punctuality</strong> report (same model over file arrivals) for schedules with no poll line. Matching is name-prefix, both ways (the server truncates long site names). A <span class="mono">-</span> means no poll and no File in the loaded logs &mdash; the schedule never fires. A <strong>dark red</strong> Observed cell contradicts its schedule: the observed slot sits off the scheduled time, the poll rate is more than 3&times; off the expected one, or a continuous schedule is only seen firing a few times a day.</p>\n'
-        # ---- the bottom table: the Observed "-" rows, diagnosed -------------
-        if [ -s "$extmp" ]; then
-            local x_n x_st x_fail
-            read -r x_n x_st x_fail <<< "$(awk -F'\t' '{ n++; f += $1; s += $2 } END { printf "%d %d %d", n+0, s+0, f+0 }' "$extmp")"
-            printf '<h2>Schedules that never complete a poll</h2>\n'
-            printf '<p class="range">The <strong>%s</strong> schedule(s) whose Observed column shows <span class="mono">-</span>: the server log holds <strong>no completed poll</strong> for them. Most DO fire &mdash; their setup lines appear right on the scheduled minutes (<strong>Poll starts</strong>) &mdash; but the poll dies before the listing. <strong>What goes wrong</strong> is the dominant failure line the server log pairs with the flow; <strong>Failure lines</strong> counts them all.</p>\n' \
-                "$(dotify "$x_n")"
-            printf '<div class="tablewrap"><table class="index fit">\n'
-            printf '<tr><th>Subscription</th><th class="num">Poll starts</th><th class="num">Failure lines</th><th>What goes wrong</th></tr>\n'
-            LC_ALL=C sort -t$'\t' -k1,1nr -k2,2nr -k3,3 "$extmp" | cut -f3-
-            printf '<tr class="total"><td>Total (%s subscription(s))</td><td class="num">%s</td><td class="num">%s</td><td></td></tr>\n' \
-                "$(dotify "$x_n")" "$(dotify "$x_st")" "$(dotify "$x_fail")"
-            printf '</table></div>\n'
-            printf '<p class="range">Connection and listing failures name the subscription in the log and are counted directly. <strong>Authentication failures name only host + user</strong>, so they are matched through the subscription&rsquo;s configured host and can be shared between that host&rsquo;s flows. A row with neither starts nor failure lines never fires at all in the loaded logs. The evidence comes from the same server-log pass as the <a href="../server/remote-poll.html">Remote poll</a> report.</p>\n'
-        fi
-        printf '</body>\n</html>\n'
-    } > "$out"
-    rm -f "$extmp"
-}
-
+# (the Cronjobs page — docs/analyses/cronjobs.html, hand-written here until
+# 2026-09-05 — is gone: its two tables are .rpt tables on the UC status / UC3
+# tab now, bin/analyses/reports/uc3-polling.sh)
 
 # ---- the analyses catalog page (docs/analyses/index.html) -------------------
 # One line per analysis, like the transfer/server index pages — the two local
@@ -1955,7 +1730,6 @@ write_analyses_index() {
         [ -f "$ADIR/fe-overview.html" ] && printf '<tr><td><a href="fe-overview.html">Partners - Incoming</a></td><td class="desc">Every FE login on one line: its use cases, the last logon here and on the old gateway, its Files in / out with the retrieved, Waiting and Expired ones, and its pickups with their cadence.</td></tr>\n'
         [ -f "$ADIR/account-sharing.html" ] && printf '<tr><td><a href="account-sharing.html">Account sharing</a></td><td class="desc">Which accounts serve more than one subscription, and in what shape: UC2+UC4 mailbox pairs, UC1+UC3 outbound pairs, fan-outs and both-directions accounts.</td></tr>\n'
         [ -f "$ADIR/twins.html" ] && printf '<tr><td><a href="twins.html">Twins</a></td><td class="desc">Every twin pair on one page: subscriptions that are the same flow configured the opposite way (naming slips highlighted) and the accounts spelled with both separators.</td></tr>\n'
-        [ -f "$ADIR/cronjobs.html" ] && printf '<tr><td><a href="cronjobs.html">Cronjobs</a></td><td class="desc">The configured polling schedules (UC3 &mdash; ST pulls from the partner), each Quartz cron expression translated to plain English.</td></tr>\n'
         [ -f "$ADIR/config-hygiene.html" ] && printf '<tr><td><a href="config-hygiene.html">Config hygiene</a></td><td class="desc">The cleanup backlog: likely-duplicate twins (case / separator folds) and orphaned objects nothing references.</td></tr>\n'
         [ -f "$ADIR/whitelist-audit.html" ] && printf '<tr><td><a href="whitelist-audit.html">Whitelist audit</a></td><td class="desc">Whitelisted partner IPs vs the addresses actually connecting: used, connect-only, never seen (prunable), and the sources without any whitelist entry.</td></tr>\n'
         [ -f "$DOCS/transfer/sources-and-targets.html" ] && printf '<tr><td><a href="../transfer/sources-and-targets.html">Sources and Targets</a></td><td class="desc">The From/To folder paths of every subscription (shown &ldquo;path @ host&rdquo; for remote endpoints, like Search): values used as both a source and a target, and sources/targets shared by more than one subscription.</td></tr>\n'
@@ -1994,7 +1768,6 @@ write_subscriptions_page
 write_logical_detection_page
 write_added_bl_page
 write_accounts_page
-write_cronjobs_page
 write_first_seen_page 1
 write_first_seen_page 2
 # The Acceptance-vs-production pages are a CROSS-env report — they need BOTH
@@ -2003,7 +1776,7 @@ write_first_seen_page 2
 # fresh build); bin/build.sh runs publish-accvsprod.sh once per env after the
 # loop with complete data. To regenerate them standalone, run
 # bin/analyses/publish-accvsprod.sh yourself (for each env) after both trees exist.
-"$SCRIPT_DIR/publish-insights.sh"    # the insight pages (cronjobs data, whitelist-audit, config-hygiene, expired, the boxes)
+"$SCRIPT_DIR/publish-insights.sh"    # the insight pages (whitelist-audit, config-hygiene, expired, the boxes)
 # The SUBS_GROUP_REPORTS pages (four Configuration-group reports whose DATA is
 # transfer/server but whose PAGES belong here). Rendered from THIS script (not
 # the area publishes, which run earlier — the rm -f above would wipe their

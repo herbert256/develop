@@ -18,7 +18,7 @@
 <li><strong>Subscription</strong> — the configured name, linking to its detail page.</li>
 <li><strong>Use case</strong> — its <code>UC&lt;n&gt;</code> prefix, always one of the cron-triggered ones.</li>
 </ul>
-<p>The schedules that <em>are</em> configured, each translated to plain English, are on <a href="cronjobs.html">Cronjobs</a>. This page was that page's last table until 2026-07, when it became a report of its own — it answers a different question, and it belongs in the same worklist as the other subscription problems.</p>
+<p>The schedules that <em>are</em> configured, each translated to plain English, are on <a href="server-uc3-status.html#cronjobs">Cronjobs</a>. This page was that page's last table until 2026-07, when it became a report of its own — it answers a different question, and it belongs in the same worklist as the other subscription problems.</p>
 <h2>How it's computed</h2>
 <p>Straight from <code>subscriptions.json</code>: take every subscription whose use-case prefix is cron-triggered (the trigger comes from the shared use-case table, so this list follows the use-case definitions rather than being hardcoded here), then keep the ones with <em>no</em> parameter whose name contains <code>cron</code> holding a non-empty value. UC1 is a client use case too, but it pushes on directory scanning rather than on a timer, so it is never flagged.</p>
 <p>It is pure configuration — no log is read — so the answer is the same whatever date range you are looking at, and the page carries no date filter.</p>

@@ -51,7 +51,9 @@
 #                  '…' for transfer site '…': N file(s) …" lines (the message
 #                  only appears when the remote listing SUCCEEDED; 0 files
 #                  found still proves the connection), already aggregated per
-#                  subscription by server/remote-poll.rpt.
+#                  subscription by server/remote-poll.rpt (an unpublished
+#                  intermediate since 2026-09-05 — its tables surface on the
+#                  UC status / UC3 tab, bin/analyses/reports/uc3-polling.sh).
 #
 # One row per configured entity: the configured subscription counts per side,
 # the File counts per side, the proof counts (Logons / Polls) and a per-side
@@ -366,7 +368,7 @@ for spec in "${SPECS[@]}"; do
     '
 done
 
-printf 'NOTE\tIn proof: the server-log SSH logon lines ("User with login name … associated with account … successfully authenticated"), counted per account by the Auth activity report and rolled up to the account'"'"'s entity — on the Accounts view that rollup is the identity. Out proof: the UC3 poll lines ("Applying the search pattern … for transfer site …"), counted per subscription by the Remote Polls report and rolled up to the subscription'"'"'s entity. Files are real logical transfers, split by the connection side.\n'
+printf 'NOTE\tIn proof: the server-log SSH logon lines ("User with login name … associated with account … successfully authenticated"), counted per account by the Auth activity report and rolled up to the account'"'"'s entity — on the Accounts view that rollup is the identity. Out proof: the UC3 poll lines ("Applying the search pattern … for transfer site …"), counted per subscription on the UC status / UC3 tab (Polls by subscription) and rolled up to the subscription'"'"'s entity. Files are real logical transfers, split by the connection side.\n'
 printf 'NOTE\tThe Logons and Polls columns show on every view, but they only COUNT towards the verdict on *Current* and *Once* — on *OK transfers* the verdict rests on the most recent File alone.\n'
 printf 'NOTE\tSubs = the configured subscriptions per side (a both-ways subscription counts on both sides); a side with 0 Subs has nothing to prove and counts as covered.\n'
 printf 'FOOT\tGenerated on %s from %s file(s)\n' "$now" "${#files[@]}"

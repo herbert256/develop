@@ -5,7 +5,7 @@
 # bin/analyses/publish.sh before write_analyses_index (the index lists only
 # pages that exist). All pages are config-vs-reality joins over data already
 # on disk — the flow-manager caches, the transfer/server report .rpt files,
-# the parse caches and (certificates + cron, like write_cronjobs_page) the
+# the parse caches and (certificates + cron, like uc3-polling.sh) the
 # raw FlowManager JSON exports via jq:
 #   whitelist-audit.html   whitelisted IPs vs the addresses actually connecting
 #   config-hygiene.html    config twins and orphaned objects

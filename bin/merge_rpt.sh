@@ -11,7 +11,9 @@
 # so they stay with their tables instead of leaking into the shared page header
 # (segment_rpt renders pre-first-TABLE directives on every tab page).
 # A missing component is skipped; zero present components removes OUT (the
-# publish then writes an empty-report placeholder).
+# publish then writes an empty-report placeholder). A component whose tables
+# carry the tab=KEY modifier of the component before it (uc3-polling behind
+# uc3-status) adds its tables to THAT tab page — see segment_rpt.
 # _merge_pad NAME -> how many TABLE blocks that component contributes. A
 # MISSING component (production skips several server reports) is padded with
 # this many empty stub tables, so the merged rpt's TABLE count ALWAYS equals
@@ -26,6 +28,7 @@ _merge_pad() {
         size-dist) echo 2 ;;
         inbound-connections|connection-diagnostics|pesit) echo 5 ;;   # connection-diagnostics 3->5, pesit 4->5 (2026-08)
         ssh-crypto) echo 10 ;;            # 8->10 (2026-08: + negotiation failures + PeSIT TLS)
+        uc3-polling) echo 0 ;;            # RIDES the UC3 tab (its tables carry tab=uc3, 2026-09-05): a missing one contributes NO tab page
         *) echo 1 ;;
     esac
 }
@@ -61,6 +64,12 @@ merge_rpt() {
                 done
             fi
         done
+        # The sentinel (2026-09-05): segment_rpt footers a NOTE that directly
+        # precedes SUMMARY/FOOT — report-level, repeated on EVERY tab page —
+        # which put the LAST component's per-table note on all the other
+        # tabs (the UC4 note on the UC1/2/3 pages). Any other directive after
+        # that note pins it to its own block; the renderer ignores META.
+        printf 'META\tmerged\t%s\n' "$#"
         printf 'FOOT\tGenerated on %s from %s component report(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$#"
     } > "$out.tmp" && mv "$out.tmp" "$out"
     echo "Data written to $out ($(command grep -c '^TABLE' "$out") table(s), $# component slot(s))." >&2

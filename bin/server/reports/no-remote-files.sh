@@ -26,7 +26,7 @@
 #                       matched = 0) has a pattern problem, not an empty remote
 #                       directory, and is left out.
 #
-# Neighbours: Remote Polls ranks the empty-poll rate of EVERY subscription
+# Neighbours: the UC status / UC3 tab (Polls by subscription) ranks the empty-poll rate of EVERY subscription
 # (including the ones that do work); No remote dir is the flows whose listing
 # fails outright.
 #
@@ -204,7 +204,7 @@ day_rows() {
     day_rows
     printf 'TOTAL\tTotal (%s day(s))\t@{class=num warn}%s\t\n' "$n_day" "$tot_polls"
 
-    printf 'NOTE\tSource: the TM message "Applying the search pattern … for transfer site …: **0 file(s) were found** of which 0 matched the pattern." Listed are the **UC3** subscriptions with no transfer data at all (result **green** via the clean-poll rule, or **blue**) whose EVERY poll found zero files; a subscription that did see files it could not match has a pattern problem, not an empty directory, and is left out%s. **Remote Polls** ranks the empty-poll rate of every subscription, working ones included, and **No remote dir** covers the flows whose listing fails outright. Poll counts are additive, so a date-filtered range re-totals them. Click a row to expand its 10 most recent poll lines.\n' \
+    printf 'NOTE\tSource: the TM message "Applying the search pattern … for transfer site …: **0 file(s) were found** of which 0 matched the pattern." Listed are the **UC3** subscriptions with no transfer data at all (result **green** via the clean-poll rule, or **blue**) whose EVERY poll found zero files; a subscription that did see files it could not match has a pattern problem, not an empty directory, and is left out%s. **UC status / UC3** (Polls by subscription) ranks the empty-poll rate of every subscription, working ones included, and **No remote dir** covers the flows whose listing fails outright. Poll counts are additive, so a date-filtered range re-totals them. Click a row to expand its 10 most recent poll lines.\n' \
         "$([ "${n_skip:-0}" -gt 0 ] && printf ' (%s here)' "$n_skip" || true)"
     printf 'SUMMARY\tSubscriptions: %s  |  Empty polls: %s  |  Days: %s\n' "$n_sub" "$tot_polls" "$n_day"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

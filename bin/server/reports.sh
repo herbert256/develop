@@ -2,8 +2,8 @@
 #
 # reports.sh — run every server report script, each of which writes
 # data/<name>.rpt. Reports ONLY — parsing is a separate step (parse.sh); this
-# does not build the cache. The reports are independent of each other (none
-# reads another SERVER report's .rpt — the unknown-*/site-failures rosters come
+# does not build the cache. The pooled reports are independent of each other
+# (none reads another SERVER report's .rpt — the unknown-*/site-failures rosters come
 # from the TRANSFER reports, produced in the earlier build stage), so they run
 # IN PARALLEL over a core-count job pool. ensure_parsed/ensure_config run ONCE
 # up front so a stale cache is rebuilt exactly once, never concurrently by the
@@ -85,6 +85,7 @@ pool_wait
 "$SCRIPT_DIR/reports/platform-health.sh"
 "$SCRIPT_DIR/reports/capacity.sh"
 "$SCRIPT_DIR/reports/ssh-security.sh"
+"$SCRIPT_DIR/../analyses/reports/uc3-polling.sh"   # the UC3 tab's polling tables: reads remote-poll.rpt + its sidecars — after the pool, before the uc-status merge (2026-09-05)
 "$SCRIPT_DIR/../analyses/reports/uc-status.sh"
 "$SCRIPT_DIR/../analyses/reports/uc2-visits.sh"   # formats uc2-status.sh's pickup sidecar — must run after the pool
 "$SCRIPT_DIR/reports/pickups.sh"   # formats the same sidecar — after the pool, behind uc2-status.sh

@@ -1404,7 +1404,6 @@ analyses/subscriptions.html|Subscriptions (analyses)|Every configured subscripti
 analyses/logical-detection.html|Logical detection|How every configured FlowID detected to its Logical flow group — the rule trail per FlowID: separator normalization, variant folds, digit tails, pins and the 3-part reshape.|logical, flowid, derivation, rules, detection|logical, derivation
 analyses/added-bl.html|Added BL|The BL numbers input/<env>/BL.txt adds on top of subscriptions.json — per subscription, the values that are not among its tags.|bl, BL.txt, added, tags, business line|BL, added
 analyses/accounts.html|Accounts (analyses)|The configured accounts analysed against the FlowManager configuration.||
-analyses/cronjobs.html|Cronjobs|The subscriptions polling schedules (cron expressions) in human terms.||
 analyses/first-seen.html|First seen|On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.||
 analyses/first-seen-both.html|First seen (both logs)|On what day each entity was first seen across BOTH the transfer and the server logs.||
 analyses/acc-vs-prod-summary.html|Acceptance vs production|The two environments entity name sets compared per type — only in Acceptance, in both, or only in Production — with each side's Files and the set/dormancy Summary.|dormant, promotion, summary|dormant, promotion, summary
@@ -1543,7 +1542,7 @@ write_sitemap() {
         printf '<li><a href="file-search-24-hours.html">File search</a></li>\n'
         printf '<li><a href="transfer/seen-in-server-log.html">Seen in server log</a></li>\n'
         printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Configuration <span class="smcount">17</span></h3><ul>\n'
+        printf '<div class="smcard"><h3>Configuration <span class="smcount">16</span></h3><ul>\n'
         printf '<li><a href="analyses/use-cases.html">Use Case</a></li>\n'
         printf '<li><a href="analyses/uc2-visits.html">UC2 pickup visits</a></li>\n'
         printf '<li><a href="analyses/subscriptions.html">Subscriptions</a></li>\n'
@@ -1553,7 +1552,6 @@ write_sitemap() {
         printf '<li><a href="analyses/fe-overview.html">Partners - Incoming</a></li>\n'
         printf '<li><a href="analyses/account-sharing.html">Account sharing</a></li>\n'
         printf '<li><a href="analyses/twins.html">Twins</a></li>\n'
-        printf '<li><a href="analyses/cronjobs.html">Cronjobs</a></li>\n'
         printf '<li><a href="analyses/config-hygiene.html">Config hygiene</a></li>\n'
         printf '<li><a href="analyses/whitelist-audit.html">Whitelist audit</a></li>\n'
         printf '<li><a href="analyses/cleanup-backlog.html">Cleanup backlog</a></li>\n'
@@ -1720,7 +1718,7 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
             cluster-health|stuck-events|scheduler-overruns)          wn_parent=platform-health ;;
             pesit|file-cleanup)                                     wn_parent=capacity ;;
             ssh-crypto|ssh-sessions)                                wn_parent=ssh-security ;;
-            uc1-status|uc2-status|uc3-status|uc4-status)            wn_parent=uc-status ;;
+            uc1-status|uc2-status|uc3-status|uc4-status|remote-poll|uc3-polling) wn_parent=uc-status ;;   # remote-poll/uc3-polling: the UC3 tab (2026-09-05)
             volume-src|trend)                                       wn_parent=volume ;;
             duration-distribution|dwell-time)                       wn_parent=duration-dwell ;;   # 2026-09-05 merge
             size-dist|file-type|duplicate-files)                    wn_parent=files ;;

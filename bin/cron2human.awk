@@ -1,6 +1,6 @@
 # cron2human.awk — translate a Quartz 6-field cron expression to plain English.
 #
-# Shared by bin/analyses/publish.sh (write_cronjobs_page) and
+# Shared by bin/analyses/reports/uc3-polling.sh (the UC3 tab cron table) and
 # bin/transfer/reports/details.sh (the Subscription detail-page Summary).
 # Deterministic — no AI, no token cost, works on a fresh clone.
 #

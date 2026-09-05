@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Entity coverage</title>
 <meta name="report-key" content="entity-coverage-once">
-<link rel="stylesheet" href="../../assets/style.css?v=1124074879">
-<script src="../../assets/topbar-data.js?v=2510131895" defer></script>
-<script src="../../assets/report.js?v=1124074879" defer></script>
+<link rel="stylesheet" href="../../assets/style.css?v=1365081356">
+<script src="../../assets/topbar-data.js?v=4109898930" defer></script>
+<script src="../../assets/report.js?v=1365081356" defer></script>
 </head>
 <body>
 <div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="entity-coverage" data-twin="../../acceptance/transfer/entity-coverage-once-domains.html"></div>
@@ -42,7 +42,7 @@
 <tr data-res="red"><td class="cl"><a href="../details/domains/cb.html">CB</a></td><td>in</td><td class="num gsep">1</td><td class="num">0</td><td class="num">0</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td></tr>
 <tr class="total"><td>Total (19 domains)</td><td></td><td class="num gsep">23</td><td class="num">2006</td><td class="num">4836</td><td class="num gsep">23</td><td class="num">3210</td><td class="num">16270</td></tr>
 </table></div>
-<p class="note">In proof: the server-log SSH logon lines (&quot;User with login name … associated with account … successfully authenticated&quot;), counted per account by the Auth activity report and rolled up to the account's entity — on the Accounts view that rollup is the identity. Out proof: the UC3 poll lines (&quot;Applying the search pattern … for transfer site …&quot;), counted per subscription by the Remote Polls report and rolled up to the subscription's entity. Files are real logical transfers, split by the connection side.</p>
+<p class="note">In proof: the server-log SSH logon lines (&quot;User with login name … associated with account … successfully authenticated&quot;), counted per account by the Auth activity report and rolled up to the account's entity — on the Accounts view that rollup is the identity. Out proof: the UC3 poll lines (&quot;Applying the search pattern … for transfer site …&quot;), counted per subscription on the UC status / UC3 tab (Polls by subscription) and rolled up to the subscription's entity. Files are real logical transfers, split by the connection side.</p>
 <p class="note">The Logons and Polls columns show on every view, but they only COUNT towards the verdict on *Current* and *Once* — on *OK transfers* the verdict rests on the most recent File alone.</p>
 <p class="note">Subs = the configured subscriptions per side (a both-ways subscription counts on both sides); a side with 0 Subs has nothing to prove and counts as covered.</p>
 </body>

@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Server Reports</title>
-<link rel="stylesheet" href="../../assets/style.css?v=1124074879">
-<script src="../../assets/topbar-data.js?v=2510131895" defer></script>
-<script src="../../assets/report.js?v=1124074879" defer></script>
+<link rel="stylesheet" href="../../assets/style.css?v=1365081356">
+<script src="../../assets/topbar-data.js?v=4109898930" defer></script>
+<script src="../../assets/report.js?v=1365081356" defer></script>
 </head>
 <body>
 <div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="index" data-twin="../../production/server/index.html"></div>
@@ -29,8 +29,7 @@
 <tr><th colspan="2">Operations &amp; Capacity</th></tr>
 <tr><td><a href="platform-health.html">Platform health</a></td><td class="desc">The platform infrastructure story on one page: daemon lifecycle and cluster distress, stuck internal events and scheduler overruns.</td></tr>
 <tr><td><a href="capacity-pesit-per-day.html">Capacity &amp; sessions</a></td><td class="desc">PeSIT activity and its problem codes, and the file retention / cleanup sweeps.</td></tr>
-<tr><th colspan="2">Routing &amp; Polling</th></tr>
-<tr><td><a href="remote-poll.html">Remote Polls</a></td><td class="desc">Scheduled remote-poll effectiveness per subscription — how many polls pick up files versus how many find nothing (chronic empty polling that never reaches the transfer logs).</td></tr>
+<tr><th colspan="2">Routing</th></tr>
 <tr><td><a href="transfer-site-missing.html">Transfer site missing</a></td><td class="desc">Server-log warnings where a transfer ran with no transfer site in its environment and fell back to the raw host, port and user — per endpoint, hosts that have delivered OK since excluded.</td></tr>
 <tr><th colspan="2">Missing Entities</th></tr>
 <tr><td><a href="missing-entities-subscriptions.html">Missing entities</a></td><td class="desc">Entity values referenced in server-log messages but absent from the transfer logs — subscriptions, accounts, hosts, whitelisted addresses and logins, one tab each.</td></tr>

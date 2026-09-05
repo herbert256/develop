@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 #
 # remote-poll.sh — remote-poll effectiveness per subscription, from the TM message
+#
+# AN UNPUBLISHED INTERMEDIATE since 2026-09-05 (user request: one report about
+# us polling partners): no page of its own any more. bin/analyses/reports/
+# uc3-polling.sh copies this .rpt's TABLE blocks onto the UC status / UC3 tab,
+# entity-coverage.sh reads its FIRST table as the Out-side proof, and the two
+# sidecars below feed the same UC3 tab's cron tables. Keep the polls table
+# FIRST.
+#
 # "Applying the search pattern '<pat>' for transfer site '<SITE>': N file(s) were
 # found of which M matched the pattern." Each such line is one scheduled poll: it
 # names the subscription and says how many files it actually picked up (M). The
@@ -34,7 +42,7 @@ OUT="$REPORTS_DIR/remote-poll.rpt"
 # transfer record at all, so this is the only evidence that a schedule fires.
 PT_OUT="$REPORTS_DIR/poll-times.tsv"
 # poll-failures.tsv — the poll FAILURE evidence sidecar (2026-08), for the
-# Cronjobs page's "never completes" table: why a schedule that fires (its
+# UC3 tab's "Schedules that never complete a poll" table: why a schedule that fires (its
 # "Remote files pattern … evaluated" setup lines appear on time) never reaches
 # the completed-listing line that counts as a poll. TAB rows:
 #   S <TAB> site <TAB> count            poll STARTS (pattern-evaluated lines)

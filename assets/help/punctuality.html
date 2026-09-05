@@ -15,7 +15,7 @@
 <h2>What this shows</h2>
 <p>Does the daily file arrive on time? For every subscription active on 8+ days, the day's <em>first</em> File defines that day's arrival time. The median over the window is the flow's <strong>typical slot</strong>, and the spread (one standard deviation) classifies its regularity:</p>
 <ul>
-<li><strong>Clockwork</strong> — ±15 minutes or tighter. Cron-driven flows land here, many at ±0 min: the observed side of the schedules the <a href="cronjobs.html">Cronjobs</a> analysis extracts from the configuration.</li>
+<li><strong>Clockwork</strong> — ±15 minutes or tighter. Cron-driven flows land here, many at ±0 min: the observed side of the schedules the <a href="server-uc3-status.html#cronjobs">Cronjobs</a> analysis extracts from the configuration.</li>
 <li><strong>Regular</strong> — within an hour.</li>
 <li><strong>Loose</strong> — within three hours.</li>
 <li><strong>Irregular</strong> — wider: event-driven flows, where "late" and "missed" have no meaning (those columns show "-").</li>

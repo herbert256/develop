@@ -1483,7 +1483,7 @@
     if (m) { try { urlRow = decodeURIComponent(m[1].replace(/\+/g, " ")); } catch (e) { urlRow = m[1]; } }
   })();
   // A page whose <body> carries the sort-fresh class (analyses/accounts.html,
-  // cronjobs.html, use-cases.html) never remembers sorting: every load starts
+  // use-cases.html — cronjobs.html until 2026-09-05) never remembers sorting: every load starts
   // at the generated order.
   var SORT_FRESH = (" " + (document.body.className || "") + " ").indexOf(" sort-fresh ") >= 0;
 

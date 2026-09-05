@@ -7,14 +7,13 @@
 <meta name="report-dates" content="2026-07-26,2026-07-27,2026-07-28,2026-07-29,2026-07-30,2026-07-31,2026-08-01,2026-08-02,2026-08-03,2026-08-04,2026-08-05,2026-08-06,2026-08-07,2026-08-08,2026-08-09,2026-08-10,2026-08-11,2026-08-12,2026-08-13,2026-08-14,2026-08-15,2026-08-16,2026-08-17,2026-08-18,2026-08-19,2026-08-20,2026-08-21,2026-08-22,2026-08-23,2026-08-24,2026-08-25,2026-08-26,2026-08-27,2026-08-28,2026-08-29">
 <meta name="report-area" content="production-server">
 <meta name="report-key" content="transfer-site-missing">
-<link rel="stylesheet" href="../../assets/style.css?v=1124074879">
-<script src="../../assets/topbar-data.js?v=2510131895" defer></script>
-<script src="../../assets/report.js?v=1124074879" defer></script>
+<link rel="stylesheet" href="../../assets/style.css?v=1365081356">
+<script src="../../assets/topbar-data.js?v=4109898930" defer></script>
+<script src="../../assets/report.js?v=1365081356" defer></script>
 </head>
 <body>
 <div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="server-transfer-site-missing" data-twin="../../acceptance/server/transfer-site-missing.html"></div>
-<h1>Transfer site missing <span class="grouptag">&larr; Routing &amp; Polling &larr; Server</span></h1>
-<p class="tabs"><a class="tab" href="remote-poll.html">Remote Polls</a><span class="tab active">Transfer site missing</span></p>
+<h1>Transfer site missing <span class="grouptag">&larr; Routing &larr; Server</span></h1>
 <p class="range"><strong>&quot;Transfer site ID is not present in environment. Using host, port and user: …&quot;</strong> — SecureTransport ran a transfer with <strong>no transfer site</strong> in its environment and fell back to the communication profile's raw <strong>host, port and user</strong>. The transfer still moves, so this is a <strong>configuration gap</strong> rather than a runtime failure: a route or profile that lost its transfer-site reference. It is the one server-log message that names NO flow — it says the transfer carried no site — so the rows here are <strong>endpoints</strong>, not subscriptions.</p>
 <p class="range"><strong>5 warning(s)</strong> in the log window. Hosts that have moved a file OK <strong>since</strong> their newest warning are <strong>not listed</strong>: a later OK transfer through the same endpoint says the gap is closed. No host cleared that way this run.</p>
 <div class="tablewrap"><table class="wide" data-nofilter="1">

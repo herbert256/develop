@@ -15,7 +15,8 @@
 #
 # The reason tail decides: only "No such file" rows are counted here. The other
 # listing failures (Permission denied, …) are counted per subscription by the
-# Remote Polls report, which also covers the polls that DO list a directory.
+# UC status / UC3 tab (its Polls by subscription table, the former Remote Polls
+# report), which also covers the polls that DO list a directory.
 #
 # The logged site keeps its "_SCP_…" suffix; we truncate it to the clean
 # subscription name (as the transfer parser does), shown as logged (mono; a
@@ -164,7 +165,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
     {
         m = $5
         # only the missing-directory reason — the other listing failures
-        # (Permission denied, …) belong to the Remote Polls report
+        # (Permission denied, …) belong to the UC3 tab of UC status (Polls by subscription)
         if (m !~ /No such file/) next
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
         rest = substr(m, index(m, "listing files from partner ") + 27)
@@ -311,7 +312,7 @@ day_rows() {
     day_rows
     printf 'TOTAL\tTotal (%s day(s))\t@{class=num failed}%s\t\n' "$n_day" "$tot_err"
 
-    printf 'NOTE\tSource: TM errors "Error occurred while listing files from partner … defined in account …. No such file[: '\''<path>'\''] " (with or without the "Error during transfer operation:" prefix). Only the **No such file** reason is counted — other listing failures (Permission denied, …) are counted per subscription by **Remote Polls**, which also covers the polls that do list a directory. **Only OPEN problems are listed**: a row is dropped when the flow recovered AFTER that row'\''s last error — either an OK File in the transfer cache, or, on a **UC3** subscription, a later "Applying the search pattern … for transfer site" line for that same site, which proves the poll reached the directory even though it downloaded nothing (an empty poll leaves no transfer record at all, so nothing else can witness it). Each row therefore still describes a directory the partner was rejecting at the end of the window. The subscription is the logged site truncated at its _SCP_ suffix, linked to its detail page when the name resolves. **One row per subscription**: a flow rejected on several directories (or several spellings of one) stacks them in the Remote directory cell, newest failure first — click the cell to expand a long list. **Last** is that subscription'\''s most recent failed listing. Error counts are additive, so a date-filtered range re-totals them. Click a row to expand its 10 most recent log lines.\n'
+    printf 'NOTE\tSource: TM errors "Error occurred while listing files from partner … defined in account …. No such file[: '\''<path>'\''] " (with or without the "Error during transfer operation:" prefix). Only the **No such file** reason is counted — other listing failures (Permission denied, …) are counted per subscription on the **UC status / UC3** tab (Polls by subscription), which also covers the polls that do list a directory. **Only OPEN problems are listed**: a row is dropped when the flow recovered AFTER that row'\''s last error — either an OK File in the transfer cache, or, on a **UC3** subscription, a later "Applying the search pattern … for transfer site" line for that same site, which proves the poll reached the directory even though it downloaded nothing (an empty poll leaves no transfer record at all, so nothing else can witness it). Each row therefore still describes a directory the partner was rejecting at the end of the window. The subscription is the logged site truncated at its _SCP_ suffix, linked to its detail page when the name resolves. **One row per subscription**: a flow rejected on several directories (or several spellings of one) stacks them in the Remote directory cell, newest failure first — click the cell to expand a long list. **Last** is that subscription'\''s most recent failed listing. Error counts are additive, so a date-filtered range re-totals them. Click a row to expand its 10 most recent log lines.\n'
     printf 'SUMMARY\tOpen failed listings: %s  |  Subscriptions: %s  |  Directories: %s  |  Days: %s  |  Resolved since: %s\n' "$tot_err" "$n_sub" "$n_path" "$n_day" "${n_res:-0}"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

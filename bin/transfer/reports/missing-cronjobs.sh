@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # missing-cronjobs.sh
-# The counterpart gap of the Cronjobs page: a configured subscription whose use
+# The counterpart gap of the Configured cronjobs table (UC status / UC3 tab since
+# 2026-09-05, the analyses Cronjobs page before): a configured subscription whose use
 # case is CRON-TRIGGERED (uc_meta's trigger == "Cronjob" — UC3, and UC5's pull
 # side) but which carries NO cron expression at all, so nothing ever makes it
 # poll. UC1 is a client use case too, but it pushes on directory scanning rather
@@ -19,7 +20,8 @@
 # takes the FlowManager subscriptions export directly (the cron expressions live
 # in .parameters, which bin/flow-manager.sh's caches do not carry), so the answer
 # is the same whatever date range is being viewed and the table is `nofilter`.
-# The report was a table on the analyses Cronjobs page until 2026-07, then its
+# The report was a table on the analyses Cronjobs page until 2026-07 (that page
+# itself folded into the UC3 tab 2026-09-05), then its
 # own analyses page, and is a transfer report from 2026-07 so its page and its
 # script sit with the other subscription problems.
 #

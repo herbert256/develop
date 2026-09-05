@@ -38,7 +38,7 @@ DOCS="docs/$SITE_ENV"
 DATA="data/$SITE_ENV"
 CSS_SRC="docs/assets/style.css"   # hand-authored + published in ONE place (see ensure_assets)
 # The FlowManager config exports every raw-JSON reader (the
-# accounts / cronjobs insight pages, publish-insights.sh) should read: the
+# accounts insight page, publish-insights.sh, uc3-polling.sh) should read: the
 # SKIP-filtered copies bin/flow-manager.sh writes (input/<env>/skip.txt) when they
 # exist, else the raw exports. (Repo-root-relative — publish_lib.sh cd's to ROOT.)
 FM_CONFIG_DIR="input/$SITE_ENV/flow-manager"
@@ -294,7 +294,7 @@ CUR_DATES=""
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
 transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-minmax duration-all-minmax duration-trend account-sharing twins)
-server_order=(topview errors failure-flows pickups uc-status uc2-visits went-kaput site-failures logons connections ssh-security platform-health capacity deploy-errors remote-poll transfer-site-missing no-remote-dir no-remote-files missing-entities)
+server_order=(topview errors failure-flows pickups uc-status uc2-visits went-kaput site-failures logons connections ssh-security platform-health capacity deploy-errors transfer-site-missing no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
 
 # ---- the analyses-housed area reports ---------------------------------------
 # FOUR reports whose DATA belongs to the transfer / server areas — they read
@@ -334,7 +334,7 @@ BOXES_ONLY_REPORTS=" pirates from-green-to-red only-red waiting expired went-qui
 # feed the merged reports and every other consumer) but they have NO page of
 # their own — whats-new must not link them. ranking and double are retired
 # outright; the four uc<n>-status merged into uc-status.
-MERGED_COMPONENT_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity ssh-key-auth cluster-health stuck-events scheduler-overruns pesit file-cleanup ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status double stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time "
+MERGED_COMPONENT_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity ssh-key-auth cluster-health stuck-events scheduler-overruns pesit file-cleanup ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status double stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling "
 is_merged_component() {
     case $MERGED_COMPONENT_REPORTS in *" $1 "*) return 0 ;; esac
     return 1
@@ -422,7 +422,7 @@ group_members() {
         srv-connections)     echo "logons connections" ;;        # 2026-07 merges (logons leads since 2026-08); site-failures is boxes-only
         srv-security)        echo "ssh-security" ;;              # 2026-07: ssh-crypto + ssh-sessions merged
         srv-ops)             echo "platform-health capacity" ;;  # 2026-07: the seven ops reports merged into two
-        srv-routing)         echo "remote-poll transfer-site-missing" ;;   # advanced-routing REMOVED 2026-08 (its AR0011/76/77 lines are noise-filtered); deploy-errors/no-remote-dir/no-remote-files are boxes-only
+        srv-routing)         echo "transfer-site-missing" ;;   # advanced-routing REMOVED 2026-08 (its AR0011/76/77 lines are noise-filtered); remote-poll folded into UC status / UC3 2026-09-05; deploy-errors/no-remote-dir/no-remote-files are boxes-only
         srv-missing)         echo "missing-entities" ;;          # 2026-07: the five unknown-* merged (one script all along)
     esac
 }
@@ -444,7 +444,7 @@ group_of() {   # $1 area (transfer|server)  $2 report basename -> group id (empt
         connections|logons) echo "srv-connections" ;;
         ssh-security) echo "srv-security" ;;
         platform-health|capacity) echo "srv-ops" ;;
-        remote-poll|transfer-site-missing)  echo "srv-routing" ;;
+        transfer-site-missing)  echo "srv-routing" ;;
         missing-entities) echo "srv-missing" ;;
         *)                                echo "" ;;
     esac
@@ -467,7 +467,7 @@ group_label() {
         srv-connections)     echo "Logons & Connections" ;;
         srv-security)        echo "Security" ;;
         srv-ops)             echo "Operations & Capacity" ;;
-        srv-routing)         echo "Routing & Polling" ;;
+        srv-routing)         echo "Routing" ;;   # "Routing & Polling" until 2026-09-05 — the polling half lives on UC status / UC3
         srv-missing)         echo "Missing Entities" ;;
     esac
 }
@@ -489,7 +489,7 @@ group_desc() {
         srv-connections)     echo "The SSH logon screening (incoming funnel + outbound auth failures), successful authentication activity per account and source IP, the inbound connection volume per protocol/account/address, and connection diagnostics." ;;
         srv-security)        echo "The negotiated cipher/crypto posture with weak algorithms flagged, protocol and credential hygiene signals, and session lifecycle problems." ;;
         srv-ops)             echo "Scheduler overruns, PeSIT protocol activity and link problems, capacity and the retention sweeps, daemon/cluster health and stuck internal events." ;;
-        srv-routing)         echo "Remote-poll effectiveness — whether the scheduled polls run and find anything — and the endpoints running transfers with no transfer site in their environment." ;;
+        srv-routing)         echo "The endpoints running transfers with no transfer site in their environment (remote-poll effectiveness moved to UC status / UC3, 2026-09-05)." ;;
         srv-missing)         echo "Entities that appear in the server messages but are absent from the transfer logs — subscriptions, accounts, IPs and logins." ;;
     esac
 }
@@ -538,7 +538,7 @@ member_label() {   # row-1 tab text for a grouped report
         site-failures) echo "Connection failures" ;; connection-diagnostics) echo "Diagnostics" ;; inbound-connections) echo "Inbound connections" ;; logon) echo "Logon" ;; auth-activity) echo "Auth activity" ;; ssh-key-auth) echo "Key auth" ;; uc1-status) echo "UC1 status" ;; uc2-status) echo "UC2 status" ;; uc4-status) echo "UC4 status" ;; uc2-visits) echo "UC2 pickup visits" ;; pickups) echo "Pickups" ;; account-sharing) echo "Account sharing" ;; twins) echo "Twins" ;;
         ssh-crypto) echo "Crypto" ;; ssh-sessions) echo "SSH sessions" ;;
         scheduler-overruns) echo "Scheduler" ;; pesit) echo "PeSIT" ;; cluster-health) echo "Cluster health" ;; stuck-events) echo "Stuck events" ;; file-cleanup) echo "File cleanup" ;;
-        deploy-errors) echo "Deploy errors" ;; remote-poll) echo "Remote Polls" ;; transfer-site-missing) echo "Transfer site missing" ;; uc3-status) echo "UC3 status" ;; no-remote-dir) echo "No remote dir" ;; no-remote-files) echo "No remote files" ;;
+        deploy-errors) echo "Deploy errors" ;; transfer-site-missing) echo "Transfer site missing" ;; uc3-status) echo "UC3 status" ;; no-remote-dir) echo "No remote dir" ;; no-remote-files) echo "No remote files" ;;
         unknown-sites) echo "Subscriptions" ;; unknown-accounts) echo "Accounts" ;; unknown-hosts) echo "Hosts" ;; unknown-whitelisting) echo "Whitelist" ;; unknown-logins) echo "Logins" ;;
     esac
 }
@@ -807,7 +807,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
 # report-wide and go to FOOTER (rendered on every split page), as before.
 segment_rpt() {
     HEADER=""; FOOTER=""; NTAB=0; TBLOCK=()
-    local line dir phase="head" pending="" sw="" lastsw=""
+    local line dir phase="head" pending="" sw="" lastsw="" tk="" lasttab=""
     while IFS= read -r line || [ -n "$line" ]; do
         dir=${line%%$'\t'*}
         case $dir in
@@ -818,9 +818,17 @@ segment_rpt() {
                 # shows one of the group at a time — so the tab count stays
                 # the count of switch GROUPS, not of tables
                 sw=""; case $line in *$'\t'switch=*) sw=${line##*$'\t'switch=}; sw=${sw%%$'\t'*}; sw=${sw%%:*} ;; esac
-                if [ "$phase" = tab ] && [ -n "$sw" ] && [ "$sw" = "$lastsw" ]; then TBLOCK[$NTAB]+=$'\n'"$line"
+                # a tab=KEY table (2026-09-05) likewise STAYS in the block of a
+                # previous table carrying the same KEY — but VISIBLE, stacked
+                # under it: several component tables on ONE tab page (the UC3
+                # tab of UC status: the status table plus uc3-polling's four).
+                # render_rpt.awk treats the modifier as inert; the tab count
+                # stays the count of blocks.
+                tk=""; case $line in *$'\t'tab=*) tk=${line##*$'\t'tab=}; tk=${tk%%$'\t'*} ;; esac
+                if [ "$phase" = tab ] && { { [ -n "$sw" ] && [ "$sw" = "$lastsw" ]; } || { [ -n "$tk" ] && [ "$tk" = "$lasttab" ]; }; }; then
+                    TBLOCK[$NTAB]+=$'\n'"$line"
                 else phase="tab"; NTAB=$((NTAB+1)); TBLOCK[$NTAB]="$line"; fi
-                lastsw=$sw ;;
+                lastsw=$sw; lasttab=$tk ;;
             NOTE|LINK)
                 if [ "$phase" = tab ]; then pending+="$line"$'\n'
                 else FOOTER+="$line"$'\n'; fi ;;
@@ -1010,6 +1018,20 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
         files)               echo "size-dist" ;;
         duration-dwell)      echo "duration-dwell" ;;   # 2026-09-05 merge: its own help page (assets/help/duration-dwell.html, the two components' help merged)
         *) if [ "$area" = server ]; then echo "server-$n"; else echo "$n"; fi ;;
+    esac
+}
+# tab_help_slug AREA REPORT LABEL — the help slug of ONE tab page of a split
+# report: the report's own slug (help_slug_for) unless that tab has a help
+# page of its own. The four UC status tabs do (assets/help/server-uc1..uc4-
+# status.html; the UC3 one also documents the polling tables the tab carries
+# since 2026-09-05).
+tab_help_slug() {
+    case "$2/$3" in
+        uc-status/UC1) echo server-uc1-status ;;
+        uc-status/UC2) echo server-uc2-status ;;
+        uc-status/UC3) echo server-uc3-status ;;
+        uc-status/UC4) echo server-uc4-status ;;
+        *) help_slug_for "$1" "$2" ;;
     esac
 }
 
@@ -1980,7 +2002,7 @@ render_report() {   # $1 area  $2 name  $3 rpt
               printf '%s' "$phdr"; printf '%s\n' "$navblk"
           fi
           printf '%s\n' "$blk"; printf '%s' "$FOOTER"; } > "$tmp"
-        render_rpt "$tmp" "$DOCS/$pagedir/$outsub${files[$i]}" "$pcss" "$phome" "$rlabel" 1 "$hslug" "$rkey"
+        render_rpt "$tmp" "$DOCS/$pagedir/$outsub${files[$i]}" "$pcss" "$phome" "$rlabel" 1 "$(tab_help_slug "$area" "$name" "${laba[$((i-1))]:-}")" "$rkey"
         rm -f "$tmp"
     done
     analyses_grouprow_for "$area" "$name"   # analyses group tab bar for the cross-reference pages
@@ -2037,24 +2059,27 @@ _subs_placeholder() {   # $1 area  $2 name
     # other pages link the sibling tabs directly (a boxes explanation links
     # uc-status-uc3.html), and only stubbing the first left those links
     # broken in an env without the data (production 2026-08)
-    pages="$fp"
+    # one "page<TAB>label" line per placeholder (the label picks the tab's
+    # help page, tab_help_slug)
+    pages="$fp"$'\t'$'\n'
     labels=$(report_tabs "$name")
     if [ -n "$labels" ]; then
         pages=""
         while IFS= read -r lbl; do
-            [ -n "$lbl" ] && pages="$pages $name-$(slugify "$lbl").html"
+            [ -n "$lbl" ] && pages="$pages$name-$(slugify "$lbl").html"$'\t'"$lbl"$'\n'
         done <<< "$(printf '%s' "$labels" | tr '|' '\n')"
     fi
-    for pg in $pages; do
+    while IFS=$'\t' read -r pg lbl; do
+        [ -n "$pg" ] || continue
         out="$DOCS/analyses/$pg"
         {
-            html_head "$title" "../assets/style.css" "" "" "$(help_slug_for "$area" "$name")" "$area" "$name"
+            html_head "$title" "../assets/style.css" "" "" "$(tab_help_slug "$area" "$name" "$lbl")" "$area" "$name"
             esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
             [ -n "$html" ] && printf '%s\n' "$html"
             printf '<p class="range">This report has <strong>no data in this environment</strong> — the log lines or configuration it reads are absent, so its report file was not produced. The report exists in the other environment when its data does; use the environment switch in the top bar.</p>\n'
             printf '</body>\n</html>\n'
         } > "$out"
-    done
+    done <<< "$pages"
 }
 
 # ---- index helpers (shared by bin/build/publish.sh and the top-bar menus) ---------
@@ -2152,7 +2177,7 @@ ANALYSES_MENU='<a class="ddtop" href="@analyses/index.html">Start page</a><a hre
 _analyses_groups() {
     printf '%s\n' \
         "Coverage & seen|../transfer/entity-coverage-accounts.html=Entity coverage|first-seen.html=First seen|data-diff.html=Since yesterday|../file-search-24-hours.html=File search|../transfer/seen-in-server-log.html=Seen in server log" \
-        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|fe-overview.html=Partners - Incoming|account-sharing.html=Account sharing|twins.html=Twins|cronjobs.html=Cronjobs|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
+        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|fe-overview.html=Partners - Incoming|account-sharing.html=Account sharing|twins.html=Twins|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
         "Partners|partner-scorecard.html=Partner scorecard|blast-radius.html=Blast radius|app-partners.html=Application dependencies|partner-lifecycle.html=Partner lifecycle" \
         "Boxes|accounts-in-boxes.html=Accounts in boxes|subscriptions-in-boxes.html=Subscriptions in boxes|triage.html=Triage" \
         "Errors|failed.html=Failed Subscriptions|failing-reasons.html=Error reasons"

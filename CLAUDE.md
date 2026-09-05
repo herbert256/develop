@@ -273,6 +273,8 @@ date its own top N, value-descending, each row `@data:date` + `@data:val`, rows 
 top N baked `@data:dhide=1` — and report.js re-picks the visible N for the selected range) ·
 `period=` (the date period the table aggregates, appended to the `<h2>` as a muted span;
 report.js keeps it on the selected range) ·
+`tab=KEY` (consecutive tables sharing KEY stay on ONE tab page of a split report, stacked and
+all visible — `switch=` shows one at a time; the UC3 tab of UC status, 2026-09-05) ·
 `anchor=` (id on the `<h2>`, an in-page link target) · `keephead` (keep the heading
 even on a page's first table) · `rowlink` (the WHOLE row opens its target — the row's own
 `@data:href` if it carries one, else its first link; report.js `setupIndexRows`).
@@ -574,7 +576,8 @@ reparses in full. **Four server reports read those lines and were removed with t
 therefore went too, leaving `pickups` alone in the srv-transfers group. **`advanced-routing` went
 the same way** (2026-08) when `AR0011/76/77` joined the list: its Routes table counted Executions
 as the AR0076 total and Fail % as failures ÷ executions, so the report could not survive the
-filter — `remote-poll` now leads srv-routing alone. Verified first that nothing else depended on
+filter — `remote-poll` then led srv-routing alone, and since 2026-09-05 it is an unpublished
+intermediate whose tables ride the UC status / UC3 tab (`uc3-polling.sh`; srv-routing = `transfer-site-missing`, label "Routing"). Verified first that nothing else depended on
 those lines: 0 of 136 blue entities evidenced by one, 0 of 905 entity mention caches made only of
 them, 0 of 732 unknown-* seeds. The failed-file error
 pages lost their JSON id join with them and now rest on the SESSION join, plus an ANY-MENTION id join
@@ -775,7 +778,8 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   `?q=` between the windows; 24 hours = the newest full day + the partial newest day, 48 hours
   = the second full day), the Report finder, the SIX Failed-transfers
   view pages (+ per-CoreId error pages, and since 2026-09-03 the FILE pages `docs/<env>/files/<coreid>.html` — the same layout for a File of ANY outcome, written by `failed.sh` for the CoreIds the Transfer patterns page's "Last 5 files" cells link, `_patterns-files.tsv`, and for every File the Longest Files page lists over one hour, `_longest-files.tsv` — its CoreId cell opens the File page), Cross References, Seen in server log, Entity coverage
-  (assert OK ⊆ Current ⊆ Once), whitelist-audit, config-hygiene, Cronjobs, acc-vs-prod, UC status
+  (assert OK ⊆ Current ⊆ Once), whitelist-audit, config-hygiene, acc-vs-prod, UC status (its UC3
+  tab also carrying the polling tables — the former Remote polls report and Cronjobs page, 2026-09-05)
   (a Use-cases view; pages in analyses/).
 - **The Boxes pages** (subscriptions-in-boxes + accounts-in-boxes, written by publish-insights):
   both start from the shared `_subs_box_rows` producer; the account join is
@@ -797,7 +801,9 @@ in `group_members`/`group_label`.
 **Merged reports** (`bin/merge_rpt.sh`, run after the report pools) fold component `.rpt`s into
 one tabbed report; the components stay on disk as unpublished intermediates (listed in
 `MERGED_COMPONENT_REPORTS`; whats-new skips them; `_merge_pad` pads a missing component with
-empty stubs). **The BOXES-ONLY reports** (`BOXES_ONLY_REPORTS`) are in no group and no
+empty stubs — 0 for a component whose tables ride another one's tab via `tab=KEY`). The merge
+ends its component run with a `META merged` sentinel so the last component's trailing NOTE
+stays on its own tab instead of footering onto every tab (2026-09-05). **The BOXES-ONLY reports** (`BOXES_ONLY_REPORTS`) are in no group and no
 menu/index/sitemap card; their pages stay at the area URLs with no group tab row, and only the
 Boxes pages link them — their scripts still run in the area orchestrators. Both full lists are in
 ARCHITECTURE.md.
