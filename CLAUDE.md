@@ -145,6 +145,17 @@ DISPLAY-RENAME sweep (`bin/build/display-rename.sh`, `input/<env>/rename.txt` �
 applied to the RENDERED pages as the build's last page-touching step; caches/.rpt keep the real
 values, slugs/links untouched) also runs only in `bin/build.sh`: a manually republished page
 shows real values until the next build.
+**Column order is a runtime feature** (2026-09-05, report.js `initColOrder`): every header of a
+movable table is draggable; the order is stored in localStorage under the report key WITHOUT the
+environment + the built header labels (`colorder:…`), re-applied FIRST in `init()`, restored by the
+↺ hotspot in the last header cell. Every cell of a movable table carries `data-ci`, its BUILT column
+index — anything that addresses a column by number (RECALC tokens, `data-noagg`/`data-pct`, the
+group column, the total label, the remembered sort, which now stores the built index) goes through
+`cellByCi`/`ciOf`/`colByCi`, never through `cells[n]`. A spanned total label is split on the first
+move. Not movable: a grouped header band (GHEAD), `data-heat`, the Boxes pages (`th[data-pf]`),
+Entity Search, `dayrows`, spacer columns, any spanned DATA row; a `nocolmove` TABLE modifier can be
+added if a report needs to opt out. New column-addressing code must use the built index.
+
 **Iterating on HTML/CSS**: edit `assets/style.css`/`assets/report.js` (NOT the docs copies) and
 run `bin/build.sh` — it clears+seeds docs/ and re-renders everything. A MANUAL per-area publish
 reads the docs/assets copies, so after an assets/ edit copy the file over (or run the build);
