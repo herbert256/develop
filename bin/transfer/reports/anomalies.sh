@@ -198,19 +198,19 @@ awk -F'\t' '
 | awk -F'\t' -v nfiles="${#files[@]}" -v now="$(date '+%Y-%m-%d %H:%M:%S')" '
     function open_daily() {
         printf "TABLE\tDaily — unusual days\twide\tkeephead\tsxs\tanchor=daily\n"
-        printf "HEAD\tDate\tWhat\tValue\tTypical\t× typical\tFiles\tError\n"
-        printf "KIND\ttext\ttext\tnum\tnum\tnum\tnum\tnumfailed\n"
+        printf "HEAD\tDate\tWhat\tValue\tTypical\t× typical\n"
+        printf "KIND\ttext\ttext\tnum\tnum\tnum\n"
     }
     function close_daily() {   # its NOTE is emitted by close_hourly: the two tables share one sxs row, and a NOTE block would end it
-        printf "TOTAL\tTotal (%d rows)\t\t\t\t\t\t\n", n2
+        printf "TOTAL\tTotal (%d rows)\t\t\t\t\n", n2
     }
     function open_hourly() {
         printf "TABLE\tHourly — unusual hours\twide\tsxs\tanchor=hourly\tpager=50\n"
-        printf "HEAD\tDate\tHours\tWhat\tPeak\tTypical\t× typical\tFiles\tError\n"
-        printf "KIND\ttext\tmono\ttext\tnum\tnum\tnum\tnum\tnumfailed\n"
+        printf "HEAD\tDate\tHours\tWhat\tPeak\tTypical\t× typical\n"
+        printf "KIND\ttext\tmono\ttext\tnum\tnum\tnum\n"
     }
     function close_hourly() {
-        printf "TOTAL\tTotal (%d rows)\t\t\t\t\t\t\t\n", n1
+        printf "TOTAL\tTotal (%d rows)\t\t\t\t\t\n", n1
         printf "NOTE\t**Daily** — signals per calendar day vs the typical day: **Error rate** (≥10%%, ≥20 Files, ≥4× typical), **Duration** (avg per OK File ≥5 min, ≥20 OK Files, ≥4×), **Files spike** (≥100 Files, ≥2×), **Files drop** (≤¼ of a ≥100-Files typical), **Silence** (a calendar day with NO transfers where ≥20 are typical — missing days are walked via the calendar), **Volume** (≥200 MB, ≥2×).\n"
         printf "NOTE\t**Hourly** — signals per start hour: **Error rate** (≥25%% and ≥5 Files), **Duration** (avg per OK File ≥5 min, ≥5 OK Files), **Files spike** (≥30 Files), **Silence** (0 Files in an hour that typically moves ≥20), **Volume** (≥100 MB) — each also ≥4× its typical. Consecutive flagged hours merge into one episode.\n"
         printf "NOTE\tEnd-of-window caution: on the newest day the outbound legs of just-arrived files may not be exported yet, which can flag late hours or the whole day as Error rate — recheck after the next log export.\n"
@@ -223,13 +223,15 @@ awk -F'\t' '
         open_daily()
     }
     $1 == "2" {
-        if ($11 == "-") printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s\n", $2, $4, $6, $7, $8, $9, $10, $12
-        else printf "ROW\t@{href=../day/%s.html?axway_hero=%s}%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s\n", $2, $11, $2, $4, $6, $7, $8, $9, $10, $12
+        # (the Files and Error columns left 2026-09-05, user request — the
+        # figures stay in the agg line for the thresholds)
+        if ($11 == "-") printf "ROW\t%s\t%s\t%s\t%s\t%s\t@data:res=%s\n", $2, $4, $6, $7, $8, $12
+        else printf "ROW\t@{href=../day/%s.html?axway_hero=%s}%s\t%s\t%s\t%s\t%s\t@data:res=%s\n", $2, $11, $2, $4, $6, $7, $8, $12
         n2++
     }
     $1 == "1" {
         if (!t1) { close_daily(); open_hourly(); t1 = 1 }
-        printf "ROW\t@{href=../day/%s.html?axway_hero=%s}%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s\n", $2, $11, $2, $5, $4, $6, $7, $8, $9, $10, $12
+        printf "ROW\t@{href=../day/%s.html?axway_hero=%s}%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s\n", $2, $11, $2, $5, $4, $6, $7, $8, $12
         n1++
     }
     END {
