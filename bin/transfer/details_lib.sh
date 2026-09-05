@@ -769,7 +769,13 @@ aggregate_files() {
       # the entry ends with the state and (2026-09-05, user request) the
       # RECOVERED flag: "yes" when this File finished OK but carried a failed
       # leg (gHADF — the same rule as the Activity per day Recovered column)
-      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : "") "|" gPICK, (ty=="SITE")?500:100)   # … then the pickup stamp
+      # the Pickup cell (UC2 pages): the collect stamp RELATIVE to the File\047s
+      # Date — "2d 5h 45m" (2026-09-05, user request); blank when not collected
+      grel=""
+      if(gPICK!=""){ split(gPICK,pp9," "); ds9=ep_iso(pp9[1],pp9[2])-ep_iso(tdt[curcid],ttm[curcid])
+        if(ds9>=0){ dd9=int(ds9/86400); hh9=int((ds9%86400)/3600); mm9=int((ds9%3600)/60)
+          grel=(dd9>0 ? dd9 "d " hh9 "h " mm9 "m" : (hh9>0 ? hh9 "h " mm9 "m" : (mm9>0 ? mm9 "m" : "<1m"))) } }
+      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : "") "|" grel, (ty=="SITE")?500:100)   # … then the pickup delay
       # Waiting/Expired rollup -> the section-0.9 summary table (per entity):
       # count + first/last STAGED date per state
       if(toc[curcid]=="Waiting" || toc[curcid]=="Expired"){ kwe=ty SUBSEP ent SUBSEP toc[curcid]
