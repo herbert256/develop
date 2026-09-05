@@ -769,6 +769,10 @@ tr[data-res="blue"] td.failed.z,   tr[data-res="blue"] td.processed.z   { backgr
    or a continuous schedule seen only ~daily). The tr[data-res] variant outranks
    the generic row tints above so the alarm survives the row colour. */
 td.obsbad, tr[data-res] td.obsbad { background-color:#8b1a1a; color:#fff; }
+/* … and on a restint table (the UC3 tab's Configured cronjobs since 2026-09-05,
+   whose Subscription column tints every row): the restint rules above carry
+   two :not() classes, so this one matches their weight and, coming later, wins */
+table[data-restint] tr[data-res] td.obsbad:not(.failed):not(.processed) { background-color:#8b1a1a; color:#fff; }
 /* Detail pages: the fixed section header (report.js setupSectionTabs) —
    the h1 + one anchor tab per section (one per side-by-side row), pinned
    under the fixed top bar; report.js inserts a spacer holding its place in
