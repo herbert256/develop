@@ -245,8 +245,15 @@ function close_table() {
     if (!table_open) return
     emit_header()
     printf "</table></div>\n"
-    if (table_sxs) { printf "</div>\n"; table_sxs = 0 }   # close this table's .sxscol column
     table_open = 0
+    # an open .sxscol column (col_open) is NOT closed here: the next TABLE
+    # decides — a switch-group sibling (same switch=KEY, same sxs row) keeps
+    # rendering INSIDE this column, so the OK/All pair of a side-by-side
+    # histogram occupies one column and its hidden member leaves no gap
+    # (2026-09-05); anything else closes it via close_col()
+}
+function close_col() {
+    if (col_open) { printf "</div>\n"; col_open = 0; col_swkey = "" }   # close the .sxscol column
 }
 
 # One table cell (the old render_cell): KIND-driven class, @{...} cell
@@ -454,7 +461,11 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
 
     if (dir == "TITLE")         printf "<h1>%s</h1>\n", esc(rest)
     else if (dir == "SUBTITLE") printf "<p class=\"subtitle\">%s</p>\n", esc(rest)
-    else if (dir == "INTRO")    printf "<p class=\"range\">%s</p>\n", prose(rest)
+    # INTRO is a full-width paragraph like NOTE: a mid-page section intro
+    # (the dwell report's Gap-per-day paragraph) closes the open table and
+    # any side-by-side row first — it used to print INSIDE the previous
+    # table's markup (2026-09-05)
+    else if (dir == "INTRO")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<p class=\"range\">%s</p>\n", prose(rest) }
     else if (dir == "ALERT") {
         # optional cells 2+3 append a LINK to the banner (href, text) — the
         # detail pages' after-last-transfer banner points at the page's own
@@ -528,7 +539,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         ntables++
         split_cells()
         heading = CELL[1]
-        tclass = ""; tattr = ""; start_empty = 0; this_sxs = 0; this_sxsgrp = "1"; heading_id = ""; keep_heading = 0; heading_period = ""; split("", gsepset)
+        tclass = ""; tattr = ""; start_empty = 0; this_sxs = 0; this_sxsgrp = "1"; this_swkey = ""; heading_id = ""; keep_heading = 0; heading_period = ""; split("", gsepset)
         for (i = 2; i <= NCELL; i++) {
             mi = CELL[i]
             if (mi == "sxs")             this_sxs = 1   # side-by-side: this table shares a flex row with adjacent sxs tables
@@ -544,8 +555,8 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             # group on the page — segment_rpt keeps them on one tab page and
             # report.js (setupSwitches) shows one at a time behind a button
             # row built from the labels, the first table being the default
-            else if (index(mi, "switch=") == 1) { sw = substr(mi, 8); p9 = index(sw, ":")
-                tattr = tattr " data-switch=\"" esc(p9 ? substr(sw, 1, p9 - 1) : sw) "\" data-switch-label=\"" esc(p9 ? substr(sw, p9 + 1) : sw) "\"" }
+            else if (index(mi, "switch=") == 1) { sw = substr(mi, 8); p9 = index(sw, ":"); this_swkey = (p9 ? substr(sw, 1, p9 - 1) : sw)
+                tattr = tattr " data-switch=\"" esc(this_swkey) "\" data-switch-label=\"" esc(p9 ? substr(sw, p9 + 1) : sw) "\"" }
             else if (mi == "totaltop")   tattr = tattr " data-total-top=\"1\""
             else if (mi == "datereset")  tattr = tattr " data-date-reset=\"1\""
             else if (mi == "nofilter")   tattr = tattr " data-nofilter=\"1\""
@@ -591,11 +602,15 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         # starts a new one (the detail pages' time trio vs Protocol/AV pair);
         # each sxs table's <h2>+wrapper live in one flex column (.sxscol) so
         # the heading stays above its own table.
+        # A switch-group SIBLING (same switch=KEY as the column's current
+        # table, same sxs row) continues inside the open column instead of
+        # opening a second one — one column per switch group (2026-09-05).
+        col_cont = (this_sxs && col_open && this_swkey != "" && this_swkey == col_swkey && grp_open && grp_id == this_sxsgrp)
+        if (!col_cont) close_col()
         if (this_sxs && grp_open && grp_id != this_sxsgrp) { printf "</div>\n"; grp_open = 0 }
         if (this_sxs && !grp_open)      { printf "<div class=\"sxs\">\n"; grp_open = 1; grp_id = this_sxsgrp }
         else if (!this_sxs && grp_open) { printf "</div>\n"; grp_open = 0 }
-        if (this_sxs) printf "<div class=\"sxscol\">\n"
-        table_sxs = this_sxs
+        if (this_sxs && !col_cont) { printf "<div class=\"sxscol\">\n"; col_open = 1; col_swkey = this_swkey }
         # report pages (droptitle=1): drop the FIRST table's title (redundant
         # with the page <h1>); detail pages keep every section title, and an
         # sxs table always keeps its heading (it labels one column of a pair)
@@ -708,11 +723,11 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     }
     # NOTE/LINK/SUMMARY are FULL-WIDTH blocks: also close an open sxs flex
     # row, or they render as a flex item BESIDE the last side-by-side table
-    else if (dir == "NOTE")    { close_table(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<p class=\"note\">%s</p>\n", prose(rest) }
-    else if (dir == "LINK")    { close_table(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); printf "<p class=\"report-link\"><a href=\"%s\" target=\"_blank\" rel=\"noopener\">%s</a></p>\n", esc(CELL[1]), esc(CELL[2]) }
-    else if (dir == "SUMMARY") { close_table(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<div class=\"summary\">%s</div>\n", esc(rest) }
+    else if (dir == "NOTE")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<p class=\"note\">%s</p>\n", prose(rest) }
+    else if (dir == "LINK")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); printf "<p class=\"report-link\"><a href=\"%s\" target=\"_blank\" rel=\"noopener\">%s</a></p>\n", esc(CELL[1]), esc(CELL[2]) }
+    else if (dir == "SUMMARY") { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<div class=\"summary\">%s</div>\n", esc(rest) }
     else if (dir == "FOOT")    close_table()
     # DESC, META and anything unknown: not rendered
 }
 
-END { close_table(); if (grp_open) { printf "</div>\n"; grp_open = 0 } }
+END { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 } }

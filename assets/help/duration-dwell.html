@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Help: Duration distribution — Cloud Reports</title>
+<title>Help: Duration distribution &amp; Store-and-forward — Cloud Reports</title>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
@@ -11,11 +11,23 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Duration distribution</h1>
+<h1>Duration distribution &amp; Store-and-forward</h1>
 <h2>What this shows</h2>
+<p>Two clocks on the same Files, side by side (merged from the former Duration distribution and Store-and-Forward pages, 2026-09-05). The <strong>Duration distribution</strong> on the left is the <em>whole trip</em> of a File; the <strong>Dwell-time distribution</strong> on the right is <em>one piece</em> of that trip &mdash; the wait inside SecureTransport between the inbound leg completing and the outbound leg starting. A File slow on the left can be slow because of a large transfer, a slow partner on either leg, retries, or a long dwell; the right-hand histogram and the tables below isolate the last of those causes.</p>
+<h2>Duration distribution (left)</h2>
 <p>A histogram of the Files by <em>wall-clock</em> duration &mdash; from the first record start to the last record end, gaps and retry idle included &mdash; in seven bands: up to 100 ms, 1 s, 10 s, 1 min, 5 min, 30 min and beyond. Split off the Duration report 2026-09-03. Two views behind a button row: <strong>OK transfers</strong> (the default) counts delivered Files only; <strong>All transfers</strong> adds the failed ones, whose duration is how long they ran before giving up.</p>
-<h2>Reading the table</h2>
 <p><strong>Files</strong> is the count in the band and <strong>Share</strong> its part of the scope&rsquo;s Files. A From/To date range re-aggregates both from the per-day buckets each row carries. In the All view the failed transfers &mdash; mostly instant 0-byte attempts &mdash; pile up in the first band.</p>
+<h2>Store-and-forward (right, and the tables below)</h2>
+<p>SecureTransport is a store-and-forward hub: a file arrives on an <strong>inbound</strong> leg, is held, then goes out on an <strong>outbound</strong> leg. This report measures the gap in between — how long each file <em>waited</em> before being forwarded — which nothing else on the site captures (<a href="duration.html">Transfer Duration</a> measures the end-to-end span, not the wait between legs). Two views:</p>
+<ul>
+<li><strong>Dwell-time distribution</strong> — how the waits are spread (under 1s, 1–5s, 5–30s, 30–60s, 1–5 min, over 5 min). Most files forward almost immediately; the tail is where latency lives.</li>
+<li><strong>Dwell by subscription</strong> — the average and maximum dwell per subscription, slowest-first, so you can see which flows queue.</li>
+<li><strong>Gap per day</strong> (absorbed from the former Inbound / Outbound Gap report, 2026-07) — per calendar day the Min / Median / Max and P25&ndash;P99 percentiles of the in&rarr;out gap, for the delivered Files with exactly one Inbound and one Outbound leg (gap = outbound start &minus; inbound end, banked under the inbound date; the per-day stats are not additive, so a narrowed range blanks their totals).</li>
+</ul>
+<h2>How the dwell is computed</h2>
+<p>All the records for one logical transfer share a CoreId and sit together in the cache. For each CoreId the dwell is the earliest <strong>outbound start</strong> minus the latest <strong>inbound completion</strong> (the inbound row's end timestamp). A transfer is "measurable" only if it has both an inbound completion and an outbound start; a few transfers whose outbound leg starts <em>before</em> the inbound finished (overlapping/streamed legs) show a negative gap and are excluded (counted in the intro). Timestamps are turned into seconds via a Julian-day-number helper, so the arithmetic is portable. The distribution and the per-subscription averages/maxima re-aggregate under the date filter; click a subscription for its 10 most recent transfers. A CoreId takes the subscription of the first row in the group that carries one — every logical transfer has one, since a CoreId with no subscription at all is dropped from the cache.</p>
+<h2>Why the dwell matters</h2>
+<p>A file can arrive on time and still be <em>late to the partner</em> if it sits in the forward queue. Because that wait is invisible in both the inbound and outbound leg durations, a growing dwell is an early warning of queue pressure, a slow or backed-up outbound target, or a scheduling problem — well before it turns into an outright failure or an SLA breach. The per-subscription table pinpoints exactly which flow is slow to forward, and the p95/max tell you how bad the tail gets.</p>
 <h2>Related</h2>
 <p>The per-day statistics and percentiles are on the Duration page, the individual slowest transfers on the Longest Files page.</p>
 </main>

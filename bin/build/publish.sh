@@ -1680,6 +1680,7 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
     local area=transfer rpt t i
     case $2 in
         details|showseen|coverage|entities|partners-domains-applications|incoming-connections) return 0 ;;
+        merge-duration-dwell) wn_meta "$1" duration-dwell; return $? ;;   # the 2026-09-05 merged page IS a new report: read its own .rpt (the generator name differs from the page name)
         first-seen)      printf 'First seen\tAnalyses\tanalyses/first-seen.html\tOn what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.\n'; return 0 ;;
         cross-reference) printf 'Cross References\tAnalyses\tanalyses/xref/cross-account-subscriptions.html\tEvery pair of the eight entities cross-tabulated both ways — which appear together on a transfer, which are configured but never seen.\n'; return 0 ;;
         # the analyses PUBLISH writers render several pages each — one row per
@@ -1721,6 +1722,7 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
             ssh-crypto|ssh-sessions)                                wn_parent=ssh-security ;;
             uc1-status|uc2-status|uc3-status|uc4-status)            wn_parent=uc-status ;;
             volume-src|trend)                                       wn_parent=volume ;;
+            duration-distribution|dwell-time)                       wn_parent=duration-dwell ;;   # 2026-09-05 merge
             size-dist|file-type|duplicate-files)                    wn_parent=files ;;
             *) return 0 ;;   # retired (ranking, double, stale-accounts, ...) — no page
         esac

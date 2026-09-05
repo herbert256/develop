@@ -124,6 +124,7 @@ pool_wait
 "$SCRIPT_DIR/reports/files.sh"
 "$SCRIPT_DIR/reports/merge-volume.sh"
 "$SCRIPT_DIR/reports/merge-went-quiet.sh"
+"$SCRIPT_DIR/reports/merge-duration-dwell.sh"   # 2026-09-05: duration-distribution + dwell-time on one page, histograms side by side
 fi
 
 if [ "$PHASE" != phase1 ]; then
