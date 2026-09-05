@@ -26,7 +26,8 @@
 #           The ENVIRONMENT of a loose file comes from its path inside the
 #           archive (a leading acceptance/ or production/ folder, with or
 #           without input/ above it) or else from the ARCHIVE NAME
-#           (production-Downloads.7z, acc_logs.7z: "prod"/"acc", any case).
+#           (prd.7z, production-Downloads.7z, acc_logs.7z: "prod"/"prd" or
+#           "acc"/"acpt", any case).
 #           NEVER guessed: a loose file whose environment cannot be told
 #           FAILS the build and leaves the archive — a wrong guess would
 #           overwrite the other environment's irreplaceable export with
@@ -89,11 +90,16 @@ done
 # the environment the ARCHIVE NAME implies (empty = none)
 name_env=""
 lc=$(basename "$UPD" | tr '[:upper:]' '[:lower:]')
-case "$lc" in
-    *acc*prod*|*prod*acc*) echo "st-reports-update: $UPDD names BOTH environments — cannot route loose files by its name." >&2 ;;
-    *acc*)  name_env=acceptance ;;
-    *prod*) name_env=production ;;
-esac
+# "prod"/"prd" = production, "acc"/"acpt" = acceptance (any case, anywhere in
+# the name: prd.7z, production-Downloads.7z, acc_logs.7z)
+has_acc=0; has_prod=0
+case "$lc" in *acc*|*acpt*) has_acc=1 ;; esac
+case "$lc" in *prod*|*prd*) has_prod=1 ;; esac
+if [ "$has_acc" = 1 ] && [ "$has_prod" = 1 ]; then
+    echo "st-reports-update: $UPDD names BOTH environments — cannot route loose files by its name." >&2
+elif [ "$has_acc" = 1 ]; then name_env=acceptance
+elif [ "$has_prod" = 1 ]; then name_env=production
+fi
 
 # route first, copy only when EVERY loose export has a home — a partial copy
 # followed by a failure would leave the checkout half-updated
@@ -131,7 +137,7 @@ if [ ${#ignored[@]} -gt 0 ]; then
 fi
 if [ ${#unrouted[@]} -gt 0 ]; then
     echo "st-reports-update: $UPDD holds loose export(s) whose ENVIRONMENT cannot be told: ${unrouted[*]}" >&2
-    echo "st-reports-update: rename the archive to say which — e.g. production-$(basename "$UPD") or acceptance-$(basename "$UPD") — or pack them under acceptance/ or production/. The file stays; nothing was removed." >&2
+    echo "st-reports-update: rename the archive to say which — e.g. prd-$(basename "$UPD") or acc-$(basename "$UPD") — or pack them under acceptance/ or production/. The file stays; nothing was removed." >&2
     exit 1
 fi
 i=0
