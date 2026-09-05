@@ -261,13 +261,11 @@ table tr th.csvhost { position:relative; padding-right:2.4rem; }   /* table tr t
 tr:hover .csvbtn, .csvbtn:hover { opacity:0.9; }
 /* Column order (report.js initColOrder): every header of a movable table is
    draggable; while a header is dragged the drop side shows as an amber edge
-   on the header under the pointer. The ↺ hotspot sits left of "csv" in the
-   last header cell and appears only while a remembered order is active. */
+   on the header under the pointer. */
 th.coldragging { opacity:0.45; }
 th.colover-l { box-shadow:inset 4px 0 0 #ffb300; }
 th.colover-r { box-shadow:inset -4px 0 0 #ffb300; }
-/* the column PICKER ("cols", report.js initColOrder): the cols hotspot and
-   the ↺ (only while an order or a hidden set is active) sit bottom-RIGHT in
+/* the column PICKER ("cols", report.js initColOrder): the cols hotspot sits bottom-RIGHT in
    the last visible cell of the total row — of the last visible data row on a
    table without one, of the header on an empty table (placeHotspots). The
    host cell gets extra bottom padding so its value stays clear of them; the
@@ -280,11 +278,6 @@ table tr td.colhost, table tr th.colhost { position:relative; padding-bottom:1.2
            color:#20344a; opacity:0.45; cursor:pointer; user-select:none; -webkit-user-select:none; }
 th .pickbtn { color:#fff; opacity:0.3; }
 tr:hover .pickbtn, .pickbtn:hover { opacity:0.95; }
-.colbtn { position:absolute; bottom:0; right:2.3rem; padding:0 0.3rem 0.15rem; font-size:0.75rem; font-weight:normal; line-height:1.1;
-          color:#8a5a00; opacity:0.85; cursor:pointer; user-select:none; -webkit-user-select:none; display:none; }
-th .colbtn { color:#ffd36b; }
-.colbtn.on { display:inline; }
-.colbtn:hover { opacity:1; }
 .colpick { display:none; position:fixed; z-index:25; background:#fff; color:#222; border:1px solid #ddd;
            border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,0.25); padding:0.4rem 0.7rem; text-align:left;
            font-weight:normal; font-size:0.85rem; line-height:1.35; white-space:nowrap; max-height:60vh; overflow:auto; cursor:default; }
@@ -293,7 +286,7 @@ th .colbtn { color:#ffd36b; }
 .colpick label { display:block; padding:0.15rem 0.2rem; cursor:pointer; }
 .colpick label.off { color:#8a94a1; }
 .colpick input { margin:0 0.45rem 0 0; vertical-align:middle; }
-.colpick .cpall { display:block; margin-top:0.3rem; padding-top:0.3rem; border-top:1px solid #ddd; color:#20344a; font-size:0.8rem; cursor:pointer; }
+.colpick .cpall { display:block; margin-top:0.3rem; padding-top:0.3rem; border-top:1px solid #ddd; color:#20344a; font-size:0.8rem; font-weight:600; cursor:pointer; }   /* Reset: built order + every column */
 /* the command PALETTE (report.js setupPalette, Ctrl+K / Cmd+K): a centred
    box over a dimmed page — reports and entities of the current environment */
 .cpal { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.38); z-index:100; display:none; }

@@ -97,8 +97,7 @@
   // The order is stored in localStorage — it must outlive the tab — under the
   // report key (WITHOUT the environment: one report, one order on both) plus
   // the built header labels, so a report whose columns change simply falls
-  // back to its built order. The ↺ hotspot in the last header cell (shown
-  // only while an order is active) restores the built order.
+  // back to its built order. Reset at the foot of the cols picker restores it.
   function cellByCi(tr, ci) {
     var cs = tr.cells, i, k = String(ci);
     for (i = 0; i < cs.length; i++) if (cs[i].getAttribute("data-ci") === k) return cs[i];
@@ -162,8 +161,8 @@
       }
     }
   }
-  // Hotspots: csv lives in the LAST header cell; the column tools (cols, ↺
-  // and the picker) sit bottom-right in the last VISIBLE cell of the TOTAL
+  // Hotspots: csv lives in the LAST header cell; the column tools (cols and
+  // its picker) sit bottom-right in the last VISIBLE cell of the TOTAL
   // row — of the last visible data row when the table has no total, of the
   // header when it has no rows at all (2026-09-05, user request). That host
   // cell is rewritten by the recalc and totals paths (textContent drops the
@@ -196,7 +195,6 @@
     host = colHostCell(table); if (!host) return;
     old = table.querySelectorAll(".colhost");
     for (i = 0; i < old.length; i++) if (old[i] !== host) old[i].className = old[i].className.replace(/ ?\bcolhost\b/, "");
-    if (tools.rb.parentNode !== host) host.appendChild(tools.rb);
     if (tools.pb.parentNode !== host) host.appendChild(tools.pb);
     if (tools.pop.parentNode !== host) host.appendChild(tools.pop);
     if (!/\bcolhost\b/.test(host.className)) host.className += (host.className ? " " : "") + "colhost";
@@ -218,8 +216,6 @@
     }
     if (sortedCi !== null) { var np = colByCi(hr, sortedCi); if (np >= 0) table.setAttribute("data-sort-col", String(np)); }
     placeHotspots(table, hr);
-    var rb = table._colTools ? table._colTools.rb : null;
-    if (rb) rb.className = "colbtn" + ((isIdentity(order) && !(table._colHidden || []).length) ? "" : " on");
   }
   // Hidden columns (the "cols" picker): the cells carry the hidden ATTRIBUTE —
   // a class would not survive the className restores of the recalc paths.
@@ -244,8 +240,6 @@
       if (cs.length !== n && isTotal(r) && hidden.length) splitSpans(r);
       for (j = 0; j < cs.length; j++) { c = cs[j]; c.hidden = !!set[ciOf(c)]; }
     }
-    var rb = table._colTools ? table._colTools.rb : null;
-    if (rb) rb.className = "colbtn" + ((hidden.length || !isIdentity(curOrder(hr))) ? " on" : "");
     placeHotspots(table, hr);
   }
   function initColOrder(table) {
@@ -260,16 +254,13 @@
     }
     var key = colOrderKey(table, hr), hkey = "colhide:" + key.slice(9), labels = [];
     for (i = 0; i < n; i++) labels.push(hr.cells[i].textContent.replace(/[▲▼]/g, "").trim());
-    // the ↺ hotspot (its home is the last header cell; placeHotspots keeps it there)
-    var rb = document.createElement("span");
-    rb.className = "colbtn"; rb.textContent = "↺"; rb.title = "Restore the built columns (order and visibility)";
-    // (the ↺ and cols hotspots sit in the FIRST header cell, see placeHotspots)
-    rb.addEventListener("click", function (e) {
-      e.preventDefault(); e.stopPropagation();
+    // the reset: the Reset link at the foot of the picker (the ↺ hotspot it
+    // replaced is gone, user request 2026-09-06) — built order AND every column
+    function resetColumns() {
       var idn = [], k; for (k = 0; k < n; k++) idn.push(k);
       applyHidden(table, hr, []); saveHidden(hkey, []);
       applyOrder(table, hr, idn); saveOrder(key, idn, true);
-    });
+    }
     // the "cols" hotspot + its picker: one checkbox per column, in the current order
     var pb = document.createElement("span"), pop = document.createElement("div"), host = null;
     pb.className = "pickbtn"; pb.textContent = "cols"; pb.title = "Choose the columns to show";
@@ -313,8 +304,9 @@
         })(ci, lab, cb);
         pop.appendChild(lab);
       }
-      var all = document.createElement("span"); all.className = "cpall"; all.textContent = "show every column";
-      all.addEventListener("click", function () { applyHidden(table, hr, []); saveHidden(hkey, []); pickOpen(); });
+      var all = document.createElement("span"); all.className = "cpall"; all.textContent = "Reset";
+      all.title = "Back to the built columns: the original order, every column shown";
+      all.addEventListener("click", function () { resetColumns(); pickOpen(); });
       pop.appendChild(all);
       pop.className = "colpick open";
       pickPlace();
@@ -329,7 +321,7 @@
     pop.addEventListener("mousedown", function (e) { e.stopPropagation(); });
     document.addEventListener("click", function (e) { if (/\bopen\b/.test(pop.className) && !pop.contains(e.target) && e.target !== pb) pickClose(); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && /\bopen\b/.test(pop.className)) pickClose(); });
-    table._colTools = { pb: pb, rb: rb, pop: pop };
+    table._colTools = { pb: pb, pop: pop };
     var stored = loadOrder(key, n);
     if (stored && !isIdentity(stored)) applyOrder(table, hr, stored);
     var hidden = loadHidden(hkey, n);
@@ -3596,7 +3588,7 @@
         if (c.nodeType !== 1) continue;
         if (c.tagName === "BR") { out += "; "; continue; }
         cl = " " + c.className + " ";
-        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" colbtn ") >= 0 || cl.indexOf(" pickbtn ") >= 0 || cl.indexOf(" colpick ") >= 0 || cl.indexOf(" ce ") >= 0) continue;   // the hotspots (csv, cols, ↺, the picker) are not cell text
+        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" pickbtn ") >= 0 || cl.indexOf(" colpick ") >= 0 || cl.indexOf(" ce ") >= 0) continue;   // the hotspots (csv, cols, the picker) are not cell text
         // skip what CSS hides: the von/voff toggle twin not in effect, a
         // collapsed clines middle — the export is the cell AS DISPLAYED
         try { if (window.getComputedStyle && getComputedStyle(c).display === "none") continue; } catch (err) {}
