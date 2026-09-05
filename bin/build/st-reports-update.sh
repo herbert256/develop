@@ -2,11 +2,12 @@
 #
 # st-reports-update.sh — RUNTIME-ONLY build step (2026-08-31, user request):
 # ingest a delivered update archive BEFORE anything parses. The archive path
-# is the optional $1 (bin/build/exchange-in.sh passes every *.7z of the
-# git-based inbox ~/exchange/, one call each); without one it is the
-# ~/cloud/update.7z drop. The archive is packed elsewhere with the SAME
-# password st-reports-archive.sh generates (input/secrets/st-reports.pass)
-# and carries fresh exports. When the file exists:
+# is the optional $1; without one it is the ~/cloud/update.7z drop — the ONE
+# inbox since 2026-09-05 (the git exchange repo at ~/exchange/ is no longer
+# read; the build only pushes the built site there at the end). The archive
+# is packed elsewhere with the SAME password st-reports-archive.sh generates
+# (input/secrets/st-reports.pass) and carries fresh exports. When the file
+# exists:
 #
 #   1. unpack it (password from input/secrets/st-reports.pass),
 #   2. copy the exports onto the checkout's input/ tree (existing files
@@ -18,16 +19,17 @@
 #              input/acceptance/flow-manager/   input/production/flow-manager/
 #              input/acceptance/server/         input/production/server/
 #              input/acceptance/transfer/       input/production/transfer/
-#        b. LOOSE FILES (2026-09-04: deliveries like Downloads.7z holding a
-#           bare logEntry_09-03.csv + transferLog_09-03.csv) routed by name:
+#        b. LOOSE FILES (2026-09-04: a drop holding a bare logEntry_09-03.csv
+#           + transferLog_09-03.csv) routed by name:
 #              logEntry*.csv      -> input/<env>/server/
 #              transferLog*.csv   -> input/<env>/transfer/
 #              partners.json, subscriptions.json -> input/<env>/flow-manager/
 #           The ENVIRONMENT of a loose file comes from its path inside the
 #           archive (a leading acceptance/ or production/ folder, with or
-#           without input/ above it) or else from the ARCHIVE NAME
-#           (prd.7z, production-Downloads.7z, acc_logs.7z: "prod"/"prd" or
-#           "acc"/"acpt", any case).
+#           without input/ above it) or else from the ARCHIVE NAME when one
+#           is passed as $1 ("prod"/"prd" or "acc"/"acpt", any case) — the
+#           ~/cloud drop's fixed name update.7z says nothing, so loose files
+#           there need the folder.
 #           NEVER guessed: a loose file whose environment cannot be told
 #           FAILS the build and leaves the archive — a wrong guess would
 #           overwrite the other environment's irreplaceable export with

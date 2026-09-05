@@ -685,23 +685,17 @@ bg_env_chain() {
 }
 
 # ---- RUNTIME-ONLY: ingest a delivered update BEFORE anything parses ---------
-# TWO inboxes carrying update archives (packed elsewhere with the
-# st-reports archive password) whose exports — the six input/ dirs, or
-# loose logEntry*/transferLog* CSVs routed by name — are copied onto the
-# checkout, the archive removed after a successful copy — see the script
-# headers:
-#   1. the GIT EXCHANGE repo at ~/exchange/ (2026-08-31, user request):
-#      exchange-in.sh pulls it first, ingests EVERY *.7z there except the
-#      outbound st-reports*.7z (2026-09-04: any name, not just update.7z),
-#      and pushes the consumption; st-reports-archive.sh pushes the built
-#      site back there at the end of the build.
-#   2. the ~/cloud/ drop folder (st-reports-update.sh without an argument:
-#      ~/cloud/update.7z).
-# Both run BEFORE the HAVE_ACC/HAVE_PROD detection just below, so an update
+# ONE inbox: the ~/cloud/ drop folder — st-reports-update.sh ingests
+# ~/cloud/update.7z (packed elsewhere with the st-reports archive password;
+# the six input/ dirs, or loose logEntry*/transferLog* CSVs routed by name)
+# and removes the archive after a successful copy — see the script header.
+# The git exchange repo at ~/exchange/ is NOT an input any more (2026-09-05,
+# user request): the build only PUSHES the built site there at the end
+# (st-reports-archive.sh); whatever else sits in that repo is never read.
+# Runs BEFORE the HAVE_ACC/HAVE_PROD detection just below, so an update
 # delivering an environment's first exports enables it in the same build.
 # Develop (the .sample-estate marker) never ingests — its estate is generated.
 if [ ! -f input/.sample-estate ]; then
-    run_step "exchange: pull ~/exchange/ + ingest its *.7z updates" bin/build/exchange-in.sh
     run_step "update: ingest ~/cloud/update.7z -> input/"  bin/build/st-reports-update.sh
 fi
 
