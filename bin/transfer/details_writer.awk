@@ -586,9 +586,15 @@ function start_table(s,   WEH, WEK) {
     else if (s == "11") time_table("Load by hour", "Hour", "sxs")
     else if (s == "12.6") { emitl("TABLE\tDwell\tsxs=4"); emitl("HEAD\tDwell\tFiles\tShare"); emitl("KIND\ttext\tnum\tnum") }
     else if (s == "0.9") { emitl("TABLE\tWaiting/Expired\trestint\tnosearch"); emitl("HEAD\tState\tFiles\tFirst staged\tLast staged"); emitl("KIND\ttext\tnum\ttext\ttext") }
-    else if (s == "9") { emitl("TABLE\tLatest " ((TYPE == "SITE") ? "500" : "100") " " cntlabel "\twide\tpager=" ((TYPE == "SITE") ? "20" : "10") "\trestint"); s9uc2 = (TYPE == "SITE" && substr(uc_desc(pend_e), 1, 3) == "UC2")   # a UC2 page: the Pickup stamp column after Date (2026-09-05)
-        if (s9uc2)             { emitl("HEAD\tDate\tPickup\tState\tRecovered\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"); emitl("KIND\ttext\ttext\ttext\ttext\ttext\tnum\tnum\tnum\t" big_kind "\tmono") }
-        else if (TYPE == "SITE") { emitl("HEAD\tDate\tState\tRecovered\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"); emitl("KIND\ttext\ttext\ttext\ttext\tnum\tnum\tnum\t" big_kind "\tmono") }   # Recovered (2026-09-05): "yes" = finished OK after a failed leg, like the per-day column
+    else if (s == "9") { emitl("TABLE\tLatest " ((TYPE == "SITE") ? "500" : "100") " " cntlabel "\twide\tpager=" ((TYPE == "SITE") ? "20" : "10") "\trestint"); s9uc2 = (TYPE == "SITE" && substr(uc_desc(pend_e), 1, 3) == "UC2")   # a UC2 page: the Pickup delay column after Date (2026-09-05)
+        # SITE pages: Pickup (UC2 only) after Date; Recovered ("yes" = finished
+        # OK after a failed leg, like the per-day column) only when some row
+        # carries it — the section is buffered, TMODE 1 says a row does
+        if (TYPE == "SITE") {
+            h9 = "HEAD\tDate" (s9uc2 ? "\tPickup" : "") "\tState" (TMODE == 1 ? "\tRecovered" : "") "\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"
+            k9 = "KIND\ttext" (s9uc2 ? "\ttext" : "") "\ttext" (TMODE == 1 ? "\ttext" : "") "\ttext\tnum\tnum\tnum\t" big_kind "\tmono"
+            emitl(h9); emitl(k9)
+        }
         else { emitl("HEAD\tDate\tState\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"); emitl("KIND\ttext\ttext\ttext\tnum\tnum\tnum\t" big_kind "\tmono") } }
     else if (s == "2.6") { emitl("TABLE\tIncoming connections\tsxs=3\tfold=orange|{n} IPs in whitelist without traffic"); emitl("HEAD\tIP\tIn\tOut"); emitl("KIND\tmono\tnum\tnum") }   # no Name column: incoming addresses are the partner's own and never resolve to a configured endpoint (verified 0 of 30k rows)
     else if (s == "2.7") { emitl("TABLE\tOutgoing connections\tsxs=3\tfold=orange|{n} hosts configured without traffic"); emitl("HEAD\tIP\tIn\tOut\tName"); emitl("KIND\tmono\tnum\tnum\tmono") }
@@ -1344,7 +1350,12 @@ NF < 4 { next }
         if (sec == "2.6") had26 = 1
         if (sec == "2.7") had27 = 1
         cur_sec = sec
-        if (sec == "0.9" || sec == "2.6" || sec == "2.7" || sec == "9" || sec == "12.6") { TMODE = 0; start_table(sec) }
+        # a SITE page BUFFERS its Latest-500 section (2026-09-05): the Recovered
+        # column shows only when a row carries "yes", so the header waits for
+        # the rows — the push_row/finish_section pair the two-direction
+        # sections use (TMODE 1 = the wide variant = with the column here)
+        if (sec == "9" && TYPE == "SITE") { buf_sec = sec; sec_in = 0; sec_out = 0; s9uc2 = (substr(uc_desc(pend_e), 1, 3) == "UC2") }   # s9uc2 BEFORE the rows: they carry the Pickup cell on a UC2 page
+        else if (sec == "0.9" || sec == "2.6" || sec == "2.7" || sec == "9" || sec == "12.6") { TMODE = 0; start_table(sec) }
         else if (BOTHMODE == 1) { buf_sec = sec; sec_in = 0; sec_out = 0 }
         else { TMODE = 0; start_table(sec) }
     }
@@ -1397,9 +1408,16 @@ NF < 4 { next }
         if (B9[8] == "Errored" || B9[8] == "Expired") res = "red"
         else if (B9[8] == "Waiting") res = "orange"
         # B9[9] = the RECOVERED flag ("yes" / ""), a SITE-page column (2026-09-05)
-        # B9[10] = the pickup stamp (the collect leg), a UC2-page column after Date
-        if (s9uc2) emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[10], B9[8], B9[9], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res))
-        else if (TYPE == "SITE") emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[8], B9[9], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res))
+        # B9[9] = the Recovered flag, B9[10] = the pickup delay (UC2 pages).
+        # SITE pages are buffered: rb = with the Recovered column, rp = without;
+        # a "yes" marks the section (push_row) so finish_section picks rb
+        if (TYPE == "SITE") {
+            pk9 = (s9uc2 ? B9[10] "\t" : "")
+            rb = sprintf("ROW\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], pk9, B9[8], B9[9], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res)
+            rp = sprintf("ROW\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], pk9, B9[8], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res)
+            rv9 = (B9[9] == "yes") ? 1 : 0
+            push_row(rb, rp, rv9, rv9)
+        }
         else emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[8], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res))
     }
     else if (sec == "2.6" || sec == "2.7") {
