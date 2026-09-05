@@ -40,6 +40,11 @@ BASE="$DATA/flow-manager/base"
 XREF="$DATA/flow-manager/xref"
 COV="$DATA/transfer/reports/coverage"
 SUBJSON="$ROOT/input/$AXWAY_ENV/flow-manager/subscriptions.json"
+# the SKIP-filtered copy when it exists (bin/flow-manager.sh) — the same population
+# every other report uses (Missing cronjobs reads it via FM_INPUT_DIR); reading the
+# raw export here listed the deliberately skipped subscriptions as cleanup
+# candidates and made the two no-cron lists disagree (audit F06, 2026-09-05)
+[ -f "$ROOT/data/$AXWAY_ENV/flow-manager/filtered/partners.json" ] && SUBJSON="$ROOT/data/$AXWAY_ENV/flow-manager/filtered/subscriptions.json"
 if [ ! -f "$TF" ] || [ ! -f "$BASE/_accounts.tsv" ]; then
     echo "cleanup-backlog: transfer cache or config caches missing; skipping." >&2
     rm -f "$OUT"
@@ -222,7 +227,7 @@ n_total=$(( n_orphan + n_never + n_white + n_nocron + n_quiet ))
     fi
     printf 'TOTAL\tTotal (%s object(s))\t\t\t\t\t\n' "$n_total"
 
-    printf 'NOTE\tEverything here reads SOURCE data — the flow-manager config caches, the coverage TSVs, the transfer cache and the subscriptions export — never another report, so the ranking is stable. "Never seen" for a whitelist address is the established result rollup: no transfer from that address AND no server-log mention (a server-contact-only address is NOT listed). The no-cron class is the Missing-cronjobs condition (the use-case definitions decide which UCs are cron-triggered); those subscriptions leave no trace in any log, so only the configuration can reveal them. Whitelist entries paired with no account at all are on **Config hygiene**. A partner'\''s recency uses the site-wide UNION attribution, so it matches the lifecycle and Entities views.\n'
+    printf 'NOTE\tEverything here reads SOURCE data — the flow-manager config caches, the coverage TSVs, the transfer cache and the subscriptions export (the SKIP-filtered copy, the same population as every other report) — never another report, so the ranking is stable. "Never seen" for a whitelist address is the established result rollup: no transfer from that address AND no server-log mention (a server-contact-only address is NOT listed). The no-cron class is the Missing-cronjobs condition (the use-case definitions decide which UCs are cron-triggered); those subscriptions leave no trace in any log, so only the configuration can reveal them. Whitelist entries paired with no account at all are on **Config hygiene**. A partner'\''s recency uses the site-wide UNION attribution, so it matches the lifecycle and Entities views.\n'
     printf 'KEYWORDS\tcleanup,backlog,decommission,orphan,unused,whitelist,never seen,no cron,quiet,dormant,prune,legacy,attack surface\n'
     printf 'SUMMARY\tFindings: %s  |  Orphan accounts: %s  |  Never-seen subscriptions: %s  |  Unused-whitelist accounts: %s (%s addresses)  |  No cron: %s  |  Long quiet: %s\n' \
         "$n_total" "$n_orphan" "$n_never" "$n_white" "$n_whiteips" "$n_nocron" "$n_quiet"
