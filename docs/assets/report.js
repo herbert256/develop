@@ -162,16 +162,18 @@
       }
     }
   }
-  // Hotspots (csv, ↺) live in the LAST header cell: move them along.
+  // Hotspots: csv lives in the LAST header cell, the column tools (cols, ↺
+  // and the picker) in the FIRST — a column move must carry them along.
   function placeHotspots(table, hr) {
-    var last = hr.cells[hr.cells.length - 1], i, th, b;
+    var last = hr.cells[hr.cells.length - 1], first = hr.cells[0], i, th, b;
     for (i = 0; i < hr.cells.length; i++) {
       th = hr.cells[i];
-      if (th === last) continue;
-      while ((b = th.querySelector(".csvbtn, .colbtn, .pickbtn, .colpick"))) last.appendChild(b);
-      th.className = th.className.replace(/ ?\bcsvhost\b/, "");
+      if (th !== last) while ((b = th.querySelector(".csvbtn"))) last.appendChild(b);
+      if (th !== first) while ((b = th.querySelector(".colbtn, .pickbtn, .colpick"))) first.appendChild(b);
+      th.className = th.className.replace(/ ?\bcsvhost\b/, "").replace(/ ?\bcolhost\b/, "");
     }
-    if (last.querySelector(".csvbtn, .colbtn, .pickbtn") && !/\bcsvhost\b/.test(last.className)) last.className += (last.className ? " " : "") + "csvhost";
+    if (last.querySelector(".csvbtn")) last.className += (last.className ? " " : "") + "csvhost";
+    if (first.querySelector(".pickbtn")) first.className += (first.className ? " " : "") + "colhost";
   }
   function applyOrder(table, hr, order) {
     var n = hr.cells.length, rows = table.rows, i, j, r, cs, byCi, sortedCi = null, sc, c;
@@ -230,13 +232,14 @@
     // the ↺ hotspot (its home is the last header cell; placeHotspots keeps it there)
     var rb = document.createElement("span");
     rb.className = "colbtn"; rb.textContent = "↺"; rb.title = "Restore the built columns (order and visibility)";
+    // (the ↺ and cols hotspots sit in the FIRST header cell, see placeHotspots)
     rb.addEventListener("click", function (e) {
       e.preventDefault(); e.stopPropagation();
       var idn = [], k; for (k = 0; k < n; k++) idn.push(k);
       applyHidden(table, hr, []); saveHidden(hkey, []);
       applyOrder(table, hr, idn); saveOrder(key, idn, true);
     });
-    hr.cells[n - 1].appendChild(rb);
+    hr.cells[0].appendChild(rb);
     // the "cols" hotspot + its picker: one checkbox per column, in the current order
     var pb = document.createElement("span"), pop = document.createElement("div"), host = null;
     pb.className = "pickbtn"; pb.textContent = "cols"; pb.title = "Choose the columns to show";
@@ -275,7 +278,8 @@
     pop.addEventListener("mousedown", function (e) { e.stopPropagation(); });
     document.addEventListener("click", function (e) { if (/\bopen\b/.test(pop.className) && !pop.contains(e.target) && e.target !== pb) pickClose(); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && /\bopen\b/.test(pop.className)) pickClose(); });
-    hr.cells[n - 1].appendChild(pb); hr.cells[n - 1].appendChild(pop);
+    hr.cells[0].appendChild(pb); hr.cells[0].appendChild(pop);
+    hr.cells[0].className += (hr.cells[0].className ? " " : "") + "colhost";   // (2026-09-05, user request: the column tools top-LEFT of the first cell, csv stays top-right of the last)
     var stored = loadOrder(key, n);
     if (stored && !isIdentity(stored)) applyOrder(table, hr, stored);
     var hidden = loadHidden(hkey, n);

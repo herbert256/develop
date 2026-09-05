@@ -255,7 +255,7 @@ th a { color:#fff; }                    /* linked column headers (traffic matrix
    hovered; clicking it downloads the table (as filtered + sorted) as .csv.
    The host th is the positioning context; the extra right padding keeps the
    hotspot clear of the header text and its sort arrow. */
-th.csvhost { position:relative; padding-right:2.4rem; }
+table tr th.csvhost { position:relative; padding-right:2.4rem; }   /* table tr th: outranks `table.wide th { padding:6px 10px }` */
 .csvbtn { position:absolute; top:0; right:0; padding:0 0.3rem 0.2rem; font-size:0.65rem; font-weight:normal;
           color:#fff; opacity:0.3; cursor:pointer; user-select:none; -webkit-user-select:none; }
 tr:hover .csvbtn, .csvbtn:hover { opacity:0.9; }
@@ -267,21 +267,24 @@ th.coldragging { opacity:0.45; }
 th.colover-l { box-shadow:inset 4px 0 0 #ffb300; }
 th.colover-r { box-shadow:inset -4px 0 0 #ffb300; }
 /* the column PICKER ("cols", report.js initColOrder): a popover under the
-   last header cell with one checkbox per column; a hidden column's cells
+   FIRST header cell with one checkbox per column; a hidden column's cells
    carry the hidden attribute (survives the className restores of the
-   recalc paths, unlike a class). The hotspot row, right to left: csv ·
-   cols · ↺ (only while an order or a hidden set is active). */
+   recalc paths, unlike a class). */
 [hidden] { display:none !important; }
-th.csvhost { padding-right:4.2rem; }
-.pickbtn { position:absolute; top:0; right:2rem; padding:0 0.3rem 0.2rem; font-size:0.65rem; font-weight:normal;
+/* the column tools sit top-LEFT of the FIRST header cell (cols, then the ↺
+   while an order or a hidden set is active); csv keeps the last cell's
+   top-right corner. The host cell gets extra left padding so the header
+   text clears them. */
+table tr th.colhost { position:relative; padding-left:2.9rem; }   /* table tr th: outranks `table.wide th { padding:6px 10px }` */
+table tr th.colhost:has(.colbtn.on) { padding-left:4.6rem; }
+.pickbtn { position:absolute; top:0; left:0; padding:0 0.3rem 0.2rem; font-size:0.65rem; font-weight:normal;
            color:#fff; opacity:0.3; cursor:pointer; user-select:none; -webkit-user-select:none; }
 tr:hover .pickbtn, .pickbtn:hover { opacity:0.9; }
-.colbtn { position:absolute; top:0; right:4.3rem; padding:0 0.3rem 0.2rem; font-size:0.75rem; font-weight:normal;
+.colbtn { position:absolute; top:0; left:2.1rem; padding:0 0.3rem 0.2rem; font-size:0.75rem; font-weight:normal;
           color:#ffd36b; opacity:0.75; cursor:pointer; user-select:none; -webkit-user-select:none; display:none; }
 .colbtn.on { display:inline; }
 .colbtn:hover { opacity:1; }
-th.csvhost:has(.colbtn.on) { padding-right:6rem; }
-.colpick { display:none; position:absolute; top:100%; right:0; z-index:25; background:#fff; color:#222; border:1px solid #ddd;
+.colpick { display:none; position:absolute; top:100%; left:0; z-index:25; background:#fff; color:#222; border:1px solid #ddd;
            border-radius:0 0 6px 6px; box-shadow:0 4px 10px rgba(0,0,0,0.25); padding:0.4rem 0.7rem; text-align:left;
            font-weight:normal; font-size:0.85rem; white-space:nowrap; max-height:60vh; overflow:auto; cursor:default; }
 .colpick.open { display:block; }
