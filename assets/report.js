@@ -287,13 +287,21 @@
     }
     function pickOpen() {
       pop.innerHTML = "";
-      var hid = table._colHidden || [], k, th, ci, lab, cb;
+      var hid = table._colHidden || [], k, th, ci, lab, cb, row, grip, dragCi = null;
+      function clearOver() { var rs = pop.querySelectorAll(".cprow"); for (var q = 0; q < rs.length; q++) rs[q].className = rs[q].className.replace(/ ?\bover-[tb]\b/g, ""); }
       for (k = 0; k < hr.cells.length; k++) {
         th = hr.cells[k]; ci = ciOf(th);
+        // one row per column, in the current order: a grip, the checkbox, the
+        // label. The row is draggable — dropping it on another row moves the
+        // column there (user request 2026-09-06), the same applyOrder the
+        // header drag uses
+        row = document.createElement("div"); row.className = "cprow"; row.draggable = true;
+        grip = document.createElement("span"); grip.className = "grip"; grip.textContent = "⋮⋮"; grip.title = "Drag up or down to move this column";
         lab = document.createElement("label"); cb = document.createElement("input"); cb.type = "checkbox";
         cb.checked = hid.indexOf(ci) < 0; lab.className = cb.checked ? "" : "off";
         lab.appendChild(cb); lab.appendChild(document.createTextNode(labels[ci] || ""));
-        (function (ci, lab, cb) {
+        row.appendChild(grip); row.appendChild(lab);
+        (function (ci, lab, cb, row) {
           cb.addEventListener("change", function () {
             var cur = (table._colHidden || []).slice(), at = cur.indexOf(ci);
             if (cb.checked) { if (at >= 0) cur.splice(at, 1); }
@@ -301,8 +309,32 @@
             lab.className = cb.checked ? "" : "off";
             applyHidden(table, hr, cur); saveHidden(hkey, cur);
           });
-        })(ci, lab, cb);
-        pop.appendChild(lab);
+          row.addEventListener("dragstart", function (e) {
+            dragCi = ci; row.className += " dragging";
+            try { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(ci)); } catch (x) {}
+            e.stopPropagation();
+          });
+          row.addEventListener("dragend", function () { dragCi = null; row.className = row.className.replace(/ ?\bdragging\b/, ""); clearOver(); });
+          row.addEventListener("dragover", function (e) {
+            if (dragCi === null || dragCi === ci) return;
+            e.preventDefault(); try { e.dataTransfer.dropEffect = "move"; } catch (x) {}
+            var rc = row.getBoundingClientRect(), upper = e.clientY < rc.top + rc.height / 2;
+            clearOver(); row.className += upper ? " over-t" : " over-b";
+          });
+          row.addEventListener("dragleave", function () { row.className = row.className.replace(/ ?\bover-[tb]\b/g, ""); });
+          row.addEventListener("drop", function (e) {
+            if (dragCi === null || dragCi === ci) return;
+            e.preventDefault(); e.stopPropagation();
+            var rc = row.getBoundingClientRect(), upper = e.clientY < rc.top + rc.height / 2;
+            var order = curOrder(hr), from = order.indexOf(dragCi), to = order.indexOf(ci) + (upper ? 0 : 1);
+            if (from < 0 || to < 0) return;
+            var moved = order.splice(from, 1)[0]; if (to > from) to--; order.splice(to, 0, moved);
+            dragCi = null; clearOver();
+            applyOrder(table, hr, order); saveOrder(key, order, isIdentity(order));
+            pickOpen();   // the list in the new order, still open
+          });
+        })(ci, lab, cb, row);
+        pop.appendChild(row);
       }
       var all = document.createElement("span"); all.className = "cpall"; all.textContent = "Reset";
       all.title = "Back to the built columns: the original order, every column shown";
