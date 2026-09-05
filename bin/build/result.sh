@@ -244,20 +244,7 @@ _build_ringattr() {
     # attribute a line to a production hybrid flow at all (no UC prefix), so
     # on that estate the precise channel abstained and the wholesale
     # went-kaput join decided the colour.
-    local SUBNAME_AWK='
-        function ros_load(f,   l9, a9) { while ((getline l9 < f) > 0) { split(l9, a9, "\t"); if (a9[1] != "") ROS[toupper(a9[1])] = a9[1] } close(f) }
-        function subname(msg,   m, t, u, uc) {
-            m = msg; uc = ""
-            while (match(m, /[A-Za-z][A-Za-z0-9_-]*[_-][A-Za-z0-9_-]+/)) {
-                t = substr(m, RSTART, RLENGTH); m = substr(m, RSTART + RLENGTH)
-                sub(/_(SS?|C)CP_.*$/, "", t)
-                t = rn_canon_pfx(t); u = toupper(t)
-                if (u in ROS) return ROS[u]
-                if (uc == "" && t ~ /^UC[0-9]+[_-]/) uc = t
-            }
-            return uc
-        }
-    '
+    local SUBNAME_AWK; SUBNAME_AWK=$(cat "$ROOT/bin/subname.awk")   # shared with went-kaput.sh (2026-09-05)
     # pass 1: the message names it. Emits N (named), S (session to resolve) or
     # X (neither — SSHD/PESITD records carry no session at all): tag, stamp,
     # subscription-or-session, level, ring kind, ring name. A forward-address
@@ -363,14 +350,21 @@ _build_kaputflip() {
     local _kfsl="$XREF/_subscriptions-logins.tsv";   [ -f "$_kfsl" ] || _kfsl=/dev/null
     local _kfsh="$XREF/_subscriptions-hosts.tsv";    [ -f "$_kfsh" ] || _kfsh=/dev/null
     tmp=$(mktemp "${TMPDIR:-/tmp}/axkflip.XXXXXX")
-    # pass 1: each ring's newest E line -> "kind <TAB> name <TAB> stamp <TAB> message"
-    # (a host ring name is folded lowercase like the pair-cache side it joins)
-    awk -F'\t' '
+    local SUBNAME_AWK; SUBNAME_AWK=$(cat "$ROOT/bin/subname.awk")
+    # pass 1: each ring's newest E line THAT NAMES NO FLOW -> "kind <TAB> name
+    # <TAB> stamp <TAB> message" (a host ring name is folded lowercase like the
+    # pair-cache side it joins). A line naming a flow — "Connection failure
+    # while UC3_X tried to connect …" on the account/host UC3_X shares with
+    # its siblings — is THAT flow's evidence and reaches it through
+    # _build_ringattr; taken wholesale here it reddened every sibling on the
+    # shared owner, an inbound UC1 flow included (2026-09-05, user report).
+    awk -F'\t' -v RNF="$RENAMES_FILE" -v SUBB="$BASE/_subscriptions.tsv" "$RENAMES_AWK$SUBNAME_AWK"'
+        BEGIN { rn_load(RNF); ros_load(SUBB) }
         FNR == 1 { fdone = 0
             nm = FILENAME; sub(/_err_warn\.tsv$/, "", nm)
             kind = (nm ~ /\/accounts\//) ? "A" : (nm ~ /\/logins\//) ? "L" : "H"
             sub(/^.*\//, "", nm); if (kind == "H") nm = tolower(nm) }
-        !fdone && $3 == "E" && NF >= 5 { printf "%s\t%s\t%s\t%s\n", kind, nm, $1 " " $2, substr($5, 1, 200); fdone = 1 }
+        !fdone && $3 == "E" && NF >= 5 && subname($5) == "" { printf "%s\t%s\t%s\t%s\n", kind, nm, $1 " " $2, substr($5, 1, 200); fdone = 1 }
     ' "${rings[@]}" > "$tmp"
     # pass 2: join per subscription (newest across its connected rings),
     # classify that ONE newest message, drop the deploy verdicts.

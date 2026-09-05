@@ -79,6 +79,11 @@ IPH="$ROOT/input/$AXWAY_ENV/ip/ip-hosts.tsv"
 # the DERIVED use case map: a production hybrid flow carries no UC prefix, so
 # "is this a UC3" must ask the config, not the name (2026-08-31 audit)
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
+# which flow a ring line NAMES (bin/subname.awk, the same helper result.sh's
+# attribution uses): a connected-ring line naming a flow is THAT flow's
+# evidence, never a sibling's (2026-09-05, user report) — see the join below
+source "$ROOT/bin/renames.sh"
+SUBNAME_AWK=$(cat "$ROOT/bin/subname.awk")
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -166,8 +171,9 @@ mapargs+=("$lastokf")
 [ -f "$SH" ] && mapargs+=("$SH")
 [ -f "$IPH" ] && mapargs+=("$IPH")
 
-totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v rowfile="$rowfile" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" -v ucdf="$UCDF" "$(cat "$ROOT/bin/flip-reason.awk")$LOGLINES_AWK"'
-    BEGIN { while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf) }
+totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v rowfile="$rowfile" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" -v ucdf="$UCDF" -v RNF="$RENAMES_FILE" "$RENAMES_AWK$SUBNAME_AWK$(cat "$ROOT/bin/flip-reason.awk")$LOGLINES_AWK"'
+    BEGIN { while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf)
+            rn_load(RNF); ros_load(subres) }
     function srcof(f) { return (f ~ /\/subscriptions\//) ? "Subscription" : (f ~ /\/accounts\//) ? "Account" : (f ~ /\/hosts\//) ? "Host" : "Login" }
     # A RING OWNER SERVING SEVERAL FLOWS (2026-08-31 audit) speaks for all of
     # them only when the line is about the CONNECTION itself (a connection
@@ -222,9 +228,18 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
         }
         if (ntgt == 0) next
         if (own > 1 && !connlevel(flip_reason($5))) next   # a shared owner: connection-level lines only
+        # a CONNECTED-ring line that NAMES a flow ("Connection failure while
+        # UC3_X tried to connect …" on the account UC3_X shares with its
+        # siblings) is the trouble of THAT flow alone — never of a sibling,
+        # an inbound UC1 flow on the same partner account included
+        # (2026-09-05, user report; bin/build/result.sh _build_kaputflip skips
+        # such lines the same way, its attribution already carrying them to
+        # UC3_X)
+        nmd = (csrc == "Subscription") ? "" : subname($5)
         dt = $1 " " $2
         for (i = 1; i <= ntgt; i++) {
             s = tgt[i]
+            if (nmd != "" && toupper(s) != toupper(nmd)) continue   # the line names another flow
             if (dt <= cut[s]) continue                # only lines AFTER the last OK transfer count
             if (seen[s, $1, $2, $3, $4, $5]++) continue   # a line named under two caches counts once
             # TWO evidence sets since 2026-08. The PAGE is ERROR-only — a

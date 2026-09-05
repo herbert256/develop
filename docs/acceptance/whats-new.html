@@ -16,6 +16,7 @@
 <div class="tablewrap"><table class="index fit">
 <tr><th>Report</th><th>Area</th><th>Description</th></tr>
 <tr><td><a href="transfer/duration-dwell.html">Duration distribution &amp; Store-and-forward</a></td><td>Transfer</td><td class="desc">Two clocks on the same Files</td></tr>
+<tr><td><a href="transfer/duration-slowest.html">Slowest subscriptions</a></td><td>Transfer</td><td class="desc">The 25 slowest subscriptions by the p95 of their Files' wall-clock duration — from the first record start to the last record end, store-and-forward…</td></tr>
 <tr><td><a href="transfer/duration-longest.html">Longest Files</a></td><td>Transfer</td><td class="desc">The 50 longest Files by wall-clock duration — from the first record start to the last record end, store-and-forward gaps and retry idle included</td></tr>
 <tr><td><a href="analyses/fe-overview.html">Partners - Incoming</a></td><td>Analyses</td><td class="desc"></td></tr>
 <tr><td><a href="analyses/acc-vs-prod-summary.html">Acceptance vs production</a></td><td>Analyses</td><td class="desc">The two environments’ entities compared per type, with each side’s activity and the promotion gaps.</td></tr>
@@ -31,7 +32,7 @@
 <tr><td><a href="analyses/first-seen.html">First seen</a></td><td>Analyses</td><td class="desc">On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.</td></tr>
 <tr><td><a href="analyses/partner-lifecycle.html">Partner lifecycle</a></td><td>Analyses</td><td class="desc">A partner relation has three quiet failure modes, and each one looks different in the data</td></tr>
 <tr><td><a href="analyses/partner-scorecard.html">Partner scorecard</a></td><td>Analyses</td><td class="desc">One number per partner relation, worst first — and every ingredient of that number in its own column, so a low score is never a mystery</td></tr>
-<tr><td><a href="analyses/triage.html">Triage</a></td><td>Analyses</td><td class="desc">One worklist instead of six symptom pages: 11 subscription(s) currently need eyes — 7 are red (last File failed, or server-log evidence after the l…</td></tr>
+<tr><td><a href="analyses/triage.html">Triage</a></td><td>Analyses</td><td class="desc">One worklist instead of six symptom pages: 9 subscription(s) currently need eyes — 5 are red (last File failed, or server-log evidence after the la…</td></tr>
 <tr><td><a href="analyses/twins.html">Twins</a></td><td>Analyses</td><td class="desc">The Twin rows of the detail pages, collated</td></tr>
 <tr><td><a href="analyses/uc-status-uc1.html">UC status</a></td><td>Analyses</td><td class="desc">Every configured subscription classified per use case, one tab each: UC1 (the partner pushes a file in), UC2 (we stage, the partner collects), UC3 …</td></tr>
 <tr><td><a href="analyses/uc2-visits.html">UC2 pickup visits</a></td><td>Analyses</td><td class="desc">A pickup account's SSH logons group into visits (a gap of more than 30 minutes starts a new one); every visit is classified by what its window show…</td></tr>
@@ -39,11 +40,11 @@
 <tr><td><a href="analyses/xref/cross-account-subscriptions.html">Cross References</a></td><td>Analyses</td><td class="desc">Every pair of the eight entities cross-tabulated both ways — which appear together on a transfer, which are configured but never seen.</td></tr>
 <tr><td><a href="search.html">Search</a></td><td>Transfer</td><td class="desc">Type in the box below to search every configured or logged entity by name — the checkboxes narrow the kinds (none checked = all)</td></tr>
 <tr><td><a href="server/capacity-pesit-per-day.html">Capacity &amp; sessions</a></td><td>Server</td><td class="desc">How busy the platform is and what it cleans up: PeSIT activity — logins, transfers, resets, ceiling hits and diagnostic codes — and the file retent…</td></tr>
-<tr><td><a href="server/connections-by-protocol.html">Connections</a></td><td>Server</td><td class="desc">Both directions of the connection story in one report</td></tr>
 </table></div>
 <h2>Changed reports</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Report</th><th>Area</th><th>Description</th></tr>
+<tr><td><a href="transfer/anomalies.html">Anomalies</a></td><td>Transfer</td><td class="desc">anomalies: the Daily and Hourly tables side by side</td></tr>
 <tr><td><a href="server/went-kaput.html">Trouble after Success</a></td><td>Server</td><td class="desc">result: a UC3 connection failure reds the flow only after three failed polls in a row</td></tr>
 <tr><td><a href="server/logons-incoming.html">Logons</a></td><td>Server</td><td class="desc">analyses/fe-overview: a Logon problems column from the Incoming funnel</td></tr>
 <tr><td><a href="transfer/duration.html">Transfer Duration</a></td><td>Transfer</td><td class="desc">transfer/duration: Longest Files and Duration distribution as own reports</td></tr>
@@ -55,6 +56,7 @@
 <tr><td><a href="transfer/failure-heatmap.html">Failure Heatmap</a></td><td>Transfer</td><td class="desc">report UX: topview state links, error-only failure tables, pickups sort, scanner IPs column</td></tr>
 <tr><td><a href="transfer/failure-rate-accounts.html">Transfer Failure Rates</a></td><td>Transfer</td><td class="desc">report UX: topview state links, error-only failure tables, pickups sort, scanner IPs column</td></tr>
 <tr><td><a href="transfer/topview.html">Top view</a></td><td>Transfer</td><td class="desc">report UX: topview state links, error-only failure tables, pickups sort, scanner IPs column</td></tr>
+<tr><td><a href="server/connections-by-protocol.html">Connections</a></td><td>Server</td><td class="desc">prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals</td></tr>
 <tr><td><a href="server/remote-poll.html">Remote Polls</a></td><td>Server</td><td class="desc">prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals</td></tr>
 <tr><td><a href="transfer/not-in-flow-manager.html">Not in Flow Manager</a></td><td>Transfer</td><td class="desc">prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals</td></tr>
 <tr><td><a href="transfer/security-params-tls-version.html">Transfer Security Parameters</a></td><td>Transfer</td><td class="desc">prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals</td></tr>

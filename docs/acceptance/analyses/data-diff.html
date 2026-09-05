@@ -16,7 +16,7 @@
 <p class="tabs"><a class="tab" href="../transfer/entity-coverage-accounts.html">Entity coverage</a><a class="tab" href="first-seen.html">First seen</a><span class="tab active">Since yesterday</span><a class="tab" href="../file-search-24-hours.html">File search</a><a class="tab" href="../transfer/seen-in-server-log.html">Seen in server log</a></p>
 <p class="range">The newest data day is <strong>2026-08-29</strong> (the latest date across the transfer and server parse caches); everything below is judged against <strong>2026-08-29 or 2026-08-28</strong> — the exports arrive in batches, so a change late on 2026-08-28 may only surface in the next export. This page diffs the <strong>DATA</strong>; the report catalog's changes live on <strong>What's new</strong>.</p>
 <div class="stat"><span class="stat-v">2026-08-29</span><span class="stat-l">Newest data day</span></div>
-<div class="stat stat-red"><span class="stat-v">7</span><span class="stat-l">new red flips</span></div>
+<div class="stat stat-red"><span class="stat-v">5</span><span class="stat-l">new red flips</span></div>
 <div class="stat stat-orange"><span class="stat-v">0</span><span class="stat-l">newly quiet</span></div>
 <div class="stat stat-green"><span class="stat-v">8</span><span class="stat-l">recovered</span></div>
 <div class="stat"><span class="stat-v">0</span><span class="stat-l">first seen</span></div>
@@ -26,12 +26,10 @@
 <tr><th>Subscription</th><th>When</th><th>Failing since</th><th class="num">Consecutive failures</th><th class="num">Files</th><th>Evidence</th></tr>
 <tr><td class="cl"><a href="../details/subscriptions/ucx-cb-isolated-soylent.html">UCx_CB-ISOLATED-SOYLENT</a></td><td>2026-08-29 21:56:56</td><td>2026-06-23 11:09:21</td><td class="num">123</td><td class="num">123</td><td>never delivered — 123 Error in 123 File(s)</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc1-aps-stream-soylent.html">UC1_APS_STREAM_SOYLENT</a></td><td>2026-08-29 19:20:29</td><td>2026-08-29 19:20:29</td><td class="num">1</td><td class="num">220</td><td>1 consecutive failure(s); last OK 2026-08-28 11:33:45</td></tr>
-<tr><td class="cl"><a href="../details/subscriptions/uc1-cb-marketing-wnk.html">UC1_CB_MARKETING_WNK</a></td><td>2026-08-29 09:08:26.242</td><td>-</td><td class="num">0</td><td class="num">70</td><td>last File OK (2026-08-28 13:39:34) — server-log evidence after it</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc3-fin-facts-massive.html">UC3_FIN_FACTS_MASSIVE</a></td><td>2026-08-29 01:20:04</td><td>2026-08-29 01:20:04</td><td class="num">1</td><td class="num">87</td><td>1 consecutive failure(s); last OK 2026-08-28 11:35:01</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc1-ab-hrdata-weyland.html">UC1_AB_HRDATA_WEYLAND</a></td><td>2026-08-28 14:46:01</td><td>2026-08-28 14:46:01</td><td class="num">1</td><td class="num">72</td><td>1 consecutive failure(s); last OK 2026-08-27 20:45:34</td></tr>
-<tr><td class="cl"><a href="../details/subscriptions/uc1-ab-polis-umbrella.html">UC1_AB_POLIS_UMBRELLA</a></td><td>2026-08-28 12:01:51.623</td><td>-</td><td class="num">0</td><td class="num">88</td><td>last File OK (2026-08-28 07:54:46) — server-log evidence after it</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc1-aim-sappo-wonka-puo.html">UC1_AIM_SAPPO_WONKA-PUO</a></td><td>2026-08-28 08:37:33</td><td>2026-08-28 08:37:33</td><td class="num">1</td><td class="num">68</td><td>1 consecutive failure(s); last OK 2026-08-27 12:37:05</td></tr>
-<tr class="total"><td>Total (7 rows)</td><td></td><td></td><td class="num">127</td><td class="num">728</td><td></td></tr>
+<tr class="total"><td>Total (5 rows)</td><td></td><td></td><td class="num">127</td><td class="num">570</td><td></td></tr>
 </table></div>
 <p class="note">Red subscriptions whose server-log evidence stamp (blue/_redflip.tsv) or newest FAILING File is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong> — the freshest breakage. A chronically failing flow fails again every day and so stays listed; its old <strong>Failing since</strong> date gives it away. <strong>From green to red</strong> tells each flip's full story.</p>
 <h2>Newly quiet</h2>
@@ -86,6 +84,6 @@
 <tr class="total"><td>Total (18 rows)</td><td></td><td></td><td></td></tr>
 </table></div>
 <p class="note">Names the server log mentions with NO transfer of their own (the data/unknown sidecars — the same set that seeds the blue result colour) whose newest mention is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong>. A configured name here is blue (server-seen, never transferred); an unconfigured one is a stranger knocking — <strong>Seen in server log</strong> has the full lists.</p>
-<div class="summary">Since yesterday (2026-08-29/2026-08-28): 7 red flip(s), 0 newly quiet, 8 recovered, 0 first seen, 18 new unknown name(s)</div>
+<div class="summary">Since yesterday (2026-08-29/2026-08-28): 5 red flip(s), 0 newly quiet, 8 recovered, 0 first seen, 18 new unknown name(s)</div>
 </body>
 </html>
