@@ -180,6 +180,11 @@
     return null;
   }
   function placeHotspots(table, hr) {
+    // NOT before init() has taken its snapshots (initTotals / initRecalc /
+    // initSeen store each cell's text and markup as data-orig / data-html):
+    // tools already inside the host cell would be captured as the literal text
+    // "↺cols" and written back top-left by every restore (2026-09-06 fix)
+    if (!table._toolsOn) return;
     var last = hr.cells[hr.cells.length - 1], i, th, b, tools = table._colTools, host, old;
     for (i = 0; i < hr.cells.length; i++) {
       th = hr.cells[i];
@@ -329,10 +334,10 @@
     if (stored && !isIdentity(stored)) applyOrder(table, hr, stored);
     var hidden = loadHidden(hkey, n);
     if (hidden.length) applyHidden(table, hr, hidden);
-    placeHotspots(table, hr);
+    // (the tools are attached by init() once every snapshot is taken — see placeHotspots)
     // the safety net: whatever rewrote or re-ordered the host cell, the next
     // pointer pass over the table puts the tools back where they belong
-    table.addEventListener("mouseover", function () { if (pb.parentNode !== colHostCell(table)) placeHotspots(table, hr); });
+    table.addEventListener("mouseover", function () { if (table._toolsOn && pb.parentNode !== colHostCell(table)) placeHotspots(table, hr); });
     // drag a header: HTML5 drag and drop, the drop side decided by the pointer
     // half of the header it lands on
     var src = null;
@@ -3691,6 +3696,7 @@
       if (tables[i].getAttribute("data-heat")) initHeat(tables[i]);   // heatmap: remember each cell's text + tint
       recomputeTotals(tables[i]);  // fold the skipped rows out of the totals (non-bucket tables)
       setupCsvBtn(tables[i]);      // the CSV-download hotspot in the last header cell's corner
+      if (tables[i]._colTools) { tables[i]._toolsOn = true; replaceHotspots(tables[i]); }   // the column tools LAST: after every data-orig / data-html snapshot
     }
     setupPager();
     // SVG chart anchors (the per-day charts' clickable day columns): navigate
