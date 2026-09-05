@@ -271,7 +271,7 @@ th.colover-r { box-shadow:inset -4px 0 0 #ffb300; }
    the last visible cell of the total row — of the last visible data row on a
    table without one, of the header on an empty table (placeHotspots). The
    host cell gets extra bottom padding so its value stays clear of them; the
-   picker opens UPWARD from that corner. A hidden column's cells carry the
+   picker opens above the corner when there is room, else below (placed against the viewport by report.js). A hidden column's cells carry the
    hidden attribute (survives the className restores of the recalc paths,
    unlike a class). */
 [hidden] { display:none !important; }
@@ -285,9 +285,10 @@ tr:hover .pickbtn, .pickbtn:hover { opacity:0.95; }
 th .colbtn { color:#ffd36b; }
 .colbtn.on { display:inline; }
 .colbtn:hover { opacity:1; }
-.colpick { display:none; position:absolute; bottom:100%; right:0; z-index:25; background:#fff; color:#222; border:1px solid #ddd;
-           border-radius:6px 6px 0 0; box-shadow:0 -4px 10px rgba(0,0,0,0.2); padding:0.4rem 0.7rem; text-align:left;
-           font-weight:normal; font-size:0.85rem; white-space:nowrap; max-height:60vh; overflow:auto; cursor:default; }
+.colpick { display:none; position:fixed; z-index:25; background:#fff; color:#222; border:1px solid #ddd;
+           border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,0.25); padding:0.4rem 0.7rem; text-align:left;
+           font-weight:normal; font-size:0.85rem; line-height:1.35; white-space:nowrap; max-height:60vh; overflow:auto; cursor:default; }
+/* (position:fixed, placed by report.js pickPlace — the .tablewrap scroll box would clip an absolute popover) */
 .colpick.open { display:block; }
 .colpick label { display:block; padding:0.15rem 0.2rem; cursor:pointer; }
 .colpick label.off { color:#8a94a1; }

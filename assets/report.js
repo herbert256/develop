@@ -269,7 +269,26 @@
     var pb = document.createElement("span"), pop = document.createElement("div"), host = null;
     pb.className = "pickbtn"; pb.textContent = "cols"; pb.title = "Choose the columns to show";
     pop.className = "colpick";
-    function pickClose() { pop.className = "colpick"; if (host) { host.draggable = true; host = null; } }
+    // The popover is positioned against the VIEWPORT (position:fixed), not the
+    // host cell: the .tablewrap scroll box clips anything that sticks out of
+    // it, which cut the list off at the top of a table shorter than the list
+    // (2026-09-06). Above the button when there is room, else below, else on
+    // the larger side with a matching max-height; re-placed on scroll/resize.
+    function pickPlace() {
+      var br = pb.getBoundingClientRect(), vh = window.innerHeight, vw = window.innerWidth, h, w, above, below, top, left;
+      pop.style.maxHeight = ""; h = pop.offsetHeight; w = pop.offsetWidth;
+      above = br.top - 6; below = vh - br.bottom - 6;
+      if (h <= above) top = br.top - h;
+      else if (h <= below) top = br.bottom;
+      else if (above >= below) { pop.style.maxHeight = above + "px"; h = pop.offsetHeight; top = br.top - h; }
+      else { pop.style.maxHeight = below + "px"; top = br.bottom; }
+      left = br.right - w; if (left < 4) left = 4; if (left + w > vw - 4) left = Math.max(4, vw - 4 - w);
+      pop.style.top = Math.max(2, top) + "px"; pop.style.left = left + "px";
+    }
+    function pickClose() {
+      pop.className = "colpick"; if (host) { host.draggable = true; host = null; }
+      window.removeEventListener("scroll", pickPlace, true); window.removeEventListener("resize", pickPlace);
+    }
     function pickOpen() {
       pop.innerHTML = "";
       var hid = table._colHidden || [], k, th, ci, lab, cb;
@@ -293,6 +312,8 @@
       all.addEventListener("click", function () { applyHidden(table, hr, []); saveHidden(hkey, []); pickOpen(); });
       pop.appendChild(all);
       pop.className = "colpick open";
+      pickPlace();
+      window.addEventListener("scroll", pickPlace, true); window.addEventListener("resize", pickPlace);
       host = pop.parentNode; if (host && host.tagName === "TH") host.draggable = false;   // a checkbox inside a draggable header would start a drag
     }
     pb.addEventListener("click", function (e) {
