@@ -294,7 +294,7 @@ CUR_DATES=""
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
 transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-minmax duration-all-minmax duration-trend account-sharing twins)
-server_order=(topview errors failure-flows pickups uc-status uc2-visits went-kaput site-failures logons connections ssh-security platform-health capacity deploy-errors transfer-site-missing no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
+server_order=(topview errors failure-flows pickups uc-status uc2-visits polling went-kaput site-failures logons connections ssh-security platform-health capacity deploy-errors transfer-site-missing no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
 
 # ---- the analyses-housed area reports ---------------------------------------
 # FOUR reports whose DATA belongs to the transfer / server areas — they read
@@ -311,7 +311,7 @@ server_order=(topview errors failure-flows pickups uc-status uc2-visits went-kap
 # OWNERSHIP: bin/analyses/publish.sh renders them, NOT the area publishes —
 # it clears docs/<env>/analyses/*.html and runs AFTER both, so a page written
 # there by the transfer/server loop would be deleted again.
-SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:uc2-visits transfer:account-sharing transfer:twins analyses:triage analyses:data-diff analyses:partner-scorecard analyses:blast-radius analyses:app-partners analyses:partner-lifecycle analyses:cleanup-backlog analyses:fe-overview "
+SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:uc2-visits server:polling transfer:account-sharing transfer:twins analyses:triage analyses:data-diff analyses:partner-scorecard analyses:blast-radius analyses:app-partners analyses:partner-lifecycle analyses:cleanup-backlog analyses:fe-overview "
 
 is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
     case $SUBS_GROUP_REPORTS in *:"$1 "*) return 0 ;; esac
@@ -535,7 +535,7 @@ member_label() {   # row-1 tab text for a grouped report
         cross-host) echo "Hosts" ;;
         went-kaput) echo "Trouble after success" ;;
         errors-day) echo "Errors per day" ;; error-timing) echo "Error timing" ;; error-reasons) echo "Error reasons" ;; top-messages) echo "Top messages" ;;
-        site-failures) echo "Connection failures" ;; connection-diagnostics) echo "Diagnostics" ;; inbound-connections) echo "Inbound connections" ;; logon) echo "Logon" ;; auth-activity) echo "Auth activity" ;; ssh-key-auth) echo "Key auth" ;; uc1-status) echo "UC1 status" ;; uc2-status) echo "UC2 status" ;; uc4-status) echo "UC4 status" ;; uc2-visits) echo "UC2 pickup visits" ;; pickups) echo "Pickups" ;; account-sharing) echo "Account sharing" ;; twins) echo "Twins" ;;
+        site-failures) echo "Connection failures" ;; connection-diagnostics) echo "Diagnostics" ;; inbound-connections) echo "Inbound connections" ;; logon) echo "Logon" ;; auth-activity) echo "Auth activity" ;; ssh-key-auth) echo "Key auth" ;; uc1-status) echo "UC1 status" ;; uc2-status) echo "UC2 status" ;; uc4-status) echo "UC4 status" ;; uc2-visits) echo "UC2 pickup visits" ;; polling) echo "Polling" ;; pickups) echo "Pickups" ;; account-sharing) echo "Account sharing" ;; twins) echo "Twins" ;;
         ssh-crypto) echo "Crypto" ;; ssh-sessions) echo "SSH sessions" ;;
         scheduler-overruns) echo "Scheduler" ;; pesit) echo "PeSIT" ;; cluster-health) echo "Cluster health" ;; stuck-events) echo "Stuck events" ;; file-cleanup) echo "File cleanup" ;;
         deploy-errors) echo "Deploy errors" ;; transfer-site-missing) echo "Transfer site missing" ;; uc3-status) echo "UC3 status" ;; no-remote-dir) echo "No remote dir" ;; no-remote-files) echo "No remote files" ;;
@@ -2177,7 +2177,7 @@ ANALYSES_MENU='<a class="ddtop" href="@analyses/index.html">Start page</a><a hre
 _analyses_groups() {
     printf '%s\n' \
         "Coverage & seen|../transfer/entity-coverage-accounts.html=Entity coverage|first-seen.html=First seen|data-diff.html=Since yesterday|../file-search-24-hours.html=File search|../transfer/seen-in-server-log.html=Seen in server log" \
-        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|fe-overview.html=Partners - Incoming|account-sharing.html=Account sharing|twins.html=Twins|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
+        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|fe-overview.html=Partners - Incoming|account-sharing.html=Account sharing|twins.html=Twins|polling.html=Polling|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
         "Partners|partner-scorecard.html=Partner scorecard|blast-radius.html=Blast radius|app-partners.html=Application dependencies|partner-lifecycle.html=Partner lifecycle" \
         "Boxes|accounts-in-boxes.html=Accounts in boxes|subscriptions-in-boxes.html=Subscriptions in boxes|triage.html=Triage" \
         "Errors|failed.html=Failed Subscriptions|failing-reasons.html=Error reasons"

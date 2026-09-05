@@ -890,6 +890,16 @@ row links inside it.
   **Schedules that never complete a poll** from `poll-failures.tsv` (S/C/L rows by site, A rows by
   host via the subscription→host xref). A vanished input (no `remote-poll.rpt`, no config export)
   drops the affected tables and the .rpt so the next build regenerates it.
+- **Polling** (`bin/analyses/reports/polling.sh` → `polling.rpt` → `analyses/polling.html`, 2026-09-05,
+  the flat twin of the UC3 polling tables, at the old Cronjobs slot of the Configuration row): ONE
+  table, one row per polling subscription = the union of `remote-poll.rpt`'s polls rows, its listing-
+  failure rows and the configured cron schedules (exact name join, else the unique prefix either way);
+  columns Subscription · Cron expression · Schedule · Observed (`obsbad` when contradicting) · Polls ·
+  Empty polls · Files matched · Empty % · Listing errors · Poll starts · Failure lines · What goes
+  wrong · Active days · First · Last, date-aware via merged `date:polls:empty:matched:listing` buckets
+  and the copied `@data:loglines` drill. The schedule-vs-observed classifier is the shared
+  `bin/cron-observed.awk` (also used by uc3-polling.sh); its FOOT records `inputs: polls=… cron=…` so
+  a vanished input forces a rebuild. Runs in `bin/server/reports.sh` right after uc3-polling.sh.
 - **`publish-accvsprod.sh`** writes the per-type acceptance-vs-production pages +
   `acc-vs-prod-summary.html`. Deliberately not in `_analyses_groups` — it keeps its own type/view
   rows directly under the `<h1>`. (The **FlowID** type — the raw
@@ -910,7 +920,7 @@ row links inside it.
   site-wide. These pages read the cache like every base and link `details/logicals/`.
 - **UC status** — the four `uc<n>-status` reports merged into ONE tabbed report `uc-status`
   (server-area `.rpt`s; its `SUBS_GROUP_REPORTS` entry `server:uc-status` — the full value is
-  `" server:uc-status server:uc2-visits transfer:account-sharing transfer:twins "` — routes its PAGES to
+  `" server:uc-status server:uc2-visits server:polling transfer:account-sharing transfer:twins "` — routes its PAGES to
   `docs/<env>/analyses/uc-status-uc<n>.html`, rendered by the analyses publish). Presented as a
   **Use-cases VIEW**: the 4th button of the Use Case traffic/definitions/patterns/status row
   (Configuration group).

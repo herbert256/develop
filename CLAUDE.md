@@ -779,7 +779,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   = the second full day), the Report finder, the SIX Failed-transfers
   view pages (+ per-CoreId error pages, and since 2026-09-03 the FILE pages `docs/<env>/files/<coreid>.html` — the same layout for a File of ANY outcome, written by `failed.sh` for the CoreIds the Transfer patterns page's "Last 5 files" cells link, `_patterns-files.tsv`, and for every File the Longest Files page lists over one hour, `_longest-files.tsv` — its CoreId cell opens the File page), Cross References, Seen in server log, Entity coverage
   (assert OK ⊆ Current ⊆ Once), whitelist-audit, config-hygiene, acc-vs-prod, UC status (its UC3
-  tab also carrying the polling tables — the former Remote polls report and Cronjobs page, 2026-09-05)
+  tab also carrying the polling tables — the former Remote polls report and Cronjobs page, 2026-09-05), Polling (the SAME polling information as ONE flat table, one row per polling subscription — `bin/analyses/reports/polling.sh` → `polling.rpt`, a `SUBS_GROUP_REPORTS` server member rendered into analyses/, sitting at the old Cronjobs slot of the Configuration row, 2026-09-05)
   (a Use-cases view; pages in analyses/).
 - **The Boxes pages** (subscriptions-in-boxes + accounts-in-boxes, written by publish-insights):
   both start from the shared `_subs_box_rows` producer; the account join is

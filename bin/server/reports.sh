@@ -86,6 +86,7 @@ pool_wait
 "$SCRIPT_DIR/reports/capacity.sh"
 "$SCRIPT_DIR/reports/ssh-security.sh"
 "$SCRIPT_DIR/../analyses/reports/uc3-polling.sh"   # the UC3 tab's polling tables: reads remote-poll.rpt + its sidecars — after the pool, before the uc-status merge (2026-09-05)
+"$SCRIPT_DIR/../analyses/reports/polling.sh"   # the flat Polling page (Analyses / Configuration): remote-poll.rpt + sidecars + the cron schedules in ONE table (2026-09-05)
 "$SCRIPT_DIR/../analyses/reports/uc-status.sh"
 "$SCRIPT_DIR/../analyses/reports/uc2-visits.sh"   # formats uc2-status.sh's pickup sidecar — must run after the pool
 "$SCRIPT_DIR/reports/pickups.sh"   # formats the same sidecar — after the pool, behind uc2-status.sh
