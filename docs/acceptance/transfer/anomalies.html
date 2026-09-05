@@ -15,7 +15,9 @@
 <div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="anomalies" data-twin="../../production/transfer/anomalies.html"></div>
 <h1>Anomalies <span class="grouptag">&larr; Performance &larr; Transfer</span></h1>
 <p class="tabs"><span class="tab active">Anomalies</span><a class="tab" href="duration.html">Duration</a><a class="tab" href="duration-longest.html">Longest Files</a><a class="tab" href="duration-distribution.html">Duration distribution</a><a class="tab" href="dwell-time.html">Store-and-forward</a><a class="tab" href="duration-trend.html">Duration trend</a></p>
-<p class="range">Every calendar day (the <strong>Daily</strong> table) and every hour (the <strong>Hourly</strong> table below it) is compared against its TYPICAL value — the median across the window days, weekdays and weekends baselined separately. A finding must beat a multiple of its typical (4× for hours; 4× for daily Error rate and Duration, 2× for daily Files and Volume) plus an absolute floor per signal, so quiet-window noise never flags. <strong>Value/Peak</strong> is the flagged figure, <strong>× typical</strong> the figure vs the baseline; <strong>red</strong> rows are ≥10× typical (or a silence), <strong>orange</strong> the rest. The Date links open the day page with the matching chart view selected — and each day page links back here only when that day has findings of its own.</p>
+<p class="range">Every calendar day (the <strong>Daily</strong> table) and every hour (the <strong>Hourly</strong> table beside it) is compared against its TYPICAL value — the median across the window days, weekdays and weekends baselined separately. A finding must beat a multiple of its typical (4× for hours; 4× for daily Error rate and Duration, 2× for daily Files and Volume) plus an absolute floor per signal, so quiet-window noise never flags. <strong>Value/Peak</strong> is the flagged figure, <strong>× typical</strong> the figure vs the baseline; <strong>red</strong> rows are ≥10× typical (or a silence), <strong>orange</strong> the rest. The Date links open the day page with the matching chart view selected — and each day page links back here only when that day has findings of its own.</p>
+<div class="sxs">
+<div class="sxscol">
 <h2 id="daily">Daily — unusual days</h2>
 <div class="tablewrap"><table class="wide">
 <tr><th>Date</th><th>What</th><th class="num">Value</th><th class="num">Typical</th><th class="num">× typical</th><th class="num">Files</th><th class="num">Error</th></tr>
@@ -32,7 +34,8 @@
 <tr data-res="orange"><td class="cl"><a href="../day/2026-07-01.html?axway_hero=Volume">2026-07-01</a></td><td>Volume</td><td class="num">553.20 MB</td><td class="num">272.24 MB</td><td class="num">2.0</td><td class="num">484</td><td class="num failed">25</td></tr>
 <tr class="total"><td>Total (11 rows)</td><td></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
 </table></div>
-<p class="note">Signals per calendar day vs the typical day: <strong>Error rate</strong> (≥10%, ≥20 Files, ≥4× typical), <strong>Duration</strong> (avg per OK File ≥5 min, ≥20 OK Files, ≥4×), <strong>Files spike</strong> (≥100 Files, ≥2×), <strong>Files drop</strong> (≤¼ of a ≥100-Files typical), <strong>Silence</strong> (a calendar day with NO transfers where ≥20 are typical — missing days are walked via the calendar), <strong>Volume</strong> (≥200 MB, ≥2×).</p>
+</div>
+<div class="sxscol">
 <h2 id="hourly">Hourly — unusual hours</h2>
 <div class="tablewrap"><table class="wide" data-pager="50">
 <tr><th>Date</th><th>Hours</th><th>What</th><th class="num">Peak</th><th class="num">Typical</th><th class="num">× typical</th><th class="num">Files</th><th class="num">Error</th></tr>
@@ -70,7 +73,10 @@
 <tr data-res="red"><td class="cl"><a href="../day/2026-06-23.html?axway_hero=Volume">2026-06-23</a></td><td><code>15:00-15:59</code></td><td>Volume</td><td class="num">271.77 MB</td><td class="num">2.06 MB</td><td class="num">28.5</td><td class="num">12</td><td class="num failed z"></td></tr>
 <tr class="total"><td>Total (32 rows)</td><td></td><td></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
 </table></div>
-<p class="note">Signals per start hour: <strong>Error rate</strong> (≥25% and ≥5 Files), <strong>Duration</strong> (avg per OK File ≥5 min, ≥5 OK Files), <strong>Files spike</strong> (≥30 Files), <strong>Silence</strong> (0 Files in an hour that typically moves ≥20), <strong>Volume</strong> (≥100 MB) — each also ≥4× its typical. Consecutive flagged hours merge into one episode.</p>
+</div>
+</div>
+<p class="note"><strong>Daily</strong> — signals per calendar day vs the typical day: <strong>Error rate</strong> (≥10%, ≥20 Files, ≥4× typical), <strong>Duration</strong> (avg per OK File ≥5 min, ≥20 OK Files, ≥4×), <strong>Files spike</strong> (≥100 Files, ≥2×), <strong>Files drop</strong> (≤¼ of a ≥100-Files typical), <strong>Silence</strong> (a calendar day with NO transfers where ≥20 are typical — missing days are walked via the calendar), <strong>Volume</strong> (≥200 MB, ≥2×).</p>
+<p class="note"><strong>Hourly</strong> — signals per start hour: <strong>Error rate</strong> (≥25% and ≥5 Files), <strong>Duration</strong> (avg per OK File ≥5 min, ≥5 OK Files), <strong>Files spike</strong> (≥30 Files), <strong>Silence</strong> (0 Files in an hour that typically moves ≥20), <strong>Volume</strong> (≥100 MB) — each also ≥4× its typical. Consecutive flagged hours merge into one episode.</p>
 <p class="note">End-of-window caution: on the newest day the outbound legs of just-arrived files may not be exported yet, which can flag late hours or the whole day as Error rate — recheck after the next log export.</p>
 </body>
 </html>

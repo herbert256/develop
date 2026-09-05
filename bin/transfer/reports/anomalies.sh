@@ -197,29 +197,29 @@ awk -F'\t' '
 | LC_ALL=C sort -t$'\t' -k1,1r -k2,2r -k3,3 -k4,4 \
 | awk -F'\t' -v nfiles="${#files[@]}" -v now="$(date '+%Y-%m-%d %H:%M:%S')" '
     function open_daily() {
-        printf "TABLE\tDaily — unusual days\twide\tkeephead\tanchor=daily\n"
+        printf "TABLE\tDaily — unusual days\twide\tkeephead\tsxs\tanchor=daily\n"
         printf "HEAD\tDate\tWhat\tValue\tTypical\t× typical\tFiles\tError\n"
         printf "KIND\ttext\ttext\tnum\tnum\tnum\tnum\tnumfailed\n"
     }
-    function close_daily() {
+    function close_daily() {   # its NOTE is emitted by close_hourly: the two tables share one sxs row, and a NOTE block would end it
         printf "TOTAL\tTotal (%d rows)\t\t\t\t\t\t\n", n2
-        printf "NOTE\tSignals per calendar day vs the typical day: **Error rate** (≥10%%, ≥20 Files, ≥4× typical), **Duration** (avg per OK File ≥5 min, ≥20 OK Files, ≥4×), **Files spike** (≥100 Files, ≥2×), **Files drop** (≤¼ of a ≥100-Files typical), **Silence** (a calendar day with NO transfers where ≥20 are typical — missing days are walked via the calendar), **Volume** (≥200 MB, ≥2×).\n"
     }
     function open_hourly() {
-        printf "TABLE\tHourly — unusual hours\twide\tanchor=hourly\tpager=50\n"
+        printf "TABLE\tHourly — unusual hours\twide\tsxs\tanchor=hourly\tpager=50\n"
         printf "HEAD\tDate\tHours\tWhat\tPeak\tTypical\t× typical\tFiles\tError\n"
         printf "KIND\ttext\tmono\ttext\tnum\tnum\tnum\tnum\tnumfailed\n"
     }
     function close_hourly() {
         printf "TOTAL\tTotal (%d rows)\t\t\t\t\t\t\t\n", n1
-        printf "NOTE\tSignals per start hour: **Error rate** (≥25%% and ≥5 Files), **Duration** (avg per OK File ≥5 min, ≥5 OK Files), **Files spike** (≥30 Files), **Silence** (0 Files in an hour that typically moves ≥20), **Volume** (≥100 MB) — each also ≥4× its typical. Consecutive flagged hours merge into one episode.\n"
+        printf "NOTE\t**Daily** — signals per calendar day vs the typical day: **Error rate** (≥10%%, ≥20 Files, ≥4× typical), **Duration** (avg per OK File ≥5 min, ≥20 OK Files, ≥4×), **Files spike** (≥100 Files, ≥2×), **Files drop** (≤¼ of a ≥100-Files typical), **Silence** (a calendar day with NO transfers where ≥20 are typical — missing days are walked via the calendar), **Volume** (≥200 MB, ≥2×).\n"
+        printf "NOTE\t**Hourly** — signals per start hour: **Error rate** (≥25%% and ≥5 Files), **Duration** (avg per OK File ≥5 min, ≥5 OK Files), **Files spike** (≥30 Files), **Silence** (0 Files in an hour that typically moves ≥20), **Volume** (≥100 MB) — each also ≥4× its typical. Consecutive flagged hours merge into one episode.\n"
         printf "NOTE\tEnd-of-window caution: on the newest day the outbound legs of just-arrived files may not be exported yet, which can flag late hours or the whole day as Error rate — recheck after the next log export.\n"
         printf "FOOT\tGenerated on %s from %s file(s)\n", now, nfiles
     }
     BEGIN {
         printf "TITLE\tAnomalies\n"
         printf "DESC\tDetected unusual hours and days: error-rate spikes, duration surges, file-count spikes, drops and silences, and volume bursts — each compared to its typical value across the window.\n"
-        printf "INTRO\tEvery calendar day (the **Daily** table) and every hour (the **Hourly** table below it) is compared against its TYPICAL value — the median across the window days, weekdays and weekends baselined separately. A finding must beat a multiple of its typical (4× for hours; 4× for daily Error rate and Duration, 2× for daily Files and Volume) plus an absolute floor per signal, so quiet-window noise never flags. **Value/Peak** is the flagged figure, **× typical** the figure vs the baseline; **red** rows are ≥10× typical (or a silence), **orange** the rest. The Date links open the day page with the matching chart view selected — and each day page links back here only when that day has findings of its own.\n"
+        printf "INTRO\tEvery calendar day (the **Daily** table) and every hour (the **Hourly** table beside it) is compared against its TYPICAL value — the median across the window days, weekdays and weekends baselined separately. A finding must beat a multiple of its typical (4× for hours; 4× for daily Error rate and Duration, 2× for daily Files and Volume) plus an absolute floor per signal, so quiet-window noise never flags. **Value/Peak** is the flagged figure, **× typical** the figure vs the baseline; **red** rows are ≥10× typical (or a silence), **orange** the rest. The Date links open the day page with the matching chart view selected — and each day page links back here only when that day has findings of its own.\n"
         open_daily()
     }
     $1 == "2" {
