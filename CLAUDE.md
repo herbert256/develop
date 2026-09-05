@@ -148,7 +148,7 @@ shows real values until the next build.
 **Column order is a runtime feature** (2026-09-05, report.js `initColOrder`): every header of a
 movable table is draggable; the order is stored in localStorage under the report key WITHOUT the
 environment + the built header labels (`colorder:…`), re-applied FIRST in `init()`, restored by the
-↺ hotspot in the first header cell (moved there with `cols` the same day). Every cell of a movable table carries `data-ci`, its BUILT column
+↺ hotspot beside `cols` (bottom-right of the table since later that day). Every cell of a movable table carries `data-ci`, its BUILT column
 index — anything that addresses a column by number (RECALC tokens, `data-noagg`/`data-pct`, the
 group column, the total label, the remembered sort, which now stores the built index) goes through
 `cellByCi`/`ciOf`/`colByCi`, never through `cells[n]`. A spanned total label is split on the first
@@ -156,8 +156,11 @@ move. Not movable: a grouped header band (GHEAD), `data-heat`, the Boxes pages (
 Entity Search, `dayrows`, spacer columns, any spanned DATA row; a `nocolmove` TABLE modifier can be
 added if a report needs to opt out. New column-addressing code must use the built index.
 
-**Five more runtime features (2026-09-05, report.js)**: the column PICKER (`cols` hotspot top-left of
-the FIRST header cell, with the ↺; csv keeps the last cell; hidden cells carry the `hidden` ATTRIBUTE, never a class — the recalc paths restore classNames;
+**Five more runtime features (2026-09-05, report.js)**: the column PICKER (`cols` hotspot + ↺ bottom-RIGHT of the
+last visible cell of the TOTAL row, else of the last visible data row — `colHostCell`; that cell is
+rewritten by the recalc/totals paths and changes with every sort/filter/page, so `replaceHotspots`
+re-attaches `table._colTools` after each of them plus a mouseover safety net; csv keeps the last
+header cell; hidden cells carry the `hidden` ATTRIBUTE, never a class — the recalc paths restore classNames;
 stored `colhide:…` beside `colorder:…`; the CSV export skips hidden cells) · MULTI-KEY sort (`sortKeys`
 takes `[{ci, dir}]`, shift-click adds a key, arrows carry `<sup>` ranks; `sortTable(table, col, dir)`
 is the position-based wrapper, `resort()` re-applies a table's keys; saveSort stores "ci:dir,ci:dir")

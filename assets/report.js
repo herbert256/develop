@@ -162,18 +162,43 @@
       }
     }
   }
-  // Hotspots: csv lives in the LAST header cell, the column tools (cols, ↺
-  // and the picker) in the FIRST — a column move must carry them along.
+  // Hotspots: csv lives in the LAST header cell; the column tools (cols, ↺
+  // and the picker) sit bottom-right in the last VISIBLE cell of the TOTAL
+  // row — of the last visible data row when the table has no total, of the
+  // header when it has no rows at all (2026-09-05, user request). That host
+  // cell is rewritten by the recalc and totals paths (textContent drops the
+  // hotspots) and changes with every sort, filter, page and column move, so
+  // placeHotspots re-attaches the elements the table remembers (_colTools)
+  // and runs after each of those paths, with a mouseover safety net.
+  function colHostCell(table) {
+    var trs = totalRows(table), row = trs.length ? trs[trs.length - 1] : null, i, cs;
+    if (!row) { var dr = dataRows(table); for (i = dr.length - 1; i >= 0; i--) if (dr[i].style.display !== "none") { row = dr[i]; break; } }
+    if (!row) row = headerRow(table);
+    if (!row) return null;
+    cs = row.cells;
+    for (i = cs.length - 1; i >= 0; i--) if (!cs[i].hidden) return cs[i];
+    return null;
+  }
   function placeHotspots(table, hr) {
-    var last = hr.cells[hr.cells.length - 1], first = hr.cells[0], i, th, b;
+    var last = hr.cells[hr.cells.length - 1], i, th, b, tools = table._colTools, host, old;
     for (i = 0; i < hr.cells.length; i++) {
       th = hr.cells[i];
       if (th !== last) while ((b = th.querySelector(".csvbtn"))) last.appendChild(b);
-      if (th !== first) while ((b = th.querySelector(".colbtn, .pickbtn, .colpick"))) first.appendChild(b);
-      th.className = th.className.replace(/ ?\bcsvhost\b/, "").replace(/ ?\bcolhost\b/, "");
+      th.className = th.className.replace(/ ?\bcsvhost\b/, "");
     }
     if (last.querySelector(".csvbtn")) last.className += (last.className ? " " : "") + "csvhost";
-    if (first.querySelector(".pickbtn")) first.className += (first.className ? " " : "") + "colhost";
+    if (!tools) return;
+    host = colHostCell(table); if (!host) return;
+    old = table.querySelectorAll(".colhost");
+    for (i = 0; i < old.length; i++) if (old[i] !== host) old[i].className = old[i].className.replace(/ ?\bcolhost\b/, "");
+    if (tools.rb.parentNode !== host) host.appendChild(tools.rb);
+    if (tools.pb.parentNode !== host) host.appendChild(tools.pb);
+    if (tools.pop.parentNode !== host) host.appendChild(tools.pop);
+    if (!/\bcolhost\b/.test(host.className)) host.className += (host.className ? " " : "") + "colhost";
+  }
+  function replaceHotspots(table) {   // after a path that may have rewritten or re-ordered the host cell
+    if (!table || !table._colTools) return;
+    var hr = headerRow(table); if (hr) placeHotspots(table, hr);
   }
   function applyOrder(table, hr, order) {
     var n = hr.cells.length, rows = table.rows, i, j, r, cs, byCi, sortedCi = null, sc, c;
@@ -188,7 +213,7 @@
     }
     if (sortedCi !== null) { var np = colByCi(hr, sortedCi); if (np >= 0) table.setAttribute("data-sort-col", String(np)); }
     placeHotspots(table, hr);
-    var rb = table.querySelector(".colbtn");
+    var rb = table._colTools ? table._colTools.rb : null;
     if (rb) rb.className = "colbtn" + ((isIdentity(order) && !(table._colHidden || []).length) ? "" : " on");
   }
   // Hidden columns (the "cols" picker): the cells carry the hidden ATTRIBUTE —
@@ -214,8 +239,9 @@
       if (cs.length !== n && isTotal(r) && hidden.length) splitSpans(r);
       for (j = 0; j < cs.length; j++) { c = cs[j]; c.hidden = !!set[ciOf(c)]; }
     }
-    var rb = table.querySelector(".colbtn");
+    var rb = table._colTools ? table._colTools.rb : null;
     if (rb) rb.className = "colbtn" + ((hidden.length || !isIdentity(curOrder(hr))) ? " on" : "");
+    placeHotspots(table, hr);
   }
   function initColOrder(table) {
     var hr = headerRow(table); if (!hr) return;
@@ -239,7 +265,6 @@
       applyHidden(table, hr, []); saveHidden(hkey, []);
       applyOrder(table, hr, idn); saveOrder(key, idn, true);
     });
-    hr.cells[0].appendChild(rb);
     // the "cols" hotspot + its picker: one checkbox per column, in the current order
     var pb = document.createElement("span"), pop = document.createElement("div"), host = null;
     pb.className = "pickbtn"; pb.textContent = "cols"; pb.title = "Choose the columns to show";
@@ -268,7 +293,7 @@
       all.addEventListener("click", function () { applyHidden(table, hr, []); saveHidden(hkey, []); pickOpen(); });
       pop.appendChild(all);
       pop.className = "colpick open";
-      host = pop.parentNode; if (host && host.tagName === "TH") host.draggable = false;   // a checkbox inside a draggable would start a drag
+      host = pop.parentNode; if (host && host.tagName === "TH") host.draggable = false;   // a checkbox inside a draggable header would start a drag
     }
     pb.addEventListener("click", function (e) {
       e.preventDefault(); e.stopPropagation();
@@ -278,12 +303,15 @@
     pop.addEventListener("mousedown", function (e) { e.stopPropagation(); });
     document.addEventListener("click", function (e) { if (/\bopen\b/.test(pop.className) && !pop.contains(e.target) && e.target !== pb) pickClose(); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && /\bopen\b/.test(pop.className)) pickClose(); });
-    hr.cells[0].appendChild(pb); hr.cells[0].appendChild(pop);
-    hr.cells[0].className += (hr.cells[0].className ? " " : "") + "colhost";   // (2026-09-05, user request: the column tools top-LEFT of the first cell, csv stays top-right of the last)
+    table._colTools = { pb: pb, rb: rb, pop: pop };
     var stored = loadOrder(key, n);
     if (stored && !isIdentity(stored)) applyOrder(table, hr, stored);
     var hidden = loadHidden(hkey, n);
     if (hidden.length) applyHidden(table, hr, hidden);
+    placeHotspots(table, hr);
+    // the safety net: whatever rewrote or re-ordered the host cell, the next
+    // pointer pass over the table puts the tools back where they belong
+    table.addEventListener("mouseover", function () { if (pb.parentNode !== colHostCell(table)) placeHotspots(table, hr); });
     // drag a header: HTML5 drag and drop, the drop side decided by the pointer
     // half of the header it lands on
     var src = null;
@@ -682,6 +710,7 @@
           else if (c.hasAttribute("data-orig")) c.textContent = c.getAttribute("data-orig");
         }
       }
+      replaceHotspots(table);
       return;
     }
     var drows = dataRows(table), aggs = [];
@@ -723,6 +752,7 @@
     rankCols(toks, drows, aggs, colSum);   // positions renumber over the rows the range left standing
     var totAgg = { sum: colSum, max: {}, days: 0 };
     totalRows(table).forEach(function (r) { writeRecalc(r, toks, totAgg, colSum, colMax, colMaxA, true); updateTotalLabel(r, vis); });
+    replaceHotspots(table);
   }
   // ---- Show-Seen coverage tables (configured vs. observed) ------------------
   // Three complementary views of the SAME configured entity set. Every data row
@@ -965,6 +995,7 @@
         dataCol += span;
       }
     });
+    replaceHotspots(table);
   }
 
   // A table can respond to the date filter only if it carries a date dimension:
@@ -1611,6 +1642,7 @@
     repositionPairs(table);           // keep each message row above its (re-ordered) data row
     repage(table);                    // a sort reshuffles the pages
     table._sortKeys = keys;
+    replaceHotspots(table);
   }
   // position-based entry: col is the CURRENT header position
   function sortTable(table, col, dir) {
@@ -1916,6 +1948,7 @@
     nav.pgInfo.textContent = "Page " + table.pagerPage + " of " + pages;
     nav.pgPrev.className = "tab" + (table.pagerPage <= 1 ? " disabled" : "");
     nav.pgNext.className = "tab" + (table.pagerPage >= pages ? " disabled" : "");
+    replaceHotspots(table);   // the last visible row changed
   }
   // ?axway_row=NAME: find the row whose FIRST cell is that entity, mark it
   // (.rowmark — an outline, so it reads on top of the restint row tints),
@@ -3537,7 +3570,7 @@
         if (c.nodeType !== 1) continue;
         if (c.tagName === "BR") { out += "; "; continue; }
         cl = " " + c.className + " ";
-        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" colbtn ") >= 0 || cl.indexOf(" ce ") >= 0) continue;   // the header hotspots (csv, ↺) are not header text
+        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" colbtn ") >= 0 || cl.indexOf(" pickbtn ") >= 0 || cl.indexOf(" colpick ") >= 0 || cl.indexOf(" ce ") >= 0) continue;   // the hotspots (csv, cols, ↺, the picker) are not cell text
         // skip what CSS hides: the von/voff toggle twin not in effect, a
         // collapsed clines middle — the export is the cell AS DISPLAYED
         try { if (window.getComputedStyle && getComputedStyle(c).display === "none") continue; } catch (err) {}

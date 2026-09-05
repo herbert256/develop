@@ -266,26 +266,27 @@ tr:hover .csvbtn, .csvbtn:hover { opacity:0.9; }
 th.coldragging { opacity:0.45; }
 th.colover-l { box-shadow:inset 4px 0 0 #ffb300; }
 th.colover-r { box-shadow:inset -4px 0 0 #ffb300; }
-/* the column PICKER ("cols", report.js initColOrder): a popover under the
-   FIRST header cell with one checkbox per column; a hidden column's cells
-   carry the hidden attribute (survives the className restores of the
-   recalc paths, unlike a class). */
+/* the column PICKER ("cols", report.js initColOrder): the cols hotspot and
+   the ↺ (only while an order or a hidden set is active) sit bottom-RIGHT in
+   the last visible cell of the total row — of the last visible data row on a
+   table without one, of the header on an empty table (placeHotspots). The
+   host cell gets extra bottom padding so its value stays clear of them; the
+   picker opens UPWARD from that corner. A hidden column's cells carry the
+   hidden attribute (survives the className restores of the recalc paths,
+   unlike a class). */
 [hidden] { display:none !important; }
-/* the column tools sit top-LEFT of the FIRST header cell (cols, then the ↺
-   while an order or a hidden set is active); csv keeps the last cell's
-   top-right corner. The host cell gets extra left padding so the header
-   text clears them. */
-table tr th.colhost { position:relative; padding-left:2.9rem; }   /* table tr th: outranks `table.wide th { padding:6px 10px }` */
-table tr th.colhost:has(.colbtn.on) { padding-left:4.6rem; }
-.pickbtn { position:absolute; top:0; left:0; padding:0 0.3rem 0.2rem; font-size:0.65rem; font-weight:normal;
-           color:#fff; opacity:0.3; cursor:pointer; user-select:none; -webkit-user-select:none; }
-tr:hover .pickbtn, .pickbtn:hover { opacity:0.9; }
-.colbtn { position:absolute; top:0; left:2.1rem; padding:0 0.3rem 0.2rem; font-size:0.75rem; font-weight:normal;
-          color:#ffd36b; opacity:0.75; cursor:pointer; user-select:none; -webkit-user-select:none; display:none; }
+table tr td.colhost, table tr th.colhost { position:relative; padding-bottom:1.25rem; }   /* table tr td: outranks `table.wide td { padding:6px 10px }` */
+.pickbtn { position:absolute; bottom:0; right:0.35rem; padding:0 0.3rem 0.15rem; font-size:0.65rem; font-weight:normal; line-height:1.2;
+           color:#20344a; opacity:0.45; cursor:pointer; user-select:none; -webkit-user-select:none; }
+th .pickbtn { color:#fff; opacity:0.3; }
+tr:hover .pickbtn, .pickbtn:hover { opacity:0.95; }
+.colbtn { position:absolute; bottom:0; right:2.3rem; padding:0 0.3rem 0.15rem; font-size:0.75rem; font-weight:normal; line-height:1.1;
+          color:#8a5a00; opacity:0.85; cursor:pointer; user-select:none; -webkit-user-select:none; display:none; }
+th .colbtn { color:#ffd36b; }
 .colbtn.on { display:inline; }
 .colbtn:hover { opacity:1; }
-.colpick { display:none; position:absolute; top:100%; left:0; z-index:25; background:#fff; color:#222; border:1px solid #ddd;
-           border-radius:0 0 6px 6px; box-shadow:0 4px 10px rgba(0,0,0,0.25); padding:0.4rem 0.7rem; text-align:left;
+.colpick { display:none; position:absolute; bottom:100%; right:0; z-index:25; background:#fff; color:#222; border:1px solid #ddd;
+           border-radius:6px 6px 0 0; box-shadow:0 -4px 10px rgba(0,0,0,0.2); padding:0.4rem 0.7rem; text-align:left;
            font-weight:normal; font-size:0.85rem; white-space:nowrap; max-height:60vh; overflow:auto; cursor:default; }
 .colpick.open { display:block; }
 .colpick label { display:block; padding:0.15rem 0.2rem; cursor:pointer; }
