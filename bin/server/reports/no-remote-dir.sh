@@ -128,12 +128,23 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
     # OK-File map is keyed by: exact, else the ONE known subscription it
     # prefixes (2026-08-31 audit: a truncated name never met its own recovery
     # evidence and stayed on the page for ever). Memoised.
-    function okkey(s,   k, c, hit) {
+    function okkey(s,   k, c, hit, sc) {
         if (s in okmax) return s
+        sc = sitecanon(s); if (sc in okmax) return sc   # rename-folded / roster-matched (2026-09-05)
         if (s in OKM) return OKM[s]
         c = 0; for (k in ksite) if (index(k, s) == 1) { c++; hit = k; if (c > 1) break }
         return OKM[s] = (c == 1) ? hit : s
     }
+    # the poll map key for a logged site: exact, else the one poll site that
+    # prefixes it or that it prefixes (the server truncates long names on
+    # either line, 2026-09-05)
+    function pollkey(s,   k, c, hit) {
+        if (s in pollmax) return s
+        c = 0; for (k in pollmax) if (index(k, s) == 1 || index(s, k) == 1) { c++; hit = k; if (c > 1) break }
+        return (c == 1) ? hit : s
+    }
+    # a _files.tsv-shaped sortkey (YYYYMMDDhh:mm:ss.mmm) as "YYYY-MM-DD hh:mm:ss"
+    function skdisp(sk) { return (sk == "") ? "\342\200\224" : substr(sk, 1, 4) "-" substr(sk, 5, 2) "-" substr(sk, 7, 2) " " substr(sk, 9, 8) }
     # A SUCCESSFUL listing on the same site: "Applying the search pattern … for
     # transfer site SITE: N file(s) were found of which M matched" — the poll
     # reached the directory, even when it downloaded nothing. On a UC3 (pull)
@@ -199,7 +210,8 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
         for (k in c) { split(k, a, SUBSEP)
             ok9 = okkey(a[1])
             if (lsk[k] != "" && (ok9 in okmax) && okmax[ok9] > lsk[k]) { nres++; nresf++; reserr += c[k]; continue }
-            if (lsk[k] != "" && (a[1] ~ /^UC3/ || (toupper(a[1]) in ucd3)) && (a[1] in pollmax) && pollmax[a[1]] > lsk[k]) { nres++; nresp++; reserr += c[k]; continue }
+            pk9 = pollkey(a[1])
+            if (lsk[k] != "" && (a[1] ~ /^UC3/ || (toupper(a[1]) in ucd3)) && (pk9 in pollmax) && pollmax[pk9] > lsk[k]) { nres++; nresp++; reserr += c[k]; continue }
             keep[k] = 1; tot += c[k]
             sseen[a[1]] = 1; aseen[a[2]] = 1; pseen[a[3]] = 1
         }
@@ -230,8 +242,16 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
             if (!((a[4] SUBSEP a[1]) in dsseen)) { dsseen[a[4], a[1]] = 1; dsn[a[4]]++ } }
         for (x in sbk) { split(x, a, SUBSEP)
             bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" sbk[x] }
-        for (s in secnt)
-            printf "DIR\t%d\t%s\t%s%s\t%s\t%s\t%s\n", secnt[s], selst[s], sitelink(s), sitecanon(s), sedir[s], bk[s], lastlines("S" SUBSEP s)
+        # per surviving subscription: Last = its newest error WITH the time, and
+        # the two recovery stamps the row did NOT pass — its last OK File and
+        # (UC3) its newest successful listing — so the reader sees why it is
+        # still open (2026-09-05, user report: a same-day OK File that
+        # PRECEDED the error read as a recovery on a date-only Last)
+        for (s in secnt) {
+            ok9 = okkey(s); pk9 = pollkey(s)
+            printf "DIR\t%d\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\n", secnt[s], skdisp(sesk[s]), sitelink(s), sitecanon(s), sedir[s], \
+                skdisp((ok9 in okmax) ? okmax[ok9] : ""), ((pk9 in pollmax) ? skdisp(pollmax[pk9]) : "\342\200\224"), bk[s], lastlines("S" SUBSEP s)
+        }
         nday = 0
         for (d in dc) { nday++; printf "DAY\t%s\t%d\t%d\n", d, dc[d], dsn[d] }
         nsub = 0; for (x in sseen) nsub++
@@ -251,10 +271,10 @@ fi
 # Both row writers print STRAIGHT to stdout inside the page block below — a
 # `rows+=$(printf …)` per row forks a subshell per row for nothing.
 dir_rows() {
-    while IFS=$'\t' read -r _ count last site path bk lines; do
+    while IFS=$'\t' read -r _ count last site path okst pollst bk lines; do
         [ -z "$site" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' \
-            "$last" "$site" "$path" "$count" "$bk" "$lines"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' \
+            "$last" "$site" "$path" "$okst" "$pollst" "$count" "$bk" "$lines"
     done <<< "$(printf '%s\n' "$agg" | grep $'^DIR\t' | sort -t"$(printf '\t')" -k3,3r -k2,2nr)"
 }
 
@@ -276,13 +296,14 @@ day_rows() {
     fi
     printf 'INTRO\tWe reached the partner and asked for a directory listing, and the partner answered **No such file**: the configured REMOTE directory is not there. **%s** failed listing(s) over **%s** day(s), across **%s** subscription(s), **%s** account(s) and **%s** distinct director(y/ies) — all still UNRESOLVED.%s The connection itself is fine, so this is a **configuration fault** — a renamed or never-created path, or an account chrooted somewhere else — and it never shows in the transfer logs: a listing that fails starts no transfer, so the flow just looks silent there.\n' \
         "$tot_err" "$n_day" "$n_sub" "$n_acc" "$n_path" "$intro_res"
+    printf 'INTRO\tA row stays only while the flow has NOT recovered since its last error: a later **OK File** of the subscription (any flow) or, on a UC3 pull flow, a later **successful listing** of the same site clears it. The two evidence columns show the newest of each the row has — both OLDER than the error (or absent), or the row would be gone.\n'
 
     printf 'TABLE\tMissing remote directories\twide\n'
-    printf 'HEAD\tLast\tSubscription\tRemote directory\tErrors\n'
-    printf 'KIND\ttext\tmono\tclines\tnumfailed\n'
-    printf 'RECALC\t-\t-\t-\ts0\n'
+    printf 'HEAD\tLast error\tSubscription\tRemote directory\tLast OK File\tLast good poll\tErrors\n'
+    printf 'KIND\ttext\tmono\tclines\ttext\ttext\tnumfailed\n'
+    printf 'RECALC\t-\t-\t-\t-\t-\ts0\n'
     dir_rows
-    printf 'TOTAL\t@{colspan=3}Total (%s subscription(s) · %s director(y/ies))\t@{class=num failed}%s\n' "$n_sub" "$n_path" "$tot_err"
+    printf 'TOTAL\t@{colspan=5}Total (%s subscription(s) · %s director(y/ies))\t@{class=num failed}%s\n' "$n_sub" "$n_path" "$tot_err"
 
     printf 'TABLE\tPer day\n'
     printf 'HEAD\tDate\tErrors\tSubscriptions\n'
