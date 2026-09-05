@@ -766,7 +766,10 @@ aggregate_files() {
       # into its dwell bucket for the entity (only when the group had a
       # measurable dwell — gdwb set in flush)
       if(gdwb!=""){ k5=ty SUBSEP ent; dwt[k5]++; dwc[k5 SUBSEP gdwb]++ }
-      addbig(ty SUBSEP ent, sk, bigdisp, st4, (ty=="SITE")?500:100)
+      # the entry ends with the state and (2026-09-05, user request) the
+      # RECOVERED flag: "yes" when this File finished OK but carried a failed
+      # leg (gHADF — the same rule as the Activity per day Recovered column)
+      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : ""), (ty=="SITE")?500:100)
       # Waiting/Expired rollup -> the section-0.9 summary table (per entity):
       # count + first/last STAGED date per state
       if(toc[curcid]=="Waiting" || toc[curcid]=="Expired"){ kwe=ty SUBSEP ent SUBSEP toc[curcid]
