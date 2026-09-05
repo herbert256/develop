@@ -65,6 +65,12 @@ awk -F'\t' '
         return (n % 2) ? t[m + 1] : (t[m] + t[m + 1]) / 2
     }
     function mx(a, b) { return a > b ? a : b }
+    # The Typical cell shows the baseline the ratio was computed AGAINST: the
+    # historical median, lifted to the floor of the rule when the median sits
+    # below it — then annotated, so Value / Typical always reproduces x typical
+    # (audit F07, 2026-09-05: the daily Duration row showed 25.3 s and 34.7x
+    # while the ratio used the 60 s floor).
+    function tyc(shown, raw, floor, fmt) { return shown ((raw < floor) ? " (floor; typical " fmt ")" : "") }
     {
         d = $4; if (d == "") next
         if (!(d in DSEEN)) { DSEEN[d] = 1; DL[++ND] = d }
@@ -116,8 +122,12 @@ awk -F'\t' '
                     if (!FLG[m, h]) { h++; continue }
                     hs = h; he = h; h++
                     while (h < 24 && (FLG[m, h] || (h + 1 < 24 && FLG[m, h + 1]))) { if (FLG[m, h]) he = h; h++ }
-                    # episode stats over the flagged hours hs..he
-                    pk = 0; pkr = 0; wf = 0; wff = 0
+                    # episode stats over the flagged hours hs..he: Peak, Typical and
+                    # x typical all come from the ONE worst hour (the largest ratio),
+                    # so the three cells explain one another (audit F07) — before,
+                    # the peak value, the baseline of the first hour and the largest
+                    # ratio could come from three different hours
+                    pk = 0; pkr = 0; pkh = hs; wf = 0; wff = 0
                     for (i = hs; i <= he; i++) {
                         if (!FLG[m, i]) continue
                         hh = sprintf("%02d", i)
@@ -127,16 +137,15 @@ awk -F'\t' '
                         else if (m == 3) val = FC[d, hh] + 0
                         else if (m == 5) val = VB[d, hh] + 0
                         else val = 0
-                        if (val >= pk) pk = val
-                        if (FLG[m, i] > pkr) pkr = FLG[m, i]
+                        if (FLG[m, i] > pkr) { pkr = FLG[m, i]; pkh = i; pk = val }
                     }
-                    k = CL[d] SUBSEP sprintf("%02d", hs)
+                    k = CL[d] SUBSEP sprintf("%02d", pkh)
                     win = sprintf("%02d:00-%02d:59", hs, he)
-                    if (m == 1)      printf "1\t%s\t%02d\tError rate\t%s\t%d%%\t%.1f%%\t%.1f\t%d\t%d\tError%%20%%25%%20Files\t%s\n",  d, hs, win, pk + 0.5, RB[k], pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
-                    else if (m == 2) printf "1\t%s\t%02d\tDuration\t%s\t%s\t%s\t%.1f\t%d\t%d\tDuration\t%s\n",               d, hs, win, hdur(pk), hdur(DB[k]), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
-                    else if (m == 3) printf "1\t%s\t%02d\tFiles spike\t%s\t%d Files\t%d\t%.1f\t%d\t%d\tFiles%%20processed\t%s\n", d, hs, win, pk, FB[k] + 0.5, pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
+                    if (m == 1)      printf "1\t%s\t%02d\tError rate\t%s\t%d%%\t%s\t%.1f\t%d\t%d\tError%%20%%25%%20Files\t%s\n",  d, hs, win, pk + 0.5, tyc(sprintf("%.1f%%", mx(RB[k], 2)), RB[k], 2, sprintf("%.1f%%", RB[k])), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
+                    else if (m == 2) printf "1\t%s\t%02d\tDuration\t%s\t%s\t%s\t%.1f\t%d\t%d\tDuration\t%s\n",               d, hs, win, hdur(pk), tyc(hdur(mx(DB[k], 30000)), DB[k], 30000, hdur(DB[k])), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
+                    else if (m == 3) printf "1\t%s\t%02d\tFiles spike\t%s\t%d Files\t%s\t%.1f\t%d\t%d\tFiles%%20processed\t%s\n", d, hs, win, pk, tyc(sprintf("%d", mx(FB[k], 5) + 0.5), FB[k], 5, sprintf("%d", FB[k] + 0.5)), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
                     else if (m == 4) printf "1\t%s\t%02d\tSilence\t%s\t0 Files\t%d\t\t0\t0\tFiles%%20processed\tred\n",           d, hs, win, FB[k] + 0.5
-                    else             printf "1\t%s\t%02d\tVolume\t%s\t%s\t%s\t%.1f\t%d\t%d\tVolume\t%s\n",                   d, hs, win, hbytes(pk), hbytes(VBASE[k]), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
+                    else             printf "1\t%s\t%02d\tVolume\t%s\t%s\t%s\t%.1f\t%d\t%d\tVolume\t%s\n",                   d, hs, win, hbytes(pk), tyc(hbytes(mx(VBASE[k], 10000000)), VBASE[k], 10000000, hbytes(VBASE[k])), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
                 }
             }
         }
@@ -168,15 +177,15 @@ awk -F'\t' '
                 continue
             }
             if (f >= 20 && rate >= 10 && rate >= 4 * mx(RDB[cl], 1)) { r = rate / mx(RDB[cl], 1)
-                printf "2\t%s\t00\tError rate\t\t%d%%\t%.1f%%\t%.1f\t%d\t%d\tError%%20%%25%%20Files\t%s\n", d, rate + 0.5, RDB[cl], r, f, ff, (r >= 10 ? "red" : "orange") }
+                printf "2\t%s\t00\tError rate\t\t%d%%\t%s\t%.1f\t%d\t%d\tError%%20%%25%%20Files\t%s\n", d, rate + 0.5, tyc(sprintf("%.1f%%", mx(RDB[cl], 1)), RDB[cl], 1, sprintf("%.1f%%", RDB[cl])), r, f, ff, (r >= 10 ? "red" : "orange") }
             if (DDN[d] + 0 >= 20 && avg >= 300000 && avg >= 4 * mx(DDB[cl], 60000)) { r = avg / mx(DDB[cl], 60000)
-                printf "2\t%s\t00\tDuration\t\t%s\t%s\t%.1f\t%d\t%d\tDuration\t%s\n", d, hdur(avg), hdur(DDB[cl]), r, f, ff, (r >= 10 ? "red" : "orange") }
+                printf "2\t%s\t00\tDuration\t\t%s\t%s\t%.1f\t%d\t%d\tDuration\t%s\n", d, hdur(avg), tyc(hdur(mx(DDB[cl], 60000)), DDB[cl], 60000, hdur(DDB[cl])), r, f, ff, (r >= 10 ? "red" : "orange") }
             if (f >= 100 && f >= 2 * mx(FDB[cl], 50)) { r = f / mx(FDB[cl], 50)
-                printf "2\t%s\t00\tFiles spike\t\t%d Files\t%d\t%.1f\t%d\t%d\tFiles%%20processed\t%s\n", d, f, FDB[cl] + 0.5, r, f, ff, (r >= 10 ? "red" : "orange") }
+                printf "2\t%s\t00\tFiles spike\t\t%d Files\t%s\t%.1f\t%d\t%d\tFiles%%20processed\t%s\n", d, f, tyc(sprintf("%d", mx(FDB[cl], 50) + 0.5), FDB[cl], 50, sprintf("%d", FDB[cl] + 0.5)), r, f, ff, (r >= 10 ? "red" : "orange") }
             else if (FDB[cl] >= 100 && f <= FDB[cl] / 4)
                 printf "2\t%s\t00\tFiles drop\t\t%d Files\t%d\t%.2f\t%d\t%d\tFiles%%20processed\t%s\n", d, f, FDB[cl] + 0.5, f / FDB[cl], f, ff, (f <= FDB[cl] / 10 ? "red" : "orange")
             if (v >= 200000000 && v >= 2 * mx(VDB[cl], 50000000)) { r = v / mx(VDB[cl], 50000000)
-                printf "2\t%s\t00\tVolume\t\t%s\t%s\t%.1f\t%d\t%d\tVolume\t%s\n", d, hbytes(v), hbytes(VDB[cl]), r, f, ff, (r >= 10 ? "red" : "orange") }
+                printf "2\t%s\t00\tVolume\t\t%s\t%s\t%.1f\t%d\t%d\tVolume\t%s\n", d, hbytes(v), tyc(hbytes(mx(VDB[cl], 50000000)), VDB[cl], 50000000, hbytes(VDB[cl])), r, f, ff, (r >= 10 ? "red" : "orange") }
         }
     }
     function hdur(ms) {
@@ -212,7 +221,7 @@ awk -F'\t' '
     function close_hourly() {
         printf "TOTAL\tTotal (%d rows)\t\t\t\t\t\n", n1
         printf "NOTE\t**Daily** — signals per calendar day vs the typical day: **Error rate** (≥10%%, ≥20 Files, ≥4× typical), **Duration** (avg per OK File ≥5 min, ≥20 OK Files, ≥4×), **Files spike** (≥100 Files, ≥2×), **Files drop** (≤¼ of a ≥100-Files typical), **Silence** (a calendar day with NO transfers where ≥20 are typical — missing days are walked via the calendar), **Volume** (≥200 MB, ≥2×).\n"
-        printf "NOTE\t**Hourly** — signals per start hour: **Error rate** (≥25%% and ≥5 Files), **Duration** (avg per OK File ≥5 min, ≥5 OK Files), **Files spike** (≥30 Files), **Silence** (0 Files in an hour that typically moves ≥20), **Volume** (≥100 MB) — each also ≥4× its typical. Consecutive flagged hours merge into one episode.\n"
+        printf "NOTE\t**Hourly** — signals per start hour: **Error rate** (≥25%% and ≥5 Files), **Duration** (avg per OK File ≥5 min, ≥5 OK Files), **Files spike** (≥30 Files), **Silence** (0 Files in an hour that typically moves ≥20), **Volume** (≥100 MB) — each also ≥4× its typical. Consecutive flagged hours merge into one episode; its Peak, Typical and × typical are the three figures of its worst hour. **Typical** is the baseline the ratio was computed against: the historical median, lifted to the floor of the rule when the median sits below it (then shown as \"1 m (floor; typical 25.3 s)\"), so Value ÷ Typical always gives × typical.\n"
         printf "NOTE\tEnd-of-window caution: on the newest day the outbound legs of just-arrived files may not be exported yet, which can flag late hours or the whole day as Error rate — recheck after the next log export.\n"
         printf "FOOT\tGenerated on %s from %s file(s)\n", now, nfiles
     }
