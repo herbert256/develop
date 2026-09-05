@@ -19,8 +19,8 @@
 <li><strong>Duration per day &mdash; percentiles</strong> &mdash; p10, p25, p50 (median), p75, p90, p95, p98 and p99 per day (the <strong>Percentage</strong> view, the default). A percentile says &ldquo;this share of transfers finished at or below this duration&rdquo;, so p95 = 95% of that day's transfers were at least this fast. Percentiles resist the single huge outlier that dominates the Max column.</li>
 <li><strong>Duration per day &mdash; Min / Avg / Median / Max</strong> &mdash; the shortest, mean, middle and longest transfer duration for each calendar day (the <strong>Min/Avg/Max</strong> view).</li>
 <li>The <strong>Top 50 longest Files</strong> and the <strong>Duration distribution</strong> moved to their own Performance pages, <em>Longest Files</em> and <em>Duration distribution</em> (2026-09-03).</li>
-<li><strong>Slowest subscriptions</strong> &mdash; the 25 subscriptions with the highest p95 duration, with their median, p95 and max.</li>
 </ul>
+<p>Three tables that used to sit here have their own pages in this group: the <strong>Longest Files</strong> (the 50 slowest individual transfers), the <strong>Distribution &amp; Store-and-forward</strong> histograms, and the <strong>Slowest subscriptions</strong> (the 25 flows with the highest p95).</p>
 
 <h2>How it's computed</h2>
 <p>The report counts <strong>Files</strong> (logical transfers &mdash; all records sharing one CoreId). On the <strong>OK transfers</strong> view it counts <strong>only those that were delivered</strong> (outcome <strong>Processed</strong>); Error transfers are excluded deliberately &mdash; most are instant 0-byte attempts that would flatten every statistic toward zero. The <strong>All transfers</strong> view drops that filter and counts every File with a measured duration, so failed/timed-out transfers are included (this is why a day's Max there can far exceed the OK view's &mdash; e.g. a transfer that hung for ~2h before failing).</p>

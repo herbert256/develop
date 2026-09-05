@@ -293,7 +293,7 @@ CUR_DATES=""
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency anomalies duration duration-longest duration-dwell duration-all duration-minmax duration-all-minmax duration-trend account-sharing twins)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency anomalies duration duration-longest duration-slowest duration-dwell duration-all duration-minmax duration-all-minmax duration-trend account-sharing twins)
 server_order=(topview errors failure-flows pickups uc-status uc2-visits went-kaput site-failures logons connections ssh-security platform-health capacity deploy-errors remote-poll transfer-site-missing no-remote-dir no-remote-files missing-entities)
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -414,7 +414,7 @@ group_members() {
         failures)            echo "failure-rate episodes retries recovered recovered-files failure-heatmap" ;;   # from-green-to-red/only-red/waiting/expired/pirates/went-quiet are boxes-only (BOXES_ONLY_REPORTS); 2026-08: + recovered (the good-news mirror) + recovered-files (the per-File Recovered analysis)
         flow-shape)          echo "file-journey file-in-file-out" ;;   # 2026-07: patterns/arrived-left/legs-count/protocol-journey merged into file-journey; attempts/resubmissions into retries
         protocol-security)   echo "protocol security-params security-outreach av-scan connection-efficiency" ;;   # 2026-08: + security-outreach/connection-efficiency
-        performance-session) echo "anomalies duration duration-longest duration-dwell duration-trend" ;;   # 2026-08: + duration-trend; 2026-09-03: + the duration split-offs; 2026-09-05: duration-distribution + dwell-time merged into duration-dwell
+        performance-session) echo "anomalies duration duration-longest duration-slowest duration-dwell duration-trend" ;;   # 2026-08: + duration-trend; 2026-09-03: + the duration split-offs; 2026-09-05: duration-distribution + dwell-time merged into duration-dwell
         cross)               echo "cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl" ;;
         srv-overview)        echo "topview" ;;
         srv-errors)          echo "errors failure-flows" ;;      # 2026-07: errors-day/error-timing/error-reasons/top-messages merged; 2026-08: + failure-flows (per-flow reason matrix)
@@ -436,7 +436,7 @@ group_of() {   # $1 area (transfer|server)  $2 report basename -> group id (empt
         failure-rate|episodes|retries|recovered|recovered-files|failure-heatmap) echo "failures" ;;   # missing-cronjobs is NOT here (boxes-only); the boxes-only reports return "" so their pages carry NO group row
         file-journey|file-in-file-out) echo "flow-shape" ;;
         protocol|security-params|security-outreach|av-scan|connection-efficiency) echo "protocol-security" ;;
-        dwell-time|duration|duration-all|duration-minmax|duration-all-minmax|duration-longest|duration-distribution|duration-dwell|anomalies|duration-trend)     echo "performance-session" ;;   # the duration-* siblings: Duration's All-transfers / Percentage views (not group MEMBERS — they share Duration's slot)
+        dwell-time|duration|duration-all|duration-minmax|duration-all-minmax|duration-longest|duration-slowest|duration-distribution|duration-dwell|anomalies|duration-trend)     echo "performance-session" ;;   # the duration-* siblings: Duration's All-transfers / Percentage views (not group MEMBERS — they share Duration's slot)
         cross-account|cross-login|cross-subscription|cross-host|cross-logical|cross-partner|cross-application|cross-domain|cross-bl) echo "cross" ;;
                 errors) echo "srv-errors" ;;
         failure-flows) echo "srv-errors" ;;
@@ -528,7 +528,8 @@ member_label() {   # row-1 tab text for a grouped report
         protocol) echo "Protocol, Direction & Mode" ;;
         dwell-time) echo "Store-and-forward" ;; ranking) echo "Ranking" ;;
         duration) echo "Duration" ;; duration-longest) echo "Longest Files" ;; duration-distribution) echo "Duration distribution" ;;
-        duration-dwell) echo "Distribution & Store-and-forward" ;;   # 2026-09-05: duration-distribution + dwell-time merged
+        duration-dwell) echo "Distribution & Store-and-forward" ;;
+        duration-slowest) echo "Slowest subscriptions" ;;   # 2026-09-05: split off duration   # 2026-09-05: duration-distribution + dwell-time merged
         security-params) echo "Security Parameters" ;; av-scan) echo "AV Scan" ;;
         cross-account) echo "Account" ;; cross-login) echo "Login" ;; cross-subscription) echo "Subscriptions" ;;
         cross-host) echo "Hosts" ;;

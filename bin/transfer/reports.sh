@@ -99,6 +99,7 @@ pool_run "$SCRIPT_DIR/reports/weekday.sh"
 pool_run "$SCRIPT_DIR/reports/anomalies.sh"
 pool_run "$SCRIPT_DIR/reports/duration.sh"
 pool_run "$SCRIPT_DIR/reports/duration-longest.sh"        # the Top 50 longest Files + their record pages (split off duration.sh 2026-09-03)
+pool_run "$SCRIPT_DIR/reports/duration-slowest.sh"        # the top 25 slowest subscriptions by p95 (split off duration.sh 2026-09-05)
 pool_run "$SCRIPT_DIR/reports/duration-distribution.sh"   # the duration histogram (split off duration.sh 2026-09-03)
 pool_run "$SCRIPT_DIR/reports/dwell-time.sh"
 pool_run "$SCRIPT_DIR/reports/top-transfers.sh"

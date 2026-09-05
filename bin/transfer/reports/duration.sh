@@ -24,16 +24,15 @@
 #   The three siblings render beside duration.html, not as separate
 #   menu/index entries.
 #
-# Tables (per view): the per-day stats and the slowest Subscriptions by p95
-# duration — only the per-day table differs between the two column views.
-# (The Top 50 longest Files and the duration distribution moved to their own
-# Performance pages 2026-09-03: duration-longest.sh, duration-distribution.sh.)
+# Table (per view): the per-day stats — the one table that differs between
+# the two column views. (The Top 50 longest Files and the duration
+# distribution moved to their own Performance pages 2026-09-03 —
+# duration-longest.sh, duration-distribution.sh — and the slowest
+# subscriptions by p95 on 2026-09-05: duration-slowest.sh.)
 #
 # The per-day stat columns are NOT additive across days, so they are marked
 # `noagg`: each day keeps its own value but a narrowed date range blanks their
-# total. The Files count IS additive and re-totals. The distribution and
-# subscription tables re-aggregate their summable columns over a date range via
-# @data:buckets (percentiles stay at their full-period value).
+# total. The Files count IS additive and re-totals.
 #
 # Usage:
 #   ./duration.sh    # reads input/*.csv (via the cache), writes data/duration{,-all}.rpt
@@ -44,8 +43,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 
-# (TOP_N — the longest Files list — moved to duration-longest.sh 2026-09-03)
-TOP_SUB=25   # subscriptions in the "slowest by p95" table
+# (TOP_N — the longest Files list — moved to duration-longest.sh 2026-09-03;
+# TOP_SUB — the slowest subscriptions — to duration-slowest.sh 2026-09-05)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -85,9 +84,9 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 build_view() {
     local OKONLY=$1 OUT_MM=$2 OUT_PP=$3 NAV_MM=$4 NAV_PP=$5 SCOPE_DESC=$6 SCOPE_INTRO=$7 SCOPE_NOTE=$8
 
-    # main pass: per-day + distribution + per-subscription stats. Tagged col 1:
-    # 1=per-day min/avg/max, 2=per-day percentiles, D=distribution, S=subscription,
-    # O=overall. OKONLY drops non-Processed Files (the "OK transfers" view).
+    # main pass: per-day + distribution stats. Tagged col 1:
+    # 1=per-day min/avg/max, 2=per-day percentiles, D=distribution,
+    # O=overall. (S=subscription left with duration-slowest.sh, 2026-09-05.) OKONLY drops non-Processed Files (the "OK transfers" view).
     local agg; agg=$(awk -F'\t' -v okonly="$OKONLY" '
         function humandur(ms) {
             if (ms < 1000)    return sprintf("%d ms", ms)
@@ -161,11 +160,6 @@ build_view() {
             DV[d SUBSEP dc[d]] = ms
             DVc[d SUBSEP dc[d]] = $1; DVt[d SUBSEP dc[d]] = $4 " " $5
             b = bkt(ms); bkc[b]++; bkd[b SUBSEP d]++
-            s = $12; if (s == "") s = "(no subscription)"
-            scnt[s]++; ssum[s] += ms; if (ms > smax[s]) smax[s] = ms
-            SV[s SUBSEP scnt[s]] = ms
-            sc[s SUBSEP d]++; sm[s SUBSEP d] = (ms > sm[s SUBSEP d]) ? ms : sm[s SUBSEP d]; sd[s SUBSEP d] += ms
-            seen_s[s] = 1
         }
         END {
             nd = 0; for (d in dc) days[++nd] = d
@@ -203,13 +197,6 @@ build_view() {
                 bs = ""; for (i = 1; i <= nd; i++) { d = days[i]; c = bkd[b SUBSEP d] + 0; if (c > 0) bs = bs (bs ? "," : "") d ":" c }
                 printf "D\t%s\t%d\t%.1f%%\t@data:buckets=%s\n", BL[b+1], bkc[b] + 0, (GN > 0 ? 100 * bkc[b] / GN : 0), bs
             }
-            for (s in seen_s) {
-                n = scnt[s]; for (k = 1; k <= n; k++) T[k] = SV[s SUBSEP k]; TN = n; qsort(T, 1, n)
-                bs = ""; for (i = 1; i <= nd; i++) { d = days[i]; c = sc[s SUBSEP d] + 0
-                    if (c > 0) bs = bs (bs ? "," : "") d ":" c ":" sd[s SUBSEP d] ":" sm[s SUBSEP d] }
-                printf "S\t%s\t%d\t%d\t%d\t%d\t@data:buckets=%s\t%s\t%s\t%s\n", s, n, pctl(50), pctl(95), smax[s], bs, \
-                    humandur(pctl(50)), humandur(pctl(95)), humandur(smax[s])
-            }
         }
     ' "$FILES")
 
@@ -219,7 +206,7 @@ build_view() {
             _en=$NAV_MM; [ "$_eo" = "$OUT_PP" ] && _en=$NAV_PP
             {
                 printf 'TITLE\tTransfer Duration\n'
-                printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, and the slowest subscriptions (the longest Files and the duration distribution have their own pages). %s\n' "$SCOPE_DESC"
+                printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, (the longest Files, the duration distribution and the slowest subscriptions have their own pages). %s\n' "$SCOPE_DESC"
                 printf 'INTRO\tNo Files with a measured duration in this view.\n'
                 printf '%s\n' "$_en"
                 printf 'TABLE\tTransfer duration\n'
@@ -257,22 +244,13 @@ build_view() {
         print row
     }')
 
-    # slowest subscriptions: sort by p95 (field 5) desc, cap, take the spellings
-    # from cols 8-10. Nothing skips a row (a blank subscription reads as "(no
-    # subscription)"), so the shown count is just the cap.
-    local sub_rows sub_total shown_sub
-    sub_rows=$(printf '%s\n' "$agg" | grep '^S'$'\t' | sort -t$'\t' -k5,5nr \
-        | awk -F'\t' -v n="$TOP_SUB" 'NR<=n { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\n", $2, $3, $8, $9, $10, $7 }')
-    [ -n "$sub_rows" ] && sub_rows+=$'\n'
-    sub_total=$(printf '%s\n' "$agg" | grep -c '^S'$'\t')
-    shown_sub=$(( sub_total < TOP_SUB ? sub_total : TOP_SUB ))
 
 
     emit_view() {   # $1 the .rpt to write  $2 its NAV line  $3 the view (mm|pp)
         local OUT=$1 NAVLINE=$2 VIEW=$3
     {
         printf 'TITLE\tTransfer Duration\n'
-        printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, and the slowest subscriptions (the longest Files and the duration distribution have their own pages). %s\n' "$SCOPE_DESC"
+        printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, (the longest Files, the duration distribution and the slowest subscriptions have their own pages). %s\n' "$SCOPE_DESC"
         printf 'INTRO\tDuration of the **%s** Files over **%s** day(s). Overall **min %s**, **median (p50) %s**, **p95 %s**, **p99 %s**, **max %s**. %s The **Percentage** and **Min/Avg/Max** buttons switch the per-day columns; the stats are shown in **whole seconds, minutes or hours**, and a narrowed date range keeps each day but blanks the non-additive totals.\n' \
             "$g_n" "$g_days" "$u_min" "$u_p50" "$u_p95" "$u_p99" "$u_max" "$SCOPE_INTRO"
         printf '%s\n' "$NAVLINE"
@@ -296,14 +274,8 @@ build_view() {
             printf '%s\n' "$perday_pp"
         fi
 
-        printf 'TABLE\tSlowest subscriptions (top %s by p95 duration)\twide\n' "$TOP_SUB"
-        printf 'HEAD\tSubscription\tFiles\tMedian\tp95\tMax\n'
-        printf 'KIND\tsite\tnum\tnum\tnum\tnum\n'
-        printf 'RECALC\t-\ts0\t-\t-\tx2\n'
-        printf '%s' "$sub_rows"
-        printf 'TOTAL\tTop %s of %s subscriptions\t\t\t\t\n' "$shown_sub" "$sub_total"
 
-        printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); duration = its **wall-clock span** — from the first record start to the last record end, in milliseconds (so it includes the store-and-forward gap between the inbound and outbound legs, and the idle time between retries), NOT the sum of the record durations. %sPer-day min/median/max and percentiles are **not additive**: a narrowed date range keeps each day row but blanks the total. The distribution re-counts per date; the subscription Median/p95 stay at their full-period value (Files and Max re-aggregate). Percentiles use the nearest-rank method.\n' "$SCOPE_NOTE"
+        printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); duration = its **wall-clock span** — from the first record start to the last record end, in milliseconds (so it includes the store-and-forward gap between the inbound and outbound legs, and the idle time between retries), NOT the sum of the record durations. %sPer-day min/median/max and percentiles are **not additive**: a narrowed date range keeps each day row but blanks the total. Percentiles use the nearest-rank method.\n' "$SCOPE_NOTE"
         printf 'SUMMARY\tFiles: %s  |  Median: %s  |  p95: %s  |  p99: %s  |  Max: %s\n' \
             "$g_n" "$u_p50" "$u_p95" "$u_p99" "$u_max"
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
