@@ -32,12 +32,15 @@
 # The Cause column says which family a row comes from (both, when an entity
 # has each).
 #
-# ONE row per entity, and the entity is whichever bracket names the flow: the
-# ACCOUNT normally, the SUBSCRIPTION when the account is the platform's own
-# SECURETRANSPORT (blacklisted everywhere else on the site, so it would make a
-# useless row) — EXCEPT the ARPA0001 variant ("publishing the file {…} to an
-# account"), whose second bracket names the destination ACCOUNT even behind
-# SECURETRANSPORT. An account's "@FE000593" endpoint suffix is stripped exactly as
+# ONE row per entity. The entity is the SUBSCRIPTION the line names — the
+# second bracket of an ARSP0001 line is the flow whose route was stopped
+# (2026-09-05, user report: keying the row by the ACCOUNT in the first
+# bracket let Subscriptions in boxes count every sibling flow of that
+# account against it — three account rows, 18 flows in the Deploy box). The
+# ACCOUNT is the fallback when no bracket names a configured flow, and the
+# rule for the ARPA0001 variant ("publishing the file {…} to an account"),
+# whose second bracket names the destination ACCOUNT even behind the
+# platform's own SECURETRANSPORT (blacklisted everywhere else on the site). An account's "@FE000593" endpoint suffix is stripped exactly as
 # bin/transfer/parse.sh strips it, so the name matches _files.tsv and the
 # detail-page link resolves.
 #
@@ -75,10 +78,15 @@ PROFSUB="$CONFIG_XREF/_profiles-subscriptions.tsv"
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
 # account -> its subscriptions: the account-level recovery test below
 ASX="$CONFIG_XREF/_accounts-subscriptions.tsv"; [ -f "$ASX" ] || ASX=/dev/null
+# the configured subscription roster: an ARSP0001 line names its flow in the
+# SECOND bracket, and that flow — not every sibling on the account — is the
+# entity when the name is configured (2026-09-05, user report: three
+# account rows fanned out to 18 flows in the Deploy box)
+ROS="$CONFIG_BASE/_subscriptions.tsv"; [ -f "$ROS" ] || ROS=/dev/null
 # The transfer cache is a cross-area DEP: the "recovered since" test reads it,
 # so a transfer reparse has to re-trigger this report. The profile map is a
 # config dep: a re-derived xref changes which flow a message names.
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILES_TSV" "$PROFSUB" "$ASX"
+skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILES_TSV" "$PROFSUB" "$ASX" "$ROS"
 ensure_parsed
 ensure_config
 
@@ -86,19 +94,29 @@ TMP=$(mktemp -d "${TMPDIR:-/tmp}/axdep.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 
 # tuple: sortkey \t name \t messages \t last-message \t kind
-LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v asx="$ASX" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v ucdf="$UCDF" "$RENAMES_AWK"'
+LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v asx="$ASX" -v ros="$ROS" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v ucdf="$UCDF" "$RENAMES_AWK"'
     BEGIN { rn_load(RNF, RNP)
-            while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf) }
+            while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf)
+            while ((getline l9 < ros) > 0) { split(l9, a9, "\t"); if (a9[1] != "") ROS[toupper(a9[1])] = a9[1] } close(ros) }
     FILENAME == asx { if ($1 != "" && $2 != "") ASUB[toupper($1)] = ASUB[toupper($1)] SUBSEP toupper($2); next }   # account -> subscriptions
-    # "[A] [B]" -> the naming entity; sets ACC as a side effect.
-    function ent(m,   p1, q1, a, rest, p2, q2, s) {
+    # "[A] [B]" -> the naming entity; sets ACC (the first bracket) and
+    # NAMED (the configured subscription a bracket names, "" when none) as
+    # side effects. The SECOND bracket of an ARSP0001 line IS the flow whose
+    # route was stopped: when it (or, failing that, the first bracket) is a
+    # configured subscription — rename-folded — that flow is the entity,
+    # never the account with all its siblings (2026-09-05). The account
+    # keying remains the fallback for a line naming no configured flow, and
+    # the caller keeps it for the ARPA0001 variant (a destination account).
+    function ent(m,   p1, q1, a, rest, p2, q2, s, c) {
         p1 = index(m, "[");             if (!p1) return ""
         q1 = index(substr(m, p1), "]"); if (!q1) return ""
         a  = substr(m, p1 + 1, q1 - 2); sub(/@.*/, "", a)
         rest = substr(m, p1 + q1)
         p2 = index(rest, "[");             if (!p2) return ""
         q2 = index(substr(rest, p2), "]"); if (!q2) return ""
-        ACC = a; s = substr(rest, p2 + 1, q2 - 2)
+        ACC = a; s = substr(rest, p2 + 1, q2 - 2); NAMED = ""
+        c = rn_canon_pfx(s); if (toupper(c) in ROS) NAMED = ROS[toupper(c)]
+        else { c = rn_canon_pfx(a); if (toupper(c) in ROS) NAMED = ROS[toupper(c)] }
         return (a == "SECURETRANSPORT" || a == "") ? s : a
     }
     # FILENAME dispatch, not an FNR==1 file counter: the profile map may be
@@ -163,6 +181,8 @@ LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v as
         # the destination ACCOUNT, not a subscription. Account evidence wins
         # over other lines naming the same entity.
         if (k == "Subscription" && substr($5, 1, 9) == "ARPA0001:") k = "Account"
+        # the named configured flow is the entity (see ent) — not for ARPA0001
+        else if (NAMED != "") { e = NAMED; k = "Subscription" }
         # RENAMES (2026-08): the bracket carries the name that was current when
         # the line was written. Fold a SUBSCRIPTION to the name the config uses
         # now — before the key is taken, so the old and new spellings of one
@@ -233,7 +253,7 @@ nlist=$(wc -l < "$TMP/rows" | tr -d ' ')
           m += $3 }
         END { printf "TOTAL\tTotal (%d entities)\t\t\t@{class=num}%d\t\n", NR, m + 0 }
     ' "$TMP/rows"
-    printf 'NOTE\tThe entity is the **account** the line names, or the **subscription** when that account is the platform'"'"'s own SECURETRANSPORT — blacklisted everywhere else on the site, so it would make a useless row. An account'"'"'s **@FE…** endpoint suffix is stripped, as the transfer parse strips it, so the name links to its detail page.\n'
+    printf 'NOTE\tThe entity is the **subscription** the line names — an ARSP0001 line carries the flow whose route was stopped in its second bracket (2026-09-05; before, the **account** in its first bracket was the row, and Subscriptions in boxes counted every sibling flow of that account against it) — and the **account** only when no bracket names a configured flow (the ARPA0001 "publishing to an account" variant names a destination account, and a name the platform'"'"'s own SECURETRANSPORT account fronts is taken as the flow).\n'
     printf 'NOTE\tOnly UNRESOLVED entities appear: one whose last message is followed by an **OK File** has recovered and is left out — as has a **UC3 subscription** whose last message is followed by a **successful poll**, files or no files. The comparison is exact to the millisecond, so a recovery on the SAME day still counts.\n'
     printf 'NOTE\tA **Receive File As** row names the subscription its transfer profile belongs to: the message names the platform account `SECURETRANSPORT`, and a transfer profile is internal flow plumbing with no page of its own. **Config hygiene** lists the same defect per profile, including the ones already recovered.%s\n' \
         "$( [ "${nunmapped:-0}" -gt 0 ] && printf ' **%s** profile(s) matched no single configured flow and are only counted there.' "$nunmapped" )"
