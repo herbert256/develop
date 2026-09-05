@@ -376,7 +376,9 @@ double-count and the incremental cache stays byte-identical to a full reparse.
 Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberate:
 
 0. **RENAME FOLD** (2026-08) — a logged subscription **and profile** name is folded to the name the CONFIG uses
-   NOW, at the one canonicalisation point in `parse.sh` (where the `_SCP_` tail is stripped), via
+   NOW, at the one canonicalisation point in `parse.sh` (where the `_SCP_` tail is stripped and the
+   `<subscription>_<PROTO>_SERVER_<partner>` extension folded — the server reports and the server
+   parser's mention tokenizer strip/fold the same two shapes, 2026-09-05), via
    `input/<env>/renames/subscriptions.tsv` (`bin/renames.sh`, `rn_canon`). A log line keeps the
    name that was current when it was written, so an export that renames a flow would otherwise
    split its history in two — the configured half joining nothing and going orange, the logged

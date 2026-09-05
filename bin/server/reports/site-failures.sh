@@ -57,7 +57,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         sp = index(m, " tried to "); if (sp <= 1) sp = index(m, " ")
         if (sp <= 1) next
         tk = substr(m, 1, sp - 1)
-        sub(/_(SS?|C)CP_.*$/, "", tk)                                        # canonical subscription name (drop the _SCP_ / _SSCP_ / _CCP_ tail)
+        sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", tk)                                        # canonical subscription name (drop the _SCP_ / _SSCP_ / _CCP_ tail)
         cnt[tk]++; tot++
         addline(tk, $1 " " $2, lvlname($3) " " compname($4) "  " substr($5, 1, 200))
         if (d != "") {

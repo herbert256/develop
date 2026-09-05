@@ -4,7 +4,8 @@
 # (rn_canon_pfx) and call ros_load(base/_subscriptions.tsv) in BEGIN.
 #
 # subname(msg): every name-shaped token of the message tried, tail-stripped
-# (_SCP_/_SSCP_/_CCP_) and rename-folded, against the roster (case-folded)
+# (_SCP_/_SSCP_/_CCP_, and the _<PROTO>_SERVER_/_CLIENT_ extension) and
+# rename-folded, against the roster (case-folded)
 # -> the configured name; else the first UC-shaped token (a line naming a
 # DECOMMISSIONED flow still attributes to that name rather than becoming an
 # orphan of its ring); else "" — the line names no flow.
@@ -13,7 +14,7 @@
         m = msg; uc = ""
         while (match(m, /[A-Za-z][A-Za-z0-9_-]*[_-][A-Za-z0-9_-]+/)) {
             t = substr(m, RSTART, RLENGTH); m = substr(m, RSTART + RLENGTH)
-            sub(/_(SS?|C)CP_.*$/, "", t)
+            sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", t)
             t = rn_canon_pfx(t); u = toupper(t)
             if (u in ROS) return ROS[u]
             if (uc == "" && t ~ /^UC[0-9]+[_-]/) uc = t

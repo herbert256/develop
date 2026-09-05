@@ -144,7 +144,7 @@ LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v as
         # succeeded — even "0 matched the pattern" means the flow works again,
         # so remember the newest poll per (tail-stripped) site for END
         if (index($5, "Applying the search pattern") > 0 && match($5, /for transfer site '\''[^'\'']*'\''/)) {
-            ps = substr($5, RSTART + 19, RLENGTH - 20); sub(/_(SS?|C)CP_.*$/, "", ps)
+            ps = substr($5, RSTART + 19, RLENGTH - 20); sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", ps)
             # folded like the LASTK keys (rn_canon_pfx below) — one side
             # folded and the other raw never met (2026-08-31 audit)
             if (ps != "") { pu = toupper(rn_canon_pfx(ps)); d = $1; gsub(/-/, "", d); pk = d $2; if (pk > PMAX[pu]) PMAX[pu] = pk }
@@ -221,7 +221,7 @@ LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v as
             # UC3 poll-recovery: a successful poll AFTER the last message means
             # the flow works again, files or no files — same tail-strip as the
             # poll side so the two name forms meet
-            us = u; sub(/_(SS?|C)CP_.*$/, "", us)
+            us = u; sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", us)
             if (KIND[u] == "Subscription" && (substr(us, 1, 3) == "UC3" || (us in ucd3)) && (us in PMAX) && PMAX[us] > LASTK[u]) { cleared++; continue }
             cz = ((u in CRT) && (u in CFA)) ? "Route stopped + Receive File As" \
                  : ((u in CFA) ? "Receive File As not set" : "Route stopped")

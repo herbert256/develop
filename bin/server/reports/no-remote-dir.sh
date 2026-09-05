@@ -152,7 +152,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
     # transfer log, so the last one per site is kept alongside the last OK File.
     $5 ~ /Applying the search pattern .* for transfer site / {
         if (!match($5, /for transfer site '\''[^'\'']*'\''/)) next
-        psite = substr($5, RSTART + 19, RLENGTH - 20); sub(/_(SS?|C)CP_.*$/, "", psite)
+        psite = substr($5, RSTART + 19, RLENGTH - 20); sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", psite)
         pd = substr($1, 1, 10)
         if (psite != "" && pd ~ /^[0-9][0-9][0-9][0-9]-/) {
             psk = substr(pd, 1, 4) substr(pd, 6, 2) substr(pd, 9, 2) $2
@@ -169,7 +169,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
         rest = substr(m, index(m, "listing files from partner ") + 27)
         p = index(rest, " defined in account "); if (p <= 1) next
-        site = substr(rest, 1, p - 1); sub(/_(SS?|C)CP_.*$/, "", site)   # clean subscription name
+        site = substr(rest, 1, p - 1); sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", site)   # clean subscription name
         if (site == "") next
         tail = substr(rest, p + 20)
         q = index(tail, ".")                                  # "ACCOUNT. No such file…"

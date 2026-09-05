@@ -124,7 +124,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         } else tk = flowtok(m)
         if (tk != "" && index(tk, "_") == 0) tk = ""   # [Ssh Default] etc — a server name, not a flow
         if (tk == "") next
-        sub(/_(SS?|C)CP_.*$/, "", tk)                  # canonical subscription name
+        sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", tk)                  # canonical subscription name
         cnt[tk SUBSEP b]++; attr++
         addline("F" SUBSEP tk SUBSEP b, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
         if (d != "") {

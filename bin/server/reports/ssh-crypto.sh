@@ -202,7 +202,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             if (param == "") next
             acct = "(unknown)"; if (match(m, /Account "[^"]*"/)) acct = substr(m, RSTART + 9, RLENGTH - 10)
             site = "(unknown)"; if (match(m, /Transfer site: "[^"]*"/)) site = substr(m, RSTART + 16, RLENGTH - 17)
-            sub(/_(SS?|C)CP_.*$/, "", site)                                            # canonical subscription name (drop the _SCP_ / _SSCP_ / _CCP_ tail)
+            sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", site)                                            # canonical subscription name (drop the _SCP_ / _SSCP_ / _CCP_ tail)
             host = "(unknown)"; if (match(m, /remote host: .+$/)) host = substr(m, RSTART + 13)
             if (acct == "") acct = "(blank)"
             dk = param SUBSEP acct SUBSEP site SUBSEP host

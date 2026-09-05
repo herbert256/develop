@@ -120,7 +120,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
         if (m ~ /Applying the search pattern .* for transfer site /) {
             if (!match(m, /for transfer site '\''[^'\'']*'\''/)) next
             site = substr(m, RSTART + 19, RLENGTH - 20)              # strip "for transfer site '" and trailing "'"
-            sub(/_(SS?|C)CP_.*$/, "", site)                           # -> clean subscription name (drop _SCP_ / _SSCP_ / _CCP_)
+            sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", site)                           # -> clean subscription name (drop _SCP_ / _SSCP_ / _CCP_)
             if (site == "") next
             # the CANONICAL name is the aggregation key (2026-08-31 audit):
             # folded only at emit time, a truncated or pre-rename spelling
@@ -151,7 +151,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             rest2 = substr(m, index(m, "listing files from partner ") + 27)
             p2 = index(rest2, " defined in account "); if (p2 <= 1) p2 = index(rest2, " ")
             if (p2 <= 1) next
-            lsite = substr(rest2, 1, p2 - 1); sub(/_(SS?|C)CP_.*$/, "", lsite)   # clean subscription name
+            lsite = substr(rest2, 1, p2 - 1); sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", lsite)   # clean subscription name
             if (lsite == "") next
             # the reason for the failure sidecar: the tail after "account X. "
             r3 = substr(rest2, p2 + 20); p3 = index(r3, ". ")
@@ -170,13 +170,13 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             # above, the gap says a schedule fires but never finishes a poll
             if (!match(m, /'\''[^'\'']*'\''/)) next
             ssite = substr(m, RSTART + 1, RLENGTH - 2)
-            sub(/_(SS?|C)CP_.*$/, "", ssite)
+            sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", ssite)
             if (ssite != "") pfs[ssite]++
         } else if (m ~ /Connection failure while .* tried to connect to remote host /) {
             csite = substr(m, index(m, "Connection failure while ") + 25)
             p2 = index(csite, " tried to connect to remote host "); if (p2 <= 1) next
             why = substr(csite, p2 + 33, 120)
-            csite = substr(csite, 1, p2 - 1); sub(/_(SS?|C)CP_.*$/, "", csite)
+            csite = substr(csite, 1, p2 - 1); sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", csite)
             if (csite != "") pfc[sitecanon(csite) SUBSEP why]++
         } else if (m ~ /failure connecting to remote host /) {
             # auth-style failures name only host+user — keyed by HOST (the

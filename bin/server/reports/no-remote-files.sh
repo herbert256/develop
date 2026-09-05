@@ -121,7 +121,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
     {
         m = $5
         if (!match(m, /for transfer site '\''[^'\'']*'\''/)) next
-        site = substr(m, RSTART + 19, RLENGTH - 20); sub(/_(SS?|C)CP_.*$/, "", site)
+        site = substr(m, RSTART + 19, RLENGTH - 20); sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", site)
         if (site == "") next
         tail = substr(m, RSTART + RLENGTH)                    # ": N file(s) …"
         u = toupper(site)

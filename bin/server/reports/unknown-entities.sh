@@ -235,7 +235,7 @@ for ((id = 0; id < NW; id++)); do
                 s = $5
                 while (match(s, /UC[0-9]+_[A-Za-z0-9_-]+/)) {    # hyphens are part of UC4/UC2 names
                     tk = substr(s, RSTART, RLENGTH)
-                    sub(/_(SS?|C)CP_.*$/, "", tk)                                        # canonical subscription name (drop the _SCP_ / _SSCP_ / _CCP_ tail)
+                    sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", tk)                                        # canonical subscription name (drop the _SCP_ / _SSCP_ / _CCP_ tail)
                     p14 = index(tk, "_P14303_CFT01"); if (p14 > 0) tk = substr(tk, 1, p14 - 1)   # composite <site>_P14303_CFT01[_flow] identifiers
                     # RENAMES: a server line keeps the name that was current
                     # when it was written. Fold it here, where the token is

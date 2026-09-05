@@ -103,7 +103,7 @@ awk -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
         # stripped first, as the transfer parse does.
         while (match(m, /[A-Za-z][A-Za-z0-9_-]*[_-][A-Za-z0-9_-]+/)) {
             t = substr(m, RSTART, RLENGTH); m = substr(m, RSTART + RLENGTH)
-            sub(/_(SS?|C)CP_.*$/, "", t)
+            sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", t)
             t = rn_canon(t)
             if (toupper(t) in conf) {
                 t = conf[toupper(t)]                       # the export own spelling

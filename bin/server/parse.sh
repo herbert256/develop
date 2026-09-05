@@ -495,6 +495,11 @@ FILENAME ~ /_hosts\.tsv$/         { if ($1 != "") hstU[toupper($1)] = $1; next }
             if (!(w2 in sub_)) {
                 p = index(w2, "_SSCP_"); if (p == 0) p = index(w2, "_SCP_"); if (p == 0) p = index(w2, "_CCP_")
                 cand = (p > 1) ? substr(w2, 1, p - 1) : w2
+                # ... and the EXTENDED site shape "<subscription>_<PROTO>_SERVER_<partner>"
+                # (production, 2026-09-05 — the transfer parser folds it too,
+                # site_extfold): the part before the _<PROTO>_SERVER_/_CLIENT_
+                # marker, accepted only when it IS a configured name
+                if (!(cand in sub_) && match(cand, /_[A-Za-z0-9]+_(SERVER|CLIENT)_/)) cand = substr(cand, 1, RSTART - 1)
                 if (cand in sub_) w2 = cand
                 else { c2 = rn_canon(cand); if (c2 in sub_) w2 = c2 }
             }
