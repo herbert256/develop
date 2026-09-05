@@ -200,13 +200,27 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
             # HERE rather than in details.sh keeps them as the fallback: a page
             # that gets no verdict (an environment with no server reports, so no
             # uc<n>-status.rpt) still carries its original line.
+            # The fragment splits in two (2026-09-05, user request): its PROSE
+            # (the verdict INTRO lines, everything before its first TABLE)
+            # lands after DESC as before; its TABLE block — the UC2 "Pickup
+            # information" table, sxs=feat — lands right after the Features
+            # table, which gets the same sxs=feat, so the two render side by
+            # side (Features left, Pickup right) above whatever follows.
             awk -F'\t' -v VF="$vf" '
+                BEGIN { intbl = 0
+                        while ((getline l < VF) > 0) {
+                            if (index(l, "TABLE\t") == 1) intbl = 1
+                            if (intbl) tblk = tblk l "\n"; else pros = pros l "\n" }
+                        close(VF) }
                 # (the blue line opens with the "**" of its bold run, so match
                 # anywhere in the field rather than at position 1)
                 $1 == "INTRO" && (index($2, "Only seen in the server log") > 0 ||
                                   index($2, "Configured") == 1) { next }
+                infeat && ($1 == "TABLE" || $1 == "NOTE" || $1 == "INTRO" || $1 == "LINK" || $1 == "SUMMARY" || $1 == "FOOT") { printf "%s", tblk; infeat = 0 }
+                $1 == "TABLE" && $2 == "Features" && tblk != "" { print $0 "\tsxs=feat"; infeat = 1; next }
                 { print }
-                $1 == "DESC" && !d { while ((getline l < VF) > 0) print l; close(VF); d = 1 }' "$srcf" > "$vtmp"
+                $1 == "DESC" && !d { printf "%s", pros; d = 1 }
+                END { if (infeat) printf "%s", tblk }' "$srcf" > "$vtmp"
             render_rpt "$vtmp" "$outdir/$base.html" "../../assets/style.css" "index.html" "TRANSFER - $t" "" "$hslug"
             rm -f "$vtmp"
         else

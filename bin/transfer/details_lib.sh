@@ -769,7 +769,7 @@ aggregate_files() {
       # the entry ends with the state and (2026-09-05, user request) the
       # RECOVERED flag: "yes" when this File finished OK but carried a failed
       # leg (gHADF — the same rule as the Activity per day Recovered column)
-      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : ""), (ty=="SITE")?500:100)
+      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : "") "|" gPICK, (ty=="SITE")?500:100)   # … then the pickup stamp
       # Waiting/Expired rollup -> the section-0.9 summary table (per entity):
       # count + first/last STAGED date per state
       if(toc[curcid]=="Waiting" || toc[curcid]=="Expired"){ kwe=ty SUBSEP ent SUBSEP toc[curcid]
@@ -781,7 +781,7 @@ aggregate_files() {
         if((a2[1]+0==3 || a2[1]+0==4) && ty!="PTN" && ty!="APP" && ty!="DOM" && ty!="LGC" && ty!="BL" && ty!="ACC") continue   # the Login/Host dims feed the Logical+PDA+BL+Account pages
         bump(ty,ent,a2[1],a2[2]) } }
     function flush(   v){
-      day=tdt[curcid]; if(day=="") { split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0; return }
+      day=tdt[curcid]; if(day=="") { split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0; gPICK=""; return }
       jd=tjd[curcid]+0; sk=tsk[curcid]; disp=tdt[curcid]" "ttm[curcid]; pr2=(toc[curcid]!="Failed" && toc[curcid]!="Expired"); size=tsz[curcid]+0
       hh=""; if(ttm[curcid] ~ /^[0-9][0-9]:/) hh=substr(ttm[curcid],1,2)
       if(jd>gmax) gmax=jd
@@ -856,7 +856,7 @@ aggregate_files() {
       for(v in gLOGIN) ent_apply("LOGIN", v)
       for(v in gSITE)  ent_apply("SITE",  v)
       for(v in gHOST)  ent_apply("HOST",  v)
-      split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0 }
+      split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0; gPICK="" }
     BEGIN { od["ACC"]=2.8; od["SITE"]=2; od["LOGIN"]=3; od["HOST"]=4
             od["DOM"]=2.81; od["APP"]=2.82; od["LGC"]=2.83; od["PTN"]=2.84; od["BL"]=2.85   # the quad dims (the former Groups table)
             }
@@ -871,6 +871,11 @@ aggregate_files() {
       if($2=="Inbound" && $18!=""){ e5=ep_us($18); if(e5>g_inend) g_inend=e5 }
       if($2=="Outbound" && $12 ~ /^[0-9][0-9]:/){ s5=ep_iso($11,$12); if(s5>=0 && (g_outst<0 || s5<g_outst)) g_outst=s5 }
       if($3!="Processed") gHADF=1   # the group carried a FAILED leg (the Activity per day Recovered column, 2026-08-29)
+      # the PICKUP stamp (2026-09-05, user request — the UC2 pages\047 Latest
+      # Files table): the latest successful partner-protocol Outbound leg, i.e.
+      # the collect that took the file (parse.sh\047s delivery leg for a
+      # movement-out file); a Waiting file has none
+      if($2=="Outbound" && $3=="Processed" && ($10=="ssh" || $10=="ftp" || $10=="ftps") && $11!=""){ t9=$11" "$12; if(t9>gPICK) gPICK=t9 }
       if($5!="")  gLOGIN[$5]=1
       if($6!="")  gSITE[$6]=1
       # HOST entities are OUTBOUND endpoints only (the hosts we dial) — an

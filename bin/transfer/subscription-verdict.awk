@@ -70,7 +70,7 @@ function stamp(s) { return (s == "" || s == "-") ? "\342\200\224" : substr(s, 1,
 function pktable(nm,   k, t) {
     k = toupper(nm)
     if (!(k in pki)) return ""
-    t = "TABLE\tPickup information\n"
+    t = "TABLE\tPickup information\tsxs=feat\n"   # sxs=feat: rendered beside the Features table (publish-details.sh splices it there, 2026-09-05)
     t = t "HEAD\tItem\tValue\n"
     t = t "KIND\ttext\ttext\n"
     t = t "ROW\tFirst pickup\t" stamp(pkf[k]) "\n"
@@ -91,7 +91,7 @@ function pktable(nm,   k, t) {
     # connection — even seconds apart, same visit — do not fire it (2026-08).
     if (pkvx[k] + 0 > 0)
         t = t "ROW\tConnection shared with UC4 drop\t@{href=../../analyses/uc2-visits.html}yes — " (pkvx[k] + 0) " connection" (pkvx[k] + 0 == 1 ? "" : "s") " both delivered and collected files\n"
-    t = t "NOTE\tA **pickup** is a successful SSH logon by this flow's pickup account (server log), shared across that account's UC2 subscriptions; a partner collecting over CFT logs none. A visit in which the account **only delivered** files — its UC4 twin flow handing files over — is not a pickup: its logons are shown on their own row and excluded from every other figure. **Files picked up** counts this subscription's collected Files (transfer log); the page's OK figure also counts staged files still **Waiting**, so OK = picked up + waiting — the two match once nothing is left waiting. **With actual files** counts the pickups that collected at least one of them — each collected file credits the logon that took it (the newest at or before its collect stamp). **Current waiting / Expired files** are this flow's own staged files by outcome, as in the Waiting/Expired table. The **pattern** reads the typical spacing of the pickups. **Connection shared with UC4 drop** appears only on hard proof: one and the same technical SSH connection (the transfer log's Session ID) both delivered and collected a file — a delivery over a separate connection, even seconds apart in the same visit, does not count.\n"
+    # (the explanatory NOTE under the table was dropped 2026-09-05, user request)
     return t
 }
 

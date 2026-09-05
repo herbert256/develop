@@ -586,7 +586,9 @@ function start_table(s,   WEH, WEK) {
     else if (s == "11") time_table("Load by hour", "Hour", "sxs")
     else if (s == "12.6") { emitl("TABLE\tDwell\tsxs=4"); emitl("HEAD\tDwell\tFiles\tShare"); emitl("KIND\ttext\tnum\tnum") }
     else if (s == "0.9") { emitl("TABLE\tWaiting/Expired\trestint\tnosearch"); emitl("HEAD\tState\tFiles\tFirst staged\tLast staged"); emitl("KIND\ttext\tnum\ttext\ttext") }
-    else if (s == "9") { emitl("TABLE\tLatest " ((TYPE == "SITE") ? "500" : "100") " " cntlabel "\twide\tpager=" ((TYPE == "SITE") ? "20" : "10") "\trestint"); if (TYPE == "SITE") { emitl("HEAD\tDate\tState\tRecovered\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"); emitl("KIND\ttext\ttext\ttext\ttext\tnum\tnum\tnum\t" big_kind "\tmono") }   # Recovered (2026-09-05): "yes" = finished OK after a failed leg, like the per-day column
+    else if (s == "9") { emitl("TABLE\tLatest " ((TYPE == "SITE") ? "500" : "100") " " cntlabel "\twide\tpager=" ((TYPE == "SITE") ? "20" : "10") "\trestint"); s9uc2 = (TYPE == "SITE" && substr(uc_desc(pend_e), 1, 3) == "UC2")   # a UC2 page: the Pickup stamp column after Date (2026-09-05)
+        if (s9uc2)             { emitl("HEAD\tDate\tPickup\tState\tRecovered\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"); emitl("KIND\ttext\ttext\ttext\ttext\ttext\tnum\tnum\tnum\t" big_kind "\tmono") }
+        else if (TYPE == "SITE") { emitl("HEAD\tDate\tState\tRecovered\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"); emitl("KIND\ttext\ttext\ttext\ttext\tnum\tnum\tnum\t" big_kind "\tmono") }   # Recovered (2026-09-05): "yes" = finished OK after a failed leg, like the per-day column
         else { emitl("HEAD\tDate\tState\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"); emitl("KIND\ttext\ttext\ttext\tnum\tnum\tnum\t" big_kind "\tmono") } }
     else if (s == "2.6") { emitl("TABLE\tIncoming connections\tsxs=3\tfold=orange|{n} IPs in whitelist without traffic"); emitl("HEAD\tIP\tIn\tOut"); emitl("KIND\tmono\tnum\tnum") }   # no Name column: incoming addresses are the partner's own and never resolve to a configured endpoint (verified 0 of 30k rows)
     else if (s == "2.7") { emitl("TABLE\tOutgoing connections\tsxs=3\tfold=orange|{n} hosts configured without traffic"); emitl("HEAD\tIP\tIn\tOut\tName"); emitl("KIND\tmono\tnum\tnum\tmono") }
@@ -1395,7 +1397,9 @@ NF < 4 { next }
         if (B9[8] == "Errored" || B9[8] == "Expired") res = "red"
         else if (B9[8] == "Waiting") res = "orange"
         # B9[9] = the RECOVERED flag ("yes" / ""), a SITE-page column (2026-09-05)
-        if (TYPE == "SITE") emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[8], B9[9], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res))
+        # B9[10] = the pickup stamp (the collect leg), a UC2-page column after Date
+        if (s9uc2) emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[10], B9[8], B9[9], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res))
+        else if (TYPE == "SITE") emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[8], B9[9], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res))
         else emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[8], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res))
     }
     else if (sec == "2.6" || sec == "2.7") {
