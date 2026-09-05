@@ -134,10 +134,13 @@ rows_raw=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
         if (b >= 1048576) return sprintf("%.1f MB", b / 1048576)
         if (b >= 1024)    return sprintf("%.1f KB", b / 1024)
         return b " B" }
-    function emit(key, cls, since, days, n, ok, err, volb, sym, ev,   sc) {
+    function emit(key, cls, since, days, n, ok, err, volb, riskb, sym, ev,   sc) {
+        # volb = the volume of the flow in the loaded window (every row); riskb = the
+        # staged bytes at expiry risk (expiry-risk rows only) — two columns since
+        # audit F09 (2026-09-05): one "at stake" column had mixed the two
         sc = n / (1 + days)
-        print "R", int(sc * 1000 + 0.5), key, cls, since, days, n, ok, err, volb, hsize(volb), sprintf("%.1f", sc), sym, ev
-        rows++; tvol += volb
+        print "R", int(sc * 1000 + 0.5), key, cls, since, days, n, ok, err, volb, hsize(volb), (riskb > 0 ? hsize(riskb) : "-"), sprintf("%.1f", sc), sym, ev   # "-": an EMPTY field would vanish under the tab-splitting read below
+        rows++; tvol += volb; trisk += riskb
         if (cls == "red") nred++; else if (cls == "expiry-risk") nrisk++; else nquiet++
     }
     FILENAME ~ /_subscriptions\.tsv$/ {
@@ -168,16 +171,16 @@ rows_raw=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
             if (key in FLIP)      ev = "server-log evidence " FLIP[key] " — see From green to red"
             else if (ok == 0)     ev = "never green — see Only red and the Boxes pages"
             else                  ev = "first failure of the run " runstart " — see From green to red"
-            emit(disp, "red", since, days, n, ok, err, bytes, sym, ev)
+            emit(disp, "red", since, days, n, ok, err, bytes, 0, sym, ev)
         } else if (wrisk > 0) {
             days = endj - wrjd
             sym = wrisk " of " wtot " staged File(s) at risk — oldest staged " wrdate " (sweep deletes at ~11 days)"
             ev = "staged, uncollected — see Waiting"
-            emit(disp, "expiry-risk", wrdate, days, n, ok, err, wriskb, sym, ev)
+            emit(disp, "expiry-risk", wrdate, days, n, ok, err, bytes, wriskb, sym, ev)
         } else if (ago >= qlo && ago <= qhi) {
             sym = "just went quiet — no traffic for " ago " day(s) after " n " File(s)"
             ev = "last File " lastdate " — see Went quiet"
-            emit(disp, "just-went-quiet", lastdate, ago, n, ok, err, bytes, sym, ev)
+            emit(disp, "just-went-quiet", lastdate, ago, n, ok, err, bytes, 0, sym, ev)
         }
     }
     END {
@@ -189,11 +192,11 @@ rows_raw=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
             days = (u in FLIP) ? endj - dj(substr(FLIP[u], 1, 10)) : 0
             emit(DISP[u], "red", since, days, 0, 0, 0, 0, "no Files in the window", "see Only red and the Boxes pages")
         }
-        print "TOT", rows + 0, nred + 0, nrisk + 0, nquiet + 0, tvol + 0
+        print "TOT", rows + 0, nred + 0, nrisk + 0, nquiet + 0, tvol + 0, trisk + 0
     }
 ' "$BASE_SUBS" "$RFLIP" -)
 
-IFS=$'\t' read -r _ n_rows n_red n_risk n_quiet t_vol \
+IFS=$'\t' read -r _ n_rows n_red n_risk n_quiet t_vol t_riskb \
     <<< "$(printf '%s\n' "$rows_raw" | grep $'^TOT\t')"
 
 # Highest score first, name as the tiebreaker — the baked order matches the
@@ -202,10 +205,11 @@ IFS=$'\t' read -r _ n_rows n_red n_risk n_quiet t_vol \
 rows=$(printf '%s\n' "$rows_raw" | grep $'^R\t' \
        | LC_ALL=C sort -t"$(printf '\t')" -k2,2nr -k3,3 || true)
 
-t_vol_h=$(awk -v b="${t_vol:-0}" 'BEGIN{ if (b>=1073741824) printf "%.1f GB", b/1073741824
+hb() { awk -v b="${1:-0}" 'BEGIN{ if (b>=1073741824) printf "%.1f GB", b/1073741824
     else if (b>=1048576) printf "%.1f MB", b/1048576
     else if (b>=1024)    printf "%.1f KB", b/1024
-    else                 printf "%d B", b }')
+    else                 printf "%d B", b }'; }
+t_vol_h=$(hb "${t_vol:-0}"); t_risk_h=$(hb "${t_riskb:-0}"); [ "${t_riskb:-0}" -gt 0 ] || t_risk_h=""
 
 sum_n=0; sum_ok=0; sum_err=0
 {
@@ -220,22 +224,23 @@ sum_n=0; sum_ok=0; sum_err=0
     printf 'STAT\torange\t%s\texpiry risk\n' "${n_risk:-0}"
     printf 'STAT\torange\t%s\tjust went quiet\n' "${n_quiet:-0}"
 
-    printf 'TABLE\tRanked action list\twide\tnofilter\tsort=8:-1\n'
-    printf 'HEAD\tSubscription\tStatus\tSince\tDays in state\tFiles\tOK\tError\tVolume at stake\tScore\tSymptoms\tEvidence\n'
-    printf 'KIND\tsite\ttext\ttext\tnum\tnum\tnumprocessed\tnumfailed\ttext\tnum\ttext\ttext\n'
+    printf 'TABLE\tRanked action list\twide\tnofilter\tsort=9:-1\n'
+    printf 'HEAD\tSubscription\tStatus\tSince\tDays in state\tFiles\tOK\tError\tVolume in window\tAt expiry risk\tScore\tSymptoms\tEvidence\n'
+    printf 'KIND\tsite\ttext\ttext\tnum\tnum\tnumprocessed\tnumfailed\ttext\ttext\tnum\ttext\ttext\n'
     if [ "${n_rows:-0}" -eq 0 ]; then
-        printf 'ROW\t@{colspan=11}Nothing to triage — no red, no staged Files at risk, no fresh silences.\n'
+        printf 'ROW\t@{colspan=12}Nothing to triage — no red, no staged Files at risk, no fresh silences.\n'
     else
-        while IFS=$'\t' read -r _ _ key cls since days n ok err _ vol score sym ev; do
+        while IFS=$'\t' read -r _ _ key cls since days n ok err _ vol risk score sym ev; do
             [ -z "$key" ] && continue
+            [ "$risk" = "-" ] && risk=""
             sum_n=$((sum_n + n)); sum_ok=$((sum_ok + ok)); sum_err=$((sum_err + err))
-            printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-                "$key" "$cls" "$since" "$days" "$n" "$ok" "$err" "$vol" "$score" "$sym" "$ev"
+            printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+                "$key" "$cls" "$since" "$days" "$n" "$ok" "$err" "$vol" "$risk" "$score" "$sym" "$ev"
         done <<< "$rows"
     fi
-    printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t\t\t\n' \
-        "${n_rows:-0}" "$sum_n" "$sum_ok" "$sum_err" "$t_vol_h"
-    printf 'NOTE\tRank score = **lifetime Files / (days in state + 1)** — state recency times historical weight: a flow that flipped yesterday after carrying hundreds of Files outranks one red for a month, which outranks a one-file wonder. **Days in state** counts against the last day in the data (**%s**), never the wall clock. Red-since is the server-log evidence stamp where one exists, else the first failure of the current failing run. **Volume at stake** is the flow'\''s lifetime volume — except for expiry-risk rows, where it is the staged bytes about to be deleted. One row per subscription, priority red > expiry-risk > just-went-quiet; the symptoms mention any second condition. This page is an ADDITION: **From green to red**, **Went quiet**, **Waiting**, **Expired**, **Only red** and the **Boxes** pages remain the per-symptom deep-dives — the Evidence column points the way.\n' \
+    printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t\t\t\n' \
+        "${n_rows:-0}" "$sum_n" "$sum_ok" "$sum_err" "$t_vol_h" "$t_risk_h"
+    printf 'NOTE\tRank score = **lifetime Files / (days in state + 1)** — state recency times historical weight: a flow that flipped yesterday after carrying hundreds of Files outranks one red for a month, which outranks a one-file wonder. **Days in state** counts against the last day in the data (**%s**), never the wall clock. Red-since is the server-log evidence stamp where one exists, else the first failure of the current failing run. **Volume in window** is the flow'\''s volume over the loaded data window — historical throughput, not an undelivered backlog; **At expiry risk** is the staged, uncollected bytes the sweep is about to delete (expiry-risk rows only). They were one column until 2026-09-05. One row per subscription, priority red > expiry-risk > just-went-quiet; the symptoms mention any second condition. This page is an ADDITION: **From green to red**, **Went quiet**, **Waiting**, **Expired**, **Only red** and the **Boxes** pages remain the per-symptom deep-dives — the Evidence column points the way.\n' \
         "${endd:-?}"
     printf 'LINK\t../transfer/from-green-to-red.html\tFrom green to red — the regression deep-dive\n'
     printf 'LINK\t../transfer/went-quiet-subscriptions.html\tWent quiet — every silence, not just the fresh ones\n'
