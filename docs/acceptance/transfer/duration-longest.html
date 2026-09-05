@@ -8,13 +8,13 @@
 <meta name="report-area" content="acceptance-transfer">
 <meta name="report-key" content="duration-longest">
 <link rel="stylesheet" href="../../assets/style.css?v=1124074879">
-<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/topbar-data.js?v=2510131895" defer></script>
 <script src="../../assets/report.js?v=1124074879" defer></script>
 </head>
 <body>
 <div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="duration-longest" data-twin="../../production/transfer/duration-longest.html"></div>
 <h1>Longest Files <span class="grouptag">&larr; Performance &larr; Transfer</span></h1>
-<p class="tabs"><a class="tab" href="anomalies.html">Anomalies</a><a class="tab" href="duration.html">Duration</a><span class="tab active">Longest Files</span><a class="tab" href="duration-slowest.html">Slowest subscriptions</a><a class="tab" href="duration-dwell.html">Distribution &amp; Store-and-forward</a><a class="tab" href="duration-trend.html">Duration trend</a></p>
+<p class="tabs"><a class="tab" href="duration.html">Duration</a><a class="tab" href="anomalies.html">Anomalies</a><span class="tab active">Longest Files</span><a class="tab" href="duration-slowest.html">Slowest subscriptions</a><a class="tab" href="duration-dwell.html">Distribution &amp; Store-and-forward</a><a class="tab" href="duration-trend.html">Duration trend</a></p>
 <p class="range">The <strong>50 longest Files</strong> by <strong>wall-clock duration</strong> — from the first record start to the last record end, store-and-forward gaps and retry idle included. <strong>OK transfers</strong> (the default) lists delivered Files only; <strong>All transfers</strong> adds the failed ones, whose duration is how long they ran before giving up (a timeout shows here). Click a Duration or Start Time cell of an OK row for the transfer's <strong>record page</strong> — every record of that CoreId, chronological. A File that ran <strong>longer than one hour</strong> has its own <strong>File page</strong> (the error-page layout: facts, records and the server log of its connections) — its <strong>CoreId</strong> cell opens that; below one hour the CoreId opens the record page like the other cells. The columns sort by the exact duration.</p>
 <div class="tablewrap"><table class="wide" data-switch="scope" data-switch-label="OK transfers">
 <tr><th>Duration</th><th>Start Time</th><th>CoreId</th><th>Destination Subscription</th><th class="num">Size</th><th>File</th></tr>

@@ -8,13 +8,13 @@
 <meta name="report-area" content="acceptance-transfer">
 <meta name="report-key" content="duration-slowest">
 <link rel="stylesheet" href="../../assets/style.css?v=1124074879">
-<script src="../../assets/topbar-data.js?v=2737332728" defer></script>
+<script src="../../assets/topbar-data.js?v=2510131895" defer></script>
 <script src="../../assets/report.js?v=1124074879" defer></script>
 </head>
 <body>
 <div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="duration-slowest" data-twin="../../production/transfer/duration-slowest.html"></div>
 <h1>Slowest subscriptions <span class="grouptag">&larr; Performance &larr; Transfer</span></h1>
-<p class="tabs"><a class="tab" href="anomalies.html">Anomalies</a><a class="tab" href="duration.html">Duration</a><a class="tab" href="duration-longest.html">Longest Files</a><span class="tab active">Slowest subscriptions</span><a class="tab" href="duration-dwell.html">Distribution &amp; Store-and-forward</a><a class="tab" href="duration-trend.html">Duration trend</a></p>
+<p class="tabs"><a class="tab" href="duration.html">Duration</a><a class="tab" href="anomalies.html">Anomalies</a><a class="tab" href="duration-longest.html">Longest Files</a><span class="tab active">Slowest subscriptions</span><a class="tab" href="duration-dwell.html">Distribution &amp; Store-and-forward</a><a class="tab" href="duration-trend.html">Duration trend</a></p>
 <p class="range">The <strong>25 slowest subscriptions</strong> by the <strong>p95</strong> of their Files' <strong>wall-clock duration</strong> — from the first record start to the last record end, store-and-forward gaps and retry idle included; p95 rather than the maximum, so one freak transfer does not crown a flow. <strong>OK transfers</strong> (the default) ranks delivered Files only; <strong>All transfers</strong> adds the failed ones, whose duration is how long they ran before giving up. A From/To range re-aggregates <strong>Files</strong> and <strong>Max</strong>; <strong>Median</strong> and <strong>p95</strong> keep their full-period value. Click a subscription for its detail page.</p>
 <div class="tablewrap"><table class="wide" data-switch="scope" data-switch-label="OK transfers" data-recalc="- s0 - - x2">
 <tr><th>Subscription</th><th class="num">Files</th><th class="num">Median</th><th class="num">p95</th><th class="num">Max</th></tr>
