@@ -3197,11 +3197,12 @@
 
   // ---- Dark / light theme (2026-09-05): the html data-theme attribute, the
   // stylesheet's generated dark block (bin/darken-css.awk) does the rest. The
-  // choice lives in localStorage; unset = the system preference. The page head
-  // applies it before the stylesheet loads, so there is no light flash.
+  // choice lives in localStorage; unset = LIGHT, the site's own look (user
+  // request — never the system preference). The page head applies a stored
+  // dark choice before the stylesheet loads, so there is no light flash.
   var THEME_KEY = "axway-theme";
   function themeApply(t) {
-    if (!t) t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+    if (t !== "dark") t = "light";
     document.documentElement.setAttribute("data-theme", t);
     var b = document.querySelector(".themebtn");
     if (b) b.title = t === "dark" ? "Switch to the light theme" : "Switch to the dark theme";

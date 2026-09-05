@@ -161,7 +161,7 @@ csv; hidden cells carry the `hidden` ATTRIBUTE, never a class — the recalc pat
 stored `colhide:…` beside `colorder:…`; the CSV export skips hidden cells) · MULTI-KEY sort (`sortKeys`
 takes `[{ci, dir}]`, shift-click adds a key, arrows carry `<sup>` ranks; `sortTable(table, col, dir)`
 is the position-based wrapper, `resort()` re-applies a table's keys; saveSort stores "ci:dir,ci:dir")
-· the DARK theme (`data-theme` on `<html>`, localStorage `axway-theme`, unset = system; the dark CSS
+· the DARK theme (`data-theme` on `<html>`, localStorage `axway-theme`, unset = LIGHT — never the system preference, user request; the dark CSS
 is GENERATED at publish from the light rules by `bin/darken-css.awk` — colour maps per property
 class, appended to docs/assets/style.css by build.sh/fresh.sh; a new light colour must be added to
 its maps; the page head applies the theme before the stylesheet, help pages carry the same inline

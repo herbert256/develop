@@ -293,7 +293,7 @@ write_report() {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Build report — Cloud Reports</title>
 HTML
-        printf '%s\n' '<script>try{var t=localStorage.getItem("axway-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>'
+        printf '%s\n' '<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>'
         printf '<link rel="stylesheet" href="%sassets/style.css">\n' "$base"
         cat <<'HTML'
 <style>
