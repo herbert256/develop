@@ -184,7 +184,11 @@
     // tools already inside the host cell would be captured as the literal text
     // "↺cols" and written back top-left by every restore (2026-09-06 fix)
     if (!table._toolsOn) return;
-    var last = hr.cells[hr.cells.length - 1], i, th, b, tools = table._colTools, host, old;
+    // csv: the last VISIBLE header cell — a hidden last column must not take
+    // the export with it (2026-09-06 fix)
+    var last = null, i, th, b, tools = table._colTools, host, old;
+    for (i = hr.cells.length - 1; i >= 0; i--) if (!hr.cells[i].hidden) { last = hr.cells[i]; break; }
+    if (!last) last = hr.cells[hr.cells.length - 1];
     for (i = 0; i < hr.cells.length; i++) {
       th = hr.cells[i];
       if (th !== last) while ((b = th.querySelector(".csvbtn"))) last.appendChild(b);
@@ -2207,6 +2211,7 @@
       for (t = 0; t < tables.length; t++) markUnfiltered(tables[t], narrowed && !isDateAware(tables[t]));
       for (t = 0; t < tables.length; t++) updateEmptyState(tables[t]);
       for (t = 0; t < tables.length; t++) repage(tables[t]);
+      for (t = 0; t < tables.length; t++) replaceHotspots(tables[t]);   // the last visible row may have changed
       hideEmptyTables();
     }
     from.addEventListener("change", function () { apply("from"); });
@@ -2739,6 +2744,7 @@
     applyGroup(table);
     updateEmptyState(table);
     repage(table);
+    replaceHotspots(table);   // the last visible row changed (repage returns early on an unpaged table)
     hideEmptyTables();
   }
 
