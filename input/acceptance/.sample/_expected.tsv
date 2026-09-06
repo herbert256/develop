@@ -1,6 +1,7 @@
 acceptance	blue	9
 acceptance	bluelogon	4
 acceptance	greenpoll	6
+acceptance	ioerr	1
 acceptance	monitor	4
 acceptance	nocron	3
 acceptance	orange	25

@@ -31,6 +31,13 @@ function flip_reason(msg,   m) {
     # the FTPS pull leg failing wholesale (2026-08-31, user request): the
     # verbatim message string IS the verdict, so it outranks every other rule
     if (m ~ /pull via ftps failed/) return "Pull via FTPS failed"
+    # the platform failing to READ (or write) a file on its OWN storage —
+    # "IO Error reading file /data/FlowManager/<account>@<login>/<file>", or
+    # the Java/POSIX "Input/output error" — a storage problem, never the
+    # remote end (2026-09-06, user request: the IO errors server report).
+    # BEFORE the connection rule: a torn-down session may follow the IO line,
+    # but the IO line is the cause.
+    if (m ~ /(^|[^a-z])io error|input\/output error/) return "IO error"
     if (m ~ /wrong server fingerprint|host key|fingerprint mismatch/) return "Wrong server fingerprint"
     if (m ~ /connection failure|could not be established|failed to connect|failed to create connection|connection refused|connection timed out|connection reset|unable to connect/) return "Connection failures"
     if (m ~ /receive file as/) return "Receive File As not set"

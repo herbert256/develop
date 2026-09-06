@@ -171,6 +171,31 @@ for env in acceptance production; do
         # for login B's flow — while PARCEL (flow A) is covered
         st=$(awk -F'\t' '$1=="ROW" && $2=="PARCELX" { print ($0 ~ /@data:res=red/) ? "red" : "notred"; exit }' "data/$env/transfer/reports/entity-coverage.rpt" 2>/dev/null)
         check $([ "$st" = "red" ] && echo 0 || echo 1) "[$env] entity-coverage PARCELX is '${st:-absent}', expected red / not covered (multi-FE logon-proof scoping)"
+    fi
+    # the IO ERRORS report (2026-09-06, user request): the tagged UC4 flow's
+    # folder logs "IO Error reading file /data/FlowManager/<acct>@<login>/…"
+    # — one folder row naming the account AND its login (the @ split), the
+    # line list joined to the Files by name with BOTH states present (Failed:
+    # the route never read the file; Processed: a retry did), the lines
+    # attributed to the flow, and the Error/OK split ties to the line list
+    if [ "$(exp "$env" ioerr)" -gt 0 ]; then
+        R="data/$env/server/reports/io-errors.rpt"
+        n=$(rpt_rows "$R")
+        check $([ "$n" -gt 0 ] && echo 0 || echo 1) "[$env] io-errors.rpt has 0 rows"
+        n=$(awk -F'\t' '$1=="TABLE" { t++ } t==1 && $1=="ROW" && $3=="ZG-ZKA-HOOLI" && $4 ~ /^FE[0-9]+$/ && index($5, "UC4_ZG_ZKA_HOOLI") { n++ } END { print n+0 }' "$R" 2>/dev/null)
+        check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "[$env] io-errors folder table has $n ZG-ZKA-HOOLI row(s) with an FE login and the UC4 subscription, expected 1"
+        for st in Failed Processed; do
+            n=$(awk -F'\t' -v s="@{class=failed}Failed" '$1=="TABLE" { t++ } t==2 && $1=="ROW" && index($0, s) { n++ } END { print n+0 }' "$R" 2>/dev/null)
+            [ "$st" = Processed ] && n=$(awk -F'\t' '$1=="TABLE" { t++ } t==2 && $1=="ROW" && index($0, "@{class=processed}Processed") { n++ } END { print n+0 }' "$R" 2>/dev/null)
+            check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] io-errors line list has no $st line (the file-name join to _files.tsv)"
+        done
+        n=$(awk -F'\t' '$1=="TABLE" { t++ } t==2 && $1=="ROW" && index($0, "not logged") { n++ } END { print n+0 }' "$R" 2>/dev/null)
+        check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] io-errors line list has $n 'not logged' line(s) — every planted line names an uploaded file"
+        e1=$(awk -F'\t' '$1=="TABLE" { t++ } t==1 && $1=="TOTAL" { v=$5; sub(/^@\{[^}]*\}/, "", v); print v+0; exit }' "$R" 2>/dev/null)
+        e2=$(awk -F'\t' '$1=="TABLE" { t++ } t==2 && $1=="ROW" && index($0, "@{class=failed}") { n++ } END { print n+0 }' "$R" 2>/dev/null)
+        check $([ "${e1:-0}" -gt 0 ] && [ "$e1" = "$e2" ] && echo 0 || echo 1) "[$env] io-errors Error total $e1 != $e2 Failed line(s) (one IO line per failed File in the sample)"
+    fi
+    if [ "$env" = production ]; then
         # the MULTI-HOST account (2026-08-31): CD_ROUTE_WONKA carries TWO
         # endpoints, and its _ALT flow logs half its rows as the raw ADDRESS.
         # The endpoint vote rides the SUBSCRIPTION, so those rows must resolve
@@ -244,7 +269,7 @@ for reason in "Connection failures" "Wrong server fingerprint" "No Dir" "Listing
               "Login errors (out)" "Could not send to CFT" "Transfer site missing" "Receive File As not set" \
               "PeSIT transfer aborted" "PeSIT delivery refused" "Staged file missing" \
               "File Tracking entry missing" "Remote file unavailable" "Post client action failed" \
-              "Pull via FTPS failed" "Delete remote file failed"; do
+              "Pull via FTPS failed" "Delete remote file failed" "IO error"; do
     n=$(grep -l -- "$reason" data/acceptance/transfer/reports/failed*.rpt data/acceptance/transfer/reports/errors/*.rpt 2>/dev/null | wc -l | tr -d ' ')
     check $([ "$n" -gt 0 ] && echo 0 || echo 1) "[acceptance] reason \"$reason\" appears in no failed/error report"
 done

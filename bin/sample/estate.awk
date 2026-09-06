@@ -162,6 +162,7 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
     else if (hastag(tags, "greenpoll")) T["greenpoll"]++
     else T["seen"]++
     if (hastag(tags, "nocron")) T["nocron"]++
+    if (hastag(tags, "ioerr")) T["ioerr"]++     # the IO errors report's planted folder (2026-09-06)
     if (tags ~ /reason=/) T["reasons"]++
 }
 
@@ -341,7 +342,7 @@ function build_acceptance() {
     addf(4, "CDV", "KRP-TDI",  "WONKA",    "", 10, 0.01, "")
     addf(4, "IT",  "EKDSI",    "CYBERDYNE","",  5, 0.01, "twinc", "IT-EKDSI-CYBERDYNE")
     addf(4, "AIM", "LAKE",     "PIEDPIPER","",  4, 0.01, "")
-    addf(4, "ZG",  "ZKA",      "HOOLI",    "",  4, 0.01, "")
+    addf(4, "ZG",  "ZKA",      "HOOLI",    "",  4, 0.01, "ioerr")       # the IO errors report's folder: a quarter of its uploads log "IO Error reading file /data/FlowManager/<acct>@<login>/…" (2026-09-06)
     addf(4, "ODV", "ARE",      "APERTURE", "",  1.5, 0.02, "sessjoin", "ODV-ARE-APERTURE")
     addf(4, "ODV", "ARE",      "APERTURE", "2", 1.2, 0.02, "sessjoin", "ODV-ARE-APERTURE")
     addf(4, "ZK",  "MIAZ",     "INITECH",  "",  1.5, 0.01, "")
@@ -446,7 +447,7 @@ function build_production() {
     addf(4, "APS", "COSMOS",   "GLOBEX",   "", 20, 0.01, "")
     addf(4, "CDV", "KRP-TDI",  "WONKA",    "",  8, 0.01, "")
     addf(4, "AIM", "LAKE",     "PIEDPIPER","",  3, 0.01, "")
-    addf(4, "ZG",  "ZKA",      "HOOLI",    "",  3, 0.01, "")
+    addf(4, "ZG",  "ZKA",      "HOOLI",    "",  3, 0.01, "ioerr")       # the IO errors report's folder, as in acceptance (2026-09-06)
     addf(4, "ZK",  "MIAZ",     "INITECH",  "",  1.5, 0.01, "")
     # production-only, NON-UC-NAMED (the hybrid generation): the blacklist
     # blanks their logged site (keep ^UC), so the reverse profile fallback

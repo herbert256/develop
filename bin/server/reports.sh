@@ -50,6 +50,7 @@ pool_run "$SCRIPT_DIR/reports/errors-day.sh"
 pool_run "$SCRIPT_DIR/reports/error-timing.sh"
 pool_run "$SCRIPT_DIR/reports/error-reasons.sh"
 pool_run "$SCRIPT_DIR/reports/failure-flows.sh"
+pool_run "$SCRIPT_DIR/reports/io-errors.sh"          # "IO Error reading file /data/FlowManager/…" — the srv-errors group's third member (2026-09-06)
 pool_run "$SCRIPT_DIR/reports/config-defects.sh"     # the config-hygiene page's server-log tables (a TSV sidecar, not a page)
 pool_run "$SCRIPT_DIR/reports/site-failures.sh"
 pool_run "$SCRIPT_DIR/reports/connection-diagnostics.sh"

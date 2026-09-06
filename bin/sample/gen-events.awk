@@ -298,6 +298,18 @@ function uc4_file(t0,   fn, sz, mo, ic, sids, sidp, d1, d2, i, tt, ok, sf) {
     s_authok(t0 - 1100 - rint(300), sids, anyip())
     if (ok) {
         ssh_T(t0, d1, "Inbound", "P", sids, fn, sz, "User", ACCT "@" LOGIN, LOGIN, sf, hostspelled(), mo, ic, "false")
+        # the IO ERROR scenario (2026-09-06, user request — the IO errors
+        # server report): the upload landed, then the route could not read
+        # the file back from the account's FlowManager folder — the REAL
+        # path shape "<account>@<login>", the login being the folder's @
+        # tail. Six in ten of those files never leave (a lone Inbound leg:
+        # Failed), the rest go through on a retry (the report's OK column).
+        # The draws happen for the tagged flow only — the RNG stream is
+        # seeded per flow and day, so no other flow's data moves.
+        if (hastag("ioerr") && rnd() < 0.25) {
+            S(t0 + d1 + 320, "E", "TM", sids, "IO Error reading file /data/FlowManager/" ACCT "@" LOGIN "/" fn)
+            if (rnd() < 0.6) { NOPROF = 0; return }
+        }
         d2 = 200 + int(rexp(500)) + szdur(sz, pesitthr())
         pesit_T(t0 + d1 + gapms(900 + rexp(900)), d2, "Outbound", "P", (hastag("ucx") ? sesshex() : sidp), fn, sz, mo, "NP")
         if (!hastag("ucx")) s_pesit_ok(t0 + d1 + 900, sidp)

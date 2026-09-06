@@ -90,7 +90,8 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
         m = $5
         # ---- the reason buckets: error-reasons.sh VERBATIM ------------------
-        if (m ~ /^Connection failure while / && m ~ /Received negative /) b = "PESIT: negative response (internal CFT)"
+        if (m ~ /(^|[^A-Za-z])[Ii][Oo] [Ee]rror|[Ii]nput\/[Oo]utput [Ee]rror/) b = "IO error (local file)"   # the lines of the IO errors report (2026-09-06)
+        else if (m ~ /^Connection failure while / && m ~ /Received negative /) b = "PESIT: negative response (internal CFT)"
         else if (m ~ /^Connection failure while /)                  b = "Connection failure (partner unreachable)"
         else if (match(m, /reason=[A-Z_]+/))                        b = "PESIT: " substr(m, RSTART + 7, RLENGTH - 7)
         else if (m ~ /Received negative /)                          b = "PESIT: negative response"

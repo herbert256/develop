@@ -12,7 +12,7 @@
 <body>
 <div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="index" data-twin="../../acceptance/server/index.html"></div>
 <h1>Server Reports</h1>
-<p class="range">First record: <strong>2026-07-26</strong> &nbsp;|&nbsp; Last record: <strong>2026-08-29</strong> &nbsp;|&nbsp; Records: <strong>57.223</strong></p>
+<p class="range">First record: <strong>2026-07-26</strong> &nbsp;|&nbsp; Last record: <strong>2026-08-29</strong> &nbsp;|&nbsp; Records: <strong>57.163</strong></p>
 <p class="range"><a href="../search.html"><strong>Search</strong></a> &mdash; find any account, subscription, login, host or flow; its Server Log column covers this server data.</p>
 <div class="tablewrap"><table class="index" data-nosort="1">
 <tr><th colspan="2">Top view</th></tr>
@@ -20,6 +20,7 @@
 <tr><th colspan="2">Errors</th></tr>
 <tr><td><a href="errors-per-day.html">Errors</a></td><td class="desc">Server-log errors and warnings from every angle: levels per day and component, timing by hour and weekday, the failure-reason classification and the most-repeated message shapes.</td></tr>
 <tr><td><a href="failure-flows.html">Per flow</a></td><td class="desc">Server-log ERROR messages classified by reason and attributed to the subscription each message names, with the reason mix per ISO week.</td></tr>
+<tr><td><a href="io-errors.html">IO errors</a></td><td class="desc">The platform failing to read (or write) a file on its own storage — &quot;IO Error reading file /data/FlowManager/&lt;account&gt;@&lt;login&gt;/&lt;file&gt;&quot; — per folder, per line and per day, each line joined to the File it concerns and its outcome.</td></tr>
 <tr><th colspan="2">Transfers &amp; Delivery</th></tr>
 <tr><td><a href="pickups.html">Pickups</a></td><td class="desc">Every UC2 (partner collects from us) flow's pickup figures side by side: first/last pickup, the last logon on the old gateway, pickup logons, collected files, waiting files and how long the oldest has waited, expired files and the pickup cadence.</td></tr>
 <tr><th colspan="2">Logons &amp; Connections</th></tr>

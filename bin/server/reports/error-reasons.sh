@@ -47,6 +47,11 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
         # (2026-08-31, user request) — before every other family, so a line
         # carrying it never reads as a generic connection/transfer error
         if (m ~ /Pull via FTPS failed/)                             b = "Pull via FTPS failed"
+        # the platform failing to read (or write) a file on its OWN storage —
+        # "IO Error reading file /data/FlowManager/…" (its own report: IO
+        # errors, 2026-09-06). Before the AR/transfer-operation families, whose
+        # prefixes such a line may carry.
+        else if (m ~ /(^|[^A-Za-z])[Ii][Oo] [Ee]rror|[Ii]nput\/[Oo]utput [Ee]rror/) b = "IO error (local file)"
         # a "Connection failure while ..." carrying a negative PeSIT response
         # is a refusal by the internal cluster CFT, NOT an unreachable partner
         else if (m ~ /^Connection failure while / && m ~ /Received negative /) b = "PESIT: negative response (internal CFT)"

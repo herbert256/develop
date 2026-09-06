@@ -294,7 +294,7 @@ CUR_DATES=""
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
 transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-minmax duration-all-minmax duration-trend account-sharing twins)
-server_order=(topview errors failure-flows pickups uc-status uc2-visits polling went-kaput site-failures logons connections ssh-security platform-health capacity deploy-errors transfer-site-missing no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
+server_order=(topview errors failure-flows io-errors pickups uc-status uc2-visits polling went-kaput site-failures logons connections ssh-security platform-health capacity deploy-errors transfer-site-missing no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
 
 # ---- the analyses-housed area reports ---------------------------------------
 # FOUR reports whose DATA belongs to the transfer / server areas — they read
@@ -417,7 +417,7 @@ group_members() {
         performance-session) echo "duration anomalies duration-longest duration-slowest duration-dwell duration-trend" ;;   # 2026-09-05: Duration leads (user request)   # 2026-08: + duration-trend; 2026-09-03: + the duration split-offs; 2026-09-05: duration-distribution + dwell-time merged into duration-dwell
         cross)               echo "cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl" ;;
         srv-overview)        echo "topview" ;;
-        srv-errors)          echo "errors failure-flows" ;;      # 2026-07: errors-day/error-timing/error-reasons/top-messages merged; 2026-08: + failure-flows (per-flow reason matrix)
+        srv-errors)          echo "errors failure-flows io-errors" ;;      # 2026-07: errors-day/error-timing/error-reasons/top-messages merged; 2026-08: + failure-flows (per-flow reason matrix); 2026-09-06: + io-errors (the platform failing to read its own files)
         srv-transfers)       echo "pickups" ;;   # transfer-outcomes + file-freshness went with the dropped JSON bookend lines (2026-08)
         srv-connections)     echo "logons connections" ;;        # 2026-07 merges (logons leads since 2026-08); site-failures is boxes-only
         srv-security)        echo "ssh-security" ;;              # 2026-07: ssh-crypto + ssh-sessions merged
@@ -439,7 +439,7 @@ group_of() {   # $1 area (transfer|server)  $2 report basename -> group id (empt
         dwell-time|duration|duration-all|duration-minmax|duration-all-minmax|duration-longest|duration-slowest|duration-distribution|duration-dwell|anomalies|duration-trend)     echo "performance-session" ;;   # the duration-* siblings: Duration's All-transfers / Percentage views (not group MEMBERS — they share Duration's slot)
         cross-account|cross-login|cross-subscription|cross-host|cross-logical|cross-partner|cross-application|cross-domain|cross-bl) echo "cross" ;;
                 errors) echo "srv-errors" ;;
-        failure-flows) echo "srv-errors" ;;
+        failure-flows|io-errors) echo "srv-errors" ;;
         pickups) echo "srv-transfers" ;;
         connections|logons) echo "srv-connections" ;;
         ssh-security) echo "srv-security" ;;
@@ -502,7 +502,7 @@ member_label() {   # row-1 tab text for a grouped report
         route-throughput) echo "Route throughput" ;; size-profile) echo "Size profile" ;;
         recovered) echo "Recovered flows" ;; recovered-files) echo "Recovered files" ;; security-outreach) echo "Security outreach" ;;
         connection-efficiency) echo "Connection efficiency" ;; duration-trend) echo "Duration trend" ;;
-        failure-flows) echo "Per flow" ;;
+        failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;;
         triage) echo "Triage" ;; data-diff) echo "Since yesterday" ;;
         partner-scorecard) echo "Partner scorecard" ;; blast-radius) echo "Blast radius" ;;
         app-partners) echo "Application dependencies" ;; partner-lifecycle) echo "Partner lifecycle" ;;
