@@ -190,7 +190,7 @@ a:hover { text-decoration:underline; }
 /* Tables shrink to their CONTENT: columns are exactly as wide as their widest
    value + padding, never stretched to fill a fixed table width. A table wider
    than the page still scrolls inside its .tablewrap. */
-table { border-collapse:collapse; width:auto; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin:0; }
+table { border-collapse:collapse; width:auto; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin:0; border:2px solid #cfd7de; }   /* a 2 px outer edge (2026-09-06, user request); the cells keep their 1 px grid */
 table.fit { width:auto; }   /* historical alias — every table shrinks to content now */
 tr.rowlink { cursor:pointer; }   /* index rows are fully clickable (report.js setupIndexRows) */
 tr.rowlink td:empty { cursor:auto; }   /* ...except empty cells — not click targets */
@@ -228,7 +228,16 @@ table.dayrows th:empty::before, table.dayrows td:empty::before { content:"\00a0"
    own left/right/bottom edges like a table of its own and no row line runs
    across the gap (2026-09-06, user request). The total row's tint and navy
    top rule must not paint the spacer either. */
-table.dayrows th.spc, table.dayrows td.spc { width:18px; min-width:18px; max-width:18px; padding:0; border:none; background:#f7f7f9; }
+table.dayrows { border:none; }   /* no table-wide edge: it would run across the gaps — each GROUP gets its own 2 px edges below */
+table.dayrows th.spc, table.dayrows td.spc { width:30px; min-width:30px; max-width:30px; padding:0; border:none; background:#f7f7f9; }   /* 30 px gaps (2026-09-06, user request: more space) */
+/* the group edges: left of the first cell of a group (the Date column and
+   every cell after a spacer), right of the last (before a spacer, and the
+   last column), top of the field header, bottom of the last VISIBLE row —
+   report.js marks that row tr.edge-b, the Show-all cap hides the rest */
+table.dayrows tr:not(.gbrow) > *:first-child, table.dayrows tr:not(.gbrow) > .spc + * { border-left:2px solid #cfd7de; }
+table.dayrows tr:not(.gbrow) > *:last-child, table.dayrows tr:not(.gbrow) > *:has(+ .spc) { border-right:2px solid #cfd7de; }
+table.dayrows tr.gbrow + tr > th { border-top:2px solid #cfd7de; }
+table.dayrows tr.edge-b > td:not(.spc) { border-bottom:2px solid #cfd7de; }
 table.dayrows tr.total td.spc { border:none; background:#f7f7f9; }
 table.dayrows tr:hover td.spc { background:#f7f7f9; }
 table.dayrows th.spc::before, table.dayrows td.spc::before { content:none; }

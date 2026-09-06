@@ -3224,7 +3224,25 @@
       var ts = w && w.querySelectorAll ? w.querySelectorAll("table.cap14") : [], j;
       for (j = 0; j < ts.length; j++) ts[j].className = ts[j].className.replace(/\s*\bcap14\b/, "");
       this.style.display = "none";
+      markDayEdges();
     });
+  }
+  // The home per-day table draws each column group with its own 2 px edges
+  // (style.css table.dayrows); the bottom edge needs the last VISIBLE row —
+  // the Show-all cap hides the older rows and the Total by class, so CSS
+  // alone cannot tell which row ends the table (2026-09-06).
+  function markDayEdges() {
+    var ts = document.querySelectorAll("table.dayrows"), t, rows, i, r, last;
+    for (t = 0; t < ts.length; t++) {
+      rows = ts[t].rows; last = null;
+      for (i = 0; i < rows.length; i++) {
+        r = rows[i]; r.className = r.className.replace(/ ?\bedge-b\b/, "");
+        if (r.getElementsByTagName("th").length) continue;
+        if (getComputedStyle(r).display === "none") continue;
+        last = r;
+      }
+      if (last) last.className += (last.className ? " " : "") + "edge-b";
+    }
   }
 
   // .herotabs button row whose buttons match the cards IN ORDER (button i ↔
@@ -3908,6 +3926,7 @@
     setupSearch();
     setupIndexRows();    // whole-row links on the index tables
     setupShowAll();      // home: the per-day table's 14-day cap lifter
+    markDayEdges();      // home: the per-day groups' bottom edge sits under the last visible row
     setupSwitches();     // switch=KEY table groups: one table of the group at a time behind a button row
     setupHeroToggle();   // overview + day pages: the hero view switch
     setupSrvToggle();    // home page: the status tables' "including server log" switch
