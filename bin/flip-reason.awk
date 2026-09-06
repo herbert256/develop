@@ -41,15 +41,14 @@ function flip_reason(msg,   m) {
     # tail would otherwise claim it (2026-09-06, user report; the Step
     # {Publish} rule further down covers the AR0111 wording of the same)
     if (m ~ /while publishing the file/) return "Publish to account failed"
-    # the SEND of the file to the transfer site failing — AR0074 "Could not
-    # send file: {…} using transfer site: {AXWAY-CFT-PRODUCTION}", the
-    # ARSP0001 "An error occurred while sending the file {…} to a partner
-    # site. Step configuration suggests to stop further route execution" that
-    # follows it, and the AR0111 Step {SendToPartner} line: one failed
-    # delivery leg, named after the site when the line names it (2026-09-06,
-    # user report on a UC3 flow whose page read Route stopped)
-    if (m ~ /could not send file/) return (m ~ /cft/) ? "Could not send to CFT" : "Could not send to partner site"
-    if (m ~ /while sending the file .* to a partner site|step \{sendtopartner\}/) return "Could not send to partner site"
+    # the SEND of the file to CFT failing — AR0074 "Could not send file: {…}
+    # using transfer site: {AXWAY-CFT-PRODUCTION}", the ARSP0001 "An error
+    # occurred while sending the file {…} to a partner site. Step
+    # configuration suggests to stop further route execution" that follows
+    # it, and the AR0111 Step {SendToPartner} line: one failed delivery leg.
+    # The "partner site" of these lines is the CFT transfer site, never the
+    # external partner (2026-09-06, user report + correction).
+    if (m ~ /could not send file|while sending the file .* to a partner site|step \{sendtopartner\}/) return "Could not send to CFT"
     if (m ~ /arpa0001|arsp0001|stop further route execution/) return "Route stopped"
     # The platform refusing its OWN file: "Permission denied. <path> file is
     # marked as in-process by Advanced Routing." — the file is locked by a
