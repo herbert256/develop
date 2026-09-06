@@ -2,9 +2,9 @@
 #
 # st-reports-update.sh — RUNTIME-ONLY build step (2026-08-31, user request):
 # ingest a delivered update archive BEFORE anything parses. The archive path
-# is the optional $1; without one it is the ~/cloud/update.7z drop — the ONE
-# inbox since 2026-09-05 (the git exchange repo at ~/exchange/ is no longer
-# read; the build only pushes the built site there at the end). The archive
+# is the optional $1; without one it is the ~/cloud/update.7z drop. The other
+# caller is bin/build/exchange-in.sh (2026-09-06): the acc*/prd* archives of
+# the git exchange repo at ~/exchange/, one call per archive. The archive
 # is packed elsewhere with the SAME password st-reports-archive.sh generates
 # (input/secrets/st-reports.pass) and carries fresh exports. When the file
 # exists:
@@ -23,7 +23,10 @@
 #           + transferLog_09-03.csv) routed by name:
 #              logEntry*.csv      -> input/<env>/server/
 #              transferLog*.csv   -> input/<env>/transfer/
-#              partners.json, subscriptions.json -> input/<env>/flow-manager/
+#              *.json             -> input/<env>/flow-manager/
+#              *.txt              -> input/<env>/          (the policy files)
+#           (2026-09-06: any .json and the .txt policy files, at any depth
+#           inside the archive — the exchange inbox mapping, user request)
 #           The ENVIRONMENT of a loose file comes from its path inside the
 #           archive (a leading acceptance/ or production/ folder, with or
 #           without input/ above it) or else from the ARCHIVE NAME when one
@@ -37,8 +40,8 @@
 #           Any other loose file is listed and ignored.
 #   3. delete the archive — only after a fully successful copy.
 #
-# Nothing else in the archive is looked at: ip/, renames/, secrets/, the
-# policy files and anything outside the six directories are never touched.
+# Nothing else in the archive is looked at: ip/, renames/, secrets/ and
+# anything else outside the mapping is listed and ignored.
 # No archive is the quiet no-op. A FAILURE (missing password file, wrong
 # password, corrupt archive, nothing ingestible inside, an environment-less
 # loose file) fails the build loudly and LEAVES the archive in place —
@@ -124,14 +127,15 @@ while IFS= read -r -d '' f; do
     base=$(basename "$f")
     sub=""
     case "$base" in
-        logEntry*.csv)                     sub=server ;;
-        transferLog*.csv)                  sub=transfer ;;
-        partners.json|subscriptions.json)  sub=flow-manager ;;
+        logEntry*.csv)     sub=server ;;
+        transferLog*.csv)  sub=transfer ;;
+        *.json)            sub=flow-manager ;;
+        *.txt)             sub=. ;;              # the policy files live at the environment root
     esac
     if [ -z "$sub" ]; then ignored+=("$rel"); continue; fi
     if [ -z "$env" ]; then unrouted+=("$rel"); continue; fi
     plan_src+=("$f")
-    plan_dst+=("input/$env/$sub/$base")
+    if [ "$sub" = . ]; then plan_dst+=("input/$env/$base"); else plan_dst+=("input/$env/$sub/$base"); fi
 done < <(find "$tmp" -type f ! -name '.DS_Store' -print0)
 
 if [ ${#ignored[@]} -gt 0 ]; then

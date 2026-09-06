@@ -686,18 +686,23 @@ bg_env_chain() {
     prod_step "[$AXWAY_ENV] publish: index pages"                          bin/build/publish.sh
 }
 
-# ---- RUNTIME-ONLY: ingest a delivered update BEFORE anything parses ---------
-# ONE inbox: the ~/cloud/ drop folder — st-reports-update.sh ingests
-# ~/cloud/update.7z (packed elsewhere with the st-reports archive password;
-# the six input/ dirs, or loose logEntry*/transferLog* CSVs routed by name)
-# and removes the archive after a successful copy — see the script header.
-# The git exchange repo at ~/exchange/ is NOT an input any more (2026-09-05,
-# user request): the build only PUSHES the built site there at the end
-# (st-reports-archive.sh); whatever else sits in that repo is never read.
+# ---- RUNTIME-ONLY: ingest delivered updates BEFORE anything parses ---------
+# Two inboxes, in this order:
+#   1. the git exchange repo at ~/exchange/ (exchange-in.sh, 2026-09-06, user
+#      request): every acc*.7z / prd*.7z in it, unpacked with the st-reports
+#      password and routed onto input/<env>/ (*.json -> flow-manager/, *.txt
+#      -> the env root, transferLog*.csv -> transfer/, logEntry*.csv ->
+#      server/; existing files replaced), then removed from the repo and
+#      pushed. A bad archive is a WARNING that stays in place — the build
+#      goes on. The same repo receives the built site at the end
+#      (st-reports-archive.sh, st-reports.7z — never read as an inbox file).
+#   2. the ~/cloud/ drop folder — st-reports-update.sh ingests
+#      ~/cloud/update.7z with the same routing and removes it on success.
 # Runs BEFORE the HAVE_ACC/HAVE_PROD detection just below, so an update
 # delivering an environment's first exports enables it in the same build.
 # Develop (the .sample-estate marker) never ingests — its estate is generated.
 if [ ! -f input/.sample-estate ]; then
+    run_step "exchange: ingest acc*/prd* .7z from ~/exchange -> input/" bin/build/exchange-in.sh   # the git inbox, first (2026-09-06)
     run_step "update: ingest ~/cloud/update.7z -> input/"  bin/build/st-reports-update.sh
 fi
 
