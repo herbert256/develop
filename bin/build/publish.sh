@@ -1575,8 +1575,8 @@ write_sitemap() {
         printf '</ul></div>\n'
         printf '<div class="smcard"><h3>Boxes <span class="smcount">15</span></h3><ul>\n'
         local sub5
-        for sub5 in 'analyses/accounts-in-boxes.html|Accounts in boxes' \
-                    'analyses/subscriptions-in-boxes.html|Subscriptions in boxes' \
+        for sub5 in 'analyses/subscriptions-in-boxes.html|Subscriptions in boxes' \
+                    'analyses/accounts-in-boxes.html|Accounts in boxes' \
                     'analyses/triage.html|Triage' \
                     'transfer/missing-cronjobs.html|Missing cronjobs' \
                     'transfer/pirates-details.html|One-legged transfers' \
