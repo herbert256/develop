@@ -3514,7 +3514,7 @@
       var id = i.getAttribute("data-id");
       copyText(id, function () {
         i.textContent = "✓"; i.className = "cpid done"; i.title = "Copied";
-        setTimeout(function () { i.textContent = "⧉"; i.className = "cpid"; i.title = "Copy " + id + " to the clipboard"; }, 1200);
+        setTimeout(function () { i.textContent = "⧉"; i.className = "cpid"; i.title = "Copy " + id + " to the clipboard"; }, 3000);   // 3 s (user request: longer, bigger)
       });
     }, true);
     // content the page adds later (drill-down lists, Entity Search, the Files page)
