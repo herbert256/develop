@@ -34,7 +34,14 @@ function flip_reason(msg,   m) {
     if (m ~ /wrong server fingerprint|host key|fingerprint mismatch/) return "Wrong server fingerprint"
     if (m ~ /connection failure|could not be established|failed to connect|failed to create connection|connection refused|connection timed out|connection reset|unable to connect/) return "Connection failures"
     if (m ~ /receive file as/) return "Receive File As not set"
-    if (m ~ /arsp0001|stop further route execution/) return "Route stopped"
+    # the PUBLISH to the account failing — "ARPA0001: … An error occurred while
+    # publishing the file {…} to an account. Step configuration suggests to
+    # stop further route execution." — the file never reached the account;
+    # BEFORE the Route stopped rule, whose "stop further route execution"
+    # tail would otherwise claim it (2026-09-06, user report; the Step
+    # {Publish} rule further down covers the AR0111 wording of the same)
+    if (m ~ /while publishing the file/) return "Publish to account failed"
+    if (m ~ /arpa0001|arsp0001|stop further route execution/) return "Route stopped"
     # The platform refusing its OWN file: "Permission denied. <path> file is
     # marked as in-process by Advanced Routing." — the file is locked by a
     # routing step still holding it, not a credentials problem. BEFORE the
