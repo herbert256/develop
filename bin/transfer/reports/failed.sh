@@ -127,8 +127,9 @@ ERRDIR="$REPORTS_DIR/errors"
 FILEDIR="$REPORTS_DIR/files"
 FILESIDE="$REPORTS_DIR/_patterns-files.tsv"
 # ... and the Longest Files page's list (duration-longest.sh, 2026-09-03: every
-# File over one hour links its File page from its CoreId cell) — the two
-# sidecars are unioned below; either may be absent
+# listed File links its File page from its CoreId cell — the one-hour
+# threshold went 2026-09-06) — the two sidecars are unioned below; either may
+# be absent
 FILESIDE2="$REPORTS_DIR/_longest-files.tsv"
 # A missing drill dir — or a missing variant list — forces a rebuild:
 # skip_if_fresh only tests the one .rpt, the same guard the pesit/uc-status
