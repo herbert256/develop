@@ -166,6 +166,10 @@ if [ "$total" -eq 0 ]; then
     inbox_note failed "$(basename "$UPD")" "holds no export"
     exit 1
 fi
-rm -f "$UPD"
-echo "st-reports-update: ingested $total file(s); removed $UPDD." >&2
+# a multi-volume archive (name.7z.001 + .002 …): 7z x on the first part read
+# them all — remove them all (2026-09-06, user request)
+case "$UPD" in
+    *.7z.001) rm -f "${UPD%.001}".[0-9][0-9][0-9]; echo "st-reports-update: ingested $total file(s); removed every part of $UPDD." >&2 ;;
+    *)        rm -f "$UPD"; echo "st-reports-update: ingested $total file(s); removed $UPDD." >&2 ;;
+esac
 inbox_note consumed "$(basename "$UPD")" "$total file(s): $(printf '%s ' ${plan_dst[@]+"${plan_dst[@]}"} | sed 's/ $//')"

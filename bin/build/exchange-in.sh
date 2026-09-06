@@ -8,7 +8,10 @@
 #      conflict — is a WARNING: nothing is ingested this build.
 #   2. Every *.7z in the repo whose name STARTS WITH acc or prd (any case,
 #      any directory of the checkout) is an update: acc = acceptance,
-#      prd = production. Each is handed to bin/build/st-reports-update.sh,
+#      prd = production. A MULTI-VOLUME archive (prd-update.7z.001, .002,
+#      .003 …) counts once, through its first part — 7z picks the other
+#      parts up by itself, and a successful ingest removes every part
+#      (2026-09-06, user request). Each is handed to bin/build/st-reports-update.sh,
 #      which unpacks it with input/secrets/st-reports.pass and copies its
 #      files — at the root of the archive or in any directory inside it —
 #      onto input/<environment>/, existing files REPLACED:
@@ -57,22 +60,29 @@ fi
 # ---- the inbox: acc*.7z / prd*.7z anywhere in the checkout ------------------
 updates=()
 while IFS= read -r -d '' f; do updates+=("$f"); done < <(
-    find "$EX" -path "$EX/.git" -prune -o -type f \( -iname 'acc*.7z' -o -iname 'prd*.7z' \) -print0 | sort -z)
+    find "$EX" -path "$EX/.git" -prune -o -type f \( -iname 'acc*.7z' -o -iname 'prd*.7z' -o -iname 'acc*.7z.001' -o -iname 'prd*.7z.001' \) -print0 | sort -z)
 if [ ${#updates[@]} -eq 0 ]; then
     echo "exchange-in: pulled $EXD — no acc*/prd* .7z to ingest." >&2
     inbox_note none "" "pulled $EXD: no acc*/prd* .7z"
     exit 0
 fi
 
-consumed=()
+consumed=()   # every repo path to drop (a multi-volume archive contributes all its parts)
+narch=0       # archives ingested
 failed=()
 for f in "${updates[@]}"; do
     rel="${f#$EX/}"
+    # a multi-volume archive: every part shares the name up to the numeric
+    # suffix; the intake deletes them all, git must drop them all
+    parts=("$rel")
+    case "$f" in
+        *.7z.001) parts=(); for pf in "${f%.001}".[0-9][0-9][0-9]; do [ -f "$pf" ] && parts+=("${pf#$EX/}"); done ;;
+    esac
     echo "exchange-in: ingesting $rel ..." >&2
     # the shared intake: unpack, route, copy, delete the archive on success;
     # its non-zero exit (the file stays) is a warning here, never a build stop
     if bin/build/st-reports-update.sh "$f"; then
-        consumed+=("$rel")
+        consumed+=("${parts[@]}"); narch=$((narch + 1))
     else
         echo "exchange-in: WARNING - $rel was NOT ingested; it stays in $EXD — fix or remove it, then rebuild." >&2
         failed+=("$rel")
@@ -83,7 +93,7 @@ if [ ${#consumed[@]} -gt 0 ]; then
     git -C "$EX" add -u -- "${consumed[@]}"
     if git -C "$EX" commit --quiet -m "consumed by the runtime build $(date '+%Y-%m-%d %H:%M'): ${consumed[*]}"; then
         if git -C "$EX" push --quiet 2>/dev/null; then
-            echo "exchange-in: ${#consumed[@]} archive(s) consumed and removed from the exchange repo (pushed): ${consumed[*]}" >&2
+            echo "exchange-in: $narch archive(s) consumed and removed from the exchange repo (pushed): ${consumed[*]}" >&2
         else
             echo "exchange-in: WARNING - push failed (offline?) — the removal of ${consumed[*]} is committed locally and goes out with the next build." >&2
         fi
