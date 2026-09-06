@@ -1018,8 +1018,8 @@ write_env_block() {
         local fsp fss fsa fsl fsh fsps=0 fsss=0 fsas=0 fsls=0 fshs=0
         local swr swg swrs=0 swgs=0 dcc=""
         printf '<div class="tablewrap perday"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
-        # groups (2026-09-06, user request): Transfers (Ok Error Error%) before Files, State (Waiting Expired) before Duration, First seen without Logical/Accounts
-        printf '<tr class="gbrow"><th></th><th class="gband" colspan="3">Transfers</th><th class="gband" colspan="6">Files</th><th class="gband" colspan="2">State</th><th class="gband" colspan="4">Duration</th><th class="gband" colspan="2">Red/Green switch</th><th class="gband" colspan="2">First seen</th></tr>\n'
+        # groups (2026-09-06, user request): Transfers (Ok Error Error%) before Files, UC2 state (Waiting Expired — staged pickups) before Duration, First seen without Logical/Accounts
+        printf '<tr class="gbrow"><th></th><th class="gband" colspan="3">Transfers</th><th class="gband" colspan="6">Files</th><th class="gband" colspan="2">UC2 state</th><th class="gband" colspan="4">Duration</th><th class="gband" colspan="2">Red/Green switch</th><th class="gband" colspan="2">First seen</th></tr>\n'
         printf '<tr><th>Date</th><th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th><th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Recovered</th><th class="num">Error</th><th class="num">Error %%</th><th class="num">Waiting</th><th class="num">Expired</th><th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th><th class="num">Red</th><th class="num">Green</th><th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n'
         rown=0
         local tcn tok ter tpc twt txp tcnsum=0 toksum=0 tersum=0 twtsum=0 txpsum=0
