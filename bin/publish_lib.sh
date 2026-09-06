@@ -2183,7 +2183,7 @@ _analyses_groups() {
         "Coverage & seen|../transfer/entity-coverage-accounts.html=Entity coverage|first-seen.html=First seen|data-diff.html=Since yesterday|../file-search-24-hours.html=File search|../transfer/seen-in-server-log.html=Seen in server log" \
         "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|fe-overview.html=Partners - Incoming|account-sharing.html=Account sharing|twins.html=Twins|polling.html=Polling|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
         "Partners|partner-scorecard.html=Partner scorecard|blast-radius.html=Blast radius|app-partners.html=Application dependencies|partner-lifecycle.html=Partner lifecycle" \
-        "Boxes|subscriptions-in-boxes.html=Subscriptions in boxes|accounts-in-boxes.html=Accounts in boxes|triage.html=Triage"   # Subscriptions first = the group home (user request 2026-09-06) \
+        "Boxes|subscriptions-in-boxes.html=Subscriptions in boxes|accounts-in-boxes.html=Accounts in boxes|triage.html=Triage" \
         "Errors|failed.html=Failed Subscriptions|failing-reasons.html=Error reasons"
 }
 # _analyses_group_of CUR -> the group line ("label|key=Label|…") whose member

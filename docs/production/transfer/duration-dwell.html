@@ -13,8 +13,8 @@
 <script src="../../assets/report.js?v=1463015748" defer></script>
 </head>
 <body>
-<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="duration-dwell"></div>
-<h1>Duration distribution &amp; Store-and-forward</h1>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="duration-dwell" data-twin="../../acceptance/transfer/duration-dwell.html"></div>
+<h1>Duration distribution &amp; Store-and-forward <span class="grouptag">&larr; Performance &larr; Transfer</span></h1>
 <p class="tabs"><a class="tab" href="duration.html">Duration</a><a class="tab" href="anomalies.html">Anomalies</a><a class="tab" href="duration-longest.html">Longest Files</a><a class="tab" href="duration-slowest.html">Slowest subscriptions</a><span class="tab active">Distribution &amp; Store-and-forward</span><a class="tab" href="duration-trend.html">Duration trend</a></p>
 <p class="range">Two clocks on the same Files. <strong>Duration distribution</strong> (left) is the whole trip: a histogram of the Files by <strong>wall-clock duration</strong> — from the first record start to the last record end, store-and-forward gaps and retry idle included — in seven bands. <strong>OK transfers</strong> (the default) counts delivered Files only; <strong>All transfers</strong> adds the failed ones, whose duration is how long they ran before giving up. The <strong>Share</strong> column is each band's part of the scope's Files; a From/To range re-aggregates both.</p>
 <p class="range"><strong>Store-and-forward</strong> (right) is one piece of that trip — the wait inside SecureTransport between the inbound leg completing and the outbound leg starting, which no other report measures: <strong>9199</strong> Files had a measurable store-and-forward dwell (inbound completed, then forwarded). <strong>Median 2.90 s</strong>, <strong>p95 16.11 s</strong>, <strong>max 15.6 min</strong>. 2435 File(s) forwarded before the inbound finished (overlapping legs) are excluded. Dwell = earliest outbound start − latest inbound completion. Click a subscription for its 10 most recent Files.</p>
