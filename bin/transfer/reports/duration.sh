@@ -14,8 +14,9 @@
 #     All = every outcome with a measured duration, so a failed transfer's
 #           run time (e.g. a 2h timeout) counts too.
 #   "Percentage" / "Min/Avg/Max" — the per-day table's columns:
-#     Percentage  = p10 / p25 / p50 / p75 / p90 / p95 / p98 / p99
-#                   (the default).
+#     Percentage  = p10 / p25 / p50 / p75 / p90 / p95 / p98 / p99 / p100
+#                   (the default; p100 = the day's longest File, the Max of
+#                   the other view — added 2026-09-06, user request).
 #     Min/Avg/Max = Min / Avg / Median / Max per day.
 #   - duration.rpt             OK  + Percentage
 #   - duration-minmax.rpt      OK  + Min/Avg/Max
@@ -236,11 +237,17 @@ build_view() {
             "@data:drill-cell-0=" $16, "@data:drill-cell-1=" $16, "@data:drill-cell-2=" $17, \
             "@data:drill-cell-3=" $18, "@data:drill-cell-4=" $19, "@data:drill-cell-5=" $20
     }')
+    # p100 (2026-09-06, user request) is the day's longest File — the Max cell
+    # ($7) and its drill list ($20) reused, so the two views agree to the ms.
+    # LAST column: the home per-day table reads p50/p75/p90/p99 from this
+    # table by POSITION (bin/build/publish.sh, cols 6/7/8/11).
     local perday_pp; perday_pp=$(printf '%s\n' "$agg" | awk -F'\t' 'BEGIN{OFS="\t"} $1=="1"{
         row="ROW" OFS $2 OFS $3
         for(i=8;i<=15;i++) row=row OFS $i
+        row=row OFS $7
         row=row OFS "@data:drill-cell-0=" $16 OFS "@data:drill-cell-1=" $16
         for(i=2;i<=9;i++) row=row OFS "@data:drill-cell-" i "=" $(i+19)
+        row=row OFS "@data:drill-cell-10=" $20
         print row
     }')
 
@@ -266,16 +273,16 @@ build_view() {
                 "$g_days" "$g_n" "$h_min" "$h_avg" "$h_p50" "$h_max"
             printf '%s\n' "$perday_mm"
         else
-            printf 'TABLE\tDuration per day\twide\ttotaltop\tnoagg=2,3,4,5,6,7,8,9\n'
-            printf 'HEAD\tDate\tFiles\tp10\tp25\tp50\tp75\tp90\tp95\tp98\tp99\n'
-            printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
-            printf 'TOTAL\tOverall (%s days)\t@{class=num}%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-                "$g_days" "$g_n" "$h_p10" "$h_p25" "$h_p50" "$h_p75" "$h_p90" "$h_p95" "$h_p98" "$h_p99"
+            printf 'TABLE\tDuration per day\twide\ttotaltop\tnoagg=2,3,4,5,6,7,8,9,10\n'
+            printf 'HEAD\tDate\tFiles\tp10\tp25\tp50\tp75\tp90\tp95\tp98\tp99\tp100\n'
+            printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
+            printf 'TOTAL\tOverall (%s days)\t@{class=num}%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+                "$g_days" "$g_n" "$h_p10" "$h_p25" "$h_p50" "$h_p75" "$h_p90" "$h_p95" "$h_p98" "$h_p99" "$h_max"
             printf '%s\n' "$perday_pp"
         fi
 
 
-        printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); duration = its **wall-clock span** — from the first record start to the last record end, in milliseconds (so it includes the store-and-forward gap between the inbound and outbound legs, and the idle time between retries), NOT the sum of the record durations. %sPer-day min/median/max and percentiles are **not additive**: a narrowed date range keeps each day row but blanks the total. Percentiles use the nearest-rank method.\n' "$SCOPE_NOTE"
+        printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); duration = its **wall-clock span** — from the first record start to the last record end, in milliseconds (so it includes the store-and-forward gap between the inbound and outbound legs, and the idle time between retries), NOT the sum of the record durations. %sPer-day min/median/max and percentiles are **not additive**: a narrowed date range keeps each day row but blanks the total. Percentiles use the nearest-rank method; **p100** is the day'\''s longest File — the Max of the other view — so the gap between p99 and p100 says how far the worst case sits from the rest.\n' "$SCOPE_NOTE"
         printf 'SUMMARY\tFiles: %s  |  Median: %s  |  p95: %s  |  p99: %s  |  Max: %s\n' \
             "$g_n" "$u_p50" "$u_p95" "$u_p99" "$u_max"
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
