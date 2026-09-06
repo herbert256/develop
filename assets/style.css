@@ -223,9 +223,9 @@ table.dayrows th:empty::before, table.dayrows td:empty::before { content:"\00a0"
    a group starts at columns 2 (Files) / 8 (Duration) / 12 (Red-Green) /
    14 (First seen) on the header, data and Total rows — and on every cell
    but the first of the gbrow banner row (its cells are one per group). */
-table.dayrows tr > *:nth-child(2), table.dayrows tr > *:nth-child(8),
-table.dayrows tr > *:nth-child(12), table.dayrows tr > *:nth-child(14) { border-left:10px solid #f7f7f9; }
-table.dayrows tr.gbrow > th:nth-child(n+2) { border-left:10px solid #f7f7f9; }
+table.dayrows tr > *:nth-child(2), table.dayrows tr > *:nth-child(5), table.dayrows tr > *:nth-child(11),
+table.dayrows tr > *:nth-child(13), table.dayrows tr > *:nth-child(17), table.dayrows tr > *:nth-child(19) { border-left:18px solid #f7f7f9; }   /* the group starts: Transfers Files State Duration Red/Green First seen (2026-09-06: wider gaps, user request) */
+table.dayrows tr.gbrow > th:nth-child(n+2) { border-left:18px solid #f7f7f9; }
 /* the banner row floats its group titles on the page — no dark bar, no frame
    (the table background is #fff, so "transparent" must be painted in the
    page color; the retired Date spine's th.blank recipe). The 10px left

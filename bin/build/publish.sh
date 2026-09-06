@@ -296,7 +296,10 @@ daily_loglines_tsv() {   # $1 = env data root, e.g. data/acceptance
         $1 != "ROW" { next }
         { dd = $2; sub(/^@\{[^}]*\}/, "", dd) }
         # the Files group (Count Ok Recovered Error Error%) is cols 5-9, per-CoreId figures (field 7 = Recovered, not used here)
-        FILENAME ~ /\/transfer\// && dd ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { d=substr(dd,1,10); fc[d]=nz($5); fok[d]=nz($6); frv[d]=nz($7); fer[d]=nz($8); fpc[d]=nz($9); seen[d]=1 }
+        FILENAME ~ /\/transfer\// && dd ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { d=substr(dd,1,10); fc[d]=nz($5); fok[d]=nz($6); frv[d]=nz($7); fer[d]=nz($8); fpc[d]=nz($9); seen[d]=1
+            # the Transfers group (Count Ok Error Error%, cols 10-13) and the Waiting/Expired of the State group (cols 16-17; Expired may carry an @{href} prefix) — 2026-09-06, user request
+            tcn[d]=nz($10); tok[d]=nz($11); ter[d]=nz($12); tpc[d]=nz($13)
+            tw=$16; sub(/^@\{[^}]*\}/, "", tw); twt[d]=nz(tw); tex=$17; sub(/^@\{[^}]*\}/, "", tex); txp[d]=nz(tex) }
         END {
             n=0; for (k in seen) a[n++]=k
             # newest date first (descending); the index table shows recent days on top
@@ -316,13 +319,16 @@ daily_loglines_tsv() {   # $1 = env data root, e.g. data/acceptance
                 # report) renders like a 0: blank cells
                 for (p = 0; p < 6; p++) printf "\t%s", (hasfs && (d, p) in fs ? fs[d, p] : "-")
                 printf "\t%s\t%s", (hassw && (d in swr) ? swr[d] : "-"), (hassw && (d in swg) ? swg[d] : "-")
+                # the Transfers + State groups (trailing fields, 2026-09-06)
+                if (d in fc) printf "\t%s\t%s\t%s\t%s\t%s\t%s", tcn[d], tok[d], ter[d], tpc[d], twt[d], txp[d]
+                else         printf "\t-\t-\t-\t-\t-\t-"
                 printf "\n"
             }
             # the Duration TOTAL as a sentinel LAST line (the shell reader
             # stores it for the Total row and skips it as a day)
             printf "TOTAL\t-\t-\t-\t-\t-\t-\t-"
             for (p = 0; p < 5; p++) printf "\t%s\t%s", (dtv[p] == "" ? "-" : dtc[p]), (dtv[p] == "" ? "-" : dtv[p])
-            printf "\t-\t-\t-\t-\t-\t-\t-\t-\n"
+            printf "\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\n"
         }
     ' "${files[@]}"
     [ -n "$swf" ] && rm -f "$swf"
@@ -990,8 +996,8 @@ write_env_block() {
         # table flex row (a Date spine + four data tables) is gone: one
         # table cannot fall out of row-sync, which the spine did whenever a
         # header's height changed (the csv-hotspot regression). The group
-        # dividers are positional CSS on table.dayrows (columns 2/8/12/14 +
-        # the gbrow banner cells) — no per-cell class to keep in step.
+        # dividers are positional CSS on table.dayrows (columns 2/5/11/13/17/19
+        # + the gbrow banner cells) — no per-cell class to keep in step.
         #
         # THE 14-DAY CAP (2026-08): the table opens showing only the newest
         # 14 days and NO Total row; the older rows and the Total carry class
@@ -1012,10 +1018,12 @@ write_env_block() {
         local fsp fss fsa fsl fsh fsps=0 fsss=0 fsas=0 fsls=0 fshs=0
         local swr swg swrs=0 swgs=0 dcc=""
         printf '<div class="tablewrap perday"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
-        printf '<tr class="gbrow"><th></th><th class="gband" colspan="6">Files</th><th class="gband" colspan="4">Duration</th><th class="gband" colspan="2">Red/Green switch</th><th class="gband" colspan="4">First seen</th></tr>\n'
-        printf '<tr><th>Date</th><th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Recovered</th><th class="num">Error</th><th class="num">Error %%</th><th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th><th class="num">Red</th><th class="num">Green</th><th class="num">Logical</th><th class="num">Partners</th><th class="num">Subscriptions</th><th class="num">Accounts</th></tr>\n'
+        # groups (2026-09-06, user request): Transfers (Ok Error Error%) before Files, State (Waiting Expired) before Duration, First seen without Logical/Accounts
+        printf '<tr class="gbrow"><th></th><th class="gband" colspan="3">Transfers</th><th class="gband" colspan="6">Files</th><th class="gband" colspan="2">State</th><th class="gband" colspan="4">Duration</th><th class="gband" colspan="2">Red/Green switch</th><th class="gband" colspan="2">First seen</th></tr>\n'
+        printf '<tr><th>Date</th><th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th><th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Recovered</th><th class="num">Error</th><th class="num">Error %%</th><th class="num">Waiting</th><th class="num">Expired</th><th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th><th class="num">Red</th><th class="num">Green</th><th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n'
         rown=0
-        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg; do
+        local tcn tok ter tpc twt txp tcnsum=0 toksum=0 tersum=0 twtsum=0 txpsum=0
+        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg tcn tok ter tpc twt txp; do
             [ -n "$d" ] || continue
             # the sentinel LAST line: the overall duration percentiles for
             # the Total row (a percentile cannot be summed)
@@ -1029,6 +1037,15 @@ write_env_block() {
             _daycell "$d"; rown=$((rown + 1)); trc=""
             [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
             printf '<tr%s><td>%s</td>' "$trc" "$dcc"
+            # —— Transfers (from transfer/topview.html, the Transfers band):
+            # technical rows, Ok/Error tinted like that page (okc/errc), a 0
+            # blank ——
+            if [ "$tok" = "-" ] || [ "$tok" = 0 ] || [ -z "$tok" ]; then printf '<td class="num okc z"></td>'; else
+                esc "$(dotify "$tok")"; printf '<td class="num okc">%s</td>' "$ESC"; toksum=$((toksum + tok)); fi
+            if [ "$ter" = "-" ] || [ "$ter" = 0 ] || [ -z "$ter" ]; then printf '<td class="num errc z"></td>'; else
+                esc "$(dotify "$ter")"; printf '<td class="num errc">%s</td>' "$ESC"; tersum=$((tersum + ter)); fi
+            if [ "$tpc" = "-" ] || [ -z "$tpc" ]; then printf '<td class="num"></td>'; else esc "$tpc"; printf '<td class="num">%s</td>' "$ESC"; fi
+            [ "$tcn" != "-" ] && [ -n "$tcn" ] && tcnsum=$((tcnsum + tcn))
             # —— Files (from transfer/topview.html) ——
             # Ok/Error tint like topview's cells, a 0 rendering as an empty
             # cell (the render_rpt.awk convention). A nonzero Error cell
@@ -1070,6 +1087,18 @@ write_env_block() {
             else
                 printf '<td class="num"></td><td class="num"></td><td class="num processed"></td><td class="num warn"></td><td class="num failed"></td><td class="num"></td>'
             fi
+            # —— State (the topview State band): Waiting (amber) and Expired
+            # (red) Files of the day; a nonzero cell opens the report ——
+            if [ "$twt" = "-" ] || [ "$twt" = 0 ] || [ -z "$twt" ]; then printf '<td class="num warn"></td>'; else
+                esc "$(dotify "$twt")"
+                if [ -f "docs/$env/transfer/waiting.html" ]; then printf '<td class="num warn"><a href="%s/transfer/waiting.html">%s</a></td>' "$env" "$ESC"
+                else printf '<td class="num warn">%s</td>' "$ESC"; fi
+                twtsum=$((twtsum + twt)); fi
+            if [ "$txp" = "-" ] || [ "$txp" = 0 ] || [ -z "$txp" ]; then printf '<td class="num errc z"></td>'; else
+                esc "$(dotify "$txp")"
+                if [ -f "docs/$env/transfer/expired.html" ]; then printf '<td class="num errc"><a href="%s/transfer/expired.html">%s</a></td>' "$env" "$ESC"
+                else printf '<td class="num errc">%s</td>' "$ESC"; fi
+                txpsum=$((txpsum + txp)); fi
             # —— Duration (from transfer/duration.html): the day's
             # p50/p75/p90/p95, tinted like that page's cells ——
             _durcell "$dc50" "$dv50"; _durcell "$dc75" "$dv75"
@@ -1093,7 +1122,7 @@ write_env_block() {
             # —— First seen (from analyses/first-seen.html): a count links
             # that day's first-seen list when the page exists (a page exists
             # only for a day with names); 0 renders blank ——
-            for c in "logicals:$fsg" "partners:$fsp" "subscriptions:$fss" "accounts:$fsa"; do
+            for c in "partners:$fsp" "subscriptions:$fss"; do   # Logical and Accounts dropped (2026-09-06, user request)
                 v=${c#*:}
                 if [ "$v" = "-" ] || [ "$v" = 0 ] || [ -z "$v" ]; then printf '<td class="num"></td>'; continue; fi
                 esc "$(dotify "$v")"
@@ -1134,7 +1163,7 @@ write_env_block() {
                 <<< "$(awk -F'\t' '$1=="SEEN"{print; exit}' "$HOME_ENV_DATA/analyses/reports/first-seen.rpt")"
         fi
         local fstot=""
-        for c in "logicals:$fsgs" "partners:$fsps" "subscriptions:$fsss" "accounts:$fsas"; do
+        for c in "partners:$fsps" "subscriptions:$fsss"; do
             v=${c#*:}
             if [ -z "$v" ] || [ "$v" = 0 ]; then fstot="$fstot<td class=\"num\"></td>"; continue; fi
             esc "$(dotify "$v")"
@@ -1142,8 +1171,15 @@ write_env_block() {
                 fstot="$fstot<td class=\"num\"><a href=\"$env/first-seen/${c%%:*}-seen.html\">$ESC</a></td>"
             else fstot="$fstot<td class=\"num\">$ESC</td>"; fi
         done
-        [ "$dcount" -ge 10 ] && printf '<tr class="total%s"><td>Total</td><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td>%s%s%s%s</tr>\n' \
-            "$totcap" "$fint" "$foutt" "$fokt" "$frvt" "$fert" "$fpct" "$dtot" "$swrt" "$swgt" "$fstot"
+        # the Transfers and State totals (2026-09-06)
+        local tokt="" tert="" tpct="" twtt="" txpt=""
+        if [ "$toksum" -gt 0 ]; then esc "$(dotify "$toksum")"; tokt=$ESC; fi
+        if [ "$tersum" -gt 0 ]; then esc "$(dotify "$tersum")"; tert=$ESC; fi
+        [ "$tcnsum" -gt 0 ] && tpct=$(awk -v e="$tersum" -v n="$tcnsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
+        if [ "$twtsum" -gt 0 ]; then esc "$(dotify "$twtsum")"; twtt=$ESC; fi
+        if [ "$txpsum" -gt 0 ]; then esc "$(dotify "$txpsum")"; txpt=$ESC; fi
+        [ "$dcount" -ge 10 ] && printf '<tr class="total%s"><td>Total</td><td class="num okc">%s</td><td class="num errc">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td><td class="num warn">%s</td><td class="num errc">%s</td>%s%s%s%s</tr>\n' \
+            "$totcap" "$tokt" "$tert" "$tpct" "$fint" "$foutt" "$fokt" "$frvt" "$fert" "$fpct" "$twtt" "$txpt" "$dtot" "$swrt" "$swgt" "$fstot"
         printf '</table></div>\n'
         # the "Show all": setupShowAll uncaps the capped table inside the
         # tablewrap above it
