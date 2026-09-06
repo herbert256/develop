@@ -382,7 +382,7 @@
       pop.style.top = Math.max(2, top) + "px"; pop.style.left = left + "px";
     }
     function pickClose() {
-      pop.className = "colpick"; if (host) { host.draggable = true; host = null; }
+      pop.className = "colpick"; host = null;
       window.removeEventListener("scroll", pickPlace, true); window.removeEventListener("resize", pickPlace);
     }
     function pickOpen() {
@@ -400,8 +400,9 @@
         }
         // one row per column, in the current order: a grip, the checkbox, the
         // label. The row is draggable — dropping it on another row moves the
-        // column there (user request 2026-09-06), the same applyOrder the
-        // header drag uses
+        // column there (user request 2026-09-06). This is the ONE way to
+        // reorder: dragging the header itself was removed the same day
+        // (user request — the picker handles it)
         row = document.createElement("div"); row.className = "cprow"; row.draggable = true;
         grip = document.createElement("span"); grip.className = "grip"; grip.textContent = "⋮⋮"; grip.title = "Drag up or down to move this column";
         lab = document.createElement("label"); cb = document.createElement("input"); cb.type = "checkbox";
@@ -452,7 +453,7 @@
       pop.className = "colpick open";
       pickPlace();
       window.addEventListener("scroll", pickPlace, true); window.addEventListener("resize", pickPlace);
-      host = pop.parentNode; if (host && host.tagName === "TH") host.draggable = false;   // a checkbox inside a draggable header would start a drag
+      host = pop.parentNode;
     }
     pb.addEventListener("click", function (e) {
       e.preventDefault(); e.stopPropagation();
@@ -474,36 +475,6 @@
     // the safety net: whatever rewrote or re-ordered the host cell, the next
     // pointer pass over the table puts the tools back where they belong
     table.addEventListener("mouseover", function () { if (table._toolsOn && pb.parentNode !== colHostCell(table)) placeHotspots(table, hr); });
-    // drag a header: HTML5 drag and drop, the drop side decided by the pointer
-    // half of the header it lands on
-    var src = null;
-    function clearOver() { for (var k = 0; k < hr.cells.length; k++) hr.cells[k].className = hr.cells[k].className.replace(/ ?\bcolover-[lr]\b/g, ""); }
-    for (i = 0; i < n; i++) (function (th) {
-      if (isSpacer(th)) return;   // a spacer column is never dragged
-      th.draggable = true;
-      th.addEventListener("dragstart", function (e) {
-        src = th; th.className += " coldragging";
-        try { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(ciOf(th))); } catch (x) {}
-      });
-      th.addEventListener("dragend", function () { if (src) src.className = src.className.replace(/ ?\bcoldragging\b/, ""); src = null; clearOver(); });
-      th.addEventListener("dragover", function (e) {
-        if (!src || src === th) return;
-        if (groupOf(table, ciOf(src)) !== groupOf(table, ciOf(th))) return;   // a move never leaves its group
-        e.preventDefault(); try { e.dataTransfer.dropEffect = "move"; } catch (x) {}
-        var rc = th.getBoundingClientRect(), left = e.clientX < rc.left + rc.width / 2;
-        clearOver(); th.className += left ? " colover-l" : " colover-r";
-      });
-      th.addEventListener("dragleave", function () { th.className = th.className.replace(/ ?\bcolover-[lr]\b/g, ""); });
-      th.addEventListener("drop", function (e) {
-        if (!src || src === th) return;
-        if (groupOf(table, ciOf(src)) !== groupOf(table, ciOf(th))) return;
-        e.preventDefault();
-        var rc = th.getBoundingClientRect(), left = e.clientX < rc.left + rc.width / 2;
-        var order = curOrder(hr), from = src.cellIndex, to = th.cellIndex + (left ? 0 : 1);
-        var moved = order.splice(from, 1)[0]; if (to > from) to--; order.splice(to, 0, moved);
-        clearOver(); applyOrder(table, hr, order); saveOrder(key, order, isIdentity(order));
-      });
-    })(hr.cells[i]);
   }
 
   function headerRow(table) {

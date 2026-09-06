@@ -277,9 +277,6 @@ tr:hover .csvbtn, .csvbtn:hover { opacity:0.9; }
 /* Column order (report.js initColOrder): every header of a movable table is
    draggable; while a header is dragged the drop side shows as an amber edge
    on the header under the pointer. */
-th.coldragging { opacity:0.45; }
-th.colover-l { box-shadow:inset 4px 0 0 #ffb300; }
-th.colover-r { box-shadow:inset -4px 0 0 #ffb300; }
 /* the column PICKER ("cols", report.js initColOrder): the cols hotspot sits bottom-RIGHT in
    the last visible cell of the total row — of the last visible data row on a
    table without one, of the header on an empty table (placeHotspots). The

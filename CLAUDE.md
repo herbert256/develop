@@ -145,10 +145,11 @@ DISPLAY-RENAME sweep (`bin/build/display-rename.sh`, `input/<env>/rename.txt` �
 applied to the RENDERED pages as the build's last page-touching step; caches/.rpt keep the real
 values, slugs/links untouched) also runs only in `bin/build.sh`: a manually republished page
 shows real values until the next build.
-**Column order is a runtime feature** (2026-09-05, report.js `initColOrder`): every header of a
-movable table is draggable; the order is stored in localStorage under the report key WITHOUT the
-environment + the built header labels (`colorder:…`), re-applied FIRST in `init()`, restored by the
-Reset link at the foot of the `cols` picker (bottom-right of the table). Every cell of a movable table carries `data-ci`, its BUILT column
+**Column order is a runtime feature** (2026-09-05, report.js `initColOrder`): the columns of a
+movable table are reordered by dragging the rows of the `cols` picker (bottom-right of the table;
+header dragging was REMOVED 2026-09-06, user request — do not bring it back); the order is stored
+in localStorage under the report key WITHOUT the environment + the built header labels
+(`colorder:…`), re-applied FIRST in `init()`, restored by the Reset link at the foot of the picker. Every cell of a movable table carries `data-ci`, its BUILT column
 index — anything that addresses a column by number (RECALC tokens, `data-noagg`/`data-pct`, the
 group column, the total label, the remembered sort, which now stores the built index) goes through
 `cellByCi`/`ciOf`/`colByCi`, never through `cells[n]`. A spanned total label is split on the first
