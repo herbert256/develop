@@ -773,6 +773,35 @@ awk -F'\t' -v LF="$LOGICALF" '
             print raws[i] "\t" fin "\t" rt
         }
     }' "$BASE/_profiles.tsv" | LC_ALL=C sort -u > "$XREF/_logical-rules.tsv"
+# THE LOGICAL NAME RECREATED FROM ITS REPLACED PARTS (2026-09-06, user
+# request): once the domain / application / partner parts of a three-part
+# Logical are detected — the curated part replacements of
+# input/<env>/logical_{domains,apps,partners}.txt and the hard-coded STREAM
+# partner rule, exactly as the PDA derivation applies them — the Logical
+# name itself becomes Domain_Application_Partner of those parts, BEFORE the
+# base list, the pair caches and the partner merge read the map. So the
+# logical_*.txt files apply to the Logical names too, not only to the
+# entities derived from them; two Logicals whose parts replace to the same
+# tokens become ONE Logical (their FlowIDs share the name). The rule trail
+# records the rename. Non-three-part names are untouched.
+awk -F'\t' -v OFS='\t' -v LDF="$LOGDOMF" -v LAF="$LOGAPPF" -v LPF="$LOGPTNF" '
+    function loadrep(f, M,   l9, n9, a9){ while((getline l9 < f) > 0){
+            if(l9 ~ /^[ \t]*#/ || l9 ~ /^[ \t]*$/) continue
+            n9=split(l9, a9, /[ \t]+/); if(n9>=2 && a9[1]!="" && a9[2]!="") M[a9[1]]=a9[2] }
+        close(f) }
+    BEGIN { loadrep(LDF, DREP); loadrep(LAF, AREP); loadrep(LPF, PREP) }
+    {
+        l = $2
+        if (split(l, S, "_") == 3) {
+            if (S[1] in DREP) S[1] = DREP[S[1]]
+            if (S[2] in AREP) S[2] = AREP[S[2]]
+            if (S[3] in PREP) S[3] = PREP[S[3]]
+            if (toupper(l) ~ /STREAM/) S[3] = "ACCEPTEMAIL"
+            nl = S[1] "_" S[2] "_" S[3]
+            if (nl != l) { $2 = nl; $3 = $3 "; parts replaced (logical_*.txt): " l " -> " nl }
+        }
+        print
+    }' "$XREF/_logical-rules.tsv" | LC_ALL=C sort -u > "$XREF/_logical-rules.tsv.tmp" && mv -f "$XREF/_logical-rules.tsv.tmp" "$XREF/_logical-rules.tsv"
 cut -f1,2 "$XREF/_logical-rules.tsv" > "$XREF/_profiles-logicals.tsv"
 cut -f2 "$XREF/_profiles-logicals.tsv" | LC_ALL=C sort -u > "$BASE/_logicals.tsv"
 # xcompose MAPFILE PAIRFILE PCOL SIDE OUT — join a profile-keyed pair cache
@@ -925,8 +954,10 @@ awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$B
             # short (or long) name has no domain/application/partner slots
             if(split(l,S,"_")!=3) continue
             # the hand-curated PART replacements (input/logical_*.txt): the
-            # replaced value is what becomes the entity / the merge token —
-            # the Logical name itself is untouched
+            # replaced value is what becomes the entity / the merge token.
+            # Since 2026-09-06 the Logical name itself was already recreated
+            # from these parts (the LOGICAL block above), so this is a no-op
+            # repeat that keeps the derivation self-contained
             if(S[1] in DREP) S[1]=DREP[S[1]]
             if(S[2] in AREP) S[2]=AREP[S[2]]
             if(S[3] in PREP) S[3]=PREP[S[3]]

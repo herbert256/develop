@@ -966,7 +966,7 @@ unioned in `bin/flow-manager.sh`; the real files live in runtime's `input/<env>/
 the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Analyses → Configuration "Partners - Incoming" page's Gateway column; hand-maintained, sample template in develop) and
 `logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
 Logical-based PDA derivation: part 1/2/3 of a three-part Logical name is replaced before it
-becomes the domain / application / partner-merge token — the Logical name itself is untouched;
+becomes the domain / application / partner-merge token — and since 2026-09-06 the Logical NAME ITSELF is recreated as Domain_Application_Partner from the replaced parts (the STREAM partner rule included), in the LOGICAL block before the base list / pair caches / PDA read the map, so two Logicals replacing to the same parts become one (the rule trail says "parts replaced");
 freshness deps too. **`logical_partners.txt` is also where PARTNER ALIASES live** since
 2026-09-01, user request: the retired `partner-aliases.tsv` said "these two tokens are one
 organisation" and merged them into a group; rewriting the variant to its canonical token here
