@@ -117,8 +117,9 @@
     var n = hr.cells.length, i, j, r, cs, sum;
     if (n < 2) return false;
     if (table.getAttribute("data-heat") || table.getAttribute("data-esearch") || table.getAttribute("data-nocolmove")) return false;
-    if ((" " + table.className + " ").indexOf(" dayrows ") >= 0) return false;
-    if (table.querySelector("th[data-pf], th.spc, th.sp, td.spc, td.sp")) return false;
+    if (table.querySelector("th[data-pf]")) return false;
+    // (spacer columns — th/td.spc, the home per-day table and the root index —
+    // are fine since 2026-09-06: never listed, never moved, group boundaries)
     for (i = 0; i < table.rows.length; i++) {
       r = table.rows[i]; cs = r.cells;
       if (r.getElementsByTagName("th").length) {
@@ -175,12 +176,22 @@
   // placeHotspots re-attaches the elements the table remembers (_colTools)
   // and runs after each of those paths, with a mouseover safety net.
   function colHostCell(table) {
-    var trs = totalRows(table), row = trs.length ? trs[trs.length - 1] : null, i, cs;
-    if (!row) { var dr = dataRows(table); for (i = dr.length - 1; i >= 0; i--) if (dr[i].style.display !== "none") { row = dr[i]; break; } }
+    // the LAST visible row of the table, total or data — a Total pinned at
+    // the top (data-total-top, the Top view) is not the last row and must
+    // not host the tools (2026-09-06, user request)
+    var rows = table.rows, row = null, i, cs, r;
+    for (i = rows.length - 1; i >= 0; i--) {
+      r = rows[i];
+      if (r.getElementsByTagName("th").length) continue;
+      if (/\b(coreid-detail|pagerrow|foldrow)\b/.test(r.className)) continue;
+      if (r.cells[0] && / bluemsg /.test(" " + r.cells[0].className + " ")) continue;
+      if (r.style.display === "none" || getComputedStyle(r).display === "none") continue;
+      row = r; break;
+    }
     if (!row) row = headerRow(table);
     if (!row) return null;
     cs = row.cells;
-    for (i = cs.length - 1; i >= 0; i--) if (!cs[i].hidden) return cs[i];
+    for (i = cs.length - 1; i >= 0; i--) if (!cs[i].hidden && !isSpacer(cs[i])) return cs[i];
     return null;
   }
   function placeHotspots(table, hr) {
@@ -192,7 +203,7 @@
     // csv: the last VISIBLE header cell — a hidden last column must not take
     // the export with it (2026-09-06 fix)
     var last = null, i, th, b, tools = table._colTools, host, old;
-    for (i = hr.cells.length - 1; i >= 0; i--) if (!hr.cells[i].hidden) { last = hr.cells[i]; break; }
+    for (i = hr.cells.length - 1; i >= 0; i--) if (!hr.cells[i].hidden && !isSpacer(hr.cells[i])) { last = hr.cells[i]; break; }
     if (!last) last = hr.cells[hr.cells.length - 1];
     for (i = 0; i < hr.cells.length; i++) {
       th = hr.cells[i];
@@ -258,23 +269,41 @@
     table._nGroups = table._bannerRow ? table._bannerRow.cells.length : 1;
   }
   function groupOf(table, ci) { return (table._colGroup && table._colGroup[ci] !== undefined) ? table._colGroup[ci] : 0; }
+  function isSpacer(cell) { return !!cell && / (spc|sp) /.test(" " + cell.className + " "); }
+  function spacerCi(table, hr, ci) { var c = cellByCi(hr, ci); return isSpacer(c); }
   function syncGroups(table, hr) {
     if (!table._banners || !table._banners.length) return;
     var n = hr.cells.length, hidden = table._colHidden || [], hid = {}, i, j, b, vis, order, firstVis = {}, g, rows, r, cs, c, ci, cls, want, has;
     for (i = 0; i < hidden.length; i++) hid[hidden[i]] = 1;
+    var gvis = {}, lastVis = {}, sp = {}, spHide = {}, nextG;
     for (i = 0; i < table._banners.length; i++) {
       b = table._banners[i]; vis = 0;
       for (j = 0; j < b.cis.length; j++) if (!hid[b.cis[j]]) vis++;
       b.cell.colSpan = vis || 1; b.cell.hidden = vis === 0;
     }
-    // the divider: each group's first VISIBLE column in the current order
+    // the divider: each group's first VISIBLE column in the current order —
+    // and its last, for the edge classes of the home per-day table
     order = curOrder(hr);
-    for (i = 0; i < order.length; i++) { ci = order[i]; if (hid[ci]) continue; g = groupOf(table, ci); if (!(g in firstVis)) firstVis[g] = ci; }
+    for (i = 0; i < order.length; i++) { ci = order[i]; if (spacerCi(table, hr, ci)) { sp[ci] = 1; continue; } if (hid[ci]) continue; g = groupOf(table, ci); gvis[g] = (gvis[g] || 0) + 1; if (!(g in firstVis)) firstVis[g] = ci; lastVis[g] = ci; }
+    // a spacer column stands before a group: hidden when that group is fully
+    // hidden (else the gap would double up), shown again with it
+    for (i = 0; i < order.length; i++) {
+      ci = order[i]; if (!sp[ci]) continue;
+      nextG = null; for (j = i + 1; j < order.length; j++) if (!sp[order[j]]) { nextG = groupOf(table, order[j]); break; }
+      spHide[ci] = (nextG !== null && !gvis[nextG]) ? 1 : 0;
+    }
     rows = table.rows;
     for (i = 0; i < rows.length; i++) {
       r = rows[i]; cs = r.cells; if (cs.length !== n) continue;
       for (j = 0; j < cs.length; j++) {
         c = cs[j]; ci = ciOf(c); g = groupOf(table, ci); want = table._groupSep[g] || "";
+        if (sp[ci]) { c.hidden = !!spHide[ci]; continue; }   // a spacer: follows its group, carries no divider or edge
+        // the group EDGES (the home per-day table, class-based since the
+        // visible first/last column of a group moves with the picker)
+        var el = (firstVis[g] === ci), er = (lastVis[g] === ci), cl2 = c.className.replace(/ ?\bgedge-[lr]\b/g, "");
+        if (el) cl2 += " gedge-l"; if (er) cl2 += " gedge-r";
+        if (cl2 !== c.className) c.className = cl2.replace(/^ /, "");
+        if (c.hasAttribute("data-origc")) { var oc2 = c.getAttribute("data-origc").replace(/ ?\bgedge-[lr]\b/g, ""); if (el) oc2 += " gedge-l"; if (er) oc2 += " gedge-r"; c.setAttribute("data-origc", oc2.replace(/^ /, "")); }
         cls = " " + c.className + " "; has = / (gsepw|gsep) /.test(cls);
         if (want && firstVis[g] === ci) { if (!(new RegExp(" " + want + " ")).test(cls)) c.className = (c.className.replace(/ ?\bgsepw?\b/g, "") + " " + want).replace(/^ /, ""); }
         else if (has) c.className = c.className.replace(/ ?\bgsepw?\b/g, "");
@@ -362,6 +391,7 @@
       function clearOver() { var rs = pop.querySelectorAll(".cprow"); for (var q = 0; q < rs.length; q++) rs[q].className = rs[q].className.replace(/ ?\bover-[tb]\b/g, ""); }
       for (k = 0; k < hr.cells.length; k++) {
         th = hr.cells[k]; ci = ciOf(th);
+        if (isSpacer(th)) continue;   // spacer columns are not offered
         if (table._nGroups > 1 && groupOf(table, ci) !== lastG) {   // a heading per column group; moves stay under it
           lastG = groupOf(table, ci);
           gh = document.createElement("div"); gh.className = "cpgrp";
@@ -437,6 +467,7 @@
     if (stored && !isIdentity(stored)) applyOrder(table, hr, stored);
     var hidden = loadHidden(hkey, n);
     if (hidden.length) applyHidden(table, hr, hidden);
+    else if (table._banners && table._banners.length) syncGroups(table, hr);   // the edge classes of a grouped table, from the start
     // (the tools are attached by init() once every snapshot is taken — see placeHotspots)
     // NOTE: syncGroups ran inside applyOrder/applyHidden when a stored setting
     // existed; without one the built markup already agrees with itself
@@ -448,6 +479,7 @@
     var src = null;
     function clearOver() { for (var k = 0; k < hr.cells.length; k++) hr.cells[k].className = hr.cells[k].className.replace(/ ?\bcolover-[lr]\b/g, ""); }
     for (i = 0; i < n; i++) (function (th) {
+      if (isSpacer(th)) return;   // a spacer column is never dragged
       th.draggable = true;
       th.addEventListener("dragstart", function (e) {
         src = th; th.className += " coldragging";
