@@ -77,6 +77,11 @@ function flip_reason(msg,   m) {
     # rule — the AR0086 line can carry a "step {…}" tail and must not read
     # as a generic step failure.
     if (m ~ /could not find file tracking entry/) return "File Tracking entry missing"
+    # the Advanced Routing PUBLISH step failing — "Step {Publish} with id {…}
+    # finished with error … No files were processed.": the file never reached
+    # the account it was to be published to. BEFORE the generic routing-step
+    # rule (2026-09-06, user report on a UC2 flow).
+    if (m ~ /step \{publish\}/) return "Publish to account failed"
     if (m ~ /arrc00|ar0111|step \{/) return "Routing step failed"
     return ""
 }
