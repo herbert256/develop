@@ -45,6 +45,10 @@ function flip_reason(msg,   m) {
     # "Permission denied" after a "Deleting remote file:" line (attached by
     # ctx_enrich), BEFORE the login rule (2026-09-06, user report)
     if (m ~ /deleting remote file/) return "Delete remote file failed"
+    # a failure of the POST CLIENT ACTION — "Error deleting the file after a
+    # post client action" included: the delete is the action's own step, so
+    # this outranks the delete rules below (2026-09-06, user report)
+    if (m ~ /post client action/) return "Post client action failed"
     if (m ~ /authentication fail|password|publickey|public key|not authorized|login failed|permission denied/) return "Login errors (out)"
     # The post-download DELETE of the remote file failing — "No such file:
     # Cannot delete file." (the file was fetched, then vanished or proved
@@ -56,7 +60,6 @@ function flip_reason(msg,   m) {
     if (m ~ /file unavailable|file not found|requested action not taken/) return "Remote file unavailable"
     if (m ~ /listing files|listing the files|list files/) return "Listing failed"
     if (m ~ /transfer site id is not present/) return "Transfer site missing"
-    if (m ~ /post client action/) return "Post-action failed"
     # The PeSIT delivery leg (ST -> CFT), rejected or torn down by the far
     # end: a negative SEND_CONF is the receiver REFUSING the file up front
     # (file already exists, a blocking I/O error on its side); a negative
