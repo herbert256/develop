@@ -121,8 +121,13 @@
     if (table.querySelector("th[data-pf], th.spc, th.sp, td.spc, td.sp")) return false;
     for (i = 0; i < table.rows.length; i++) {
       r = table.rows[i]; cs = r.cells;
-      if (r.getElementsByTagName("th").length) {          // every header row must be flat
-        for (j = 0; j < cs.length; j++) if ((cs[j].colSpan || 1) > 1) return false;
+      if (r.getElementsByTagName("th").length) {
+        if (r === hr) { for (j = 0; j < cs.length; j++) if ((cs[j].colSpan || 1) > 1) return false; continue; }   // the field header must be flat
+        // a GROUP BANNER row (GHEAD: cells spanning column groups) is fine as
+        // long as its spans cover the table exactly (2026-09-06, user request:
+        // grouped tables get the picker too, moves stay inside a group)
+        sum = 0; for (j = 0; j < cs.length; j++) sum += cs[j].colSpan || 1;
+        if (sum !== n) return false;
         continue;
       }
       if (cs.length === 1) continue;                      // full-width message / divider / drill row
@@ -219,7 +224,67 @@
       for (j = 0; j < n; j++) { c = byCi[order[j]]; if (c) r.appendChild(c); }
     }
     if (sortedCi !== null) { var np = colByCi(hr, sortedCi); if (np >= 0) table.setAttribute("data-sort-col", String(np)); }
+    syncGroups(table, hr);
     placeHotspots(table, hr);
+  }
+  // Column GROUPS (a banner row of spanned header cells above the flat
+  // header, the gsep= dividers on each group's first column): initGroups maps
+  // every built column to its group and remembers each banner cell's columns
+  // and each group's divider class; syncGroups, after any move or hide, sets
+  // every banner cell's span to its VISIBLE column count (hidden when none)
+  // and moves the divider to the group's first visible column — mirrored into
+  // data-origc so a recalc restore keeps it. Drags never cross a group.
+  function initGroups(table, hr) {
+    var n = hr.cells.length, gid = [], banners = [], seps = {}, labels = {}, i, j, r, cs, g = 0, ci, k, sp;
+    for (i = 0; i < n; i++) gid[i] = 0;
+    for (i = 0; i < table.rows.length; i++) {
+      r = table.rows[i]; if (r === hr || !r.getElementsByTagName("th").length) continue;
+      var defines = !table._bannerRow;               // the FIRST banner row defines the groups
+      if (defines) table._bannerRow = r;
+      cs = r.cells; ci = 0; g = 0;
+      for (j = 0; j < cs.length; j++) {
+        sp = cs[j].colSpan || 1; var cis = [];
+        for (k = 0; k < sp; k++) { cis.push(ci + k); if (defines) gid[ci + k] = g; }
+        banners.push({ cell: cs[j], cis: cis });
+        if (defines) labels[g] = cs[j].textContent.trim();
+        ci += sp; g++;
+      }
+    }
+    for (i = 0; i < n; i++) {
+      var th = hr.cells[i], m = / (gsepw|gsep)( |$)/.exec(" " + th.className + " ");
+      if (m && !(gid[i] in seps)) seps[gid[i]] = m[1];
+    }
+    table._colGroup = gid; table._banners = banners; table._groupSep = seps; table._groupLabel = labels;
+    table._nGroups = table._bannerRow ? table._bannerRow.cells.length : 1;
+  }
+  function groupOf(table, ci) { return (table._colGroup && table._colGroup[ci] !== undefined) ? table._colGroup[ci] : 0; }
+  function syncGroups(table, hr) {
+    if (!table._banners || !table._banners.length) return;
+    var n = hr.cells.length, hidden = table._colHidden || [], hid = {}, i, j, b, vis, order, firstVis = {}, g, rows, r, cs, c, ci, cls, want, has;
+    for (i = 0; i < hidden.length; i++) hid[hidden[i]] = 1;
+    for (i = 0; i < table._banners.length; i++) {
+      b = table._banners[i]; vis = 0;
+      for (j = 0; j < b.cis.length; j++) if (!hid[b.cis[j]]) vis++;
+      b.cell.colSpan = vis || 1; b.cell.hidden = vis === 0;
+    }
+    // the divider: each group's first VISIBLE column in the current order
+    order = curOrder(hr);
+    for (i = 0; i < order.length; i++) { ci = order[i]; if (hid[ci]) continue; g = groupOf(table, ci); if (!(g in firstVis)) firstVis[g] = ci; }
+    rows = table.rows;
+    for (i = 0; i < rows.length; i++) {
+      r = rows[i]; cs = r.cells; if (cs.length !== n) continue;
+      for (j = 0; j < cs.length; j++) {
+        c = cs[j]; ci = ciOf(c); g = groupOf(table, ci); want = table._groupSep[g] || "";
+        cls = " " + c.className + " "; has = / (gsepw|gsep) /.test(cls);
+        if (want && firstVis[g] === ci) { if (!(new RegExp(" " + want + " ")).test(cls)) c.className = (c.className.replace(/ ?\bgsepw?\b/g, "") + " " + want).replace(/^ /, ""); }
+        else if (has) c.className = c.className.replace(/ ?\bgsepw?\b/g, "");
+        if (c.hasAttribute("data-origc")) {   // keep the restore in step
+          var oc = c.getAttribute("data-origc").replace(/ ?\bgsepw?\b/g, "");
+          if (want && firstVis[g] === ci) oc = (oc + " " + want).replace(/^ /, "");
+          c.setAttribute("data-origc", oc);
+        }
+      }
+    }
   }
   // Hidden columns (the "cols" picker): the cells carry the hidden ATTRIBUTE —
   // a class would not survive the className restores of the recalc paths.
@@ -244,6 +309,7 @@
       if (cs.length !== n && isTotal(r) && hidden.length) splitSpans(r);
       for (j = 0; j < cs.length; j++) { c = cs[j]; c.hidden = !!set[ciOf(c)]; }
     }
+    syncGroups(table, hr);
     placeHotspots(table, hr);
   }
   function initColOrder(table) {
@@ -256,6 +322,7 @@
       ci = 0;
       for (j = 0; j < cs.length; j++) { cs[j].setAttribute("data-ci", String(ci)); ci += cs[j].colSpan || 1; }
     }
+    initGroups(table, hr);
     var key = colOrderKey(table, hr), hkey = "colhide:" + key.slice(9), labels = [];
     for (i = 0; i < n; i++) labels.push(hr.cells[i].textContent.replace(/[▲▼]/g, "").trim());
     // the reset: the Reset link at the foot of the picker (the ↺ hotspot it
@@ -291,10 +358,16 @@
     }
     function pickOpen() {
       pop.innerHTML = "";
-      var hid = table._colHidden || [], k, th, ci, lab, cb, row, grip, dragCi = null;
+      var hid = table._colHidden || [], k, th, ci, lab, cb, row, grip, dragCi = null, lastG = null, gh;
       function clearOver() { var rs = pop.querySelectorAll(".cprow"); for (var q = 0; q < rs.length; q++) rs[q].className = rs[q].className.replace(/ ?\bover-[tb]\b/g, ""); }
       for (k = 0; k < hr.cells.length; k++) {
         th = hr.cells[k]; ci = ciOf(th);
+        if (table._nGroups > 1 && groupOf(table, ci) !== lastG) {   // a heading per column group; moves stay under it
+          lastG = groupOf(table, ci);
+          gh = document.createElement("div"); gh.className = "cpgrp";
+          gh.textContent = (table._groupLabel && table._groupLabel[lastG]) || (labels[ci] + " …");   // an unlabelled band (the leading Date/First/Last block): its first column names it
+          pop.appendChild(gh);
+        }
         // one row per column, in the current order: a grip, the checkbox, the
         // label. The row is draggable — dropping it on another row moves the
         // column there (user request 2026-09-06), the same applyOrder the
@@ -321,6 +394,7 @@
           row.addEventListener("dragend", function () { dragCi = null; row.className = row.className.replace(/ ?\bdragging\b/, ""); clearOver(); });
           row.addEventListener("dragover", function (e) {
             if (dragCi === null || dragCi === ci) return;
+            if (groupOf(table, dragCi) !== groupOf(table, ci)) return;   // a move never leaves its group
             e.preventDefault(); try { e.dataTransfer.dropEffect = "move"; } catch (x) {}
             var rc = row.getBoundingClientRect(), upper = e.clientY < rc.top + rc.height / 2;
             clearOver(); row.className += upper ? " over-t" : " over-b";
@@ -328,6 +402,7 @@
           row.addEventListener("dragleave", function () { row.className = row.className.replace(/ ?\bover-[tb]\b/g, ""); });
           row.addEventListener("drop", function (e) {
             if (dragCi === null || dragCi === ci) return;
+            if (groupOf(table, dragCi) !== groupOf(table, ci)) return;
             e.preventDefault(); e.stopPropagation();
             var rc = row.getBoundingClientRect(), upper = e.clientY < rc.top + rc.height / 2;
             var order = curOrder(hr), from = order.indexOf(dragCi), to = order.indexOf(ci) + (upper ? 0 : 1);
@@ -363,6 +438,8 @@
     var hidden = loadHidden(hkey, n);
     if (hidden.length) applyHidden(table, hr, hidden);
     // (the tools are attached by init() once every snapshot is taken — see placeHotspots)
+    // NOTE: syncGroups ran inside applyOrder/applyHidden when a stored setting
+    // existed; without one the built markup already agrees with itself
     // the safety net: whatever rewrote or re-ordered the host cell, the next
     // pointer pass over the table puts the tools back where they belong
     table.addEventListener("mouseover", function () { if (table._toolsOn && pb.parentNode !== colHostCell(table)) placeHotspots(table, hr); });
@@ -379,6 +456,7 @@
       th.addEventListener("dragend", function () { if (src) src.className = src.className.replace(/ ?\bcoldragging\b/, ""); src = null; clearOver(); });
       th.addEventListener("dragover", function (e) {
         if (!src || src === th) return;
+        if (groupOf(table, ciOf(src)) !== groupOf(table, ciOf(th))) return;   // a move never leaves its group
         e.preventDefault(); try { e.dataTransfer.dropEffect = "move"; } catch (x) {}
         var rc = th.getBoundingClientRect(), left = e.clientX < rc.left + rc.width / 2;
         clearOver(); th.className += left ? " colover-l" : " colover-r";
@@ -386,6 +464,7 @@
       th.addEventListener("dragleave", function () { th.className = th.className.replace(/ ?\bcolover-[lr]\b/g, ""); });
       th.addEventListener("drop", function (e) {
         if (!src || src === th) return;
+        if (groupOf(table, ciOf(src)) !== groupOf(table, ciOf(th))) return;
         e.preventDefault();
         var rc = th.getBoundingClientRect(), left = e.clientX < rc.left + rc.width / 2;
         var order = curOrder(hr), from = src.cellIndex, to = th.cellIndex + (left ? 0 : 1);

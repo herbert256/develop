@@ -253,10 +253,10 @@ th a { color:#fff; }                    /* linked column headers (traffic matrix
 /* CSV download (report.js setupCsvBtn): a small hotspot in the upper-right
    corner of every table's LAST header cell — faint until the header row is
    hovered; clicking it downloads the table (as filtered + sorted) as .csv.
-   The host th is the positioning context; the extra right padding keeps the
-   hotspot clear of the header text and its sort arrow. */
-table tr th.csvhost { position:relative; padding-right:2.4rem; }   /* table tr th: outranks `table.wide th { padding:6px 10px }` */
-.csvbtn { position:absolute; top:0; right:0; padding:0 0.3rem 0.2rem; font-size:0.65rem; font-weight:normal;
+   The host th is the positioning context; the hotspot lives in its top
+   padding (no extra padding — the column must not widen). */
+table tr th.csvhost { position:relative; }   /* no extra padding: the hotspot sits in the cell's own top padding, the column keeps its width (2026-09-06, user request) */
+.csvbtn { position:absolute; top:0; right:0; padding:0 0.3rem 0; font-size:0.6rem; line-height:1; font-weight:normal;
           color:#fff; opacity:0.3; cursor:pointer; user-select:none; -webkit-user-select:none; }
 tr:hover .csvbtn, .csvbtn:hover { opacity:0.9; }
 /* Column order (report.js initColOrder): every header of a movable table is
@@ -284,6 +284,7 @@ tr:hover .pickbtn, .pickbtn:hover { opacity:0.95; }
            font-weight:normal; font-size:0.85rem; line-height:1.35; white-space:nowrap; max-height:60vh; overflow:auto; cursor:default; }
 /* (position:fixed, placed by report.js pickPlace — the .tablewrap scroll box would clip an absolute popover) */
 .colpick.open { display:block; }
+.colpick .cpgrp { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; color:#8a94a1; margin:0.4rem 0 0.1rem; }   /* a column group's heading (grouped tables): rows move only under their heading */
 .colpick .cprow { display:flex; align-items:center; gap:0.25rem; padding:0.05rem 0; }   /* one column: grip + checkbox + label; draggable up/down */
 .colpick .cprow .grip { cursor:grab; color:#8a94a1; font-size:0.8rem; letter-spacing:-0.15em; user-select:none; -webkit-user-select:none; padding:0 0.1rem; }
 .colpick .cprow.dragging { opacity:0.45; }
