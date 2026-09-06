@@ -228,7 +228,7 @@ table.dayrows th:empty::before, table.dayrows td:empty::before { content:"\00a0"
    own left/right/bottom edges like a table of its own and no row line runs
    across the gap (2026-09-06, user request). The total row's tint and navy
    top rule must not paint the spacer either. */
-table.dayrows { border:none; }   /* no table-wide edge: it would run across the gaps — each GROUP gets its own 2 px edges below */
+table.dayrows { border:none; box-shadow:none; }   /* no table-wide edge or shadow: both would run across the gaps — each GROUP gets its own 2 px edges below */
 table.dayrows th.spc, table.dayrows td.spc { width:30px; min-width:30px; max-width:30px; padding:0; border:none; background:#f7f7f9; }   /* 30 px gaps (2026-09-06, user request: more space) */
 /* the group edges: left of the first cell of a group (the Date column and
    every cell after a spacer), right of the last (before a spacer, and the
@@ -236,7 +236,7 @@ table.dayrows th.spc, table.dayrows td.spc { width:30px; min-width:30px; max-wid
    report.js marks that row tr.edge-b, the Show-all cap hides the rest */
 table.dayrows tr:not(.gbrow) > *:first-child, table.dayrows tr:not(.gbrow) > .spc + * { border-left:2px solid #cfd7de; }
 table.dayrows tr:not(.gbrow) > *:last-child, table.dayrows tr:not(.gbrow) > *:has(+ .spc) { border-right:2px solid #cfd7de; }
-table.dayrows tr.gbrow + tr > th { border-top:2px solid #cfd7de; }
+table.dayrows tr.gbrow + tr > th:not(.spc) { border-top:2px solid #cfd7de; }   /* not the spacers: no line across a gap */
 table.dayrows tr.edge-b > td:not(.spc) { border-bottom:2px solid #cfd7de; }
 table.dayrows tr.total td.spc { border:none; background:#f7f7f9; }
 table.dayrows tr:hover td.spc { background:#f7f7f9; }
@@ -1036,7 +1036,7 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] table.dayrows th.spc, :root[data-theme="dark"] table.dayrows td.spc { background:#15191f; }
 :root[data-theme="dark"] table.dayrows tr:not(.gbrow) > *:first-child, :root[data-theme="dark"] table.dayrows tr:not(.gbrow) > .spc + * { border-left:2px solid #3a4451; }
 :root[data-theme="dark"] table.dayrows tr:not(.gbrow) > *:last-child, :root[data-theme="dark"] table.dayrows tr:not(.gbrow) > *:has(+ .spc) { border-right:2px solid #3a4451; }
-:root[data-theme="dark"] table.dayrows tr.gbrow + tr > th { border-top:2px solid #3a4451; }
+:root[data-theme="dark"] table.dayrows tr.gbrow + tr > th:not(.spc) { border-top:2px solid #3a4451; }
 :root[data-theme="dark"] table.dayrows tr.edge-b > td:not(.spc) { border-bottom:2px solid #3a4451; }
 :root[data-theme="dark"] table.dayrows tr.total td.spc { background:#15191f; }
 :root[data-theme="dark"] table.dayrows tr:hover td.spc { background:#15191f; }
