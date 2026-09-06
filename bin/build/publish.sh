@@ -1505,11 +1505,12 @@ write_sitemap() {
         # the sibling views are reached from there). Deliberately NOT a generic
         # prefix rule: the No/By/Per-style labels (No remote files / No remote
         # dir, ...) are distinct reports and stay separate entries.
-        printf '<div class="smcard"><h3>Coverage &amp; seen <span class="smcount">5</span></h3><ul>\n'
+        # File search left this card 2026-09-07 (user request): the top bar's
+        # Files link is its one navigation entry; the report finder still lists it
+        printf '<div class="smcard"><h3>Coverage &amp; seen <span class="smcount">4</span></h3><ul>\n'
         printf '<li><a href="transfer/entity-coverage-accounts.html">Entity coverage</a></li>\n'
         printf '<li><a href="analyses/first-seen.html">First seen</a></li>\n'
         printf '<li><a href="analyses/data-diff.html">Since yesterday</a></li>\n'
-        printf '<li><a href="file-search-24-hours.html">File search</a></li>\n'
         printf '<li><a href="transfer/seen-in-server-log.html">Seen in server log</a></li>\n'
         printf '</ul></div>\n'
         printf '<div class="smcard"><h3>Configuration <span class="smcount">17</span></h3><ul>\n'
