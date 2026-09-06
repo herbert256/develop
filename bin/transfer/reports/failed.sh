@@ -900,6 +900,7 @@ LC_ALL=C awk -F'\t' -v CAND=8 "$(cat "$LIB_DIR/../flip-reason.awk")"'
         if ($2 > fmax) fmax = $2                # the page own newest line, for picking the page
         if (fn < CAND) { fn++; fs[fn] = $2; fl[fn] = $3; fm[fn] = ctx_enrich(substr($4, 1, 200), prev) }   # a bare "Permission denied" carries the line before it
     }
+    $1 == "ROW" && NF >= 4 { prev = $4 }   # the previous line of the page, for ctx_enrich
     END { flush()
           for (k in bn) for (i = 1; i <= bn[k]; i++)
               printf "%s\t%s\t%s\t%s\n", k, bs[k, i], bl[k, i], bm[k, i] }
@@ -1007,7 +1008,6 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
         if (r6 == "" && LEGST != "" && LEGST != "Processed" && LEGST != "Failed") r6 = LEGST
         print cid "\t" r6
     }
-    $1 == "ROW" && NF >= 4 { prev = $4 }   # the previous line of the page, for ctx_enrich
 ' "$TMP/all" > "$TMP/reasons"
 
 # The same Reason lands in each drill page TITLE — "Failed subscription:
