@@ -15,6 +15,17 @@
 # Order matters: the first pattern that matches wins, most specific first —
 # a fingerprint rejection also mentions the connection it failed, and must
 # not read "Connection failures".
+# ctx_enrich(msg, prev): a BARE "Permission denied" line says nothing on its
+# own — the platform logs WHAT it was doing on the Info line just before it
+# ("Deleting remote file: done.txt under /OUT/."). The collectors (failed.sh:
+# the page candidates and the _errpage-evidence sidecar) pass that previous
+# line here; the bare message comes back with it attached, so every consumer
+# classifying the same text sees the context (2026-09-06, user report).
+function ctx_enrich(msg, prev,   m) {
+    m = tolower(msg); sub(/^[ \t]+/, "", m); sub(/[ \t.]+$/, "", m)
+    if (m == "permission denied" && prev != "") return msg " [after: " substr(prev, 1, 120) "]"
+    return msg
+}
 function flip_reason(msg,   m) {
     m = tolower(msg)
     # the FTPS pull leg failing wholesale (2026-08-31, user request): the
@@ -30,13 +41,17 @@ function flip_reason(msg,   m) {
     # login rule, whose "permission denied" would otherwise claim it
     # (2026-09-06, user report on a UC1 flow).
     if (m ~ /marked as in-process/) return "File is marked as in-process"
+    # the post-download DELETE of the remote file refused — the bare
+    # "Permission denied" after a "Deleting remote file:" line (attached by
+    # ctx_enrich), BEFORE the login rule (2026-09-06, user report)
+    if (m ~ /deleting remote file/) return "Delete remote file failed"
     if (m ~ /authentication fail|password|publickey|public key|not authorized|login failed|permission denied/) return "Login errors (out)"
     # The post-download DELETE of the remote file failing — "No such file:
     # Cannot delete file." (the file was fetched, then vanished or proved
     # undeletable at the partner): a delete problem, not a missing directory.
     # BEFORE the "no such file" rule, which read it as No Dir (2026-09-02,
     # user report on a UC3 flow whose 40 MB download had succeeded).
-    if (m ~ /cannot delete|could not delete|failed to delete|error deleting/) return "Remote delete failed"
+    if (m ~ /cannot delete|could not delete|failed to delete|error deleting/) return "Delete remote file failed"
     if (m ~ /no such file|no such directory|does not exist/) return "No Dir"
     if (m ~ /file unavailable|file not found|requested action not taken/) return "Remote file unavailable"
     if (m ~ /listing files|listing the files|list files/) return "Listing failed"

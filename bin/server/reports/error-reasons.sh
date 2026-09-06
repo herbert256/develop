@@ -61,7 +61,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
         else if (m ~ /CONFIG_PASSWD/)                               b = "CONFIG_PASSWD state variable error"
         # the post-download remote DELETE failing ("No such file: Cannot
         # delete file.") — its own bucket, the flip-reason.awk verdict
-        else if (m ~ /[Cc]annot delete|[Cc]ould not delete|[Ff]ailed to delete/) b = "Remote delete failed"
+        else if (m ~ /[Cc]annot delete|[Cc]ould not delete|[Ff]ailed to delete/) b = "Delete remote file failed"
         else if (m ~ /^Error during transfer operation: /)          b = "Transfer operation error (other)"
         else                                                        b = "Other"
         cnt[b]++; tot++

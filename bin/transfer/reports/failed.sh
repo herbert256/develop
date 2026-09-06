@@ -882,13 +882,14 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
 #   subscription <TAB> "date time" <TAB> level (Error|Warning) <TAB> message
 # cmp-guarded, so an unchanged run does not drag the analyses publish along.
 EVID="$REPORTS_DIR/_errpage-evidence.tsv"
-LC_ALL=C awk -F'\t' -v CAND=8 '
+LC_ALL=C awk -F'\t' -v CAND=8 "$(cat "$LIB_DIR/../flip-reason.awk")"'
     function flush(   i) {                      # the buffered page -> its subscription
         if (site == "" || fn == 0) return
         if (fmax > best[site]) { best[site] = fmax; bn[site] = fn
             for (i = 1; i <= fn; i++) { bs[site, i] = fs[i]; bl[site, i] = fl[i]; bm[site, i] = fm[i] } }
     }
-    FNR == 1 { flush(); site = ""; fn = 0; fmax = "" }
+    FNR == 1 { flush(); site = ""; fn = 0; fmax = ""; prev = "" }
+    $1 == "TABLE" { prev = "" }
     $1 == "TITLE" { site = $2; sub(/^Failed subscription: /, "", site)
                     sub(/^Expired pickup: /, "", site)   # the drill-only Expired pages (File search windows)
                     # a page from a previous run carries the Reason suffix in
@@ -897,7 +898,7 @@ LC_ALL=C awk -F'\t' -v CAND=8 '
                     sub(/ - .*$/, "", site); next }
     $1 == "ROW" && site != "" && NF >= 4 && ($3 == "Error" || $3 == "Warning") {
         if ($2 > fmax) fmax = $2                # the page own newest line, for picking the page
-        if (fn < CAND) { fn++; fs[fn] = $2; fl[fn] = $3; fm[fn] = substr($4, 1, 200) }
+        if (fn < CAND) { fn++; fs[fn] = $2; fl[fn] = $3; fm[fn] = ctx_enrich(substr($4, 1, 200), prev) }   # a bare "Permission denied" carries the line before it
     }
     END { flush()
           for (k in bn) for (i = 1; i <= bn[k]; i++)
@@ -964,16 +965,18 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
     # the legs table (TABLE 2; the server section is TABLE 3, so it is
     # complete before the break can fire). The legs table sits between the
     # facts and the server log on every page.
-    function pagereason(cid,   f, l, a, n, fn, fl, fm, t) {
-        f = ERRDIR "/" cid ".rpt"; fn = 0; t = 0; LEGST = ""
+    function pagereason(cid,   f, l, a, n, fn, fl, fm, t, prev) {
+        f = ERRDIR "/" cid ".rpt"; fn = 0; t = 0; LEGST = ""; prev = ""
         while ((getline l < f) > 0) {
             if (fn >= CAND) break
             n = split(l, a, "\t")
-            if (a[1] == "TABLE") { t++; continue }
+            if (a[1] == "TABLE") { t++; prev = ""; continue }
             if (a[1] != "ROW") continue
             if (t == 2 && a[2] != "") LEGST = a[2]
+            # a bare "Permission denied" takes its meaning from the line before it (ctx_enrich, flip-reason.awk)
             if (n >= 4 && (a[3] == "Error" || a[3] == "Warning")) {
-                fn++; fl[fn] = a[3]; fm[fn] = substr(a[4], 1, 200) }
+                fn++; fl[fn] = a[3]; fm[fn] = ctx_enrich(substr(a[4], 1, 200), prev) }
+            if (n >= 4) prev = a[4]
         }
         close(f)
         return classify(fn, fl, fm) }
@@ -1004,6 +1007,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
         if (r6 == "" && LEGST != "" && LEGST != "Processed" && LEGST != "Failed") r6 = LEGST
         print cid "\t" r6
     }
+    $1 == "ROW" && NF >= 4 { prev = $4 }   # the previous line of the page, for ctx_enrich
 ' "$TMP/all" > "$TMP/reasons"
 
 # The same Reason lands in each drill page TITLE — "Failed subscription:
