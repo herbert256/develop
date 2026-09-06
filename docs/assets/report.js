@@ -3452,6 +3452,84 @@
     });
   }
 
+  // ---- Copy-to-clipboard icons on ids (2026-09-06, user request): every
+  // CoreId / transfer id shown on a page (they are UUIDs) gets a small ⧉
+  // after it; a click copies the id. Covers the baked cells (files / errors
+  // pages, Item/Value rows, code cells) and whatever the page adds later
+  // (drill-down lists, Entity Search rows, the Files page) through a
+  // MutationObserver, plus a mouseover net for cells a restore rewrote.
+  var ID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g;
+  function isIcon(n) { return n && n.nodeType === 1 && (" " + n.className + " ").indexOf(" cpid ") >= 0; }
+  function makeIcon(id) {
+    var i = document.createElement("span");
+    i.className = "cpid"; i.textContent = "⧉"; i.title = "Copy " + id + " to the clipboard"; i.setAttribute("data-id", id);
+    return i;
+  }
+  function addCopyIcons(root) {
+    if (!root || root.nodeType !== 1) return;
+    var els = Array.prototype.slice.call(root.querySelectorAll("td, th, code, .coreid-item, dd, li"));
+    if (root.matches && root.matches("td, th, code, .coreid-item, dd, li")) els.unshift(root);
+    for (var e = 0; e < els.length; e++) {
+      var el = els[e], t = el.textContent;
+      if (t.length > 200 || t.indexOf("-") < 0) continue;
+      ID_RE.lastIndex = 0; if (!ID_RE.test(t)) continue;
+      if (el.closest && el.closest(".cpal, .colpick, .topbar")) continue;
+      // the text nodes carrying an id, one icon after each (after the node's
+      // element when that element IS the id — <code>id</code>, <a>id</a>)
+      var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), node, nodes = [], count = 0;
+      while ((node = walker.nextNode())) { if (!isIcon(node.parentNode)) nodes.push(node); }
+      for (var k = 0; k < nodes.length && count < 4; k++) {
+        node = nodes[k]; ID_RE.lastIndex = 0;
+        var m = ID_RE.exec(node.nodeValue); if (!m) continue;
+        var par = node.parentNode, anchor = node;
+        if (par !== el && par.textContent.trim() === m[0]) anchor = par;   // wrap-the-id element: icon after it
+        if (isIcon(anchor.nextSibling)) continue;                          // already there
+        if (anchor === node && par.textContent.trim() === m[0] && isIcon(par.nextSibling)) continue;   // the enclosing <code>/<a> already carries it (placed by an outer scan)
+        anchor.parentNode.insertBefore(makeIcon(m[0]), anchor.nextSibling);
+        count++;
+      }
+    }
+  }
+  function copyText(text, done) {
+    function fallback() {
+      var ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.top = "-1000px"; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { fallback(); done(); });
+    else { fallback(); done(); }
+  }
+  function setupCopyIds() {
+    addCopyIcons(document.body);
+    document.addEventListener("click", function (e) {
+      var i = e.target && e.target.closest ? e.target.closest(".cpid") : null; if (!i) return;
+      e.preventDefault(); e.stopPropagation();   // never the row link, the drill or the sort behind it
+      var id = i.getAttribute("data-id");
+      copyText(id, function () {
+        i.textContent = "✓"; i.className = "cpid done"; i.title = "Copied";
+        setTimeout(function () { i.textContent = "⧉"; i.className = "cpid"; i.title = "Copy " + id + " to the clipboard"; }, 1200);
+      });
+    }, true);
+    // content the page adds later (drill-down lists, Entity Search, the Files page)
+    if (window.MutationObserver) {
+      var pending = [], queued = false;
+      new MutationObserver(function (muts) {
+        for (var m = 0; m < muts.length; m++) for (var a = 0; a < muts[m].addedNodes.length; a++)
+          if (muts[m].addedNodes[a].nodeType === 1) pending.push(muts[m].addedNodes[a]);
+        if (!pending.length || queued) return;
+        queued = true;
+        setTimeout(function () { var p = pending; pending = []; queued = false; for (var x = 0; x < p.length; x++) if (!isIcon(p[x])) addCopyIcons(p[x]); }, 50);
+      }).observe(document.body, { childList: true, subtree: true });
+    }
+    // a restore that rewrote a cell's text (data-orig) drops its icon: put it back on the next pointer pass
+    document.addEventListener("mouseover", function (e) {
+      var el = e.target; if (!el || el.nodeType !== 1 || !el.matches || !el.matches("td, th, code, .coreid-item")) return;
+      if (el.querySelector(".cpid")) return;
+      addCopyIcons(el);
+    });
+  }
+
   function buildTopbar() {
     var tb = document.querySelector("div.topbar");
     if (!tb || tb.firstChild) return;                     // baked bar (help/build) — leave it
@@ -3620,7 +3698,7 @@
         if (c.nodeType !== 1) continue;
         if (c.tagName === "BR") { out += "; "; continue; }
         cl = " " + c.className + " ";
-        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" pickbtn ") >= 0 || cl.indexOf(" colpick ") >= 0 || cl.indexOf(" ce ") >= 0) continue;   // the hotspots (csv, cols, the picker) are not cell text
+        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" pickbtn ") >= 0 || cl.indexOf(" colpick ") >= 0 || cl.indexOf(" cpid ") >= 0 || cl.indexOf(" ce ") >= 0) continue;   // the hotspots (csv, cols, the picker, the copy icon) are not cell text
         // skip what CSS hides: the von/voff toggle twin not in effect, a
         // collapsed clines middle — the export is the cell AS DISPLAYED
         try { if (window.getComputedStyle && getComputedStyle(c).display === "none") continue; } catch (err) {}
@@ -3757,6 +3835,7 @@
     setupStatFilter();   // Subscriptions in boxes: the stat boxes narrow the table
     setupSelFilter();    // coverage partners page: Connection / Movement / Use case selectors
     markUrlRow();        // LAST: the sort/date/pager order it scrolls to must be final
+    setupCopyIds();      // after every snapshot: the ⧉ after each id must not be captured as cell text
   }
 
   // Clickable STAT boxes as row filters (Subscriptions in boxes): each

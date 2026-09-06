@@ -171,6 +171,9 @@ class, appended to docs/assets/style.css by build.sh/fresh.sh; a new light colou
 its maps; the page head applies the theme before the stylesheet, help pages carry the same inline
 line) · RELATIVE dates (`setupRelDates`, mouseover delegation, tooltip only) · the COMMAND palette
 (`setupPalette`, Ctrl/Cmd+K; fetches `<env>/report-finder.html` and `<env>/search-data.js` once).
+COPY icons on ids (`setupCopyIds`, 2026-09-06): a ⧉ after every UUID in td/th/code/.coreid-item/dd/li,
+added LAST in init() (after the data-orig snapshots), re-added by a MutationObserver for content the
+page builds later and by a mouseover net after a restore; csvCellText skips `.cpid`.
 
 **Iterating on HTML/CSS**: edit `assets/style.css`/`assets/report.js` (NOT the docs copies) and
 run `bin/build.sh` — it clears+seeds docs/ and re-renders everything. A MANUAL per-area publish

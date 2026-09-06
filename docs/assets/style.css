@@ -308,6 +308,11 @@ tr:hover .pickbtn, .pickbtn:hover { opacity:0.95; }
 .cplist li.cpe { padding:0.5rem 0.9rem; color:#8a94a1; font-size:0.9rem; }
 .cphint { font-size:0.75rem; color:#8a94a1; padding:0.35rem 0.9rem 0.5rem; border-top:1px solid #ddd; }
 .cphint kbd { font:inherit; border:1px solid #ddd; border-radius:3px; padding:0 0.3rem; margin-right:0.2rem; }
+/* the copy-to-clipboard icon after an id (report.js setupCopyIds) */
+.cpid { display:inline-block; margin-left:0.4rem; font-size:0.85em; line-height:1; color:#8a94a1; opacity:0.65; cursor:pointer;
+        user-select:none; -webkit-user-select:none; vertical-align:baseline; font-family:Arial, Helvetica, sans-serif; }
+.cpid:hover { color:#20344a; opacity:1; }
+.cpid.done { color:#1e7e34; opacity:1; }
 /* the sort arrow of a SECONDARY sort key carries its rank (shift-click) */
 th .arrow sup { font-size:0.65em; margin-left:0.1em; }
 tr:nth-child(even) { background-color:#f2f2f2; }
@@ -1031,6 +1036,9 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] .cplist li.cpe { color:#7f8a96; }
 :root[data-theme="dark"] .cphint { color:#7f8a96;border-top:1px solid #3a4451; }
 :root[data-theme="dark"] .cphint kbd { border:1px solid #3a4451; }
+:root[data-theme="dark"] .cpid { color:#7f8a96; }
+:root[data-theme="dark"] .cpid:hover { color:#a9c4e4; }
+:root[data-theme="dark"] .cpid.done { color:#6ad07f; }
 :root[data-theme="dark"] tr:nth-child(even) { background-color:#232a33; }
 :root[data-theme="dark"] tr:hover { background-color:#2a3a52; }
 :root[data-theme="dark"] tr.total td { background-color:#2b3644;border-top:2px solid #6f95bd; }
