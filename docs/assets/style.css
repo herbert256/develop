@@ -268,13 +268,14 @@ th.colover-r { box-shadow:inset -4px 0 0 #ffb300; }
 /* the column PICKER ("cols", report.js initColOrder): the cols hotspot sits bottom-RIGHT in
    the last visible cell of the total row — of the last visible data row on a
    table without one, of the header on an empty table (placeHotspots). The
-   host cell gets extra bottom padding so its value stays clear of them; the
+   hotspot sits in the bottom padding of the host cell (no extra padding,
+   so the row keeps its height); the
    picker opens above the corner when there is room, else below (placed against the viewport by report.js). A hidden column's cells carry the
    hidden attribute (survives the className restores of the recalc paths,
    unlike a class). */
 [hidden] { display:none !important; }
-table tr td.colhost, table tr th.colhost { position:relative; padding-bottom:1.25rem; }   /* table tr td: outranks `table.wide td { padding:6px 10px }` */
-.pickbtn { position:absolute; bottom:0; right:0; padding:0 0.3rem 0.15rem; font-size:0.65rem; font-weight:normal; line-height:1.2;   /* right:0 + the same right padding as .csvbtn: the two texts share one right edge */
+table tr td.colhost, table tr th.colhost { position:relative; }   /* no extra padding: the hotspot fits inside the cell's own bottom padding, so a data-row host keeps its height (2026-09-06, user request) */
+.pickbtn { position:absolute; bottom:0; right:0; padding:0 0.3rem 0; font-size:0.6rem; font-weight:normal; line-height:1;   /* right:0 + the same right padding as .csvbtn: the two texts share one right edge */
            color:#20344a; opacity:0.45; cursor:pointer; user-select:none; -webkit-user-select:none; }
 th .pickbtn { color:#fff; opacity:0.3; }
 tr:hover .pickbtn, .pickbtn:hover { opacity:0.95; }
