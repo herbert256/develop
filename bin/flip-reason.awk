@@ -24,6 +24,12 @@ function flip_reason(msg,   m) {
     if (m ~ /connection failure|could not be established|failed to connect|failed to create connection|connection refused|connection timed out|connection reset|unable to connect/) return "Connection failures"
     if (m ~ /receive file as/) return "Receive File As not set"
     if (m ~ /arsp0001|stop further route execution/) return "Route stopped"
+    # The platform refusing its OWN file: "Permission denied. <path> file is
+    # marked as in-process by Advanced Routing." — the file is locked by a
+    # routing step still holding it, not a credentials problem. BEFORE the
+    # login rule, whose "permission denied" would otherwise claim it
+    # (2026-09-06, user report on a UC1 flow).
+    if (m ~ /marked as in-process/) return "File is marked as in-process"
     if (m ~ /authentication fail|password|publickey|public key|not authorized|login failed|permission denied/) return "Login errors (out)"
     # The post-download DELETE of the remote file failing — "No such file:
     # Cannot delete file." (the file was fetched, then vanished or proved

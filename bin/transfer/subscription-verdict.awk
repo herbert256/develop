@@ -49,6 +49,8 @@ function nextmove(ll) {
     if (index(ll, "TRANSFER_REFUSED") || index(ll, "refused") || index(ll, "Refused") || \
         index(ll, "No such file"))
         return "**Next move: the partner** — their side refuses or lacks the path."
+    if (index(ll, "marked as in-process"))
+        return "**Next move: ours** — the file is locked by Advanced Routing (marked as in-process); free or re-route it."
     if (index(ll, "Publickey") || index(ll, "publickey") || index(ll, "Authentication failure") || \
         index(ll, "authentication failed") || index(ll, "authentication was cancelled") || \
         index(ll, "Permission denied") || index(ll, "permission denied") || \
