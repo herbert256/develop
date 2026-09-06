@@ -914,72 +914,14 @@ write_env_block() {
     if [ -f "$HOME_ENV_DATA/analyses/reports/home.rpt" ] || [ -f "$HOME_ENV_DATA/flow-manager/base/_subscriptions.tsv" ]; then
         write_status_pair "$env/coverage/"
     fi
-    # The per-day figures: FOUR titled tables (Files / Duration / Red/Green
-    # switch / First seen), rendered side by side further down — one data
-    # pass here feeds all four.
+    # The per-day figures: the column groups of ONE table (Transfers / Files /
+    # UC2 state / Duration / First seen) further down — one data pass feeds
+    # them all.
     local dl; dl=$(daily_loglines_tsv "$HOME_ENV_DATA")
-    # THE SWITCH PAGES (2026-08): one page per day with flips, listing the
-    # subscriptions behind the Red and Green cells — the cells link to it.
-    # The names file is the side channel daily_loglines_tsv fills (same
-    # deterministic path; the $(...) above cannot return a second value).
+    # (the Red/Green switch group and its per-day switch pages are gone —
+    # 2026-09-06, user request; daily_loglines_tsv still fills the names side
+    # file, removed unread here)
     local swn="${TMPDIR:-/tmp}/axswnames.$$.$(basename "$HOME_ENV_DATA")"
-    local swdir="docs/$env/switches"   # publish.sh runs from the repo root (publish_lib cd)
-    mkdir -p "$swdir"; rm -f "$swdir"/*.html
-    if [ -s "$swn" ]; then
-        local _swd _swsub _swdirn _swpage _swcol
-        # missing-file guard (write_failing_now's pattern): on a FRESH data/
-        # the OTHER env's chain renders this home first, before this env's
-        # analyses publish has written _subs-boxes.tsv — awk over the missing
-        # path exits 2 and set -e killed the whole index publish (2026-08-29)
-        local _swbase="$HOME_ENV_DATA/flow-manager/base/_subscriptions.tsv"
-        local _swboxes="$HOME_ENV_DATA/analyses/reports/_subs-boxes.tsv"
-        [ -f "$_swbase" ]  || _swbase=/dev/null
-        [ -f "$_swboxes" ] || _swboxes=/dev/null
-        # one page per date; the reader below groups by the (sorted) date
-        for _swd in $(cut -f1 "$swn" | LC_ALL=C sort -u); do
-            _swpage="$swdir/$_swd.html"
-            {
-                esc "Red/Green switch $_swd"
-                html_head "$ESC" "../../assets/style.css" "" "" "" "" ""
-                printf '<main>\n<h1>Red/Green switch %s</h1>\n' "$_swd"
-                printf '<p class="hnote">Subscriptions whose END-OF-DAY state changed on %s against their previous active day. Red = the day ended on an Error (a Failed or Expired File) where the previous one was OK; Green = the reverse. A flow that broke and recovered inside the day is not listed. Each row opens the subscription&rsquo;s detail page; the tint and the Reason are its CURRENT state — a flow that has recovered since shows green with no reason.</p>\n' "$_swd"
-                # side by side: the same .sxs/.sxscol flex row the home red
-                # tables use — each column carries its own heading + table
-                printf '<div class="sxs">\n'
-                for _swdirn in R G; do
-                    printf '<div class="sxscol">\n'
-                    if [ "$_swdirn" = R ]; then
-                        printf '<h2 id="red">Went red</h2>\n'
-                        printf '<div class="tablewrap"><table class="index fit" data-nosearch="1">\n<tr><th>Subscription</th><th>Reason</th></tr>\n'
-                    else
-                        printf '<h2 id="green">Went green</h2>\n'
-                        printf '<div class="tablewrap"><table class="index fit" data-nosearch="1">\n<tr><th>Subscription</th></tr>\n'
-                    fi
-                    while IFS=$'\t' read -r _ _ _swsub; do
-                        [ -n "$_swsub" ] || continue
-                        _swcol=$(awk -F'\t' -v N="$_swsub" 'toupper($1)==toupper(N){print $3; exit}' "$_swbase")
-                        case $_swcol in green|red|orange|blue) _swcol="res-$_swcol" ;; *) _swcol="" ;; esac
-                        esc "$_swsub"
-                        if [ "$_swdirn" = R ]; then
-                            # the Reason: the boxes sidecar, the same value the
-                            # home Failing-transfers table shows — the CURRENT
-                            # diagnosis, so an old day may show none
-                            _swreas=$(awk -F'\t' -v N="$_swsub" 'toupper($1)==toupper(N){print $2; exit}' "$_swboxes")
-                            _swname=$ESC; esc "$_swreas"
-                            printf '<tr><td class="%s"><a href="../details/subscriptions/%s.html">%s</a></td><td>%s</td></tr>\n' \
-                                "$_swcol" "$(slugify "$_swsub")" "$_swname" "$ESC"
-                        else
-                            printf '<tr><td class="%s"><a href="../details/subscriptions/%s.html">%s</a></td></tr>\n' \
-                                "$_swcol" "$(slugify "$_swsub")" "$ESC"
-                        fi
-                    done <<< "$(awk -F'\t' -v D="$_swd" -v W="$_swdirn" '$1==D && $2==W' "$swn" | LC_ALL=C sort -t"$(printf '\t')" -k3,3f)"
-                    printf '</table></div>\n</div>\n'
-                done
-                printf '</div>\n'
-                printf '</main>\n</body>\n</html>\n'
-            } > "$_swpage"
-        done
-    fi
     rm -f "$swn"
     # ONLY with TRANSFERS (2026-08-29): dl always carries the Duration TOTAL
     # sentinel, so a bare non-empty test rendered the four titled tables as
@@ -1019,16 +961,16 @@ write_env_block() {
         local fsp fss fsa fsl fsh fsps=0 fsss=0 fsas=0 fsls=0 fshs=0
         local swr swg swrs=0 swgs=0 dcc=""
         printf '<div class="tablewrap perday"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
-        # groups (2026-09-06, user request): Transfers (Ok Error Error%) before Files, UC2 state (Waiting Expired — staged pickups) before Duration, First seen without Logical/Accounts
+        # groups (2026-09-06, user request): Transfers (Ok Error Error%) before Files, UC2 state (Waiting Expired — staged pickups) before Duration, First seen without Logical/Accounts; Recovered reads Cured; the Red/Green switch group is gone
         # the groups are separated by SPACER columns (th/td.spc: no borders,
         # page background — the root index pattern), so every group keeps its
         # own left/right/bottom edges like a table of its own and no row line
         # crosses the gap (2026-09-06, user request; before: a thick
         # page-coloured left border that the row lines ran through)
-        printf '<tr class="gbrow"><th></th>%s<th class="gband" colspan="3">Transfers</th>%s<th class="gband" colspan="6">Files</th>%s<th class="gband" colspan="2">UC2 state</th>%s<th class="gband" colspan="4">Duration</th>%s<th class="gband" colspan="2">Red/Green switch</th>%s<th class="gband" colspan="2">First seen</th></tr>\n' \
-            '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
-        printf '<tr><th>Date</th>%s<th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Recovered</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">Waiting</th><th class="num">Expired</th>%s<th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th>%s<th class="num">Red</th><th class="num">Green</th>%s<th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n' \
-            '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
+        printf '<tr class="gbrow"><th></th>%s<th class="gband" colspan="3">Transfers</th>%s<th class="gband" colspan="6">Files</th>%s<th class="gband" colspan="2">UC2 state</th>%s<th class="gband" colspan="4">Duration</th>%s<th class="gband" colspan="2">First seen</th></tr>\n' \
+            '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
+        printf '<tr><th>Date</th>%s<th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Cured</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">Waiting</th><th class="num">Expired</th>%s<th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th>%s<th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n' \
+            '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
         rown=0
         local tcn tok ter tpc twt txp tcnsum=0 toksum=0 tersum=0 twtsum=0 txpsum=0
         while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg tcn tok ter tpc twt txp; do
@@ -1115,23 +1057,6 @@ write_env_block() {
             _durcell "$dc50" "$dv50"; _durcell "$dc75" "$dv75"
             _durcell "$dc90" "$dv90"; _durcell "$dc95" "$dv95"
             printf '<td class="spc"></td>'
-            # —— Red/Green switch: subscriptions that FLIPPED that day ——
-            # Tinted like every other outcome pair on the site — red for the
-            # flows that broke, green for the ones that recovered — and a 0
-            # renders blank (the render_rpt.awk convention, class z). A
-            # nonzero cell links its day's switch page (written above),
-            # anchored on the matching section.
-            if [ "$swr" = "-" ] || [ "$swr" = 0 ] || [ -z "$swr" ]; then printf '<td class="num failed z"></td>'; else
-                esc "$(dotify "$swr")"
-                if [ -f "docs/$env/switches/$d.html" ]; then printf '<td class="num failed"><a href="%s/switches/%s.html#red">%s</a></td>' "$env" "$d" "$ESC"
-                else printf '<td class="num failed">%s</td>' "$ESC"; fi
-                swrs=$((swrs + swr)); fi
-            if [ "$swg" = "-" ] || [ "$swg" = 0 ] || [ -z "$swg" ]; then printf '<td class="num processed z"></td>'; else
-                esc "$(dotify "$swg")"
-                if [ -f "docs/$env/switches/$d.html" ]; then printf '<td class="num processed"><a href="%s/switches/%s.html#green">%s</a></td>' "$env" "$d" "$ESC"
-                else printf '<td class="num processed">%s</td>' "$ESC"; fi
-                swgs=$((swgs + swg)); fi
-            printf '<td class="spc"></td>'
             # —— First seen (from analyses/first-seen.html): a count links
             # that day's first-seen list when the page exists (a page exists
             # only for a day with names); 0 renders blank ——
@@ -1160,10 +1085,6 @@ write_env_block() {
         # the Duration total = the report's own overall percentiles (a
         # percentile cannot be summed); empty cells when the report is absent
         [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'
-        # the switch totals: how many flips of each kind in the whole window
-        local swrt swgt
-        if [ "$swrs" -gt 0 ]; then esc "$(dotify "$swrs")"; swrt="<td class=\"num failed\">$ESC</td>"; else swrt='<td class="num failed z"></td>'; fi
-        if [ "$swgs" -gt 0 ]; then esc "$(dotify "$swgs")"; swgt="<td class=\"num processed\">$ESC</td>"; else swgt='<td class="num processed z"></td>'; fi
         # the First-seen totals: the report's SEEN line — the SAME figure as
         # the status tables' Seen column in the Transfer scope (the day cells
         # above plus the report's no-date bucket sum to it); each links its
@@ -1191,8 +1112,8 @@ write_env_block() {
         [ "$tcnsum" -gt 0 ] && tpct=$(awk -v e="$tersum" -v n="$tcnsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
         if [ "$twtsum" -gt 0 ]; then esc "$(dotify "$twtsum")"; twtt=$ESC; fi
         if [ "$txpsum" -gt 0 ]; then esc "$(dotify "$txpsum")"; txpt=$ESC; fi
-        [ "$dcount" -ge 10 ] && printf '<tr class="total%s"><td>Total</td><td class="spc"></td><td class="num okc">%s</td><td class="num errc">%s</td><td class="num">%s</td><td class="spc"></td><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td><td class="spc"></td><td class="num warn">%s</td><td class="num errc">%s</td><td class="spc"></td>%s<td class="spc"></td>%s%s<td class="spc"></td>%s</tr>\n' \
-            "$totcap" "$tokt" "$tert" "$tpct" "$fint" "$foutt" "$fokt" "$frvt" "$fert" "$fpct" "$twtt" "$txpt" "$dtot" "$swrt" "$swgt" "$fstot"
+        [ "$dcount" -ge 10 ] && printf '<tr class="total%s"><td>Total</td><td class="spc"></td><td class="num okc">%s</td><td class="num errc">%s</td><td class="num">%s</td><td class="spc"></td><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td><td class="spc"></td><td class="num warn">%s</td><td class="num errc">%s</td><td class="spc"></td>%s<td class="spc"></td>%s</tr>\n' \
+            "$totcap" "$tokt" "$tert" "$tpct" "$fint" "$foutt" "$fokt" "$frvt" "$fert" "$fpct" "$twtt" "$txpt" "$dtot" "$fstot"
         printf '</table></div>\n'
         # the "Show all": setupShowAll uncaps the capped table inside the
         # tablewrap above it
