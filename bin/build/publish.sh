@@ -996,8 +996,9 @@ write_env_block() {
         # table flex row (a Date spine + four data tables) is gone: one
         # table cannot fall out of row-sync, which the spine did whenever a
         # header's height changed (the csv-hotspot regression). The group
-        # dividers are positional CSS on table.dayrows (columns 2/5/11/13/17/19
-        # + the gbrow banner cells) — no per-cell class to keep in step.
+        # dividers are SPACER columns (th/td.spc — no borders, page
+        # background), one before each group, so each group has its own
+        # table-like edges and the row lines stop at the gaps.
         #
         # THE 14-DAY CAP (2026-08): the table opens showing only the newest
         # 14 days and NO Total row; the older rows and the Total carry class
@@ -1019,8 +1020,15 @@ write_env_block() {
         local swr swg swrs=0 swgs=0 dcc=""
         printf '<div class="tablewrap perday"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
         # groups (2026-09-06, user request): Transfers (Ok Error Error%) before Files, UC2 state (Waiting Expired — staged pickups) before Duration, First seen without Logical/Accounts
-        printf '<tr class="gbrow"><th></th><th class="gband" colspan="3">Transfers</th><th class="gband" colspan="6">Files</th><th class="gband" colspan="2">UC2 state</th><th class="gband" colspan="4">Duration</th><th class="gband" colspan="2">Red/Green switch</th><th class="gband" colspan="2">First seen</th></tr>\n'
-        printf '<tr><th>Date</th><th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th><th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Recovered</th><th class="num">Error</th><th class="num">Error %%</th><th class="num">Waiting</th><th class="num">Expired</th><th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th><th class="num">Red</th><th class="num">Green</th><th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n'
+        # the groups are separated by SPACER columns (th/td.spc: no borders,
+        # page background — the root index pattern), so every group keeps its
+        # own left/right/bottom edges like a table of its own and no row line
+        # crosses the gap (2026-09-06, user request; before: a thick
+        # page-coloured left border that the row lines ran through)
+        printf '<tr class="gbrow"><th></th>%s<th class="gband" colspan="3">Transfers</th>%s<th class="gband" colspan="6">Files</th>%s<th class="gband" colspan="2">UC2 state</th>%s<th class="gband" colspan="4">Duration</th>%s<th class="gband" colspan="2">Red/Green switch</th>%s<th class="gband" colspan="2">First seen</th></tr>\n' \
+            '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
+        printf '<tr><th>Date</th>%s<th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Recovered</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">Waiting</th><th class="num">Expired</th>%s<th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th>%s<th class="num">Red</th><th class="num">Green</th>%s<th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n' \
+            '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
         rown=0
         local tcn tok ter tpc twt txp tcnsum=0 toksum=0 tersum=0 twtsum=0 txpsum=0
         while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg tcn tok ter tpc twt txp; do
@@ -1036,7 +1044,7 @@ write_env_block() {
             fi
             _daycell "$d"; rown=$((rown + 1)); trc=""
             [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
-            printf '<tr%s><td>%s</td>' "$trc" "$dcc"
+            printf '<tr%s><td>%s</td><td class="spc"></td>' "$trc" "$dcc"
             # —— Transfers (from transfer/topview.html, the Transfers band):
             # technical rows, Ok/Error tinted like that page (okc/errc), a 0
             # blank ——
@@ -1046,6 +1054,7 @@ write_env_block() {
                 esc "$(dotify "$ter")"; printf '<td class="num errc">%s</td>' "$ESC"; tersum=$((tersum + ter)); fi
             if [ "$tpc" = "-" ] || [ -z "$tpc" ]; then printf '<td class="num"></td>'; else esc "$tpc"; printf '<td class="num">%s</td>' "$ESC"; fi
             [ "$tcn" != "-" ] && [ -n "$tcn" ] && tcnsum=$((tcnsum + tcn))
+            printf '<td class="spc"></td>'
             # —— Files (from transfer/topview.html) ——
             # Ok/Error tint like topview's cells, a 0 rendering as an empty
             # cell (the render_rpt.awk convention). A nonzero Error cell
@@ -1087,7 +1096,8 @@ write_env_block() {
             else
                 printf '<td class="num"></td><td class="num"></td><td class="num processed"></td><td class="num warn"></td><td class="num failed"></td><td class="num"></td>'
             fi
-            # —— State (the topview State band): Waiting (amber) and Expired
+            printf '<td class="spc"></td>'
+            # —— UC2 state (the topview State band): Waiting (amber) and Expired
             # (red) Files of the day; a nonzero cell opens the report ——
             if [ "$twt" = "-" ] || [ "$twt" = 0 ] || [ -z "$twt" ]; then printf '<td class="num warn"></td>'; else
                 esc "$(dotify "$twt")"
@@ -1099,10 +1109,12 @@ write_env_block() {
                 if [ -f "docs/$env/transfer/expired.html" ]; then printf '<td class="num errc"><a href="%s/transfer/expired.html">%s</a></td>' "$env" "$ESC"
                 else printf '<td class="num errc">%s</td>' "$ESC"; fi
                 txpsum=$((txpsum + txp)); fi
+            printf '<td class="spc"></td>'
             # —— Duration (from transfer/duration.html): the day's
             # p50/p75/p90/p95, tinted like that page's cells ——
             _durcell "$dc50" "$dv50"; _durcell "$dc75" "$dv75"
             _durcell "$dc90" "$dv90"; _durcell "$dc95" "$dv95"
+            printf '<td class="spc"></td>'
             # —— Red/Green switch: subscriptions that FLIPPED that day ——
             # Tinted like every other outcome pair on the site — red for the
             # flows that broke, green for the ones that recovered — and a 0
@@ -1119,6 +1131,7 @@ write_env_block() {
                 if [ -f "docs/$env/switches/$d.html" ]; then printf '<td class="num processed"><a href="%s/switches/%s.html#green">%s</a></td>' "$env" "$d" "$ESC"
                 else printf '<td class="num processed">%s</td>' "$ESC"; fi
                 swgs=$((swgs + swg)); fi
+            printf '<td class="spc"></td>'
             # —— First seen (from analyses/first-seen.html): a count links
             # that day's first-seen list when the page exists (a page exists
             # only for a day with names); 0 renders blank ——
@@ -1178,7 +1191,7 @@ write_env_block() {
         [ "$tcnsum" -gt 0 ] && tpct=$(awk -v e="$tersum" -v n="$tcnsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
         if [ "$twtsum" -gt 0 ]; then esc "$(dotify "$twtsum")"; twtt=$ESC; fi
         if [ "$txpsum" -gt 0 ]; then esc "$(dotify "$txpsum")"; txpt=$ESC; fi
-        [ "$dcount" -ge 10 ] && printf '<tr class="total%s"><td>Total</td><td class="num okc">%s</td><td class="num errc">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td><td class="num warn">%s</td><td class="num errc">%s</td>%s%s%s%s</tr>\n' \
+        [ "$dcount" -ge 10 ] && printf '<tr class="total%s"><td>Total</td><td class="spc"></td><td class="num okc">%s</td><td class="num errc">%s</td><td class="num">%s</td><td class="spc"></td><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td><td class="spc"></td><td class="num warn">%s</td><td class="num errc">%s</td><td class="spc"></td>%s<td class="spc"></td>%s%s<td class="spc"></td>%s</tr>\n' \
             "$totcap" "$tokt" "$tert" "$tpct" "$fint" "$foutt" "$fokt" "$frvt" "$fert" "$fpct" "$twtt" "$txpt" "$dtot" "$swrt" "$swgt" "$fstot"
         printf '</table></div>\n'
         # the "Show all": setupShowAll uncaps the capped table inside the

@@ -223,9 +223,15 @@ table.dayrows th:empty::before, table.dayrows td:empty::before { content:"\00a0"
    a group starts at columns 2 (Files) / 8 (Duration) / 12 (Red-Green) /
    14 (First seen) on the header, data and Total rows — and on every cell
    but the first of the gbrow banner row (its cells are one per group). */
-table.dayrows tr > *:nth-child(2), table.dayrows tr > *:nth-child(5), table.dayrows tr > *:nth-child(11),
-table.dayrows tr > *:nth-child(13), table.dayrows tr > *:nth-child(17), table.dayrows tr > *:nth-child(19) { border-left:18px solid #f7f7f9; }   /* the group starts: Transfers Files State Duration Red/Green First seen (2026-09-06: wider gaps, user request) */
-table.dayrows tr.gbrow > th:nth-child(n+2) { border-left:18px solid #f7f7f9; }
+/* the gaps between the seven groups are SPACER columns (th/td.spc, the root
+   index pattern): no borders and the page background, so each group shows its
+   own left/right/bottom edges like a table of its own and no row line runs
+   across the gap (2026-09-06, user request). The total row's tint and navy
+   top rule must not paint the spacer either. */
+table.dayrows th.spc, table.dayrows td.spc { width:18px; min-width:18px; max-width:18px; padding:0; border:none; background:#f7f7f9; }
+table.dayrows tr.total td.spc { border:none; background:#f7f7f9; }
+table.dayrows tr:hover td.spc { background:#f7f7f9; }
+table.dayrows th.spc::before, table.dayrows td.spc::before { content:none; }
 /* the banner row floats its group titles on the page — no dark bar, no frame
    (the table background is #fff, so "transparent" must be painted in the
    page color; the retired Date spine's th.blank recipe). The 10px left
@@ -1018,8 +1024,9 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] .logcard .lc-msg { color:#a9c4e4; }
 :root[data-theme="dark"] a { color:#a9c4e4; }
 :root[data-theme="dark"] table { background:#1e242c; }
-:root[data-theme="dark"] table.dayrows tr > *:nth-child(2), :root[data-theme="dark"] table.dayrows tr > *:nth-child(5), :root[data-theme="dark"] table.dayrows tr > *:nth-child(11), :root[data-theme="dark"] table.dayrows tr > *:nth-child(13), :root[data-theme="dark"] table.dayrows tr > *:nth-child(17), :root[data-theme="dark"] table.dayrows tr > *:nth-child(19) { border-left:18px solid #15191f; }
-:root[data-theme="dark"] table.dayrows tr.gbrow > th:nth-child(n+2) { border-left:18px solid #15191f; }
+:root[data-theme="dark"] table.dayrows th.spc, :root[data-theme="dark"] table.dayrows td.spc { background:#15191f; }
+:root[data-theme="dark"] table.dayrows tr.total td.spc { background:#15191f; }
+:root[data-theme="dark"] table.dayrows tr:hover td.spc { background:#15191f; }
 :root[data-theme="dark"] table.dayrows tr.gbrow > th { background:#15191f;color:#a9c4e4;border-color:#15191f; }
 :root[data-theme="dark"] th, :root[data-theme="dark"] td { border:1px solid #3a4451; }
 :root[data-theme="dark"] td.metgrp { background:#262e38;color:#a9c4e4; }
