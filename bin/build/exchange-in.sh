@@ -39,13 +39,18 @@ cd "$SCRIPT_DIR/../.."
 
 EX="${AXWAY_EXCHANGE_DIR:-$HOME/exchange}"
 EXD="${EX/#$HOME/~}"
+# the build report's Inbox block (build/inbox.tsv): source ⇥ status ⇥ name ⇥ detail
+inbox_note() { [ -d build ] && printf 'exchange\t%s\t%s\t%s\n' "$1" "$2" "$3" >> build/inbox.tsv; return 0; }
+export AXWAY_INBOX_SOURCE=exchange   # st-reports-update.sh notes its outcome under this source
 if [ ! -d "$EX/.git" ]; then
     echo "exchange-in: no git repo at $EXD — skipping (clone the exchange repo there to enable)." >&2
+    inbox_note skipped "" "no git repo at $EXD"
     exit 0
 fi
 
 if ! git -C "$EX" pull --rebase --autostash --quiet 2>/dev/null; then
     echo "exchange-in: WARNING - git pull failed in $EXD (offline? a conflict?) — nothing ingested this build." >&2
+    inbox_note skipped "" "git pull failed (offline? a conflict?)"
     exit 0
 fi
 
@@ -55,6 +60,7 @@ while IFS= read -r -d '' f; do updates+=("$f"); done < <(
     find "$EX" -path "$EX/.git" -prune -o -type f \( -iname 'acc*.7z' -o -iname 'prd*.7z' \) -print0 | sort -z)
 if [ ${#updates[@]} -eq 0 ]; then
     echo "exchange-in: pulled $EXD — no acc*/prd* .7z to ingest." >&2
+    inbox_note none "" "pulled $EXD: no acc*/prd* .7z"
     exit 0
 fi
 

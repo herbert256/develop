@@ -251,8 +251,13 @@ write_report() {
         both) envs="acceptance production" ;;
         *)    envs=$BUILD_SCOPE ;;
     esac
-    local e sfiles=0 slines=0 sbytes=0 tfiles=0 tlines=0 tbytes=0
-    local cslines=0 csbytes=0 ctlines=0 ctbytes=0 r a b c
+    # per ENVIRONMENT (2026-09-06, user request — the three boxes were one
+    # combined set): "_<env>" suffixed variables, read back below
+    local e r a b c
+    local sfiles_acceptance=0 slines_acceptance=0 sbytes_acceptance=0 tfiles_acceptance=0 tlines_acceptance=0 tbytes_acceptance=0
+    local cslines_acceptance=0 csbytes_acceptance=0 ctlines_acceptance=0 ctbytes_acceptance=0
+    local sfiles_production=0 slines_production=0 sbytes_production=0 tfiles_production=0 tlines_production=0 tbytes_production=0
+    local cslines_production=0 csbytes_production=0 ctlines_production=0 ctbytes_production=0
     # NOTE the two-step read. `IFS=$'\t' read … <<<"$(f $(ls …))"` looks
     # equivalent and is not: the assignment is already in effect when the INNER
     # substitution is word-split, so newline stops separating and all 35 export
@@ -263,18 +268,42 @@ write_report() {
     for e in $envs; do
         g=("input/$e/server"/*.csv)
         r=$(count_stats "in-$e-server" ${g[@]+"${g[@]}"}); IFS=$'\t' read -r a b c <<<"$r"
-        sfiles=$((sfiles+a)); slines=$((slines+b)); sbytes=$((sbytes+c))
+        eval "sfiles_$e=$a; slines_$e=$b; sbytes_$e=$c"
         g=("input/$e/transfer"/*.csv)
         r=$(count_stats "in-$e-transfer" ${g[@]+"${g[@]}"}); IFS=$'\t' read -r a b c <<<"$r"
-        tfiles=$((tfiles+a)); tlines=$((tlines+b)); tbytes=$((tbytes+c))
+        eval "tfiles_$e=$a; tlines_$e=$b; tbytes_$e=$c"
         g=("data/$e/server/cache/_parse.tsv")
         r=$(count_stats "cache-$e-server" ${g[@]+"${g[@]}"}); IFS=$'\t' read -r a b c <<<"$r"
-        cslines=$((cslines+b)); csbytes=$((csbytes+c))
+        eval "cslines_$e=$b; csbytes_$e=$c"
         g=("data/$e/transfer/cache/_files.tsv")
         r=$(count_stats "cache-$e-transfer" ${g[@]+"${g[@]}"}); IFS=$'\t' read -r a b c <<<"$r"
-        ctlines=$((ctlines+b)); ctbytes=$((ctbytes+c))
+        eval "ctlines_$e=$b; ctbytes_$e=$c"
     done
     shopt -u nullglob
+    # THE INPUT CHANGES (2026-09-06, user request): every file under
+    # input/<env>/{server,transfer,flow-manager}/ and the env's *.txt policy
+    # files, compared with the manifest the PREVIOUS build left in
+    # build/input-manifest.tsv (env ⇥ path ⇥ size ⇥ mtime): new, updated (size
+    # or mtime differs) or removed since then. The manifest is rewritten at
+    # the end of this report, so the next build compares against this one.
+    local manifest="build/input-manifest.tsv" manifest_new="build/input-manifest.new" changes=""
+    : > "$manifest_new"
+    for e in $envs; do
+        find "input/$e/server" "input/$e/transfer" "input/$e/flow-manager" "input/$e" -maxdepth 1 -type f \
+             \( -name '*.csv' -o -name '*.json' -o -name '*.txt' \) 2>/dev/null \
+            | LC_ALL=C sort -u | while IFS= read -r f; do
+                printf '%s\t%s\t%s\t%s\n' "$e" "$f" "$(stat -f%z "$f")" "$(stat -f%m "$f")"
+              done >> "$manifest_new"
+    done
+    [ -f "$manifest" ] || : > "$manifest"
+    changes=$(awk -F'\t' 'NR==FNR { old[$1 SUBSEP $2] = $3 SUBSEP $4; next }
+        { k = $1 SUBSEP $2; seen[k] = 1
+          if (!(k in old)) print $1 "\tnew\t" $2 "\t" $3
+          else if (old[k] != $3 SUBSEP $4) print $1 "\tupdated\t" $2 "\t" $3 }
+        END { for (k in old) if (!(k in seen)) { split(k, a, SUBSEP); print a[1] "\tremoved\t" a[2] "\t" } }' \
+        "$manifest" "$manifest_new" | LC_ALL=C sort)
+    local firstbuild=""
+    [ -s "$manifest" ] || firstbuild=1
     t1=$(date +%s); total=$((t1 - BUILD_T0)); end=$(date '+%Y-%m-%d %H:%M:%S')
     # The report carries the site's standard fixed top bar (the help pages'
     # plain-link style — no dropdown machinery, the report must render even
@@ -372,21 +401,66 @@ HTML
         nhtml=$(find docs -name '*.html' 2>/dev/null | wc -l | tr -d ' ')
         [ "${nhtml:-0}" -gt 0 ] && obytes=$(find docs -name '*.html' -exec stat -f%z {} + 2>/dev/null \
                                             | awk '{ s += $1 } END { printf "%d", s + 0 }')
-        printf '<div class="bstats bsrow">\n'   # Input/Cache/Output on one row
-        printf '<div class="bs"><h3>Input</h3><table>'
-        printf '<tr><td>Server logs</td><td class="v">%s files, %s lines, %s</td></tr>' \
-            "$(hnum "$sfiles")" "$(hnum "$slines")" "$(hbytes "$sbytes")"
-        printf '<tr><td>Transfer logs</td><td class="v">%s files, %s lines, %s</td></tr></table></div>\n' \
-            "$(hnum "$tfiles")" "$(hnum "$tlines")" "$(hbytes "$tbytes")"
-        printf '<div class="bs"><h3>Cached files</h3><table>'
-        printf '<tr><td>Server <code>_parse.tsv</code></td><td class="v">%s lines, %s</td></tr>' \
-            "$(hnum "$cslines")" "$(hbytes "$csbytes")"
-        printf '<tr><td>Transfer <code>_files.tsv</code></td><td class="v">%s lines, %s</td></tr></table></div>\n' \
-            "$(hnum "$ctlines")" "$(hbytes "$ctbytes")"
-        printf '<div class="bs"><h3>Output</h3><table>'
-        printf '<tr><td>HTML files</td><td class="v">%s</td></tr>' "$(hnum "$nhtml")"
-        printf '<tr><td>Size</td><td class="v">%s</td></tr></table></div>\n' "$(hbytes "$obytes")"
-        printf '</div>\n'
+        # one row of the three boxes PER ENVIRONMENT (2026-09-06, user
+        # request); the Output box counts that environment's docs/<env>/ tree
+        local _E _cap _nh _ob
+        for e in $envs; do
+            _cap=$(printf '%s' "$e" | awk '{ print toupper(substr($0,1,1)) substr($0,2) }')
+            _nh=$(find "docs/$e" -name '*.html' 2>/dev/null | wc -l | tr -d ' '); _ob=0
+            [ "${_nh:-0}" -gt 0 ] && _ob=$(find "docs/$e" -name '*.html' -exec stat -f%z {} + 2>/dev/null | awk '{ s += $1 } END { printf "%d", s + 0 }')
+            printf '<h2>%s</h2>\n' "$_cap"
+            printf '<div class="bstats bsrow">\n'   # Input/Cache/Output on one row
+            printf '<div class="bs"><h3>Input</h3><table>'
+            eval "_E=\$sfiles_$e; _F=\$slines_$e; _G=\$sbytes_$e"
+            printf '<tr><td>Server logs</td><td class="v">%s files, %s lines, %s</td></tr>' "$(hnum "$_E")" "$(hnum "$_F")" "$(hbytes "$_G")"
+            eval "_E=\$tfiles_$e; _F=\$tlines_$e; _G=\$tbytes_$e"
+            printf '<tr><td>Transfer logs</td><td class="v">%s files, %s lines, %s</td></tr></table></div>\n' "$(hnum "$_E")" "$(hnum "$_F")" "$(hbytes "$_G")"
+            printf '<div class="bs"><h3>Cached files</h3><table>'
+            eval "_E=\$cslines_$e; _F=\$csbytes_$e"
+            printf '<tr><td>Server <code>_parse.tsv</code></td><td class="v">%s lines, %s</td></tr>' "$(hnum "$_E")" "$(hbytes "$_F")"
+            eval "_E=\$ctlines_$e; _F=\$ctbytes_$e"
+            printf '<tr><td>Transfer <code>_files.tsv</code></td><td class="v">%s lines, %s</td></tr></table></div>\n' "$(hnum "$_E")" "$(hbytes "$_F")"
+            printf '<div class="bs"><h3>Output</h3><table>'
+            printf '<tr><td>HTML files</td><td class="v">%s</td></tr>' "$(hnum "$_nh")"
+            printf '<tr><td>Size</td><td class="v">%s</td></tr></table></div>\n' "$(hbytes "$_ob")"
+            printf '</div>\n'
+        done
+        printf '<p class="bsnote">Whole site: %s HTML files, %s (the shared root, help and asset pages included).</p>\n' "$(hnum "$nhtml")" "$(hbytes "$obytes")"
+        # ---- Inbox: what the exchange repo and the cloud drop delivered ----
+        printf '<h2>Inbox</h2>\n'
+        if [ -f input/.sample-estate ]; then
+            printf '<p class="bsnote">Not read on the sample estate (develop) — the inboxes are runtime-only.</p>\n'
+        elif [ ! -s build/inbox.tsv ]; then
+            printf '<p class="bsnote">The inbox steps did not run this build.</p>\n'
+        else
+            printf '<table>\n<tr><th>Source</th><th>Outcome</th><th>Archive</th><th>Detail</th></tr>\n'
+            local _is _io _ia _id _cls
+            while IFS=$'\t' read -r _is _io _ia _id; do
+                [ -n "$_is" ] || continue
+                case $_io in consumed) _cls=ok ;; failed) _cls=failed ;; *) _cls="" ;; esac
+                case $_is in exchange) _is="Exchange repo (github.com/herbert256/exchange)" ;; cloud) _is="~/cloud drop" ;; esac
+                printf '<tr><td>%s</td><td class="%s">%s</td><td><code>%s</code></td><td>%s</td></tr>\n' \
+                    "$(printf '%s' "$_is" | esc)" "$_cls" "$(printf '%s' "$_io" | esc)" "$(printf '%s' "$_ia" | esc)" "$(printf '%s' "$_id" | esc)"
+            done < build/inbox.tsv
+            printf '</table>\n'
+        fi
+        # ---- Input changes since the previous build ----
+        printf '<h2>Input changes since the previous build</h2>\n'
+        if [ -n "$firstbuild" ]; then
+            printf '<p class="bsnote">No previous manifest — this build recorded the input files; the next report lists what changed.</p>\n'
+        elif [ -z "$changes" ]; then
+            printf '<p class="bsnote">No new, updated or removed input files.</p>\n'
+        else
+            printf '<table>\n<tr><th>Environment</th><th>Change</th><th>File</th><th>Size</th></tr>\n'
+            local _ce _cw _cf _cz
+            while IFS=$'\t' read -r _ce _cw _cf _cz; do
+                [ -n "$_ce" ] || continue
+                printf '<tr><td>%s</td><td class="%s">%s</td><td><code>%s</code></td><td class="r">%s</td></tr>\n' \
+                    "$_ce" "$([ "$_cw" = removed ] && echo failed || echo ok)" "$_cw" "$(printf '%s' "$_cf" | esc)" "$([ -n "$_cz" ] && hbytes "$_cz")"
+            done <<< "$changes"
+            printf '</table>\n'
+        fi
+        mv -f "$manifest_new" "$manifest"
         [ -n "$note" ] && printf '<p>%s</p>\n' "$note"
         printf '<table>\n<tr><th>#</th><th>Step</th><th>Command</th><th>Started</th><th>Duration</th><th>Status</th></tr>\n'
         local rec label cmd start dur status logf i=0
@@ -701,6 +775,7 @@ bg_env_chain() {
 # Runs BEFORE the HAVE_ACC/HAVE_PROD detection just below, so an update
 # delivering an environment's first exports enables it in the same build.
 # Develop (the .sample-estate marker) never ingests — its estate is generated.
+: > build/inbox.tsv   # the report's Inbox block: the inbox scripts append one line per outcome
 if [ ! -f input/.sample-estate ]; then
     run_step "exchange: ingest acc*/prd* .7z from ~/exchange -> input/" bin/build/exchange-in.sh   # the git inbox, first (2026-09-06)
     run_step "update: ingest ~/cloud/update.7z -> input/"  bin/build/st-reports-update.sh

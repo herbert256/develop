@@ -58,7 +58,11 @@ cd "$SCRIPT_DIR/../.."
 
 UPD="${1:-$HOME/cloud/update.7z}"
 UPDD="${UPD/#$HOME/~}"   # display form
-[ -f "$UPD" ] || { echo "st-reports-update: no $UPDD — nothing to ingest." >&2; exit 0; }
+# the build report's Inbox block (build/inbox.tsv, reset by bin/build.sh):
+# source ⇥ status ⇥ archive ⇥ detail — every outcome leaves one line
+SRC="${AXWAY_INBOX_SOURCE:-cloud}"
+inbox_note() { [ -d build ] && printf '%s\t%s\t%s\t%s\n' "$SRC" "$1" "$2" "$3" >> build/inbox.tsv; return 0; }
+[ -f "$UPD" ] || { echo "st-reports-update: no $UPDD — nothing to ingest." >&2; inbox_note none "$UPDD" ""; exit 0; }
 
 command -v 7z >/dev/null 2>&1 || { echo "st-reports-update: 7z not found (brew install p7zip)." >&2; exit 1; }
 PASSF="input/secrets/st-reports.pass"
@@ -70,6 +74,7 @@ trap 'rm -rf "$tmp"' EXIT
 
 if ! 7z x -aoa -p"$pass" -o"$tmp" "$UPD" >/dev/null 2>&1; then
     echo "st-reports-update: could not unpack $UPDD (wrong password or corrupt archive) — the file stays; fix or remove it." >&2
+    inbox_note failed "$(basename "$UPD")" "could not unpack (wrong password or corrupt archive)"
     exit 1
 fi
 
@@ -144,6 +149,7 @@ fi
 if [ ${#unrouted[@]} -gt 0 ]; then
     echo "st-reports-update: $UPDD holds loose export(s) whose ENVIRONMENT cannot be told: ${unrouted[*]}" >&2
     echo "st-reports-update: rename the archive to say which — e.g. prd-$(basename "$UPD") or acc-$(basename "$UPD") — or pack them under acceptance/ or production/. The file stays; nothing was removed." >&2
+    inbox_note failed "$(basename "$UPD")" "environment of ${unrouted[*]} cannot be told"
     exit 1
 fi
 i=0
@@ -157,7 +163,9 @@ done
 
 if [ "$total" -eq 0 ]; then
     echo "st-reports-update: $UPDD holds NO export at all — the file stays; check its layout (expected input/<env>/{flow-manager,server,transfer}/... or loose logEntry*.csv / transferLog*.csv / partners.json / subscriptions.json)." >&2
+    inbox_note failed "$(basename "$UPD")" "holds no export"
     exit 1
 fi
 rm -f "$UPD"
 echo "st-reports-update: ingested $total file(s); removed $UPDD." >&2
+inbox_note consumed "$(basename "$UPD")" "$total file(s): $(printf '%s ' ${plan_dst[@]+"${plan_dst[@]}"} | sed 's/ $//')"
