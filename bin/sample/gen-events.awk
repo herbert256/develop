@@ -383,6 +383,31 @@ function env_ambient(   ci, jd, base, i, n, k, sid, lst) {
         # moves such a name to the Scanners tab (2026-09-04, user request).
         # Planted without rint() so the RNG sequence stays as it was.
         if (n >= 4) S(base + 25200000, "I", "TM", "", "[Ssh Default] Unable to find account with username: svc-backup")
+        # a PERSISTENT SSH connection (2026-09-06, the FE000508 finding): the
+        # first login's partner keeps ONE connection open for the whole window
+        # — one session id on every day — authenticated once on the first
+        # calendar day, then re-screened every hour (the SSH re-key logs
+        # "Start login process" + "Allowed user" again, no authentication):
+        # logon.sh/logons.sh count those as Re-screens, not Allowed. Once a
+        # week the session also logs the CMS-parsing pair (a Session error).
+        # Planted without rint() so the RNG sequence stays as it was.
+        if (NAL >= 1) {
+            sid = "50455253495354454e542d53455353494f4e2d" ENVN
+            if (ci == 1) {
+                S(base + 35904000, "I", "TM", sid, "[Ssh Default] Authentication attempt with certificate with serial number 01 assigned to [" AL_A[1] "@" AL_L[1] "]")
+                S(base + 35904190, "I", "TM", sid, "[Ssh Default] User " AL_L[1] " logged in using certificate with serial number 01 assigned to [" AL_A[1] "@" AL_L[1] "].")
+                S(base + 35904191, "I", "TM", sid, "[Ssh Default] User with login name \"" AL_L[1] "\", associated with account \"" AL_A[1] "@" AL_L[1] "\", successfully authenticated over SSH by local authentication agent. Remote address: 198.51.100.77. Connection security protocol SSH-2.")
+            }
+            for (i = (ci == 1 ? 10 : 0); i < 24; i++) {
+                k = base + i * 3600000 + 3504000 + i * 2000 + (ci - 1) * 48000
+                S(k, "I", "TM", sid, "[Ssh Default] Start login process for:" AL_L[1] "; Unique Key: " AL_L[1] "29105588")
+                S(k + 37, "I", "TM", sid, "[Ssh Default] Allowed user '" AL_L[1] "' from address '198.51.100.77', corresponding account '" AL_A[1] "@" AL_L[1] "' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.")
+            }
+            if (jd % 7 == 6) {
+                S(base + 26480872, "W", "TM", sid, "[Ssh Default] CMS parsing has failed")
+                S(base + 26480873, "E", "TM", sid, "[Ssh Default] Stream read/write error. Exception message is: CMS parsing has failed")
+            }
+        }
         # the shared-certificate serial list (ssh-security's detector)
         if (NAL >= 3) {
             lst = AL_A[1] "@" AL_L[1] ", " AL_A[2] "@" AL_L[2] ", " AL_A[3] "@" AL_L[3]
@@ -497,9 +522,14 @@ function flow_day_ambient(jd, base,   i, np, tt, sid, poff) {
     }
     # empty-handed partner visits (UC2 pickup stats' empty visits)
     if (UC == 2 && VOL > 0 && rnd() < 0.5) {
-        sid = sesshex()
-        s_allowed(base + 20000000 + rint(40000000), sid, anyip())
-        s_authok(base + 20001000 + rint(40000000), sid, anyip())
+        # the visit's screening pair sits ONE second apart on its session, as
+        # on a real connection (2026-09-06: two independent draws put half the
+        # authentications BEFORE their own Allowed line, which the session-aware
+        # funnel then read as re-screens); both draws stay so the RNG sequence
+        # is unchanged
+        sid = sesshex(); tt = rint(40000000); rint(40000000)
+        s_allowed(base + 20000000 + tt, sid, anyip())
+        s_authok(base + 20001000 + tt, sid, anyip())
     }
     # the weak-SSH warning family
     if (hastag("weakssh") && rnd() < 0.4)

@@ -6,6 +6,7 @@
 #     ⇥ auth-failed-anonymous
 #     ⇥ last-allowed ⇥ last-disallowed ⇥ last-authenticated ⇥ last-no-account
 #     ⇥ last-bad-key ⇥ last-key-failures ⇥ last-locked ⇥ last-auth-failed
+#     ⇥ re-screens ⇥ session-errors ⇥ last-re-screen ⇥ last-session-error
 # Fields 2-5 come from the server log's own logon signal ("User with login
 # name X … successfully authenticated", any protocol daemon; the same line
 # uc2-status.sh counts pickups by); a login with funnel activity but no
@@ -32,6 +33,16 @@
 # Fields 14-21 (2026-08) are the LAST stamp per family, in the field 6-13
 # order — the detail pages' Logons table shows them as its Last column;
 # "-" where the family never fired.
+#
+# Fields 22-25 (2026-09-06, user request — the FE000508 finding) are the two
+# SESSION-keyed families, logon.sh's rule replicated: a RE-SCREEN is an
+# Allowed line on a session (parse col 6) LATER than that session's last
+# authentication — a persistent connection's hourly re-key logs "Start login
+# process" + "Allowed user" again and never authenticates anew — counted here
+# and NOT in field 6 (nor in the host file's Allowed); SESSION ERRORS are the
+# Error/Warning [Ssh Default] lines of no counted family, attributed to the
+# login of their session. Then the two last stamps. Every Allowed line is
+# therefore booked in END, once the session's first authentication is known.
 #
 # A SECOND file, _logons-hosts.tsv (2026-08), carries the same story per
 # client ADDRESS — the auth line's "Remote address:" and the screening
@@ -102,6 +113,12 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 p = index(substr(rest, 2), q)
                 if (p <= 0) return ""
                 return substr(rest, 2, p - 1)
+            }
+            # one screening line, booked in the per-ADDRESS host file
+            function host_screen(s9, ha9, ts9h) {
+                hfc[s9 SUBSEP ha9]++
+                if (hfl[s9 SUBSEP ha9] == "" || ts9h > hfl[s9 SUBSEP ha9]) hfl[s9 SUBSEP ha9] = ts9h
+                if (hORD[ha9] == "") { hORD[ha9] = ++hno; HNM[hno] = ha9 }
             }
             # the client address after "Remote address: " — up to the first
             # space, a trailing sentence dot stripped
@@ -257,33 +274,76 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 else if (match(m9, /\[Ssh Default\] User /) && m9 ~ /is locked/) {
                     side = "L"; u2 = qtok(substr(m9, RSTART + RLENGTH))
                     if (u2 == "" && match(m9, /Username: /)) u2 = qtok(substr(m9, RSTART + RLENGTH)) }
-                if (side == "" || u2 == "") next
+                if (side == "" || u2 == "") {
+                    # SESSION ERRORS (2026-09-06): an Error/Warning [Ssh
+                    # Default] line of no counted family, on a session —
+                    # attributed to the login of the session in END
+                    if (side == "" && $3 != "I" && $6 != "") { nx9++; XS9[nx9] = $6; XT9[nx9] = $1 " " $2 }
+                    next
+                }
                 # the screening lines carry the client address too (the host
                 # file) — captured BEFORE the login blacklist: the address
-                # activity is real whichever credential it carried
+                # activity is real whichever credential it carried. An
+                # Allowed line is DEFERRED for the host file with the line
+                # itself (a re-screen counts for the address no more than
+                # for the login).
+                ha = ""
                 if ((side == "A" || side == "D") && match(m9, /from address /)) {
                     ha = qtok(substr(m9, RSTART + RLENGTH))
-                    if (ha != "" && !bl_blank("host", ha)) {
-                        hfc[side SUBSEP ha]++
-                        ts = $1 " " $2
-                        if (hfl[side SUBSEP ha] == "" || ts > hfl[side SUBSEP ha]) hfl[side SUBSEP ha] = ts
-                        if (hORD[ha] == "") { hORD[ha] = ++hno; HNM[hno] = ha }
-                    }
+                    if (ha != "" && bl_blank("host", ha)) ha = ""
+                    if (ha != "" && side == "D") host_screen("D", ha, $1 " " $2)
+                }
+                ts9 = $1 " " $2
+                if (side == "A") {
+                    # DEFERRED (2026-09-06): re-screen or genuine screening is
+                    # decided in END — the exports are newest-first, so the
+                    # last authentication of the session is known only then
+                    nr9++; RS9s[nr9] = $6; RS9h[nr9] = ha; RS9t[nr9] = ts9; RS9u[nr9] = ""
+                    RS9d[nr9] = ($1 ~ /^[0-9][0-9][0-9][0-9]-/ && $2 ~ /^[0-9][0-9]:/) ? secof($1, $2) : ""
+                    if (bl_blank("login", u2)) next   # raw token, pre-toupper: the address activity stays, the login does not
+                    u2 = toupper(u2); RS9u[nr9] = u2
+                    if ($6 != "" && !($6 in slog)) slog[$6] = u2
+                    if (ORD[u2] == "") { ORD[u2] = ++no; NM[no] = u2 }
+                    next
                 }
                 if (bl_blank("login", u2)) next   # raw token, pre-toupper
                 u2 = toupper(u2)
-                fcnt[side SUBSEP u2]++
-                ts9 = $1 " " $2; k9f = side SUBSEP u2
-                if (fls[k9f] == "" || ts9 > fls[k9f]) fls[k9f] = ts9   # last stamp per family
-                # the Allowed and SSH-success events feed the anon-failure
-                # window join (a success CONSUMES its Allowed — see END)
-                if ($1 ~ /^[0-9][0-9][0-9][0-9]-/ && $2 ~ /^[0-9][0-9]:/) {
-                    if (side == "A")      { na9++; AS9[na9] = secof($1, $2); AU9[na9] = u2 }
-                    else if (side == "T") { nt9++; TS9[nt9] = secof($1, $2); TU9[nt9] = u2 }
+                # the session -> login map and the LAST SSH authentication
+                # of the session (the logon.sh rule verbatim)
+                if ($6 != "") {
+                    if (side == "T" || !($6 in slog)) slog[$6] = u2
+                    if (side == "T" && (!($6 in sat) || ts9 > sat[$6])) sat[$6] = ts9
                 }
+                fcnt[side SUBSEP u2]++
+                k9f = side SUBSEP u2
+                if (fls[k9f] == "" || ts9 > fls[k9f]) fls[k9f] = ts9   # last stamp per family
+                # the SSH-success events feed the anon-failure window join (a
+                # success CONSUMES its Allowed — see END; the Allowed side
+                # joins from the deferred loop there)
+                if (side == "T" && $1 ~ /^[0-9][0-9][0-9][0-9]-/ && $2 ~ /^[0-9][0-9]:/) { nt9++; TS9[nt9] = secof($1, $2); TU9[nt9] = u2 }
                 if (ORD[u2] == "") { ORD[u2] = ++no; NM[no] = u2 }
             }
             END {
+                # ---- the deferred Allowed lines (2026-09-06): a re-screen (R) ----
+                # when the line is LATER than the last authentication of its
+                # session, else a genuine screening (A) — which alone counts
+                # for the address and feeds the anon-failure window below
+                for (r9 = 1; r9 <= nr9; r9++) {
+                    s9 = RS9s[r9]
+                    side = (s9 != "" && (s9 in sat) && sat[s9] < RS9t[r9]) ? "R" : "A"
+                    if (side == "A" && RS9h[r9] != "") host_screen("A", RS9h[r9], RS9t[r9])
+                    u = RS9u[r9]; if (u == "") continue
+                    fcnt[side SUBSEP u]++
+                    if (fls[side SUBSEP u] == "" || RS9t[r9] > fls[side SUBSEP u]) fls[side SUBSEP u] = RS9t[r9]
+                    if (side == "A" && RS9d[r9] != "") { na9++; AS9[na9] = RS9d[r9]; AU9[na9] = u }
+                }
+                # ---- the session errors (X): to the login of their session ----
+                for (x9 = 1; x9 <= nx9; x9++) {
+                    if (!(XS9[x9] in slog)) continue
+                    u = slog[XS9[x9]]
+                    fcnt["X" SUBSEP u]++
+                    if (fls["X" SUBSEP u] == "" || XT9[x9] > fls["X" SUBSEP u]) fls["X" SUBSEP u] = XT9[x9]
+                }
                 # attribute each anonymous failure to the NEWEST Allowed line
                 # at most one second before it. An Allowed followed by ITS
                 # OWN SSH success before the failure is CONSUMED — that
@@ -322,12 +382,13 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                     c9 = (u in cnt) ? cnt[u] : 0
                     # a funnel-only login (screened, never authenticated)
                     pat = (c9 > 0) ? ((u in m0) ? cadence(lgm, u, m0[u], m1[u]) : "Rarely") : "Never"
-                    printf "%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", u, \
+                    printf "%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%s\n", u, \
                         (c9 > 0 ? fst[u] : "-"), (c9 > 0 ? lst[u] : "-"), c9, pat, \
                         fk("A", u), fk("D", u), fk("T", u), fk("N", u), fk("B", u), fk("K", u), fk("L", u), \
                         ((u in afc) ? afc[u] : 0), \
                         fl9("A", u), fl9("D", u), fl9("T", u), fl9("N", u), fl9("B", u), fl9("K", u), fl9("L", u), \
-                        (afl[u] != "" ? afl[u] : "-")
+                        (afl[u] != "" ? afl[u] : "-"), \
+                        fk("R", u), fk("X", u), fl9("R", u), fl9("X", u)
                 }
                 # ---- the per-ADDRESS host file (see the header) ---------------
                 for (i9 = 1; i9 <= hno; i9++) {

@@ -130,6 +130,15 @@ for env in acceptance production; do
     scn=$(awk -F'\t' '$1=="TABLE" { t=$2 } $1=="ROW" && t ~ /scanner names/ && index($2, "svc-backup") { n++ } END { print n+0 }' "$R" 2>/dev/null)
     check $([ "${inc:-1}" -eq 0 ] && echo 0 || echo 1) "[$env] logon Incoming lists svc-backup ($inc row(s)), expected none (unconfigured no-account name is a door knocker)"
     check $([ "${scn:-0}" -ge 1 ] && echo 0 || echo 1) "[$env] logon Scanners lacks svc-backup, expected a row (the funnel no-account rejection)"
+    # the PERSISTENT connection (2026-09-06, the FE000508 finding): the first
+    # login's hourly re-key screenings count under Re-screens, not Allowed,
+    # its row stays green, its weekly CMS-parsing pair lands in Session
+    # errors — and the report's figures equal the detail pages' sidecar
+    # (the two matchers must agree)
+    rs=$(awk -F'\t' '$1=="TABLE" { t++ } t==1 && $1=="HEAD" { for (i=2;i<=NF;i++) { if ($i=="Re-screens") c=i; if ($i=="Session errors") x=i } } t==1 && $1=="ROW" && c && $c+0>0 && $x+0>0 && index($0, "@data:res=green") { n++ } END { print n+0 }' "$R" 2>/dev/null)
+    check $([ "${rs:-0}" -ge 1 ] && echo 0 || echo 1) "[$env] logon Incoming has $rs green row(s) with both Re-screens and Session errors, expected the persistent connection"
+    tw=$(awk -F'\t' -v LG="data/$env/server/cache/_logons.tsv" 'BEGIN { while ((getline l < LG) > 0) { split(l, A, "\t"); LA[A[1]] = A[6] + 0; LR[A[1]] = A[22] + 0; LX[A[1]] = A[23] + 0 } } $1=="TABLE" { t++ } t==1 && $1=="HEAD" { for (i=2;i<=NF;i++) { if ($i=="Allowed") a=i; if ($i=="Re-screens") c=i; if ($i=="Session errors") x=i } } t==1 && $1=="ROW" && c && ($a+0>0 || $c+0>0 || $x+0>0) { u=toupper($2); if (LA[u] != $a+0 || LR[u] != $c+0 || LX[u] != $x+0) bad++ } END { print bad+0 }' "$R" 2>/dev/null)
+    check $([ "${tw:-1}" -eq 0 ] && echo 0 || echo 1) "[$env] $tw Incoming row(s) whose Allowed/Re-screens/Session errors differ from the _logons.tsv sidecar (the two matchers must agree)"
     # the MULTI-FE account (2026-08-31, user report): CD-PARCEL-BLUTH carries
     # TWO logins; its quiet second flow (its own login, never used) must read
     # Nothing — never "No files": the other login's logons are no pickup
@@ -227,10 +236,12 @@ for env in acceptance production; do
     fi
 done
 
-# the failing-reasons catalogue: every planted category non-empty (acceptance)
+# the failing-reasons catalogue: every planted category non-empty (acceptance);
+# the "routestop" scenario (an ARSP0001 "while sending the file … to a partner
+# site" line) reads "Could not send to CFT" since the 2026-09-06 wording rule
 FR="data/acceptance/transfer/reports/failed-sub-all.rpt"
 for reason in "Connection failures" "Wrong server fingerprint" "No Dir" "Listing failed" \
-              "Login errors (out)" "Route stopped" "Transfer site missing" "Receive File As not set" \
+              "Login errors (out)" "Could not send to CFT" "Transfer site missing" "Receive File As not set" \
               "PeSIT transfer aborted" "PeSIT delivery refused" "Staged file missing" \
               "File Tracking entry missing" "Remote file unavailable" "Post client action failed" \
               "Pull via FTPS failed" "Delete remote file failed"; do

@@ -710,7 +710,8 @@ function page_srv_log(   f, n, i, V, fw, ip, nc, C9) {
 # raw logon count and the cadence label — the Pickup-pattern vocabulary —
 # plus the seven [Ssh Default] screening-funnel counts, the same figures as
 # the server Logon report's Incoming columns (bin/logons.sh computes both
-# consumers' file). A zero funnel count emits NO row; a login the server
+# consumers' file), then Re-screens and Session errors (2026-09-06, the
+# session-keyed families). A zero funnel count emits NO row; a login the server
 # log never saw authenticate shows em-dash stamps, 0 and "Never".
 function logons_section(   k9, F9, i9, n9, FL) {
     if (pend_t != "LOGIN") return
@@ -745,6 +746,13 @@ function logons_section(   k9, F9, i9, n9, FL) {
         if (F9[4 + i9] + 0 > 0)
             emitl("ROW\t" FL[i9] "\t" F9[4 + i9] "\t" (F9[12 + i9] == "-" ? "" : substr(F9[12 + i9], 1, 19)) ((i9 == 2 || i9 >= 5) ? "\t@data:res=red" : ""))
     }
+    # the two SESSION-keyed families (2026-09-06, sidecar fields 22-25 = F9[21..24]):
+    # Re-screens — an Allowed on a connection that had already authenticated
+    # (the hourly re-key of a persistent connection), neutral — and Session
+    # errors (the Error/Warning [Ssh Default] lines of this login's
+    # sessions), red
+    if (F9[21] + 0 > 0) emitl("ROW\tRe-screens\t" F9[21] "\t" ((F9[23] == "-" || F9[23] == "") ? "" : substr(F9[23], 1, 19)))
+    if (F9[22] + 0 > 0) emitl("ROW\tSession errors\t" F9[22] "\t" ((F9[24] == "-" || F9[24] == "") ? "" : substr(F9[24], 1, 19)) "\t@data:res=red")
 }
 
 # LOGIN pages (2026-08): one flex row "Activity per day | Logons | Incoming
@@ -1236,7 +1244,9 @@ BEGIN {
     if (TYPE == "LOGIN") {
         while ((getline l < LGF) > 0) {
             n = split(l, A, "\t")
-            if (n >= 21) { r = A[2]; for (i = 3; i <= 21; i++) r = r "\t" A[i]; LGO[A[1]] = r }
+            # 21 fields through 2026-08; 25 since 2026-09-06 (Re-screens, Session
+            # errors and their last stamps) — the whole tail is kept
+            if (n >= 21) { r = A[2]; for (i = 3; i <= n; i++) r = r "\t" A[i]; LGO[A[1]] = r }
         }
         close(LGF)
     }

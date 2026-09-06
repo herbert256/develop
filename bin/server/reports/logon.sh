@@ -14,6 +14,17 @@
 #     [Ssh Default] User FE... failed to login successfully N times
 #                   by SSH Key authentication.                  (Info)
 #     [Ssh Default] User 'U' is locked.                         (Info)
+#   plus two SESSION-keyed families (2026-09-06, user request — the FE000508
+#   finding): a RE-SCREEN is an Allowed line on a session (cache col 6) LATER
+#   than that session's last authentication — a persistent connection re-keys
+#   about hourly and the server logs "Start login process" + "Allowed user"
+#   again with no new authentication; counted apart, NOT as Allowed, never
+#   moving the row tint. (An Allowed that an authentication follows is a real
+#   screening, whatever the session logged before.) SESSION ERRORS are the Error/Warning [Ssh Default] lines of no
+#   counted family ("Stream read/write error. Exception message is: CMS
+#   parsing has failed" …), attributed to the login of their session. Both
+#   need the whole cache read first (the exports are newest-first, not
+#   chronological), so every Allowed line is booked in END.
 #   One row per logon user: Allowed (whitelist pass) -> Authenticated
 #   (credentials pass), plus the failure modes Disallowed (whitelist
 #   reject), No account (the username exists on no account — probing or
@@ -92,7 +103,7 @@ skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TACCT" "$THOST" "$LBASE" "$LOGONS_TSV
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Emits TAB-separated:
-#   R   <TAB> user <TAB> a t d n b k l <TAB> buckets <TAB> 7 drill fields <TAB> latest side (A T D N B K L) <TAB> its stamp
+#   R   <TAB> user <TAB> a t d n b k l r x <TAB> buckets <TAB> 9 drill fields <TAB> latest side (A T D N B K L) <TAB> its stamp
 #   OUT <TAB> count <TAB> host <TAB> user <TAB> reason <TAB> buckets <TAB> first <TAB> last <TAB> loglines
 #   KN  <TAB> name <TAB> count <TAB> nips <TAB> top-ip (n) <TAB> configured <TAB> first <TAB> last <TAB> buckets <TAB> loglines   (FE-namespace door knockers)
 #   SC  <TAB> name <TAB> count <TAB> nips <TAB> ips (", "-joined, "-" = none) <TAB> first <TAB> last <TAB> buckets <TAB> loglines  (scanner door knockers)
@@ -127,6 +138,16 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
         s = lastlines(p); n = split(s, a4, _US); out = ""
         for (i = 1; i <= n && i <= 5; i++) out = out (out == "" ? "" : _US) a4[i]
         return out
+    }
+    # one funnel event, booked: the counts, the per-day bucket, the
+    # newest stamp per family (the row tint — compared by TIMESTAMP, never by
+    # cache order: the exports are newest-first within a file) and the drill
+    function book(side9, u9, d9, ts9, txt9,   k9) {
+        cnt[side9 SUBSEP u9]++; tot[side9]++
+        if (d9 ~ /^[0-9][0-9][0-9][0-9]-/) { bk[u9 SUBSEP d9 SUBSEP side9]++; days[u9 SUBSEP d9] = 1
+            k9 = side9 SUBSEP u9
+            if (!(k9 in lts) || ts9 > lts[k9]) lts[k9] = ts9 }
+        addline(side9 SUBSEP u9, ts9, txt9)
     }
     $1 == "KA" { kacct[$2] = 1; next }                       # known-entity lists (first input)
     $1 == "KH" { khost[$2] = 1; next }
@@ -212,12 +233,38 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
             # the second locked family carries the name later in the line:
             # "[Ssh Default] User login is locked. Username: \"U\""
             if (u == "" && match(m, /Username: /)) u = qtok(substr(m, RSTART + RLENGTH)) }
-        else next
+        else {
+            # SESSION ERRORS (2026-09-06, user request): an Error/Warning
+            # [Ssh Default] line of no counted family, on a session — kept
+            # for END, which attributes it to the login of the session once the
+            # whole cache has built the session -> login map
+            if ($3 != "I" && $6 != "") { nxs++; XSs[nxs] = $6; XSd[nxs] = $1; XSt[nxs] = $1 " " $2; XSl[nxs] = lvlname($3) " " compname($4) "  " substr(m, 1, 200) }
+            next
+        }
         if (u == "") next
         # platform-internal pseudo-logins (blacklist, raw token) get no row
         if (bl_blank("login", u)) next
         users[u] = 1
-        cnt[side SUBSEP u]++; tot[side]++
+        # the session -> login map and the LAST SSH authentication of the
+        # session (cache col 6; the re-screen test and the session-error
+        # attribution, both in END). An authenticated line names the login of
+        # the session for sure; any other funnel line only when nothing named
+        # it yet.
+        if ($6 != "") {
+            if (side == "T" || !($6 in slog)) slog[$6] = u
+            if (side == "T") { ts = $1 " " $2; if (!($6 in sat) || ts > sat[$6]) sat[$6] = ts }
+        }
+        if (side == "A") {
+            # DEFERRED: a genuine screening or a RE-SCREEN (the line is LATER
+            # than the last authentication of its session — the hourly re-key
+            # of a persistent connection logs the screening pair again and
+            # never authenticates anew, FE000508 2026-09-06; an Allowed that
+            # an authentication follows is a real screening whatever came
+            # before it) is decided in END, when the last authentication of
+            # the session is known
+            nrs++; RSu[nrs] = u; RSd[nrs] = $1; RSt[nrs] = $1 " " $2; RSs[nrs] = $6; RSl[nrs] = lvlname($3) " " compname($4) "  " substr(m, 1, 200)
+            next
+        }
         if (side == "N") {
             # a No-account line of a name Flow Manager does not configure is
             # door-knocker evidence logged with the funnel wording (2026-09-04,
@@ -229,19 +276,24 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
             if (ipn != "") nip[u SUBSEP ipn]++
             addline("DK" SUBSEP u, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
         }
-        d = $1
-        if (d ~ /^[0-9][0-9][0-9][0-9]-/) { bk[u SUBSEP d SUBSEP side]++; days[u SUBSEP d] = 1
-            # the newest stamp per side — the row tint (2026-09-02, user
-            # request) is the LATEST screening outcome of the login, compared by
-            # TIMESTAMP, never by cache order (the exports are newest-first
-            # within a file)
-            k2 = side SUBSEP u; ts = $1 " " $2
-            if (!(k2 in lts) || ts > lts[k2]) lts[k2] = ts }
-        addline(side SUBSEP u, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
+        book(side, u, $1, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
     }
     END {
-        # column order — matches the HEAD/RECALC/drill-cell numbering below
-        ns = split("A T D N B K L", S, " ")
+        # ---- the deferred Allowed lines: a genuine screening (A), or a ----
+        # re-screen (R) when the line is later than the last authentication
+        # of its session
+        for (i = 1; i <= nrs; i++) {
+            s = RSs[i]
+            book((s != "" && (s in sat) && sat[s] < RSt[i]) ? "R" : "A", RSu[i], RSd[i], RSt[i], RSl[i])
+        }
+        # ---- the session errors (X): to the login of their session; a ----
+        # session no funnel line named stays unattributed
+        for (i = 1; i <= nxs; i++) if (XSs[i] in slog) book("X", slog[XSs[i]], XSd[i], XSt[i], XSl[i])
+        # column order — matches the HEAD/RECALC/drill-cell numbering below;
+        # the first SEVEN are the screening funnel (the row-tint verdict), R
+        # and X ride behind them (2026-09-06)
+        ns = split("A T D N B K L R X", S, " ")
+        nsv = 7
         # an UNCONFIGURED name whose only funnel evidence is No account is a
         # door knocker the server logged with the funnel wording ("Unable to
         # find account with username"), not a login of ours (2026-09-04, user
@@ -253,10 +305,11 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
             if (u in klog) continue
             if ((cnt["N" SUBSEP u] + 0) == 0) continue
             only = 1
-            for (i = 1; i <= ns; i++) if (S[i] != "N" && (cnt[S[i] SUBSEP u] + 0) > 0) { only = 0; break }
+            for (i = 1; i <= ns; i++) if (S[i] != "N" && S[i] != "X" && (cnt[S[i] SUBSEP u] + 0) > 0) { only = 0; break }
             if (!only) continue
             moved[u] = 1
             tot["N"] -= cnt["N" SUBSEP u]
+            tot["X"] -= cnt["X" SUBSEP u] + 0   # the session errors of a knocker leave with it
             dkc[u] += cnt["N" SUBSEP u]; dkT += cnt["N" SUBSEP u]
         }
         for (x in nip) { split(x, a6, SUBSEP)
@@ -290,7 +343,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
             # consumed, so that Allowed is already the newest event and the
             # verdict is red either way.
             lsd = ""; lst = ""
-            for (i = 1; i <= ns; i++) { k2 = S[i] SUBSEP u
+            for (i = 1; i <= nsv; i++) { k2 = S[i] SUBSEP u
                 if (!(k2 in lts)) continue
                 if (lst == "" || lts[k2] > lst || (lts[k2] == lst && S[i] == "T")) { lst = lts[k2]; lsd = S[i] } }
             print line "\t" (lsd == "" ? "-" : lsd) "\t" (lst == "" ? "-" : lst)
@@ -351,7 +404,7 @@ if [ -z "$agg" ]; then
     exit 0
 fi
 
-IFS=$'\t' read -r _ atot ttot dtot ntot btot ktot ltot ototal opwt okyt ocrt oott <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
+IFS=$'\t' read -r _ atot ttot dtot ntot btot ktot ltot rtot xtot ototal opwt okyt ocrt oott <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 IFS=$'\t' read -r _ cov_fad cov_fss <<< "$(printf '%s\n' "$agg" | grep $'^COV\t')"
 
 # Both row writers print STRAIGHT to stdout inside the page block below — a
@@ -365,22 +418,24 @@ nnames=0
 # most rejections first, then no-account, bad keys, lockouts, key failures
 lgtot=0; aftot=0
 # the per-login PROBLEM counts sidecar (2026-09-04, user request): login ⇥
-# Disallowed ⇥ Bad key ⇥ Key failures ⇥ Locked ⇥ Auth failed, one line per
+# Disallowed ⇥ Bad key ⇥ Key failures ⇥ Locked ⇥ Auth failed ⇥ Session errors
+# (the 7th field, 2026-09-06), one line per
 # Incoming row — the Partners - Incoming page's "Logon problems" column
 # (bin/analyses/reports/fe-overview.sh); staged here, cmp-guarded below
 PROBF="$OUT.problems.tmp"; : > "$PROBF"
 rows() {
-    while IFS=$'\t' read -r _ user a t d n b k l bkt d1 d2 d3 d4 d5 d6 d7 lside lstamp af9 lgf lgl lgn lgp; do
+    while IFS=$'\t' read -r _ user a t d n b k l r x bkt d1 d2 d3 d4 d5 d6 d7 d8 d9 lside lstamp af9 lgf lgl lgn lgp; do
         [ -n "$user" ] || continue
         [ "$bkt" = "-" ] && bkt=""
         [ "$d1" = "-" ] && d1=""; [ "$d2" = "-" ] && d2=""; [ "$d3" = "-" ] && d3=""; [ "$d4" = "-" ] && d4=""
         [ "$d5" = "-" ] && d5=""; [ "$d6" = "-" ] && d6=""; [ "$d7" = "-" ] && d7=""
+        [ "$d8" = "-" ] && d8=""; [ "$d9" = "-" ] && d9=""
         [ "$af9" = "-" ] && af9=""
-        printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$user" "$d" "$b" "$k" "$l" "${af9:-0}" >> "$PROBF"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$user" "$d" "$b" "$k" "$l" "${af9:-0}" "$x" >> "$PROBF"
         # SEEN = any funnel activity at all, the anonymous Auth-failed count
         # included (before the 0-blanking below); a zero-everything row is a
         # configured login the funnel never saw
-        local sn9=0; [ $((a + t + d + n + b + k + l + ${af9:-0})) -gt 0 ] && sn9=1
+        local sn9=0; [ $((a + t + d + n + b + k + l + r + x + ${af9:-0})) -gt 0 ] && sn9=1
         # THE ROW TINT (2026-09-02, user request) — @data:res on a restint
         # table: ORANGE = never seen (every funnel column empty); GREEN = the
         # login's LATEST screening line is a successful authentication; RED =
@@ -390,7 +445,7 @@ rows() {
         # problem cells keep their own red/amber (the restint CSS).
         local res9=red
         if [ "$sn9" = 0 ]; then res9=orange; elif [ "$lside" = "T" ]; then res9=green; fi
-        [ "$k" = "0" ] && k=""; [ "$l" = "0" ] && l=""   # blank the 0s at source too (render_rpt z-blanks warn zeros as well since 2026-08 — this keeps the raw .rpt readable)
+        [ "$k" = "0" ] && k=""; [ "$l" = "0" ] && l=""; [ "$r" = "0" ] && r=""   # blank the 0s at source too (render_rpt z-blanks warn zeros as well since 2026-08 — this keeps the raw .rpt readable)
         [ "${n:-0}" -gt 0 ] && nnames=$((nnames + 1))
         nrows=$((nrows + 1))
         [ "$lgn" = "-" ] && lgn=""
@@ -398,10 +453,13 @@ rows() {
         [ -n "$af9" ] && aftot=$((aftot + af9))
         # column order Allowed, Disallowed, Authenticated (the 2026-07 swap): the
         # cells, their drill payloads and the RECALC tokens below all follow it.
-        # Auth failed sits AFTER Locked: drill-cell-<i> binds cells 1-7
-        # positionally, so the funnel block must not shift.
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:seen=%s\t@data:res=%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\t@data:drill-cell-6=%s\t@data:drill-cell-7=%s\n' \
-            "$user" "$a" "$d" "$t" "$n" "$b" "$k" "$l" "$af9" "$lgf" "$lgl" "$lgn" "$lgp" "$sn9" "$res9" "$bkt" "$d1" "$d3" "$d2" "$d4" "$d5" "$d6" "$d7"
+        # Re-screens sits right after Allowed and Session errors after Auth
+        # failed (2026-09-06): drill-cell-<i> binds cells positionally —
+        # 1 Allowed, 2 Re-screens, 3 Disallowed, 4 Authenticated, 5 No account,
+        # 6 Bad key, 7 Key failures, 8 Locked, (9 Auth failed: no drill),
+        # 10 Session errors — so the block must not shift.
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:seen=%s\t@data:res=%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\t@data:drill-cell-6=%s\t@data:drill-cell-7=%s\t@data:drill-cell-8=%s\t@data:drill-cell-10=%s\n' \
+            "$user" "$a" "$r" "$d" "$t" "$n" "$b" "$k" "$l" "$af9" "$x" "$lgf" "$lgl" "$lgn" "$lgp" "$sn9" "$res9" "$bkt" "$d1" "$d8" "$d3" "$d2" "$d4" "$d5" "$d6" "$d7" "$d9"
     done <<< "$(printf '%s\n' "$agg" | grep $'^R\t' | LC_ALL=C sort -t"$(printf '\t')" -k5,5nr -k6,6nr -k7,7nr -k9,9nr -k8,8nr -k3,3nr -k2,2 \
         | awk -F'\t' -v OFS='\t' -v LG="$LOGONS_TSV" '
             # the per-login logon summary join (details.sh _logons.tsv): four
@@ -467,7 +525,7 @@ out_rows() {
 {
     printf 'TITLE\tLogon\n'
     printf 'DESC\tThe SSH logon story, both directions: the incoming screening funnel per login, and our outbound authentication failures at partners.\n'
-    printf 'INTRO\t**Incoming**: every SSH logon is screened by the server ("[Ssh Default] ..." TM lines), the columns following the logon funnel — **Allowed** = the source address passed the account whitelist; **Disallowed** = the address was rejected by the AllowIP whitelist; **Authenticated** = successful authentications (logged for every account, whitelisted or not, so it can exceed Allowed); **No account** = the username exists on no account (a configured login the server does not know, or a misconfigured partner; a name Flow Manager does NOT configure that has nothing but No account hits is a door knocker and is listed on the Near misses / Scanners tabs instead); **Bad key** = a submitted key matching no certificate; **Key failures** = the repeated-key-failure counter that precedes a lockout; **Locked** = attempts blocked because the user is locked. **Auth failed** = the platform'\''s ANONYMOUS failure line ("Authentication failed using local.", no username, no address — a client that passed the whitelist and then failed without presenting an evaluable credential), attributed by TIMING: it counts for the login whose Allowed line it follows within one second, and a window holding two different logins'\'' Allowed lines counts for neither. **Every configured login is listed**, and **the row colour is the login'\''s LATEST screening outcome**: **green** when its newest funnel line is a successful authentication, **red** when the newest line is anything else — a refusal, a failure, or an Allowed that no authentication followed — and **orange** when the login is configured but never appeared in the SSH funnel (every funnel column empty; its logon-summary columns can still be filled by a login that authenticates over another protocol). The colour is a full-period verdict — a selected date range re-aggregates the counts but does not move it — and the problem cells keep their own red or amber inside a green row. The last four columns are the login'\''s **logon summary** (the detail pages'\'' Logons table): first and last successful authentication, the raw count and the typical spacing — counted over ANY protocol, so Logons can exceed the SSH-only Authenticated; a login that never authenticated reads **Never**, and these four keep their full-period values when a date range is selected. **Outgoing**: this server failing to authenticate AT a partner (expired passwords/keys, TLS policy). **Click a count** (Incoming) or **a row** (Outgoing) for the most recent log lines.\n'
+    printf 'INTRO\t**Incoming**: every SSH logon is screened by the server ("[Ssh Default] ..." TM lines), the columns following the logon funnel — **Allowed** = the source address passed the account whitelist; **Disallowed** = the address was rejected by the AllowIP whitelist; **Authenticated** = successful authentications (logged for every account, whitelisted or not, so it can exceed Allowed); **No account** = the username exists on no account (a configured login the server does not know, or a misconfigured partner; a name Flow Manager does NOT configure that has nothing but No account hits is a door knocker and is listed on the Near misses / Scanners tabs instead); **Bad key** = a submitted key matching no certificate; **Key failures** = the repeated-key-failure counter that precedes a lockout; **Locked** = attempts blocked because the user is locked. **Auth failed** = the platform'\''s ANONYMOUS failure line ("Authentication failed using local.", no username, no address — a client that passed the whitelist and then failed without presenting an evaluable credential), attributed by TIMING: it counts for the login whose Allowed line it follows within one second, and a window holding two different logins'\'' Allowed lines counts for neither. **Re-screens** = an Allowed line on a connection that had ALREADY authenticated: a persistent connection re-keys about hourly and the server logs its screening pair again ("Start login process" + "Allowed user") with no new authentication — counted here, NOT under Allowed, and never moving the row colour (the FE000508 case, 2026-09-06). **Session errors** = the Error/Warning "[Ssh Default]" lines of no other family ("Stream read/write error …"), each attributed to the login of its SSH session by the log line'\''s session id. **Every configured login is listed**, and **the row colour is the login'\''s LATEST screening outcome**: **green** when its newest funnel line is a successful authentication, **red** when the newest line is anything else — a refusal, a failure, or an Allowed that no authentication followed (a re-screen is not one) — and **orange** when the login is configured but never appeared in the SSH funnel (every funnel column empty; its logon-summary columns can still be filled by a login that authenticates over another protocol). The colour is a full-period verdict — a selected date range re-aggregates the counts but does not move it — and the problem cells keep their own red or amber inside a green row. The last four columns are the login'\''s **logon summary** (the detail pages'\'' Logons table): first and last successful authentication, the raw count and the typical spacing — counted over ANY protocol, so Logons can exceed the SSH-only Authenticated; a login that never authenticated reads **Never**, and these four keep their full-period values when a date range is selected. **Outgoing**: this server failing to authenticate AT a partner (expired passwords/keys, TLS policy). **Click a count** (Incoming) or **a row** (Outgoing) for the most recent log lines.\n'
     if [ "$cov_fss" != "-" ] && [ "$cov_fad" = "-" ]; then
         # the FULLY-blind case — SSH screening lines exist but not one Allowed
         # line in the whole window: the maximum undercount keeps its warning.
@@ -480,13 +538,16 @@ out_rows() {
     # restint paints each row its @data:res verdict (2026-09-02) — the CSS
     # lets it beat the seenrows green/red, so the colour stays full-period
     printf 'TABLE\tIncoming\twide\tseenrows\trestint\tdrill=log line\n'
-    printf 'HEAD\tLogin\tAllowed\tDisallowed\tAuthenticated\tNo account\tBad key\tKey failures\tLocked\tAuth failed\tFirst logon\tLast logon\tLogons\tPattern\n'
-    printf 'KIND\tlogin\tnumprocessed\tnumfailed\tnumprocessed\tnumfailed\tnumfailed\tnumwarn\tnumwarn\tnumfailed\ttext\ttext\tnum\ttext\n'
-    printf 'RECALC\t-\ts0\ts2\ts1\ts3\ts4\ts5\ts6\tk\tk\tk\tk\tk\n'
+    # bucket slots (the R-line order A T D N B K L R X): s7 = Re-screens, s8 =
+    # Session errors
+    printf 'HEAD\tLogin\tAllowed\tRe-screens\tDisallowed\tAuthenticated\tNo account\tBad key\tKey failures\tLocked\tAuth failed\tSession errors\tFirst logon\tLast logon\tLogons\tPattern\n'
+    printf 'KIND\tlogin\tnumprocessed\tnum\tnumfailed\tnumprocessed\tnumfailed\tnumfailed\tnumwarn\tnumwarn\tnumfailed\tnumfailed\ttext\ttext\tnum\ttext\n'
+    printf 'RECALC\t-\ts0\ts7\ts2\ts1\ts3\ts4\ts5\ts6\tk\ts8\tk\tk\tk\tk\n'
     rows
     [ "$aftot" -gt 0 ] || aftot=""
-    printf 'TOTAL\tTotal (%s logins)\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t\t\t@{class=num}%s\t\n' \
-        "$nrows" "$atot" "$dtot" "$ttot" "$ntot" "$btot" "$ktot" "$ltot" "$aftot" "$lgtot"
+    [ "${rtot:-0}" -gt 0 ] || rtot=""
+    printf 'TOTAL\tTotal (%s logins)\t@{class=num processed}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num failed}%s\t\t\t@{class=num}%s\t\n' \
+        "$nrows" "$atot" "$rtot" "$dtot" "$ttot" "$ntot" "$btot" "$ktot" "$ltot" "$aftot" "$xtot" "$lgtot"
 
     printf 'TABLE\tOutgoing\twide\tdrill=log line\n'
     printf 'HEAD\tRemote host\tUser\tFailures\tPassword\tKey\tCertificate\tOther\tReason (last seen)\tFirst\tLast\n'
@@ -531,8 +592,8 @@ out_rows() {
     printf 'TOTAL\tTotal (top %s of %s name(s))\t@{class=num failed}%s\t\t\t\t\n' "$n_scan" "${dk_names:-0}" "$scan_att"
     printf 'NOTE\tThe same "not associated with any account" family for every OTHER name — the internet background noise (root, admin, user, test, …) probing over many source addresses. The **IPs** column lists that name'\''s distinct source addresses (full period, like the Source IPs count). The 25 most-tried names are shown of **%s** distinct name(s) and **%s** attempt(s) in all; the total row sums the SHOWN rows only. These names never get past the account lookup, so they appear in no other logon column. A name Flow Manager does not configure that the funnel itself rejected (the "Unable to find account with username" wording, the Incoming No account column) is counted here too — never as an Incoming row.\n' "${dk_names:-0}" "${dk_tot:-0}"
 
-    printf 'SUMMARY\tLogins: %s  |  Allowed: %s  |  Authenticated: %s  |  Disallowed: %s  |  No account: %s names (%s attempts)  |  Bad key: %s  |  Key failures: %s  |  Locked: %s  |  Outbound auth failures: %s (%s pairs)  |  Door knockers: %s attempts (%s names, %s near-miss)\n' \
-        "$nrows" "$atot" "$ttot" "$dtot" "$nnames" "$ntot" "$btot" "$ktot" "$ltot" "$ototal" "$n_pairs" "${dk_tot:-0}" "${dk_names:-0}" "$n_near"
+    printf 'SUMMARY\tLogins: %s  |  Allowed: %s  |  Re-screens: %s  |  Authenticated: %s  |  Disallowed: %s  |  No account: %s names (%s attempts)  |  Bad key: %s  |  Key failures: %s  |  Locked: %s  |  Session errors: %s  |  Outbound auth failures: %s (%s pairs)  |  Door knockers: %s attempts (%s names, %s near-miss)\n' \
+        "$nrows" "$atot" "${rtot:-0}" "$ttot" "$dtot" "$nnames" "$ntot" "$btot" "$ktot" "$ltot" "$xtot" "$ototal" "$n_pairs" "${dk_tot:-0}" "${dk_names:-0}" "$n_near"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 # the problem-counts sidecar (see rows()): cmp-guarded so an unchanged set
@@ -540,4 +601,4 @@ out_rows() {
 PROBLEMS="$REPORTS_DIR/_logon-problems.tsv"
 if cmp -s "$PROBF" "$PROBLEMS" 2>/dev/null; then rm -f "$PROBF"; else mv "$PROBF" "$PROBLEMS"; fi
 
-echo "Data written to $OUT ($nrows login(s): $atot allowed, $ttot authenticated, $dtot disallowed, $ntot no-account, $btot bad-key, $ktot key-failure, $ltot locked; $ototal outbound failure(s))." >&2
+echo "Data written to $OUT ($nrows login(s): $atot allowed, ${rtot:-0} re-screen(s), $ttot authenticated, $dtot disallowed, $ntot no-account, $btot bad-key, $ktot key-failure, $ltot locked, $xtot session error(s); $ototal outbound failure(s))." >&2

@@ -706,6 +706,26 @@ as SEEN with blank counts; the status tables show it as the Server column; in th
 it retints orange. `data/<env>/blue/<type>/<name>.txt` holds the evidencing log line per blue
 entity (existence = the signal `blue_box` renders).
 
+**The SSH logon funnel is SESSION-aware** (2026-09-06, user request — the FE000508 finding):
+`_parse.tsv` column 6 is the SSH session id, and `bin/server/reports/logon.sh` + its twin
+`bin/logons.sh` (the detail pages' Logons table and the Incoming table's last four columns —
+"a change to either matcher belongs in both") tie every `[Ssh Default]` line to its connection.
+A **re-screen** is an "Allowed user" line LATER than the last successful authentication of its
+session (an Allowed that an authentication follows is a real screening, whatever the session
+logged before — the sample's shared-session flows log several pairs on one id): a partner that keeps a connection open for days re-keys it about hourly and the
+server logs "Start login process" + "Allowed user" again with no new authentication (FE000508:
+601 Allowed vs 375 Authenticated, no failure, 2 hosts × 24 h/day). Re-screens have their own
+column (kind `num`, never a problem, never the row-tint verdict) and are NOT in Allowed — nor
+in the host file's Allowed. **Session errors** are the Error/Warning `[Ssh Default]` lines of no
+counted family ("Stream read/write error. Exception message is: CMS parsing has failed"),
+attributed to the login of their session; a `numfailed` column with drills, a 7th field of the
+`_logon-problems.tsv` sidecar (the FE overview's Logon problems sum) and sidecar fields 22-25 of
+`_logons.tsv`. Both need the whole cache read first (the exports are newest-first, not
+chronological), so every Allowed line is booked in END. The sample estate plants one persistent
+connection for the first login (`bin/sample/gen-events.awk` env_ambient, fixed session id, no
+rint()). Drill-cell numbering on Incoming: 1 Allowed, 2 Re-screens, 3 Disallowed,
+4 Authenticated, 5 No account, 6 Bad key, 7 Key failures, 8 Locked, 10 Session errors.
+
 ## Rendering
 
 `bin/publish_lib.sh` is **sourced, not run**: it cd's to the repo root, computes the shared

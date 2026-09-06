@@ -6,9 +6,9 @@
 <title>Entity coverage</title>
 <meta name="report-key" content="entity-coverage-once">
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
-<link rel="stylesheet" href="../../assets/style.css?v=862173861">
+<link rel="stylesheet" href="../../assets/style.css?v=1748809548">
 <script src="../../assets/topbar-data.js?v=2156014354" defer></script>
-<script src="../../assets/report.js?v=862173861" defer></script>
+<script src="../../assets/report.js?v=1748809548" defer></script>
 </head>
 <body>
 <div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="entity-coverage" data-twin="../../production/transfer/entity-coverage-once-bl.html"></div>
@@ -28,7 +28,7 @@
 <tr data-res="green"><td class="cl"><a href="../details/bl/bl10004.html">BL10004</a></td><td>out</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td><td class="num gsep">1</td><td class="num">64</td><td class="num">1525</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/bl/bl-ab.html">BL_AB</a></td><td>both</td><td class="num gsep">3</td><td class="num">118</td><td class="num">118</td><td class="num gsep">7</td><td class="num">985</td><td class="num">8112</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/bl/bl-aim.html">BL_AIM</a></td><td>both</td><td class="num gsep">1</td><td class="num">222</td><td class="num">222</td><td class="num gsep">2</td><td class="num">68</td><td class="num">20</td></tr>
-<tr data-res="green"><td class="cl"><a href="../details/bl/bl-aps.html">BL_APS</a></td><td>both</td><td class="num gsep">2</td><td class="num">2683</td><td class="num">2474</td><td class="num gsep">7</td><td class="num">1400</td><td class="num">2745</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/bl/bl-aps.html">BL_APS</a></td><td>both</td><td class="num gsep">2</td><td class="num">2683</td><td class="num">2475</td><td class="num gsep">7</td><td class="num">1400</td><td class="num">2745</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/bl/bl-cb.html">BL_CB</a></td><td>both</td><td class="num gsep">3</td><td class="num">0</td><td class="num">246</td><td class="num gsep">3</td><td class="num">143</td><td class="num">1575</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/bl/bl-cd.html">BL_CD</a></td><td>both</td><td class="num gsep">4</td><td class="num">136</td><td class="num">238</td><td class="num gsep">4</td><td class="num">2303</td><td class="num">1525</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/bl/bl-cdv.html">BL_CDV</a></td><td>both</td><td class="num gsep">1</td><td class="num">546</td><td class="num">546</td><td class="num gsep">2</td><td class="num">87</td><td class="num">55</td></tr>
@@ -46,7 +46,7 @@
 <tr data-res="green"><td class="cl"><a href="../details/bl/bl-wa.html">BL_WA</a></td><td>both</td><td class="num gsep">2</td><td class="num">120</td><td class="num">120</td><td class="num gsep">3</td><td class="num">148</td><td class="num">114</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/bl/bl-zg.html">BL_ZG</a></td><td>both</td><td class="num gsep">3</td><td class="num">293</td><td class="num">293</td><td class="num gsep">4</td><td class="num">294</td><td class="num">120</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/bl/bl-zk.html">BL_ZK</a></td><td>both</td><td class="num gsep">3</td><td class="num">85</td><td class="num">85</td><td class="num gsep">2</td><td class="num">90</td><td class="num">124</td></tr>
-<tr class="total"><td>Total (24 bl)</td><td></td><td class="num gsep">42</td><td class="num">8925</td><td class="num">6944</td><td class="num gsep">70</td><td class="num">23919</td><td class="num">33367</td></tr>
+<tr class="total"><td>Total (24 bl)</td><td></td><td class="num gsep">42</td><td class="num">8925</td><td class="num">6945</td><td class="num gsep">70</td><td class="num">23919</td><td class="num">33367</td></tr>
 </table></div>
 <p class="note">In proof: the server-log SSH logon lines (&quot;User with login name … associated with account … successfully authenticated&quot;), counted per account by the Auth activity report and rolled up to the account's entity — on the Accounts view that rollup is the identity. Out proof: the UC3 poll lines (&quot;Applying the search pattern … for transfer site …&quot;), counted per subscription on the UC status / UC3 tab (Polls by subscription) and rolled up to the subscription's entity. Files are real logical transfers, split by the connection side.</p>
 <p class="note">The Logons and Polls columns show on every view, but they only COUNT towards the verdict on *Current* and *Once* — on *OK transfers* the verdict rests on the most recent File alone.</p>

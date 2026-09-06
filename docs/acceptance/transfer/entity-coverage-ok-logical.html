@@ -6,9 +6,9 @@
 <title>Entity coverage</title>
 <meta name="report-key" content="entity-coverage-ok">
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
-<link rel="stylesheet" href="../../assets/style.css?v=862173861">
+<link rel="stylesheet" href="../../assets/style.css?v=1748809548">
 <script src="../../assets/topbar-data.js?v=2156014354" defer></script>
-<script src="../../assets/report.js?v=862173861" defer></script>
+<script src="../../assets/report.js?v=1748809548" defer></script>
 </head>
 <body>
 <div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="entity-coverage" data-twin="../../production/transfer/entity-coverage-ok-logical.html"></div>
@@ -35,7 +35,7 @@
 <tr data-res="green"><td class="cl"><a href="../details/logicals/aps-settle-p2p.html">APS_SETTLE_P2P</a></td><td>out</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td><td class="num gsep">2</td><td class="num">156</td><td class="num">1717</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/logicals/aps-syshub-soylent.html">APS_SYSHUB_SOYLENT</a></td><td>out</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td><td class="num gsep">1</td><td class="num">230</td><td class="num">286</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/logicals/aps-telem-gekko.html">APS_TELEM_GEKKO</a></td><td>out</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td><td class="num gsep">1</td><td class="num">51</td><td class="num">0</td></tr>
-<tr data-res="green"><td class="cl"><a href="../details/logicals/aps-vida-umbrella.html">APS_VIDA_UMBRELLA</a></td><td>in</td><td class="num gsep">1</td><td class="num">520</td><td class="num">311</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td></tr>
+<tr data-res="green"><td class="cl"><a href="../details/logicals/aps-vida-umbrella.html">APS_VIDA_UMBRELLA</a></td><td>in</td><td class="num gsep">1</td><td class="num">520</td><td class="num">312</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/logicals/cb-marketing-wonka.html">CB_MARKETING_WONKA</a></td><td>out</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td><td class="num gsep">1</td><td class="num">70</td><td class="num">0</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/logicals/cb-quotes-gekko.html">CB_QUOTES_GEKKO</a></td><td>out</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td><td class="num gsep">1</td><td class="num">73</td><td class="num">1558</td></tr>
 <tr data-res="green"><td class="cl"><a href="../details/logicals/cdv-krp-tdi-wonka.html">CDV_KRP-TDI_WONKA</a></td><td>in</td><td class="num gsep">1</td><td class="num">546</td><td class="num">546</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td></tr>
@@ -131,7 +131,7 @@
 <tr data-res="red"><td class="cl"><a href="../details/logicals/zg-ikaz-bluth.html">ZG_IKAZ_BLUTH</a></td><td>out</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td><td class="num gsep">1</td><td class="num">0</td><td class="num">0</td></tr>
 <tr data-res="red"><td class="cl"><a href="../details/logicals/zk-ariva-oscorp.html">ZK_ARIVA_OSCORP</a></td><td>in</td><td class="num gsep">1</td><td class="num">0</td><td class="num">0</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td></tr>
 <tr data-res="red"><td class="cl"><a href="../details/logicals/zk-sensor-soylent.html">ZK_SENSOR_SOYLENT</a></td><td>in</td><td class="num gsep">1</td><td class="num">0</td><td class="num">0</td><td class="num gsep">0</td><td class="num">0</td><td class="num">0</td></tr>
-<tr class="total"><td>Total (109 logical)</td><td></td><td class="num gsep">50</td><td class="num">12462</td><td class="num">7501</td><td class="num gsep">75</td><td class="num">17970</td><td class="num">39662</td></tr>
+<tr class="total"><td>Total (109 logical)</td><td></td><td class="num gsep">50</td><td class="num">12462</td><td class="num">7502</td><td class="num gsep">75</td><td class="num">17970</td><td class="num">39662</td></tr>
 </table></div>
 <p class="note">In proof: the server-log SSH logon lines (&quot;User with login name … associated with account … successfully authenticated&quot;), counted per account by the Auth activity report and rolled up to the account's entity — on the Accounts view that rollup is the identity. Out proof: the UC3 poll lines (&quot;Applying the search pattern … for transfer site …&quot;), counted per subscription on the UC status / UC3 tab (Polls by subscription) and rolled up to the subscription's entity. Files are real logical transfers, split by the connection side.</p>
 <p class="note">The Logons and Polls columns show on every view, but they only COUNT towards the verdict on *Current* and *Once* — on *OK transfers* the verdict rests on the most recent File alone.</p>
