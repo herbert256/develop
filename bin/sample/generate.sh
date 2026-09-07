@@ -109,8 +109,9 @@ done
 # the same template seeds both envs (the sample estates share their policy)
 for env in acceptance production; do
     [ -d "input/$env" ] || continue
-    for f in blacklist.txt skip.txt rename.txt logical.txt logical_domains.txt logical_apps.txt logical_partners.txt BL.txt logons_old.txt; do
-        cp "$TPL_DIR/$f" "input/$env/$f"
+    for f in blacklist.txt skip.txt rename.txt logical.txt logical_domains.txt logical_apps.txt logical_partners.txt BL.txt logons_old.txt coreid-url.txt; do
+        # coreid-url.txt names the env's admin host: the template's @ENV@ becomes the env
+        sed "s/@ENV@/$env/g" "$TPL_DIR/$f" > "input/$env/$f"
     done
 done
 
@@ -139,6 +140,8 @@ Layout (per environment, acceptance/ + production/):
                  a second source of BL entities beside the subscriptions.json tags
   logons_old.txt the FE logins' last logon on the OLD gateway ("<login> <stamp>"
                  per line) — the Partners - Incoming page's Gateway column
+  coreid-url.txt the SecureTransport File Tracking URL every CoreId on the site
+                 links to — one line, @COREID@ where the id goes (2026-09-07)
 The eight policy files are PER ENVIRONMENT since 2026-08-31 (user request);
 bin/build/migrate-input.sh moves a checkout's old shared copies into the env
 dirs once, and folds a retired partner-aliases.tsv into logical_partners.txt.

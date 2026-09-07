@@ -3606,7 +3606,103 @@
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { fallback(); done(); });
     else { fallback(); done(); }
   }
+  // ---- CoreId links to SecureTransport's File Tracking (2026-09-07, user
+  // request): every UUID the copy pass covers also OPENS the platform's own
+  // file-tracking search for that id, in a new tab. The URL template — one per
+  // environment, "@COREID@" where the id goes — is baked into topbar-data.js
+  // from input/<env>/coreid-url.txt (ensure_assets); an environment without
+  // the file gets no links. An id that already IS a link (a File page, an
+  // error page, a record page) keeps it and gets a small ↗ after it instead,
+  // so the internal page and the platform one are each one click away. Runs
+  // BEFORE the copy pass, so the ⧉ lands after the link element the way it
+  // lands after any wrap-the-id element. Row links and drills ignore clicks
+  // on anchors, so a click on the id opens the platform and nothing else.
+  function coreidUrlTemplate() {
+    var M = window.AXWAY_TB || {}, map = M.coreid || {}, env = "";
+    var tb = document.querySelector("div.topbar");
+    if (tb) env = tb.getAttribute("data-env") || "";
+    if (!env) { var p = location.pathname; env = /\/acceptance\//.test(p) ? "acceptance" : (/\/production\//.test(p) ? "production" : ""); }
+    var t = env ? (map[env] || "") : "";
+    return t.indexOf("@COREID@") >= 0 ? t : "";
+  }
+  function coreidHref(tpl, id) { return tpl.split("@COREID@").join(encodeURIComponent(id)); }
+  function isStGo(n) { return n && n.nodeType === 1 && (" " + n.className + " ").indexOf(" stgo ") >= 0; }
+  function makeStLink(tpl, id, cls, text) {
+    var a = document.createElement("a");
+    a.className = cls; a.textContent = text; a.href = coreidHref(tpl, id); a.target = "_blank"; a.rel = "noopener";
+    a.title = "Open " + id + " in SecureTransport File Tracking";
+    return a;
+  }
+  // A TRANSFER id is a UUID too, but File Tracking searches by CoreId — a cell
+  // under a "Transfer ID" header (the record / File / error pages' records
+  // table) or beside a "Transfer ID" label (a facts row, a <dt>) gets the ⧉
+  // only, never the link.
+  function isTransferIdCell(el) {
+    var lbl = "";
+    if (el.tagName === "TD" || el.tagName === "TH") {
+      var tbl = el.closest ? el.closest("table") : null;
+      if (tbl) {
+        var ci = el.getAttribute("data-ci"), th = null;
+        if (ci !== null) th = tbl.querySelector('thead th[data-ci="' + ci + '"], tr:first-child th[data-ci="' + ci + '"]');
+        if (!th && tbl.rows.length && el.cellIndex >= 0) th = tbl.rows[0].cells[el.cellIndex] || null;
+        if (th) lbl = th.textContent;
+      }
+      var prev = el.previousElementSibling;
+      if (prev && (prev.tagName === "TD" || prev.tagName === "TH")) lbl += " " + prev.textContent;
+    } else if (el.tagName === "DD") {
+      var dt = el.previousElementSibling; if (dt && dt.tagName === "DT") lbl = dt.textContent;
+    }
+    return /transfer\s*id/i.test(lbl);
+  }
+  function addCoreIdLinks(root) {
+    if (!root || root.nodeType !== 1) return;
+    var tpl = coreidUrlTemplate(); if (!tpl) return;
+    // the copy pass's element set PLUS the prose that names an id — a page
+    // title ("Transfer <id>"), an intro ("… for CoreId `<id>`") — where the
+    // 200-character cap of the cell scan would skip a long paragraph
+    var SEL = "td, th, code, .coreid-item, dd, li, p, h1, h2, h3";
+    var els = Array.prototype.slice.call(root.querySelectorAll(SEL));
+    if (root.matches && root.matches(SEL)) els.unshift(root);
+    for (var e = 0; e < els.length; e++) {
+      var el = els[e], t = el.textContent, prose = /^(P|H1|H2|H3)$/.test(el.tagName);
+      if ((!prose && t.length > 200) || t.indexOf("-") < 0) continue;
+      ID_RE.lastIndex = 0; if (!ID_RE.test(t)) continue;
+      if (el.closest && el.closest(".cpal, .colpick, .topbar")) continue;
+      if (isTransferIdCell(el) || (el.tagName === "CODE" && el.parentNode && el.parentNode.closest && isTransferIdCell(el.parentNode.closest("td, dd") || el))) continue;
+      var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), node, nodes = [], count = 0;
+      while ((node = walker.nextNode())) { if (!isIcon(node.parentNode) && !isStGo(node.parentNode)) nodes.push(node); }
+      for (var k = 0; k < nodes.length && count < 4; k++) {
+        node = nodes[k]; ID_RE.lastIndex = 0;
+        var m = ID_RE.exec(node.nodeValue); if (!m) continue;
+        var par = node.parentNode, a = par.closest ? par.closest("a") : null;
+        if (a) {
+          // already a link: our own wrap (a re-run) — nothing to do; an
+          // internal page link — the ↗ after it, once (the ⧉ may sit between)
+          if ((" " + a.className + " ").indexOf(" stid ") >= 0) { count++; continue; }
+          var s = a.nextSibling, has = false;
+          while (s && (isIcon(s) || isStGo(s))) { if (isStGo(s)) { has = true; break; } s = s.nextSibling; }
+          if (!has) {
+            // the link, its ⧉ (added after this pass, right after the link)
+            // and the ↗ stay on ONE line: a no-wrap span around them, so a
+            // narrow cell never breaks the ↗ onto a line of its own
+            var w = document.createElement("span"); w.className = "stwrap";
+            a.parentNode.insertBefore(w, a); w.appendChild(a);
+            w.appendChild(makeStLink(tpl, m[0], "stgo", "↗"));
+          }
+          count++; continue;
+        }
+        // plain text: the id itself becomes the link; the text around it stays
+        var before = node.nodeValue.slice(0, m.index), after = node.nodeValue.slice(m.index + m[0].length);
+        var link = makeStLink(tpl, m[0], "stid", m[0]);
+        par.insertBefore(link, node);
+        if (before) par.insertBefore(document.createTextNode(before), link);
+        if (after) { node.nodeValue = after; nodes.push(node); } else par.removeChild(node);   // a second id in the same text is scanned next
+        count++;
+      }
+    }
+  }
   function setupCopyIds() {
+    addCoreIdLinks(document.body);
     addCopyIcons(document.body);
     document.addEventListener("click", function (e) {
       var i = e.target && e.target.closest ? e.target.closest(".cpid") : null; if (!i) return;
@@ -3625,13 +3721,14 @@
           if (muts[m].addedNodes[a].nodeType === 1) pending.push(muts[m].addedNodes[a]);
         if (!pending.length || queued) return;
         queued = true;
-        setTimeout(function () { var p = pending; pending = []; queued = false; for (var x = 0; x < p.length; x++) if (!isIcon(p[x])) addCopyIcons(p[x]); }, 50);
+        setTimeout(function () { var p = pending; pending = []; queued = false; for (var x = 0; x < p.length; x++) if (!isIcon(p[x]) && !isStGo(p[x])) { addCoreIdLinks(p[x]); addCopyIcons(p[x]); } }, 50);
       }).observe(document.body, { childList: true, subtree: true });
     }
     // a restore that rewrote a cell's text (data-orig) drops its icon: put it back on the next pointer pass
     document.addEventListener("mouseover", function (e) {
       var el = e.target; if (!el || el.nodeType !== 1 || !el.matches || !el.matches("td, th, code, .coreid-item")) return;
       if (el.querySelector(".cpid")) return;
+      addCoreIdLinks(el);
       addCopyIcons(el);
     });
   }
@@ -3942,7 +4039,7 @@
     setupStatFilter();   // Subscriptions in boxes: the stat boxes narrow the table
     setupSelFilter();    // coverage partners page: Connection / Movement / Use case selectors
     markUrlRow();        // LAST: the sort/date/pager order it scrolls to must be final
-    setupCopyIds();      // after every snapshot: the ⧉ after each id must not be captured as cell text
+    setupCopyIds();      // after every snapshot: the File Tracking link + the ⧉ on each id must not be captured as cell text
   }
 
   // Clickable STAT boxes as row filters (Subscriptions in boxes): each

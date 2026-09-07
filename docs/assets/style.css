@@ -327,6 +327,16 @@ tr:hover .pickbtn, .pickbtn:hover { opacity:0.95; }
         user-select:none; -webkit-user-select:none; vertical-align:baseline; font-family:Arial, Helvetica, sans-serif; }
 .cpid:hover { color:#20344a; opacity:1; }
 .cpid.done { color:#1e7e34; opacity:1; font-size:1.25em; font-weight:bold; }   /* the tick after a copy: bigger, 3 s (user request) */
+/* the CoreId -> SecureTransport File Tracking links (report.js addCoreIdLinks,
+   2026-09-07): the id text itself (stid) keeps its cell colour with a dotted
+   underline; an id that is already an internal link gets the ↗ (stgo) after it,
+   styled like the copy icon */
+a.stid { color:inherit; text-decoration:none; border-bottom:1px dotted #8a94a1; }
+a.stid:hover { border-bottom-color:#20344a; }
+.stgo { display:inline-block; margin-left:0.3rem; font-size:0.85em; line-height:1; color:#8a94a1; opacity:0.65; text-decoration:none;
+        vertical-align:baseline; font-family:Arial, Helvetica, sans-serif; }
+.stgo:hover { color:#20344a; opacity:1; }
+.stwrap { white-space:nowrap; }
 /* the sort arrow of a SECONDARY sort key carries its rank (shift-click) */
 th .arrow sup { font-size:0.65em; margin-left:0.1em; }
 tr:nth-child(even) { background-color:#f2f2f2; }
@@ -1059,6 +1069,9 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] .cpid { color:#7f8a96; }
 :root[data-theme="dark"] .cpid:hover { color:#a9c4e4; }
 :root[data-theme="dark"] .cpid.done { color:#6ad07f; }
+:root[data-theme="dark"] a.stid:hover { border-bottom-color:#6f95bd; }
+:root[data-theme="dark"] .stgo { color:#7f8a96; }
+:root[data-theme="dark"] .stgo:hover { color:#a9c4e4; }
 :root[data-theme="dark"] tr:nth-child(even) { background-color:#232a33; }
 :root[data-theme="dark"] tr:hover { background-color:#2a3a52; }
 :root[data-theme="dark"] tr.total td { background-color:#2b3644;border-top:2px solid #6f95bd; }

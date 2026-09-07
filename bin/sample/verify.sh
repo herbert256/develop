@@ -216,7 +216,7 @@ for env in acceptance production; do
     fi
     # the nine policy files are PER ENVIRONMENT (2026-08-31): present in the
     # env dir, and none left at the input root
-    for pf in blacklist.txt skip.txt rename.txt logical.txt logical_domains.txt logical_apps.txt logical_partners.txt BL.txt; do
+    for pf in blacklist.txt skip.txt rename.txt logical.txt logical_domains.txt logical_apps.txt logical_partners.txt BL.txt coreid-url.txt; do
         check $([ -f "input/$env/$pf" ] && echo 0 || echo 1) "[$env] input/$env/$pf missing"
         check $([ ! -e "input/$pf" ] && echo 0 || echo 1) "input/$pf still at the input root (per-environment since 2026-08-31)"
     done

@@ -174,7 +174,14 @@ line) · RELATIVE dates (`setupRelDates`, mouseover delegation, tooltip only) ·
 (`setupPalette`, Ctrl/Cmd+K; fetches `<env>/report-finder.html` and `<env>/search-data.js` once).
 COPY icons on ids (`setupCopyIds`, 2026-09-06): a ⧉ after every UUID in td/th/code/.coreid-item/dd/li,
 added LAST in init() (after the data-orig snapshots), re-added by a MutationObserver for content the
-page builds later and by a mouseover net after a restore; csvCellText skips `.cpid`.
+page builds later and by a mouseover net after a restore; csvCellText skips `.cpid`. **CoreId LINKS to
+SecureTransport File Tracking** (`addCoreIdLinks`, 2026-09-07, user request): the same pass, run just
+BEFORE the copy icons, makes every UUID a link (new tab) to the per-env URL template of
+`input/<env>/coreid-url.txt` (`@COREID@` = the id; baked into topbar-data.js as `coreid:{acceptance,
+production}` by `ensure_assets`, folded into `TB_VER`); an id that already IS a link (File / error /
+record page) keeps it and gets a `↗` (`.stgo`) after it instead; the env comes from the topbar's
+`data-env`, else the path. An env without the file gets no links. Row links and drills ignore anchor
+clicks, so the id opens the platform and nothing else.
 
 **Iterating on HTML/CSS**: edit `assets/style.css`/`assets/report.js` (NOT the docs copies) and
 run `bin/build.sh` — it clears+seeds docs/ and re-renders everything. A MANUAL per-area publish
@@ -984,7 +991,7 @@ became a full entity, and one of its freshness deps; a listed FlowID skips the d
 `BL.txt` (BL numbers per subscription, `<subscription> <BL>[,<BL>...]` — several numbers
 comma-separated in the second field — a SECOND source of BL entities beside the subscriptions.json tags,
 unioned in `bin/flow-manager.sh`; the real files live in runtime's `input/<env>/`, develop's are
-the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Analyses → Configuration "Partners - Incoming" page's Gateway column; hand-maintained, sample template in develop) and
+the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Analyses → Configuration "Partners - Incoming" page's Gateway column; hand-maintained, sample template in develop), `coreid-url.txt` (2026-09-07: the SecureTransport File Tracking URL every CoreId on the site links to — ONE line, `@COREID@` where the id goes; hand-maintained per environment, the REAL admin hosts live only in runtime's copies, develop's sample carries an `.example` host — read by `publish_lib.sh` into topbar-data.js) and
 `logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
 Logical-based PDA derivation: part 1/2/3 of a three-part Logical name is replaced before it
 becomes the domain / application / partner-merge token — and since 2026-09-06 the Logical NAME ITSELF is recreated as Domain_Application_Partner from the replaced parts (the STREAM partner rule included), in the LOGICAL block before the base list / pair caches / PDA read the map, so two Logicals replacing to the same parts become one (the rule trail says "parts replaced");

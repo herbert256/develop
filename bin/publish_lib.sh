@@ -2547,7 +2547,18 @@ SERVER_MENU=""
 # re-stamps the data file's ?v=.
 TB_MON_ACC=0; [ -f data/acceptance/dashboards/reports/monitor.rpt ] && TB_MON_ACC=1
 TB_MON_PRD=0; [ -f data/production/dashboards/reports/monitor.rpt ] && TB_MON_PRD=1
-TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU$TB_MON_ACC$TB_MON_PRD" | cksum | cut -d' ' -f1)
+# The CoreId -> SecureTransport File Tracking URL template per env (2026-09-07,
+# user request): input/<env>/coreid-url.txt, ONE line carrying @COREID@ where
+# the id goes (comment and blank lines skipped) — hand-maintained, per
+# environment; the runtime repo carries the real admin hosts, develop's sample
+# an .example one. Baked into the SHARED topbar-data.js as a per-env map
+# (report.js addCoreIdLinks wraps every id on a page with it; an env without
+# the file gets an empty template and no links) and folded into TB_VER so a
+# URL change re-stamps the data file's ?v=.
+_coreid_url() { [ -f "$1" ] && awk '/^[ \t]*#/ || /^[ \t]*$/ { next } { sub(/^[ \t]+/, ""); sub(/[ \t\r]+$/, ""); print; exit }' "$1" || true; }
+TB_CID_ACC=$(_coreid_url input/acceptance/coreid-url.txt)
+TB_CID_PRD=$(_coreid_url input/production/coreid-url.txt)
+TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU$TB_MON_ACC$TB_MON_PRD$TB_CID_ACC$TB_CID_PRD" | cksum | cut -d' ' -f1)
 
 # Copy the shared assets into docs/ and write .nojekyll. Idempotent, so each
 # publish script can call it and still produce a valid site when run on its own.
@@ -2590,7 +2601,11 @@ ensure_assets() {
     t=${t//\\/\\\\}; t=${t//\"/\\\"}
     s=${s//\\/\\\\}; s=${s//\"/\\\"}
     a=${a//\\/\\\\}; a=${a//\"/\\\"}
-    local _tb; printf -v _tb 'window.AXWAY_TB={transfer:"%s",server:"%s",analyses:"%s",monitor:{acceptance:%s,production:%s}};' "$t" "$s" "$a" "${TB_MON_ACC:-0}" "${TB_MON_PRD:-0}"
+    # + the per-env CoreId -> File Tracking URL templates (see TB_CID_* above)
+    local ca=${TB_CID_ACC:-} cp=${TB_CID_PRD:-}
+    ca=${ca//\\/\\\\}; ca=${ca//\"/\\\"}
+    cp=${cp//\\/\\\\}; cp=${cp//\"/\\\"}
+    local _tb; printf -v _tb 'window.AXWAY_TB={transfer:"%s",server:"%s",analyses:"%s",monitor:{acceptance:%s,production:%s},coreid:{acceptance:"%s",production:"%s"}};' "$t" "$s" "$a" "${TB_MON_ACC:-0}" "${TB_MON_PRD:-0}" "$ca" "$cp"
     _asset_put docs/assets/topbar-data.js "$_tb"
     [ -f docs/.nojekyll ] || : > docs/.nojekyll
 }

@@ -22,6 +22,8 @@ Layout (per environment, acceptance/ + production/):
                  a second source of BL entities beside the subscriptions.json tags
   logons_old.txt the FE logins' last logon on the OLD gateway ("<login> <stamp>"
                  per line) — the Partners - Incoming page's Gateway column
+  coreid-url.txt the SecureTransport File Tracking URL every CoreId on the site
+                 links to — one line, @COREID@ where the id goes (2026-09-07)
 The eight policy files are PER ENVIRONMENT since 2026-08-31 (user request);
 bin/build/migrate-input.sh moves a checkout's old shared copies into the env
 dirs once, and folds a retired partner-aliases.tsv into logical_partners.txt.
