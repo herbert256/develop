@@ -199,19 +199,25 @@ tr.rowlink td:empty { cursor:auto; }   /* ...except empty cells — not click ta
    running); report.js applyRowVis keeps the attribute and the inline style in
    step, so the runtime date filter and this rule never disagree. */
 tr[data-dhide="1"] { display:none; }
-/* Every table is wrapped in .tablewrap so a table wider than the page scrolls
-   inside its own box — the page body never scrolls sideways (the top bar
-   are fixed). The wrapper carries the table's outer spacing. */
-.tablewrap { overflow-x:auto; margin-top:0.5rem; padding-bottom:3px; }
+/* Every table is wrapped in .tablewrap, which carries the table's outer
+   spacing. A table wider than the page WIDENS THE PAGE (2026-09-08, user
+   request): the wrap used to be a scroll box (overflow-x:auto), whose only
+   scrollbar sat at the BOTTOM of the table — off-screen for a tall table, so
+   the upper-right of a wide table (the last header cells, the csv hotspot)
+   was unreachable with a mouse. Overflow left visible, the document grows
+   and the BROWSER's horizontal bar, always at the bottom of the window,
+   reaches every column; the fixed top bar spans the viewport, so its right
+   icons stay in view while the page scrolls sideways. */
+.tablewrap { overflow-x:visible; margin-top:0.5rem; padding-bottom:3px; }
 .tablewrap + h2 { margin-top:2rem; }
 .tablewrap + .tablewrap { margin-top:1.8rem; }   /* title-less stacked tables (detail-page breakdowns) need breathing room */
 
 /* Side-by-side tables (render_rpt `sxs` modifier): a flex row of columns, each
    column holding one table's <h2> + .tablewrap so the heading stays above its
-   own table. NOWRAP + top-align keeps both titles on the SAME row (the group
-   scrolls sideways inside its own box if the pair is wider than the page,
+   own table. NOWRAP + top-align keeps both titles on the SAME row (a pair
+   wider than the page widens the page, like a wide table — 2026-09-08 —
    rather than dropping the second table below the first). */
-.sxs { display:flex; flex-wrap:nowrap; gap:0 2.5rem; align-items:flex-start; overflow-x:auto; }
+.sxs { display:flex; flex-wrap:nowrap; gap:0 2.5rem; align-items:flex-start; overflow-x:visible; }
 .sxs .sxscol { flex:0 0 auto; }
 .sxs .sxscol > h2:first-child { margin-top:1.6rem; }
 /* the home's ONE per-day table (2026-08-31 — the five-table flex row with
@@ -678,8 +684,9 @@ body.home.env-production .envblock.env-acceptance { display:none; }
 /* ---- the root index (body.home): every part centered ---- */
 /* Headings/prose center via text-align; the block parts (the .sxs status pair,
    the tables) center as content-width boxes with auto margins — max-width:100%
-   keeps an over-wide box scrolling from its LEFT edge inside .tablewrap/.sxs
-   instead of clipping (a centered overflowing flex row is unreachable). */
+   pins an over-wide box to the LEFT edge so its overflow runs to the right,
+   where the page's own horizontal bar reaches it (a centered overflowing flex
+   row would stick out on both sides, and the left part is unreachable). */
 body.home h1, body.home .subtitle, body.home h2 { text-align:center; }
 /* the "Still failing" note under its heading: one muted, centered sentence
    stating the rule the table follows (home only — the report pages carry their

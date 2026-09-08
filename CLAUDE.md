@@ -326,7 +326,7 @@ marker cell). Entity KINDs link to the detail page, the
 slug resolved through that dir's comprehensive `_slugmap.tsv` — no map entry, no link. `lines` =
 `\x1f`-separated stacked lines; `clines` collapsible (3+ lines fold behind `⋯`); `pre` = a raw log
 LINE kept verbatim in `<pre>` (the failed-file error pages) — logged spacing preserved, NO wrap
-and no width cap, so one logged line is one rendered line and the table scrolls.
+and no width cap, so one logged line is one rendered line and the page scrolls sideways.
 
 **Direction columns show the CONNECTION/MOVEMENT pair (`out/in`) wherever both sides exist**; the
 per-LEG aggregates (one row per direction) legitimately show one value. **A column headed exactly
@@ -337,8 +337,10 @@ themselves. Raw DATA is never folded (`_transfers.tsv` col 2 stays `Inbound`/`Ou
 A ROW/TOTAL cell may lead with `@{class=…,colspan=N,link=…,alink=…,href=…,nolink=1}`
 (`alink=<sub>/<name>` resolves through that sub-dir's slugmap at render time). A ROW may carry
 `@data:NAME=VALUE` cells (emitted as `data-NAME` on the `<tr>`). Scripts emit values UNESCAPED
-(the renderer escapes); keep TAB/CR/LF out of cells. Tables size to content; a wide table scrolls
-inside its `.tablewrap`.
+(the renderer escapes); keep TAB/CR/LF out of cells. Tables size to content; a wide table WIDENS THE
+PAGE (2026-09-08, user request — `.tablewrap` and `.sxs` are no longer scroll boxes: their bottom
+scrollbar was off-screen on a tall table, so the browser's own horizontal bar now does the job; the
+fixed top bar keeps its right icons in view).
 
 ### Client-side date re-aggregation (RECALC + @data:buckets)
 
