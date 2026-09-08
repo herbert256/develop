@@ -6,7 +6,7 @@ changing that subsystem**; it is not auto-loaded, so nothing in it can be assume
 
 ## Parse reference
 
-Source CSV field indices (transfer log): `1`=Status, `2`=Account, `3`=Login, `7`=Transfer Site,
+Source CSV field indices (transfer log): `1`=Status, `2`=Account, `3`=Login, `6`=Application (raw, cache col 25), `7`=Transfer Site,
 `8`=Direction, `9`=Action By, `12`=Transfer Profile, `15`=Local Filename, `17`=ICAP Details,
 `19`=Size, `20`=Protocol, `22`=Mode, `23`=Start Time, `24`=End Time, `25`=Duration, `26`=Remote Host,
 `29`=Transfer ID, `30`=Session ID (the technical connection — one SSH/PESIT connection = one id),

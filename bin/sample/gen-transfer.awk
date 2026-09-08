@@ -44,8 +44,8 @@ $1 != "T" { next }
     # the real export's shape; the real file name is field 15 (Local Filename)
     f10 = ($10 == "pesit" && $8 == "Inbound") ? $22 : $11
     printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", \
-        q(ST[$4]), q($5), q(login), q("VirtClass"), q("Virtual"), q("FlowManagerApplication"), \
-        q(site), q($8), q($9), q(f10), q("UNKNOWN"), q($22), q("FILE"), \
+        q(ST[$4]), q($5), q(login), q("VirtClass"), q("Virtual"), q($22 == "NOAPP" ? "none" : "FlowManagerApplication"), \
+        q(site), q($8), q($9), q(f10), q("UNKNOWN"), q($22 == "NOAPP" ? "UNKNOWN" : $22), q("FILE"), \
         q($8 == "Inbound" ? "Upload/" : "/"), q($11), q("/"), q(icap($16, $11)), \
         q("/data/FlowManager/" $5 "/" $11), $12, q($10), q("true"), q($15), \
         q(fmt_ts(abs)), q(fmt_ts(abs + dur)), q(humandur(dur)), q(host), q($14), q("UNKNOWN"), \

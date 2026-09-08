@@ -195,6 +195,22 @@ for env in acceptance production; do
         e2=$(awk -F'\t' '$1=="TABLE" { t++ } t==2 && $1=="ROW" && index($0, "@{class=failed}") { n++ } END { print n+0 }' "$R" 2>/dev/null)
         check $([ "${e1:-0}" -gt 0 ] && [ "$e1" = "$e2" ] && echo 0 || echo 1) "[$env] io-errors Error total $e1 != $e2 Failed line(s) (one IO line per failed File in the sample)"
     fi
+    # the EMPTY OUTBOUND SSH PROBES (2026-09-08, user request): the tagged
+    # flow's lone Outbound ssh 0-byte records with Application "none" are
+    # dropped from both caches (never a one-legged Failed File), set aside in
+    # _skipped.csv, and the Skipped report lists them under their own reason
+    if [ "$(exp "$env" sshprobe)" -gt 0 ]; then
+        n=$(awk -F'\t' '$2=="Outbound" && $10=="ssh" && ($9+0)==0 && tolower($25)=="none" { c[$1]++ } END { for (k in c) n++; print n+0 }' "$T")
+        check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] $n probe CoreId(s) (Outbound ssh, size 0, Application none) survived in _transfers.tsv"
+        n=$(awk -F'\t' '$2=="Outbound" && $10=="ssh" && ($9+0)==0 && tolower($25)=="none" && NF>=25 { n++ } END { print n+0 }' "$T")
+        check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] $n probe record(s) survived in _transfers.tsv"
+        n=$(command grep -c ',"none",' "data/$env/transfer/_skipped.csv" 2>/dev/null || echo 0)
+        check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] _skipped.csv holds no Application-none record (the planted probes were not set aside)"
+        n=$(awk -F'\t' '$1=="ROW" && $3=="empty ssh probe" { n++ } END { print n+0 }' "data/$env/transfer/reports/skipped.rpt" 2>/dev/null)
+        check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] skipped.rpt lists no 'empty ssh probe' row"
+        n=$(awk -F'\t' 'NF < 25 { n++ } END { print n+0 }' "$T")
+        check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] $n _transfers.tsv row(s) short of 25 columns"
+    fi
     if [ "$env" = production ]; then
         # the MULTI-HOST account (2026-08-31): CD_ROUTE_WONKA carries TWO
         # endpoints, and its _ALT flow logs half its rows as the raw ADDRESS.

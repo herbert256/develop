@@ -380,7 +380,9 @@ within a file). Full detail in ARCHITECTURE.md.
 
 `bin/transfer/parse.sh` tokenizes `input/<env>/transfer/*.csv` once into
 `data/<env>/transfer/cache/_transfers.tsv` (`$PARSED`). The CSV tokenizer is hand-rolled in awk
-(quoted commas work on any awk). One 24-column row per record, sorted by CoreId then Direction:
+(quoted commas work on any awk). One 25-column row per record, sorted by CoreId then Direction
+(col 25, 2026-09-08 = the export's own Application field, raw — "none" on the empty outbound ssh
+probes the parse-time skip drops; NOT the derived application entity):
 
 ```
  1 coreid          the logical-transfer key      13 sortkey (YYYYMMDD+time)
@@ -499,8 +501,11 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    site **`UCx_<account>`** — counted like any logged-but-unconfigured subscription (result.sh
    `discover_logged` appends it to the base cache), EXCEPT that first-seen.sh excludes it by the
    `UCx_` prefix; it surfaces on not-in-flow-manager.
-6. **NO-SUBSCRIPTION / HTTP SKIP** — a CoreId with neither site nor ACCOUNT anywhere, or any
-   http leg, is dropped from both caches; its raw CSV lines go to `_skipped.csv`. Distinct from
+6. **NO-SUBSCRIPTION / HTTP / PROBE SKIP** — a CoreId with neither site nor ACCOUNT anywhere, or any
+   http leg, is dropped from both caches; its raw CSV lines go to `_skipped.csv`. So is (2026-09-08,
+   user request) the **EMPTY OUTBOUND SSH PROBE**: a CoreId whose ONE record is Outbound + ssh +
+   size 0 + Application "none" (col 25; empty counts the same) — no file moved, so it must not
+   become a one-legged Failed File; the Skipped report lists it under its own reason. Distinct from
    the `input/<env>/skip.txt` SKIP LIST (same layout as the blacklist, but DROPS THE WHOLE RECORD — and, on the config side, the account, subscription or comm-profile LOGIN whose name contains the value, 2026-09-03;
    read only through the sourced `bin/skiplist.sh`; matched cache rows → `_skipped.tsv`).
 

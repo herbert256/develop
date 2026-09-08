@@ -72,6 +72,10 @@
 #                     operation). Re-added 2026-08 for the same-connection
 #                     UC2/UC4 shared-drop proof in uc2-status.sh; Session
 #                     Start Time (field 31) stays out (no reader).
+#  25 application     Application (field 6) RAW — the export's own attribute,
+#                     NOT the derived application entity. "none" on the empty
+#                     outbound ssh probes the parse-time skip drops
+#                     (2026-09-08, user request).
 #
 # Values are emitted unescaped except that TAB/CR/LF are scrubbed to a space so
 # they can never break the TAB line protocol (none occur in the current data).
@@ -439,11 +443,13 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         # no-subscription skip then dropped them.
         prof = field[12]
         if (prof != "" && prof != "UNKNOWN") prof = rnp_canon(prof)
-        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
+        # col 25 (2026-09-08): the Application field of the export itself (6),
+        # RAW — "none" on the empty outbound ssh probes the skip below drops
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
             sv(field[34]), sv(field[8]), sv(field[1]), sv(account), sv(login), sv(site), \
             sv(field[9]), sv(field[15]), size, sv(field[20]), date_iso, sv(t), sortkey, jd, \
             dur, sv(field[26]), bucket(field[17]), sv(field[24]), sv(field[38]), sv(field[22]), \
-            sv(prof), sv(field[35]), sv(field[29]), sv(field[30])
+            sv(prof), sv(field[35]), sv(field[29]), sv(field[30]), sv(field[6])
     }
     END {
         if (dups > 0)
@@ -1016,8 +1022,17 @@ rm -f "$smap"
 # Recomputed each derive from the whole cache, so a later export adding a leg
 # WITH a subscription brings a no-sub CoreId back automatically
 # (_transfers0.tsv, the merge base, keeps all rows).
-awk -F'\t' '{ seen[$1] = 1; if ($6 != "") has[$1] = 1; if ($10 == "http") ht[$1] = 1 }
-    END { for (c in seen) if (!(c in has) || (c in ht)) print c }' "$PARSED" > "$tmp.nosub"
+# + THE EMPTY OUTBOUND SSH PROBE (2026-09-08, user request): a CoreId whose
+# ONE and only record is Outbound + ssh + size 0 + the export's Application
+# field "none" (col 25; an empty field counts the same) is no file at all —
+# it must not become a (Failed, one-legged) File. Dropped the same way, its
+# raw line set aside with the others (the Skipped report labels the reason);
+# a later export adding a second leg brings the CoreId back, like the
+# no-sub case.
+awk -F'\t' '{ seen[$1] = 1; nrow[$1]++; if ($6 != "") has[$1] = 1; if ($10 == "http") ht[$1] = 1
+              app = tolower($25); if ($2 == "Outbound" && $10 == "ssh" && ($9 + 0) == 0 && (app == "none" || app == "")) pshape[$1] = 1 }
+    END { for (c in seen) if (!(c in has) || (c in ht) || (nrow[c] == 1 && (c in pshape))) { print c; if (nrow[c] == 1 && (c in pshape) && (c in has) && !(c in ht)) np++ }
+          printf "%d\n", np + 0 > "/dev/stderr" }' "$PARSED" 2> "$tmp.nprobe" > "$tmp.nosub"
 if [ -s "$tmp.nosub" ]; then
     awk -F'\t' -v listfile="$tmp.nosub" '
         BEGIN { while ((getline l < listfile) > 0) drop[l] = 1; close(listfile) }
@@ -1058,8 +1073,8 @@ if [ -s "$tmp.nosub" ]; then
 else
     : > "$SKIPCSV"
 fi
-echo "No-subscription/http skip: dropped $(wc -l < "$tmp.nosub" | tr -d ' ') CoreId(s); raw line(s) -> $SKIPCSV." >&2
-rm -f "$tmp.nosub"
+echo "No-subscription/http/probe skip: dropped $(wc -l < "$tmp.nosub" | tr -d ' ') CoreId(s) ($(cat "$tmp.nprobe" 2>/dev/null || echo 0) empty outbound ssh probe(s)); raw line(s) -> $SKIPCSV." >&2
+rm -f "$tmp.nosub" "$tmp.nprobe"
 
 # SKIP LIST: partition _transfers.tsv into kept (rewrite $PARSED) and skipped
 # (set aside in $SKIPOUT). A record is skipped when its attributed account
@@ -1180,6 +1195,10 @@ col  name           description
                     sharing this id provably used one and the same connection —
                     the same-connection proof behind the UC2/UC4 shared-drop
                     signal.
+ 25  application    The export's own Application field (CSV field 6), raw —
+                    "none" on the empty outbound ssh probes the parse-time
+                    skip drops (2026-09-08). NOT the derived application
+                    entity (_files.tsv col 18 comes from the configuration).
 
 This cache never contains fabricated rows: bin/build/seen-in-server-log.sh (the
 build step after both parses) marks server-log-only entities BLUE in the

@@ -180,13 +180,20 @@ if [ -f "$RAW_SKIP" ] && [ -s "$RAW_SKIP" ]; then
             }
             n++; return (n == want) ? cur : ""
         }
-        # pass 1: which CoreIds have an http leg; pass 2: emit sortable rows
-        FNR == NR { if (f($0, 20) == "http") ht[f($0, 34)] = 1; next }
+        # pass 1: which CoreIds have an http leg, and how many raw lines each
+        # CoreId has; pass 2: emit sortable rows. Reason precedence: http, then
+        # the EMPTY OUTBOUND SSH PROBE (2026-09-08: the CoreId is one lone
+        # Outbound ssh record of size 0 whose Application field reads "none"
+        # or is empty — bin/transfer/parse.sh drops it as no file at all),
+        # else no subscription.
+        FNR == NR { if (f($0, 20) == "http") ht[f($0, 34)] = 1; nl[f($0, 34)]++; next }
         {
             ts = f($0, 23); cid = f($0, 34)
             split(ts, dt, " "); split(dt[1], m, "/")
             iso = (m[3] != "" ? sprintf("%04d-%02d-%02d", m[3], m[1], m[2]) : dt[1])
-            reason = (cid in ht) ? "http" : "no subscription"
+            app = tolower(f($0, 6))
+            probe = (nl[cid] == 1 && f($0, 8) == "Outbound" && f($0, 20) == "ssh" && (f($0, 19) + 0) == 0 && (app == "none" || app == ""))
+            reason = (cid in ht) ? "http" : (probe ? "empty ssh probe" : "no subscription")
             printf "%s %s\tROW\t%s %s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
                 iso, dt[2], iso, dt[2], reason, f($0, 1), f($0, 2), f($0, 3), \
                 f($0, 8), f($0, 20), f($0, 15), f($0, 19), cid
@@ -198,17 +205,17 @@ fi
 nraw=$(grep -c . "$rows_tmp" || true)
 awk -v rowsfile="$rows_tmp" -v nraw="$nraw" '
     /^STAT\t/ { print; laststat = 1; next }
-    laststat { printf "STAT\twhite\t%d\tSkipped no-subscription / http lines\n", nraw; laststat = 0 }
+    laststat { printf "STAT\twhite\t%d\tSkipped no-subscription / http / probe lines\n", nraw; laststat = 0 }
     /^SUMMARY\t/ && !spliced {
-        printf "TABLE\tNo subscription / http — skipped transfer records\twide\n"
+        printf "TABLE\tNo subscription / http / empty probe — skipped transfer records\twide\n"
         printf "HEAD\tDate & time\tReason\tStatus\tAccount\tLogin\tDirection\tProtocol\tFile\tSize\tCoreId\n"
         printf "KIND\ttext\ttext\ttext\ttext\ttext\ttext\ttext\tfile\tnum\tmono\n"
         n = 0
         while ((getline l < rowsfile) > 0) { print l; n++ }
         close(rowsfile)
-        if (n == 0) printf "ROW\t@{class=desc}(none — every CoreId got a subscription attributed and none ran over http)\t\t\t\t\t\t\t\t\t\n"
+        if (n == 0) printf "ROW\t@{class=desc}(none — every CoreId got a subscription attributed, none ran over http and none was an empty outbound ssh probe)\t\t\t\t\t\t\t\t\t\n"
         printf "TOTAL\tTotal (%d record(s))\t\t\t\t\t\t\t\t\t\n", n
-        printf "NOTE\tThe RAW transfer-log records of the CoreIds dropped at parse time because **no leg** carried a subscription or even an **account** (after the propagation and config/xref/flow-direction fallbacks — a record with an account is never dropped: it keeps the synthetic subscription **UCx_account** and counts everywhere except First seen and the coverage figures), or because a leg ran over **http** (web-UI hand traffic, never flow traffic). Kept verbatim in data/<env>/transfer/_skipped.csv; no other report counts these. Reason **http** = the CoreId has an http leg; otherwise **no subscription**.\n"
+        printf "NOTE\tThe RAW transfer-log records of the CoreIds dropped at parse time because **no leg** carried a subscription or even an **account** (after the propagation and config/xref/flow-direction fallbacks — a record with an account is never dropped: it keeps the synthetic subscription **UCx_account** and counts everywhere except First seen and the coverage figures), because a leg ran over **http** (web-UI hand traffic, never flow traffic), or because the CoreId is an **empty ssh probe** (2026-09-08): one lone **Outbound ssh** record of **size 0** whose Application field reads **none** — no file moved, so it must not count as a one-legged Error File. Kept verbatim in data/<env>/transfer/_skipped.csv; no other report counts these. Reason **http** = the CoreId has an http leg; **empty ssh probe** = the shape above; otherwise **no subscription**.\n"
         spliced = 1
     }
     { print }

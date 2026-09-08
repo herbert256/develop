@@ -511,6 +511,20 @@ function flow_day_ambient(jd, base,   i, np, tt, sid, poff) {
             if (rnd() < 0.95) s_poll(tt, sesshex(), 0)
         }
     }
+    # the EMPTY OUTBOUND SSH PROBES (2026-09-08, user request): a tagged out
+    # flow logs, beside its real files, one to three lone Outbound ssh legs of
+    # size 0 whose export Application field reads "none" (the NOAPP profile
+    # marker: gen-transfer.awk writes Application "none" + profile UNKNOWN).
+    # The transfer parse must drop these CoreIds — they are no files — so
+    # they never become one-legged Failed Files. Tagged flows only: the RNG
+    # is seeded per flow and day, no other flow's data moves.
+    if (hastag("sshprobe") && VOL > 0) {
+        np = 1 + rint(3)
+        for (i = 0; i < np; i++) {
+            CID = uuid4(); tt = base + file_time()
+            T(tt, 80 + rint(400), "P", "SECURETRANSPORT", "UNKNOWN", sitefield(), "Outbound", "Server", PROTO, fname_of(tt), 0, hostspelled(), PORT, "BINARY", "NP", secssh(), sesshex(), "false", "NOAPP", tt - 200 - rint(2000))
+        }
+    }
     # blue / greenpoll flows: server-log-only evidence
     if (hastag("greenpoll") && rnd() < 0.8) s_poll(base + cd_ms() + rint(3600000), sesshex(), 0)
     # blue = a SITE-naming mention shape the unknown-entities seeds extract

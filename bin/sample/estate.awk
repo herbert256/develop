@@ -163,6 +163,7 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
     else T["seen"]++
     if (hastag(tags, "nocron")) T["nocron"]++
     if (hastag(tags, "ioerr")) T["ioerr"]++     # the IO errors report's planted folder (2026-09-06)
+    if (hastag(tags, "sshprobe")) T["sshprobe"]++   # the empty outbound ssh probes the parse drops (2026-09-08)
     if (tags ~ /reason=/) T["reasons"]++
 }
 
@@ -234,7 +235,7 @@ BEGIN {
 
 function build_acceptance() {
     # ======== UC1 — we push to the partner (Inbound pesit + Outbound ssh) ====
-    addf(1, "FIN", "BILLING",  "GLOBEX",   "", 55, 0.04, "whale")
+    addf(1, "FIN", "BILLING",  "GLOBEX",   "", 55, 0.04, "whale,sshprobe")   # sshprobe: lone 0-byte outbound ssh legs with Application "none" — the parse drops them (2026-09-08)
     addf(1, "FIN", "LEDGER",   "GLOBEX",   "",  4, 0.03, "twinb")
     addf(1, "FIN", "BILLING",  "GLOBEXX",  "",  1, 0.05, "")            # alias misspelling
     addf(1, "CD",  "PRINTMGMT","WONKA",    "", 12, 0.06, "")
@@ -405,7 +406,7 @@ function monitor_flows(   u) {
 
 function build_production() {
     # shared-name flows (acc-vs-prod comparability), HYBRID parameter style
-    addf(1, "FIN", "BILLING",  "GLOBEX",   "", 30, 0.03, "whale")
+    addf(1, "FIN", "BILLING",  "GLOBEX",   "", 30, 0.03, "whale,sshprobe")   # sshprobe as in acceptance (2026-09-08)
     addf(1, "CD",  "COSMOS",   "WONKA",    "", 20, 0.02, "")
     addf(1, "CD",  "PRINTMGMT","WONKA",    "", 10, 0.04, "")
     addf(1, "IT",  "ARCHIVE",  "INITECH",  "",  4, 0.03, "")
