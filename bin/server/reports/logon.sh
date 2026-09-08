@@ -92,7 +92,9 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 ensure_parsed
 # the per-login logon summary (bin/logons.sh: LOGIN(upper) ⇥ first ⇥ last ⇥
-# count ⇥ pattern) — joined onto the Incoming table as its last four columns.
+# count ⇥ pattern) — joined onto the Incoming table as its four logon-summary
+# columns (First logon · Last logon · Logons · Pattern, before the Re-screens
+# column that closes the table since 2026-09-08).
 # ensure_logons builds it here rather than trusting another step: the detail
 # pages' consumer runs CONCURRENTLY in the build, so neither may rely on the
 # other having written it (the write is atomic and cmp-guarded).
@@ -453,13 +455,16 @@ rows() {
         [ -n "$af9" ] && aftot=$((aftot + af9))
         # column order Allowed, Disallowed, Authenticated (the 2026-07 swap): the
         # cells, their drill payloads and the RECALC tokens below all follow it.
-        # Re-screens sits right after Allowed and Session errors after Auth
-        # failed (2026-09-06): drill-cell-<i> binds cells positionally —
-        # 1 Allowed, 2 Re-screens, 3 Disallowed, 4 Authenticated, 5 No account,
-        # 6 Bad key, 7 Key failures, 8 Locked, (9 Auth failed: no drill),
-        # 10 Session errors — so the block must not shift.
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:seen=%s\t@data:res=%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\t@data:drill-cell-6=%s\t@data:drill-cell-7=%s\t@data:drill-cell-8=%s\t@data:drill-cell-10=%s\n' \
-            "$user" "$a" "$r" "$d" "$t" "$n" "$b" "$k" "$l" "$af9" "$x" "$lgf" "$lgl" "$lgn" "$lgp" "$sn9" "$res9" "$bkt" "$d1" "$d8" "$d3" "$d2" "$d4" "$d5" "$d6" "$d7" "$d9"
+        # Session errors sits after Auth failed (2026-09-06); Re-screens is the
+        # LAST column (2026-09-08, user request — it sat right after Allowed
+        # for two days, which also shifted the cells publish-insights.sh reads
+        # by POSITION for its "login in" box: $4/$7/$8/$9 = Disallowed / Bad
+        # key / Key failures / Locked are back in place). drill-cell-<i> binds
+        # cells positionally — 1 Allowed, 2 Disallowed, 3 Authenticated, 4 No
+        # account, 5 Bad key, 6 Key failures, 7 Locked, (8 Auth failed: no
+        # drill), 9 Session errors, 14 Re-screens — so the block must not shift.
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:seen=%s\t@data:res=%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\t@data:drill-cell-6=%s\t@data:drill-cell-7=%s\t@data:drill-cell-9=%s\t@data:drill-cell-14=%s\n' \
+            "$user" "$a" "$d" "$t" "$n" "$b" "$k" "$l" "$af9" "$x" "$lgf" "$lgl" "$lgn" "$lgp" "$r" "$sn9" "$res9" "$bkt" "$d1" "$d3" "$d2" "$d4" "$d5" "$d6" "$d7" "$d9" "$d8"
     done <<< "$(printf '%s\n' "$agg" | grep $'^R\t' | LC_ALL=C sort -t"$(printf '\t')" -k5,5nr -k6,6nr -k7,7nr -k9,9nr -k8,8nr -k3,3nr -k2,2 \
         | awk -F'\t' -v OFS='\t' -v LG="$LOGONS_TSV" '
             # the per-login logon summary join (details.sh _logons.tsv): four
@@ -540,14 +545,14 @@ out_rows() {
     printf 'TABLE\tIncoming\twide\tseenrows\trestint\tdrill=log line\n'
     # bucket slots (the R-line order A T D N B K L R X): s7 = Re-screens, s8 =
     # Session errors
-    printf 'HEAD\tLogin\tAllowed\tRe-screens\tDisallowed\tAuthenticated\tNo account\tBad key\tKey failures\tLocked\tAuth failed\tSession errors\tFirst logon\tLast logon\tLogons\tPattern\n'
-    printf 'KIND\tlogin\tnumprocessed\tnum\tnumfailed\tnumprocessed\tnumfailed\tnumfailed\tnumwarn\tnumwarn\tnumfailed\tnumfailed\ttext\ttext\tnum\ttext\n'
-    printf 'RECALC\t-\ts0\ts7\ts2\ts1\ts3\ts4\ts5\ts6\tk\ts8\tk\tk\tk\tk\n'
+    printf 'HEAD\tLogin\tAllowed\tDisallowed\tAuthenticated\tNo account\tBad key\tKey failures\tLocked\tAuth failed\tSession errors\tFirst logon\tLast logon\tLogons\tPattern\tRe-screens\n'
+    printf 'KIND\tlogin\tnumprocessed\tnumfailed\tnumprocessed\tnumfailed\tnumfailed\tnumwarn\tnumwarn\tnumfailed\tnumfailed\ttext\ttext\tnum\ttext\tnum\n'
+    printf 'RECALC\t-\ts0\ts2\ts1\ts3\ts4\ts5\ts6\tk\ts8\tk\tk\tk\tk\ts7\n'
     rows
     [ "$aftot" -gt 0 ] || aftot=""
     [ "${rtot:-0}" -gt 0 ] || rtot=""
-    printf 'TOTAL\tTotal (%s logins)\t@{class=num processed}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num failed}%s\t\t\t@{class=num}%s\t\n' \
-        "$nrows" "$atot" "$rtot" "$dtot" "$ttot" "$ntot" "$btot" "$ktot" "$ltot" "$aftot" "$xtot" "$lgtot"
+    printf 'TOTAL\tTotal (%s logins)\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num failed}%s\t\t\t@{class=num}%s\t\t@{class=num}%s\n' \
+        "$nrows" "$atot" "$dtot" "$ttot" "$ntot" "$btot" "$ktot" "$ltot" "$aftot" "$xtot" "$lgtot" "$rtot"
 
     printf 'TABLE\tOutgoing\twide\tdrill=log line\n'
     printf 'HEAD\tRemote host\tUser\tFailures\tPassword\tKey\tCertificate\tOther\tReason (last seen)\tFirst\tLast\n'

@@ -717,7 +717,7 @@ entity (existence = the signal `blue_box` renders).
 
 **The SSH logon funnel is SESSION-aware** (2026-09-06, user request — the FE000508 finding):
 `_parse.tsv` column 6 is the SSH session id, and `bin/server/reports/logon.sh` + its twin
-`bin/logons.sh` (the detail pages' Logons table and the Incoming table's last four columns —
+`bin/logons.sh` (the detail pages' Logons table and the Incoming table's four logon-summary columns —
 "a change to either matcher belongs in both") tie every `[Ssh Default]` line to its connection.
 A **re-screen** is an "Allowed user" line LATER than the last successful authentication of its
 session (an Allowed that an authentication follows is a real screening, whatever the session
@@ -732,8 +732,10 @@ attributed to the login of their session; a `numfailed` column with drills, a 7t
 `_logons.tsv`. Both need the whole cache read first (the exports are newest-first, not
 chronological), so every Allowed line is booked in END. The sample estate plants one persistent
 connection for the first login (`bin/sample/gen-events.awk` env_ambient, fixed session id, no
-rint()). Drill-cell numbering on Incoming: 1 Allowed, 2 Re-screens, 3 Disallowed,
-4 Authenticated, 5 No account, 6 Bad key, 7 Key failures, 8 Locked, 10 Session errors.
+rint()). Drill-cell numbering on Incoming: 1 Allowed, 2 Disallowed, 3 Authenticated, 4 No account,
+5 Bad key, 6 Key failures, 7 Locked, 9 Session errors, 14 Re-screens — Re-screens is the LAST column
+(2026-09-08, user request); `publish-insights.sh` reads the Incoming cells by POSITION for its "login
+in" box (`$4/$7/$8/$9` = Disallowed / Bad key / Key failures / Locked), so a new column goes at the END.
 
 ## Rendering
 
