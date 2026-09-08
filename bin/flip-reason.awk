@@ -38,6 +38,11 @@ function flip_reason(msg,   m) {
     # BEFORE the connection rule: a torn-down session may follow the IO line,
     # but the IO line is the cause.
     if (m ~ /(^|[^a-z])io error|input\/output error/) return "IO error"
+    # a READ TIMEOUT on the transfer's connection — "… Read timed out" (the
+    # Java socket wording): the far end stopped answering mid-transfer.
+    # BEFORE the connection rule, whose "connection failure" wrapping the
+    # same line may carry would otherwise claim it (2026-09-08, user request).
+    if (m ~ /read timed out/) return "Read timed out"
     if (m ~ /wrong server fingerprint|host key|fingerprint mismatch/) return "Wrong server fingerprint"
     if (m ~ /connection failure|could not be established|failed to connect|failed to create connection|connection refused|connection timed out|connection reset|unable to connect/) return "Connection failures"
     if (m ~ /receive file as/) return "Receive File As not set"

@@ -246,6 +246,7 @@ function build_acceptance() {
     addf(1, "AB",  "POLIS",    "UMBRELLA", "",  1.5, 0.03, "")
     addf(1, "ZG",  "PENSION",  "HOOLI",    "",  4, 0.04, "")
     addf(1, "IT",  "CRM",      "STARK",    "",  1.5, 0.2, "reason=fingerprint")
+    addf(1, "ZG",  "INVOICE",  "HOOLI",    "",  1.2, 0.2, "reason=readtimeout")   # the "Read timed out" reason (2026-09-08)
     addf(1, "APS", "RISK",     "TYRELL",   "",  4, 0.15, "reason=connfail,g2r")
     addf(1, "CD",  "INVOICE",  "VANDELAY", "",  1.5, 0.2, "reason=routestop")
     addf(1, "SI",  "PORTAL",   "OSCORP",   "",  1.2, 0.2, "reason=sitemissing")

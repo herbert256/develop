@@ -156,6 +156,9 @@ function s_reason_err(abs, sid, fn,   r) {
     else if (r == "tracking")    S(abs, "E", "TM", sid, "Error during transfer operation: Could not find file tracking entry for transfer " CID)
     else if (r == "unavailable") S(abs, "E", "TM", sid, "Error during transfer operation: 550 File unavailable, not found or busy")
     else if (r == "ftpspull")    S(abs, "E", "TM", sid, "Error during transfer operation: Pull via FTPS failed for transfer site '" srvsite() "': 425 Unable to build data connection")
+    # the far end going silent mid-transfer — the Java socket read timeout
+    # (2026-09-08, user request: the "Read timed out" reason)
+    else if (r == "readtimeout") S(abs, "E", "TM", sid, "Error during transfer operation: java.net.SocketTimeoutException: Read timed out")
     # the post-download remote delete failing (2026-09-02): the Info line
     # names the delete, the Error is what flip-reason.awk classifies
     else if (r == "remdel")      { S(abs - 6, "I", "TM", sid, "Deleting remote file: " fn " under /outbox/download/.")

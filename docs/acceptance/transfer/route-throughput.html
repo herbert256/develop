@@ -16,7 +16,7 @@
 <div class="topbar" data-eb="../" data-b="../../" data-env="acceptance" data-help="route-throughput" data-twin="../../production/transfer/route-throughput.html"></div>
 <h1>Route Throughput <span class="grouptag">&larr; Volume, Sizes &amp; Files &larr; Transfer</span></h1>
 <p class="tabs"><a class="tab" href="volume-per-day.html">Volume</a><a class="tab" href="files-by-size.html"></a><a class="tab" href="top-transfers.html">Largest files</a><span class="tab active">Route throughput</span><a class="tab" href="size-profile.html">Size profile</a><a class="tab" href="ranking-subscriptions.html">Ranking</a></p>
-<p class="range">How fast the bytes actually move, per <strong>route</strong> (subscription x protocol x direction). Only legs that measure a real rate count: <strong>duration &gt; 500 ms</strong> and <strong>size &gt; 1 MB</strong> — <strong>2896</strong> such Transfers, moving <strong>29.70 GB</strong> in <strong>3.69 h</strong> of wire time (<strong>2.29 MB/s</strong> overall). Slowest routes first: a PeSIT route at 0.2 MB/s and an SFTP route at 40 MB/s are both normal, but a route far below its protocol peers is worth a look. The Trend column compares the first half of the observed window with the second.</p>
+<p class="range">How fast the bytes actually move, per <strong>route</strong> (subscription x protocol x direction). Only legs that measure a real rate count: <strong>duration &gt; 500 ms</strong> and <strong>size &gt; 1 MB</strong> — <strong>2904</strong> such Transfers, moving <strong>29.74 GB</strong> in <strong>3.70 h</strong> of wire time (<strong>2.29 MB/s</strong> overall). Slowest routes first: a PeSIT route at 0.2 MB/s and an SFTP route at 40 MB/s are both normal, but a route far below its protocol peers is worth a look. The Trend column compares the first half of the observed window with the second.</p>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Subscription</th><th>Protocol</th><th>Direction</th><th class="num">Transfers</th><th class="num">Volume</th><th class="num">Wire time</th><th class="num">MB/s</th><th>Trend (MB/s)</th></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc3-aps-settle-p2p2.html">UC3_APS_SETTLE_P2P2</a></td><td>ssh</td><td>inbound</td><td class="num">3</td><td class="num">4.79 MB</td><td class="num">17.98 s</td><td class="num">0.27</td><td><code>-</code></td></tr>
@@ -54,6 +54,7 @@
 <tr><td class="cl"><a href="../details/subscriptions/uc1-synt-itp-aperture.html">UC1_SYNT_ITP_APERTURE</a></td><td>ssh</td><td>outbound</td><td class="num">16</td><td class="num">173.22 MB</td><td class="num">2.1 min</td><td class="num">1.38</td><td><code>1.62 → 0.48  ↓</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc3-ab-nas-globex.html">UC3_AB_NAS_GLOBEX</a></td><td>ssh</td><td>inbound</td><td class="num">27</td><td class="num">282.46 MB</td><td class="num">3.4 min</td><td class="num">1.39</td><td><code>1.53 → 0.89  ↓</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc3-fin-facts-massive.html">UC3_FIN_FACTS_MASSIVE</a></td><td>ssh</td><td>inbound</td><td class="num">7</td><td class="num">41.22 MB</td><td class="num">29.60 s</td><td class="num">1.39</td><td><code>-</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-zg-invoice-hooli.html">UC1_ZG_INVOICE_HOOLI</a></td><td>ssh</td><td>outbound</td><td class="num">3</td><td class="num">14.67 MB</td><td class="num">10.34 s</td><td class="num">1.42</td><td><code>-</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc1-odv-dms-cyberdyne.html">UC1_ODV_DMS_CYBERDYNE</a></td><td>pesit</td><td>inbound</td><td class="num">65</td><td class="num">124.95 MB</td><td class="num">1.4 min</td><td class="num">1.44</td><td><code>1.30 → 1.64  ↑</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc1-cb-marketing-wnk.html">UC1_CB_MARKETING_WNK</a></td><td>ssh</td><td>outbound</td><td class="num">28</td><td class="num">225.06 MB</td><td class="num">2.6 min</td><td class="num">1.45</td><td><code>0.51 → 1.70  ↑</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc1-cd-printmgmt-wonka.html">UC1_CD_PRINTMGMT_WONKA</a></td><td>ssh</td><td>outbound</td><td class="num">29</td><td class="num">295.21 MB</td><td class="num">3.4 min</td><td class="num">1.47</td><td><code>1.56 → 1.29  →</code></td></tr>
@@ -105,6 +106,7 @@
 <tr><td class="cl"><a href="../details/subscriptions/uc1-it-crm-stark.html">UC1_IT_CRM_STARK</a></td><td>pesit</td><td>inbound</td><td class="num">9</td><td class="num">24.94 MB</td><td class="num">8.75 s</td><td class="num">2.85</td><td><code>1.66 → 3.89  ↑</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc1-it-ledger-hooli.html">UC1_IT_LEDGER_HOOLI</a></td><td>pesit</td><td>inbound</td><td class="num">11</td><td class="num">40.66 MB</td><td class="num">14.06 s</td><td class="num">2.89</td><td><code>1.38 → 4.77  ↑</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc1-it-archive-initech.html">UC1_IT_ARCHIVE_INITECH</a></td><td>pesit</td><td>inbound</td><td class="num">8</td><td class="num">40.21 MB</td><td class="num">13.85 s</td><td class="num">2.90</td><td><code>2.93 → 2.89  →</code></td></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc1-zg-invoice-hooli.html">UC1_ZG_INVOICE_HOOLI</a></td><td>pesit</td><td>inbound</td><td class="num">5</td><td class="num">23.16 MB</td><td class="num">7.90 s</td><td class="num">2.93</td><td><code>-</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc4-zg-zka-hooli.html">UC4_ZG_ZKA_HOOLI</a></td><td>pesit</td><td>outbound</td><td class="num">19</td><td class="num">92.84 MB</td><td class="num">31.33 s</td><td class="num">2.96</td><td><code>1.94 → 3.81  ↑</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc1-cd-invoice-vandelay.html">UC1_CD_INVOICE_VANDELAY</a></td><td>pesit</td><td>inbound</td><td class="num">12</td><td class="num">73.36 MB</td><td class="num">24.70 s</td><td class="num">2.97</td><td><code>3.45 → 2.45  ↓</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc3-fin-facts-massive.html">UC3_FIN_FACTS_MASSIVE</a></td><td>pesit</td><td>outbound</td><td class="num">5</td><td class="num">31.91 MB</td><td class="num">10.38 s</td><td class="num">3.08</td><td><code>-</code></td></tr>
@@ -166,19 +168,19 @@
 <tr><td class="cl"><a href="../details/subscriptions/uc2-it-sapbhp-gekko.html">UC2_IT_SAPBHP_GEKKO</a></td><td>ssh</td><td>outbound</td><td class="num">1</td><td class="num">13.15 MB</td><td class="num">679 ms</td><td class="num">19.37</td><td><code>-</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc2-aps-vida-umbrella.html">UC2_APS_VIDA_UMBRELLA</a></td><td>routing</td><td>inbound</td><td class="num">2</td><td class="num">22.36 MB</td><td class="num">1.14 s</td><td class="num">19.56</td><td><code>-</code></td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc2-wa-vdn.html">UC2_WA_VDN</a></td><td>ssh</td><td>outbound</td><td class="num">4</td><td class="num">214.21 MB</td><td class="num">4.13 s</td><td class="num">51.85</td><td><code>-</code></td></tr>
-<tr class="total"><td>Total (147 route(s))</td><td></td><td></td><td class="num">2896</td><td class="num">29.70 GB</td><td class="num">3.69 h</td><td class="num">2.29</td><td></td></tr>
+<tr class="total"><td>Total (149 route(s))</td><td></td><td></td><td class="num">2904</td><td class="num">29.74 GB</td><td class="num">3.70 h</td><td class="num">2.29</td><td></td></tr>
 </table></div>
 <p class="note">MB/s = the route's counted bytes divided by its summed leg durations (a volume-weighted rate, so one big slow file outweighs ten quick ones). The <strong>500 ms / 1 MB floors</strong> drop the legs whose measured rate is mostly session setup and rounding. A leg's duration is the log record's own wire time — the store-and-forward dwell BETWEEN legs is never in it (the Store-and-Forward report measures that). Trend: first-half vs second-half MB/s of the window; shown when both halves have at least 3 Transfers.</p>
 <h2>Per protocol</h2>
 <div class="tablewrap"><table data-nofilter="1">
 <tr><th>Protocol</th><th class="num">Transfers</th><th class="num">Volume</th><th class="num">Wire time</th><th class="num">MB/s</th></tr>
-<tr><td>ssh</td><td class="num">1410</td><td class="num">14.06 GB</td><td class="num">2.60 h</td><td class="num">1.54</td></tr>
+<tr><td>ssh</td><td class="num">1413</td><td class="num">14.07 GB</td><td class="num">2.61 h</td><td class="num">1.54</td></tr>
 <tr><td>ftp</td><td class="num">37</td><td class="num">678.35 MB</td><td class="num">6.5 min</td><td class="num">1.73</td></tr>
-<tr><td>pesit</td><td class="num">1439</td><td class="num">14.94 GB</td><td class="num">58.7 min</td><td class="num">4.34</td></tr>
+<tr><td>pesit</td><td class="num">1444</td><td class="num">14.96 GB</td><td class="num">58.8 min</td><td class="num">4.34</td></tr>
 <tr><td>routing</td><td class="num">10</td><td class="num">44.57 MB</td><td class="num">6.16 s</td><td class="num">7.24</td></tr>
-<tr class="total"><td>Total (4 protocol(s))</td><td class="num">2896</td><td class="num">29.70 GB</td><td class="num">3.69 h</td><td class="num">2.29</td></tr>
+<tr class="total"><td>Total (4 protocol(s))</td><td class="num">2904</td><td class="num">29.74 GB</td><td class="num">3.70 h</td><td class="num">2.29</td></tr>
 </table></div>
 <p class="note">The same figures rolled up per protocol — the fair baseline for a route: PeSIT throttles far below SFTP by design. `routing` is the internal store-and-forward leg between the inbound and outbound sides.</p>
-<div class="summary">Routes: 147  |  Measured Transfers: 2896  |  Volume: 29.70 GB  |  Overall: 2.29 MB/s</div>
+<div class="summary">Routes: 149  |  Measured Transfers: 2904  |  Volume: 29.74 GB  |  Overall: 2.29 MB/s</div>
 </body>
 </html>
