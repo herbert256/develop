@@ -108,7 +108,9 @@ PSIG="$CACHE_DIR/_parse.parser"
 # The RENAME MAP is part of the signature: it decides which logged subscription
 # name a mention is attributed to, so recording a rename must rebuild the
 # per-entity caches (bin/renames.sh).
-parser_sig=$(cat "${BASH_SOURCE[0]}" "$SKIPFILE" "$RENAMES_FILE" 2>/dev/null | cksum | awk '{print $1"_"$2}')
+# + the skip-list READER (2026-09-09): a change in how a rule line is parsed
+# must reparse like an edit of the rules would
+parser_sig=$(cat "${BASH_SOURCE[0]}" "$SKIPFILE" "$RENAMES_FILE" "$ROOT/bin/skiplist.sh" 2>/dev/null | cksum | awk '{print $1"_"$2}')
 
 # ---------------------------------------------------------------------------
 # Parallel machinery. The 5+ GB of input is embarrassingly parallel two ways:

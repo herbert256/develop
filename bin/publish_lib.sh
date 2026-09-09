@@ -2374,8 +2374,16 @@ skipped_tokens() {
     while IFS= read -r l || [ -n "$l" ]; do
         l=${l%$'\r'}
         case $l in \#*|"") continue ;; esac
-        case $l in *"$(printf '\t')"*) l=$(printf '%s' "$l" | cut -f3) ;; esac
-        l="$(printf '%s' "$l" | awk '{$1=$1; print}')"
+        # the value, by the readers' rule (bin/skiplist.sh sl_load, 2026-09-09):
+        # three TAB fields -> the third; a space-typed "field kind value" ->
+        # the rest of the line; anything else the legacy bare token itself
+        l=$(printf '%s' "$l" | awk -F'\t' '{
+            v = ""
+            if (NF >= 3) v = $3
+            else { m = split($0, b, /[ \t]+/)
+                   if (m >= 3 && b[1] ~ /^(account|login|site|message|any)$/ && b[2] ~ /^(contains|exact|regex)$/) { v = $0; sub(/^[ \t]*[a-z]+[ \t]+[a-z]+[ \t]+/, "", v) }
+                   else v = $0 }
+            gsub(/^[ \t]+|[ \t]+$/, "", v); print v }')
         [ -n "$l" ] || continue
         s=$(printf '%s' "$l" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-'); s=${s%-}; s=${s#-}
         printf '%s\t%s\n' "$l" "${s:-_}"

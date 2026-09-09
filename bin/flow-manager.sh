@@ -206,6 +206,7 @@ for f in $ENTITY_CACHES $PAIR_CACHES; do
     case " $ENTITY_CACHES " in *" $f "*) out="$BASE/_$f.tsv" ;; *) out="$XREF/_$f.tsv" ;; esac
     if [ ! -f "$out" ] || [ "$PARTNERS" -nt "$out" ] || [ "$SUBS" -nt "$out" ] \
        || [ "${BASH_SOURCE[0]}" -nt "$out" ] \
+       || [ "$ROOT/bin/skiplist.sh" -nt "$out" ] \
        || { [ -f "$SKIPFILE" ] && [ "$SKIPFILE" -nt "$out" ]; } \
        || { [ -f "$LOGICALF" ] && [ "$LOGICALF" -nt "$out" ]; } \
        || { [ -f "$LOGDOMF" ] && [ "$LOGDOMF" -nt "$out" ]; } \

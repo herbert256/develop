@@ -51,13 +51,27 @@ export SKIPLIST_FILE
 # NOTE: no single quotes inside this program — it rides in a single-quoted
 # shell string.
 SKIPLIST_AWK='
-function sl_load(f,   ln, a, n) {
+function sl_load(f,   ln, a, n, b, m, v) {   # b/m/v LOCAL: this rides inside consumer programs that use those names
     SL_N = 0
     while ((getline ln < f) > 0) {
         sub(/\r$/, "", ln)
         if (ln ~ /^[ \t]*#/ || ln ~ /^[ \t]*$/) continue
         n = split(ln, a, "\t")
-        if (n < 3) {                      # LEGACY: a bare token
+        if (n < 3) {
+            # a rule typed with SPACES between field, kind and value (2026-09-09:
+            # "any contains<TAB>NAME" on the runtime fell through to the bare
+            # token branch and became the substring "any contains<TAB>NAME",
+            # matching nothing — the subscription stayed): when the first two
+            # words are a known field and kind, it is that rule, the rest of
+            # the line its value
+            m = split(ln, b, /[ \t]+/)
+            if (m >= 3 && b[1] ~ /^(account|login|site|message|any)$/ && b[2] ~ /^(contains|exact|regex)$/) {
+                v = ln; sub(/^[ \t]*[a-z]+[ \t]+[a-z]+[ \t]+/, "", v); gsub(/[ \t]+$/, "", v)
+                if (v == "") continue
+                SL_N++; SL_FIELD[SL_N] = b[1]; SL_RULE[SL_N] = b[2]; SL_VAL[SL_N] = v; SL_RAW[SL_N] = v
+                continue
+            }
+            # LEGACY: a bare token
             gsub(/^[ \t]+|[ \t]+$/, "", ln)
             if (ln == "") continue
             SL_N++; SL_FIELD[SL_N] = "any"; SL_RULE[SL_N] = "contains"
@@ -98,7 +112,16 @@ skip_values() {
         /^[ \t]*#/ || /^[ \t]*$/ { next }
         {
             sub(/\r$/, "")
-            if (NF < 3) { gsub(/^[ \t]+|[ \t]+$/, ""); if ($0 != "") print; next }
+            if (NF < 3) {
+                # the space-typed rule (see sl_load): field kind value
+                m = split($0, b, /[ \t]+/)
+                if (m >= 3 && b[1] ~ /^(account|login|site|message|any)$/ && b[2] ~ /^(contains|exact|regex)$/) {
+                    v = $0; sub(/^[ \t]*[a-z]+[ \t]+[a-z]+[ \t]+/, "", v); gsub(/[ \t]+$/, "", v)
+                    if (v != "" && (b[1] == want || b[1] == "any")) print v
+                    next
+                }
+                gsub(/^[ \t]+|[ \t]+$/, ""); if ($0 != "") print; next
+            }
             f = $1; gsub(/^[ \t]+|[ \t]+$/, "", f)
             if (f == want || f == "any") print $3
         }' "$SKIPLIST_FILE"

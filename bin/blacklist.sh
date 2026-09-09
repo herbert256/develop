@@ -43,12 +43,20 @@ export BLACKLIST_FILE
 # NOTE: no single quotes inside this program — it is carried in a
 # single-quoted shell string.
 BLACKLIST_AWK='
-function bl_load(f,   ln, a, n) {
+function bl_load(f,   ln, a, n, b, m) {   # b/m LOCAL: this rides inside consumer programs that use those names
     while ((getline ln < f) > 0) {
         sub(/\r$/, "", ln)
         if (ln ~ /^[ \t]*#/ || ln ~ /^[ \t]*$/) continue
         n = split(ln, a, "\t")
-        if (n < 3 || a[1] == "" || a[3] == "") continue
+        if (n < 3) {
+            # a rule typed with SPACES (the skip list learned the same,
+            # 2026-09-09): "field drop|keep value" — the rest of the line is
+            # the value
+            m = split(ln, b, /[ \t]+/)
+            if (m < 3 || b[2] !~ /^(drop|keep)$/) continue
+            a[1] = b[1]; a[2] = b[2]; a[3] = ln; sub(/^[ \t]*[^ \t]+[ \t]+[^ \t]+[ \t]+/, "", a[3]); gsub(/[ \t]+$/, "", a[3])
+        }
+        if (a[1] == "" || a[3] == "") continue
         if (a[2] == "drop")      BL_DROP[a[1] SUBSEP a[3]] = 1
         else if (a[2] == "keep") BL_KEEP[a[1]] = a[3]
     }

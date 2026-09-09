@@ -3,7 +3,9 @@
 #   <field> <rule> <value>
 #   field: account | login | site | message | any
 #   rule:  contains (default, case-insensitive) | exact | regex
-# A line with no TAB is the legacy short form: any contains <line>.
+# Fields separated by TABs or spaces (a space-typed "any contains X" used to fall to
+# the legacy short form and match nothing — 2026-09-09). A line with no TAB and
+# no known field/rule words is the legacy short form: any contains <line>.
 # Read only through bin/skiplist.sh. See CLAUDE.md, "The attribution chain".
 #
 # SAMPLE ESTATE: the generator plants traffic each rule catches — the
@@ -11,4 +13,4 @@
 any	contains	HEARTBEAT
 any	contains	ACMETEST
 account	exact	SVC_MIGRATION
-login	exact	FE748281
+login exact FE748281

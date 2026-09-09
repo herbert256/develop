@@ -506,7 +506,7 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    user request) the **EMPTY OUTBOUND SSH PROBE**: a CoreId whose ONE record is Outbound + ssh +
    size 0 + Application "none" (col 25; empty counts the same) — no file moved, so it must not
    become a one-legged Failed File; the Skipped report lists it under its own reason. Distinct from
-   the `input/<env>/skip.txt` SKIP LIST (same layout as the blacklist, but DROPS THE WHOLE RECORD — and, on the config side, the account, subscription or comm-profile LOGIN whose name contains the value, 2026-09-03;
+   the `input/<env>/skip.txt` SKIP LIST (same layout as the blacklist — fields TAB- or whitespace-separated since 2026-09-09: a space-typed `any contains X` used to fall to the bare-token form and match nothing, which is how a skipped production subscription stayed on the site; the two readers `bin/skiplist.sh` / `bin/blacklist.sh` are part of both parser signatures and of the config step's freshness since then — but DROPS THE WHOLE RECORD — and, on the config side, the account, subscription or comm-profile LOGIN whose name contains the value, 2026-09-03;
    read only through the sourced `bin/skiplist.sh`; matched cache rows → `_skipped.tsv`).
 
 A changed subscriptions.json re-derives `_transfers.tsv` (export → flow-manager cache mtimes →

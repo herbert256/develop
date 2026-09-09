@@ -177,7 +177,10 @@ PSIG="$CACHE_DIR/_transfers.parser"
 # result column is recoloured every build and whose discovered rows are logged
 # values, not configuration.
 CFG_CONF="$CONFIG_BASE/.configured.tsv"   # <list> <TAB> <name>: the config lists BEFORE either colour step appends
-parser_sig=$( { cat "${BASH_SOURCE[0]}" "$BLACKLIST_FILE" "$RENAMES_FILE" "$RENAMES_PROF" 2>/dev/null
+# + the two policy READERS (2026-09-09): a change in how a rule line is parsed
+# (bin/skiplist.sh learned space-separated rules) must reparse like an edit
+# of the rules themselves would
+parser_sig=$( { cat "${BASH_SOURCE[0]}" "$BLACKLIST_FILE" "$RENAMES_FILE" "$RENAMES_PROF" "$ROOT/bin/skiplist.sh" "$ROOT/bin/blacklist.sh" 2>/dev/null
                 awk -F'\t' '$1 == "_subscriptions" { print $2 }' "$CFG_CONF" 2>/dev/null; } | cksum | awk '{print $1"_"$2}')
 
 # CONFIG-ONLY ESTATE (2026-08): an env with the flow-manager exports but not a
