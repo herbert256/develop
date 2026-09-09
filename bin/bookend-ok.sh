@@ -17,10 +17,13 @@
 #
 #   FLIP when   outcome == Failed
 #          AND  a "Transfer end logged." JSON line with "status":"ok" and
-#               "direction":"Outbound" names the File's CoreId ("coreId") AND
-#               the transfer id of the File's LAST leg ("transferId") — the
-#               transfer the outcome rests on; an ok bookend of an earlier,
-#               successful leg of the same File does not count
+#               "direction":"Outbound" names the transfer id of the File's
+#               LAST leg ("transferId") — the transfer the outcome rests on;
+#               an ok bookend of an earlier, successful leg of the same File
+#               does not count. The JSON's own "coreId" is NOT required to
+#               match: it can differ from the transfer log's CoreId for the
+#               same transfer (seen on the runtime), the transfer id is the
+#               unambiguous key
 #          AND  no reason is found: no Error/Warning line of the File's
 #               connections (the legs' session ids, _transfers.tsv col 24)
 #               nor one mentioning the CoreId or a leg's transfer id
@@ -84,7 +87,7 @@ if [ ! -f "$BK" ] || [ ! -f "$RL" ] || [ "$SRV" -nt "$BK" ] || [ "${BASH_SOURCE[
         }
         index($5, "{\"message\":\"Transfer end logged.\"") == 1 {
             if (jval($5, "status") == "ok" && jval($5, "direction") == "Outbound") {
-                c = jval($5, "coreId"); if (c != "") printf "%s\t%s\t%s\t%s\n", c, jval($5, "transferId"), $1, $2 > BOUT
+                t = jval($5, "transferId"); if (t != "") printf "%s\t%s\t%s\t%s\n", jval($5, "coreId"), t, $1, $2 > BOUT
             }
             next
         }
@@ -105,25 +108,33 @@ fi
 # ---- 2. settle the Failed rows (and re-check the settled ones) -------------
 ftmp="$FILES.tmp.$$"; otmp="$OKF.tmp.$$"
 awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
-    # the ok bookends, keyed by CoreId AND transferId: the ok must belong to
-    # THE transfer the outcome rests on — the LAST leg of the CoreId — not to an
+    # the ok bookends, keyed by TRANSFER ID: the ok must belong to THE
+    # transfer the outcome rests on — the LAST leg of the CoreId — not to an
     # earlier, successful leg of the same File (one acceptance File had ok
     # bookends on two earlier legs and a later "Failed Subtransmission" leg
-    # with none: that one stays Failed)
-    FILENAME ~ /_bookends\.tsv$/ { k = $1 SUBSEP $2; if (!(k in bkt) || ($3 " " $4) > bkt[k]) bkt[k] = $3 " " $4; has[$1] = 1; next }
+    # with none: that one stays Failed). The transfer id alone is the key:
+    # the coreId the JSON carries can DIFFER from the CoreId the transfer log
+    # gives the same transfer (seen on the runtime — a torn-down collect the
+    # bookend booked under another CoreId), and the transfer id is the finer,
+    # unambiguous one.
+    FILENAME ~ /_bookends\.tsv$/ { if ($2 != "" && (!($2 in bkt) || ($3 " " $4) > bkt[$2])) bkt[$2] = $3 " " $4; next }
     FILENAME ~ /_reasonlines\.tsv$/ {
         if ($3 != "") rsess[$3] = 1
         n = split($4, U, " "); for (i = 1; i <= n; i++) rid[U[i]] = 1
         next
     }
     FILENAME ~ /_transfers\.tsv$/ {
-        # the legs of every CoreId a bookend names: its sessions and transfer
-        # ids (for the reason test) and its LAST leg (by sort key, col 13)
-        if (!($1 in has)) next
-        if ($24 != "") { if ($24 in rsess) reason[$1] = 1 }
+        # per CoreId: whether any leg is one an ok bookend names (cand — a
+        # superset of the ones that can flip, since the LAST leg must be that
+        # leg), the reason test over its sessions and transfer ids, and its
+        # LAST leg by sort key (col 13). Kept for every CoreId in one pass —
+        # a few arrays over the CoreId count, cheaper than a second read of
+        # the biggest cache.
+        if ($23 != "" && ($23 in bkt)) cand[$1] = 1
+        if (!($1 in lastsk) || $13 >= lastsk[$1]) { lastsk[$1] = $13; lasttid[$1] = $23 }
+        if ($24 != "" && ($24 in rsess)) reason[$1] = 1
         if ($23 != "" && ($23 in rid)) reason[$1] = 1
         if ($1 in rid) reason[$1] = 1
-        if (!($1 in lastsk) || $13 >= lastsk[$1]) { lastsk[$1] = $13; lasttid[$1] = $23 }
         next
     }
     {
@@ -131,11 +142,11 @@ awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
         if (NF < 23) $23 = ""
         settled = ($23 != "")
         if ($2 == "Failed" || settled) {
-            k = $1 SUBSEP lasttid[$1]
-            if (($1 in has) && lasttid[$1] != "" && (k in bkt) && !($1 in reason)) {
-                if ($2 != "Processed" || $23 != bkt[k]) chg++
-                $2 = "Processed"; $23 = bkt[k]; nset++
-                printf "%s\t%s\t%s\n", $1, lasttid[$1], bkt[k] > OKOUT
+            t = lasttid[$1]
+            if (($1 in cand) && t != "" && (t in bkt) && !($1 in reason)) {
+                if ($2 != "Processed" || $23 != bkt[t]) chg++
+                $2 = "Processed"; $23 = bkt[t]; nset++
+                printf "%s\t%s\t%s\n", $1, t, bkt[t] > OKOUT
             } else if (settled) {
                 chg++; $2 = "Failed"; $23 = ""; nrev++       # the evidence no longer holds
             }
