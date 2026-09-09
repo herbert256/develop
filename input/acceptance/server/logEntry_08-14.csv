@@ -692,19 +692,19 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 ""status"":""error"",
 ""direction"":""Outbound"",
 ""coreId"":""628e75b2-38a0-4cdd-a9d5-71646a5e5426"",
-""transferId"":""f08738b8-e47d-4cdd-b051-0625886dcd67"",
+""transferId"":""7480b1a2-127d-4da2-acde-e97a77faf3a4"",
 ""fileName"":""AcmeZG_MATCH_HOOLI_20260814060522_377759.csv""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","607","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","476b78586a4b574c4c4762705a556468376b574d48686f516b4342474454693775304d7a744e564d482f383d","08/14/2026 16:53:21.954","UNKNOWN"
 "08/14/2026 16:54:04.452","INFO","TM","requestExecutor832813","{""message"":""Transfer end logged."",
 ""status"":""ok"",
 ""direction"":""Outbound"",
 ""coreId"":""628e75b2-38a0-4cdd-a9d5-71646a5e5426"",
-""transferId"":""c13053c6-1af8-4c0c-a28e-c347741a956c"",
-""fileName"":""AcmeZG_MATCH_HOOLI_20260814060522_377759.csv""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","682","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","337253362b486c4f695969744d466765594c7a77714834774b32313861674c534e68757846537057656b563d","08/14/2026 16:53:45.801","UNKNOWN"
+""transferId"":""7480b1a2-127d-4da2-acde-e97a77faf3a4"",
+""fileName"":""AcmeZG_MATCH_HOOLI_20260814060522_377759.csv""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","682","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","7057567767624d4e78337253362b486c4f695969744d466765594c7a77714834774b32313861674c534e683d","08/14/2026 16:53:45.801","UNKNOWN"
 "08/14/2026 16:54:02.548","INFO","TM","requestExecutor880247","{""message"":""Transfer start logged."",
 ""status"":""active"",
 ""direction"":""Outbound"",
 ""coreId"":""628e75b2-38a0-4cdd-a9d5-71646a5e5426"",
-""transferId"":""a76e5a1d-55db-4c12-a6d3-334935b8c5a9"",
+""transferId"":""7480b1a2-127d-4da2-acde-e97a77faf3a4"",
 ""fileName"":""AcmeZG_MATCH_HOOLI_20260814060522_377759.csv""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","434","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","476b78586a4b574c4c4762705a556468376b574d48686f516b4342474454693775304d7a744e564d482f383d","08/14/2026 16:52:59.301","UNKNOWN"
 "08/14/2026 16:54:01.518","INFO","TM","requestExecutor804825","[Ssh Default] User with login name ""FE294508"", associated with account ""ZG-MATCH-HOOLI@FE294508"", successfully authenticated over SSH by local authentication agent. Remote address: 198.51.100.41. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-sha2-256; Public Key: ssh-rsa.","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","692","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","476b78586a4b574c4c4762705a556468376b574d48686f516b4342474454693775304d7a744e564d482f383d","08/14/2026 16:53:19.731","UNKNOWN"
 "08/14/2026 16:54:01.318","INFO","TM","requestExecutor849309","[Ssh Default] Allowed user 'FE294508' from address '198.51.100.41', corresponding account 'ZG-MATCH-HOOLI@FE294508' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","486","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","476b78586a4b574c4c4762705a556468376b574d48686f516b4342474454693775304d7a744e564d482f383d","08/14/2026 16:53:21.221","UNKNOWN"

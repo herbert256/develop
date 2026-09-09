@@ -39,11 +39,14 @@ function tagval(t,   s) { s = "," TAGS ","; if (!match(s, "," t "=[^,]*,")) retu
 # spilled legs minted a transferLog for the day AFTER the window, and the
 # home page's day spine gained a first row no logical File backs (four
 # empty cells beside a lone date).
-function T(abs, dur, st, af, lf, sf, dir, ab, pr, fn, sz, ho, po, mo, ic, se, sid, resub, prraw, ss) {
-    if (abs >= (J1 + 1) * 86400000) { uuid4(); return }   # burn the tid draw: the
-                                                          # PRNG stream stays aligned
+function T(abs, dur, st, af, lf, sf, dir, ab, pr, fn, sz, ho, po, mo, ic, se, sid, resub, prraw, ss,   tid) {
+    if (abs >= (J1 + 1) * 86400000) { LAST_TID = uuid4(); return }   # burn the tid draw: the
+                                                                     # PRNG stream stays aligned
+    # LAST_TID: the transfer id of the leg just emitted — the same draw as
+    # before, taken first so the JSON bookend a caller emits next can name it
+    tid = uuid4(); LAST_TID = tid
     printf "T\t%.0f\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%.0f\n", \
-        abs, dur, st, af, lf, sf, dir, ab, pr, fn, sz, ho, po, mo, ic, se, sid, uuid4(), CID, resub, prraw, ss > OUT
+        abs, dur, st, af, lf, sf, dir, ab, pr, fn, sz, ho, po, mo, ic, se, sid, tid, CID, resub, prraw, ss > OUT
 }
 function S(abs, lvl, comp, sid, msg) {
     if (abs >= (J1 + 1) * 86400000) return
@@ -135,10 +138,11 @@ function s_arpair(abs, sid, fn) {
 # the JSON transfer BOOKEND the platform writes at a transfer's start and end
 # (multi-line in the export — the \x01 breaks become real newlines in the CSV;
 # the CSV writer doubles the quotes). "end" carries the platform's own verdict
-# in "status". Emitted for the collectdrop flow only: the uuid4() draw would
-# move every other flow's data (2026-09-09).
+# in "status", and "transferId" names the leg just emitted (LAST_TID, set by
+# T()) — bin/bookend-ok.sh settles on the ok bookend of the LAST leg only.
+# Emitted for the collectdrop flow only (2026-09-09).
 function s_bookend(abs, sid, kind, status, fn) {
-    S(abs, "I", "TM", sid, "{\"message\":\"Transfer " kind " logged.\",\x01\"status\":\"" status "\",\x01\"direction\":\"Outbound\",\x01\"coreId\":\"" CID "\",\x01\"transferId\":\"" uuid4() "\",\x01\"fileName\":\"" fn "\"}")
+    S(abs, "I", "TM", sid, "{\"message\":\"Transfer " kind " logged.\",\x01\"status\":\"" status "\",\x01\"direction\":\"Outbound\",\x01\"coreId\":\"" CID "\",\x01\"transferId\":\"" LAST_TID "\",\x01\"fileName\":\"" fn "\"}")
 }
 function s_pesit_ok(abs, sid) {
     if (rnd() < 0.4) S(abs - 200 - rint(300), "I", "PESITD", "", "Establishing PeSIT SSL connection with host 192.0.2.21, using cipher suite: TLS_AES_256_GCM_SHA384 and TLS/SSL protocol: TLSv1.3.")

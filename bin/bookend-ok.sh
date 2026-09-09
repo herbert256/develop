@@ -17,7 +17,10 @@
 #
 #   FLIP when   outcome == Failed
 #          AND  a "Transfer end logged." JSON line with "status":"ok" and
-#               "direction":"Outbound" names the File's CoreId ("coreId")
+#               "direction":"Outbound" names the File's CoreId ("coreId") AND
+#               the transfer id of the File's LAST leg ("transferId") — the
+#               transfer the outcome rests on; an ok bookend of an earlier,
+#               successful leg of the same File does not count
 #          AND  no reason is found: no Error/Warning line of the File's
 #               connections (the legs' session ids, _transfers.tsv col 24)
 #               nor one mentioning the CoreId or a leg's transfer id
@@ -102,19 +105,25 @@ fi
 # ---- 2. settle the Failed rows (and re-check the settled ones) -------------
 ftmp="$FILES.tmp.$$"; otmp="$OKF.tmp.$$"
 awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
-    FILENAME ~ /_bookends\.tsv$/ { if (!($1 in bk) || ($3 " " $4) > bkstamp[$1]) { bk[$1] = $2; bkstamp[$1] = $3 " " $4 } ; next }
+    # the ok bookends, keyed by CoreId AND transferId: the ok must belong to
+    # THE transfer the outcome rests on — the LAST leg of the CoreId — not to an
+    # earlier, successful leg of the same File (one acceptance File had ok
+    # bookends on two earlier legs and a later "Failed Subtransmission" leg
+    # with none: that one stays Failed)
+    FILENAME ~ /_bookends\.tsv$/ { k = $1 SUBSEP $2; if (!(k in bkt) || ($3 " " $4) > bkt[k]) bkt[k] = $3 " " $4; has[$1] = 1; next }
     FILENAME ~ /_reasonlines\.tsv$/ {
         if ($3 != "") rsess[$3] = 1
         n = split($4, U, " "); for (i = 1; i <= n; i++) rid[U[i]] = 1
         next
     }
     FILENAME ~ /_transfers\.tsv$/ {
-        # the legs of every CoreId: its sessions and transfer ids (only the
-        # CoreIds a bookend names matter — the rest cannot flip)
-        if (!($1 in bk)) next
+        # the legs of every CoreId a bookend names: its sessions and transfer
+        # ids (for the reason test) and its LAST leg (by sort key, col 13)
+        if (!($1 in has)) next
         if ($24 != "") { if ($24 in rsess) reason[$1] = 1 }
         if ($23 != "" && ($23 in rid)) reason[$1] = 1
         if ($1 in rid) reason[$1] = 1
+        if (!($1 in lastsk) || $13 >= lastsk[$1]) { lastsk[$1] = $13; lasttid[$1] = $23 }
         next
     }
     {
@@ -122,10 +131,11 @@ awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
         if (NF < 23) $23 = ""
         settled = ($23 != "")
         if ($2 == "Failed" || settled) {
-            if (($1 in bk) && !($1 in reason)) {
-                if ($2 != "Processed" || $23 != bkstamp[$1]) chg++
-                $2 = "Processed"; $23 = bkstamp[$1]; nset++
-                printf "%s\t%s\t%s\n", $1, bk[$1], bkstamp[$1] > OKOUT
+            k = $1 SUBSEP lasttid[$1]
+            if (($1 in has) && lasttid[$1] != "" && (k in bkt) && !($1 in reason)) {
+                if ($2 != "Processed" || $23 != bkt[k]) chg++
+                $2 = "Processed"; $23 = bkt[k]; nset++
+                printf "%s\t%s\t%s\n", $1, lasttid[$1], bkt[k] > OKOUT
             } else if (settled) {
                 chg++; $2 = "Failed"; $23 = ""; nrev++       # the evidence no longer holds
             }

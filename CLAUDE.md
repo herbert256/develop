@@ -555,8 +555,9 @@ sweep (~11 days) deleted before pickup — server-log-only evidence, so **`bin/e
 joins those lines onto Waiting rows (col 22 = the timestamp; cached in `_expired.tsv`,
 cmp-guarded, recomputed each run; transfer `parse.sh` re-runs it last unless
 `AXWAY_SKIP_EXPIRE=1`). **SETTLED BY BOOKEND** (2026-09-09, user request, **`bin/bookend-ok.sh`**
-right after expire-files, same gate): a **Failed** File whose CoreId a server-log `"Transfer end
-logged."` JSON record ends with `"status":"ok"` + `"direction":"Outbound"`, and about which NO
+right after expire-files, same gate): a **Failed** File whose LAST leg's transfer id (and CoreId) a
+server-log `"Transfer end logged."` JSON record ends with `"status":"ok"` + `"direction":"Outbound"`
+(an ok bookend of an earlier leg of the same File does not count), and about which NO
 Error/Warning line classifies to a reason (`flip-reason.awk` over the legs' sessions and the
 CoreId/transfer-id mentions), reads **Processed** — the platform ends one transfer twice when the
 client tears the connection down after the bytes went (ok on its fresh connection, error on the
