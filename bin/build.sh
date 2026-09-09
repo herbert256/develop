@@ -611,6 +611,7 @@ env_steps() {
     # may re-derive _files.tsv (resetting col 22), so expire re-marks after it
     run_step "[$AXWAY_ENV] server log -> transfer: attribute UCx flows by session" bin/session-sites.sh
     run_step "[$AXWAY_ENV] server log -> transfer: mark expired staged files" bin/expire-files.sh
+    run_step "[$AXWAY_ENV] server log -> transfer: settle failed Files by ok bookend" bin/bookend-ok.sh
     run_step "[$AXWAY_ENV] server log -> transfer: mark server-only entities blue" bin/build/seen-in-server-log.sh
     run_step "[$AXWAY_ENV] result: subscription outcomes -> base caches"  bin/build/result.sh
     # The blue step may APPEND SSH-logon-discovered names to the base rosters —
@@ -733,6 +734,7 @@ bg_env_chain() {
     wait "$_pparse"
     prod_step "[$AXWAY_ENV] server log -> transfer: attribute UCx flows by session" bin/session-sites.sh
     prod_step "[$AXWAY_ENV] server log -> transfer: mark expired staged files" bin/expire-files.sh
+    prod_step "[$AXWAY_ENV] server log -> transfer: settle failed Files by ok bookend" bin/bookend-ok.sh
     prod_step "[$AXWAY_ENV] server log -> transfer: mark server-only entities blue" bin/build/seen-in-server-log.sh
     prod_step "[$AXWAY_ENV] result: subscription outcomes -> base caches"  bin/build/result.sh
     # went-kaput early — see the foreground chain's comment

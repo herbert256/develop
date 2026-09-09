@@ -196,12 +196,20 @@ TOK_PROG=$(cat <<'AWK_EOF'
 # The message shapes the platform emits for every session and every transfer
 # leg, as message PREFIXES. None of them carries a fact worth keeping: a
 # session id that col 6 already holds, an acknowledgement that a message was
-# sent, the start/end bookends of a transfer the TRANSFER log records properly,
-# the internal session counter, the Sentinel notification-command trace, the
-# PESITD daemon's tagged copies of the same, the placeholder UNKNOWN lines and
-# the ar- worker stop notices. Dropped here, at tokenize time, so they never
-# reach the cache, the per-entity mention rings, the drill-downs or the
-# failed-file error pages.
+# sent, the internal session counter, the Sentinel notification-command
+# trace, the PESITD daemon's tagged copies of the same, the placeholder
+# UNKNOWN lines and the ar- worker stop notices. Dropped here, at tokenize
+# time, so they never reach the cache, the per-entity mention rings, the
+# drill-downs or the failed-file error pages.
+# The JSON transfer BOOKENDS ("Transfer start logged." / "Transfer end
+# logged.") were on this list until 2026-09-09 (user request): the "end"
+# record carries the platform's OWN verdict on a transfer ("status":"ok" /
+# "error" per transferId), and the platform can end one transfer twice — ok
+# on the client's fresh connection, error on the one it tore down — with the
+# transfer log keeping the error. bin/bookend-ok.sh settles such Files on
+# the ok record, and the drill pages show the bookends through their id
+# join. They stay OUT of the per-entity mention rings (the scanner skips
+# them), so the detail pages keep their descriptive lines.
 #
 # This is deliberately NOT input/<env>/skip.txt: a skip-list rule sets its records
 # aside in the skipped file for the Skipped report, and archiving 8M lines of
@@ -216,8 +224,6 @@ BEGIN {
     NOISE[++NOISE_N] = "Created session information with "
     NOISE[++NOISE_N] = "Removed session information with"
     NOISE[++NOISE_N] = "Universal Agent successfully sent a message of type "
-    NOISE[++NOISE_N] = "{\"message\":\"Transfer end logged.\""
-    NOISE[++NOISE_N] = "{\"message\":\"Transfer start logged.\""
     NOISE[++NOISE_N] = "Initializing Push As helper."
     NOISE[++NOISE_N] = "Initializing Pull AS helper."
     NOISE[++NOISE_N] = "Adding SubtransmissionStatus entry to Database "
@@ -466,6 +472,10 @@ FILENAME ~ /_accounts\.tsv$/      { if ($1 != "") acc[$1] = 1;            next }
 FILENAME ~ /_subscriptions\.tsv$/ { if ($1 != "") sub_[$1] = 1;           next }
 FILENAME ~ /_logins\.tsv$/        { if ($1 != "") lgn[$1] = 1;            next }
 FILENAME ~ /_hosts\.tsv$/         { if ($1 != "") hstU[toupper($1)] = $1; next }   # DNS names: match case-insensitively, attribute under the config spelling
+# the JSON transfer bookends (in the cache since 2026-09-09 for bookend-ok.sh
+# and the drill pages) name the account and the file of every leg — kept OUT
+# of the mention rings, which would otherwise fill up with them
+index($5, "{\"message\":") == 1 { next }
 {
     t = $1 (($2 != "") ? " " $2 : "")
     k = split($5, tok, /[^A-Za-z0-9._-]+/)   # dots kept: hostnames/IPs stay one token

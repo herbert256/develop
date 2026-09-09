@@ -1,5 +1,6 @@
 acceptance	blue	9
 acceptance	bluelogon	4
+acceptance	collectdrop	1
 acceptance	greenpoll	6
 acceptance	ioerr	1
 acceptance	monitor	4

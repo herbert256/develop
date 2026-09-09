@@ -1505,6 +1505,11 @@ col  name       rule
                 Expired; from the server log, joined by bin/expire-files.sh on
                 account + file basename, earliest deletion at/after staging).
                 "" everywhere else — this parser always writes it empty
+ 23  settled    "ccyy-mm-dd hh:mm:ss.mmm" — the server log's own ok "Transfer
+                end logged." bookend that settled a Failed File as Processed
+                (bin/bookend-ok.sh, 2026-09-09: no classifying error line about
+                the transfer, the platform ended it ok on the client's fresh
+                connection). "" everywhere else — written by that step only
 
 This cache never contains fabricated rows: server-log-only entities are
 marked BLUE in the base result column; the enriched tuples live only in the
@@ -1540,4 +1545,9 @@ fi
 # parse barrier and does the re-mark on the finished cache instead.
 if [ "${AXWAY_SKIP_EXPIRE:-0}" != 1 ]; then
     "$ROOT/bin/expire-files.sh"
+    # ... and the bookend settlement (2026-09-09): a Failed File whose transfer
+    # the server log's own "Transfer end logged." record ends OK, with no
+    # classifying error line about it, reads Processed (col 23 = the stamp).
+    # Same gate, same reasons: it needs the finished server cache.
+    "$ROOT/bin/bookend-ok.sh"
 fi

@@ -211,6 +211,23 @@ for env in acceptance production; do
         n=$(awk -F'\t' 'NF < 25 { n++ } END { print n+0 }' "$T")
         check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] $n _transfers.tsv row(s) short of 25 columns"
     fi
+    # the COLLECT DROP + ok BOOKEND (2026-09-09, user request): the JSON
+    # transfer bookends are in the server cache (no longer noise-filtered) but
+    # out of the mention rings; the tagged flow's torn-down collects — a Failed
+    # ssh leg with an ok "Transfer end logged." on the CoreId and no error line
+    # — are settled Processed by bin/bookend-ok.sh (col 23 = the ok stamp)
+    if [ "$(exp "$env" collectdrop)" -gt 0 ]; then
+        n=$(command grep -c 'Transfer end logged' "$P")
+        check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] _parse.tsv holds no 'Transfer end logged' bookend (still noise-filtered?)"
+        n=$(awk -F'\t' '$23 != "" { n++; if ($2 != "Processed") bad++ } END { print n+0 "\t" bad+0 }' "$F"); nb=${n#*	}; n=${n%	*}
+        check $([ "${n:-0}" -gt 0 ] && [ "${nb:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] $n settled File(s) in _files.tsv ($nb not Processed) — expected some, all Processed"
+        n=$(awk -F'\t' '$12=="UC2_ZG_MATCH_HOOLI" && $23 != "" { n++ } END { print n+0 }' "$F")
+        check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] no settled File on UC2_ZG_MATCH_HOOLI (the collectdrop flow)"
+        n=$(rows "data/$env/transfer/cache/_bookendok.tsv")
+        check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] _bookendok.tsv is empty"
+        n=$(command grep -c 'Transfer end logged' "data/$env/server/cache/_accounts.tsv" 2>/dev/null || true)   # grep -c prints the 0 itself (exit 1)
+        check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] $n bookend(s) leaked into the account mention cache"
+    fi
     if [ "$env" = production ]; then
         # the MULTI-HOST account (2026-08-31): CD_ROUTE_WONKA carries TWO
         # endpoints, and its _ALT flow logs half its rows as the raw ADDRESS.

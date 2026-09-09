@@ -89,7 +89,7 @@ the shared awk shim is pre-created first); (2) the two env
 chains run CONCURRENTLY — the bigger input in the foreground, the smaller in the background
 (pools capped via `AXWAY_NJOBS`), merged into the report at the barrier; (3) per env chain:
 *parse* (transfer and server `parse.sh` overlap, transfer with
-`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`, then `bin/session-sites.sh`, `bin/expire-files.sh`,
+`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`, then `bin/session-sites.sh`, `bin/expire-files.sh`, `bin/bookend-ok.sh`,
 `bin/build/seen-in-server-log.sh`, `bin/build/result.sh`), *report*
 (`bin/transfer/reports/details.sh` FIRST — transfer phase 2 reads its `.rpt`s and slugmaps — then
 transfer, server, analyses, dashboards, day), *publish* (transfer, transfer-details,
@@ -530,6 +530,8 @@ A **logical transfer** = all records sharing one CoreId (commonly 2–7 rows). `
  9 dur_ms (wall-clock span)                  20 partner     (config join)
 10 rows                                      21 wait_ms (UC2 pickup wait)
 11 file (first row's Local Filename)         22 expired (deletion timestamp)
+                                             23 settled (the ok bookend's stamp,
+                                                bin/bookend-ok.sh; "" otherwise)
 ```
 
 - **col 9** = last row's start + its duration − first row's start (includes store-and-forward gaps
@@ -552,7 +554,16 @@ re-flips it. **Processed** = ≥2 legs, last leg Outbound+Processed AND matching
 sweep (~11 days) deleted before pickup — server-log-only evidence, so **`bin/expire-files.sh`**
 joins those lines onto Waiting rows (col 22 = the timestamp; cached in `_expired.tsv`,
 cmp-guarded, recomputed each run; transfer `parse.sh` re-runs it last unless
-`AXWAY_SKIP_EXPIRE=1`).
+`AXWAY_SKIP_EXPIRE=1`). **SETTLED BY BOOKEND** (2026-09-09, user request, **`bin/bookend-ok.sh`**
+right after expire-files, same gate): a **Failed** File whose CoreId a server-log `"Transfer end
+logged."` JSON record ends with `"status":"ok"` + `"direction":"Outbound"`, and about which NO
+Error/Warning line classifies to a reason (`flip-reason.awk` over the legs' sessions and the
+CoreId/transfer-id mentions), reads **Processed** — the platform ends one transfer twice when the
+client tears the connection down after the bytes went (ok on its fresh connection, error on the
+dropped one; the transfer log keeps the error). Col 23 = the ok bookend's stamp; `_bookendok.tsv`
+lists the settled rows; extracts cached in `_bookends.tsv` / `_reasonlines.tsv`; settled rows are
+re-evaluated every run. The JSON bookends therefore stay in the server cache (out of the noise
+list since 2026-09-09) but the mention scanner skips them.
 
 **OUTCOME POLICY: Waiting counts as OK, Expired counts as ERROR** on every report: Error =
 (`=="Failed" || =="Expired"`), OK = otherwise (never `== "Processed"`). The waiting report and the
@@ -599,7 +610,7 @@ dirs (last 25 rows + last 10 Error/Warn; hosts match case-insensitively).
 
 **The NOISE filter** (2026-08, the `NOISE`/`is_noise` list at the top of `TOK_PROG`): message
 PREFIXES the platform logs for every session and every leg — the session Created/Removed
-bookkeeping, the Universal Agent acknowledgements, the JSON Transfer start/end bookends, the
+bookkeeping, the Universal Agent acknowledgements, the
 Push/Pull-AS helpers, the SubtransmissionStatus writes, the internal session counter, every
 `Reporting event …` (the Sentinel notification-command trace), the `UNKNOWN` placeholders, the
 `Stopped ar-`/`Shutdown ar-` worker notices, the `Error during test connection` lines (a
@@ -1029,6 +1040,7 @@ bin/render_rpt.awk      the one-pass page-body renderer
 bin/merge_rpt.sh        component .rpt -> merged tabbed report
 bin/flow-manager.sh     config exports -> data/<env>/flow-manager/{base,xref}
 bin/expire-files.sh     Waiting -> Expired from the File Maintenance sweep lines
+bin/bookend-ok.sh       Failed -> Processed on the server log's own ok "Transfer end logged." bookend (no reason line)
 bin/session-sites.sh    UCx groups -> real subscription via the server log's session route lines
 
 # BUILD-ONLY — nothing but bin/build.sh invokes these:

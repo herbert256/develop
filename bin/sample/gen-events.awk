@@ -132,6 +132,14 @@ function s_arpair(abs, sid, fn) {
     S(abs, "I", "TM", sid, "ARRC0024: [" ACCT "@" LOGIN "] [" ACCT "]  The file {/data/FlowManager/" ACCT "/" fn "} will be submitted for processing.")
     S(abs + 4000 + rint(3000), "I", "TM", sid, "AR0089: [" ACCT "@" LOGIN "] [" ACCT "]  Deleting local file: {/data/FlowManager/" ACCT "/" fn "}.")
 }
+# the JSON transfer BOOKEND the platform writes at a transfer's start and end
+# (multi-line in the export — the \x01 breaks become real newlines in the CSV;
+# the CSV writer doubles the quotes). "end" carries the platform's own verdict
+# in "status". Emitted for the collectdrop flow only: the uuid4() draw would
+# move every other flow's data (2026-09-09).
+function s_bookend(abs, sid, kind, status, fn) {
+    S(abs, "I", "TM", sid, "{\"message\":\"Transfer " kind " logged.\",\x01\"status\":\"" status "\",\x01\"direction\":\"Outbound\",\x01\"coreId\":\"" CID "\",\x01\"transferId\":\"" uuid4() "\",\x01\"fileName\":\"" fn "\"}")
+}
 function s_pesit_ok(abs, sid) {
     if (rnd() < 0.4) S(abs - 200 - rint(300), "I", "PESITD", "", "Establishing PeSIT SSL connection with host 192.0.2.21, using cipher suite: TLS_AES_256_GCM_SHA384 and TLS/SSL protocol: TLSv1.3.")
     S(abs, "I", "PESITD", "", "[Pesit Default] Client logged in (remote address - 192.0.2.20/192.0.2.20, caller id - P00001_CFT01)")
@@ -227,7 +235,7 @@ function uc1_file(t0,   fn, sz, mo, ic, sidp, sids, d1, d2, i, tt, ok, late) {
 }
 
 # UC2: CFT stages over pesit+routing (one session), the partner collects (new session)
-function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj) {
+function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj, dcol) {
     fn = fname_of(t0); sz = fsize(); mo = fmode()
     sidst = sesshex()
     d1 = 150 + int(rexp(400)) + szdur(sz, pesitthr()); d2 = 40 + int(rexp(120)); d3 = 80 + int(rexp(150))
@@ -253,7 +261,24 @@ function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj)
     sidc = hastag("shareduc4") ? SHARESID : sesshex()
     s_allowed(tc - 1200, sidc, anyip())
     s_authok(tc - 1000, sidc, anyip())
-    ssh_T(tc, 90 + int(rexp(400)), "Outbound", "P", sidc, fn, sz, "User", ACCT "@" LOGIN, LOGIN, sitefield(), anyip(), mo, "NP", "false")
+    dcol = 90 + int(rexp(400))
+    # the COLLECT DROP (2026-09-09, user request — the bookend-ok rule): on a
+    # tagged flow some collects are torn down by the client after the bytes
+    # went, so the transfer log records the leg as Failed, while the platform
+    # ends the SAME transfer twice — ok on the client's fresh connection a
+    # second later, error on the dropped one. No error line anywhere, so
+    # bin/bookend-ok.sh settles the File Processed. The other collects of the
+    # flow carry an ordinary start/ok pair. Draws happen for the tagged flow
+    # only (RNG seeded per flow and day).
+    if (hastag("collectdrop") && rnd() < 0.3) {
+        ssh_T(tc, dcol, "Outbound", "F", sidc, fn, sz, "User", ACCT "@" LOGIN, LOGIN, sitefield(), anyip(), mo, "NP", "false")
+        s_bookend(tc + 30, sidc, "start", "active", fn)
+        s_bookend(tc + dcol + 1350, sesshex(), "end", "ok", fn)
+        s_bookend(tc + dcol + 1387, sidc, "end", "error", fn)
+    } else {
+        ssh_T(tc, dcol, "Outbound", "P", sidc, fn, sz, "User", ACCT "@" LOGIN, LOGIN, sitefield(), anyip(), mo, "NP", "false")
+        if (hastag("collectdrop")) { s_bookend(tc + 30, sidc, "start", "active", fn); s_bookend(tc + dcol + 120, sidc, "end", "ok", fn) }
+    }
 }
 
 # UC3: we poll the partner (Inbound ssh/ftp), deliver to CFT (Outbound pesit)

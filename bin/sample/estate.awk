@@ -164,6 +164,7 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
     if (hastag(tags, "nocron")) T["nocron"]++
     if (hastag(tags, "ioerr")) T["ioerr"]++     # the IO errors report's planted folder (2026-09-06)
     if (hastag(tags, "sshprobe")) T["sshprobe"]++   # the empty outbound ssh probes the parse drops (2026-09-08)
+    if (hastag(tags, "collectdrop")) T["collectdrop"]++   # collects torn down by the client, settled by the ok bookend (2026-09-09)
     if (tags ~ /reason=/) T["reasons"]++
 }
 
@@ -288,7 +289,7 @@ function build_acceptance() {
     addf(2, "CD",  "ARIVA",    "DUNDER",   "",  0.4, 0.02, "")
     addf(2, "CD",  "ARIVA",    "SABRE",    "",  0.3, 0.02, "")
     addf(2, "ODV", "MAIA",     "PIEDPIPER","",  1.5, 0.03, "")
-    addf(2, "ZG",  "MATCH",    "HOOLI",    "",  1.5, 0.02, "")
+    addf(2, "ZG",  "MATCH",    "HOOLI",    "",  1.5, 0.02, "collectdrop")   # collectdrop: some collects fail on a torn-down connection but the ok bookend settles them (2026-09-09)
     addf(2, "DPL", "POLIS",    "TYRELL",   "",  1.2, 0.02, "waitheavy,rename=UC2_DPL_POLIS_TYRELL2")
     addf(2, "FS",  "STMT",     "APERTURE", "",  2, 0.02, "shareduc4")    # shared-session UC4 drop
     # orange
@@ -417,7 +418,7 @@ function build_production() {
     addf(2, "APS", "VIDA",     "UMBRELLA", "",  7, 0.02, "waitheavy,expheavy")
     addf(2, "IT",  "SAPBHP",   "GEKKO",    "",  3, 0.02, "expheavy")
     addf(2, "IT",  "EKDSI",    "CYBERDYNE","",  4, 0.02, "twinc")
-    addf(2, "ZG",  "MATCH",    "HOOLI",    "",  1.5, 0.02, "")
+    addf(2, "ZG",  "MATCH",    "HOOLI",    "",  1.5, 0.02, "collectdrop")   # collectdrop: some collects fail on a torn-down connection but the ok bookend settles them (2026-09-09)
     # the MULTI-FE ACCOUNT (2026-08-31, user report): one account, TWO FE
     # logins — flow A active on the account login, flow B on its OWN login
     # and never used. uc2-status must read flow B as "Nothing", never

@@ -137,6 +137,18 @@ FILESIDE2="$REPORTS_DIR/_longest-files.tsv"
 [ -d "$ERRDIR" ] || rm -f "$OUT"
 [ -d "$FILEDIR" ] || rm -f "$OUT"
 for v in $VARIANTS; do [ -f "$REPORTS_DIR/failed-$v.rpt" ] || rm -f "$OUT"; done
+# A LISTED CoreId WITHOUT A PAGE forces a rebuild too (2026-09-09): the two
+# sidecars are written by reports of the same pool, so a list that changed
+# while this script was already running lands OLDER than failed.rpt and the
+# mtime check would skip the catch-up — leaving the Patterns / Longest cells
+# linking pages that do not exist (5 broken links the day the bookend
+# settlement moved Files into the Last-5 cells).
+if [ -f "$OUT" ]; then
+    while IFS= read -r c9; do
+        [ -n "$c9" ] || continue
+        [ -f "$FILEDIR/$c9.rpt" ] || [ -f "$ERRDIR/$c9.rpt" ] || { rm -f "$OUT"; break; }
+    done < <(cat "$FILESIDE" "$FILESIDE2" 2>/dev/null)
+fi
 # The server parse cache is a dep (the "What the server log said" sections);
 # skip_if_fresh skips a missing dep, so an env without server logs still works.
 SRVLOG="$SERVER_CACHE/_parse.tsv"
