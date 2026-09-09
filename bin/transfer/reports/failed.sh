@@ -340,6 +340,17 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
         WANT[$2] = 1; FSET[$2] = 1              # -> FILEDIR, neutral wording, no list mark
         next
     }
+    # legs_chrono(c): the ROW lines of CoreId c in time order (insertion sort
+    # on the per-leg keys — a CoreId has a handful of legs)
+    function legs_chrono(c,   n, i, j, k, s, K, R) {
+        n = NL[c] + 0
+        for (i = 1; i <= n; i++) { K[i] = LEGK[c, i]; R[i] = LEGR[c, i] }
+        for (i = 2; i <= n; i++) { k = K[i]; s = R[i]; j = i - 1
+            while (j >= 1 && K[j] > k) { K[j+1] = K[j]; R[j+1] = R[j]; j-- }
+            K[j+1] = k; R[j+1] = s }
+        s = ""; for (i = 1; i <= n; i++) s = s R[i]
+        return s
+    }
     # the parse cache: the last-leg raw status for every failed CoreId (the
     # cache is CoreId-sorted, legs in cache order — last write wins, the same
     # last row pagereason reads off a drill page)
@@ -357,9 +368,14 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
         if (HOSTN[$1] == "" && $16 != "") HOSTN[$1] = $16
         if (ACCTN[$1] == "" && $4  != "") ACCTN[$1] = $4
         if (LOGINN[$1] == "" && $5 != "") LOGINN[$1] = $5   # the login, the rule of _files.tsv col 14 (2026-09-03)
-        LEG[$1] = LEG[$1] sprintf("ROW\t%s\t%s\t%s\t%s\t%s %s\t%s\t%s\t%s\n", \
-            esc($3), esc($2), esc($10), humanbytes($9), esc($11), esc($12), humandur($15), esc($16), esc($23))
+        # each leg with its sort key (col 13, YYYYMMDD + time): the page lists
+        # the legs CHRONOLOGICALLY (2026-09-09, user request — cache order is
+        # inbound first, so a later outbound attempt used to precede an
+        # earlier outbound routing leg); ties keep cache order
         NL[$1]++
+        LEGK[$1, NL[$1]] = $13 sprintf("%06d", NL[$1])
+        LEGR[$1, NL[$1]] = sprintf("ROW\t%s\t%s\t%s\t%s\t%s %s\t%s\t%s\t%s\n", \
+            esc($3), esc($2), esc($10), humanbytes($9), esc($11), esc($12), humandur($15), esc($16), esc($23))
         # every leg transfer_id -> its CoreId, for the server-log id join
         if ($23 != "" && !tid[$1, $23]++) print $23 "\t" $1 > IDS
         # every leg SESSION -> its CoreId (col 24, the technical connection):
@@ -422,14 +438,14 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
             # no TOTAL: an Item/Value facts table has nothing to total, and
             # an empty footer row would just draw a grey strip under it (the
             # detail pages\047 Features table omits it for the same reason)
-            # No sort= here: the legs are emitted in cache order (inbound first,
-            # then each attempt), which the intro promises, and the first column
-            # is not a date so report.js applies no default of its own. Dropping
-            # `nosort` leaves that order intact AND makes the headers clickable.
+            # No sort= here: the legs are emitted CHRONOLOGICALLY (legs_chrono,
+            # 2026-09-09 — until then cache order, inbound first), and the first
+            # column is not a date so report.js applies no default of its own.
+            # No `nosort`, so the headers stay clickable.
             printf "TABLE\t\twide\tnosearch\n" > f
             printf "HEAD\tStatus\tDirection\tProtocol\tSize\tDate & time\tDuration\tRemote host\tTransfer ID\n" > f
             printf "KIND\ttext\ttext\ttext\tnum\ttext\tnum\thost\tmono\n" > f
-            printf "%s", LEG[c] > f
+            printf "%s", legs_chrono(c) > f
             # NO LINK/FOOT here — the finishing pass below appends the server-log
             # section first, then LINK + FOOT, so those stay the last lines.
             close(f)
