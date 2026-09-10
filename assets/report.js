@@ -783,8 +783,11 @@
           // Markup cells (lines -> <br>, entity links -> <a>, mono -> <code>) lose their markup
           // if restored via textContent; remember the HTML so the restore keeps them stacked/linked.
           if (c.innerHTML !== c.textContent && !c.hasAttribute("data-html")) c.setAttribute("data-html", c.innerHTML);
-          // Failed/Processed cells also remember their class so the 0->blank toggle can restore it.
-          if (/ (failed|processed) /.test(" " + c.className + " ") && !c.hasAttribute("data-origc")) c.setAttribute("data-origc", c.className);
+          // The tinted count kinds (Error/OK, the tint-only errc/okc pairs and the amber
+          // warn cells — Cured, Recovered) remember their class so the 0->blank toggle can
+          // restore it; without the snapshot writeRecalc has nothing to key its blanking on
+          // and a narrowed range printed a literal 0 (2026-09-10, the Cured column).
+          if (/ (failed|processed|errc|okc|warn) /.test(" " + c.className + " ") && !c.hasAttribute("data-origc")) c.setAttribute("data-origc", c.className);
         }
       }
     }
@@ -911,7 +914,7 @@
         var c = tr.cells[j];
         if (!c.hasAttribute("data-orig")) c.setAttribute("data-orig", c.textContent);
         if (c.innerHTML !== c.textContent && !c.hasAttribute("data-html")) c.setAttribute("data-html", c.innerHTML);   // keep markup on restore
-        if (/ (failed|processed) /.test(" " + c.className + " ") && !c.hasAttribute("data-origc")) c.setAttribute("data-origc", c.className);
+        if (/ (failed|processed|errc|okc|warn) /.test(" " + c.className + " ") && !c.hasAttribute("data-origc")) c.setAttribute("data-origc", c.className);
       }
     });
   }
