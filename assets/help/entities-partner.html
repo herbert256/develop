@@ -15,6 +15,7 @@
 <h1>Partners</h1>
 <h2>What this shows</h2>
 <p>One row per external partner ORGANISATION — the same identities as the Logical, Partners, Domains & Applications page's Partners row: how many Files were exchanged with it, how many failed vs. processed, the volume, and the first/last day it was active. A <strong>Summary</strong> tab lists every partner; a <strong>Detail</strong> tab breaks the same figures down per partner per day.</p>
+<p><strong>Cured</strong>, between OK and Error, is the part of OK that needed a retry: Files with at least one failed transfer leg that still finished OK — the same rule as the home page's Cured figure and the <a href="recovered-files.html">Recovered files</a> report, counted per partner like the other columns. A blank cell means none.</p>
 <h2>How it's computed</h2>
 <p>A partner is the LAST part of the three-part logical flow name (<code>domain_application_partner</code>), merged into one organisation by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases. Every File in the per-CoreId cache carries its partner attribution: an outbound File takes the partner of its endpoint (the configured remote host), an inbound File its account&rsquo;s partner, unioned with its subscription&rsquo;s configured partner(s). A File whose partner cannot be determined is not counted here. Every partner links its own detail page.</p>
 <p>Both tabs support click-to-expand on an Error/OK cell for that outcome's 10 most recent Files.</p>

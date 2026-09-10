@@ -1410,13 +1410,13 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
             $1=="ROW" {
                 hit=0; for (i=1;i<=NF;i++) if ($i==want) hit=1
                 if (!hit) next
-                f=$3; gsub(/[^0-9]/,"",f); e=$4; gsub(/[^0-9]/,"",e); o=$5; gsub(/[^0-9]/,"",o)
-                sf+=f+0; se+=e+0; so+=o+0; cnt++
+                f=$3; gsub(/[^0-9]/,"",f); e=$4; gsub(/[^0-9]/,"",e); o=$5; gsub(/[^0-9]/,"",o); cu=$6; gsub(/[^0-9]/,"",cu)
+                sf+=f+0; se+=e+0; so+=o+0; scu+=cu+0; cnt++
                 for (i=1;i<=NF;i++) if ($i ~ /^@data:buckets=/) { split(substr($i,15),B,","); for (j in B){ split(B[j],C,":"); sb+=C[5]+0 } }
                 rows[++nr]=$0 }
             END {
                 l=lbl; sub(/\([0-9,]+/, "(" cnt, l)
-                printf "TOTAL\t%s\t@{class=num}%d\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%s\t\t\n", l, sf, se, so, human(sb)
+                printf "TOTAL\t%s\t@{class=num}%d\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num warn}%d\t@{class=num}%s\t\t\n", l, sf, se, so, scu, human(sb)
                 for (i=1;i<=nr;i++) print rows[i] }'
     }
     # (the "% of Files" column was removed 2026-07 — the subset views use the
@@ -1451,8 +1451,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     local dirmapf="" grpmapf=""
     # DIRECTION for every entity: the CONNECTION/MOVEMENT pair (out/in) — the
     # same XXX/YYY the entity's detail page is titled with, so the Entities
-    # views share ONE layout: Name · Direction · Files · Volume · OK · Error ·
-    # Last seen. XXX = the base cache's own direction field; YYY = the union of
+    # views share ONE layout: Name · Direction · Files · Volume · OK · Cured ·
+    # Error · Last seen. XXX = the base cache's own direction field; YYY = the union of
     # the entity's connected subscriptions' flowdir (relay counts as BOTH
     # sides), via the _<item>-subscriptions xref pair. A SUBSCRIPTION is its own
     # movement, so it reads flowdir directly. Partners were the only entity
@@ -1525,10 +1525,11 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
                 $1=="ROW"    { nm=$2; sub(/^@\{[^}]*\}/,"",nm); print shift3((toupper(nm) in dm)?dm[toupper(nm)]:""); next }
                 { print }'
         }
-    # ONE LAYOUT for every Entities view (2026-07):
-    #   Name · Direction · Files · Volume · OK · Error · Last seen
+    # ONE LAYOUT for every Entities view (2026-07; Cured 2026-09-10):
+    #   Name · Direction · Files · Volume · OK · Cured · Error · Last seen
     # inject_dir_col puts Direction in as column 2; entity_layout then reorders
-    # the four figure columns (the .rpt carries Files·Error·OK·Volume), DROPS
+    # the five figure columns (the .rpt carries Files·Error·OK·Cured·Volume —
+    # Cured = the OK Files that carried a failed leg, the home page rule), DROPS
     # First seen and keeps Last seen. RECALC tokens travel with their column —
     # they name a bucket metric, not a position — and the trailing @data: cells
     # (buckets, drills, seen, res) ride along untouched at the end of each ROW.
@@ -1540,10 +1541,10 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
         LC_ALL=C awk -F'\t' -v OFS='\t' -v strip="${1:-0}" '
             function tail(from,   i, out) { out = ""; for (i = from; i <= NF; i++) out = out OFS $i; return out }
             function reord(   out, i) {
-                if (NF < 9) return $0
+                if (NF < 10) return $0
                 if (strip == 1) out = $1 OFS $2 OFS $3
-                else            out = $1 OFS $2 OFS $3 OFS $4 OFS $7 OFS $6 OFS $5 OFS $9
-                for (i = 10; i <= NF; i++) out = out OFS $i     # @data: cells
+                else            out = $1 OFS $2 OFS $3 OFS $4 OFS $8 OFS $6 OFS $7 OFS $5 OFS $10
+                for (i = 11; i <= NF; i++) out = out OFS $i     # @data: cells
                 return out
             }
             $1=="TABLE" { for (i = 3; i <= NF; i++)
@@ -1652,13 +1653,14 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
                         u = toupper(a[1]); rm[u] = a[2]
                         rk[u] = (n >= 3) ? a[3] : ""; rc[u] = (n >= 4) ? a[4] : "" }
                     close(mapf) }
-            # insert v as the display column after Last seen (field 8; the
-            # trailing @data cells start at field 9 and ride along)
+            # insert v as the display column after Last seen (field 9 since
+            # the Cured column; the trailing @data cells start at field 10 and
+            # ride along)
             function ins(v,   out, i) {
                 out = $1
-                for (i = 2; i <= 8; i++) out = out OFS (i <= NF ? $i : "")
+                for (i = 2; i <= 9; i++) out = out OFS (i <= NF ? $i : "")
                 out = out OFS v
-                for (i = 9; i <= NF; i++) out = out OFS $i
+                for (i = 10; i <= NF; i++) out = out OFS $i
                 return out
             }
             $1 == "HEAD"   { print ins("Reason"); next }

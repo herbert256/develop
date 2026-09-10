@@ -1002,7 +1002,7 @@ write_env_block() {
             # cell (the render_rpt.awk convention). A nonzero Error cell
             # links the Entities Subscriptions/ALL view narrowed to that day
             # (?axway_date — report.js sets From=To and persists it like a
-            # user selection), sorted by its Error column (axway_sort=5:-1):
+            # user selection), sorted by its Error column (axway_sort=6:-1 — display index 6 since the Cured column, 2026-09-10):
             # there the Error column total equals this cell exactly, and the
             # row tints say which of the flows are still red — the ERROR view
             # cannot show that (2026-08: 24 of a day's 25 errors belonged to
@@ -1030,7 +1030,7 @@ write_env_block() {
                 if [ "$fer" = "-" ] || [ "$fer" = 0 ]; then printf '<td class="num failed z"></td>'; else
                     esc "$(dotify "$fer")"
                     if [ -f "docs/$env/transfer/entities/subscription-all.html" ]; then
-                        printf '<td class="num failed"><a href="%s/transfer/entities/subscription-all.html?axway_date=%s&amp;axway_sort=5:-1">%s</a></td>' "$env" "$d" "$ESC"
+                        printf '<td class="num failed"><a href="%s/transfer/entities/subscription-all.html?axway_date=%s&amp;axway_sort=6:-1">%s</a></td>' "$env" "$d" "$ESC"
                     else printf '<td class="num failed">%s</td>' "$ESC"; fi; fi
                 [ "$fok" != "-" ] && foksum=$((foksum + fok)); [ "$fer" != "-" ] && fersum=$((fersum + fer))
                 if [ "$fpc" = "-" ]; then printf '<td class="num"></td>'; else

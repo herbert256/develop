@@ -301,6 +301,20 @@ for env in acceptance production; do
         check $([ "$n" -gt 0 ] && echo 0 || echo 1) "[$env] no resubmitted legs"
     fi
 
+    # the Cured column of the Entities pages (2026-09-10, user request):
+    # every entity .rpt Summary carries Files·Error·OK·Cured (ROW $3..$6,
+    # Cured = the OK Files that carried a failed leg — the home page rule),
+    # the rendered views show it between OK and Error, and the account total
+    # equals an independent recount of the two caches
+    n=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" && ($6 + 0 > $5 + 0) { n++ } END { print n + 0 }' "data/$env/transfer/reports/subscription.rpt" 2>/dev/null)
+    check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "[$env] subscription.rpt: ${n:-?} row(s) with Cured > OK"
+    hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/$env/transfer/entities/account-all.html" 2>/dev/null | sed 's/<[^>]*>//g' | head -8 | tr '\n' '|')
+    check $([ "$hdr" = "Account|Direction|Files|Volume|OK|Cured|Error|Last seen|" ] && echo 0 || echo 1) "[$env] entities/account-all.html header is '$hdr', expected Account|Direction|Files|Volume|OK|Cured|Error|Last seen|"
+    want=$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($3 != "Processed") fl[$1] = 1; next } $3 != "" && $4 != "" && $2 != "Failed" && $2 != "Expired" && ($1 in fl) { n++ } END { print n + 0 }' "$T" "$F" 2>/dev/null)
+    got=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "TOTAL" { v = $6; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' "data/$env/transfer/reports/account.rpt" 2>/dev/null)
+    check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "[$env] account.rpt Cured total is '${got:-absent}', an independent recount of the caches gives '${want:-?}'"
+    check $([ "${want:-0}" -gt 0 ] && echo 0 || echo 1) "[$env] the sample has no cured File (a failed leg, then delivered) — the Cured column is never exercised"
+
     # production: the NON-UC-NAMED hybrid flows must come out attributed to
     # their real site (the reverse profile fallback) — never UCx_
     if [ "$env" = production ]; then

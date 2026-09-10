@@ -15,6 +15,7 @@
 <h1>Applications</h1>
 <h2>What this shows</h2>
 <p>One row per internal application — the same identities as the Logical, Partners, Domains & Applications page's Applications row: how many Files it exchanged, how many failed vs. processed, the volume, and the first/last day it was active. A <strong>Summary</strong> tab lists every application; a <strong>Detail</strong> tab breaks the same figures down per application per day.</p>
+<p><strong>Cured</strong>, between OK and Error, is the part of OK that needed a retry: Files with at least one failed transfer leg that still finished OK — the same rule as the home page's Cured figure and the <a href="recovered-files.html">Recovered files</a> report, counted per application like the other columns. A blank cell means none.</p>
 <h2>How it's computed</h2>
 <p>The application is the MIDDLE part of the three-part logical flow name <code>domain_application_partner</code> (ODV-TDRS-ASR &rarr; application TDRS); every File inherits it from its account, so this is name-derived and best-effort — a File under a two-token account name (no application segment) is not counted here. Application names are groupings, not logged entities, so they carry no link — there is no application detail page.</p>
 <p>Both tabs support click-to-expand on an Error/OK cell for that outcome's 10 most recent Files.</p>
