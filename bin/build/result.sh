@@ -26,6 +26,13 @@
 #     polls are a blip); below three the connection failures are discounted
 #     and the newest other evidence decides; blue/_connhold.tsv lists the
 #     flows kept green by it
+#     never transferred, but a UC3 whose own polls FAIL with a "Connection
+#     failure while <flow> tried to connect …" line on THREE POLLS IN A ROW
+#     (newer than its newest successful poll, or none at all)
+#                                           -> red   (2026-09-10, user rule:
+#     a flow that polls and cannot connect is broken, not idle — blue/orange
+#     would hide it; the newest failure is its _redflip evidence stamp, so
+#     the home worklist and its error page show it as a server-log failure)
 #
 # Stage 2 — every OTHER base file, rolled up from its connected subscriptions
 # via the data/flow-manager/xref/_<item>-subscriptions.tsv pair caches:
@@ -524,6 +531,21 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
                 }
             }
             if (due && !held) { r = "red"; print $1 "\t" bdt > rf }   # record the flip + its evidence stamp (the _redflip sidecar)
+        }
+        # A UC3 THAT NEVER TRANSFERRED AND CANNOT CONNECT (2026-09-10, user
+        # rule): no File at all, but its own polls fail — "Connection failure
+        # while <flow> tried to connect …" — on THREE POLLS IN A ROW: three
+        # connection failures newer than its newest successful poll, or with
+        # no successful poll at all. Blue/orange would read "never seen", but
+        # a flow that polls and cannot connect is BROKEN, not idle: RED, with
+        # the newest failure as the evidence stamp (the _redflip sidecar), so
+        # the home worklist lists it under the server-log failures and its
+        # error page shows the failures. The same three-in-a-row threshold as
+        # the streak rule above — one or two failed polls are a blip.
+        if (!(k in oc) && (k in UC3) && (k in CFL)) {
+            n4 = 0; b4 = ""; m4 = split(substr(CFL[k], 2), Z4, SUBSEP)
+            for (i4 = 1; i4 <= m4; i4++) if (Z4[i4] != "" && (CFP[k] == "" || Z4[i4] > CFP[k])) { n4++; if (Z4[i4] > b4) b4 = Z4[i4] }
+            if (n4 >= 3) { r = "red"; print $1 "\t" b4 > rf }
         }
         if ($3 == "blue" && r == "orange") r = "blue"   # preserve the server-log-only marking ONLY over orange — an entity whose own data says green/red is already seen (bin/build/seen-in-server-log.sh runs first)
         # The UC3 clean-poll rule: polling verified working, simply nothing

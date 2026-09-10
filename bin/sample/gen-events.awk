@@ -557,6 +557,16 @@ function flow_day_ambient(jd, base,   i, np, tt, sid, poff) {
             T(tt, 80 + rint(400), "P", "SECURETRANSPORT", "UNKNOWN", sitefield(), "Outbound", "Server", PROTO, fname_of(tt), 0, hostspelled(), PORT, "BINARY", "NP", secssh(), sesshex(), "false", "NOAPP", tt - 200 - rint(2000))
         }
     }
+    # a UC3 that NEVER transfers and CANNOT CONNECT (2026-09-10, user rule):
+    # no successful poll ever, two to four "Connection failure while <flow>
+    # tried to connect …" errors a day on the configured grid — result.sh
+    # reds it after three in a row instead of leaving it blue/orange. Tagged
+    # flow only (the RNG is seeded per flow and day).
+    if (hastag("pollconnfail")) {
+        np = 2 + rint(3)
+        for (i = 0; i < np; i++)
+            S(base + i * 21600000 + cd_ms() + rint(600000), "E", "TM", sesshex(), "Connection failure while " srvsite() " tried to connect to remote host " HOST ":" PORT " as user " ACCT ": com.maverick.ssh.SshException: The connection did not complete")
+    }
     # blue / greenpoll flows: server-log-only evidence
     if (hastag("greenpoll") && rnd() < 0.8) s_poll(base + cd_ms() + rint(3600000), sesshex(), 0)
     # blue = a SITE-naming mention shape the unknown-entities seeds extract

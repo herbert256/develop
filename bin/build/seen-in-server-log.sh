@@ -436,7 +436,15 @@ recolor() {   # $1 = newfiles/_files entity column   $2 = base file basename
     # depends on the base colours (2026-08). result.sh still recomputes the
     # flip from live evidence each run, so this file only stops the churn; it
     # never decides a colour.
-    local gpoll="$DATA/blue/_greenpoll.tsv"; [ -f "$gpoll" ] || gpoll="$tmp.noextra"
+    # ... and the RED no-transfer flows (2026-09-10): a UC3 that never
+    # transferred and cannot connect is reddened by result.sh (its names sit
+    # in blue/_redflip.tsv like every server-reddened flow); marking it blue
+    # here would start the same churn, so the keep list is the UNION of the
+    # two sidecars (a redflip name WITH transfers has real files and is no
+    # blue candidate anyway).
+    local gpoll="$tmp.keepblue"
+    { [ -f "$DATA/blue/_greenpoll.tsv" ] && cut -f1 "$DATA/blue/_greenpoll.tsv"
+      [ -f "$DATA/blue/_redflip.tsv" ] && cut -f1 "$DATA/blue/_redflip.tsv"; :; } > "$gpoll"
     awk -F'\t' -v OFS='\t' -v col="$col" -v mode="$mode" -v PMAPF="$pmapf" '
         BEGIN { if (PMAPF != "") { while ((getline pl9 < PMAPF) > 0) {
                     n9 = split(pl9, p9, "\t")

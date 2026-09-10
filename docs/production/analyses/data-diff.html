@@ -17,16 +17,17 @@
 <p class="tabs"><a class="tab" href="../transfer/entity-coverage-accounts.html">Entity coverage</a><a class="tab" href="first-seen.html">First seen</a><span class="tab active">Since yesterday</span><a class="tab" href="../transfer/seen-in-server-log.html">Seen in server log</a></p>
 <p class="range">The newest data day is <strong>2026-08-29</strong> (the latest date across the transfer and server parse caches); everything below is judged against <strong>2026-08-29 or 2026-08-28</strong> — the exports arrive in batches, so a change late on 2026-08-28 may only surface in the next export. This page diffs the <strong>DATA</strong>; the report catalog's changes live on <strong>What's new</strong>.</p>
 <div class="stat"><span class="stat-v">2026-08-29</span><span class="stat-l">Newest data day</span></div>
-<div class="stat stat-red"><span class="stat-v">1</span><span class="stat-l">new red flips</span></div>
+<div class="stat stat-red"><span class="stat-v">2</span><span class="stat-l">new red flips</span></div>
 <div class="stat stat-orange"><span class="stat-v">0</span><span class="stat-l">newly quiet</span></div>
 <div class="stat stat-green"><span class="stat-v">4</span><span class="stat-l">recovered</span></div>
 <div class="stat"><span class="stat-v">0</span><span class="stat-l">first seen</span></div>
-<div class="stat stat-blue"><span class="stat-v">3</span><span class="stat-l">new unknown names</span></div>
+<div class="stat stat-blue"><span class="stat-v">5</span><span class="stat-l">new unknown names</span></div>
 <h2>New red flips</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Subscription</th><th>When</th><th>Failing since</th><th class="num">Consecutive failures</th><th class="num">Files</th><th>Evidence</th></tr>
+<tr><td class="cl"><a href="../details/subscriptions/uc3-zg-rates-oscorp.html">UC3_ZG_RATES_OSCORP</a></td><td>2026-08-29 12:05:16.736</td><td>-</td><td class="num">0</td><td class="num">0</td><td>no Files in the window — server-log evidence only</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc1-cd-printmgmt-wonka.html">UC1_CD_PRINTMGMT_WONKA</a></td><td>2026-08-29 06:58:35</td><td>2026-08-29 06:58:35</td><td class="num">1</td><td class="num">285</td><td>1 consecutive failure(s); last OK 2026-08-29 06:18:06</td></tr>
-<tr class="total"><td>Total (1 rows)</td><td></td><td></td><td class="num">1</td><td class="num">285</td><td></td></tr>
+<tr class="total"><td>Total (2 rows)</td><td></td><td></td><td class="num">1</td><td class="num">285</td><td></td></tr>
 </table></div>
 <p class="note">Red subscriptions whose server-log evidence stamp (blue/_redflip.tsv) or newest FAILING File is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong> — the freshest breakage. A chronically failing flow fails again every day and so stays listed; its old <strong>Failing since</strong> date gives it away. <strong>From green to red</strong> tells each flip's full story.</p>
 <h2>Newly quiet</h2>
@@ -56,12 +57,14 @@
 <h2>New unknown/blue names</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Type</th><th>Name</th><th>Mentioned</th><th>Evidence</th></tr>
+<tr><td>Subscription</td><td class="cl"><a href="../details/subscriptions/uc3-zg-rates-oscorp.html">UC3_ZG_RATES_OSCORP</a></td><td>2026-08-29 12:05:16.736</td><td>Connection failure while UC3_ZG_RATES_OSCORP_ZG_RATES_OSCORP_SCP_ZG_RATES_OSCORP_KEY tried to connect to remote host mft.oscorp.example:22 as user ZG_RATES_O...</td></tr>
+<tr><td>Remote host</td><td class="cl"><a href="../details/hosts/mft-oscorp-example.html">mft.oscorp.example</a></td><td>2026-08-29 12:05:16.736</td><td>Connection failure while UC3_ZG_RATES_OSCORP_ZG_RATES_OSCORP_SCP_ZG_RATES_OSCORP_KEY tried to connect to remote host mft.oscorp.example:22 as user ZG_RATES_O...</td></tr>
 <tr><td>Subscription</td><td class="cl"><a href="../details/subscriptions/uc3-aps-fmreplerr-cyberdyne.html">UC3_APS_FMREPLERR_CYBERDYNE</a></td><td>2026-08-29 06:59:08.378</td><td>Applying the search pattern '*' for transfer site 'UC3_APS_FMREPLERR_CYBERDYNE_APS_FMREPLERR_CYBERDYNE_SCP_APS_FMREPLERR_CYBERDYNE_': 0 file(s) were found of...</td></tr>
 <tr><td>Account</td><td class="cl"><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td><td>2026-08-28 11:27:03.803</td><td>[Ssh Default] User with login name &quot;FE579565&quot;, associated with account &quot;DPL-SCAN-CYBERDYNE@FE579565&quot;, successfully authenticated over SSH by local authentica...</td></tr>
 <tr><td>Login</td><td class="cl"><a href="../details/logins/fe579565.html">FE579565</a></td><td>2026-08-28 11:27:03.803</td><td>[Ssh Default] User with login name &quot;FE579565&quot;, associated with account &quot;DPL-SCAN-CYBERDYNE@FE579565&quot;, successfully authenticated over SSH by local authentica...</td></tr>
-<tr class="total"><td>Total (3 rows)</td><td></td><td></td><td></td></tr>
+<tr class="total"><td>Total (5 rows)</td><td></td><td></td><td></td></tr>
 </table></div>
 <p class="note">Names the server log mentions with NO transfer of their own (the data/unknown sidecars — the same set that seeds the blue result colour) whose newest mention is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong>. A configured name here is blue (server-seen, never transferred); an unconfigured one is a stranger knocking — <strong>Seen in server log</strong> has the full lists.</p>
-<div class="summary">Since yesterday (2026-08-29/2026-08-28): 1 red flip(s), 0 newly quiet, 4 recovered, 0 first seen, 3 new unknown name(s)</div>
+<div class="summary">Since yesterday (2026-08-29/2026-08-28): 2 red flip(s), 0 newly quiet, 4 recovered, 0 first seen, 5 new unknown name(s)</div>
 </body>
 </html>

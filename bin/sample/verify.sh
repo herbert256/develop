@@ -228,6 +228,21 @@ for env in acceptance production; do
         n=$(command grep -c 'Transfer end logged' "data/$env/server/cache/_accounts.tsv" 2>/dev/null || true)   # grep -c prints the 0 itself (exit 1)
         check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] $n bookend(s) leaked into the account mention cache"
     fi
+    # the UC3 that never transfers and CANNOT CONNECT (2026-09-10, user rule):
+    # no File, every poll a Connection failure — red (not blue/orange), with
+    # its newest failure in the _redflip sidecar, an error page of its own,
+    # and a row on the home page's "Failing subscriptions in Server log"
+    if [ "$(exp "$env" pollconnfail)" -gt 0 ]; then
+        c=$(awk -F'\t' '$1=="UC3_ZG_RATES_OSCORP" { print $3 }' "$B")
+        check $([ "$c" = red ] && echo 0 || echo 1) "[$env] UC3_ZG_RATES_OSCORP is '${c:-absent}', expected red (every poll a connection failure, no transfer)"
+        n=$(awk -F'\t' '$12=="UC3_ZG_RATES_OSCORP" { n++ } END { print n+0 }' "$F")
+        check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "[$env] UC3_ZG_RATES_OSCORP has $n File(s) — the sample must plant none"
+        n=$(awk -F'\t' '$1=="UC3_ZG_RATES_OSCORP" { n++ } END { print n+0 }' "data/$env/blue/_redflip.tsv" 2>/dev/null)
+        check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "[$env] _redflip.tsv has $n row(s) for UC3_ZG_RATES_OSCORP, expected 1"
+        check $([ -f "docs/$env/errors/uc3-zg-rates-oscorp.html" ] && echo 0 || echo 1) "[$env] docs/$env/errors/uc3-zg-rates-oscorp.html missing (the server-failing error page)"
+        n=$(awk 'BEGIN{RS="<h2"} /Failing subscriptions in Server log/ && /UC3_ZG_RATES_OSCORP/ { n++ } END { print n+0 }' docs/index.html 2>/dev/null)
+        check $([ "${n:-0}" -ge 1 ] && echo 0 || echo 1) "[$env] the home worklist 'Failing subscriptions in Server log' does not list UC3_ZG_RATES_OSCORP"
+    fi
     if [ "$env" = production ]; then
         # the MULTI-HOST account (2026-08-31): CD_ROUTE_WONKA carries TWO
         # endpoints, and its _ALT flow logs half its rows as the raw ADDRESS.

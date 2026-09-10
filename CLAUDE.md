@@ -673,11 +673,17 @@ logs **blue**; **`bin/build/result.sh`** fills the rest, preserving blue — a s
 green/red by its LAST File's outcome (red when Failed or Expired; orange = never seen), other
 entities roll up their connected subscriptions (a blue subscription counts like ORANGE in the
 rollup — server-log discovery must never change a health verdict; `_white.tsv` goes by the last
-real transfer from that address instead). **Blue always means "never transferred".** ONE
-deliberate exception, the **UC3 clean-poll rule** (2026-08): a would-be-blue UC3 subscription
-whose newest successful poll is no older than its newest E-level mention flips GREEN — working,
-just nothing to fetch (sidecar `blue/_greenpoll.tsv`; showseen treats a no-data green as
-seen-with-blank-counts like blue; deploy-errors clears a UC3 on a poll after its last message).
+real transfer from that address instead). **Blue always means "never transferred".** TWO
+deliberate exceptions, both UC3 poll verdicts. The **clean-poll rule** (2026-08): a would-be-blue UC3
+subscription whose newest successful poll is no older than its newest E-level mention flips GREEN —
+working, just nothing to fetch (sidecar `blue/_greenpoll.tsv`; showseen treats a no-data green as
+seen-with-blank-counts like blue; deploy-errors clears a UC3 on a poll after its last message). Its
+mirror, the **cannot-connect rule** (2026-09-10, user rule): a never-transferred UC3 whose own polls
+fail with "Connection failure while <flow> tried to connect …" on THREE polls in a row (newer than
+its newest successful poll, or none at all) flips RED — a flow that polls and cannot connect is
+broken, not idle; the newest failure is its `blue/_redflip.tsv` stamp, so it lands on the home
+"Failing subscriptions in Server log" worklist with its own error page and the reason "Connection
+failures". `seen-in-server-log.sh` keeps BOTH sidecars' names out of the blue marking.
 **The two colour steps must AGREE** (2026-08): `seen-in-server-log.sh` leaves the clean-poll
 greens alone (it reads `blue/_greenpoll.tsv`) and `result.sh`'s rollup counts one like ORANGE, as
 it does a blue subscription — server-log discovery never sets a health verdict, and an entity

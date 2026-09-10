@@ -154,7 +154,8 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
         sched, vol, fail, size, f0, f1, cred, tags, allow > EST
     # tallies for _expected.tsv
     T["subs"]++; T["subs_uc" uc]++
-    if (hastag(tags, "noxfer")) T["orange"]++
+    if (hastag(tags, "pollconnfail")) T["pollconnfail"]++   # red without transfers (2026-09-10) — neither orange nor seen
+    else if (hastag(tags, "noxfer")) T["orange"]++
     else if (hastag(tags, "blue")) T["blue"]++
     else if (hastag(tags, "bluelogon")) { T["blue"]++; T["bluelogon"]++ }   # the xref enrich
                                         # walks the logon sighting to the account's single
@@ -330,6 +331,9 @@ function build_acceptance() {
     addf(3, "CDV", "STREAM",   "ABSTERGO", "",  0, 0, "greenpoll")
     addf(3, "APS", "FMREPLERR","CYBERDYNE","",  0, 0, "greenpoll")
     addf(3, "ODV", "EMIS",     "ZORG",     "",  0, 0, "greenpoll")
+    # the UC3 that never transfers and cannot connect: every poll a Connection
+    # failure — red, not blue (2026-09-10, user rule)
+    addf(3, "ZG",  "RATES",    "OSCORP",   "",  0, 0, "pollconnfail")
     # orange
     addf(3, "ZG",  "IKAZ",     "BLUTH",    "", 0, 0, "noxfer")
     addf(3, "AB",  "EXPORT",   "WAYNE",    "", 0, 0, "noxfer")
@@ -468,6 +472,7 @@ function build_production() {
     addf(2, "CB",  "VIDA",     "WAYNE",    "", 0, 0, "noxfer")
     addf(1, "HR",  "ARCHIVE",  "ZORG",     "", 0, 0, "noxfer")
     addf(3, "APS", "FMREPLERR","CYBERDYNE","", 0, 0, "greenpoll")
+    addf(3, "ZG",  "RATES",    "OSCORP",   "", 0, 0, "pollconnfail")   # cannot connect: red, not blue (2026-09-10)
     addf(4, "DPL", "SCAN",     "CYBERDYNE","", 0, 0, "bluelogon")
     addf(1, "APS", "INVOICE",  "STARK",    "", 0, 0, "blue")
     monitor_flows()
