@@ -836,8 +836,11 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   `publish-insights.sh`). **The SERVER LOG ON THE FLOW'S OWN ERROR PAGE COMES FIRST** (2026-08):
   the page a home row opens is the evidence a reader checks, so the Reason must be what that page
   says — `_errpage-evidence.tsv` (written by `failed.sh`: the first 8 Error/Warning
-  lines, with their level, of the flow's NEWEST drill page — the page the home row opens)
-  classified **FIRST-ERROR-first**, warnings only after. The opening error is the CAUSE and
+  lines, with their level, of the flow's NEWEST drill page — the page the home row opens —
+  PLUS, since 2026-09-10, an Info `"Transfer end logged."` bookend with `"status":"error"` whose
+  transferId is one of the page's own legs: the only evidence a silently dropped connection
+  leaves, read by the classifier as **"Connection dropped mid-transfer"**, its LAST rule)
+  classified **FIRST-ERROR-first**, warnings and the bookend only after. The opening error is the CAUSE and
   everything after it consequence: a rejected host key, then "failed to create connection", then
   the connection failure, then a trailing ARRC0029 "No files were processed during step
   execution". Reading from the end names the symptom (it moved 40 acceptance reasons off

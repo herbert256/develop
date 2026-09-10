@@ -110,5 +110,15 @@ function flip_reason(msg,   m) {
     # rule (2026-09-06, user report on a UC2 flow).
     if (m ~ /step \{publish\}/) return "Publish to account failed"
     if (m ~ /arrc00|ar0111|step \{/) return "Routing step failed"
+    # LAST, the fallback with no error line at all (2026-09-10, user request):
+    # the platform's own "Transfer end logged." bookend with "status":"error"
+    # — an INFO record, admitted as a candidate by failed.sh only when it
+    # names one of the File's own legs (the collectors keep every other
+    # Info line out). What it marks, every time it was examined, is a
+    # partner client tearing its connection down mid-transfer: the platform
+    # books the error silently, no Error/Warning line anywhere. Any real
+    # error line above outranks it (errors first, then the rest in page
+    # order — the bookend closes the transfer, so it comes last).
+    if (m ~ /"message":"transfer end logged\."/ && m ~ /"status":"error"/) return "Connection dropped mid-transfer"
     return ""
 }

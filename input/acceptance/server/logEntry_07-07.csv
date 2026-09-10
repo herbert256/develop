@@ -693,12 +693,6 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 ""coreId"":""07820fc0-2013-4fd2-b123-2eeb6bc83e7d"",
 ""transferId"":""10dd59fe-4f54-4401-9dc0-c41f0b803321"",
 ""fileName"":""AcmeZG_MATCH_HOOLI_20260707058405_100437.txt.pgp""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","395","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","484b61796846704b635863536e6d4e5771523754703972506676325a6d3359336f6361434f4f53666a70633d","07/07/2026 17:01:53.991","UNKNOWN"
-"07/07/2026 17:02:28.612","INFO","TM","requestExecutor867789","{""message"":""Transfer end logged."",
-""status"":""ok"",
-""direction"":""Outbound"",
-""coreId"":""07820fc0-2013-4fd2-b123-2eeb6bc83e7d"",
-""transferId"":""10dd59fe-4f54-4401-9dc0-c41f0b803321"",
-""fileName"":""AcmeZG_MATCH_HOOLI_20260707058405_100437.txt.pgp""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","470","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","79372f5a466832584d386630534250677a5159414366356f68517237377556374f4f61756e4961387644553d","07/07/2026 17:02:17.838","UNKNOWN"
 "07/07/2026 17:02:26.983","INFO","TM","requestExecutor817687","{""message"":""Transfer start logged."",
 ""status"":""active"",
 ""direction"":""Outbound"",

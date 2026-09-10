@@ -917,15 +917,26 @@ LC_ALL=C awk -F'\t' -v CAND=8 "$(cat "$LIB_DIR/../flip-reason.awk")"'
         if (fmax > best[site]) { best[site] = fmax; bn[site] = fn
             for (i = 1; i <= fn; i++) { bs[site, i] = fs[i]; bl[site, i] = fl[i]; bm[site, i] = fm[i] } }
     }
-    FNR == 1 { flush(); site = ""; fn = 0; fmax = ""; prev = "" }
-    $1 == "TABLE" { prev = "" }
+    # an error BOOKEND of one of the page own legs is a candidate too
+    # (2026-09-10): the Info line {"message":"Transfer end logged.",
+    # "status":"error",…} whose transferId is in the legs table (TABLE 2,
+    # cell 9) — the only evidence a silently dropped connection leaves; the
+    # classifier reads it "Connection dropped mid-transfer" and, walking
+    # errors first, lets any real error line outrank it
+    function ownbookend(m,   t9) {
+        if (index(m, "{\"message\":\"Transfer end logged.\"") != 1 || index(m, "\"status\":\"error\"") == 0) return 0
+        t9 = m; if (!sub(/.*"transferId" *: *"/, "", t9)) return 0
+        sub(/".*/, "", t9); return (t9 in ptid) }
+    FNR == 1 { flush(); site = ""; fn = 0; fmax = ""; prev = ""; tno = 0; split("", ptid) }
+    $1 == "TABLE" { prev = ""; tno++ }
     $1 == "TITLE" { site = $2; sub(/^Failed subscription: /, "", site)
                     sub(/^Expired pickup: /, "", site)   # the drill-only Expired pages (File search windows)
                     # a page from a previous run carries the Reason suffix in
                     # its title ("<name> - <reason>"); a name never contains a
                     # space, so stripping from " - " recovers it exactly
                     sub(/ - .*$/, "", site); next }
-    $1 == "ROW" && site != "" && NF >= 4 && ($3 == "Error" || $3 == "Warning") {
+    $1 == "ROW" && tno == 2 && NF >= 9 && $9 != "" { ptid[$9] = 1 }   # the legs table: the page own transfer ids
+    $1 == "ROW" && site != "" && NF >= 4 && ($3 == "Error" || $3 == "Warning" || ($3 == "Info" && ownbookend($4))) {
         if ($2 > fmax) fmax = $2                # the page own newest line, for picking the page
         if (fn < CAND) { fn++; fs[fn] = $2; fl[fn] = $3; fm[fn] = ctx_enrich(substr($4, 1, 200), prev) }   # a bare "Permission denied" carries the line before it
     }
@@ -995,16 +1006,24 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
     # the legs table (TABLE 2; the server section is TABLE 3, so it is
     # complete before the break can fire). The legs table sits between the
     # facts and the server log on every page.
-    function pagereason(cid,   f, l, a, n, fn, fl, fm, t, prev) {
-        f = ERRDIR "/" cid ".rpt"; fn = 0; t = 0; LEGST = ""; prev = ""
+    # an error BOOKEND of one of the file own legs is a candidate too
+    # (2026-09-10, see the evidence sidecar above): the Info line whose
+    # transferId is in the legs table — the silently dropped connection
+    function ownbookend(m, ptid,   t9) {
+        if (index(m, "{\"message\":\"Transfer end logged.\"") != 1 || index(m, "\"status\":\"error\"") == 0) return 0
+        t9 = m; if (!sub(/.*"transferId" *: *"/, "", t9)) return 0
+        sub(/".*/, "", t9); return (t9 in ptid) }
+    function pagereason(cid,   f, l, a, n, fn, fl, fm, t, prev, ptid) {
+        f = ERRDIR "/" cid ".rpt"; fn = 0; t = 0; LEGST = ""; prev = ""; split("", ptid)
         while ((getline l < f) > 0) {
             if (fn >= CAND) break
             n = split(l, a, "\t")
             if (a[1] == "TABLE") { t++; prev = ""; continue }
             if (a[1] != "ROW") continue
             if (t == 2 && a[2] != "") LEGST = a[2]
+            if (t == 2 && n >= 9 && a[9] != "") ptid[a[9]] = 1   # the legs table: the file own transfer ids
             # a bare "Permission denied" takes its meaning from the line before it (ctx_enrich, flip-reason.awk)
-            if (n >= 4 && (a[3] == "Error" || a[3] == "Warning")) {
+            if (n >= 4 && (a[3] == "Error" || a[3] == "Warning" || (a[3] == "Info" && ownbookend(a[4], ptid)))) {
                 fn++; fl[fn] = a[3]; fm[fn] = ctx_enrich(substr(a[4], 1, 200), prev) }
             if (n >= 4) prev = a[4]
         }

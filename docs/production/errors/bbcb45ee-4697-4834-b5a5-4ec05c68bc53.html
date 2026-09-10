@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Failed subscription: UC2_ZG_MATCH_HOOLI - Connection dropped mid-transfer</title>
+<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<link rel="stylesheet" href="../../assets/style.css?v=230298321">
+<script src="../../assets/topbar-data.js?v=1684967113" defer></script>
+<script src="../../assets/report.js?v=230298321" defer></script>
+</head>
+<body>
+<div class="topbar" data-eb="../" data-b="../../" data-env="production" data-help="failed" data-twin="../../acceptance/404.html"></div>
+<h1>Failed subscription: UC2_ZG_MATCH_HOOLI - Connection dropped mid-transfer</h1>
+<div class="tablewrap"><table data-nosearch="1">
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>File name</td><td>AcmeZG_MATCH_HOOLI_20260825032031_600995.pdf.pgp</td></tr>
+<tr><td>CoreId</td><td class="mono">bbcb45ee-4697-4834-b5a5-4ec05c68bc53</td></tr>
+<tr><td>Date/time</td><td>2026-08-25 08:53:51.494</td></tr>
+<tr><td>Subscription</td><td class="res-green cl"><a href="../details/subscriptions/uc2-zg-match-hooli.html">UC2_ZG_MATCH_HOOLI</a></td></tr>
+<tr><td>Partner</td><td class="res-green cl"><a href="../details/partners/hooli.html">HOOLI</a></td></tr>
+<tr><td>Account</td><td class="res-green cl"><a href="../details/accounts/zg-match-hooli.html">ZG-MATCH-HOOLI</a></td></tr>
+<tr><td>Login</td><td class="res-green cl"><a href="../details/logins/fe102183.html">FE102183</a></td></tr>
+<tr><td>Remote host</td><td>198.51.100.41</td></tr>
+</table></div>
+<div class="tablewrap"><table class="wide" data-nosearch="1">
+<tr><th>Status</th><th>Direction</th><th>Protocol</th><th class="num">Size</th><th>Date &amp; time</th><th class="num">Duration</th><th>Remote host</th><th>Transfer ID</th></tr>
+<tr><td>Processed</td><td>inbound</td><td>pesit</td><td class="num">745.50 KB</td><td>2026-08-25 08:53:51.494</td><td class="num">732 ms</td><td>198.51.100.41</td><td><code>2221de65-d446-459c-9e87-fdfce599c336</code></td></tr>
+<tr><td>Processed</td><td>outbound</td><td>routing</td><td class="num">745.50 KB</td><td>2026-08-25 08:53:54.059</td><td class="num">359 ms</td><td>198.51.100.41</td><td><code>818020d3-2a3d-420b-bd5f-c0be34b455b9</code></td></tr>
+<tr><td>Processed</td><td>inbound</td><td>routing</td><td class="num">745.50 KB</td><td>2026-08-25 08:53:54.103</td><td class="num">150 ms</td><td>198.51.100.41</td><td><code>de0fe928-54cb-4f4e-9fe3-a56738d27fa4</code></td></tr>
+<tr><td>Failed</td><td>outbound</td><td>ssh</td><td class="num">745.50 KB</td><td>2026-08-25 09:02:51.516</td><td class="num">688 ms</td><td>198.51.100.41</td><td><code>5d48575f-2f26-4a00-a690-680a9680ca90</code></td></tr>
+</table></div>
+<div class="tablewrap"><table class="wide" data-restint="1" data-nosort="1" data-nosearch="1">
+<tr><th>Date &amp; time</th><th>Level</th><th>Line</th></tr>
+<tr><td>2026-08-25 08:53:52.462</td><td>Info</td><td><pre>[Ssh Default] Initializing route: {UC2_ZG_MATCH_HOOLI}</pre></td></tr>
+<tr><td>2026-08-25 09:02:50.316</td><td>Info</td><td><pre>[Ssh Default] Allowed user 'FE102183' from address '198.51.100.41', corresponding account 'ZG-MATCH-HOOLI@FE102183' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.</pre></td></tr>
+<tr><td>2026-08-25 09:02:50.516</td><td>Info</td><td><pre>[Ssh Default] User with login name &quot;FE102183&quot;, associated with account &quot;ZG-MATCH-HOOLI@FE102183&quot;, successfully authenticated over SSH by local authentication agent. Remote address: 198.51.100.40. Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-sha2-256; Public Key: ssh-rsa.</pre></td></tr>
+<tr><td>2026-08-25 09:02:51.546</td><td>Info</td><td><pre>{&quot;message&quot;:&quot;Transfer start logged.&quot;, &quot;status&quot;:&quot;active&quot;, &quot;direction&quot;:&quot;Outbound&quot;, &quot;coreId&quot;:&quot;bbcb45ee-4697-4834-b5a5-4ec05c68bc53&quot;, &quot;transferId&quot;:&quot;5d48575f-2f26-4a00-a690-680a9680ca90&quot;, &quot;fileName&quot;:&quot;AcmeZG_MATCH_HOOLI_20260825032031_600995.pdf.pgp&quot;}</pre></td></tr>
+<tr><td>2026-08-25 09:02:53.591</td><td>Info</td><td><pre>{&quot;message&quot;:&quot;Transfer end logged.&quot;, &quot;status&quot;:&quot;error&quot;, &quot;direction&quot;:&quot;Outbound&quot;, &quot;coreId&quot;:&quot;bbcb45ee-4697-4834-b5a5-4ec05c68bc53&quot;, &quot;transferId&quot;:&quot;5d48575f-2f26-4a00-a690-680a9680ca90&quot;, &quot;fileName&quot;:&quot;AcmeZG_MATCH_HOOLI_20260825032031_600995.pdf.pgp&quot;}</pre></td></tr>
+<tr class="total"><td>Total (5 line(s))</td><td></td><td></td></tr>
+</table></div>
+<p class="report-link"><a href="../analyses/failed.html" target="_blank" rel="noopener">Back to Failed Subscriptions</a></p>
+</body>
+</html>

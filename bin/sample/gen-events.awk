@@ -277,7 +277,11 @@ function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj,
     if (hastag("collectdrop") && rnd() < 0.3) {
         ssh_T(tc, dcol, "Outbound", "F", sidc, fn, sz, "User", ACCT "@" LOGIN, LOGIN, sitefield(), anyip(), mo, "NP", "false")
         s_bookend(tc + 30, sidc, "start", "active", fn)
-        s_bookend(tc + dcol + 1350, sesshex(), "end", "ok", fn)
+        # half the drops are followed by the client's successful re-download
+        # (the ok bookend settles the File); the other half end in the error
+        # bookend alone — the File stays Failed and its only evidence is that
+        # bookend: reason "Connection dropped mid-transfer" (2026-09-10)
+        if (rnd() < 0.5) s_bookend(tc + dcol + 1350, sesshex(), "end", "ok", fn)
         s_bookend(tc + dcol + 1387, sidc, "end", "error", fn)
     } else {
         ssh_T(tc, dcol, "Outbound", "P", sidc, fn, sz, "User", ACCT "@" LOGIN, LOGIN, sitefield(), anyip(), mo, "NP", "false")

@@ -317,7 +317,7 @@ for reason in "Connection failures" "Wrong server fingerprint" "No Dir" "Listing
               "Login errors (out)" "Could not send to CFT" "Transfer site missing" "Receive File As not set" \
               "PeSIT transfer aborted" "PeSIT delivery refused" "Staged file missing" \
               "File Tracking entry missing" "Remote file unavailable" "Post client action failed" \
-              "Pull via FTPS failed" "Delete remote file failed" "IO error" "Read timed out"; do
+              "Pull via FTPS failed" "Delete remote file failed" "IO error" "Read timed out" "Connection dropped mid-transfer"; do
     n=$(grep -l -- "$reason" data/acceptance/transfer/reports/failed*.rpt data/acceptance/transfer/reports/errors/*.rpt 2>/dev/null | wc -l | tr -d ' ')
     check $([ "$n" -gt 0 ] && echo 0 || echo 1) "[acceptance] reason \"$reason\" appears in no failed/error report"
 done
