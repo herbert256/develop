@@ -32,17 +32,11 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .topbar .nav a:hover { text-decoration:underline; }
 .topbar .brand { color:#fff; font-weight:bold; font-size:1.05rem; }
 .topbar .brand:hover { text-decoration:underline; }
-/* the ENVIRONMENT label right after the brand (report.js setupEnvSwitch):
-   on env pages a link to this page's twin in the other environment, on the
-   shared home the Acceptance/Production toggle for the baked env blocks */
-/* The env pair "Acceptance / Production": the ACTIVE env (.envcur) bold &
-   bright and not clickable, the other a dimmer switch link. */
+/* the ENVIRONMENT label right after the brand (report.js buildTopbar, from
+   input/environment.txt via topbar-data.js): a static bold span — one site
+   = one environment since 2026-09-11, the Acceptance/Production switch is gone */
 .topbar .envpair { font-size:0.95rem; white-space:nowrap; }
-.topbar .envpair .envsep { color:rgba(255,255,255,0.4); margin:0 0.5rem; }
-.topbar a.envswitch { color:rgba(255,255,255,0.6); cursor:pointer; }
-.topbar a.envswitch:hover { color:#fff; text-decoration:underline; }
 .topbar .envpair .envcur { color:#ffd9a0; font-weight:bold; cursor:default; text-decoration:none; }
-.topbar .envpair a.envcur:hover { color:#ffd9a0; text-decoration:none; }
 .topbar .tright { color:#fff; font-size:0.95rem; white-space:nowrap; }
 /* hover dropdowns of report links (left-anchored: the menus live on the bar's left side) */
 .dd { position:relative; }
@@ -569,7 +563,7 @@ a.tab:hover { background:#e8f0fe; text-decoration:none; }
    the table's border grid before each section (plain padding only widens the
    cell — with full cell borders that never reads as space) */
 th.gsep, td.gsep { border-left:10px solid #f7f7f9; }
-/* the WIDE column-group gap (the acc-vs-prod summary Per-type table) */
+/* the WIDE column-group gap (report.js keeps the gsepw class beside gsep; no renderer emits it since the acc-vs-prod pages went, 2026-09-11) */
 th.gsepw, td.gsepw { border-left:28px solid #f7f7f9; }
 th.gband { text-align:center; }
 /* tint-only Error/OK columns (KIND numerr/numok — same colors as failed/
@@ -671,15 +665,6 @@ td.desc { color:#444; white-space:normal; }
         transition:box-shadow 0.12s ease, border-color 0.12s ease, transform 0.12s ease; }
 .card h2 { margin:0 0 0.35rem; color:#20344a; font-size:1.2rem; }
 .card p { color:#444; font-size:0.95rem; line-height:1.45; margin:0 0 0.9rem; }
-
-/* ---- the root index (body.home): the two ENVIRONMENT blocks ---- */
-/* The home bakes one .envblock per environment (acceptance + production) and
-   shows only the ACTIVE one — default production (body bakes env-production); report.js setupEnvSwitch
-   stamps .env-production on <body> when Production is picked (the .srvon
-   pattern). */
-body.home .envblock.env-production { display:none; }
-body.home.env-production .envblock.env-production { display:block; }
-body.home.env-production .envblock.env-acceptance { display:none; }
 
 /* ---- the root index (body.home): every part centered ---- */
 /* Headings/prose center via text-align; the block parts (the .sxs status pair,

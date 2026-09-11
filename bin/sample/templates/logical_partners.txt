@@ -1,4 +1,4 @@
-# input/<env>/logical_partners.txt — hand-curated PART REPLACEMENTS for the
+# input/logical_partners.txt — hand-curated PART REPLACEMENTS for the
 # Logical-based PDA derivation (bin/flow-manager.sh): the third part of a
 # three-part Logical name (D_A_P) equal to FROM is replaced by TO before it
 # becomes the Partner token — the value that enters the partner MERGE (rules
@@ -12,11 +12,11 @@
 # no-op.
 #
 # THIS IS ALSO WHERE PARTNER ALIASES LIVE (2026-09-01, user request): the
-# retired input/<env>/partner-aliases.tsv said "these two tokens name one
+# retired input/partner-aliases.tsv said "these two tokens name one
 # organisation" and merged them into a group. Rewriting the variant to its
 # canonical token here does the same job earlier and more simply — the
 # variant never becomes a token at all, so there is no two-member group to
-# name. bin/build/migrate-input.sh folds an old alias file into this one.
+# name.
 #
 # SAMPLE ESTATE: the misspelled GLOBEXX accounts are GLOBEX, and the WONKA
 # variants (its -PUO qualifier, the WNK short code, the TDI product name) are

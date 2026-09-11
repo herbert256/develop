@@ -1,6 +1,6 @@
-# input/<env>/coreid-url.txt — the SecureTransport File Tracking URL every
+# input/coreid-url.txt — the SecureTransport File Tracking URL every
 # CoreId on the site links to (report.js wraps each id; the link opens in a
 # new tab). ONE line: the URL with @COREID@ where the CoreId goes; comment and
-# blank lines are skipped. Hand-maintained, per environment: the runtime repo
-# carries the real admin host, this SAMPLE carries an .example one.
-https://mft-@ENV@.example:8444/coreadmin/common/main.html?pg=/coreadmin/operations/fileTracking.html?items=100&index=0&searchTime=startTime&timeFilter=2weeks&direction=All&coreId=@COREID@&transferContentType=All&initiator=All&security=All&resubmissionAttempt=All&latestStatusOnly=All
+# blank lines are skipped. Hand-maintained per checkout, never synced: the
+# runtime repos carry their real admin host, this SAMPLE an .example one.
+https://mft.acme.example:8444/coreadmin/common/main.html?pg=/coreadmin/operations/fileTracking.html?items=100&index=0&searchTime=startTime&timeFilter=2weeks&direction=All&coreId=@COREID@&transferContentType=All&initiator=All&security=All&resubmissionAttempt=All&latestStatusOnly=All

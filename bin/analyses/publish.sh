@@ -46,7 +46,7 @@ if publish_is_fresh "$STAMP" "$ADIR" "${BASH_SOURCE[0]}" \
        docs/assets/file-search.js \
        "$ARPT" "$FSRPT" "$COVRPT" "$DATA/transfer/reports" "$DATA/transfer/cache" \
        "$DATA/server/reports" "$DATA/flow-manager" "$FM_CONFIG_DIR"; then
-    echo "docs/$SITE_ENV/analyses/ is up to date; skipping." >&2
+    echo "docs/analyses/ is up to date; skipping." >&2
     exit 0
 fi
 
@@ -1749,11 +1749,6 @@ write_analyses_index() {
         printf '<tr><th colspan="2">Errors</th></tr>\n'
         [ -f "$ADIR/failed.html" ] && printf '<tr><td><a href="failed.html">Failed Subscriptions</a></td><td class="desc">Every failing subscription with its evidence &mdash; the newest failed File of each (drilling into its transfer legs and server log), plus the flows failing in the server log only; view buttons switch to per-leg-count and full-history views.</td></tr>\n'
         [ -f "$ADIR/failing-reasons.html" ] && printf '<tr><td><a href="failing-reasons.html">Error reasons</a></td><td class="desc">Every possible Reason of the Failed Subscriptions pages &mdash; how many currently red subscriptions carry it and the newest occurrence; a nonzero row opens the red subscriptions behind it.</td></tr>\n'
-        printf '<tr><th colspan="2">Acceptance vs production</th></tr>\n'
-        # acc-vs-prod is built post-loop (a cross-env report — see the note near
-        # the bottom of this script); bin/build.sh always produces it, so link it
-        # unconditionally like ANALYSES_MENU and the sitemap already do.
-        printf '<tr><td><a href="acc-vs-prod-summary.html">Acceptance vs production</a></td><td class="desc">The two environments&rsquo; entities compared by name, per type &mdash; only in Acceptance, in both (one linked column per environment, with each side&rsquo;s Files/volume), or only in Production &mdash; opening on the Summary.</td></tr>\n'
         printf '</table></div>\n'
         printf '</body>\n</html>\n'
     } > "$out"
@@ -1770,12 +1765,6 @@ write_added_bl_page
 write_accounts_page
 write_first_seen_page 1
 write_first_seen_page 2
-# The Acceptance-vs-production pages are a CROSS-env report — they need BOTH
-# env trees complete, which only holds AFTER the per-env loop. So they are NOT
-# built here (inside the loop the other env is stale, or absent entirely on a
-# fresh build); bin/build.sh runs publish-accvsprod.sh once per env after the
-# loop with complete data. To regenerate them standalone, run
-# bin/analyses/publish-accvsprod.sh yourself (for each env) after both trees exist.
 "$SCRIPT_DIR/publish-insights.sh"    # the insight pages (whitelist-audit, config-hygiene, expired, the boxes)
 # The SUBS_GROUP_REPORTS pages (four Configuration-group reports whose DATA is
 # transfer/server but whose PAGES belong here). Rendered from THIS script (not

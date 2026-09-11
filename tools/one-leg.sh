@@ -2,7 +2,7 @@
 #
 # tools/one-leg.sh — STANDALONE helper (2026-08-31, user request; split out
 # of the former split-transfers.sh): from a raw SecureTransport transfer-log
-# export (transferLog_*.csv, the files under input/<env>/transfer/) write
+# export (transferLog_*.csv, the files under input/transfer/) write
 #
 #   one_leg.csv   every CoreId that has exactly ONE leg (one record row);
 #                 the output row is that single leg, verbatim.

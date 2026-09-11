@@ -39,14 +39,14 @@ STAMP="$PUBLISH_STAMP_DIR/partner-groups.stamp"
 PG_OUT="$OUTDIR"; [ -s "$GRPF" ] || PG_OUT="$PUBLISH_STAMP_DIR"
 if publish_is_fresh "$STAMP" "$PG_OUT" "${BASH_SOURCE[0]}" \
        "$GRPF" "$WHYF" "$GAF" "$PSLUG"; then
-    echo "docs/$SITE_ENV/details/partner-groups/ is up to date; skipping." >&2
+    echo "docs/details/partner-groups/ is up to date; skipping." >&2
     exit 0
 fi
 
 # Nothing configured / no groups this env -> remove any stale pages and stop.
 if [ ! -s "$GRPF" ]; then
     rm -rf "$OUTDIR"
-    echo "publish-partner-groups: no partner groups in $AXWAY_ENV." >&2
+    echo "publish-partner-groups: no partner groups configured." >&2
     publish_stamp "$STAMP"   # "nothing to render" is a COMPLETED publish — without
                              # this, an env with no groups (production) never stamps
                              # and re-runs this every build

@@ -613,17 +613,17 @@ function cd_ms(   a) { if (substr(SCHED,1,3) != "cd:") return 21600000
 # ---- main -------------------------------------------------------------------
 BEGIN { RET_LO = 10; RET_HI = 12 }
 FILENAME == CAL {
-    CJ[++NCAL] = $2; CD[NCAL] = $3; CF[NCAL] = $4; CT[NCAL] = $5
+    CJ[++NCAL] = $1; CD[NCAL] = $2; CF[NCAL] = $3; CT[NCAL] = $4   # jdn, date, factor, flags (no env column since 2026-09-11)
     CG[NCAL] = 1
-    if (match($5, /slow:[0-9]+/)) CG[NCAL] = substr($5, RSTART + 5, RLENGTH - 5) + 0
-    if (NCAL == 1) J0R = $2 + 0
-    J1 = $2 + 0
+    if (match($4, /slow:[0-9]+/)) CG[NCAL] = substr($4, RSTART + 5, RLENGTH - 5) + 0
+    if (NCAL == 1) J0R = $1 + 0
+    J1 = $1 + 0
     next
 }
 {
     # one estate row: generate every day's events for this flow
     if ($3 == "A") next
-    FK = $1; ENVN = $2; UC = $3 + 0; SITE = $4; ACCT = $5; LOGIN = $6
+    FK = $1; ENVN = $2; UC = $3 + 0; SITE = $4; ACCT = $5; LOGIN = $6   # ENVN = the estate PRNG namespace (estate.awk KEY)
     PROF = $7; PDASH = $8; DOM = $9; APP = $10; PTOK = $11
     HOST = $19; IPS = $20; SPELL = $21; PORT = $22
     SCHED = $23; VOL = $24 + 0; FAILP = $25 + 0; SIZEM = $26 + 0

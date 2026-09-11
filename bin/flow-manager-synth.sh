@@ -59,16 +59,15 @@
 # quoted-comma-safe walk parse.sh uses.
 #
 # Usage:
-#   AXWAY_ENV=production bin/flow-manager-synth.sh
+#   bin/flow-manager-synth.sh
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
-source bin/env.sh
 source bin/fastawk.sh
 
-IN="input/$AXWAY_ENV/transfer"
-OUTDIR="input/$AXWAY_ENV/flow-manager"
+IN="input/transfer"
+OUTDIR="input/flow-manager"
 shopt -s nullglob
 files=("$IN"/*.csv)
 shopt -u nullglob
@@ -78,7 +77,7 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 mkdir -p "$OUTDIR"
 
-LC_ALL=C awk -v SUBSJ="$OUTDIR/subscriptions.json.tmp" -v PARTJ="$OUTDIR/partners.json.tmp" -v BL="input/$AXWAY_ENV/blacklist.txt" '
+LC_ALL=C awk -v SUBSJ="$OUTDIR/subscriptions.json.tmp" -v PARTJ="$OUTDIR/partners.json.tmp" -v BL="input/blacklist.txt" '
     function split_csv(line,    n, i, c, inquotes, cur) {
         delete field
         n = 0; cur = ""; inquotes = 0

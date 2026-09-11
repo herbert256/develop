@@ -11,9 +11,8 @@
 LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$LIB_DIR/../.." && pwd)"
 cd "$ROOT"
-source "$ROOT/bin/env.sh"        # resolve $AXWAY_ENV (acceptance|production, default acceptance)
 source "$ROOT/bin/fastawk.sh"    # route unqualified `awk` to mawk when installed (4-9x faster)
-DATA="data/$AXWAY_ENV"           # the env's data root (this lib cd's to the repo root)
+DATA="data"
 REPORTS_DIR="$DATA/dashboards/reports"     # one .rpt (page spec) per dashboard page
 mkdir -p "$REPORTS_DIR"
 

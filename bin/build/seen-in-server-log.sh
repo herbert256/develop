@@ -57,9 +57,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed
-source "$ROOT/bin/env.sh"       # resolve $AXWAY_ENV (acceptance|production, default acceptance)
 
-DATA="$ROOT/data/$AXWAY_ENV"
+DATA="$ROOT/data"
 CACHE="$DATA/transfer/cache"
 FILESC="$CACHE/_files.tsv"
 TRANSC="$CACHE/_transfers.tsv"
@@ -104,7 +103,7 @@ awk -F'\t' '
 # always is: the parse step precedes this one).
 # ---------------------------------------------------------------------------
 shopt -s nullglob
-srv_inputs=("$ROOT/input/$AXWAY_ENV/server/"*.csv)   # the ACTIVE ENV's server inputs (pre-split path missed in the 2026-07 env sweep)
+srv_inputs=("$ROOT/input/server/"*.csv)   # the ACTIVE ENV's server inputs (pre-split path missed in the 2026-07 env sweep)
 shopt -u nullglob
 if [ ${#srv_inputs[@]} -gt 0 ]; then
     "$ROOT/bin/server/parse.sh"

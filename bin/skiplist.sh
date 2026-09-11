@@ -43,9 +43,7 @@
 #
 SCRIPT_DIR_SL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # PER ENVIRONMENT since 2026-08-31 (user request): input/<env>/skip.txt.
-# $AXWAY_ENV comes from bin/env.sh (sourced here when the caller has not).
-[ -n "${AXWAY_ENV:-}" ] || source "$SCRIPT_DIR_SL/env.sh"
-SKIPLIST_FILE="${SKIPLIST_FILE:-$(cd "$SCRIPT_DIR_SL/.." && pwd)/input/$AXWAY_ENV/skip.txt}"
+SKIPLIST_FILE="${SKIPLIST_FILE:-$(cd "$SCRIPT_DIR_SL/.." && pwd)/input/skip.txt}"
 export SKIPLIST_FILE
 
 # NOTE: no single quotes inside this program — it rides in a single-quoted

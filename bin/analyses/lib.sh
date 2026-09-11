@@ -11,10 +11,9 @@
 LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$LIB_DIR/../.." && pwd)"
 cd "$ROOT"
-source "$ROOT/bin/env.sh"        # resolve $AXWAY_ENV (acceptance|production, default acceptance)
-IP_DIR="$ROOT/input/$AXWAY_ENV/ip"                 # PER ENV (the two estates share no endpoints)
+IP_DIR="$ROOT/input/ip"
 source "$ROOT/bin/ip.sh"         # IP_HOSTS_FILE (input/<env>/ip/ip-hosts.tsv) + ip_put
-DATA="data/$AXWAY_ENV"           # the env's data root (this lib cd's to the repo root)
+DATA="data"
 REPORTS_DIR="$DATA/analyses/reports"        # home.rpt (the status tables' SEEN counts) + first-seen*.rpt
 FSRPT_DIR="$DATA/first-seen"                # one .rpt per First-seen cell page
 COVRPT_DIR="$DATA/coverage"                  # one .rpt per coverage cell page (the 3 PDA Configured cells)

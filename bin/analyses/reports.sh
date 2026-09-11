@@ -33,8 +33,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # reports dir (the transfer-dir ones are swept by bin/transfer/reports.sh,
 # which always runs first). rm -f on an unmatched literal glob is a no-op.
 _ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-source "$_ROOT/bin/env.sh"
-rm -f "$_ROOT/data/$AXWAY_ENV/analyses/reports"/*.rpt.tmp
+rm -f "$_ROOT/data/analyses/reports"/*.rpt.tmp
 
 # THREE waves. Wave 1 overlaps the independent scripts (cross-reference 1.8 s
 # is the wave floor); the ensure_pda_tsvs chain runs sequentially in wave 2 —

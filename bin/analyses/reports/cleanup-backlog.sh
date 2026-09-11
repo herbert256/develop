@@ -39,12 +39,12 @@ TF="$DATA/transfer/cache/_files.tsv"
 BASE="$DATA/flow-manager/base"
 XREF="$DATA/flow-manager/xref"
 COV="$DATA/transfer/reports/coverage"
-SUBJSON="$ROOT/input/$AXWAY_ENV/flow-manager/subscriptions.json"
+SUBJSON="$ROOT/input/flow-manager/subscriptions.json"
 # the SKIP-filtered copy when it exists (bin/flow-manager.sh) — the same population
 # every other report uses (Missing cronjobs reads it via FM_INPUT_DIR); reading the
 # raw export here listed the deliberately skipped subscriptions as cleanup
 # candidates and made the two no-cron lists disagree (audit F06, 2026-09-05)
-[ -f "$ROOT/data/$AXWAY_ENV/flow-manager/filtered/partners.json" ] && SUBJSON="$ROOT/data/$AXWAY_ENV/flow-manager/filtered/subscriptions.json"
+[ -f "$ROOT/data/flow-manager/filtered/partners.json" ] && SUBJSON="$ROOT/data/flow-manager/filtered/subscriptions.json"
 if [ ! -f "$TF" ] || [ ! -f "$BASE/_accounts.tsv" ]; then
     echo "cleanup-backlog: transfer cache or config caches missing; skipping." >&2
     rm -f "$OUT"

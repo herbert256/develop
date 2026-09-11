@@ -23,25 +23,21 @@ set -euo pipefail
 # resolve — regardless of which publish script sourced us (BASH_SOURCE points here).
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-source bin/skiplist.sh    # SKIPLIST_FILE  — input/<env>/skip.txt (the ONE skip list, per environment)
+source bin/skiplist.sh    # SKIPLIST_FILE  — input/skip.txt (the ONE skip list)
 source bin/fastawk.sh   # route unqualified `awk` to mawk when installed (see bin/fastawk.sh)
-source bin/env.sh       # resolve $AXWAY_ENV (acceptance|production, default production)
+source bin/envlabel.sh  # ENV_LABEL — the checkout's environment label (input/environment.txt)
 
-# The active ENVIRONMENT: every publish run renders ONE env's site tree
-# (docs/<env>/…) from that env's data tree (data/<env>/…). The shared root
-# artifacts — docs/assets/, docs/help/, docs/index.html — live
-# at the docs root; html_head derives the extra ../ from SITE_ENV. The root
-# home page writer (bin/build/publish.sh write_root_index) temporarily clears
-# SITE_ENV to render the one shared page.
-SITE_ENV="$AXWAY_ENV"
-DOCS="docs/$SITE_ENV"
-DATA="data/$SITE_ENV"
+# One repo = one environment (2026-09-11): a publish run renders THE site tree
+# (docs/…) from THE data tree (data/…) — flat, no environment segment. The
+# hand-authored assets and help live at docs/assets/ and docs/help/.
+DOCS="docs"
+DATA="data"
 CSS_SRC="docs/assets/style.css"   # hand-authored + published in ONE place (see ensure_assets)
 # The FlowManager config exports every raw-JSON reader (the
 # accounts insight page, publish-insights.sh, uc3-polling.sh) should read: the
-# SKIP-filtered copies bin/flow-manager.sh writes (input/<env>/skip.txt) when they
+# SKIP-filtered copies bin/flow-manager.sh writes (input/skip.txt) when they
 # exist, else the raw exports. (Repo-root-relative — publish_lib.sh cd's to ROOT.)
-FM_CONFIG_DIR="input/$SITE_ENV/flow-manager"
+FM_CONFIG_DIR="input/flow-manager"
 [ -f "$DATA/flow-manager/filtered/partners.json" ] && FM_CONFIG_DIR="$DATA/flow-manager/filtered"
 
 # Build timestamp shown at the right of the footer bar on every page. Computed
@@ -145,11 +141,11 @@ pub_wait() {   # reap every pooled job; abort the publish if any page failed
 # is still rebuilt.
 #
 # AXWAY_FORCE_PUBLISH=1 re-renders everything regardless (as does deleting
-# data/<env>/.publish/). NOTE the same second-granularity caveat the report
+# data/.publish/). NOTE the same second-granularity caveat the report
 # guards have under bash 3.2: an input written in the SAME second as the stamp
 # reads as "not newer".
 PUBLISH_STAMP_DIR="$DATA/.publish"
-PUBLISH_CORE_DEPS="bin/publish_lib.sh bin/render_rpt.awk bin/env.sh bin/fastawk.sh \
+PUBLISH_CORE_DEPS="bin/publish_lib.sh bin/render_rpt.awk bin/envlabel.sh bin/fastawk.sh \
                    bin/uc-cases.sh docs/assets/style.css docs/assets/report.js docs/assets/slotchart.js"
 
 # The dep list publish_is_fresh was last called with, so publish_stamp can
@@ -226,11 +222,9 @@ publish_stamp() { mkdir -p "$(dirname "$1")" && publish_stamp_value > "$1"; }
 # steps' OWN stamps, and they are written one after another — so a dir dep made
 # each step invalidate the one before it on every single run.
 publish_area_stamps() {
-    local env area
-    for env in acceptance production; do
-        for area in transfer details server analyses dashboards day partner-groups; do
-            printf '%s\n' "data/$env/.publish/$area.stamp"
-        done
+    local area
+    for area in transfer details server analyses dashboards day partner-groups; do
+        printf '%s\n' "data/.publish/$area.stamp"
     done
 }
 
@@ -649,26 +643,12 @@ meta_val() { grep -m1 "^META"$'\t'"$2"$'\t' "$1" 2>/dev/null | cut -f3- || true;
 
 html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the right label — replaced by the quick-search box)]  [$5 help slug]  [$6 area]  [$7 report key]  [$8 body class (the detail pages' direction/seen tint)]  [$9 extra asset scripts, space-separated basenames — only the slot-chart pages ask for slotchart.js]
     esc "$1"
-    # TWO depth prefixes since the env split. Callers keep passing their css
-    # href relative to the ENV root ("../assets/style.css" from
-    # docs/<env>/transfer/) exactly as before the split:
-    #   envbase = path back to the ENV root  (docs/<env>/)  — the in-env links:
-    #             the report dropdowns, the Entities link, the search form
-    #   base    = path back to the DOCS root (one level higher) — the shared
-    #             artifacts: assets/, help/, index.html (home)
-    # On a SITE_ENV-less page (the shared root home, the local build report)
-    # base = the caller's prefix as-is and envbase points into production/ (the
-    # default env since 2026-08-31, user request; report.js rewrites the links
-    # when Acceptance is the active choice).
-    local envbase=${2%assets/style.css}
-    local base envpair
-    if [ -n "${SITE_ENV:-}" ]; then
-        base="${envbase}../"
-    else
-        base=$envbase
-        envbase="${base}production/"
-    fi
-    local home=${base}index.html                         # home = the SHARED root index
+    # ONE depth prefix (2026-09-11, one repo = one environment): callers pass
+    # their css href relative to the docs root ("../assets/style.css" from
+    # docs/transfer/), and base is the path back to that root — the assets,
+    # help/, index.html (home) and every in-site link hang off it.
+    local base=${2%assets/style.css}
+    local home=${base}index.html
     printf '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>%s</title>\n' "$ESC"
     [ -n "${3:-}" ] && printf '<meta name="report-dates" content="%s">\n' "$3"
     # The partial-END days of that same list (area_partial). The date list
@@ -684,8 +664,7 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
     fi
     # A stable per-AREA key for report.js's date-filter persistence — emitted
     # ONLY alongside a date list (pages without the From/To filter get neither).
-    # Env-prefixed so the two environments' date ranges never share a store.
-    [ -n "${3:-}" ] && [ -n "${6:-}" ] && printf '<meta name="report-area" content="%s%s">\n' "${SITE_ENV:+$SITE_ENV-}" "$6"
+    [ -n "${3:-}" ] && [ -n "${6:-}" ] && printf '<meta name="report-area" content="%s">\n' "$6"
     # A stable per-REPORT key for report.js's search/sort persistence: identical
     # on every page of one report — all its table-tab pages — so e.g. Entity
     # Search keeps the typed search when switching All / Seen / Not Seen. Pages
@@ -701,44 +680,43 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
     printf '</head>\n<body%s>\n' "${8:+ class=\"$8\"}"
     # RUNTIME top bar (2026-07): every html_head page bakes only a compact
     # PLACEHOLDER — report.js (buildTopbar) renders the full bar client-side
-    # from docs/assets/topbar-data.js (the menu strings, written once per
-    # publish by ensure_assets) + these data attrs: data-eb/-b the two depth
-    # prefixes, data-env the page's env (absent = the shared root pages, whose
-    # bar gets the dual data-target env toggle), data-help the help slug, and
-    # data-twin the OTHER env's twin page (stamped by bin/build/crosslink.sh after
-    # both envs exist; absent -> report.js's pathname-swap fallback). The
-    # baked-chrome pages (help, build report — render_shared_topbar) keep the
-    # full bar; buildTopbar skips a non-empty topbar div.
-    printf '<div class="topbar" data-eb="%s" data-b="%s"%s%s></div>\n' \
-        "$envbase" "$base" "${SITE_ENV:+ data-env=\"$SITE_ENV\"}" "${5:+ data-help=\"$5\"}"
+    # from docs/assets/topbar-data.js (the menu strings + the environment
+    # label, written once per publish by ensure_assets) + these data attrs:
+    # data-b the depth prefix back to the docs root, data-help the help slug.
+    # The baked-chrome pages (help, build report — render_shared_topbar) keep
+    # the full bar; buildTopbar skips a non-empty topbar div.
+    printf '<div class="topbar" data-b="%s"%s></div>\n' \
+        "$base" "${5:+ data-help=\"$5\"}"
 }
 
-# The site-wide top bar. $1 base (docs-root prefix), $2 envbase (env-root
-# prefix), $3 envpair HTML, $4 help slug (""=none). Called by html_head and the
-# shared pages (render_shared_topbar), so all pages share one definition.
+# The site-wide top bar (the BAKED form — the help pages and the build report;
+# every other page gets the same bar client-side from report.js buildTopbar,
+# KEEP THE TWO IN STEP). $1 base (docs-root prefix), $2 help slug (""=none).
 render_topbar() {
-    local base=$1 envbase=$2 envpair=$3 helpslug=${4:-} home=${1}index.html
+    local base=$1 helpslug=${2:-} home=${1}index.html label=""
     # SIX evenly-spaced parts (the bar's justify-content:space-between does the
-    # spacing — no pushing margins, 2026-07 redesign): 1 the brand (-> the
-    # shared home) · 2 the ENV pair (report.js setupEnvSwitch) · 3 the Entities
-    # link + search icon · 4 the three report dropdowns (Transfer/Server/
-    # Analyses) · 5 the plain Dashboard link (ONE dashboard page — no dropdown)
-    # · 6 the three right icons. The precomputed menu strings carry an "@"
-    # placeholder; swap it for this page's ENV prefix.
-    printf '<div class="topbar"><a class="brand" href="%s">Cloud</a><span class="envpair">%s</span><span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch.html" title="Search" aria-label="Search">&#128269;</a></span>' "$home" "$envpair" "$envbase" "$envbase"
+    # spacing — no pushing margins, 2026-07 redesign): 1 the brand (-> home) ·
+    # 2 the ENVIRONMENT LABEL (input/environment.txt, a static span — the
+    # Acceptance/Production switch went with the env split, 2026-09-11) · 3 the
+    # Entities link + search icon · 4 the three report dropdowns
+    # (Transfer/Server/Analyses) · 5 the plain Dashboard link (ONE dashboard
+    # page — no dropdown) · 6 the three right icons. The precomputed menu
+    # strings carry an "@" placeholder; swap it for this page's prefix.
+    if [ -n "${ENV_LABEL:-}" ]; then esc "$ENV_LABEL"; label="<span class=\"envcur\">$ESC</span>"; fi
+    printf '<div class="topbar"><a class="brand" href="%s">Cloud</a><span class="envpair">%s</span><span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch.html" title="Search" aria-label="Search">&#128269;</a></span>' "$home" "$label" "$base" "$base"
     # the FILE SEARCH entry (2026-08), mirroring report.js buildTopbar:
     # between the search icon and the report menus
-    printf '<a class="dashlink" href="%sfile-search-24-hours.html">Files</a>' "$envbase"
+    printf '<a class="dashlink" href="%sfile-search-24-hours.html">Files</a>' "$base"
     printf '<nav class="nav">'
-    printf '<div class="dd"><span class="ddlabel">Transfer reports \342\226\276</span><div class="ddm">%s</div></div>' "${TRANSFER_MENU//@/$envbase}"
-    [ -n "${SERVER_MENU:-}" ] && printf '<div class="dd"><span class="ddlabel">Server reports \342\226\276</span><div class="ddm">%s</div></div>' "${SERVER_MENU//@/$envbase}"
-    [ -n "${ANALYSES_MENU:-}" ] && printf '<div class="dd"><span class="ddlabel">Analyses \342\226\276</span><div class="ddm">%s</div></div>' "${ANALYSES_MENU//@/$envbase}"
+    printf '<div class="dd"><span class="ddlabel">Transfer reports \342\226\276</span><div class="ddm">%s</div></div>' "${TRANSFER_MENU//@/$base}"
+    [ -n "${SERVER_MENU:-}" ] && printf '<div class="dd"><span class="ddlabel">Server reports \342\226\276</span><div class="ddm">%s</div></div>' "${SERVER_MENU//@/$base}"
+    [ -n "${ANALYSES_MENU:-}" ] && printf '<div class="dd"><span class="ddlabel">Analyses \342\226\276</span><div class="ddm">%s</div></div>' "${ANALYSES_MENU//@/$base}"
     printf '</nav>'
-    printf '<a class="dashlink" href="%sdashboards/index.html">Dashboard</a>' "$envbase"
+    printf '<a class="dashlink" href="%sdashboards/index.html">Dashboard</a>' "$base"
     # Top-bar right: the REPORT FINDER + SITE MAP magnifiers, then the help icon.
     printf '<span class="tr-group">'
-    printf '<a class="searchbtn" href="%sreport-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a>' "$envbase"
-    printf '<a class="searchbtn" href="%ssitemap.html" title="Site map" aria-label="Site map">&#128506;</a>' "$envbase"
+    printf '<a class="searchbtn" href="%sreport-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a>' "$base"
+    printf '<a class="searchbtn" href="%ssitemap.html" title="Site map" aria-label="Site map">&#128506;</a>' "$base"
     [ -n "$helpslug" ] && printf '<a class="helpbtn" href="%shelp/%s.html" title="Help" aria-label="Help">?</a>' "$base" "$helpslug"
     printf '</span></div>\n'
 }
@@ -747,17 +725,11 @@ render_topbar() {
 # which links the report of the run that built that env — see write_sitemap in
 # bin/build/publish.sh. Nothing bakes a build identity into a page any more,
 # which is also why a scope switch re-renders nothing.)
-# The top bar for an ENV-NEUTRAL shared page (the local build report, help/…) whose
-# docs-root prefix is $1: SITE_ENV-less, so the env pair toggles like the home's
-# and the in-env links point into production/ (the default env; report.js
-# rewrites them when Acceptance is the active choice; on these pages the
-# switch is inert — one page, no env data — which is fine, UI consistency
-# matters more). $2 = help slug.
+# The baked top bar of a shared-chrome page (the local build report, help/…)
+# whose docs-root prefix is $1; $2 = help slug. (Kept as a separate name: the
+# callers predate the one-prefix bar.)
 render_shared_topbar() {
-    local base=$1 helpslug=${2:-}
-    local envbase="${base}production/"
-    local envpair='<a class="envswitch" data-target="acceptance">Acceptance</a><span class="envsep">/</span><a class="envswitch" data-target="production">Production</a>'
-    render_topbar "$base" "$envbase" "$envpair" "$helpslug"
+    render_topbar "$1" "${2:-}"
 }
 
 # ---- report page renderer ---------------------------------------------------
@@ -882,8 +854,8 @@ member_page_for_label() {   # $1 member  $2 current table label ("" = first page
 }
 
 # render_missing_reports AREA — write an "empty report" placeholder page for
-# every order-listed report whose .rpt is absent in THIS env (production's
-# example data skips many). The menus, sitemap and group tab rows list ALL
+# every order-listed report whose .rpt is absent in this checkout (a small
+# estate skips many). The menus, sitemap and group tab rows list ALL
 # options unconditionally (2026-07), so every listed page must exist: a
 # data-less report shows a page saying so, never a 404. EVERY tab page of a
 # split report is written (2026-08 — formerly only the first): the group
@@ -2047,7 +2019,7 @@ render_subs_group_pages() {
         fi
     done
     CUR_DATES=$saved; RPT_SUBTINT=""
-    printf 'Rendered %d Subscriptions group page(s) into docs/%s/analyses/' "$n" "$SITE_ENV" >&2
+    printf 'Rendered %d Subscriptions group page(s) into docs/analyses/' "$n" >&2
     [ "$miss" -gt 0 ] && printf ' (+%d empty-report placeholder(s))' "$miss" >&2
     printf '.\n' >&2
 }
@@ -2171,15 +2143,14 @@ TRANSFER_MENU=$(build_menu transfer "${transfer_menu_order[@]}")
 # The Analyses dropdown shows one line per GROUP (like the transfer/server
 # menus); each line lands on its group's leader page, whose row-1 tab bar
 # (analyses_group_tabs below) navigates within the group.
-ANALYSES_MENU='<a class="ddtop" href="@analyses/index.html">Start page</a><a href="@transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="@analyses/use-cases.html">Configuration</a><a href="@analyses/partner-scorecard.html">Partners</a><a href="@analyses/subscriptions-in-boxes.html">Boxes</a><a href="@analyses/failed.html">Errors</a><a href="@analyses/acc-vs-prod-summary.html">Acceptance vs production</a>'
+ANALYSES_MENU='<a class="ddtop" href="@analyses/index.html">Start page</a><a href="@transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="@analyses/use-cases.html">Configuration</a><a href="@analyses/partner-scorecard.html">Partners</a><a href="@analyses/subscriptions-in-boxes.html">Boxes</a><a href="@analyses/failed.html">Errors</a>'
 
 # The analyses report GROUPS — the single source of truth for the group tab
 # bars, the group-of lookup and the h1 group tags. One line per group:
 #   <group label>|<key1>=<Label1>|<key2>=<Label2>|...
-# Keys are hrefs relative to docs/<env>/analyses/ (the transfer-area members —
+# Keys are hrefs relative to docs/analyses/ (the transfer-area members —
 # partner coverage, seen-in-server-log, skipped, cross references — carry a
-# ../transfer/ prefix). Acceptance-vs-production keeps its own tab rows and is
-# not listed. KEEP IN SYNC with ANALYSES_MENU and the analyses index/sitemap.
+# ../transfer/ prefix). KEEP IN SYNC with ANALYSES_MENU and the analyses index/sitemap.
 _analyses_groups() {
     printf '%s\n' \
         "Coverage & seen|../transfer/entity-coverage-accounts.html=Entity coverage|first-seen.html=First seen|data-diff.html=Since yesterday|../transfer/seen-in-server-log.html=Seen in server log" \
@@ -2367,11 +2338,11 @@ _hdr_with_nav() {
 # the per-value report basename suffix (skipped-<slug>). Used by the Skipped
 # button row, the report finder and the sitemap.
 skipped_tokens() {
-    # The VALUES of every skip rule + its page slug. Reads input/<env>/skip.txt through
+    # The VALUES of every skip rule + its page slug. Reads input/skip.txt through
     # the shared format (bin/skiplist.sh): a three-field rule contributes its
     # value (field 3), a legacy bare token itself, and "#" comments/blanks are
     # dropped — so the button row and sitemap show the rules, not the file.
-    local f="${SKIPLIST_FILE:-input/$AXWAY_ENV/skip.txt}" l s   # per environment since 2026-08-31
+    local f="${SKIPLIST_FILE:-input/skip.txt}" l s
     [ -f "$f" ] || return 0
     while IFS= read -r l || [ -n "$l" ]; do
         l=${l%$'\r'}
@@ -2510,7 +2481,6 @@ tag_analyses_group_h1s() {
             _tag_h1 "$DOCS/analyses/$nm-$(slugify "$tab").html" "$glabel" "Analyses"
         done < <(printf '%s\n' "${tabs//|/$'\n'}")
     done
-    for f in "$DOCS/analyses/"acc-vs-prod-*.html; do [ -f "$f" ] || continue; _tag_h1 "$f" "Acceptance vs production" "Analyses"; done
 }
 tag_transfer_group_h1s() {   # the analyses members already in transfer/ are tagged; this skips them
     local f b lbl
@@ -2549,26 +2519,23 @@ SERVER_MENU=""
 # The RUNTIME top bar's menu-data version (the ?v= stamp html_head puts on
 # assets/topbar-data.js): changes exactly when the menu content does, so a
 # MENU change needs only a re-publish of the data file — no page re-render.
-# Per-env "has a Monitor dashboard" flags for the runtime top bar: the flag IS
-# the existence of that env's monitor.rpt (bin/dashboards/reports/monitor.sh
-# writes it only when the transfer cache carries monitor rows). Baked into the
-# SHARED topbar-data.js as a per-env map — buildTopbar shows the Monitor link
-# only for an env whose flag is 1 — and folded into TB_VER so a flag flip
-# re-stamps the data file's ?v=.
-TB_MON_ACC=0; [ -f data/acceptance/dashboards/reports/monitor.rpt ] && TB_MON_ACC=1
-TB_MON_PRD=0; [ -f data/production/dashboards/reports/monitor.rpt ] && TB_MON_PRD=1
-# The CoreId -> SecureTransport File Tracking URL template per env (2026-09-07,
-# user request): input/<env>/coreid-url.txt, ONE line carrying @COREID@ where
-# the id goes (comment and blank lines skipped) — hand-maintained, per
-# environment; the runtime repo carries the real admin hosts, develop's sample
-# an .example one. Baked into the SHARED topbar-data.js as a per-env map
-# (report.js addCoreIdLinks wraps every id on a page with it; an env without
-# the file gets an empty template and no links) and folded into TB_VER so a
-# URL change re-stamps the data file's ?v=.
+# The "has a Monitor dashboard" flag for the runtime top bar: the flag IS the
+# existence of monitor.rpt (bin/dashboards/reports/monitor.sh writes it only
+# when the transfer cache carries monitor rows). Baked into topbar-data.js —
+# buildTopbar shows the Monitor link only when it is 1 — and folded into
+# TB_VER so a flag flip re-stamps the data file's ?v=.
+TB_MON=0; [ -f data/dashboards/reports/monitor.rpt ] && TB_MON=1
+# The CoreId -> SecureTransport File Tracking URL template (2026-09-07, user
+# request): input/coreid-url.txt, ONE line carrying @COREID@ where the id goes
+# (comment and blank lines skipped) — hand-maintained per checkout; a runtime
+# repo carries the real admin host, develop's sample an .example one. Baked
+# into topbar-data.js (report.js addCoreIdLinks wraps every id on a page with
+# it; a checkout without the file gets an empty template and no links) and
+# folded into TB_VER so a URL change re-stamps the data file's ?v=. So is the
+# ENVIRONMENT LABEL (bin/envlabel.sh), which the bar shows as a static span.
 _coreid_url() { [ -f "$1" ] && awk '/^[ \t]*#/ || /^[ \t]*$/ { next } { sub(/^[ \t]+/, ""); sub(/[ \t\r]+$/, ""); print; exit }' "$1" || true; }
-TB_CID_ACC=$(_coreid_url input/acceptance/coreid-url.txt)
-TB_CID_PRD=$(_coreid_url input/production/coreid-url.txt)
-TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU$TB_MON_ACC$TB_MON_PRD$TB_CID_ACC$TB_CID_PRD" | cksum | cut -d' ' -f1)
+TB_CID=$(_coreid_url input/coreid-url.txt)
+TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU$TB_MON$TB_CID${ENV_LABEL:-}" | cksum | cut -d' ' -f1)
 
 # Copy the shared assets into docs/ and write .nojekyll. Idempotent, so each
 # publish script can call it and still produce a valid site when run on its own.
@@ -2576,9 +2543,8 @@ TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU$TB_MON_ACC$TB_MON
 # moved pages no longer keep their old URLs alive; they 404.)
 
 ensure_assets() {
-    # the assets and .nojekyll are SHARED by both env trees — they live at the
-    # docs ROOT (docs/assets/), not under $DOCS (docs/<env>/); both env
-    # publishes write the same bytes, so writing them is idempotent.
+    # the assets and .nojekyll live at the docs ROOT (docs/assets/); every
+    # publish writes the same bytes, so writing them is idempotent.
     # style.css / report.js / slotchart.js / file-search.js and docs/help/
     # are SEEDED from the repo-root assets/ by bin/build.sh (2026-08-29 —
     # every build clears its scope's docs tree first, so docs/ is pure build
@@ -2590,9 +2556,9 @@ ensure_assets() {
     # anchor). Included WITHOUT a ?v= cache-buster — its content changes
     # every build, and versioning it would put the changing value back into
     # every page, defeating the point.
-    # ATOMIC writes (2026-07): publishes now run CONCURRENTLY — the two
-    # environments beside each other, and the report/detail pages within one —
-    # so two processes write these same bytes at the same time. Same content
+    # ATOMIC writes (2026-07): publishes run CONCURRENTLY (the report and
+    # detail pages beside each other), so two processes write these same
+    # bytes at the same time. Same content
     # either way, but a plain redirect truncates first: a reader (or the other
     # writer) can catch an empty file. tmp + mv makes each swap atomic.
     _asset_put() {   # $1 target  $2 content (a trailing newline is appended)
@@ -2605,17 +2571,18 @@ ensure_assets() {
     # (build-stamp.js is GONE with the footer bar: no page shows a build time
     # any more, so there is nothing to stamp.)
     # The runtime top bar's menu data (buildTopbar in report.js): the three
-    # dropdown menu strings, env-root-relative with their "@" placeholder
-    # kept verbatim (report.js swaps it for the page's data-eb prefix).
+    # dropdown menu strings, docs-root-relative with their "@" placeholder
+    # kept verbatim (report.js swaps it for the page's data-b prefix).
     local t=$TRANSFER_MENU s=${SERVER_MENU:-} a=${ANALYSES_MENU:-}
     t=${t//\\/\\\\}; t=${t//\"/\\\"}
     s=${s//\\/\\\\}; s=${s//\"/\\\"}
     a=${a//\\/\\\\}; a=${a//\"/\\\"}
-    # + the per-env CoreId -> File Tracking URL templates (see TB_CID_* above)
-    local ca=${TB_CID_ACC:-} cp=${TB_CID_PRD:-}
-    ca=${ca//\\/\\\\}; ca=${ca//\"/\\\"}
-    cp=${cp//\\/\\\\}; cp=${cp//\"/\\\"}
-    local _tb; printf -v _tb 'window.AXWAY_TB={transfer:"%s",server:"%s",analyses:"%s",monitor:{acceptance:%s,production:%s},coreid:{acceptance:"%s",production:"%s"}};' "$t" "$s" "$a" "${TB_MON_ACC:-0}" "${TB_MON_PRD:-0}" "$ca" "$cp"
+    # + the CoreId -> File Tracking URL template (TB_CID) and the environment
+    # label (ENV_LABEL), both baked as plain strings
+    local c=${TB_CID:-} e=${ENV_LABEL:-}
+    c=${c//\\/\\\\}; c=${c//\"/\\\"}
+    e=${e//\\/\\\\}; e=${e//\"/\\\"}
+    local _tb; printf -v _tb 'window.AXWAY_TB={transfer:"%s",server:"%s",analyses:"%s",monitor:%s,coreid:"%s",env:"%s"};' "$t" "$s" "$a" "${TB_MON:-0}" "$c" "$e"
     _asset_put docs/assets/topbar-data.js "$_tb"
     [ -f docs/.nojekyll ] || : > docs/.nojekyll
 }

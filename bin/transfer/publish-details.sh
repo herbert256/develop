@@ -46,7 +46,7 @@ if publish_is_fresh "$STAMP" "$DOCS/details" "${BASH_SOURCE[0]}" \
        "$DATA/transfer/reports/details" "$DATA/flow-manager" \
        "$DATA/transfer/reports/failed-sub-all.rpt" "$DATA/transfer/reports/errors" \
        ${UCRPT[@]+"${UCRPT[@]}"}; then
-    echo "docs/$SITE_ENV/details/ is up to date; skipping." >&2
+    echo "docs/details/ is up to date; skipping." >&2
     exit 0
 fi
 

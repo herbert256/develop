@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 #
 # display-rename.sh — the DISPLAY RENAME sweep (2026-08-30, user request):
-# the LAST page-touching build step. input/<env>/rename.txt (PER ENVIRONMENT
-# since 2026-08-31, user request) holds that environment's PRESENTATION
-# renames; each env's rules rewrite its own docs/<env>/ tree, and the SHARED
-# root pages (the home, the acc-vs-prod pages, everything at the docs root
-# that shows both environments' names) take the union of both files:
+# the LAST page-touching build step. input/rename.txt holds this checkout's
+# PRESENTATION renames (one repo = one environment since 2026-09-11); the
+# rules rewrite the whole docs/ tree:
 #
 #     <entity> <old_value> <new_value>      (whitespace-separated, # comments)
 #     e.g.  subscription UC8_..._SRC_..._DEST UC8_HR_PLURALSIGHT_SAPSF
@@ -27,8 +25,8 @@
 # The entity column (subscription account login host logical partner
 # application domain bl profile any) is documentation and validation; the value match is
 # what rewrites. A missing or empty rename.txt is a no-op. MANUAL-REPUBLISH
-# GOTCHA: like crosslink.sh, this runs only in bin/build.sh — a manual
-# per-area publish shows real values until the next build.
+# GOTCHA: this runs only in bin/build.sh — a manual per-area publish shows
+# real values until the next build.
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -87,15 +85,6 @@ apply_rules() {
     echo "display-rename: $dir: applied $n rule(s) to $(printf '%s\n' "$hits" | wc -l | tr -d ' ') page(s)." >&2
 }
 
-# each env's own tree with its own file; the root-level shared pages (not
-# descending into the env trees) with the union of both
-all=""
-for env in acceptance production; do
-    r=$(load_rules "input/$env/rename.txt")
-    [ -n "$r" ] || continue
-    all="${all:+$all
-}$r"
-    apply_rules "$r" "docs/$env"
-done
-[ -n "$all" ] || { echo "display-rename: no input/<env>/rename.txt holds a usable rule; nothing to rename." >&2; exit 0; }
-apply_rules "$all" docs -maxdepth 1
+r=$(load_rules "input/rename.txt")
+[ -n "$r" ] || { echo "display-rename: input/rename.txt holds no usable rule; nothing to rename." >&2; exit 0; }
+apply_rules "$r" docs

@@ -48,7 +48,7 @@
 # An absent file reads as an empty map everywhere, so an EMPTY input/<env>/ip/ is
 # a valid starting state: the next flow-manager.sh rebuild fills it.
 
-IP_DIR="${IP_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/input/${AXWAY_ENV:-acceptance}/ip}"
+IP_DIR="${IP_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/input/ip}"
 IP_HOSTS_FILE="$IP_DIR/ip-hosts.tsv"
 
 # Replace OUT with TMP only when the content differs, so a re-resolution that

@@ -31,7 +31,7 @@ if publish_is_fresh "$STAMP" "$DOCS/transfer" "${BASH_SOURCE[0]}" \
        "$DATA/transfer/reports" "$DATA/flow-manager" \
        "$DATA/server/reports/_kaput-evidence.tsv" "$DATA/analyses/reports/_subs-boxes.tsv" \
        "$DATA/blue/_redflip.tsv" "bin/flip-reason.awk"; then
-    echo "docs/$SITE_ENV/transfer/ is up to date; skipping." >&2
+    echo "docs/transfer/ is up to date; skipping." >&2
     exit 0
 fi
 

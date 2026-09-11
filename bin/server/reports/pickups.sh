@@ -40,7 +40,7 @@ OUT="$REPORTS_DIR/pickups.rpt"
 PICKUPS="$REPORTS_DIR/uc2-pickups.tsv"
 SL="$CONFIG_XREF/_subscriptions-logins.tsv"
 TF="$TRANSFER_CACHE/_files.tsv"
-OLD="$(cd "$SCRIPT_DIR/../../.." && pwd)/input/$AXWAY_ENV/logons_old.txt"
+OLD="$(cd "$SCRIPT_DIR/../../.." && pwd)/input/logons_old.txt"
 
 if [ ! -s "$PICKUPS" ]; then
     echo "pickups: no $PICKUPS (no UC2 flows in this env) — page not published." >&2

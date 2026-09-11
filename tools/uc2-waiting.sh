@@ -3,7 +3,7 @@
 # tools/uc2-waiting.sh — STANDALONE helper (2026-08-31, user request; split
 # out of the former split-transfers.sh, and the detection corrected to the
 # site's own Waiting shape): from a raw SecureTransport transfer-log export
-# (transferLog_*.csv, the files under input/<env>/transfer/) write
+# (transferLog_*.csv, the files under input/transfer/) write
 #
 #   uc2_waiting.csv   every CoreId whose LAST leg (by Start Time) is an
 #                     INBOUND leg with protocol 'routing' — a UC2 file

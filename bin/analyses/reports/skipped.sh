@@ -26,7 +26,7 @@ mkdir -p "$REPORTS_DIR"
 CFG_SKIP="$CONFIG_DIR/filtered/_skipped.tsv"   # data/<env>/flow-manager/filtered/_skipped.tsv (type<TAB>name)
 T_SKIP="$DATA/transfer/_skipped.tsv"       # skipped transfer records
 S_SKIP="$DATA/server/_skipped.tsv"         # skipped server records
-SKIPFILE="$ROOT/input/$AXWAY_ENV/skip.txt" # the rules (per environment since 2026-08-31)
+SKIPFILE="$ROOT/input/skip.txt" # the rules (per environment since 2026-08-31)
 source "$ROOT/bin/skiplist.sh"             # SKIPLIST_AWK (sl_load/sl_match) — the ONE reader
 
 # All the inputs are parse-time products (the two _skipped.tsv sidecars and the
@@ -92,8 +92,8 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         # report with a fresh mtime for skip_if_fresh to trust. ----
         main = outdir "/skipped.rpt.tmp"
         printf "TITLE\tSkipped\n" > main
-        printf "DESC\tThe accounts, subscriptions and logins ignored because their name matches the skip list (input/%s/skip.txt), plus the transfer- and server-log records set aside for the same reason.\n", ENVIRON["AXWAY_ENV"] > main
-        printf "INTRO\tNames matching the **skip list** (**input/%s/skip.txt**, this environment'\''s own — %s) are removed at parse time — from the FlowManager config, the transfer logs and the server logs alike — so **no other report counts them**. On the configuration side matching is a case-insensitive **substring** of the account, subscription or comm-profile login name (a skipped login loses its detail page); the log records follow the rule kind (contains, exact or regex). The buttons below give a per-value report; this page lists them all.\n", ENVIRON["AXWAY_ENV"], (tokens == "" ? "(empty)" : tokens) > main
+        printf "DESC\tThe accounts, subscriptions and logins ignored because their name matches the skip list (input/skip.txt), plus the transfer- and server-log records set aside for the same reason.\n" > main
+        printf "INTRO\tNames matching the **skip list** (**input/skip.txt**, this checkout'\''s own — %s) are removed at parse time — from the FlowManager config, the transfer logs and the server logs alike — so **no other report counts them**. On the configuration side matching is a case-insensitive **substring** of the account, subscription or comm-profile login name (a skipped login loses its detail page); the log records follow the rule kind (contains, exact or regex). The buttons below give a per-value report; this page lists them all.\n", (tokens == "" ? "(empty)" : tokens) > main
         printf "KEYWORDS\tskip, skipped, ignore, ignored, exclude, excluded, filter, filtered, skip.txt, %s\n", tokens > main
         # totals across all values
         for (i = 1; i <= nt; i++) { TA += nacc[i]; TS += nsub[i]; TL += nlog[i]; TT += tcnt[i]; TV += scnt[i] }

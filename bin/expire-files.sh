@@ -35,15 +35,14 @@
 # its LAST outcome is Failed OR Expired (a Waiting last file stays green),
 # so a dead pickup flow never hides in green.
 #
-# Usage:  bin/expire-files.sh      (env from $AXWAY_ENV, default production)
+# Usage:  bin/expire-files.sh
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed
-source "$ROOT/bin/env.sh"       # resolve $AXWAY_ENV (acceptance|production, default production)
 
-DATA="$ROOT/data/$AXWAY_ENV"
+DATA="$ROOT/data"
 FILES="$DATA/transfer/cache/_files.tsv"
 SRV="$DATA/server/cache/_parse.tsv"
 DEL="$DATA/transfer/cache/_expired.tsv"   # extracted deletions: acct \t file \t date \t time

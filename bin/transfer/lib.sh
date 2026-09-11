@@ -2,19 +2,18 @@
 # of truth for every path, so reports just `source ../lib.sh` and use the vars
 # below (they no longer hardcode INPUT_DIR/DATA_DIR themselves); parse.sh sources
 # it too. Provides:
-# Every path below carries the ACTIVE ENVIRONMENT segment ($AXWAY_ENV from
-# bin/env.sh — acceptance|production, default acceptance), input/<env>/ip/
-# included: the two estates share no partners or endpoints, and a host name in
-# that map is the one CONFIGURED FOR THAT ENV.
-#   INPUT_DIR       raw log exports        (input/<env>/transfer/*.csv, gitignored)
-#   IP_DIR          the env's address<->endpoint map dir (input/<env>/ip/)
+# One repo = one environment (2026-09-11): the trees are flat (input/, data/,
+# docs/) — no environment segment anywhere; input/ip/ maps the addresses of
+# THIS checkout's configured hosts.
+#   INPUT_DIR       raw log exports        (input/transfer/*.csv, gitignored)
+#   IP_DIR          the address<->endpoint map dir (input/ip/)
 #   IP_HOSTS_FILE   the address -> endpoint map (ip<TAB>host): forward DNS over
 #                   the configured hosts. See bin/ip.sh (there is no reverse DNS).
-#   FM_INPUT_DIR    FlowManager config exports (input/<env>/flow-manager/*.json)
-#   CACHE_DIR       tokenized *.tsv caches (data/<env>/transfer/cache/, gitignored)
-#   REPORTS_DIR     generated *.rpt files  (data/<env>/transfer/reports/)
+#   FM_INPUT_DIR    FlowManager config exports (input/flow-manager/*.json)
+#   CACHE_DIR       tokenized *.tsv caches (data/transfer/cache/, gitignored)
+#   REPORTS_DIR     generated *.rpt files  (data/transfer/reports/)
 #   SERVER_CACHE / SERVER_REPORTS   the server area's cache/reports (cross-area reads)
-#   CONFIG_DIR      bin/flow-manager.sh's configured-entity caches (data/<env>/flow-manager/{base,xref}/_*.tsv)
+#   CONFIG_DIR      bin/flow-manager.sh's configured-entity caches (data/flow-manager/{base,xref}/_*.tsv)
 #   UNKNOWN_DIR / BLUE_TSV / ANALYSES_REPORTS   the env's data/ side-outputs
 #   PARSED/FILES                 the two transfer caches (in CACHE_DIR)
 #   ensure_parsed   (re)build the caches with parse.sh when they are stale
@@ -46,14 +45,13 @@
 LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"       # <area>/bin
 ROOT="$(cd "$LIB_DIR/../.." && pwd)"                          # repo root
 source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed (see bin/fastawk.sh)
-source "$ROOT/bin/env.sh"       # resolve $AXWAY_ENV (acceptance|production, default acceptance)
 AREA="$(basename "$LIB_DIR")"                    # transfer | server (the tool-set dir, bin/<area>)
-DATA="$ROOT/data/$AXWAY_ENV"                                  # the env's data root
-INPUT_DIR="$ROOT/input/$AXWAY_ENV/$AREA"
-IP_DIR="$ROOT/input/$AXWAY_ENV/ip"                            # PER ENV (the two estates share no endpoints)
-source "$ROOT/bin/ip.sh"         # IP_HOSTS_FILE (input/<env>/ip/ip-hosts.tsv) + ip_put
-FM_INPUT_DIR="$ROOT/input/$AXWAY_ENV/flow-manager"            # the env's FlowManager config exports
-# When bin/flow-manager.sh has written SKIP-filtered copies (input/<env>/skip.txt),
+DATA="$ROOT/data"
+INPUT_DIR="$ROOT/input/$AREA"
+IP_DIR="$ROOT/input/ip"
+source "$ROOT/bin/ip.sh"         # IP_HOSTS_FILE (input/ip/ip-hosts.tsv) + ip_put
+FM_INPUT_DIR="$ROOT/input/flow-manager"
+# When bin/flow-manager.sh has written SKIP-filtered copies (input/skip.txt),
 # every raw-JSON reader prefers them so the skipped accounts/subscriptions are
 # excluded everywhere, not just from the base/xref caches.
 [ -f "$DATA/flow-manager/filtered/partners.json" ] && FM_INPUT_DIR="$DATA/flow-manager/filtered"
@@ -114,7 +112,7 @@ ensure_parsed() {
        || [ ! -f "$FILES" ] \
        || [ "$LIB_DIR/parse.sh" -nt "$PARSED" ] \
        || [ -n "$(find "$CONFIG_XREF" -name '_*.tsv' -newer "$PARSED" 2>/dev/null)" ] \
-       || [ -n "$(find "$ROOT/input/$AXWAY_ENV/renames" -name '*.tsv' -newer "$PARSED" 2>/dev/null)" ] \
+       || [ -n "$(find "$ROOT/input/renames" -name '*.tsv' -newer "$PARSED" 2>/dev/null)" ] \
        || { [ -f "$CACHE_DIR/_sessionsites.tsv" ] && [ "$CACHE_DIR/_sessionsites.tsv" -nt "$PARSED" ]; } \
        || [ -n "$(find "$INPUT_DIR" -name '*.csv' -newer "$PARSED" 2>/dev/null)" ]; then
         stale=1

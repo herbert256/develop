@@ -96,7 +96,7 @@ LSUB="$DATA/flow-manager/xref/_logins-subscriptions.tsv"
 UCDF="$DATA/flow-manager/xref/_subscriptions-ucderived.tsv"
 TF="$DATA/transfer/cache/_files.tsv"
 SCACHE="$DATA/server/cache"
-OLD="$ROOT/input/$AXWAY_ENV/logons_old.txt"
+OLD="$ROOT/input/logons_old.txt"
 PICKUPS="$DATA/server/reports/uc2-pickups.tsv"   # uc2-status.sh's sidecar (server reports dir)
 # logon.sh's sidecar (2026-09-04, user request): login ⇥ Disallowed ⇥ Bad key ⇥
 # Key failures ⇥ Locked ⇥ Auth failed ⇥ Session errors (7th, 2026-09-06) — the Incoming funnel's problem counts,

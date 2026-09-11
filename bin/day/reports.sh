@@ -49,8 +49,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$ROOT"
 source bin/fastawk.sh   # route unqualified `awk` to mawk when installed
-source bin/env.sh       # resolve $AXWAY_ENV (acceptance|production, default acceptance)
-DATA="data/$AXWAY_ENV"  # the env's data root
+DATA="data"
 
 RPTDIR="$DATA/day/reports"
 mkdir -p "$RPTDIR"
@@ -82,7 +81,7 @@ if [ -n "$oldest_rpt" ]; then
         if [ -f "$dep" ] && [ "$dep" -nt "$oldest_rpt" ]; then stale=1; break; fi
     done
     if [ "$stale" = 0 ]; then
-        echo "  data/$AXWAY_ENV/day/reports/ is up to date; skipping." >&2
+        echo "  data/day/reports/ is up to date; skipping." >&2
         exit 0
     fi
 fi

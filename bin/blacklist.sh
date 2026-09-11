@@ -35,9 +35,7 @@
 SCRIPT_DIR_BL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # PER ENVIRONMENT since 2026-08-31 (user request): input/<env>/blacklist.txt —
 # the two estates are different platforms with different internal values.
-# $AXWAY_ENV comes from bin/env.sh (sourced here when the caller has not).
-[ -n "${AXWAY_ENV:-}" ] || source "$SCRIPT_DIR_BL/env.sh"
-BLACKLIST_FILE="${BLACKLIST_FILE:-$(cd "$SCRIPT_DIR_BL/.." && pwd)/input/$AXWAY_ENV/blacklist.txt}"
+BLACKLIST_FILE="${BLACKLIST_FILE:-$(cd "$SCRIPT_DIR_BL/.." && pwd)/input/blacklist.txt}"
 export BLACKLIST_FILE
 
 # NOTE: no single quotes inside this program — it is carried in a

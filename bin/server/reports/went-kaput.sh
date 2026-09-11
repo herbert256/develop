@@ -75,7 +75,7 @@ SL="$CONFIG_XREF/_subscriptions-logins.tsv"
 SH="$CONFIG_XREF/_subscriptions-hosts.tsv"
 SUBRES="$CONFIG_BASE/_subscriptions.tsv"
 EVID="$REPORTS_DIR/_kaput-evidence.tsv"
-IPH="$ROOT/input/$AXWAY_ENV/ip/ip-hosts.tsv"
+IPH="$ROOT/input/ip/ip-hosts.tsv"
 # the DERIVED use case map: a production hybrid flow carries no UC prefix, so
 # "is this a UC3" must ask the config, not the name (2026-08-31 audit)
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null

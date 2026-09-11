@@ -53,12 +53,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed
-source "$ROOT/bin/env.sh"       # resolve $AXWAY_ENV (acceptance|production, default acceptance)
 
-BASE="$ROOT/data/$AXWAY_ENV/flow-manager/base"
-XREF="$ROOT/data/$AXWAY_ENV/flow-manager/xref"
-FILES="$ROOT/data/$AXWAY_ENV/transfer/cache/_files.tsv"
-UNK="$ROOT/data/$AXWAY_ENV/unknown"
+BASE="$ROOT/data/flow-manager/base"
+XREF="$ROOT/data/flow-manager/xref"
+FILES="$ROOT/data/transfer/cache/_files.tsv"
+UNK="$ROOT/data/unknown"
 # SSH-logon-seen names (bin/build/seen-in-server-log.sh Step F0): a login/account/IP still
 # ORANGE after the rollup below, named in the server SSH-logon lines, AND with no
 # real transfer data (no green/red connected subscription) is server-log-only ->
@@ -88,8 +87,8 @@ commit_tmp() {   # $1 = final path; expects $1.tmp
 # Source: the per-name server mention caches (last 25 rows + last 10
 # Error/Warn per subscription, bin/server/parse.sh) — present once the server
 # parse ran; a missing dir just leaves the list empty.
-SUBMENT="$ROOT/data/$AXWAY_ENV/server/cache/subscriptions"
-BLUEDIR="$ROOT/data/$AXWAY_ENV/blue"
+SUBMENT="$ROOT/data/server/cache/subscriptions"
+BLUEDIR="$ROOT/data/blue"
 POLLOK="$BLUEDIR/_greenpoll.tsv"
 POLLCAND="$BLUEDIR/_greenpoll.cand"   # candidates; stage 1 writes the final list
 # The UC3 CONNECTION-FAILURE STREAK (2026-09-05, user rule): a "Connection
@@ -190,7 +189,7 @@ discover_logged() {   # $1 = base name  $2 = the awk condition picking its colum
     # not know the new names — their detail pages would lose the server-log
     # table. The same marker seen-in-server-log.sh drops for an appended name;
     # bin/build.sh rescans once, right after this step.
-    : > "$ROOT/data/$AXWAY_ENV/server/cache/.rescan-mentions" 2>/dev/null || true
+    : > "$ROOT/data/server/cache/.rescan-mentions" 2>/dev/null || true
 }
 discover_logged subscriptions sub
 discover_logged hosts host
@@ -206,9 +205,9 @@ discover_logged hosts host
 # connected-ring newest E of the went-kaput join — _build_kaputflip below,
 # deploy-classified flows excluded — so a trouble-after-success flow reads
 # RED on the home worklist rather than green beside it.
-IPH_P="$ROOT/input/$AXWAY_ENV/ip/ip-hosts.tsv"; [ -f "$IPH_P" ] || IPH_P=/dev/null
-TRANSFERS="$ROOT/data/$AXWAY_ENV/transfer/cache/_transfers.tsv"
-SRVC="$ROOT/data/$AXWAY_ENV/server/cache"
+IPH_P="$ROOT/input/ip/ip-hosts.tsv"; [ -f "$IPH_P" ] || IPH_P=/dev/null
+TRANSFERS="$ROOT/data/transfer/cache/_transfers.tsv"
+SRVC="$ROOT/data/server/cache"
 source "$ROOT/bin/renames.sh"   # rn_canon_pfx: the log names a flow as it was called THEN
 
 # ---- connected-ring Error/Warn lines, ATTRIBUTED to one subscription --------
@@ -779,7 +778,7 @@ rollup bl       bl-subscriptions
 # log" box. The evidence map (latest line per type+value) is produced by
 # bin/build/seen-in-server-log.sh, which ran just before. Rewritten from scratch each run, so a
 # name that stopped being blue leaves no stale file behind.
-BLUEDIR="$ROOT/data/$AXWAY_ENV/blue"
+BLUEDIR="$ROOT/data/blue"
 EVID="$BLUEDIR/_evidence.tsv"
 # (no whitelisted-ip entry: IPs have no detail pages, so nothing ever read
 # blue/whitelisted-ip/*.txt — dropped 2026-07)

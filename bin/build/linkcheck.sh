@@ -4,35 +4,30 @@
 #
 # A static check over the whole published tree: it resolves every internal
 # href/src against the filesystem and then walks the link graph from the shared
-# home to find pages nothing points at. Both environments at once (like
-# crosslink.sh) — the env switch and the shared root pages are cross-env links,
-# so one env in isolation cannot be checked.
+# home to find pages nothing points at (one tree — one repo = one environment
+# since 2026-09-11).
 #
 # THE TOP BAR IS RUNTIME, and that is the whole difficulty. Since 2026-07 the
-# publishes bake only an empty `<div class="topbar" data-eb=… data-b=…
-# data-help=… data-twin=…>` and report.js's buildTopbar renders the real bar
+# publishes bake only an empty `<div class="topbar" data-b=… data-help=…>`
+# and report.js's buildTopbar renders the real bar
 # from docs/assets/topbar-data.js. A naive href scan therefore finds almost no
 # navigation at all and calls ~2,600 pages unreachable. This models what
 # buildTopbar emits, from the page's own attributes:
-#   - every menu href in topbar-data.js, its "@" placeholder replaced by data-eb
+#   - every menu href in topbar-data.js, its "@" placeholder replaced by data-b
 #   - brand -> data-b + index.html
-#   - data-eb + dashboards/index.html, report-finder.html, search.html,
+#   - data-b + dashboards/index.html, report-finder.html, search.html,
 #     sitemap.html, transfer/entities/subscription-all.html
 #   - the help icon  -> data-b + help/<data-help>.html
-#   - the env switch -> data-twin  (on the shared root pages it is a
-#     data-target JS toggle with no href, so there is nothing to check)
 # A page whose topbar div is NOT empty has a baked bar (help pages, the build
 # report — render_shared_topbar) and is scanned normally.
 #
 # Entity Search ships its rows as DATA, not markup (split_search_rows lifts them
-# into docs/<env>/search-data.js), so its ~7,500 detail links live in the .js —
+# into docs/search-data.js), so its ~7,500 detail links live in the .js —
 # they are read from there and counted as edges from search.html.
 #
 # EXPECTED-UNREACHABLE (not failures, listed for confirmation):
 #   docs/404.html            what GitHub Pages serves for an unmatched URL;
-#                            nothing should link it. The per-env 404s ARE
-#                            linked — crosslink.sh points a twin-less page at
-#                            docs/<other>/404.html.
+#                            nothing should link it.
 #   (the build report left docs/ entirely 2026-08-29 — build/index.html is
 #   local only, so no build.html expectation remains)
 #
@@ -40,7 +35,7 @@
 # beyond the expected set are reported and also fail the run — a page nothing
 # links to is dead weight in the published site.
 #
-# Usage:  bin/build/linkcheck.sh          # both envs, ~1 s over 2,900 pages
+# Usage:  bin/build/linkcheck.sh          # ~1 s over ~3,000 pages
 #         bin/build/linkcheck.sh -q       # summary only (no per-item detail)
 #
 set -euo pipefail
@@ -129,17 +124,15 @@ awk -v DOCS="$DOCS" '
                 rest = substr(txt, RSTART + RLENGTH)
                 sub(/^[ \t\r\n]+/, "", rest)
                 if (index(rest, "</div>") == 1) {
-                    eb = attr(d, "data-eb"); b = attr(d, "data-b")
-                    hlp = attr(d, "data-help"); twin = attr(d, "data-twin")
-                    for (i = 1; i <= MENUN; i++) { h = MENU[i]; gsub(/@/, eb, h); edge(page, h) }
+                    b = attr(d, "data-b"); hlp = attr(d, "data-help")
+                    for (i = 1; i <= MENUN; i++) { h = MENU[i]; gsub(/@/, b, h); edge(page, h) }
                     edge(page, b "index.html")
-                    edge(page, eb "dashboards/index.html")
-                    edge(page, eb "report-finder.html")
-                    edge(page, eb "search.html")
-                    edge(page, eb "sitemap.html")
-                    edge(page, eb "transfer/entities/subscription-all.html")
-                    if (hlp  != "") edge(page, b "help/" hlp ".html")
-                    if (twin != "") edge(page, twin)
+                    edge(page, b "dashboards/index.html")
+                    edge(page, b "report-finder.html")
+                    edge(page, b "search.html")
+                    edge(page, b "sitemap.html")
+                    edge(page, b "transfer/entities/subscription-all.html")
+                    if (hlp != "") edge(page, b "help/" hlp ".html")
                 }
             }
         }

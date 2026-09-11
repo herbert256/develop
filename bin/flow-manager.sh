@@ -89,21 +89,20 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed (see bin/fastawk.sh)
-source "$ROOT/bin/env.sh"       # resolve $AXWAY_ENV (acceptance|production, default production)
-IP_DIR="$ROOT/input/$AXWAY_ENV/ip"                 # PER ENV (the two estates share no endpoints)
+IP_DIR="$ROOT/input/ip"
 source "$ROOT/bin/ip.sh"        # IP_HOSTS_FILE (input/<env>/ip/ip-hosts.tsv) + ip_put
 source "$ROOT/bin/renames.sh"  # RENAMES_FILE (input/<env>/renames/) + fm_snapshot_renames
-OUT="$ROOT/data/$AXWAY_ENV/flow-manager"
+OUT="$ROOT/data/flow-manager"
 # The two FlowManager config exports. Like the log CSVs they live under the
 # gitignored input/ root and are NOT in git — a fresh clone needs them dropped
 # into input/<env>/flow-manager/ before the configured lists (and the parse
 # fallback) exist.
-PARTNERS="$ROOT/input/$AXWAY_ENV/flow-manager/partners.json"
-SUBS="$ROOT/input/$AXWAY_ENV/flow-manager/subscriptions.json"
+PARTNERS="$ROOT/input/flow-manager/partners.json"
+SUBS="$ROOT/input/flow-manager/subscriptions.json"
 # The flow-template catalog export is OPTIONAL — without it xref/_templates.tsv
 # is written empty and the Use-cases analyses degrade (no template table, no
 # zero-subscription UC rows).
-TEMPLATES="$ROOT/input/$AXWAY_ENV/flow-manager/templates.json"
+TEMPLATES="$ROOT/input/flow-manager/templates.json"
 
 [ -f "$PARTNERS" ] || { echo "flow-manager.sh: input/flow-manager/partners.json not found" >&2; exit 1; }
 [ -f "$SUBS" ]     || { echo "flow-manager.sh: input/flow-manager/subscriptions.json not found" >&2; exit 1; }
@@ -124,7 +123,7 @@ mkdir -p "$BASE" "$XREF"
 # FM_INPUT_DIR). The skipped config names are recorded in _skipped.tsv for the
 # "Skipped" analyses report. cmp-guarded writes keep mtimes stable so the
 # downstream freshness checks don't re-fire on a no-change run.
-SKIPFILE="$ROOT/input/$AXWAY_ENV/skip.txt"
+SKIPFILE="$ROOT/input/skip.txt"
 # RETIRED 2026-09-01 (user request): the hand-curated partner alias map
 # (input/<env>/partner-aliases.tsv) is folded into the PART REPLACEMENTS
 # below — bin/build/migrate-input.sh moves a checkout's pairs into
@@ -132,19 +131,19 @@ SKIPFILE="$ROOT/input/$AXWAY_ENV/skip.txt"
 # the FIXED FlowID -> Logical transforms (input/<env>/logical.txt, COMMITTED
 # in develop) — consumed by the LOGICAL derivation block below; a pin edit
 # re-derives the caches (and, through them, everything downstream).
-LOGICALF="$ROOT/input/$AXWAY_ENV/logical.txt"
+LOGICALF="$ROOT/input/logical.txt"
 # the three PART-REPLACEMENT maps for the Logical-based PDA derivation
 # (input/<env>/logical_{domains,apps,partners}.txt — FROM<ws>TO per line):
 # part 1/2/3 of a three-part Logical name equal to FROM becomes TO before it
 # turns into the domain / application / partner-merge token. The Logical
 # entity name itself is untouched. Freshness deps like the others.
-LOGDOMF="$ROOT/input/$AXWAY_ENV/logical_domains.txt"
-LOGAPPF="$ROOT/input/$AXWAY_ENV/logical_apps.txt"
-LOGPTNF="$ROOT/input/$AXWAY_ENV/logical_partners.txt"
+LOGDOMF="$ROOT/input/logical_domains.txt"
+LOGAPPF="$ROOT/input/logical_apps.txt"
+LOGPTNF="$ROOT/input/logical_partners.txt"
 # the BL numbers per subscription (input/<env>/BL.txt — 2026-08-31, user
 # request): a second source beside the subscriptions.json tags, unioned into
 # _subscriptions-bl; a freshness dep like the rest
-BLF="$ROOT/input/$AXWAY_ENV/BL.txt"
+BLF="$ROOT/input/BL.txt"
 source "$ROOT/bin/skiplist.sh"   # skip_values() — the ONE reader for input/<env>/skip.txt
 SKIPDIR="$OUT/filtered"                 # the filtered partners/subscriptions/templates.json
 # The skipped-config sidecar lives INSIDE filtered/ (NOT directly in $OUT) so
@@ -1111,7 +1110,7 @@ _bltag="$XREF/.bl.tag.$$"; _bladd="$XREF/.bl.add.$$"
     fi
 } | LC_ALL=C sort -u > "$_bltag"
 {   if [ -s "$BLF" ] && [ -f "$BASE/_subscriptions.tsv" ]; then
-        awk -F'\t' -v BLF="$BLF" -v ENVN="$AXWAY_ENV" '
+        awk -F'\t' -v BLF="$BLF" '
             FILENAME != BLF { if ($1 != "") CFG[toupper($1)] = $1; next }
             { l = $0; sub(/\r$/, "", l); sub(/^[ \t]+/, "", l)
               if (l ~ /^#/ || l == "") next
@@ -1124,7 +1123,7 @@ _bltag="$XREF/.bl.tag.$$"; _bladd="$XREF/.bl.add.$$"
               v = a[2]; for (j = 3; j <= n; j++) v = v a[j]
               m = split(v, B, ",")
               for (j = 1; j <= m; j++) if (B[j] != "") print CFG[k] "\t" B[j] }
-            END { if (unk) printf "flow-manager.sh: [%s] input/%s/BL.txt: %d row(s) name a subscription this environment does not configure (skipped): %s%s\n", ENVN, ENVN, unk, ul, (unk > 8 ? ", ..." : "") > "/dev/stderr" }
+            END { if (unk) printf "flow-manager.sh: input/BL.txt: %d row(s) name a subscription this checkout does not configure (skipped): %s%s\n", unk, ul, (unk > 8 ? ", ..." : "") > "/dev/stderr" }
         ' "$BASE/_subscriptions.tsv" "$BLF"
     fi
 } | LC_ALL=C sort -u > "$_bladd"

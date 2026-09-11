@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # fresh.sh — the FULL FRESH BUILD in one command (2026-08-29): wipe every
-# derived tree and rebuild both environments from the raw inputs.
+# derived tree and rebuild this checkout's one environment from the raw inputs.
 #
 #   1. clear build/ — every prior run's report, step logs and (runtime) the
 #                     st-reports archives (2026-08-30: their keepers are the
@@ -14,13 +14,13 @@
 #   4. seed docs/   — the hand-authored files from the repo-root assets/
 #                     (style.css / report.js / slotchart.js / file-search.js
 #                     -> docs/assets/, assets/help/ -> docs/help/)
-#   5. bin/build.sh — the whole chain, both environments (build.sh re-clears
+#   5. bin/build.sh — the whole chain (build.sh re-clears
 #                     its scope and re-seeds on its own; the explicit steps
 #                     above make THIS script's contract obvious and cover a
 #                     build.sh that dies before its own clear)
 #
-# No arguments — a fresh build is always BOTH environments (a scoped wipe
-# would delete the other env's data without rebuilding it).
+# No arguments — one repo = one environment (2026-09-11); a fresh build
+# always wipes and rebuilds the whole site.
 #
 # Usage:
 #   bin/fresh.sh
@@ -29,7 +29,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 if [ $# -gt 0 ]; then
-    printf 'bin/fresh.sh takes no arguments (a fresh build is always both environments).\n' >&2
+    printf 'bin/fresh.sh takes no arguments (it wipes data/ + docs/ and rebuilds the whole site — one repo, one environment).\n' >&2
     exit 2
 fi
 

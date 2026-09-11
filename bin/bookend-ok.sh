@@ -43,15 +43,14 @@
 # _reasonlines.tsv (the classifying E/W lines with their session + ids),
 # both re-extracted only when the server cache or this script is newer.
 #
-# Usage:  bin/bookend-ok.sh      (env from $AXWAY_ENV, default production)
+# Usage:  bin/bookend-ok.sh
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed
-source "$ROOT/bin/env.sh"       # resolve $AXWAY_ENV (acceptance|production, default production)
 
-DATA="$ROOT/data/$AXWAY_ENV"
+DATA="$ROOT/data"
 FILES="$DATA/transfer/cache/_files.tsv"
 TRANSFERS="$DATA/transfer/cache/_transfers.tsv"
 SRV="$DATA/server/cache/_parse.tsv"

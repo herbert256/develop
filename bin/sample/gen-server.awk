@@ -4,7 +4,7 @@
 # embedded quotes doubled; the \x01 placeholder becomes a REAL newline inside
 # the quoted Message — the multi-line record shape the parser re-joins.
 #
-#   awk -F'\t' -f prelude.awk -f gen-server.awk -v DIR=input/<env>/server
+#   awk -F'\t' -f prelude.awk -f gen-server.awk -v DIR=input/server
 BEGIN {
     HDR = "Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account or Login, Stack Trace, Activity, Transferred File, Client Hostname, Edge Hostname, Server Hostname, Node Name, Session ID, Session Start Time, Transfer ID"
     LV["I"] = "INFO"; LV["W"] = "WARN"; LV["E"] = "ERROR"

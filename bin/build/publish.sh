@@ -1,19 +1,14 @@
 #!/usr/bin/env bash
 #
 # bin/build/publish.sh — write the index pages of the site:
-#   docs/index.html                   the ONE SHARED root landing page (all
-#                                     parts centered): per ENVIRONMENT
-#                                     (acceptance + production) an .envblock
-#                                     holding the two result-status tables and
-#                                     the log-files table; the top-bar env
-#                                     label toggles which block shows
-#                                     (report.js, default production).
-#                                     Always rewritten reading BOTH envs from
-#                                     disk, so per-env build passes are
-#                                     idempotent.
-#   docs/<env>/transfer/index.html    the active env's transfer report catalog
-#
-#   docs/<env>/server/index.html      the active env's server report catalog
+#   docs/index.html            the root landing page (all parts centered):
+#                              the two result-status tables, the per-day
+#                              table, the red worklists and the log-files
+#                              table — one environment per checkout since
+#                              2026-09-11, so ONE block; the title carries the
+#                              environment label (input/environment.txt)
+#   docs/transfer/index.html   the transfer report catalog
+#   docs/server/index.html     the server report catalog
 #
 # Labels/descriptions come from each report's TITLE/DESC (via publish_lib.sh's
 # area_entries). This reads the .rpt files, not the rendered HTML, so it does not
@@ -32,11 +27,11 @@ source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines area_e
 
 ensure_assets   # ALWAYS — see the note in bin/transfer/publish.sh
 
-# The index pages, the finder, the sitemap and the shared home are written from
-# BOTH env trees, and the per-area publishes CLEAR the dirs the index pages
-# live in — so this must re-run whenever any of them did. Their stamp files
-# are the signal: data/<env>/.publish holds one per completed publish, so
-# depending on both dirs says exactly "did anything get re-rendered".
+# The index pages, the finder, the sitemap and the home are written from the
+# data tree, and the per-area publishes CLEAR the dirs the index pages live
+# in — so this must re-run whenever any of them did. Their stamp files are
+# the signal: data/.publish holds one per completed publish, so depending on
+# them says exactly "did anything get re-rendered".
 # Also read directly: every area's .rpt (the index labels come from TITLE/DESC),
 # docs/help/ (the sitemap's help card) and the git history (What is new).
 STAMP="$PUBLISH_STAMP_DIR/index.stamp"
@@ -45,20 +40,15 @@ STAMP="$PUBLISH_STAMP_DIR/index.stamp"
 # sitemap's Build-report link, gone 2026-08-29 with the docs/ build report)
 if [ -f docs/index.html ] && publish_is_fresh "$STAMP" "$DOCS" "${BASH_SOURCE[0]}" \
        $(publish_area_stamps) \
-       data/acceptance/transfer/reports data/production/transfer/reports \
-       data/acceptance/server/reports data/production/server/reports \
-       data/acceptance/dashboards/reports data/production/dashboards/reports \
-       data/acceptance/analyses/reports data/production/analyses/reports \
-       docs/help .git/HEAD .git/refs/heads .git/packed-refs; then
-    echo "docs/$SITE_ENV index pages are up to date; skipping." >&2
+       data/transfer/reports data/server/reports data/dashboards/reports data/analyses/reports \
+       docs/help input/environment.txt .git/HEAD .git/refs/heads .git/packed-refs; then
+    echo "index pages are up to date; skipping." >&2
     exit 0
 fi
 
 # Give the hand-authored help pages the EXACT site top bar + footer (the user
 # asked for one consistent interface). The help BODY stays hand-authored; only
-# the chrome is regenerated — render_shared_topbar, env-neutral (production-
-# rooted, inert env switch). Runs in the PRODUCTION pass only (the default env
-# since 2026-08-31, like the shared home). A leftover footer bar from before its 2026-07 removal
+# the chrome is regenerated — render_shared_topbar. A leftover footer bar from before its 2026-07 removal
 # is DROPPED here, so the hand-authored help pages need no manual edit.
 # This is the one publish step that writes into docs/help/ (see CLAUDE.md).
 apply_help_chrome() {
@@ -177,7 +167,7 @@ write_area_index() {   # $1 area  $2 title ; remaining args = ordered basenames
 # <TAB>5 first-seen counts" line per date. FILENAME (not FNR==NR) keys the
 # source (path segment, env-agnostic), so a missing file just drops its
 # columns.
-daily_loglines_tsv() {   # $1 = env data root, e.g. data/acceptance
+daily_loglines_tsv() {   # $1 = the data root (data)
     # The day list is the TRANSFER topview's days only: all four data groups
     # (Files / Duration / Red/Green switch / First seen) are transfer-derived,
     # so a server-only day — the server export runs a day ahead of the
@@ -339,7 +329,7 @@ daily_loglines_tsv() {   # $1 = env data root, e.g. data/acceptance
 # One Status cell (mirrors bin/analyses/publish.sh's st_cell): a 0 renders
 # blank; a nonzero value links its coverage cell page when that page exists.
 # $3 = the coverage href RELATIVE TO THE DOCS ROOT — the shared home's hrefs
-# carry the env prefix ("acceptance/coverage/…"), so the existence check is
+# carry the docs-root prefix ("coverage/…"), so the existence check is
 # against docs/, never the env-scoped $DOCS.
 _stcell() {   # $1 value  $2 class  [$3 coverage href, docs-root-relative]
     if [ "${1:-0}" = 0 ]; then printf '<td class="%s"></td>' "$2"; return 0; fi
@@ -555,11 +545,10 @@ _durcell() {   # $1 class-or-"-"  $2 value-or-"-"
 }
 
 # One per-day Date cell (the four per-day tables): sets $dcc to the escaped
-# date, linked to the day's combined dashboard when that page exists. Reads
-# $env from the caller (write_env_block).
+# date, linked to the day's combined dashboard when that page exists.
 _daycell() {   # $1 = date
     esc "$1"; dcc=$ESC
-    [ -f "docs/$env/day/$1.html" ] && dcc="<a href=\"$env/day/$1.html\">$ESC</a>"
+    [ -f "docs/day/$1.html" ] && dcc="<a href=\"day/$1.html\">$ESC</a>"
     return 0
 }
 
@@ -620,8 +609,8 @@ _daycell() {   # $1 = date
 # holds more than 15 rows. cap14 is the shared cap CLASS, not the count —
 # the hidden set is whatever rows the publish marked capx.
 # ---------------------------------------------------------------------------
-write_failing_now() {   # $1 = env
-    local env=$1 rows1 rows2
+write_failing_now() {
+    local rows1 rows2
     local base="$HOME_ENV_DATA/flow-manager/base/_subscriptions.tsv"
     [ -f "$base" ] || return 0
     local boxes="$HOME_ENV_DATA/analyses/reports/_subs-boxes.tsv"
@@ -758,7 +747,7 @@ write_failing_now() {   # $1 = env
             [ -n "$site" ] || continue
             rown=$((rown + 1)); trc=""
             [ -n "$cap1" ] && [ "$rown" -gt 15 ] && trc=' class="capx"'
-            href="$env/errors/$cid.html"
+            href="errors/$cid.html"
             [ "$reason" = "-" ] && reason=""
             esc "$site";    local hsite=$ESC
             esc "$reason";  local hreas=$ESC
@@ -789,7 +778,7 @@ write_failing_now() {   # $1 = env
             rown=$((rown + 1)); trc=""
             [ -n "$cap2" ] && [ "$rown" -gt 15 ] && trc=' class="capx"'
             # slugify mirrors the detail-page slug rule
-            href="$env/details/subscriptions/$(slugify "$site").html"
+            href="details/subscriptions/$(slugify "$site").html"
             # A RED row opens the flow's OWN error page instead (2026-08):
             # errors/<slug>.html, named by the subscription — failed.sh
             # writes one for every table-2 red (server-reddened or file-less),
@@ -799,8 +788,8 @@ write_failing_now() {   # $1 = env
             [ "$lastf"  = "-" ] && lastf=""
             [ "$reason" = "-" ] && reason=""
             case $colr in red|green) ;; *) colr=red ;; esac
-            if [ "$colr" = red ] && [ -f "docs/$env/errors/$(slugify "$site").html" ]; then
-                href="$env/errors/$(slugify "$site").html"
+            if [ "$colr" = red ] && [ -f "docs/errors/$(slugify "$site").html" ]; then
+                href="errors/$(slugify "$site").html"
             fi
             esc "$site";   local hsite2=$ESC
             esc "${lastf:0:16}"; local hlast=$ESC   # minutes precision — no seconds/.mmm (2026-08)
@@ -903,16 +892,15 @@ write_log_facts() {
     printf '</table></div>\n'
 }
 
-# ONE environment's home-page content: the status pair + "The log files"
-# table, all links prefixed "<env>/…" (docs-root-relative — the home lives at
-# the docs root). $1 = the env name. Reads $HOME_ENV_DATA (set by the caller).
-write_env_block() {
-    local env=$1
+# The home-page content: the status pair, the per-day table, the red
+# worklists and "The log files" table, all links docs-root-relative (the home
+# lives at the docs root). Reads $HOME_ENV_DATA (set by the caller).
+write_home_block() {
     # The two result-status tables (copied from the Flow manager Entities /
     # Logical, Partners, Domains, Applications & BL analyses pages), side by side with
     # coverage links — a status snapshot at the TOP of the landing page.
     if [ -f "$HOME_ENV_DATA/analyses/reports/home.rpt" ] || [ -f "$HOME_ENV_DATA/flow-manager/base/_subscriptions.tsv" ]; then
-        write_status_pair "$env/coverage/"
+        write_status_pair "coverage/"
     fi
     # The per-day figures: the column groups of ONE table (Transfers / Files /
     # UC2 state / Duration / First seen) further down — one data pass feeds
@@ -1023,14 +1011,14 @@ write_env_block() {
                 # request), the way the Error cell beside it opens its view.
                 if [ "$frv" = "-" ] || [ "$frv" = 0 ] || [ -z "$frv" ]; then printf '<td class="num warn"></td>'; else
                     esc "$(dotify "$frv")"
-                    if [ -f "docs/$env/transfer/recovered-files.html" ]; then
-                        printf '<td class="num warn"><a href="%s/transfer/recovered-files.html?axway_date=%s">%s</a></td>' "$env" "$d" "$ESC"
+                    if [ -f "docs/transfer/recovered-files.html" ]; then
+                        printf '<td class="num warn"><a href="transfer/recovered-files.html?axway_date=%s">%s</a></td>' "$d" "$ESC"
                     else printf '<td class="num warn">%s</td>' "$ESC"; fi
                     frvsum=$((frvsum + frv)); fi
                 if [ "$fer" = "-" ] || [ "$fer" = 0 ]; then printf '<td class="num failed z"></td>'; else
                     esc "$(dotify "$fer")"
-                    if [ -f "docs/$env/transfer/entities/subscription-all.html" ]; then
-                        printf '<td class="num failed"><a href="%s/transfer/entities/subscription-all.html?axway_date=%s&amp;axway_sort=6:-1">%s</a></td>' "$env" "$d" "$ESC"
+                    if [ -f "docs/transfer/entities/subscription-all.html" ]; then
+                        printf '<td class="num failed"><a href="transfer/entities/subscription-all.html?axway_date=%s&amp;axway_sort=6:-1">%s</a></td>' "$d" "$ESC"
                     else printf '<td class="num failed">%s</td>' "$ESC"; fi; fi
                 [ "$fok" != "-" ] && foksum=$((foksum + fok)); [ "$fer" != "-" ] && fersum=$((fersum + fer))
                 if [ "$fpc" = "-" ]; then printf '<td class="num"></td>'; else
@@ -1043,12 +1031,12 @@ write_env_block() {
             # (red) Files of the day; a nonzero cell opens the report ——
             if [ "$twt" = "-" ] || [ "$twt" = 0 ] || [ -z "$twt" ]; then printf '<td class="num warn"></td>'; else
                 esc "$(dotify "$twt")"
-                if [ -f "docs/$env/transfer/waiting.html" ]; then printf '<td class="num warn"><a href="%s/transfer/waiting.html">%s</a></td>' "$env" "$ESC"
+                if [ -f "docs/transfer/waiting.html" ]; then printf '<td class="num warn"><a href="transfer/waiting.html">%s</a></td>' "$ESC"
                 else printf '<td class="num warn">%s</td>' "$ESC"; fi
                 twtsum=$((twtsum + twt)); fi
             if [ "$txp" = "-" ] || [ "$txp" = 0 ] || [ -z "$txp" ]; then printf '<td class="num errc z"></td>'; else
                 esc "$(dotify "$txp")"
-                if [ -f "docs/$env/transfer/expired.html" ]; then printf '<td class="num errc"><a href="%s/transfer/expired.html">%s</a></td>' "$env" "$ESC"
+                if [ -f "docs/transfer/expired.html" ]; then printf '<td class="num errc"><a href="transfer/expired.html">%s</a></td>' "$ESC"
                 else printf '<td class="num errc">%s</td>' "$ESC"; fi
                 txpsum=$((txpsum + txp)); fi
             printf '<td class="spc"></td>'
@@ -1064,8 +1052,8 @@ write_env_block() {
                 v=${c#*:}
                 if [ "$v" = "-" ] || [ "$v" = 0 ] || [ -z "$v" ]; then printf '<td class="num"></td>'; continue; fi
                 esc "$(dotify "$v")"
-                if [ -f "docs/$env/first-seen/${c%%:*}-$d.html" ]; then
-                    printf '<td class="num"><a href="%s/first-seen/%s-%s.html">%s</a></td>' "$env" "${c%%:*}" "$d" "$ESC"
+                if [ -f "docs/first-seen/${c%%:*}-$d.html" ]; then
+                    printf '<td class="num"><a href="first-seen/%s-%s.html">%s</a></td>' "${c%%:*}" "$d" "$ESC"
                 else printf '<td class="num">%s</td>' "$ESC"; fi
             done
             printf '</tr>\n'
@@ -1081,7 +1069,7 @@ write_env_block() {
         local frvt=""
         if [ "$frvsum" -gt 0 ]; then esc "$(dotify "$frvsum")"; frvt=$ESC
             # the whole-window Recovered total opens the report unnarrowed
-            [ -f "docs/$env/transfer/recovered-files.html" ] && frvt="<a href=\"$env/transfer/recovered-files.html\">$ESC</a>"; fi
+            [ -f "docs/transfer/recovered-files.html" ] && frvt="<a href=\"transfer/recovered-files.html\">$ESC</a>"; fi
         # the Duration total = the report's own overall percentiles (a
         # percentile cannot be summed); empty cells when the report is absent
         [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'
@@ -1101,8 +1089,8 @@ write_env_block() {
             v=${c#*:}
             if [ -z "$v" ] || [ "$v" = 0 ]; then fstot="$fstot<td class=\"num\"></td>"; continue; fi
             esc "$(dotify "$v")"
-            if [ -f "docs/$env/first-seen/${c%%:*}-seen.html" ]; then
-                fstot="$fstot<td class=\"num\"><a href=\"$env/first-seen/${c%%:*}-seen.html\">$ESC</a></td>"
+            if [ -f "docs/first-seen/${c%%:*}-seen.html" ]; then
+                fstot="$fstot<td class=\"num\"><a href=\"first-seen/${c%%:*}-seen.html\">$ESC</a></td>"
             else fstot="$fstot<td class=\"num\">$ESC</td>"; fi
         done
         # the Transfers and State totals (2026-09-06)
@@ -1119,26 +1107,8 @@ write_env_block() {
         # tablewrap above it
         [ -n "$capcls" ] && printf '<button class="showallbtn" type="button">Show all</button>\n'
     fi
-    write_failing_now "$env"
+    write_failing_now
     write_log_facts
-}
-
-# The active environment's own 404 page (docs/<env>/404.html) — the target
-# bin/build/crosslink.sh points an env-switch link at when a page has NO TWIN in
-# this environment, so the switch never lands on the webserver's error page.
-# Standard top-bar chrome (the page sits at the env root: css href
-# "assets/style.css" -> envbase "", base "../").
-write_env_404() {
-    local out="$DOCS/404.html" envlabel
-    case $SITE_ENV in production) envlabel="Production" ;; *) envlabel="Acceptance" ;; esac
-    {
-        html_head "Page not found — $envlabel" "assets/style.css" "" "" "general"
-        printf '<h1>Page not found</h1>\n'
-        printf '<p class="subtitle">This page does not exist in the <strong>%s</strong> environment.</p>\n' "$envlabel"
-        printf '<p class="range">If the environment switch brought you here, the page you came from has no counterpart in %s &mdash; its entity, report day or data set exists only in the other environment.</p>\n' "$envlabel"
-        printf '<p class="range">The environment switch did happen, you are now in <strong>%s</strong>, continue via the report menus above, or go to the <a href="../index.html"><strong>home page</strong></a>.</p>\n' "$envlabel"
-        printf '</body>\n</html>\n'
-    } > "$out"
 }
 
 # ---- The Report finder (docs/<env>/report-finder.html) ----------------------
@@ -1376,7 +1346,6 @@ analyses/added-bl.html|Added BL|The BL numbers input/<env>/BL.txt adds on top of
 analyses/accounts.html|Accounts (analyses)|The configured accounts analysed against the FlowManager configuration.||
 analyses/first-seen.html|First seen|On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.||
 analyses/first-seen-both.html|First seen (both logs)|On what day each entity was first seen across BOTH the transfer and the server logs.||
-analyses/acc-vs-prod-summary.html|Acceptance vs production|The two environments entity name sets compared per type — only in Acceptance, in both, or only in Production — with each side's Files and the set/dormancy Summary.|dormant, promotion, summary|dormant, promotion, summary
 analyses/whitelist-audit.html|Whitelist audit|Whitelisted partner IPs vs the addresses actually connecting: used, connect-only, never seen (prunable), plus sources without any whitelist entry.|whitelist, AllowIP, IP, prune, attack surface, unused|whitelist, AllowIP, prune
 analyses/accounts-in-boxes.html|Accounts in boxes|Every configured account boxed by what is true of the subscriptions connected to it — an account is in a box when one of its subscriptions is. The account view of Subscriptions in boxes.|boxes, account, box, connected, subscriptions, estate, rollup|boxes, box, account rollup
 analyses/config-hygiene.html|Config hygiene|The cleanup backlog: likely-duplicate twins (case / separator folds) and orphaned objects nothing references.|twins, duplicates, orphans, cleanup, legacy|twins, orphans, cleanup
@@ -1568,15 +1537,6 @@ write_sitemap() {
         printf '<li><a href="analyses/failed.html">Failed Subscriptions</a></li>\n'
         printf '<li><a href="analyses/failing-reasons.html">Error reasons</a></li>\n'
         printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Acceptance vs production <span class="smcount">12</span></h3><ul>\n'
-        local avp
-        for avp in accounts:Accounts subscriptions:Subscriptions logicals:Logical logins:Logins hosts:Hosts \
-                   partners:Partners domains:Domains applications:Applications bl:BL whitelist:Whitelist; do
-            printf '<li><a href="analyses/acc-vs-prod-%s-both.html">%s</a></li>\n' "${avp%%:*}" "${avp#*:}"
-        done
-        printf '<li><a href="analyses/acc-vs-prod-subs-partners.html">Subscriptions vs partners</a></li>\n'
-        printf '<li><a href="analyses/acc-vs-prod-summary.html">Summary</a></li>\n'
-        printf '</ul></div>\n'
         printf '</section>\n<section class="smarea sm-dash"><h2>Dashboards</h2>\n'
         # ONE dashboard (2026-07): the per-topic pages folded into the overview
         printf '<div class="smcard"><h3><a href="dashboards/index.html">Dashboard</a></h3></div>\n'
@@ -1665,8 +1625,6 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
                 [ -f "$DOCS/analyses/$key.html" ] && printf '%s\tAnalyses\tanalyses/%s.html\t%s\n' "$ttl" "$key" "$dsc"
             done
             return 0 ;;
-        publish-accvsprod)
-            printf 'Acceptance vs production\tAnalyses\tanalyses/acc-vs-prod-summary.html\tThe two environments’ entities compared per type, with each side’s activity and the promotion gaps.\n'; return 0 ;;
     esac
     case $1 in bin/server/*|server/bin/*) area=server ;; esac   # (the pre-2026-07 path too — see write_whats_new)
     # the Subscriptions group scripts all live in bin/analyses/reports/, so the
@@ -1716,9 +1674,9 @@ write_whats_new() {
     # rename, so without the legacy paths every report's history would start at
     # the move commit — the catalog went empty the first time this ran after it.
     local dirs=(bin/transfer/reports bin/server/reports bin/analyses/reports \
-                bin/analyses/publish-insights.sh bin/analyses/publish-accvsprod.sh \
+                bin/analyses/publish-insights.sh \
                 transfer/bin/reports server/bin/reports analyses/bin/reports \
-                analyses/bin/publish-insights.sh analyses/bin/publish-accvsprod.sh)
+                analyses/bin/publish-insights.sh)
     # Over ALL history: per generator, its ADD date (a "new" report) and its
     # latest MODIFY date + that commit's subject (a "changed" report — the
     # subject is the "what changed" message). The "site update" build commits
@@ -1837,18 +1795,20 @@ write_whats_new() {
     } > "$out"
 }
 
-# The SHARED root 404 page (docs/404.html) — what GitHub Pages (and any
-# webserver configured for it) serves for a URL that matches nothing at all,
-# instead of the stock error page. Same chrome as the shared home
-# (SITE_ENV-less: production-rooted menus).
-# SELF-CONTAINED on purpose: Pages serves this page AT THE REQUESTED URL
-# (any depth), so relative hrefs — stylesheet included — would resolve
-# against the missing page's directory and 404 too. Inline style only, and
-# the home link is derived at runtime (the path before the env segment;
-# else the missing URL's own directory) — base-path-free, so the same page
-# works at /develop/, /runtime/, a Pages project base or a server root.
+# The 404 page (docs/404.html) — what GitHub Pages (and any webserver
+# configured for it) serves for a URL that matches nothing at all, instead of
+# the stock error page. SELF-CONTAINED on purpose: Pages serves this page AT
+# THE REQUESTED URL (any depth), so relative hrefs — stylesheet included —
+# would resolve against the missing page's directory and 404 too. Inline
+# style only, and the home link is derived at runtime: the path before the
+# FIRST known top-level directory of the site (the list is taken from docs/
+# as it stands when this runs — last of the publishes), else the missing
+# URL's own directory; a trailing acceptance/ or production/ segment is
+# stripped either way (the pre-2026-09 bookmarks) — base-path-free, so the
+# same page works at /develop/, a Pages project base or a server root.
 write_root_404() {
-    local out="docs/404.html"
+    local out="docs/404.html" dirs
+    dirs=$(cd docs && ls -d */ 2>/dev/null | sed 's#/$##' | LC_ALL=C sort | tr '\n' '|' | sed 's/|$//')
     {
         printf '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         printf '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
@@ -1857,40 +1817,26 @@ write_root_404() {
         printf '</head>\n<body>\n'
         printf '<h1>Page not found</h1>\n'
         printf '<p>There is no page at this address.</p>\n'
-        printf '<p>The site moved to per-environment trees in 2026-07 (<code>acceptance/&hellip;</code> and <code>production/&hellip;</code>), so older bookmarks may need updating.</p>\n'
+        printf '<p>The site dropped its environment level in 2026-09 (<code>production/&hellip;</code> became <code>&hellip;</code>), so older bookmarks may need updating.</p>\n'
         printf '<p><a id="homelink" href="/"><strong>Go to the home page</strong></a></p>\n'
-        printf '<script>(function(){var p=location.pathname,m=p.match(/^(.*?)(?:acceptance|production)\\//);var r=m?m[1]:p.replace(/[^/]*$/,"");document.getElementById("homelink").href=r+"index.html";})();</script>\n'
+        printf '<script>(function(){var p=location.pathname,m=p.match(/^(.*?\\/)(?:%s)\\//);var r=m?m[1]:p.replace(/[^/]*$/,"");r=r.replace(/(?:acceptance|production)\\/$/,"");document.getElementById("homelink").href=r+"index.html";})();</script>\n' "$dirs"
         printf '</body>\n</html>\n'
     } > "$out"
 }
 
-# The root landing page — the ONE SHARED page serving BOTH environments:
-# everything centered (body class "home", style.css), one .envblock per env
-# with that env's status snapshot + log-files table. CSS shows the ACTIVE
-# env's block only (default production since 2026-08-31 — baked as body class
-# env-production so the first paint is right); the top-bar env label toggles it
-# client-side (report.js setupEnvSwitch, sessionStorage "axway-env") and
-# rewrites the topbar's env-scoped links. Always written to the DOCS ROOT and
-# always reads BOTH envs from disk, so the per-env build passes are idempotent
-# (each rewrites the same page; an env without data simply contributes no
-# block). Navigation is the top-bar dropdowns.
+# The root landing page — everything centered (body class "home", style.css):
+# the status snapshot, the per-day table, the red worklists and the log-files
+# table of THIS checkout's one environment (2026-09-11; the per-env .envblock
+# toggle went with the env split). The title carries the environment label.
+# Navigation is the top-bar dropdowns.
 write_root_index() {
-    local out="docs/index.html"
+    local out="docs/index.html" title="Cloud Reports"
+    [ -n "${ENV_LABEL:-}" ] && title="Cloud Reports — $ENV_LABEL"
     {
-        # the home is the shared page: SITE_ENV empty makes html_head emit
-        # root-depth shared links + production-rooted menus (a local shadows
-        # the sourced global for this call only)
-        local SITE_ENV=""
-        html_head "Cloud Reports" "assets/style.css" "" "" "index" "" "" "home env-production"
-        printf '<h1>Cloud Reports</h1>\n'
-        local env
-        for env in acceptance production; do
-            HOME_ENV_DATA="data/$env"
-            [ -d "$HOME_ENV_DATA" ] || continue
-            printf '<div class="envblock env-%s">\n' "$env"
-            write_env_block "$env"
-            printf '</div>\n'
-        done
+        html_head "$title" "assets/style.css" "" "" "index" "" "" "home"
+        esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
+        HOME_ENV_DATA="data"
+        write_home_block
         printf '</body>\n</html>\n'
     } > "$out"
 }
@@ -1940,7 +1886,7 @@ check_status_consistency() {
             echo "CONSISTENCY WARNING: home shows $num for $href but the page's Total footer says $foot — an untinted (unconfigured) row leaked into the view: ${leak:-(name not extracted)}" >&2
             mism=$((mism+1))
         fi
-    done < <(perl -ne 'while (m{<a href="((?:acceptance|production)/(?:transfer/entities|coverage)/[a-z0-9-]+)\.html">([\d.]+)</a>}g) { print "$1\t$2\n" }' docs/index.html 2>/dev/null)
+    done < <(perl -ne 'while (m{<a href="((?:transfer/entities|coverage)/[a-z0-9-]+)\.html">([\d.]+)</a>}g) { print "$1\t$2\n" }' docs/index.html 2>/dev/null)
     # (the coverage/ alternation, 2026-08-31 audit: the five derived Totals —
     # Logical / Partners / Domains / Applications / BL — link a coverage cell
     # page instead of an Entities view and escaped this gate; their pages
@@ -1958,7 +1904,6 @@ check_status_consistency() {
 # the grouped index matches the menu — those live in the Analyses index instead.
 write_area_index transfer "Transfer Reports" "${transfer_menu_order[@]}"
 [ ${#server_order[@]} -gt 0 ] && write_area_index server "Server Reports" "${server_order[@]}"
-write_env_404
 write_report_finder
 write_whats_new
 write_sitemap
@@ -1973,8 +1918,8 @@ tag_analyses_group_h1s
 tag_transfer_group_h1s
 tag_server_group_h1s
 
-# The shared help pages' chrome (production pass only — the default env's menus).
-[ "${SITE_ENV:-}" = production ] && apply_help_chrome
+# The shared help pages' chrome (the site top bar on every help page).
+apply_help_chrome
 
 echo "Wrote index pages (root + transfer${SERVER_MENU:+ + server})." >&2
 

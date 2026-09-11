@@ -60,7 +60,7 @@ LEGEND="$CACHE_DIR/_parse.txt"
 # signature below, so a changed skip list forces a full reparse — the sidecar is
 # then rebuilt from scratch (a full parse truncates it; an incremental appends).
 # See bin/flow-manager.sh.
-SKIPFILE="$ROOT/input/$AXWAY_ENV/skip.txt"   # per environment since 2026-08-31
+SKIPFILE="$ROOT/input/skip.txt"
 SKIPOUT="$DATA/server/_skipped.tsv"     # skipped _parse.tsv rows (verbatim)
 # awk splits stdin into kept rows (stdout) and skipped rows (>> the file passed
 # as -v sc=…). A skip.txt-less run keeps everything.

@@ -3,9 +3,9 @@
 # top-level arrays, 2-space indent, LF — the shape bin/flow-manager.sh consumes.
 #
 #   awk -F'\t' -f prelude.awk -f gen-config.awk \
-#       -v EST=input/<env>/.sample/_estate.tsv \
-#       -v PJSON=input/<env>/flow-manager/partners.json \
-#       -v SJSON=input/<env>/flow-manager/subscriptions.json
+#       -v EST=input/.sample/_estate.tsv \
+#       -v PJSON=input/flow-manager/partners.json \
+#       -v SJSON=input/flow-manager/subscriptions.json
 #
 # Consistency contract: participants[].comProfileId (subscriptions) ==
 # communicationProfiles[].businessId (partners) — both come from estate col 14.

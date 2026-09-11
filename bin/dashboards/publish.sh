@@ -30,7 +30,7 @@ ensure_assets   # ALWAYS — see the note in bin/transfer/publish.sh
 STAMP="$PUBLISH_STAMP_DIR/dashboards.stamp"
 if publish_is_fresh "$STAMP" "$DDIR" "${BASH_SOURCE[0]}" \
        "$SCRIPT_DIR/charts_lib.sh" "$DRPT"; then
-    echo "docs/$SITE_ENV/dashboards/ is up to date; skipping." >&2
+    echo "docs/dashboards/ is up to date; skipping." >&2
     exit 0
 fi
 

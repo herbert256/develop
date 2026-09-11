@@ -3,7 +3,7 @@
 # the real exports' order), so each day's rows arrive contiguously and in
 # order; one output file per calendar day, header first.
 #
-#   awk -F'\t' -f prelude.awk -f gen-transfer.awk -v DIR=input/<env>/transfer
+#   awk -F'\t' -f prelude.awk -f gen-transfer.awk -v DIR=input/transfer
 #
 # Row shape (the real export): 41 comma-separated fields, every field
 # double-quoted EXCEPT 19 Size (bare integer) and 39 Server Name (bare word).

@@ -22,7 +22,7 @@ ensure_assets   # ALWAYS — see the note in bin/transfer/publish.sh
 STAMP="$PUBLISH_STAMP_DIR/server.stamp"
 if publish_is_fresh "$STAMP" "$DOCS/server" "${BASH_SOURCE[0]}" \
        "$DATA/server/reports" "$DATA/transfer/reports/details" "$DATA/flow-manager"; then
-    echo "docs/$SITE_ENV/server/ is up to date; skipping." >&2
+    echo "docs/server/ is up to date; skipping." >&2
     exit 0
 fi
 

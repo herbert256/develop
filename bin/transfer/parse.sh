@@ -106,7 +106,7 @@ LEGEND="$CACHE_DIR/_transfers.txt"
 # "Skipped" analyses report. Applied in the DERIVE step below (after the
 # propagation/config fallback fills the attribution), which runs every parse —
 # so the sidecar always reflects the full cache. See bin/flow-manager.sh.
-SKIPFILE="$ROOT/input/$AXWAY_ENV/skip.txt"   # per environment since 2026-08-31
+SKIPFILE="$ROOT/input/skip.txt"
 SKIPOUT="$DATA/transfer/_skipped.tsv"   # skipped _transfers.tsv rows (verbatim)
 # NO-SUBSCRIPTION / HTTP SKIP (narrowed 2026-08): additionally, a CoreId whose
 # EVERY row still has no site (col 6) after all attribution passes — or with an
