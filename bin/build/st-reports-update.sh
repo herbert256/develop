@@ -1,175 +1,198 @@
 #!/usr/bin/env bash
 #
 # st-reports-update.sh — RUNTIME-ONLY build step (2026-08-31, user request):
-# ingest a delivered update archive BEFORE anything parses. The archive path
-# is the optional $1; without one it is the ~/cloud/update.7z drop. The other
-# caller is bin/build/exchange-in.sh (2026-09-06): the acc*/prd* archives of
-# the git exchange repo at ~/exchange/, one call per archive. The archive
-# is packed elsewhere with the SAME password st-reports-archive.sh generates
-# (input/secrets/st-reports.pass) and carries fresh exports. When the file
-# exists:
+# ingest delivered update archives BEFORE anything parses. Two callers:
 #
-#   1. unpack it (password from input/secrets/st-reports.pass),
-#   2. copy the exports onto the checkout's input/ tree (existing files
-#      overwritten — a re-delivered export replaces its older self, and the
-#      incremental parse manifests notice the changed sizes and reparse).
-#      Two layouts are understood:
-#        a. the REPO TREE — the files of exactly these six directories,
-#           rooted at input/ or directly at the environment directories:
-#              input/acceptance/flow-manager/   input/production/flow-manager/
-#              input/acceptance/server/         input/production/server/
-#              input/acceptance/transfer/       input/production/transfer/
-#        b. LOOSE FILES (2026-09-04: a drop holding a bare logEntry_09-03.csv
-#           + transferLog_09-03.csv) routed by name:
-#              logEntry*.csv      -> input/<env>/server/
-#              transferLog*.csv   -> input/<env>/transfer/
-#              *.json             -> input/<env>/flow-manager/
-#              *.txt              -> input/<env>/          (the policy files)
-#           (2026-09-06: any .json and the .txt policy files, at any depth
-#           inside the archive — the exchange inbox mapping, user request)
-#           The ENVIRONMENT of a loose file comes from its path inside the
-#           archive (a leading acceptance/ or production/ folder, with or
-#           without input/ above it) or else from the ARCHIVE NAME when one
-#           is passed as $1 ("prod"/"prd" or "acc"/"acpt", any case) — the
-#           ~/cloud drop's fixed name update.7z says nothing, so loose files
-#           there need the folder.
-#           NEVER guessed: a loose file whose environment cannot be told
-#           FAILS the build and leaves the archive — a wrong guess would
-#           overwrite the other environment's irreplaceable export with
-#           this one. Rename the archive and rebuild.
-#           Any other loose file is listed and ignored.
-#   3. delete the archive — only after a fully successful copy.
+#   bin/build/st-reports-update.sh            the ~/cloud/ drop folder: every
+#       <prefix>*.7z directly in it (acc* for the Acceptance checkout, prd*
+#       and prod* for Production — input/environment.txt via bin/envlabel.sh;
+#       one repo = one environment since 2026-09-11, so the fixed name
+#       update.7z is no longer read: two runtime builds share the folder and
+#       a shared name would be consumed by whichever built first). Each
+#       archive is ingested in turn; a refused one is a WARNING that stays in
+#       place (the exchange inbox's policy) — the build goes on.
+#   bin/build/st-reports-update.sh ARCHIVE    one archive (bin/build/exchange-in.sh
+#       calls it per acc*/prd* archive of the git exchange repo); the exit
+#       status says consumed (0) or left in place (1).
+#
+# An archive is packed elsewhere with the SAME password st-reports-archive.sh
+# generates (input/secrets/st-reports.pass) and carries fresh exports:
+#
+#   1. a name claiming the OTHER environment (prd-… in the Acceptance
+#      checkout) is refused untouched — never routed onto this checkout;
+#   2. unpack it (password from input/secrets/st-reports.pass);
+#   3. an archive carrying the OTHER environment's tree (a production/ or
+#      input/production/ directory in the Acceptance checkout) is refused
+#      BEFORE anything is copied — a half-copied checkout is worse than none;
+#   4. copy the exports onto input/ (existing files overwritten — a
+#      re-delivered export replaces its older self, and the incremental parse
+#      manifests notice the changed sizes and reparse). Two layouts:
+#        a. the REPO TREE — flow-manager/ server/ transfer/ rooted at the
+#           archive root or under input/; the OLD per-environment layout
+#           (input/<env>/… or <env>/…) is accepted when <env> is THIS one;
+#        b. LOOSE FILES, at any depth, routed by name:
+#              logEntry*.csv      -> input/server/
+#              transferLog*.csv   -> input/transfer/
+#              *.json             -> input/flow-manager/
+#              *.txt              -> input/          (the policy files —
+#                                    environment.txt and README.txt never)
+#           Any other file is listed and ignored.
+#   5. delete the archive (every part of a multi-volume set) — only after a
+#      fully successful copy.
 #
 # Nothing else in the archive is looked at: ip/, renames/, secrets/ and
-# anything else outside the mapping is listed and ignored.
-# No archive is the quiet no-op. A FAILURE (missing password file, wrong
-# password, corrupt archive, nothing ingestible inside, an environment-less
-# loose file) fails the build loudly and LEAVES the archive in place —
-# building silently on stale inputs is worse than stopping; fix or remove
-# the file.
+# anything else outside the mapping is listed and ignored. No archive is the
+# quiet no-op. A FAILURE (missing password file, wrong password, corrupt
+# archive, nothing ingestible inside, the other environment) LEAVES the
+# archive in place: fix or remove the file and rebuild.
 #
-# Runs before the HAVE_ACC/HAVE_PROD detection in bin/build.sh, so an update
-# delivering an environment's FIRST flow-manager exports enables that
-# environment in the same build.
+# Runs before the have-config check in bin/build.sh, so an update delivering
+# a checkout's FIRST flow-manager exports enables the build in the same run.
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."
+source bin/envlabel.sh   # ENV_LABEL / ENV_KEY / ENV_INBOX / env_of_name / env_inbox_find
 
-UPD="${1:-$HOME/cloud/update.7z}"
-UPDD="${UPD/#$HOME/~}"   # display form
 # the build report's Inbox block (build/inbox.tsv, reset by bin/build.sh):
 # source ⇥ status ⇥ archive ⇥ detail — every outcome leaves one line
 SRC="${AXWAY_INBOX_SOURCE:-cloud}"
 inbox_note() { [ -d build ] && printf '%s\t%s\t%s\t%s\n' "$SRC" "$1" "$2" "$3" >> build/inbox.tsv; return 0; }
-[ -f "$UPD" ] || { echo "st-reports-update: no $UPDD — nothing to ingest." >&2; inbox_note none "$UPDD" ""; exit 0; }
-
-command -v 7z >/dev/null 2>&1 || { echo "st-reports-update: 7z not found (brew install p7zip)." >&2; exit 1; }
 PASSF="input/secrets/st-reports.pass"
-[ -s "$PASSF" ] || { echo "st-reports-update: $PASSF missing — cannot unpack $UPDD (the password is generated by the archive step of a completed build; pack updates with that value)." >&2; exit 1; }
-pass=$(cat "$PASSF")
 
-tmp=$(mktemp -d "${TMPDIR:-/tmp}/stupd.XXXXXX")
-trap 'rm -rf "$tmp"' EXIT
+# ingest_one ARCHIVE -> 0 consumed, 1 left in place (with the reason on stderr
+# and in the Inbox block)
+ingest_one() {
+    local UPD=$1 UPDD tmp total=0 claimed other d root sub n src rel base i f
+    UPDD="${UPD/#$HOME/~}"   # display form
+    local -a ignored=() plan_src=() plan_dst=()
 
-if ! 7z x -aoa -p"$pass" -o"$tmp" "$UPD" >/dev/null 2>&1; then
-    echo "st-reports-update: could not unpack $UPDD (wrong password or corrupt archive) — the file stays; fix or remove it." >&2
-    inbox_note failed "$(basename "$UPD")" "could not unpack (wrong password or corrupt archive)"
-    exit 1
+    # ---- 1. the name must not claim the other environment -------------------
+    claimed=$(env_of_name "$(basename "$UPD")")
+    if [ -n "$claimed" ] && [ "$claimed" != "$ENV_KEY" ]; then
+        echo "st-reports-update: $UPDD is named for the $claimed environment — this checkout is ${ENV_LABEL:-unlabelled}; the file stays, nothing was copied." >&2
+        inbox_note failed "$(basename "$UPD")" "names the $claimed environment (this checkout is ${ENV_LABEL:-unlabelled})"
+        return 1
+    fi
+
+    command -v 7z >/dev/null 2>&1 || { echo "st-reports-update: 7z not found (brew install p7zip)." >&2; return 1; }
+    [ -s "$PASSF" ] || { echo "st-reports-update: $PASSF missing — cannot unpack $UPDD (the password is generated by the archive step of a completed build; pack updates with that value)." >&2; inbox_note failed "$(basename "$UPD")" "no $PASSF"; return 1; }
+
+    tmp=$(mktemp -d "${TMPDIR:-/tmp}/stupd.XXXXXX")
+    # ---- 2. unpack -----------------------------------------------------------
+    if ! 7z x -aoa -p"$(cat "$PASSF")" -o"$tmp" "$UPD" >/dev/null 2>&1; then
+        rm -rf "$tmp"
+        echo "st-reports-update: could not unpack $UPDD (wrong password or corrupt archive) — the file stays; fix or remove it." >&2
+        inbox_note failed "$(basename "$UPD")" "could not unpack (wrong password or corrupt archive)"
+        return 1
+    fi
+
+    # ---- 3. the other environment's tree is refused BEFORE any copy ----------
+    for d in "$tmp"/* "$tmp"/input/*; do
+        [ -d "$d" ] || continue
+        other=$(env_of_name "$(basename "$d")")
+        case "$(basename "$d" | tr '[:upper:]' '[:lower:]')" in
+            acceptance|production) ;;
+            *) continue ;;
+        esac
+        if [ "$other" != "$ENV_KEY" ]; then
+            rm -rf "$tmp"
+            echo "st-reports-update: $UPDD carries the $other environment's tree (${d#$tmp/}) — this checkout is ${ENV_LABEL:-unlabelled}; the file stays, nothing was copied from it." >&2
+            inbox_note failed "$(basename "$UPD")" "carries the $other tree (${d#$tmp/})"
+            return 1
+        fi
+    done
+
+    # ---- 4a. the repo tree: the three directories -----------------------------
+    # rooted at input/ (the repo layout), at the archive root, or — the OLD
+    # per-environment layout — under input/<env>/ or <env>/ when <env> is ours
+    local -a roots=("$tmp/input" "$tmp")
+    [ -z "$ENV_KEY" ] || roots+=("$tmp/input/$ENV_KEY" "$tmp/$ENV_KEY")
+    for sub in flow-manager server transfer; do
+        for root in "${roots[@]}"; do
+            src="$root/$sub"
+            [ -d "$src" ] || continue
+            n=$(find "$src" -type f ! -name '.DS_Store' | wc -l | tr -d ' ')
+            [ "$n" -gt 0 ] || continue
+            mkdir -p "input/$sub"
+            cp -pR "$src"/. "input/$sub"/
+            total=$((total + n))
+            echo "st-reports-update: $n file(s) ${src#$tmp/} -> input/$sub/" >&2
+        done
+    done
+
+    # ---- 4b. loose files, routed by name ----------------------------------------
+    while IFS= read -r -d '' f; do
+        rel="${f#$tmp/}"
+        rel="${rel#input/}"
+        [ -n "$ENV_KEY" ] && rel="${rel#$ENV_KEY/}"
+        # files inside one of the three known subdirs were copied by pass 4a
+        case "$rel" in flow-manager/*|server/*|transfer/*) continue ;; esac
+        base=$(basename "$f")
+        sub=""
+        case "$base" in
+            logEntry*.csv)     sub=server ;;
+            transferLog*.csv)  sub=transfer ;;
+            *.json)            sub=flow-manager ;;
+            environment.txt|README.txt) sub="" ;;   # a checkout's own files, never delivered
+            *.txt)             sub=. ;;             # the policy files live at the input root
+        esac
+        if [ -z "$sub" ]; then ignored+=("$rel"); continue; fi
+        plan_src+=("$f")
+        if [ "$sub" = . ]; then plan_dst+=("input/$base"); else plan_dst+=("input/$sub/$base"); fi
+    done < <(find "$tmp" -type f ! -name '.DS_Store' -print0)
+
+    [ ${#ignored[@]} -eq 0 ] || echo "st-reports-update: ignored (not an export): ${ignored[*]}" >&2
+    i=0
+    while [ $i -lt ${#plan_src[@]} ]; do
+        mkdir -p "$(dirname "${plan_dst[$i]}")"
+        cp -p "${plan_src[$i]}" "${plan_dst[$i]}"
+        total=$((total + 1))
+        echo "st-reports-update: ${plan_src[$i]#$tmp/} -> ${plan_dst[$i]}" >&2
+        i=$((i + 1))
+    done
+    rm -rf "$tmp"
+
+    if [ "$total" -eq 0 ]; then
+        echo "st-reports-update: $UPDD holds NO export at all — the file stays; check its layout (expected input/{flow-manager,server,transfer}/... or loose logEntry*.csv / transferLog*.csv / partners.json / subscriptions.json / the policy .txt files)." >&2
+        inbox_note failed "$(basename "$UPD")" "holds no export"
+        return 1
+    fi
+    # ---- 5. remove the archive (every part of a multi-volume set) --------------
+    case "$UPD" in
+        *.7z.001) rm -f "${UPD%.001}".[0-9][0-9][0-9]; echo "st-reports-update: ingested $total file(s); removed every part of $UPDD." >&2 ;;
+        *)        rm -f "$UPD"; echo "st-reports-update: ingested $total file(s); removed $UPDD." >&2 ;;
+    esac
+    inbox_note consumed "$(basename "$UPD")" "$total file(s): $(printf '%s ' ${plan_dst[@]+"${plan_dst[@]}"} | sed 's/ $//')"
+    return 0
+}
+
+if [ $# -ge 1 ]; then
+    # one archive, named by the caller (exchange-in.sh): the exit status is the verdict
+    ingest_one "$1"
+    exit $?
 fi
 
-# ---- a. the repo tree: the six directories ---------------------------------
-total=0
-for d in input/acceptance/flow-manager input/acceptance/server input/acceptance/transfer \
-         input/production/flow-manager input/production/server input/production/transfer; do
-    # the archive may root its tree at input/ (the repo layout) or directly
-    # at the environment directories — accept both
-    src=""
-    [ -d "$tmp/$d" ] && src="$tmp/$d"
-    [ -z "$src" ] && [ -d "$tmp/${d#input/}" ] && src="$tmp/${d#input/}"
-    [ -n "$src" ] || continue
-    n=$(find "$src" -type f | wc -l | tr -d ' ')
-    [ "$n" -gt 0 ] || continue
-    mkdir -p "$d"
-    cp -pR "$src"/. "$d"/
-    total=$((total + n))
-    echo "st-reports-update: $n file(s) -> $d/" >&2
+# ---- the ~/cloud drop: this environment's <prefix>*.7z, directly in it -------
+CLOUD="$HOME/cloud"
+if [ -z "$ENV_INBOX" ]; then
+    echo "st-reports-update: input/environment.txt says '${ENV_LABEL:-<missing>}' — no inbox prefix for it (Acceptance or Production expected); ~/cloud is not read." >&2
+    inbox_note skipped "~/cloud" "no inbox prefix for environment '${ENV_LABEL:-<missing>}'"
+    exit 0
+fi
+pfxs=$(printf '%s' "$ENV_INBOX" | sed 's/ /*.7z, /g; s/$/*.7z/')
+[ -d "$CLOUD" ] || { echo "st-reports-update: no ~/cloud folder — nothing to ingest." >&2; inbox_note none "~/cloud" "no folder"; exit 0; }
+drops=()
+while IFS= read -r -d '' f; do drops+=("$f"); done < <(env_inbox_find "$CLOUD")
+if [ ${#drops[@]} -eq 0 ]; then
+    echo "st-reports-update: no $pfxs in ~/cloud — nothing to ingest ($ENV_LABEL)." >&2
+    inbox_note none "~/cloud" "no $pfxs"
+    exit 0
+fi
+left=0
+for f in "${drops[@]}"; do
+    echo "st-reports-update: ingesting ${f/#$HOME/~} ..." >&2
+    ingest_one "$f" || { left=$((left + 1)); echo "st-reports-update: WARNING - ${f/#$HOME/~} was NOT ingested; it stays in ~/cloud — fix or remove it, then rebuild." >&2; }
 done
-
-# ---- b. loose files, routed by name -----------------------------------------
-# the environment the ARCHIVE NAME implies (empty = none)
-name_env=""
-lc=$(basename "$UPD" | tr '[:upper:]' '[:lower:]')
-# "prod"/"prd" = production, "acc"/"acpt" = acceptance (any case, anywhere in
-# the name: prd.7z, production-Downloads.7z, acc_logs.7z)
-has_acc=0; has_prod=0
-case "$lc" in *acc*|*acpt*) has_acc=1 ;; esac
-case "$lc" in *prod*|*prd*) has_prod=1 ;; esac
-if [ "$has_acc" = 1 ] && [ "$has_prod" = 1 ]; then
-    echo "st-reports-update: $UPDD names BOTH environments — cannot route loose files by its name." >&2
-elif [ "$has_acc" = 1 ]; then name_env=acceptance
-elif [ "$has_prod" = 1 ]; then name_env=production
-fi
-
-# route first, copy only when EVERY loose export has a home — a partial copy
-# followed by a failure would leave the checkout half-updated
-unrouted=()
-ignored=()
-plan_src=()
-plan_dst=()
-while IFS= read -r -d '' f; do
-    rel="${f#$tmp/}"
-    rel="${rel#input/}"
-    env="$name_env"
-    case "$rel" in
-        acceptance/*) env=acceptance; rel="${rel#acceptance/}" ;;
-        production/*) env=production; rel="${rel#production/}" ;;
-    esac
-    # files inside one of the three known subdirs were copied by pass a.
-    case "$rel" in
-        flow-manager/*|server/*|transfer/*) [ -n "$env" ] && continue ;;
-    esac
-    base=$(basename "$f")
-    sub=""
-    case "$base" in
-        logEntry*.csv)     sub=server ;;
-        transferLog*.csv)  sub=transfer ;;
-        *.json)            sub=flow-manager ;;
-        *.txt)             sub=. ;;              # the policy files live at the environment root
-    esac
-    if [ -z "$sub" ]; then ignored+=("$rel"); continue; fi
-    if [ -z "$env" ]; then unrouted+=("$rel"); continue; fi
-    plan_src+=("$f")
-    if [ "$sub" = . ]; then plan_dst+=("input/$env/$base"); else plan_dst+=("input/$env/$sub/$base"); fi
-done < <(find "$tmp" -type f ! -name '.DS_Store' -print0)
-
-if [ ${#ignored[@]} -gt 0 ]; then
-    echo "st-reports-update: ignored (not an export): ${ignored[*]}" >&2
-fi
-if [ ${#unrouted[@]} -gt 0 ]; then
-    echo "st-reports-update: $UPDD holds loose export(s) whose ENVIRONMENT cannot be told: ${unrouted[*]}" >&2
-    echo "st-reports-update: rename the archive to say which — e.g. prd-$(basename "$UPD") or acc-$(basename "$UPD") — or pack them under acceptance/ or production/. The file stays; nothing was removed." >&2
-    inbox_note failed "$(basename "$UPD")" "environment of ${unrouted[*]} cannot be told"
-    exit 1
-fi
-i=0
-while [ $i -lt ${#plan_src[@]} ]; do
-    mkdir -p "$(dirname "${plan_dst[$i]}")"
-    cp -p "${plan_src[$i]}" "${plan_dst[$i]}"
-    total=$((total + 1))
-    echo "st-reports-update: ${plan_src[$i]#$tmp/} -> ${plan_dst[$i]}" >&2
-    i=$((i + 1))
-done
-
-if [ "$total" -eq 0 ]; then
-    echo "st-reports-update: $UPDD holds NO export at all — the file stays; check its layout (expected input/<env>/{flow-manager,server,transfer}/... or loose logEntry*.csv / transferLog*.csv / partners.json / subscriptions.json)." >&2
-    inbox_note failed "$(basename "$UPD")" "holds no export"
-    exit 1
-fi
-# a multi-volume archive (name.7z.001 + .002 …): 7z x on the first part read
-# them all — remove them all (2026-09-06, user request)
-case "$UPD" in
-    *.7z.001) rm -f "${UPD%.001}".[0-9][0-9][0-9]; echo "st-reports-update: ingested $total file(s); removed every part of $UPDD." >&2 ;;
-    *)        rm -f "$UPD"; echo "st-reports-update: ingested $total file(s); removed $UPDD." >&2 ;;
-esac
-inbox_note consumed "$(basename "$UPD")" "$total file(s): $(printf '%s ' ${plan_dst[@]+"${plan_dst[@]}"} | sed 's/ $//')"
+[ "$left" -eq 0 ] || echo "st-reports-update: $left archive(s) left in ~/cloud." >&2
+exit 0

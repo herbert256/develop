@@ -18,6 +18,8 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."
+source bin/envlabel.sh   # ENV_KEY names the archives
+[ -n "$ENV_KEY" ] || { echo "st-reports-archive: input/environment.txt missing or empty — the archive name carries the environment (st-reports-<env>_<stamp>.7z) so the two runtime repos never overwrite each other's copy; write the label (Acceptance / Production) and rebuild." >&2; exit 1; }
 
 command -v 7z >/dev/null 2>&1 || { echo "st-reports-archive: 7z not found (brew install p7zip)." >&2; exit 1; }
 [ -d docs ] || { echo "st-reports-archive: no docs/ tree to archive." >&2; exit 1; }
@@ -48,7 +50,7 @@ chmod 600 "$PASSF" 2>/dev/null || true
 pass=$(cat "$PASSF")
 
 stamp=$(date '+%Y-%m-%d_%H%M')
-out="build/st-reports_${stamp}.7z"
+out="build/st-reports-${ENV_KEY}_${stamp}.7z"
 mkdir -p build
 rm -f "$out"
 
@@ -63,7 +65,7 @@ echo "Wrote $out ($(du -h "$out" | cut -f1 | tr -d ' ')) and copied it to ~/clou
 
 # ---- the git exchange copy (2026-08-31, user request) -----------------------
 # The same archive into the exchange repo at ~/exchange/ under the STABLE
-# name st-reports.7z, committed and pushed: the receiving side always finds
+# name st-reports-<env>.7z, committed and pushed: the receiving side always finds
 # the newest site there (a timestamped name per build would grow the repo
 # without bound — the stamp lives in build/ and ~/cloud/, and in the pages
 # themselves). Pull first so a concurrent drop on the other side never makes
@@ -72,15 +74,15 @@ echo "Wrote $out ($(du -h "$out" | cut -f1 | tr -d ' ')) and copied it to ~/clou
 # next build's push. No ~/exchange/ git repo = quiet skip.
 EX="${AXWAY_EXCHANGE_DIR:-$HOME/exchange}"
 if [ -d "$EX/.git" ]; then
-    cp "$out" "$EX/st-reports.7z"
+    cp "$out" "$EX/st-reports-${ENV_KEY}.7z"
     git -C "$EX" pull --rebase --autostash --quiet 2>/dev/null \
         || echo "st-reports-archive: WARNING - exchange pull failed (offline?) — pushing on top of the local state." >&2
     if [ -n "$(git -C "$EX" status --porcelain)" ]; then
         git -C "$EX" add -A
-        git -C "$EX" commit --quiet -m "st-reports ${stamp}"
+        git -C "$EX" commit --quiet -m "st-reports-${ENV_KEY} ${stamp}"
     fi
     if git -C "$EX" push --quiet 2>/dev/null; then
-        echo "st-reports-archive: st-reports.7z pushed to the exchange repo." >&2
+        echo "st-reports-archive: st-reports-${ENV_KEY}.7z pushed to the exchange repo." >&2
     else
         echo "st-reports-archive: WARNING - exchange push failed (offline?) — the commit is local and goes out with the next build." >&2
     fi
