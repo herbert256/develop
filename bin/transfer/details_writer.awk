@@ -415,6 +415,7 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
         else emitl("INTRO\tConfigured (direction: **" dirv "**) — **never seen** in the loaded transfer logs.")
         if (pend_t == "SITE") {
             emitl("TABLE\tFeatures"); emitl("HEAD\tItem\tValue"); emitl("KIND\ttext\ttext")
+            emitl("ROW\tSubscription\t" pend_e)   # the page's own name leads the table (2026-09-11, user request)
             if (ucd != "") emitl("ROW\tUse case\t@{href=../../analyses/use-cases.html}" ucd)
             twin_features_rows()
             sum_config()
@@ -431,6 +432,7 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
     # would carry nothing
     if (pend_t == "SITE" || pend_t == "ACC" || x_ip != "" || x_oneacct != "" || x_onedom != "" || x_oneapp != "" || x_onelgc != "" || x_oneptn != "" || x_onebl != "" || nca > 0) {
         emitl("TABLE\tFeatures"); emitl("HEAD\tItem\tValue"); emitl("KIND\ttext\ttext")
+        if (pend_t == "SITE") emitl("ROW\tSubscription\t" pend_e)   # the page's own name leads the table (2026-09-11, user request)
         if (ucd != "") emitl("ROW\tUse case\t@{href=../../analyses/use-cases.html}" ucd)
         dupacct = 0
         for (i = 1; i <= nca; i++) if (CA[i] != "") {
