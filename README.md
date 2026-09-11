@@ -20,14 +20,17 @@ This project lives in three sibling repos that share ALL code but never data:
   **http://localhost/runtime-acceptance/** and
   **http://localhost/runtime-production/**.
 
-Code flows one way, develop → runtime, via **`bin/runtime.sh <path>
-[<path>…]`**: it syncs `bin/` + `assets/` (+ `.gitattributes`) into each
-runtime checkout and then runs each checkout's `bin/fresh.sh` in sequence,
-rebuilding that site from its own real data. It never touches `input/`, and
+Code flows one way, develop → runtime, via **`bin/acc.sh`** and
+**`bin/prd.sh`** (no arguments — the runtime checkouts sit beside this repo
+as `../runtime-acceptance` and `../runtime-production`): each syncs `bin/` +
+`assets/` (+ `.gitattributes`) into its checkout and then runs that
+checkout's `bin/fresh.sh`, rebuilding the site from its own real data; run
+the two one after the other, never at the same time. It never touches `input/`, and
 the committed `input/.sample-estate` marker (checked by
 `bin/sample/generate.sh`, absent in a runtime checkout by construction) makes
 it impossible for the generator to overwrite real exports. The sync EXCLUDES
-the develop-only tooling — `bin/runtime.sh` itself and `bin/sample/` — and
+the develop-only tooling — `bin/acc.sh`, `bin/prd.sh`, their shared
+`bin/runtime-lib.sh` and `bin/sample/` — and
 removes any copy an earlier refresh left behind, so a runtime `bin/` carries
 pipeline code only. Which environment a checkout serves is written in its
 hand-maintained `input/environment.txt` (`Acceptance` / `Production`; `Sample`

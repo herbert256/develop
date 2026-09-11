@@ -25,11 +25,11 @@ covers every planted scenario. **runtime-acceptance** and **runtime-production**
 / `runtime-production`, private, no Pages) are the operational twins with the REAL exports of ONE
 environment each — **never read, edit or build them from an AI session**; they have no CLAUDE.md
 by design. (The old combined `runtime` repo — two environments in one checkout — is RETIRED since
-2026-09-11, left in place for Herbert to delete; `bin/runtime.sh` refuses it.) Code flows one way
-via `bin/runtime.sh <path> [<path>…]` (syncs `bin/` + `assets/` + `.gitattributes` into each
-checkout, removes CLAUDE/ARCHITECTURE there, then runs each checkout's `bin/fresh.sh` IN
-SEQUENCE — never in parallel: every runtime build reads and pushes the shared `~/exchange`); the
-sync EXCLUDES the develop-only tooling — `bin/runtime.sh` itself and `bin/sample/` — and deletes
+2026-09-11, left in place for Herbert to delete; `bin/acc.sh` / `bin/prd.sh` refuse it.) Code flows one way
+via **`bin/acc.sh`** and **`bin/prd.sh`** (no arguments — the runtime checkouts sit BESIDE this repo as `../runtime-acceptance` and `../runtime-production`; each syncs `bin/` + `assets/` + `.gitattributes` into its checkout, removes CLAUDE/ARCHITECTURE
+there, then runs that checkout's `bin/fresh.sh`; run the two one AFTER the other, never at the
+same time — every runtime build reads and pushes the shared `~/exchange`); the
+sync EXCLUDES the develop-only tooling — `bin/acc.sh`, `bin/prd.sh`, their shared `bin/runtime-lib.sh` and `bin/sample/` — and deletes
 stale copies of them in the target, so a runtime `bin/` carries pipeline code only. The committed
 `input/.sample-estate` marker gates the generator — absent in a runtime checkout, so it can never
 clobber real exports. Local preview: develop at `http://localhost/develop/`, the runtimes at
@@ -1031,7 +1031,7 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 
 ## Directory layout
 
-Every pipeline script lives under **`bin/`** — `bin/runtime.sh` (the develop→runtime code
+Every pipeline script lives under **`bin/`** — `bin/acc.sh` + `bin/prd.sh` (the develop→runtime code
 sync) included; the committed repo top is `bin/ assets/ docs/`,
 the three `.md` docs, `.gitignore`/`.gitattributes` and **`input/`** — in
 THIS repo committed IN FULL, sample CSVs included (the whole estate is synthetic and small;

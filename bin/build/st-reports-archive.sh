@@ -29,7 +29,7 @@ command -v 7z >/dev/null 2>&1 || { echo "st-reports-archive: 7z not found (brew 
 # burned; archives made before this change still open with it). The secret
 # lives in input/secrets/st-reports.pass:
 #   - input/ because a secret is IRREPLACEABLE: rm -rf data/ stays safe, and
-#     bin/runtime.sh never syncs input/ — each checkout keeps its own.
+#     the develop->runtime sync (bin/acc.sh, bin/prd.sh) never touches input/ — each checkout keeps its own.
 #   - the folder SELF-IGNORES (its own .gitignore says "*"), so it stays out
 #     of git in any checkout without relying on the top-level .gitignore
 #     (which carries input/secrets/ too, belt and braces).

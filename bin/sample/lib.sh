@@ -4,7 +4,7 @@
 # SAFETY: the generator OVERWRITES input/ — the one thing that must never
 # happen in the runtime repo (real, irreplaceable exports). It therefore
 # refuses to run unless input/.sample-estate exists. The marker is COMMITTED
-# in the develop repo; input/ is never synced to runtime (runtime.sh copies
+# in the develop repo; input/ is never synced to runtime (the acc.sh/prd.sh sync copies
 # bin/ and assets/ only), so a runtime checkout can never carry it.
 
 SAMPLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
