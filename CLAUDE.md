@@ -14,99 +14,119 @@ manager — **bash + awk** pipelines read CSV log exports into small data files;
 render those into the static HTML site under `docs/`. Requirements: `bash`, `awk`, `sort`, `sed`,
 `date`, `jq` (config JSON only). Homebrew mawk is used automatically; keep the awk POSIX.
 
-## The two-repo model — THIS IS THE DEVELOP REPO
+## The three-repo model — THIS IS THE DEVELOP REPO
 
-The project lives in two sibling repos sharing all code but never data. **develop** (this one)
+The project lives in three sibling repos sharing all code but never data. **develop** (this one)
 is where every change happens and holds ONLY the **SAMPLE ESTATE**: synthetic input data from
 `bin/sample/generate.sh` (fake orgs, RFC 5737 addresses, `.example` hosts) — deterministic
 (seed `AXWAY_SAMPLE_SEED`), committed, regenerable; `bin/sample/verify.sh` asserts a built site
-covers every planted scenario. **runtime** is the operational twin with the REAL exports —
-**never read, edit or build it from an AI session**; it has no CLAUDE.md by design. Code flows
-one way via `bin/runtime.sh <path-to-runtime>` (syncs `bin/` + `assets/` + `.gitattributes`,
-removes CLAUDE/ARCHITECTURE there, runs its `bin/fresh.sh`); the sync EXCLUDES the develop-only
-tooling — `bin/runtime.sh` itself and `bin/sample/` — and deletes stale copies of them in the
-target, so runtime's `bin/` carries pipeline code only. The committed `input/.sample-estate` marker
-gates the generator — absent in runtime, so it can never clobber real exports. Local preview:
-develop at `http://localhost/develop/`, runtime at `http://localhost/runtime/`.
+covers every planted scenario. **runtime-acceptance** and **runtime-production**
+(`~/axway/runtime-acceptance`, `~/axway/runtime-production`; github `herbert256/runtime-acceptance`
+/ `runtime-production`, private, no Pages) are the operational twins with the REAL exports of ONE
+environment each — **never read, edit or build them from an AI session**; they have no CLAUDE.md
+by design. (The old combined `runtime` repo — two environments in one checkout — is RETIRED since
+2026-09-11, left in place for Herbert to delete; `bin/runtime.sh` refuses it.) Code flows one way
+via `bin/runtime.sh <path> [<path>…]` (syncs `bin/` + `assets/` + `.gitattributes` into each
+checkout, removes CLAUDE/ARCHITECTURE there, then runs each checkout's `bin/fresh.sh` IN
+SEQUENCE — never in parallel: every runtime build reads and pushes the shared `~/exchange`); the
+sync EXCLUDES the develop-only tooling — `bin/runtime.sh` itself and `bin/sample/` — and deletes
+stale copies of them in the target, so a runtime `bin/` carries pipeline code only. The committed
+`input/.sample-estate` marker gates the generator — absent in a runtime checkout, so it can never
+clobber real exports. Local preview: develop at `http://localhost/develop/`, the runtimes at
+`http://localhost/runtime-acceptance/` and `http://localhost/runtime-production/`.
 
-## Environments (acceptance + production)
+## Environment (one repo = one environment)
 
-Two environments side by side, selected by **`AXWAY_ENV`** (`acceptance`|`production`, default
-`production` since 2026-08-31 — the shared home opens on Production and the shared pages root their
-links there; a script run without the variable acts on production) via the sourced **`bin/env.sh`**. **Every input/data/docs path in this document is
-per-environment**: `input/<env>/…`, `data/<env>/…`, `docs/<env>/…`. Shared only: `data/.awkshim`
-and the docs-root artifacts (`index.html` — the ONE shared home —, `404.html`,
-`assets/`, `help/`, `.nojekyll`).
+Since 2026-09-11 a checkout serves ONE SecureTransport environment and the three trees are FLAT:
+`input/` → `data/` → `docs/` — no `<env>` level anywhere. Gone with it: `AXWAY_ENV` and
+`bin/env.sh`, the build scope argument and the parallel env chains, the top-bar env switch and
+`bin/build/crosslink.sh` (`data-twin`), the per-env 404 pages and the `.envblock` home, the
+acceptance-vs-production pages (`publish-accvsprod.sh`), `migrate-input.sh` and
+`make-monitor-example.sh`. Which environment a checkout IS lives in the hand-maintained,
+committed, NEVER-synced **`input/environment.txt`** — one line, the display label: `Acceptance` /
+`Production` in the two runtime repos, `Sample` here. **`bin/envlabel.sh`** is its one reader
+(sourced; `ENV_LABEL`, `ENV_KEY` = lowercased, `ENV_INBOX`, `env_of_name`, `env_inbox_find`):
+the label is a static top-bar label (report.js `buildTopbar` reads `env:"…"` from
+`topbar-data.js`, where the Acceptance/Production pair was; `render_topbar` bakes the same span
+on the help/build pages) and the home title (`Cloud Reports — <label>`); it derives the runtime
+inbox prefixes (Acceptance → `acc*`, Production → `prd*` and `prod*`, case-insensitive; any other
+label = both inboxes skipped with a note) and names the outbox archives
+(`build/st-reports-<key>_<stamp>.7z`, the `~/cloud/` copy, `~/exchange/st-reports-<key>.7z`); a
+missing label FAILS the archive step. The docs root holds the site itself: `index.html` (the
+home), `404.html` (self-contained; its home link = the path before the FIRST known top-level dir,
+a trailing `acceptance/`|`production/` stripped for pre-split bookmarks), `assets/`, `help/`,
+`.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `seenlog/`), `server/`, `analyses/`
+(+ `xref/`), `dashboards/`, `day/`, `errors/`, `details/` (one subdir per entity type), `files/`,
+`first-seen/`, `use-cases/`, `coverage/`, `transfers/duration/`, `switches/`, plus
+`search.html sitemap.html report-finder.html whats-new.html file-search-*.html`. `input/` carries
+the exports — logs AND the FlowManager JSONs (the real production flows are the HYBRID pattern
+generation: no folder parameters, flowdir from `{source,target}_hybrid_participant`; the sample
+estate carries both shapes). The manual `bin/flow-manager-synth.sh` stays as the fallback for a
+checkout with logs but no config export: it synthesizes the two JSONs from the transfer logs
+(one subscription per Transfer Profile, one partner per account).
 
-Under `docs/<env>/`: `transfer/` (+ `entities/`, `secparams/`, `seenlog/`), `server/`, `analyses/`
-(+ `xref/`), `dashboards/`, `day/`, `errors/`, `details/` (one subdir per entity type),
-`first-seen/`, `use-cases/`, `coverage/`, `transfers/duration/`, plus
-`404.html search.html sitemap.html report-finder.html whats-new.html`. `input/production/` carries REAL
-exports since 2026-08 — logs AND the FlowManager JSONs (the production flows are the HYBRID
-pattern generation: no folder parameters, flowdir from `{source,target}_hybrid_participant`).
-The manual `bin/flow-manager-synth.sh` stays as the fallback for an env with logs but no config
-export: it synthesizes the two JSONs from the transfer logs (one subscription per Transfer
-Profile, one partner per account).
-
-- `html_head` derives `envbase` (env root) and `base` (docs root) from the css href callers pass
-  env-root-relative.
-- **The top bar is RUNTIME**: pages bake only a placeholder div; report.js `buildTopbar` renders
-  the full bar from `docs/assets/topbar-data.js` (written by `ensure_assets`; `?v=` stamp
-  `TB_VER`). The help/build pages bake full chrome (`render_shared_topbar`).
-- **The env switch**: `bin/build/crosslink.sh` stamps each placeholder with `data-twin` — the same
-  page in the other env when it exists, else that env's `docs/<env>/404.html` (the shared
-  `docs/404.html` is what Pages serves for unmatched URLs); report.js carries a live
-  `?query`/`#hash` onto a non-404 twin. On the shared home the label toggles the visible baked
-  `.envblock` (sessionStorage `axway-env`). report.js keeps the envs' persistence apart:
-  `pageKeyBase()` prefixes the env segment; the `report-area` meta is `<env>-<area>`.
+- `html_head` derives ONE prefix — `base`, back to the docs root — from the css href callers pass
+  docs-root-relative (`../assets/style.css` from `docs/transfer/`); the placeholder it bakes is
+  `<div class="topbar" data-b=… [data-help=…]>`.
+- **The top bar is RUNTIME**: pages bake only that placeholder; report.js `buildTopbar` renders
+  the full bar from `docs/assets/topbar-data.js` (written by `ensure_assets`: the
+  `transfer/server/analyses` menu strings with their `@` placeholder, `monitor:0|1`,
+  `coreid:"<url>"`, `env:"<label>"`; `?v=` stamp `TB_VER` folds the flag, the template and the
+  label). The help/build pages bake full chrome (`render_shared_topbar` → `render_topbar BASE
+  HELPSLUG`) — KEEP THE TWO IN STEP.
+- report.js has no `pageEnv`/`setupEnvSwitch`; the sessionStorage keys carry no env prefix; the
+  `report-area` meta is the area alone.
 
 ## The pipeline — bin/build.sh
 
-Runs the whole chain. One optional argument picks the SCOPE: none = both envs, `acc`/`prd` = that
-env only (drops the other env from every loop and cross-env step). NO git step — committing and
-pushing is manual. Writes an HTML run report to `build/index.html` (also on FAILED, EXIT trap) —
-LOCAL ONLY since 2026-08-29: no docs/ copy, and no page on the site references a build (the
-sitemap link went with it, so `AXWAY_BUILD_SCOPE`/`PUBLISH_STAMP_EXTRA` are gone). An env without the two
-flow-manager JSON exports is skipped with a note. **An env with the JSONs but NO log CSVs builds
-fully** (2026-08, the config-only estate — what a fresh clone is, the exports being gitignored):
-both parses write EMPTY-but-valid cache sets and exit 0, every report either renders its zero-row
-tables (the roster/entity/cross/UC-status reports — configured rows still show, all orange
-"configured, never seen") or skips into the empty-report placeholder; `render_report` pads a
-split report short of its `report_tabs` labels with the merge_rpt no-data stub so the group nav's
-same-label carry never links a 404, and linkcheck lists an unreachable `help/` page as
-informational (its family has no pages then) instead of failing.
+Runs the whole chain. NO argument (`-h` only; anything else is exit 2 — the acc/prd scope went
+with the env split). NO git step — committing and pushing is manual. Writes an HTML run report to
+`build/index.html` (also on FAILED, EXIT trap) — LOCAL ONLY since 2026-08-29: no docs/ copy, and
+no page on the site references a build. A checkout without the two flow-manager JSON exports
+exits 1 with a hint. **A checkout with the JSONs but NO log CSVs builds fully** (2026-08, the
+config-only estate — what a fresh clone is, the exports being gitignored): both parses write
+EMPTY-but-valid cache sets and exit 0, every report either renders its zero-row tables (the
+roster/entity/cross/UC-status reports — configured rows still show, all orange "configured,
+never seen") or skips into the empty-report placeholder; `render_report` pads a split report
+short of its `report_tabs` labels with the merge_rpt no-data stub so the group nav's same-label
+carry never links a 404, and linkcheck lists an unreachable `help/` page as informational (its
+family has no pages then) instead of failing.
 
-The report carries the timings (start → end · duration) in its title and opens with three fact
-blocks (Input / Cached files / Output), gathered BEFORE the end timestamp; `count_stats` caches line counts in `data/.buildstats/<key>` under a signature
-of the file list. Trap: glob file lists into an ARRAY, not `read <<<"$(…)"` (word-splits under the
-assignment's IFS). Nothing on the site links the report; the published HTML is identical
-whichever scope built it. (`PUBLISH_STAMP_EXTRA` still exists in publish_lib for any publish that
-needs an extra freshness ingredient — **never put a scope-like value in every stamp**, it would
-re-render every page on each switch.)
+The report carries the timings (start → end · duration) in its title — the environment label
+before them — and opens with ONE fact row (Input / Cached files / Output), gathered BEFORE the
+end timestamp; `count_stats` caches line counts in `data/.buildstats/<key>` under a signature of
+the file list. Then the Inbox block (which prefixes this checkout consumes and what the two inbox
+steps did — `build/inbox.tsv`) and the Input-changes table (new / updated / removed since the
+previous build, from the 3-column `build/input-manifest.tsv`: path ⇥ size ⇥ mtime). Trap: glob
+file lists into an ARRAY, not `read <<<"20 20 12 61 79 80 81 701 33 98 100 204 250 395 398 399 400…)"` (word-splits under the assignment's IFS). Nothing
+on the site links the report. (`PUBLISH_STAMP_EXTRA` still exists in publish_lib for any publish
+that needs an extra freshness ingredient — **never put a run-specific value in every stamp**, it
+would re-render every page on each build.)
 
-Order: (1) config, both envs — in PARALLEL when both are present (2026-08; ~9 s per env cold;
-the shared awk shim is pre-created first); (2) the two env
-chains run CONCURRENTLY — the bigger input in the foreground, the smaller in the background
-(pools capped via `AXWAY_NJOBS`), merged into the report at the barrier; (3) per env chain:
-*parse* (transfer and server `parse.sh` overlap, transfer with
-`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`, then `bin/session-sites.sh`, `bin/expire-files.sh`, `bin/bookend-ok.sh`,
-`bin/build/seen-in-server-log.sh`, `bin/build/result.sh`), *report*
-(`bin/transfer/reports/details.sh` FIRST — transfer phase 2 reads its `.rpt`s and slugmaps — then
-transfer, server, analyses, dashboards, day), *publish* (transfer, transfer-details,
-partner-groups, server, analyses, then THE CATCH-UPS — re-runs folding the cross-phase evidence
-into THIS build, each self-gating via its own freshness check (a warm build skips them in ~0 s):
-failed.sh (the boxes reasons now on disk; went-kaput runs EARLY, after result.sh, so the kaput
-stamps are final on failed.sh's FIRST pass), failing-reasons.sh, then the detail-pages pair
-(.rpt + publish) in the BACKGROUND beside the analyses/transfer publish catch-ups — details
-deps on the REDUCED `_srvsubs-map.tsv` (name⇥slug⇥stamp, no reason), so a reason-only rerun
-leaves it byte-identical and the pair skips — dashboards, day); (4) after the barrier: `bin/build/publish.sh`
-(index pages + shared home, reads BOTH trees), then `bin/analyses/publish-accvsprod.sh` per env in
-scope, then `bin/build/crosslink.sh` (always), then the scope's report page.
+Order, ONE linear chain (the rationale of every position is in the script's comments):
+(runtime only) `bin/build/exchange-in.sh` → `bin/build/st-reports-update.sh` (the `~/cloud`
+drop, by prefix) → the have-config check → `bin/flow-manager.sh` → *parse*: server `parse.sh`
+in the background beside transfer `parse.sh` (`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`), then
+`bin/session-sites.sh`, `bin/expire-files.sh`, `bin/bookend-ok.sh`,
+`bin/build/seen-in-server-log.sh`, `bin/build/result.sh`, a server-mention rescan when
+`data/server/cache/.rescan-mentions` exists, `went-kaput.sh` early (always; its evidence sidecar
+makes the details catch-up self-gate) → *report*: `bin/transfer/reports/details.sh` in the
+background beside transfer phase 1 and the server reports, then transfer phase 2, analyses (ends
+with seen-in-server-log — it needs a fresh `pda.rpt`), dashboards ∥ day → *publish*: detail
+pages ∥ transfer, then partner-groups, server, analyses, then THE CATCH-UPS — re-runs folding the
+cross-phase evidence into THIS build, each self-gating via its own freshness check (a warm build
+skips them in ~0 s): failed.sh (the boxes reasons now on disk), failing-reasons.sh, the
+detail-pages pair (.rpt + publish) in the BACKGROUND beside the analyses publish catch-up
+(details deps on the REDUCED `_srvsubs-map.tsv` — name⇥slug⇥stamp, no reason — so a reason-only
+rerun leaves it byte-identical and the pair skips), the transfer publish catch-up, dashboards,
+day → `bin/build/publish.sh` (index pages + the home, reads every area) →
+`bin/build/display-rename.sh` → (runtime only) `bin/build/st-reports-archive.sh`.
 
 Dependency rules: transfer reports before server and analyses reports; `seen-in-server-log.sh`
 last inside the analyses step (needs a fresh `pda.rpt`); dashboards + day after both areas;
 `bin/build/publish.sh` last of the publishes (the area publishes clear the dirs its index pages
-live in).
+live in). `bin/fresh.sh` (no arguments) wipes `build/`, `data/` and `docs/`, re-seeds the assets
+and runs the chain.
 
 ## Running individual stages
 
@@ -120,8 +140,8 @@ paths are centralized in `lib.sh` (derived from `LIB_DIR`, its own location): `I
 don't reintroduce `../../data`-style paths or path arguments.
 
 ```bash
-bin/build.sh                          # everything, both envs (no git)
-bin/fresh.sh                          # FULL fresh build: wipe data/ + docs/, seed assets/, build both envs
+bin/build.sh                          # everything (no git)
+bin/fresh.sh                          # FULL fresh build: wipe data/ + docs/, seed assets/, build
 bin/build/linkcheck.sh                # verify: 0 broken links, 0 orphan pages
 bin/transfer/parse.sh                 # -> _transfers.tsv + _files.tsv
 bin/transfer/reports.sh [phase1|phase2]
@@ -131,24 +151,22 @@ bin/server/reports.sh
 bin/analyses/reports.sh; bin/dashboards/reports.sh; bin/day/reports.sh
 bin/transfer/publish.sh               # …and the other per-area publishes; then:
 bin/analyses/publish-partner-groups.sh
-bin/build/publish.sh                  # index pages + shared home; run LAST
-bin/analyses/publish-accvsprod.sh     # needs both env trees
-bin/build/crosslink.sh                # stamp the env-switch twin links
+bin/build/publish.sh                  # index pages + the home; run LAST
 AXWAY_FORCE_PUBLISH=1 bin/…/publish.sh   # re-render even when the stamp says fresh
 AXWAY_DEBUG_FRESH=1   bin/…/publish.sh   # name the dep that forced the rebuild
 bash -n script.sh                     # syntax check — there is no test suite
 ```
 
-**Manual re-publish gotcha**: `publish-partner-groups.sh` and `publish-accvsprod.sh` run OUTSIDE
-the per-area publishes; skipping them after a publish sweep leaves their pages missing. The
-DISPLAY-RENAME sweep (`bin/build/display-rename.sh`, `input/<env>/rename.txt` — presentation renames
-applied to the RENDERED pages as the build's last page-touching step; caches/.rpt keep the real
-values, slugs/links untouched) also runs only in `bin/build.sh`: a manually republished page
-shows real values until the next build.
+**Manual re-publish gotcha**: `publish-partner-groups.sh` runs OUTSIDE the per-area publishes;
+skipping it after a publish sweep leaves its pages missing. The DISPLAY-RENAME sweep
+(`bin/build/display-rename.sh`, `input/rename.txt` — presentation renames applied to the
+RENDERED pages as the build's last page-touching step; caches/.rpt keep the real values,
+slugs/links untouched) also runs only in `bin/build.sh`: a manually republished page shows real
+values until the next build.
 **Column order is a runtime feature** (2026-09-05, report.js `initColOrder`): the columns of a
 movable table are reordered by dragging the rows of the `cols` picker (bottom-right of the table;
 header dragging was REMOVED 2026-09-06, user request — do not bring it back); the order is stored
-in localStorage under the report key WITHOUT the environment + the built header labels
+in localStorage under the report key + the built header labels
 (`colorder:…`), re-applied FIRST in `init()`, restored by the Reset link at the foot of the picker. Every cell of a movable table carries `data-ci`, its BUILT column
 index — anything that addresses a column by number (RECALC tokens, `data-noagg`/`data-pct`, the
 group column, the total label, the remembered sort, which now stores the built index) goes through
@@ -171,16 +189,16 @@ is GENERATED at publish from the light rules by `bin/darken-css.awk` — colour 
 class, appended to docs/assets/style.css by build.sh/fresh.sh; a new light colour must be added to
 its maps; the page head applies the theme before the stylesheet, help pages carry the same inline
 line) · RELATIVE dates (`setupRelDates`, mouseover delegation, tooltip only) · the COMMAND palette
-(`setupPalette`, Ctrl/Cmd+K; fetches `<env>/report-finder.html` and `<env>/search-data.js` once).
+(`setupPalette`, Ctrl/Cmd+K; fetches `report-finder.html` and `search-data.js` at the docs root once).
 COPY icons on ids (`setupCopyIds`, 2026-09-06): a ⧉ after every UUID in td/th/code/.coreid-item/dd/li,
 added LAST in init() (after the data-orig snapshots), re-added by a MutationObserver for content the
 page builds later and by a mouseover net after a restore; csvCellText skips `.cpid`. **CoreId LINKS to
 SecureTransport File Tracking** (`addCoreIdLinks`, 2026-09-07, user request): the same pass, run just
-BEFORE the copy icons, makes every UUID a link (new tab) to the per-env URL template of
-`input/<env>/coreid-url.txt` (`@COREID@` = the id; baked into topbar-data.js as `coreid:{acceptance,
-production}` by `ensure_assets`, folded into `TB_VER`); an id that already IS a link (File / error /
-record page) keeps it and gets a `↗` (`.stgo`) after it instead; the env comes from the topbar's
-`data-env`, else the path. An env without the file gets no links. Row links and drills ignore anchor
+BEFORE the copy icons, makes every UUID a link (new tab) to the URL template of
+`input/coreid-url.txt` (`@COREID@` = the id; baked into topbar-data.js as `coreid:"…"` by
+`ensure_assets`, folded into `TB_VER`); an id that already IS a link (File / error /
+record page) keeps it and gets a `↗` (`.stgo`) after it instead. A checkout without the file
+gets no links. Row links and drills ignore anchor
 clicks, so the id opens the platform and nothing else.
 
 **Iterating on HTML/CSS**: edit `assets/style.css`/`assets/report.js` (NOT the docs copies) and
@@ -192,21 +210,20 @@ a publish SKIPS when its stamp is fresh — the docs asset copies are deps, anyt
 **Incremental parsing.** `parse.sh` (both areas) keeps a manifest (basename + byte size per
 input) and tokenizes only what is new: the transfer side `sort -m`-merges into the CoreId-sorted
 cache (byte-identical to a full parse), the server side appends; a changed/removed manifested
-file — or **editing `parse.sh` / `input/<env>/blacklist.txt`** (cksums in `_*.parser`) — forces a full
+file — or **editing `parse.sh` / `input/blacklist.txt`** (cksums in `_*.parser`) — forces a full
 reparse. `reports.sh` does not parse; each report calls `ensure_parsed`.
 
-**Incremental publishing.** Each publish writes `data/<env>/.publish/<name>.stamp` and skips when
+**Incremental publishing.** Each publish writes `data/.publish/<name>.stamp` and skips when
 nothing it reads is newer. `bin/publish_lib.sh` owns `publish_is_fresh STAMP OUTDIR DEP…` /
 `publish_stamp` / `publish_area_stamps`; deps = `PUBLISH_CORE_DEPS` + the trees the caller lists.
 Four rules the machinery depends on:
 
-- **A generated `docs/` page is NEVER a dep** (crosslink.sh rewrites thousands every build); the
+- **A generated `docs/` page is NEVER a dep** (the display-rename sweep rewrites pages every build); the
   output DIRECTORY's existence is checked instead.
 - **Files only, never a directory's own mtime** (`find -type f -newer`); the stamp also stores the
   dep-tree file COUNT so a deletion is noticed.
-- **The three cross-cutting steps** (`bin/build/publish.sh`, `publish-accvsprod.sh`,
-  `crosslink.sh`) depend on the seven per-AREA stamps BY NAME (`publish_area_stamps`) — never on
-  the `.publish` DIR, which also holds their own stamps.
+- **The cross-cutting step** (`bin/build/publish.sh`) depends on the seven per-AREA stamps BY
+  NAME (`publish_area_stamps`) — never on the `.publish` DIR, which also holds its own stamp.
 - **A writer regenerating identical content must keep its mtime** (cmp-guarded: `cov_put`,
   `apply_help_chrome`, `_expired.tsv` — tested with `-f`, not `-s`: an empty extraction is
   valid). A `.rpt` cannot be cmp-guarded — its FOOT carries the run time.
@@ -222,18 +239,18 @@ configured-vs-seen analyses from the transfer outputs + config caches (no parse 
 
 ### bin/flow-manager.sh — the pre-parse config step
 
-Extracts from `input/<env>/flow-manager/{partners,subscriptions}.json`: `data/<env>/flow-manager/base/`
+Extracts from `input/flow-manager/{partners,subscriptions}.json`: `data/flow-manager/base/`
 — the 11 entity lists (`name⇥direction⇥result`: `_accounts _logins _hosts _white _subscriptions
 _profiles` + the derived `_logicals` (the FlowIDs condensed into logical flow groups,
-`input/<env>/logical.txt` pins honoured), PDA `_partners _apps _domains` and `_bl` (2026-08-31, user
+`input/logical.txt` pins honoured), PDA `_partners _apps _domains` and `_bl` (2026-08-31, user
 request: the subscriptions.json `tags` entries starting with `BL`, kept verbatim — a full entity,
 LAST in the Logical/Partners/Domains/Applications group everywhere it renders; a File belongs to
 a BL through its SUBSCRIPTION); result filled later by the
-two build steps) — and `data/<env>/flow-manager/xref/` — the pair caches: every pair of the eleven
+two build steps) — and `data/flow-manager/xref/` — the pair caches: every pair of the eleven
 items BOTH WAYS (110 files; unconfigured = empty — `_profiles-logicals` doubles as the FlowID →
 Logical MAP every report attributes a File’s profile column through, `_subscriptions-bl` as the
 subscription → BL tag map, and its sidecar `_subscriptions-bl-added.tsv` carries the
-`input/<env>/BL.txt` rows the `tags` do NOT hold — the Analyses → Configuration “Added BL” page), plus `_subscriptions-patterns`, `_subscriptions-flowdir`
+`input/BL.txt` rows the `tags` do NOT hold — the Analyses → Configuration “Added BL” page), plus `_subscriptions-patterns`, `_subscriptions-flowdir`
 (out|in|relay), `_subscriptions-ucderived` (2026-08: the use case DERIVED for a non-UC-named
 subscription from flowdir × the pattern's one partner verb — out+pull=UC2, out+push=UC1,
 in+push=UC4, in+pull=UC3; both/neither verb = no row; consumers: the detail Features "Use case"
@@ -241,7 +258,7 @@ row and every use-case-gated consumer — the UC1–UC4 status rosters, the UC3 
 and its clears, missing-cronjobs, account-sharing, twins, the twin rules; until 2026-08-31 most
 read the name prefix alone and silently dropped the hybrid flows), `_{accounts,subscriptions}-fmlink`,
 `_partner-group{s,-why,-accounts}` and `_templates.tsv` (optional export). It also forward-resolves the configured hosts into
-`input/<env>/ip/`.
+`input/ip/`.
 
 Nothing downstream reads the JSONs directly (except `publish-insights.sh`); everything goes via
 `ensure_config`. Transfer's `ensure_parsed` watches the **xref** cache mtimes only — deliberately
@@ -256,11 +273,11 @@ through the FlowID. The account-name split machinery, the subscription-name fall
 prune are RETIRED. So is the **Logical derivation** itself (FlowID families → three-part group
 names; a `-` inside a part marks parts the derivation combined, which is why Logical names are
 never separator-folded) — it runs FIRST, the PDA pass consumes it. The coverage TSVs
-`data/<env>/transfer/reports/coverage/*.tsv` are the materialized product (`ensure_pda_tsvs`).
+`data/transfer/reports/coverage/*.tsv` are the materialized product (`ensure_pda_tsvs`).
 
 ### bin/dashboards/ and bin/day/
 
-`bin/dashboards/reports.sh` → `overview.rpt` (+ `monitor.rpt`, whose EXISTENCE flags "this env
+`bin/dashboards/reports.sh` → `overview.rpt` (+ `monitor.rpt`, whose EXISTENCE flags "this checkout
 has a monitor"); `publish.sh` renders the Overview — 5 KPIs + one hero graph with alternate
 views, all chart type `slots`, drawn client-side by `docs/assets/slotchart.js`.
 `bin/day/reports.sh` writes one `.rpt` per calendar day (both logs); its publish renders KPIs →
@@ -378,8 +395,8 @@ within a file). Full detail in ARCHITECTURE.md.
 
 ### Transfer parse — _transfers.tsv
 
-`bin/transfer/parse.sh` tokenizes `input/<env>/transfer/*.csv` once into
-`data/<env>/transfer/cache/_transfers.tsv` (`$PARSED`). The CSV tokenizer is hand-rolled in awk
+`bin/transfer/parse.sh` tokenizes `input/transfer/*.csv` once into
+`data/transfer/cache/_transfers.tsv` (`$PARSED`). The CSV tokenizer is hand-rolled in awk
 (quoted commas work on any awk). One 25-column row per record, sorted by CoreId then Direction
 (col 25, 2026-09-08 = the export's own Application field, raw — "none" on the empty outbound ssh
 probes the parse-time skip drops; NOT the derived application entity):
@@ -404,7 +421,7 @@ probes the parse-time skip drops; NOT the derived application entity):
 Column 8 is the real file basename (CSV field 10 "File" holds the account name on outbound rows —
 not used). Raw columns are carried verbatim so each report keeps its own fold/parse. Col 16: an
 IPv4 on an OUT-side row is replaced by the configured endpoint it maps to
-(`input/<env>/ip/ip-hosts.tsv`); an IN-side row KEEPS the raw source IP. Which side a row is on,
+(`input/ip/ip-hosts.tsv`); an IN-side row KEEPS the raw source IP. Which side a row is on,
 and which endpoint an address belongs to, are decided by the row's SUBSCRIPTION first and its
 account only as a fallback (2026-08-31): an account may be configured BOTH ways *and* with
 SEVERAL hosts, so asked first it mislabelled a hybrid account's inbound rows and — being
@@ -423,7 +440,7 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    NOW, at the one canonicalisation point in `parse.sh` (where the `_SCP_` tail is stripped and the
    `<subscription>_<PROTO>_SERVER_<partner>` extension folded — the server reports and the server
    parser's mention tokenizer strip/fold the same two shapes, 2026-09-05), via
-   `input/<env>/renames/subscriptions.tsv` (`bin/renames.sh`, `rn_canon`). A log line keeps the
+   `input/renames/subscriptions.tsv` (`bin/renames.sh`, `rn_canon`). A log line keeps the
    name that was current when it was written, so an export that renames a flow would otherwise
    split its history in two — the configured half joining nothing and going orange, the logged
    half arriving as an unknown entity. The map is derived from the EXPORTS, never from the names
@@ -457,8 +474,8 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
   not configured at all (this is how the caches once grew to 696 rows for 568 flows). A row
   survives when it is in `base/.configured.tsv` (the snapshot `flow-manager.sh` takes BEFORE
   either step appends), still blue this run, or backed by real transfer data.
-1. **Blacklist** — `input/<env>/blacklist.txt` (PER ENVIRONMENT since 2026-08-31, user request —
-   like every policy file; COMMITTED in develop; TSV `<field>⇥drop|keep⇥<value>`) BLANKS
+1. **Blacklist** — `input/blacklist.txt` (a policy file like the others, COMMITTED in develop; TSV
+   `<field>⇥drop|keep⇥<value>`) BLANKS
    platform-internal values (row kept), read only through the sourced `bin/blacklist.sh`;
    `parser_sig` cksums it so an edit forces a full reparse. **The EXTENDED transfer-site fold**
    (2026-09-01, user report): ST logs some flows as `<subscription>_<PROTO>_SERVER_<partner>` —
@@ -506,7 +523,7 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    user request) the **EMPTY OUTBOUND SSH PROBE**: a CoreId whose ONE record is Outbound + ssh +
    size 0 + Application "none" (col 25; empty counts the same) — no file moved, so it must not
    become a one-legged Failed File; the Skipped report lists it under its own reason. Distinct from
-   the `input/<env>/skip.txt` SKIP LIST (same layout as the blacklist — fields TAB- or whitespace-separated since 2026-09-09: a space-typed `any contains X` used to fall to the bare-token form and match nothing, which is how a skipped production subscription stayed on the site; the two readers `bin/skiplist.sh` / `bin/blacklist.sh` are part of both parser signatures and of the config step's freshness since then — but DROPS THE WHOLE RECORD — and, on the config side, the account, subscription or comm-profile LOGIN whose name contains the value, 2026-09-03;
+   the `input/skip.txt` SKIP LIST (same layout as the blacklist — fields TAB- or whitespace-separated since 2026-09-09: a space-typed `any contains X` used to fall to the bare-token form and match nothing, which is how a skipped production subscription stayed on the site; the two readers `bin/skiplist.sh` / `bin/blacklist.sh` are part of both parser signatures and of the config step's freshness since then — but DROPS THE WHOLE RECORD — and, on the config side, the account, subscription or comm-profile LOGIN whose name contains the value, 2026-09-03;
    read only through the sourced `bin/skiplist.sh`; matched cache rows → `_skipped.tsv`).
 
 A changed subscriptions.json re-derives `_transfers.tsv` (export → flow-manager cache mtimes →
@@ -600,8 +617,8 @@ the logical flow name — parse col 19 keeps one).
 
 ### Server parse — _parse.tsv
 
-`bin/server/parse.sh` tokenizes `input/<env>/server/*.csv` (handling quoted fields with embedded
-newlines) into `data/<env>/server/cache/_parse.tsv` — 6 columns: date, time, level (I/W/E),
+`bin/server/parse.sh` tokenizes `input/server/*.csv` (handling quoted fields with embedded
+newlines) into `data/server/cache/_parse.tsv` — 6 columns: date, time, level (I/W/E),
 component (T=TM P=PESITD S=SSHD; ADMIN/AUDIT dropped), message (multi-line buffered into one
 row), **session** (CSV field 18 — the SAME connection id `_transfers.tsv` carries in col 24, so a
 file's legs and the server lines of their connection join on it; `""` where the export wrote
@@ -627,7 +644,7 @@ matching**: each daemon stamps `[Ssh Default] ` / `[Pesit Default] ` / `[Ftp Def
 anchored rule would otherwise match the bare form and miss the tagged twin of the same line. Only
 a `<Word> Default` tag is stripped — the odd `[server #173 @…]` lines keep their text — and every
 rule then covers both forms, which is why no rule names a tag.
-Deliberately NOT `input/<env>/skip.txt`: a skip rule archives its records for the Skipped report, which
+Deliberately NOT `input/skip.txt`: a skip rule archives its records for the Skipped report, which
 is the cost this filter exists to avoid. Editing the list changes `parser_sig`, so the next run
 reparses in full. **Four server reports read those lines and were removed with them**:
 `concurrency` (a `capacity` component), `event-feed` (a `platform-health` component), and
@@ -737,7 +754,7 @@ the UC status per-hour walkers read it (+ `_greenpoll.tsv`) so their sidecars' l
 the STAT figures.
 Blue counts
 as SEEN with blank counts; the status tables show it as the Server column; in the Transfer scope
-it retints orange. `data/<env>/blue/<type>/<name>.txt` holds the evidencing log line per blue
+it retints orange. `data/blue/<type>/<name>.txt` holds the evidencing log line per blue
 entity (existence = the signal `blue_box` renders).
 
 **The SSH logon funnel is SESSION-aware** (2026-09-06, user request — the FE000508 finding):
@@ -789,10 +806,10 @@ Analyses get the same treatment via `render_subs_group_pages`. Kept in its own a
 pages' `resmaps` tint entity CELLS and must not switch this on for a whole area.
 
 The analyses, dashboards and day publishes hand-render their pages but source publish_lib;
-cross-links use `DLINK_BASE`. **All options, every env**: menus, sitemap and group tab bars list
-every order-listed report UNCONDITIONALLY, so both envs' menus are identical; a missing `.rpt`
+cross-links use `DLINK_BASE`. **All options, every checkout**: menus, sitemap and group tab bars list
+every order-listed report UNCONDITIONALLY, so every checkout's menus are identical; a missing `.rpt`
 gets an "empty report" placeholder page (`render_missing_reports`). Publishes run concurrently
-(production beside acceptance; `publish-details.sh` beside `publish.sh` — disjoint trees).
+(`publish-details.sh` beside `publish.sh` — disjoint trees).
 
 ### The page families (details in ARCHITECTURE.md)
 
@@ -817,7 +834,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   sets that day's state (site-wide outcome policy, Waiting counts as OK), so a flow that broke and
   recovered inside one day ends it green and is NOT a flip; a day the flow carried nothing keeps
   the state, so the flip lands on the day the state actually changed. A flow's first active day
-  only establishes its state. Each nonzero cell links `docs/<env>/switches/<date>.html#red|#green`
+  only establishes its state. Each nonzero cell links `docs/switches/<date>.html#red|#green`
   — one page per day with flips, listing the subscriptions behind the two cells (tinted by their
   CURRENT colour, each row opening the detail page); the pages are written by the same
   `write_env_block` pass from the names side-file `daily_loglines_tsv` fills. Then the RED worklist
@@ -851,7 +868,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   "Error" and the two mood boxes are deliberately not reasons and a flow in several cause boxes
   takes the one its newest own Error/Warn line classifies to. The REASON is descriptive, not a
   verdict: the colour still never rests on a line attributed to no flow; Last file comes from `_files.tsv`.
-- **The Entities pages**: 9 entities x 10 views under `docs/<env>/transfer/entities/`, one shared
+- **The Entities pages**: 9 entities x 10 views under `docs/transfer/entities/`, one shared
   layout assembled at publish time from the entity `.rpt` + the coverage TSVs; the
   +Server/Transfer SCOPE decides whether a server-log sighting counts as seen; sort is shared
   across the nine entities (localStorage, 1-hour sliding expiry, stored by column label).
@@ -873,8 +890,8 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   `docs/assets/file-search.js` — a Search button, never per-keystroke, the NAV row carrying
   `?q=` between the windows; 24 hours = the newest full day + the partial newest day, 48 hours
   = the second full day), the Report finder, the SIX Failed-transfers
-  view pages (+ per-CoreId error pages, and since 2026-09-03 the FILE pages `docs/<env>/files/<coreid>.html` — the same layout for a File of ANY outcome, written by `failed.sh` for the CoreIds the Transfer patterns page's "Last 5 files" cells link, `_patterns-files.tsv`, and for every File the Longest Files page lists (both views; the one-hour threshold went 2026-09-06), `_longest-files.tsv` — its CoreId cell opens the File page), Cross References, Seen in server log, Entity coverage
-  (assert OK ⊆ Current ⊆ Once), whitelist-audit, config-hygiene, acc-vs-prod, UC status (its UC3
+  view pages (+ per-CoreId error pages, and since 2026-09-03 the FILE pages `docs/files/<coreid>.html` — the same layout for a File of ANY outcome, written by `failed.sh` for the CoreIds the Transfer patterns page's "Last 5 files" cells link, `_patterns-files.tsv`, and for every File the Longest Files page lists (both views; the one-hour threshold went 2026-09-06), `_longest-files.tsv` — its CoreId cell opens the File page), Cross References, Seen in server log, Entity coverage
+  (assert OK ⊆ Current ⊆ Once), whitelist-audit, config-hygiene, UC status (its UC3
   tab also carrying the polling tables — the former Remote polls report and Cronjobs page, 2026-09-05), Polling (the SAME polling information as ONE flat table, one row per polling subscription — `bin/analyses/reports/polling.sh` → `polling.rpt`, a `SUBS_GROUP_REPORTS` server member rendered into analyses/, sitting at the old Cronjobs slot of the Configuration row, 2026-09-05)
   (a Use-cases view; pages in analyses/).
 - **The Boxes pages** (subscriptions-in-boxes + accounts-in-boxes, written by publish-insights):
@@ -906,11 +923,10 @@ ARCHITECTURE.md.
 
 `TRANSFER_MENU`/`SERVER_MENU` are built from the orders minus the basenames living in the Analyses
 dropdown. `ANALYSES_MENU` is hand-written, one line per group: Start page · **Coverage & seen** ·
-**Configuration** · **Partners** · **Boxes** · **Errors** ·
-**Acceptance vs production**; `_analyses_groups` is the single
+**Configuration** · **Partners** · **Boxes** · **Errors**; `_analyses_groups` is the single
 source of truth for the analyses group tab bars — **keep it in sync with `ANALYSES_MENU`, the
 analyses index and the sitemap.** The Coverage/Configuration members whose PAGE renders into
-`docs/<env>/transfer/` are absent from `group_of` and the transfer menu; `finder_area` labels them
+`docs/transfer/` are absent from `group_of` and the transfer menu; `finder_area` labels them
 Analyses. `_tag_variants` (group crumbs) skips a globbed page that is itself a listed member — the
 `<base>-*.html` glob would otherwise claim a different member sharing the prefix.
 
@@ -921,11 +937,12 @@ CI build (the sources are gitignored): run `bin/build.sh` locally → commit `do
 both MANUAL.
 
 - **Local preview: `http://localhost/develop/`** — the local Homebrew httpd serves this repo's
-  `docs/` (the runtime twin serves at `http://localhost/runtime/`); preview there, never start a
+  `docs/` (the runtime twins serve at `http://localhost/runtime-acceptance/` and
+  `http://localhost/runtime-production/`); preview there, never start a
   throwaway HTTP server, hard-reload after an asset edit. All generated links are RELATIVE, so
   the site works under any base path — the 404 page derives its home link from the URL itself.
-- **`docs/` is PURE committed build output** (2026-08-29): every `bin/build.sh` run CLEARS its
-  scope's docs tree (both = all of `docs/`, `acc`/`prd` = that env's subtree) and RE-SEEDS the
+- **`docs/` is PURE committed build output** (2026-08-29): every `bin/build.sh` run CLEARS
+  `docs/` wholesale and RE-SEEDS the
   hand-authored files from the repo-root **`assets/`** — `style.css`, `report.js`, `slotchart.js`,
   `file-search.js` → `docs/assets/`, `assets/help/` → `docs/help/`. **EDIT IN `assets/`, never in
   `docs/`** — a build overwrites the docs copies. (`.nojekyll` and `topbar-data.js` stay
@@ -981,7 +998,7 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 ## Conventions / gotchas
 
 - **Endpoints are canonically LOWERCASE everywhere, data files included** — lowercased at the
-  source; downstream needs no folding. Readers of `input/<env>/ip/` lowercase the HOST column at
+  source; downstream needs no folding. Readers of `input/ip/` lowercase the HOST column at
   read time (the map is an input, kept as written).
 - **"Subscription" naming**: the entity is **subscription** in display text and visible internals.
   Still site-named (data model): the KIND token `site`, the parse-cache columns, `sites.tsv`, the
@@ -1018,18 +1035,20 @@ Every pipeline script lives under **`bin/`** — `bin/runtime.sh` (the develop�
 sync) included; the committed repo top is `bin/ assets/ docs/`,
 the three `.md` docs, `.gitignore`/`.gitattributes` and **`input/`** — in
 THIS repo committed IN FULL, sample CSVs included (the whole estate is synthetic and small;
-`bin/sample/generate.sh` rewrites it). `input/` holds the flow-manager JSONs, the `ip/` and
-`renames/` maps, the `.sample-estate` marker + `.sample/` spec, the two policy files
-and — **PER ENVIRONMENT since 2026-08-31 (user request), under `input/<env>/`**:
+`bin/sample/generate.sh` — no argument — rewrites it as ONE estate, the union of the former
+acceptance and production sample rosters; its `KEY="acceptance"` constant is only the PRNG
+namespace that keeps the generated identities stable). `input/` holds the flow-manager JSONs, the
+`ip/` and `renames/` maps, the `.sample-estate` marker + `.sample/` spec, and the hand-maintained
+files at its root: **`environment.txt`** (the checkout's label — see "Environment"),
 `blacklist.txt` + `skip.txt` (see the attribution chain),
-`rename.txt` (DISPLAY renames, applied to that environment's rendered pages by the build's last
-step — the shared root pages take both envs' rules; see the manual re-publish gotcha), `logical.txt` (fixed FlowID → Logical
+`rename.txt` (DISPLAY renames, applied to the rendered pages by the build's last step; see the
+manual re-publish gotcha), `logical.txt` (fixed FlowID → Logical
 transforms feeding the Logical entity derivation — owned by `bin/flow-manager.sh` since Logical
 became a full entity, and one of its freshness deps; a listed FlowID skips the derivation),
 `BL.txt` (BL numbers per subscription, `<subscription> <BL>[,<BL>...]` — several numbers
 comma-separated in the second field — a SECOND source of BL entities beside the subscriptions.json tags,
-unioned in `bin/flow-manager.sh`; the real files live in runtime's `input/<env>/`, develop's are
-the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Analyses → Configuration "Partners - Incoming" page's Gateway column; hand-maintained, sample template in develop), `coreid-url.txt` (2026-09-07: the SecureTransport File Tracking URL every CoreId on the site links to — ONE line, `@COREID@` where the id goes; hand-maintained per environment, the REAL admin hosts live only in runtime's copies, develop's sample carries an `.example` host — read by `publish_lib.sh` into topbar-data.js) and
+unioned in `bin/flow-manager.sh`; the real files live in the runtime repos' `input/`, develop's are
+the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Analyses → Configuration "Partners - Incoming" page's Gateway column; hand-maintained, sample template in develop), `coreid-url.txt` (2026-09-07: the SecureTransport File Tracking URL every CoreId on the site links to — ONE line, `@COREID@` where the id goes; hand-maintained per checkout, the REAL admin hosts live only in the runtime copies, develop's sample carries an `.example` host — read by `publish_lib.sh` into topbar-data.js) and
 `logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
 Logical-based PDA derivation: part 1/2/3 of a three-part Logical name is replaced before it
 becomes the domain / application / partner-merge token — and since 2026-09-06 the Logical NAME ITSELF is recreated as Domain_Application_Partner from the replaced parts (the STREAM partner rule included), in the LOGICAL block before the base list / pair caches / PDA read the map, so two Logicals replacing to the same parts become one (the rule trail says "parts replaced");
@@ -1037,8 +1056,7 @@ freshness deps too. **`logical_partners.txt` is also where PARTNER ALIASES live*
 2026-09-01, user request: the retired `partner-aliases.tsv` said "these two tokens are one
 organisation" and merged them into a group; rewriting the variant to its canonical token here
 does the same earlier — the variant never becomes a token, so there is no group to name, and
-merge rule 4 plus the alias star went with it. `bin/build/migrate-input.sh` folds an old alias
-file into this one; ONE HARD-CODED rule sits beside them in `bin/flow-manager.sh`, 2026-09-03,
+merge rule 4 plus the alias star went with it. ONE HARD-CODED rule sits beside them in `bin/flow-manager.sh`, 2026-09-03,
 user request: a Logical whose name contains `STREAM` takes the partner `ACCEPTEMAIL`, exempt from
 the merges), plus a
 README.txt per directory. Gitignored: the `data/` root and `/build/`. A step script that
@@ -1046,17 +1064,18 @@ only `bin/build.sh` ever invokes lives in **`bin/build/`** — the placement rul
 generator lives in **`bin/sample/`** (guarded by the marker, seeds in `bin/sample/seed/`).
 
 ```
-bin/build.sh            the whole chain, both envs
+bin/build.sh            the whole chain (no argument)
 
 # SHARED — sourced or called by the area scripts:
-bin/env.sh              AXWAY_ENV resolution          bin/fastawk.sh    the mawk PATH shim
+bin/envlabel.sh         input/environment.txt reader (label, inbox prefixes)
+bin/fastawk.sh          the mawk PATH shim
 bin/ip.sh               address<->endpoint map        bin/blacklist.sh  field blanking
 bin/skiplist.sh         record dropping               bin/uc-cases.sh   uc_meta()
-bin/renames.sh          subscription rename map (input/<env>/renames/) + fm_snapshot_renames
+bin/renames.sh          subscription rename map (input/renames/) + fm_snapshot_renames
 bin/publish_lib.sh      shared renderer + globals     bin/cron2human.awk cron -> prose
 bin/render_rpt.awk      the one-pass page-body renderer
 bin/merge_rpt.sh        component .rpt -> merged tabbed report
-bin/flow-manager.sh     config exports -> data/<env>/flow-manager/{base,xref}
+bin/flow-manager.sh     config exports -> data/flow-manager/{base,xref}
 bin/expire-files.sh     Waiting -> Expired from the File Maintenance sweep lines
 bin/bookend-ok.sh       Failed -> Processed on the server log's own ok "Transfer end logged." bookend (no reason line)
 bin/session-sites.sh    UCx groups -> real subscription via the server log's session route lines
@@ -1064,25 +1083,28 @@ bin/session-sites.sh    UCx groups -> real subscription via the server log's ses
 # BUILD-ONLY — nothing but bin/build.sh invokes these:
 bin/build/seen-in-server-log.sh  mark server-log-only entities blue (+ the unknown-* reports)
 bin/build/result.sh              fill the base result columns (preserve blue)
-bin/build/publish.sh             index pages + the shared home; run LAST
-bin/build/crosslink.sh           stamp the env-switch twin links
+bin/build/publish.sh             index pages + the home; run LAST
+bin/build/display-rename.sh      the display-rename sweep (input/rename.txt); the last page-touching step
 bin/build/linkcheck.sh           every link resolves + every page is reachable (manual gate)
+
+# RUNTIME-ONLY (skipped on the sample estate — the .sample-estate marker):
+bin/build/exchange-in.sh         ~/exchange inbox: this environment's <prefix>*.7z -> st-reports-update.sh
+bin/build/st-reports-update.sh   one archive (or every <prefix>*.7z in ~/cloud) -> input/
+bin/build/st-reports-archive.sh  docs/ -> st-reports-<env>_<stamp>.7z -> build/ + ~/cloud/ + ~/exchange/
 ```
 
-All data lives under two roots at the repo top (`data/` gitignored wholesale; under `input/` only
-the `*.csv` exports are gitignored):
+All data lives under two roots at the repo top (`data/` gitignored wholesale; a runtime repo
+additionally ignores the `*.csv` exports under `input/`, its one bulk item):
 
-- `input/<env>/{transfer,server}/*.csv` + `input/<env>/flow-manager/*.json` — the raw exports
-  (irreplaceable); `templates.json` optional. `input/<env>/blacklist.txt` and
-  `input/<env>/skip.txt` — see the attribution chain. **`bin/build/migrate-input.sh`** (the
-  build's first step) moves a checkout's pre-2026-08-31 shared copies of the nine policy files
-  into every env dir once — runtime's `input/` is never synced, so its real files migrate at its
-  next build (same content into both envs; the user splits them afterwards).
-- `input/<env>/renames/` — `subscriptions.tsv` (old⇥current) and `flowid-names.tsv` (the previous
+- `input/{transfer,server}/*.csv` + `input/flow-manager/*.json` — the raw exports
+  (irreplaceable); `templates.json` optional. `input/blacklist.txt` and `input/skip.txt` — see
+  the attribution chain. `input/environment.txt` — the checkout's label (see "Environment"),
+  never synced, never delivered by an archive.
+- `input/renames/` — `subscriptions.tsv` (old⇥current) and `flowid-names.tsv` (the previous
   export's `flowId`⇥name snapshot). **Machine-maintained, never hand-written**; under `input/`
   for the same reason as the DNS map — once an export is overwritten its names cannot be
   recovered, and `rm -rf data/` must stay safe. See the attribution chain, step 0.
-- `input/<env>/ip/ip-hosts.tsv` — the PER-ENV address ↔ endpoint map (`ip⇥host`), **fully
+- `input/ip/ip-hosts.tsv` — the address ↔ endpoint map (`ip⇥host`), **fully
   automatic, never hand-written**; **`bin/ip.sh`** owns it (`ip_put`, the only writer,
   cmp-guarded; an empty dir is valid). **There is NO reverse DNS anywhere, and none may be
   reintroduced** — the configuration names endpoints. Writers: `flow-manager.sh` forward-resolves
@@ -1090,16 +1112,15 @@ the `*.csv` exports are gitignored):
   OUTGOING IPv4 under the host configured for its account (no row on disagreement; an INCOMING
   address gets no row — it stays raw in col 16). **`ip_put` UNIONS, never replaces.** Under
   `input/` because a DNS answer cannot be regenerated — `rm -rf data/` must stay safe.
-- `data/<env>/<area>/cache/` — the tokenized caches + companions; `data/<env>/<area>/reports/` —
+- `data/<area>/cache/` — the tokenized caches + companions; `data/<area>/reports/` —
   the `.rpt` descriptors (+ `details/`, `coverage/`, `errors/`).
-- `data/<env>/unknown/*.tsv` — the unknown-* sidecars + the SSH-logon files; ALL FIVE sidecars
+- `data/unknown/*.tsv` — the unknown-* sidecars + the SSH-logon files; ALL FIVE sidecars
   seed the blue step (accounts/logins/sites/hosts/white — `white.tsv` carries only TM-mentioned
   whitelisted IPs and recolors `base/_white.tsv` via `recolor … onlywhite`; the xref `_white-*`
   pair caches are enrichment inputs, not seeds). Rewritten each run; a type with
   no unknowns keeps an EMPTY sidecar (a deleted one would force a full rescan every build).
-- `data/<env>/blue/` — the blue evidence. `data/<env>/flow-manager/{base,xref}/` — the config
-  caches. `data/<env>/.publish/*.stamp` — the freshness stamps (`data/.publish/crosslink.stamp` is
-  shared).
+- `data/blue/` — the blue evidence. `data/flow-manager/{base,xref}/` — the config
+  caches. `data/.publish/*.stamp` — the freshness stamps.
 
 `input/` is deliberately separate from the wipe-able `data/`: `rm -rf data/` is safe and never
 touches the raw CSVs or the DNS map. The built site is the committed repo-root `docs/`.
