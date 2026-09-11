@@ -95,7 +95,7 @@
   // index (spacer columns), and any row whose spans cannot be split cleanly.
   //
   // The order is stored in localStorage — it must outlive the tab — under the
-  // report key (WITHOUT the environment: one report, one order on both) plus
+  // report key plus
   // the built header labels, so a report whose columns change simply falls
   // back to its built order. Reset at the foot of the cols picker restores it.
   function cellByCi(tr, ci) {
@@ -112,7 +112,6 @@
     return c ? c.cellIndex : -1;
   }
   function cell0(tr) { return cellByCi(tr, 0) || tr.cells[0]; }   // the built first column's cell
-  function pageKeyNoEnv() { return pageKeyBase().replace(/^(acceptance|production):/, ""); }
   function colMovable(table, hr) {
     var n = hr.cells.length, i, j, r, cs, sum;
     if (n < 2) return false;
@@ -141,7 +140,7 @@
   function colOrderKey(table, hr) {
     var labels = [], i;
     for (i = 0; i < hr.cells.length; i++) labels.push(hr.cells[i].textContent.replace(/[▲▼]/g, "").trim());
-    return "colorder:" + pageKeyNoEnv() + ":" + labels.join("|");
+    return "colorder:" + pageKeyBase() + ":" + labels.join("|");
   }
   function loadOrder(key, n) {
     try {
@@ -1316,7 +1315,7 @@
     if (sfocus) sfocus.focus();
   }
 
-  // ---- The Report finder (docs/<env>/report-finder.html) -------------------
+  // ---- The Report finder (docs/report-finder.html) -------------------------
   // A static catalog table (data-rfinder) + its own search box (#rfq): the
   // query matches each report's TITLE (data-t) and INTRO (data-i) with the
   // site search grammar (wildcards ? and *, or/and/not); TITLE matches rank
@@ -1813,21 +1812,11 @@
   // Page identity: "<dir>/<report key or basename>", so one report's pages
   // share their remembered sort and search, while different reports never
   // bleed into each other.
-  // The active ENVIRONMENT segment of this page's path ("acceptance" /
-  // "production"), or "" on the shared root pages (home, build report). Both
-  // env trees serve the same page names, so every sessionStorage key that
-  // identifies a page or area must carry this to keep the envs apart.
-  function pageEnv() {
-    var m = location.pathname.match(/\/(acceptance|production)\//);
-    return m ? m[1] : "";
-  }
+  // (One site = one environment since 2026-09-11: the keys carry no
+  // environment segment any more.)
   function pageKeyBase() {
     var segs = location.pathname.split("/").filter(Boolean);
     var pdir = segs.length > 1 ? segs[segs.length - 2] : "";
-    // Env prefix: /acceptance/transfer/x.html and /production/transfer/x.html
-    // must never share a sort/search store.
-    var env = pageEnv();
-    if (env) pdir = env + ":" + pdir;
     // Report pages carry a report-key meta: the SAME key on every page of one
     // report — all its table-tab pages (All/Seen/Not Seen, Summary/Detail, …)
     // — so the search text and sort survive tab switches.
@@ -1874,7 +1863,7 @@
   // the pages fall back to their own default (Files descending).
   var ENT_TTL = 3600000;   // 1 hour, in ms
   function isEntitiesPage() { return location.pathname.indexOf("/transfer/entities/") >= 0; }
-  function entKey()  { var e = pageEnv(); return "axway-entities-sort" + (e ? ":" + e : ""); }
+  function entKey()  { return "axway-entities-sort"; }
   function entLabel(th) { return th ? th.textContent.replace(/[▲▼]/g, "").trim() : ""; }
   function entLoad() {
     try {
@@ -2343,7 +2332,7 @@
     // and re-selects the Top 5 for it). Until 2026-08 the wrap joined the
     // hero card's own .chartbtns row and dropped the day buttons.
     var _dfArea = document.querySelector('meta[name="report-area"]');
-    var dashHero = !!(_dfArea && /-dashboards$/.test(_dfArea.getAttribute("content") || "") &&
+    var dashHero = !!(_dfArea && /(^|-)dashboards$/.test(_dfArea.getAttribute("content") || "") &&
                       document.querySelector(".dash-grid .chartbtns"));
     var wrap = document.createElement("div");
     wrap.className = "controls";
@@ -2843,10 +2832,7 @@
   // All/Seen/Not seen/Server/Detail views share ONE search, so a filter typed on
   // Accounts survives a switch to Logins. (Sort stays per-entity via pageKeyBase.)
   function searchStoreKey() {
-    if (location.pathname.indexOf("/entities/") >= 0) {
-      var env = pageEnv();
-      return (env ? env + ":" : "") + "entities";
-    }
+    if (location.pathname.indexOf("/entities/") >= 0) return "entities";
     return pageKeyBase();
   }
   function saveSearch(v) { try { sessionStorage.setItem("search:" + searchStoreKey(), v); } catch (e) {} }
@@ -3351,33 +3337,19 @@
     }
   }
 
-  // The top-bar ENVIRONMENT label (html_head's .envswitch, right after the
-  // brand). Two behaviors:
-  //  - On an env page (path contains /acceptance/ or /production/): the link
-  //    to this page's TWIN in the other environment is resolved at BUILD time
-  //    by bin/crosslink.sh — the twin page when it exists, else the other
-  //    env's own 404 page — so the switch never hits the webserver's 404.
-  //    The click handler only carries the current ?query/#hash over (e.g. a
-  //    live ?axway_search). A page the crosslink pass has not touched (a
-  //    partial local publish) falls back to the plain pathname swap.
-  //  - On the shared root home (body.home): the label shows the ACTIVE env
-  //    (sessionStorage "axway-env", default production) and clicking toggles
-  //    it — body gains/loses .env-production so CSS swaps the baked .envblock
-  //    tables, and the topbar's env-scoped links (dropdown menus, Entities,
-  //    the search form action — emitted production-rooted) are rewritten to
-  //    the active env.
   // ---- The RUNTIME top bar (2026-07) ---------------------------------------
-  // Every html_head page bakes only `<div class="topbar" data-eb=… data-b=…
-  // [data-env=…] [data-help=…] [data-twin=…]></div>` (~0.1 KB instead of the
-  // ~2.7 KB baked bar × ~4,000 pages) — this renders the full bar from
-  // window.AXWAY_TB (assets/topbar-data.js, the three dropdown menu strings
-  // with their "@" env-prefix placeholder; rewritten by every publish, so a
-  // MENU change no longer needs a site-wide page republish). data-twin is the
-  // crosslink.sh-stamped env-switch target; without it setupEnvSwitch's
-  // pathname-swap fallback still works. The baked-chrome pages (help pages,
-  // the build report — render_shared_topbar) arrive with a NON-empty topbar
-  // div and are left untouched. Must run before setupEnvSwitch/setupSrvToggle,
-  // which bind into the bar.
+  // Every html_head page bakes only `<div class="topbar" data-b=…
+  // [data-help=…]></div>` (~0.1 KB instead of the ~2.7 KB baked bar × ~4,000
+  // pages) — this renders the full bar from window.AXWAY_TB
+  // (assets/topbar-data.js: the three dropdown menu strings with their "@"
+  // docs-root placeholder, the monitor flag, the CoreId URL template and the
+  // environment LABEL of this site — input/environment.txt, a static
+  // .envcur span right after the brand since 2026-09-11, when the
+  // Acceptance/Production switch went with the two-environment layout;
+  // rewritten by every publish, so a MENU change no longer needs a site-wide
+  // page republish). The baked-chrome pages (help pages, the build report —
+  // render_shared_topbar) arrive with a NON-empty topbar div and are left
+  // untouched. Must run before setupSrvToggle, which binds into the bar.
   // ---- the shared hero-slot charts (svg_slots): styled hover tooltip -------
   // Every slot rect (.dbz) carries data-l (the slot label) + data-a/-b/-c
   // (the humanized series values); the chart's g.slotmeta carries the series
@@ -3389,7 +3361,7 @@
   // docs/assets/slotchart.js in 2026-07, with the charts themselves: the
   // tooltip has to be rebound on every redraw, so it belongs to the renderer.)
 
-  var TB_EB = "";   // the environment base of this page (buildTopbar) — the palette's link root
+  var TB_EB = "";   // the docs-root base of this page (buildTopbar) — the palette's link root
 
   // ---- Dark / light theme (2026-09-05): the html data-theme attribute, the
   // stylesheet's generated dark block (bin/darken-css.awk) does the rest. The
@@ -3454,7 +3426,7 @@
   // ---- The command palette (2026-09-05): Ctrl+K / Cmd+K anywhere opens a
   // box that finds REPORTS (the report finder's catalog, fetched once) and
   // ENTITIES (search-data.js, the Entity Search payload, fetched once) of
-  // the current environment. Arrow keys move, Enter opens, Escape closes.
+  // this site. Arrow keys move, Enter opens, Escape closes.
   var PAL = null, palEl = null, palIn = null, palList = null, palItems = [], palAct = 0, palQ = "";
   function palFold(s) { return s.toLowerCase().replace(/_/g, "-"); }
   function palLoad(done) {
@@ -3611,22 +3583,18 @@
   }
   // ---- CoreId links to SecureTransport's File Tracking (2026-09-07, user
   // request): every UUID the copy pass covers also OPENS the platform's own
-  // file-tracking search for that id, in a new tab. The URL template — one per
-  // environment, "@COREID@" where the id goes — is baked into topbar-data.js
-  // from input/<env>/coreid-url.txt (ensure_assets); an environment without
-  // the file gets no links. An id that already IS a link (a File page, an
+  // file-tracking search for that id, in a new tab. The URL template —
+  // "@COREID@" where the id goes — is baked into topbar-data.js from
+  // input/coreid-url.txt (ensure_assets); a site without the file gets no
+  // links. An id that already IS a link (a File page, an
   // error page, a record page) keeps it and gets a small ↗ after it instead,
   // so the internal page and the platform one are each one click away. Runs
   // BEFORE the copy pass, so the ⧉ lands after the link element the way it
   // lands after any wrap-the-id element. Row links and drills ignore clicks
   // on anchors, so a click on the id opens the platform and nothing else.
   function coreidUrlTemplate() {
-    var M = window.AXWAY_TB || {}, map = M.coreid || {}, env = "";
-    var tb = document.querySelector("div.topbar");
-    if (tb) env = tb.getAttribute("data-env") || "";
-    if (!env) { var p = location.pathname; env = /\/acceptance\//.test(p) ? "acceptance" : (/\/production\//.test(p) ? "production" : ""); }
-    var t = env ? (map[env] || "") : "";
-    return t.indexOf("@COREID@") >= 0 ? t : "";
+    var t = (window.AXWAY_TB || {}).coreid || "";
+    return (typeof t === "string" && t.indexOf("@COREID@") >= 0) ? t : "";
   }
   function coreidHref(tpl, id) { return tpl.split("@COREID@").join(encodeURIComponent(id)); }
   function isStGo(n) { return n && n.nodeType === 1 && (" " + n.className + " ").indexOf(" stgo ") >= 0; }
@@ -3740,148 +3708,39 @@
     var tb = document.querySelector("div.topbar");
     if (!tb || tb.firstChild) return;                     // baked bar (help/build) — leave it
     var M = window.AXWAY_TB || {};
-    var eb = tb.getAttribute("data-eb") || "";
-    var b = tb.getAttribute("data-b") || "";
-    TB_EB = eb;
-    var env = tb.getAttribute("data-env") || "";
+    var b = tb.getAttribute("data-b") || "";   // ONE prefix: back to the docs root (the site is one tree)
+    TB_EB = b;
     var help = tb.getAttribute("data-help") || "";
-    var twin = tb.getAttribute("data-twin") || "";
-    function cap(e) { return e.charAt(0).toUpperCase() + e.slice(1); }
-    function menu(s) { return (s || "").replace(/@/g, eb); }
-    var pair;
-    if (env) {
-      // env page: the active env is a bold non-clickable span, the other an
-      // anchor with the crosslinked twin href (or href-less -> fallback)
-      var other = env === "production" ? "acceptance" : "production";
-      var sw = '<a class="envswitch" data-env="' + env + '"' +
-               (twin ? ' href="' + twin + '" title="Switch to ' + cap(other) + '"' : "") +
-               ">" + cap(other) + "</a>";
-      pair = env === "production"
-        ? sw + '<span class="envsep">/</span><span class="envcur">Production</span>'
-        : '<span class="envcur">Acceptance</span><span class="envsep">/</span>' + sw;
-    } else {
-      // shared root pages: BOTH anchors, data-target — the home env toggle
-      pair = '<a class="envswitch" data-target="acceptance">Acceptance</a>' +
-             '<span class="envsep">/</span>' +
-             '<a class="envswitch" data-target="production">Production</a>';
-    }
+    function menu(s) { return (s || "").replace(/@/g, b); }
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+    // the ENVIRONMENT LABEL of this site (input/environment.txt via
+    // ensure_assets), a static span where the Acceptance/Production switch
+    // stood until 2026-09-11; a site without the file shows nothing there
+    var label = (typeof M.env === "string" && M.env) ? '<span class="envpair"><span class="envcur">' + esc(M.env) + "</span></span>" : "";
     tb.innerHTML =
       '<a class="brand" href="' + b + 'index.html">Cloud</a>' +
-      '<span class="envpair">' + pair + "</span>" +
-      '<span class="entgroup"><a class="entlabel" href="' + eb + 'transfer/entities/subscription-all.html">Entities</a>' +
-      '<a class="searchbtn" href="' + eb + 'search.html" title="Search" aria-label="Search">🔍</a></span>' +
+      label +
+      '<span class="entgroup"><a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
+      '<a class="searchbtn" href="' + b + 'search.html" title="Search" aria-label="Search">🔍</a></span>' +
       // the FILE SEARCH entry (2026-08): the leader of the windowed pages,
       // between the search icon and the report menus
-      '<a class="dashlink" href="' + eb + 'file-search-24-hours.html">Files</a>' +
+      '<a class="dashlink" href="' + b + 'file-search-24-hours.html">Files</a>' +
       '<nav class="nav">' +
       '<div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm">' + menu(M.transfer) + "</div></div>" +
       (M.server ? '<div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm">' + menu(M.server) + "</div></div>" : "") +
       (M.analyses ? '<div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm">' + menu(M.analyses) + "</div></div>" : "") +
       "</nav>" +
-      '<a class="dashlink" href="' + eb + 'dashboards/index.html">Dashboard</a>' +
-      // the Monitor dashboard link renders only for an env that HAS one
-      // (M.monitor = the per-env flags ensure_assets bakes into topbar-data.js
-      // from monitor.rpt's existence). The shared root pages carry no data-env:
-      // there the anchor is emitted hidden whenever ANY env has a monitor, and
-      // setupEnvSwitch's apply() shows/hides + rewrites it per the ACTIVE env.
-      (env
-        ? (M.monitor && M.monitor[env] ? '<a class="dashlink" href="' + eb + 'dashboards/monitor.html">Monitor</a>' : "")
-        : (M.monitor && (M.monitor.acceptance || M.monitor.production)
-            ? '<a class="dashlink monlink" style="display:none" href="' + eb + 'dashboards/monitor.html">Monitor</a>' : "")) +
+      '<a class="dashlink" href="' + b + 'dashboards/index.html">Dashboard</a>' +
+      // the Monitor dashboard link renders only when this site HAS one
+      // (M.monitor = the flag ensure_assets bakes into topbar-data.js from
+      // monitor.rpt's existence)
+      (M.monitor ? '<a class="dashlink" href="' + b + 'dashboards/monitor.html">Monitor</a>' : "") +
       '<span class="tr-group">' +
-      '<a class="searchbtn" href="' + eb + 'report-finder.html" title="Report finder (Ctrl+K / Cmd+K: quick jump from any page)" aria-label="Report finder">🔎</a>' +
+      '<a class="searchbtn" href="' + b + 'report-finder.html" title="Report finder (Ctrl+K / Cmd+K: quick jump from any page)" aria-label="Report finder">🔎</a>' +
       '<a class="searchbtn themebtn" href="#" title="Dark / light theme" aria-label="Dark or light theme">◐</a>' +
-      '<a class="searchbtn" href="' + eb + 'sitemap.html" title="Site map" aria-label="Site map">🗺</a>' +
+      '<a class="searchbtn" href="' + b + 'sitemap.html" title="Site map" aria-label="Site map">🗺</a>' +
       (help ? '<a class="helpbtn" href="' + b + "help/" + help + '.html" title="Help" aria-label="Help">?</a>' : "") +
       "</span>";
-  }
-
-  function setupEnvSwitch() {
-    var sws = document.querySelectorAll("a.envswitch");
-    if (!sws.length) return;
-    function cap(e) { return e.charAt(0).toUpperCase() + e.slice(1); }
-    var env = pageEnv();
-    if (env) {
-      // Record the env being VIEWED (sessionStorage "axway-env", the key the
-      // shared home reads): switching environments through the top bar and
-      // then clicking the brand link used to land on a home still showing the
-      // env stored by its own toggle — the page you came from, not the one
-      // you were browsing. Every env page visit now keeps the key current.
-      try { sessionStorage.setItem("axway-env", env); } catch (e) {}
-      // env page: ONE anchor — the OTHER env's name (the active env is the
-      // baked non-clickable .envcur span next to it)
-      var sw = sws[0];
-      var other = env === "acceptance" ? "production" : "acceptance";
-      sw.textContent = cap(other);
-      sw.setAttribute("title", "Switch to " + cap(other));
-      var built = sw.getAttribute("href");
-      if (built) {
-        // build-time link (crosslink.sh): augment with the live query/hash at
-        // click time — but never onto a 404 target (nothing to restore there)
-        sw.addEventListener("click", function () {
-          if ((location.search || location.hash) && !/\/404\.html$/.test(built))
-            sw.setAttribute("href", built + location.search + location.hash);
-        });
-        return;
-      }
-      sw.setAttribute("href", location.pathname.replace("/" + env + "/", "/" + other + "/") + location.search + location.hash);
-      return;
-    }
-    if ((" " + (document.body.className || "") + " ").indexOf(" home ") < 0) return;   // build report etc.: label only
-    // Home: BOTH anchors carry data-target — the stored env becomes the
-    // bold non-clickable .envcur, the other one switches the baked blocks.
-    var KEY = "axway-env";
-    function active() {
-      var v = "";
-      try { v = sessionStorage.getItem(KEY) || ""; } catch (e) {}
-      return v === "acceptance" ? "acceptance" : "production";   // default production (2026-08-31, user request)
-    }
-    function apply(e) {
-      var body = document.body;
-      if (e === "production") {
-        if (body.className.indexOf("env-production") < 0) body.className += " env-production";
-      } else {
-        body.className = body.className.replace(/\s*\benv-production\b/, "");
-      }
-      for (var j = 0; j < sws.length; j++) {
-        var t = sws[j].getAttribute("data-target");
-        if (t === e) {
-          sws[j].className = "envswitch envcur";
-          sws[j].removeAttribute("title");
-        } else {
-          sws[j].className = "envswitch";
-          sws[j].setAttribute("title", "Switch to " + cap(t));
-        }
-      }
-      // rewrite the env-scoped topbar links to the active env — including the
-      // Dashboard + Monitor dashlinks (missing them left every "next click"
-      // from a production-toggled home on an acceptance page)
-      var from = (e === "production" ? "acceptance/" : "production/"), to = e + "/";
-      var bar = document.querySelector(".topbar");
-      if (!bar) return;
-      var as = bar.querySelectorAll(".ddm a, a.entlabel, a.searchbtn, a.dashlink");
-      for (var i = 0; i < as.length; i++) {
-        var h = as[i].getAttribute("href") || "";
-        if (h.indexOf(from) === 0) as[i].setAttribute("href", to + h.slice(from.length));
-      }
-      // the Monitor link exists on the home only as a hidden anchor; show it
-      // exactly when the ACTIVE env has a monitor
-      var ml = bar.querySelector("a.monlink");
-      if (ml) {
-        var mm = (window.AXWAY_TB || {}).monitor || {};
-        ml.style.display = mm[e] ? "" : "none";
-      }
-    }
-    apply(active());
-    for (var k = 0; k < sws.length; k++) {
-      sws[k].addEventListener("click", function (ev) {
-        ev.preventDefault();
-        var t = this.getAttribute("data-target");
-        if (!t || t === active()) return;   // the active one is inert
-        try { sessionStorage.setItem(KEY, t); } catch (e) {}
-        apply(t);
-      });
-    }
   }
 
   // ---- CSV download (2026-08-30, user request): every table exports itself
@@ -3982,7 +3841,7 @@
   }
 
   function init() {
-    buildTopbar();          // FIRST: setupEnvSwitch/setupSrvToggle bind into the bar
+    buildTopbar();          // FIRST: setupSrvToggle binds into the bar
     setupTheme();           // the ◐ toggle (the head script already applied the choice)
     setupRelDates();        // "3 days ago" tooltips on date cells, lazily
     setupPalette();         // Ctrl+K / Cmd+K quick jump
@@ -4033,7 +3892,6 @@
     setupSwitches();     // switch=KEY table groups: one table of the group at a time behind a button row
     setupHeroToggle();   // overview + day pages: the hero view switch
     setupSrvToggle();    // home page: the status tables' "including server log" switch
-    setupEnvSwitch();    // top bar: the Acceptance/Production label (twin-page link / home toggle)
     setupSearchConfig(); // Entity Search: the collapsed configuration panel
     setupReportFinder(); // Report finder: title/intro/keyword search over the catalog
     setupCollapsible();  // clines cells (patterns): click toggles the collapsed middle lines
