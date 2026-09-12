@@ -5,22 +5,22 @@
 # Entities page was removed, the Sessions unit dropped, and the State split
 # merged in; the old three URLs are redirect stubs to topview.html):
 #
-#   topview.rpt   THREE tables (2026-09-12). Per day: the Files (per CoreId,
-#                 activity_stream) with Count / Ok / Error / Error rate %,
-#                 then the physical Transfers (log rows, _transfers) with
-#                 Count / Ok / Error / Error %, then the Files' 4-state
-#                 outcome split Processed / Failed / Waiting / Expired
-#                 (_files.tsv col 2). (2026-08-29: the Transfers group moved
-#                 BEFORE State on request.) Below it, side by side, one row
-#                 per calendar day: RECOVERED — the OK Files that carried a
-#                 failed leg (2026-08-29; until 2026-09-12 an amber column
-#                 of the Files band), split Automatic (the platform's own
+#   topview.rpt   ONE per-day table in SIX column groups (2026-09-12 layout):
+#                 the Files (per CoreId, activity_stream) with Count / Ok /
+#                 Error / Error rate %; RECOVERED — the OK Files that carried
+#                 a failed leg (2026-08-29; until 2026-09-12 one amber column
+#                 of the Files group), split Automatic (the platform's own
 #                 retry delivered them) / Manual (a leg carries the log's
 #                 Resubmitted flag, _transfers.tsv col 22 — an operator
-#                 resubmitted) — and RESUBMIT — every File with a
-#                 resubmitted leg, Ok / Failed by its outcome. Both credit
-#                 the File's START day. Readers of this .rpt must count the
-#                 TABLE lines (bin/build/publish.sh, bin/day/reports.sh).
+#                 resubmitted); RESUBMIT — every File with a resubmitted leg,
+#                 Ok / Failed by its outcome; then the physical Transfers
+#                 (log rows, _transfers) with Count / Ok / Error / Error %;
+#                 then the Files' 4-state outcome split Processed / Failed /
+#                 Waiting / Expired (_files.tsv col 2). (2026-08-29: the
+#                 Transfers group moved BEFORE State on request.) Every
+#                 per-File figure credits the File's START day. Readers of
+#                 the ROW fields by index: bin/build/publish.sh (home per-day
+#                 table + log-exports facts), bin/day/reports.sh.
 #
 # Each row is one calendar day (gaps filled, edge days flagged partial) with
 # the day's first and last transfer-log time; the total row is pinned to the
@@ -61,7 +61,7 @@ rm -f "$REPORTS_DIR/topview-ids.rpt" "$REPORTS_DIR/topview-entities.rpt" "$REPOR
 # 22 true on any leg).
 # END classifies the recovered Files Automatic/Manual and the resubmitted
 # Files Ok/Failed, then walks the Julian-day range so calendar gaps become
-# explicit "0" rows in all three tables.
+# explicit "0" rows.
 agg=$(awk -F'\t' "$COREIDS_AWK"'
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function fromjdn(j,  a,b,c,dd,e,mm,day,mon,yr){ a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d",yr,mon,day) }
@@ -113,21 +113,17 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
                 # user request); zero stays a plain blank / 0
                 wcell = (WW[d]+0>0 ? "@{href=waiting.html}" (WW[d]+0) : "")
                 xcell = (WX[d]+0>0 ? "@{href=expired.html}" (WX[d]+0) : "0")
-                printf "R1\tROW\t@{href=../day/%s.html}%s%s\t%s\t%s\t%d\t%d\t%d\t%s%%\t%d\t%d\t%d\t%s%%\t%d\t%d\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
+                # the amber Recovered cells (Automatic / Manual) are blank on 0
+                printf "R1\tROW\t@{href=../day/%s.html}%s%s\t%s\t%s\t%d\t%d\t%d\t%s%%\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s%%\t%d\t%d\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
                     d, d, mark, fi, la, \
                     C[d], P[d]+0, F[d]+0, pr(F[d]+0, C[d]), \
+                    (RVA[d]+0>0 ? RVA[d]+0 : ""), (RVM[d]+0>0 ? RVM[d]+0 : ""), RSO[d]+0, RSF[d]+0, \
                     TC[d]+0, TP2[d]+0, TF2[d]+0, pr(TF2[d]+0, TC[d]+0), \
                     WP[d]+0, WF[d]+0, wcell, xcell, \
                     buildlist(top[d SUBSEP "F"]), buildlist(top[d SUBSEP "P"])
             } else {
-                printf "R1\tROW\t%s\t-\t-\t0\t0\t0\t0.0%%\t0\t0\t0\t0.0%%\t0\t0\t\t0\n", d   # empty Waiting cell: blank
+                printf "R1\tROW\t%s\t-\t-\t0\t0\t0\t0.0%%\t\t\t0\t0\t0\t0\t0\t0.0%%\t0\t0\t\t0\n", d   # empty Recovered / Waiting cells: blank
             }
-            # the two side tables get the SAME day rows (a data day links its
-            # page; no partial mark — that is about the Files table
-            # first/last times); the amber Recovered cells are blank on 0
-            dcell=(d in C ? "@{href=../day/" d ".html}" d : d)
-            printf "R2\tROW\t%s\t%s\t%s\n", dcell, (RVA[d]+0>0 ? RVA[d]+0 : ""), (RVM[d]+0>0 ? RVM[d]+0 : "")
-            printf "R3\tROW\t%s\t%d\t%d\n", dcell, RSO[d]+0, RSF[d]+0
         }
         printf "TOT|%d|%d|%d|%d|%s|%d|%d|%d|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d\n", \
             tC,tP,tRVF+0,tF,pr(tF,tC), tT,tTP,tTF,pr(tTF,tT), wP+0,wF+0,wW+0,wX+0, ndays, tRVA+0,tRVM+0,tRSO+0,tRSF+0
@@ -143,8 +139,6 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
 nl=$'\n'
 case "$agg" in R1*|*"${nl}R1"*) : ;; *) echo "No usable records found." >&2; exit 0 ;; esac
 rows=$(printf '%s\n' "$agg" | grep '^R1' | cut -f2-)
-rows2=$(printf '%s\n' "$agg" | grep '^R2' | cut -f2-)   # the Recovered table — the same day rows as R1
-rows3=$(printf '%s\n' "$agg" | grep '^R3' | cut -f2-)   # the Resubmit table
 IFS='|' read -r _ tC tP tRVF tF tfp tT tTP tTF ttp wP wF wW wX ndays tRVA tRVM tRSO tRSF \
     <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 [ "$ndays" -eq 1 ] && total_label="Total for 1 day" || total_label="Total for $ndays days"
@@ -153,39 +147,25 @@ IFS='|' read -r _ tC tP tRVF tF tfp tT tTP tTF ttp wP wF wW wX ndays tRVA tRVM t
     printf 'TITLE\tTop view\n'
     printf 'DESC\tThe whole transfer log at a glance, per day: logical Files (per CoreId) with their Count / Ok / Error split and error rate, the physical Transfers (log rows) with the same Ok/Error split, the same Files by their final state — Processed, Failed, Waiting and Expired — and, per day, the Recovered Files (automatic or manual) and the resubmitted Files (Ok or Failed).\n'
     printf 'KEYWORDS\tstate, processed, failed, waiting, expired, recovered, cured, retry, resubmit, resubmitted, manual, automatic, per day, outcome, error rate\n'
-    printf 'INTRO\tEvery day of the loaded transfer log on one row — the day counted as **Files** (one per CoreId — the site-wide counting unit) split into Ok/Error with its error rate, the day counted as **Transfers** (physical log rows) with the same Ok/Error split, and the same Files by their **final state**: **Processed** (delivered), **Failed**, **Waiting** (UC2 staged for pickup, not collected yet) and **Expired** (the retention sweep deleted the staged copy before any pickup — never delivered). Newest day on top; the Date cell opens that day'\''s page. Below it, per day: **Recovered** — the Files that carried a failed leg yet still finished OK, **Automatic** when a retry healed them, **Manual** when an operator resubmitted the transfer (the log'\''s Resubmitted flag) — and **Resubmit** — every File with a resubmitted leg, **Ok** or **Failed** by its final outcome.\n'
-    # 0-based columns: Date0 First1 Last2 | Count3 Ok4 Error5 Error%6 |
-    # Count7 Ok8 Error9 Error%10 | Processed11 Failed12 Waiting13 Expired14
-    # (the Recovered column left the Files band 2026-09-12 — its own table below)
-    printf 'TABLE\t\twide\ttotaltop\tdatereset\tpct=6:5:3;10:9:7\tgsep=3,7,11\n'
-    printf 'GHEAD\t@{colspan=3}\t@{colspan=4,class=gband gsep}Files\t@{colspan=4,class=gband gsep}Transfers\t@{colspan=4,class=gband gsep}State\n'
-    printf 'HEAD\tDate\tFirst\tLast\tCount\tOk\tError\tError %%\tCount\tOk\tError\tError %%\tProcessed\tFailed\tWaiting\tExpired\n'
-    printf 'KIND\ttext\ttext\ttext\tnum\tnumprocessed\tnumfailed\tnum\tnum\tnumok\tnumerr\tnum\tnumok\tnumerr\tnumwarn\tnumerr\n'
+    printf 'INTRO\tEvery day of the loaded transfer log on one row — the day counted as **Files** (one per CoreId — the site-wide counting unit) split into Ok/Error with its error rate, the day counted as **Transfers** (physical log rows) with the same Ok/Error split, and the same Files by their **final state**: **Processed** (delivered), **Failed**, **Waiting** (UC2 staged for pickup, not collected yet) and **Expired** (the retention sweep deleted the staged copy before any pickup — never delivered). Between Files and Transfers: **Recovered** — the Files that carried a failed leg yet still finished OK, **Automatic** when a retry healed them, **Manual** when an operator resubmitted the transfer (the log'\''s Resubmitted flag) — and **Resubmit** — every File with a resubmitted leg, **Ok** or **Failed** by its final outcome. Newest day on top; the Date cell opens that day'\''s page.\n'
+    # 0-based columns (six groups, 2026-09-12): Date0 First1 Last2 | Files:
+    # Count3 Ok4 Error5 Error%6 | Recovered: Automatic7 Manual8 | Resubmit:
+    # Ok9 Failed10 | Transfers: Count11 Ok12 Error13 Error%14 | State:
+    # Processed15 Failed16 Waiting17 Expired18
+    printf 'TABLE\t\twide\ttotaltop\tdatereset\tpct=6:5:3;14:13:11\tgsep=3,7,9,11,15\n'
+    printf 'GHEAD\t@{colspan=3}\t@{colspan=4,class=gband gsep}Files\t@{colspan=2,class=gband gsep}Recovered\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Transfers\t@{colspan=4,class=gband gsep}State\n'
+    printf 'HEAD\tDate\tFirst\tLast\tCount\tOk\tError\tError %%\tAutomatic\tManual\tOk\tFailed\tCount\tOk\tError\tError %%\tProcessed\tFailed\tWaiting\tExpired\n'
+    printf 'KIND\ttext\ttext\ttext\tnum\tnumprocessed\tnumfailed\tnum\tnumwarn\tnumwarn\tnumprocessed\tnumfailed\tnum\tnumok\tnumerr\tnum\tnumok\tnumerr\tnumwarn\tnumerr\n'
     # a nonzero Waiting / Expired total opens its report too (2026-08-31)
     wW_cell="@{class=num warn}"; [ "${wW:-0}" -gt 0 ] && wW_cell="@{class=num warn,href=waiting.html}$wW"   # 0 -> blank (td.warn:empty drops the tint)
     wX_cell="@{class=num errc}$wX"; [ "${wX:-0}" -gt 0 ] && wX_cell="@{class=num errc,href=expired.html}$wX"
-    printf 'TOTAL\t%s\t\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s%%\t@{class=num}%s\t@{class=num okc}%s\t@{class=num errc}%s\t@{class=num}%s%%\t@{class=num okc}%s\t@{class=num errc}%s\t%s\t%s\n' \
-        "$total_label" "$tC" "$tP" "$tF" "$tfp" "$tT" "$tTP" "$tTF" "$ttp" "$wP" "$wF" "$wW_cell" "$wX_cell"
-    printf '%s\n' "$rows"
-    printf 'NOTE\t**Files** = logical transfers (all rows sharing one CoreId, Ok when the final row processed), **Transfers** = physical log rows (one per transfer leg). The **State** columns split the same Files by their final state: on the reports Processed + Waiting count as **OK** and Failed + Expired as **Error** — Waiting is a live state (those files can still be collected, see the Waiting Files report); Expired files were deleted unclaimed ~11 days after staging. Sessions have their own reports (see Session Topview). Click a Files Ok / Error cell for that day'\''s 10 most recent Files; a nonzero **Waiting** / **Expired** cell opens that report.\n'
-    # The two per-day side tables (2026-09-12, user request — until then
-    # Recovered was an amber column of the Files band): the SAME day rows as
-    # the Files table, side by side (sxs), each with its total pinned on top.
-    # Amber Recovered cells blank on 0 (td.warn:empty drops the tint), the
-    # Resubmit Ok/Failed cells tinted like the Files band.
+    # the amber Recovered totals: 0 -> blank (td.warn:empty drops the tint)
     tRVA_cell="@{class=num warn}"; [ "${tRVA:-0}" -gt 0 ] && tRVA_cell="@{class=num warn}$tRVA"
     tRVM_cell="@{class=num warn}"; [ "${tRVM:-0}" -gt 0 ] && tRVM_cell="@{class=num warn}$tRVM"
-    printf 'TABLE\tRecovered\tsxs\ttotaltop\n'
-    printf 'HEAD\tDate\tAutomatic\tManual\n'
-    printf 'KIND\ttext\tnumwarn\tnumwarn\n'
-    printf 'TOTAL\t%s\t%s\t%s\n' "$total_label" "$tRVA_cell" "$tRVM_cell"
-    printf '%s\n' "$rows2"
-    printf 'TABLE\tResubmit\tsxs\ttotaltop\n'
-    printf 'HEAD\tDate\tOk\tFailed\n'
-    printf 'KIND\ttext\tnumprocessed\tnumfailed\n'
-    printf 'TOTAL\t%s\t@{class=num processed}%s\t@{class=num failed}%s\n' "$total_label" "$tRSO" "$tRSF"
-    printf '%s\n' "$rows3"
-    printf 'NOTE\t**Recovered** = the Files that carried at least one failed leg yet still finished OK — the failure was healed, so those Files sit under Files/Ok while their failed legs sit under Transfers/Error: **Automatic** when the platform'\''s own retry delivered them, **Manual** when a leg carries the log'\''s Resubmitted flag — an operator resubmitted the transfer. **Resubmit** counts every File with a resubmitted leg, **Ok** or **Failed** by its final outcome (Waiting counts as Ok, Expired as Failed); a resubmitted File that never had a failed leg — a re-delivery — is counted here but not under Recovered. Both credit the File'\''s start day, and every calendar day is listed.\n'
+    printf 'TOTAL\t%s\t\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s%%\t%s\t%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num okc}%s\t@{class=num errc}%s\t@{class=num}%s%%\t@{class=num okc}%s\t@{class=num errc}%s\t%s\t%s\n' \
+        "$total_label" "$tC" "$tP" "$tF" "$tfp" "$tRVA_cell" "$tRVM_cell" "$tRSO" "$tRSF" "$tT" "$tTP" "$tTF" "$ttp" "$wP" "$wF" "$wW_cell" "$wX_cell"
+    printf '%s\n' "$rows"
+    printf 'NOTE\t**Files** = logical transfers (all rows sharing one CoreId, Ok when the final row processed), **Transfers** = physical log rows (one per transfer leg). The **State** columns split the same Files by their final state: on the reports Processed + Waiting count as **OK** and Failed + Expired as **Error** — Waiting is a live state (those files can still be collected, see the Waiting Files report); Expired files were deleted unclaimed ~11 days after staging. Sessions have their own reports (see Session Topview). Click a Files Ok / Error cell for that day'\''s 10 most recent Files; a nonzero **Waiting** / **Expired** cell opens that report. **Recovered** = the Files that carried at least one failed leg yet still finished OK — the failure was healed, so those Files sit under Files/Ok while their failed legs sit under Transfers/Error: **Automatic** when the platform'\''s own retry delivered them, **Manual** when a leg carries the log'\''s Resubmitted flag — an operator resubmitted the transfer. **Resubmit** counts every File with a resubmitted leg, **Ok** or **Failed** by its final outcome (Waiting counts as Ok, Expired as Failed); a resubmitted File that never had a failed leg — a re-delivery — is counted there but not under Recovered. Every per-File figure credits the File'\''s start day.\n'
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

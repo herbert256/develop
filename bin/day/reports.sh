@@ -56,7 +56,7 @@ mkdir -p "$RPTDIR"
 
 TF="$DATA/transfer/cache/_files.tsv"       # 1 coreid 2 outcome 3 account 4 date 5 time 6 sortkey 8 size 9 dur 11 file 12 site
 TP="$DATA/transfer/cache/_transfers.tsv"   # 10 protocol 11 date 22 resubmitted 24 session_id
-TT="$DATA/transfer/reports/topview.rpt"    # per-day Files/Transfers counts (table 1 of three since 2026-09-12; col 5 = Files, >0 on data days)
+TT="$DATA/transfer/reports/topview.rpt"    # per-day Files/Transfers counts (col 5 = Files, >0 on data days)
 SV="$DATA/server/reports/topview.rpt"      # per-day records/levels/components/first/last
 SP="$DATA/server/cache/_parse.tsv"         # 1 date 2 time 3 level 4 component 5 message
 SLF="$DATA/server/reports/went-kaput.rpt"   # ROW: 6 = "Latest issue" date+time (per-day "Problems this day" PROBLEM link)
@@ -127,7 +127,7 @@ anomc=$(anomcount "$ANOM")
 # get no page). The date cell may carry a leading @{href=...} attribute once
 # the topviews link here — strip it before reading the date.
 tdays=""
-[ -f "$TT" ] && tdays=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1=="ROW" { d=$2; sub(/^@\{[^}]*\}/,"",d); if ($5+0 > 0) print substr(d,1,10) }' "$TT" | LC_ALL=C sort -u | tr '\n' ' ')   # table 1 of three (2026-09-12)
+[ -f "$TT" ] && tdays=$(awk -F'\t' '$1=="ROW" { d=$2; sub(/^@\{[^}]*\}/,"",d); if ($5+0 > 0) print substr(d,1,10) }' "$TT" | LC_ALL=C sort -u | tr '\n' ' ')
 sdays=""
 [ -f "$SV" ] && sdays=$(awk -F'\t' '$1=="ROW" { d=$2; sub(/^@\{[^}]*\}/,"",d); if ($3+0 > 0) print substr(d,1,10) }' "$SV" | LC_ALL=C sort -u | tr '\n' ' ')
 

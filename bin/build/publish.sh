@@ -156,9 +156,8 @@ write_area_index() {   # $1 area  $2 title ; remaining args = ordered basenames
 }
 
 # Per-day figures for the root index's log table: the Files group (transfer
-# topview.rpt table 1, ROW fields 5-8; the Cured figure = table 2's Automatic
-# + Manual — the file holds three tables since 2026-09-12, the awk counts
-# its TABLE lines), the
+# topview.rpt per-day table, ROW fields 5-8; the Cured figure = its Recovered
+# group's Automatic + Manual, fields 9-10, since 2026-09-12), the
 # duration percentiles (duration.rpt) and the five per-day First-seen counts
 # (analyses first-seen.rpt, joined by date; its SEEN/NOTSEEN lines are not
 # day ROWs and stay out). The server topview.rpt contributes only DAYS: the
@@ -284,19 +283,16 @@ daily_loglines_tsv() {   # $1 = the data root (data)
             if ($1 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) { fin[$1] = $2; fout[$1] = $3; hasio = 1 }
             next
         }
-        # the transfer topview.rpt holds THREE tables since 2026-09-12 (per-day
-        # Files/Transfers/State, then Recovered = Automatic + Manual, then
-        # Resubmit): count them, index the ROW fields per table
-        FILENAME ~ /topview\.rpt$/ && $1 == "TABLE" { tvt++; next }
         $1 != "ROW" { next }
         { dd = $2; sub(/^@\{[^}]*\}/, "", dd) }
-        # table 1 — the Files group (Count Ok Error Error%) is cols 5-8, per-CoreId figures (Recovered left the band 2026-09-12)
-        FILENAME ~ /\/transfer\// && tvt == 1 && dd ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { d=substr(dd,1,10); fc[d]=nz($5); fok[d]=nz($6); fer[d]=nz($7); fpc[d]=nz($8); seen[d]=1
-            # the Transfers group (Count Ok Error Error%, cols 9-12) and the Waiting/Expired of the State group (cols 15-16; Expired may carry an @{href} prefix) — 2026-09-06, user request
-            tcn[d]=nz($9); tok[d]=nz($10); ter[d]=nz($11); tpc[d]=nz($12)
-            tw=$15; sub(/^@\{[^}]*\}/, "", tw); twt[d]=nz(tw); tex=$16; sub(/^@\{[^}]*\}/, "", tex); txp[d]=nz(tex); next }
-        # table 2 — Recovered (Date Automatic Manual, the amber cells blank on 0): the home Cured cell = Automatic + Manual
-        FILENAME ~ /\/transfer\// && tvt == 2 && dd ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { d=substr(dd,1,10); frv[d] = ($3+0) + ($4+0) }
+        # the transfer topview ROW (bin/transfer/reports/topview.sh HEAD, six groups since 2026-09-12): the Files group
+        # (Count Ok Error Error%) is cols 5-8, per-CoreId figures; the Recovered group (Automatic Manual, amber cells blank
+        # on 0) cols 9-10 — the home Cured cell is their sum; the Resubmit group (Ok Failed) cols 11-12 (not shown here)
+        FILENAME ~ /\/transfer\// && dd ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { d=substr(dd,1,10); fc[d]=nz($5); fok[d]=nz($6); fer[d]=nz($7); fpc[d]=nz($8); seen[d]=1
+            frv[d] = ($9+0) + ($10+0)
+            # the Transfers group (Count Ok Error Error%, cols 13-16) and the Waiting/Expired of the State group (cols 19-20; Expired may carry an @{href} prefix) — 2026-09-06, user request
+            tcn[d]=nz($13); tok[d]=nz($14); ter[d]=nz($15); tpc[d]=nz($16)
+            tw=$19; sub(/^@\{[^}]*\}/, "", tw); twt[d]=nz(tw); tex=$20; sub(/^@\{[^}]*\}/, "", tex); txp[d]=nz(tex) }
         END {
             n=0; for (k in seen) a[n++]=k
             # newest date first (descending); the index table shows recent days on top
@@ -838,8 +834,6 @@ write_log_facts() {
             d=l-int(2447*k/80); l=int(k/11); m=k+2-12*l; y=100*(n-49)+i+l
             return sprintf("%04d-%02d-%02d", y, m, d) }
         function j_of(ds) { split(ds, JP, "-"); return jdn(JP[1]+0, JP[2]+0, JP[3]+0) }
-        # the transfer topview holds THREE tables (2026-09-12): only table 1 has the per-day counts; the server one is single
-        $1 == "TABLE" { if (FILENAME ~ /\/transfer\//) tvt++; next }
         $1 != "ROW" { next }
         { dd=$2; sub(/^@\{[^}]*\}/, "", dd) }
         dd !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { next }
@@ -850,10 +844,10 @@ write_log_facts() {
                 if (smax=="" || d>smax) { smax=d; slt=$13 } }
             next
         }
-        # The transfer topview table-1 ROW (bin/transfer/reports/topview.sh HEAD):
-        # 3=First 4=Last 5=Files 9=Transfers (physical log rows) 12=Transfers
-        # Error % (Recovered left the Files band 2026-09-12, every later field
-        # moved one left). Records = $9, the rows of the log itself — the server row
+        # The transfer topview ROW (bin/transfer/reports/topview.sh HEAD):
+        # 3=First 4=Last 5=Files 13=Transfers (physical log rows) 16=Transfers
+        # Error % (the Recovered and Resubmit groups sit between Files and
+        # Transfers since 2026-09-12). Records = $13, the rows of the log itself — the server row
         # counts its lines the same way. (NO apostrophes here: this comment
         # sits INSIDE the single-quoted awk program.) NOT the Error % field (fixed 2026-08-31): that
         # summed the daily error PERCENTAGES as "records" and treated every
@@ -862,7 +856,7 @@ write_log_facts() {
         # Records / First / Last / Days cells entirely.
         FILENAME ~ /\/transfer\// {
             d=substr(dd,1,10)
-            if (tvt == 1 && $9+0 > 0) { td[d]=1; tpd++; tsum+=$9
+            if ($13+0 > 0) { td[d]=1; tpd++; tsum+=$13
                 if (tmin=="" || d<tmin) { tmin=d; tft=$3 }
                 if (tmax=="" || d>tmax) { tmax=d; tlt=$4 } }
         }

@@ -458,13 +458,13 @@ PeSIT ceiling, cluster distress, event-feed errors); UC3 "Failing polls"
 boxes that has dated log evidence (Missing cron, Went quiet and Not seen have none). Both Top views link Date cells to day pages via the cell attr
 `@{href=URL}`; consumers of topview date cells strip it first (`sub(/^@\{[^}]*\}/,"",d)`:
 publish_lib's `area_dates`, `bin/build/publish.sh`, `bin/dashboards/lib.sh`,
-`bin/day/reports.sh`). The transfer `topview.rpt` holds THREE tables since 2026-09-12 — the
-per-day Files/Transfers/State table, then side by side (sxs) **Recovered** (Date · Automatic ·
-Manual: the OK Files that carried a failed leg, Manual when a leg carries `Resubmitted=true`,
-`_transfers.tsv` col 22) and **Resubmit** (Date · Ok · Failed: every File with a resubmitted
-leg, by outcome), all three with the same calendar-day rows — so its readers count the `TABLE`
-lines (`/^TABLE\t/ { t++ }`) and index ROW fields per table; the home page's Cured cell is
-table 2's Automatic + Manual.
+`bin/day/reports.sh`). The transfer `topview.rpt` per-day table has SIX column groups since
+2026-09-12 — Date · First · Last | Files (Count · Ok · Error · Error %) | **Recovered**
+(Automatic · Manual: the OK Files that carried a failed leg, Manual when a leg carries
+`Resubmitted=true`, `_transfers.tsv` col 22) | **Resubmit** (Ok · Failed: every File with a
+resubmitted leg, by outcome) | Transfers (Count · Ok · Error · Error %) | State (Processed ·
+Failed · Waiting · Expired) — ROW fields 2-20 in that order; the home page's Cured cell is
+Automatic + Manual (fields 9-10).
 
 ## Click-to-expand drill-down
 
@@ -503,7 +503,7 @@ log-exports facts table (`write_log_facts`:
 per log the input-file count from the parse manifests `_parse.files`/`_transfers.files`, total
 records, first/last record stamp and the HOLES — span days with no record — from the topviews;
 Records = the log's own rows — the server topview's Records column, the transfer topview's
-Transfers Count (`$9` of its table 1 since 2026-09-12, one per physical leg), never a Files or percentage column: until
+Transfers Count (`$13` since 2026-09-12 — the Recovered and Resubmit groups sit before it — one per physical leg), never a Files or percentage column: until
 2026-08-31 the transfer half read `$13`, the Transfers Error %, so a clean 0.0 % day counted as a
 hole and an estate with no failed transfer showed the Transfer row without Records/First/Last/Days).
 Every status cell opens the **Transfer > Entities view whose row
