@@ -344,6 +344,19 @@ check $([ "${rva:-0}" -gt 0 ] && [ "${rvm:-0}" -gt 0 ] && echo 0 || echo 1) "the
 check $([ "${rso:-0}" -gt 0 ] && [ "${rsf:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Resubmit Ok (${rso:-0}) or Failed (${rsf:-0}) File — a Resubmit column is never exercised"
 hc=$(grep -o '<a href="transfer/recovered-files.html">[0-9.]*</a>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g; s/\.//g' | head -1)
 check $([ "${hc:-x}" = "${wrv:-y}" ] && echo 0 || echo 1) "home Cured total is '${hc:-absent}', expected the recovered total ${wrv:-?}"
+# the Recovered files report's Retry / Resubmit split (2026-09-12, user
+# request): every table carries the two columns after Recovered — the same
+# Automatic / Manual rule as the Top view, so the per-subscription totals
+# must equal the recount above, and the per-day totals the same
+RF="data/transfer/reports/recovered-files.rpt"
+h=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "HEAD" { print; exit }' "$RF" 2>/dev/null)
+check $([ "$h" = $'HEAD\tSubscription\tRecovered\tRetry\tResubmit\tFiles\tRecovered %' ] && echo 0 || echo 1) "recovered-files.rpt table 1 HEAD is '$h' — expected Recovered · Retry · Resubmit"
+read -r rfr rfa rfm <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "TOTAL" { a = $3; b = $4; c = $5; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); print a + 0, b + 0, c + 0; exit }' "$RF" 2>/dev/null)"
+check $([ "${rfr:-x}" = "${wrv:-y}" ] && [ "$((${rfa:-0} + ${rfm:-0}))" = "${wrv:-y}" ] && echo 0 || echo 1) "recovered-files Recovered/Retry/Resubmit = ${rfr:-?}/${rfa:-?}/${rfm:-?}, the caches give ${wrv:-?} recovered"
+check $([ "${rfm:-x}" = "${wrm:-y}" ] && echo 0 || echo 1) "recovered-files Resubmit = ${rfm:-absent}, the caches give ${wrm:-?}"
+read -r dfa dfm <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 3 && $1 == "TOTAL" { b = $5; c = $6; sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); print b + 0, c + 0; exit }' "$RF" 2>/dev/null)"
+check $([ "${dfa:-x}" = "${rfa:-y}" ] && [ "${dfm:-x}" = "${rfm:-y}" ] && echo 0 || echo 1) "recovered-files per-day Retry/Resubmit totals ${dfa:-?}/${dfm:-?} differ from the per-subscription ${rfa:-?}/${rfm:-?}"
+check $([ "$(grep -c 'Retry (automatic)\|Resubmit (manual)' "docs/transfer/recovered-files.html" 2>/dev/null)" -ge 2 ] && echo 0 || echo 1) "transfer/recovered-files.html lacks the Retry (automatic) / Resubmit (manual) boxes"
 hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/topview.html" 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "$hdr" = "|Files|Recovered|Resubmit|Transfers|State|Date|First|Last|Count|Ok|Error|Error %|Automatic|Manual|Ok|Failed|Count|Ok|Error|Error %|Processed|Failed|Waiting|Expired|" ] && echo 0 || echo 1) "transfer/topview.html headers are '$hdr'"
 n=$(grep -c '<table' docs/transfer/topview.html 2>/dev/null || true)
