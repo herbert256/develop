@@ -853,7 +853,7 @@ row links inside it.
   by RESULT. Also lists every whitelisted IP (type "Whitelist", linking the allowing account).
   **Adding a column means shifting report.js** — the Type cell is read by INDEX (`cells[2]`) in
   several places.
-- **Report finder** — `docs/report-finder.html` (`write_report_finder`): the report catalog
+- **Report finder** — `docs/tools/report-finder.html` (`write_report_finder`; under `docs/tools/` with the sitemap, whats-new and the build report since 2026-09-12 — their hrefs carry `../`, the palette strips it): the report catalog
   searched client-side; TITLE matches rank above intro-only matches; rows carry KEYWORDS
   (`rpt_keywords`: `KEYWORDS` + every TABLE heading and HEAD column name) via `data-k`.
 - **Failed Subscriptions** — `bin/transfer/reports/failed.sh`, leader of the Analyses ERRORS

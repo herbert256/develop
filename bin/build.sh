@@ -15,8 +15,11 @@
 #                       trap, so a FAILED or interrupted run still gets its
 #                       report, with the failing step on record.
 #   build/step-NN.log   the raw per-step output the report embeds.
-#   (the docs/ copies were REMOVED 2026-08-29: the report is a LOCAL artifact
-#   only, and no page on the published site references a build any more)
+#   docs/tools/build.html the SITE copy of the same report (2026-09-12, user
+#                       request; the docs/ copies were removed 2026-08-29 and the
+#                       report stayed local-only until then), linked from the
+#                       sitemap Tools card — one render, two copies
+#   (build/step-NN.log stays local)
 #
 # build/ is gitignored like data/ — a per-run local artifact, safe to delete.
 #
@@ -64,7 +67,7 @@
 #   bin/build.sh -h     this text
 #
 # No arguments: one repo = one environment. The report goes to
-# build/index.html and nowhere else.
+# build/index.html and docs/tools/build.html.
 #
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -79,8 +82,8 @@ case "${1:-}" in
         exit 2 ;;
 esac
 source bin/envlabel.sh   # ENV_LABEL / ENV_KEY / ENV_INBOX from input/environment.txt
-# The report is LOCAL ONLY (2026-08-29): build/index.html, never published
-# into docs/ — no page on the site references a build any more.
+# The report goes to build/index.html AND docs/tools/build.html (2026-09-12 —
+# the site copy, linked from the sitemap Tools card; local-only 2026-08-29..09-12).
 # ---- build lock -------------------------------------------------------------
 # ONE build per checkout: the chains clear and rewrite shared trees (data/,
 # docs/, build/), so two overlapping runs — a second terminal, an automation
@@ -109,7 +112,8 @@ printf '%s\n' "$$" > "$BUILD_LOCK/pid"
 # ---- CLEAR + SEED docs/ (2026-08-29, user decision) -------------------------
 # Every build CLEARS docs/ and re-seeds the hand-authored files from the
 # repo-root assets/ — docs/ is pure build output, and a build can never leave
-# a stale page behind. assets/ is the ONE place to edit style.css / report.js
+# a stale page behind (the build report lands back in docs/tools/build.html at the
+# very end, from the EXIT trap — 2026-09-12). assets/ is the ONE place to edit style.css / report.js
 # / slotchart.js / file-search.js and the help pages (see assets/README.txt);
 # .nojekyll and topbar-data.js stay generated (ensure_assets).
 # rm -rf with a .DS_Store retry: Finder can drop one into a directory WHILE
@@ -254,7 +258,8 @@ run_step() {
 
 
 # write_report FILE RC [NOTE] — render the report of the steps recorded so
-# far. Called from the EXIT trap for the local build/index.html — on success,
+# far. Called from the EXIT trap for the local build/index.html AND the site copy
+# docs/tools/build.html (2026-09-12, user request; one render, two copies) — on success,
 # on a failed step, and on interruption, so the report always reflects the
 # run. It links the site stylesheet for the standard top bar but keeps its
 # own inline <style> for the rest: the page must render even when a build
@@ -320,9 +325,13 @@ write_report() {
     # when a build died before any publish). The report's own styles below
     # scope to .buildwrap so style.css keeps the body padding that clears the
     # fixed bar; without the stylesheet (a from-scratch clone) the page still
-    # renders, just with a plain bar. build/index.html sits OUTSIDE docs/, so
-    # everything resolves through ../docs/.
-    local base="../docs/"
+    # renders, just with a plain bar. The report is rendered ONCE with the
+    # @B@ placeholder for its docs-root prefix and written TWICE (2026-09-12,
+    # user request): build/index.html sits OUTSIDE docs/, so there @B@ becomes
+    # ../docs/; docs/tools/build.html is the SITE copy (linked from the
+    # sitemap's Tools card), one level below the root, so there @B@ is ../.
+    # One render = identical timings in both copies.
+    local base="@B@"
     {
         cat <<'HTML'
 <!doctype html>
@@ -522,7 +531,11 @@ HTML
         printf '<p>Written by <code>bin/build.sh</code> &mdash; raw step logs in <code>build/step-NN.log</code>. Build finished at %s.</p>\n' "$end"
         printf '</div>\n'
         printf '</body>\n</html>\n'
-    } > "$out"
+    } > "$out.tmp"
+    # the two copies (see `base` above): the local report and the site copy
+    sed 's#@B@#../docs/#g' "$out.tmp" > "$out"
+    mkdir -p docs/tools && sed 's#@B@#../#g' "$out.tmp" > docs/tools/build.html
+    rm -f "$out.tmp"
 }
 
 # kill_tree PID — terminate PID and its whole DESCENDANT tree. A background

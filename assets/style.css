@@ -82,7 +82,7 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
                    color:#fff; font-size:0.92rem; line-height:1; }
 .topbar .searchbtn:hover { background:rgba(255,255,255,0.35); text-decoration:none; }
 
-/* ---- Site map (docs/<env>/sitemap.html, bin/publish.sh write_sitemap) ----
+/* ---- Site map (docs/tools/sitemap.html, bin/build/publish.sh write_sitemap) ----
    One column per AREA, one card per report GROUP: the group name on top, the
    member reports tree-listed under it with monospace connectors. Each area
    carries its own accent color on the card left border. */

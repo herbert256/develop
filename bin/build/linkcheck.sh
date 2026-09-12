@@ -15,9 +15,9 @@
 # buildTopbar emits, from the page's own attributes:
 #   - every menu href in topbar-data.js, its "@" placeholder replaced by data-b
 #   - brand -> data-b + index.html
-#   - data-b + dashboards/index.html, report-finder.html, search/search.html,
+#   - data-b + dashboards/index.html, tools/report-finder.html, search/search.html,
 #     search/file-search-24-hours.html (the Files link),
-#     sitemap.html, transfer/entities/subscription-all.html
+#     tools/sitemap.html, transfer/entities/subscription-all.html
 #   - the help icon  -> data-b + help/<data-help>.html
 # A page whose topbar div is NOT empty has a baked bar (help pages, the build
 # report — render_shared_topbar) and is scanned normally.
@@ -30,8 +30,8 @@
 # EXPECTED-UNREACHABLE (not failures, listed for confirmation):
 #   docs/404.html            what GitHub Pages serves for an unmatched URL;
 #                            nothing should link it.
-#   (the build report left docs/ entirely 2026-08-29 — build/index.html is
-#   local only, so no build.html expectation remains)
+#   (the build report is back on the site since 2026-09-12 — docs/tools/build.html,
+#   linked from the sitemap Tools card, so it is REACHABLE, not expected-unreachable)
 #
 # Exit status: 1 when a link resolves to nothing, else 0. Unreachable pages
 # beyond the expected set are reported and also fail the run — a page nothing
@@ -136,10 +136,10 @@ awk -v DOCS="$DOCS" '
                     for (i = 1; i <= MENUN; i++) { h = MENU[i]; gsub(/@/, b, h); edge(page, h) }
                     edge(page, b "index.html")
                     edge(page, b "dashboards/index.html")
-                    edge(page, b "report-finder.html")
+                    edge(page, b "tools/report-finder.html")
                     edge(page, b "search/search.html")
                     edge(page, b "search/file-search-24-hours.html")   # the Files link
-                    edge(page, b "sitemap.html")
+                    edge(page, b "tools/sitemap.html")
                     edge(page, b "transfer/entities/subscription-all.html")
                     if (hlp != "") edge(page, b "help/" hlp ".html")
                 }

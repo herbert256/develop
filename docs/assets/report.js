@@ -1315,7 +1315,7 @@
     if (sfocus) sfocus.focus();
   }
 
-  // ---- The Report finder (docs/report-finder.html) -------------------------
+  // ---- The Report finder (docs/tools/report-finder.html) -------------------
   // A static catalog table (data-rfinder) + its own search box (#rfq): the
   // query matches each report's TITLE (data-t) and INTRO (data-i) with the
   // site search grammar (wildcards ? and *, or/and/not); TITLE matches rank
@@ -3436,11 +3436,11 @@
     PAL = { reports: [], ents: [], pending: 2, err: "" };
     function one() { if (--PAL.pending <= 0) done(); }
     if (!window.fetch) { PAL.pending = 0; PAL.err = "no fetch in this browser"; done(); return; }
-    fetch(TB_EB + "report-finder.html").then(function (r) { return r.ok ? r.text() : ""; }).then(function (html) {
+    fetch(TB_EB + "tools/report-finder.html").then(function (r) { return r.ok ? r.text() : ""; }).then(function (html) {
       var doc = new DOMParser().parseFromString(html, "text/html"), rows = doc.querySelectorAll("tr[data-t]"), i, a, cells;
       for (i = 0; i < rows.length; i++) {
         a = rows[i].querySelector("a"); if (!a) continue; cells = rows[i].cells;
-        PAL.reports.push({ t: a.textContent.trim(), h: a.getAttribute("href") || "", s: cells[1] ? cells[1].textContent.trim() : "",
+        PAL.reports.push({ t: a.textContent.trim(), h: (a.getAttribute("href") || "").replace(/^\.\.\//, ""),   // the finder sits in tools/ (2026-09-12): its hrefs lead with ../, dropped for the docs-root base s: cells[1] ? cells[1].textContent.trim() : "",
                            x: palFold(a.textContent + " " + (rows[i].getAttribute("data-k") || "") + " " + (a.getAttribute("href") || "")) });
       }
       one();
@@ -3761,9 +3761,9 @@
       // monitor.rpt's existence)
       (M.monitor ? '<a class="dashlink" href="' + b + 'dashboards/monitor.html">Monitor</a>' : "") +
       '<span class="tr-group">' +
-      '<a class="searchbtn" href="' + b + 'report-finder.html" title="Report finder (Ctrl+K / Cmd+K: quick jump from any page)" aria-label="Report finder">🔎</a>' +
+      '<a class="searchbtn" href="' + b + 'tools/report-finder.html" title="Report finder (Ctrl+K / Cmd+K: quick jump from any page)" aria-label="Report finder">🔎</a>' +
       '<a class="searchbtn themebtn" href="#" title="Dark / light theme" aria-label="Dark or light theme">◐</a>' +
-      '<a class="searchbtn" href="' + b + 'sitemap.html" title="Site map" aria-label="Site map">🗺</a>' +
+      '<a class="searchbtn" href="' + b + 'tools/sitemap.html" title="Site map" aria-label="Site map">🗺</a>' +
       (help ? '<a class="helpbtn" href="' + b + "help/" + help + '.html" title="Help" aria-label="Help">?</a>' : "") +
       "</span>";
     if (typeof window.AXWAY_ENVLINKS === "function") window.AXWAY_ENVLINKS();   // the switch's other-site href (see above)

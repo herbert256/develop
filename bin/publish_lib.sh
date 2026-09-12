@@ -743,8 +743,8 @@ render_topbar() {
     printf '<a class="dashlink" href="%sdashboards/index.html">Dashboard</a>' "$base"
     # Top-bar right: the REPORT FINDER + SITE MAP magnifiers, then the help icon.
     printf '<span class="tr-group">'
-    printf '<a class="searchbtn" href="%sreport-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a>' "$base"
-    printf '<a class="searchbtn" href="%ssitemap.html" title="Site map" aria-label="Site map">&#128506;</a>' "$base"
+    printf '<a class="searchbtn" href="%stools/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a>' "$base"
+    printf '<a class="searchbtn" href="%stools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a>' "$base"
     [ -n "$helpslug" ] && printf '<a class="helpbtn" href="%shelp/%s.html" title="Help" aria-label="Help">?</a>' "$base" "$helpslug"
     printf '</span></div>'
     # the baked-chrome pages load no report.js / topbar-data.js, so the switch

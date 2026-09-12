@@ -1115,13 +1115,13 @@ write_home_block() {
     write_log_facts
 }
 
-# ---- The Report finder (docs/<env>/report-finder.html) ----------------------
+# ---- The Report finder (docs/tools/report-finder.html) -----------------------
 # One searchable catalog row per report page: TITLE + INTRO lifted from every
 # published .rpt (transfer, server, dashboards) plus the hand-rendered
 # analyses pages. The client-side search (report.js setupReportFinder, input
 # #rfq) ranks TITLE matches ABOVE intro-only matches, both in catalog order.
-# Linked from the top-bar magnifier next to the help icon. Env-root page like
-# search/search.html (css depth 1).
+# Linked from the top-bar magnifier next to the help icon. A docs/tools/ page like
+# search/search.html (css depth 1; under docs/tools/ since 2026-09-12).
 finder_row() {   # $1 href  $2 area  $3 title  $4 intro (**bold** markdown, or raw HTML on dashboards)  $5 keywords ("" = none)
     [ -n "$3" ] || return 0
     local text disp tl il et eh ea kw kl kd
@@ -1274,7 +1274,7 @@ function row(href, area, title, intro, kw, kvis,   text, disp, tl, il, kl, kd) {
         kd = " <span class=\"rfkw\">" esc(kvis) "</span>"
     }
     printf "<tr data-t=\"%s\" data-i=\"%s\" data-k=\"%s\"><td><a href=\"%s\">%s</a></td><td>%s</td><td class=\"desc\">%s%s</td></tr>\n", \
-        tl, il, kl, esc(href), esc(title), esc(area), disp, kd
+        tl, il, kl, "../" esc(href), esc(title), esc(area), disp, kd   # the finder lives in docs/tools/ (2026-09-12): one level below the root
 }
 # **bold** -> <strong>bold</strong>, left to right (sed -E s/\*\*([^*]+)\*\*/…/g)
 function strongify(s,   out, i, j) {
@@ -1293,7 +1293,8 @@ $1 == "S" { row($2, $3, $4, $5, $6, $7) }
 '
 
 write_report_finder() {
-    local out="$DOCS/report-finder.html" name rpt t4 i4 fp a4 rows
+    local out="$DOCS/tools/report-finder.html" name rpt t4 i4 fp a4 rows   # under docs/tools/ since 2026-09-12 (user request) — the row hrefs carry ../
+    mkdir -p "$DOCS/tools"   # before the redirected block below opens $out
     # Emit every finder row first, then derive the per-area counts from what was
     # actually emitted (so the intro line can never drift from the table).
     # Build a MANIFEST (pure bash string work, no forks per row) and turn it into
@@ -1376,7 +1377,7 @@ STATIC
     rf_sc=$(grep -c '<td>Server</td>' <<<"$rows" || true)
     rf_ac=$(grep -c '<td>Analyses</td>' <<<"$rows" || true)
     {
-        html_head "Report finder" "assets/style.css" "" "" "report-finder"
+        html_head "Report finder" "../assets/style.css" "" "" "report-finder"
         printf '<h1>Report finder</h1>\n'
         printf '<p class="range">%d Transfer reports, %d Server reports, %d Analyses reports. Find a report by its <strong>title</strong> or <strong>introduction</strong> text &mdash; title matches list first.</p>\n' "$rf_tc" "$rf_sc" "$rf_ac"
         printf '<div class="controls"><label>Search</label><span class="search-wrap"><input type="search" id="rfq" class="search" autocomplete="off" autofocus></span><span class="searchhint">Wildcards: ? = 1 character, * = 0..n characters. Logical operators: or / and / and not</span></div>\n'
@@ -1387,12 +1388,12 @@ STATIC
     } > "$out"
 }
 
-# ---- The Site map (docs/<env>/sitemap.html) ---------------------------------
+# ---- The Site map (docs/tools/sitemap.html) ----------------------------------
 # The whole environment on one page: per AREA (Transfer / Server / Dashboards /
 # Analyses / Data pages & tools) a column of CARDS — one card per report GROUP,
 # its group name on top and the member reports tree-listed beneath (the same
 # group machinery the menus use); ungrouped reports get a card of their own.
-# Env-root page (css depth 0) linked from the top-bar map icon.
+# A docs/tools/ page (css depth 1, 2026-09-12) linked from the top-bar map icon.
 sm_href() {   # $1 area  $2 basename -> env-root-relative page
     local fp; fp=$(first_page "$2")
     # the Subscriptions group renders into docs/<env>/analyses/, whichever area
@@ -1434,7 +1435,7 @@ sm_area_cards() {   # $1 area (transfer|server)
                 ml=$(member_label "$m"); [ -n "$ml" ] || ml=$(member_label "${m#cross-}")
                 [ -n "$ml" ] || ml=$m
                 esc "$ml"
-                lis+=$(printf '<li><a href="%s">%s</a></li>' "$(sm_href "$area" "$m")" "$ESC")$'\n'
+                lis+=$(printf '<li><a href="../%s">%s</a></li>' "$(sm_href "$area" "$m")" "$ESC")$'\n'
                 n=$((n + 1)); lastm=$m
             done
             [ "$n" -gt 0 ] || continue
@@ -1443,7 +1444,7 @@ sm_area_cards() {   # $1 area (transfer|server)
                 # link the ONE member that has a page (not the whole member
                 # list — that produced a spaces-in-href 404 when only one of
                 # a group's reports exists, e.g. production srv-security)
-                printf '<div class="smcard"><h3><a href="%s">%s</a></h3></div>\n' \
+                printf '<div class="smcard"><h3><a href="../%s">%s</a></h3></div>\n' \
                     "$(sm_href "$area" "$lastm")" "$ESC"
             else
                 printf '<div class="smcard"><h3>%s <span class="smcount">%s</span></h3><ul>\n%s</ul></div>\n' "$ESC" "$n" "$lis"
@@ -1451,28 +1452,29 @@ sm_area_cards() {   # $1 area (transfer|server)
         else
             lbl=$(entry_label "$area" "$name")
             esc "$lbl"
-            printf '<div class="smcard"><h3><a href="%s">%s</a></h3></div>\n' "$(sm_href "$area" "$name")" "$ESC"
+            printf '<div class="smcard"><h3><a href="../%s">%s</a></h3></div>\n' "$(sm_href "$area" "$name")" "$ESC"
         fi
     done
 }
 write_sitemap() {
-    local out="$DOCS/sitemap.html" rpt name t4 n1 n2 sub base cnt lbl
+    local out="$DOCS/tools/sitemap.html" rpt name t4 n1 n2 sub base cnt lbl   # under docs/tools/ since 2026-09-12 (user request) — every link carries ../, the sibling tools ./
+    mkdir -p "$DOCS/tools"   # before the redirected block below opens $out
     {
-        html_head "Site Map" "assets/style.css" "" "" "sitemap"
+        html_head "Site Map" "../assets/style.css" "" "" "sitemap"
         printf '<h1>Site Map</h1>\n'
         printf '<p class="range">Everything in this environment on one page: each card is a report <strong>group</strong> — the group name on top, its reports beneath. The same order as the menus, left to right by area.</p>\n'
         printf '<div class="smgrid">\n'
         printf '<section class="smarea sm-transfer"><h2>Transfer reports</h2>\n'
-        printf '<div class="smcard"><h3><a href="transfer/index.html">Start page</a></h3></div>\n'
+        printf '<div class="smcard"><h3><a href="../transfer/index.html">Start page</a></h3></div>\n'
         sm_area_cards transfer
         printf '</section>\n<section class="smarea sm-server"><h2>Server reports</h2>\n'
-        printf '<div class="smcard"><h3><a href="server/index.html">Start page</a></h3></div>\n'
+        printf '<div class="smcard"><h3><a href="../server/index.html">Start page</a></h3></div>\n'
         sm_area_cards server
         # one card per GROUP — the same five groups as ANALYSES_MENU and the
         # pages' analyses_group_tabs rows. Analyses BEFORE Dashboards to match
         # the top-bar pulldown order (Transfer · Server · Analyses · Dashboards).
         printf '</section>\n<section class="smarea sm-ana"><h2>Analyses</h2>\n'
-        printf '<div class="smcard"><h3><a href="analyses/index.html">Start page</a></h3></div>\n'
+        printf '<div class="smcard"><h3><a href="../analyses/index.html">Start page</a></h3></div>\n'
         # A report family sharing one prefix lists ONCE, linked to its first
         # page (First seen, Use Case, Skipped — the per-value Skipped pages and
         # the sibling views are reached from there). Deliberately NOT a generic
@@ -1481,29 +1483,29 @@ write_sitemap() {
         # File search left this card 2026-09-07 (user request): the top bar's
         # Files link is its one navigation entry; the report finder still lists it
         printf '<div class="smcard"><h3>Coverage &amp; seen <span class="smcount">4</span></h3><ul>\n'
-        printf '<li><a href="transfer/entity-coverage-accounts.html">Entity coverage</a></li>\n'
-        printf '<li><a href="analyses/first-seen.html">First seen</a></li>\n'
-        printf '<li><a href="analyses/data-diff.html">Since yesterday</a></li>\n'
-        printf '<li><a href="transfer/seen-in-server-log.html">Seen in server log</a></li>\n'
+        printf '<li><a href="../transfer/entity-coverage-accounts.html">Entity coverage</a></li>\n'
+        printf '<li><a href="../analyses/first-seen.html">First seen</a></li>\n'
+        printf '<li><a href="../analyses/data-diff.html">Since yesterday</a></li>\n'
+        printf '<li><a href="../transfer/seen-in-server-log.html">Seen in server log</a></li>\n'
         printf '</ul></div>\n'
         printf '<div class="smcard"><h3>Configuration <span class="smcount">17</span></h3><ul>\n'
-        printf '<li><a href="analyses/use-cases.html">Use Case</a></li>\n'
-        printf '<li><a href="analyses/uc2-visits.html">UC2 pickup visits</a></li>\n'
-        printf '<li><a href="analyses/subscriptions.html">Subscriptions</a></li>\n'
-        printf '<li><a href="analyses/logical-detection.html">Logical detection</a></li>\n'
-        printf '<li><a href="analyses/added-bl.html">Added BL</a></li>\n'
-        printf '<li><a href="analyses/accounts.html">Accounts</a></li>\n'
-        printf '<li><a href="analyses/fe-overview.html">Partners - Incoming</a></li>\n'
-        printf '<li><a href="analyses/account-sharing.html">Account sharing</a></li>\n'
-        printf '<li><a href="analyses/twins.html">Twins</a></li>\n'
-        printf '<li><a href="analyses/polling.html">Polling</a></li>\n'
-        printf '<li><a href="analyses/config-hygiene.html">Config hygiene</a></li>\n'
-        printf '<li><a href="analyses/whitelist-audit.html">Whitelist audit</a></li>\n'
-        printf '<li><a href="analyses/cleanup-backlog.html">Cleanup backlog</a></li>\n'
-        printf '<li><a href="transfer/sources-and-targets.html">Sources and Targets</a></li>\n'
-        printf '<li><a href="transfer/skipped.html">Skipped</a></li>\n'
-        printf '<li><a href="transfer/not-in-flow-manager.html">Not in Flow Manager</a></li>\n'
-        printf '<li><a href="analyses/%s">Cross References</a></li>\n' "$(group_home cross)"
+        printf '<li><a href="../analyses/use-cases.html">Use Case</a></li>\n'
+        printf '<li><a href="../analyses/uc2-visits.html">UC2 pickup visits</a></li>\n'
+        printf '<li><a href="../analyses/subscriptions.html">Subscriptions</a></li>\n'
+        printf '<li><a href="../analyses/logical-detection.html">Logical detection</a></li>\n'
+        printf '<li><a href="../analyses/added-bl.html">Added BL</a></li>\n'
+        printf '<li><a href="../analyses/accounts.html">Accounts</a></li>\n'
+        printf '<li><a href="../analyses/fe-overview.html">Partners - Incoming</a></li>\n'
+        printf '<li><a href="../analyses/account-sharing.html">Account sharing</a></li>\n'
+        printf '<li><a href="../analyses/twins.html">Twins</a></li>\n'
+        printf '<li><a href="../analyses/polling.html">Polling</a></li>\n'
+        printf '<li><a href="../analyses/config-hygiene.html">Config hygiene</a></li>\n'
+        printf '<li><a href="../analyses/whitelist-audit.html">Whitelist audit</a></li>\n'
+        printf '<li><a href="../analyses/cleanup-backlog.html">Cleanup backlog</a></li>\n'
+        printf '<li><a href="../transfer/sources-and-targets.html">Sources and Targets</a></li>\n'
+        printf '<li><a href="../transfer/skipped.html">Skipped</a></li>\n'
+        printf '<li><a href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a></li>\n'
+        printf '<li><a href="../analyses/%s">Cross References</a></li>\n' "$(group_home cross)"
         printf '</ul></div>\n'
         # The Boxes card — the two hand-written boxes pages (under analyses/)
         # plus the BOXES_ONLY_REPORTS, whose pages stay at their area URLs and
@@ -1512,10 +1514,10 @@ write_sitemap() {
         # (The four SUBS_GROUP_REPORTS members live in the Configuration card
         # above, not here.)
         printf '<div class="smcard"><h3>Partners <span class="smcount">4</span></h3><ul>\n'
-        printf '<li><a href="analyses/partner-scorecard.html">Partner scorecard</a></li>\n'
-        printf '<li><a href="analyses/blast-radius.html">Blast radius</a></li>\n'
-        printf '<li><a href="analyses/app-partners.html">Application dependencies</a></li>\n'
-        printf '<li><a href="analyses/partner-lifecycle.html">Partner lifecycle</a></li>\n'
+        printf '<li><a href="../analyses/partner-scorecard.html">Partner scorecard</a></li>\n'
+        printf '<li><a href="../analyses/blast-radius.html">Blast radius</a></li>\n'
+        printf '<li><a href="../analyses/app-partners.html">Application dependencies</a></li>\n'
+        printf '<li><a href="../analyses/partner-lifecycle.html">Partner lifecycle</a></li>\n'
         printf '</ul></div>\n'
         printf '<div class="smcard"><h3>Boxes <span class="smcount">15</span></h3><ul>\n'
         local sub5
@@ -1534,21 +1536,21 @@ write_sitemap() {
                     'server/deploy-errors.html|Deploy errors' \
                     'server/no-remote-dir.html|No remote dir' \
                     'server/no-remote-files.html|No remote files'; do
-            printf '<li><a href="%s">%s</a></li>\n' "${sub5%%|*}" "${sub5#*|}"
+            printf '<li><a href="../%s">%s</a></li>\n' "${sub5%%|*}" "${sub5#*|}"
         done
         printf '</ul></div>\n'
         printf '<div class="smcard"><h3>Errors <span class="smcount">2</span></h3><ul>\n'
-        printf '<li><a href="analyses/failed.html">Failed Subscriptions</a></li>\n'
-        printf '<li><a href="analyses/failing-reasons.html">Error reasons</a></li>\n'
+        printf '<li><a href="../analyses/failed.html">Failed Subscriptions</a></li>\n'
+        printf '<li><a href="../analyses/failing-reasons.html">Error reasons</a></li>\n'
         printf '</ul></div>\n'
         printf '</section>\n<section class="smarea sm-dash"><h2>Dashboards</h2>\n'
         # ONE dashboard (2026-07): the per-topic pages folded into the overview
-        printf '<div class="smcard"><h3><a href="dashboards/index.html">Dashboard</a></h3></div>\n'
+        printf '<div class="smcard"><h3><a href="../dashboards/index.html">Dashboard</a></h3></div>\n'
         # the Monitor dashboard exists only in an env with monitor data (the
         # rpt is the flag); this sitemap line is also what keeps the page
         # REACHABLE for linkcheck — the top-bar Monitor link is runtime-only
         [ -f "$DATA/dashboards/reports/monitor.rpt" ] && \
-            printf '<div class="smcard"><h3><a href="dashboards/monitor.html">Monitor</a></h3></div>\n'
+            printf '<div class="smcard"><h3><a href="../dashboards/monitor.html">Monitor</a></h3></div>\n'
         printf '</section>\n<section class="smarea sm-tools"><h2>Data pages &amp; tools</h2>\n'
         # per-day pages: the COMBINED day dashboard, one per calendar day
         # (date-named; the per-area transfer-/server- day pages were removed
@@ -1558,7 +1560,7 @@ write_sitemap() {
         # pipefail would kill the publish over a legitimate 0
         n1=$({ ls "$DOCS"/day/[0-9]*.html 2>/dev/null || true; } | wc -l | tr -d ' ')
         printf '<div class="smcard"><h3>Per-day pages <span class="smcount">%s</span></h3><ul>\n' "$n1"
-        printf '<li><a href="index.html">Day dashboards (%s) — one per calendar day, via the home log-files table</a></li>\n' "$n1"
+        printf '<li><a href="../index.html">Day dashboards (%s) — one per calendar day, via the home log-files table</a></li>\n' "$n1"
         printf '</ul></div>\n'
         # the per-entity detail pages: one page per configured-or-logged entity
         printf '<div class="smcard"><h3>Entity detail pages</h3><ul>\n'
@@ -1573,24 +1575,28 @@ write_sitemap() {
                 cnt=$(wc -l < "$DATA/transfer/reports/details/$sub/_slugmap.tsv" | tr -d ' ')
             lbl=$(member_label "$base")
             esc "$lbl"
-            printf '<li><a href="transfer/entities/%s-all.html">%s (%s)</a></li>\n' "$base" "$ESC" "${cnt:-0}"
+            printf '<li><a href="../transfer/entities/%s-all.html">%s (%s)</a></li>\n' "$base" "$ESC" "${cnt:-0}"
         done
         printf '</ul></div>\n'
         printf '<div class="smcard"><h3>Tools</h3><ul>\n'
-        printf '<li><a href="index.html">Home</a> — the shared landing page</li>\n'
-        printf '<li><a href="search/search.html">Search</a> — find any entity by name</li>\n'
-        printf '<li><a href="report-finder.html">Report finder</a> — find a report by title or intro</li>\n'
-        printf '<li><a href="whats-new.html">What is new</a> — new and changed reports</li>\n'
-        printf '<li><a href="help/index.html">Help</a> — how to read the report catalogs (per-report help sits behind each page'\''s <b>?</b> button)</li>\n'
-        # (the Build report link is GONE 2026-08-29: the report is no longer
-        # published into docs/ at all — it lives only in the local build/
-        # directory, and nothing on the site references a build any more)
+        printf '<li><a href="../index.html">Home</a> — the shared landing page</li>\n'
+        printf '<li><a href="../search/search.html">Search</a> — find any entity by name</li>\n'
+        # the sibling tools (docs/tools/, 2026-09-12): ./ links — the ../ rule
+        # above is for everything outside this directory
+        printf '<li><a href="./report-finder.html">Report finder</a> — find a report by title or intro</li>\n'
+        printf '<li><a href="./whats-new.html">What is new</a> — new and changed reports</li>\n'
+        printf '<li><a href="../help/index.html">Help</a> — how to read the report catalogs (per-report help sits behind each page'\''s <b>?</b> button)</li>\n'
+        # THE BUILD REPORT (2026-09-12, user request): back on the site as
+        # docs/tools/build.html — bin/build.sh writes it LAST, from its EXIT
+        # trap, so the link points at the report of the build that wrote this
+        # page (it left docs/ 2026-08-29 and was local-only until now)
+        printf '<li><a href="./build.html">Build report</a> — the run that built this site: steps and timings, the inbox, input changes, the log files</li>\n'
         printf '</ul></div>\n'
         printf '</section>\n</div>\n</body>\n</html>\n'
     } > "$out"
 }
 
-# ---- What is new (docs/<env>/whats-new.html) --------------------------------
+# ---- What is new (docs/tools/whats-new.html) ---------------------------------
 # Two tables from the GIT history of the report scripts (transfer/server/
 # analyses bin/reports/): the 10 most recently ADDED reports, and the 10 most
 # recently CHANGED ones. Linked ONLY from the Site Map's Tools card. Degrades
@@ -1672,7 +1678,8 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
     fi
 }
 write_whats_new() {
-    local out="$DOCS/whats-new.html"
+    local out="$DOCS/tools/whats-new.html"   # under docs/tools/ since 2026-09-12 (user request) — the row hrefs carry ../
+    mkdir -p "$DOCS/tools"   # before the redirected block below opens $out
     # The generator dirs, CURRENT and pre-2026-07 (the tool sets moved from
     # <area>/bin/ to bin/<area>/): git log's path limiting does not follow a
     # rename, so without the legacy paths every report's history would start at
@@ -1769,10 +1776,10 @@ write_whats_new() {
             esc "$t"; et=$ESC; esc "$a"; ea=$ESC; esc "$href"; eh=$ESC
             if [ "$kind" = N ]; then
                 esc "$desc"; ed=$ESC
-                rows_new+="$date\t$seq\t$eh\t<tr><td>$date</td><td><a href=\"$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>\n"
+                rows_new+="$date\t$seq\t$eh\t<tr><td>$date</td><td><a href=\"../$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>\n"
             else
                 esc "$subj"; ed=$ESC
-                rows_chg+="$date\t$seq\t$eh\t<tr><td>$date</td><td><a href=\"$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>\n"
+                rows_chg+="$date\t$seq\t$eh\t<tr><td>$date</td><td><a href=\"../$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>\n"
             fi
         done <<< "$meta"
     done <<< "$hist"
@@ -1794,7 +1801,7 @@ write_whats_new() {
         rm -f "$keyf"
     fi
     {
-        html_head "What is new" "assets/style.css" "" "" ""
+        html_head "What is new" "../assets/style.css" "" "" ""
         printf '<h1>What is new</h1>\n'
         printf '<p class="range">The report catalog’s history, from the generators’ git log: the <strong>25 most recently added</strong> reports and the <strong>25 most recently changed</strong> ones. A change is listed only when its commit was about <strong>a few reports</strong> (up to eight — a sweep across more is about the site, not about any one of them), and a report the New table already names is not repeated below it. Newest first; the Description gives a new report’s introduction, or a changed report’s latest change.</p>\n'
         printf '<h2>New reports</h2>\n'

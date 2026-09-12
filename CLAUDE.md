@@ -75,7 +75,7 @@ a trailing `acceptance/`|`production/` stripped for pre-split bookmarks), `asset
 `.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `seenlog/`), `server/`, `analyses/`
 (+ `xref/`), `dashboards/`, `day/`, `errors/`, `details/` (one subdir per entity type), `files/`,
 `first-seen/`, `use-cases/`, `coverage/`, `transfers/duration/`, `switches/`, plus
-`search/` (`search.html` + `search-data.js`, the six `file-search-*.html` + their `-data.js` payloads — 2026-09-12, user request; at the root before) and `sitemap.html report-finder.html whats-new.html`. `input/` carries
+`search/` (`search.html` + `search-data.js`, the six `file-search-*.html` + their `-data.js` payloads — 2026-09-12, user request; at the root before) and `tools/` (`sitemap.html`, `report-finder.html`, `whats-new.html` and the build report `build.html` — 2026-09-12, user request; at the root before, the build report local-only 2026-08-29..09-12). `input/` carries
 the exports — logs AND the FlowManager JSONs (the real production flows are the HYBRID pattern
 generation: no folder parameters, flowdir from `{source,target}_hybrid_participant`; the sample
 estate carries both shapes). The manual `bin/flow-manager-synth.sh` stays as the fallback for a
@@ -99,7 +99,9 @@ checkout with logs but no config export: it synthesizes the two JSONs from the t
 
 Runs the whole chain. NO argument (`-h` only; anything else is exit 2 — the acc/prd scope went
 with the env split). NO git step — committing and pushing is manual. Writes an HTML run report to
-`build/index.html` (also on FAILED, EXIT trap) — LOCAL ONLY since 2026-08-29: no docs/ copy, and
+`build/index.html` (also on FAILED, EXIT trap) AND, since 2026-09-12 (user request), the SITE copy
+`docs/tools/build.html` — one render with an `@B@` docs-root placeholder, two copies — linked from
+the sitemap Tools card (local-only 2026-08-29..09-12; before that, in `docs/`); still
 no page on the site references a build. A checkout without the two flow-manager JSON exports
 exits 1 with a hint. **A checkout with the JSONs but NO log CSVs builds fully** (2026-08, the
 config-only estate — what a fresh clone is, the exports being gitignored): both parses write
@@ -221,7 +223,7 @@ is GENERATED at publish from the light rules by `bin/darken-css.awk` — colour 
 class, appended to docs/assets/style.css by build.sh/fresh.sh; a new light colour must be added to
 its maps; the page head applies the theme before the stylesheet, help pages carry the same inline
 line) · RELATIVE dates (`setupRelDates`, mouseover delegation, tooltip only) · the COMMAND palette
-(`setupPalette`, Ctrl/Cmd+K; fetches `report-finder.html` and `search-data.js` at the docs root once).
+(`setupPalette`, Ctrl/Cmd+K; fetches `tools/report-finder.html` and `search/search-data.js` from the docs root once, stripping the `../` their hrefs carry).
 COPY icons on ids (`setupCopyIds`, 2026-09-06): a ⧉ after every UUID in td/th/code/.coreid-item/dd/li,
 added LAST in init() (after the data-orig snapshots), re-added by a MutationObserver for content the
 page builds later and by a mouseover net after a restore; csvCellText skips `.cpid`. **CoreId LINKS to
