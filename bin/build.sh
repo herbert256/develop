@@ -613,9 +613,11 @@ bg_step_wait() {
 # environment's archives (input/environment.txt -> the prefixes acc* /
 # prd*+prod*, bin/envlabel.sh; one repo = one environment, 2026-09-11):
 # every <prefix>*.7z in it, unpacked with the st-reports password and routed
-# onto input/ by st-reports-update.sh (*.json -> flow-manager/, *.txt -> the
-# input root, the two log exports RENAMED to logEntry_yyyy-mm-dd.csv /
-# fileTransfer_yyyy-mm-dd.csv from their first record's date; existing files
+# onto input/ by st-reports-update.sh (the *.json exports told apart BY
+# CONTENT and named subscriptions.json / partners.json -> flow-manager/,
+# *.txt -> the input root, the two log exports RENAMED to
+# logEntry_yyyy-mm-dd.csv / fileTransfer_yyyy-mm-dd.csv from their first
+# record's date; existing files
 # replaced), then removed from the repo and pushed. A bad archive is a
 # WARNING that stays in place — the build goes on. The same repo receives
 # the built site at the end (st-reports-archive.sh, st-reports-<env>.7z —

@@ -19,7 +19,8 @@
 #      input/secrets/st-reports.pass and copies its files — at the root of
 #      the archive or in any directory inside it — onto input/, existing
 #      files REPLACED:
-#          *.json            -> input/flow-manager/
+#          *.json            -> input/flow-manager/subscriptions.json or partners.json
+#                               (told apart by CONTENT, not by name — 2026-09-12)
 #          *.txt             -> input/            (environment.txt never)
 #          fileTransfer*.csv -> input/transfer/fileTransfer_yyyy-mm-dd.csv  (transferLog*.csv too)
 #          logEntry*.csv     -> input/server/logEntry_yyyy-mm-dd.csv

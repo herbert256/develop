@@ -29,7 +29,14 @@
 #              logEntry*.csv      -> input/server/logEntry_yyyy-mm-dd.csv
 #              fileTransfer*.csv  -> input/transfer/fileTransfer_yyyy-mm-dd.csv
 #              transferLog*.csv   -> input/transfer/fileTransfer_yyyy-mm-dd.csv (the old name)
-#              *.json             -> input/flow-manager/
+#              *.json             -> input/flow-manager/subscriptions.json or
+#                                    partners.json — told apart by CONTENT, not
+#                                    by name (2026-09-12, user request): the
+#                                    first object's meta.href says
+#                                    /api/v2/subscriptions/ or /api/v2/partners/,
+#                                    else the keys ("participants" /
+#                                    "patternName" vs "communicationProfiles");
+#                                    an unrecognised JSON keeps its own name
 #              *.txt              -> input/          (the policy files —
 #                                    environment.txt and README.txt never)
 #           yyyy-mm-dd (zero-padded month and day) is read from the file itself:
@@ -64,6 +71,21 @@ PASSF="input/secrets/st-reports.pass"
 csv_ymd() {
     awk 'NR > 1 && match($0, /[0-9][0-9]\/[0-9][0-9]\/[0-9][0-9][0-9][0-9]/) { s = substr($0, RSTART, RLENGTH); print substr(s, 7, 4) "-" substr(s, 1, 2) "-" substr(s, 4, 2); exit }
          NR > 6 { exit }' "$1"
+}
+# json_kind FILE -> "subscriptions" | "partners" | "" from the first 64 KB of a
+# FlowManager export: the first object's meta.href names the collection
+# (/api/v2/subscriptions/ or /api/v2/partners/); without it the keys decide
+# ("participants" / "patternName" belong to a subscription,
+# "communicationProfiles" to a partner) — 2026-09-12, user request
+json_kind() {
+    head -c 65536 "$1" | awk '
+        { h = h $0 }
+        END {
+            if (index(h, "/api/v2/subscriptions/")) { print "subscriptions"; exit }
+            if (index(h, "/api/v2/partners/"))      { print "partners"; exit }
+            if (index(h, "\"participants\"") || index(h, "\"patternName\"")) { print "subscriptions"; exit }
+            if (index(h, "\"communicationProfiles\"")) { print "partners"; exit }
+            print "" }'
 }
 
 # ingest_one ARCHIVE -> 0 consumed, 1 left in place (with the reason on stderr
@@ -109,42 +131,29 @@ ingest_one() {
         fi
     done
 
-    # ---- 4a. the repo tree: flow-manager/ is copied as a tree -----------------
-    # rooted at input/ (the repo layout), at the archive root, or — the OLD
-    # per-environment layout — under input/<env>/ or <env>/ when <env> is
-    # ours. The server/ and transfer/ exports go through the per-file plan
-    # below instead, which NAMES them (2026-09-12).
-    local -a roots=("$tmp/input" "$tmp")
-    [ -z "$ENV_KEY" ] || roots+=("$tmp/input/$ENV_KEY" "$tmp/$ENV_KEY")
-    for root in "${roots[@]}"; do
-        src="$root/flow-manager"
-        [ -d "$src" ] || continue
-        n=$(find "$src" -type f ! -name '.DS_Store' | wc -l | tr -d ' ')
-        [ "$n" -gt 0 ] || continue
-        mkdir -p input/flow-manager
-        cp -pR "$src"/. input/flow-manager/
-        total=$((total + n))
-        echo "inbox: $n file(s) ${src#$tmp/} -> input/flow-manager/" >&2
-    done
-
-    # ---- 4b. every other file, routed by name — the log exports RENAMED -------
+    # ---- 4. every file, at any depth, routed by name — the JSON exports by
+    # CONTENT (json_kind) and the log exports RENAMED (csv_ymd). The former
+    # tree copy of flow-manager/ is gone (2026-09-12): a tree's files go
+    # through the same plan, so a mis-named subscriptions.json inside it is
+    # recognised too; the old per-environment layout (input/<env>/…, <env>/…)
+    # only matters for the tree refusal above.
+    # ---- 4b. every file, routed by name — the log exports RENAMED -------------
     # (2026-09-12, user request): logEntry_yyyy-mm-dd.csv /
     # fileTransfer_yyyy-mm-dd.csv, the date from the file's first data record
     # (csv_ymd); a file whose date cannot be read keeps its own name; a second
     # file of this archive mapping to a name already planned gets a numbered
     # suffix (never overwrites it)
-    local ymd j dup
+    local ymd kind j dup
     while IFS= read -r -d '' f; do
         rel="${f#$tmp/}"
         rel="${rel#input/}"
         [ -n "$ENV_KEY" ] && rel="${rel#$ENV_KEY/}"
-        case "$rel" in flow-manager/*) continue ;; esac   # copied by pass 4a
         base=$(basename "$f")
         sub=""; dst=$base
         case "$base" in
             logEntry*.csv)                      sub=server;   ymd=$(csv_ymd "$f"); [ -n "$ymd" ] && dst="logEntry_$ymd.csv" ;;
             transferLog*.csv|fileTransfer*.csv) sub=transfer; ymd=$(csv_ymd "$f"); [ -n "$ymd" ] && dst="fileTransfer_$ymd.csv" ;;
-            *.json)            sub=flow-manager ;;
+            *.json)            sub=flow-manager; kind=$(json_kind "$f"); [ -n "$kind" ] && dst="$kind.json" ;;   # by content, not by name
             environment.txt|README.txt) sub="" ;;   # a checkout's own files, never delivered
             *.txt)             sub=. ;;             # the policy files live at the input root
         esac

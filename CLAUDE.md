@@ -113,7 +113,9 @@ would re-render every page on each build.)
 Order, ONE linear chain (the rationale of every position is in the script's comments):
 (runtime only) `bin/build/exchange-in.sh` (the inbox, by prefix; it calls
 `bin/build/st-reports-update.sh` per archive, which renames the log exports to
-`logEntry_yyyy-mm-dd.csv` / `fileTransfer_yyyy-mm-dd.csv` from their first record's date — 2026-09-12) → the
+`logEntry_yyyy-mm-dd.csv` / `fileTransfer_yyyy-mm-dd.csv` from their first record's date and tells
+the JSON exports apart by content — `subscriptions.json` / `partners.json` from the first object's
+`meta.href` or keys, whatever they were called — 2026-09-12) → the
 have-config check → `bin/flow-manager.sh` → *parse*: server `parse.sh`
 in the background beside transfer `parse.sh` (`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`), then
 `bin/session-sites.sh`, `bin/expire-files.sh`, `bin/bookend-ok.sh`,
