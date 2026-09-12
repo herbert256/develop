@@ -15,14 +15,16 @@
 # buildTopbar emits, from the page's own attributes:
 #   - every menu href in topbar-data.js, its "@" placeholder replaced by data-b
 #   - brand -> data-b + index.html
-#   - data-b + dashboards/index.html, report-finder.html, search.html,
+#   - data-b + dashboards/index.html, report-finder.html, search/search.html,
+#     search/file-search-24-hours.html (the Files link),
 #     sitemap.html, transfer/entities/subscription-all.html
 #   - the help icon  -> data-b + help/<data-help>.html
 # A page whose topbar div is NOT empty has a baked bar (help pages, the build
 # report — render_shared_topbar) and is scanned normally.
 #
 # Entity Search ships its rows as DATA, not markup (split_search_rows lifts them
-# into docs/search-data.js), so its ~7,500 detail links live in the .js —
+# into docs/search/search-data.js — the search pages live under docs/search/ since
+# 2026-09-12, so the payload links carry a leading ../), so its ~7,500 detail links live in the .js —
 # they are read from there and counted as edges from search.html.
 #
 # EXPECTED-UNREACHABLE (not failures, listed for confirmation):
@@ -135,7 +137,8 @@ awk -v DOCS="$DOCS" '
                     edge(page, b "index.html")
                     edge(page, b "dashboards/index.html")
                     edge(page, b "report-finder.html")
-                    edge(page, b "search.html")
+                    edge(page, b "search/search.html")
+                    edge(page, b "search/file-search-24-hours.html")   # the Files link
                     edge(page, b "sitemap.html")
                     edge(page, b "transfer/entities/subscription-all.html")
                     if (hlp != "") edge(page, b "help/" hlp ".html")
@@ -143,8 +146,9 @@ awk -v DOCS="$DOCS" '
             }
         }
         # 3. Entity Search + File search: their rows live in *search-data.js,
-        # not in the page (search-data.js maps to search.html; each of the six
-        # file-search-<key>-data.js maps to its file-search-<key>.html)
+        # not in the page (search/search-data.js maps to search/search.html; each of the six
+        # search/file-search-<key>-data.js maps to its search/file-search-<key>.html;
+        # the engine-derived links are ../details/… and ../errors/…, one level up)
         for (f in FILE) if (f ~ /^[a-z]+\/(file-search-[a-z0-9-]+-|search-)data\.js$/) {
             src = f; sub(/-data\.js$/, ".html", src)
             if (f ~ /file-search-/) {
@@ -163,12 +167,12 @@ awk -v DOCS="$DOCS" '
                     if (l == "`;" || l == "") continue
                     if (sect == "S") {
                         n2 = split(l, a2, "\t")
-                        if (n2 >= 2 && a2[2] != "") edge(src, "details/subscriptions/" a2[2] ".html")
+                        if (n2 >= 2 && a2[2] != "") edge(src, "../details/subscriptions/" a2[2] ".html")
                     } else if (sect == "R") {
                         n2 = split(l, a2, "\t")
                         if (a2[n2] == "E")
                             for (i2 = 1; i2 <= n2; i2++)
-                                if (length(a2[i2]) == 36 && a2[i2] ~ /^[0-9a-f-]+$/) { edge(src, "errors/" a2[i2] ".html"); break }
+                                if (length(a2[i2]) == 36 && a2[i2] ~ /^[0-9a-f-]+$/) { edge(src, "../errors/" a2[i2] ".html"); break }
                     }
                 }
                 close(DOCS "/" f)

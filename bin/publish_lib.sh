@@ -544,7 +544,7 @@ first_page() {
     case $1 in
         account|login|subscription|remote-host|logical|partner|application|domain|bl)
             echo "entities/$1-all.html"; return ;;
-        entity-search) echo "../search.html"; return ;;    # published at the ENV ROOT (renamed 2026-07)
+        entity-search) echo "../search/search.html"; return ;;    # published under search/ (2026-09-12; at the env root 2026-07..09)
     esac
     local labels; labels=$(report_tabs "$1")
     if [ -z "$labels" ]; then echo "$1.html"
@@ -731,10 +731,10 @@ render_topbar() {
     else
         printf '<div class="topbar"><a class="brand" href="%s">%s</a>' "$home" "$brand"
     fi
-    printf '<span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch.html" title="Search" aria-label="Search">&#128269;</a></span>' "$base" "$base"
+    printf '<span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch/search.html" title="Search" aria-label="Search">&#128269;</a></span>' "$base" "$base"
     # the FILE SEARCH entry (2026-08), mirroring report.js buildTopbar:
     # between the search icon and the report menus
-    printf '<a class="dashlink" href="%sfile-search-24-hours.html">Files</a>' "$base"
+    printf '<a class="dashlink" href="%ssearch/file-search-24-hours.html">Files</a>' "$base"
     printf '<nav class="nav">'
     printf '<div class="dd"><span class="ddlabel">Transfer reports \342\226\276</span><div class="ddm">%s</div></div>' "${TRANSFER_MENU//@/$base}"
     [ -n "${SERVER_MENU:-}" ] && printf '<div class="dd"><span class="ddlabel">Server reports \342\226\276</span><div class="ddm">%s</div></div>' "${SERVER_MENU//@/$base}"
@@ -1840,13 +1840,16 @@ render_report() {   # $1 area  $2 name  $3 rpt
             CUR_DATES=$saved_dates
             return ;;
         entity-search)
-            # published at the ENV ROOT as search.html — css depth 0, entity
-            # links into details/ from the env root
+            # published under docs/search/ as search.html (2026-09-12, user
+            # request — at the docs root 2026-07..09; the six File search
+            # pages moved with it) — css depth 1, entity links into
+            # ../details/; the row payload search-data.js sits beside it
             local saved_dl=${DLINK_BASE:-}
-            DLINK_BASE="details/"
-            render_rpt "$rpt" "$DOCS/search.html" "assets/style.css" "index.html" "$rlabel" 1 "$hslug" "$rkey"
+            DLINK_BASE="../details/"
+            mkdir -p "$DOCS/search"
+            render_rpt "$rpt" "$DOCS/search/search.html" "../assets/style.css" "../index.html" "$rlabel" 1 "$hslug" "$rkey"
             DLINK_BASE=$saved_dl
-            split_search_rows "$DOCS/search.html" "$DOCS/search-data.js"
+            split_search_rows "$DOCS/search/search.html" "$DOCS/search/search-data.js"
             CUR_DATES=$saved_dates
             return ;;
     esac

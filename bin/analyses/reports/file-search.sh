@@ -21,7 +21,7 @@
 # OK = anything else (Waiting counts OK) — the row TINT, not a page split.
 #
 # Each page is one EMPTY table; THIS script writes the page's data sidecar
-# (file-search-<key>-data.js, copied to docs/<env>/ by the analyses publish)
+# (file-search-<key>-data.js, copied to docs/search/ by the analyses publish — the six pages live there since 2026-09-12)
 # in a COMPACT DATA format (v5, 2026-08 — one row shape for every page):
 #
 #   window.AXWAY_FSEARCH_D = `date per line`            (the date dictionary)

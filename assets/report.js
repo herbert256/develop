@@ -2677,7 +2677,7 @@
   // within the selected date range. Grouped tables are ungrouped first so a
   // blanked repeat cell still matches its real value, then re-blanked.
   // ---- Entity Search: rows arrive as DATA, not as markup --------------------
-  // search.html ships window.AXWAY_SEARCH (assets-style search-data.js): one
+  // search/search.html ships window.AXWAY_SEARCH (assets-style search-data.js): one
   // rendered <tr> per line, written by publish_lib.sh's split_search_rows. The
   // page itself carries an EMPTY table, so the browser parses ~600 DOM nodes
   // instead of 44,854 for rows that are invisible until a query is typed (the
@@ -3445,14 +3445,17 @@
       }
       one();
     }).catch(function () { PAL.err = "the report catalog could not be loaded"; one(); });
-    fetch(TB_EB + "search-data.js").then(function (r) { return r.ok ? r.text() : ""; }).then(function (txt) {
+    fetch(TB_EB + "search/search-data.js").then(function (r) { return r.ok ? r.text() : ""; }).then(function (txt) {
       var lines = txt.split("\n"), i, m, ty, cellRe = /<td[^>]*>([\s\S]*?)<\/td>/g, m1, m3;
       for (i = 0; i < lines.length; i++) {
         if (lines[i].charAt(0) !== "<") continue;
         m = /<a href="([^"]+)">([^<]*)<\/a>/.exec(lines[i]); if (!m) continue;
         cellRe.lastIndex = 0; m1 = cellRe.exec(lines[i]); cellRe.exec(lines[i]); m3 = cellRe.exec(lines[i]);
         ty = m3 ? m3[1].replace(/<[^>]*>/g, "").trim() : "";
-        PAL.ents.push({ t: m[2], h: m[1], s: ty, x: palFold(m[2]) });
+        // the rows are rendered for search/search.html, one level below the
+        // docs root (2026-09-12), so their hrefs lead with ../ — dropped
+        // here: palGo prefixes the docs-root base TB_EB
+        PAL.ents.push({ t: m[2], h: m[1].replace(/^\.\.\//, ""), s: ty, x: palFold(m[2]) });
       }
       one();
     }).catch(function () { one(); });
@@ -3743,10 +3746,10 @@
     tb.innerHTML =
       brandHtml +
       '<span class="entgroup"><a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
-      '<a class="searchbtn" href="' + b + 'search.html" title="Search" aria-label="Search">🔍</a></span>' +
+      '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
       // the FILE SEARCH entry (2026-08): the leader of the windowed pages,
       // between the search icon and the report menus
-      '<a class="dashlink" href="' + b + 'file-search-24-hours.html">Files</a>' +
+      '<a class="dashlink" href="' + b + 'search/file-search-24-hours.html">Files</a>' +
       '<nav class="nav">' +
       '<div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm">' + menu(M.transfer) + "</div></div>" +
       (M.server ? '<div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm">' + menu(M.server) + "</div></div>" : "") +

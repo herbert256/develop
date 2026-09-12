@@ -369,6 +369,22 @@ for f in docs/details/subscriptions/*.html; do
 done
 check $([ "$n" = 0 ] && echo 0 || echo 1) "$n subscription page(s) show the last error twice (the splice below Features AND the writer's section)"
 check $([ "$m" -gt 0 ] && echo 0 || echo 1) "no sample subscription page carries the spliced 'Last error - <reason>' section"
+
+# the search pages live under docs/search/ (2026-09-12, user request):
+# search.html + search-data.js and the six file-search pages + payloads —
+# nothing of them left at the docs root, the pages load their engine and
+# payload from the right places, and the top bar / sitemap link there
+for p in search.html search-data.js file-search-24-hours.html file-search-24-hours-data.js file-search-month.html file-search-month-data.js; do
+    check $([ -f "docs/search/$p" ] && echo 0 || echo 1) "docs/search/$p is missing"
+    check $([ ! -e "docs/$p" ] && echo 0 || echo 1) "docs/$p still sits at the docs root"
+done
+check $([ "$(ls docs/search/file-search-*.html 2>/dev/null | wc -l | tr -d ' ')" = 6 ] && echo 0 || echo 1) "docs/search/ has $(ls docs/search/file-search-*.html 2>/dev/null | wc -l | tr -d ' ') file-search pages, expected 6"
+check $([ "$(grep -c '<script src="../assets/file-search.js?v=' docs/search/file-search-24-hours.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "search/file-search-24-hours.html does not load ../assets/file-search.js"
+check $([ "$(grep -c '<script src="file-search-24-hours-data.js?v=' docs/search/file-search-24-hours.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "search/file-search-24-hours.html does not load its sibling payload"
+check $([ "$(grep -c 'href="search/search.html"' docs/sitemap.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "sitemap.html does not link search/search.html"
+check $([ "$(grep -c 'search/file-search-24-hours.html' docs/report-finder.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "report-finder.html does not link search/file-search-24-hours.html"
+check $([ "$(grep -c 'href="../search/search.html"' docs/help/index.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "the baked top bar does not link ../search/search.html"
+check $([ "$(grep -c 'href="\.\./details/' docs/search/search-data.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "search/search-data.js rows do not link ../details/ (one level below the root)"
 hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/topview.html" 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "$hdr" = "|Files|Recovered|Resubmit|Transfers|State|Date|First|Last|Count|Ok|Error|Error %|Automatic|Manual|Ok|Failed|Count|Ok|Error|Error %|Processed|Failed|Waiting|Expired|" ] && echo 0 || echo 1) "transfer/topview.html headers are '$hdr'"
 n=$(grep -c '<table' docs/transfer/topview.html 2>/dev/null || true)

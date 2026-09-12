@@ -1,5 +1,5 @@
 /* file-search.js — the dedicated engine of the six FILE SEARCH pages
-   (file-search-<window>.html — ONE page per window since 2026-08, the
+   (search/file-search-<window>.html — under docs/search/ since 2026-09-12; ONE page per window since 2026-08, the
    Errors/OK pair is gone; every result row tints green (OK) or red (Error)).
    ------------------------------------------------------------------------
    Deliberately NOT report.js's shared esearch: these pages search ONLY on
@@ -27,7 +27,7 @@
    - matching is on the FILE NAME and the CoreId, case-insensitive; `*` = any run,
      `?` = one character, several space-separated words must ALL match;
    - an ERROR row with its own error page (flag E): every cell and the whole
-     row open errors/<coreid>.html; every other row follows its
+     row open ../errors/<coreid>.html (the pages sit in docs/search/); every other row follows its
      Subscription cell's detail-page link;
    - after every search the NAV row's sibling links (file-search-*.html) get
      ?q=<query> appended and the page's own URL is kept in sync
@@ -126,11 +126,11 @@
       var f = line.split("\t"), tr = document.createElement("tr");
       var nm = f[0], dt = dates[+f[1]] || "", sb = subs[+f[2]] || ["", ""];
       if (f[3]) dt = dt + " " + f[3];   // the row's own time beside the date
-      var dlink = sb[1] ? "details/subscriptions/" + sb[1] + ".html" : "";
+      var dlink = sb[1] ? "../details/subscriptions/" + sb[1] + ".html" : "";
       var err = f[6] === "e" || f[6] === "E";
       tr.setAttribute("data-res", err ? "red" : "green");   // the restint tint
       if (f[6] === "E") {               // error WITH its own page: the whole row opens it
-        var eh = "errors/" + f[5] + ".html";
+        var eh = "../errors/" + f[5] + ".html";   // the pages live in docs/search/ (2026-09-12): one level below the root
         tr.setAttribute("data-href", eh);
         cell(tr, "file cl", nm, eh);
         cell(tr, "cl", dt, eh);

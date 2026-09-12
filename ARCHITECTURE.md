@@ -803,7 +803,7 @@ IP-named page.
 
 ## The special pages
 
-**File search** (2026-08, SIX pages at the docs root): `file-search-<window>-<outcome>.html` for
+**File search** (2026-08, SIX pages — under `docs/search/` since 2026-09-12, beside `search/search.html`; the engine-derived links carry `../`): `file-search-<window>-<outcome>.html` for
 windows `48-hours` (the newest 2 data days, anchored on the newest day in `_files.tsv`), `week`,
 `2-weeks`, `3-weeks` (the 5 days, then a week each, before) and `month` (through data day 30; older files are on no page — the windows PARTITION, a file is on exactly one page), outcomes
 `errors` (Failed/Expired) and `ok`. `bin/analyses/reports/file-search.sh` writes one `.rpt` per
@@ -836,7 +836,7 @@ card, sitemap and finder link the leader (`file-search-48-hours-errors.html`); t
 reachable through the NAV row. linkcheck maps each `*-data.js` to its page by name and checks the
 row links inside it.
 
-- **Entity Search** — `docs/search.html`. Columns: Name · Direction · Type · Error · OK ·
+- **Entity Search** — `docs/search/search.html` (+ `search/search-data.js`; at the root until 2026-09-12). Columns: Name · Direction · Type · Error · OK ·
   Last seen (Direction = the same `XXX/YYY` pair that titles the detail page; a row with no page
   of its own inherits the pair/counts/tint of the page it links to; Last seen = the newest
   `_files.tsv` entry attributed to the entity as `ccyy-mm-dd hh:mm:ss`, the site's union

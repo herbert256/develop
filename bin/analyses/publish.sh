@@ -1888,29 +1888,35 @@ done
 # carrying ?q= between the windows), each with its own cksum ?v=, before
 # report.js (defer order). CUR_DATES cleared: no date filter; DLINK_BASE for
 # any residual site cell.
-rm -f "$DOCS/file-search.html" "$DOCS/file-search-data.js"
+# THE PAGES LIVE UNDER docs/search/ (2026-09-12, user request — at the docs
+# root before), beside search/search.html: css depth 1, the engine-derived
+# links (file-search.js) and DLINK_BASE carry ../, the payload tag stays a
+# bare sibling name, the engine loads from ../assets/. Stale root copies are
+# swept for a manual publish (a build clears docs/ anyway).
+_fs_dir="$DOCS/search"; mkdir -p "$_fs_dir"
+rm -f "$DOCS"/file-search-*.html "$DOCS"/file-search-*-data.js "$_fs_dir/file-search.html" "$_fs_dir/file-search-data.js"
 # the 2026-08 Errors/OK page pair — swept so no stale twin survives the merge
 for _fs_k in 48-hours-errors 48-hours-ok week-errors week-ok 2-weeks-errors 2-weeks-ok 3-weeks-errors 3-weeks-ok month-errors month-ok; do
-    rm -f "$DOCS/file-search-$_fs_k.html" "$DOCS/file-search-$_fs_k-data.js"
+    rm -f "$_fs_dir/file-search-$_fs_k.html" "$_fs_dir/file-search-$_fs_k-data.js"
 done
 _fs_n=0
 _fs_jsv=$(cksum < docs/assets/file-search.js 2>/dev/null | awk '{print $1}')   # publish_lib cd'd to the repo root
 for _fs_k in 24-hours 48-hours week 2-weeks 3-weeks month; do
     if [ ! -f "$ARPT/file-search-$_fs_k.rpt" ] || [ ! -f "$ARPT/file-search-$_fs_k-data.js" ]; then
-        rm -f "$DOCS/file-search-$_fs_k.html" "$DOCS/file-search-$_fs_k-data.js"
+        rm -f "$_fs_dir/file-search-$_fs_k.html" "$_fs_dir/file-search-$_fs_k-data.js"
         continue
     fi
-    _fs_sd=${CUR_DATES:-}; CUR_DATES=""; _fs_dl=${DLINK_BASE:-}; DLINK_BASE="details/"
-    render_rpt "$ARPT/file-search-$_fs_k.rpt" "$DOCS/file-search-$_fs_k.html" "assets/style.css" "index.html" \
+    _fs_sd=${CUR_DATES:-}; CUR_DATES=""; _fs_dl=${DLINK_BASE:-}; DLINK_BASE="../details/"
+    render_rpt "$ARPT/file-search-$_fs_k.rpt" "$_fs_dir/file-search-$_fs_k.html" "../assets/style.css" "../index.html" \
         "ANALYSES - File search" 1 "file-search" "file-search-$_fs_k"
     DLINK_BASE=$_fs_dl; CUR_DATES=$_fs_sd
-    cp "$ARPT/file-search-$_fs_k-data.js" "$DOCS/file-search-$_fs_k-data.js"
-    _fs_dver=$(cksum < "$DOCS/file-search-$_fs_k-data.js" | awk '{print $1}')
+    cp "$ARPT/file-search-$_fs_k-data.js" "$_fs_dir/file-search-$_fs_k-data.js"
+    _fs_dver=$(cksum < "$_fs_dir/file-search-$_fs_k-data.js" | awk '{print $1}')
     awk -v d="<script src=\"file-search-$_fs_k-data.js?v=$_fs_dver\" defer></script>" \
-        -v e="<script src=\"assets/file-search.js?v=$_fs_jsv\" defer></script>" \
+        -v e="<script src=\"../assets/file-search.js?v=$_fs_jsv\" defer></script>" \
         '/<script src=[^>]*report\.js/ && !done { print d; print e; done = 1 } { print }' \
-        "$DOCS/file-search-$_fs_k.html" > "$DOCS/file-search-$_fs_k.html.tmp.$$" \
-        && mv "$DOCS/file-search-$_fs_k.html.tmp.$$" "$DOCS/file-search-$_fs_k.html"
+        "$_fs_dir/file-search-$_fs_k.html" > "$_fs_dir/file-search-$_fs_k.html.tmp.$$" \
+        && mv "$_fs_dir/file-search-$_fs_k.html.tmp.$$" "$_fs_dir/file-search-$_fs_k.html"
     _fs_n=$((_fs_n + 1))
 done
 [ "$_fs_n" -gt 0 ] && echo "Wrote $_fs_n File search page(s) (+ per-page data files)." >&2

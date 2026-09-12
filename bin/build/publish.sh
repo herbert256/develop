@@ -113,8 +113,8 @@ write_area_index() {   # $1 area  $2 title ; remaining args = ordered basenames
         fi
         # Server index: the transfer area's Search report covers this server data
         # too (its "Server values" column), so surface it here as well.
-        if [ "$area" = server ] && [ -f "$DOCS/search.html" ]; then
-            printf '<p class="range"><a href="../search.html"><strong>Search</strong></a> &mdash; find any account, subscription, login, host or flow; its Server Log column covers this server data.</p>\n'
+        if [ "$area" = server ] && [ -f "$DOCS/search/search.html" ]; then
+            printf '<p class="range"><a href="../search/search.html"><strong>Search</strong></a> &mdash; find any account, subscription, login, host or flow; its Server Log column covers this server data.</p>\n'
         fi
         # Grouped catalog, like the Analyses index: one <th colspan=2> section
         # header per report GROUP, its member reports listed beneath (the group
@@ -1121,7 +1121,7 @@ write_home_block() {
 # analyses pages. The client-side search (report.js setupReportFinder, input
 # #rfq) ranks TITLE matches ABOVE intro-only matches, both in catalog order.
 # Linked from the top-bar magnifier next to the help icon. Env-root page like
-# search.html (css depth 0).
+# search/search.html (css depth 1).
 finder_row() {   # $1 href  $2 area  $3 title  $4 intro (**bold** markdown, or raw HTML on dashboards)  $5 keywords ("" = none)
     [ -n "$3" ] || return 0
     local text disp tl il et eh ea kw kl kd
@@ -1305,7 +1305,7 @@ write_report_finder() {
             rpt="$DATA/transfer/reports/$name.rpt"; [ -f "$rpt" ] || continue
             fp=$(first_page "$name")
             case $name in
-                (entity-search) fp="search.html" ;;
+                (entity-search) fp="search/search.html" ;;
                 (cross-*)       fp="analyses/xref/$fp" ;;
                 (*)             if is_subs_report "$name"; then fp="analyses/$fp"; else fp="transfer/$fp"; fi ;;
             esac
@@ -1363,7 +1363,7 @@ analyses/app-partners.html|Application dependencies|Which external partners each
 analyses/partner-lifecycle.html|Partner lifecycle|The quiet failure modes of a partner relation: configured but never live, gone quiet after real history, and still transferring on ever fewer flows.|partner, lifecycle, never live, quiet, shrinking, onboarding|partner, lifecycle, quiet
 analyses/cleanup-backlog.html|Cleanup backlog|Every cleanup signal merged into one ranked decommission-candidate list, safest first — config orphans, never-seen subscriptions, unused whitelist addresses, cron-less polls and long-quiet entities.|cleanup, backlog, decommission, orphans, unused, prune|cleanup, decommission, prune
 analyses/fe-overview.html|Partners - Incoming|Every FE login on one line: use cases, the last logon here and on the old gateway, Files in / out with the retrieved, Waiting and Expired ones, and its pickups with their cadence.|partners, incoming, fe, login, overview, status, use case, uc2, uc4, last logon, gateway, migration, files, retrieved, waiting, expired, pickup, pattern|fe, login, overview, pickup
-file-search-24-hours.html|File search|Find a File by its file name — date, subscription, size and CoreId, OK rows green and Error rows red; six windows (24 hours through a month), each with its own Search button, the query carried between them.|file, search, file name, find, filename, lookup|file search, filename, find
+search/file-search-24-hours.html|File search|Find a File by its file name — date, subscription, size and CoreId, OK rows green and Error rows red; six windows (24 hours through a month), each with its own Search button, the query carried between them.|file, search, file name, find, filename, lookup|file search, filename, find
 STATIC
     } > "$mf"
     rows=$(LC_ALL=C awk "$FINDER_AWK" "$mf")
@@ -1400,7 +1400,7 @@ sm_href() {   # $1 area  $2 basename -> env-root-relative page
     if is_subs_report "$2"; then printf 'analyses/%s' "$fp"; return; fi
     if [ "$1" = server ]; then printf 'server/%s' "$fp"; return; fi
     case $2 in
-        entity-search) printf 'search.html' ;;
+        entity-search) printf 'search/search.html' ;;
         cross-*)       printf 'analyses/xref/%s' "$fp" ;;
         *)             printf 'transfer/%s' "$fp" ;;
     esac
@@ -1578,7 +1578,7 @@ write_sitemap() {
         printf '</ul></div>\n'
         printf '<div class="smcard"><h3>Tools</h3><ul>\n'
         printf '<li><a href="index.html">Home</a> — the shared landing page</li>\n'
-        printf '<li><a href="search.html">Search</a> — find any entity by name</li>\n'
+        printf '<li><a href="search/search.html">Search</a> — find any entity by name</li>\n'
         printf '<li><a href="report-finder.html">Report finder</a> — find a report by title or intro</li>\n'
         printf '<li><a href="whats-new.html">What is new</a> — new and changed reports</li>\n'
         printf '<li><a href="help/index.html">Help</a> — how to read the report catalogs (per-report help sits behind each page'\''s <b>?</b> button)</li>\n'

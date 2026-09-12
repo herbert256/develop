@@ -75,7 +75,7 @@ a trailing `acceptance/`|`production/` stripped for pre-split bookmarks), `asset
 `.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `seenlog/`), `server/`, `analyses/`
 (+ `xref/`), `dashboards/`, `day/`, `errors/`, `details/` (one subdir per entity type), `files/`,
 `first-seen/`, `use-cases/`, `coverage/`, `transfers/duration/`, `switches/`, plus
-`search.html sitemap.html report-finder.html whats-new.html file-search-*.html`. `input/` carries
+`search/` (`search.html` + `search-data.js`, the six `file-search-*.html` + their `-data.js` payloads — 2026-09-12, user request; at the root before) and `sitemap.html report-finder.html whats-new.html`. `input/` carries
 the exports — logs AND the FlowManager JSONs (the real production flows are the HYBRID pattern
 generation: no folder parameters, flowdir from `{source,target}_hybrid_participant`; the sample
 estate carries both shapes). The manual `bin/flow-manager-synth.sh` stays as the fallback for a
@@ -932,7 +932,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   no From/To, no search box, no RECALC.
 - **The special pages**: Entity Search (rows ship as DATA in `search-data.js`; the Type cell is
   read by INDEX in report.js — adding a column means shifting it), the SIX File search pages
-  (`file-search-{24-hours,48-hours,week,2-weeks,3-weeks,month}.html`, 2026-08: ONE page per
+  (`search/file-search-{24-hours,48-hours,week,2-weeks,3-weeks,month}.html` — under `docs/search/` since 2026-09-12, beside `search/search.html`; the engine-derived links carry `../` — 2026-08: ONE page per
   window — result rows tint green/red by outcome via restint + a per-row `data-res` — with
   per-page `-data.js` payloads (v5, capped at 100,000 rows; a capped page turns into a RED
   banner on the build report via `file-search-capped.txt`), searched by the DEDICATED
