@@ -690,6 +690,8 @@ aggregate_files() {
     function secs5(t,  p5){ if (split(t, p5, ":") < 3) return -1; return p5[1]*3600 + p5[2]*60 + p5[3] }
     function ep_iso(di, t,  p5, s5){ if (split(di, p5, "-") < 3) return -1; s5=secs5(t); if (s5<0) return -1; return jdnum(p5[1]+0,p5[2]+0,p5[3]+0)*86400 + s5 }
     function ep_us(x,  a5, dp5, s5){ if (split(x, a5, " ") < 2) return -1; if (split(a5[1], dp5, "/") < 3) return -1; s5=secs5(a5[2]); if (s5<0) return -1; return jdnum(dp5[3]+0,dp5[1]+0,dp5[2]+0)*86400 + s5 }
+    # epoch seconds (fractional — the ms survive) back to "ccyy-mm-dd HH:MM:SS.mmm", the Start cell format (the Latest Files End column, 2026-09-12)
+    function fmt_ep(ep,  j6, r6, h6, m6){ j6=int(ep/86400); r6=ep-j6*86400; h6=int(r6/3600); m6=int((r6-h6*3600)/60); return fromjdn(j6) " " sprintf("%02d:%02d:%06.3f", h6, m6, r6-h6*3600-m6*60) }
     function fromjdn(j,   a,b,c,dd,e2,mm,day2,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e2=c-int(1461*dd/4); mm=int((5*e2+2)/153); day2=e2-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day2) }
     function wkkey(jd,   thu,yy) { thu = jd - (jd % 7) + 3; split(fromjdn(thu), yy, "-"); return sprintf("%04d%02d", yy[1], int((thu - jdnum(yy[1]+0,1,1)) / 7) + 1) }
     function qsort(A, lo, hi,   i, j, p2, t) {
@@ -775,7 +777,9 @@ aggregate_files() {
       if(gPICK!=""){ split(gPICK,pp9," "); ds9=ep_iso(pp9[1],pp9[2])-ep_iso(tdt[curcid],ttm[curcid])
         if(ds9>=0){ dd9=int(ds9/86400); hh9=int((ds9%86400)/3600); mm9=int((ds9%3600)/60)
           grel=(dd9>0 ? dd9 "d " hh9 "h " mm9 "m" : (hh9>0 ? hh9 "h " mm9 "m" : (mm9>0 ? mm9 "m" : "<1m"))) } }
-      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : "") "|" grel, (ty=="SITE")?500:100)   # … then the pickup delay
+      # … then the pickup delay, then (2026-09-12) the File END — the latest
+      # leg end (g_end, the leg walk), in the Start cell format
+      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : "") "|" grel "|" (g_end>=0 ? fmt_ep(g_end) : ""), (ty=="SITE")?500:100)
       # Waiting/Expired rollup -> the section-0.9 summary table (per entity):
       # count + first/last STAGED date per state
       if(toc[curcid]=="Waiting" || toc[curcid]=="Expired"){ kwe=ty SUBSEP ent SUBSEP toc[curcid]
@@ -870,12 +874,18 @@ aggregate_files() {
     fno == 1 { toc[$1]=$2; tac[$1]=$3; tdt[$1]=$4; ttm[$1]=$5; tsk[$1]=$6; tjd[$1]=$7; tsz[$1]=$8; tdur[$1]=$9; tfl[$1]=$11; tmv[$1]=$17
                tfd[$1]=$16; tsite[$1]=$12; tpt[$1]=sp_union($20,$12); tap[$1]=ap_union($18,$12); tlg[$1]=lg_union($13,$12); tbl[$1]=bl_union($12); tdm[$1]=$19; next }   # _files.tsv by CoreId (col 16 = connection; col 12 = subscription, for the file-movement lookup; partner/application/logical = UNION sets)
     {   # _transfers.tsv, CoreId-sorted: collect the group'\''s entity & dimension values
-      if($1 != curcid){ if(curcid!="") flush(); curcid=$1; g_inend=-1; g_outst=-1 }
+      if($1 != curcid){ if(curcid!="") flush(); curcid=$1; g_inend=-1; g_outst=-1; g_end=-1 }
       # store-and-forward dwell inputs (mirrors dwell-time.sh): the group'\''s
       # latest Inbound completion ($18 raw end_time, US format) and earliest
       # Outbound start ($11 date_iso + $12 time)
       if($2=="Inbound" && $18!=""){ e5=ep_us($18); if(e5>g_inend) g_inend=e5 }
       if($2=="Outbound" && $12 ~ /^[0-9][0-9]:/){ s5=ep_iso($11,$12); if(s5>=0 && (g_outst<0 || s5<g_outst)) g_outst=s5 }
+      # the File END (2026-09-12, user request — the Latest Files table): the
+      # latest leg end of the group, any direction — the raw $18 End Time,
+      # else the leg start + its own $15 duration
+      e6=-1; if($18!="") e6=ep_us($18)
+      if(e6<0 && $15+0>=0 && $12 ~ /^[0-9][0-9]:/){ s6=ep_iso($11,$12); if(s6>=0) e6=s6+$15/1000 }
+      if(e6>g_end) g_end=e6
       if($3!="Processed") gHADF=1   # the group carried a FAILED leg (the Activity per day Recovered column, 2026-08-29)
       # the PICKUP stamp (2026-09-05, user request — the UC2 pages\047 Latest
       # Files table): the latest successful partner-protocol Outbound leg, i.e.

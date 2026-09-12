@@ -732,9 +732,12 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   same-movement flows — the EQUENS UC3/UC4 pair does); an estate without any qualifying pair must degrade
   to no rows. The cell is `@{alink=…}`, tinted by the TWIN's own result.
 - A KPI Summary table (`nosearch`, not date-aware) renders before section 10 on seen pages.
-- Section 9, the latest 100 Files: State = Delivered/Errored/Waiting/Expired (row tinted via
+- Section 9, the latest 100 Files (500 on subscription pages): State = Delivered/Errored/Waiting/Expired (row tinted via
   `restint`+`@data:res`); Direction = the FILE MOVEMENT (col 12 via `FLOWMAP`); paged 10 at a
-  time.
+  time (20 on subscription pages). Subscription pages open with Start · End (2026-09-12, user
+  request): the File's first leg start and its latest leg end (`g_end` in the `aggregate_files`
+  leg walk — raw `_transfers.tsv` col 18 End Time, else start + duration — payload field 11);
+  the other pages keep the single Date.
 - Sections 2.6/2.7 (`whitelist_rows()`): 2.7 = configured endpoints ∪ observed outgoing hosts;
   2.6 = the AllowIP whitelist ∪ observed incoming sources (no Name column — an incoming address
   never resolves to a configured endpoint). Green = configured + traffic, red = unconfigured
