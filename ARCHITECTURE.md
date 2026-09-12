@@ -144,7 +144,12 @@ in the area orchestrators and feed the boxes and day pages.
 2. **`bin/build/result.sh`** fills the rest, preserving blue: a **subscription** goes green/red by
    its LAST File's outcome (red when Failed or Expired, green otherwise incl. Waiting; orange =
    never seen). **The after-last-transfer rule (2026-08)**: a would-be-green subscription flips
-   RED when the server log holds an E-level line NEWER than that last transfer. The evidence is
+   RED when the server log holds an E-level line NEWER than that last transfer — never a line on
+   a TRANSFER-ENDED session (2026-09-12, user rule): a session that also logged the platform's own
+   `{"message":"Transfer end logged."` bookend, any status, is not a server-log error, applied ONCE
+   in `bin/server/parse.sh` by keeping such lines out of every `_err_warn` ring
+   (`data/server/cache/_sessions-ended.tsv`, the shared PERSISTENT-SESSION pseudo-session never
+   listed), so the banner, the red flip, went-kaput and the server-failing set agree. The evidence is
    its own `_err_warn` ring plus every connected host/account/login ring LINE `_build_ringattr`
    attributes to THIS flow (`blue/_ringattr.tsv`): each of those entities serves other flows too,
    so a connected ring never counts wholesale. A line attributes by a CONFIGURED NAME in its

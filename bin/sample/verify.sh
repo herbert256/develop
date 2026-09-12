@@ -384,6 +384,22 @@ if [ "$(exp cnsend)" -gt 0 ]; then
     check $([ -f docs/server/could-not-send.html ] && echo 0 || echo 1) "docs/server/could-not-send.html is missing"
 fi
 
+# the TRANSFER-ENDED sessions rule (2026-09-12, user rule): an Error/Warning
+# on a session that also logged {"message":"Transfer end logged." is not a
+# server-log error — parse.sh lists those sessions in _sessions-ended.tsv
+# and keeps their E/W lines out of every *_err_warn.tsv ring (the
+# after-last-transfer judgement); the collectdrop flow plants an Error on
+# such a session so the mute is exercised
+SE="data/server/cache/_sessions-ended.tsv"
+n=$(rows "$SE")
+check $([ "$n" -gt 0 ] && echo 0 || echo 1) "_sessions-ended.tsv is missing or empty ($n)"
+n=$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($1 != "") e[$1] = 1; next } $3 == "E" && ($6 in e) { n++ } END { print n + 0 }' "$SE" "$P" 2>/dev/null)
+check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Error line on a transfer-ended session — the mute is never exercised"
+n=$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($1 != "") e[$1] = 1; next } ($6 in e) { n++ } END { print n + 0 }' "$SE" data/server/cache/*/*_err_warn.tsv 2>/dev/null)
+check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "${n:-?} err/warn ring line(s) sit on a transfer-ended session (must be 0)"
+n=$(grep -c '50455253495354454e542d53455353494f4e2d' "$SE" 2>/dev/null || true)
+check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "the PERSISTENT-SESSION pseudo-session is listed in _sessions-ended.tsv"
+
 # the NON-UC-NAMED hybrid flows must come out attributed to their real site
 # (the reverse profile fallback) — never UCx_ — and every planted one is a
 # configured subscription of the base roster

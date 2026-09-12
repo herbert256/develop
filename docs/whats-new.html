@@ -19,6 +19,7 @@
 <h2>New reports</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Report</th><th>Area</th><th>Description</th></tr>
+<tr><td><a href="server/could-not-send.html">Could not send file</a></td><td>Server</td><td class="desc">12 &quot;Could not send file&quot; line(s) for 1 subscription(s) on 11 day(s) — an Advanced Routing route that gave up delivering a file to its transfer site…</td></tr>
 <tr><td><a href="server/io-errors.html">IO errors</a></td><td>Server</td><td class="desc">53 IO error line(s) in 1 FlowManager folder(s) of 1 account(s), over 37 day(s) (2026-06-23 to 2026-08-27)</td></tr>
 <tr><td><a href="analyses/polling.html">Polling</a></td><td>Analyses</td><td class="desc"></td></tr>
 <tr><td><a href="analyses/uc-status-uc1.html">UC status</a></td><td>Analyses</td><td class="desc">Every configured subscription classified per use case, one tab each: UC1 (we connect out and send a file to the partner), UC2 (we stage, the partne…</td></tr>
@@ -43,7 +44,6 @@
 <tr><td><a href="analyses/uc2-visits.html">UC2 pickup visits</a></td><td>Analyses</td><td class="desc">A pickup account's SSH logons group into visits (a gap of more than 30 minutes starts a new one); every visit is classified by what its window show…</td></tr>
 <tr><td><a href="analyses/whitelist-audit.html">Whitelist audit</a></td><td>Analyses</td><td class="desc">Whitelisted partner IPs vs the addresses actually connecting — used, connect-only or prunable.</td></tr>
 <tr><td><a href="analyses/xref/cross-account-subscriptions.html">Cross References</a></td><td>Analyses</td><td class="desc">Every pair of the eight entities cross-tabulated both ways — which appear together on a transfer, which are configured but never seen.</td></tr>
-<tr><td><a href="search.html">Search</a></td><td>Transfer</td><td class="desc">Type in the box below to search every configured or logged entity by name — the checkboxes narrow the kinds (none checked = all)</td></tr>
 </table></div>
 <h2>Changed reports</h2>
 <div class="tablewrap"><table class="index fit">
@@ -71,8 +71,8 @@
 <tr><td><a href="server/connections-by-protocol.html">Connections</a></td><td>Server</td><td class="desc">prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals</td></tr>
 <tr><td><a href="transfer/not-in-flow-manager.html">Not in Flow Manager</a></td><td>Transfer</td><td class="desc">prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals</td></tr>
 <tr><td><a href="transfer/security-params-tls-version.html">Transfer Security Parameters</a></td><td>Transfer</td><td class="desc">prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals</td></tr>
+<tr><td><a href="search.html">Search</a></td><td>Transfer</td><td class="desc">Application/domain attribution rides the SUBSCRIPTION, not the account</td></tr>
 <tr><td><a href="transfer/seen-in-server-log.html">Seen in server log</a></td><td>Transfer</td><td class="desc">Application/domain attribution rides the SUBSCRIPTION, not the account</td></tr>
-<tr><td><a href="transfer/ranking-subscriptions.html">Ranking</a></td><td>Transfer</td><td class="desc">transfer reports: BL joins pda-entities, ranking and not-in-flow-manager</td></tr>
 </table></div>
 </body>
 </html>

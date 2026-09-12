@@ -460,7 +460,13 @@ BEGIN { outf["A"]=accout; outf["S"]=subout; outf["L"]=logout; outf["H"]=hstout; 
 # this task." is EXCLUDED from the err/warn ring — a poll running longer than
 # its interval is routine backlog noise, not a failure to flag (it would
 # otherwise dominate the after-last-transfer banner/merge); it still rides
-# along in the all-level ring as ordinary recent log.
+# along in the all-level ring as ordinary recent log. Same treatment
+# (2026-09-12, user rule) for an Error/Warning on a TRANSFER-ENDED session —
+# one whose log also holds the platform's own {"message":"Transfer end
+# logged." bookend (_sessions-ended.tsv, built from the whole cache right
+# before this scan): the transfer log has the last word on that session, so
+# the line is not a server-log error and never raises the after-last-transfer
+# banner, red flip or server-failing verdict; it stays in the all-level ring.
 function hit(ty, w,   k) {
     k = ty SUBSEP w
     if (seen[k] == NR) return
@@ -468,8 +474,9 @@ function hit(ty, w,   k) {
     print t "\t" w >> outf[ty]
     ring[k, cnt[k] % 25] = $0
     cnt[k]++
-    if (($3 == "E" || $3 == "W") && $5 !~ /Skipping the next scheduled occurrence of this task/) { ewring[k, ewcnt[k] % 10] = $0; ewcnt[k]++ }
+    if (($3 == "E" || $3 == "W") && !($6 in ended) && $5 !~ /Skipping the next scheduled occurrence of this task/) { ewring[k, ewcnt[k] % 10] = $0; ewcnt[k]++ }
 }
+FILENAME ~ /_sessions-ended\.tsv$/ { if ($1 != "") ended[$1] = 1;         next }   # the transfer-ended sessions (col 1 = session id)
 FILENAME ~ /_accounts\.tsv$/      { if ($1 != "") acc[$1] = 1;            next }   # base files: col 1 = name, col 2 = direction
 FILENAME ~ /_subscriptions\.tsv$/ { if ($1 != "") sub_[$1] = 1;           next }
 FILENAME ~ /_logins\.tsv$/        { if ($1 != "") lgn[$1] = 1;            next }
@@ -615,6 +622,7 @@ ent_one() {   # $1 = cache line chunk, $2 = 4-digit part index
 # (the last-25 / err-warn rings) remain for all four types.
 ACCOUNTS_TSV="$CACHE_DIR/_accounts.tsv";      ACCOUNTS_DIR="$CACHE_DIR/accounts"
 SUBS_TSV="$CACHE_DIR/_subscriptions.tsv";     SUBS_DIR="$CACHE_DIR/subscriptions"
+ENDED_TSV="$CACHE_DIR/_sessions-ended.tsv"    # the sessions that logged a transfer end (session <TAB> status) — their E/W lines stay out of the err/warn rings (2026-09-12)
 LOGINS_DIR="$CACHE_DIR/logins"
 HOSTS_DIR="$CACHE_DIR/hosts"
 # Configured name lists: bin/flow-manager.sh's caches (one name per line), refreshed
@@ -648,6 +656,25 @@ build_entity_tsvs() {
         if [ -f "$cfg" ]; then ENT_CFG_SRCS+=("$cfg")
         else echo "WARNING: $cfg not found — its server entity cache will be empty." >&2; fi
     done
+    # The TRANSFER-ENDED sessions (2026-09-12, user rule): every session whose
+    # log holds the platform's own {"message":"Transfer end logged." bookend,
+    # any status and direction — an Error/Warning line on such a session is
+    # NOT a server-log error (ENT_PROG keeps it out of the err/warn rings, the
+    # one input of the after-last-transfer judgement everywhere: the detail
+    # page banner, result.sh's red flip, went-kaput, failed.sh's server-failing
+    # set). One line per session: session <TAB> status. Recomputed from the
+    # WHOLE cache on every rescan, so a bookend arriving in a later export
+    # retro-mutes the earlier lines of its session. The shared
+    # PERSISTENT-SESSION pseudo-session (hex prefix of that literal) is never
+    # listed — one bookend on it would mute thousands of unrelated lines.
+    awk -F'\t' '
+        index($5, "{\"message\":\"Transfer end logged.") == 1 && $6 != "" && index($6, "50455253495354454e542d53455353494f4e2d") != 1 {
+            if ($6 in s) next
+            s[$6] = 1; st = ""
+            if (match($5, /"status":"[a-z]+"/)) st = substr($5, RSTART + 10, RLENGTH - 11)
+            print $6 "\t" st }' "$OUT" > "$ENDED_TSV.tmp" && mv "$ENDED_TSV.tmp" "$ENDED_TSV"
+    ENT_CFG_SRCS+=("$ENDED_TSV")
+    echo "  transfer-ended sessions: $(wc -l < "$ENDED_TSV" | tr -d ' ') (their Error/Warning lines stay out of the err/warn rings)." >&2
     : > "$ACCOUNTS_TSV"; : > "$SUBS_TSV"
     # Rebuild the per-name detail dirs from scratch so a name that dropped out of
     # the config (or the logs) leaves no stale <name>.tsv behind.

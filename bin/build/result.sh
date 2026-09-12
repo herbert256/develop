@@ -18,7 +18,11 @@
 #     "ERRORS IN SERVER LOG AFTER LAST TRANSFER" on its detail page cannot
 #     be green; the evidence is the subscription's own _err_warn ring plus
 #     every connected host/account/login ring LINE the attribution below
-#     pins on this flow — never a connected ring wholesale)
+#     pins on this flow — never a connected ring wholesale; and never a
+#     line on a TRANSFER-ENDED session, 2026-09-12 user rule: a session
+#     that also logged the platform's own "Transfer end logged." bookend
+#     is not a server-log error — bin/server/parse.sh keeps such lines out
+#     of every _err_warn ring, data/server/cache/_sessions-ended.tsv)
 #     … EXCEPT a UC3 flow whose newest evidence is a "Connection failure
 #     while <flow> tried to connect …" line — its own, or a sibling's on
 #     the shared host/account ring: that reds it only after THREE FAILED

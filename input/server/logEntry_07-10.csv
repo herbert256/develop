@@ -711,6 +711,7 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 ""coreId"":""bcf8406f-5644-4c8e-804d-e20753a18778"",
 ""transferId"":""e7fb3488-ef26-4e6b-b72d-244fee174777"",
 ""fileName"":""AcmeZG_MATCH_HOOLI_20260710060971_959217.csv""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","477","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","777646756b6c754432693946464f7173596e694b34742f5a637444772f584b6b356137543964485a3343313d","07/10/2026 17:07:23.429","UNKNOWN"
+"07/10/2026 17:08:24.599","ERROR","TM","requestExecutor868849","Error during transfer operation: Error occurred while sending file to partner UC2_ZG_MATCH_HOOLI_ZG_MATCH_HOOLI_SCP_ZG_MATCH_HOOLI_PWD defined in account ZG-MATCH-HOOLI. Connection closed by the remote host","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","585","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","777646756b6c754432693946464f7173596e694b34742f5a637444772f584b6b356137543964485a3343313d","07/10/2026 17:08:18.131","UNKNOWN"
 "07/10/2026 17:08:24.579","INFO","TM","requestExecutor817649","{""message"":""Transfer end logged."",
 ""status"":""ok"",
 ""direction"":""Outbound"",

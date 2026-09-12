@@ -304,6 +304,11 @@ function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj,
         # bookend alone — the File stays Failed and its only evidence is that
         # bookend: reason "Connection dropped mid-transfer" (2026-09-10)
         if (rnd() < 0.5) s_bookend(tc + dcol + 1350, sesshex(), "end", "ok", fn)
+        # the dropped connection also logs an Error naming the flow ON THE
+        # SAME SESSION as the error bookend below (2026-09-12): a transfer-
+        # ended session, so parse.sh keeps that Error out of the err/warn
+        # rings — it never raises the after-last-transfer banner. No draw.
+        S(tc + dcol + 1370, "E", "TM", sidc, "Error during transfer operation: Error occurred while sending file to partner " srvsite() " defined in account " ACCT ". Connection closed by the remote host")
         s_bookend(tc + dcol + 1387, sidc, "end", "error", fn)
     } else {
         ssh_T(tc, dcol, "Outbound", "P", sidc, fn, sz, "User", ACCT "@" LOGIN, LOGIN, sitefield(), anyip(), mo, "NP", "false")
