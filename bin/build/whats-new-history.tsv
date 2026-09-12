@@ -1,0 +1,309 @@
+C	2026-09-12		bin/server/reports/could-not-send.sh	Server reports "Publish to account failed" and "Post client action error" — the AR-line lists share one body
+C	2026-09-12	1	bin/transfer/reports/failed.sh	Failure reason "Connection dropped mid-transfer" reads "Unknown error"
+C	2026-09-12	2	bin/server/reports/went-kaput.sh	Server errors on a shared host: the line's session names the subscription — never the siblings
+C	2026-09-12	3	bin/server/reports/could-not-send.sh	Failure reasons: "Could not send to CFT" and "Publish to account failed" both read "Duplicate file"
+C	2026-09-12	4	bin/transfer/reports/details.sh	Subscription detail pages: the after-last-transfer banner shows its server log line and drops the verdict prose above it
+C	2026-09-12	5	bin/transfer/reports/account.sh	Entities: Cured becomes Retry · Resubmit — the Top view's Automatic / Manual split per entity
+C	2026-09-12	5	bin/transfer/reports/login.sh	Entities: Cured becomes Retry · Resubmit — the Top view's Automatic / Manual split per entity
+C	2026-09-12	5	bin/transfer/reports/pda-entities.sh	Entities: Cured becomes Retry · Resubmit — the Top view's Automatic / Manual split per entity
+C	2026-09-12	5	bin/transfer/reports/remote-host.sh	Entities: Cured becomes Retry · Resubmit — the Top view's Automatic / Manual split per entity
+C	2026-09-12	5	bin/transfer/reports/subscription.sh	Entities: Cured becomes Retry · Resubmit — the Top view's Automatic / Manual split per entity
+C	2026-09-12	6	bin/transfer/reports/recovered-files.sh	Top view: Recovered (Automatic · Manual) and Resubmit (Ok · Failed) are column groups of the per-day table, beside Files, Transfers and State
+C	2026-09-12	6	bin/transfer/reports/topview.sh	Top view: Recovered (Automatic · Manual) and Resubmit (Ok · Failed) are column groups of the per-day table, beside Files, Transfers and State
+C	2026-09-12	7	bin/transfer/reports/recovered-files.sh	Top view: Recovered leaves the Files band; per-day Recovered (Automatic · Manual) and Resubmit (Ok · Failed) tables beside each other
+C	2026-09-12	7	bin/transfer/reports/resubmissions.sh	Top view: Recovered leaves the Files band; per-day Recovered (Automatic · Manual) and Resubmit (Ok · Failed) tables beside each other
+C	2026-09-12	7	bin/transfer/reports/topview.sh	Top view: Recovered leaves the Files band; per-day Recovered (Automatic · Manual) and Resubmit (Ok · Failed) tables beside each other
+C	2026-09-11	8	bin/analyses/reports/cleanup-backlog.sh	One repo = one environment (2/n): flatten the pipeline — input/, data/, docs/ without the environment level
+C	2026-09-11	8	bin/analyses/reports/fe-overview.sh	One repo = one environment (2/n): flatten the pipeline — input/, data/, docs/ without the environment level
+C	2026-09-11	8	bin/analyses/reports/skipped.sh	One repo = one environment (2/n): flatten the pipeline — input/, data/, docs/ without the environment level
+C	2026-09-11	8	bin/server/reports/pickups.sh	One repo = one environment (2/n): flatten the pipeline — input/, data/, docs/ without the environment level
+C	2026-09-11	8	bin/server/reports/went-kaput.sh	One repo = one environment (2/n): flatten the pipeline — input/, data/, docs/ without the environment level
+C	2026-09-10	9	bin/transfer/reports/account.sh	Entities pages: Cured column between OK and Error
+C	2026-09-10	9	bin/transfer/reports/login.sh	Entities pages: Cured column between OK and Error
+C	2026-09-10	9	bin/transfer/reports/pda-entities.sh	Entities pages: Cured column between OK and Error
+C	2026-09-10	9	bin/transfer/reports/remote-host.sh	Entities pages: Cured column between OK and Error
+C	2026-09-10	9	bin/transfer/reports/subscription.sh	Entities pages: Cured column between OK and Error
+C	2026-09-10	10	bin/transfer/reports/failed.sh	Error reason "Connection dropped mid-transfer" from the error bookend
+C	2026-09-09	11	bin/transfer/reports/failed.sh	Settled by bookend: a Failed File the server log ends OK reads Processed; the JSON bookends stay in the cache
+C	2026-09-09	12	bin/transfer/reports/failed.sh	Drill pages: the legs table in chronological order
+C	2026-09-08	13	bin/analyses/reports/skipped.sh	Parse: drop the empty outbound ssh probes (one Outbound ssh 0-byte record, Application none)
+C	2026-09-08	14	bin/server/reports/logon.sh	Logon funnel: Re-screens moved to the last column of Incoming
+C	2026-09-06	15	bin/transfer/reports/duration.sh	Duration: a p100 column on the Percentage view
+C	2026-09-06	16	bin/transfer/reports/duration-longest.sh	Longest Files: every listed File gets a File page — the one-hour threshold dropped
+C	2026-09-06	16	bin/transfer/reports/failed.sh	Longest Files: every listed File gets a File page — the one-hour threshold dropped
+C	2026-09-06	17	bin/server/reports/error-reasons.sh	IO errors: a server report for "IO Error reading file /data/FlowManager/<account>@<login>/<file>"
+C	2026-09-06	17	bin/server/reports/failure-flows.sh	IO errors: a server report for "IO Error reading file /data/FlowManager/<account>@<login>/<file>"
+C	2026-09-06	18	bin/analyses/reports/fe-overview.sh	Logon funnel: session-aware Re-screens and Session errors columns
+C	2026-09-06	18	bin/server/reports/logon.sh	Logon funnel: session-aware Re-screens and Session errors columns
+C	2026-09-06	19	bin/transfer/reports/failed.sh	failed.sh: the evidence sidecar's previous-line tracker sits right after the E/W rule
+C	2026-09-06	20	bin/server/reports/error-reasons.sh	Error reason: a bare "Permission denied" after "Deleting remote file" is "Delete remote file failed"
+C	2026-09-06	20	bin/transfer/reports/failed.sh	Error reason: a bare "Permission denied" after "Deleting remote file" is "Delete remote file failed"
+C	2026-09-05	21	bin/analyses/reports/triage.sh	Triage: Volume in window and At expiry risk are two columns (audit F09)
+C	2026-09-05	22	bin/analyses/reports/cleanup-backlog.sh	Cleanup backlog reads the SKIP-filtered export like every other report (audit F06)
+C	2026-09-05	23	bin/transfer/reports/anomalies.sh	Anomalies: Typical shows the comparison baseline; an episode reports one hour (audit F07)
+C	2026-09-05	24	bin/analyses/reports/uc-status.sh	UC status: the merged introduction had UC1 and UC4 reversed (audit F04)
+C	2026-09-05	25	bin/analyses/reports/polling.sh	Observed slot: the first and the last active day left out; the ↺ hotspot kept out of the CSV header
+C	2026-09-05	25	bin/analyses/reports/uc3-polling.sh	Observed slot: the first and the last active day left out; the ↺ hotspot kept out of the CSV header
+C	2026-09-05	25	bin/server/reports/remote-poll.sh	Observed slot: the first and the last active day left out; the ↺ hotspot kept out of the CSV header
+C	2026-09-05	26	bin/analyses/reports/polling.sh	Polling: Schedule column moved behind Failure lines
+C	2026-09-05	27	bin/analyses/reports/polling.sh	Polling: bare table — intro, boxes and the Status / Files / Last file / Last log / Active days / First / Last columns removed
+C	2026-09-05	28	bin/analyses/reports/polling.sh	Polling: the UC3 status columns join the flat table
+C	2026-09-05	29	bin/analyses/reports/uc3-polling.sh	Polling: the flat one-table page replacing Remote polls + Cronjobs, at the old Cronjobs slot
+C	2026-09-05	30	bin/server/reports/deploy-errors.sh	deploy-errors: the row is the subscription the ARSP0001 line names, not its account
+C	2026-09-05	31	bin/server/reports/no-remote-dir.sh	no-remote-dir: show why a row is still open — the error time and both recovery stamps
+C	2026-09-05	32	bin/transfer/reports/anomalies.sh	anomalies: the Files and Error columns leave both tables
+C	2026-09-05	33	bin/server/reports/went-kaput.sh	result/went-kaput: a connected-ring line that names a flow never reddens its siblings
+C	2026-09-05	34	bin/transfer/reports/duration.sh	duration-slowest: the slowest subscriptions (top 25 by p95) on their own Performance page
+C	2026-09-05	35	bin/transfer/reports/anomalies.sh	anomalies: the Daily and Hourly tables side by side
+C	2026-09-05	36	bin/server/reports/went-kaput.sh	result: a UC3 connection failure reds the flow only after three failed polls in a row
+C	2026-09-04	37	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: Logon problems as one number
+C	2026-09-04	38	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: a Logon problems column from the Incoming funnel
+C	2026-09-04	38	bin/server/reports/logon.sh	analyses/fe-overview: a Logon problems column from the Incoming funnel
+C	2026-09-04	39	bin/server/reports/logon.sh	server/logon: an unconfigured No-account name is a door knocker
+C	2026-09-03	40	bin/transfer/reports/duration-longest.sh	transfer/duration-longest: a File page for every File over one hour
+C	2026-09-03	40	bin/transfer/reports/failed.sh	transfer/duration-longest: a File page for every File over one hour
+C	2026-09-03	41	bin/transfer/reports/duration.sh	transfer/duration: Longest Files and Duration distribution as own reports
+C	2026-09-03	42	bin/transfer/reports/details.sh	details: the after-last-transfer banner needs an ERROR, not a Warning
+C	2026-09-03	43	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: Error column after Files out
+C	2026-09-03	44	bin/analyses/reports/fe-overview.sh	pickup pattern: "Irregular" when the gaps have no rhythm
+C	2026-09-03	44	bin/analyses/reports/uc2-status.sh	pickup pattern: "Irregular" when the gaps have no rhythm
+C	2026-09-03	45	bin/analyses/reports/fe-overview.sh	pickup pattern: "Once" for a lone visit, the spacing of two — no visit counts
+C	2026-09-03	45	bin/analyses/reports/uc2-status.sh	pickup pattern: "Once" for a lone visit, the spacing of two — no visit counts
+C	2026-09-03	46	bin/analyses/reports/uc2-status.sh	pickup pattern: never an em dash — "Rarely" with pickups, empty without
+C	2026-09-03	47	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: Visits dropped; column groups with dividers
+C	2026-09-03	48	bin/transfer/reports/failed.sh	errors/<subscription>: Partner, Login and Remote host rows, each only when configured
+C	2026-09-03	49	bin/transfer/reports/patterns.sh	transfer/patterns: the protocol is the second element of a pattern line
+C	2026-09-03	50	bin/transfer/reports/patterns.sh	transfer/patterns: no heading on the Protocol-on table (user request)
+C	2026-09-03	51	bin/transfer/reports/failed.sh	transfer/patterns: Protocol switch, Last 5 files linked to new File pages
+C	2026-09-03	51	bin/transfer/reports/patterns.sh	transfer/patterns: Protocol switch, Last 5 files linked to new File pages
+C	2026-09-03	52	bin/transfer/reports/failed.sh	errors/: Partner, Account, Login and Remote host rows, each only when known
+C	2026-09-03	53	bin/analyses/reports/fe-overview.sh	pickup pattern: no cadence from fewer than 3 visits; Visits on Partners - Incoming
+C	2026-09-03	53	bin/analyses/reports/uc2-status.sh	pickup pattern: no cadence from fewer than 3 visits; Visits on Partners - Incoming
+C	2026-09-03	54	bin/analyses/reports/fe-overview.sh	analyses/config: FE overview is now "Partners - Incoming"
+C	2026-09-03	54	bin/server/reports/pickups.sh	analyses/config: FE overview is now "Partners - Incoming"
+C	2026-09-03	55	bin/analyses/reports/skipped.sh	skip list: a login rule now drops the configured login too
+C	2026-09-02	56	bin/analyses/reports/fe-overview.sh	analyses/config: the FE status information page is gone
+C	2026-09-02	56	bin/server/reports/pickups.sh	analyses/config: the FE status information page is gone
+C	2026-09-02	57	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: no intro, no stat boxes (user request)
+C	2026-09-02	58	bin/analyses/reports/fe-overview.sh	analyses/fe-overview + fe-status: the Logins box counts configured logins
+C	2026-09-02	58	bin/analyses/reports/fe-status.sh	analyses/fe-overview + fe-status: the Logins box counts configured logins
+C	2026-09-02	59	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: Gateway desc as the sixth default sort key
+C	2026-09-02	60	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: Cloud desc as the fifth default sort key
+C	2026-09-02	61	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: Pickups desc as the fourth default sort key
+C	2026-09-02	62	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: Files in desc as the third default sort key
+C	2026-09-02	63	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: default sort Waiting desc, then Files out desc
+C	2026-09-02	64	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: Retrieved instead of Collected
+C	2026-09-02	65	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: fewer columns — Gateway, Collected after Files out
+C	2026-09-02	66	bin/analyses/reports/fe-overview.sh	analyses/fe-overview: let the renderer zero-blank the two processed-kind columns
+C	2026-09-02	67	bin/server/reports/error-reasons.sh	reasons: "Remote delete failed" — a failed post-download delete is not No Dir
+C	2026-09-02	68	bin/analyses/reports/fe-status.sh	analyses/fe-status: Expired and Oldest waiting columns
+C	2026-09-02	69	bin/server/reports/pickups.sh	server/pickups: Oldest waiting column; Delivered-only logons and UC4 drop dropped
+C	2026-09-02	70	bin/server/reports/pickups.sh	server/pickups: a 0 total renders empty too
+C	2026-09-02	71	bin/analyses/reports/fe-status.sh	analyses/fe-status: columns Cloud and Last Gateway
+C	2026-09-02	71	bin/server/reports/pickups.sh	analyses/fe-status: columns Cloud and Last Gateway
+C	2026-09-02	72	bin/server/reports/pickups.sh	server/pickups: a 0 count renders empty
+C	2026-09-02	73	bin/analyses/reports/fe-status.sh	analyses/fe-status: blank the zero Files in/out cells and the Never stamp
+C	2026-09-02	74	bin/server/reports/pickups.sh	server/pickups: Last Gateway column, stamps as date + hh:mm
+C	2026-09-02	75	bin/analyses/reports/fe-status.sh	analyses/fe-status: Last logon as date + hh:mm
+C	2026-09-02	76	bin/server/reports/logon.sh	server/logons: Incoming rows tinted by the login's latest screening outcome
+C	2026-09-01	77	bin/server/reports/pickups.sh	server/pickups: default sort Waiting desc, then Pickups desc
+C	2026-09-01	78	bin/server/reports/unknown-entities.sh	partner aliases: migrated into logical_partners.txt, the alias file retired
+C	2026-08-31	79	bin/analyses/reports/entity-coverage.sh	seen-in-server-log + entity-coverage: the multi-FE login knowledge applied
+C	2026-08-31	79	bin/analyses/reports/uc2-visits.sh	seen-in-server-log + entity-coverage: the multi-FE login knowledge applied
+C	2026-08-31	79	bin/server/reports/auth-activity.sh	seen-in-server-log + entity-coverage: the multi-FE login knowledge applied
+C	2026-08-31	80	bin/analyses/reports/account-sharing.sh	uc2/uc4 status: scope the logon evidence per LOGIN on a multi-FE account
+C	2026-08-31	80	bin/analyses/reports/uc2-status.sh	uc2/uc4 status: scope the logon evidence per LOGIN on a multi-FE account
+C	2026-08-31	80	bin/analyses/reports/uc4-status.sh	uc2/uc4 status: scope the logon evidence per LOGIN on a multi-FE account
+C	2026-08-31	80	bin/server/reports/pickups.sh	uc2/uc4 status: scope the logon evidence per LOGIN on a multi-FE account
+C	2026-08-31	81	bin/server/reports/logon.sh	report UX: topview state links, error-only failure tables, pickups sort, scanner IPs column
+C	2026-08-31	81	bin/server/reports/pickups.sh	report UX: topview state links, error-only failure tables, pickups sort, scanner IPs column
+C	2026-08-31	81	bin/transfer/reports/failure-heatmap.sh	report UX: topview state links, error-only failure tables, pickups sort, scanner IPs column
+C	2026-08-31	81	bin/transfer/reports/failure-rate.sh	report UX: topview state links, error-only failure tables, pickups sort, scanner IPs column
+C	2026-08-31	81	bin/transfer/reports/topview.sh	report UX: topview state links, error-only failure tables, pickups sort, scanner IPs column
+C	2026-08-31	82	bin/analyses/reports/skipped.sh	input: the nine policy files are per environment (input/<env>/), no longer shared
+C	2026-08-31	83	bin/analyses/reports/first-seen.sh	prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals
+C	2026-08-31	83	bin/server/reports/connection-diagnostics.sh	prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals
+C	2026-08-31	83	bin/server/reports/no-remote-dir.sh	prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals
+C	2026-08-31	83	bin/server/reports/remote-poll.sh	prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals
+C	2026-08-31	83	bin/transfer/reports/failed.sh	prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals
+C	2026-08-31	83	bin/transfer/reports/not-in-flow-manager.sh	prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals
+C	2026-08-31	83	bin/transfer/reports/security-params.sh	prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals
+C	2026-08-31	83	bin/transfer/reports/showseen.sh	prefix matching bounded at a name-part boundary; one-sided case/name folds fixed; the gate covers the coverage Totals
+C	2026-08-31	84	bin/analyses/publish-insights.sh	attribution via the account, removed from the consumers the 6e25fbe5 fix missed; shared-ring colour fan-out bounded
+C	2026-08-31	84	bin/analyses/reports/app-partners.sh	attribution via the account, removed from the consumers the 6e25fbe5 fix missed; shared-ring colour fan-out bounded
+C	2026-08-31	84	bin/analyses/reports/blast-radius.sh	attribution via the account, removed from the consumers the 6e25fbe5 fix missed; shared-ring colour fan-out bounded
+C	2026-08-31	84	bin/analyses/reports/entity-coverage.sh	attribution via the account, removed from the consumers the 6e25fbe5 fix missed; shared-ring colour fan-out bounded
+C	2026-08-31	84	bin/server/reports/deploy-errors.sh	attribution via the account, removed from the consumers the 6e25fbe5 fix missed; shared-ring colour fan-out bounded
+C	2026-08-31	84	bin/server/reports/went-kaput.sh	attribution via the account, removed from the consumers the 6e25fbe5 fix missed; shared-ring colour fan-out bounded
+C	2026-08-31	84	bin/transfer/reports/details.sh	attribution via the account, removed from the consumers the 6e25fbe5 fix missed; shared-ring colour fan-out bounded
+C	2026-08-31	85	bin/analyses/reports/cross-reference.sh	Application/domain attribution rides the SUBSCRIPTION, not the account
+C	2026-08-31	85	bin/analyses/reports/entity-search.sh	Application/domain attribution rides the SUBSCRIPTION, not the account
+C	2026-08-31	85	bin/analyses/reports/seen-in-server-log.sh	Application/domain attribution rides the SUBSCRIPTION, not the account
+C	2026-08-31	85	bin/transfer/reports/pda-entities.sh	Application/domain attribution rides the SUBSCRIPTION, not the account
+C	2026-08-31	86	bin/transfer/reports/details.sh	Account detail pages: dims render like the Partner pages
+C	2026-08-31	87	bin/analyses/reports/coverage.sh	coverage cell pages: ONE column set for all five derived members
+C	2026-08-31	88	bin/analyses/reports/home.sh	Seen figures: an evidence-free ghost is NOT seen
+C	2026-08-31	89	bin/server/reports/error-reasons.sh	server error reasons: 'Pull via FTPS failed' (verbatim-string verdict)
+C	2026-08-31	90	bin/analyses/reports/coverage.sh	analyses: BL joins the derived-entity machinery (group-last)
+C	2026-08-31	90	bin/analyses/reports/cross-reference.sh	analyses: BL joins the derived-entity machinery (group-last)
+C	2026-08-31	90	bin/analyses/reports/entity-coverage.sh	analyses: BL joins the derived-entity machinery (group-last)
+C	2026-08-31	90	bin/analyses/reports/entity-search.sh	analyses: BL joins the derived-entity machinery (group-last)
+C	2026-08-31	90	bin/analyses/reports/home.sh	analyses: BL joins the derived-entity machinery (group-last)
+C	2026-08-31	90	bin/analyses/reports/seen-in-server-log.sh	analyses: BL joins the derived-entity machinery (group-last)
+C	2026-08-31	91	bin/transfer/reports/details.sh	details family: BL pages + the 2.85 BL dimension on every page
+C	2026-08-31	92	bin/transfer/reports/not-in-flow-manager.sh	transfer reports: BL joins pda-entities, ranking and not-in-flow-manager
+C	2026-08-31	92	bin/transfer/reports/pda-entities.sh	transfer reports: BL joins pda-entities, ranking and not-in-flow-manager
+C	2026-08-31	92	bin/transfer/reports/ranking.sh	transfer reports: BL joins pda-entities, ranking and not-in-flow-manager
+C	2026-08-30	93	bin/analyses/publish-insights.sh	logical-based PDA: adapt the group pages, accounts audit, prose and docs
+C	2026-08-30	93	bin/transfer/reports/pda-entities.sh	logical-based PDA: adapt the group pages, accounts audit, prose and docs
+C	2026-08-30	94	bin/analyses/reports/entity-coverage.sh	entity-coverage: view key 'logical' (rule-nav links must match the tab slug) + rebuilt site
+C	2026-08-30	95	bin/analyses/reports/coverage.sh	analyses: Logical in coverage, first-seen, entity-coverage, cross-reference, search, seen-log
+C	2026-08-30	95	bin/analyses/reports/cross-reference.sh	analyses: Logical in coverage, first-seen, entity-coverage, cross-reference, search, seen-log
+C	2026-08-30	95	bin/analyses/reports/data-diff.sh	analyses: Logical in coverage, first-seen, entity-coverage, cross-reference, search, seen-log
+C	2026-08-30	95	bin/analyses/reports/entity-coverage.sh	analyses: Logical in coverage, first-seen, entity-coverage, cross-reference, search, seen-log
+C	2026-08-30	95	bin/analyses/reports/entity-search.sh	analyses: Logical in coverage, first-seen, entity-coverage, cross-reference, search, seen-log
+C	2026-08-30	95	bin/analyses/reports/first-seen.sh	analyses: Logical in coverage, first-seen, entity-coverage, cross-reference, search, seen-log
+C	2026-08-30	95	bin/analyses/reports/home.sh	analyses: Logical in coverage, first-seen, entity-coverage, cross-reference, search, seen-log
+C	2026-08-30	95	bin/analyses/reports/seen-in-server-log.sh	analyses: Logical in coverage, first-seen, entity-coverage, cross-reference, search, seen-log
+C	2026-08-30	96	bin/transfer/reports/details.sh	details: Logical detail pages (LGC type) + the Logical dimension on every page
+C	2026-08-30	97	bin/transfer/reports/not-in-flow-manager.sh	transfer reports: logical.rpt entity report + ranking/not-in-flow-manager Logical rows
+C	2026-08-30	97	bin/transfer/reports/pda-entities.sh	transfer reports: logical.rpt entity report + ranking/not-in-flow-manager Logical rows
+C	2026-08-30	97	bin/transfer/reports/ranking.sh	transfer reports: logical.rpt entity report + ranking/not-in-flow-manager Logical rows
+C	2026-08-30	98	bin/analyses/reports/twins.sh	Twins rule C: the UC2+UC4 mailbox pair joins on the shared LOGIN
+C	2026-08-30	98	bin/transfer/reports/details.sh	Twins rule C: the UC2+UC4 mailbox pair joins on the shared LOGIN
+C	2026-08-30	99	bin/transfer/reports/recovered-files.sh	Recovered files: hide rows the date range leaves at Recovered 0
+N	2026-08-30	0	bin/server/reports/transfer-site-missing.sh	
+N	2026-08-30	0	bin/analyses/reports/failing-reasons.sh	
+N	2026-09-05	0	bin/transfer/reports/duration-slowest.sh	
+N	2026-08-30	0	bin/analyses/reports/partner-lifecycle.sh	
+N	2026-08-30	0	bin/transfer/reports/duration.sh	
+N	2026-08-30	0	bin/server/reports/no-remote-files.sh	
+N	2026-08-30	0	bin/server/reports/failure-flows.sh	
+N	2026-08-30	0	bin/analyses/reports/entity-coverage.sh	
+N	2026-08-30	0	bin/analyses/reports/app-partners.sh	
+N	2026-08-30	0	bin/transfer/reports/top-transfers.sh	
+N	2026-08-30	0	bin/analyses/reports/triage.sh	
+N	2026-08-30	0	bin/server/reports/pickups.sh	
+N	2026-08-30	0	bin/analyses/publish-insights.sh	
+N	2026-09-03	0	bin/transfer/reports/duration-distribution.sh	
+N	2026-08-30	0	bin/transfer/reports/security-params.sh	
+N	2026-08-30	0	bin/transfer/reports/merge-volume.sh	
+N	2026-08-30	0	bin/analyses/reports/uc4-status.sh	
+N	2026-08-30	0	bin/analyses/reports/twins.sh	
+N	2026-08-30	0	bin/transfer/reports/topview.sh	
+N	2026-08-30	0	bin/transfer/reports/only-red.sh	
+N	2026-08-30	0	bin/server/reports/ssh-crypto.sh	
+N	2026-08-30	0	bin/analyses/reports/seen-in-server-log.sh	
+N	2026-08-30	0	bin/transfer/reports/route-throughput.sh	
+N	2026-08-30	0	bin/transfer/reports/file-in-file-out.sh	
+N	2026-08-30	0	bin/server/reports/went-kaput.sh	
+N	2026-09-06	0	bin/server/reports/io-errors.sh	
+N	2026-08-30	0	bin/transfer/reports/remote-host.sh	
+N	2026-08-30	0	bin/transfer/reports/expected-arrival.sh	
+N	2026-08-30	0	bin/server/reports/ssh-sessions.sh	
+N	2026-08-30	0	bin/transfer/reports/recovered.sh	
+N	2026-08-30	0	bin/transfer/reports/missing-cronjobs.sh	
+N	2026-08-30	0	bin/transfer/reports/security-outreach.sh	
+N	2026-08-30	0	bin/analyses/reports/account-sharing.sh	
+N	2026-08-30	0	bin/server/reports/error-timing.sh	
+N	2026-08-30	0	bin/analyses/reports/home.sh	
+N	2026-08-30	0	bin/server/reports/auth-activity.sh	
+N	2026-08-30	0	bin/transfer/reports/account.sh	
+N	2026-08-30	0	bin/server/reports/logon.sh	
+N	2026-08-30	0	bin/transfer/reports/ranking.sh	
+N	2026-08-30	0	bin/server/reports/scheduler-overruns.sh	
+N	2026-08-30	0	bin/server/reports/missing-entities.sh	
+N	2026-08-30	0	bin/analyses/reports/data-diff.sh	
+N	2026-08-30	0	bin/transfer/reports/files.sh	
+N	2026-08-30	0	bin/server/reports/ssh-key-auth.sh	
+N	2026-08-30	0	bin/server/reports/connection-diagnostics.sh	
+N	2026-09-05	0	bin/analyses/reports/polling.sh	
+N	2026-08-30	0	bin/analyses/reports/cleanup-backlog.sh	
+N	2026-08-30	0	bin/server/reports/cluster-health.sh	
+N	2026-09-03	0	bin/transfer/reports/duration-longest.sh	
+N	2026-08-30	0	bin/analyses/reports/first-seen.sh	
+N	2026-08-30	0	bin/transfer/reports/protocol-journey.sh	
+N	2026-08-30	0	bin/transfer/reports/pda-entities.sh	
+N	2026-08-30	0	bin/transfer/reports/failed.sh	
+N	2026-08-30	0	bin/transfer/reports/arrived-left.sh	
+N	2026-08-30	0	bin/transfer/reports/pirates.sh	
+N	2026-08-30	0	bin/server/reports/errors-day.sh	
+N	2026-08-30	0	bin/server/reports/site-failures.sh	
+N	2026-09-12	0	bin/server/reports/publish-failed.sh	
+N	2026-09-12	0	bin/server/reports/post-client-action.sh	
+N	2026-08-30	0	bin/transfer/reports/attempts.sh	
+N	2026-08-30	0	bin/server/reports/stuck-events.sh	
+N	2026-08-30	0	bin/server/reports/platform-health.sh	
+N	2026-08-30	0	bin/transfer/reports/waiting.sh	
+N	2026-08-30	0	bin/transfer/reports/merge-went-quiet.sh	
+N	2026-09-02	0	bin/analyses/reports/fe-status.sh	
+N	2026-08-30	0	bin/transfer/reports/went-quiet.sh	
+N	2026-08-30	0	bin/server/reports/connections.sh	
+N	2026-09-12	0	bin/server/reports/could-not-send.sh	
+N	2026-08-30	0	bin/transfer/reports/size-profile.sh	
+N	2026-08-30	0	bin/transfer/reports/activity.sh	
+N	2026-08-30	0	bin/server/reports/error-reasons.sh	
+N	2026-08-30	0	bin/transfer/reports/file-journey.sh	
+N	2026-08-30	0	bin/transfer/reports/anomalies.sh	
+N	2026-08-30	0	bin/analyses/reports/file-search.sh	
+N	2026-08-30	0	bin/analyses/reports/blast-radius.sh	
+N	2026-08-30	0	bin/server/reports/unknown-entities.sh	
+N	2026-08-30	0	bin/transfer/reports/recovered-files.sh	
+N	2026-08-30	0	bin/transfer/reports/hourly.sh	
+N	2026-08-30	0	bin/transfer/reports/resubmissions.sh	
+N	2026-08-30	0	bin/transfer/reports/from-green-to-red.sh	
+N	2026-08-30	0	bin/transfer/reports/details.sh	
+N	2026-08-30	0	bin/analyses/reports/uc-status.sh	
+N	2026-08-30	0	bin/server/reports/remote-poll.sh	
+N	2026-09-05	0	bin/transfer/reports/merge-duration-dwell.sh	
+N	2026-08-30	0	bin/transfer/reports/retry.sh	
+N	2026-08-30	0	bin/analyses/reports/entity-search.sh	
+N	2026-08-30	0	bin/server/reports/deploy-errors.sh	
+N	2026-08-30	0	bin/transfer/reports/duration-trend.sh	
+N	2026-08-30	0	bin/analyses/reports/skipped.sh	
+N	2026-08-30	0	bin/analyses/reports/cross-reference.sh	
+N	2026-08-30	0	bin/transfer/reports/punctuality.sh	
+N	2026-08-30	0	bin/transfer/reports/incoming-connections.sh	
+N	2026-08-30	0	bin/transfer/reports/day.sh	
+N	2026-08-30	0	bin/server/reports/logons.sh	
+N	2026-08-30	0	bin/transfer/reports/weekly.sh	
+N	2026-08-30	0	bin/transfer/reports/patterns.sh	
+N	2026-08-30	0	bin/analyses/reports/uc2-status.sh	
+N	2026-08-30	0	bin/transfer/reports/showseen.sh	
+N	2026-08-30	0	bin/server/reports/top-messages.sh	
+N	2026-08-30	0	bin/analyses/reports/uc3-status.sh	
+N	2026-08-30	0	bin/analyses/reports/coverage.sh	
+N	2026-08-30	0	bin/transfer/reports/duplicate-files.sh	
+N	2026-08-30	0	bin/server/reports/config-defects.sh	
+N	2026-08-30	0	bin/analyses/reports/uc2-visits.sh	
+N	2026-08-30	0	bin/transfer/reports/stale-accounts.sh	
+N	2026-08-30	0	bin/server/reports/no-remote-dir.sh	
+N	2026-08-30	0	bin/transfer/reports/login.sh	
+N	2026-08-30	0	bin/transfer/reports/legs-count.sh	
+N	2026-08-30	0	bin/transfer/reports/expired.sh	
+N	2026-08-30	0	bin/server/reports/ssh-security.sh	
+N	2026-08-30	0	bin/server/reports/file-cleanup.sh	
+N	2026-08-30	0	bin/transfer/reports/volume.sh	
+N	2026-08-30	0	bin/transfer/reports/trend.sh	
+N	2026-08-30	0	bin/transfer/reports/failure-heatmap.sh	
+N	2026-08-30	0	bin/transfer/reports/weekday.sh	
+N	2026-08-30	0	bin/transfer/reports/retries.sh	
+N	2026-08-30	0	bin/transfer/reports/protocol.sh	
+N	2026-08-30	0	bin/transfer/reports/connection-efficiency.sh	
+N	2026-08-30	0	bin/transfer/reports/failure-rate.sh	
+N	2026-08-30	0	bin/server/reports/errors.sh	
+N	2026-08-30	0	bin/analyses/reports/sources-and-targets.sh	
+N	2026-08-30	0	bin/transfer/reports/size-dist.sh	
+N	2026-08-30	0	bin/transfer/reports/not-in-flow-manager.sh	
+N	2026-08-30	0	bin/transfer/reports/episodes.sh	
+N	2026-08-30	0	bin/transfer/reports/dwell-time.sh	
+N	2026-08-30	0	bin/transfer/reports/subscription.sh	
+N	2026-08-30	0	bin/transfer/reports/av-scan.sh	
+N	2026-08-30	0	bin/analyses/reports/partner-scorecard.sh	
+N	2026-09-02	0	bin/analyses/reports/fe-overview.sh	
+N	2026-09-05	0	bin/analyses/reports/uc3-polling.sh	
+N	2026-08-30	0	bin/server/reports/capacity.sh	
+N	2026-08-30	0	bin/analyses/reports/uc1-status.sh	
+N	2026-08-30	0	bin/transfer/reports/file-type.sh	
+N	2026-08-30	0	bin/server/reports/pesit.sh	
+N	2026-08-30	0	bin/server/reports/inbound-connections.sh	

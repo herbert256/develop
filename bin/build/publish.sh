@@ -1698,8 +1698,18 @@ write_whats_new() {
     # never disqualify a commit (they are the New table's news) and never
     # emit a C line themselves. Deduped per report later (each report shows
     # its NEWEST qualifying change).
-    local hist
-    hist=$(git log --format='@@@%x09%as%x09%s' --name-status -M -- "${dirs[@]}" 2>/dev/null | awk -F'\t' -v CMAX=100 '
+    # THE HISTORY IS DERIVED IN DEVELOP AND SHIPPED (2026-09-12, user report:
+    # "whats-new is not updated anymore"): the runtime checkouts get bin/ by
+    # rsync and their own git log holds one commit touching the generators —
+    # the 2026-09-11 import — so there every report was "new" that day and
+    # nothing ever changed. The develop build (the .sample-estate marker)
+    # runs the git pipeline below and writes bin/build/whats-new-history.tsv
+    # (committed, synced with bin/ by acc.sh/prd.sh); every build — develop
+    # and runtime — then renders the page from that file, with the titles
+    # and intros of its own .rpt files.
+    local hist histf="bin/build/whats-new-history.tsv"
+    if [ -f input/.sample-estate ]; then
+    git log --format='@@@%x09%as%x09%s' --name-status -M -- "${dirs[@]}" 2>/dev/null | awk -F'\t' -v CMAX=100 '
         function bn(p) { sub(/^.*\//, "", p); return p }
         # emit the commit just finished: one C line per MODIFIED generator
         # (cp[i] == "" marks an ADD — news for the New table, not a change),
@@ -1729,7 +1739,9 @@ write_whats_new() {
         $1 ~ /^R/ { ko = bn($2); kn = bn($3); if (!(kn in pth)) pth[kn] = $3
                     if (ko == kn) next
                     cp[++nc] = $3; next }
-        END { flush(); for (k in add) print "N\t" add[k] "\t0\t" pth[k] "\t" }' || true)
+        END { flush(); for (k in add) print "N\t" add[k] "\t0\t" pth[k] "\t" }' > "$histf.tmp" && mv "$histf.tmp" "$histf" || rm -f "$histf.tmp"
+    fi
+    hist=$( [ -f "$histf" ] && cat "$histf" || true )
     local kind date seq path subj nm meta t a href desc rows_new="" rows_chg="" et ea eh ed
     while IFS=$'\t' read -r kind date seq path subj; do
         [ -n "$path" ] || continue
@@ -1757,10 +1769,10 @@ write_whats_new() {
             esc "$t"; et=$ESC; esc "$a"; ea=$ESC; esc "$href"; eh=$ESC
             if [ "$kind" = N ]; then
                 esc "$desc"; ed=$ESC
-                rows_new+="$date\t$seq\t$eh\t<tr><td><a href=\"$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>\n"
+                rows_new+="$date\t$seq\t$eh\t<tr><td>$date</td><td><a href=\"$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>\n"
             else
                 esc "$subj"; ed=$ESC
-                rows_chg+="$date\t$seq\t$eh\t<tr><td><a href=\"$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>\n"
+                rows_chg+="$date\t$seq\t$eh\t<tr><td>$date</td><td><a href=\"$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>\n"
             fi
         done <<< "$meta"
     done <<< "$hist"
@@ -1786,14 +1798,14 @@ write_whats_new() {
         printf '<h1>What is new</h1>\n'
         printf '<p class="range">The report catalog’s history, from the generators’ git log: the <strong>25 most recently added</strong> reports and the <strong>25 most recently changed</strong> ones. A change is listed only when its commit was about <strong>a few reports</strong> (up to eight — a sweep across more is about the site, not about any one of them), and a report the New table already names is not repeated below it. Newest first; the Description gives a new report’s introduction, or a changed report’s latest change.</p>\n'
         printf '<h2>New reports</h2>\n'
-        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Report</th><th>Area</th><th>Description</th></tr>\n'
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Date</th><th>Report</th><th>Area</th><th>Description</th></tr>\n'
         if [ -n "$ntop" ]; then printf '%s\n' "$ntop" | cut -f4-
-        else printf '<tr><td>(none)</td><td></td><td></td></tr>\n'; fi
+        else printf '<tr><td></td><td>(none)</td><td></td><td></td></tr>\n'; fi
         printf '</table></div>\n'
         printf '<h2>Changed reports</h2>\n'
-        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Report</th><th>Area</th><th>Description</th></tr>\n'
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Date</th><th>Report</th><th>Area</th><th>Description</th></tr>\n'
         if [ -n "$ctop" ]; then printf '%s\n' "$ctop" | cut -f4-
-        else printf '<tr><td>(none)</td><td></td><td></td></tr>\n'; fi
+        else printf '<tr><td></td><td>(none)</td><td></td><td></td></tr>\n'; fi
         printf '</table></div>\n'
         printf '</body>\n</html>\n'
     } > "$out"
