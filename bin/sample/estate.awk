@@ -281,6 +281,7 @@ function build_roster() {
     addf(1, "FIN", "TREASURY", "GEKKO",    "",  4, 0.05, "stormy")
     addf(1, "ZK",  "CLAIMS",   "BLACKMESA","",  1.5, 0.1, "resub")
     addf(1, "CD",  "IDM",      "VANDELAY", "",  1.5, 0.2, "cnsend")   # every failed burst ends in an AR0074 "Could not send file" line — the Could not send file report (2026-09-12)
+    addf(1, "AB",  "STREAM",   "WEYLAND",  "",  1.5, 0.2, "reason=streamrw")   # "Stream read/write error." lines — the Stream read/write error reason (2026-09-12)
     addf(1, "AIM", "SAPPO",    "WONKA-PUO","",  1.2, 0.04, "")          # alias star member
     addf(1, "CDV", "STREAM",   "DUFF",     "",  1.5, 0.03, "")
     addf(1, "IT",  "HEARTBEAT","INITECH",  "",  1.5, 0.02, "skipflow")  # skip-listed wholesale

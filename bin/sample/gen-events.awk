@@ -171,6 +171,9 @@ function s_reason_err(abs, sid, fn,   r) {
     # the far end going silent mid-transfer — the Java socket read timeout
     # (2026-09-08, user request: the "Read timed out" reason)
     else if (r == "readtimeout") S(abs, "E", "TM", sid, "Error during transfer operation: java.net.SocketTimeoutException: Read timed out")
+    # the data stream breaking mid-transfer (2026-09-12, user request: the
+    # "Stream read/write error" reason — the line STARTS with that text)
+    else if (r == "streamrw")    S(abs, "E", "TM", sid, "Stream read/write error. Exception message is: Connection reset by peer")
     # the post-download remote delete failing (2026-09-02): the Info line
     # names the delete, the Error is what flip-reason.awk classifies
     else if (r == "remdel")      { S(abs - 6, "I", "TM", sid, "Deleting remote file: " fn " under /outbox/download/.")

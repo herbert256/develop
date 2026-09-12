@@ -43,6 +43,12 @@ function flip_reason(msg,   m) {
     # BEFORE the connection rule, whose "connection failure" wrapping the
     # same line may carry would otherwise claim it (2026-09-08, user request).
     if (m ~ /read timed out/) return "Read timed out"
+    # a STREAM READ/WRITE ERROR on the transfer's connection — a line that
+    # STARTS with "Stream read/write error." (2026-09-12, user request; an
+    # optional "[Ssh Default] " component tag may precede it): the data
+    # stream broke mid-transfer. BEFORE the fingerprint / connection rules,
+    # whose words the exception text after it may carry.
+    if (m ~ /^(\[[^]]*\] *)?stream read\/write error\./) return "Stream read/write error"
     if (m ~ /wrong server fingerprint|host key|fingerprint mismatch/) return "Wrong server fingerprint"
     if (m ~ /connection failure|could not be established|failed to connect|failed to create connection|connection refused|connection timed out|connection reset|unable to connect/) return "Connection failures"
     if (m ~ /receive file as/) return "Receive File As not set"
