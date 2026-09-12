@@ -945,7 +945,10 @@ both MANUAL.
 - **Local preview: `http://localhost/develop/`** — the local Homebrew httpd serves this repo's
   `docs/` (the runtime twins serve at `http://localhost/runtime-acceptance/` and
   `http://localhost/runtime-production/`); preview there, never start a
-  throwaway HTTP server, hard-reload after an asset edit. All generated links are RELATIVE, so
+  throwaway HTTP server, hard-reload after an asset edit. Every page head carries the no-cache
+  trio (`http-equiv` Cache-Control / Pragma / Expires — 2026-09-12, user request; baked by
+  `html_head`, `write_root_404`, the build report and the hand-authored `assets/help/*.html`,
+  KEEP IN STEP); the assets rely on their `?v=` busters. All generated links are RELATIVE, so
   the site works under any base path — the 404 page derives its home link from the URL itself.
 - **`docs/` is PURE committed build output** (2026-08-29): every `bin/build.sh` run CLEARS
   `docs/` wholesale and RE-SEEDS the

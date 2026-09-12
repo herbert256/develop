@@ -1816,6 +1816,8 @@ write_root_404() {
     {
         printf '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         printf '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        # never cache (2026-09-12) — the same trio html_head bakes into every page
+        printf '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n'
         printf '<title>Page not found — Cloud Reports</title>\n'
         printf '<style>body{font-family:Arial,Helvetica,sans-serif;background:#f7f7f9;color:#222;text-align:center;padding:5rem 2rem}h1{color:#20344a}a{color:#1a5dab}</style>\n'
         printf '</head>\n<body>\n'

@@ -650,6 +650,13 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
     local base=${2%assets/style.css}
     local home=${base}index.html
     printf '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>%s</title>\n' "$ESC"
+    # never cache a page (2026-09-12, user request — stale pages in the local
+    # browser): the http-equiv trio on EVERY document head. KEEP IN STEP with
+    # the other head emitters — write_root_404 (bin/build/publish.sh), the
+    # build report (bin/build.sh) and the hand-authored assets/help/*.html.
+    # The assets keep their ?v= cache-busters (ASSET_VER) — these metas cover
+    # the HTML document only, not its subresources.
+    printf '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n'
     [ -n "${3:-}" ] && printf '<meta name="report-dates" content="%s">\n' "$3"
     # The partial-END days of that same list (area_partial). The date list
     # identifies its area, so no caller has to pass anything: matching it
