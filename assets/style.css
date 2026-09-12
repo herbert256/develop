@@ -381,6 +381,22 @@ table[data-seenrows] tr[data-seen="0"][data-res="green"] td  { background-color:
 table[data-seenrows] tr[data-seen="0"][data-res="orange"] td { background-color:#fdf1dc; }
 table[data-seenrows] tr[data-seen="0"][data-res="red"] td    { background-color:#fde3e3; }
 table[data-seenrows] tr[data-seen="0"][data-res="blue"] td   { background-color:#d3e6fb; }
+/* …and the ROWS themselves (2026-09-12, user request: an EMPTY cell takes
+   the colour of its row — every blank cell is transparent and shows the tr
+   behind it, see the tr[data-res] row rules further down). The seen /
+   not-seen / own-result row tints of the seenmode and seenrows tables, and
+   the restint tables' whole-row result tint, repeated on the tr. */
+table[data-seenmode="all"] tr[data-seen="0"] { background-color:#fde3e3; }
+table[data-seenrows] tr[data-seen="1"] { background-color:#e4f6e4; }
+table[data-seenrows] tr[data-seen="0"] { background-color:#fde3e3; }
+table[data-seenrows] tr[data-seen="0"][data-res="green"]  { background-color:#e4f6e4; }
+table[data-seenrows] tr[data-seen="0"][data-res="orange"] { background-color:#fdf1dc; }
+table[data-seenrows] tr[data-seen="0"][data-res="red"]    { background-color:#fde3e3; }
+table[data-seenrows] tr[data-seen="0"][data-res="blue"]   { background-color:#d3e6fb; }
+table[data-restint] tr[data-res="green"]  { background-color:#e4f6e4; }
+table[data-restint] tr[data-res="orange"] { background-color:#fdf1dc; }
+table[data-restint] tr[data-res="red"]    { background-color:#fde3e3; }
+table[data-restint] tr[data-res="blue"]   { background-color:#d3e6fb; }
 /* A 0-blanked Error/OK cell (td.failed.z / td.processed.z, normally
    transparent) must not punch a white hole into a green SEEN row — it takes
    the row's light green (an empty Error cell = zero errors = good). */
@@ -828,6 +844,18 @@ tr[data-res="red"] td    { background-color:#fde3e3; }
    (data/fakes/<entity>.tsv); it overrides the green/orange/red result tint so a
    fabricated sighting is never read as a real failure. */
 tr[data-res="blue"] td   { background-color:#d3e6fb; }
+/* …and the ROW ITSELF carries the same tint (2026-09-12, user request: an
+   EMPTY cell takes the colour of its row). Every blank cell is
+   background-color:transparent — td.warn:empty (the Retry / Resubmit /
+   Waiting amber columns), the .z 0-blanked outcome cells, plain empties —
+   which shows the tr behind it: with the tr tinted too, no blank cell
+   punches a stripe-coloured hole into a tinted row, now or for any blank
+   cell type added later. Same specificity as tr:nth-child(even) and
+   tr:hover, later in source, so the row tint wins for these rows. */
+tr[data-res="green"]  { background-color:#e4f6e4; }
+tr[data-res="orange"] { background-color:#fdf1dc; }
+tr[data-res="red"]    { background-color:#fde3e3; }
+tr[data-res="blue"]   { background-color:#d3e6fb; }
 /* inside a result-tinted row the Error/OK cells keep their OWN tints where
    they carry a value; an EMPTY cell (zero-blanked .z or a config-only row's
    blank) takes the row tint instead of a stripe or a white hole */
