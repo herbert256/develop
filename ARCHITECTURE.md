@@ -688,7 +688,11 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   section** above it (`last_error_section`, 2026-08) is the newest failed File's error page
   errors/<coreid>.rpt spliced VERBATIM — its legs table and its server-log table, the file name
   in the heading, a LINK to the full page below; never a mere link row (the facts table stays
-  out — the page already knows its subscription). The sidecar also carries
+  out — the page already knows its subscription). A RED flow (a row of transfer/failed.html)
+  gets the same error spliced in below Features at publish time (`publish-details.sh`, titled
+  "Last error - <reason>"), and that splice DROPS the writer's section from the page
+  (2026-09-12, user request — the page showed the error twice, only the first stays), so a
+  subscription page carries ONE "Last error". The sidecar also carries
   the newest FAILED File's session lines (kind X, never rendered — the spliced error-page
   content shows the failure), and **"Last server log messages" SUPPRESSES every line already
   told on the page** — the S (rendered) and X session lines and both spliced server-log

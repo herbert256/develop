@@ -348,7 +348,12 @@ function twin_features_rows(   n, i, V, sd) {
 # server log messages does not repeat them, and a LINK below the section
 # still opens the full error page. failed.sh guarantees the .rpt for a
 # subscription's newest error; if it is missing anyway, the old one-row
-# link table is the fallback.
+# link table is the fallback. A RED flow (a row of transfer/failed.html)
+# gets the SAME error spliced in below Features at publish time —
+# publish-details.sh, titled "Last error - <reason>" — and that splice
+# DROPS this section from the page (2026-09-12, user request: the page
+# showed the error twice; only the first stays), so the section survives
+# only on a page without the splice.
 function last_error_section(   k9, f9, l9, n9a, C9a, st9, legs9, srv9, nl9, ns9, F9, cid9) {
     if (pend_t != "SITE" || nle == 0) return
     k9 = toupper(pend_e)

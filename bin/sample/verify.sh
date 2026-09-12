@@ -357,6 +357,18 @@ check $([ "${rfm:-x}" = "${wrm:-y}" ] && echo 0 || echo 1) "recovered-files Resu
 read -r dfa dfm <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 3 && $1 == "TOTAL" { b = $5; c = $6; sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); print b + 0, c + 0; exit }' "$RF" 2>/dev/null)"
 check $([ "${dfa:-x}" = "${rfa:-y}" ] && [ "${dfm:-x}" = "${rfm:-y}" ] && echo 0 || echo 1) "recovered-files per-day Retry/Resubmit totals ${dfa:-?}/${dfm:-?} differ from the per-subscription ${rfa:-?}/${rfm:-?}"
 check $([ "$(grep -c 'Retry (automatic)\|Resubmit (manual)' "docs/transfer/recovered-files.html" 2>/dev/null)" -ge 2 ] && echo 0 || echo 1) "transfer/recovered-files.html lacks the Retry (automatic) / Resubmit (manual) boxes"
+
+# ONE "Last error" per subscription page (2026-09-12, user request): a red
+# flow's page carries the publish-time splice "Last error - <reason>" below
+# Features, and the writer's own "Last error — <file>" section must then be
+# gone — no page shows the same error twice; and the splice must exist on
+# at least one sample page, or the rule is never exercised
+n=0; m=0
+for f in docs/details/subscriptions/*.html; do
+    if grep -q '<h2>Last error - ' "$f" 2>/dev/null; then m=$((m + 1)); grep -q '<h2>Last error — ' "$f" 2>/dev/null && n=$((n + 1)); fi
+done
+check $([ "$n" = 0 ] && echo 0 || echo 1) "$n subscription page(s) show the last error twice (the splice below Features AND the writer's section)"
+check $([ "$m" -gt 0 ] && echo 0 || echo 1) "no sample subscription page carries the spliced 'Last error - <reason>' section"
 hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/topview.html" 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "$hdr" = "|Files|Recovered|Resubmit|Transfers|State|Date|First|Last|Count|Ok|Error|Error %|Automatic|Manual|Ok|Failed|Count|Ok|Error|Error %|Processed|Failed|Waiting|Expired|" ] && echo 0 || echo 1) "transfer/topview.html headers are '$hdr'"
 n=$(grep -c '<table' docs/transfer/topview.html 2>/dev/null || true)

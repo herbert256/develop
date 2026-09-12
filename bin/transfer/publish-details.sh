@@ -186,6 +186,20 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
                     $1 == "TABLE" && $2 == "Features" { afterfeat = 1 }
                     $1 == "TABLE" && $2 == "Last server log messages" { inject() }
                     $1 == "FOOT" { inject() }
+                    # THE WRITER'\''S OWN "Last error — <file>" SECTION IS DROPPED
+                    # when this splice is in (2026-09-12, user request: a red
+                    # flow'\''s page showed the same error twice — "Last error -
+                    # <reason>" below Features, from here, and "Last error —
+                    # <file>" above Last OK transfer, from details_writer.awk
+                    # last_error_section — only the first stays). The section
+                    # runs from its TABLE line to its closing LINK (the
+                    # full-content shape) or to the next titled TABLE / FOOT
+                    # (the one-row fallback has no LINK); its untitled server-
+                    # log sub-table is part of it.
+                    $1 == "TABLE" && ($2 == "Last error" || index($2, "Last error — ") == 1) { skip = 1; next }
+                    skip && $1 == "LINK" && index($2, "../../errors/") == 1 { skip = 0; next }
+                    skip && (($1 == "TABLE" && $2 != "") || $1 == "FOOT" || $1 == "META" || $1 == "SUMMARY") { skip = 0 }
+                    skip { next }
                     { print }
                 ' "$srcf" > "$etmp"
                 srcf="$etmp"
