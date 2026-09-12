@@ -3343,11 +3343,13 @@
   // pages) — this renders the full bar from window.AXWAY_TB
   // (assets/topbar-data.js: the three dropdown menu strings with their "@"
   // docs-root placeholder, the monitor flag, the CoreId URL template and the
-  // environment LABEL of this site — input/environment.txt, a static
-  // .envcur span right after the brand since 2026-09-11, when the
-  // Acceptance/Production switch went with the two-environment layout;
-  // rewritten by every publish, so a MENU change no longer needs a site-wide
-  // page republish). The baked-chrome pages (help pages, the build report —
+  // environment LABEL of this site — input/environment.txt, the TEXT OF THE
+  // BRAND link itself since 2026-09-12 (2026-09-11, when the
+  // Acceptance/Production switch went with the two-environment layout, it
+  // was a static span beside a fixed "Cloud" brand; a site without the file
+  // still says "Cloud"); rewritten by every publish, so a MENU change no
+  // longer needs a site-wide page republish). The baked-chrome pages (help
+  // pages, the build report —
   // render_shared_topbar) arrive with a NON-empty topbar div and are left
   // untouched. Must run before setupSrvToggle, which binds into the bar.
   // ---- the shared hero-slot charts (svg_slots): styled hover tooltip -------
@@ -3714,12 +3716,12 @@
     function menu(s) { return (s || "").replace(/@/g, b); }
     function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
     // the ENVIRONMENT LABEL of this site (input/environment.txt via
-    // ensure_assets), a static span where the Acceptance/Production switch
-    // stood until 2026-09-11; a site without the file shows nothing there
-    var label = (typeof M.env === "string" && M.env) ? '<span class="envpair"><span class="envcur">' + esc(M.env) + "</span></span>" : "";
+    // ensure_assets) IS the brand — the home link's text (2026-09-12, user
+    // request: no separate label beside it); a site without the file says
+    // "Cloud"
+    var brand = (typeof M.env === "string" && M.env) ? M.env : "Cloud";
     tb.innerHTML =
-      '<a class="brand" href="' + b + 'index.html">Cloud</a>' +
-      label +
+      '<a class="brand" href="' + b + 'index.html">' + esc(brand) + "</a>" +
       '<span class="entgroup"><a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
       '<a class="searchbtn" href="' + b + 'search.html" title="Search" aria-label="Search">🔍</a></span>' +
       // the FILE SEARCH entry (2026-08): the leader of the windowed pages,
