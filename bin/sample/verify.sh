@@ -363,6 +363,27 @@ check $([ "$(grep -c '<p class="alert">[^<]*ERROR IN SERVER LOG AFTER LAST TRANS
 check $([ "$(grep -c 'class="logcard"><span class="lc-when">[0-9-]* [0-9:.]*  · *session [0-9a-f]*</span>' "$kp" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the kaput page lacks the log line card (date/time · session id) under the banner"
 check $([ "$(grep -c 'used to work and now fails' "$kp" 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the kaput page still carries the verdict prose above the banner"
 
+# the Could not send file report (2026-09-12, user request): the planted
+# cnsend flow (estate.awk UC1_CD_IDM_VANDELAY) closes every failed burst
+# with an AR0074 line — the report lists them newest first, Date & time ·
+# Subscription · File, at most 1000 rows and 10 per subscription
+if [ "$(exp cnsend)" -gt 0 ]; then
+    R="data/server/reports/could-not-send.rpt"
+    n=$(rpt_rows "$R")
+    check $([ "$n" -gt 0 ] && echo 0 || echo 1) "could-not-send.rpt has 0 rows"
+    h=$(awk -F'\t' '$1 == "HEAD" { print; exit }' "$R" 2>/dev/null)
+    check $([ "$h" = $'HEAD\tDate & time\tSubscription\tFile' ] && echo 0 || echo 1) "could-not-send.rpt HEAD is '$h', expected Date & time|Subscription|File"
+    n=$(awk -F'\t' '$1 == "ROW" { s = $3; sub(/^@\{[^}]*\}/, "", s); if (s == "UC1_CD_IDM_VANDELAY") n++ } END { print n + 0 }' "$R" 2>/dev/null)
+    check $([ "${n:-0}" -gt 0 ] && [ "${n:-0}" -le 10 ] && echo 0 || echo 1) "could-not-send.rpt has ${n:-0} row(s) for the planted flow, expected 1-10"
+    n=$(awk -F'\t' '$1 == "ROW" { s = $3; sub(/^@\{[^}]*\}/, "", s); if (++c[s] > 10) over++ } END { print over + 0 }' "$R" 2>/dev/null)
+    check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "could-not-send.rpt: ${n:-?} row(s) beyond the 10-per-subscription cap"
+    n=$(rpt_rows "$R")
+    check $([ "$n" -le 1000 ] && echo 0 || echo 1) "could-not-send.rpt has $n rows, beyond the 1000 cap"
+    n=$(awk -F'\t' '$1 == "ROW" { if (p != "" && $2 > p) bad++; p = $2 } END { print bad + 0 }' "$R" 2>/dev/null)
+    check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "could-not-send.rpt is not newest-first (${n:-?} row(s) out of order)"
+    check $([ -f docs/server/could-not-send.html ] && echo 0 || echo 1) "docs/server/could-not-send.html is missing"
+fi
+
 # the NON-UC-NAMED hybrid flows must come out attributed to their real site
 # (the reverse profile fallback) — never UCx_ — and every planted one is a
 # configured subscription of the base roster

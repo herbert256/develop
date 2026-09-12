@@ -230,6 +230,13 @@ function uc1_file(t0,   fn, sz, mo, ic, sidp, sids, d1, d2, i, tt, ok, late, rr,
             if (i <= 2) s_reason_err(tt + 100, sids, fn)
             tt += (5000 + i * i * 1200) + int(rexp(1500))
         }
+        # the "Could not send file" report (2026-09-12, user request): a
+        # tagged flow closes every failed burst with the Advanced Routing
+        # AR0074 give-up line — route = the subscription (second bracket),
+        # the file path in the first braces, the transfer site, the attempts.
+        # No PRNG draw here (sids is the burst session), so no other flow-day moves.
+        if (hastag("cnsend"))
+            S(tt + 100, "E", "TM", sids, "AR0074: [SECURETRANSPORT] [" LOGSITE "]  Could not send file: {/.stfs/objects/" substr(CID, 1, 2) "/" substr(CID, 3, 30) "/" CID "/" fn "} using transfer site: {" LOGSITE "_SFTP_SERVER_" PTOK "} after attempting {6} times.")
         # the OPERATOR RESUBMIT shapes (2026-09-12 — the Top view's Recovered
         # Automatic/Manual and Resubmit Ok/Failed tables): only flows tagged
         # "resub" draw here, so every other flow's stream is untouched. The

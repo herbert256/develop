@@ -656,6 +656,30 @@
     "tags": ["sample-estate"]
   },
   {
+    "businessId": "901f19e2-634f-4d7d-89a3-c2c54b91411f",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/901f19e2-634f-4d7d-89a3-c2c54b91411f",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "5f06b73e-5e28-4c23-88e3-34283b9f5529",
+        "name": "SCP_CD_IDM_VANDELAY_KEY",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "hosts": ["imports.vandelay.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "CD_IDM_VANDELAY",
+    "tags": ["sample-estate"]
+  },
+  {
     "businessId": "6c7eed01-e646-41c1-acaf-e8efa7d47a81",
     "meta": {
       "href": "https://flowmanager.acme.example:443/api/v2/partners/6c7eed01-e646-41c1-acaf-e8efa7d47a81",

@@ -227,9 +227,12 @@ file-in-file-out) · **protocol-security** (protocol · security-params · av-sc
 `duration-all` / `duration-minmax` / `duration-all-minmax` siblings share Duration's slot) ·
 **cross** "Cross References".
 
-Server groups: **srv-overview** (topview) · **srv-errors** (errors · failure-flows · io-errors — the
-last one, 2026-09-06, lists every "IO Error reading file /data/FlowManager/<account>@<login>/<file>"
-line per folder, per line and per day, each line joined to its File by name for the outcome) · **srv-transfers**
+Server groups: **srv-overview** (topview) · **srv-errors** (errors · failure-flows · io-errors · could-not-send —
+io-errors, 2026-09-06, lists every "IO Error reading file /data/FlowManager/<account>@<login>/<file>"
+line per folder, per line and per day, each line joined to its File by name for the outcome;
+could-not-send, 2026-09-12, lists the Advanced Routing AR0074 "Could not send file: {…} using transfer
+site: {…} after attempting {n} times." lines newest first — Date & time · Subscription (the second
+bracket, alink'd) · File (the path's basename) — capped at 1000 rows and 10 per subscription) · **srv-transfers**
 "Transfers & Delivery" (pickups — the `transfers` merge went in 2026-08 with the JSON
 Transfer-start/end lines its two components read) · **srv-connections** (connections · logons) ·
 **srv-security** (ssh-security) · **srv-ops** "Operations & Capacity" (platform-health ·

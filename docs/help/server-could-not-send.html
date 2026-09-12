@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Help: Could not send file — Cloud Reports</title>
+<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../transfer/index.html">Start page</a><a href="../transfer/topview.html">Top view</a><a href="../transfer/entities/subscription-all.html">Entities</a><a href="../transfer/file-journey-patterns.html">Patterns</a><a href="../transfer/activity-per-day.html">Activity over Time</a><a href="../transfer/volume-per-day.html">Volume, Sizes &amp; Files</a><a href="../transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../transfer/duration.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../server/index.html">Start page</a><a href="../server/topview.html">Top view</a><a href="../server/errors-per-day.html">Errors</a><a href="../server/pickups.html">Transfers &amp; Delivery</a><a href="../server/logons-incoming.html">Logons &amp; Connections</a><a href="../server/ssh-security.html">Security</a><a href="../server/platform-health.html">Operations &amp; Capacity</a><a href="../server/transfer-site-missing.html">Routing</a><a href="../server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../analyses/index.html">Start page</a><a href="../transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../analyses/use-cases.html">Configuration</a><a href="../analyses/partner-scorecard.html">Partners</a><a href="../analyses/subscriptions-in-boxes.html">Boxes</a><a href="../analyses/failed.html">Errors</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Could not send file</h1>
+<h2>What this shows</h2>
+<p>Every <strong>Could not send file</strong> error the server log holds, one row per line, newest first: an Advanced Routing route that gave up delivering a file to its transfer site after its retries. The line looks like this:</p>
+<p class="mono">AR0074: [SECURETRANSPORT] [UC1_CD_IDM_ROTAFORM]  Could not send file: {/.stfs/objects/&hellip;/krpdashboard-productie-20260910135425809.xml} using transfer site: {UC1_CD_IDM_ROTAFORM_SFTP_SERVER_ROTAFORM} after attempting {11} times.</p>
+<h2>The table</h2>
+<ul>
+<li><strong>Date &amp; time</strong> &mdash; when the route gave up, to the second.</li>
+<li><strong>Subscription</strong> &mdash; the route, the second bracket of the line; it opens the subscription's detail page, and the row carries the subscription's result colour.</li>
+<li><strong>File</strong> &mdash; the last element of the path in the first braces.</li>
+</ul>
+<h2>How it's computed</h2>
+<p>The tokenized server log is scanned for TM lines whose message starts with an <code>AR&lt;n&gt;:</code> code and carries &ldquo;Could not send file:&rdquo;. The subscription is read from the second bracket group (the same reading the <a href="server-uc1-status.html">UC1 status</a> report and the failure pages' &ldquo;Could not send to CFT&rdquo; reason use), folded to its current name when it was renamed; the file is the basename inside the first braces. The report shows at most <strong>1000</strong> rows and at most <strong>10</strong> rows per subscription &mdash; the newest ones on both counts; the intro and the total row say how many lines the log really holds. The date filter, search and sort work over the shown rows.</p>
+<h2>Why it matters</h2>
+<p>This error is the delivery leg failing for good: the platform tried the configured number of times and the file did not reach the transfer site. Each row is a file a partner did not get; a subscription that keeps appearing has a delivery-side problem &mdash; the transfer site, its credentials or the far end &mdash; that the <a href="server-errors-day.html">Errors</a> reasons and the subscription's own detail page put in context.</p>
+</main>
+</body>
+</html>

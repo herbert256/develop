@@ -19,8 +19,8 @@
 <h1>Application dependencies <span class="grouptag">&larr; Partners &larr; Analyses</span></h1>
 <p class="tabs"><a class="tab" href="partner-scorecard.html">Partner scorecard</a><a class="tab" href="blast-radius.html">Blast radius</a><span class="tab active">Application dependencies</span><a class="tab" href="partner-lifecycle.html">Partner lifecycle</a></p>
 <p class="range">Every internal application seen in the logs, by how many <strong>external partner organisations</strong> it depends on — and how well each of those pairs actually runs. The most exposed application is <strong>ARIVA</strong> with <strong>3</strong> partners (0 of those pairs at 100% Error). Applications and partners are parts 2 and 3 of the logical flow name (domain_application_partner) a File's subscription resolves to through its FlowID, so this attribution is only as good as that naming convention — good enough to see exposure and failing pairs, but not a configuration export. Both sides use the site-wide UNION rules: a File counts for every application and every partner of its subscription.</p>
-<div class="stat"><span class="stat-v">70</span><span class="stat-l">Applications seen</span></div>
-<div class="stat"><span class="stat-v">81</span><span class="stat-l">Dependency pairs</span></div>
+<div class="stat"><span class="stat-v">71</span><span class="stat-l">Applications seen</span></div>
+<div class="stat"><span class="stat-v">82</span><span class="stat-l">Dependency pairs</span></div>
 <div class="stat stat-red"><span class="stat-v">1</span><span class="stat-l">Pairs at 100% Error</span></div>
 <div class="tablewrap"><table data-nofilter="1">
 <tr><th>Application</th><th class="num">Partners</th><th class="num">Files</th><th class="num">Worst pair Error %</th><th class="num">Pairs at 100% Error</th></tr>
@@ -51,6 +51,7 @@
 <tr><td class="cl"><a href="../details/applications/facts.html">FACTS</a></td><td class="num">1</td><td class="num">90</td><td class="num">27.8</td><td class="num"></td></tr>
 <tr><td class="cl"><a href="../details/applications/feeds.html">FEEDS</a></td><td class="num">1</td><td class="num">118</td><td class="num">3.4</td><td class="num"></td></tr>
 <tr><td class="cl"><a href="../details/applications/hrdata.html">HRDATA</a></td><td class="num">1</td><td class="num">75</td><td class="num">20.0</td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/applications/idm.html">IDM</a></td><td class="num">1</td><td class="num">85</td><td class="num">14.1</td><td class="num"></td></tr>
 <tr><td class="cl"><a href="../details/applications/ikaz.html">IKAZ</a></td><td class="num">1</td><td class="num">66</td><td class="num">4.5</td><td class="num"></td></tr>
 <tr data-res="red"><td class="cl"><a href="../details/applications/isolated.html">ISOLATED</a></td><td class="num">1</td><td class="num">127</td><td class="num">100.0</td><td class="num">1</td></tr>
 <tr><td class="cl"><a href="../details/applications/itp.html">ITP</a></td><td class="num">1</td><td class="num">72</td><td class="num">13.9</td><td class="num"></td></tr>
@@ -94,7 +95,7 @@
 <tr><td class="cl"><a href="../details/applications/vida.html">VIDA</a></td><td class="num">1</td><td class="num">530</td><td class="num">39.6</td><td class="num"></td></tr>
 <tr><td class="cl"><a href="../details/applications/vps.html">VPS</a></td><td class="num">1</td><td class="num">91</td><td class="num">5.5</td><td class="num"></td></tr>
 <tr><td class="cl"><a href="../details/applications/zka.html">ZKA</a></td><td class="num">1</td><td class="num">227</td><td class="num">15.4</td><td class="num"></td></tr>
-<tr class="total"><td>Total (70 application(s))</td><td class="num">81</td><td class="num">20703</td><td class="num"></td><td class="num">1</td></tr>
+<tr class="total"><td>Total (71 application(s))</td><td class="num">82</td><td class="num">20788</td><td class="num"></td><td class="num">1</td></tr>
 </table></div>
 <h2>The dependency pairs</h2>
 <div class="tablewrap"><table data-nofilter="1" data-pager="50">
@@ -126,6 +127,7 @@
 <tr><td class="cl"><a href="../details/applications/fmgenlog.html">FMGENLOG</a></td><td class="cl"><a href="../details/partners/cyberdyne.html">CYBERDYNE</a></td><td class="num">834</td><td class="num">5.8</td><td>2026-08-29</td></tr>
 <tr><td class="cl"><a href="../details/applications/fmgenlog.html">FMGENLOG</a></td><td class="cl"><a href="../details/partners/piedpiper.html">PIEDPIPER</a></td><td class="num">228</td><td class="num">4.4</td><td>2026-08-29</td></tr>
 <tr><td class="cl"><a href="../details/applications/hrdata.html">HRDATA</a></td><td class="cl"><a href="../details/partners/weyland.html">WEYLAND</a></td><td class="num">75</td><td class="num">20.0</td><td>2026-08-28</td></tr>
+<tr><td class="cl"><a href="../details/applications/idm.html">IDM</a></td><td class="cl"><a href="../details/partners/vandelay.html">VANDELAY</a></td><td class="num">85</td><td class="num">14.1</td><td>2026-08-28</td></tr>
 <tr><td class="cl"><a href="../details/applications/ikaz.html">IKAZ</a></td><td class="cl"><a href="../details/partners/blackmesa.html">BLACKMESA</a></td><td class="num">66</td><td class="num">4.5</td><td>2026-08-28</td></tr>
 <tr><td class="cl"><a href="../details/applications/invoice.html">INVOICE</a></td><td class="cl"><a href="../details/partners/vandelay.html">VANDELAY</a></td><td class="num">154</td><td class="num">13.0</td><td>2026-08-28</td></tr>
 <tr><td class="cl"><a href="../details/applications/invoice.html">INVOICE</a></td><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">69</td><td class="num">20.3</td><td>2026-08-28</td></tr>
@@ -180,9 +182,9 @@
 <tr><td class="cl"><a href="../details/applications/vida.html">VIDA</a></td><td class="cl"><a href="../details/partners/umbrella.html">UMBRELLA</a></td><td class="num">530</td><td class="num">39.6</td><td>2026-08-29</td></tr>
 <tr><td class="cl"><a href="../details/applications/vps.html">VPS</a></td><td class="cl"><a href="../details/partners/vdn.html">VDN</a></td><td class="num">91</td><td class="num">5.5</td><td>2026-08-28</td></tr>
 <tr><td class="cl"><a href="../details/applications/zka.html">ZKA</a></td><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">227</td><td class="num">15.4</td><td>2026-08-29</td></tr>
-<tr class="total"><td>Total (81 pair(s))</td><td></td><td class="num">20703</td><td class="num"></td><td></td></tr>
+<tr class="total"><td>Total (82 pair(s))</td><td></td><td class="num">20788</td><td class="num"></td><td></td></tr>
 </table></div>
 <p class="note">A pair's Error % is the Failed-or-Expired share of its Files (the site-wide outcome policy: Waiting counts as OK, Expired as Error). The per-application Files column sums its pairs, so a File shared by two partners counts twice there — exposure, not throughput. A red row runs at 100% Error: the dependency exists in the logs but never works — usually a decommissioned counterparty still being retried.</p>
-<div class="summary">Applications: 70  |  Dependency pairs: 81  |  Pairs at 100% Error: 1</div>
+<div class="summary">Applications: 71  |  Dependency pairs: 82  |  Pairs at 100% Error: 1</div>
 </body>
 </html>

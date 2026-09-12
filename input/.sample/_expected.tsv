@@ -1,5 +1,6 @@
 blue	9
 bluelogon	4
+cnsend	1
 collectdrop	1
 greenpoll	6
 ioerr	1
@@ -10,10 +11,10 @@ orange	26
 orphans	1
 pollconnfail	1
 reasons	18
-seen	105
+seen	106
 sshprobe	1
-subs	147
-subs_uc1	45
+subs	148
+subs_uc1	46
 subs_uc2	29
 subs_uc3	39
 subs_uc4	32

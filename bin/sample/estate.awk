@@ -173,6 +173,7 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
     else T["seen"]++
     if (hastag(tags, "nocron")) T["nocron"]++
     if (hastag(tags, "ioerr")) T["ioerr"]++     # the IO errors report's planted folder (2026-09-06)
+    if (hastag(tags, "cnsend")) T["cnsend"]++   # the Could not send file report's planted flow (2026-09-12)
     if (hastag(tags, "sshprobe")) T["sshprobe"]++   # the empty outbound ssh probes the parse drops (2026-09-08)
     if (hastag(tags, "collectdrop")) T["collectdrop"]++   # collects torn down by the client, settled by the ok bookend (2026-09-09)
     if (tags ~ /reason=/) T["reasons"]++
@@ -278,6 +279,7 @@ function build_roster() {
     addf(1, "SYNT","ITP",      "APERTURE", "",  1.2, 0.2, "reason=postaction")
     addf(1, "FIN", "TREASURY", "GEKKO",    "",  4, 0.05, "stormy")
     addf(1, "ZK",  "CLAIMS",   "BLACKMESA","",  1.5, 0.1, "resub")
+    addf(1, "CD",  "IDM",      "VANDELAY", "",  1.5, 0.2, "cnsend")   # every failed burst ends in an AR0074 "Could not send file" line — the Could not send file report (2026-09-12)
     addf(1, "AIM", "SAPPO",    "WONKA-PUO","",  1.2, 0.04, "")          # alias star member
     addf(1, "CDV", "STREAM",   "DUFF",     "",  1.5, 0.03, "")
     addf(1, "IT",  "HEARTBEAT","INITECH",  "",  1.5, 0.02, "skipflow")  # skip-listed wholesale
