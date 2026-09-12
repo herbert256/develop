@@ -269,6 +269,7 @@ function build_roster() {
     addf(1, "WA",  "BATCH",    "WAYNE",    "",  1.5, 0.03, "")
     addf(1, "FS",  "MORTGAGE", "SABRE",    "",  4, 0.03, "hybrid")
     addf(1, "DPL", "AUDITLOG", "DUNDER",   "",  1.5, 0.03, "quiet")
+    addf(1, "DPL", "LEDGER",   "DUNDER",   "",  1.0, 0,    "quiet,kaput")   # every File delivered, then a connection-failure E line AFTER the last one: the after-last-transfer red flip (result.sh), server-failing (failed.sh), the detail page's banner + its log line (2026-09-12)
     addf(1, "CB",  "MARKETING","WNK",      "",  1.2, 0.04, "")          # alias star member
     addf(1, "ODV", "DMS",      "CYBERDYNE","",  4, 0.04, "ascii,resub")
     addf(1, "IT",  "LEDGER",   "HOOLI",    "",  1.5, 0.03, "rename=UC1_IT_GENLEDGER_HOOLI")

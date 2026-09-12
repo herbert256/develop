@@ -193,6 +193,15 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
         fi
         if [ -n "$vf" ] && [ -s "$vf" ]; then
             vtmp=$(mktemp "${TMPDIR:-/tmp}/axdet.XXXXXX")
+            # A page whose writer raised the after-last-transfer banner WITH
+            # its error line (the server-failing flows: the bare ALERT text,
+            # details_writer.awk err_after_transfer_banner) shows NO verdict
+            # prose above it (2026-09-12, user request): the "used to work and
+            # now fails" headline and its paragraph only paraphrased that
+            # line. The fragment's TABLE block (UC2 pickup) still lands after
+            # Features.
+            _skipv=0
+            grep -q $'^ALERT\tERROR IN SERVER LOG AFTER LAST TRANSFER$' "$srcf" && _skipv=1
             # The verdict REPLACES the two one-liners the writer emits for the
             # same conditions — "Only seen in the server log, never in the
             # transfer log" and "Configured — never seen …" — which it now says
@@ -206,7 +215,7 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
             # information" table, sxs=feat — lands right after the Features
             # table, which gets the same sxs=feat, so the two render side by
             # side (Features left, Pickup right) above whatever follows.
-            awk -F'\t' -v VF="$vf" '
+            awk -F'\t' -v VF="$vf" -v SKIPPROSE="$_skipv" '
                 BEGIN { intbl = 0
                         while ((getline l < VF) > 0) {
                             if (index(l, "TABLE\t") == 1) intbl = 1
@@ -219,7 +228,7 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
                 infeat && ($1 == "TABLE" || $1 == "NOTE" || $1 == "INTRO" || $1 == "LINK" || $1 == "SUMMARY" || $1 == "FOOT") { printf "%s", tblk; infeat = 0 }
                 $1 == "TABLE" && $2 == "Features" && tblk != "" { print $0 "\tsxs=feat"; infeat = 1; next }
                 { print }
-                $1 == "DESC" && !d { printf "%s", pros; d = 1 }
+                $1 == "DESC" && !d { if (!SKIPPROSE) printf "%s", pros; d = 1 }
                 END { if (infeat) printf "%s", tblk }' "$srcf" > "$vtmp"
             render_rpt "$vtmp" "$outdir/$base.html" "../../assets/style.css" "index.html" "TRANSFER - $t" "" "$hslug"
             rm -f "$vtmp"

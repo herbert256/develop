@@ -819,12 +819,16 @@ LC_ALL=C awk -F'\t' \
         # rings hold Warnings too, and a Warning alone raised "ERRORS IN SERVER
         # LOG AFTER LAST TRANSFER". The rings are capped at 10 lines, newest
         # first, so scanning them for the level is cheap.
-        bdt = ""
+        # … and THAT line itself (2026-09-12, user request): its message (ring
+        # field 5) and session id (field 6) ride along as annotation fields
+        # 35-36, so the subscription page can show the evidence right under
+        # the banner
+        bdt = ""; bses = ""; bmsg = ""
         nb = split(conn, a2, "\037")
         for (i = 0; i <= nb; i++) {
             if (i == 0) { if (t in pt) f = SRV "/" pt[t] "/" e "_err_warn.tsv"; else continue }
             else { f = a2[i]; sub(/\.tsv$/, "_err_warn.tsv", f) }
-            while ((getline l < f) > 0) { n = split(l, b2, "\t"); if (n >= 3 && b2[3] == "E" && b2[1] " " b2[2] > bdt) bdt = b2[1] " " b2[2] }
+            while ((getline l < f) > 0) { n = split(l, b2, "\t"); if (n >= 3 && b2[3] == "E" && b2[1] " " b2[2] > bdt) { bdt = b2[1] " " b2[2]; bmsg = (n >= 5 ? b2[5] : ""); bses = (n >= 6 ? b2[6] : "") } }
             close(f)
         }
         grp = ""
@@ -848,8 +852,8 @@ LC_ALL=C awk -F'\t' \
                (t == "SITE" && (e in TWINS)) ? TWINS[e] : ""
         af = SDIR "/a." t
         if (af != aprev) { if (aprev != "") close(aprev); aprev = af }
-        printf "%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\n", \
-            t, e, base, mv, resv, isblue, sblue, od1, od2, od3, od4, sdh, sda, sdl, cr, crh, fdir, lloc, lmask, rloc, rmask, cfa, acl, ach, conn, bdt, grp, suba, subl, subh, nosub, twin, od5, od6 > af
+        printf "%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\n", \
+            t, e, base, mv, resv, isblue, sblue, od1, od2, od3, od4, sdh, sda, sdl, cr, crh, fdir, lloc, lmask, rloc, rmask, cfa, acl, ach, conn, bdt, grp, suba, subl, subh, nosub, twin, od5, od6, bses, bmsg > af
         }
         # ---- the drop rules (the two former filter passes) + the s. slice ---
         if ($3 == 13) next

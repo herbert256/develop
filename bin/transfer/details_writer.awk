@@ -191,14 +191,21 @@ function blue_box(   f, line, i1, bmsg) {
     } else close(f)
 }
 
-function err_after_transfer_banner() {
+function err_after_transfer_banner(   m9) {
     if (have_tot != 1 || tot_last == "" || a_bannerdt == "") return
     if (a_bannerdt > tot_last) {
         # when the page carries its own "Server log error" section (the flow
-        # is in the server-failing set), the banner links straight to it;
-        # otherwise the log still sits at the bottom and the old text holds
-        if (pend_t == "SITE" && (toupper(pend_e) in SLG))
-            emitl("ALERT\tERROR IN SERVER LOG AFTER LAST TRANSFER - SEE \t#srv-log-error\t'Server log error'")
+        # is in the server-failing set), the banner is followed by the error
+        # line itself — date/time, session id and message, a LOGCARD
+        # (2026-09-12, user request; it used to link the section instead,
+        # and publish-details.sh drops the UCx verdict prose above it, which
+        # only paraphrased this line). Otherwise the log still sits at the
+        # bottom and the old text holds.
+        if (pend_t == "SITE" && (toupper(pend_e) in SLG)) {
+            emitl("ALERT\tERROR IN SERVER LOG AFTER LAST TRANSFER")
+            if (a_bmsg != "") { m9 = a_bmsg; gsub(/\t/, " ", m9)
+                emitl("LOGCARD\t" a_bannerdt (a_bses != "" ? "  \302\267  session " a_bses : "") "\t" m9) }
+        }
         else
             emitl("ALERT\tERRORS IN SERVER LOG AFTER LAST TRANSFER - SEE LOG AT BOTTOM OF THIS PAGE")
     }
@@ -1301,6 +1308,7 @@ NF < 4 { next }
         a_cfgacct = A[22]; a_acl = A[23]; a_ach = A[24]; a_conn = A[25]; a_bannerdt = A[26]; a_grp = A[27]
         a_suba = A[28]; a_subl = A[29]; a_subh = A[30]; a_nosub = A[31]; a_twin = A[32]
         x_oneacct = A[8]; x_onedom = A[9]; x_oneapp = A[10]; x_oneptn = A[11]; x_onelgc = A[33]; x_onebl = A[34]
+        a_bses = A[35]; a_bmsg = A[36]   # the banner error line itself: session id + message (2026-09-12)
         if (t == "SITE") {
             a_sdh = A[12]; a_sda = A[13]; a_sdl = A[14]
             a_cron = A[15]; a_cronh = A[16]

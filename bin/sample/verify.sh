@@ -349,6 +349,20 @@ check $([ "$hdr" = "|Files|Recovered|Resubmit|Transfers|State|Date|First|Last|Co
 n=$(grep -c '<table' docs/transfer/topview.html 2>/dev/null || true)
 check $([ "${n:-0}" = 1 ] && echo 0 || echo 1) "transfer/topview.html has ${n:-0} table(s), expected exactly 1 (the six groups share one per-day table)"
 
+# the after-last-transfer banner with its log line (2026-09-12, user
+# request): the planted kaput flow (estate.awk UC1_DPL_LEDGER_DUNDER —
+# every File delivered, then a connection-failure E line) is server-failing,
+# its page opens with the bare ERROR IN SERVER LOG AFTER LAST TRANSFER banner,
+# a LOGCARD carrying the line's date/time + session id right under it, and
+# NO "used to work and now fails" verdict prose above
+ks=$(awk -F'\t' '$1 == "UC1_DPL_LEDGER_DUNDER" { print $2; exit }' "data/transfer/reports/details/subscriptions/_slugmap.tsv" 2>/dev/null)
+kp="docs/details/subscriptions/${ks:-missing}.html"
+check $([ -n "$ks" ] && [ -f "$kp" ] && echo 0 || echo 1) "the kaput flow UC1_DPL_LEDGER_DUNDER has no detail page ('${ks:-no slug}')"
+check $([ "$(grep -c 'UC1_DPL_LEDGER_DUNDER' data/transfer/reports/_srvsubs-map.tsv 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the kaput flow is not in the server-failing set (_srvsubs-map.tsv)"
+check $([ "$(grep -c '<p class="alert">[^<]*ERROR IN SERVER LOG AFTER LAST TRANSFER</[a-z]*></p>\|<p class="alert">ERROR IN SERVER LOG AFTER LAST TRANSFER</p>' "$kp" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the kaput page lacks the bare ERROR IN SERVER LOG AFTER LAST TRANSFER banner"
+check $([ "$(grep -c 'class="logcard"><span class="lc-when">[0-9-]* [0-9:.]*  · *session [0-9a-f]*</span>' "$kp" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the kaput page lacks the log line card (date/time · session id) under the banner"
+check $([ "$(grep -c 'used to work and now fails' "$kp" 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the kaput page still carries the verdict prose above the banner"
+
 # the NON-UC-NAMED hybrid flows must come out attributed to their real site
 # (the reverse profile fallback) — never UCx_ — and every planted one is a
 # configured subscription of the base roster

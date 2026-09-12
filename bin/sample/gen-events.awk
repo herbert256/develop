@@ -659,6 +659,19 @@ FILENAME == CAL {
 
     for (ci = 1; ci <= NCAL; ci++) {
         jd = CJ[ci] + 0
+        # the KAPUT shape (2026-09-12): a quiet flow that delivered every File
+        # logs, two days after its last one, a single "Connection failure
+        # while <flow> tried to connect …" E line on its own session — the
+        # after-last-transfer red flip: result.sh reds it, failed.sh lists it
+        # as server-failing, its detail page opens with the ERROR IN SERVER
+        # LOG AFTER LAST TRANSFER banner and that line. Tagged flow only, its
+        # own per-day seed, so no other flow-day moves.
+        if (hastag("kaput") && jd == TOJ + 2) {
+            base = jd * 86400000
+            srnd(hash(ENVN "|ev|" SITE "|" jd))
+            S(base + cd_ms() + rint(3600000), "E", "TM", sesshex(), "Connection failure while " srvsite() " tried to connect to remote host " HOST ":" PORT " as user " ACCT ": com.maverick.ssh.SshException: The connection did not complete")
+            continue
+        }
         if (jd < FROMJ || jd > TOJ) continue
         base = jd * 86400000
         srnd(hash(ENVN "|ev|" SITE "|" jd))
