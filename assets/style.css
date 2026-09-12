@@ -37,6 +37,19 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
    a fixed "Cloud" brand is gone) */
 .topbar .brand { color:#fff; font-weight:bold; font-size:1.05rem; }
 .topbar .brand:hover { text-decoration:underline; }
+/* THE ENVIRONMENT SWITCH (2026-09-12, user request): on a RUNTIME checkout
+   the brand slot holds the pair "Acceptance / Production" (.envpair) — the
+   ACTIVE site (.envcur) bold and YELLOW, its link the home page; the other
+   one plain white, its href the same page on the other site (filled in the
+   browser by window.AXWAY_ENVLINKS — publish_lib.sh ENVSWITCH_JS). The
+   develop/sample checkout keeps the single .brand link. The yellow is not in
+   the dark-theme maps on purpose: it must stay yellow on both themes. */
+.topbar .envpair { display:inline-flex; align-items:center; gap:0.45rem; }
+.topbar .envpair:hover { text-decoration:none; }
+.topbar .envlink { color:#fff; font-weight:normal; font-size:1.05rem; }
+.topbar .envlink:hover { text-decoration:underline; }
+.topbar .envlink.envcur { color:#ffd400; font-weight:bold; }
+.topbar .envsep { color:#fff; opacity:0.7; }
 .topbar .tright { color:#fff; font-size:0.95rem; white-space:nowrap; }
 /* hover dropdowns of report links (left-anchored: the menus live on the bar's left side) */
 .dd { position:relative; }

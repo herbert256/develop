@@ -51,7 +51,21 @@ committed, NEVER-synced **`input/environment.txt`** — one line, the display la
 the label is the TEXT of the top bar's brand/home link (report.js `buildTopbar` reads `env:"…"`
 from `topbar-data.js`; `render_topbar` bakes the same link on the help/build pages; "Cloud" on a
 checkout without the file — 2026-09-12, the separate label span beside a fixed "Cloud" brand is
-gone) and the home title (`Cloud Reports — <label>`); it derives the runtime
+gone) and the home title (`Cloud Reports — <label>`). **THE ENVIRONMENT SWITCH** (2026-09-12,
+user request, later the same day): on a RUNTIME checkout (`ENV_KEY` acceptance|production —
+`env_has_switch`) the brand slot holds the pair **Acceptance / Production** instead — the ACTIVE
+site bold and YELLOW (`.envcur`), its link the home page; the OTHER one the SAME PAGE on the
+other site, whose host differs per viewer, so its href is computed in the browser, never baked:
+`window.AXWAY_ENVLINKS()` (publish_lib `ENVSWITCH_JS`, the ONE implementation; the four URLs in
+`ENV_SITES_JS` — localhost → `http://localhost/runtime-{acceptance,production}/`, any other host
+→ the two GitHub Pages sites) fills every `a[data-envto]` from its `data-root` (the page's
+docs-root prefix) + the page's root-relative path + query + hash; the other site answers a
+missing page with its own 404 (GitHub Pages serves `docs/404.html`; the local Apache its
+default). It ships inside `topbar-data.js` (report.js `buildTopbar` renders the pair from
+`envkey:"…"` and calls it) AND inline on the baked bar line (`render_topbar`: the help pages and
+the build report load no script; `apply_help_chrome` swaps the whole line, so the script stays on
+it). The develop/sample checkout keeps its single "Sample" brand link. `TB_VER` folds the key
+and the URLs. KEEP the two markups in step; it derives the runtime
 inbox prefixes (Acceptance → `acc*`, Production → `prd*` and `prod*`, case-insensitive; any other
 label = the inbox skipped with a note) and names the outbox archives
 (`build/st-reports-<key>_<stamp>.7z` and the outbox repo's `st-reports-<key>.7z`; the `~/cloud/`
@@ -74,9 +88,10 @@ checkout with logs but no config export: it synthesizes the two JSONs from the t
 - **The top bar is RUNTIME**: pages bake only that placeholder; report.js `buildTopbar` renders
   the full bar from `docs/assets/topbar-data.js` (written by `ensure_assets`: the
   `transfer/server/analyses` menu strings with their `@` placeholder, `monitor:0|1`,
-  `coreid:"<url>"`, `env:"<label>"`; `?v=` stamp `TB_VER` folds the flag, the template and the
-  label). The help/build pages bake full chrome (`render_shared_topbar` → `render_topbar BASE
-  HELPSLUG`) — KEEP THE TWO IN STEP.
+  `coreid:"<url>"`, `env:"<label>"`, `envkey:"<key>"` + the `AXWAY_ENVLINKS` switch function;
+  `?v=` stamp `TB_VER` folds the flag, the template, the label, the key and the site URLs). The
+  help/build pages bake full chrome (`render_shared_topbar` → `render_topbar BASE HELPSLUG`, the
+  switch script inline on the bar line) — KEEP THE TWO IN STEP.
 - report.js has no `pageEnv`/`setupEnvSwitch`; the sessionStorage keys carry no env prefix; the
   `report-area` meta is the area alone.
 

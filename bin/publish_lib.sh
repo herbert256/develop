@@ -713,7 +713,25 @@ render_topbar() {
     # right icons. The precomputed menu strings carry an "@" placeholder; swap
     # it for this page's prefix.
     esc "${ENV_LABEL:-Cloud}"; brand=$ESC
-    printf '<div class="topbar"><a class="brand" href="%s">%s</a><span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch.html" title="Search" aria-label="Search">&#128269;</a></span>' "$home" "$brand" "$base" "$base"
+    if env_has_switch; then
+        # THE ENVIRONMENT SWITCH (2026-09-12, user request; ENVSWITCH_JS): the
+        # pair "Acceptance / Production" — the active one (.envcur: bold,
+        # yellow) is the home link; the other one (data-envto) is filled by
+        # window.AXWAY_ENVLINKS() with the SAME PAGE on the other site, from
+        # data-root (this page's docs-root prefix). KEEP IN STEP with
+        # report.js buildTopbar, which renders the identical markup.
+        local _k=${ENV_KEY} _x _pair="" _e
+        for _e in acceptance production; do
+            [ -n "$_pair" ] && _pair="$_pair"'<span class="envsep">/</span>'
+            _x=$(printf '%s' "$_e" | awk '{ print toupper(substr($0, 1, 1)) substr($0, 2) }')
+            if [ "$_e" = "$_k" ]; then _pair="$_pair"'<a class="envlink envcur" href="'"$home"'">'"$_x"'</a>'
+            else _pair="$_pair"'<a class="envlink" data-envto="'"$_e"'" data-root="'"$base"'" href="#">'"$_x"'</a>'; fi
+        done
+        printf '<div class="topbar"><span class="brand envpair">%s</span>' "$_pair"
+    else
+        printf '<div class="topbar"><a class="brand" href="%s">%s</a>' "$home" "$brand"
+    fi
+    printf '<span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch.html" title="Search" aria-label="Search">&#128269;</a></span>' "$base" "$base"
     # the FILE SEARCH entry (2026-08), mirroring report.js buildTopbar:
     # between the search icon and the report menus
     printf '<a class="dashlink" href="%sfile-search-24-hours.html">Files</a>' "$base"
@@ -728,7 +746,12 @@ render_topbar() {
     printf '<a class="searchbtn" href="%sreport-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a>' "$base"
     printf '<a class="searchbtn" href="%ssitemap.html" title="Site map" aria-label="Site map">&#128506;</a>' "$base"
     [ -n "$helpslug" ] && printf '<a class="helpbtn" href="%shelp/%s.html" title="Help" aria-label="Help">?</a>' "$base" "$helpslug"
-    printf '</span></div>\n'
+    printf '</span></div>'
+    # the baked-chrome pages load no report.js / topbar-data.js, so the switch
+    # function rides inline right after its anchors (ONE line: apply_help_chrome
+    # swaps the whole bar line — the script must stay on it)
+    if env_has_switch; then printf '<script>%swindow.AXWAY_ENVLINKS();</script>' "$ENVSWITCH_JS"; fi
+    printf '\n'
 }
 # (The site-wide fixed FOOTER BAR was removed 2026-07, with its "Build report"
 # link and build timestamp. The build report is reachable from the SITE MAP,
@@ -2548,7 +2571,24 @@ TB_MON=0; [ -f data/dashboards/reports/monitor.rpt ] && TB_MON=1
 # ENVIRONMENT LABEL (bin/envlabel.sh), which the bar shows as a static span.
 _coreid_url() { [ -f "$1" ] && awk '/^[ \t]*#/ || /^[ \t]*$/ { next } { sub(/^[ \t]+/, ""); sub(/[ \t\r]+$/, ""); print; exit }' "$1" || true; }
 TB_CID=$(_coreid_url input/coreid-url.txt)
-TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU$TB_MON$TB_CID${ENV_LABEL:-}" | cksum | cut -d' ' -f1)
+# THE ENVIRONMENT SWITCH (2026-09-12, user request — back after the 2026-09-11
+# env split retired the data-twin crosslink): a RUNTIME checkout's top bar
+# leads with "Acceptance / Production" — the ACTIVE one bold and yellow, its
+# link the home page; the OTHER one the SAME PAGE on the other site, which
+# must serve its own 404 when the page is not there (GitHub Pages: docs/
+# 404.html). The other site's host differs per viewer, so the hrefs are
+# computed in the browser (never baked): on localhost the local checkouts,
+# anywhere else the GitHub Pages sites. ENV_SITES_JS holds the four URLs;
+# ENVSWITCH_JS is the ONE implementation — window.AXWAY_ENVLINKS() fills
+# every a[data-envto] from its data-root (the page's docs-root prefix) —
+# shipped inside topbar-data.js (report.js calls it after buildTopbar) AND
+# inline after the baked bar (render_topbar: help pages, build report). The
+# develop/sample checkout keeps its single "Sample" brand link.
+ENV_SITES_JS='{local:{acceptance:"http://localhost/runtime-acceptance/",production:"http://localhost/runtime-production/"},remote:{acceptance:"https://probable-adventure-l6y6k83.pages.github.io/",production:"https://expert-adventure-9myme9m.pages.github.io/"}}'
+ENVSWITCH_JS='window.AXWAY_ENVLINKS=function(){var S='"$ENV_SITES_JS"',h=location.hostname,L=(h==="localhost"||h==="127.0.0.1")?S.local:S.remote,A=document.querySelectorAll("a[data-envto]"),i,a,b,r,p;for(i=0;i<A.length;i++){a=A[i];b=L[a.getAttribute("data-envto")];if(!b)continue;r=new URL(a.getAttribute("data-root")||"./",location.href).pathname;p=location.pathname.indexOf(r)===0?location.pathname.slice(r.length):"";a.href=b+p+location.search+location.hash}};'
+# the pair is a RUNTIME feature: only the two runtime keys get it
+env_has_switch() { [ "${ENV_KEY:-}" = acceptance ] || [ "${ENV_KEY:-}" = production ]; }
+TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU$TB_MON$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS" | cksum | cut -d' ' -f1)
 
 # Copy the shared assets into docs/ and write .nojekyll. Idempotent, so each
 # publish script can call it and still produce a valid site when run on its own.
@@ -2592,10 +2632,14 @@ ensure_assets() {
     a=${a//\\/\\\\}; a=${a//\"/\\\"}
     # + the CoreId -> File Tracking URL template (TB_CID) and the environment
     # label (ENV_LABEL), both baked as plain strings
-    local c=${TB_CID:-} e=${ENV_LABEL:-}
+    local c=${TB_CID:-} e=${ENV_LABEL:-} k=${ENV_KEY:-}
     c=${c//\\/\\\\}; c=${c//\"/\\\"}
     e=${e//\\/\\\\}; e=${e//\"/\\\"}
-    local _tb; printf -v _tb 'window.AXWAY_TB={transfer:"%s",server:"%s",analyses:"%s",monitor:%s,coreid:"%s",env:"%s"};' "$t" "$s" "$a" "${TB_MON:-0}" "$c" "$e"
+    k=${k//\\/\\\\}; k=${k//\"/\\\"}
+    # + envkey (report.js renders the Acceptance / Production pair for the
+    # two runtime keys) and the ENVIRONMENT SWITCH function itself
+    # (ENVSWITCH_JS — the one implementation, see TB_VER above)
+    local _tb; printf -v _tb 'window.AXWAY_TB={transfer:"%s",server:"%s",analyses:"%s",monitor:%s,coreid:"%s",env:"%s",envkey:"%s"};%s' "$t" "$s" "$a" "${TB_MON:-0}" "$c" "$e" "$k" "$ENVSWITCH_JS"
     _asset_put docs/assets/topbar-data.js "$_tb"
     [ -f docs/.nojekyll ] || : > docs/.nojekyll
 }

@@ -392,6 +392,20 @@ fi
 n=$(awk -F'\t' '$4 != "" && ($24 == "" || $24 < $4 " " $5) { n++ } END { print n+0 }' "$F" 2>/dev/null)
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_files.tsv has $n dated File(s) with an empty end (col 24) or an end before the start"
 
+# the ENVIRONMENT SWITCH (2026-09-12, user request): the sample checkout keeps
+# its single "Sample" brand link — no Acceptance / Production pair anywhere —
+# while the shipped runtime (topbar-data.js, report.js) carries the switch
+# function with the four site URLs, so a runtime checkout renders the pair
+tbd="docs/assets/topbar-data.js"
+check $([ "$(grep -c 'envkey:"sample"' "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js does not carry envkey:\"sample\""
+check $([ "$(grep -c 'window.AXWAY_ENVLINKS=function' "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js does not define the AXWAY_ENVLINKS switch function"
+for u in 'http://localhost/runtime-acceptance/' 'http://localhost/runtime-production/' 'https://probable-adventure-l6y6k83.pages.github.io/' 'https://expert-adventure-9myme9m.pages.github.io/'; do
+    check $([ "$(grep -c "$u" "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js lacks the site URL $u"
+done
+check $([ "$(grep -c 'data-envto' docs/assets/report.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "report.js does not render the Acceptance / Production pair (data-envto)"
+check $([ "$(grep -c '<a class="brand" href="../index.html">Sample</a>' docs/help/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the help page bar does not lead with the single Sample brand link"
+check $([ "$(grep -rl 'data-envto' docs --include=*.html 2>/dev/null | wc -l | tr -d ' ')" = 0 ] && echo 0 || echo 1) "a sample page bakes the Acceptance / Production pair (data-envto)"
+
 # the Could not send file report (2026-09-12, user request): the planted
 # cnsend flow (estate.awk UC1_CD_IDM_VANDELAY) closes every failed burst
 # with an AR0074 line — the report lists them newest first, Date & time ·

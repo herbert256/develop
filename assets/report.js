@@ -3720,8 +3720,28 @@
     // request: no separate label beside it); a site without the file says
     // "Cloud"
     var brand = (typeof M.env === "string" && M.env) ? M.env : "Cloud";
+    // THE ENVIRONMENT SWITCH (2026-09-12, user request): a RUNTIME checkout
+    // (envkey acceptance|production) leads with the pair "Acceptance /
+    // Production" instead — the active one (.envcur: bold, yellow) links the
+    // home page; the other one carries data-envto + data-root and
+    // window.AXWAY_ENVLINKS() (defined in topbar-data.js — the ONE
+    // implementation, publish_lib.sh ENVSWITCH_JS) fills it with the SAME
+    // PAGE on the other site (localhost -> the local checkouts, elsewhere the
+    // GitHub Pages sites). KEEP IN STEP with publish_lib.sh render_topbar,
+    // which bakes the identical markup for the help/build pages.
+    var brandHtml, keys = ["acceptance", "production"], ki, kk, pair = "";
+    if (M.envkey === "acceptance" || M.envkey === "production") {
+      for (ki = 0; ki < keys.length; ki++) {
+        kk = keys[ki];
+        if (pair) pair += '<span class="envsep">/</span>';
+        pair += (kk === M.envkey)
+          ? '<a class="envlink envcur" href="' + b + 'index.html">' + kk.charAt(0).toUpperCase() + kk.slice(1) + "</a>"
+          : '<a class="envlink" data-envto="' + kk + '" data-root="' + esc(b) + '" href="#">' + kk.charAt(0).toUpperCase() + kk.slice(1) + "</a>";
+      }
+      brandHtml = '<span class="brand envpair">' + pair + "</span>";
+    } else brandHtml = '<a class="brand" href="' + b + 'index.html">' + esc(brand) + "</a>";
     tb.innerHTML =
-      '<a class="brand" href="' + b + 'index.html">' + esc(brand) + "</a>" +
+      brandHtml +
       '<span class="entgroup"><a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
       '<a class="searchbtn" href="' + b + 'search.html" title="Search" aria-label="Search">🔍</a></span>' +
       // the FILE SEARCH entry (2026-08): the leader of the windowed pages,
@@ -3743,6 +3763,7 @@
       '<a class="searchbtn" href="' + b + 'sitemap.html" title="Site map" aria-label="Site map">🗺</a>' +
       (help ? '<a class="helpbtn" href="' + b + "help/" + help + '.html" title="Help" aria-label="Help">?</a>' : "") +
       "</span>";
+    if (typeof window.AXWAY_ENVLINKS === "function") window.AXWAY_ENVLINKS();   // the switch's other-site href (see above)
   }
 
   // ---- CSV download (2026-08-30, user request): every table exports itself
