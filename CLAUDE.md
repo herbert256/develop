@@ -860,7 +860,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   lines, with their level, of the flow's NEWEST drill page — the page the home row opens —
   PLUS, since 2026-09-10, an Info `"Transfer end logged."` bookend with `"status":"error"` whose
   transferId is one of the page's own legs: the only evidence a silently dropped connection
-  leaves, read by the classifier as **"Connection dropped mid-transfer"**, its LAST rule)
+  leaves, read by the classifier as **"Unknown error"**, its LAST rule)
   classified **FIRST-ERROR-first**, warnings and the bookend only after. The opening error is the CAUSE and
   everything after it consequence: a rejected host key, then "failed to create connection", then
   the connection failure, then a trailing ARRC0029 "No files were processed during step

@@ -921,7 +921,7 @@ LC_ALL=C awk -F'\t' -v CAND=8 "$(cat "$LIB_DIR/../flip-reason.awk")"'
     # (2026-09-10): the Info line {"message":"Transfer end logged.",
     # "status":"error",…} whose transferId is in the legs table (TABLE 2,
     # cell 9) — the only evidence a silently dropped connection leaves; the
-    # classifier reads it "Connection dropped mid-transfer" and, walking
+    # classifier reads it "Unknown error" and, walking
     # errors first, lets any real error line outrank it
     function ownbookend(m,   t9) {
         if (index(m, "{\"message\":\"Transfer end logged.\"") != 1 || index(m, "\"status\":\"error\"") == 0) return 0

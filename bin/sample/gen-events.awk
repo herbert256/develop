@@ -305,7 +305,7 @@ function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj,
         # half the drops are followed by the client's successful re-download
         # (the ok bookend settles the File); the other half end in the error
         # bookend alone — the File stays Failed and its only evidence is that
-        # bookend: reason "Connection dropped mid-transfer" (2026-09-10)
+        # bookend: reason "Unknown error" (2026-09-10)
         if (rnd() < 0.5) s_bookend(tc + dcol + 1350, sesshex(), "end", "ok", fn)
         # the dropped connection also logs an Error naming the flow ON THE
         # SAME SESSION as the error bookend below (2026-09-12): a transfer-

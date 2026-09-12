@@ -129,7 +129,9 @@ function flip_reason(msg,   m) {
     # partner client tearing its connection down mid-transfer: the platform
     # books the error silently, no Error/Warning line anywhere. Any real
     # error line above outranks it (errors first, then the rest in page
-    # order — the bookend closes the transfer, so it comes last).
-    if (m ~ /"message":"transfer end logged\."/ && m ~ /"status":"error"/) return "Connection dropped mid-transfer"
+    # order — the bookend closes the transfer, so it comes last). Reads
+    # "Unknown error" since 2026-09-12 (user request; it was "Connection
+    # dropped mid-transfer") — no error line says what went wrong.
+    if (m ~ /"message":"transfer end logged\."/ && m ~ /"status":"error"/) return "Unknown error"
     return ""
 }
