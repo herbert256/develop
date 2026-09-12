@@ -79,6 +79,11 @@ IPH="$ROOT/input/ip/ip-hosts.tsv"
 # the DERIVED use case map: a production hybrid flow carries no UC prefix, so
 # "is this a UC3" must ask the config, not the name (2026-08-31 audit)
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
+# the SESSION VOTE (bin/build/result.sh _build_ringattr, 2026-09-12 user rule:
+# read all server log lines with the same session id to find the right
+# subscription): a connected-ring line naming no flow whose session names ONE
+# flow is that flow's trouble alone — never a sibling's on the shared owner
+SV="$ROOT/data/blue/_sessvote.tsv"; [ -f "$SV" ] || SV=/dev/null
 # which flow a ring line NAMES (bin/subname.awk, the same helper result.sh's
 # attribution uses): a connected-ring line naming a flow is THAT flow's
 # evidence, never a sibling's (2026-09-05, user report) — see the join below
@@ -97,7 +102,7 @@ ensure_config
 # Rebuild when the transfer cache, the server err/warn rings (the server
 # _subscriptions.tsv mention cache is a representative — rewritten in the same
 # parse pass as the per-name dirs), the connection maps, or this script change.
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILES" "$CACHE_DIR/_subscriptions.tsv" "$SA" "$SL" "$SH" "$SUBRES"
+skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILES" "$CACHE_DIR/_subscriptions.tsv" "$SA" "$SL" "$SH" "$SUBRES" "$SV"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # 1) the LAST transfer per subscription (max sortkey), keeping only those whose
@@ -171,8 +176,9 @@ mapargs+=("$lastokf")
 [ -f "$SH" ] && mapargs+=("$SH")
 [ -f "$IPH" ] && mapargs+=("$IPH")
 
-totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v rowfile="$rowfile" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" -v ucdf="$UCDF" -v RNF="$RENAMES_FILE" "$RENAMES_AWK$SUBNAME_AWK$(cat "$ROOT/bin/flip-reason.awk")$LOGLINES_AWK"'
+totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v rowfile="$rowfile" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" -v ucdf="$UCDF" -v svf="$SV" -v RNF="$RENAMES_FILE" "$RENAMES_AWK$SUBNAME_AWK$(cat "$ROOT/bin/flip-reason.awk")$LOGLINES_AWK"'
     BEGIN { while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf)
+            while ((getline l9 < svf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[1] != "") SV9[a9[1]] = a9[2] } close(svf)   # the session vote (see SV above)
             rn_load(RNF); ros_load(subres) }
     function srcof(f) { return (f ~ /\/subscriptions\//) ? "Subscription" : (f ~ /\/accounts\//) ? "Account" : (f ~ /\/hosts\//) ? "Host" : "Login" }
     # A RING OWNER SERVING SEVERAL FLOWS (2026-08-31 audit) speaks for all of
@@ -236,6 +242,10 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
         # such lines the same way, its attribution already carrying them to
         # UC3_X)
         nmd = (csrc == "Subscription") ? "" : subname($5)
+        # … or its SESSION names one (2026-09-12, user rule — the vote of
+        # bin/build/result.sh _build_ringattr): the same restriction to that
+        # one flow; a session naming two flows (\001) or none changes nothing
+        if (nmd == "" && csrc != "Subscription" && NF >= 6 && $6 != "" && ($6 in SV9) && SV9[$6] != "" && SV9[$6] != "\001") nmd = SV9[$6]
         dt = $1 " " $2
         for (i = 1; i <= ntgt; i++) {
             s = tgt[i]

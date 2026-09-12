@@ -172,8 +172,15 @@ in the area orchestrators and feed the boxes and day pages.
    the went-kaput join), classifies that one newest message with `flip-reason.awk` and drops the
    flow entirely when it reads as a DEPLOY defect (Route stopped / Receive File As not set —
    those stay green, on the Deploy errors report); the surviving stamp merges into the same
-   after-last-transfer test, clean-poll keep included. **A ring owner serving SEVERAL flows
-   counts only for a CONNECTION-level line** (2026-08-31 audit — Connection failures, Wrong
+   after-last-transfer test, clean-poll keep included. **A line whose SESSION names one flow
+   is that flow's alone** (2026-09-12, user rule: for a server error with a host, read all the
+   log lines with the same session id to find the right subscription): `_build_ringattr`'s
+   session vote is persisted as `blue/_sessvote.tsv` (session → the one flow its lines name /
+   its transfer legs carried, `\001` when two) and both wholesale joins — `_build_kaputflip`
+   and went-kaput.sh — skip such a line for the siblings (a production host shared by two
+   flows reddened the wrong one on an "Authentication failure connecting to remote host …"
+   whose session's poll lines named the other flow's transfer site). **A ring owner serving
+   SEVERAL flows counts only for a CONNECTION-level line** (2026-08-31 audit — Connection failures, Wrong
    server fingerprint, Login errors (out): the credential/endpoint every flow on it uses is
    broken); a flow-level line on a shared account/login/host concerns one of its flows and
    reaches the colour only through `_build_ringattr`. Before, eight production flows on one

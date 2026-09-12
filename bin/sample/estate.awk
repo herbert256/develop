@@ -263,6 +263,7 @@ function build_roster() {
     addf(1, "AB",  "POLIS",    "UMBRELLA", "",  1.5, 0.03, "")
     addf(1, "ZG",  "PENSION",  "HOOLI",    "",  4, 0.04, "hybrid")
     addf(1, "IT",  "CRM",      "STARK",    "",  1.5, 0.2, "reason=fingerprint")
+    addf(1, "IT",  "LEADS",    "STARK",    "",  1.0, 0,   "quiet")   # every File OK, then quiet — shares the STARK host with the authout poll-failing UC3 below, whose "Authentication failure connecting to remote host …" must NOT redden this flow: the session votes the UC3 (2026-09-12)
     addf(1, "ZG",  "INVOICE",  "HOOLI",    "",  1.2, 0.2, "reason=readtimeout")   # the "Read timed out" reason (2026-09-08)
     addf(1, "APS", "RISK",     "TYRELL",   "",  4, 0.15, "reason=connfail,g2r")
     addf(1, "CD",  "INVOICE",  "VANDELAY", "",  1.5, 0.2, "reason=routestop")

@@ -234,6 +234,17 @@ source "$ROOT/bin/renames.sh"   # rn_canon_pfx: the log names a flow as it was c
 # its E-level residue goes to the ring's own entity instead (orphan_red).
 RINGATTR="$BLUEDIR/_ringattr.tsv"    # subscription <TAB> newest attributed E-level stamp
 RINGORPH="$BLUEDIR/_ringorphan.tsv"  # ring kind <TAB> name <TAB> newest E-level line attributable to NO flow
+# the SESSION VOTE itself, kept for the two wholesale joins (2026-09-12, user
+# rule: "for server errors with a host, read all server log lines with the
+# same session-id to find the right subscription"): session <TAB> the ONE
+# subscription the session's other lines name (pass 2), or the one site its
+# transfer legs carried (pass 3), or \001 when they name two. A connected-ring
+# line whose session votes one flow is THAT flow's evidence — carried to it
+# here — and must not be taken wholesale for every sibling on the shared
+# host/account/login (_build_kaputflip, went-kaput.sh). A production host
+# shared by two flows reddened the wrong one on an authentication failure
+# whose session named the other flow's transfer site.
+SESSVOTE="$BLUEDIR/_sessvote.tsv"
 _build_ringattr() {
     local rings=() f tmp
     for f in "$SRVC"/hosts/*_err_warn.tsv "$SRVC"/accounts/*_err_warn.tsv "$SRVC"/logins/*_err_warn.tsv; do
@@ -242,6 +253,7 @@ _build_ringattr() {
     if [ ${#rings[@]} -eq 0 ]; then
         : > "$RINGATTR.tmp"; commit_tmp "$RINGATTR"
         : > "$RINGORPH.tmp"; commit_tmp "$RINGORPH"
+        : > "$SESSVOTE.tmp"; commit_tmp "$SESSVOTE"
         return 0
     fi
     tmp=$(mktemp "${TMPDIR:-/tmp}/axrattr.XXXXXX")
@@ -303,6 +315,8 @@ _build_ringattr() {
             ' "$TRANSFERS" >> "$tmp.map"
         fi
     fi
+    # the vote, persisted for _build_kaputflip and went-kaput.sh (see SESSVOTE)
+    LC_ALL=C sort -u "$tmp.map" > "$SESSVOTE.tmp"; commit_tmp "$SESSVOTE"
     awk -F'\t' -v MAP="$tmp.map" -v ORPH="$RINGORPH.tmp" '
         BEGIN { while ((getline l < MAP) > 0) { n = split(l, a, "\t")
                     if (n >= 2 && a[2] != "\001") M[a[1]] = a[2]; else if (n >= 2) M[a[1]] = "" }
@@ -368,13 +382,22 @@ _build_kaputflip() {
     # its siblings — is THAT flow's evidence and reaches it through
     # _build_ringattr; taken wholesale here it reddened every sibling on the
     # shared owner, an inbound UC1 flow included (2026-09-05, user report).
-    awk -F'\t' -v RNF="$RENAMES_FILE" -v SUBB="$BASE/_subscriptions.tsv" "$RENAMES_AWK$SUBNAME_AWK"'
-        BEGIN { rn_load(RNF); ros_load(SUBB) }
+    # … and the same for a line whose SESSION names a flow (2026-09-12, user
+    # rule — SESSVOTE, the vote _build_ringattr just took): the newest E line
+    # of a host shared by two flows is an "Authentication failure connecting
+    # to remote host …" that names no flow, but the poll lines of its session
+    # name one flow's transfer site — that flow's evidence alone, never the
+    # sibling's. A session naming two flows (\001) or none votes nothing and
+    # the wholesale rule below still applies.
+    awk -F'\t' -v RNF="$RENAMES_FILE" -v SUBB="$BASE/_subscriptions.tsv" -v SV="$SESSVOTE" "$RENAMES_AWK$SUBNAME_AWK"'
+        BEGIN { rn_load(RNF); ros_load(SUBB)
+                while ((getline l < SV) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") V[a[1]] = a[2] } close(SV) }
+        function sessnamed(s) { return (s != "" && (s in V) && V[s] != "" && V[s] != "\001") }
         FNR == 1 { fdone = 0
             nm = FILENAME; sub(/_err_warn\.tsv$/, "", nm)
             kind = (nm ~ /\/accounts\//) ? "A" : (nm ~ /\/logins\//) ? "L" : "H"
             sub(/^.*\//, "", nm); if (kind == "H") nm = tolower(nm) }
-        !fdone && $3 == "E" && NF >= 5 && subname($5) == "" { printf "%s\t%s\t%s\t%s\n", kind, nm, $1 " " $2, substr($5, 1, 200); fdone = 1 }
+        !fdone && $3 == "E" && NF >= 5 && subname($5) == "" && !sessnamed($6) { printf "%s\t%s\t%s\t%s\n", kind, nm, $1 " " $2, substr($5, 1, 200); fdone = 1 }
     ' "${rings[@]}" > "$tmp"
     # pass 2: join per subscription (newest across its connected rings),
     # classify that ONE newest message, drop the deploy verdicts.

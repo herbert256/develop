@@ -307,6 +307,35 @@
     "type": "Subscription"
   },
   {
+    "businessId": "66c5264a-e2f8-440b-a41a-7b3cdab72d8b",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/66c5264a-e2f8-440b-a41a-7b3cdab72d8b",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_IT_LEADS_STARK",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "66c5264a-e2f8-440b-a41a-0000par00000", "name": "IT_LEADS_STARK", "comProfileId": "421ae356-2d5f-4bf7-a515-d367336aa9cb",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "66c5264a-e2f8-440b-a41a-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "IT_LEADS_STARK",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/IT_LEADS_STARK/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "11a848d0-672c-4983-b1f8-e964b62d47ea",
+    "flowName": "UC1_IT_LEADS_STARK",
+    "tags": ["BL_IT", "sample-estate"],
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
     "businessId": "2bcdc090-363d-4189-b555-e94c9894567f",
     "meta": {
       "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/2bcdc090-363d-4189-b555-e94c9894567f",
@@ -359,7 +388,7 @@
     },
     "flowId": "c8832546-392b-44fc-b55f-5ca6ad1d7ca0",
     "flowName": "UC1_APS_RISK_TYRELL",
-    "tags": ["BL_APS", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -388,7 +417,7 @@
     },
     "flowId": "67d35970-f636-453e-82c0-e4d59c8a2ed7",
     "flowName": "UC1_CD_INVOICE_VANDELAY",
-    "tags": ["sample-estate"],
+    "tags": ["BL_CD", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -560,7 +589,7 @@
     },
     "flowId": "5572dd22-074a-4910-90fe-970dfc1751a3",
     "flowName": "UC1_CB_MARKETING_WNK",
-    "tags": ["BL_CB", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -589,7 +618,7 @@
     },
     "flowId": "73a58dfe-34a3-4e4d-b97a-d6876406f48c",
     "flowName": "UC1_ODV_DMS_CYBERDYNE",
-    "tags": ["sample-estate"],
+    "tags": ["BL_ODV", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -763,7 +792,7 @@
     },
     "flowId": "c7473d90-f19b-406d-a6bb-1dcad0a27089",
     "flowName": "UC1_ZK_CLAIMS_BLACKMESA",
-    "tags": ["BL_ZK", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -792,7 +821,7 @@
     },
     "flowId": "2410c223-b1fa-4b03-b8b6-c477724fd60a",
     "flowName": "UC1_CD_IDM_VANDELAY",
-    "tags": ["sample-estate"],
+    "tags": ["BL_CD", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -962,7 +991,7 @@
     },
     "flowId": "be68bafe-a73b-4234-9a94-1e10d473e1f4",
     "flowName": "UC1_HR_ARCHIVE_ZORG",
-    "tags": ["BL_HR", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -991,7 +1020,7 @@
     },
     "flowId": "917dc688-4286-488f-8159-9d4bc14b5184",
     "flowName": "UC1_IT_BILLING_BLUTH",
-    "tags": ["sample-estate"],
+    "tags": ["BL_IT", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -1163,7 +1192,7 @@
     },
     "flowId": "dc05ccc6-ea6f-4306-a9dc-2bbc73a42b9c",
     "flowName": "UC1_APS_INVOICE_STARK",
-    "tags": ["BL_APS", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -1192,7 +1221,7 @@
     },
     "flowId": "326dc7b9-681a-4a2f-b8be-0b590664c66f",
     "flowName": "UC1_ODV_RISK_TYRELL",
-    "tags": ["sample-estate"],
+    "tags": ["BL_ODV", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -1360,7 +1389,7 @@
     },
     "flowId": "801e36b5-bc64-4817-ac96-28cb62ac1ead",
     "flowName": "UC2_CD_ARIVA_BLUTH",
-    "tags": ["BL_CD", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -1389,7 +1418,7 @@
     },
     "flowId": "6688ab22-75cd-40e3-97f8-c2707fa0f67f",
     "flowName": "UC2_CD_ARIVA_DUNDER",
-    "tags": ["sample-estate"],
+    "tags": ["BL_CD", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -1559,7 +1588,7 @@
     },
     "flowId": "e790ac93-fc0b-45e6-a060-f7ac7becc882",
     "flowName": "UC2_CB_VIDA_WAYNE",
-    "tags": ["BL_CB", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -1588,7 +1617,7 @@
     },
     "flowId": "b44e79a6-881f-4bc8-af43-6d9826ef29da",
     "flowName": "UC2_IT_MAIA_SOYLENT",
-    "tags": ["sample-estate"],
+    "tags": ["BL_IT", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -1762,7 +1791,7 @@
     },
     "flowId": "799fb71f-64e7-4b14-b8ba-5a3aac2f6e4c",
     "flowName": "UC3_AB_NAS_GLOBEX",
-    "tags": ["BL_AB", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -1791,7 +1820,7 @@
     },
     "flowId": "a17cf4a1-86ce-4436-b65a-af44c5bba8ec",
     "flowName": "UC3_APS_SYSHUB_SOYLENT",
-    "tags": ["sample-estate"],
+    "tags": ["BL_APS", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -1971,7 +2000,7 @@
     },
     "flowId": "433c491d-19ef-4c37-a9a4-b28fef257caf",
     "flowName": "UC3_SI_TELEMETRY_STARK",
-    "tags": ["BL_SI", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -2000,7 +2029,7 @@
     },
     "flowId": "f89a6601-fbff-42e6-9bbd-dddde543c75d",
     "flowName": "UC3_ODV_MERLIJN_SABRE_D",
-    "tags": ["sample-estate"],
+    "tags": ["BL_ODV", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -2178,7 +2207,7 @@
     },
     "flowId": "98680656-21e1-4473-8dac-f83bed3c064a",
     "flowName": "UC3_IT_DISPATCH_INITECH",
-    "tags": ["BL_IT", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -2208,7 +2237,7 @@
     },
     "flowId": "d858a18b-ae55-46f3-a9ca-54deca4056ca",
     "flowName": "UC3_WA_TELEMATICS_MONARCH",
-    "tags": ["sample-estate"],
+    "tags": ["BL_WA", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -2387,7 +2416,7 @@
     },
     "flowId": "09a294ba-7dd7-4ae9-96f6-009d5c794a84",
     "flowName": "UC3_FS_SAPBODS_PRIMATECH_I",
-    "tags": ["BL_FS", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -2417,7 +2446,7 @@
     },
     "flowId": "c6c21d6f-91b8-4018-9a62-1f070bbb5266",
     "flowName": "UC3_FS_SAPBODS_PRIMATECH_M",
-    "tags": ["sample-estate"],
+    "tags": ["BL_FS", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -2594,7 +2623,7 @@
     },
     "flowId": "18cd4fc5-157f-4710-8c70-41eea81ba362",
     "flowName": "UC3_AB_EXPORT_WAYNE",
-    "tags": ["BL_AB", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -2623,7 +2652,7 @@
     },
     "flowId": "32788f29-e592-404e-8cca-d2ea00ef7d5e",
     "flowName": "UC3_IT_FACTS_HOOLI",
-    "tags": ["sample-estate"],
+    "tags": ["BL_IT", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -2799,7 +2828,7 @@
     },
     "flowId": "794e2536-343b-44a9-8cf0-8cefdf51711f",
     "flowName": "UC4_CDV_KRP-TDI_WONKA",
-    "tags": ["BL_CDV", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -2828,7 +2857,7 @@
     },
     "flowId": "2e727c3f-1ed8-4f88-9b0c-f52d6774f341",
     "flowName": "UC4_IT_EKDSI_CYBERDYNE",
-    "tags": ["sample-estate"],
+    "tags": ["BL_IT", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -2999,7 +3028,7 @@
     },
     "flowId": "e3b87025-bdf5-431f-8430-91fd985b808d",
     "flowName": "UC4_WA_SENSOR_STARK",
-    "tags": ["BL_WA", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -3028,7 +3057,7 @@
     },
     "flowId": "5bc37ff4-98d7-4701-b438-b5bd8c932ffb",
     "flowName": "UC4_CD_INVOICE_VANDELAY",
-    "tags": ["sample-estate"],
+    "tags": ["BL_CD", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -3202,7 +3231,7 @@
     },
     "flowId": "02efaf9d-a120-4593-a31c-484333e4e506",
     "flowName": "UC4_AB_SCAN_MONARCH",
-    "tags": ["BL_AB", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -3231,7 +3260,7 @@
     },
     "flowId": "971792b2-1a00-4365-911a-d0e83774ccea",
     "flowName": "UC4_CB_ISOLATED_SOYLENT",
-    "tags": ["sample-estate"],
+    "tags": ["BL_CB", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -3404,7 +3433,7 @@
     },
     "flowId": "be9fe61b-0924-4302-b913-20f4acab3120",
     "flowName": "UC4_AB_TDRS_PRIMATECH",
-    "tags": ["BL_AB", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -3433,7 +3462,7 @@
     },
     "flowId": "c1ef5f20-5cf9-40a5-8396-abbcf0b8f43b",
     "flowName": "UC4_ZK_SENSOR_SOYLENT",
-    "tags": ["sample-estate"],
+    "tags": ["BL_ZK", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -3603,7 +3632,7 @@
     },
     "flowId": "ee6cf5c1-8aeb-4826-a125-c363b2904019",
     "flowName": "UC5_CB_STARK_WAYNE",
-    "tags": ["BL_CB", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -3628,7 +3657,7 @@
     },
     "flowId": "f4b5c690-57ac-4df3-957d-82520374f016",
     "flowName": "UC8_ZG_HOOLI_GEKKO",
-    "tags": ["sample-estate"],
+    "tags": ["BL_ZG", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -3799,7 +3828,7 @@
     },
     "flowId": "3d633801-013c-4195-9351-4cb104acee15",
     "flowName": "UC2_CD_PARCELX_BLUTH",
-    "tags": ["BL_CD", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -3826,7 +3855,7 @@
     },
     "flowId": "82caaaa7-e3be-4d98-af2f-842dd31524d7",
     "flowName": "UC1_CD_ROUTE_WONKA",
-    "tags": ["sample-estate"],
+    "tags": ["BL_CD", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -3992,7 +4021,7 @@
     },
     "flowId": "bc23cc2b-586c-42fa-aca3-09143ca32df0",
     "flowName": "STMT_EXPORT_GLOBEX_04",
-    "tags": ["BL_STMT", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -4019,7 +4048,7 @@
     },
     "flowId": "bc23cc2b-586c-42fa-aca3-09143ca32df0",
     "flowName": "STMT_EXPORT_GLOBEX_05",
-    "tags": ["sample-estate"],
+    "tags": ["BL_STMT", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -4184,7 +4213,7 @@
     },
     "flowId": "6c7b20b9-91d8-41a3-ae92-44e814a2ca2b",
     "flowName": "GL_POSTINGS_GEKKO",
-    "tags": ["BL_GL", "sample-estate"],
+    "tags": ["sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
@@ -4212,7 +4241,7 @@
     },
     "flowId": "e0057439-4a55-41ec-8e35-6e9ba3f12ec6",
     "flowName": "CRM_SYNC_INITECH",
-    "tags": ["sample-estate"],
+    "tags": ["BL_CRM", "sample-estate"],
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"

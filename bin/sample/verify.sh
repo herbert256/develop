@@ -400,6 +400,22 @@ check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "${n:-?} err/warn ring line(s) 
 n=$(grep -c '50455253495354454e542d53455353494f4e2d' "$SE" 2>/dev/null || true)
 check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "the PERSISTENT-SESSION pseudo-session is listed in _sessions-ended.tsv"
 
+# the SHARED-HOST session rule (2026-09-12, user rule: read all server log
+# lines with the same session id to find the right subscription):
+# UC1_IT_LEADS_STARK (every File OK, then quiet) shares the STARK host with
+# the poll-failing UC3_SI_TELEMETRY_STARK, whose "Authentication failure
+# connecting to remote host …" lines name no flow — their sessions vote the
+# UC3 (its failed legs), so the host's newest error is that flow's alone and
+# the quiet flow stays green (before: the wholesale join reddened it)
+h=$(awk -F'\t' '$1 == "UC3_SI_TELEMETRY_STARK" { print tolower($2); exit }' data/flow-manager/xref/_subscriptions-hosts.tsv 2>/dev/null)
+n=$(awk -F'\t' -v H="$h" '$1 != "" && tolower($2) == H { n++ } END { print n + 0 }' data/flow-manager/xref/_subscriptions-hosts.tsv 2>/dev/null)
+check $([ -n "$h" ] && [ "${n:-0}" -ge 2 ] && echo 0 || echo 1) "the STARK host '${h:-?}' is not shared (${n:-0} flow(s)) — the session rule is never exercised"
+s=$(awk -F'\t' '$3 == "E" && $5 ~ /^Authentication failure connecting to remote host/ { print $6; exit }' "data/server/cache/hosts/${h:-none}_err_warn.tsv" 2>/dev/null)
+v=$(awk -F'\t' -v S="$s" 'S != "" && $1 == S { print $2; exit }' data/blue/_sessvote.tsv 2>/dev/null)
+check $([ -n "$s" ] && [ "$v" = "UC3_SI_TELEMETRY_STARK" ] && echo 0 || echo 1) "the STARK host ring's authentication failure (session '${s:-none}') votes '${v:-nothing}', expected UC3_SI_TELEMETRY_STARK"
+c=$(awk -F'\t' '$1 == "UC1_IT_LEADS_STARK" { print $3; exit }' data/flow-manager/base/_subscriptions.tsv 2>/dev/null)
+check $([ "$c" = green ] && echo 0 || echo 1) "UC1_IT_LEADS_STARK is '${c:-absent}', expected green — the shared host's authentication failure belongs to the UC3 poll flow"
+
 # the NON-UC-NAMED hybrid flows must come out attributed to their real site
 # (the reverse profile fallback) — never UCx_ — and every planted one is a
 # configured subscription of the base roster
