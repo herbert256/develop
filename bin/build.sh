@@ -339,8 +339,9 @@ HTML
         BUILD_TB=$( source bin/publish_lib.sh >/dev/null 2>&1; render_shared_topbar "$base" "index" ) || true
         if [ -n "${BUILD_TB:-}" ]; then printf '%s' "$BUILD_TB"
         else
-            printf '<div class="topbar"><a class="brand" href="%sindex.html">Cloud</a><nav class="nav"><a href="%stransfer/index.html">Transfer reports</a><a href="%sserver/index.html">Server reports</a><a href="%sdashboards/index.html">Dashboards</a><a href="%sanalyses/index.html">Analyses</a></nav><span class="tr-group"><span class="tright">Build report</span></span></div>\n' \
-                "$base" "$base" "$base" "$base" "$base"
+            # (the brand's text is the environment label, like render_topbar)
+            printf '<div class="topbar"><a class="brand" href="%sindex.html">%s</a><nav class="nav"><a href="%stransfer/index.html">Transfer reports</a><a href="%sserver/index.html">Server reports</a><a href="%sdashboards/index.html">Dashboards</a><a href="%sanalyses/index.html">Analyses</a></nav><span class="tr-group"><span class="tright">Build report</span></span></div>\n' \
+                "$base" "$(printf '%s' "${ENV_LABEL:-Cloud}" | esc)" "$base" "$base" "$base" "$base"
         fi
         # THE TIMINGS LIVE IN THE TITLE (2026-08): start → end and the
         # duration are the h1's tail, not a fact block — the end collapses to

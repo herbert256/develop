@@ -30,13 +30,13 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .topbar .nav { display:flex; align-items:center; gap:0.4rem 1.4rem; }
 .topbar .nav a { color:#fff; font-size:0.95rem; }   /* help pages' plain area links (report pages use .dd dropdowns instead) */
 .topbar .nav a:hover { text-decoration:underline; }
+/* the brand = the home link; its TEXT is the ENVIRONMENT label (report.js
+   buildTopbar, from input/environment.txt via topbar-data.js; "Cloud" on a
+   checkout without one) — one site = one environment since 2026-09-11, and
+   since 2026-09-12 the label IS the brand (the separate .envcur span beside
+   a fixed "Cloud" brand is gone) */
 .topbar .brand { color:#fff; font-weight:bold; font-size:1.05rem; }
 .topbar .brand:hover { text-decoration:underline; }
-/* the ENVIRONMENT label right after the brand (report.js buildTopbar, from
-   input/environment.txt via topbar-data.js): a static bold span — one site
-   = one environment since 2026-09-11, the Acceptance/Production switch is gone */
-.topbar .envpair { font-size:0.95rem; white-space:nowrap; }
-.topbar .envpair .envcur { color:#ffd9a0; font-weight:bold; cursor:default; text-decoration:none; }
 .topbar .tright { color:#fff; font-size:0.95rem; white-space:nowrap; }
 /* hover dropdowns of report links (left-anchored: the menus live on the bar's left side) */
 .dd { position:relative; }

@@ -693,17 +693,19 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
 # every other page gets the same bar client-side from report.js buildTopbar,
 # KEEP THE TWO IN STEP). $1 base (docs-root prefix), $2 help slug (""=none).
 render_topbar() {
-    local base=$1 helpslug=${2:-} home=${1}index.html label=""
+    local base=$1 helpslug=${2:-} home=${1}index.html brand
     # SIX evenly-spaced parts (the bar's justify-content:space-between does the
-    # spacing — no pushing margins, 2026-07 redesign): 1 the brand (-> home) ·
-    # 2 the ENVIRONMENT LABEL (input/environment.txt, a static span — the
-    # Acceptance/Production switch went with the env split, 2026-09-11) · 3 the
-    # Entities link + search icon · 4 the three report dropdowns
-    # (Transfer/Server/Analyses) · 5 the plain Dashboard link (ONE dashboard
-    # page — no dropdown) · 6 the three right icons. The precomputed menu
-    # strings carry an "@" placeholder; swap it for this page's prefix.
-    if [ -n "${ENV_LABEL:-}" ]; then esc "$ENV_LABEL"; label="<span class=\"envcur\">$ESC</span>"; fi
-    printf '<div class="topbar"><a class="brand" href="%s">Cloud</a><span class="envpair">%s</span><span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch.html" title="Search" aria-label="Search">&#128269;</a></span>' "$home" "$label" "$base" "$base"
+    # spacing — no pushing margins, 2026-07 redesign): 1 the brand (-> home;
+    # its TEXT is the ENVIRONMENT LABEL, input/environment.txt — "Cloud" on a
+    # checkout without one; 2026-09-12, user request: the static label span
+    # that stood beside a fixed "Cloud" brand since the env split of
+    # 2026-09-11 is gone) · 2 the Entities link + search icon · 3 the Files
+    # link · 4 the three report dropdowns (Transfer/Server/Analyses) · 5 the
+    # plain Dashboard link (ONE dashboard page — no dropdown) · 6 the three
+    # right icons. The precomputed menu strings carry an "@" placeholder; swap
+    # it for this page's prefix.
+    esc "${ENV_LABEL:-Cloud}"; brand=$ESC
+    printf '<div class="topbar"><a class="brand" href="%s">%s</a><span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch.html" title="Search" aria-label="Search">&#128269;</a></span>' "$home" "$brand" "$base" "$base"
     # the FILE SEARCH entry (2026-08), mirroring report.js buildTopbar:
     # between the search icon and the report menus
     printf '<a class="dashlink" href="%sfile-search-24-hours.html">Files</a>' "$base"

@@ -46,9 +46,10 @@ acceptance-vs-production pages (`publish-accvsprod.sh`), `migrate-input.sh` and
 committed, NEVER-synced **`input/environment.txt`** — one line, the display label: `Acceptance` /
 `Production` in the two runtime repos, `Sample` here. **`bin/envlabel.sh`** is its one reader
 (sourced; `ENV_LABEL`, `ENV_KEY` = lowercased, `ENV_INBOX`, `env_of_name`, `env_inbox_find`):
-the label is a static top-bar label (report.js `buildTopbar` reads `env:"…"` from
-`topbar-data.js`, where the Acceptance/Production pair was; `render_topbar` bakes the same span
-on the help/build pages) and the home title (`Cloud Reports — <label>`); it derives the runtime
+the label is the TEXT of the top bar's brand/home link (report.js `buildTopbar` reads `env:"…"`
+from `topbar-data.js`; `render_topbar` bakes the same link on the help/build pages; "Cloud" on a
+checkout without the file — 2026-09-12, the separate label span beside a fixed "Cloud" brand is
+gone) and the home title (`Cloud Reports — <label>`); it derives the runtime
 inbox prefixes (Acceptance → `acc*`, Production → `prd*` and `prod*`, case-insensitive; any other
 label = both inboxes skipped with a note) and names the outbox archives
 (`build/st-reports-<key>_<stamp>.7z`, the `~/cloud/` copy, `~/exchange/st-reports-<key>.7z`); a
