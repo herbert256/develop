@@ -113,7 +113,7 @@ would re-render every page on each build.)
 Order, ONE linear chain (the rationale of every position is in the script's comments):
 (runtime only) `bin/build/exchange-in.sh` (the inbox, by prefix; it calls
 `bin/build/st-reports-update.sh` per archive, which renames the log exports to
-`logEntry_mm-dd.csv` / `fileTransfer_mm-dd.csv` from their first record's date — 2026-09-12) → the
+`logEntry_yyyy-mm-dd.csv` / `fileTransfer_yyyy-mm-dd.csv` from their first record's date — 2026-09-12) → the
 have-config check → `bin/flow-manager.sh` → *parse*: server `parse.sh`
 in the background beside transfer `parse.sh` (`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`), then
 `bin/session-sites.sh`, `bin/expire-files.sh`, `bin/bookend-ok.sh`,
@@ -1107,7 +1107,7 @@ bin/build/linkcheck.sh           every link resolves + every page is reachable (
 
 # RUNTIME-ONLY (skipped on the sample estate — the .sample-estate marker):
 bin/build/exchange-in.sh         the inbox (a git repo, ~/exchange by default — never named in output): this environment's <prefix>*.7z -> st-reports-update.sh
-bin/build/st-reports-update.sh   one archive -> input/ (the log exports renamed logEntry_mm-dd.csv / fileTransfer_mm-dd.csv)
+bin/build/st-reports-update.sh   one archive -> input/ (the log exports renamed logEntry_yyyy-mm-dd.csv / fileTransfer_yyyy-mm-dd.csv)
 bin/build/st-reports-archive.sh  docs/ -> st-reports-<env>_<stamp>.7z -> build/ + the outbox (the same repo, st-reports-<env>.7z)
 ```
 

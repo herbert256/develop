@@ -26,13 +26,13 @@
 #           <env>/…) is accepted when <env> is THIS one;
 #        b. every OTHER file, at any depth, routed by name and — the two log
 #           exports — RENAMED on the way in (2026-09-12, user request):
-#              logEntry*.csv      -> input/server/logEntry_mm-dd.csv
-#              fileTransfer*.csv  -> input/transfer/fileTransfer_mm-dd.csv
-#              transferLog*.csv   -> input/transfer/fileTransfer_mm-dd.csv (the old name)
+#              logEntry*.csv      -> input/server/logEntry_yyyy-mm-dd.csv
+#              fileTransfer*.csv  -> input/transfer/fileTransfer_yyyy-mm-dd.csv
+#              transferLog*.csv   -> input/transfer/fileTransfer_yyyy-mm-dd.csv (the old name)
 #              *.json             -> input/flow-manager/
 #              *.txt              -> input/          (the policy files —
 #                                    environment.txt and README.txt never)
-#           mm-dd (zero-padded month and day) is read from the file itself:
+#           yyyy-mm-dd (zero-padded month and day) is read from the file itself:
 #           the date of its first data record — the exports are newest-first,
 #           so that is the day the export was cut. A file whose date cannot
 #           be read keeps its own name; two files of one archive mapping to
@@ -59,10 +59,10 @@ source bin/envlabel.sh   # ENV_LABEL / ENV_KEY / ENV_INBOX / env_of_name / env_i
 # status ⇥ archive ⇥ detail — every outcome leaves one line
 inbox_note() { [ -d build ] && printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> build/inbox.tsv; return 0; }
 PASSF="input/secrets/st-reports.pass"
-# csv_mmdd FILE -> "mm-dd" from the first data record's MM/DD/YYYY date (the
-# header is line 1; up to five lines are read), "" when none is found
-csv_mmdd() {
-    awk 'NR > 1 && match($0, /[0-9][0-9]\/[0-9][0-9]\/[0-9][0-9][0-9][0-9]/) { s = substr($0, RSTART, RLENGTH); print substr(s, 1, 2) "-" substr(s, 4, 2); exit }
+# csv_ymd FILE -> "yyyy-mm-dd" from the first data record's MM/DD/YYYY date
+# (the header is line 1; up to five lines are read), "" when none is found
+csv_ymd() {
+    awk 'NR > 1 && match($0, /[0-9][0-9]\/[0-9][0-9]\/[0-9][0-9][0-9][0-9]/) { s = substr($0, RSTART, RLENGTH); print substr(s, 7, 4) "-" substr(s, 1, 2) "-" substr(s, 4, 2); exit }
          NR > 6 { exit }' "$1"
 }
 
@@ -128,11 +128,12 @@ ingest_one() {
     done
 
     # ---- 4b. every other file, routed by name — the log exports RENAMED -------
-    # (2026-09-12, user request): logEntry_mm-dd.csv / fileTransfer_mm-dd.csv,
-    # mm-dd from the file's first data record (csv_mmdd); a file whose date
-    # cannot be read keeps its own name; a second file of this archive mapping
-    # to a name already planned gets a numbered suffix (never overwrites it)
-    local mmdd j dup
+    # (2026-09-12, user request): logEntry_yyyy-mm-dd.csv /
+    # fileTransfer_yyyy-mm-dd.csv, the date from the file's first data record
+    # (csv_ymd); a file whose date cannot be read keeps its own name; a second
+    # file of this archive mapping to a name already planned gets a numbered
+    # suffix (never overwrites it)
+    local ymd j dup
     while IFS= read -r -d '' f; do
         rel="${f#$tmp/}"
         rel="${rel#input/}"
@@ -141,8 +142,8 @@ ingest_one() {
         base=$(basename "$f")
         sub=""; dst=$base
         case "$base" in
-            logEntry*.csv)                      sub=server;   mmdd=$(csv_mmdd "$f"); [ -n "$mmdd" ] && dst="logEntry_$mmdd.csv" ;;
-            transferLog*.csv|fileTransfer*.csv) sub=transfer; mmdd=$(csv_mmdd "$f"); [ -n "$mmdd" ] && dst="fileTransfer_$mmdd.csv" ;;
+            logEntry*.csv)                      sub=server;   ymd=$(csv_ymd "$f"); [ -n "$ymd" ] && dst="logEntry_$ymd.csv" ;;
+            transferLog*.csv|fileTransfer*.csv) sub=transfer; ymd=$(csv_ymd "$f"); [ -n "$ymd" ] && dst="fileTransfer_$ymd.csv" ;;
             *.json)            sub=flow-manager ;;
             environment.txt|README.txt) sub="" ;;   # a checkout's own files, never delivered
             *.txt)             sub=. ;;             # the policy files live at the input root

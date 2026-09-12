@@ -36,7 +36,7 @@ pipeline code only. Which environment a checkout serves is written in its
 hand-maintained `input/environment.txt` (`Acceptance` / `Production`; `Sample`
 here) — the top-bar label, the home title, and the prefix of the update
 archives its build ingests from the inbox (`acc*.7z` / `prd*.7z`); the log
-exports inside land as `logEntry_mm-dd.csv` / `fileTransfer_mm-dd.csv`.
+exports inside land as `logEntry_yyyy-mm-dd.csv` / `fileTransfer_yyyy-mm-dd.csv`.
 
 ## What it publishes
 

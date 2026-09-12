@@ -434,7 +434,7 @@ HTML
             printf '<p class="bsnote">input/environment.txt %s — the inbox is not read (Acceptance or Production expected).</p>\n' \
                 "$([ -n "${ENV_LABEL:-}" ] && printf 'says <strong>%s</strong>' "$(printf '%s' "$ENV_LABEL" | esc)" || printf 'is missing')"
         else
-            printf '<p class="bsnote">This checkout is <strong>%s</strong>: it consumes the archives named <code>%s</code> in the inbox; the other environment'"'"'s archives stay put. The log exports inside land as <code>logEntry_mm-dd.csv</code> and <code>fileTransfer_mm-dd.csv</code>, named from their first record'"'"'s date.</p>\n' \
+            printf '<p class="bsnote">This checkout is <strong>%s</strong>: it consumes the archives named <code>%s</code> in the inbox; the other environment'"'"'s archives stay put. The log exports inside land as <code>logEntry_yyyy-mm-dd.csv</code> and <code>fileTransfer_yyyy-mm-dd.csv</code>, named from their first record'"'"'s date.</p>\n' \
                 "$(printf '%s' "$ENV_LABEL" | esc)" "$(printf '%s' "$ENV_INBOX" | sed 's/ /*.7z, /g; s/$/*.7z/')"
             if [ ! -s build/inbox.tsv ]; then
                 printf '<p class="bsnote">The inbox step did not run this build.</p>\n'
@@ -614,8 +614,8 @@ bg_step_wait() {
 # prd*+prod*, bin/envlabel.sh; one repo = one environment, 2026-09-11):
 # every <prefix>*.7z in it, unpacked with the st-reports password and routed
 # onto input/ by st-reports-update.sh (*.json -> flow-manager/, *.txt -> the
-# input root, the two log exports RENAMED to logEntry_mm-dd.csv /
-# fileTransfer_mm-dd.csv from their first record's date; existing files
+# input root, the two log exports RENAMED to logEntry_yyyy-mm-dd.csv /
+# fileTransfer_yyyy-mm-dd.csv from their first record's date; existing files
 # replaced), then removed from the repo and pushed. A bad archive is a
 # WARNING that stays in place — the build goes on. The same repo receives
 # the built site at the end (st-reports-archive.sh, st-reports-<env>.7z —

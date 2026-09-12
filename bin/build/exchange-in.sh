@@ -21,9 +21,9 @@
 #      files REPLACED:
 #          *.json            -> input/flow-manager/
 #          *.txt             -> input/            (environment.txt never)
-#          fileTransfer*.csv -> input/transfer/fileTransfer_mm-dd.csv  (transferLog*.csv too)
-#          logEntry*.csv     -> input/server/logEntry_mm-dd.csv
-#      (the two exports are RENAMED on the way in, mm-dd from their first
+#          fileTransfer*.csv -> input/transfer/fileTransfer_yyyy-mm-dd.csv  (transferLog*.csv too)
+#          logEntry*.csv     -> input/server/logEntry_yyyy-mm-dd.csv
+#      (the two exports are RENAMED on the way in, the date from their first
 #      data record — 2026-09-12, user request; st-reports-update.sh)
 #      (a repo-layout tree inside the archive is copied as such; an archive
 #      that carries the OTHER environment's tree is refused). The archive is
