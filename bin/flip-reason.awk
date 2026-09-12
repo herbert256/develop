@@ -51,16 +51,21 @@ function flip_reason(msg,   m) {
     # stop further route execution." — the file never reached the account;
     # BEFORE the Route stopped rule, whose "stop further route execution"
     # tail would otherwise claim it (2026-09-06, user report; the Step
-    # {Publish} rule further down covers the AR0111 wording of the same)
-    if (m ~ /while publishing the file/) return "Publish to account failed"
+    # {Publish} rule further down covers the AR0111 wording of the same).
+    # Reads "Duplicate file" since 2026-09-12 (user request; it was "Publish
+    # to account failed") — the same reason as the failed send below.
+    if (m ~ /while publishing the file/) return "Duplicate file"
     # the SEND of the file to CFT failing — AR0074 "Could not send file: {…}
     # using transfer site: {AXWAY-CFT-PRODUCTION}", the ARSP0001 "An error
     # occurred while sending the file {…} to a partner site. Step
     # configuration suggests to stop further route execution" that follows
     # it, and the AR0111 Step {SendToPartner} line: one failed delivery leg.
     # The "partner site" of these lines is the CFT transfer site, never the
-    # external partner (2026-09-06, user report + correction).
-    if (m ~ /could not send file|while sending the file .* to a partner site|step \{sendtopartner\}/) return "Could not send to CFT"
+    # external partner (2026-09-06, user report + correction). The reason
+    # reads "Duplicate file" since 2026-09-12 (user request; it was "Could
+    # not send to CFT") — the server report "Could not send file" lists the
+    # AR0074 lines themselves.
+    if (m ~ /could not send file|while sending the file .* to a partner site|step \{sendtopartner\}/) return "Duplicate file"
     if (m ~ /arpa0001|arsp0001|stop further route execution/) return "Route stopped"
     # The platform refusing its OWN file: "Permission denied. <path> file is
     # marked as in-process by Advanced Routing." — the file is locked by a
@@ -108,7 +113,7 @@ function flip_reason(msg,   m) {
     # finished with error … No files were processed.": the file never reached
     # the account it was to be published to. BEFORE the generic routing-step
     # rule (2026-09-06, user report on a UC2 flow).
-    if (m ~ /step \{publish\}/) return "Publish to account failed"
+    if (m ~ /step \{publish\}/) return "Duplicate file"   # was "Publish to account failed" (2026-09-12)
     if (m ~ /arrc00|ar0111|step \{/) return "Routing step failed"
     # LAST, the fallback with no error line at all (2026-09-10, user request):
     # the platform's own "Transfer end logged." bookend with "status":"error"

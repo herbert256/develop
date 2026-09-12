@@ -11,7 +11,7 @@
 #
 # The ROUTE — the subscription — is the SECOND bracket group (the same
 # reading as uc1-status.sh and flip-reason.awk, where this line is the
-# "Could not send to CFT" reason); the File is the basename of the first
+# "Duplicate file" reason); the File is the basename of the first
 # {…} after "Could not send file:". The row is
 #
 #   Date & time (to the second) · Subscription · File
@@ -134,7 +134,7 @@ if [ "$n_lines" -gt 0 ]; then n_shown=$(lin_rows | grep -c $'^ROW\t' || true); f
     if [ "$n_lines" -eq 0 ]; then
         printf 'INTRO\tNo **Could not send file** line in this data window — no Advanced Routing route gave up delivering a file to its transfer site.\n'
     else
-        printf 'INTRO\t**%s** "Could not send file" line(s) for **%s** subscription(s) on **%s** day(s) — an Advanced Routing route that gave up delivering a file to its transfer site after its retries (the AR0074 error, the "Could not send to CFT" reason of the failure pages). Newest first; the report shows at most **%s** rows and at most **%s** per subscription (**%s** shown here); the subscription opens its detail page.\n' \
+        printf 'INTRO\t**%s** "Could not send file" line(s) for **%s** subscription(s) on **%s** day(s) — an Advanced Routing route that gave up delivering a file to its transfer site after its retries (the AR0074 error, the "Duplicate file" reason of the failure pages). Newest first; the report shows at most **%s** rows and at most **%s** per subscription (**%s** shown here); the subscription opens its detail page.\n' \
             "$n_lines" "$n_subs" "$n_days" "$MAXROWS" "$MAXPERSUB" "$n_shown"
     fi
 

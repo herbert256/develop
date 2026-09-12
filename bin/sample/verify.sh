@@ -410,9 +410,10 @@ check $([ "${n:-0}" -eq "$en" ] && echo 0 || echo 1) "base/_subscriptions.tsv li
 
 # the failing-reasons catalogue: every planted category non-empty; the
 # "routestop" scenario (an ARSP0001 "while sending the file … to a partner
-# site" line) reads "Could not send to CFT" since the 2026-09-06 wording rule
+# site" line) reads "Duplicate file" — the 2026-09-12 rename of the
+# 2026-09-06 "Could not send to CFT" wording
 for reason in "Connection failures" "Wrong server fingerprint" "No Dir" "Listing failed" \
-              "Login errors (out)" "Could not send to CFT" "Transfer site missing" "Receive File As not set" \
+              "Login errors (out)" "Duplicate file" "Transfer site missing" "Receive File As not set" \
               "PeSIT transfer aborted" "PeSIT delivery refused" "Staged file missing" \
               "File Tracking entry missing" "Remote file unavailable" "Post client action failed" \
               "Pull via FTPS failed" "Delete remote file failed" "IO error" "Read timed out" "Connection dropped mid-transfer"; do
