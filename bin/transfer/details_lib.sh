@@ -724,7 +724,12 @@ aggregate_files() {
       dk=k SUBSEP (jd % 7); dl2[dk]++; db2[dk]+=size; if(pr2)dp3[dk]++; else df3[dk]++
       if(dio!="") dD[dk SUBSEP dio]++
       if(!(k in pmin)||sk<pmink[k]){pmink[k]=sk;pfirst[k]=disp;pmin[k]=1}
-      if(!(k in pmax)||sk>pmaxk[k]){pmaxk[k]=sk;plast[k]=disp;pmaxjd[k]=jd;pmax[k]=1} }
+      if(!(k in pmax)||sk>pmaxk[k]){pmaxk[k]=sk;plast[k]=disp;pmaxjd[k]=jd;pmax[k]=1}
+      # the newest OK File END per entity (g_end, the leg walk — 2026-09-12
+      # user rule): the after-last-transfer banner compares its Error against
+      # this, not the last Start — a File that FINISHED OK after the error is
+      # a transfer that ended OK after it. Totals-row field 30.
+      if(pr2 && g_end>=0){ e7=fmt_ep(g_end); if(!(k in pokend)||e7>pokend[k]) pokend[k]=e7 } }
     # Read wec[] WITHOUT creating the element: a bare wec[k] reference would
     # add an empty entry, and the "for (k in wec)" loop that builds the
     # section-0.9 table would then emit a phantom "Waiting files 0" row.
@@ -930,7 +935,7 @@ aggregate_files() {
         share=ttot[a[1]]>0?sprintf("%.1f",ptr[k]*100/ttot[a[1]]):"0.0"
         sshare=ttotb[a[1]]>0?sprintf("%.1f",ptb[k]*100/ttotb[a[1]]):"0.0"
         avgsz=(ptr[k]>0?human(ptb[k]/ptr[k]):"-")
-        printf "%s\t%s\t0\t0\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%d\t%d\n", a[1], a[2], ptr[k], ptf[k]+0, ptp[k]+0, human(ptb[k]), pfirst[k], plast[k], pct, share, rank, tcnt2[a[1]], nact[k]+0, medgap(k), gmax-pmaxjd[k], ptD[k SUBSEP "fi"]+0, ptD[k SUBSEP "pi"]+0, ptD[k SUBSEP "fo"]+0, ptD[k SUBSEP "po"]+0, human(ptmx[k]+0), avgsz, srank, erank, (ptr[k]>0?humandur(ptdur[k]/ptr[k]):"-"), sshare, wecnt(k SUBSEP "Waiting"), wecnt(k SUBSEP "Expired") }
+        printf "%s\t%s\t0\t0\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\n", a[1], a[2], ptr[k], ptf[k]+0, ptp[k]+0, human(ptb[k]), pfirst[k], plast[k], pct, share, rank, tcnt2[a[1]], nact[k]+0, medgap(k), gmax-pmaxjd[k], ptD[k SUBSEP "fi"]+0, ptD[k SUBSEP "pi"]+0, ptD[k SUBSEP "fo"]+0, ptD[k SUBSEP "po"]+0, human(ptmx[k]+0), avgsz, srank, erank, (ptr[k]>0?humandur(ptdur[k]/ptr[k]):"-"), sshare, wecnt(k SUBSEP "Waiting"), wecnt(k SUBSEP "Expired"), ((k in pokend)?pokend[k]:"") }   # field 30 = the newest OK File END (the banner cut)
       # section 0.4 — the Last error(s) rows: one per connected SUBSCRIPTION
       # that has an error, carrying the newest error of that subscription. The SORTKEY
       # is the File sortkey, so the global sort hands them to the writer

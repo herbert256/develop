@@ -137,9 +137,15 @@ trap 'rm -f "$rowfile" "$lastokf" "$pollf"' EXIT
         done
     fi
 } > "$pollf"
+#    The cut is the newest OK File's END (col 24, 2026-09-12 user rule — a
+#    File that started before the error but FINISHED OK after it, a retry
+#    burst whose late leg delivered, is a transfer that ended OK after the
+#    error): the "Last OK transfer" column shows that end; the start when the
+#    parse wrote no end (never lower than the last transfer's start).
 awk -F'\t' '
-    $12 != "" { if (!($12 in mk) || $6 > mk[$12]) { mk[$12]=$6; dt[$12]=$4" "$5; oc[$12]=$2 } }
-    END { for (s in mk) if (oc[s] != "Failed" && oc[s] != "Expired") print s "\t" dt[s] }
+    $12 != "" { if (!($12 in mk) || $6 > mk[$12]) { mk[$12]=$6; oc[$12]=$2 }
+                if ($2 != "Failed" && $2 != "Expired") { e9 = ($24 != "" ? $24 : $4 " " $5); if (!($12 in dt) || e9 > dt[$12]) dt[$12] = e9 } }
+    END { for (s in mk) if (oc[s] != "Failed" && oc[s] != "Expired" && (s in dt)) print s "\t" dt[s] }
 ' "$FILES" | LC_ALL=C sort > "$lastokf"
 
 # 2) ONE awk pass collects, per subscription, the Error/Warn lines (its own +

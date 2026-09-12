@@ -1224,7 +1224,10 @@ ttmp="$FILES.tmp.$$"
 flowmap="$CFG_FLOW"; [ -f "$flowmap" ] || flowmap=/dev/null
 LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED" | awk -F'\t' '
     function hms_ms(t,   a) { if (t == "") return 0; split(t, a, "[:.]"); return ((a[1]*3600) + (a[2]*60) + a[3]) * 1000 + a[4] }
-    function flush(   t1, t2, arr_end, pick_start, oc, wait, mv) {
+    function fromjdn(j,   a,b,c,dd,e2,mm,day2,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e2=c-int(1461*dd/4); mm=int((5*e2+2)/153); day2=e2-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day2) }
+    # an epoch-ms value (jdn * 86400000 + ms of day) -> "ccyy-mm-dd hh:mm:ss.mmm", the col 4/5 format
+    function stamp_ms(ms,   j, r, h, m, s) { j = int(ms / 86400000); r = ms - j * 86400000; h = int(r / 3600000); r -= h * 3600000; m = int(r / 60000); r -= m * 60000; s = int(r / 1000); return fromjdn(j) " " sprintf("%02d:%02d:%02d.%03d", h, m, s, r - s * 1000) }
+    function flush(   t1, t2, arr_end, pick_start, oc, wait, mv, endst) {
         if (prev == "")  return
         # Duration = the WALL-CLOCK SPAN of the logical transfer: from the first
         # (earliest) row start to the last (latest) row END (its own start + its
@@ -1290,9 +1293,17 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED" | awk -F'\t' '
         # carries none: a relay CoreId legitimately has legs on two flows, and
         # last-row site beside first-row profile named two flows on one row
         pf9 = (sprof != "") ? sprof : gprof
-        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", \
+        # the transfer END (2026-09-12, user rule): the LATEST leg end over the
+        # dated rows — each row start + its own duration, so a long retry burst
+        # whose late leg delivers ends the File when THAT leg ends. The config
+        # join lands it in col 24; "" when no row is dated. The after-last-
+        # transfer rule (result.sh, went-kaput, the detail banner) compares a
+        # server Error against this, not the start: a File that FINISHED OK
+        # after the error is a transfer that ended OK after it.
+        endst = (maxend > 0) ? stamp_ms(maxend) : ""
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
             prev, oc, f_acct, f_date, f_time, \
-            f_sortkey, f_jdn, maxsize, durtot, rows, f_file, last_site, pf9, f_login, f_host, wait
+            f_sortkey, f_jdn, maxsize, durtot, rows, f_file, last_site, pf9, f_login, f_host, wait, endst
     }
     FILENAME ~ /_subscriptions-flowdir\.tsv$/ { if ($2 == "in" || $2 == "out" || $2 == "relay") fd[toupper($1)] = $2; next }
     {
@@ -1300,10 +1311,12 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED" | awk -F'\t' '
             flush()
             prev=$1; f_acct=""; f_date=""; f_time=""; f_sortkey=""; f_jdn=""; f_file=$8
             maxsize=0; durtot=0; rows=0; gprof=""; sprof=""; last_site=""; f_login=""; f_host=""
-            l_jdn=""; l_time=""; l_dur=0
+            l_jdn=""; l_time=""; l_dur=0; maxend=0
             arr_jdn=""; arr_time=""; arr_dur=0; pick_jdn=""; pick_time=""; pick_sum=0
         }
         rows++
+        # the latest leg END over the dated rows (col 24, see flush)
+        if ($14 != "") { e9 = $14 * 86400000 + hms_ms($12) + ($15 + 0 > 0 ? $15 + 0 : 0); if (e9 > maxend) maxend = e9 }
         # Date/time from the first row that HAS a valid date. Rows are sorted by
         # sortkey (col 13), and an undated row has an empty sortkey that sorts
         # FIRST under LC_ALL=C — so taking the first row blindly would blank the
@@ -1370,7 +1383,7 @@ for cf in "$CFG_AL" "$CFG_AH" "$CFG_AAPP" "$CFG_ADOM" "$CFG_SAPP" "$CFG_SDOM" "$
 done
 ttmp="$FILES.tmp.$$"
 if [ ${#pda_caches[@]} -eq 0 ]; then
-    awk -F'\t' 'BEGIN{OFS="\t"} { w=$16; NF=15; print $0, "", "", "", "", "", w, "" }' "$FILES" > "$ttmp"
+    awk -F'\t' 'BEGIN{OFS="\t"} { w=$16; e=$17; NF=15; print $0, "", "", "", "", "", w, "", "", e }' "$FILES" > "$ttmp"   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp
 else
     awk -F'\t' 'BEGIN{OFS="\t"; AMB=sprintf("%c",1)}
         FILENAME ~ /_accounts-logins\.tsv$/        { al[toupper($1)]=1; next }
@@ -1415,10 +1428,10 @@ else
             if(s!="" && (s in sp) && sp[s]!=AMB) p=sp[s]
             else if(h!="" && (h in hp) && hp[h]!=AMB) p=hp[h]
             else if((a in ap) && ap[a]!=AMB) p=ap[a]
-            w=$16; NF=15
+            w=$16; e=$17; NF=15
             a18=""; if(s!="" && (s in sa) && sa[s]!=AMB) a18=sa[s]; if(a18=="" && (a in aa) && aa[a]!=AMB) a18=aa[a]
             d19=""; if(s!="" && (s in sdo) && sdo[s]!=AMB) d19=sdo[s]; if(d19=="" && (a in ad) && ad[a]!=AMB) d19=ad[a]
-            print $0, d, m, a18, d19, p, w, ""
+            print $0, d, m, a18, d19, p, w, "", "", e   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp
         }
     ' "${pda_caches[@]}" "$FILES" > "$ttmp"
 fi
@@ -1513,6 +1526,15 @@ col  name       rule
                 (bin/bookend-ok.sh, 2026-09-09: no classifying error line about
                 the transfer, the platform ended it ok on the client's fresh
                 connection). "" everywhere else — written by that step only
+ 24  end        "ccyy-mm-dd hh:mm:ss.mmm" — when the transfer ENDED: the latest
+                leg end over its dated rows (each row's start + its own
+                duration), so a retry burst whose late leg delivers ends when
+                that leg ends (2026-09-12, user rule). "" when no row is dated.
+                The after-last-transfer rule (result.sh, went-kaput, the detail
+                page banner) compares a server Error against the newest OK
+                File's END — a File that finished OK after the error is a
+                transfer that ended OK after it, so the error is not "after
+                the last transfer". Cols 4/5 stay the START.
 
 This cache never contains fabricated rows: server-log-only entities are
 marked BLUE in the base result column; the enriched tuples live only in the

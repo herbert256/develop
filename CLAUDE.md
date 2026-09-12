@@ -570,6 +570,8 @@ A **logical transfer** = all records sharing one CoreId (commonly 2–7 rows). `
 11 file (first row's Local Filename)         22 expired (deletion timestamp)
                                              23 settled (the ok bookend's stamp,
                                                 bin/bookend-ok.sh; "" otherwise)
+                                             24 end (when the transfer ENDED:
+                                                the latest leg end, 2026-09-12)
 ```
 
 - **col 9** = last row's start + its duration − first row's start (includes store-and-forward gaps
@@ -772,7 +774,16 @@ flow that has since polled cleanly is working, whatever it logged before (accept
 rule and the stamp this one.
 The after-last-transfer red flip records its evidence in `blue/_redflip.tsv` (name + ring stamp);
 the UC status per-hour walkers read it (+ `_greenpoll.tsv`) so their sidecars' last row equals
-the STAT figures.
+the STAT figures. **"After the last transfer" means after its END** (2026-09-12, user rule: a
+production flow logged a "Could not send file" Error at 09:19 while three Files that had STARTED
+the day before were delivered by their retries at 15:16 — "there are CoreIds from this
+subscription that ended ok after it; in those cases do not mark it as a Server Error"): the cut
+the evidence must be newer than is the last File's start raised to the newest OK File's END
+(`_files.tsv` col 24, the latest leg end; outcome-policy OK) — in `result.sh`'s flip and
+`orphan_red`'s recovered-since test, went-kaput's `lastokf` (its "Last OK transfer" column shows
+that end), and the detail pages (details_lib's totals-row field 30 → `last_transfer_cut()`, the
+banner and the connected-lines cutoff); the "Last OK transfer" section picks the newest Processed
+File by its end too. Never lower than the old start-based cut, so it only ever spares a flip.
 Blue counts
 as SEEN with blank counts; the status tables show it as the Server column; in the Transfer scope
 it retints orange. `data/blue/<type>/<name>.txt` holds the evidencing log line per blue

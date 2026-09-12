@@ -14,7 +14,10 @@
 #     seen, last transfer Processed         -> green
 #     seen, last transfer not Processed     -> red
 #     seen, last transfer OK but the server log holds an Error/Warn line
-#     NEWER than it                         -> red   (2026-08: a flow with
+#     NEWER than its END (col 24; the newest
+#     OK File END — a File that finished OK
+#     after the error ended OK after it,
+#     2026-09-12 user rule)                 -> red   (2026-08: a flow with
 #     "ERRORS IN SERVER LOG AFTER LAST TRANSFER" on its detail page cannot
 #     be green; the evidence is the subscription's own _err_warn ring plus
 #     every connected host/account/login ring LINE the attribution below
@@ -474,6 +477,14 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
     FILENAME == ARGV[1] {
         s = toupper($12)
         if (s != "" && $6 != "" && $6 >= sk[s]) { sk[s] = $6; oc[s] = $2; lt[s] = $4 " " $5 }
+        # the newest OK END per flow (col 24, 2026-09-12 user rule: "there are
+        # CoreIds from this subscription that ended ok after it — in those
+        # cases do not mark it as a Server Error"): a File that started before
+        # the Error but FINISHED OK after it — a retry burst whose late leg
+        # delivered — is a transfer that ended OK after the error, so the
+        # error is not "after the last transfer". Outcome-policy OK (Waiting
+        # counts); the start when the parse wrote no end.
+        if (s != "" && $2 != "Failed" && $2 != "Expired" && $6 != "") { e9 = ($24 != "") ? $24 : $4 " " $5; if (!(s in le) || e9 > le[s]) le[s] = e9 }
         next
     }
     FILENAME == ARGV[2] { if ($1 != "") { if ($3 + 0 == 1) po[toupper($1)] = 1   # blue -> green (never transferred)
@@ -506,6 +517,10 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
         # last (OK) transfer -> red, matching the detail-page ALERT banner
         if ((r == "green" || expd) && (k in lt)) {
             bdt = ""
+            # the cut the evidence must be NEWER than: the last transfer
+            # START, raised to the newest OK File END (le, col 24) — never
+            # lower than before, so this only ever spares a flip
+            ct = lt[k]; if ((k in le) && le[k] > ct) ct = le[k]
             ringmax(srvc "/subscriptions/" $1 "_err_warn.tsv")
             # the connected host/account/login rings contribute only the lines
             # ATTRIBUTED to THIS subscription (see _build_ringattr): each of
@@ -532,7 +547,7 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
             # in the _connhold sidecar (the went-kaput page still shows it as
             # trouble after success). Evidence of any other kind, or a newer
             # line, flips as before.
-            due = (bdt != "" && bdt > lt[k] && !((k in pt) && pt[k] > bdt))
+            due = (bdt != "" && bdt > ct && !((k in pt) && pt[k] > bdt))
             held = 0
             if (due && (k in UC3)) {
                 # is the newest evidence a connection failure? The flow'\''s own
@@ -544,14 +559,14 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
                 iscf = ((k SUBSEP bdt) in cfset) || ((k in KF) && KF[k] == bdt && KFC[k] == 1)
                 if (iscf) {
                     n3 = 0; m3 = split(substr(CFL[k], 2), Z3, SUBSEP)
-                    for (i3 = 1; i3 <= m3; i3++) if (Z3[i3] > lt[k] && Z3[i3] > CFP[k]) n3++
+                    for (i3 = 1; i3 <= m3; i3++) if (Z3[i3] > ct && Z3[i3] > CFP[k]) n3++
                     if (n3 < 3) {
                         # DISCOUNT the connection failures: the newest of the
                         # remaining evidence decides, by the same test
                         b2 = ENCF[k]
                         if ((k in RA) && !((k SUBSEP RA[k]) in cfset) && RA[k] > b2) b2 = RA[k]
                         if ((k in KF) && KFC[k] != 1 && KF[k] > b2) b2 = KF[k]
-                        if (b2 != "" && b2 > lt[k] && !((k in pt) && pt[k] > b2)) bdt = b2
+                        if (b2 != "" && b2 > ct && !((k in pt) && pt[k] > b2)) bdt = b2
                         else { held = 1; print $1 "\t" bdt "\t" n3 > ch }
                     }
                 }
@@ -775,7 +790,7 @@ orphan_red() {   # $1 = base/ring name (hosts|accounts|logins)  $2 = its _files.
         FILENAME == ARGV[1] { if ($1 == K && $2 != "") ORPH[toupper($2)] = $3; next }   # name -> newest orphan Error
         FILENAME == ARGV[2] {                                                          # the last OK file per entity
             if ($C != "" && $2 != "Failed" && $2 != "Expired" && (OO == "" || $16 == "out")) {
-                e = toupper($C); t = $4 " " $5
+                e = toupper($C); t = ($24 != "") ? $24 : $4 " " $5   # the File END (col 24, 2026-09-12): finished OK after the error = recovered
                 if (t > ok[e]) ok[e] = t }
             next }
         { e = toupper($1)

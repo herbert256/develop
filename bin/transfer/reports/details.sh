@@ -907,7 +907,13 @@ if [ -s "$FILES" ] && [ -s "$PARSED" ]; then
     _tab9=$(printf '\t')
     awk -F'\t' '$12 == "" { next }
         $2 == "Processed" {
-            if (!($12 in SK) || $6 > SK[$12]) { SK[$12] = $6; C[$12] = $1; D[$12] = $4 " " $5; N[$12] = $11 }
+            # the newest Processed File by its END (col 24, 2026-09-12 user
+            # rule — the same "last OK transfer" the after-last-transfer rule
+            # compares an Error against: a File that finished OK last IS the
+            # last OK transfer, whenever it started); the start when the parse
+            # wrote no end. D stays the start (the legs table shows it).
+            e9 = ($24 != "" ? $24 : $4 " " $5)
+            if (!($12 in SK) || e9 > SK[$12]) { SK[$12] = e9; C[$12] = $1; D[$12] = $4 " " $5; N[$12] = $11 }
             next
         }
         $2 == "Failed" {

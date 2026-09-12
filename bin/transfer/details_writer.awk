@@ -191,9 +191,18 @@ function blue_box(   f, line, i1, bmsg) {
     } else close(f)
 }
 
+# The cut an Error must be NEWER than to be "after the last transfer": the
+# last File's START (tot_last), raised to the newest OK File's END
+# (tot_okend — 2026-09-12, user rule: a File that started before the error
+# but FINISHED OK after it, a retry burst whose late leg delivered, is a
+# transfer that ended OK after the error, so the error is not after the last
+# transfer). Shared by the banner and the connected-lines cutoff of the Last
+# server log messages table, and the same cut result.sh / went-kaput apply.
+function last_transfer_cut() { return (tot_okend > tot_last) ? tot_okend : tot_last }
+
 function err_after_transfer_banner(   m9) {
     if (have_tot != 1 || tot_last == "" || a_bannerdt == "") return
-    if (a_bannerdt > tot_last) {
+    if (a_bannerdt > last_transfer_cut()) {
         # when the page carries its own "Server log error" section (the flow
         # is in the server-failing set), the banner is followed by the error
         # line itself — date/time, session id and message, a LOGCARD
@@ -713,7 +722,7 @@ function page_srv_log(   f, n, i, V, fw, ip, nc, C9) {
     srv_log_error_section()
     last_error_section()
     last_ok_section()
-    emit_srv_table("Last server log messages", tot_last)
+    emit_srv_table("Last server log messages", last_transfer_cut())   # connected lines after the last transfer — its END cut (2026-09-12)
 }
 
 # The "Logons" table (LOGIN pages, 2026-08): first/last successful
@@ -1191,7 +1200,7 @@ function reset_entity() {
     busy_day = "-"; busy_cnt = 0
     x_blue = ""; x_grpfold = ""
     x_oneacct = ""; x_onedom = ""; x_oneapp = ""; x_oneptn = ""; x_onelgc = ""; x_onebl = ""
-    tot_recs = ""; tot_f = ""; tot_p = ""; tot_h = ""; tot_first = ""; tot_last = ""; tot_pct = ""
+    tot_recs = ""; tot_f = ""; tot_p = ""; tot_h = ""; tot_first = ""; tot_last = ""; tot_pct = ""; tot_okend = ""
     tot_share = ""; tot_rank = ""; tot_n = ""; tot_act = ""; tot_idle = ""
     tot_largest = ""; tot_avg = ""; tot_srank = ""; tot_erank = ""; tot_duravg = "-"; tot_sshare = ""
     tot_fi = 0; tot_pi = 0; tot_fo = 0; tot_po = 0; tot_rv = 0
@@ -1342,6 +1351,7 @@ NF < 4 { next }
             tot_fi = ($18 != "") ? $18 : 0; tot_pi = ($19 != "") ? $19 : 0; tot_fo = ($20 != "") ? $20 : 0; tot_po = ($21 != "") ? $21 : 0
             tot_largest = $22; tot_avg = $23; tot_srank = $24; tot_erank = $25
             tot_duravg = ($26 != "") ? $26 : "-"; tot_sshare = $27
+            tot_okend = $30   # the newest OK File END (details_lib perday, 2026-09-12): the after-last-transfer cut
             have_tot = 1
             rank_name = $2   # the entity these totals belong to — the stream
                              # variable `e` has moved on by the time the page

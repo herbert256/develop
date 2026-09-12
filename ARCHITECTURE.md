@@ -144,7 +144,13 @@ in the area orchestrators and feed the boxes and day pages.
 2. **`bin/build/result.sh`** fills the rest, preserving blue: a **subscription** goes green/red by
    its LAST File's outcome (red when Failed or Expired, green otherwise incl. Waiting; orange =
    never seen). **The after-last-transfer rule (2026-08)**: a would-be-green subscription flips
-   RED when the server log holds an E-level line NEWER than that last transfer — never a line on
+   RED when the server log holds an E-level line NEWER than that last transfer — newer than its
+   END since 2026-09-12 (user rule): the cut is the last File's start raised to the newest OK
+   File's END (`_files.tsv` col 24, the latest leg end), because a File that started before the
+   error but FINISHED OK after it — a retry burst whose late leg delivered — is a transfer that
+   ended OK after the error (production `UC1_CD_IDM_ROTAFORM`: an Error at 09:19, three Files
+   started the day before delivered at 15:16); the same cut in went-kaput, `orphan_red`'s
+   recovered-since test and the detail pages' banner — never a line on
    a TRANSFER-ENDED session (2026-09-12, user rule): a session that also logged the platform's own
    `{"message":"Transfer end logged."` bookend, any status, is not a server-log error, applied ONCE
    in `bin/server/parse.sh` by keeping such lines out of every `_err_warn` ring
@@ -662,7 +668,8 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   login is, on a multi-FE account, credited only to the flows configured for that login. `subscription-verdict.awk`'s END fallback
   still writes the bare Pickup information table for every sidecar flow without a verdict.
 - **The "Last OK transfer" section** (2026-08, SITE pages, directly above "Last server log
-  messages"): the flow's newest PROCESSED File — deliberately NOT the outcome policy's OK
+  messages"): the flow's newest PROCESSED File — newest by its END (`_files.tsv` col 24) since
+  2026-09-12, the same "last OK transfer" the after-last-transfer cut uses — deliberately NOT the outcome policy's OK
   (2026-08): a UC2 file still Waiting is staged, not transferred, and showed 3 staging legs where
   the reader expects the complete 4-leg transfer with the partner's collect; an all-Waiting flow
   has no section — shown

@@ -211,6 +211,22 @@ function routing_T(abs, dur, dir, st, sid, fn, sz, mo) {
     T(abs, dur, st, "SECURETRANSPORT", "", sitefield(), dir, "Server", "routing", fn, sz, "", "UNKNOWN", mo, (dir == "Inbound" ? "AL" : "NP"), "NU", sid, "false", PROF, abs - 100 - rint(500))
 }
 
+# the LATE-OK File (the "lateok" shape, 2026-09-12): the inbound pesit leg
+# at t0, a FAILED first push right after it (with its reason line), then the
+# automatic retry that DELIVERS at t1 — ONE File whose start is t0 and whose
+# end is past t1, Processed with a failed leg (Recovered, Automatic)
+function uc1_lateok(t0, t1,   fn, sz, mo, sidp, sids, sidr, d1) {
+    fn = fname_of(t0); sz = fsize(); mo = fmode()
+    sidp = sesshex(); sids = sesshex(); sidr = sesshex()
+    d1 = 300 + int(rexp(900)) + szdur(sz, pesitthr())
+    pesit_T(t0, d1, "Inbound", "S", sidp, fn, sz, mo, "NP")
+    s_pesit_ok(t0, sidp)
+    ssh_T(t0 + d1 + 2500, 200 + int(rexp(600)), "Outbound", "F", sids, fn, 0, "Server", "SECURETRANSPORT", "UNKNOWN", sitefield(), hostspelled(), mo, "NP", "false")
+    s_reason_err(t0 + d1 + 2600, sids, fn)
+    ssh_T(t1, 600 + int(rexp(900)), "Outbound", "P", sidr, fn, sz, "Server", "SECURETRANSPORT", "UNKNOWN", sitefield(), hostspelled(), mo, "NP", "false")
+    s_initconn(t1 - 2000, sidr)
+}
+
 # UC1: CFT delivers over pesit (Inbound), we push to the partner (Outbound ssh)
 function uc1_file(t0,   fn, sz, mo, ic, sidp, sids, d1, d2, i, tt, ok, late, rr, sidr, tr) {
     fn = fname_of(t0); sz = fsize(); mo = fmode(); ic = inicap()
@@ -695,6 +711,24 @@ FILENAME == CAL {
             base = jd * 86400000
             srnd(hash(ENVN "|ev|" SITE "|" jd))
             S(base + cd_ms() + rint(3600000), "E", "TM", sesshex(), "Connection failure while " srvsite() " tried to connect to remote host " HOST ":" PORT " as user " ACCT ": com.maverick.ssh.SshException: The connection did not complete")
+            continue
+        }
+        # the LATE-OK shape (2026-09-12, user rule: "there are CoreIds from
+        # this subscription that ended ok after it — in those cases do not
+        # mark it as a Server Error"): the same E line at X, two days after
+        # the last window File — and ONE File that STARTED three hours before
+        # X (its inbound leg, a failed first push) and whose automatic retry
+        # DELIVERED an hour after X. Start < error < end: the start-based rule
+        # flipped this flow red, the END rule keeps it green — no banner, not
+        # server-failing, not on went-kaput. Tagged flow only, its own per-day
+        # seed, so no other flow-day moves.
+        if (hastag("lateok") && jd == TOJ + 2) {
+            base = jd * 86400000
+            srnd(hash(ENVN "|ev|" SITE "|" jd))
+            tx = base + 43200000 + rint(3600000)
+            S(tx, "E", "TM", sesshex(), "Connection failure while " srvsite() " tried to connect to remote host " HOST ":" PORT " as user " ACCT ": com.maverick.ssh.SshException: The connection did not complete")
+            CID = uuid4(); NOPROF = 0
+            uc1_lateok(tx - 10800000, tx + 3600000)
             continue
         }
         if (jd < FROMJ || jd > TOJ) continue

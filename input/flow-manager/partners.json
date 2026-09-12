@@ -776,6 +776,30 @@
     "tags": ["sample-estate"]
   },
   {
+    "businessId": "1c1e31f9-0387-4d15-b2e7-f01fb7c11e7e",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/1c1e31f9-0387-4d15-b2e7-f01fb7c11e7e",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "d47eda9f-0538-4cc7-9d8f-9979fd333697",
+        "name": "SCP_DPL_PAYOUT_DUNDER_PWD",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "hosts": ["paper.dunder.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "DPL_PAYOUT_DUNDER",
+    "tags": ["sample-estate"]
+  },
+  {
     "businessId": "6c7eed01-e646-41c1-acaf-e8efa7d47a81",
     "meta": {
       "href": "https://flowmanager.acme.example:443/api/v2/partners/6c7eed01-e646-41c1-acaf-e8efa7d47a81",
