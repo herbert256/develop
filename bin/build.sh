@@ -193,6 +193,39 @@ count_stats() {
     printf '%d\t%d\t%d' "$nf" "$nl" "$nb"
 }
 
+# log_inventory DIR -> one line per *.csv export in DIR, sorted on First:
+#   name <TAB> first <TAB> last <TAB> lines
+# First/Last = the oldest/newest record stamp in the file (ccyy-mm-dd
+# HH:MM:SS, from the first MM/DD/YYYY HH:MM:SS on each line — the transfer
+# export's Start Time, the server export's Time; the continuation lines of a
+# multi-line server message carry none and are skipped), Lines = the physical
+# lines after the header. The report's two bottom tables (2026-09-12, user
+# request). Reading every byte of every export is the count_stats cost
+# again, so the answer is CACHED PER FILE under name + size + mtime
+# (data/.buildstats/loginv/): a warm build re-reads nothing, a new or changed
+# export is scanned once.
+log_inventory() {
+    local d=$1 f sig cache
+    local -a g
+    shopt -s nullglob; g=("$d"/*.csv); shopt -u nullglob
+    [ ${#g[@]} -gt 0 ] || return 0
+    mkdir -p "$BUILD_STATS_DIR/loginv"
+    for f in "${g[@]}"; do
+        sig=$(stat -f'%N %z %m' "$f" | cksum | cut -d' ' -f1)
+        cache="$BUILD_STATS_DIR/loginv/$sig"
+        if [ ! -s "$cache" ]; then
+            awk -v N="$(basename "$f")" '
+                function iso(s) { return substr(s, 7, 4) "-" substr(s, 1, 2) "-" substr(s, 4, 2) " " substr(s, 12) }
+                NR > 1 && match($0, /[0-9][0-9]\/[0-9][0-9]\/[0-9][0-9][0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]/) {
+                    t = iso(substr($0, RSTART, RLENGTH))
+                    if (first == "" || t < first) first = t
+                    if (t > last) last = t }
+                END { printf "%s\t%s\t%s\t%d\n", N, first, last, (NR > 0 ? NR - 1 : 0) }' "$f" > "$cache.tmp" && mv "$cache.tmp" "$cache"
+        fi
+        cat "$cache"
+    done | LC_ALL=C sort -t"$(printf '\t')" -k2,2 -k1,1
+}
+
 # HTML-escape stdin (the report embeds commands and raw step output)
 esc() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
 
@@ -252,6 +285,10 @@ write_report() {
     g=("data/transfer/cache/_files.tsv")
     r=$(count_stats "cache-transfer" ${g[@]+"${g[@]}"}); IFS=$'\t' read -r a ctlines ctbytes <<<"$r"
     shopt -u nullglob
+    # the per-export inventory for the report's bottom tables (log_inventory,
+    # cached per file) — gathered here, BEFORE the clock, like the figures above
+    local sinv tinv
+    sinv=$(log_inventory input/server); tinv=$(log_inventory input/transfer)
     # THE INPUT CHANGES (2026-09-06, user request): every file under
     # input/{server,transfer,flow-manager}/ and the *.txt policy files at the
     # input root, compared with the manifest the PREVIOUS build left in
@@ -309,6 +346,8 @@ HTML
 .buildwrap th,.buildwrap td{border:1px solid #ddd;padding:.3rem .6rem;text-align:left;vertical-align:top;white-space:normal}
 .buildwrap th{background:#f5f5f5;color:#222}
 .buildwrap td.r{text-align:right;white-space:nowrap}
+.buildwrap .sxs table{width:auto;margin-top:.4rem}   /* the two log-file tables side by side (style.css .sxs): content-sized, not 100% */
+.buildwrap .sxs td,.buildwrap .sxs th{white-space:nowrap}
 code,pre,td.cmd{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.92em}
 .ok{color:#1a7f37}
 .failed{color:#c0392b;font-weight:600}
@@ -387,27 +426,26 @@ HTML
         printf '<tr><td>HTML files</td><td class="v">%s</td></tr>' "$(hnum "$nhtml")"
         printf '<tr><td>Size</td><td class="v">%s</td></tr></table></div>\n' "$(hbytes "$obytes")"
         printf '</div>\n'
-        # ---- Inbox: what the exchange repo and the cloud drop delivered ----
+        # ---- Inbox: what the inbox delivered (never named — 2026-09-12) -------
         printf '<h2>Inbox</h2>\n'
         if [ -f input/.sample-estate ]; then
-            printf '<p class="bsnote">Not read on the sample estate (develop) — the inboxes are runtime-only.</p>\n'
+            printf '<p class="bsnote">Not read on the sample estate (develop) — the inbox is runtime-only.</p>\n'
         elif [ -z "${ENV_INBOX:-}" ]; then
-            printf '<p class="bsnote">input/environment.txt %s — the inboxes are not read (Acceptance or Production expected).</p>\n' \
+            printf '<p class="bsnote">input/environment.txt %s — the inbox is not read (Acceptance or Production expected).</p>\n' \
                 "$([ -n "${ENV_LABEL:-}" ] && printf 'says <strong>%s</strong>' "$(printf '%s' "$ENV_LABEL" | esc)" || printf 'is missing')"
         else
-            printf '<p class="bsnote">This checkout is <strong>%s</strong>: it consumes the archives named <code>%s</code> in the exchange repo and in ~/cloud; the other environment'"'"'s archives stay put.</p>\n' \
+            printf '<p class="bsnote">This checkout is <strong>%s</strong>: it consumes the archives named <code>%s</code> in the inbox; the other environment'"'"'s archives stay put. The log exports inside land as <code>logEntry_mm-dd.csv</code> and <code>fileTransfer_mm-dd.csv</code>, named from their first record'"'"'s date.</p>\n' \
                 "$(printf '%s' "$ENV_LABEL" | esc)" "$(printf '%s' "$ENV_INBOX" | sed 's/ /*.7z, /g; s/$/*.7z/')"
             if [ ! -s build/inbox.tsv ]; then
-                printf '<p class="bsnote">The inbox steps did not run this build.</p>\n'
+                printf '<p class="bsnote">The inbox step did not run this build.</p>\n'
             else
-                printf '<table>\n<tr><th>Source</th><th>Outcome</th><th>Archive</th><th>Detail</th></tr>\n'
-                local _is _io _ia _id _cls
-                while IFS=$'\t' read -r _is _io _ia _id; do
-                    [ -n "$_is" ] || continue
+                printf '<table>\n<tr><th>Outcome</th><th>Archive</th><th>Detail</th></tr>\n'
+                local _io _ia _id _cls
+                while IFS=$'\t' read -r _io _ia _id; do
+                    [ -n "$_io" ] || continue
                     case $_io in consumed) _cls=ok ;; failed) _cls=failed ;; *) _cls="" ;; esac
-                    case $_is in exchange) _is="Exchange repo (github.com/herbert256/exchange)" ;; cloud) _is="~/cloud drop" ;; esac
-                    printf '<tr><td>%s</td><td class="%s">%s</td><td><code>%s</code></td><td>%s</td></tr>\n' \
-                        "$(printf '%s' "$_is" | esc)" "$_cls" "$(printf '%s' "$_io" | esc)" "$(printf '%s' "$_ia" | esc)" "$(printf '%s' "$_id" | esc)"
+                    printf '<tr><td class="%s">%s</td><td><code>%s</code></td><td>%s</td></tr>\n' \
+                        "$_cls" "$(printf '%s' "$_io" | esc)" "$(printf '%s' "$_ia" | esc)" "$(printf '%s' "$_id" | esc)"
                 done < build/inbox.tsv
                 printf '</table>\n'
             fi
@@ -461,6 +499,26 @@ HTML
                 printf '</pre></details>\n'
             done
         fi
+        # ---- the log files (2026-09-12, user request): every server and
+        # transfer export in input/, two tables side by side — Name · First ·
+        # Last · Lines, sorted on First (log_inventory, gathered up top)
+        printf '<h2>Log files</h2>\n<div class="sxs">\n'
+        local _spec _lname _lfirst _llast _llines _inv
+        for _spec in "Server log files|$sinv" "Transfer log files|$tinv"; do
+            _inv="${_spec#*|}"
+            printf '<div class="sxscol"><h3>%s</h3>\n<table>\n<tr><th>Name</th><th>First</th><th>Last</th><th class="r">Lines</th></tr>\n' "${_spec%%|*}"
+            if [ -z "$_inv" ]; then
+                printf '<tr><td colspan="4">(none)</td></tr>\n'
+            else
+                while IFS=$'\t' read -r _lname _lfirst _llast _llines; do
+                    [ -n "$_lname" ] || continue
+                    printf '<tr><td><code>%s</code></td><td>%s</td><td>%s</td><td class="r">%s</td></tr>\n' \
+                        "$(printf '%s' "$_lname" | esc)" "$(printf '%s' "$_lfirst" | esc)" "$(printf '%s' "$_llast" | esc)" "$(hnum "${_llines:-0}")"
+                done <<< "$_inv"
+            fi
+            printf '</table></div>\n'
+        done
+        printf '</div>\n'
         printf '<p>Written by <code>bin/build.sh</code> &mdash; raw step logs in <code>build/step-NN.log</code>. Build finished at %s.</p>\n' "$end"
         printf '</div>\n'
         printf '</body>\n</html>\n'
@@ -549,27 +607,25 @@ bg_step_wait() {
 }
 
 # ---- RUNTIME-ONLY: ingest delivered updates BEFORE anything parses ---------
-# Two inboxes, in this order — both read ONLY this environment's archives
-# (input/environment.txt -> the prefixes acc* / prd*+prod*, bin/envlabel.sh;
-# one repo = one environment, 2026-09-11):
-#   1. the git exchange repo at ~/exchange/ (exchange-in.sh, 2026-09-06, user
-#      request): every <prefix>*.7z in it, unpacked with the st-reports
-#      password and routed onto input/ (*.json -> flow-manager/, *.txt -> the
-#      input root, transferLog*.csv -> transfer/, logEntry*.csv -> server/;
-#      existing files replaced), then removed from the repo and pushed. A bad
-#      archive is a WARNING that stays in place — the build goes on. The same
-#      repo receives the built site at the end (st-reports-archive.sh,
-#      st-reports-<env>.7z — never read as an inbox file).
-#   2. the ~/cloud/ drop folder — st-reports-update.sh ingests every
-#      <prefix>*.7z directly in it with the same routing and removes each on
-#      success (the fixed name update.7z is no longer read).
+# ONE inbox (2026-09-12, user request — the ~/cloud drop folder is gone): the
+# git repo exchange-in.sh pulls (~/exchange/ by default; the report and every
+# message call it "the inbox", never by name). It reads ONLY this
+# environment's archives (input/environment.txt -> the prefixes acc* /
+# prd*+prod*, bin/envlabel.sh; one repo = one environment, 2026-09-11):
+# every <prefix>*.7z in it, unpacked with the st-reports password and routed
+# onto input/ by st-reports-update.sh (*.json -> flow-manager/, *.txt -> the
+# input root, the two log exports RENAMED to logEntry_mm-dd.csv /
+# fileTransfer_mm-dd.csv from their first record's date; existing files
+# replaced), then removed from the repo and pushed. A bad archive is a
+# WARNING that stays in place — the build goes on. The same repo receives
+# the built site at the end (st-reports-archive.sh, st-reports-<env>.7z —
+# never read as an inbox file).
 # Runs BEFORE the have-config check just below, so an update delivering the
 # checkout's first exports enables the build in the same run.
 # Develop (the .sample-estate marker) never ingests — its estate is generated.
 : > build/inbox.tsv   # the report's Inbox block: the inbox scripts append one line per outcome
 if [ ! -f input/.sample-estate ]; then
-    run_step "exchange: ingest ${ENV_INBOX:-<no prefix>}* .7z from ~/exchange -> input/" bin/build/exchange-in.sh   # the git inbox, first (2026-09-06)
-    run_step "update: ingest ${ENV_INBOX:-<no prefix>}* .7z from ~/cloud -> input/"      bin/build/st-reports-update.sh
+    run_step "inbox: ingest ${ENV_INBOX:-<no prefix>}* .7z -> input/" bin/build/exchange-in.sh
 fi
 
 if [ ! -f input/flow-manager/partners.json ] || [ ! -f input/flow-manager/subscriptions.json ]; then
@@ -686,11 +742,11 @@ run_step "publish: display renames (input/rename.txt)"                    bin/bu
 # ---- RUNTIME-ONLY: the shareable site archive (2026-08-30) ------------------
 # In a runtime checkout — recognized by the ABSENT input/.sample-estate
 # marker, which only the develop repo carries — every completed build packs
-# docs/ into build/st-reports-<env>_YYYY-MM-DD_HHMM.7z, copies it to ~/cloud/
-# and pushes it into the ~/exchange/ git repo as the stable st-reports-<env>.7z
-# (2026-08-31, user request; the <env> since 2026-09-11).
+# docs/ into build/st-reports-<env>_YYYY-MM-DD_HHMM.7z and pushes it into the
+# OUTBOX (the inbox repo) as the stable st-reports-<env>.7z (2026-08-31, user
+# request; the <env> since 2026-09-11; the ~/cloud copy went 2026-09-12).
 if [ ! -f input/.sample-estate ]; then
-    run_step "archive: st-reports-${ENV_KEY:-?} .7z -> build/ + ~/cloud/ + ~/exchange/"  bin/build/st-reports-archive.sh
+    run_step "archive: st-reports-${ENV_KEY:-?} .7z -> build/ + outbox"  bin/build/st-reports-archive.sh
 fi
 
 # (The docs/build.html publish was REMOVED 2026-08-29 — the report lives only

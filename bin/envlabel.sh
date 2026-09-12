@@ -15,9 +15,10 @@
 #               any other label -> "" (no inbox — archives stay where they are)
 #
 # The label shows as a static top-bar label (report.js buildTopbar reads it
-# from topbar-data.js) and in the home title; the prefixes drive the two
-# runtime inboxes (bin/build/exchange-in.sh, bin/build/st-reports-update.sh)
-# and the key names the outbox archives (bin/build/st-reports-archive.sh).
+# from topbar-data.js) and in the home title; the prefixes drive the runtime
+# inbox (bin/build/exchange-in.sh -> bin/build/st-reports-update.sh; the
+# ~/cloud drop is gone since 2026-09-12) and the key names the outbox
+# archives (bin/build/st-reports-archive.sh).
 #
 _el_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_LABEL=""
@@ -47,9 +48,9 @@ env_of_name() {
 
 # env_inbox_find DIR [PRUNE] — NUL-separated, sorted: every *.7z (and the FIRST
 # part *.7z.001 of a multi-volume set) under DIR whose name starts with one of
-# ENV_INBOX, any case. With PRUNE (the exchange checkout's .git) the whole tree
-# is walked; without it only DIR itself is read (~/cloud holds unrelated files
-# and folders). Nothing when ENV_INBOX is empty.
+# ENV_INBOX, any case. With PRUNE (the inbox checkout's .git) the whole tree
+# is walked; without it only DIR itself is read (no caller since the ~/cloud
+# drop went, 2026-09-12 — kept for a flat folder). Nothing when ENV_INBOX is empty.
 env_inbox_find() {
     local d=$1 p; local -a t=()
     [ -n "$ENV_INBOX" ] || return 0

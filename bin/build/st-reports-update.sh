@@ -1,19 +1,13 @@
 #!/usr/bin/env bash
 #
 # st-reports-update.sh — RUNTIME-ONLY build step (2026-08-31, user request):
-# ingest delivered update archives BEFORE anything parses. Two callers:
+# ingest ONE delivered update archive BEFORE anything parses:
 #
-#   bin/build/st-reports-update.sh            the ~/cloud/ drop folder: every
-#       <prefix>*.7z directly in it (acc* for the Acceptance checkout, prd*
-#       and prod* for Production — input/environment.txt via bin/envlabel.sh;
-#       one repo = one environment since 2026-09-11, so the fixed name
-#       update.7z is no longer read: two runtime builds share the folder and
-#       a shared name would be consumed by whichever built first). Each
-#       archive is ingested in turn; a refused one is a WARNING that stays in
-#       place (the exchange inbox's policy) — the build goes on.
-#   bin/build/st-reports-update.sh ARCHIVE    one archive (bin/build/exchange-in.sh
-#       calls it per acc*/prd* archive of the git exchange repo); the exit
-#       status says consumed (0) or left in place (1).
+#   bin/build/st-reports-update.sh ARCHIVE    bin/build/exchange-in.sh calls
+#       it per acc*/prd* archive of the INBOX (the git repo it pulls); the
+#       exit status says consumed (0) or left in place (1). The former
+#       ~/cloud drop folder is gone (2026-09-12, user request: the inbox is
+#       the only intake).
 #
 # An archive is packed elsewhere with the SAME password st-reports-archive.sh
 # generates (input/secrets/st-reports.pass) and carries fresh exports:
@@ -27,16 +21,23 @@
 #   4. copy the exports onto input/ (existing files overwritten — a
 #      re-delivered export replaces its older self, and the incremental parse
 #      manifests notice the changed sizes and reparse). Two layouts:
-#        a. the REPO TREE — flow-manager/ server/ transfer/ rooted at the
-#           archive root or under input/; the OLD per-environment layout
-#           (input/<env>/… or <env>/…) is accepted when <env> is THIS one;
-#        b. LOOSE FILES, at any depth, routed by name:
-#              logEntry*.csv      -> input/server/
-#              transferLog*.csv   -> input/transfer/
+#        a. the REPO TREE — flow-manager/ rooted at the archive root or under
+#           input/; the OLD per-environment layout (input/<env>/… or
+#           <env>/…) is accepted when <env> is THIS one;
+#        b. every OTHER file, at any depth, routed by name and — the two log
+#           exports — RENAMED on the way in (2026-09-12, user request):
+#              logEntry*.csv      -> input/server/logEntry_mm-dd.csv
+#              fileTransfer*.csv  -> input/transfer/fileTransfer_mm-dd.csv
+#              transferLog*.csv   -> input/transfer/fileTransfer_mm-dd.csv (the old name)
 #              *.json             -> input/flow-manager/
 #              *.txt              -> input/          (the policy files —
 #                                    environment.txt and README.txt never)
-#           Any other file is listed and ignored.
+#           mm-dd (zero-padded month and day) is read from the file itself:
+#           the date of its first data record — the exports are newest-first,
+#           so that is the day the export was cut. A file whose date cannot
+#           be read keeps its own name; two files of one archive mapping to
+#           the same name get a numbered suffix rather than overwriting each
+#           other. Any other file is listed and ignored.
 #   5. delete the archive (every part of a multi-volume set) — only after a
 #      fully successful copy.
 #
@@ -55,34 +56,39 @@ cd "$SCRIPT_DIR/../.."
 source bin/envlabel.sh   # ENV_LABEL / ENV_KEY / ENV_INBOX / env_of_name / env_inbox_find
 
 # the build report's Inbox block (build/inbox.tsv, reset by bin/build.sh):
-# source ⇥ status ⇥ archive ⇥ detail — every outcome leaves one line
-SRC="${AXWAY_INBOX_SOURCE:-cloud}"
-inbox_note() { [ -d build ] && printf '%s\t%s\t%s\t%s\n' "$SRC" "$1" "$2" "$3" >> build/inbox.tsv; return 0; }
+# status ⇥ archive ⇥ detail — every outcome leaves one line
+inbox_note() { [ -d build ] && printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> build/inbox.tsv; return 0; }
 PASSF="input/secrets/st-reports.pass"
+# csv_mmdd FILE -> "mm-dd" from the first data record's MM/DD/YYYY date (the
+# header is line 1; up to five lines are read), "" when none is found
+csv_mmdd() {
+    awk 'NR > 1 && match($0, /[0-9][0-9]\/[0-9][0-9]\/[0-9][0-9][0-9][0-9]/) { s = substr($0, RSTART, RLENGTH); print substr(s, 1, 2) "-" substr(s, 4, 2); exit }
+         NR > 6 { exit }' "$1"
+}
 
 # ingest_one ARCHIVE -> 0 consumed, 1 left in place (with the reason on stderr
 # and in the Inbox block)
 ingest_one() {
-    local UPD=$1 UPDD tmp total=0 claimed other d root sub n src rel base i f
+    local UPD=$1 UPDD tmp total=0 claimed other d root sub n src rel base i f dst
     UPDD="${UPD/#$HOME/~}"   # display form
     local -a ignored=() plan_src=() plan_dst=()
 
     # ---- 1. the name must not claim the other environment -------------------
     claimed=$(env_of_name "$(basename "$UPD")")
     if [ -n "$claimed" ] && [ "$claimed" != "$ENV_KEY" ]; then
-        echo "st-reports-update: $UPDD is named for the $claimed environment — this checkout is ${ENV_LABEL:-unlabelled}; the file stays, nothing was copied." >&2
+        echo "inbox: $UPDD is named for the $claimed environment — this checkout is ${ENV_LABEL:-unlabelled}; the file stays, nothing was copied." >&2
         inbox_note failed "$(basename "$UPD")" "names the $claimed environment (this checkout is ${ENV_LABEL:-unlabelled})"
         return 1
     fi
 
-    command -v 7z >/dev/null 2>&1 || { echo "st-reports-update: 7z not found (brew install p7zip)." >&2; return 1; }
-    [ -s "$PASSF" ] || { echo "st-reports-update: $PASSF missing — cannot unpack $UPDD (the password is generated by the archive step of a completed build; pack updates with that value)." >&2; inbox_note failed "$(basename "$UPD")" "no $PASSF"; return 1; }
+    command -v 7z >/dev/null 2>&1 || { echo "inbox: 7z not found (brew install p7zip)." >&2; return 1; }
+    [ -s "$PASSF" ] || { echo "inbox: $PASSF missing — cannot unpack $UPDD (the password is generated by the archive step of a completed build; pack updates with that value)." >&2; inbox_note failed "$(basename "$UPD")" "no $PASSF"; return 1; }
 
     tmp=$(mktemp -d "${TMPDIR:-/tmp}/stupd.XXXXXX")
     # ---- 2. unpack -----------------------------------------------------------
     if ! 7z x -aoa -p"$(cat "$PASSF")" -o"$tmp" "$UPD" >/dev/null 2>&1; then
         rm -rf "$tmp"
-        echo "st-reports-update: could not unpack $UPDD (wrong password or corrupt archive) — the file stays; fix or remove it." >&2
+        echo "inbox: could not unpack $UPDD (wrong password or corrupt archive) — the file stays; fix or remove it." >&2
         inbox_note failed "$(basename "$UPD")" "could not unpack (wrong password or corrupt archive)"
         return 1
     fi
@@ -97,102 +103,88 @@ ingest_one() {
         esac
         if [ "$other" != "$ENV_KEY" ]; then
             rm -rf "$tmp"
-            echo "st-reports-update: $UPDD carries the $other environment's tree (${d#$tmp/}) — this checkout is ${ENV_LABEL:-unlabelled}; the file stays, nothing was copied from it." >&2
+            echo "inbox: $UPDD carries the $other environment's tree (${d#$tmp/}) — this checkout is ${ENV_LABEL:-unlabelled}; the file stays, nothing was copied from it." >&2
             inbox_note failed "$(basename "$UPD")" "carries the $other tree (${d#$tmp/})"
             return 1
         fi
     done
 
-    # ---- 4a. the repo tree: the three directories -----------------------------
+    # ---- 4a. the repo tree: flow-manager/ is copied as a tree -----------------
     # rooted at input/ (the repo layout), at the archive root, or — the OLD
-    # per-environment layout — under input/<env>/ or <env>/ when <env> is ours
+    # per-environment layout — under input/<env>/ or <env>/ when <env> is
+    # ours. The server/ and transfer/ exports go through the per-file plan
+    # below instead, which NAMES them (2026-09-12).
     local -a roots=("$tmp/input" "$tmp")
     [ -z "$ENV_KEY" ] || roots+=("$tmp/input/$ENV_KEY" "$tmp/$ENV_KEY")
-    for sub in flow-manager server transfer; do
-        for root in "${roots[@]}"; do
-            src="$root/$sub"
-            [ -d "$src" ] || continue
-            n=$(find "$src" -type f ! -name '.DS_Store' | wc -l | tr -d ' ')
-            [ "$n" -gt 0 ] || continue
-            mkdir -p "input/$sub"
-            cp -pR "$src"/. "input/$sub"/
-            total=$((total + n))
-            echo "st-reports-update: $n file(s) ${src#$tmp/} -> input/$sub/" >&2
-        done
+    for root in "${roots[@]}"; do
+        src="$root/flow-manager"
+        [ -d "$src" ] || continue
+        n=$(find "$src" -type f ! -name '.DS_Store' | wc -l | tr -d ' ')
+        [ "$n" -gt 0 ] || continue
+        mkdir -p input/flow-manager
+        cp -pR "$src"/. input/flow-manager/
+        total=$((total + n))
+        echo "inbox: $n file(s) ${src#$tmp/} -> input/flow-manager/" >&2
     done
 
-    # ---- 4b. loose files, routed by name ----------------------------------------
+    # ---- 4b. every other file, routed by name — the log exports RENAMED -------
+    # (2026-09-12, user request): logEntry_mm-dd.csv / fileTransfer_mm-dd.csv,
+    # mm-dd from the file's first data record (csv_mmdd); a file whose date
+    # cannot be read keeps its own name; a second file of this archive mapping
+    # to a name already planned gets a numbered suffix (never overwrites it)
+    local mmdd j dup
     while IFS= read -r -d '' f; do
         rel="${f#$tmp/}"
         rel="${rel#input/}"
         [ -n "$ENV_KEY" ] && rel="${rel#$ENV_KEY/}"
-        # files inside one of the three known subdirs were copied by pass 4a
-        case "$rel" in flow-manager/*|server/*|transfer/*) continue ;; esac
+        case "$rel" in flow-manager/*) continue ;; esac   # copied by pass 4a
         base=$(basename "$f")
-        sub=""
+        sub=""; dst=$base
         case "$base" in
-            logEntry*.csv)     sub=server ;;
-            transferLog*.csv)  sub=transfer ;;
+            logEntry*.csv)                      sub=server;   mmdd=$(csv_mmdd "$f"); [ -n "$mmdd" ] && dst="logEntry_$mmdd.csv" ;;
+            transferLog*.csv|fileTransfer*.csv) sub=transfer; mmdd=$(csv_mmdd "$f"); [ -n "$mmdd" ] && dst="fileTransfer_$mmdd.csv" ;;
             *.json)            sub=flow-manager ;;
             environment.txt|README.txt) sub="" ;;   # a checkout's own files, never delivered
             *.txt)             sub=. ;;             # the policy files live at the input root
         esac
         if [ -z "$sub" ]; then ignored+=("$rel"); continue; fi
-        plan_src+=("$f")
-        if [ "$sub" = . ]; then plan_dst+=("input/$base"); else plan_dst+=("input/$sub/$base"); fi
+        if [ "$sub" = . ]; then dst="input/$dst"; else dst="input/$sub/$dst"; fi
+        dup=1; j=0
+        while [ $j -lt ${#plan_dst[@]} ]; do
+            if [ "${plan_dst[$j]}" = "$dst" ]; then dup=$((dup + 1)); dst="${dst%.*}_$dup.${dst##*.}"; j=0; continue; fi
+            j=$((j + 1))
+        done
+        plan_src+=("$f"); plan_dst+=("$dst")
     done < <(find "$tmp" -type f ! -name '.DS_Store' -print0)
 
-    [ ${#ignored[@]} -eq 0 ] || echo "st-reports-update: ignored (not an export): ${ignored[*]}" >&2
+    [ ${#ignored[@]} -eq 0 ] || echo "inbox: ignored (not an export): ${ignored[*]}" >&2
     i=0
     while [ $i -lt ${#plan_src[@]} ]; do
         mkdir -p "$(dirname "${plan_dst[$i]}")"
         cp -p "${plan_src[$i]}" "${plan_dst[$i]}"
         total=$((total + 1))
-        echo "st-reports-update: ${plan_src[$i]#$tmp/} -> ${plan_dst[$i]}" >&2
+        echo "inbox: ${plan_src[$i]#$tmp/} -> ${plan_dst[$i]}" >&2
         i=$((i + 1))
     done
     rm -rf "$tmp"
 
     if [ "$total" -eq 0 ]; then
-        echo "st-reports-update: $UPDD holds NO export at all — the file stays; check its layout (expected input/{flow-manager,server,transfer}/... or loose logEntry*.csv / transferLog*.csv / partners.json / subscriptions.json / the policy .txt files)." >&2
+        echo "inbox: $UPDD holds NO export at all — the file stays; check its layout (expected input/flow-manager/... or logEntry*.csv / fileTransfer*.csv / partners.json / subscriptions.json / the policy .txt files, at any depth)." >&2
         inbox_note failed "$(basename "$UPD")" "holds no export"
         return 1
     fi
     # ---- 5. remove the archive (every part of a multi-volume set) --------------
     case "$UPD" in
-        *.7z.001) rm -f "${UPD%.001}".[0-9][0-9][0-9]; echo "st-reports-update: ingested $total file(s); removed every part of $UPDD." >&2 ;;
-        *)        rm -f "$UPD"; echo "st-reports-update: ingested $total file(s); removed $UPDD." >&2 ;;
+        *.7z.001) rm -f "${UPD%.001}".[0-9][0-9][0-9]; echo "inbox: ingested $total file(s); removed every part of $UPDD." >&2 ;;
+        *)        rm -f "$UPD"; echo "inbox: ingested $total file(s); removed $UPDD." >&2 ;;
     esac
     inbox_note consumed "$(basename "$UPD")" "$total file(s): $(printf '%s ' ${plan_dst[@]+"${plan_dst[@]}"} | sed 's/ $//')"
     return 0
 }
 
-if [ $# -ge 1 ]; then
-    # one archive, named by the caller (exchange-in.sh): the exit status is the verdict
-    ingest_one "$1"
-    exit $?
-fi
-
-# ---- the ~/cloud drop: this environment's <prefix>*.7z, directly in it -------
-CLOUD="$HOME/cloud"
-if [ -z "$ENV_INBOX" ]; then
-    echo "st-reports-update: input/environment.txt says '${ENV_LABEL:-<missing>}' — no inbox prefix for it (Acceptance or Production expected); ~/cloud is not read." >&2
-    inbox_note skipped "~/cloud" "no inbox prefix for environment '${ENV_LABEL:-<missing>}'"
-    exit 0
-fi
-pfxs=$(printf '%s' "$ENV_INBOX" | sed 's/ /*.7z, /g; s/$/*.7z/')
-[ -d "$CLOUD" ] || { echo "st-reports-update: no ~/cloud folder — nothing to ingest." >&2; inbox_note none "~/cloud" "no folder"; exit 0; }
-drops=()
-while IFS= read -r -d '' f; do drops+=("$f"); done < <(env_inbox_find "$CLOUD")
-if [ ${#drops[@]} -eq 0 ]; then
-    echo "st-reports-update: no $pfxs in ~/cloud — nothing to ingest ($ENV_LABEL)." >&2
-    inbox_note none "~/cloud" "no $pfxs"
-    exit 0
-fi
-left=0
-for f in "${drops[@]}"; do
-    echo "st-reports-update: ingesting ${f/#$HOME/~} ..." >&2
-    ingest_one "$f" || { left=$((left + 1)); echo "st-reports-update: WARNING - ${f/#$HOME/~} was NOT ingested; it stays in ~/cloud — fix or remove it, then rebuild." >&2; }
-done
-[ "$left" -eq 0 ] || echo "st-reports-update: $left archive(s) left in ~/cloud." >&2
-exit 0
+# one archive, named by the caller (exchange-in.sh): the exit status is the
+# verdict. (The ~/cloud drop loop that ran without an argument is gone —
+# 2026-09-12, user request: the inbox is the only intake.)
+[ $# -ge 1 ] || { echo "usage: bin/build/st-reports-update.sh ARCHIVE.7z   (called per inbox archive by bin/build/exchange-in.sh)" >&2; exit 2; }
+ingest_one "$1"
+exit $?

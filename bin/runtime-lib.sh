@@ -28,7 +28,7 @@
 # and --delete-excluded removes any copy an earlier refresh left behind.
 # No git operations either way: committing in a runtime repo stays manual.
 # Run acc.sh and prd.sh one AFTER the other, never at the same time — both
-# builds read and push the shared ~/exchange repo and ~/cloud drop.
+# builds pull and push the shared inbox/outbox repo.
 #
 runtime_refresh() {
     local name=$1 me=${0##*/} dev rt lock_pid

@@ -4,8 +4,8 @@
 # derived tree and rebuild this checkout's one environment from the raw inputs.
 #
 #   1. clear build/ — every prior run's report, step logs and (runtime) the
-#                     st-reports archives (2026-08-30: their keepers are the
-#                     ~/cloud/ copies). Cleared BEFORE the log tee below
+#                     st-reports archives (the stable-name copy in the
+#                     outbox repo is the keeper). Cleared BEFORE the log tee below
 #                     opens build/fresh.log — clearing after would unlink
 #                     the very file this run is writing.
 #   2. clear data/  — every parse cache, report and stamp (documented safe:

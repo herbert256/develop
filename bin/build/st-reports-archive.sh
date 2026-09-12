@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 #
 # st-reports-archive.sh — RUNTIME-ONLY build step (2026-08-30): pack the
-# rendered site into a password-protected archive and drop a copy in the
-# cloud-sync folder — and, since 2026-08-31 (user request), commit + push it
-# into the git exchange repo at ~/exchange/ as the stable st-reports.7z:
+# rendered site into a password-protected archive and, since 2026-08-31
+# (user request), commit + push it into the OUTBOX — the same git repo the
+# inbox step pulls, at ~/exchange/ — under the stable name st-reports-<env>.7z:
 #
-#   build/st-reports_YYYY-MM-DD_HHMM.7z   (7z -mx9, whole docs/ tree)
-#   ~/cloud/st-reports_YYYY-MM-DD_HHMM.7z (copy)
-#   ~/exchange/st-reports.7z              (stable name, committed + pushed)
+#   build/st-reports-<env>_YYYY-MM-DD_HHMM.7z   (7z -mx9, whole docs/ tree)
+#   ~/exchange/st-reports-<env>.7z              (stable name, committed + pushed)
 #
+# (The ~/cloud/ copy is gone — 2026-09-12, user request: the outbox is the
+# repo alone; build/ keeps the stamped copy until the next fresh build.)
 # Invoked by bin/build.sh at the end of a successful chain, and ONLY in the
 # runtime checkout (build.sh gates on the ABSENT input/.sample-estate marker
 # — the develop repo carries the marker and skips this). A fresh build
-# (bin/fresh.sh) clears build/ wholesale, archives included (2026-08-30) —
-# the ~/cloud/ copies are the keepers; *.7z is gitignored in both repos.
+# (bin/fresh.sh) clears build/ wholesale, archives included (2026-08-30);
+# *.7z is gitignored in both repos.
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -59,31 +60,31 @@ rm -f "$out"
 # page names are listable.
 7z a -t7z -mx9 -mhe=on -p"$pass" "$out" docs >/dev/null
 
-mkdir -p "$HOME/cloud"
-cp "$out" "$HOME/cloud/"
-echo "Wrote $out ($(du -h "$out" | cut -f1 | tr -d ' ')) and copied it to ~/cloud/." >&2
+echo "Wrote $out ($(du -h "$out" | cut -f1 | tr -d ' '))." >&2
 
-# ---- the git exchange copy (2026-08-31, user request) -----------------------
-# The same archive into the exchange repo at ~/exchange/ under the STABLE
-# name st-reports-<env>.7z, committed and pushed: the receiving side always finds
+# ---- the OUTBOX copy (2026-08-31, user request) ------------------------------
+# The same archive into the outbox repo under the STABLE name
+# st-reports-<env>.7z, committed and pushed: the receiving side always finds
 # the newest site there (a timestamped name per build would grow the repo
-# without bound — the stamp lives in build/ and ~/cloud/, and in the pages
-# themselves). Pull first so a concurrent drop on the other side never makes
-# the push non-fast-forward; every failure here is a WARNING — the archive is
-# already safe in build/ and ~/cloud/, and a local commit goes out with the
-# next build's push. No ~/exchange/ git repo = quiet skip.
+# without bound — the stamp lives in build/ and in the pages themselves).
+# Pull first so a concurrent drop on the other side never makes the push
+# non-fast-forward; every failure here is a WARNING — the archive is already
+# safe in build/, and a local commit goes out with the next build's push. No
+# git repo there = quiet skip.
 EX="${AXWAY_EXCHANGE_DIR:-$HOME/exchange}"
 if [ -d "$EX/.git" ]; then
     cp "$out" "$EX/st-reports-${ENV_KEY}.7z"
     git -C "$EX" pull --rebase --autostash --quiet 2>/dev/null \
-        || echo "st-reports-archive: WARNING - exchange pull failed (offline?) — pushing on top of the local state." >&2
+        || echo "outbox: WARNING - pull failed (offline?) — pushing on top of the local state." >&2
     if [ -n "$(git -C "$EX" status --porcelain)" ]; then
         git -C "$EX" add -A
         git -C "$EX" commit --quiet -m "st-reports-${ENV_KEY} ${stamp}"
     fi
     if git -C "$EX" push --quiet 2>/dev/null; then
-        echo "st-reports-archive: st-reports-${ENV_KEY}.7z pushed to the exchange repo." >&2
+        echo "outbox: st-reports-${ENV_KEY}.7z pushed." >&2
     else
-        echo "st-reports-archive: WARNING - exchange push failed (offline?) — the commit is local and goes out with the next build." >&2
+        echo "outbox: WARNING - push failed (offline?) — the commit is local and goes out with the next build." >&2
     fi
+else
+    echo "outbox: no git repo at ${EX/#$HOME/~} — the archive stays in build/ only." >&2
 fi

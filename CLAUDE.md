@@ -28,7 +28,9 @@ by design. (The old combined `runtime` repo — two environments in one checkout
 2026-09-11, left in place for Herbert to delete; `bin/acc.sh` / `bin/prd.sh` refuse it.) Code flows one way
 via **`bin/acc.sh`** and **`bin/prd.sh`** (no arguments — the runtime checkouts sit BESIDE this repo as `../runtime-acceptance` and `../runtime-production`; each syncs `bin/` + `assets/` + `.gitattributes` into its checkout, removes CLAUDE/ARCHITECTURE
 there, then runs that checkout's `bin/fresh.sh`; run the two one AFTER the other, never at the
-same time — every runtime build reads and pushes the shared `~/exchange`); the
+same time — every runtime build pulls and pushes the shared inbox/outbox repo, `~/exchange` by
+default, which the build report and every message call "the inbox" / "the outbox", never by
+name — 2026-09-12, user request; the `~/cloud` drop folder is gone since the same day); the
 sync EXCLUDES the develop-only tooling — `bin/acc.sh`, `bin/prd.sh`, their shared `bin/runtime-lib.sh` and `bin/sample/` — and deletes
 stale copies of them in the target, so a runtime `bin/` carries pipeline code only. The committed
 `input/.sample-estate` marker gates the generator — absent in a runtime checkout, so it can never
@@ -51,9 +53,9 @@ from `topbar-data.js`; `render_topbar` bakes the same link on the help/build pag
 checkout without the file — 2026-09-12, the separate label span beside a fixed "Cloud" brand is
 gone) and the home title (`Cloud Reports — <label>`); it derives the runtime
 inbox prefixes (Acceptance → `acc*`, Production → `prd*` and `prod*`, case-insensitive; any other
-label = both inboxes skipped with a note) and names the outbox archives
-(`build/st-reports-<key>_<stamp>.7z`, the `~/cloud/` copy, `~/exchange/st-reports-<key>.7z`); a
-missing label FAILS the archive step. The docs root holds the site itself: `index.html` (the
+label = the inbox skipped with a note) and names the outbox archives
+(`build/st-reports-<key>_<stamp>.7z` and the outbox repo's `st-reports-<key>.7z`; the `~/cloud/`
+copy is gone since 2026-09-12); a missing label FAILS the archive step. The docs root holds the site itself: `index.html` (the
 home), `404.html` (self-contained; its home link = the path before the FIRST known top-level dir,
 a trailing `acceptance/`|`production/` stripped for pre-split bookmarks), `assets/`, `help/`,
 `.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `seenlog/`), `server/`, `analyses/`
@@ -96,17 +98,23 @@ family has no pages then) instead of failing.
 The report carries the timings (start → end · duration) in its title — the environment label
 before them — and opens with ONE fact row (Input / Cached files / Output), gathered BEFORE the
 end timestamp; `count_stats` caches line counts in `data/.buildstats/<key>` under a signature of
-the file list. Then the Inbox block (which prefixes this checkout consumes and what the two inbox
-steps did — `build/inbox.tsv`) and the Input-changes table (new / updated / removed since the
-previous build, from the 3-column `build/input-manifest.tsv`: path ⇥ size ⇥ mtime). Trap: glob
+the file list. Then the Inbox block (which prefixes this checkout consumes and what the inbox
+step did — `build/inbox.tsv`, 3 columns: status ⇥ archive ⇥ detail; the inbox is never named)
+and the Input-changes table (new / updated / removed since the previous build, from the 3-column
+`build/input-manifest.tsv`: path ⇥ size ⇥ mtime). At the BOTTOM (2026-09-12, user request), two
+side-by-side tables — Server log files | Transfer log files — Name · First · Last · Lines per
+export in `input/`, sorted on First (`log_inventory`, one awk pass per file cached under
+name+size+mtime in `data/.buildstats/loginv/`, gathered before the clock). Trap: glob
 file lists into an ARRAY, not `read <<<"20 20 12 61 79 80 81 701 33 98 100 204 250 395 398 399 400…)"` (word-splits under the assignment's IFS). Nothing
 on the site links the report. (`PUBLISH_STAMP_EXTRA` still exists in publish_lib for any publish
 that needs an extra freshness ingredient — **never put a run-specific value in every stamp**, it
 would re-render every page on each build.)
 
 Order, ONE linear chain (the rationale of every position is in the script's comments):
-(runtime only) `bin/build/exchange-in.sh` → `bin/build/st-reports-update.sh` (the `~/cloud`
-drop, by prefix) → the have-config check → `bin/flow-manager.sh` → *parse*: server `parse.sh`
+(runtime only) `bin/build/exchange-in.sh` (the inbox, by prefix; it calls
+`bin/build/st-reports-update.sh` per archive, which renames the log exports to
+`logEntry_mm-dd.csv` / `fileTransfer_mm-dd.csv` from their first record's date — 2026-09-12) → the
+have-config check → `bin/flow-manager.sh` → *parse*: server `parse.sh`
 in the background beside transfer `parse.sh` (`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`), then
 `bin/session-sites.sh`, `bin/expire-files.sh`, `bin/bookend-ok.sh`,
 `bin/build/seen-in-server-log.sh`, `bin/build/result.sh`, a server-mention rescan when
@@ -233,8 +241,9 @@ Report scripts use `skip_if_fresh OUT SCRIPT [DEP…]`; a directory dep covers i
 
 ## Tool sets
 
-**`bin/transfer/`** — reports over the transfer logs (`transferLog_*.csv`). **`bin/server/`** — a
-parser + report scripts over the server logs (`logEntry_*.csv`). **`bin/analyses/`** —
+**`bin/transfer/`** — reports over the transfer logs (`fileTransfer_*.csv` as the inbox names them
+since 2026-09-12; the sample estate still writes `transferLog_*.csv` — every reader globs `*.csv`).
+**`bin/server/`** — a parser + report scripts over the server logs (`logEntry_*.csv`). **`bin/analyses/`** —
 configured-vs-seen analyses from the transfer outputs + config caches (no parse of its own).
 **`bin/dashboards/`** — the graphical Overview. **`bin/day/`** — the per-day pages.
 
@@ -1097,9 +1106,9 @@ bin/build/display-rename.sh      the display-rename sweep (input/rename.txt); th
 bin/build/linkcheck.sh           every link resolves + every page is reachable (manual gate)
 
 # RUNTIME-ONLY (skipped on the sample estate — the .sample-estate marker):
-bin/build/exchange-in.sh         ~/exchange inbox: this environment's <prefix>*.7z -> st-reports-update.sh
-bin/build/st-reports-update.sh   one archive (or every <prefix>*.7z in ~/cloud) -> input/
-bin/build/st-reports-archive.sh  docs/ -> st-reports-<env>_<stamp>.7z -> build/ + ~/cloud/ + ~/exchange/
+bin/build/exchange-in.sh         the inbox (a git repo, ~/exchange by default — never named in output): this environment's <prefix>*.7z -> st-reports-update.sh
+bin/build/st-reports-update.sh   one archive -> input/ (the log exports renamed logEntry_mm-dd.csv / fileTransfer_mm-dd.csv)
+bin/build/st-reports-archive.sh  docs/ -> st-reports-<env>_<stamp>.7z -> build/ + the outbox (the same repo, st-reports-<env>.7z)
 ```
 
 All data lives under two roots at the repo top (`data/` gitignored wholesale; a runtime repo
