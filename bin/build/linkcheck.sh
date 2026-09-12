@@ -77,7 +77,12 @@ awk -v DOCS="$DOCS" '
         n = split(full, parts, "/"); sp = 0
         for (i = 1; i <= n; i++) {
             if (parts[i] == "" || parts[i] == ".") continue
-            if (parts[i] == "..") { if (sp > 0) sp--; continue }
+            # a ".." that climbs ABOVE docs/ is a broken link on the served site
+            # even when the path happens to exist on disk (2026-09-12: the
+            # file-search pages loaded ../assets/file-search.js from the site
+            # root — the repo-root assets/ made it pass here while the browser
+            # got a 404)
+            if (parts[i] == "..") { if (sp > 0) sp--; else return "\001ESCAPE"; continue }
             stack[++sp] = parts[i]
         }
         out = ""
@@ -88,6 +93,7 @@ awk -v DOCS="$DOCS" '
         t = resolve(page, raw)
         if (t == "") { next_ext++; return }
         if (t == "\001ROOT") { rootlink[page]++; return }
+        if (t == "\001ESCAPE") { t = "(above the site root) " raw }   # counted as broken below
         if (t in FILE) { E[page, ++EN[page]] = t }
         else           { if (!(t in BRKN)) BRKEX[t] = page "\t" raw   # keep the FIRST sighting as the example
                          BRKN[t]++ }

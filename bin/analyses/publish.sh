@@ -208,17 +208,17 @@ render_coverage_pages() {
             html_head "$title" "../assets/style.css" "" "HOME" "coverage"
             esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
             if [ "$member" = logicals ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the logical flows counted in this cell of the Logical row (Logical, Partners, Domains, Applications &amp; BL table). A logical flow is a FlowID family condensed to one three-part name (a hyphen marks parts the derivation combined); its members are the configured subscriptions that carry those FlowIDs.</p>\n'
+                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the logical flows counted in this cell of the Logical row (Logical, Partners, Domains, Applications &amp; BL table). A logical flow is a FlowID family condensed to one three-part name (a hyphen marks parts the derivation combined); its members are the configured subscriptions that carry those FlowIDs.</p>\n'
             elif [ "$member" = partners ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the partners counted in this cell of the Partners row (Logical, Partners, Domains, Applications &amp; BL table). A partner is the last part of the logical flow names (domain_application_partner), merged into one organisation by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases; its configured endpoint(s) and member accounts are listed.</p>\n'
+                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the partners counted in this cell of the Partners row (Logical, Partners, Domains, Applications &amp; BL table). A partner is the last part of the logical flow names (domain_application_partner), merged into one organisation by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases; its configured endpoint(s) and member accounts are listed.</p>\n'
             elif [ "$member" = applications ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the applications counted in this cell of the Applications row (Logical, Partners, Domains, Applications &amp; BL table). An application is the middle part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; an application active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the applications counted in this cell of the Applications row (Logical, Partners, Domains, Applications &amp; BL table). An application is the middle part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; an application active in both directions counts once per side.</p>\n'
             elif [ "$member" = domains ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the business domains counted in this cell of the Domains row (Logical, Partners, Domains, Applications &amp; BL table). The domain is the first part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; a domain active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the business domains counted in this cell of the Domains row (Logical, Partners, Domains, Applications &amp; BL table). The domain is the first part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; a domain active in both directions counts once per side.</p>\n'
             elif [ "$member" = bl ]; then
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the BL tags counted in this cell of the BL row (Logical, Partners, Domains, Applications &amp; BL table). A BL is a subscriptions.json tags entry starting with BL, kept verbatim; its members are the configured subscriptions that carry the tag, and a tag active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the BL tags counted in this cell of the BL row (Logical, Partners, Domains, Applications &amp; BL table). A BL is a subscriptions.json tags entry starting with BL, kept verbatim; its members are the configured subscriptions that carry the tag, and a tag active in both directions counts once per side.</p>\n'
             else
-                printf '<p class="range"><a href="../../index.html">&larr; Back to the home status table</a> &mdash; the items counted in this cell of the Entities table.</p>\n'
+                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the items counted in this cell of the Entities table.</p>\n'
             fi
             printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = surfaced only by the Server &rarr; Transfer step (bin/seen-in-server-log.sh) with no real transfer.</p>\n'
             # the three selector groups (report.js setupSelFilter) —
@@ -1907,7 +1907,7 @@ for _fs_k in 24-hours 48-hours week 2-weeks 3-weeks month; do
     cp "$ARPT/file-search-$_fs_k-data.js" "$DOCS/file-search-$_fs_k-data.js"
     _fs_dver=$(cksum < "$DOCS/file-search-$_fs_k-data.js" | awk '{print $1}')
     awk -v d="<script src=\"file-search-$_fs_k-data.js?v=$_fs_dver\" defer></script>" \
-        -v e="<script src=\"../assets/file-search.js?v=$_fs_jsv\" defer></script>" \
+        -v e="<script src=\"assets/file-search.js?v=$_fs_jsv\" defer></script>" \
         '/<script src=[^>]*report\.js/ && !done { print d; print e; done = 1 } { print }' \
         "$DOCS/file-search-$_fs_k.html" > "$DOCS/file-search-$_fs_k.html.tmp.$$" \
         && mv "$DOCS/file-search-$_fs_k.html.tmp.$$" "$DOCS/file-search-$_fs_k.html"

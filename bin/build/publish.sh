@@ -1558,7 +1558,7 @@ write_sitemap() {
         # pipefail would kill the publish over a legitimate 0
         n1=$({ ls "$DOCS"/day/[0-9]*.html 2>/dev/null || true; } | wc -l | tr -d ' ')
         printf '<div class="smcard"><h3>Per-day pages <span class="smcount">%s</span></h3><ul>\n' "$n1"
-        printf '<li><a href="../index.html">Day dashboards (%s) — one per calendar day, via the home log-files table</a></li>\n' "$n1"
+        printf '<li><a href="index.html">Day dashboards (%s) — one per calendar day, via the home log-files table</a></li>\n' "$n1"
         printf '</ul></div>\n'
         # the per-entity detail pages: one page per configured-or-logged entity
         printf '<div class="smcard"><h3>Entity detail pages</h3><ul>\n'
@@ -1577,11 +1577,11 @@ write_sitemap() {
         done
         printf '</ul></div>\n'
         printf '<div class="smcard"><h3>Tools</h3><ul>\n'
-        printf '<li><a href="../index.html">Home</a> — the shared landing page</li>\n'
+        printf '<li><a href="index.html">Home</a> — the shared landing page</li>\n'
         printf '<li><a href="search.html">Search</a> — find any entity by name</li>\n'
         printf '<li><a href="report-finder.html">Report finder</a> — find a report by title or intro</li>\n'
         printf '<li><a href="whats-new.html">What is new</a> — new and changed reports</li>\n'
-        printf '<li><a href="../help/index.html">Help</a> — how to read the report catalogs (per-report help sits behind each page'\''s <b>?</b> button)</li>\n'
+        printf '<li><a href="help/index.html">Help</a> — how to read the report catalogs (per-report help sits behind each page'\''s <b>?</b> button)</li>\n'
         # (the Build report link is GONE 2026-08-29: the report is no longer
         # published into docs/ at all — it lives only in the local build/
         # directory, and nothing on the site references a build any more)
