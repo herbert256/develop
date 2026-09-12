@@ -876,12 +876,14 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   layout assembled at publish time from the entity `.rpt` + the coverage TSVs; the
   +Server/Transfer SCOPE decides whether a server-log sighting counts as seen; sort is shared
   across the nine entities (localStorage, 1-hour sliding expiry, stored by column label).
-  Every view with figures shows **Cured** between OK and Error (2026-09-10, user request): the
-  OK Files that carried ≥1 Failed leg — the home page Cured rule, per entity. In the `.rpt` it is
-  the column AFTER OK (ROW `$6`, `numwarn`, bucket metric 4 = RECALC `s4`, blank when 0); the
-  five writers pre-scan `_transfers.tsv` col 3 for it; `entity_layout` moves it; the Error column
-  is display index 6, where the three `?axway_sort=` producers (home day table, overview/day Top 5)
-  point.
+  Every view with figures shows **Retry** and **Resubmit** between OK and Error (Cured
+  2026-09-10, split 2026-09-12, user request): the OK Files that carried ≥1 Failed leg — the home
+  page Cured rule, per entity — Resubmit when a leg carries `Resubmitted=true` (`_transfers.tsv`
+  col 22, the Top view's Automatic/Manual rule), Retry otherwise. In the `.rpt` they are the two
+  columns AFTER OK (ROW `$6` `$7`, `numwarn`, bucket metrics 4 and 5 = RECALC `s4` `s5`, blank
+  when 0); the five writers pre-scan `_transfers.tsv` cols 3 and 22 for them; `entity_layout`
+  moves them; the Error column is display index 7, where the three `?axway_sort=` producers (home
+  day table, overview/day Top 5) point.
 - **The detail pages** (`details.sh` → `details_lib.sh`/`details_writer.awk`): one page per entity
   of the nine types, every configured name gets one; slugs via the comprehensive `_slugmap.tsv`;
   no From/To, no search box, no RECALC.

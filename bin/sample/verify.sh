@@ -304,19 +304,22 @@ check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no UCx_ synthetic-site legs"
 n=$(awk -F'\t' '$22 == "true" { n++ } END { print n + 0 }' "$T")
 check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no resubmitted legs"
 
-# the Cured column of the Entities pages (2026-09-10, user request):
-# every entity .rpt Summary carries Files·Error·OK·Cured (ROW $3..$6,
-# Cured = the OK Files that carried a failed leg — the home page rule),
-# the rendered views show it between OK and Error, and the account total
-# equals an independent recount of the two caches
-n=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" && ($6 + 0 > $5 + 0) { n++ } END { print n + 0 }' "data/transfer/reports/subscription.rpt" 2>/dev/null)
-check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "subscription.rpt: ${n:-?} row(s) with Cured > OK"
-hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/entities/account-all.html" 2>/dev/null | sed 's/<[^>]*>//g' | head -8 | tr '\n' '|')
-check $([ "$hdr" = "Account|Direction|Files|Volume|OK|Cured|Error|Last seen|" ] && echo 0 || echo 1) "entities/account-all.html header is '$hdr', expected Account|Direction|Files|Volume|OK|Cured|Error|Last seen|"
-want=$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($3 != "Processed") fl[$1] = 1; next } $3 != "" && $4 != "" && $2 != "Failed" && $2 != "Expired" && ($1 in fl) { n++ } END { print n + 0 }' "$T" "$F" 2>/dev/null)
-got=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "TOTAL" { v = $6; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' "data/transfer/reports/account.rpt" 2>/dev/null)
-check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "account.rpt Cured total is '${got:-absent}', an independent recount of the caches gives '${want:-?}'"
-check $([ "${want:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no cured File (a failed leg, then delivered) — the Cured column is never exercised"
+# the Retry · Resubmit columns of the Entities pages (Cured 2026-09-10, split
+# 2026-09-12, user request): every entity .rpt Summary carries
+# Files·Error·OK·Retry·Resubmit (ROW $3..$7; Retry + Resubmit = the OK Files
+# that carried a failed leg — the home page Cured rule — Resubmit when a leg
+# carries Resubmitted=true, like the Top view's Automatic/Manual), the
+# rendered views show them between OK and Error, and the account totals
+# equal an independent recount of the two caches
+n=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" && ($6 + $7 > $5 + 0) { n++ } END { print n + 0 }' "data/transfer/reports/subscription.rpt" 2>/dev/null)
+check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "subscription.rpt: ${n:-?} row(s) with Retry + Resubmit > OK"
+hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/entities/account-all.html" 2>/dev/null | sed 's/<[^>]*>//g' | head -9 | tr '\n' '|')
+check $([ "$hdr" = "Account|Direction|Files|Volume|OK|Retry|Resubmit|Error|Last seen|" ] && echo 0 || echo 1) "entities/account-all.html header is '$hdr', expected Account|Direction|Files|Volume|OK|Retry|Resubmit|Error|Last seen|"
+read -r want wantm <<< "$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rs[$1] = 1; next } $3 != "" && $4 != "" && $2 != "Failed" && $2 != "Expired" && ($1 in fl) { n++; if ($1 in rs) m++ } END { print n + 0, m + 0 }' "$T" "$F" 2>/dev/null)"
+read -r got gotm <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "TOTAL" { a = $6; b = $7; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); print a + b, b + 0; exit }' "data/transfer/reports/account.rpt" 2>/dev/null)"
+check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "account.rpt Retry + Resubmit total is '${got:-absent}', an independent recount of the caches gives '${want:-?}'"
+check $([ "${gotm:-x}" = "${wantm:-y}" ] && echo 0 || echo 1) "account.rpt Resubmit total is '${gotm:-absent}', an independent recount of the caches gives '${wantm:-?}'"
+check $([ "${want:-0}" -gt "${wantm:-0}" ] && [ "${wantm:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Retry (${want:-0} cured, ${wantm:-0} resubmitted) or no Resubmit File — an Entities column is never exercised"
 
 # the Top view's six column groups (2026-09-12, user request): Files WITHOUT
 # Recovered, then the Recovered group (Automatic · Manual) and the Resubmit

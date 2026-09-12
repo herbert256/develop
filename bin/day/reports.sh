@@ -457,10 +457,10 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # The "See more" href opens the matching Transfer > Entities view
             # NARROWED TO THIS DAY and sorted descending on the same column —
             # ?axway_date beats the page\047s data-date-reset, and the Entities
-            # layout is Name 0 · Direction 1 · Files 2 · Volume 3 · OK 4 · Error 5.
+            # layout is Name 0 · Direction 1 · Files 2 · Volume 3 · OK 4 · Retry 5 · Resubmit 6 · Error 7.
             for (tm = 1; tm <= 3; tm++) {
                 tmet = (tm == 1) ? "Files" : (tm == 2) ? "Volume" : "Errors"
-                tcol = (tm == 1) ? 2 : (tm == 2) ? 3 : 6   # the entities view display indices: Files 2, Volume 3, Error 6 (after OK · Cured)
+                tcol = (tm == 1) ? 2 : (tm == 2) ? 3 : 7   # the entities view display indices: Files 2, Volume 3, Error 7 (after OK · Retry · Resubmit, 2026-09-12)
                 for (tk = 1; tk <= 2; tk++) {
                     tkind = (tk == 1) ? "P" : "S"
                     tname = (tk == 1) ? "partners" : "subscriptions"

@@ -525,8 +525,10 @@ application, bl (group `account-login-site`, label "Entities") — each rendered
 `docs/transfer/entities/` by `render_entity_report`: `<entity>-{all,ok,error,server}.html` +
 `<entity>-{seen,not-seen,warning}[-transfer].html`.
 
-ONE LAYOUT for every view — Name · Direction · Files · Volume · OK · Cured · Error · Last seen
-(Cured, 2026-09-10 = the OK Files that carried a failed leg — the home page rule, per entity). ONE
+ONE LAYOUT for every view — Name · Direction · Files · Volume · OK · Retry · Resubmit · Error ·
+Last seen (Retry + Resubmit, 2026-09-12 — the single Cured column of 2026-09-10 split — = the OK
+Files that carried a failed leg — the home page rule, per entity; Resubmit when a leg carries
+`Resubmitted=true`, the Top view's Automatic/Manual rule). ONE
 exception (2026-08): the SUBSCRIPTIONS Error view appends a **Reason** column — the same per-flow
 diagnosis the home red tables show, resolved by the same chain (newest red `failed-sub-all.rpt` row's
 own verdict unless the flow is in `blue/_redflip.tsv`; else the classified `_kaput-evidence.tsv`

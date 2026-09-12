@@ -102,7 +102,7 @@ for dim in logical partner application domain bl; do
             if (VMAP != "") { while ((getline l < VMAP) > 0) { n2 = split(l, z, "\t")
                 if (n2 >= 2 && z[1] != "" && z[2] != "") vm[toupper(z[1])] = z[2] } close(VMAP) }
         }
-        FILENAME == PF { if ($3 != "Processed") fl[$1] = 1; next }   # _transfers.tsv first: a Failed leg marks its File (Cured)
+        FILENAME == PF { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rsb[$1] = 1; next }   # _transfers.tsv first: a Failed leg marks its File (Retry/Resubmit); a Resubmitted=true leg marks the operator resubmit
         $4 == "" { next }
         {
             delete P; np2 = 0
@@ -115,28 +115,28 @@ for dim in logical partner application domain bl; do
             }
             if (np2 == 0) next
             f = ($2 == "Failed" || $2 == "Expired"); date = $4; sk = $6; disp = $4 " " $5; cid = $1; size = $8
-            cu = (!f && (cid in fl))                      # CURED: an OK File that carried a failed leg (the home page rule)
+            cu = (!f && (cid in fl)); rt = (cu && !(cid in rsb)); rs = (cu && (cid in rsb))   # CURED (an OK File that carried a failed leg — the home page rule): RETRY when no leg was resubmitted, RESUBMIT when one was (the Top view Automatic/Manual split)
             for (a in P) {
-                sc[a]++; if (f) sfl[a]++; else spr[a]++; if (cu) scu[a]++; sv[a] += size
+                sc[a]++; if (f) sfl[a]++; else spr[a]++; if (rt) srt[a]++; if (rs) srs[a]++; sv[a] += size
                 if (!(a in havemin) || sk < mink[a]) { mink[a] = sk; fst[a] = date; havemin[a] = 1 }
                 if (!(a in havemax) || sk > maxk[a]) { maxk[a] = sk; lst[a] = date; havemax[a] = 1 }
                 addtop("S" SUBSEP a SUBSEP (f ? "F" : "P"), sk, disp, cid)
-                dk = a SUBSEP date; ds[dk] = 1; dl[dk]++; if (f) dfl[dk]++; else dpr[dk]++; if (cu) dcu[dk]++; ddb[dk] += size
+                dk = a SUBSEP date; ds[dk] = 1; dl[dk]++; if (f) dfl[dk]++; else dpr[dk]++; if (rt) drt[dk]++; if (rs) drs[dk]++; ddb[dk] += size
                 addtop("D" SUBSEP a SUBSEP date SUBSEP (f ? "F" : "P"), sk, disp, cid)
             }
-            tc++; if (f) tfl++; else tpr++; if (cu) tcu++; tvol += size
+            tc++; if (f) tfl++; else tpr++; if (rt) trt++; if (rs) trs++; tvol += size
         }
         END {
             for (dk in ds) { split(dk, kk, SUBSEP)
-                bk[kk[1]] = bk[kk[1]] (bk[kk[1]] ? "," : "") kk[2] ":" dl[dk] ":" (dfl[dk]+0) ":" (dpr[dk]+0) ":" ddb[dk] ":" (dcu[dk]+0) }
+                bk[kk[1]] = bk[kk[1]] (bk[kk[1]] ? "," : "") kk[2] ":" dl[dk] ":" (dfl[dk]+0) ":" (dpr[dk]+0) ":" ddb[dk] ":" (drt[dk]+0) ":" (drs[dk]+0) }
             for (a in sc) { ns++
                 sh = tc > 0 ? sprintf("%.1f", sc[a] * 100 / tc) : "0.0"
-                printf "S|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s\n", a, sc[a], sfl[a]+0, spr[a]+0, scu[a]+0, human(sv[a]+0), sh, fst[a], lst[a], \
+                printf "S|%s|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s\n", a, sc[a], sfl[a]+0, spr[a]+0, srt[a]+0, srs[a]+0, human(sv[a]+0), sh, fst[a], lst[a], \
                     bk[a], buildlist(top["S" SUBSEP a SUBSEP "F"]), buildlist(top["S" SUBSEP a SUBSEP "P"]) }
             for (dk in ds) { split(dk, x, SUBSEP); nd++
-                printf "D|%s|%s|%d|%d|%d|%d|%s|%s\n", x[1], x[2], dl[dk], dfl[dk]+0, dpr[dk]+0, dcu[dk]+0, \
+                printf "D|%s|%s|%d|%d|%d|%d|%d|%s|%s\n", x[1], x[2], dl[dk], dfl[dk]+0, dpr[dk]+0, drt[dk]+0, drs[dk]+0, \
                     buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "F"]), buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "P"]) }
-            printf "T|%d|%d|%d|%s|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, nd+0, tcu+0
+            printf "T|%d|%d|%d|%s|%d|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, nd+0, trt+0, trs+0
         }
     ' "$PARSED" "$FILES")
 
@@ -145,7 +145,7 @@ for dim in logical partner application domain bl; do
         continue
     fi
 
-    IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_count detail_row_count tot_cured <<< "$(printf '%s\n' "$agg" | grep '^T|')"
+    IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_count detail_row_count tot_retry tot_resub <<< "$(printf '%s\n' "$agg" | grep '^T|')"
 
     # Summary rows, busiest first. ONE awk pass formats the sorted stream into
     # finished ROW lines — a bash while-read with a $(printf) per row forked a
@@ -153,38 +153,38 @@ for dim in logical partner application domain bl; do
     # remainder, like read into the final variable did.
     summary_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | sort -t'|' -k3,3nr | awk -F'|' '
         $2 == "" { next }
-        { ccp = $13; for (i = 14; i <= NF; i++) ccp = ccp "|" $i
-          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-              $2, $3, $4, $5, $6, $7, $9, $10, $11, $12, ccp }')
+        { ccp = $14; for (i = 15; i <= NF; i++) ccp = ccp "|" $i
+          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
+              $2, $3, $4, $5, $6, $7, $8, $10, $11, $12, $13, ccp }')
 
     # Detail rows, sorted by name then date (repeated name blanked in-browser).
     detail_rows=$({ printf '%s\n' "$agg" | grep '^D|' || true; } | sort -t'|' -k2,2 -k3,3 | awk -F'|' '
         $2 == "" { next }
-        { ccp = $9; for (i = 10; i <= NF; i++) ccp = ccp "|" $i
-          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-              $2, $3, $4, $5, $6, $7, $8, ccp }')
+        { ccp = $10; for (i = 11; i <= NF; i++) ccp = ccp "|" $i
+          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
+              $2, $3, $4, $5, $6, $7, $8, $9, ccp }')
 
     {
         printf 'TITLE\t%s\n' "$title"
         printf 'DESC\tFiles per %s: a summary and a per-day detail, both split into Error/OK.\n' "$dim"
         src="derived from the logical flow names (and, for partners, the endpoint/whitelist/alias merge)"
         [ "$dim" = logical ] && src="derived from the FlowIDs, condensed into logical flow groups"
-        printf 'INTRO\tEvery %s with its **Files** (one per CoreId), Error/OK split (**Cured** = the OK Files that needed a retry: a failed leg, then delivered), volume and last sighting — %s. The view tabs switch between logged (**Seen**), configured (**All** / **Not seen**), the status subsets (**OK** / **Warning** / **Error**) and the server-log-only ones (**Server**); the scope tabs decide whether a server-log sighting counts as seen (**+Server**, the default) or not (**Transfer**) — rows tint by each %s'\''s status.\n' "$dim" "$src" "$dim"
+        printf 'INTRO\tEvery %s with its **Files** (one per CoreId), Error/OK split (**Retry** / **Resubmit** = the OK Files that needed a retry — a failed leg, then delivered — healed by the platform'\''s own retry or by an operator'\''s resubmit, the log'\''s Resubmitted flag), volume and last sighting — %s. The view tabs switch between logged (**Seen**), configured (**All** / **Not seen**), the status subsets (**OK** / **Warning** / **Error**) and the server-log-only ones (**Server**); the scope tabs decide whether a server-log sighting counts as seen (**+Server**, the default) or not (**Transfer**) — rows tint by each %s'\''s status.\n' "$dim" "$src" "$dim"
 
         printf 'TABLE\tSummary per %s\twide\n' "$chead"
-        printf 'HEAD\t%s\tFiles\tError\tOK\tCured\tVolume\tFirst seen\tLast seen\n' "$chead"
-        printf "KIND\t$nkind\tnum\tnumfailed\tnumprocessed\tnumwarn\tnum\ttext\ttext\n"
-        printf 'RECALC\t-\ts0\ts1\ts2\ts4\th3\t-\t-\n'
+        printf 'HEAD\t%s\tFiles\tError\tOK\tRetry\tResubmit\tVolume\tFirst seen\tLast seen\n' "$chead"
+        printf "KIND\t$nkind\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumwarn\tnum\ttext\ttext\n"
+        printf 'RECALC\t-\ts0\ts1\ts2\ts4\ts5\th3\t-\t-\n'
         [ -n "$summary_rows" ] && printf '%s\n' "$summary_rows"
-        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num}%s\t\t\n' \
-            "$summary_row_count" "$dim" "$tot_records" "$tot_failed" "$tot_processed" "$tot_cured" "$tot_human"
+        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t\t\n' \
+            "$summary_row_count" "$dim" "$tot_records" "$tot_failed" "$tot_processed" "$tot_retry" "$tot_resub" "$tot_human"
 
         printf 'TABLE\tDetail per %s / Date\tgroup\n' "$chead"
-        printf 'HEAD\t%s\tDate\tFiles\tError\tOK\tCured\n' "$chead"
-        printf "KIND\t$nkind\ttext\tnum\tnumfailed\tnumprocessed\tnumwarn\n"
+        printf 'HEAD\t%s\tDate\tFiles\tError\tOK\tRetry\tResubmit\n' "$chead"
+        printf "KIND\t$nkind\ttext\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumwarn\n"
         [ -n "$detail_rows" ] && printf '%s\n' "$detail_rows"
-        printf 'TOTAL\t@{colspan=2}Total (%s row(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\n' \
-            "$detail_row_count" "$tot_records" "$tot_failed" "$tot_processed" "$tot_cured"
+        printf 'TOTAL\t@{colspan=2}Total (%s row(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num warn}%s\n' \
+            "$detail_row_count" "$tot_records" "$tot_failed" "$tot_processed" "$tot_retry" "$tot_resub"
 
         printf 'NOTE\tCounts Files — one logical transfer each; the %s is %s. Names link to the logical / partner / application / domain detail pages. Volume is the file counted once; First/Last seen stay full-period under the date filter. **The Total row counts each File once** (the site-wide distinct figure); a narrowed date range re-totals over the per-%s rows, whose union attribution can claim one File for several %ss — so a filtered Total can run slightly higher than the distinct figure it replaces, and snaps back to it at the full range. Click an Error or OK count for that outcome'\''s 10 most recent Files (newest first).\n' "$dim" "$attr" "$dim" "$dim"
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

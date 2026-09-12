@@ -58,7 +58,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
     FNR == 1 { fno++ }
     fno == 1 { oc[$1] = $2; sz[$1] = $8; dt[$1] = $4; tm[$1] = $5; skf[$1] = $6; next }
-    fno == 2 { if ($3 != "Processed") fl[$1] = 1; next }   # every leg of every File: a Failed leg marks its File (Cured)
+    fno == 2 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rsb[$1] = 1; next }   # every leg of every File: a Failed leg marks its File (Retry/Resubmit); a Resubmitted=true leg marks the operator resubmit
     $5 == "" { next }
     {
         e = $5; cid = $1; pk = e SUBSEP cid
@@ -66,26 +66,26 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         pseen[pk] = 1
         date = dt[cid]; if (date == "") next
         f = (oc[cid] == "Failed" || oc[cid] == "Expired"); sk = skf[cid]; disp = date " " tm[cid]; size = sz[cid] + 0
-        cu = (!f && (cid in fl))                      # CURED: an OK File that carried a failed leg (the home page rule)
-        sc[e]++; if (f) sfl[e]++; else spr[e]++; if (cu) scu[e]++; sv[e] += size
+        cu = (!f && (cid in fl)); rt = (cu && !(cid in rsb)); rs = (cu && (cid in rsb))   # CURED (an OK File that carried a failed leg — the home page rule): RETRY when no leg was resubmitted, RESUBMIT when one was (the Top view Automatic/Manual split)
+        sc[e]++; if (f) sfl[e]++; else spr[e]++; if (rt) srt[e]++; if (rs) srs[e]++; sv[e] += size
         if (!(e in havemin) || sk < mink[e]) { mink[e] = sk; fst[e] = date; havemin[e] = 1 }
         if (!(e in havemax) || sk > maxk[e]) { maxk[e] = sk; lst[e] = date; havemax[e] = 1 }
         addtop("S" SUBSEP e SUBSEP (f ? "F" : "P"), sk, disp, cid)
-        dk = e SUBSEP date; ds[dk] = 1; dl[dk]++; if (f) dfl[dk]++; else dpr[dk]++; if (cu) dcu[dk]++; ddb[dk] += size
+        dk = e SUBSEP date; ds[dk] = 1; dl[dk]++; if (f) dfl[dk]++; else dpr[dk]++; if (rt) drt[dk]++; if (rs) drs[dk]++; ddb[dk] += size
         addtop("D" SUBSEP e SUBSEP date SUBSEP (f ? "F" : "P"), sk, disp, cid)
-        tc++; if (f) tfl++; else tpr++; if (cu) tcu++; tvol += size
+        tc++; if (f) tfl++; else tpr++; if (rt) trt++; if (rs) trs++; tvol += size
     }
     END {
         for (dk in ds) { split(dk, kk, SUBSEP)
-            bk[kk[1]] = bk[kk[1]] (bk[kk[1]] ? "," : "") kk[2] ":" dl[dk] ":" (dfl[dk]+0) ":" (dpr[dk]+0) ":" ddb[dk] ":" (dcu[dk]+0) }
+            bk[kk[1]] = bk[kk[1]] (bk[kk[1]] ? "," : "") kk[2] ":" dl[dk] ":" (dfl[dk]+0) ":" (dpr[dk]+0) ":" ddb[dk] ":" (drt[dk]+0) ":" (drs[dk]+0) }
         for (e in sc) { ns++
             sh = tc > 0 ? sprintf("%.1f", sc[e] * 100 / tc) : "0.0"
-            printf "S|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s\n", e, sc[e], sfl[e]+0, spr[e]+0, scu[e]+0, human(sv[e]+0), sh, fst[e], lst[e], \
+            printf "S|%s|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s\n", e, sc[e], sfl[e]+0, spr[e]+0, srt[e]+0, srs[e]+0, human(sv[e]+0), sh, fst[e], lst[e], \
                 bk[e], buildlist(top["S" SUBSEP e SUBSEP "F"]), buildlist(top["S" SUBSEP e SUBSEP "P"]) }
         for (dk in ds) { split(dk, x, SUBSEP); nd++
-            printf "D|%s|%s|%d|%d|%d|%d|%s|%s\n", x[1], x[2], dl[dk], dfl[dk]+0, dpr[dk]+0, dcu[dk]+0, \
+            printf "D|%s|%s|%d|%d|%d|%d|%d|%s|%s\n", x[1], x[2], dl[dk], dfl[dk]+0, dpr[dk]+0, drt[dk]+0, drs[dk]+0, \
                 buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "F"]), buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "P"]) }
-        printf "T|%d|%d|%d|%s|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, nd+0, tcu+0
+        printf "T|%d|%d|%d|%s|%d|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, nd+0, trt+0, trs+0
     }
 ' "$FILES" "$PARSED" "$PARSED")
 
@@ -94,7 +94,7 @@ if [ -z "$agg" ]; then
     exit 1
 fi
 
-IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_count detail_row_count tot_cured <<< "$(printf '%s\n' "$agg" | grep '^T|')"
+IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_count detail_row_count tot_retry tot_resub <<< "$(printf '%s\n' "$agg" | grep '^T|')"
 
 # Summary rows, busiest first (by transfer count). ONE awk pass formats the
 # sorted stream into finished ROW lines — a bash while-read with a $(printf)
@@ -102,36 +102,36 @@ IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_cou
 # remainder, like read into the final variable did.
 summary_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | sort -t'|' -k3,3nr | awk -F'|' '
     $2 == "" { next }
-    { ccp = $13; for (i = 14; i <= NF; i++) ccp = ccp "|" $i
-      printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-          $2, $3, $4, $5, $6, $7, $9, $10, $11, $12, ccp }')
+    { ccp = $14; for (i = 15; i <= NF; i++) ccp = ccp "|" $i
+      printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
+          $2, $3, $4, $5, $6, $7, $8, $10, $11, $12, $13, ccp }')
 
 # Detail rows, sorted by login then date (repeated login blanked in-browser).
 detail_rows=$({ printf '%s\n' "$agg" | grep '^D|' || true; } | sort -t'|' -k2,2 -k3,3 | awk -F'|' '
     $2 == "" { next }
-    { ccp = $9; for (i = 10; i <= NF; i++) ccp = ccp "|" $i
-      printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-          $2, $3, $4, $5, $6, $7, $8, ccp }')
+    { ccp = $10; for (i = 11; i <= NF; i++) ccp = ccp "|" $i
+      printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
+          $2, $3, $4, $5, $6, $7, $8, $9, ccp }')
 
 {
     printf 'TITLE\tLogins\n'
     printf 'DESC\tFiles per login: a per-login summary and a per-day detail, both split into Error/OK.\n'
-    printf 'INTRO\tEvery login with its **Files** (one per CoreId), Error/OK split (**Cured** = the OK Files that needed a retry: a failed leg, then delivered), volume and last sighting. The view tabs switch between the logged logins (**Seen**), the whole configuration (**All** / **Not seen**), the status subsets (**OK** / **Warning** / **Error**) and the server-log-only ones (**Server**); the scope tabs decide whether a server-log sighting counts as seen (**+Server**, the default) or not (**Transfer**) — rows tint by each login'\''s status.\n'
+    printf 'INTRO\tEvery login with its **Files** (one per CoreId), Error/OK split (**Retry** / **Resubmit** = the OK Files that needed a retry — a failed leg, then delivered — healed by the platform'\''s own retry or by an operator'\''s resubmit, the log'\''s Resubmitted flag), volume and last sighting. The view tabs switch between the logged logins (**Seen**), the whole configuration (**All** / **Not seen**), the status subsets (**OK** / **Warning** / **Error**) and the server-log-only ones (**Server**); the scope tabs decide whether a server-log sighting counts as seen (**+Server**, the default) or not (**Transfer**) — rows tint by each login'\''s status.\n'
 
     printf 'TABLE\tSummary per login\twide\n'
-    printf 'HEAD\tLogin\tFiles\tError\tOK\tCured\tVolume\tFirst seen\tLast seen\n'
-    printf 'KIND\tlogin\tnum\tnumfailed\tnumprocessed\tnumwarn\tnum\ttext\ttext\n'
-    printf 'RECALC\t-\ts0\ts1\ts2\ts4\th3\t-\t-\n'
+    printf 'HEAD\tLogin\tFiles\tError\tOK\tRetry\tResubmit\tVolume\tFirst seen\tLast seen\n'
+    printf 'KIND\tlogin\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumwarn\tnum\ttext\ttext\n'
+    printf 'RECALC\t-\ts0\ts1\ts2\ts4\ts5\th3\t-\t-\n'
     [ -n "$summary_rows" ] && printf '%s\n' "$summary_rows"
-    printf 'TOTAL\tTotal (%s login(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num}%s\t\t\n' \
-        "$summary_row_count" "$tot_records" "$tot_failed" "$tot_processed" "$tot_cured" "$tot_human"
+    printf 'TOTAL\tTotal (%s login(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t\t\n' \
+        "$summary_row_count" "$tot_records" "$tot_failed" "$tot_processed" "$tot_retry" "$tot_resub" "$tot_human"
 
     printf 'TABLE\tDetail per login / day\tgroup\n'
-    printf 'HEAD\tLogin\tDate\tFiles\tError\tOK\tCured\n'
-    printf 'KIND\tlogin\ttext\tnum\tnumfailed\tnumprocessed\tnumwarn\n'
+    printf 'HEAD\tLogin\tDate\tFiles\tError\tOK\tRetry\tResubmit\n'
+    printf 'KIND\tlogin\ttext\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumwarn\n'
     [ -n "$detail_rows" ] && printf '%s\n' "$detail_rows"
-    printf 'TOTAL\t@{colspan=2}Total (%s row(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\n' \
-        "$detail_row_count" "$tot_records" "$tot_failed" "$tot_processed" "$tot_cured"
+    printf 'TOTAL\t@{colspan=2}Total (%s row(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num warn}%s\n' \
+        "$detail_row_count" "$tot_records" "$tot_failed" "$tot_processed" "$tot_retry" "$tot_resub"
 
     printf 'NOTE\tCounts Files — one logical transfer each. A transfer is counted once per distinct login it involves (its Inbound and Outbound rows may log different logins), so the per-login counts can sum to more than the number of distinct transfers. Error/OK is the transfer'\''s delivered outcome; volume is the file counted once. Click an Error or OK count for that outcome'\''s 10 most recent Files (newest first, by start time).\n'
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

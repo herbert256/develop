@@ -761,10 +761,10 @@ if [ -f "$TR" ]; then
         }
         END {
             # the Entities layout is Name 0 · Direction 1 · Files 2 · Volume 3
-            # · OK 4 · Error 5 — the sort target of each "See more" link
+            # · OK 4 · Retry 5 · Resubmit 6 · Error 7 — the sort target of each "See more" link
             for (tm = 1; tm <= 3; tm++) {
                 tmet = (tm == 1) ? "Files" : (tm == 2) ? "Volume" : "Errors"
-                tcol = (tm == 1) ? 2 : (tm == 2) ? 3 : 6   # the entities view display indices: Files 2, Volume 3, Error 6 (after OK · Cured)
+                tcol = (tm == 1) ? 2 : (tm == 2) ? 3 : 7   # the entities view display indices: Files 2, Volume 3, Error 7 (after OK · Retry · Resubmit, 2026-09-12)
                 for (tk = 1; tk <= 2; tk++) {
                     tkind = (tk == 1) ? "P" : "S"
                     tname = (tk == 1) ? "partners" : "subscriptions"
