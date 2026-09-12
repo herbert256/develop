@@ -37,6 +37,10 @@ hand-maintained `input/environment.txt` (`Acceptance` / `Production`; `Sample`
 here) — the top-bar label, the home title, and the prefix of the update
 archives its build ingests from the inbox (`acc*.7z` / `prd*.7z`); the log
 exports inside land as `logEntry_yyyy-mm-dd.csv` / `fileTransfer_yyyy-mm-dd.csv`.
+A runtime build keeps the CURRENT and the PAST month of exports in `input/`;
+older log exports move to the gitignored `archive/` at the repo root, one
+tested 7z per file (`bin/build/archive-old-logs.sh`, right after the inbox
+step — the sample estate never runs it).
 
 ## What it publishes
 

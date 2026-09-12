@@ -115,7 +115,13 @@ Order, ONE linear chain (the rationale of every position is in the script's comm
 `bin/build/st-reports-update.sh` per archive, which renames the log exports to
 `logEntry_yyyy-mm-dd.csv` / `fileTransfer_yyyy-mm-dd.csv` from their first record's date and tells
 the JSON exports apart by content — `subscriptions.json` / `partners.json` from the first object's
-`meta.href` or keys, whatever they were called — 2026-09-12) → the
+`meta.href` or keys, whatever they were called — 2026-09-12) → (runtime only)
+`bin/build/archive-old-logs.sh` (RETENTION, 2026-09-12, user request: keep the CURRENT and the
+PAST month of exports in `input/`; every server/transfer export dated before the first of the
+past month — the day from its `_yyyy-mm-dd.csv` name, else its first record — moves to the
+gitignored repo-root `archive/` as `<name>.7z`, tested before the original goes; a failure is a
+warning that leaves the file in place; it runs BEFORE the parses so the manifests see the final
+input set and reparse in full once, the month the first files go) → the
 have-config check → `bin/flow-manager.sh` → *parse*: server `parse.sh`
 in the background beside transfer `parse.sh` (`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`), then
 `bin/session-sites.sh`, `bin/expire-files.sh`, `bin/bookend-ok.sh`,
@@ -1079,7 +1085,7 @@ does the same earlier — the variant never becomes a token, so there is no grou
 merge rule 4 plus the alias star went with it. ONE HARD-CODED rule sits beside them in `bin/flow-manager.sh`, 2026-09-03,
 user request: a Logical whose name contains `STREAM` takes the partner `ACCEPTEMAIL`, exempt from
 the merges), plus a
-README.txt per directory. Gitignored: the `data/` root and `/build/`. A step script that
+README.txt per directory. Gitignored: the `data/` root, `/build/` and the retention `/archive/`. A step script that
 only `bin/build.sh` ever invokes lives in **`bin/build/`** — the placement rule; the sample-data
 generator lives in **`bin/sample/`** (guarded by the marker, seeds in `bin/sample/seed/`).
 
@@ -1110,6 +1116,7 @@ bin/build/linkcheck.sh           every link resolves + every page is reachable (
 # RUNTIME-ONLY (skipped on the sample estate — the .sample-estate marker):
 bin/build/exchange-in.sh         the inbox (a git repo, ~/exchange by default — never named in output): this environment's <prefix>*.7z -> st-reports-update.sh
 bin/build/st-reports-update.sh   one archive -> input/ (the log exports renamed logEntry_yyyy-mm-dd.csv / fileTransfer_yyyy-mm-dd.csv)
+bin/build/archive-old-logs.sh    retention: exports older than the current + past month -> archive/<name>.7z (gitignored), tested before removal
 bin/build/st-reports-archive.sh  docs/ -> st-reports-<env>_<stamp>.7z -> build/ + the outbox (the same repo, st-reports-<env>.7z)
 ```
 
