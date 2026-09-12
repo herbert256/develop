@@ -430,7 +430,11 @@ a3 the `{}` link pattern, then `"<minutes>:<series>"` extras — a From/To chang
 interval from the span (1 day→1h, ≤3→2h, ≤7→4h, ≤15→6h, ≤30→12h, else 1 day; slotchart.js
 `autoIv`, applied by the range hook and the load-time stash; a manual click overrides until the
 next change) — overview row 1h/2h/4h/6h/12h/1d (base
-360), day row 15/30/60 min (base 30). KIND picks series/colors/format/axis: `dur` (P50/P90/P98) /
+360), day row 15/30/60 min (base 30). KIND picks series/colors/format/axis: `dur` (P50/P90/P98 on
+the FIXED 19-tick duration axis — 1 s · 2 s · 3 s · 5 s · 7 s · 10 s · 15 s · 20 s · 25 s · 30 s ·
+45 s · 1 m · 5 m · 30 m · 1 h · 5 h · 10 h · 24 h · ≥ 48 h, the user's list verbatim, 2026-09-12;
+equal spacing, linear between ticks, the last tick the clamp ceiling; drawn in a taller 760x380
+frame so the labels keep apart — `durfit`, the Monitor's fitted axis, stays in the 230 frame) /
 `count` / `bytes` / `rate` / `pesit` / `seen` / `ucst` `ucst2` (`stack:1`). The interval +
 Line/Bar/Solid rows (sessionStorage `axway-chart-interval[-<base>]` / `axway-chart-style`) are
 owned by slotchart.js (the tooltip rebinds on every redraw). Hover targets carry `data-l`+`data-v`

@@ -406,6 +406,11 @@ check $([ "$(grep -c 'data-envto' docs/assets/report.js 2>/dev/null)" -ge 1 ] &&
 check $([ "$(grep -c '<a class="brand" href="../index.html">Sample</a>' docs/help/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the help page bar does not lead with the single Sample brand link"
 check $([ "$(grep -rl 'data-envto' docs --include=*.html 2>/dev/null | wc -l | tr -d ' ')" = 0 ] && echo 0 || echo 1) "a sample page bakes the Acceptance / Production pair (data-envto)"
 
+# the fixed duration axis of the Overview / day-page Duration heroes
+# (2026-09-12, user request): the shipped slotchart.js carries the 19-tick
+# scale verbatim, 1 s .. >= 48 h
+check $([ "$(grep -c '"1 s", "2 s", "3 s", "5 s", "7 s", "10 s", "15 s", "20 s", "25 s", "30 s", "45 s", "1 m", "5 m", "30 m", "1 h", "5 h", "10 h", "24 h", ">= 48 h"' docs/assets/slotchart.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "slotchart.js does not carry the 19-tick duration scale"
+
 # the Could not send file report (2026-09-12, user request): the planted
 # cnsend flow (estate.awk UC1_CD_IDM_VANDELAY) closes every failed burst
 # with an AR0074 line — the report lists them newest first, Date & time ·

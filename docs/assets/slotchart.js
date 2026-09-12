@@ -21,23 +21,29 @@
    day PeSIT card has no 15-minute sidecar) falls back to its base.
 
    Everything here mirrors the awk generator it replaced, pixel for pixel:
-   the 760x230 frame, the fixed 12-tick duration axis, the mirrored y labels,
+   the 760x230 frame (760x380 for the 19-tick fixed duration axis since
+   2026-09-12), the mirrored y labels,
    the per-style marks and the transparent per-slot hover columns. */
 (function () {
   "use strict";
 
-  var W = 760, H = 230, L = 46, R = 46, T0 = 16, B = 34;
-  var BASE = H - B, IW = W - L - R, IH = BASE - T0;
+  // H0/BASE0/IH0 are the frame every kind draws in — except `dur`, whose
+  // 19-tick fixed axis needs a TALLER frame (draw() picks H per kind)
+  var W = 760, H0 = 230, HDUR = 380, L = 46, R = 46, T0 = 16, B = 34;
+  var BASE0 = H0 - B, IW = W - L - R, IH0 = BASE0 - T0;
   var GRID = "#e9edf2", MUTE = "#8a97a4";
   var CB = "#3b82c4", CG = "#3f9d52", CR = "#df5a4c", CP = "#7d63c6", CO = "#d9821c";
   var CBL = "#8fb8d8", COL = "#f0c07a";   // the light blue / light orange the UC-status ramp needs
   var SKEY = "axway-chart-style", IKEY = "axway-chart-interval", SCKEY = "axway-chart-scale";
 
-  // the fixed duration axis: 5 s .. >= 48 h, equal tick spacing, linear
-  // between ticks; the LAST tick is the clamp ceiling (a value at or above
-  // it draws at the top) and its label names the beyond-the-previous band
-  var DT = [5000, 10000, 30000, 60000, 300000, 1800000, 3600000, 10800000, 21600000, 36000000, 86400000, 172800000];
-  var DTL = ["5 s", "10 s", "30 s", "1 m", "5 m", "30 m", "1 h", "3 h", "6 h", "10 h", "24 h", ">= 48 h"];
+  // the fixed duration axis (the Overview and day-page Duration heroes):
+  // 1 s .. >= 48 h in 19 ticks (2026-09-12, user request — the scale below
+  // is the user's list verbatim), equal tick spacing, linear between ticks;
+  // the LAST tick is the clamp ceiling (a value at or above it draws at the
+  // top) and its label names the beyond-the-previous band. Nineteen labels
+  // need room: `dur` draws in the taller HDUR frame (draw()).
+  var DT = [1000, 2000, 3000, 5000, 7000, 10000, 15000, 20000, 25000, 30000, 45000, 60000, 300000, 1800000, 3600000, 18000000, 36000000, 86400000, 172800000];
+  var DTL = ["1 s", "2 s", "3 s", "5 s", "7 s", "10 s", "15 s", "20 s", "25 s", "30 s", "45 s", "1 m", "5 m", "30 m", "1 h", "5 h", "10 h", "24 h", ">= 48 h"];
 
   // The FITTED duration axis (kind `durfit`, the Monitor charts): identical
   // bands and piecewise-linear segments, but the ticks come from this chart's
@@ -166,6 +172,12 @@
   // numbers. Duration keeps its own fixed ms->h axis, which is already
   // non-linear, so it is never offered the toggle.
   function draw(kind, style, slots, linkpat, cid, title, scale) {
+    // the frame: every kind the 230-high one, the fixed-axis `dur` the
+    // taller HDUR one — its 19 ticks (DT) would sit 10 units apart in the
+    // shared frame and their labels overlap; `durfit` (at most 8 fitted
+    // ticks) keeps the shared frame. Decided on the ORIGINAL kind, before
+    // the durfit remap below. Shadows the module H0/BASE0/IH0 for this draw.
+    var H = (kind === "dur") ? HDUR : H0, BASE = H - B, IH = BASE - T0;
     // durfit = dur on a per-chart fitted axis; remapped HERE so every other
     // dur branch (marks, tooltip, data table) is shared untouched
     var DTv = DT, DTLv = DTL;
