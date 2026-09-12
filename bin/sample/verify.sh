@@ -318,6 +318,39 @@ got=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "TOTAL" { v = $6; sub(/^@\{
 check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "account.rpt Cured total is '${got:-absent}', an independent recount of the caches gives '${want:-?}'"
 check $([ "${want:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no cured File (a failed leg, then delivered) — the Cured column is never exercised"
 
+# the Top view's three tables (2026-09-12, user request): the per-day Files
+# band WITHOUT Recovered, then Recovered (Date · Automatic · Manual) and
+# Resubmit (Date · Ok · Failed) side by side — Manual = a recovered File
+# with a Resubmitted=true leg (col 22), Resubmit = every File with such a
+# leg, Ok/Failed by outcome; every figure on the File's START day. The
+# totals must equal an independent recount of the two caches, all four
+# new columns must be exercised, and the home page's Cured (= Automatic +
+# Manual, read from table 2) must still equal the recovered total.
+TV="data/transfer/reports/topview.rpt"
+h=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "HEAD" { print; exit }' "$TV" 2>/dev/null)
+check $([ "$h" = $'HEAD\tDate\tFirst\tLast\tCount\tOk\tError\tError %\tCount\tOk\tError\tError %\tProcessed\tFailed\tWaiting\tExpired' ] && echo 0 || echo 1) "topview.rpt table 1 HEAD is '$h' — Recovered should have left the Files band"
+h=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "HEAD" { print; exit }' "$TV" 2>/dev/null)
+check $([ "$h" = $'HEAD\tDate\tAutomatic\tManual' ] && echo 0 || echo 1) "topview.rpt table 2 HEAD is '$h', expected Date|Automatic|Manual"
+h=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 3 && $1 == "HEAD" { print; exit }' "$TV" 2>/dev/null)
+check $([ "$h" = $'HEAD\tDate\tOk\tFailed' ] && echo 0 || echo 1) "topview.rpt table 3 HEAD is '$h', expected Date|Ok|Failed"
+# the TOTAL cells carry an @{class=…} prefix; a blank amber cell is 0
+read -r rva rvm <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "TOTAL" { a = $3; b = $4; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); print a + 0, b + 0; exit }' "$TV" 2>/dev/null)"
+read -r rso rsf <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 3 && $1 == "TOTAL" { a = $3; b = $4; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); print a + 0, b + 0; exit }' "$TV" 2>/dev/null)"
+# independent recounts (the topview rule: every File with a start day)
+read -r wrv wrm <<< "$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rs[$1] = 1; next } $4 != "" && $2 != "Failed" && $2 != "Expired" && ($1 in fl) { n++; if ($1 in rs) m++ } END { print n + 0, m + 0 }' "$T" "$F" 2>/dev/null)"
+read -r wro wrf <<< "$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($22 == "true") rs[$1] = 1; next } $4 != "" && ($1 in rs) { if ($2 == "Failed" || $2 == "Expired") f++; else o++ } END { print o + 0, f + 0 }' "$T" "$F" 2>/dev/null)"
+check $([ "$((${rva:-0} + ${rvm:-0}))" = "${wrv:-x}" ] && echo 0 || echo 1) "topview Recovered Automatic + Manual = $((${rva:-0} + ${rvm:-0})), the caches give ${wrv:-?}"
+check $([ "${rvm:-x}" = "${wrm:-y}" ] && echo 0 || echo 1) "topview Recovered Manual = ${rvm:-absent}, the caches give ${wrm:-?}"
+check $([ "${rso:-x}" = "${wro:-y}" ] && [ "${rsf:-x}" = "${wrf:-y}" ] && echo 0 || echo 1) "topview Resubmit Ok/Failed = ${rso:-?}/${rsf:-?}, the caches give ${wro:-?}/${wrf:-?}"
+check $([ "${rva:-0}" -gt 0 ] && [ "${rvm:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Automatic (${rva:-0}) or no Manual (${rvm:-0}) recovery — a Recovered column is never exercised"
+check $([ "${rso:-0}" -gt 0 ] && [ "${rsf:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Resubmit Ok (${rso:-0}) or Failed (${rsf:-0}) File — a Resubmit column is never exercised"
+hc=$(grep -o '<a href="transfer/recovered-files.html">[0-9.]*</a>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g; s/\.//g' | head -1)
+check $([ "${hc:-x}" = "${wrv:-y}" ] && echo 0 || echo 1) "home Cured total is '${hc:-absent}', expected the recovered total ${wrv:-?}"
+hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/topview.html" 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
+check $([ "$hdr" = "|Files|Transfers|State|Date|First|Last|Count|Ok|Error|Error %|Count|Ok|Error|Error %|Processed|Failed|Waiting|Expired|Date|Automatic|Manual|Date|Ok|Failed|" ] && echo 0 || echo 1) "transfer/topview.html headers are '$hdr'"
+n=$(grep -c 'class="sxs"' docs/transfer/topview.html 2>/dev/null || true)
+check $([ "${n:-0}" = 1 ] && echo 0 || echo 1) "transfer/topview.html has ${n:-0} sxs row(s), expected exactly 1 (Recovered beside Resubmit)"
+
 # the NON-UC-NAMED hybrid flows must come out attributed to their real site
 # (the reverse profile fallback) — never UCx_ — and every planted one is a
 # configured subscription of the base roster

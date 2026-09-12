@@ -3,8 +3,9 @@
 # recovered-files.sh — the RECOVERED FILES analysis (2026-08-29). A File
 # (CoreId) counts as RECOVERED when at least one of its legs FAILED and the
 # File still finished OK — a retry delivered it. The same rule and the same
-# figure as the amber Recovered column on the Top view, the home page and
-# the subscription detail pages, broken down three ways:
+# figure as the Top view's Recovered table (Automatic + Manual; until
+# 2026-09-12 an amber column of its Files band), the home page's Cured cell
+# and the subscription detail pages, broken down three ways:
 #
 #   - per SUBSCRIPTION  (which flows heal themselves, and how often)
 #   - per PROTOCOL      (of the FAILED leg — where the healed failures live)
@@ -12,7 +13,7 @@
 #
 # OK follows the site-wide outcome policy (Processed or Waiting; Failed and
 # Expired are not OK); everything is attributed to the File's START day,
-# exactly like the Top view column. Distinct from recovered.sh ("Recovered
+# exactly like the Top view's Recovered table. Distinct from recovered.sh ("Recovered
 # flows"), which is about SUBSCRIPTIONS coming back green after a red
 # episode — this page is about single Files healed by a retry.
 #
@@ -109,7 +110,7 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     printf 'TITLE\tRecovered files\n'
     printf 'DESC\tThe Files that carried a failed transfer leg yet still finished OK — a retry delivered them: which subscriptions have them, which protocols the healed failures happened on, and on what days.\n'
     printf 'KEYWORDS\trecovered, retry, healed, self-healing, failed leg, retries, resilience, per subscription, per protocol, per day\n'
-    printf 'INTRO\tA **recovered File** carried at least one FAILED transfer leg and still finished **OK** — a retry delivered it, so it sits under Files/Ok on the Top view while its failed legs sit under Transfers/Error. The same rule and the same figures as the amber **Recovered** column on the Top view, the home page and the subscription detail pages (OK per the site-wide outcome policy: Processed or Waiting; everything on the File'\''s START day). Three breakdowns: which **subscriptions** have it, which **protocols** the healed failures happened on, and on what **days**. Click a row for its 10 most recent recovered Files.\n'
+    printf 'INTRO\tA **recovered File** carried at least one FAILED transfer leg and still finished **OK** — a retry delivered it, so it sits under Files/Ok on the Top view while its failed legs sit under Transfers/Error. The same rule and the same figures as the Top view'\''s **Recovered** table (Automatic + Manual), the home page'\''s Cured cell and the subscription detail pages (OK per the site-wide outcome policy: Processed or Waiting; everything on the File'\''s START day). Three breakdowns: which **subscriptions** have it, which **protocols** the healed failures happened on, and on what **days**. Click a row for its 10 most recent recovered Files.\n'
     # every box carries its per-day payload so the values follow the From/To
     # range (report.js recalcStats; the full range restores the baked figures)
     printf 'STAT\torange\t%s\tRecovered Files\t@data:tok=sum\t@data:sb=%s\n' "$tR" "$sbr"
@@ -143,7 +144,7 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     printf '%s\n' "$agg" | grep '^DAY|' | sort -t'|' -k2,2r | awk -F'|' '
         $2 != "" { printf "ROW\t@{href=../day/%s.html}%s\t%s\t%s\t%s%%\t@data:coreids=%s\n", $2, $2, $3, $4, $5, $6 }' || true
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num warn}%s\t@{class=num}%s%%\n' "$dFC" "$tR" "$dshare"
-    printf 'NOTE\tOnly days with at least one recovered File are listed (the Top view'\''s Files table shows every day); the Date cell opens that day'\''s page. Days are the File'\''s START day, so the figures line up with the Top view'\''s Recovered column exactly.\n'
+    printf 'NOTE\tOnly days with at least one recovered File are listed (the Top view'\''s Recovered table shows every day); the Date cell opens that day'\''s page. Days are the File'\''s START day, so the figures line up with the Top view'\''s Recovered table (Automatic + Manual) exactly.\n'
 
     printf 'SUMMARY\tRecovered Files: %s (%s%% of %s)  |  Failed legs healed: %s\n' "$tR" "$oshare" "$tFC" "$thl"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

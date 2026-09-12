@@ -205,7 +205,7 @@ function routing_T(abs, dur, dir, st, sid, fn, sz, mo) {
 }
 
 # UC1: CFT delivers over pesit (Inbound), we push to the partner (Outbound ssh)
-function uc1_file(t0,   fn, sz, mo, ic, sidp, sids, d1, d2, i, tt, ok, late) {
+function uc1_file(t0,   fn, sz, mo, ic, sidp, sids, d1, d2, i, tt, ok, late, rr, sidr, tr) {
     fn = fname_of(t0); sz = fsize(); mo = fmode(); ic = inicap()
     sidp = sesshex(); sids = sesshex()
     d1 = 300 + int(rexp(900)) + szdur(sz, pesitthr())
@@ -230,10 +230,25 @@ function uc1_file(t0,   fn, sz, mo, ic, sidp, sids, d1, d2, i, tt, ok, late) {
             if (i <= 2) s_reason_err(tt + 100, sids, fn)
             tt += (5000 + i * i * 1200) + int(rexp(1500))
         }
-        late = (rnd() < 0.012)
-        if (late) {                                   # next-day recovery, sid UNKNOWN on the late inbound
-            pesit_T(t0 + 86400000 + int(rexp(7200000)), 400 + int(rexp(600)), "Inbound", "P", "UNKNOWN", fn, sz, mo, "AL")
-            ssh_T(t0 + 86400000 + 7200000 + int(rexp(3600000)), 600 + int(rexp(900)), "Outbound", "P", sesshex(), fn, sz, "Server", "SECURETRANSPORT", "UNKNOWN", sitefield(), hostspelled(), mo, "NP", "false")
+        # the OPERATOR RESUBMIT shapes (2026-09-12 — the Top view's Recovered
+        # Automatic/Manual and Resubmit Ok/Failed tables): only flows tagged
+        # "resub" draw here, so every other flow's stream is untouched. The
+        # resubmit comes ~30 min-2 h after the burst, on its own session.
+        if (hastag("resub") && (rr = rnd()) < 0.8) {
+            sidr = sesshex(); tr = tt + 1800000 + int(rexp(5400000))
+            if (rr < 0.5) {   # MANUAL recovery: the resubmitted leg delivers — an OK File with failed legs AND a resubmitted leg
+                ssh_T(tr, 600 + int(rexp(900)), "Outbound", "P", sidr, fn, sz, "Server", "SECURETRANSPORT", "UNKNOWN", sitefield(), hostspelled(), mo, "NP", "true")
+                s_initconn(tr - 2000, sidr)
+            } else {          # FAILED resubmit: the operator's attempt fails too and nothing follows — the File stays Failed
+                ssh_T(tr, 200 + int(rexp(600)), "Outbound", "F", sidr, fn, 0, "Server", "SECURETRANSPORT", "UNKNOWN", sitefield(), hostspelled(), mo, "NP", "true")
+                s_reason_err(tr + 100, sidr, fn)
+            }
+        } else {
+            late = (rnd() < 0.012)
+            if (late) {                               # next-day recovery, sid UNKNOWN on the late inbound
+                pesit_T(t0 + 86400000 + int(rexp(7200000)), 400 + int(rexp(600)), "Inbound", "P", "UNKNOWN", fn, sz, mo, "AL")
+                ssh_T(t0 + 86400000 + 7200000 + int(rexp(3600000)), 600 + int(rexp(900)), "Outbound", "P", sesshex(), fn, sz, "Server", "SECURETRANSPORT", "UNKNOWN", sitefield(), hostspelled(), mo, "NP", "false")
+            }
         }
     }
 }

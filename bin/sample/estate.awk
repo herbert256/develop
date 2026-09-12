@@ -270,13 +270,13 @@ function build_roster() {
     addf(1, "FS",  "MORTGAGE", "SABRE",    "",  4, 0.03, "hybrid")
     addf(1, "DPL", "AUDITLOG", "DUNDER",   "",  1.5, 0.03, "quiet")
     addf(1, "CB",  "MARKETING","WNK",      "",  1.2, 0.04, "")          # alias star member
-    addf(1, "ODV", "DMS",      "CYBERDYNE","",  4, 0.04, "ascii")
+    addf(1, "ODV", "DMS",      "CYBERDYNE","",  4, 0.04, "ascii,resub")
     addf(1, "IT",  "LEDGER",   "HOOLI",    "",  1.5, 0.03, "rename=UC1_IT_GENLEDGER_HOOLI")
     addf(1, "APS", "STREAM",   "SOYLENT",  "",  4, 0.18, "reason=pesitrefused")
     addf(1, "AB",  "HRDATA",   "WEYLAND",  "",  1.2, 0.2, "reason=stfs")
     addf(1, "SYNT","ITP",      "APERTURE", "",  1.2, 0.2, "reason=postaction")
     addf(1, "FIN", "TREASURY", "GEKKO",    "",  4, 0.05, "stormy")
-    addf(1, "ZK",  "CLAIMS",   "BLACKMESA","",  0.5, 0.1, "resub")
+    addf(1, "ZK",  "CLAIMS",   "BLACKMESA","",  1.5, 0.1, "resub")
     addf(1, "AIM", "SAPPO",    "WONKA-PUO","",  1.2, 0.04, "")          # alias star member
     addf(1, "CDV", "STREAM",   "DUFF",     "",  1.5, 0.03, "")
     addf(1, "IT",  "HEARTBEAT","INITECH",  "",  1.5, 0.02, "skipflow")  # skip-listed wholesale

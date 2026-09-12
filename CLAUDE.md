@@ -284,7 +284,10 @@ views, all chart type `slots`, drawn client-side by `docs/assets/slotchart.js`.
 `bin/day/reports.sh` writes one `.rpt` per calendar day (both logs); its publish renders KPIs →
 hero → problem lists → facts → six Top-5 tables. Both run after the two areas' reports; the
 UC-status stacks and cumulative "seen" views carry strict invariants — see ARCHITECTURE.md before
-touching them. Consumers reading topview Date cells strip the `@{href=…}` cell attr first.
+touching them. Consumers reading topview Date cells strip the `@{href=…}` cell attr first, and
+count its `TABLE` lines: the transfer `topview.rpt` carries three tables since 2026-09-12 (the
+per-day Files/Transfers/State table, then Recovered = Automatic · Manual and Resubmit = Ok ·
+Failed, side by side, same day rows) — see ARCHITECTURE.md.
 
 ## Architecture
 
@@ -820,8 +823,8 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   "Per day" table (2026-08-31, user request — the 2026-08 five-table flex row with its Date
   spine is retired: it could fall out of row-sync whenever a header's height changed): a `gband`
   banner row (Files · Duration · Red/Green switch · First seen) over a shared Date column (its
-  cells link the day dashboard), then the group columns — Files (In · Out · Ok · Recovered ·
-  Error · Error %; the In/Out split is the movement direction, `_files.tsv` col 17; the count
+  cells link the day dashboard), then the group columns — Files (In · Out · Ok · Cured ·
+  Error · Error %; Cured = the transfer topview.rpt's Recovered table, Automatic + Manual; the In/Out split is the movement direction, `_files.tsv` col 17; the count
   column is gone — In + Out carries it), Duration (p50 · p75 · p90 · p95), Red/Green switch
   (Red · Green) and First seen (Logical · Partners · Subscriptions · Accounts). Group dividers
   are POSITIONAL CSS on `table.dayrows` (columns 2/8/12/14 + the `gbrow` banner cells — adding

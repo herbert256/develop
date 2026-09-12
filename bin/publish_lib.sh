@@ -467,7 +467,7 @@ group_label() {
 }
 group_desc() {
     case $1 in
-        topview)             echo "The whole transfer log at a glance: per day, the Files and Transfers counts with their Ok/Error split and error rate, plus the Files by their final state (Processed/Failed/Waiting/Expired)." ;;
+        topview)             echo "The whole transfer log at a glance: per day, the Files and Transfers counts with their Ok/Error split and error rate, plus the Files by their final state (Processed/Failed/Waiting/Expired), the Recovered Files (automatic or manual) and the resubmitted Files (Ok or Failed)." ;;
         entity-search)       echo "Search every account, subscription, login, remote host, logical flow, partner, application, domain and BL tag by name — with its Files count, Error/OK, and whether it appears in the server logs." ;;
         time)                echo "Files per calendar day, the week-over-week trend, and load by hour of day and day of week, plus each subscription's arrival punctuality — late files and missed expected days." ;;
         account-login-site)  echo "Files per subscription, logical flow, partner, account, login, remote host, domain, application and BL tag — each with a summary and per-day detail." ;;

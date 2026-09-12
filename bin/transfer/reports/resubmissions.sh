@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # resubmissions.sh — "Resubmissions": the legs carrying the transfer log's
-# Resubmitted=true flag (_transfers.tsv col 24) — a MANUAL resubmit is human
+# Resubmitted=true flag (_transfers.tsv col 22) — a MANUAL resubmit is human
 # intervention, so this is a direct marker of flows that did not recover on
 # their own. Per day and per subscription, with drills.
 #
