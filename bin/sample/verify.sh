@@ -384,6 +384,38 @@ if [ "$(exp cnsend)" -gt 0 ]; then
     check $([ -f docs/server/could-not-send.html ] && echo 0 || echo 1) "docs/server/could-not-send.html is missing"
 fi
 
+# its two twins on the shared body bin/server/arlist.sh (2026-09-12, user
+# request): "Publish to account failed" (the ARPA0001 lines of the planted
+# UC1_ODV_PUBLISH_PIEDPIPER, reason=publishfail) and "Post client action
+# error" (the ARRC0009 lines of the planted UC3_CD_NOTARY_BLUTH, pcaerr tag,
+# listed per ACCOUNT — the first bracket before the @). Same caps and order.
+arlist_checks() {   # $1 basename  $2 entity column  $3 expected entity value (or "")  $4 "File" when the table has a File column
+    local R="data/server/reports/$1.rpt" n h want
+    n=$(rpt_rows "$R")
+    check $([ "$n" -gt 0 ] && echo 0 || echo 1) "$1.rpt has 0 rows"
+    h=$(awk -F'\t' '$1 == "HEAD" { print; exit }' "$R" 2>/dev/null)
+    want=$'HEAD\tDate & time\t'"$2"; [ -n "$4" ] && want="$want"$'\t'"$4"
+    check $([ "$h" = "$want" ] && echo 0 || echo 1) "$1.rpt HEAD is '$h', expected '$want'"
+    if [ -n "$3" ]; then
+        n=$(awk -F'\t' -v E="$3" '$1 == "ROW" { s = $3; sub(/^@\{[^}]*\}/, "", s); if (s == E) n++ } END { print n + 0 }' "$R" 2>/dev/null)
+        check $([ "${n:-0}" -gt 0 ] && [ "${n:-0}" -le 10 ] && echo 0 || echo 1) "$1.rpt has ${n:-0} row(s) for the planted $3, expected 1-10"
+    fi
+    n=$(awk -F'\t' '$1 == "ROW" { s = $3; sub(/^@\{[^}]*\}/, "", s); if (++c[s] > 10) over++ } END { print over + 0 }' "$R" 2>/dev/null)
+    check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "$1.rpt: ${n:-?} row(s) beyond the 10-per-entity cap"
+    n=$(rpt_rows "$R")
+    check $([ "$n" -le 1000 ] && echo 0 || echo 1) "$1.rpt has $n rows, beyond the 1000 cap"
+    n=$(awk -F'\t' '$1 == "ROW" { if (p != "" && $2 > p) bad++; p = $2 } END { print bad + 0 }' "$R" 2>/dev/null)
+    check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "$1.rpt is not newest-first (${n:-?} row(s) out of order)"
+    check $([ -f "docs/server/$1.html" ] && echo 0 || echo 1) "docs/server/$1.html is missing"
+}
+arlist_checks publish-failed Subscription UC1_ODV_PUBLISH_PIEDPIPER File
+if [ "$(exp pcaerr)" -gt 0 ]; then
+    # the planted flow's ACCOUNT, as the configuration spells it
+    a=$(awk -F'\t' '$1 == "UC3_CD_NOTARY_BLUTH" { print $2; exit }' data/flow-manager/xref/_subscriptions-accounts.tsv 2>/dev/null)
+    check $([ -n "$a" ] && echo 0 || echo 1) "UC3_CD_NOTARY_BLUTH has no account in _subscriptions-accounts.tsv"
+    arlist_checks post-client-action Account "$a" ""
+fi
+
 # the TRANSFER-ENDED sessions rule (2026-09-12, user rule): an Error/Warning
 # on a session that also logged {"message":"Transfer end logged." is not a
 # server-log error — parse.sh lists those sessions in _sessions-ended.tsv

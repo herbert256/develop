@@ -239,12 +239,17 @@ file-in-file-out) · **protocol-security** (protocol · security-params · av-sc
 `duration-all` / `duration-minmax` / `duration-all-minmax` siblings share Duration's slot) ·
 **cross** "Cross References".
 
-Server groups: **srv-overview** (topview) · **srv-errors** (errors · failure-flows · io-errors · could-not-send —
-io-errors, 2026-09-06, lists every "IO Error reading file /data/FlowManager/<account>@<login>/<file>"
-line per folder, per line and per day, each line joined to its File by name for the outcome;
-could-not-send, 2026-09-12, lists the Advanced Routing AR0074 "Could not send file: {…} using transfer
-site: {…} after attempting {n} times." lines newest first — Date & time · Subscription (the second
-bracket, alink'd) · File (the path's basename) — capped at 1000 rows and 10 per subscription) · **srv-transfers**
+Server groups: **srv-overview** (topview) · **srv-errors** (errors · failure-flows · io-errors · could-not-send ·
+publish-failed · post-client-action — io-errors, 2026-09-06, lists every "IO Error reading file
+/data/FlowManager/<account>@<login>/<file>" line per folder, per line and per day, each line joined to its
+File by name for the outcome; the three AR-LINE LISTS, 2026-09-12, share one body — `bin/server/arlist.sh`
+(`arlist_run`: one row per matched Advanced Routing line, newest first, capped at 1000 rows and 10 per
+entity, the entity alink'd; the caller sets the title/prose, the match regex and an awk extraction
+snippet over the parsed `[B1] [B2] BODY`) — could-not-send = the AR0074 "Could not send file: {…}"
+lines, Date & time · Subscription (the second bracket) · File; publish-failed = the ARPA0001 "while
+publishing the file {…} to an account" lines, the same columns; post-client-action = the ARRC0009
+"Error deleting the file after a post client action." lines, Date & time · Account (the first bracket
+before the @)) · **srv-transfers**
 "Transfers & Delivery" (pickups — the `transfers` merge went in 2026-08 with the JSON
 Transfer-start/end lines its two components read) · **srv-connections** (connections · logons) ·
 **srv-security** (ssh-security) · **srv-ops** "Operations & Capacity" (platform-health ·

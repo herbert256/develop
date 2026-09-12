@@ -174,6 +174,10 @@ function s_reason_err(abs, sid, fn,   r) {
     # the data stream breaking mid-transfer (2026-09-12, user request: the
     # "Stream read/write error" reason — the line STARTS with that text)
     else if (r == "streamrw")    S(abs, "E", "TM", sid, "Stream read/write error. Exception message is: Connection reset by peer")
+    # the route failing to PUBLISH the file into its account (2026-09-12,
+    # user request: the "Publish to account failed" report) — the ARPA0001
+    # line, with the file in braces
+    else if (r == "publishfail") S(abs, "E", "TM", sid, "ARPA0001: [SECURETRANSPORT] [" LOGSITE "]  An error occurred while publishing the file {" fn "} to an account. Step configuration suggests to stop further route execution")
     # the post-download remote delete failing (2026-09-02): the Info line
     # names the delete, the Error is what flip-reason.awk classifies
     else if (r == "remdel")      { S(abs - 6, "I", "TM", sid, "Deleting remote file: " fn " under /outbox/download/.")
@@ -328,6 +332,12 @@ function uc3_file(t0,   fn, sz, mo, ic, sids, sidp, d1, d2, i, tt, ok) {
     if (ok) {
         s_poll(t0 - 4000 - rint(4000), sids, 1 + rint(3))
         ssh_T(t0, d1, "Inbound", "P", sids, fn, sz, "Server", ACCT, "UNKNOWN", sitefield(), hostspelled(), mo, ic, "false")
+        # the "Post client action error" report (2026-09-12, user request): a
+        # tagged flow's pull sometimes ends with the receive-side ARRC0009
+        # line — the post client action (the delete) failed. Draws for the
+        # tagged flow only (the RNG is seeded per flow and day).
+        if (hastag("pcaerr") && rnd() < 0.15)
+            S(t0 + d1 + 500, "E", "TM", sids, "ARRC0009: [" ACCT "@" LOGIN "] []  Error deleting the file after a post client action.")
         d2 = 300 + int(rexp(700)) + szdur(sz, pesitthr())
         pesit_T(t0 + d1 + gapms(1200 + rexp(1500)), d2, "Outbound", "P", sidp, fn, sz, mo, "NP")
         s_pesit_ok(t0 + d1 + 1200, sidp)

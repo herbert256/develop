@@ -15,7 +15,7 @@
 <body>
 <div class="topbar" data-b="../" data-help="index"></div>
 <h1>Server Reports</h1>
-<p class="range">First record: <strong>2026-06-23</strong> &nbsp;|&nbsp; Last record: <strong>2026-08-29</strong> &nbsp;|&nbsp; Records: <strong>178.799</strong></p>
+<p class="range">First record: <strong>2026-06-23</strong> &nbsp;|&nbsp; Last record: <strong>2026-08-29</strong> &nbsp;|&nbsp; Records: <strong>179.582</strong></p>
 <p class="range"><a href="../search.html"><strong>Search</strong></a> &mdash; find any account, subscription, login, host or flow; its Server Log column covers this server data.</p>
 <div class="tablewrap"><table class="index" data-nosort="1">
 <tr><th colspan="2">Top view</th></tr>
@@ -25,6 +25,8 @@
 <tr><td><a href="failure-flows.html">Per flow</a></td><td class="desc">Server-log ERROR messages classified by reason and attributed to the subscription each message names, with the reason mix per ISO week.</td></tr>
 <tr><td><a href="io-errors.html">IO errors</a></td><td class="desc">The platform failing to read (or write) a file on its own storage — &quot;IO Error reading file /data/FlowManager/&lt;account&gt;@&lt;login&gt;/&lt;file&gt;&quot; — per folder, per line and per day, each line joined to the File it concerns and its outcome.</td></tr>
 <tr><td><a href="could-not-send.html">Could not send</a></td><td class="desc">The Advanced Routing &quot;Could not send file&quot; errors (AR0074): the route gave up delivering a file to its transfer site — per line, newest first, with the subscription and the file.</td></tr>
+<tr><td><a href="publish-failed.html">Publish failed</a></td><td class="desc">The Advanced Routing &quot;An error occurred while publishing the file … to an account&quot; errors (ARPA0001): the route could not publish a file into its account — per line, newest first, with the subscription and the file.</td></tr>
+<tr><td><a href="post-client-action.html">Post client action</a></td><td class="desc">The Advanced Routing post client action errors (ARRC0009 &quot;Error deleting the file after a post client action.&quot; and its kin): the action that runs after a file was received failed — per line, newest first, with the account.</td></tr>
 <tr><th colspan="2">Transfers &amp; Delivery</th></tr>
 <tr><td><a href="pickups.html">Pickups</a></td><td class="desc">Every UC2 (partner collects from us) flow's pickup figures side by side: first/last pickup, the last logon on the old gateway, pickup logons, collected files, waiting files and how long the oldest has waited, expired files and the pickup cadence.</td></tr>
 <tr><th colspan="2">Logons &amp; Connections</th></tr>

@@ -52,6 +52,8 @@ pool_run "$SCRIPT_DIR/reports/error-reasons.sh"
 pool_run "$SCRIPT_DIR/reports/failure-flows.sh"
 pool_run "$SCRIPT_DIR/reports/io-errors.sh"          # "IO Error reading file /data/FlowManager/…" — the srv-errors group's third member (2026-09-06)
 pool_run "$SCRIPT_DIR/reports/could-not-send.sh"     # "Could not send file" (AR0074) — the srv-errors group fourth member (2026-09-12)
+pool_run "$SCRIPT_DIR/reports/publish-failed.sh"     # "Publish to account failed" (ARPA0001) — srv-errors (2026-09-12)
+pool_run "$SCRIPT_DIR/reports/post-client-action.sh" # "Post client action error" (ARRC0009) — srv-errors (2026-09-12)
 pool_run "$SCRIPT_DIR/reports/config-defects.sh"     # the config-hygiene page's server-log tables (a TSV sidecar, not a page)
 pool_run "$SCRIPT_DIR/reports/site-failures.sh"
 pool_run "$SCRIPT_DIR/reports/connection-diagnostics.sh"

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Help: Publish to account failed — Cloud Reports</title>
+<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../transfer/index.html">Start page</a><a href="../transfer/topview.html">Top view</a><a href="../transfer/entities/subscription-all.html">Entities</a><a href="../transfer/file-journey-patterns.html">Patterns</a><a href="../transfer/activity-per-day.html">Activity over Time</a><a href="../transfer/volume-per-day.html">Volume, Sizes &amp; Files</a><a href="../transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../transfer/duration.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../server/index.html">Start page</a><a href="../server/topview.html">Top view</a><a href="../server/errors-per-day.html">Errors</a><a href="../server/pickups.html">Transfers &amp; Delivery</a><a href="../server/logons-incoming.html">Logons &amp; Connections</a><a href="../server/ssh-security.html">Security</a><a href="../server/platform-health.html">Operations &amp; Capacity</a><a href="../server/transfer-site-missing.html">Routing</a><a href="../server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../analyses/index.html">Start page</a><a href="../transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../analyses/use-cases.html">Configuration</a><a href="../analyses/partner-scorecard.html">Partners</a><a href="../analyses/subscriptions-in-boxes.html">Boxes</a><a href="../analyses/failed.html">Errors</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Publish to account failed</h1>
+<h2>What this shows</h2>
+<p>Every <strong>Publish to account failed</strong> line the server log holds, one row per line, newest first: the route could not publish a received file into its account and stopped — the file never reached the account it was routed to. The line looks like this:</p>
+<p class="mono">ARPA0001: [SECURETRANSPORT] [UC2_ODV_MAIA_SCHUBERGPHILIS]  An error occurred while publishing the file {AIMAPF_NL81ABNA0438073703_11-09-2026.XML} to an account. Step configuration suggests to stop further route execution</p>
+<h2>The table</h2>
+<ul>
+<li><strong>Date &amp; time</strong> &mdash; when it happened, to the second.</li>
+<li><strong>Subscription</strong> &mdash; the route, the second bracket of the line; it opens the subscription's detail page, and the row carries the subscription's result colour.</li><li><strong>File</strong> &mdash; the file in the braces.</li>
+</ul>
+<h2>How it's computed</h2>
+<p>The tokenized server log is scanned for Advanced Routing lines (an <code>AR&lt;code&gt;:</code> prefix with its two bracket groups) whose text carries the message above; the subscription is read from the bracket named in the table and folded to its current name when it was renamed. The report shows at most <strong>1000</strong> rows and at most <strong>10</strong> rows per subscription &mdash; the newest ones on both counts; the intro and the total row say how many lines the log really holds. The date filter, search and sort work over the shown rows. The <a href="server-could-not-send.html">Could not send file</a> report is its twin for the AR0074 delivery failures.</p>
+<h2>Why it matters</h2>
+<p>Each row is a file whose routing did not complete as configured; a subscription that keeps appearing has a problem on this step that the <a href="server-errors-day.html">Errors</a> reasons and its own detail page put in context.</p>
+</main>
+</body>
+</html>
