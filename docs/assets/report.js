@@ -8,7 +8,11 @@
   "use strict";
 
   var SIZE = { b: 1, kb: 1024, mb: 1048576, gb: 1073741824, tb: 1099511627776, pb: 1125899906842624 };
-  var TIME = { ms: 1, s: 1000, m: 60000, min: 60000, h: 3600000 };
+  // d and the spelled-out forms (2026-09-13): the Entities pages' whole-day
+  // durations ("1 d" sorted as 1 ms before) and the prose ages ("5 days",
+  // "12 hours") of the Pickups report
+  var TIME = { ms: 1, s: 1000, sec: 1000, second: 1000, seconds: 1000, m: 60000, min: 60000, minute: 60000, minutes: 60000,
+               h: 3600000, hour: 3600000, hours: 3600000, d: 86400000, day: 86400000, days: 86400000 };
 
   // "2026-06-28[ HH:MM:SS[.mmm]]" or "06/28/2026[ HH:MM:SS]" -> epoch ms, else null.
   function parseDate(s) {
