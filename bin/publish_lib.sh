@@ -1133,7 +1133,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # sort= marker, and its subset totals re-sum the grouped columns
     # (entity2_res_block). Every lay-1 path below is byte-for-byte the classic one.
     local lay=${ENT_LAYOUT:-1} outdir=entities _fsort="sort=1:-1" _nreal=10
-    if [ "$lay" = 2 ]; then outdir=entities2; _fsort=""; _nreal=22; fi   # 22 = the directive + Name + 20 figure columns (Duration p90/p95/p99 last)
+    if [ "$lay" = 2 ]; then outdir=entities2; _fsort=""; _nreal=23; fi   # 23 = the directive + Name + 21 figure columns (the Reason column follows Days)
     segment_rpt "$rpt"                                  # TBLOCK[1]=Summary, TBLOCK[2]=Detail
     local sumblk=${TBLOCK[1]:-}
     local stable shead stotal srows snotes
@@ -1458,7 +1458,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # tint following the subset value). Template cells (2026-09-13 order):
     # 2 label · 3 Ok · 4 Error · 5 Error % · 6 In · 7 Out · 8 Error ·
     # 9 Error % · 10 Auto · 11 Ok · 12 Error · 13 p90 · 14 p95 · 15 p99 ·
-    # 16 Total · 17 Avg · 18 Waiting · 19 Expired · 20 First · 21 Last · 22 Days.
+    # 16 p100 · 17 Total · 18 Avg · 19 Waiting · 20 Expired · 21 First ·
+    # 22 Last · 23 Days.
     entity2_res_block() {   # $1 = green|orange|red   $2 = the All-view rows to filter
         printf '%s\n' "$2" | LC_ALL=C awk -F'\t' -v OFS='\t' -v want="@data:res=$1" -v tmpl="$stotal" '
             function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0
@@ -1477,7 +1478,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
                 hit=0; for (i=1;i<=NF;i++) if ($i==want) hit=1
                 if (!hit) next
                 cnt++
-                for (c = 3; c <= 19; c++) if (c != 5 && c != 9 && !(c >= 13 && c <= 17)) S[c] += n($c)   # the count cells: Ok Error | In Out Error | Auto Ok Error | Waiting Expired
+                for (c = 3; c <= 20; c++) if (c != 5 && c != 9 && !(c >= 13 && c <= 18)) S[c] += n($c)   # the count cells: Ok Error | In Out Error | Auto Ok Error | Waiting Expired
                 for (i=1;i<=NF;i++) {
                     if ($i ~ /^@data:buckets=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ split(B[j],C,":"); files += C[2]+0; sb += C[6]+0; dd[C[1]] = 1 } }
                     else if ($i ~ /^@data:durdays=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ p = index(B[j], ":"); if (p < 1) continue
@@ -1491,8 +1492,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
                 for (k in HH) { v = k + 0; c = HH[k]; HN += c; j = hq; while (j >= 1 && HQ[j] > v) { HQ[j+1] = HQ[j]; HC[j+1] = HC[j]; j-- } HQ[j+1] = v; HC[j+1] = c; hq++ }
                 V[3]=S[3]+0; V[4]=S[4]+0; V[5]=pr(S[4], S[3]+S[4]); V[6]=nz(S[6]); V[7]=nz(S[7]); V[8]=S[8]+0; V[9]=pr(S[8], files)
                 V[10]=S[10]+0; V[11]=S[11]+0; V[12]=S[12]+0
-                W[13] = (HN > 0) ? dcell(prank(90)) : ""; W[14] = (HN > 0) ? dcell(prank(95)) : ""; W[15] = (HN > 0) ? dcell(prank(99)) : ""   # WHOLE cells (their tint follows the value)
-                V[16]=human(sb); V[17]=human(files > 0 ? sb / files : 0); V[18]=S[18]+0; V[19]=S[19]+0; V[22]=days+0
+                W[13] = (HN > 0) ? dcell(prank(90)) : ""; W[14] = (HN > 0) ? dcell(prank(95)) : ""; W[15] = (HN > 0) ? dcell(prank(99)) : ""; W[16] = (HN > 0) ? dcell(prank(100)) : ""   # WHOLE cells (their tint follows the value)
+                V[17]=human(sb); V[18]=human(files > 0 ? sb / files : 0); V[19]=S[19]+0; V[20]=S[20]+0; V[23]=days+0
                 nt = split(tmpl, T, "\t")
                 l = T[2]; sub(/\([0-9,]+/, "(" cnt, l); out = T[1] OFS l
                 for (c = 3; c <= nt; c++) { cell = T[c]

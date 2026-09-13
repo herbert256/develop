@@ -937,7 +937,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   user request): Transfers (Ok · Error · Error % — the LEGS of the entity's Files) · Files (In ·
   Out by MOVEMENT, `_files.tsv` col 17 · Error · Error %) · Retry / Resubmit (Auto = the classic
   Retry; Ok / Error = every resubmitted File by outcome — the Top view's Automatic + Resubmit
-  Ok/Failed rule) · Duration (p90 · p95 · p99 of the OK Files' wall-clock span, the Duration
+  Ok/Failed rule) · Duration (p90 · p95 · p99 · p100 of the OK Files' wall-clock span, the Duration
   report's scope and nearest-rank rule, FOLLOWING the date filter — user rule: each row carries
   per-day display-grid histograms `@data:durdays`, the RECALC tokens `P90`/`P95`/`P99` re-pick
   the percentile over the in-range days, rows and TOTAL alike, and the publish-time subset totals
