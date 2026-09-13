@@ -578,6 +578,12 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             # GROUP — their th/td cells get class "gsep" (a left divider +
             # extra padding, style.css). Pairs with the GHEAD banner row.
             else if (index(mi, "gsep=") == 1)     { n2g = split(substr(mi, 6), GSA, ","); for (g2 = 1; g2 <= n2g; g2++) gsepset[GSA[g2] + 0] = 1 }
+            # drillcols=<key:col[:Noun_words],...> (2026-09-13, the Entities2
+            # pages): per-CELL drills bound by BUILT column index — a row's
+            # :coreids-<key> list opens under the cell at <col>; the
+            # optional noun (underscores = spaces) heads the list, else the
+            # column label (report.js setupExpandable)
+            else if (index(mi, "drillcols=") == 1) tattr = tattr " data-drill-cols=\"" esc(substr(mi, 11)) "\""
             else if (index(mi, "pager=") == 1)    tattr = tattr " data-pager=\"" substr(mi, 7) "\""
             # zerohide=<m>: while the date range is NARROWED, hide a data row
             # whose re-aggregated bucket metric <m> sums to 0 — a "0 of this

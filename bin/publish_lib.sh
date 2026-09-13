@@ -735,7 +735,9 @@ render_topbar() {
     # THE DATA PERIOD (2026-09-13, user request): second, after the
     # environment and before Entities — KEEP IN STEP with report.js buildTopbar
     if [ -n "${TB_PERIOD:-}" ]; then esc "$TB_PERIOD"; printf '<span class="period" title="The data period: the first and last day of the transfer data">%s</span>' "$ESC"; fi
-    printf '<span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch/search.html" title="Search" aria-label="Search">&#128269;</a></span>' "$base" "$base"
+    # + the ENTITIES2 experiment link (2026-09-13, user request): the grouped-
+    # layout twins under transfer/entities2/ — KEEP IN STEP with report.js buildTopbar
+    printf '<span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="%stransfer/entities2/subscription-all.html">Entities2</a><a class="searchbtn" href="%ssearch/search.html" title="Search" aria-label="Search">&#128269;</a></span>' "$base" "$base" "$base"
     # the FILE SEARCH entry (2026-08), mirroring report.js buildTopbar:
     # between the search icon and the report menus
     printf '<a class="dashlink" href="%ssearch/file-search-24-hours.html">Files</a>' "$base"
@@ -1107,17 +1109,36 @@ entity_cov_base() {
 # seen views, where the seven metric columns carry no information.
 entities_name_only() {
     LC_ALL=C awk -F'\t' -v OFS='\t' '
+        # the Entities2 twins (2026-09-13): the GHEAD banner spans columns the
+        # name-only view lacks, and so do the column-group / drill / ratio
+        # TABLE modifiers — drop them (the classic blocks carry none, so their
+        # lines pass through unchanged)
+        $1 == "GHEAD" { next }
+        $1 == "TABLE" { out = $1; drop = 0
+                        for (i = 2; i <= NF; i++) { if (i > 2 && $i ~ /^(gsep|drillcols|pct|noagg)=/) drop = 1; else out = out OFS $i }
+                        if (drop) print out; else print
+                        next }
         $1 == "HEAD" || $1 == "KIND" || $1 == "TOTAL" { print $1, $2; next }
         $1 == "ROW" { out = $1 OFS $2; for (i = 3; i <= NF; i++) if ($i ~ /^@data:/) out = out OFS $i; print out; next }
         { print }'
 }
 render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 rkey
     local area=$1 name=$2 rpt=$3 rlabel=$4 hslug=$5 rkey=$6
+    # ENT_LAYOUT=2 (2026-09-13, user request): the ENTITIES2 EXPERIMENT — the
+    # same views and scopes over the grouped-layout twin .rpt
+    # (bin/transfer/reports/entities2.sh: Name, then the Dates / Transfers /
+    # Files / Recover / State / Volume column groups), rendered into
+    # docs/<area>/entities2/. The twin is already in display order (no
+    # Direction column, no reorder), its rows are baked busiest-first with no
+    # sort= marker, and its subset totals re-sum the grouped columns
+    # (entity2_res_block). Every lay-1 path below is byte-for-byte the classic one.
+    local lay=${ENT_LAYOUT:-1} outdir=entities _fsort="sort=1:-1" _nreal=10
+    if [ "$lay" = 2 ]; then outdir=entities2; _fsort=""; _nreal=19; fi
     segment_rpt "$rpt"                                  # TBLOCK[1]=Summary, TBLOCK[2]=Detail
     local sumblk=${TBLOCK[1]:-}
     local stable shead stotal srows snotes
     stable=$(printf '%s\n' "$sumblk" | grep -m1 $'^TABLE\t' || true)
-    shead=$(printf '%s\n' "$sumblk" | grep -E $'^(HEAD|KIND|RECALC)\t' || true)
+    shead=$(printf '%s\n' "$sumblk" | grep -E $'^(GHEAD|HEAD|KIND|RECALC)\t' || true)   # GHEAD = the Entities2 banner row (none on the classic .rpt)
     stotal=$(printf '%s\n' "$sumblk" | grep -m1 $'^TOTAL\t' || true)
     srows=$(printf '%s\n' "$sumblk" | grep $'^ROW\t' || true)
     snotes=$(printf '%s\n' "$sumblk" | grep $'^NOTE\t' || true)
@@ -1242,7 +1263,21 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     [ -n "$nsrows" ] && all_rows+=${all_rows:+$'\n'}$nsrows
     [ -n "$ghrows" ] && all_rows+=${all_rows:+$'\n'}$ghrows
     [ -n "$ghnsrows" ] && all_rows+=${all_rows:+$'\n'}$ghnsrows
-    [ -n "$all_rows" ] && all_rows=$(printf '%s\n' "$all_rows" | LC_ALL=C sort -t$'\t' -k3,3nr -k2,2f -k2,2)
+    if [ "$lay" = 2 ]; then
+        # Entities2: the seen rows keep their BAKED busiest-first order (field
+        # 3 is a DATE in this layout, there is no Files column to sort on);
+        # the never-seen / ghost rows follow, by name
+        local _blank=""
+        [ -n "$nsrows" ] && _blank=$nsrows
+        [ -n "$ghrows" ] && _blank+=${_blank:+$'\n'}$ghrows
+        [ -n "$ghnsrows" ] && _blank+=${_blank:+$'\n'}$ghnsrows
+        [ -n "$_blank" ] && _blank=$(printf '%s\n' "$_blank" | LC_ALL=C sort -t$'\t' -k2,2f -k2,2)
+        all_rows=""
+        [ -n "$srows" ] && all_rows=$(printf '%s\n' "$srows" | sed $'s/$/\t@data:seen=1/')
+        [ -n "$_blank" ] && all_rows+=${all_rows:+$'\n'}$_blank
+    else
+        [ -n "$all_rows" ] && all_rows=$(printf '%s\n' "$all_rows" | LC_ALL=C sort -t$'\t' -k3,3nr -k2,2f -k2,2)
+    fi
     # the All view tints every row by the entity RESULT (the base caches'
     # third field, bin/build/result.sh): @data:res green / orange / red -> the
     # tr[data-res] rules in style.css (like the coverage pages and Search)
@@ -1320,8 +1355,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # (and sort=1:-1 — Files descending, like every other counted view; the
     # Seen rows arrive Files-desc from the .rpt, so this only makes the page
     # default explicit and marks the sorted header.)
-    sumblk_tinted=$(printf '%s\n' "$sumblk_tinted" | LC_ALL=C awk -F'\t' -v OFS='\t' '
-        $1 == "TABLE" && !done { $0 = $0 OFS "sort=1:-1" OFS "datereset"; done = 1 } { print }')
+    sumblk_tinted=$(printf '%s\n' "$sumblk_tinted" | LC_ALL=C awk -F'\t' -v OFS='\t' -v fs="$_fsort" '
+        $1 == "TABLE" && !done { if (fs != "") $0 = $0 OFS fs; $0 = $0 OFS "datereset"; done = 1 } { print }')
     # The VOUCHED ghost rows belong on SEEN (2026-07): the coverage TSV — and
     # with it showseen, the analyses figures and the status tables' Seen
     # column — counts these names as seen (e.g. the UC3 clean-poll greens,
@@ -1339,7 +1374,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # datereset: the All view is the catalog (the home status tables link it) —
     # it always OPENS at the full date range, ignoring a remembered From/To
     # (and never saves one); narrowing it stays page-local.
-    blk_all="$(tbl_variant "all (logged + configured)" "sort=1:-1 datereset")"$'\n'"$shead"$'\n'"$tot_all"
+    blk_all="$(tbl_variant "all (logged + configured)" "$_fsort datereset")"$'\n'"$shead"$'\n'"$tot_all"
     [ -n "$all_rows" ] && blk_all+=$'\n'"$all_rows"
     blk_all+=$'\n'"NOTE"$'\t'"Row colors: **light green** = last transfer OK, **light orange** = configured but never seen, **light red** = last transfer Error (or server-log Errors/Warnings after the last OK transfer), **light blue** = surfaced only by the Server → Transfer step (bin/build/seen-in-server-log.sh) with no real transfer. For entity types other than subscriptions the result rolls up from the connected subscriptions; configured-but-never-seen rows keep blank counts. A green/red-tinted row with BLANK counts was seen only through a sibling group — a shared endpoint whose Files are credited to the co-tenant, or one side of a two-partner account name. An UNTINTED row was logged but is not configured in FlowManager — it has no result to color by."
     [ -n "$snotes" ] && blk_all+=$'\n'"$snotes"
@@ -1363,7 +1398,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     transfer_rows=$(printf '%s\n' "$sumblk_tinted" | grep $'^ROW\t' | grep -v '@data:res=blue' || true)
     ntransfer=$(printf '%s' "$transfer_rows" | grep -c $'^ROW\t' || true)
     tot_transfer=$(printf '%s\n' "$stotal" | LC_ALL=C awk -F'\t' -v OFS='\t' -v n="$ntransfer" '{ sub(/\([0-9,]+/, "(" n, $2); print }')
-    blk_seen_tr="$(tbl_variant "seen in the transfer log" "sort=1:-1 datereset")"$'\n'"$shead"$'\n'"$tot_transfer"
+    blk_seen_tr="$(tbl_variant "seen in the transfer log" "$_fsort datereset")"$'\n'"$shead"$'\n'"$tot_transfer"
     [ -n "$transfer_rows" ] && blk_seen_tr+=$'\n'"$transfer_rows"
     blk_seen_tr+=$'\n'"NOTE"$'\t'"The entities with at least one **real transfer** in this log window — the Seen view minus the server-log-only (blue) rows. Switch the scope to **+Server** to count a server-log sighting as seen. Row colors are the entity RESULT, as on Seen."
     # Not seen (transfer) = the configured-never-seen rows PLUS the blue ones:
@@ -1411,7 +1446,43 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # Filter the All rows, which already carry @data:res, and re-sum the
     # subset TOTAL (Files/Error/OK from the integer cells, Volume from the
     # @data:buckets bytes).
+    # The Entities2 twin's subset TOTAL (lay 2): the same @data:res filter,
+    # re-summing the grouped columns — the count cells (fields 6-7, 9-11,
+    # 13-17), the Files total and bytes from the buckets (metrics 0 and 4),
+    # Days = the DISTINCT bucket dates — into the writer's own baked TOTAL
+    # line, whose @{class=…} cell prefixes are kept (the formatting lives in
+    # the writer alone). Template cells: 2 label · 3 First · 4 Last · 5 Days ·
+    # 6 Ok · 7 Error · 8 Error % · 9 In · 10 Out · 11 Error · 12 Error % ·
+    # 13 Auto · 14 Manual-ok · 15 Manual-error · 16 Waiting · 17 Expired ·
+    # 18 Total · 19 Avg.
+    entity2_res_block() {   # $1 = green|orange|red   $2 = the All-view rows to filter
+        printf '%s\n' "$2" | LC_ALL=C awk -F'\t' -v OFS='\t' -v want="@data:res=$1" -v tmpl="$stotal" '
+            function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0
+                while (v>=1024 && i<6) { v/=1024; i++ }
+                return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
+            function pr(x, c) { if (c > 0) return sprintf("%.1f", x * 100 / c) "%"; return "0.0%" }
+            function n(s) { gsub(/[^0-9]/, "", s); return s + 0 }
+            $1=="ROW" {
+                hit=0; for (i=1;i<=NF;i++) if ($i==want) hit=1
+                if (!hit) next
+                cnt++
+                for (c = 6; c <= 17; c++) if (c != 8 && c != 12) S[c] += n($c)
+                for (i=1;i<=NF;i++) if ($i ~ /^@data:buckets=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ split(B[j],C,":"); files += C[2]+0; sb += C[6]+0; dd[C[1]] = 1 } }
+                rows[++nr]=$0 }
+            END {
+                for (d in dd) days++
+                V[5]=days+0; V[6]=S[6]+0; V[7]=S[7]+0; V[8]=pr(S[7], S[6]+S[7]); V[9]=S[9]+0; V[10]=S[10]+0; V[11]=S[11]+0; V[12]=pr(S[11], files)
+                V[13]=S[13]+0; V[14]=S[14]+0; V[15]=S[15]+0; V[16]=S[16]+0; V[17]=S[17]+0; V[18]=human(sb); V[19]=human(files > 0 ? sb / files : 0)
+                nt = split(tmpl, T, "\t")
+                l = T[2]; sub(/\([0-9,]+/, "(" cnt, l); out = T[1] OFS l
+                for (c = 3; c <= nt; c++) { cell = T[c]
+                    if (c in V) { if (match(cell, /^@\{[^}]*\}/)) cell = substr(cell, 1, RLENGTH) V[c]; else cell = V[c] }
+                    out = out OFS cell }
+                print out
+                for (i=1;i<=nr;i++) print rows[i] }'
+    }
     entity_res_block() {   # $1 = green|orange|red   $2 = the All-view rows to filter
+        if [ "$lay" = 2 ]; then entity2_res_block "$@"; return; fi
         printf '%s\n' "$2" | LC_ALL=C awk -F'\t' -v OFS='\t' -v want="@data:res=$1" -v lbl="$origlabel" '
             function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0
                 while (v>=1024 && i<6) { v/=1024; i++ }
@@ -1435,9 +1506,9 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     n_ok="Only the entities whose site-wide RESULT is **green**: their last transfer ended OK — for a type other than subscriptions, every connected subscription's did. Rows are shown light green."
     n_err="Only the entities whose site-wide RESULT is **red**: their last transfer ended in an Error (Failed, or a staged file that Expired before pickup) — for a type other than subscriptions, at least one connected subscription's did. Rows are shown light red."
     n_warn="Only the entities whose site-wide RESULT is **orange**: never seen in this log window, or a mix of OK and Error across their connected subscriptions. Rows are shown light orange."
-    blk_ok="$(tbl_variant "OK (result green)" "sort=1:-1 datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block green "$all_rows")"$'\n'"NOTE"$'\t'"$n_ok"
-    blk_err="$(tbl_variant "Error (result red)" "sort=1:-1 datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block red "$all_rows")"$'\n'"NOTE"$'\t'"$n_err"
-    blk_warn="$(tbl_variant "Warning (result orange)" "sort=1:-1 datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block orange "$all_rows")"$'\n'"NOTE"$'\t'"$n_warn"
+    blk_ok="$(tbl_variant "OK (result green)" "$_fsort datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block green "$all_rows")"$'\n'"NOTE"$'\t'"$n_ok"
+    blk_err="$(tbl_variant "Error (result red)" "$_fsort datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block red "$all_rows")"$'\n'"NOTE"$'\t'"$n_err"
+    blk_warn="$(tbl_variant "Warning (result orange)" "$_fsort datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block orange "$all_rows")"$'\n'"NOTE"$'\t'"$n_warn"
     # ---- TRANSFER SCOPE: Warning -------------------------------------------
     # Retint the blue rows ORANGE (with the server log out of scope a
     # server-log-only entity is simply configured-but-never-seen, which IS
@@ -1449,7 +1520,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # scope tabs disabled on it (see the render loop).
     local all_rows_tr=$all_rows blk_warn_tr
     [ -n "$all_rows" ] && all_rows_tr=$(printf '%s\n' "$all_rows" | LC_ALL=C sed 's/@data:res=blue/@data:res=orange/')
-    blk_warn_tr="$(tbl_variant "Warning (result orange), transfer log only" "sort=1:-1 datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block orange "$all_rows_tr")"$'\n'"NOTE"$'\t'"Only the entities whose RESULT is **orange** with the server log OUT of scope: never seen in the transfer log in this window (server-log-only entities included), or a mix of OK and Error across their connected subscriptions. Rows are shown light orange."
+    blk_warn_tr="$(tbl_variant "Warning (result orange), transfer log only" "$_fsort datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block orange "$all_rows_tr")"$'\n'"NOTE"$'\t'"Only the entities whose RESULT is **orange** with the server log OUT of scope: never seen in the transfer log in this window (server-log-only entities included), or a mix of OK and Error across their connected subscriptions. Rows are shown light orange."
     # --- Partner entity only: a Direction (connection/movement) column injected
     # as column 2, and a group-explanation icon on multi-token (merged) partner
     # names. Both are added at PUBLISH time so the .rpt — and showseen.sh /
@@ -1567,6 +1638,16 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
             $1=="HEAD" || $1=="KIND" || $1=="RECALC" || $1=="ROW" || $1=="TOTAL" { print reord(); next }
             { print }'
     }
+    if [ "$lay" = 2 ]; then
+        # Entities2: no Direction column and no reorder — the twin .rpt is
+        # already in display order. Only the blank-by-construction Warning
+        # views of SUBSCRIPTIONS strip to the name here (Not seen and Server
+        # were stripped above, like the classic ones).
+        if [ "$name" = subscription ]; then
+            blk_warn=$(printf '%s\n' "$blk_warn" | entities_name_only)
+            blk_warn_tr=$(printf '%s\n' "$blk_warn_tr" | entities_name_only)
+        fi
+    else
     for _b in blk_all sumblk_tinted blk_ok blk_warn blk_err blk_seen_tr blk_warn_tr blk_ns blk_ns_tr blk_server; do
         eval "[ -n \"\${$_b:-}\" ] || continue"
         eval "$_b=\$(printf '%s\\n' \"\$$_b\" | inject_dir_col)"
@@ -1583,6 +1664,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     blk_ns=$(printf '%s\n' "$blk_ns" | entity_layout 1)
     blk_ns_tr=$(printf '%s\n' "$blk_ns_tr" | entity_layout 1)
     blk_server=$(printf '%s\n' "$blk_server" | entity_layout 1)
+    fi
     # THE REASON COLUMN — the SUBSCRIPTIONS Error view only (2026-08): the
     # same per-flow Reason the home page's two red tables show, resolved by
     # the same chain (bin/build/publish.sh write_failing_now): the flow's
@@ -1660,19 +1742,21 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
                 for (k in kapall) if (!(k in claimed)) { print k "\t" kapall[k] "\tD\t"; claimed[k] = 1 }
                 for (k in why) if (!(k in claimed)) print k "\t" why[k] "\tD\t"
             }' "$_lfr" > "$_reasonf"
-        blk_err=$(printf '%s\n' "$blk_err" | LC_ALL=C awk -F'\t' -v OFS='\t' -v mapf="$_reasonf" '
+        blk_err=$(printf '%s\n' "$blk_err" | LC_ALL=C awk -F'\t' -v OFS='\t' -v mapf="$_reasonf" -v nreal="$_nreal" '
             BEGIN { while ((getline l < mapf) > 0) { n = split(l, a, "\t")
                         u = toupper(a[1]); rm[u] = a[2]
                         rk[u] = (n >= 3) ? a[3] : ""; rc[u] = (n >= 4) ? a[4] : "" }
                     close(mapf) }
-            # insert v as the display column after Last seen (field 10 since
-            # the Retry/Resubmit columns; the trailing @data cells start at
-            # field 11 and ride along)
+            # insert v as the display column after the LAST figure column —
+            # nreal = the real fields incl. the directive: 10 on the classic
+            # layout (Last seen, since the Retry/Resubmit columns), 19 on the
+            # Entities2 twin (Avg); the trailing @data cells start at nreal+1
+            # and ride along
             function ins(v,   out, i) {
                 out = $1
-                for (i = 2; i <= 10; i++) out = out OFS (i <= NF ? $i : "")
+                for (i = 2; i <= nreal; i++) out = out OFS (i <= NF ? $i : "")
                 out = out OFS v
-                for (i = 11; i <= NF; i++) out = out OFS $i
+                for (i = nreal + 1; i <= NF; i++) out = out OFS $i
                 return out
             }
             $1 == "HEAD"   { print ins("Reason"); next }
@@ -1726,7 +1810,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # render_rpt reads GRPICON_MAP (partner group name -> slug) to draw the icon;
     # empty for every non-partner entity, so no other page gets one.
     local GRPICON_MAP="$grpmapf"
-    mkdir -p "$DOCS/$area/entities"
+    mkdir -p "$DOCS/$area/$outdir"
     for i in $(seq 0 $nview); do
         for s in 0 1; do        # 0 = +Server (default), 1 = Transfer
             [ "$s" = 1 ] && [ "${dual[$i]}" != 1 ] && continue   # one page for a scope-independent view
@@ -1761,7 +1845,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
             [ -n "$prow1" ] && nav="${prow1}"$'\t@sep\t'"${nav#NAV$'\t'}"
             tmp=$(mktemp "${TMPDIR:-/tmp}/rpt.XXXXXX")
             { _hdr_with_nav "$HEADER" "$nav"; printf '%s\n' "$blkc"; printf '%s' "$FOOTER"; } > "$tmp"
-            render_rpt "$tmp" "$DOCS/$area/entities/$outf" "../../assets/style.css" "../index.html" "$rlabel" 1 "$hslug" "$rkey"
+            render_rpt "$tmp" "$DOCS/$area/$outdir/$outf" "../../assets/style.css" "../index.html" "$rlabel" 1 "$hslug" "$rkey"
             rm -f "$tmp"
         done
     done
@@ -1841,6 +1925,14 @@ render_report() {   # $1 area  $2 name  $3 rpt
     case $name in
         account|login|subscription|remote-host|logical|partner|application|domain|bl)
             render_entity_report "$area" "$name" "$rpt" "$rlabel" "$hslug" "$rkey"
+            # the ENTITIES2 experiment (2026-09-13): the same nine reports in
+            # the grouped layout, from bin/transfer/reports/entities2.sh's twin
+            # .rpt, rendered by the same function in its ENT_LAYOUT=2 mode into
+            # docs/<area>/entities2/ (its own search/sort key; the help page
+            # is the classic one)
+            if [ -f "$DATA/$area/reports/entities2/$name.rpt" ]; then
+                ENT_LAYOUT=2 render_entity_report "$area" "$name" "$DATA/$area/reports/entities2/$name.rpt" "$rlabel" "$hslug" "entities2-$name"
+            fi
             CUR_DATES=$saved_dates
             return ;;
         entity-search)
@@ -2533,6 +2625,7 @@ tag_transfer_group_h1s() {   # the analyses members already in transfer/ are tag
         [ -n "$lbl" ] && _tag_h1 "$f" "$lbl" "Transfer"
     done
     for f in "$DOCS/transfer/entities/"*.html; do [ -f "$f" ] || continue; _tag_h1 "$f" "Entities" "Transfer"; done
+    for f in "$DOCS/transfer/entities2/"*.html; do [ -f "$f" ] || continue; _tag_h1 "$f" "Entities2" "Transfer"; done   # the Entities2 experiment twins (2026-09-13)
     return 0
 }
 tag_server_group_h1s() {

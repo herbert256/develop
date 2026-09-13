@@ -141,6 +141,7 @@ awk -v DOCS="$DOCS" '
                     edge(page, b "search/file-search-24-hours.html")   # the Files link
                     edge(page, b "tools/sitemap.html")
                     edge(page, b "transfer/entities/subscription-all.html")
+                    edge(page, b "transfer/entities2/subscription-all.html")   # the Entities2 experiment link (2026-09-13)
                     if (hlp != "") edge(page, b "help/" hlp ".html")
                 }
             }

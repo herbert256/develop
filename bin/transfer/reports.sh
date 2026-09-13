@@ -107,6 +107,7 @@ pool_run "$SCRIPT_DIR/reports/duplicate-files.sh"
 pool_run "$SCRIPT_DIR/reports/file-in-file-out.sh"   # partner-to-partner handovers carried by two subscriptions
 pool_run "$SCRIPT_DIR/reports/remote-host.sh"
 pool_run "$SCRIPT_DIR/reports/pda-entities.sh"
+pool_run "$SCRIPT_DIR/reports/entities2.sh"   # the ENTITIES2 experiment: the nine entities in the grouped layout (2026-09-13)
 # (cross-reference.sh and seen-in-server-log.sh moved to bin/analyses/reports/
 # 2026-07 — their pages sit in the Analyses menu; bin/analyses/reports.sh runs
 # them, still writing into the transfer reports dir)

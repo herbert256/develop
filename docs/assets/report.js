@@ -583,23 +583,27 @@
   // (100*sumN/columnTotalN) · pN.M 100*sumN/sumM · aN round(sumN/days) · c
   // in-range day count · dN count of in-range days with metric N > 0 ·
   // qN.M humanDur(sumN/sumM) · xN humanDur(max N) · tN.M
-  // humanBytes(sumN*1000/sumM)+"/s" · bN bar of sumN vs column max ·
+  // humanBytes(sumN*1000/sumM)+"/s" · vN.M humanBytes(sumN/sumM) (the
+  // Entities2 Avg per File, 2026-09-13) · bN bar of sumN vs column max ·
   // rN position by column N descending (rN.a ascending, rN.z zeros last) —
   // see rankCols.
+  // `dates` = the in-range dates themselves (a set): recalcTable unions them
+  // over the visible rows so the TOTAL row's `c`/`a` tokens count DISTINCT
+  // days, not 0 (2026-09-13; the total's day count was never set before).
   function aggBuckets(str, lo, hi) {
-    var sum = {}, max = {}, pos = {}, days = 0, i, v;
+    var sum = {}, max = {}, pos = {}, dates = {}, days = 0, i, v;
     if (str) str.split(",").forEach(function (seg) {
       if (!seg) return;
       var pp = seg.split(":"), e = parseDate(pp[0]);
       if (e === null || e < lo || e > hi) return;
-      days++;
+      days++; dates[pp[0]] = 1;
       for (i = 1; i < pp.length; i++) {
         v = +pp[i] || 0; sum[i - 1] = (sum[i - 1] || 0) + v;
         if (max[i - 1] == null || v > max[i - 1]) max[i - 1] = v;
         if (v > 0) pos[i - 1] = (pos[i - 1] || 0) + 1;
       }
     });
-    return { sum: sum, max: max, pos: pos, days: days };
+    return { sum: sum, max: max, pos: pos, days: days, dates: dates };
   }
   // ---- top-N re-select tables (data-topsel) ---------------------------------
   // The table's rows are the CANDIDATE set — per qualifying date its own top N,
@@ -708,6 +712,7 @@
     if (t === "q") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? humanDur((agg.sum[+p[0]] || 0) / den) : "-"; }
     if (t === "x") { N = +rest; return humanDur(agg.max[N] > 0 ? agg.max[N] : 0); }
     if (t === "t") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? humanBytes((agg.sum[+p[0]] || 0) * 1000 / den) + "/s" : "-"; }
+    if (t === "v") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? humanBytes((agg.sum[+p[0]] || 0) / den) : "-"; }
     return null;
   }
   // The NUMBER behind a recalc token — recalcCell without the formatting, so a
@@ -726,6 +731,7 @@
     if (t === "q") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? (agg.sum[+p[0]] || 0) / den : null; }
     if (t === "x") { return agg.max[+rest] > 0 ? agg.max[+rest] : 0; }
     if (t === "t") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? (agg.sum[+p[0]] || 0) * 1000 / den : null; }
+    if (t === "v") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? (agg.sum[+p[0]] || 0) / den : null; }
     return null;
   }
   // Write one logical column of a row (colspans make cell index != column).
@@ -874,12 +880,15 @@
       }
       applyRowVis(r);
     });
-    var colSum = {}, colMax = {}, colMaxA = {}, vis = 0;
+    var colSum = {}, colMax = {}, colMaxA = {}, vis = 0, totDates = {}, totDays = 0, dk;
     drows.forEach(function (r, x) {
       if (r.style.display === "none") return;
       var s = aggs[x].sum, m, d = aggs[x].days || 0, av;
       for (m in s) { colSum[m] = (colSum[m] || 0) + s[m]; if (colMax[m] == null || s[m] > colMax[m]) colMax[m] = s[m];
         av = d ? s[m] / d : 0; if (colMaxA[m] == null || av > colMaxA[m]) colMaxA[m] = av; }
+      // the TOTAL row's day count = the DISTINCT in-range dates over the
+      // visible rows (a per-row sum would count a shared day once per row)
+      for (dk in (aggs[x].dates || {})) if (!totDates[dk]) { totDates[dk] = 1; totDays++; }
     });
     drows.forEach(function (r, x) {
       if (r.style.display === "none") return;
@@ -888,7 +897,7 @@
       writeRecalc(r, toks, aggs[x], colSum, colMax, colMaxA, false);
     });
     rankCols(toks, drows, aggs, colSum);   // positions renumber over the rows the range left standing
-    var totAgg = { sum: colSum, max: {}, days: 0 };
+    var totAgg = { sum: colSum, max: {}, days: totDays };
     totalRows(table).forEach(function (r) { writeRecalc(r, toks, totAgg, colSum, colMax, colMaxA, true); updateTotalLabel(r, vis); });
     replaceHotspots(table);
   }
@@ -1067,8 +1076,12 @@
     for (var z = 0; z < na.length; z++) if (na[z] !== "") noagg[+na[z]] = 1;
     // Ratio columns "pctCol:numCol:denCol" recompute as 100·Σnum/Σden from the
     // visible rows (num/den must be summed columns to the LEFT of the ratio).
+    // num / den may each be a "+"-joined LIST of columns (2026-09-13, the
+    // Entities2 error rates: Error over Ok+Error, Error over In+Out).
     var pctMap = {}, pc = (table.getAttribute("data-pct") || "").split(";"), colPlain = {};
-    for (var y = 0; y < pc.length; y++) if (pc[y]) { var pt = pc[y].split(":"); pctMap[+pt[0]] = [+pt[1], +pt[2]]; }
+    function pctCols(s) { return s.split("+").map(function (q) { return +q; }); }
+    function pctSum(cols) { var s = 0, q; for (q = 0; q < cols.length; q++) s += colPlain[cols[q]] || 0; return s; }
+    for (var y = 0; y < pc.length; y++) if (pc[y]) { var pt = pc[y].split(":"); pctMap[+pt[0]] = [pctCols(pt[1]), pctCols(pt[2])]; }
     // the visible-row sums of every additive column FIRST (by built index):
     // a moved ratio column may sit left of the columns it is computed from
     trs.forEach(function (tr) {
@@ -1115,8 +1128,8 @@
         } else if (noagg[dataCol]) {
           cell.textContent = "–";                               // distinct count: not summable over a narrowed range
         } else if (pctMap[dataCol]) {                           // ratio: 100·Σnum/Σden over the visible rows
-          var nd = pctMap[dataCol], den = colPlain[nd[1]];
-          cell.textContent = (den ? (100 * ((colPlain[nd[0]]) || 0) / den).toFixed(1) : "0.0") + "%";
+          var nd = pctMap[dataCol], den = pctSum(nd[1]);
+          cell.textContent = (den ? (100 * pctSum(nd[0]) / den).toFixed(1) : "0.0") + "%";
         } else if (isNum) {                                     // declared additive count
           cell.textContent = String(colPlain[dataCol] || 0);   // summed in the first pass (blank / "-" / text cells contribute 0)
         } else if (isBytes) {                                   // declared additive volume
@@ -1572,6 +1585,26 @@
         }
         if (cr && rtCells.length === 1) bindDrill(rtCells[0], tr, table, cr, "Retry", null, du);
         if (cs && rsCells.length === 1) bindDrill(rsCells[0], tr, table, cs, "Resubmit", null, du);
+      }
+      // Per-CELL drills by BUILT column index (the drillcols= TABLE modifier
+      // -> data-drill-cols="key:col[:Noun_words],…", 2026-09-13, the Entities2
+      // pages): the row's data-coreids-<key> list opens under the cell at
+      // <col>; the noun (underscores = spaces) heads the list, else the
+      // column's own header label. The keys are the table's own, so the
+      // failed/processed/retry/resubmit bindings above never double-bind a
+      // cell. A blank z cell (0) stays unclickable.
+      var dcs = table.getAttribute("data-drill-cols");
+      if (dcs) {
+        var hr8 = headerRow(table);
+        dcs.split(",").forEach(function (spec) {
+          var sp8 = spec.split(":"), lst8 = tr.getAttribute("data-coreids-" + sp8[0]);
+          if (!lst8 || sp8.length < 2) return;
+          var cell8 = cellByCi(tr, +sp8[1]) || tr.cells[+sp8[1]];
+          if (!cell8 || (" " + cell8.className + " ").indexOf(" z ") >= 0) return;
+          var noun8 = sp8[2] ? sp8[2].replace(/_/g, " ") : "";
+          if (!noun8 && hr8 && hr8.cells[cell8.cellIndex]) noun8 = hr8.cells[cell8.cellIndex].textContent.replace(/[▲▼]/g, "").replace(/\s+/g, " ").trim();
+          bindDrill(cell8, tr, table, lst8, noun8, null, du);
+        });
       }
       var dcol = tr.getAttribute("data-drill-col");             // session-topview: drill on one named column
       var dlist = tr.getAttribute("data-drill-list");
@@ -2852,6 +2885,7 @@
   // All/Seen/Not seen/Server/Detail views share ONE search, so a filter typed on
   // Accounts survives a switch to Logins. (Sort stays per-entity via pageKeyBase.)
   function searchStoreKey() {
+    if (location.pathname.indexOf("/entities2/") >= 0) return "entities2";   // the Entities2 experiment: its own shared search (2026-09-13)
     if (location.pathname.indexOf("/entities/") >= 0) return "entities";
     return pageKeyBase();
   }
@@ -3791,6 +3825,9 @@
       // IN STEP with publish_lib.sh render_topbar.
       (M.period ? '<span class="period" title="The data period: the first and last day of the transfer data">' + esc(M.period) + "</span>" : "") +
       '<span class="entgroup"><a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
+      // the ENTITIES2 experiment (2026-09-13, user request): the grouped-layout
+      // twins under transfer/entities2/ — KEEP IN STEP with render_topbar
+      '<a class="entlabel" href="' + b + 'transfer/entities2/subscription-all.html">Entities2</a>' +
       '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
       // the FILE SEARCH entry (2026-08): the leader of the windowed pages,
       // between the search icon and the report menus

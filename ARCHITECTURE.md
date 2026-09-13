@@ -592,6 +592,37 @@ in report.js (`entLoad`/`entSave`/`entTouch`/`entResolve`), stored by COLUMN LAB
 (column 0 = the sentinel `#name`); a label the view lacks leaves the entry intact and that page
 keeps its own default.
 
+**The ENTITIES2 experiment** (2026-09-13, user request): a TWIN of the nine pages under
+`docs/transfer/entities2/` (the "Entities2" top-bar link), same views, scopes, tints, drills and
+Reason column, in a GROUPED layout — a `GHEAD` banner row + `gsep=` dividers like the Top view:
+
+| Name | Dates | Transfers | Files | Recover | State | Volume |
+|---|---|---|---|---|---|---|
+| | First · Last · Days | Ok · Error · Error % | In · Out · Error · Error % | Auto · Manual-ok · Manual-error | Waiting · Expired | Total · Avg |
+| KIND | text text num | numok numerr num | num num numfailed num | numwarn numwarn numerr | numwarn numerr | num num |
+| RECALC | - - c | s5 s6 p6.12 | s1 s2 s3 p3.0 | s7 s8 s9 | s10 s11 | h4 v4.0 |
+
+Bucket metrics per date: `files in out ferr bytes tok terr rauto rmok rmerr waiting expired legs`
+(0–12). Definitions: Transfers = every LEG of the entity's Files (Processed / not), credited to the
+File's start day; In/Out = the MOVEMENT direction (`_files.tsv` col 17 — a File with no movement
+counts in the total and the Error % only); Recover = the Top view rule (Auto = an OK File with a
+failed leg and no resubmitted leg — the classic Retry; Manual-ok / Manual-error = EVERY File with
+a resubmitted leg, by outcome — so Manual-ok ≥ the classic Resubmit); Days = days with ≥1 File;
+Avg = bytes ÷ Files. Every count cell drills to its 10 newest Files (`drillcols=` → the row's
+`@data:coreids-<key>`, bound by BUILT column index); the Transfers cells list the Files that
+carried a leg of that outcome. `bin/transfer/reports/entities2.sh` is ONE writer for all nine
+(attribution mirroring `account.sh` / `subscription.sh` / `login.sh` / `remote-host.sh` /
+`pda-entities.sh` exactly; totals per (name, File) pair for the three join entities, once per
+File for the rest — the classic `T|` rule) → `data/transfer/reports/entities2/<entity>.rpt`
+(baked busiest-first, no `sort=`; ONE table, no per-day detail). `render_entity_report` renders it
+in its `ENT_LAYOUT=2` mode: output dir `entities2`, search key `entities2` (report.js), sort per
+page (`report-key` `entities2-<name>`), no `inject_dir_col`/`entity_layout`, the seen rows in
+baked order followed by the blank rows by name, subset totals by `entity2_res_block` (the count
+cells re-summed, Files and bytes from the buckets, Days = the distinct bucket dates, written into
+the writer's own TOTAL template), the Reason column inserted after Avg (`nreal` 19 vs 10), and
+`entities_name_only` also dropping the `GHEAD` line and the `gsep=`/`drillcols=`/`pct=`/`noagg=`
+modifiers for the name-only views. The classic help page serves both.
+
 **`showseen.sh` is a DATA producer only** — its four `showseen-*.rpt` are unpublished
 intermediates feeding the status figures; its `coverage/*.tsv` feed the entity not-seen rows. It
 lifts figures straight from the entity summary `.rpt`s (subscriptions = prefix match, others exact

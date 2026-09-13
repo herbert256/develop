@@ -1,0 +1,237 @@
+#!/usr/bin/env bash
+#
+# entities2.sh — the ENTITIES2 EXPERIMENT (2026-09-13, user request): the nine
+# Entities reports in a GROUPED layout, one .rpt per entity under
+# data/transfer/reports/entities2/, rendered by publish_lib's
+# render_entity_report in its ENT_LAYOUT=2 mode into docs/transfer/entities2/
+# (the "Entities2" top-bar link). The classic entity .rpt files and pages are
+# UNTOUCHED — this is a twin, to be adopted or deleted as one piece (the
+# pieces are listed in CLAUDE.md, "The Entities pages").
+#
+# Layout: the Name, then SIX column groups (a GHEAD banner + the gsep=
+# dividers, the Top view way):
+#   Dates      First · Last · Days (days with traffic)
+#   Transfers  Ok · Error · Error %      the LEGS (log rows) of the entity's
+#              Files — every leg of every attributed File, credited to the
+#              File's start day like every per-File figure on the site
+#   Files      In · Out · Error · Error %   In/Out = the MOVEMENT direction
+#              (_files.tsv col 17 — the home page's In/Out rule; a File with
+#              no movement counts in the total and the Error % only)
+#   Recover    Auto · Manual-ok · Manual-error   the Top view rule: Auto = an
+#              OK File that carried a failed leg and no resubmitted leg (the
+#              classic Retry column); Manual-ok / Manual-error = EVERY File
+#              with a resubmitted leg (_transfers.tsv col 22), by its outcome
+#   State      Waiting · Expired         _files.tsv col 2
+#   Volume     Total · Avg (per File)
+# Every count cell drills to its 10 newest Files (CoreIds); the Transfers
+# cells to the Files that carried a leg of that outcome.
+#
+# Attribution per entity mirrors the five classic writers EXACTLY (account.sh,
+# subscription.sh, login.sh, remote-host.sh, pda-entities.sh) — so Files,
+# Error, Auto, Volume, First and Last agree row for row with the classic pages:
+#   account      _files col 3
+#   subscription the distinct non-empty _transfers col 6 over the File's legs
+#   login        the distinct non-empty _transfers col 5   (each: one count
+#                per (name, File) pair, like the classic join)
+#   remote-host  the distinct non-empty _transfers col 16, only when the File
+#                connects OUT (_files col 16 == out — a host is an outbound
+#                endpoint, never an incoming address)
+#   logical      col 13 via xref/_profiles-logicals ∪ col 12 via _subscriptions-logicals
+#   partner      col 20 ∪ col 12 via _subscriptions-partners
+#   application  col 18 ∪ col 12 via _subscriptions-apps
+#   domain       col 19
+#   bl           col 12 via _subscriptions-bl
+# Totals: subscription / login / remote-host sum the (name, File) pairs, the
+# others count each File once — exactly what the classic T| lines do.
+#
+# Usage:
+#   ./entities2.sh    # reads the caches, writes data/transfer/reports/entities2/<entity>.rpt (nine files)
+#
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../lib.sh"
+
+shopt -s nullglob
+files=("$INPUT_DIR"/*.csv)
+shopt -u nullglob
+if [ ${#files[@]} -eq 0 ]; then
+    echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
+fi
+OUTDIR="$REPORTS_DIR/entities2"
+mkdir -p "$OUTDIR"
+rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp   # orphaned temps from a killed run (reports.sh sweeps the top level only)
+ensure_parsed
+
+DIMS="account subscription login remote-host logical partner application domain bl"
+# one script, NINE outputs — skip only when ALL are fresh (pda-entities.sh's rule)
+_fresh=1
+for _o in $DIMS; do
+    _f="$OUTDIR/$_o.rpt"
+    if ! { [ -f "$_f" ] && ! [ "$PARSED" -nt "$_f" ] && ! [ "$FILES" -nt "$_f" ] && ! [ "${BASH_SOURCE[0]}" -nt "$_f" ] && ! [ "$LIB_DIR/lib.sh" -nt "$_f" ]; }; then
+        _fresh=0; break
+    fi
+done
+if [ "$_fresh" = 1 ]; then
+    echo "  entities2/*.rpt are up to date; skipping." >&2
+    exit 0
+fi
+unset _fresh _o _f
+echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
+
+# the union / value maps (pda-entities.sh's UMAP/VMAP set); a missing map is
+# an empty one
+mapf() { [ -f "$CONFIG_XREF/$1.tsv" ] && printf '%s' "$CONFIG_XREF/$1.tsv" || printf ''; }
+M_LG=$(mapf _subscriptions-logicals); M_VLG=$(mapf _profiles-logicals)
+M_PT=$(mapf _subscriptions-partners); M_AP=$(mapf _subscriptions-apps); M_BL=$(mapf _subscriptions-bl)
+
+AGG="$OUTDIR/.agg.tmp"
+# ---------------------------------------------------------------------------
+# ONE awk, two passes. Pass 1 = _transfers.tsv: per CoreId the OK / failed
+# LEG counts, the failed-leg and resubmitted flags, and the distinct login /
+# site / host sets. Pass 2 = _files.tsv: per File the nine name sets, then
+# per (type, name) the counters, first/last by sortkey, the per-date buckets
+# (date:files:in:out:ferr:bytes:tok:terr:rauto:rmok:rmerr:waiting:expired:legs)
+# and the ten drill rings. Writes S| / T| lines to a temp file — ten drill
+# lists per row are too much for a bash variable.
+# ---------------------------------------------------------------------------
+awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v DIMS="$DIMS" \
+    -v M_LG="$M_LG" -v M_VLG="$M_VLG" -v M_PT="$M_PT" -v M_AP="$M_AP" -v M_BL="$M_BL" "$COREIDS_AWK"'
+    function loadmulti(f, m,   l, n2, z, k) { if (f == "") return   # name -> \037-joined values (UNION maps)
+        while ((getline l < f) > 0) { n2 = split(l, z, "\t")
+            if (n2 >= 2 && z[1] != "" && z[2] != "") { k = toupper(z[1]); m[k] = m[k] (m[k] == "" ? "" : "\037") z[2] } }
+        close(f) }
+    function loadsingle(f, m,   l, n2, z) { if (f == "") return      # name -> ONE value (the profile -> Logical map)
+        while ((getline l < f) > 0) { n2 = split(l, z, "\t"); if (n2 >= 2 && z[1] != "" && z[2] != "") m[toupper(z[1])] = z[2] }
+        close(f) }
+    function addset(s, v) { return index("\037" s "\037", "\037" v "\037") ? s : (s == "" ? v : s "\037" v) }   # a distinct-value set as a \037 string (tests emptiness, never membership — the mawk LHS trap)
+    function addnames(t, s,   n2, z, i2) { if (s == "") return; n2 = split(s, z, "\037"); for (i2 = 1; i2 <= n2; i2++) NS[t SUBSEP z[i2]] = 1 }
+    function acc(key,   dk) {
+        sc[key]++; if (isin) sfin[key]++; if (isout) sfout[key]++; if (f) sfe[key]++; sv[key] += size
+        stok[key] += tk; ster[key] += te
+        if (ra) sra[key]++; if (rmo) smo[key]++; if (rme) sme[key]++; if (wt) swt[key]++; if (ex) sex[key]++
+        if (!(key in havemin) || sk < mink[key]) { mink[key] = sk; fst[key] = date; havemin[key] = 1 }
+        if (!(key in havemax) || sk > maxk[key]) { maxk[key] = sk; lst[key] = date; havemax[key] = 1 }
+        dk = key SUBSEP date; ds[dk] = 1; dl[dk]++; if (isin) din[dk]++; if (isout) dout[dk]++; if (f) dfe[dk]++; db[dk] += size
+        dtok[dk] += tk; dter[dk] += te; if (ra) dra[dk]++; if (rmo) dmo[dk]++; if (rme) dme[dk]++; if (wt) dwt[dk]++; if (ex) dex[dk]++
+        if (tk > 0) addtop(key SUBSEP "tok", sk, disp, cid); if (te > 0) addtop(key SUBSEP "terr", sk, disp, cid)
+        if (isin) addtop(key SUBSEP "fin", sk, disp, cid); if (isout) addtop(key SUBSEP "fout", sk, disp, cid)
+        if (f) addtop(key SUBSEP "ferr", sk, disp, cid)
+        if (ra) addtop(key SUBSEP "rauto", sk, disp, cid); if (rmo) addtop(key SUBSEP "rmok", sk, disp, cid); if (rme) addtop(key SUBSEP "rmerr", sk, disp, cid)
+        if (wt) addtop(key SUBSEP "wait", sk, disp, cid); if (ex) addtop(key SUBSEP "exp", sk, disp, cid)
+    }
+    function tot(t) {
+        tc[t]++; if (isin) tin[t]++; if (isout) tout[t]++; if (f) tfe[t]++; tv[t] += size; ttok[t] += tk; tter[t] += te
+        if (ra) tra[t]++; if (rmo) tmo[t]++; if (rme) tme[t]++; if (wt) twt[t]++; if (ex) tex[t]++
+        tdd[t SUBSEP date] = 1
+    }
+    BEGIN {
+        loadmulti(M_LG, LG); loadsingle(M_VLG, VLG); loadmulti(M_PT, PT); loadmulti(M_AP, AP); loadmulti(M_BL, BLM)
+        PAIRTOT["subscription"] = 1; PAIRTOT["login"] = 1; PAIRTOT["remote-host"] = 1   # totals once per (name, File) pair — the classic join writers
+    }
+    FILENAME == PF {   # _transfers.tsv first: the per-CoreId leg facts
+        cid = $1
+        if ($3 == "Processed") tokc[cid]++; else { terrc[cid]++; fl[cid] = 1 }
+        if ($22 == "true") rsb[cid] = 1
+        if ($5 != "") lg[cid] = addset(lg[cid], $5)
+        if ($6 != "") st[cid] = addset(st[cid], $6)
+        if ($16 != "") hs[cid] = addset(hs[cid], $16)
+        next }
+    $4 == "" { next }
+    {
+        cid = $1; f = ($2 == "Failed" || $2 == "Expired"); date = $4; sk = $6; disp = $4 " " $5; size = $8 + 0
+        isin = ($17 == "in"); isout = ($17 == "out"); wt = ($2 == "Waiting"); ex = ($2 == "Expired")
+        tk = (cid in tokc) ? tokc[cid] : 0; te = (cid in terrc) ? terrc[cid] : 0
+        ra = (!f && (cid in fl) && !(cid in rsb)); rmo = (!f && (cid in rsb)); rme = (f && (cid in rsb))
+        delete NS
+        if ($3 != "") NS["account" SUBSEP $3] = 1
+        if (cid in st) addnames("subscription", st[cid])
+        if (cid in lg) addnames("login", lg[cid])
+        if ($16 == "out" && (cid in hs)) addnames("remote-host", hs[cid])
+        if ($13 != "" && (toupper($13) in VLG)) NS["logical" SUBSEP VLG[toupper($13)]] = 1
+        if ($12 != "" && (toupper($12) in LG)) addnames("logical", LG[toupper($12)])
+        if ($20 != "") NS["partner" SUBSEP $20] = 1
+        if ($12 != "" && (toupper($12) in PT)) addnames("partner", PT[toupper($12)])
+        if ($18 != "") NS["application" SUBSEP $18] = 1
+        if ($12 != "" && (toupper($12) in AP)) addnames("application", AP[toupper($12)])
+        if ($19 != "") NS["domain" SUBSEP $19] = 1
+        if ($12 != "" && (toupper($12) in BLM)) addnames("bl", BLM[toupper($12)])
+        delete TS
+        for (k in NS) { split(k, kk, SUBSEP); t = kk[1]
+            acc(k); TS[t] = 1
+            if (t in PAIRTOT) tot(t) }
+        for (t in TS) if (!(t in PAIRTOT)) tot(t)
+    }
+    END {
+        for (dk in ds) { split(dk, kk, SUBSEP); key = kk[1] SUBSEP kk[2]; nd[key]++
+            bk[key] = bk[key] (bk[key] ? "," : "") kk[3] ":" dl[dk] ":" (din[dk]+0) ":" (dout[dk]+0) ":" (dfe[dk]+0) ":" (db[dk]+0) ":" (dtok[dk]+0) ":" (dter[dk]+0) ":" (dra[dk]+0) ":" (dmo[dk]+0) ":" (dme[dk]+0) ":" (dwt[dk]+0) ":" (dex[dk]+0) ":" (dtok[dk]+dter[dk]) }
+        for (key in sc) { split(key, kk, SUBSEP); t = kk[1]; ns[t]++
+            printf "S|%s|%s|%d|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", \
+                t, kk[2], sc[key], fst[key], lst[key], nd[key]+0, stok[key]+0, ster[key]+0, sfin[key]+0, sfout[key]+0, sfe[key]+0, \
+                sra[key]+0, smo[key]+0, sme[key]+0, swt[key]+0, sex[key]+0, sv[key]+0, bk[key], \
+                buildlist(top[key SUBSEP "tok"]), buildlist(top[key SUBSEP "terr"]), buildlist(top[key SUBSEP "fin"]), buildlist(top[key SUBSEP "fout"]), \
+                buildlist(top[key SUBSEP "ferr"]), buildlist(top[key SUBSEP "rauto"]), buildlist(top[key SUBSEP "rmok"]), buildlist(top[key SUBSEP "rmerr"]), \
+                buildlist(top[key SUBSEP "wait"]), buildlist(top[key SUBSEP "exp"]) > OUTF }
+        for (k in tdd) { split(k, kk, SUBSEP); tdays[kk[1]]++ }
+        n2 = split(DIMS, TL, " ")   # a T| line for EVERY type, data or not (the config-only estate renders zero-row tables)
+        for (i2 = 1; i2 <= n2; i2++) { t = TL[i2]
+            printf "T|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s|%d\n", t, tc[t]+0, tdays[t]+0, ttok[t]+0, tter[t]+0, tin[t]+0, tout[t]+0, tfe[t]+0, \
+                tra[t]+0, tmo[t]+0, tme[t]+0, twt[t]+0, tex[t]+0, tv[t]+0, ns[t]+0 > OUTF }
+    }
+' "$PARSED" "$FILES"
+
+# ROW formatter: ONE awk pass over the busiest-first stream (S| fields: 2 type
+# 3 name 4 files 5 first 6 last 7 days 8 tok 9 terr 10 in 11 out 12 ferr
+# 13 rauto 14 rmok 15 rmerr 16 waiting 17 expired 18 bytes 19 buckets
+# 20-29 the drills tok terr fin fout ferr rauto rmok rmerr wait exp). The
+# renderer blanks a 0 in the tinted cells itself (its z rule).
+FMT_AWK='
+    function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
+        while (v >= 1024 && i < 6) { v /= 1024; i++ }
+        return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
+    function pr(x, c) { if (c > 0) return sprintf("%.1f", x * 100 / c); return "0.0" }
+'
+
+for dim in $DIMS; do
+    case $dim in
+        account)      title="Accounts";      chead="Account";      nkind=acct;  noun="account" ;;
+        subscription) title="Subscriptions"; chead="Subscription"; nkind=site;  noun="subscription" ;;
+        login)        title="Logins";        chead="Login";        nkind=login; noun="login" ;;
+        remote-host)  title="Remote Hosts";  chead="Remote Host";  nkind=host;  noun="remote host" ;;
+        logical)      title="Logical";       chead="Logical";      nkind=lgc;   noun="logical" ;;
+        partner)      title="Partners";      chead="Partner";      nkind=ptn;   noun="partner" ;;
+        application)  title="Applications";  chead="Application";  nkind=app;   noun="application" ;;
+        domain)       title="Domains";       chead="Domain";       nkind=dom;   noun="domain" ;;
+        bl)           title="BL";            chead="BL";           nkind=bl;    noun="BL" ;;
+    esac
+    OUT="$OUTDIR/$dim.rpt"
+    IFS='|' read -r _ _ tc tdays ttok tter tin tout tfe tra tmo tme twt tex tv ns \
+        <<< "$({ grep "^T|$dim|" "$AGG" || true; } | awk 'NR == 1')"
+    : "${tc:=0}" "${tdays:=0}" "${ttok:=0}" "${tter:=0}" "${tin:=0}" "${tout:=0}" "${tfe:=0}" "${tra:=0}" "${tmo:=0}" "${tme:=0}" "${twt:=0}" "${tex:=0}" "${tv:=0}" "${ns:=0}"
+    rows=$({ grep "^S|$dim|" "$AGG" || true; } | LC_ALL=C sort -t'|' -k4,4nr -k3,3f -k3,3 | awk -F'|' "$FMT_AWK"'
+        $3 == "" { next }
+        { files = $4 + 0; tok = $8 + 0; ter = $9 + 0; fe = $12 + 0; bytes = $18 + 0
+          printf "ROW\t%s\t%s\t%s\t%d\t%d\t%d\t%s%%\t%d\t%d\t%d\t%s%%\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s\t@data:coreids-ferr=%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:coreids-wait=%s\t@data:coreids-exp=%s\n", \
+              $3, $5, $6, $7, tok, ter, pr(ter, tok + ter), $10, $11, fe, pr(fe, files), $13, $14, $15, $16, $17, \
+              human(bytes), human(files > 0 ? bytes / files : 0), $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29 }')
+    tot_line=$(awk -F'|' "$FMT_AWK"'BEGIN { tc = ARGV[1]; ttok = ARGV[2]; tter = ARGV[3]; tfe = ARGV[4]; tv = ARGV[5]
+        printf "%s%%\t%s%%\t%s\t%s\n", pr(tter, ttok + tter), pr(tfe, tc), human(tv), human(tc > 0 ? tv / tc : 0); exit }' "$tc" "$ttok" "$tter" "$tfe" "$tv")
+    IFS=$'\t' read -r tterp tfep tvh tavg <<< "$tot_line"
+    {
+        printf 'TITLE\t%s\n' "$title"
+        printf 'DESC\tFiles per %s in the grouped Entities2 layout: dates, transfers, files, recoveries, state and volume — an experiment beside the classic Entities pages.\n' "$noun"
+        printf 'INTRO\tEvery %s with its traffic in six groups — **Dates** (first and last day, days with traffic), **Transfers** (the physical log rows — every leg of its Files — Ok/Error with the error rate), **Files** (one per CoreId, split **In** / **Out** by the movement direction, with its Error count and rate), **Recover** (**Auto** = an OK File that carried a failed leg and was delivered by the platform'\''s own retry; **Manual-ok** / **Manual-error** = every File an operator resubmitted, by its final outcome), **State** (the UC2 **Waiting** files — staged, not collected yet — and the **Expired** ones, deleted unclaimed) and **Volume** (the total, and the average per File). Same rows, views and scopes as the classic Entities pages; every count opens its 10 most recent Files.\n' "$noun"
+        printf 'TABLE\tSummary per %s\twide\tgsep=1,4,7,11,14,16\tnoagg=3,17\tpct=6:5:4+5;10:9:7+8\tdrillcols=tok:4:Transfers_Ok,terr:5:Transfers_Error,fin:7:Files_In,fout:8:Files_Out,ferr:9:Files_Error,rauto:11:Recover_Auto,rmok:12:Recover_Manual-ok,rmerr:13:Recover_Manual-error,wait:14:Waiting,exp:15:Expired\n' "$chead"
+        printf 'GHEAD\t\t@{colspan=3,class=gband gsep}Dates\t@{colspan=3,class=gband gsep}Transfers\t@{colspan=4,class=gband gsep}Files\t@{colspan=3,class=gband gsep}Recover\t@{colspan=2,class=gband gsep}State\t@{colspan=2,class=gband gsep}Volume\n'
+        printf 'HEAD\t%s\tFirst\tLast\tDays\tOk\tError\tError %%\tIn\tOut\tError\tError %%\tAuto\tManual-ok\tManual-error\tWaiting\tExpired\tTotal\tAvg\n' "$chead"
+        printf 'KIND\t%s\ttext\ttext\tnum\tnumok\tnumerr\tnum\tnum\tnum\tnumfailed\tnum\tnumwarn\tnumwarn\tnumerr\tnumwarn\tnumerr\tnum\tnum\n' "$nkind"
+        printf 'RECALC\t-\t-\t-\tc\ts5\ts6\tp6.12\ts1\ts2\ts3\tp3.0\ts7\ts8\ts9\ts10\ts11\th4\tv4.0\n'
+        [ -n "$rows" ] && printf '%s\n' "$rows"
+        printf 'TOTAL\tTotal (%s %s(s))\t\t\t@{class=num}%s\t@{class=num okc}%s\t@{class=num errc}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num errc}%s\t@{class=num warn}%s\t@{class=num errc}%s\t@{class=num}%s\t@{class=num}%s\n' \
+            "$ns" "$noun" "$tdays" "$ttok" "$tter" "$tterp" "$tin" "$tout" "$tfe" "$tfep" "$tra" "$tmo" "$tme" "$twt" "$tex" "$tvh" "$tavg"
+        printf 'NOTE\t**Files** = logical transfers (one per CoreId; Waiting counts as OK, Expired as Error), **Transfers** = the physical log rows of those Files (one per leg). **In** / **Out** is the movement direction of the File (a File with no known movement counts in the Files total and Error %% only). **Recover**: **Auto** = an OK File that carried at least one failed leg and no resubmitted leg — the platform'\''s own retry delivered it (the classic Retry column); **Manual-ok** / **Manual-error** = every File with a resubmitted leg (the log'\''s Resubmitted flag), OK or Error by its final outcome (the Top view'\''s Resubmit rule — a resubmitted re-delivery that never failed counts under Manual-ok). **Days** = the days with at least one File; First / Last stay full-period under the date filter. **Avg** = the volume divided by the Files. Click any count for its 10 most recent Files (newest first, by start time); the Transfers cells list the Files that carried a leg of that outcome.\n'
+        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+    echo "Data written to $OUT ($ns $noun(s), $tc file(s))." >&2
+done
+rm -f "$AGG"

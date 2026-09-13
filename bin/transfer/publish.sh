@@ -39,6 +39,8 @@ mkdir -p "$DOCS/transfer"
 rm -f "$DOCS"/transfer/*.html   # clear stale report pages (the index is rewritten by bin/build/publish.sh)
 mkdir -p "$DOCS/transfer/entities"
 rm -f "$DOCS"/transfer/entities/*.html   # the Entities All/Seen/Not seen/Server/OK/Warning/Error pages (render_entity_report)
+mkdir -p "$DOCS/transfer/entities2"
+rm -f "$DOCS"/transfer/entities2/*.html  # the ENTITIES2 experiment twins (render_entity_report, ENT_LAYOUT=2 — 2026-09-13)
 mkdir -p "$DOCS/analyses/xref"
 rm -f "$DOCS"/analyses/xref/*.html       # the cross-reference pages (render_report's cross-* branch, now under analyses/)
 rm -rf "$DOCS/transfer/xref"             # the cross pages moved to analyses/xref/ (2026-07) — drop the old dir

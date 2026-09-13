@@ -931,6 +931,25 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   day table, overview/day Top 5) point. Each carries its own DRILL (2026-09-13, user request):
   `@data:coreids-retry` / `-resubmit` on the row, the 10 newest such Files, bound to the cell by
   HEADER LABEL in report.js `setupExpandable` (both are `numwarn` cells).
+  **THE ENTITIES2 EXPERIMENT** (2026-09-13, user request — a TWIN of the nine pages, to be adopted
+  or deleted as ONE piece): the same reports in a GROUPED layout — Name, then six column groups
+  rendered the Top view way (a `GHEAD` banner + `gsep=` dividers): Dates (First · Last · Days with
+  traffic) · Transfers (Ok · Error · Error % — the LEGS of the entity's Files) · Files (In · Out by
+  MOVEMENT, `_files.tsv` col 17 · Error · Error %) · Recover (Auto = the classic Retry; Manual-ok /
+  Manual-error = every resubmitted File by outcome — the Top view's Automatic + Resubmit Ok/Failed
+  rule) · State (Waiting · Expired) · Volume (Total · Avg per File); every count cell drills to its
+  10 newest Files. Pieces: `bin/transfer/reports/entities2.sh` (ONE writer for all nine, its
+  attribution mirroring the five classic writers — Files/Error/Auto/Volume/First/Last agree row for
+  row) → `data/transfer/reports/entities2/<entity>.rpt` → `render_entity_report` in its
+  `ENT_LAYOUT=2` mode (called from `render_report`'s entity branch; no Direction column, no reorder,
+  rows baked busiest-first with no `sort=`, subset totals via `entity2_res_block`) →
+  `docs/transfer/entities2/` (cleared by `bin/transfer/publish.sh`; h1 crumb "Entities2"; search key
+  `entities2`, sort per page, the CLASSIC help page); the **Entities2** top-bar link
+  (`render_topbar` + `buildTopbar`, KEEP IN STEP, + linkcheck's hand-modelled bar); the
+  `drillcols=` TABLE modifier (per-cell drills by BUILT column index, `key:col[:Noun_words]` →
+  `data-coreids-<key>`), the RECALC token `vN.M` (humanBytes(sumN/sumM)), `pct=` accepting `a+b`
+  column lists, and the TOTAL row's day count under a narrowed range = the DISTINCT in-range dates
+  (was 0 — report.js `recalcTable`). Deliberately without a sitemap card, finder rows or home links.
 - **The detail pages** (`details.sh` → `details_lib.sh`/`details_writer.awk`): one page per entity
   of the nine types, every configured name gets one; slugs via the comprehensive `_slugmap.tsv`;
   no From/To, no search box, no RECALC.
