@@ -596,11 +596,16 @@ keeps its own default.
 `docs/transfer/entities2/` (the "Entities2" top-bar link), same views, scopes, tints, drills and
 Reason column, in a GROUPED layout — a `GHEAD` banner row + `gsep=` dividers like the Top view:
 
-| Name | Dates | Transfers | Files | Recover | State | Volume | Duration |
+| Name | Transfers | Files | Retry / Resubmit | Duration | Volume | State | Dates |
 |---|---|---|---|---|---|---|---|
-| | First · Last · Days | Ok · Error · Error % | In · Out · Error · Error % | Auto · Manual-ok · Manual-error | Waiting · Expired | Total · Avg | p90 · p95 · p99 |
-| KIND | text text num | numok numerr num | num num numfailed num | numwarn numwarn numerr | numwarn numerr | num num | num num num |
-| RECALC | - - c | s5 s6 p6.12 | s1 s2 s3 p3.0 | s7 s8 s9 | s10 s11 | h4 v4.0 | P90 P95 P99 |
+| | Ok · Error · Error % | In · Out · Error · Error % | Auto · Ok · Error | p90 · p95 · p99 | Total · Avg | Waiting · Expired | First · Last · Days |
+| KIND | numok numfailed num | num num numfailed num | numwarn numwarn numfailed | num num num (+ unit tint) | num num | numwarn numfailed | text text num |
+| RECALC | s5 s6 e6.12 | S1 S2 s3 e3.0 | s7 s8 s9 | P90 P95 P99 | H4 V4.0 | s10 s11 | - - c |
+
+(The order, the TOTAL row LAST, whole-unit bytes, the s/m/h/d durations tinted green/amber/red by
+unit, an empty rate beside an empty Error, no In/Out 0 and the red cells as `numfailed` are the
+2026-09-13 user rules — `errc`/`okc` cells lose their tint inside the views' tinted rows, only
+`.failed`/`.processed` and a non-empty `.warn` keep it.)
 
 Bucket metrics per date: `files in out ferr bytes tok terr rauto rmok rmerr waiting expired legs`
 (0–12). Definitions: Transfers = every LEG of the entity's Files (Processed / not), credited to the

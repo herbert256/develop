@@ -932,17 +932,23 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   `@data:coreids-retry` / `-resubmit` on the row, the 10 newest such Files, bound to the cell by
   HEADER LABEL in report.js `setupExpandable` (both are `numwarn` cells).
   **THE ENTITIES2 EXPERIMENT** (2026-09-13, user request — a TWIN of the nine pages, to be adopted
-  or deleted as ONE piece): the same reports in a GROUPED layout — Name, then six column groups
-  rendered the Top view way (a `GHEAD` banner + `gsep=` dividers): Dates (First · Last · Days with
-  traffic) · Transfers (Ok · Error · Error % — the LEGS of the entity's Files) · Files (In · Out by
-  MOVEMENT, `_files.tsv` col 17 · Error · Error %) · Recover (Auto = the classic Retry; Manual-ok /
-  Manual-error = every resubmitted File by outcome — the Top view's Automatic + Resubmit Ok/Failed
-  rule) · State (Waiting · Expired) · Volume (Total · Avg per File) · Duration (p90 · p95 · p99 of
-  the OK Files' wall-clock span, the Duration report's scope and nearest-rank rule, FOLLOWING the
-  date filter — user rule: each row carries per-day display-grid histograms `@data:durdays`, the
-  RECALC tokens `P90`/`P95`/`P99` re-pick the percentile over the in-range days, rows and TOTAL
-  alike, and the publish-time subset totals merge the same payload); every count cell drills to its
-  10 newest Files. Pieces: `bin/transfer/reports/entities2.sh` (ONE writer for all nine, its
+  or deleted as ONE piece): the same reports in a GROUPED layout — Name, then seven column groups
+  rendered the Top view way (a `GHEAD` banner + `gsep=` dividers), in this order (2026-09-13,
+  user request): Transfers (Ok · Error · Error % — the LEGS of the entity's Files) · Files (In ·
+  Out by MOVEMENT, `_files.tsv` col 17 · Error · Error %) · Retry / Resubmit (Auto = the classic
+  Retry; Ok / Error = every resubmitted File by outcome — the Top view's Automatic + Resubmit
+  Ok/Failed rule) · Duration (p90 · p95 · p99 of the OK Files' wall-clock span, the Duration
+  report's scope and nearest-rank rule, FOLLOWING the date filter — user rule: each row carries
+  per-day display-grid histograms `@data:durdays`, the RECALC tokens `P90`/`P95`/`P99` re-pick
+  the percentile over the in-range days, rows and TOTAL alike, and the publish-time subset totals
+  merge the same payload) · Volume (Total · Avg per File) · State (Waiting · Expired) · Dates
+  (First · Last · Days with traffic). DISPLAY RULES (user): the TOTAL row LAST
+  (`entity2_total_last`); bytes in WHOLE units (tokens `H`/`V`); a duration as a whole number with
+  a one-letter unit s/m/h/d, tinted s green · m amber · h/d red (the `P` token retints); an empty
+  Error keeps an EMPTY rate beside it (token `e`); In / Out never show a 0 (token `S`); every red
+  count cell is KIND `numfailed`, never `numerr` — the views' row tints paint over `errc`/`okc`
+  cells (only `.failed`/`.processed`, and a non-empty `.warn`, keep their own tint). Every count
+  cell drills to its 10 newest Files. Pieces: `bin/transfer/reports/entities2.sh` (ONE writer for all nine, its
   attribution mirroring the five classic writers — Files/Error/Auto/Volume/First/Last agree row for
   row) → `data/transfer/reports/entities2/<entity>.rpt` → `render_entity_report` in its
   `ENT_LAYOUT=2` mode (called from `render_report`'s entity branch; no Direction column, no reorder,
@@ -951,10 +957,12 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   `entities2`, sort per page, the CLASSIC help page); the **Entities2** top-bar link
   (`render_topbar` + `buildTopbar`, KEEP IN STEP, + linkcheck's hand-modelled bar); the
   `drillcols=` TABLE modifier (per-cell drills by BUILT column index, `key:col[:Noun_words]` →
-  `data-coreids-<key>`), the RECALC tokens `vN.M` (humanBytes(sumN/sumM)) and `PN` (the
-  nearest-rank percentile N of the row's `data-durdays` histograms), `pct=` accepting `a+b`
-  column lists, and the TOTAL row's day count under a narrowed range = the DISTINCT in-range dates
-  (was 0 — report.js `recalcTable`). Deliberately without a sitemap card, finder rows or home links.
+  `data-coreids-<key>`), the RECALC tokens `vN.M` (humanBytes(sumN/sumM)), `PN` (the
+  nearest-rank percentile N of the row's `data-durdays` histograms, s/m/h/d + unit tint), `SN`
+  (sum, blank on 0), `eN.M` (rate, blank when sumN is 0), `HN`/`VN.M` (whole-unit bytes),
+  `pct=` accepting `a+b` column lists (the searched total honours S/e/H too), and the TOTAL
+  row's day count under a narrowed range = the DISTINCT in-range dates (was 0 — report.js
+  `recalcTable`). Deliberately without a sitemap card, finder rows or home links.
 - **The detail pages** (`details.sh` → `details_lib.sh`/`details_writer.awk`): one page per entity
   of the nine types, every configured name gets one; slugs via the comprehensive `_slugmap.tsv`;
   no From/To, no search box, no RECALC.

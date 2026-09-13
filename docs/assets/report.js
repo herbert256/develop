@@ -574,6 +574,25 @@
     if (ms < 3600000) return (ms / 60000).toFixed(1) + " min";
     return (ms / 3600000).toFixed(2) + " h";
   }
+  // The Entities2 spellings (2026-09-13, user request; bin/transfer/reports/
+  // entities2.sh spells the baked cells the same way): bytes in WHOLE units,
+  // a duration as a whole number with a one-letter unit (s m h d), tinted by
+  // its unit — s green (processed) · m amber (warn) · h/d red (failed). The
+  // tint classes are the row-tint-proof ones (.failed / .processed keep their
+  // background inside a tinted row; .warn does by its own rule).
+  function humanBytesInt(b) {
+    var u = ["B", "KB", "MB", "GB", "TB", "PB"], i = 0, v = b;
+    while (v >= 1024 && i < 5) { v /= 1024; i++; }
+    return Math.round(v) + " " + u[i];
+  }
+  function humanDurShort(ms) {
+    var v = ms / 1000;
+    if (v < 59.5) return Math.round(v) + " s";
+    v /= 60; if (v < 59.5) return Math.round(v) + " m";
+    v /= 60; if (v < 23.5) return Math.round(v) + " h";
+    return Math.round(v / 24) + " d";
+  }
+  function durTint(ms) { var v = ms / 1000; if (v < 59.5) return "processed"; if (v / 60 < 59.5) return "warn"; return "failed"; }
 
   // ---- generic per-date re-aggregation (the date filter) --------------------
   // A row carries data-buckets = "date:m0:m1:...,date:m0:m1:..." (raw per-date
@@ -583,12 +602,14 @@
   // (100*sumN/columnTotalN) · pN.M 100*sumN/sumM · aN round(sumN/days) · c
   // in-range day count · dN count of in-range days with metric N > 0 ·
   // qN.M humanDur(sumN/sumM) · xN humanDur(max N) · tN.M
-  // humanBytes(sumN*1000/sumM)+"/s" · vN.M humanBytes(sumN/sumM) (the
-  // Entities2 Avg per File, 2026-09-13) · PN the nearest-rank percentile N
-  // of the row's per-day DURATION histograms (data-durdays, see aggDurDays —
-  // the Entities2 Duration group) · bN bar of sumN vs column max ·
-  // rN position by column N descending (rN.a ascending, rN.z zeros last) —
-  // see rankCols.
+  // humanBytes(sumN*1000/sumM)+"/s" · vN.M humanBytes(sumN/sumM) · bN bar
+  // of sumN vs column max · rN position by column N descending (rN.a
+  // ascending, rN.z zeros last) — see rankCols.
+  // The Entities2 variants (2026-09-13): SN sum, BLANK when 0 · eN.M the
+  // pN.M rate, BLANK when sumN is 0 (an empty Error keeps an empty rate) ·
+  // HN / VN.M the hN / vN.M bytes in WHOLE units · PN the nearest-rank
+  // percentile N of the row's per-day DURATION histograms (data-durdays, see
+  // aggDurDays), spelled s/m/h/d and TINTED by its unit (writeRecalc).
   // `dates` = the in-range dates themselves (a set): recalcTable unions them
   // over the visible rows so the TOTAL row's `c`/`a` tokens count DISTINCT
   // days, not 0 (2026-09-13; the total's day count was never set before).
@@ -733,7 +754,11 @@
   }
   function recalcCell(tok, agg, colSum) {
     var t = tok.charAt(0), rest = tok.slice(1), N, p, den, pv;
-    if (t === "P") { pv = pctlHist(agg.dur, +rest); return pv === null ? "" : humanDur(pv); }
+    if (t === "P") { pv = pctlHist(agg.dur, +rest); return pv === null ? "" : humanDurShort(pv); }
+    if (t === "S") { pv = agg.sum[+rest] || 0; return pv ? String(pv) : ""; }
+    if (t === "e") { p = rest.split("."); pv = agg.sum[+p[0]] || 0; den = agg.sum[+p[1]] || 0; return (pv && den) ? (100 * pv / den).toFixed(1) + "%" : ""; }
+    if (t === "H") return humanBytesInt(agg.sum[+rest] || 0);
+    if (t === "V") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? humanBytesInt((agg.sum[+p[0]] || 0) / den) : ""; }
     if (t === "s") return String(agg.sum[+rest] || 0);
     if (t === "h") return humanBytes(agg.sum[+rest] || 0);
     if (t === "%") { N = +rest; den = colSum[N] || 0; return (den ? (100 * (agg.sum[N] || 0) / den).toFixed(1) : "0.0") + "%"; }
@@ -754,7 +779,9 @@
   function recalcNum(tok, agg, colSum) {
     var t = tok.charAt(0), rest = tok.slice(1), p, den;
     if (t === "P") return pctlHist(agg.dur, +rest);
-    if (t === "s" || t === "h") return agg.sum[+rest] || 0;
+    if (t === "s" || t === "h" || t === "S" || t === "H") return agg.sum[+rest] || 0;
+    if (t === "e") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? 100 * (agg.sum[+p[0]] || 0) / den : 0; }
+    if (t === "V") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? (agg.sum[+p[0]] || 0) / den : null; }
     if (t === "%") { den = colSum[+rest] || 0; return den ? 100 * (agg.sum[+rest] || 0) / den : 0; }
     if (t === "p") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? 100 * (agg.sum[+p[0]] || 0) / den : 0; }
     if (t === "a") return agg.days ? (agg.sum[+rest] || 0) / agg.days : 0;
@@ -833,7 +860,7 @@
   // Rewrite one row's cells from its aggregated metrics (dcol tracks the logical
   // column across colspans). Bars need the column max; shares need the column sum.
   function writeRecalc(tr, toks, agg, colSum, colMax, colMaxA, isTot) {
-    var dcol = 0, ci, c, span, tok, v, N, mx, w, oc, base, av;
+    var dcol = 0, ci, c, span, tok, v, N, mx, w, oc, base, av, pms;
     for (ci = 0; ci < tr.cells.length; ci++) {
       c = tr.cells[ci]; span = c.colSpan || 1; tok = toks[c.hasAttribute("data-ci") ? +c.getAttribute("data-ci") : dcol] || "-";
       if (tok.charAt(0) === "b" || tok.charAt(0) === "B") {
@@ -855,7 +882,13 @@
           v = recalcCell(tok, agg, colSum);
           if (v !== null) {
             oc = c.getAttribute("data-origc");
-            if (oc !== null && /failed|processed|errc|okc|warn/.test(oc)) {    // tinted count kinds: a 0 -> blank + no tint (matches render_rpt's z rule; warn untints via td.warn:empty)
+            if (tok.charAt(0) === "P") {
+              // a Duration percentile cell: the value AND its unit tint (s
+              // green · m amber · h/d red); the divider class stays
+              base = (oc !== null ? oc : c.className).replace(/\b(processed|failed|warn|okc|errc|z)\b/g, "").replace(/\s+/g, " ").trim();
+              pms = pctlHist(agg.dur, +tok.slice(1));
+              c.textContent = v; c.className = pms === null ? base : base + " " + durTint(pms);
+            } else if (oc !== null && /failed|processed|errc|okc|warn/.test(oc)) {    // tinted count kinds: a 0 -> blank + no tint (matches render_rpt's z rule; warn untints via td.warn:empty)
               base = oc.replace(/ ?\bz\b/g, "");
               if (v === "0") { c.textContent = ""; c.className = base + " z"; }
               else { c.textContent = v; c.className = base; }
@@ -1116,6 +1149,11 @@
     // num / den may each be a "+"-joined LIST of columns (2026-09-13, the
     // Entities2 error rates: Error over Ok+Error, Error over In+Out).
     var pctMap = {}, pc = (table.getAttribute("data-pct") || "").split(";"), colPlain = {};
+    // the column's RECALC token, where the table has one: the Entities2
+    // spellings (S = blank on 0, e = blank rate on 0, H = whole-unit bytes)
+    // hold on the searched total too (2026-09-13)
+    var rtoks = (table.getAttribute("data-recalc") || "").split(/\s+/);
+    function rtok(ci) { return (rtoks[ci] || "-").charAt(0); }
     function pctCols(s) { return s.split("+").map(function (q) { return +q; }); }
     function pctSum(cols) { var s = 0, q; for (q = 0; q < cols.length; q++) s += colPlain[cols[q]] || 0; return s; }
     for (var y = 0; y < pc.length; y++) if (pc[y]) { var pt = pc[y].split(":"); pctMap[+pt[0]] = [pctCols(pt[1]), pctCols(pt[2])]; }
@@ -1165,10 +1203,10 @@
         } else if (noagg[dataCol]) {
           cell.textContent = "–";                               // distinct count: not summable over a narrowed range
         } else if (pctMap[dataCol]) {                           // ratio: 100·Σnum/Σden over the visible rows
-          var nd = pctMap[dataCol], den = pctSum(nd[1]);
-          cell.textContent = (den ? (100 * pctSum(nd[0]) / den).toFixed(1) : "0.0") + "%";
+          var nd = pctMap[dataCol], den = pctSum(nd[1]), num = pctSum(nd[0]);
+          cell.textContent = (rtok(dataCol) === "e" && !(num > 0)) ? "" : (den ? (100 * num / den).toFixed(1) : "0.0") + "%";
         } else if (isNum) {                                     // declared additive count
-          cell.textContent = String(colPlain[dataCol] || 0);   // summed in the first pass (blank / "-" / text cells contribute 0)
+          cell.textContent = (rtok(dataCol) === "S" && !(colPlain[dataCol] > 0)) ? "" : String(colPlain[dataCol] || 0);   // summed in the first pass (blank / "-" / text cells contribute 0)
         } else if (isBytes) {                                   // declared additive volume
           var bytes = 0, k2, b;
           for (k2 = 0; k2 < visible.length; k2++) {
@@ -1176,7 +1214,7 @@
             b = asBytes(c2.textContent.trim());
             if (b !== null) bytes += b;
           }
-          cell.textContent = visible.length === 0 ? "0 B" : humanBytes(bytes);
+          cell.textContent = visible.length === 0 ? "0 B" : (rtok(dataCol) === "H" ? humanBytesInt(bytes) : humanBytes(bytes));
         } else {
           cell.textContent = "–";                               // average/summary text: an all-rows figure would be false here
         }
