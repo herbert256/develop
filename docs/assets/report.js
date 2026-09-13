@@ -2993,6 +2993,7 @@
       var el = ev.target, td = null;
       while (el && el !== tr) {
         if (el.tagName === "A" || el.tagName === "SUMMARY" || el.tagName === "DETAILS") return;
+        if ((el.tagName === "TD" || el.tagName === "TH") && el.getAttribute("data-href")) return;   // a cell link (setupCellLinks) owns the click
         if (el.tagName === "TD") td = el;
         el = el.parentNode;
       }
@@ -3005,6 +3006,25 @@
       if (td && td.textContent.trim() === "") return;
       window.location.href = a.getAttribute("href");
     });
+  }
+  // CELL LINKS (2026-09-13, user request): a td/th carrying data-href opens
+  // that page on click — the home Per day table's Duration group (banner,
+  // p-headers, every day cell, the Total) all go to transfer/duration.html
+  // WITHOUT a date. The cell listener runs before the row's rowlink listener
+  // (bubbling: target → cell → row) and stops propagation, so the click never
+  // reaches the row link, which would open the day page; bindRowlink also
+  // steps aside for such a cell. A native link inside the cell still wins.
+  function setupCellLinks() {
+    var cells = document.querySelectorAll("td[data-href], th[data-href]"), i;
+    for (i = 0; i < cells.length; i++) (function (c) {
+      c.classList.add("celllink");
+      c.addEventListener("click", function (ev) {
+        var el = ev.target;
+        while (el && el !== c) { if (el.tagName === "A") return; el = el.parentNode; }
+        ev.stopPropagation();
+        window.location.href = c.getAttribute("data-href");
+      });
+    })(cells[i]);
   }
   function setupIndexRows() {
     var tables = document.getElementsByTagName("table"), t;
@@ -3933,6 +3953,7 @@
     setupDateFilter();
     setupSearch();
     setupIndexRows();    // whole-row links on the index tables
+    setupCellLinks();    // td/th[data-href] cell links (the home Duration group), outranking the row link
     setupShowAll();      // home: the per-day table's 14-day cap lifter
     markDayEdges();      // home: the per-day groups' bottom edge sits under the last visible row
     setupSwitches();     // switch=KEY table groups: one table of the group at a time behind a button row

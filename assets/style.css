@@ -201,6 +201,13 @@ table { border-collapse:collapse; width:auto; background:#fff; box-shadow:0 1px 
 table.fit { width:auto; }   /* historical alias — every table shrinks to content now */
 tr.rowlink { cursor:pointer; }   /* index rows are fully clickable (report.js setupIndexRows) */
 tr.rowlink td:empty { cursor:auto; }   /* ...except empty cells — not click targets */
+/* CELL LINKS (2026-09-13, user request): a td/th carrying data-href opens its
+   page on click (report.js setupCellLinks) — the home Per day table's whole
+   Duration group, empty cells and headers included, goes to transfer/
+   duration.html without a date. After the rowlink rules: same specificity,
+   so this one wins for an empty Duration cell. */
+td[data-href], th[data-href], tr.rowlink td[data-href]:empty { cursor:pointer; }
+td[data-href]:hover, th[data-href]:hover { text-decoration:underline; }
 /* A row carrying data-dhide=1 is hidden by ATTRIBUTE, so a writer can bake it
    (the topsel candidate rows past the top N start hidden without a script
    running); report.js applyRowVis keeps the attribute and the inline style in

@@ -491,9 +491,18 @@ check $([ "$(grep -rl 'data-envto' docs --include=*.html 2>/dev/null | wc -l | t
 
 # the home page's Duration group ends on p99 (2026-09-13, user request):
 # p50 · p75 · p90 · p95 · p99, five cells per day and in the Total row
-hdr=$(grep -o '<th class="num">p[0-9]*</th>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
+hdr=$(grep -o '<th class="num"[^>]*>p[0-9]*</th>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "$hdr" = "p50|p75|p90|p95|p99|" ] && echo 0 || echo 1) "the home Duration group headers are '$hdr', expected p50|p75|p90|p95|p99|"
-check $([ "$(grep -c '<th class="gband" colspan="5">Duration</th>' docs/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the home Duration banner does not span 5 columns"
+check $([ "$(grep -c '<th class="gband" colspan="5" data-href="transfer/duration.html">Duration</th>' docs/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the home Duration banner does not span 5 columns or does not link the Duration report"
+# every cell of the Duration group opens transfer/duration.html WITHOUT a
+# date (2026-09-13, user request): the five p-headers, and five cells per
+# day row + the Total row; report.js binds them and outranks the row link
+nrows=$(awk '/<table class="index fit dayrows/ { p = 1 } p && /<tr>/ && /<td/ { n++ } p && /<\/table>/ { exit } END { print n + 0 }' docs/index.html 2>/dev/null)
+ncells=$(grep -o '<td class="num[^"]*" data-href="transfer/duration.html">' docs/index.html 2>/dev/null | wc -l | tr -d ' ')
+nth=$(grep -o '<th class="num" data-href="transfer/duration.html">p[0-9]*</th>' docs/index.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${nth:-0}" = 5 ] && [ "${nrows:-0}" -gt 0 ] && [ "${ncells:-0}" -ge $((${nrows:-0} * 5)) ] && echo 0 || echo 1) "the home Duration group links: $nth p-headers, $ncells day cells for $nrows rows (expected 5 and >= 5 per row)"
+check $([ "$(grep -c 'data-href="transfer/duration.html?' docs/index.html 2>/dev/null)" = 0 ] && echo 0 || echo 1) "a home Duration link carries a query (a date selection)"
+check $([ "$(grep -c 'function setupCellLinks' docs/assets/report.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "report.js does not define setupCellLinks"
 
 # the fixed duration axis of the Overview / day-page Duration heroes
 # (2026-09-12, user request): the shipped slotchart.js carries the 19-tick

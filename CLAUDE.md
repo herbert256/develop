@@ -870,7 +870,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   banner row (Files · Duration · Red/Green switch · First seen) over a shared Date column (its
   cells link the day dashboard), then the group columns — Files (In · Out · Ok · Cured ·
   Error · Error %; Cured = the transfer topview.rpt's Recovered group, Automatic + Manual; the In/Out split is the movement direction, `_files.tsv` col 17; the count
-  column is gone — In + Out carries it), Duration (p50 · p75 · p90 · p95 · p99 — p99 last since 2026-09-13, user request), Red/Green switch
+  column is gone — In + Out carries it), Duration (p50 · p75 · p90 · p95 · p99 — p99 last since 2026-09-13, user request; EVERY cell of the group, banner and headers included, carries `data-href="transfer/duration.html"` and opens the Duration report WITHOUT a date — report.js `setupCellLinks`, which outranks the index row link that would open the day page), Red/Green switch
   (Red · Green) and First seen (Logical · Partners · Subscriptions · Accounts). Group dividers
   are POSITIONAL CSS on `table.dayrows` (columns 2/8/12/14 + the `gbrow` banner cells — adding
   a column means moving them). Still `data-nosort` (the 14-day cap hides the OLDEST rows by

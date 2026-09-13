@@ -541,10 +541,10 @@ write_status_pair() {
 # One Duration cell: keeps the .rpt's dur-s/m/h tint class; "-" (no data or
 # no class) renders an empty/plain num cell. Prints the <td>.
 _durcell() {   # $1 class-or-"-"  $2 value-or-"-"
-    if [ "$2" = "-" ]; then printf '<td class="num"></td>'; return 0; fi
+    if [ "$2" = "-" ]; then printf '<td class="num"%s></td>' "${DURGO:-}"; return 0; fi   # DURGO: the home Duration group link (2026-09-13)
     esc "$2"
-    if [ "$1" = "-" ]; then printf '<td class="num">%s</td>' "$ESC"
-    else printf '<td class="num %s">%s</td>' "$1" "$ESC"; fi
+    if [ "$1" = "-" ]; then printf '<td class="num"%s>%s</td>' "${DURGO:-}" "$ESC"
+    else printf '<td class="num %s"%s>%s</td>' "$1" "${DURGO:-}" "$ESC"; fi
 }
 
 # One per-day Date cell (the four per-day tables): sets $dcc to the escaped
@@ -952,6 +952,10 @@ write_home_block() {
         local dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 dtot=""
         local fsp fss fsa fsl fsh fsps=0 fsss=0 fsas=0 fsls=0 fshs=0
         local swr swg swrs=0 swgs=0 dcc=""
+        # every cell of the Duration group — banner, p-headers, day cells, Total — opens
+        # transfer/duration.html WITHOUT a date (2026-09-13, user request): data-href on the
+        # cell, report.js setupCellLinks navigates there and outranks the row link
+        local DURGO=""; [ -f docs/transfer/duration.html ] && DURGO=' data-href="transfer/duration.html"'
         printf '<div class="tablewrap perday"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
         # groups (2026-09-06, user request): Transfers (Ok Error Error%) before Files, UC2 state (Waiting Expired — staged pickups) before Duration, First seen without Logical/Accounts; Recovered reads Cured; the Red/Green switch group is gone
         # the groups are separated by SPACER columns (th/td.spc: no borders,
@@ -959,9 +963,9 @@ write_home_block() {
         # own left/right/bottom edges like a table of its own and no row line
         # crosses the gap (2026-09-06, user request; before: a thick
         # page-coloured left border that the row lines ran through)
-        printf '<tr class="gbrow"><th></th>%s<th class="gband" colspan="3">Transfers</th>%s<th class="gband" colspan="6">Files</th>%s<th class="gband" colspan="2">UC2 state</th>%s<th class="gband" colspan="5">Duration</th>%s<th class="gband" colspan="2">First seen</th></tr>\n' \
+        printf '<tr class="gbrow"><th></th>%s<th class="gband" colspan="3">Transfers</th>%s<th class="gband" colspan="6">Files</th>%s<th class="gband" colspan="2">UC2 state</th>%s<th class="gband" colspan="5"'"$DURGO"'>Duration</th>%s<th class="gband" colspan="2">First seen</th></tr>\n' \
             '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
-        printf '<tr><th>Date</th>%s<th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Cured</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">Waiting</th><th class="num">Expired</th>%s<th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th><th class="num">p99</th>%s<th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n' \
+        printf '<tr><th>Date</th>%s<th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Cured</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">Waiting</th><th class="num">Expired</th>%s<th class="num"'"$DURGO"'>p50</th><th class="num"'"$DURGO"'>p75</th><th class="num"'"$DURGO"'>p90</th><th class="num"'"$DURGO"'>p95</th><th class="num"'"$DURGO"'>p99</th>%s<th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n' \
             '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
         rown=0
         local tcn tok ter tpc twt txp tcnsum=0 toksum=0 tersum=0 twtsum=0 txpsum=0
