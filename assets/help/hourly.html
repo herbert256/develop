@@ -17,7 +17,7 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Load by Hour</h1>
 <h2>What this shows</h2>
-<p>The first table shows one row per hour of day (00-23), summed across every day in range: the Files count, its Error/OK split, the volume, and a relative <strong>load bar</strong> scaled against the busiest hour. Each record is bucketed by its <em>start</em> time, so an hour's figures reflect activity that began in that hour, not activity still running through it.</p>
+<p>The first table shows one row per hour of day (00-23), summed across every day in range: the Files count (the delivered ones, since 2026-09-13 — no Error / OK split), the volume, and a relative <strong>load bar</strong> scaled against the busiest hour. Each record is bucketed by its <em>start</em> time, so an hour's figures reflect activity that began in that hour, not activity still running through it.</p>
 <h2>The Hour &times; Weekday heatmap</h2>
 <p>A second table breaks the same activity down two ways at once: hour of day (rows) against weekday (columns). Each cell counts the records that started in that hour on that weekday, across the whole date range, and is tinted by which quartile it falls in relative to the single busiest cell in the table — the darkest cells are the top quartile. This is the view to use for spotting recurring batch windows (e.g. "the 02:00 slot is always busy on weekdays but quiet on weekends").</p>
 <h2>How it's computed</h2>

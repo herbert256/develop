@@ -72,9 +72,12 @@ server_basics(){
 }
 
 # per-day Files + Failed series (chronological, from day.rpt) -> tday_lab/tday_fl
+# Read from the non-rendered "META day <date> <files> <failed>" lines
+# (2026-09-13): the rendered Per day table shows the delivered count as its
+# one Files column — the all-outcomes count and the failures live here only.
 tday_series(){
-    tday_lab=$(awk -F'\t' '$1=="ROW"{d=$2; sub(/ \(.*/,"",d); print d ":" $3}' "$DATA/transfer/reports/day.rpt" | pipejoin)
-    tday_fl=$(awk -F'\t' '$1=="ROW"{d=$2; sub(/ \(.*/,"",d); print d ":" $4}' "$DATA/transfer/reports/day.rpt" | pipejoin)
+    tday_lab=$(awk -F'\t' '$1=="META" && $2=="day"{print $3 ":" $4}' "$DATA/transfer/reports/day.rpt" | pipejoin)
+    tday_fl=$(awk -F'\t' '$1=="META" && $2=="day"{print $3 ":" $5}' "$DATA/transfer/reports/day.rpt" | pipejoin)
 }
 
 # per-day server records + errors series -> sday_rec/sday_err

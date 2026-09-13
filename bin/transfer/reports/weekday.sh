@@ -50,7 +50,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         for (k in wdl) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" wdl[k] ":" (wdf[k]+0) ":" (wdp[k]+0) ":" wdb[k] }
         for (i = 0; i <= 6; i++) {
             rec = wr[i] + 0; days = wdays[i] + 0
-            avg = days > 0 ? sprintf("%d", rec / days + 0.5) : "0"   # round HALF-UP, exactly report.js'\''s a-token (Math.round) — plain %d truncated and the value flicked by 1 after a date round-trip (audit C3)
+            avg = days > 0 ? sprintf("%d", (wp[i]+0) / days + 0.5) : "0"   # the OK count per observed day (Files = delivered since 2026-09-13); round HALF-UP, exactly report.js'\''s a-token (Math.round) — plain %d truncated and the value flicked by 1 after a date round-trip (audit C3)
             pct = rec > 0 ? sprintf("%.1f", (wf[i]+0) * 100 / rec) : "0.0"
             printf "WD|%d|%d|%d|%s|%d|%d|%s|%d|%s|%s|%s|%s\n", i, days, rec, avg, wf[i]+0, wp[i]+0, pct, wb[i]+0, human(wb[i]+0), bk[i], buildlist(top["W" SUBSEP i SUBSEP "F"]), buildlist(top["W" SUBSEP i SUBSEP "P"])
         }
@@ -69,23 +69,28 @@ maxavg=$(printf '%s\n' "$agg" | grep '^WD|' | awk -F'|' 'BEGIN{m=0} $5+0>m{m=$5+
 
 {
     printf 'TITLE\tLoad by Weekday\n'
-    printf 'DESC\t%s, average per day, Error/OK, failure rate and volume by day of week, with a load bar.\n' "$clabel"
+    printf 'DESC\t%s (the delivered ones), average per day, failure rate and volume by day of week, with a load bar.\n' "$clabel"
     printf 'INTRO\t%s by day of week (overall **%s%%** failed). "Avg/day" divides by the number of that weekday actually observed; the bar shows load relative to the busiest weekday (by average per day).\n' \
         "$clabel" "$tot_pct"
     printf 'TABLE\tBy day of week%s\n' "$drillmod"
-    printf 'HEAD\tWeekday\tDays\t%s\tAvg/day\tError\tOK\tError %%\tVolume\tLoad\n' "$clabel"
-    printf 'KIND\ttext\tnum\tnum\tnum\tnumfailed\tnumprocessed\tnum\tnum\tbar\n'
-    printf 'RECALC\t-\tc\ts0\ta0\ts1\ts2\tp1.0\th3\tB0\n'
+    # FILES = the delivered (OK) count (2026-09-13, user request: one Files
+    # column, no Error / OK pair, no green/red cells, no drills); the bucket
+    # payload keeps all four metrics — Files and the bar read metric 2 (ok),
+    # Avg/day = ok per observed day, Error % keeps its base (errors over
+    # every File, p1.0), Volume metric 3
+    printf 'HEAD\tWeekday\tDays\t%s\tAvg/day\tError %%\tVolume\tLoad\n' "$clabel"
+    printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tbar\n'
+    printf 'RECALC\t-\tc\ts2\ta2\tp1.0\th3\tB2\n'
     # the rows go straight to the report — no per-row command substitution
     while IFS='|' read -r _ widx days rec avg fa pr pct bytes human bk ccf ccp; do
         [ -z "$widx" ] && continue
         lbar=0; [ "${maxavg:-0}" -gt 0 ] && lbar=$(( (avg * 100 + maxavg / 2) / maxavg ))
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s%%\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n' \
-            "${names[$widx]}" "$days" "$rec" "$avg" "$fa" "$pr" "$pct" "$human" "$lbar" "$bk" "$ccf" "$ccp"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s%%\t%s\t%s\t@data:buckets=%s\n' \
+            "${names[$widx]}" "$days" "$pr" "$avg" "$pct" "$human" "$lbar" "$bk"
     done <<< "$(printf '%s\n' "$agg" | grep '^WD|' | sort -t'|' -k2,2n)"
-    printf 'TOTAL\tTotal (%s weekday(s))\t\t@{class=num}%s\t\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num}%s%%\t@{class=num}%s\t\n' \
-        "$n_wdays" "$tot_rec" "$tot_failed" "$tot_processed" "$tot_pct" "$tot_human"
-    printf 'NOTE\tOne row = one day of week. Click an Error or OK count for that outcome'\''s 10 most recent %ss (newest first).\n' "$noun"
+    printf 'TOTAL\tTotal (%s weekday(s))\t\t@{class=num}%s\t\t@{class=num}%s%%\t@{class=num}%s\t\n' \
+        "$n_wdays" "$tot_processed" "$tot_pct" "$tot_human"
+    printf 'NOTE\tOne row = one day of week; Files = the delivered (OK) %ss, Error %% the failures over every File of that weekday.\n' "$noun"
     printf 'SUMMARY\tTotal %ss: %s  |  Error: %s (%s%%)  |  Volume: %s\n' "$noun" "$tot_rec" "$tot_failed" "$tot_pct" "$tot_human"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

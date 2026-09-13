@@ -82,19 +82,25 @@ rows_html=$(printf '%s\n' "$sorted_stats" | awk -F'|' '
       sub(/\.[0-9]+$/, "", ft[NR]); sub(/\.[0-9]+$/, "", lt[NR]) }   # display without milliseconds (like topview.sh)
     END {
         for (i = 1; i <= n; i++) {
-            if (i > 1) for (g = jday[i-1] + 1; g < jday[i]; g++) printf "ROW\t%s\t0\t0\t0\t0 B\t-\t-\n", fromjdn(g)
+            # FILES = the delivered (OK) count (2026-09-13, user request: the
+            # Activity over Time tables carry ONE Files column, no Error / OK
+            # pair, no green/red cells, no drills); the all-outcomes count and
+            # the failures ride a non-rendered META day line for the dashboards
+            # (bin/dashboards/lib.sh tday_series), gap days included
+            if (i > 1) for (g = jday[i-1] + 1; g < jday[i]; g++) { printf "ROW\t%s\t0\t0 B\t-\t-\n", fromjdn(g); printf "META\tday\t%s\t0\t0\n", fromjdn(g) }
             mark = ""
             if ((i == 1 || jday[i] - jday[i-1] > 1) && ft[i] > "02:00:00") mark = " (partial start)"
             if ((i == n || (i < n && jday[i+1] - jday[i] > 1)) && lt[i] < "22:00:00") mark = (mark == "" ? " (partial end)" : " (partial)")
-            printf "ROW\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", date[i], mark, cnt[i], fa[i], pr[i], hu[i], ft[i], lt[i], ccf[i], ccp[i]
+            printf "ROW\t%s%s\t%s\t%s\t%s\t%s\n", date[i], mark, pr[i], hu[i], ft[i], lt[i]
+            printf "META\tday\t%s\t%s\t%s\n", date[i], cnt[i], fa[i]
         }
     }
 ')
-nodata_days=$(printf '%s\n' "$rows_html" | awk -F'\t' '$3=="0" && $7=="-"{c++} END{print c+0}')
+nodata_days=$(printf '%s\n' "$rows_html" | awk -F'\t' '$1=="ROW" && $3=="0" && $5=="-"{c++} END{print c+0}')
 
 {
     printf 'TITLE\tPer Day\n'
-    printf 'DESC\t%s per calendar day: Error/OK, volume, first and last time.\n' "$clabel"
+    printf 'DESC\t%s per calendar day (the delivered ones), volume, first and last time.\n' "$clabel"
     printf 'META\tfirst\t%s\n' "$first_record"
     printf 'META\tlast\t%s\n' "$last_record"
     printf 'META\ttransfers\t%s\n' "$total_records"
@@ -102,12 +108,12 @@ nodata_days=$(printf '%s\n' "$rows_html" | awk -F'\t' '$3=="0" && $7=="-"{c++} E
     printf 'INTRO\t**%s** %ss over **%s** day(s) with data: **%s** failed, **%s** processed, **%s** total volume.\n' \
         "$total_records" "$noun" "$total_days" "$total_failed" "$total_processed" "$total_human"
     printf 'TABLE\tPer day\n'
-    printf 'HEAD\tDate\t%s\tError\tOK\tVolume\tFirst Time\tLast Time\n' "$clabel"
-    printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\ttext\ttext\n'
+    printf 'HEAD\tDate\t%s\tVolume\tFirst Time\tLast Time\n' "$clabel"
+    printf 'KIND\ttext\tnum\tnum\ttext\ttext\n'
     printf '%s\n' "$rows_html"
-    printf 'TOTAL\tTotal (%s day(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num}%s\t\t\n' \
-        "$((total_days + nodata_days))" "$total_records" "$total_failed" "$total_processed" "$total_human"
-    printf 'NOTE\tOne row = one calendar day. A "0" row with no times is a day with no %ss; "(partial start/end)" marks a day whose collection window began or ended mid-day. Click an Error or OK count for that outcome'\''s 10 most recent %ss (newest first). The Top view shows this same per-day table together with each day'\''s active accounts, subscriptions, flows, hosts and logins.\n' "$noun" "$noun"
+    printf 'TOTAL\tTotal (%s day(s))\t@{class=num}%s\t@{class=num}%s\t\t\n' \
+        "$((total_days + nodata_days))" "$total_processed" "$total_human"
+    printf 'NOTE\tOne row = one calendar day. A "0" row with no times is a day with no %ss; "(partial start/end)" marks a day whose collection window began or ended mid-day. The Top view shows this same per-day table together with each day'\''s active accounts, subscriptions, flows, hosts and logins.\n' "$noun"
     if [ "$nodata_days" -gt 0 ]; then
         printf 'SUMMARY\tDays with data: %s  |  Days with no data: %s  |  Total %ss: %s  |  Volume: %s\n' "$total_days" "$nodata_days" "$noun" "$total_records" "$total_human"
     else

@@ -75,11 +75,15 @@ nweeks=$(printf '%s\n' "$agg" | grep -c '^WK|' || true)
 rows=$(printf '%s\n' "$agg" | grep '^WK|' | sort -t'|' -k2,2n | awk -F'|' '
     {
         label = $3; if ($6 + 0 < 7) label = label " (partial)"
-        avg = $6 > 0 ? int($7 / $6) : 0
+        # FILES = the delivered (OK) count, $9 (2026-09-13, user request: one
+        # Files column, no Error / OK pair, no green/red cells, no drills);
+        # Avg/day and the week-over-week delta follow it. Error % ($10) keeps
+        # its base — errors over every File of the week.
+        avg = $6 > 0 ? int($9 / $6) : 0
         delta = "-"
-        if (NR > 1 && prev > 0) delta = sprintf("%+.1f%%", ($7 - prev) * 100 / prev)
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%%\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", label, $4, $5, $6, $7, avg, $8, $9, $10, $12, delta, $13, $14
-        prev = $7
+        if (NR > 1 && prev > 0) delta = sprintf("%+.1f%%", ($9 - prev) * 100 / prev)
+        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s%%\t%s\t%s\n", label, $4, $5, $6, $9, avg, $10, $12, delta
+        prev = $9
     }
 ')
 
@@ -88,12 +92,12 @@ rows=$(printf '%s\n' "$agg" | grep '^WK|' | sort -t'|' -k2,2n | awk -F'|' '
     printf 'DESC\t%s, failure rate, volume and week-over-week change per ISO week.\n' "$clabel"
     printf 'INTRO\t**%s** ISO week(s) (Mon-Sun). "Δ %ss" compares each week'\''s count with the previous week; **(partial)** marks a week observed on fewer than 7 days — the edges of the data window — whose delta is not meaningful.\n' "$nweeks" "$noun"
     printf 'TABLE\tPer ISO week\twide%s\n' "$drillmod"
-    printf 'HEAD\tWeek\tFrom\tTo\tDays\t%s\tAvg/day\tError\tOK\tError %%\tVolume\tΔ %ss\n' "$clabel" "$noun"
-    printf 'KIND\ttext\ttext\ttext\tnum\tnum\tnum\tnumfailed\tnumprocessed\tnum\tnum\tnum\n'
+    printf 'HEAD\tWeek\tFrom\tTo\tDays\t%s\tAvg/day\tError %%\tVolume\tΔ %ss\n' "$clabel" "$noun"
+    printf 'KIND\ttext\ttext\ttext\tnum\tnum\tnum\tnum\tnum\tnum\n'
     printf '%s\n' "$rows"
-    printf 'TOTAL\tTotal (%s week(s))\t\t\t\t@{class=num}%s\t\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num}%s%%\t@{class=num}%s\t\n' \
-        "$nweeks" "$tot_cnt" "$tot_fail" "$tot_proc" "$tot_pct" "$tot_vol"
-    printf 'NOTE\tOne row = one ISO week (Monday-Sunday) by start date. "Days" counts the calendar days with data; Avg/day divides by it. The From/To dates make the date filter hide out-of-range weeks. Click an Error or OK count for that outcome'\''s 10 most recent %ss (newest first).\n' "$noun"
+    printf 'TOTAL\tTotal (%s week(s))\t\t\t\t@{class=num}%s\t\t@{class=num}%s%%\t@{class=num}%s\t\n' \
+        "$nweeks" "$tot_proc" "$tot_pct" "$tot_vol"
+    printf 'NOTE\tOne row = one ISO week (Monday-Sunday) by start date. "Days" counts the calendar days with data; Avg/day divides by it. The From/To dates make the date filter hide out-of-range weeks.\n'
     printf 'SUMMARY\tWeeks: %s  |  Total %ss: %s  |  Error: %s (%s%%)  |  Volume: %s\n' "$nweeks" "$noun" "$tot_cnt" "$tot_fail" "$tot_pct" "$tot_vol"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

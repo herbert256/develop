@@ -504,6 +504,25 @@ check $([ "${nth:-0}" = 5 ] && [ "${nrows:-0}" -gt 0 ] && [ "${ncells:-0}" -ge $
 check $([ "$(grep -c 'data-href="transfer/duration.html?' docs/index.html 2>/dev/null)" = 0 ] && echo 0 || echo 1) "a home Duration link carries a query (a date selection)"
 check $([ "$(grep -c 'function setupCellLinks' docs/assets/report.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "report.js does not define setupCellLinks"
 
+# the Activity over Time tables carry ONE Files column — the delivered
+# count — and no Error / OK pair (2026-09-13, user request): no green/red
+# cells on the four activity pages, the Per day Files total = the OK count
+# of the caches, and the dashboards still get their per-day series from the
+# day.rpt META day lines (files + failed, gap days included)
+for h in $(awk -F'\t' '$1 == "HEAD" { print $0 }' data/transfer/reports/activity.rpt 2>/dev/null | grep -c $'\tOK\t\|\tOK$'); do
+    check $([ "$h" = 0 ] && echo 0 || echo 1) "activity.rpt still has $h table header(s) with an OK column"
+done
+h=$(awk -F'\t' '$1 == "TABLE" && $2 == "Per day" { p = 1 } p && $1 == "HEAD" { print; exit }' data/transfer/reports/activity.rpt 2>/dev/null)
+check $([ "$h" = $'HEAD\tDate\tFiles\tVolume\tFirst Time\tLast Time' ] && echo 0 || echo 1) "activity.rpt Per day HEAD is '$h'"
+n=$(grep -c 'class="num failed"\|class="num processed"\|numfailed\|numprocessed' docs/transfer/activity-per-day.html docs/transfer/activity-per-week.html docs/transfer/activity-per-hour.html docs/transfer/activity-per-weekday.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n green/red (OK/Error) cells left on the four Activity over Time pages"
+want=$(awk -F'\t' '$4 != "" && $2 != "Failed" && $2 != "Expired" { n++ } END { print n + 0 }' "$F" 2>/dev/null)
+got=$(awk -F'\t' '$1 == "TABLE" && $2 == "Per day" { p = 1 } p && $1 == "TOTAL" { v = $3; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/transfer/reports/activity.rpt 2>/dev/null)
+check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "activity Per day Files total is '${got:-absent}', the caches hold ${want:-?} OK Files"
+m=$(awk -F'\t' '$1 == "META" && $2 == "day" { n++; if ($4 + 0 < $5 + 0) bad++ } END { print n + 0, bad + 0 }' data/transfer/reports/day.rpt 2>/dev/null)
+check $([ "${m%% *}" -gt 0 ] && [ "${m##* }" = 0 ] && echo 0 || echo 1) "day.rpt META day lines: ${m:-none} (count, rows with failed > files)"
+check $([ "$(grep -c '\$1=="META" && \$2=="day"' bin/dashboards/lib.sh 2>/dev/null)" = 2 ] && echo 0 || echo 1) "dashboards/lib.sh does not read the per-day series from the META day lines"
+
 # the Duration report holds BOTH per-day tables side by side (2026-09-13,
 # user request): percentiles first (the home page reads it by title), then
 # min / avg / median / max; the Min/Avg/Max sibling pages are gone and the

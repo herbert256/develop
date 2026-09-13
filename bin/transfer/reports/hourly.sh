@@ -94,19 +94,24 @@ n_hours=$(printf '%s\n' "$agg" | grep -c '^HOUR|' || true)
 
 {
     printf 'TITLE\tLoad by Hour\n'
-    printf 'DESC\t%s, Error/OK and volume per hour of day, with a load bar.\n' "$clabel"
+    printf 'DESC\t%s (the delivered ones) and volume per hour of day, with a load bar.\n' "$clabel"
     printf 'INTRO\t%s across the 24 hours of the day, by start time. The bar shows load relative to the busiest hour.\n' "$clabel"
     printf 'TABLE\tPer hour of day%s\n' "$drillmod"
-    printf 'HEAD\tHour\t%s\tError\tOK\tVolume\tLoad\n' "$clabel"
-    printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\tbar\n'
-    printf 'RECALC\t-\ts0\ts1\ts2\th3\tb0\n'
-    # the 24 hour rows, the Load bar scaled against the busiest hour
-    printf '%s\n' "$agg" | grep '^HOUR|' | awk -F'|' -v mx="$max_rec" '
-        $2 != "" { printf "ROW\t%s:00\t%s\t%s\t%s\t%s\t%d\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-                          $2, $3, $4, $5, $7, int($3 * 100 / mx), $8, $9, $10 }' || true
-    printf 'TOTAL\tTotal (%s hour(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num}%s\t\n' \
-        "$n_hours" "$tot_rec" "$tot_failed" "$tot_processed" "$tot_human"
-    printf 'NOTE\tClick an Error or OK count for that outcome'\''s 10 most recent %ss (newest first).\n' "$noun"
+    # FILES = the delivered (OK) count, HOUR field 5 (2026-09-13, user request:
+    # one Files column, no Error / OK pair, no green/red cells, no drills);
+    # the bucket payload keeps all four metrics, so the tokens read metric 2
+    # (ok) for Files and the bar, metric 3 for Volume
+    printf 'HEAD\tHour\t%s\tVolume\tLoad\n' "$clabel"
+    printf 'KIND\ttext\tnum\tnum\tbar\n'
+    printf 'RECALC\t-\ts2\th3\tb2\n'
+    # the 24 hour rows, the Load bar scaled against the busiest hour (by OK Files)
+    max_ok=$(printf '%s\n' "$agg" | grep '^HOUR|' | awk -F'|' 'BEGIN{m=0} $5+0>m{m=$5+0} END{print m}')
+    [ "${max_ok:-0}" -eq 0 ] && max_ok=1
+    printf '%s\n' "$agg" | grep '^HOUR|' | awk -F'|' -v mx="$max_ok" '
+        $2 != "" { printf "ROW\t%s:00\t%s\t%s\t%d\t@data:buckets=%s\n", $2, $5, $7, int($5 * 100 / mx), $8 }' || true
+    printf 'TOTAL\tTotal (%s hour(s))\t@{class=num}%s\t@{class=num}%s\t\n' \
+        "$n_hours" "$tot_processed" "$tot_human"
+    printf 'NOTE\tFiles = the delivered (OK) %ss started in that hour; the bar shows load relative to the busiest hour.\n' "$noun"
 
     printf 'TABLE\tHour × weekday\theat\n'
     printf 'HEAD\tHour\tMonday\tTuesday\tWednesday\tThursday\tFriday\tSaturday\tSunday\n'
