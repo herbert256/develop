@@ -623,7 +623,10 @@ grid (rounded like the format, so a grid histogram picks the same displayed valu
 list), the per-DAY histograms ride the ROW as `@data:durdays=date:q.count;q.count,…`, and the
 RECALC tokens `P90`/`P95`/`P99` (report.js `aggDurDays`/`pctlHist`) re-pick the percentile over
 the in-range days — per row, and for the TOTAL over every visible row's merged histogram; the
-publish-time subset totals (`entity2_res_block`) merge the same payload. Every count cell drills to its 10 newest Files (`drillcols=` → the row's
+publish-time subset totals (`entity2_res_block`) merge the same payload. A Duration cell drills to
+the 10 newest OK Files whose (grid) span is at or above that percentile, each entry carrying its
+span — a THIRD pass over `_files.tsv` once the thresholds are known (`calc_pcts` at the pass's first
+line; END computes them itself on an empty cache). Every count cell drills to its 10 newest Files (`drillcols=` → the row's
 `@data:coreids-<key>`, bound by BUILT column index); the Transfers cells list the Files that
 carried a leg of that outcome. `bin/transfer/reports/entities2.sh` is ONE writer for all nine
 (attribution mirroring `account.sh` / `subscription.sh` / `login.sh` / `remote-host.sh` /

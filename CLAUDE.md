@@ -950,7 +950,9 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   Error keeps an EMPTY rate beside it (token `e`); In / Out never show a 0 (token `S`); every red
   count cell is KIND `numfailed`, never `numerr` — the views' row tints paint over `errc`/`okc`
   cells (only `.failed`/`.processed`, and a non-empty `.warn`, keep their own tint). Every count
-  cell drills to its 10 newest Files. Pieces: `bin/transfer/reports/entities2.sh` (ONE writer for all nine, its
+  cell drills to its 10 newest Files; a Duration cell to the 10 newest OK Files at or above that
+  percentile, each entry with its span (the writer reads `_files.tsv` a THIRD time for those,
+  after the thresholds are known). Pieces: `bin/transfer/reports/entities2.sh` (ONE writer for all nine, its
   attribution mirroring the five classic writers — Files/Error/Auto/Volume/First/Last agree row for
   row) → `data/transfer/reports/entities2/<entity>.rpt` → `render_entity_report` in its
   `ENT_LAYOUT=2` mode (called from `render_report`'s entity branch; no Direction column, no reorder,
