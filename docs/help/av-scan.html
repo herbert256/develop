@@ -16,20 +16,31 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>AV Scan</h1>
-<h2>What this shows</h2>
-<p>The anti-virus / ICAP scan outcome of every <strong>File</strong>, read from its <strong>first Inbound leg</strong> — the scan runs when a file enters the system, so that leg carries the File's verdict: <strong>Allowed</strong>, <strong>Blocked</strong>, <strong>Not performed</strong>, or Error/Unknown (grouped as "Other"). Five tabs: the overall Breakdown, outcomes Per day, outcomes Per protocol (how the file entered — pesit from CFT, ssh/ftp from a partner), the Blocked list — every blocked file individually, newest first, capped at 200 — <strong>Not performed</strong> (why arrivals skipped the scan: before scanning was active, failed/empty arrival, encrypted .pgp/.enc, oversized, Other) and <strong>Not first inbound</strong>.</p>
-<h2>The "Not first inbound" check</h2>
-<p>The last tab verifies the scan-on-entry model: it lists every real scan verdict (Allowed/Blocked/Error) found on a leg <em>other than</em> the File's first Inbound leg. What legitimately appears there: <strong>inbound retries</strong> (a re-entry is scanned again) and the <strong>UC2 staging re-entry</strong> (the Inbound routing leg). An <strong>Outbound</strong> row would break the model — outbound legs only ever carry the "Scanning was not performed" boilerplate, which this tab excludes.</p>
-<h2>How it's computed</h2>
-<p>One chronological walk over each File's physical rows; the first Inbound leg's ICAP verdict counts for the File (a File with no Inbound leg has no scan and is absent). Allowed is tinted green and Blocked red in the breakdown. If more than 200 files were blocked, a note states how many are hidden; if none were blocked, the Blocked table shows an explicit empty-state row.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">Scan outcomes on the <strong>first Inbound leg</strong> of every File — the AV scan runs when a file ENTERS the system, so that leg carries the File's verdict (one per File). <strong>19116</strong> allowed  |  <strong>19</strong> blocked  |  <strong>14481</strong> not performed. The <strong>Not first inbound</strong> tab is the check: scan verdicts found on any other leg.</p>
-<p class="note">The protocol of the first Inbound leg — HOW the file entered the system (pesit = from CFT, ssh/ftp = a partner delivering in).</p>
-<p class="note">Why the scanner skipped these arrivals. <strong>Before scanning was active</strong>: everything ahead of the window's FIRST Allowed verdict — the boundary is derived from the data each run, and in this window scanning went live mid-2026-06-25; before that, every arrival entered unscanned. <strong>Failed or empty</strong>: the receive aborted or brought 0 bytes — nothing whole to scan. <strong>Encrypted</strong>: the scanner cannot see inside a .pgp/.enc file. <strong>Oversized</strong>: above the ICAP scan-size cap. <strong>Other</strong> catches what no known reason explains — it should sit at (or near) 0, and growth there is a new skip reason worth investigating. Click a row for its 10 most recent Files.</p>
-<p class="note">Scan verdicts (Allowed/Blocked/Error) on legs OTHER than the File's first Inbound leg — the check on the &quot;scan on entry&quot; model. What legitimately shows up: <strong>Inbound retries</strong> (a re-entry is re-scanned) and the <strong>UC2 staging re-entry</strong> (Inbound routing). An <strong>Outbound</strong> row here would break the model. The plain &quot;Scanning was not performed&quot; boilerplate on outbound legs is excluded.</p>
-<p class="note">One scan verdict per File — its first Inbound leg (a File with no Inbound leg has no scan). Outcomes are parsed from the free-text &quot;ICAP Details&quot; column; &quot;Other&quot; groups Error/Unknown and unrecognized text.</p>
-</section>
+<h2>What it shows</h2>
+<p>The anti-virus (ICAP) verdict of every <strong>File</strong>, from its <strong>first Inbound leg</strong> (the scan runs on entry): <strong>Allowed</strong>, <strong>Blocked</strong>, <strong>Not performed</strong> or Other. The intro gives the allowed / blocked / not-performed totals.</p>
+<h2>Tabs</h2>
+<ul>
+<li><strong>Breakdown</strong> &mdash; the overall split; Allowed tinted green, Blocked red.</li>
+<li><strong>Per day</strong> &mdash; outcomes per day.</li>
+<li><strong>Per protocol</strong> &mdash; the first Inbound leg&rsquo;s protocol, how the file entered: pesit = from CFT, ssh/ftp = a partner delivering in.</li>
+<li><strong>Blocked</strong> &mdash; every blocked file, newest first, capped at 200 (a note counts the hidden ones; an explicit empty-state row when none).</li>
+<li><strong>Not performed</strong> &mdash; why arrivals skipped the scan; click a row for its 10 most recent Files.</li>
+<li><strong>Not first inbound</strong> &mdash; the check on the scan-on-entry model: real verdicts (Allowed/Blocked/Error) on any other leg.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>One chronological walk over each File&rsquo;s rows; the first Inbound leg&rsquo;s verdict counts; no Inbound leg = no scan, absent.</li>
+<li>Outcomes are parsed from the free-text &ldquo;ICAP Details&rdquo; column; <strong>Other</strong> = Error/Unknown and unrecognised text.</li>
+<li>Not performed reasons:
+<ul>
+<li><strong>Before scanning was active</strong> &mdash; ahead of the window&rsquo;s first Allowed verdict (boundary derived from the data each run).</li>
+<li><strong>Failed or empty</strong> &mdash; the receive aborted or brought 0 bytes.</li>
+<li><strong>Encrypted</strong> &mdash; .pgp/.enc, the scanner cannot see inside.</li>
+<li><strong>Oversized</strong> &mdash; above the ICAP scan-size cap.</li>
+<li><strong>Other</strong> &mdash; no known reason; should sit near 0, growth = a new skip reason to investigate.</li>
+</ul></li>
+<li>Not first inbound: legitimate are <strong>inbound retries</strong> (a re-entry is re-scanned) and the <strong>UC2 staging re-entry</strong> (Inbound routing); an <strong>Outbound</strong> row would break the model; the outbound &ldquo;Scanning was not performed&rdquo; boilerplate is excluded.</li>
+</ul>
 </main>
 </body>
 </html>

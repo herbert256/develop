@@ -16,17 +16,25 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>One-Legged Transfers</h1>
-<h2>What this shows</h2>
-<p>Logical transfers (CoreIds) that have only <strong>one leg</strong> — a single technical row in the transfer log. Two views, switched with the buttons at the top right: <strong>Details</strong> — one row per single-leg transfer, showing that one leg's <strong>Direction</strong> (Inbound or Outbound), the transfer's outcome, and its account, subscription, partner, size and file (Account, Subscription and Partner link to their detail pages; newest first); and <strong>Top view</strong> — the count of single-leg transfers per day, split Error / OK. The From/To date filter narrows both.</p>
-<h2>Why "one leg" matters</h2>
-<p>A completed transfer is normally <strong>store-and-forward</strong>: the partner sends the file in (an <strong>Inbound</strong> leg) and Secure&shy;Transport forwards it back out (an <strong>Outbound</strong> leg), so one logical transfer is commonly 2–7 rows (the two legs plus any retries). A <strong>single-leg</strong> CoreId is one-sided — only the Inbound leg (the file arrived but was never forwarded) or only the Outbound leg (a send with no matching arrival) was ever logged. The counterpart leg never happened, so the file never made the full crossing; these do not complete and end up <strong>Error</strong>. The Direction column tells you which half exists — the missing half is the other direction.</p>
-<h2>How it's computed</h2>
-<p>Leg count comes from the logical-transfer cache (<code>_files.tsv</code>, one row per CoreId, its <em>rows</em> column = the number of technical legs); a value of exactly 1 selects the pirates. The single leg's Direction is read from the parse cache (<code>_transfers.tsv</code>), and the account / subscription / partner / size / file from the same per-CoreId row. Every count here is one logical transfer (one CoreId), full period. Days on which a single-leg transfer occurred are also surfaced in the combined day page's <em>Problems this day</em> list.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range"><strong>Pirates</strong> — logical transfers (CoreIds) that have only <strong>one leg</strong> (one technical row). A complete transfer is store-and-forward: an <strong>Inbound</strong> leg (partner → ST) and an <strong>Outbound</strong> leg (ST → partner). A single-leg CoreId is one-sided — the counterpart leg never happened — so the file never made the full crossing. <strong>Details</strong> counts them per subscription; <strong>Top view</strong> the count per day.</p>
-<p class="note">One row per subscription: how many of its transfers were single-leg, and the first and last date one occurred. Single-leg transfers do not complete the store-and-forward, so they end up <strong>Error</strong>. The Subscription links to its detail page.</p>
-</section>
+<h2>What it shows</h2>
+<p><strong>Pirates</strong>: logical transfers (CoreIds) with only <strong>one leg</strong> &mdash; a single technical row in the transfer log. <strong>Details</strong> counts them per subscription, <strong>Top view</strong> per day split Error / OK; the buttons at the top right switch, the From/To filter narrows both.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Details</strong> &mdash; one row per subscription (linking its detail page): how many of its transfers were single-leg, and the first and last date one occurred.</li>
+<li><strong>Top view</strong> &mdash; the count of single-leg transfers per day, Error / OK.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>A complete transfer is store-and-forward: an <strong>Inbound</strong> leg (partner &rarr; ST) and an <strong>Outbound</strong> leg (ST &rarr; partner), so one logical transfer is commonly 2&ndash;7 rows (the two legs plus retries).</li>
+<li>A single-leg CoreId is one-sided: only the Inbound leg (the file arrived, was never forwarded) or only the Outbound leg (a send with no matching arrival). The counterpart never happened, the file never made the full crossing, so these end up <strong>Error</strong>.</li>
+<li>The leg count comes from the logical-transfer cache <code>_files.tsv</code> (one row per CoreId; its <em>rows</em> column = the technical legs); exactly 1 selects the pirates. The leg&rsquo;s direction is read from the parse cache <code>_transfers.tsv</code>; account, subscription, partner, size and file from the same per-CoreId row.</li>
+<li>Every count is one logical transfer (one CoreId), full period.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Days with a single-leg transfer also appear in the combined day page&rsquo;s <em>Problems this day</em> list.</li>
+<li>The 1-leg bucket of <a href="patterns.html">File journey</a> is this same population.</li>
+</ul>
 </main>
 </body>
 </html>

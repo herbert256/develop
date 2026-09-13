@@ -16,14 +16,20 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Partner lifecycle</h1>
-<h2>What this shows</h2>
-<p>The three quiet failure modes of a partner relation on one page. Configured-never-live is the onboarding that never happened: the name and its subscriptions exist, zero Files ever flowed — the row colour is the partner's standard result colour, so a blue row was at least seen in the server log.</p>
-<p>Gone quiet is the opposite end: partners with real history followed by 14+ days of silence, measured against the newest log day. Shrinking is the subtle middle: the partner still transfers, but the number of its subscriptions actually carrying Files dropped by two or more between the previous 14 log days and the last 14 — flows dying one by one while the relation still looks alive.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">A partner relation has three quiet failure modes, and each one looks different in the data. <strong>Configured, never live</strong> is the onboarding that never happened: the name and its subscriptions exist, no File ever flowed. <strong>Gone quiet</strong> is the opposite end — traffic that stopped: the partner has history, then 14+ days of silence (measured against the newest log day, <strong>2026-08-29</strong>). <strong>Shrinking</strong> is the subtle middle: the partner still transfers, but the number of its subscriptions actually carrying Files dropped by 2 or more between the previous 14 log days and the last 14 — flows are dying one by one while the relation as a whole still looks alive.</p>
-<p class="note">Partner attribution is the site-wide UNION rule (the subscription's configured partners unioned with the parse attribution), so these figures match the Entities and coverage views. In the never-live table the row colour is the partner's standard result colour — <strong>orange</strong> never seen anywhere, <strong>blue</strong> seen in the server log only (a connection, still zero Files); its Subscriptions column counts the configured subscriptions waiting behind the name. &quot;Active subscription&quot; in the shrinking table means a distinct subscription with at least one File in the window — the drop threshold of 2 filters ordinary week-to-week noise.</p>
-</section>
+<h2>What it shows</h2>
+<p>The three quiet failure modes of a partner relation, one table each.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>Configured, never live</strong> &mdash; the onboarding that never happened: the name and its subscriptions exist, no File ever flowed. Its Subscriptions column counts the configured subscriptions waiting behind the name.</li>
+<li><strong>Gone quiet</strong> &mdash; partners with real history followed by <strong>14+ days</strong> of silence, measured against the newest log day.</li>
+<li><strong>Shrinking</strong> &mdash; the partner still transfers, but the number of its subscriptions actually carrying Files dropped by <strong>2 or more</strong> between the previous 14 log days and the last 14: flows dying one by one while the relation as a whole looks alive.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Partner attribution is the site-wide UNION rule (the subscription&rsquo;s configured partners unioned with the parse attribution), so the figures match the Entities and coverage views.</li>
+<li>In the never-live table the row colour is the partner&rsquo;s standard result colour: <strong>orange</strong> never seen anywhere, <strong>blue</strong> seen in the server log only (a connection, still zero Files).</li>
+<li>&ldquo;Active subscription&rdquo; in the shrinking table = a distinct subscription with at least one File in the window; the drop threshold of 2 filters ordinary week-to-week noise.</li>
+</ul>
 </main>
 </body>
 </html>

@@ -16,16 +16,40 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Subscriptions in boxes</h1>
-<h2>What this shows</h2>
-<p>One consolidated list of every subscription flagged by <strong>any of the eight problem reports</strong>, one column per report:</p>
-<p><strong><a href="pirates.html">One-legged transfers</a></strong> &mdash; the subscription has CoreIds with only ONE leg (an incomplete crossing) <em>and no OK File after the last one</em>: an OK delivery afterwards means the flow recovered, so it is not flagged here even though the report itself still lists the history. <strong><a href="from-green-to-red.html">From green to red</a></strong> &mdash; it used to deliver OK Files but its latest File failed (a regression). <strong><a href="server-went-kaput.html">Trouble after Success</a></strong> &mdash; its last transfer succeeded but the server log shows Errors/Warnings since. <strong><a href="only-red.html">Only red</a></strong> &mdash; every File it ever produced is an Error; it never worked at all. <strong><a href="waiting.html">Waiting</a></strong> &mdash; its newest File is staged for pickup and the partner has not collected it yet. <strong><a href="expired.html">Expired</a></strong> &mdash; its newest File expired: the staged copy was deleted by the retention sweep before any pickup, so the last thing that happened to this flow is a lost delivery. <strong><a href="server-no-remote-dir.html">No Dir</a></strong> &mdash; its configured REMOTE directory does not exist: we reach the partner, the listing fails with "No such file", and no transfer is ever started (only still-open cases count &mdash; a directory found again later is not flagged). <strong><a href="server-no-remote-files.html">No Files</a></strong> &mdash; a UC3 flow that polls faultlessly but has <em>never</em> found a file: the listing succeeds every time and the remote directory is always empty. <strong>Failing polls</strong> &mdash; the UC3 poll itself errors on the server side (the state UC status / UC3 calls &ldquo;server - error&rdquo;): the poll never completes, so nothing is listed or collected.</p>
-<p><strong>Login errors (in)</strong> &mdash; a connected login failed the incoming SSH screening (disallowed, unknown key, key failures, locked) with no OK File since; <strong>Login errors (out)</strong> &mdash; we failed to authenticate at the remote host (password, key or certificate policy) with no OK File since. Both follow the unresolved rule: a later successful delivery clears the flag.</p>
-<p>Alongside the problem columns the page carries plain <strong>status boxes</strong> &mdash; <strong>OK</strong>, <strong>Seen</strong>, <strong>Not seen</strong>, <strong>Error</strong> and <strong>Server log only</strong>: the site-wide result colors and the coverage flag, read from the same sources as the Transfer / Entities views, so those views are their full lists and the figures cannot drift &mdash; <strong>Seen</strong> is the TRANSFER-scope reading (a flow known only from the server log sits in Server log only instead), so Seen, Server log only and Not seen together are always the whole estate.</p>
-<p>Each flagged cell names its box and <strong>links into the report behind it</strong>; where the target page has a search box, the link arrives pre-filtered to the subscription. The table is sorted by name. The <strong>boxes at the top are filters</strong>: the page opens on the <strong>OK</strong> box, clicking a box narrows the table to the subscriptions it flags, and the <strong>Total</strong> box shows all rows again; columns with nothing left to show are hidden. In the problem rows the orange boxes (attention, or not working yet) come before the red ones (failing). Row tint is the subscription's site-wide result color; the name links to its detail page.</p>
-<h2>How it's computed</h2>
-<p>The page is assembled from the four reports' own data files at publish time, so it always agrees with what those pages show &mdash; with one deliberate refinement: the One-legged flag is recomputed from the transfer cache (the same one-leg condition pirates uses) and kept only when no OK File follows the last one-legged transfer, compared at full timestamp precision. A report that produced no data in this environment simply contributes no rows (its column stays empty).</p>
-<h2>Reading the combinations</h2>
-<p><em>Only red + Trouble after Success</em> together mean a flow that never worked and is still actively logging errors &mdash; the hottest candidates. <em>From green to red</em> alone is a fresh regression: something changed recently. <em>One-legged</em> alone often points at attribution or protocol quirks rather than a hard failure &mdash; check the report's own explanation.</p>
+<h2>What it shows</h2>
+<p>Every subscription flagged by any problem report, one column per report, plus the plain status boxes. Sorted by name; the name links its detail page.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong><a href="pirates.html">One-legged transfers</a></strong> &mdash; CoreIds with only ONE leg (incomplete crossing), no OK File after the last; a later OK delivery = recovered, not flagged though the report still lists the history.</li>
+<li><strong><a href="from-green-to-red.html">From green to red</a></strong> &mdash; delivered OK Files before, latest File failed (regression).</li>
+<li><strong><a href="server-went-kaput.html">Trouble after Success</a></strong> &mdash; last transfer succeeded, server log shows Errors/Warnings since.</li>
+<li><strong><a href="only-red.html">Only red</a></strong> &mdash; every File ever produced is an Error; never worked.</li>
+<li><strong><a href="waiting.html">Waiting</a></strong> &mdash; newest File staged for pickup, not collected yet.</li>
+<li><strong><a href="expired.html">Expired</a></strong> &mdash; newest File expired: the retention sweep deleted the staged copy before any pickup, a lost delivery.</li>
+<li><strong><a href="server-no-remote-dir.html">No Dir</a></strong> &mdash; configured REMOTE directory missing: we reach the partner, the listing fails &ldquo;No such file&rdquo;, no transfer starts. Still-open cases only; a directory found again later is not flagged.</li>
+<li><strong><a href="server-no-remote-files.html">No Files</a></strong> &mdash; UC3 flow polling faultlessly, never found a file: every listing succeeds, remote directory always empty.</li>
+<li><strong>Failing polls</strong> &mdash; the UC3 poll itself errors server-side (UC status / UC3: &ldquo;server - error&rdquo;); nothing listed or collected.</li>
+<li><strong>Login errors (in)</strong> &mdash; a connected login failed the incoming SSH screening (disallowed, unknown key, key failures, locked), no OK File since.</li>
+<li><strong>Login errors (out)</strong> &mdash; we failed to authenticate at the remote host (password, key or certificate policy), no OK File since.</li>
+<li><strong>OK / Seen / Not seen / Error / Server log only</strong> &mdash; site-wide result colours and coverage flag, from the same sources as the Transfer / Entities views (their full lists), so figures cannot drift.</li>
+<li>Seen is the TRANSFER-scope reading; a flow known only from the server log sits in Server log only, so Seen + Server log only + Not seen = the whole estate.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Login-error flags are unresolved-only: a later successful delivery clears them.</li>
+<li>Top boxes filter: opens on <strong>OK</strong>; a box narrows to what it flags; <strong>Total</strong> shows all rows; emptied columns hide.</li>
+<li>Orange boxes (attention, or not working yet) precede red (failing). Row tint = the subscription&rsquo;s site-wide result colour.</li>
+<li>A flagged cell names its box and links into the report, pre-filtered to the subscription where the page has a search box.</li>
+<li>Assembled at publish time from the reports&rsquo; own data files, so it agrees with them.</li>
+<li>Exception: One-legged is recomputed from the transfer cache (pirates&rsquo; one-leg condition) and kept only when no OK File follows the last one-legged transfer, at full timestamp precision.</li>
+<li>A report with no data here contributes no rows (empty column).</li>
+</ul>
+<h2>Reading combinations</h2>
+<ul>
+<li><em>Only red + Trouble after Success</em>: never worked, still logging errors &mdash; hottest candidates.</li>
+<li><em>From green to red</em> alone: fresh regression, something changed recently.</li>
+<li><em>One-legged</em> alone: often attribution or protocol quirks, not a hard failure &mdash; check that report&rsquo;s explanation.</li>
+</ul>
 </main>
 </body>
 </html>

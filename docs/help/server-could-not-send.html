@@ -16,24 +16,22 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Could not send file</h1>
-<h2>What this shows</h2>
-<p>Every <strong>Could not send file</strong> error the server log holds, one row per line, newest first: an Advanced Routing route that gave up delivering a file to its transfer site after its retries. The line looks like this:</p>
-<p class="mono">AR0074: [SECURETRANSPORT] [UC1_CD_IDM_ROTAFORM]  Could not send file: {/.stfs/objects/&hellip;/krpdashboard-productie-20260910135425809.xml} using transfer site: {UC1_CD_IDM_ROTAFORM_SFTP_SERVER_ROTAFORM} after attempting {11} times.</p>
-<h2>The table</h2>
+<h2>What it shows</h2>
+<p>Every &ldquo;Could not send file&rdquo; error in the server log, one row per line, newest first: an Advanced Routing route that gave up delivering a file to its transfer site after its retries (AR0074 &mdash; the &ldquo;Duplicate file&rdquo; reason of the failure pages).</p>
+<p><code>AR0074: [SECURETRANSPORT] [&lt;subscription&gt;]  Could not send file: {&lt;path&gt;} using transfer site: {&lt;site&gt;} after attempting {&lt;n&gt;} times.</code></p>
+<h2>Columns</h2>
 <ul>
 <li><strong>Date &amp; time</strong> &mdash; when the route gave up, to the second.</li>
-<li><strong>Subscription</strong> &mdash; the route, the second bracket of the line; it opens the subscription's detail page, and the row carries the subscription's result colour.</li>
-<li><strong>File</strong> &mdash; the last element of the path in the first braces.</li>
+<li><strong>Subscription</strong> &mdash; the route, the line&rsquo;s second bracket; opens the detail page, and the row carries the subscription&rsquo;s result colour.</li>
+<li><strong>File</strong> &mdash; the last path element inside the first braces.</li>
 </ul>
-<h2>How it's computed</h2>
-<p>The tokenized server log is scanned for TM lines whose message starts with an <code>AR&lt;n&gt;:</code> code and carries &ldquo;Could not send file:&rdquo;. The subscription is read from the second bracket group (the same reading the <a href="server-uc1-status.html">UC1 status</a> report and the failure pages' &ldquo;Duplicate file&rdquo; reason use), folded to its current name when it was renamed; the file is the basename inside the first braces. The report shows at most <strong>1000</strong> rows and at most <strong>10</strong> rows per subscription &mdash; the newest ones on both counts; the intro and the total row say how many lines the log really holds. The date filter, search and sort work over the shown rows.</p>
-<h2>Why it matters</h2>
-<p>This error is the delivery leg failing for good: the platform tried the configured number of times and the file did not reach the transfer site. Each row is a file a partner did not get; a subscription that keeps appearing has a delivery-side problem &mdash; the transfer site, its credentials or the far end &mdash; that the <a href="server-errors-day.html">Errors</a> reasons and the subscription's own detail page put in context.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range"><strong>12</strong> &quot;Could not send file&quot; line(s) for <strong>1</strong> subscription(s) on <strong>11</strong> day(s) — an Advanced Routing route that gave up delivering a file to its transfer site after its retries (the AR0074 error, the &quot;Duplicate file&quot; reason of the failure pages). Newest first; the report shows at most <strong>1000</strong> rows and at most <strong>10</strong> per subscription (<strong>10</strong> shown here); the subscription opens its detail page.</p>
-<p class="note">Source: the TM error &quot;AR0074: [SECURETRANSPORT] [&lt;subscription&gt;]  Could not send file: {&lt;path&gt;} using transfer site: {&lt;site&gt;} after attempting {&lt;n&gt;} times.&quot; — the route is the second bracket, the File the last path element. At most 1000 rows and 10 per subscription, the newest ones; the totals name what the log holds.</p>
-</section>
+<h2>Rules</h2>
+<ul>
+<li>Source: TM lines whose message starts with an <code>AR&lt;n&gt;:</code> code and carries &ldquo;Could not send file:&rdquo;.</li>
+<li>The subscription is read from the second bracket (the same reading as <a href="server-uc1-status.html">UC1 status</a> and the failure pages&rsquo; &ldquo;Duplicate file&rdquo; reason), folded to its current name when renamed.</li>
+<li>At most <strong>1000</strong> rows and <strong>10</strong> per subscription, the newest on both counts; the total row says how many lines the log really holds. Date filter, search and sort work over the shown rows.</li>
+<li>The error is the delivery leg failing for good after the configured number of tries: each row is a file a partner did not get. A recurring subscription has a delivery-side problem &mdash; the transfer site, its credentials or the far end &mdash; that the <a href="server-errors-day.html">Errors</a> reasons and its detail page put in context.</li>
+</ul>
 </main>
 </body>
 </html>

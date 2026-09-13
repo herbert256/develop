@@ -16,43 +16,37 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Waiting Files</h1>
-<h2>What this shows</h2>
-<p>A <strong>UC2</strong> flow is one the partner <em>collects from us</em>. Such a file does not travel in the usual two legs — it has <strong>four</strong>:</p>
-<ol>
-<li>Inbound / PeSIT — the file arrives from the internal CFT</li>
-<li>Outbound / routing — internal staging, within seconds of leg 1</li>
-<li>Inbound / routing — the file lands in the pickup area</li>
-<li>Outbound / SSH — the partner dials in and collects it (later; sometimes repeatedly)</li>
-</ol>
-<p>Between legs 3 and 4 the file just sits <em>staged</em>, waiting for the partner. A file whose last leg is the staging one carries the outcome <strong>Waiting</strong> — arrived and ready, but not collected yet. That is not an error; it may simply mean the partner has not polled since the file arrived. A staged file the partner never collects does not wait forever, though: the nightly <strong>File Maintenance</strong> retention sweep (around 03:00, ~11 days after staging) deletes it — those files carry the outcome <strong>Expired</strong>, with the deletion timestamp in the <em>Expired</em> field. An expired file was never delivered and can no longer be collected. Four tables:</p>
+<h2>What it shows</h2>
+<p>UC2 files staged for pickup: which subscriptions have Files the partner has not collected, how long they have waited, how fast partners usually collect.</p>
+<p>Always the full period (like <a href="episodes.html">Failure Episodes</a> and <a href="went-quiet.html">Went quiet</a>): Waiting is a state at the window end, not a per-day statistic; a narrower range would fake &ldquo;waiting&rdquo; for files collected later.</p>
+<h2>Rules</h2>
 <ul>
-<li><strong>Waiting now — per subscription</strong> — which subscriptions have staged Files nobody collected <em>that are still on disk</em>: how many, oldest and newest staging moment, and how long the oldest has been waiting. Sorted oldest-waiting first — the top rows are the ones to chase.</li>
-<li><strong>Files waiting the longest</strong> — the individual staged Files, oldest first.</li>
-<li><strong>Expired — deleted before pickup</strong> — per subscription, the staged Files the retention sweep removed before any pickup: never delivered.</li>
-<li><strong>Pickup wait — collected files</strong> — for the files that <em>were</em> collected: how long the partner took (median / average / max, and how many were picked up within an hour, within a day, or later).</li>
+<li>A UC2 file (the partner collects from us) has four legs: Inbound/PeSIT from the internal CFT; Outbound/routing (internal staging, seconds later); Inbound/routing into the pickup area; Outbound/SSH, the partner dials in and collects (later, sometimes repeatedly).</li>
+<li><strong>Waiting</strong> = a File whose final leg is a successfully processed Inbound routing leg, staged copy still on disk; not an error, the partner may not have polled yet.</li>
+<li><strong>Waiting for</strong> runs from staging to the dataset&rsquo;s last record; a later export with the collect leg flips it to OK (or Error) automatically.</li>
+<li><strong>Expired</strong> = the nightly <strong>File Maintenance</strong> retention sweep (~03:00, ~11 days after staging) deleted the staged copy before any pickup: never delivered, no longer collectable.</li>
+<li>The deletion leaves no transfer-log trace; <code>bin/expire-files.sh</code> joins the server log&rsquo;s &ldquo;File Maintenance &hellip; Deleted files&rdquo; lines (same account and file name, deletion after staging) into the <em>Expired</em> field, <code>_files.tsv</code> col 22.</li>
+<li>Every report counts Waiting as <strong>OK</strong> and Expired as <strong>Error</strong>; only here are they apart.</li>
+<li><strong>Pickup wait</strong> = staging leg end to FIRST collect leg start (repeat collects count once). <code>parse.sh</code> excludes it, and the idle time between repeat collects, from every UC2 <a href="duration.html">Duration</a> figure.</li>
+<li><a href="episodes.html">Failure Episodes</a> shows broken flows; these are merely uncollected.</li>
 </ul>
-<h2>How it's computed</h2>
-<p>A logical transfer (all records sharing one CoreId) whose final leg is a successfully processed Inbound routing leg is Waiting. "Waiting for" counts from the staging moment to the dataset's last record — a file may well have been collected right after the export was taken. When a later export contains the collect leg, the file flips to OK (or Error) on the next build automatically.</p>
-<p>The deletion of an expired file leaves <em>no trace in the transfer log</em> — the evidence is only the server log's "File Maintenance … finished. Deleted files […]" lines. A build step joins those onto the Waiting files (same account and file name, deletion dated after the staging) and marks the matches Expired. On every report a Waiting file counts as <strong>OK</strong> (a normal in-window state) and an Expired file counts as <strong>Error</strong> (never delivered); this page is where the two states are visible individually.</p>
-<p>The pickup wait — from the staging leg ending to the first collect leg starting — is <strong>excluded from every Duration figure</strong> on this site: a UC2 file's Duration is the arrival work (legs 1–3) plus the collect transfer itself, not the hours the partner let it sit. When a partner collects the same file several times, the idle time between collects is excluded too.</p>
-<h2>Why the date filter is off</h2>
-<p>Waiting is a state at the end of the data window, not a per-day statistic — narrowing the range would fake "waiting" files that were collected later. The page always shows the full period (like Stale Accounts and Failure Episodes).</p>
-<h2>How it relates to the other reports</h2>
-<p><a href="episodes.html">Failure Episodes</a> shows flows that are broken; this page shows flows that are merely <em>uncollected</em> — the delivery side did its work. <a href="duration.html">Transfer Duration</a> benefits from the same split: without it, a UC2 file that sat staged for three days would count as a three-day transfer.</p>
-<p>The <strong>Staged backlog</strong> table reconstructs the day-by-day staged-but-uncollected inventory: a file occupies every day from staging until pickup or deletion, so the curve&rsquo;s last day equals the Waiting count. <strong>Will expire next</strong> lists Waiting files staged nine days or more &mdash; the retention sweep deletes staged copies after about eleven days, so these are the partners to call today.</p>
-<p>The <strong>percentile table</strong> rolls collected pickups up to the partner (median, p95, max, and near-misses that waited over eight days); the <strong>weekly table</strong> tracks the median and average wait per staged week for the ten busiest subscriptions &mdash; a rising average flags a partner that paused collecting long before files start expiring.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">A UC2 file is COLLECTED by the partner: it arrives from CFT in three quick legs (PeSIT in, routing out, routing in), then sits STAGED until the partner dials in over SSH and picks it up. A file still staged at the end of the data window has outcome <strong>Waiting</strong> — not an error, just not collected yet. A staged file the nightly File Maintenance retention sweep (~11 days) DELETED before any pickup is <strong>Expired</strong> — never delivered. Right now <strong>91</strong> File(s) across <strong>10</strong> subscription(s) are waiting (oldest staged <strong>2026-06-24 23:01:39 (UC2-INFRA_ST-MONITOR_INFRA)</strong>), <strong>385</strong> File(s) across <strong>21</strong> subscription(s) have expired, and <strong>5165</strong> staged File(s) were collected. The pickup wait is EXCLUDED from every UC2 Duration figure on this site. Below the four state tables: the day-by-day <strong>staged backlog</strong> curve (peak <strong>117</strong> file(s) on 2026-07-23), the <strong>Will expire next</strong> call list, and the per-partner and per-week <strong>pickup-wait</strong> statistics. Click a row for the 10 most recent Files.</p>
-<p class="note">A <strong>Waiting</strong> File arrived and was staged (its last leg is the Inbound routing one) but no partner collect leg followed — and its staged copy has NOT been deleted yet, so the partner can still pick it up (once the retention sweep removes it, the File moves to the Expired table below). <strong>Waiting for</strong> counts from the staging moment to the dataset's last record (2026-08-29 23:57:46) — a file may have been collected after the export. Collected = the same subscription's Files that WERE picked up. Sorted oldest-waiting first. Click a row for the 10 most recent waiting Files.</p>
-<p class="note">The <strong>50</strong> longest-waiting individual Files, oldest first.</p>
-<p class="note">Staged Files the nightly <strong>File Maintenance</strong> retention sweep deleted (~11 days after staging) before any partner pickup — <strong>never delivered</strong>, and no longer collectable. The deletion timestamp comes from the server log (there is NO transfer-log record of the deletion) and is stored as the <strong>Expired</strong> field (_files.tsv col 22) by the bin/expire-files.sh build step. Expired Files count as <strong>Error</strong> on every report. Click a row for the 10 most recent expired Files.</p>
-<p class="note">How long the partner took to collect: from the staging leg ending to the FIRST collect leg starting (repeat collects of the same File count once). This wait is what parse.sh excludes from the UC2 Duration figures.</p>
-<p class="note">The staged-but-uncollected inventory, reconstructed per day: every staged File occupies the days from its staging day up to (not including) the day the partner collected it or the retention sweep deleted it — a same-day pickup never sits in the overnight inventory, and a still-Waiting File occupies through the window end, so the LAST day equals the Waiting count above (<strong>91</strong>). Peak backlog: <strong>117</strong> file(s) on <strong>2026-07-23</strong>. Volume is the staged bytes sitting in inventory that day.</p>
-<p class="note"><strong>Call the partner today.</strong> These Waiting Files have been staged for <strong>9 days or more</strong> (vs the dataset's last day) — the nightly File Maintenance retention sweep deletes staged copies after ~11 days, so without a pickup in the next day or two they move to the Expired table above and are never delivered. Age is the oldest File's. Click a row for the 10 most recent Files at risk.</p>
-<p class="note">Collected Files rolled up to the PARTNER (the site-wide UNION attribution: a File counts for every partner of its subscription plus the host-resolved one, so the partner counts can sum past the collected total). Median = the typical pickup, <strong>p95</strong> = the slow tail, and <strong>Waited over 8 days</strong> are the near-misses — collected, but within a couple of days of the ~11-day retention sweep. A partner with a fat p95 or near-misses is one pause away from the Expired table.</p>
-<p class="note">The pickup wait per <strong>staged week</strong> (Monday-start) for the 10 subscriptions with the most collected Files, busiest first. The median shows the typical pickup; the <strong>average</strong> exposes a pause — a partner that stops collecting for days drags the average up long before the median moves, then both fall back once the backlog is cleared. Subscriptions whose staged Files were never collected have no pickup waits and are absent (the Waiting/Expired tables above carry them).</p>
-</section>
+<h2>Sections</h2>
+<ul>
+<li><strong>Waiting now &mdash; per subscription</strong> &mdash; staged Files still on disk: count, oldest/newest staging moment, longest wait; <strong>Collected</strong> = its Files that were picked up. Oldest-waiting first: chase the top rows.</li>
+<li><strong>Files waiting the longest</strong> &mdash; the 50 oldest staged Files.</li>
+<li><strong>Expired &mdash; deleted before pickup</strong> &mdash; per subscription, the Files the sweep removed.</li>
+<li><strong>Pickup wait &mdash; collected files</strong> &mdash; median / average / max; collected within an hour, within a day, or later.</li>
+<li><strong>Staged backlog</strong> &mdash; the uncollected inventory per day: a File occupies the days from staging up to (not including) its collect or delete day, so the last day equals the Waiting count.</li>
+<li>Same-day pickups never sit overnight; a still-Waiting File runs to the window end. Volume = staged bytes in inventory that day; the peak day is named.</li>
+<li><strong>Will expire next</strong> &mdash; Waiting Files staged 9+ days against the dataset&rsquo;s last day; without a pickup within a day or two they expire: call the partner today. Age = the oldest File&rsquo;s.</li>
+<li><strong>Percentile table</strong> &mdash; collected pickups per partner: median, <strong>p95</strong> (slow tail), max, <strong>Waited over 8 days</strong> (near-misses, one pause from Expired).</li>
+<li>Partner attribution is the site-wide UNION: a File counts for every partner of its subscription plus the host-resolved one, so partner counts can sum past the collected total.</li>
+<li><strong>Weekly table</strong> &mdash; median and average wait per staged week (Monday start), the 10 subscriptions with most collected Files, busiest first. A rising average flags a pausing partner before the median moves; never-collected subscriptions are absent.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a row for that table&rsquo;s 10 most recent Files.</li>
+</ul>
 </main>
 </body>
 </html>

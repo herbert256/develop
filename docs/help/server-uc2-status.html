@@ -16,19 +16,39 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>UC2 status</h1>
-<h2>What this shows</h2>
-<p>Every <strong>UC2</strong> (partner collects from us) pickup flow, classified into five statuses — the info boxes above the table give the count for each. It is one of a set of four: <a href="server-uc1-status.html">UC1 status</a> does the same for the flows we push out to the partner, <a href="server-uc3-status.html">UC3 status</a> for the ones we poll and pull, and <a href="server-uc4-status.html">UC4 status</a> for the ones the partner delivers to us. One row per subscription:</p>
+<h2>What it shows</h2>
+<p>Every <strong>UC2</strong> flow (the partner collects from us), one row per flow, in one of five statuses; the info boxes count them. Siblings: <a href="server-uc1-status.html">UC1</a> (we push out), <a href="server-uc3-status.html">UC3</a> (we poll and pull), <a href="server-uc4-status.html">UC4</a> (the partner delivers to us).</p>
+<h2>Columns</h2>
 <ul>
-<li><strong>Subscription</strong> — the "collect from us" subscription (the account's primary movement-out flow, else its configured subscription), linking to its detail page. The flow is keyed internally by the <em>account</em> that owns the pickup folder — that is the token the server log lines carry — but the account is not a column: one account owns one UC2 subscription here, so the name would only repeat what the subscription already says. The account detail page is one click away, through the subscription.</li>
-<li><strong>Expired</strong> — how many files File Maintenance deleted from the account's folder (per file, from "File Maintenance … finished. Deleted files [ … ]").</li>
-<li><strong>First / Last arrived</strong> — when the app first and last <em>staged</em> a file for the flow, from the transfer log. This is the actionable timeline: a file "arrived" long ago and is still not collected.</li>
-<li><strong>Pickups</strong> / <strong>Last pickup</strong> — successful partner logons ("Allowed user … from address …"). Zero means the partner never connected over SSH to collect.</li>
-<li><strong>Status</strong> — one of five, a complete partition of the UC2 flows: <strong>Never collected</strong> (red): files expired, <em>zero</em> successful pickups — nobody collected. <strong>No files</strong> (amber): the partner logs in to collect (pickups &gt; 0) but the app never staged a single file — a dormant or broken source side. <strong>Both</strong> (green): the partner picks up <em>and</em> the odd file still expired — both outcomes on the one flow. <strong>OK</strong> (green): files staged and collected, none expired — healthy. <strong>Nothing</strong> (plain): no pickup and no expiry — a quiet flow, or one whose partner collects over CFT (which logs no SSH pickup).</li>
+<li><strong>Subscription</strong> &mdash; the &ldquo;collect from us&rdquo; subscription (the account&rsquo;s primary movement-out flow, else its configured subscription), linked to its detail page. Keyed internally by the account owning the pickup folder &mdash; the token the server-log lines carry; the account is one click away.</li>
+<li><strong>Expired</strong> &mdash; files File Maintenance deleted from the account&rsquo;s folder (&ldquo;File Maintenance &hellip; finished. Deleted files [ &hellip; ]&rdquo;).</li>
+<li><strong>First / Last arrived</strong> &mdash; when the app first and last <em>staged</em> a file (transfer log): the timeline of a file waiting uncollected.</li>
+<li><strong>Pickups</strong> / <strong>Last pickup</strong> &mdash; successful partner logons (&ldquo;Allowed user &hellip; from address &hellip;&rdquo;); zero = never connected over SSH to collect.</li>
+<li><strong>Status</strong> &mdash; one of five, a complete partition (below).</li>
 </ul>
-<h2>How it's computed</h2>
-<p>Expiry (File Maintenance deletes) and SSH pickups come from the server log, keyed on the <code>NAME@FEnnn</code> account token; the subscription and the arrival dates come from the transfer <code>_files.tsv</code> cache (files this subscription staged, movement out). <strong>Detection is deliberately on the retention delete, not on arrival.</strong> Arrival-based detection ("files staged AND no SSH pickup") flags 101 of 113 pickup subscriptions, because most partners collect over CFT/PESIT and never log an SSH pickup — so arrival alone can't tell collected from uncollected. A file the sweep actually deleted, by contrast, was collected by nobody: a direct-SFTP pickup would log the connection, and a CFT pickup would have removed the file before it could expire. The <em>arrival</em> date is shown anyway, as the timeline. This is a current-state audit — not adjusted by the date filter; click a row for the account's 10 most recent maintenance-delete messages. A row is a UC2 flow (an account with a UC2 subscription). The <strong>No files</strong> and <strong>OK</strong> statuses need the positive SSH signal, so they only distinguish SFTP-collecting partners; a CFT-collecting partner with no expiry lands in <strong>Nothing</strong>. No-files and OK rows drill to the partner's recent pickup logons.</p>
-<h2>Why it matters</h2>
-<p>A configured pickup flow that produces files nobody collects is a <em>silent</em> failure — nothing errors, the file just expires. It usually means the partner side is wrong: they connect over a different channel, their credentials or schedule changed, or they are refused at the door — the <a href="server-logon.html">Logon</a> report's <strong>Disallowed</strong> column shows the whitelist-rejected attempts. A high <strong>Files expired</strong> with a recent <strong>Last arrived</strong> and no pickups is a live flow worth chasing with the partner; a one-off expiry on an otherwise-collecting account is normal.</p>
+<h2>Statuses</h2>
+<ul>
+<li><strong>Never collected</strong> (red) &mdash; files expired and nothing was ever collected; logon visits alone do not count.</li>
+<li><strong>No files</strong> (amber) &mdash; the partner logs in (pickups &gt; 0) but the app never staged a file: a dormant or broken source side.</li>
+<li><strong>Both</strong> (green) &mdash; the partner provably collects (Files in the transfer log) and the odd file still expired.</li>
+<li><strong>OK</strong> (green) &mdash; files staged and collected, none expired.</li>
+<li><strong>Nothing</strong> (plain) &mdash; no collection, no expiry: a quiet flow, a partner collecting over CFT (no SSH pickup logged), or visits that came up empty.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Expiry and SSH pickups come from the server log, keyed on the <code>NAME@FEnnn</code> account token; subscription and arrival dates from <code>_files.tsv</code> (files the subscription staged, movement out).</li>
+<li>Uncollected detection is on the <strong>retention delete</strong>, not on arrival: &ldquo;staged and no SSH pickup&rdquo; would flag almost every pickup flow, since CFT/PESIT collectors never log an SSH pickup. A file the sweep deleted was collected by nobody &mdash; an SFTP pickup logs its connection, a CFT pickup removes the file before it can expire.</li>
+<li><strong>No files</strong> and <strong>OK</strong> need the positive SSH signal, so they only distinguish SFTP collectors; a CFT partner with no expiry lands in <strong>Nothing</strong>.</li>
+<li>A logon whose session only <em>delivered</em> files (the account&rsquo;s UC4 twin flow) is not a pickup.</li>
+<li>An account serving several UC2 flows (the hybrid production accounts) lists each with its own staged, collected and expired Files; the Pickups figures are the account&rsquo;s &mdash; the partner logs on to the account. On an account with several FE logins they are the flow&rsquo;s own login&rsquo;s: each login is a different partner credential.</li>
+<li>A current-state audit &mdash; the date filter does not narrow it.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a row for the account&rsquo;s 10 most recent maintenance-delete messages; No files and OK rows drill to the partner&rsquo;s recent pickup logons.</li>
+<li>An uncollected flow fails <em>silently</em> &mdash; nothing errors, the file expires. Usually the partner side: another channel, changed credentials or schedule, or refused at the door (the <strong>Disallowed</strong> column of the <a href="server-logon.html">Logon</a> report).</li>
+<li>High Expired, recent Last arrived, no pickups = a live flow to chase; a one-off expiry on a collecting account is normal.</li>
+</ul>
 </main>
 </body>
 </html>

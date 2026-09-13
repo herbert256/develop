@@ -16,16 +16,22 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Added BL</h1>
-<p>What <code>input/BL.txt</code> contributes <strong>on top of</strong> the configuration export. A subscription can carry its business-line marker in two places: the <code>tags</code> entries of <code>subscriptions.json</code> (any entry starting with <code>BL</code>), and the hand-maintained file <code>input/BL.txt</code>, whose rows read <span class="mono">&lt;subscription&gt; &lt;BL&gt;[,&lt;BL&gt;...]</span>. The pipeline <strong>unions</strong> the two, so the BL entity always shows every number a flow has.</p>
-<p>This page is the difference: one row per subscription, listing only the BL numbers that come from the FILE and are <strong>not</strong> among that subscription&rsquo;s tags. A subscription whose numbers all come from its tags does not appear at all, and an environment whose file adds nothing says so in one line.</p>
-<h2>The columns</h2>
+<h2>What it shows</h2>
+<p>What <code>input/BL.txt</code> adds on top of the configuration export: one row per subscription, listing only the BL numbers that come from the file and are <strong>not</strong> among that subscription&rsquo;s tags.</p>
+<h2>Columns</h2>
 <ul>
-<li><strong>Subscription</strong> &mdash; the configured flow, linking its detail page. Names in <code>BL.txt</code> are matched case-insensitively against the configured subscriptions of that environment, and the configured spelling is what is shown; a row naming a subscription the environment does not configure is skipped by the config step, which reports it on the build.</li>
-<li><strong>BLs</strong> &mdash; the added numbers, comma-separated, each linking its own BL detail page (a BL is a full entity, alongside Logical, Partners, Domains and Applications).</li>
+<li><strong>Subscription</strong> &mdash; the configured flow, in its configured spelling, linking its detail page.</li>
+<li><strong>BLs</strong> &mdash; the added numbers, comma-separated, each linking its BL detail page (a BL is a full entity, alongside Logical, Partners, Domains and Applications).</li>
 </ul>
-<p>Rows are tinted by the subscription&rsquo;s result &mdash; <strong>light green</strong> = last transfer OK, <strong>light orange</strong> = configured but never seen, <strong>light red</strong> = last transfer Error, <strong>light blue</strong> = surfaced only by the server log.</p>
-<h2>How it&rsquo;s computed</h2>
-<p>The config step (<code>bin/flow-manager.sh</code>) keeps the two BL sources apart while building the union, and writes the file-only rows to <code>xref/_subscriptions-bl-added.tsv</code>. This page renders that sidecar, so it can never disagree with the pipeline that built the BL entity.</p>
+<h2>Rules</h2>
+<ul>
+<li>A subscription carries its business-line marker in two places: the <code>tags</code> of <code>subscriptions.json</code> (any entry starting with <code>BL</code>) and the hand-maintained <code>input/BL.txt</code>, rows <code>&lt;subscription&gt; &lt;BL&gt;[,&lt;BL&gt;...]</code>.</li>
+<li>The pipeline unions both, so the BL entity always shows every number a flow has; this page is the difference.</li>
+<li>A subscription whose numbers all come from its tags is not listed; a file that adds nothing gives a one-line page.</li>
+<li>Names in <code>BL.txt</code> match the environment&rsquo;s configured subscriptions case-insensitively; a row naming an unconfigured subscription is skipped by the config step, which reports it on the build.</li>
+<li>Row tint = the subscription&rsquo;s result: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer Error, <strong>light blue</strong> surfaced only by the server log.</li>
+<li>Source: the config step (<code>bin/flow-manager.sh</code>) keeps the two sources apart while building the union and writes the file-only rows to <code>xref/_subscriptions-bl-added.tsv</code>; the page renders that sidecar, so it cannot disagree with the pipeline.</li>
+</ul>
 </main>
 </body>
 </html>

@@ -16,23 +16,26 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Transfer Patterns</h1>
-<h2>What this shows</h2>
-<p>A logical transfer (one <strong>File</strong>) is built from an Inbound row, an Outbound row, and — when the Outbound fails — up to 5 Outbound retries (the Inbound can retry too). This report groups Files by their <strong>pattern</strong>: the ordered sequence of "Direction / Status" lines across all of a File's rows, e.g. an Inbound row that processed followed by an Outbound row that processed. Status is shown exactly as logged, so a value like "Failed Subtransmission" appears verbatim rather than folded into the Error bucket.</p>
-<p>Each distinct pattern is one row of the table. The <strong>Last 10 files</strong> column lists the 10 Files that most recently matched the pattern ("date time&nbsp;&nbsp;CoreId"), newest first. The <strong>Pattern</strong> and <strong>Last 10 files</strong> cells load collapsed: only their first and last line show, with an ellipsis (&#8943;) marking the hidden middle lines — so a collapsed pattern shows its first and last leg. Click a cell to expand it; click again to collapse.</p>
-<h2>How it's computed</h2>
-<p>Rows sharing a File are ordered Inbound-first, then by start time (so retries appear in the order they happened), and their "Direction / Status" lines are joined into one pattern string. The <strong>Legs</strong> column counts the lines in the pattern — the physical rows a matching File is made of. The <strong>Files</strong> column counts how many logical transfers matched that exact pattern. The <strong>Transfers</strong> column counts their individual physical rows — Files &times; Legs — so a two-leg pattern (Inbound + Outbound, no retries) contributes twice as many Transfers as Files.</p>
-<p>There are typically only a few dozen distinct patterns; the table is capped at the top 200 by frequency as a safety margin, and a note appears if any were cut off.</p>
-<h2>The Protocol switch and the Last 5 files</h2>
-<p>A second button row above the Patterns table switches between two groupings of the same Files (2026-09-03): <strong>Protocol off</strong> (the default) shows each pattern as its <em>Direction / Status</em> lines; <strong>Protocol on</strong> adds each leg&rsquo;s protocol to its line (&ldquo;Outbound / ssh / Processed&rdquo;), which splits a shape by the way it travelled &mdash; the same Files, more rows. The choice is remembered per report in this browser session. <strong>Last 5 files</strong> lists each pattern&rsquo;s five most recent Files (newest first, start date and CoreId); every entry opens the File&rsquo;s own page under <code>files/</code> &mdash; the failed-file page layout (the facts table, every transfer leg, the server log behind it) for a File of any outcome.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">How a File moves through the platform, in one report: the <strong>row/status patterns</strong> (the transfers sharing a CoreId), the <strong>leg counts</strong> (the shape of store-and-forward, retries and UC2 pickups), the ordered <strong>protocol journey</strong> of each File, and <strong>how files arrive vs how they leave</strong> (first Inbound and last Outbound protocol with the delivered outcome).</p>
-<p class="note">Files = the delivered (OK) Files of that bucket. The <strong>1 leg</strong> bucket is the One-legged (Pirates) population.</p>
-<p class="note">The extreme repeat-collectors: a UC2 file the partner keeps re-collecting adds one ssh leg per pickup, so its CoreId accumulates legs for as long as it stays staged.</p>
-<p class="note">Files = the delivered (OK) Files of that journey. <strong>?</strong> marks a leg with no protocol logged.</p>
-<p class="note">The protocol each File's FINAL leg used — Files = the delivered ones, beside the Waiting / Expired population. A journey ending on <strong>routing</strong> never left staging — the Waiting / Expired population; a healthy delivery ends on <strong>ssh</strong>/<strong>ftp</strong> (partner side) or <strong>pesit</strong> (CFT side). The state columns show full-period values under a narrowed date range.</p>
-<p class="note">Arrived = the protocol of the earliest Inbound row; Left = the protocol of the latest Outbound row. &quot;(none)&quot; means the File had no Inbound (or no Outbound) row. Files counts the delivered (OK) Files of that pair (2026-09-13 — the Error / OK split is gone), so the rows reconcile to the delivered total.</p>
-</section>
+<h2>What it shows</h2>
+<p>How a File moves through the platform: its <strong>row/status pattern</strong> (the transfers sharing a CoreId), <strong>leg counts</strong>, the ordered <strong>protocol journey</strong>, and how files <strong>arrive vs leave</strong>.</p>
+<h2>Patterns table</h2>
+<ul>
+<li>A File is an Inbound row, an Outbound row and, when the Outbound fails, up to 5 Outbound retries (the Inbound can retry too).</li>
+<li>One row per distinct <strong>pattern</strong>: the ordered &ldquo;Direction / Status&rdquo; lines of a File&rsquo;s rows, Inbound first, then by start time (retries as they happened). Status as logged (&ldquo;Failed Subtransmission&rdquo; verbatim, not folded into Error).</li>
+<li><strong>Legs</strong> &mdash; lines in the pattern (physical rows). <strong>Files</strong> &mdash; logical transfers matching it. <strong>Transfers</strong> &mdash; Files &times; Legs (a two-leg pattern: twice as many Transfers as Files).</li>
+<li><strong>Last 5 files</strong> &mdash; the pattern&rsquo;s most recent Files, newest first (start date, CoreId); each opens the File&rsquo;s own page under <code>files/</code> &mdash; the failed-file layout (facts table, every leg, the server log behind it) for any outcome.</li>
+<li>Pattern and file cells load collapsed (first and last line, &#8943; for the hidden middle); click to expand, again to collapse.</li>
+<li><strong>Protocol off</strong> (default) / <strong>Protocol on</strong> adds each leg&rsquo;s protocol (&ldquo;Outbound / ssh / Processed&rdquo;), splitting a shape by the way it travelled &mdash; the same Files, more rows. Remembered per report for the session.</li>
+<li>Capped at the top 200 patterns by frequency (typically a few dozen exist); a note appears if any were cut.</li>
+</ul>
+<h2>Other tabs</h2>
+<ul>
+<li><strong>Leg count</strong> &mdash; Files = the delivered (OK) Files of the bucket; the <strong>1 leg</strong> bucket is the One-legged (<a href="pirates.html">Pirates</a>) population.</li>
+<li><strong>Most legs</strong> &mdash; the extreme repeat-collectors: a UC2 file the partner keeps re-collecting adds one ssh leg per pickup while it stays staged.</li>
+<li><strong>Protocol journey</strong> &mdash; Files = the delivered Files of that journey; <strong>?</strong> = a leg with no protocol logged.</li>
+<li><strong>Last leg</strong> &mdash; the protocol of each File&rsquo;s final leg; delivered Files beside the Waiting / Expired population. <strong>routing</strong> = never left staging; a healthy delivery ends on <strong>ssh</strong>/<strong>ftp</strong> (partner side) or <strong>pesit</strong> (CFT side). The state columns keep full-period values under a narrowed range.</li>
+<li><strong>In and out</strong> &mdash; Arrived = protocol of the earliest Inbound row, Left = of the latest Outbound row, &ldquo;(none)&rdquo; = no such row. Files = the delivered (OK) Files of the pair, reconciling to the delivered total.</li>
+</ul>
 </main>
 </body>
 </html>

@@ -16,17 +16,30 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Top View</h1>
-<h2>What this shows</h2>
-<p>Top View is the transfer log's landing dashboard: one row per calendar day, with the day's first/last time and five column groups. <strong>Files</strong> — logical transfers (one per CoreId, the site-wide counting unit) with their Count / Ok / Error / Error % split. <strong>Recovered</strong> — the Files that carried at least one failed transfer leg and still finished OK (they sit under Files/Ok while their failed legs sit under Transfers/Error): <strong>Automatic</strong> when the platform's own retry delivered them, <strong>Manual</strong> when an operator resubmitted the transfer — one of the File's legs carries the log's Resubmitted flag. <strong>Resubmit</strong> — every File with a resubmitted leg, <strong>Ok</strong> or <strong>Failed</strong> by its final outcome (Waiting counts as Ok, Expired as Failed); a resubmitted File that never had a failed leg — a re-delivery — is counted here but not under Recovered. <strong>Transfers</strong> — the same day counted as physical log rows (one per transfer leg), with the same split. <strong>State</strong> — the day's Files by their final state: <strong>Processed</strong> (delivered), <strong>Failed</strong>, <strong>Waiting</strong> (UC2 staged for pickup, not collected yet — a live state, amber) and <strong>Expired</strong> (deleted by the retention sweep before any pickup — never delivered). On the other reports Processed + Waiting count as OK and Failed + Expired as Error; this page is where the four states appear separately per day. The page always loads at the full date range regardless of any range remembered from another page — it's meant to show the whole dataset at a glance. The Date cell opens that day's page; a Files Ok or Error cell clicks open to that day's 10 most recent Files of that outcome.</p>
-<p>The <a href="recovered-files.html">Recovered files</a> report breaks the same Recovered Files down per subscription and protocol.</p>
-<p>Sessions are not counted here — the site counts Files (records grouped per CoreId).</p>
-<h2>How it's computed</h2>
-<p>The Files columns come from the same normalized activity stream that feeds <a href="day.html">Activity per Day</a> (one record per File); the Transfers columns are counted from the tokenized row cache; the State columns split the logical-transfer cache by its outcome column, per the file's <em>start</em> day. Recovered and Resubmit join the two caches per CoreId: a File is recovered when its outcome is OK and any of its rows is not Processed, and Manual / Resubmit read the Resubmitted flag of the tokenized rows — everything credited to the File's <em>start</em> day, so the home page's Cured figure is Automatic + Manual. Calendar gaps are filled with zero rows, and an edge day is flagged <strong>(partial start)</strong> or <strong>(partial end)</strong> when the log collection window began or ended partway through it.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">Every day of the loaded transfer log on one row — the day counted as <strong>Files</strong> (one per CoreId — the site-wide counting unit) split into Ok/Error with its error rate, the day counted as <strong>Transfers</strong> (physical log rows) with the same Ok/Error split, and the same Files by their <strong>final state</strong>: <strong>Processed</strong> (delivered), <strong>Failed</strong>, <strong>Waiting</strong> (UC2 staged for pickup, not collected yet) and <strong>Expired</strong> (the retention sweep deleted the staged copy before any pickup — never delivered). Between Files and Transfers: <strong>Recovered</strong> — the Files that carried a failed leg yet still finished OK, <strong>Automatic</strong> when a retry healed them, <strong>Manual</strong> when an operator resubmitted the transfer (the log's Resubmitted flag) — and <strong>Resubmit</strong> — every File with a resubmitted leg, <strong>Ok</strong> or <strong>Failed</strong> by its final outcome. Newest day on top; the Date cell opens that day's page.</p>
-<p class="note"><strong>Files</strong> = logical transfers (all rows sharing one CoreId, Ok when the final row processed), <strong>Transfers</strong> = physical log rows (one per transfer leg). The <strong>State</strong> columns split the same Files by their final state: on the reports Processed + Waiting count as <strong>OK</strong> and Failed + Expired as <strong>Error</strong> — Waiting is a live state (those files can still be collected, see the Waiting Files report); Expired files were deleted unclaimed ~11 days after staging. Sessions have their own reports (see Session Topview). Click a Files Ok / Error cell for that day's 10 most recent Files; a nonzero <strong>Waiting</strong> / <strong>Expired</strong> cell opens that report. <strong>Recovered</strong> = the Files that carried at least one failed leg yet still finished OK — the failure was healed, so those Files sit under Files/Ok while their failed legs sit under Transfers/Error: <strong>Automatic</strong> when the platform's own retry delivered them, <strong>Manual</strong> when a leg carries the log's Resubmitted flag — an operator resubmitted the transfer. <strong>Resubmit</strong> counts every File with a resubmitted leg, <strong>Ok</strong> or <strong>Failed</strong> by its final outcome (Waiting counts as Ok, Expired as Failed); a resubmitted File that never had a failed leg — a re-delivery — is counted there but not under Recovered. Every per-File figure credits the File's start day.</p>
-</section>
+<h2>What it shows</h2>
+<p>The transfer log&rsquo;s landing dashboard: one row per calendar day, newest on top, with first/last time. Always loads the full date range, whatever another page remembered.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Date</strong> &mdash; opens the day&rsquo;s page; <strong>(partial start)</strong> / <strong>(partial end)</strong> when the collection window began or ended partway through it.</li>
+<li><strong>Files</strong> &mdash; logical transfers (one per CoreId, the site-wide unit; Ok when the final row processed): Count / Ok / Error / Error %.</li>
+<li><strong>Recovered</strong> &mdash; Files with a failed leg that still finished OK (under Files/Ok, their failed legs under Transfers/Error): <strong>Automatic</strong> = the platform&rsquo;s own retry delivered, <strong>Manual</strong> = a leg carries the log&rsquo;s Resubmitted flag (operator resubmit).</li>
+<li><strong>Resubmit</strong> &mdash; every File with a resubmitted leg, <strong>Ok</strong> or <strong>Failed</strong> by final outcome (Waiting = Ok, Expired = Failed); a resubmit without failed leg (re-delivery) counts here, not under Recovered.</li>
+<li><strong>Transfers</strong> &mdash; the day as physical log rows (one per leg), same Ok/Error split.</li>
+<li><strong>State</strong> &mdash; the Files by final state: <strong>Processed</strong> (delivered), <strong>Failed</strong>, <strong>Waiting</strong> (UC2 staged, not collected yet: live, amber), <strong>Expired</strong> (retention sweep deleted it unclaimed ~11 days after staging: never delivered).</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Elsewhere Processed + Waiting = OK and Failed + Expired = Error; only here are the four states separate.</li>
+<li>Files: the normalized activity stream behind <a href="day.html">Activity per Day</a>; Transfers: the tokenized row cache; State: the logical-transfer cache&rsquo;s outcome column.</li>
+<li>Recovered / Resubmit join both caches per CoreId: recovered = outcome OK with a row not Processed; Manual and Resubmit read the Resubmitted flag.</li>
+<li>Every per-File figure credits the File&rsquo;s <em>start</em> day; the home page&rsquo;s Cured = Automatic + Manual.</li>
+<li>Calendar gaps get zero rows. Sessions are not counted (the site counts Files); Session Topview has them.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>A Files Ok / Error cell opens the day&rsquo;s 10 most recent Files of that outcome; a nonzero Waiting / Expired cell opens that report.</li>
+<li><a href="recovered-files.html">Recovered files</a> splits Recovered per subscription and protocol.</li>
+</ul>
 </main>
 </body>
 </html>

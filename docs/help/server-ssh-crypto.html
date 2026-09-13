@@ -16,31 +16,37 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>SSH/TLS Crypto</h1>
-<h2>What this shows</h2>
-<p>Every authenticated connection logs a "Connection security parameters" line naming the cipher, key exchange, MAC and public-key algorithm it actually negotiated. This report inventories what cryptography is really in live use, and flags the weak/deprecated algorithms still showing up: CBC/3DES/RC4 ciphers, SHA-1-based key exchange or MAC, and <code>ssh-rsa</code>/<code>ssh-dss</code> host keys (which sign with SHA-1). It also lists the server's own warnings when it flags a connection parameter as insecure or deprecated. None of this is visible from the transfer logs.</p>
-<p>The two tables at the bottom collect the <strong>protocol &amp; credential hygiene signals</strong>: connection- and credential-level problems that aren't crypto-algorithm posture and aren't a specific transfer failure. Five signals are classified from the server messages:</p>
+<h2>What it shows</h2>
+<p>The cryptography really in live use, from the &ldquo;Connection security parameters&rdquo; line every authenticated connection logs (cipher, key exchange, MAC, public-key algorithm), with the weak algorithms flagged, the server&rsquo;s own deprecated-parameter warnings, session lifecycle problems and the protocol/credential hygiene signals. None of it is visible from the transfer log.</p>
+<h2>Sections</h2>
 <ul>
-<li><strong>ASCII transfer fallback</strong> — "ASCII transfers are not supported for the current ssh client version. Binary transfer mode will be used." (a client asked for ASCII mode; the server fell back to binary).</li>
-<li><strong>FTPS connection establishment failed</strong> — "Trying to establish an FTPS connection with protocols […] failed."</li>
-<li><strong>CONFIG_PASSWD read error</strong> — "Error reading CONFIG_PASSWD state variable" (a stored credential couldn't be read).</li>
-<li><strong>Certificate chain error</strong> — "Error in certificate chain for Subject DN:CN=…" (a trust-chain problem for a specific key).</li>
-<li><strong>Disconnect error</strong> — "Error during disconnect operation: …" (an abrupt/broken teardown, e.g. a broken pipe).</li>
+<li><strong>Cipher suites</strong> / <strong>Key exchange</strong> / <strong>MAC</strong> / <strong>Public key</strong> &mdash; per algorithm: negotiations, share within the table, <strong>Assessment</strong> OK or <strong>Weak</strong> (red): CBC/3DES/RC4 ciphers, SHA-1-based key exchange or MAC, <code>ssh-rsa</code>/<code>ssh-dss</code> keys (they sign with SHA-1).</li>
+<li><strong>Negotiations by protocol</strong> &mdash; the SSH/PeSIT/HTTPS/FTPS split.</li>
+<li><strong>Deprecated parameters</strong> &mdash; the &ldquo;Insecure or deprecated SSH connection parameter used&rdquo; warnings, with the account, subscription and remote host as logged; a name matching a known transfer-log entity links to its detail page.</li>
+<li><strong>Algorithm negotiation failures</strong> &mdash; outbound SSH connections that died before authentication because no common algorithm exists, with the remote software banner.</li>
+<li><strong>PeSIT TLS adoption</strong> &mdash; the PESITD &ldquo;Establishing PeSIT SSL connection with host &hellip;, using cipher suite: &hellip;&rdquo; lines: the internal ST&ndash;CFT link over TLS. The first line dates the moment it went encrypted (before it, the link ran in the clear); <strong>Per-week</strong> is the ramp, one line per calendar week dated by its Monday.</li>
+<li><strong>Session lifecycle problems</strong> &mdash; sessions referenced after teardown, streams aborted mid-transfer.</li>
+<li><strong>Hygiene signals</strong> &mdash; connection- and credential-level problems, five kinds, each from one distinct message so they never overlap; <strong>Level</strong> is the actual log level (CONFIG_PASSWD Error, disconnects Warning, the rest Info):
+<ul>
+<li><strong>ASCII transfer fallback</strong> &mdash; &ldquo;ASCII transfers are not supported for the current ssh client version. Binary transfer mode will be used.&rdquo;</li>
+<li><strong>FTPS connection establishment failed</strong> &mdash; &ldquo;Trying to establish an FTPS connection with protocols [&hellip;] failed.&rdquo;</li>
+<li><strong>CONFIG_PASSWD read error</strong> &mdash; &ldquo;Error reading CONFIG_PASSWD state variable&rdquo;: a stored credential could not be read.</li>
+<li><strong>Certificate chain error</strong> &mdash; &ldquo;Error in certificate chain for Subject DN:CN=&hellip;&rdquo;: a trust-chain problem for one key.</li>
+<li><strong>Disconnect error</strong> &mdash; &ldquo;Error during disconnect operation: &hellip;&rdquo;: an abrupt teardown, e.g. a broken pipe.</li>
+</ul></li>
+<li><strong>Certificate chain errors by CN</strong> &mdash; the <code>PUBKEY_</code>/<code>PRIVKEY_</code> key names: exactly which key&rsquo;s trust chain is broken.</li>
 </ul>
-<p>The last table breaks the certificate-chain errors down by their <strong>CN subject</strong> — the <code>PUBKEY_</code>/<code>PRIVKEY_</code> key names — which is the actionable part: it tells you exactly which key's trust chain is broken. None of these hygiene signals stop a well-behaved transfer on their own, but each is a latent config or trust problem that will eventually turn into a hard failure or a security gap.</p>
-<h2>How it's computed</h2>
-<p>The security-parameters line comes in two shapes and both are parsed: an SSH/PeSIT/HTTPS-style line (<code>cipher suite: X; Key exchange: Y; HMAC: Z; Public Key: W</code>) and an FTPS/PeSIT-initiated style (<code>cipher: X, MAC: Z, Key Exchange: Y, Public Key: W</code>). A separate table covers the "Insecure or deprecated SSH connection parameter used" warnings, shown with the account, subscription and remote host that triggered them, as logged.</p>
-<p>Each hygiene signal is matched from a distinct, specific message, so the categories don't overlap. The <strong>Level</strong> column reflects the actual log level (CONFIG_PASSWD is logged at Error, disconnects at Warning, the rest at Info). Occurrences are additive and re-total under the date filter.</p>
-<p>A <strong>TLS 1.3</strong> connection (HTTPS, and PeSIT/FTPS over TLS) logs only a cipher suite — key exchange, MAC and signature are folded into that suite and never broken out separately. So the Cipher suites table covers <em>every</em> negotiation, while the Key exchange, MAC and Public-key tables only cover the smaller set of SSH/SFTP connections that itemize those fields separately — the report's intro states both counts so the difference is explicit.</p>
-<h2>Reading the tables</h2>
-<p>Each algorithm table shows negotiation count, share within that table, and an Assessment of OK or <strong>Weak</strong> (tinted red). The Negotiations by protocol table gives the SSH/PeSIT/HTTPS/FTPS split. All tables re-total under the date filter; click a row to expand its 10 most recent log lines.</p>
-<p><strong>Algorithm negotiation failures</strong> shows outbound SSH connections that died before authentication because no common algorithm exists, with the remote software banner. <strong>PeSIT TLS adoption</strong> dates the moment the internal ST&ndash;CFT PeSIT link went encrypted, with a per-week ramp.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">The SSH security picture on one page: the <strong>negotiated algorithms</strong> in live use (ciphers, key exchange, MACs, public keys) with weak ones flagged, the <strong>deprecated-parameter</strong> warnings, and the <strong>session lifecycle problems</strong> — sessions referenced after teardown and streams aborted mid-transfer.</p>
-<p class="note">An SSH/SFTP connection breaks out cipher, key exchange, MAC and public key separately; a TLS connection (HTTPS and PeSIT/FTPS over TLS) logs only a cipher suite — key exchange, MAC and signature are folded into the suite. So the Cipher suites table counts all <strong>7863</strong> negotiations, while Key exchange / MAC / Public-key count only the <strong>7863</strong> SSH/SFTP connection(s) that itemize them. Share is within each table. &quot;Weak&quot; flags known-deprecated algorithms; `ssh-rsa` is flagged because it signs with SHA-1. The deprecated-parameter table is the server's own warnings, with the account, subscription and remote host that used the parameter (shown as logged; names matching a known transfer-log entity link to its detail page). All tables re-total under the date filter; click a row to expand its 10 most recent log lines.</p>
-<p class="note">Outbound SSH connections that failed before any authentication because no common algorithm exists — none in this data window.</p>
-<p class="note">The &quot;Establishing PeSIT SSL connection with host …, using cipher suite: …&quot; lines from the PESITD component: the internal ST ↔ CFT PeSIT link running over TLS. The first such line is dated <strong>2026-06-23</strong> — the milestone that PeSIT went ENCRYPTED; before that date the link ran in the clear (no PeSIT SSL line appears). The Per-week column shows the adoption ramp, one line per calendar week (dated by its Monday). Click a row for its 10 most recent connections.</p>
-</section>
+<h2>Rules</h2>
+<ul>
+<li>Both shapes of the parameters line are parsed: <code>cipher suite: X; Key exchange: Y; HMAC: Z; Public Key: W</code> (SSH/PeSIT/HTTPS) and <code>cipher: X, MAC: Z, Key Exchange: Y, Public Key: W</code> (FTPS/PeSIT-initiated).</li>
+<li>A TLS 1.3 connection (HTTPS, PeSIT/FTPS over TLS) logs only a cipher suite &mdash; key exchange, MAC and signature are folded into it. So Cipher suites covers <em>every</em> negotiation; Key exchange, MAC and Public key only the SSH/SFTP connections that itemize them &mdash; the intro states both counts.</li>
+<li>No hygiene signal stops a well-behaved transfer by itself; each is a latent config or trust problem that turns into a hard failure or a security gap.</li>
+<li>All tables re-total under the date filter; occurrences are additive.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a row for its 10 most recent log lines (PeSIT TLS: its 10 most recent connections).</li>
+</ul>
 </main>
 </body>
 </html>

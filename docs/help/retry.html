@@ -16,23 +16,29 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Repeat Failures</h1>
-<h2>What this shows</h2>
-<p>Transfer "flows" — each distinct <strong>(Account, Subscription)</strong> pair — ranked by how persistently they fail: flows that have <strong>never</strong> succeeded are listed first, then the flakiest by failure count. For each flow it shows how many distinct days it failed on, its failure and success counts, how many of its rows were flagged as resubmissions, and the time of its last failure.</p>
-<h2>How it's computed</h2>
-<p>The Account+Site pair is used as the stable flow key because file names carry timestamps (so an exact retry never repeats as a name), but the pair that keeps failing is the same account talking to the same subscription over and over. This report counts physical <strong>rows</strong> from the parse cache (every row is either a failure or a success), not Files — a chronically-broken flow's individual failed attempts are what's being measured here, not distinct logical transfers.</p>
-<p>A row's <strong>Resubmitted</strong> flag comes straight from the log's own resubmission marker (set when an operator resubmitted the transfer by hand — the platform's own automatic retries never set it; the Top view's Recovered columns split the healed Files by it into Automatic and Manual). "Fail days" counts the distinct calendar days a flow logged at least one failure — a flow that fails once a day for a week looks very different from one that failed 50 times in a single afternoon, even with the same total failure count. Only flows with at least one failure are listed; a flow that always succeeds never appears.</p>
-<p><strong>Resubmission outcomes (server log)</strong> compares the server&rsquo;s own per-day resubmit errors and successes — it also catches attempts that never produced a transfer-log leg.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">Everything about transfers that did not succeed at the first attempt: the <strong>failing flows</strong> (by failure count, with successes and last failure), the <strong>retry anatomy</strong> — how many failed legs before delivery or before giving up, the spacing between attempts and <strong>which side fails</strong> — and the <strong>manual resubmissions</strong> (Resubmitted=true legs), per day and per subscription.</p>
-<p class="note">Showing the top 60 of 79 failing flows (never-succeeded first, then by failure count). &quot;Fail days&quot; is the number of distinct days the flow failed on; &quot;Resubmitted&quot; counts rows flagged as resubmissions. Failures and Successes count individual transfers (legs), so a failed leg later re-sent successfully appears on both sides — the File-level reports fold such intra-File recoveries into one OK File (the delivered rule). Click a Failures or Successes count for that outcome's 10 most recent transfers (newest first).</p>
-<p class="note">Only Files that DELIVERED (incl. Waiting). Click a row for that bucket's 10 most recent Files. A big &quot;first try&quot; row is healthy; weight further down means the platform delivers by insisting.</p>
-<p class="note">Files that ended <strong>Error or Expired</strong>. &quot;first try (0 failed legs)&quot; here is mostly the <strong>Expired</strong> population — every leg processed, the partner just never collected the staged file.</p>
-<p class="note">The time from a failed leg's start to the NEXT leg of the same File. Under 10 seconds = automatic hammering; minutes/hours = scheduled re-runs; the Files column is full-period under a narrowed date range.</p>
-<p class="note">Inbound = the arrival side (partner/CFT delivering to ST); Outbound = the delivery side (ST pushing onward, or the partner collecting). The Files column is full-period under a narrowed date range.</p>
-<p class="note">Click a row for that subscription's 10 most recent resubmitted Files. Error/OK is the LEG's own status — an OK resubmitted leg is the retry that finally worked. Files and First/Last stay full-period under a narrowed date range.</p>
-<p class="note">The SERVER log's own resubmission trail — &quot;Error while resubmitting transfer&quot; vs &quot;Resubmission successfully executed&quot; lines, per day. None in this data window.</p>
-</section>
+<h2>What it shows</h2>
+<p>Transfers that did not succeed at the first attempt: failing flows, retry anatomy, retry spacing, which side fails, manual resubmissions.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>Failing flows</strong> &mdash; one row per <strong>(Account, Subscription)</strong> pair; top 60, never-succeeded first, then by failure count. <strong>Fail days</strong> = distinct days with a failure; <strong>Failures</strong>/<strong>Successes</strong> = legs; <strong>Resubmitted</strong> = legs flagged as resubmissions; last failure time.</li>
+<li><strong>Retry anatomy, delivered</strong> &mdash; failed legs before delivery, delivered Files only (incl. Waiting). A big &ldquo;first try&rdquo; row is healthy; weight further down = the platform delivers by insisting.</li>
+<li><strong>Retry anatomy, abandoned</strong> &mdash; Files ended Error or Expired; &ldquo;first try (0 failed legs)&rdquo; is mostly Expired: every leg processed, the partner never collected.</li>
+<li><strong>Retry spacing</strong> &mdash; a failed leg&rsquo;s start to the next leg of the same File. Under 10 seconds = automatic hammering; minutes/hours = scheduled re-runs.</li>
+<li><strong>Which side fails</strong> &mdash; Inbound = arrival (partner/CFT delivering to ST); Outbound = delivery (ST pushing onward, or the partner collecting).</li>
+<li><strong>Manual resubmissions</strong> &mdash; <code>Resubmitted=true</code> legs per day and per subscription. Error/OK is the leg&rsquo;s own status: an OK resubmitted leg is the retry that worked.</li>
+<li><strong>Resubmission outcomes (server log)</strong> &mdash; &ldquo;Error while resubmitting transfer&rdquo; vs &ldquo;Resubmission successfully executed&rdquo; per day; also catches attempts that produced no transfer-log leg.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Flow key = Account+Subscription: file names carry timestamps, so a retry never repeats as a name; the pair does.</li>
+<li>Failing flows count parse-cache rows, not Files: a failed leg later re-sent OK appears on both sides; the File-level reports fold such intra-File recoveries into one OK File (the delivered rule). Only flows with a failure are listed.</li>
+<li>Resubmitted = the log&rsquo;s own marker, set only by an operator&rsquo;s manual resubmission, never by automatic retries (the Top view splits Recovered into Automatic and Manual by it).</li>
+<li>Under a narrowed date range the Files columns of spacing, side and resubmissions, and the resubmissions&rsquo; First/Last, stay full-period.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a Failures/Successes count for that outcome&rsquo;s 10 most recent transfers, an anatomy row for its 10 most recent Files, a resubmission row for the subscription&rsquo;s 10 most recent resubmitted Files (newest first).</li>
+</ul>
 </main>
 </body>
 </html>

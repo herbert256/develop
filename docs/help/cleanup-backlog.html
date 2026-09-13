@@ -16,14 +16,25 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Cleanup backlog</h1>
-<h2>What this shows</h2>
-<p>Every cleanup signal the site computes, merged into one ranked decommission-candidate list, safest first. A green row never showed any traffic — removing it cannot break a working flow — while an orange row had traffic once, or is a configuration gap, and deserves a check before acting.</p>
-<p>The classes in rank order: accounts no subscription references, subscriptions that never carried a File, whitelisted addresses that never connected (grouped per allowing account, using the established no-transfer-and-no-server-mention rollup), cron-triggered subscriptions with no cron expression (they can never run and leave no trace in any log), and entities quiet for 45+ days. Everything reads source data rather than other reports, so the ranking is stable between runs.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">Every cleanup signal the site computes, merged into <strong>one ranked list</strong> and ordered safest-first: an object whose row is <strong>green</strong> never showed ANY traffic — removing it cannot break a working flow — while an <strong>orange</strong> row had traffic once (or is a config gap) and deserves a check before acting. Each object appears once, under its safest applicable class, and every row names its evidence. The classes, in rank order: <strong>config-orphan</strong> (no subscription references the account — nothing can route through it), <strong>never-any-traffic</strong> (configured subscription, zero Files ever), <strong>unused-whitelist</strong> (96 allowed addresses that never connected, grouped per allowing account), <strong>no-cron</strong> (a cron-triggered subscription with no cron expression can never poll — the quietest failure mode there is), and <strong>long-quiet</strong> (no activity for 45+ days, measured against the newest log day, 2026-08-29).</p>
-<p class="note">Everything here reads SOURCE data — the flow-manager config caches, the coverage TSVs, the transfer cache and the subscriptions export (the SKIP-filtered copy, the same population as every other report) — never another report, so the ranking is stable. &quot;Never seen&quot; for a whitelist address is the established result rollup: no transfer from that address AND no server-log mention (a server-contact-only address is NOT listed). The no-cron class is the Missing-cronjobs condition (the use-case definitions decide which UCs are cron-triggered); those subscriptions leave no trace in any log, so only the configuration can reveal them. Whitelist entries paired with no account at all are on <strong>Config hygiene</strong>. A partner's recency uses the site-wide UNION attribution, so it matches the lifecycle and Entities views.</p>
-</section>
+<h2>What it shows</h2>
+<p>Every cleanup signal the site computes, merged into one ranked decommission-candidate list, safest first. One row per object, under its safest applicable class, with its evidence named.</p>
+<h2>Classes (rank order)</h2>
+<ul>
+<li><strong>config-orphan</strong> &mdash; no subscription references the account: nothing can route through it.</li>
+<li><strong>never-any-traffic</strong> &mdash; a configured subscription with zero Files ever.</li>
+<li><strong>unused-whitelist</strong> &mdash; allowed addresses that never connected, grouped per allowing account.</li>
+<li><strong>no-cron</strong> &mdash; a cron-triggered subscription with no cron expression can never poll: the quietest failure mode there is.</li>
+<li><strong>long-quiet</strong> &mdash; no activity for 45+ days, measured against the newest log day.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li><strong>Green</strong> row = never showed any traffic; removing it cannot break a working flow. <strong>Orange</strong> row = had traffic once, or is a config gap; check before acting.</li>
+<li>Reads source data only &mdash; the flow-manager config caches, the coverage TSVs, the transfer cache and the SKIP-filtered subscriptions export (the same population as every other report) &mdash; never another report, so the ranking is stable.</li>
+<li>&ldquo;Never seen&rdquo; for a whitelist address is the established rollup: no transfer from that address AND no server-log mention; a server-contact-only address is not listed.</li>
+<li>no-cron is the <a href="missing-cronjobs.html">Missing cronjobs</a> condition (the use-case definitions decide which UCs are cron-triggered); such subscriptions leave no trace in any log, only the configuration reveals them.</li>
+<li>Whitelist entries paired with no account at all are on <a href="config-hygiene.html">Config hygiene</a>.</li>
+<li>A partner&rsquo;s recency uses the site-wide union attribution, so it matches the lifecycle and Entities views.</li>
+</ul>
 </main>
 </body>
 </html>

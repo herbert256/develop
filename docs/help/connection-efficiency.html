@@ -16,17 +16,22 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Connection efficiency</h1>
-<h2>What this shows</h2>
-<p>A session is one technical connection — an SFTP login or PeSIT session — identified by the log's Session ID column; one session can carry many Files, but on this platform 95% carry exactly one.</p>
-<p>The league lists User-initiated sessions only (the partner controls the reconnect behaviour) for accounts with 200+ sessions, least efficient first: a ratio of 1.00 at tens of thousands of sessions means a fresh connection per file, and batching would cut real overhead. Connection storms shows the most sessions one account started inside a single minute.</p>
-<p>The failure anatomy splits bad sessions into all-Error (a connection that achieved nothing), mixed OK+Error, and retry marathons — 8+ records hammering one File, all Error, inside a single connection. A session is attributed to its first record's account.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">A <strong>session</strong> is one technical connection — an SFTP login, a PeSIT session — identified by the log's Session ID column (added to the exports 2026-08). One session can carry many Files, but on this platform it mostly does not: <strong>54046</strong> sessions carried <strong>54046</strong> Files (<strong>1.00</strong> Files per connection) and <strong>100.0%</strong> of all sessions moved a single File. <strong>32035</strong> sessions were User-initiated (the partner connected in), the rest Server-initiated; <strong>100</strong> record(s) without a usable Session ID are excluded. A session is attributed to the account of its first record.</p>
-<p class="note"><strong>User-initiated sessions only</strong> (the first record's Action By is User — the partner controls the reconnect behaviour), accounts with <strong>200+</strong> such sessions, least efficient first. A ratio of <strong>1.00</strong> means a fresh connection for every single File — at tens of thousands of sessions that is real overhead on both ends, and batching would cut it. The TOTAL row is the WHOLE platform (all 54046 sessions, any initiator), so it exceeds the sum of the 25 listed account(s).</p>
-<p class="note">The most sessions one account STARTED inside a single minute (any initiator), and when. A three-digit peak is a client script opening a connection per file as fast as it can loop — harmless for one partner, but a load spike and a noisy-neighbour risk on shared listeners. Peak is a maximum, not additive; Sessions is the account's whole-window total.</p>
-<p class="note"><strong>All-Error</strong> = a session of 2+ records where every record failed (a connection that achieved nothing — platform-wide 937 such sessions). <strong>Mixed OK+Error</strong> = the session delivered some Files and failed others (platform-wide 0). <strong>Retry marathons</strong> = 8+ records, one single File, all Error: a client hammering the same broken transfer inside one connection (platform-wide 129). Per-record status is used here (a record is OK when its raw Status is Processed), not the per-File outcome.</p>
-</section>
+<h2>What it shows</h2>
+<p>How the technical connections are used. A <strong>session</strong> is one connection &mdash; an SFTP login, a PeSIT session &mdash; identified by the log&rsquo;s Session ID column; it can carry many Files, but here mostly carries one. The intro gives sessions, Files, Files per connection, the single-File share and the User- vs Server-initiated split.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>Files per connection</strong> &mdash; per account: sessions, Files, ratio; least efficient first. 1.00 = a fresh connection per File; at tens of thousands of sessions batching would cut real overhead.</li>
+<li><strong>Connection storms</strong> &mdash; per account: the most sessions started inside one minute (Peak) and when; Sessions = its whole-window total.</li>
+<li><strong>Failing sessions</strong> &mdash; All-Error, Mixed OK+Error and Retry marathons, with platform-wide counts.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>A session belongs to the account of its first record; records without a usable Session ID are excluded (count in the intro).</li>
+<li>The league lists User-initiated sessions only (first record&rsquo;s Action By = User: the partner controls the reconnects), accounts with 200+ such sessions. The TOTAL row is the whole platform, any initiator, so it exceeds the listed sum.</li>
+<li>Storms count any initiator; Peak is a maximum, not additive. A three-digit peak is a client script opening a connection per file: harmless for one partner, a load spike and noisy-neighbour risk on shared listeners.</li>
+<li><strong>All-Error</strong> = 2+ records, all failed (a connection that achieved nothing). <strong>Mixed OK+Error</strong> = some Files delivered, others failed. <strong>Retry marathons</strong> = 8+ records, one File, all Error.</li>
+<li>Failure anatomy uses per-record status (OK = raw Status Processed), not the per-File outcome.</li>
+</ul>
 </main>
 </body>
 </html>

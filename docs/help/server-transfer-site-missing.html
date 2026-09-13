@@ -16,32 +16,27 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Transfer site missing</h1>
-<h2>What this shows</h2>
-<p>Endpoints where SecureTransport ran a transfer with <strong>no transfer site in its environment</strong> and fell back to the communication profile&rsquo;s raw host, port and user. The server log says so literally:</p>
-<p class="mono">Transfer site ID is not present in environment. Using host, port and user: <em>host</em>:<em>port</em>:<em>user</em></p>
-<p>The transfer still moves &mdash; the fallback works &mdash; so this is a <strong>configuration gap</strong> rather than a runtime failure: a route or profile that lost its transfer-site reference. What it costs is everything the subscription would have governed: with no site there is no site-level routing and no site-level limit, and the connection is made on profile values alone.</p>
-<h2>Why the rows are hosts</h2>
-<p>Because that is all the message names. This is the one server-log line that identifies <em>no flow at all</em> &mdash; it reports the absence of the very thing that would tie the connection to a subscription, and neither the message nor its session mentions one. Listing it per endpoint is the most precise thing the log supports; a host appears once however many subscriptions use it.</p>
-<p>That property is why the line is here rather than anywhere else. It sits in the endpoint&rsquo;s server-log ring, where it once counted as evidence against <em>every</em> subscription configured for that host. The colour rules now redden a host only on unattributable <strong>Errors</strong>, and these are Warnings, so they had no home until this page.</p>
-<h2>Recovered endpoints are not listed</h2>
-<p>A host that has moved a file <strong>OK since</strong> its newest warning is dropped: a later OK transfer through the same endpoint says the gap is closed. It is the same &ldquo;recovered since&rdquo; test <a href="server-deploy-errors.html">Deploy errors</a> applies to a configuration defect, and the intro says how many hosts were cleared that way &mdash; in practice it is usually most of them, which is what makes the remainder worth reading.</p>
-<h2>The columns</h2>
+<h2>What it shows</h2>
+<p>One row per endpoint where SecureTransport ran a transfer with <strong>no transfer site in its environment</strong> and fell back to the communication profile&rsquo;s raw host, port and user &mdash; the warning <code>Transfer site ID is not present in environment. Using host, port and user: host:port:user</code>.</p>
+<h2>Columns</h2>
 <ul>
 <li><strong>Host</strong> &mdash; the endpoint the fallback connected to, linked to its detail page.</li>
 <li><strong>Warnings</strong> &mdash; how many times it happened.</li>
-<li><strong>Users</strong> and <strong>Ports</strong> &mdash; the other fallback values, read from the message itself. Several users on one host usually means several profiles share the endpoint and more than one has lost its site reference.</li>
-<li><strong>First</strong> / <strong>Last</strong> &mdash; the window the warnings span. A tight burst is a change that went wrong; a long tail is a gap nobody has noticed.</li>
+<li><strong>Users</strong> / <strong>Ports</strong> &mdash; the other fallback values, read from the message. Several users on one host: several profiles share the endpoint and more than one lost its site reference.</li>
+<li><strong>First</strong> / <strong>Last</strong> &mdash; the window the warnings span. A tight burst is a change that went wrong; a long tail a gap nobody noticed.</li>
 </ul>
-<p>Click a row to expand its 10 most recent warnings.</p>
-<h2>How it relates to the other pages</h2>
-<p><a href="server-deploy-errors.html">Deploy errors</a> covers the configuration defects that <em>stop</em> a flow (an abandoned route, a profile that cannot receive); this page covers the one that quietly degrades it instead. The former Remote Polls tables live on the <a href="server-uc3-status.html#polls">UC status / UC3</a> tab since 2026-09-05.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range"><strong>&quot;Transfer site ID is not present in environment. Using host, port and user: …&quot;</strong> — SecureTransport ran a transfer with <strong>no transfer site</strong> in its environment and fell back to the communication profile's raw <strong>host, port and user</strong>. The transfer still moves, so this is a <strong>configuration gap</strong> rather than a runtime failure: a route or profile that lost its transfer-site reference. It is the one server-log message that names NO flow — it says the transfer carried no site — so the rows here are <strong>endpoints</strong>, not subscriptions.</p>
-<p class="range"><strong>36 warning(s)</strong> in the log window. Hosts that have moved a file OK <strong>since</strong> their newest warning are <strong>not listed</strong>: a later OK transfer through the same endpoint says the gap is closed. That cleared <strong>1</strong> host(s) carrying <strong>26</strong> warning(s).</p>
-<p class="note">The host, port and user are the values the fallback used, read from the message itself. A host appears once however many flows use it: the message names none of them, which is the point — with no transfer site there is nothing to attribute it to. Click a row to expand its 10 most recent warnings.</p>
-<p class="note">Why it matters: the connection is made on profile values alone, so nothing about it is governed by the subscription — no site-level routing, no site-level limits. It also leaves the endpoint carrying evidence no flow can own, which is why <strong>bin/build/result.sh</strong> reddens a host on unattributable ERRORS only and leaves these warnings to this page.</p>
-</section>
+<h2>Rules</h2>
+<ul>
+<li>The transfer still moves, so this is a <strong>configuration gap</strong>, not a runtime failure: a route or profile that lost its transfer-site reference. Cost: the connection runs on profile values alone &mdash; no site-level routing, no site-level limits.</li>
+<li>Rows are hosts because the message is the one server-log line that names <em>no flow</em>: neither it nor its session mentions a subscription. A host appears once however many flows use it.</li>
+<li>A host that moved a file <strong>OK since</strong> its newest warning is not listed &mdash; a later OK transfer through the endpoint says the gap is closed (the &ldquo;recovered since&rdquo; test of <a href="server-deploy-errors.html">Deploy errors</a>); the intro says how many hosts that cleared.</li>
+<li>These are Warnings: the colour rules (<code>bin/build/result.sh</code>) redden a host on unattributable <strong>Errors</strong> only, so they count against no subscription and live on this page.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a row for its 10 most recent warnings.</li>
+<li><a href="server-deploy-errors.html">Deploy errors</a> covers the configuration defects that <em>stop</em> a flow (an abandoned route, a profile that cannot receive); this page the one that quietly degrades it. The polling tables are on the <a href="server-uc3-status.html#polls">UC status / UC3</a> tab.</li>
+</ul>
 </main>
 </body>
 </html>

@@ -16,21 +16,25 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Transfer Size Distribution</h1>
-<h2>What this shows</h2>
-<p>Files bucketed by file size, from <strong>0 B</strong> up to <strong>&gt;= 1 GB</strong>, with each bucket's Error/OK split, volume, share of all Files, and a relative-count distribution bar. This report counts <strong>logical transfers</strong> (Files, from <code>_files.tsv</code>) — one row per bucket, not per physical log row.</p>
-<h2>How it's computed</h2>
-<p>Each File's file size places it in exactly one of nine buckets (0 B; 1 B&ndash;1 KB; 1 KB&ndash;10 KB; 10 KB&ndash;100 KB; 100 KB&ndash;1 MB; 1 MB&ndash;10 MB; 10 MB&ndash;100 MB; 100 MB&ndash;1 GB; &gt;= 1 GB). The distribution bar's width is relative to the bucket with the most Files, so it highlights where the bulk of activity sits rather than plotting to an absolute scale.</p>
-<p>The <strong>0 B</strong> bucket is dominated by <strong>failed</strong> Files: a transfer that never actually delivered a file often has no size recorded, so a large 0 B bucket usually reflects failed attempts rather than genuine empty-file transfers.</p>
-<h2>Empty files delivered OK</h2>
-<p>The second table isolates the interesting minority of that 0 B bucket: zero-byte Files whose delivery ended <strong>OK</strong>, per subscription. The transfer worked but the file was empty — which usually means the upstream export produced nothing. A flow that legitimately ships empty marker files recurs here steadily; a subscription that suddenly appears (or whose count jumps) deserves a look at what its source stopped producing. Click a row for its 10 most recent empty Files.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">The files themselves, in one report: the <strong>size distribution</strong> (with the zero-byte files that were delivered OK kept visible), the split <strong>per file type</strong> (extension), and the <strong>duplicate deliveries</strong> — business filenames delivered more than once, worst first, which catches replay loops and re-sends.</p>
-<p class="note">Click an Error or OK count for that outcome's 10 most recent Files (newest first).</p>
-<p class="note">Zero-byte Files whose delivery ended <strong>OK</strong> — the transfer worked, but the file was EMPTY, which usually means the upstream export produced nothing. A flow that legitimately ships empty markers recurs steadily here; a subscription appearing suddenly deserves a look. The failed 0-byte attempts stay in the 0 B bucket above. Click a row for its 10 most recent empty Files.</p>
-<p class="note">Counts individual transfers (legs), not Files — a file appears on both its Inbound and Outbound leg. Click an Error or OK count for that outcome's 10 most recent transfers (newest first).</p>
-<p class="note">One row per filename delivered more than once (grouped from the logical-transfer cache). Files = how many logical transfers carried that exact filename; Error = how many of them failed; Accounts = distinct accounts that sent it (a full-period figure, not date-adjusted). An Error count lower than the group's Files usually means a failed transfer was re-sent successfully. Files and Error re-aggregate over the selected dates. Click a row for its 10 most recent Files.</p>
-</section>
+<h2>What it shows</h2>
+<p>The files themselves: Files bucketed by size (one row per bucket, from <strong>0 B</strong> to <strong>&gt;= 1 GB</strong>), the empty files delivered OK, the split per file type, and the filenames delivered more than once.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>Size distribution</strong> &mdash; nine buckets: 0 B; 1 B&ndash;1 KB; 1 KB&ndash;10 KB; 10 KB&ndash;100 KB; 100 KB&ndash;1 MB; 1 MB&ndash;10 MB; 10 MB&ndash;100 MB; 100 MB&ndash;1 GB; &gt;= 1 GB. Counts Files (<code>_files.tsv</code>), not log rows.</li>
+<li>Per bucket: the Error/OK split, volume, share of all Files, and a distribution bar whose width is relative to the fullest bucket.</li>
+<li><strong>Empty files delivered OK</strong> &mdash; zero-byte Files whose delivery ended OK, per subscription: the transfer worked, the upstream export produced nothing. A flow that legitimately ships empty markers recurs steadily; a subscription that suddenly appears (or whose count jumps) deserves a look.</li>
+<li><strong>Per file type</strong> &mdash; the split per extension. Counts transfers (legs), not Files &mdash; a file appears on both its Inbound and Outbound leg.</li>
+<li><strong>Duplicate deliveries</strong> &mdash; one row per business filename delivered more than once, worst first (replay loops, re-sends): <strong>Files</strong> = logical transfers carrying that exact name, <strong>Error</strong> = how many failed, <strong>Accounts</strong> = distinct senders (full-period, not date-adjusted). Error below Files usually means a failed transfer was re-sent successfully.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>The <strong>0 B</strong> bucket is dominated by failed Files: a transfer that never delivered often has no size recorded. The failed 0-byte attempts stay in that bucket; only the OK ones move to the empty-files table.</li>
+<li>Files and Error of the duplicates table re-aggregate over the selected dates.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click an Error or OK count for that outcome&rsquo;s 10 most recent Files (per file type: transfers), newest first; click an empty-files or duplicates row for its 10 most recent Files.</li>
+</ul>
 </main>
 </body>
 </html>

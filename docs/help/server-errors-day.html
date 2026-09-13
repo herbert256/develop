@@ -16,23 +16,25 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Errors per Day</h1>
-<h2>What this shows</h2>
-<p>This report is built from the server log (<code>data/server/cache/_parse.tsv</code>), the platform's own info/warning/error messages — not the transfer log. Every number here is a plain count of log records, not Files. Two tables: records per day split by level (Info/Warning/Error, with the error rate), and the same split per component (TM, PESITD, SSHD).</p>
-<p>The report is tabbed: this page covers <strong>Errors per day</strong>; its sibling tabs have their own pages &mdash; <a href="server-error-reasons.html">Error reasons</a> groups the same errors by what the message says.</p>
-<h2>How it's computed</h2>
-<p>One pass over the parse cache counts every record by date and by level, and separately by component and level. The per-component table carries per-day buckets so it re-aggregates correctly under the date filter. Levels other than Info/Warning/Error (none expected in practice) are counted in Records only, not broken out.</p>
-<h2>Click to expand</h2>
-<p>Click a day, or a component row, to expand its 10 most recent Warning/Error lines (newest first).</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">The errors and warnings of the server log from every angle, in one report: <strong>levels per day</strong> and <strong>per component</strong>, <strong>when</strong> they happen (hour of day, weekday, the hour × weekday heatmap), the <strong>failure-reason classification</strong> (connection, PESIT refusal codes, network, routing) and the <strong>most-repeated message shapes</strong> (numbers, IDs and quoted values normalized away).</p>
-<p class="note">Components: TM (transaction manager), PESITD, SSHD. Levels other than Info/Warning/Error (none expected) are counted in Records only. Click a row to expand its 10 most recent warning/error lines.</p>
-<p class="note">Error (red) and Warning (amber) messages by hour of the day, all days combined; the Load bar is the hour total relative to the busiest hour. Additive; re-aggregates over the selected dates. Click an hour for its 10 most recent messages.</p>
-<p class="note">The same Error/Warning counts by day of week (Monday first). Re-aggregates over the selected dates.</p>
-<p class="note">Each cell is the total Error + Warning count for that hour and weekday; cells are tinted by quartile (darker = busier). The date filter re-sums and re-tints every cell for the selected range. Heatmap cells are not clickable — use the hour and weekday tables above for the click-to-expand view of the most recent messages.</p>
-<p class="note">One row per reason bucket; PESIT reason= codes get their own bucket each. &quot;Example message&quot; is the first occurrence, truncated. Unrecognized error families land in &quot;Other&quot; so new problems surface rather than vanish. Click a row to expand its 10 most recent error lines.</p>
-<p class="note">Shapes are truncated to 160 characters before clustering, so long stack-trace variants group together. Info-level records (3.2M routine lines) are excluded. Click a row to expand its 10 most recent raw log lines.</p>
-</section>
+<h2>What it shows</h2>
+<p>The server log&rsquo;s own info/warning/error records (<code>data/server/cache/_parse.tsv</code>, not the transfer log) from every angle, one tab per table. Every number is a count of log records, not Files.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>Errors per day</strong> &mdash; records per day by level (Info/Warning/Error) with the error rate.</li>
+<li><strong>Per component</strong> &mdash; the same split for TM (transaction manager), PESITD and SSHD.</li>
+<li><strong>Per hour</strong> &mdash; Error (red) and Warning (amber) by hour of day, all days combined; Load = the hour&rsquo;s total relative to the busiest hour.</li>
+<li><strong>Per weekday</strong> &mdash; the same counts by day of week, Monday first.</li>
+<li><strong>Heatmap</strong> &mdash; hour &times; weekday, each cell the Error + Warning total, tinted by quartile (darker = busier). Cells are not clickable.</li>
+<li><strong>Reasons</strong> &mdash; one row per failure-reason bucket (connection, PESIT refusal codes, network, routing); each PESIT <code>reason=</code> code gets its own bucket; Example message = the first occurrence, truncated; unrecognized families land in &ldquo;Other&rdquo; so new problems surface rather than vanish.</li>
+<li><strong>Message shapes</strong> &mdash; the most-repeated messages with numbers, IDs and quoted values normalized away; truncated to 160 characters before clustering so stack-trace variants group; Info records excluded.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>One pass over the parse cache counts each record by date and level, and by component and level; per-day buckets make every table re-aggregate under the date filter (the heatmap re-sums and re-tints).</li>
+<li>Levels other than Info/Warning/Error (none expected) are counted in Records only.</li>
+<li>Click a day, component, hour, weekday, reason or shape row for its 10 most recent lines (Warning/Error, newest first; the shapes table shows raw lines).</li>
+<li>The same reasons per subscription: <a href="server-failure-flows.html">Failure reasons per flow</a>.</li>
+</ul>
 </main>
 </body>
 </html>

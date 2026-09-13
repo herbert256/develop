@@ -16,20 +16,21 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Activity per Day</h1>
-<h2>What this shows</h2>
-<p>One row per calendar day: the Files count, its Error/OK split, the day's volume, and the first and last time seen that day. This is the most basic activity-over-time view on the site — Per Week, Load by Hour and Load by Weekday all re-bucket the same underlying activity by a different calendar dimension.</p>
-<h2>How it's computed</h2>
-<p>Every day in the full calendar span between the first and last record is shown, even one with zero activity: a day with no Files gets an explicit "0" row with <code>-</code> in the First/Last Time columns, so a quiet day is visually distinct from a missing one rather than simply absent from the table.</p>
-<p>A day at either edge of the log collection window is flagged <strong>(partial start)</strong> or <strong>(partial end)</strong> when its first time is after 02:00 or its last time is before 22:00 — a sign that the export didn't cover the whole day, so its numbers should not be compared directly with a full day.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">Transfer activity at every resolution in one report: <strong>per day</strong>, <strong>per ISO week</strong>, <strong>per hour of day</strong> (plus the hour × weekday grid) and <strong>per weekday</strong>. The tabs switch the resolution; the figures are the same Files, Error/OK split and volume throughout.</p>
-<p class="note">One row = one calendar day. A &quot;0&quot; row with no times is a day with no Files; &quot;(partial start/end)&quot; marks a day whose collection window began or ended mid-day. The Top view shows this same per-day table together with each day's active accounts, subscriptions, flows, hosts and logins.</p>
-<p class="note">One row = one ISO week (Monday-Sunday) by start date. &quot;Days&quot; counts the calendar days with data; Avg/day divides by it. The From/To dates make the date filter hide out-of-range weeks.</p>
-<p class="note">Files = the delivered (OK) Files started in that hour; the bar shows load relative to the busiest hour.</p>
-<p class="note">Each cell counts the Files starting in that hour on that weekday, tinted by quartile of the busiest cell — batch windows show as dark blocks. The date filter re-sums every cell and re-tints for the selected range.</p>
-<p class="note">One row = one day of week; Files = the delivered (OK) Files, Error % the failures over every File of that weekday.</p>
-</section>
+<h2>What it shows</h2>
+<p>The Activity over time report: transfer activity at every resolution, one tab each &mdash; <strong>per day</strong>, <strong>per ISO week</strong>, <strong>per hour of day</strong> (plus the hour &times; weekday grid) and <strong>per weekday</strong>. The same Files, Error/OK split and volume throughout.</p>
+<h2>Tabs</h2>
+<ul>
+<li><strong>Per day</strong> &mdash; one row per calendar day: Files, Error/OK, volume, first and last time seen. The <a href="topview.html">Top view</a> shows the same table with each day&rsquo;s active accounts, subscriptions, flows, hosts and logins.</li>
+<li><strong>Per week</strong> &mdash; one row per ISO week (Monday&ndash;Sunday) by start date; <strong>Days</strong> = calendar days with data, <strong>Avg/day</strong> divides by it. From/To hides out-of-range weeks.</li>
+<li><strong>Per hour</strong> &mdash; Files = delivered (OK) Files started in that hour; the bar shows load relative to the busiest hour.</li>
+<li><strong>Hour &times; weekday</strong> &mdash; each cell counts the Files starting in that hour on that weekday, tinted by quartile of the busiest cell: batch windows show as dark blocks. The date filter re-sums and re-tints.</li>
+<li><strong>Per weekday</strong> &mdash; one row per day of week; Files = delivered (OK) Files, Error % = failures over every File of that weekday.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Per day lists every day of the calendar span between the first and last record: no Files gives an explicit &ldquo;0&rdquo; row with <code>-</code> in First/Last Time, so a quiet day is distinct from a missing one.</li>
+<li><strong>(partial start)</strong> / <strong>(partial end)</strong> marks an edge day of the collection window whose first time is after 02:00 or last time before 22:00: the export did not cover the whole day, so do not compare it with a full one.</li>
+</ul>
 </main>
 </body>
 </html>

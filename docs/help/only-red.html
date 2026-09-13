@@ -16,20 +16,28 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Only red</h1>
-<h2>What this shows</h2>
-<p>The <strong>never-worked list</strong>: subscriptions whose <strong>every File is an Error</strong> — outcome Failed, or Expired — with not a single OK delivery in the whole log window. Where <a href="from-green-to-red.html">From green to red</a> lists the flows that used to work and broke later, this page lists the flows that never worked at all: dead configurations, wrong endpoints, credentials that never matched, or flows abandoned right after setup.</p>
-<p>Per subscription: its <strong>Files</strong> (all of them errors), the <strong>Failed / Expired</strong> split, the <strong>first</strong> and <strong>last failure</strong>, how many <strong>days</strong> it has been failing (first failure to the dataset's last day) and the <strong>volume</strong> of the failed attempts. The most recent failure sits on top — those flows are still actively trying and failing; entries whose last failure is long past are more likely abandoned. Click an Error count for that subscription's 10 most recent failed Files.</p>
-<h2>How it's computed</h2>
-<p>One pass over the logical transfers (Files, the delivered outcome) per subscription. The outcome split is the site-wide rule: <strong>Error</strong> = Failed or Expired (a staged UC2 file the retention sweep deleted before any pickup), <strong>OK</strong> = Processed or Waiting (staged and still collectable). A single OK File disqualifies a subscription from this list — including a Waiting one, so a UC2 flow whose file simply has not been collected yet is not "only red".</p>
-<h2>Why the date filter is off</h2>
-<p>"Never delivered" is a whole-window property — a narrowed From/To range would fabricate entries (by cutting away the successful days). The page therefore always shows the full period, like <a href="from-green-to-red.html">From green to red</a> and <a href="episodes.html">Failure Episodes</a>.</p>
-<h2>How it relates to the other failure reports</h2>
-<p><a href="from-green-to-red.html">From green to red</a> is the exact complement: red now but green before. <a href="episodes.html">Failure Episodes</a> shows every failure run with its Last OK column ("never" marks these flows). <a href="failure-rate.html">Failure rate</a> answers "what share fails" for flows that partially work. The subscriptions here are red on the Entities pages and their detail pages by the same outcome rule; the counts can differ slightly from "never green" on From green to red — a subscription with one mid-day OK File never ended a day green, yet it did deliver once, so it is excluded here.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">The NEVER-WORKED list: of the <strong>109</strong> subscription(s) with Files, <strong>1</strong> have <strong>only Error Files</strong> — Failed or Expired, not one OK delivery in the whole window. The regressions (flows that USED to work and broke later) are on <strong>From green to red</strong> instead. Newest failure first; click an Error count for that subscription's 10 most recent failed Files.</p>
-<p class="note">Every File of these subscriptions is an <strong>Error</strong> — outcome Failed, or Expired (a staged UC2 file the retention sweep deleted before pickup). One Processed or <strong>Waiting</strong> File disqualifies a subscription (Waiting counts as OK site-wide: staged and still collectable). Days failing counts from the first failure to the dataset's last day (2026-08-29). Volume is the bytes of the failed attempts. <strong>This table always shows the full period</strong> — &quot;never delivered&quot; is a whole-window property, so a narrowed From/To range would fabricate entries.</p>
-</section>
+<h2>What it shows</h2>
+<p>The never-worked list: one row per subscription whose <strong>every File is an Error</strong> (Failed or Expired) &mdash; not one OK delivery in the whole log window. Dead configurations, wrong endpoints, credentials that never matched, or flows abandoned right after setup. Most recent failure first.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Files</strong> &mdash; all of them errors, with the <strong>Failed / Expired</strong> split.</li>
+<li><strong>First / Last failure</strong> &mdash; the newest on top are still actively trying and failing; a long-past last failure suggests an abandoned flow.</li>
+<li><strong>Days failing</strong> &mdash; first failure to the dataset&rsquo;s last day.</li>
+<li><strong>Volume</strong> &mdash; the bytes of the failed attempts.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>One pass over the Files per subscription, with the site-wide outcome rule: <strong>Error</strong> = Failed or Expired (a staged UC2 file the retention sweep deleted before any pickup), <strong>OK</strong> = Processed or Waiting (staged and still collectable).</li>
+<li>A single OK File disqualifies a subscription &mdash; a Waiting one included, so a UC2 flow whose file simply has not been collected yet is not &ldquo;only red&rdquo;.</li>
+<li>Always the full period, no date filter (like <a href="from-green-to-red.html">From green to red</a> and <a href="episodes.html">Failure Episodes</a>): &ldquo;never delivered&rdquo; is a whole-window property; a narrowed range would fabricate entries by cutting away the successful days.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click an Error count for that subscription&rsquo;s 10 most recent failed Files.</li>
+<li><a href="from-green-to-red.html">From green to red</a> is the exact complement: red now, green before. Counts can differ slightly from its &ldquo;never green&rdquo; &mdash; a subscription with one mid-day OK File never ended a day green, yet delivered once, so it is excluded here.</li>
+<li><a href="episodes.html">Failure Episodes</a> shows every failure run; its Last OK column reads &ldquo;never&rdquo; for these flows. <a href="failure-rate.html">Failure rate</a> answers what share fails for flows that partially work.</li>
+<li>These subscriptions are red on the Entities pages and their detail pages by the same outcome rule.</li>
+</ul>
 </main>
 </body>
 </html>

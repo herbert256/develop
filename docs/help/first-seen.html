@@ -16,19 +16,23 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>First seen</h1>
-
-<h2>What this shows</h2>
-<p>For six entity types &mdash; <strong>Logical, Partners, Subscriptions, Accounts, Logins and Hosts</strong> &mdash; the calendar day each <strong>configured</strong> name was <strong>first seen in the transfer logs</strong>. One row per day in the loaded logs; a blank cell means nothing of that type appeared for the first time that day. On the first day of the logs everything active is &ldquo;new&rdquo;, so that row is naturally the largest.</p>
-<p>The summary rows on top use the <strong>same Seen / Not seen split as the home page&rsquo;s status tables</strong> (the coverage universe), so the figures here and there always agree. Per column: <strong>Seen + Not seen = Total</strong> (every configured name of that type), and <strong>the day rows + the &ldquo;Seen, no date&rdquo; row = Seen</strong>. The &ldquo;Seen, no date&rdquo; row holds the names that count as seen without a dated transfer of their own &mdash; a UC3 subscription whose polling works but never had a file to fetch, a name whose transfers are credited to a sibling (a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account), or a blue name without a dated cross-reference.</p>
-
-<h2>The two views</h2>
-<p>The buttons above the table switch between two definitions of "seen". <strong>Transfer log only</strong> (the default) matches the status tables&rsquo; Transfer scope: a name that only ever appears in the server log (<strong>blue</strong>) counts as Not seen. <strong>Both Transfer &amp; Server logs</strong> matches the +Server scope and additionally dates the blue names — the entities the site's server-log analysis flagged as server-log-only (the same set as the Status tables' Server column and the "Server log &rarr; Transfer log" page). A blue name never transferred, so it takes the <strong>oldest first transfer of its cross-referenced entities</strong> — its account, subscription, login, host or partner from the FlowManager configuration — as the day its surrounding flow first became active; the cell pages tag those rows <em>Server</em> in the Log column. This deliberately does <em>not</em> scan the raw server log for name mentions: the nightly housekeeping (File Maintenance) mentions virtually every configured account, which would move everything to the window's first day and drown the signal. A blue name whose cross-references also never transferred keeps no date and sits in the &ldquo;Seen, no date&rdquo; row of that view.</p>
-<h2>The cell pages</h2>
-<p>Every count links a page listing exactly the items behind it, each name linked to its detail page. The list shows the name, its configured direction (blank when the name is not configured) and its first transfer timestamp. Rows are tinted by the entity&rsquo;s result: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = seen in the server log only.</p>
-
-<h2>How it's computed</h2>
-<p>The Seen / Not seen split is read from the <strong>coverage tables</strong> (the exact files behind the home status tables and the Entities views), so the two pages cannot disagree. First-seen <em>dates</em> come from the transfer parse caches: accounts and partners per logical transfer (File), subscriptions, logins and hosts per log record; date matching is exact, case aside &mdash; subscriptions match by prefix (a configured subscription matches the logged site values it prefixes).</p>
-<p>Those server-only (blue) names are recognizable on the cell pages by their light-blue tint.</p>
+<h2>What it shows</h2>
+<p>For six entity types &mdash; <strong>Logical, Partners, Subscriptions, Accounts, Logins, Hosts</strong> &mdash; the calendar day each <strong>configured</strong> name was <strong>first seen in the transfer logs</strong>: one row per day in the loaded logs, a blank cell = nothing of that type was new that day. The first day of the logs is naturally the largest row.</p>
+<h2>Rules</h2>
+<ul>
+<li>The summary rows use the same Seen / Not seen split as the home page&rsquo;s status tables (the coverage universe), so the figures always agree. Per column: <strong>Seen + Not seen = Total</strong> (every configured name of that type); <strong>the day rows + &ldquo;Seen, no date&rdquo; = Seen</strong>.</li>
+<li><strong>Seen, no date</strong> = seen without a dated transfer of its own: a UC3 subscription whose polling works but never had a file to fetch, a name whose transfers are credited to a sibling (a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account), or a blue name without a dated cross-reference.</li>
+<li>Two views: <strong>Transfer log only</strong> (default) = the status tables&rsquo; Transfer scope &mdash; a server-log-only (<strong>blue</strong>) name counts as Not seen. <strong>Both Transfer &amp; Server logs</strong> = the +Server scope, and dates the blue names (the Status tables&rsquo; Server column, the <a href="seen-in-server-log.html">Seen in server log</a> set).</li>
+<li>A blue name never transferred, so it takes the <strong>oldest first transfer of its cross-referenced entities</strong> (its account, subscription, login, host or partner in the FlowManager configuration) as the day its flow became active; cell pages tag those rows <em>Server</em> in the Log column.</li>
+<li>The raw server log is deliberately not scanned for mentions: nightly File Maintenance names virtually every account and would move everything to the first day. A blue name whose cross-references never transferred sits in &ldquo;Seen, no date&rdquo;.</li>
+<li>The split is read from the coverage tables (the files behind the home status tables and the Entities views); dates come from the transfer parse caches &mdash; accounts and partners per File, subscriptions, logins and hosts per log record.</li>
+<li>Matching is exact, case aside; subscriptions match by prefix (a configured subscription matches the logged site values it prefixes).</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Every count opens a cell page listing exactly the items behind it: the name (linked to its detail page), its configured direction (blank when not configured), its first transfer timestamp.</li>
+<li>Cell-page tints: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer Error (or server-log errors after it), <strong>light blue</strong> server log only.</li>
+</ul>
 </main>
 </body>
 </html>

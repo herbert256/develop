@@ -16,15 +16,21 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Failure reasons per flow</h1>
-<h2>What this shows</h2>
-<p>This report classifies the server log's ERROR messages into failure-reason buckets — the same buckets as the Errors report's Reasons table — and attributes each message to the subscription it names, taken from the connection-failure text, the partner-listing failure text, or the bracketed flow token of an advanced-routing line.</p>
-<p>The first table shows, per subscription and reason, how often that failure hit and when it was first and last seen; click a row for its ten most recent error lines. Only messages that name a flow appear there, so its total is a subset of the platform-wide reason totals. The second table counts all classified ERROR records per ISO week, showing how the reason mix moves over time.</p>
-<p>Server messages truncate long subscription names: a name that resolves to exactly one configured subscription is shown in full and linked; the rest appear as logged.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range"><strong>1481</strong> of the <strong>2440</strong> server-log ERROR records (<strong>60.7%</strong>) name a flow: <strong>56</strong> subscription(s), <strong>60</strong> subscription-and-reason pair(s), classified with the same reason buckets as the <strong>Transfer Error Reasons</strong> report. The transfer logs record only OK/Error with no reason; this page says what breaks for <strong>which flow</strong> — and, below, how the reason mix moves week by week.</p>
-<p class="note">The reason buckets are the <strong>Transfer Error Reasons</strong> buckets, verbatim — the first table narrows them to the ERROR lines that name a flow (a connection-failure line, a partner-listing failure, or an advanced-routing line's bracketed flow token), so its total is a subset of that report's; the second table counts ALL classified ERROR records per ISO week and ties to it exactly. Server messages truncate long subscription names: a name resolving to exactly one configured subscription is shown in full (and linked); the rest appear as logged. Both tables always show the full period. Click a row to expand its 10 most recent error lines.</p>
-</section>
+<h2>What it shows</h2>
+<p>The server log&rsquo;s ERROR messages classified into failure-reason buckets and attributed to the subscription each one names &mdash; what breaks for <strong>which flow</strong>, which the transfer log (OK/Error, no reason) cannot say.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>Per subscription and reason</strong> &mdash; how often that failure hit, first and last seen. Only messages that name a flow, so its total is a subset of the platform-wide reason totals.</li>
+<li><strong>Per ISO week</strong> &mdash; all classified ERROR records per week, how the reason mix moves over time; ties exactly to the Errors report.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>The buckets are the <a href="server-errors-day.html">Errors</a> report&rsquo;s Reasons buckets (Transfer Error Reasons), verbatim.</li>
+<li>The subscription is taken from the connection-failure text, the partner-listing failure text, or the bracketed flow token of an advanced-routing line.</li>
+<li>Server messages truncate long names: a name resolving to exactly one configured subscription is shown in full and linked; the rest appear as logged.</li>
+<li>Both tables always show the full period.</li>
+<li>Click a row for its 10 most recent error lines.</li>
+</ul>
 </main>
 </body>
 </html>

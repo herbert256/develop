@@ -16,20 +16,26 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Slowest subscriptions</h1>
-<h2>What this shows</h2>
-<p>The <strong>25 subscriptions whose Files take longest</strong>, ranked by the <strong>p95</strong> of their Files&rsquo; <em>wall-clock</em> duration &mdash; from the first record start to the last record end, so the store-and-forward wait inside SecureTransport and any retry idle time count. p95 rather than the maximum, so one freak transfer does not crown a flow. Split off the Duration page 2026-09-05.</p>
-<p><strong>OK transfers</strong> (the default) ranks delivered Files only; <strong>All transfers</strong> adds the failed ones, whose duration is how long they ran before giving up &mdash; a flow with long-hanging timeouts climbs the list there.</p>
-<h2>Reading the table</h2>
-<p>Per subscription (linked to its detail page): the <strong>Files</strong> counted, their <strong>Median</strong>, the ranking <strong>p95</strong> and the <strong>Max</strong>. A From/To date range re-aggregates Files and Max from the per-day buckets each row carries; Median and p95 are percentiles and keep their full-period value (they cannot be re-derived from daily figures). The Total row says how many subscriptions the scope has in all.</p>
-<h2>How it&rsquo;s computed</h2>
-<p>From the logical-transfer cache (one row per CoreId): per subscription the sorted durations of its Files in the scope, the p50 and p95 read at the nearest rank, then the 25 highest p95 values. Ties break on the Files count, then the name.</p>
-<h2>Related</h2>
-<p>The per-day statistics and percentiles are on the Duration page, the individual slowest transfers on the Longest Files page, the histogram of all durations on the Distribution &amp; Store-and-forward page.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">The <strong>25 slowest subscriptions</strong> by the <strong>p95</strong> of their Files' <strong>wall-clock duration</strong> — from the first record start to the last record end, store-and-forward gaps and retry idle included; p95 rather than the maximum, so one freak transfer does not crown a flow. <strong>OK transfers</strong> (the default) ranks delivered Files only; <strong>All transfers</strong> adds the failed ones, whose duration is how long they ran before giving up. A From/To range re-aggregates <strong>Files</strong> and <strong>Max</strong>; <strong>Median</strong> and <strong>p95</strong> keep their full-period value. Click a subscription for its detail page.</p>
-<p class="note">One &quot;File&quot; = one logical transfer (all records sharing a CoreId); duration = its <strong>wall-clock span</strong> — from the first record start to the last record end, in milliseconds, gaps included — not the sum of the record durations. The per-day statistics are on the Duration page, the individual slowest transfers on the Longest Files page.</p>
-</section>
+<h2>What it shows</h2>
+<p>The <strong>25 subscriptions whose Files take longest</strong>, ranked by the <strong>p95</strong> of their wall-clock duration &mdash; first record start to last record end, store-and-forward wait and retry idle included. p95 rather than the maximum, so one freak transfer does not crown a flow.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Subscription</strong> &mdash; linked to its detail page.</li>
+<li><strong>Files</strong> &mdash; the Files counted.</li>
+<li><strong>Median</strong>, <strong>p95</strong> (the ranking value), <strong>Max</strong>.</li>
+<li>The Total row says how many subscriptions the scope has in all.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li><strong>OK transfers</strong> (default) ranks delivered Files only; <strong>All transfers</strong> adds the failed ones, whose duration is how long they ran before giving up &mdash; a flow with long-hanging timeouts climbs the list there.</li>
+<li>Duration = the File&rsquo;s wall-clock span in milliseconds, gaps included, not the sum of its record durations.</li>
+<li>From the logical-transfer cache (one row per CoreId): per subscription the sorted durations of its Files in the scope, p50 and p95 read at the nearest rank, then the 25 highest p95. Ties break on the Files count, then the name.</li>
+<li>A From/To range re-aggregates Files and Max from the per-day buckets each row carries; Median and p95 keep their full-period value (percentiles cannot be re-derived from daily figures).</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Per-day statistics and percentiles: <a href="duration.html">Transfer Duration</a>; the individual slowest transfers: <a href="duration-longest.html">Longest Files</a>; the histogram of all durations: <a href="duration-dwell.html">Duration distribution &amp; Store-and-forward</a>.</li>
+</ul>
 </main>
 </body>
 </html>

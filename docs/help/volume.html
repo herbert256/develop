@@ -16,18 +16,24 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Transfer Volume</h1>
-<h2>What this shows</h2>
-<p>Data volume (bytes moved) across three tabs: <strong>Per day</strong> (volume and Files per calendar day), <strong>By direction</strong> (a per-row split between Inbound and Outbound), and <strong>Top accounts</strong> (the busiest accounts by volume, with each account's share of the total). Record counts are shown alongside the byte totals for context.</p>
-<h2>How it's computed</h2>
-<p>The Per day and Top accounts tabs count <strong>Files</strong> — logical transfers from <code>_files.tsv</code> — with each file's size counted <strong>once per File</strong>, not once per row. This is what "volume" should mean: the size of the file that moved, not the sum of its Inbound and Outbound legs.</p>
-<p>The <strong>By direction</strong> tab is the one exception on this page: it counts physical rows from the parse cache, split Inbound vs Outbound, with its own Error/OK and volume figures. Because a single transfer writes its file size on both its Inbound and its Outbound row, this table's total volume is roughly <strong>twice</strong> the logical total shown on the other two tabs — a note under the table restates this. It is included so you can see the split by direction, which the logical File view (one outcome per transfer) cannot show.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">How much data moves and which way it is heading: <strong>volume per day</strong>, the <strong>direction split</strong>, the <strong>top accounts</strong> — and the <strong>trend</strong> view: the window split in half and each flow's Files/volume compared across the halves, so growers, shrinkers and flows gone silent stand out.</p>
-<p class="note">This table counts technical transfers (rows), not Files: a File moves its file in on the Inbound row and out on the Outbound row, so the total (44.79 GB) is roughly twice the logical volume above. Error/OK split those transfers by status; click a count for that outcome's 10 most recent transfers.</p>
-<p class="note">Active with 10+ Files in the first half, then NOTHING in the window's final week. Days silent counts to the dataset's last day, not today. Stale Accounts tracks the same signal per ACCOUNT (against its own cadence) — this catches the per-subscription cases.</p>
-<p class="note">4x+ more Files in the second half (20+ Files there). &quot;new&quot; = no first-half activity at all — a flow that started mid-window (the First Seen analysis dates every flow's absolute first appearance).</p>
-</section>
+<h2>What it shows</h2>
+<p>How much data moves and which way, on four tabs; record counts sit next to the byte totals.</p>
+<h2>Tabs</h2>
+<ul>
+<li><strong>Per day</strong> &mdash; volume and Files per calendar day.</li>
+<li><strong>By direction</strong> &mdash; Inbound vs Outbound per row.</li>
+<li><strong>Top accounts</strong> &mdash; the busiest accounts by volume, with each account&rsquo;s share of the total.</li>
+<li><strong>Trend</strong> &mdash; per-subscription growers, shrinkers and flows gone silent.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Per day and Top accounts count <strong>Files</strong> (logical transfers from <code>_files.tsv</code>), each file&rsquo;s size counted <strong>once per File</strong>, not once per row: the size of the file that moved, not the sum of its Inbound and Outbound legs.</li>
+<li>By direction is the exception: physical rows from the parse cache, split Inbound / Outbound, with their own Error/OK and volume figures; it shows the direction split the File view cannot.</li>
+<li>A transfer writes its size on both rows, so the By direction total is roughly <strong>twice</strong> the logical total (a note under the table says so). Click a count for that outcome&rsquo;s 10 most recent transfers.</li>
+<li>Trend splits the window in half and compares each flow&rsquo;s Files/volume across the halves.</li>
+<li><strong>Gone silent</strong> = 10+ Files in the first half, then nothing in the window&rsquo;s final week. Days silent counts to the dataset&rsquo;s last day, not today. The same signal per account, against its own cadence, is on <a href="went-quiet.html">Went quiet</a>.</li>
+<li><strong>Growers</strong> = 4x+ more Files in the second half (20+ Files there); <em>new</em> = no first-half activity at all, a flow that started mid-window (<a href="first-seen.html">First seen</a> dates every flow&rsquo;s absolute first appearance).</li>
+</ul>
 </main>
 </body>
 </html>

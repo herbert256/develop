@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Load by Hour — Cloud Reports</title>
+<title>Help: What is new — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,13 +15,16 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Load by Hour</h1>
-<h2>What this shows</h2>
-<p>The first table shows one row per hour of day (00-23), summed across every day in range: the Files count (the delivered ones, since 2026-09-13 — no Error / OK split), the volume, and a relative <strong>load bar</strong> scaled against the busiest hour. Each record is bucketed by its <em>start</em> time, so an hour's figures reflect activity that began in that hour, not activity still running through it.</p>
-<h2>The Hour &times; Weekday heatmap</h2>
-<p>A second table breaks the same activity down two ways at once: hour of day (rows) against weekday (columns). Each cell counts the records that started in that hour on that weekday, across the whole date range, and is tinted by which quartile it falls in relative to the single busiest cell in the table — the darkest cells are the top quartile. This is the view to use for spotting recurring batch windows (e.g. "the 02:00 slot is always busy on weekdays but quiet on weekends").</p>
-<h2>How it's computed</h2>
-<p>Both tables re-aggregate live when you narrow the date range: the underlying per-date breakdown is embedded in the page, so changing the range re-sums the hour totals and re-tints the heatmap's quartiles for just the selected dates, with no server round-trip.</p>
+<h1>What is new</h1>
+<h2>What it shows</h2>
+<p>Two tables from the git history of the report scripts: the 10 most recently <strong>added</strong> reports and the 10 most recently <strong>changed</strong> ones, each linking its page with a one-line description.</p>
+<h2>Rules</h2>
+<ul>
+<li>A change counts only when a commit was about one report (it modified exactly one generator).</li>
+<li>A report in the New table is not repeated in Changed &mdash; added and changed on the same day is one piece of news.</li>
+<li>Unpublished intermediates (the merged reports&rsquo; components) never appear; the tables are empty when git is unavailable.</li>
+<li>Reached from the Site map&rsquo;s Tools card only.</li>
+</ul>
 </main>
 </body>
 </html>

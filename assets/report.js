@@ -24,9 +24,28 @@
   }
 
   // "1.59 GB" / "574 ms" / "45.1%" / "+14.2%" / "1.33 MB/s" / "12,345" -> comparable number, else null.
+  // A COMPOUND duration (2026-09-13) — "1h 53m", "2d 5h 45m", "66d 0h", "3m 12s":
+  // the Waiting report's Waiting for and the UC2 detail pages' Pickup cells —
+  // is the SUM of its parts (every part a number + time unit); before, no part
+  // matched the single-token shape, the cell fell out of the numeric order
+  // (sank last, or flipped the whole column to text where "2h" < "9m"). A
+  // "<" / ">" bound ("<1 s", "<1m", "> 24 h") sorts a hair below / above its
+  // value instead of dropping out of the order the same way.
+  var COMPOUND = /^([-+]?)((?:\d+(?:\.\d+)?\s*(?:ms|min|minutes?|m|sec|seconds?|s|hours?|h|days?|d)\s*){2,})$/i;
   function parseNum(s) {
-    var t = s.trim();
+    var t = s.trim(), bound = 0, v;
+    if (/^[<>]/.test(t)) { bound = t.charAt(0) === "<" ? -1e-3 : 1e-3; t = t.slice(1).trim(); }
+    v = parseNum1(t);
+    return v === null ? null : v + bound;
+  }
+  function parseNum1(t) {
     if (t === "" || t === "-") return null;
+    var c = COMPOUND.exec(t);
+    if (c) {
+      var sum = 0, part, pr = /(\d+(?:\.\d+)?)\s*([A-Za-z]+)/g;
+      while ((part = pr.exec(c[2]))) sum += parseFloat(part[1]) * TIME[part[2].toLowerCase()];
+      return c[1] === "-" ? -sum : sum;
+    }
     // a RANK cell ("#1", "#12" — the Ranking report) sorts by its number;
     // only the exact #<digits> shape qualifies, anything longer stays text
     if (/^#\d+$/.test(t)) return parseFloat(t.slice(1));

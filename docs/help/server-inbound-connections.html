@@ -16,34 +16,26 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Inbound Connections</h1>
-<h2>What this shows</h2>
-<p>Who connects <em>in</em> to SecureTransport, over which protocol, from where — from the "User with login name "…", associated with account "…", had initiated a connection over SSH|PESIT|FTP. Remote address: …" lines the server logs for every inbound connection. Five tables:</p>
+<h2>What it shows</h2>
+<p><strong>Inbound</strong>: who connects in to SecureTransport, over which protocol, from where, and which whitelist policies do the work. <strong>Outbound</strong>: why and where our own connections fail.</p>
+<h2>Sections</h2>
 <ul>
-<li><strong>Connections by protocol</strong> — the volume per protocol. This is the only place FTP and PeSIT inbound connection volume exists on this site.</li>
-<li><strong>Connections per day</strong> — the daily SSH / PESIT / FTP trend. A protocol falling silent, or a sudden spike, shows here first.</li>
-<li><strong>By account</strong> — connections per account, with its protocol mix and the distinct source addresses seen. An account known from the transfer logs links to its detail page.</li>
-<li><strong>By source address</strong> — the partners' SOURCE addresses (what actually connects in — the address a whitelist allows), top 50 by connections.</li>
-<li><strong>Whitelist policy usage</strong> — which Login Restriction Policy the screening actually matched, from the "Allowed user … corresponding policy name '…'" lines.</li>
+<li><strong>Connections by protocol</strong> &mdash; one count per &ldquo;User with login name &hellip;, associated with account &hellip;, had initiated a connection over SSH|PESIT|FTP. Remote address: &hellip;&rdquo; line; the only place FTP and PeSIT inbound volume exists on the site.</li>
+<li><strong>Connections per day</strong> &mdash; the daily SSH/PESIT/FTP mix; a protocol falling silent or a spike shows here first.</li>
+<li><strong>By account</strong> &mdash; connections per account (as logged), protocol mix, distinct source addresses; a known account links to its detail page.</li>
+<li><strong>By source address</strong> &mdash; the partners&rsquo; SOURCE addresses (what connects in, what a whitelist allows &mdash; not the configured outbound endpoints), top 50, the total over shown rows; Accounts = distinct accounts from that address.</li>
+<li><strong>Whitelist policy usage</strong> &mdash; which Login Restriction Policy the &ldquo;Allowed user &hellip; corresponding policy name '&hellip;'&rdquo; lines matched; Accounts = distinct accounts allowed under it.</li>
+<li><strong>Outbound failure reasons</strong> &mdash; classified from the failure tail. &ldquo;SSH exception (generic)&rdquo; = a com.maverick.ssh.SshException with no more specific cause (often a reset/aborted connection); Timeout, Bad certificate, Incompatible security protocols and Algorithm negotiation each point at a different fix.</li>
+<li><strong>Per remote host</strong> &mdash; the physical endpoint (a host serves several subscriptions) with its dominant reason; as logged, linked to a detail page when one exists (matched case-insensitively).</li>
+<li><strong>Test connections</strong> &mdash; explicit &ldquo;Performs test connection for &lt;protocol&gt; protocol&rdquo; checks (an admin/API testing a configuration); <strong>Test outcomes</strong> splits them by the &ldquo;Error during test connection&rdquo; reason tail.</li>
+<li><strong>Host-key mismatches</strong> &mdash; presented-vs-expected pairs from the &ldquo;Wrong server fingerprint: got X, expected Y&rdquo; warnings; one presented key against many stored keys = a server-side key rotation (or worth a closer look); a short &ldquo;got&rdquo; is the log truncating.</li>
 </ul>
-<h2>How it's computed</h2>
-<p>One count per connection line — this is connection <em>volume</em>, before any authentication or transfer happens. The distinct-count columns (Addresses per account, Accounts per address/policy) cover the whole period and do not re-aggregate under the date filter; the connection counts do. Click a row for its 10 most recent connection lines.</p>
-<h2>How it relates to the other connection reports</h2>
-<p>Three reports look at inbound sessions from different angles: <a href="server-logon.html">Logon</a> is the screening <em>funnel</em> (allowed / disallowed / no-account / lockouts per login), <a href="server-auth-activity.html">Auth Activity</a> counts successful SSH <em>authentications</em>, and this report counts raw <em>connections</em> — every protocol, before and regardless of authentication. Comparing them is informative: many connections with few authentications means clients connecting and failing (or probing); connections from an address the whitelist table doesn't know is worth a look.</p>
-<p><strong>Host-key mismatches</strong> lists every presented-vs-expected SSH fingerprint pair from the &ldquo;Wrong server fingerprint&rdquo; warnings — one presented key against many stored keys means a server-side key rotation (or something worth a closer look). <strong>Test outcomes</strong> breaks the explicit test connections down by their error reason.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">Both directions of the connection story in one report. <strong>Inbound</strong>: who connects in to SecureTransport, over which protocol, from which addresses, and how the whitelist policies are used. <strong>Outbound</strong>: why and where our own connections fail — the failure-reason breakdown, the per-remote-host view and the test connections.</p>
-<p class="note">One count per &quot;had initiated a connection over &lt;protocol&gt;&quot; line. FTP and PeSIT inbound volume appears in no other report. Counts are additive and re-total under the date filter.</p>
-<p class="note">The daily protocol mix. A protocol falling silent, or a sudden connection spike from one day to the next, stands out here first.</p>
-<p class="note">Connections per account (as logged; an account known from the transfer logs links to its detail page). Addresses is the distinct source addresses seen for that account over the whole period — it does not re-aggregate under the date filter. Click an account for its 10 most recent connection lines.</p>
-<p class="note">The partners' SOURCE addresses (what actually connects in — the address the whitelist allows), not the configured outbound endpoints. Accounts is the distinct accounts seen from that address over the whole period. Top 50 by connections; the total row sums the shown rows. Click an address for its 10 most recent connection lines.</p>
-<p class="note">Which Login Restriction Policy the &quot;Allowed user … corresponding policy name&quot; screening lines actually matched — the policies doing the work, next to Logon's per-login funnel. Accounts is the distinct accounts allowed under that policy (whole period).</p>
-<p class="note">The reason is classified from the failure tail. &quot;SSH exception (generic)&quot; is a com.maverick.ssh.SshException without a more specific cause (often a reset/aborted SSH connection); Timeout, Bad certificate, Incompatible security protocols and Algorithm negotiation each point at a different fix. Failures and share re-aggregate over the selected dates.</p>
-<p class="note">The physical partner endpoint (host, not subscription — a host can serve several subscriptions), with the reason that dominates its failures. Shown as logged; a host with a detail page links to it (matched case-insensitively — the canonical endpoint spelling is lowercase). Click a host for its 10 most recent failures.</p>
-<p class="note">Explicit &quot;Performs test connection for &lt;protocol&gt; protocol&quot; checks — an admin/API testing a partner configuration before real transfers.</p>
-<p class="note">The &quot;Wrong server fingerprint: got X, expected Y&quot; warnings, per fingerprint pair: a partner endpoint presenting an SSH host key that does not match the stored known-host entry. One presented key (`07`) accounts for <strong>26</strong> of the <strong>26</strong> warning(s), checked against <strong>1</strong> different expected keys — ONE endpoint presenting a NEW key that many stored entries no longer match (a server-side key rotation), not many endpoints drifting at once. A short &quot;got&quot; value is the log itself truncating; shown as logged. Click a pair for its 10 most recent warnings.</p>
-<p class="note">How the explicit test connections failed: the &quot;Error during test connection&quot; reason tail, as logged.</p>
-</section>
+<h2>Rules</h2>
+<ul>
+<li>A connection line counts before any authentication or transfer &mdash; connection <em>volume</em>. Connection and failure counts re-total under the date filter; distinct counts (Addresses per account, Accounts per address or policy) are full-period.</li>
+<li>Click a row for its 10 most recent lines.</li>
+<li><a href="server-logon.html">Logon</a> is the screening <em>funnel</em> (allowed / disallowed / no-account / lockouts per login) and the successful SSH authentications; this report is raw connections, every protocol, regardless of authentication. Many connections, few authentications = clients failing (or probing); an address the whitelist table does not know is worth a look.</li>
+</ul>
 </main>
 </body>
 </html>

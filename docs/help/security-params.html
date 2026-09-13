@@ -16,16 +16,21 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Transfer Security Parameters</h1>
-<h2>What this shows</h2>
-<p>Connection security for transfers: one view per attribute found in the log's free-text <strong>SecurityParameters</strong> column — <strong>TLS version</strong> (labelled so rather than "Protocol" to avoid confusion with the transfer protocol), <strong>Cipher</strong>, <strong>Cipher suite</strong>, <strong>MAC</strong>, <strong>Key Exchange</strong> and <strong>Public Key</strong>. The buttons under the title switch between the attributes; one table shows at a time. An attribute the environment's traffic never negotiates shows an empty table. For the transfer <em>protocol</em> distribution itself, see the Protocol report in the same group.</p>
-<h2>How it's computed</h2>
-<p>SecurityParameters is negotiated per connection leg, so every table here counts individual <strong>transfers (legs)</strong>, not Files — the Inbound and Outbound rows of one File can use different ciphers or protocol versions. Each attribute value's row shows the transfer count &mdash; the OK legs (since 2026-09-13; no Error / OK split, no green or red cells).</p>
-<p>Click a <strong>value in the first column</strong> of any table (a cipher, MAC, key exchange, public key, cipher suite or TLS version) to open a page listing every <strong>subscription</strong> that used that value — with its <strong>partner</strong> and transfer counts, each subscription and partner linking to its own detail page — followed by a <strong>Partners</strong> summary table rolling those subscriptions up per partner. Those per-value pages are full-period (not date-filtered).</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">Connection security by SecurityParameters attribute (TLS version, Cipher, MAC, Key Exchange, Public Key, ...), one view per attribute. Click a value in the first column for the subscriptions that use it.</p>
-<p class="note">Counts individual transfers (legs), not Files: security parameters are negotiated per leg (the Inbound and Outbound rows use different ciphers/protocols). Transfers = the OK legs (2026-09-13 — the Error / OK split is gone); click a value in the first column for the subscriptions that use it.</p>
-</section>
+<h2>What it shows</h2>
+<p>Connection security per attribute of the log&rsquo;s free-text <strong>SecurityParameters</strong> column, one view per attribute: <strong>TLS version</strong>, <strong>Cipher</strong>, <strong>Cipher suite</strong>, <strong>MAC</strong>, <strong>Key Exchange</strong> and <strong>Public Key</strong>. The buttons under the title switch views; one table shows at a time.</p>
+<h2>Rules</h2>
+<ul>
+<li>Every table counts <strong>transfers (legs)</strong>, not Files: the parameters are negotiated per leg, so the Inbound and Outbound rows of one File can use different ciphers or versions.</li>
+<li><strong>Transfers</strong> = the OK legs; there is no Error/OK split and no green or red cells.</li>
+<li>The attribute is labelled &ldquo;TLS version&rdquo;, not &ldquo;Protocol&rdquo;, to keep it apart from the transfer protocol &mdash; that distribution is the Protocol report in the same group.</li>
+<li>An attribute the environment&rsquo;s traffic never negotiates shows an empty table.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a value in the first column (a cipher, MAC, key exchange, public key, cipher suite or TLS version) for a page listing every <strong>subscription</strong> that used it, with its <strong>partner</strong> and transfer counts &mdash; each linking to its detail page &mdash; followed by a <strong>Partners</strong> summary rolling those subscriptions up per partner.</li>
+<li>Those per-value pages are full-period, not date-filtered.</li>
+<li>Deprecated values and who still uses them: <a href="security-outreach.html">Security outreach</a>.</li>
+</ul>
 </main>
 </body>
 </html>

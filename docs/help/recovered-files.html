@@ -16,21 +16,27 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Recovered files</h1>
-<h2>What this shows</h2>
-<p>A <strong>recovered File</strong> carried at least one failed transfer leg and still finished OK — a retry delivered it. It is the same rule behind the Top view's Recovered columns (Automatic + Manual), the home page's Cured cell and the subscription detail pages, so the figures line up exactly: the File counts under Files/Ok while its failed legs count under Transfers/Error. OK follows the site-wide outcome policy (Processed or Waiting; Failed and Expired are not OK), and everything is attributed to the File's start day.</p>
-<h2>The three tables</h2>
-<p><strong>How the File recovered</strong> is shown in every table and in two boxes at the top, splitting Recovered into <strong>Retry</strong> and <strong>Resubmit</strong>: <em>Retry</em> means the platform's own automatic retry delivered the File after the failed leg; <em>Resubmit</em> means an operator resubmitted it &mdash; one of the File's transfer legs carries the Resubmitted flag (the delivering leg included). It is the Top view's Automatic / Manual rule, so Retry + Resubmit always equals Recovered and the figures line up with the Top view's Recovered columns. A blank cell is 0.</p>
-<p><strong>Per subscription</strong> answers which flows heal themselves: the Files column counts all of the subscription's Files, Recovered % the share of them that needed a retry — a high share on a busy flow points at a flaky endpoint that succeeds on the second try. Only subscriptions with at least one recovered File are listed.</p>
-<p><strong>Per protocol</strong> looks at the failed leg's protocol — where the healed failure actually happened, not what finally delivered the File. Healed % compares the failed legs that belonged to recovered Files against all failed legs of that protocol: how often a failure there turns out to be transient. A File whose failed legs span two protocols counts once under each.</p>
-<p><strong>Per day</strong> lists only the days with at least one recovery (the Top view shows every day); the Date cell opens that day's page.</p>
-<p>Every row expands on click into its 10 most recent recovered Files, newest first. The From/To range re-aggregates the two upper tables from their per-day buckets — a subscription or protocol with <strong>zero recovered files inside the selected range</strong> is hidden until the range widens again; the drill lists always show the full period.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">A <strong>recovered File</strong> carried at least one FAILED transfer leg and still finished <strong>OK</strong> — a retry delivered it, so it sits under Files/Ok on the Top view while its failed legs sit under Transfers/Error. The same rule and the same figures as the Top view's <strong>Recovered</strong> columns (Automatic + Manual), the home page's Cured cell and the subscription detail pages (OK per the site-wide outcome policy: Processed or Waiting; everything on the File's START day). <strong>How</strong> it recovered is split in every table: <strong>Retry</strong> = the platform's own automatic retry delivered it; <strong>Resubmit</strong> = an operator resubmitted it (a leg carries the Resubmitted flag) — the Top view's Automatic and Manual. Three breakdowns: which <strong>subscriptions</strong> have it, which <strong>protocols</strong> the healed failures happened on, and on what <strong>days</strong>. Click a row for its 10 most recent recovered Files.</p>
-<p class="note"><strong>Retry</strong> and <strong>Resubmit</strong> split Recovered by HOW the File got through: Retry = the platform's automatic retry delivered it, Resubmit = an operator resubmitted it (one of its legs carries the Resubmitted flag) — the Top view's Automatic and Manual. <strong>Recovered %</strong> = the share of that subscription's Files (in the whole loaded window) that needed a retry to get through — a high share on a busy flow points at a flaky endpoint that succeeds on the second try. The Files column counts ALL of the subscription's Files, whatever their outcome; only subscriptions with at least one recovered File are listed.</p>
-<p class="note">The protocol is the FAILED leg's — where the healed failure actually happened, not what finally delivered the File. A File whose failed legs span two protocols counts once under each, so the Recovered column (and its Retry / Resubmit split — how the File got through, the Top view's Automatic and Manual) can sum past the 28 distinct Files. <strong>Healed %</strong> = failed legs belonging to recovered Files over ALL failed legs of that protocol (recovered or not) — how often a failure on that protocol turns out to be transient.</p>
-<p class="note">Only days with at least one recovered File are listed (the Top view shows every day); the Date cell opens that day's page. Days are the File's START day, so the figures line up with the Top view's Recovered columns exactly — Retry is its Automatic, Resubmit its Manual.</p>
-</section>
+<h2>What it shows</h2>
+<p>A <strong>recovered File</strong> carried at least one failed transfer leg and still finished OK &mdash; a retry delivered it. Three tables: per <strong>subscription</strong>, per <strong>protocol</strong> of the healed failure, per <strong>day</strong>; two boxes at the top split Recovered into Retry and Resubmit.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Retry</strong> &mdash; the platform&rsquo;s automatic retry delivered the File. <strong>Resubmit</strong> &mdash; an operator resubmitted it: a leg (the delivering one included) carries the Resubmitted flag. Retry + Resubmit = Recovered, the Top view&rsquo;s Automatic / Manual. A blank cell is 0.</li>
+<li><strong>Files</strong> (per subscription) &mdash; all its Files, whatever their outcome. <strong>Recovered %</strong> &mdash; the share that needed a retry; a high share on a busy flow points at a flaky endpoint that succeeds on the second try.</li>
+<li><strong>Healed %</strong> (per protocol) &mdash; failed legs of recovered Files over <em>all</em> failed legs of that protocol: how often a failure there is transient.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Same rule and figures as the Top view&rsquo;s Recovered columns, the home page&rsquo;s Cured cell and the subscription detail pages: the File counts under Files/Ok, its failed legs under Transfers/Error.</li>
+<li>OK per the site-wide outcome policy (Processed or Waiting; Failed and Expired are not OK). Everything is attributed to the File&rsquo;s <strong>start day</strong>.</li>
+<li>Per subscription: only subscriptions with at least one recovered File are listed.</li>
+<li>Per protocol: the <em>failed</em> leg&rsquo;s protocol &mdash; where the healed failure happened, not what delivered the File. Failed legs on two protocols count once under each, so the column can sum past the distinct Files.</li>
+<li>Per day: only days with a recovery (the Top view shows every day); the Date cell opens that day&rsquo;s page.</li>
+<li>From/To re-aggregates the two upper tables from their per-day buckets; a subscription or protocol with zero recovered Files in range is hidden until the range widens.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Every row expands on click into its 10 most recent recovered Files, newest first, always the full period.</li>
+</ul>
 </main>
 </body>
 </html>

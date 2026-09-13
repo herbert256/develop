@@ -16,20 +16,18 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Protocol, Direction &amp; Mode</h1>
-<h2>What this shows</h2>
-<p>Six tabs break transfers down along the per-leg dimensions (the 2026-07 merge of the former Direction &amp; Action By and Mode reports — old links land here): <strong>Protocol</strong> (e.g. pesit, ssh, ftp, routing), <strong>Direction</strong> (Inbound/Outbound), the Protocol × Direction <strong>Crosstab</strong>, <strong>Action By</strong> (who initiated the leg), the Direction × Action By crosstab, and the BINARY/ASCII transfer <strong>Mode</strong> split. Each row shows the transfer count, its Error/OK split, the volume where applicable, and its share of all transfers.</p>
-<h2>How it's computed</h2>
-<p>These tables count individual <strong>transfers (legs)</strong>, not Files: one File typically has an Inbound row on one protocol (say ssh) and an Outbound row on another (say pesit), so protocol and direction are attributes of each physical row, not of the logical transfer as a whole. "Failed Subtransmission" is folded into Failed everywhere in these tables.</p>
-<p>Since 2026-09-13 every table shows one <strong>Transfers</strong> column holding the OK legs &mdash; no Error / OK split and no green or red cells.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">44.79 GB total volume across all protocols.</p>
-<p class="note">Counts individual transfers (legs), not Files: one File has an Inbound row (e.g. ssh) and an Outbound row (e.g. pesit), so protocol/direction are per leg.</p>
-<p class="range">Transfer legs by <strong>Direction</strong> (Inbound/Outbound), by <strong>Action By</strong>, and their crosstab — the OK legs. Counts physical <strong>Transfers</strong> — one per log row — so one File's inbound and outbound legs count once each.</p>
-<p class="note">Counts individual transfers (legs), not Files: direction and action-by are per leg (a File has an Inbound and an Outbound row).</p>
-<p class="range">How transfers moved their files, from the log <strong>Mode</strong> column: <strong>BINARY</strong> vs <strong>ASCII</strong>. Counts are per transfer.</p>
-<p class="note">Counts individual transfers (legs), not Files: Mode is a per-leg attribute.</p>
-</section>
+<h2>What it shows</h2>
+<p>Six tabs break transfer legs down along the per-leg dimensions: <strong>Protocol</strong> (pesit, ssh, ftp, routing &hellip;), <strong>Direction</strong> (Inbound/Outbound), the Protocol &times; Direction <strong>Crosstab</strong>, <strong>Action By</strong> (who initiated the leg), the Direction &times; Action By crosstab, and the BINARY/ASCII <strong>Mode</strong> split from the log&rsquo;s Mode column.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Transfers</strong> &mdash; the OK legs, one column: no Error / OK split and no green or red cells.</li>
+<li><strong>Volume</strong> where applicable, and each row&rsquo;s share of all transfers.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Counts individual <strong>transfers (legs)</strong>, not Files: one File has an Inbound row on one protocol (say ssh) and an Outbound row on another (say pesit), so protocol, direction, action-by and mode are attributes of each physical row &mdash; a File&rsquo;s inbound and outbound legs count once each.</li>
+<li>&ldquo;Failed Subtransmission&rdquo; is folded into Failed everywhere in these tables.</li>
+</ul>
 </main>
 </body>
 </html>

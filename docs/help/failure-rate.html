@@ -16,16 +16,20 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Transfer Failure Rates</h1>
-<h2>What this shows</h2>
-<p>Three tabs, each with the same four figures — Files, Error, OK, Error % — broken down a different way: <strong>per Account</strong>, <strong>per Destination Subscription</strong>, and <strong>per Day</strong>. All three count <strong>Files</strong> (logical transfers, from <code>_files.tsv</code>), so a transfer that failed on its first leg but was ultimately delivered by a retry counts as OK, not Error.</p>
-<h2>How it's computed</h2>
-<p>A File counts as <strong>Error</strong> when its <strong>final</strong>, last-chronological row did not deliver — this is the same "delivered" rule used everywhere logical transfers are split into Error/OK. An account or a transfer with no usable account/subscription value (blanked by the platform-internal blacklist) is kept in the totals under a parenthesized placeholder — <code>(no account)</code> or <code>(no subscription)</code> — rather than dropped, so the totals still reconcile.</p>
-<p>The per-account and per-subscription tabs are sorted worst-first, by Error % then by volume of failures, so the flows most worth investigating surface at the top. The per-day tab is chronological instead, to show the failure rate trending over time.</p>
-<section class="about">
-<h2>About this report</h2>
-<p class="range">Overall <strong>4.5%</strong> of Files failed (<strong>1516</strong> of <strong>33621</strong>). A File counts as Error when its final row did not deliver.</p>
-<p class="note">Counts Files — one logical transfer each; a File counts as Error when its final row did not deliver (the delivered rule). The account table lists only accounts with at least one Error. The Subscriptions entity pages count individual transfers (legs) by default, so their Error figures differ from the per-subscription numbers here. Click an Error or OK count for that outcome's 10 most recent Files (newest first).</p>
-</section>
+<h2>What it shows</h2>
+<p>Failed vs total Files as a percentage &mdash; three tabs with the same four figures (<strong>Files</strong>, <strong>Error</strong>, <strong>OK</strong>, <strong>Error %</strong>): <strong>per Account</strong>, <strong>per Destination Subscription</strong> and <strong>per Day</strong>. The headline is the overall failed share.</p>
+<h2>Rules</h2>
+<ul>
+<li>Counts Files (logical transfers, from <code>_files.tsv</code>): a File is <strong>Error</strong> when its final, last-chronological row did not deliver &mdash; the delivered rule used everywhere. A transfer that failed on its first leg but was delivered by a retry is OK.</li>
+<li>A File with no usable account / subscription value (blanked by the platform-internal blacklist) stays in the totals under <code>(no account)</code> / <code>(no subscription)</code>, so the totals reconcile.</li>
+<li>The account table lists only accounts with at least one Error.</li>
+<li>The Account and Subscription tabs sort worst-first (Error %, then failure volume); the Day tab is chronological, to show the trend.</li>
+<li>The Subscriptions entity pages count transfers (legs) by default, so their Error figures differ from the per-subscription numbers here.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click an Error or OK count for that outcome&rsquo;s 10 most recent Files, newest first.</li>
+</ul>
 </main>
 </body>
 </html>
