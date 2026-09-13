@@ -596,11 +596,11 @@ keeps its own default.
 `docs/transfer/entities2/` (the "Entities2" top-bar link), same views, scopes, tints, drills and
 Reason column, in a GROUPED layout — a `GHEAD` banner row + `gsep=` dividers like the Top view:
 
-| Name | Dates | Transfers | Files | Recover | State | Volume |
-|---|---|---|---|---|---|---|
-| | First · Last · Days | Ok · Error · Error % | In · Out · Error · Error % | Auto · Manual-ok · Manual-error | Waiting · Expired | Total · Avg |
-| KIND | text text num | numok numerr num | num num numfailed num | numwarn numwarn numerr | numwarn numerr | num num |
-| RECALC | - - c | s5 s6 p6.12 | s1 s2 s3 p3.0 | s7 s8 s9 | s10 s11 | h4 v4.0 |
+| Name | Dates | Transfers | Files | Recover | State | Volume | Duration |
+|---|---|---|---|---|---|---|---|
+| | First · Last · Days | Ok · Error · Error % | In · Out · Error · Error % | Auto · Manual-ok · Manual-error | Waiting · Expired | Total · Avg | p90 · p95 · p99 |
+| KIND | text text num | numok numerr num | num num numfailed num | numwarn numwarn numerr | numwarn numerr | num num | num num num |
+| RECALC | - - c | s5 s6 p6.12 | s1 s2 s3 p3.0 | s7 s8 s9 | s10 s11 | h4 v4.0 | - - - |
 
 Bucket metrics per date: `files in out ferr bytes tok terr rauto rmok rmerr waiting expired legs`
 (0–12). Definitions: Transfers = every LEG of the entity's Files (Processed / not), credited to the
@@ -608,7 +608,12 @@ File's start day; In/Out = the MOVEMENT direction (`_files.tsv` col 17 — a Fil
 counts in the total and the Error % only); Recover = the Top view rule (Auto = an OK File with a
 failed leg and no resubmitted leg — the classic Retry; Manual-ok / Manual-error = EVERY File with
 a resubmitted leg, by outcome — so Manual-ok ≥ the classic Resubmit); Days = days with ≥1 File;
-Avg = bytes ÷ Files. Every count cell drills to its 10 newest Files (`drillcols=` → the row's
+Avg = bytes ÷ Files; Duration = the p90 / p95 / p99 of the OK Files' wall-clock span (`_files.tsv`
+col 9 > 0 — `duration.sh`'s default scope and nearest-rank rule `T[int((N-1)·P/100+0.5)+1]`),
+FULL-PERIOD under the date filter (RECALC `-`, the Slowest-subscriptions precedent); each span is
+quantized to the humandur DISPLAY grid (rounded like the format, so a grid histogram picks the
+same displayed value as the exact list) and the per-row histogram rides the ROW as
+`@data:durhist=q.count,…` for the subset totals. Every count cell drills to its 10 newest Files (`drillcols=` → the row's
 `@data:coreids-<key>`, bound by BUILT column index); the Transfers cells list the Files that
 carried a leg of that outcome. `bin/transfer/reports/entities2.sh` is ONE writer for all nine
 (attribution mirroring `account.sh` / `subscription.sh` / `login.sh` / `remote-host.sh` /

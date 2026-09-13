@@ -1133,7 +1133,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # sort= marker, and its subset totals re-sum the grouped columns
     # (entity2_res_block). Every lay-1 path below is byte-for-byte the classic one.
     local lay=${ENT_LAYOUT:-1} outdir=entities _fsort="sort=1:-1" _nreal=10
-    if [ "$lay" = 2 ]; then outdir=entities2; _fsort=""; _nreal=19; fi
+    if [ "$lay" = 2 ]; then outdir=entities2; _fsort=""; _nreal=22; fi   # 22 = the directive + Name + 20 figure columns (Duration p90/p95/p99 last)
     segment_rpt "$rpt"                                  # TBLOCK[1]=Summary, TBLOCK[2]=Detail
     local sumblk=${TBLOCK[1]:-}
     local stable shead stotal srows snotes
@@ -1449,30 +1449,43 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # The Entities2 twin's subset TOTAL (lay 2): the same @data:res filter,
     # re-summing the grouped columns — the count cells (fields 6-7, 9-11,
     # 13-17), the Files total and bytes from the buckets (metrics 0 and 4),
-    # Days = the DISTINCT bucket dates — into the writer's own baked TOTAL
-    # line, whose @{class=…} cell prefixes are kept (the formatting lives in
-    # the writer alone). Template cells: 2 label · 3 First · 4 Last · 5 Days ·
+    # Days = the DISTINCT bucket dates, the Duration percentiles from the
+    # rows' merged @data:durhist histograms (display-grid values, the
+    # writer's nearest-rank rule) — into the writer's own baked TOTAL line,
+    # whose @{class=…} cell prefixes are kept (the formatting lives in the
+    # writer alone). Template cells: 2 label · 3 First · 4 Last · 5 Days ·
     # 6 Ok · 7 Error · 8 Error % · 9 In · 10 Out · 11 Error · 12 Error % ·
     # 13 Auto · 14 Manual-ok · 15 Manual-error · 16 Waiting · 17 Expired ·
-    # 18 Total · 19 Avg.
+    # 18 Total · 19 Avg · 20 p90 · 21 p95 · 22 p99.
     entity2_res_block() {   # $1 = green|orange|red   $2 = the All-view rows to filter
         printf '%s\n' "$2" | LC_ALL=C awk -F'\t' -v OFS='\t' -v want="@data:res=$1" -v tmpl="$stotal" '
             function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0
                 while (v>=1024 && i<6) { v/=1024; i++ }
                 return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
+            function humandur(ms) { if (ms < 1000) return sprintf("%d ms", ms); if (ms < 60000) return sprintf("%.2f s", ms / 1000)
+                if (ms < 3600000) return sprintf("%.1f min", ms / 60000); return sprintf("%.2f h", ms / 3600000) }
             function pr(x, c) { if (c > 0) return sprintf("%.1f", x * 100 / c) "%"; return "0.0%" }
             function n(s) { gsub(/[^0-9]/, "", s); return s + 0 }
+            function prank(P,   r, cum, i2) { r = int((HN - 1) * P / 100 + 0.5) + 1; cum = 0
+                for (i2 = 1; i2 <= hq; i2++) { cum += HC[i2]; if (cum >= r) return HQ[i2] } return HQ[hq] }
             $1=="ROW" {
                 hit=0; for (i=1;i<=NF;i++) if ($i==want) hit=1
                 if (!hit) next
                 cnt++
                 for (c = 6; c <= 17; c++) if (c != 8 && c != 12) S[c] += n($c)
-                for (i=1;i<=NF;i++) if ($i ~ /^@data:buckets=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ split(B[j],C,":"); files += C[2]+0; sb += C[6]+0; dd[C[1]] = 1 } }
+                for (i=1;i<=NF;i++) {
+                    if ($i ~ /^@data:buckets=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ split(B[j],C,":"); files += C[2]+0; sb += C[6]+0; dd[C[1]] = 1 } }
+                    else if ($i ~ /^@data:durhist=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ p = index(B[j], "."); if (p > 1) HH[substr(B[j],1,p-1)+0] += substr(B[j],p+1)+0 } }
+                }
                 rows[++nr]=$0 }
             END {
                 for (d in dd) days++
+                # the merged histogram, sorted by grid value (insertion sort — a few hundred entries at most)
+                hq = 0; HN = 0
+                for (k in HH) { v = k + 0; c = HH[k]; HN += c; j = hq; while (j >= 1 && HQ[j] > v) { HQ[j+1] = HQ[j]; HC[j+1] = HC[j]; j-- } HQ[j+1] = v; HC[j+1] = c; hq++ }
                 V[5]=days+0; V[6]=S[6]+0; V[7]=S[7]+0; V[8]=pr(S[7], S[6]+S[7]); V[9]=S[9]+0; V[10]=S[10]+0; V[11]=S[11]+0; V[12]=pr(S[11], files)
                 V[13]=S[13]+0; V[14]=S[14]+0; V[15]=S[15]+0; V[16]=S[16]+0; V[17]=S[17]+0; V[18]=human(sb); V[19]=human(files > 0 ? sb / files : 0)
+                V[20] = (HN > 0) ? humandur(prank(90)) : ""; V[21] = (HN > 0) ? humandur(prank(95)) : ""; V[22] = (HN > 0) ? humandur(prank(99)) : ""
                 nt = split(tmpl, T, "\t")
                 l = T[2]; sub(/\([0-9,]+/, "(" cnt, l); out = T[1] OFS l
                 for (c = 3; c <= nt; c++) { cell = T[c]

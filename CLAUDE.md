@@ -937,7 +937,10 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   traffic) · Transfers (Ok · Error · Error % — the LEGS of the entity's Files) · Files (In · Out by
   MOVEMENT, `_files.tsv` col 17 · Error · Error %) · Recover (Auto = the classic Retry; Manual-ok /
   Manual-error = every resubmitted File by outcome — the Top view's Automatic + Resubmit Ok/Failed
-  rule) · State (Waiting · Expired) · Volume (Total · Avg per File); every count cell drills to its
+  rule) · State (Waiting · Expired) · Volume (Total · Avg per File) · Duration (p90 · p95 · p99 of
+  the OK Files' wall-clock span, the Duration report's scope and nearest-rank rule, FULL-PERIOD
+  under the date filter like the Slowest subscriptions page; each row carries a display-grid
+  histogram `@data:durhist` for the subset totals); every count cell drills to its
   10 newest Files. Pieces: `bin/transfer/reports/entities2.sh` (ONE writer for all nine, its
   attribution mirroring the five classic writers — Files/Error/Auto/Volume/First/Last agree row for
   row) → `data/transfer/reports/entities2/<entity>.rpt` → `render_entity_report` in its
