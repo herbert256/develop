@@ -404,7 +404,7 @@ group_members() {
         entity-search)       echo "entity-search" ;;
         time)                echo "activity punctuality expected-arrival" ;;   # 2026-07: day/weekly/hourly/weekday merged into activity; 2026-08: + expected-arrival
         account-login-site)  echo "subscription logical partner account login remote-host domain application bl" ;;
-        volume-files)        echo "volume files top-transfers route-throughput size-profile ranking" ;;   # ranking retired 2026-07; 2026-08: + route-throughput/size-profile
+        volume-files)        echo "ranking volume files top-transfers route-throughput size-profile" ;;   # Ranking FIRST (2026-09-13, user request) — it leads the group: the menu and index land on it   # ranking retired 2026-07; 2026-08: + route-throughput/size-profile
         failures)            echo "failure-rate episodes retries recovered recovered-files failure-heatmap" ;;   # from-green-to-red/only-red/waiting/expired/pirates/went-quiet are boxes-only (BOXES_ONLY_REPORTS); 2026-08: + recovered (the good-news mirror) + recovered-files (the per-File Recovered analysis)
         flow-shape)          echo "file-journey file-in-file-out" ;;   # 2026-07: patterns/arrived-left/legs-count/protocol-journey merged into file-journey; attempts/resubmissions into retries
         protocol-security)   echo "protocol security-params security-outreach av-scan connection-efficiency" ;;   # 2026-08: + security-outreach/connection-efficiency
