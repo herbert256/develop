@@ -50,6 +50,10 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .topbar .envlink:hover { text-decoration:underline; }
 .topbar .envlink.envcur { color:#ffd400; font-weight:bold; }
 .topbar .envsep { color:#fff; opacity:0.7; }
+/* THE DATA PERIOD (2026-09-13, user request): "yyyy-mm-dd / yyyy-mm-dd", the
+   first and last day of the transfer data — second in the bar, after the
+   environment and before Entities (report.js buildTopbar / render_topbar) */
+.topbar .period { color:#fff; font-size:0.9rem; white-space:nowrap; opacity:0.85; font-variant-numeric:tabular-nums; }
 .topbar .tright { color:#fff; font-size:0.95rem; white-space:nowrap; }
 /* hover dropdowns of report links (left-anchored: the menus live on the bar's left side) */
 .dd { position:relative; }

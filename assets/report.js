@@ -3785,6 +3785,11 @@
     } else brandHtml = '<a class="brand" href="' + b + 'index.html">' + esc(brand) + "</a>";
     tb.innerHTML =
       brandHtml +
+      // THE DATA PERIOD (2026-09-13, user request): "yyyy-mm-dd / yyyy-mm-dd",
+      // the first and last day of the transfer data (ensure_assets bakes it
+      // as `period`), second — after the environment, before Entities. KEEP
+      // IN STEP with publish_lib.sh render_topbar.
+      (M.period ? '<span class="period" title="The data period: the first and last day of the transfer data">' + esc(M.period) + "</span>" : "") +
       '<span class="entgroup"><a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
       '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
       // the FILE SEARCH entry (2026-08): the leader of the windowed pages,

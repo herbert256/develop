@@ -567,6 +567,15 @@ check $([ ! -e docs/transfer/duration-minmax.html ] && [ ! -e docs/transfer/dura
 dr=$(awk '/<table class="index fit dayrows/ { p = 1 } p && /<tr>/ && /<td/ { print; exit }' docs/index.html 2>/dev/null | grep -o 'data-href="transfer/duration.html">[^<][^<]*<' | wc -l | tr -d ' ')
 check $([ "${dr:-0}" -ge 5 ] && echo 0 || echo 1) "the home page's newest day carries ${dr:-0} filled Duration cells (the extractor must still find the percentiles table)"
 
+# the DATA PERIOD in the top bar (2026-09-13, user request): "yyyy-mm-dd /
+# yyyy-mm-dd", the transfer data's first and last day (day.rpt META
+# first/last), second after the environment — in the runtime bar data and
+# on the baked bar of the help pages
+per=$(awk -F'\t' '$1 == "META" && ($2 == "first" || $2 == "last") { v[$2] = substr($3, 1, 10) } END { print v["first"] " / " v["last"] }' data/transfer/reports/day.rpt 2>/dev/null)
+check $([ "$per" != " / " ] && [ "$(grep -c "period:\"$per\"" docs/assets/topbar-data.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js does not carry period:\"$per\""
+check $([ "$(grep -c "<span class=\"period\"[^>]*>$per</span><span class=\"entgroup\">" docs/help/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the baked top bar does not show the period '$per' between the brand and Entities"
+check $([ "$(grep -c '<a class="brand" href="../index.html">Sample</a><span class="period"' docs/help/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the baked top bar does not place the period right after the brand"
+
 # the fixed duration axis of the Overview / day-page Duration heroes
 # (2026-09-12, user request): the shipped slotchart.js carries the 19-tick
 # scale verbatim, 1 s .. >= 48 h

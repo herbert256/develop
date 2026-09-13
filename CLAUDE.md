@@ -88,7 +88,7 @@ checkout with logs but no config export: it synthesizes the two JSONs from the t
 - **The top bar is RUNTIME**: pages bake only that placeholder; report.js `buildTopbar` renders
   the full bar from `docs/assets/topbar-data.js` (written by `ensure_assets`: the
   `transfer/server/analyses` menu strings with their `@` placeholder, `monitor:0|1`,
-  `coreid:"<url>"`, `env:"<label>"`, `envkey:"<key>"` + the `AXWAY_ENVLINKS` switch function;
+  `coreid:"<url>"`, `env:"<label>"`, `envkey:"<key>"`, `period:"yyyy-mm-dd / yyyy-mm-dd"` (the DATA PERIOD — the transfer day report’s META first/last days, shown second in the bar after the environment, before Entities; 2026-09-13, user request) + the `AXWAY_ENVLINKS` switch function;
   `?v=` stamp `TB_VER` folds the flag, the template, the label, the key and the site URLs). The
   help/build pages bake full chrome (`render_shared_topbar` → `render_topbar BASE HELPSLUG`, the
   switch script inline on the bar line) — KEEP THE TWO IN STEP.

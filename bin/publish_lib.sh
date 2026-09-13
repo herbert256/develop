@@ -732,6 +732,9 @@ render_topbar() {
     else
         printf '<div class="topbar"><a class="brand" href="%s">%s</a>' "$home" "$brand"
     fi
+    # THE DATA PERIOD (2026-09-13, user request): second, after the
+    # environment and before Entities — KEEP IN STEP with report.js buildTopbar
+    if [ -n "${TB_PERIOD:-}" ]; then esc "$TB_PERIOD"; printf '<span class="period" title="The data period: the first and last day of the transfer data">%s</span>' "$ESC"; fi
     printf '<span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch/search.html" title="Search" aria-label="Search">&#128269;</a></span>' "$base" "$base"
     # the FILE SEARCH entry (2026-08), mirroring report.js buildTopbar:
     # between the search icon and the report menus
@@ -2592,7 +2595,19 @@ ENV_SITES_JS='{local:{acceptance:"http://localhost/runtime-acceptance/",producti
 ENVSWITCH_JS='window.AXWAY_ENVLINKS=function(){var S='"$ENV_SITES_JS"',h=location.hostname,L=(h==="localhost"||h==="127.0.0.1")?S.local:S.remote,A=document.querySelectorAll("a[data-envto]"),i,a,b,r,p;for(i=0;i<A.length;i++){a=A[i];b=L[a.getAttribute("data-envto")];if(!b)continue;r=new URL(a.getAttribute("data-root")||"./",location.href).pathname;p=location.pathname.indexOf(r)===0?location.pathname.slice(r.length):"";a.href=b+p+location.search+location.hash}};'
 # the pair is a RUNTIME feature: only the two runtime keys get it
 env_has_switch() { [ "${ENV_KEY:-}" = acceptance ] || [ "${ENV_KEY:-}" = production ]; }
-TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU$TB_MON$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS" | cksum | cut -d' ' -f1)
+# THE DATA PERIOD in the top bar (2026-09-13, user request): "yyyy-mm-dd /
+# yyyy-mm-dd", the first and last day of the transfer data — the day report's
+# META first/last records (the same window the From/To selectors span) —
+# shown right after the environment and before Entities, on the runtime bar
+# (topbar-data.js `period`) and the baked one alike; empty on a checkout
+# without transfer data. Folded into TB_VER: it changes only when the data
+# window does, which re-renders the pages anyway.
+TB_PERIOD=""
+if [ -f "$DATA/transfer/reports/day.rpt" ]; then
+    TB_PERIOD=$(awk -F'\t' '$1 == "META" && ($2 == "first" || $2 == "last") && $3 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { v[$2] = substr($3, 1, 10) }
+        END { if (("first" in v) && ("last" in v)) print v["first"] " / " v["last"] }' "$DATA/transfer/reports/day.rpt")
+fi
+TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU$TB_MON$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS$TB_PERIOD" | cksum | cut -d' ' -f1)
 
 # Copy the shared assets into docs/ and write .nojekyll. Idempotent, so each
 # publish script can call it and still produce a valid site when run on its own.
@@ -2643,7 +2658,9 @@ ensure_assets() {
     # + envkey (report.js renders the Acceptance / Production pair for the
     # two runtime keys) and the ENVIRONMENT SWITCH function itself
     # (ENVSWITCH_JS — the one implementation, see TB_VER above)
-    local _tb; printf -v _tb 'window.AXWAY_TB={transfer:"%s",server:"%s",analyses:"%s",monitor:%s,coreid:"%s",env:"%s",envkey:"%s"};%s' "$t" "$s" "$a" "${TB_MON:-0}" "$c" "$e" "$k" "$ENVSWITCH_JS"
+    # + the data period (TB_PERIOD, "yyyy-mm-dd / yyyy-mm-dd" — plain digits,
+    # slashes and spaces, nothing to escape)
+    local _tb; printf -v _tb 'window.AXWAY_TB={transfer:"%s",server:"%s",analyses:"%s",monitor:%s,coreid:"%s",env:"%s",envkey:"%s",period:"%s"};%s' "$t" "$s" "$a" "${TB_MON:-0}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENVSWITCH_JS"
     _asset_put docs/assets/topbar-data.js "$_tb"
     [ -f docs/.nojekyll ] || : > docs/.nojekyll
 }
