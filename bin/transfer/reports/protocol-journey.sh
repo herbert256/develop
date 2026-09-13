@@ -74,9 +74,13 @@ agg=$( { cat "$FILES"; printf '###SPLIT###\n'; LC_ALL=C sort -t"$(printf '\t')" 
         flush()
         if (maxrec < 1) maxrec = 1
         for (k in cdr) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" cdr[k] ":" (cdf[k]+0) ":" (cdp[k]+0) ":" cdb[k] }
+        # share and bar over the DELIVERED (OK) count (2026-09-13, user request:
+        # the one Files column of the table is the OK count — no Error / OK pair)
+        maxpr = 0; for (ch in cr) if (cp[ch] + 0 > maxpr) maxpr = cp[ch] + 0
+        if (maxpr < 1) maxpr = 1
         for (ch in cr) {
-            sh = trec > 0 ? sprintf("%.1f", cr[ch] * 100 / trec) : "0.0"
-            w = int(cr[ch] * 100 / maxrec)
+            sh = tpr > 0 ? sprintf("%.1f", (cp[ch]+0) * 100 / tpr) : "0.0"
+            w = int((cp[ch]+0) * 100 / maxpr)
             printf "CHN|%s|%d|%d|%d|%s|%s|%d|%s|%s|%s\n", ch, cr[ch], cf[ch]+0, cp[ch]+0, human(cb[ch]+0), sh, w, bk[ch], buildlist(top["J" SUBSEP ch SUBSEP "F"]), buildlist(top["J" SUBSEP ch SUBSEP "P"])
         }
         for (p in lr) {
@@ -103,28 +107,35 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed <<< "$(printf '%s\n' "$agg" |
     printf 'INTRO\tEach File'\''s legs, in start-time order, as a **protocol chain** — consecutive repeats collapse to **proto+** (one or more), so every UC2 repeat-collect variant folds into one journey like **pesit \342\206\222 routing+ \342\206\222 ssh+**. Patterns shows the Direction/Status shape; this shows the **route**. **%s** Files: **%s** Error, **%s** OK.\n' "$tot_rec" "$tot_failed" "$tot_processed"
 
     printf 'TABLE\tFiles by protocol journey\n'
-    printf 'HEAD\tJourney\tFiles\tError\tOK\tVolume\t%% of Files\tDistribution\n'
-    printf 'KIND\tmono\tnum\tnumfailed\tnumprocessed\tnum\tnum\tbar\n'
-    printf 'RECALC\t-\ts0\ts1\ts2\th3\t%%0\tb0\n'
+    # FILES = the delivered (OK) count (2026-09-13, user request: the Patterns
+    # group tables carry ONE Files column, no Error / OK pair, no green/red
+    # cells, no drills); the bucket payload keeps all four metrics, so the
+    # tokens read metric 2 (ok) for Files, the share and the bar
+    printf 'HEAD\tJourney\tFiles\tVolume\t%% of Files\tDistribution\n'
+    printf 'KIND\tmono\tnum\tnum\tnum\tbar\n'
+    printf 'RECALC\t-\ts2\th3\t%%2\tb2\n'
     # straight into the report — no per-row command substitution
     while IFS='|' read -r _ chain rec fa pr human sh w bk ccf ccp; do
         [ -z "$chain" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n' "$chain" "$rec" "$fa" "$pr" "$human" "$sh" "$w" "$bk" "$ccf" "$ccp"
-    done <<< "$(printf '%s\n' "$agg" | grep '^CHN|' | sort -t'|' -k3,3nr)"
-    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t\t@{class=num}100.0%%\t\n' \
-        "$tot_rec" "$tot_failed" "$tot_processed"
-    printf 'NOTE\tClick an Error or OK count for that journey'\''s 10 most recent Files. **?** marks a leg with no protocol logged.\n'
+        printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\n' "$chain" "$pr" "$human" "$sh" "$w" "$bk"
+    done <<< "$(printf '%s\n' "$agg" | grep '^CHN|' | sort -t'|' -k5,5nr)"
+    printf 'TOTAL\tTotal\t@{class=num}%s\t\t@{class=num}100.0%%\t\n' "$tot_processed"
+    printf 'NOTE\tFiles = the delivered (OK) Files of that journey. **?** marks a leg with no protocol logged.\n'
 
+    # the last-leg table: Files = the Delivered count (the former Delivered
+    # column), the Errored column gone; Waiting / Expired stay
     printf 'TABLE\tWhere the journey ends — protocol of the last leg\n'
-    printf 'HEAD\tLast leg\tFiles\tDelivered\tErrored\tWaiting\tExpired\n'
-    printf 'KIND\tmono\tnum\tnumprocessed\tnumfailed\tnumwarn\tnum\n'
-    printf 'RECALC\t-\ts0\t-\t-\t-\t-\n'
+    printf 'HEAD\tLast leg\tFiles\tWaiting\tExpired\n'
+    printf 'KIND\tmono\tnum\tnumwarn\tnum\n'
+    printf 'RECALC\t-\t-\t-\t-\n'
+    tot_del=0
     while IFS='|' read -r _ p rec del fa wt ex bk ccf ccp; do
         [ -z "$p" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n' "$p" "$rec" "$del" "$fa" "$wt" "$ex" "$bk" "$ccf" "$ccp"
-    done <<< "$(printf '%s\n' "$agg" | grep '^END|' | sort -t'|' -k3,3nr)"
-    printf 'TOTAL\tTotal\t@{class=num}%s\t\t\t\t\n' "$tot_rec"
-    printf 'NOTE\tThe protocol each File'\''s FINAL leg used, split by its delivered state. A journey ending on **routing** never left staging — the Waiting / Expired population; a healthy delivery ends on **ssh**/**ftp** (partner side) or **pesit** (CFT side). The state columns show full-period values under a narrowed date range.\n'
+        printf 'ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\n' "$p" "$del" "$wt" "$ex" "$bk"
+        tot_del=$((tot_del + del))
+    done <<< "$(printf '%s\n' "$agg" | grep '^END|' | sort -t'|' -k4,4nr)"
+    printf 'TOTAL\tTotal\t@{class=num}%s\t\t\n' "$tot_del"
+    printf 'NOTE\tThe protocol each File'\''s FINAL leg used — Files = the delivered ones, beside the Waiting / Expired population. A journey ending on **routing** never left staging — the Waiting / Expired population; a healthy delivery ends on **ssh**/**ftp** (partner side) or **pesit** (CFT side). The state columns show full-period values under a narrowed date range.\n'
 
     printf 'SUMMARY\tFiles: %s | Error: %s | OK: %s\n' "$tot_rec" "$tot_failed" "$tot_processed"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

@@ -523,6 +523,22 @@ m=$(awk -F'\t' '$1 == "META" && $2 == "day" { n++; if ($4 + 0 < $5 + 0) bad++ } 
 check $([ "${m%% *}" -gt 0 ] && [ "${m##* }" = 0 ] && echo 0 || echo 1) "day.rpt META day lines: ${m:-none} (count, rows with failed > files)"
 check $([ "$(grep -c '\$1=="META" && \$2=="day"' bin/dashboards/lib.sh 2>/dev/null)" = 2 ] && echo 0 || echo 1) "dashboards/lib.sh does not read the per-day series from the META day lines"
 
+# the Patterns group tables carry ONE Files column — the delivered count —
+# and no Error / OK (Delivered / Errored) pair (2026-09-13, user request):
+# no green/red cells on the file-journey pages, the leg-count / journey /
+# arrived-left Files totals = the caches' OK count
+n=$(awk -F'\t' '$1 == "HEAD" && (/\tOK\t|\tOK$|\tError\t|\tError$|\tDelivered\t|\tErrored\t/) { n++ } END { print n + 0 }' data/transfer/reports/file-journey.rpt 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "file-journey.rpt still has $n table header(s) with an OK / Error / Delivered / Errored column"
+n=$(grep -c 'class="num failed"\|class="num processed"' docs/transfer/file-journey*.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n green/red (OK/Error) cells left on the Patterns group pages"
+want=$(awk -F'\t' '$4 != "" && $2 != "Failed" && $2 != "Expired" { n++ } END { print n + 0 }' "$F" 2>/dev/null)
+for t in "Files by leg count" "Files by protocol journey"; do
+    got=$(awk -F'\t' -v t="$t" '$1 == "TABLE" && $2 == t { p = 1 } p && $1 == "TOTAL" { v = $3; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/transfer/reports/file-journey.rpt 2>/dev/null)
+    check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "file-journey '$t' Files total is '${got:-absent}', the caches hold ${want:-?} OK Files"
+done
+got=$(awk -F'\t' '$1 == "TOTAL" && $2 == "@{colspan=2}Files" { v = $3; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/transfer/reports/file-journey.rpt 2>/dev/null)
+check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "file-journey Arrived / Left Files total is '${got:-absent}', the caches hold ${want:-?} OK Files"
+
 # the Duration report holds BOTH per-day tables side by side (2026-09-13,
 # user request): percentiles first (the home page reads it by title), then
 # min / avg / median / max; the Min/Avg/Max sibling pages are gone and the

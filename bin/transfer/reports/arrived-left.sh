@@ -93,21 +93,23 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed <<< "$(printf '%s\n' "$agg" |
 {
     printf 'TITLE\tArrived / Left\n'
     printf 'DESC\tHow each File arrived (first Inbound protocol) and how it left (last Outbound protocol), with the delivered outcome.\n'
-    printf 'INTRO\tEach **File** is counted once by how its file **arrived** — the protocol of its earliest **Inbound** row — and how it **left** — the protocol of its latest **Outbound** row. **OK/Error** is the delivered (final-row) outcome. Every File has exactly one arrival and one departure protocol, so the rows reconcile to the total. **Click an Error or OK count** to see the 10 most recent Files of that outcome (by start time).\n'
+    printf 'INTRO\tEach **File** is counted once by how its file **arrived** — the protocol of its earliest **Inbound** row — and how it **left** — the protocol of its latest **Outbound** row. **Files** counts the delivered (OK) ones — the final-row outcome. Every File has exactly one arrival and one departure protocol, so the rows reconcile to the total.\n'
     printf 'TABLE\t\n'
-    printf 'HEAD\tArrived\tLeft\tFiles\tError\tOK\n'
-    printf 'KIND\ttext\ttext\tnum\tnumfailed\tnumprocessed\n'
-    printf 'RECALC\t-\t-\ts0\ts1\ts2\n'
-    # Crosstab rows: Arrived | Left | Files | Error | OK | buckets, most common
+    # FILES = the delivered (OK) count (2026-09-13, user request: the Patterns
+    # group tables carry ONE Files column, no Error / OK pair, no green/red
+    # cells, no drills); the bucket payload keeps its three metrics, so the
+    # token reads metric 2 (ok)
+    printf 'HEAD\tArrived\tLeft\tFiles\n'
+    printf 'KIND\ttext\ttext\tnum\n'
+    printf 'RECALC\t-\t-\ts2\n'
+    # Crosstab rows: Arrived | Left | Files | buckets, most common (by OK Files)
     # first — printed straight into the report, no per-row command substitution.
     while IFS='|' read -r _ arrived left rec fa pr bk ccf ccp; do
         [ -z "$arrived" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n' \
-            "$arrived" "$left" "$rec" "$fa" "$pr" "$bk" "$ccf" "$ccp"
-    done <<< "$(printf '%s\n' "$agg" | grep '^X|' | sort -t'|' -k4,4nr)"
-    printf 'TOTAL\t@{colspan=2}Files\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\n' \
-        "$tot_rec" "$tot_failed" "$tot_processed"
-    printf 'NOTE\tArrived = the protocol of the earliest Inbound row; Left = the protocol of the latest Outbound row. "(none)" means the File had no Inbound (or no Outbound) row. Counts are Files, so the rows reconcile to the total; OK/Error follows the delivered (final-row) outcome.\n'
+        printf 'ROW\t%s\t%s\t%s\t@data:buckets=%s\n' "$arrived" "$left" "$pr" "$bk"
+    done <<< "$(printf '%s\n' "$agg" | grep '^X|' | sort -t'|' -k6,6nr)"
+    printf 'TOTAL\t@{colspan=2}Files\t@{class=num}%s\n' "$tot_processed"
+    printf 'NOTE\tArrived = the protocol of the earliest Inbound row; Left = the protocol of the latest Outbound row. "(none)" means the File had no Inbound (or no Outbound) row. Files counts the delivered (OK) Files of that pair (2026-09-13 — the Error / OK split is gone), so the rows reconcile to the delivered total.\n'
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

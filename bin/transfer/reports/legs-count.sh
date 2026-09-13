@@ -61,10 +61,14 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         split("1 leg|2 legs|3 legs|4 legs|5 legs|6 legs|7 legs|8 legs|9 legs|10 legs|11 - 100 legs|> 100 legs", lab, "|")
         if (maxrec < 1) maxrec = 1
         for (k in bdr) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" bdr[k] ":" (bdf[k]+0) ":" (bdp[k]+0) ":" bdb[k] }
+        # share and bar over the DELIVERED (OK) count (2026-09-13, user request:
+        # the one Files column of the table is the OK count — no Error / OK pair)
+        maxpr = 0; for (i = 1; i <= 12; i++) if (bp[i] + 0 > maxpr) maxpr = bp[i] + 0
+        if (maxpr < 1) maxpr = 1
         for (i = 1; i <= 12; i++) {
             if (br[i] + 0 == 0) continue
-            sh = trec > 0 ? sprintf("%.1f", (br[i]+0) * 100 / trec) : "0.0"
-            w = int((br[i]+0) * 100 / maxrec)
+            sh = tpr > 0 ? sprintf("%.1f", (bp[i]+0) * 100 / tpr) : "0.0"
+            w = int((bp[i]+0) * 100 / maxpr)
             printf "BKT|%s|%d|%d|%d|%d|%s|%s|%d|%s|%s|%s\n", lab[i], br[i]+0, bf[i]+0, bp[i]+0, bb[i]+0, human(bb[i]+0), sh, w, bk[i], buildlist(top["L" SUBSEP i SUBSEP "F"]), buildlist(top["L" SUBSEP i SUBSEP "P"])
         }
         # top-25, most legs first (selection sort on the padded keys)
@@ -93,17 +97,20 @@ top_n=0
     printf 'INTRO\tEvery File is a set of physical log rows sharing one CoreId — its **legs**. A clean store-and-forward is **2 legs** (Inbound + Outbound), retries add legs, a **UC2 pickup is 4+** (arrival, the staging pair, then one leg per partner collect — repeat collectors reach hundreds), and **1 leg** is a one-sided crossing (see One-legged). **%s** Files: **%s** Error, **%s** OK.\n' "$tot_rec" "$tot_failed" "$tot_processed"
 
     printf 'TABLE\tFiles by leg count\n'
-    printf 'HEAD\tLegs\tFiles\tError\tOK\tVolume\t%% of Files\tDistribution\n'
-    printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\tnum\tbar\n'
-    printf 'RECALC\t-\ts0\ts1\ts2\th3\t%%0\tb0\n'
+    # FILES = the delivered (OK) count (2026-09-13, user request: the Patterns
+    # group tables carry ONE Files column, no Error / OK pair, no green/red
+    # cells, no drills); the bucket payload keeps all four metrics, so the
+    # tokens read metric 2 (ok) for Files, the share and the bar
+    printf 'HEAD\tLegs\tFiles\tVolume\t%% of Files\tDistribution\n'
+    printf 'KIND\ttext\tnum\tnum\tnum\tbar\n'
+    printf 'RECALC\t-\ts2\th3\t%%2\tb2\n'
     while IFS='|' read -r _ label rec fa pr bytes human sh w bk ccf ccp; do
         [ -z "$label" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\t@data:ord=%s\n' "$label" "$rec" "$fa" "$pr" "$human" "$sh" "$w" "$bk" "$ccf" "$ccp" "$ord"
+        printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:ord=%s\n' "$label" "$pr" "$human" "$sh" "$w" "$bk" "$ord"
         ord=$((ord + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^BKT|')"
-    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t\t@{class=num}100.0%%\t\n' \
-        "$tot_rec" "$tot_failed" "$tot_processed"
-    printf 'NOTE\tClick an Error or OK count for that bucket'\''s 10 most recent Files. The **1 leg** bucket is the One-legged (Pirates) population.\n'
+    printf 'TOTAL\tTotal\t@{class=num}%s\t\t@{class=num}100.0%%\t\n' "$tot_processed"
+    printf 'NOTE\tFiles = the delivered (OK) Files of that bucket. The **1 leg** bucket is the One-legged (Pirates) population.\n'
     printf 'LINK\tpirates-details.html\tOne-legged transfers (the 1-leg Files, per subscription)\n'
 
     printf 'TABLE\tFiles with the most legs\n'
