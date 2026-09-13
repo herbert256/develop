@@ -73,8 +73,10 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         if (!(e in havemin) || sk < mink[e]) { mink[e] = sk; fst[e] = date; havemin[e] = 1 }
         if (!(e in havemax) || sk > maxk[e]) { maxk[e] = sk; lst[e] = date; havemax[e] = 1 }
         addtop("S" SUBSEP e SUBSEP (f ? "F" : "P"), sk, disp, cid)
+        if (rt) addtop("R" SUBSEP e SUBSEP "T", sk, disp, cid); if (rs) addtop("R" SUBSEP e SUBSEP "S", sk, disp, cid)   # the Retry / Resubmit drill lists, 10 newest each (2026-09-13, user request)
         dk = e SUBSEP date; ds[dk] = 1; dl[dk]++; if (f) dfl[dk]++; else dpr[dk]++; if (rt) drt[dk]++; if (rs) drs[dk]++; ddb[dk] += size
         addtop("D" SUBSEP e SUBSEP date SUBSEP (f ? "F" : "P"), sk, disp, cid)
+        if (rt) addtop("Q" SUBSEP e SUBSEP date SUBSEP "T", sk, disp, cid); if (rs) addtop("Q" SUBSEP e SUBSEP date SUBSEP "S", sk, disp, cid)
         tc++; if (f) tfl++; else tpr++; if (rt) trt++; if (rs) trs++; tvol += size
     }
     END {
@@ -82,11 +84,11 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
             bk[kk[1]] = bk[kk[1]] (bk[kk[1]] ? "," : "") kk[2] ":" dl[dk] ":" (dfl[dk]+0) ":" (dpr[dk]+0) ":" ddb[dk] ":" (drt[dk]+0) ":" (drs[dk]+0) }
         for (e in sc) { ns++
             sh = tc > 0 ? sprintf("%.1f", sc[e] * 100 / tc) : "0.0"
-            printf "S|%s|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s\n", e, sc[e], sfl[e]+0, spr[e]+0, srt[e]+0, srs[e]+0, human(sv[e]+0), sh, fst[e], lst[e], \
-                bk[e], buildlist(top["S" SUBSEP e SUBSEP "F"]), buildlist(top["S" SUBSEP e SUBSEP "P"]) }
+            printf "S|%s|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", e, sc[e], sfl[e]+0, spr[e]+0, srt[e]+0, srs[e]+0, human(sv[e]+0), sh, fst[e], lst[e], \
+                bk[e], buildlist(top["S" SUBSEP e SUBSEP "F"]), buildlist(top["S" SUBSEP e SUBSEP "P"]), buildlist(top["R" SUBSEP e SUBSEP "T"]), buildlist(top["R" SUBSEP e SUBSEP "S"]) }
         for (dk in ds) { split(dk, x, SUBSEP); nd++
-            printf "D|%s|%s|%d|%d|%d|%d|%d|%s|%s\n", x[1], x[2], dl[dk], dfl[dk]+0, dpr[dk]+0, drt[dk]+0, drs[dk]+0, \
-                buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "F"]), buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "P"]) }
+            printf "D|%s|%s|%d|%d|%d|%d|%d|%s|%s|%s|%s\n", x[1], x[2], dl[dk], dfl[dk]+0, dpr[dk]+0, drt[dk]+0, drs[dk]+0, \
+                buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "F"]), buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "P"]), buildlist(top["Q" SUBSEP x[1] SUBSEP x[2] SUBSEP "T"]), buildlist(top["Q" SUBSEP x[1] SUBSEP x[2] SUBSEP "S"]) }
         printf "T|%d|%d|%d|%s|%d|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, nd+0, trt+0, trs+0
     }
 ' "$FILES" "$PARSED" "$PARSED")
@@ -104,16 +106,16 @@ IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_cou
 # remainder, like read into the final variable did.
 summary_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | sort -t'|' -k3,3nr | awk -F'|' '
     $2 == "" { next }
-    { ccp = $14; for (i = 15; i <= NF; i++) ccp = ccp "|" $i
-      printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-          $2, $3, $4, $5, $6, $7, $8, $10, $11, $12, $13, ccp }')
+    { ccp = $14   # field 14 = the OK list; 15/16 = the Retry / Resubmit lists (2026-09-13)
+      printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\t@data:coreids-retry=%s\t@data:coreids-resubmit=%s\n", \
+          $2, $3, $4, $5, $6, $7, $8, $10, $11, $12, $13, ccp, $15, $16 }')
 
 # Detail rows, sorted by host then date (repeated host blanked in-browser).
 detail_rows=$({ printf '%s\n' "$agg" | grep '^D|' || true; } | sort -t'|' -k2,2 -k3,3 | awk -F'|' '
     $2 == "" { next }
-    { ccp = $10; for (i = 11; i <= NF; i++) ccp = ccp "|" $i
-      printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-          $2, $3, $4, $5, $6, $7, $8, $9, ccp }')
+    { ccp = $10   # field 10 = the OK list; 11/12 = the Retry / Resubmit lists (2026-09-13)
+      printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\t@data:coreids-retry=%s\t@data:coreids-resubmit=%s\n", \
+          $2, $3, $4, $5, $6, $7, $8, $9, ccp, $11, $12 }')
 
 {
     printf 'TITLE\tRemote Hosts\n'

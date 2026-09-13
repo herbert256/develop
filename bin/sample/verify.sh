@@ -320,6 +320,22 @@ read -r got gotm <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "TOTAL" {
 check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "account.rpt Retry + Resubmit total is '${got:-absent}', an independent recount of the caches gives '${want:-?}'"
 check $([ "${gotm:-x}" = "${wantm:-y}" ] && echo 0 || echo 1) "account.rpt Resubmit total is '${gotm:-absent}', an independent recount of the caches gives '${wantm:-?}'"
 check $([ "${want:-0}" -gt "${wantm:-0}" ] && [ "${wantm:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Retry (${want:-0} cured, ${wantm:-0} resubmitted) or no Resubmit File — an Entities column is never exercised"
+# the Retry / Resubmit DRILLS (2026-09-13, user request): every summary row
+# with a Retry (Resubmit) count carries a non-empty coreids-retry
+# (coreids-resubmit) list of at most 10 entries, a row without one carries
+# an empty list, and the rendered page ships the attributes
+read -r dr1 dr2 dr3 <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" {
+        r = ""; s = ""; for (i = 8; i <= NF; i++) { if (index($i, "@data:coreids-retry=") == 1) r = substr($i, 21); if (index($i, "@data:coreids-resubmit=") == 1) s = substr($i, 24) }
+        nr = (r == "" ? 0 : split(r, a, ",")); ns = (s == "" ? 0 : split(s, b, ","))
+        if (($6 + 0 > 0) != (nr > 0) || ($7 + 0 > 0) != (ns > 0)) bad++
+        if (nr > 10 || ns > 10) big++
+        if (nr > 0) anyr++; if (ns > 0) anys++ }
+    END { print bad + 0, big + 0, (anyr > 0 && anys > 0) + 0 }' "data/transfer/reports/subscription.rpt" 2>/dev/null)"
+check $([ "${dr1:-1}" = 0 ] && echo 0 || echo 1) "subscription.rpt: ${dr1:-?} row(s) whose Retry/Resubmit count and drill list disagree"
+check $([ "${dr2:-1}" = 0 ] && echo 0 || echo 1) "subscription.rpt: ${dr2:-?} Retry/Resubmit drill list(s) longer than 10"
+check $([ "${dr3:-0}" = 1 ] && echo 0 || echo 1) "the sample subscription table has no Retry drill or no Resubmit drill — one of the two is never exercised"
+check $([ "$(grep -c 'data-coreids-retry="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && [ "$(grep -c 'data-coreids-resubmit="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "entities/subscription-all.html ships no Retry / Resubmit drill lists"
+check $([ "$(grep -c 'data-coreids-retry' docs/assets/report.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "report.js does not bind the Retry / Resubmit drills"
 
 # the Top view's six column groups (2026-09-12, user request): Files WITHOUT
 # Recovered, then the Recovered group (Automatic · Manual) and the Resubmit

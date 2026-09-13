@@ -498,7 +498,7 @@ Automatic + Manual (fields 9-10).
 
 ## Click-to-expand drill-down
 
-`data-coreids` makes a row clickable; `data-coreids-failed`/`-processed` its Error/OK cell.
+`data-coreids` makes a row clickable; `data-coreids-failed`/`-processed` its Error/OK cell (bound by cell class), `data-coreids-retry`/`-resubmit` its Retry/Resubmit cell (bound by HEADER LABEL — both are `numwarn` cells; the Entities pages, 2026-09-13).
 Clicking inserts a detail row listing that outcome's 10 most-recent transfers; detail rows are
 excluded from `dataRows` and torn down before sort/filter/search. Lists are built by the shared
 `COREIDS_AWK` helper (`addtop` bounded top-10 + `buildlist`/`orlist`). Every transfer report with

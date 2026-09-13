@@ -426,7 +426,7 @@ bound snapped to the page's own date list), `?axway_hero=`, `?axway_row=` (mark 
 scroll to that entity's row, and open at the FULL range without touching the stored one — the
 detail pages' Ranking rows link this way).
 
-**Drill-down**: rows/cells carrying `data-coreids[-failed|-processed]` expand to the outcome's 10
+**Drill-down**: rows/cells carrying `data-coreids[-failed|-processed|-retry|-resubmit]` expand to the outcome's 10
 most-recent transfers, built by the shared `COREIDS_AWK` helper; the server reports use
 `@data:loglines` (`LOGLINES_AWK`, a bounded insert by "date time" — the exports are newest-first
 within a file). Full detail in ARCHITECTURE.md.
@@ -928,7 +928,9 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   columns AFTER OK (ROW `$6` `$7`, `numwarn`, bucket metrics 4 and 5 = RECALC `s4` `s5`, blank
   when 0); the five writers pre-scan `_transfers.tsv` cols 3 and 22 for them; `entity_layout`
   moves them; the Error column is display index 7, where the three `?axway_sort=` producers (home
-  day table, overview/day Top 5) point.
+  day table, overview/day Top 5) point. Each carries its own DRILL (2026-09-13, user request):
+  `@data:coreids-retry` / `-resubmit` on the row, the 10 newest such Files, bound to the cell by
+  HEADER LABEL in report.js `setupExpandable` (both are `numwarn` cells).
 - **The detail pages** (`details.sh` → `details_lib.sh`/`details_writer.awk`): one page per entity
   of the nine types, every configured name gets one; slugs via the comprehensive `_slugmap.tsv`;
   no From/To, no search box, no RECALC.

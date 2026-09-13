@@ -1553,6 +1553,26 @@
         if (cf && failedCells.length === 1)    bindDrill(failedCells[0], tr, table, cf, "Error", null, du);
         if (cp && processedCells.length === 1) bindDrill(processedCells[0], tr, table, cp, "OK", null, du);
       }
+      // The Entities pages' RETRY / RESUBMIT cells (2026-09-13, user request):
+      // data-coreids-retry / data-coreids-resubmit on the row, each bound to
+      // its cell. Both are numwarn cells, so the class cannot tell them apart:
+      // the cell is found by its HEADER LABEL — the header row and the data
+      // rows are reordered together (initColOrder), so position i of the
+      // header is the label of cell i whatever the current column order. A
+      // blank z cell (0) stays unclickable, like the OK/Error ones.
+      var cr = tr.getAttribute("data-coreids-retry");
+      var cs = tr.getAttribute("data-coreids-resubmit");
+      if (cr || cs) {
+        var hr9 = headerRow(table), rtCells = [], rsCells = [], hi;
+        if (hr9) for (hi = 0; hi < tr.cells.length && hi < hr9.cells.length; hi++) {
+          if ((" " + tr.cells[hi].className + " ").indexOf(" z ") >= 0) continue;
+          var lab9 = hr9.cells[hi].textContent.replace(/[▲▼]/g, "").replace(/\s+/g, " ").trim();
+          if (lab9 === "Retry") rtCells.push(tr.cells[hi]);
+          else if (lab9 === "Resubmit") rsCells.push(tr.cells[hi]);
+        }
+        if (cr && rtCells.length === 1) bindDrill(rtCells[0], tr, table, cr, "Retry", null, du);
+        if (cs && rsCells.length === 1) bindDrill(rsCells[0], tr, table, cs, "Resubmit", null, du);
+      }
       var dcol = tr.getAttribute("data-drill-col");             // session-topview: drill on one named column
       var dlist = tr.getAttribute("data-drill-list");
       if (dcol !== null && dlist && tr.cells[+dcol]) bindDrill(tr.cells[+dcol], tr, table, dlist, "", null, du);
