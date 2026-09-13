@@ -253,7 +253,7 @@ daily_loglines_tsv() {   # $1 = the data root (data)
         # "Duration per day" table of duration.rpt (Processed Files only);
         # the overall percentiles come from its TOTAL line — never summed here
         FILENAME ~ /duration\.rpt$/ {
-            if ($1 == "TABLE") intab = ($2 == "Duration per day")
+            if ($1 == "TABLE") intab = ($2 == "Duration per day — percentiles")   # the FIRST of the two side-by-side tables (2026-09-13)
             if (!intab) next
             if ($1 == "TOTAL") for (p = 0; p < 5; p++) { c = (p==4 ? 11 : 6+p); dtc[p] = dcls($c); dtv[p] = dtxt($c) }
             if ($1 != "ROW") next
@@ -1306,7 +1306,7 @@ write_report_finder() {
     local mf; mf=$(mktemp "${TMPDIR:-/tmp}/rfind.XXXXXX")
     {
         for name in "${transfer_order[@]}"; do
-            case $name in duration-all|duration-minmax|duration-all-minmax) continue ;; esac   # Duration's sibling views — reached via their buttons, not separate finder entries
+            case $name in duration-all) continue ;; esac   # Duration's sibling views — reached via their buttons, not separate finder entries
             rpt="$DATA/transfer/reports/$name.rpt"; [ -f "$rpt" ] || continue
             fp=$(first_page "$name")
             case $name in
@@ -1419,7 +1419,7 @@ sm_area_cards() {   # $1 area (transfer|server)
         # env — a data-less report has an empty-report placeholder page
         # (render_missing_reports), never a 404.
         [ "$name" = entity-search ] && continue     # Search lives in the Tools card
-        case $name in duration-all|duration-minmax|duration-all-minmax) continue ;; esac   # Duration's sibling views (reached via their buttons)
+        case $name in duration-all) continue ;; esac   # Duration's sibling views (reached via their buttons)
         case $name in entity-coverage|entity-coverage-ok|entity-coverage-once|entity-coverage-diff) continue ;; esac   # listed in the Analyses column
         [ "$name" = sources-and-targets ] && continue # listed in the Analyses column
         [ "$name" = skipped ] && continue           # listed in the Analyses column

@@ -6,27 +6,26 @@
 # the transfer's WALL-CLOCK span in milliseconds (first row's start to the last
 # row's end, gaps included), NOT the sum of the row durations.
 #
-# FOUR views along two selectors (each pair of buttons is a NAV group):
+# TWO views along one selector (the pair of buttons is a NAV group):
 #   "OK transfers" / "All transfers" — the scope:
 #     OK  = outcome Processed only (the default). Error transfers (mostly
 #           instant 0-byte attempts) are excluded so they do not flatten
 #           every statistic.
 #     All = every outcome with a measured duration, so a failed transfer's
 #           run time (e.g. a 2h timeout) counts too.
-#   "Percentage" / "Min/Avg/Max" — the per-day table's columns:
-#     Percentage  = p10 / p25 / p50 / p75 / p90 / p95 / p98 / p99 / p100
-#                   (the default; p100 = the day's longest File, the Max of
-#                   the other view — added 2026-09-06, user request).
-#     Min/Avg/Max = Min / Avg / Median / Max per day.
-#   - duration.rpt             OK  + Percentage
-#   - duration-minmax.rpt      OK  + Min/Avg/Max
-#   - duration-all.rpt         All + Percentage
-#   - duration-all-minmax.rpt  All + Min/Avg/Max
-#   The three siblings render beside duration.html, not as separate
-#   menu/index entries.
+#   - duration.rpt       OK
+#   - duration-all.rpt   All (renders beside duration.html, not as a separate
+#                        menu/index entry)
 #
-# Table (per view): the per-day stats — the one table that differs between
-# the two column views. (The Top 50 longest Files and the duration
+# Tables (per view, SIDE BY SIDE — 2026-09-13, user request; until then the
+# second one was a sibling page pair, duration-minmax / duration-all-minmax,
+# reached by a Percentage / Min/Avg/Max button pair):
+#   Duration per day — percentiles: p10 / p25 / p50 / p75 / p90 / p95 / p98 /
+#     p99 / p100 (p100 = the day's longest File, the Max of the other table —
+#     added 2026-09-06, user request). FIRST: the home per-day table reads its
+#     p50/p75/p90/p95/p99 by title + position (bin/build/publish.sh).
+#   Duration per day — min / avg / median / max.
+# (The Top 50 longest Files and the duration
 # distribution moved to their own Performance pages 2026-09-03 —
 # duration-longest.sh, duration-distribution.sh — and the slowest
 # subscriptions by p95 on 2026-09-05: duration-slowest.sh.)
@@ -54,17 +53,18 @@ if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
 ensure_parsed
-# one script, FOUR outputs — skip
-# only when BOTH rpts are fresh and the top dir exists (pda-entities pattern)
+# one script, TWO outputs — skip only when both rpts are fresh (pda-entities pattern)
 _dur_fresh=1
-for _f in "$REPORTS_DIR/duration.rpt" "$REPORTS_DIR/duration-minmax.rpt" \
-          "$REPORTS_DIR/duration-all.rpt" "$REPORTS_DIR/duration-all-minmax.rpt"; do
+# the Min/Avg/Max sibling pages are GONE (2026-09-13, user request): their
+# table sits beside the percentiles on the same page — sweep the old .rpts
+rm -f "$REPORTS_DIR/duration-minmax.rpt" "$REPORTS_DIR/duration-all-minmax.rpt"
+for _f in "$REPORTS_DIR/duration.rpt" "$REPORTS_DIR/duration-all.rpt"; do
     if ! { [ -f "$_f" ] && ! [ "$PARSED" -nt "$_f" ] && ! [ "$FILES" -nt "$_f" ] && ! [ "${BASH_SOURCE[0]}" -nt "$_f" ]; }; then
         _dur_fresh=0; break
     fi
 done
 if [ "$_dur_fresh" = 1 ]; then
-    echo "  the four duration .rpt files are up to date; skipping." >&2
+    echo "  the two duration .rpt files are up to date; skipping." >&2
     exit 0
 fi
 unset _dur_fresh _f
@@ -77,13 +77,12 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # humandur() is the site-wide spelling (report.js humanDur matches it exactly);
 # hd() is the per-day table's WHOLE-UNIT spelling, deliberately coarser.
 
-# ---- build one scope (two outputs) --------------------------------------------
-# Parameters via the calls below: OKONLY (1 = Processed only), OUT_MM/OUT_PP
-# (the Min/Avg/Max and Percentage .rpt of this scope), NAV_MM/NAV_PP (the two
-# button rows: OK/All then
-# Min-Avg-Max/Percentage), and the scope words for the DESC/INTRO/NOTE.
-build_view() {
-    local OKONLY=$1 OUT_MM=$2 OUT_PP=$3 NAV_MM=$4 NAV_PP=$5 SCOPE_DESC=$6 SCOPE_INTRO=$7 SCOPE_NOTE=$8
+# ---- build one scope (one output, two tables side by side) -------------------
+# Parameters via the calls below: OKONLY (1 = Processed only), OUT (the .rpt
+# of this scope), NAVLINE (the OK/All button row), and the scope words for
+# the DESC/INTRO/NOTE.
+build_view() {   # ONE output per scope since 2026-09-13: the percentiles table and the min/avg/max table side by side
+    local OKONLY=$1 OUT=$2 NAVLINE=$3 SCOPE_DESC=$4 SCOPE_INTRO=$5 SCOPE_NOTE=$6
 
     # main pass: per-day + distribution stats. Tagged col 1:
     # 1=per-day min/avg/max, 2=per-day percentiles, D=distribution,
@@ -202,22 +201,18 @@ build_view() {
     ' "$FILES")
 
     if [ -z "$agg" ]; then
-        local _eo _en
-        for _eo in "$OUT_MM" "$OUT_PP"; do
-            _en=$NAV_MM; [ "$_eo" = "$OUT_PP" ] && _en=$NAV_PP
-            {
-                printf 'TITLE\tTransfer Duration\n'
-                printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, (the longest Files, the duration distribution and the slowest subscriptions have their own pages). %s\n' "$SCOPE_DESC"
-                printf 'INTRO\tNo Files with a measured duration in this view.\n'
-                printf '%s\n' "$_en"
-                printf 'TABLE\tTransfer duration\n'
-                printf 'HEAD\tDuration\n'
-                printf 'KIND\ttext\n'
-                printf 'ROW\tNo transfers with a measured duration in this view.\n'
-                printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
-            } > "$_eo.tmp" && mv "$_eo.tmp" "$_eo"
-            echo "No transfers with a duration found for $_eo — wrote empty-state." >&2
-        done
+        {
+            printf 'TITLE\tTransfer Duration\n'
+            printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, (the longest Files, the duration distribution and the slowest subscriptions have their own pages). %s\n' "$SCOPE_DESC"
+            printf 'INTRO\tNo Files with a measured duration in this view.\n'
+            printf '%s\n' "$NAVLINE"
+            printf 'TABLE\tTransfer duration\n'
+            printf 'HEAD\tDuration\n'
+            printf 'KIND\ttext\n'
+            printf 'ROW\tNo transfers with a measured duration in this view.\n'
+            printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+        echo "No transfers with a duration found for $OUT — wrote empty-state." >&2
         return 0
     fi
 
@@ -253,33 +248,35 @@ build_view() {
 
 
 
-    emit_view() {   # $1 the .rpt to write  $2 its NAV line  $3 the view (mm|pp)
-        local OUT=$1 NAVLINE=$2 VIEW=$3
+    emit_view() {   # $1 the .rpt to write  $2 its NAV line (both per-day tables land on it, 2026-09-13)
+        local OUT=$1 NAVLINE=$2
     {
         printf 'TITLE\tTransfer Duration\n'
         printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, (the longest Files, the duration distribution and the slowest subscriptions have their own pages). %s\n' "$SCOPE_DESC"
-        printf 'INTRO\tDuration of the **%s** Files over **%s** day(s). Overall **min %s**, **median (p50) %s**, **p95 %s**, **p99 %s**, **max %s**. %s The **Percentage** and **Min/Avg/Max** buttons switch the per-day columns; the stats are shown in **whole seconds, minutes or hours**, and a narrowed date range keeps each day but blanks the non-additive totals.\n' \
+        printf 'INTRO\tDuration of the **%s** Files over **%s** day(s). Overall **min %s**, **median (p50) %s**, **p95 %s**, **p99 %s**, **max %s**. %s The two per-day tables sit side by side — the percentiles, then min / avg / median / max; the stats are shown in **whole seconds, minutes or hours**, and a narrowed date range keeps each day but blanks the non-additive totals.\n' \
             "$g_n" "$g_days" "$u_min" "$u_p50" "$u_p95" "$u_p99" "$u_max" "$SCOPE_INTRO"
         printf '%s\n' "$NAVLINE"
 
         # Files keeps an explicit @{class=num}; the duration cells arrive
         # from hdc() carrying their own dur-<unit> class, and the renderer adds
         # the num alignment to those itself.
-        if [ "$VIEW" = mm ]; then
-            printf 'TABLE\tDuration per day\twide\ttotaltop\tnoagg=2,3,4,5\n'
-            printf 'HEAD\tDate\tFiles\tMin\tAvg\tMedian\tMax\n'
-            printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\n'
-            printf 'TOTAL\tOverall (%s days)\t@{class=num}%s\t%s\t%s\t%s\t%s\n' \
-                "$g_days" "$g_n" "$h_min" "$h_avg" "$h_p50" "$h_max"
-            printf '%s\n' "$perday_mm"
-        else
-            printf 'TABLE\tDuration per day\twide\ttotaltop\tnoagg=2,3,4,5,6,7,8,9,10\n'
-            printf 'HEAD\tDate\tFiles\tp10\tp25\tp50\tp75\tp90\tp95\tp98\tp99\tp100\n'
-            printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
-            printf 'TOTAL\tOverall (%s days)\t@{class=num}%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-                "$g_days" "$g_n" "$h_p10" "$h_p25" "$h_p50" "$h_p75" "$h_p90" "$h_p95" "$h_p98" "$h_p99" "$h_max"
-            printf '%s\n' "$perday_pp"
-        fi
+        # THE TWO PER-DAY TABLES SIDE BY SIDE (2026-09-13, user request — the
+        # Min/Avg/Max sibling pages are gone): the percentiles table FIRST
+        # (the home per-day table reads its p50/p75/p90/p95/p99 by TITLE and
+        # position — bin/build/publish.sh — so its title and columns stay),
+        # then min / avg / median / max; both `sxs` in one flex row.
+        printf 'TABLE\tDuration per day — percentiles\twide\tsxs\ttotaltop\tnoagg=2,3,4,5,6,7,8,9,10\n'
+        printf 'HEAD\tDate\tFiles\tp10\tp25\tp50\tp75\tp90\tp95\tp98\tp99\tp100\n'
+        printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
+        printf 'TOTAL\tOverall (%s days)\t@{class=num}%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$g_days" "$g_n" "$h_p10" "$h_p25" "$h_p50" "$h_p75" "$h_p90" "$h_p95" "$h_p98" "$h_p99" "$h_max"
+        printf '%s\n' "$perday_pp"
+        printf 'TABLE\tDuration per day — min / avg / median / max\twide\tsxs\ttotaltop\tnoagg=2,3,4,5\n'
+        printf 'HEAD\tDate\tFiles\tMin\tAvg\tMedian\tMax\n'
+        printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\n'
+        printf 'TOTAL\tOverall (%s days)\t@{class=num}%s\t%s\t%s\t%s\t%s\n' \
+            "$g_days" "$g_n" "$h_min" "$h_avg" "$h_p50" "$h_max"
+        printf '%s\n' "$perday_mm"
 
 
         printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); duration = its **wall-clock span** — from the first record start to the last record end, in milliseconds (so it includes the store-and-forward gap between the inbound and outbound legs, and the idle time between retries), NOT the sum of the record durations. %sPer-day min/median/max and percentiles are **not additive**: a narrowed date range keeps each day row but blanks the total. Percentiles use the nearest-rank method; **p100** is the day'\''s longest File — the Max of the other view — so the gap between p99 and p100 says how far the worst case sits from the rest.\n' "$SCOPE_NOTE"
@@ -290,27 +287,20 @@ build_view() {
 
     echo "Data written to $OUT ($g_n Files over $g_days days)." >&2
     }
-    emit_view "$OUT_MM" "$NAV_MM" mm
-    emit_view "$OUT_PP" "$NAV_PP" pp
+    emit_view "$OUT" "$NAVLINE"
 }
 
-# The two button groups on one NAV row (@sep = the gap): OK/All transfers,
-# then Percentage vs Min/Avg/Max (Percentage first — it is the default and
-# lives at duration.html). Each button links the SAME view along the other
-# axis, so the two selections compose.
-NAV_OK_PP=$'NAV\t1|OK transfers|duration.html\t0|All transfers|duration-all.html\t@sep\t1|Percentage|duration.html\t0|Min/Avg/Max|duration-minmax.html'
-NAV_OK_MM=$'NAV\t1|OK transfers|duration-minmax.html\t0|All transfers|duration-all-minmax.html\t@sep\t0|Percentage|duration.html\t1|Min/Avg/Max|duration-minmax.html'
-NAV_ALL_PP=$'NAV\t0|OK transfers|duration.html\t1|All transfers|duration-all.html\t@sep\t1|Percentage|duration-all.html\t0|Min/Avg/Max|duration-all-minmax.html'
-NAV_ALL_MM=$'NAV\t0|OK transfers|duration-minmax.html\t1|All transfers|duration-all-minmax.html\t@sep\t0|Percentage|duration-all.html\t1|Min/Avg/Max|duration-all-minmax.html'
+# ONE button pair on the NAV row (2026-09-13): OK transfers / All transfers —
+# the Percentage vs Min/Avg/Max pair is gone, both tables sit on each page.
+NAV_OK=$'NAV\t1|OK transfers|duration.html\t0|All transfers|duration-all.html'
+NAV_ALL=$'NAV\t0|OK transfers|duration.html\t1|All transfers|duration-all.html'
 
-build_view 1 "$REPORTS_DIR/duration-minmax.rpt" "$REPORTS_DIR/duration.rpt" \
-    "$NAV_OK_MM" "$NAV_OK_PP" \
+build_view 1 "$REPORTS_DIR/duration.rpt" "$NAV_OK" \
     "Delivered (Processed) Files only — the default; use the All transfers button to include failures." \
     "Only **Processed** Files count; Error transfers (mostly instant 0-byte attempts) are excluded so they do not flatten the statistics — switch to **All transfers** to include them." \
     "**Only Processed (OK) Files are counted** here (use the All transfers button to include failures). "
 
-build_view 0 "$REPORTS_DIR/duration-all-minmax.rpt" "$REPORTS_DIR/duration-all.rpt" \
-    "$NAV_ALL_MM" "$NAV_ALL_PP" \
+build_view 0 "$REPORTS_DIR/duration-all.rpt" "$NAV_ALL" \
     "ALL Files, including failed (Error) transfers." \
     "**All** Files count, including Error transfers — a failed transfer's duration is how long it ran before failing (e.g. a timeout), so long-hanging failures show up here (switch to **OK transfers** for delivered-only statistics)." \
     "**All Files are counted, including failed (Error) ones** — a failure's duration is how long it ran before giving up (use the OK transfers button for delivered-only). "

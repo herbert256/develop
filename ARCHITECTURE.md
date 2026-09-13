@@ -242,7 +242,7 @@ files · top-transfers) · **failures** "Failures & Retries" (failure-rate leade
 episodes · retries · failure-heatmap) · **flow-shape** "Patterns" (file-journey ·
 file-in-file-out) · **protocol-security** (protocol · security-params · av-scan) ·
 **performance-session** "Performance" (duration leader since 2026-09-05 · anomalies · duration-longest · duration-slowest (2026-09-05: the top-25-by-p95 table split off duration) · duration-dwell (2026-09-05: the merged duration-distribution + dwell-time page, histograms side by side; the components stay unpublished intermediates); the
-`duration-all` / `duration-minmax` / `duration-all-minmax` siblings share Duration's slot) ·
+`duration-all` sibling shares Duration's slot; the Min/Avg/Max pages folded into the Duration pages as a side-by-side second table 2026-09-13) ·
 **cross** "Cross References".
 
 Server groups: **srv-overview** (topview) · **srv-errors** (errors · failure-flows · io-errors · could-not-send ·

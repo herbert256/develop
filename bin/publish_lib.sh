@@ -287,7 +287,7 @@ CUR_DATES=""
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-minmax duration-all-minmax duration-trend account-sharing twins)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-trend account-sharing twins)
 server_order=(topview errors failure-flows io-errors could-not-send publish-failed post-client-action pickups uc-status uc2-visits polling went-kaput site-failures logons connections ssh-security platform-health capacity deploy-errors transfer-site-missing no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -430,7 +430,7 @@ group_of() {   # $1 area (transfer|server)  $2 report basename -> group id (empt
         failure-rate|episodes|retries|recovered|recovered-files|failure-heatmap) echo "failures" ;;   # missing-cronjobs is NOT here (boxes-only); the boxes-only reports return "" so their pages carry NO group row
         file-journey|file-in-file-out) echo "flow-shape" ;;
         protocol|security-params|security-outreach|av-scan|connection-efficiency) echo "protocol-security" ;;
-        dwell-time|duration|duration-all|duration-minmax|duration-all-minmax|duration-longest|duration-slowest|duration-distribution|duration-dwell|anomalies|duration-trend)     echo "performance-session" ;;   # the duration-* siblings: Duration's All-transfers / Percentage views (not group MEMBERS — they share Duration's slot)
+        dwell-time|duration|duration-all|duration-longest|duration-slowest|duration-distribution|duration-dwell|anomalies|duration-trend)     echo "performance-session" ;;   # the duration-* siblings: Duration's All-transfers / Percentage views (not group MEMBERS — they share Duration's slot)
         cross-account|cross-login|cross-subscription|cross-host|cross-logical|cross-partner|cross-application|cross-domain|cross-bl) echo "cross" ;;
                 errors) echo "srv-errors" ;;
         failure-flows|io-errors|could-not-send|publish-failed|post-client-action) echo "srv-errors" ;;
@@ -1010,7 +1010,7 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
         skipped-*)                                                      echo "skipped" ;;   # the per-value Skipped pages share one help page
         failed-*)                                                       echo "failed" ;;    # the Failed Subscriptions view pages share one help page
         failing-reasons-*)                                              echo "failing-reasons" ;;  # the per-reason drill pages share the Error reasons help page
-        duration-all|duration-minmax|duration-all-minmax)     echo "duration" ;;  # the All-transfers / Min-Avg-Max sibling views share the Duration help page
+        duration-all)     echo "duration" ;;  # the All-transfers sibling view shares the Duration help page (the Min/Avg/Max pages are gone, 2026-09-13)
         entity-coverage-ok|entity-coverage-once|entity-coverage-diff)   echo "entity-coverage" ;;  # the OK-transfers / Once / Difference rule views share the Entity coverage help page
         cross-*)                                                        echo "cross-reference" ;;
         missing-entities)    echo "server-unknown-entities" ;;   # the merged report keeps the unknown-* family help page
@@ -2177,7 +2177,7 @@ transfer_menu_order=()
 for _n in "${transfer_order[@]}"; do
     if is_subs_report "$_n"; then continue; fi   # the Subscriptions analyses group
     if is_boxes_only "$_n"; then continue; fi   # boxes-only: reached from the two Boxes pages, not the menu
-    case $_n in cross-*|entity-search|seen-in-server-log|entity-coverage|entity-coverage-ok|entity-coverage-once|entity-coverage-diff|sources-and-targets|duration-all|duration-minmax|duration-all-minmax|skipped|not-in-flow-manager|missing-cronjobs) ;; *) transfer_menu_order+=("$_n") ;; esac
+    case $_n in cross-*|entity-search|seen-in-server-log|entity-coverage|entity-coverage-ok|entity-coverage-once|entity-coverage-diff|sources-and-targets|duration-all|skipped|not-in-flow-manager|missing-cronjobs) ;; *) transfer_menu_order+=("$_n") ;; esac
 done
 TRANSFER_MENU=$(build_menu transfer "${transfer_menu_order[@]}")
 # The Analyses dropdown shows one line per GROUP (like the transfer/server

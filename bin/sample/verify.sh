@@ -504,6 +504,22 @@ check $([ "${nth:-0}" = 5 ] && [ "${nrows:-0}" -gt 0 ] && [ "${ncells:-0}" -ge $
 check $([ "$(grep -c 'data-href="transfer/duration.html?' docs/index.html 2>/dev/null)" = 0 ] && echo 0 || echo 1) "a home Duration link carries a query (a date selection)"
 check $([ "$(grep -c 'function setupCellLinks' docs/assets/report.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "report.js does not define setupCellLinks"
 
+# the Duration report holds BOTH per-day tables side by side (2026-09-13,
+# user request): percentiles first (the home page reads it by title), then
+# min / avg / median / max; the Min/Avg/Max sibling pages are gone and the
+# button row keeps only the OK / All pair — for both scopes
+for p in duration duration-all; do
+    n=$(grep -c '<table' "docs/transfer/$p.html" 2>/dev/null)
+    check $([ "${n:-0}" = 2 ] && echo 0 || echo 1) "transfer/$p.html has ${n:-0} table(s), expected the two side-by-side per-day tables"
+    check $([ "$(grep -c '<h2[^>]*>Duration per day — percentiles' "docs/transfer/$p.html" 2>/dev/null)" = 1 ] && [ "$(grep -c '<h2[^>]*>Duration per day — min / avg / median / max' "docs/transfer/$p.html" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "transfer/$p.html lacks one of the two per-day table headings"
+    check $([ "$(grep -c 'class="sxs"' "docs/transfer/$p.html" 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "transfer/$p.html does not lay its tables out side by side (.sxs)"
+    n=$(grep -o 'class="tab[^"]*"[^>]*>[^<]*<' "docs/transfer/$p.html" 2>/dev/null | grep -c 'OK transfers\|All transfers')
+    check $([ "${n:-0}" = 2 ] && [ "$(grep -c 'Min/Avg/Max\|>Percentage<' "docs/transfer/$p.html" 2>/dev/null)" = 0 ] && echo 0 || echo 1) "transfer/$p.html button row: ${n:-0} scope buttons, and the Percentage / Min/Avg/Max pair must be gone"
+done
+check $([ ! -e docs/transfer/duration-minmax.html ] && [ ! -e docs/transfer/duration-all-minmax.html ] && [ ! -e data/transfer/reports/duration-minmax.rpt ] && echo 0 || echo 1) "the Min/Avg/Max sibling pages or .rpts still exist"
+dr=$(awk '/<table class="index fit dayrows/ { p = 1 } p && /<tr>/ && /<td/ { print; exit }' docs/index.html 2>/dev/null | grep -o 'data-href="transfer/duration.html">[^<][^<]*<' | wc -l | tr -d ' ')
+check $([ "${dr:-0}" -ge 5 ] && echo 0 || echo 1) "the home page's newest day carries ${dr:-0} filled Duration cells (the extractor must still find the percentiles table)"
+
 # the fixed duration axis of the Overview / day-page Duration heroes
 # (2026-09-12, user request): the shipped slotchart.js carries the 19-tick
 # scale verbatim, 1 s .. >= 48 h
