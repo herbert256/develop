@@ -2265,7 +2265,7 @@ TRANSFER_MENU=$(build_menu transfer "${transfer_menu_order[@]}")
 # The Analyses dropdown shows one line per GROUP (like the transfer/server
 # menus); each line lands on its group's leader page, whose row-1 tab bar
 # (analyses_group_tabs below) navigates within the group.
-ANALYSES_MENU='<a class="ddtop" href="@analyses/index.html">Start page</a><a href="@transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="@analyses/use-cases.html">Configuration</a><a href="@analyses/partner-scorecard.html">Partners</a><a href="@analyses/subscriptions-in-boxes.html">Boxes</a><a href="@analyses/failed.html">Errors</a><a href="@transfer/month-stats/this-subscription.html">Month stats</a>'
+ANALYSES_MENU='<a class="ddtop" href="@analyses/index.html">Start page</a><a href="@transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="@analyses/use-cases.html">Configuration</a><a href="@analyses/partners-in.html">Partners</a><a href="@analyses/subscriptions-in-boxes.html">Boxes</a><a href="@analyses/failed.html">Errors</a><a href="@transfer/month-stats/this-subscription.html">Month stats</a>'
 # The GOODIES dropdown (2026-09-13, user request): a SHORT CUT to the best
 # reports, fourth after Analyses — the pages stay in their own menus and
 # groups, this is a hand-written list of direct links. KEEP IN STEP:
@@ -2283,8 +2283,8 @@ GOODIES_MENU='<a href="@analyses/partners-in.html">Partners - Incoming</a><a hre
 _analyses_groups() {
     printf '%s\n' \
         "Coverage & seen|../transfer/entity-coverage-accounts.html=Entity coverage|first-seen.html=First seen|data-diff.html=Since yesterday|../transfer/seen-in-server-log.html=Seen in server log" \
-        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|partners-in.html=Partners - Incoming|fe-overview.html=FE overview|hosts-overview.html=Partners - Outgoing|account-sharing.html=Account sharing|twins.html=Twins|polling.html=Polling|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
-        "Partners|partner-scorecard.html=Partner scorecard|blast-radius.html=Blast radius|app-partners.html=Application dependencies|partner-lifecycle.html=Partner lifecycle" \
+        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|fe-overview.html=FE overview|account-sharing.html=Account sharing|twins.html=Twins|polling.html=Polling|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
+        "Partners|partners-in.html=Partners - Incoming|hosts-overview.html=Partners - Outgoing|partner-scorecard.html=Partner scorecard|blast-radius.html=Blast radius|app-partners.html=Application dependencies|partner-lifecycle.html=Partner lifecycle" \
         "Boxes|subscriptions-in-boxes.html=Subscriptions in boxes|accounts-in-boxes.html=Accounts in boxes|triage.html=Triage" \
         "Errors|failed.html=Failed Subscriptions|failing-reasons.html=Error reasons" \
         "Month stats|../transfer/month-stats/this-subscription.html=Month stats"

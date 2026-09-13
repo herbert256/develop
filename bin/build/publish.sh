@@ -1569,16 +1569,14 @@ write_sitemap() {
         printf '<li><a href="../analyses/data-diff.html">Since yesterday</a></li>\n'
         printf '<li><a href="../transfer/seen-in-server-log.html">Seen in server log</a></li>\n'
         printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Configuration <span class="smcount">19</span></h3><ul>\n'
+        printf '<div class="smcard"><h3>Configuration <span class="smcount">17</span></h3><ul>\n'
         printf '<li><a href="../analyses/use-cases.html">Use Case</a></li>\n'
         printf '<li><a href="../analyses/uc2-visits.html">UC2 pickup visits</a></li>\n'
         printf '<li><a href="../analyses/subscriptions.html">Subscriptions</a></li>\n'
         printf '<li><a href="../analyses/logical-detection.html">Logical detection</a></li>\n'
         printf '<li><a href="../analyses/added-bl.html">Added BL</a></li>\n'
         printf '<li><a href="../analyses/accounts.html">Accounts</a></li>\n'
-        printf '<li><a href="../analyses/partners-in.html">Partners - Incoming</a></li>\n'
         printf '<li><a href="../analyses/fe-overview.html">FE overview</a></li>\n'
-        printf '<li><a href="../analyses/hosts-overview.html">Partners - Outgoing</a></li>\n'
         printf '<li><a href="../analyses/account-sharing.html">Account sharing</a></li>\n'
         printf '<li><a href="../analyses/twins.html">Twins</a></li>\n'
         printf '<li><a href="../analyses/polling.html">Polling</a></li>\n'
@@ -1596,7 +1594,9 @@ write_sitemap() {
         # _analyses_groups' "Boxes" line, ANALYSES_MENU and the analyses index.
         # (The four SUBS_GROUP_REPORTS members live in the Configuration card
         # above, not here.)
-        printf '<div class="smcard"><h3>Partners <span class="smcount">4</span></h3><ul>\n'
+        printf '<div class="smcard"><h3>Partners <span class="smcount">6</span></h3><ul>\n'
+        printf '<li><a href="../analyses/partners-in.html">Partners - Incoming</a></li>\n'
+        printf '<li><a href="../analyses/hosts-overview.html">Partners - Outgoing</a></li>\n'
         printf '<li><a href="../analyses/partner-scorecard.html">Partner scorecard</a></li>\n'
         printf '<li><a href="../analyses/blast-radius.html">Blast radius</a></li>\n'
         printf '<li><a href="../analyses/app-partners.html">Application dependencies</a></li>\n'
