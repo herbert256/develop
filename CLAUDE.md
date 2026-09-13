@@ -1011,7 +1011,11 @@ ARCHITECTURE.md.
 
 `TRANSFER_MENU`/`SERVER_MENU` are built from the orders minus the basenames living in the Analyses
 dropdown. `ANALYSES_MENU` is hand-written, one line per group: Start page · **Coverage & seen** ·
-**Configuration** · **Partners** · **Boxes** · **Errors**; `_analyses_groups` is the single
+**Configuration** · **Partners** · **Boxes** · **Errors**. A FOURTH dropdown, **Goodies**
+(`GOODIES_MENU`, 2026-09-13, user request), is a hand-written SHORT CUT to the best reports —
+Partners - Incoming · Logons (incoming) · Transfer Duration · Failed Subscriptions — the pages
+staying in their own menus and groups; it ships in `topbar-data.js` as `goodies`, both bar
+renderers draw it, `TB_VER` folds it, linkcheck reads it like the other menus. `_analyses_groups` is the single
 source of truth for the analyses group tab bars — **keep it in sync with `ANALYSES_MENU`, the
 analyses index and the sitemap.** The Coverage/Configuration members whose PAGE renders into
 `docs/transfer/` are absent from `group_of` and the transfer menu; `finder_area` labels them

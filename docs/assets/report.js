@@ -3987,6 +3987,9 @@
       '<div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm">' + menu(M.transfer) + "</div></div>" +
       (M.server ? '<div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm">' + menu(M.server) + "</div></div>" : "") +
       (M.analyses ? '<div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm">' + menu(M.analyses) + "</div></div>" : "") +
+      // GOODIES (2026-09-13, user request): a short cut to the best reports,
+      // hand-written in publish_lib GOODIES_MENU — KEEP IN STEP with render_topbar
+      (M.goodies ? '<div class="dd"><span class="ddlabel">Goodies ▾</span><div class="ddm">' + menu(M.goodies) + "</div></div>" : "") +
       "</nav>" +
       '<a class="dashlink" href="' + b + 'dashboards/index.html">Dashboard</a>' +
       // the Monitor dashboard link renders only when this site HAS one

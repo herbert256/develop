@@ -743,6 +743,7 @@ render_topbar() {
     printf '<div class="dd"><span class="ddlabel">Transfer reports \342\226\276</span><div class="ddm">%s</div></div>' "${TRANSFER_MENU//@/$base}"
     [ -n "${SERVER_MENU:-}" ] && printf '<div class="dd"><span class="ddlabel">Server reports \342\226\276</span><div class="ddm">%s</div></div>' "${SERVER_MENU//@/$base}"
     [ -n "${ANALYSES_MENU:-}" ] && printf '<div class="dd"><span class="ddlabel">Analyses \342\226\276</span><div class="ddm">%s</div></div>' "${ANALYSES_MENU//@/$base}"
+    [ -n "${GOODIES_MENU:-}" ] && printf '<div class="dd"><span class="ddlabel">Goodies \342\226\276</span><div class="ddm">%s</div></div>' "${GOODIES_MENU//@/$base}"   # the short cuts (2026-09-13) — KEEP IN STEP with buildTopbar
     printf '</nav>'
     printf '<a class="dashlink" href="%sdashboards/index.html">Dashboard</a>' "$base"
     # Top-bar right: the REPORT FINDER + SITE MAP magnifiers, then the help icon.
@@ -2225,6 +2226,13 @@ TRANSFER_MENU=$(build_menu transfer "${transfer_menu_order[@]}")
 # menus); each line lands on its group's leader page, whose row-1 tab bar
 # (analyses_group_tabs below) navigates within the group.
 ANALYSES_MENU='<a class="ddtop" href="@analyses/index.html">Start page</a><a href="@transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="@analyses/use-cases.html">Configuration</a><a href="@analyses/partner-scorecard.html">Partners</a><a href="@analyses/subscriptions-in-boxes.html">Boxes</a><a href="@analyses/failed.html">Errors</a>'
+# The GOODIES dropdown (2026-09-13, user request): a SHORT CUT to the best
+# reports, fourth after Analyses — the pages stay in their own menus and
+# groups, this is a hand-written list of direct links. KEEP IN STEP:
+# report.js buildTopbar and render_topbar render it, ensure_assets ships it
+# as `goodies`, TB_VER folds it; linkcheck reads it from topbar-data.js like
+# the other menus.
+GOODIES_MENU='<a href="@analyses/fe-overview.html">Partners - Incoming</a><a href="@server/logons-incoming.html">Logons (incoming)</a><a href="@transfer/duration.html">Transfer Duration</a><a href="@analyses/failed.html">Failed Subscriptions</a>'
 
 # The analyses report GROUPS — the single source of truth for the group tab
 # bars, the group-of lookup and the h1 group tags. One line per group:
@@ -2645,7 +2653,7 @@ if [ -f "$DATA/transfer/reports/day.rpt" ]; then
     TB_PERIOD=$(awk -F'\t' '$1 == "META" && ($2 == "first" || $2 == "last") && $3 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { v[$2] = substr($3, 1, 10) }
         END { if (("first" in v) && ("last" in v)) print v["first"] " / " v["last"] }' "$DATA/transfer/reports/day.rpt")
 fi
-TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU$TB_MON$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS$TB_PERIOD" | cksum | cut -d' ' -f1)
+TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU${GOODIES_MENU:-}$TB_MON$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS$TB_PERIOD" | cksum | cut -d' ' -f1)
 
 # Copy the shared assets into docs/ and write .nojekyll. Idempotent, so each
 # publish script can call it and still produce a valid site when run on its own.
@@ -2683,10 +2691,11 @@ ensure_assets() {
     # The runtime top bar's menu data (buildTopbar in report.js): the three
     # dropdown menu strings, docs-root-relative with their "@" placeholder
     # kept verbatim (report.js swaps it for the page's data-b prefix).
-    local t=$TRANSFER_MENU s=${SERVER_MENU:-} a=${ANALYSES_MENU:-}
+    local t=$TRANSFER_MENU s=${SERVER_MENU:-} a=${ANALYSES_MENU:-} g=${GOODIES_MENU:-}
     t=${t//\\/\\\\}; t=${t//\"/\\\"}
     s=${s//\\/\\\\}; s=${s//\"/\\\"}
     a=${a//\\/\\\\}; a=${a//\"/\\\"}
+    g=${g//\\/\\\\}; g=${g//\"/\\\"}
     # + the CoreId -> File Tracking URL template (TB_CID) and the environment
     # label (ENV_LABEL), both baked as plain strings
     local c=${TB_CID:-} e=${ENV_LABEL:-} k=${ENV_KEY:-}
@@ -2698,7 +2707,7 @@ ensure_assets() {
     # (ENVSWITCH_JS — the one implementation, see TB_VER above)
     # + the data period (TB_PERIOD, "yyyy-mm-dd / yyyy-mm-dd" — plain digits,
     # slashes and spaces, nothing to escape)
-    local _tb; printf -v _tb 'window.AXWAY_TB={transfer:"%s",server:"%s",analyses:"%s",monitor:%s,coreid:"%s",env:"%s",envkey:"%s",period:"%s"};%s' "$t" "$s" "$a" "${TB_MON:-0}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENVSWITCH_JS"
+    local _tb; printf -v _tb 'window.AXWAY_TB={transfer:"%s",server:"%s",analyses:"%s",goodies:"%s",monitor:%s,coreid:"%s",env:"%s",envkey:"%s",period:"%s"};%s' "$t" "$s" "$a" "$g" "${TB_MON:-0}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENVSWITCH_JS"
     _asset_put docs/assets/topbar-data.js "$_tb"
     [ -f docs/.nojekyll ] || : > docs/.nojekyll
 }
