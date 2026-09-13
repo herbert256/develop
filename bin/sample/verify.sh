@@ -489,6 +489,12 @@ check $([ "$(grep -c 'data-envto' docs/assets/report.js 2>/dev/null)" -ge 1 ] &&
 check $([ "$(grep -c '<a class="brand" href="../index.html">Sample</a>' docs/help/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the help page bar does not lead with the single Sample brand link"
 check $([ "$(grep -rl 'data-envto' docs --include=*.html 2>/dev/null | wc -l | tr -d ' ')" = 0 ] && echo 0 || echo 1) "a sample page bakes the Acceptance / Production pair (data-envto)"
 
+# the home page's Duration group ends on p99 (2026-09-13, user request):
+# p50 · p75 · p90 · p95 · p99, five cells per day and in the Total row
+hdr=$(grep -o '<th class="num">p[0-9]*</th>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
+check $([ "$hdr" = "p50|p75|p90|p95|p99|" ] && echo 0 || echo 1) "the home Duration group headers are '$hdr', expected p50|p75|p90|p95|p99|"
+check $([ "$(grep -c '<th class="gband" colspan="5">Duration</th>' docs/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the home Duration banner does not span 5 columns"
+
 # the fixed duration axis of the Overview / day-page Duration heroes
 # (2026-09-12, user request): the shipped slotchart.js carries the 19-tick
 # scale verbatim, 1 s .. >= 48 h

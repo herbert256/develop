@@ -249,7 +249,7 @@ daily_loglines_tsv() {   # $1 = the data root (data)
         # a duration cell "@{class=dur-s}3 s" -> its class / its text ("-" when absent)
         function dcls(v) { if (v !~ /^@\{class=/) return "-"; sub(/^@\{class=/, "", v); sub(/\}.*/, "", v); return v }
         function dtxt(v) { sub(/^@\{[^}]*\}/, "", v); return v == "" ? "-" : v }
-        # the Duration group: p50/p75/p90/p99 (cols 6/7/8/11) from the
+        # the Duration group: p50/p75/p90/p95/p99 (cols 6/7/8/9/11) from the
         # "Duration per day" table of duration.rpt (Processed Files only);
         # the overall percentiles come from its TOTAL line — never summed here
         FILENAME ~ /duration\.rpt$/ {
@@ -959,9 +959,9 @@ write_home_block() {
         # own left/right/bottom edges like a table of its own and no row line
         # crosses the gap (2026-09-06, user request; before: a thick
         # page-coloured left border that the row lines ran through)
-        printf '<tr class="gbrow"><th></th>%s<th class="gband" colspan="3">Transfers</th>%s<th class="gband" colspan="6">Files</th>%s<th class="gband" colspan="2">UC2 state</th>%s<th class="gband" colspan="4">Duration</th>%s<th class="gband" colspan="2">First seen</th></tr>\n' \
+        printf '<tr class="gbrow"><th></th>%s<th class="gband" colspan="3">Transfers</th>%s<th class="gband" colspan="6">Files</th>%s<th class="gband" colspan="2">UC2 state</th>%s<th class="gband" colspan="5">Duration</th>%s<th class="gband" colspan="2">First seen</th></tr>\n' \
             '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
-        printf '<tr><th>Date</th>%s<th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Cured</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">Waiting</th><th class="num">Expired</th>%s<th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th>%s<th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n' \
+        printf '<tr><th>Date</th>%s<th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Cured</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">Waiting</th><th class="num">Expired</th>%s<th class="num">p50</th><th class="num">p75</th><th class="num">p90</th><th class="num">p95</th><th class="num">p99</th>%s<th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n' \
             '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
         rown=0
         local tcn tok ter tpc twt txp tcnsum=0 toksum=0 tersum=0 twtsum=0 txpsum=0
@@ -971,7 +971,7 @@ write_home_block() {
             # the Total row (a percentile cannot be summed)
             if [ "$d" = "TOTAL" ]; then
                 dtot=""
-                for c in "$dc50:$dv50" "$dc75:$dv75" "$dc90:$dv90" "$dc95:$dv95"; do
+                for c in "$dc50:$dv50" "$dc75:$dv75" "$dc90:$dv90" "$dc95:$dv95" "$dc99:$dv99"; do   # p99 last (2026-09-13, user request)
                     dtot="$dtot$(_durcell "${c%%:*}" "${c#*:}")"
                 done
                 continue
@@ -1045,9 +1045,9 @@ write_home_block() {
                 txpsum=$((txpsum + txp)); fi
             printf '<td class="spc"></td>'
             # —— Duration (from transfer/duration.html): the day's
-            # p50/p75/p90/p95, tinted like that page's cells ——
+            # p50/p75/p90/p95/p99, tinted like that page's cells ——
             _durcell "$dc50" "$dv50"; _durcell "$dc75" "$dv75"
-            _durcell "$dc90" "$dv90"; _durcell "$dc95" "$dv95"
+            _durcell "$dc90" "$dv90"; _durcell "$dc95" "$dv95"; _durcell "$dc99" "$dv99"   # p99 last (2026-09-13, user request)
             printf '<td class="spc"></td>'
             # —— First seen (from analyses/first-seen.html): a count links
             # that day's first-seen list when the page exists (a page exists
@@ -1076,7 +1076,7 @@ write_home_block() {
             [ -f "docs/transfer/recovered-files.html" ] && frvt="<a href=\"transfer/recovered-files.html\">$ESC</a>"; fi
         # the Duration total = the report's own overall percentiles (a
         # percentile cannot be summed); empty cells when the report is absent
-        [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'
+        [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'   # five: p50 p75 p90 p95 p99
         # the First-seen totals: the report's SEEN line — the SAME figure as
         # the status tables' Seen column in the Transfer scope (the day cells
         # above plus the report's no-date bucket sum to it); each links its
