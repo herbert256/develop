@@ -850,6 +850,7 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   (2026-08-31): a connected account/login/host serving other flows too is not merged — after its
   last transfer (ACCOUNT pages fold in their logins'/hosts' lines). Any Error/Warn after the last
   transfer opens a red ALERT banner. Only the five classic types have per-name caches.
+- **Partners - Outgoing** (2026-09-13, user request), `bin/analyses/reports/hosts-overview.sh` → `analyses/hosts-overview.html`: the OPPOSITE of Partners - Incoming — one row per configured remote HOST (the partner server we dial) for UC1 (we deliver) and UC3 (we collect): use cases, Cloud = the newest Processed leg with the host (`_transfers.tsv`), Gateway from the hand-maintained `input/hosts_old.txt` (the `logons_old.txt` format), Files in / out / Error / Delivered / Auto retries / Resubmit OK / Error / Last error by the Entities host rule (connection side out, every host a leg names), Polls + Poll pattern summed from `polling.rpt` through the host's UC3 subscriptions, Connection problems summed from `site-failures.rpt` (the cell links the busiest subscription's row). Rows tint by the host result. Registered like fe-overview (SUBS_GROUP_REPORTS, the Configuration group, catalog, finder, sitemap, Goodies, help page `hosts-overview`, verify.sh).
 
 report.js `hideEmptyTables()` (detail pages only) hides emptied sections; `setupSectionTabs()`
 builds the sticky header (`div.detailhead`). The sticky-header CSS comment must never contain a

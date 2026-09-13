@@ -305,7 +305,7 @@ server_order=(topview errors failure-flows io-errors could-not-send publish-fail
 # OWNERSHIP: bin/analyses/publish.sh renders them, NOT the area publishes —
 # it clears docs/<env>/analyses/*.html and runs AFTER both, so a page written
 # there by the transfer/server loop would be deleted again.
-SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:uc2-visits server:polling transfer:account-sharing transfer:twins analyses:triage analyses:data-diff analyses:partner-scorecard analyses:blast-radius analyses:app-partners analyses:partner-lifecycle analyses:cleanup-backlog analyses:fe-overview "
+SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:uc2-visits server:polling transfer:account-sharing transfer:twins analyses:triage analyses:data-diff analyses:partner-scorecard analyses:blast-radius analyses:app-partners analyses:partner-lifecycle analyses:cleanup-backlog analyses:fe-overview analyses:hosts-overview "
 
 is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
     case $SUBS_GROUP_REPORTS in *:"$1 "*) return 0 ;; esac
@@ -2272,7 +2272,7 @@ ANALYSES_MENU='<a class="ddtop" href="@analyses/index.html">Start page</a><a hre
 # report.js buildTopbar and render_topbar render it, ensure_assets ships it
 # as `goodies`, TB_VER folds it; linkcheck reads it from topbar-data.js like
 # the other menus.
-GOODIES_MENU='<a href="@analyses/fe-overview.html">Partners - Incoming</a><a href="@server/logons-incoming.html">Logons (incoming)</a><a href="@transfer/duration.html">Transfer Duration</a><a href="@analyses/failed.html">Failed Subscriptions</a><a href="@analyses/subscriptions.html">Subscriptions</a><a href="@analyses/polling.html">Polling</a>'
+GOODIES_MENU='<a href="@analyses/fe-overview.html">Partners - Incoming</a><a href="@server/logons-incoming.html">Logons (incoming)</a><a href="@analyses/hosts-overview.html">Partners - Outgoing</a><a href="@transfer/duration.html">Transfer Duration</a><a href="@analyses/failed.html">Failed Subscriptions</a><a href="@analyses/subscriptions.html">Subscriptions</a><a href="@analyses/polling.html">Polling</a>'
 
 # The analyses report GROUPS — the single source of truth for the group tab
 # bars, the group-of lookup and the h1 group tags. One line per group:
@@ -2283,7 +2283,7 @@ GOODIES_MENU='<a href="@analyses/fe-overview.html">Partners - Incoming</a><a hre
 _analyses_groups() {
     printf '%s\n' \
         "Coverage & seen|../transfer/entity-coverage-accounts.html=Entity coverage|first-seen.html=First seen|data-diff.html=Since yesterday|../transfer/seen-in-server-log.html=Seen in server log" \
-        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|fe-overview.html=Partners - Incoming|account-sharing.html=Account sharing|twins.html=Twins|polling.html=Polling|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
+        "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|fe-overview.html=Partners - Incoming|hosts-overview.html=Partners - Outgoing|account-sharing.html=Account sharing|twins.html=Twins|polling.html=Polling|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
         "Partners|partner-scorecard.html=Partner scorecard|blast-radius.html=Blast radius|app-partners.html=Application dependencies|partner-lifecycle.html=Partner lifecycle" \
         "Boxes|subscriptions-in-boxes.html=Subscriptions in boxes|accounts-in-boxes.html=Accounts in boxes|triage.html=Triage" \
         "Errors|failed.html=Failed Subscriptions|failing-reasons.html=Error reasons" \

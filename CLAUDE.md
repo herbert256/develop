@@ -1020,9 +1020,10 @@ in the transfer publish renders the 18 pages into `docs/transfer/month-stats/` w
 rows (month, entity), no date filter, help page `month-stats`; listed in `_analyses_groups`,
 the finder's static rows and the sitemap). A FOURTH dropdown, **Goodies**
 (`GOODIES_MENU`, 2026-09-13, user request), is a hand-written SHORT CUT to the best reports —
-Partners - Incoming · Logons (incoming) · Transfer Duration · Failed Subscriptions · Subscriptions
-(the analyses/subscriptions.html configuration list) · Polling (analyses/polling.html; both added
-2026-09-13) — the pages
+Partners - Incoming · Logons (incoming) · Partners - Outgoing (analyses/hosts-overview.html, the
+hosts twin of Partners - Incoming for UC1/UC3, `bin/analyses/reports/hosts-overview.sh`, 2026-09-13) ·
+Transfer Duration · Failed Subscriptions · Subscriptions (the analyses/subscriptions.html
+configuration list) · Polling (analyses/polling.html; both added 2026-09-13) — the pages
 staying in their own menus and groups; it ships in `topbar-data.js` as `goodies`, both bar
 renderers draw it, `TB_VER` folds it, linkcheck reads it like the other menus. `_analyses_groups` is the single
 source of truth for the analyses group tab bars — **keep it in sync with `ANALYSES_MENU`, the
