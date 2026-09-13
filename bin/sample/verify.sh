@@ -112,8 +112,8 @@ check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "fe-overview.rpt has 0 tinted r
 check $([ -f "docs/analyses/partners-in.html" ] && echo 0 || echo 1) "docs/analyses/partners-in.html missing"
 n=$(command grep -c '^ROW' "data/analyses/reports/partners-in.rpt" 2>/dev/null || echo 0); m=$(command grep -c '^ROW' "data/analyses/reports/fe-overview.rpt" 2>/dev/null || echo 1)
 check $([ "${n:-0}" -ge "${m:-1}" ] && [ "${m:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt has $n row(s), fewer than the FE overview ($m)"
-n=$(command grep -c '@data:drill-cell-13=' "data/analyses/reports/partners-in.rpt" 2>/dev/null || echo 0)
-check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt carries no re-keyed funnel drill (Allowed at column 13)"
+n=$(command grep -c '@data:drill-cell-12=' "data/analyses/reports/partners-in.rpt" 2>/dev/null || echo 0)
+check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt carries no re-keyed funnel drill (Allowed at column 12)"
 # Partners - Outgoing (2026-09-13): the hosts twin exists, its rows carry the host tints, and its host figures agree with the Entities host page
 check $([ -f "docs/analyses/hosts-overview.html" ] && echo 0 || echo 1) "docs/analyses/hosts-overview.html missing"
 n=$(command grep -c '@data:res=' "data/analyses/reports/hosts-overview.rpt" 2>/dev/null || echo 0)

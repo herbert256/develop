@@ -10,15 +10,21 @@
 # never disagree. The two source pages stay (user request: "do not yet
 # remove those 2 reports").
 #
-#   Login … Pickup pattern   fe-overview.rpt columns 0-12, verbatim
-#   Allowed … Session errors, First logon, Logons, Pattern, Re-screens
-#                            the Incoming table's columns, verbatim (with
-#                            their cell drills — the 5 newest log lines per
-#                            count — re-keyed to the new column positions)
-#   Dropped as duplicates:   fe-overview's "Logon problems" (the six funnel
-#                            columns it summed are here) and the funnel's
-#                            "Last logon" (= Cloud: the same logon summary,
-#                            to the minute)
+#   Login … Pickups          fe-overview.rpt columns 0-11, verbatim
+#   Allowed, Disallowed, Authenticated, Auth Failed, Locked, Pattern
+#                            the Incoming table's columns, verbatim, with
+#                            their cell drills (the 5 newest log lines per
+#                            count) re-keyed to the new column positions;
+#                            AUTH FAILED = the funnel's Bad key + Key
+#                            failures + Auth failed folded into one count
+#                            (2026-09-13, user request), its drill the 5
+#                            newest lines of the three
+#   Dropped (2026-09-13, user request): Re-screens, Pickup pattern, No
+#                            account, Session errors, First logon, Logons;
+#                            and as duplicates fe-overview's "Logon
+#                            problems" (a sum of funnel columns) and the
+#                            funnel's "Last logon" (= Cloud: the same logon
+#                            summary, to the minute)
 #
 # Rows = the UNION: every fe-overview row in its baked order (the configured
 # logins + the old-gateway-only ones), then the funnel-only logins (seen
@@ -50,56 +56,76 @@ GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 
 awk -F'\t' -v FE="$FE" -v LG="$LG" -v GEN="$GENDATE" '
     function strip(c) { while (index(c, "@{") == 1) sub(/^@\{[^}]*\}/, "", c); return c }
+    function num(c) { c = strip(c); return (c ~ /^[0-9]+$/) ? c + 0 : 0 }
+    # the Auth Failed drill: the three source lists (each newest first,
+    # \x1f-joined) merged, the 5 newest kept (the lines lead with their
+    # timestamp, so a string sort orders them)
+    function mergedrill(p1, p2, p3,   n1, L, i, j, v, out) {
+        n1 = 0
+        if (p1 != "") n1 += split(p1, A1, "\037"); for (i = 1; i <= n1; i++) L[i] = A1[i]
+        if (p2 != "") { m2 = split(p2, A2, "\037"); for (i = 1; i <= m2; i++) L[++n1] = A2[i] }
+        if (p3 != "") { m3 = split(p3, A3, "\037"); for (i = 1; i <= m3; i++) L[++n1] = A3[i] }
+        for (i = 2; i <= n1; i++) { v = L[i]; for (j = i - 1; j >= 1 && L[j] < v; j--) L[j + 1] = L[j]; L[j + 1] = v }
+        out = ""; for (i = 1; i <= n1 && i <= 5; i++) out = out (i > 1 ? "\037" : "") L[i]
+        return out
+    }
     BEGIN {
-        E12 = "\t\t\t\t\t\t\t\t\t\t\t\t"; E13 = E12 "\t"
-        # fe-overview.rpt ROW: 2 login, 3 use cases .. 14 pickup pattern, 15
-        # logon problems (dropped), then @data:res=; TOTAL: 2 label, 3..14 the
-        # same cells, 15 logon problems (dropped)
+        E11 = "\t\t\t\t\t\t\t\t\t\t\t"; E6 = "\t\t\t\t\t\t"
+        # fe-overview.rpt ROW: 2 login, 3 use cases .. 13 pickups, 14 pickup
+        # pattern (dropped), 15 logon problems (dropped), then @data:res=;
+        # TOTAL: 2 label, 3..13 the same cells
         while ((getline l < FE) > 0) { n = split(l, a, "\t")
             if (a[1] == "ROW") { k = toupper(a[2]); if (!(k in IDX)) { IDX[k] = ++nr; NAME[nr] = a[2] }
-                s = ""; for (i = 3; i <= 14; i++) s = s "\t" a[i]; FEROW[k] = s
+                s = ""; for (i = 3; i <= 13; i++) s = s "\t" a[i]; FEROW[k] = s
                 for (i = 15; i <= n; i++) if (index(a[i], "@data:res=") == 1) FERES[k] = a[i]
                 nfe++ }
-            else if (a[1] == "TOTAL") { FETOT = ""; for (i = 3; i <= 14; i++) FETOT = FETOT "\t" a[i] }
+            else if (a[1] == "TOTAL") { FETOT = ""; for (i = 3; i <= 13; i++) FETOT = FETOT "\t" a[i] }
         } close(FE)
-        # logon.rpt, FIRST table (Incoming) ROW: 2 login, 3..11 Allowed ..
-        # Session errors, 12 First logon, 13 Last logon (dropped), 14 Logons,
-        # 15 Pattern, 16 Re-screens, then the @data: payloads; TOTAL likewise
+        # logon.rpt, FIRST table (Incoming) ROW: 2 login, 3 Allowed, 4
+        # Disallowed, 5 Authenticated, 6 No account (dropped), 7 Bad key, 8 Key
+        # failures, 9 Locked, 10 Auth failed, 11 Session errors (dropped), 12
+        # First logon (dropped), 13 Last logon (dropped), 14 Logons (dropped),
+        # 15 Pattern, 16 Re-screens (dropped), then the @data: payloads;
+        # TOTAL likewise (its cells carry @{class=…} prefixes)
         t = 0
         while ((getline l < LG) > 0) { n = split(l, a, "\t")
             if (a[1] == "TABLE") { t++; continue }
             if (t != 1) continue
             if (a[1] == "ROW") { nm = strip(a[2]); k = toupper(nm)
                 if (!(k in IDX)) { IDX[k] = ++nr; NAME[nr] = nm; nonly++ }
-                s = ""; for (i = 3; i <= 11; i++) s = s "\t" a[i]
-                LGROW[k] = s "\t" a[12] "\t" a[14] "\t" a[15] "\t" a[16]
-                # the cell drills, re-keyed: the funnel columns 1..9 sit at
-                # 13..21 here, Re-screens (14) at 25
-                d = ""
+                af = num(a[7]) + num(a[8]) + num(a[10])
+                LGROW[k] = "\t" a[3] "\t" a[4] "\t" a[5] "\t" (af > 0 ? af : "") "\t" a[9] "\t" a[15]
+                # the cell drills, re-keyed: Allowed 1 -> 12, Disallowed 2 ->
+                # 13, Authenticated 3 -> 14, Locked 7 -> 16; Bad key 5 + Key
+                # failures 6 + Auth failed 8 -> the merged Auth Failed 15
+                d = ""; d5 = ""; d6 = ""; d8 = ""
                 for (i = 17; i <= n; i++) if (index(a[i], "@data:drill-cell-") == 1) { p = index(a[i], "="); if (p == 0) continue
-                    ci = substr(a[i], 18, p - 18) + 0
-                    nc = (ci >= 1 && ci <= 9) ? ci + 12 : (ci == 14 ? 25 : -1); if (nc < 0) continue
-                    d = d "\t@data:drill-cell-" nc substr(a[i], p) }
+                    ci = substr(a[i], 18, p - 18) + 0; pl = substr(a[i], p + 1)
+                    if (ci == 5) d5 = pl; else if (ci == 6) d6 = pl; else if (ci == 8) d8 = pl
+                    else { nc = (ci == 1) ? 12 : (ci == 2) ? 13 : (ci == 3) ? 14 : (ci == 7) ? 16 : -1
+                           if (nc >= 0) d = d "\t@data:drill-cell-" nc "=" pl } }
+                md = mergedrill(d5, d6, d8); if (md != "") d = d "\t@data:drill-cell-15=" md
                 LGDR[k] = d }
-            else if (a[1] == "TOTAL") { LGTOT = ""; for (i = 3; i <= 11; i++) LGTOT = LGTOT "\t" a[i]; LGTOT = LGTOT "\t" a[12] "\t" a[14] "\t" a[15] "\t" a[16] }
+            else if (a[1] == "TOTAL") { af = num(a[7]) + num(a[8]) + num(a[10])
+                LGTOT = "\t" a[3] "\t" a[4] "\t" a[5] "\t@{class=num failed}" (af > 0 ? af : "") "\t" a[9] "\t" a[15] }
         } close(LG)
-        if (FETOT == "") FETOT = E12
-        if (LGTOT == "") LGTOT = E13
+        if (FETOT == "") FETOT = E11
+        if (LGTOT == "") LGTOT = E6
         print "TITLE\tPartners - Incoming"
-        print "DESC\tEvery FE login on one line: its use cases, the last logon here and on the old gateway, its Files in and out with the retrieved, Waiting and Expired ones and the oldest wait, its pickups with their cadence, and the SSH screening funnel — Allowed, Disallowed, Authenticated, No account, Bad key, Key failures, Locked, Auth failed, Session errors, Re-screens — with the logon count and pattern."
+        print "DESC\tEvery FE login on one line: its use cases, the last logon here and on the old gateway, its Files in and out with the retrieved, Waiting and Expired ones and the oldest wait, its pickups, and the SSH screening funnel — Allowed, Disallowed, Authenticated, Auth Failed (bad key, key failures and failed authentications), Locked — with the logon pattern."
         # the FE overview layout: default sort Waiting (column 8) descending;
         # group dividers before Cloud, Files in, Files out, Oldest waiting,
-        # Pickups, then the funnel (Allowed), its logon summary (First logon)
-        # and Re-screens; the funnel counts keep their log-line drills
-        print "TABLE\tFE logins\twide\tnofilter\trestint\tsort=8:-1\tgsep=2,4,5,10,11,13,22,25\tdrill=log line"
-        print "HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tError\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\tPickup pattern\tAllowed\tDisallowed\tAuthenticated\tNo account\tBad key\tKey failures\tLocked\tAuth failed\tSession errors\tFirst logon\tLogons\tPattern\tRe-screens"
-        print "KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumfailed\ttext\tnum\ttext\tnumprocessed\tnumfailed\tnumprocessed\tnumfailed\tnumfailed\tnumwarn\tnumwarn\tnumfailed\tnumfailed\ttext\tnum\ttext\tnum"
+        # Pickups, the funnel (Allowed) and Pattern; the funnel counts keep
+        # their log-line drills
+        print "TABLE\tFE logins\twide\tnofilter\trestint\tsort=8:-1\tgsep=2,4,5,10,11,12,17\tdrill=log line"
+        print "HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tError\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\tAllowed\tDisallowed\tAuthenticated\tAuth Failed\tLocked\tPattern"
+        print "KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumfailed\ttext\tnum\tnumprocessed\tnumfailed\tnumprocessed\tnumfailed\tnumwarn\ttext"
         for (i = 1; i <= nr; i++) { k = toupper(NAME[i])
-            fe = (k in FEROW) ? FEROW[k] : E12; lg = (k in LGROW) ? LGROW[k] : E13
+            fe = (k in FEROW) ? FEROW[k] : E11; lg = (k in LGROW) ? LGROW[k] : E6
             res = (k in FERES) ? "\t" FERES[k] : ""
             print "ROW\t" NAME[i] fe lg res ((k in LGDR) ? LGDR[k] : "") }
         print "TOTAL\tTotal (" nr " logins)" FETOT LGTOT
-        print "KEYWORDS\tpartners,incoming,fe,login,overview,status,use case,uc2,uc4,mailbox,last logon,gateway,old gateway,migration,files,in,out,retrieved,collected,waiting,expired,oldest,age,pickup,visit,pattern,cadence,logon,logons,funnel,allowed,disallowed,authenticated,no account,bad key,key failures,locked,auth failed,session errors,re-screens,ssh"
+        print "KEYWORDS\tpartners,incoming,fe,login,overview,status,use case,uc2,uc4,mailbox,last logon,gateway,old gateway,migration,files,in,out,retrieved,collected,waiting,expired,oldest,age,pickup,visit,pattern,cadence,logon,funnel,allowed,disallowed,authenticated,bad key,key failures,locked,auth failed,ssh"
         print "FOOT\tGenerated on " GEN
         printf "%d\t%d\t%d\n", nr, nfe + 0, nonly + 0 > "/dev/stderr"
     }
