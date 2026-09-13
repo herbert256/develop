@@ -1231,22 +1231,25 @@ write_subscriptions_page() {
                 if (res == "green" || res == "orange" || res == "red" || res == "blue") tr = tr " data-res=\"" res "\""
                 if (k in CNT) split(CNT[k], C, "\t"); else for (ci = 1; ci <= 9; ci++) C[ci] = 0
                 for (ci = 1; ci <= 9; ci++) TOT[ci] += C[ci]
+                # column order (2026-09-13, user request): name, the routing
+                # (Endpoint, From, To), the counts, the groups, the cron
+                # columns last; the Schedule cell never wraps
                 print ucsort "\t" k "\t" tr ">" \
                     "<td>" lnk("subscriptions", nm) "</td>" \
+                    "<td class=\"wrap\">" epc "</td>" \
+                    "<td class=\"wrap\">" fr "</td>" \
+                    "<td class=\"wrap\">" to "</td>" \
+                    ncell(C[1], "num") ncell(C[2], "num") ncell(C[3], "num") ncell(C[4], "num failed") \
+                    ncell(C[5], "num warn") ncell(C[6], "num warn") ncell(C[7], "num failed") \
+                    ncell(C[8], "num warn") ncell(C[9], "num failed") \
                     "<td>" cell("logicals", (k in LGC) ? LGC[k] : "") "</td>" \
                     "<td class=\"wrap\">" cell("accounts", (k in ACC) ? ACC[k] : "") "</td>" \
                     "<td class=\"wrap\">" cell("partners", (k in PTN) ? PTN[k] : "") "</td>" \
                     "<td>" cell("domains", (k in DOM) ? DOM[k] : "") "</td>" \
                     "<td>" cell("applications", (k in APP) ? APP[k] : "") "</td>" \
                     "<td>" cell("bl", (k in BLE) ? BLE[k] : "") "</td>" \
-                    "<td class=\"wrap\">" epc "</td>" \
-                    "<td class=\"wrap\">" fr "</td>" \
-                    "<td class=\"wrap\">" to "</td>" \
                     "<td class=\"mono\">" ((k in CRX) ? crcell(CRX[k]) : "") "</td>" \
-                    "<td class=\"wrap\">" ((k in CRH) ? e(CRH[k]) : "") "</td>" \
-                    ncell(C[1], "num") ncell(C[2], "num") ncell(C[3], "num") ncell(C[4], "num failed") \
-                    ncell(C[5], "num warn") ncell(C[6], "num warn") ncell(C[7], "num failed") \
-                    ncell(C[8], "num warn") ncell(C[9], "num failed") "</tr>"
+                    "<td>" ((k in CRH) ? e(CRH[k]) : "") "</td></tr>"
             }
             # the column sums: sorted LAST ("~" > every UC key), split off below
             printf "~\t~"; for (ci = 1; ci <= 9; ci++) printf "\t%d", TOT[ci] + 0; printf "\n"
@@ -1264,9 +1267,9 @@ write_subscriptions_page() {
         printf '<h1>Subscriptions</h1>\n'
         analyses_group_tabs subscriptions.html
         printf '<div class="tablewrap"><table class="index fit">\n'
-        printf '<tr><th>Subscription</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Endpoint</th><th>From</th><th>To</th><th>Cron expression</th><th>Schedule</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Auto Retries</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th></tr>\n'
+        printf '<tr><th>Subscription</th><th>Endpoint</th><th>From</th><th>To</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Auto Retries</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Cron expression</th><th>Schedule</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
-        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>%s</tr>\n' "$n" "$tcells"
+        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td>%s<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$n" "$tcells"
         printf '</table></div>\n'
         printf '</body>\n</html>\n'
     } > "$out"

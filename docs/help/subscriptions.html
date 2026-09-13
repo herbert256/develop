@@ -17,19 +17,19 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Subscriptions (analyses)</h1>
 <h2>What it shows</h2>
-<p>Every configured subscription on one row: its groups, its endpoint and folders, and its all-time File counts. Ordered by use case, then name.</p>
+<p>Every configured subscription on one row: its endpoint and folders, its all-time File counts, its groups and its cron schedule. Ordered by use case, then name.</p>
 <h2>Columns</h2>
 <ul>
 <li><strong>Subscription</strong> &mdash; the complete configured name; links the detail page.</li>
-<li><strong>Logical</strong>, <strong>Account</strong>, <strong>Partner</strong>, <strong>Domain</strong>, <strong>Application</strong>, <strong>BL</strong> &mdash; the owning account and the derived groups (BL = the <code>tags</code> entry starting with <code>BL</code>); each links its detail page.</li>
 <li><strong>Endpoint</strong> &mdash; inbound: the login the partner connects with; outbound: the remote host we dial.</li>
 <li><strong>From</strong> / <strong>To</strong> &mdash; the source and target folders exactly as the detail page&rsquo;s Features rows: the pickup side carries its file mask in green; <code>-</code> = nothing configured.</li>
-<li><strong>Cron expression</strong> / <strong>Schedule</strong> &mdash; the configured receive scheduler (Quartz <code>sec min hour day-of-month month day-of-week</code>) and its plain-English reading, exactly as on the <a href="server-polling.html">Polling</a> page; blank without one.</li>
 <li><strong>Total files</strong>, <strong>In Files</strong>, <strong>Out Files</strong> &mdash; the Files (one per CoreId) this subscription carried over the whole data set, by movement direction.</li>
 <li><strong>Errors</strong> &mdash; Files that ended Failed or Expired (red).</li>
 <li><strong>Auto Retries</strong> &mdash; OK Files with a failed leg and no resubmit: the platform retried (amber).</li>
 <li><strong>Resubmit OK</strong> / <strong>Resubmit Error</strong> &mdash; the Files an operator resubmitted, by final outcome.</li>
 <li><strong>Waiting</strong> / <strong>Expired</strong> &mdash; UC2 Files staged but not collected yet, and the ones deleted unclaimed.</li>
+<li><strong>Logical</strong>, <strong>Account</strong>, <strong>Partner</strong>, <strong>Domain</strong>, <strong>Application</strong>, <strong>BL</strong> &mdash; the owning account and the derived groups (BL = the <code>tags</code> entry starting with <code>BL</code>); each links its detail page.</li>
+<li><strong>Cron expression</strong> / <strong>Schedule</strong> &mdash; the configured receive scheduler (Quartz <code>sec min hour day-of-month month day-of-week</code>) and its plain-English reading, exactly as on the <a href="server-polling.html">Polling</a> page; blank without one.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
