@@ -16,9 +16,25 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Partner scorecard</h1>
-<h2>What this shows</h2>
-<p>One number per partner relation with at least 100 Files, worst first. The score starts at 100 minus the partner's Error % (the heaviest weight) and deducts for a worsening 14-day error trend, a UC2 average pickup wait over 24 hours, transfer legs on weak security parameters (ssh-rsa or TLSv1.2), a single outbound endpoint, and 14+ days of silence — the NOTE on the page states the exact weights. Every component is its own column, so a low score is checkable per row.</p>
-<p>The concentration boxes (top-1/3/10 share, Gini) cover all seen partners and show how heavily the estate leans on a few organisations. The side-by-side top-10 tables expose the volume-vs-count blind spot: the biggest byte mover is not the biggest file counter.</p>
+<h2>What it shows</h2>
+<p>One composite 0&ndash;100 health score per partner relation with at least <strong>100 Files</strong>, worst first, every ingredient in its own column so a low score is checkable per row.</p>
+<p>Concentration boxes and two side-by-side top-10 tables show how heavily the estate leans on a few organisations.</p>
+<h2>Rules</h2>
+<ul>
+<li>The score starts at <strong>100 minus the Error %</strong> (Failed or Expired Files &mdash; the heaviest weight by far).</li>
+<li>Minus <strong>0.5 points per percentage point</strong> the last-14-days Error % worsened against the 14 days before (capped at 15; improving never adds).</li>
+<li>Minus <strong>5 points</strong> when the average UC2 partner pickup wait exceeds 24 h.</li>
+<li>Minus up to <strong>5 points</strong>, scaled by the share of transfer legs on a weak security parameter (ssh-rsa host key or TLSv1.2).</li>
+<li>Minus <strong>3 points</strong> when everything we send the partner rides a single outbound endpoint.</li>
+<li>Minus <strong>10 points</strong> when the partner has been quiet for 14+ days.</li>
+<li>All measured against the newest log day, then clamped to 0&ndash;100.</li>
+<li>Partner attribution is the site-wide UNION rule (the subscription&rsquo;s configured partners unioned with the parse attribution).</li>
+<li>The concentration boxes (top-1/3/10 share, Gini) cover all seen partners; the scorecard only those with at least 100 Files.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>The top-10 tables expose the volume-vs-count blind spot: the biggest byte mover is not the biggest file counter, and a count-ranked view buries it under the high-frequency movers.</li>
+</ul>
 </main>
 </body>
 </html>

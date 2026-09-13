@@ -16,15 +16,31 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>From green to red</h1>
-<h2>What this shows</h2>
-<p>The <strong>regression list</strong>: subscriptions that are <strong>red right now</strong> — their latest File failed — but that were <strong>green on an earlier day</strong>. These are the flows that used to work and are broken now, which makes them the most actionable failures on the site: something changed. Subscriptions that have <em>never</em> delivered an OK File are deliberately excluded — they were never green, so nothing flipped; <a href="episodes.html">Failure Episodes</a> lists those with Last OK <strong>"never"</strong>.</p>
-<p>Per subscription: the <strong>last green day</strong> (the most recent day that ended on an OK File), the moment it <strong>went red</strong> (the first failure of the current run), how many <strong>days</strong> it has been red, the <strong>consecutive failures</strong> since, and its lifetime OK/Files counts. Newest flips first — the freshest regression sits on top. Click the Error count for the 10 most recent failed Files, the OK count for the last successful ones.</p>
-<h2>How it's computed</h2>
-<p>Logical transfers (Files, the delivered outcome) are walked chronologically per subscription. A subscription's color is the site-wide result rule: <strong>red</strong> when its latest File's outcome is Failed or Expired, <strong>green</strong> otherwise — Waiting (a UC2 file staged for pickup, not collected yet) counts as OK, Expired (the staged copy was deleted before pickup) counts as Error. A day "ends green" when the last File of that day is OK; the flip moment is the first failure of the run the subscription is still in. An OK and a failure on the same day leave that day red, so "last green day" and "went red on" can sit days apart. "Days red" counts to the dataset's last day, not today.</p>
-<h2>Why the date filter is off</h2>
-<p>The flip is a sequence in time — a narrowed From/To range would fabricate flips (by hiding the newest failures) or hide them (by cutting the green history). The page therefore always shows the full period, like <a href="stale-accounts.html">Stale Accounts</a> and <a href="episodes.html">Failure Episodes</a>.</p>
-<h2>How it relates to the other failure reports</h2>
-<p><a href="episodes.html">Failure Episodes</a> shows every failure run (its Open incidents table requires 3+ consecutive failures and includes never-green flows); this page requires exactly one thing — <em>green before, red now</em> — and shows the flip itself, even when the current run is a single failure. <a href="failure-rate.html">Failure rate</a> answers "what share fails", <a href="not-in-flow-manager.html">Not in Flow Manager</a> covers configuration drift. The subscription's red tint on the Entities pages and detail pages follows the same latest-File rule this page uses.</p>
+<h2>What it shows</h2>
+<p>The regression list: one row per subscription that is <strong>red right now</strong> (its latest File failed) but was <strong>green on an earlier day</strong> &mdash; flows that used to work and broke, so something changed. Newest flip first.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Last green day</strong> &mdash; the most recent day that <em>ended</em> on an OK File.</li>
+<li><strong>Went red on</strong> &mdash; the first failure of the run the subscription is still in.</li>
+<li><strong>Days red</strong> &mdash; counted to the dataset&rsquo;s last day, not today.</li>
+<li><strong>Consecutive failures</strong> &mdash; failed Files since the flip.</li>
+<li><strong>OK Files / Files</strong> &mdash; lifetime counts of the subscription.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Files are walked chronologically per subscription.</li>
+<li>Site-wide colour rule: <strong>red</strong> when the latest File is Failed or Expired, <strong>green</strong> otherwise. Waiting (a UC2 file staged, not collected yet) is OK; Expired (the staged copy deleted before pickup) is Error.</li>
+<li>A day ends green when its last File is OK. An OK and a failure on one day leave it red, so Last green day and Went red on can sit days apart.</li>
+<li>Subscriptions that never delivered an OK File are excluded (never green, nothing flipped): see <a href="only-red.html">Only red</a>; <a href="episodes.html">Failure Episodes</a> lists them with Last OK &ldquo;never&rdquo;.</li>
+<li>Always the full period, no date filter (like <a href="went-quiet.html">Went quiet</a> and Failure Episodes): a narrowed range would fabricate flips (hiding the newest failures) or hide them (cutting the green history).</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click the Error count for the 10 most recent failed Files, the OK count for the last successful ones.</li>
+<li>Failure Episodes shows every failure run (its Open incidents table needs 3+ consecutive failures and includes never-green flows); this page needs only <em>green before, red now</em> and shows the flip even for a single failure.</li>
+<li><a href="failure-rate.html">Failure rate</a> answers what share fails; <a href="not-in-flow-manager.html">Not in Flow Manager</a> covers configuration drift.</li>
+<li>The red tint on the Entities and detail pages follows the same latest-File rule.</li>
+</ul>
 </main>
 </body>
 </html>

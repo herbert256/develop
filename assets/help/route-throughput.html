@@ -16,9 +16,17 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Route throughput</h1>
-<h2>What this shows</h2>
-<p>Wire speed per route (subscription × protocol × direction), computed only from legs that measure a real rate: duration over 500 ms and size over 1 MB, so session-setup noise is excluded. MB/s is the route's counted bytes divided by its summed leg durations — a volume-weighted rate.</p>
-<p>Leg duration is the record's own wire time; the store-and-forward dwell between legs is never included (the Store-and-forward report measures that). Compare a route to its protocol rollup, not across protocols: PeSIT throttles far below SFTP by design. The Trend column compares the first half of the window with the second.</p>
+<h2>What it shows</h2>
+<p>Wire speed in MB/s per <strong>route</strong> (subscription &times; protocol &times; direction), slowest routes first, with a per-protocol rollup and a trend.</p>
+<h2>Rules</h2>
+<ul>
+<li>Only legs that measure a real rate count: <strong>duration over 500 ms</strong> and <strong>size over 1 MB</strong>; the floors drop legs whose rate is mostly session setup and rounding.</li>
+<li>MB/s = the route&rsquo;s counted bytes divided by its summed leg durations &mdash; volume-weighted, so one big slow file outweighs ten quick ones.</li>
+<li>A leg&rsquo;s duration is the record&rsquo;s own wire time; the store-and-forward dwell between legs is never included (the Store-and-forward report measures that).</li>
+<li><strong>Trend</strong> compares first-half with second-half MB/s of the window; shown when both halves have at least 3 Transfers.</li>
+<li>Compare a route to its <strong>protocol rollup</strong>, not across protocols: PeSIT throttles far below SFTP by design &mdash; a PeSIT route at 0.2 MB/s and an SFTP route at 40 MB/s are both normal; a route far below its protocol peers is worth a look.</li>
+<li><code>routing</code> is the internal store-and-forward leg between the inbound and outbound sides.</li>
+</ul>
 </main>
 </body>
 </html>

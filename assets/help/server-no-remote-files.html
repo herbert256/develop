@@ -16,21 +16,23 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>No remote files</h1>
-<h2>What this shows</h2>
-<p>UC3 subscriptions that poll the partner <strong>faultlessly</strong> and never find a thing. Every poll logs its result, and for these flows it always reads zero:</p>
-<p class="mono">Applying the search pattern '*' for transfer site 'UC3_ZG_SCOPE_IMPRESS_&hellip;_KEY': 0 file(s) were found of which 0 matched the pattern.</p>
-<p>Nothing is broken here &mdash; the connection, the credentials and the remote directory are all fine and the listing succeeds. There is simply never a file on the other side. Each row is a schedule spending connections and directory listings around the clock for no data at all: the top rows in this report poll <em>thousands</em> of times a month and have never once had anything to fetch.</p>
-<h2>Who gets listed</h2>
-<p>The scope is deliberately narrow, so the report answers one question &mdash; <em>which flows have never had anything to fetch?</em></p>
+<h2>What it shows</h2>
+<p>UC3 subscriptions that poll the partner <strong>faultlessly</strong> and never find a thing: every poll logs <code>Applying the search pattern '*' for transfer site '&lt;site&gt;': 0 file(s) were found of which 0 matched the pattern.</code></p>
+<h2>Columns</h2>
 <ul>
-<li><strong>UC3 only</strong> &mdash; the pull use case, where polling is the whole point.</li>
-<li><strong>No transfer data</strong> &mdash; the subscription appears in the server log but has <em>no transfer rows at all</em>. Its result shows <strong>green</strong> when its latest poll succeeded (the clean-poll rule: the flow verifiably works, there is simply nothing to fetch) or <a href="general.html">blue</a> otherwise. A subscription that has moved files is left out &mdash; a quiet stretch there is a lull, not this problem.</li>
-<li><strong>Every poll empty</strong> &mdash; zero files <em>found</em> on every single poll. A flow that saw files it could not match (found &gt; 0, matched = 0) has a search-pattern problem, not an empty directory, and is left out; the note under the table says how many were excluded that way.</li>
+<li><strong>First</strong> / <strong>Last</strong> &mdash; bound the polling; <strong>Polls</strong> &mdash; the empty listings; <strong>Days</strong> &mdash; how many separate days it ran.</li>
 </ul>
-<h2>How it's computed</h2>
-<p>One pass over the poll lines in the server log. Both message shapes count &mdash; <code>N file(s) were found of which M matched the pattern.</code> and <code>N file(s), matching the pattern, were found and will be downloaded.</code> &mdash; since only the leading count is common to them. <strong>Last</strong> and <strong>First</strong> bound the polling, <strong>Polls</strong> is the number of empty listings and <strong>Days</strong> how many separate days it ran. Poll counts are additive, so a date-filtered range re-totals them, and clicking a row expands its 10 most recent poll lines.</p>
-<h2>Why it matters</h2>
-<p>An empty poll leaves <strong>no trace whatsoever in the transfer logs</strong> &mdash; no transfer is started, so the flow is invisible in every file-based report. A subscription can therefore run for years, cost a connection every few minutes, and never be noticed. Each row is a candidate for retirement, a slower schedule, or a question to the partner about whether they ever intend to deliver. Compare with <a href="server-uc3-status.html#polls">Remote Polls</a>, which ranks the empty-poll rate of <em>every</em> subscription including the working ones, and <a href="server-no-remote-dir.html">No remote dir</a>, where the listing fails outright because the directory is not there.</p>
+<h2>Rules</h2>
+<ul>
+<li>Nothing is broken: connection, credentials and remote directory are fine and the listing succeeds &mdash; there is simply never a file. Each row is a schedule spending connections and listings around the clock for no data; the top rows poll thousands of times a month.</li>
+<li><strong>UC3 only</strong> &mdash; the pull use case, where polling is the whole point.</li>
+<li><strong>No transfer data</strong> &mdash; the subscription is in the server log with no transfer rows at all; its result is <strong>green</strong> when its latest poll succeeded (the clean-poll rule: verifiably working, nothing to fetch) or <a href="general.html">blue</a> otherwise. A subscription that has moved files is left out &mdash; a quiet stretch there is a lull.</li>
+<li><strong>Every poll empty</strong> &mdash; zero files <em>found</em> on every poll. Found &gt; 0 with matched = 0 is a search-pattern problem, not an empty directory, and is left out; the note under the table says how many.</li>
+<li>Both poll shapes count &mdash; <code>N file(s) were found of which M matched the pattern.</code> and <code>N file(s), matching the pattern, were found and will be downloaded.</code> &mdash; only the leading count is common to them.</li>
+<li>Poll counts are additive and re-total under the date filter; click a row for its 10 most recent poll lines.</li>
+<li>An empty poll leaves no trace in the transfer logs, so the flow is invisible in every file-based report and can run for years at a connection every few minutes: a candidate for retirement, a slower schedule, or a question to the partner.</li>
+<li>Compare <a href="server-uc3-status.html#polls">Remote Polls</a> (the empty-poll rate of every subscription, working ones included) and <a href="server-no-remote-dir.html">No remote dir</a> (the listing fails outright: the directory is not there).</li>
+</ul>
 </main>
 
 

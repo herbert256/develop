@@ -16,19 +16,27 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Punctuality</h1>
-<h2>What this shows</h2>
-<p>Does the daily file arrive on time? For every subscription active on 8+ days, the day's <em>first</em> File defines that day's arrival time. The median over the window is the flow's <strong>typical slot</strong>, and the spread (one standard deviation) classifies its regularity:</p>
+<h2>What it shows</h2>
+<p>Does the daily file arrive on time? One row per subscription active on <strong>8+ days</strong>: its typical arrival slot, how regular it is, its late arrivals and missed days. Tightest flows first.</p>
+<h2>Columns</h2>
 <ul>
-<li><strong>Clockwork</strong> — ±15 minutes or tighter. Cron-driven flows land here, many at ±0 min: the observed side of the schedules the <a href="server-uc3-status.html#cronjobs">Cronjobs</a> analysis extracts from the configuration.</li>
-<li><strong>Regular</strong> — within an hour.</li>
-<li><strong>Loose</strong> — within three hours.</li>
-<li><strong>Irregular</strong> — wider: event-driven flows, where "late" and "missed" have no meaning (those columns show "-").</li>
+<li><strong>Typical slot</strong> &mdash; the median arrival time over the window; the day&rsquo;s <em>first</em> File defines that day&rsquo;s arrival.</li>
+<li><strong>Window / Class</strong> &mdash; the spread (one standard deviation): <strong>Clockwork</strong> ±15 minutes or tighter (cron-driven flows, many at ±0 min); <strong>Regular</strong> within an hour; <strong>Loose</strong> within three hours; <strong>Irregular</strong> wider &mdash; event-driven flows, where late and missed have no meaning (those columns show &ldquo;-&rdquo;).</li>
+<li><strong>Late</strong> &mdash; arrivals over an hour past the typical slot (Clockwork/Regular only).</li>
+<li><strong>Missed days</strong> &mdash; a weekday the flow served on 75%+ of its calendar occurrences that passed without any File (Clockwork/Regular only).</li>
 </ul>
-<p>For Clockwork and Regular flows it then flags <strong>Late</strong> arrivals (over an hour past the typical slot) and <strong>Missed days</strong>: a weekday the flow served on 75%+ of its calendar occurrences that passed without any File. Click a row with late/missed counts for the exact dates.</p>
-<h2>How it's computed</h2>
-<p>Per (subscription, day) the earliest File time is kept; the median of those minutes is the typical slot. The missed-day model builds each flow's weekday profile (which weekdays it usually serves) and walks the whole calendar window — so a Tuesday flow that skips a Tuesday is flagged, while never running on weekends is not. The page always shows the full period (the model needs the whole window), so there is no From/To filter.</p>
-<h2>How it relates to the other timing reports</h2>
-<p><a href="stale-accounts.html">Stale Accounts</a> measures idle <em>days</em> per account against its own cadence — day granularity, account level. This page is time-<em>of-day</em> granularity at subscription level: the file arrived, but an hour late; the Tuesday slot passed empty. <a href="hourly.html">Load by Hour</a> shows when the platform is busy overall; this shows whether each individual rhythm holds.</p>
+<h2>Rules</h2>
+<ul>
+<li>Per (subscription, day) the earliest File time is kept; the median of those minutes is the typical slot.</li>
+<li>The missed-day model builds each flow&rsquo;s weekday profile and walks the whole calendar window: a Tuesday flow that skips a Tuesday is flagged, never running on weekends is not.</li>
+<li>Always the full period (the model needs the whole window), so there is no From/To filter.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a row with late/missed counts for the exact dates.</li>
+<li><a href="server-uc3-status.html#cronjobs">Cronjobs</a> shows the <em>configured</em> schedules these observed slots should match.</li>
+<li><a href="went-quiet.html">Went quiet</a> measures idle <em>days</em> per account against its own cadence; this page is time-of-day granularity per subscription. <a href="day.html">Activity over time</a> shows when the platform is busy overall; this page shows whether each individual rhythm holds.</li>
+</ul>
 </main>
 </body>
 </html>

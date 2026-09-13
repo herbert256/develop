@@ -16,16 +16,28 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Logical Flow Details</h1>
-<h2>What this shows</h2>
-<p>This is the per-logical-flow detail page &mdash; one page per <strong>logical flow</strong>: a FlowID family of the configured subscriptions condensed to one three-part name (a <code>-</code> inside a part marks parts the derivation combined; a fixed mapping in <code>input/logical.txt</code> wins verbatim). It opens with a one-line KPI summary, then Activity per day, a breakdown of every dimension the flow's transfers touch (subscription, account, login, remote host, domain, application, partner), the latest Files and the load tables. A file belongs to a logical flow through its FlowID attribution, unioned with its subscription&rsquo;s configured logical(s).</p>
-<p>The subscription / account / login / remote host tables are cross-referenced against the FlowManager configuration: every name configured for this flow is listed, whether it appears in the logs or not &mdash; <strong>green</strong> rows have logged data, <strong>red</strong> rows are configured but never seen, each linking to its own detail page.</p>
-<h2>Last error(s)</h2>
-<p>Directly above the <strong>Features</strong> table, a page carries a <strong>Last error(s)</strong> table whenever any subscription it moves files with has something wrong on it: one row per such subscription &mdash; its <em>most recent</em> error, newest first &mdash; with the date and time, the subscription and the file. Clicking anywhere on a row opens that file&rsquo;s error page, with every transfer leg and the server log of the failure.</p>
-<h2>Direction, page colors and never-seen pages</h2>
-<p>Every configured logical flow has a page &mdash; seen in the logs or not. The page background color says the same at a glance: <strong>light brown</strong> = seen &amp; in, <strong>light blue</strong> = seen &amp; out, <strong>light gray</strong> = seen &amp; both/unknown, <strong>light yellow</strong> = never seen &amp; in, <strong>light orange</strong> = never seen &amp; out, <strong>light purple</strong> = never seen &amp; both/unknown.</p>
-<h2>How it's computed</h2>
-<p>The KPI line reports this flow's rank and share of traffic among all logical flows, its failure rate, total volume and cadence, plus processed-transfer performance where durations are recorded. Every count is in <strong>Files</strong>: one per logical transfer, split by its delivered (final-row) outcome, volume counted once per file.</p>
-<p class="range">A Partner, Application, Domain or Logical breakdown holding exactly one row is folded away: the name appears as a row in the Features table instead, keeping its link and colour.</p>
+<h2>What it shows</h2>
+<p>The detail page of one <strong>logical flow</strong>: a FlowID family of the configured subscriptions condensed to one three-part name. A <code>-</code> inside a part marks parts the derivation combined; a fixed mapping in <code>input/logical.txt</code> wins verbatim.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>KPI line</strong> &mdash; rank and share of traffic among all logical flows, failure rate, total volume, cadence, and processed-transfer performance where durations are recorded.</li>
+<li><strong>Last error(s)</strong> &mdash; directly above Features, only when a subscription it moves files with has an error: one row per such subscription, its most recent error, newest first, with date and time, subscription and file.</li>
+<li><strong>Features</strong> &mdash; a Partner, Application, Domain or Logical breakdown holding exactly one row is folded away into a Features row, keeping its link and colour.</li>
+<li><strong>Activity per day</strong>.</li>
+<li><strong>Breakdowns</strong> &mdash; every dimension the flow&rsquo;s transfers touch: subscription, account, login, remote host, domain, application, partner.</li>
+<li><strong>Latest Files</strong> and the <strong>load tables</strong>.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>A file belongs to a logical flow through its FlowID attribution, unioned with its subscription&rsquo;s configured logical(s).</li>
+<li>Every count is in <strong>Files</strong>: one per logical transfer, split by its delivered (final-row) outcome, volume counted once per file.</li>
+<li>The subscription / account / login / remote host tables are cross-referenced with the FlowManager configuration: every name configured for this flow is listed, seen or not &mdash; <strong>green</strong> rows have logged data, <strong>red</strong> rows are configured but never seen; each links its own detail page.</li>
+<li>Every configured logical flow has a page, seen or not. Background: <strong>light brown</strong> = seen &amp; in, <strong>light blue</strong> = seen &amp; out, <strong>light gray</strong> = seen &amp; both/unknown, <strong>light yellow</strong> = never seen &amp; in, <strong>light orange</strong> = never seen &amp; out, <strong>light purple</strong> = never seen &amp; both/unknown.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click anywhere on a Last error(s) row for that file&rsquo;s error page: every transfer leg and the server log of the failure.</li>
+</ul>
 </main>
 </body>
 </html>

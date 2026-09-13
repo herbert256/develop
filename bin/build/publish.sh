@@ -116,18 +116,14 @@ help_about_fragments() {   # $1 = a scratch dir; writes <slug>.html fragments in
     return 0
 }
 apply_help_chrome() {
-    local tb f tmp adir about
+    local tb f tmp
     tb=$(render_shared_topbar "../" "index")
-    adir=$(mktemp -d "${TMPDIR:-/tmp}/habout.XXXXXX")
-    help_about_fragments "$adir"
     for f in docs/help/*.html; do
         [ -f "$f" ] || continue
-        about="$adir/$(basename "$f")"; [ -f "$about" ] || about=""
         tmp=$(mktemp "${TMPDIR:-/tmp}/help.XXXXXX")
-        awk -v tb="$tb" -v ab="$about" '
+        awk -v tb="$tb" '
             /^<div class="topbar"><a class="brand"/         { print tb; next }
             /^<div class="footer"><span class="f-left"/     { next }
-            /^<\/main>/ && ab != ""                          { while ((getline l < ab) > 0) print l; close(ab) }   # the moved report prose, before the page ends
             { print }
         ' "$f" > "$tmp" && { cmp -s "$tmp" "$f" && rm -f "$tmp" || mv "$tmp" "$f"; }
         # content-compared: the chrome is regenerated identically on almost
@@ -135,7 +131,6 @@ apply_help_chrome() {
         # check (and of the sitemap) — an unchanged rewrite must not bump its
         # mtime, or the check could never hold.
     done
-    rm -rf "$adir"
 }
 
 write_area_index() {   # $1 area  $2 title ; remaining args = ordered basenames
@@ -1884,7 +1879,7 @@ write_whats_new() {
         rm -f "$keyf"
     fi
     {
-        html_head "What is new" "../assets/style.css" "" "" ""
+        html_head "What is new" "../assets/style.css" "" "" "whats-new"   # its help page (2026-09-13: every page carries one)
         printf '<h1>What is new</h1>\n'
         printf '<p class="range">The report catalog’s history, from the generators’ git log: the <strong>25 most recently added</strong> reports and the <strong>25 most recently changed</strong> ones. A change is listed only when its commit was about <strong>a few reports</strong> (up to eight — a sweep across more is about the site, not about any one of them), and a report the New table already names is not repeated below it. Newest first; the Description gives a new report’s introduction, or a changed report’s latest change.</p>\n'
         printf '<h2>New reports</h2>\n'

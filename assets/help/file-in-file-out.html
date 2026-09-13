@@ -16,21 +16,24 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>File in - File out</h1>
-<h2>What this shows</h2>
-<p><strong>Partner-to-partner handovers carried by TWO subscriptions.</strong> A file arrives from one partner on an inbound subscription, OpsWise copies it across, and the <em>same filename</em> leaves to a different partner on an outbound subscription. Nothing in the transfer data links the two — separate CoreIds, separate accounts, separate partners — except the filename, so without this report each half is counted as an unrelated one-partner flow.</p>
-<p>The platform also has a documented single-subscription form of the same idea, the <strong>UC5</strong> and <strong>UC8</strong> relays (one subscription each today). This report finds the undocumented two-subscription form, which carries far more traffic.</p>
-<h2>The two tables</h2>
-<p><strong>Handover routes</strong> — one row per (inbound subscription &rarr; outbound subscription) pair, busiest first, with the partner on each side and how long the copy takes (fastest / median / slowest).</p>
-<p><strong>Latest handovers</strong> — the 100 most recent individual files, with the arrival and departure timestamps, the gap, and the size on each side.</p>
-<h2>How it's computed</h2>
-<p>One pass over the logical-transfer cache (<span class="mono">_files.tsv</span>): every named file with a known movement direction (col 17 <span class="mono">in</span> / <span class="mono">out</span>) is indexed by filename, and each inbound file is paired with the next outbound file of a <em>different</em> subscription that follows it within <strong>48 hours</strong>. Each inbound file pairs at most once.</p>
-<p>Matching is on the <strong>filename only</strong>, deliberately. The largest route re-encrypts in transit (<span class="mono">.afp.pgp</span>, growing by 4&ndash;19 KB), so requiring the size to match would miss it completely. The size behaviour is <em>reported</em> instead, in the <strong>Same size</strong> / <strong>Size changed</strong> columns — an all-same route is a provable byte-for-byte copy, an all-changed route was re-encrypted or re-wrapped.</p>
-<p>The 48-hour window is wide because the copy is a scheduled OpsWise batch rather than an event: observed gaps run from 4 minutes to 47 hours. A one-hour window finds roughly a sixth of them.</p>
-<h2>How much to trust a row</h2>
-<p>Compare <strong>Files</strong> with <strong>Filenames</strong>. When they are equal every match carried a distinct name — and where those names are timestamped, thousands of collisions with one particular subscription cannot be coincidence. A route with far fewer filenames than files is repeating a fixed name (a daily <span class="mono">export.zip</span>), which can pair by accident: treat it as a lead, not a fact.</p>
-<p>Check the two partner columns as well. When both sides resolve to the <em>same</em> partner group the row is usually <strong>not</strong> a partner-to-partner handover but a pull-then-stage flow — we fetch a file and stage it back for the same partner. Those rows are kept so the pattern stays visible, but they read differently.</p>
-<h2>Why the partner grouping does not already show this</h2>
-<p>The partner derivation merges two partner codes into one organisation when they share a whitelisted IP or an endpoint domain (see <a href="entity-coverage.html">Entity coverage</a>). A handover that happens <em>inside</em> OpsWise leaves neither trace, so routes that cross unmerged partners are invisible to it — which is exactly what this report surfaces.</p>
+<h2>What it shows</h2>
+<p><strong>Partner-to-partner handovers carried by TWO subscriptions</strong>: a file arrives from one partner on an inbound subscription, OpsWise copies it across, and the <em>same filename</em> leaves to another partner on an outbound one. Headline: routes, files, and how many routes cross partners the grouping does not merge.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>Handover routes</strong> &mdash; one row per (inbound &rarr; outbound subscription) pair, busiest first: the partner on each side, <strong>Files</strong> (handovers detected), <strong>Filenames</strong> (distinct names), <strong>Same size</strong> / <strong>Size changed</strong>, and the gap from inbound to outbound file (fastest / median / slowest).</li>
+<li><strong>Latest handovers</strong> &mdash; the 100 most recent files, newest first: <strong>In</strong> (arrived from the first partner), <strong>Out</strong> (left to the second), the gap, the size on each side; subscription cells link their detail pages.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Nothing links the two halves &mdash; separate CoreIds, accounts, partners &mdash; except the filename; without this report each counts as an unrelated one-partner flow.</li>
+<li>One pass over the logical-transfer cache <code>_files.tsv</code>: every named file with a known movement direction (col 17 <code>in</code> / <code>out</code>) is indexed by filename; each inbound file pairs with the next outbound file of a <em>different</em> subscription within <strong>48 hours</strong>, at most once.</li>
+<li>Matching is on the <strong>filename only</strong>: the largest route re-encrypts in transit (<code>.afp.pgp</code>, growing 4&ndash;19 KB), so a size match would miss it. Size is reported instead: all-same = a byte-for-byte copy, all-changed = re-encrypted or re-wrapped.</li>
+<li>48 hours because the copy is a scheduled OpsWise batch: observed gaps run from 4 minutes to 47 hours; a one-hour window finds about a sixth.</li>
+<li>Trust: Files = Filenames means every match carried a distinct (timestamped) name &mdash; thousands of collisions with one subscription cannot be coincidence. Far fewer filenames than files = a repeated fixed name (a daily <code>export.zip</code>) that can pair by accident: a lead, not a fact.</li>
+<li>The same partner group on both sides is usually not a handover but a pull-then-stage flow (we fetch a file and stage it back for the same partner); kept so the pattern stays visible.</li>
+<li>The platform&rsquo;s documented single-subscription relays (<strong>UC5</strong>, <strong>UC8</strong>; one each today) are not this: this report finds the undocumented two-subscription form, which carries far more traffic.</li>
+<li>The partner derivation merges partner codes sharing a whitelisted IP or endpoint domain (see <a href="entity-coverage.html">Entity coverage</a>); a handover inside OpsWise leaves neither trace, so routes across unmerged partners are invisible to it.</li>
+</ul>
 </main>
 </body>
 </html>

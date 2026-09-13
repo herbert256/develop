@@ -16,16 +16,23 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Sources and Targets</h1>
-<p><em>The From/To folder paths configured on every subscription, and where they overlap.</em></p>
-<h2>What this shows</h2>
-<p>Every subscription reads files from a <strong>source</strong> folder and writes them to a <strong>target</strong> folder (the "From" and "To" rows in its detail-page Features table). This report collects those paths across all subscriptions and highlights where the same path is used by more than one subscription, or serves as both an input and an output.</p>
-<p>A path on a <strong>remote partner</strong> (an endpoint SecureTransport dials) shows the partner host after an <code>@</code> &mdash; for example <code>/some/dir @ sftp-test.lifetime.nl</code> &mdash; exactly as on the <a href="../search/search.html">Search</a> page. A local SecureTransport path (for example <code>F:\Data\Cloud\in\&hellip;</code>) has no host. Each row links to the subscription and is tinted by that subscription's status (green / red / orange / blue).</p>
-<h2>The three tables</h2>
-<p><strong>Values used as both a Source and a Target.</strong> A path that one subscription <em>writes to</em> and another <em>reads from</em> &mdash; an internal hand-off (a relay through a shared folder). The <strong>Role</strong> column tells you, per subscription, whether it uses the value as its source or its target.</p>
-<p><strong>Sources used by multiple subscriptions.</strong> One block per source folder that appears on two or more subscriptions, listing each subscription that reads from it.</p>
-<p><strong>Targets used by multiple subscriptions.</strong> The same for target folders &mdash; one block per target shared by two or more subscriptions.</p>
-<h2>How it's computed</h2>
-<p>The source/target values and the <code>@ host</code> come from the same inputs as the Search page: each subscription's detail-page From/To rows, plus the configured remote host and file-movement direction (the host is appended to whichever side is remote &mdash; the source on a pull flow, the target otherwise). Per-subscription <strong>Error</strong> and <strong>OK</strong> counts are the subscription's own transfer outcome. This is a configuration analysis over <code>subscriptions.json</code>, so it carries no From/To date filter.</p>
+<h2>What it shows</h2>
+<p>The From/To folder paths configured on every subscription, and where they overlap. One row = one subscription using one path.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>Values used as both a Source and a Target</strong> &mdash; a path one subscription writes to and another reads from: an internal hand-off (a relay through a shared folder). <strong>Role</strong> says, per subscription, source or target.</li>
+<li><strong>Sources used by multiple subscriptions</strong> &mdash; one block per source folder read by two or more subscriptions.</li>
+<li><strong>Targets used by multiple subscriptions</strong> &mdash; one block per target folder written by two or more subscriptions.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Source and target are the From and To rows of the subscription&rsquo;s detail-page Features table.</li>
+<li>A path on a <strong>remote partner</strong> (an endpoint SecureTransport dials) shows the host after an <code>@</code>, e.g. <code>/some/dir @ sftp-test.lifetime.nl</code> &mdash; exactly as on the <a href="../search/search.html">Search</a> page. A local SecureTransport path (e.g. <code>F:\Data\Cloud\in\&hellip;</code>) has no host.</li>
+<li>The host is appended to whichever side is remote (from the configured remote host and file-movement direction): the source on a pull flow, the target otherwise.</li>
+<li><strong>Error</strong> / <strong>OK</strong> per subscription are its own transfer outcome.</li>
+<li>Each row links to the subscription and is tinted by its status (green / red / orange / blue).</li>
+<li>A configuration analysis over <code>subscriptions.json</code>: no From/To date filter.</li>
+</ul>
 </main>
 </body>
 </html>

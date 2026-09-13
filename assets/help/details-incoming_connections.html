@@ -16,13 +16,26 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Incoming Connection Details</h1>
-<h2>What this shows</h2>
-<p>One page per <strong>sighted whitelisted IP address</strong> — every address from the partners' <code>AllowIP</code> whitelists (patterns expanded) that has actually been seen: as the source of real transfers, or in the server log. The ~3,000 whitelisted addresses that have never been seen anywhere (whole ranges whitelisted "just in case") get no page.</p>
-<p>The page opens with a <strong>Summary</strong> — the raw incoming address, the configured endpoint name when that same address appears in <code>input/ip/ip-hosts.tsv</code> (otherwise blank), its result, how many accounts whitelist it, and its traffic totals (Files, Volume, first/last seen). No reverse-DNS lookup is used. Then, for addresses with real traffic, <strong>Activity per day</strong> and the <strong>Latest 10 Files</strong> (account and subscription cells link to their own detail pages). <strong>Whitelisted by</strong> lists every account whose whitelist allows this address, each linked to its account page. For addresses sighted only in the server log, the page ends with the <strong>last 10 server log lines</strong> that mention the address.</p>
-<h2>Page colors</h2>
-<p>The page background is the address's result: <strong>light green</strong> = its last transfer was OK, <strong>light red</strong> = its last transfer failed, <strong>light blue</strong> = sighted in the server log only, never a transfer. A whitelisted IP is colored by <em>its own</em> transfers exclusively — never by the health of its partner's flows (a partner's healthy flow says nothing about which of its whitelisted addresses actually connect).</p>
-<h2>How it's computed</h2>
-<p>Traffic is every logical transfer (File) whose remote host equals this address — since the side-aware parse, an incoming connection keeps its raw source IP, so the address a partner connects from stays visible. The whitelisting accounts come from the FlowManager configuration (the expanded <code>AllowIP</code> whitelist); the server-log lines are the ones the <em>Missing whitelisted IPs</em> server report collected. The index page lists every sighted address; the "Why blue" matrix on the <em>Seen in server log</em> page links its whitelisted-IP entries here.</p>
+<h2>What it shows</h2>
+<p>One page per <strong>sighted whitelisted IP address</strong>: an address from the partners&rsquo; <code>AllowIP</code> whitelists (patterns expanded) that was actually seen &mdash; as the source of real transfers, or in the server log. The ~3,000 whitelisted addresses never seen anywhere (whole ranges whitelisted &ldquo;just in case&rdquo;) get no page.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>Summary</strong> &mdash; the raw incoming address, the configured endpoint name when that same address is in <code>input/ip/ip-hosts.tsv</code> (otherwise blank; no reverse-DNS lookup), its result, how many accounts whitelist it, and its totals: Files, Volume, first/last seen.</li>
+<li><strong>Activity per day</strong> and <strong>Latest 10 Files</strong> &mdash; addresses with real traffic only; the account and subscription cells link their detail pages.</li>
+<li><strong>Whitelisted by</strong> &mdash; every account whose whitelist allows this address, each linked to its account page.</li>
+<li><strong>Last 10 server log lines</strong> mentioning the address &mdash; closes the page of an address sighted only in the server log.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Traffic = every File whose remote host equals this address; the side-aware parse keeps an incoming connection&rsquo;s raw source IP, so the address a partner connects from stays visible.</li>
+<li>The whitelisting accounts come from the FlowManager configuration (the expanded <code>AllowIP</code> whitelist); the server-log lines are the ones the <em>Missing whitelisted IPs</em> server report collected.</li>
+<li>Page background = the address&rsquo;s result: <strong>light green</strong> = its last transfer was OK, <strong>light red</strong> = its last transfer failed, <strong>light blue</strong> = sighted in the server log only, never a transfer.</li>
+<li>Coloured by its <em>own</em> transfers exclusively, never by the health of its partner&rsquo;s flows: a healthy flow says nothing about which of its whitelisted addresses actually connect.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>The index page lists every sighted address; the &ldquo;Why blue&rdquo; matrix on the <em>Seen in server log</em> page links its whitelisted-IP entries here.</li>
+</ul>
 </main>
 </body>
 </html>

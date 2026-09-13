@@ -340,10 +340,10 @@ META`. `GHEAD` = an optional group-banner `<th>` row ABOVE `HEAD` (cells may lea
   entity detail links (slugmap-resolved at render time like a cell's `alink`; no entry → the
   plain name). **NEITHER RENDERS ON A REPORT PAGE** (2026-09-13, user request: a report explains
   itself on its HELP page only) — `render_report` sets `RPT_NOPROSE=1` and render_rpt.awk skips
-  the two directives; the prose lands on the report's help page instead, under "About this
-  report" (bin/build/publish.sh `help_about_fragments` / `apply_help_chrome`, every published
-  .rpt mapping to the slug, a sub-heading per report when several share a page), and the Report
-  finder shows the one-line `DESC` (the INTRO words still feed its search). The drill and record
+  the two directives; the report's HAND-WRITTEN help page (`assets/help/<slug>.html`, compact
+  bullets — see the `docs/help/*.html` bullet under Publishing) carries those facts instead, so a
+  changed INTRO/NOTE means an updated help page; the Report finder shows the one-line `DESC` (the
+  INTRO words still feed its search). The drill and record
   pages (errors/, files/, the record and value pages, the detail pages) keep their INTRO — there
   it states facts. `ALERT` → red banner (the
   RUNTIME register); `WARN` → amber (the CONFIGURATION register). `STAT⇥class⇥value⇥label` → info

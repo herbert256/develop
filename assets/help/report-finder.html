@@ -16,11 +16,19 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Report finder</h1>
-<h2>What this shows</h2>
-<p>The whole report catalog on one searchable page &mdash; every transfer report, server report and dashboard (title and introduction lifted from the reports themselves) plus the analyses pages. Type in the box and the list narrows as you go; click a title to open the report.</p>
-<h2>How the search works</h2>
-<p>The query is matched against each report's <strong>title</strong>, its <strong>introduction</strong> text (the paragraph right below the title on the report page), its <strong>keywords</strong> (the muted line under the introduction) and its <strong>page file name</strong> (so e.g. <code>went-kaput</code> finds the "Trouble after Success" report). A title match weighs more than any other match: reports whose title matches are listed first, then the reports matched through their introduction, keywords or file name &mdash; each group keeping the catalog order. The search grammar is the site-wide one: <code>?</code> matches one character, <code>*</code> any run of characters, and the whole-word operators <code>or</code>, <code>and</code> and <code>not</code> combine terms (e.g. <code>failure and not heatmap</code>).</p>
-<p>This page finds <strong>reports</strong>; to find an <strong>entity</strong> (an account, subscription, login, host, logical flow, partner, application, domain or IP), use the magnifier next to the Entities link on the left of the top bar instead.</p>
+<h2>What it shows</h2>
+<p>The whole report catalog on one searchable page: every transfer report, server report, dashboard and analyses page, by title with its one-line description. Type in the box to narrow the list; click a title to open the report.</p>
+<h2>Rules</h2>
+<ul>
+<li>The query is matched against each report&rsquo;s <strong>title</strong>, its <strong>description and introduction</strong> words, its <strong>keywords</strong> and its <strong>page file name</strong> (so <code>went-kaput</code> finds &ldquo;Trouble after Success&rdquo;).</li>
+<li>A title match weighs more: title matches list first, then the reports matched through description, keywords or file name &mdash; each group in catalog order.</li>
+<li>The search grammar is the site-wide one: <code>?</code> matches one character, <code>*</code> any run of characters, and the whole-word operators <code>or</code>, <code>and</code>, <code>not</code> combine terms (<code>failure and not heatmap</code>).</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li><strong>Ctrl/Cmd+K</strong> opens the finder from any page.</li>
+<li>This page finds <strong>reports</strong>. To find an <strong>entity</strong> (account, subscription, login, host, logical flow, partner, application, domain or IP) use the magnifier beside the Entities link at the left of the top bar.</li>
+</ul>
 </main>
 </body>
 </html>

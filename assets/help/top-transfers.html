@@ -16,11 +16,20 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Notable Transfers</h1>
-<h2>What this shows</h2>
-<p>Two tabs listing individual, standout <strong>Files</strong> (logical transfers): <strong>Largest</strong> — the top 50 by file size — and <strong>Slowest</strong> — the top 50 by total duration. Each row shows the file name, account, destination subscription, outcome, timestamp and throughput for context, so you can see exactly which transfer produced the extreme value.</p>
-<h2>How it's computed</h2>
-<p>Both tabs read the logical-transfer cache, so each row is one File — every physical row sharing that File (both directions, plus any retries) is already collapsed into a single size and a single duration before ranking. Size is the file's size (counted once, as everywhere else on the site). Duration is the <strong>sum</strong> of that File's row durations, not just one leg, so a transfer that needed several retries has its retry time included in "Slowest." Throughput is size divided by that summed duration.</p>
-<p>Unlike most reports on the site, these two tables list individual transfers rather than aggregating by a dimension — there is no Error/OK split or percentage column here, only the outcome of each listed transfer.</p>
+<h2>What it shows</h2>
+<p>The <strong>Largest</strong> Files: the top 50 by file size. One row = one File, with file name, account, destination subscription, outcome, timestamp and throughput, so you see which transfer produced the extreme value.</p>
+<h2>Rules</h2>
+<ul>
+<li>Reads the logical-transfer cache: every physical row of the File (both directions, plus retries) is collapsed into one size and one duration before ranking.</li>
+<li>Size = the file&rsquo;s size, counted once (as everywhere on the site).</li>
+<li>Duration = the <strong>sum</strong> of the File&rsquo;s row durations, not one leg; retry time included.</li>
+<li>Throughput = size divided by that summed duration.</li>
+<li>Individual transfers, not an aggregation by a dimension: no Error/OK split or percentage column, only each listed transfer&rsquo;s outcome.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>The slowest transfers are on the <a href="duration.html">Duration</a> report (<a href="duration-longest.html">Longest Files</a> lists the individual ones), not here.</li>
+</ul>
 </main>
 </body>
 </html>

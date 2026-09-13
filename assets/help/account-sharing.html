@@ -16,13 +16,28 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Account sharing</h1>
-<h2>What this shows</h2>
-<p>Which accounts serve <strong>more than one subscription</strong>, and in what shape. An account is a partner relation (with its FE login riding along 1-to-1), and one relation often carries several flows &mdash; but only in a few recurring patterns:</p>
-<p><strong>Mailbox pair</strong> &mdash; exactly UC2 + UC4: the partner&rsquo;s inbound mailbox, one connection used to drop (UC4) and pick up (UC2). This is the only inbound sharing that occurs &mdash; never two UC2s or two UC4s &mdash; and it is why UC2/UC4 detail pages carry the shared-connection notes and why such pairs are Twins. <strong>Outbound pair</strong> &mdash; exactly UC1 + UC3: the outbound mirror, we push to and poll the same partner. <strong>Outbound fan-out</strong> &mdash; several UC1/UC3 flows over one relation, up to dozens. <strong>Both directions</strong> &mdash; inbound and outbound use cases on one account: real partners never do this; the synthetic ST end-to-end monitor account is built this way on purpose.</p>
-<h2>Reading the table</h2>
-<p>Only the shared accounts are listed (the single-subscription majority is counted in the boxes above). Per account: its kind, how many subscriptions of each use case, and the full subscription list (three or more fold behind an ellipsis &mdash; click to expand). The account links to its detail page. Rows are grouped by kind, largest first.</p>
-<h2>How it's computed</h2>
-<p>Configuration only: the account &rarr; subscription pairs from the FlowManager export (the xref cache), classified by the subscription names&rsquo; <code>UC&lt;n&gt;</code> prefix (UC1/UC3 = we connect out, UC2/UC4 = the partner connects in). No log data is involved, so the page is identical however much traffic ran.</p>
+<h2>What it shows</h2>
+<p>Accounts serving <strong>more than one subscription</strong>, one row each, and the shape of the sharing (an account is a partner relation that often carries several flows, in a few recurring shapes).</p>
+<h2>Kinds</h2>
+<ul>
+<li><strong>Mailbox pair</strong> &mdash; exactly UC2 + UC4: the partner&rsquo;s inbound mailbox, one connection to drop (UC4) and pick up (UC2). Hence the UC2/UC4 pages&rsquo; shared-connection notes; such pairs are Twins.</li>
+<li><strong>Outbound pair</strong> &mdash; exactly UC1 + UC3: we push to and poll the same partner.</li>
+<li><strong>Outbound fan-out</strong> &mdash; several UC1/UC3 flows over one relation, up to dozens.</li>
+<li><strong>Inbound (irregular)</strong> &mdash; inbound sharing beyond the pair (two UC2s, two UC4s): the hybrid production accounts.</li>
+<li><strong>Both directions</strong> &mdash; inbound and outbound on one account. Real partners never; the synthetic ST end-to-end monitor account is built so on purpose.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Account</strong> (links its detail page), <strong>Kind</strong>, <strong>Per use case</strong> (subscriptions per UC), <strong>Subscriptions</strong> (the full list; three or more fold behind an ellipsis, click to expand).</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Configuration only: the account &rarr; subscription pairs of the FlowManager export (xref cache); no log data, identical however much traffic ran.</li>
+<li>Kind reads the names&rsquo; <code>UC&lt;n&gt;</code> prefix (UC1/UC3 = we connect out, UC2/UC4 = the partner connects in); a flow without one (hybrid production) uses the use case derived from its configuration.</li>
+<li>Only shared accounts are listed; the single-subscription majority is counted in the boxes above.</li>
+<li>Ordered by kind, then size, largest first.</li>
+<li>A login usually rides its account 1-to-1 (&ldquo;same account&rdquo; = &ldquo;same FE login&rdquo;); a hybrid production account shares one login across its flows or carries several FE logins, one per flow (the multi-FE shape).</li>
+</ul>
 </main>
 </body>
 </html>

@@ -16,10 +16,20 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Security outreach</h1>
-<h2>What this shows</h2>
-<p>Two SecurityParameters values are deprecated: Public Key ssh-rsa — an RSA key still signing with SHA-1, disabled by default in modern OpenSSH (the same key works with rsa-sha2-256/-512, so it is a partner software upgrade, not a new key) — and TLSv1.2, the legacy TLS version.</p>
-<p>The outreach list names every partner seen with a deprecated value in the last 7 days of the window, busiest first. The Upgrades table shows who already moved: a clean cutover date, or "mixed fleet" when old and new values overlap in time — two partner systems, one still legacy.</p>
-<p>On outbound legs the Public Key is the remote server's host key; on inbound legs it is the connecting client's authentication key — the fix sits on different partner systems. Partners follow the site-wide union attribution.</p>
+<h2>What it shows</h2>
+<p>The partner call list for deprecated connection-security values &mdash; the outreach view of <a href="security-params.html">Security parameters</a>: who still connects with a deprecated value, who already cut over, who runs a mixed fleet.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>Outreach list</strong> &mdash; one row per (partner, deprecated parameter) seen in the <strong>last 7 days</strong> of the window, busiest first; Transfers = every leg in the window negotiated with that value. A partner that stopped earlier (a completed cutover) is not listed here.</li>
+<li><strong>Upgrades</strong> &mdash; every partner that used a deprecated <em>and</em> a modern value of the same parameter. A <strong>clean cutover</strong> shows its date: the modern value&rsquo;s first sighting on or after the deprecated value&rsquo;s last (same-day switches count as clean). <strong>Mixed fleet</strong>: the deprecated value kept appearing after the modern one started &mdash; several partner systems or keys, only some upgraded; those partners stay on the outreach list while the old value shows up.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li><strong>Public Key ssh-rsa</strong> &mdash; an RSA key still signing with SHA-1; OpenSSH disables it by default since 8.8. The same key works with rsa-sha2-256/-512, so it is a partner software or config upgrade, not a new key.</li>
+<li><strong>TLSv1.2</strong> &mdash; the legacy TLS version; TLSv1.3 is current.</li>
+<li>On an <strong>outbound</strong> leg the Public Key is the remote server&rsquo;s host key (the partner upgrades their server); on an <strong>inbound</strong> leg it is the connecting client&rsquo;s authentication key (the fix is in the partner&rsquo;s client software).</li>
+<li>Partners follow the site-wide union attribution: a leg counts for every partner of its subscription plus the host-resolved one.</li>
+</ul>
 </main>
 </body>
 </html>

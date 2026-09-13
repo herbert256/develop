@@ -15,22 +15,36 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>UC2 pickup visits</h1>
 <h1>Polling</h1>
-<h2>What this shows</h2>
-<p>Every subscription that <strong>polls a partner</strong> in one row &mdash; the <strong>UC3</strong> flows (and the pull side of UC5), where we are the client: SecureTransport connects to the partner&rsquo;s server on a timer and collects whatever is waiting. The row joins three sides of that activity: the flow&rsquo;s <strong>OK</strong> and <strong>Error</strong> transfers (the transfer log, as on the UC status / UC3 tab), the <strong>configuration</strong> (the Quartz cron expression from the FlowManager export and its plain-English <strong>Schedule</strong>) and the <strong>server log</strong> (what the schedule actually did). Every configured UC3 flow is listed, the never-seen ones included (their poll columns empty); a flow the log shows polling without a configured schedule still gets a row, its cron and transfer columns empty. The page is the bare table &mdash; no intro, no boxes.</p>
-<p>This page replaces the former <em>Remote polls</em> server report and the <em>Cronjobs</em> analyses page; the same information sits on the <a href="server-uc3-status.html">UC status / UC3</a> tab as separate tables beside the status of every UC3 flow.</p>
-<h2>Reading the columns</h2>
-<p><strong>OK</strong> and <strong>Error</strong> are the logical transfers of the flow in the transfer log &mdash; the figures of the UC3 tab. Its status, Files, Last file, Problems and Last log columns are not repeated here; the <a href="server-uc3-status.html">UC3 tab</a> has them.</p>
-<p><strong>Cron expression</strong> is the Quartz form: <code>sec min hour day-of-month month day-of-week</code> (<code>?</code> = no specific value, <code>5/30</code> = every 30 from minute 5, <code>MON-FRI</code> = weekdays). <strong>Schedule</strong> spells it out.</p>
-<p><strong>Observed</strong> is when the schedule really fires, from the log: the median of the first poll of each day &plusmn; one standard deviation for a schedule firing up to 3&times; a day (the first and the last active day are left out: the export window cuts into both, so their first poll is the first poll after the cut, not the schedule firing), the poll rate (<em>~23 polls/day</em>) above that, and <strong>&middot; files</strong> when no poll line exists and only the file arrivals of the flow give a slot. <strong>-</strong> means nothing was ever observed. A <strong>dark red</strong> Observed cell <strong>contradicts</strong> the schedule: the observed slot does not match the configured one (a daily schedule firing at another hour, an hourly one that polls once a day) &mdash; the export and the running server disagree, or the flow runs on another schedule than the one configured.</p>
-<p><strong>Polls</strong> counts every scheduled poll the log shows (the <em>Applying the search pattern &hellip; N file(s) were found of which M matched</em> lines); <strong>Empty polls</strong> those with nothing matching; <strong>Files matched</strong> the sum of M; <strong>Empty %</strong> the share. An empty poll consumes a slot, a connection and a directory listing but leaves no trace in the transfer log &mdash; chronic empty polling is visible only here. <strong>Listing errors</strong> counts the polls that could not even list the remote folder (<em>Error occurred while listing files from partner &hellip;</em>) &mdash; a wrong remote directory, a permission problem or a partner that dropped the connection mid-listing.</p>
-<p><strong>Poll starts</strong>, <strong>Failure lines</strong> and <strong>What goes wrong</strong> are filled for a schedule that fires but <strong>never completes a poll</strong>: the setup lines that opened the poll (<em>Remote files pattern &hellip; evaluated</em>), the connection and authentication failures naming the flow or its host, and the dominant reason (the host and port, the account, the error).</p>
-<h2>Filtering and drilling</h2>
-<p>The From/To bar re-totals the poll figures for a date range (Polls, Empty polls, Files matched, Empty %, Listing errors); the configuration columns and the Observed slot are for the whole period. Click a row for the 10 most recent poll lines of that subscription (on a flow without poll lines, the server-log lines that decided its status). Rows are tinted by the result of the subscription, as everywhere on this site. The Subscription cell links to the detail page of the flow.</p>
-<h2>How it's computed</h2>
-<p>The OK and Error columns are copied from the UC3 status table (<code>uc3-status.rpt</code>), so they can never disagree with the UC3 tab. The poll and listing figures come from the same per-subscription aggregation that feeds the UC3 tab (the unpublished <em>remote-poll</em> intermediate and its poll-times and poll-failures sidecars); the cron side reads <code>subscriptions.json</code> and the file-arrival fallback reads the Punctuality report. Subscription names are the configured ones &mdash; the logged <code>_SCP_</code> / <code>_SFTP_SERVER_</code> tails are dropped &mdash; and where the server truncated a long site name the two sides match by name prefix, either way, as long as the match is unique. All schedules are enabled; none skip holidays.</p>
-<p>Reference: <a href="https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html">Quartz cron trigger tutorial</a>.</p>
+<h2>What it shows</h2>
+<p>One row per polling subscription (UC3 and the pull side of UC5: SecureTransport is the client and collects from the partner&rsquo;s server on a timer) &mdash; its Files, its configured cron schedule and what the server log observed.</p>
+<p>A bare table, no intro or boxes; the same tables sit on the <a href="server-uc3-status.html">UC status / UC3</a> tab.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Subscription</strong> &mdash; configured name, links to its detail page; row tinted by its result.</li>
+<li><strong>OK</strong> / <strong>Error</strong> &mdash; the flow&rsquo;s Files in the transfer log, copied from <code>uc3-status.rpt</code> so they never disagree with the UC3 tab (which keeps Status, Files, Last file, Problems, Last log).</li>
+<li><strong>Cron expression</strong> &mdash; Quartz <code>sec min hour day-of-month month day-of-week</code> (<code>?</code> no specific value, <code>5/30</code> every 30 from minute 5, <code>MON-FRI</code> weekdays); <strong>Schedule</strong> spells it out.</li>
+<li><strong>Observed</strong> &mdash; when the schedule really fires (rules below).</li>
+<li><strong>Polls</strong> / <strong>Empty polls</strong> / <strong>Files matched</strong> / <strong>Empty %</strong> &mdash; the &ldquo;Applying the search pattern &hellip; N file(s) were found of which M matched&rdquo; lines; empty = M is 0; matched = sum of M.</li>
+<li><strong>Listing errors</strong> &mdash; &ldquo;Error occurred while listing files from partner &hellip;&rdquo;: wrong remote directory, permissions, or a partner dropping the connection mid-listing.</li>
+<li><strong>Poll starts</strong> / <strong>Failure lines</strong> / <strong>What goes wrong</strong> &mdash; filled for a schedule that fires but never completes a poll: the &ldquo;Remote files pattern &hellip; evaluated&rdquo; setup lines, the connection and authentication failures naming the flow or its host, and the dominant reason (host and port, account, error).</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Every configured UC3 flow is listed, never-seen ones with empty poll columns; a flow polling without a configured schedule gets a row with empty cron and transfer columns.</li>
+<li>Observed = the median of each day&rsquo;s first poll &plusmn; one standard deviation (first and last active day left out &mdash; the export window cuts into both); a poll rate (<em>~23 polls/day</em>) for a schedule firing more than 3&times; a day.</li>
+<li><strong>&middot; files</strong> = no poll line, only the file arrivals (the Punctuality report) give a slot; <strong>-</strong> = nothing ever observed.</li>
+<li><strong>Dark red</strong> Observed contradicts the schedule (a daily one firing at another hour, an hourly one polling once a day): the export and the running server disagree, or the flow runs on another schedule.</li>
+<li>An empty poll costs a slot, a connection and a listing but leaves no trace in the transfer log &mdash; chronic empty polling shows only here.</li>
+<li>From/To re-totals the poll figures; the cron columns and Observed are whole-period.</li>
+<li>Names are the configured ones (logged <code>_SCP_</code> / <code>_SFTP_SERVER_</code> tails dropped); a server-truncated name matches by unique prefix, either way.</li>
+<li>Cron from <code>subscriptions.json</code>; polls from the per-subscription aggregation that feeds the UC3 tab. All schedules enabled, none skip holidays. UC1 is a client use case too but pushes on directory scanning &mdash; no cron.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a row: its 10 most recent poll lines (on a flow without poll lines, the server-log lines that decided its status).</li>
+<li>Reference: <a href="https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html">Quartz cron trigger tutorial</a>.</li>
+</ul>
 </main>
 </body>
 </html>

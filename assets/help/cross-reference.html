@@ -16,12 +16,18 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Cross References</h1>
-<h2>What this shows</h2>
-<p>An <strong>analysis of the cross references</strong> — which pairs of the nine entities (Account, Login, Subscription, Remote Host, Logical, Partner, Application, Domain and BL) belong together — not a traffic report: there are no counts, no volumes and no date filter here. Pick the first entity on the top tab row and the second entity on the row below it — both rows list all nine entities, and each grays out the entity the other row has selected, so a pair is never crossed against itself. The underlying pair data is symmetric — Account&times;Login and Login&times;Account are the same pairs, just read from either page.</p>
-<h2>Green and red rows</h2>
-<p>Each row is one (first entity, second entity) pair. A <strong>green</strong> row is a pair that actually appears together in the transfer logs; a <strong>red</strong> row is a pair CONFIGURED in the FlowManager exports (the cross-reference caches under <code>data/flow-manager/xref/</code>) that never appears in the logs — a configured flow with no observed traffic, or a spelling that never matches. Seen means seen <em>anywhere</em> in the loaded logs; these pages carry no From/To date filter. The intro line above each table gives the pair totals (all / seen / not seen).</p>
-<h2>How it's computed</h2>
-<p>A pair counts as seen when <strong>both</strong> values appear on one physical log row (a leg inherits the partner / application / domain attribution of its account). If either side is blank on a row — including a value blanked by the parse-time blacklist — that row doesn't establish the pair. A repeated first-column value is blanked, so consecutive rows of one entity read as a block; entity names link to their detail pages where those exist.</p>
+<h2>What it shows</h2>
+<p>Which pairs of the nine entities (Account, Login, Subscription, Remote Host, Logical, Partner, Application, Domain, BL) belong together: every pair seen on at least one log row, plus the configured pairs that never appear. Relationships only &mdash; no counts, no volumes, no date filter.</p>
+<h2>Rules</h2>
+<ul>
+<li>The top tab row picks the first entity, the row below the second; each grays out the other&rsquo;s choice, so a pair is never crossed with itself. The data is symmetric: Account&times;Login and Login&times;Account are the same pairs.</li>
+<li>One row = one pair; the intro line gives the totals: all / seen / not seen.</li>
+<li><strong>Seen</strong> = both values on one physical log row, anywhere in the loaded logs (a leg inherits its File&rsquo;s partner / application / domain / logical / BL attribution).</li>
+<li><strong>Not seen</strong> = configured in the FlowManager exports (the xref caches under <code>data/flow-manager/xref/</code>) but never on a log row: a configured flow with no traffic, or a spelling that never matches.</li>
+<li>A row with either side blank &mdash; including a value blanked by the parse-time blacklist &mdash; establishes no pair; pairs where either value is blacklisted or unattributed are not listed.</li>
+<li>Each cell tints by its own entity&rsquo;s result: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer Error, <strong>light blue</strong> surfaced only by the Server &rarr; Transfer step (<code>bin/build/seen-in-server-log.sh</code>), no real transfer.</li>
+<li>A repeated first-column value is blanked, so consecutive rows of one entity read as a block; names link their detail pages where those exist.</li>
+</ul>
 </main>
 </body>
 </html>

@@ -16,9 +16,26 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Duration trend</h1>
-<h2>What this shows</h2>
-<p>The delivered Files are split at the midpoint of the observed window; every subscription with 15+ delivered Files in each half gets a median duration per half and the ratio between them. Flows at 1.3× or above are listed as slower, 0.7× or below as faster.</p>
-<p>The average file size per half sits beside the medians: a slowdown whose size also grew is load growth, not degradation — the interesting row is a slowdown at unchanged size. Only delivered Files count; a failed transfer's run time is a timeout artefact, not a trend.</p>
+<h2>What it shows</h2>
+<p>The subscriptions whose median transfer duration changed between the first and second half of the data window &mdash; slower and faster movers, with the average file size beside them.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Median</strong> duration per half and the <strong>ratio</strong> between them.</li>
+<li><strong>Average file size</strong> per half, beside the medians.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>The delivered (Processed) Files with a measured duration are split at the midpoint of the observed window; the intro states the window, the split date, the Files, the comparable flows and how many moved.</li>
+<li>Only subscriptions with <strong>15+ delivered Files in each half</strong> are compared.</li>
+<li>Ratio <strong>1.3&times; or above</strong> = slower (biggest slowdown first); <strong>0.7&times; or below</strong> = faster (biggest speed-up first).</li>
+<li>Duration = the File&rsquo;s wall-clock span, first record start to last record end, store-and-forward gap included; medians use the nearest-rank method over each half.</li>
+<li>Failed transfers are left out: their run time is a timeout artefact, not a trend.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Read the size columns before alarming: a 2&times; ratio with the average size also doubling is load growth, not degradation &mdash; a slowdown at <strong>unchanged</strong> size is the interesting row.</li>
+<li>A speed-up is usually good news (a fixed route, smaller files, an off-peak reschedule), but a sudden drop can mean the flow now ships stubs instead of real content: check the size columns and the Size profile report.</li>
+</ul>
 </main>
 </body>
 </html>

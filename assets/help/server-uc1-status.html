@@ -16,46 +16,38 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>UC1 status</h1>
-<h2>What this shows</h2>
-<p>Every configured <strong>UC1</strong> subscription — the push use case, where <em>we</em> are the client and send a file out to the partner as soon as one appears — in exactly one of six statuses. It is one of a set of four: <a href="server-uc2-status.html">UC2 status</a> does the same for the flows the partner collects from us, <a href="server-uc3-status.html">UC3 status</a> for the ones we poll and pull, and <a href="server-uc4-status.html">UC4 status</a> for the ones the partner delivers to us. The info boxes above the table give the count per status. One row per subscription:</p>
+<h2>What it shows</h2>
+<p>Every configured <strong>UC1</strong> subscription (the push use case: we are the client and send a file out as soon as one appears), one row each, in exactly one of six statuses; the info boxes count them. Siblings: <a href="server-uc2-status.html">UC2</a> (the partner collects from us), <a href="server-uc3-status.html">UC3</a> (we poll and pull), <a href="server-uc4-status.html">UC4</a> (the partner delivers to us).</p>
+<h2>Columns</h2>
 <ul>
-<li><strong>Status</strong> — one of six, a complete partition (see below).</li>
-<li><strong>Subscription</strong> — the configured name, linking to its detail page.</li>
-<li><strong>Files</strong> / <strong>OK</strong> / <strong>Error</strong> / <strong>Last file</strong> — the transfer-log history: logical transfers pushed out, split by outcome, and the date of the newest one. All blank on a subscription the transfer log has never seen.</li>
-<li><strong>Route runs</strong> — how often Advanced Routing started this subscription's route. A UC1 push is one route run per file, so this is roughly "how often did we have something to send".</li>
-<li><strong>Problems</strong> — server-log lines saying the send could not be made, or that the partner could not be reached at all.</li>
-<li><strong>Last log</strong> — the newest server-log line of either kind. It answers "is this flow still running at all", so on a <strong>server - error</strong> row it can be newer than the failures the drill shows: the route still runs, it just last failed earlier.</li>
+<li><strong>Status</strong> &mdash; one of six, a complete partition (below).</li>
+<li><strong>Subscription</strong> &mdash; the configured name, linked to its detail page.</li>
+<li><strong>Files</strong> / <strong>OK</strong> / <strong>Error</strong> / <strong>Last file</strong> &mdash; Files pushed out, by outcome, and the newest one&rsquo;s date (<code>_files.tsv</code>); blank on a never-seen subscription.</li>
+<li><strong>Route runs</strong> &mdash; &ldquo;Starting execution of route&rdquo; lines; one run per file, so roughly &ldquo;how often did we have something to send&rdquo;.</li>
+<li><strong>Problems</strong> &mdash; a send that could not be made (&ldquo;Could not send file&rdquo;, &ldquo;An error occurred while sending&rdquo;, a step &ldquo;finished with error&rdquo;) or the partner unreachable (a Connection failure, a failing directory listing).</li>
+<li><strong>Last log</strong> &mdash; the newest line of either kind: &ldquo;is this flow still running at all&rdquo;. On a <strong>server - error</strong> row it can be newer than the failures shown &mdash; the route still runs, it last failed earlier.</li>
 </ul>
-<h2>The six statuses</h2>
-<p>The first three are the <strong>transfer-log</strong> verdict, read off the subscription's site-wide result colour:</p>
+<h2>Statuses</h2>
 <ul>
-<li><strong>ok</strong> (green) — its latest File was delivered. The flow is working.</li>
-<li><strong>error</strong> (red) — its latest File failed <em>and</em> it has never once delivered an OK File in the window. Nothing here ever worked, which points at the configuration or a partner side that was never finished rather than at something that broke.</li>
-<li><strong>ok -> error</strong> (red, was green) — its latest File failed, but it <em>has</em> delivered OK Files before: a regression. Something that used to work stopped, so there is a change to find.</li>
+<li><strong>ok</strong> (green) &mdash; its latest File was delivered.</li>
+<li><strong>error</strong> (red) &mdash; its latest File failed and no OK File in the window: nothing ever worked &mdash; the configuration, or a partner side never finished.</li>
+<li><strong>ok -> error</strong> (red, was green) &mdash; OK Files before, the latest failed: a regression, a change to find.</li>
+<li><strong>server - error</strong> (blue) &mdash; never in the transfer log; a Problems-type failure names the subscription.</li>
+<li><strong>server - no result</strong> (blue) &mdash; seen in the server log, no failure names it; it may be blue on a line attributed to its host or account (a failed test connection, say) &mdash; its detail page shows that line.</li>
+<li><strong>not seen</strong> (orange) &mdash; configured, in neither log: set up and never used, or a partner side never finished. Not a failure, an open question &mdash; usually the largest block, worth a periodic review.</li>
 </ul>
-<p>Then the <strong>blue</strong> subscriptions — seen in the server log, never once in the transfer log. They have no transfer history at all, so the log's own lines are the only evidence there is:</p>
+<h2>Rules</h2>
 <ul>
-<li><strong>server - error</strong> — a failure names the subscription: <em>Could not send file</em>, <em>An error occurred while sending</em>, a routing step that <em>finished with error</em>, or a <em>Connection failure</em> reaching the partner in the first place.</li>
-<li><strong>server - no result</strong> — the server log has seen the subscription, but no failure <em>names</em> it. It can still have been marked blue on a line attributed to its host or account rather than to itself — in one real estate the single case was a failed test connection to the partner host — and its detail page shows that line.</li>
+<li>Roster: every <code>UC1</code> name in the FlowManager subscription export, run or not. Colour = the site-wide result: green/red are real transfer data (the LAST File OK / Failed-or-Expired), blue server log only, orange neither log.</li>
+<li><strong>error</strong> vs <strong>ok -> error</strong> is per File &mdash; right after any OK File the subscription WAS green &mdash; finer than <a href="from-green-to-red.html">From green to red</a>, which buckets by whole days.</li>
+<li>Server counts read the Advanced Routing lines of the server parse cache (<code>ARn: [account] [route] &hellip;</code>, the route in the second bracket) plus the two client-side failures that mean we never reached the partner.</li>
+<li>No &ldquo;no files&rdquo; status, unlike UC3: a push is triggered by a file appearing &mdash; no file, no route run, no log line. The blue split needs no tie-breaker: a failure is the only explanation on offer.</li>
+<li>We are the active party, so red and <strong>server - error</strong> rows are ours to fix (our route, our send, our connection).</li>
 </ul>
-<p>And last, the largest:</p>
+<h2>Tips</h2>
 <ul>
-<li><strong>not seen</strong> (orange) — configured, and never observed in <em>either</em> log. Not a failure so much as an open question: a flow that was set up and never used, or one whose partner side was never finished. In one real estate this was 97 of 185 subscriptions, more than half the report.</li>
+<li>Click a row for its most recent server-log lines; on a <strong>server - error</strong> row those are the failures.</li>
 </ul>
-<h2>How it's computed</h2>
-<p>The roster is every <code>UC1</code> name in the FlowManager subscription export, so a subscription appears whether or not it has ever run. Green/red/blue/orange is the site-wide <strong>result</strong> colour; Files/OK/Error come from the transfer cache (<code>_files.tsv</code>), and the route signals from the server parse cache.</p>
-<p><strong>error vs ok -> error</strong> is a per-<em>File</em> question, not a per-day one: right after any OK File the subscription <em>was</em> green, so a red subscription with even one OK File in the window counts as a regression. That is deliberately finer than <a href="from-green-to-red.html">From green to red</a>, which buckets by whole days and so misses a flow that fails at the end of every day while still delivering within them.</p>
-<p>The server counts come from the Advanced Routing (<code>AR…</code>) lines, which carry the route name in their <em>second</em> bracket group (<code>AR<i>n</i>: [account] [route] …</code>), plus the two client-side failures that mean we never reached the partner at all.</p>
-<h2>How it differs from UC3 status</h2>
-<p>Two deliberate differences, both because a push is not a pull:</p>
-<ul>
-<li><strong>There is no "no files" status.</strong> UC3 polls, so "the poll worked and there was nothing to fetch" is a real and common state with its own log line. A UC1 push is triggered by a file <em>appearing</em>, so no file simply means no route run and no log line — there is nothing to report.</li>
-<li><strong>"not seen" is a first-class status here</strong>, not the safety net it is on UC3 status. More than half the UC1 subscriptions are in it; UC3 has none at all, so its box stays hidden there.</li>
-</ul>
-<p>The blue split also needs no tie-breaker. On UC3 two rival explanations — empty polls and failures — compete on the same subscription, so the most recent line arbitrates. Here only one explanation is on offer, so a blue subscription either has a failure or it does not.</p>
-<h2>Why it matters</h2>
-<p>A UC1 flow is the one where <em>we</em> are the active party, so a failure is ours to fix: our route ran, our send failed, our connection was refused. That makes the red and <strong>server - error</strong> rows directly actionable in a way an inbound flow's are not. The large <strong>not seen</strong> block is a different question and worth a periodic look — configuration that has never carried a file is either waiting on a partner or should not be there, and either way it is quietly counted as part of the estate.</p>
-</main>
 </main>
 
 

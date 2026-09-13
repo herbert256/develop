@@ -16,17 +16,26 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Missing Entities</h1>
-<h2>What this shows</h2>
-<p>Five tabs — Subscriptions, Accounts, Hosts, Whitelist, Logins — each list entity names that appear in <em>server-log</em> messages (Transfer Manager lines only) but never appear in the <em>transfer</em> logs at all. These are entities the server actually saw (usually in a failed-connection message) that never went on to produce a single transfer. It's a cross-check between the two logs: something the server knows about that the transfer side has no record of.</p>
+<h2>What it shows</h2>
+<p>Entity names that appear in <em>server-log</em> messages but never in the <em>transfer</em> log &mdash; one tab per type, one row per name with its mention count. Something alive on the platform (usually in a failed-connection message) that never produced a transfer; these are the seeds of the site-wide blue result.</p>
+<h2>Tabs</h2>
 <ul>
-<li><strong>Subscriptions</strong> — <code>UC…</code> names pulled from server messages. Server messages truncate long subscription names, so a name counts as "known" when it's a prefix of a real one.</li>
-<li><strong>Accounts</strong> — names from <code>associated with account "…"</code>, checked against every transfer row's account (not just first-row accounts, so a destination-side-only account isn't falsely flagged).</li>
-<li><strong>Hosts</strong> — the <em>outgoing</em> side: configured endpoint addresses (the FlowManager partner <code>host</code> fields — the servers <em>we</em> connect to) mentioned in server messages, e.g. "tried to connect to remote host …". A hit means the server tried to reach a configured endpoint that never produced a transfer.</li>
-<li><strong>Whitelist</strong> — the <em>incoming</em> side: whitelisted partner IPs (the FlowManager <code>AllowIP</code> fields — the addresses partners connect <em>from</em>) mentioned in server messages. A hit means an allowed partner address connected, or tried to, without ever producing a transfer.</li>
-<li><strong>Logins</strong> — names from <code>login name "…"</code>, checked against every transfer row's login.</li>
+<li><strong>Subscriptions</strong> &mdash; <code>UC&hellip;</code> names in server messages. The server truncates long names, so a name counts as known when it is a prefix of a real one.</li>
+<li><strong>Accounts</strong> &mdash; names from <code>associated with account "&hellip;"</code>, checked against every transfer row&rsquo;s account (not only first-row accounts, so a destination-side-only account is not falsely flagged).</li>
+<li><strong>Hosts</strong> &mdash; the outgoing side: configured endpoint addresses (the FlowManager partner <code>host</code> fields, the servers we connect to) named in messages such as &ldquo;tried to connect to remote host &hellip;&rdquo;. A hit = a configured endpoint the server tried to reach that never produced a transfer.</li>
+<li><strong>Whitelist</strong> &mdash; the incoming side: whitelisted partner addresses (the FlowManager <code>AllowIP</code> fields) named in messages. A hit = an allowed address that connected, or tried to, without ever producing a transfer.</li>
+<li><strong>Logins</strong> &mdash; names from <code>login name "&hellip;"</code>, checked against every transfer row&rsquo;s login.</li>
 </ul>
-<h2>How it's computed</h2>
-<p>Each tab counts server-log mentions of the unmatched name and can be clicked to expand its 10 most recent log lines. Only Transfer Manager (runtime) log lines are considered — the admin/audit deploy trail also names entities, but that's configuration activity, not traffic. The "known" list for every tab is the transfer parse cache itself (every technical row's attribution), so the comparison covers everything the transfer log ever recorded. The Hosts and Whitelist tabs additionally scope their search to the FlowManager configuration: only configured endpoints and whitelisted addresses are looked for, so every hit is directly actionable.</p>
+<h2>Rules</h2>
+<ul>
+<li>Only Transfer Manager (runtime) lines count; the admin/audit deploy trail names entities too, but that is configuration activity, not traffic.</li>
+<li>The known list of every tab is the transfer parse cache itself (every technical row&rsquo;s attribution), so the comparison covers everything the transfer log ever recorded.</li>
+<li>Hosts and Whitelist look only for configured endpoints and whitelisted addresses, so every hit is directly actionable.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a row for its 10 most recent server-log lines.</li>
+</ul>
 </main>
 </body>
 </html>

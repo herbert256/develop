@@ -16,47 +16,41 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>UC4 status</h1>
-<h2>What this shows</h2>
-<p>Every configured <strong>UC4</strong> subscription — the inbound-delivery use case, where <em>we</em> are the server and the partner connects in and hands us a file — in exactly one of seven statuses. It completes the set: <a href="server-uc1-status.html">UC1 status</a> for the flows we push out, <a href="server-uc2-status.html">UC2 status</a> for the ones the partner collects from us, <a href="server-uc3-status.html">UC3 status</a> for the ones we poll and pull. The info boxes above the table give the count per status. One row per subscription:</p>
+<h2>What it shows</h2>
+<p>Every configured <strong>UC4</strong> subscription (inbound delivery: we are the server, the partner connects in and hands us a file), one row each, in exactly one of seven statuses; the info boxes count them. Siblings: <a href="server-uc1-status.html">UC1</a> (we push out), <a href="server-uc2-status.html">UC2</a> (the partner collects from us), <a href="server-uc3-status.html">UC3</a> (we poll and pull).</p>
+<h2>Columns</h2>
 <ul>
-<li><strong>Status</strong> — one of seven, a complete partition (see below).</li>
-<li><strong>Subscription</strong> — the configured name, linking to its detail page.</li>
-<li><strong>Files</strong> / <strong>OK</strong> / <strong>Error</strong> / <strong>Last file</strong> — the transfer-log history: logical transfers received, split by outcome, and the date of the newest one. All blank on a subscription the transfer log has never seen.</li>
-<li><strong>Logons</strong> — successful partner authentications. It counts both the SSH <em>Allowed user</em> line and the <em>successfully authenticated</em> line the other protocols write, so one connection can contribute more than one: read it as activity, not as an exact session count.</li>
-<li><strong>Arrivals</strong> — files the partner actually handed over ("the file … will be submitted for processing").</li>
-<li><strong>Problems</strong> — logon attempts the account whitelist <em>refused</em>.</li>
-<li><strong>Last log</strong> — the newest server-log line of any of those kinds, so it answers "is this partner still knocking at all".</li>
+<li><strong>Status</strong> &mdash; one of seven, a complete partition (below).</li>
+<li><strong>Subscription</strong> &mdash; the configured name, linked to its detail page.</li>
+<li><strong>Files</strong> / <strong>OK</strong> / <strong>Error</strong> / <strong>Last file</strong> &mdash; Files received, by outcome, and the newest one&rsquo;s date (<code>_files.tsv</code>); blank on a never-seen subscription.</li>
+<li><strong>Logons</strong> &mdash; the &ldquo;successfully authenticated&rdquo; line, one per successful SSH logon; an &ldquo;Allowed user&rdquo; whitelist admission that then fails authentication does not count.</li>
+<li><strong>Arrivals</strong> &mdash; files actually handed over (&ldquo;will be submitted for processing&rdquo;).</li>
+<li><strong>Problems</strong> &mdash; logon attempts the account whitelist <em>refused</em>.</li>
+<li><strong>Last log</strong> &mdash; the newest line of those kinds: &ldquo;is this partner still knocking at all&rdquo;.</li>
 </ul>
-<h2>The seven statuses</h2>
-<p>The first three are the <strong>transfer-log</strong> verdict, read off the subscription's site-wide result colour:</p>
+<h2>Statuses</h2>
 <ul>
-<li><strong>ok</strong> (green) — its latest File arrived. The flow is working.</li>
-<li><strong>error</strong> (red) — its latest File failed <em>and</em> it has never once received an OK File in the window. Nothing here ever worked.</li>
-<li><strong>ok -> error</strong> (red, was green) — its latest File failed, but it <em>has</em> received before: a regression. In one real estate this was the larger half of the red rows, unlike UC1, where every failing flow had never worked at all.</li>
+<li><strong>ok</strong> (green) &mdash; its latest File arrived.</li>
+<li><strong>error</strong> (red) &mdash; its latest File failed and no OK File in the window: nothing ever worked.</li>
+<li><strong>ok -> error</strong> (red, was green) &mdash; OK Files before, the latest failed: a regression, a change to find.</li>
+<li><strong>server - no files</strong> (blue) &mdash; the partner does log in and never sends: credentials work, the partner reaches us, no file ever came. The question is for the partner.</li>
+<li><strong>server - error</strong> (blue) &mdash; the partner never got in: its only attempts were refused by the whitelist. Fix the whitelist.</li>
+<li><strong>server - no result</strong> (blue) &mdash; the server log says nothing about the subscription either way.</li>
+<li><strong>not seen</strong> (orange) &mdash; configured, in neither log: set up and never used, or a partner side never finished. Estate to review, not an incident.</li>
 </ul>
-<p>Then the <strong>blue</strong> subscriptions — seen in the server log, never once in the transfer log:</p>
+<h2>Rules</h2>
 <ul>
-<li><strong>server - no files</strong> — the partner <em>does</em> log in. It just never sends anything. This is the most useful thing the report says: the flow is configured, the credentials work, the partner reaches us, and no file has ever come. The question is for the partner, not for us.</li>
-<li><strong>server - error</strong> — the partner never got in at all: its only attempts were <em>refused</em> by the account whitelist. Because we are the <em>server</em> in UC4 we cannot fail to reach anyone, so being turned away at the door is the only way a UC4 flow can break before a file exists.</li>
-<li><strong>server - no result</strong> — the server log carries nothing about the subscription either way.</li>
+<li>Roster: every <code>UC4</code> name in the FlowManager subscription export, run or not. Colour = the site-wide result: green/red are real transfer data (the LAST File OK / Failed-or-Expired), blue server log only, orange neither log.</li>
+<li>The server signals are <strong>account-keyed</strong>: the partner connects to an account, and the subscription name barely reaches the log (only the PeSIT confirmation of the onward internal leg carries it). The account&harr;subscription cross-reference is 1:1 both ways for UC4, so every line attributes to exactly one subscription.</li>
+<li><strong>error</strong> vs <strong>ok -> error</strong> is per File &mdash; right after any OK File the subscription WAS green &mdash; finer than <a href="from-green-to-red.html">From green to red</a>, which buckets by whole days.</li>
+<li>We are the server: no unreachable-partner failure exists, so a refusal at the door is the only way a UC4 flow breaks before a file exists &mdash; <strong>server - error</strong> is narrower than on UC1 and UC3.</li>
+<li><strong>server - no files</strong> means what it means on UC2 (the partner never sends), not on UC3 (we poll an empty directory). <strong>not seen</strong> is first-class as on UC1; UC3 has none, so its box stays hidden there.</li>
+<li>Inbound fails silently &mdash; never sent, never connected and turned away look alike and write no transfer record; the blue split separates them.</li>
 </ul>
-<p>And last, the largest:</p>
+<h2>Tips</h2>
 <ul>
-<li><strong>not seen</strong> (orange) — configured, and never observed in <em>either</em> log. Not a failure so much as an open question: a flow set up and never used, or one whose partner side was never finished. In one real estate this was 64 of 142 subscriptions.</li>
+<li>Click a row for its most recent server-log lines; on a <strong>server - error</strong> row those are the refusals.</li>
 </ul>
-<h2>How it's computed</h2>
-<p>The roster is every <code>UC4</code> name in the FlowManager subscription export, so a subscription appears whether or not it has ever run. Green/red/blue/orange is the site-wide <strong>result</strong> colour, and Files/OK/Error come from the transfer cache (<code>_files.tsv</code>).</p>
-<p><strong>The server signals are account-keyed, not subscription-keyed.</strong> A partner connects to an <em>account</em>; the subscription name barely reaches the server log at all (only the PeSIT confirmation of the onward internal leg carries it). So the roster is joined through the account&harr;subscription cross-reference, which for UC4 is strictly one-to-one in both directions — 142 accounts, 142 subscriptions, none shared and none missing — and every line therefore attributes to exactly one subscription.</p>
-<p><strong>error vs ok -> error</strong> is a per-<em>File</em> question, not a per-day one: right after any OK File the subscription <em>was</em> green, so a red subscription with even one OK File in the window counts as a regression. That is deliberately finer than <a href="from-green-to-red.html">From green to red</a>, which buckets by whole days.</p>
-<h2>How it differs from the others</h2>
-<ul>
-<li><strong>"server - no files" means what it means on UC2, not on UC3.</strong> On UC3 <em>we</em> poll and find the remote directory empty; here the <em>partner</em> connects and simply never sends — the same conclusion, nothing arrives, reached from the opposite side.</li>
-<li><strong>"server - error" is narrower than on UC1 and UC3.</strong> Those two have us dialling out, so they can fail to reach the partner. Here we are the one being dialled, so the only pre-file failure is a refusal.</li>
-<li><strong>"not seen" is first-class</strong>, as on UC1 status. UC3 has none of these at all, so its box stays hidden there.</li>
-</ul>
-<h2>Why it matters</h2>
-<p>An inbound flow fails silently and asymmetrically: nothing arriving looks exactly the same whether the partner never sent, never connected, or was turned away — and none of the three writes a transfer record. Splitting the blue rows by how far the partner actually got turns that silence into a specific question: chase the partner for the file (<strong>no files</strong>), fix the whitelist (<strong>server - error</strong>), or find out why the flow leaves no trace at all (<strong>no result</strong>). The <strong>ok -> error</strong> rows are the ones with a change to find; <strong>not seen</strong> is estate to review rather than an incident.</p>
-</main>
 </main>
 
 

@@ -16,26 +16,30 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Went quiet</h1>
-<h2>What this shows</h2>
-<p>Subscriptions that <em>have</em> carried Files and then stopped: every subscription whose most recent File is more than <strong>7 days</strong> before the end of the data window. Two columns:</p>
+<h2>What it shows</h2>
+<p>The silence report, both units: <strong>subscriptions</strong> that carried Files and then stopped (nothing in the last 7 days of the window, whatever the outcome), and <strong>accounts</strong> idle long against their own cadence.</p>
+<h2>Subscriptions table</h2>
 <ul>
-<li><strong>Subscription</strong> — the configured name, linking to its detail page.</li>
-<li><strong>Days ago last traffic</strong> — how many days before the end of the window its last File was. 8 means it stopped the day after the 7-day threshold; a large number means it has been silent for most of the window.</li>
+<li><strong>Subscription</strong> &mdash; configured name, links its detail page.</li>
+<li><strong>Days ago last traffic</strong> &mdash; days from last File to window end; 8 = stopped right after the threshold, large = silent most of the window.</li>
+<li>Quiet = most recent File more than <strong>7 days</strong> before the last day in the data. Newest-quiet first: 8 days is a live question, 31 days probably an unrecorded decommissioning.</li>
+<li>Every outcome counts as traffic (Processed, Failed, Waiting, Expired): the question is &ldquo;is anything happening&rdquo;, not &ldquo;is it working&rdquo;. A daily failer is noisy, not quiet; a green subscription (last File delivered, however long ago) can be listed.</li>
+<li>Health is judged on <a href="only-red.html">Only red</a>, <a href="from-green-to-red.html">From green to red</a> and the <a href="server-uc1-status.html">UCx status</a> verdicts.</li>
+<li>Never carried a File = cannot go quiet, not listed; the Entities <strong>Not seen</strong> view has those.</li>
+<li>One pass over <code>_files.tsv</code>: per subscription the last day with a File, against the last day in the data. Flat threshold: &ldquo;what stopped?&rdquo; is one list, not a ranking.</li>
 </ul>
-<p>Rows are ordered <strong>newest-quiet first</strong>: a flow that stopped 8 days ago is a live question, one that stopped 31 days ago is probably a decommissioning nobody recorded.</p>
-<h2>What counts as traffic</h2>
-<p><strong>Every outcome.</strong> Processed, Failed, Waiting and Expired all count as activity, because the question here is <em>is anything still happening</em> — not <em>is it working</em>. A flow that fails every single day is noisy, not quiet, and does not appear. A flow that delivered perfectly and then stopped does.</p>
-<p>That is deliberately a different question from the health reports, and they answer it in the other direction: <a href="only-red.html">Only red</a> and <a href="from-green-to-red.html">From green to red</a> judge whether the traffic that <em>is</em> flowing is any good, and the <a href="server-uc1-status.html">UCx status</a> reports give each subscription a single verdict. A subscription can easily be green here and still be listed — green only means its <em>last</em> File was delivered, however long ago that was.</p>
-<h2>How it's computed</h2>
-<p>One pass over the logical-transfer cache (<code>_files.tsv</code>): per subscription the last day it carried a File, against the last day present in the data as a whole.</p>
-<p><strong>The count is measured from the end of the window, not from today.</strong> The site reports on an export, so counting against the wall clock would make every figure drift with how old that export is — a report read on Monday would disagree with the same report read on Friday, without any data changing. The same convention is used by <a href="stale-accounts.html">Stale accounts</a>.</p>
-<p>A subscription that has <strong>never</strong> carried a File is not listed: it cannot have gone quiet. Those are configuration that has never run, and the Entities <strong>Not seen</strong> view is where they live.</p>
-<h2>Why it matters</h2>
-<p>A flow that stops is the failure mode no error report can catch, because nothing fails — there is simply nothing there. It usually means one of three things: the partner stopped sending, the source system stopped producing, or the flow was decommissioned and the configuration was never cleaned up. All three are worth knowing, and only the third is harmless.</p>
-<p>The per-<em>account</em> equivalent is <a href="stale-accounts.html">Stale accounts</a>, which additionally weighs the idle time against each account's own cadence — a daily account silent for 3 days is more alarming than a monthly one silent for 20. This report deliberately uses a flat threshold instead, so the answer to "what stopped?" is one list, not a ranking.</p>
-</main>
-<p>"Days idle" is <strong>not</strong> measured against today's date — it's measured against the most recent File seen <strong>across every account</strong> in the data. So this table reflects staleness as of the end of the collected log window, not as of when you're viewing the page; an account idle "10 days" means 10 days before the last record in the export, however long ago that export was taken.</p>
-<p>"Median gap" is the account's own typical spacing between its active days — its normal cadence. The <strong>idle&divide;gap ratio</strong> compares its current idle time against that cadence: an account that normally transfers daily and has been idle 3 days (ratio 3.0) has missed three of its own cycles and is more alarming than a weekly account idle 5 days (ratio 0.7), which a flat day-count threshold alone would rank the wrong way round. An account seen on only a single day has no gap to measure, shows "-", and sorts last. Idle 7+ days is tinted, as is a ratio of 2 or more (two missed cycles).</p>
+<h2>Accounts table</h2>
+<ul>
+<li><strong>Days idle</strong> &mdash; against the most recent File across every account; tinted at 7+.</li>
+<li><strong>Median gap</strong> &mdash; typical spacing between the account&rsquo;s active days (its cadence).</li>
+<li><strong>Idle &divide; gap</strong> &mdash; a daily account idle 3 days = 3.0 (three missed cycles), more alarming than a weekly one idle 5 days = 0.7; tinted at 2 or more. Single-day accounts have no gap: &ldquo;-&rdquo;, sorts last.</li>
+<li>Files without account attribution (platform-internal, blanked at parse) are excluded. Always the full period: narrowing From/To would hide exactly the stalest accounts.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Both units measure from the window end, never today, so figures do not drift with the export&rsquo;s age.</li>
+<li>Nothing fails when a flow stops: partner stopped sending, source stopped producing, or decommissioned without cleanup &mdash; only the third is harmless.</li>
+</ul>
 </main>
 </body>
 </html>

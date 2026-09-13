@@ -16,15 +16,27 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Subscriptions (analyses)</h1>
-<h2>What this shows</h2>
-<p>Every <strong>configured FlowID</strong> (the <code>customAttribute_FlowIdentifier</code> value) on one row &mdash; the whole configuration mapping at a glance, still ordered by <strong>use case</strong>. A flow&rsquo;s UC subscriptions <em>share</em> one FlowID, so they fold into a <strong>single row</strong> whose every cell is the union of their values. Then the derived <strong>Logical</strong> group (the FlowID condensed into its logical flow group), the <strong>account</strong> it belongs to, the derived <strong>Partner</strong>, <strong>Domain</strong> and <strong>Application</strong> groups, its <strong>endpoint</strong> (the login the partner connects in with &mdash; inbound &mdash; or the remote host we dial out to &mdash; outbound) and the <strong>BL</strong> tag &mdash; a full entity of its own, so the cell links its detail page.</p>
-<p>Every other name links its own detail page too, and each row is tinted by the result of the subscriptions it folds &mdash; <strong>light green</strong> = last transfer OK, <strong>light orange</strong> = configured but never seen (or a mix), <strong>light red</strong> = one or more last transfers in Error, <strong>light blue</strong> = surfaced only by the server log. Click a column header to sort.</p>
-<h2>The UCx column</h2>
-<p>Column <strong>two</strong>, and the place the subscriptions themselves live: it lists <strong>every use case</strong> the FlowID appears under &mdash; the <code>UC&lt;n&gt;</code> token from the subscription name prefix, or the one the configuration derives when the name carries none &mdash; ordered by number, and each value links <em>that</em> use case&rsquo;s own subscription detail page. So a flow configured as both a UC1 and a UC4 subscription reads <code>UC1, UC4</code> on one row, with a link behind each. The <strong>Subscription</strong> column shows the FlowID itself; it links the subscription detail page when the row is a single subscription, and is plain text when the row folds several &mdash; the UCx links reach them individually.</p>
-<h2>The BL column</h2>
-<p>The subscription export (<code>subscriptions.json</code>) carries free-form <code>tags</code>; the BL column shows the entry (or entries) starting with <code>BL</code> &mdash; the business-line marker. A subscription without such a tag shows a blank cell. Each tag is an entity in the Logical, Partners, Domains, Applications &amp; BL group, and the cell links its detail page.</p>
-<h2>How it's computed</h2>
-<p>The roster is the pristine configured snapshot (the base cache before the build appends discovered names), so the list is exactly what FlowManager defines. Everything else is joined from the flow-manager caches: the FlowID from the subscription&rsquo;s profile pair, the account/login/host from their pair caches, the Logical / Partner / Domain / Application / BL from the derived group caches. The roster is then folded on the FlowID, each cell taking the union of the folded subscriptions&rsquo; values and the tint their rolled-up result (any red wins; one shared value carries; anything mixed is orange) &mdash; the same rule the derived entities use. A subscription that carries no FlowID keeps a row of its own. No log data is read &mdash; only the row tint reflects activity.</p>
+<h2>What it shows</h2>
+<p>Every configured FlowID (<code>customAttribute_FlowIdentifier</code>) on one row, ordered by use case. UC subscriptions sharing a FlowID fold into one row, each cell the union of their values; a subscription without FlowID keeps its own row.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Subscription</strong> &mdash; the FlowID; links the detail page for a single subscription, plain text when the row folds several.</li>
+<li><strong>UCx</strong> (column two, where the subscriptions live) &mdash; every use case the FlowID appears under, by number, each linking that use case&rsquo;s subscription page (<code>UC1, UC4</code> = two links).</li>
+<li>The UC token is the name-prefix <code>UC&lt;n&gt;</code>, or the one the configuration derives when the name has none.</li>
+<li><strong>Logical</strong> &mdash; the FlowID condensed into its logical flow group.</li>
+<li><strong>Account</strong>, <strong>Partner</strong>, <strong>Domain</strong>, <strong>Application</strong> &mdash; the owning account and the derived groups.</li>
+<li><strong>Endpoint</strong> &mdash; inbound: the login the partner connects with; outbound: the remote host we dial.</li>
+<li><strong>BL</strong> &mdash; the <code>tags</code> entries in <code>subscriptions.json</code> starting with <code>BL</code> (business-line marker); blank without one. An entity of the Logical, Partners, Domains, Applications &amp; BL group.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Every name links its detail page; click a header to sort.</li>
+<li>Row tint: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen (or a mix), <strong>light red</strong> a last transfer in Error, <strong>light blue</strong> surfaced only by the server log.</li>
+<li>Fold rule, as for the derived entities: any red wins; one shared value carries; anything mixed is orange.</li>
+<li>Roster = the pristine configured snapshot (base cache before the build appends discovered names): exactly what FlowManager defines.</li>
+<li>Joined from the flow-manager caches: FlowID from the profile pair, account/login/host from the pair caches, Logical / Partner / Domain / Application / BL from the derived group caches.</li>
+<li>No log data is read; only the tint reflects activity.</li>
+</ul>
 </main>
 </body>
 </html>

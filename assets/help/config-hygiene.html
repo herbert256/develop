@@ -16,16 +16,23 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Config hygiene</h1>
-<h2>What this shows</h2>
-<p>The configuration cleanup backlog, in two kinds of findings:</p>
+<h2>What it shows</h2>
+<p>The configuration cleanup backlog: what is configured but pointless. Two kinds of findings, one row per object.</p>
+<h2>Sections</h2>
 <ul>
-<li><strong>Twins</strong> — names identical once case and the <code>-</code>/<code>_</code> separators are folded, configured as separate entities (<code>FRE-SAPCD-…</code> vs <code>FRE_SAPCD_…</code> — a real phenomenon on this platform). Usually one is legacy; but a green pair where BOTH work is deliberate, so check the tint before cleaning up.</li>
-<li><strong>Orphans</strong> — objects nothing references: accounts without a subscription, hosts and logins no subscription/account uses, whitelist entries no account allows.</li>
+<li><strong>Twins</strong> &mdash; names identical once case and the <code>-</code>/<code>_</code> separators are folded, yet configured as separate entities (<code>FRE-SAPCD-…</code> vs <code>FRE_SAPCD_…</code>, a real phenomenon on this platform).</li>
+<li><strong>Orphans</strong> &mdash; objects nothing references: accounts without a subscription, hosts and logins no subscription or account uses, whitelist entries no account allows.</li>
 </ul>
-<h2>How it's computed</h2>
-<p>Twins fold each configured name list onto itself; orphans check the cross-reference pair caches. Rows are tinted by each entity's standard result color, and names link to their detail pages where one exists.</p>
-<h2>How it relates to Not in Flow Manager</h2>
-<p><a href="not-in-flow-manager.html">Not in Flow Manager</a> covers the reverse direction — values in the logs missing from the configuration. Together they bracket the config drift: what's configured but pointless, and what's real but unconfigured.</p>
+<h2>Rules</h2>
+<ul>
+<li>Twins fold each configured name list onto itself; orphans check the cross-reference pair caches.</li>
+<li>Usually one twin is legacy &mdash; but a green pair where BOTH work is deliberate, so check the tint before cleaning up.</li>
+<li>Rows are tinted by each entity&rsquo;s standard result colour; names link to their detail pages where one exists.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li><a href="not-in-flow-manager.html">Not in Flow Manager</a> is the reverse direction &mdash; values in the logs missing from the configuration. Together they bracket the config drift: configured but pointless, and real but unconfigured.</li>
+</ul>
 </main>
 </body>
 </html>

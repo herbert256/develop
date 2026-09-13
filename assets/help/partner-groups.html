@@ -16,19 +16,26 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the page</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Partner groups &amp; the Direction column</h1>
-<h2>What a partner group is</h2>
-<p>Most partner names on the <strong>Entities &rarr; Partners</strong> pages are a single organisation &mdash; <span class="mono">ROTAFORM</span>, <span class="mono">VECOZO</span>. Some are a <strong>group</strong>: a name like <span class="mono">GBA_TT_XXLLNC</span> that joins several partner codes with underscores. FlowManager configures those codes on separate logical flows, but the grouping logic recognises them as one real partner organisation and counts them together. A group row carries a small <strong>&#128279; link icon</strong> after its name; clicking it opens a page that lists the group's member codes and the exact evidence used to merge them.</p>
-<h2>How partners are grouped</h2>
-<p>Every three-part <strong>logical flow name</strong> reads <em>domain_application_partner</em>, so its LAST part is a partner token. Those tokens are then merged into one group whenever any of four things holds:</p>
+<h2>What it shows</h2>
+<p>Most partner names on <strong>Entities &rarr; Partners</strong> are one organisation (<code>ROTAFORM</code>, <code>VECOZO</code>). A <strong>group</strong> such as <code>GBA_TT_XXLLNC</code> joins several partner codes with underscores: FlowManager configures those codes on separate logical flows, the grouping recognises them as one real organisation and counts them together.</p>
+<h2>Rules</h2>
 <ul>
-<li><strong>Their logical flows connect to the same configured host</strong> &mdash; two flows delivering to (or collecting from) one endpoint belong to one partner.</li>
-<li><strong>Their logical flows whitelist the same IP</strong> &mdash; two inbound flows allowing the same source address are the same partner reaching us two ways.</li>
-<li><strong>One partner's host resolves to an IP another whitelists</strong> &mdash; the endpoint SecureTransport dials out to lands on an address an inbound flow's whitelist allows: the same partner, both directions.</li>
+<li>Every three-part logical flow name reads <em>domain_application_partner</em>, so its last part is a partner token.</li>
+<li>Tokens merge into one group when any of three things holds: their logical flows connect to the <strong>same configured host</strong>; their logical flows <strong>whitelist the same IP</strong> (the same partner reaching us two ways); one partner&rsquo;s <strong>host resolves to an IP another whitelists</strong> (the same partner, both directions).</li>
+<li>Every rule is derived from the configuration. Hand-maintained knowledge the infrastructure cannot prove (&ldquo;this variant code is really that organisation&rdquo;) is a <strong>part replacement</strong> in <code>input/logical_partners.txt</code>: the variant is rewritten to its canonical token before it ever becomes a partner, so the two never form a group.</li>
+<li>The group&rsquo;s name is its member codes joined with underscores, sorted alphabetically.</li>
 </ul>
-<p>Every rule above is <strong>derived from the configuration</strong>. Hand-maintained knowledge the infrastructure cannot prove &mdash; &ldquo;this variant code is really that organisation&rdquo; &mdash; is expressed one step earlier instead, as a <strong>part replacement</strong> in <span class="mono">input/logical_partners.txt</span>: the variant is rewritten to its canonical token before it ever becomes a partner, so the two never form a group at all. (Until 2026-09-01 that lived in a separate <span class="mono">partner-aliases.tsv</span> as a fourth merge rule; its pairs were folded into the part replacements.)</p>
-<p>The group's name is its member codes joined with underscores, sorted alphabetically. The per-group page groups the raw evidence by the pair of partner codes it links, showing one representative fact per pair with a count of the rest.</p>
+<h2>Tips</h2>
+<ul>
+<li>A group row carries a <strong>&#128279;</strong> icon after its name; it opens a page listing the member codes and the evidence used to merge them, grouped by the pair of codes it links &mdash; one representative fact per pair with a count of the rest.</li>
+</ul>
 <h2>The Direction column</h2>
-<p>The Partners list carries a <strong>Direction</strong> column reading <em>connection&nbsp;/&nbsp;movement</em> &mdash; for example <span class="mono">both/both</span> or <span class="mono">in/out</span>. <strong>Connection</strong> is the partner's configured side: <em>in</em> (the partner connects into SecureTransport), <em>out</em> (SecureTransport connects out to the partner) or <em>both</em>. <strong>Movement</strong> is which way the files actually travel across the partner's subscriptions (<em>in</em>, <em>out</em>, or <em>both</em>). The two diverge on pull flows &mdash; a partner SecureTransport connects <em>out</em> to in order to collect files that move <em>in</em> reads <span class="mono">out/in</span>.</p>
+<ul>
+<li>The Partners list reads <em>connection / movement</em>, e.g. <code>both/both</code> or <code>in/out</code>.</li>
+<li><strong>Connection</strong> &mdash; the partner&rsquo;s configured side: <em>in</em> (the partner connects into SecureTransport), <em>out</em> (SecureTransport connects out to the partner) or <em>both</em>.</li>
+<li><strong>Movement</strong> &mdash; which way the files actually travel across the partner&rsquo;s subscriptions: <em>in</em>, <em>out</em> or <em>both</em>.</li>
+<li>The two diverge on pull flows: SecureTransport connects <em>out</em> to collect files that move <em>in</em> &mdash; <code>out/in</code>.</li>
+</ul>
 </main>
 </body>
 </html>

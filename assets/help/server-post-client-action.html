@@ -16,18 +16,26 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Post client action error</h1>
-<h2>What this shows</h2>
-<p>Every <strong>Post client action error</strong> line the server log holds, one row per line, newest first: the action that runs after a file was received &mdash; typically the delete of the source &mdash; failed; the file arrived, its cleanup did not. The line looks like this:</p>
-<p class="mono">ARRC0009: [CD_ARIVA_HAANSADVOCATEN@FE000225] []  Error deleting the file after a post client action.</p>
-<h2>The table</h2>
+<h2>What it shows</h2>
+<p>One row per <strong>Post client action error</strong> line in the server log, newest first: the Advanced Routing action that runs after a file was received (typically the delete of the source) failed &mdash; the file arrived, its cleanup did not. This is the &ldquo;Post client action failed&rdquo; reason of the failure pages.</p>
+<p>The line: <code>ARRC0009: [&lt;account&gt;@&lt;login&gt;] []  Error deleting the file after a post client action.</code></p>
+<h2>Columns</h2>
 <ul>
 <li><strong>Date &amp; time</strong> &mdash; when it happened, to the second.</li>
-<li><strong>Account</strong> &mdash; the first bracket of the line, before the @; it opens the account's detail page.</li>
+<li><strong>Account</strong> &mdash; the first bracket, before the <code>@</code>; opens the account&rsquo;s detail page.</li>
 </ul>
-<h2>How it's computed</h2>
-<p>The tokenized server log is scanned for Advanced Routing lines (an <code>AR&lt;code&gt;:</code> prefix with its two bracket groups) whose text carries the message above; the account is read from the bracket named in the table and folded to its current name when it was renamed. The report shows at most <strong>1000</strong> rows and at most <strong>10</strong> rows per account &mdash; the newest ones on both counts; the intro and the total row say how many lines the log really holds. The date filter, search and sort work over the shown rows. The <a href="server-could-not-send.html">Could not send file</a> report is its twin for the AR0074 delivery failures.</p>
-<h2>Why it matters</h2>
-<p>Each row is a file whose routing did not complete as configured; a account that keeps appearing has a problem on this step that the <a href="server-errors-day.html">Errors</a> reasons and its own detail page put in context.</p>
+<h2>Rules</h2>
+<ul>
+<li>Source: the tokenized server log&rsquo;s Advanced Routing lines (an <code>AR&lt;code&gt;:</code> prefix with two bracket groups) whose text names a post client action.</li>
+<li>A renamed account is folded to its current name.</li>
+<li>At most <strong>1000</strong> rows and at most <strong>10</strong> per account, the newest on both counts; the intro and the total row say how many lines the log really holds.</li>
+<li>Date filter, search and sort work over the shown rows.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Each row is a file whose routing did not complete as configured; an account that keeps appearing has a problem on this step &mdash; the <a href="server-errors-day.html">Errors</a> reasons and its detail page put it in context.</li>
+<li><a href="server-could-not-send.html">Could not send file</a> is the twin report for the AR0074 delivery failures.</li>
+</ul>
 </main>
 </body>
 </html>

@@ -16,12 +16,24 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Longest Files</h1>
-<h2>What this shows</h2>
-<p>The <strong>50 longest Files</strong> by <em>wall-clock</em> duration &mdash; from the first record start to the last record end, so the store-and-forward wait inside SecureTransport and any retry idle are included. Split off the Duration report 2026-09-03. Only <strong>delivered</strong> Files are listed (outcome Processed): a Failed, Expired or still-Waiting File is not a completed transfer, and a failure&rsquo;s run time is a timeout, not a duration (the former &ldquo;All transfers&rdquo; view went 2026-09-13).</p>
-<h2>Reading the table</h2>
-<p>Per File: the <strong>Duration</strong> (the column sorts by the exact milliseconds), the <strong>Start Time</strong>, the <strong>CoreId</strong>, the destination <strong>Subscription</strong> (linked to its detail page), the <strong>Size</strong> and the <strong>File</strong> name. The Duration and Start Time cells open the transfer&rsquo;s <strong>record page</strong>: every record of that CoreId in chronological order, with direction, status, protocol, login, remote host and transfer id. Every listed File also has its own <strong>File page</strong> under <code>files/</code> &mdash; the error-page layout: the facts table, every record and the server log of its connections &mdash; and the <strong>CoreId</strong> cell opens that page.</p>
-<h2>How it&rsquo;s computed</h2>
-<p>From the logical-transfer cache (one row per CoreId): the 50 largest durations among the Files whose outcome is Processed. Error transfers are mostly instant 0-byte attempts, and a hanging one is a timeout &mdash; neither is a delivery, so neither is listed.</p>
+<h2>What it shows</h2>
+<p>The <strong>50 longest delivered Files</strong> by wall-clock duration &mdash; first record start to last record end, so the store-and-forward wait inside SecureTransport and any retry idle are included.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Duration</strong> &mdash; sorts by the exact milliseconds.</li>
+<li><strong>Start Time</strong>, <strong>CoreId</strong>, <strong>Size</strong>, <strong>File</strong> name.</li>
+<li><strong>Subscription</strong> &mdash; the destination, linked to its detail page.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Only <strong>Processed</strong> (OK) Files are listed: a Failed, Expired or still-Waiting File is not a completed transfer, and a failure&rsquo;s run time is a timeout, not a duration. Error transfers are mostly instant 0-byte attempts, a hanging one is a timeout &mdash; neither is a delivery.</li>
+<li>Read from the logical-transfer cache (one row per CoreId): the 50 largest durations among the Processed Files.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>A Duration or Start Time cell opens the transfer&rsquo;s <strong>record page</strong>: every record of that CoreId in chronological order, with direction, status, protocol, login, remote host and transfer id.</li>
+<li>The CoreId cell opens the File&rsquo;s own <strong>File page</strong> under <code>files/</code> &mdash; the error-page layout: the facts table, every record and the server log of its connections.</li>
+</ul>
 </main>
 </body>
 </html>

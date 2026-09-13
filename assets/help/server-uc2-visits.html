@@ -16,15 +16,27 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>UC2 pickup visits</h1>
-<h2>What this shows</h2>
-<p>For every <strong>UC2</strong> flow (the partner connects in and collects files from us) whose pickup account ever logged on: what the partner&rsquo;s SSH <strong>visits</strong> actually did. A visit is a group of logons — an SFTP client typically opens several connections per sitting; a gap of more than 30 minutes starts a new visit. Each visit is classified by what its window shows in the transfer log:</p>
-<p><strong>Collected</strong> &mdash; took at least one staged file (and delivered none). <strong>Collected + delivered</strong> &mdash; a two-way exchange: the partner dropped its own files (its UC4 twin flow) <em>and</em> took ours in one visit. <strong>Delivered only</strong> &mdash; the visit only handed files over; that is a UC4 delivery, <em>not</em> a pickup, and such visits are excluded from every pickup figure on this site.</p>
-<p><strong>Same connection</strong> is the hard evidence beside those time windows: the number of distinct <em>technical</em> SSH connections (the transfer log&rsquo;s Session ID &mdash; one connection, one id) in which the account both delivered <em>and</em> collected a file. The visit classes group logons by time, and an SFTP client typically opens a fresh connection per operation &mdash; so a two-way exchange <em>visit</em> can still show 0 here when its uploads and downloads travelled in separate connections. Only this session-proven figure raises the <strong>Connection shared with UC4 drop</strong> row on the detail pages and the <strong>UC4 drop</strong> flag on the Pickups report.</p>
-<h2>Reading the table</h2>
-<p><strong>Pickups</strong> counts the account&rsquo;s pickup <em>logons</em> — the same figure the detail page&rsquo;s Pickup information table shows as <strong>Total pickups</strong> — so it runs higher than the visit columns (a visit typically holds several logons). The pickup and visit columns are the <strong>account&rsquo;s</strong> — the SSH logon lines carry only the account, so an account serving several UC2 subscriptions repeats its figures on each of them. <strong>Files picked up</strong> is per subscription and matches the OK figure of its detail page, which carries the flow&rsquo;s own <strong>Pickup information</strong> table (first/last pickup, pattern, delivering logons).</p>
-<p>A partner collecting over <strong>CFT/PESIT</strong> logs no SSH visit at all &mdash; such flows are absent here even while their files are collected fine. Flows whose account never logged on at all are not listed.</p>
-<h2>How it's computed</h2>
-<p>The figures come from the same per-visit classification that feeds the UC2 status report and the detail pages&rsquo; Pickup information tables (the <code>uc2-pickups</code> sidecar), so the three can never disagree. Logon evidence is the server log&rsquo;s successful-SSH-logon lines; deliveries are the account&rsquo;s inbound SSH transfer records; collections are each staged File&rsquo;s final successful outbound (download) record. The <strong>Same connection</strong> column pairs those two transfer-log sides by their Session ID: a session counts once when it carries at least one delivery and at least one successful collection of the account&rsquo;s files.</p>
+<h2>What it shows</h2>
+<p>For every UC2 flow whose pickup account ever logged on: what the partner&rsquo;s SSH <strong>visits</strong> did. A visit groups an account&rsquo;s logons (a gap of more than 30 minutes starts a new one); each visit is classified by what its window shows in the transfer log.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Pickups</strong> &mdash; the account&rsquo;s pickup logons (the detail page&rsquo;s Pickup information <strong>Total pickups</strong>); higher than the visit columns, a visit holding several logons.</li>
+<li><strong>Collected</strong> &mdash; visits that took at least one staged file.</li>
+<li><strong>Collected + delivered</strong> &mdash; a two-way exchange: the partner dropped its own files (the UC4 twin flow) and took ours in one visit.</li>
+<li><strong>Delivered only</strong> &mdash; a UC4 delivery, not a pickup; excluded from every pickup figure on the site.</li>
+<li><strong>Same connection</strong> &mdash; distinct technical SSH connections (the transfer log&rsquo;s Session ID) in which the account both delivered and collected a file. The only figure that raises the detail pages&rsquo; <strong>Connection shared with UC4 drop</strong> row and the Pickups report&rsquo;s <strong>UC4 drop</strong> flag.</li>
+<li><strong>Files picked up</strong> &mdash; per subscription; the OK figure of its detail page.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Classification is per visit, not per logon: every connection of a visit inherits its class. A visit that collected counts as a pickup even when it also delivered.</li>
+<li>Same connection counts sessions, not visits: an SFTP client typically opens a fresh connection per operation, so a two-way visit whose uploads and downloads travelled separately shows 0.</li>
+<li>The pickup, visit and session figures are the account&rsquo;s and repeat on each of its UC2 subscriptions &mdash; except on an account with several FE logins (production), where they are the flow&rsquo;s own login&rsquo;s.</li>
+<li>Each subscription links to its detail page, whose Pickup information table (first/last pickup, pattern, delivering logons) carries that flow&rsquo;s own figures.</li>
+<li>A partner collecting over CFT/PESIT logs no SSH visit: absent here while its files are collected fine (Files picked up still shows on its detail page). A flow whose account never logged on is not listed.</li>
+<li>The same per-visit classification feeds UC2 status and the detail pages (the <code>uc2-pickups</code> sidecar), so the three never disagree.</li>
+<li>Logons = the server log&rsquo;s successful-SSH-logon lines; deliveries = the account&rsquo;s inbound SSH transfer records; collections = each staged File&rsquo;s final successful outbound (download) record. A session counts once when it carries at least one delivery and one successful collection of the account&rsquo;s files.</li>
+</ul>
 </main>
 </body>
 </html>

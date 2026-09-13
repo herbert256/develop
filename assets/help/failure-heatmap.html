@@ -16,17 +16,24 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Failure Heatmap</h1>
-<h2>What this shows</h2>
-<p>Where the <a href="hourly.html">Load by Hour</a> and <a href="weekday.html">Load by Weekday</a> reports show volume, this one focuses on <strong>failures</strong> and combines both axes. Three views over logical transfers (one per CoreId, delivered outcome):</p>
+<h2>What it shows</h2>
+<p>When transfers fail &mdash; by hour of day, by weekday, and an hour &times; weekday heatmap &mdash; over Files (one logical transfer each, delivered outcome). Where <a href="day.html">Activity per Day</a> shows volume, this page shows failures on both axes. Headline: Files, failed, failed %.</p>
+<h2>Sections</h2>
 <ul>
-<li><strong>By hour of day</strong> — Files, Error and Error % for each of the 24 hours, with a bar scaled to the busiest failure hour.</li>
-<li><strong>By weekday</strong> — the same, by day of week (Monday first).</li>
-<li><strong>Hour × weekday failure heatmap</strong> — a 24×7 grid where each cell is the number of failed transfers for that hour on that weekday, tinted by quartile (darker = more failures). This is where a recurring failure window jumps out — a Monday-10:00 batch, a nightly poll — instead of being averaged away.</li>
+<li><strong>By hour of day</strong> &mdash; Files, Error and Error % per hour of the start time, all days combined, with a Failures bar relative to the busiest failure hour. Hours with zero errors are not listed.</li>
+<li><strong>By weekday</strong> &mdash; the same by day of week, Monday first; zero-error weekdays not listed.</li>
+<li><strong>Hour &times; weekday heatmap</strong> &mdash; a 24&times;7 grid, each cell the number of failed Files for that hour on that weekday, tinted by quartile (darker = more). A recurring window (a Monday-10:00 batch, a nightly poll) jumps out instead of being averaged away.</li>
 </ul>
-<h2>How it's computed</h2>
-<p>Every logical transfer is placed by the hour of its start time and the weekday of its date (from the Julian day number, 0 = Monday); a transfer counts as failed when its delivered (final-row) outcome is not OK. The hour and weekday tables re-aggregate under the date filter and their Error counts drill to the 10 most recent failed Files for that bucket; the heatmap re-sums and re-tints every cell for the selected range.</p>
-<h2>Why it matters</h2>
-<p>A daily failure total can completely hide a sharp temporal pattern. If nearly all of a day's failures land in one hour, or every Monday morning when a batch kicks off, that points straight at the schedule, job or upstream feed responsible — a very different investigation from a steady background failure rate. Because one dominant window can make every other cell look pale, narrowing the date range (which re-tints the grid) is the quickest way to see the shape of a normal day versus an incident.</p>
+<h2>Rules</h2>
+<ul>
+<li>A File is placed by the hour of its start time and the weekday of its date (Julian day number, 0 = Monday); it is failed when its delivered (final-row) outcome is not OK.</li>
+<li>The hour and weekday tables re-aggregate under the date filter; the heatmap re-sums and re-tints every cell for the selected range.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click an Error count for that bucket&rsquo;s 10 most recent failed Files.</li>
+<li>One dominant window makes every other cell pale: narrow the date range to compare a normal day with an incident. Failures in one hour, or every Monday morning, point at a schedule, job or upstream feed rather than a background rate.</li>
+</ul>
 </main>
 </body>
 </html>

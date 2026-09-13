@@ -16,28 +16,30 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Ranking</h1>
-<h2>What this shows</h2>
-<p>Where every entity stands against the others of its <strong>own type</strong>, on the five metrics its detail page ranks it by. Each metric is <strong>two columns</strong> &mdash; the <strong>position</strong> and the <strong>value</strong> behind it &mdash; and a divider separates the five pairs.</p>
-<h2>The five rankings</h2>
+<h2>What it shows</h2>
+<p>Where every entity stands against the others of its <strong>own type</strong> on the five metrics its detail page ranks it by.</p>
+<p>Each metric is two columns, the <strong>position</strong> and the <strong>value</strong> behind it, a divider between the pairs. Sorted on the Files position by default; every column sorts.</p>
+<h2>Columns</h2>
 <ul>
-<li><strong>Files</strong> &mdash; most Files first, so <span class="mono">#1</span> is the busiest entity of its type.</li>
-<li><strong>Volume</strong> &mdash; most bytes first. A flow can be #1 by volume and unremarkable by file count (one big file a day), which is exactly the kind of mismatch this page is for.</li>
-<li><strong>Errors</strong> &mdash; highest error percentage first, so here a <em>low</em> number is bad news: <span class="mono">#1</span> is the worst-performing entity of its type, and a flawless one sorts last.</li>
-<li><strong>Duration</strong> &mdash; shortest average transfer first (<span class="mono">#1</span> = fastest).</li>
-<li><strong>Throughput</strong> &mdash; highest bytes per second first (<span class="mono">#1</span> = fastest).</li>
+<li><strong>Files</strong> &mdash; most Files first; <code>#1</code> is the busiest of its type.</li>
+<li><strong>Volume</strong> &mdash; most bytes first (a flow can be #1 by volume and unremarkable by count).</li>
+<li><strong>Errors</strong> &mdash; highest error percentage first: <code>#1</code> is the worst; a flawless entity sorts last.</li>
+<li><strong>Duration</strong> &mdash; shortest average transfer first (<code>#1</code> = fastest).</li>
+<li><strong>Throughput</strong> &mdash; highest bytes per second first (<code>#1</code> = fastest).</li>
 </ul>
-<h2>Who is ranked</h2>
-<p>The entities the detail pages rank: those <strong>seen</strong> with real transfers. A server-log-only (blue) entity has no metric to stand on and is left out, as it is on its own page. An entity whose transfers were never timed shows <span class="mono">-</span> for Duration and Throughput but still ranks on the other three.</p>
-<h2>Picking a type</h2>
-<p>The second button row switches between the nine entity types &mdash; subscriptions, accounts, logins, hosts, logical flows, partners, applications, domains, BL tags. Ranks never cross types: a subscription is ranked among subscriptions only.</p>
-<h2>How it is computed</h2>
-<p>The positions are not calculated here. Each entity&rsquo;s detail page writes its own five positions to a sidecar as it is rendered, and this page collates them &mdash; so the report and the detail pages are the same numbers by construction.</p>
-<h2>Arriving from a detail page</h2>
-<p>Every row of an entity&rsquo;s own <strong>Ranking</strong> box links here. The link opens the page for that entity&rsquo;s <em>type</em>, sorted on the metric whose row was clicked (<span class="mono">#1</span> at the top), turned to the page holding that entity and scrolled to its row, which is drawn with an outline. The point is the neighbourhood: a bare <span class="mono">#138</span> says little, the twenty rows around it say whether the field is tightly packed or the entity is an outlier.</p>
-<p>Such a link always opens at the <strong>full period</strong>, whatever range you last set elsewhere &mdash; the position you clicked is a full-period figure, and answering with a different number would make the link a lie. Your remembered range is left alone; picking a new one here saves as usual.</p>
-<h2>The date filter re-ranks the page</h2>
-<p>At the full range the page shows those baked figures. Narrow <strong>From/To</strong> and both halves of every pair are recomputed over the selected days alone: the values re-aggregate and the <em>positions renumber with them</em>, so you never read a filtered value beside a full-period rank. An entity with nothing in the range drops out of the table and out of the population the positions are counted over &mdash; which is the point of the filter, since it shows who mattered <em>last week</em> rather than who has accumulated the most since logging began. Widening back to the full range restores the baked numbers exactly.</p>
-<p>Two rules survive the recomputation unchanged: a tie shares a position (the next ones are skipped), and a flawless entity still sorts last on Errors instead of first. Duration and Throughput are averages over the <em>timed</em> transfers in the range, so an entity that has files but nothing timed there shows <span class="mono">-</span> for both and is left out of those two rankings.</p>
+<h2>Rules</h2>
+<ul>
+<li>Ranks never cross types; the second button row picks one of the nine entity types.</li>
+<li>Only entities <strong>seen</strong> with real transfers are ranked; a server-log-only (blue) entity has no metric and is left out, as on its own page. Never timed: <code>-</code> for Duration and Throughput, still ranked on the other three.</li>
+<li>Positions are not computed here: each detail page writes its five positions to a sidecar as it renders; this page collates them &mdash; the same numbers by construction.</li>
+<li>A tie shares a position (the next ones are skipped).</li>
+<li><strong>From/To re-ranks</strong>: narrowing recomputes every value <em>and</em> position over the selected days alone; an entity with nothing in range drops out of the table and the population. Duration and Throughput average the <em>timed</em> transfers in range. Widening back restores the baked figures exactly.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Every row of an entity&rsquo;s <strong>Ranking</strong> box links here: the page opens at that type, sorted on the clicked metric (<code>#1</code> on top), turned to the page holding the entity and scrolled to its outlined row &mdash; the neighbourhood shows whether the field is packed or the entity an outlier.</li>
+<li>Such a link always opens at the <strong>full period</strong> (the clicked position is a full-period figure); your remembered range is left alone, and picking a new one here saves as usual.</li>
+</ul>
 </main>
 </body>
 </html>

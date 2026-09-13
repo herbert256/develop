@@ -16,9 +16,16 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Size profile</h1>
-<h2>What this shows</h2>
-<p>What each flow's files weigh. For every subscription with 20+ Files: the overall median size, the median of its first half of files versus its second half (the flow's own files in chronological order, split by count), and the stub share — files smaller than max(1 KB, 1% of the flow's median).</p>
-<p>A drift of 3× or more in either direction marks a regime change: a new format, a changed upstream export, or content replaced by placeholders. Two-regime flows (a data file plus a near-empty semaphore companion) are legitimate and produce a steady stub share by design — the table shows the mix so an unexpected stub surge stands out; it is informational, not an alarm list.</p>
+<h2>What it shows</h2>
+<p>What each flow&rsquo;s files weigh: one row per subscription with <strong>20+ Files</strong> &mdash; its overall median size, the median of its first half of files against its second half, and its share of stub files.</p>
+<h2>Rules</h2>
+<ul>
+<li>The halves are the flow&rsquo;s own files split by count in chronological order (not calendar halves), so a burst-shaped flow is compared fairly.</li>
+<li><strong>Drift</strong> = second-half median &divide; first-half median; &infin; marks a flow whose first-half median was 0 bytes.</li>
+<li>A drift of <strong>3&times; or more</strong> in either direction is a regime change: a new format, a changed upstream export, or content replaced by placeholders &mdash; worth understanding, not by itself an error.</li>
+<li>A <strong>stub</strong> is a file smaller than max(1 KB, 1% of the flow&rsquo;s median); the per-flow limit is in the <strong>Stub limit</strong> column. A flow ships stubs when 10%+ of its files are below it.</li>
+<li>Two-regime flows are often legitimate: a data file plus a 0-byte semaphore companion gives a steady ~50% stub share by design. The table shows the mix so an unexpected stub surge (real content replaced by empties) stands out &mdash; informational, not an alarm list.</li>
+</ul>
 </main>
 </body>
 </html>

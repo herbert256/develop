@@ -16,9 +16,21 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Blast radius</h1>
-<h2>What this shows</h2>
-<p>What stops when a remote host dies: one row per outbound endpoint we dial, counting the Files, volume, subscriptions, applications, domains and partner organisations routed over it. A red row is the sole recorded endpoint of at least one partner — no second address exists to fail over to.</p>
-<p>The redundancy table classes every seen partner by its distinct recorded endpoints across all its Files: single, multiple, or none recorded (inbound-only — the partner dials us, a legitimate class rather than a gap). The last table lists endpoints shared by several partner organisations, where one address outage crosses relationship boundaries.</p>
+<h2>What it shows</h2>
+<p>What stops when a remote host dies. One row per outbound endpoint we dial, with everything routed over it; then the same census turned around per partner, and the endpoints several partners share.</p>
+<h2>Sections</h2>
+<ul>
+<li><strong>Blast radius</strong> &mdash; per endpoint: Files, volume, and distinct Subscriptions, Applications, Domains and Partners routed over it; <strong>Sole endpoint for</strong> names the partners for which it is the only recorded endpoint.</li>
+<li><strong>Redundancy</strong> &mdash; every seen partner by its distinct recorded endpoints: single, multiple, or none recorded (inbound-only). The intro gives the three counts.</li>
+<li><strong>Shared endpoints</strong> &mdash; endpoints used by several partner organisations: one address, several relationships in the blast radius.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>The first table counts OUT-connection Files only (the endpoints we dial); its distinct counts use the site-wide union attribution.</li>
+<li>A <strong>red</strong> row is the sole recorded endpoint of at least one partner &mdash; no second address to fail over to; losing it strands those partners entirely.</li>
+<li>Redundancy and sharing count each partner&rsquo;s distinct recorded endpoints over ALL its Files; for an inbound flow that is the partner&rsquo;s recorded source address.</li>
+<li>A partner with no endpoint recorded anywhere is <strong>inbound-only</strong>: it dials us, so none of its endpoints can strand us &mdash; a legitimate class, not a gap.</li>
+</ul>
 </main>
 </body>
 </html>

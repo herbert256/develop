@@ -16,9 +16,27 @@
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Recovered flows</h1>
-<h2>What this shows</h2>
-<p>The good-news mirror of "From green to red": every subscription whose latest File is OK but that went through a red episode earlier in the window — at least one day ending on a failed File. The episode shown is the most recent run of consecutive active days that each ended red; "Recovered on" is the first active day after it.</p>
-<p>Outage days span the episode's calendar days; the Error count drills into the episode's 10 most recent failures, the OK count into the freshest successes since — the fastest way to confirm a fix actually took. Waiting counts as OK and Expired as Error, the same rule that colors the subscription site-wide. The table always shows the full period: narrowing the range would fabricate or hide recoveries.</p>
+<h2>What it shows</h2>
+<p>The good-news mirror of <a href="from-green-to-red.html">From green to red</a> &mdash; did yesterday&rsquo;s fix work?</p>
+<p>One row per subscription whose <strong>latest File is OK</strong> but that went through a <strong>red episode</strong> earlier in the window: at least one day that ended on a failed File. Most recent recovery first.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Episode</strong> &mdash; the most recent run of consecutive active days that each <em>ended</em> on a failed File.</li>
+<li><strong>Recovered on</strong> &mdash; the first active day after the episode (by construction it ended green).</li>
+<li><strong>Outage days</strong> &mdash; the episode&rsquo;s calendar span.</li>
+<li><strong>Error Files</strong> &mdash; the episode&rsquo;s failures. <strong>OK Files</strong> &mdash; everything delivered since, to the dataset&rsquo;s end.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Green when the latest File&rsquo;s outcome is OK, red otherwise &mdash; the site-wide colour rule (Waiting counts as OK, Expired as Error).</li>
+<li>A day with a failure but a later OK stays green, matching From green to red.</li>
+<li>Only a subscription&rsquo;s most recent episode is shown; an earlier, already-recovered one is not.</li>
+<li>Always the full period, no date filter: the flip back is a sequence in time, a narrowed range would fabricate or hide recoveries.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click the Error count for the episode&rsquo;s 10 most recent failed Files, the OK count for the freshest successes since &mdash; the fastest way to confirm a fix actually took.</li>
+</ul>
 </main>
 </body>
 </html>
