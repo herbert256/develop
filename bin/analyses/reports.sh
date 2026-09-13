@@ -88,6 +88,10 @@ run_bg "$SCRIPT_DIR/reports/cleanup-backlog.sh"
 run_bg "$SCRIPT_DIR/reports/hosts-overview.sh"       # Partners - Outgoing (2026-09-13): the hosts twin of fe-overview — config + both transfer caches + input/<env>/hosts_old.txt + polling.rpt + site-failures.rpt (server pool outputs)
 run_bg "$SCRIPT_DIR/reports/fe-overview.sh"          # Partners - Incoming: config + files cache + logon summary + input/<env>/logons_old.txt + the UC2 pickup sidecar (server pool output — bin/build.sh runs the server reports first)
 wait_all
+# MERGED (2026-09-13, user request): fe-overview.rpt (wave 1, just above) + the
+# Incoming table of the server pool's logon.rpt -> Partners - Incoming
+# (analyses/partners-in.html); reads the two .rpt files only
+"$SCRIPT_DIR/reports/partners-in.sh"
 
 # wave 2 — the ensure_pda_tsvs chain, strictly in order (first-seen moved here
 # 2026-08: its seen split now reads the coverage TSVs, incl. the PDA partners)

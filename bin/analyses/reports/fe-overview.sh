@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 #
-# fe-overview.sh — "Partners - Incoming" (Analyses → Configuration, 2026-09-02, user
-# request; named "FE overview" until 2026-09-03 — the file and page names keep
-# the old name so links stay valid), one row per FE login (the partner-side
+# fe-overview.sh — "FE overview" (Analyses → Configuration, 2026-09-02, user
+# request; "Partners - Incoming" from 2026-09-03 to 2026-09-13, when the COMBINED
+# page analyses/partners-in.html (partners-in.sh: this table + the Incoming
+# logon funnel) took that name — this page stays, under its original name,
+# until the user retires it), one row per FE login (the partner-side
 # credential the UC2 / UC4
 # flows are served through) — the login's status columns plus its pickup
 # figures. It replaced the "FE status information" page (folded in and
@@ -236,7 +238,7 @@ IFS=$'\t' read -r _ n_all n_uc2 n_uc4 n_both n_here n_never n_gw n_old n_in n_ou
 nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"; fi; }
 
 {
-    printf 'TITLE\tPartners - Incoming\n'
+    printf 'TITLE\tFE overview\n'
     printf 'DESC\tEvery FE login on one line: its use cases, the last logon here and on the old gateway, its Files in and out with the retrieved, Waiting and Expired ones and how long the oldest has waited, and its pickups with their cadence.\n'
     # default sort (user request): Waiting (column 8, 0-based) descending, then
     # Files out descending, then Files in descending, then Pickups descending, then Cloud descending, then Gateway descending — the primary key is this modifier; the rest is

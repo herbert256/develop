@@ -196,6 +196,7 @@ N	2026-08-30	0	bin/transfer/reports/protocol-journey.sh
 N	2026-08-30	0	bin/transfer/reports/pda-entities.sh	
 N	2026-08-30	0	bin/transfer/reports/failed.sh	
 N	2026-08-30	0	bin/transfer/reports/arrived-left.sh	
+N	2026-09-13	0	bin/analyses/reports/hosts-overview.sh	
 N	2026-08-30	0	bin/transfer/reports/pirates.sh	
 N	2026-08-30	0	bin/server/reports/errors-day.sh	
 N	2026-08-30	0	bin/server/reports/site-failures.sh	

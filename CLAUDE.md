@@ -1020,7 +1020,10 @@ in the transfer publish renders the 18 pages into `docs/transfer/month-stats/` w
 rows (month, entity), no date filter, help page `month-stats`; listed in `_analyses_groups`,
 the finder's static rows and the sitemap). A FOURTH dropdown, **Goodies**
 (`GOODIES_MENU`, 2026-09-13, user request), is a hand-written SHORT CUT to the best reports —
-Partners - Incoming · Logons (incoming) · Partners - Outgoing (analyses/hosts-overview.html, the
+FE overview (analyses/fe-overview.html — "Partners - Incoming" until 2026-09-13, when the COMBINED
+analyses/partners-in.html, `bin/analyses/reports/partners-in.sh` = fe-overview.rpt + the Incoming
+logon funnel of logon.rpt, one row per login, took that name; both source pages stay until the
+user retires them) · Logons (incoming) · Partners - Outgoing (analyses/hosts-overview.html, the
 hosts twin of Partners - Incoming for UC1/UC3, `bin/analyses/reports/hosts-overview.sh`, 2026-09-13) ·
 Transfer Duration · Failed Subscriptions · Subscriptions (the analyses/subscriptions.html
 configuration list) · Polling (analyses/polling.html; both added 2026-09-13) — the pages
