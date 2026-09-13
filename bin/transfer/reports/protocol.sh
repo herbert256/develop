@@ -3,7 +3,7 @@
 # protocol.sh
 # Breaks Axway FlowManager transfers down by PROTOCOL (field 20: pesit, ssh,
 # ftp, routing, ...) and by DIRECTION (field 8: Inbound/Outbound), showing
-# record counts, Error/OK split and data volume, plus a protocol x
+# record counts (the OK legs since 2026-09-13) and data volume, plus a protocol x
 # direction crosstab. "Failed Subtransmission" is folded into "Failed".
 # The page also carries the direction x action-by breakdown (formerly
 # direction-action.sh) and the BINARY/ASCII mode split (formerly mode.sh),
@@ -79,7 +79,9 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
             mdl[mode SUBSEP d]++;  mdf[mode SUBSEP d] += f;  mdp[mode SUBSEP d] += (!f)
         }
     }
-    function rshare(x) { return tr2 > 0 ? sprintf("%.1f", x * 100 / tr2) : "0.0" }
+    # the share is over the OK legs (2026-09-13, user request: the one
+    # Transfers column of every table is the OK count — no Error / OK pair)
+    function rshare(x) { return tp > 0 ? sprintf("%.1f", x * 100 / tp) : "0.0" }
     END {
         for (k in pdl) { split(k, a, SUBSEP); pbk[a[1]] = pbk[a[1]] (pbk[a[1]] ? "," : "") a[2] ":" pdl[k] ":" (pdf[k]+0) ":" (pdp[k]+0) ":" pdb[k] }
         for (k in ddl) { split(k, a, SUBSEP); dbk[a[1]] = dbk[a[1]] (dbk[a[1]] ? "," : "") a[2] ":" ddl[k] ":" (ddf[k]+0) ":" (ddp[k]+0) ":" ddb[k] }
@@ -87,9 +89,9 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         for (k in adl) { split(k, a, SUBSEP); abk[a[1]] = abk[a[1]] (abk[a[1]] ? "," : "") a[2] ":" adl[k] ":" (adf[k]+0) ":" (adp[k]+0) }
         for (k in ydl) { split(k, a, SUBSEP); kk2 = a[1] SUBSEP a[2]; ybk[kk2] = ybk[kk2] (ybk[kk2] ? "," : "") a[3] ":" ydl[k] ":" (ydf[k]+0) ":" (ydp[k]+0) }
         for (k in mdl) { split(k, a, SUBSEP); mbk[a[1]] = mbk[a[1]] (mbk[a[1]] ? "," : "") a[2] ":" mdl[k] ":" (mdf[k]+0) ":" (mdp[k]+0) }
-        for (k in pr) printf "PROTO|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s\n", k, pr[k], pf[k]+0, pp[k]+0, pb[k], human(pb[k]), rshare(pr[k]), pbk[k], buildlist(top["PRO" SUBSEP k SUBSEP "F"]), buildlist(top["PRO" SUBSEP k SUBSEP "P"])
-        for (k in dr) printf "DIR|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s\n",   k, dr[k], dff[k]+0, dpp[k]+0, db[k], human(db[k]), rshare(dr[k]), dbk[k], buildlist(top["DIR" SUBSEP k SUBSEP "F"]), buildlist(top["DIR" SUBSEP k SUBSEP "P"])
-        for (k in xr) printf "PXD|%s|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s\n", xp[k], xd[k], xr[k], xff[k]+0, xpp[k]+0, xb[k], human(xb[k]), rshare(xr[k]), xbk[k], buildlist(top["PXD" SUBSEP k SUBSEP "F"]), buildlist(top["PXD" SUBSEP k SUBSEP "P"])
+        for (k in pr) printf "PROTO|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s\n", k, pr[k], pf[k]+0, pp[k]+0, pb[k], human(pb[k]), rshare(pp[k]+0), pbk[k], buildlist(top["PRO" SUBSEP k SUBSEP "F"]), buildlist(top["PRO" SUBSEP k SUBSEP "P"])
+        for (k in dr) printf "DIR|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s\n",   k, dr[k], dff[k]+0, dpp[k]+0, db[k], human(db[k]), rshare(dpp[k]+0), dbk[k], buildlist(top["DIR" SUBSEP k SUBSEP "F"]), buildlist(top["DIR" SUBSEP k SUBSEP "P"])
+        for (k in xr) printf "PXD|%s|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s\n", xp[k], xd[k], xr[k], xff[k]+0, xpp[k]+0, xb[k], human(xb[k]), rshare(xpp[k]+0), xbk[k], buildlist(top["PXD" SUBSEP k SUBSEP "F"]), buildlist(top["PXD" SUBSEP k SUBSEP "P"])
         for (k in ar) printf "AB|%s|%d|%d|%d|%s|%s|%s\n", k, ar[k], afl[k]+0, app[k]+0, abk[k], buildlist(top["AB" SUBSEP k SUBSEP "F"]), buildlist(top["AB" SUBSEP k SUBSEP "P"])
         for (k in yr) printf "X|%s|%s|%d|%d|%d|%s|%s|%s\n", yd[k], ya[k], yr[k], yff[k]+0, ypp[k]+0, ybk[k], buildlist(top["X" SUBSEP k SUBSEP "F"]), buildlist(top["X" SUBSEP k SUBSEP "P"])
         for (k in mr) printf "MODE|%s|%d|%d|%d|%s|%s|%s\n", k, mr[k], mf[k]+0, mp[k]+0, mbk[k], buildlist(top["M" SUBSEP k SUBSEP "F"]), buildlist(top["M" SUBSEP k SUBSEP "P"])
@@ -109,78 +111,71 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human <<< "$(pr
 # ROW lines. `|| true` keeps a tag with no lines at all from tripping pipefail.
 {
     printf 'TITLE\tProtocol, Direction & Mode\n'
-    printf 'DESC\tTransfers, Error/OK and volume by protocol and direction, the direction x action-by breakdown, and the BINARY/ASCII transfer mode split — the per-leg dimensions on one page.\n'
+    printf 'DESC\tTransfers (the OK legs) and volume by protocol and direction, the direction x action-by breakdown, and the BINARY/ASCII transfer mode split — the per-leg dimensions on one page.\n'
     printf 'INTRO\t%s total volume across all protocols.\n' "$tot_human"
 
+    # TRANSFERS = the OK legs in every table (2026-09-13, user request: one
+    # Transfers column, no Error / OK pair, no green/red cells, no drills);
+    # the bucket payloads keep all metrics, so the tokens read metric 2 (ok)
+    # for Transfers and the share, metric 3 for Volume; rows sort by it
     printf 'TABLE\tBy protocol\tdrill=transfer\n'
-    printf 'HEAD\tProtocol\tTransfers\tError\tOK\tVolume\t%% of transfers\n'
-    printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\tnum\n'
-    printf 'RECALC\t-\ts0\ts1\ts2\th3\t%%0\n'
+    printf 'HEAD\tProtocol\tTransfers\tVolume\t%% of transfers\n'
+    printf 'KIND\ttext\tnum\tnum\tnum\n'
+    printf 'RECALC\t-\ts2\th3\t%%2\n'
     # key | records | failed | processed | bytes | human | share | buckets | drills
-    printf '%s\n' "$agg" | grep '^PROTO|' | sort -t'|' -k3,3nr | awk -F'|' '
-        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-                          $2, $3, $4, $5, $7, $8, $9, $10, $11 }' || true
-    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num}100.0%%\n' \
-        "$tot_rec" "$tot_failed" "$tot_processed" "$tot_human"
+    printf '%s\n' "$agg" | grep '^PROTO|' | sort -t'|' -k5,5nr | awk -F'|' '
+        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\n", $2, $5, $7, $8, $9 }' || true
+    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_processed" "$tot_human"
 
     printf 'TABLE\tBy direction\tdrill=transfer\n'
-    printf 'HEAD\tDirection\tTransfers\tError\tOK\tVolume\t%% of transfers\n'
-    printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\tnum\n'
-    printf 'RECALC\t-\ts0\ts1\ts2\th3\t%%0\n'
-    printf '%s\n' "$agg" | grep '^DIR|' | sort -t'|' -k3,3nr | awk -F'|' '
-        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-                          $2, $3, $4, $5, $7, $8, $9, $10, $11 }' || true
-    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num}100.0%%\n' \
-        "$tot_rec" "$tot_failed" "$tot_processed" "$tot_human"
+    printf 'HEAD\tDirection\tTransfers\tVolume\t%% of transfers\n'
+    printf 'KIND\ttext\tnum\tnum\tnum\n'
+    printf 'RECALC\t-\ts2\th3\t%%2\n'
+    printf '%s\n' "$agg" | grep '^DIR|' | sort -t'|' -k5,5nr | awk -F'|' '
+        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\n", $2, $5, $7, $8, $9 }' || true
+    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_processed" "$tot_human"
 
     printf 'TABLE\tProtocol × direction\tdrill=transfer\n'
-    printf 'HEAD\tProtocol\tDirection\tTransfers\tError\tOK\tVolume\t%% of transfers\n'
-    printf 'KIND\ttext\ttext\tnum\tnumfailed\tnumprocessed\tnum\tnum\n'
-    printf 'RECALC\t-\t-\ts0\ts1\ts2\th3\t%%0\n'
-    printf '%s\n' "$agg" | grep '^PXD|' | sort -t'|' -k4,4nr | awk -F'|' '
-        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-                          $2, $3, $4, $5, $6, $8, $9, $10, $11, $12 }' || true
-    printf 'TOTAL\t@{colspan=2}Total\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_rec" "$tot_failed" "$tot_processed" "$tot_human"
+    printf 'HEAD\tProtocol\tDirection\tTransfers\tVolume\t%% of transfers\n'
+    printf 'KIND\ttext\ttext\tnum\tnum\tnum\n'
+    printf 'RECALC\t-\t-\ts2\th3\t%%2\n'
+    printf '%s\n' "$agg" | grep '^PXD|' | sort -t'|' -k6,6nr | awk -F'|' '
+        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\n", $2, $3, $6, $8, $9, $10 }' || true
+    printf 'TOTAL\t@{colspan=2}Total\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_processed" "$tot_human"
 
-    printf 'NOTE\tCounts individual transfers (legs), not Files: one File has an Inbound row (e.g. ssh) and an Outbound row (e.g. pesit), so protocol/direction are per leg. Click an Error or OK count for that outcome'\''s 10 most recent transfers (newest first).\n'
+    printf 'NOTE\tCounts individual transfers (legs), not Files: one File has an Inbound row (e.g. ssh) and an Outbound row (e.g. pesit), so protocol/direction are per leg.\n'
 
     # ---- Direction x Action By (formerly direction-action.sh, absorbed 2026-07)
-    printf 'INTRO\tTransfer legs by **Direction** (Inbound/Outbound), by **Action By**, and their crosstab, each split into Error/OK. Counts physical **Transfers** — one per log row — so one File'\''s inbound and outbound legs count once each.\n'
+    printf 'INTRO\tTransfer legs by **Direction** (Inbound/Outbound), by **Action By**, and their crosstab — the OK legs. Counts physical **Transfers** — one per log row — so one File'\''s inbound and outbound legs count once each.\n'
 
     printf 'TABLE\tBy action by\tdrill=transfer\n'
-    printf 'HEAD\tAction By\tTransfers\tError\tOK\n'
-    printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\n'
-    printf 'RECALC\t-\ts0\ts1\ts2\n'
-    printf '%s\n' "$agg" | grep '^AB|' | sort -t'|' -k3,3nr | awk -F'|' '
-        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-                          $2, $3, $4, $5, $6, $7, $8 }' || true
-    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\n' \
-        "$tot_rec" "$tot_failed" "$tot_processed"
+    printf 'HEAD\tAction By\tTransfers\n'
+    printf 'KIND\ttext\tnum\n'
+    printf 'RECALC\t-\ts2\n'
+    printf '%s\n' "$agg" | grep '^AB|' | sort -t'|' -k5,5nr | awk -F'|' '
+        $2 != "" { printf "ROW\t%s\t%s\t@data:buckets=%s\n", $2, $5, $6 }' || true
+    printf 'TOTAL\tTotal\t@{class=num}%s\n' "$tot_processed"
 
     printf 'TABLE\tDirection x action by\tdrill=transfer\n'
-    printf 'HEAD\tDirection\tAction By\tTransfers\tError\tOK\n'
-    printf 'KIND\ttext\ttext\tnum\tnumfailed\tnumprocessed\n'
-    printf 'RECALC\t-\t-\ts0\ts1\ts2\n'
-    printf '%s\n' "$agg" | grep '^X|' | sort -t'|' -k4,4nr | awk -F'|' '
-        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-                          $2, $3, $4, $5, $6, $7, $8, $9 }' || true
-    printf 'TOTAL\t@{colspan=2}Total\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\n' \
-        "$tot_rec" "$tot_failed" "$tot_processed"
+    printf 'HEAD\tDirection\tAction By\tTransfers\n'
+    printf 'KIND\ttext\ttext\tnum\n'
+    printf 'RECALC\t-\t-\ts2\n'
+    printf '%s\n' "$agg" | grep '^X|' | sort -t'|' -k6,6nr | awk -F'|' '
+        $2 != "" { printf "ROW\t%s\t%s\t%s\t@data:buckets=%s\n", $2, $3, $6, $7 }' || true
+    printf 'TOTAL\t@{colspan=2}Total\t@{class=num}%s\n' "$tot_processed"
 
-    printf 'NOTE\tCounts individual transfers (legs), not Files: direction and action-by are per leg (a File has an Inbound and an Outbound row). Click an Error or OK count for that outcome'\''s 10 most recent transfers (newest first).\n'
+    printf 'NOTE\tCounts individual transfers (legs), not Files: direction and action-by are per leg (a File has an Inbound and an Outbound row).\n'
 
     # ---- Transfer mode BINARY/ASCII (formerly mode.sh, absorbed 2026-07) -----
     printf 'INTRO\tHow transfers moved their files, from the log **Mode** column: **BINARY** vs **ASCII**. Counts are per transfer.\n'
     printf 'TABLE\t\tdrill=transfer\n'
-    printf 'HEAD\tMode\tTransfers\tError\tOK\n'
-    printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\n'
-    printf 'RECALC\t-\ts0\ts1\ts2\n'
-    printf '%s\n' "$agg" | grep '^MODE|' | sort -t'|' -k3,3nr | awk -F'|' '
-        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-                          $2, $3, $4, $5, $6, $7, $8 }' || true
-    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\n' \
-        "$tot_rec" "$tot_failed" "$tot_processed"
-    printf 'NOTE\tCounts individual transfers (legs), not Files: Mode is a per-leg attribute. Click an Error or OK count to see that outcome'\''s 10 most recent transfers.\n'
+    printf 'HEAD\tMode\tTransfers\n'
+    printf 'KIND\ttext\tnum\n'
+    printf 'RECALC\t-\ts2\n'
+    printf '%s\n' "$agg" | grep '^MODE|' | sort -t'|' -k5,5nr | awk -F'|' '
+        $2 != "" { printf "ROW\t%s\t%s\t@data:buckets=%s\n", $2, $5, $6 }' || true
+    printf 'TOTAL\tTotal\t@{class=num}%s\n' "$tot_processed"
+    printf 'NOTE\tCounts individual transfers (legs), not Files: Mode is a per-leg attribute.\n'
 
     printf 'SUMMARY\tTotal transfers: %s  |  Total volume: %s\n' "$tot_rec" "$tot_human"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

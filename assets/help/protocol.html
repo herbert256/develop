@@ -20,7 +20,7 @@
 <p>Six tabs break transfers down along the per-leg dimensions (the 2026-07 merge of the former Direction &amp; Action By and Mode reports — old links land here): <strong>Protocol</strong> (e.g. pesit, ssh, ftp, routing), <strong>Direction</strong> (Inbound/Outbound), the Protocol × Direction <strong>Crosstab</strong>, <strong>Action By</strong> (who initiated the leg), the Direction × Action By crosstab, and the BINARY/ASCII transfer <strong>Mode</strong> split. Each row shows the transfer count, its Error/OK split, the volume where applicable, and its share of all transfers.</p>
 <h2>How it's computed</h2>
 <p>These tables count individual <strong>transfers (legs)</strong>, not Files: one File typically has an Inbound row on one protocol (say ssh) and an Outbound row on another (say pesit), so protocol and direction are attributes of each physical row, not of the logical transfer as a whole. "Failed Subtransmission" is folded into Failed everywhere in these tables.</p>
-<p>Click an Error or OK count (or, in the crosstab, click a row) to expand the 10 most recent matching transfers.</p>
+<p>Since 2026-09-13 every table shows one <strong>Transfers</strong> column holding the OK legs &mdash; no Error / OK split and no green or red cells.</p>
 </main>
 </body>
 </html>

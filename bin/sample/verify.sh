@@ -539,6 +539,18 @@ done
 got=$(awk -F'\t' '$1 == "TOTAL" && $2 == "@{colspan=2}Files" { v = $3; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/transfer/reports/file-journey.rpt 2>/dev/null)
 check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "file-journey Arrived / Left Files total is '${got:-absent}', the caches hold ${want:-?} OK Files"
 
+# the Protocol & Security group tables carry ONE Transfers column — the OK
+# legs — and no Error / OK pair (2026-09-13, user request): no green/red
+# cells on the protocol / security-params pages and their per-value pages,
+# the By protocol Transfers total = the caches' Processed legs
+n=$(awk -F'\t' '$1 == "HEAD" && (/\tOK\t|\tOK$|\tError\t|\tError$/) { n++ } END { print n + 0 }' data/transfer/reports/protocol.rpt data/transfer/reports/security-params.rpt data/transfer/reports/secparams/*.rpt 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "protocol / security-params rpts still have $n table header(s) with an OK / Error column"
+n=$(grep -c 'class="num failed"\|class="num processed"' docs/transfer/protocol-*.html docs/transfer/security-params-*.html docs/transfer/secparams/*.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n green/red (OK/Error) cells left on the Protocol & Security group pages"
+want=$(awk -F'\t' '{ s = $3; sub(/ Subtransmission$/, "", s); if (s == "Processed") n++ } END { print n + 0 }' "$T" 2>/dev/null)
+got=$(awk -F'\t' '$1 == "TABLE" && $2 == "By protocol" { p = 1 } p && $1 == "TOTAL" { v = $3; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/transfer/reports/protocol.rpt 2>/dev/null)
+check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "protocol By protocol Transfers total is '${got:-absent}', the caches hold ${want:-?} Processed legs"
+
 # the Duration report holds BOTH per-day tables side by side (2026-09-13,
 # user request): percentiles first (the home page reads it by title), then
 # min / avg / median / max; the Min/Avg/Max sibling pages are gone and the

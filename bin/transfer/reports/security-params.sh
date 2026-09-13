@@ -31,10 +31,11 @@ OUT="$REPORTS_DIR/security-params.rpt"
 # Inject it the COREIDS_AWK way, with -v smap= and -v d=.
 SECROW_AWK='
     BEGIN { while ((getline _l < smap) > 0) { split(_l, _a, "\t"); if (_a[1] == d) sl[_a[2]] = _a[3] } close(smap) }
-    { bk = ($5 == "-") ? "" : $5; cf = ($6 == "-") ? "" : $6; cp = ($7 == "-") ? "" : $7
+    { bk = ($5 == "-") ? "" : $5
       lk = ($1 in sl) ? "@{href=secparams/" sl[$1] ".html}" : ""
-      printf "ROW\t%s%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-          lk, $1, $2, $3, $4, bk, cf, cp }
+      # TRANSFERS = the OK legs ($4) — one column, no Error / OK pair, no
+      # green/red cells, no drills (2026-09-13, user request)
+      printf "ROW\t%s%s\t%s\t@data:buckets=%s\n", lk, $1, $4, bk }
 '
 
 shopt -s nullglob
@@ -229,15 +230,15 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
     # page (a subscription with >1 partner counts under each; subscriptions with
     # no configured partner -> "(none)")
     function subtotal() {
-        printf "TOTAL\tTotal (%d subscription(s))\t\t@{class=num}%d\t@{class=num failed}%d\t@{class=num processed}%d\n", sn, sc, sf, sp > out
+        printf "TOTAL\tTotal (%d subscription(s))\t\t@{class=num}%d\n", sn, sp > out
         printf "TABLE\tPartners\n" > out
-        printf "HEAD\tPartner\tSubscriptions\tTransfers\tError\tOK\n" > out
-        printf "KIND\tptn\tnum\tnum\tnumfailed\tnumprocessed\n" > out
+        printf "HEAD\tPartner\tSubscriptions\tTransfers\n" > out
+        printf "KIND\tptn\tnum\tnum\n" > out
         ptbl = 1
     }
     function closepage() {
         if (!ptbl) subtotal()
-        printf "TOTAL\tTotal (%d partner(s))\t@{class=num}%d\t@{class=num}%d\t@{class=num failed}%d\t@{class=num processed}%d\n", pn, ps, pc, pf, pp > out
+        printf "TOTAL\tTotal (%d partner(s))\t@{class=num}%d\t@{class=num}%d\n", pn, ps, pp > out
         printf "NOTE\tCounts individual transfers (legs) — security parameters are negotiated per leg. Full period (this page is not date-filtered). Click a subscription or partner to open its detail page. Partners use the site-wide UNION attribution: a leg counts under every partner of its subscription AND under the partner its remote host resolves to, so a subscription with more than one partner is counted under each in the Partners table.\n" > out
         printf "FOOT\tGenerated on %s\n", gen > out
         close(out)
@@ -250,14 +251,14 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
         printf "DESC\tSubscriptions that used %s \"%s\" on at least one transfer.\n", $4, $5 > out
         printf "INTRO\tEvery subscription (and its partner) that used **%s: %s** on at least one transfer leg. Counts are transfers (legs), full period.\n", $4, $5 > out
         printf "TABLE\t\n" > out                 # empty heading — the h1 names the page
-        printf "HEAD\tSubscription\tPartner\tTransfers\tError\tOK\n" > out
-        printf "KIND\tsite\tptn\tnum\tnumfailed\tnumprocessed\n" > out
+        printf "HEAD\tSubscription\tPartner\tTransfers\n" > out
+        printf "KIND\tsite\tptn\tnum\n" > out
         next
     }
-    $2 == 1 { printf "ROW\t%s\t%s\t%s\t%s\t%s\n", $3, $4, $5, $6, $7 > out
+    $2 == 1 { printf "ROW\t%s\t%s\t%s\n", $3, $4, $7 > out
               sn++; sc += $5; sf += $6; sp += $7; next }
     { if (!ptbl) subtotal()
-      printf "ROW\t%s\t%s\t%s\t%s\t%s\n", $3, $4, $5, $6, $7 > out
+      printf "ROW\t%s\t%s\t%s\n", $3, $4, $7 > out
       pn++; ps += $4; pc += $5; pf += $6; pp += $7 }
     END { if (out != "") closepage() }
 '
@@ -270,15 +271,18 @@ emit_attr() {   # $1 = attribute key
     # transfer-protocol table above — label it so the two aren't both "Protocol".
     [ "$key" = "Protocol" ] && label="TLS version"
     printf 'TABLE\t\tdrill=transfer\n'          # no title — the first column header names the table
-    printf 'HEAD\t%s\tTransfers\tError\tOK\n' "$label"
-    printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\n'
-    printf 'RECALC\t-\ts0\ts1\ts2\n'
+    # TRANSFERS = the OK legs (2026-09-13, user request: one Transfers column,
+    # no Error / OK pair, no green/red cells, no drills); the bucket payload
+    # keeps its metrics, so the token reads metric 2 (ok); rows sort by it
+    printf 'HEAD\t%s\tTransfers\n' "$label"
+    printf 'KIND\ttext\tnum\n'
+    printf 'RECALC\t-\ts2\n'
     printf '%s\n' "$agg" | awk -F'|' -v k="$key" '$1=="ATTR" && $2==k { print $3"\t"$4"\t"$5"\t"$6"\t"$7"\t"$8"\t"$9 }' \
-        | sort -t$'\t' -k2,2nr | awk -F'\t' -v smap="$smap" -v d="$key" "$SECROW_AWK"
-    # Per-table total: the sum of this attribute's rows (attributes cover only
+        | sort -t$'\t' -k4,4nr | awk -F'\t' -v smap="$smap" -v d="$key" "$SECROW_AWK"
+    # Per-table total: the sum of this attribute's OK rows (attributes cover only
     # the legs whose SecurityParameters name them, so each table totals its own).
-    printf '%s\n' "$agg" | awk -F'|' -v k="$key" '$1=="ATTR" && $2==k { c += $4; f += $5; p += $6 }
-        END { printf "TOTAL\tTotal\t@{class=num}%d\t@{class=num failed}%d\t@{class=num processed}%d\n", c+0, f+0, p+0 }'
+    printf '%s\n' "$agg" | awk -F'|' -v k="$key" '$1=="ATTR" && $2==k { p += $6 }
+        END { printf "TOTAL\tTotal\t@{class=num}%d\n", p+0 }'
 }
 
 {
@@ -293,7 +297,7 @@ emit_attr() {   # $1 = attribute key
         emit_attr "$pk"
     done
 
-    printf 'NOTE\tCounts individual transfers (legs), not Files: security parameters are negotiated per leg (the Inbound and Outbound rows use different ciphers/protocols). Error/OK split those transfers by status; click an Error or OK count for that outcome'\''s 10 most recent transfers. Click a value in the first column for the subscriptions that use it.\n'
+    printf 'NOTE\tCounts individual transfers (legs), not Files: security parameters are negotiated per leg (the Inbound and Outbound rows use different ciphers/protocols). Transfers = the OK legs (2026-09-13 — the Error / OK split is gone); click a value in the first column for the subscriptions that use it.\n'
     printf 'SUMMARY\tTotal transfers: %s  |  Error: %s  |  OK: %s\n' "$tot_legs" "$tot_failed" "$tot_processed"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
