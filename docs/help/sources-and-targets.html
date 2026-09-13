@@ -26,6 +26,11 @@
 <p><strong>Targets used by multiple subscriptions.</strong> The same for target folders &mdash; one block per target shared by two or more subscriptions.</p>
 <h2>How it's computed</h2>
 <p>The source/target values and the <code>@ host</code> come from the same inputs as the Search page: each subscription's detail-page From/To rows, plus the configured remote host and file-movement direction (the host is appended to whichever side is remote &mdash; the source on a pull flow, the target otherwise). Per-subscription <strong>Error</strong> and <strong>OK</strong> counts are the subscription's own transfer outcome. This is a configuration analysis over <code>subscriptions.json</code>, so it carries no From/To date filter.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">Every subscription reads from a <strong>source</strong> folder and writes to a <strong>target</strong> folder; a remote-partner endpoint shows its host after an <strong>@</strong> (exactly as on the Search page). Three tables: paths that serve as <strong>both</strong> a source and a target (internal hand-offs), <strong>sources</strong> used by more than one subscription, and <strong>targets</strong> used by more than one subscription. Each row links to the subscription and is tinted by its status.</p>
+<p class="note">A <strong>remote</strong> source/target (an endpoint we dial) carries its partner host after <strong>@</strong>; a local SecureTransport path has none. A value in the first table is written by one subscription and read by another — an internal hand-off. Error/OK are each subscription's own transfer outcome.</p>
+</section>
 </main>
 </body>
 </html>

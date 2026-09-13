@@ -18,7 +18,6 @@
 <body>
 <div class="topbar" data-b="../" data-help="waiting"></div>
 <h1>Waiting Files</h1>
-<p class="range">A UC2 file is COLLECTED by the partner: it arrives from CFT in three quick legs (PeSIT in, routing out, routing in), then sits STAGED until the partner dials in over SSH and picks it up. A file still staged at the end of the data window has outcome <strong>Waiting</strong> — not an error, just not collected yet. A staged file the nightly File Maintenance retention sweep (~11 days) DELETED before any pickup is <strong>Expired</strong> — never delivered. Right now <strong>91</strong> File(s) across <strong>10</strong> subscription(s) are waiting (oldest staged <strong>2026-06-24 23:01:39 (UC2-INFRA_ST-MONITOR_INFRA)</strong>), <strong>385</strong> File(s) across <strong>21</strong> subscription(s) have expired, and <strong>5165</strong> staged File(s) were collected. The pickup wait is EXCLUDED from every UC2 Duration figure on this site. Below the four state tables: the day-by-day <strong>staged backlog</strong> curve (peak <strong>117</strong> file(s) on 2026-07-23), the <strong>Will expire next</strong> call list, and the per-partner and per-week <strong>pickup-wait</strong> statistics. Click a row for the 10 most recent Files.</p>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Subscription</th><th class="num">Waiting Files</th><th>Oldest staged</th><th>Waiting for</th><th>Newest staged</th><th class="num">Collected</th></tr>
 <tr data-coreids="2026-08-28 15:01:51.709  4ea415f7-2767-40af-9268-b5cdaf8d7c40,2026-08-28 04:32:03.574  18976323-936e-4301-baf5-44ffd9f30bd9,2026-08-27 02:33:02.717  0c80aa96-9af2-4c6a-9669-6950178bbeb0,2026-08-22 18:01:41.164  ffea8c34-e26f-4ff0-b605-e4ace5cd1b39,2026-08-21 02:35:00.894  767bbe93-d092-4558-8122-949489fff197,2026-08-16 18:02:05.878  eeb9bf29-5a09-4381-b315-a9999a1635e6,2026-08-15 13:03:03.955  1983197c-56fc-4efc-9622-232bf204ea97,2026-08-12 09:31:32.398  8c6d6943-ea62-4f32-8d16-6c2f8f34be82,2026-08-12 01:31:37.893  60b803d4-911a-4509-a02f-4d73fa6d0e87,2026-08-11 18:02:46.662  498b4831-9cd3-408c-ade6-28aebaf2752e"><td>UC2-INFRA_ST-MONITOR_INFRA <a class="dlicon" href="../details/subscriptions/uc2-infra-st-monitor-infra.html" title="Open the detail page">&#8599;</a></td><td class="num warn">29</td><td>2026-06-24 23:01:39</td><td>66d 0h</td><td>2026-08-28 15:01:51</td><td class="num">3096</td></tr>
@@ -33,7 +32,6 @@
 <tr data-coreids="2026-08-28 16:05:27.424  e0d8a458-ae88-494f-8b40-7a42be2857ea"><td>STMT_EXPORT_GLOBEX_08 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-08.html" title="Open the detail page">&#8599;</a></td><td class="num warn">1</td><td>2026-08-28 16:05:27</td><td>1d 7h</td><td>2026-08-28 16:05:27</td><td class="num">71</td></tr>
 <tr class="total"><td>Total (10 subscriptions)</td><td class="num warn">91</td><td>2026-06-24 23:01:39</td><td></td><td></td><td class="num">4297</td></tr>
 </table></div>
-<p class="note">A <strong>Waiting</strong> File arrived and was staged (its last leg is the Inbound routing one) but no partner collect leg followed — and its staged copy has NOT been deleted yet, so the partner can still pick it up (once the retention sweep removes it, the File moves to the Expired table below). <strong>Waiting for</strong> counts from the staging moment to the dataset's last record (2026-08-29 23:57:46) — a file may have been collected after the export. Collected = the same subscription's Files that WERE picked up. Sorted oldest-waiting first. Click a row for the 10 most recent waiting Files.</p>
 <h2>Files waiting the longest</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Staged</th><th>Subscription</th><th>Account</th><th>File</th><th>Size</th><th>Waiting for</th></tr>
@@ -89,7 +87,6 @@
 <tr><td>2026-08-21 17:33:16</td><td class="cl"><a href="../details/subscriptions/uc2-aps-vida-umbrella.html">UC2_APS_VIDA_UMBRELLA</a></td><td class="cl"><a href="../details/accounts/aps-vida-umbrella.html">APS-VIDA-UMBRELLA</a></td><td class="file">AcmeAPS_VIDA_UMBRELLA_20260821063196_287671.csv</td><td>63.3 KB</td><td>8d 6h</td></tr>
 <tr class="total"><td>Total (50 of 91 waiting Files shown)</td><td></td><td></td><td></td><td>2.2 MB</td><td></td></tr>
 </table></div>
-<p class="note">The <strong>50</strong> longest-waiting individual Files, oldest first.</p>
 <h2>Expired — deleted before pickup, per subscription</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Subscription</th><th class="num">Expired Files</th><th>First staged</th><th>Last staged</th><th>Last deletion</th></tr>
@@ -116,7 +113,6 @@
 <tr data-coreids="2026-07-16 14:40:12.741  ff682b7e-5dfe-4ff2-81ef-d221ad535daf"><td>UC2_CD_ARIVA_DUNDER <a class="dlicon" href="../details/subscriptions/uc2-cd-ariva-dunder.html" title="Open the detail page">&#8599;</a></td><td class="num warn">1</td><td>2026-07-16 14:40:12</td><td>2026-07-16 14:40:12</td><td>2026-07-27 03:02:14.183</td></tr>
 <tr class="total"><td>Total (21 subscriptions)</td><td class="num warn">385</td><td></td><td></td><td></td></tr>
 </table></div>
-<p class="note">Staged Files the nightly <strong>File Maintenance</strong> retention sweep deleted (~11 days after staging) before any partner pickup — <strong>never delivered</strong>, and no longer collectable. The deletion timestamp comes from the server log (there is NO transfer-log record of the deletion) and is stored as the <strong>Expired</strong> field (_files.tsv col 22) by the bin/expire-files.sh build step. Expired Files count as <strong>Error</strong> on every report. Click a row for the 10 most recent expired Files.</p>
 <h2>Pickup wait — collected files, per subscription</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Subscription</th><th class="num">Collected</th><th>Median wait</th><th>Average wait</th><th>Max wait</th><th class="num">Within 1 h</th><th class="num">1 - 24 h</th><th class="num">Over 24 h</th></tr>
@@ -144,7 +140,6 @@
 <tr><td class="cl"><a href="../details/subscriptions/uc2-cd-ariva-sabre.html">UC2_CD_ARIVA_SABRE</a></td><td class="num">17</td><td>20 min</td><td>26 min</td><td>1h 33m</td><td class="num processed">16</td><td class="num">1</td><td class="num warn z"></td></tr>
 <tr class="total"><td>Total (22 subscriptions)</td><td class="num">5165</td><td></td><td></td><td></td><td class="num processed">4772</td><td class="num">393</td><td class="num warn z"></td></tr>
 </table></div>
-<p class="note">How long the partner took to collect: from the staging leg ending to the FIRST collect leg starting (repeat collects of the same File count once). This wait is what parse.sh excludes from the UC2 Duration figures.</p>
 <h2>Staged backlog over time</h2>
 <div class="tablewrap"><table data-nofilter="1" data-nosearch="1">
 <tr><th>Date</th><th class="num">Staged Files in inventory</th><th>Staged volume</th></tr>
@@ -218,7 +213,6 @@
 <tr><td>2026-08-29</td><td class="num">91</td><td>83.2 MB</td></tr>
 <tr class="total"><td>Total (68 days)</td><td class="num"></td><td></td></tr>
 </table></div>
-<p class="note">The staged-but-uncollected inventory, reconstructed per day: every staged File occupies the days from its staging day up to (not including) the day the partner collected it or the retention sweep deleted it — a same-day pickup never sits in the overnight inventory, and a still-Waiting File occupies through the window end, so the LAST day equals the Waiting count above (<strong>91</strong>). Peak backlog: <strong>117</strong> file(s) on <strong>2026-07-23</strong>. Volume is the staged bytes sitting in inventory that day.</p>
 <h2>Will expire next</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1" data-restint="1">
 <tr><th>Subscription</th><th class="num">Files at risk</th><th>Oldest staged</th><th>Age</th></tr>
@@ -231,7 +225,6 @@
 <tr data-coreids="2026-08-19 16:14:42.563  08c49d87-27c1-4174-9bb7-5efbb37deebd" data-res="red"><td>STMT_EXPORT_GLOBEX_07 <a class="dlicon" href="../details/subscriptions/stmt-export-globex-07.html" title="Open the detail page">&#8599;</a></td><td class="num">1</td><td>2026-08-19 16:14:42</td><td>10 days</td></tr>
 <tr class="total"><td>Total (7 subscriptions)</td><td class="num warn">42</td><td></td><td></td></tr>
 </table></div>
-<p class="note"><strong>Call the partner today.</strong> These Waiting Files have been staged for <strong>9 days or more</strong> (vs the dataset's last day) — the nightly File Maintenance retention sweep deletes staged copies after ~11 days, so without a pickup in the next day or two they move to the Expired table above and are never delivered. Age is the oldest File's. Click a row for the 10 most recent Files at risk.</p>
 <h2>Pickup wait percentiles per partner</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Partner</th><th class="num">Collected Files</th><th>Median wait</th><th>p95 wait</th><th>Max wait</th><th class="num">Waited over 8 days</th></tr>
@@ -250,7 +243,6 @@
 <tr><td class="cl"><a href="../details/partners/sabre.html">SABRE</a></td><td class="num">17</td><td>20 min</td><td>41 min</td><td>1h 33m</td><td class="num warn z"></td></tr>
 <tr class="total"><td>Total (13 partners)</td><td class="num">5158</td><td></td><td></td><td></td><td class="num warn z"></td></tr>
 </table></div>
-<p class="note">Collected Files rolled up to the PARTNER (the site-wide UNION attribution: a File counts for every partner of its subscription plus the host-resolved one, so the partner counts can sum past the collected total). Median = the typical pickup, <strong>p95</strong> = the slow tail, and <strong>Waited over 8 days</strong> are the near-misses — collected, but within a couple of days of the ~11-day retention sweep. A partner with a fat p95 or near-misses is one pause away from the Expired table.</p>
 <h2>Pickup wait per week — busiest subscriptions</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Subscription</th><th>Week of</th><th class="num">Collected Files</th><th>Median wait</th><th>Average wait</th></tr>
@@ -356,7 +348,6 @@
 <tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-02.html">STMT_EXPORT_GLOBEX_02</a></td><td>2026-08-24</td><td class="num">5</td><td>30 min</td><td>45 min</td></tr>
 <tr class="total"><td>Total (100 subscription-weeks)</td><td></td><td class="num">4498</td><td></td><td></td></tr>
 </table></div>
-<p class="note">The pickup wait per <strong>staged week</strong> (Monday-start) for the 10 subscriptions with the most collected Files, busiest first. The median shows the typical pickup; the <strong>average</strong> exposes a pause — a partner that stops collecting for days drags the average up long before the median moves, then both fall back once the backlog is cleared. Subscriptions whose staged Files were never collected have no pickup waits and are absent (the Waiting/Expired tables above carry them).</p>
 <div class="summary">Waiting Files: 91 across 10 subscription(s)  |  Expired (deleted before pickup): 385  |  Oldest staged: 2026-06-24 23:01:39  |  Collected pickups: 5165  |  Peak backlog: 117  |  Expiring next: 42 File(s) in 7 subscription(s)  |  Waited over 8 days: 0  |  Dataset end: 2026-08-29 23:57:46</div>
 </body>
 </html>

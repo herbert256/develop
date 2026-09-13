@@ -807,6 +807,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
             -v slugmaps="$SLUGMAP_FILES" -v resmaps="${RESMAP_FILES:-}" \
             -v subtint="${RPT_SUBTINT:-}" \
             -v grpicons="${GRPICON_MAP:-}" -v dropbuckets="$dropbuckets" \
+            -v noprose="${RPT_NOPROSE:-0}" \
             -f "$RENDER_AWK" "$rpt"
         printf '</body>\n</html>\n'
     } > "$out"
@@ -1845,6 +1846,14 @@ split_search_rows() {   # $1 rendered search.html  $2 data file to write
 
 render_report() {   # $1 area  $2 name  $3 rpt
     local area=$1 name=$2 rpt=$3
+    # NO PROSE ON THE REPORT PAGES (2026-09-13, user request): the .rpt INTRO
+    # and NOTE lines are not rendered on any report page — every page this
+    # function (and the functions it calls) renders — but on the report's
+    # HELP page instead ("About this report", bin/build/publish.sh
+    # apply_help_chrome); the Report finder shows the DESC line. The drill and
+    # record pages (errors/, files/, the record and value pages, the detail
+    # pages) keep their INTRO — there it states facts, not explanations.
+    local RPT_NOPROSE=1
     # Top-bar right text: "TRANSFER"/"SERVER" + this report's index-entry name.
     local rlabel; rlabel="$(printf '%s' "$area" | tr '[:lower:]' '[:upper:]') - $(entry_label "$area" "$name")"
     local hslug; hslug=$(help_slug_for "$area" "$name")

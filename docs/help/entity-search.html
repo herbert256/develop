@@ -30,6 +30,11 @@
 <p>Whitelisted IPs are searchable too, as type <strong>Whitelist</strong> &mdash; one entry per (allowing account, IP) from the partners.json <code>AllowIP</code> whitelists. A whitelisted IP never gets a page of its own: clicking the row opens the detail page of the <strong>account</strong> that allows it. An IP allowed by several accounts appears once per allowing account.</p>
 <h2>The "Last seen" column</h2>
 <p>The timestamp (<code>ccyy-mm-dd hh:mm:ss</code>) of the <strong>newest File</strong> attributed to that entity in the loaded transfer logs — blank for a name that never moved a file (including the blue server-log-only entities). Partners and applications use the same union attribution as everywhere else on the site; a Whitelist or IP row shows the last transfer involving that address; a Source or Target row shows its subscription's stamp, and a multi-subscription path row the newest across its subscriptions (expand it to see each one's own).</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">Type in the box below to search <strong>every configured or logged entity by name</strong> — the checkboxes narrow the kinds (none checked = all). Wildcards and operators are explained right under the box; rows tint by each entity's status.</p>
+<p class="note">Row colors: <strong>green</strong> = last transfer OK (or, for a row with no status, one that moved files), <strong>red</strong> = last transfer Error or server-log errors after the last OK transfer, <strong>orange</strong> = configured but never seen (or moved no files), <strong>blue</strong> = surfaced only in the Server logs.</p>
+</section>
 </main>
 </body>
 </html>

@@ -25,6 +25,11 @@
 <p>From the logical-transfer cache (one row per CoreId): per subscription the sorted durations of its Files in the scope, the p50 and p95 read at the nearest rank, then the 25 highest p95 values. Ties break on the Files count, then the name.</p>
 <h2>Related</h2>
 <p>The per-day statistics and percentiles are on the Duration page, the individual slowest transfers on the Longest Files page, the histogram of all durations on the Distribution &amp; Store-and-forward page.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">The <strong>25 slowest subscriptions</strong> by the <strong>p95</strong> of their Files' <strong>wall-clock duration</strong> — from the first record start to the last record end, store-and-forward gaps and retry idle included; p95 rather than the maximum, so one freak transfer does not crown a flow. <strong>OK transfers</strong> (the default) ranks delivered Files only; <strong>All transfers</strong> adds the failed ones, whose duration is how long they ran before giving up. A From/To range re-aggregates <strong>Files</strong> and <strong>Max</strong>; <strong>Median</strong> and <strong>p95</strong> keep their full-period value. Click a subscription for its detail page.</p>
+<p class="note">One &quot;File&quot; = one logical transfer (all records sharing a CoreId); duration = its <strong>wall-clock span</strong> — from the first record start to the last record end, in milliseconds, gaps included — not the sum of the record durations. The per-day statistics are on the Duration page, the individual slowest transfers on the Longest Files page.</p>
+</section>
 </main>
 </body>
 </html>

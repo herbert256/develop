@@ -22,6 +22,11 @@
 <p>Each row is one (first entity, second entity) pair. A <strong>green</strong> row is a pair that actually appears together in the transfer logs; a <strong>red</strong> row is a pair CONFIGURED in the FlowManager exports (the cross-reference caches under <code>data/flow-manager/xref/</code>) that never appears in the logs — a configured flow with no observed traffic, or a spelling that never matches. Seen means seen <em>anywhere</em> in the loaded logs; these pages carry no From/To date filter. The intro line above each table gives the pair totals (all / seen / not seen).</p>
 <h2>How it's computed</h2>
 <p>A pair counts as seen when <strong>both</strong> values appear on one physical log row (a leg inherits the partner / application / domain attribution of its account). If either side is blank on a row — including a value blanked by the parse-time blacklist — that row doesn't establish the pair. A repeated first-column value is blanked, so consecutive rows of one entity read as a block; entity names link to their detail pages where those exist.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">Which Account goes with which other entity: every pair seen together on at least one log row, PLUS the configured pairs that never appear (an analysis of relationships — no counts, no dates). The two tab rows pick the pair of entity types; each cell tints by its own entity's status (green = last transfer OK, orange = never seen, red = Error, blue = server-log only).</p>
+<p class="note">An analysis of the cross references, not a traffic report. Each cell is colored by that entity result: <strong>light green</strong> = last transfer OK, <strong>light orange</strong> = configured but never seen, <strong>light red</strong> = last transfer Error, <strong>light blue</strong> = surfaced only by the Server → Transfer step (bin/build/seen-in-server-log.sh) with no real transfer. The entities are per-leg attributes (a leg inherits its File's partner/application/domain/logical/BL attribution); pairs where either value is blacklisted or unattributed are not listed. There is no date filter here — seen means seen anywhere in the loaded logs.</p>
+</section>
 </main>
 </body>
 </html>

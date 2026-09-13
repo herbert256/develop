@@ -18,7 +18,6 @@
 <body>
 <div class="topbar" data-b="../" data-help="expired"></div>
 <h1>Expired</h1>
-<p class="range">A <strong>UC2</strong> file waits <strong>staged</strong> until the partner collects it — and the nightly File Maintenance retention sweep (03:00, ~11 days) deletes whatever nobody picked up: outcome <strong>Expired</strong>, never delivered. <strong>385</strong> File(s) went that way, <strong>6.9%</strong> of every staged file whose fate is already decided, worth <strong>267.3 MB</strong> that never reached a partner. The per-subscription view is on <strong>Waiting</strong>.</p>
 <div class="stat stat-red"><span class="stat-v">385</span><span class="stat-l">Expired Files</span></div>
 <div class="stat"><span class="stat-v">6.9%</span><span class="stat-l">of resolved staged Files</span></div>
 <div class="stat"><span class="stat-v">267.3 MB</span><span class="stat-l">Never-delivered volume</span></div>
@@ -31,7 +30,6 @@
 <tr><td>12 day(s)</td><td class="num">120</td><td class="num">31.2%</td></tr>
 <tr class="total"><td>Total (3 row(s))</td><td class="num">385</td><td class="num">100.0%</td></tr>
 </table></div>
-<p class="note">Calendar days between the staging start and the deletion: ONE global retention (~11 days) — the sweep runs at 03:00, so a file staged before 03:00 expires on calendar day 11, a later one on day 10-11. No account deviates (see the per-account average below), so retention is <strong>not</strong> configured per partner.</p>
 <h2>Accounts the expired files belong to</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1" data-restint="1">
 <tr><th>Account</th><th>Partner</th><th class="num">Expired</th><th class="num">Collected</th><th class="num">Waiting</th><th class="num">Pickup rate</th><th class="num">Avg age</th><th class="num">Volume</th><th>First staged</th><th>Last staged</th><th>Last deletion</th></tr>
@@ -51,7 +49,6 @@
 <tr data-res="orange"><td class="cl"><a href="../details/accounts/cd-ariva-dunder.html">CD-ARIVA-DUNDER</a></td><td class="cl"><a href="../details/partners/dunder.html">DUNDER</a></td><td class="num failed">1</td><td class="num processed">28</td><td class="num warn z"></td><td class="num">97%</td><td class="num">11.0 d</td><td class="num">125.1 KB</td><td>2026-07-16 14:40:12</td><td>2026-07-16 14:40:12</td><td>2026-07-27 03:02:14</td></tr>
 <tr class="total"><td>Total (14 account(s))</td><td></td><td class="num failed">385</td><td class="num processed">2069</td><td class="num warn">62</td><td class="num">84%</td><td class="num"></td><td class="num">267.3 MB</td><td></td><td></td><td></td></tr>
 </table></div>
-<p class="note">Pickup rate = Collected / (Collected + Expired) for the same account — how often this partner actually fetches what is staged for it. <strong>Red</strong> rows never collected a single file (a dead pickup flow: everything staged for them expires); <strong>orange</strong> rows collect some and let the rest expire. Waiting = staged within the last ~11 days, still collectable.</p>
 <h2>Expiries per sweep night</h2>
 <div class="tablewrap"><table data-nofilter="1">
 <tr><th>Deletion night</th><th class="num">Files expired</th><th class="num">Volume</th><th class="num">Accounts</th></tr>
@@ -114,7 +111,6 @@
 <tr><td>2026-08-29</td><td class="num">13</td><td class="num">942.5 KB</td><td class="num">5</td></tr>
 <tr class="total"><td>Total (57 night(s))</td><td class="num failed">385</td><td class="num">267.3 MB</td><td class="num"></td></tr>
 </table></div>
-<p class="note">Each row is one 03:00 File Maintenance run and what it removed unclaimed. A missing night means that sweep deleted nothing — nothing staged ~11 days earlier went uncollected. The Accounts column is per night and not additive (one account expires files on many nights), so the Total leaves it blank.</p>
 <h2>Staged on which weekday - expired vs collected</h2>
 <div class="tablewrap"><table data-nofilter="1" data-nosearch="1">
 <tr><th>Staged on</th><th class="num">Expired</th><th class="num">Collected</th><th class="num">Expired share</th></tr>
@@ -127,8 +123,6 @@
 <tr><td>Sunday</td><td class="num failed">16</td><td class="num processed">497</td><td class="num">3%</td></tr>
 <tr class="total"><td>Total (7 weekday(s))</td><td class="num failed">385</td><td class="num processed">5165</td><td class="num">7%</td></tr>
 </table></div>
-<p class="note">The weekday the file was <strong>STAGED</strong> (not deleted). NOTE one account can dominate this split — check the per-account table before reading a weekday pattern as partner behaviour.</p>
-<p class="note">Source: the transfer parse cache (_files.tsv) — outcome <strong>Expired</strong> and the col-22 deletion timestamp set by <strong>bin/expire-files.sh</strong> from the server log's &quot;File Maintenance … finished. Deleted files […]&quot; lines (the deletion leaves NO transfer-log record). Collected = staged files with a pickup (col 21); the sweep also removes already-collected staged copies — routine cleanup, not counted here. Expired files count as <strong>Error</strong> on every report; Waiting files count as <strong>OK</strong>.</p>
 <div class="summary">Expired: 385 Files (6.9% of resolved staged)  |  Volume: 267.3 MB  |  Average staged to deleted: 11.0 d  |  Still waiting: 91</div>
 </body>
 </html>

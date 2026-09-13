@@ -19,7 +19,6 @@
 <div class="topbar" data-b="../" data-help="server-pesit"></div>
 <h1>Capacity &amp; sessions <span class="grouptag">&larr; Operations &amp; Capacity &larr; Server</span></h1>
 <p class="tabs"><a class="tab" href="platform-health.html">Platform health</a><span class="tab active">Capacity &amp; sessions</span><span class="tabsep"></span><a class="tab" href="capacity-pesit-per-day.html">PeSIT per day</a><span class="tab active">PeSIT problems</span><a class="tab" href="capacity-problem-types.html">Problem types</a><a class="tab" href="capacity-diagnostic-codes.html">Diagnostic codes</a><a class="tab" href="capacity-fpdu-ledger.html">FPDU ledger</a><a class="tab" href="capacity-local-deletes.html">Local deletes</a><a class="tab" href="capacity-remote-deletes.html">Remote deletes</a><a class="tab" href="capacity-maintenance.html">Maintenance</a></p>
-<p class="range">How busy the platform is and what it cleans up: <strong>PeSIT activity</strong> — logins, transfers, resets, ceiling hits and diagnostic codes — and the <strong>file retention / cleanup</strong> sweeps per account and remote directory. (The session-concurrency view went with the session bookkeeping lines the server parse now drops — 2026-08.)</p>
 <div class="tablewrap"><table class="wide" data-total-top="1">
 <tr><th>Date</th><th class="num">Problems</th><th class="num">ST → CFT</th><th class="num">CFT → ST</th><th>First</th><th>Last</th></tr>
 <tr class="total"><td>Totals for 43 days</td><td class="num failed">237</td><td class="num">223</td><td class="num">14</td><td></td><td></td></tr>
@@ -92,6 +91,5 @@
 <tr data-loglines=""><td>2026-08-28</td><td class="num failed z"></td><td class="num">0</td><td class="num">0</td><td>-</td><td>-</td></tr>
 <tr data-loglines="2026-08-29 19:20:40.343  Error TM  Error during transfer operation: Received negative SEND_CONF response: diagCode=230, diagText=230-File cannot be delivered2026-08-29 19:20:34.055  Error TM  Error during transfer operation: Received negative SEND_CONF response: diagCode=230, diagText=230-File cannot be delivered"><td>2026-08-29</td><td class="num failed">2</td><td class="num">2</td><td class="num">0</td><td>19:20:34</td><td>19:20:40</td></tr>
 </table></div>
-<p class="note">One row = one calendar day (calendar gaps show as 0). <strong>ST → CFT</strong> counts the TM component acting as PeSIT client (SecureTransport dialing the CFT); <strong>CFT → ST</strong> counts the PESITD component acting as server (the CFT dialing SecureTransport). One failed transfer commonly logs SEVERAL lines — the client-side wrapper plus FPDU_AWRITE/FPDU_ABORT pairs — so these are log lines, not failed transfers. Click a day for its 10 most recent problem lines (newest first).</p>
 </body>
 </html>

@@ -19,12 +19,10 @@
 <div class="topbar" data-b="../" data-help="server-pesit"></div>
 <h1>Capacity &amp; sessions <span class="grouptag">&larr; Operations &amp; Capacity &larr; Server</span></h1>
 <p class="tabs"><a class="tab" href="platform-health.html">Platform health</a><span class="tab active">Capacity &amp; sessions</span><span class="tabsep"></span><a class="tab" href="capacity-pesit-per-day.html">PeSIT per day</a><a class="tab" href="capacity-pesit-problems.html">PeSIT problems</a><a class="tab" href="capacity-problem-types.html">Problem types</a><a class="tab" href="capacity-diagnostic-codes.html">Diagnostic codes</a><span class="tab active">FPDU ledger</span><a class="tab" href="capacity-local-deletes.html">Local deletes</a><a class="tab" href="capacity-remote-deletes.html">Remote deletes</a><a class="tab" href="capacity-maintenance.html">Maintenance</a></p>
-<p class="range">How busy the platform is and what it cleans up: <strong>PeSIT activity</strong> — logins, transfers, resets, ceiling hits and diagnostic codes — and the <strong>file retention / cleanup</strong> sweeps per account and remote directory. (The session-concurrency view went with the session bookkeeping lines the server parse now drops — 2026-08.)</p>
 <div class="tablewrap"><table data-nofilter="1" data-nosort="1" data-recalc="- - - s0 %0 - - -">
 <tr><th>FPDU</th><th>diagCode</th><th>Result</th><th class="num">Log lines</th><th class="num">Share</th><th>Typical text</th><th>First</th><th>Last</th></tr>
 <tr><td colspan="8"><code>No Info-level FPDU confirmations in this data window.</code></td></tr>
 <tr class="total"><td>Total (0 combination(s))</td><td></td><td></td><td class="num">0</td><td class="num">100.0%</td><td></td><td></td><td></td></tr>
 </table></div>
-<p class="note">Every PeSIT protocol confirmation the TM component logs while acting as PeSIT CLIENT (ST → CFT), per FPDU kind and diagCode — connectionConfirmation (session setup), sendFileConfirmation (per file sent) and abortIndication (transfer torn down). These are <strong>Info-level</strong> lines, so a refusal here is INVISIBLE to the error reports: diagCode <strong>309</strong> is the CFT refusing the session (&quot;Too many connections&quot;), <strong>310</strong> a network-incident abort, <strong>214</strong> a checkpoint mismatch on restart, <strong>0</strong> success. The Problem types table above counts the E-level wrappers of the SAME failures — this ledger counts only Info lines, so the two never double-count. Click a row for its 10 most recent lines.</p>
 </body>
 </html>

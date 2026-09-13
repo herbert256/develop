@@ -20,6 +20,13 @@
 <p>This page builds a cadence model per subscription from the gaps between its active days (days with at least one File). A flow with at least five active days gets a median and p90 inter-arrival gap; it is flagged OVERDUE when its current silence exceeds max(p90+1, median+2) days — its own historical worst-normal interval plus a margin.</p>
 <p>This differs from Went quiet (one fixed 7-day cutoff for every flow) and Punctuality (a time-of-day model): a weekly flow is not "quiet" after 5 days here, and a twice-daily flow goes overdue long before day 7.</p>
 <p>The weekday-locked table lists flows with 75%+ of arrivals on one weekday, with the next expected date; "(missed)" means that day already passed inside the data window.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">A cadence model per subscription, built from the gaps between its <strong>active days</strong> (days with at least one File). Of the <strong>109</strong> modelable flows (<strong>5+ active days</strong>), <strong>4</strong> are <strong>OVERDUE by their own rhythm</strong>: silent longer than max(p90 gap + 1, median gap + 2) days, measured against the newest day in the data (<strong>2026-08-29</strong>). Unlike <strong>Went quiet</strong> (one fixed 7-day cutoff for every flow) and <strong>Punctuality</strong> (a time-of-day model for daily flows), this page compares each flow to its own day-to-day interval history — a weekly flow is not &quot;quiet&quot; after 5 days, and a twice-daily flow is overdue long before day 7. 0 flow(s) with fewer than 5 active days are not modelable and are left out.</p>
+<p class="note">A flow is <strong>OVERDUE</strong> when its current silence exceeds <strong>max(p90 gap + 1, median gap + 2)</strong> days — a margin above its own historical worst-normal interval. The gaps are between consecutive ACTIVE days, so a flow that sends 40 files every Monday still has a 7-day gap pattern.</p>
+<p class="note">Every modelable flow whose silence is still within its own limit, most-silent first — the top rows are the ones closest to going overdue. <strong>long-period</strong> marks a flow whose median gap is 20 days or more (monthly-style cadence): one skipped period takes weeks to detect, by design.</p>
+<p class="note">Flows where at least 75% of the active days fall on ONE weekday — a weekly batch with a fixed slot. &quot;Next expected&quot; is the first such weekday after the last arrival; <strong>(missed)</strong> means that day already lies inside the observed window and nothing arrived.</p>
+</section>
 </main>
 </body>
 </html>

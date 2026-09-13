@@ -19,6 +19,11 @@
 <h2>What this shows</h2>
 <p>What stops when a remote host dies: one row per outbound endpoint we dial, counting the Files, volume, subscriptions, applications, domains and partner organisations routed over it. A red row is the sole recorded endpoint of at least one partner — no second address exists to fail over to.</p>
 <p>The redundancy table classes every seen partner by its distinct recorded endpoints across all its Files: single, multiple, or none recorded (inbound-only — the partner dials us, a legitimate class rather than a gap). The last table lists endpoints shared by several partner organisations, where one address outage crosses relationship boundaries.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">An endpoint outage is never one flow. The first table answers <strong>&quot;if this host dies, what stops?&quot;</strong> — one row per outbound endpoint we dial, everything behind it counted; a <strong>red</strong> row is the sole recorded endpoint of at least one partner, so there is no second address to fail over to. The redundancy table turns the same census around per partner: <strong>5</strong> partner(s) ride a single endpoint, <strong>20</strong> have more than one, and <strong>0</strong> are inbound-only — they dial us, so no endpoint of theirs can strand us (a legitimate class, not a gap). The last table lists the endpoints shared by several partner organisations: one address, several relationships in the blast radius.</p>
+<p class="note">The first table counts OUT-connection Files only (the endpoints we dial); its Subscriptions/Applications/Domains/Partners columns are distinct counts over those Files, applications and partners by the site-wide UNION attribution. The redundancy and sharing views count each partner's distinct recorded endpoints over ALL its Files — for an inbound flow that is the partner's recorded source address, and a partner with no endpoint recorded anywhere is the inbound-only class. &quot;Sole endpoint for&quot; flags the hosts that are the ONLY recorded endpoint of at least one partner: losing that address strands those partners entirely.</p>
+</section>
 </main>
 </body>
 </html>

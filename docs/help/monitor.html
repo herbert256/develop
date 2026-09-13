@@ -28,6 +28,10 @@
 <p>Everything comes from the transfer log's monitor rows: files named <code>monitor_ccyymmdd_hhmmss.txt</code> on the <code>UC1/UC2/UC3-INFRA_ST-MONITOR_INFRA</code> subscriptions, earliest leg per side so a retry never shifts a measurement. Each resolution is aggregated from the raw measurements (a median of medians is not a median). One honesty rule on the loss penalty: a file without its end leg that is <em>younger than one hour</em> against the newest monitor row is skipped rather than penalized — the log export was simply cut mid-flight.</p>
 <h2>When this page exists</h2>
 <p>Only in an environment whose transfer log actually carries monitor traffic — the top-bar <strong>Monitor</strong> link and this page appear and disappear with the data. The monitor itself (scripts, scheduling, its CFT-side logs under <code>e:\admin\monitor\9-logs</code>) is documented on the CFT server in <code>8-docs</code>.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">The end-to-end monitor drops one file every 15 minutes on the CFT and sends it through all four use cases with ourselves as the remote partner. The three views cut its trip into disjoint segments — before ST (CFT pickup), the whole loop, and inside ST without the poll wait (staging) — so an incident shows up in exactly the segment that owns it.</p>
+</section>
 </main>
 </body>
 </html>

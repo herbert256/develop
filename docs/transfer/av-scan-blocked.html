@@ -19,7 +19,6 @@
 <div class="topbar" data-b="../" data-help="av-scan"></div>
 <h1>AV Scan (ICAP) Outcomes <span class="grouptag">&larr; Protocol &amp; Security &larr; Transfer</span></h1>
 <p class="tabs"><a class="tab" href="protocol-protocol.html">Protocol, Direction &amp; Mode</a><a class="tab" href="security-params-tls-version.html">Security Parameters</a><a class="tab" href="security-outreach.html">Security outreach</a><span class="tab active">AV Scan</span><a class="tab" href="connection-efficiency.html">Connection efficiency</a><span class="tabsep"></span><a class="tab" href="av-scan-breakdown.html">Breakdown</a><a class="tab" href="av-scan-per-day.html">Per day</a><a class="tab" href="av-scan-per-protocol.html">Per protocol</a><span class="tab active">Blocked</span><a class="tab" href="av-scan-not-performed.html">Not performed</a><a class="tab" href="av-scan-not-first-inbound.html">Not first inbound</a></p>
-<p class="range">Scan outcomes on the <strong>first Inbound leg</strong> of every File — the AV scan runs when a file ENTERS the system, so that leg carries the File's verdict (one per File). <strong>19116</strong> allowed  |  <strong>19</strong> blocked  |  <strong>14481</strong> not performed. The <strong>Not first inbound</strong> tab is the check: scan verdicts found on any other leg.</p>
 <div class="tablewrap"><table class="wide">
 <tr><th>Date</th><th>Time</th><th>Account</th><th>Login</th><th>Subscription</th><th>Protocol</th><th>File</th></tr>
 <tr><td>2026-08-22</td><td>07:23:54.500</td><td class="cl"><a href="../details/accounts/hr-payroll-initech.html">HR_PAYROLL_INITECH</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc1-hr-payroll-initech.html">UC1_HR_PAYROLL_INITECH</a></td><td><code>pesit</code></td><td class="file">AcmeHR_PAYROLL_INITECH_20260822026634_815518.zip</td></tr>
@@ -43,7 +42,5 @@
 <tr><td>2026-06-23</td><td>07:43:55.136</td><td class="cl"><a href="../details/accounts/hr-payroll-initech.html">HR_PAYROLL_INITECH</a></td><td></td><td class="cl"><a href="../details/subscriptions/uc1-hr-payroll-initech.html">UC1_HR_PAYROLL_INITECH</a></td><td><code>pesit</code></td><td class="file">AcmeHR_PAYROLL_INITECH_20260623027835_979358.csv</td></tr>
 <tr class="total"><td>Total (19 rows)</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
 </table></div>
-<p class="note">Scan verdicts (Allowed/Blocked/Error) on legs OTHER than the File's first Inbound leg — the check on the &quot;scan on entry&quot; model. What legitimately shows up: <strong>Inbound retries</strong> (a re-entry is re-scanned) and the <strong>UC2 staging re-entry</strong> (Inbound routing). An <strong>Outbound</strong> row here would break the model. The plain &quot;Scanning was not performed&quot; boilerplate on outbound legs is excluded.</p>
-<p class="note">One scan verdict per File — its first Inbound leg (a File with no Inbound leg has no scan). Outcomes are parsed from the free-text &quot;ICAP Details&quot; column; &quot;Other&quot; groups Error/Unknown and unrecognized text.</p>
 </body>
 </html>

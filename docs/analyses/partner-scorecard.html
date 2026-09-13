@@ -18,7 +18,6 @@
 <div class="topbar" data-b="../" data-help="partner-scorecard"></div>
 <h1>Partner scorecard <span class="grouptag">&larr; Partners &larr; Analyses</span></h1>
 <p class="tabs"><span class="tab active">Partner scorecard</span><a class="tab" href="blast-radius.html">Blast radius</a><a class="tab" href="app-partners.html">Application dependencies</a><a class="tab" href="partner-lifecycle.html">Partner lifecycle</a></p>
-<p class="range">One number per partner relation, worst first — and every ingredient of that number in its own column, so a low score is never a mystery. The concentration boxes show why a plain count ranking misleads: the top partner alone carries <strong>33.6%</strong> of all Files. The side-by-side tables below expose the volume-vs-count blind spot: <strong>GLOBEX</strong> is the biggest byte mover (4.55 GB) with an Error share of <strong>3.1%</strong>, yet by file count it ranks only #1 — a count-ranked view buries it under the high-frequency movers.</p>
 <div class="stat"><span class="stat-v">25</span><span class="stat-l">Partners seen</span></div>
 <div class="stat"><span class="stat-v">23</span><span class="stat-l">Scored (&gt;= 100 Files)</span></div>
 <div class="stat stat-orange"><span class="stat-v">33.6%</span><span class="stat-l">Top-1 share of Files</span></div>
@@ -88,7 +87,6 @@
 </table></div>
 </div>
 </div>
-<p class="note">The score starts at <strong>100 minus the Error %</strong> (Failed or Expired Files — the heaviest weight by far) and deducts: <strong>0.5 points per percentage point</strong> the last-14-days Error % worsened against the 14 days before (capped at 15; improving never adds), <strong>5 points</strong> when the average UC2 partner pickup wait exceeds 24 h, up to <strong>5 points</strong> scaled by the share of transfer legs on a weak security parameter (ssh-rsa host key or TLSv1.2), <strong>3 points</strong> when everything we send the partner rides a single outbound endpoint, and <strong>10 points</strong> when the partner has been quiet for 14+ days — all measured against the newest log day, then clamped to 0-100. Every component sits in its own column, so the arithmetic is checkable per row. Partner attribution is the site-wide UNION rule (the subscription's configured partners unioned with the parse attribution); the concentration boxes cover all seen partners, the scorecard only those with at least 100 Files.</p>
 <div class="summary">Partners seen: 25  |  Scored: 23  |  Top-1 share: 33.6%  |  Top-10 share: 81.5%  |  Gini: 0.605</div>
 </body>
 </html>

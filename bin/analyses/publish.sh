@@ -1787,8 +1787,8 @@ _fsaved_dates=${CUR_DATES:-}; CUR_DATES=$TRANSFER_DATES
 for _frpt in "$DATA"/transfer/reports/failed-*.rpt; do
     [ -f "$_frpt" ] || continue
     _fname=${_frpt##*/}; _fname=${_fname%.rpt}
-    render_rpt "$_frpt" "$ADIR/$_fname.html" "../assets/style.css" "index.html" \
-        "TRANSFER - Failed Subscriptions" 1 "failed" "failed"
+    RPT_NOPROSE=1 render_rpt "$_frpt" "$ADIR/$_fname.html" "../assets/style.css" "index.html" \
+        "TRANSFER - Failed Subscriptions" 1 "failed" "failed"   # a report page: no INTRO / NOTE prose (the help page carries it)
     [ -n "$_fgrow" ] && _inject_after_h1 "$ADIR/$_fname.html" "$_fgrow"
 done
 CUR_DATES=$_fsaved_dates
@@ -1803,8 +1803,8 @@ _ersaved_dates=${CUR_DATES:-}; CUR_DATES=$TRANSFER_DATES
 for _errpt in "$ARPT"/failing-reasons-*.rpt; do
     [ -f "$_errpt" ] || continue
     _ername=${_errpt##*/}; _ername=${_ername%.rpt}
-    render_rpt "$_errpt" "$ADIR/$_ername.html" "../assets/style.css" "index.html" \
-        "ANALYSES - Error reasons" 1 "failing-reasons" "failing-reasons"
+    RPT_NOPROSE=1 render_rpt "$_errpt" "$ADIR/$_ername.html" "../assets/style.css" "index.html" \
+        "ANALYSES - Error reasons" 1 "failing-reasons" "failing-reasons"   # a report page: no INTRO / NOTE prose
     [ -n "$_ergrow" ] && _inject_after_h1 "$ADIR/$_ername.html" "$_ergrow"
 done
 CUR_DATES=$_ersaved_dates
@@ -1907,8 +1907,8 @@ for _fs_k in 24-hours 48-hours week 2-weeks 3-weeks month; do
         continue
     fi
     _fs_sd=${CUR_DATES:-}; CUR_DATES=""; _fs_dl=${DLINK_BASE:-}; DLINK_BASE="../details/"
-    render_rpt "$ARPT/file-search-$_fs_k.rpt" "$_fs_dir/file-search-$_fs_k.html" "../assets/style.css" "../index.html" \
-        "ANALYSES - File search" 1 "file-search" "file-search-$_fs_k"
+    RPT_NOPROSE=1 render_rpt "$ARPT/file-search-$_fs_k.rpt" "$_fs_dir/file-search-$_fs_k.html" "../assets/style.css" "../index.html" \
+        "ANALYSES - File search" 1 "file-search" "file-search-$_fs_k"   # a report page: no INTRO / NOTE prose
     DLINK_BASE=$_fs_dl; CUR_DATES=$_fs_sd
     cp "$ARPT/file-search-$_fs_k-data.js" "$_fs_dir/file-search-$_fs_k-data.js"
     _fs_dver=$(cksum < "$_fs_dir/file-search-$_fs_k-data.js" | awk '{print $1}')

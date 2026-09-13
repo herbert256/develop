@@ -21,6 +21,10 @@
 <h2>How it's computed</h2>
 <p>Both tabs read the logical-transfer cache, so each row is one File — every physical row sharing that File (both directions, plus any retries) is already collapsed into a single size and a single duration before ranking. Size is the file's size (counted once, as everywhere else on the site). Duration is the <strong>sum</strong> of that File's row durations, not just one leg, so a transfer that needed several retries has its retry time included in "Slowest." Throughput is size divided by that summed duration.</p>
 <p>Unlike most reports on the site, these two tables list individual transfers rather than aggregating by a dimension — there is no Error/OK split or percentage column here, only the outcome of each listed transfer.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">The 50 largest Files by file size. One row = one File. The SLOWEST transfers live on the <strong>Duration</strong> report (2026-07: the former Slowest table here duplicated it).</p>
+</section>
 </main>
 </body>
 </html>

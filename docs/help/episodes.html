@@ -29,6 +29,13 @@
 <p>An episode is a sequence in time — narrowing the date range would cut runs in half and turn open incidents into closed ones. The page therefore always shows the full period (like Stale Accounts).</p>
 <h2>How it relates to the other failure reports</h2>
 <p><a href="failure-rate.html">Failure rate</a> answers "what share fails", <a href="retry.html">Repeat failures</a> counts the physical retries inside one transfer, <a href="anomalies.html">Anomalies</a> flags unusual hours; this page answers "what is broken right now, how deep, and how long do outages last".</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">Failure RUNS in time, per subscription: <strong>98</strong> of <strong>109</strong> subscription(s) failed at least once; <strong>1</strong> are in an <strong>open incident</strong> right now (latest File failed, 3+ consecutive failures — worst run: <strong>127</strong>), <strong>1</strong> of them have NEVER delivered an OK File. Of the <strong>1108</strong> closed episode(s), most self-heal quickly but the slow tail is real (longest recovery: <strong>5.2</strong> days). The other failure reports show failure rates; this one shows how failures cluster and how long they last. Click a row for its 10 most recent failed Files.</p>
+<p class="note">Subscriptions whose LATEST File failed, with <strong>3 or more</strong> consecutive failures behind it — broken right now, not historically. Days failing counts from the run's first failure to the dataset's last day (2026-08-29), not today. &quot;never&quot; = the flow has no OK File in the whole window. Click the failure count for the 10 most recent failed Files.</p>
+<p class="note">One episode = an unbroken run of failed Files ended by the next OK (or still open). The healed columns split the CLOSED episodes by their time to recovery; a subscription with many quick-healing episodes flaps, one with few long ones breaks hard. Sorted by episode count. Click the Error count for the 10 most recent failed Files.</p>
+<p class="note">The distribution over all closed episodes: from the episode's first failure to the next OK File of the same subscription. Open incidents (no OK yet) are not counted here.</p>
+</section>
 </main>
 </body>
 </html>

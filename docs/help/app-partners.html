@@ -19,6 +19,11 @@
 <h2>What this shows</h2>
 <p>Which external partner organisations each internal application exchanges Files with, and how well each pair runs. The first table ranks applications by how many partners they depend on, with the worst pair Error % and the count of pairs running at 100% Error beside it; the second is the full (application, partner) dependency matrix with Files, Error % and last seen.</p>
 <p>Applications derive from the logical flow names (the middle part of the domain_application_partner shape), so the attribution is heuristic by design — good enough to see exposure and dead dependencies, not a configuration export. A red pair exists in the logs but never works, usually a decommissioned counterparty still being retried.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">Every internal application seen in the logs, by how many <strong>external partner organisations</strong> it depends on — and how well each of those pairs actually runs. The most exposed application is <strong>ARIVA</strong> with <strong>3</strong> partners (0 of those pairs at 100% Error). Applications and partners are parts 2 and 3 of the logical flow name (domain_application_partner) a File's subscription resolves to through its FlowID, so this attribution is only as good as that naming convention — good enough to see exposure and failing pairs, but not a configuration export. Both sides use the site-wide UNION rules: a File counts for every application and every partner of its subscription.</p>
+<p class="note">A pair's Error % is the Failed-or-Expired share of its Files (the site-wide outcome policy: Waiting counts as OK, Expired as Error). The per-application Files column sums its pairs, so a File shared by two partners counts twice there — exposure, not throughput. A red row runs at 100% Error: the dependency exists in the logs but never works — usually a decommissioned counterparty still being retried.</p>
+</section>
 </main>
 </body>
 </html>

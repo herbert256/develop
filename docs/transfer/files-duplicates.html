@@ -19,7 +19,6 @@
 <div class="topbar" data-b="../" data-help="size-dist"></div>
 <h1>File sizes &amp; types <span class="grouptag">&larr; Volume, Sizes &amp; Files &larr; Transfer</span></h1>
 <p class="tabs"><a class="tab" href="ranking-subscriptions.html">Ranking</a><a class="tab" href="volume-per-day.html">Volume</a><span class="tab active">Sizes &amp; types</span><a class="tab" href="top-transfers.html">Largest files</a><a class="tab" href="route-throughput.html">Route throughput</a><a class="tab" href="size-profile.html">Size profile</a><span class="tabsep"></span><a class="tab" href="files-by-size.html">By size</a><a class="tab" href="files-empty-files.html">Empty files</a><a class="tab" href="files-by-type.html">By type</a><span class="tab active">Duplicates</span></p>
-<p class="range">The files themselves, in one report: the <strong>size distribution</strong> (with the zero-byte files that were delivered OK kept visible), the split <strong>per file type</strong> (extension), and the <strong>duplicate deliveries</strong> — business filenames delivered more than once, worst first, which catches replay loops and re-sends.</p>
 <div class="tablewrap"><table class="wide" data-recalc="- s0 s1 - - -">
 <tr><th>Filename</th><th class="num">Files</th><th class="num">Error</th><th class="num">Accounts</th><th>First</th><th>Last</th></tr>
 <tr data-buckets="2026-06-23:4:0" data-coreids="2026-06-23 00:35:08.668  df34d65b-06a4-4177-88c5-302cbf7877ac,2026-06-23 00:17:11.409  d868ab84-a680-42f3-8dd9-096633006943,2026-06-23 00:15:57.528  bec87931-8768-4c91-9d2d-8503b9b52e50,2026-06-23 00:15:47.303  dcb50b3f-94a0-4aaa-ab25-c0c633b22080"><td class="file">monitor_20260623_000000.txt</td><td class="num">4</td><td class="num failed z"></td><td class="num">1</td><td>2026-06-23</td><td>2026-06-23</td></tr>
@@ -224,6 +223,5 @@
 <tr data-buckets="2026-06-27:4:0" data-coreids="2026-06-27 10:05:28.417  da21c2f5-a235-478a-baca-2b1b1a41bb94,2026-06-27 10:01:50.972  30d65c2a-0115-4281-8848-3796615a9698,2026-06-27 10:00:47.164  20ddbe27-1fb2-4fcf-be56-73308fadb49e,2026-06-27 10:00:37.319  052b8333-b9b4-4eda-b8f1-7849292144e1"><td class="file">monitor_20260627_100000.txt</td><td class="num">4</td><td class="num failed z"></td><td class="num">1</td><td>2026-06-27</td><td>2026-06-27</td></tr>
 <tr class="total"><td>Total (200 rows)</td><td class="num">800</td><td class="num failed z"></td><td class="num"></td><td></td><td></td></tr>
 </table></div>
-<p class="note">One row per filename delivered more than once (grouped from the logical-transfer cache). Files = how many logical transfers carried that exact filename; Error = how many of them failed; Accounts = distinct accounts that sent it (a full-period figure, not date-adjusted). An Error count lower than the group's Files usually means a failed transfer was re-sent successfully. Files and Error re-aggregate over the selected dates. Click a row for its 10 most recent Files.</p>
 </body>
 </html>

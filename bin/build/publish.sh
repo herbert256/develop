@@ -51,15 +51,83 @@ fi
 # the chrome is regenerated — render_shared_topbar. A leftover footer bar from before its 2026-07 removal
 # is DROPPED here, so the hand-authored help pages need no manual edit.
 # This is the one publish step that writes into docs/help/ (see CLAUDE.md).
+# "ABOUT THIS REPORT" on the help pages (2026-09-13, user request): the report
+# pages render no INTRO / NOTE prose any more (publish_lib render_report sets
+# RPT_NOPROSE, render_rpt.awk skips the two directives) — that prose lands
+# HERE, on the report's help page, rendered by the same awk (bold, the
+# [[entity]] links) from every published .rpt that maps to the page's slug
+# (help_slug_for; several reports can share one page — a Failed view, a
+# Skipped value, the entity pages — and each then gets its TITLE as a
+# sub-heading). Skipped: the merged reports' components, the showseen
+# intermediates, the sidecars, a report whose slug has no page. The Report
+# finder shows the DESC line instead (write_report_finder).
+help_about_fragments() {   # $1 = a scratch dir; writes <slug>.html fragments into it
+    local dir=$1 rpt name area slug cnt tmp frag map="$1/map.tsv" famdone=" "
+    : > "$map"
+    for rpt in "$DATA"/transfer/reports/*.rpt "$DATA"/transfer/reports/entities/*.rpt "$DATA"/server/reports/*.rpt "$DATA"/analyses/reports/*.rpt "$DATA"/dashboards/reports/*.rpt; do
+        [ -f "$rpt" ] || continue
+        name=${rpt##*/}; name=${name%.rpt}
+        case $name in _*|showseen-*|remote-poll) continue ;; esac
+        # the nine classic entity .rpt at the top level are DATA producers (no
+        # page, an obsolete intro) — the Entities pages' prose is the
+        # entities/<name>.rpt one (bin/transfer/reports/entities.sh)
+        case $rpt in */transfer/reports/entities/*) ;; *) case $name in account|login|subscription|remote-host|logical|partner|application|domain|bl) continue ;; esac ;; esac
+        is_merged_component "$name" && continue
+        case $name in duration-all) continue ;; esac   # the Duration report's sibling view: the same prose
+        grep -qE $'^(INTRO|NOTE)\t' "$rpt" || continue
+        area=transfer; case $rpt in */server/*) area=server ;; esac
+        slug=$(help_slug_for "$area" "$name")
+        [ -f "docs/help/$slug.html" ] || continue
+        # a per-VALUE family (a page per error reason, per skipped value, per
+        # Failed view, per cross-reference pair) explains itself once: its
+        # FIRST member stands for the family
+        case $name in failing-reasons-*|skipped-*|failed-*|cross-*)
+            case $famdone in *" $slug "*) continue ;; esac; famdone="$famdone$slug " ;; esac
+        printf '%s\t%s\n' "$slug" "$rpt" >> "$map"
+    done
+    [ -s "$map" ] || return 0
+    LC_ALL=C sort -t$'\t' -k1,1 -k2,2 "$map" > "$map.s" && mv "$map.s" "$map"
+    # render every report's prose to its own piece, then assemble per slug —
+    # DEDUPED by content (the Failed views, the Skipped values share one
+    # page AND one text) and sub-headed by TITLE only when the remaining
+    # pieces differ
+    tmp=$(mktemp "${TMPDIR:-/tmp}/habout.XXXXXX"); local n=0 piece sig
+    : > "$map.pieces"
+    while IFS=$'\t' read -r slug rpt; do
+        n=$((n + 1)); piece="$dir/piece.$n"
+        grep -E $'^(INTRO|NOTE)\t' "$rpt" > "$tmp"
+        LC_ALL=C awk -F'\t' -v droptitle=1 -v dlink="../details/" -v slugmaps="$SLUGMAP_FILES" -v dropbuckets=1 -v noprose=0 \
+            -f "$RENDER_AWK" "$tmp" > "$piece"
+        sig=$(cksum "$piece" | cut -d' ' -f1,2 | tr ' ' :)
+        printf '%s\t%s\t%s\t%s\n' "$slug" "$piece" "$sig" "$(grep -m1 $'^TITLE\t' "$rpt" | cut -f2-)" >> "$map.pieces"
+    done < "$map"
+    rm -f "$tmp"
+    # per slug: the unique pieces (by content, then by TITLE) in order, with a
+    # <h3> per piece when there are several
+    awk -F'\t' '{ if (!(($1 SUBSEP $3) in seen) && !(($1 SUBSEP $4) in seen)) { seen[$1 SUBSEP $3] = 1; seen[$1 SUBSEP $4] = 1; cnt[$1]++; ord[++k] = $0 } }
+        END { for (i = 1; i <= k; i++) { split(ord[i], a, "\t"); printf "%s\t%s\t%d\t%s\n", a[1], a[2], cnt[a[1]], a[4] } }' "$map.pieces" \
+    | while IFS=$'\t' read -r slug piece cnt title; do
+        frag="$dir/$slug.html"
+        [ -f "$frag" ] || printf '<section class="about">\n<h2>About this report</h2>\n' > "$frag"
+        if [ "$cnt" -gt 1 ]; then esc "$title"; printf '<h3>%s</h3>\n' "$ESC" >> "$frag"; fi
+        cat "$piece" >> "$frag"
+    done
+    for frag in "$dir"/*.html; do [ -f "$frag" ] && printf '</section>\n' >> "$frag"; done
+    return 0
+}
 apply_help_chrome() {
-    local tb f tmp
+    local tb f tmp adir about
     tb=$(render_shared_topbar "../" "index")
+    adir=$(mktemp -d "${TMPDIR:-/tmp}/habout.XXXXXX")
+    help_about_fragments "$adir"
     for f in docs/help/*.html; do
         [ -f "$f" ] || continue
+        about="$adir/$(basename "$f")"; [ -f "$about" ] || about=""
         tmp=$(mktemp "${TMPDIR:-/tmp}/help.XXXXXX")
-        awk -v tb="$tb" '
+        awk -v tb="$tb" -v ab="$about" '
             /^<div class="topbar"><a class="brand"/         { print tb; next }
             /^<div class="footer"><span class="f-left"/     { next }
+            /^<\/main>/ && ab != ""                          { while ((getline l < ab) > 0) print l; close(ab) }   # the moved report prose, before the page ends
             { print }
         ' "$f" > "$tmp" && { cmp -s "$tmp" "$f" && rm -f "$tmp" || mv "$tmp" "$f"; }
         # content-compared: the chrome is regenerated identically on almost
@@ -67,6 +135,7 @@ apply_help_chrome() {
         # check (and of the sitemap) — an unchanged rewrite must not bump its
         # mtime, or the check could never hold.
     done
+    rm -rf "$adir"
 }
 
 write_area_index() {   # $1 area  $2 title ; remaining args = ordered basenames
@@ -1251,9 +1320,10 @@ function add(s,   k) { sub(/^ +/, "", s); sub(/ +$/, "", s)
 # scan one .rpt for TITLE/INTRO and the keyword sets (rpt_keywords, both sets in
 # a single pass — it used to be two separate awk invocations per report)
 function scan(f,   l, n, a2, j) {
-    title = ""; intro = ""; kw = ""; kvis = ""; split("", kseen); split("", vseen)
+    title = ""; intro = ""; desc = ""; kw = ""; kvis = ""; split("", kseen); split("", vseen)
     while ((getline l < f) > 0) {
         if (title == "" && index(l, "TITLE\t") == 1) { title = val(l); continue }
+        if (desc == "" && index(l, "DESC\t") == 1) { desc = val(l); continue }
         if (intro == "" && index(l, "INTRO\t") == 1) { intro = val(l); continue }
         if (index(l, "KEYWORDS\t") == 1) { visnow = 1
             n = split(val(l), a2, "\t")
@@ -1292,7 +1362,11 @@ function strongify(s,   out, i, j) {
     }
     return out s
 }
-$1 == "R" { scan($4); row($2, $3, title, intro, kw, kvis); next }
+# the finder SHOWS the report'"'"'s DESC — its short introduction (2026-09-13,
+# user request: the INTRO no longer renders on the page and is long) — and
+# still SEARCHES the INTRO words, folded into the hidden keyword text
+$1 == "R" { scan($4); iw = intro; gsub(/\*\*/, "", iw); gsub(/<[^>]*>/, "", iw)
+            row($2, $3, title, (desc != "" ? desc : intro), (kw == "" ? iw : kw " " iw), kvis); next }
 $1 == "S" { row($2, $3, $4, $5, $6, $7) }
 '
 
@@ -1308,6 +1382,11 @@ write_report_finder() {
         for name in "${transfer_order[@]}"; do
             case $name in duration-all) continue ;; esac   # Duration's sibling views — reached via their buttons, not separate finder entries
             rpt="$DATA/transfer/reports/$name.rpt"; [ -f "$rpt" ] || continue
+            # the Entities pages describe themselves through the grouped
+            # entities/<name>.rpt (bin/transfer/reports/entities.sh, 2026-09-13);
+            # the classic <name>.rpt is a data producer with no page of its own
+            case $name in account|login|subscription|remote-host|logical|partner|application|domain|bl)
+                [ -f "$DATA/transfer/reports/entities/$name.rpt" ] && rpt="$DATA/transfer/reports/entities/$name.rpt" ;; esac
             fp=$(first_page "$name")
             case $name in
                 (entity-search) fp="search/search.html" ;;
@@ -1587,7 +1666,7 @@ write_sitemap() {
         printf '<li><a href="../search/search.html">Search</a> — find any entity by name</li>\n'
         # the sibling tools (docs/tools/, 2026-09-12): ./ links — the ../ rule
         # above is for everything outside this directory
-        printf '<li><a href="./report-finder.html">Report finder</a> — find a report by title or intro</li>\n'
+        printf '<li><a href="./report-finder.html">Report finder</a> — find a report by title or description</li>\n'
         printf '<li><a href="./whats-new.html">What is new</a> — new and changed reports</li>\n'
         printf '<li><a href="../help/index.html">Help</a> — how to read the report catalogs (per-report help sits behind each page'\''s <b>?</b> button)</li>\n'
         # THE BUILD REPORT (2026-09-12, user request): back on the site as

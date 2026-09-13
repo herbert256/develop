@@ -24,6 +24,15 @@
 <p>There are typically only a few dozen distinct patterns; the table is capped at the top 200 by frequency as a safety margin, and a note appears if any were cut off.</p>
 <h2>The Protocol switch and the Last 5 files</h2>
 <p>A second button row above the Patterns table switches between two groupings of the same Files (2026-09-03): <strong>Protocol off</strong> (the default) shows each pattern as its <em>Direction / Status</em> lines; <strong>Protocol on</strong> adds each leg&rsquo;s protocol to its line (&ldquo;Outbound / ssh / Processed&rdquo;), which splits a shape by the way it travelled &mdash; the same Files, more rows. The choice is remembered per report in this browser session. <strong>Last 5 files</strong> lists each pattern&rsquo;s five most recent Files (newest first, start date and CoreId); every entry opens the File&rsquo;s own page under <code>files/</code> &mdash; the failed-file page layout (the facts table, every transfer leg, the server log behind it) for a File of any outcome.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">How a File moves through the platform, in one report: the <strong>row/status patterns</strong> (the transfers sharing a CoreId), the <strong>leg counts</strong> (the shape of store-and-forward, retries and UC2 pickups), the ordered <strong>protocol journey</strong> of each File, and <strong>how files arrive vs how they leave</strong> (first Inbound and last Outbound protocol with the delivered outcome).</p>
+<p class="note">Files = the delivered (OK) Files of that bucket. The <strong>1 leg</strong> bucket is the One-legged (Pirates) population.</p>
+<p class="note">The extreme repeat-collectors: a UC2 file the partner keeps re-collecting adds one ssh leg per pickup, so its CoreId accumulates legs for as long as it stays staged.</p>
+<p class="note">Files = the delivered (OK) Files of that journey. <strong>?</strong> marks a leg with no protocol logged.</p>
+<p class="note">The protocol each File's FINAL leg used — Files = the delivered ones, beside the Waiting / Expired population. A journey ending on <strong>routing</strong> never left staging — the Waiting / Expired population; a healthy delivery ends on <strong>ssh</strong>/<strong>ftp</strong> (partner side) or <strong>pesit</strong> (CFT side). The state columns show full-period values under a narrowed date range.</p>
+<p class="note">Arrived = the protocol of the earliest Inbound row; Left = the protocol of the latest Outbound row. &quot;(none)&quot; means the File had no Inbound (or no Outbound) row. Files counts the delivered (OK) Files of that pair (2026-09-13 — the Error / OK split is gone), so the rows reconcile to the delivered total.</p>
+</section>
 </main>
 </body>
 </html>

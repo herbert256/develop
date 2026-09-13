@@ -28,6 +28,11 @@
 <p>The tokenized server log is scanned for Advanced Routing lines (an <code>AR&lt;code&gt;:</code> prefix with its two bracket groups) whose text carries the message above; the account is read from the bracket named in the table and folded to its current name when it was renamed. The report shows at most <strong>1000</strong> rows and at most <strong>10</strong> rows per account &mdash; the newest ones on both counts; the intro and the total row say how many lines the log really holds. The date filter, search and sort work over the shown rows. The <a href="server-could-not-send.html">Could not send file</a> report is its twin for the AR0074 delivery failures.</p>
 <h2>Why it matters</h2>
 <p>Each row is a file whose routing did not complete as configured; a account that keeps appearing has a problem on this step that the <a href="server-errors-day.html">Errors</a> reasons and its own detail page put in context.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range"><strong>14</strong> post client action error line(s) for <strong>1</strong> account(s) on <strong>14</strong> day(s) — the Advanced Routing action that runs after a file was received (the delete, typically) failed, the ARRC0009 line, the &quot;Post client action failed&quot; reason of the failure pages. Newest first; the report shows at most <strong>1000</strong> rows and at most <strong>10</strong> per account (<strong>10</strong> shown here); the account opens its detail page.</p>
+<p class="note">Source: the TM error &quot;ARRC0009: [&lt;account&gt;@&lt;login&gt;] []  Error deleting the file after a post client action.&quot; (any AR line whose text names a post client action) — the account is the first bracket, before the @. At most 1000 rows and 10 per account, the newest ones; the totals name what the log holds.</p>
+</section>
 </main>
 </body>
 </html>

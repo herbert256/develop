@@ -26,6 +26,15 @@
 <p>Each message family is matched and counted per signal, with first/last dates and the click-to-expand drill of the 10 most recent raw lines. Counts are additive and re-total under the date filter.</p>
 <h2>Why it matters</h2>
 <p>A daemon that restarted a dozen times in a month, or a watchdog that keeps finding a service unresponsive, are early warnings of infrastructure trouble — and they are invisible everywhere else on this site by design: the transfer logs only see transfers. The steady background rate is the baseline; what deserves attention is a change — restarts clustering on one day, or a distress signal appearing that was never there.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">The health of the platform itself on one page — the infrastructure story the transfer figures never show: <strong>daemon lifecycle and cluster distress</strong> signals, <strong>stuck internal events</strong> (expired heartbeats and the recovery sweeps) and <strong>scheduler overruns</strong> (tasks skipped because the previous run was still going). (The Sentinel event-feed view went with the per-message acknowledgement lines the server parse now drops — 2026-08.)</p>
+<p class="note">Protocol daemons starting/stopping (each restart logs several lines: the stop/shutdown request, then the start, bind and listener lines) and the watchdog's &quot;Service … appears to be unresponsive or stopped&quot; warnings. Counts are additive and re-total under the date filter. Click a signal for its 10 most recent messages.</p>
+<p class="note">Low-volume but high-signal warnings from the streaming/cluster layer: Oracle Coherence cluster-formation delays, the dispatch policy finding no usable peer, streaming not ready, and streaming completion-token timeouts. Any sustained rise here deserves attention before it becomes transfer failures.</p>
+<p class="note">This view has no data in this environment.</p>
+<p class="note">This view has no data in this environment.</p>
+<p class="note">Source: TM warnings &quot;The task … is still in progress. Skipping the next scheduled occurrence of this task.&quot; The subscription is the last segment of the logged subscription folder. Names are shown as logged; a name matching a known account or subscription from the transfer logs links to its detail page. Skipped-run counts are additive, so a date-filtered range re-totals them. Click a row to expand its 10 most recent skip lines.</p>
+</section>
 </main>
 </body>
 </html>

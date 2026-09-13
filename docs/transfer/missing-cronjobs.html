@@ -18,7 +18,6 @@
 <body>
 <div class="topbar" data-b="../" data-help="missing-cronjobs"></div>
 <h1>Missing cronjobs</h1>
-<p class="range"><strong>3</strong> subscription(s) of a cron-triggered use case (<strong>UC3, UC5, UC6</strong>) have <strong>no cron expression</strong> configured, so nothing ever makes them poll the partner. Where we are the client and PULL, a Quartz cron expression is the ONLY thing that starts the flow — without one the subscription is complete in every other respect and simply never runs: no poll, no file, no error, and nothing in either log to notice. The schedules that ARE configured are on <strong>Cronjobs</strong>.</p>
 <div class="stat stat-red"><span class="stat-v">3</span><span class="stat-l">Missing a cronjob</span></div>
 <div class="tablewrap"><table data-nofilter="1" data-nosearch="1">
 <tr><th>Subscription</th><th>Use case</th></tr>
@@ -27,7 +26,6 @@
 <tr data-res="orange"><td class="cl"><a href="../details/subscriptions/uc3-it-facts-hooli.html">UC3_IT_FACTS_HOOLI</a></td><td>UC3</td></tr>
 <tr class="total"><td>Total (3 subscription(s))</td><td></td></tr>
 </table></div>
-<p class="note">Source: the <strong>subscriptions.json</strong> export directly — the cron expressions live in each subscription's `parameters`, which the config caches do not carry. This is PURE CONFIGURATION and reads no log, so the answer does not change with the date range and the table carries no date filter. A use case counts as cron-triggered when <strong>uc-cases.sh</strong> gives it the trigger &quot;Cronjob&quot; (UC3, UC5, UC6 today), so the list follows the use-case definitions rather than a hardcoded set here; <strong>UC1</strong> is a client use case too, but pushes on directory scanning, so it is never flagged.</p>
 <div class="summary">Missing a cronjob: 3 subscription(s)  |  Cron-triggered use cases: UC3, UC5, UC6</div>
 </body>
 </html>

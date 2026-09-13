@@ -21,6 +21,13 @@
 <h2>How it's computed</h2>
 <p>The Per day and Top accounts tabs count <strong>Files</strong> — logical transfers from <code>_files.tsv</code> — with each file's size counted <strong>once per File</strong>, not once per row. This is what "volume" should mean: the size of the file that moved, not the sum of its Inbound and Outbound legs.</p>
 <p>The <strong>By direction</strong> tab is the one exception on this page: it counts physical rows from the parse cache, split Inbound vs Outbound, with its own Error/OK and volume figures. Because a single transfer writes its file size on both its Inbound and its Outbound row, this table's total volume is roughly <strong>twice</strong> the logical total shown on the other two tabs — a note under the table restates this. It is included so you can see the split by direction, which the logical File view (one outcome per transfer) cannot show.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">How much data moves and which way it is heading: <strong>volume per day</strong>, the <strong>direction split</strong>, the <strong>top accounts</strong> — and the <strong>trend</strong> view: the window split in half and each flow's Files/volume compared across the halves, so growers, shrinkers and flows gone silent stand out.</p>
+<p class="note">This table counts technical transfers (rows), not Files: a File moves its file in on the Inbound row and out on the Outbound row, so the total (44.79 GB) is roughly twice the logical volume above. Error/OK split those transfers by status; click a count for that outcome's 10 most recent transfers.</p>
+<p class="note">Active with 10+ Files in the first half, then NOTHING in the window's final week. Days silent counts to the dataset's last day, not today. Stale Accounts tracks the same signal per ACCOUNT (against its own cadence) — this catches the per-subscription cases.</p>
+<p class="note">4x+ more Files in the second half (20+ Files there). &quot;new&quot; = no first-half activity at all — a flow that started mid-window (the First Seen analysis dates every flow's absolute first appearance).</p>
+</section>
 </main>
 </body>
 </html>

@@ -22,6 +22,12 @@
 <p>The report walks the logical-transfer cache (one row per File) and compares each attributed value against the FlowManager caches extracted from <code>partners.json</code> / <code>subscriptions.json</code>, case-insensitively. A logged subscription value counts as configured when a configured subscription name <strong>prefixes</strong> it &mdash; the same rule the rest of the site uses (logged site values carry protocol suffixes). <strong>Host</strong> rows are outbound endpoints we dialed that partners.json does not list; <strong>Whitelist</strong> rows are the source addresses of incoming connections that no AllowIP entry covers.</p>
 <p>Counts are <strong>Files</strong> (one logical transfer per CoreId), with the Error/OK split by each File's delivered outcome and the volume counting each file once. Names link to their detail pages where one exists (whitelist addresses have none). These are exactly the values that render <strong>untinted</strong> (no status color) on the Entities pages &mdash; FlowManager has no result to color them by.</p>
 <p>Note that the configuration is compared <strong>as it is now</strong>: the report cannot tell whether a value was configured at the time it was logged &mdash; a since-deleted account and a never-configured one look the same.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">Every entity VALUE that appears in the transfer logs but is <strong>not in the current FlowManager configuration</strong> — checked against all ten configured lists (accounts, subscriptions, logins, hosts, whitelist, logical flows, partners, applications, domains, BL tags). These are the flows running outside the configuration: test uploads, renamed or deleted config objects, or unlisted partner addresses.</p>
+<p class="note">Counts Files — one logical transfer each. Matching is case-insensitive; a logged subscription value counts as configured when a configured subscription name <strong>prefixes</strong> it (the site-wide rule). <strong>Host</strong> rows are outbound endpoints we dialed that partners.json does not list; <strong>Whitelist</strong> rows are incoming source addresses that no AllowIP whitelist entry covers. A missing FlowManager export makes every logged value of that type appear here.</p>
+<p class="note">These are the same values that render UNTINTED (no status color) on the Entities pages — FlowManager has no result for them.</p>
+</section>
 </main>
 </body>
 </html>

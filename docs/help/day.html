@@ -21,6 +21,15 @@
 <h2>How it's computed</h2>
 <p>Every day in the full calendar span between the first and last record is shown, even one with zero activity: a day with no Files gets an explicit "0" row with <code>-</code> in the First/Last Time columns, so a quiet day is visually distinct from a missing one rather than simply absent from the table.</p>
 <p>A day at either edge of the log collection window is flagged <strong>(partial start)</strong> or <strong>(partial end)</strong> when its first time is after 02:00 or its last time is before 22:00 — a sign that the export didn't cover the whole day, so its numbers should not be compared directly with a full day.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">Transfer activity at every resolution in one report: <strong>per day</strong>, <strong>per ISO week</strong>, <strong>per hour of day</strong> (plus the hour × weekday grid) and <strong>per weekday</strong>. The tabs switch the resolution; the figures are the same Files, Error/OK split and volume throughout.</p>
+<p class="note">One row = one calendar day. A &quot;0&quot; row with no times is a day with no Files; &quot;(partial start/end)&quot; marks a day whose collection window began or ended mid-day. The Top view shows this same per-day table together with each day's active accounts, subscriptions, flows, hosts and logins.</p>
+<p class="note">One row = one ISO week (Monday-Sunday) by start date. &quot;Days&quot; counts the calendar days with data; Avg/day divides by it. The From/To dates make the date filter hide out-of-range weeks.</p>
+<p class="note">Files = the delivered (OK) Files started in that hour; the bar shows load relative to the busiest hour.</p>
+<p class="note">Each cell counts the Files starting in that hour on that weekday, tinted by quartile of the busiest cell — batch windows show as dark blocks. The date filter re-sums every cell and re-tints for the selected range.</p>
+<p class="note">One row = one day of week; Files = the delivered (OK) Files, Error % the failures over every File of that weekday.</p>
+</section>
 </main>
 </body>
 </html>

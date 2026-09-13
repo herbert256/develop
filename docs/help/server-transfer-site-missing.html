@@ -35,6 +35,13 @@
 <p>Click a row to expand its 10 most recent warnings.</p>
 <h2>How it relates to the other pages</h2>
 <p><a href="server-deploy-errors.html">Deploy errors</a> covers the configuration defects that <em>stop</em> a flow (an abandoned route, a profile that cannot receive); this page covers the one that quietly degrades it instead. The former Remote Polls tables live on the <a href="server-uc3-status.html#polls">UC status / UC3</a> tab since 2026-09-05.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range"><strong>&quot;Transfer site ID is not present in environment. Using host, port and user: …&quot;</strong> — SecureTransport ran a transfer with <strong>no transfer site</strong> in its environment and fell back to the communication profile's raw <strong>host, port and user</strong>. The transfer still moves, so this is a <strong>configuration gap</strong> rather than a runtime failure: a route or profile that lost its transfer-site reference. It is the one server-log message that names NO flow — it says the transfer carried no site — so the rows here are <strong>endpoints</strong>, not subscriptions.</p>
+<p class="range"><strong>36 warning(s)</strong> in the log window. Hosts that have moved a file OK <strong>since</strong> their newest warning are <strong>not listed</strong>: a later OK transfer through the same endpoint says the gap is closed. That cleared <strong>1</strong> host(s) carrying <strong>26</strong> warning(s).</p>
+<p class="note">The host, port and user are the values the fallback used, read from the message itself. A host appears once however many flows use it: the message names none of them, which is the point — with no transfer site there is nothing to attribute it to. Click a row to expand its 10 most recent warnings.</p>
+<p class="note">Why it matters: the connection is made on profile values alone, so nothing about it is governed by the subscription — no site-level routing, no site-level limits. It also leaves the endpoint carrying evidence no flow can own, which is why <strong>bin/build/result.sh</strong> reddens a host on unattributable ERRORS only and leaves these warnings to this page.</p>
+</section>
 </main>
 </body>
 </html>

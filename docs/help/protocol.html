@@ -21,6 +21,15 @@
 <h2>How it's computed</h2>
 <p>These tables count individual <strong>transfers (legs)</strong>, not Files: one File typically has an Inbound row on one protocol (say ssh) and an Outbound row on another (say pesit), so protocol and direction are attributes of each physical row, not of the logical transfer as a whole. "Failed Subtransmission" is folded into Failed everywhere in these tables.</p>
 <p>Since 2026-09-13 every table shows one <strong>Transfers</strong> column holding the OK legs &mdash; no Error / OK split and no green or red cells.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">44.79 GB total volume across all protocols.</p>
+<p class="note">Counts individual transfers (legs), not Files: one File has an Inbound row (e.g. ssh) and an Outbound row (e.g. pesit), so protocol/direction are per leg.</p>
+<p class="range">Transfer legs by <strong>Direction</strong> (Inbound/Outbound), by <strong>Action By</strong>, and their crosstab — the OK legs. Counts physical <strong>Transfers</strong> — one per log row — so one File's inbound and outbound legs count once each.</p>
+<p class="note">Counts individual transfers (legs), not Files: direction and action-by are per leg (a File has an Inbound and an Outbound row).</p>
+<p class="range">How transfers moved their files, from the log <strong>Mode</strong> column: <strong>BINARY</strong> vs <strong>ASCII</strong>. Counts are per transfer.</p>
+<p class="note">Counts individual transfers (legs), not Files: Mode is a per-leg attribute.</p>
+</section>
 </main>
 </body>
 </html>

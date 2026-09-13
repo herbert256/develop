@@ -465,8 +465,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # (the dwell report's Gap-per-day paragraph) closes the open table and
     # any side-by-side row first — it used to print INSIDE the previous
     # table's markup (2026-09-05)
-    else if (dir == "INTRO")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<p class=\"range\">%s</p>\n", prose(rest) }
-    else if (dir == "ALERT") {
+    else if (dir == "INTRO")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; if (!noprose) printf "<p class=\"range\">%s</p>\n", prose(rest) }    else if (dir == "ALERT") {
         # optional cells 2+3 append a LINK to the banner (href, text) — the
         # detail pages' after-last-transfer banner points at the page's own
         # "Server log error" section this way. A single-cell ALERT renders
@@ -739,8 +738,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     }
     # NOTE/LINK/SUMMARY are FULL-WIDTH blocks: also close an open sxs flex
     # row, or they render as a flex item BESIDE the last side-by-side table
-    else if (dir == "NOTE")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<p class=\"note\">%s</p>\n", prose(rest) }
-    else if (dir == "LINK")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); printf "<p class=\"report-link\"><a href=\"%s\" target=\"_blank\" rel=\"noopener\">%s</a></p>\n", esc(CELL[1]), esc(CELL[2]) }
+    else if (dir == "NOTE")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; if (!noprose) printf "<p class=\"note\">%s</p>\n", prose(rest) }    else if (dir == "LINK")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); printf "<p class=\"report-link\"><a href=\"%s\" target=\"_blank\" rel=\"noopener\">%s</a></p>\n", esc(CELL[1]), esc(CELL[2]) }
     else if (dir == "SUMMARY") { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<div class=\"summary\">%s</div>\n", esc(rest) }
     else if (dir == "FOOT")    close_table()
     # DESC, META and anything unknown: not rendered

@@ -338,7 +338,14 @@ META`. `GHEAD` = an optional group-banner `<th>` row ABOVE `HEAD` (cells may lea
 
 - Empty `TABLE` heading → no `<h2>`. `INTRO`/`NOTE` support `**bold**` and `[[sub/name]]`
   entity detail links (slugmap-resolved at render time like a cell's `alink`; no entry → the
-  plain name). `ALERT` → red banner (the
+  plain name). **NEITHER RENDERS ON A REPORT PAGE** (2026-09-13, user request: a report explains
+  itself on its HELP page only) — `render_report` sets `RPT_NOPROSE=1` and render_rpt.awk skips
+  the two directives; the prose lands on the report's help page instead, under "About this
+  report" (bin/build/publish.sh `help_about_fragments` / `apply_help_chrome`, every published
+  .rpt mapping to the slug, a sub-heading per report when several share a page), and the Report
+  finder shows the one-line `DESC` (the INTRO words still feed its search). The drill and record
+  pages (errors/, files/, the record and value pages, the detail pages) keep their INTRO — there
+  it states facts. `ALERT` → red banner (the
   RUNTIME register); `WARN` → amber (the CONFIGURATION register). `STAT⇥class⇥value⇥label` → info
   box. `LOGCARD⇥date time⇥message` → timestamped monospace card. `LINK⇥url⇥text` → below the
   table. `KEYWORDS` feeds the Report finder. `NAV` is emitted by publish_lib when splitting a

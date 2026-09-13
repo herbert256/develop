@@ -23,6 +23,11 @@
 <p>Only the shared accounts are listed (the single-subscription majority is counted in the boxes above). Per account: its kind, how many subscriptions of each use case, and the full subscription list (three or more fold behind an ellipsis &mdash; click to expand). The account links to its detail page. Rows are grouped by kind, largest first.</p>
 <h2>How it's computed</h2>
 <p>Configuration only: the account &rarr; subscription pairs from the FlowManager export (the xref cache), classified by the subscription names&rsquo; <code>UC&lt;n&gt;</code> prefix (UC1/UC3 = we connect out, UC2/UC4 = the partner connects in). No log data is involved, so the page is identical however much traffic ran.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">An account is a partner relation, and one relation often carries <strong>several flows</strong>. The shapes are few: a <strong>Mailbox pair</strong> (exactly UC2 + UC4) is the partner's inbound mailbox — ONE connection used to drop and pick up, which is why those pages carry the shared-connection notes; an <strong>Outbound pair</strong> (exactly UC1 + UC3) is the outbound mirror — we push to and poll the same partner; an <strong>Outbound fan-out</strong> runs several UC1/UC3 flows over one relation. <strong>Both directions</strong> on one account is rare for real partners — the synthetic ST monitor account has it by design. Inbound sharing beyond the pair (two UC2s, two UC4s) is the <strong>Inbound (irregular)</strong> kind: the hybrid production accounts, where one partner relation carries several flows.</p>
+<p class="note">The kind reads the subscription NAMES' UC prefix (UC1/UC3 = we connect out, UC2/UC4 = the partner connects in), or the use case DERIVED from the configuration for a flow without one (the hybrid production flows). Rows are ordered by kind, then by size. Single-subscription accounts (the majority) are counted in the boxes above but not listed. A login usually rides its account 1-to-1, so &quot;same account&quot; and &quot;same FE login&quot; describe the same sharing; a hybrid production account shares one login across its flows — or carries SEVERAL FE logins, one per flow (the multi-FE shape, 2026-08-31).</p>
+</section>
 </main>
 </body>
 </html>

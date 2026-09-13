@@ -22,6 +22,11 @@
 <p>A completed transfer is normally <strong>store-and-forward</strong>: the partner sends the file in (an <strong>Inbound</strong> leg) and Secure&shy;Transport forwards it back out (an <strong>Outbound</strong> leg), so one logical transfer is commonly 2–7 rows (the two legs plus any retries). A <strong>single-leg</strong> CoreId is one-sided — only the Inbound leg (the file arrived but was never forwarded) or only the Outbound leg (a send with no matching arrival) was ever logged. The counterpart leg never happened, so the file never made the full crossing; these do not complete and end up <strong>Error</strong>. The Direction column tells you which half exists — the missing half is the other direction.</p>
 <h2>How it's computed</h2>
 <p>Leg count comes from the logical-transfer cache (<code>_files.tsv</code>, one row per CoreId, its <em>rows</em> column = the number of technical legs); a value of exactly 1 selects the pirates. The single leg's Direction is read from the parse cache (<code>_transfers.tsv</code>), and the account / subscription / partner / size / file from the same per-CoreId row. Every count here is one logical transfer (one CoreId), full period. Days on which a single-leg transfer occurred are also surfaced in the combined day page's <em>Problems this day</em> list.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range"><strong>Pirates</strong> — logical transfers (CoreIds) that have only <strong>one leg</strong> (one technical row). A complete transfer is store-and-forward: an <strong>Inbound</strong> leg (partner → ST) and an <strong>Outbound</strong> leg (ST → partner). A single-leg CoreId is one-sided — the counterpart leg never happened — so the file never made the full crossing. <strong>Details</strong> counts them per subscription; <strong>Top view</strong> the count per day.</p>
+<p class="note">One row per subscription: how many of its transfers were single-leg, and the first and last date one occurred. Single-leg transfers do not complete the store-and-forward, so they end up <strong>Error</strong>. The Subscription links to its detail page.</p>
+</section>
 </main>
 </body>
 </html>

@@ -23,6 +23,11 @@
 <p>Because this report reads the transfer subscription list as an input, it can only run <strong>after</strong> the transfer reports have produced it — if <code>data/transfer/reports/subscription.rpt</code> is missing, this report fails with an error asking you to run the transfer reports first.</p>
 <h2>Click to expand</h2>
 <p>Click a row to expand its 10 most recent connection-failure lines (newest first).</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range"><strong>1233</strong> connection-failure messages: <strong>49</strong> subscription(s) resolved to a known subscription, <strong>1</strong> name(s) unresolved (truncated beyond a unique match, or absent from the transfer logs — see the Missing subscriptions report). Repeated connection failures are retry storms toward an unreachable partner.</p>
+<p class="note">Server messages truncate long subscription names; a name is shown in full (and linked) when it is the prefix of exactly one subscription. Share is of all connection failures across both tables at the full range (a narrowed date range re-shares over each table separately). Click a row to expand its 10 most recent failure lines.</p>
+</section>
 </main>
 </body>
 </html>

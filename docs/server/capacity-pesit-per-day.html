@@ -19,7 +19,6 @@
 <div class="topbar" data-b="../" data-help="server-pesit"></div>
 <h1>Capacity &amp; sessions <span class="grouptag">&larr; Operations &amp; Capacity &larr; Server</span></h1>
 <p class="tabs"><a class="tab" href="platform-health.html">Platform health</a><span class="tab active">Capacity &amp; sessions</span><span class="tabsep"></span><span class="tab active">PeSIT per day</span><a class="tab" href="capacity-pesit-problems.html">PeSIT problems</a><a class="tab" href="capacity-problem-types.html">Problem types</a><a class="tab" href="capacity-diagnostic-codes.html">Diagnostic codes</a><a class="tab" href="capacity-fpdu-ledger.html">FPDU ledger</a><a class="tab" href="capacity-local-deletes.html">Local deletes</a><a class="tab" href="capacity-remote-deletes.html">Remote deletes</a><a class="tab" href="capacity-maintenance.html">Maintenance</a></p>
-<p class="range">How busy the platform is and what it cleans up: <strong>PeSIT activity</strong> — logins, transfers, resets, ceiling hits and diagnostic codes — and the <strong>file retention / cleanup</strong> sweeps per account and remote directory. (The session-concurrency view went with the session bookkeeping lines the server parse now drops — 2026-08.)</p>
 <div class="tablewrap"><table class="wide" data-total-top="1">
 <tr><th>Date</th><th class="num">Logins</th><th class="num">Logouts</th><th class="num">Transfers</th><th class="num">Conn resets</th><th class="num">Max-conn hits</th><th>First</th><th>Last</th></tr>
 <tr class="total"><td>Totals for 68 days</td><td class="num">17590</td><td class="num">17590</td><td class="num">8836</td><td class="num failed z"></td><td class="num warn">14</td><td></td><td></td></tr>
@@ -92,6 +91,5 @@
 <tr data-loglines=""><td>2026-08-28</td><td class="num">269</td><td class="num">269</td><td class="num">127</td><td class="num failed z"></td><td class="num warn z"></td><td>00:01:59</td><td>23:22:04</td></tr>
 <tr data-loglines=""><td>2026-08-29</td><td class="num">81</td><td class="num">81</td><td class="num">42</td><td class="num failed z"></td><td class="num warn z"></td><td>00:36:23</td><td>23:57:49</td></tr>
 </table></div>
-<p class="note">One row = one calendar day. Logins/Logouts come from &quot;Client logged in/out&quot;; Transfers from &quot;Inbound transfer completed with diagCode&quot;; Conn resets from PESITD &quot;Network error: Connection reset&quot; (also counted in Transfer Error Reasons); Max-conn hits from &quot;PeSIT server has exceeded the maximum number of allowed connections 100&quot; — the internal CFT link saturating the 100-connection limit. Counts are additive, so a date-filtered range re-totals them. Conn resets are tinted red, Max-conn hits amber. Click a day to expand its 10 most recent Warning/Error lines (newest first).</p>
 </body>
 </html>

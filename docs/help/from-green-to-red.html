@@ -25,6 +25,11 @@
 <p>The flip is a sequence in time — a narrowed From/To range would fabricate flips (by hiding the newest failures) or hide them (by cutting the green history). The page therefore always shows the full period, like <a href="stale-accounts.html">Stale Accounts</a> and <a href="episodes.html">Failure Episodes</a>.</p>
 <h2>How it relates to the other failure reports</h2>
 <p><a href="episodes.html">Failure Episodes</a> shows every failure run (its Open incidents table requires 3+ consecutive failures and includes never-green flows); this page requires exactly one thing — <em>green before, red now</em> — and shows the flip itself, even when the current run is a single failure. <a href="failure-rate.html">Failure rate</a> answers "what share fails", <a href="not-in-flow-manager.html">Not in Flow Manager</a> covers configuration drift. The subscription's red tint on the Entities pages and detail pages follows the same latest-File rule this page uses.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">The REGRESSION list: of the <strong>109</strong> subscription(s) with Files, <strong>8</strong> are <strong>red right now</strong> (latest File Failed or Expired) — and <strong>7</strong> of those were <strong>green on an earlier day</strong> (that day ended on an OK File). They are listed here, newest flip first; the other <strong>1</strong> never delivered an OK File at all and belong on the Only red view, not here. Click the Error count for the 10 most recent failed Files, the OK count for the last successful ones.</p>
+<p class="note">A subscription is <strong>red</strong> when its LATEST File's outcome is Failed or Expired, <strong>green</strong> otherwise — the same rule that colors it site-wide (Waiting counts as OK, Expired as Error). &quot;Last green day&quot; is the most recent day that ENDED on an OK File; &quot;Went red on&quot; is the first failure of the current run (an OK and a failure on the same day leave that day red, so the two can sit days apart). Days red counts to the dataset's last day (2026-08-29), not today. OK Files and Files are lifetime counts for the subscription. <strong>This table always shows the full period</strong> — the flip is a sequence in time, so a narrowed From/To range would fabricate or hide flips.</p>
+</section>
 </main>
 </body>
 </html>

@@ -25,6 +25,13 @@
 <p>Red subscriptions only, <strong>one each</strong>: the source is the default Failed Subscriptions view &mdash; one row per failing subscription, its newest failed File or its server-log verdict &mdash; so the Count column sums to the same red total the home page&rsquo;s two red tables split between them. Green (recovered) flows never count here, whatever their history; for volumes over time use <a href="failure-rate.html">Failure rate</a>.</p>
 <h2>The drill pages</h2>
 <p>A nonzero row opens the list of the red subscriptions carrying that reason &mdash; each row exactly as the Failed Subscriptions pages list it (Subscription and Date/time), and opening the same error page: the file&rsquo;s legs and server log, or the server-failing flow&rsquo;s reddening session.</p>
+<section class="about">
+<h2>About this report</h2>
+<h3>Error reason: Connection failures</h3>
+<p class="range">The currently <strong>red</strong> subscriptions whose Reason is <strong>Connection failures</strong>, newest first. Each row is listed exactly as on the Failed Subscriptions pages, and opens the same error page.</p>
+<h3>Error reasons</h3>
+<p class="note">The row set is <strong>every Reason the Failed Subscriptions pages can show</strong> — the shared classifier vocabulary (bin/flip-reason.awk, in classifier order), <strong>One-legged</strong>, the raw last-leg status, plus whatever a server row carries — a reason with <strong>nothing counted stays listed with blank Count and Last</strong>, so a fault class disappearing from the estate is visible as an emptied row. The button rows above pick the view: <strong>Subscriptions</strong> counts flows once each (their newest failure or server verdict), <strong>Errors</strong> counts every individual failed File; <strong>Current</strong> keeps to the still-failing estate, <strong>History</strong> includes the recovered. This view: RED subscriptions only, one each — the same rows the default Failed Subscriptions view lists. A nonzero row opens the list behind the count.</p>
+</section>
 </main>
 </body>
 </html>

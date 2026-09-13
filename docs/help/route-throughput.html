@@ -19,6 +19,12 @@
 <h2>What this shows</h2>
 <p>Wire speed per route (subscription × protocol × direction), computed only from legs that measure a real rate: duration over 500 ms and size over 1 MB, so session-setup noise is excluded. MB/s is the route's counted bytes divided by its summed leg durations — a volume-weighted rate.</p>
 <p>Leg duration is the record's own wire time; the store-and-forward dwell between legs is never included (the Store-and-forward report measures that). Compare a route to its protocol rollup, not across protocols: PeSIT throttles far below SFTP by design. The Trend column compares the first half of the window with the second.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">How fast the bytes actually move, per <strong>route</strong> (subscription x protocol x direction). Only legs that measure a real rate count: <strong>duration &gt; 500 ms</strong> and <strong>size &gt; 1 MB</strong> — <strong>3190</strong> such Transfers, moving <strong>33.44 GB</strong> in <strong>4.09 h</strong> of wire time (<strong>2.32 MB/s</strong> overall). Slowest routes first: a PeSIT route at 0.2 MB/s and an SFTP route at 40 MB/s are both normal, but a route far below its protocol peers is worth a look. The Trend column compares the first half of the observed window with the second.</p>
+<p class="note">MB/s = the route's counted bytes divided by its summed leg durations (a volume-weighted rate, so one big slow file outweighs ten quick ones). The <strong>500 ms / 1 MB floors</strong> drop the legs whose measured rate is mostly session setup and rounding. A leg's duration is the log record's own wire time — the store-and-forward dwell BETWEEN legs is never in it (the Store-and-Forward report measures that). Trend: first-half vs second-half MB/s of the window; shown when both halves have at least 3 Transfers.</p>
+<p class="note">The same figures rolled up per protocol — the fair baseline for a route: PeSIT throttles far below SFTP by design. `routing` is the internal store-and-forward leg between the inbound and outbound sides.</p>
+</section>
 </main>
 </body>
 </html>

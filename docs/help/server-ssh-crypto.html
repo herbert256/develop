@@ -34,6 +34,13 @@
 <h2>Reading the tables</h2>
 <p>Each algorithm table shows negotiation count, share within that table, and an Assessment of OK or <strong>Weak</strong> (tinted red). The Negotiations by protocol table gives the SSH/PeSIT/HTTPS/FTPS split. All tables re-total under the date filter; click a row to expand its 10 most recent log lines.</p>
 <p><strong>Algorithm negotiation failures</strong> shows outbound SSH connections that died before authentication because no common algorithm exists, with the remote software banner. <strong>PeSIT TLS adoption</strong> dates the moment the internal ST&ndash;CFT PeSIT link went encrypted, with a per-week ramp.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">The SSH security picture on one page: the <strong>negotiated algorithms</strong> in live use (ciphers, key exchange, MACs, public keys) with weak ones flagged, the <strong>deprecated-parameter</strong> warnings, and the <strong>session lifecycle problems</strong> — sessions referenced after teardown and streams aborted mid-transfer.</p>
+<p class="note">An SSH/SFTP connection breaks out cipher, key exchange, MAC and public key separately; a TLS connection (HTTPS and PeSIT/FTPS over TLS) logs only a cipher suite — key exchange, MAC and signature are folded into the suite. So the Cipher suites table counts all <strong>7863</strong> negotiations, while Key exchange / MAC / Public-key count only the <strong>7863</strong> SSH/SFTP connection(s) that itemize them. Share is within each table. &quot;Weak&quot; flags known-deprecated algorithms; `ssh-rsa` is flagged because it signs with SHA-1. The deprecated-parameter table is the server's own warnings, with the account, subscription and remote host that used the parameter (shown as logged; names matching a known transfer-log entity link to its detail page). All tables re-total under the date filter; click a row to expand its 10 most recent log lines.</p>
+<p class="note">Outbound SSH connections that failed before any authentication because no common algorithm exists — none in this data window.</p>
+<p class="note">The &quot;Establishing PeSIT SSL connection with host …, using cipher suite: …&quot; lines from the PESITD component: the internal ST ↔ CFT PeSIT link running over TLS. The first such line is dated <strong>2026-06-23</strong> — the milestone that PeSIT went ENCRYPTED; before that date the link ran in the clear (no PeSIT SSL line appears). The Per-week column shows the adoption ramp, one line per calendar week (dated by its Monday). Click a row for its 10 most recent connections.</p>
+</section>
 </main>
 </body>
 </html>

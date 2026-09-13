@@ -18,7 +18,6 @@
 <div class="topbar" data-b="../" data-help="app-partners"></div>
 <h1>Application dependencies <span class="grouptag">&larr; Partners &larr; Analyses</span></h1>
 <p class="tabs"><a class="tab" href="partner-scorecard.html">Partner scorecard</a><a class="tab" href="blast-radius.html">Blast radius</a><span class="tab active">Application dependencies</span><a class="tab" href="partner-lifecycle.html">Partner lifecycle</a></p>
-<p class="range">Every internal application seen in the logs, by how many <strong>external partner organisations</strong> it depends on — and how well each of those pairs actually runs. The most exposed application is <strong>ARIVA</strong> with <strong>3</strong> partners (0 of those pairs at 100% Error). Applications and partners are parts 2 and 3 of the logical flow name (domain_application_partner) a File's subscription resolves to through its FlowID, so this attribution is only as good as that naming convention — good enough to see exposure and failing pairs, but not a configuration export. Both sides use the site-wide UNION rules: a File counts for every application and every partner of its subscription.</p>
 <div class="stat"><span class="stat-v">75</span><span class="stat-l">Applications seen</span></div>
 <div class="stat"><span class="stat-v">86</span><span class="stat-l">Dependency pairs</span></div>
 <div class="stat stat-red"><span class="stat-v">1</span><span class="stat-l">Pairs at 100% Error</span></div>
@@ -192,7 +191,6 @@
 <tr><td class="cl"><a href="../details/applications/zka.html">ZKA</a></td><td class="cl"><a href="../details/partners/hooli.html">HOOLI</a></td><td class="num">227</td><td class="num">15.4</td><td>2026-08-29</td></tr>
 <tr class="total"><td>Total (86 pair(s))</td><td></td><td class="num">21125</td><td class="num"></td><td></td></tr>
 </table></div>
-<p class="note">A pair's Error % is the Failed-or-Expired share of its Files (the site-wide outcome policy: Waiting counts as OK, Expired as Error). The per-application Files column sums its pairs, so a File shared by two partners counts twice there — exposure, not throughput. A red row runs at 100% Error: the dependency exists in the logs but never works — usually a decommissioned counterparty still being retried.</p>
 <div class="summary">Applications: 75  |  Dependency pairs: 86  |  Pairs at 100% Error: 1</div>
 </body>
 </html>

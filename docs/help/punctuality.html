@@ -29,6 +29,11 @@
 <p>Per (subscription, day) the earliest File time is kept; the median of those minutes is the typical slot. The missed-day model builds each flow's weekday profile (which weekdays it usually serves) and walks the whole calendar window — so a Tuesday flow that skips a Tuesday is flagged, while never running on weekends is not. The page always shows the full period (the model needs the whole window), so there is no From/To filter.</p>
 <h2>How it relates to the other timing reports</h2>
 <p><a href="stale-accounts.html">Stale Accounts</a> measures idle <em>days</em> per account against its own cadence — day granularity, account level. This page is time-<em>of-day</em> granularity at subscription level: the file arrived, but an hour late; the Tuesday slot passed empty. <a href="hourly.html">Load by Hour</a> shows when the platform is busy overall; this shows whether each individual rhythm holds.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">Does the daily file arrive on time? Of the <strong>109</strong> subscription(s) active on <strong>8+ days</strong>: <strong>15</strong> run like <strong>clockwork</strong> (arrival within ±15 min), <strong>3</strong> are regular (±1 h), <strong>19</strong> loose (±3 h) and <strong>72</strong> irregular (event-driven). Across the clockwork/regular flows there were <strong>14</strong> late arrival(s) (over an hour past the typical slot) and <strong>15</strong> missed expected day(s). Click a row with late/missed counts for the dates.</p>
+<p class="note">The day's FIRST File defines that day's arrival; the median over the window is the typical slot, the spread (one standard deviation) the Window and Class. <strong>Late</strong> = arrived over an hour past the typical slot; <strong>Missed</strong> = a weekday this flow served on 75%+ of its calendar occurrences passed with no File at all — both only meaningful for Clockwork/Regular flows (the others show &quot;-&quot;). Tightest flows first. This page always shows the full period — the model needs the whole window. Stale Accounts covers day-level idleness per account; the Cronjobs analysis shows the CONFIGURED schedules these observed slots should match.</p>
+</section>
 </main>
 </body>
 </html>

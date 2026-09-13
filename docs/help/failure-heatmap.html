@@ -27,6 +27,13 @@
 <p>Every logical transfer is placed by the hour of its start time and the weekday of its date (from the Julian day number, 0 = Monday); a transfer counts as failed when its delivered (final-row) outcome is not OK. The hour and weekday tables re-aggregate under the date filter and their Error counts drill to the 10 most recent failed Files for that bucket; the heatmap re-sums and re-tints every cell for the selected range.</p>
 <h2>Why it matters</h2>
 <p>A daily failure total can completely hide a sharp temporal pattern. If nearly all of a day's failures land in one hour, or every Monday morning when a batch kicks off, that points straight at the schedule, job or upstream feed responsible — a very different investigation from a steady background failure rate. Because one dominant window can make every other cell look pale, narrowing the date range (which re-tints the grid) is the quickest way to see the shape of a normal day versus an incident.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range"><strong>33621</strong> Files (one logical transfer each), <strong>1516</strong> failed (<strong>4.5%</strong>). Below: the failure split by <strong>hour of day</strong>, by <strong>weekday</strong>, and a <strong>heatmap</strong> of failures per hour × weekday — darker cells are more failures. Click an Error count for that bucket's 10 most recent failed Files.</p>
+<p class="note">Files by the hour of their start time, all days combined; the Failures bar is that hour's failed count relative to the busiest hour. Hours with zero errors are not listed. Re-aggregates over the selected dates. Click an Error count for its 10 most recent failed Files.</p>
+<p class="note">The same counts by day of week (Monday first). Weekdays with zero errors are not listed. Re-aggregates over the selected dates.</p>
+<p class="note">Each cell is the number of FAILED Files for that hour and weekday; cells are tinted by quartile (darker = more failures). The date filter re-sums and re-tints every cell for the selected range.</p>
+</section>
 </main>
 </body>
 </html>

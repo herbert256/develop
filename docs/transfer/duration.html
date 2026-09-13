@@ -19,7 +19,6 @@
 <div class="topbar" data-b="../" data-help="duration"></div>
 <h1>Transfer Duration <span class="grouptag">&larr; Performance &larr; Transfer</span></h1>
 <p class="tabs"><span class="tab active">Duration</span><a class="tab" href="anomalies.html">Anomalies</a><a class="tab" href="duration-longest.html">Longest Files</a><a class="tab" href="duration-slowest.html">Slowest subscriptions</a><a class="tab" href="duration-dwell.html">Distribution &amp; Store-and-forward</a><a class="tab" href="duration-trend.html">Duration trend</a><span class="tabsep"></span><span class="tab active">OK transfers</span><a class="tab" href="duration-all.html">All transfers</a></p>
-<p class="range">Duration of the <strong>32105</strong> Files over <strong>68</strong> day(s). Overall <strong>min 1.53 s</strong>, <strong>median (p50) 8.01 s</strong>, <strong>p95 37.95 s</strong>, <strong>p99 4.1 min</strong>, <strong>max 27.23 h</strong>. Only <strong>Processed</strong> Files count; Error transfers (mostly instant 0-byte attempts) are excluded so they do not flatten the statistics — switch to <strong>All transfers</strong> to include them. The two per-day tables sit side by side — the percentiles, then min / avg / median / max; the stats are shown in <strong>whole seconds, minutes or hours</strong>, and a narrowed date range keeps each day but blanks the non-additive totals.</p>
 <div class="sxs">
 <div class="sxscol">
 <h2>Duration per day — percentiles</h2>
@@ -172,7 +171,6 @@
 </table></div>
 </div>
 </div>
-<p class="note">One &quot;File&quot; = one logical transfer (all records sharing a CoreId); duration = its <strong>wall-clock span</strong> — from the first record start to the last record end, in milliseconds (so it includes the store-and-forward gap between the inbound and outbound legs, and the idle time between retries), NOT the sum of the record durations. <strong>Only Processed (OK) Files are counted</strong> here (use the All transfers button to include failures). Per-day min/median/max and percentiles are <strong>not additive</strong>: a narrowed date range keeps each day row but blanks the total. Percentiles use the nearest-rank method; <strong>p100</strong> is the day's longest File — the Max of the other view — so the gap between p99 and p100 says how far the worst case sits from the rest.</p>
 <div class="summary">Files: 32105  |  Median: 8.01 s  |  p95: 37.95 s  |  p99: 4.1 min  |  Max: 27.23 h</div>
 </body>
 </html>

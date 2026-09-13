@@ -19,7 +19,6 @@
 <div class="topbar" data-b="../" data-help="route-throughput"></div>
 <h1>Route Throughput <span class="grouptag">&larr; Volume, Sizes &amp; Files &larr; Transfer</span></h1>
 <p class="tabs"><a class="tab" href="ranking-subscriptions.html">Ranking</a><a class="tab" href="volume-per-day.html">Volume</a><a class="tab" href="files-by-size.html">Sizes &amp; types</a><a class="tab" href="top-transfers.html">Largest files</a><span class="tab active">Route throughput</span><a class="tab" href="size-profile.html">Size profile</a></p>
-<p class="range">How fast the bytes actually move, per <strong>route</strong> (subscription x protocol x direction). Only legs that measure a real rate count: <strong>duration &gt; 500 ms</strong> and <strong>size &gt; 1 MB</strong> — <strong>3190</strong> such Transfers, moving <strong>33.44 GB</strong> in <strong>4.09 h</strong> of wire time (<strong>2.32 MB/s</strong> overall). Slowest routes first: a PeSIT route at 0.2 MB/s and an SFTP route at 40 MB/s are both normal, but a route far below its protocol peers is worth a look. The Trend column compares the first half of the observed window with the second.</p>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Subscription</th><th>Protocol</th><th>Direction</th><th class="num">Transfers</th><th class="num">Volume</th><th class="num">Wire time</th><th class="num">MB/s</th><th>Trend (MB/s)</th></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc3-aps-settle-p2p2.html">UC3_APS_SETTLE_P2P2</a></td><td>ssh</td><td>inbound</td><td class="num">3</td><td class="num">4.79 MB</td><td class="num">17.98 s</td><td class="num">0.27</td><td><code>-</code></td></tr>
@@ -222,7 +221,6 @@
 <tr><td class="cl"><a href="../details/subscriptions/uc2-wa-vdn.html">UC2_WA_VDN</a></td><td>ssh</td><td>outbound</td><td class="num">5</td><td class="num">215.26 MB</td><td class="num">4.64 s</td><td class="num">46.43</td><td><code>-</code></td></tr>
 <tr class="total"><td>Total (198 route(s))</td><td></td><td></td><td class="num">3190</td><td class="num">33.44 GB</td><td class="num">4.09 h</td><td class="num">2.32</td><td></td></tr>
 </table></div>
-<p class="note">MB/s = the route's counted bytes divided by its summed leg durations (a volume-weighted rate, so one big slow file outweighs ten quick ones). The <strong>500 ms / 1 MB floors</strong> drop the legs whose measured rate is mostly session setup and rounding. A leg's duration is the log record's own wire time — the store-and-forward dwell BETWEEN legs is never in it (the Store-and-Forward report measures that). Trend: first-half vs second-half MB/s of the window; shown when both halves have at least 3 Transfers.</p>
 <h2>Per protocol</h2>
 <div class="tablewrap"><table data-nofilter="1">
 <tr><th>Protocol</th><th class="num">Transfers</th><th class="num">Volume</th><th class="num">Wire time</th><th class="num">MB/s</th></tr>
@@ -232,7 +230,6 @@
 <tr><td>routing</td><td class="num">14</td><td class="num">49.48 MB</td><td class="num">8.86 s</td><td class="num">5.58</td></tr>
 <tr class="total"><td>Total (4 protocol(s))</td><td class="num">3190</td><td class="num">33.44 GB</td><td class="num">4.09 h</td><td class="num">2.32</td></tr>
 </table></div>
-<p class="note">The same figures rolled up per protocol — the fair baseline for a route: PeSIT throttles far below SFTP by design. `routing` is the internal store-and-forward leg between the inbound and outbound sides.</p>
 <div class="summary">Routes: 198  |  Measured Transfers: 3190  |  Volume: 33.44 GB  |  Overall: 2.32 MB/s</div>
 </body>
 </html>

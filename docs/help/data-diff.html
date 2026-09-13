@@ -20,6 +20,15 @@
 <p>What changed on the newest data day: D is the latest date across the transfer and server parse caches, and every table is judged against D or D-1 — exports arrive in batches, so a change late yesterday may only surface in today's export.</p>
 <p>New red flips lists the freshest breakage (evidence stamp or newest failing File on D/D-1; a chronically failing flow stays listed, its old Failing-since gives it away). Newly quiet catches flows the moment they cross the went-quiet 7-day rule; Recovered shows broken flows whose first OK after their last failure landed since yesterday.</p>
 <p>First seen reads the first-seen ledger; New unknown names lists the server-log-only sidecar names mentioned on D or D-1. The report catalog's changes live on What's new — this page is about the data.</p>
+<section class="about">
+<h2>About this report</h2>
+<p class="range">The newest data day is <strong>2026-08-29</strong> (the latest date across the transfer and server parse caches); everything below is judged against <strong>2026-08-29 or 2026-08-28</strong> — the exports arrive in batches, so a change late on 2026-08-28 may only surface in the next export. This page diffs the <strong>DATA</strong>; the report catalog's changes live on <strong>What's new</strong>.</p>
+<p class="note">Red subscriptions whose server-log evidence stamp (blue/_redflip.tsv) or newest FAILING File is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong> — the freshest breakage. A chronically failing flow fails again every day and so stays listed; its old <strong>Failing since</strong> date gives it away. <strong>From green to red</strong> tells each flip's full story.</p>
+<p class="note">Flows whose last File is exactly <strong>8 days</strong> before the transfer window end (<strong>2026-08-29</strong>): <strong>Went quiet</strong> flags a flow once its silence exceeds 7 days, so these crossed that line within the last data day — the freshest silences, before they fade into old news.</p>
+<p class="note">Green flows whose FIRST OK File after their last failure is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong>: they were failing, and started working again since yesterday. Waiting counts as OK, Expired as Error — the site-wide outcome policy.</p>
+<p class="note">Configured logical flows, partners, subscriptions, accounts, logins and remote hosts whose FIRST-EVER File is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong>, read from the first-seen ledger (the same per-day cells behind the <strong>First seen</strong> analysis). A name's first sighting is a one-off event — it appears here once and then only lives on that page.</p>
+<p class="note">Names the server log mentions with NO transfer of their own (the data/unknown sidecars — the same set that seeds the blue result colour) whose newest mention is on <strong>2026-08-29</strong> or <strong>2026-08-28</strong>. A configured name here is blue (server-seen, never transferred); an unconfigured one is a stranger knocking — <strong>Seen in server log</strong> has the full lists.</p>
+</section>
 </main>
 </body>
 </html>
