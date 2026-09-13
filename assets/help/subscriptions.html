@@ -17,25 +17,24 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Subscriptions (analyses)</h1>
 <h2>What it shows</h2>
-<p>Every configured FlowID (<code>customAttribute_FlowIdentifier</code>) on one row, ordered by use case. UC subscriptions sharing a FlowID fold into one row, each cell the union of their values; a subscription without FlowID keeps its own row.</p>
+<p>Every configured subscription on one row: its groups, its endpoint and folders, and its all-time File counts. Ordered by use case, then name.</p>
 <h2>Columns</h2>
 <ul>
-<li><strong>Subscription</strong> &mdash; the FlowID; links the detail page for a single subscription, plain text when the row folds several.</li>
-<li><strong>UCx</strong> (column two, where the subscriptions live) &mdash; every use case the FlowID appears under, by number, each linking that use case&rsquo;s subscription page (<code>UC1, UC4</code> = two links).</li>
-<li>The UC token is the name-prefix <code>UC&lt;n&gt;</code>, or the one the configuration derives when the name has none.</li>
-<li><strong>Logical</strong> &mdash; the FlowID condensed into its logical flow group.</li>
-<li><strong>Account</strong>, <strong>Partner</strong>, <strong>Domain</strong>, <strong>Application</strong> &mdash; the owning account and the derived groups.</li>
+<li><strong>Subscription</strong> &mdash; the complete configured name; links the detail page.</li>
+<li><strong>Logical</strong>, <strong>Account</strong>, <strong>Partner</strong>, <strong>Domain</strong>, <strong>Application</strong>, <strong>BL</strong> &mdash; the owning account and the derived groups (BL = the <code>tags</code> entry starting with <code>BL</code>); each links its detail page.</li>
 <li><strong>Endpoint</strong> &mdash; inbound: the login the partner connects with; outbound: the remote host we dial.</li>
-<li><strong>BL</strong> &mdash; the <code>tags</code> entries in <code>subscriptions.json</code> starting with <code>BL</code> (business-line marker); blank without one. An entity of the Logical, Partners, Domains, Applications &amp; BL group.</li>
+<li><strong>From</strong> / <strong>To</strong> &mdash; the source and target folders exactly as the detail page&rsquo;s Features rows: the pickup side carries its file mask in green; <code>-</code> = nothing configured.</li>
+<li><strong>Total files</strong>, <strong>In Files</strong>, <strong>Out Files</strong> &mdash; the Files (one per CoreId) this subscription carried over the whole data set, by movement direction.</li>
+<li><strong>Errors</strong> &mdash; Files that ended Failed or Expired (red).</li>
+<li><strong>Auto Retries</strong> &mdash; OK Files with a failed leg and no resubmit: the platform retried (amber).</li>
+<li><strong>Resubmit OK</strong> / <strong>Resubmit Error</strong> &mdash; the Files an operator resubmitted, by final outcome.</li>
+<li><strong>Waiting</strong> / <strong>Expired</strong> &mdash; UC2 Files staged but not collected yet, and the ones deleted unclaimed.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Every name links its detail page; click a header to sort.</li>
-<li>Row tint: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen (or a mix), <strong>light red</strong> a last transfer in Error, <strong>light blue</strong> surfaced only by the server log.</li>
-<li>Fold rule, as for the derived entities: any red wins; one shared value carries; anything mixed is orange.</li>
-<li>Roster = the pristine configured snapshot (base cache before the build appends discovered names): exactly what FlowManager defines.</li>
-<li>Joined from the flow-manager caches: FlowID from the profile pair, account/login/host from the pair caches, Logical / Partner / Domain / Application / BL from the derived group caches.</li>
-<li>No log data is read; only the tint reflects activity.</li>
+<li>Roster = the pristine configured snapshot: exactly what FlowManager defines. Groups, endpoint and folders come from the configuration; the counts from the log, the <a href="entities-subscription.html">Entities</a> definitions, all dates. A subscription never seen in the log shows blank counts; a 0 shows blank.</li>
+<li>Row tint: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> a last transfer in Error, <strong>light blue</strong> surfaced only by the server log.</li>
+<li>Every load starts at the generated order; click a header to sort.</li>
 </ul>
 </main>
 </body>

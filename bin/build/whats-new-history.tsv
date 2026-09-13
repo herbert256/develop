@@ -182,6 +182,7 @@ N	2026-08-30	0	bin/analyses/reports/account-sharing.sh
 N	2026-08-30	0	bin/server/reports/error-timing.sh	
 N	2026-08-30	0	bin/analyses/reports/home.sh	
 N	2026-08-30	0	bin/server/reports/auth-activity.sh	
+N	2026-09-13	0	bin/transfer/reports/month-stats.sh	
 N	2026-08-30	0	bin/transfer/reports/account.sh	
 N	2026-08-30	0	bin/server/reports/logon.sh	
 N	2026-08-30	0	bin/transfer/reports/ranking.sh	

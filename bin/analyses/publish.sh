@@ -1079,42 +1079,50 @@ write_added_bl_page() {
 }
 
 # ---- the Subscriptions page (docs/analyses/subscriptions.html) --------------
-# The per-FLOWID configuration mapping (2026-08-30, user request; the row
-# identity moved from the subscription to the FLOWID 2026-09-01, user
-# request): every configured FlowID (customAttribute_FlowIdentifier) on ONE
-# row with its use cases, account, endpoint (the login the partner connects
-# in with, or the remote host we dial out to), BL tag (the
-# subscriptions.json tags[] entry starting with "BL" — the
-# _subscriptions-bl xref cache, since 2026-08-31 a full entity whose cell
-# links its detail page) and the derived Logical / Partner / Domain /
-# Application groups — the config caches joined onto one row each.
-# A flow'"'"'s UC subscriptions SHARE one FlowID, so their rows fold into one
-# and every cell carries the UNION of their values: the UCx column (column
-# TWO since 2026-09-01, user request) lists every use case the FlowID
-# appears under, each linking that use case'"'"'s own subscription detail page.
-# Every name links its detail page; rows tint by the folded subscriptions'"'"'
-# result, rolled up the site-wide way (any red -> red, one shared value ->
-# that value, mixed -> orange). The roster is
-# the pristine configured snapshot (base/.configured.tsv — the base cache
-# gains discovered names after the build's append steps), falling back to the
-# base cache minus the parse-synthetic UCx_ names on a pre-snapshot tree.
+# ONE ROW PER CONFIGURED SUBSCRIPTION (2026-09-13, user request — until then
+# the rows folded onto the FlowID with a UCx column): the complete
+# subscription name (linking its detail page), the derived Logical / Account /
+# Partner / Domain / Application / BL groups (the config caches joined onto the
+# row), the endpoint (the login the partner connects in with, or the remote
+# host we dial out to), the From / To folders exactly as the subscription
+# detail page's Features rows show them (lifted from the detail .rpt files
+# like sources-and-targets.sh does; the pickup-side file mask as the green
+# suffix), and the ALL-TIME File counts — Total files · In · Out · Errors ·
+# Auto Retries · Resubmit OK / Error · Waiting · Expired — from
+# month-stats.sh's _alltime.tsv sidecar (the Entities / Month stats
+# definitions; a subscription never seen in the log shows blanks; 0 shows
+# blank). Rows tint by the subscription's result (green / orange / red /
+# blue); baked order use case (the name prefix, else the derived one) then
+# name. The roster is the pristine configured snapshot (base/.configured.tsv —
+# the base cache gains discovered names after the build's append steps),
+# falling back to the base cache minus the parse-synthetic UCx_ names on a
+# pre-snapshot tree. No prose on the page (help page subscriptions).
+_subs_tcell() {   # $1 value  $2 classes — a total-row count cell, 0 blanked like the rows
+    if [ "${1:-0}" = 0 ]; then printf '<td class="%s z"></td>' "$2"; else printf '<td class="%s">%s</td>' "$2" "$1"; fi
+}
 write_subscriptions_page() {
-    local out="$ADIR/subscriptions.html" S="$FM_CONFIG_DIR/subscriptions.json"
+    local out="$ADIR/subscriptions.html"
     local B="$DATA/flow-manager/base" X="$DATA/flow-manager/xref" DET="$DATA/transfer/reports/details"
+    local ALLT="$DATA/transfer/reports/month-stats/_alltime.tsv"
     [ -f "$B/_subscriptions.tsv" ] || { rm -f "$out"; return 0; }
     local conf="$B/.configured.tsv"; [ -f "$conf" ] || conf=""
     local args=() f d
-    for f in _subscriptions-profiles _subscriptions-ucderived _subscriptions-accounts \
-             _subscriptions-logins _subscriptions-hosts _subscriptions-logicals \
-             _subscriptions-partners _subscriptions-domains _subscriptions-apps \
+    for f in _subscriptions-ucderived _subscriptions-accounts _subscriptions-logins _subscriptions-hosts \
+             _subscriptions-logicals _subscriptions-partners _subscriptions-domains _subscriptions-apps \
              _subscriptions-bl; do
         [ -f "$X/$f.tsv" ] && args+=("$X/$f.tsv")
     done
     for d in subscriptions accounts logins hosts logicals partners domains applications bl; do
         [ -f "$DET/$d/_slugmap.tsv" ] && args+=("$DET/$d/_slugmap.tsv")
     done
-    local rows
-    rows=$(LC_ALL=C awk -F'\t' -v CONF="$conf" '
+    [ -f "$ALLT" ] && args+=("$ALLT")
+    # the subscription detail .rpt files: their Features From / To rows (the
+    # first of each per file) — the same source sources-and-targets.sh reads
+    shopt -s nullglob
+    local drpts=("$DET/subscriptions"/*.rpt)
+    shopt -u nullglob
+    local all rows tots
+    all=$(LC_ALL=C awk -F'\t' -v CONF="$conf" '
         function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
         # per-subscription value sets, deduped per (map, sub, value)
         function addv(M, tag, s, v,   k2) {
@@ -1129,33 +1137,42 @@ write_subscriptions_page() {
                 return "<a href=\"../details/" sub2 "/" SLUG[sub2 SUBSEP k2] ".html\">" e(nm) "</a>"
             return e(nm)
         }
-        # "UC12" -> 12, so the UCx cell orders UC2 before UC10
+        # "UC12" -> 12, so the baked order puts UC2 before UC10
         function ucnum(u,   t) { t = u; sub(/^UC/, "", t); return t + 0 }
-        # a \x1f set -> sorted, DEDUPED, each value linked, ", "-joined.
-        # The dedupe is what lets a folded FlowID row simply CONCATENATE its
-        # subscriptions'"'"' sets (2026-09-01): addv() only dedupes per
-        # subscription, so two UC rows of one flow bring the same account
-        # twice.
-        function cell(sub2, set,   A2, n2, i2, j2, t3, o2, prev) {
+        # a \x1f set -> sorted, each value linked, ", "-joined
+        function cell(sub2, set,   A2, n2, i2, j2, t3, o2) {
             if (set == "") return ""
             n2 = split(substr(set, 2), A2, US)
             for (i2 = 2; i2 <= n2; i2++) { t3 = A2[i2]
                 for (j2 = i2 - 1; j2 >= 1 && A2[j2] > t3; j2--) A2[j2+1] = A2[j2]
                 A2[j2+1] = t3 }
-            o2 = ""; prev = ""
-            for (i2 = 1; i2 <= n2; i2++) { if (i2 > 1 && A2[i2] == prev) continue
-                prev = A2[i2]
-                o2 = o2 (o2 == "" ? "" : ", ") lnk(sub2, A2[i2]) }
+            o2 = ""
+            for (i2 = 1; i2 <= n2; i2++) o2 = o2 (o2 == "" ? "" : ", ") lnk(sub2, A2[i2])
             return o2
         }
+        # a detail-page location cell: "-" = nothing configured; "@{mask=M}path"
+        # = the path with its file mask (render_rpt.awk shows the mask as the
+        # green .mask suffix — the same markup here)
+        function loccell(raw,   p, m) {
+            if (index(raw, "@{mask=") == 1) { p = index(raw, "}"); m = substr(raw, 8, p - 8)
+                return e(substr(raw, p + 1)) "<span class=\"mask\">" e(m) "</span>" }
+            return e(raw)
+        }
+        # a count cell: 0 shows blank (class z = no tint), like the report tables
+        function ncell(v, cls) { v = v + 0; if (v == 0) return "<td class=\"" cls " z\"></td>"; return "<td class=\"" cls "\">" v "</td>" }
         BEGIN { US = sprintf("%c", 31)
             if (CONF != "") { while ((getline l < CONF) > 0) { n = split(l, a, "\t")
                     if (n >= 2 && a[1] == "_subscriptions" && a[2] != "" && !(toupper(a[2]) in seenr)) { seenr[toupper(a[2])] = 1; RN[++nr] = a[2] } }
                 close(CONF) }
         }
+        FILENAME ~ /details\/subscriptions\/[^\/]*\.rpt$/ {
+            if (FNR == 1) { lslug = FILENAME; sub(/.*\//, "", lslug); sub(/\.rpt$/, "", lslug) }
+            if ($1 == "ROW" && ($2 == "From" || $2 == "To") && !((lslug SUBSEP $2) in LOC)) LOC[lslug SUBSEP $2] = $3
+            next }
         FILENAME ~ /base\/_subscriptions\.tsv$/ { RES[toupper($1)] = $3
             if (CONF == "" && $1 !~ /^UCx_/ && $1 != "" && !(toupper($1) in seenr)) { seenr[toupper($1)] = 1; RN[++nr] = $1 }
             next }
+        FILENAME ~ /_alltime\.tsv$/ { if ($1 == "subscription") CNT[toupper($2)] = $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11; next }
         FILENAME ~ /details\/subscriptions\/_slugmap\.tsv$/ { SLUG["subscriptions" SUBSEP toupper($1)] = $2; next }
         FILENAME ~ /details\/accounts\/_slugmap\.tsv$/      { SLUG["accounts"      SUBSEP toupper($1)] = $2; next }
         FILENAME ~ /details\/logins\/_slugmap\.tsv$/        { SLUG["logins"        SUBSEP toupper($1)] = $2; next }
@@ -1165,7 +1182,6 @@ write_subscriptions_page() {
         FILENAME ~ /details\/domains\/_slugmap\.tsv$/       { SLUG["domains"       SUBSEP toupper($1)] = $2; next }
         FILENAME ~ /details\/applications\/_slugmap\.tsv$/  { SLUG["applications"  SUBSEP toupper($1)] = $2; next }
         FILENAME ~ /details\/bl\/_slugmap\.tsv$/            { SLUG["bl"            SUBSEP toupper($1)] = $2; next }
-        FILENAME ~ /_subscriptions-profiles\.tsv$/  { addv(FID, "f", $1, $2); next }
         FILENAME ~ /_subscriptions-ucderived\.tsv$/ { if ($1 != "" && $2 != "") UCD[toupper($1)] = $2; next }
         FILENAME ~ /_subscriptions-accounts\.tsv$/  { addv(ACC, "a", $1, $2); next }
         FILENAME ~ /_subscriptions-logins\.tsv$/    { addv(LGN, "l", $1, $2); next }
@@ -1176,102 +1192,55 @@ write_subscriptions_page() {
         FILENAME ~ /_subscriptions-apps\.tsv$/      { addv(APP, "z", $1, $2); next }
         FILENAME ~ /_subscriptions-bl\.tsv$/        { addv(BLE, "b", $1, $2); next }
         END {
-            # ---- fold the roster onto the FLOWID (2026-09-01, user request)
-            # A flow'"'"'s UC subscriptions share one FlowID, so they become ONE
-            # row: the group key is the FlowID cell text, and a subscription
-            # with no FlowID (or a rare multi-FlowID one, which keeps its own
-            # exact set as the key) still gets its own row. Every value set is
-            # CONCATENATED here and deduped by cell().
             for (i = 1; i <= nr; i++) { nm = RN[i]; k = toupper(nm)
-                fidtxt = cell("", (k in FID) ? FID[k] : "")
-                gk = (fidtxt != "" ? "F" SUBSEP toupper(fidtxt) : "N" SUBSEP k)
-                if (!(gk in gseen)) { gseen[gk] = 1; GK[++ng] = gk
-                    GFID[gk] = fidtxt; GNAME[gk] = nm }
-                GN[gk]++                       # subscriptions folded into the row
-                GSUB[gk] = k                   # the single member'"'"'s key (used when GN == 1)
-                GLGC[gk] = GLGC[gk] ((k in LGC) ? LGC[k] : "")
-                GACC[gk] = GACC[gk] ((k in ACC) ? ACC[k] : "")
-                GPTN[gk] = GPTN[gk] ((k in PTN) ? PTN[k] : "")
-                GDOM[gk] = GDOM[gk] ((k in DOM) ? DOM[k] : "")
-                GAPP[gk] = GAPP[gk] ((k in APP) ? APP[k] : "")
-                GBLE[gk] = GBLE[gk] ((k in BLE) ? BLE[k] : "")
-                GLGN[gk] = GLGN[gk] ((k in LGN) ? LGN[k] : "")
-                GHST[gk] = GHST[gk] ((k in HST) ? HST[k] : "")
-                # UCx: the name prefix wins; else the flow-manager derived one.
-                # One entry per DISTINCT use case, linking the subscription
-                # that carries it — the first one when two subscriptions of
-                # the row share a use case (they are reachable from the
-                # subscription Entities list either way).
+                # baked order: use case (the name prefix, else the derived one) then name
                 uc = ""
                 if (match(nm, /^UC[0-9]+/)) uc = substr(nm, RSTART, RLENGTH)
                 else if (k in UCD) uc = UCD[k]
-                uc = toupper(uc)
-                if (uc != "" && !((gk SUBSEP uc) in ucseen)) { ucseen[gk SUBSEP uc] = 1
-                    GUC[gk] = GUC[gk] US uc; GUCS[gk SUBSEP uc] = k }
-                # result: the site-wide rollup (bin/build/result.sh stage 2) —
-                # any red wins, one shared value carries, anything mixed is
-                # orange
-                res = (k in RES) ? RES[k] : ""
-                if (res != "") { GRES[gk SUBSEP res] = 1
-                    if (!(gk in GR1)) GR1[gk] = res; else if (GR1[gk] != res) GRMIX[gk] = 1 }
-            }
-            for (i = 1; i <= ng; i++) { gk = GK[i]
-                fidtxt = GFID[gk]; nm = GNAME[gk]
-                # the UCx cell, numerically ordered (UC2 before UC10)
-                nuc = split(substr(GUC[gk], 2), UA, US)
-                for (ua = 2; ua <= nuc; ua++) { uv = UA[ua]; utn = ucnum(uv)
-                    for (ub = ua - 1; ub >= 1 && ucnum(UA[ub]) > utn; ub--) UA[ub+1] = UA[ub]
-                    UA[ub+1] = uv }
-                ucc = ""; ucsort = ""
-                for (ua = 1; ua <= nuc; ua++) { uv = UA[ua]; utxt = e(uv)
-                    if ((gk SUBSEP uv) in GUCS && ("subscriptions" SUBSEP GUCS[gk SUBSEP uv]) in SLUG)
-                        utxt = "<a href=\"../details/subscriptions/" SLUG["subscriptions" SUBSEP GUCS[gk SUBSEP uv]] ".html\">" utxt "</a>"
-                    ucc = ucc (ucc == "" ? "" : ", ") utxt
-                    if (ua == 1) ucsort = sprintf("%03d", ucnum(uv)) }
-                ep = cell("logins", GLGN[gk]); hp = cell("hosts", GHST[gk])
+                ucsort = sprintf("%03d", ucnum(toupper(uc)))
+                slug = (("subscriptions" SUBSEP k) in SLUG) ? SLUG["subscriptions" SUBSEP k] : ""
+                fr = (slug != "" && ((slug SUBSEP "From") in LOC)) ? loccell(LOC[slug SUBSEP "From"]) : ""
+                to = (slug != "" && ((slug SUBSEP "To") in LOC)) ? loccell(LOC[slug SUBSEP "To"]) : ""
+                ep = cell("logins", (k in LGN) ? LGN[k] : ""); hp = cell("hosts", (k in HST) ? HST[k] : "")
                 epc = ep ((ep != "" && hp != "") ? ", " : "") hp
-                res = ""
-                if ((gk SUBSEP "red") in GRES) res = "red"
-                else if (!(gk in GRMIX)) res = GR1[gk]
-                else res = "orange"
+                res = (k in RES) ? RES[k] : ""
                 tr = "<tr"
                 if (res == "green" || res == "orange" || res == "red" || res == "blue") tr = tr " data-res=\"" res "\""
-                # the Subscription cell (2026-08-30, user request): the
-                # FlowID text — the row identity. It links the subscription
-                # detail page while the row folds exactly ONE subscription;
-                # a folded row would have several, so there the UCx cell
-                # carries the per-use-case links instead. Baked order:
-                # lowest UCx, then the PLAIN FlowID text (the anchor would
-                # sort every row on the shared href prefix), name as tiebreak.
-                fid = fidtxt
-                if (fid != "" && GN[gk] == 1 && ("subscriptions" SUBSEP GSUB[gk]) in SLUG)
-                    fid = "<a href=\"../details/subscriptions/" SLUG["subscriptions" SUBSEP GSUB[gk]] ".html\">" fidtxt "</a>"
-                # column order Subscription, UCx, Logical, Account, Partner …
-                # (2026-09-01, user request — UCx second; 2026-08-31 — Logical
-                # before Account)
-                print ucsort "\t" toupper(fidtxt == "" ? nm : fidtxt) "\t" toupper(nm) "\t" tr ">" \
-                    "<td>" fid "</td>" \
-                    "<td>" ucc "</td>" \
-                    "<td>" cell("logicals", GLGC[gk]) "</td>" \
-                    "<td class=\"wrap\">" cell("accounts", GACC[gk]) "</td>" \
-                    "<td class=\"wrap\">" cell("partners", GPTN[gk]) "</td>" \
-                    "<td>" cell("domains", GDOM[gk]) "</td>" \
-                    "<td>" cell("applications", GAPP[gk]) "</td>" \
+                if (k in CNT) split(CNT[k], C, "\t"); else for (ci = 1; ci <= 9; ci++) C[ci] = 0
+                for (ci = 1; ci <= 9; ci++) TOT[ci] += C[ci]
+                print ucsort "\t" k "\t" tr ">" \
+                    "<td>" lnk("subscriptions", nm) "</td>" \
+                    "<td>" cell("logicals", (k in LGC) ? LGC[k] : "") "</td>" \
+                    "<td class=\"wrap\">" cell("accounts", (k in ACC) ? ACC[k] : "") "</td>" \
+                    "<td class=\"wrap\">" cell("partners", (k in PTN) ? PTN[k] : "") "</td>" \
+                    "<td>" cell("domains", (k in DOM) ? DOM[k] : "") "</td>" \
+                    "<td>" cell("applications", (k in APP) ? APP[k] : "") "</td>" \
+                    "<td>" cell("bl", (k in BLE) ? BLE[k] : "") "</td>" \
                     "<td class=\"wrap\">" epc "</td>" \
-                    "<td>" cell("bl", GBLE[gk]) "</td></tr>"
+                    "<td class=\"wrap\">" fr "</td>" \
+                    "<td class=\"wrap\">" to "</td>" \
+                    ncell(C[1], "num") ncell(C[2], "num") ncell(C[3], "num") ncell(C[4], "num failed") \
+                    ncell(C[5], "num warn") ncell(C[6], "num warn") ncell(C[7], "num failed") \
+                    ncell(C[8], "num warn") ncell(C[9], "num failed") "</tr>"
             }
-        }' ${args[@]+"${args[@]}"} "$B/_subscriptions.tsv" \
-        | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3 | cut -f4-)
+            # the column sums: sorted LAST ("~" > every UC key), split off below
+            printf "~\t~"; for (ci = 1; ci <= 9; ci++) printf "\t%d", TOT[ci] + 0; printf "\n"
+        }' ${args[@]+"${args[@]}"} ${drpts[@]+"${drpts[@]}"} "$B/_subscriptions.tsv" \
+        | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2)
+    rows=$(printf '%s\n' "$all" | awk -F'\t' '$1 != "~"' | cut -f3-)
+    tots=$(printf '%s\n' "$all" | awk -F'\t' '$1 == "~"' | cut -f3-)
     local n; n=$(printf '%s' "$rows" | grep -c '<tr' || true)
+    local t1 t2 t3 t4 t5 t6 t7 t8 t9 tcells
+    IFS=$'\t' read -r t1 t2 t3 t4 t5 t6 t7 t8 t9 <<< "$tots"
+    tcells="$(_subs_tcell "$t1" num)$(_subs_tcell "$t2" num)$(_subs_tcell "$t3" num)$(_subs_tcell "$t4" "num failed")$(_subs_tcell "$t5" "num warn")$(_subs_tcell "$t6" "num warn")$(_subs_tcell "$t7" "num failed")$(_subs_tcell "$t8" "num warn")$(_subs_tcell "$t9" "num failed")"
     {
         html_head "Subscriptions" "../assets/style.css" "" "" "subscriptions" "" "" "sort-fresh"
         printf '<h1>Subscriptions</h1>\n'
         analyses_group_tabs subscriptions.html
-        printf '<p class="subtitle">Every configured <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code>) on one row, ordered by <strong>use case</strong>. A flow&rsquo;s UC subscriptions share one FlowID, so they fold into a single row and the <strong>UCx</strong> column lists <strong>every use case</strong> that FlowID appears under (the <code>UC&lt;n&gt;</code> name prefix, else the derived one), each linking that use case&rsquo;s own subscription detail page; the FlowID itself links the detail page when the row is a single subscription. Then the derived <strong>Logical</strong> group, the <strong>account</strong>, the derived <strong>Partner</strong> / <strong>Domain</strong> / <strong>Application</strong> groups, the <strong>endpoint</strong> (the login the partner connects in with, or the remote host we dial out to) and the <strong>BL</strong> tag (the export&rsquo;s <code>tags</code> entry starting with <code>BL</code>) &mdash; each cell the <strong>union</strong> over the folded subscriptions. Every other name links its detail page too; rows tint by the folded result &mdash; <strong>green</strong> last transfer OK, <strong>orange</strong> never seen or mixed, <strong>red</strong> one or more last transfers in Error, <strong>blue</strong> server-log only.</p>\n'
         printf '<div class="tablewrap"><table class="index fit">\n'
-        printf '<tr><th>Subscription</th><th>UCx</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>Endpoint</th><th>BL</th></tr>\n'
+        printf '<tr><th>Subscription</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Endpoint</th><th>From</th><th>To</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Auto Retries</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
-        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$n"
+        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>%s</tr>\n' "$n" "$tcells"
         printf '</table></div>\n'
         printf '</body>\n</html>\n'
     } > "$out"
@@ -1722,7 +1691,7 @@ write_analyses_index() {
         printf '<tr><th colspan="2">Configuration</th></tr>\n'
         [ -f "$ADIR/use-cases.html" ] && printf '<tr><td><a href="use-cases.html">Use cases</a></td><td class="desc">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; Total, Server (server-log only), Not seen, Error and OK per use case; tabs for the <strong>Use Case definitions</strong> (who connects, which way the file travels, what triggers it) and the <strong>Use Case patterns</strong> (the accounts grouped by their subscription mix, e.g. <code>UC2 (1) UC4 (1)</code>).</td></tr>\n'
         [ -f "$ADIR/uc2-visits.html" ] && printf '<tr><td><a href="uc2-visits.html">UC2 pickup visits</a></td><td class="desc">What each UC2 partner actually does when it connects: collected, two-way exchange, delivery-only (the UC4 twin) or empty-handed visits.</td></tr>\n'
-        [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured FlowID on one row: its use case(s), account, endpoint, BL tag and the derived Logical / Partner / Domain / Application groups.</td></tr>\n'
+        [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured subscription on one row: its Logical, Account, Partner, Domain, Application and BL groups, the endpoint (login or remote host), the From and To folders, and the all-time File counts &mdash; total, in, out, Errors, automatic retries, resubmits, Waiting, Expired.</td></tr>\n'
         [ -f "$ADIR/logical-detection.html" ] && printf '<tr><td><a href="logical-detection.html">Logical detection</a></td><td class="desc">How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID.</td></tr>\n'
         [ -f "$ADIR/added-bl.html" ] && printf '<tr><td><a href="added-bl.html">Added BL</a></td><td class="desc">The BL numbers input/&lt;env&gt;/BL.txt adds on top of subscriptions.json — per subscription, the values that are not among its tags.</td></tr>\n'
         [ -f "$ADIR/accounts.html" ] && printf '<tr><td><a href="accounts.html">Accounts</a></td><td class="desc">The accounts (partners) and their communication profiles &mdash; naming vs configured type/auth, insecure and unrestricted endpoints, conflicting host/whitelist setup, plus account &amp; login integrity checks (non-standard or shared logins, password profiles without a password, and more).</td></tr>\n'

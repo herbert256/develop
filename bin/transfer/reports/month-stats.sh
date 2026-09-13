@@ -33,14 +33,14 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 OUTDIR="$REPORTS_DIR/month-stats"
 mkdir -p "$OUTDIR"
-rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp
+rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp "$OUTDIR"/_alltime.tsv.tmp "$OUTDIR"/_alltime.tsv.tmp2
 ensure_parsed
 
 DIMS="account subscription login remote-host logical partner application domain bl"
 _fresh=1
 for _w in this previous; do for _o in $DIMS; do
     _f="$OUTDIR/$_w-$_o.rpt"
-    if ! { [ -f "$_f" ] && ! [ "$PARSED" -nt "$_f" ] && ! [ "$FILES" -nt "$_f" ] && ! [ "${BASH_SOURCE[0]}" -nt "$_f" ] && ! [ "$LIB_DIR/lib.sh" -nt "$_f" ]; }; then
+    if ! { [ -f "$_f" ] && [ -f "$OUTDIR/_alltime.tsv" ] && ! [ "$PARSED" -nt "$_f" ] && ! [ "$FILES" -nt "$_f" ] && ! [ "${BASH_SOURCE[0]}" -nt "$_f" ] && ! [ "$LIB_DIR/lib.sh" -nt "$_f" ]; }; then
         _fresh=0; break 2
     fi
 done; done
@@ -63,7 +63,14 @@ if [ -n "$newest" ]; then THIS=${newest:0:7}; else THIS=$(date '+%Y-%m'); fi
 PREV=$(awk -v m="$THIS" 'BEGIN { y = substr(m, 1, 4) + 0; mo = substr(m, 6, 2) + 0; mo--; if (mo == 0) { mo = 12; y-- } printf "%04d-%02d", y, mo }')
 
 AGG="$OUTDIR/.agg.tmp"
-awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v DIMS="$DIMS" -v THIS="$THIS" -v PREV="$PREV" \
+# The ALL-TIME sidecar (2026-09-13, user request): every File regardless of
+# month, the same nine counts per (type, name) — "type<TAB>name<TAB>total in
+# out errors auto rmok rmerr waiting expired", sorted. Unpublished; the
+# analyses Subscriptions page (bin/analyses/publish.sh write_subscriptions_page)
+# reads its subscription rows for the count columns.
+ALLF="$OUTDIR/_alltime.tsv"
+: > "$ALLF.tmp"
+awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v ALLF="$ALLF.tmp" -v DIMS="$DIMS" -v THIS="$THIS" -v PREV="$PREV" \
     -v M_LG="$M_LG" -v M_VLG="$M_VLG" -v M_PT="$M_PT" -v M_AP="$M_AP" -v M_BL="$M_BL" '
     function loadmulti(f, m,   l, n2, z, k) { if (f == "") return
         while ((getline l < f) > 0) { n2 = split(l, z, "\t")
@@ -94,7 +101,7 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v DIMS="$DIMS" -v THIS="$THIS" -v PRE
         next }
     $4 == "" { next }
     {
-        mon = substr($4, 1, 7); if (mon != THIS && mon != PREV) next
+        mon = substr($4, 1, 7); inm = (mon == THIS || mon == PREV)   # the ALL-TIME bucket below takes every File
         cid = $1; f = ($2 == "Failed" || $2 == "Expired")
         isin = ($17 == "in"); isout = ($17 == "out"); wt = ($2 == "Waiting"); ex = ($2 == "Expired")
         ra = (!f && (cid in fl) && !(cid in rsb)); rmo = (!f && (cid in rsb)); rme = (f && (cid in rsb))
@@ -113,18 +120,23 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v DIMS="$DIMS" -v THIS="$THIS" -v PRE
         if ($12 != "" && (toupper($12) in BLM)) addnames("bl", BLM[toupper($12)])
         delete TS
         for (k in NS) { split(k, kk, SUBSEP); t = kk[1]
+            acc("all" SUBSEP k)                     # the _alltime.tsv sidecar (analyses/subscriptions.html)
+            if (!inm) continue
             acc(mon SUBSEP k); TS[t] = 1
             if (t in PAIRTOT) tot(mon SUBSEP t) }
-        for (t in TS) if (!(t in PAIRTOT)) tot(mon SUBSEP t)
+        if (inm) for (t in TS) if (!(t in PAIRTOT)) tot(mon SUBSEP t)
     }
     END {
-        for (key in sc) { split(key, kk, SUBSEP); ns[kk[1] SUBSEP kk[2]]++
+        for (key in sc) { split(key, kk, SUBSEP)
+            if (kk[1] == "all") { printf "%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", kk[2], kk[3], sc[key], sin_[key]+0, sout_[key]+0, sfe[key]+0, sra[key]+0, smo[key]+0, sme[key]+0, swt[key]+0, sex[key]+0 > ALLF; continue }
+            ns[kk[1] SUBSEP kk[2]]++
             printf "S|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d\n", kk[1], kk[2], kk[3], sc[key], sin_[key]+0, sout_[key]+0, sfe[key]+0, sra[key]+0, smo[key]+0, sme[key]+0, swt[key]+0, sex[key]+0 > OUTF }
         n2 = split(DIMS, TL, " "); split(THIS " " PREV, MM, " ")
         for (m = 1; m <= 2; m++) for (i2 = 1; i2 <= n2; i2++) { t = TL[i2]; k = MM[m] SUBSEP t
             printf "T|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d\n", MM[m], t, tc[k]+0, tin[k]+0, tout[k]+0, tfe[k]+0, tra[k]+0, tmo[k]+0, tme[k]+0, twt[k]+0, tex[k]+0, ns[k]+0 > OUTF }
     }
-' "$PARSED" "$FILES"
+'  "$PARSED" "$FILES"
+LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$ALLF.tmp" > "$ALLF.tmp2" && mv "$ALLF.tmp2" "$ALLF" && rm -f "$ALLF.tmp"
 
 for which in this previous; do
     [ "$which" = this ] && mon=$THIS || mon=$PREV
