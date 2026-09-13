@@ -603,8 +603,11 @@ Reason column, in a GROUPED layout — a `GHEAD` banner row + `gsep=` dividers l
 | RECALC | s5 s6 e6.12 | S1 S2 s3 e3.0 | s7 s8 s9 | P90 P95 P99 P100 | H4 V4.0 | s10 s11 | - - c |
 
 (The order, the TOTAL row LAST, whole-unit bytes, the s/m/h/d durations tinted green/amber/red by
-unit, an empty rate beside an empty Error, no In/Out 0 and the red cells as `numfailed` are the
-2026-09-13 user rules — `errc`/`okc` cells lose their tint inside the views' tinted rows, only
+unit, an empty rate beside an empty Error, no In/Out 0, the red cells as `numfailed` and an EMPTY
+group HIDDEN — Retry / Resubmit, State — on a view with no such value (`entity2_hide_groups`, a
+per-table publish-time decision — an empty full range is empty for every narrower range; the
+index-naming modifiers gsep=/noagg=/pct=/drillcols= are remapped) are the 2026-09-13
+user rules — `errc`/`okc` cells lose their tint inside the views' tinted rows, only
 `.failed`/`.processed` and a non-empty `.warn` keep it.)
 
 Bucket metrics per date: `files in out ferr bytes tok terr rauto rmok rmerr waiting expired legs`

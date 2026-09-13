@@ -943,7 +943,9 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   the percentile over the in-range days, rows and TOTAL alike, and the publish-time subset totals
   merge the same payload) · Volume (Total · Avg per File) · State (Waiting · Expired) · Dates
   (First · Last · Days with traffic). DISPLAY RULES (user): the TOTAL row LAST
-  (`entity2_total_last`); bytes in WHOLE units (tokens `H`/`V`); a duration as a whole number with
+  (`entity2_total_last`); an EMPTY group HIDDEN — Retry / Resubmit and State — on a view whose
+  rows carry no such value at all (`entity2_hide_groups` drops the columns and the banner cell
+  and remaps every index-naming modifier); bytes in WHOLE units (tokens `H`/`V`); a duration as a whole number with
   a one-letter unit s/m/h/d, tinted s green · m amber · h/d red (the `P` token retints); an empty
   Error keeps an EMPTY rate beside it (token `e`); In / Out never show a 0 (token `S`); every red
   count cell is KIND `numfailed`, never `numerr` — the views' row tints paint over `errc`/`okc`

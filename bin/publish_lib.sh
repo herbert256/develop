@@ -1514,6 +1514,55 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
             { if (held != "") { print held; held = "" } print }
             END { if (held != "") print held }'
     }
+    # Entities2: HIDE an EMPTY group (2026-09-13, user request) — the Retry /
+    # Resubmit group (Auto · Ok · Error, .rpt fields 10-12, display columns
+    # 8-10, banner cell 5) and the State group (Waiting · Expired, fields
+    # 19-20, columns 17-18, banner cell 8) — on a view whose rows carry no
+    # such value at all. At the full range that holds for every narrower
+    # range too, so the page drops the columns for good: the fields of every
+    # HEAD/KIND/RECALC/ROW/TOTAL line (a trailing Reason column shifts left
+    # with the rest), the banner cell, and the TABLE modifiers that name
+    # columns by index (gsep=, noagg=, pct=, drillcols= — remapped past the
+    # dropped columns, the dropped groups' own entries removed). Name-only
+    # views (a HEAD under 20 fields) pass through.
+    entity2_hide_groups() {
+        LC_ALL=C awk -F'\t' -v OFS='\t' '
+            function nm(d,   k, c) { c = 0; for (k in DD) if (k + 0 < d) c++; return d - c }   # a display index, the dropped columns before it removed
+            function remap_list(s,   m, A, i, out) { m = split(s, A, ","); out = ""
+                for (i = 1; i <= m; i++) { if ((A[i] + 0) in DD) continue; out = out (out == "" ? "" : ",") nm(A[i] + 0) } return out }
+            function remap_pct(s,   m, A, i, p, P, j, q, B, k2, x, w, out) {   # "col:num+num:den+den;…"
+                m = split(s, A, ";"); out = ""
+                for (i = 1; i <= m; i++) { p = split(A[i], P, ":"); q = ""
+                    for (j = 1; j <= p; j++) { k2 = split(P[j], B, "+"); w = ""
+                        for (x = 1; x <= k2; x++) w = w (w == "" ? "" : "+") nm(B[x] + 0)
+                        q = q (q == "" ? "" : ":") w }
+                    out = out (out == "" ? "" : ";") q }
+                return out }
+            function remap_drills(s,   m, A, i, P, out) { m = split(s, A, ","); out = ""
+                for (i = 1; i <= m; i++) { split(A[i], P, ":"); if ((P[2] + 0) in DD) continue
+                    out = out (out == "" ? "" : ",") P[1] ":" nm(P[2] + 0) (P[3] != "" ? ":" P[3] : "") } return out }
+            function keep(   out, i) { out = ""; for (i = 1; i <= NF; i++) { if (i in DF) continue; out = out (i == 1 ? "" : OFS) $i } return out }
+            { L[++n] = $0
+              if ($1 == "HEAD" && NF < 20) skip = 1
+              if ($1 == "ROW") { for (i = 10; i <= 12; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasR = 1 }
+                                 for (i = 19; i <= 20; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasS = 1 } } }
+            END {
+                if (skip || (hasR && hasS)) { for (k = 1; k <= n; k++) print L[k]; exit }
+                # DF = the .rpt fields to drop, DD = the same as display columns, DB = the banner cells
+                if (!hasR) { DF[10] = 1; DF[11] = 1; DF[12] = 1; DD[8] = 1; DD[9] = 1; DD[10] = 1; DB[5] = 1 }
+                if (!hasS) { DF[19] = 1; DF[20] = 1; DD[17] = 1; DD[18] = 1; DB[8] = 1 }
+                for (k = 1; k <= n; k++) { $0 = L[k]
+                    if ($1 == "TABLE") {
+                        for (i = 3; i <= NF; i++) {
+                            if ($i ~ /^gsep=/)           $i = "gsep=" remap_list(substr($i, 6))
+                            else if ($i ~ /^noagg=/)     $i = "noagg=" remap_list(substr($i, 7))
+                            else if ($i ~ /^pct=/)       $i = "pct=" remap_pct(substr($i, 5))
+                            else if ($i ~ /^drillcols=/) $i = "drillcols=" remap_drills(substr($i, 11)) }
+                        print; continue }
+                    if ($1 == "GHEAD") { out = ""; for (i = 1; i <= NF; i++) { if (i in DB) continue; out = out (i == 1 ? "" : OFS) $i } print out; continue }
+                    if ($1 == "HEAD" || $1 == "KIND" || $1 == "RECALC" || $1 == "ROW" || $1 == "TOTAL") { print keep(); continue }
+                    print } }'
+    }
     entity_res_block() {   # $1 = green|orange|red   $2 = the All-view rows to filter
         if [ "$lay" = 2 ]; then entity2_res_block "$@"; return; fi
         printf '%s\n' "$2" | LC_ALL=C awk -F'\t' -v OFS='\t' -v want="@data:res=$1" -v lbl="$origlabel" '
@@ -1815,7 +1864,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     if [ "$lay" = 2 ]; then
         for _b in blk_all sumblk_tinted blk_ok blk_warn blk_err blk_seen_tr blk_warn_tr blk_ns blk_ns_tr blk_server; do
             eval "[ -n \"\${$_b:-}\" ] || continue"
-            eval "$_b=\$(printf '%s\\n' \"\$$_b\" | entity2_total_last)"
+            eval "$_b=\$(printf '%s\\n' \"\$$_b\" | entity2_hide_groups | entity2_total_last)"
         done
     fi
     # The views. THREE are scope-dependent (dual=1: Seen / Not seen / Warning)
