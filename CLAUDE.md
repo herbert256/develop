@@ -934,15 +934,15 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   **THE ENTITIES2 EXPERIMENT** (2026-09-13, user request — a TWIN of the nine pages, to be adopted
   or deleted as ONE piece): the same reports in a GROUPED layout — Name, then seven column groups
   rendered the Top view way (a `GHEAD` banner + `gsep=` dividers), in this order (2026-09-13,
-  user request): Transfers (Ok · Error · Error % — the LEGS of the entity's Files) · Files (In ·
-  Out by MOVEMENT, `_files.tsv` col 17 · Error · Error %) · Retry / Resubmit (Auto = the classic
-  Retry; Ok / Error = every resubmitted File by outcome — the Top view's Automatic + Resubmit
-  Ok/Failed rule) · Duration (p90 · p95 · p99 · p100 of the OK Files' wall-clock span, the Duration
-  report's scope and nearest-rank rule, FOLLOWING the date filter — user rule: each row carries
-  per-day display-grid histograms `@data:durdays`, the RECALC tokens `P90`/`P95`/`P99` re-pick
-  the percentile over the in-range days, rows and TOTAL alike, and the publish-time subset totals
-  merge the same payload) · Volume (Total · Avg per File) · State (Waiting · Expired) · Dates
-  (First · Last · Days with traffic). DISPLAY RULES (user): the TOTAL row LAST
+  user request): Files (In · Out by MOVEMENT, `_files.tsv` col 17 · Error · Error %) · Retry /
+  Resubmit (Auto = the classic Retry; Ok / Error = every resubmitted File by outcome — the Top
+  view's Automatic + Resubmit Ok/Failed rule) · Duration (p90 · p95 · p99 · p100 of the OK Files'
+  wall-clock span, the Duration report's scope and nearest-rank rule, FOLLOWING the date filter —
+  user rule: each row carries per-day display-grid histograms `@data:durdays`, the RECALC tokens
+  `P90`/`P95`/`P99`/`P100` re-pick the percentile over the in-range days, rows and TOTAL alike,
+  and the publish-time subset totals merge the same payload) · Volume (Total · Avg per File) ·
+  Transfers (Ok · Error · Error % — the LEGS of the entity's Files) · State (Waiting · Expired) ·
+  Dates (First · Last · Days with traffic). DISPLAY RULES (user): the TOTAL row LAST
   (`entity2_total_last`); an EMPTY group HIDDEN — Retry / Resubmit and State — on a view whose
   rows carry no such value at all (`entity2_hide_groups` drops the columns and the banner cell
   and remaps every index-naming modifier); bytes in WHOLE units (tokens `H`/`V`); a duration as a whole number with

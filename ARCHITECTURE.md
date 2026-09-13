@@ -596,11 +596,11 @@ keeps its own default.
 `docs/transfer/entities2/` (the "Entities2" top-bar link), same views, scopes, tints, drills and
 Reason column, in a GROUPED layout — a `GHEAD` banner row + `gsep=` dividers like the Top view:
 
-| Name | Transfers | Files | Retry / Resubmit | Duration | Volume | State | Dates |
+| Name | Files | Retry / Resubmit | Duration | Volume | Transfers | State | Dates |
 |---|---|---|---|---|---|---|---|
-| | Ok · Error · Error % | In · Out · Error · Error % | Auto · Ok · Error | p90 · p95 · p99 · p100 | Total · Avg | Waiting · Expired | First · Last · Days |
-| KIND | numok numfailed num | num num numfailed num | numwarn numwarn numfailed | num num num num (+ unit tint) | num num | numwarn numfailed | text text num |
-| RECALC | s5 s6 e6.12 | S1 S2 s3 e3.0 | s7 s8 s9 | P90 P95 P99 P100 | H4 V4.0 | s10 s11 | - - c |
+| | In · Out · Error · Error % | Auto · Ok · Error | p90 · p95 · p99 · p100 | Total · Avg | Ok · Error · Error % | Waiting · Expired | First · Last · Days |
+| KIND | num num numfailed num | numwarn numwarn numfailed | num num num num (+ unit tint) | num num | numok numfailed num | numwarn numfailed | text text num |
+| RECALC | S1 S2 s3 e3.0 | s7 s8 s9 | P90 P95 P99 P100 | H4 V4.0 | s5 s6 e6.12 | s10 s11 | - - c |
 
 (The order, the TOTAL row LAST, whole-unit bytes, the s/m/h/d durations tinted green/amber/red by
 unit, an empty rate beside an empty Error, no In/Out 0, the red cells as `numfailed` and an EMPTY

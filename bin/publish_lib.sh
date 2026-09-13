@@ -1455,11 +1455,11 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # prefixes are kept (the formatting lives in the writer: whole-unit
     # bytes, an empty rate beside an empty Error, no In/Out 0, the s/m/h/d
     # durations tinted by unit — the Duration cells are rebuilt whole, their
-    # tint following the subset value). Template cells (2026-09-13 order):
-    # 2 label · 3 Ok · 4 Error · 5 Error % · 6 In · 7 Out · 8 Error ·
-    # 9 Error % · 10 Auto · 11 Ok · 12 Error · 13 p90 · 14 p95 · 15 p99 ·
-    # 16 p100 · 17 Total · 18 Avg · 19 Waiting · 20 Expired · 21 First ·
-    # 22 Last · 23 Days.
+    # tint following the subset value). Template cells (the 2026-09-13
+    # order, Transfers after Volume): 2 label · 3 In · 4 Out · 5 Error ·
+    # 6 Error % · 7 Auto · 8 Ok · 9 Error · 10 p90 · 11 p95 · 12 p99 ·
+    # 13 p100 · 14 Total · 15 Avg · 16 Ok · 17 Error · 18 Error % ·
+    # 19 Waiting · 20 Expired · 21 First · 22 Last · 23 Days.
     entity2_res_block() {   # $1 = green|orange|red   $2 = the All-view rows to filter
         printf '%s\n' "$2" | LC_ALL=C awk -F'\t' -v OFS='\t' -v want="@data:res=$1" -v tmpl="$stotal" '
             function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0
@@ -1478,7 +1478,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
                 hit=0; for (i=1;i<=NF;i++) if ($i==want) hit=1
                 if (!hit) next
                 cnt++
-                for (c = 3; c <= 20; c++) if (c != 5 && c != 9 && !(c >= 13 && c <= 18)) S[c] += n($c)   # the count cells: Ok Error | In Out Error | Auto Ok Error | Waiting Expired
+                for (c = 3; c <= 20; c++) if (c != 6 && c != 18 && !(c >= 10 && c <= 15)) S[c] += n($c)   # the count cells: In Out Error | Auto Ok Error | Ok Error | Waiting Expired
                 for (i=1;i<=NF;i++) {
                     if ($i ~ /^@data:buckets=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ split(B[j],C,":"); files += C[2]+0; sb += C[6]+0; dd[C[1]] = 1 } }
                     else if ($i ~ /^@data:durdays=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ p = index(B[j], ":"); if (p < 1) continue
@@ -1490,10 +1490,9 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
                 # the merged histogram, sorted by grid value (insertion sort — a few hundred entries at most)
                 hq = 0; HN = 0
                 for (k in HH) { v = k + 0; c = HH[k]; HN += c; j = hq; while (j >= 1 && HQ[j] > v) { HQ[j+1] = HQ[j]; HC[j+1] = HC[j]; j-- } HQ[j+1] = v; HC[j+1] = c; hq++ }
-                V[3]=S[3]+0; V[4]=S[4]+0; V[5]=pr(S[4], S[3]+S[4]); V[6]=nz(S[6]); V[7]=nz(S[7]); V[8]=S[8]+0; V[9]=pr(S[8], files)
-                V[10]=S[10]+0; V[11]=S[11]+0; V[12]=S[12]+0
-                W[13] = (HN > 0) ? dcell(prank(90)) : ""; W[14] = (HN > 0) ? dcell(prank(95)) : ""; W[15] = (HN > 0) ? dcell(prank(99)) : ""; W[16] = (HN > 0) ? dcell(prank(100)) : ""   # WHOLE cells (their tint follows the value)
-                V[17]=human(sb); V[18]=human(files > 0 ? sb / files : 0); V[19]=S[19]+0; V[20]=S[20]+0; V[23]=days+0
+                V[3]=nz(S[3]); V[4]=nz(S[4]); V[5]=S[5]+0; V[6]=pr(S[5], files); V[7]=S[7]+0; V[8]=S[8]+0; V[9]=S[9]+0
+                W[10] = (HN > 0) ? dcell(prank(90)) : ""; W[11] = (HN > 0) ? dcell(prank(95)) : ""; W[12] = (HN > 0) ? dcell(prank(99)) : ""; W[13] = (HN > 0) ? dcell(prank(100)) : ""   # WHOLE cells (their tint follows the value)
+                V[14]=human(sb); V[15]=human(files > 0 ? sb / files : 0); V[16]=S[16]+0; V[17]=S[17]+0; V[18]=pr(S[17], S[16]+S[17]); V[19]=S[19]+0; V[20]=S[20]+0; V[23]=days+0
                 nt = split(tmpl, T, "\t")
                 l = T[2]; sub(/\([0-9,]+/, "(" cnt, l); out = T[1] OFS l
                 for (c = 3; c <= nt; c++) { cell = T[c]
@@ -1515,9 +1514,9 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
             END { if (held != "") print held }'
     }
     # Entities2: HIDE an EMPTY group (2026-09-13, user request) — the Retry /
-    # Resubmit group (Auto · Ok · Error, .rpt fields 10-12, display columns
-    # 8-10, banner cell 5) and the State group (Waiting · Expired, fields
-    # 19-20, columns 17-18, banner cell 8) — on a view whose rows carry no
+    # Resubmit group (Auto · Ok · Error, .rpt fields 7-9, display columns
+    # 5-7, banner cell 4) and the State group (Waiting · Expired, fields
+    # 19-20, columns 17-18, banner cell 7) — on a view whose rows carry no
     # such value at all. At the full range that holds for every narrower
     # range too, so the page drops the columns for good: the fields of every
     # HEAD/KIND/RECALC/ROW/TOTAL line (a trailing Reason column shifts left
@@ -1544,13 +1543,13 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
             function keep(   out, i) { out = ""; for (i = 1; i <= NF; i++) { if (i in DF) continue; out = out (i == 1 ? "" : OFS) $i } return out }
             { L[++n] = $0
               if ($1 == "HEAD" && NF < 20) skip = 1
-              if ($1 == "ROW") { for (i = 10; i <= 12; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasR = 1 }
+              if ($1 == "ROW") { for (i = 7; i <= 9; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasR = 1 }
                                  for (i = 19; i <= 20; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasS = 1 } } }
             END {
                 if (skip || (hasR && hasS)) { for (k = 1; k <= n; k++) print L[k]; exit }
                 # DF = the .rpt fields to drop, DD = the same as display columns, DB = the banner cells
-                if (!hasR) { DF[10] = 1; DF[11] = 1; DF[12] = 1; DD[8] = 1; DD[9] = 1; DD[10] = 1; DB[5] = 1 }
-                if (!hasS) { DF[19] = 1; DF[20] = 1; DD[17] = 1; DD[18] = 1; DB[8] = 1 }
+                if (!hasR) { DF[7] = 1; DF[8] = 1; DF[9] = 1; DD[5] = 1; DD[6] = 1; DD[7] = 1; DB[4] = 1 }
+                if (!hasS) { DF[19] = 1; DF[20] = 1; DD[17] = 1; DD[18] = 1; DB[7] = 1 }
                 for (k = 1; k <= n; k++) { $0 = L[k]
                     if ($1 == "TABLE") {
                         for (i = 3; i <= NF; i++) {
