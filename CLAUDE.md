@@ -1021,7 +1021,8 @@ rows (month, entity), no date filter, help page `month-stats`; listed in `_analy
 the finder's static rows and the sitemap). A FOURTH dropdown, **Goodies**
 (`GOODIES_MENU`, 2026-09-13, user request), is a hand-written SHORT CUT to the best reports —
 Partners - Incoming · Logons (incoming) · Transfer Duration · Failed Subscriptions · Subscriptions
-(the analyses/subscriptions.html configuration list, added 2026-09-13) — the pages
+(the analyses/subscriptions.html configuration list) · Polling (analyses/polling.html; both added
+2026-09-13) — the pages
 staying in their own menus and groups; it ships in `topbar-data.js` as `goodies`, both bar
 renderers draw it, `TB_VER` folds it, linkcheck reads it like the other menus. `_analyses_groups` is the single
 source of truth for the analyses group tab bars — **keep it in sync with `ANALYSES_MENU`, the
