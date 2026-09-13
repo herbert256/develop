@@ -58,6 +58,18 @@ function fieldinfo(fld,cycle,   parts,np,i,seg,a,b,x,set,k,cnt,keys,mn,mx,step,o
   out=""; for(i=1;i<=cnt;i++) out=out (out==""?"":",") keys[i]; return "list:" out
 }
 function hourlist(hv,   n,HL,i,t){ n=split(hv,HL,","); t=""; for(i=1;i<=n;i++) t=t (t==""?"":", ") hh(HL[i]); return t }
+# An hour LIST with runs of consecutive hours (2026-09-13, user request:
+# "0 0,10,20,30,40,50 0,8-23 * * ?" spelled out all sixteen hours): each run
+# becomes a window from its first fire to its LAST fire (the real minutes,
+# like the hour-range endpoints), a lone hour its own window — so
+# "at 00:00-00:50, 08:00-23:50". hasrun() decides; a list without any run
+# keeps the classic hourlist() text.
+function hasrun(hv,   n,HL,i){ n=split(hv,HL,","); for(i=2;i<=n;i++) if(HL[i]+0==HL[i-1]+1) return 1; return 0 }
+function hourruns(hv,mmn,mmx,   n,HL,i,a,b,seg,t){ n=split(hv,HL,","); t=""; i=1
+  while(i<=n){ a=HL[i]+0; b=a; while(i<n && HL[i+1]+0==b+1){ i++; b=HL[i]+0 }
+    if(b>a) seg=hm(a,mmn) "-" hm(b,mmx); else seg=(mmn==mmx ? hm(a,mmn) : hm(a,mmn) "-" hm(a,mmx))
+    t=t (t==""?"":", ") seg; i++ }
+  return t }
 # smallest (want<0) / largest (want>0) minute a MINUTE field fires at (0..59).
 # Parses the RAW field, so a stepped list with an offset (1,16,31,46) keeps its
 # true min/max — fieldinfo's "step:N" summary drops the offset. Used for the
@@ -88,23 +100,25 @@ function cron2human(expr,   f,nf,mi,hi,dp,mk,mv,hk,hv,ha,hb,p,freq,time,out,mmn,
     if(hk=="range") time="between " hm(ha,mmn) " and " hm(hb,mmx)
     else if(hk=="one") time="during the " hh(hv) " hour"
     else if(hk=="step") time="in each " hv "-hour window"
-    else if(hk=="list") time="at " hourlist(hv)
+    else if(hk=="list") time="at " (hasrun(hv) ? hourruns(hv,mmn,mmx) : hourlist(hv))
   } else if(mk=="one" && mv==0){
     if(hk=="all") freq="Every hour"
     else if(hk=="range"){ freq="Hourly"; time="between " hm(ha,mmn) " and " hm(hb,mmx) }
     else if(hk=="one"){ freq="Daily"; time="at " hh(hv) }
     else if(hk=="step") freq="Every " hv " hours"
+    else if(hasrun(hv)){ freq="Hourly"; time="at " hourruns(hv,mmn,mmx) }
     else { freq="Daily"; time="at " hourlist(hv) }
   } else if(mk=="one"){
     if(hk=="all") freq="Every hour at :" pad(mv)
     else if(hk=="one"){ freq="Daily"; time="at " pad(hv) ":" pad(mv) }
     else if(hk=="range"){ freq="Hourly"; time="between " hm(ha,mmn) " and " hm(hb,mmx) }
     else if(hk=="step") freq="Every " hv " hours at :" pad(mv)
+    else if(hasrun(hv)){ freq="Hourly"; time="at " hourruns(hv,mmn,mmx) }
     else { freq="At :" pad(mv); time="at " hourlist(hv) }
   } else {
     freq="At minutes " mv
     if(hk=="range") time="between " hm(ha,mmn) " and " hm(hb,mmx)
-    else if(hk!="all") time="at " hourlist(hv)
+    else if(hk!="all") time="at " (hasrun(hv) ? hourruns(hv,mmn,mmx) : hourlist(hv))
   }
   if(dp!="" && freq=="Daily" && time!=""){ freq="At " substr(time,4); time="" }  # avoid "Daily ... on workdays"
   out=freq; if(dp!="") out=out " " dp; if(time!="") out=out " " time

@@ -22,7 +22,7 @@
 <h2>Columns</h2>
 <ul>
 <li><strong>Subscription</strong> &mdash; configured name, links to its detail page; row tinted by its result.</li>
-<li><strong>Cron expression</strong> (column two) &mdash; Quartz <code>sec min hour day-of-month month day-of-week</code> (<code>?</code> no specific value, <code>5/30</code> every 30 from minute 5, <code>MON-FRI</code> weekdays); <strong>Schedule</strong> (column three) spells it out.</li>
+<li><strong>Cron expression</strong> (column two) &mdash; Quartz <code>sec min hour day-of-month month day-of-week</code> (<code>?</code> no specific value, <code>5/30</code> every 30 from minute 5, <code>MON-FRI</code> weekdays); <strong>Schedule</strong> (column three) spells it out; consecutive hours of a list read as one window from the first to the last fire (<code>0,8-23</code> with every 10 minutes = <em>00:00-00:50, 08:00-23:50</em>).</li>
 <li><strong>Observed</strong> &mdash; when the schedule really fires (rules below).</li>
 <li><strong>Polls</strong> / <strong>Empty polls</strong> / <strong>Files matched</strong> / <strong>Empty %</strong> &mdash; the &ldquo;Applying the search pattern &hellip; N file(s) were found of which M matched&rdquo; lines; empty = M is 0; matched = sum of M.</li>
 <li><strong>Listing errors</strong> &mdash; &ldquo;Error occurred while listing files from partner &hellip;&rdquo;: wrong remote directory, permissions, or a partner dropping the connection mid-listing.</li>
