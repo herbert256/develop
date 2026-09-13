@@ -5,14 +5,13 @@
 # to last record end, gaps included), split out of duration.sh 2026-09-03
 # (user request) into its own Performance-group page.
 #
-# TWO tables in ONE switch group on the page (the TABLE switch= modifier):
-#   OK transfers   Processed Files only (the default) — every row links its
-#                  per-transfer RECORD page, docs/<env>/transfers/duration/top/
-#                  <coreid>.html, written here (moved from duration.sh) into
-#                  $REPORTS_DIR/duration/top/ and rendered by
-#                  bin/transfer/publish.sh
-#   All transfers  every outcome with a measured duration — a failed
-#                  transfer's run time (a 2 h timeout) counts too; plain rows
+# ONE table: the DELIVERED Files only — outcome Processed; not Failed, not
+# Expired and not Waiting either (2026-09-13, user request: the former
+# "All transfers" switch view, every outcome with a measured duration, is
+# gone — a failed transfer's run time is a timeout, not a duration). Every
+# row links its per-transfer RECORD page, docs/<env>/transfers/duration/top/
+# <coreid>.html, written here (moved from duration.sh) into
+# $REPORTS_DIR/duration/top/ and rendered by bin/transfer/publish.sh.
 # Columns: Duration (sorting by the exact milliseconds via @{sortval}), Start
 # Time, CoreId, Destination Subscription, Size, File — the former "Duration
 # (ms)" and "Account" columns went with the split (user request). EVERY
@@ -50,10 +49,10 @@ ensure_parsed
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-# top_list OKONLY — the TOP_N longest Files of a scope, ms-descending:
+# top_list — the TOP_N longest DELIVERED Files (outcome Processed), ms-descending:
 #   ms ⇥ coreid ⇥ "date time" ⇥ subscription ⇥ size ⇥ file ⇥ humandur ⇥ humanbytes
 top_list() {
-    awk -F'\t' -v okonly="$1" '
+    awk -F'\t' '
         function clean(s){ gsub(/[\t\r]/, " ", s); return s }
         function humandur(ms) {
             if (ms < 1000)    return sprintf("%d ms", ms)
@@ -66,29 +65,28 @@ top_list() {
             while (v >= 1024 && i < 6) { v /= 1024; i++ }
             return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i])
         }
-        okonly && ($2 == "Failed" || $2 == "Expired") { next }
+        $2 != "Processed" { next }   # delivered Files only: no Failed, no Expired, no Waiting
         { ms = $9 + 0; if (ms <= 0) next
           s = clean($12); if (s == "") s = "(no subscription)"
           sz = int($8)
           printf "%d\t%s\t%s %s\t%s\t%d\t%s\t%s\t%s\n", ms, $1, $4, $5, s, sz, clean($11), humandur(ms), humanbytes(sz) }
     ' "$FILES" | sort -t$'\t' -k1,1nr | awk -v n="$TOP_N" 'NR<=n'
 }
-# the scope totals (Files with a duration), for the TOTAL rows
-count_scope() { awk -F'\t' -v okonly="$1" 'okonly && ($2 == "Failed" || $2 == "Expired") { next } ($9 + 0) > 0 { n++ } END { print n + 0 }' "$FILES"; }
+# the scope total (delivered Files with a duration), for the TOTAL row
+count_scope() { awk -F'\t' '$2 == "Processed" && ($9 + 0) > 0 { n++ } END { print n + 0 }' "$FILES"; }
 
-slow_ok=$(top_list 1); slow_all=$(top_list 0)
-n_ok=$(count_scope 1); n_all=$(count_scope 0)
+slow_ok=$(top_list)
+n_ok=$(count_scope)
 shown_ok=$(printf '%s\n' "$slow_ok" | awk 'length($0) { n++ } END { print n+0 }')
-shown_all=$(printf '%s\n' "$slow_all" | awk 'length($0) { n++ } END { print n+0 }')
 
-# the FILE-page list (2026-09-03, user request): EVERY listed File — either
-# scope — gets a File page docs/<env>/files/<coreid>.html, the errors-page
-# layout for a File of any outcome; failed.sh writes it from this sidecar
-# (unioned with the Transfer patterns list) and the CoreId cell of every row
-# opens it (the one-hour threshold went 2026-09-06, user request: at most
-# 2 x TOP_N pages). cmp-guarded: an unchanged list keeps its mtime (a
-# failed.sh dep); an EMPTY list is valid (-f, not -s)
-{ printf '%s\n' "$slow_ok" "$slow_all"; } \
+# the FILE-page list (2026-09-03, user request): EVERY listed File gets a
+# File page docs/<env>/files/<coreid>.html, the errors-page layout for a
+# File of any outcome; failed.sh writes it from this sidecar (unioned with
+# the Transfer patterns list) and the CoreId cell of every row opens it (the
+# one-hour threshold went 2026-09-06, user request: at most TOP_N pages).
+# cmp-guarded: an unchanged list keeps its mtime (a failed.sh dep); an
+# EMPTY list is valid (-f, not -s)
+printf '%s\n' "$slow_ok" \
     | awk -F'\t' 'length($0) { print $2 }' \
     | LC_ALL=C sort -u > "$FILESIDE.tmp"
 if cmp -s "$FILESIDE.tmp" "$FILESIDE" 2>/dev/null; then rm -f "$FILESIDE.tmp"; else mv "$FILESIDE.tmp" "$FILESIDE"; fi
@@ -146,21 +144,16 @@ rows_of() {   # $1 the list  $2 link base ("" = plain rows)
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 {
     printf 'TITLE\tLongest Files\n'
-    printf 'DESC\tThe %s longest Files by wall-clock duration — delivered (OK) ones or every outcome — each opening its per-transfer record page.\n' "$TOP_N"
-    printf 'INTRO\tThe **%s longest Files** by **wall-clock duration** — from the first record start to the last record end, store-and-forward gaps and retry idle included. **OK transfers** (the default) lists delivered Files only; **All transfers** adds the failed ones, whose duration is how long they ran before giving up (a timeout shows here). Click a Duration or Start Time cell of an OK row for the transfer'\''s **record page** — every record of that CoreId, chronological. Every listed File has its own **File page** (the error-page layout: facts, records and the server log of its connections) — its **CoreId** cell opens that, in both views. The columns sort by the exact duration.\n' "$TOP_N"
-    printf 'TABLE\tTop %s longest Files by duration\twide\tswitch=scope:OK transfers\n' "$TOP_N"
+    printf 'DESC\tThe %s longest delivered Files by wall-clock duration, each opening its per-transfer record page.\n' "$TOP_N"
+    printf 'INTRO\tThe **%s longest delivered Files** by **wall-clock duration** — from the first record start to the last record end, store-and-forward gaps and retry idle included. Only **OK** Files are listed (outcome Processed): a Failed, Expired or Waiting File is not a completed transfer, and a failure'\''s run time is a timeout, not a duration. Click a Duration or Start Time cell for the transfer'\''s **record page** — every record of that CoreId, chronological. Every listed File has its own **File page** (facts, records and the server log of its connections) — its **CoreId** cell opens that. The columns sort by the exact duration.\n' "$TOP_N"
+    printf 'TABLE\tTop %s longest Files by duration\twide\n' "$TOP_N"
     printf 'HEAD\tDuration\tStart Time\tCoreId\tDestination Subscription\tSize\tFile\n'
     printf 'KIND\ttext\ttext\tmono\tsite\tnum\tfile\n'
     rows_of "$slow_ok" "$TOPLINK"
     printf 'TOTAL\tTop %s of %s Files\t\t\t\t\t\n' "$shown_ok" "$n_ok"
-    printf 'TABLE\t\twide\tswitch=scope:All transfers\n'
-    printf 'HEAD\tDuration\tStart Time\tCoreId\tDestination Subscription\tSize\tFile\n'
-    printf 'KIND\ttext\ttext\tmono\tsite\tnum\tfile\n'
-    rows_of "$slow_all" ""
-    printf 'TOTAL\tTop %s of %s Files\t\t\t\t\t\n' "$shown_all" "$n_all"
-    printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); its duration is the wall-clock span of those records, so it includes the store-and-forward wait inside SecureTransport and any retry idle. Error transfers are mostly instant 0-byte attempts, which is why the OK view is the default; the All view is where a long-hanging failure shows. The record pages exist for the OK list only; the File pages for every listed File, whatever its outcome.\n'
+    printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); its duration is the wall-clock span of those records, so it includes the store-and-forward wait inside SecureTransport and any retry idle. Delivered (Processed) Files only — the failed, expired and still-waiting ones are left out (2026-09-13). Every listed File has a record page and a File page.\n'
     printf 'KEYWORDS\tduration,longest,slowest,slow,top,wall-clock,record,coreid,transfer\n'
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$GENDATE" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-echo "Data written to $OUT ($shown_ok of $n_ok OK Files, $shown_all of $n_all in all; $shown_ok record page(s) in $TOPDIR)." >&2
+echo "Data written to $OUT ($shown_ok of $n_ok delivered Files; $shown_ok record page(s) in $TOPDIR)." >&2
