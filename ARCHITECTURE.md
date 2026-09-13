@@ -587,7 +587,12 @@ over every visible row's merged histogram; the publish-time subset totals merge 
 Display rules (2026-09-13, user): the TOTAL row LAST (`entity_total_last`); an EMPTY Retry /
 Resubmit or State group HIDDEN per view (`entity_hide_groups` — a publish-time decision, an empty
 full range being empty for every narrower range: it drops the fields, the banner cell and remaps
-gsep=/noagg=/pct=/drillcols= past the dropped columns); whole-unit bytes (tokens `H`/`V`); the
+gsep=/noagg=/pct=/drillcols= past the dropped columns) and, in the BROWSER, whenever a date range
+or a search leaves every visible row's cells of the group empty (the `autohide=Retry /
+Resubmit;State` TABLE modifier → `data-autohide` → report.js `autoHideGroups` after every
+recalc / search: the group's columns take the hidden attribute through `applyHidden`, whose
+`_autoHidden` set joins the picker's `_colHidden` for the cells and the banner spans but never
+enters the stored list; the columns return when a visible row carries a value); whole-unit bytes (tokens `H`/`V`); the
 s/m/h/d durations tinted green/amber/red by unit (the `P` token retints); an empty rate beside an
 empty Error (token `e`); no In/Out 0 (token `S`); every red count as KIND `numfailed` — `errc`/`okc`
 cells lose their tint inside the views' tinted rows, only `.failed`/`.processed` and a non-empty

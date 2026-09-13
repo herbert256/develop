@@ -1111,7 +1111,7 @@ entities_name_only() {
         # the column-group / drill / ratio TABLE modifiers — drop them
         $1 == "GHEAD" { next }
         $1 == "TABLE" { out = $1; drop = 0
-                        for (i = 2; i <= NF; i++) { if (i > 2 && $i ~ /^(gsep|drillcols|pct|noagg)=/) drop = 1; else out = out OFS $i }
+                        for (i = 2; i <= NF; i++) { if (i > 2 && $i ~ /^(gsep|drillcols|pct|noagg|autohide)=/) drop = 1; else out = out OFS $i }
                         if (drop) print out; else print
                         next }
         $1 == "HEAD" || $1 == "KIND" || $1 == "TOTAL" { print $1, $2; next }

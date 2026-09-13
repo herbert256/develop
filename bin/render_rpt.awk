@@ -584,6 +584,12 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             # optional noun (underscores = spaces) heads the list, else the
             # column label (report.js setupExpandable)
             else if (index(mi, "drillcols=") == 1) tattr = tattr " data-drill-cols=\"" esc(substr(mi, 11)) "\""
+            # autohide=<Group label>;<Group label> (2026-09-13, the Entities
+            # pages): a column GROUP (a GHEAD banner cell) whose visible cells
+            # are ALL empty is hidden in the browser — after a date-range
+            # change or a search — and comes back when it has values again
+            # (report.js autoHideGroups)
+            else if (index(mi, "autohide=") == 1)  tattr = tattr " data-autohide=\"" esc(substr(mi, 10)) "\""
             else if (index(mi, "pager=") == 1)    tattr = tattr " data-pager=\"" substr(mi, 7) "\""
             # zerohide=<m>: while the date range is NARROWED, hide a data row
             # whose re-aggregated bucket metric <m> sums to 0 — a "0 of this

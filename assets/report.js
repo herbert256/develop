@@ -272,7 +272,7 @@
   function spacerCi(table, hr, ci) { var c = cellByCi(hr, ci); return isSpacer(c); }
   function syncGroups(table, hr) {
     if (!table._banners || !table._banners.length) return;
-    var n = hr.cells.length, hidden = table._colHidden || [], hid = {}, i, j, b, vis, order, firstVis = {}, g, rows, r, cs, c, ci, cls, want, has;
+    var n = hr.cells.length, hidden = table._colHiddenAll || table._colHidden || [], hid = {}, i, j, b, vis, order, firstVis = {}, g, rows, r, cs, c, ci, cls, want, has;
     for (i = 0; i < hidden.length; i++) hid[hidden[i]] = 1;
     var gvis = {}, lastVis = {}, sp = {}, spHide = {}, nextG;
     for (i = 0; i < table._banners.length; i++) {
@@ -327,18 +327,53 @@
   function saveHidden(key, hidden) {
     try { if (hidden.length) localStorage.setItem(key, JSON.stringify(hidden)); else localStorage.removeItem(key); } catch (e) {}
   }
+  // `hidden` is the USER's list (the picker, persisted); the AUTO-hidden
+  // columns (autoHideGroups — an empty group after a range change or a
+  // search, table._autoHidden) join it for the cells and the banner spans
+  // but never enter the stored list.
   function applyHidden(table, hr, hidden) {
-    var n = hr.cells.length, rows = table.rows, i, j, r, cs, set = {}, c;
-    for (i = 0; i < hidden.length; i++) set[hidden[i]] = 1;
-    table._colHidden = hidden;
+    var n = hr.cells.length, rows = table.rows, i, j, r, cs, set = {}, c, all = hidden.slice(), auto = table._autoHidden || [];
+    for (i = 0; i < auto.length; i++) if (all.indexOf(auto[i]) < 0) all.push(auto[i]);
+    for (i = 0; i < all.length; i++) set[all[i]] = 1;
+    table._colHidden = hidden; table._colHiddenAll = all;
     for (i = 0; i < rows.length; i++) {
       r = rows[i]; cs = r.cells;
       if (cs.length === 1 && !r.getElementsByTagName("th").length) continue;
-      if (cs.length !== n && isTotal(r) && hidden.length) splitSpans(r);
+      if (cs.length !== n && isTotal(r) && all.length) splitSpans(r);
       for (j = 0; j < cs.length; j++) { c = cs[j]; c.hidden = !!set[ciOf(c)]; }
     }
     syncGroups(table, hr);
     placeHotspots(table, hr);
+  }
+  // AUTO-HIDE an EMPTY column group (the autohide= TABLE modifier ->
+  // data-autohide="Group;Group", the Entities pages' Retry / Resubmit and
+  // State, 2026-09-13, user request): when every VISIBLE data row's cells of
+  // a named group are empty — after a date-range change or a search — the
+  // group's columns hide (the hidden attribute, the banner cell with them,
+  // via applyHidden); they come back the moment a visible row carries a
+  // value. The full period's empty groups are already gone at publish time
+  // (publish_lib entity_hide_groups); this is the same rule for the range.
+  function autoHideGroups(table) {
+    var spec = table.getAttribute("data-autohide");
+    if (!spec || !table._colGroup || !table._groupLabel) return;
+    var hr = headerRow(table); if (!hr) return;
+    var want = {}, groups = {}, hide = [], ci, g, k, rows, i, j, cis, any, cell;
+    spec.split(";").forEach(function (s) { s = s.trim(); if (s) want[s] = 1; });
+    for (ci = 0; ci < hr.cells.length; ci++) {
+      k = ciOf(hr.cells[ci]); g = groupOf(table, k);
+      if (want[table._groupLabel[g]]) (groups[g] = groups[g] || []).push(k);
+    }
+    rows = dataRows(table).filter(function (r) { return r.style.display !== "none"; });
+    for (g in groups) {
+      cis = groups[g]; any = false;
+      for (i = 0; i < rows.length && !any; i++)
+        for (j = 0; j < cis.length; j++) { cell = cellByCi(rows[i], cis[j]) || rows[i].cells[cis[j]]; if (cell && cell.textContent.trim() !== "") { any = true; break; } }
+      if (!any) for (j = 0; j < cis.length; j++) hide.push(cis[j]);
+    }
+    var before = (table._autoHidden || []).join(","), after = hide.join(",");
+    if (before === after) return;
+    table._autoHidden = hide;
+    applyHidden(table, hr, table._colHidden || []);
   }
   function initColOrder(table) {
     var hr = headerRow(table); if (!hr) return;
@@ -920,6 +955,7 @@
           else if (c.hasAttribute("data-orig")) c.textContent = c.getAttribute("data-orig");
         }
       }
+      autoHideGroups(table);   // an empty group hidden for the range comes back with its full-period values
       replaceHotspots(table);
       return;
     }
@@ -969,6 +1005,7 @@
     rankCols(toks, drows, aggs, colSum);   // positions renumber over the rows the range left standing
     var totAgg = { sum: colSum, max: {}, days: totDays, dur: totDur };
     totalRows(table).forEach(function (r) { writeRecalc(r, toks, totAgg, colSum, colMax, colMaxA, true); updateTotalLabel(r, vis); });
+    autoHideGroups(table);   // a group the range left empty on every visible row hides (data-autohide)
     replaceHotspots(table);
   }
   // ---- Show-Seen coverage tables (configured vs. observed) ------------------
@@ -2958,9 +2995,10 @@
     // recomputeTotals below would restore full-range totals). Re-run the exact
     // bucket aggregation over the post-search visible set instead.
     if (table.getAttribute("data-recalc") && curRange && curRange.narrowed) {
-      recalcTable(table, curRange.lo, curRange.hi, true);
+      recalcTable(table, curRange.lo, curRange.hi, true);   // (runs autoHideGroups itself)
     } else {
       recomputeTotals(table, true);   // force: bucket tables too (recalcTable doesn't run for a full-range search)
+      autoHideGroups(table);          // a group the search left empty on every visible row hides (data-autohide)
     }
     applyGroup(table);
     updateEmptyState(table);

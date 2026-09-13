@@ -936,7 +936,10 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   Expired) · Dates (First · Last · Days with traffic). DISPLAY RULES (user): the TOTAL row LAST
   (`entity_total_last`); an EMPTY Retry / Resubmit or State group HIDDEN per view
   (`entity_hide_groups` drops the columns and the banner cell and remaps every index-naming
-  modifier — gsep=, noagg=, pct=, drillcols=); bytes in WHOLE units (tokens `H`/`V`); a duration
+  modifier — gsep=, noagg=, pct=, drillcols=) AND, in the browser, hidden whenever a date range or
+  a search leaves every visible row's cells of the group empty (the `autohide=Group;Group` TABLE
+  modifier → report.js `autoHideGroups`, the auto-hidden set joining the picker's list in
+  `applyHidden` without entering the stored one); bytes in WHOLE units (tokens `H`/`V`); a duration
   as a whole number with a one-letter unit s/m/h/d, tinted s green · m amber · h/d red (the `P`
   token retints); an empty Error keeps an EMPTY rate beside it (token `e`); In / Out never show a
   0 (token `S`); every red count cell is KIND `numfailed`, never `numerr` — the views' row tints
