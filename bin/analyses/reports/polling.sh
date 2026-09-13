@@ -24,8 +24,15 @@
 # bare table: Subscription · OK · Error · Cron expression · Observed · Polls ·
 # Empty polls · Files matched · Empty % · Listing errors · Poll starts ·
 # Failure lines · Schedule · What goes wrong (Schedule moved behind Failure
-# lines on request, so the two prose columns sit together at the right). The row set stays every
-# configured UC3 flow plus any other flow the server log shows polling.
+# lines on request, so the two prose columns sit together at the right).
+#
+# 2026-09-13 (user request): UC3 ONLY — a row is a configured UC3 flow (the
+# UC3 status roster, name-prefixed or derived) or a UC3-named flow the server
+# log shows polling; the other pollers (the UC5 pull side, a UC1 flow with a
+# cron) are dropped. OK and Error are gone, and the cron columns lead: the
+# page is Subscription · Cron expression · Schedule · Observed · Polls · Empty
+# polls · Files matched · Empty % · Listing errors · Poll starts · Failure
+# lines · What goes wrong.
 #
 # Reads (after the server report pool, bin/server/reports.sh):
 #   $REPORTS_DIR/uc3-status.rpt           the UC3 status table (bin/analyses/reports/uc3-status.sh)
@@ -141,6 +148,8 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" '
         return out
     }
     function emit(name, u, pk, lk, sk,   cronx, sched, obs, polls, empty, matched, pct, lst, starts, fails, why, days, first, last, bk, ll, nm, stc, fi, ok, er, lf, lg) {
+        # UC3 ONLY (2026-09-13): in the UC3 status roster, or UC3-named
+        if (sk == "" && toupper(substr(name, 1, 3)) != "UC3") return
         cronx = ""; sched = ""; obs = ""; starts = ""; fails = ""; why = ""; days = ""
         stc = ""; fi = ""; ok = ""; er = ""; lf = ""; lg = ""
         if (sk != "") { stc = SST[sk]; fi = SFI[sk]; ok = SOK[sk]; er = SER[sk]; lf = SLF[sk]; lg = SLG[sk]; TFI += fi; TOK += ok; TER += er }
@@ -154,8 +163,8 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" '
         if (ll == "" && sk != "") ll = SDL[sk]   # no poll lines: the status drill (the lines that decided the status)
         if (days == 0) days = ""
         nm = "@{alink=subscriptions/" name "}" name
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n", \
-            nm, ok, er, cronx, (obs != "" ? obs : (pk != "" ? "" : "-")), polls, empty, matched, pct, lst, starts, fails, sched, why, buckets((pk != "" ? PB[pk] : ""), (lk != "" ? LB[lk] : "")), ll
+        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n", \
+            nm, cronx, sched, (obs != "" ? obs : (pk != "" ? "" : "-")), polls, empty, matched, pct, lst, starts, fails, why, buckets((pk != "" ? PB[pk] : ""), (lk != "" ? LB[lk] : "")), ll
         # the totals (this pass): rows, polls, empty, matched, listing, starts, failures, schedules, never
         NR9++; if (polls != "-" && polls != "") TP += polls; TE += empty; TM += matched; TL += lst; TS += starts; TF += fails
         if (u in CN) { NC++; if (CNEV[u]) NNEV++ }
@@ -185,20 +194,20 @@ pct_empty=$(awk -v p="$t_polls" -v e="$t_empty" 'BEGIN { printf "%.1f%%", (p > 0
 
 {
     printf 'TITLE\tPolling\n'
-    printf 'DESC\tEvery polling subscription in one row — its OK and Error transfers, its configured cron schedule and what the server log observed: polls, empty polls, files matched, listing failures, the poll starts and failure lines of a schedule that never completes, and the contradiction alarm.\n'
+    printf 'DESC\tEvery UC3 polling subscription in one row — its configured cron expression and schedule, and what the server log observed: polls, empty polls, files matched, listing failures, the poll starts and failure lines of a schedule that never completes, and the contradiction alarm.\n'
     printf 'KEYWORDS\tpoll,polls,polling,remote poll,empty polls,listing failures,cron,cronjobs,schedule,quartz,observed,uc3,uc3 status\n'
     printf 'TABLE\tPolling\twide\tanchor=polling\n'
-    printf 'HEAD\tSubscription\tOK\tError\tCron expression\tObserved\tPolls\tEmpty polls\tFiles matched\tEmpty %%\tListing errors\tPoll starts\tFailure lines\tSchedule\tWhat goes wrong\n'
-    printf 'KIND\tmono\tnumprocessed\tnumfailed\tmono\ttext\tnum\tnumwarn\tnumprocessed\tnum\tnumfailed\tnum\tnum\ttext\ttext\n'
-    printf 'RECALC\t-\t-\t-\t-\t-\ts0\ts1\ts2\tp1.0\ts3\t-\t-\t-\t-\n'
+    printf 'HEAD\tSubscription\tCron expression\tSchedule\tObserved\tPolls\tEmpty polls\tFiles matched\tEmpty %%\tListing errors\tPoll starts\tFailure lines\tWhat goes wrong\n'
+    printf 'KIND\tmono\tmono\ttext\ttext\tnum\tnumwarn\tnumprocessed\tnum\tnumfailed\tnum\tnum\ttext\n'
+    printf 'RECALC\t-\t-\t-\t-\ts0\ts1\ts2\tp1.0\ts3\t-\t-\t-\n'
     printf '%s\n' "$agg" | command grep $'^ROW\t' || true
-    printf 'TOTAL\tTotal (%s subscription(s))\t@{class=num processed}%s\t@{class=num failed}%s\t\t\t@{class=num}%s\t@{class=num warn}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t\t\n' \
-        "$n_rows" "$t_ok" "$t_err" "$t_polls" "$t_empty" "$t_matched" "$pct_empty" "$t_list" "$t_starts" "$t_fails"
+    printf 'TOTAL\tTotal (%s subscription(s))\t\t\t\t@{class=num}%s\t@{class=num warn}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t\n' \
+        "$n_rows" "$t_polls" "$t_empty" "$t_matched" "$pct_empty" "$t_list" "$t_starts" "$t_fails"
     printf 'NOTE\tSources: the TM lines "Applying the search pattern … for transfer site SITE: N file(s) were found of which M matched the pattern" (a poll; empty when M = 0), "Error occurred while listing files from partner SITE" (a listing failure), the "Remote files pattern … evaluated" setup lines (a poll start), the connection and authentication failures naming the flow or its host (the failure lines), and the cron expressions of subscriptions.json; **OK** / **Error** are the logical transfers of the flow in the transfer log, as on the UC status / UC3 tab. **Observed** is when the schedule actually fires — the median of the first poll of each day ± one standard deviation (the first and the last active day left out — the export window cuts into both), the poll rate for a schedule firing more than 3× a day, **· files** when only file arrivals give a slot, **-** when nothing was ever observed; a **dark red** cell contradicts its schedule. **Poll starts** / **Failure lines** / **What goes wrong** are filled for a schedule that never completes a poll. The poll figures re-total for a From/To range; click a row for its 10 most recent poll lines. Subscription names are the configured ones (the logged _SCP_ / _SFTP_SERVER_ tails dropped); a flow polling without a configured schedule still gets a row, its cron columns empty. Matching is name-prefix both ways where the server truncated a name.\n'
     printf 'NOTE\tThe same information sits on the **UC status / UC3** tab as separate tables, beside the UC3 status of every flow. Where we are the client (UC3, and the pull side of UC5) SecureTransport connects to the server of the partner on a timer and collects whatever is waiting — an empty poll consumes a slot, a connection and a listing but leaves no trace in the transfer log, so chronic empty polling is visible only here. UC1 is a client use case too, but pushes on directory scanning — no cron. All schedules are enabled; none skip holidays.\n'
     printf 'LINK\thttps://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html\tQuartz cron trigger reference\n'
-    printf 'SUMMARY	Polling subscriptions: %s  |  OK: %s  |  Error: %s  |  Polls: %s  |  Empty: %s  |  Listing failures: %s  |  Cron schedules: %s  |  Never complete a poll: %s
-' "$n_rows" "$t_ok" "$t_err" "$t_polls" "$pct_empty" "$t_list" "$n_cron" "$n_never"
+    printf 'SUMMARY	UC3 polling subscriptions: %s  |  Polls: %s  |  Empty: %s  |  Listing failures: %s  |  Cron schedules: %s  |  Never complete a poll: %s
+' "$n_rows" "$t_polls" "$pct_empty" "$t_list" "$n_cron" "$n_never"
     printf 'FOOT\tGenerated on %s (inputs: %s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$have"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

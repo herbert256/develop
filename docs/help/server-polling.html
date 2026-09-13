@@ -17,13 +17,12 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Polling</h1>
 <h2>What it shows</h2>
-<p>One row per polling subscription (UC3 and the pull side of UC5: SecureTransport is the client and collects from the partner&rsquo;s server on a timer) &mdash; its Files, its configured cron schedule and what the server log observed.</p>
+<p>One row per <strong>UC3</strong> polling subscription (SecureTransport is the client and collects from the partner&rsquo;s server on a timer) &mdash; its configured cron expression and schedule, and what the server log observed.</p>
 <p>A bare table, no intro or boxes; the same tables sit on the <a href="server-uc3-status.html">UC status / UC3</a> tab.</p>
 <h2>Columns</h2>
 <ul>
 <li><strong>Subscription</strong> &mdash; configured name, links to its detail page; row tinted by its result.</li>
-<li><strong>OK</strong> / <strong>Error</strong> &mdash; the flow&rsquo;s Files in the transfer log, copied from <code>uc3-status.rpt</code> so they never disagree with the UC3 tab (which keeps Status, Files, Last file, Problems, Last log).</li>
-<li><strong>Cron expression</strong> &mdash; Quartz <code>sec min hour day-of-month month day-of-week</code> (<code>?</code> no specific value, <code>5/30</code> every 30 from minute 5, <code>MON-FRI</code> weekdays); <strong>Schedule</strong> spells it out.</li>
+<li><strong>Cron expression</strong> (column two) &mdash; Quartz <code>sec min hour day-of-month month day-of-week</code> (<code>?</code> no specific value, <code>5/30</code> every 30 from minute 5, <code>MON-FRI</code> weekdays); <strong>Schedule</strong> (column three) spells it out.</li>
 <li><strong>Observed</strong> &mdash; when the schedule really fires (rules below).</li>
 <li><strong>Polls</strong> / <strong>Empty polls</strong> / <strong>Files matched</strong> / <strong>Empty %</strong> &mdash; the &ldquo;Applying the search pattern &hellip; N file(s) were found of which M matched&rdquo; lines; empty = M is 0; matched = sum of M.</li>
 <li><strong>Listing errors</strong> &mdash; &ldquo;Error occurred while listing files from partner &hellip;&rdquo;: wrong remote directory, permissions, or a partner dropping the connection mid-listing.</li>
@@ -31,7 +30,7 @@
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Every configured UC3 flow is listed, never-seen ones with empty poll columns; a flow polling without a configured schedule gets a row with empty cron and transfer columns.</li>
+<li>UC3 only: every configured UC3 flow (by name prefix or derived use case), never-seen ones with empty poll columns, plus any UC3-named flow the server log shows polling (empty cron columns). Other pollers &mdash; the UC5 pull side, a UC1 flow with a cron &mdash; are not listed; the UC3 tab keeps the Files, OK and Error figures.</li>
 <li>Observed = the median of each day&rsquo;s first poll &plusmn; one standard deviation (first and last active day left out &mdash; the export window cuts into both); a poll rate (<em>~23 polls/day</em>) for a schedule firing more than 3&times; a day.</li>
 <li><strong>&middot; files</strong> = no poll line, only the file arrivals (the Punctuality report) give a slot; <strong>-</strong> = nothing ever observed.</li>
 <li><strong>Dark red</strong> Observed contradicts the schedule (a daily one firing at another hour, an hourly one polling once a day): the export and the running server disagree, or the flow runs on another schedule.</li>

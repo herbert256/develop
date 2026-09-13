@@ -1087,7 +1087,9 @@ write_added_bl_page() {
 # host we dial out to), the From / To folders exactly as the subscription
 # detail page's Features rows show them (lifted from the detail .rpt files
 # like sources-and-targets.sh does; the pickup-side file mask as the green
-# suffix), and the ALL-TIME File counts — Total files · In · Out · Errors ·
+# suffix), the Cron expression and Schedule exactly as the Polling page shows
+# them (subscriptions.json via jq + bin/cron2human.awk, the same pipeline as
+# polling.sh; blank without a cron), and the ALL-TIME File counts — Total files · In · Out · Errors ·
 # Auto Retries · Resubmit OK / Error · Waiting · Expired — from
 # month-stats.sh's _alltime.tsv sidecar (the Entities / Month stats
 # definitions; a subscription never seen in the log shows blanks; 0 shows
@@ -1116,6 +1118,20 @@ write_subscriptions_page() {
         [ -f "$DET/$d/_slugmap.tsv" ] && args+=("$DET/$d/_slugmap.tsv")
     done
     [ -f "$ALLT" ] && args+=("$ALLT")
+    # the cron expressions (2026-09-13, user request): name / proto / display
+    # cron / plain-English schedule per configured receive scheduler — the
+    # Polling page's own pipeline, so the two pages never disagree
+    local cronf; cronf=$(mktemp "${TMPDIR:-/tmp}/subcron.XXXXXX")
+    if command -v jq >/dev/null 2>&1 && [ -f "$FM_CONFIG_DIR/subscriptions.json" ]; then
+        jq -r '
+            .[] | . as $s
+            | (["sftp","ftp"][] as $p
+               | ($s.parameters["hybrid_partner_\($p)_relay0_receive_scheduler_cron_expression"]) as $c
+               | select($c != null and $c != "")
+               | [ $s.name, ($p|ascii_upcase), $c ] | @tsv)
+          ' "$FM_CONFIG_DIR/subscriptions.json" 2>/dev/null | awk -F'\t' -v CF=3 -f "$SCRIPT_DIR/../cron2human.awk" > "$cronf" || true
+    fi
+    args+=("$cronf")
     # the subscription detail .rpt files: their Features From / To rows (the
     # first of each per file) — the same source sources-and-targets.sh reads
     shopt -s nullglob
@@ -1158,6 +1174,9 @@ write_subscriptions_page() {
                 return e(substr(raw, p + 1)) "<span class=\"mask\">" e(m) "</span>" }
             return e(raw)
         }
+        # a cron cell: several expressions (one per line, \x1f-joined by
+        # cron2human.awk) stack with <br>
+        function crcell(raw,   o) { o = e(raw); gsub(/\037/, "<br>", o); return "<code>" o "</code>" }
         # a count cell: 0 shows blank (class z = no tint), like the report tables
         function ncell(v, cls) { v = v + 0; if (v == 0) return "<td class=\"" cls " z\"></td>"; return "<td class=\"" cls "\">" v "</td>" }
         BEGIN { US = sprintf("%c", 31)
@@ -1171,6 +1190,10 @@ write_subscriptions_page() {
             next }
         FILENAME ~ /base\/_subscriptions\.tsv$/ { RES[toupper($1)] = $3
             if (CONF == "" && $1 !~ /^UCx_/ && $1 != "" && !(toupper($1) in seenr)) { seenr[toupper($1)] = 1; RN[++nr] = $1 }
+            next }
+        FILENAME ~ /subcron\.[A-Za-z0-9]+$/ { if ($1 != "" && $3 != "") { u = toupper($1)
+                CRX[u] = CRX[u] ((u in CRX) && CRX[u] != "" ? "\037" : "") $3
+                CRH[u] = CRH[u] ((u in CRH) && CRH[u] != "" ? "; " : "") $4 }
             next }
         FILENAME ~ /_alltime\.tsv$/ { if ($1 == "subscription") CNT[toupper($2)] = $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11; next }
         FILENAME ~ /details\/subscriptions\/_slugmap\.tsv$/ { SLUG["subscriptions" SUBSEP toupper($1)] = $2; next }
@@ -1219,6 +1242,8 @@ write_subscriptions_page() {
                     "<td class=\"wrap\">" epc "</td>" \
                     "<td class=\"wrap\">" fr "</td>" \
                     "<td class=\"wrap\">" to "</td>" \
+                    "<td class=\"mono\">" ((k in CRX) ? crcell(CRX[k]) : "") "</td>" \
+                    "<td class=\"wrap\">" ((k in CRH) ? e(CRH[k]) : "") "</td>" \
                     ncell(C[1], "num") ncell(C[2], "num") ncell(C[3], "num") ncell(C[4], "num failed") \
                     ncell(C[5], "num warn") ncell(C[6], "num warn") ncell(C[7], "num failed") \
                     ncell(C[8], "num warn") ncell(C[9], "num failed") "</tr>"
@@ -1227,6 +1252,7 @@ write_subscriptions_page() {
             printf "~\t~"; for (ci = 1; ci <= 9; ci++) printf "\t%d", TOT[ci] + 0; printf "\n"
         }' ${args[@]+"${args[@]}"} ${drpts[@]+"${drpts[@]}"} "$B/_subscriptions.tsv" \
         | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2)
+    rm -f "$cronf"
     rows=$(printf '%s\n' "$all" | awk -F'\t' '$1 != "~"' | cut -f3-)
     tots=$(printf '%s\n' "$all" | awk -F'\t' '$1 == "~"' | cut -f3-)
     local n; n=$(printf '%s' "$rows" | grep -c '<tr' || true)
@@ -1238,9 +1264,9 @@ write_subscriptions_page() {
         printf '<h1>Subscriptions</h1>\n'
         analyses_group_tabs subscriptions.html
         printf '<div class="tablewrap"><table class="index fit">\n'
-        printf '<tr><th>Subscription</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Endpoint</th><th>From</th><th>To</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Auto Retries</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th></tr>\n'
+        printf '<tr><th>Subscription</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Endpoint</th><th>From</th><th>To</th><th>Cron expression</th><th>Schedule</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Auto Retries</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
-        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>%s</tr>\n' "$n" "$tcells"
+        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>%s</tr>\n' "$n" "$tcells"
         printf '</table></div>\n'
         printf '</body>\n</html>\n'
     } > "$out"
@@ -1691,14 +1717,14 @@ write_analyses_index() {
         printf '<tr><th colspan="2">Configuration</th></tr>\n'
         [ -f "$ADIR/use-cases.html" ] && printf '<tr><td><a href="use-cases.html">Use cases</a></td><td class="desc">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; Total, Server (server-log only), Not seen, Error and OK per use case; tabs for the <strong>Use Case definitions</strong> (who connects, which way the file travels, what triggers it) and the <strong>Use Case patterns</strong> (the accounts grouped by their subscription mix, e.g. <code>UC2 (1) UC4 (1)</code>).</td></tr>\n'
         [ -f "$ADIR/uc2-visits.html" ] && printf '<tr><td><a href="uc2-visits.html">UC2 pickup visits</a></td><td class="desc">What each UC2 partner actually does when it connects: collected, two-way exchange, delivery-only (the UC4 twin) or empty-handed visits.</td></tr>\n'
-        [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured subscription on one row: its Logical, Account, Partner, Domain, Application and BL groups, the endpoint (login or remote host), the From and To folders, and the all-time File counts &mdash; total, in, out, Errors, automatic retries, resubmits, Waiting, Expired.</td></tr>\n'
+        [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured subscription on one row: its Logical, Account, Partner, Domain, Application and BL groups, the endpoint (login or remote host), the From and To folders, the cron expression and schedule, and the all-time File counts &mdash; total, in, out, Errors, automatic retries, resubmits, Waiting, Expired.</td></tr>\n'
         [ -f "$ADIR/logical-detection.html" ] && printf '<tr><td><a href="logical-detection.html">Logical detection</a></td><td class="desc">How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID.</td></tr>\n'
         [ -f "$ADIR/added-bl.html" ] && printf '<tr><td><a href="added-bl.html">Added BL</a></td><td class="desc">The BL numbers input/&lt;env&gt;/BL.txt adds on top of subscriptions.json — per subscription, the values that are not among its tags.</td></tr>\n'
         [ -f "$ADIR/accounts.html" ] && printf '<tr><td><a href="accounts.html">Accounts</a></td><td class="desc">The accounts (partners) and their communication profiles &mdash; naming vs configured type/auth, insecure and unrestricted endpoints, conflicting host/whitelist setup, plus account &amp; login integrity checks (non-standard or shared logins, password profiles without a password, and more).</td></tr>\n'
         [ -f "$ADIR/fe-overview.html" ] && printf '<tr><td><a href="fe-overview.html">Partners - Incoming</a></td><td class="desc">Every FE login on one line: its use cases, the last logon here and on the old gateway, its Files in / out with the retrieved, Waiting and Expired ones, and its pickups with their cadence.</td></tr>\n'
         [ -f "$ADIR/account-sharing.html" ] && printf '<tr><td><a href="account-sharing.html">Account sharing</a></td><td class="desc">Which accounts serve more than one subscription, and in what shape: UC2+UC4 mailbox pairs, UC1+UC3 outbound pairs, fan-outs and both-directions accounts.</td></tr>\n'
         [ -f "$ADIR/twins.html" ] && printf '<tr><td><a href="twins.html">Twins</a></td><td class="desc">Every twin pair on one page: subscriptions that are the same flow configured the opposite way (naming slips highlighted) and the accounts spelled with both separators.</td></tr>\n'
-        [ -f "$ADIR/polling.html" ] && printf '<tr><td><a href="polling.html">Polling</a></td><td class="desc">Every polling subscription in one row: its cron schedule in plain English, the observed firing, polls, empty polls, files matched, listing failures and what goes wrong when a schedule never completes a poll.</td></tr>\n'
+        [ -f "$ADIR/polling.html" ] && printf '<tr><td><a href="polling.html">Polling</a></td><td class="desc">Every UC3 polling subscription in one row: its cron expression and schedule in plain English, the observed firing, polls, empty polls, files matched, listing failures and what goes wrong when a schedule never completes a poll.</td></tr>\n'
         [ -f "$ADIR/config-hygiene.html" ] && printf '<tr><td><a href="config-hygiene.html">Config hygiene</a></td><td class="desc">The cleanup backlog: likely-duplicate twins (case / separator folds) and orphaned objects nothing references.</td></tr>\n'
         [ -f "$ADIR/whitelist-audit.html" ] && printf '<tr><td><a href="whitelist-audit.html">Whitelist audit</a></td><td class="desc">Whitelisted partner IPs vs the addresses actually connecting: used, connect-only, never seen (prunable), and the sources without any whitelist entry.</td></tr>\n'
         [ -f "$DOCS/transfer/sources-and-targets.html" ] && printf '<tr><td><a href="../transfer/sources-and-targets.html">Sources and Targets</a></td><td class="desc">The From/To folder paths of every subscription (shown &ldquo;path @ host&rdquo; for remote endpoints, like Search): values used as both a source and a target, and sources/targets shared by more than one subscription.</td></tr>\n'

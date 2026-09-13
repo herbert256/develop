@@ -24,6 +24,7 @@
 <li><strong>Logical</strong>, <strong>Account</strong>, <strong>Partner</strong>, <strong>Domain</strong>, <strong>Application</strong>, <strong>BL</strong> &mdash; the owning account and the derived groups (BL = the <code>tags</code> entry starting with <code>BL</code>); each links its detail page.</li>
 <li><strong>Endpoint</strong> &mdash; inbound: the login the partner connects with; outbound: the remote host we dial.</li>
 <li><strong>From</strong> / <strong>To</strong> &mdash; the source and target folders exactly as the detail page&rsquo;s Features rows: the pickup side carries its file mask in green; <code>-</code> = nothing configured.</li>
+<li><strong>Cron expression</strong> / <strong>Schedule</strong> &mdash; the configured receive scheduler (Quartz <code>sec min hour day-of-month month day-of-week</code>) and its plain-English reading, exactly as on the <a href="server-polling.html">Polling</a> page; blank without one.</li>
 <li><strong>Total files</strong>, <strong>In Files</strong>, <strong>Out Files</strong> &mdash; the Files (one per CoreId) this subscription carried over the whole data set, by movement direction.</li>
 <li><strong>Errors</strong> &mdash; Files that ended Failed or Expired (red).</li>
 <li><strong>Auto Retries</strong> &mdash; OK Files with a failed leg and no resubmit: the platform retried (amber).</li>
@@ -32,7 +33,7 @@
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Roster = the pristine configured snapshot: exactly what FlowManager defines. Groups, endpoint and folders come from the configuration; the counts from the log, the <a href="entities-subscription.html">Entities</a> definitions, all dates. A subscription never seen in the log shows blank counts; a 0 shows blank.</li>
+<li>Roster = the pristine configured snapshot: exactly what FlowManager defines. Groups, endpoint, folders and cron come from the configuration; the counts from the log, the <a href="entities-subscription.html">Entities</a> definitions, all dates. A subscription never seen in the log shows blank counts; a 0 shows blank.</li>
 <li>Row tint: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> a last transfer in Error, <strong>light blue</strong> surfaced only by the server log.</li>
 <li>Every load starts at the generated order; click a header to sort.</li>
 </ul>
