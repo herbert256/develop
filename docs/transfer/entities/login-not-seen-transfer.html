@@ -11,36 +11,36 @@
 <meta name="report-area" content="transfer">
 <meta name="report-key" content="login">
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
-<link rel="stylesheet" href="../../assets/style.css?v=3384331843">
+<link rel="stylesheet" href="../../assets/style.css?v=802129310">
 <script src="../../assets/topbar-data.js?v=1902584667" defer></script>
-<script src="../../assets/report.js?v=3384331843" defer></script>
+<script src="../../assets/report.js?v=802129310" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../../" data-help="entities-login"></div>
 <h1>Logins <span class="grouptag">&larr; Entities &larr; Transfer</span></h1>
 <p class="tabs"><a class="tab" href="subscription-not-seen-transfer.html">Subscriptions</a><a class="tab" href="logical-not-seen-transfer.html">Logical</a><a class="tab" href="partner-not-seen-transfer.html">Partners</a><a class="tab" href="account-not-seen-transfer.html">Accounts</a><span class="tab active">Logins</span><a class="tab" href="remote-host-not-seen-transfer.html">Hosts</a><a class="tab" href="domain-not-seen-transfer.html">Domains</a><a class="tab" href="application-not-seen-transfer.html">Applications</a><a class="tab" href="bl-not-seen-transfer.html">BL</a><span class="tabsep"></span><a class="tab" href="login-all.html">All</a><a class="tab" href="login-seen-transfer.html">Seen</a><span class="tab active">Not seen</span><a class="tab" href="login-ok.html">OK</a><a class="tab" href="login-warning-transfer.html">Warning</a><a class="tab" href="login-error.html">Error</a><span class="tabsep"></span><span class="tab active">Transfer</span><a class="tab" href="login-not-seen.html">+Server</a></p>
-<p class="range">Every login with its <strong>Files</strong> (one per CoreId), Error/OK split (<strong>Retry</strong> / <strong>Resubmit</strong> = the OK Files that needed a retry — a failed leg, then delivered — healed by the platform's own retry or by an operator's resubmit, the log's Resubmitted flag), volume and last sighting. The view tabs switch between the logged logins (<strong>Seen</strong>), the whole configuration (<strong>All</strong> / <strong>Not seen</strong>), the status subsets (<strong>OK</strong> / <strong>Warning</strong> / <strong>Error</strong>) and the server-log-only ones (<strong>Server</strong>); the scope tabs decide whether a server-log sighting counts as seen (<strong>+Server</strong>, the default) or not (<strong>Transfer</strong>) — rows tint by each login's status.</p>
-<div class="tablewrap"><table class="wide" data-seenrows="1" data-sort-init="0:asc">
-<tr><th>Login</th><th>Direction</th></tr>
-<tr class="total"><td>Total (16 login(s))</td><td></td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe088995.html">FE088995</a></td><td>in/out</td></tr>
-<tr data-res="orange" data-seen="0"><td class="cl"><a href="../../details/logins/fe155237.html">FE155237</a></td><td>in/in</td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe286248.html">FE286248</a></td><td>in/in</td></tr>
-<tr data-res="orange" data-seen="0"><td class="cl"><a href="../../details/logins/fe397484.html">FE397484</a></td><td>in/out</td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe399986.html">FE399986</a></td><td>in/out</td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe416286.html">FE416286</a></td><td>in/in</td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe419758.html">FE419758</a></td><td>in/both</td></tr>
-<tr data-res="orange" data-seen="0"><td class="cl"><a href="../../details/logins/fe437991.html">FE437991</a></td><td>in/in</td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe458279.html">FE458279</a></td><td>in/out</td></tr>
-<tr data-res="orange" data-seen="0"><td class="cl"><a href="../../details/logins/fe479667.html">FE479667</a></td><td>in/in</td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe520186.html">FE520186</a></td><td>in/out</td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe598079.html">FE598079</a></td><td>in/in</td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe624205.html">FE624205</a></td><td>in/out</td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe724256.html">FE724256</a></td><td>in/in</td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe804646.html">FE804646</a></td><td>in/in</td></tr>
-<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe859017.html">FE859017</a></td><td>in/out</td></tr>
+<p class="range">Every login with its traffic in seven groups — <strong>Files</strong> (one per CoreId, split <strong>In</strong> / <strong>Out</strong> by the movement direction, with its Error count and rate), <strong>Retry / Resubmit</strong> (<strong>Auto</strong> = an OK File that carried a failed leg and was delivered by the platform's own retry; <strong>Ok</strong> / <strong>Error</strong> = every File an operator resubmitted, by its final outcome), <strong>Duration</strong> (the p90 / p95 / p99 / p100 wall-clock duration of its OK Files — p100 = the longest — seconds green, minutes amber, hours and days red), <strong>Volume</strong> (the total, and the average per File), <strong>Transfers</strong> (the physical log rows — every leg of its Files — Ok/Error with the error rate), <strong>State</strong> (the UC2 <strong>Waiting</strong> files — staged, not collected yet — and the <strong>Expired</strong> ones, deleted unclaimed) and <strong>Dates</strong> (first and last day, days with traffic). Same rows, views and scopes as the classic Entities pages; every count opens its 10 most recent Files.</p>
+<div class="tablewrap"><table class="wide" data-seenrows="1" data-sort-init="0:1">
+<tr><th>Login</th></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe088995.html">FE088995</a></td></tr>
+<tr data-res="orange" data-seen="0"><td class="cl"><a href="../../details/logins/fe155237.html">FE155237</a></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe286248.html">FE286248</a></td></tr>
+<tr data-res="orange" data-seen="0"><td class="cl"><a href="../../details/logins/fe397484.html">FE397484</a></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe399986.html">FE399986</a></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe416286.html">FE416286</a></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe419758.html">FE419758</a></td></tr>
+<tr data-res="orange" data-seen="0"><td class="cl"><a href="../../details/logins/fe437991.html">FE437991</a></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe458279.html">FE458279</a></td></tr>
+<tr data-res="orange" data-seen="0"><td class="cl"><a href="../../details/logins/fe479667.html">FE479667</a></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe520186.html">FE520186</a></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe598079.html">FE598079</a></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe624205.html">FE624205</a></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe724256.html">FE724256</a></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe804646.html">FE804646</a></td></tr>
+<tr data-seen="0" data-res="orange"><td class="cl"><a href="../../details/logins/fe859017.html">FE859017</a></td></tr>
+<tr class="total"><td>Total (16 login(s))</td></tr>
 </table></div>
 <p class="note">Configured in FlowManager but never seen in the <strong>transfer log</strong> in this window — including the entities that DID appear in the server log (the <strong>+Server</strong> scope counts those as seen and lists them under Seen). Every name links to its detail page, which lists the configured cross-references.</p>
-<p class="note">Counts Files — one logical transfer each. A transfer is counted once per distinct login it involves (its Inbound and Outbound rows may log different logins), so the per-login counts can sum to more than the number of distinct transfers. Error/OK is the transfer's delivered outcome; volume is the file counted once. Click an Error or OK count for that outcome's 10 most recent Files (newest first, by start time).</p>
+<p class="note"><strong>Files</strong> = logical transfers (one per CoreId; Waiting counts as OK, Expired as Error), <strong>Transfers</strong> = the physical log rows of those Files (one per leg). <strong>In</strong> / <strong>Out</strong> is the movement direction of the File (a File with no known movement counts in the Files total and Error % only); an empty Error cell keeps an empty rate beside it, and In / Out never show a 0. <strong>Retry / Resubmit</strong>: <strong>Auto</strong> = an OK File that carried at least one failed leg and no resubmitted leg — the platform's own retry delivered it (the classic Retry column); <strong>Ok</strong> / <strong>Error</strong> = every File with a resubmitted leg (the log's Resubmitted flag), OK or Error by its final outcome (the Top view's Resubmit rule — a resubmitted re-delivery that never failed counts under Ok). <strong>Duration</strong> = the p90 / p95 / p99 / p100 (the longest) of the wall-clock duration of the OK Files (first record start to last record end, as on the Duration report — the Error attempts, mostly instant, are left out), re-picked for the selected From/To like every other figure, as whole seconds / minutes / hours / days (s m h d) — seconds green, minutes amber, hours and days red. <strong>Volume</strong> in whole units; <strong>Avg</strong> = the volume divided by the Files. <strong>Retry / Resubmit</strong> and <strong>State</strong> are shown only on a view where at least one File carries such a value. <strong>Days</strong> = the days with at least one File; First / Last stay full-period under the date filter. Click any count for its 10 most recent Files (newest first, by start time); the Transfers cells list the Files that carried a leg of that outcome, and a Duration cell the 10 most recent OK Files whose span is at or above that percentile, each with its span.</p>
 </body>
 </html>

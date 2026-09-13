@@ -460,14 +460,14 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # layout is Name 0 · Direction 1 · Files 2 · Volume 3 · OK 4 · Retry 5 · Resubmit 6 · Error 7.
             for (tm = 1; tm <= 3; tm++) {
                 tmet = (tm == 1) ? "Files" : (tm == 2) ? "Volume" : "Errors"
-                tcol = (tm == 1) ? 2 : (tm == 2) ? 3 : 7   # the entities view display indices: Files 2, Volume 3, Error 7 (after OK · Retry · Resubmit, 2026-09-12)
+                tcol = (tm == 1) ? "" : (tm == 2) ? "&axway_sort=Total:-1" : "&axway_sort=Error:-1"   # the Entities page sorts by header LABEL (2026-09-13, the grouped layout): Volume = Total, Error = the Files group Error (the first match); Files = the page own busiest-first order, no sort
                 for (tk = 1; tk <= 2; tk++) {
                     tkind = (tk == 1) ? "P" : "S"
                     tname = (tk == 1) ? "partners" : "subscriptions"
                     tpage = (tk == 1) ? "partner" : "subscription"
                     trows = (tm == 1) ? top5(FC, tkind, d) : (tm == 2) ? top5b(VC, tkind, d) : top5(EC, tkind, d)
                     if (trows == "") continue
-                    printf "TOP\t%s\tTop 5 %s by %s\t%s\t../transfer/entities/%s-all.html?axway_date=%s&axway_sort=%d:-1\t%s\n", \
+                    printf "TOP\t%s\tTop 5 %s by %s\t%s\t../transfer/entities/%s-all.html?axway_date=%s%s\t%s\n", \
                         tkind, tname, tmet, tmet, tpage, d, tcol, trows >> out
                 }
             }

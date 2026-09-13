@@ -574,7 +574,7 @@
     if (ms < 3600000) return (ms / 60000).toFixed(1) + " min";
     return (ms / 3600000).toFixed(2) + " h";
   }
-  // The Entities2 spellings (2026-09-13, user request; bin/transfer/reports/
+  // The grouped-Entities spellings (2026-09-13, user request; bin/transfer/reports/
   // entities2.sh spells the baked cells the same way): bytes in WHOLE units,
   // a duration as a whole number with a one-letter unit (s m h d), tinted by
   // its unit — s green (processed) · m amber (warn) · h/d red (failed). The
@@ -605,7 +605,7 @@
   // humanBytes(sumN*1000/sumM)+"/s" · vN.M humanBytes(sumN/sumM) · bN bar
   // of sumN vs column max · rN position by column N descending (rN.a
   // ascending, rN.z zeros last) — see rankCols.
-  // The Entities2 variants (2026-09-13): SN sum, BLANK when 0 · eN.M the
+  // The grouped-Entities variants (2026-09-13): SN sum, BLANK when 0 · eN.M the
   // pN.M rate, BLANK when sumN is 0 (an empty Error keeps an empty rate) ·
   // HN / VN.M the hN / vN.M bytes in WHOLE units · PN the nearest-rank
   // percentile N of the row's per-day DURATION histograms (data-durdays, see
@@ -628,7 +628,7 @@
     });
     return { sum: sum, max: max, pos: pos, days: days, dates: dates };
   }
-  // Per-day DURATION histograms (the Entities2 Duration group, 2026-09-13):
+  // Per-day DURATION histograms (the Entities Duration group, 2026-09-13):
   // data-durdays = "date:q.c;q.c,date:…" — per date the humanDur display-grid
   // value q (ms) and its count c, written by bin/transfer/reports/entities2.sh.
   // aggDurDays merges the in-range days into one histogram, mergeDur folds
@@ -1147,9 +1147,9 @@
     // Ratio columns "pctCol:numCol:denCol" recompute as 100·Σnum/Σden from the
     // visible rows (num/den must be summed columns to the LEFT of the ratio).
     // num / den may each be a "+"-joined LIST of columns (2026-09-13, the
-    // Entities2 error rates: Error over Ok+Error, Error over In+Out).
+    // Entities error rates: Error over Ok+Error, Error over In+Out).
     var pctMap = {}, pc = (table.getAttribute("data-pct") || "").split(";"), colPlain = {};
-    // the column's RECALC token, where the table has one: the Entities2
+    // the column's RECALC token, where the table has one: the Entities
     // spellings (S = blank on 0, e = blank rate on 0, H = whole-unit bytes)
     // hold on the searched total too (2026-09-13)
     var rtoks = (table.getAttribute("data-recalc") || "").split(/\s+/);
@@ -1662,7 +1662,7 @@
         if (cs && rsCells.length === 1) bindDrill(rsCells[0], tr, table, cs, "Resubmit", null, du);
       }
       // Per-CELL drills by BUILT column index (the drillcols= TABLE modifier
-      // -> data-drill-cols="key:col[:Noun_words],…", 2026-09-13, the Entities2
+      // -> data-drill-cols="key:col[:Noun_words],…", 2026-09-13, the Entities
       // pages): the row's data-coreids-<key> list opens under the cell at
       // <col>; the noun (underscores = spaces) heads the list, else the
       // column's own header label. The keys are the table's own, so the
@@ -1992,7 +1992,17 @@
   var ENT_TTL = 3600000;   // 1 hour, in ms
   function isEntitiesPage() { return location.pathname.indexOf("/transfer/entities/") >= 0; }
   function entKey()  { return "axway-entities-sort"; }
-  function entLabel(th) { return th ? th.textContent.replace(/[▲▼]/g, "").trim() : ""; }
+  // The label of a header cell — on the grouped Entities layout (2026-09-13)
+  // prefixed with its GROUP banner ("Files › Error"): Ok / Error / Error %
+  // repeat across the groups, so the bare label would land the remembered
+  // sort on the wrong group. The csv / cols hotspot text is stripped.
+  function entLabel(th) {
+    if (!th) return "";
+    var lab = th.textContent.replace(/[▲▼]/g, "").replace(/\s*(csv|cols)$/, "").trim();
+    var t = th.closest ? th.closest("table") : null;
+    if (t && t._groupLabel && t._colGroup) { var g = groupOf(t, ciOf(th)); if (t._groupLabel[g]) lab = t._groupLabel[g] + " › " + lab; }
+    return lab;
+  }
   function entLoad() {
     try {
       var raw = localStorage.getItem(entKey()); if (!raw) return null;
@@ -2026,10 +2036,15 @@
   // the column's own first-click direction (a #rank column opens ascending) —
   // overriding the remembered sort and persisting like a user click (the
   // ?axway_search pattern).
+  // COL may also be a header LABEL (2026-09-13 — the grouped Entities pages,
+  // whose column positions shift when an empty group is hidden): the first
+  // header cell reading it, e.g. ?axway_sort=Error:-1 (the Files group's
+  // Error, the first match) or Total:-1 (Volume). The csv / cols hotspot
+  // text on a header cell is ignored.
   var urlSort = null, urlSortDone = false;
   (function () {
-    var m = /[?&]axway_sort=(\d+)(?::(-?1))?/.exec(window.location.search || "");
-    if (m) urlSort = { col: parseInt(m[1], 10), dir: m[2] ? parseInt(m[2], 10) : 0 };
+    var m = /[?&]axway_sort=([^&:]+)(?::(-?1))?/.exec(window.location.search || ""), c;
+    if (m) { c = decodeURIComponent(m[1].replace(/\+/g, " ")); urlSort = { col: /^\d+$/.test(c) ? parseInt(c, 10) : -1, label: /^\d+$/.test(c) ? "" : c, dir: m[2] ? parseInt(m[2], 10) : 0 }; }
   })();
   // ?axway_row=NAME (the detail pages' Ranking rows): mark that entity's own
   // row, page the table to it and scroll it into view, so a click on "#12"
@@ -2155,6 +2170,10 @@
     // persists like a user click; else a sort the user made earlier this
     // session (possibly on another unit variant of this page) wins over the
     // page's default.
+    if (urlSort && !urlSortDone && urlSort.label) {   // a header label -> its first position on this table
+      for (var ul = 0; ul < ths.length; ul++)
+        if (ths[ul].textContent.replace(/[▲▼]/g, "").replace(/\s*(csv|cols)$/, "").trim() === urlSort.label) { urlSort.col = ul; break; }
+    }
     if (urlSort && !urlSortDone && urlSort.col >= 0 && urlSort.col < ths.length) {
       urlSortDone = true;
       var udir = urlSort.dir || colFirstDir(urlSort.col);
@@ -2960,7 +2979,6 @@
   // All/Seen/Not seen/Server/Detail views share ONE search, so a filter typed on
   // Accounts survives a switch to Logins. (Sort stays per-entity via pageKeyBase.)
   function searchStoreKey() {
-    if (location.pathname.indexOf("/entities2/") >= 0) return "entities2";   // the Entities2 experiment: its own shared search (2026-09-13)
     if (location.pathname.indexOf("/entities/") >= 0) return "entities";
     return pageKeyBase();
   }
@@ -3900,9 +3918,6 @@
       // IN STEP with publish_lib.sh render_topbar.
       (M.period ? '<span class="period" title="The data period: the first and last day of the transfer data">' + esc(M.period) + "</span>" : "") +
       '<span class="entgroup"><a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
-      // the ENTITIES2 experiment (2026-09-13, user request): the grouped-layout
-      // twins under transfer/entities2/ — KEEP IN STEP with render_topbar
-      '<a class="entlabel" href="' + b + 'transfer/entities2/subscription-all.html">Entities2</a>' +
       '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
       // the FILE SEARCH entry (2026-08): the leader of the windowed pages,
       // between the search icon and the report menus

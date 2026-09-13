@@ -1026,7 +1026,7 @@ write_home_block() {
                 if [ "$fer" = "-" ] || [ "$fer" = 0 ]; then printf '<td class="num failed z"></td>'; else
                     esc "$(dotify "$fer")"
                     if [ -f "docs/transfer/entities/subscription-all.html" ]; then
-                        printf '<td class="num failed"><a href="transfer/entities/subscription-all.html?axway_date=%s&amp;axway_sort=7:-1">%s</a></td>' "$d" "$ESC"
+                        printf '<td class="num failed"><a href="transfer/entities/subscription-all.html?axway_date=%s&amp;axway_sort=Error:-1">%s</a></td>' "$d" "$ESC"
                     else printf '<td class="num failed">%s</td>' "$ESC"; fi; fi
                 [ "$fok" != "-" ] && foksum=$((foksum + fok)); [ "$fer" != "-" ] && fersum=$((fersum + fer))
                 if [ "$fpc" = "-" ]; then printf '<td class="num"></td>'; else

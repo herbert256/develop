@@ -553,48 +553,17 @@ the derived Logical/PDA members re-run their both-ways merge over `coverage/<mem
 Nine entity reports — subscription, logical, partner, account, login, remote-host, domain,
 application, bl (group `account-login-site`, label "Entities") — each rendered as TEN pages under
 `docs/transfer/entities/` by `render_entity_report`: `<entity>-{all,ok,error,server}.html` +
-`<entity>-{seen,not-seen,warning}[-transfer].html`.
+`<entity>-{seen,not-seen,warning}[-transfer].html`. The page data is
+`data/transfer/reports/entities/<name>.rpt`, written by ONE writer for the nine,
+`bin/transfer/reports/entities.sh` (2026-09-13, user request — built that day as the
+`transfer/entities2/` twin experiment and adopted the same day; the classic Name · Direction · Files ·
+Volume · OK · Retry · Resubmit · Error · Last seen pages are gone). The nine classic `<name>.rpt`
+(`account.sh`, `subscription.sh`, `login.sh`, `remote-host.sh`, `pda-entities.sh`) stay DATA
+producers — `showseen.sh`, `entity-search.sh` and the server rosters read them positionally — and
+render no page.
 
-ONE LAYOUT for every view — Name · Direction · Files · Volume · OK · Retry · Resubmit · Error ·
-Last seen (Retry + Resubmit, 2026-09-12 — the single Cured column of 2026-09-10 split — = the OK
-Files that carried a failed leg — the home page rule, per entity; Resubmit when a leg carries
-`Resubmitted=true`, the Top view's Automatic/Manual rule). ONE
-exception (2026-08): the SUBSCRIPTIONS Error view appends a **Reason** column — the same per-flow
-diagnosis the home red tables show, resolved by the same chain (newest red `failed-sub-all.rpt` row's
-own verdict unless the flow is in `blue/_redflip.tsv`; else the classified `_kaput-evidence.tsv`
-newest E line via the shared `bin/flip-reason.awk`; else `_subs-boxes.tsv`) — appended AFTER Last
-seen so the baked column indices and every `?axway_sort=` link stay put. `_subs-boxes.tsv` is
-written by the LATER analyses publish; the transfer publish stamp watches all three sources + the
-classifier, and build.sh re-invokes the transfer publish right after the analyses publish (the
-"transfer catch-up (boxes reasons)" step, 2026-08) so a changed — or first-build — boxes
-sidecar lands in the SAME build. The sidecar is cmp-guarded, so the catch-up skips in ~0 s when
-nothing changed.
-`inject_dir_col` adds Direction as the connection/movement pair (a SUBSCRIPTION reads
-`_subscriptions-flowdir` alone — **pass that file ONCE**; a second copy makes every subscription
-`out/?`). `entity_layout` reorders the figures and drops First seen; `entity_layout 1` keeps only
-Name · Direction on Not seen, Server, and Warning-on-subscriptions (figures blank by
-construction).
-
-Nav = three tab groups: member · All/Seen/Not seen/OK/Warning/Error[/Server] · **Transfer |
-+Server**. The SCOPE: does a server-log sighting count as seen? **+Server** is the default and the
-site-wide model (bare filenames); **Transfer** pretends the server log was never read — blue tints
-orange and moves into Not seen/Warning (`-transfer` suffix). Only Seen/Not seen/Warning are
-scope-dependent; All/OK/Error are one page each (both scope tabs disabled); **Server** is a
-seventh view of the blue names only. The `.rpt` keeps its two tables unchanged (rosters and
-showseen read it); the variants are assembled at PUBLISH time: All = Summary rows + one zero-blank
-row per configured-never-seen name (the DEFAULT page, `first_page`); OK/Warning/Error filter by
-site-wide RESULT (`entity_res_block` — one definition, shared with tints and status columns). The
-not-seen names come from showseen's `coverage/*.tsv`, so Entities and Show Seen can never
-disagree. Every view carries `datereset`.
-
-**SORT is SHARED across the nine entities with a 1-hour sliding expiry** — the one localStorage
-in report.js (`entLoad`/`entSave`/`entTouch`/`entResolve`), stored by COLUMN LABEL, never index
-(column 0 = the sentinel `#name`); a label the view lacks leaves the entry intact and that page
-keeps its own default.
-
-**The ENTITIES2 experiment** (2026-09-13, user request): a TWIN of the nine pages under
-`docs/transfer/entities2/` (the "Entities2" top-bar link), same views, scopes, tints, drills and
-Reason column, in a GROUPED layout — a `GHEAD` banner row + `gsep=` dividers like the Top view:
+THE GROUPED LAYOUT — Name, then seven column groups (a `GHEAD` banner row + `gsep=` dividers like
+the Top view), ONE table per view:
 
 | Name | Files | Retry / Resubmit | Duration | Volume | Transfers | State | Dates |
 |---|---|---|---|---|---|---|---|
@@ -602,44 +571,72 @@ Reason column, in a GROUPED layout — a `GHEAD` banner row + `gsep=` dividers l
 | KIND | num num numfailed num | numwarn numwarn numfailed | num num num num (+ unit tint) | num num | numok numfailed num | numwarn numfailed | text text num |
 | RECALC | S1 S2 s3 e3.0 | s7 s8 s9 | P90 P95 P99 P100 | H4 V4.0 | s5 s6 e6.12 | s10 s11 | - - c |
 
-(The order, the TOTAL row LAST, whole-unit bytes, the s/m/h/d durations tinted green/amber/red by
-unit, an empty rate beside an empty Error, no In/Out 0, the red cells as `numfailed` and an EMPTY
-group HIDDEN — Retry / Resubmit, State — on a view with no such value (`entity2_hide_groups`, a
-per-table publish-time decision — an empty full range is empty for every narrower range; the
-index-naming modifiers gsep=/noagg=/pct=/drillcols= are remapped) are the 2026-09-13
-user rules — `errc`/`okc` cells lose their tint inside the views' tinted rows, only
-`.failed`/`.processed` and a non-empty `.warn` keep it.)
-
 Bucket metrics per date: `files in out ferr bytes tok terr rauto rmok rmerr waiting expired legs`
 (0–12). Definitions: Transfers = every LEG of the entity's Files (Processed / not), credited to the
 File's start day; In/Out = the MOVEMENT direction (`_files.tsv` col 17 — a File with no movement
-counts in the total and the Error % only); Recover = the Top view rule (Auto = an OK File with a
-failed leg and no resubmitted leg — the classic Retry; Manual-ok / Manual-error = EVERY File with
-a resubmitted leg, by outcome — so Manual-ok ≥ the classic Resubmit); Days = days with ≥1 File;
-Avg = bytes ÷ Files; Duration = the p90 / p95 / p99 of the OK Files' wall-clock span (`_files.tsv`
-col 9 > 0 — `duration.sh`'s default scope and nearest-rank rule `T[int((N-1)·P/100+0.5)+1]`),
-FOLLOWING the date filter (user rule, 2026-09-13): each span is quantized to the humandur DISPLAY
-grid (rounded like the format, so a grid histogram picks the same displayed value as the exact
-list), the per-DAY histograms ride the ROW as `@data:durdays=date:q.count;q.count,…`, and the
-RECALC tokens `P90`/`P95`/`P99` (report.js `aggDurDays`/`pctlHist`) re-pick the percentile over
-the in-range days — per row, and for the TOTAL over every visible row's merged histogram; the
-publish-time subset totals (`entity2_res_block`) merge the same payload. A Duration cell drills to
-the 10 newest OK Files whose (grid) span is at or above that percentile, each entry carrying its
-span — a THIRD pass over `_files.tsv` once the thresholds are known (`calc_pcts` at the pass's first
-line; END computes them itself on an empty cache). Every count cell drills to its 10 newest Files (`drillcols=` → the row's
-`@data:coreids-<key>`, bound by BUILT column index); the Transfers cells list the Files that
-carried a leg of that outcome. `bin/transfer/reports/entities2.sh` is ONE writer for all nine
-(attribution mirroring `account.sh` / `subscription.sh` / `login.sh` / `remote-host.sh` /
-`pda-entities.sh` exactly; totals per (name, File) pair for the three join entities, once per
-File for the rest — the classic `T|` rule) → `data/transfer/reports/entities2/<entity>.rpt`
-(baked busiest-first, no `sort=`; ONE table, no per-day detail). `render_entity_report` renders it
-in its `ENT_LAYOUT=2` mode: output dir `entities2`, search key `entities2` (report.js), sort per
-page (`report-key` `entities2-<name>`), no `inject_dir_col`/`entity_layout`, the seen rows in
-baked order followed by the blank rows by name, subset totals by `entity2_res_block` (the count
-cells re-summed, Files and bytes from the buckets, Days = the distinct bucket dates, written into
-the writer's own TOTAL template), the Reason column inserted after Avg (`nreal` 19 vs 10), and
-`entities_name_only` also dropping the `GHEAD` line and the `gsep=`/`drillcols=`/`pct=`/`noagg=`
-modifiers for the name-only views. The classic help page serves both.
+counts in the total and the Error % only); Retry / Resubmit = the Top view rule (Auto = an OK File
+with a failed leg and no resubmitted leg — the former Retry column; Ok / Error = EVERY File with a
+resubmitted leg, by outcome); Days = days with ≥1 File; Avg = bytes ÷ Files; Duration = the p90 /
+p95 / p99 / p100 of the OK Files' wall-clock span (`_files.tsv` col 9 > 0 — `duration.sh`'s default
+scope and nearest-rank rule `T[int((N-1)·P/100+0.5)+1]`), FOLLOWING the date filter (user rule):
+each span is quantized to the humandur DISPLAY grid (rounded like the format, so a grid histogram
+picks the same displayed value as the exact list), the per-DAY histograms ride the ROW as
+`@data:durdays=date:q.count;q.count,…`, and the RECALC tokens `P90`…`P100` (report.js
+`aggDurDays`/`pctlHist`) re-pick the percentile over the in-range days — per row, and for the TOTAL
+over every visible row's merged histogram; the publish-time subset totals merge the same payload.
+Display rules (2026-09-13, user): the TOTAL row LAST (`entity_total_last`); an EMPTY Retry /
+Resubmit or State group HIDDEN per view (`entity_hide_groups` — a publish-time decision, an empty
+full range being empty for every narrower range: it drops the fields, the banner cell and remaps
+gsep=/noagg=/pct=/drillcols= past the dropped columns); whole-unit bytes (tokens `H`/`V`); the
+s/m/h/d durations tinted green/amber/red by unit (the `P` token retints); an empty rate beside an
+empty Error (token `e`); no In/Out 0 (token `S`); every red count as KIND `numfailed` — `errc`/`okc`
+cells lose their tint inside the views' tinted rows, only `.failed`/`.processed` and a non-empty
+`.warn` keep it. Drills: every count cell → its 10 newest Files (`drillcols=` → the row's
+`@data:coreids-<key>`, bound by BUILT column index, the noun in the spec); the Transfers cells → the
+Files that carried a leg of that outcome; a Duration cell → the 10 newest OK Files whose (grid) span
+is at or above that percentile, each entry carrying its span — a THIRD pass over `_files.tsv` once
+the thresholds are known (`calc_pcts` at the pass's first line; END computes them itself on an empty
+cache). The writer's attribution mirrors the classic writers exactly (Files / Error / Auto / Volume /
+First / Last agree row for row with their `.rpt`); totals per (name, File) pair for
+subscription / login / remote-host, once per File for the rest — the classic `T|` rule; rows baked
+busiest-first with no `sort=`.
+
+Render (`render_entity_report`): the same views and scopes as always (below), over the grouped `.rpt`
+which is already in display order — no Direction injection and no reorder; the seen rows keep their
+baked order and the never-seen / ghost rows follow by name; `entity_res_block` re-sums the OK /
+Warning / Error subset totals into the writer's own TOTAL template (the count cells, Files and bytes
+from the buckets, Days = the distinct bucket dates, the Duration cells rebuilt whole from the merged
+`@data:durdays`); the subscriptions Error view's Reason column lands after Days (`nreal` 23);
+`entities_name_only` also drops the `GHEAD` line and the `gsep=`/`drillcols=`/`pct=`/`noagg=`
+modifiers for the name-only views. Links INTO the pages sort by header LABEL
+(`?axway_sort=Error:-1` / `Total:-1`; report.js resolves the first header cell reading it) because
+the positions shift when a group is hidden. The hand-written help pages `entities-<name>.html`
+describe this layout.
+
+The Reason column (2026-08): the SUBSCRIPTIONS Error view appends it — the same per-flow diagnosis
+the home red tables show, resolved by the same chain (newest red `failed-sub-all.rpt` row's own
+verdict unless the flow is in `blue/_redflip.tsv`; else the classified `_kaput-evidence.tsv` newest
+E line via the shared `bin/flip-reason.awk`; else `_subs-boxes.tsv`). `_subs-boxes.tsv` is written
+by the LATER analyses publish; the transfer publish stamp watches all three sources + the classifier,
+and build.sh re-invokes the transfer publish right after the analyses publish (the "transfer
+catch-up (boxes reasons)" step) so a changed — or first-build — boxes sidecar lands in the SAME
+build. The sidecar is cmp-guarded, so the catch-up skips in ~0 s when nothing changed.
+
+Nav = three tab groups: member · All/Seen/Not seen/OK/Warning/Error[/Server] · **Transfer |
++Server**. The SCOPE: does a server-log sighting count as seen? **+Server** is the default and the
+site-wide model (bare filenames); **Transfer** pretends the server log was never read — blue tints
+orange and moves into Not seen/Warning (`-transfer` suffix). Only Seen/Not seen/Warning are
+scope-dependent; All/OK/Error are one page each (both scope tabs disabled); **Server** is a
+seventh view of the blue names only. The variants are assembled at PUBLISH time: All = Summary
+rows + one zero-blank row per configured-never-seen name (the DEFAULT page, `first_page`);
+OK/Warning/Error filter by site-wide RESULT (`entity_res_block` — one definition, shared with tints
+and status columns). The not-seen names come from showseen's `coverage/*.tsv`, so Entities and Show
+Seen can never disagree. Every view carries `datereset`.
+
+**SORT is SHARED across the nine entities with a 1-hour sliding expiry** — the one localStorage
+in report.js (`entLoad`/`entSave`/`entTouch`/`entResolve`), stored by "group › column" LABEL, never
+index (column 0 = the sentinel `#name`; the group prefix because Ok / Error / Error % repeat across
+the groups); a label the view lacks leaves the entry intact and that page keeps its own default.
 
 **`showseen.sh` is a DATA producer only** — its four `showseen-*.rpt` are unpublished
 intermediates feeding the status figures; its `coverage/*.tsv` feed the entity not-seen rows. It

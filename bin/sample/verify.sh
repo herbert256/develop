@@ -313,8 +313,8 @@ check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no resubmitted legs"
 # equal an independent recount of the two caches
 n=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" && ($6 + $7 > $5 + 0) { n++ } END { print n + 0 }' "data/transfer/reports/subscription.rpt" 2>/dev/null)
 check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "subscription.rpt: ${n:-?} row(s) with Retry + Resubmit > OK"
-hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/entities/account-all.html" 2>/dev/null | sed 's/<[^>]*>//g' | head -9 | tr '\n' '|')
-check $([ "$hdr" = "Account|Direction|Files|Volume|OK|Retry|Resubmit|Error|Last seen|" ] && echo 0 || echo 1) "entities/account-all.html header is '$hdr', expected Account|Direction|Files|Volume|OK|Retry|Resubmit|Error|Last seen|"
+hdr=$(grep -o '<tr><th>Account</th>.*' "docs/transfer/entities/account-all.html" 2>/dev/null | head -1 | sed 's/^<tr>//; s/<\/tr>.*//; s/<th[^>]*>//g; s/<\/th>/|/g')
+check $([ "$hdr" = "Account|In|Out|Error|Error %|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|Waiting|Expired|First|Last|Days|" ] && echo 0 || echo 1) "entities/account-all.html header is '$hdr', expected the grouped layout Account|In|Out|Error|Error %|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|Waiting|Expired|First|Last|Days"
 read -r want wantm <<< "$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rs[$1] = 1; next } $3 != "" && $4 != "" && $2 != "Failed" && $2 != "Expired" && ($1 in fl) { n++; if ($1 in rs) m++ } END { print n + 0, m + 0 }' "$T" "$F" 2>/dev/null)"
 read -r got gotm <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "TOTAL" { a = $6; b = $7; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); print a + b, b + 0; exit }' "data/transfer/reports/account.rpt" 2>/dev/null)"
 check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "account.rpt Retry + Resubmit total is '${got:-absent}', an independent recount of the caches gives '${want:-?}'"
@@ -334,7 +334,7 @@ read -r dr1 dr2 dr3 <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" 
 check $([ "${dr1:-1}" = 0 ] && echo 0 || echo 1) "subscription.rpt: ${dr1:-?} row(s) whose Retry/Resubmit count and drill list disagree"
 check $([ "${dr2:-1}" = 0 ] && echo 0 || echo 1) "subscription.rpt: ${dr2:-?} Retry/Resubmit drill list(s) longer than 10"
 check $([ "${dr3:-0}" = 1 ] && echo 0 || echo 1) "the sample subscription table has no Retry drill or no Resubmit drill — one of the two is never exercised"
-check $([ "$(grep -c 'data-coreids-retry="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && [ "$(grep -c 'data-coreids-resubmit="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "entities/subscription-all.html ships no Retry / Resubmit drill lists"
+check $([ "$(grep -c 'data-coreids-rauto="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && [ "$(grep -c 'data-coreids-rmok="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "entities/subscription-all.html ships no Retry / Resubmit drill lists"
 check $([ "$(grep -c 'data-coreids-retry' docs/assets/report.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "report.js does not bind the Retry / Resubmit drills"
 
 # NO EMPTY GROUP TAB (2026-09-13, user report: transfer/files-by-size.html

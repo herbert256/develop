@@ -917,56 +917,45 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   "Error" and the two mood boxes are deliberately not reasons and a flow in several cause boxes
   takes the one its newest own Error/Warn line classifies to. The REASON is descriptive, not a
   verdict: the colour still never rests on a line attributed to no flow; Last file comes from `_files.tsv`.
-- **The Entities pages**: 9 entities x 10 views under `docs/transfer/entities/`, one shared
-  layout assembled at publish time from the entity `.rpt` + the coverage TSVs; the
-  +Server/Transfer SCOPE decides whether a server-log sighting counts as seen; sort is shared
-  across the nine entities (localStorage, 1-hour sliding expiry, stored by column label).
-  Every view with figures shows **Retry** and **Resubmit** between OK and Error (Cured
-  2026-09-10, split 2026-09-12, user request): the OK Files that carried ≥1 Failed leg — the home
-  page Cured rule, per entity — Resubmit when a leg carries `Resubmitted=true` (`_transfers.tsv`
-  col 22, the Top view's Automatic/Manual rule), Retry otherwise. In the `.rpt` they are the two
-  columns AFTER OK (ROW `$6` `$7`, `numwarn`, bucket metrics 4 and 5 = RECALC `s4` `s5`, blank
-  when 0); the five writers pre-scan `_transfers.tsv` cols 3 and 22 for them; `entity_layout`
-  moves them; the Error column is display index 7, where the three `?axway_sort=` producers (home
-  day table, overview/day Top 5) point. Each carries its own DRILL (2026-09-13, user request):
-  `@data:coreids-retry` / `-resubmit` on the row, the 10 newest such Files, bound to the cell by
-  HEADER LABEL in report.js `setupExpandable` (both are `numwarn` cells).
-  **THE ENTITIES2 EXPERIMENT** (2026-09-13, user request — a TWIN of the nine pages, to be adopted
-  or deleted as ONE piece): the same reports in a GROUPED layout — Name, then seven column groups
-  rendered the Top view way (a `GHEAD` banner + `gsep=` dividers), in this order (2026-09-13,
-  user request): Files (In · Out by MOVEMENT, `_files.tsv` col 17 · Error · Error %) · Retry /
-  Resubmit (Auto = the classic Retry; Ok / Error = every resubmitted File by outcome — the Top
-  view's Automatic + Resubmit Ok/Failed rule) · Duration (p90 · p95 · p99 · p100 of the OK Files'
-  wall-clock span, the Duration report's scope and nearest-rank rule, FOLLOWING the date filter —
-  user rule: each row carries per-day display-grid histograms `@data:durdays`, the RECALC tokens
-  `P90`/`P95`/`P99`/`P100` re-pick the percentile over the in-range days, rows and TOTAL alike,
-  and the publish-time subset totals merge the same payload) · Volume (Total · Avg per File) ·
-  Transfers (Ok · Error · Error % — the LEGS of the entity's Files) · State (Waiting · Expired) ·
-  Dates (First · Last · Days with traffic). DISPLAY RULES (user): the TOTAL row LAST
-  (`entity2_total_last`); an EMPTY group HIDDEN — Retry / Resubmit and State — on a view whose
-  rows carry no such value at all (`entity2_hide_groups` drops the columns and the banner cell
-  and remaps every index-naming modifier); bytes in WHOLE units (tokens `H`/`V`); a duration as a whole number with
-  a one-letter unit s/m/h/d, tinted s green · m amber · h/d red (the `P` token retints); an empty
-  Error keeps an EMPTY rate beside it (token `e`); In / Out never show a 0 (token `S`); every red
-  count cell is KIND `numfailed`, never `numerr` — the views' row tints paint over `errc`/`okc`
-  cells (only `.failed`/`.processed`, and a non-empty `.warn`, keep their own tint). Every count
-  cell drills to its 10 newest Files; a Duration cell to the 10 newest OK Files at or above that
-  percentile, each entry with its span (the writer reads `_files.tsv` a THIRD time for those,
-  after the thresholds are known). Pieces: `bin/transfer/reports/entities2.sh` (ONE writer for all nine, its
-  attribution mirroring the five classic writers — Files/Error/Auto/Volume/First/Last agree row for
-  row) → `data/transfer/reports/entities2/<entity>.rpt` → `render_entity_report` in its
-  `ENT_LAYOUT=2` mode (called from `render_report`'s entity branch; no Direction column, no reorder,
-  rows baked busiest-first with no `sort=`, subset totals via `entity2_res_block`) →
-  `docs/transfer/entities2/` (cleared by `bin/transfer/publish.sh`; h1 crumb "Entities2"; search key
-  `entities2`, sort per page, the CLASSIC help page); the **Entities2** top-bar link
-  (`render_topbar` + `buildTopbar`, KEEP IN STEP, + linkcheck's hand-modelled bar); the
-  `drillcols=` TABLE modifier (per-cell drills by BUILT column index, `key:col[:Noun_words]` →
-  `data-coreids-<key>`), the RECALC tokens `vN.M` (humanBytes(sumN/sumM)), `PN` (the
-  nearest-rank percentile N of the row's `data-durdays` histograms, s/m/h/d + unit tint), `SN`
-  (sum, blank on 0), `eN.M` (rate, blank when sumN is 0), `HN`/`VN.M` (whole-unit bytes),
-  `pct=` accepting `a+b` column lists (the searched total honours S/e/H too), and the TOTAL
-  row's day count under a narrowed range = the DISTINCT in-range dates (was 0 — report.js
-  `recalcTable`). Deliberately without a sitemap card, finder rows or home links.
+- **The Entities pages**: 9 entities x 10 views under `docs/transfer/entities/`, assembled at
+  publish time (`render_entity_report`) from `data/transfer/reports/entities/<name>.rpt` — ONE
+  writer for the nine, `bin/transfer/reports/entities.sh` — plus the coverage TSVs and the base
+  caches (the blue / ghost rows); the +Server/Transfer SCOPE decides whether a server-log sighting
+  counts as seen; sort is shared across the nine entities (localStorage, 1-hour sliding expiry,
+  stored by "group › column" label). THE GROUPED LAYOUT (2026-09-13, user request — built that day
+  as the `transfer/entities2/` twin experiment and adopted the same day; the classic Name ·
+  Direction · Files · Volume · OK · Retry · Resubmit · Error · Last seen pages are GONE): Name,
+  then seven column groups the Top view way (a `GHEAD` banner + `gsep=` dividers) — Files (In ·
+  Out by MOVEMENT, `_files.tsv` col 17 · Error · Error %) · Retry / Resubmit (Auto = an OK File
+  with a failed leg and no resubmitted leg; Ok / Error = every resubmitted File by outcome — the
+  Top view's Automatic + Resubmit Ok/Failed rule) · Duration (p90 · p95 · p99 · p100 of the OK
+  Files' wall-clock span, the Duration report's scope and nearest-rank rule, FOLLOWING the date
+  filter: per-day display-grid histograms `@data:durdays` + the RECALC tokens `P90`…`P100`, rows
+  and TOTAL alike, the publish-time subset totals merging the same payload) · Volume (Total · Avg
+  per File) · Transfers (Ok · Error · Error % — the LEGS of the entity's Files) · State (Waiting ·
+  Expired) · Dates (First · Last · Days with traffic). DISPLAY RULES (user): the TOTAL row LAST
+  (`entity_total_last`); an EMPTY Retry / Resubmit or State group HIDDEN per view
+  (`entity_hide_groups` drops the columns and the banner cell and remaps every index-naming
+  modifier — gsep=, noagg=, pct=, drillcols=); bytes in WHOLE units (tokens `H`/`V`); a duration
+  as a whole number with a one-letter unit s/m/h/d, tinted s green · m amber · h/d red (the `P`
+  token retints); an empty Error keeps an EMPTY rate beside it (token `e`); In / Out never show a
+  0 (token `S`); every red count cell is KIND `numfailed`, never `numerr` — the views' row tints
+  paint over `errc`/`okc` cells (only `.failed`/`.processed`, and a non-empty `.warn`, keep their
+  own tint). Every count cell drills to its 10 newest Files (the `drillcols=` TABLE modifier →
+  the row's `@data:coreids-<key>`, bound by BUILT column index); the Transfers cells to the Files
+  with a leg of that outcome; a Duration cell to the 10 newest OK Files at or above that
+  percentile, each entry with its span (the writer reads `_files.tsv` a THIRD time once the
+  thresholds are known). The writer's attribution mirrors the nine classic writers (`account.sh`,
+  `subscription.sh`, `login.sh`, `remote-host.sh`, `pda-entities.sh`), which STAY as DATA
+  producers — `showseen.sh`, `entity-search.sh` and the server rosters read their `<name>.rpt`
+  positionally — but render no page. Links INTO the pages sort by header LABEL
+  (`?axway_sort=Error:-1` / `Total:-1` — report.js resolves the first header cell reading it; the
+  home day table and the overview/day Top 5 produce them), since the positions shift when a group
+  is hidden. The hand-written help pages `entities-<name>.html` describe this layout. Other
+  report.js pieces that came with it and are general: the RECALC tokens `vN.M`
+  (humanBytes(sumN/sumM)), `SN`, `eN.M`, `HN`/`VN.M`, `PN`; `pct=` accepting `a+b` column lists
+  (the searched total honours S/e/H too); the TOTAL row's day count under a narrowed range = the
+  DISTINCT in-range dates (was 0).
 - **The detail pages** (`details.sh` → `details_lib.sh`/`details_writer.awk`): one page per entity
   of the nine types, every configured name gets one; slugs via the comprehensive `_slugmap.tsv`;
   no From/To, no search box, no RECALC.

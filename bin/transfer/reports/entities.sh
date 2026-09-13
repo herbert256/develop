@@ -1,34 +1,41 @@
 #!/usr/bin/env bash
 #
-# entities2.sh — the ENTITIES2 EXPERIMENT (2026-09-13, user request): the nine
-# Entities reports in a GROUPED layout, one .rpt per entity under
-# data/transfer/reports/entities2/, rendered by publish_lib's
-# render_entity_report in its ENT_LAYOUT=2 mode into docs/transfer/entities2/
-# (the "Entities2" top-bar link). The classic entity .rpt files and pages are
-# UNTOUCHED — this is a twin, to be adopted or deleted as one piece (the
-# pieces are listed in CLAUDE.md, "The Entities pages").
+# entities.sh — THE ENTITIES PAGES (2026-09-13, user request: the grouped
+# layout, built the same day as a twin under transfer/entities2/, replaced
+# the classic Name · Direction · Files · Volume · OK · Retry · Resubmit ·
+# Error · Last seen pages): the nine Entities reports in a GROUPED layout,
+# one .rpt per entity under data/transfer/reports/entities/, rendered by
+# publish_lib's render_entity_report into docs/transfer/entities/. The nine
+# classic writers (account.sh, subscription.sh, login.sh, remote-host.sh,
+# pda-entities.sh) keep writing their <name>.rpt as DATA producers —
+# showseen.sh, entity-search.sh and the server rosters read them — but
+# render no page any more.
 #
-# Layout: the Name, then SIX column groups (a GHEAD banner + the gsep=
-# dividers, the Top view way):
-#   Dates      First · Last · Days (days with traffic)
-#   Transfers  Ok · Error · Error %      the LEGS (log rows) of the entity's
-#              Files — every leg of every attributed File, credited to the
-#              File's start day like every per-File figure on the site
+# Layout: the Name, then SEVEN column groups (a GHEAD banner + the gsep=
+# dividers, the Top view way), in this order:
 #   Files      In · Out · Error · Error %   In/Out = the MOVEMENT direction
 #              (_files.tsv col 17 — the home page's In/Out rule; a File with
 #              no movement counts in the total and the Error % only)
-#   Recover    Auto · Manual-ok · Manual-error   the Top view rule: Auto = an
-#              OK File that carried a failed leg and no resubmitted leg (the
-#              classic Retry column); Manual-ok / Manual-error = EVERY File
-#              with a resubmitted leg (_transfers.tsv col 22), by its outcome
-#   State      Waiting · Expired         _files.tsv col 2
+#   Retry / Resubmit   Auto · Ok · Error   the Top view rule: Auto = an OK
+#              File that carried a failed leg and no resubmitted leg (the
+#              classic Retry column); Ok / Error = EVERY File with a
+#              resubmitted leg (_transfers.tsv col 22), by its outcome
+#   Duration   p90 · p95 · p99 · p100 of the OK Files' wall-clock span
 #   Volume     Total · Avg (per File)
+#   Transfers  Ok · Error · Error %      the LEGS (log rows) of the entity's
+#              Files — every leg of every attributed File, credited to the
+#              File's start day like every per-File figure on the site
+#   State      Waiting · Expired         _files.tsv col 2
+#   Dates      First · Last · Days (days with traffic)
 # Every count cell drills to its 10 newest Files (CoreIds); the Transfers
-# cells to the Files that carried a leg of that outcome.
+# cells to the Files that carried a leg of that outcome; a Duration cell to
+# the 10 newest OK Files at or above that percentile. An empty Retry /
+# Resubmit or State group is hidden per view, the TOTAL row is last
+# (publish_lib).
 #
 # Attribution per entity mirrors the five classic writers EXACTLY (account.sh,
 # subscription.sh, login.sh, remote-host.sh, pda-entities.sh) — so Files,
-# Error, Auto, Volume, First and Last agree row for row with the classic pages:
+# Error, Auto, Volume, First and Last agree row for row with their .rpt:
 #   account      _files col 3
 #   subscription the distinct non-empty _transfers col 6 over the File's legs
 #   login        the distinct non-empty _transfers col 5   (each: one count
@@ -45,7 +52,10 @@
 # others count each File once — exactly what the classic T| lines do.
 #
 # Usage:
-#   ./entities2.sh    # reads the caches, writes data/transfer/reports/entities2/<entity>.rpt (nine files)
+#   ./entities.sh    # reads the caches, writes data/transfer/reports/entities/<entity>.rpt (nine files)
+#
+# (Until 2026-09-13 this was entities2.sh, the twin experiment; the S| / T|
+# streams and the display rules below are its.)
 #
 set -euo pipefail
 
@@ -58,7 +68,7 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-OUTDIR="$REPORTS_DIR/entities2"
+OUTDIR="$REPORTS_DIR/entities"
 mkdir -p "$OUTDIR"
 rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp   # orphaned temps from a killed run (reports.sh sweeps the top level only)
 ensure_parsed
@@ -73,7 +83,7 @@ for _o in $DIMS; do
     fi
 done
 if [ "$_fresh" = 1 ]; then
-    echo "  entities2/*.rpt are up to date; skipping." >&2
+    echo "  entities/*.rpt are up to date; skipping." >&2
     exit 0
 fi
 unset _fresh _o _f
