@@ -111,8 +111,12 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v DIMS="$DIMS" \
     # Error attempts being mostly instant. Each span is QUANTIZED to the
     # humandur DISPLAY grid (rounded like the format), so a histogram of grid
     # values per (type, name) replaces the sorted list: the percentile picked
-    # by rank displays exactly what the exact values would, and the histogram
-    # rides the row (@data:durhist) for the publish-time subset totals.
+    # by rank displays exactly what the exact values would. The SAME
+    # histogram PER DAY rides the row as @data:durdays ("date:q.c;q.c,…"):
+    # report.js re-picks the percentiles for the selected From/To from the
+    # in-range days (RECALC P90 / P95 / P99 — the user rule, 2026-09-13:
+    # Duration follows the date period like every other group) and the
+    # publish-time subset totals merge it the same way.
     function qdur(ms) {
         if (ms < 1000)    return int(ms + 0.5)
         if (ms < 60000)   return int(ms / 10 + 0.5) * 10
@@ -154,7 +158,7 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v DIMS="$DIMS" \
         if (f) addtop(key SUBSEP "ferr", sk, disp, cid)
         if (ra) addtop(key SUBSEP "rauto", sk, disp, cid); if (rmo) addtop(key SUBSEP "rmok", sk, disp, cid); if (rme) addtop(key SUBSEP "rmerr", sk, disp, cid)
         if (wt) addtop(key SUBSEP "wait", sk, disp, cid); if (ex) addtop(key SUBSEP "exp", sk, disp, cid)
-        if (hasd) dh[key SUBSEP q]++
+        if (hasd) { dh[key SUBSEP q]++; dhd[key SUBSEP date SUBSEP q]++ }
     }
     function tot(t) {
         tc[t]++; if (isin) tin[t]++; if (isout) tout[t]++; if (f) tfe[t]++; tv[t] += size; ttok[t] += tk; tter[t] += te
@@ -203,9 +207,13 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v DIMS="$DIMS" \
     END {
         for (dk in ds) { split(dk, kk, SUBSEP); key = kk[1] SUBSEP kk[2]; nd[key]++
             bk[key] = bk[key] (bk[key] ? "," : "") kk[3] ":" dl[dk] ":" (din[dk]+0) ":" (dout[dk]+0) ":" (dfe[dk]+0) ":" (db[dk]+0) ":" (dtok[dk]+0) ":" (dter[dk]+0) ":" (dra[dk]+0) ":" (dmo[dk]+0) ":" (dme[dk]+0) ":" (dwt[dk]+0) ":" (dex[dk]+0) ":" (dtok[dk]+dter[dk]) }
-        # the duration histograms, grouped per (type, name) and per type
+        # the duration histograms, grouped per (type, name) and per type —
+        # and per (type, name, DAY) for the row payload
         for (k in dh) { split(k, kk, SUBSEP); key = kk[1] SUBSEP kk[2]; ql[key] = ql[key] (ql[key] == "" ? "" : "|") kk[3] "." dh[k] }
         for (k in th) { split(k, kk, SUBSEP); tql[kk[1]] = tql[kk[1]] (tql[kk[1]] == "" ? "" : "|") kk[2] "." th[k] }
+        # (";" between the entries of one day: "|" is the S| stream separator)
+        for (k in dhd) { split(k, kk, SUBSEP); dk = kk[1] SUBSEP kk[2] SUBSEP kk[3]; dql[dk] = dql[dk] (dql[dk] == "" ? "" : ";") kk[4] "." dhd[k] }
+        for (dk in dql) { split(dk, kk, SUBSEP); key = kk[1] SUBSEP kk[2]; ddp[key] = ddp[key] (ddp[key] == "" ? "" : ",") kk[3] ":" dql[dk] }
         for (key in sc) { split(key, kk, SUBSEP); t = kk[1]; ns[t]++
             pctls((key in ql) ? ql[key] : "")
             printf "S|%s|%s|%d|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", \
@@ -213,7 +221,7 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v DIMS="$DIMS" \
                 sra[key]+0, smo[key]+0, sme[key]+0, swt[key]+0, sex[key]+0, sv[key]+0, bk[key], \
                 buildlist(top[key SUBSEP "tok"]), buildlist(top[key SUBSEP "terr"]), buildlist(top[key SUBSEP "fin"]), buildlist(top[key SUBSEP "fout"]), \
                 buildlist(top[key SUBSEP "ferr"]), buildlist(top[key SUBSEP "rauto"]), buildlist(top[key SUBSEP "rmok"]), buildlist(top[key SUBSEP "rmerr"]), \
-                buildlist(top[key SUBSEP "wait"]), buildlist(top[key SUBSEP "exp"]), P90, P95, P99, HIST > OUTF }
+                buildlist(top[key SUBSEP "wait"]), buildlist(top[key SUBSEP "exp"]), P90, P95, P99, ((key in ddp) ? ddp[key] : "") > OUTF }
         for (k in tdd) { split(k, kk, SUBSEP); tdays[kk[1]]++ }
         n2 = split(DIMS, TL, " ")   # a T| line for EVERY type, data or not (the config-only estate renders zero-row tables)
         for (i2 = 1; i2 <= n2; i2++) { t = TL[i2]
@@ -227,8 +235,8 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v DIMS="$DIMS" \
 # 3 name 4 files 5 first 6 last 7 days 8 tok 9 terr 10 in 11 out 12 ferr
 # 13 rauto 14 rmok 15 rmerr 16 waiting 17 expired 18 bytes 19 buckets
 # 20-29 the drills tok terr fin fout ferr rauto rmok rmerr wait exp,
-# 30-32 p90 p95 p99, 33 the duration histogram). The renderer blanks a 0 in
-# the tinted cells itself (its z rule).
+# 30-32 p90 p95 p99, 33 the per-day duration histograms). The renderer
+# blanks a 0 in the tinted cells itself (its z rule).
 FMT_AWK='
     function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
         while (v >= 1024 && i < 6) { v /= 1024; i++ }
@@ -255,7 +263,7 @@ for dim in $DIMS; do
     rows=$({ grep "^S|$dim|" "$AGG" || true; } | LC_ALL=C sort -t'|' -k4,4nr -k3,3f -k3,3 | awk -F'|' "$FMT_AWK"'
         $3 == "" { next }
         { files = $4 + 0; tok = $8 + 0; ter = $9 + 0; fe = $12 + 0; bytes = $18 + 0
-          printf "ROW\t%s\t%s\t%s\t%d\t%d\t%d\t%s%%\t%d\t%d\t%d\t%s%%\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s\t@data:coreids-ferr=%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:coreids-wait=%s\t@data:coreids-exp=%s\t@data:durhist=%s\n", \
+          printf "ROW\t%s\t%s\t%s\t%d\t%d\t%d\t%s%%\t%d\t%d\t%d\t%s%%\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s\t@data:coreids-ferr=%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:coreids-wait=%s\t@data:coreids-exp=%s\t@data:durdays=%s\n", \
               $3, $5, $6, $7, tok, ter, pr(ter, tok + ter), $10, $11, fe, pr(fe, files), $13, $14, $15, $16, $17, \
               human(bytes), human(files > 0 ? bytes / files : 0), $30, $31, $32, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $33 }')
     tot_line=$(awk -F'|' "$FMT_AWK"'BEGIN { tc = ARGV[1]; ttok = ARGV[2]; tter = ARGV[3]; tfe = ARGV[4]; tv = ARGV[5]
@@ -269,11 +277,11 @@ for dim in $DIMS; do
         printf 'GHEAD\t\t@{colspan=3,class=gband gsep}Dates\t@{colspan=3,class=gband gsep}Transfers\t@{colspan=4,class=gband gsep}Files\t@{colspan=3,class=gband gsep}Recover\t@{colspan=2,class=gband gsep}State\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Duration\n'
         printf 'HEAD\t%s\tFirst\tLast\tDays\tOk\tError\tError %%\tIn\tOut\tError\tError %%\tAuto\tManual-ok\tManual-error\tWaiting\tExpired\tTotal\tAvg\tp90\tp95\tp99\n' "$chead"
         printf 'KIND\t%s\ttext\ttext\tnum\tnumok\tnumerr\tnum\tnum\tnum\tnumfailed\tnum\tnumwarn\tnumwarn\tnumerr\tnumwarn\tnumerr\tnum\tnum\tnum\tnum\tnum\n' "$nkind"
-        printf 'RECALC\t-\t-\t-\tc\ts5\ts6\tp6.12\ts1\ts2\ts3\tp3.0\ts7\ts8\ts9\ts10\ts11\th4\tv4.0\t-\t-\t-\n'
+        printf 'RECALC\t-\t-\t-\tc\ts5\ts6\tp6.12\ts1\ts2\ts3\tp3.0\ts7\ts8\ts9\ts10\ts11\th4\tv4.0\tP90\tP95\tP99\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
         printf 'TOTAL\tTotal (%s %s(s))\t\t\t@{class=num}%s\t@{class=num okc}%s\t@{class=num errc}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num errc}%s\t@{class=num warn}%s\t@{class=num errc}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\n' \
             "$ns" "$noun" "$tdays" "$ttok" "$tter" "$tterp" "$tin" "$tout" "$tfe" "$tfep" "$tra" "$tmo" "$tme" "$twt" "$tex" "$tvh" "$tavg" "$tp90" "$tp95" "$tp99"
-        printf 'NOTE\t**Files** = logical transfers (one per CoreId; Waiting counts as OK, Expired as Error), **Transfers** = the physical log rows of those Files (one per leg). **In** / **Out** is the movement direction of the File (a File with no known movement counts in the Files total and Error %% only). **Recover**: **Auto** = an OK File that carried at least one failed leg and no resubmitted leg — the platform'\''s own retry delivered it (the classic Retry column); **Manual-ok** / **Manual-error** = every File with a resubmitted leg (the log'\''s Resubmitted flag), OK or Error by its final outcome (the Top view'\''s Resubmit rule — a resubmitted re-delivery that never failed counts under Manual-ok). **Days** = the days with at least one File; First / Last stay full-period under the date filter. **Avg** = the volume divided by the Files. **Duration** = the p90 / p95 / p99 of the wall-clock duration of the OK Files (first record start to last record end, as on the Duration report — the Error attempts, mostly instant, are left out); like the Slowest subscriptions page, the percentiles keep their full-period value under the date filter. Click any count for its 10 most recent Files (newest first, by start time); the Transfers cells list the Files that carried a leg of that outcome.\n'
+        printf 'NOTE\t**Files** = logical transfers (one per CoreId; Waiting counts as OK, Expired as Error), **Transfers** = the physical log rows of those Files (one per leg). **In** / **Out** is the movement direction of the File (a File with no known movement counts in the Files total and Error %% only). **Recover**: **Auto** = an OK File that carried at least one failed leg and no resubmitted leg — the platform'\''s own retry delivered it (the classic Retry column); **Manual-ok** / **Manual-error** = every File with a resubmitted leg (the log'\''s Resubmitted flag), OK or Error by its final outcome (the Top view'\''s Resubmit rule — a resubmitted re-delivery that never failed counts under Manual-ok). **Days** = the days with at least one File; First / Last stay full-period under the date filter. **Avg** = the volume divided by the Files. **Duration** = the p90 / p95 / p99 of the wall-clock duration of the OK Files (first record start to last record end, as on the Duration report — the Error attempts, mostly instant, are left out), re-picked for the selected From/To like every other figure. Click any count for its 10 most recent Files (newest first, by start time); the Transfers cells list the Files that carried a leg of that outcome.\n'
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "Data written to $OUT ($ns $noun(s), $tc file(s))." >&2

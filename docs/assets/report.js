@@ -584,7 +584,9 @@
   // in-range day count · dN count of in-range days with metric N > 0 ·
   // qN.M humanDur(sumN/sumM) · xN humanDur(max N) · tN.M
   // humanBytes(sumN*1000/sumM)+"/s" · vN.M humanBytes(sumN/sumM) (the
-  // Entities2 Avg per File, 2026-09-13) · bN bar of sumN vs column max ·
+  // Entities2 Avg per File, 2026-09-13) · PN the nearest-rank percentile N
+  // of the row's per-day DURATION histograms (data-durdays, see aggDurDays —
+  // the Entities2 Duration group) · bN bar of sumN vs column max ·
   // rN position by column N descending (rN.a ascending, rN.z zeros last) —
   // see rankCols.
   // `dates` = the in-range dates themselves (a set): recalcTable unions them
@@ -604,6 +606,35 @@
       }
     });
     return { sum: sum, max: max, pos: pos, days: days, dates: dates };
+  }
+  // Per-day DURATION histograms (the Entities2 Duration group, 2026-09-13):
+  // data-durdays = "date:q.c;q.c,date:…" — per date the humanDur display-grid
+  // value q (ms) and its count c, written by bin/transfer/reports/entities2.sh.
+  // aggDurDays merges the in-range days into one histogram, mergeDur folds
+  // rows together (the TOTAL row), and pctlHist picks the nearest-rank
+  // percentile the writers use — T[int((N-1)·P/100+0.5)+1] over the sorted
+  // values — so the full-range figure equals the baked one.
+  function aggDurDays(str, lo, hi) {
+    var h = {}, n = 0;
+    if (str) str.split(",").forEach(function (seg) {
+      var p = seg.indexOf(":"); if (p < 1) return;
+      var e = parseDate(seg.slice(0, p)); if (e === null || e < lo || e > hi) return;
+      seg.slice(p + 1).split(";").forEach(function (qc) {
+        var d = qc.indexOf("."); if (d < 1) return;
+        var q = +qc.slice(0, d), c = +qc.slice(d + 1) || 0;
+        if (!(c > 0)) return;
+        h[q] = (h[q] || 0) + c; n += c;
+      });
+    });
+    return { h: h, n: n };
+  }
+  function mergeDur(into, d) { var q; if (!d) return; for (q in d.h) into.h[q] = (into.h[q] || 0) + d.h[q]; into.n += d.n; }
+  function pctlHist(d, P) {
+    if (!d || !d.n) return null;
+    var keys = Object.keys(d.h).map(Number).sort(function (a, b) { return a - b; });
+    var r = Math.floor((d.n - 1) * P / 100 + 0.5) + 1, cum = 0, i;
+    for (i = 0; i < keys.length; i++) { cum += d.h[keys[i]]; if (cum >= r) return keys[i]; }
+    return keys[keys.length - 1];
   }
   // ---- top-N re-select tables (data-topsel) ---------------------------------
   // The table's rows are the CANDIDATE set — per qualifying date its own top N,
@@ -701,7 +732,8 @@
     }
   }
   function recalcCell(tok, agg, colSum) {
-    var t = tok.charAt(0), rest = tok.slice(1), N, p, den;
+    var t = tok.charAt(0), rest = tok.slice(1), N, p, den, pv;
+    if (t === "P") { pv = pctlHist(agg.dur, +rest); return pv === null ? "" : humanDur(pv); }
     if (t === "s") return String(agg.sum[+rest] || 0);
     if (t === "h") return humanBytes(agg.sum[+rest] || 0);
     if (t === "%") { N = +rest; den = colSum[N] || 0; return (den ? (100 * (agg.sum[N] || 0) / den).toFixed(1) : "0.0") + "%"; }
@@ -721,6 +753,7 @@
   // range (nothing timed), and never takes a position.
   function recalcNum(tok, agg, colSum) {
     var t = tok.charAt(0), rest = tok.slice(1), p, den;
+    if (t === "P") return pctlHist(agg.dur, +rest);
     if (t === "s" || t === "h") return agg.sum[+rest] || 0;
     if (t === "%") { den = colSum[+rest] || 0; return den ? 100 * (agg.sum[+rest] || 0) / den : 0; }
     if (t === "p") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? 100 * (agg.sum[+p[0]] || 0) / den : 0; }
@@ -860,7 +893,10 @@
     var drows = dataRows(table), aggs = [];
     var zh = table.getAttribute("data-zerohide");
     zh = zh == null || zh === "" ? null : +zh;
-    drows.forEach(function (r, x) { aggs[x] = aggBuckets(r.getAttribute("data-buckets"), lo, hi); });
+    drows.forEach(function (r, x) {
+      aggs[x] = aggBuckets(r.getAttribute("data-buckets"), lo, hi);
+      if (r.hasAttribute("data-durdays")) aggs[x].dur = aggDurDays(r.getAttribute("data-durdays"), lo, hi);   // the Duration percentiles (P tokens)
+    });
     drows.forEach(function (r, x) {
       // A seenrows row (data-seen INSIDE a data-seenrows table — the detail
       // pages' entity tables) is never hidden by the date filter — its
@@ -880,7 +916,7 @@
       }
       applyRowVis(r);
     });
-    var colSum = {}, colMax = {}, colMaxA = {}, vis = 0, totDates = {}, totDays = 0, dk;
+    var colSum = {}, colMax = {}, colMaxA = {}, vis = 0, totDates = {}, totDays = 0, dk, totDur = { h: {}, n: 0 };
     drows.forEach(function (r, x) {
       if (r.style.display === "none") return;
       var s = aggs[x].sum, m, d = aggs[x].days || 0, av;
@@ -889,6 +925,7 @@
       // the TOTAL row's day count = the DISTINCT in-range dates over the
       // visible rows (a per-row sum would count a shared day once per row)
       for (dk in (aggs[x].dates || {})) if (!totDates[dk]) { totDates[dk] = 1; totDays++; }
+      mergeDur(totDur, aggs[x].dur);   // the TOTAL row's Duration percentiles: every visible row's in-range histogram
     });
     drows.forEach(function (r, x) {
       if (r.style.display === "none") return;
@@ -897,7 +934,7 @@
       writeRecalc(r, toks, aggs[x], colSum, colMax, colMaxA, false);
     });
     rankCols(toks, drows, aggs, colSum);   // positions renumber over the rows the range left standing
-    var totAgg = { sum: colSum, max: {}, days: totDays };
+    var totAgg = { sum: colSum, max: {}, days: totDays, dur: totDur };
     totalRows(table).forEach(function (r) { writeRecalc(r, toks, totAgg, colSum, colMax, colMaxA, true); updateTotalLabel(r, vis); });
     replaceHotspots(table);
   }

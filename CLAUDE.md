@@ -938,9 +938,10 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   MOVEMENT, `_files.tsv` col 17 · Error · Error %) · Recover (Auto = the classic Retry; Manual-ok /
   Manual-error = every resubmitted File by outcome — the Top view's Automatic + Resubmit Ok/Failed
   rule) · State (Waiting · Expired) · Volume (Total · Avg per File) · Duration (p90 · p95 · p99 of
-  the OK Files' wall-clock span, the Duration report's scope and nearest-rank rule, FULL-PERIOD
-  under the date filter like the Slowest subscriptions page; each row carries a display-grid
-  histogram `@data:durhist` for the subset totals); every count cell drills to its
+  the OK Files' wall-clock span, the Duration report's scope and nearest-rank rule, FOLLOWING the
+  date filter — user rule: each row carries per-day display-grid histograms `@data:durdays`, the
+  RECALC tokens `P90`/`P95`/`P99` re-pick the percentile over the in-range days, rows and TOTAL
+  alike, and the publish-time subset totals merge the same payload); every count cell drills to its
   10 newest Files. Pieces: `bin/transfer/reports/entities2.sh` (ONE writer for all nine, its
   attribution mirroring the five classic writers — Files/Error/Auto/Volume/First/Last agree row for
   row) → `data/transfer/reports/entities2/<entity>.rpt` → `render_entity_report` in its
@@ -950,7 +951,8 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   `entities2`, sort per page, the CLASSIC help page); the **Entities2** top-bar link
   (`render_topbar` + `buildTopbar`, KEEP IN STEP, + linkcheck's hand-modelled bar); the
   `drillcols=` TABLE modifier (per-cell drills by BUILT column index, `key:col[:Noun_words]` →
-  `data-coreids-<key>`), the RECALC token `vN.M` (humanBytes(sumN/sumM)), `pct=` accepting `a+b`
+  `data-coreids-<key>`), the RECALC tokens `vN.M` (humanBytes(sumN/sumM)) and `PN` (the
+  nearest-rank percentile N of the row's `data-durdays` histograms), `pct=` accepting `a+b`
   column lists, and the TOTAL row's day count under a narrowed range = the DISTINCT in-range dates
   (was 0 — report.js `recalcTable`). Deliberately without a sitemap card, finder rows or home links.
 - **The detail pages** (`details.sh` → `details_lib.sh`/`details_writer.awk`): one page per entity

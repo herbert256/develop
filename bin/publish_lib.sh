@@ -1450,8 +1450,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
     # re-summing the grouped columns — the count cells (fields 6-7, 9-11,
     # 13-17), the Files total and bytes from the buckets (metrics 0 and 4),
     # Days = the DISTINCT bucket dates, the Duration percentiles from the
-    # rows' merged @data:durhist histograms (display-grid values, the
-    # writer's nearest-rank rule) — into the writer's own baked TOTAL line,
+    # rows' merged @data:durdays per-day histograms (display-grid values,
+    # the writer's nearest-rank rule) — into the writer's own baked TOTAL line,
     # whose @{class=…} cell prefixes are kept (the formatting lives in the
     # writer alone). Template cells: 2 label · 3 First · 4 Last · 5 Days ·
     # 6 Ok · 7 Error · 8 Error % · 9 In · 10 Out · 11 Error · 12 Error % ·
@@ -1475,7 +1475,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt  $4 rlabel  $5 hslug  $6 r
                 for (c = 6; c <= 17; c++) if (c != 8 && c != 12) S[c] += n($c)
                 for (i=1;i<=NF;i++) {
                     if ($i ~ /^@data:buckets=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ split(B[j],C,":"); files += C[2]+0; sb += C[6]+0; dd[C[1]] = 1 } }
-                    else if ($i ~ /^@data:durhist=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ p = index(B[j], "."); if (p > 1) HH[substr(B[j],1,p-1)+0] += substr(B[j],p+1)+0 } }
+                    else if ($i ~ /^@data:durdays=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ p = index(B[j], ":"); if (p < 1) continue
+                        nq = split(substr(B[j],p+1),QQ,";"); for (m=1;m<=nq;m++){ p2 = index(QQ[m], "."); if (p2 > 1) HH[substr(QQ[m],1,p2-1)+0] += substr(QQ[m],p2+1)+0 } } }
                 }
                 rows[++nr]=$0 }
             END {
