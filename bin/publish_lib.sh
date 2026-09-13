@@ -517,6 +517,7 @@ member_label() {   # row-1 tab text for a grouped report
         cross-bl) echo "BL" ;;
 
         volume) echo "Volume" ;; trend) echo "Growers & shrinkers" ;; size-dist) echo "Size distribution" ;;
+        files) echo "Sizes & types" ;;   # the MERGED report (size-dist + file-type + duplicate-files): its own group tab was an EMPTY span until 2026-09-13 (user report)
         file-type) echo "File types" ;; top-transfers) echo "Largest files" ;; duplicate-files) echo "Duplicate files" ;;
         failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; failure-rate) echo "Failure rate" ;; episodes) echo "Episodes" ;; from-green-to-red) echo "From green to red" ;; expired) echo "Expired" ;; missing-cronjobs) echo "Missing cronjobs" ;; only-red) echo "Only red" ;; waiting) echo "Waiting" ;; retry) echo "Repeat failures" ;; pirates) echo "One-legged" ;; stale-accounts) echo "Stale accounts" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
         patterns) echo "Patterns" ;; arrived-left) echo "Arrived / Left" ;; legs-count) echo "Legs count" ;; protocol-journey) echo "Protocol journey" ;; attempts) echo "Attempts" ;; resubmissions) echo "Resubmissions" ;; file-in-file-out) echo "File in - File out" ;;

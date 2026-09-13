@@ -337,6 +337,15 @@ check $([ "${dr3:-0}" = 1 ] && echo 0 || echo 1) "the sample subscription table 
 check $([ "$(grep -c 'data-coreids-retry="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && [ "$(grep -c 'data-coreids-resubmit="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "entities/subscription-all.html ships no Retry / Resubmit drill lists"
 check $([ "$(grep -c 'data-coreids-retry' docs/assets/report.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "report.js does not bind the Retry / Resubmit drills"
 
+# NO EMPTY GROUP TAB (2026-09-13, user report: transfer/files-by-size.html
+# showed a blank second button — the merged "files" report had no
+# member_label, so its own active tab rendered as an empty span): every
+# group member must have a label, on every page
+n=$(grep -rl '<span class="tab active"></span>' docs 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n page(s) render an EMPTY active group tab (a group member without a member_label)"
+n=$(grep -rl '<a class="tab" href="[^"]*"></a>' docs 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n page(s) render an EMPTY group tab link (a group member without a member_label)"
+
 # the Top view's six column groups (2026-09-12, user request): Files WITHOUT
 # Recovered, then the Recovered group (Automatic · Manual) and the Resubmit
 # group (Ok · Failed) between Files and Transfers — Manual = a recovered
