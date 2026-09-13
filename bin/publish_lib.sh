@@ -2272,7 +2272,7 @@ ANALYSES_MENU='<a class="ddtop" href="@analyses/index.html">Start page</a><a hre
 # report.js buildTopbar and render_topbar render it, ensure_assets ships it
 # as `goodies`, TB_VER folds it; linkcheck reads it from topbar-data.js like
 # the other menus.
-GOODIES_MENU='<a href="@analyses/fe-overview.html">Partners - Incoming</a><a href="@server/logons-incoming.html">Logons (incoming)</a><a href="@transfer/duration.html">Transfer Duration</a><a href="@analyses/failed.html">Failed Subscriptions</a>'
+GOODIES_MENU='<a href="@analyses/fe-overview.html">Partners - Incoming</a><a href="@server/logons-incoming.html">Logons (incoming)</a><a href="@transfer/duration.html">Transfer Duration</a><a href="@analyses/failed.html">Failed Subscriptions</a><a href="@analyses/subscriptions.html">Subscriptions</a>'
 
 # The analyses report GROUPS — the single source of truth for the group tab
 # bars, the group-of lookup and the h1 group tags. One line per group:
