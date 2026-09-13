@@ -108,6 +108,7 @@ pool_run "$SCRIPT_DIR/reports/file-in-file-out.sh"   # partner-to-partner handov
 pool_run "$SCRIPT_DIR/reports/remote-host.sh"
 pool_run "$SCRIPT_DIR/reports/pda-entities.sh"
 pool_run "$SCRIPT_DIR/reports/entities.sh"   # the Entities PAGES (the grouped layout, 2026-09-13) — the nine classic writers above stay as data producers
+pool_run "$SCRIPT_DIR/reports/month-stats.sh"   # the Analyses-menu Month stats: this / previous month × the nine entities (2026-09-13)
 # (cross-reference.sh and seen-in-server-log.sh moved to bin/analyses/reports/
 # 2026-07 — their pages sit in the Analyses menu; bin/analyses/reports.sh runs
 # them, still writing into the transfer reports dir)

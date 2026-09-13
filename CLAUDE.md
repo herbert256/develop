@@ -1011,7 +1011,14 @@ ARCHITECTURE.md.
 
 `TRANSFER_MENU`/`SERVER_MENU` are built from the orders minus the basenames living in the Analyses
 dropdown. `ANALYSES_MENU` is hand-written, one line per group: Start page · **Coverage & seen** ·
-**Configuration** · **Partners** · **Boxes** · **Errors**. A FOURTH dropdown, **Goodies**
+**Configuration** · **Partners** · **Boxes** · **Errors** · **Month stats** (2026-09-13, user
+request: `bin/transfer/reports/month-stats.sh` → `data/transfer/reports/month-stats/{this,previous}-<entity>.rpt`,
+the nine entities counted over the Files that STARTED in the month of the newest File start
+(this) and the month before (previous) — Total · In · Out · Errors · Auto Retries · Resubmit
+OK / Error · Waiting · Expired, the Entities definitions and attribution; `render_month_stats`
+in the transfer publish renders the 18 pages into `docs/transfer/month-stats/` with two tab
+rows (month, entity), no date filter, help page `month-stats`; listed in `_analyses_groups`,
+the finder's static rows and the sitemap). A FOURTH dropdown, **Goodies**
 (`GOODIES_MENU`, 2026-09-13, user request), is a hand-written SHORT CUT to the best reports —
 Partners - Incoming · Logons (incoming) · Transfer Duration · Failed Subscriptions — the pages
 staying in their own menus and groups; it ships in `topbar-data.js` as `goodies`, both bar

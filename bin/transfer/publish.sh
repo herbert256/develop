@@ -185,6 +185,11 @@ if [ ${#filp[@]} -gt 0 ]; then
     echo "Rendered docs/files/ (${#filp[@]} File page(s))." >&2
 fi
 
+# MONTH STATS (2026-09-13, user request): the 18 {this,previous} × entity
+# pages of month-stats.sh -> docs/transfer/month-stats/ (publish_lib
+# render_month_stats clears the dir itself)
+render_month_stats transfer
+
 # Redirect stubs were REMOVED 2026-07 (no backwards compatibility): the old
 # flat entities/showseen/session/topview-split/direction-action/mode/inout-gap/
 # entity-search/transfer-site URLs are gone — they 404.

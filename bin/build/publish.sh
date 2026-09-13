@@ -1420,6 +1420,7 @@ write_report_finder() {
             [ -n "$sh" ] || continue
             printf 'S\t%s\tAnalyses\t%s\t%s\t%s\t%s\n' "$sh" "$st" "$si" "$sk" "$sv"
         done <<'STATIC'
+transfer/month-stats/this-subscription.html|Month stats|The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired.|month, monthly, this month, previous month, calendar, statistics|
 analyses/use-cases.html|Use cases|The UC flow templates: each use case with its subscriptions and template status.||
 analyses/use-case-definitions.html|Use case definitions|Each use case explained — who connects, which way the file travels, and what triggers it.||
 analyses/use-case-patterns.html|Use case patterns|The accounts grouped by their subscription mix (e.g. UC2 (1) UC4 (1)).||
@@ -1620,6 +1621,9 @@ write_sitemap() {
         printf '<div class="smcard"><h3>Errors <span class="smcount">2</span></h3><ul>\n'
         printf '<li><a href="../analyses/failed.html">Failed Subscriptions</a></li>\n'
         printf '<li><a href="../analyses/failing-reasons.html">Error reasons</a></li>\n'
+        printf '</ul></div>\n'
+        printf '<div class="smcard"><h3>Month stats <span class="smcount">1</span></h3><ul>\n'
+        printf '<li><a href="../transfer/month-stats/this-subscription.html">Month stats</a></li>\n'
         printf '</ul></div>\n'
         printf '</section>\n<section class="smarea sm-dash"><h2>Dashboards</h2>\n'
         # ONE dashboard (2026-07): the per-topic pages folded into the overview

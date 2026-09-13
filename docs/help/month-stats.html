@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Help: Month stats — Cloud Reports</title>
+<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../search/file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../transfer/index.html">Start page</a><a href="../transfer/topview.html">Top view</a><a href="../transfer/entities/subscription-all.html">Entities</a><a href="../transfer/file-journey-patterns.html">Patterns</a><a href="../transfer/activity-per-day.html">Activity over Time</a><a href="../transfer/ranking-subscriptions.html">Volume, Sizes &amp; Files</a><a href="../transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../transfer/duration.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../server/index.html">Start page</a><a href="../server/topview.html">Top view</a><a href="../server/errors-per-day.html">Errors</a><a href="../server/pickups.html">Transfers &amp; Delivery</a><a href="../server/logons-incoming.html">Logons &amp; Connections</a><a href="../server/ssh-security.html">Security</a><a href="../server/platform-health.html">Operations &amp; Capacity</a><a href="../server/transfer-site-missing.html">Routing</a><a href="../server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../analyses/index.html">Start page</a><a href="../transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../analyses/use-cases.html">Configuration</a><a href="../analyses/partner-scorecard.html">Partners</a><a href="../analyses/subscriptions-in-boxes.html">Boxes</a><a href="../analyses/failed.html">Errors</a><a href="../transfer/month-stats/this-subscription.html">Month stats</a></div></div><div class="dd"><span class="ddlabel">Goodies ▾</span><div class="ddm"><a href="../analyses/fe-overview.html">Partners - Incoming</a><a href="../server/logons-incoming.html">Logons (incoming)</a><a href="../transfer/duration.html">Transfer Duration</a><a href="../analyses/failed.html">Failed Subscriptions</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../tools/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Month stats</h1>
+<h2>What it shows</h2>
+<p>One row per name of the chosen entity, counting the Files that <strong>started</strong> in the chosen calendar month. Two tab rows: the month (<strong>This month</strong> = the month of the newest File start in the data, <strong>Previous month</strong> = the one before) and the entity (Subscriptions, Logical, Partners, Accounts, Logins, Hosts, Domains, Applications, BL) &mdash; 18 pages.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Total files</strong> &mdash; Files (one per CoreId) started in the month.</li>
+<li><strong>In Files</strong> / <strong>Out Files</strong> &mdash; by the movement direction; a File with no known movement counts in the total only. A 0 shows blank.</li>
+<li><strong>Errors</strong> &mdash; Files that ended Failed or Expired (red).</li>
+<li><strong>Auto Retries</strong> &mdash; OK Files that carried a failed leg and no resubmitted leg: the platform&rsquo;s own retry delivered them (amber).</li>
+<li><strong>Resubmit OK</strong> / <strong>Resubmit Error</strong> &mdash; every File an operator resubmitted (the log&rsquo;s Resubmitted flag), by its final outcome.</li>
+<li><strong>Waiting</strong> / <strong>Expired</strong> &mdash; the UC2 Files staged but not collected yet, and the ones deleted unclaimed.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Source: the per-CoreId cache <code>_files.tsv</code>, its start date (col 4) picking the month; a File is attributed to each entity exactly as on the <a href="entities.html">Entities</a> pages (see each entity&rsquo;s help page). The total row counts each File once, except for subscriptions, logins and hosts, where it counts (name, File) pairs.</li>
+<li>Only names with at least one File in the month are listed; rows open busiest first. No From/To range: a page is one month.</li>
+<li>An empty data set falls back to the calendar month.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Every name links its detail page; the search box narrows the rows. Sorting, <em>cols</em>, csv: <a href="general.html">Generic help</a>.</li>
+</ul>
+</main>
+</body>
+</html>

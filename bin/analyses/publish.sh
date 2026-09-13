@@ -1749,6 +1749,8 @@ write_analyses_index() {
         printf '<tr><th colspan="2">Errors</th></tr>\n'
         [ -f "$ADIR/failed.html" ] && printf '<tr><td><a href="failed.html">Failed Subscriptions</a></td><td class="desc">Every failing subscription with its evidence &mdash; the newest failed File of each (drilling into its transfer legs and server log), plus the flows failing in the server log only; view buttons switch to per-leg-count and full-history views.</td></tr>\n'
         [ -f "$ADIR/failing-reasons.html" ] && printf '<tr><td><a href="failing-reasons.html">Error reasons</a></td><td class="desc">Every possible Reason of the Failed Subscriptions pages &mdash; how many currently red subscriptions carry it and the newest occurrence; a nonzero row opens the red subscriptions behind it.</td></tr>\n'
+        printf '<tr><th colspan="2">Month stats</th></tr>\n'
+        [ -f "$DOCS/transfer/month-stats/this-subscription.html" ] && printf '<tr><td><a href="../transfer/month-stats/this-subscription.html">Month stats</a></td><td class="desc">The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired.</td></tr>\n'
         printf '</table></div>\n'
         printf '</body>\n</html>\n'
     } > "$out"

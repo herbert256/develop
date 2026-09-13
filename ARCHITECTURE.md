@@ -649,6 +649,18 @@ lifts figures straight from the entity summary `.rpt`s (subscriptions = prefix m
 name match, case aside). Runs after `details.sh` (needs the slugmaps). No Logical/PDA members
 (their Seen figures come from the coverage-TSV union path instead).
 
+### Month stats (Analyses menu, 2026-09-13)
+
+`bin/transfer/reports/month-stats.sh` reuses the Entities attribution (same rules, same nine
+entities, same total-row pair/once rule) but counts only the Files whose START date (`_files.tsv`
+col 4) falls in ONE calendar month: "this" = the month of the newest File start, "previous" = the
+month before. 18 `.rpt` under `data/transfer/reports/month-stats/{this,previous}-<entity>.rpt`
+(`META month` / `META which`), columns Total files · In · Out · Errors · Auto Retries · Resubmit
+OK · Resubmit Error · Waiting · Expired, busiest first. `render_month_stats` (publish_lib, from the
+transfer publish) renders them into `docs/transfer/month-stats/` with two NAV tab rows (the month
+with its yyyy-mm, then the entity) and no From/To filter; help slug `month-stats`; listed in
+`ANALYSES_MENU`, `_analyses_groups`, the analyses catalog, the sitemap and the finder.
+
 ## Per-entity detail pages
 
 `details.sh` → `data/transfer/reports/details/<sub>/<slug>.rpt` →
