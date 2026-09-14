@@ -2118,6 +2118,16 @@
     var m = /[?&]axway_row=([^&]*)/.exec(window.location.search || "");
     if (m) { try { urlRow = decodeURIComponent(m[1].replace(/\+/g, " ")); } catch (e) { urlRow = m[1]; } }
   })();
+  // ?axway_column=LABEL (2026-09-14, user request — the home page's per-day
+  // Error cells into the Entities subscription page): mark that column — the
+  // first header cell reading LABEL (the axway_sort label rule), on the first
+  // table that has one — and scroll it into view. The row twin is axway_row;
+  // the two combine (a row AND a column marked = one cell singled out).
+  var urlCol = null;
+  (function () {
+    var m = /[?&]axway_column=([^&]*)/.exec(window.location.search || "");
+    if (m) { try { urlCol = decodeURIComponent(m[1].replace(/\+/g, " ")); } catch (e) { urlCol = m[1]; } }
+  })();
   // A page whose <body> carries the sort-fresh class (analyses/accounts.html,
   // use-cases.html — cronjobs.html until 2026-09-05) never remembers sorting: every load starts
   // at the generated order.
@@ -2309,6 +2319,37 @@
       if (idx >= 0) { tbl.pagerPage = Math.floor(idx / N) + 1; repage(tbl); }
     }
     if (hit.scrollIntoView) hit.scrollIntoView({ block: "center" });
+  }
+  // ?axway_column=LABEL: find the header cell reading LABEL (the first one, on
+  // the first table that has it), stamp data-colmark on it and on that
+  // column's cell in every data and total row, and scroll it into view
+  // (style.css: side borders down the column, the header outlined). An
+  // ATTRIBUTE, like the hidden columns: the recalc / seenmode className
+  // restores would drop a class. Cells are matched by their built index
+  // (data-ci), so a remembered column order or hidden neighbours do not
+  // matter; the GHEAD banner, spanning message rows, the pager row and drill
+  // subrows are left alone. Runs LAST, right before markUrlRow.
+  function markUrlColumn() {
+    if (!urlCol) return;
+    var tables = document.getElementsByTagName("table"), t, hr = null, ths, i, th = null, tbl = null, ci, rows, r, c;
+    for (t = 0; t < tables.length && !th; t++) {
+      hr = headerRow(tables[t]); if (!hr) continue;
+      ths = hr.cells;
+      for (i = 0; i < ths.length; i++)
+        if (ths[i].textContent.replace(/[▲▼]/g, "").replace(/\s*(csv|cols)$/, "").trim() === urlCol) { th = ths[i]; tbl = tables[t]; break; }
+    }
+    if (!th) return;
+    th.setAttribute("data-colmark", "1");
+    ci = ciOf(th); rows = tbl.rows;
+    for (i = 0; i < rows.length; i++) {
+      r = rows[i];
+      if (r === hr || r.getElementsByTagName("th").length || r.cells.length === 1) continue;
+      if (/coreid-detail|subrow|pagerrow/.test(r.className)) continue;
+      c = cellByCi(r, ci);
+      if (!c && r.cells[ci] && ciOf(r.cells[ci]) === ci) c = r.cells[ci];   // an unstamped (fixed-column) table
+      if (c) c.setAttribute("data-colmark", "1");
+    }
+    if (th.scrollIntoView) th.scrollIntoView({ block: "nearest", inline: "center" });
   }
   function setupPager() {
     var tables = document.getElementsByTagName("table"), t;
@@ -4180,6 +4221,7 @@
     setupSectionTabs();  // detail pages: the fixed h1 + section-tab header (after empty sections are hidden)
     setupStatFilter();   // Subscriptions in boxes: the stat boxes narrow the table
     setupSelFilter();    // coverage partners page: Connection / Movement / Use case selectors
+    markUrlColumn();     // LAST with markUrlRow: the column order it marks and scrolls to must be final
     markUrlRow();        // LAST: the sort/date/pager order it scrolls to must be final
     setupCopyIds();      // after every snapshot: the File Tracking link + the ⧉ on each id must not be captured as cell text
   }
