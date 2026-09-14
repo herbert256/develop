@@ -26,7 +26,7 @@ OUT="$REPORTS_DIR/overview.rpt"
 # ledger (the curated server-only sets and their first-sighting days — see
 # the seen block below).
 XR="$DATA/flow-manager/xref"
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$DATA/server/reports/pesit-slots.tsv" \
+skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$DATA/server/reports/pesit-slots.tsv" "$DATA/server/reports/event-queue-slots.tsv" \
     "$DATA/server/reports/uc1-slots.tsv" "$DATA/server/reports/uc2-slots.tsv" \
     "$DATA/server/reports/uc3-slots.tsv" "$DATA/server/reports/uc4-slots.tsv" \
     "$XR/_subscriptions-partners.tsv" "$XR/_hosts-partners.tsv" \
@@ -662,6 +662,46 @@ if [ -s "$PS" ]; then
     done
 fi
 
+# the EventQueue view (2026-09-14, user request): bin/server/reports/event-queue.sh
+# writes the 30-minute event-queue-slots.tsv sidecar ("date slot lines") —
+# summed here like the PeSIT one (a copy of its block, one value per slot)
+eq1=""; eq2=""; eq4=""; eq6=""; eq12=""; eq24=""
+EQS="$DATA/server/reports/event-queue-slots.tsv"
+if [ -s "$EQS" ]; then
+    eqser=$(awk -F'\t' '
+        function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
+        function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
+        function bump(r, t,   k) { k = r SUBSEP t
+            if (!(r in tmin) || t < tmin[r]) tmin[r] = t
+            if (!(r in tmax) || t > tmax[r]) tmax[r] = t
+            o[k] += $3 }
+        function build(r, spd,   t, k, d, lab, s) {
+            s = ""
+            for (t = tmin[r]; t <= tmax[r]; t++) {
+                k = r SUBSEP t
+                if (spd == 24)     { d = fromjdn(int(t/24)); lab = substr(d,6) sprintf(" %02dh", t%24) }
+                else if (spd == 12) { d = fromjdn(int(t/12)); lab = substr(d,6) sprintf(" %02dh", (t%12)*2) }
+                else if (spd == 6) { d = fromjdn(int(t/6)); lab = substr(d,6) sprintf(" %02dh", (t%6)*4) }
+                else if (spd == 4) { d = fromjdn(int(t/4)); lab = substr(d,6) sprintf(" %02dh", (t%4)*6) }
+                else if (spd == 2) { d = fromjdn(int(t/2)); lab = substr(d,6) sprintf(" %02dh", (t%2)*12) }
+                else               { d = fromjdn(t);        lab = substr(d,6) }
+                s = s (s==""?"":"|") lab ":" o[k]+0 ":" d
+            }
+            print "EQ" r "\t" s
+        }
+        { split($1, p, "-"); j = jdn(p[1]+0, p[2]+0, p[3]+0)
+          bump(1,  j*24 + int($2/2))
+          bump(2,  j*12 + int($2/4))
+          bump(4,  j*6 + int($2/8))
+          bump(6,  j*4 + int($2/12))
+          bump(12, j*2 + int($2/24))
+          bump(24, j) }
+        END { if (6 in tmax) { build(1, 24); build(2, 12); build(4, 6); build(6, 4); build(12, 2); build(24, 1) } }' "$EQS")
+    for r in 1 2 4 6 12 24; do
+        eval "eq$r=\$(printf '%s\n' \"\$eqser\" | awk -F'\t' -v k=EQ\$r '\$1==k{print \$2}')"
+    done
+fi
+
 # ---- the KPI daily series ---------------------------------------------------
 # One K line per calendar day (K⇥YYYYMMDD⇥files⇥failed⇥volume⇥records⇥errors):
 # the five KPI cards follow the From/To range client-side (report.js
@@ -857,6 +897,7 @@ fi
                 "$u" "$u" "$u" "$w" "$u" "$k" "$s6" "$u" "60:$s1" "120:$s2" "240:$s4" "720:$s12" "1440:$s24"
         done
         [ -n "$pes6" ] && printf 'CARDALT\tPeSIT\tPeSIT problems\tST %s CFT (red) vs CFT %s ST (purple) problem lines on the CFT link\t../server/capacity-pesit-per-day.html\tspan2\tslots\tpesit\t%s\t../day/{}.html?axway_hero=PeSIT\t%s\t%s\t%s\t%s\t%s\n' "$(printf '\342\206\222')" "$(printf '\342\206\222')" "$pes6" "60:$pes1" "120:$pes2" "240:$pes4" "720:$pes12" "1440:$pes24"
+        [ -n "$eq6" ] && printf 'CARDALT\tEventQueue\tEventQueue\t[Pesit Default] "Unable to submit event AgentEvent" server-log lines per slot\t../server/event-queue.html\tspan2\tslots\teventq\t%s\t../day/{}.html?axway_hero=EventQueue\t%s\t%s\t%s\t%s\t%s\n' "$eq6" "60:$eq1" "120:$eq2" "240:$eq4" "720:$eq12" "1440:$eq24"
     fi
     [ -n "$tops" ] && printf '%s\n' "$tops"
     [ -n "$kpid" ] && printf '%s\n' "$kpid"

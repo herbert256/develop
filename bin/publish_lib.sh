@@ -288,7 +288,7 @@ CUR_DATES=""
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
 transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files failed-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-trend account-sharing twins)
-server_order=(topview errors failure-flows io-errors could-not-send publish-failed post-client-action pickups uc-status uc2-visits polling went-kaput site-failures logons connections ssh-security platform-health capacity deploy-errors transfer-site-missing no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
+server_order=(topview errors failure-flows io-errors could-not-send publish-failed post-client-action pickups uc-status uc2-visits polling went-kaput site-failures logons connections ssh-security platform-health capacity event-queue deploy-errors transfer-site-missing no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
 
 # ---- the analyses-housed area reports ---------------------------------------
 # FOUR reports whose DATA belongs to the transfer / server areas — they read
@@ -415,7 +415,7 @@ group_members() {
         srv-transfers)       echo "pickups" ;;   # transfer-outcomes + file-freshness went with the dropped JSON bookend lines (2026-08)
         srv-connections)     echo "logons connections" ;;        # 2026-07 merges (logons leads since 2026-08); site-failures is boxes-only
         srv-security)        echo "ssh-security" ;;              # 2026-07: ssh-crypto + ssh-sessions merged
-        srv-ops)             echo "platform-health capacity" ;;  # 2026-07: the seven ops reports merged into two
+        srv-ops)             echo "platform-health capacity event-queue" ;;  # 2026-07: the seven ops reports merged into two
         srv-routing)         echo "transfer-site-missing" ;;   # advanced-routing REMOVED 2026-08 (its AR0011/76/77 lines are noise-filtered); remote-poll folded into UC status / UC3 2026-09-05; deploy-errors/no-remote-dir/no-remote-files are boxes-only
         srv-missing)         echo "missing-entities" ;;          # 2026-07: the five unknown-* merged (one script all along)
     esac
@@ -437,7 +437,7 @@ group_of() {   # $1 area (transfer|server)  $2 report basename -> group id (empt
         pickups) echo "srv-transfers" ;;
         connections|logons) echo "srv-connections" ;;
         ssh-security) echo "srv-security" ;;
-        platform-health|capacity) echo "srv-ops" ;;
+        platform-health|capacity|event-queue) echo "srv-ops" ;;
         transfer-site-missing)  echo "srv-routing" ;;
         missing-entities) echo "srv-missing" ;;
         *)                                echo "" ;;
@@ -482,7 +482,7 @@ group_desc() {
         srv-transfers)       echo "The server's own view of the deliveries: which staged files the partners actually came to collect, and when." ;;
         srv-connections)     echo "The SSH logon screening (incoming funnel + outbound auth failures), successful authentication activity per account and source IP, the inbound connection volume per protocol/account/address, and connection diagnostics." ;;
         srv-security)        echo "The negotiated cipher/crypto posture with weak algorithms flagged, protocol and credential hygiene signals, and session lifecycle problems." ;;
-        srv-ops)             echo "Scheduler overruns, PeSIT protocol activity and link problems, capacity and the retention sweeps, daemon/cluster health and stuck internal events." ;;
+        srv-ops)             echo "Scheduler overruns, PeSIT protocol activity and link problems, capacity and the retention sweeps, daemon/cluster health, stuck internal events and the PeSIT EventQueue." ;;
         srv-routing)         echo "The endpoints running transfers with no transfer site in their environment (remote-poll effectiveness moved to UC status / UC3, 2026-09-05)." ;;
         srv-missing)         echo "Entities that appear in the server messages but are absent from the transfer logs — subscriptions, accounts, IPs and logins." ;;
     esac
@@ -504,7 +504,7 @@ member_label() {   # row-1 tab text for a grouped report
         cleanup-backlog) echo "Cleanup backlog" ;;
         errors) echo "Errors" ;; connections) echo "Connections" ;; logons) echo "Logons" ;;
         ssh-security) echo "SSH security" ;; platform-health) echo "Platform health" ;;
-        capacity) echo "Capacity & sessions" ;; missing-entities) echo "Missing entities" ;;
+        capacity) echo "Capacity & sessions" ;; event-queue) echo "EventQueue" ;; missing-entities) echo "Missing entities" ;;
         uc-status) echo "UC status" ;;
         anomalies) echo "Anomalies" ;;
         account) echo "Accounts" ;; login) echo "Logins" ;; subscription) echo "Subscriptions" ;;

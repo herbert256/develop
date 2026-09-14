@@ -67,6 +67,7 @@ ANOM="$DATA/transfer/reports/anomalies.rpt"    # ROW: 2 = Date, in BOTH tables (
 GTR="$DATA/transfer/reports/from-green-to-red.rpt"   # ROW: 4 = "Went red on" date+time (per-day PROBLEM link)
 ORED="$DATA/transfer/reports/only-red.rpt"           # ROW: 6 = "First failure" date+time (per-day PROBLEM link)
 PSLOTS="$DATA/server/reports/pesit-slots.tsv"   # pesit.sh's 30-min direction split (date slot out in) — the PeSIT hero view
+EQSLOTS="$DATA/server/reports/event-queue-slots.tsv"   # event-queue.sh's 30-min line counts (date slot lines) — the EventQueue hero view (2026-09-14)
 SUBPF="$DATA/flow-manager/xref/_subscriptions-partners.tsv"   # subscription -> partner(s), for the Top-5 partner UNION
 
 # Freshness: this writer has no area lib to borrow skip_if_fresh from, so the
@@ -77,7 +78,7 @@ SUBPF="$DATA/flow-manager/xref/_subscriptions-partners.tsv"   # subscription -> 
 oldest_rpt=$(ls -tr "$RPTDIR"/*.rpt 2>/dev/null | head -1 || true)
 if [ -n "$oldest_rpt" ]; then
     stale=0
-    for dep in "${BASH_SOURCE[0]}" "$TF" "$TP" "$TT" "$SV" "$SP" "$SLF" "$NRD" "$NRF" "$UC3" "$ANOM" "$GTR" "$ORED" "$PSLOTS" "$SUBPF"; do
+    for dep in "${BASH_SOURCE[0]}" "$TF" "$TP" "$TT" "$SV" "$SP" "$SLF" "$NRD" "$NRF" "$UC3" "$ANOM" "$GTR" "$ORED" "$PSLOTS" "$EQSLOTS" "$SUBPF"; do
         if [ -f "$dep" ] && [ "$dep" -nt "$oldest_rpt" ]; then stale=1; break; fi
     done
     if [ "$stale" = 0 ]; then
@@ -139,7 +140,7 @@ sdays=""
 # transfer problem list, the hero card + its alternates and the facts.
 # ---------------------------------------------------------------------------
 if [ -f "$TF" ] && [ -n "$tdays" ]; then
-awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v PS="$PSLOTS" \
+awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v PS="$PSLOTS" -v EQF="$EQSLOTS" \
     -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SUBPF="$SUBPF" '
     function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
     function humandur(ms,   s,m,h){ ms+=0; if(ms<1000)return int(ms) "ms"; s=int(ms/1000); if(s<60)return s "s"; m=int(s/60); s=s%60; if(m<60)return m "m " s "s"; h=int(m/60); m=m%60; return h "h " m "m" }
@@ -206,6 +207,8 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (np2 >= 2 && sz[1] != "" && sz[2] != "") SUBP[toupper(sz[1])] = SUBP[toupper(sz[1])] US sz[2] }
         close(SUBPF)
         if (PS != "") { while ((getline pl < PS) > 0) { n = split(pl, pz, "\t"); if (n >= 4) { PO[pz[1], pz[2]+0] = pz[3]+0; PI[pz[1], pz[2]+0] = pz[4]+0 } } close(PS) }
+        # the EventQueue 30-min sidecar (event-queue.sh, 2026-09-14) — missing = all zeros
+        if (EQF != "") { while ((getline el < EQF) > 0) { n = split(el, ez, "\t"); if (n >= 3) EQC[ez[1], ez[2]+0] = ez[3]+0 } close(EQF) }
         dcload(gtrc, GTRC); dcload(oredc, OREDC); dcload(anomc, ANOMC) }
     FNR == 1 { fno++ }
     fno == 1 {   # _files.tsv
@@ -407,7 +410,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             for (ri = 1; ri <= 3; ri++) {
                 rr = (ri == 1) ? 15 : (ri == 2) ? 30 : 60
                 nsl = 1440 / rr
-                sdur = ""; scnt = ""; srate = ""; svol = ""; spes = ""; serr = ""
+                sdur = ""; scnt = ""; srate = ""; svol = ""; spes = ""; serr = ""; seqq = ""
                 for (s = 0; s < nsl; s++) {
                     # NO colon in the label — ":" is the slots DATA field separator
                     lab = sprintf("%02dh%02d", int(s * rr / 60), (s * rr) % 60); sep = (s ? "|" : "")
@@ -429,12 +432,15 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
                     else                srate = srate sep lab "::" d
                     svol = svol sep lab ":" (SVV[kk] + 0) ":" d
                     serr = serr sep lab ":" (SE[kk] + 0) ":" d
+                    # EventQueue: a 30-minute sidecar like PeSIT — 15 min skipped, 60 min sums the half hours
+                    if (rr == 30)      seqq = seqq sep lab ":" (EQC[d, s] + 0) ":" d
+                    else if (rr == 60) seqq = seqq sep lab ":" (EQC[d, s*2] + EQC[d, s*2+1] + 0) ":" d
                     # PeSIT: the sidecar is 30-minute, so 15 min is skipped and
                     # 60 min sums the two half hours
                     if (rr == 30)      spes = spes sep lab ":" (PO[d, s] + 0) ":" (PI[d, s] + 0) ":" d
                     else if (rr == 60) spes = spes sep lab ":" (PO[d, s*2] + PO[d, s*2+1] + 0) ":" (PI[d, s*2] + PI[d, s*2+1] + 0) ":" d
                 }
-                DURS[rr] = sdur; CNTS[rr] = scnt; RATES[rr] = srate; VOLS[rr] = svol; PESS[rr] = spes; ERRS[rr] = serr
+                DURS[rr] = sdur; CNTS[rr] = scnt; RATES[rr] = srate; VOLS[rr] = svol; PESS[rr] = spes; ERRS[rr] = serr; EQSS[rr] = seqq
             }
             printf "CARD\tFile duration percentiles per slot\t%s · P50 dark green, P90 orange, P98 dark red — each band tops out at that percentile of the OK File durations in that slot\t../transfer/duration.html" q "\tspan2\tslots\tdur\t%s\t\t15:%s\t60:%s\n", d, DURS[30], DURS[15], DURS[60] >> out
             # Files processed is the ONE day card that fills a3 (the plot link):
@@ -472,6 +478,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
                 }
             }
             if (issrv[d]) printf "CARDALT\tPeSIT\tPeSIT problems per slot\t%s · ST \342\206\222 CFT (red) vs CFT \342\206\222 ST (purple) problem lines on the CFT link\t../server/capacity-pesit-per-day.html" q "\tspan2\tslots\tpesit\t%s\t\t\t60:%s\n", d, PESS[30], PESS[60] >> out
+            if (issrv[d]) printf "CARDALT\tEventQueue\tEventQueue lines per slot\t%s · [Pesit Default] Unable to submit event AgentEvent server-log lines per slot\t../server/event-queue.html" q "\tspan2\tslots\teventq\t%s\t\t\t60:%s\n", d, EQSS[30], EQSS[60] >> out
             close(out)
         }
     }

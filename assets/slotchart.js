@@ -140,6 +140,7 @@
     // who dialled: the partner's client, or us
     if (kind === "conns") return { ns: 2, stack: 1, col: [CB, CBL], name: ["Partner dialled in", "We dialled out"], empty: "no data", fmt: hn };
     if (kind === "errs") return { ns: 1, col: [CR], name: ["Transfer errors"], empty: "no data", fmt: hn };
+    if (kind === "eventq") return { ns: 1, col: [CO], name: ["EventQueue lines"], empty: "no data", fmt: hn };   // [Pesit Default] Unable to submit event AgentEvent (2026-09-14)
     return { ns: 1, col: [CR], name: ["Error % Files"], empty: "no Files in this slot", fmt: function (x) { return (+x).toFixed(1) + "%"; } };
   }
 
@@ -198,7 +199,7 @@
       // plot to the same rounded top; the log-spaced ticks round the same way
       // below. (rate is a percentage and bytes are humanised, so both keep
       // their decimals; dur has its own fixed axis.)
-      var whole = kind === "seen" || kind === "count" || kind === "errs" || kind === "pesit" || K.stack;
+      var whole = kind === "seen" || kind === "count" || kind === "errs" || kind === "eventq" || kind === "pesit" || K.stack;
       if (whole) mx = Math.ceil(mx / 4) * 4;
     }
     var LOG = (scale === "log" && kind !== "dur");

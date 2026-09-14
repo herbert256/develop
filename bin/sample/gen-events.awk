@@ -561,6 +561,15 @@ function env_ambient(   ci, jd, base, i, n, k, sid, lst) {
             S(base + 41000000, "I", "SSHD", "", "Stopping SSH server with name Ssh Default.")
             S(base + 41090000, "I", "SSHD", "", "Starting SSH server with name Ssh Default.")
         }
+        # the EventQueue report (2026-09-14, user request): "[Pesit Default]
+        # Unable to submit event AgentEvent" bursts every 9th calendar day and
+        # a heavy one on the storm day — DETERMINISTIC times (no rint/sesshex
+        # draw), so the rest of the estate stays byte-identical
+        if (jd % 9 == 2 || CT[ci] ~ /storm/) {
+            n = (CT[ci] ~ /storm/) ? 40 : 3 + (jd % 4) * 2
+            for (i = 0; i < n; i++)
+                S(base + 50400000 + ((i * 97 + jd * 13) % 120) * 60000 + i * 1000, "W", "PESITD", "", "[Pesit Default] Unable to submit event AgentEvent{type=TRANSFER_PROGRESS} to the event queue: queue is full")
+        }
         # the PeSIT ceiling episode on the storm day
         if (CT[ci] ~ /storm/) {
             n = 25 + rint(30)
