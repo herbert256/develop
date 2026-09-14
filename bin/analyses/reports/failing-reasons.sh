@@ -98,7 +98,11 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen=
         printf "KEYWORDS\terror,reason,cause,failed,failing,errors,expired,count,files,vocabulary,classifier\n" > f
         # a snapshot per reason, so no date semantics: nofilter keeps the
         # From/To machinery off this table
-        printf "TABLE\t\tnofilter\tnosearch\trowlink\n" > f
+        # sort=2:-1 + totaltop (2026-09-14, user request): the default order is
+        # Last (the newest occurrence) descending — a reason with nothing
+        # counted has no Last and sorts to the bottom — and the Total row sits
+        # pinned right under the header (report.js re-appends it first)
+        printf "TABLE\t\tnofilter\tnosearch\trowlink\tsort=2:-1\ttotaltop\n" > f
         printf "HEAD\tReason\tCount\tLast\n" > f
         printf "KIND\ttext\tnum\ttext\n" > f
         for (i = 1; i <= nr; i++) {

@@ -751,6 +751,8 @@ done
 frt() { awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" { c = $3; sub(/^@\{[^}]*\}/, "", c); n += c + 0 } END { print n + 0 }' "$1" 2>/dev/null; }
 n=$(frt data/analyses/reports/failing-reasons.rpt); en=$(rpt_rows data/transfer/reports/failed-files.rpt)
 check $([ "${n:-x}" = "${en:-y}" ] && [ "${en:-0}" -gt 0 ] && echo 0 || echo 1) "failing-reasons counts ${n:-?}, failed-files.rpt lists ${en:-?}"
+t=$(grep -m1 $'^TABLE\t' data/analyses/reports/failing-reasons.rpt 2>/dev/null)
+check $(printf '%s' "$t" | grep -q 'sort=2:-1' && printf '%s' "$t" | grep -q 'totaltop' && echo 0 || echo 1) "failing-reasons main table lacks the Last-descending default sort or the pinned total (TABLE: $t)"
 dn=$(cat data/analyses/reports/failing-reasons-*.rpt 2>/dev/null | grep -c $'^ROW\t' || true)
 check $([ "${dn:-0}" = "${en:-y}" ] && echo 0 || echo 1) "failing-reasons drill pages hold ${dn:-0} row(s), expected every one of the ${en:-?} Files in error"
 n=$(ls docs/analyses 2>/dev/null | awk '/^failing-reasons-(history|errors)/ { n++ } END { print n + 0 }')
