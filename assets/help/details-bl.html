@@ -29,6 +29,7 @@
 </ul>
 <h2>Rules</h2>
 <ul>
+<li>The <strong>Subscriptions</strong> table&rsquo;s nonzero <strong>Error</strong> count opens <a href="failed-files.html">Failed files</a> for that subscription at the full date range: every failed File of the subscription, so a page that sees only part of its traffic can list more.</li>
 <li>A file belongs to a BL through its <strong>subscription</strong>: every BL tag of the File&rsquo;s subscription counts it.</li>
 <li>Every count is in <strong>Files</strong>: one per logical transfer, split by its delivered (final-row) outcome, volume counted once per file.</li>
 <li>The subscription / account / login / remote host tables are cross-referenced with the FlowManager configuration: every name configured for this tag is listed, seen or not &mdash; <strong>green</strong> rows have logged data, <strong>red</strong> rows are configured but never seen; each links its own detail page.</li>

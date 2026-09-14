@@ -811,6 +811,15 @@ read -r nz nl <<< "$(awk -F'\t' '$1 == "TABLE" { t = ($2 == "Activity per day") 
 check $([ "${nz:-0}" -gt 0 ] && [ "$nz" = "$nl" ] && echo 0 || echo 1) "UC1_FIN_BILLING_GLOBEX Activity per day: ${nz:-?} nonzero Error cell(s), ${nl:-?} opening failed-files for their day and subscription"
 check $([ "$(grep -c 'href="transfer/failed-files.html?axway_date=[0-9-]*&amp;axway_search="' docs/index.html 2>/dev/null || true)" -gt 0 ] && echo 0 || echo 1) "home Error cells do not clear the remembered failed-files search (&axway_search=)"
 
+# the detail pages' Subscriptions table (2026-09-15, user request): every nonzero Error cell opens
+# transfer/failed-files.html at the full range for that row's subscription (quoted: a whole-cell search)
+read -r nz nl <<< "$(awk -F'\t' 'FNR == 1 { t = 0 } $1 == "TABLE" { t = ($2 == "Subscriptions") }
+    t && $1 == "HEAD" { ec = 0; ic = 0; oc = 0; for (i = 2; i <= NF; i++) { if ($i == "Error") ec = i; if ($i == "In - Error") ic = i; if ($i == "Out - Error") oc = i } }
+    t && $1 == "ROW" { nm = $2; sub(/^@\{[^}]*\}/, "", nm); n = split((ec ? ec : ic " " oc), C, " ")
+      for (j = 1; j <= n; j++) { if (C[j] + 0 == 0) continue; v = $(C[j]); l = (index(v, "@{href=../../transfer/failed-files.html?axway_date=all&axway_search=\"" nm "\"}") == 1); sub(/^@\{[^}]*\}/, "", v); if (v + 0 > 0) { nz++; if (l) nl++ } } }
+    END { print nz + 0, nl + 0 }' data/transfer/reports/details/*/*.rpt 2>/dev/null)"
+check $([ "${nz:-0}" -gt 0 ] && [ "$nz" = "$nl" ] && echo 0 || echo 1) "detail Subscriptions tables: ${nz:-?} nonzero Error cell(s), ${nl:-?} opening failed-files for their own subscription"
+
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2
 else

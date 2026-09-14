@@ -44,6 +44,7 @@
 </ul>
 <h2>Rules</h2>
 <ul>
+<li>The <strong>Subscriptions</strong> table&rsquo;s nonzero <strong>Error</strong> count opens <a href="failed-files.html">Failed files</a> for that subscription at the full date range: every failed File of the subscription, so a page that sees only part of its traffic can list more.</li>
 <li>Every count is in <strong>Files</strong>, as distinct (login, CoreId) pairs: a File touching several logins counts once on each login&rsquo;s page.</li>
 <li>The account / subscription / remote host tables are cross-referenced with the FlowManager configuration: every partner configured for this login is listed &mdash; <strong>green</strong> = logged data; <strong>red</strong> = configured, never seen with it (no counts, a link to its never-seen page). Partners logged but not configured are listed too (green).</li>
 <li>Narrowing the date filter re-tints: a partner without activity in the range turns red instead of being hidden.</li>

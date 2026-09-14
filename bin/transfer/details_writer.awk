@@ -609,6 +609,19 @@ function ffcell(v, d) {
     # subscription's link searches the SHOWN name, as the page displays it
     return "@{href=../../transfer/failed-files.html?axway_date=" d "&axway_search=\"" uenc(pend_e) "\"}" v
 }
+# the SUBSCRIPTIONS table's Error cells on every detail page (2026-09-15, user
+# request): a nonzero count opens transfer/failed-files.html at the FULL range
+# (?axway_date=all: the detail pages have no date filter) searching that row's
+# subscription, quoted like ffcell. The Failed files list holds every failed
+# File of the subscription, so a page that sees only part of its traffic (a
+# host serving one of several endpoints) can list more Files than the cell
+# counts. Only the Subscriptions table (sec 2): the Accounts table (sec 2.8)
+# shares the row code and is left alone.
+function ffsub(v, nm) {
+    if (sec != "2" || v + 0 <= 0) return v
+    sub(/^@\{[^}]*\}/, "", nm)
+    return "@{href=../../transfer/failed-files.html?axway_date=all&axway_search=\"" uenc(nm) "\"}" v
+}
 function start_table(s,   WEH, WEK) {
     WEH = ""; WEK = ""
     if (HAS_WE == 1) { WEH = "\tWaiting\tExpired"; WEK = "\tnumwarn\tnumfailed" }
@@ -1538,11 +1551,11 @@ NF < 4 { next }
             if (cf == "-") cf = ""
             if (cp == "-") cp = ""
             if (BOTHMODE == 1) {
-                rb = sprintf("ROW\t%s%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t@data:seen=1\t@data:coreids-failed=%s\t@data:coreids-processed=%s%s", $5, extra, $6, ($10 != "" ? $10 : 0), ($11 != "" ? $11 : 0), ($12 != "" ? $12 : 0), ($13 != "" ? $13 : 0), wecells, $9, cf, cp, resm)
-                rp = sprintf("ROW\t%s%s\t%s\t%s\t%s%s\t%s\t@data:seen=1\t@data:coreids-failed=%s\t@data:coreids-processed=%s%s", $5, extra, $6, $7, $8, wecells, $9, cf, cp, resm)
+                rb = sprintf("ROW\t%s%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t@data:seen=1\t@data:coreids-failed=%s\t@data:coreids-processed=%s%s", $5, extra, $6, ffsub(($10 != "" ? $10 : 0), $5), ($11 != "" ? $11 : 0), ffsub(($12 != "" ? $12 : 0), $5), ($13 != "" ? $13 : 0), wecells, $9, cf, cp, resm)
+                rp = sprintf("ROW\t%s%s\t%s\t%s\t%s%s\t%s\t@data:seen=1\t@data:coreids-failed=%s\t@data:coreids-processed=%s%s", $5, extra, $6, ffsub($7, $5), $8, wecells, $9, cf, cp, resm)
                 push_row(rb, rp, ($10 + 0) + ($11 + 0), ($12 + 0) + ($13 + 0))
             } else {
-                emitl(sprintf("ROW\t%s%s\t%s\t%s\t%s%s\t%s\t@data:seen=1\t@data:coreids-failed=%s\t@data:coreids-processed=%s%s", $5, extra, $6, $7, $8, wecells, $9, cf, cp, resm))
+                emitl(sprintf("ROW\t%s%s\t%s\t%s\t%s%s\t%s\t@data:seen=1\t@data:coreids-failed=%s\t@data:coreids-processed=%s%s", $5, extra, $6, ffsub($7, $5), $8, wecells, $9, cf, cp, resm))
             }
         }
     }
