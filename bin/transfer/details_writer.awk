@@ -595,6 +595,20 @@ function time_table(title, lbl, mods) {
         emitl("KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum")
     }
 }
+# the Activity per day Error cell of a SUBSCRIPTION page (2026-09-15, user
+# request): a nonzero count opens transfer/failed-files.html narrowed to that
+# day (?axway_date) and to this subscription (?axway_search with the name in
+# double quotes: report.js matches a quoted term against the WHOLE cell). The
+# failed-files rows per subscription and start day equal this count. Other
+# entity pages and 0 cells are left as they were.
+function ffcell(v, d) {
+    if (pend_t != "SITE" || v + 0 <= 0) return v
+    # LITERAL quotes, not %22: the renderer escapes them to &quot;, and the
+    # display-rename sweep only rewrites a name with a non-name character on
+    # both sides — ";" qualifies, the "2" of %22 does not — so a renamed
+    # subscription's link searches the SHOWN name, as the page displays it
+    return "@{href=../../transfer/failed-files.html?axway_date=" d "&axway_search=\"" uenc(pend_e) "\"}" v
+}
 function start_table(s,   WEH, WEK) {
     WEH = ""; WEK = ""
     if (HAS_WE == 1) { WEH = "\tWaiting\tExpired"; WEK = "\tnumwarn\tnumfailed" }
@@ -1423,13 +1437,13 @@ NF < 4 { next }
         if (dcnt > busy_cnt) { busy_cnt = dcnt; busy_day = $5 }
         ddur = ($15 != "") ? $15 : "-"
         if (BOTHMODE == 1) {
-            rb = sprintf("ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, dcnt, ($11 != "" ? $11 : 0), ($12 != "" ? $12 : 0), ($13 != "" ? $13 : 0), ($14 != "" ? $14 : 0), $8, ddur, ccf, ccp)
-            rp = sprintf("ROW\t%s\t%d\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, dcnt, $6, $7, $8, ddur, ccf, ccp)
+            rb = sprintf("ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, dcnt, ffcell(($11 != "" ? $11 : 0), $5), ($12 != "" ? $12 : 0), ffcell(($13 != "" ? $13 : 0), $5), ($14 != "" ? $14 : 0), $8, ddur, ccf, ccp)
+            rp = sprintf("ROW\t%s\t%d\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, dcnt, ffcell($6, $5), $7, $8, ddur, ccf, ccp)
             push_row(rb, rp, ($11 + 0) + ($12 + 0), ($13 + 0) + ($14 + 0))
         } else if (pend_t == "SITE") {
             # Recovered between Error and OK (blank on 0, like the topview)
             tot_rv += $18 + 0
-            emitl(sprintf("ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, dcnt, $6, ($18 + 0 > 0 ? $18 : ""), $7, $8, ddur, ccf, ccp))
+            emitl(sprintf("ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, dcnt, ffcell($6, $5), ($18 + 0 > 0 ? $18 : ""), $7, $8, ddur, ccf, ccp))
         } else {
             emitl(sprintf("ROW\t%s\t%d\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, dcnt, $6, $7, $8, ddur, ccf, ccp))
         }

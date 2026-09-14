@@ -804,6 +804,13 @@ h=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "HEAD" { print; exit }' "$SP"
 check $([ "$h" = $'HEAD\tSubscription\tDate/time\tProtocol\tFirst inbound\tLast outbound\tLegs\tOutcome\tCoreId\tFilename' ] && echo 0 || echo 1) "same-protocol Files HEAD is '$h'"
 check $([ -f docs/transfer/same-protocol.html ] && [ -f docs/help/same-protocol.html ] && echo 0 || echo 1) "docs/transfer/same-protocol.html or its help page is missing"
 
+# the subscription pages' Activity per day Error cells (2026-09-15, user request): every nonzero Error cell
+# opens transfer/failed-files.html for that day and that subscription (the name quoted: a whole-cell search)
+SD="data/transfer/reports/details/subscriptions/uc1-fin-billing-globex.rpt"
+read -r nz nl <<< "$(awk -F'\t' '$1 == "TABLE" { t = ($2 == "Activity per day") } t && $1 == "ROW" { v = $4; l = (index(v, "@{href=../../transfer/failed-files.html?axway_date=" $2 "&axway_search=\"UC1_FIN_BILLING_GLOBEX\"}") == 1); sub(/^@\{[^}]*\}/, "", v); if (v + 0 > 0) nz++; if (l) nl++ } END { print nz + 0, nl + 0 }' "$SD" 2>/dev/null)"
+check $([ "${nz:-0}" -gt 0 ] && [ "$nz" = "$nl" ] && echo 0 || echo 1) "UC1_FIN_BILLING_GLOBEX Activity per day: ${nz:-?} nonzero Error cell(s), ${nl:-?} opening failed-files for their day and subscription"
+check $([ "$(grep -c 'href="transfer/failed-files.html?axway_date=[0-9-]*&amp;axway_search="' docs/index.html 2>/dev/null || true)" -gt 0 ] && echo 0 || echo 1) "home Error cells do not clear the remembered failed-files search (&axway_search=)"
+
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2
 else

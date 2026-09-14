@@ -1320,7 +1320,7 @@
   // configuration just narrows what a search may match.
   // The search-syntax hint shown below the search box on Entity Search AND on
   // the ordinary report pages (setupSearch) — one source of truth.
-  var SEARCH_HINT = "Wildcards: ? = 1 character, * = 0..n characters. A space means AND; operators: and / or / not";
+  var SEARCH_HINT = "Wildcards: ? = 1 character, * = 0..n characters. \"…\" = the whole cell. A space means AND; operators: and / or / not";
   function setupSearchConfig() {
     var table = document.querySelector("table[data-esearch]");
     if (!table) return;
@@ -2780,6 +2780,14 @@
   function foldSep(s) { return s.replace(/_/g, "-"); }
 
   function makeMatcher(q) {
+    // a "QUOTED" term (2026-09-15, user request — the subscription pages'
+    // Activity per day Error cells open Failed files with the subscription in
+    // quotes): the WHOLE cell must equal the text between the quotes, so
+    // "UC1_FIN_BILLING_GLOBEX" no longer also matches …GLOBEXX; no wildcards
+    if (q.length > 2 && q.charAt(0) === '"' && q.charAt(q.length - 1) === '"') {
+      var exact = q.slice(1, -1);
+      return function (text) { return text.replace(/^\s+|\s+$/g, "") === exact; };
+    }
     if (q.indexOf("*") < 0 && q.indexOf("?") < 0)
       return function (text) { return text.indexOf(q) >= 0; };
     // Escape every regex metacharacter EXCEPT * and ?, then translate those two.
@@ -3137,7 +3145,7 @@
       (function () {
         var box = document.createElement("input");
         box.type = "text"; box.className = "search"; box.placeholder = "Search this page…";
-        box.title = "Filters every table on this page. Wildcards: ? = one character, * = any run (e.g. FE?????, ab*cd). Keywords: and, or (e.g. RABO or SAP, ABC and XYZ)";
+        box.title = "Filters every table on this page. Wildcards: ? = one character, * = any run (e.g. FE?????, ab*cd). Keywords: and, or (e.g. RABO or SAP, ABC and XYZ). Quotes match a whole cell (e.g. \"UC1_FIN_BILLING\")";
         var clear = document.createElement("span");
         clear.className = "search-clear"; clear.textContent = "×"; clear.title = "Clear search";
         function refresh() {                       // reflect the box: toggle ×, persist, sync the URL, filter

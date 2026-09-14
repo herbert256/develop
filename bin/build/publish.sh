@@ -1097,7 +1097,7 @@ write_home_block() {
                     # (Failed or Expired, on the start day), with reason,
                     # CoreId and file name; the Entities view is the fallback
                     if [ -f "docs/transfer/failed-files.html" ]; then
-                        printf '<td class="num failed"><a href="transfer/failed-files.html?axway_date=%s">%s</a></td>' "$d" "$ESC"
+                        printf '<td class="num failed"><a href="transfer/failed-files.html?axway_date=%s&amp;axway_search=">%s</a></td>' "$d" "$ESC"
                     elif [ -f "docs/transfer/entities/subscription-all.html" ]; then
                         printf '<td class="num failed"><a href="transfer/entities/subscription-all.html?axway_date=%s&amp;axway_sort=Error:-1&amp;axway_column=Error">%s</a></td>' "$d" "$ESC"
                     else printf '<td class="num failed">%s</td>' "$ESC"; fi; fi
@@ -1156,8 +1156,10 @@ write_home_block() {
         if [ "$frvsum" -gt 0 ]; then esc "$(dotify "$frvsum")"; frvt=$ESC
             # the whole-window Recovered total opens the report unnarrowed
             [ -f "docs/transfer/recovered-files.html" ] && frvt="<a href=\"transfer/recovered-files.html\">$ESC</a>"; fi
-        # the whole-window Error total opens the Failed files list unnarrowed (2026-09-14)
-        if [ "$fersum" -gt 0 ] && [ -f "docs/transfer/failed-files.html" ]; then fert="<a href=\"transfer/failed-files.html\">$fert</a>"; fi
+        # the whole-window Error total opens the Failed files list unnarrowed (2026-09-14);
+        # the empty ?axway_search= on both home links (2026-09-15) clears a search the
+        # subscription pages' Error cells left remembered for the page
+        if [ "$fersum" -gt 0 ] && [ -f "docs/transfer/failed-files.html" ]; then fert="<a href=\"transfer/failed-files.html?axway_search=\">$fert</a>"; fi
         # the Duration total = the report's own overall percentiles (a
         # percentile cannot be summed); empty cells when the report is absent
         [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'   # five: p50 p75 p90 p95 p99
