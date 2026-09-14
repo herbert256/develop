@@ -287,7 +287,7 @@ CUR_DATES=""
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files failed-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-trend account-sharing twins)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out uc4-to-uc2 activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files failed-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-trend account-sharing twins)
 server_order=(topview errors failure-flows io-errors could-not-send publish-failed post-client-action pickups uc-status uc2-visits polling went-kaput site-failures logons connections ssh-security platform-health capacity event-queue deploy-errors transfer-site-missing no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -406,7 +406,7 @@ group_members() {
         account-login-site)  echo "subscription logical partner account login remote-host domain application bl" ;;
         volume-files)        echo "ranking volume files top-transfers route-throughput size-profile" ;;   # Ranking FIRST (2026-09-13, user request) — it leads the group: the menu and index land on it   # ranking retired 2026-07; 2026-08: + route-throughput/size-profile
         failures)            echo "failure-rate episodes retries recovered recovered-files failed-files failure-heatmap" ;;   # from-green-to-red/only-red/waiting/expired/pirates/went-quiet are boxes-only (BOXES_ONLY_REPORTS); 2026-08: + recovered (the good-news mirror) + recovered-files (the per-File Recovered analysis)
-        flow-shape)          echo "file-journey file-in-file-out" ;;   # 2026-07: patterns/arrived-left/legs-count/protocol-journey merged into file-journey; attempts/resubmissions into retries
+        flow-shape)          echo "file-journey file-in-file-out uc4-to-uc2" ;;   # 2026-07: patterns/arrived-left/legs-count/protocol-journey merged into file-journey; attempts/resubmissions into retries
         protocol-security)   echo "protocol security-params security-outreach av-scan connection-efficiency" ;;   # 2026-08: + security-outreach/connection-efficiency
         performance-session) echo "duration anomalies duration-longest duration-slowest duration-dwell duration-trend" ;;   # 2026-09-05: Duration leads (user request)   # 2026-08: + duration-trend; 2026-09-03: + the duration split-offs; 2026-09-05: duration-distribution + dwell-time merged into duration-dwell
         cross)               echo "cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl" ;;
@@ -428,7 +428,7 @@ group_of() {   # $1 area (transfer|server)  $2 report basename -> group id (empt
         account|login|subscription|remote-host|logical|partner|application|domain|bl) echo "account-login-site" ;;
         volume|files|top-transfers|route-throughput|size-profile|ranking) echo "volume-files" ;;
         failure-rate|episodes|retries|recovered|recovered-files|failed-files|failure-heatmap) echo "failures" ;;   # missing-cronjobs is NOT here (boxes-only); the boxes-only reports return "" so their pages carry NO group row
-        file-journey|file-in-file-out) echo "flow-shape" ;;
+        file-journey|file-in-file-out|uc4-to-uc2) echo "flow-shape" ;;
         protocol|security-params|security-outreach|av-scan|connection-efficiency) echo "protocol-security" ;;
         dwell-time|duration|duration-all|duration-longest|duration-slowest|duration-distribution|duration-dwell|anomalies|duration-trend)     echo "performance-session" ;;   # the duration-* siblings: Duration's All-transfers / Percentage views (not group MEMBERS — they share Duration's slot)
         cross-account|cross-login|cross-subscription|cross-host|cross-logical|cross-partner|cross-application|cross-domain|cross-bl) echo "cross" ;;
@@ -494,7 +494,7 @@ member_label() {   # row-1 tab text for a grouped report
         activity) echo "Activity" ;; punctuality) echo "Punctuality" ;; expected-arrival) echo "Expected arrival" ;;
         retries) echo "Retries & resubmissions" ;; file-journey) echo "File journey" ;;
         route-throughput) echo "Route throughput" ;; size-profile) echo "Size profile" ;;
-        recovered) echo "Recovered flows" ;; recovered-files) echo "Recovered files" ;; failed-files) echo "Failed files" ;; security-outreach) echo "Security outreach" ;;
+        recovered) echo "Recovered flows" ;; recovered-files) echo "Recovered files" ;; failed-files) echo "Failed files" ;; uc4-to-uc2) echo "UC4 to UC2" ;; security-outreach) echo "Security outreach" ;;
         connection-efficiency) echo "Connection efficiency" ;; duration-trend) echo "Duration trend" ;;
         failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;; could-not-send) echo "Could not send" ;;
         publish-failed) echo "Publish failed" ;; post-client-action) echo "Post client action" ;;

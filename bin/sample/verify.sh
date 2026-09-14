@@ -765,6 +765,21 @@ check $([ "${n:-0}" -gt 0 ] && grep -q 'restint' "$DR" 2>/dev/null && echo 0 || 
 dp="docs/analyses/$(basename "$DR" .rpt).html"
 check $([ "$(grep -c '<meta name="report-dates" content="[0-9]' "$dp" 2>/dev/null || true)" -gt 0 ] && echo 0 || echo 1) "${dp} carries no date list (no From/To fields)"
 
+# the UC4 to UC2 report (2026-09-14, user request): an independent recount of the pairs — a UC2 File with
+# the same file name, login and post-prefix subscription name as a UC4 File that started earlier
+FB="data/transfer/reports/uc4-to-uc2.rpt"
+wn=$(LC_ALL=C awk -F'\t' '$11 != "" && $4 != "" && $12 ~ /^[Uu][Cc][24]/ { u = toupper(substr($12, 1, 3)); k = $11 SUBSEP toupper($14) SUBSEP toupper(substr($12, 4))
+        if (u == "UC4") { if (!(k in M4) || $6 < M4[k]) M4[k] = $6 } else { n2++; K2[n2] = k; T2[n2] = $6 } }
+    END { for (i = 1; i <= n2; i++) if ((K2[i] in M4) && M4[K2[i]] < T2[i]) n++; print n + 0 }' data/transfer/cache/_files.tsv 2>/dev/null)
+fn=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "ROW" { n++ } END { print n + 0 }' "$FB" 2>/dev/null)
+check $([ "${wn:-0}" -gt 0 ] && [ "$fn" = "$wn" ] && echo 0 || echo 1) "uc4-to-uc2: the Files table lists ${fn:-?} pair(s), the recount finds ${wn:-?}"
+h=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "HEAD" { print; exit }' "$FB" 2>/dev/null)
+check $([ "$h" = $'HEAD\tFile\tLogin\tUC4 subscription\tUC4 date/time\tUC2 subscription\tUC2 date/time\tGap\tUC4 CoreId\tUC2 CoreId' ] && echo 0 || echo 1) "uc4-to-uc2 Files HEAD is '$h'"
+check $([ -f docs/transfer/uc4-to-uc2.html ] && [ -f docs/help/uc4-to-uc2.html ] && echo 0 || echo 1) "docs/transfer/uc4-to-uc2.html or its help page is missing"
+# ... and its gaps are real: none negative, and not every one "0 s" (the 2026-09-14 OFMT precision bug)
+read -r gneg gnz <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "ROW" { if ($8 ~ /^-/) neg++; if ($8 != "0 s") nz++ } END { print neg + 0, nz + 0 }' "$FB" 2>/dev/null)"
+check $([ "${gneg:-1}" = 0 ] && [ "${gnz:-0}" -gt 0 ] && echo 0 || echo 1) "uc4-to-uc2 gaps: ${gneg:-?} negative, ${gnz:-?} non-zero"
+
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2
 else

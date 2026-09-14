@@ -105,6 +105,7 @@ pool_run "$SCRIPT_DIR/reports/dwell-time.sh"
 pool_run "$SCRIPT_DIR/reports/top-transfers.sh"
 pool_run "$SCRIPT_DIR/reports/duplicate-files.sh"
 pool_run "$SCRIPT_DIR/reports/file-in-file-out.sh"   # partner-to-partner handovers carried by two subscriptions
+pool_run "$SCRIPT_DIR/reports/uc4-to-uc2.sh"         # a UC4 delivery collected back by the same-named UC2 subscription (2026-09-14)
 pool_run "$SCRIPT_DIR/reports/remote-host.sh"
 pool_run "$SCRIPT_DIR/reports/pda-entities.sh"
 pool_run "$SCRIPT_DIR/reports/entities.sh"   # the Entities PAGES (the grouped layout, 2026-09-13) — the nine classic writers above stay as data producers

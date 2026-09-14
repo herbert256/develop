@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Help: UC4 to UC2 — Cloud Reports</title>
+<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../search/file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../transfer/index.html">Start page</a><a href="../transfer/topview.html">Top view</a><a href="../transfer/entities/subscription-all.html">Entities</a><a href="../transfer/file-journey-patterns.html">Patterns</a><a href="../transfer/activity-per-day.html">Activity over Time</a><a href="../transfer/volume-per-day.html">Volume, Sizes &amp; Files</a><a href="../transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../transfer/duration.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../server/index.html">Start page</a><a href="../server/topview.html">Top view</a><a href="../server/errors-per-day.html">Errors</a><a href="../server/pickups.html">Transfers &amp; Delivery</a><a href="../server/logons-incoming.html">Logons &amp; Connections</a><a href="../server/ssh-security.html">Security</a><a href="../server/platform-health.html">Operations &amp; Capacity</a><a href="../server/transfer-site-missing.html">Routing</a><a href="../server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../analyses/index.html">Start page</a><a href="../transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../analyses/use-cases.html">Configuration</a><a href="../analyses/partner-scorecard.html">Partners</a><a href="../analyses/subscriptions-in-boxes.html">Boxes</a><a href="../analyses/failed.html">Errors</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>UC4 to UC2</h1>
+<h2>What it shows</h2>
+<p>Files a partner <strong>delivered</strong> on a UC4 subscription that the matching UC2 subscription then <strong>collected</strong>: the delivered file did not move on to the CFT quickly enough, so the partner&rsquo;s own pickup took it.</p>
+<h2>Rules</h2>
+<ul>
+<li>A UC4 File and a UC2 File pair when they have the <strong>same file name</strong>, the <strong>same login</strong>, the <strong>same subscription name</strong> apart from the UC4 / UC2 prefix (UC4-X with UC2-X, case ignored), and the UC4 File <strong>started earlier</strong>.</li>
+<li>Each UC2 File pairs with the newest such UC4 File. The use case comes from the subscription name prefix only.</li>
+</ul>
+<h2>Tables</h2>
+<ul>
+<li><strong>Per subscription pair</strong> &mdash; per UC4 / UC2 subscription and login: how many Files, the fastest, median and slowest gap between delivery and collect, and the first and last collect. Whole-window figures: From/To does not narrow this table.</li>
+<li><strong>Files</strong> &mdash; every pair, newest collect first, 500 per page: the file name, login, both subscriptions and start times, the gap and both CoreIds. From/To narrows it by the UC4 date; the search box filters it.</li>
+</ul>
+</main>
+</body>
+</html>
