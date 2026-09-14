@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
 #
 # failing-reasons.sh — "Error reasons": every possible Reason of the Failed
-# Subscriptions pages (Reason / Count / Last), on FOUR pages picked by the
-# two-group selector row (injected by bin/analyses/publish.sh, the failed
-# pages' undertabs pattern — UNIT first, SCOPE second):
+# Subscriptions pages (Reason / Count / Last), on TWO pages picked by the
+# selector row (injected by bin/analyses/publish.sh, 2026-09-14 user request:
+# the Failed Subscriptions pages' SELECTION buttons, All and Subscription):
 #
-#   UNIT   Subscriptions  count SUBSCRIPTIONS, one each (its newest failure's
-#                         reason — the failed-sub-all rows)
-#          Errors         count individual ERRORS — every failed File (and
-#                         each server-failing subscription once) — the
-#                         failed-all rows
-#   SCOPE  Current        the still-failing estate: red subscriptions /
-#                         the errors of still-failing subscriptions
-#          History        everything ever: recovered flows included
+#   All           count individual ERRORS in the whole data — every failed
+#                 File (and each server-failing subscription once), recovered
+#                 flows included: the failed-all-all rows, so the Total equals
+#                 failed-all-all.html's row count
+#                 -> failing-reasons-errors-history.html (name kept for links)
+#   Subscription  count each still-failing (red) SUBSCRIPTION once, by its
+#                 newest failure's reason: the failed-sub-all rows tinted red,
+#                 so the Total equals failed.html's row count
+#                 -> failing-reasons.html (THE page, the default)
 #
-#   subs x current   -> failing-reasons.html           (THE page, unchanged)
-#   subs x history   -> failing-reasons-history.html
-#   errors x current -> failing-reasons-errors.html
-#   errors x history -> failing-reasons-errors-history.html
+# (Until 2026-09-14 a UNIT x SCOPE grid of four pages: the Errors x Current
+# and Subscriptions x History views went.)
 #
 # The Errors group's second member.
 #
@@ -30,9 +29,8 @@
 # row with a blank Reason counts under "(none)"). A reason with no counted
 # row keeps its row with Count and Last BLANK.
 #
-# SOURCES: failed-sub-all.rpt (the Subscriptions unit, both scopes — Current
-# filters its rows to @data:res=red), failed-all-failing.rpt (Errors x
-# Current) and failed-all-all.rpt (Errors x History) — so each view's Count
+# SOURCES: failed-sub-all.rpt (the Subscription view — its rows filtered to
+# @data:res=red) and failed-all-all.rpt (the All view) — so each view's Count
 # is exactly a Failed Subscriptions view's row count, split by Reason.
 #
 # Each nonzero row opens its view's drill list (failing-reasons[-errors]
@@ -57,19 +55,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 
 SRC="$DATA/transfer/reports/failed-sub-all.rpt"
-SRCEC="$DATA/transfer/reports/failed-all-failing.rpt"
 SRCEH="$DATA/transfer/reports/failed-all-all.rpt"
 OUT="$REPORTS_DIR/failing-reasons.rpt"
-if [ ! -f "$SRC" ] || [ ! -f "$SRCEC" ] || [ ! -f "$SRCEH" ]; then
+if [ ! -f "$SRC" ] || [ ! -f "$SRCEH" ]; then
     echo "failing-reasons: missing failed-*.rpt source(s) (the transfer reports have not run) — pages not published." >&2
     rm -f "$OUT" "$REPORTS_DIR"/failing-reasons-*.rpt
     exit 0
 fi
 # a missing view page forces a rebuild — skip_if_fresh tests the one .rpt
-for v in history errors errors-history; do
+for v in errors-history; do
     [ -f "$REPORTS_DIR/failing-reasons-$v.rpt" ] || rm -f "$OUT"
 done
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRC" "$SRCEC" "$SRCEH" "$LIB_DIR/../flip-reason.awk"
+skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRC" "$SRCEH" "$LIB_DIR/../flip-reason.awk"
 
 GEN=$(date '+%Y-%m-%d %H:%M:%S')
 DCAP=500            # the Errors drills show at most this many newest rows
@@ -82,7 +79,7 @@ grep -o 'return "[^"]*"' "$LIB_DIR/../flip-reason.awk" \
 printf 'One-legged\nFailed Subtransmission\n' >> "$TMP/vocab"
 
 LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen="$GEN" -v DCAP="$DCAP" \
-    -v F1="$SRC" -v F2="$SRCEC" -v F3="$SRCEH" '
+    -v F1="$SRC" -v F2="$SRCEH" '
     function slug9(n,   s) { s = tolower(n); gsub(/[^a-z0-9]+/, "-", s)
         sub(/^-+/, "", s); sub(/-+$/, "", s); return s }
     # one view MAIN list: f = the output, pfx = the drill-page prefix,
@@ -150,60 +147,27 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen=
         # same links, same tint, so a drill row opens the same error page
         row9 = "ROW\t" $2 "\t" $3
         for (i = 5; i <= NF; i++) row9 = row9 "\t" $i
-        if (nf == 1) {                     # failed-sub-all: Subscriptions x Current
+        if (nf == 1) {                     # failed-sub-all: the Subscription view (red flows, one each)
             if (red) { tally(r, $3, row9, CNT, LAST, CD, DR, 0); tot++ }
-        } else if (nf == 2) {              # failed-all-failing: Errors x Current
-            tally(r, $3, row9, EC, EL, ED9, ED, DCAP); etot++
-        } else {                           # failed-all-all: Errors x History
+        } else {                           # failed-all-all: the All view (every failed File in the data)
             tally(r, $3, row9, XC, XL, XD9, XD, DCAP); xtot++
-            # + Subscriptions x History (2026-08): per reason, EVERY
-            # subscription that EVER failed with it — one flow counts under
-            # each fault class that ever hit it (counting only newest-failure
-            # reasons left a class blank though it plainly occurred). The
-            # drill row per (reason, flow) is the newest occurrence OF THAT
-            # REASON; the stream is newest-first except the appended server
-            # rows, so the max-dt compare picks it exactly.
-            site9 = $2; sub(/^@\{[^}]*\}/, "", site9)
-            k9 = r SUBSEP toupper(site9)
-            if (!(k9 in HDT)) { HC[r]++; htot++
-                HKN[r]++; HKL[r, HKN[r]] = k9 }
-            if (!(k9 in HDT) || $3 > HDT[k9]) { HDT[k9] = $3; HRW[k9] = row9 }
-            if ($3 > HL[r]) HL[r] = $3
         }
         next
     }
     END {
-        # assemble the Subscriptions x History drill buffers (one row per
-        # (reason, flow) pair, in first-seen order — sort=1:-1 orders the
-        # rendered page by date anyway)
-        for (i = 1; i <= nr; i++) { r = RN[i]
-            for (j = 1; j <= HKN[r] + 0; j++) HD[r] = HD[r] HRW[HKL[r, j]] "\n"
-            HD9[r] = HKN[r] + 0 }
         mainlist(OUT, "failing-reasons-", CNT, LAST, tot, "currently RED subscriptions")
-        printf "NOTE\tThe row set is **every Reason the Failed Subscriptions pages can show** — the shared classifier vocabulary (bin/flip-reason.awk, in classifier order), **One-legged**, the raw last-leg status, plus whatever a server row carries — a reason with **nothing counted stays listed with blank Count and Last**, so a fault class disappearing from the estate is visible as an emptied row. The button rows above pick the view: **Subscriptions** counts flows once each (their newest failure or server verdict), **Errors** counts every individual failed File; **Current** keeps to the still-failing estate, **History** includes the recovered. This view: RED subscriptions only, one each — the same rows the default Failed Subscriptions view lists. A nonzero row opens the list behind the count.\n" > OUT
+        printf "NOTE\tThe row set is **every Reason the Failed Subscriptions pages can show** — the shared classifier vocabulary (bin/flip-reason.awk, in classifier order), **One-legged**, the raw last-leg status, plus whatever a server row carries — a reason with **nothing counted stays listed with blank Count and Last**, so a fault class disappearing from the estate is visible as an emptied row. The buttons pick the view, like the Failed Subscriptions pages: **All** counts every individual failed File in the data, **Subscription** counts each still-failing subscription once. This view: RED subscriptions only, one each — the same rows the default Failed Subscriptions view lists. A nonzero row opens the list behind the count.\n" > OUT
         printf "FOOT\tGenerated on %s\n", gen > OUT
         close(OUT)
-        f2 = TMPD "/failing-reasons-history.rpt"
-        mainlist(f2, "failing-reasons-history-", HC, HL, htot, "subscriptions that ever failed with it")
-        printf "NOTE\tSee the Current view'"'"'s note for the row set and the buttons. This view counts, per reason, **every subscription that EVER failed with it** — so one flow counts under each fault class that ever hit it, and the Total can exceed the number of flows. The drill lists each flow once, at its newest occurrence OF THAT reason, tinted **red** = still failing, **green** = recovered since.\n" > f2
-        printf "FOOT\tGenerated on %s\n", gen > f2
-        close(f2)
-        f3 = TMPD "/failing-reasons-errors.rpt"
-        mainlist(f3, "failing-reasons-errors-", EC, EL, etot, "individual errors of the still-failing subscriptions")
-        printf "NOTE\tSee the Subscriptions x Current view'"'"'s note for the row set and the buttons. This view counts **individual ERRORS**: every failed File of the still-failing subscriptions (and each server-failing subscription once) — the Failed Subscriptions All x Still-failing rows, so one busy flow counts as many times as it failed.\n" > f3
-        printf "FOOT\tGenerated on %s\n", gen > f3
-        close(f3)
         f4 = TMPD "/failing-reasons-errors-history.rpt"
         mainlist(f4, "failing-reasons-errors-history-", XC, XL, xtot, "individual errors in the data")
-        printf "NOTE\tSee the Subscriptions x Current view'"'"'s note for the row set and the buttons. This view counts **individual ERRORS across the whole data**: every failed File (and each server-failing subscription once) — the Failed Subscriptions All x All rows — recovered flows included, so one busy flow counts as many times as it ever failed.\n" > f4
+        printf "NOTE\tSee the Subscription view note for the row set and the buttons. This view counts **individual ERRORS across the whole data**: every failed File (and each server-failing subscription once) — the Failed Subscriptions All x All rows — recovered flows included, so one busy flow counts as many times as it ever failed.\n" > f4
         printf "FOOT\tGenerated on %s\n", gen > f4
         close(f4)
         drills("failing-reasons-",                CNT, CD,  DR, "failing-reasons.html",                "currently **red** subscriptions")
-        drills("failing-reasons-history-",        HC,  HD9, HD, "failing-reasons-history.html",        "subscriptions that **ever failed** with it")
-        drills("failing-reasons-errors-",         EC,  ED9, ED, "failing-reasons-errors.html",         "individual errors of the **still-failing** subscriptions")
         drills("failing-reasons-errors-history-", XC,  XD9, XD, "failing-reasons-errors-history.html", "individual errors in the **whole data**")
     }
-' "$SRC" "$SRCEC" "$SRCEH"
+' "$SRC" "$SRCEH"
 
 # publish: the drill set + the view mains first, the Current main LAST — a
 # killed run leaves the old complete main (a stale mtime, so skip_if_fresh
@@ -214,4 +178,4 @@ for f in "$TMP"/failing-reasons-*.rpt; do mv "$f" "$REPORTS_DIR/${f##*/}"; done
 shopt -u nullglob
 mv "$OUT.tmp" "$OUT"
 n=$(command grep -c '^ROW' "$OUT" || true)
-echo "Data written to $OUT + 3 view variants ($n reason row(s))." >&2
+echo "Data written to $OUT + the All view ($n reason row(s))." >&2

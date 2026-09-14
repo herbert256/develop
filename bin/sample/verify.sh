@@ -729,6 +729,19 @@ for reason in "Connection failures" "Wrong server fingerprint" "No Dir" "Listing
     n=$(grep -l -- "$reason" data/transfer/reports/failed*.rpt data/transfer/reports/errors/*.rpt 2>/dev/null | wc -l | tr -d ' ')
     check $([ "$n" -gt 0 ] && echo 0 || echo 1) "reason \"$reason\" appears in no failed/error report"
 done
+# the Error reasons pages (2026-09-14, user request): TWO views on the Failed Subscriptions SELECTION buttons —
+# All counts the failed-all-all rows, Subscription the failed.html rows; the dropped views stay unpublished
+frt() { awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" { c = $3; sub(/^@\{[^}]*\}/, "", c); n += c + 0 } END { print n + 0 }' "$1" 2>/dev/null; }
+n=$(frt data/analyses/reports/failing-reasons.rpt); en=$(rpt_rows data/transfer/reports/failed.rpt)
+check $([ "${n:-x}" = "${en:-y}" ] && echo 0 || echo 1) "failing-reasons Subscription view counts ${n:-?}, failed.rpt lists ${en:-?}"
+n=$(frt data/analyses/reports/failing-reasons-errors-history.rpt); en=$(rpt_rows data/transfer/reports/failed-all-all.rpt)
+check $([ "${n:-x}" = "${en:-y}" ] && echo 0 || echo 1) "failing-reasons All view counts ${n:-?}, failed-all-all.rpt lists ${en:-?}"
+n=$(ls docs/analyses 2>/dev/null | awk '/^failing-reasons-history/ || (/^failing-reasons-errors/ && !/^failing-reasons-errors-history/) { n++ } END { print n + 0 }')
+check $([ "$n" = 0 ] && echo 0 || echo 1) "$n dropped Error reasons view page(s) still published"
+for p in failing-reasons failing-reasons-errors-history; do
+    b=$(awk '{ while ((i = index($0, "<p class=\"tabs undertabs\">")) > 0) { s = substr($0, i); j = index(s, "</p>"); if (j == 0) break; print substr(s, 1, j); $0 = substr(s, j + 4) } }' "docs/analyses/$p.html" 2>/dev/null | grep -o '>All<\|>Subscription<' | wc -l | tr -d ' ')
+    check $([ "$b" = 2 ] && echo 0 || echo 1) "analyses/$p.html selector row carries $b of the All / Subscription buttons"
+done
 
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2

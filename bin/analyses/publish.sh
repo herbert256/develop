@@ -1837,40 +1837,28 @@ for _errpt in "$ARPT"/failing-reasons-*.rpt; do
 done
 CUR_DATES=$_ersaved_dates
 
-# THE VIEW SELECTOR ROW on the four Error reasons mains (the failed pages'
-# undertabs pattern — this page has no date fields, so the row simply sits
-# above the table). Two groups, a tabsep gap between: the UNIT
-# (Subscriptions = flows counted once / Errors = every failed File) and the
-# SCOPE (Current = the still-failing estate / History = everything ever) —
-# switching one keeps the other, the default (Subscriptions x Current)
-# being failing-reasons.html itself.
-_frpage() {   # $1 unit (subs|errors)  $2 scope (current|history) -> page basename
-    case "$1-$2" in
-        subs-current)   echo "failing-reasons.html" ;;
-        subs-history)   echo "failing-reasons-history.html" ;;
-        errors-current) echo "failing-reasons-errors.html" ;;
-        errors-history) echo "failing-reasons-errors-history.html" ;;
+# THE VIEW SELECTOR ROW on the two Error reasons mains (2026-09-14, user
+# request: the Failed Subscriptions pages' SELECTION buttons, All and
+# Subscription, two pages — until then a Subscriptions/Errors x
+# Current/History grid of four). All = every failed File in the data,
+# counted like failed-all-all.html (failing-reasons-errors-history.html, the
+# name kept for old links); Subscription = each still-failing subscription
+# once, counted like failed.html (failing-reasons.html itself, the default).
+# This page has no date fields, so the row simply sits above the table.
+for _frk in all sub; do
+    case $_frk in
+        all) _frf="$ADIR/failing-reasons-errors-history.html" ;;
+        sub) _frf="$ADIR/failing-reasons.html" ;;
     esac
-}
-for _fru in subs errors; do
-    for _frsc in current history; do
-        _frf="$ADIR/$(_frpage "$_fru" "$_frsc")"
-        [ -f "$_frf" ] || continue
-        _frrow='<p class="tabs undertabs">'
-        for _frs in subs:Subscriptions errors:Errors; do
-            _frk=${_frs%%:*}; _frl=${_frs#*:}
-            if [ "$_frk" = "$_fru" ]; then _frrow+="<span class=\"tab active\">$_frl</span>"
-            else _frrow+="<a class=\"tab\" href=\"$(_frpage "$_frk" "$_frsc")\">$_frl</a>"; fi
-        done
-        _frrow+='<span class="tabsep"></span>'
-        for _frs in current:Current history:History; do
-            _frk=${_frs%%:*}; _frl=${_frs#*:}
-            if [ "$_frk" = "$_frsc" ]; then _frrow+="<span class=\"tab active\">$_frl</span>"
-            else _frrow+="<a class=\"tab\" href=\"$(_frpage "$_fru" "$_frk")\">$_frl</a>"; fi
-        done
-        _frrow+='</p>'
-        _inject_before_table "$_frf" "$_frrow"
+    [ -f "$_frf" ] || continue
+    _frrow='<p class="tabs undertabs">'
+    for _frs in "all:All:failing-reasons-errors-history.html" "sub:Subscription:failing-reasons.html"; do
+        _frk2=${_frs%%:*}; _frrest=${_frs#*:}; _frl=${_frrest%%:*}; _frh=${_frrest#*:}
+        if [ "$_frk2" = "$_frk" ]; then _frrow+="<span class=\"tab active\">$_frl</span>"
+        else _frrow+="<a class=\"tab\" href=\"$_frh\">$_frl</a>"; fi
     done
+    _frrow+='</p>'
+    _inject_before_table "$_frf" "$_frrow"
 done
 
 # THE VIEW SELECTOR ROW, injected into all six Failed Subscriptions pages BELOW
