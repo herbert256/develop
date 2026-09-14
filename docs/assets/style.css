@@ -283,10 +283,14 @@ td.metsub { padding-left:1.9rem; }
    line; a heavier top border marks where each 2-row entry begins, and the
    message wraps instead of stretching the table. */
 td.bluemsg { background:#eef2f6; color:#556; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:.85em; white-space:normal; border-top:2px solid #b8c2cc; }
-/* a cell whose whole value is ONE link (class cl, set by the renderer): the
-   entire cell is the click target — the td padding moves onto the block <a> */
-td.cl { padding:0; }
-td.cl > a { display:block; padding:8px 12px; }
+/* a cell whose whole value is ONE link (class cl: baked by the renderer for
+   link=/href=/entity cells, added in the browser by report.js wholeCellLinks
+   for every other single-link cell — 2026-09-14, user rule): the ENTIRE cell
+   is the click target. The <a> stays inline; its ::after stretches over the
+   cell's padding box (the card-title pattern below), so every padding
+   variant (wide, sep, metsub, subname, pagerrow…) keeps its own layout */
+td.cl { position:relative; }
+td.cl > a::after { content:""; position:absolute; top:0; right:0; bottom:0; left:0; }
 th { background-color:#20344a; color:#fff; }
 th a { color:#fff; }                    /* linked column headers (traffic matrix) stay readable on the dark bar */
 /* CSV download (report.js setupCsvBtn): a small hotspot in the upper-right
@@ -536,8 +540,6 @@ tr.subrow td.subname::before { content:"\21B3\00a0"; color:#8a94a6; }
 /* ---- wide table variant (historical: tables now size to content) ---- */
 table.wide { width:auto; }
 table.wide th, table.wide td { padding:6px 10px; }
-table.wide td.cl { padding:0; }
-table.wide td.cl > a { padding:6px 10px; }
 td.file { max-width:480px; overflow:hidden; text-overflow:ellipsis; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.85rem; }
 code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
 /* communication-profile JSON pages (bin/comm-profiles.sh + bin/json2html.awk):

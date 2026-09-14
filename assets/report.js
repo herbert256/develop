@@ -4102,6 +4102,23 @@
     th.appendChild(b);
   }
 
+  // Whole-cell links (2026-09-14, user rule): a cell whose only content is
+  // ONE link gets class `cl` — style.css stretches that link over the whole
+  // cell, so the click target is the cell, not just its text. The renderer
+  // bakes `cl` for link=/href=/entity cells (render_rpt.awk); this pass
+  // catches the hand-built tables (start pages, report finder, site map,
+  // index lists) and any writer that forgot. A cell with text beside its
+  // link, or more than one element, is left alone; header cells too (their
+  // click sorts). Runs before the data-origc snapshots, which copy className.
+  function wholeCellLinks(table) {
+    var as = table.querySelectorAll("td > a[href]"), i, a, td;
+    for (i = 0; i < as.length; i++) {
+      a = as[i]; td = a.parentNode;
+      if (td.children.length !== 1 || (" " + td.className + " ").indexOf(" cl ") >= 0) continue;
+      if (td.textContent.replace(/\s+/g, " ").trim() !== a.textContent.replace(/\s+/g, " ").trim()) continue;
+      td.className = (td.className ? td.className + " " : "") + "cl";
+    }
+  }
   function init() {
     buildTopbar();          // FIRST: setupSrvToggle binds into the bar
     setupTheme();           // the ◐ toggle (the head script already applied the choice)
@@ -4111,6 +4128,7 @@
     var tables = document.getElementsByTagName("table");
     for (var i = 0; i < tables.length; i++) {
       initColOrder(tables[i]); // FIRST: stamp the built column index + apply a remembered column order
+      wholeCellLinks(tables[i]); // single-link cells become whole-cell click targets (class cl) — before the className snapshots below
       initGroup(tables[i]);   // record real group values — before makeSortable's data-sort-init
       bindPairs(tables[i]);   // bind 2-row message/data pairs BEFORE any sort restore
       makeSortable(tables[i]); // sorts/blanks col 0, which would otherwise memorize a blanked value
