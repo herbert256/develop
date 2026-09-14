@@ -732,15 +732,25 @@ for reason in "Connection failures" "Wrong server fingerprint" "No Dir" "Listing
     n=$(grep -l -- "$reason" data/transfer/reports/failed*.rpt data/transfer/reports/errors/*.rpt 2>/dev/null | wc -l | tr -d ' ')
     check $([ "$n" -gt 0 ] && echo 0 || echo 1) "reason \"$reason\" appears in no failed/error report"
 done
-# the Error reasons page (2026-09-14, user request): ONE page counting every failed File — its Total is the
-# failed-all-all row count; no selector row, and none of the retired view pages published
+# the Error reasons pages (2026-09-14, user request): ONE main page counting every File in error — its
+# Total is the Failed files row count, no selector row, no retired view page — and per reason a drill
+# page with EVERY such File: Subscription / Date/time / CoreId / Filename, tinted rows, the date fields
 frt() { awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" { c = $3; sub(/^@\{[^}]*\}/, "", c); n += c + 0 } END { print n + 0 }' "$1" 2>/dev/null; }
-n=$(frt data/analyses/reports/failing-reasons.rpt); en=$(rpt_rows data/transfer/reports/failed-all-all.rpt)
-check $([ "${n:-x}" = "${en:-y}" ] && [ "${en:-0}" -gt 0 ] && echo 0 || echo 1) "failing-reasons counts ${n:-?}, failed-all-all.rpt lists ${en:-?}"
+n=$(frt data/analyses/reports/failing-reasons.rpt); en=$(rpt_rows data/transfer/reports/failed-files.rpt)
+check $([ "${n:-x}" = "${en:-y}" ] && [ "${en:-0}" -gt 0 ] && echo 0 || echo 1) "failing-reasons counts ${n:-?}, failed-files.rpt lists ${en:-?}"
+dn=$(cat data/analyses/reports/failing-reasons-*.rpt 2>/dev/null | grep -c $'^ROW\t' || true)
+check $([ "${dn:-0}" = "${en:-y}" ] && echo 0 || echo 1) "failing-reasons drill pages hold ${dn:-0} row(s), expected every one of the ${en:-?} Files in error"
 n=$(ls docs/analyses 2>/dev/null | awk '/^failing-reasons-(history|errors)/ { n++ } END { print n + 0 }')
 check $([ "$n" = 0 ] && echo 0 || echo 1) "$n retired Error reasons view page(s) still published"
 n=$(grep -c 'tabs undertabs' docs/analyses/failing-reasons.html 2>/dev/null || true)
 check $([ "${n:-0}" = 0 ] && [ -f docs/analyses/failing-reasons.html ] && echo 0 || echo 1) "analyses/failing-reasons.html missing or still carries a selector row"
+DR=$(ls data/analyses/reports/failing-reasons-*.rpt 2>/dev/null | head -1)
+h=$(awk -F'\t' '$1 == "HEAD" { print; exit }' "$DR" 2>/dev/null)
+check $([ "$h" = $'HEAD\tSubscription\tDate/time\tCoreId\tFilename' ] && echo 0 || echo 1) "Error reason drill ${DR##*/} HEAD is '$h'"
+n=$(grep -c '@data:res=' "$DR" 2>/dev/null || true)
+check $([ "${n:-0}" -gt 0 ] && grep -q 'restint' "$DR" 2>/dev/null && echo 0 || echo 1) "Error reason drill ${DR##*/} has no tinted rows"
+dp="docs/analyses/$(basename "$DR" .rpt).html"
+check $([ "$(grep -c '<meta name="report-dates" content="[0-9]' "$dp" 2>/dev/null || true)" -gt 0 ] && echo 0 || echo 1) "${dp} carries no date list (no From/To fields)"
 
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2

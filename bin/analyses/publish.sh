@@ -1822,7 +1822,9 @@ done
 CUR_DATES=$_fsaved_dates
 
 # The Error reasons DRILL pages (failing-reasons-<slug>.rpt, one per reason
-# with currently red subscriptions): rendered like the Failed Subscriptions
+# with Files in error — every such File, 2026-09-14): rendered with the
+# transfer date list, so their Date/time table carries the From/To fields,
+# and otherwise like the Failed Subscriptions
 # variants — the Errors group row with Error reasons active, the
 # "failing-reasons" help slug and persistence key. The main page renders via
 # render_subs_group_pages (analyses:failing-reasons).

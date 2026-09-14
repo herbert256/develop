@@ -17,18 +17,18 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Error reasons</h1>
 <h2>What it shows</h2>
-<p>One row per <strong>Reason</strong> the <a href="failed.html">Failed Subscriptions</a> pages can show: how many failed Files carry it (<strong>Count</strong>) and the newest occurrence (<strong>Last</strong>) &mdash; the failure profile of the whole data at a glance.</p>
+<p>One row per error <strong>Reason</strong>: how many Files in error carry it (<strong>Count</strong>) and the newest occurrence (<strong>Last</strong>) &mdash; the failure profile of the whole data at a glance.</p>
 <h2>Rules</h2>
 <ul>
-<li>Count = <strong>every failed File</strong> in the data, recovered flows included, plus each server-failing subscription once: the Failed Subscriptions All &times; All list, so the Total equals that list and a busy flow counts as often as it failed.</li>
-<li>The row set is fixed: the shared classifier vocabulary (<em>Connection failures</em>, <em>PeSIT transfer aborted</em>, <em>Wrong server fingerprint</em>, &hellip;) parsed from <code>bin/flip-reason.awk</code> in classifier order (a new verdict appears on its own), plus <em>One-legged</em>, the raw last-leg status, and whatever a server-log row carries.</li>
-<li>A reason with nothing counted stays listed with blank Count and Last: a fault class disappearing is an emptied row, one appearing a new nonzero.</li>
-<li>Volumes over time: <a href="failure-rate.html">Failure rate</a>; every failed File with its CoreId and file name: <a href="failed-files.html">Failed files</a>.</li>
+<li>Count = <strong>every File in error</strong>, Failed or Expired, recovered flows included: the rows of <a href="failed-files.html">Failed files</a>, so the Total equals that list and the home page&rsquo;s Error total.</li>
+<li>The reasons are the Failed files page&rsquo;s: the shared classifier vocabulary (<em>Connection failures</em>, <em>PeSIT transfer aborted</em>, &hellip;) in classifier order, <em>One-legged</em>, the raw last-leg status and <em>Expired (not collected)</em>; <code>(none)</code> when no rule applies.</li>
+<li>A reason with nothing counted stays listed with blank Count and Last.</li>
 </ul>
-<h2>Tips</h2>
+<h2>Reason pages</h2>
 <ul>
-<li>A nonzero row opens the failed Files with that reason, each row as on the Failed Subscriptions pages (Subscription, Date/time, tinted by the subscription) and opening the same error page.</li>
-<li>A drill shows at most the newest 500 rows and says so; the All &times; All list holds every one.</li>
+<li>A nonzero row opens <strong>every</strong> File with that reason, newest first, 500 per page: <strong>Subscription</strong> (links its detail page), <strong>Date/time</strong> (the File&rsquo;s start), <strong>CoreId</strong> (links File Tracking where configured) and <strong>Filename</strong>. A click elsewhere on the row opens the File&rsquo;s error page when it has one.</li>
+<li>Rows tint by the subscription&rsquo;s result: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer in Error, <strong>light blue</strong> surfaced only by the server log.</li>
+<li>From/To narrows the rows to a date range; the search box filters them.</li>
 </ul>
 </main>
 </body>
