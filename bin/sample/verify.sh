@@ -495,6 +495,8 @@ check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_files.tsv has $n dated File(s) 
 tbd="docs/assets/topbar-data.js"
 check $([ "$(grep -c 'envkey:"sample"' "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js does not carry envkey:\"sample\""
 check $([ "$(grep -c 'window.AXWAY_ENVLINKS=function' "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js does not define the AXWAY_ENVLINKS switch function"
+# from the file system only the current environment shows (2026-09-14): the switch function carries the file: branch
+check $([ "$(grep -c 'location.protocol==="file:"' "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js: AXWAY_ENVLINKS lacks the file-system branch (only the current environment from file://)"
 for u in 'http://localhost/runtime-acceptance/' 'http://localhost/runtime-production/' 'https://probable-adventure-l6y6k83.pages.github.io/' 'https://expert-adventure-9myme9m.pages.github.io/'; do
     check $([ "$(grep -c "$u" "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js lacks the site URL $u"
 done

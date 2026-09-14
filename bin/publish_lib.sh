@@ -2679,8 +2679,13 @@ TB_CID=$(_coreid_url input/coreid-url.txt)
 # shipped inside topbar-data.js (report.js calls it after buildTopbar) AND
 # inline after the baked bar (render_topbar: help pages, build report). The
 # develop/sample checkout keeps its single "Sample" brand link.
+# FROM THE FILE SYSTEM (location.protocol file:, 2026-09-14, user request)
+# there is no other site to switch to: the function REMOVES the other
+# environment's link and the separator, so only the current environment
+# shows — its link the home page (the page-relative index.html, which works
+# from disk too).
 ENV_SITES_JS='{local:{acceptance:"http://localhost/runtime-acceptance/",production:"http://localhost/runtime-production/"},remote:{acceptance:"https://probable-adventure-l6y6k83.pages.github.io/",production:"https://expert-adventure-9myme9m.pages.github.io/"}}'
-ENVSWITCH_JS='window.AXWAY_ENVLINKS=function(){var S='"$ENV_SITES_JS"',h=location.hostname,L=(h==="localhost"||h==="127.0.0.1")?S.local:S.remote,A=document.querySelectorAll("a[data-envto]"),i,a,b,r,p;for(i=0;i<A.length;i++){a=A[i];b=L[a.getAttribute("data-envto")];if(!b)continue;r=new URL(a.getAttribute("data-root")||"./",location.href).pathname;p=location.pathname.indexOf(r)===0?location.pathname.slice(r.length):"";a.href=b+p+location.search+location.hash}};'
+ENVSWITCH_JS='window.AXWAY_ENVLINKS=function(){if(location.protocol==="file:"){var F=document.querySelectorAll(".envpair a[data-envto],.envpair .envsep"),j;for(j=0;j<F.length;j++)F[j].parentNode.removeChild(F[j]);return}var S='"$ENV_SITES_JS"',h=location.hostname,L=(h==="localhost"||h==="127.0.0.1")?S.local:S.remote,A=document.querySelectorAll("a[data-envto]"),i,a,b,r,p;for(i=0;i<A.length;i++){a=A[i];b=L[a.getAttribute("data-envto")];if(!b)continue;r=new URL(a.getAttribute("data-root")||"./",location.href).pathname;p=location.pathname.indexOf(r)===0?location.pathname.slice(r.length):"";a.href=b+p+location.search+location.hash}};'
 # the pair is a RUNTIME feature: only the two runtime keys get it
 env_has_switch() { [ "${ENV_KEY:-}" = acceptance ] || [ "${ENV_KEY:-}" = production ]; }
 # THE DATA PERIOD in the top bar (2026-09-13, user request): "yyyy-mm-dd /

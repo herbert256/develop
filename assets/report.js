@@ -3999,7 +3999,9 @@
     // window.AXWAY_ENVLINKS() (defined in topbar-data.js — the ONE
     // implementation, publish_lib.sh ENVSWITCH_JS) fills it with the SAME
     // PAGE on the other site (localhost -> the local checkouts, elsewhere the
-    // GitHub Pages sites). KEEP IN STEP with publish_lib.sh render_topbar,
+    // GitHub Pages sites; opened from the file system it REMOVES the other
+    // one and the separator, leaving the active home link alone — 2026-09-14,
+    // user request). KEEP IN STEP with publish_lib.sh render_topbar,
     // which bakes the identical markup for the help/build pages.
     var brandHtml, keys = ["acceptance", "production"], ki, kk, pair = "";
     if (M.envkey === "acceptance" || M.envkey === "production") {

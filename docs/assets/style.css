@@ -42,7 +42,9 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
    ACTIVE site (.envcur) bold and YELLOW, its link the home page; the other
    one plain white, its href the same page on the other site (filled in the
    browser by window.AXWAY_ENVLINKS — publish_lib.sh ENVSWITCH_JS). The
-   develop/sample checkout keeps the single .brand link. The yellow is not in
+   develop/sample checkout keeps the single .brand link. Opened from the file
+   system (file://) only the active one remains (AXWAY_ENVLINKS removes the
+   other and the separator, 2026-09-14). The yellow is not in
    the dark-theme maps on purpose: it must stay yellow on both themes. */
 .topbar .envpair { display:inline-flex; align-items:center; gap:0.45rem; }
 .topbar .envpair:hover { text-decoration:none; }
