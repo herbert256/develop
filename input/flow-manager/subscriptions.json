@@ -905,6 +905,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 5 5 ? * *"
     },
     "flowId": "82cbde29-768c-4f38-a545-84e23f5e65e7",
@@ -1196,7 +1197,7 @@
     "flowId": "82d6c792-4ed4-460b-a2ef-f879ea2cf15a",
     "flowName": "UC1_AB_PORTAL_ABSTERGO",
     "tags": ["sample-estate"],
-    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "status": {"code": "SAVED_NOT_DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
   },
@@ -1219,7 +1220,7 @@
       "customAttribute_FlowIdentifier": "CD_BATCH_MASSIVE",
       "source_folder_monitoring_scan_dir": "/data/cft/out/CD_BATCH_MASSIVE/in",
       "source_folder_monitoring_time_between_scans": "60",
-      "source_folder_monitoring_state": "Active",
+      "source_folder_monitoring_state": "Inactive",
       "hybrid_partner_sftp_relay0_send_remote_directory": "/"
     },
     "flowId": "3e413923-5fb8-439c-bd65-4fc8e0e76bc2",
@@ -1875,6 +1876,7 @@
       "source_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 15 7 ? * *"
     },
     "flowId": "024bc770-a009-4ef8-9cd5-253de6866c21",
@@ -1904,6 +1906,7 @@
       "source_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 5/15 * * * ?"
     },
     "flowId": "799fb71f-64e7-4b14-b8ba-5a3aac2f6e4c",
@@ -1933,6 +1936,7 @@
       "source_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 30 8 ? * *"
     },
     "flowId": "a17cf4a1-86ce-4436-b65a-af44c5bba8ec",
@@ -1963,6 +1967,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 0 8 ? * *"
     },
     "flowId": "005e3b1b-9f0c-4e71-9447-572bdc42899e",
@@ -1993,6 +1998,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 15 * * * ?"
     },
     "flowId": "7524adc5-74b7-49af-b9fc-51fb6dea4637",
@@ -2023,6 +2029,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 55 6 ? * *"
     },
     "flowId": "0ff2f9af-6fb1-4f8d-ad99-19bb482f2cc6",
@@ -2053,6 +2060,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 5/15 * * * ?"
     },
     "flowId": "1b18f8d0-263b-416c-8f7c-92bdd7e10105",
@@ -2083,6 +2091,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 15 5 ? * *"
     },
     "flowId": "7d91c2cd-4c68-474b-a7da-32483c3caeba",
@@ -2113,6 +2122,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 59 * * * ?"
     },
     "flowId": "433c491d-19ef-4c37-a9a4-b28fef257caf",
@@ -2142,6 +2152,7 @@
       "source_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 5/15 * * * ?"
     },
     "flowId": "f89a6601-fbff-42e6-9bbd-dddde543c75d",
@@ -2172,6 +2183,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 52 * * * ?"
     },
     "flowId": "1269e6e1-c749-497c-b224-8b47226fe0bd",
@@ -2202,6 +2214,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 25 6 ? * *"
     },
     "flowId": "50fe84b8-4d38-4b32-a9dd-22795490f73e",
@@ -2231,7 +2244,8 @@
       "target_working_dir": "/data/cft/in/CDV_STREAM_DUFF_I",
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
-      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes"
     },
     "flowId": "f8342b64-c409-43d7-afd8-3ef28b6e1437",
     "flowName": "UC3_CDV_STREAM_DUFF_I",
@@ -2261,6 +2275,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 49 * * * ?"
     },
     "flowId": "f286543f-353c-40d3-919a-c9901eaf82cd",
@@ -2290,7 +2305,8 @@
       "target_working_dir": "/data/cft/in/HR_AFAS_GEKKO",
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
-      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes"
     },
     "flowId": "aebe4aa7-424a-4312-bf6e-d7d2374a10e3",
     "flowName": "UC3_HR_AFAS_GEKKO",
@@ -2320,6 +2336,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 0 6 ? * *"
     },
     "flowId": "98680656-21e1-4473-8dac-f83bed3c064a",
@@ -2350,6 +2367,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 20 6 ? * *"
     },
     "flowId": "d858a18b-ae55-46f3-a9ca-54deca4056ca",
@@ -2380,6 +2398,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 16 * * * ?"
     },
     "flowId": "8aa3f0a6-2ce1-4754-aa8e-0b44c566ccde",
@@ -2410,6 +2429,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 13 * * * ?"
     },
     "flowId": "57c3f6e3-dc88-4817-adfe-beedbeb97aca",
@@ -2440,6 +2460,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 32 * * * ?"
     },
     "flowId": "610b1c64-260a-4703-8f81-e9d88d942f84",
@@ -2469,6 +2490,7 @@
       "source_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 40 * * * ?"
     },
     "flowId": "00dddc00-9449-47e3-9dad-0a9dfb7e1753",
@@ -2499,6 +2521,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 14 * * * ?"
     },
     "flowId": "5d3aa9d8-e4fc-486f-82af-5a99016740aa",
@@ -2529,6 +2552,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 28 * * * ?"
     },
     "flowId": "09a294ba-7dd7-4ae9-96f6-009d5c794a84",
@@ -2559,6 +2583,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 39 * * * ?"
     },
     "flowId": "c6c21d6f-91b8-4018-9a62-1f070bbb5266",
@@ -2589,6 +2614,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 23 * * * ?"
     },
     "flowId": "949e40f1-9d60-43fc-a21c-5f7d19c78503",
@@ -2618,6 +2644,7 @@
       "source_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 15 8 ? * *"
     },
     "flowId": "3ad3fa19-8870-4a75-bb86-36efb05350bb",
@@ -2648,6 +2675,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 0 * * * ?"
     },
     "flowId": "5e5e7450-61b3-43e7-833f-3d0c03561a02",
@@ -2677,6 +2705,7 @@
       "source_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 5/15 * * * ?"
     },
     "flowId": "b9063a23-0199-416a-826f-99eb384c10dc",
@@ -2706,6 +2735,7 @@
       "source_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 36 * * * ?"
     },
     "flowId": "e9000676-2ebc-44f6-84c3-6a63c89e35fd",
@@ -2736,12 +2766,13 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "No",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 25 5 ? * *"
     },
     "flowId": "18cd4fc5-157f-4710-8c70-41eea81ba362",
     "flowName": "UC3_AB_EXPORT_WAYNE",
     "tags": ["BL_AB", "sample-estate"],
-    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "status": {"code": "UNDEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
   },
@@ -2765,7 +2796,8 @@
       "target_working_dir": "/data/cft/in/IT_FACTS_HOOLI",
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
-      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes"
     },
     "flowId": "32788f29-e592-404e-8cca-d2ea00ef7d5e",
     "flowName": "UC3_IT_FACTS_HOOLI",
@@ -2795,6 +2827,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "No",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 40 5 ? * *"
     },
     "flowId": "a9a9cde4-6d07-40b1-a64f-fa868a9283bf",
@@ -2825,12 +2858,13 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 42 * * * ?"
     },
     "flowId": "76aaae86-ee43-4710-ad2f-952a17b83707",
     "flowName": "UC3_SYNT_NAS_TYRELL",
     "tags": ["sample-estate"],
-    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "status": {"code": "UNDEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
   },
@@ -2855,6 +2889,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 10 7 ? * *"
     },
     "flowId": "cee54dc3-60d0-4fba-8b58-d9efff09d1d6",
@@ -2885,6 +2920,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 53 * * * ?"
     },
     "flowId": "1c717936-080b-4474-a046-a41c4a82c260",
@@ -3745,6 +3781,7 @@
     ],
     "parameters": {
       "customAttribute_FlowIdentifier": "CB_STARK_WAYNE",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 0 6 ? * *"
     },
     "flowId": "ee6cf5c1-8aeb-4826-a125-c363b2904019",
@@ -3858,6 +3895,7 @@
       "target_target_file_name": "&NFNAME",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 5/30 * * * ?"
     },
     "flowId": "391209c9-a89e-42d4-bda1-6e398ce3bcd7",
@@ -3997,6 +4035,7 @@
       "source_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 10 8 ? * *"
     },
     "flowId": "c0e938b6-6dea-4442-aa57-537d4f2fa7a9",
@@ -4026,6 +4065,7 @@
       "source_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 0 7 ? * *"
     },
     "flowId": "55e3e3fd-2a30-4d50-9a25-0df42097a69f",
@@ -4299,6 +4339,7 @@
       "source_hybrid_participant": "partner_sftp",
       "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
       "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*",
+      "hybrid_partner_sftp_relay0_receive_scheduler_enable": "Yes",
       "hybrid_partner_sftp_relay0_receive_scheduler_cron_expression": "0 17 * * * ?"
     },
     "flowId": "99c0208f-9654-498b-9c65-1e77195bade7",

@@ -114,7 +114,7 @@ END {
         if (S_fdk[si] == "scan") {
             printf ",\n      \"source_folder_monitoring_scan_dir\": \"/data/cft/out/%s/in\"", jesc(S_prof[si]) > SJSON
             printf ",\n      \"source_folder_monitoring_time_between_scans\": \"60\"" > SJSON
-            printf ",\n      \"source_folder_monitoring_state\": \"Active\"" > SJSON
+            printf ",\n      \"source_folder_monitoring_state\": \"%s\"", (index("," S_tags[si] ",", ",scanoff,") ? "Inactive" : "Active") > SJSON
             printf ",\n      \"hybrid_partner_sftp_relay0_send_remote_directory\": \"/\"" > SJSON
         } else if (S_fdk[si] == "work") {
             printf ",\n      \"target_working_dir\": \"/data/cft/in/%s\"", jesc(S_acct[si]) > SJSON
@@ -129,6 +129,11 @@ END {
             printf ",\n      \"hybrid_partner_sftp_relay0_receive_remote_directory\": \"/outbox\"" > SJSON
             printf ",\n      \"hybrid_partner_sftp_relay0_receive_file_filter_expression\": \"*\"" > SJSON
         }
+        # the receive scheduler switch for polled flows (UC3/UC5, 2026-09-14 —
+        # the production shape): "No" on the schedoff flows (the Subscriptions
+        # page's Active code 3), "Yes" elsewhere
+        if (S_uc[si] == 3 || S_uc[si] == 5)
+            printf ",\n      \"hybrid_partner_sftp_relay0_receive_scheduler_enable\": \"%s\"", (index("," S_tags[si] ",", ",schedoff,") ? "No" : "Yes") > SJSON
         # the Quartz cron for polled flows (UC3/UC5) — absent on the nocron
         # flows (the Missing-cronjobs report's planted rows)
         if ((S_uc[si] == 3 || S_uc[si] == 5) && index("," S_tags[si] ",", ",nocron,") == 0) {
@@ -147,7 +152,10 @@ END {
             printf "    \"tags\": [\"BL_%s\", \"sample-estate\"],\n", jesc(BLP[1]) > SJSON
         else
             printf "    \"tags\": [\"sample-estate\"],\n" > SJSON
-        printf "    \"status\": {\"code\": \"DEPLOYED\", \"timestamp\": 1787000000000},\n" > SJSON
+        # the deployment status (2026-09-14): the undeployed / notdeployed flows
+        # plant the Subscriptions page's Active codes 1 and 2
+        stc = index("," S_tags[si] ",", ",undeployed,") ? "UNDEPLOYED" : (index("," S_tags[si] ",", ",notdeployed,") ? "SAVED_NOT_DEPLOYED" : "DEPLOYED")
+        printf "    \"status\": {\"code\": \"%s\", \"timestamp\": 1787000000000},\n", stc > SJSON
         printf "    \"domains\": [{\"businessId\": \"c25c8684-4ecc-40fc-9d8b-85e39cbf91f2\", \"name\": \"Default\"}],\n" > SJSON
         printf "    \"type\": \"Subscription\"\n  }" > SJSON
     }

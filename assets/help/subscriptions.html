@@ -17,10 +17,11 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Subscriptions (analyses)</h1>
 <h2>What it shows</h2>
-<p>Every configured subscription on one row: its endpoint and folders, its all-time File counts, its groups and its cron schedule. Ordered by use case, then name.</p>
+<p>Every configured subscription on one row: whether it is active, its endpoint and folders, its all-time File counts, its groups and its cron schedule. Ordered by use case, then name.</p>
 <h2>Columns</h2>
 <ul>
 <li><strong>Subscription</strong> &mdash; the complete configured name; links the detail page.</li>
+<li><strong>Active</strong> &mdash; <strong>Yes</strong>, or why not (hover for the words): <strong>1</strong> status Undeployed, <strong>2</strong> status SAVED_NOT_DEPLOYED, <strong>3</strong> a receive schedule set to No, <strong>4</strong> folder monitoring Inactive. Several apply = several numbers.</li>
 <li><strong>Endpoint</strong> &mdash; inbound: the login the partner connects with; outbound: the remote host we dial.</li>
 <li><strong>From</strong> / <strong>To</strong> &mdash; the source and target folders exactly as the detail page&rsquo;s Features rows: the pickup side carries its file mask in green; <code>-</code> = nothing configured.</li>
 <li><strong>Total files</strong>, <strong>In Files</strong>, <strong>Out Files</strong> &mdash; the Files (one per CoreId) this subscription carried over the whole data set, by movement direction.</li>

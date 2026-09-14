@@ -179,6 +179,13 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
     if (hastag(tags, "sshprobe")) T["sshprobe"]++   # the empty outbound ssh probes the parse drops (2026-09-08)
     if (hastag(tags, "collectdrop")) T["collectdrop"]++   # collects torn down by the client, settled by the ok bookend (2026-09-09)
     if (tags ~ /reason=/) T["reasons"]++
+    # the Subscriptions page's Active column (2026-09-14): the planted inactive
+    # subscriptions — gen-config.awk writes the status / schedule / folder state
+    if (hastag(tags, "undeployed"))  T["act_undeployed"]++    # code 1: status UNDEPLOYED
+    if (hastag(tags, "notdeployed")) T["act_notdeployed"]++   # code 2: status SAVED_NOT_DEPLOYED
+    if (hastag(tags, "schedoff"))    T["act_schedoff"]++      # code 3: receive scheduler enable No
+    if (hastag(tags, "scanoff"))     T["act_scanoff"]++       # code 4: folder monitoring Inactive
+    if (tags ~ /(^|,)(undeployed|notdeployed|schedoff|scanoff)(,|$)/) T["act_inactive"]++
 }
 
 # account-only row (an orphaned account: config residue with no flows).
@@ -296,8 +303,8 @@ function build_roster() {
     addf(1, "HR",  "ARCHIVE",  "ZORG",     "", 0, 0, "noxfer,hybrid")
     addf(1, "IT",  "BILLING",  "BLUTH",    "", 0, 0, "noxfer")
     addf(1, "ZG",  "DMS",      "PRIMATECH","", 0, 0, "noxfer")
-    addf(1, "AB",  "PORTAL",   "ABSTERGO", "", 0, 0, "noxfer")
-    addf(1, "CD",  "BATCH",    "MASSIVE",  "", 0, 0, "noxfer")
+    addf(1, "AB",  "PORTAL",   "ABSTERGO", "", 0, 0, "noxfer,notdeployed")
+    addf(1, "CD",  "BATCH",    "MASSIVE",  "", 0, 0, "noxfer,scanoff")
     addf(1, "WA",  "CRM",      "PIEDPIPER","", 0, 0, "noxfer")
     addf(1, "FS",  "PENSION",  "DUNDER",   "", 0, 0, "noxfer,credexp")
     # server-log-only (blue)
@@ -360,10 +367,10 @@ function build_roster() {
     addf(3, "ZG",  "RATES",    "OSCORP",   "",  0, 0, "pollconnfail,hybrid")
     # orange
     addf(3, "ZG",  "IKAZ",     "BLUTH",    "", 0, 0, "noxfer,hybrid")
-    addf(3, "AB",  "EXPORT",   "WAYNE",    "", 0, 0, "noxfer")
+    addf(3, "AB",  "EXPORT",   "WAYNE",    "", 0, 0, "noxfer,undeployed,schedoff")
     addf(3, "IT",  "FACTS",    "HOOLI",    "", 0, 0, "noxfer,nocron")
-    addf(3, "DPL", "STREAM",   "UMBRELLA", "", 0, 0, "noxfer")
-    addf(3, "SYNT","NAS",      "TYRELL",   "", 0, 0, "noxfer")
+    addf(3, "DPL", "STREAM",   "UMBRELLA", "", 0, 0, "noxfer,schedoff")
+    addf(3, "SYNT","NAS",      "TYRELL",   "", 0, 0, "noxfer,undeployed")
     # blue
     addf(3, "AIM", "QUOTES",   "WONKA",    "", 0, 0, "blue")
     addf(3, "FIN", "NAS",      "VANDELAY", "", 0, 0, "blue")

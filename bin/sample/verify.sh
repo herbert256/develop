@@ -121,6 +121,18 @@ check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "hosts-overview.rpt has 0 tinte
 n=$(awk -F'\t' 'FNR==NR { if ($1=="ROW") { l=$0; gsub(/@\{[^}]*\}/, "", l); split(l, F, "\t"); E[toupper(F[2])] = (F[3]+0) "|" (F[4]+0) "|" (F[7]+0) } next }
     $1=="ROW" { l=$0; gsub(/@\{[^}]*\}/, "", l); split(l, F, "\t"); k=toupper(F[2]); if (!(k in E)) next; if (E[k] != (F[6]+0) "|" (F[7]+0) "|" (F[9]+0)) bad++ } END { print bad+0 }' data/transfer/reports/entities/remote-host.rpt data/analyses/reports/hosts-overview.rpt 2>/dev/null || echo 1)
 check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "hosts-overview: $n host row(s) disagree with the Entities host page on Files in / out / Auto retries"
+# the Subscriptions page's Active column (2026-09-14): Yes on the active ones, and exactly the planted
+# inactive subscriptions carry codes — 1 undeployed, 2 saved-not-deployed, 3 schedule No, 4 folder monitoring Inactive
+acts=$(grep -o '<td class="act"[^>]*>[^<]*</td>' "docs/analyses/subscriptions.html" 2>/dev/null | sed 's/<[^>]*>//g')
+n=$(printf '%s\n' "$acts" | grep -c '^Yes$' || true)
+check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "subscriptions.html: no Active cell reads Yes"
+n=$(printf '%s\n' "$acts" | grep -c '^[1-4]' || true); en=$(exp act_inactive)
+check $([ "${n:-0}" -eq "$en" ] && [ "$en" -gt 0 ] && echo 0 || echo 1) "subscriptions.html: $n inactive Active cell(s), planted $en"
+for pair in 1:act_undeployed 2:act_notdeployed 3:act_schedoff 4:act_scanoff; do
+    c=${pair%%:*}; en=$(exp "${pair#*:}")
+    n=$(printf '%s\n' "$acts" | awk -v c="$c" '{ m = split($0, A, /, /); for (i = 1; i <= m; i++) if (A[i] == c) { n++; break } } END { print n + 0 }')
+    check $([ "$n" -eq "$en" ] && [ "$en" -gt 0 ] && echo 0 || echo 1) "subscriptions.html: Active code $c on $n cell(s), planted $en"
+done
 # a LOGIN skip rule (2026-09-03, user report): the comm-profile login goes
 # from the configuration — no roster row, no detail page — and the Skipped
 # report lists it (the sample rule: login exact FE672382, the CD-ZIBA-GEKKO

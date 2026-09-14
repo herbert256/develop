@@ -1,3 +1,8 @@
+act_inactive	5
+act_notdeployed	1
+act_scanoff	1
+act_schedoff	2
+act_undeployed	2
 blue	9
 bluelogon	4
 cnsend	1
