@@ -726,6 +726,7 @@ run_step "publish: analyses + coverage pages"                             bin/an
 # cmp-guarded and listed in the consumer's skip_if_fresh deps, so a warm
 # build skips each step in ~0 s.
 run_step "report catch-up: failed subscriptions"                          bin/transfer/reports/failed.sh
+run_step "report catch-up: failed files"                                  bin/transfer/reports/failed-files.sh   # 2026-09-14: the reasons the failed.sh catch-up just classified
 run_step "report catch-up: error reasons"                                 bin/analyses/reports/failing-reasons.sh
 # The DETAIL-PAGES catch-up runs in the BACKGROUND beside everything
 # below (2026-08): it touches only data/…/details + docs/details,

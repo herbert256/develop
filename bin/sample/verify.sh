@@ -411,6 +411,17 @@ check $([ "${rfm:-x}" = "${wrm:-y}" ] && echo 0 || echo 1) "recovered-files Resu
 read -r dfa dfm <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 3 && $1 == "TOTAL" { b = $5; c = $6; sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); print b + 0, c + 0; exit }' "$RF" 2>/dev/null)"
 check $([ "${dfa:-x}" = "${rfa:-y}" ] && [ "${dfm:-x}" = "${rfm:-y}" ] && echo 0 || echo 1) "recovered-files per-day Retry/Resubmit totals ${dfa:-?}/${dfm:-?} differ from the per-subscription ${rfa:-?}/${rfm:-?}"
 check $([ "$(grep -c 'Retry (automatic)\|Resubmit (manual)' "docs/transfer/recovered-files.html" 2>/dev/null)" -ge 2 ] && echo 0 || echo 1) "transfer/recovered-files.html lacks the Retry (automatic) / Resubmit (manual) boxes"
+# the Failed files list (2026-09-14, user request): one row per Failed/Expired File, per start day equal
+# to the Top view's Files/Error column (the home Error cells), which now open it narrowed to their day
+FF="data/transfer/reports/failed-files.rpt"
+n=$(rpt_rows "$FF"); wn=$(awk -F'\t' '$2 == "Failed" || $2 == "Expired" { n++ } END { print n + 0 }' data/transfer/cache/_files.tsv 2>/dev/null)
+check $([ "${n:-0}" -gt 0 ] && [ "$n" = "$wn" ] && echo 0 || echo 1) "failed-files.rpt has ${n:-0} row(s), the Files cache ${wn:-?} Failed/Expired File(s)"
+n=$(awk -F'\t' 'FNR == NR { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW") { d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10); if (d ~ /^[0-9][0-9][0-9][0-9]-/) T[d] = $7 + 0 } next }
+    $1 == "ROW" { F[substr($3, 1, 10)]++ }
+    END { for (d in T) if (T[d] != F[d] + 0) b++; for (d in F) if (!(d in T)) b++; print b + 0 }' data/transfer/reports/topview.rpt "$FF" 2>/dev/null || echo 1)
+check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "failed-files: $n day(s) whose row count differs from the Top view Files/Error"
+n=$(grep -c 'href="transfer/failed-files.html?axway_date=' docs/index.html 2>/dev/null || true)
+check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "home Error cells do not open transfer/failed-files.html"
 
 # ONE "Last error" per subscription page (2026-09-12, user request): a red
 # flow's page carries the publish-time splice "Last error - <reason>" below

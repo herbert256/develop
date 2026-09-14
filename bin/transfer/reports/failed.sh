@@ -1057,6 +1057,12 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
         print cid "\t" r6
     }
 ' "$TMP/all" > "$TMP/reasons"
+# the per-CoreId reasons SAVED for the Failed files report (2026-09-14, user
+# request: failed-files.sh shows them per File) — cmp-guarded, so a rerun that
+# classifies the same leaves the sidecar mtime (its skip_if_fresh dep) alone
+LC_ALL=C sort "$TMP/reasons" > "$REPORTS_DIR/_failed-reasons.tsv.tmp" 2>/dev/null || : > "$REPORTS_DIR/_failed-reasons.tsv.tmp"
+if cmp -s "$REPORTS_DIR/_failed-reasons.tsv.tmp" "$REPORTS_DIR/_failed-reasons.tsv" 2>/dev/null; then rm -f "$REPORTS_DIR/_failed-reasons.tsv.tmp"
+else mv "$REPORTS_DIR/_failed-reasons.tsv.tmp" "$REPORTS_DIR/_failed-reasons.tsv"; fi
 
 # The same Reason lands in each drill page TITLE — "Failed subscription:
 # <name> - <reason>" — so the error page answers WHY in its own heading
