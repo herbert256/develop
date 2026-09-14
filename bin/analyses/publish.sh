@@ -1774,7 +1774,7 @@ write_analyses_index() {
         [ -f "$ADIR/triage.html" ] && printf '<tr><td><a href="triage.html">Triage</a></td><td class="desc">The ranked action list: every subscription that is red, holds staged Files about to expire, or just fell silent &mdash; newest flips on the busiest flows first; the per-symptom pages stay the deep-dives.</td></tr>\n'
         printf '<tr><th colspan="2">Errors</th></tr>\n'
         [ -f "$ADIR/failed.html" ] && printf '<tr><td><a href="failed.html">Failed Subscriptions</a></td><td class="desc">Every failing subscription with its evidence &mdash; the newest failed File of each (drilling into its transfer legs and server log), plus the flows failing in the server log only; view buttons switch to per-leg-count and full-history views.</td></tr>\n'
-        [ -f "$ADIR/failing-reasons.html" ] && printf '<tr><td><a href="failing-reasons.html">Error reasons</a></td><td class="desc">Every possible Reason of the Failed Subscriptions pages &mdash; how many currently red subscriptions carry it and the newest occurrence; a nonzero row opens the red subscriptions behind it.</td></tr>\n'
+        [ -f "$ADIR/failing-reasons.html" ] && printf '<tr><td><a href="failing-reasons.html">Error reasons</a></td><td class="desc">Every possible Reason of the Failed Subscriptions pages &mdash; how many failed Files carry it and the newest occurrence; a nonzero row opens the failed Files behind it.</td></tr>\n'
         printf '<tr><th colspan="2">Month stats</th></tr>\n'
         [ -f "$DOCS/transfer/month-stats/this-subscription.html" ] && printf '<tr><td><a href="../transfer/month-stats/this-subscription.html">Month stats</a></td><td class="desc">The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired.</td></tr>\n'
         printf '</table></div>\n'
@@ -1837,29 +1837,8 @@ for _errpt in "$ARPT"/failing-reasons-*.rpt; do
 done
 CUR_DATES=$_ersaved_dates
 
-# THE VIEW SELECTOR ROW on the two Error reasons mains (2026-09-14, user
-# request: the Failed Subscriptions pages' SELECTION buttons, All and
-# Subscription, two pages — until then a Subscriptions/Errors x
-# Current/History grid of four). All = every failed File in the data,
-# counted like failed-all-all.html (failing-reasons-errors-history.html, the
-# name kept for old links); Subscription = each still-failing subscription
-# once, counted like failed.html (failing-reasons.html itself, the default).
-# This page has no date fields, so the row simply sits above the table.
-for _frk in all sub; do
-    case $_frk in
-        all) _frf="$ADIR/failing-reasons-errors-history.html" ;;
-        sub) _frf="$ADIR/failing-reasons.html" ;;
-    esac
-    [ -f "$_frf" ] || continue
-    _frrow='<p class="tabs undertabs">'
-    for _frs in "all:All:failing-reasons-errors-history.html" "sub:Subscription:failing-reasons.html"; do
-        _frk2=${_frs%%:*}; _frrest=${_frs#*:}; _frl=${_frrest%%:*}; _frh=${_frrest#*:}
-        if [ "$_frk2" = "$_frk" ]; then _frrow+="<span class=\"tab active\">$_frl</span>"
-        else _frrow+="<a class=\"tab\" href=\"$_frh\">$_frl</a>"; fi
-    done
-    _frrow+='</p>'
-    _inject_before_table "$_frf" "$_frrow"
-done
+# (No selector row on Error reasons since 2026-09-14, user request: ONE page
+# counting every failed File — failing-reasons.sh.)
 
 # THE VIEW SELECTOR ROW, injected into all six Failed Subscriptions pages BELOW
 # the From/To date controls (report.js hoists its controls anchor back over a

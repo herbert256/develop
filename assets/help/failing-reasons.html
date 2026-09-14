@@ -17,19 +17,18 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Error reasons</h1>
 <h2>What it shows</h2>
-<p>One row per <strong>Reason</strong> the <a href="failed.html">Failed Subscriptions</a> pages can show: how many currently <strong>red</strong> subscriptions carry it (<strong>Count</strong>) and the newest occurrence among them (<strong>Last</strong>) &mdash; the estate&rsquo;s failure profile at a glance.</p>
+<p>One row per <strong>Reason</strong> the <a href="failed.html">Failed Subscriptions</a> pages can show: how many failed Files carry it (<strong>Count</strong>) and the newest occurrence (<strong>Last</strong>) &mdash; the failure profile of the whole data at a glance.</p>
 <h2>Rules</h2>
 <ul>
-<li>The row set is fixed: the shared classifier vocabulary (<em>Connection failures</em>, <em>PeSIT transfer aborted</em>, <em>Wrong server fingerprint</em>, &hellip;) parsed from <code>bin/flip-reason.awk</code> in classifier order (a new verdict appears on its own), plus <em>One-legged</em>, the raw last-leg status, and whatever a server-log row carries (a Subscriptions-in-boxes label).</li>
+<li>Count = <strong>every failed File</strong> in the data, recovered flows included, plus each server-failing subscription once: the Failed Subscriptions All &times; All list, so the Total equals that list and a busy flow counts as often as it failed.</li>
+<li>The row set is fixed: the shared classifier vocabulary (<em>Connection failures</em>, <em>PeSIT transfer aborted</em>, <em>Wrong server fingerprint</em>, &hellip;) parsed from <code>bin/flip-reason.awk</code> in classifier order (a new verdict appears on its own), plus <em>One-legged</em>, the raw last-leg status, and whatever a server-log row carries.</li>
 <li>A reason with nothing counted stays listed with blank Count and Last: a fault class disappearing is an emptied row, one appearing a new nonzero.</li>
-<li>Red subscriptions only, <strong>one each</strong>: the source is the default Failed Subscriptions view (one row per failing subscription &mdash; its newest failed File or its server-log verdict), so Count sums to the red total the home page&rsquo;s two red tables split.</li>
-<li>Green (recovered) flows never count, whatever their history; volumes over time: <a href="failure-rate.html">Failure rate</a>.</li>
-<li>Buttons (each its own page), like the <a href="failed.html">Failed Subscriptions</a> pages: <strong>All</strong> counts every failed File in the data, recovered flows included, so a busy flow counts as often as it failed (the Total equals the All &times; All list); <strong>Subscription</strong> (default) counts each still-failing subscription once, by its newest failure&rsquo;s reason.</li>
+<li>Volumes over time: <a href="failure-rate.html">Failure rate</a>; every failed File with its CoreId and file name: <a href="failed-files.html">Failed files</a>.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A nonzero row opens the red subscriptions carrying that reason, each row as on the Failed Subscriptions pages (Subscription, Date/time) and opening the same error page: the file&rsquo;s legs and server log, or the server-failing flow&rsquo;s reddening session.</li>
-<li>All drills show at most the newest 500 rows per reason and say so; the searchable All views of Failed Subscriptions hold every one.</li>
+<li>A nonzero row opens the failed Files with that reason, each row as on the Failed Subscriptions pages (Subscription, Date/time, tinted by the subscription) and opening the same error page.</li>
+<li>A drill shows at most the newest 500 rows and says so; the All &times; All list holds every one.</li>
 </ul>
 </main>
 </body>

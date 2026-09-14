@@ -1,22 +1,15 @@
 #!/usr/bin/env bash
 #
 # failing-reasons.sh — "Error reasons": every possible Reason of the Failed
-# Subscriptions pages (Reason / Count / Last), on TWO pages picked by the
-# selector row (injected by bin/analyses/publish.sh, 2026-09-14 user request:
-# the Failed Subscriptions pages' SELECTION buttons, All and Subscription):
+# Subscriptions pages (Reason / Count / Last) on ONE page counting every
+# failed File in the data (2026-09-14, user request: no selector buttons,
+# count all errors, not subscriptions). The source is failed-all-all.rpt —
+# every failed File, recovered flows included, plus each server-failing
+# subscription once — so the Total equals failed-all-all.html's row count and
+# one busy flow counts as often as it failed.
 #
-#   All           count individual ERRORS in the whole data — every failed
-#                 File (and each server-failing subscription once), recovered
-#                 flows included: the failed-all-all rows, so the Total equals
-#                 failed-all-all.html's row count
-#                 -> failing-reasons-errors-history.html (name kept for links)
-#   Subscription  count each still-failing (red) SUBSCRIPTION once, by its
-#                 newest failure's reason: the failed-sub-all rows tinted red,
-#                 so the Total equals failed.html's row count
-#                 -> failing-reasons.html (THE page, the default)
-#
-# (Until 2026-09-14 a UNIT x SCOPE grid of four pages: the Errors x Current
-# and Subscriptions x History views went.)
+# (Until 2026-09-14 first a Subscriptions/Errors x Current/History grid of
+# four pages, then the two All / Subscription pages the same day.)
 #
 # The Errors group's second member.
 #
@@ -24,52 +17,42 @@
 # bin/flip-reason.awk vocabulary — PARSED FROM THE CLASSIFIER ITSELF (its
 # `return "…"` strings, in classifier order), so a new verdict appears here
 # on its own — plus the two chain extras One-legged and Failed
-# Subtransmission, UNIONed with any reason actually present in the sources
+# Subtransmission, UNIONed with any reason actually present in the source
 # (a Subscriptions-in-boxes label on a server row, an unlisted raw status; a
 # row with a blank Reason counts under "(none)"). A reason with no counted
 # row keeps its row with Count and Last BLANK.
 #
-# SOURCES: failed-sub-all.rpt (the Subscription view — its rows filtered to
-# @data:res=red) and failed-all-all.rpt (the All view) — so each view's Count
-# is exactly a Failed Subscriptions view's row count, split by Reason.
+# Each nonzero row opens its drill list (failing-reasons-<slug>.html): the
+# rows behind the count, copied from the source MINUS the Reason column —
+# same links and tints, so a row opens the same error page it opens on the
+# Failed Subscriptions pages. The drills are CAPPED at the newest 500 rows
+# (Connection failures alone can hold thousands of files; failed-all-all.html
+# is the full, searchable list), the cap stated in a NOTE. The drills render
+# through the failing-reasons-* loop in bin/analyses/publish.sh (group row +
+# "failing-reasons" help slug and persistence key).
 #
-# Each nonzero row opens its view's drill list (failing-reasons[-errors]
-# [-history]-<slug>.html): the rows behind the count, copied from the source
-# MINUS the Reason column — same links, so a row opens the same error page
-# it opens on the Failed Subscriptions pages. The ERRORS drills are CAPPED
-# at the newest 500 rows (Connection failures alone holds ~13k files; the
-# searchable All views are the full lists), the cap stated in a NOTE. All
-# the extra pages render through the failing-reasons-* drill loop in
-# bin/analyses/publish.sh (group row + "failing-reasons" help slug and
-# persistence key).
-#
-# An ANALYSES report (page in the Analyses Errors group) reading TRANSFER
-# reports — analyses reports run after the transfer reports in bin/build.sh,
-# so the sources are always this build's.
+# An ANALYSES report (page in the Analyses Errors group) reading a TRANSFER
+# report — analyses reports run after the transfer reports in bin/build.sh,
+# and again after the failed.sh catch-up, so the source is always this build's.
 #
 # Usage:
-#   ./failing-reasons.sh    # -> data/<env>/analyses/reports/failing-reasons*.rpt
+#   ./failing-reasons.sh    # -> data/analyses/reports/failing-reasons*.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 
-SRC="$DATA/transfer/reports/failed-sub-all.rpt"
-SRCEH="$DATA/transfer/reports/failed-all-all.rpt"
+SRC="$DATA/transfer/reports/failed-all-all.rpt"
 OUT="$REPORTS_DIR/failing-reasons.rpt"
-if [ ! -f "$SRC" ] || [ ! -f "$SRCEH" ]; then
-    echo "failing-reasons: missing failed-*.rpt source(s) (the transfer reports have not run) — pages not published." >&2
+if [ ! -f "$SRC" ]; then
+    echo "failing-reasons: missing $SRC (the transfer reports have not run) — pages not published." >&2
     rm -f "$OUT" "$REPORTS_DIR"/failing-reasons-*.rpt
     exit 0
 fi
-# a missing view page forces a rebuild — skip_if_fresh tests the one .rpt
-for v in errors-history; do
-    [ -f "$REPORTS_DIR/failing-reasons-$v.rpt" ] || rm -f "$OUT"
-done
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRC" "$SRCEH" "$LIB_DIR/../flip-reason.awk"
+skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRC" "$LIB_DIR/../flip-reason.awk"
 
 GEN=$(date '+%Y-%m-%d %H:%M:%S')
-DCAP=500            # the Errors drills show at most this many newest rows
+DCAP=500            # the drills show at most this many newest rows
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axereas.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 
@@ -78,17 +61,31 @@ grep -o 'return "[^"]*"' "$LIB_DIR/../flip-reason.awk" \
     | sed -e 's/^return "//' -e 's/"$//' | awk 'NF' > "$TMP/vocab"
 printf 'One-legged\nFailed Subtransmission\n' >> "$TMP/vocab"
 
-LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen="$GEN" -v DCAP="$DCAP" \
-    -v F1="$SRC" -v F2="$SRCEH" '
+LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen="$GEN" -v DCAP="$DCAP" '
     function slug9(n,   s) { s = tolower(n); gsub(/[^a-z0-9]+/, "-", s)
         sub(/^-+/, "", s); sub(/-+$/, "", s); return s }
-    # one view MAIN list: f = the output, pfx = the drill-page prefix,
-    # CN/LS = the view count/last maps, ttl = the total counted, scope =
-    # the DESC/NOTE phrase for what a count counts
-    function mainlist(f, pfx, CN, LS, ttl, scope,   i, r, sl) {
+    BEGIN { while ((getline l < VOC) > 0)
+                if (l != "" && !(l in RIX)) { RN[++nr] = l; RIX[l] = nr }
+            close(VOC) }
+    $1 == "ROW" {
+        r = ($4 != "") ? $4 : "(none)"
+        if (!(r in RIX)) { RN[++nr] = r; RIX[r] = nr }   # a dynamic straggler
+        # the drill row: the source row (Subscription / Date/time) minus its
+        # (constant) Reason column, the trailing @data cells riding along —
+        # same links, same tint, so a drill row opens the same error page
+        row9 = "ROW\t" $2 "\t" $3
+        for (i = 5; i <= NF; i++) row9 = row9 "\t" $i
+        CN[r]++; tot++
+        if ($3 > LS[r]) LS[r] = $3
+        if (DN[r] + 0 < DCAP + 0) { DN[r]++; DRW[r] = DRW[r] row9 "\n" }
+        next
+    }
+    END {
+        # the MAIN list
+        f = OUT
         printf "TITLE\tError reasons\n" > f
-        printf "DESC\tEvery possible Reason of the Failed Subscriptions pages — how many %s carry it and the newest occurrence; a nonzero row opens the rows behind it.\n", scope > f
-        printf "KEYWORDS\terror,reason,cause,failed,failing,red,count,history,vocabulary,classifier\n" > f
+        printf "DESC\tEvery possible Reason of the Failed Subscriptions pages — how many failed Files carry it and the newest occurrence; a nonzero row opens the failed Files behind it.\n" > f
+        printf "KEYWORDS\terror,reason,cause,failed,failing,errors,count,files,vocabulary,classifier\n" > f
         # a snapshot per reason, so no date semantics: nofilter keeps the
         # From/To machinery off this table
         printf "TABLE\t\tnofilter\tnosearch\trowlink\n" > f
@@ -97,85 +94,46 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen=
         for (i = 1; i <= nr; i++) {
             r = RN[i]
             if (CN[r] + 0 > 0) {
-                sl = pfx slug9(r)
+                sl = "failing-reasons-" slug9(r)
                 printf "ROW\t@{href=%s.html}%s\t@{href=%s.html,class=num}%d\t%s\t@data:href=%s.html\n", \
                        sl, r, sl, CN[r], LS[r], sl > f
             } else
                 printf "ROW\t%s\t\t\n", r > f
         }
-        printf "TOTAL\tTotal (%d reasons)\t%d\t\n", nr, ttl + 0 > f
-    }
-    # one view DRILL set: DN = how many buffered (capped), CN = the true
-    # count, DRW = the buffered rows, back = the main page to link back to
-    function drills(pfx, CN, DN, DRW, back, scope,   i, r, f) {
+        printf "TOTAL\tTotal (%d reasons)\t%d\t\n", nr, tot + 0 > f
+        printf "NOTE\tThe row set is **every Reason the Failed Subscriptions pages can show** — the shared classifier vocabulary (bin/flip-reason.awk, in classifier order), **One-legged**, the raw last-leg status, plus whatever a server row carries — a reason with **nothing counted stays listed with blank Count and Last**. Count = **every failed File** in the data (and each server-failing subscription once) — the Failed Subscriptions All x All rows — recovered flows included, so one busy flow counts as often as it failed. A nonzero row opens the list behind the count.\n" > f
+        printf "FOOT\tGenerated on %s\n", gen > f
+        close(f)
+        # the DRILL pages, one per nonzero reason
         for (i = 1; i <= nr; i++) {
             r = RN[i]
             if (CN[r] + 0 == 0) continue
-            f = TMPD "/" pfx slug9(r) ".rpt"
+            f = TMPD "/failing-reasons-" slug9(r) ".rpt"
             printf "TITLE\tError reason: %s\n", r > f
-            printf "DESC\tThe %d %s whose Reason is %s — each row opening its own error page.\n", CN[r], scope, r > f
-            printf "INTRO\tThe %s whose Reason is **%s**, newest first. Each row is listed exactly as on the Failed Subscriptions pages, and opens the same error page.\n", scope, r > f
+            printf "DESC\tThe %d failed Files whose Reason is %s — each row opening its own error page.\n", CN[r], r > f
+            printf "INTRO\tThe failed Files whose Reason is **%s**, newest first. Each row is listed exactly as on the Failed Subscriptions pages, and opens the same error page.\n", r > f
             printf "TABLE\t\twide\tsort=1:-1\trowlink\trestint\n" > f
             printf "HEAD\tSubscription\tDate/time\n" > f
             printf "KIND\tsite\ttext\n" > f
             printf "%s", DRW[r] > f
             printf "TOTAL\tTotal (%d rows)\t\n", DN[r] + 0 > f
             if (CN[r] + 0 > DN[r] + 0)
-                printf "NOTE\tOnly the newest **%d** of the **%d** rows are shown — the **All** views of Failed Subscriptions hold the full lists (their newest 10,000).\n", DN[r] + 0, CN[r] > f
-            printf "LINK\t%s\tBack to Error reasons\n", back > f
+                printf "NOTE\tOnly the newest **%d** of the **%d** rows are shown — the Failed Subscriptions All x All view holds the full list.\n", DN[r] + 0, CN[r] > f
+            printf "LINK\tfailing-reasons.html\tBack to Error reasons\n" > f
             printf "FOOT\tGenerated on %s\n", gen > f
             close(f)
         }
     }
-    # count one source row into a view: CN/LS/DN/DRW its maps, cap the
-    # drill-buffer ceiling (0 = uncapped)
-    function tally(r, dt, row9, CN, LS, DN, DRW, cap) {
-        CN[r]++
-        if (dt > LS[r]) LS[r] = dt
-        if (cap + 0 == 0 || DN[r] + 0 < cap + 0) { DN[r]++; DRW[r] = DRW[r] row9 "\n" }
-    }
-    BEGIN { while ((getline l < VOC) > 0)
-                if (l != "" && !(l in RIX)) { RN[++nr] = l; RIX[l] = nr }
-            close(VOC) }
-    FNR == 1 { nf++ }
-    $1 == "ROW" {
-        red = 0; for (i = 2; i <= NF; i++) if ($i == "@data:res=red") red = 1
-        r = ($4 != "") ? $4 : "(none)"
-        if (!(r in RIX)) { RN[++nr] = r; RIX[r] = nr }   # a dynamic straggler
-        # the drill row: the source row (Subscription / Date/time) minus its
-        # (constant) Reason column, the trailing @data cells riding along —
-        # same links, same tint, so a drill row opens the same error page
-        row9 = "ROW\t" $2 "\t" $3
-        for (i = 5; i <= NF; i++) row9 = row9 "\t" $i
-        if (nf == 1) {                     # failed-sub-all: the Subscription view (red flows, one each)
-            if (red) { tally(r, $3, row9, CNT, LAST, CD, DR, 0); tot++ }
-        } else {                           # failed-all-all: the All view (every failed File in the data)
-            tally(r, $3, row9, XC, XL, XD9, XD, DCAP); xtot++
-        }
-        next
-    }
-    END {
-        mainlist(OUT, "failing-reasons-", CNT, LAST, tot, "currently RED subscriptions")
-        printf "NOTE\tThe row set is **every Reason the Failed Subscriptions pages can show** — the shared classifier vocabulary (bin/flip-reason.awk, in classifier order), **One-legged**, the raw last-leg status, plus whatever a server row carries — a reason with **nothing counted stays listed with blank Count and Last**, so a fault class disappearing from the estate is visible as an emptied row. The buttons pick the view, like the Failed Subscriptions pages: **All** counts every individual failed File in the data, **Subscription** counts each still-failing subscription once. This view: RED subscriptions only, one each — the same rows the default Failed Subscriptions view lists. A nonzero row opens the list behind the count.\n" > OUT
-        printf "FOOT\tGenerated on %s\n", gen > OUT
-        close(OUT)
-        f4 = TMPD "/failing-reasons-errors-history.rpt"
-        mainlist(f4, "failing-reasons-errors-history-", XC, XL, xtot, "individual errors in the data")
-        printf "NOTE\tSee the Subscription view note for the row set and the buttons. This view counts **individual ERRORS across the whole data**: every failed File (and each server-failing subscription once) — the Failed Subscriptions All x All rows — recovered flows included, so one busy flow counts as many times as it ever failed.\n" > f4
-        printf "FOOT\tGenerated on %s\n", gen > f4
-        close(f4)
-        drills("failing-reasons-",                CNT, CD,  DR, "failing-reasons.html",                "currently **red** subscriptions")
-        drills("failing-reasons-errors-history-", XC,  XD9, XD, "failing-reasons-errors-history.html", "individual errors in the **whole data**")
-    }
-' "$SRC" "$SRCEH"
+' "$SRC"
 
-# publish: the drill set + the view mains first, the Current main LAST — a
-# killed run leaves the old complete main (a stale mtime, so skip_if_fresh
-# rebuilds) rather than a fresh list linking missing pages
+# publish: the drill set first, the main LAST — a killed run leaves the old
+# complete main (a stale mtime, so skip_if_fresh rebuilds) rather than a fresh
+# list linking missing pages. The sweep also removes the retired view pages
+# (failing-reasons-errors-history*, -history*, -errors*).
 rm -f "$REPORTS_DIR"/failing-reasons-*.rpt
 shopt -s nullglob
 for f in "$TMP"/failing-reasons-*.rpt; do mv "$f" "$REPORTS_DIR/${f##*/}"; done
 shopt -u nullglob
 mv "$OUT.tmp" "$OUT"
 n=$(command grep -c '^ROW' "$OUT" || true)
-echo "Data written to $OUT + the All view ($n reason row(s))." >&2
+echo "Data written to $OUT ($n reason row(s))." >&2
