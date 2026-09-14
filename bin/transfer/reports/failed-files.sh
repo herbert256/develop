@@ -18,6 +18,11 @@
 #   CoreId         col 1 (report.js adds the File Tracking link + copy icon)
 #   Filename       col 11
 #
+# Rows tint by the SUBSCRIPTION's result colour (2026-09-14, user request: the
+# standard subscription colours) — restint + @data:res from base/
+# _subscriptions.tsv col 3 (green / orange / red / blue), the failed.sh rule;
+# a name the configuration lacks stays untinted.
+#
 # Runs after the transfer pool (bin/transfer/reports.sh, serial tail — the
 # pool's failed.sh has finished) and again in bin/build.sh right after the
 # failed.sh catch-up, whose reasons it needs; skip_if_fresh on the reasons
@@ -43,6 +48,8 @@ ensure_parsed
 DEPS=("${BASH_SOURCE[0]}")
 [ -f "$REAS" ] && DEPS+=("$REAS")
 [ -d "$ERRDIR" ] && DEPS+=("$ERRDIR")
+SUBRES="$CONFIG_BASE/_subscriptions.tsv"   # name <TAB> ... <TAB> result colour (col 3)
+[ -f "$SUBRES" ] && DEPS+=("$SUBRES")
 skip_if_fresh "$OUT" "${DEPS[@]}"
 
 # the CoreIds that have an error page (their errors/<CoreId>.rpt)
@@ -53,10 +60,13 @@ else
     : > "$pages"
 fi
 [ -f "$REAS" ] || REAS=/dev/null
+[ -f "$SUBRES" ] || SUBRES=/dev/null
 
 # one "sortkey TAB ROW..." line per failed File, plus the "~N TAB count" line
-agg=$(LC_ALL=C awk -F'\t' -v REAS="$REAS" -v PAGES="$pages" '
+agg=$(LC_ALL=C awk -F'\t' -v REAS="$REAS" -v PAGES="$pages" -v SUBRES="$SUBRES" '
     BEGIN {
+        while ((getline l < SUBRES) > 0) { n9 = split(l, a9, "\t"); if (n9 >= 3 && a9[1] != "") SRES[toupper(a9[1])] = a9[3] }
+        close(SUBRES)
         while ((getline l < REAS) > 0) { p = index(l, "\t"); if (p > 0) RE[substr(l, 1, p - 1)] = substr(l, p + 1) }
         close(REAS)
         while ((getline l < PAGES) > 0) if (l != "") PG[l] = 1
@@ -67,7 +77,9 @@ agg=$(LC_ALL=C awk -F'\t' -v REAS="$REAS" -v PAGES="$pages" '
         r = ($2 == "Expired") ? "Expired (not collected)" : ((cid in RE) ? RE[cid] : "")
         if (r == "") r = "-"
         if (cid in PG) r = "@{href=../errors/" cid ".html}" r
-        printf "%s\tROW\t%s\t%s %s\t%s\t@{class=mono}%s\t%s\n", $6, $12, $4, $5, r, cid, $11
+        res = SRES[toupper($12)]
+        tint = (res == "green" || res == "orange" || res == "red" || res == "blue") ? "\t@data:res=" res : ""
+        printf "%s\tROW\t%s\t%s %s\t%s\t@{class=mono}%s\t%s%s\n", $6, $12, $4, $5, r, cid, $11, tint
         n++
     }
     END { printf "~N\t%d\n", n + 0 }' "$FILES")
@@ -78,7 +90,7 @@ nff=$(printf '%s\n' "$agg" | awk -F'\t' '$1 == "~N" { print $2 }')
     printf 'TITLE\tFailed files\n'
     printf 'DESC\tEvery File that ended in error (Failed or Expired), newest first: its subscription, start date/time, error reason, CoreId and file name. The Files the home page Error cells count; a cell opens this page narrowed to its day.\n'
     printf 'KEYWORDS\tfailed, failed files, error, errors, error reason, reason, expired, coreid, file name, filename, per day, home error\n'
-    printf 'TABLE\t\twide\tsort=1:-1\tpager=500\n'
+    printf 'TABLE\t\twide\tsort=1:-1\tpager=500\trestint\n'
     printf 'HEAD\tSubscription\tDate/time\tError reason\tCoreId\tFilename\n'
     printf 'KIND\tsite\ttext\ttext\ttext\ttext\n'
     printf '%s\n' "$agg" | awk -F'\t' '$1 != "~N" && $1 != ""' | LC_ALL=C sort -t"$(printf '\t')" -k1,1r | cut -f2- || true

@@ -420,6 +420,9 @@ n=$(awk -F'\t' 'FNR == NR { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW") {
     $1 == "ROW" { F[substr($3, 1, 10)]++ }
     END { for (d in T) if (T[d] != F[d] + 0) b++; for (d in F) if (!(d in T)) b++; print b + 0 }' data/transfer/reports/topview.rpt "$FF" 2>/dev/null || echo 1)
 check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "failed-files: $n day(s) whose row count differs from the Top view Files/Error"
+# ... its rows carry the standard subscription colours (2026-09-14): a restint table, tinted rows
+n=$(grep -c '@data:res=' "$FF" 2>/dev/null || true)
+check $([ "${n:-0}" -gt 0 ] && grep -q 'restint' "$FF" 2>/dev/null && echo 0 || echo 1) "failed-files.rpt: ${n:-0} tinted row(s) or no restint table"
 n=$(grep -c 'href="transfer/failed-files.html?axway_date=' docs/index.html 2>/dev/null || true)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "home Error cells do not open transfer/failed-files.html"
 
