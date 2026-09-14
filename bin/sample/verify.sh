@@ -119,7 +119,7 @@ check $([ -f "docs/analyses/hosts-overview.html" ] && echo 0 || echo 1) "docs/an
 n=$(command grep -c '@data:res=' "data/analyses/reports/hosts-overview.rpt" 2>/dev/null || echo 0)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "hosts-overview.rpt has 0 tinted rows"
 n=$(awk -F'\t' 'FNR==NR { if ($1=="ROW") { l=$0; gsub(/@\{[^}]*\}/, "", l); split(l, F, "\t"); E[toupper(F[2])] = (F[3]+0) "|" (F[4]+0) "|" (F[7]+0) } next }
-    $1=="ROW" { l=$0; gsub(/@\{[^}]*\}/, "", l); split(l, F, "\t"); k=toupper(F[2]); if (!(k in E)) next; if (E[k] != (F[6]+0) "|" (F[7]+0) "|" (F[10]+0)) bad++ } END { print bad+0 }' data/transfer/reports/entities/remote-host.rpt data/analyses/reports/hosts-overview.rpt 2>/dev/null || echo 1)
+    $1=="ROW" { l=$0; gsub(/@\{[^}]*\}/, "", l); split(l, F, "\t"); k=toupper(F[2]); if (!(k in E)) next; if (E[k] != (F[6]+0) "|" (F[7]+0) "|" (F[9]+0)) bad++ } END { print bad+0 }' data/transfer/reports/entities/remote-host.rpt data/analyses/reports/hosts-overview.rpt 2>/dev/null || echo 1)
 check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "hosts-overview: $n host row(s) disagree with the Entities host page on Files in / out / Auto retries"
 # a LOGIN skip rule (2026-09-03, user report): the comm-profile login goes
 # from the configuration — no roster row, no detail page — and the Skipped

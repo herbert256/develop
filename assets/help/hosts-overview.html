@@ -17,29 +17,23 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Partners - Outgoing</h1>
 <h2>What it shows</h2>
-<p>The opposite of <a href="partners-in.html">Partners - Incoming</a>: one row per <strong>remote host</strong> (the partner&rsquo;s server we connect to) for <strong>UC1</strong> (we deliver) and <strong>UC3</strong> (we collect): every configured host with its use cases, contact stamps, Files and polls. Full-period; no date filter.</p>
+<p>The opposite of <a href="partners-in.html">Partners - Incoming</a>: one row per <strong>remote host</strong> (the partner&rsquo;s server we connect to) for <strong>UC1</strong> (we deliver) and <strong>UC3</strong> (we collect), with its use cases, contact stamps and Files. Full-period; no date filter.</p>
 <h2>Columns</h2>
 <ul>
 <li><strong>Host</strong> &mdash; links its detail page.</li>
-<li><strong>Use cases</strong> &mdash; of its subscriptions: <strong>UC1</strong> (we push to the partner), <strong>UC3</strong> (we pull from the partner), <strong>UC1/UC3</strong> (both).</li>
-<li><strong>Cloud</strong> &mdash; the newest successful transfer leg with the host on <em>this</em> platform: the last time we reached the partner; empty when the log window holds none.</li>
+<li><strong>Use cases</strong> &mdash; of its subscriptions: <strong>UC1</strong> (we push), <strong>UC3</strong> (we pull), <strong>UC1/UC3</strong> (both).</li>
+<li><strong>Cloud</strong> &mdash; the newest successful transfer leg with the host here; empty when none.</li>
 <li><strong>Gateway</strong> &mdash; the host&rsquo;s stamp on the <em>old</em> gateway, from <code>input/hosts_old.txt</code>.</li>
-<li><strong>Files in</strong> / <strong>Files out</strong> &mdash; Files collected from / delivered to the host, by movement direction, whole transfer window.</li>
-<li><strong>Error</strong> &mdash; Files that failed, delivered or collected.</li>
-<li><strong>Delivered</strong> &mdash; the out-side Files that completed. Delivered + the failed deliveries = Files out.</li>
+<li><strong>Files</strong> (group) &mdash; <strong>In</strong> / <strong>Out</strong>: Files collected from / delivered to the host, by movement direction; <strong>Error</strong>: the Files that failed.</li>
 <li><strong>Auto retries</strong> &mdash; OK Files with a failed leg and no resubmit: the platform&rsquo;s own retry delivered them.</li>
 <li><strong>Resubmit OK</strong> / <strong>Resubmit Error</strong> &mdash; the Files an operator resubmitted, by final outcome.</li>
-<li><strong>Last error</strong> &mdash; when the newest failed File started.</li>
-<li><strong>Polls</strong> / <strong>Poll pattern</strong> &mdash; the server-log polls of the host&rsquo;s UC3 subscriptions summed (the <a href="server-polling.html">Polling</a> page), the pattern = the observed cadence of the busiest one; empty for a host we only deliver to.</li>
-<li><strong>Connection problems</strong> &mdash; the server-log connection failures of the host&rsquo;s subscriptions summed (<a href="server-site-failures.html">Connection failures</a>); empty when none. Click it for that page with the busiest subscription&rsquo;s row marked.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Tints: <strong>green</strong> delivering, <strong>red</strong> failing, <strong>orange</strong> configured, never seen; a host only the old-gateway file names (not configured here) is untinted &mdash; a partner not yet moved over. A 0 renders empty.</li>
-<li>Roster = the FlowManager export&rsquo;s host list; a subscription&rsquo;s use case = its <code>UC&lt;n&gt;</code> name prefix, else the use case derived from its configuration.</li>
-<li>Files: the transfer caches, the <a href="entities-remote-host.html">Entities</a> host rule &mdash; a File counts for every host its legs name when we made the connection (the connection side is out).</li>
-<li>Cloud and Last error: the transfer legs and Files caches (one File per CoreId). Polls and Connection problems: the server-log reports, joined through the host&rsquo;s subscriptions.</li>
-<li><code>input/hosts_old.txt</code>: hand-maintained like <code>logons_old.txt</code>, one host per line &mdash; the host, then its stamp (<code>sftp.partner.example&nbsp;&nbsp;2026-09-02 14:35</code>). First token (up to spaces, TAB, comma or semicolon) = the host, case-insensitive; the rest shown as written; blank and <code>#</code> lines ignored; a missing file leaves the column empty.</li>
+<li>Tints: <strong>green</strong> delivering, <strong>red</strong> failing, <strong>orange</strong> configured, never seen; an old-gateway-only host (not configured here) is untinted. A 0 renders empty.</li>
+<li>Roster = the FlowManager export&rsquo;s host list; a subscription&rsquo;s use case = its <code>UC&lt;n&gt;</code> name prefix, else the derived one.</li>
+<li>Files: the transfer caches, the <a href="entities-remote-host.html">Entities</a> host rule &mdash; a File counts for every host its legs name when we made the connection. Polls and connection failures: the <a href="server-polling.html">Polling</a> and <a href="server-site-failures.html">Connection failures</a> pages.</li>
+<li><code>input/hosts_old.txt</code>: hand-maintained like <code>logons_old.txt</code>, one host per line: the host, then its stamp as written (<code>sftp.partner.example&nbsp;&nbsp;2026-09-02 14:35</code>); blank and <code>#</code> lines ignored; no file = empty column.</li>
 </ul>
 </main>
 </body>
