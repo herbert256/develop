@@ -2436,6 +2436,14 @@
     var from = document.createElement("select"), to = document.createElement("select");
     mkSelect(from); mkSelect(to);
     from.selectedIndex = dates.length - 1; to.selectedIndex = 0;   // full range: oldest From, newest To
+    // the ACTIVE date selection as a URL value (2026-09-15 — the Entities
+    // subscription pages' Error cells carry it into Failed files): "all" at
+    // the full range, else "from..to" (the ?axway_date range form)
+    window.AXWAY_DATESEL = function () {
+      var f = from.options[from.selectedIndex], t = to.options[to.selectedIndex];
+      if (!f || !t || (from.selectedIndex === dates.length - 1 && to.selectedIndex === 0)) return "all";
+      return f.textContent + ".." + t.textContent;
+    };
 
     // Persist the From/To selection across pages: keyed by AREA (the
     // report-area meta publish emits), so all transfer pages share one setting
@@ -3259,6 +3267,41 @@
   // (bubbling: target → cell → row) and stops propagation, so the click never
   // reaches the row link, which would open the day page; bindRowlink also
   // steps aside for such a cell. A native link inside the cell still wins.
+  // ENTITIES SUBSCRIPTION pages (2026-09-15, user request): the Files group's
+  // Error count opens transfer/failed-files.html for THAT subscription and the
+  // ACTIVE date selection. The URL is built at CLICK time — From/To change
+  // without a reload and the counts re-aggregate — from the row's name link
+  // and window.AXWAY_DATESEL ("all" when the page has no date filter). The
+  // column is found by its BUILT index (the first "Error" header, the Files
+  // group), so a moved column still resolves; a 0 / blank cell does nothing.
+  // entities.sh leaves this cell's drill out on the subscription pages; the
+  // listener stops the click before any row handler.
+  function setupEntityErrorLinks() {
+    if (!/\/transfer\/entities\/subscription-[^\/]*\.html$/.test(location.pathname)) return;
+    var tables = document.querySelectorAll("table[data-drill-cols]"), t;
+    for (t = 0; t < tables.length; t++) (function (table) {
+      var hr = headerRow(table); if (!hr) return;
+      var ci = -1, i, k;
+      for (i = 0; i < hr.cells.length; i++) {
+        if (hr.cells[i].textContent.replace(/[▲▼]/g, "").replace(/\s*(csv|cols)$/, "").trim() !== "Error") continue;
+        k = ciOf(hr.cells[i]); if (ci < 0 || k < ci) ci = k;
+      }
+      if (ci < 0) return;
+      dataRows(table).forEach(function (tr) {
+        var c = cellByCi(tr, ci) || tr.cells[ci]; if (!c) return;
+        c.classList.add("errlink");
+        c.addEventListener("click", function (ev) {
+          if (!(parseFloat(c.textContent.replace(/[^0-9.]/g, "")) > 0)) return;
+          var a0 = tr.cells[0] && tr.cells[0].getElementsByTagName("a")[0];
+          var nm = (a0 ? a0.textContent : (tr.cells[0] ? tr.cells[0].textContent : "")).trim();
+          if (!nm) return;
+          ev.preventDefault(); ev.stopPropagation();
+          var ds = (typeof window.AXWAY_DATESEL === "function") ? window.AXWAY_DATESEL() : "all";
+          window.location.href = "../failed-files.html?axway_date=" + encodeURIComponent(ds) + "&axway_search=" + encodeURIComponent('"' + nm + '"');
+        });
+      });
+    })(tables[t]);
+  }
   function setupCellLinks() {
     var cells = document.querySelectorAll("td[data-href], th[data-href]"), i;
     for (i = 0; i < cells.length; i++) (function (c) {
@@ -4227,6 +4270,7 @@
     setupSearch();
     setupIndexRows();    // whole-row links on the index tables
     setupCellLinks();    // td/th[data-href] cell links (the home Duration group), outranking the row link
+    setupEntityErrorLinks(); // Entities subscription pages: the Files Error count opens Failed files for that subscription + the active dates
     setupShowAll();      // home: the per-day table's 14-day cap lifter
     markDayEdges();      // home: the per-day groups' bottom edge sits under the last visible row
     setupSwitches();     // switch=KEY table groups: one table of the group at a time behind a button row

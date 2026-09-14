@@ -21,6 +21,7 @@
 <h2>How a File is attributed</h2>
 <ul>
 <li>A subscription is a per-row attribute (a transfer has a source and a destination subscription): distinct <code>(subscription, CoreId)</code> pairs are counted, so a File on two subscriptions counts for both and the per-subscription counts can sum to more than the distinct total.</li>
+<li>The Files group&rsquo;s <strong>Error</strong> count opens <a href="failed-files.html">Failed files</a> for that subscription and the selected From/To dates (the other count cells still open their 10 most recent Files).</li>
 <li>Only logged transfer activity counts here; whether a <em>configured</em> subscription has been seen at all is the <a href="coverage.html">Coverage</a> question.</li>
 <li>The <strong>Error</strong> view adds a <strong>Reason</strong> column, the per-flow diagnosis of the front page&rsquo;s two red tables: the verdict of the flow&rsquo;s newest failed File (its error page) unless the flow is red for server-log reasons; else the classified newest server Error line; else the most specific box of the <a href="subscriptions-in-boxes.html">Boxes</a> page.</li>
 </ul>

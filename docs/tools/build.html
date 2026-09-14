@@ -42,7 +42,7 @@ pre{background:#f8f8f8;border:1px solid #eee;padding:.6rem;overflow-x:auto;margi
 </head>
 <body>
 <div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../search/file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../transfer/index.html">Start page</a><a href="../transfer/topview.html">Top view</a><a href="../transfer/entities/subscription-all.html">Entities</a><a href="../transfer/file-journey-patterns.html">Patterns</a><a href="../transfer/activity-per-day.html">Activity over Time</a><a href="../transfer/ranking-subscriptions.html">Volume, Sizes &amp; Files</a><a href="../transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../transfer/duration.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../server/index.html">Start page</a><a href="../server/topview.html">Top view</a><a href="../server/errors-per-day.html">Errors</a><a href="../server/pickups.html">Transfers &amp; Delivery</a><a href="../server/logons-incoming.html">Logons &amp; Connections</a><a href="../server/ssh-security.html">Security</a><a href="../server/platform-health.html">Operations &amp; Capacity</a><a href="../server/transfer-site-missing.html">Routing</a><a href="../server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../analyses/index.html">Start page</a><a href="../transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../analyses/use-cases.html">Configuration</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions-in-boxes.html">Boxes</a><a href="../analyses/failed.html">Errors</a><a href="../transfer/month-stats/this-subscription.html">Month stats</a></div></div><div class="dd"><span class="ddlabel">Goodies ▾</span><div class="ddm"><a href="../analyses/partners-in.html">Partners - Incoming</a><a href="../analyses/hosts-overview.html">Partners - Outgoing</a><a href="../transfer/duration.html">Transfer Duration</a><a href="../analyses/failed.html">Failed Subscriptions</a><a href="../analyses/subscriptions.html">Subscriptions</a><a href="../analyses/polling.html">Polling</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../tools/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div><div class="buildwrap">
-<h1>Build report &mdash; Sample &mdash; 2026-09-15 01:50:43 &rarr; 01:51:41 &middot; 58 s</h1>
+<h1>Build report &mdash; Sample &mdash; 2026-09-15 01:56:58 &rarr; 01:57:55 &middot; 57 s</h1>
 <p class="banner ok">Build succeeded</p>
 <div class="bstats bsrow">
 <div class="bs"><h3>Input</h3><table><tr><td>Server logs</td><td class="v">68 files, 181,976 lines, 85.6 MB</td></tr><tr><td>Transfer logs</td><td class="v">68 files, 83,499 lines, 72.7 MB</td></tr></table></div>
@@ -55,38 +55,38 @@ pre{background:#f8f8f8;border:1px solid #eee;padding:.6rem;overflow-x:auto;margi
 <p class="bsnote">No new, updated or removed input files.</p>
 <table>
 <tr><th>#</th><th>Step</th><th>Command</th><th>Started</th><th>Duration</th><th>Status</th></tr>
-<tr><td class="r">1</td><td>config: extract the configured entity lists</td><td class="cmd">bin/flow-manager.sh</td><td class="r">01:50:43</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">2</td><td>parse: transfer log cache</td><td class="cmd">env AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1 bin/transfer/parse.sh</td><td class="r">01:50:43</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">3</td><td>parse: server log cache</td><td class="cmd">bin/server/parse.sh</td><td class="r">01:50:43</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">4</td><td>server log -&gt; transfer: attribute UCx flows by session</td><td class="cmd">bin/session-sites.sh</td><td class="r">01:50:44</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">5</td><td>server log -&gt; transfer: mark expired staged files</td><td class="cmd">bin/expire-files.sh</td><td class="r">01:50:44</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">6</td><td>server log -&gt; transfer: settle failed Files by ok bookend</td><td class="cmd">bin/bookend-ok.sh</td><td class="r">01:50:44</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">7</td><td>server log -&gt; transfer: mark server-only entities blue</td><td class="cmd">bin/build/seen-in-server-log.sh</td><td class="r">01:50:44</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">8</td><td>result: subscription outcomes -&gt; base caches</td><td class="cmd">bin/build/result.sh</td><td class="r">01:50:45</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">9</td><td>report: went-kaput (early — the failed/details evidence)</td><td class="cmd">bin/server/reports/went-kaput.sh</td><td class="r">01:50:46</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">10</td><td>report: transfer .rpt files (phase 1)</td><td class="cmd">bin/transfer/reports.sh phase1</td><td class="r">01:50:46</td><td class="r">4 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">11</td><td>report: server .rpt files</td><td class="cmd">bin/server/reports.sh</td><td class="r">01:50:50</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">12</td><td>report: detail pages .rpt files</td><td class="cmd">bin/transfer/reports/details.sh</td><td class="r">01:50:46</td><td class="r">17 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">13</td><td>report: transfer .rpt files (phase 2)</td><td class="cmd">bin/transfer/reports.sh phase2</td><td class="r">01:51:03</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">14</td><td>report: analyses .rpt files</td><td class="cmd">bin/analyses/reports.sh</td><td class="r">01:51:03</td><td class="r">3 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">15</td><td>report: day pages .rpt files</td><td class="cmd">bin/day/reports.sh</td><td class="r">01:51:06</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">16</td><td>report: dashboards .rpt files</td><td class="cmd">bin/dashboards/reports.sh</td><td class="r">01:51:06</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">17</td><td>publish: transfer report pages</td><td class="cmd">bin/transfer/publish.sh</td><td class="r">01:51:08</td><td class="r">13 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">18</td><td>publish: detail pages</td><td class="cmd">bin/transfer/publish-details.sh</td><td class="r">01:51:08</td><td class="r">13 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">19</td><td>publish: partner group pages</td><td class="cmd">bin/analyses/publish-partner-groups.sh</td><td class="r">01:51:21</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">20</td><td>publish: server report pages</td><td class="cmd">bin/server/publish.sh</td><td class="r">01:51:21</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">21</td><td>publish: analyses + coverage pages</td><td class="cmd">bin/analyses/publish.sh</td><td class="r">01:51:22</td><td class="r">3 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">22</td><td>report catch-up: failed subscriptions</td><td class="cmd">bin/transfer/reports/failed.sh</td><td class="r">01:51:25</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">23</td><td>report catch-up: failed files</td><td class="cmd">bin/transfer/reports/failed-files.sh</td><td class="r">01:51:26</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">24</td><td>report catch-up: error reasons</td><td class="cmd">bin/analyses/reports/failing-reasons.sh</td><td class="r">01:51:26</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">25</td><td>publish catch-up: analyses (failed pages)</td><td class="cmd">bin/analyses/publish.sh</td><td class="r">01:51:26</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">26</td><td>publish: transfer catch-up (boxes reasons)</td><td class="cmd">bin/transfer/publish.sh</td><td class="r">01:51:26</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">27</td><td>publish: dashboards</td><td class="cmd">bin/dashboards/publish.sh</td><td class="r">01:51:26</td><td class="r">3 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">28</td><td>publish: day pages</td><td class="cmd">bin/day/publish.sh</td><td class="r">01:51:29</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">29</td><td>catch-up: detail pages (.rpt + publish)</td><td class="cmd">bash -c bin/transfer/reports/details.sh &amp;&amp; bin/transfer/publish-details.sh</td><td class="r">01:51:26</td><td class="r">5 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">30</td><td>publish: index pages + home</td><td class="cmd">bin/build/publish.sh</td><td class="r">01:51:31</td><td class="r">9 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">31</td><td>publish: display renames (input/rename.txt)</td><td class="cmd">bin/build/display-rename.sh</td><td class="r">01:51:40</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr class="total"><td></td><td>Total (31 steps)</td><td></td><td></td><td class="r">58 s</td><td></td></tr>
+<tr><td class="r">1</td><td>config: extract the configured entity lists</td><td class="cmd">bin/flow-manager.sh</td><td class="r">01:56:58</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">2</td><td>parse: transfer log cache</td><td class="cmd">env AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1 bin/transfer/parse.sh</td><td class="r">01:56:58</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">3</td><td>parse: server log cache</td><td class="cmd">bin/server/parse.sh</td><td class="r">01:56:58</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">4</td><td>server log -&gt; transfer: attribute UCx flows by session</td><td class="cmd">bin/session-sites.sh</td><td class="r">01:56:59</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">5</td><td>server log -&gt; transfer: mark expired staged files</td><td class="cmd">bin/expire-files.sh</td><td class="r">01:56:59</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">6</td><td>server log -&gt; transfer: settle failed Files by ok bookend</td><td class="cmd">bin/bookend-ok.sh</td><td class="r">01:56:59</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">7</td><td>server log -&gt; transfer: mark server-only entities blue</td><td class="cmd">bin/build/seen-in-server-log.sh</td><td class="r">01:56:59</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">8</td><td>result: subscription outcomes -&gt; base caches</td><td class="cmd">bin/build/result.sh</td><td class="r">01:57:00</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">9</td><td>report: went-kaput (early — the failed/details evidence)</td><td class="cmd">bin/server/reports/went-kaput.sh</td><td class="r">01:57:00</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">10</td><td>report: transfer .rpt files (phase 1)</td><td class="cmd">bin/transfer/reports.sh phase1</td><td class="r">01:57:00</td><td class="r">9 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">11</td><td>report: server .rpt files</td><td class="cmd">bin/server/reports.sh</td><td class="r">01:57:09</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">12</td><td>report: detail pages .rpt files</td><td class="cmd">bin/transfer/reports/details.sh</td><td class="r">01:57:00</td><td class="r">18 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">13</td><td>report: transfer .rpt files (phase 2)</td><td class="cmd">bin/transfer/reports.sh phase2</td><td class="r">01:57:18</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">14</td><td>report: analyses .rpt files</td><td class="cmd">bin/analyses/reports.sh</td><td class="r">01:57:18</td><td class="r">3 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">15</td><td>report: day pages .rpt files</td><td class="cmd">bin/day/reports.sh</td><td class="r">01:57:21</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">16</td><td>report: dashboards .rpt files</td><td class="cmd">bin/dashboards/reports.sh</td><td class="r">01:57:21</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">17</td><td>publish: transfer report pages</td><td class="cmd">bin/transfer/publish.sh</td><td class="r">01:57:23</td><td class="r">13 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">18</td><td>publish: detail pages</td><td class="cmd">bin/transfer/publish-details.sh</td><td class="r">01:57:23</td><td class="r">13 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">19</td><td>publish: partner group pages</td><td class="cmd">bin/analyses/publish-partner-groups.sh</td><td class="r">01:57:36</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">20</td><td>publish: server report pages</td><td class="cmd">bin/server/publish.sh</td><td class="r">01:57:36</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">21</td><td>publish: analyses + coverage pages</td><td class="cmd">bin/analyses/publish.sh</td><td class="r">01:57:37</td><td class="r">3 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">22</td><td>report catch-up: failed subscriptions</td><td class="cmd">bin/transfer/reports/failed.sh</td><td class="r">01:57:40</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">23</td><td>report catch-up: failed files</td><td class="cmd">bin/transfer/reports/failed-files.sh</td><td class="r">01:57:40</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">24</td><td>report catch-up: error reasons</td><td class="cmd">bin/analyses/reports/failing-reasons.sh</td><td class="r">01:57:40</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">25</td><td>publish catch-up: analyses (failed pages)</td><td class="cmd">bin/analyses/publish.sh</td><td class="r">01:57:40</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">26</td><td>publish: transfer catch-up (boxes reasons)</td><td class="cmd">bin/transfer/publish.sh</td><td class="r">01:57:41</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">27</td><td>publish: dashboards</td><td class="cmd">bin/dashboards/publish.sh</td><td class="r">01:57:41</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">28</td><td>publish: day pages</td><td class="cmd">bin/day/publish.sh</td><td class="r">01:57:43</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">29</td><td>catch-up: detail pages (.rpt + publish)</td><td class="cmd">bash -c bin/transfer/reports/details.sh &amp;&amp; bin/transfer/publish-details.sh</td><td class="r">01:57:40</td><td class="r">5 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">30</td><td>publish: index pages + home</td><td class="cmd">bin/build/publish.sh</td><td class="r">01:57:45</td><td class="r">9 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">31</td><td>publish: display renames (input/rename.txt)</td><td class="cmd">bin/build/display-rename.sh</td><td class="r">01:57:54</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr class="total"><td></td><td>Total (31 steps)</td><td></td><td></td><td class="r">57 s</td><td></td></tr>
 </table>
 <h2>Step output</h2>
 <details><summary>1. config: extract the configured entity lists &mdash; 0 s &mdash; OK</summary><pre>flow-manager.sh: data/flow-manager caches are up to date; skipping.
@@ -123,7 +123,7 @@ recolor /Users/herbert/axway/develop/data/flow-manager/base/_domains.tsv: 0 blue
 recolor /Users/herbert/axway/develop/data/flow-manager/base/_partners.tsv: 3 blue
 seen-in-server-log.sh: 18 server-log-only entity tuple(s) (6 duplicate(s) collapsed); base/*.tsv recolored blue.
 </pre></details>
-<details><summary>8. result: subscription outcomes -&gt; base caches &mdash; 1 s &mdash; OK</summary><pre>  _subscriptions.tsv: 106 green, 10 red, 28 orange, 9 blue, 0 unknown
+<details><summary>8. result: subscription outcomes -&gt; base caches &mdash; 0 s &mdash; OK</summary><pre>  _subscriptions.tsv: 106 green, 10 red, 28 orange, 9 blue, 0 unknown
   _accounts.tsv: 84 green, 10 red, 27 orange, 15 blue, 0 unknown
   _logins.tsv: 31 green, 1 red, 12 orange, 4 blue, 0 unknown
   _hosts.tsv: 10 green, 7 red, 12 orange, 0 blue, 0 unknown
@@ -138,7 +138,7 @@ result.sh: result column filled for the 10 base caches.
 <details><summary>9. report: went-kaput (early — the failed/details evidence) &mdash; 0 s &mdash; OK</summary><pre>flow-manager.sh: data/flow-manager caches are up to date; skipping.
   went-kaput.rpt is up to date; skipping.
 </pre></details>
-<details><summary>10. report: transfer .rpt files (phase 1) &mdash; 4 s &mdash; OK</summary><pre>flow-manager.sh: data/flow-manager caches are up to date; skipping.
+<details><summary>10. report: transfer .rpt files (phase 1) &mdash; 9 s &mdash; OK</summary><pre>flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
@@ -152,13 +152,13 @@ flow-manager.sh: data/flow-manager caches are up to date; skipping.
   topview.rpt is up to date; skipping.
   account.rpt is up to date; skipping.
   stale-accounts.rpt is up to date; skipping.
-  went-quiet-src.rpt is up to date; skipping.
   expected-arrival.rpt is up to date; skipping.
-  duration-trend.rpt is up to date; skipping.
   route-throughput.rpt is up to date; skipping.
-  size-profile.rpt is up to date; skipping.
+  went-quiet-src.rpt is up to date; skipping.
   connection-efficiency.rpt is up to date; skipping.
+  size-profile.rpt is up to date; skipping.
   recovered.rpt is up to date; skipping.
+  duration-trend.rpt is up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
@@ -170,15 +170,15 @@ flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
   security-outreach.rpt is up to date; skipping.
-  recovered-files.rpt is up to date; skipping.
   failure-heatmap.rpt is up to date; skipping.
+  recovered-files.rpt is up to date; skipping.
+  login.rpt is up to date; skipping.
   not-in-flow-manager.rpt is up to date; skipping.
   day.rpt is up to date; skipping.
   weekly.rpt is up to date; skipping.
   subscription.rpt is up to date; skipping.
-  trend.rpt is up to date; skipping.
   volume-src.rpt is up to date; skipping.
-  login.rpt is up to date; skipping.
+  trend.rpt is up to date; skipping.
   missing-cronjobs.rpt is up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
@@ -190,14 +190,14 @@ flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
-  from-green-to-red.rpt is up to date; skipping.
   episodes.rpt is up to date; skipping.
-  punctuality.rpt is up to date; skipping.
+  from-green-to-red.rpt is up to date; skipping.
+  waiting.rpt is up to date; skipping.
   expired.rpt is up to date; skipping.
   only-red.rpt is up to date; skipping.
-  waiting.rpt is up to date; skipping.
-  failure-rate.rpt is up to date; skipping.
   retry.rpt is up to date; skipping.
+  punctuality.rpt is up to date; skipping.
+  failure-rate.rpt is up to date; skipping.
   pirates.rpt is up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
@@ -208,15 +208,15 @@ flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
-  patterns.rpt is up to date; skipping.
+  protocol.rpt is up to date; skipping.
   attempts.rpt is up to date; skipping.
   legs-count.rpt is up to date; skipping.
-  resubmissions.rpt is up to date; skipping.
   protocol-journey.rpt is up to date; skipping.
-  protocol.rpt is up to date; skipping.
+  patterns.rpt is up to date; skipping.
+  resubmissions.rpt is up to date; skipping.
   arrived-left.rpt is up to date; skipping.
-  file-type.rpt is up to date; skipping.
   size-dist.rpt is up to date; skipping.
+  file-type.rpt is up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
@@ -226,15 +226,15 @@ flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
-  weekday.rpt is up to date; skipping.
-  the two duration .rpt files are up to date; skipping.
-  anomalies.rpt is up to date; skipping.
   hourly.rpt is up to date; skipping.
+  weekday.rpt is up to date; skipping.
+  anomalies.rpt is up to date; skipping.
+  the two duration .rpt files are up to date; skipping.
   duration-slowest.rpt is up to date; skipping.
   duration-longest.rpt is up to date; skipping.
   duration-distribution.rpt is up to date; skipping.
-  dwell-time.rpt is up to date; skipping.
   top-transfers.rpt is up to date; skipping.
+  dwell-time.rpt is up to date; skipping.
 File pages: 84 written to /Users/herbert/axway/develop/data/transfer/reports/files/ + 56 copied from errors/ (the Transfer patterns links).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/failed.rpt + 3 view variants (1174 failed file(s), 86 subscription/legs combination(s)) and /Users/herbert/axway/develop/data/transfer/reports/errors/ (555 drill page(s), 469 for the File search windows; server-log sections: 616 by session/id carrying 1554 line(s), 0 on the time-window fallback).
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
@@ -250,16 +250,25 @@ flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
   duplicate-files.rpt is up to date; skipping.
   file-in-file-out.rpt is up to date; skipping.
-  remote-host.rpt is up to date; skipping.
-  logical/partner/application/domain/bl.rpt are up to date; skipping.
   uc4-to-uc2.rpt is up to date; skipping.
+  logical/partner/application/domain/bl.rpt are up to date; skipping.
+  remote-host.rpt is up to date; skipping.
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
   month-stats/*.rpt are up to date; skipping.
   av-scan.rpt is up to date; skipping.
-  entities/*.rpt are up to date; skipping.
   security-params.rpt is up to date; skipping.
   same-protocol.rpt is up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
   _slugmap.tsv is up to date; skipping.
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/account.rpt (94 account(s), 33621 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/subscription.rpt (109 subscription(s), 33621 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/login.rpt (32 login(s), 20020 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/remote-host.rpt (26 remote host(s), 19815 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/logical.rpt (88 logical(s), 33494 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/partner.rpt (25 partner(s), 21125 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/application.rpt (75 application(s), 21125 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/domain.rpt (22 domain(s), 21125 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/bl.rpt (29 BL(s), 28486 file(s)).
   activity.rpt is up to date; skipping.
   retries.rpt is up to date; skipping.
   file-journey.rpt is up to date; skipping.
@@ -274,50 +283,50 @@ Data written to /Users/herbert/axway/develop/data/transfer/reports/failed-files.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
   went-kaput.rpt is up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
-  topview.rpt is up to date; skipping.
   errors-day.rpt is up to date; skipping.
+  topview.rpt is up to date; skipping.
   error-timing.rpt is up to date; skipping.
-  error-reasons.rpt is up to date; skipping.
   failure-flows.rpt is up to date; skipping.
-  could-not-send.rpt is up to date; skipping.
-  publish-failed.rpt is up to date; skipping.
+  error-reasons.rpt is up to date; skipping.
   event-queue.rpt is up to date; skipping.
+  publish-failed.rpt is up to date; skipping.
+  could-not-send.rpt is up to date; skipping.
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
   post-client-action.rpt is up to date; skipping.
 Data written to /Users/herbert/axway/develop/data/server/reports/io-errors.rpt (53 IO error line(s), 1 folder(s)).
   config-defects.tsv is up to date; skipping.
-  connection-diagnostics.rpt is up to date; skipping.
   site-failures.rpt is up to date; skipping.
+  connection-diagnostics.rpt is up to date; skipping.
   ssh-key-auth.rpt is up to date; skipping.
   auth-activity.rpt is up to date; skipping.
   ssh-crypto.rpt is up to date; skipping.
   scheduler-overruns.rpt is up to date; skipping.
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-  deploy-errors.rpt is up to date; skipping.
   pesit.rpt is up to date; skipping.
+  deploy-errors.rpt is up to date; skipping.
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+No stuck-event / recovery messages found.
+Data written to /Users/herbert/axway/develop/data/server/reports/logon.rpt (48 login(s): 7863 allowed, 1621 re-screen(s), 7864 authenticated, 10 disallowed, 0 no-account, 10 bad-key, 0 key-failure, 0 locked, 18 session error(s); 72 outbound failure(s)).
   file-cleanup.rpt is up to date; skipping.
   remote-poll.rpt is up to date; skipping.
   transfer-site-missing.rpt is up to date; skipping.
-No stuck-event / recovery messages found.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
-flow-manager.sh: data/flow-manager caches are up to date; skipping.
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
   uc2-status.rpt is up to date; skipping.
+flow-manager.sh: data/flow-manager caches are up to date; skipping.
   uc1-status.rpt is up to date; skipping.
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
   uc4-status.rpt is up to date; skipping.
-Data written to /Users/herbert/axway/develop/data/server/reports/logon.rpt (48 login(s): 7863 allowed, 1621 re-screen(s), 7864 authenticated, 10 disallowed, 0 no-account, 10 bad-key, 0 key-failure, 0 locked, 18 session error(s); 72 outbound failure(s)).
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
   uc3-status.rpt is up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
-No OPEN missing-remote-directory errors (1 resolved since).
   ssh-sessions.rpt is up to date; skipping.
-  top-messages.rpt is up to date; skipping.
   cluster-health.rpt is up to date; skipping.
+No OPEN missing-remote-directory errors (1 resolved since).
   inbound-connections.rpt is up to date; skipping.
-  unknown-* reports are up to date; skipping.
+  top-messages.rpt is up to date; skipping.
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+  unknown-* reports are up to date; skipping.
 No transfer-less UC3 subscription polls an always-empty directory.
   errors.rpt is up to date; skipping.
   missing-entities.rpt is up to date; skipping.
@@ -334,7 +343,7 @@ flow-manager.sh: data/flow-manager caches are up to date; skipping.
   uc2-visits.rpt is up to date; skipping.
   pickups.rpt is up to date; skipping.
 </pre></details>
-<details><summary>12. report: detail pages .rpt files &mdash; 17 s &mdash; OK</summary><pre>flow-manager.sh: data/flow-manager caches are up to date; skipping.
+<details><summary>12. report: detail pages .rpt files &mdash; 18 s &mdash; OK</summary><pre>flow-manager.sh: data/flow-manager caches are up to date; skipping.
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', building per-entity detail files...
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 Wrote 719 detail file(s) across accounts/subscriptions/logins/hosts/logicals/partners/applications/domains/bl.
@@ -350,25 +359,25 @@ Data written to /Users/herbert/axway/develop/data/transfer/reports/showseen-subs
 Data written to /Users/herbert/axway/develop/data/transfer/reports/showseen-logins.rpt.
 Data written to /Users/herbert/axway/develop/data/transfer/reports/showseen-hosts.rpt.
 </pre></details>
-<details><summary>14. report: analyses .rpt files &mdash; 3 s &mdash; OK</summary><pre>  blast-radius.rpt is up to date; skipping.
-  triage.rpt is up to date; skipping.
-  partner-lifecycle.rpt is up to date; skipping.
+<details><summary>14. report: analyses .rpt files &mdash; 3 s &mdash; OK</summary><pre>  partner-lifecycle.rpt is up to date; skipping.
   app-partners.rpt is up to date; skipping.
+  triage.rpt is up to date; skipping.
   partner-scorecard.rpt is up to date; skipping.
+  blast-radius.rpt is up to date; skipping.
   hosts-overview.rpt is up to date; skipping.
   twins.rpt is up to date; skipping.
   skipped.rpt is up to date; skipping.
 Data written to /Users/herbert/axway/develop/data/transfer/reports/sources-and-targets.rpt.
-Data written to data/analyses/reports/fe-overview.rpt (49 login(s): 19 UC2, 25 UC4, 3 UC2/UC4; 35 logged on here, 5 with a gateway logon, 1 old-gateway only; 11102 in, 8791 out, 91 waiting, oldest 66 days; 2847 pickup(s), 8287 retrieved).
 Data written to data/analyses/reports/failing-reasons.rpt (26 reason row(s)).
+Data written to data/analyses/reports/fe-overview.rpt (49 login(s): 19 UC2, 25 UC4, 3 UC2/UC4; 35 logged on here, 5 with a gateway logon, 1 old-gateway only; 11102 in, 8791 out, 91 waiting, oldest 66 days; 2847 pickup(s), 8287 retrieved).
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 flow-manager.sh: data/flow-manager caches are up to date; skipping.
 Data written to data/analyses/reports/cleanup-backlog.rpt (79 finding(s): 1 orphan, 28 never-seen, 47 whitelist, 3 no-cron, 0 long-quiet).
   account-sharing.rpt is up to date; skipping.
 Data written to data/analyses/reports/file-search-*.rpt + -data.js (windows: 24-hours 48-hours week 2-weeks 3-weeks month; 15113 Files bucketed; newest day jdn 2461282, partial=0).
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', building entity coverage...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', building entity coverage...
 Data written to /Users/herbert/axway/develop/data/transfer/reports/entity-coverage.rpt (6 view(s), rule 'Current').
 Data written to /Users/herbert/axway/develop/data/transfer/reports/entity-coverage-once.rpt (6 view(s), rule 'Once').
 Data written to /Users/herbert/axway/develop/data/transfer/reports/entity-coverage-ok.rpt (6 view(s), rule 'OK transfers').
@@ -419,7 +428,7 @@ Rendered 17 Subscriptions group page(s) into docs/analyses/.
 Wrote 6 File search page(s) (+ per-page data files).
 Wrote docs/analyses (index + the analysis pages).
 </pre></details>
-<details><summary>22. report catch-up: failed subscriptions &mdash; 1 s &mdash; OK</summary><pre>flow-manager.sh: data/flow-manager caches are up to date; skipping.
+<details><summary>22. report catch-up: failed subscriptions &mdash; 0 s &mdash; OK</summary><pre>flow-manager.sh: data/flow-manager caches are up to date; skipping.
   failed.rpt is up to date; skipping.
 </pre></details>
 <details><summary>23. report catch-up: failed files &mdash; 0 s &mdash; OK</summary><pre>flow-manager.sh: data/flow-manager caches are up to date; skipping.
@@ -427,11 +436,11 @@ Wrote docs/analyses (index + the analysis pages).
 </pre></details>
 <details><summary>24. report catch-up: error reasons &mdash; 0 s &mdash; OK</summary><pre>  failing-reasons.rpt is up to date; skipping.
 </pre></details>
-<details><summary>25. publish catch-up: analyses (failed pages) &mdash; 0 s &mdash; OK</summary><pre>docs/analyses/ is up to date; skipping.
+<details><summary>25. publish catch-up: analyses (failed pages) &mdash; 1 s &mdash; OK</summary><pre>docs/analyses/ is up to date; skipping.
 </pre></details>
 <details><summary>26. publish: transfer catch-up (boxes reasons) &mdash; 0 s &mdash; OK</summary><pre>docs/transfer/ is up to date; skipping.
 </pre></details>
-<details><summary>27. publish: dashboards &mdash; 3 s &mdash; OK</summary><pre>Wrote 2 dashboard page(s) to docs/dashboards/.
+<details><summary>27. publish: dashboards &mdash; 2 s &mdash; OK</summary><pre>Wrote 2 dashboard page(s) to docs/dashboards/.
 </pre></details>
 <details><summary>28. publish: day pages &mdash; 2 s &mdash; OK</summary><pre>Wrote 68 combined day page(s) to docs/day/.
 </pre></details>
@@ -593,7 +602,7 @@ Wrote index pages (root + transfer + server).
 <tr><td><code>transferLog_08-29.csv</code></td><td>2026-08-29 00:00:35</td><td>2026-08-29 23:57:49</td><td class="r">713</td></tr>
 </table></div>
 </div>
-<p>Written by <code>bin/build.sh</code> &mdash; raw step logs in <code>build/step-NN.log</code>. Build finished at 2026-09-15 01:51:41.</p>
+<p>Written by <code>bin/build.sh</code> &mdash; raw step logs in <code>build/step-NN.log</code>. Build finished at 2026-09-15 01:57:55.</p>
 </div>
 </body>
 </html>

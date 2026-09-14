@@ -820,6 +820,11 @@ read -r nz nl <<< "$(awk -F'\t' 'FNR == 1 { t = 0 } $1 == "TABLE" { t = ($2 == "
     END { print nz + 0, nl + 0 }' data/transfer/reports/details/*/*.rpt 2>/dev/null)"
 check $([ "${nz:-0}" -gt 0 ] && [ "$nz" = "$nl" ] && echo 0 || echo 1) "detail Subscriptions tables: ${nz:-?} nonzero Error cell(s), ${nl:-?} opening failed-files for their own subscription"
 
+# the Entities subscription pages (2026-09-15, user request): the Files group Error count opens Failed files
+# for that subscription and the active dates — its drill is gone there, kept on the other entity pages
+check $([ "$(grep -o 'data-drill-cols="[^"]*"' docs/transfer/entities/subscription-all.html 2>/dev/null | grep -c 'ferr:')" = 0 ] && [ "$(grep -o 'data-drill-cols="[^"]*"' docs/transfer/entities/account-all.html 2>/dev/null | grep -c 'ferr:3:')" = 1 ] && echo 0 || echo 1) "Entities: the subscription pages still drill Files Error, or the account pages lost that drill"
+check $([ "$(grep -c 'function setupEntityErrorLinks' docs/assets/report.js 2>/dev/null)" = 1 ] && [ "$(grep -c 'setupEntityErrorLinks();' docs/assets/report.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "report.js does not define and run setupEntityErrorLinks"
+
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2
 else
