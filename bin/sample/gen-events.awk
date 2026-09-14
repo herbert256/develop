@@ -402,6 +402,18 @@ function uc4_file(t0,   fn, sz, mo, ic, sids, sidp, d1, d2, i, tt, ok, sf) {
             S(t0 + d1 + 320, "E", "TM", sids, "IO Error reading file /data/FlowManager/" ACCT "@" LOGIN "/" fn)
             if (rnd() < 0.6) { NOPROF = 0; return }
         }
+        # the SAME PROTOCOL scenario (2026-09-14, user request — the Inbound and
+        # Outbound same Protocol report): on the samecollect flow about one
+        # upload in five fails its hand-off to the CFT and the partner
+        # collects the file back over ssh 10-20 minutes later — first inbound
+        # ssh, last outbound ssh. The draws happen for the tagged flow only
+        # (the RNG stream is seeded per flow and day).
+        if (hastag("samecollect") && rnd() < 0.2) {
+            pesit_T(t0 + d1 + gapms(900 + rexp(900)), 58000, "Outbound", "F", sidp, fn, 0, mo, "NP")
+            ssh_T(t0 + d1 + 600000 + rint(600000), d1, "Outbound", "P", sesshex(), fn, sz, "User", ACCT "@" LOGIN, LOGIN, sf, hostspelled(), mo, ic, "false")
+            NOPROF = 0
+            return
+        }
         d2 = 200 + int(rexp(500)) + szdur(sz, pesitthr())
         pesit_T(t0 + d1 + gapms(900 + rexp(900)), d2, "Outbound", "P", (hastag("ucx") ? sesshex() : sidp), fn, sz, mo, "NP")
         if (!hastag("ucx")) s_pesit_ok(t0 + d1 + 900, sidp)

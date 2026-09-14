@@ -186,6 +186,7 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
     if (hastag(tags, "schedoff"))    T["act_schedoff"]++      # code 3: receive scheduler enable No
     if (hastag(tags, "scanoff"))     T["act_scanoff"]++       # code 4: folder monitoring Inactive
     if (tags ~ /(^|,)(undeployed|notdeployed|schedoff|scanoff)(,|$)/) T["act_inactive"]++
+    if (hastag(tags, "samecollect")) T["samecollect"]++   # the Inbound and Outbound same Protocol report's planted flow (2026-09-14)
 }
 
 # account-only row (an orphaned account: config residue with no flows).
@@ -379,7 +380,7 @@ function build_roster() {
     addf(4, "APS", "COSMOS",   "GLOBEX",   "", 38, 0.01, "rename=UC4_APS_COSMOS-GLOBEX,hybrid")
     addf(4, "CDV", "KRP-TDI",  "WONKA",    "", 10, 0.01, "hybrid")
     addf(4, "IT",  "EKDSI",    "CYBERDYNE","",  5, 0.01, "twinc", "IT-EKDSI-CYBERDYNE")
-    addf(4, "AIM", "LAKE",     "PIEDPIPER","",  4, 0.01, "hybrid")
+    addf(4, "AIM", "LAKE",     "PIEDPIPER","",  4, 0.01, "hybrid,samecollect")   # samecollect: a failed CFT hand-off, the file collected back over ssh — the Inbound and Outbound same Protocol report (2026-09-14)
     addf(4, "ZG",  "ZKA",      "HOOLI",    "",  4, 0.01, "ioerr,hybrid")       # the IO errors report's folder: a quarter of its uploads log "IO Error reading file /data/FlowManager/<acct>@<login>/…" (2026-09-06)
     addf(4, "ODV", "ARE",      "APERTURE", "",  1.5, 0.02, "sessjoin", "ODV-ARE-APERTURE")
     addf(4, "ODV", "ARE",      "APERTURE", "2", 1.2, 0.02, "sessjoin", "ODV-ARE-APERTURE")

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Help: Inbound and Outbound same Protocol — Cloud Reports</title>
+<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../search/file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../transfer/index.html">Start page</a><a href="../transfer/topview.html">Top view</a><a href="../transfer/entities/subscription-all.html">Entities</a><a href="../transfer/file-journey-patterns.html">Patterns</a><a href="../transfer/activity-per-day.html">Activity over Time</a><a href="../transfer/volume-per-day.html">Volume, Sizes &amp; Files</a><a href="../transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../transfer/duration.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../server/index.html">Start page</a><a href="../server/topview.html">Top view</a><a href="../server/errors-per-day.html">Errors</a><a href="../server/pickups.html">Transfers &amp; Delivery</a><a href="../server/logons-incoming.html">Logons &amp; Connections</a><a href="../server/ssh-security.html">Security</a><a href="../server/platform-health.html">Operations &amp; Capacity</a><a href="../server/transfer-site-missing.html">Routing</a><a href="../server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../analyses/index.html">Start page</a><a href="../transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../analyses/use-cases.html">Configuration</a><a href="../analyses/partner-scorecard.html">Partners</a><a href="../analyses/subscriptions-in-boxes.html">Boxes</a><a href="../analyses/failed.html">Errors</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Inbound and Outbound same Protocol</h1>
+<h2>What it shows</h2>
+<p>The Files whose <strong>first inbound</strong> leg used the same protocol as their <strong>last outbound</strong> leg &mdash; for example an SFTP upload that also left over SFTP instead of going on to the CFT.</p>
+<h2>Rules</h2>
+<ul>
+<li>Per File (one CoreId): the protocol of its inbound leg with the earliest start is compared with the protocol of its outbound leg with the latest start; the File is listed when they are equal.</li>
+<li>Protocols as the transfer log names them: <code>ssh</code> (SFTP), <code>ftp</code>, <code>pesit</code>, <code>routing</code>.</li>
+</ul>
+<h2>Tables</h2>
+<ul>
+<li><strong>Per subscription</strong> &mdash; per subscription and protocol: Files, OK, Error, the first and last day. Whole-window figures: From/To does not narrow this table.</li>
+<li><strong>Files</strong> &mdash; every File, newest first, 500 per page: the subscription, the File&rsquo;s start, the protocol, the start of its first inbound and last outbound leg, its leg count, outcome, CoreId and file name. From/To narrows it; the search box filters it.</li>
+<li>Rows tint by the subscription&rsquo;s result: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer in Error, <strong>light blue</strong> surfaced only by the server log.</li>
+</ul>
+</main>
+</body>
+</html>

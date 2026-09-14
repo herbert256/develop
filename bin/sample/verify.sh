@@ -785,6 +785,25 @@ check $([ -f docs/transfer/uc4-to-uc2.html ] && [ -f docs/help/uc4-to-uc2.html ]
 read -r gneg gnz <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "ROW" { if ($8 ~ /^-/) neg++; if ($8 != "0 s") nz++ } END { print neg + 0, nz + 0 }' "$FB" 2>/dev/null)"
 check $([ "${gneg:-1}" = 0 ] && [ "${gnz:-0}" -gt 0 ] && echo 0 || echo 1) "uc4-to-uc2 gaps: ${gneg:-?} negative, ${gnz:-?} non-zero"
 
+# the Inbound and Outbound same Protocol report (2026-09-14, user request): an independent recount — a File
+# whose earliest Inbound leg and latest Outbound leg share one protocol, UC5-UC8 left out — the planted
+# samecollect flow present, no UC5-UC8 row, the page and its help published
+SP="data/transfer/reports/same-protocol.rpt"
+wn=$(LC_ALL=C awk -F'\t' 'FNR == 1 { f++ } f == 1 { if ($1 != "" && $2 != "") U[toupper($1)] = toupper($2); next }
+    f == 2 { c = $1; if ($2 == "Inbound") { if (!(c in IK) || $13 < IK[c]) { IK[c] = $13; IP[c] = $10 } } else if ($2 == "Outbound") { if (!(c in OK) || $13 > OK[c]) { OK[c] = $13; OP[c] = $10 } } next }
+    { c = $1; if (!(c in IP) || !(c in OP) || IP[c] != OP[c] || IP[c] == "") next; s = toupper($12); u = ""
+      if (match(s, /^UC[0-9]+/)) u = substr(s, 1, RLENGTH); else if (s in U) u = U[s]
+      if (u !~ /^UC[5-8]$/) n++ } END { print n + 0 }' data/flow-manager/xref/_subscriptions-ucderived.tsv data/transfer/cache/_transfers.tsv data/transfer/cache/_files.tsv 2>/dev/null)
+fn=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "ROW" { n++ } END { print n + 0 }' "$SP" 2>/dev/null)
+check $([ "$fn" = "$wn" ] && { [ "$(exp samecollect)" -eq 0 ] || [ "${fn:-0}" -gt 0 ]; } && echo 0 || echo 1) "same-protocol: the Files table lists ${fn:-?} File(s), the recount finds ${wn:-?} (planted flows: $(exp samecollect))"
+n=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "ROW" && $2 == "UC4_AIM_LAKE_PIEDPIPER" { n++ } END { print n + 0 }' "$SP" 2>/dev/null)
+check $([ "$(exp samecollect)" -eq 0 ] || [ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "same-protocol lists no File of the planted UC4_AIM_LAKE_PIEDPIPER flow"
+n=$(awk -F'\t' '$1 == "ROW" && toupper($2) ~ /^UC[5-8]/ { n++ } END { print n + 0 }' "$SP" 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "same-protocol lists ${n:-?} UC5-UC8 row(s)"
+h=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "HEAD" { print; exit }' "$SP" 2>/dev/null)
+check $([ "$h" = $'HEAD\tSubscription\tDate/time\tProtocol\tFirst inbound\tLast outbound\tLegs\tOutcome\tCoreId\tFilename' ] && echo 0 || echo 1) "same-protocol Files HEAD is '$h'"
+check $([ -f docs/transfer/same-protocol.html ] && [ -f docs/help/same-protocol.html ] && echo 0 || echo 1) "docs/transfer/same-protocol.html or its help page is missing"
+
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2
 else
