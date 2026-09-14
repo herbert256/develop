@@ -2559,6 +2559,12 @@
         if (urlLo == null || urlHi == null || urlLo > urlHi) { urlLo = null; urlHi = null; }
       }
     }
+    // ?axway_date=all (2026-09-14, user request — the home Duration group's
+    // banner, p-headers and Total): the whole date list, exactly what the All
+    // button selects, persisted like a user selection
+    if (!um && /[?&]axway_date=all(&|$)/.test(window.location.search) && dates.length) {
+      urlLo = epochOf[dates[0]]; urlHi = epochOf[dates[dates.length - 1]];
+    }
     var urlDay = urlLo != null;
     // Carry a narrowed range across pages — unless this page opts to always load
     // at the full range (data-date-reset, the Top view dashboards). The From/To
@@ -3238,8 +3244,10 @@
   }
   // CELL LINKS (2026-09-13, user request): a td/th carrying data-href opens
   // that page on click — the home Per day table's Duration group (banner,
-  // p-headers, every day cell, the Total) all go to transfer/duration.html
-  // WITHOUT a date. The cell listener runs before the row's rowlink listener
+  // p-headers, every day cell, the Total) all go to transfer/duration.html at
+  // the FULL date range: the banner, p-headers and Total with ?axway_date=all,
+  // a day cell with ?axway_row=<its date> — that day's row marked, the range
+  // full (2026-09-14). The cell listener runs before the row's rowlink listener
   // (bubbling: target → cell → row) and stops propagation, so the click never
   // reaches the row link, which would open the day page; bindRowlink also
   // steps aside for such a cell. A native link inside the cell still wins.

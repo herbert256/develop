@@ -1017,9 +1017,12 @@ write_home_block() {
         local fsp fss fsa fsl fsh fsps=0 fsss=0 fsas=0 fsls=0 fshs=0
         local swr swg swrs=0 swgs=0 dcc=""
         # every cell of the Duration group — banner, p-headers, day cells, Total — opens
-        # transfer/duration.html WITHOUT a date (2026-09-13, user request): data-href on the
-        # cell, report.js setupCellLinks navigates there and outranks the row link
-        local DURGO=""; [ -f docs/transfer/duration.html ] && DURGO=' data-href="transfer/duration.html"'
+        # transfer/duration.html at the FULL date range (2026-09-14, user request): the
+        # banner, p-headers and Total with ?axway_date=all (report.js: the All button's
+        # range), each day's five cells with ?axway_row=<that date> — the row marked, the
+        # range full. data-href on the cell; report.js setupCellLinks navigates there and
+        # outranks the row link
+        local DURGO=""; [ -f docs/transfer/duration.html ] && DURGO=' data-href="transfer/duration.html?axway_date=all"'
         printf '<div class="tablewrap perday"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
         # groups (2026-09-06, user request): Transfers (Ok Error Error%) before Files, UC2 state (Waiting Expired — staged pickups) before Duration, First seen without Logical/Accounts; Recovered reads Cured; the Red/Green switch group is gone
         # the groups are separated by SPACER columns (th/td.spc: no borders,
@@ -1120,8 +1123,13 @@ write_home_block() {
             printf '<td class="spc"></td>'
             # —— Duration (from transfer/duration.html): the day's
             # p50/p75/p90/p95/p99, tinted like that page's cells ——
+            # the day's own link: that row marked on the Duration page (the shared
+            # DURGO restored right after, for the Total and the next row)
+            local _durgo_all=$DURGO
+            [ -n "$DURGO" ] && DURGO=" data-href=\"transfer/duration.html?axway_row=$d\""
             _durcell "$dc50" "$dv50"; _durcell "$dc75" "$dv75"
             _durcell "$dc90" "$dv90"; _durcell "$dc95" "$dv95"; _durcell "$dc99" "$dv99"   # p99 last (2026-09-13, user request)
+            DURGO=$_durgo_all
             printf '<td class="spc"></td>'
             # —— First seen (from analyses/first-seen.html): a count links
             # that day's first-seen list when the page exists (a page exists

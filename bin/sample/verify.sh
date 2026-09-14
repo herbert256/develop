@@ -538,15 +538,18 @@ check $([ "$(grep -rl 'data-envto' docs --include=*.html 2>/dev/null | wc -l | t
 # p50 · p75 · p90 · p95 · p99, five cells per day and in the Total row
 hdr=$(grep -o '<th class="num"[^>]*>p[0-9]*</th>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "$hdr" = "p50|p75|p90|p95|p99|" ] && echo 0 || echo 1) "the home Duration group headers are '$hdr', expected p50|p75|p90|p95|p99|"
-check $([ "$(grep -c '<th class="gband" colspan="5" data-href="transfer/duration.html">Duration</th>' docs/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the home Duration banner does not span 5 columns or does not link the Duration report"
-# every cell of the Duration group opens transfer/duration.html WITHOUT a
-# date (2026-09-13, user request): the five p-headers, and five cells per
-# day row + the Total row; report.js binds them and outranks the row link
+check $([ "$(grep -c '<th class="gband" colspan="5" data-href="transfer/duration.html?axway_date=all">Duration</th>' docs/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the home Duration banner does not span 5 columns or does not link the Duration report"
+# every cell of the Duration group opens transfer/duration.html at the full
+# date range (2026-09-14, user request): the five p-headers and the Total with
+# ?axway_date=all, five cells per day row with ?axway_row=<that row's date>;
+# report.js binds them and outranks the row link
 nrows=$(awk '/<table class="index fit dayrows/ { p = 1 } p && /<tr>/ && /<td/ { n++ } p && /<\/table>/ { exit } END { print n + 0 }' docs/index.html 2>/dev/null)
-ncells=$(grep -o '<td class="num[^"]*" data-href="transfer/duration.html">' docs/index.html 2>/dev/null | wc -l | tr -d ' ')
-nth=$(grep -o '<th class="num" data-href="transfer/duration.html">p[0-9]*</th>' docs/index.html 2>/dev/null | wc -l | tr -d ' ')
+ncells=$(grep -o '<td class="num[^"]*" data-href="transfer/duration.html?axway_\(row=[0-9-]*\|date=all\)">' docs/index.html 2>/dev/null | wc -l | tr -d ' ')
+nth=$(grep -o '<th class="num" data-href="transfer/duration.html?axway_date=all">p[0-9]*</th>' docs/index.html 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${nth:-0}" = 5 ] && [ "${nrows:-0}" -gt 0 ] && [ "${ncells:-0}" -ge $((${nrows:-0} * 5)) ] && echo 0 || echo 1) "the home Duration group links: $nth p-headers, $ncells day cells for $nrows rows (expected 5 and >= 5 per row)"
-check $([ "$(grep -c 'data-href="transfer/duration.html?' docs/index.html 2>/dev/null)" = 0 ] && echo 0 || echo 1) "a home Duration link carries a query (a date selection)"
+bad=$(awk '/<table class="index fit dayrows/ { p = 1 } p && /<\/table>/ { exit } p && /<tr>/ && /<td/ { if (!match($0, /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)) next; d = substr($0, RSTART, RLENGTH); c = $0; if (gsub("axway_row=" d "\"", "", c) != 5) bad++ } END { print bad + 0 }' docs/index.html 2>/dev/null)
+check $([ "${bad:-1}" = 0 ] && echo 0 || echo 1) "${bad:-?} home day row(s) whose five Duration cells do not open their own date (?axway_row=<date>)"
+check $([ "$(grep -c 'axway_date=all' docs/assets/report.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "report.js does not accept ?axway_date=all"
 check $([ "$(grep -c 'function setupCellLinks' docs/assets/report.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "report.js does not define setupCellLinks"
 
 # the Activity over Time tables carry ONE Files column — the delivered
@@ -609,7 +612,7 @@ for p in duration duration-all; do
     check $([ "${n:-0}" = 2 ] && [ "$(grep -c 'Min/Avg/Max\|>Percentage<' "docs/transfer/$p.html" 2>/dev/null)" = 0 ] && echo 0 || echo 1) "transfer/$p.html button row: ${n:-0} scope buttons, and the Percentage / Min/Avg/Max pair must be gone"
 done
 check $([ ! -e docs/transfer/duration-minmax.html ] && [ ! -e docs/transfer/duration-all-minmax.html ] && [ ! -e data/transfer/reports/duration-minmax.rpt ] && echo 0 || echo 1) "the Min/Avg/Max sibling pages or .rpts still exist"
-dr=$(awk '/<table class="index fit dayrows/ { p = 1 } p && /<tr>/ && /<td/ { print; exit }' docs/index.html 2>/dev/null | grep -o 'data-href="transfer/duration.html">[^<][^<]*<' | wc -l | tr -d ' ')
+dr=$(awk '/<table class="index fit dayrows/ { p = 1 } p && /<tr>/ && /<td/ { print; exit }' docs/index.html 2>/dev/null | grep -o 'data-href="transfer/duration.html?axway_row=[0-9-]*">[^<][^<]*<' | wc -l | tr -d ' ')
 check $([ "${dr:-0}" -ge 5 ] && echo 0 || echo 1) "the home page's newest day carries ${dr:-0} filled Duration cells (the extractor must still find the percentiles table)"
 
 # the DATA PERIOD in the top bar (2026-09-13, user request): "yyyy-mm-dd /
