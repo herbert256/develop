@@ -133,6 +133,10 @@ for pair in 1:act_undeployed 2:act_notdeployed 3:act_schedoff 4:act_scanoff; do
     n=$(printf '%s\n' "$acts" | awk -v c="$c" '{ m = split($0, A, /, /); for (i = 1; i <= m; i++) if (A[i] == c) { n++; break } } END { print n + 0 }')
     check $([ "$n" -eq "$en" ] && [ "$en" -gt 0 ] && echo 0 || echo 1) "subscriptions.html: Active code $c on $n cell(s), planted $en"
 done
+# ... and the subscription detail pages' Features Status rows (2026-09-14): one row per planted reason
+n=$(awk -F'\t' 'FNR == 1 { t = 0 } $1 == "TABLE" { t = ($2 == "Features") } t && $1 == "ROW" && $2 == "Status" { n++ } END { print n + 0 }' data/transfer/reports/details/subscriptions/*.rpt 2>/dev/null)
+en=$(( $(exp act_undeployed) + $(exp act_notdeployed) + $(exp act_schedoff) + $(exp act_scanoff) ))
+check $([ "${n:-0}" -eq "$en" ] && [ "$en" -gt 0 ] && echo 0 || echo 1) "subscription detail Features: $n Status row(s), planted $en"
 # a LOGIN skip rule (2026-09-03, user report): the comm-profile login goes
 # from the configuration — no roster row, no detail page — and the Skipped
 # report lists it (the sample rule: login exact FE672382, the CD-ZIBA-GEKKO

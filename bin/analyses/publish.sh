@@ -1139,18 +1139,11 @@ write_subscriptions_page() {
     fi
     args+=("$cronf")
     # the ACTIVE codes (2026-09-14, user request): name / the comma-joined
-    # codes, empty = active (see the header)
+    # codes, empty = active — bin/subscription-active.jq, the one definition
+    # the subscription detail pages' Features Status rows share
     local actf; actf=$(mktemp "${TMPDIR:-/tmp}/subact.XXXXXX")
     if command -v jq >/dev/null 2>&1 && [ -f "$FM_CONFIG_DIR/subscriptions.json" ]; then
-        jq -r '
-            .[] | select(.name != null and .name != "") | . as $s
-            | ($s.parameters // {}) as $p
-            | [ (if $s.status.code == "UNDEPLOYED" then "1" else empty end),
-                (if $s.status.code == "SAVED_NOT_DEPLOYED" then "2" else empty end),
-                (if ([$p | to_entries[] | select(.key | test("receive_scheduler_enable$")) | .value | tostring | ascii_downcase] | any(. == "no")) then "3" else empty end),
-                (if (($p.source_folder_monitoring_state // "") | tostring | ascii_downcase) == "inactive" then "4" else empty end) ] as $c
-            | [ $s.name, ($c | join(",")) ] | @tsv
-          ' "$FM_CONFIG_DIR/subscriptions.json" > "$actf" 2>/dev/null || : > "$actf"
+        jq -r -f "$SCRIPT_DIR/../subscription-active.jq" "$FM_CONFIG_DIR/subscriptions.json" > "$actf" 2>/dev/null || : > "$actf"
     fi
     args+=("$actf")
     # the subscription detail .rpt files: their Features From / To rows (the

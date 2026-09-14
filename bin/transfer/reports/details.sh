@@ -81,7 +81,7 @@ STAMP="$REPORTS_DIR/details/.stamp"
 # appeared (the map is cmp-guarded and carries the evidence stamp, so its
 # mtime moves exactly when the evidence does).
 skip_if_fresh "$STAMP" "${BASH_SOURCE[0]}" "$SCRIPT_DIR/../details_lib.sh" "$SCRIPT_DIR/../details_writer.awk" \
-    "$ROOT/bin/cron2human.awk" "$ROOT/bin/uc-cases.sh" \
+    "$ROOT/bin/cron2human.awk" "$ROOT/bin/uc-cases.sh" "$ROOT/bin/subscription-active.jq" \
     "$CONFIG_BASE" \
     "$SERVER_CACHE/_accounts.tsv" \
     "$REPORTS_DIR/_srvsubs-map.tsv"
@@ -318,6 +318,15 @@ whitelist_rows   > "$_pdir/wl" || true & _ppids+=($!)
             | awk -F'\t' -v CF=2 -f "$ROOT/bin/cron2human.awk" || true   # -> name \t disp-cron \t human
     fi
 } > "$_pdir/sitecron" & _ppids+=($!)
+# why a subscription is NOT active (2026-09-14, user request): name -> the
+# comma-joined reason codes (bin/subscription-active.jq, the one definition the
+# analyses Subscriptions page's Active column shares) — the Features Status
+# rows. An active subscription writes no line. Graceful if jq/export absent.
+{
+    if command -v jq >/dev/null 2>&1 && [ -f "$S_JSON" ]; then
+        jq -r -f "$ROOT/bin/subscription-active.jq" "$S_JSON" 2>/dev/null | awk -F'\t' '$2 != ""' || true
+    fi
+} > "$_pdir/siteact" & _ppids+=($!)
 # each subscription's LOCAL (SecureTransport) + REMOTE (partner) directory and
 # their file filter/mask, from subscriptions.json — the Features "Local/Remote
 # location" rows. join("\t") keeps the Windows-path backslashes literal (@tsv
@@ -647,6 +656,8 @@ fi
 # 33 onelgc (the Logical single-value fold — APPENDED 2026-08-31 so fields
 #            1-32 keep their positions; the writer reads the stream by index)
 # 34 onebl  (the BL single-value fold — APPENDED, same rule)
+# 37 act    (SITE: the not-active reason codes, bin/subscription-active.jq —
+#            APPENDED 2026-09-14 after 35/36, the banner session + message)
 # PASS B (2026-07 head merge): the annotation pass ALSO applies the drop
 # rules and writes the per-type stream/annotation slices directly — the two
 # whole-stream filter passes and the two separate split passes folded in
@@ -660,7 +671,7 @@ printf '%s\n' "$grpmap" > "$_pdir/grpmap"
 LC_ALL=C awk -F'\t' \
     -v XREF="$CONFIG_XREF" -v BASE="$CONFIG_BASE" \
     -v ODF="$_pdir/onedims" -v SDF="$_pdir/sitedims" -v CRF="$_pdir/sitecron" \
-    -v LCF="$_pdir/siteloc" -v BLF="$_pdir/siteblue" -v GRF="$_pdir/grpmap" \
+    -v LCF="$_pdir/siteloc" -v BLF="$_pdir/siteblue" -v GRF="$_pdir/grpmap" -v ACF="$_pdir/siteact" \
     -v MOV="$MOVMAP" -v SRV="$SERVER_CACHE" -v FWD="$IP_HOSTS_FILE" -v SDIR="$STREAMDIR" \
     -v TWF="$_pdir/twins" -v TWFS="$_pdir/twins-site" '
     function up(s) { return toupper(s) }
@@ -742,6 +753,7 @@ LC_ALL=C awk -F'\t' \
         vf = SDF; while ((getline l < vf) > 0) { i = index(l, "\t"); if (i > 0) SD[substr(l, 1, i-1)] = substr(l, i+1) }
         close(vf)
         vf = CRF; while ((getline l < vf) > 0) { n = split(l, a2, "\t"); k = up(a2[1]); if (n >= 3 && !(k in CR)) { CR[k] = a2[2]; CRH[k] = a2[3] } }
+        vf = ACF; while ((getline l < vf) > 0) { n = split(l, a2, "\t"); k = up(a2[1]); if (n >= 2 && a2[2] != "" && !(k in ACT)) ACT[k] = a2[2] }   # the not-active codes (field 37)
         close(vf)
         vf = LCF; while ((getline l < vf) > 0)  { i = index(l, "\t"); if (i > 0) { k = up(substr(l, 1, i-1)); if (!(k in LOC)) LOC[k] = substr(l, i+1) } }
         close(vf)
@@ -783,12 +795,13 @@ LC_ALL=C awk -F'\t' \
         k4 = t "|" e "|2.84"; od4 = (k4 in OD) ? OD[k4] : ""
         k4 = t "|" e "|2.83"; od5 = (k4 in OD) ? OD[k4] : ""
         k4 = t "|" e "|2.85"; od6 = (k4 in OD) ? OD[k4] : ""
-        sdh = ""; sda = ""; sdl = ""; cr = ""; crh = ""
+        sdh = ""; sda = ""; sdl = ""; cr = ""; crh = ""; act = ""
         fdir = ""; lloc = ""; lmask = ""; rloc = ""; rmask = ""
         suba = ""; subl = ""; subh = ""
         if (t == "SITE") {
             if (e in SD) { n = split(SD[e], a2, "\t"); sdh = a2[1]; sda = a2[2]; sdl = a2[3] }
             if (U in CR) { cr = CR[U]; crh = CRH[U] }
+            if (U in ACT) act = ACT[U]
             if (U in LOC) { n = split(LOC[U], a2, "\t"); fdir = a2[1]; lloc = a2[2]; lmask = a2[3]; rloc = a2[4]; rmask = a2[5] }
             suba = sortu(SBA[U]); subl = sortu(SBL[U]); subh = sortu(SBH[U])
         }
@@ -852,8 +865,8 @@ LC_ALL=C awk -F'\t' \
                (t == "SITE" && (e in TWINS)) ? TWINS[e] : ""
         af = SDIR "/a." t
         if (af != aprev) { if (aprev != "") close(aprev); aprev = af }
-        printf "%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\n", \
-            t, e, base, mv, resv, isblue, sblue, od1, od2, od3, od4, sdh, sda, sdl, cr, crh, fdir, lloc, lmask, rloc, rmask, cfa, acl, ach, conn, bdt, grp, suba, subl, subh, nosub, twin, od5, od6, bses, bmsg > af
+        printf "%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\n", \
+            t, e, base, mv, resv, isblue, sblue, od1, od2, od3, od4, sdh, sda, sdl, cr, crh, fdir, lloc, lmask, rloc, rmask, cfa, acl, ach, conn, bdt, grp, suba, subl, subh, nosub, twin, od5, od6, bses, bmsg, act > af
         }
         # ---- the drop rules (the two former filter passes) + the s. slice ---
         if ($3 == 13) next

@@ -280,7 +280,7 @@ function sum_locations() {
     if (a_flowdir == "in") { sum_loc("From", a_remote, a_rmask); sum_loc("To", a_local, a_lmask) }
     else                   { sum_loc("From", a_local, a_lmask);  sum_loc("To", a_remote, a_rmask) }
 }
-function sum_config(   c) {
+function sum_config(   c, n, i, SC, v) {
     sum_ent("Remote host", "hosts", a_sdh)
     # Login ABOVE Account (2026-07): the two name the same participant at
     # different levels — the login is what actually authenticates, the account
@@ -292,6 +292,17 @@ function sum_config(   c) {
         c = a_cron; gsub(/\037/, "/", c)
         emitl("ROW\tCron\t" c)
         emitl("ROW\tSchedule\t" a_cronh)
+    }
+    # the STATUS rows (2026-09-14, user request): one "Status" row per reason
+    # the subscription is NOT active — the bin/subscription-active.jq codes
+    # (annotation field 37, the analyses Subscriptions page's Active column);
+    # an active subscription gets none
+    if (a_act != "") {
+        n = split(a_act, SC, ",")
+        for (i = 1; i <= n; i++) {
+            v = (SC[i] == "1") ? "Undeployed" : (SC[i] == "2") ? "SAVED_NOT_DEPLOYED" : (SC[i] == "3") ? "Schedule No" : (SC[i] == "4") ? "Folder monitoring Inactive" : ""
+            if (v != "") emitl("ROW\tStatus\t" v)
+        }
     }
 }
 function uc_desc(name,   uc) {
@@ -1325,11 +1336,11 @@ NF < 4 { next }
         a_bses = A[35]; a_bmsg = A[36]   # the banner error line itself: session id + message (2026-09-12)
         if (t == "SITE") {
             a_sdh = A[12]; a_sda = A[13]; a_sdl = A[14]
-            a_cron = A[15]; a_cronh = A[16]
+            a_cron = A[15]; a_cronh = A[16]; a_act = A[37]   # 37: the not-active reason codes (APPENDED 2026-09-14)
             a_flowdir = A[17]; a_local = A[18]; a_lmask = A[19]; a_remote = A[20]; a_rmask = A[21]
             x_blue = (A[7] == "1") ? "1" : ""
         } else {
-            a_sdh = ""; a_sda = ""; a_sdl = ""; a_cron = ""; a_cronh = ""
+            a_sdh = ""; a_sda = ""; a_sdl = ""; a_cron = ""; a_cronh = ""; a_act = ""
             a_flowdir = ""; a_local = ""; a_lmask = ""; a_remote = ""; a_rmask = ""
             x_blue = ""
         }
