@@ -22,7 +22,7 @@
 <ul>
 <li><strong>KPI line</strong> &mdash; rank and share among all accounts, failure rate, volume, cadence (days active, median gap between active days, days idle since last seen); with recorded durations also avg/p50/p95/max, throughput, distinct sessions.</li>
 <li><strong>Last error(s)</strong> &mdash; above Features when a subscription it moves files with has an error: per subscription its newest error (date, time, subscription, file), newest first; red = failed, orange = expired uncollected; absent when none. A click anywhere on the row opens the file&rsquo;s error page (all legs plus server log), guaranteed by <a href="failed.html">Failed Subscriptions</a>.</li>
-<li><strong>Features</strong> &mdash; a Login, Host, Partner, Application, Domain, Logical or BL breakdown with exactly one value folds in here as a linked, tinted row.</li>
+<li><strong>Features</strong> &mdash; a Login, Host, Partner, Application, Domain, Logical or BL breakdown with exactly one value folds in here as a linked, tinted row. The first Features row is the Account itself.</li>
 <li><strong>Logins, Hosts, Domains / Applications / Logical / Partners / BL</strong> &mdash; one table each, side by side, every configured <em>and</em> logged value: green = logged, red = configured, never seen (no counts; links its never-seen page); unconfigured-but-logged partners green; group rows tint by the entity&rsquo;s own result. A narrowed date filter re-tints (no activity = red), never hides.</li>
 <li><strong>Incoming / Outgoing connections</strong> &mdash; after Latest 100; address · In · Out · Name; full-period, unchanged by the date filter.
 <ul>

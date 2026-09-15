@@ -832,6 +832,17 @@ check $([ "$(grep -c 'function setupEntityErrorLinks' docs/assets/report.js 2>/d
 g=$(grep -oE 'goodies:"([^"\\]|\\.)*"' docs/assets/topbar-data.js 2>/dev/null)
 check $([ -n "$g" ] && printf '%s' "$g" | grep -q 'failing-reasons.html\\">Error reasons' && ! printf '%s' "$g" | grep -q 'Failed Subscriptions' && echo 0 || echo 1) "Goodies menu does not link Error reasons, or still links Failed Subscriptions"
 
+# every detail page (2026-09-15, user request): a Features table whose FIRST row is the entity itself, Item = the type label and Value = the name its TITLE ends with
+r=$(awk -F'\t' '
+    function done_file() { if (fname != "") { np++; if (!ok) { bad++; if (ex == "") ex = fname } } }
+    FNR == 1 { done_file(); fname = FILENAME; ok = 0; t = 0; got = 0; title = "" }
+    $1 == "TITLE" { title = $2 }
+    $1 == "TABLE" { t = ($2 == "Features") }
+    t && $1 == "ROW" && !got { got = 1; s = $2 ": " $3; if (length(title) >= length(s) && substr(title, length(title) - length(s) + 1) == s) ok = 1 }
+    END { done_file(); print np + 0, bad + 0, ex }' data/transfer/reports/details/{accounts,applications,bl,domains,hosts,logicals,logins,partners,subscriptions}/*.rpt 2>/dev/null)
+read -r np bad ex <<< "$r"
+check $([ "${np:-0}" -gt 0 ] && [ "${bad:-1}" = 0 ] && echo 0 || echo 1) "detail pages: ${bad:-?} of ${np:-?} lack a Features table led by the entity itself (first: ${ex:-?})"
+
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2
 else

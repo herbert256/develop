@@ -447,7 +447,6 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
         else emitl("INTRO\tConfigured (direction: **" dirv "**) — **never seen** in the loaded transfer logs.")
         if (pend_t == "SITE") {
             emitl("TABLE\tFeatures"); emitl("HEAD\tItem\tValue"); emitl("KIND\ttext\ttext")
-            emitl("ROW\tSubscription\t" pend_e)   # the page's own name leads the table (2026-09-11, user request)
             if (ucd != "") emitl("ROW\tUse case\t@{href=../../analyses/use-cases.html}" ucd)
             twin_features_rows()
             sum_config()
@@ -464,7 +463,6 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
     # would carry nothing
     if (pend_t == "SITE" || pend_t == "ACC" || x_ip != "" || x_oneacct != "" || x_onedom != "" || x_oneapp != "" || x_onelgc != "" || x_oneptn != "" || x_onebl != "" || nca > 0) {
         emitl("TABLE\tFeatures"); emitl("HEAD\tItem\tValue"); emitl("KIND\ttext\ttext")
-        if (pend_t == "SITE") emitl("ROW\tSubscription\t" pend_e)   # the page's own name leads the table (2026-09-11, user request)
         if (ucd != "") emitl("ROW\tUse case\t@{href=../../analyses/use-cases.html}" ucd)
         dupacct = 0
         for (i = 1; i <= nca; i++) if (CA[i] != "") {
@@ -1206,6 +1204,46 @@ function inject_conn_placeholder(s) {
         had27 = 1
     }
 }
+# EVERY detail page (2026-09-15, user request; the subscription pages since
+# 2026-09-11): the Features table exists and its FIRST row is the entity
+# itself, Item = the type label (the TITLE's), Value = its name. Runs LAST,
+# after every pass that creates, fills or moves Features (emit_intro,
+# strip_page, fold_single_dims, the LOGIN and HOST layout passes). A page
+# without Features gets the skeleton where fold_single_dims creates one:
+# first in the sxs=5 flex row, else before the first table.
+function self_features_row(   i, fe0, fe1, d0, ins, n2, selfrow) {
+    selfrow = "ROW\t" label "\t" pend_e
+    fe0 = 0
+    for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\tFeatures") == 1) { fe0 = i; break }
+    if (fe0 == 0) {
+        d0 = 0
+        for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\t") == 1 && index(PG[i], "\tsxs=5") > 0) { d0 = i; break }
+        if (d0 == 0) for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\t") == 1) { d0 = i; break }
+        if (d0 == 0) return
+        n2 = 0
+        for (i = 1; i <= npg; i++) {
+            if (i == d0) {
+                PG2[++n2] = (index(PG[i], "\tsxs=5") > 0) ? "TABLE\tFeatures\tsxs=5\tnosearch" : "TABLE\tFeatures"
+                PG2[++n2] = "HEAD\tItem\tValue"; PG2[++n2] = "KIND\ttext\ttext"
+            }
+            PG2[++n2] = PG[i]
+        }
+        for (i = 1; i <= n2; i++) PG[i] = PG2[i]
+        npg = n2
+        fe0 = d0
+    }
+    fe1 = blk_end(fe0)
+    ins = fe0
+    while (ins + 1 <= fe1 && (index(PG[ins + 1], "HEAD\t") == 1 || index(PG[ins + 1], "KIND\t") == 1)) ins++
+    n2 = 0
+    for (i = 1; i <= npg; i++) {
+        if (i > fe0 && i <= fe1 && PG[i] == selfrow) continue
+        PG2[++n2] = PG[i]
+        if (i == ins) PG2[++n2] = selfrow
+    }
+    for (i = 1; i <= n2; i++) PG[i] = PG2[i]
+    npg = n2
+}
 function close_file(   dircls, resv, out, i) {
     if (pend_t == "") return
     ensure_file()
@@ -1226,6 +1264,7 @@ function close_file(   dircls, resv, out, i) {
     fold_single_dims()
     if (pend_t == "LOGIN") { login_feat_row(); login_sxs_row(); login_lasterr_move() }
     if (pend_t == "HOST") host_sxs_row()
+    self_features_row()
     out = ""
     for (i = 1; i <= npg; i++) out = out PG[i] "\n"
     printf "%s", out > cur_path
