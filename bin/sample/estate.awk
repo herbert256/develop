@@ -452,6 +452,10 @@ function build_roster() {
     nonuc1("GL_POSTINGS_GEKKO",   1, 2, 0.02)          # out+push -> UC1-derived
     nonuc1("CRM_SYNC_INITECH",    4, 2, 0.02)
     nonuc1("HR_ROSTER_UMBRELLA",  1, 1.5, 0.03)
+    # a SWIFT flow (2026-09-15): skip-listed (skip.txt "any contains SWIFT"),
+    # never transferring; the analyses Subscriptions page lists it as a
+    # skipped row with Active CFT. LAST, so no other flow shifts.
+    addf(1, "IT",  "SWIFT",    "INITECH",  "",  0, 0, "noxfer")
 }
 
 # The CFT end-to-end monitor: four sites UC<n>-INFRA_ST-MONITOR_INFRA (note

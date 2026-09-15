@@ -1105,6 +1105,19 @@ write_added_bl_page() {
 # SAVED_NOT_DEPLOYED, 3 a *_receive_scheduler_enable parameter set to No, 4
 # source_folder_monitoring_state Inactive — with the words as the hover title;
 # blank for a subscription the JSON does not name.
+# SKIPPED (2026-09-15, user request): the subscriptions skip.txt removed from
+# the config (filtered/_skipped.tsv) get a row too: Active and cron from the
+# RAW export (input/flow-manager/subscriptions.json still names them), "n/a"
+# in the nine count columns (the parse dropped their records), no groups, no
+# tint. COLOR (2026-09-15): the result as a word, green / red / orange / blue,
+# white for a skipped or unresulted subscription. ERROR REASON (2026-09-15):
+# the reason of the NEWEST File in error of the subscription (failed-files.rpt,
+# the Failed files page: Failed or Expired), linking its error page; the
+# analyses publish catch-up runs after failed-files.sh, so one build converges.
+# A name containing SWIFT shows Active "CFT" (2026-09-15, user rule).
+# DIRECTION (2026-09-15, user request): connection / file movement, e.g.
+# out/in, exactly the detail page title prefix lowercased (base direction;
+# xref flowdir with relay = both; ? = unknown side); blank when skipped.
 _subs_tcell() {   # $1 value  $2 classes — a total-row count cell, 0 blanked like the rows
     if [ "${1:-0}" = 0 ]; then printf '<td class="%s z"></td>' "$2"; else printf '<td class="%s">%s</td>' "$2" "$1"; fi
 }
@@ -1115,7 +1128,7 @@ write_subscriptions_page() {
     [ -f "$B/_subscriptions.tsv" ] || { rm -f "$out"; return 0; }
     local conf="$B/.configured.tsv"; [ -f "$conf" ] || conf=""
     local args=() f d
-    for f in _subscriptions-ucderived _subscriptions-accounts _subscriptions-logins _subscriptions-hosts \
+    for f in _subscriptions-ucderived _subscriptions-flowdir _subscriptions-accounts _subscriptions-logins _subscriptions-hosts \
              _subscriptions-logicals _subscriptions-partners _subscriptions-domains _subscriptions-apps \
              _subscriptions-bl; do
         [ -f "$X/$f.tsv" ] && args+=("$X/$f.tsv")
@@ -1124,6 +1137,10 @@ write_subscriptions_page() {
         [ -f "$DET/$d/_slugmap.tsv" ] && args+=("$DET/$d/_slugmap.tsv")
     done
     [ -f "$ALLT" ] && args+=("$ALLT")
+    # the skipped subscriptions and the newest error reason per subscription (2026-09-15)
+    local SKS="$DATA/flow-manager/filtered/_skipped.tsv" FFR="$DATA/transfer/reports/failed-files.rpt" RAWS="input/flow-manager/subscriptions.json"
+    [ -f "$SKS" ] && args+=("$SKS")
+    [ -f "$FFR" ] && args+=("$FFR")
     # the cron expressions (2026-09-13, user request): name / proto / display
     # cron / plain-English schedule per configured receive scheduler — the
     # Polling page's own pipeline, so the two pages never disagree
@@ -1138,6 +1155,18 @@ write_subscriptions_page() {
           ' "$FM_CONFIG_DIR/subscriptions.json" 2>/dev/null | awk -F'\t' -v CF=3 -f "$SCRIPT_DIR/../cron2human.awk" > "$cronf" || true
     fi
     args+=("$cronf")
+    # the SKIPPED rows' cron (2026-09-15): the same program over the RAW export
+    local cronrf; cronrf=$(mktemp "${TMPDIR:-/tmp}/subcronr.XXXXXX")
+    if command -v jq >/dev/null 2>&1 && [ -f "$SKS" ] && [ -f "$RAWS" ]; then
+        jq -r '
+            .[] | . as $s
+            | (["sftp","ftp"][] as $p
+               | ($s.parameters["hybrid_partner_\($p)_relay0_receive_scheduler_cron_expression"]) as $c
+               | select($c != null and $c != "")
+               | [ $s.name, ($p|ascii_upcase), $c ] | @tsv)
+          ' "$RAWS" 2>/dev/null | awk -F'\t' -v CF=3 -f "$SCRIPT_DIR/../cron2human.awk" > "$cronrf" || true
+    fi
+    args+=("$cronrf")
     # the ACTIVE codes (2026-09-14, user request): name / the comma-joined
     # codes, empty = active — bin/subscription-active.jq, the one definition
     # the subscription detail pages' Features Status rows share
@@ -1146,6 +1175,12 @@ write_subscriptions_page() {
         jq -r -f "$SCRIPT_DIR/../subscription-active.jq" "$FM_CONFIG_DIR/subscriptions.json" > "$actf" 2>/dev/null || : > "$actf"
     fi
     args+=("$actf")
+    # the SKIPPED rows' Active codes (2026-09-15): the same jq over the RAW export
+    local actrf; actrf=$(mktemp "${TMPDIR:-/tmp}/subactr.XXXXXX")
+    if command -v jq >/dev/null 2>&1 && [ -f "$SKS" ] && [ -f "$RAWS" ]; then
+        jq -r -f "$SCRIPT_DIR/../subscription-active.jq" "$RAWS" > "$actrf" 2>/dev/null || : > "$actrf"
+    fi
+    args+=("$actrf")
     # the subscription detail .rpt files: their Features From / To rows (the
     # first of each per file) — the same source sources-and-targets.sh reads
     shopt -s nullglob
@@ -1193,13 +1228,29 @@ write_subscriptions_page() {
         function crcell(raw,   o) { o = e(raw); gsub(/\037/, "<br>", o); return "<code>" o "</code>" }
         # the Active cell (2026-09-14): Yes, or the codes ", "-joined with their
         # words as the hover title; blank when the JSON does not name it
-        function actcell(k,   c, n3, A3, W3, i3, o, t) {
-            if (!(k in ACT)) return "<td class=\"act\"></td>"
-            c = ACT[k]; if (c == "") return "<td class=\"act\">Yes</td>"
+        function actcell(k, AA,   c, n3, A3, W3, i3, o, t) {
+            # a SWIFT subscription runs through CFT (2026-09-15, user rule): CFT, whatever the JSON says
+            if (index(k, "SWIFT") > 0) return "<td class=\"act\" title=\"SWIFT: runs through CFT\">CFT</td>"
+            if (!(k in AA)) return "<td class=\"act\"></td>"
+            c = AA[k]; if (c == "") return "<td class=\"act\">Yes</td>"
             split("status Undeployed|status SAVED_NOT_DEPLOYED|schedule No|folder monitoring Inactive", W3, "|")
             n3 = split(c, A3, ","); o = ""; t = ""
             for (i3 = 1; i3 <= n3; i3++) { o = o (o == "" ? "" : ", ") A3[i3]; t = t (t == "" ? "" : "; ") A3[i3] " " W3[A3[i3] + 0] }
             return "<td class=\"act\" title=\"" e(t) "\">" o "</td>"
+        }
+        # the Color cell (2026-09-15): the result as a word, white = none
+        function colcell(r) { if (r != "green" && r != "orange" && r != "red" && r != "blue") r = "white"; return "<td class=\"rescol\">" r "</td>" }
+        # the Error reason cell (2026-09-15): the newest File in error, linking its error page
+        function ercell(k) {
+            if (!(k in ERR) || ERR[k] == "") return "<td class=\"wrap ereason\"></td>"
+            if (ERH[k] != "") return "<td class=\"wrap ereason\"><a href=\"" e(ERH[k]) "\">" e(ERR[k]) "</a></td>"
+            return "<td class=\"wrap ereason\">" e(ERR[k]) "</td>"
+        }
+        # the Direction cell (2026-09-15, user request): connection / file movement,
+        # the detail page title prefix lowercased; blank when both sides are unknown
+        function dircell(k,   c, m) {
+            c = ((k in CDIR) && CDIR[k] != "") ? CDIR[k] : "?"; m = ((k in MVD) && MVD[k] != "") ? MVD[k] : "?"
+            return "<td class=\"dir\">" ((c == "?" && m == "?") ? "" : c "/" m) "</td>"
         }
         # a count cell: 0 shows blank (class z = no tint), like the report tables
         function ncell(v, cls) { v = v + 0; if (v == 0) return "<td class=\"" cls " z\"></td>"; return "<td class=\"" cls "\">" v "</td>" }
@@ -1212,10 +1263,22 @@ write_subscriptions_page() {
             if (FNR == 1) { lslug = FILENAME; sub(/.*\//, "", lslug); sub(/\.rpt$/, "", lslug) }
             if ($1 == "ROW" && ($2 == "From" || $2 == "To") && !((lslug SUBSEP $2) in LOC)) LOC[lslug SUBSEP $2] = $3
             next }
-        FILENAME ~ /base\/_subscriptions\.tsv$/ { RES[toupper($1)] = $3
+        FILENAME ~ /base\/_subscriptions\.tsv$/ { RES[toupper($1)] = $3; CDIR[toupper($1)] = $2
             if (CONF == "" && $1 !~ /^UCx_/ && $1 != "" && !(toupper($1) in seenr)) { seenr[toupper($1)] = 1; RN[++nr] = $1 }
             next }
         FILENAME ~ /subact\.[A-Za-z0-9]+$/ { if ($1 != "") ACT[toupper($1)] = $2; next }
+        FILENAME ~ /subactr\.[A-Za-z0-9]+$/ { if ($1 != "") ACTR[toupper($1)] = $2; next }
+        FILENAME ~ /subcronr\.[A-Za-z0-9]+$/ { if ($1 != "" && $3 != "") { u = toupper($1)
+                CRXR[u] = CRXR[u] ((u in CRXR) && CRXR[u] != "" ? "\037" : "") $3
+                CRHR[u] = CRHR[u] ((u in CRHR) && CRHR[u] != "" ? "; " : "") $4 }
+            next }
+        FILENAME ~ /filtered\/_skipped\.tsv$/ { if ($1 == "Subscription" && $2 != "") SKN[++nsk] = $2; next }
+        FILENAME ~ /failed-files\.rpt$/ { if ($1 == "ROW" && $2 != "") { u = toupper($2)
+                if (!(u in ERT) || $3 > ERT[u]) { ERT[u] = $3; rr = $4; hh = ""
+                    if (index(rr, "@{") == 1) { pp = index(rr, "}"); at = substr(rr, 3, pp - 3); rr = substr(rr, pp + 1)
+                        if (match(at, /href=[^,]*/)) hh = substr(at, RSTART + 5, RLENGTH - 5) }
+                    ERR[u] = rr; ERH[u] = hh } }
+            next }
         FILENAME ~ /subcron\.[A-Za-z0-9]+$/ { if ($1 != "" && $3 != "") { u = toupper($1)
                 CRX[u] = CRX[u] ((u in CRX) && CRX[u] != "" ? "\037" : "") $3
                 CRH[u] = CRH[u] ((u in CRH) && CRH[u] != "" ? "; " : "") $4 }
@@ -1231,6 +1294,7 @@ write_subscriptions_page() {
         FILENAME ~ /details\/applications\/_slugmap\.tsv$/  { SLUG["applications"  SUBSEP toupper($1)] = $2; next }
         FILENAME ~ /details\/bl\/_slugmap\.tsv$/            { SLUG["bl"            SUBSEP toupper($1)] = $2; next }
         FILENAME ~ /_subscriptions-ucderived\.tsv$/ { if ($1 != "" && $2 != "") UCD[toupper($1)] = $2; next }
+        FILENAME ~ /_subscriptions-flowdir\.tsv$/   { if ($1 != "") { v = $2; if (v == "relay") v = "both"; MVD[toupper($1)] = v }; next }
         FILENAME ~ /_subscriptions-accounts\.tsv$/  { addv(ACC, "a", $1, $2); next }
         FILENAME ~ /_subscriptions-logins\.tsv$/    { addv(LGN, "l", $1, $2); next }
         FILENAME ~ /_subscriptions-hosts\.tsv$/     { addv(HST, "h", $1, $2); next }
@@ -1261,13 +1325,14 @@ write_subscriptions_page() {
                 # columns last; the Schedule cell never wraps
                 print ucsort "\t" k "\t" tr ">" \
                     "<td>" lnk("subscriptions", nm) "</td>" \
-                    actcell(k) \
+                    actcell(k, ACT) colcell(res) dircell(k) \
                     "<td class=\"wrap\">" epc "</td>" \
                     "<td class=\"wrap\">" fr "</td>" \
                     "<td class=\"wrap\">" to "</td>" \
                     ncell(C[1], "num") ncell(C[2], "num") ncell(C[3], "num") ncell(C[4], "num failed") \
                     ncell(C[5], "num warn") ncell(C[6], "num warn") ncell(C[7], "num failed") \
                     ncell(C[8], "num warn") ncell(C[9], "num failed") \
+                    ercell(k) \
                     "<td>" cell("logicals", (k in LGC) ? LGC[k] : "") "</td>" \
                     "<td class=\"wrap\">" cell("accounts", (k in ACC) ? ACC[k] : "") "</td>" \
                     "<td class=\"wrap\">" cell("partners", (k in PTN) ? PTN[k] : "") "</td>" \
@@ -1277,11 +1342,28 @@ write_subscriptions_page() {
                     "<td class=\"mono\">" ((k in CRX) ? crcell(CRX[k]) : "") "</td>" \
                     "<td>" ((k in CRH) ? e(CRH[k]) : "") "</td></tr>"
             }
+            # the SKIPPED subscriptions (2026-09-15, user request): n/a counts, white, no groups
+            for (i = 1; i <= nsk; i++) { nm = SKN[i]; k = toupper(nm)
+                if (k in seenr) continue
+                seenr[k] = 1
+                uc = ""
+                if (match(nm, /^UC[0-9]+/)) uc = substr(nm, RSTART, RLENGTH)
+                ucsort = sprintf("%03d", ucnum(toupper(uc)))
+                na = ""; for (ci = 1; ci <= 9; ci++) na = na "<td class=\"num na\">n/a</td>"
+                print ucsort "\t" k "\t<tr data-skipped=\"1\">" \
+                    "<td>" lnk("subscriptions", nm) "</td>" \
+                    actcell(k, ACTR) colcell("") "<td class=\"dir\"></td>" \
+                    "<td class=\"wrap\"></td><td class=\"wrap\"></td><td class=\"wrap\"></td>" \
+                    na ercell(k) \
+                    "<td></td><td class=\"wrap\"></td><td class=\"wrap\"></td><td></td><td></td><td></td>" \
+                    "<td class=\"mono\">" ((k in CRXR) ? crcell(CRXR[k]) : "") "</td>" \
+                    "<td>" ((k in CRHR) ? e(CRHR[k]) : "") "</td></tr>"
+            }
             # the column sums: sorted LAST ("~" > every UC key), split off below
             printf "~\t~"; for (ci = 1; ci <= 9; ci++) printf "\t%d", TOT[ci] + 0; printf "\n"
         }' ${args[@]+"${args[@]}"} ${drpts[@]+"${drpts[@]}"} "$B/_subscriptions.tsv" \
         | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2)
-    rm -f "$cronf" "$actf"
+    rm -f "$cronf" "$actf" "$cronrf" "$actrf"
     rows=$(printf '%s\n' "$all" | awk -F'\t' '$1 != "~"' | cut -f3-)
     tots=$(printf '%s\n' "$all" | awk -F'\t' '$1 == "~"' | cut -f3-)
     local n; n=$(printf '%s' "$rows" | grep -c '<tr' || true)
@@ -1293,9 +1375,9 @@ write_subscriptions_page() {
         printf '<h1>Subscriptions</h1>\n'
         analyses_group_tabs subscriptions.html
         printf '<div class="tablewrap"><table class="index fit">\n'
-        printf '<tr><th>Subscription</th><th>Active</th><th>Endpoint</th><th>From</th><th>To</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Auto Retries</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Cron expression</th><th>Schedule</th></tr>\n'
+        printf '<tr><th>Subscription</th><th>Active</th><th>Color</th><th>Direction</th><th>Endpoint</th><th>From</th><th>To</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Auto Retries</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th><th>Error reason</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Cron expression</th><th>Schedule</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
-        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td>%s<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$n" "$tcells"
+        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td>%s<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$n" "$tcells"
         printf '</table></div>\n'
         printf '</body>\n</html>\n'
     } > "$out"
@@ -1746,7 +1828,7 @@ write_analyses_index() {
         printf '<tr><th colspan="2">Configuration</th></tr>\n'
         [ -f "$ADIR/use-cases.html" ] && printf '<tr><td><a href="use-cases.html">Use cases</a></td><td class="desc">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; Total, Server (server-log only), Not seen, Error and OK per use case; tabs for the <strong>Use Case definitions</strong> (who connects, which way the file travels, what triggers it) and the <strong>Use Case patterns</strong> (the accounts grouped by their subscription mix, e.g. <code>UC2 (1) UC4 (1)</code>).</td></tr>\n'
         [ -f "$ADIR/uc2-visits.html" ] && printf '<tr><td><a href="uc2-visits.html">UC2 pickup visits</a></td><td class="desc">What each UC2 partner actually does when it connects: collected, two-way exchange, delivery-only (the UC4 twin) or empty-handed visits.</td></tr>\n'
-        [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured subscription on one row: whether it is active, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint (login or remote host), the From and To folders, the cron expression and schedule, and the all-time File counts &mdash; total, in, out, Errors, automatic retries, resubmits, Waiting, Expired.</td></tr>\n'
+        [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured subscription on one row, the skip-listed ones included: whether it is active (CFT for SWIFT), its result colour and direction, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint (login or remote host), the From and To folders, the cron expression and schedule, the all-time File counts &mdash; total, in, out, Errors, automatic retries, resubmits, Waiting, Expired &mdash; and the last error reason.</td></tr>\n'
         [ -f "$ADIR/logical-detection.html" ] && printf '<tr><td><a href="logical-detection.html">Logical detection</a></td><td class="desc">How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID.</td></tr>\n'
         [ -f "$ADIR/added-bl.html" ] && printf '<tr><td><a href="added-bl.html">Added BL</a></td><td class="desc">The BL numbers input/&lt;env&gt;/BL.txt adds on top of subscriptions.json — per subscription, the values that are not among its tags.</td></tr>\n'
         [ -f "$ADIR/accounts.html" ] && printf '<tr><td><a href="accounts.html">Accounts</a></td><td class="desc">The accounts (partners) and their communication profiles &mdash; naming vs configured type/auth, insecure and unrestricted endpoints, conflicting host/whitelist setup, plus account &amp; login integrity checks (non-standard or shared logins, password profiles without a password, and more).</td></tr>\n'

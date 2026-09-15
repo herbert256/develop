@@ -843,6 +843,50 @@ r=$(awk -F'\t' '
 read -r np bad ex <<< "$r"
 check $([ "${np:-0}" -gt 0 ] && [ "${bad:-1}" = 0 ] && echo 0 || echo 1) "detail pages: ${bad:-?} of ${np:-?} lack a Features table led by the entity itself (first: ${ex:-?})"
 
+# analyses/subscriptions.html (2026-09-15, user request): the skipped subscriptions listed with n/a counts and Color white, a Color word on every row, the newest failed-files reason per subscription, Active CFT on every SWIFT name
+r=$(awk -F'\t' '
+    function strip(s) { gsub(/<[^>]*>/, "", s); gsub(/&quot;/, "\"", s); gsub(/&lt;/, "<", s); gsub(/&gt;/, ">", s); gsub(/&amp;/, "\\&", s); return s }
+    FILENAME ~ /_skipped\.tsv$/ { if ($1 == "Subscription") SK[toupper($2)] = 1; next }
+    FILENAME ~ /failed-files\.rpt$/ { if ($1 == "ROW") { u = toupper($2); if (!(u in T) || $3 > T[u]) { T[u] = $3; x = $4; if (index(x, "@{") == 1) x = substr(x, index(x, "}") + 1); R[u] = x } } next }
+    index($0, "<tr") == 1 && index($0, "class=\"act\"") > 0 {
+        n = split($0, P, "</td>"); nm = toupper(strip(P[1])); col = ""; er = ""; act = ""; na = 0
+        for (i = 1; i <= n; i++) {
+            if (index(P[i], "class=\"rescol\"")) col = strip(P[i])
+            if (index(P[i], "ereason\"")) er = strip(P[i])
+            if (index(P[i], "class=\"act\"")) act = strip(P[i])
+            if (index(P[i], "class=\"num na\"")) na++
+        }
+        rows++
+        if (col !~ /^(green|red|orange|blue|white)$/) badcol++
+        if (nm in SK) { sk++; if (na != 9 || col != "white") badsk++ }
+        else if (na != 0) badsk++
+        want = (nm in R) ? R[nm] : ""
+        if (er != want) { bader++; if (ex == "") ex = nm }
+        if (er != "") withr++
+        if (index(nm, "SWIFT")) { sw++; if (act != "CFT") badsw++ }
+    }
+    END { nsk = 0; for (k in SK) nsk++; print rows + 0, nsk, sk + 0, badsk + 0, badcol + 0, withr + 0, bader + 0, sw + 0, badsw + 0, (ex == "" ? "-" : ex) }' \
+    data/flow-manager/filtered/_skipped.tsv data/transfer/reports/failed-files.rpt docs/analyses/subscriptions.html 2>/dev/null)
+read -r srows snsk ssk sbadsk sbadcol swithr sbader ssw sbadsw sex <<< "$r"
+check $([ "${srows:-0}" -gt 0 ] && [ "${snsk:-0}" -gt 0 ] && [ "${ssk:-0}" = "${snsk:-x}" ] && [ "${sbadsk:-1}" = 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: ${ssk:-?} of ${snsk:-?} skipped subscription(s) listed, ${sbadsk:-?} row(s) with wrong n/a counts or colour"
+check $([ "${sbadcol:-1}" = 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: ${sbadcol:-?} row(s) without a green/red/orange/blue/white Color"
+check $([ "${swithr:-0}" -gt 0 ] && [ "${sbader:-1}" = 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: ${sbader:-?} Error reason cell(s) differ from the newest failed-files reason (first: ${sex:-?}), ${swithr:-0} filled"
+check $([ "${ssw:-0}" -gt 0 ] && [ "${sbadsw:-1}" = 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: ${sbadsw:-?} of ${ssw:-0} SWIFT subscription(s) without Active CFT"
+
+# analyses/subscriptions.html Direction (2026-09-15, user request): connection / movement, equal to the detail page title prefix lowercased, blank on the skipped rows
+r=$(awk -F'\t' '
+    function strip(s) { gsub(/<[^>]*>/, "", s); gsub(/&amp;/, "\\&", s); return s }
+    FILENAME ~ /\.rpt$/ { if ($1 == "TITLE") { t = $2; nm = t; sub(/^.*Subscription: /, "", nm); p = ""; if (match(t, /^[A-Z?]+\/[A-Z?]+: /)) p = tolower(substr(t, 1, RLENGTH - 2)); W[toupper(nm)] = p; nextfile } next }
+    index($0, "<tr") == 1 && index($0, "class=\"dir\"") > 0 {
+        n = split($0, P, "</td>"); nm = toupper(strip(P[1])); d = "x"
+        for (i = 1; i <= n; i++) if (index(P[i], "class=\"dir\"")) d = strip(P[i])
+        if (index($0, "data-skipped")) { if (d != "") bad++; next }
+        if (nm in W) { cmp++; if (d != W[nm]) { bad++; if (ex == "") ex = nm " page=" d " title=" W[nm] } }
+    }
+    END { print cmp + 0, bad + 0, (ex == "" ? "-" : ex) }' data/transfer/reports/details/subscriptions/*.rpt docs/analyses/subscriptions.html 2>/dev/null)
+read -r dcmp dbad dex <<< "$r"
+check $([ "${dcmp:-0}" -gt 0 ] && [ "${dbad:-1}" = 0 ] && echo 0 || echo 1) "analyses/subscriptions.html Direction: ${dbad:-?} of ${dcmp:-?} row(s) differ from the detail title prefix (first: ${dex:-?})"
+
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2
 else

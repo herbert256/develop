@@ -14,3 +14,4 @@ any	contains	HEARTBEAT
 any	contains	ACMETEST
 account	exact	SVC_MIGRATION
 login exact FE672382
+any	contains	SWIFT
