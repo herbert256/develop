@@ -613,12 +613,8 @@ A **logical transfer** = all records sharing one CoreId (commonly 2–7 rows). `
 **Outcome (col 2), the last-leg rules**: **Waiting** = ≥3 legs ending on the staging leg
 (Inbound+`routing`) — a UC2 file staged, not collected; a later export with the collect leg
 re-flips it. **Processed** = ≥2 legs, last leg Outbound+Processed AND matching the movement (out →
-`ssh`/`ftp`/`ftps`, in → `pesit`); deliberately no bytes condition. **In progress** (2026-09-15,
-user rule) = a lone leg whose own status is not a failure and that STARTED less than 10 minutes
-(`INPROG_MS`) before the newest leg start of the whole cache — its second leg is not logged yet;
-the propagation pass leaves its raw status standing (not forced Failed), the next export
-re-collapses it; the one-legged consumers (pirates, the Boxes one-legged box, the day pages'
-single-leg count) skip it. **Failed** = everything else (incl. an older or failed lone leg). **Expired** = a Waiting file whose staged copy the nightly File Maintenance
+`ssh`/`ftp`/`ftps`, in → `pesit`); deliberately no bytes condition. **Failed** = everything else
+(incl. a lone leg). **Expired** = a Waiting file whose staged copy the nightly File Maintenance
 sweep (~11 days) deleted before pickup — server-log-only evidence, so **`bin/expire-files.sh`**
 joins those lines onto Waiting rows (col 22 = the timestamp; cached in `_expired.tsv`,
 cmp-guarded, recomputed each run; transfer `parse.sh` re-runs it last unless
@@ -636,7 +632,7 @@ lists the settled rows; extracts cached in `_bookends.tsv` / `_reasonlines.tsv`;
 re-evaluated every run. The JSON bookends therefore stay in the server cache (out of the noise
 list since 2026-09-09) but the mention scanner skips them.
 
-**OUTCOME POLICY: Waiting and In progress count as OK, Expired counts as ERROR** on every report: Error =
+**OUTCOME POLICY: Waiting counts as OK, Expired counts as ERROR** on every report: Error =
 (`=="Failed" || =="Expired"`), OK = otherwise (never `== "Processed"`). The waiting report and the
 detail State column distinguish the states. **The entity RESULT COLOUR parts company with the
 policy on EXPIRED** (2026-08): an expired-last flow is ORANGE, not red — a staged UC2 copy the
@@ -646,6 +642,12 @@ It is red only when something ELSE says so: `result.sh` keeps it a candidate for
 after-last-transfer rule, so expired PLUS a newer server-log Error/Warn is still red.
 
 `_files.tsv` takes the FIRST row with an account and the LAST row with a site.
+
+**STILL UNDER WAY** (2026-09-15, user rule): right after the collapse, `parse.sh` REMOVES every
+File that STARTED less than 10 minutes (`INPROG_MS`) before the newest leg start in
+`_transfers.tsv` — from `_files.tsv` AND its legs from `_transfers.tsv` — since its legs may not
+all be logged yet (a lone first leg would read Failed). `_transfers0.tsv` keeps the rows, so the
+next parse brings them back complete. An undated File stays.
 
 ### Which cache a report reads
 

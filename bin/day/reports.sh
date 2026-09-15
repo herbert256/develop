@@ -220,7 +220,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         if ($9 + 0 > MAXD[d] + 0) { MAXD[d] = $9 + 0; MAXDA[d] = $3; MAXDO[d] = $2 }   # longest transfer (dur_ms)
         if ($8 + 0 == 0) Z[d]++           # zero-byte files
         if ($10 + 0 > MAXR[d] + 0) { MAXR[d] = $10 + 0; MAXRF[d] = $11; MAXRA[d] = $3 }   # most legs (retries) in one transfer
-        if ($10 + 0 == 1 && $2 != "In progress") PIR[d]++   # single-leg (pirate) transfers -> Problems this day (not the ones still under way, 2026-09-15)
+        if ($10 + 0 == 1) PIR[d]++   # single-leg (pirate) transfers -> Problems this day
         # UC2 staged files, by the day they were STAGED -> Problems this day
         if ($2 == "Waiting") WAI[d]++; else if ($2 == "Expired") XPD[d]++
         if ($12 != "") { pf[d SUBSEP $12]++; if ($2 == "Failed" || $2 == "Expired") pff[d SUBSEP $12]++ }   # per-subscription totals/fails

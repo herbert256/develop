@@ -44,7 +44,7 @@ agg=$(awk -F'\t' '
         while (v >= 1024 && i < 6) { v /= 1024; i++ }
         return (i == 1) ? v " " u[i] : sprintf("%.1f %s", v, u[i]) }
     FNR==NR { dir[$1] = $2; next }                 # _transfers.tsv: coreid -> its (single) leg direction
-    $10 == 1 && $2 != "In progress" {   # _files.tsv: exactly one leg, not still under way (2026-09-15)
+    $10 == 1 {                 # _files.tsv: exactly one leg
         oc = ($2 != "Failed" && $2 != "Expired") ? "OK" : "Error"
         printf "%s %s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n", \
             $4, $5, (($1 in dir) ? dir[$1] : ""), oc, $3, $12, $20, $8, human($8), $11, $1

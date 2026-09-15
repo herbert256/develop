@@ -414,10 +414,8 @@ _subs_box_rows() {
                 {
                     if (!(($12) in ls)) orda[++na] = $12
                     if ($6 > ls[$12]) { ls[$12] = $6; lout[$12] = $2 }
-                    # an In progress lone leg (2026-09-15) is neither a
-                    # one-legged problem nor a delivery that recovers one
-                    if ($10 == 1 && $2 != "In progress") { if (!(($12) in lp)) ord[++n] = $12; if ($6 > lp[$12]) lp[$12] = $6 }
-                    if ($2 != "Failed" && $2 != "Expired" && $2 != "In progress") { if ($6 > lo[$12]) lo[$12] = $6 }
+                    if ($10 == 1) { if (!(($12) in lp)) ord[++n] = $12; if ($6 > lp[$12]) lp[$12] = $6 }
+                    if ($2 != "Failed" && $2 != "Expired") { if ($6 > lo[$12]) lo[$12] = $6 }
                 }
                 END {
                     for (i = 1; i <= n; i++) { s = ord[i]
