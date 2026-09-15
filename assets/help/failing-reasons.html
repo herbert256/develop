@@ -22,12 +22,12 @@
 <ul>
 <li>Count = <strong>every File in error</strong>, Failed or Expired, recovered flows included: the rows of <a href="failed-files.html">Failed files</a>, so the Total equals that list and the home page&rsquo;s Error total.</li>
 <li>The reasons are the Failed files page&rsquo;s: the shared classifier vocabulary (<em>Connection failures</em>, <em>PeSIT transfer aborted</em>, &hellip;) in classifier order, <em>One-legged</em>, the raw last-leg status and <em>Expired (not collected)</em>; <code>(none)</code> when no rule applies.</li>
-<li>A reason with nothing counted stays listed with blank Count and Last.</li>
-<li>Sorted by <strong>Last</strong>, newest first, so the reasons with nothing counted sit at the bottom; the <strong>Total</strong> row sits right under the header.</li>
+<li>Only reasons that occur are listed: a reason with nothing counted has no row.</li>
+<li>Sorted by <strong>Last</strong>, newest first; the <strong>Total</strong> row sits at the bottom.</li>
 </ul>
 <h2>Reason pages</h2>
 <ul>
-<li>A nonzero row opens <strong>every</strong> File with that reason, newest first, 500 per page: <strong>Subscription</strong> (links its detail page), <strong>Date/time</strong> (the File&rsquo;s start), <strong>CoreId</strong> (links File Tracking where configured) and <strong>Filename</strong>. A click elsewhere on the row opens the File&rsquo;s error page when it has one.</li>
+<li>A row opens <strong>every</strong> File with that reason, newest first, 500 per page: <strong>Subscription</strong> (links its detail page), <strong>Date/time</strong> (the File&rsquo;s start), <strong>CoreId</strong> (links File Tracking where configured) and <strong>Filename</strong>. A click elsewhere on the row opens the File&rsquo;s error page when it has one.</li>
 <li>Rows tint by the subscription&rsquo;s result: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer in Error, <strong>light blue</strong> surfaced only by the server log.</li>
 <li>From/To narrows the rows to a date range; the search box filters them.</li>
 </ul>

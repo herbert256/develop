@@ -1024,7 +1024,7 @@ Partners - Incoming (analyses/partners-in.html, `bin/analyses/reports/partners-i
 the Incoming logon funnel of logon.rpt, one row per login; the old FE overview page and the Logons
 (incoming) page stay in their own groups but left Goodies 2026-09-13) · Partners - Outgoing
 (analyses/hosts-overview.html, the hosts twin for UC1/UC3, `bin/analyses/reports/hosts-overview.sh`) ·
-Transfer Duration · Failed Subscriptions · Subscriptions (the analyses/subscriptions.html
+Transfer Duration · Error reasons (analyses/failing-reasons.html; replaced Failed Subscriptions 2026-09-15) · Subscriptions (the analyses/subscriptions.html
 configuration list) · Polling (analyses/polling.html) — the pages
 staying in their own menus and groups; it ships in `topbar-data.js` as `goodies`, both bar
 renderers draw it, `TB_VER` folds it, linkcheck reads it like the other menus. `_analyses_groups` is the single

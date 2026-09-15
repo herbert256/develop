@@ -755,7 +755,10 @@ frt() { awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" { c = $3; sub(/^@\{
 n=$(frt data/analyses/reports/failing-reasons.rpt); en=$(rpt_rows data/transfer/reports/failed-files.rpt)
 check $([ "${n:-x}" = "${en:-y}" ] && [ "${en:-0}" -gt 0 ] && echo 0 || echo 1) "failing-reasons counts ${n:-?}, failed-files.rpt lists ${en:-?}"
 t=$(grep -m1 $'^TABLE\t' data/analyses/reports/failing-reasons.rpt 2>/dev/null)
-check $(printf '%s' "$t" | grep -q 'sort=2:-1' && printf '%s' "$t" | grep -q 'totaltop' && echo 0 || echo 1) "failing-reasons main table lacks the Last-descending default sort or the pinned total (TABLE: $t)"
+check $(printf '%s' "$t" | grep -q 'sort=2:-1' && ! printf '%s' "$t" | grep -q 'totaltop' && echo 0 || echo 1) "failing-reasons main table lacks the Last-descending default sort or still pins the total on top (TABLE: $t)"
+# 2026-09-15 (user request): no row for a reason with nothing counted
+z=$(awk -F'\t' '$1 == "ROW" && $3 == "" { n++ } END { print n + 0 }' data/analyses/reports/failing-reasons.rpt 2>/dev/null)
+check $([ "${z:-1}" = 0 ] && echo 0 || echo 1) "failing-reasons main table still lists ${z:-?} reason(s) with no count"
 dn=$(cat data/analyses/reports/failing-reasons-*.rpt 2>/dev/null | grep -c $'^ROW\t' || true)
 check $([ "${dn:-0}" = "${en:-y}" ] && echo 0 || echo 1) "failing-reasons drill pages hold ${dn:-0} row(s), expected every one of the ${en:-?} Files in error"
 n=$(ls docs/analyses 2>/dev/null | awk '/^failing-reasons-(history|errors)/ { n++ } END { print n + 0 }')
@@ -824,6 +827,10 @@ check $([ "${nz:-0}" -gt 0 ] && [ "$nz" = "$nl" ] && echo 0 || echo 1) "detail S
 # for that subscription and the active dates — its drill is gone there, kept on the other entity pages
 check $([ "$(grep -o 'data-drill-cols="[^"]*"' docs/transfer/entities/subscription-all.html 2>/dev/null | grep -c 'ferr:')" = 0 ] && [ "$(grep -o 'data-drill-cols="[^"]*"' docs/transfer/entities/account-all.html 2>/dev/null | grep -c 'ferr:3:')" = 1 ] && echo 0 || echo 1) "Entities: the subscription pages still drill Files Error, or the account pages lost that drill"
 check $([ "$(grep -c 'function setupEntityErrorLinks' docs/assets/report.js 2>/dev/null)" = 1 ] && [ "$(grep -c 'setupEntityErrorLinks();' docs/assets/report.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "report.js does not define and run setupEntityErrorLinks"
+
+# the Goodies menu (2026-09-15, user request): Error reasons replaced Failed Subscriptions
+g=$(grep -oE 'goodies:"([^"\\]|\\.)*"' docs/assets/topbar-data.js 2>/dev/null)
+check $([ -n "$g" ] && printf '%s' "$g" | grep -q 'failing-reasons.html\\">Error reasons' && ! printf '%s' "$g" | grep -q 'Failed Subscriptions' && echo 0 || echo 1) "Goodies menu does not link Error reasons, or still links Failed Subscriptions"
 
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2

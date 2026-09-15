@@ -94,27 +94,25 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen=
         # the MAIN list
         f = OUT
         printf "TITLE\tError reasons\n" > f
-        printf "DESC\tEvery possible error Reason — how many Files in error (Failed or Expired) carry it and the newest occurrence; a nonzero row opens every File behind it.\n" > f
+        printf "DESC\tEvery error Reason that occurs — how many Files in error (Failed or Expired) carry it and the newest occurrence; a row opens every File behind it.\n" > f
         printf "KEYWORDS\terror,reason,cause,failed,failing,errors,expired,count,files,vocabulary,classifier\n" > f
         # a snapshot per reason, so no date semantics: nofilter keeps the
         # From/To machinery off this table
-        # sort=2:-1 + totaltop (2026-09-14, user request): the default order is
-        # Last (the newest occurrence) descending — a reason with nothing
-        # counted has no Last and sorts to the bottom — and the Total row sits
-        # pinned right under the header (report.js re-appends it first)
-        printf "TABLE\t\tnofilter\tnosearch\trowlink\tsort=2:-1\ttotaltop\n" > f
+        # sort=2:-1 (2026-09-14, user request): Last (the newest occurrence)
+        # descending. 2026-09-15 (user request): reasons with nothing counted
+        # get no row, and the Total row sits at the bottom again (no totaltop)
+        printf "TABLE\t\tnofilter\tnosearch\trowlink\tsort=2:-1\n" > f
         printf "HEAD\tReason\tCount\tLast\n" > f
         printf "KIND\ttext\tnum\ttext\n" > f
         for (i = 1; i <= nr; i++) {
             r = RN[i]
-            if (CN[r] + 0 > 0) {
-                sl = "failing-reasons-" slug9(r)
-                printf "ROW\t@{href=%s.html}%s\t@{href=%s.html,class=num}%d\t%s\t@data:href=%s.html\n", \
-                       sl, r, sl, CN[r], LS[r], sl > f
-            } else
-                printf "ROW\t%s\t\t\n", r > f
+            if (CN[r] + 0 == 0) continue
+            nz++
+            sl = "failing-reasons-" slug9(r)
+            printf "ROW\t@{href=%s.html}%s\t@{href=%s.html,class=num}%d\t%s\t@data:href=%s.html\n", \
+                   sl, r, sl, CN[r], LS[r], sl > f
         }
-        printf "TOTAL\tTotal (%d reasons)\t%d\t\n", nr, tot + 0 > f
+        printf "TOTAL\tTotal (%d reasons)\t%d\t\n", nz, tot + 0 > f
         printf "FOOT\tGenerated on %s\n", gen > f
         close(f)
         # the DRILL pages, one per nonzero reason: every File, newest first
