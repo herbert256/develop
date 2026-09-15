@@ -806,7 +806,20 @@ smap="$tmp.submap"
         awk -F'\t' -v OFS='\t' '$1 != "" && $2 != "" { print "Z", $1, $2 }' "$SESSMAP"
     fi
 } > "$smap"
-awk -F'\t' -v OFS='\t' '
+# IN PROGRESS (2026-09-15, user rule): a lone leg that STARTED less than
+# INPROG_MS before the newest leg start of the whole cache is a transfer still
+# under way — its counterpart leg is simply not logged yet — so the pass below
+# does not force it Failed and the collapse reads its File "In progress" (OK
+# under the outcome policy: Error = Failed || Expired). A lone leg whose own
+# status is a failure stays Failed, and so does every older one. Recomputed on
+# every parse: the next export moves the newest start on and brings the leg.
+INPROG_MS=600000
+newest_ms=$(awk -F'\t' '
+    function hms_ms(t,   a) { if (t == "") return 0; split(t, a, "[:.]"); return ((a[1]*3600) + (a[2]*60) + a[3]) * 1000 + a[4] }
+    $14 != "" { m = $14 * 86400000 + hms_ms($12); if (m > mx) mx = m }
+    END { printf "%.0f\n", mx + 0 }' "$PARSED0")
+awk -F'\t' -v OFS='\t' -v NEWEST="$newest_ms" -v INPROG="$INPROG_MS" '
+    function hms_ms(t,   a) { if (t == "") return 0; split(t, a, "[:.]"); return ((a[1]*3600) + (a[2]*60) + a[3]) * 1000 + a[4] }
     # Resolve a profile to its subscription, breaking a multi-claim tie on the
     # direction of the group pesit leg. Returns "" when it cannot be decided.
     function resolve_site(p, in_, out_,   i, want, hits, cand) {
@@ -939,8 +952,10 @@ awk -F'\t' -v OFS='\t' '
             # Inbound and an Outbound leg, so a group of ONE row never actually
             # delivered — force its status (col 3) to Failed regardless of what
             # the single leg logged. _files.tsv derives its outcome from col 3,
-            # so the transfer outcome follows automatically.
-            if (nb == 1) $3 = "Failed"
+            # so the transfer outcome follows automatically. EXCEPT a lone leg
+            # still IN PROGRESS (see INPROG_MS above): its own non-failed
+            # status stands, and the collapse reads the File "In progress".
+            if (nb == 1 && ($3 ~ /^Failed/ || $14 == "" || $14 * 86400000 + hms_ms($12) < NEWEST - INPROG)) $3 = "Failed"
             print
         }
         nb = 0; ga = ""; gl = ""; gs = ""; gh = ""; gp = ""; gpin = 0; gpout = 0; gmv = ""; gss = ""; gppin = 0
@@ -1160,6 +1175,9 @@ col  name           description
   3  status         Status, raw (reports fold "Failed Subtransmission" -> "Failed");
                     a lone leg (a CoreId group of one row — no Inbound+Outbound
                     pair) is forced to "Failed": an incomplete transfer never delivered
+                    — unless it is still IN PROGRESS (2026-09-15: not a failed status
+                    itself, started less than 10 minutes before the newest leg start
+                    of the cache), when its own status stands
   4  account        Account, with "@..." stripped; blacklist blanked (SECURETRANSPORT)
   5  login          Login; blacklist blanked (SECURETRANSPORT, P14303_CFT01, *nobody,
                     UNKNOWN); if then blank and Account has an @suffix, the part after
@@ -1222,7 +1240,7 @@ ttmp="$FILES.tmp.$$"
 # _subscriptions-flowdir.tsv xref cache (the same map the config-column join
 # below uses for col 17). Missing cache -> empty map -> movement unknown.
 flowmap="$CFG_FLOW"; [ -f "$flowmap" ] || flowmap=/dev/null
-LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED" | awk -F'\t' '
+LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED" | awk -F'\t' -v NEWEST="$newest_ms" -v INPROG="$INPROG_MS" '
     function hms_ms(t,   a) { if (t == "") return 0; split(t, a, "[:.]"); return ((a[1]*3600) + (a[2]*60) + a[3]) * 1000 + a[4] }
     function fromjdn(j,   a,b,c,dd,e2,mm,day2,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e2=c-int(1461*dd/4); mm=int((5*e2+2)/153); day2=e2-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day2) }
     # an epoch-ms value (jdn * 86400000 + ms of day) -> "ccyy-mm-dd hh:mm:ss.mmm", the col 4/5 format
@@ -1270,7 +1288,11 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED" | awk -F'\t' '
         #             movement in  -> pesit   (handed to CFT).
         #             A file with no movement direction (no/unmapped
         #             subscription) can never pass.
-        #   Failed    everything else (incl. a lone leg).
+        #   In progress  a lone leg whose own status is not a failure, started
+        #             less than INPROG ms before the newest leg start of the
+        #             cache (2026-09-15, user rule): the second leg is not
+        #             logged yet — OK under the outcome policy.
+        #   Failed    everything else (incl. an older or failed lone leg).
         # Deliberately NO bytes condition: a 0-byte file delivered end-to-end
         # stays Processed (empty at origin — the size-dist zero-byte table
         # keeps it visible), and a trailing 0-byte re-collect half a second
@@ -1288,6 +1310,9 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED" | awk -F'\t' '
             # 100 % Error)
             else if (mv == "relay" && (last_proto == "ssh" || last_proto == "ftp" || last_proto == "ftps" || last_proto == "pesit")) oc = "Processed"
         }
+        # the propagation pass left the raw status standing on exactly these
+        # lone legs (INPROG_MS)
+        if (rows == 1 && last_st !~ /^Failed/ && f_jdn != "" && f_jdn * 86400000 + hms_ms(f_time) >= NEWEST - INPROG) oc = "In progress"
         # the profile of the row that DONATED the subscription (col 13 from
         # the same leg as col 12), the group first profile only when that row
         # carries none: a relay CoreId legitimately has legs on two flows, and
@@ -1455,7 +1480,14 @@ col  name       rule
                             (col 17): out -> protocol ssh/ftp/ftps (handed to
                             the partner), in -> pesit (handed to CFT). A file
                             without a movement direction never passes.
-                Failed    = everything else (incl. a lone one-row CoreId).
+                In progress = a lone one-row CoreId whose leg status is not a
+                            failure and that started less than 10 minutes
+                            before the newest leg start of the cache
+                            (2026-09-15): its second leg is not logged yet.
+                            OK under the outcome policy; the next export
+                            re-collapses it.
+                Failed    = everything else (incl. an older or failed lone
+                            one-row CoreId).
                 There is deliberately NO bytes condition: a 0-byte file
                 delivered end-to-end stays Processed (empty at ORIGIN — see
                 size-dist's zero-byte table), and a trailing 0-byte

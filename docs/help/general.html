@@ -20,7 +20,7 @@
 <li>Sources: the <strong>transfer</strong> log (every file movement) and the <strong>server</strong> log (the platform&rsquo;s info/warning/error messages).</li>
 <li><strong>File</strong> &mdash; one logical transfer: all rows sharing a CoreId (Inbound partner&rarr;ST leg, Outbound ST&rarr;CFT leg, retries), counted once, volume once: files moved, not log lines. E.g. 3 files retrieved from a partner = 3 Files, 6 rows, 4 sessions (one partner&harr;ST, three ST&harr;CFT). Files never exceed rows; equal only when every File has one leg.</li>
 <li><strong>Transfer</strong> &mdash; one physical row (a leg). Per-leg reports (protocol, direction/action, security parameters, AV scan) count Transfers and say so.</li>
-<li><strong>OK</strong> &mdash; the File&rsquo;s <em>final</em> row is <code>Processed</code> (a failed retry then a success is OK), or Waiting (staged, still collectable). <strong>Error</strong> &mdash; any other status: Failed, the <code>Failed Subtransmission</code> variants, Expired. On Transfers reports each row counts by its own status.</li>
+<li><strong>OK</strong> &mdash; the File&rsquo;s <em>final</em> row is <code>Processed</code> (a failed retry then a success is OK), or Waiting (staged, still collectable), or In progress (a single leg that started less than 10 minutes before the newest transfer: its second leg is not logged yet). <strong>Error</strong> &mdash; any other status: Failed, the <code>Failed Subtransmission</code> variants, Expired. On Transfers reports each row counts by its own status.</li>
 <li><strong>Entities</strong> &mdash; nine types: subscriptions, accounts, logins, hosts, logical flows, partners, applications, domains, BL tags.</li>
 </ul>
 <h2>Colours</h2>
