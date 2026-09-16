@@ -750,13 +750,13 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   the `files/` page set (source tag `O`, no back link of its own — the page's facts table links
   its subscription). A flow with no such File gets no row. Because nothing is repeated on the page
   any more, **"Last server log messages" no longer suppresses those lines** and shows the page's
-  own log in full. A SERVER-FAILING subscription (in failed.sh's `_srvsubs-map.tsv` — the REDUCED
-  name⇥slug⇥stamp map, cmp-guarded without the reason column so a reason-only rerun leaves it
-  byte-identical and the details catch-up self-gates; went-kaput runs EARLY in the build so the
-  stamps are final on failed.sh's first pass) additionally
-  gets the **"Server log error"** section above Last error (`srv_log_error_section`): its
-  `errors/<slug>.rpt` server-log table re-emitted VERBATIM with a LINK to the full error page,
-  its lines joining the same suppression set.
+  own log in full — the SUPPRESSION SET has no writers left. A SERVER-FAILING subscription (in
+  failed.sh's `_srvsubs-map.tsv` — the REDUCED name⇥slug⇥stamp map, cmp-guarded without the reason
+  column so a reason-only rerun leaves it byte-identical and the details catch-up self-gates;
+  went-kaput runs EARLY in the build so the stamps are final on failed.sh's first pass) gets a
+  THIRD Features row, **"Server log error"** — the map's stamp, linking the flow's OWN
+  `errors/<slug>.html`, which failed.sh already writes. The section that re-emitted that page's
+  server-log table here (`srv_log_error_section`) went with the other two on 2026-09-16.
 - **The "Logons" table** (2026-08, LOGIN pages, `logons_section()`): first/last successful
   authentication, the raw logon count and the cadence label, from **`bin/logons.sh`**
   (`ensure_logons` → `data/server/cache/_logons.tsv`, atomic + cmp-guarded) — one

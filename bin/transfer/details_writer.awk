@@ -149,12 +149,11 @@ function emit_srv_table(title, cutoff,   i, f, ewf, nA, nB, nC, nda, ndb, nall, 
         k = C5[1] SUBSEP C5[2] SUBSEP C5[3] SUBSEP C5[4] SUBSEP C5[5]
         if (k in _fseen) continue
         _fseen[k] = 1
-        # a SITE page suppresses the lines already told elsewhere on it: the
-        # Last OK transfer section lines (S) and the last-error session lines
-        # (X — shown on the error page the Last error row links). Keyed on the
-        # PRE-fold field 5 — the sidecar carries the bare message field, while
-        # the fold below appends the trailing SESSION column into the display
-        if (pend_t == "SITE" && ((toupper(pend_e) SUBSEP C5[1] " " C5[2] SUBSEP C5[5]) in SUP)) continue
+        # (SUPPRESSION GONE 2026-09-16: a SITE page used to hide the lines its
+        # Last OK transfer / Last error / Server log error sections already
+        # told. Those sections are gone — their content lives on the linked
+        # files/ and errors/ pages — so this table shows the page's own server
+        # log in full again.)
         # a literal TAB inside the message text splits into extra fields — fold
         # them back so the ROW keeps exactly five cells (the .rpt protocol
         # forbids TAB inside a cell)
@@ -714,10 +713,9 @@ function page_srv_log(   f, n, i, V, fw, ip, nc, C9) {
     }
     logons_section()
     host_logons_section()
-    srv_log_error_section()
-    # (the "Last error" and "Last OK transfer" SECTIONS were removed
-    # 2026-09-16, user request: the Features table's "Latest Error" / "Latest
-    # OK" rows link those two files' own pages instead)
+    # (the "Server log error", "Last error" and "Last OK transfer" SECTIONS
+    # were all removed 2026-09-16, user request: the Features table's "Server
+    # log error" / "Latest Error" / "Latest OK" rows link those pages instead)
     emit_srv_table("Last server log messages", last_transfer_cut())   # connected lines after the last transfer — its END cut (2026-09-12)
 }
 
@@ -1047,38 +1045,12 @@ function login_lasterr_move(   i, le0, le1, sub0, sub1, n2) {
     npg = n2
 }
 
-# The "Server log error" section (SITE pages, 2026-08): a subscription that
-# is red for what the SERVER log shows has its own error page
-# errors/<slug>.html (failed.sh, the _srvsubs.tsv map) — this re-emits that
-# page's server-log table VERBATIM above Last error, and adds its lines to
-# the suppression set so Last server log messages does not repeat them (the
-# same rule as the Last OK transfer and last-error session lines).
-function srv_log_error_section(   k9, f9, l9, n9a, C9a, intab9, body9, nb9) {
-    if (pend_t != "SITE") return
-    k9 = toupper(pend_e)
-    if (!(k9 in SLG)) return
-    f9 = ERRD "/" SLG[k9] ".rpt"
-    intab9 = 0; body9 = ""; nb9 = 0
-    while ((getline l9 < f9) > 0) {
-        if (index(l9, "HEAD\tDate & time\tLevel\tLine") == 1) { intab9 = 1; continue }
-        if (!intab9) continue
-        if (index(l9, "ROW\t") != 1) {
-            if (l9 ~ /^(TABLE|TOTAL|LINK|FOOT|NOTE)\t/ || l9 ~ /^(TABLE|TOTAL|LINK|FOOT)$/) break
-            continue
-        }
-        n9a = split(l9, C9a, "\t")
-        if (n9a < 4) continue
-        body9 = body9 l9 "\n"; nb9++
-        SUP[k9 SUBSEP C9a[2] SUBSEP C9a[4]] = 1
-    }
-    close(f9)
-    if (nb9 == 0) return
-    emitl("TABLE\tServer log error\twide\trestint\tnosort\tnosearch\tanchor=srv-log-error")
-    emitl("HEAD\tDate & time\tLevel\tLine")
-    emitl("KIND\ttext\ttext\tpre")
-    n9a = split(body9, C9a, "\n")
-    for (l9 = 1; l9 <= n9a; l9++) if (C9a[l9] != "") emitl(C9a[l9])
-}
+# (the "Server log error" SECTION went the same way on 2026-09-16, user
+# request: a subscription red for what the SERVER log shows already HAS its
+# own page, errors/<slug>.html, written by failed.sh from the _srvsubs-map.tsv
+# map — the Features "Server log error" row links it instead of the page
+# repeating that page's log table. It was the last writer of SUP, so nothing
+# is suppressed from "Last server log messages" any more.)
 
 # (the "Last OK transfer" section went the same way on 2026-09-16 — the
 # Features "Latest OK" row links that File's page under files/ instead.)
@@ -1218,8 +1190,9 @@ function latest_features_row(   i, fe0, fe1, n2, row) {
     npg = n2
 }
 
-# The Features rows "Latest OK" and "Latest Error" (2026-09-16, user request):
-# each reads "<date time>  <file name>" and links that File's OWN page —
+# The Features rows "Latest OK", "Latest Error" and "Server log error"
+# (2026-09-16, user request): the first two read "<date time>  <file name>"
+# and the third its evidence stamp; each links that File's OWN page —
 # files/<coreid>.html for the newest DELIVERED File (the OKTF sidecar) and
 # errors/<coreid>.html for the newest FAILED one (LE, the section 0.4 row).
 # failed.sh guarantees both pages exist: the latest-OK list it now pages, and
@@ -1237,6 +1210,14 @@ function lastfiles_features_rows(   i, j, fe0, fe1, n2, k9, F9, rows, nr) {
         if (F9[4] != "")
             rows[++nr] = "ROW\tLatest Error\t@{href=../../errors/" F9[4] ".html}" F9[1] "  " F9[3]
     }
+    # THE SERVER-LOG ERROR PAGE (2026-09-16, user request): a subscription red
+    # for what the SERVER log shows already has its own errors/<slug>.html —
+    # failed.sh writes it from _srvsubs-map.tsv (name⇥slug⇥stamp) — so the row
+    # links it and shows that evidence stamp. Only a server-failing flow is in
+    # the map, so only such a page carries the row.
+    if ((k9 in SLG) && SLG[k9] != "")
+        rows[++nr] = "ROW\tServer log error\t@{href=../../errors/" SLG[k9] ".html}" \
+                     (((k9 in SLGD) && SLGD[k9] != "") ? SLGD[k9] : "The server log error page")
     if (nr == 0) return
     fe0 = 0
     for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\tFeatures") == 1) { fe0 = i; break }
@@ -1335,10 +1316,12 @@ BEGIN {
             OKN[k] = A[3]; OKD[k] = A[4]; OKC[k] = A[5]
         }
         close(OKF)
-        # the server-failing subscriptions map (failed.sh _srvsubs.tsv): a
-        # SITE page in it re-emits its errors/<slug>.rpt server-log table as
-        # the "Server log error" section (srv_log_error_section)
-        while ((getline l < SSF) > 0) { n = split(l, A, "\t"); if (n >= 2) SLG[toupper(A[1])] = A[2] }
+        # the server-failing subscriptions map (failed.sh _srvsubs-map.tsv),
+        # name⇥slug⇥stamp: the slug names the errors/<slug>.html page the
+        # Features "Server log error" row links, the stamp is what it shows
+        while ((getline l < SSF) > 0) { n = split(l, A, "\t")
+            if (n >= 2) SLG[toupper(A[1])] = A[2]
+            if (n >= 3) SLGD[toupper(A[1])] = A[3] }
         close(SSF)
     }
     # LOGIN pages: the "Logons" sidecar (bin/logons.sh via details.sh) — per

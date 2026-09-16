@@ -435,6 +435,10 @@ n=0; m=0
 for f in docs/details/subscriptions/*.html; do
     if grep -qE '<h2>Last error( |<)' "$f" 2>/dev/null; then n=$((n + 1)); fi
     if grep -q '<h2>Last OK transfer' "$f" 2>/dev/null; then n=$((n + 1)); fi
+    if grep -q '<h2>Server log error' "$f" 2>/dev/null; then n=$((n + 1)); fi
+    if grep -q '>Server log error<' "$f" 2>/dev/null; then
+        if ! grep -q 'href="../../errors/' "$f" 2>/dev/null; then m=$((m + 1)); fi
+    fi
     if grep -q '>Latest Error<' "$f" 2>/dev/null; then
         if ! grep -q 'href="../../errors/' "$f" 2>/dev/null; then m=$((m + 1)); fi
     fi
