@@ -351,70 +351,11 @@ function twin_features_rows(   n, i, V, sd) {
 # page instead, exactly as on the Last-failed list. The CoreId a row points at
 # is a subscription's newest error, which failed.sh guarantees a page for
 # — linkcheck is the net if that ever stops being true.
-# A SUBSCRIPTION page gets its own "Last error" section instead, placed
-# directly ABOVE the "Last OK transfer" section (2026-08; it replaced the
-# Features "Last error" row). Since 2026-08 it is the REAL CONTENT of the
-# newest failed File's error page errors/<coreid>.rpt — the legs table and
-# the server-log table spliced verbatim (the srv_log_error_section shape;
-# the facts table stays out: the page already knows its subscription, and
-# the file name goes into the heading like Last OK transfer's) — never a
-# mere link row. The spliced server lines join the suppression set so Last
-# server log messages does not repeat them, and a LINK below the section
-# still opens the full error page. failed.sh guarantees the .rpt for a
-# subscription's newest error; if it is missing anyway, the old one-row
-# link table is the fallback. A RED flow (a row of transfer/failed.html)
-# gets the SAME error spliced in below Features at publish time —
-# publish-details.sh, titled "Last error - <reason>" — and that splice
-# DROPS this section from the page (2026-09-12, user request: the page
-# showed the error twice; only the first stays), so the section survives
-# only on a page without the splice.
-function last_error_section(   k9, f9, l9, n9a, C9a, st9, legs9, srv9, nl9, ns9, F9, cid9) {
-    if (pend_t != "SITE" || nle == 0) return
-    k9 = toupper(pend_e)
-    split(LE[nle], F9, "\t")
-    cid9 = F9[4]
-    f9 = ERRD "/" cid9 ".rpt"
-    st9 = 0; legs9 = ""; srv9 = ""; nl9 = 0; ns9 = 0
-    while ((getline l9 < f9) > 0) {
-        if (index(l9, "HEAD\tStatus\tDirection\t") == 1) { st9 = 1; continue }
-        if (index(l9, "HEAD\tDate & time\tLevel\tLine") == 1) { st9 = 2; continue }
-        if (st9 == 0) continue
-        if (index(l9, "ROW\t") != 1) {
-            if (l9 ~ /^(TABLE|TOTAL|LINK|FOOT|NOTE)\t/ || l9 ~ /^(TABLE|TOTAL|LINK|FOOT)$/) st9 = 0
-            continue
-        }
-        if (st9 == 1) { legs9 = legs9 l9 "\n"; nl9++ }
-        else {
-            n9a = split(l9, C9a, "\t")
-            if (n9a < 4) continue
-            srv9 = srv9 l9 "\n"; ns9++
-            SUP[k9 SUBSEP C9a[2] SUBSEP C9a[4]] = 1
-        }
-    }
-    close(f9)
-    if (nl9 == 0) {
-        emitl("TABLE\tLast error\trowlink\trestint\tnosort\tnosearch")
-        emitl("HEAD\tDate & time\tFile")
-        emitl("KIND\ttext\tmono")
-        emitl("ROW\t@{href=../../errors/" cid9 ".html}" F9[1] \
-              "\t@{href=../../errors/" cid9 ".html}" F9[3] \
-              "\t@data:href=../../errors/" cid9 ".html\t@data:res=red")
-        return
-    }
-    emitl("TABLE\tLast error — " F9[3] "\twide\tnosearch")
-    emitl("HEAD\tStatus\tDirection\tProtocol\tSize\tDate & time\tDuration\tRemote host\tTransfer ID")
-    emitl("KIND\ttext\ttext\ttext\tnum\ttext\tnum\thost\tmono")
-    n9a = split(legs9, C9a, "\n")
-    for (l9 = 1; l9 <= n9a; l9++) if (C9a[l9] != "") emitl(C9a[l9])
-    if (ns9 > 0) {
-        emitl("TABLE\t\twide\trestint\tnosort\tnosearch")
-        emitl("HEAD\tDate & time\tLevel\tLine")
-        emitl("KIND\ttext\ttext\tpre")
-        n9a = split(srv9, C9a, "\n")
-        for (l9 = 1; l9 <= n9a; l9++) if (C9a[l9] != "") emitl(C9a[l9])
-    }
-    emitl("LINK\t../../errors/" cid9 ".html\tOpen this error's page")
-}
+# A SUBSCRIPTION page carries NO such section since 2026-09-16 (user request):
+# its Features table's "Latest Error" row links the newest failed File's own
+# page instead (lastfiles_features_rows), so the legs and the server log are
+# read there — one place, not two. The publish-time splice that used to fold
+# the same error in below Features went with it (publish-details.sh).
 function last_error_table(   i, F9, cid, res) {
     if (pend_t == "SITE" || nle == 0) return
     emitl("TABLE\tLast error(s)\trowlink\trestint\tnosort\tnosearch")
@@ -774,8 +715,9 @@ function page_srv_log(   f, n, i, V, fw, ip, nc, C9) {
     logons_section()
     host_logons_section()
     srv_log_error_section()
-    last_error_section()
-    last_ok_section()
+    # (the "Last error" and "Last OK transfer" SECTIONS were removed
+    # 2026-09-16, user request: the Features table's "Latest Error" / "Latest
+    # OK" rows link those two files' own pages instead)
     emit_srv_table("Last server log messages", last_transfer_cut())   # connected lines after the last transfer — its END cut (2026-09-12)
 }
 
@@ -1138,29 +1080,8 @@ function srv_log_error_section(   k9, f9, l9, n9a, C9a, intab9, body9, nb9) {
     for (l9 = 1; l9 <= n9a; l9++) if (C9a[l9] != "") emitl(C9a[l9])
 }
 
-# The "Last OK transfer" section (SITE pages, details.sh OKTF sidecar): the
-# newest PROCESSED File of this flow (never a Waiting one — a UC2 staging
-# without the collect leg is not a complete transfer) — its transfer legs and
-# the server log of their connections, the errors/ drill-page shape —
-# directly above the Last server log messages table. A flow with no
-# Processed File emits nothing.
-function last_ok_section(   k9, nls, i9, LL) {
-    if (pend_t != "SITE") return
-    k9 = toupper(pend_e)
-    if (!(k9 in OKL)) return
-    emitl("TABLE\tLast OK transfer" (((k9 in OKN) && OKN[k9] != "") ? " — " OKN[k9] : "") "\twide\tnosearch")
-    emitl("HEAD\tStatus\tDirection\tProtocol\tSize\tDate & time\tDuration\tRemote host\tTransfer ID")
-    emitl("KIND\ttext\ttext\ttext\tnum\ttext\tnum\thost\tmono")
-    nls = split(OKL[k9], LL, "\n")
-    for (i9 = 1; i9 <= nls; i9++) if (LL[i9] != "") emitl(LL[i9])
-    if (k9 in OKS) {
-        emitl("TABLE\t\twide\trestint\tnosort\tnosearch")
-        emitl("HEAD\tDate & time\tLevel\tLine")
-        emitl("KIND\ttext\ttext\tpre")
-        nls = split(OKS[k9], LL, "\n")
-        for (i9 = 1; i9 <= nls; i9++) if (LL[i9] != "") emitl(LL[i9])
-    }
-}
+# (the "Last OK transfer" section went the same way on 2026-09-16 — the
+# Features "Latest OK" row links that File's page under files/ instead.)
 
 # strip_notseen_counts: a never-seen/blue page's dimension tables keep only
 # their name column (+ the Subscription Direction cell); @data: cells survive
@@ -1297,6 +1218,39 @@ function latest_features_row(   i, fe0, fe1, n2, row) {
     npg = n2
 }
 
+# The Features rows "Latest OK" and "Latest Error" (2026-09-16, user request):
+# each reads "<date time>  <file name>" and links that File's OWN page —
+# files/<coreid>.html for the newest DELIVERED File (the OKTF sidecar) and
+# errors/<coreid>.html for the newest FAILED one (LE, the section 0.4 row).
+# failed.sh guarantees both pages exist: the latest-OK list it now pages, and
+# the newest failure through the S mark (S implies L, the leg selection).
+# They REPLACE the two sections this page used to carry; a flow with no such
+# File simply gets no row.
+function lastfiles_features_rows(   i, j, fe0, fe1, n2, k9, F9, rows, nr) {
+    if (pend_t != "SITE") return
+    k9 = toupper(pend_e)
+    nr = 0
+    if ((k9 in OKC) && OKC[k9] != "")
+        rows[++nr] = "ROW\tLatest OK\t@{href=../../files/" OKC[k9] ".html}" OKD[k9] "  " OKN[k9]
+    if (nle > 0) {
+        split(LE[nle], F9, "\t")
+        if (F9[4] != "")
+            rows[++nr] = "ROW\tLatest Error\t@{href=../../errors/" F9[4] ".html}" F9[1] "  " F9[3]
+    }
+    if (nr == 0) return
+    fe0 = 0
+    for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\tFeatures") == 1) { fe0 = i; break }
+    if (fe0 == 0) return
+    fe1 = blk_end(fe0)
+    n2 = 0
+    for (i = 1; i <= npg; i++) {
+        PG2[++n2] = PG[i]
+        if (i == fe1) for (j = 1; j <= nr; j++) PG2[++n2] = rows[j]
+    }
+    for (i = 1; i <= n2; i++) PG[i] = PG2[i]
+    npg = n2
+}
+
 function close_file(   dircls, resv, out, i) {
     if (pend_t == "") return
     ensure_file()
@@ -1318,7 +1272,8 @@ function close_file(   dircls, resv, out, i) {
     if (pend_t == "LOGIN") { login_feat_row(); login_sxs_row(); login_lasterr_move() }
     if (pend_t == "HOST") host_sxs_row()
     self_features_row()
-    latest_page()   # writes the diverted section 9 + adds its Features row
+    latest_page()              # writes the diverted section 9 + adds its Features row
+    lastfiles_features_rows()  # the Latest OK / Latest Error rows
     out = ""
     for (i = 1; i <= npg; i++) out = out PG[i] "\n"
     printf "%s", out > cur_path
@@ -1365,26 +1320,19 @@ BEGIN {
     # "name \t UC<n>", from the pattern + flowdir caches)
     while ((getline l < UCDF) > 0) { n = split(l, A, "\t"); if (n >= 2) DUC[A[1]] = A[2] }
     close(UCDF)
-    # the "Last OK transfer" sidecar (details.sh OKTF; SITE pages only): per
-    # subscription the newest Processed File — F = file + stamp, L = one transfer
-    # leg (the errors/ drill-page columns), S = one server-log line of the
-    # legs connections (session join), Error/Warning rows tinted like there
+    # the "Latest OK" sidecar (details.sh OKTF; SITE pages only): ONE row per
+    # subscription — F <TAB> site <TAB> file <TAB> date time <TAB> coreid, its
+    # newest Processed File. Since 2026-09-16 it feeds the Features "Latest OK"
+    # row and nothing else: the legs and server-log rows went with the "Last OK
+    # transfer" SECTION they fed, and so did their SUPPRESSION of those lines
+    # from "Last server log messages" — that table shows the page's own log in
+    # full again, the evidence now living on the linked file page.
     if (TYPE == "SITE") {
         while ((getline l < OKF) > 0) {
             n = split(l, A, "\t")
-            if (n < 4) continue
+            if (n < 5 || A[1] != "F") continue
             k = toupper(A[2])
-            if (A[1] == "F")               { OKN[k] = A[3]; OKD[k] = A[4] }
-            else if (A[1] == "L") { r = A[3]; for (i = 4; i <= n; i++) r = r "\t" A[i]
-                                    OKL[k] = OKL[k] "ROW\t" r "\n" }
-            else if (A[1] == "S" && n >= 5) {
-                r = (A[4] == "Error") ? "\t@data:res=red" : ((A[4] == "Warning") ? "\t@data:res=orange" : "")
-                OKS[k] = OKS[k] "ROW\t" A[3] "\t" A[4] "\t" A[5] r "\n"
-                SUP[k SUBSEP A[3] SUBSEP A[5]] = 1 }
-            # X = the newest FAILED File session lines: shown on the error
-            # page the Last error row links, so they (with the S lines) are
-            # SUPPRESSED from the Last server log messages table, never shown
-            else if (A[1] == "X" && n >= 5) SUP[k SUBSEP A[3] SUBSEP A[5]] = 1
+            OKN[k] = A[3]; OKD[k] = A[4]; OKC[k] = A[5]
         }
         close(OKF)
         # the server-failing subscriptions map (failed.sh _srvsubs.tsv): a

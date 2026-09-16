@@ -426,17 +426,30 @@ check $([ "${n:-0}" -gt 0 ] && grep -q 'restint' "$FF" 2>/dev/null && echo 0 || 
 n=$(grep -c 'href="transfer/failed-files.html?axway_date=' docs/index.html 2>/dev/null || true)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "home Error cells do not open transfer/failed-files.html"
 
-# ONE "Last error" per subscription page (2026-09-12, user request): a red
-# flow's page carries the publish-time splice "Last error - <reason>" below
-# Features, and the writer's own "Last error — <file>" section must then be
-# gone — no page shows the same error twice; and the splice must exist on
-# at least one sample page, or the rule is never exercised
+# NO "Last error" / "Last OK transfer" SECTION on a subscription page
+# (2026-09-16, user request): both became Features ROWS — "Latest Error" and
+# "Latest OK" — each reading "<date time>  <file name>" and linking that
+# File's OWN page under errors/ resp. files/, which failed.sh guarantees.
+# The publish-time splice that folded the error in below Features went too.
 n=0; m=0
 for f in docs/details/subscriptions/*.html; do
-    if grep -q '<h2>Last error - ' "$f" 2>/dev/null; then m=$((m + 1)); grep -q '<h2>Last error — ' "$f" 2>/dev/null && n=$((n + 1)); fi
+    if grep -qE '<h2>Last error( |<)' "$f" 2>/dev/null; then n=$((n + 1)); fi
+    if grep -q '<h2>Last OK transfer' "$f" 2>/dev/null; then n=$((n + 1)); fi
+    if grep -q '>Latest Error<' "$f" 2>/dev/null; then
+        if ! grep -q 'href="../../errors/' "$f" 2>/dev/null; then m=$((m + 1)); fi
+    fi
+    if grep -q '>Latest OK<' "$f" 2>/dev/null; then
+        if ! grep -q 'href="../../files/' "$f" 2>/dev/null; then m=$((m + 1)); fi
+    fi
 done
-check $([ "$n" = 0 ] && echo 0 || echo 1) "$n subscription page(s) show the last error twice (the splice below Features AND the writer's section)"
-check $([ "$m" -gt 0 ] && echo 0 || echo 1) "no sample subscription page carries the spliced 'Last error - <reason>' section"
+check $([ "$n" = 0 ] && echo 0 || echo 1) "$n subscription page section(s) still show the last error / last OK transfer inline"
+check $([ "$m" = 0 ] && echo 0 || echo 1) "$m subscription page(s) carry a Latest Error / Latest OK row that links no page"
+# ... and the rows must be EXERCISED: the sample estate has both failing and
+# delivering flows, so at least one page carries each row
+n=$(grep -l '>Latest Error<' docs/details/subscriptions/*.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "no sample subscription page carries a Features 'Latest Error' row"
+n=$(grep -l '>Latest OK<' docs/details/subscriptions/*.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "no sample subscription page carries a Features 'Latest OK' row"
 
 # the search pages live under docs/search/ (2026-09-12, user request):
 # search.html + search-data.js and the six file-search pages + payloads —
@@ -513,7 +526,12 @@ if [ "$(exp lateok)" -gt 0 ]; then
     lp="docs/details/subscriptions/${ls9:-missing}.html"
     check $([ -n "$ls9" ] && [ -f "$lp" ] && echo 0 || echo 1) "the lateok flow has no detail page ('${ls9:-no slug}')"
     check $([ "$(grep -c 'AFTER LAST TRANSFER' "$lp" 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the lateok page carries an AFTER LAST TRANSFER banner"
-    check $([ "$(grep -c "Last OK transfer" "$lp" 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "the lateok page has no Last OK transfer section"
+    # the "Last OK transfer" SECTION became the Features "Latest OK" ROW
+    # (2026-09-16, user request): the row names the File and links its page
+    # under files/, which failed.sh guarantees exists
+    check $([ "$(grep -c '>Latest OK<' "$lp" 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "the lateok page has no Features 'Latest OK' row"
+    check $([ "$(grep -c 'href="../../files/' "$lp" 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "the lateok page's Latest OK row does not link a files/ page"
+    check $([ "$(grep -c 'Last OK transfer' "$lp" 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the lateok page still carries the removed Last OK transfer section"
 fi
 n=$(awk -F'\t' '$4 != "" && ($24 == "" || $24 < $4 " " $5) { n++ } END { print n+0 }' "$F" 2>/dev/null)
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_files.tsv has $n dated File(s) with an empty end (col 24) or an end before the start"

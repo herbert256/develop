@@ -89,42 +89,12 @@ trap '[ -n "${VERDICT_DIR:-}" ] && rm -rf "$VERDICT_DIR"' EXIT
 # docs/<env>/details/<sub>/*.html plus a browsable index of that subdir.
 # Detail pages sit two levels below the env root, so their asset/home links
 # use ../../ (html_head adds the extra ../ to the docs root itself).
-# THE LAST-ERROR SPLICE (2026-08): a subscription sitting in a RED row of
-# transfer/failed.html gets that row's error page folded into its detail
-# page — the legs table (titled "Last error") and the server-log table,
-# spliced in above "Last server log messages" at render time. Publish-time,
-# not report-time: details.sh runs OVERLAPPING transfer phase 1, so reading
-# errors/*.rpt there would race failed.sh rebuilding them; here every
-# report is long finished. The map is slug -> newest failed CoreId (the .rpt
-# is newest-first, so the first red row of a subscription is its newest). The
-# slug comes from the comprehensive _slugmap.tsv, NEVER re-derived (2026-08-31
-# audit — CLAUDE.md'\''s rule for _srvsubs applies verbatim): slugify() has no
-# collision bump, so the second of a separator-twin pair (FRE-SAPCD-… /
-# FRE_SAPCD_…, whose page is …-2) shared the first twin'\''s key — the wrong
-# error page spliced onto one page, none onto the other.
-LASTERR_MAP=$(mktemp "${TMPDIR:-/tmp}/axlerr.XXXXXX")
-trap 'rm -f "$LASTERR_MAP"' EXIT
-if [ -f "$DATA/transfer/reports/failed-sub-all.rpt" ]; then
-    _lsm="$_vsm"; [ -f "$_lsm" ] || _lsm=/dev/null
-    awk -F'\t' -v SM="$_lsm" 'BEGIN { while ((getline l < SM) > 0) { split(l, a, "\t"); if (a[1] != "" && a[2] != "") S[a[1]] = a[2] } close(SM) }
-        $1 != "" && ($1 in S) { print S[$1] "\t" $2 }' <<< "$(awk -F'\t' '
-        $1 != "ROW" { next }
-        # the row is Subscription / Date/time / Reason since 2026-08 — the
-        # CoreId lives only in @data:href; @data:srv=1 = a server-failing
-        # row, whose page is subscription-named (no legs table to splice)
-        { red = 0; srv = 0; pg = ""
-          for (i = 2; i <= NF; i++) {
-              if ($i == "@data:res=red") red = 1
-              if ($i == "@data:srv=1") srv = 1
-              if (index($i, "@data:href=../errors/") == 1) pg = substr($i, 22)
-          }
-          if (!red || srv) next
-          site = $2; sub(/^@\{[^}]*\}/, "", site)
-          if (site == "" || (site in seen)) next
-          seen[site] = 1
-          sub(/\.html$/, "", pg)
-          if (pg != "") print site "\t" pg }' "$DATA/transfer/reports/failed-sub-all.rpt")" > "$LASTERR_MAP"
-fi
+# (THE LAST-ERROR SPLICE, 2026-08..2026-09-16: a red subscription's error page
+# used to be folded into its detail page here — legs table + server log, above
+# "Last server log messages". REMOVED on user request: the page now carries a
+# Features "Latest Error" row linking that file's own page, so the evidence
+# lives in ONE place. failed-sub-all.rpt stays a freshness dep: the row a
+# subscription is red for still decides what its detail page says elsewhere.)
 
 render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
     local sub=$1 title=$2
@@ -147,64 +117,12 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
         # after DESC so it renders under the <h1>, above every table — the same
         # slot the blue and errors-after-last-transfer banners use.
         vf=""; [ "$sub" = subscriptions ] && [ -n "$VERDICT_DIR" ] && vf="$VERDICT_DIR/$base.txt"
-        # the Last-error splice (see the map above): srcf walks through the
-        # optional preprocessing steps, each reading the previous one's output
-        srcf="$f"; etmp=""
-        if [ "$sub" = subscriptions ] && [ -s "$LASTERR_MAP" ]; then
-            _lecid=$(awk -F'\t' -v B="$base" '$1 == B { print $2; exit }' "$LASTERR_MAP")
-            if [ -n "$_lecid" ] && [ -f "$DATA/transfer/reports/errors/$_lecid.rpt" ]; then
-                etmp=$(mktemp "${TMPDIR:-/tmp}/axdle.XXXXXX")
-                # Buffer tables 2+3 of the error page (the LEGS and the server
-                # log — table 1 is the facts block this page already states),
-                # retitle the first "Last error - <reason>" (the reason read
-                # from the error page own TITLE, which carries it since
-                # 2026-08; a page with none keeps the plain heading), and
-                # splice the pair in DIRECTLY BELOW the Features table —
-                # before the first table that follows it (before "Last server
-                # log messages", then the FOOT, when a page lacks one). A LINK
-                # to the full error page closes the insert.
-                awk -F'\t' -v OFS='\t' -v ERR="$DATA/transfer/reports/errors/$_lecid.rpt" -v CID="$_lecid" '
-                    BEGIN {
-                        nb = 0; tbl = 0; reason = ""
-                        while ((getline l < ERR) > 0) {
-                            split(l, a2, "\t")
-                            if (a2[1] == "TITLE") { t2 = a2[2]
-                                if (sub(/^Failed subscription: [^ ]+ - /, "", t2)) reason = t2 }
-                            if (a2[1] == "TABLE") tbl++
-                            if (tbl < 2) continue
-                            if (a2[1] == "LINK" || a2[1] == "KEYWORDS" || a2[1] == "SUMMARY" || a2[1] == "FOOT") break
-                            if (a2[1] == "TABLE" && tbl == 2) {
-                                repl = "TABLE\tLast error" (reason != "" ? " - " reason : "")
-                                sub(/^TABLE\t[^\t]*/, repl, l) }
-                            BUF[++nb] = l
-                        }
-                        close(ERR)
-                        BUF[++nb] = "LINK\t../../errors/" CID ".html\tThe full page of this failed file"
-                    }
-                    function inject(   i) { if (done || nb == 0) return; for (i = 1; i <= nb; i++) print BUF[i]; done = 1 }
-                    afterfeat && $1 == "TABLE" { inject(); afterfeat = 0 }
-                    $1 == "TABLE" && $2 == "Features" { afterfeat = 1 }
-                    $1 == "TABLE" && $2 == "Last server log messages" { inject() }
-                    $1 == "FOOT" { inject() }
-                    # THE WRITER'\''S OWN "Last error — <file>" SECTION IS DROPPED
-                    # when this splice is in (2026-09-12, user request: a red
-                    # flow'\''s page showed the same error twice — "Last error -
-                    # <reason>" below Features, from here, and "Last error —
-                    # <file>" above Last OK transfer, from details_writer.awk
-                    # last_error_section — only the first stays). The section
-                    # runs from its TABLE line to its closing LINK (the
-                    # full-content shape) or to the next titled TABLE / FOOT
-                    # (the one-row fallback has no LINK); its untitled server-
-                    # log sub-table is part of it.
-                    $1 == "TABLE" && ($2 == "Last error" || index($2, "Last error — ") == 1) { skip = 1; next }
-                    skip && $1 == "LINK" && index($2, "../../errors/") == 1 { skip = 0; next }
-                    skip && (($1 == "TABLE" && $2 != "") || $1 == "FOOT" || $1 == "META" || $1 == "SUMMARY") { skip = 0 }
-                    skip { next }
-                    { print }
-                ' "$srcf" > "$etmp"
-                srcf="$etmp"
-            fi
-        fi
+        # srcf walks through the optional preprocessing steps, each reading
+        # the previous one's output (the LAST-ERROR SPLICE was removed
+        # 2026-09-16, user request: a subscription page no longer shows its
+        # latest error or its latest OK transfer at all — the Features table's
+        # "Latest Error" / "Latest OK" rows link those files' own pages)
+        srcf="$f"
         if [ -n "$vf" ] && [ -s "$vf" ]; then
             vtmp=$(mktemp "${TMPDIR:-/tmp}/axdet.XXXXXX")
             # A page whose writer raised the after-last-transfer banner WITH
@@ -249,7 +167,6 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
         else
             render_rpt "$srcf" "$outdir/$base.html" "../../assets/style.css" "index.html" "TRANSFER - $t" "" "$hslug"
         fi
-        [ -n "$etmp" ] && rm -f "$etmp"
     done
     DLINK_BASE="../details/"
 }

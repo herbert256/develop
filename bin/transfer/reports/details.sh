@@ -910,96 +910,29 @@ SRVSUBSF="$REPORTS_DIR/_srvsubs-map.tsv"
 # ---- the "Last OK transfer" sidecar (SITE pages) ----------------------------
 # Per subscription: the newest PROCESSED File — deliberately NOT the outcome
 # policy's OK (2026-08): a UC2 file still Waiting is staged, not transferred,
-# and showed 3 staging legs where the reader expects the COMPLETE 4-leg
-# transfer with the partner's collect; a flow whose files are all Waiting
-# simply has no section — with its transfer LEGS and the server-log lines of its legs
-# CONNECTIONS (the session join the errors/ drill pages use: _transfers.tsv
-# col 24 and _parse.tsv col 6 carry the same id). details_writer.awk renders
-# it as the section directly above "Last server log messages". Rows:
-#   F <TAB> site <TAB> file <TAB> date time
-#   L <TAB> site <TAB> status..transfer-id   (the errors/ legs columns)
-#   S <TAB> site <TAB> date time <TAB> level <TAB> raw line   (newest 40,
-#           chronological — sorted desc, capped, re-sorted asc)
-#   X <TAB> site <TAB> date time <TAB> level <TAB> raw line   (the newest
-#           FAILED File's session lines — NOT rendered: the error page the
-#           "Last error" row links shows them, so the writer only SUPPRESSES
-#           them, together with the S lines, from "Last server log messages")
+# so a flow whose files are all Waiting simply has no latest-OK file.
+# ONE row per subscription (2026-09-16, user request):
+#   F <TAB> site <TAB> file <TAB> date time <TAB> coreid
+# details_writer.awk turns it into the Features "Latest OK" row, which links
+# the File's page under files/ (failed.sh guarantees one for exactly these
+# CoreIds). The LEGS and SERVER-LOG rows this sidecar used to carry (L/S/X)
+# are GONE with the "Last OK transfer" and "Last error" SECTIONS they fed —
+# that content lives on the linked file/error page now, which is the whole
+# point of the move — and with them went a full pass over the transfer parse
+# cache plus a scan of the server cache per build.
 OKTF="$_pdir/lastok"
 : > "$OKTF"
-if [ -s "$FILES" ] && [ -s "$PARSED" ]; then
-    _tab9=$(printf '\t')
-    awk -F'\t' '$12 == "" { next }
-        $2 == "Processed" {
-            # the newest Processed File by its END (col 24, 2026-09-12 user
-            # rule — the same "last OK transfer" the after-last-transfer rule
-            # compares an Error against: a File that finished OK last IS the
-            # last OK transfer, whenever it started); the start when the parse
-            # wrote no end. D stays the start (the legs table shows it).
-            e9 = ($24 != "" ? $24 : $4 " " $5)
-            if (!($12 in SK) || e9 > SK[$12]) { SK[$12] = e9; C[$12] = $1; D[$12] = $4 " " $5; N[$12] = $11 }
-            next
-        }
-        $2 == "Failed" {
-            if (!($12 in EK) || $6 > EK[$12]) { EK[$12] = $6; EC[$12] = $1 }
-        }
-        END { for (s in SK) printf "O\t%s\t%s\t%s\t%s\n", C[s], s, N[s], D[s]
-              for (s in EK) printf "E\t%s\t%s\n", EC[s], s }' "$FILES" > "$_pdir/lastok.sel"
-    awk -F'\t' -v sel="$_pdir/lastok.sel" -v sesf="$_pdir/lastok.ses" '
+if [ -s "$FILES" ]; then
+    awk -F'\t' '
         function esc9(s) { gsub(/[\t\r\n]/, " ", s); return s }
-        function humanbytes(b) {
-            b = b + 0
-            if (b < 1024)       return sprintf("%d B", b)
-            if (b < 1048576)    return sprintf("%.2f KB", b/1024)
-            if (b < 1073741824) return sprintf("%.2f MB", b/1048576)
-            return sprintf("%.2f GB", b/1073741824)
-        }
-        function humandur(ms) {
-            ms = ms + 0
-            if (ms < 0)       return "-"
-            if (ms < 1000)    return sprintf("%d ms", ms)
-            if (ms < 60000)   return sprintf("%.2f s", ms/1000)
-            if (ms < 3600000) return sprintf("%.1f min", ms/60000)
-            return sprintf("%.2f h", ms/3600000)
-        }
-        BEGIN { while ((getline l < sel) > 0) { n = split(l, a, "\t")
-                    if (a[1] == "O" && n >= 5) { SITEOF[a[2]] = a[3]; KOF[a[2]] = "S"; printf "F\t%s\t%s\t%s\n", a[3], esc9(a[4]), a[5] }
-                    else if (a[1] == "E" && n >= 3) { SITEOF[a[2]] = a[3]; KOF[a[2]] = "X" } }
-                close(sel) }
-        ($1 in SITEOF) {
-            s = SITEOF[$1]
-            if (KOF[$1] == "S")
-                printf "L\t%s\t%s\t%s\t%s\t%s\t%s %s\t%s\t%s\t%s\n", s, \
-                    esc9($3), esc9($2), esc9($10), humanbytes($9), esc9($11), esc9($12), humandur($15), esc9($16), esc9($23)
-            if ($24 != "" && !(($1 SUBSEP $24) in ses)) { ses[$1 SUBSEP $24] = 1; print $24 "\t" s "\t" KOF[$1] > sesf }
-        }
-    ' "$PARSED" > "$OKTF"
-    if [ -s "$_pdir/lastok.ses" ] && [ -s "$SERVER_CACHE/_parse.tsv" ]; then
-        awk -F'\t' -v sesf="$_pdir/lastok.ses" '
-            function esc9(s) { gsub(/[\t\r\n]/, " ", s); return s }
-            # A session is MULTI-VALUED: one PeSIT/SSH connection can carry
-            # the last-OK files of SEVERAL subscriptions (production: one CFT
-            # push connection, six flows), so its lines go to EVERY site whose
-            # legs used it. Per (session, site): S beats X (the rendered kind).
-            BEGIN { while ((getline l < sesf) > 0) { split(l, a, "\t")
-                        k2 = a[1] SUBSEP a[2]
-                        if (!(k2 in KS9)) { NS9[a[1]]++; SS9[a[1], NS9[a[1]]] = a[2]; KS9[k2] = a[3] }
-                        else if (a[3] == "S") KS9[k2] = "S"
-                    }
-                    close(sesf) }
-            $6 != "" && ($6 in NS9) {
-                for (i9 = 1; i9 <= NS9[$6]; i9++) {
-                    s = SS9[$6, i9]; k9 = KS9[$6 SUBSEP s]
-                    if (cnt[k9, s] >= 400) continue
-                    cnt[k9, s]++
-                    printf "%s\t%s\t%s %s\t%s\t%s\n", k9, s, $1, $2, ($3 == "E" ? "Error" : $3 == "W" ? "Warning" : "Info"), esc9($5)
-                }
-            }
-        ' "$SERVER_CACHE/_parse.tsv" \
-        | LC_ALL=C sort -t"$_tab9" -k1,1 -k2,2 -k3,3r \
-        | awk -F'\t' '{ if ($1 == "S") { if (++n9[$2] <= 40) print } else print }' \
-        | LC_ALL=C sort -t"$_tab9" -k1,1 -k2,2 -k3,3 >> "$OKTF"
-    fi
-    rm -f "$_pdir/lastok.sel" "$_pdir/lastok.ses"
+        $12 == "" || $2 != "Processed" { next }
+        {   # the newest Processed File by its END (col 24, 2026-09-12 user
+            # rule — a File that finished OK last IS the last OK transfer,
+            # whenever it started); the start when the parse wrote no end.
+            # D stays the START — the date/time the Features row shows.
+            e9 = ($24 != "" ? $24 : $4 " " $5)
+            if (!($12 in SK) || e9 > SK[$12]) { SK[$12] = e9; C[$12] = $1; D[$12] = $4 " " $5; N[$12] = $11 } }
+        END { for (s in SK) printf "F\t%s\t%s\t%s\t%s\n", s, esc9(N[s]), D[s], C[s] }' "$FILES" > "$OKTF"
 fi
 # ---- the "Logons" sidecar (LOGIN pages) -------------------------------------
 # bin/logons.sh owns the aggregation (ensure_logons, shared with the server

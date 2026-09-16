@@ -735,34 +735,22 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   count each line once) instead of one arbitrary flow — except that a logon/refusal NAMING a
   login is, on a multi-FE account, credited only to the flows configured for that login. `subscription-verdict.awk`'s END fallback
   still writes the bare Pickup information table for every sidecar flow without a verdict.
-- **The "Last OK transfer" section** (2026-08, SITE pages, directly above "Last server log
-  messages"): the flow's newest PROCESSED File — newest by its END (`_files.tsv` col 24) since
-  2026-09-12, the same "last OK transfer" the after-last-transfer cut uses — deliberately NOT the outcome policy's OK
-  (2026-08): a UC2 file still Waiting is staged, not transferred, and showed 3 staging legs where
-  the reader expects the complete 4-leg transfer with the partner's collect; an all-Waiting flow
-  has no section — shown
-  the errors/ drill-page way — the legs table (Status … Transfer ID) and the server-log lines of
-  the legs' CONNECTIONS (the `_transfers.tsv` col 24 ↔ `_parse.tsv` col 6 session join; newest
-  40 lines, chronological, E/W rows tinted). Computed by `details.sh` into the `$_pdir/lastok`
-  sidecar (three passes: newest-Processed per site over `$FILES` → legs + sessions over `$PARSED` →
-  the server-cache session scan, sorted/capped per site; the session→site map is MULTI-VALUED —
-  one CFT push connection carried six flows' last-OK files, and a single-valued map starved
-  five of them); `details_writer.awk`
-  `last_ok_section()` renders it. A flow with no OK File emits nothing. The **"Last error"
-  section** above it (`last_error_section`, 2026-08) is the newest failed File's error page
-  errors/<coreid>.rpt spliced VERBATIM — its legs table and its server-log table, the file name
-  in the heading, a LINK to the full page below; never a mere link row (the facts table stays
-  out — the page already knows its subscription). A RED flow (a row of transfer/failed.html)
-  gets the same error spliced in below Features at publish time (`publish-details.sh`, titled
-  "Last error - <reason>"), and that splice DROPS the writer's section from the page
-  (2026-09-12, user request — the page showed the error twice, only the first stays), so a
-  subscription page carries ONE "Last error". The sidecar also carries
-  the newest FAILED File's session lines (kind X, never rendered — the spliced error-page
-  content shows the failure), and **"Last server log messages" SUPPRESSES every line already
-  told on the page** — the S (rendered) and X session lines and both spliced server-log
-  tables — keyed on the PRE-fold
-  message field, since `emit_srv_table`'s tab-fold appends the trailing session column into the
-  displayed text. A SERVER-FAILING subscription (in failed.sh's `_srvsubs-map.tsv` — the REDUCED
+- **"Latest OK" and "Latest Error" — two Features ROWS, not sections** (2026-09-16, user
+  request; the "Last OK transfer" and "Last error" SECTIONS, the publish-time last-error splice
+  and their log-line suppression are all GONE). Each row reads `<date time>  <file name>` and
+  links that File's OWN page: **`files/<coreid>.html`** for the newest PROCESSED File — newest by
+  its END (`_files.tsv` col 24, the same "last OK transfer" the after-last-transfer cut uses),
+  deliberately NOT the outcome policy's OK, since a UC2 file still Waiting is staged, not
+  transferred — and **`errors/<coreid>.html`** for the newest FAILED one. `details.sh` writes the
+  `$_pdir/lastok` sidecar in ONE pass over `$FILES` (`F⇥site⇥file⇥date time⇥coreid`; the former
+  legs/session/server-cache passes went with the sections) and `details_writer.awk`
+  `lastfiles_features_rows()` appends the rows to the Features block, after the "Files" row.
+  **Both pages are GUARANTEED by `failed.sh`**: the newest failure through the `S` mark (S implies
+  L, so the leg selection pages it) and the newest OK through the LATEST-OK list it now folds into
+  the `files/` page set (source tag `O`, no back link of its own — the page's facts table links
+  its subscription). A flow with no such File gets no row. Because nothing is repeated on the page
+  any more, **"Last server log messages" no longer suppresses those lines** and shows the page's
+  own log in full. A SERVER-FAILING subscription (in failed.sh's `_srvsubs-map.tsv` — the REDUCED
   name⇥slug⇥stamp map, cmp-guarded without the reason column so a reason-only rerun leaves it
   byte-identical and the details catch-up self-gates; went-kaput runs EARLY in the build so the
   stamps are final on failed.sh's first pass) additionally

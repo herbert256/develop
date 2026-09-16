@@ -234,10 +234,24 @@ rm -rf "$FILEDIR"; mkdir -p "$FILEDIR"
 # that page and receives a COPY under files/ at the end, so a "Last 5 files"
 # link never dangles and no CoreId is paged twice by the pass below.
 : > "$TMP/filepages"; : > "$TMP/fileset"; : > "$TMP/overlap"
-# the union of the two lists, each CoreId tagged with its source(s) — P =
-# Transfer patterns, L = Longest Files, PL = both — the back link(s) of its
-# page (the 8th column of the list rows below)
-{ [ -f "$FILESIDE" ] && sed 's/$/	P/' "$FILESIDE"; [ -f "$FILESIDE2" ] && sed 's/$/	L/' "$FILESIDE2"; true; } \
+# THE LATEST-OK GUARANTEE (2026-09-16, user request): every subscription's
+# newest DELIVERED File gets a files/ page too, so the "Latest OK" row of its
+# detail page's Features table always has a page to open. Newest by the File's
+# END (col 24 — the same "last OK transfer" rule the after-last-transfer cut
+# uses), falling back to its start when the parse recorded no end. PROCESSED
+# only: a Waiting or Expired file is staged, not transferred. (The newest
+# FAILED File needs no such list — it carries the S mark below, and S implies
+# L, so the leg selection already pages it; details_writer.awk's "Latest
+# Error" row rests on that guarantee.)
+LC_ALL=C awk -F'\t' '$12 != "" && $2 == "Processed" {
+        e = ($24 != "" ? $24 : $4 " " $5)
+        if (!($12 in K) || e > K[$12]) { K[$12] = e; C[$12] = $1 } }
+    END { for (s in K) print C[s] }' "$FILES" | LC_ALL=C sort > "$TMP/lastokfiles"
+# the union of the three lists, each CoreId tagged with its source(s) — P =
+# Transfer patterns, L = Longest Files, PL = both, O = a subscription's latest
+# OK File — the back link(s) of its page (the 8th column of the list rows
+# below; O adds none, its facts table links the subscription it belongs to)
+{ [ -f "$FILESIDE" ] && sed 's/$/	P/' "$FILESIDE"; [ -f "$FILESIDE2" ] && sed 's/$/	L/' "$FILESIDE2"; [ -s "$TMP/lastokfiles" ] && sed 's/$/	O/' "$TMP/lastokfiles"; true; } \
     | LC_ALL=C awk -F'\t' '$1 != "" { s[$1] = s[$1] $2 } END { for (c in s) print c "\t" s[c] }' \
     | LC_ALL=C sort > "$TMP/fileside"
 if [ -s "$TMP/fileside" ]; then
