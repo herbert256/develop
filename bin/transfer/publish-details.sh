@@ -158,7 +158,15 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
                 $1 == "INTRO" && (index($2, "Only seen in the server log") > 0 ||
                                   index($2, "Configured") == 1) { next }
                 infeat && ($1 == "TABLE" || $1 == "NOTE" || $1 == "INTRO" || $1 == "LINK" || $1 == "SUMMARY" || $1 == "FOOT") { printf "%s", tblk; infeat = 0 }
-                $1 == "TABLE" && $2 == "Features" && tblk != "" { print $0 "\tsxs=feat"; infeat = 1; next }
+                # the Features table may ALREADY sit in a flex row — the writer
+                # pairs it with "Activity per day" (sxs=af, 2026-09-16) — so the
+                # Pickup table JOINS that row instead of starting a second one:
+                # Activity per day | Features | Pickup information
+                $1 == "TABLE" && $2 == "Features" && tblk != "" {
+                    sxid = "feat"
+                    for (fi = 3; fi <= NF; fi++) if (index($fi, "sxs=") == 1) sxid = substr($fi, 5)
+                    if (sxid == "feat") print $0 "\tsxs=feat"; else { print $0; gsub(/\tsxs=feat/, "\tsxs=" sxid, tblk) }
+                    infeat = 1; next }
                 { print }
                 $1 == "DESC" && !d { if (!SKIPPROSE) printf "%s", pros; d = 1 }
                 END { if (infeat) printf "%s", tblk }' "$srcf" > "$vtmp"

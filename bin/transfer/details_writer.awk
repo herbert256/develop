@@ -1229,6 +1229,27 @@ function lastfiles_features_rows(   i, j, fe0, fe1, n2, k9, F9, rows, nr) {
     npg = n2
 }
 
+# SITE pages (2026-09-16, user request): a page that opens with "Activity per
+# day" followed by "Features" — the seen-page order — renders the two SIDE BY
+# SIDE on one flex row. They are already adjacent, so unlike login_sxs_row this
+# relocates nothing: both TABLE lines just take the same sxs id. A never-seen
+# page (Features first) or any other order is left alone. The id is distinctive
+# so the row closes before the sxs=3 connections pair that may follow, and
+# publish-details.sh reuses it when it splices the UC2 Pickup table in.
+function site_sxs_row(   i, t1, t2) {
+    if (pend_t != "SITE") return
+    t1 = 0; t2 = 0
+    for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\t") == 1) {
+        if (t1 == 0) t1 = i
+        else { t2 = i; break }
+    }
+    if (t1 == 0 || t2 == 0) return
+    if (index(PG[t1], "TABLE\tActivity per day") != 1) return
+    if (index(PG[t2], "TABLE\tFeatures") != 1) return
+    PG[t1] = PG[t1] "\tsxs=af"
+    PG[t2] = PG[t2] "\tsxs=af"
+}
+
 function close_file(   dircls, resv, out, i) {
     if (pend_t == "") return
     ensure_file()
@@ -1252,6 +1273,7 @@ function close_file(   dircls, resv, out, i) {
     self_features_row()
     latest_page()              # writes the diverted section 9 + adds its Features row
     lastfiles_features_rows()  # the Latest OK / Latest Error rows
+    site_sxs_row()             # "Activity per day" | "Features" on one row
     out = ""
     for (i = 1; i <= npg; i++) out = out PG[i] "\n"
     printf "%s", out > cur_path

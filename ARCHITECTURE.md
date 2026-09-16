@@ -681,6 +681,11 @@ Page order IS the section number: -1 direction · 0 header data · 0.9 Waiting/E
 10 weekday · 11 hour · 13 direction · 14 action-by · 15 mode; then `close_file` appends the
 Duration/Size perf tables, a Groups fact table (classic types only — a PDA page IS the group) and
 "Last server log messages" + "Last server log errors" (two tables since 2026-09-16, see below).
+**SITE pages pair the first two tables**: when the page opens "Activity per day" then "Features"
+— the seen-page order — `site_sxs_row()` gives both the same `sxs=af` id, so they render on ONE
+flex row (they are already adjacent, so nothing is relocated; a never-seen page, Features first,
+is left alone). On a UC2 page `publish-details.sh` splices the Pickup information table into that
+SAME row (it reuses the id it finds on the Features line instead of its own `sxs=feat`).
 
 - On a direction=both page an outcome section splits into four columns (In/Out x Error/OK) only
   when its rows carry both directions. A never-seen page opens "Configured — never seen" and still
