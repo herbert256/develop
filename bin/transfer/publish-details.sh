@@ -43,9 +43,9 @@ done
 unset _u
 if publish_is_fresh "$STAMP" "$DOCS/details" "${BASH_SOURCE[0]}" \
        "$SCRIPT_DIR/subscription-verdict.awk" \
-       "$DATA/transfer/reports/details" "$DATA/flow-manager" \
+       "$DATA/transfer/reports/details" "$DATA/transfer/reports/latest" "$DATA/flow-manager" \
        "$DATA/transfer/reports/failed-sub-all.rpt" "$DATA/transfer/reports/errors" \
-       ${UCRPT[@]+"${UCRPT[@]}"}; then
+       ${UCRPT[@]+"${UCRPT[@]}"} && [ -d "$DOCS/latest" ]; then
     echo "docs/details/ is up to date; skipping." >&2
     exit 0
 fi
@@ -302,6 +302,32 @@ dt_pids+=("$!")
 for _p in "${dt_pids[@]}"; do wait "$_p"; done
 unset dt_pids _p
 RESMAP_FILES=""
+
+# ---- the subscription "Latest files" pages (2026-09-16, user request) -------
+# docs/latest/<slug>.html, one per subscription that carries Files: the table
+# the subscription detail pages used to hold (details_writer.awk diverts
+# section 9 into data/transfer/reports/latest/). UNLIKE a detail page these DO
+# get the search box and the From/To selectors — which is the point of the
+# move — so they render with the transfer date list, not the empty CUR_DATES
+# the detail pages use. Cleared wholesale: a subscription that lost its Files
+# (or its name) must not keep a page.
+shopt -s nullglob
+latp=("$DATA"/transfer/reports/latest/*.rpt)
+shopt -u nullglob
+mkdir -p "$DOCS/latest"
+rm -f "$DOCS"/latest/*.html
+if [ ${#latp[@]} -gt 0 ]; then
+    CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
+    for f in "${latp[@]}"; do
+        b=${f##*/}; b=${b%.rpt}
+        # report key per subscription: a remembered search or sort belongs to
+        # THAT flow's list, not to every other subscription's page
+        pub_run render_rpt "$f" "$DOCS/latest/$b.html" "../assets/style.css" "../index.html" "TRANSFER - Latest files" "" "latest" "latest-$b"
+    done
+    pub_wait
+    CUR_DATES=""; DLINK_BASE="../details/"
+    echo "Rendered docs/latest/ (${#latp[@]} subscription page(s))." >&2
+fi
 
 # Redirect stubs were REMOVED 2026-07 (no backwards compatibility): the old
 # details/transfer-sites/ tree and the IP->hostname stubs are gone — old URLs 404.

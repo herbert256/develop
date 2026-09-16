@@ -10,6 +10,7 @@
 #
 # Invocation (details.sh, one background job per type over the writer pool):
 #   LC_ALL=C awk -F'\t' -v TYPE=ACC -v ANN=<streams/a.ACC> -v OUTDIR=<dir> \
+#       -v LATESTDIR=<reports/latest> (SITE only — the "Latest files" pages) \
 #       -v SRV=<server cache> -v FWD=<input/<env>/ip/ip-hosts.tsv> -v BLUE=<blue dir> \
 #       -v UCF=<ucmeta dump> -v UCDF=<derived-uc dump> -v UNCF=<uncollected dump> -v OKF=<last-ok sidecar> \
 #       -v NOW="YYYY-mm-dd HH:MM:SS" -v NFILES=<n input csvs> \
@@ -31,7 +32,9 @@
 #   through printf %.1f (same libc as the bash builtin).
 
 # ===== small helpers =========================================================
-function emitl(s) { PG[++npg] = s }
+# The page buffer — EXCEPT while DIVERT is on, when the lines go to the
+# subscription's own "Latest files" page instead (latest_page(), 2026-09-16).
+function emitl(s) { if (DIVERT == 1) LP[++nlp] = s; else PG[++npg] = s }
 
 function wdname(d) {
     if (d == 0) return "Monday";   if (d == 1) return "Tuesday"
@@ -645,7 +648,11 @@ function start_table(s,   WEH, WEK) {
     else if (s == "11") time_table("Load by hour", "Hour", "sxs")
     else if (s == "12.6") { emitl("TABLE\tDwell\tsxs=4"); emitl("HEAD\tDwell\tFiles\tShare"); emitl("KIND\ttext\tnum\tnum") }
     else if (s == "0.9") { emitl("TABLE\tWaiting/Expired\trestint\tnosearch"); emitl("HEAD\tState\tFiles\tFirst staged\tLast staged"); emitl("KIND\ttext\tnum\ttext\ttext") }
-    else if (s == "9") { emitl("TABLE\tLatest " ((TYPE == "SITE") ? "500" : "100") " " cntlabel "\twide\tpager=" ((TYPE == "SITE") ? "20" : "10") "\trestint"); s9uc2 = (TYPE == "SITE" && substr(uc_desc(pend_e), 1, 3) == "UC2")   # a UC2 page: the Pickup delay column after Date (2026-09-05)
+    # SITE: the table lives on its OWN page (docs/latest/<slug>.html, 2026-09-16
+    # user request) — 1000 rows, and there the reader gets the search box and the
+    # From/To selectors a detail page deliberately has none of. Every other type
+    # keeps its Latest 100 on the detail page.
+    else if (s == "9") { emitl((TYPE == "SITE") ? "TABLE\tLatest 1000 files\twide\tpager=25\trestint" : "TABLE\tLatest 100 " cntlabel "\twide\tpager=10\trestint"); s9uc2 = (TYPE == "SITE" && substr(uc_desc(pend_e), 1, 3) == "UC2")   # a UC2 page: the Pickup delay column after Date (2026-09-05)
         # SITE pages: Start · End (2026-09-12, user request — the first leg's
         # start and the latest leg's end, was one Date column), Pickup (UC2
         # only) after them; Recovered ("yes" = finished OK after a failed leg,
@@ -695,9 +702,15 @@ function finish_section(   i) {
     if (buf_sec != "") {
         TMODE = 0
         if (sec_in == 1 && sec_out == 1) TMODE = 1
+        # the SITE Latest-files section is DIVERTED to its own page (2026-09-16):
+        # the table, its header and every row go to LP[] instead of the page.
+        # Without LATESTDIR the section stays where it always was — the writer
+        # keeps working for a caller that does not pass the dir.
+        if (buf_sec == "9" && TYPE == "SITE" && LATESTDIR != "") DIVERT = 1
         start_table(buf_sec)
         for (i = 1; i <= nbb; i++) emitl(TMODE == 1 ? BB[i] : BP[i])
         if (buf_sec == "1") day_total(TMODE)
+        DIVERT = 0
         nbb = 0; buf_sec = ""; sec_in = 0; sec_out = 0
     } else if (cur_sec == "1") day_total(0)
 }
@@ -1244,6 +1257,46 @@ function self_features_row(   i, fe0, fe1, d0, ins, n2, selfrow) {
     for (i = 1; i <= n2; i++) PG[i] = PG2[i]
     npg = n2
 }
+# ===== the subscription "Latest files" page (2026-09-16, user request) =======
+# Section 9's table is diverted off the SITE detail page (finish_section) and
+# written here as its own .rpt under LATESTDIR — one per subscription that
+# carries Files — which publish-details.sh renders to docs/latest/<slug>.html.
+# The detail page keeps a Features row pointing at it (latest_features_row).
+# A subscription with no Files writes nothing, so no page and no link exist.
+function latest_page(   i, lp, nrow, txt) {
+    if (TYPE != "SITE" || LATESTDIR == "" || nlp == 0) return
+    nrow = 0
+    for (i = 1; i <= nlp; i++) if (index(LP[i], "ROW\t") == 1) nrow++
+    if (nrow == 0) return
+    lp = LATESTDIR "/" a_slug ".rpt"
+    # a DRILL page, so it keeps its INTRO (the no-prose rule covers report
+    # pages); the count is what the page really holds, the cap what it can
+    txt = "TITLE\tLatest files: " pend_e "\n"
+    txt = txt "DESC\tThe most recent Files of subscription " pend_e ", newest first (at most 1000).\n"
+    txt = txt "INTRO\tThe **" nrow "** most recent File(s) of subscription **" pend_e "**, newest first — at most 1000.\n"
+    for (i = 1; i <= nlp; i++) txt = txt LP[i] "\n"
+    txt = txt "LINK\t../details/subscriptions/" a_slug ".html\tThe subscription page of " pend_e "\n"
+    txt = txt "FOOT\tGenerated on " NOW " from " NFILES " file(s)\n"
+    printf "%s", txt > lp
+    close(lp)
+    latest_features_row()
+}
+# the Features row that links it: key "Files", text "Latest 1000 files"
+# (2026-09-16, user request), appended as the LAST row of the Features block —
+# the detail page is rendered from docs/details/subscriptions/, one level
+# deeper than docs/latest/, hence ../../
+function latest_features_row(   i, fe0, fe1, n2, row) {
+    row = "ROW\tFiles\t@{href=../../latest/" a_slug ".html}Latest 1000 files"
+    fe0 = 0
+    for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\tFeatures") == 1) { fe0 = i; break }
+    if (fe0 == 0) return
+    fe1 = blk_end(fe0)
+    n2 = 0
+    for (i = 1; i <= npg; i++) { PG2[++n2] = PG[i]; if (i == fe1) PG2[++n2] = row }
+    for (i = 1; i <= n2; i++) PG[i] = PG2[i]
+    npg = n2
+}
+
 function close_file(   dircls, resv, out, i) {
     if (pend_t == "") return
     ensure_file()
@@ -1265,11 +1318,12 @@ function close_file(   dircls, resv, out, i) {
     if (pend_t == "LOGIN") { login_feat_row(); login_sxs_row(); login_lasterr_move() }
     if (pend_t == "HOST") host_sxs_row()
     self_features_row()
+    latest_page()   # writes the diverted section 9 + adds its Features row
     out = ""
     for (i = 1; i <= npg; i++) out = out PG[i] "\n"
     printf "%s", out > cur_path
     close(cur_path)
-    npg = 0
+    npg = 0; nlp = 0; DIVERT = 0
 }
 
 # ===== per-entity reset + the stream loop ====================================

@@ -746,10 +746,11 @@ aggregate_files() {
       if(dio!="") bD[key SUBSEP dio]++ }
     # addbig: lib.sh addtop with a per-type bound and its own array — the
     # Latest Files list per entity, newest first (sortkey = date+time desc).
-    # SITE keeps 500 (the subscription pages page through 25 at a time,
-    # 2026-08); every other type keeps 100 — the bound also caps the string
-    # re-join cost per insert, so widening it for all seven attributions
-    # would multiply the aggregation cost across the board.
+    # SITE keeps 1000 (2026-09-16, user request: the subscription list moved
+    # OFF the detail page onto its own docs/latest/<slug>.html — it was 500 on
+    # the detail page since 2026-08); every other type keeps 100 — the bound
+    # also caps the string re-join cost per insert, so widening it for all
+    # seven attributions would multiply the aggregation cost across the board.
     function addbig(p, sk2, disp2, cid2, bnd,   key,n,a2,i,pos,m,out){ key=sk2 SUBSEP disp2 SUBSEP cid2
         if ((p in _bign) && _bign[p] >= bnd && key <= _bigmin[p]) return   # cheap reject, see lib.sh addtop
         n=(p in big)?split(big[p],a2,_US):0; pos=n+1
@@ -784,7 +785,7 @@ aggregate_files() {
           grel=(dd9>0 ? dd9 "d " hh9 "h " mm9 "m" : (hh9>0 ? hh9 "h " mm9 "m" : (mm9>0 ? mm9 "m" : "<1m"))) } }
       # … then the pickup delay, then (2026-09-12) the File END — the latest
       # leg end (g_end, the leg walk), in the Start cell format
-      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : "") "|" grel "|" (g_end>=0 ? fmt_ep(g_end) : ""), (ty=="SITE")?500:100)
+      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : "") "|" grel "|" (g_end>=0 ? fmt_ep(g_end) : ""), (ty=="SITE")?1000:100)
       # Waiting/Expired rollup -> the section-0.9 summary table (per entity):
       # count + first/last STAGED date per state
       if(toc[curcid]=="Waiting" || toc[curcid]=="Expired"){ kwe=ty SUBSEP ent SUBSEP toc[curcid]

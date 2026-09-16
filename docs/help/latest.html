@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Help: Latest files — Cloud Reports</title>
+<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../search/file-search-24-hours.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm"><a class="ddtop" href="../transfer/index.html">Start page</a><a href="../transfer/topview.html">Top view</a><a href="../transfer/entities/subscription-all.html">Entities</a><a href="../transfer/file-journey-patterns.html">Patterns</a><a href="../transfer/activity-per-day.html">Activity over Time</a><a href="../transfer/ranking-subscriptions.html">Volume, Sizes &amp; Files</a><a href="../transfer/failure-rate-accounts.html">Failures &amp; Retries</a><a href="../transfer/protocol-protocol.html">Protocol &amp; Security</a><a href="../transfer/duration.html">Performance</a></div></div><div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm"><a class="ddtop" href="../server/index.html">Start page</a><a href="../server/topview.html">Top view</a><a href="../server/errors-per-day.html">Errors</a><a href="../server/pickups.html">Transfers &amp; Delivery</a><a href="../server/logons-incoming.html">Logons &amp; Connections</a><a href="../server/ssh-security.html">Security</a><a href="../server/platform-health.html">Operations &amp; Capacity</a><a href="../server/transfer-site-missing.html">Routing</a><a href="../server/missing-entities-subscriptions.html">Missing Entities</a></div></div><div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm"><a class="ddtop" href="../analyses/index.html">Start page</a><a href="../transfer/entity-coverage-accounts.html">Coverage &amp; seen</a><a href="../analyses/use-cases.html">Configuration</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions-in-boxes.html">Boxes</a><a href="../analyses/failed.html">Errors</a><a href="../transfer/month-stats/this-subscription.html">Month stats</a></div></div><div class="dd"><span class="ddlabel">Goodies ▾</span><div class="ddm"><a href="../analyses/partners-in.html">Partners - Incoming</a><a href="../analyses/hosts-overview.html">Partners - Outgoing</a><a href="../transfer/duration.html">Transfer Duration</a><a href="../analyses/failing-reasons.html">Error reasons</a><a href="../analyses/subscriptions.html">Subscriptions</a><a href="../analyses/polling.html">Polling</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><span class="tr-group"><a class="searchbtn" href="../tools/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Latest files</h1>
+<h2>What it shows</h2>
+<p>One page per subscription: its most recent Files, newest first, at most 1000. Opened from the <strong>Files</strong> row of the <a href="details-subscriptions.html">subscription page</a>&rsquo;s Features table; it carried this table itself until 2026-09-16.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Start</strong> / <strong>End</strong> &mdash; the first leg&rsquo;s start and the latest leg&rsquo;s end.</li>
+<li><strong>Pickup</strong> &mdash; UC2 pages only: how long after Start the partner collected the file.</li>
+<li><strong>State</strong> &mdash; Delivered, Errored, Waiting (staged, not collected) or Expired (staged, deleted unclaimed).</li>
+<li><strong>Recovered</strong> &mdash; <em>yes</em> when the File finished OK after a failed leg; the column shows only when a row carries it.</li>
+<li><strong>Direction</strong> &mdash; the connection / file-movement pair (<code>out/in</code>); <code>?</code> = unknown side, <code>-</code> = neither known.</li>
+<li><strong>Size</strong>, <strong>Throughput</strong>, <strong>Duration</strong> &mdash; the file once, its rate and its wall-clock span.</li>
+<li><strong>File</strong>, <strong>CoreId</strong> &mdash; the name as logged and the transfer key; the CoreId opens File Tracking.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>A row is tinted by that File&rsquo;s own state: red Errored or Expired, orange Waiting, green Delivered.</li>
+<li>Files, not transfer records: one row per CoreId, all its legs folded into one.</li>
+<li>The <strong>search box</strong> and the <strong>From/To</strong> selectors apply here (the subscription page has neither); From/To is the shared transfer-area range, so it follows you from other transfer pages.</li>
+<li>25 rows per page; <em>csv</em> in the last header cell exports what is shown.</li>
+<li>Only the newest 1000 Files are kept. A subscription that never carried one has no page, and its Features table has no Files row.</li>
+</ul>
+</main>
+</body>
+</html>

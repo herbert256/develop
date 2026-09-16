@@ -781,7 +781,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
     # callers use for the CSS depth, so no caller needs a new argument.
     local rarea=""
     case $out in
-        "$DOCS"/transfer/*|"$DOCS"/details/*) rarea="transfer" ;;
+        "$DOCS"/transfer/*|"$DOCS"/details/*|"$DOCS"/latest/*) rarea="transfer" ;;
         "$DOCS"/server/*)                     rarea="server" ;;
     esac
     # The page body — the whole .rpt line protocol, tables and cells included —

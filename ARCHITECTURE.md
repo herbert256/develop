@@ -676,7 +676,8 @@ From/To, no search box, no RECALC/@data:buckets** (`CUR_DATES` stays empty; `set
 
 Page order IS the section number: -1 direction · 0 header data · 0.9 Waiting/Expired summary ·
 1 Activity per day · 2 subscription · 2.6/2.7 Incoming/Outgoing connections · 2.8 account ·
-2.81–2.83 domain/application/partner · 3 login · 5 protocol · 6 av · 9 latest 100 Files ·
+2.81–2.83 domain/application/partner · 3 login · 5 protocol · 6 av · 9 latest 100 Files
+(SITE: DIVERTED to its own page since 2026-09-16, see below) ·
 10 weekday · 11 hour · 13 direction · 14 action-by · 15 mode; then `close_file` appends the
 Duration/Size perf tables, a Groups fact table (classic types only — a PDA page IS the group) and
 "Last server log messages".
@@ -830,7 +831,13 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   same-movement flows — the EQUENS UC3/UC4 pair does); an estate without any qualifying pair must degrade
   to no rows. The cell is `@{alink=…}`, tinted by the TWIN's own result.
 - A KPI Summary table (`nosearch`, not date-aware) renders before section 10 on seen pages.
-- Section 9, the latest 100 Files (500 on subscription pages): State = Delivered/Errored/Waiting/Expired (row tinted via
+- Section 9, the latest 100 Files — on SUBSCRIPTION pages the whole table is DIVERTED to its own
+  page (2026-09-16, user request): `details_writer.awk` `latest_page()` writes
+  `data/transfer/reports/latest/<slug>.rpt` (1000 rows, `addbig` bound), `publish-details.sh`
+  renders it to `docs/latest/<slug>.html` WITH the transfer date list — so unlike a detail page it
+  has the search box and the From/To selectors — and `latest_features_row()` adds the detail
+  page's Features row "Files → Latest 1000 files". A subscription with no Files writes no page and
+  gets no row: State = Delivered/Errored/Waiting/Expired (row tinted via
   `restint`+`@data:res`); Direction = the FILE MOVEMENT (col 12 via `FLOWMAP`); paged 10 at a
   time (20 on subscription pages). Subscription pages open with Start · End (2026-09-12, user
   request): the File's first leg start and its latest leg end (`g_end` in the `aggregate_files`
