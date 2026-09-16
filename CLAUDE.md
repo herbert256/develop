@@ -248,6 +248,19 @@ input) and tokenizes only what is new: the transfer side `sort -m`-merges into t
 cache (byte-identical to a full parse), the server side appends; a changed/removed manifested
 file — or **editing `parse.sh` / `input/blacklist.txt`** (cksums in `_*.parser`) — forces a full
 reparse. `reports.sh` does not parse; each report calls `ensure_parsed`.
+**ONE TRANSFER PARSE AT A TIME** (2026-09-16): the transfer `parse.sh` rewrites `_files.tsv`
+THREE times (collapse 17 cols → config join 24 → the still-under-way filter), each `> $FILES.tmp.$$`
++ `mv`, and ~100 scripts call `ensure_parsed` — some CONCURRENTLY (build stage 13's detail reports
+beside stage 14). Two runs interleaving their mv's left the UNJOINED intermediate as the cache, so
+cols 16-20 (connection, movement, application, domain, partner) were gone and every In/Out figure
+on the site was empty (the acceptance damage found that day). A mkdir lock
+`data/<area>/cache/.parselock` (the `bin/build.sh` pattern — owner PID, dead owner reclaimed,
+30-minute wait then a warned fallback) serializes them, taken BEFORE the freshness decision so the
+loser exits with "nothing to parse"; it is RE-ENTRANT via the exported `AXWAY_PARSE_LOCK` because
+`bin/session-sites.sh` re-invokes the parse from inside the critical section. The derive-only
+freshness check tests the JOINED shape (24 columns AND col 17 in `in|out|relay|""`), never a lower
+bound: `expire-files.sh` pads a short row to 22 columns and `bookend-ok.sh` to 23, so the old
+`NF>=20` test passed a damaged cache and no later build ever healed it.
 
 **Incremental publishing.** Each publish writes `data/.publish/<name>.stamp` and skips when
 nothing it reads is newer. `bin/publish_lib.sh` owns `publish_is_fresh STAMP OUTDIR DEP…` /

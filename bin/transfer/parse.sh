@@ -86,6 +86,21 @@
 # manifested file (or `touch input/*.csv`) forces a full reparse; the merge is
 # order-safe, so an incremental result is byte-identical to a full one.
 #
+# ONE PARSE AT A TIME (2026-09-16, user request — the acceptance damage): this
+# script rewrites data/_files.tsv THREE times (collapse 17 cols -> config join
+# 24 -> the still-under-way filter), each as `> $FILES.tmp.$$` + `mv`. ~100
+# scripts call ensure_parsed and bin/build.sh runs some of them CONCURRENTLY
+# (the detail reports in the background beside the transfer reports), so two
+# runs could interleave their mv's and leave the UNJOINED intermediate as the
+# cache — every In/Out, partner, application and domain figure on the site
+# then reads a column that is not there. A mkdir lock (data/<area>/cache/
+# .parselock, the bin/build.sh pattern: owner PID recorded, a dead owner's
+# lock reclaimed) serializes them; the loser re-evaluates freshness afterwards
+# and normally exits with "nothing to parse". It is RE-ENTRANT through
+# AXWAY_PARSE_LOCK: bin/session-sites.sh re-invokes this script from inside
+# the critical section, and that nested derive-only run must not wait for a
+# lock its own ancestor holds.
+#
 # Usage:
 #   ./parse.sh            # build/extend data/_transfers.tsv (+ _transfers.txt) from input/*.csv
 #
@@ -141,6 +156,42 @@ CFG_APTN="$CONFIG_XREF/_accounts-partners.tsv"       # account <TAB> partner org
 CFG_HPTN="$CONFIG_XREF/_hosts-partners.tsv"          # configured host <TAB> partner organisation
 CFG_FLOW="$CONFIG_XREF/_subscriptions-flowdir.tsv"   # subscription <TAB> out|in|relay (file-movement direction)
 mkdir -p "$CACHE_DIR"
+
+# ---- ONE PARSE AT A TIME (2026-09-16, user request) -------------------------
+# See the header: two concurrent runs can interleave their three _files.tsv
+# mv's and leave the unjoined intermediate behind. The lock is taken BEFORE the
+# freshness/mode decision below, so the loser re-evaluates once the winner is
+# done and normally exits with "nothing to parse" instead of parsing again.
+# RE-ENTRANT: bin/session-sites.sh re-invokes this script from inside the
+# critical section, and that nested run inherits AXWAY_PARSE_LOCK.
+PARSE_LOCK="$CACHE_DIR/.parselock"
+if [ -z "${AXWAY_PARSE_LOCK:-}" ]; then
+    _lock_mine=0; _lock_waited=0
+    while :; do
+        if mkdir "$PARSE_LOCK" 2>/dev/null; then _lock_mine=1; break; fi
+        _lock_pid=$(cat "$PARSE_LOCK/pid" 2>/dev/null || true)
+        if [ -z "$_lock_pid" ] || ! kill -0 "$_lock_pid" 2>/dev/null; then
+            printf 'parse.sh: reclaiming stale parse lock (PID %s not running).\n' "${_lock_pid:-unknown}" >&2
+            rm -rf "$PARSE_LOCK"
+            continue
+        fi
+        # a full acceptance parse runs minutes; wait generously, then degrade to
+        # the old behaviour rather than fail a build
+        if [ "$_lock_waited" -ge 1800 ]; then
+            printf 'parse.sh: parse (PID %s) still running after %ss — continuing WITHOUT the lock.\n' "$_lock_pid" "$_lock_waited" >&2
+            break
+        fi
+        [ "$_lock_waited" = 0 ] && printf 'parse.sh: another parse (PID %s) is running — waiting.\n' "$_lock_pid" >&2
+        sleep 2; _lock_waited=$((_lock_waited + 2))
+    done
+    # only the run that CREATED the lock owns it: a timed-out waiter must never
+    # remove the holder's lock on its own exit
+    if [ "$_lock_mine" = 1 ]; then
+        printf '%s\n' "$$" > "$PARSE_LOCK/pid" 2>/dev/null || true
+        export AXWAY_PARSE_LOCK=$$
+        trap 'rm -rf "$PARSE_LOCK"' EXIT
+    fi
+fi
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -254,14 +305,22 @@ elif [ -f "$PARSED0" ] && [ -f "$MANIFEST" ]; then
             if [ -f "$SESSMAP" ] && [ "$SESSMAP" -nt "$PARSED" ]; then cfg_newer=1; fi
             # the derived caches must also be INTACT: at least as new as the
             # row cache (an interrupted run leaves them older) and _files.tsv
-            # fully joined (20 columns — the interrupt window between its two
-            # mv's leaves the 15-column intermediate). A failed check falls
+            # FULLY JOINED. The join is the second of three mv's (collapse 17
+            # cols -> config join 24 -> still-under-way), so an interrupted or
+            # RACED run can leave the 17-column intermediate as the cache.
+            # The test is the JOINED WIDTH (24) plus col 17 holding the
+            # movement vocabulary — NOT a lower bound like the old NF>=20,
+            # which the intermediate PASSED: bin/expire-files.sh pads a short
+            # row to 22 columns and bin/bookend-ok.sh to 23, so a damaged
+            # cache looked healthy and no later build ever healed it (the
+            # 2026-09-16 acceptance case: col 17 held the end stamp, so every
+            # In/Out figure on the site was empty). A failed check falls
             # through to the derive-only rebuild below, which heals both.
             if [ -f "$PARSED" ] && [ -f "$CACHE_DIR/_files.tsv" ] \
                && ! [ "$PARSED0" -nt "$PARSED" ] && [ "$cfg_newer" = 0 ] \
                && ! [ "$PARSED" -nt "$CACHE_DIR/_files.tsv" ] \
                && [ -s "$CACHE_DIR/_files.tsv" ] \
-               && head -1 "$CACHE_DIR/_files.tsv" | LC_ALL=C awk -F'\t' '{exit !(NF>=20)}'; then
+               && head -1 "$CACHE_DIR/_files.tsv" | LC_ALL=C awk -F'\t' '{exit !(NF >= 24 && ($17 == "" || $17 == "in" || $17 == "out" || $17 == "relay"))}'; then
                 echo "$PARSED already covers all ${#files[@]} input file(s); nothing to parse." >&2
                 exit 0
             fi
