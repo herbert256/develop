@@ -680,7 +680,7 @@ Page order IS the section number: -1 direction · 0 header data · 0.9 Waiting/E
 (SITE: DIVERTED to its own page since 2026-09-16, see below) ·
 10 weekday · 11 hour · 13 direction · 14 action-by · 15 mode; then `close_file` appends the
 Duration/Size perf tables, a Groups fact table (classic types only — a PDA page IS the group) and
-"Last server log messages".
+"Last server log messages" + "Last server log errors" (two tables since 2026-09-16, see below).
 
 - On a direction=both page an outcome section splits into four columns (In/Out x Error/OK) only
   when its rows carry both directions. A never-seen page opens "Configured — never seen" and still
@@ -840,10 +840,15 @@ Duration/Size perf tables, a Groups fact table (classic types only — a PDA pag
   covers only account/login/mode; the PDA-trio pages' group dims always render as own tables,
   every row tinted by the item's RESULT. Every entity cell is tinted by its own RESULT
   (`RESMAP_FILES`, set around `render_details` only).
-- "Last server log messages" (bottom of every page): the entity's 25 recent + 10 recent Error/Warn
-  lines, plus on SEEN pages the Error/Warn of its 1-to-1 connected entities — 1-to-1 BOTH WAYS
-  (2026-08-31): a connected account/login/host serving other flows too is not merged — after its
-  last transfer (ACCOUNT pages fold in their logins'/hosts' lines). Any Error/Warn after the last
+- "Last server log messages" + "Last server log errors" (bottom of every page): TWO TABLES since
+  2026-09-16 (user request) and **NO DEDUPLICATION** — the entity's 25 recent lines in the first,
+  its 10 recent Error/Warn lines in the second, plus on SEEN pages the Error/Warn of its 1-to-1
+  connected entities — 1-to-1 BOTH WAYS (2026-08-31): a connected account/login/host serving other
+  flows too is not merged — after its last transfer (ACCOUNT pages fold in their logins'/hosts'
+  lines). A line that is both recent and an error now appears in BOTH tables, and a line the log
+  holds twice is shown twice (`sort_cap`, which replaced `dedup_cap`; `emit_srv_rows` renders one
+  table, `emit_srv_table`'s third argument picks one or two). The per-entity lists a blue /
+  never-seen page prints (`srv_lines_for`) stay ONE table each. Any Error/Warn after the last
   transfer opens a red ALERT banner. Only the five classic types have per-name caches.
 - **Partners - Incoming** (2026-09-13, user request), `bin/analyses/reports/partners-in.sh` → `analyses/partners-in.html`: a MERGED report — fe-overview.rpt (the FE overview, renamed back from "Partners - Incoming" the same day) joined with the Incoming table of the server pool's `logon.rpt`, one row per login (the union; funnel-only logins untinted with empty transfer cells), the funnel cell drills re-keyed to their new columns; trimmed the same day (user request) to Login … Pickups + Allowed · Disallowed · Authenticated · Auth Failed (= Bad key + Key failures + Auth failed, its drill the 5 newest lines of the three) · Locked · Pattern. Runs after analyses wave 1. Both source pages stay until the user retires them.
 - **Partners - Outgoing** (2026-09-13, user request), `bin/analyses/reports/hosts-overview.sh` → `analyses/hosts-overview.html`: the OPPOSITE of Partners - Incoming — one row per configured remote HOST (the partner server we dial) for UC1 (we deliver) and UC3 (we collect): use cases, Cloud = the newest Processed leg with the host (`_transfers.tsv`), Gateway from the hand-maintained `input/hosts_old.txt` (the `logons_old.txt` format), Files in / out / Error / Delivered / Auto retries / Resubmit OK / Error / Last error by the Entities host rule (connection side out, every host a leg names), Polls + Poll pattern summed from `polling.rpt` through the host's UC3 subscriptions, Connection problems summed from `site-failures.rpt` (the cell links the busiest subscription's row). Rows tint by the host result. Registered like fe-overview (SUBS_GROUP_REPORTS, catalog, finder, sitemap, Goodies, help page `hosts-overview`, verify.sh); since 2026-09-13 (user request) Partners - Incoming and Partners - Outgoing lead the **Partners** group (the Analyses menu's Partners entry opens Partners - Incoming), not Configuration.

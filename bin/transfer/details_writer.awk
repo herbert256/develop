@@ -97,67 +97,64 @@ function srt1_sort(L, n,   i, j, t) {
 # read every line of file f into L[++n]; returns the new n
 function slurp(f, L, n,   l) { while ((getline l < f) > 0) L[++n] = l; close(f); return n }
 
-# sort L[1..n], dedup on fields 1-5 (first survivor wins), keep at most cap;
-# result in D[1..nd], returns nd
-function dedup_cap(L, n, cap, D,   i, k, nd, m, C5) {
+# sort L[1..n] newest first and keep at most cap in D[1..nd]; NO DEDUP
+# (2026-09-16, user request — it replaced dedup_cap): a line the log holds
+# twice is shown twice, and a line that is both recent and an error appears
+# in both tables. Returns nd.
+function sort_cap(L, n, cap, D,   i, nd) {
     srv_sort(L, n)
-    split("", _dseen); nd = 0
-    for (i = 1; i <= n; i++) {
-        m = split(L[i], C5, "\t")
-        k = C5[1] SUBSEP C5[2] SUBSEP C5[3] SUBSEP C5[4] SUBSEP C5[5]
-        if (k in _dseen) continue
-        _dseen[k] = 1
-        nd++
-        if (nd <= cap) D[nd] = L[i]
-    }
-    return (nd < cap) ? nd : cap
+    nd = 0
+    for (i = 1; i <= n && nd < cap; i++) D[++nd] = L[i]
+    return nd
 }
 
 # ===== emit_srv_lines_table ==================================================
 # REC[1..nrec] = the recent-source cache files, CN2[1..nconn] = the connected
 # base files (their _err_warn siblings are derived here), st_cutoff = the
 # "only Error/Warn after this" timestamp ("" = no connected merge).
-function emit_srv_table(title, cutoff,   i, f, ewf, nA, nB, nC, nda, ndb, nall, k, m, C5, lvl, cmp, body, nrows, l) {
+# TWO TABLES, NO DEDUPLICATION (2026-09-16, user request): the 25 most recent
+# lines and the 10 most recent Error/Warning ones are now SEPARATE tables — a
+# line that is both appears in both, and a line the log holds twice is shown
+# twice. `two` = 0 keeps the single merged table for the per-entity lists a
+# blue / never-seen page prints through srv_lines_for (no connected pool
+# there, and one table per connected entity is already the unit).
+function emit_srv_table(title, cutoff, two,   i, ewf, nA, nB, nda, ndb, l) {
     if (nrec == 0 && nconn == 0) return
-    # per-source pools: recent lines (cap 25), their _err_warn rings (cap 10),
-    # the connected _err_warn lines after the cutoff (no dedup, no cap) — the
-    # three-stage order is load-bearing, then everything merges, re-sorts and
-    # dedups first-wins.
-    split("", SA); nA = 0
+    # pool A — the entity's OWN recent lines, cap 25
+    split("", SA); split("", DA); nA = 0
     for (i = 1; i <= nrec; i++) nA = slurp(REC[i], SA, nA)
-    nda = dedup_cap(SA, nA, 25, DA)
-    split("", SB); nB = 0
+    nda = sort_cap(SA, nA, 25, DA)
+    # pool B — its own _err_warn rings, cap 10 …
+    split("", SB); split("", DB); nB = 0
     for (i = 1; i <= nrec; i++) { ewf = REC[i]; sub(/\.tsv$/, "_err_warn.tsv", ewf); if (nonempty(ewf)) nB = slurp(ewf, SB, nB) }
-    ndb = dedup_cap(SB, nB, 10, DB)
-    split("", SC); nC = 0
+    ndb = sort_cap(SB, nB, 10, DB)
+    # … plus the CONNECTED rings after the cutoff (uncapped), which only the
+    # main table has (cutoff "" = the srv_lines_for path)
     if (cutoff != "") for (i = 1; i <= nconn; i++) {
         ewf = CN2[i]; sub(/\.tsv$/, "_err_warn.tsv", ewf)
         if (!nonempty(ewf)) continue
-        while ((getline l < ewf) > 0) { if (keyf(l, 1) " " keyf(l, 2) > cutoff) SC[++nC] = l }
+        while ((getline l < ewf) > 0) { if (keyf(l, 1) " " keyf(l, 2) > cutoff) DB[++ndb] = l }
         close(ewf)
     }
-    srv_sort(SC, nC)
-    # merge and finalize
-    split("", ALL); nall = 0
-    for (i = 1; i <= nda; i++) ALL[++nall] = DA[i]
-    for (i = 1; i <= ndb; i++) ALL[++nall] = DB[i]
-    for (i = 1; i <= nC;  i++) ALL[++nall] = SC[i]
-    srv_sort(ALL, nall)
-    split("", _fseen); body = ""; nrows = 0
-    for (i = 1; i <= nall; i++) {
-        m = split(ALL[i], C5, "\t")
-        k = C5[1] SUBSEP C5[2] SUBSEP C5[3] SUBSEP C5[4] SUBSEP C5[5]
-        if (k in _fseen) continue
-        _fseen[k] = 1
-        # (SUPPRESSION GONE 2026-09-16: a SITE page used to hide the lines its
-        # Last OK transfer / Last error / Server log error sections already
-        # told. Those sections are gone — their content lives on the linked
-        # files/ and errors/ pages — so this table shows the page's own server
-        # log in full again.)
+    if (two == 0) {                      # one merged table, as before
+        for (i = 1; i <= ndb; i++) DA[++nda] = DB[i]
+        srv_sort(DA, nda)
+        emit_srv_rows(title, DA, nda)
+        return
+    }
+    srv_sort(DA, nda); srv_sort(DB, ndb)
+    emit_srv_rows(title, DA, nda)
+    emit_srv_rows("Last server log errors", DB, ndb)
+}
+# one rendered table out of L[1..n], newest first, every line kept
+function emit_srv_rows(title, L, n,   i, m, C5, lvl, cmp, body, nrows, tj) {
+    body = ""; nrows = 0
+    for (i = 1; i <= n; i++) {
+        m = split(L[i], C5, "\t")
         # a literal TAB inside the message text splits into extra fields — fold
         # them back so the ROW keeps exactly five cells (the .rpt protocol
         # forbids TAB inside a cell)
-        for (_tj = 6; _tj <= m; _tj++) C5[5] = C5[5] " " C5[_tj]
+        for (tj = 6; tj <= m; tj++) C5[5] = C5[5] " " C5[tj]
         lvl = (C5[3] == "I") ? "Info" : (C5[3] == "W") ? "@{class=warn}Warning" : (C5[3] == "E") ? "@{class=failed}Error" : C5[3]
         cmp = (C5[4] == "T") ? "TM" : (C5[4] == "P") ? "PESITD" : (C5[4] == "S") ? "SSHD" : C5[4]
         nrows++
@@ -174,7 +171,7 @@ function emit_srv_table(title, cutoff,   i, f, ewf, nA, nB, nC, nda, ndb, nall, 
 # no connected sources (cutoff empty)
 function srv_lines_for(sub2, name2, title2) {
     nrec = 1; REC[1] = SRV "/" sub2 "/" name2 ".tsv"; nconn = 0
-    emit_srv_table(title2, "")
+    emit_srv_table(title2, "", 0)
 }
 
 # ===== per-page helper tables ================================================
@@ -716,7 +713,7 @@ function page_srv_log(   f, n, i, V, fw, ip, nc, C9) {
     # (the "Server log error", "Last error" and "Last OK transfer" SECTIONS
     # were all removed 2026-09-16, user request: the Features table's "Server
     # log error" / "Latest Error" / "Latest OK" rows link those pages instead)
-    emit_srv_table("Last server log messages", last_transfer_cut())   # connected lines after the last transfer — its END cut (2026-09-12)
+    emit_srv_table("Last server log messages", last_transfer_cut(), 1)   # TWO tables (2026-09-16); connected lines after the last transfer — its END cut (2026-09-12)
 }
 
 # The "Logons" table (LOGIN pages, 2026-08): first/last successful

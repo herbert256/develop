@@ -1532,6 +1532,7 @@
                   "Load by hour": "Hour", "Load by weekday": "Weekday",
                   "Latest 100 Files": "Latest 100", "Whitelisted IPs": "Whitelist",
                   "Last server log messages": "Server log",
+                  "Last server log errors": "Server errors",
                   "Last 25 log lines": "Log lines",
                   "Last 10 server log lines": "Server log" };
     // a SIDE-BY-SIDE row (div.sxs) gets ONE combined button — labeled by the

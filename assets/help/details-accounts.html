@@ -32,7 +32,8 @@
 <li>Light green configured and used; light red traffic on an unconfigured address; light orange configured, never seen (folded behind one summary row); light blue whitelisted, server-log sighting only (not folded).</li>
 </ul></li>
 <li><strong>Files not picked up</strong> &mdash; files File Maintenance purged uncollected from the account&rsquo;s folder (the log&rsquo;s &ldquo;Deleted files [ &hellip; ]&rdquo; sweeps, keyed on <code>NAME@FEnnn</code>); newest expiry first, up to 100, paged 10 &mdash; a real pickup removes a file before it expires.</li>
-<li><strong>Last server log messages</strong> &mdash; at the bottom: the account&rsquo;s 25 newest lines merged with its configured login(s) and host(s) lines (a host by name and each resolved IP &mdash; address-keyed caches), plus each one&rsquo;s 10 newest Error/Warning lines; deduplicated, newest first, full-period.</li>
+<li><strong>Last server log messages</strong> &mdash; at the bottom: the account&rsquo;s 25 newest lines, together with its configured login(s) and host(s) lines (a host by name and each resolved IP &mdash; address-keyed caches), newest first, full-period.</li>
+<li><strong>Last server log errors</strong> &mdash; a separate table below it: the 10 newest Error/Warning lines of those same sources. Not deduplicated against the table above (2026-09-16).</li>
 </ul>
 <h2>Rules</h2>
 <ul>

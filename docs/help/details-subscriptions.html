@@ -32,7 +32,8 @@
 <li><strong>Breakdowns</strong> &mdash; account, login, remote host, protocol, AV scan, security parameters, direction, action-by, mode; Subscription comes first below Activity, Account right under the Incoming/Outgoing connections tables.</li>
 <li><strong>10 largest transfers</strong>.</li>
 <li><strong>Whitelisted IPs</strong> &mdash; when the subscription&rsquo;s partner carries an <code>AllowIP</code> whitelist (partners.json): the source addresses allowed to connect for it; the whitelist belongs to the partner account, joined via the subscription&rsquo;s participant. Configuration, not activity: the date filter leaves it unchanged.</li>
-<li><strong>Last server log messages</strong> &mdash; at the very bottom: its own 25 most recent lines merged with its 10 most recent Error/Warning lines (a recent problem stays visible when the newest 25 are routine), plus the Error/Warning lines of its 1-to-1 connected entities (typically its one account, login and host) after its last transfer. Deduplicated, newest first, full-period.</li>
+<li><strong>Last server log messages</strong> &mdash; at the very bottom: its own 25 most recent lines, newest first, full-period.</li>
+<li><strong>Last server log errors</strong> &mdash; a separate table below it: its 10 most recent Error/Warning lines (a recent problem stays visible when the newest 25 are routine), plus the Error/Warning lines of its 1-to-1 connected entities (typically its one account, login and host) after its last transfer. Not deduplicated against the table above &mdash; a line that is both recent and an error appears in both (2026-09-16).</li>
 <li>Any such after-the-last-transfer line, own or connected, raises the red banner <em>ERRORS IN SERVER LOG AFTER LAST TRANSFER &ndash; SEE LOG AT BOTTOM OF THIS PAGE</em>.</li>
 </ul>
 <h2>Server log error rules</h2>

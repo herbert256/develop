@@ -27,7 +27,8 @@
 <li><strong>Last error(s)</strong> &mdash; only when a subscription it moves files with has an error: one row per such subscription, its most recent error, newest first &mdash; date and time, subscription, file. Red = failed, orange = expired before the partner collected it.</li>
 <li><strong>10 largest transfers</strong>.</li>
 <li><strong>Whitelisted IPs</strong> &mdash; when the login&rsquo;s partner carries an <code>AllowIP</code> whitelist (partners.json): the source addresses allowed to connect with this login; the whitelist belongs to the partner account owning the login. Configuration, not activity: the date filter leaves it unchanged.</li>
-<li><strong>Last server log messages</strong> &mdash; at the very bottom: its 25 most recent lines merged with its 10 most recent Error/Warning lines, plus the Error/Warning lines of its 1-to-1 connected entities (its one account, subscription, host) after the login&rsquo;s last transfer. Deduplicated, newest first, full-period.</li>
+<li><strong>Last server log messages</strong> &mdash; at the very bottom: its 25 most recent lines, newest first, full-period.</li>
+<li><strong>Last server log errors</strong> &mdash; a separate table below it: its 10 most recent Error/Warning lines, plus the Error/Warning lines of its 1-to-1 connected entities (its one account, subscription, host) after the login&rsquo;s last transfer. Not deduplicated against the table above (2026-09-16).</li>
 <li>Any such after-the-last-transfer line raises the red top banner <em>ERRORS IN SERVER LOG AFTER LAST TRANSFER &ndash; SEE LOG AT BOTTOM OF THIS PAGE</em>.</li>
 </ul>
 <h2>Logons table</h2>
