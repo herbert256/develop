@@ -104,6 +104,13 @@ END {
         printf "    \"businessId\": \"%s\",\n", S_biz[si] > SJSON
         printf "    \"meta\": {\n      \"href\": \"https://flowmanager.acme.example:443/api/v2/subscriptions/%s\",\n      \"createdTimestamp\": 1780000000000,\n      \"modifiedTimestamp\": 1787000000000\n    },\n", S_biz[si] > SJSON
         printf "    \"name\": \"%s\",\n", jesc(S_site[si]) > SJSON
+        # A DESCRIPTION CARRYING A BL NUMBER (2026-09-18, user request): the
+        # config step reads BL numbers out of the description as well as the
+        # tags, so the estate plants one — the SPACED form, to exercise the
+        # normalisation to BL<digits> — on one flow that has no input/BL.txt
+        # row. bin/sample/verify.sh asserts it reaches the BL entity.
+        if (S_site[si] == "UC1_WA_BATCH_WAYNE")
+            printf "    \"description\": \"Weekly batch for WAYNE — BL 10042, contact ops.\",\n" > SJSON
         printf "    \"patternName\": \"%s\",\n", S_pat[si] > SJSON
         printf "    \"participants\": [\n" > SJSON
         printf "      {\"businessId\": \"%s\", \"name\": \"%s\", \"comProfileId\": \"%s\",\n       \"role\": \"%s\", \"protocol\": \"SFTP\", \"participantType\": \"partner\"},\n", substr(S_biz[si], 1, 24) "0000par00000", jesc(S_acct[si]), S_cp[si], (S_fdk[si] == "work" || S_fdk[si] == "hybs" ? "source" : "target") > SJSON

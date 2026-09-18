@@ -1095,7 +1095,8 @@ unset _e _m
 # (2026-08-31, user request), LAST in the Logical/Partners/Domains/
 # Applications group. The spine is the SUBSCRIPTION: a subscription carries
 # its BL tag(s) verbatim (BL_FIN — never stripped; several tags = several
-# rows) UNIONED with its input/<env>/BL.txt rows ("<subscription> <BL>[,<BL>...]" —
+# rows), PLUS every BL number in its DESCRIPTION (2026-09-18, user request —
+# see the jq below), UNIONED with its input/<env>/BL.txt rows ("<subscription> <BL>[,<BL>...]" —
 # the numbers comma-separated in the second field; one-per-line rows still
 # read — 2026-08-31, user request; the name must
 # be a configured subscription of THIS env, matched case-insensitively with
@@ -1106,6 +1107,25 @@ unset _e _m
 _bltag="$XREF/.bl.tag.$$"; _bladd="$XREF/.bl.add.$$"
 {   if command -v jq >/dev/null 2>&1 && [ -f "$SKIPDIR/subscriptions.json" ]; then
         jq -r '.[] | .name as $n | (.tags // [])[] | select(startswith("BL")) | [$n, .] | @tsv' \
+            "$SKIPDIR/subscriptions.json" 2>/dev/null || true
+        # THE DESCRIPTION IS A SECOND SOURCE IN THE SAME EXPORT (2026-09-18,
+        # user request: "the BL numbers are not only in the tags, the
+        # subscription description can also have a BL number"). FIELD-AGNOSTIC
+        # on purpose: the export spells the description differently per
+        # environment (a top-level "description", a "parameters"
+        # customAttribute_…, a "meta" note), so every key whose NAME matches
+        # /desc/i anywhere inside the subscription object is scanned, string
+        # values only. The number is "BL" on a WORD BOUNDARY (so TBL10099 is
+        # not one), an optional space/underscore/hyphen, then 3+ digits, case
+        # insensitive and several per text — normalised to BL<digits>, the
+        # shape input/BL.txt already uses, so the same number from either
+        # source is ONE entity. These come from subscriptions.json exactly
+        # like the tags, so they join the TAG side of the union: the "Added
+        # BL" page stays what input/BL.txt adds on top of the export.
+        jq -r '.[] | .name as $n
+               | [ .. | objects | to_entries[] | select(.key | test("desc"; "i")) | .value | strings ] | .[]
+               | [ match("\\bBL[ _-]?([0-9]{3,})"; "gi") | .captures[0].string ] | .[]
+               | [$n, ("BL" + .)] | @tsv' \
             "$SKIPDIR/subscriptions.json" 2>/dev/null || true
     fi
 } | LC_ALL=C sort -u > "$_bltag"

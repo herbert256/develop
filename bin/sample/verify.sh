@@ -104,6 +104,18 @@ check $([ "${n:-0}" -ge 2 ] && echo 0 || echo 1) "_subscriptions-bl-added.tsv ha
 n=$(awk -F'\t' '$2 ~ /^BL_/' "data/flow-manager/xref/_subscriptions-bl-added.tsv" 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "_subscriptions-bl-added.tsv carries $n tag-style BL_ value(s) — those come from subscriptions.json and must not count as added"
 check $([ -f "docs/analyses/added-bl.html" ] && echo 0 || echo 1) "docs/analyses/added-bl.html missing"
+# the DESCRIPTION as a BL source (2026-09-18, user request): the planted
+# "… BL 10042 …" description of UC1_WA_BATCH_WAYNE reaches the BL entity,
+# normalised to BL<digits> — and counts as an EXPORT BL, so it must NOT
+# appear in the input/BL.txt "Added BL" sidecar
+n=$(awk -F'\t' '$1=="UC1_WA_BATCH_WAYNE" && $2=="BL10042"' "data/flow-manager/xref/_subscriptions-bl.tsv" 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "the description BL10042 of UC1_WA_BATCH_WAYNE is not in _subscriptions-bl.tsv ($n row(s))"
+n=$(awk -F'\t' '$2=="BL10042"' "data/flow-manager/xref/_subscriptions-bl-added.tsv" 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "BL10042 comes from subscriptions.json but appears in _subscriptions-bl-added.tsv ($n row(s))"
+# base/_bl.tsv is name<TAB>direction<TAB>result, so match COLUMN 1 — a
+# whole-line test never matches (it cost this assertion a false FAIL)
+n=$(awk -F'\t' '$1=="BL10042"' "data/flow-manager/base/_bl.tsv" 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "BL10042 is not an entity in base/_bl.tsv ($n row(s))"
 # Partners - Incoming (2026-09-02): the page exists and its rows carry the login tints
 check $([ -f "docs/analyses/fe-overview.html" ] && echo 0 || echo 1) "docs/analyses/fe-overview.html missing"
 n=$(command grep -c '@data:res=' "data/analyses/reports/fe-overview.rpt" 2>/dev/null || echo 0)

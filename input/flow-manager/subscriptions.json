@@ -459,6 +459,7 @@
       "modifiedTimestamp": 1787000000000
     },
     "name": "UC1_WA_BATCH_WAYNE",
+    "description": "Weekly batch for WAYNE — BL 10042, contact ops.",
     "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
     "participants": [
       {"businessId": "fd8eb418-d27c-4d55-a585-0000par00000", "name": "WA_BATCH_WAYNE", "comProfileId": "d90e650d-4d1b-44f0-a2c1-a8254998d0bf",

@@ -293,7 +293,11 @@ Extracts from `input/flow-manager/{partners,subscriptions}.json`: `data/flow-man
 — the 11 entity lists (`name⇥direction⇥result`: `_accounts _logins _hosts _white _subscriptions
 _profiles` + the derived `_logicals` (the FlowIDs condensed into logical flow groups,
 `input/logical.txt` pins honoured), PDA `_partners _apps _domains` and `_bl` (2026-08-31, user
-request: the subscriptions.json `tags` entries starting with `BL`, kept verbatim — a full entity,
+request: the subscriptions.json `tags` entries starting with `BL`, kept verbatim, PLUS (2026-09-18,
+user request) every BL NUMBER in a subscription's DESCRIPTION — any key matching `/desc/i` anywhere
+in the object, `\bBL[ _-]?[0-9]{3,}` case-insensitively, normalised to `BL<digits>` so the same
+number from a description and from `input/BL.txt` is ONE entity; both are export BLs, so neither
+lands in the "Added BL" sidecar — a full entity,
 LAST in the Logical/Partners/Domains/Applications group everywhere it renders; a File belongs to
 a BL through its SUBSCRIPTION); result filled later by the
 two build steps) — and `data/flow-manager/xref/` — the pair caches: every pair of the eleven

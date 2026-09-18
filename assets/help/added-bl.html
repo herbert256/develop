@@ -25,7 +25,7 @@
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>A subscription carries its business-line marker in two places: the <code>tags</code> of <code>subscriptions.json</code> (any entry starting with <code>BL</code>) and the hand-maintained <code>input/BL.txt</code>, rows <code>&lt;subscription&gt; &lt;BL&gt;[,&lt;BL&gt;...]</code>.</li>
+<li>A subscription carries its business-line marker in three places: the <code>tags</code> of <code>subscriptions.json</code> (any entry starting with <code>BL</code>), the <strong>description</strong> of the same export (any <code>BL</code> + digits, 2026-09-18) and the hand-maintained <code>input/BL.txt</code>, rows <code>&lt;subscription&gt; &lt;BL&gt;[,&lt;BL&gt;...]</code>.</li>
 <li>The pipeline unions both, so the BL entity always shows every number a flow has; this page is the difference.</li>
 <li>A subscription whose numbers all come from its tags is not listed; a file that adds nothing gives a one-line page.</li>
 <li>Names in <code>BL.txt</code> match the environment&rsquo;s configured subscriptions case-insensitively; a row naming an unconfigured subscription is skipped by the config step, which reports it on the build.</li>
