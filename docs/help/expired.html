@@ -20,11 +20,11 @@
 <p>Staged <strong>UC2</strong> files the nightly <strong>File Maintenance</strong> retention sweep (03:00, ~11 days after staging) deleted before any pickup &mdash; outcome <strong>Expired</strong>: never delivered, no longer collectable. Headline: the Expired Files, their share of every staged file whose fate is decided, and the volume that never reached a partner.</p>
 <h2>Sections</h2>
 <ul>
-<li><strong>How long until expiry</strong> &mdash; calendar days from staging start to deletion. One global retention (~11 days): staged before 03:00 expires on day 11, later on day 10&ndash;11. No account deviates, so retention is <strong>not</strong> configured per partner.</li>
-<li><strong>Accounts</strong> &mdash; who the expired files were staged for, with the <strong>pickup rate</strong> = Collected / (Collected + Expired). <strong>Red</strong> = never collected a single file (a dead pickup flow: everything staged expires); <strong>orange</strong> = collects some, lets the rest expire.</li>
+<li><strong>How long until expiry</strong> &mdash; calendar days from staging start to deletion. One global retention (~11 days): staged before 03:00 expires on day 11, later on day 10&ndash;11. No subscription deviates, so retention is <strong>not</strong> configured per partner.</li>
+<li><strong>Subscriptions</strong> &mdash; the flows the expired files were staged on (per account until 2026-09-19; an account can serve several UC2 flows, and the flow is what gets fixed), with the <strong>pickup rate</strong> = Collected / (Collected + Expired). <strong>Red</strong> = never collected a single file (a dead pickup flow: everything staged expires); <strong>orange</strong> = collects some, lets the rest expire.</li>
 <li>Waiting there = staged within the last ~11 days, still collectable.</li>
-<li><strong>Expiries per sweep night</strong> &mdash; one row per 03:00 run and what it removed unclaimed; a missing night deleted nothing. The Accounts column is per night, not additive, so the Total leaves it blank.</li>
-<li><strong>Staged weekday</strong> &mdash; the weekday the file was <strong>staged</strong>, not deleted. One account can dominate this split: check the per-account table before reading a weekday pattern as partner behaviour.</li>
+<li><strong>Expiries per sweep night</strong> &mdash; one row per 03:00 run and what it removed unclaimed; a missing night deleted nothing. The Subscriptions column is per night, not additive, so the Total leaves it blank.</li>
+<li><strong>Staged weekday</strong> &mdash; the weekday the file was <strong>staged</strong>, not deleted. One subscription can dominate this split: check the per-subscription table before reading a weekday pattern as partner behaviour.</li>
 </ul>
 <h2>Rules</h2>
 <ul>

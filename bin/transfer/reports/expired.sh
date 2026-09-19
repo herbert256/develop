@@ -4,7 +4,8 @@
 # Staged but never collected: a UC2 file waits STAGED until the partner fetches
 # it, and the nightly File Maintenance retention sweep (03:00, ~11 days) deletes
 # whatever nobody picked up — outcome Expired, never delivered. Four tables:
-# how long a file survives, which accounts the losses belong to, what each sweep
+# how long a file survives, which SUBSCRIPTIONS the losses belong to (per
+# account until 2026-09-19, user request), what each sweep
 # night removed, and whether the staging weekday matters.
 #
 # The deletion leaves NO transfer-log record — the evidence is only the server
@@ -15,13 +16,13 @@
 #
 # Was an analyses insight page until 2026-07; it is a transfer report from then
 # so its page and its script sit with the other subscription problems. The
-# entity columns are KIND acct/ptn, so the renderer resolves their detail-page
+# entity columns are KIND site/ptn, so the renderer resolves their detail-page
 # links through the slugmaps and the page needs no slugmap join of its own.
 #
 # A CURRENT-STATE audit: every table is `nofilter`, the date range never narrows
 # it (the old page had no From/To either).
 #
-# Reads data/_files.tsv (2 outcome, 3 account, 4 date, 5 time, 8 size,
+# Reads data/_files.tsv (2 outcome, 4 date, 5 time, 8 size, 12 subscription,
 # 20 partner, 21 wait_ms, 22 expired-at). Writes data/expired.rpt.
 #
 # Usage:
@@ -53,27 +54,31 @@ trap 'rm -rf "$TMPD"' EXIT
 awk -F'\t' -v D="$TMPD" '
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function j(ds,  p){ split(ds,p,"-"); return jdn(p[1]+0,p[2]+0,p[3]+0) }
+    # keyed on the SUBSCRIPTION (col 12) since 2026-09-19 (user request — the
+    # table was per ACCOUNT before): an account can serve several UC2 flows,
+    # and the flow is what a reader fixes
+    { s = ($12 != "" ? $12 : "-") }
     $2 == "Expired" {
         n++; b += $8
         split($22, dp, " "); age = j(dp[1]) - j($4); agesum += age
         ages[age]++
-        ea[$3]++; eb[$3] += $8; eage[$3] += age
-        if (fs[$3] == "" || $4 " " $5 < fs[$3]) fs[$3] = $4 " " substr($5, 1, 8)
-        if ($4 " " $5 > lsx[$3]) lsx[$3] = $4 " " substr($5, 1, 8)
-        if ($22 > ld[$3]) ld[$3] = $22
+        ea[s]++; eb[s] += $8; eage[s] += age
+        if (fs[s] == "" || $4 " " $5 < fs[s]) fs[s] = $4 " " substr($5, 1, 8)
+        if ($4 " " $5 > lsx[s]) lsx[s] = $4 " " substr($5, 1, 8)
+        if ($22 > ld[s]) ld[s] = $22
         night[dp[1]]++; nightb[dp[1]] += $8
-        if (!((dp[1] SUBSEP $3) in na)) { na[dp[1] SUBSEP $3] = 1; nacct[dp[1]]++ }
+        if (!((dp[1] SUBSEP s) in na)) { na[dp[1] SUBSEP s] = 1; nsub[dp[1]]++ }
         ewd[j($4) % 7]++
-        if (pt[$3] == "" && $20 != "") pt[$3] = $20
+        if (pt[s] == "" && $20 != "") pt[s] = $20
         next
     }
-    $21 != "" { cn++; ca[$3]++; cwd[j($4) % 7]++; next }
-    $2 == "Waiting" { wn++; wa[$3]++ }
+    $21 != "" { cn++; ca[s]++; cwd[j($4) % 7]++; next }
+    $2 == "Waiting" { wn++; wa[s]++ }
     END {
         printf "%d\t%d\t%d\t%d\t%d\n", n+0, b+0, agesum+0, cn+0, wn+0 > (D "/x_stats")
         for (a in ea) printf "%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\n", \
-            a, ea[a], ca[a]+0, wa[a]+0, eb[a], eage[a], fs[a], lsx[a], ld[a], pt[a] > (D "/x_acct")
-        for (d in night) printf "%s\t%d\t%d\t%d\n", d, night[d], nightb[d], nacct[d]+0 > (D "/x_night")
+            a, ea[a], ca[a]+0, wa[a]+0, eb[a], eage[a], fs[a], lsx[a], ld[a], pt[a] > (D "/x_sub")
+        for (d in night) printf "%s\t%d\t%d\t%d\n", d, night[d], nightb[d], nsub[d]+0 > (D "/x_night")
         for (g in ages) printf "%d\t%d\n", g, ages[g] > (D "/x_age")
         for (w = 0; w < 7; w++) printf "%d\t%d\t%d\n", w, ewd[w]+0, cwd[w]+0 > (D "/x_wd")
     }
@@ -91,8 +96,8 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
 
 {
     printf 'TITLE\tExpired\n'
-    printf 'DESC\tStaged UC2 files the retention sweep deleted before any pickup: how long until expiry, which accounts never collect, what each sweep night removed, and the never-delivered volume.\n'
-    printf 'INTRO\tA **UC2** file waits **staged** until the partner collects it — and the nightly File Maintenance retention sweep (03:00, ~11 days) deletes whatever nobody picked up: outcome **Expired**, never delivered. **%s** File(s) went that way, **%s%%** of every staged file whose fate is already decided, worth **%s** that never reached a partner. The per-subscription view is on **Waiting**.\n' \
+    printf 'DESC\tStaged UC2 files the retention sweep deleted before any pickup: how long until expiry, which subscriptions never get collected, what each sweep night removed, and the never-delivered volume.\n'
+    printf 'INTRO\tA **UC2** file waits **staged** until the partner collects it — and the nightly File Maintenance retention sweep (03:00, ~11 days) deletes whatever nobody picked up: outcome **Expired**, never delivered. **%s** File(s) went that way, **%s%%** of every staged file whose fate is already decided, worth **%s** that never reached a partner. The files still staged are on **Waiting**.\n' \
         "$nexp" "$share" "$hb"
 
     printf 'STAT\tred\t%s\tExpired Files\n' "$nexp"
@@ -113,14 +118,14 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
         printf 'ROW\t@{colspan=3}No expired Files in this data window.\n'
         printf 'TOTAL\tTotal (0 rows)\t\t\n'
     fi
-    printf 'NOTE\tCalendar days between the staging start and the deletion: ONE global retention (~11 days) — the sweep runs at 03:00, so a file staged before 03:00 expires on calendar day 11, a later one on day 10-11. No account deviates (see the per-account average below), so retention is **not** configured per partner.\n'
+    printf 'NOTE\tCalendar days between the staging start and the deletion: ONE global retention (~11 days) — the sweep runs at 03:00, so a file staged before 03:00 expires on calendar day 11, a later one on day 10-11. No subscription deviates (see the per-subscription average below), so retention is **not** configured per partner.\n'
 
-    # ---- 2. the accounts ----------------------------------------------------
-    printf 'TABLE\tAccounts the expired files belong to\twide\tnofilter\trestint\n'
-    printf 'HEAD\tAccount\tPartner\tExpired\tCollected\tWaiting\tPickup rate\tAvg age\tVolume\tFirst staged\tLast staged\tLast deletion\n'
-    printf 'KIND\tacct\tptn\tnumfailed\tnumprocessed\tnumwarn\tnum\tnum\tnum\ttext\ttext\ttext\n'
-    if [ -s "$TMPD/x_acct" ]; then
-        LC_ALL=C sort -t"$(printf '\t')" -k2,2nr -k1,1 "$TMPD/x_acct" | awk -F'\t' '
+    # ---- 2. the subscriptions (per ACCOUNT until 2026-09-19, user request) ---
+    printf 'TABLE\tSubscriptions the expired files belong to\twide\tnofilter\trestint\n'
+    printf 'HEAD\tSubscription\tPartner\tExpired\tCollected\tWaiting\tPickup rate\tAvg age\tVolume\tFirst staged\tLast staged\tLast deletion\n'
+    printf 'KIND\tsite\tptn\tnumfailed\tnumprocessed\tnumwarn\tnum\tnum\tnum\ttext\ttext\ttext\n'
+    if [ -s "$TMPD/x_sub" ]; then
+        LC_ALL=C sort -t"$(printf '\t')" -k2,2nr -k1,1 "$TMPD/x_sub" | awk -F'\t' '
             function hsz(b) { if (b >= 1073741824) return sprintf("%.1f GB", b/1073741824)
                 if (b >= 1048576) return sprintf("%.1f MB", b/1048576)
                 if (b >= 1024)    return sprintf("%.1f KB", b/1024)
@@ -135,17 +140,17 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
                 te += $2; tc += $3; tw += $4; tv += $5
             }
             END { trate = (te + tc) ? tc * 100 / (te + tc) : 0
-                  printf "TOTAL\tTotal (%d account(s))\t\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num warn}%d\t@{class=num}%.0f%%\t\t@{class=num}%s\t\t\t\n", \
+                  printf "TOTAL\tTotal (%d subscription(s))\t\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num warn}%d\t@{class=num}%.0f%%\t\t@{class=num}%s\t\t\t\n", \
                       NR, te, tc, tw, trate, hsz(tv) }'
     else
         printf 'ROW\t@{colspan=11}No expired Files in this data window.\n'
-        printf 'TOTAL\tTotal (0 accounts)\t\t\t\t\t\t\t\t\t\t\n'
+        printf 'TOTAL\tTotal (0 subscriptions)\t\t\t\t\t\t\t\t\t\t\n'
     fi
-    printf 'NOTE\tPickup rate = Collected / (Collected + Expired) for the same account — how often this partner actually fetches what is staged for it. **Red** rows never collected a single file (a dead pickup flow: everything staged for them expires); **orange** rows collect some and let the rest expire. Waiting = staged within the last ~11 days, still collectable.\n'
+    printf 'NOTE\tPickup rate = Collected / (Collected + Expired) for the same subscription — how often the partner actually fetches what this flow stages for it. **Red** rows never collected a single file (a dead pickup flow: everything staged for them expires); **orange** rows collect some and let the rest expire. Waiting = staged within the last ~11 days, still collectable.\n'
 
     # ---- 3. the sweep nights ------------------------------------------------
     printf 'TABLE\tExpiries per sweep night\tnofilter\n'
-    printf 'HEAD\tDeletion night\tFiles expired\tVolume\tAccounts\n'
+    printf 'HEAD\tDeletion night\tFiles expired\tVolume\tSubscriptions\n'
     printf 'KIND\ttext\tnum\tnum\tnum\n'
     if [ -s "$TMPD/x_night" ]; then
         LC_ALL=C sort -t"$(printf '\t')" -k1,1 "$TMPD/x_night" | awk -F'\t' '
@@ -159,7 +164,7 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
         printf 'ROW\t@{colspan=4}No expired Files in this data window.\n'
         printf 'TOTAL\tTotal (0 nights)\t\t\t\n'
     fi
-    printf 'NOTE\tEach row is one 03:00 File Maintenance run and what it removed unclaimed. A missing night means that sweep deleted nothing — nothing staged ~11 days earlier went uncollected. The Accounts column is per night and not additive (one account expires files on many nights), so the Total leaves it blank.\n'
+    printf 'NOTE\tEach row is one 03:00 File Maintenance run and what it removed unclaimed. A missing night means that sweep deleted nothing — nothing staged ~11 days earlier went uncollected. The Subscriptions column is per night and not additive (one subscription expires files on many nights), so the Total leaves it blank.\n'
 
     # ---- 4. the staging weekday --------------------------------------------
     printf 'TABLE\tStaged on which weekday - expired vs collected\tnofilter\tnosearch\n'
@@ -174,7 +179,7 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
         printf 'ROW\t@{colspan=4}No staged UC2 Files in this data window.\n'
         printf 'TOTAL\tTotal (0 weekdays)\t\t\t\n'
     fi
-    printf 'NOTE\tThe weekday the file was **STAGED** (not deleted). NOTE one account can dominate this split — check the per-account table before reading a weekday pattern as partner behaviour.\n'
+    printf 'NOTE\tThe weekday the file was **STAGED** (not deleted). NOTE one subscription can dominate this split — check the per-subscription table before reading a weekday pattern as partner behaviour.\n'
 
     printf 'NOTE\tSource: the transfer parse cache (_files.tsv) — outcome **Expired** and the col-22 deletion timestamp set by **bin/expire-files.sh** from the server log'"'"'s "File Maintenance … finished. Deleted files […]" lines (the deletion leaves NO transfer-log record). Collected = staged files with a pickup (col 21); the sweep also removes already-collected staged copies — routine cleanup, not counted here. Expired files count as **Error** on every report; Waiting files count as **OK**.\n'
     printf 'KEYWORDS\texpired, retention, file maintenance, sweep, deleted, never delivered, uncollected, pickup, staged, uc2, waiting\n'
