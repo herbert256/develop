@@ -149,13 +149,13 @@ route_rows=$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k15,15 -k3,3n "$TMP.p
     function flush(   med, samesz, i) {
         if (n == 0) return
         med = g[int((n + 1) / 2)]
-        printf "R\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\n", \
-               ink, outk, n, nf, hd(gmin), hd(med), hd(gmax), inp, outp, same, n - same, first, last, dirlbl
+        printf "R\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\n", \
+               ink, outk, n, nf, hd(gmin), hd(med), hd(gmax), inp, outp, same, n - same, dirlbl
     }
     { k = $1 SUBSEP $2 SUBSEP $15 }
     k != cur { flush(); cur = k; ink = $1; outk = $2; n = 0; nf = 0; same = 0
                dirlbl = ($15 == "out") ? "Out --> In" : "In --> Out"
-               delete g; delete fseen; gmin = $3; gmax = $3; first = ""; last = "" }
+               delete g; delete fseen; gmin = $3; gmax = $3 }
     {
         n++; g[n] = $3
         if ($3 < gmin) gmin = $3
@@ -163,8 +163,6 @@ route_rows=$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k15,15 -k3,3n "$TMP.p
         if ($4 == $5) same++
         if (!($8 in fseen)) { fseen[$8] = 1; nf++ }
         inp = ($6 == "" ? "-" : $6); outp = ($7 == "" ? "-" : $7)
-        if (first == "" || $9 < first) first = $9
-        if ($9 > last) last = $9
     }
     END { flush() }')
 
@@ -186,21 +184,22 @@ IFS=' ' read -r nroutes ncross <<< "$(printf '%s\n' "$route_rows" | awk -F'\t' '
     # table below IS date-aware and filters normally.
     # FIRST / SECOND / DIRECTION (2026-09-19, user request): the two flows are
     # named by their ORDER in the handover, not by a movement — the report
-    # carries out -> in routes too now. The date columns became First seen /
-    # Last seen so they cannot be read as the First flow, and the partner and
-    # size columns follow the same order wording.
+    # carries out -> in routes too now; the partner and size columns follow
+    # the same order wording. The route's first / last date columns were
+    # DROPPED the same day (user request) — they had been renamed First seen /
+    # Last seen to stay apart from the First flow, and went altogether.
     printf 'TABLE\tHandover routes\twide\tnofilter\n'
-    printf 'HEAD\tFirst\tSecond\tDirection\tFiles\tFilenames\tFirst partner\tSecond partner\tFastest\tMedian\tSlowest\tSame size\tSize changed\tFirst seen\tLast seen\n'
-    printf 'KIND\tsite\tsite\ttext\tnum\tnum\tptn\tptn\ttext\ttext\ttext\tnum\tnum\ttext\ttext\n'
+    printf 'HEAD\tFirst\tSecond\tDirection\tFiles\tFilenames\tFirst partner\tSecond partner\tFastest\tMedian\tSlowest\tSame size\tSize changed\n'
+    printf 'KIND\tsite\tsite\ttext\tnum\tnum\tptn\tptn\ttext\ttext\ttext\tnum\tnum\n'
     # the sorted rows first, then the TOTAL summed off the same stream as it
     # passes by (the route figures all survive into the ROW line)
     printf '%s\n' "$route_rows" | awk -F'\t' '$1=="R"{
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
-               $2,$3,$15,$4,$5,$9,$10,$6,$7,$8,$11,$12,$13,$14 }' | LC_ALL=C sort -t"$(printf '\t')" -k5,5nr \
+        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
+               $2,$3,$13,$4,$5,$9,$10,$6,$7,$8,$11,$12 }' | LC_ALL=C sort -t"$(printf '\t')" -k5,5nr \
         | awk -F'\t' '{ print; n++; f+=$5; nf+=$6; s+=$12; c+=$13 }
-            END{printf "TOTAL\tTotal (%d route(s))\t\t\t@{class=num}%d\t@{class=num}%d\t\t\t\t\t\t@{class=num}%d\t@{class=num}%d\t\t\n", n+0, f+0, nf+0, s+0, c+0}'
+            END{printf "TOTAL\tTotal (%d route(s))\t\t\t@{class=num}%d\t@{class=num}%d\t\t\t\t\t\t@{class=num}%d\t@{class=num}%d\n", n+0, f+0, nf+0, s+0, c+0}'
     printf 'NOTE\tOne row per ROUTE, and a route is a (First flow, Second flow, Direction) triple: **First** carried the file first, **Second** carried it next. **Direction** *In --> Out* is a file that arrived from a partner and then left to another; *Out --> In* is one that left to a partner and then arrived from another — the same pattern the other way round. **Files** = handovers detected; **Filenames** = how many DISTINCT names they carried — when the two are equal every name was unique (timestamped), so the match cannot be coincidence; a route with far fewer filenames than files is repeating a fixed name and deserves a look. **Same size** / **Size changed** split the files by whether the byte count survived the copy: all-same is a byte-for-byte copy, all-changed usually means it was re-encrypted or re-wrapped. Gaps are the time from the inbound file to the outbound one.\n'
-    printf 'NOTE\tA route whose **In partner** and **Out partner** are the same group is usually NOT a partner-to-partner handover but a pull-then-stage flow (we fetch a file and stage it back for the same partner) — the row is kept so the pattern is visible, but read it differently.\n'
+    printf 'NOTE\tA route whose **First partner** and **Second partner** are the same group is usually NOT a partner-to-partner handover but a pull-then-stage flow (we fetch a file and stage it back for the same partner) — the row is kept so the pattern is visible, but read it differently.\n'
 
     printf 'TABLE\tLatest handovers\twide\n'
     printf 'HEAD\tFile\tFirst time\tFirst\tSecond time\tSecond\tDirection\tGap\tSize first\tSize second\n'
