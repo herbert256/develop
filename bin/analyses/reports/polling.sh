@@ -34,6 +34,15 @@
 # polls · Files matched · Empty % · Listing errors · Poll starts · Failure
 # lines · What goes wrong.
 #
+# 2026-09-20 (user request): ACTIVE, the second column — the Subscriptions
+# page's Active column (bin/analyses/publish.sh): "Yes", or the ", "-joined
+# bin/subscription-active.jq codes of why the subscription is not active
+# (1 status Undeployed, 2 status SAVED_NOT_DEPLOYED, 3 a receive schedule set
+# to No, 4 folder monitoring Inactive) with the words as the hover title,
+# "CFT" for a name containing SWIFT, blank for a flow the JSON does not name.
+# The name resolves exactly, else through the UC3 status roster, else by the
+# unique prefix either way (the join rule of the other columns).
+#
 # Reads (after the server report pool, bin/server/reports.sh):
 #   $REPORTS_DIR/uc3-status.rpt           the UC3 status table (bin/analyses/reports/uc3-status.sh)
 #   $REPORTS_DIR/remote-poll.rpt          the polls + listing-failure tables
@@ -42,6 +51,8 @@
 #   $REPORTS_DIR/poll-times.tsv, poll-failures.tsv   its sidecars
 #   $TRANSFER_REPORTS/punctuality.rpt     the file-arrival fallback slot
 #   $FM_INPUT_DIR/subscriptions.json      the cron expressions (jq + cron2human)
+#   bin/subscription-active.jq            the Active codes (the ONE definition, shared with
+#                                         the Subscriptions page and the detail pages)
 #   $CONFIG_XREF/_subscriptions-hosts.tsv the host-keyed auth failures
 #   bin/cron-observed.awk                 the schedule-vs-observed classifier
 #                                         (shared with uc3-polling.sh)
@@ -64,6 +75,7 @@ SUBJSON="$FM_INPUT_DIR/subscriptions.json"   # the SKIP-filtered copy when prese
 XSH="$CONFIG_XREF/_subscriptions-hosts.tsv"
 CRON_AWK="$ROOT/bin/cron2human.awk"
 COBS="$ROOT/bin/cron-observed.awk"
+ACTJQ="$ROOT/bin/subscription-active.jq"
 ensure_config
 
 if [ ! -f "$RP" ] && [ ! -f "$SUBJSON" ] && [ ! -f "$US" ]; then
@@ -74,7 +86,7 @@ fi
 have="polls=$([ -f "$RP" ] && echo yes || echo no) cron=$([ -f "$SUBJSON" ] && echo yes || echo no) status=$([ -f "$US" ] && echo yes || echo no)"
 if [ -f "$OUT" ] && ! command grep -q "inputs: $have" "$OUT"; then rm -f "$OUT"; fi
 deps=()
-for d in "$US" "$RP" "$PT" "$PF" "$PUNCT" "$SUBJSON" "$XSH" "$CRON_AWK" "$COBS"; do [ -f "$d" ] && deps+=("$d"); done
+for d in "$US" "$RP" "$PT" "$PF" "$PUNCT" "$SUBJSON" "$XSH" "$CRON_AWK" "$COBS" "$ACTJQ"; do [ -f "$d" ] && deps+=("$d"); done
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" ${deps[@]+"${deps[@]}"}
 echo "polling: building the flat Polling table ..." >&2
 
@@ -94,11 +106,17 @@ if [ -f "$SUBJSON" ] && command -v jq >/dev/null 2>&1; then
       ' "$SUBJSON" | awk -F'\t' -v CF=3 -f "$CRON_AWK" | LC_ALL=C sort -f \
       | awk -F'\t' -v PUNCT="$_pu" -v POLLT="$_pt" -v PF="$_pf" -v XSH="$_xs" -f "$COBS")
 fi
+# ---- the Active codes (2026-09-20): name ⇥ the comma-joined codes, empty = active
+actf=$(mktemp "${TMPDIR:-/tmp}/pollact.XXXXXX")
+trap 'rm -f "$actf"' EXIT
+if [ -f "$SUBJSON" ] && command -v jq >/dev/null 2>&1; then
+    jq -r -f "$ACTJQ" "$SUBJSON" > "$actf" 2>/dev/null || : > "$actf"
+fi
 _rp="$RP"; [ -f "$_rp" ] || _rp=/dev/null
 _us="$US"; [ -f "$_us" ] || _us=/dev/null
 
 # ---- the join: ONE awk over the cron TSV (stdin) and remote-poll.rpt -------
-agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" '
+agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" -v ACTF="$actf" '
     function strip(c) { sub(/^@\{[^}]*\}/, "", c); return c }
     function pfx(a, b) { return substr(a, 1, length(b)) == b || substr(b, 1, length(a)) == a }
     # the ONE poll/listing key a name resolves to: exact, else the unique
@@ -134,6 +152,13 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" '
             st = a[2]; sub(/^@\{[^}]*\}/, "", st); SCNT[st]++
         }
         close(USF)
+        # the Active codes: name ⇥ codes (empty = active)
+        while ((getline l < ACTF) > 0) {
+            n = split(l, a, "\t"); u = toupper(a[1]); if (u == "") continue
+            if (!(u in AN)) { AU[++nak] = u }
+            AN[u] = a[1]; AC[u] = (n >= 2 ? a[2] : "")
+        }
+        close(ACTF)
     }
     # the cron rows (stdin): name ⇥ cron ⇥ schedule ⇥ observed ⇥ bad ⇥ polls ⇥ days ⇥ never ⇥ starts ⇥ failures ⇥ why
     NF >= 11 { u = toupper($1); if (!(u in CN)) { CU[++nck] = u }
@@ -146,6 +171,20 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" '
         for (i = 2; i <= nk; i++) { v = keys[i]; j = i - 1; while (j >= 1 && keys[j] > v) { keys[j+1] = keys[j]; j-- } keys[j+1] = v }
         out = ""; for (i = 1; i <= nk; i++) { d = keys[i]; out = out (out == "" ? "" : ",") d ":" D[d] ":" E[d] ":" M[d] ":" L[d] }
         return out
+    }
+    # the Active cell (2026-09-20) — the Subscriptions page rules: CFT for a
+    # SWIFT name, blank when the JSON does not name the flow, Yes, else the
+    # codes with their words as the hover title ("; "-joined — the cell attr
+    # list splits on ",")
+    function actcell(u, sk,   ak, c, n3, A3, W3, i3, o, t) {
+        if (index(u, "SWIFT") > 0) return "@{class=act,title=SWIFT: runs through CFT}CFT"
+        ak = (u in AN) ? u : ((sk != "" && (sk in AN)) ? sk : resolve(u, AU, nak, AN))
+        if (ak == "") return "@{class=act}"
+        c = AC[ak]; if (c == "") return "@{class=act}Yes"
+        split("status Undeployed|status SAVED_NOT_DEPLOYED|schedule No|folder monitoring Inactive", W3, "|")
+        n3 = split(c, A3, ","); o = ""; t = ""
+        for (i3 = 1; i3 <= n3; i3++) { o = o (o == "" ? "" : ", ") A3[i3]; t = t (t == "" ? "" : "; ") A3[i3] " " W3[A3[i3] + 0] }
+        return "@{class=act,title=" t "}" o
     }
     function emit(name, u, pk, lk, sk,   cronx, sched, obs, polls, empty, matched, pct, lst, starts, fails, why, days, first, last, bk, ll, nm, stc, fi, ok, er, lf, lg) {
         # UC3 ONLY (2026-09-13): in the UC3 status roster, or UC3-named
@@ -163,8 +202,8 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" '
         if (ll == "" && sk != "") ll = SDL[sk]   # no poll lines: the status drill (the lines that decided the status)
         if (days == 0) days = ""
         nm = "@{alink=subscriptions/" name "}" name
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n", \
-            nm, cronx, sched, (obs != "" ? obs : (pk != "" ? "" : "-")), polls, empty, matched, pct, lst, starts, fails, why, buckets((pk != "" ? PB[pk] : ""), (lk != "" ? LB[lk] : "")), ll
+        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n", \
+            nm, actcell(u, sk), cronx, sched, (obs != "" ? obs : (pk != "" ? "" : "-")), polls, empty, matched, pct, lst, starts, fails, why, buckets((pk != "" ? PB[pk] : ""), (lk != "" ? LB[lk] : "")), ll
         # the totals (this pass): rows, polls, empty, matched, listing, starts, failures, schedules, never
         NR9++; if (polls != "-" && polls != "") TP += polls; TE += empty; TM += matched; TL += lst; TS += starts; TF += fails
         if (u in CN) { NC++; if (CNEV[u]) NNEV++ }
@@ -194,14 +233,14 @@ pct_empty=$(awk -v p="$t_polls" -v e="$t_empty" 'BEGIN { printf "%.1f%%", (p > 0
 
 {
     printf 'TITLE\tPolling\n'
-    printf 'DESC\tEvery UC3 polling subscription in one row — its configured cron expression and schedule, and what the server log observed: polls, empty polls, files matched, listing failures, the poll starts and failure lines of a schedule that never completes, and the contradiction alarm.\n'
+    printf 'DESC\tEvery UC3 polling subscription in one row — whether it is active, its configured cron expression and schedule, and what the server log observed: polls, empty polls, files matched, listing failures, the poll starts and failure lines of a schedule that never completes, and the contradiction alarm.\n'
     printf 'KEYWORDS\tpoll,polls,polling,remote poll,empty polls,listing failures,cron,cronjobs,schedule,quartz,observed,uc3,uc3 status\n'
     printf 'TABLE\tPolling\twide\tanchor=polling\n'
-    printf 'HEAD\tSubscription\tCron expression\tSchedule\tObserved\tPolls\tEmpty polls\tFiles matched\tEmpty %%\tListing errors\tPoll starts\tFailure lines\tWhat goes wrong\n'
-    printf 'KIND\tmono\tmono\ttext\ttext\tnum\tnumwarn\tnumprocessed\tnum\tnumfailed\tnum\tnum\ttext\n'
-    printf 'RECALC\t-\t-\t-\t-\ts0\ts1\ts2\tp1.0\ts3\t-\t-\t-\n'
+    printf 'HEAD\tSubscription\tActive\tCron expression\tSchedule\tObserved\tPolls\tEmpty polls\tFiles matched\tEmpty %%\tListing errors\tPoll starts\tFailure lines\tWhat goes wrong\n'
+    printf 'KIND\tmono\ttext\tmono\ttext\ttext\tnum\tnumwarn\tnumprocessed\tnum\tnumfailed\tnum\tnum\ttext\n'
+    printf 'RECALC\t-\t-\t-\t-\t-\ts0\ts1\ts2\tp1.0\ts3\t-\t-\t-\n'
     printf '%s\n' "$agg" | command grep $'^ROW\t' || true
-    printf 'TOTAL\tTotal (%s subscription(s))\t\t\t\t@{class=num}%s\t@{class=num warn}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t\n' \
+    printf 'TOTAL\tTotal (%s subscription(s))\t\t\t\t\t@{class=num}%s\t@{class=num warn}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t\n' \
         "$n_rows" "$t_polls" "$t_empty" "$t_matched" "$pct_empty" "$t_list" "$t_starts" "$t_fails"
     printf 'NOTE\tSources: the TM lines "Applying the search pattern … for transfer site SITE: N file(s) were found of which M matched the pattern" (a poll; empty when M = 0), "Error occurred while listing files from partner SITE" (a listing failure), the "Remote files pattern … evaluated" setup lines (a poll start), the connection and authentication failures naming the flow or its host (the failure lines), and the cron expressions of subscriptions.json; **OK** / **Error** are the logical transfers of the flow in the transfer log, as on the UC status / UC3 tab. **Observed** is when the schedule actually fires — the median of the first poll of each day ± one standard deviation (the first and the last active day left out — the export window cuts into both), the poll rate for a schedule firing more than 3× a day, **· files** when only file arrivals give a slot, **-** when nothing was ever observed; a **dark red** cell contradicts its schedule. **Poll starts** / **Failure lines** / **What goes wrong** are filled for a schedule that never completes a poll. The poll figures re-total for a From/To range; click a row for its 10 most recent poll lines. Subscription names are the configured ones (the logged _SCP_ / _SFTP_SERVER_ tails dropped); a flow polling without a configured schedule still gets a row, its cron columns empty. Matching is name-prefix both ways where the server truncated a name.\n'
     printf 'NOTE\tThe same information sits on the **UC status / UC3** tab as separate tables, beside the UC3 status of every flow. Where we are the client (UC3, and the pull side of UC5) SecureTransport connects to the server of the partner on a timer and collects whatever is waiting — an empty poll consumes a slot, a connection and a listing but leaves no trace in the transfer log, so chronic empty polling is visible only here. UC1 is a client use case too, but pushes on directory scanning — no cron. All schedules are enabled; none skip holidays.\n'

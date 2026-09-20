@@ -289,8 +289,8 @@ function dirfold(v,   pre, body, p, t) {
 function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
               nkv, kva, i, kv, w, rawtext, pout, nseg, segs, pnm, sd, slug,
               av, ap2, asd, anm, aslug, rawhref, maskv, nln, LNS, li, midl,
-              bad, cv, sv) {
-    cls = ""; sp = ""; text = ""; cc = ""; link = ""; nolink = 0; rawhref = ""; maskv = ""; sv = ""
+              bad, cv, sv, tt) {
+    cls = ""; sp = ""; text = ""; cc = ""; link = ""; nolink = 0; rawhref = ""; maskv = ""; sv = ""; tt = ""
     if (substr(raw, 1, 2) == "@{") {
         p = index(raw, "}")
         bad = (p == 0)
@@ -323,11 +323,15 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
                 # report.js before the text) — a humanized text cell ("5 days")
                 # sorts by its number (2026-09-02, the Pickups Oldest waiting)
                 else if (index(kv, "sortval=") == 1) { sv = substr(kv, 9); if (sv !~ /^-?[0-9]+$/) bad = 1 }
+                # title=<words>: the cell's hover title (2026-09-20, the Polling
+                # Active column) — escaped like text; the attr list splits on
+                # ",", so the words carry none
+                else if (index(kv, "title=") == 1)   tt = substr(kv, 7)
             }
         }
         # any invalid metadata: the block was data after all — render the
         # whole cell as literal text, nothing from it shapes markup
-        if (bad) { cc = ""; sp = ""; link = ""; nolink = 0; rawhref = ""; maskv = ""; sv = ""; text = raw }
+        if (bad) { cc = ""; sp = ""; link = ""; nolink = 0; rawhref = ""; maskv = ""; sv = ""; tt = ""; text = raw }
     } else text = raw
     if (!total) {
         if (kind == "num") cls = "num"
@@ -452,7 +456,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # included since 2026-08 — the logons Key failures/Locked ask; an empty
     # warn cell untints via td.warn:empty)
     if ((" " cls " ") ~ / (failed|processed|errc|okc|warn) / && rawtext == "0") { text = ""; cls = cls " z" }
-    printf "<td%s%s%s>%s</td>", sp, (cls != "" ? " class=\"" cls "\"" : ""), (sv != "" ? " data-sortval=\"" sv "\"" : ""), text
+    printf "<td%s%s%s%s>%s</td>", sp, (cls != "" ? " class=\"" cls "\"" : ""), (sv != "" ? " data-sortval=\"" sv "\"" : ""), (tt != "" ? " title=\"" esc(tt) "\"" : ""), text
 }
 
 {

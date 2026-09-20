@@ -415,8 +415,10 @@ per-LEG aggregates (one row per direction) legitimately show one value. **A colu
 (keeping the server PeSIT `ST → CFT` values intact); the three hand-written Direction tables fold
 themselves. Raw DATA is never folded (`_transfers.tsv` col 2 stays `Inbound`/`Outbound`).
 
-A ROW/TOTAL cell may lead with `@{class=…,colspan=N,link=…,alink=…,href=…,nolink=1}`
-(`alink=<sub>/<name>` resolves through that sub-dir's slugmap at render time). A ROW may carry
+A ROW/TOTAL cell may lead with `@{class=…,colspan=N,link=…,alink=…,href=…,nolink=1,title=…}`
+(`alink=<sub>/<name>` resolves through that sub-dir's slugmap at render time; `title=` = the
+cell's hover title, 2026-09-20 — the Polling page's Active column — its words carry no `,`,
+the attr list splits on it). A ROW may carry
 `@data:NAME=VALUE` cells (emitted as `data-NAME` on the `<tr>`). Scripts emit values UNESCAPED
 (the renderer escapes); keep TAB/CR/LF out of cells. Tables size to content; a wide table WIDENS THE
 PAGE (2026-09-08, user request — `.tablewrap` and `.sxs` are no longer scroll boxes: their bottom
