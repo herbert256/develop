@@ -284,7 +284,7 @@ if [ "$(exp pollconnfail)" -gt 0 ]; then
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "UC3_ZG_RATES_OSCORP has $n File(s) — the sample must plant none"
     n=$(awk -F'\t' '$1=="UC3_ZG_RATES_OSCORP" { n++ } END { print n+0 }' "data/blue/_redflip.tsv" 2>/dev/null)
     check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "_redflip.tsv has $n row(s) for UC3_ZG_RATES_OSCORP, expected 1"
-    check $([ -f "docs/errors/uc3-zg-rates-oscorp.html" ] && echo 0 || echo 1) "docs/errors/uc3-zg-rates-oscorp.html missing (the server-failing error page)"
+    check $([ -f "docs/files/uc3-zg-rates-oscorp.html" ] && echo 0 || echo 1) "docs/files/uc3-zg-rates-oscorp.html missing (the server-failing error page)"
     n=$(awk 'BEGIN{RS="<h2"} /Failing subscriptions in Server log/ && /UC3_ZG_RATES_OSCORP/ { n++ } END { print n+0 }' docs/index.html 2>/dev/null)
     check $([ "${n:-0}" -ge 1 ] && echo 0 || echo 1) "the home worklist 'Failing subscriptions in Server log' does not list UC3_ZG_RATES_OSCORP"
 fi
@@ -441,7 +441,7 @@ check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "home Error cells do not open t
 # NO "Last error" / "Last OK transfer" SECTION on a subscription page
 # (2026-09-16, user request): both became Features ROWS — "Latest Error" and
 # "Latest OK" — each reading "<date time>  <file name>" and linking that
-# File's OWN page under errors/ resp. files/, which failed.sh guarantees.
+# File's OWN page under files/, which failed.sh guarantees.
 # The publish-time splice that folded the error in below Features went too.
 n=0; m=0
 for f in docs/details/subscriptions/*.html; do
@@ -449,10 +449,10 @@ for f in docs/details/subscriptions/*.html; do
     if grep -q '<h2>Last OK transfer' "$f" 2>/dev/null; then n=$((n + 1)); fi
     if grep -q '<h2>Server log error' "$f" 2>/dev/null; then n=$((n + 1)); fi
     if grep -q '>Server log error<' "$f" 2>/dev/null; then
-        if ! grep -q 'href="../../errors/' "$f" 2>/dev/null; then m=$((m + 1)); fi
+        if ! grep -q 'href="../../files/' "$f" 2>/dev/null; then m=$((m + 1)); fi
     fi
     if grep -q '>Latest Error<' "$f" 2>/dev/null; then
-        if ! grep -q 'href="../../errors/' "$f" 2>/dev/null; then m=$((m + 1)); fi
+        if ! grep -q 'href="../../files/' "$f" 2>/dev/null; then m=$((m + 1)); fi
     fi
     if grep -q '>Latest OK<' "$f" 2>/dev/null; then
         if ! grep -q 'href="../../files/' "$f" 2>/dev/null; then m=$((m + 1)); fi

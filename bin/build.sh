@@ -742,7 +742,7 @@ run_step "publish catch-up: analyses (failed pages)"                      bin/an
 # publish above (publish-insights.sh) writes AFTER the transfer publish
 # already ran — on a fresh data/ the box-tier reasons would render blank
 # until the NEXT build. Re-invoking the transfer publish here folds the
-# catch-up into THIS build (it also re-renders the errors/ pages the
+# catch-up into THIS build (it also re-renders the files/ error pages the
 # failed.sh catch-up refreshed). Self-gating: the sidecar is cmp-guarded
 # and a dep of the transfer stamp, so when its content did not change
 # this step skips in ~0 s.

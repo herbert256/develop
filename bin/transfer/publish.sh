@@ -140,50 +140,43 @@ if [ ${#spv[@]} -gt 0 ]; then
     echo "Rendered docs/transfer/secparams/ (${#spv[@]} value page(s))." >&2
 fi
 
-# Failed-file DRILL pages: failed.sh wrote one .rpt per paged CoreId into
-# data/<env>/transfer/reports/errors/, listing that file's individual transfer
-# legs; render each to docs/<env>/errors/<coreid>.html. ONE level below the env
-# root (like transfer/), so "../assets/style.css". The Failed Subscriptions
-# table links here from both its CoreId and its Legs cell via @{href=../errors/…}.
-# CoreIds are lowercase UUIDs, so they are used as filenames verbatim.
-# No date filter — a drill page is one file, not a period.
+# THE FILE PAGES — docs/<env>/files/ (2026-09-21, user request: the error pages
+# and the File pages share ONE directory; docs/<env>/errors/ is gone). failed.sh
+# keeps TWO .rpt sets, because its reason-evidence pass globs the first and must
+# not read an OK File's page; both render here, into the one docs directory:
+#   data/<env>/transfer/reports/errors/   one per paged FAILED File (<coreid>),
+#                                         plus one per server-failing subscription
+#                                         (<slug>, named by the subscription)
+#   data/<env>/transfer/reports/files/    one per File of ANY outcome another page
+#                                         links (Transfer patterns "Last 5 files",
+#                                         Longest Files, the detail "Latest OK" row)
+# ONE level below the env root (like transfer/), so "../assets/style.css".
+# CoreIds are lowercase UUIDs, so they are used as filenames verbatim. No date
+# filter — a page is one file, not a period. The errors set renders LAST, after
+# the files set has been waited for: should a CoreId ever sit in both, the
+# failed-File page wins and the two renders never race on one path.
 shopt -s nullglob
+filp=("$DATA"/transfer/reports/files/*.rpt)
 errp=("$DATA"/transfer/reports/errors/*.rpt)
 shopt -u nullglob
 # clear even when THIS run has no .rpt set (an env can lose the whole
-# family — production 2026-08 — and stale pages would survive forever)
-mkdir -p "$DOCS/errors"
-rm -f "$DOCS"/errors/*.html
-if [ ${#errp[@]} -gt 0 ]; then
-    CUR_DATES=""; DLINK_BASE="../details/"
-    for f in "${errp[@]}"; do
-        b=${f##*/}; b=${b%.rpt}
-        pub_run render_rpt "$f" "$DOCS/errors/$b.html" "../assets/style.css" "../index.html" "TRANSFER" "" "failed"
-    done
-    pub_wait
-    CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
-    echo "Rendered docs/errors/ (${#errp[@]} failed-file page(s))." >&2
-fi
-
-# FILE pages (2026-09-03, user request): failed.sh also writes one .rpt per
-# CoreId the Transfer patterns page's "Last 5 files" cells link — ANY outcome,
-# the failed-file page layout — into data/<env>/transfer/reports/files/;
-# render each to docs/<env>/files/<coreid>.html, a sibling of errors/.
-shopt -s nullglob
-filp=("$DATA"/transfer/reports/files/*.rpt)
-shopt -u nullglob
+# family — production 2026-08 — and stale pages would survive forever); the
+# retired docs/<env>/errors/ goes too (a manual publish over a pre-merge tree)
 mkdir -p "$DOCS/files"
 rm -f "$DOCS"/files/*.html
-if [ ${#filp[@]} -gt 0 ]; then
+rm -rf "$DOCS/errors"
+for set9 in filp errp; do
+    if [ "$set9" = filp ]; then pages=(${filp[@]+"${filp[@]}"}); else pages=(${errp[@]+"${errp[@]}"}); fi
+    [ ${#pages[@]} -gt 0 ] || continue
     CUR_DATES=""; DLINK_BASE="../details/"
-    for f in "${filp[@]}"; do
+    for f in "${pages[@]}"; do
         b=${f##*/}; b=${b%.rpt}
         pub_run render_rpt "$f" "$DOCS/files/$b.html" "../assets/style.css" "../index.html" "TRANSFER" "" "failed"
     done
     pub_wait
     CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
-    echo "Rendered docs/files/ (${#filp[@]} File page(s))." >&2
-fi
+done
+echo "Rendered docs/files/ (${#errp[@]} failed-file page(s) + ${#filp[@]} File page(s))." >&2
 
 # MONTH STATS (2026-09-13, user request): the 18 {this,previous} × entity
 # pages of month-stats.sh -> docs/transfer/month-stats/ (publish_lib

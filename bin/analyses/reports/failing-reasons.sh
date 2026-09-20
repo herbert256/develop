@@ -72,7 +72,7 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen=
                 if (l != "" && !(l in RIX)) { RN[++nr] = l; RIX[l] = nr }
             close(VOC) }
     # a failed-files row: 2 Subscription, 3 Date/time, 4 Error reason (an
-    # @{href=../errors/<CoreId>.html} prefix when the File has an error page),
+    # @{href=../files/<CoreId>.html} prefix when the File has an error page),
     # 5 @{class=mono}CoreId, 6 Filename, then @data cells (res = the tint)
     $1 == "ROW" {
         rc = $4; href = ""

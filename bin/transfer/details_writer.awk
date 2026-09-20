@@ -362,10 +362,10 @@ function last_error_table(   i, F9, cid, res) {
         split(LE[i], F9, "\t")
         cid = F9[4]
         res = "\t@data:res=red"   # every row is a FAILED file (expiries are out, 2026-08)
-        emitl("ROW\t@{href=../../errors/" cid ".html}" F9[1] \
-              "\t@{href=../../errors/" cid ".html,nolink=1}" F9[2] \
-              "\t@{href=../../errors/" cid ".html}" F9[3] \
-              "\t@data:href=../../errors/" cid ".html" res)
+        emitl("ROW\t@{href=../../files/" cid ".html}" F9[1] \
+              "\t@{href=../../files/" cid ".html,nolink=1}" F9[2] \
+              "\t@{href=../../files/" cid ".html}" F9[3] \
+              "\t@data:href=../../files/" cid ".html" res)
     }
     emitl("TOTAL\tTotal (" nle " subscription(s))\t\t")
 }
@@ -1044,7 +1044,7 @@ function login_lasterr_move(   i, le0, le1, sub0, sub1, n2) {
 
 # (the "Server log error" SECTION went the same way on 2026-09-16, user
 # request: a subscription red for what the SERVER log shows already HAS its
-# own page, errors/<slug>.html, written by failed.sh from the _srvsubs-map.tsv
+# own page, files/<slug>.html, written by failed.sh from the _srvsubs-map.tsv
 # map — the Features "Server log error" row links it instead of the page
 # repeating that page's log table. It was the last writer of SUP, so nothing
 # is suppressed from "Last server log messages" any more.)
@@ -1191,7 +1191,7 @@ function latest_features_row(   i, fe0, fe1, n2, row) {
 # (2026-09-16, user request): the first two read "<date time>  <file name>"
 # and the third its evidence stamp; each links that File's OWN page —
 # files/<coreid>.html for the newest DELIVERED File (the OKTF sidecar) and
-# errors/<coreid>.html for the newest FAILED one (LE, the section 0.4 row).
+# files/<coreid>.html for the newest FAILED one (LE, the section 0.4 row).
 # failed.sh guarantees both pages exist: the latest-OK list it now pages, and
 # the newest failure through the S mark (S implies L, the leg selection).
 # They REPLACE the two sections this page used to carry; a flow with no such
@@ -1205,15 +1205,15 @@ function lastfiles_features_rows(   i, j, fe0, fe1, n2, k9, F9, rows, nr) {
     if (nle > 0) {
         split(LE[nle], F9, "\t")
         if (F9[4] != "")
-            rows[++nr] = "ROW\tLatest Error\t@{href=../../errors/" F9[4] ".html}" F9[1] "  " F9[3]
+            rows[++nr] = "ROW\tLatest Error\t@{href=../../files/" F9[4] ".html}" F9[1] "  " F9[3]
     }
     # THE SERVER-LOG ERROR PAGE (2026-09-16, user request): a subscription red
-    # for what the SERVER log shows already has its own errors/<slug>.html —
+    # for what the SERVER log shows already has its own files/<slug>.html —
     # failed.sh writes it from _srvsubs-map.tsv (name⇥slug⇥stamp) — so the row
     # links it and shows that evidence stamp. Only a server-failing flow is in
     # the map, so only such a page carries the row.
     if ((k9 in SLG) && SLG[k9] != "")
-        rows[++nr] = "ROW\tServer log error\t@{href=../../errors/" SLG[k9] ".html}" \
+        rows[++nr] = "ROW\tServer log error\t@{href=../../files/" SLG[k9] ".html}" \
                      (((k9 in SLGD) && SLGD[k9] != "") ? SLGD[k9] : "The server log error page")
     if (nr == 0) return
     fe0 = 0
@@ -1336,7 +1336,7 @@ BEGIN {
         }
         close(OKF)
         # the server-failing subscriptions map (failed.sh _srvsubs-map.tsv),
-        # name⇥slug⇥stamp: the slug names the errors/<slug>.html page the
+        # name⇥slug⇥stamp: the slug names the files/<slug>.html page the
         # Features "Server log error" row links, the stamp is what it shows
         while ((getline l < SSF) > 0) { n = split(l, A, "\t")
             if (n >= 2) SLG[toupper(A[1])] = A[2]

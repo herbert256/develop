@@ -27,7 +27,7 @@
    - matching is on the FILE NAME and the CoreId, case-insensitive; `*` = any run,
      `?` = one character, several space-separated words must ALL match;
    - an ERROR row with its own error page (flag E): every cell and the whole
-     row open ../errors/<coreid>.html (the pages sit in docs/search/); every other row follows its
+     row open ../files/<coreid>.html (the pages sit in docs/search/); every other row follows its
      Subscription cell's detail-page link;
    - after every search the NAV row's sibling links (file-search-*.html) get
      ?q=<query> appended and the page's own URL is kept in sync
@@ -130,7 +130,7 @@
       var err = f[6] === "e" || f[6] === "E";
       tr.setAttribute("data-res", err ? "red" : "green");   // the restint tint
       if (f[6] === "E") {               // error WITH its own page: the whole row opens it
-        var eh = "../errors/" + f[5] + ".html";   // the pages live in docs/search/ (2026-09-12): one level below the root
+        var eh = "../files/" + f[5] + ".html";   // the pages live in docs/search/ (2026-09-12): one level below the root
         tr.setAttribute("data-href", eh);
         cell(tr, "file cl", nm, eh);
         cell(tr, "cl", dt, eh);

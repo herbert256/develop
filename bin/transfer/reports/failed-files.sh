@@ -13,7 +13,7 @@
 #                  (_failed-reasons.tsv, bin/flip-reason.awk — the same text as
 #                  the Failed subscriptions lists and the error page title),
 #                  "-" when no rule applied; Expired: "Expired (not collected)".
-#                  Opens the File's error page (errors/<CoreId>.html) when it
+#                  Opens the File's error page (files/<CoreId>.html) when it
 #                  has one.
 #   CoreId         col 1 (report.js adds the File Tracking link + copy icon)
 #   Filename       col 11
@@ -76,7 +76,7 @@ agg=$(LC_ALL=C awk -F'\t' -v REAS="$REAS" -v PAGES="$pages" -v SUBRES="$SUBRES" 
         cid = $1
         r = ($2 == "Expired") ? "Expired (not collected)" : ((cid in RE) ? RE[cid] : "")
         if (r == "") r = "-"
-        if (cid in PG) r = "@{href=../errors/" cid ".html}" r
+        if (cid in PG) r = "@{href=../files/" cid ".html}" r
         res = SRES[toupper($12)]
         tint = (res == "green" || res == "orange" || res == "red" || res == "blue") ? "\t@data:res=" res : ""
         printf "%s\tROW\t%s\t%s %s\t%s\t@{class=mono}%s\t%s%s\n", $6, $12, $4, $5, r, cid, $11, tint

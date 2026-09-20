@@ -647,7 +647,7 @@ _daycell() {   # $1 = date
 #                                     mistake, an expired pickup. These rows
 #                                     carry the Reason and the evidence stamp;
 #                                     a RED row opens the flow's OWN error page
-#                                     (errors/<slug>.html, named by the
+#                                     (files/<slug>.html, named by the
 #                                     subscription — failed.sh writes one for
 #                                     every table-2 red).
 #
@@ -718,7 +718,7 @@ write_failing_now() {
           for (i = 2; i <= NF; i++) {
               if ($i == "@data:res=red") red = 1
               if ($i == "@data:srv=1") srv = 1
-              if (index($i, "@data:href=../errors/") == 1) pg = substr($i, 22)
+              if (index($i, "@data:href=../files/") == 1) pg = substr($i, 21)
           }
           if (!red || srv) next
           site = $2; sub(/^@\{[^}]*\}/, "", site)
@@ -814,7 +814,7 @@ write_failing_now() {
             [ -n "$site" ] || continue
             rown=$((rown + 1)); trc=""
             [ -n "$cap1" ] && [ "$rown" -gt 15 ] && trc=' class="capx"'
-            href="errors/$cid.html"
+            href="files/$cid.html"
             [ "$reason" = "-" ] && reason=""
             esc "$site";    local hsite=$ESC
             esc "$reason";  local hreas=$ESC
@@ -847,7 +847,7 @@ write_failing_now() {
             # slugify mirrors the detail-page slug rule
             href="details/subscriptions/$(slugify "$site").html"
             # A RED row opens the flow's OWN error page instead (2026-08):
-            # errors/<slug>.html, named by the subscription — failed.sh
+            # files/<slug>.html, named by the subscription — failed.sh
             # writes one for every table-2 red (server-reddened or file-less),
             # holding the very server-log evidence this row's verdict rests
             # on. Existence-checked (the error slugs suffix on a twin
@@ -855,8 +855,8 @@ write_failing_now() {
             [ "$lastf"  = "-" ] && lastf=""
             [ "$reason" = "-" ] && reason=""
             case $colr in red|green) ;; *) colr=red ;; esac
-            if [ "$colr" = red ] && [ -f "docs/errors/$(slugify "$site").html" ]; then
-                href="errors/$(slugify "$site").html"
+            if [ "$colr" = red ] && [ -f "docs/files/$(slugify "$site").html" ]; then
+                href="files/$(slugify "$site").html"
             fi
             esc "$site";   local hsite2=$ESC
             esc "${lastf:0:16}"; local hlast=$ESC   # minutes precision — no seconds/.mmm (2026-08)
@@ -1936,6 +1936,9 @@ write_whats_new() {
 write_root_404() {
     local out="docs/404.html" dirs
     dirs=$(cd docs && ls -d */ 2>/dev/null | sed 's#/$##' | LC_ALL=C sort | tr '\n' '|' | sed 's/|$//')
+    # the retired errors/ (2026-09-21: its pages moved into files/) stays a KNOWN
+    # top-level dir, so an old errors/<page> bookmark still finds the home link
+    dirs="${dirs:+$dirs|}errors"
     {
         printf '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         printf '<meta name="viewport" content="width=device-width, initial-scale=1">\n'

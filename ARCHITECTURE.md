@@ -746,7 +746,7 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   links that File's OWN page: **`files/<coreid>.html`** for the newest PROCESSED File — newest by
   its END (`_files.tsv` col 24, the same "last OK transfer" the after-last-transfer cut uses),
   deliberately NOT the outcome policy's OK, since a UC2 file still Waiting is staged, not
-  transferred — and **`errors/<coreid>.html`** for the newest FAILED one. `details.sh` writes the
+  transferred — and **`files/<coreid>.html`** for the newest FAILED one. `details.sh` writes the
   `$_pdir/lastok` sidecar in ONE pass over `$FILES` (`F⇥site⇥file⇥date time⇥coreid`; the former
   legs/session/server-cache passes went with the sections) and `details_writer.awk`
   `lastfiles_features_rows()` appends the rows to the Features block, after the "Files" row.
@@ -760,7 +760,7 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   column so a reason-only rerun leaves it byte-identical and the details catch-up self-gates;
   went-kaput runs EARLY in the build so the stamps are final on failed.sh's first pass) gets a
   THIRD Features row, **"Server log error"** — the map's stamp, linking the flow's OWN
-  `errors/<slug>.html`, which failed.sh already writes. The section that re-emitted that page's
+  `files/<slug>.html`, which failed.sh already writes. The section that re-emitted that page's
   server-log table here (`srv_log_error_section`) went with the other two on 2026-09-16.
 - **The "Logons" table** (2026-08, LOGIN pages, `logons_section()`): first/last successful
   authentication, the raw logon count and the cadence label, from **`bin/logons.sh`**
@@ -950,11 +950,11 @@ row links inside it.
   only in its `@data:href`), Date/time = the redflip/kaput evidence stamp,
   Reason = the classified kaput E line else its box — so the six pages cover ALL failing
   subscriptions, transfer and server alike. Each server-failing subscription ALSO gets its own
-  drill page `errors/<slug>.html`, NAMED BY THE SUBSCRIPTION (lowercased, non-alnum → `-`; a
+  drill page `files/<slug>.html`, NAMED BY THE SUBSCRIPTION (lowercased, non-alnum → `-`; a
   separator-twin collision suffixes; a slug never collides with a UUID CoreId page): the facts +
   the flow's server-log mention ring, written BEFORE the evidence-sidecar pass so its E/W lines
   join `_errpage-evidence.tsv`; the row opens it like a file row opens its CoreId page. Paged
-  file rows link `docs/errors/<coreid>.html` — a second `.rpt` per paged file under
+  file rows link `docs/files/<coreid>.html` — a second `.rpt` per paged file under
   `data/transfer/reports/errors/`, listing every leg of that CoreId.
 - **CFT to ST delay** — REMOVED 2026-08-29 on request (the `cft-delay.sh` report, its menu
   entry, single-member group, index/sitemap/finder cards and help page). Three page

@@ -829,7 +829,7 @@ aggregate_files() {
       # side must track the SAME set or the links below would point at error
       # pages that no longer exist. Keyed on tsite (_files.tsv col 12), which
       # is EXACTLY what failed.sh keys its coverage floor on, so the
-      # CoreId recorded here is guaranteed to have an errors/<coreid>.html page
+      # CoreId recorded here is guaranteed to have an files/<coreid>.html page
       # to link to. (gSITE, used for the entity relation in ent_apply, can hold
       # more sites than col 12 — it is the legs\047 view — so it must not be
       # used here.) The `in` guard is the mawk rule: a bare read would create

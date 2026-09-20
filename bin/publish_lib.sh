@@ -1661,7 +1661,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 for (i = 2; i <= NF; i++) {
                     if ($i == "@data:res=red") red = 1
                     if ($i == "@data:srv=1") srv = 1
-                    if (index($i, "@data:href=../errors/") == 1) pg = substr($i, 22)
+                    if (index($i, "@data:href=../files/") == 1) pg = substr($i, 21)
                 }
                 if (!red || srv) next
                 site = $2; sub(/^@\{[^}]*\}/, "", site)
@@ -1708,7 +1708,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             $1 == "ROW"    { nm = $2; sub(/^@\{[^}]*\}/, "", nm); u = toupper(nm)
                              v = (u in rm) ? rm[u] : ""
                              if (v != "" && (rk[u] == "E" || rk[u] == "S") && rc[u] != "")
-                                 v = "@{href=../../errors/" rc[u] ".html}" v
+                                 v = "@{href=../../files/" rc[u] ".html}" v
                              else if (v != "")
                                  v = "@{alink=subscriptions/" nm "}" v
                              print ins(v); next }
@@ -1892,7 +1892,7 @@ render_report() {   # $1 area  $2 name  $3 rpt
     # function (and the functions it calls) renders — but on the report's
     # HELP page instead ("About this report", bin/build/publish.sh
     # apply_help_chrome); the Report finder shows the DESC line. The drill and
-    # record pages (errors/, files/, the record and value pages, the detail
+    # record pages (files/ — the error and File pages, the record and value pages, the detail
     # pages) keep their INTRO — there it states facts, not explanations.
     local RPT_NOPROSE=1
     # Top-bar right text: "TRANSFER"/"SERVER" + this report's index-entry name.

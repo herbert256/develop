@@ -73,7 +73,12 @@ copy is gone since 2026-09-12); a missing label FAILS the archive step. The docs
 home), `404.html` (self-contained; its home link = the path before the FIRST known top-level dir,
 a trailing `acceptance/`|`production/` stripped for pre-split bookmarks), `assets/`, `help/`,
 `.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `seenlog/`), `server/`, `analyses/`
-(+ `xref/`), `dashboards/`, `day/`, `errors/`, `details/` (one subdir per entity type), `files/`,
+(+ `xref/`), `dashboards/`, `day/`, `details/` (one subdir per entity type), `files/`
+(2026-09-21, user request: the ONE directory of the per-File pages — the failed-File error pages
+`<coreid>.html`, the subscription-named error pages `<slug>.html` and the File pages of any
+outcome; the separate `errors/` directory is GONE. Only the DATA stays split —
+`data/transfer/reports/errors/` + `files/`, because failed.sh's reason-evidence pass globs the
+first — and `bin/transfer/publish.sh` renders both sets into `docs/files/`, the errors set last),
 `latest/` (2026-09-16: one page per subscription — its newest 1000 Files, the table the
 subscription detail pages used to carry, linked from their Features "Files" row),
 `first-seen/`, `use-cases/`, `coverage/`, `transfers/duration/`, `switches/`, plus
@@ -363,7 +368,7 @@ META`. `GHEAD` = an optional group-banner `<th>` row ABOVE `HEAD` (cells may lea
   bullets — see the `docs/help/*.html` bullet under Publishing) carries those facts instead, so a
   changed INTRO/NOTE means an updated help page; the Report finder shows the one-line `DESC` (the
   INTRO words still feed its search). The drill and record
-  pages (errors/, files/, the record and value pages, the detail pages) keep their INTRO — there
+  pages (files/ — the error and File pages, the record and value pages, the detail pages) keep their INTRO — there
   it states facts. `ALERT` → red banner (the
   RUNTIME register); `WARN` → amber (the CONFIGURATION register). `STAT⇥class⇥value⇥label` → info
   box. `LOGCARD⇥date time⇥message` → timestamped monospace card. `LINK⇥url⇥text` → below the

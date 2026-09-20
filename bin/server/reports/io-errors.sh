@@ -54,7 +54,7 @@ OUT="$REPORTS_DIR/io-errors.rpt"
 
 FILES="$TRANSFER_CACHE/_files.tsv"          # one row per CoreId: 1 coreid 2 outcome 3 account 4 date 5 time 6 sortkey 11 file 12 site 14 login
 TRANSFERS="$TRANSFER_CACHE/_transfers.tsv"  # the legs: 6 site, 24 session (the SESSION join)
-ERRDIR="$TRANSFER_REPORTS/errors"           # failed.sh's per-CoreId error pages (docs/<env>/errors/)
+ERRDIR="$TRANSFER_REPORTS/errors"           # failed.sh's per-CoreId error pages (docs/<env>/files/)
 FILEDIR="$TRANSFER_REPORTS/files"           # … and its File pages (docs/<env>/files/)
 ACCB="$CONFIG_BASE/_accounts.tsv"           # configured spelling -> the cells link
 LOGB="$CONFIG_BASE/_logins.tsv"
@@ -197,7 +197,7 @@ agg=$(awk -F'\t' -v IOF="$TMP" -v FILES="$FILES" -v TRANSFERS="$TRANSFERS" \
             # ---- the line row
             fcell = (L_base[i] != "" ? L_base[i] : (L_path[i] != "" ? L_path[i] : "-"))
             if (cid != "") {
-                if (exists(ERRDIR "/" cid ".rpt")) fcell = "@{href=../errors/" cid ".html}" fcell
+                if (exists(ERRDIR "/" cid ".rpt")) fcell = "@{href=../files/" cid ".html}" fcell
                 else if (exists(FILEDIR "/" cid ".rpt")) fcell = "@{href=../files/" cid ".html}" fcell
             }
             if (oc == "Failed" || oc == "Expired") scell = "@{class=failed}" oc

@@ -31,7 +31,7 @@
 # the classified newest server E line (_kaput-evidence.tsv through
 # bin/flip-reason.awk) else its Subscriptions-in-boxes box (one build behind,
 # like the entities Reason column). Like a file row, the whole row opens the
-# flow's OWN error page — errors/<slug>.html, NAMED BY THE SUBSCRIPTION,
+# flow's OWN error page — files/<slug>.html, NAMED BY THE SUBSCRIPTION,
 # holding the facts and the server-log mention ring (the page step below the
 # finishing pass writes them). So the six pages together cover ALL
 # failing subscriptions, transfer and server alike — the same total the home
@@ -75,7 +75,7 @@
 #                                       is out of the question); a missing
 #                                       server cache degrades silently (no
 #                                       section).
-# bin/transfer/publish.sh renders the second set to docs/<env>/errors/<coreid>.html
+# bin/transfer/publish.sh renders the second set to docs/<env>/files/<coreid>.html
 # (one level below the env root, like transfer/ — so "../assets/style.css").
 # The WHOLE list row opens that page (the rowlink modifier + the row's
 # @data:href, which beats its first link — the Subscription cell, whose own
@@ -122,8 +122,10 @@ ERRDIR="$REPORTS_DIR/errors"
 # cells link — patterns.sh leaves the CoreId list in $FILESIDE (cmp-guarded;
 # it runs in the same report pool, so the build's failed.sh catch-up is the
 # run that sees the final list). Pages land in data/<env>/transfer/reports/
-# files/ (docs/<env>/files/), beside errors/ and never inside it: the
-# reason-evidence pass globs errors/ and must not read an OK File's page.
+# files/, beside errors/ and never inside it — the reason-evidence pass globs
+# errors/ and must not read an OK File's page. Only the DATA is split: both sets
+# publish into the ONE docs/<env>/files/ (2026-09-21, user request — the
+# docs/<env>/errors/ directory is gone; bin/transfer/publish.sh).
 FILEDIR="$REPORTS_DIR/files"
 FILESIDE="$REPORTS_DIR/_patterns-files.tsv"
 # ... and the Longest Files page's list (duration-longest.sh, 2026-09-03: every
@@ -231,8 +233,10 @@ rm -rf "$FILEDIR"; mkdir -p "$FILEDIR"
 # The FILE pages (see FILEDIR above): every CoreId patterns.sh listed, in the
 # 8-column shape of the lists above (+ the source tag) — a CoreId that already gets a drill
 # page as a failed File (the leg selection or the window guarantee) keeps
-# that page and receives a COPY under files/ at the end, so a "Last 5 files"
-# link never dangles and no CoreId is paged twice by the pass below.
+# that page and is left out here: both sets publish into docs/<env>/files/
+# (2026-09-21 — until then the finished page was COPIED under files/), so a
+# "Last 5 files" link resolves to it and no CoreId is paged twice by the
+# pass below.
 : > "$TMP/filepages"; : > "$TMP/fileset"; : > "$TMP/overlap"
 # THE LATEST-OK GUARANTEE (2026-09-16, user request): every subscription's
 # newest DELIVERED File gets a files/ page too, so the "Latest OK" row of its
@@ -1200,7 +1204,7 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
         # beyond the guarantee) keeps the Subscription cell'"'"'s ordinary
         # detail link and nothing else.
         if (cid in PG)
-            row = sprintf("ROW\t@{href=../errors/%s.html,nolink=1}%s\t%s %s\t%s\t@data:href=../errors/%s.html%s", \
+            row = sprintf("ROW\t@{href=../files/%s.html,nolink=1}%s\t%s %s\t%s\t@data:href=../files/%s.html%s", \
                           cid, site, d, t, r, cid, tint)
         else
             row = sprintf("ROW\t%s\t%s %s\t%s%s", site, d, t, r, tint)
@@ -1224,11 +1228,11 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
         # passes both filters, and a subscription-level fact belongs on every
         # selection. @data:srv=1 is the marker consumers skip (the CoreId
         # column that used to show "-" is gone); like a file row, the row
-        # opens the error page of the flow — errors/<slug>.html, NAMED BY THE
+        # opens the error page of the flow — files/<slug>.html, NAMED BY THE
         # SUBSCRIPTION, written by the page step above. The page default sort
         # (Date/time desc) interleaves the rows on load.
         for (j = 1; j <= nsv; j++) {
-            srow = sprintf("ROW\t@{href=../errors/%s.html,nolink=1}%s\t%s\t%s\t@data:href=../errors/%s.html\t@data:srv=1\t@data:res=red", \
+            srow = sprintf("ROW\t@{href=../files/%s.html,nolink=1}%s\t%s\t%s\t@data:href=../files/%s.html\t@data:srv=1\t@data:res=red", \
                            SVS[j], SVN[j], SVT[j], SVR[j], SVS[j])
             for (i = 1; i <= NP; i++) { print srow > F[PK[i]]; CNT[PK[i]]++ }
         }
@@ -1277,12 +1281,9 @@ stats=$(awk -F'\t' '$2 == "I" { I[$1]++; nl++ } $2 == "N" { N[$1] = 1 }
                           for (c in N) nn++
                           printf "%d %d %d", ni + 0, nl + 0, nn + 0 }' "$TMP/srvlines" 2>/dev/null || echo "0 0 0")
 set -- $stats
-# the FILE pages of CoreIds that also got a failed-File drill page: a COPY of
-# that finished page (facts, legs, server log, LINK, FOOT) under files/, so
-# every "Last 5 files" link resolves
-while IFS= read -r ovc; do
-    [ -n "$ovc" ] && [ -f "$ERRDIR/$ovc.rpt" ] && cp "$ERRDIR/$ovc.rpt" "$FILEDIR/$ovc.rpt"
-done < "$TMP/overlap"
+# the listed CoreIds that are failed Files: their drill page in $ERRDIR IS their
+# File page — the two sets share docs/<env>/files/, so every "Last 5 files"
+# link resolves without a copy
 nover=$(wc -l < "$TMP/overlap" | tr -d ' ')
-echo "File pages: $nfilep written to $FILEDIR/ + $nover copied from errors/ (the Transfer patterns links)." >&2
+echo "File pages: $nfilep written to $FILEDIR/ + $nover served by their failed-File page (the Transfer patterns links)." >&2
 echo "Data written to $OUT + 3 view variants ($nallf failed file(s), $nleg subscription/legs combination(s)) and $ERRDIR/ ($((nleg + nextra)) drill page(s), $nextra for the File search windows; server-log sections: $1 by session/id carrying $2 line(s), $3 on the time-window fallback)." >&2

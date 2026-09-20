@@ -32,7 +32,7 @@
 #     name TAB di TAB si TAB time TAB bytes TAB coreid TAB flag
 #   (di/si = dictionary indices; time = HH:MM:SS, rendered beside the date;
 #   bytes raw — the engine humanizes; flag: "" = OK, "e" = Error, "E" =
-#   Error with its own errors/<coreid>.html page)
+#   Error with its own files/<coreid>.html page)
 #
 # The DEDICATED docs/assets/file-search.js parses these and renders only the
 # matches — NOT report.js's esearch: a Search button (no per-keystroke
