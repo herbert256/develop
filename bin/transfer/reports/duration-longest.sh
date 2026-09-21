@@ -13,7 +13,9 @@
 # <coreid>.html, written here (moved from duration.sh) into
 # $REPORTS_DIR/duration/top/ and rendered by bin/transfer/publish.sh.
 # Columns: Duration (sorting by the exact milliseconds via @{sortval}), Start
-# Time, CoreId, Destination Subscription, Size, File — the former "Duration
+# Time, End Time (_files.tsv col 24, the latest leg end — 2026-09-21, user
+# request: it took the Size column's place), CoreId, Destination Subscription,
+# File — the former "Duration
 # (ms)" and "Account" columns went with the split (user request). EVERY
 # listed File (either scope) also gets a File page docs/<env>/files/
 # <coreid>.html (the sidecar _longest-files.tsv, paged by failed.sh) — its
@@ -50,7 +52,7 @@ skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # top_list — the TOP_N longest DELIVERED Files (outcome Processed), ms-descending:
-#   ms ⇥ coreid ⇥ "date time" ⇥ subscription ⇥ size ⇥ file ⇥ humandur ⇥ humanbytes
+#   ms ⇥ coreid ⇥ "date time" ⇥ subscription ⇥ end ⇥ file ⇥ humandur
 top_list() {
     awk -F'\t' '
         function clean(s){ gsub(/[\t\r]/, " ", s); return s }
@@ -60,16 +62,10 @@ top_list() {
             if (ms < 3600000) return sprintf("%.1f min", ms/60000)
             return sprintf("%.2f h", ms/3600000)
         }
-        function humanbytes(b,   u, i, v) {
-            split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
-            while (v >= 1024 && i < 6) { v /= 1024; i++ }
-            return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i])
-        }
         $2 != "Processed" { next }   # delivered Files only: no Failed, no Expired, no Waiting
         { ms = $9 + 0; if (ms <= 0) next
           s = clean($12); if (s == "") s = "(no subscription)"
-          sz = int($8)
-          printf "%d\t%s\t%s %s\t%s\t%d\t%s\t%s\t%s\n", ms, $1, $4, $5, s, sz, clean($11), humandur(ms), humanbytes(sz) }
+          printf "%d\t%s\t%s %s\t%s\t%s\t%s\t%s\n", ms, $1, $4, $5, s, clean($24), clean($11), humandur(ms) }
     ' "$FILES" | sort -t$'\t' -k1,1nr | awk -v n="$TOP_N" 'NR<=n'
 }
 # the scope total (delivered Files with a duration), for the TOTAL row
@@ -132,23 +128,23 @@ if [ -n "$slow_ok" ]; then
     ' - "$PARSED"
 fi
 
-# rows: Duration (sortval = the exact ms) ⇥ Start Time ⇥ CoreId ⇥ Subscription ⇥
-# Size ⇥ File; the OK rows link their record page from the Duration and Start
-# Time cells, and EVERY row's CoreId cell opens its File page
+# rows: Duration (sortval = the exact ms) ⇥ Start Time ⇥ End Time ⇥ CoreId ⇥
+# Subscription ⇥ File; the OK rows link their record page from the Duration,
+# Start Time and End Time cells, and EVERY row's CoreId cell opens its File page
 rows_of() {   # $1 the list  $2 link base ("" = plain rows)
     printf '%s\n' "$1" | awk -F'\t' -v L="$2" 'length($0) {
         h = (L != "") ? "href=" L "/" $2 ".html," : ""
         hc = "href=../files/" $2 ".html,"
-        printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t%s\t%s\t%s\n", h, $1, $7, h, $1, $3, hc, $1, $2, $4, $8, $6 }'
+        printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t%s\t%s\n", h, $1, $7, h, $1, $3, h, $1, $5, hc, $1, $2, $4, $6 }'
 }
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 {
     printf 'TITLE\tLongest Files\n'
     printf 'DESC\tThe %s longest delivered Files by wall-clock duration, each opening its per-transfer record page.\n' "$TOP_N"
-    printf 'INTRO\tThe **%s longest delivered Files** by **wall-clock duration** — from the first record start to the last record end, store-and-forward gaps and retry idle included. Only **OK** Files are listed (outcome Processed): a Failed, Expired or Waiting File is not a completed transfer, and a failure'\''s run time is a timeout, not a duration. Click a Duration or Start Time cell for the transfer'\''s **record page** — every record of that CoreId, chronological. Every listed File has its own **File page** (facts, records and the server log of its connections) — its **CoreId** cell opens that. The columns sort by the exact duration.\n' "$TOP_N"
+    printf 'INTRO\tThe **%s longest delivered Files** by **wall-clock duration** — from the first record start to the last record end, store-and-forward gaps and retry idle included. Only **OK** Files are listed (outcome Processed): a Failed, Expired or Waiting File is not a completed transfer, and a failure'\''s run time is a timeout, not a duration. Click a Duration, Start Time or End Time cell for the transfer'\''s **record page** — every record of that CoreId, chronological. Every listed File has its own **File page** (facts, records and the server log of its connections) — its **CoreId** cell opens that. The columns sort by the exact duration.\n' "$TOP_N"
     printf 'TABLE\tTop %s longest Files by duration\twide\n' "$TOP_N"
-    printf 'HEAD\tDuration\tStart Time\tCoreId\tDestination Subscription\tSize\tFile\n'
-    printf 'KIND\ttext\ttext\tmono\tsite\tnum\tfile\n'
+    printf 'HEAD\tDuration\tStart Time\tEnd Time\tCoreId\tDestination Subscription\tFile\n'
+    printf 'KIND\ttext\ttext\ttext\tmono\tsite\tfile\n'
     rows_of "$slow_ok" "$TOPLINK"
     printf 'TOTAL\tTop %s of %s Files\t\t\t\t\t\n' "$shown_ok" "$n_ok"
     printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); its duration is the wall-clock span of those records, so it includes the store-and-forward wait inside SecureTransport and any retry idle. Delivered (Processed) Files only — the failed, expired and still-waiting ones are left out (2026-09-13). Every listed File has a record page and a File page.\n'
