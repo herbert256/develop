@@ -475,7 +475,9 @@ HTML
             done <<< "$changes"
             printf '</table>\n'
         fi
-        mv -f "$manifest_new" "$manifest"
+        # (the PRELIMINARY site copy — see the archive step — leaves the manifest
+        # alone: the final report of this run must still list the input changes)
+        if [ -n "${REPORT_PRELIM:-}" ]; then rm -f "$manifest_new"; else mv -f "$manifest_new" "$manifest"; fi
         [ -n "$note" ] && printf '<p>%s</p>\n' "$note"
         printf '<table>\n<tr><th>#</th><th>Step</th><th>Command</th><th>Started</th><th>Duration</th><th>Status</th></tr>\n'
         local rec label cmd start dur status logf i=0
@@ -533,7 +535,7 @@ HTML
         printf '</body>\n</html>\n'
     } > "$out.tmp"
     # the two copies (see `base` above): the local report and the site copy
-    sed 's#@B@#../docs/#g' "$out.tmp" > "$out"
+    [ -n "${REPORT_PRELIM:-}" ] || sed 's#@B@#../docs/#g' "$out.tmp" > "$out"   # the preliminary render is the SITE copy only
     mkdir -p docs/tools && sed 's#@B@#../#g' "$out.tmp" > docs/tools/build.html
     rm -f "$out.tmp"
 }
@@ -772,6 +774,18 @@ run_step "publish: display renames (input/rename.txt)"                    bin/bu
 # OUTBOX (the inbox repo) as the stable st-reports-<env>.7z (2026-08-31, user
 # request; the <env> since 2026-09-11; the ~/cloud copy went 2026-09-12).
 if [ ! -f input/.sample-estate ]; then
+    # THE BUILD REPORT MUST BE IN THE PACK (2026-09-21, user report: the sitemap
+    # link to the build page did not work on the delivered site). The site
+    # copy docs/tools/build.html is written by the EXIT trap — AFTER this
+    # step packed docs/ — and a fresh build wiped the previous one, so the
+    # archive carried the Tools-card link without its page. A PRELIMINARY
+    # site copy is rendered right here, from the steps recorded so far (all
+    # but this one); the EXIT trap overwrites it with the complete report
+    # on the build's own site. It leaves build/index.html and the input
+    # manifest to the final render.
+    REPORT_PRELIM=1
+    write_report "$REPORT" 0 "This copy was written just before the site was packed for the outbox, so the delivered site carries its build report: the archive step and the final timings are not in it &mdash; the site of the build itself has the complete report."
+    unset REPORT_PRELIM
     run_step "archive: st-reports-${ENV_KEY:-?} .7z -> build/ + outbox"  bin/build/st-reports-archive.sh
 fi
 
