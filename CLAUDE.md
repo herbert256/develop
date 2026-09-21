@@ -72,7 +72,10 @@ label = the inbox skipped with a note) and names the outbox archives
 copy is gone since 2026-09-12); a missing label FAILS the archive step. The docs root holds the site itself: `index.html` (the
 home), `404.html` (self-contained; its home link = the path before the FIRST known top-level dir,
 a trailing `acceptance/`|`production/` stripped for pre-split bookmarks), `assets/`, `help/`,
-`.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `seenlog/`), `server/`, `analyses/`
+`.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `seenlog/`, `expired/` — 2026-09-21, user
+request: one page per subscription with expired Files, Start · Expired · File name · CoreId, opened
+from the Expired cells of the Expired report's subscriptions table; `expired.sh` writes the
+`.rpt` set into `data/transfer/reports/expired/`), `server/`, `analyses/`
 (+ `xref/`), `dashboards/`, `day/`, `details/` (one subdir per entity type), `files/`
 (2026-09-21, user request: the ONE directory of the per-File pages — the failed-File error pages
 `<coreid>.html`, the subscription-named error pages `<slug>.html` and the File pages of any
