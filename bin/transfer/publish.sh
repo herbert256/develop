@@ -164,6 +164,30 @@ if [ ${#expp[@]} -gt 0 ]; then
     echo "Rendered docs/transfer/expired/ (${#expp[@]} subscription page(s))." >&2
 fi
 
+# Waiting SUBSCRIPTION pages (2026-09-21, user request — the Expired pages'
+# twin): waiting.sh wrote one .rpt per subscription with Files still staged into
+# data/transfer/reports/waiting/; render each to docs/transfer/waiting/<slug>.html
+# (2 levels deep -> ../../ css). The Waiting Files cells of the Waiting report's
+# first table link here via @{href=waiting/...}. No date filter (Waiting is a
+# state at the dataset's end).
+shopt -s nullglob
+waip=("$DATA"/transfer/reports/waiting/*.rpt)
+shopt -u nullglob
+# clear even when THIS run has no .rpt set (stale pages would survive forever)
+mkdir -p "$DOCS/transfer/waiting"
+rm -f "$DOCS"/transfer/waiting/*.html
+if [ ${#waip[@]} -gt 0 ]; then
+    CUR_DATES=""; DLINK_BASE="../../details/"
+    for f in "${waip[@]}"; do
+        b=${f##*/}; b=${b%.rpt}
+        # report key per subscription, the latest/ pages' rule
+        pub_run render_rpt "$f" "$DOCS/transfer/waiting/$b.html" "../../assets/style.css" "../../index.html" "TRANSFER - Waiting" "" "waiting" "waiting-$b"
+    done
+    pub_wait
+    CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
+    echo "Rendered docs/transfer/waiting/ (${#waip[@]} subscription page(s))." >&2
+fi
+
 # THE FILE PAGES — docs/<env>/files/ (2026-09-21, user request: the error pages
 # and the File pages share ONE directory; docs/<env>/errors/ is gone). failed.sh
 # keeps TWO .rpt sets, because its reason-evidence pass globs the first and must

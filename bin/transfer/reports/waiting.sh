@@ -35,7 +35,8 @@
 # Reads data/_files.tsv (1=coreid, 2=outcome, 3=account, 4=date_iso, 5=time,
 # 6=sortkey, 7=jdn, 8=size, 11=file, 12=dest_site, 20=partner, 21=wait_ms,
 # 22=expired) + xref/_subscriptions-partners.tsv (the UNION attribution).
-# Writes data/waiting.rpt.
+# Writes data/waiting.rpt + the subscription File pages data/waiting/<slug>.rpt
+# and their File-page list _waiting-files.tsv (2026-09-21, see SUBDIR below).
 #
 # Usage:
 #   ./waiting.sh    # reads input/*.csv (via the cache), writes data/waiting.rpt
@@ -61,15 +62,28 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 ensure_parsed
 SPX="$CONFIG_XREF/_subscriptions-partners.tsv"   # subscription -> partner (UNION attribution)
+# THE SUBSCRIPTION FILE PAGES (2026-09-21, user request — the Expired report's
+# twin): the Waiting Files cell of the first table opens
+# transfer/waiting/<slug>.html — the Files of that subscription still staged
+# (Start · Waiting for · File name · CoreId, longest waiting first), one .rpt
+# per subscription in $SUBDIR, rendered by bin/transfer/publish.sh. The CoreId
+# of the first 5 rows links the File page, so those CoreIds go to $FILESIDE,
+# which failed.sh pages (list tag W). A missing dir / list forces a rebuild —
+# skip_if_fresh only tests the one .rpt.
+SUBDIR="$REPORTS_DIR/waiting"
+FILESIDE="$REPORTS_DIR/_waiting-files.tsv"
+[ -d "$SUBDIR" ] || rm -f "$OUT"
+[ -f "$FILESIDE" ] || rm -f "$OUT"
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SPX"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Stream _files.tsv grouped by subscription, chronological inside each group.
 # Emits pipe-separated (file names go LAST — they may hold any byte but TAB):
-#   W|oldsec|site|nwait|oldest_dt|wait_for|newest_dt|ncoll|drill
+#   W|oldsec|site|nwait|oldest_dt|wait_for|wait_sec|newest_dt|ncoll|drill
 #   X|site|nexp|first_dt|last_dt|last_del|drill
 #   P|site|ncoll|median|avg|max|b1h|b24|bgt
-#   F|stagesec|staged_dt|site|acct|bytes|size|wait_for|file
+#   F|stagesec|staged_dt|site|acct|bytes|size|wait_for|wait_sec|coreid|file
+# (wait_sec = the Waiting for cell's SORT KEY: the humanized text does not sort)
 #   TOT|wsites|wtot|csites|ctot|xsites|xtot|oldest_dt|oldest_site|last_dt
 agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COREIDS_AWK"'
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
@@ -117,7 +131,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
             if (olddt == "") { olddt = $4 " " substr($5, 1, 8); oldsec = s }   # sortkey-sorted: first = oldest
             newdt = $4 " " substr($5, 1, 8)
             addtop("W" SUBSEP site, $6, $4 " " $5, $1)
-            FL[++nf] = s "|" $4 " " substr($5, 1, 8) "|" site "|" $3 "|" ($8 + 0) "|" hsize($8 + 0) "|" $11
+            FL[++nf] = s "|" $4 " " substr($5, 1, 8) "|" site "|" $3 "|" ($8 + 0) "|" hsize($8 + 0) "|" $1 "|" $11
         } else if ($2 == "Expired") {
             nx++
             if (xolddt == "") xolddt = $4 " " substr($5, 1, 8)   # sortkey-sorted: first = oldest
@@ -136,7 +150,8 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
         flush()
         for (i = 1; i <= wsites; i++) {
             m = split(W[i], a, "|")
-            printf "W|%s|%s|%s|%s|%s|%s|%s|%s\n", a[1], a[2], a[3], a[4], hdur(g_lastsec - a[1]), a[5], a[6], a[7]
+            ws = int(g_lastsec - a[1]); if (ws < 0) ws = 0
+            printf "W|%s|%s|%s|%s|%s|%d|%s|%s|%s\n", a[1], a[2], a[3], a[4], hdur(ws), ws, a[5], a[6], a[7]
         }
         for (i = 1; i <= xsites; i++) print "X|" X[i]
         for (i = 1; i <= csites; i++) {
@@ -145,9 +160,10 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
         }
         for (i = 1; i <= nf; i++) {
             m = split(FL[i], a, "|")
-            # file name may contain "|": re-join everything from field 7 on
-            fn = a[7]; for (j = 8; j <= m; j++) fn = fn "|" a[j]
-            printf "F|%s|%s|%s|%s|%s|%s|%s|%s\n", a[1], a[2], a[3], a[4], a[5], a[6], hdur(g_lastsec - a[1]), fn
+            # file name may contain "|": re-join everything from field 8 on
+            fn = a[8]; for (j = 9; j <= m; j++) fn = fn "|" a[j]
+            ws = int(g_lastsec - a[1]); if (ws < 0) ws = 0
+            printf "F|%s|%s|%s|%s|%s|%s|%s|%d|%s|%s\n", a[1], a[2], a[3], a[4], a[5], a[6], hdur(ws), ws, a[7], fn
         }
         printf "TOT|%d|%d|%d|%d|%d|%d|%s|%s|%s\n", wsites+0, wtot+0, csites+0, ctot+0, xsites+0, xtot+0, g_olddt, g_oldsite, g_lastdt
     }
@@ -159,6 +175,61 @@ if [ -z "$agg" ]; then
 fi
 
 IFS='|' read -r _ n_wsites n_wait n_csites n_coll n_xsites n_exp oldest_dt oldest_site last_dt <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
+
+# ---------------------------------------------------------------------------
+# The subscription File pages (see the header of this block above, at SUBDIR).
+# The slug is the site-wide slugify, walked over the C-SORTED names so a
+# separator twin's numeric bump is stable (never a hash walk). Rows are BAKED
+# longest-waiting first — the page's declared default (sort=1:-1 on the
+# Waiting for cell's sortval) — ties by CoreId: report.js sorts stably, so the
+# first 5 rows of the page are exactly the first 5 here, the ones whose CoreId
+# links files/<coreid>.html. Staged in waiting.new/ and swapped in BEFORE the
+# main .rpt lands; the File-page list is cmp-guarded (a failed.sh dep).
+# ---------------------------------------------------------------------------
+rm -rf "$SUBDIR.new"; mkdir -p "$SUBDIR.new"
+SLUGS="$SUBDIR.new/_slugmap.tsv"
+printf '%s\n' "$agg" | awk -F'|' '$1 == "W" && $3 != "" { print $3 }' | LC_ALL=C sort -u | awk '
+    function slugify(s,   t) { t = tolower(s); gsub(/[^a-z0-9]+/, "-", t)
+        sub(/^-+/, "", t); sub(/-+$/, "", t); return t }
+    { base = slugify($0); if (base == "") base = "subscription"
+      slug = base; n = 1
+      while (slug in used) { n++; slug = base "-" n }
+      used[slug] = 1
+      printf "%s\t%s\n", $0, slug }' > "$SLUGS"
+: > "$FILESIDE.raw.$$"
+printf '%s\n' "$agg" | awk -F'|' '$1 == "F"' | LC_ALL=C sort -t'|' -k4,4 -k2,2n -k10,10 | awk -F'|' \
+    -v slugs="$SLUGS" -v dir="$SUBDIR.new" -v stamp="$(date '+%Y-%m-%d %H:%M:%S')" -v nin="${#files[@]}" \
+    -v side="$FILESIDE.raw.$$" -v lastdt="$last_dt" -v TOPN=5 '
+    BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
+    function clean(s) { gsub(/[\t\r]/, " ", s); return s }
+    function finish() {
+        if (out == "") return
+        printf "FOOT\tGenerated on %s from %s file(s)\n", stamp, nin > out
+        close(out)
+    }
+    ($4 "") != cur {
+        finish(); cur = $4; out = ""; nrow = 0
+        if (!($4 in SL)) next
+        out = dir "/" SL[$4] ".rpt"
+        printf "TITLE\tWaiting files: %s\n", $4 > out
+        printf "DESC\tThe staged Files of subscription %s the partner has not collected yet, longest waiting first.\n", $4 > out
+        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] the partner has not collected yet — still collectable until the nightly File Maintenance retention sweep (~11 days) deletes them. **Waiting for** counts from the staging moment to the last record of the data (%s). Longest waiting first; the CoreId of the first %d opens the File page.\n", $4, lastdt, TOPN > out
+        printf "TABLE\tWaiting files\twide\tnofilter\tsort=1:-1\tpager=25\n" > out
+        printf "HEAD\tStart\tWaiting for\tFile name\tCoreId\n" > out
+        printf "KIND\ttext\ttext\tmono\tmono\n" > out
+    }
+    out != "" {
+        # file name may contain "|": re-join everything from field 11 on
+        fn = $11; for (j = 12; j <= NF; j++) fn = fn "|" $j
+        nrow++
+        if (nrow <= TOPN) { lk = "@{href=../../files/" $10 ".html}"; print $10 > side } else lk = ""
+        printf "ROW\t%s\t@{sortval=%d}%s\t%s\t%s%s\n", $3, $9, $8, clean(fn), lk, $10 > out
+    }
+    END { finish() }'
+rm -rf "$SUBDIR"; mv "$SUBDIR.new" "$SUBDIR"
+SLUGS="$SUBDIR/_slugmap.tsv"
+LC_ALL=C sort -u "$FILESIDE.raw.$$" > "$FILESIDE.tmp"; rm -f "$FILESIDE.raw.$$"
+if cmp -s "$FILESIDE.tmp" "$FILESIDE" 2>/dev/null; then rm -f "$FILESIDE.tmp"; else mv "$FILESIDE.tmp" "$FILESIDE"; fi
 
 # ---------------------------------------------------------------------------
 # Second pass: the staged-inventory curve, the expiry-risk list, the per-
@@ -310,29 +381,38 @@ oldest_cell="-"
     printf 'INTRO\tA UC2 file is COLLECTED by the partner: it arrives from CFT in three quick legs (PeSIT in, routing out, routing in), then sits STAGED until the partner dials in over SSH and picks it up. A file still staged at the end of the data window has outcome **Waiting** — not an error, just not collected yet. A staged file the nightly File Maintenance retention sweep (~11 days) DELETED before any pickup is **Expired** — never delivered. Right now **%s** File(s) across **%s** subscription(s) are waiting (oldest staged **%s**), **%s** File(s) across **%s** subscription(s) have expired, and **%s** staged File(s) were collected. The pickup wait is EXCLUDED from every UC2 Duration figure on this site. Below the four state tables: the day-by-day **staged backlog** curve (peak **%s** file(s) on %s), the **Will expire next** call list, and the per-partner and per-week **pickup-wait** statistics. Click a row for the 10 most recent Files.\n' \
         "$n_wait" "$n_wsites" "$oldest_cell" "$n_exp" "$n_xsites" "$n_coll" "$bk_peak" "${bk_peakdate:--}"
 
-    printf 'TABLE\tWaiting now — per subscription\twide\tnofilter\n'
+    # default sort = Waiting for descending (2026-09-21, user request): declared
+    # (sort=3:-1, the cell's sortval = the wait in seconds) AND baked in that
+    # order. The Waiting Files cell opens the subscription File page
+    # (waiting/<slug>.html, written above) — the slug is joined on as field 2.
+    printf 'TABLE\tWaiting now — per subscription\twide\tnofilter\tsort=3:-1\n'
     printf 'HEAD\tSubscription\tWaiting Files\tOldest staged\tWaiting for\tNewest staged\tCollected\n'
     printf 'KIND\tsite\tnumwarn\ttext\ttext\ttext\tnum\n'
-    # W fields: 2=oldsec 3=site 4=nwait 5=oldest_dt 6=wait_for 7=newest_dt 8=ncoll 9=drill
-    while IFS='|' read -r _ oldsec site nw olddt wf newdt nc drill; do
+    # W fields: 2=slug 3=oldsec 4=site 5=nwait 6=oldest_dt 7=wait_for 8=wait_sec 9=newest_dt 10=ncoll 11=drill
+    while IFS='|' read -r _ slug oldsec site nw olddt wf wsec newdt nc drill; do
         [ -z "$site" ] && continue
         sum_nc=$((sum_nc + nc)); n_wrows=$((n_wrows + 1))
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids=%s\n' "$site" "$nw" "$olddt" "$wf" "$newdt" "$nc" "$drill"
-    done <<< "$(printf '%s\n' "$agg" | grep '^W|' | LC_ALL=C sort -t'|' -k2,2n -k3,3)"
+        lk=""; [ -n "$slug" ] && lk="@{href=waiting/$slug.html}"
+        printf 'ROW\t%s\t%s%s\t%s\t@{sortval=%s}%s\t%s\t%s\t@data:coreids=%s\n' "$site" "$lk" "$nw" "$olddt" "$wsec" "$wf" "$newdt" "$nc" "$drill"
+    done <<< "$(printf '%s\n' "$agg" | grep '^W|' | LC_ALL=C sort -t'|' -k2,2n -k3,3 | awk -F'|' -v OFS='|' -v slugs="$SLUGS" '
+        BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
+        { s = ($3 in SL) ? SL[$3] : ""; $1 = "W" OFS s; print }')"
     if [ "$n_wrows" -eq 0 ]; then
         printf 'ROW\t@{colspan=6}No Waiting Files — every staged UC2 File in this data window was collected.\n'
     fi
     printf 'TOTAL\tTotal (%s subscriptions)\t@{class=num warn}%s\t%s\t\t\t@{class=num}%s\n' "$n_wsites" "$n_wait" "$oldest_dt" "$sum_nc"
     printf 'NOTE\tA **Waiting** File arrived and was staged (its last leg is the Inbound routing one) but no partner collect leg followed — and its staged copy has NOT been deleted yet, so the partner can still pick it up (once the retention sweep removes it, the File moves to the Expired table below). **Waiting for** counts from the staging moment to the dataset'\''s last record (%s) — a file may have been collected after the export. Collected = the same subscription'\''s Files that WERE picked up. Sorted oldest-waiting first. Click a row for the 10 most recent waiting Files.\n' "$last_dt"
 
-    printf 'TABLE\tFiles waiting the longest\twide\tnofilter\n'
+    # the same default sort here: Waiting for descending (sort=5:-1 on the
+    # sortval) — without it the Staged date column opened the table NEWEST first
+    printf 'TABLE\tFiles waiting the longest\twide\tnofilter\tsort=5:-1\n'
     printf 'HEAD\tStaged\tSubscription\tAccount\tFile\tSize\tWaiting for\n'
     printf 'KIND\ttext\tsite\tacct\tfile\ttext\ttext\n'
-    # F fields: 2=stagesec 3=staged_dt 4=site 5=acct 6=bytes 7=size 8=wait_for 9..=file
-    while IFS='|' read -r _ s dt site acct bytes size wf fname; do
+    # F fields: 2=stagesec 3=staged_dt 4=site 5=acct 6=bytes 7=size 8=wait_for 9=wait_sec 10=coreid 11..=file
+    while IFS='|' read -r _ s dt site acct bytes size wf wsec _ fname; do
         [ -z "$site" ] && continue
         n_shown=$((n_shown + 1)); sum_bytes=$((sum_bytes + bytes))
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\n' "$dt" "$site" "$acct" "$fname" "$size" "$wf"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@{sortval=%s}%s\n' "$dt" "$site" "$acct" "$fname" "$size" "$wsec" "$wf"
     done <<< "$(printf '%s\n' "$agg" | grep '^F|' | LC_ALL=C sort -t'|' -k2,2n -k4,4 | awk -v n="$TOP_FILES" 'NR<=n')"
     if [ "$n_shown" -eq 0 ]; then
         printf 'ROW\t@{colspan=6}No Waiting Files in this data window.\n'

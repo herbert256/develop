@@ -23,7 +23,8 @@
 <ul>
 <li>A UC2 file (the partner collects from us) has four legs: Inbound/PeSIT from the internal CFT; Outbound/routing (internal staging, seconds later); Inbound/routing into the pickup area; Outbound/SSH, the partner dials in and collects (later, sometimes repeatedly).</li>
 <li><strong>Waiting</strong> = a File whose final leg is a successfully processed Inbound routing leg, staged copy still on disk; not an error, the partner may not have polled yet.</li>
-<li><strong>Waiting for</strong> runs from staging to the dataset&rsquo;s last record; a later export with the collect leg flips it to OK (or Error) automatically.</li>
+<li><strong>Waiting for</strong> runs from staging to the dataset&rsquo;s last record; a later export with the collect leg flips it to OK (or Error) automatically. The two waiting tables open longest-waiting first.</li>
+<li>A <strong>Waiting Files</strong> cell opens the subscription&rsquo;s own page: its staged Files, longest waiting first &mdash; Start, Waiting for, File name, CoreId. The CoreId of the first 5 opens the File page.</li>
 <li><strong>Expired</strong> = the nightly <strong>File Maintenance</strong> retention sweep (~03:00, ~11 days after staging) deleted the staged copy before any pickup: never delivered, no longer collectable.</li>
 <li>The deletion leaves no transfer-log trace; <code>bin/expire-files.sh</code> joins the server log&rsquo;s &ldquo;File Maintenance &hellip; Deleted files&rdquo; lines (same account and file name, deletion after staging) into the <em>Expired</em> field, <code>_files.tsv</code> col 22.</li>
 <li>Every report counts Waiting as <strong>OK</strong> and Expired as <strong>Error</strong>; only here are they apart.</li>

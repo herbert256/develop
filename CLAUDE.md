@@ -77,7 +77,11 @@ request: one page per subscription with expired Files, Start · Expired · File 
 from the Expired cells of the Expired report's subscriptions table; `expired.sh` writes the
 `.rpt` set into `data/transfer/reports/expired/`; default sort = Expired descending, baked in that
 order, and the CoreId of the FIRST 5 rows links `files/<coreid>.html` — the list
-`_expired-files.tsv`, paged by `failed.sh` under list tag `X`), `server/`, `analyses/`
+`_expired-files.tsv`, paged by `failed.sh` under list tag `X`; and its twin `waiting/` — the same
+day: the Files still staged, Start · Waiting for · File name · CoreId, opened from the Waiting
+Files cells of the Waiting report's first table, default sort = Waiting for descending via the
+cell's `sortval` (the wait in seconds — the humanized text does not sort), list
+`_waiting-files.tsv`, tag `W`), `server/`, `analyses/`
 (+ `xref/`), `dashboards/`, `day/`, `details/` (one subdir per entity type), `files/`
 (2026-09-21, user request: the ONE directory of the per-File pages — the failed-File error pages
 `<coreid>.html`, the subscription-named error pages `<slug>.html` and the File pages of any
