@@ -53,6 +53,8 @@ ensure_parsed
 # rebuild — skip_if_fresh only tests the one .rpt
 SUBDIR="$REPORTS_DIR/expired"
 [ -d "$SUBDIR" ] || rm -f "$OUT"
+FILESIDE="$REPORTS_DIR/_expired-files.tsv"   # the CoreIds those pages link → File pages (failed.sh)
+[ -f "$FILESIDE" ] || rm -f "$OUT"
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
@@ -118,10 +120,18 @@ cut -f1 "$TMPD/x_sub" | LC_ALL=C sort | awk '
       printf "%s\t%s\n", $0, slug }' > "$TMPD/x_slugs"
 rm -rf "$SUBDIR.new"; mkdir -p "$SUBDIR.new"
 cp "$TMPD/x_slugs" "$SUBDIR.new/_slugmap.tsv"
-# newest staged first per subscription (the page default: a first column of
-# dates opens descending)
-LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2r -k5,5 "$TMPD/x_files" | awk -F'\t' \
-    -v slugs="$TMPD/x_slugs" -v dir="$SUBDIR.new" -v stamp="$(date '+%Y-%m-%d %H:%M:%S')" -v nin="${#files[@]}" '
+# LAST EXPIRED FIRST per subscription (2026-09-21, user request) — the page's
+# declared default sort (sort=1:-1, the Expired column descending). The rows are
+# BAKED in that order on the DISPLAYED value, ties by Start descending then
+# CoreId: report.js sorts stably (ties keep DOM order), so the first rows of the
+# page are exactly the first rows here. THE FIRST 5 of that order link their
+# File page — files/<coreid>.html — from the CoreId cell; their CoreIds go to
+# the sidecar $FILESIDE, which failed.sh pages (list tag X) like the Transfer
+# patterns / Longest Files lists. cmp-guarded: an unchanged list keeps its mtime
+# and failed.sh stays fresh.
+LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk -F'\t' \
+    -v slugs="$TMPD/x_slugs" -v dir="$SUBDIR.new" -v stamp="$(date '+%Y-%m-%d %H:%M:%S')" -v nin="${#files[@]}" \
+    -v side="$TMPD/x_side" -v TOPN=5 '
     BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
     function finish() {
         if (out == "") return
@@ -129,19 +139,26 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2r -k5,5 "$TMPD/x_files" | awk -F'\t'
         close(out)
     }
     ($1 "") != cur {
-        finish(); cur = $1; out = ""
+        finish(); cur = $1; out = ""; nrow = 0
         if (!($1 in SL)) next
         out = dir "/" SL[$1] ".rpt"
         printf "TITLE\tExpired files: %s\n", $1 > out
         printf "DESC\tThe staged Files of subscription %s the retention sweep deleted before any pickup, newest first.\n", $1 > out
-        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] that the nightly File Maintenance retention sweep deleted before the partner collected them — never delivered. Newest first.\n", $1 > out
-        printf "TABLE\tExpired files\twide\tnofilter\tpager=25\n" > out
+        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] that the nightly File Maintenance retention sweep deleted before the partner collected them — never delivered. Last expired first; the CoreId of the first %d opens the File page.\n", $1, TOPN > out
+        printf "TABLE\tExpired files\twide\tnofilter\tsort=1:-1\tpager=25\n" > out
         printf "HEAD\tStart\tExpired\tFile name\tCoreId\n" > out
         printf "KIND\ttext\ttext\tmono\tmono\n" > out
     }
-    out != "" { printf "ROW\t%s\t%s\t%s\t%s\n", $2, $3, $4, $5 > out }
+    out != "" {
+        nrow++
+        if (nrow <= TOPN) { lk = "@{href=../../files/" $5 ".html}"; print $5 > side } else lk = ""
+        printf "ROW\t%s\t%s\t%s\t%s%s\n", $2, $3, $4, lk, $5 > out
+    }
     END { finish() }'
 rm -rf "$SUBDIR"; mv "$SUBDIR.new" "$SUBDIR"
+[ -f "$TMPD/x_side" ] || : > "$TMPD/x_side"
+LC_ALL=C sort -u "$TMPD/x_side" > "$FILESIDE.tmp"
+if cmp -s "$FILESIDE.tmp" "$FILESIDE" 2>/dev/null; then rm -f "$FILESIDE.tmp"; else mv "$FILESIDE.tmp" "$FILESIDE"; fi
 
 hsz() { awk -v b="$1" 'BEGIN{ if (b>=1073741824) printf "%.1f GB", b/1073741824
     else if (b>=1048576) printf "%.1f MB", b/1048576
@@ -178,11 +195,13 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
     printf 'NOTE\tCalendar days between the staging start and the deletion: ONE global retention (~11 days) — the sweep runs at 03:00, so a file staged before 03:00 expires on calendar day 11, a later one on day 10-11. No subscription deviates (see the per-subscription average below), so retention is **not** configured per partner.\n'
 
     # ---- 2. the subscriptions (per ACCOUNT until 2026-09-19, user request) ---
-    printf 'TABLE\tSubscriptions the expired files belong to\twide\tnofilter\trestint\n'
+    # default sort = Last deletion descending (2026-09-21, user request): declared
+    # (sort=10:-1) AND baked in that order, the name as the tie-break
+    printf 'TABLE\tSubscriptions the expired files belong to\twide\tnofilter\trestint\tsort=10:-1\n'
     printf 'HEAD\tSubscription\tPartner\tExpired\tCollected\tWaiting\tPickup rate\tAvg age\tVolume\tFirst staged\tLast staged\tLast deletion\n'
     printf 'KIND\tsite\tptn\tnumfailed\tnumprocessed\tnumwarn\tnum\tnum\tnum\ttext\ttext\ttext\n'
     if [ -s "$TMPD/x_sub" ]; then
-        LC_ALL=C sort -t"$(printf '\t')" -k2,2nr -k1,1 "$TMPD/x_sub" | awk -F'\t' -v slugs="$TMPD/x_slugs" '
+        LC_ALL=C sort -t"$(printf '\t')" -k9,9r -k1,1 "$TMPD/x_sub" | awk -F'\t' -v slugs="$TMPD/x_slugs" '
             function hsz(b) { if (b >= 1073741824) return sprintf("%.1f GB", b/1073741824)
                 if (b >= 1048576) return sprintf("%.1f MB", b/1048576)
                 if (b >= 1024)    return sprintf("%.1f KB", b/1024)

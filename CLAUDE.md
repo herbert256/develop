@@ -75,7 +75,9 @@ a trailing `acceptance/`|`production/` stripped for pre-split bookmarks), `asset
 `.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `seenlog/`, `expired/` — 2026-09-21, user
 request: one page per subscription with expired Files, Start · Expired · File name · CoreId, opened
 from the Expired cells of the Expired report's subscriptions table; `expired.sh` writes the
-`.rpt` set into `data/transfer/reports/expired/`), `server/`, `analyses/`
+`.rpt` set into `data/transfer/reports/expired/`; default sort = Expired descending, baked in that
+order, and the CoreId of the FIRST 5 rows links `files/<coreid>.html` — the list
+`_expired-files.tsv`, paged by `failed.sh` under list tag `X`), `server/`, `analyses/`
 (+ `xref/`), `dashboards/`, `day/`, `details/` (one subdir per entity type), `files/`
 (2026-09-21, user request: the ONE directory of the per-File pages — the failed-File error pages
 `<coreid>.html`, the subscription-named error pages `<slug>.html` and the File pages of any

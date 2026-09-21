@@ -138,6 +138,10 @@ FILESIDE2="$REPORTS_DIR/_longest-files.tsv"
 # exist) — bin/build/drill-files.sh collects them from the transfer .rpt tree
 # right before the build catch-up run of this script; tag D, no back link
 FILESIDE3="$REPORTS_DIR/_drill-files.tsv"
+# ... and the first 5 Files of every Expired subscription page (expired.sh,
+# 2026-09-21, user request: their CoreId cells link the File page) — tag X,
+# back link = the Expired report
+FILESIDE4="$REPORTS_DIR/_expired-files.tsv"
 # A missing drill dir — or a missing variant list — forces a rebuild:
 # skip_if_fresh only tests the one .rpt, the same guard the pesit/uc-status
 # sidecars carry.
@@ -154,7 +158,7 @@ if [ -f "$OUT" ]; then
     while IFS= read -r c9; do
         [ -n "$c9" ] || continue
         [ -f "$FILEDIR/$c9.rpt" ] || [ -f "$ERRDIR/$c9.rpt" ] || { rm -f "$OUT"; break; }
-    done < <(cat "$FILESIDE" "$FILESIDE2" "$FILESIDE3" 2>/dev/null)
+    done < <(cat "$FILESIDE" "$FILESIDE2" "$FILESIDE3" "$FILESIDE4" 2>/dev/null)
 fi
 # The server parse cache is a dep (the "What the server log said" sections);
 # skip_if_fresh skips a missing dep, so an env without server logs still works.
@@ -185,7 +189,7 @@ source "$LIB_DIR/../envlabel.sh"
 ENVL=$(printf '%s' "$ENV_LABEL" | cut -c1 | tr '[:lower:]' '[:upper:]')
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRVLOG" "$CONFIG_BASE" "$LIB_DIR/../flip-reason.awk" \
     "$RFLIP" "$KAPUT" "$BOXES" "$CONFIG_XREF/_subscriptions-partners.tsv" "$CONFIG_XREF/_subscriptions-logins.tsv" \
-    "$CONFIG_XREF/_subscriptions-hosts.tsv" "$FILESIDE" "$FILESIDE2" "$FILESIDE3" \
+    "$CONFIG_XREF/_subscriptions-hosts.tsv" "$FILESIDE" "$FILESIDE2" "$FILESIDE3" "$FILESIDE4" \
     "$LIB_DIR/../envlabel.sh" "$LIB_DIR/../../input/environment.txt"
 
 GEN=$(date '+%Y-%m-%d %H:%M:%S')
@@ -263,12 +267,13 @@ LC_ALL=C awk -F'\t' '$12 != "" && $2 == "Processed" {
         e = ($24 != "" ? $24 : $4 " " $5)
         if (!($12 in K) || e > K[$12]) { K[$12] = e; C[$12] = $1 } }
     END { for (s in K) print C[s] }' "$FILES" | LC_ALL=C sort > "$TMP/lastokfiles"
-# the union of the four lists, each CoreId tagged with its source(s) — P =
+# the union of the five lists, each CoreId tagged with its source(s) — P =
 # Transfer patterns, L = Longest Files, PL = both, D = the first File of a red /
-# orange drill cell, O = a subscription's latest OK File — the back link(s) of
-# its page (the 8th column of the list rows below; D and O add none, the facts
-# table links the subscription the File belongs to)
-{ [ -f "$FILESIDE" ] && sed 's/$/	P/' "$FILESIDE"; [ -f "$FILESIDE2" ] && sed 's/$/	L/' "$FILESIDE2"; [ -f "$FILESIDE3" ] && sed 's/$/	D/' "$FILESIDE3"; [ -s "$TMP/lastokfiles" ] && sed 's/$/	O/' "$TMP/lastokfiles"; true; } \
+# orange drill cell, O = a subscription's latest OK File, X = the first 5 Files
+# of an Expired subscription page — the back link(s) of its page (the 8th
+# column of the list rows below; D and O add none, the facts table links the
+# subscription the File belongs to)
+{ [ -f "$FILESIDE" ] && sed 's/$/	P/' "$FILESIDE"; [ -f "$FILESIDE2" ] && sed 's/$/	L/' "$FILESIDE2"; [ -f "$FILESIDE3" ] && sed 's/$/	D/' "$FILESIDE3"; [ -s "$TMP/lastokfiles" ] && sed 's/$/	O/' "$TMP/lastokfiles"; [ -f "$FILESIDE4" ] && sed 's/$/	X/' "$FILESIDE4"; true; } \
     | LC_ALL=C awk -F'\t' '$1 != "" { s[$1] = s[$1] $2 } END { for (c in s) print c "\t" s[c] }' \
     | LC_ALL=C sort > "$TMP/fileside"
 if [ -s "$TMP/fileside" ]; then
@@ -769,6 +774,7 @@ if [ -s "$TMP/meta" ]; then
                 if (MC[i] in FSET) {            # one back link per list that named it
                     if (FSRC[MC[i]] ~ /P/) printf "LINK\t../transfer/file-journey-patterns.html\tBack to Transfer patterns\n" >> f
                     if (FSRC[MC[i]] ~ /L/) printf "LINK\t../transfer/duration-longest.html\tBack to Longest Files\n" >> f
+                    if (FSRC[MC[i]] ~ /X/) printf "LINK\t../transfer/expired.html\tBack to Expired\n" >> f
                 }
                 else printf "LINK\t../analyses/failed.html\tBack to Failed Subscriptions\n" >> f
                 printf "FOOT\tGenerated on %s\n", gen >> f
