@@ -140,6 +140,30 @@ if [ ${#spv[@]} -gt 0 ]; then
     echo "Rendered docs/transfer/secparams/ (${#spv[@]} value page(s))." >&2
 fi
 
+# Expired SUBSCRIPTION pages (2026-09-21, user request): expired.sh wrote one
+# .rpt per subscription with expired Files into data/transfer/reports/expired/,
+# listing those Files; render each to docs/transfer/expired/<slug>.html
+# (2 levels deep -> ../../ css). The Expired cells of the Expired report's
+# subscriptions table link here via @{href=expired/...}. No date filter (the
+# Expired report is a current-state audit).
+shopt -s nullglob
+expp=("$DATA"/transfer/reports/expired/*.rpt)
+shopt -u nullglob
+# clear even when THIS run has no .rpt set (stale pages would survive forever)
+mkdir -p "$DOCS/transfer/expired"
+rm -f "$DOCS"/transfer/expired/*.html
+if [ ${#expp[@]} -gt 0 ]; then
+    CUR_DATES=""; DLINK_BASE="../../details/"
+    for f in "${expp[@]}"; do
+        b=${f##*/}; b=${b%.rpt}
+        # report key per subscription, the latest/ pages' rule
+        pub_run render_rpt "$f" "$DOCS/transfer/expired/$b.html" "../../assets/style.css" "../../index.html" "TRANSFER - Expired" "" "expired" "expired-$b"
+    done
+    pub_wait
+    CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
+    echo "Rendered docs/transfer/expired/ (${#expp[@]} subscription page(s))." >&2
+fi
+
 # THE FILE PAGES — docs/<env>/files/ (2026-09-21, user request: the error pages
 # and the File pages share ONE directory; docs/<env>/errors/ is gone). failed.sh
 # keeps TWO .rpt sets, because its reason-evidence pass globs the first and must

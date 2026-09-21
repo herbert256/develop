@@ -22,8 +22,15 @@
 # A CURRENT-STATE audit: every table is `nofilter`, the date range never narrows
 # it (the old page had no From/To either).
 #
-# Reads data/_files.tsv (2 outcome, 4 date, 5 time, 8 size, 12 subscription,
-# 20 partner, 21 wait_ms, 22 expired-at). Writes data/expired.rpt.
+# THE SUBSCRIPTION FILE PAGES (2026-09-21, user request): the Expired cell of
+# the subscriptions table opens transfer/expired/<slug>.html — the expired
+# Files of that subscription (Start · Expired · File name · CoreId), one .rpt
+# per subscription in data/transfer/reports/expired/, rendered by
+# bin/transfer/publish.sh.
+#
+# Reads data/_files.tsv (1 coreid, 2 outcome, 4 date, 5 time, 8 size, 11 file,
+# 12 subscription, 20 partner, 21 wait_ms, 22 expired-at). Writes
+# data/expired.rpt + data/expired/<slug>.rpt (+ its _slugmap.tsv).
 #
 # Usage:
 #   ./expired.sh
@@ -42,6 +49,10 @@ if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
 ensure_parsed
+# the per-subscription File pages' .rpt set (see below); a missing dir forces a
+# rebuild — skip_if_fresh only tests the one .rpt
+SUBDIR="$REPORTS_DIR/expired"
+[ -d "$SUBDIR" ] || rm -f "$OUT"
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
@@ -70,6 +81,8 @@ awk -F'\t' -v D="$TMPD" '
         if (!((dp[1] SUBSEP s) in na)) { na[dp[1] SUBSEP s] = 1; nsub[dp[1]]++ }
         ewd[j($4) % 7]++
         if (pt[s] == "" && $20 != "") pt[s] = $20
+        # the per-subscription File pages: subscription, staged, deleted, file, coreid
+        printf "%s\t%s %s\t%s\t%s\t%s\n", s, $4, substr($5, 1, 8), substr($22, 1, 19), $11, $1 > (D "/x_files")
         next
     }
     $21 != "" { cn++; ca[s]++; cwd[j($4) % 7]++; next }
@@ -85,6 +98,50 @@ awk -F'\t' -v D="$TMPD" '
 ' "$FILES"
 [ -f "$TMPD/x_stats" ] || printf '0\t0\t0\t0\t0\n' > "$TMPD/x_stats"
 IFS=$'\t' read -r nexp bexp agesum ncoll nwait < "$TMPD/x_stats"
+
+# ---- the per-subscription File pages (2026-09-21, user request) -------------
+# One .rpt per subscription with expired Files -> $REPORTS_DIR/expired/<slug>.rpt,
+# rendered to docs/transfer/expired/<slug>.html by bin/transfer/publish.sh; the
+# Expired cell of the subscriptions table links it. The slug is the site-wide
+# slugify, walked over the C-SORTED names so a separator twin's numeric bump is
+# stable (never a hash walk). Staged in expired.new/ and swapped in BEFORE the
+# main .rpt lands — skip_if_fresh rests on that one file.
+[ -f "$TMPD/x_sub" ] || : > "$TMPD/x_sub"
+[ -f "$TMPD/x_files" ] || : > "$TMPD/x_files"
+cut -f1 "$TMPD/x_sub" | LC_ALL=C sort | awk '
+    function slugify(s,   t) { t = tolower(s); gsub(/[^a-z0-9]+/, "-", t)
+        sub(/^-+/, "", t); sub(/-+$/, "", t); return t }
+    { base = slugify($0); if (base == "") base = "subscription"
+      slug = base; n = 1
+      while (slug in used) { n++; slug = base "-" n }
+      used[slug] = 1
+      printf "%s\t%s\n", $0, slug }' > "$TMPD/x_slugs"
+rm -rf "$SUBDIR.new"; mkdir -p "$SUBDIR.new"
+cp "$TMPD/x_slugs" "$SUBDIR.new/_slugmap.tsv"
+# newest staged first per subscription (the page default: a first column of
+# dates opens descending)
+LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2r -k5,5 "$TMPD/x_files" | awk -F'\t' \
+    -v slugs="$TMPD/x_slugs" -v dir="$SUBDIR.new" -v stamp="$(date '+%Y-%m-%d %H:%M:%S')" -v nin="${#files[@]}" '
+    BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
+    function finish() {
+        if (out == "") return
+        printf "FOOT\tGenerated on %s from %s file(s)\n", stamp, nin > out
+        close(out)
+    }
+    ($1 "") != cur {
+        finish(); cur = $1; out = ""
+        if (!($1 in SL)) next
+        out = dir "/" SL[$1] ".rpt"
+        printf "TITLE\tExpired files: %s\n", $1 > out
+        printf "DESC\tThe staged Files of subscription %s the retention sweep deleted before any pickup, newest first.\n", $1 > out
+        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] that the nightly File Maintenance retention sweep deleted before the partner collected them — never delivered. Newest first.\n", $1 > out
+        printf "TABLE\tExpired files\twide\tnofilter\tpager=25\n" > out
+        printf "HEAD\tStart\tExpired\tFile name\tCoreId\n" > out
+        printf "KIND\ttext\ttext\tmono\tmono\n" > out
+    }
+    out != "" { printf "ROW\t%s\t%s\t%s\t%s\n", $2, $3, $4, $5 > out }
+    END { finish() }'
+rm -rf "$SUBDIR"; mv "$SUBDIR.new" "$SUBDIR"
 
 hsz() { awk -v b="$1" 'BEGIN{ if (b>=1073741824) printf "%.1f GB", b/1073741824
     else if (b>=1048576) printf "%.1f MB", b/1048576
@@ -125,17 +182,21 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
     printf 'HEAD\tSubscription\tPartner\tExpired\tCollected\tWaiting\tPickup rate\tAvg age\tVolume\tFirst staged\tLast staged\tLast deletion\n'
     printf 'KIND\tsite\tptn\tnumfailed\tnumprocessed\tnumwarn\tnum\tnum\tnum\ttext\ttext\ttext\n'
     if [ -s "$TMPD/x_sub" ]; then
-        LC_ALL=C sort -t"$(printf '\t')" -k2,2nr -k1,1 "$TMPD/x_sub" | awk -F'\t' '
+        LC_ALL=C sort -t"$(printf '\t')" -k2,2nr -k1,1 "$TMPD/x_sub" | awk -F'\t' -v slugs="$TMPD/x_slugs" '
             function hsz(b) { if (b >= 1073741824) return sprintf("%.1f GB", b/1073741824)
                 if (b >= 1048576) return sprintf("%.1f MB", b/1048576)
                 if (b >= 1024)    return sprintf("%.1f KB", b/1024)
                 return b " B" }
+            BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
             {
                 rate = ($2 + $3) ? $3 * 100 / ($2 + $3) : 0
+                # the Expired cell opens the subscription File page
+                # (expired/<slug>.html, written above)
+                lk = ($1 in SL) ? "@{href=expired/" SL[$1] ".html}" : ""
                 # never collected once = a dead pickup flow (red); collects some
                 # and lets the rest expire = orange
-                printf "ROW\t%s\t%s\t%d\t%d\t%d\t%.0f%%\t%.1f d\t%s\t%s\t%s\t%s\t@data:res=%s\n", \
-                    $1, $10, $2, $3, $4, rate, $6 / $2, hsz($5), $7, $8, substr($9, 1, 19), \
+                printf "ROW\t%s\t%s\t%s%d\t%d\t%d\t%.0f%%\t%.1f d\t%s\t%s\t%s\t%s\t@data:res=%s\n", \
+                    $1, $10, lk, $2, $3, $4, rate, $6 / $2, hsz($5), $7, $8, substr($9, 1, 19), \
                     ($3 == 0 ? "red" : "orange")
                 te += $2; tc += $3; tw += $4; tv += $5
             }
