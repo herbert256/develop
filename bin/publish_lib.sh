@@ -1652,8 +1652,9 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             # page by CoreId), S = a server-failing flow (the cell links its
             # subscription-named errors/<slug> page), D = a boxes verdict with
             # no page (the cell links the subscription'\''s detail page).
-            # the failed-sub-all row is Subscription / Date/time / Reason
-            # since 2026-08 — the CoreId page lives only in the @data:href
+            # the failed-sub-all row is Environment / Subscription / Date/time /
+            # Reason / CoreId since 2026-09-21 (Subscription / Date/time / Reason
+            # since 2026-08) — the CoreId page still comes from the @data:href
             # cell, and a server-failing row carries @data:srv=1 (the END
             # srvslug entries cover those)
             $1 == "ROW" {
@@ -1664,12 +1665,12 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                     if (index($i, "@data:href=../files/") == 1) pg = substr($i, 21)
                 }
                 if (!red || srv) next
-                site = $2; sub(/^@\{[^}]*\}/, "", site)
+                site = $3; sub(/^@\{[^}]*\}/, "", site)
                 k = toupper(site)
                 if (site == "" || (k in claimed) || (k in rfs)) next
                 claimed[k] = 1
                 sub(/\.html$/, "", pg)
-                if ($4 != "" && pg != "") print site "\t" $4 "\tE\t" pg
+                if ($5 != "" && pg != "") print site "\t" $5 "\tE\t" pg
             }
             END {
                 for (k in srvslug) if (!(k in claimed)) { claimed[k] = 1

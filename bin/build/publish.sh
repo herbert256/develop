@@ -711,8 +711,9 @@ write_failing_now() {
                     if (n >= 1 && a[1] != "") rfs[toupper(a[1])] = 1 }
                 close(RF) }
         $1 != "ROW" { next }
-        # the failed-sub-all row is Subscription / Date/time / Reason since
-        # 2026-08 — the CoreId lives only in the @data:href cell, and a
+        # the failed-sub-all row is Environment / Subscription / Date/time / Reason /
+        # CoreId since 2026-09-21 (Subscription / Date/time / Reason since
+        # 2026-08) — the page still comes from the @data:href cell, and a
         # server-failing row carries @data:srv=1 (table 2 owns those)
         { red = 0; srv = 0; pg = ""
           for (i = 2; i <= NF; i++) {
@@ -721,7 +722,7 @@ write_failing_now() {
               if (index($i, "@data:href=../files/") == 1) pg = substr($i, 21)
           }
           if (!red || srv) next
-          site = $2; sub(/^@\{[^}]*\}/, "", site)
+          site = $3; sub(/^@\{[^}]*\}/, "", site)
           if (site == "" || (site in seen)) next          # newest-first: the first row wins
           if (toupper(site) in rfs) next                  # server-reddened: table 2 owns it
           seen[site] = 1
@@ -729,7 +730,7 @@ write_failing_now() {
           sub(/\.html$/, "", pg)                          # -> the CoreId
           # "-" where a field would be empty: the reader below splits on TAB and
           # bash read() collapses a run of IFS whitespace, shifting the columns
-          printf "%s\t%s\t%s\t%s\t%s\n", $3, site, ($4 != "" ? $4 : "-"), pg, $3 }
+          printf "%s\t%s\t%s\t%s\t%s\n", $4, site, ($5 != "" ? $5 : "-"), pg, $4 }
     ' "$rpt" | LC_ALL=C sort -r | cut -f2-)
 
     # --- table 2: every OTHER red subscription (the still-green early warnings
