@@ -989,7 +989,9 @@ if cmp -s "$EVID.tmp" "$EVID" 2>/dev/null; then rm -f "$EVID.tmp"; else mv "$EVI
 #      lines was inheriting a stale "Connection failures" verdict from a
 #      19-day-older page of the same flow — the page's own evidence
 #      contradicted its own title. What the file's legs say outranks what a
-#      DIFFERENT file's page said.
+#      DIFFERENT file's page said. Since 2026-09-21 (user rule) a one-leg file
+#      its page classified only as "Unknown error" — the classifier's LAST
+#      rule, the bare error bookend — reads "One-legged" too.
 #   3. the PAIR borrow (2026-08): an UNPAGED file with nothing of its own
 #      takes the reason of the NEWEST PAGED file of its (subscription, legs)
 #      pair — the same failure shape, much closer evidence than the flow's
@@ -1064,6 +1066,13 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
         LEGST = ""
         if (cid in PG) {
             r6 = pagereason(cid)
+            # "Unknown error" on a ONE-LEG file reads One-legged (2026-09-21,
+            # user rule): the classifier LAST rule only says an error bookend
+            # closed the connection — on a file that took a single leg the
+            # missing second leg IS the story, the verdict rule 2 gives every
+            # other unclassified one-leg file. Before the PAIR store, so the
+            # pair donates the final verdict.
+            if (r6 == "Unknown error" && legs + 0 == 1) r6 = "One-legged"
             # the PAIR verdict: the stream is newest first, so the FIRST
             # paged row of a (subscription, legs) pair is that pair NEWEST
             # page — it donates its reason to the unpaged (older, off-window)

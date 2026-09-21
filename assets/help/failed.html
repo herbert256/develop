@@ -32,7 +32,7 @@
 <li><strong>Date/time</strong> &mdash; the first leg&rsquo;s start; server-log row: the server evidence stamp (its last File when none).</li>
 <li><strong>Reason</strong> &mdash; the first classifying error line of the file&rsquo;s server-log section, in the home page&rsquo;s red-worklist vocabulary (<em>Connection failures</em>, <em>Route stopped</em>, <em>Wrong server fingerprint</em>, &hellip;); for a red row the home page&rsquo;s Reason.
 <ul>
-<li><em>One-legged</em>: a single-leg file naming nothing recognisable &mdash; arrival without delivery is the failure.</li>
+<li><em>One-legged</em>: a single-leg file naming nothing recognisable &mdash; arrival without delivery is the failure. A single-leg file whose only evidence would read <em>Unknown error</em> (a bare error end-of-transfer record) reads <em>One-legged</em> too.</li>
 <li>No own error page (All views): the reason of the newest paged file of the same Subscription + leg-count.</li>
 <li>Multi-leg, no logged error: the last leg&rsquo;s raw status (<em>Failed Subtransmission</em>). Blank only when no rule applies.</li>
 <li>Server-log row: the classified newest server error line, else its Subscriptions-in-boxes box.</li>
