@@ -37,7 +37,7 @@
 <li>Multi-leg, no logged error: the last leg&rsquo;s raw status (<em>Failed Subtransmission</em>). Blank only when no rule applies.</li>
 <li>Server-log row: the classified newest server error line, else its Subscriptions-in-boxes box.</li>
 </ul></li>
-<li><strong>CoreId</strong> (last) &mdash; the CoreId of the last error: the failed File of the row, linking SecureTransport File Tracking; server-log row: the flow&rsquo;s newest failed File, blank when it never had one.</li>
+<li><strong>CoreID / SessionID</strong> (last) &mdash; the id of the last error. Failed File row: its CoreId, linking SecureTransport File Tracking. Server-log row: the <em>session</em> id of the server-log error line the red verdict rests on (the connection its error page shows) &mdash; never a transfer id; blank when the log names no session for it.</li>
 </ul>
 <h2>Rules</h2>
 <ul>

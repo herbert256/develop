@@ -1144,7 +1144,7 @@ NFAILING=$(LC_ALL=C awk -F'\t' -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" '
 LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
     -v NALLALL=$((nallf + NSRVR)) -v NALLFAIL=$((NFAILING + NSRVR)) \
     -v REAS="$TMP/reasons" -v PAGEDF="$TMP/paged" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" \
-    -v SRVS="$TMP/srvsubs" -v ENVL="$ENVL" '
+    -v SRVS="$TMP/srvsubs" -v ENVL="$ENVL" -v SESSF="$TMP/srvsess2" '
     function rescol(nm,   r) { r = (toupper(nm) in SRES) ? SRES[toupper(nm)] : ""
         return (r == "green" || r == "orange" || r == "red" || r == "blue") ? r : "" }
     BEGIN {
@@ -1171,6 +1171,15 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
                 SVT[nsv] = (n >= 3) ? a[3] : ""; SVR[nsv] = (n >= 4) ? a[4] : ""
                 if (n >= 5 && a[5] == "P") PSET[toupper(a[1])] = 1 } }
         close(SRVS)
+        # the reddening SESSION of each server-failing flow (name ⇥ session, the
+        # scan above: the session of the E line at the flow evidence stamp — the
+        # connection its error page shows), the SessionID of its list row; several
+        # sessions at one stamp are ", "-joined in file order
+        while ((getline l < SESSF) > 0) { p = index(l, "\t")
+            if (p > 1) { k = toupper(substr(l, 1, p - 1)); s = substr(l, p + 1)
+                # emptiness, not membership: mawk creates SVSES[k] before the RHS runs
+                if (s != "") SVSES[k] = ((SVSES[k] != "") ? SVSES[k] ", " : "") s } }
+        close(SESSF)
         NP = split("sub-failing sub-all all-failing all-all", PK, " ")
         DSC["sub-failing"] = "Every failing subscription — the newest failed File of each, one row per subscription, plus the subscriptions failing in the server log only."
         DSC["sub-all"]     = "The newest failed File of every subscription that ever failed, recovered flows included — one row per subscription — plus the subscriptions failing in the server log only."
@@ -1198,13 +1207,15 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
             # (2026-08, replacing the search-on-demand payloads): the all
             # lists cap at the newest RCAP file rows instead (the intro
             # above says so when it bites), so the page loads whole.
-            # Environment · Subscription · Date/time · Reason · CoreId (2026-09-21,
-            # user request: the environment letter first, the CoreId of the last
-            # error last) — the positional readers of failed-sub-all.rpt (home
+            # Environment · Subscription · Date/time · Reason · CoreID / SessionID
+            # (2026-09-21, user request: the environment letter first, the id of the
+            # last error last — a failed File row its CoreId, a server-log row the
+            # SESSION of its reddening error line, never a transfer id) — the
+            # positional readers of failed-sub-all.rpt (home
             # table 1, bin/build/publish.sh; the Entities Reason, publish_lib.sh)
             # read Subscription = field 3, Date/time = 4, Reason = 5
             printf "TABLE\t\twide\tsort=2:-1\trowlink\trestint\tnosearch\n" > f
-            printf "HEAD\tEnvironment\tSubscription\tDate/time\tReason\tCoreId\n" > f
+            printf "HEAD\tEnvironment\tSubscription\tDate/time\tReason\tCoreID / SessionID\n" > f
             printf "KIND\ttext\tsite\ttext\ttext\tmono\n" > f
         }
     }
@@ -1213,16 +1224,13 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
         col = rescol(site)
         r = (cid in RE) ? RE[cid] : ""
         tint = (col != "") ? "\t@data:res=" col : ""
-        # the newest failed File of each subscription (mark S): the CoreId cell of
-        # a kind-P server row in END — its last error File, the row itself being
-        # the server verdict
-        if (m ~ /S/) LASTC[toupper(site)] = cid
         # A PAGED row: the Subscription cell opens the error page —
         # @{nolink=1} drops the automatic entity link a `site` cell would
         # otherwise carry, so the row has ONE destination and no cell that
         # quietly goes somewhere else (the error page names the subscription
         # in its facts table, linked) — and @data:href gives the whole row
-        # the same target (rowlink). The CoreId is the LAST column again since
+        # the same target (rowlink). The CoreId is the LAST column again (headed
+        # CoreID / SessionID — a server-log row carries its session there) since
         # 2026-09-21 (report.js links it to File Tracking); the failed-sub-all
         # consumers (home table 1, the entities Reason, the detail splice)
         # still extract the page from @data:href. An UNPAGED row (the all lists
@@ -1257,11 +1265,11 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
         # SUBSCRIPTION, written by the page step above. The page default sort
         # (Date/time desc) interleaves the rows on load.
         for (j = 1; j <= nsv; j++) {
-            # CoreId: the newest failed File of the flow where it has one (kind P),
-            # blank for a flow failing in the server log only (kind R)
+            # CoreID / SessionID: a server-log error shows the SESSION of its
+            # reddening line (blank when the scan resolved none), never a CoreId
             sk = toupper(SVN[j])
             srow = sprintf("ROW\t%s\t@{href=../files/%s.html,nolink=1}%s\t%s\t%s\t%s\t@data:href=../files/%s.html\t@data:srv=1\t@data:res=red", \
-                           ENVL, SVS[j], SVN[j], SVT[j], SVR[j], ((sk in LASTC) ? LASTC[sk] : ""), SVS[j])
+                           ENVL, SVS[j], SVN[j], SVT[j], SVR[j], ((sk in SVSES) ? SVSES[sk] : ""), SVS[j])
             for (i = 1; i <= NP; i++) { print srow > F[PK[i]]; CNT[PK[i]]++ }
         }
         for (i = 1; i <= NP; i++) {
