@@ -725,6 +725,11 @@ run_step "publish: analyses + coverage pages"                             bin/an
 # here folds the convergence into THIS build. Self-gating: every input is
 # cmp-guarded and listed in the consumer's skip_if_fresh deps, so a warm
 # build skips each step in ~0 s.
+# THE DRILL-CELL FILES (2026-09-21, user request): the first File of every red /
+# orange drill cell links its File page, so failed.sh must page it — this
+# step lists those CoreIds from the reports now on disk (cmp-guarded: an
+# unchanged list keeps its mtime and the catch-up below still skips)
+run_step "report catch-up: drill-cell files"                           bin/build/drill-files.sh
 run_step "report catch-up: failed subscriptions"                          bin/transfer/reports/failed.sh
 run_step "report catch-up: failed files"                                  bin/transfer/reports/failed-files.sh   # 2026-09-14: the reasons the failed.sh catch-up just classified
 run_step "report catch-up: error reasons"                                 bin/analyses/reports/failing-reasons.sh

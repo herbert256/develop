@@ -144,6 +144,34 @@ awk -v DOCS="$DOCS" '
                     if (hlp != "") edge(page, b "help/" hlp ".html")
                 }
             }
+            # 2b. THE DRILL LINKS (2026-09-21): report.js bindDrill links the
+            # FIRST File of a red / orange drill cell to files/<coreid>.html
+            # (data-b + the path). The Error / Retry / Resubmit lists always
+            # open under such a cell — a STRICT edge, a missing page is a
+            # broken link. The per-column lists (drillcols keys, the Duration
+            # drill-cell-N) are red / orange only per cell, which the markup
+            # scan here cannot tell — those get the edge when the page exists
+            # (reachability), and the list check after this pass holds every
+            # File bin/build/drill-files.sh listed against the tree. Scanned PER
+            # TABLE: a table whose data-drill-unit is not the File (the
+            # drill=transfer leg tables) lists TRANSFER ids — no links there.
+            if (index(txt, "data-coreids-") > 0 || index(txt, "data-drill-cell-") > 0) {
+                b9 = match(txt, /<div class="topbar"[^>]*>/) ? attr(substr(txt, RSTART, RLENGTH), "data-b") : ""
+                nt9 = split(txt, T9, "<table")
+                for (ti9 = 2; ti9 <= nt9; ti9++) {
+                s = T9[ti9]; tg9 = substr(s, 1, index(s, ">"))
+                u9 = attr(tg9, "data-drill-unit"); if (u9 != "" && u9 != "File") continue
+                while (match(s, /data-(coreids-[a-z0-9]+|drill-cell-[0-9]+)="[^"]*"/)) {
+                    a9 = substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH)
+                    k9 = a9; sub(/=.*/, "", k9)
+                    if (k9 == "data-coreids-processed") continue
+                    if (!match(a9, /[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]/)) continue
+                    h9 = b9 "files/" substr(a9, RSTART, RLENGTH) ".html"
+                    if (k9 == "data-coreids-failed" || k9 == "data-coreids-retry" || k9 == "data-coreids-resubmit") edge(page, h9)
+                    else if (resolve(page, h9) in FILE) edge(page, h9)
+                }
+                }
+            }
         }
         # 3. Entity Search + File search: their rows live in *search-data.js,
         # not in the page (search/search-data.js maps to search/search.html; each of the six
@@ -229,13 +257,29 @@ awk -F'\t' '$1=="UNREACH"{print $2}' "$TMP/sorted" \
 norph=$(wc -l < "$TMP/orphans" | tr -d ' ')
 nexp=$(awk -F'\t' '$1=="UNREACH"' "$TMP/sorted" | wc -l | tr -d ' ')
 
+# THE DRILL-CELL FILES (2026-09-21): every File bin/build/drill-files.sh listed —
+# the first File of a red / orange drill cell, which report.js links — has its
+# page under files/ (failed.sh pages the list); a missing one is a broken link
+# the markup scan above cannot see (the link is made in the browser)
+DRILLF="data/transfer/reports/_drill-files.tsv"; ndrill=0; ndmiss=0
+if [ -f "$DRILLF" ]; then
+    ndrill=$(wc -l < "$DRILLF" | tr -d ' ')
+    awk -v D="$DOCS/files/" '$1 != "" { f = D $1 ".html"; if ((getline l < f) < 0) print $1; else close(f) }' "$DRILLF" > "$TMP/drillmiss"
+    ndmiss=$(wc -l < "$TMP/drillmiss" | tr -d ' ')
+fi
+
 printf 'linkcheck: %s pages, %s internal links, %s broken, %s unreachable (%s expected)\n' \
        "$pages" "$edges" "$nbroken" "$norph" "$((nexp - norph))"
 [ "$nroot" -gt 0 ] && printf 'linkcheck: %s site-root href="/" link(s) — the 404 fallback, rewritten by its inline script\n' "$nroot"
+[ "$ndrill" -gt 0 ] && printf 'linkcheck: %s drill-cell File(s) listed, %s without a files/ page\n' "$ndrill" "$ndmiss"
 
 if [ "$QUIET" = 0 ] && [ "$nbroken" -gt 0 ]; then
     echo "--- broken links ---"
     awk -F'\t' '$1=="BROKEN"{ printf "  %-56s %s link(s), e.g. %s -> %s\n", $2, $3, $4, $5 }' "$TMP/sorted"
+fi
+if [ "$QUIET" = 0 ] && [ "$ndmiss" -gt 0 ]; then
+    echo "--- drill-cell Files without a page (first 10) ---"
+    awk 'NR <= 10 { print "  files/" $1 ".html" }' "$TMP/drillmiss"
 fi
 if [ "$QUIET" = 0 ] && [ "$norph" -gt 0 ]; then
     echo "--- unreachable pages ---"
@@ -247,4 +291,4 @@ if [ "$QUIET" = 0 ] && [ "$nhelp" -gt 0 ]; then
     awk -F'\t' '$1=="UNREACH" && $2 ~ /^help\// { print "  " $2 }' "$TMP/sorted"
 fi
 
-[ "$nbroken" -eq 0 ] && [ "$norph" -eq 0 ]
+[ "$nbroken" -eq 0 ] && [ "$norph" -eq 0 ] && [ "$ndmiss" -eq 0 ]

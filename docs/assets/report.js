@@ -1664,10 +1664,34 @@
         (unit || "File") + (entries.length === 1 ? "" : "s") +
         (curRange && curRange.narrowed ? " (full period, not the selected range)" : "") + ":";
       td.appendChild(h);
-      entries.forEach(function (e) {
+      // THE FIRST FILE OF A RED / ORANGE CELL LINKS ITS FILE PAGE (2026-09-21,
+      // user request): when the drill opens under a CELL that is red or orange
+      // right now (an Error count, a Retry / Resubmit / Waiting count, an amber
+      // or red duration), the CoreId of the first entry opens
+      // files/<coreid>.html — bin/build/drill-files.sh lists exactly those
+      // Files (a superset: every cell that CAN tint) and failed.sh pages them.
+      // The File Tracking link stays: addCoreIdLinks puts its ↗ after an id
+      // that already is a link. Rows and green / plain cells stay text — and so
+      // does a list whose unit is not the File (the leg tables, unit
+      // "transfer": their ids are TRANSFER ids, no page is keyed by one).
+      var ro = el.tagName === "TD" && (!unit || unit === "File") &&
+               / (failed|errc|warn|dur-m|dur-h) /.test(" " + el.className + " ");
+      var tb9 = ro ? document.querySelector("div.topbar") : null;
+      var root9 = tb9 ? (tb9.getAttribute("data-b") || "") : "";
+      entries.forEach(function (e, ei) {
         var line = document.createElement("div");
         line.className = "coreid-item";
-        line.textContent = e;                       // "ccyy-mm-dd hh:mm:ss.mmm  <coreid>" / "ccyy-mm-dd  <message>"
+        var m9 = (ro && ei === 0) ? /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/.exec(e) : null;
+        if (m9) {
+          var fa = document.createElement("a");
+          fa.href = root9 + "files/" + m9[0] + ".html";
+          fa.textContent = m9[0];
+          line.appendChild(document.createTextNode(e.slice(0, m9.index)));
+          line.appendChild(fa);
+          line.appendChild(document.createTextNode(e.slice(m9.index + m9[0].length)));
+        } else {
+          line.textContent = e;                     // "ccyy-mm-dd hh:mm:ss.mmm  <coreid>" / "ccyy-mm-dd  <message>"
+        }
         td.appendChild(line);
       });
       var dtr = document.createElement("tr");

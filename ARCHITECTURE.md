@@ -509,6 +509,24 @@ consumers need `orlist`'s `-` sentinel for empty fields). The server reports use
 bounded insert by "date time", NOT arrival order: the exports are newest-first within a file; in
 pipe-delimited aggs the loglines field goes LAST so embedded `|` survives).
 
+**The first File of a red / orange drill cell links its File page** (2026-09-21, user request):
+when the drill opens under a CELL that is red or orange at that moment (class `failed`, `errc`,
+`warn`, `dur-m`, `dur-h` — an Error / Retry / Resubmit / Waiting / Expired count, an amber or red
+duration), `bindDrill` renders the FIRST entry's CoreId as a link to `files/<coreid>.html`
+(the `data-b` docs-root prefix + the path; `addCoreIdLinks` then adds its File Tracking `↗` after
+it, as for any id that already is a link). Rows and green / plain cells stay text. The page must
+exist: **`bin/build/drill-files.sh`** (a build step right before the failed.sh catch-up) scans the
+transfer `.rpt` tree and lists the first CoreId of every list whose cell is — or can turn — red or
+orange into `data/transfer/reports/_drill-files.tsv` (cmp-guarded): `coreids-failed` / `-retry` /
+`-resubmit` always; a `drillcols=` key or a `drill-cell-<col>` when the row's cell at that column is
+red / orange by its KIND (`failed`, `numfailed`, `numerr`, `numwarn`) or its own `@{class=…}`, and
+EVERY cell of a Duration percentile column (RECALC `P…`, retinted per date range) — a superset of
+what the browser links. `failed.sh` unions the list with its Patterns / Longest / latest-OK lists
+(tag `D`, no back link; a listed CoreId without a page forces its rebuild) and writes a neutral File
+page for each CoreId that has no error page already. `linkcheck.sh` models the links (a strict edge
+for the Error / Retry / Resubmit lists, an edge-when-present for the per-column ones) and fails on a
+listed File without a page. Never the OK lists, the whole-row lists or the server log-line drills.
+
 ## The home page
 
 `bin/build/publish.sh` writes the centered shared home (body class `home`): the two status tables

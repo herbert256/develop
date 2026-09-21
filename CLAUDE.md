@@ -156,7 +156,8 @@ background beside transfer phase 1 and the server reports, then transfer phase 2
 with seen-in-server-log — it needs a fresh `pda.rpt`), dashboards ∥ day → *publish*: detail
 pages ∥ transfer, then partner-groups, server, analyses, then THE CATCH-UPS — re-runs folding the
 cross-phase evidence into THIS build, each self-gating via its own freshness check (a warm build
-skips them in ~0 s): failed.sh (the boxes reasons now on disk), failing-reasons.sh, the
+skips them in ~0 s): `bin/build/drill-files.sh` (2026-09-21 — lists the first File of every red /
+orange drill cell for failed.sh to page, see "Drill-down"), failed.sh (the boxes reasons now on disk), failing-reasons.sh, the
 detail-pages pair (.rpt + publish) in the BACKGROUND beside the analyses publish catch-up
 (details deps on the REDUCED `_srvsubs-map.tsv` — name⇥slug⇥stamp, no reason — so a reason-only
 rerun leaves it byte-identical and the pair skips), the transfer publish catch-up, dashboards,
@@ -462,7 +463,12 @@ detail pages' Ranking rows link this way).
 **Drill-down**: rows/cells carrying `data-coreids[-failed|-processed|-retry|-resubmit]` expand to the outcome's 10
 most-recent transfers, built by the shared `COREIDS_AWK` helper; the server reports use
 `@data:loglines` (`LOGLINES_AWK`, a bounded insert by "date time" — the exports are newest-first
-within a file). Full detail in ARCHITECTURE.md.
+within a file). **The first File of a RED or ORANGE drill cell links its File page** (2026-09-21,
+user request): report.js `bindDrill` makes the first entry's CoreId a link to
+`files/<coreid>.html` when the cell it opens under is red / orange at click time;
+`bin/build/drill-files.sh` collects those CoreIds from the transfer `.rpt` tree into
+`_drill-files.tsv` (a superset: every cell that CAN tint), failed.sh pages them (list tag `D`)
+and linkcheck fails on a listed File without a page. Full detail in ARCHITECTURE.md.
 
 ### Transfer parse — _transfers.tsv
 
@@ -1223,6 +1229,7 @@ bin/session-sites.sh    UCx groups -> real subscription via the server log's ses
 bin/build/seen-in-server-log.sh  mark server-log-only entities blue (+ the unknown-* reports)
 bin/build/result.sh              fill the base result columns (preserve blue)
 bin/build/publish.sh             index pages + the home; run LAST
+bin/build/drill-files.sh         the first File of every red / orange drill cell -> _drill-files.tsv (failed.sh pages them)
 bin/build/display-rename.sh      the display-rename sweep (input/rename.txt); the last page-touching step
 bin/build/linkcheck.sh           every link resolves + every page is reachable (manual gate)
 

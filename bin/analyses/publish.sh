@@ -1897,6 +1897,11 @@ _fsaved_dates=${CUR_DATES:-}; CUR_DATES=$TRANSFER_DATES
 for _frpt in "$DATA"/transfer/reports/failed-*.rpt; do
     [ -f "$_frpt" ] || continue
     _fname=${_frpt##*/}; _fname=${_fname%.rpt}
+    # the view variants ONLY (failed-sub-* / failed-all-*): the glob also matches
+    # failed-files.rpt — the Failed files report, a transfer page of its own —
+    # and rendered it here as analyses/failed-files.html, a page nothing links
+    # (linkcheck's one standing orphan until 2026-09-21)
+    case $_fname in failed-sub-*|failed-all-*) ;; *) continue ;; esac
     RPT_NOPROSE=1 render_rpt "$_frpt" "$ADIR/$_fname.html" "../assets/style.css" "index.html" \
         "TRANSFER - Failed Subscriptions" 1 "failed" "failed"   # a report page: no INTRO / NOTE prose (the help page carries it)
     [ -n "$_fgrow" ] && _inject_after_h1 "$ADIR/$_fname.html" "$_fgrow"
