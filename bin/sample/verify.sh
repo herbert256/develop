@@ -64,9 +64,15 @@ eo=$(exp orange)
 # server-log-only flows are orange now (or green / red by the UC3 poll rules)
 check $([ "$blue" -eq 0 ] && echo 0 || echo 1) "$blue subscription(s) still carry the retired blue result"
 check $([ "$orange" -ge "$eo" ] && echo 0 || echo 1) "orange subscriptions $orange < planted $eo"
-gp=$(rows "data/colour/_greenpoll.tsv")
+# the planted CLEAN POLLERS (tag greenpoll: UC3, polls fine, never a file) are
+# ORANGE — no clean-poll green since 2026-09-28 (user rule: a UC3 subscription
+# with no transfers is orange, not green); the rule's sidecar is gone
 egp=$(exp greenpoll)
-[ "$egp" -gt 0 ] && check $([ "$gp" -gt 0 ] && echo 0 || echo 1) "greenpoll empty (planted $egp)"
+read -r gpf gpno <<< "$(awk -F'\t' 'NR == FNR { if ($30 ~ /(^|,)greenpoll(,|$)/) want[toupper($4)] = 1; next }
+    (toupper($1) in want) { f++; if ($3 != "orange") no++ } END { print f + 0, no + 0 }' "input/.sample/_estate.tsv" "$B")"
+check $([ "$gpf" -eq "$egp" ] && echo 0 || echo 1) "clean pollers in base/_subscriptions.tsv: $gpf, planted $egp"
+check $([ "$gpno" -eq 0 ] && echo 0 || echo 1) "$gpno clean-polling UC3 flow(s) with no transfers are not orange"
+check $([ -e "data/colour/_greenpoll.tsv" ] && echo 1 || echo 0) "the retired data/colour/_greenpoll.tsv still exists"
 
 # the monitor dashboard flag
 check $([ -f "data/dashboards/reports/monitor.rpt" ] && echo 0 || echo 1) "monitor.rpt missing"

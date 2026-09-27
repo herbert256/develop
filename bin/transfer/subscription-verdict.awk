@@ -182,12 +182,10 @@ FILENAME ~ /uc2-status\.rpt$/ {
 FILENAME ~ /uc3-status\.rpt$/ {
     n = $4 + 0; ok = $5 + 0; er = $6 + 0; last = dt($7); poll = $8 + 0; emp = $9 + 0; prob = $10 + 0; lg = dt($11)
     if (st == "error" || st == "ok -> error") NEXTMOVE = nextmove(getll())
-    if (st == "ok" && n == 0)
-        # the CLEAN-POLL cohort (colour/_greenpoll.tsv): verified polling, no
-        # file ever there to fetch — no last-file date exists, so this branch
-        # must not interpolate one (an empty **%s** breaks the bold pairing)
-        emit(s, "", sprintf("**Working, nothing to fetch.** We poll this partner on schedule and the connection, the credentials and the remote directory are all fine — **%d** poll%s so far — but no file has ever been there to collect, so nothing has reached the transfer log. **UC3 status** calls this **ok** (the clean-poll rule: a verified working poll is green).", poll, plural(poll,"","s")))
-    else if (st == "ok")
+    # (the clean-poll "ok with no File" cohort went 2026-09-28, user rule: a
+    # UC3 that never moved a file is orange — the "not seen" branch below,
+    # which names its polls)
+    if (st == "ok")
         emit(s, "", sprintf("**Working.** We poll this partner and pull what is waiting: **%d** File%s, the latest on **%s** (%d OK, %d error), from **%d** poll%s. A high empty-poll count (**%d**) is normal — a schedule fires far more often than a file appears. **UC3 status** calls this **ok**.", n, plural(n,"","s"), last, ok, er, poll, plural(poll,"","s"), emp))
     else if (st == "error")
         emit(s, "This flow has never pulled a file successfully", sprintf("Every one of its **%d** File%s failed, the last on **%s**, with no successful pull at all — not something that broke, something that never worked. **UC3 status** calls this **error**.", n, plural(n,"","s"), last))

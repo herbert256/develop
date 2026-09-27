@@ -106,8 +106,7 @@ pda_seen_total() {   # $1 = member  $2 = its coverage TSV  $3 = its base cache  
             for (k in S) seen[k] = 1               # union-attributed names (logged, configured or not)
             for (i = 1; i <= nb; i++) { k = ord[i]
                 if (k in seen) continue
-                # a coverage row vouches when it says 1 (the UC3 clean-poll
-                # greens included); a base name ABSENT from the coverage TSV
+                # a coverage row vouches when it says 1; a base name ABSENT from the coverage TSV
                 # (an evidence-free "ghost" — since 2026-08-31 only a flow
                 # configured with NO login and NO host produces one: its
                 # direction-less rows are skipped by every derived-coverage

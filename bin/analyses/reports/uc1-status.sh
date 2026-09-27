@@ -19,9 +19,9 @@
 # blue result, 2026-09-27: those flows are "not seen" now, and the Route runs /
 # Problems / Last log columns still show what the server log says about them.
 #
-# Unlike uc3-status.sh there is no clean-poll ok: UC1 is triggered by a file
-# APPEARING (uc-cases.sh: trigger "OpsWise" — a dir scan), so no file simply
-# means no route run and no log line.
+# No File means not seen here (and in uc3-status.sh since 2026-09-28): UC1 is
+# triggered by a file APPEARING (uc-cases.sh: trigger "OpsWise" — a dir scan),
+# so no file simply means no route run and no log line.
 #
 # The server signals. Advanced Routing logs a UC1 push as
 #   AR<n>: [<account>] [<route>]  <text>

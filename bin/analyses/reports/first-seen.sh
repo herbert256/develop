@@ -10,8 +10,8 @@
 # Transfer & Server logs" view went with the BLUE server-log-only status,
 # 2026-09-27.)
 #
-# A seen name with NO dated transfer of its own — a UC3 clean-poll green
-# (works, nothing to fetch yet), a sibling-credited name — lands in the
+# A seen name with NO dated transfer of its own — a sibling-credited name
+# (the UC3 clean-poll greens were one until 2026-09-28) — lands in the
 # "Seen, no date" bucket: per column, Seen + Not seen = Total and the day
 # rows + the no-date row = Seen.
 #

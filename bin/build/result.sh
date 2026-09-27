@@ -76,25 +76,25 @@ commit_tmp() {   # $1 = final path; expects $1.tmp
 }
 [ -f "$FILES" ] || { echo "result.sh: no $FILES (run bin/transfer/parse.sh first) — nothing to do." >&2; exit 0; }
 
-# ---- the UC3 clean-poll rule (2026-08) --------------------------------------
-# A UC3 subscription the server log shows POLLING SUCCESSFULLY — "Applying the
-# search pattern … for transfer site '…': N file(s) …" — with no NEWER E-level
-# mention is WORKING from our point of view, even when there was never a file
-# to fetch. It has no transfer rows, so stage 1 would leave it orange: flip it
-# GREEN instead. data/colour/_greenpoll.tsv records the names stage 1
-# actually FLIPPED (candidates with real transfers stay untouched and out of
-# it).
-# Source: the per-name server mention caches (last 25 rows + last 10
-# Error/Warn per subscription, bin/server/parse.sh) — present once the server
-# parse ran; a missing dir just leaves the list empty.
+# ---- the UC3 poll evidence ---------------------------------------------------
+# The newest SUCCESSFUL poll per UC3 subscription — "Applying the search
+# pattern … for transfer site '…': N file(s) …" — from the per-name server
+# mention caches (last 25 rows + last 10 Error/Warn per subscription,
+# bin/server/parse.sh; a missing dir just leaves the list empty). It feeds the
+# green-KEEP below (a UC3 that transferred and has polled cleanly since an
+# error stays green) and the connection-failure streak.
+# NO CLEAN-POLL GREEN (2026-09-28, user rule: "A UC3 subscription that has no
+# transfers must be orange and not green"): a UC3 that polls fine but never
+# moved a file stays ORANGE — until then (2026-08..09-27) it flipped green,
+# listed in data/colour/_greenpoll.tsv, which is gone with the rule.
 SUBMENT="$ROOT/data/server/cache/subscriptions"
-# data/colour/ — this step's working files and sidecars (the red-flip, clean-poll,
+# data/colour/ — this step's working files and sidecars (the red-flip, poll,
 # ring-attribution evidence); data/blue/ until 2026-09-27, when the BLUE status
 # (server-log-only entities) was removed — the old directory is dropped here
 COLDIR="$ROOT/data/colour"
 rm -rf "$ROOT/data/blue"
-POLLOK="$COLDIR/_greenpoll.tsv"
-POLLCAND="$COLDIR/_greenpoll.cand"   # candidates; stage 1 writes the final list
+rm -f "$COLDIR/_greenpoll.tsv"          # the retired clean-poll greens (2026-09-28)
+POLLCAND="$COLDIR/_uc3polls.cand"       # name <TAB> newest successful poll, per UC3 (a working file)
 # The UC3 CONNECTION-FAILURE STREAK (2026-09-05, user rule): a "Connection
 # failure while <UC3 flow> tried to connect to remote host …" line reds the
 # flow only when it happened on THREE POLLS IN A ROW — each such line is one
@@ -137,12 +137,9 @@ mkdir -p "$COLDIR"
                             iscf = ($5 ~ /^Connection failure while /) ? 1 : 0
                             if (t > e) e = t
                             if (iscf) cfs[t] = 1; else if (t > encf) encf = t }
-                # name <TAB> newest successful poll <TAB> 1 when no E-level
-                # mention is newer. The FLAG drives the clean-poll rule (a UC3 that
-                # never transferred); the STAMP drives the green-keep below,
-                # where the comparison is against the red-flip evidence rather
-                # than against E-level mentions.
-                END { if (p != "") printf "%s\t%s\t%d\n", n, p, (p >= e ? 1 : 0)
+                # name <TAB> newest successful poll: the STAMP the green-keep
+                # below compares against the red-flip evidence
+                END { if (p != "") printf "%s\t%s\n", n, p
                       # the connection-failure streak candidate (see CONNCAND)
                       if (e != "") { z = ""; for (t in cfs) z = z (z == "" ? "" : "|") t
                                      printf "%s\t%s\t%s\t%s\t%s\n", n, e, encf, p, z >> cf } }
@@ -474,7 +471,7 @@ _build_kaputflip
 [ -f "$KAPUTFLIP" ] || : > "$KAPUTFLIP"
 [ -f "$RINGORPH" ] || : > "$RINGORPH"
 
-awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srvc="$SRVC" '
+awk -F'\t' -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srvc="$SRVC" '
     # raise bdt to ring file f'\''s newest E-LEVEL line "date time" when newer
     # (the per-name rings are newest-first, so the first E met is the newest;
     # a missing file reads nothing). ERRORS ONLY (2026-08): a Warning must not
@@ -504,9 +501,8 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
         if (s != "" && $2 != "Failed" && $2 != "Expired" && $6 != "") { e9 = ($24 != "") ? $24 : $4 " " $5; if (!(s in le) || e9 > le[s]) le[s] = e9 }
         next
     }
-    FILENAME == ARGV[2] { if ($1 != "") { if ($3 + 0 == 1) po[toupper($1)] = 1   # orange -> green (never transferred)
-                                          if ($2 != "") pt[toupper($1)] = $2 }   # newest successful poll, for the green-keep
-                          next }   # UC3 clean-poll candidates (see above)
+    FILENAME == ARGV[2] { if ($1 != "" && $2 != "") pt[toupper($1)] = $2   # newest successful poll, for the green-keep
+                          next }   # the UC3 poll evidence (see above)
     FILENAME == ARGV[3] { if ($1 != "" && $2 != "") RA[toupper($1)] = $2; next }   # subscription -> newest connected-ring Error attributed to it
     FILENAME == ARGV[4] { if ($1 != "" && $2 != "") { KF[toupper($1)] = $2; KFC[toupper($1)] = $3 + 0 }; next }   # subscription -> newest LOOSE connected-ring Error (the went-kaput join; deploy-classified flows absent) + its connection-failure flag
     FILENAME == ARGV[5] { if ($1 != "" && $2 != "") { u = toupper($1); UC3[u] = 1; ENCF[u] = $3; CFP[u] = $4
@@ -551,10 +547,10 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
             # A UC3 that has POLLED CLEANLY SINCE that Error/Warn is working:
             # "0 file(s) were found of which 0 matched the pattern" is a
             # successful poll with nothing to fetch, and it is the newest
-            # thing the log says about the flow. The same evidence the clean-poll
-            # rule below trusts for a UC3 that never transferred, applied to
-            # one that has: the flip is skipped and the subscription stays
-            # green (2026-08).
+            # thing the log says about the flow: the flip is skipped and the
+            # subscription stays green (2026-08). Only a flow that HAS
+            # transferred — a UC3 that never moved a file is not green on
+            # its polls (2026-09-28, user rule), it stays orange.
             # THE UC3 CONNECTION-FAILURE STREAK (2026-09-05, user rule): when
             # the newest evidence IS this flow'\''s own newest "Connection
             # failure while <flow> tried to connect …" line, it reds the flow
@@ -605,17 +601,13 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
             for (i4 = 1; i4 <= m4; i4++) if (Z4[i4] != "" && (CFP[k] == "" || Z4[i4] > CFP[k])) { n4++; if (Z4[i4] > b4) b4 = Z4[i4] }
             if (n4 >= 3) { r = "red"; print $1 "\t" b4 > rf }
         }
-        # The UC3 clean-poll rule: polling verified working, simply nothing
-        # to fetch. It fires on a never-seen (ORANGE) flow; `po` is
-        # recomputed from the mention caches each run.
-        if (r == "orange" && (k in po)) { r = "green"; print $1 > gp }
+        # (no UC3 clean-poll GREEN since 2026-09-28, user rule: a UC3 with no
+        # transfers is orange — or red by the cannot-connect rule above)
         print $1 "\t" $2 "\t" r
     }
 ' "$FILES" "$POLLCAND" "$RINGATTR" "$KAPUTFLIP" "$CONNCAND" "$BASE/_subscriptions.tsv" > "$BASE/_subscriptions.tsv.tmp" \
     && commit_tmp "$BASE/_subscriptions.tsv"
-[ -f "$POLLOK.tmp" ] || : > "$POLLOK.tmp"   # no flips: an empty (not absent) sidecar
-commit_tmp "$POLLOK"
-[ -f "$REDFLIP.tmp" ] || : > "$REDFLIP.tmp"   # same rule for the red-flip sidecar
+[ -f "$REDFLIP.tmp" ] || : > "$REDFLIP.tmp"   # no flips: an empty (not absent) sidecar
 commit_tmp "$REDFLIP"
 [ -f "$CONNHOLD.tmp" ] || : > "$CONNHOLD.tmp"   # and for the connection-failure hold sidecar
 commit_tmp "$CONNHOLD"
@@ -634,15 +626,9 @@ rollup() {   # $1 = base name (accounts|logins|...)  $2 = its <item>-subscriptio
         return 0
     fi
     awk -F'\t' '
-        FILENAME == ARGV[1] { if ($1 != "") gp[toupper($1)] = 1; next }   # the UC3 clean-poll greens (colour/_greenpoll.tsv)
-        FILENAME == ARGV[2] { sres[toupper($1)] = $3; next }            # subscription -> its result
-        FILENAME == ARGV[3] {                                          # entity -> connected subscriptions
+        FILENAME == ARGV[1] { sres[toupper($1)] = $3; next }            # subscription -> its result
+        FILENAME == ARGV[2] {                                          # entity -> connected subscriptions
             k = toupper($1); u = toupper($2); s = sres[u]
-            # A CLEAN-POLL green counts like ORANGE here (2026-08): it is green
-            # because the server log shows it POLLING, having moved no file at
-            # all: server-log evidence never sets a health verdict, and an
-            # entity whose only flows never moved a file is not SEEN.
-            if (s == "green" && (u in gp)) s = "orange"
             if (s == "") next                                          # unknown subscription: ignore
             n[k]++
             if (s == "green") g[k]++
@@ -656,7 +642,7 @@ rollup() {   # $1 = base name (accounts|logins|...)  $2 = its <item>-subscriptio
             else if ((k in n) && n[k] > 0 && g[k] == n[k]) r = "green"
             print $1 "\t" $2 "\t" r
         }
-    ' "$POLLOK" "$BASE/_subscriptions.tsv" "$pair" "$basef" > "$basef.tmp" && commit_tmp "$basef"
+    ' "$BASE/_subscriptions.tsv" "$pair" "$basef" > "$basef.tmp" && commit_tmp "$basef"
 }
 # The same own-transfer rule for a host with NO connected subscriptions — in
 # practice only one discovered by stage 0, since every configured host is in the

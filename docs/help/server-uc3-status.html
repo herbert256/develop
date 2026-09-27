@@ -29,7 +29,7 @@
 </ul>
 <h2>Statuses</h2>
 <ul>
-<li><strong>ok</strong> (green) &mdash; its latest File was delivered, or it polls cleanly with nothing to fetch (the clean-poll rule). <strong>error</strong> (red) &mdash; the latest failed, no OK File in the window: nothing ever worked. <strong>ok -> error</strong> (red, was green) &mdash; OK Files before: a regression.</li>
+<li><strong>ok</strong> (green) &mdash; its latest File was delivered. A flow that polls cleanly but has never moved a file is <strong>not seen</strong> (orange), not ok. <strong>error</strong> (red) &mdash; the latest failed, no OK File in the window: nothing ever worked. <strong>ok -> error</strong> (red, was green) &mdash; OK Files before: a regression.</li>
 <li><strong>not seen</strong> (orange) &mdash; configured, never in the transfer log. Polls / Empty polls / Problems still say whether it polls at all, finds nothing (<a href="server-no-remote-files.html">No remote files</a>) or cannot connect (<a href="server-no-remote-dir.html">No remote dir</a>, the <a href="#polls">polls tables</a>).</li>
 </ul>
 <h2>Status rules</h2>

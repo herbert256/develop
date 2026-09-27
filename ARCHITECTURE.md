@@ -192,29 +192,27 @@ is `data/colour/`; `result.sh` drops the old directory.
    the deploy-classified and poll-cleared remainder. **The UC3 connection-failure streak (2026-09-05, user rule)**: a "Connection failure while
    <UC3 flow> tried to connect …" line reds a UC3 flow only after THREE failed polls in a row.
    When the newest evidence is a connection failure — the flow's own line (its stamp is in
-   `_greenpoll.cand`'s sibling `_connfail.cand`, from the per-name mention cache + Error/Warn
+   `_uc3polls.cand`'s sibling `_connfail.cand`, from the per-name mention cache + Error/Warn
    ring), or a sibling's on the shared host/account ring (`_kaputflip.tsv` col 3 flags it) — the
    flow's OWN failures newer than its newest successful poll and than the last transfer are the
    streak; below three the connection failures are DISCOUNTED and the newest of the remaining
    evidence decides by the usual test. Nothing left = the flow stays green, listed in
    `colour/_connhold.tsv` (name, stamp, streak); the went-kaput page still shows it as trouble
-   after success. Evidence of any other kind flips as before. **The UC3 clean-poll
-   exception (2026-08)**: a never-transferred (orange) UC3 subscription whose
-   newest successful poll line ("Applying the search pattern … for transfer site '…': N file(s) …",
-   per-name server mention cache) is no older than its newest E-level mention flips **GREEN** — the
-   poll verifiably works, there is simply nothing to fetch. The flipped names land in
-   `data/colour/_greenpoll.tsv` (no-remote-files re-selects on green+orange), showseen counts a
-   no-data green as seen-with-blank-counts, and
-   deploy-errors clears a UC3 subscription on a successful poll after its last route-stop message.
+   after success. Evidence of any other kind flips as before. **No UC3 clean-poll green (2026-09-28,
+   user rule "A UC3 subscription that has no transfers must be orange and not green")**: a
+   never-transferred UC3 whose polls work ("Applying the search pattern … for transfer site '…':
+   N file(s) …") stays ORANGE — the 2026-08 exception that flipped it GREEN (sidecar
+   `data/colour/_greenpoll.tsv`) is gone; no-remote-files lists such flows, and deploy-errors still
+   clears a UC3 subscription on a successful poll after its last route-stop message.
    Every other entity rolls up its connected subscriptions via the xref caches (all
-   green → green, any red → red, else orange; a clean-poll green counts like ORANGE in the rollup
-   — server-log evidence never sets the verdict of the entities above a flow). EXCEPT
+   green → green, any red → red, else orange — server-log evidence never sets the verdict of the
+   entities above a flow). EXCEPT
    `_white.tsv`: a whitelisted IP goes by the LAST real transfer whose remote host is that
    address, orange when none.
 
-The coverage TSVs (`showseen.sh`) mark a subscription seen when it has transfer data or is a
-clean-poll green (blank counts); the Entities views and Entity Search add such a green as a blank
-tinted "ghost" row at publish time from the base result — `RESMAP_FILES` alone carries the tint.
+The coverage TSVs (`showseen.sh`) mark a subscription seen when it has transfer data (a name green without a report row
+of its own — seen through its subscriptions — gets blank counts); the Entities views and Entity
+Search add such a green as a blank tinted "ghost" row at publish time from the base result — `RESMAP_FILES` alone carries the tint.
 The per-row dimension reports, dashboards charts and day pages count real `_files.tsv` rows only.
 
 ## Report groups (full lists)

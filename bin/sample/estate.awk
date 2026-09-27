@@ -356,7 +356,8 @@ function build_roster() {
     addf(3, "CD",  "QUOTES",   "STARK",    "",  1.2, 0.25, "reason=ftpspull")
     addf(3, "AB",  "SNOWFLAKE","GLOBEX",   "",  1.2, 0.25, "reason=remdel")   # the download succeeds, the remote delete fails (2026-09-02)
     addf(3, "IT",  "RECON",    "HOOLI",    "",  2, 0.05, "recover,hybrid")
-    # clean-poll greens (poll works, nothing to fetch — no transfers ever)
+    # clean pollers (poll works, nothing to fetch — no transfers ever): ORANGE
+    # since 2026-09-28 (they were the clean-poll greens; verify.sh checks it)
     addf(3, "FS",  "SAPBODS",  "PRIMATECH","_D", 0, 0, "greenpoll")
     addf(3, "FS",  "SAPBODS",  "PRIMATECH","_I", 0, 0, "greenpoll")
     addf(3, "FS",  "SAPBODS",  "PRIMATECH","_M", 0, 0, "greenpoll")

@@ -862,7 +862,8 @@ Entities +Server scope and Server view, the home Transfer/Server columns and "in
 log" switch, the First seen both-logs view, the UC1/UC3/UC4 `server - …` statuses (those flows
 are plain **not seen**), the Boxes "Server log only" and "Failing polls" boxes, the Overview's
 blue seen curve and the detail pages' server-only evidence card. A server-log mention alone never
-makes an entity seen or coloured; the two UC3 POLL rules below stay. `data/blue/` is
+makes an entity seen or coloured; the UC3 cannot-connect RED rule below stays (its clean-poll
+GREEN twin went 2026-09-28). `data/blue/` is
 `data/colour/` (result.sh drops the old directory). Never reintroduce a server-log-only colour.
 
 **Entities DISCOVERED in the transfer log** (2026-08, `result.sh` stage 0, `discover_logged`): a
@@ -882,12 +883,12 @@ The third column of every `base/*.tsv`, filled after the parses by ONE build ste
 in ARCHITECTURE.md), **`bin/build/result.sh`** — a subscription goes green/red by its LAST File's
 outcome (red when Failed or Expired; orange = never seen in the transfer log), other entities
 roll up their connected subscriptions (`_white.tsv` goes by the last real transfer from that
-address instead). TWO deliberate exceptions, both UC3 poll verdicts. The **clean-poll rule**
-(2026-08): a never-transferred (orange) UC3 subscription whose newest successful poll is no older
-than its newest E-level mention flips GREEN — working, just nothing to fetch (sidecar
-`colour/_greenpoll.tsv`; showseen treats a no-data green as seen-with-blank-counts; deploy-errors
-clears a UC3 on a poll after its last message; the rollup counts one like ORANGE — server-log
-evidence never sets a health verdict for the entities above it). Its mirror, the
+address instead). **A UC3 WITH NO TRANSFERS IS NEVER GREEN** (2026-09-28, user rule: "A UC3
+subscription that has no transfers must be orange and not green"): polling fine with nothing to
+fetch leaves it ORANGE (UC3 status "not seen"; the verdict and No remote files name its polls). The
+**clean-poll rule** that flipped it GREEN (2026-08, sidecar `colour/_greenpoll.tsv`, its uc3-status
+per-hour branch and detail-page "Working, nothing to fetch" verdict) is GONE — never bring it back.
+ONE deliberate exception remains, a UC3 poll verdict: the
 **cannot-connect rule** (2026-09-10, user rule): a never-transferred UC3 whose own polls fail
 with "Connection failure while <flow> tried to connect …" on THREE polls in a row (newer than its
 newest successful poll, or none at all) flips RED — a flow that polls and cannot connect is
@@ -932,10 +933,10 @@ to the `_kaput-evidence.tsv` the home Reason reads. 1:1 owners are unchanged.
 The SAME evidence also **keeps a UC3 green** (2026-08): the after-last-transfer red flip is
 skipped when a successful poll is NEWER than the E-level stamp that would have flipped it — a
 flow that has since polled cleanly is working, whatever it logged before (acceptance: 14 of the
-15 candidates). `_greenpoll.cand` carries `name⇥newest poll⇥flag`, the flag driving the
-clean-poll rule and the stamp this one.
+15 candidates) — a flow that HAS transferred; `_uc3polls.cand` carries `name⇥newest poll`, the
+stamp this keep compares.
 The after-last-transfer red flip records its evidence in `colour/_redflip.tsv` (name + ring stamp);
-the UC status per-hour walkers read it (+ `_greenpoll.tsv`) so their sidecars' last row equals
+the UC status per-hour walkers read it so their sidecars' last row equals
 the STAT figures. **"After the last transfer" means after its END** (2026-09-12, user rule: a
 production flow logged a "Could not send file" Error at 09:19 while three Files that had STARTED
 the day before were delivered by their retries at 15:16 — "there are CoreIds from this
@@ -1064,7 +1065,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   assembled at publish time (`render_entity_report`) from
   `data/transfer/reports/entities/<name>.rpt` — ONE writer for the nine,
   `bin/transfer/reports/entities.sh` — plus the coverage TSVs and the base caches (the ghost
-  rows: a clean-poll green with no Files is Seen with blank counts); sort is shared across the nine entities (localStorage, 1-hour sliding expiry,
+  rows: a green with no report row of its own is Seen with blank counts); sort is shared across the nine entities (localStorage, 1-hour sliding expiry,
   stored by "group › column" label). THE GROUPED LAYOUT (2026-09-13, user request — built that day
   as the `transfer/entities2/` twin experiment and adopted the same day; the classic Name ·
   Direction · Files · Volume · OK · Retry · Resubmit · Error · Last seen pages are GONE): Name,
@@ -1364,7 +1365,7 @@ additionally ignores the `*.csv` exports under `input/`, its one bulk item):
   read colour-free by Entity Search, Cross reference, data-diff and the cleanup backlog.
   Rewritten each run; a type with no unknowns keeps an EMPTY sidecar (a deleted one would force
   a full rescan every build). (The SSH-logon files went with the blue result, 2026-09-27.)
-- `data/colour/` — `result.sh`'s sidecars (`_redflip`, `_greenpoll`, `_ringattr`,
+- `data/colour/` — `result.sh`'s sidecars (`_redflip`, `_ringattr`,
   `_ringorphan`, `_kaputflip`, …; `data/blue/` until 2026-09-27). `data/flow-manager/{base,xref}/`
   — the config caches. `data/.publish/*.stamp` — the freshness stamps.
 

@@ -5,8 +5,9 @@
 # the UC2 report uc2-status.sh, and the same idea: a complete partition, one row per
 # subscription, the per-status counts as info boxes above the table.
 #
-#   ok                 the subscription is green   — its latest File is OK, or
-#                      it is a clean-poll green (polls fine, nothing to fetch)
+#   ok                 the subscription is green   — its latest File is OK (a
+#                      flow that polls fine but never moved a file is NOT ok:
+#                      it is orange, "not seen" — 2026-09-28, user rule)
 #   error              it is red and has NEVER delivered an OK File
 #   ok -> error        it is red but HAS delivered OK Files before — a regression
 #   not seen           orange: configured, never seen in the transfer log
@@ -62,12 +63,12 @@ OUT="$REPORTS_DIR/uc3-status.rpt"
 
 SUBB="$CONFIG_BASE/_subscriptions.tsv"     # name <TAB> direction <TAB> result
 FILESC="$TRANSFER_CACHE/_files.tsv"        # the logical-transfer cache (col 12 = subscription, 2 = outcome)
-# result.sh's two flip sidecars, applied by the per-hour walker so its last
-# row matches the STATs: _redflip.tsv (green -> red on ring Error/Warn newer
-# than the last transfer; name + evidence stamp) and _greenpoll.tsv (the UC3
-# clean-poll flows flipped green: polling fine, nothing to fetch).
+# result.sh's flip sidecar, applied by the per-hour walker so its last row
+# matches the STATs: _redflip.tsv (green -> red on ring Error/Warn newer than
+# the last transfer, or the cannot-connect red; name + evidence stamp). The
+# clean-poll greens (_greenpoll.tsv) went 2026-09-28: a UC3 with no File is
+# not seen, however it polls.
 RFLIP="$DATA/colour/_redflip.tsv"
-GPOLL="$DATA/colour/_greenpoll.tsv"
 # The per-HOUR status sidecar for the dashboards Overview's UC3 status card.
 # Written from THIS script because the classification lives here — the Overview
 # must never re-derive it (cf. pesit-slots.tsv). One row per hour,
@@ -93,9 +94,8 @@ fi
 ensure_parsed
 ensure_config
 [ -f "$SLOTS_OUT" ] || rm -f "$OUT"   # a missing sidecar must force a rebuild (skip_if_fresh checks $OUT only)
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILESC" "$SUBB" "$RFLIP" "$GPOLL"
+skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILESC" "$SUBB" "$RFLIP"
 [ -f "$RFLIP" ] || RFLIP=/dev/null   # first build: result.sh not run yet — no flips
-[ -f "$GPOLL" ] || GPOLL=/dev/null
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One awk over three inputs: the configured UC3 roster, the transfer _files.tsv
@@ -108,7 +108,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # is a UC3 flow here exactly like a UC3_-named one (2026-08-31 audit — the
 # roster read the name alone and silently dropped them)
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
-agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v gpv="$GPOLL" -v ucdf="$UCDF" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK"'
+agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK"'
     BEGIN { while ((getline ucl < ucdf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[2] == "UC3") ucd[toupper(uca[1])] = 1 } close(ucdf) }
     # the logged site -> the clean subscription name (as the transfer parser does)
     function clean(s) { sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", s); return s }
@@ -129,7 +129,6 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v gpv="$GPOLL" -
         return memo[u] = (c == 1) ? hit : ""
     }
     FILENAME == rfv { if ($1 != "" && $2 != "") rfd[toupper($1)] = $2; next }   # red-flip sidecar: name -> evidence stamp
-    FILENAME == gpv { if ($1 != "") gp9[toupper($1)] = 1; next }                # clean-poll greens
     FILENAME == sb {                                         # the configured UC3 roster (UC3-named or derived)
         if ($1 == "" || ($1 !~ /^UC3/ && !(toupper($1) in ucd))) next
         u = toupper($1); res[u] = $3; nm[u] = $1; R[++nr] = u
@@ -176,19 +175,9 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v gpv="$GPOLL" -
         if (d != "" && d > llg[k]) llg[k] = d
         if (sig == "poll") { poll[k]++; if (found == 0) empty[k]++ }
         else if (sig == "prob") { prob[k]++ }
-        # per-HOUR for the sidecar: the latest DECISIVE line within the hour — a
-        # failure, or a poll that found nothing — which the clean-poll flip
-        # below needs (a clean-poll green is ok from its empty polls on).
-        # Ordered on "date time", not arrival — the exports are newest-first
-        # within a file.
-        if (d != "" && $2 ~ /^[0-9][0-9]:/) {
-            hs = jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 24 + int(substr($2,1,2))
-            span(hs); hk = k SUBSEP hs
-            if (sig == "prob" || (sig == "poll" && found == 0)) {
-                t2 = d " " $2
-                if (!(hk in slt) || t2 > slt[hk]) { slt[hk] = t2; ssig[hk] = sig }
-            }
-        }
+        # a server line widens the hours the per-HOUR sidecar walks
+        if (d != "" && $2 ~ /^[0-9][0-9]:/)
+            span(jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 24 + int(substr($2,1,2)))
         # the drill keeps the problems apart: on a red flow that never
         # transferred they are the story, and thousands of routine poll lines
         # would otherwise crowd them out
@@ -222,8 +211,8 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v gpv="$GPOLL" -
         # exactly, with the result COLOUR re-derived from the evidence so far
         # (bin/build/result.sh\047s rule for a subscription: green/red by the LAST
         # transfer outcome — including the 2026-08 after-last-transfer red flip
-        # and the UC3 clean-poll green flip, read from the _redflip/_greenpoll
-        # sidecars below — orange = nothing yet) — which is why the LAST hour
+        # and the cannot-connect red, read from the _redflip sidecar below —
+        # orange = no File yet) — which is why the LAST hour
         # reproduces the n[] figures printed above. That equality is the
         # regression test.
         if (hmin != "" && SL != "") {
@@ -247,10 +236,8 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v gpv="$GPOLL" -
                     k = R[i]; hk = k SUBSEP h
                     if (hk in tsk) { HF[k] = 1; LOK[k] = !tbad[hk] }
                     if (hk in thok) EOK[k] = 1
-                    if (hk in ssig) LSG[k] = ssig[hk]
-                    if (HF[k])                               sc = LOK[k] ? 2 : (EOK[k] ? 1 : 0)
-                    else if (LSG[k] == "poll" && (k in gp9)) sc = 2   # the clean-poll flip: polling fine, nothing to fetch
-                    else                                     sc = 3
+                    if (HF[k]) sc = LOK[k] ? 2 : (EOK[k] ? 1 : 0)
+                    else       sc = 3   # no File yet: not seen, however it polls (2026-09-28)
                     # the red flip: ok -> "ok -> error"; a never-transferred flow
                     # (the cannot-connect rule) goes straight to error
                     if ((k in RFH) && h >= RFH[k]) { if (sc == 2) sc = 1; else if (sc == 3) sc = 0 }
@@ -262,7 +249,7 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v gpv="$GPOLL" -
             close(SL)
         }
     }
-' "$RFLIP" "$GPOLL" "$SUBB" "$FILESC" "$(srv_subset uc3)")
+' "$RFLIP" "$SUBB" "$FILESC" "$(srv_subset uc3)")
 
 IFS=$'\t' read -r _ n_err n_okerr n_ok n_notseen t_files t_ok t_er t_poll t_prob \
     <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"

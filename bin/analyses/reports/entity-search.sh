@@ -475,8 +475,8 @@ tuples=$( {
             nc = (gsd!="" && gslug!="") ? "@{link=" gsd "/" gslug "}" gpath : gpath
             printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t\t%s\t%s\n", nc, gtype, gseen, gc, gf, gp, grr, gdd, gls
         } else {
-            # show counts only when there ARE real Error/OK counts (a clean-poll
-            # aggregate is "seen" but has none) — so an orange (no-counts) row is
+            # show counts only when there ARE real Error/OK counts (a seen-with-
+            # blank-counts aggregate has none) — so an orange (no-counts) row is
             # blank, matching aggcolor() and every other never-seen row.
             hascount = (gsumf > 0 || gsump > 0)
             dc = hascount ? gsumc : ""; df = hascount ? gsumf : ""; dp = hascount ? gsump : ""

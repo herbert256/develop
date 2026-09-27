@@ -62,7 +62,7 @@ ensure_config
 # one script, MANY outputs — guard on the OLDEST one (any missing output
 # builds); deps = the entity summary rpts it lifts rows from, the detail
 # slugmaps it resolves links through, and the config caches (base recolors
-# flip the clean-poll seen-ness, so base IS a dep — its rewrites are cmp-guarded, a
+# flip the seen-ness of a green with no rows of its own, so base IS a dep — its rewrites are cmp-guarded, a
 # no-change recolor keeps the mtime)
 _ss_guard=""
 for _f in "$REPORTS_DIR"/showseen-{accounts,subscriptions,logins,hosts}.rpt \
@@ -192,13 +192,14 @@ exact_tuples() {   # $1 grid-basename  $2 details sub-dir  $3 config cache  [$4 
         $1=="A" { al[toupper($2)]=toupper($3); next }   # config spelling -> its logged alias (raw-IP endpoint -> PTR name)
         # N = the configured name; $4 = its base result. A name matched in the
         # logs is seen (real counts). A name never in the logs but result==green
-        # (the UC3 clean-poll rule, result.sh) is counted as SEEN too, with
-        # BLANK counts (no real transfer) and its config-only detail-page link.
+        # (green through its subscriptions; until 2026-09-28 also the UC3
+        # clean-poll rule) is counted as SEEN too, with BLANK counts (no real
+        # transfer) and its config-only detail-page link.
         $1=="N" { name=$2; if (name=="") next; k=toupper(name); mk=k
           # a configured RAW-IP endpoint logs under its reverse-DNS name
           # (parse.sh PTR substitution): match through the alias
           if (!(k in cnt) && (k in al) && (al[k] in cnt)) mk=al[k]
-          seenreal=(mk in cnt); s=(seenreal || $4=="green")?1:0   # a GREEN name with no log rows = the UC3 clean-poll rule (result.sh): seen, blank counts
+          seenreal=(mk in cnt); s=(seenreal || $4=="green")?1:0   # a GREEN name with no log rows: seen, blank counts
           ps = (dsub != "") ? pageslug(seenreal ? real[mk] : name) : ""
           print name "\t" s "\t" (seenreal?cnt[mk]:"") "\t" (seenreal?fail[mk]:"") "\t" (seenreal?proc[mk]:"") "\t" (seenreal?cf[mk]:"") "\t" (seenreal?cp[mk]:"") "\t" (seenreal?bkt[mk]:"") "\t" (ps != "" ? dsub "/" ps : "") }
     ' | LC_ALL=C sort
@@ -399,7 +400,7 @@ sub_tuples=$( {
       # buckets and link the moment the traffic swung)
       for (i=1;i<=nv;i++) if (svu[i]==nn) { mi=i; break }
       if (mi==0) for (i=1;i<=nv;i++) if (index(svu[i], nn)==1 && substr(svu[i], length(nn)+1, 1) !~ /[A-Za-z0-9]/) { mi=i; break }
-      seenreal=(mi>0); s=(seenreal || $4=="green")?1:0   # an unmatched GREEN is the UC3 clean-poll rule (result.sh): seen, blank counts
+      seenreal=(mi>0); s=(seenreal || $4=="green")?1:0   # an unmatched GREEN: seen, blank counts (the UC3 clean-poll greens until 2026-09-28)
       ps = pageslug(seenreal ? sv[mi] : name)
       print name "\t" s "\t" (seenreal?cnt[mi]:"") "\t" (seenreal?fail[mi]:"") "\t" (seenreal?proc[mi]:"") "\t" (seenreal?cf[mi]:"") "\t" (seenreal?cp[mi]:"") "\t" (seenreal?bkt[mi]:"") "\t" (ps != "" ? "subscriptions/" ps : "") }
 ' | LC_ALL=C sort)

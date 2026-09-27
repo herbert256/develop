@@ -1168,8 +1168,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # the Logical-based derivations (2026-08-30) key every coverage TSV by
     # the real member names this set is EMPTY on a healthy estate — what
     # still lands here is either a flow the COVERAGE TSV vouches for without
-    # a report row (a UC3 clean-poll green: seen-with-blank-counts — VOUCHED,
-    # stays on Seen exactly as before) or a flow configured with NO login and
+    # a report row (a name seen with blank counts — VOUCHED, stays on Seen exactly
+    # as before; the UC3 clean-poll greens were that case until 2026-09-28) or a flow configured with NO login and
     # NO host, whose direction-less rows every derived-coverage builder skips
     # — NO coverage row, NO evidence: that one belongs on NOT SEEN
     # (2026-08-31, user report: a config-only env showed 6% of Domains "Seen"
@@ -1321,7 +1321,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
         $1 == "TABLE" && !done { $0 = $0 OFS "datereset"; done = 1 } { print }')
     # The VOUCHED ghost rows belong on SEEN (2026-07): the coverage TSV — and
     # with it showseen, the analyses figures and the status tables' Seen
-    # column — counts these names as seen (e.g. the UC3 clean-poll greens,
+    # column — counts these names as seen (a green with no report row of its own,
     # seen-with-blank-counts). The EVIDENCE-FREE ghosts go to Not seen
     # instead (2026-08-31); pda_seen_total moved in lockstep.
     if [ -n "$ghrows" ]; then

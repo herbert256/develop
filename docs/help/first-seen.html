@@ -21,7 +21,7 @@
 <h2>Rules</h2>
 <ul>
 <li>The summary rows use the same Seen / Not seen split as the home page&rsquo;s status tables (the coverage universe), so the figures always agree. Per column: <strong>Seen + Not seen = Total</strong> (every configured name of that type); <strong>the day rows + &ldquo;Seen, no date&rdquo; = Seen</strong>.</li>
-<li><strong>Seen, no date</strong> = seen without a dated transfer of its own: a UC3 subscription whose polling works but never had a file to fetch, a name whose transfers are credited to a sibling (a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account).</li>
+<li><strong>Seen, no date</strong> = seen without a dated transfer of its own: a name whose transfers are credited to a sibling (a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account).</li>
 <li>A name the server log mentions but that never transferred counts as Not seen; the raw server log is deliberately not scanned for first mentions (nightly File Maintenance names virtually every account and would move everything to the first day).</li>
 <li>The split is read from the coverage tables (the files behind the home status tables and the Entities views); dates come from the transfer parse caches &mdash; accounts and partners per File, subscriptions, logins and hosts per log record.</li>
 <li>Matching is exact, case aside; subscriptions match by prefix (a configured subscription matches the logged site values it prefixes).</li>
