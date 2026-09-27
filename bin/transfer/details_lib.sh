@@ -58,6 +58,22 @@ SP_AWK='
     function bl_union(s6) { return uni_join("", s6, BLX) }
     BEGIN { uni_load(SPMAP, SPX); uni_load(APMAP, APX); uni_load(PLMAP, PLX); uni_load(SLGMAP, SLGX); uni_load(BLMAP, BLX) }
 '
+# ===== same-type RANKS (2026-09-27) ==========================================
+# The Ranking positions (aggregate_files: Files / Volume / Error rate;
+# compute_extras: Duration / Throughput) used to be counted by an all-pairs
+# loop over every entity of every type — quadratic, with a key split per
+# pair. The caller pools one type t as V[t, 1..RKN[t]] (the entity keys in
+# RKK[t, i]); gtrank() sets R[key] = 1 + the same-type values STRICTLY
+# greater than its own, ltrank() the STRICTLY smaller ones — exactly what
+# the loops counted — by one sort and a binary search per entity. Needs the
+# host program's qsort(A, lo, hi). Inject as "$SP_AWK$RANK_AWK".
+RANK_AWK='
+    function rsorted(t, V, S,   n, i) { n = RKN[t]; split("", S); for (i = 1; i <= n; i++) S[i] = V[t, i]; qsort(S, 1, n); return n }
+    function nle(S, n, v,   lo, hi, mid) { lo = 0; hi = n; while (lo < hi) { mid = int((lo + hi + 1) / 2); if (S[mid] <= v) lo = mid; else hi = mid - 1 } return lo }
+    function nlt(S, n, v,   lo, hi, mid) { lo = 0; hi = n; while (lo < hi) { mid = int((lo + hi + 1) / 2); if (S[mid] < v) lo = mid; else hi = mid - 1 } return lo }
+    function gtrank(t, V, R,   S, n, i) { n = rsorted(t, V, S); for (i = 1; i <= n; i++) R[RKK[t, i]] = 1 + n - nle(S, n, V[t, i]) }
+    function ltrank(t, V, R,   S, n, i) { n = rsorted(t, V, S); for (i = 1; i <= n; i++) R[RKK[t, i]] = 1 + nlt(S, n, V[t, i]) }
+'
 # ===== direction lines (section -1) ==========================================
 # One line per entity carrying its configured DIRECTION (in/both/out; unknown
 # when unclassified) — one for every name in data/flow-manager/base/ (all
@@ -122,7 +138,7 @@ direction_rows() {
 # Merged into the files stream. Perf is processed ROWS (as the "Processed
 # transfers" KPI reads).
 compute_extras() {
-  awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK"'
+  awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK$RANK_AWK"'
     function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
     function humandur(ms){ if(ms<1000) return sprintf("%d ms",ms); if(ms<60000) return sprintf("%.2f s",ms/1000); if(ms<3600000) return sprintf("%.1f min",ms/60000); return sprintf("%.2f h",ms/3600000) }
     function thr(bytes,ms){ return ms>0 ? human(bytes*1000/ms) "/s" : "-" }
@@ -176,13 +192,12 @@ compute_extras() {
       # Duration / Throughput RANKS within the entity type (the detail Ranking
       # table + matching the Ranking report): avg duration ASC (fastest = #1),
       # throughput DESC (highest = #1) over the entities WITH measurable perf
+      # (RANK_AWK: one sort per type instead of the all-pairs loop, 2026-09-27)
+      for(k in pn){ split(k,a,SUBSEP); t5=a[1]; n5=++RKN[t5]; RKK[t5,n5]=k
+        RV1[t5,n5] = ps2[k]/pn[k]; RV2[t5,n5] = (ps2[k] > 0 ? pby[k]*1000/ps2[k] : 0) }
+      for(t5 in RKN){ ltrank(t5, RV1, RKD); gtrank(t5, RV2, RKT) }
       for(k in pn){ split(k,a,SUBSEP)
-        av5 = ps2[k]/pn[k]; th5 = (ps2[k] > 0 ? pby[k]*1000/ps2[k] : 0)
-        dr5 = 1; tr5 = 1
-        for(k2 in pn){ if(k2 == k) continue; split(k2,b5,SUBSEP); if(b5[1] != a[1]) continue
-          if(ps2[k2]/pn[k2] < av5) dr5++
-          if((ps2[k2] > 0 ? pby[k2]*1000/ps2[k2] : 0) > th5) tr5++ }
-        printf "%s\t%s\t0\t6\t%d|%d\n", a[1], a[2], dr5, tr5 }
+        printf "%s\t%s\t0\t6\t%d|%d\n", a[1], a[2], RKD[k], RKT[k] }
       for(h in rip) if(h in hseen) printf "HOST\t%s\t0\t3\t%s\n", h, rip[h]
     }
   ' "$IPMAP" "$FILES" "$PARSED"
@@ -680,7 +695,7 @@ insert_config_rows() {
 # each dimension value is taken once. Rows are CoreId-contiguous (the cache is
 # CoreId-sorted), so a group is flushed at each CoreId boundary — memory-bounded.
 aggregate_files() {
-  awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK$COREIDS_AWK"'
+  awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK$COREIDS_AWK$RANK_AWK"'
     function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
     function humandur(ms){ if(ms<1000) return sprintf("%d ms",ms); if(ms<60000) return sprintf("%.2f s",ms/1000); if(ms<3600000) return sprintf("%.1f min",ms/60000); return sprintf("%.2f h",ms/3600000) }
     function thr(bytes,ms){ return ms>0 ? human(bytes*1000/ms) "/s" : "-" }
@@ -700,14 +715,6 @@ aggregate_files() {
             while (i <= j) { while (A[i] < p2) i++; while (A[j] > p2) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
             if (j - lo < hi - i) { if (lo < j) qsort(A, lo, j); lo = i } else { if (i < hi) qsort(A, i, hi); hi = j }
         }
-    }
-    function medgap(e,   n,i,j,v,ng,D2,G2) {
-      n=split(dstr[e],D2," "); if(n<=1) return "-"
-      for(i=2;i<=n;i++){v=D2[i];j=i-1;while(j>=1&&D2[j]>v){D2[j+1]=D2[j];j--}D2[j+1]=v}
-      ng=0; for(i=2;i<=n;i++){ng++;G2[ng]=D2[i]-D2[i-1]}
-      for(i=2;i<=ng;i++){v=G2[i];j=i-1;while(j>=1&&G2[j]>v){G2[j+1]=G2[j];j--}G2[j+1]=v}
-      if(ng%2) return sprintf("%.1f",G2[(ng+1)/2])
-      return sprintf("%.1f",(G2[ng/2]+G2[ng/2+1])/2)
     }
     function perday(ty,ent,   k,kd,wk,wkd,hk,dk) { if(ent=="")return; k=ty SUBSEP ent; kd=k SUBSEP day; pdseen[kd]=1
       if(pr2){pdp[kd]++;ptp[k]++; if(gHADF)pdr[kd]++}else{pdf[kd]++;ptf[k]++}   # pdr = RECOVERED: an OK File that carried a failed leg
@@ -751,14 +758,30 @@ aggregate_files() {
     # the detail page since 2026-08); every other type keeps 100 — the bound
     # also caps the string re-join cost per insert, so widening it for all
     # seven attributions would multiply the aggregation cost across the board.
-    function addbig(p, sk2, disp2, cid2, bnd,   key,n,a2,i,pos,m,out){ key=sk2 SUBSEP disp2 SUBSEP cid2
-        if ((p in _bign) && _bign[p] >= bnd && key <= _bigmin[p]) return   # cheap reject, see lib.sh addtop
-        n=(p in big)?split(big[p],a2,_US):0; pos=n+1
-        for(i=1;i<=n;i++) if(key>a2[i]){pos=i;break}
-        if(pos>bnd) return
-        for(i=(n<bnd?n:bnd-1);i>=pos;i--) a2[i+1]=a2[i]
-        a2[pos]=key; m=(n<bnd)?n+1:bnd; out=a2[1]; for(i=2;i<=m;i++) out=out _US a2[i]; big[p]=out
-        _bign[p]=m; _bigmin[p]=a2[m] }
+    # AN ARRAY POOL, NOT A JOINED STRING (2026-09-27): the list used to live
+    # in one \x1f-joined string per entity, split and re-joined on EVERY
+    # accepted insert — and with the SITE bound at 1000 that string is
+    # ~200 KB, re-built by 1000 concatenations each copying the growing
+    # string: tens of MB of copying per File, the long pole of the whole
+    # build (35 of the 40 s of the sample run). The candidates now go into
+    # array slots _bigk[p, 1.._bign[p]] unsorted; when the pool reaches
+    # twice the bound it is sorted ONCE and cut back to the bound, whose last
+    # key becomes the floor: a key not above it cannot be among the newest,
+    # so it is rejected on one compare. The kept set is the same: the bnd
+    # largest keys (a File enters each entity once, so keys never tie).
+    function addbig(p, sk2, disp2, cid2, bnd,   key, n){ key=sk2 SUBSEP disp2 SUBSEP cid2
+        if ((p in _bigfl) && key <= _bigfl[p]) return
+        n = ++_bign[p]; _bigk[p, n] = key; _bigb[p] = bnd
+        if (n >= 2 * bnd) bigtrim(p) }
+    # sort the pool of p NEWEST FIRST into its slots and keep at most its bound
+    function bigtrim(p,   n, i, bnd) {
+        n = _bign[p]; bnd = _bigb[p]
+        for (i = 1; i <= n; i++) _BT[i] = _bigk[p, i]
+        qsort(_BT, 1, n)                          # ascending string order ...
+        if (n > bnd) { for (i = bnd + 1; i <= n; i++) delete _bigk[p, i]; _bigfl[p] = _BT[n - bnd + 1] }
+        for (i = 1; i <= n && i <= bnd; i++) _bigk[p, i] = _BT[n - i + 1]   # ... read back from the top
+        _bign[p] = (n > bnd) ? bnd : n
+        split("", _BT) }
     function ent_apply(ty,ent,   dv,a2,k5,s9){ if(ent=="")return
       # the entity <-> SUBSCRIPTION relation, for the Last error(s) table on
       # every non-subscription page: which flows this entity moves files with.
@@ -920,23 +943,28 @@ aggregate_files() {
     }
     END {
       if(curcid!="") flush()
-      for(k in adays){ split(k,a,SUBSEP); dstr[a[1] SUBSEP a[2]]=dstr[a[1] SUBSEP a[2]] " " a[3]; nact[a[1] SUBSEP a[2]]++ }
+      # (field 16, the median gap between active days — medgap() over a per-
+      # entity day list — had NO reader; dropped 2026-09-27, the slot keeps "-"
+      # because the writer reads this line by position)
+      for(k in adays){ split(k,a,SUBSEP); nact[a[1] SUBSEP a[2]]++ }
       for(k in ptr){ split(k,a,SUBSEP); ttot[a[1]]+=ptr[k]; ttotb[a[1]]+=ptb[k]; tcnt2[a[1]]++ }
+      # three same-type ranks: by Files (ptr), by Size (ptb), by error RATE
+      # (ptf/ptr) — #1 is the most files / bytes / errors; rank = 1 + the
+      # same-type entities with a STRICTLY greater value (competition
+      # ranking). Precomputed by SORTING each type once (2026-09-27): the
+      # all-pairs loop that counted them was quadratic in the entities.
+      for(k in ptr){ split(k,a,SUBSEP); t9=a[1]; n9=++RKN[t9]; RKK[t9,n9]=k
+        RV1[t9,n9]=ptr[k]; RV2[t9,n9]=ptb[k]; RV3[t9,n9]=(ptr[k]>0?ptf[k]/ptr[k]:0) }
+      for(t9 in RKN){ gtrank(t9, RV1, RK1); gtrank(t9, RV2, RK2); gtrank(t9, RV3, RK3) }
       for(k in ptr){ split(k,a,SUBSEP)
-        # three same-type ranks in one pass: by Files (ptr), by Size (ptb),
-        # by error RATE (ptf/ptr) — #1 is the most files / bytes / errors
-        rank=1; srank=1; erank=1; er=(ptr[k]>0?ptf[k]/ptr[k]:0)
-        for(k2 in ptr){ split(k2,a2,SUBSEP); if(a2[1]!=a[1]) continue
-          if(ptr[k2]>ptr[k]) rank++
-          if(ptb[k2]>ptb[k]) srank++
-          if((ptr[k2]>0?ptf[k2]/ptr[k2]:0)>er) erank++ }
+        rank=RK1[k]; srank=RK2[k]; erank=RK3[k]; er=(ptr[k]>0?ptf[k]/ptr[k]:0)
         # 0% errors = the LAST position (#n of n), matching the Ranking report
         if(er==0) erank=tcnt2[a[1]]
         pct=ptr[k]>0?sprintf("%.1f",ptf[k]*100/ptr[k]):"0.0"
         share=ttot[a[1]]>0?sprintf("%.1f",ptr[k]*100/ttot[a[1]]):"0.0"
         sshare=ttotb[a[1]]>0?sprintf("%.1f",ptb[k]*100/ttotb[a[1]]):"0.0"
         avgsz=(ptr[k]>0?human(ptb[k]/ptr[k]):"-")
-        printf "%s\t%s\t0\t0\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\n", a[1], a[2], ptr[k], ptf[k]+0, ptp[k]+0, human(ptb[k]), pfirst[k], plast[k], pct, share, rank, tcnt2[a[1]], nact[k]+0, medgap(k), gmax-pmaxjd[k], ptD[k SUBSEP "fi"]+0, ptD[k SUBSEP "pi"]+0, ptD[k SUBSEP "fo"]+0, ptD[k SUBSEP "po"]+0, human(ptmx[k]+0), avgsz, srank, erank, (ptr[k]>0?humandur(ptdur[k]/ptr[k]):"-"), sshare, wecnt(k SUBSEP "Waiting"), wecnt(k SUBSEP "Expired"), ((k in pokend)?pokend[k]:"") }   # field 30 = the newest OK File END (the banner cut)
+        printf "%s\t%s\t0\t0\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\n", a[1], a[2], ptr[k], ptf[k]+0, ptp[k]+0, human(ptb[k]), pfirst[k], plast[k], pct, share, rank, tcnt2[a[1]], nact[k]+0, "-", gmax-pmaxjd[k], ptD[k SUBSEP "fi"]+0, ptD[k SUBSEP "pi"]+0, ptD[k SUBSEP "fo"]+0, ptD[k SUBSEP "po"]+0, human(ptmx[k]+0), avgsz, srank, erank, (ptr[k]>0?humandur(ptdur[k]/ptr[k]):"-"), sshare, wecnt(k SUBSEP "Waiting"), wecnt(k SUBSEP "Expired"), ((k in pokend)?pokend[k]:"") }   # field 30 = the newest OK File END (the banner cut)
       # section 0.4 — the Last error(s) rows: one per connected SUBSCRIPTION
       # that has an error, carrying the newest error of that subscription. The SORTKEY
       # is the File sortkey, so the global sort hands them to the writer
@@ -963,11 +991,13 @@ aggregate_files() {
         printf "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\n", a[1], a[2], a[3], inv(bc[key]), a[4], bc[key], bf[key]+0, bp[key]+0, human(bv[key]+0), bD[key SUBSEP "fi"]+0, bD[key SUBSEP "pi"]+0, bD[key SUBSEP "fo"]+0, bD[key SUBSEP "po"]+0, orlist(top[key SUBSEP "F"]), orlist(top[key SUBSEP "P"]), bw[key]+0, be[key]+0 }
       for(k in wec){ split(k,a,SUBSEP)
         printf "%s\t%s\t0.9\t%d\t%s|%d|%s|%s\n", a[1], a[2], (a[3]=="Waiting"?0:1), a[3], wec[k], wef[k], wel[k] }
-      US = sprintf("%c", 31)
-      for(k in big){ split(k,a,SUBSEP)
-        n=split(big[k],arr,US)
-        for(i=1;i<=n;i++){ split(arr[i],f2,SUBSEP)
-          printf "%s\t%s\t9\t%03d\t%s|%s\n", a[1], a[2], i, f2[2], f2[3] } }   # section 9 -> the Latest-Files table renders right above the Load by weekday table
+      # section 9 -> the Latest-Files table renders right above the Load by
+      # weekday table. The row index is %04d (2026-09-27): the stream sort
+      # compares it as TEXT, and with %03d a full 1000-row SITE list put its
+      # row "1000" — the OLDEST File — between rows 100 and 101
+      for(k in _bign){ bigtrim(k); split(k,a,SUBSEP)
+        for(i=1;i<=_bign[k];i++){ split(_bigk[k, i],f2,SUBSEP)
+          printf "%s\t%s\t9\t%04d\t%s|%s\n", a[1], a[2], i, f2[2], f2[3] } }
     }' "$FILES" "$PARSED"
 }
 # ===== the WRITER lives in bin/transfer/details_writer.awk (2026-07) =========
