@@ -756,13 +756,25 @@ _flap "server log pass 1 (what the server log said)"
 # scan above did not run — the pages then fall back to the mention ring).
 : > "$TMP/srvsublines"
 if [ -f "$SRVLOG" ] && [ -s "$TMP/srvsess2" ]; then
-    LC_ALL=C awk -F'\t' -v SS="$TMP/srvsess2" '
+    # IN PARALLEL (2026-09-27, speed round 10): byte ranges of the server
+    # cache like pass 1 — it ran single-threaded over the whole cache, twice
+    # per build (the catch-up re-run on the critical path). The sort below
+    # orders the lines whatever the part order (ties fall to the whole line),
+    # so the result is the single pass's.
+    FNJ2=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
+    case $FNJ2 in ""|*[!0-9]*) FNJ2=2 ;; esac
+    FSZ2=$(wc -c < "$SRVLOG" | tr -d ' ')
+    fpass2() {   # $1 = part index: its range of line starts is [lo, hi)
+    local lo=$(( ($1 - 1) * FSZ2 / FNJ2 )) hi
+    if [ "$1" -eq "$FNJ2" ]; then hi=$((FSZ2 + 1)); else hi=$(( $1 * FSZ2 / FNJ2 )); fi
+    rng_feed "$SRVLOG" "$lo" | LC_ALL=C awk -F'\t' -v SS="$TMP/srvsess2" -v RANGEF=/dev/stdin -v RLO="$lo" -v RHI="$hi" -v ROFF="$(rng_off "$lo")" '
         function lvlname(x) { if (x == "I") return "Info"; if (x == "W") return "Warning"
                               if (x == "E") return "Error"; return x }
         BEGIN { while ((getline l < SS) > 0) { p = index(l, "\t")
                     if (p > 0) { s = substr(l, p + 1); m = substr(l, 1, p - 1)
                         SM[s] = (s in SM) ? SM[s] "\n" m : m } }
                 close(SS) }
+        FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
         $6 != "" && ($6 in SM) {
             msg = $5
             if (length(msg) > 4000) msg = substr(msg, 1, 4000) " …"
@@ -770,7 +782,13 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/srvsess2" ]; then
             for (i = 1; i <= n; i++)
                 printf "%s\t%s\t%s\t%s\t%s\n", sl9[i], $1, $2, lvlname($3), msg
         }
-    ' "$SRVLOG" | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3 > "$TMP/srvsublines"
+    ' /dev/stdin > "$TMP/srvsub.p$1"
+    }
+    fpids2=(); fparts2=()
+    for ((pi = 1; pi <= FNJ2; pi++)); do fpass2 "$pi" & fpids2+=("$!"); fparts2+=("$TMP/srvsub.p$pi"); done
+    for p in "${fpids2[@]}"; do wait "$p"; done
+    LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3 "${fparts2[@]}" > "$TMP/srvsublines"
+    rm -f "${fparts2[@]}"
 fi
 
 # The finishing pass: append the server-log section (where one exists) and the

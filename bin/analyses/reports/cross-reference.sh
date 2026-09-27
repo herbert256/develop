@@ -105,7 +105,14 @@ agg=$(awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$
     {
         # host legs: OUTBOUND endpoints only — an incoming connection'\''s
         # source IP is not a host entity (whitelist/incoming views cover it)
-        V["acct"] = $4; V["login"] = $5; V["site"] = $6; V["host"] = (cn[$1] == "out" ? $16 : "")
+        hv = (cn[$1] == "out" ? $16 : "")
+        # ONE PASS PER DISTINCT ENTITY TUPLE (2026-09-27, speed round 10): the
+        # pairs below are a function of these nine values alone, and the legs
+        # of a flow nearly all share them — a tuple seen before adds no key
+        tk = $4 SUBSEP $5 SUBSEP $6 SUBSEP hv SUBSEP dom[$1] SUBSEP ptn[$1] SUBSEP app[$1] SUBSEP lgc[$1] SUBSEP blv[$1]
+        if (tk in TUP) next
+        TUP[tk] = 1
+        V["acct"] = $4; V["login"] = $5; V["site"] = $6; V["host"] = hv
         V["dom"] = dom[$1]
         # the partner × application sets: one pair-emission pass per member
         # combination (seen[] dedups, so the pairs repeating across

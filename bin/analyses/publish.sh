@@ -1774,7 +1774,11 @@ write_accounts_page() {
 # One line per analysis, like the transfer/server index pages — the two local
 # coverage tables plus the Cross References group (rendered in the transfer
 # area). Labels/descriptions come from the .rpt TITLE/DESC where one exists.
+# laps (2026-09-27, speed round 10): TIME lines on the build console
+_ap0=$(date +%s)
+_aplap() { local _t1; _t1=$(date +%s); printf "TIME %5ds  analyses publish: %s\n" "$((_t1 - _ap0))" "$1" >&2; _ap0=$_t1; }
 render_coverage_pages   # the 3 PDA Configured cell pages (linked from the home)
+_aplap "coverage pages"
 write_analyses_index() {
     local out="$ADIR/index.html"
     {
@@ -1841,12 +1845,15 @@ write_logical_detection_page
 write_added_bl_page
 write_accounts_page
 write_first_seen_page
+_aplap "use cases, first seen, configuration pages"
 "$SCRIPT_DIR/publish-insights.sh"    # the insight pages (whitelist-audit, config-hygiene, expired, the boxes)
+_aplap "insights (the boxes, audits)"
 # The SUBS_GROUP_REPORTS pages (four Configuration-group reports whose DATA is
 # transfer/server but whose PAGES belong here). Rendered from THIS script (not
 # the area publishes, which run earlier — the rm -f above would wipe their
 # output) and AFTER publish-insights.sh, which renders into the same tree.
 render_subs_group_pages
+_aplap "subscription group pages"
 
 # The Failed Subscriptions VIEW pages (failed-<sel>-<fil>.rpt, written by
 # bin/transfer/reports/failed.sh beside the default failed.rpt, which
@@ -1873,6 +1880,7 @@ for _frpt in "$DATA"/transfer/reports/failed-*.rpt; do
     [ -n "$_fgrow" ] && _inject_after_h1 "$ADIR/$_fname.html" "$_fgrow"
 done
 CUR_DATES=$_fsaved_dates
+_aplap "failed pages"
 
 # The Error reasons DRILL pages (failing-reasons-<slug>.rpt, one per reason
 # with Files in error — every such File, 2026-09-14): rendered with the
@@ -1891,6 +1899,7 @@ for _errpt in "$ARPT"/failing-reasons-*.rpt; do
     [ -n "$_ergrow" ] && _inject_after_h1 "$ADIR/$_ername.html" "$_ergrow"
 done
 CUR_DATES=$_ersaved_dates
+_aplap "error reasons pages"
 
 # (No selector row on Error reasons since 2026-09-14, user request: ONE page
 # counting every failed File — failing-reasons.sh.)
@@ -1972,6 +1981,7 @@ for _fs_k in 24-hours 48-hours week 2-weeks 3-weeks month; do
     _fs_n=$((_fs_n + 1))
 done
 [ "$_fs_n" -gt 0 ] && echo "Wrote $_fs_n File search page(s) (+ per-page data files)." >&2
+_aplap "the rest + file search pages"
 write_analyses_index
 
 echo "Wrote docs/analyses (index + the analysis pages)." >&2

@@ -155,7 +155,11 @@ rulenav() {
     printf '%s\n' "$out"
 }
 
-for rule in "${RULES[@]}"; do
+# THE FOUR RULES IN PARALLEL (2026-09-27, speed round 10): each writes its
+# own .rpt from the same read-only inputs — one job per rule instead of 24
+# awk passes over _files.tsv one after another (the analyses stage's long pole).
+cov_rule() {   # $1 = one RULES entry
+local rule=$1
 IFS=: read -r RKEY RLABEL RBASE <<< "$rule"
 OUT="$REPORTS_DIR/$RBASE.rpt"
 {
@@ -374,4 +378,9 @@ printf 'NOTE\tSubs = the configured subscriptions per side (a both-ways subscrip
 printf 'FOOT\tGenerated on %s from %s file(s)\n' "$now" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($(command grep -c '^TABLE' "$OUT") view(s), rule '$RLABEL')." >&2
-done
+}
+_cpids=()
+for rule in "${RULES[@]}"; do cov_rule "$rule" & _cpids+=("$!"); done
+_crc=0
+for _cp in "${_cpids[@]}"; do wait "$_cp" || _crc=$?; done
+[ "$_crc" -eq 0 ] || { echo "entity-coverage: a rule failed (exit $_crc)." >&2; exit "$_crc"; }
