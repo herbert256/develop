@@ -49,6 +49,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed
+source "$ROOT/bin/ranges.sh"    # rng_feed / rng_off: the byte-range split of the parallel extraction (2026-09-27)
 
 DATA="$ROOT/data"
 FILES="$DATA/transfer/cache/_files.tsv"
@@ -84,7 +85,7 @@ if [ ! -f "$BK" ] || [ ! -f "$RL" ] || [ "$SRV" -nt "$BK" ] || [ "${BASH_SOURCE[
     local lo=$(( ($1 - 1) * SRVSZ / NJ )) hi
     if [ "$1" -eq "$NJ" ]; then hi=$((SRVSZ + 1)); else hi=$(( $1 * SRVSZ / NJ )); fi
     : > "$btmp.p$1"; : > "$rtmp.p$1"
-    awk -F'\t' -v BOUT="$btmp.p$1" -v ROUT="$rtmp.p$1" -v RANGEF="$SRV" -v RLO="$lo" -v RHI="$hi" "$(cat "$CLS")"'
+    rng_feed "$SRV" "$lo" | awk -F'\t' -v BOUT="$btmp.p$1" -v ROUT="$rtmp.p$1" -v RANGEF=/dev/stdin -v RLO="$lo" -v RHI="$hi" -v ROFF="$(rng_off "$lo")" "$(cat "$CLS")"'
         BEGIN { H4 = "[0-9a-f][0-9a-f][0-9a-f][0-9a-f]"; UUID = H4 H4 "-" H4 "-" H4 "-" H4 "-" H4 H4 H4 }
         # the JSON value of key k in message m ("" when absent); the tokenizer
         # flattened the multi-line record to one line and unquoted the CSV
@@ -95,7 +96,7 @@ if [ ! -f "$BK" ] || [ ! -f "$RL" ] || [ "$SRV" -nt "$BK" ] || [ "${BASH_SOURCE[
             if (substr(s, 1, 1) == "\"" ) return ""      # not a string value
             sub(/".*$/, "", s); return s
         }
-        FILENAME == RANGEF { _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
+        FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
         index($5, "{\"message\":\"Transfer end logged.\"") == 1 {
             if (jval($5, "status") == "ok" && jval($5, "direction") == "Outbound") {
                 t = jval($5, "transferId"); if (t != "") printf "%s\t%s\t%s\t%s\n", jval($5, "coreId"), t, $1, $2 > BOUT
@@ -108,7 +109,7 @@ if [ ! -f "$BK" ] || [ ! -f "$RL" ] || [ "$SRV" -nt "$BK" ] || [ "${BASH_SOURCE[
             while (match(s, UUID)) { ids = ids (ids == "" ? "" : " ") substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH) }
             printf "%s\t%s\t%s\t%s\t%s\n", $1, $2, $6, ids, r > ROUT
         }
-    ' "$SRV"
+    ' /dev/stdin
     }
     pids=()
     for ((pi = 1; pi <= NJ; pi++)); do bk_part "$pi" & pids+=("$!"); done

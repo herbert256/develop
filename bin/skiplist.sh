@@ -49,7 +49,7 @@ export SKIPLIST_FILE
 # NOTE: no single quotes inside this program — it rides in a single-quoted
 # shell string.
 SKIPLIST_AWK='
-function sl_load(f,   ln, a, n, b, m, v) {   # b/m/v LOCAL: this rides inside consumer programs that use those names
+function sl_load(f,   ln, a, n, b, m, v, i) {   # b/m/v LOCAL: this rides inside consumer programs that use those names
     SL_N = 0
     while ((getline ln < f) > 0) {
         sub(/\r$/, "", ln)
@@ -84,14 +84,16 @@ function sl_load(f,   ln, a, n, b, m, v) {   # b/m/v LOCAL: this rides inside co
         SL_RAW[SL_N] = a[3]
     }
     close(f)
+    for (i = 1; i <= SL_N; i++) SL_UVAL[i] = toupper(SL_VAL[i])   # (2026-09-27: upper-cased ONCE, not per row and rule)
 }
-function sl_match(fld, v,   i) {
+function sl_match(fld, v,   i, uv) {
     if (v == "") return 0
     for (i = 1; i <= SL_N; i++) {
         if (SL_FIELD[i] != fld && SL_FIELD[i] != "any") continue
-        if (SL_RULE[i] == "exact")    { if (toupper(v) == toupper(SL_VAL[i])) return i }
+        # the value is upper-cased once per call, only when a rule needs it (2026-09-27)
+        if (SL_RULE[i] == "exact")    { if (uv == "") uv = toupper(v); if (uv == SL_UVAL[i]) return i }
         else if (SL_RULE[i] == "regex") { if (v ~ SL_VAL[i]) return i }
-        else                          { if (index(toupper(v), toupper(SL_VAL[i]))) return i }
+        else                          { if (uv == "") uv = toupper(v); if (index(uv, SL_UVAL[i])) return i }
     }
     return 0
 }

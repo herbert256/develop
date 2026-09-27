@@ -102,6 +102,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+source "$SCRIPT_DIR/../../ranges.sh"   # rng_feed / rng_off: the byte-range split of the parallel server log pass 1 (2026-09-27)
 # PHASE TIMINGS (2026-09-27): one "TIME Ns  failed: <phase>" lap per section
 _fl0=$(date +%s)
 _flap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  failed: %s\n' "$((_t1 - _fl0))" "$1" >&2; _fl0=$_t1; }
@@ -633,7 +634,7 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
     local lo=$(( ($1 - 1) * FSZ / FNJ )) hi
     if [ "$1" -eq "$FNJ" ]; then hi=$((FSZ + 1)); else hi=$(( $1 * FSZ / FNJ )); fi
     : > "$TMP/srvsess2.p$1"
-    LC_ALL=C awk -F'\t' -v SSUBF="$TMP/srvsubs" -v SSOUT="$TMP/srvsess2.p$1" -v RANGEF="$SRVLOG" -v RLO="$lo" -v RHI="$hi" '
+    rng_feed "$SRVLOG" "$lo" | LC_ALL=C awk -F'\t' -v SSUBF="$TMP/srvsubs" -v SSOUT="$TMP/srvsess2.p$1" -v RANGEF=/dev/stdin -v RLO="$lo" -v RHI="$hi" -v ROFF="$(rng_off "$lo")" '
         function lvlname(x) { if (x == "I") return "Info"; if (x == "W") return "Warning"
                               if (x == "E") return "Error"; return x }
         function compname(x) { if (x == "T") return "TM"; if (x == "P") return "PESITD"
@@ -693,7 +694,7 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
             hbucket(nc, w0[$1], w1[$1])
             next
         }
-        FILENAME == RANGEF { _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
+        FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
         {                                             # the server parse cache
             m = $5
             # the ID join: every UUID the message carries, in whatever words;
@@ -734,7 +735,7 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
                 if (k >= w0[c] && k <= w1[c] && index(m, pfx[c]) > 0) emit(c, "N", "window")
             }
         }
-    ' "$TMP/ids" "$TMP/sess" "$TMP/meta" "$SRVLOG" > "$TMP/srvlines.p$1"
+    ' "$TMP/ids" "$TMP/sess" "$TMP/meta" /dev/stdin > "$TMP/srvlines.p$1"
     }
     fpids=(); fparts=(); fsess=()
     for ((pi = 1; pi <= FNJ; pi++)); do fpass1 "$pi" & fpids+=("$!"); fparts+=("$TMP/srvlines.p$pi"); fsess+=("$TMP/srvsess2.p$pi"); done

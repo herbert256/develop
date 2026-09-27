@@ -48,6 +48,9 @@ rm -rf "$DOCS/transfer/xref"             # the cross pages moved to analyses/xre
 
 # ---- render -----------------------------------------------------------------
 
+# laps (2026-09-27): TIME lines on the build console
+_tp0=$(date +%s)
+_tplap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  transfer publish: %s\n' "$((_t1 - _tp0))" "$1" >&2; _tp0=$_t1; }
 count=0
 CUR_DATES=$TRANSFER_DATES
 for name in "${transfer_order[@]}"; do
@@ -204,6 +207,7 @@ fi
 # the files set has been waited for: should a CoreId ever sit in both, the
 # failed-File page wins and the two renders never race on one path.
 shopt -s nullglob
+_tplap "report pages + sub-pages"
 filp=("$DATA"/transfer/reports/files/*.rpt)
 errp=("$DATA"/transfer/reports/errors/*.rpt)
 shopt -u nullglob
@@ -225,6 +229,7 @@ for set9 in filp errp; do
     CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
 done
 echo "Rendered docs/files/ (${#errp[@]} failed-file page(s) + ${#filp[@]} File page(s))." >&2
+_tplap "files/ pages"
 
 # MONTH STATS (2026-09-13, user request): the 18 {this,previous} × entity
 # pages of month-stats.sh -> docs/transfer/month-stats/ (publish_lib
@@ -241,4 +246,5 @@ echo "Rendered docs/transfer/ ($count report(s))." >&2
 # empty-report placeholder for each order-listed report without a .rpt here.
 render_missing_reports transfer
 
+_tplap "month stats + placeholders"
 publish_stamp "$STAMP"

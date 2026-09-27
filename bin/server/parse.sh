@@ -50,6 +50,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"   # INPUT_DIR, CACHE_DIR, IP_DIR, CONFIG_DIR, PARSED (= $CACHE_DIR/_parse.tsv)
 source "$ROOT/bin/skiplist.sh"   # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/<env>/skip.txt
+source "$ROOT/bin/ranges.sh"     # rng_feed / rng_off: the byte-range split of the parallel rescan (2026-09-27)
 source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK (rn_load/rn_canon) — input/<env>/renames/
 # PHASE TIMINGS (2026-09-27): "TIME Ns  server parse: <phase>" laps on stderr
 _sl0=$(date +%s)
@@ -487,7 +488,7 @@ BEGIN { outf["A"]=accout; outf["S"]=subout; outf["L"]=logout; outf["H"]=hstout; 
 # cache RANGEF that START at an offset in [RLO, RHI) and stops after them —
 # every job computes the same offsets, so the jobs partition the cache in
 # order, exactly like the line chunks a split copy used to write
-RANGEF != "" && FILENAME == RANGEF { _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
+RANGEF != "" && FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
 # One matched (type, name) per record: append the mention line and keep
 # the newest 25 full records per name in a ring ($0 is the 6-col record),
 # plus the newest 10 ERROR/WARN records ($3 == "E" || "W") in a second ring.
@@ -623,13 +624,13 @@ ent_one() {   # $1 = cache line chunk, $2 = 4-digit part index
         "$RENAMES_AWK$ENT_PROG" ${ENT_CFG_SRCS[@]+"${ENT_CFG_SRCS[@]}"} "$1"
 }
 ent_range() {   # $1 = the cache, $2/$3 = the byte range [lo, hi) of line starts, $4 = 4-digit part index
-    awk -F'\t' \
+    rng_feed "$1" "$2" | awk -F'\t' \
         -v accout="$ENT_CHUNK_DIR/A.$4" -v subout="$ENT_CHUNK_DIR/S.$4" \
         -v logout="$ENT_CHUNK_DIR/L.$4" -v hstout="$ENT_CHUNK_DIR/H.$4" \
         -v ringout="$ENT_CHUNK_DIR/rings.$4" \
         -v ewout="$ENT_CHUNK_DIR/ewrings.$4" \
-        -v RNF="$RENAMES_FILE" -v RANGEF="$1" -v RLO="$2" -v RHI="$3" \
-        "$RENAMES_AWK$ENT_PROG" ${ENT_CFG_SRCS[@]+"${ENT_CFG_SRCS[@]}"} "$1"
+        -v RNF="$RENAMES_FILE" -v RANGEF=/dev/stdin -v RLO="$2" -v RHI="$3" -v ROFF="$(rng_off "$2")" \
+        "$RENAMES_AWK$ENT_PROG" ${ENT_CFG_SRCS[@]+"${ENT_CFG_SRCS[@]}"} /dev/stdin
 }
 
 # ---------------------------------------------------------------------------

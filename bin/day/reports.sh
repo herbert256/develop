@@ -49,6 +49,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$ROOT"
 source bin/fastawk.sh   # route unqualified `awk` to mawk when installed
+source bin/ranges.sh    # rng_feed / rng_off: the byte-range split of the parallel server pass (2026-09-27)
 DATA="data"
 
 RPTDIR="$DATA/day/reports"
@@ -565,7 +566,7 @@ if [ -f "$SV" ] && [ -f "$SP" ] && [ -n "$sdays" ]; then
 day_srv() {
 awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v slfc="$slfc" -v nrdc="$nrdc" -v nrfc="$nrfc" -v u3c="$u3c" -v anomc="$anomc" '
     BEGIN { PART = ENVIRON["DAYSRV_PART"] + 0; REDUCE = ENVIRON["DAYSRV_REDUCE"] + 0; SVF = ENVIRON["DAYSRV_SVF"]
-            RANGEF = ENVIRON["DAYSRV_RANGEF"]; RLO = ENVIRON["DAYSRV_LO"] + 0; RHI = ENVIRON["DAYSRV_HI"] + 0 }
+            RANGEF = ENVIRON["DAYSRV_RANGEF"]; RLO = ENVIRON["DAYSRV_LO"] + 0; RHI = ENVIRON["DAYSRV_HI"] + 0; ROFF = ENVIRON["DAYSRV_ROFF"] + 0 }
     BEGIN { ns = split(slfc, _sa, " "); for (i = 1; i <= ns; i++) { if (_sa[i] == "") continue; p = index(_sa[i], ":"); if (p > 1) SLFC[substr(_sa[i], 1, p - 1)] = substr(_sa[i], p + 1) }
         na = split(anomc, _aa, " "); for (i = 1; i <= na; i++) { if (_aa[i] == "") continue; p = index(_aa[i], ":"); if (p > 1) ANOMC[substr(_aa[i], 1, p - 1)] = substr(_aa[i], p + 1) }
         nu = split(u3c, _ua, " "); for (i = 1; i <= nu; i++) { if (_ua[i] == "") continue; p = index(_ua[i], ":"); if (p > 1) U3C[substr(_ua[i], 1, p - 1)] = substr(_ua[i], p + 1) }
@@ -591,7 +592,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         REC[d]=$3; WRN[d]=$6; ERR[d]=$7; CT[d]=$9; CP[d]=$10; CS[d]=$11; FI[d]=$12; LA[d]=$13
         next
     }
-    RANGEF != "" && FILENAME == RANGEF { _lo = _off; _off += length($0) + 1; if (_lo < RLO) next; if (_lo >= RHI) exit }
+    RANGEF != "" && FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO) next; if (_lo >= RHI) exit }
     {   # _parse.tsv — the one full pass
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) next
         h = substr($2, 1, 2); if (h !~ /^[0-9][0-9]$/) h = "00"
@@ -758,7 +759,7 @@ dparts="$RPTNEW.srvparts.$$"; rm -rf "$dparts"; mkdir -p "$dparts"
 dpids=()
 for ((pi = 1; pi <= DNJ; pi++)); do
     dlo=$(( (pi - 1) * DSZ / DNJ )); if [ "$pi" -eq "$DNJ" ]; then dhi=$((DSZ + 1)); else dhi=$(( pi * DSZ / DNJ )); fi
-    DAYSRV_PART=1 DAYSRV_RANGEF="$SP" DAYSRV_LO="$dlo" DAYSRV_HI="$dhi" day_srv "$SV" "$SP" > "$dparts/$pi" &
+    rng_feed "$SP" "$dlo" | DAYSRV_PART=1 DAYSRV_RANGEF=/dev/stdin DAYSRV_LO="$dlo" DAYSRV_HI="$dhi" DAYSRV_ROFF="$(rng_off "$dlo")" day_srv "$SV" /dev/stdin > "$dparts/$pi" &
     dpids+=("$!")
 done
 for p in "${dpids[@]}"; do wait "$p"; done

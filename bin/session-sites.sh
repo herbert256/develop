@@ -47,6 +47,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed
 source "$ROOT/bin/renames.sh"   # RENAMES_FILE + RENAMES_AWK (rn_canon: old name -> current)
+source "$ROOT/bin/ranges.sh"    # rng_feed / rng_off: the byte-range split of the parallel scan (2026-09-27)
 
 DATA="$ROOT/data"
 PARSED="$DATA/transfer/cache/_transfers.tsv"
@@ -97,7 +98,7 @@ SRVSZ=$(wc -c < "$SRV" | tr -d " ")
 scan_part() {   # $1 = part index: its range of line starts is [lo, hi)
     local lo=$(( ($1 - 1) * SRVSZ / NJ )) hi
     if [ "$1" -eq "$NJ" ]; then hi=$((SRVSZ + 1)); else hi=$(( $1 * SRVSZ / NJ )); fi
-    awk -v RANGEF="$SRV" -v RLO="$lo" -v RHI="$hi" -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
+    rng_feed "$SRV" "$lo" | awk -v RANGEF=/dev/stdin -v RLO="$lo" -v RHI="$hi" -v ROFF="$(rng_off "$lo")" -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
     # THE PREFIX GATE (2026-09-27): a token can name a configured flow only when
     # its first 3 characters, upper-cased, open a configured name or an old
     # name of the rename map (the tail strip and the rename fold both keep the
@@ -107,7 +108,7 @@ scan_part() {   # $1 = part index: its range of line starts is [lo, hi)
     FILENAME ~ /_subscriptions\.tsv$/ { if ($2 != "") { conf[toupper($1)] = $1; CP3[toupper(substr($1, 1, 3))] = 1; if (length($1) < 3) GATE_OFF = 1 }; next }
     FILENAME ~ /\.sess\./             { scan[$1] = 1; next }
     FILENAME ~ /_sessionsites\.tsv$/  { old[$1] = $2; next }
-    RANGEF != "" && FILENAME == RANGEF { _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
+    RANGEF != "" && FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
     {   # _parse.tsv: col 5 = message, col 6 = session
         if (!($6 in scan)) next
         # a session that already named two flows keeps "-" whatever it logs
@@ -134,7 +135,7 @@ scan_part() {   # $1 = part index: its range of line starts is [lo, hi)
         }
     }
     END { for (s in seen) if (seen[s] != "") print s, seen[s] }
-    ' "$CONFSRC" "$sess" /dev/null "$SRV" > "$tmp.part.$1"
+    ' "$CONFSRC" "$sess" /dev/null /dev/stdin > "$tmp.part.$1"
 }
 pids=()
 for ((pi = 1; pi <= NJ; pi++)); do scan_part "$pi" & pids+=("$!"); done

@@ -2566,15 +2566,36 @@ skipped_grouprow_for() {
 # avoids awk sub()'s "&" = whole-match replacement semantics (the tag contains
 # &larr;/&amp;). SECTION is the top-bar area (Transfer / Server / Analyses), so an
 # h1 reads "Title &larr; Group &larr; Section".
-_tag_h1() {   # $1 file  $2 group label  $3 section
-    local f=$1 lbl=$2 sect=$3 tmp; [ -f "$f" ] || return 0
-    grep -q 'class="grouptag"' "$f" && return 0
-    esc "$lbl"; local tag=" <span class=\"grouptag\">&larr; $ESC &larr; $sect</span>"
-    tmp=$(mktemp "${TMPDIR:-/tmp}/h1.XXXXXX")
-    awk -v tag="$tag" '
-        !done { p = index($0, "</h1>"); if (p > 0) { $0 = substr($0, 1, p-1) tag substr($0, p); done = 1 } }
-        { print }
-    ' "$f" > "$tmp" && mv "$tmp" "$f"
+# (the queue is a FILE, not a variable: some callers run _tag_h1 inside a
+# `printf … | while` subshell, whose variables die with it; $$ is the main
+# shell pid in every subshell, so they all append to the one queue)
+_tag_h1() {   # $1 file  $2 group label  $3 section — QUEUED, applied by _tag_flush
+    local f=$1 lbl=$2 sect=$3; [ -f "$f" ] || return 0
+    esc "$lbl"
+    printf '%s\t%s\n' "$f" " <span class=\"grouptag\">&larr; $ESC &larr; $sect</span>" >> "${TMPDIR:-/tmp}/axtag.$$"
+}
+# _tag_flush — the queued crumbs in ONE perl (2026-09-27: a grep, a mktemp, an
+# awk and a mv per page, ~250 pages a build). Same edit as the former per-page
+# awk: the FIRST queued tag of a page wins, a page already carrying a grouptag
+# is left alone, the tag goes in front of the first </h1>, and a missing final
+# newline is added (awk print did that). Each tag_*_group_h1s flushes at its
+# end, so analyses still tags before transfer and server.
+_tag_flush() {
+    local q="${TMPDIR:-/tmp}/axtag.$$"
+    [ -s "$q" ] || { rm -f "$q"; return 0; }
+    perl -e '
+        my (@order, %tag);
+        while (my $l = <STDIN>) { chomp $l; my ($f, $t) = split /\t/, $l, 2; next if exists $tag{$f}; $tag{$f} = $t; push @order, $f }
+        for my $f (@order) {
+            open(my $h, "<", $f) or next; my $c = do { local $/; <$h> }; close $h;
+            next if index($c, q{class="grouptag"}) >= 0;
+            my $p = index($c, "</h1>");
+            my $n = $c; substr($n, $p, 0) = $tag{$f} if $p >= 0;
+            $n .= "\n" if length($n) && substr($n, -1) ne "\n";
+            next if $n eq $c;
+            open(my $o, ">", $f) or die "tag: $f: $!"; print $o $n; close $o or die "tag: $f: $!";
+        }' < "$q"
+    rm -f "$q"
 }
 # _area_group_label AREA BASENAME -> the group LABEL for a transfer/server report
 # page ("" when ungrouped). A multi-page variant file (anomalies-hourly,
@@ -2656,25 +2677,28 @@ tag_analyses_group_h1s() {
             _tag_h1 "$DOCS/analyses/$nm-$(slugify "$tab").html" "$glabel" "Analyses"
         done < <(printf '%s\n' "${tabs//|/$'\n'}")
     done
+    _tag_flush
 }
 tag_transfer_group_h1s() {   # the analyses members already in transfer/ are tagged; this skips them
     local f b lbl
     for f in "$DOCS/transfer/"*.html; do
         [ -f "$f" ] || continue
-        b=$(basename "$f" .html); lbl=$(_area_group_label transfer "$b")
+        b=${f##*/}; b=${b%.html}; lbl=$(_area_group_label transfer "$b")
         [ -n "$lbl" ] && _tag_h1 "$f" "$lbl" "Transfer"
     done
     for f in "$DOCS/transfer/entities/"*.html; do [ -f "$f" ] || continue; _tag_h1 "$f" "Entities" "Transfer"; done
     for f in "$DOCS/transfer/month-stats/"*.html; do [ -f "$f" ] || continue; _tag_h1 "$f" "Month stats" "Analyses"; done   # the Analyses-menu Month stats pages (2026-09-13)
+    _tag_flush
     return 0
 }
 tag_server_group_h1s() {
     local f b lbl
     for f in "$DOCS/server/"*.html; do
         [ -f "$f" ] || continue
-        b=$(basename "$f" .html); lbl=$(_area_group_label server "$b")
+        b=${f##*/}; b=${b%.html}; lbl=$(_area_group_label server "$b")
         [ -n "$lbl" ] && _tag_h1 "$f" "$lbl" "Server"
     done
+    _tag_flush
     return 0
 }
 # The Subscriptions analyses group members are dropped here the same way the

@@ -41,6 +41,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed
+source "$ROOT/bin/ranges.sh"    # rng_feed / rng_off: the byte-range split of the parallel extraction (2026-09-27)
 
 DATA="$ROOT/data"
 FILES="$DATA/transfer/cache/_files.tsv"
@@ -76,9 +77,9 @@ if [ ! -f "$DEL" ] || [ "$SRV" -nt "$DEL" ] || [ "${BASH_SOURCE[0]}" -nt "$DEL" 
     ex_part() {   # $1 = part index: its range of line starts is [lo, hi)
         local lo=$(( ($1 - 1) * ESZ / ENJ )) hi
         if [ "$1" -eq "$ENJ" ]; then hi=$((ESZ + 1)); else hi=$(( $1 * ESZ / ENJ )); fi
-        LC_ALL=C awk -v RLO="$lo" -v RHI="$hi" '
-            { _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
-            index($0, "File Maintenance for account") > 0' "$SRV" > "$dtmp.p$1"
+        rng_feed "$SRV" "$lo" | LC_ALL=C awk -v RLO="$lo" -v RHI="$hi" -v ROFF="$(rng_off "$lo")" '
+            { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
+            index($0, "File Maintenance for account") > 0' /dev/stdin > "$dtmp.p$1"
     }
     epids=(); eparts=()
     for ((pi = 1; pi <= ENJ; pi++)); do ex_part "$pi" & epids+=("$!"); eparts+=("$dtmp.p$pi"); done
