@@ -242,8 +242,9 @@ before the @)) · **srv-transfers**
 "Transfers & Delivery" (pickups — the `transfers` merge went in 2026-08 with the JSON
 Transfer-start/end lines its two components read) · **srv-connections** (connections · logons) ·
 **srv-security** (ssh-security) · **srv-ops** "Operations & Capacity" (platform-health ·
-capacity) · **srv-routing** "Routing" (transfer-site-missing; remote-poll an unpublished intermediate since 2026-09-05, its tables on the UC status / UC3 tab) ·
-**srv-missing** (missing-entities).
+capacity) · **srv-missing** (missing-entities). (The **srv-routing** "Routing" group and its one
+report, transfer-site-missing, were removed 2026-09-27, user request; remote-poll is an
+unpublished intermediate since 2026-09-05, its tables on the UC status / UC3 tab.)
 
 ## PDA derivation (partners, domains, applications)
 

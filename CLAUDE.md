@@ -779,7 +779,8 @@ therefore went too, leaving `pickups` alone in the srv-transfers group. **`advan
 the same way** (2026-08) when `AR0011/76/77` joined the list: its Routes table counted Executions
 as the AR0076 total and Fail % as failures ÷ executions, so the report could not survive the
 filter — `remote-poll` then led srv-routing alone, and since 2026-09-05 it is an unpublished
-intermediate whose tables ride the UC status / UC3 tab (`uc3-polling.sh`; srv-routing = `transfer-site-missing`, label "Routing"). Verified first that nothing else depended on
+intermediate whose tables ride the UC status / UC3 tab (`uc3-polling.sh`; the srv-routing group, then only
+`transfer-site-missing`, went with that report 2026-09-27, user request). Verified first that nothing else depended on
 those lines: 0 of 136 blue entities evidenced by one, 0 of 905 entity mention caches made only of
 them, 0 of 732 unknown-* seeds. The failed-file error
 pages lost their JSON id join with them and now rest on the SESSION join, plus an ANY-MENTION id join

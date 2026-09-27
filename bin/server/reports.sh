@@ -77,7 +77,9 @@ pool_run "$SCRIPT_DIR/reports/file-cleanup.sh"
 pool_run "$SCRIPT_DIR/../analyses/reports/uc1-status.sh"
 pool_run "$SCRIPT_DIR/reports/deploy-errors.sh"
 pool_run "$SCRIPT_DIR/reports/remote-poll.sh"
-pool_run "$SCRIPT_DIR/reports/transfer-site-missing.sh"
+# (transfer-site-missing.sh — the "Transfer site missing" report — was removed
+# 2026-09-27, user request; its stale .rpt is dropped here)
+rm -f "$REPORTS_DIR/transfer-site-missing.rpt"
 pool_run "$SCRIPT_DIR/../analyses/reports/uc3-status.sh"
 pool_run "$SCRIPT_DIR/reports/no-remote-dir.sh"
 pool_run "$SCRIPT_DIR/reports/no-remote-files.sh"
