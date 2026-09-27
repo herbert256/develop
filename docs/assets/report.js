@@ -4246,12 +4246,38 @@
       td.className = (td.className ? td.className + " " : "") + "cl";
     }
   }
+  // ---- Latest files pages: rows arrive as DATA (2026-09-27) -----------------
+  // docs/latest/<slug>.html ships an EMPTY table stamped data-latest="<slug>";
+  // its rows — EXACTLY as render_rpt wrote them — sit in the sibling <slug>.js
+  // (publish-details.sh render_latest_page), which registers itself on
+  // window.AXWAY_LATEST so latest/search.html can load every payload at once.
+  // Materialised here, before init() touches any table, so the sort, pager,
+  // From/To, search, tints, whole-cell links and CoreId links all see
+  // ordinary DOM rows. A total row (none today) keeps its place last.
+  function latestRows() {
+    var L = window.AXWAY_LATEST;
+    if (!L || !L.length) return;
+    var table = document.querySelector("table[data-latest]");
+    if (!table) return;
+    var slug = table.getAttribute("data-latest"), i, j;
+    for (i = 0; i < L.length; i++) {
+      if (!L[i] || L[i].s !== slug || typeof L[i].r !== "string") continue;
+      var body = table.tBodies[0] || table, total = null;
+      for (j = 0; j < body.rows.length; j++)
+        if ((" " + body.rows[j].className + " ").indexOf(" total ") >= 0) { total = body.rows[j]; break; }
+      if (total) total.insertAdjacentHTML("beforebegin", L[i].r);
+      else body.insertAdjacentHTML("beforeend", L[i].r);
+      return;
+    }
+  }
+
   function init() {
     buildTopbar();          // FIRST: setupSrvToggle binds into the bar
     setupTheme();           // the ◐ toggle (the head script already applied the choice)
     setupRelDates();        // "3 days ago" tooltips on date cells, lazily
     setupPalette();         // Ctrl+K / Cmd+K quick jump
     entTouch();             // Entities: slide the shared sort's hour on every view
+    latestRows();           // Latest files pages: the rows arrive as DATA — BEFORE any table setup below
     var tables = document.getElementsByTagName("table");
     for (var i = 0; i < tables.length; i++) {
       initColOrder(tables[i]); // FIRST: stamp the built column index + apply a remembered column order
