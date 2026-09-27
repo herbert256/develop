@@ -210,6 +210,7 @@ IPH_P="$ROOT/input/ip/ip-hosts.tsv"; [ -f "$IPH_P" ] || IPH_P=/dev/null
 TRANSFERS="$ROOT/data/transfer/cache/_transfers.tsv"
 SRVC="$ROOT/data/server/cache"
 source "$ROOT/bin/renames.sh"   # rn_canon_pfx: the log names a flow as it was called THEN
+source "$ROOT/bin/ranges.sh"    # rng_feed / rng_off: the parallel session-vote pass (2026-09-27)
 
 # ---- connected-ring Error/Warn lines, ATTRIBUTED to one subscription --------
 # A remote host — and just as much an account or a login — serves many flows,
@@ -286,15 +287,37 @@ _build_ringattr() {
     if command grep -q "^S" "$tmp.raw" 2>/dev/null; then
         awk -F'\t' '$1 == "S" { print $3 }' "$tmp.raw" | LC_ALL=C sort -u > "$tmp.sess"
         # pass 2: ONE pass over the parse cache for those sessions only
+        # IN PARALLEL (2026-09-27, speed round 11): byte ranges of the 3 GB
+        # cache (bin/ranges.sh), one job per core — this single-threaded pass
+        # sat on the build's critical path. Each part lists its DISTINCT
+        # (session, flow) pairs in first-seen order; the merge reads the parts
+        # in range (= cache) order, so a session's first flow is the one the
+        # single pass printed, and a second distinct flow anywhere marks it
+        # "\001" (a session naming two flows resolves to neither) — the same
+        # lines, then the same sort -u.
         if [ -f "$SRVC/_parse.tsv" ]; then
-            awk -F'\t' -v SF="$tmp.sess" -v RNF="$RENAMES_FILE" -v SUBB="$BASE/_subscriptions.tsv" "$RENAMES_AWK$SUBNAME_AWK"'
-                BEGIN { while ((getline l < SF) > 0) S[l] = 1; close(SF); rn_load(RNF); ros_load(SUBB) }
-                ($6 in S) {
-                    t = subname($5); if (t == "") next
-                    if (!(($6) in got)) { got[$6] = t; print $6 "\t" t }
-                    else if (got[$6] != t) got[$6] = "\001" }   # a session naming two flows resolves to neither
-                END { for (k in got) if (got[k] == "\001") print k "\t\001" }
-            ' "$SRVC/_parse.tsv" | LC_ALL=C sort -u > "$tmp.map"
+            _rsz=$(wc -c < "$SRVC/_parse.tsv" | tr -d ' ')
+            _rnj=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
+            case $_rnj in ""|*[!0-9]*) _rnj=2 ;; esac
+            _rparts=(); _rpids=()
+            for ((_ri = 1; _ri <= _rnj; _ri++)); do
+                _rlo=$(rng_lo "$_rsz" "$_rnj" "$_ri"); _rhi=$(rng_hi "$_rsz" "$_rnj" "$_ri")
+                rng_feed "$SRVC/_parse.tsv" "$_rlo" | awk -F'\t' -v SF="$tmp.sess" -v RNF="$RENAMES_FILE" -v SUBB="$BASE/_subscriptions.tsv" \
+                    -v RANGEF=/dev/stdin -v RLO="$_rlo" -v RHI="$_rhi" -v ROFF="$(rng_off "$_rlo")" "$RENAMES_AWK$SUBNAME_AWK"'
+                    BEGIN { while ((getline l < SF) > 0) S[l] = 1; close(SF); rn_load(RNF); ros_load(SUBB) }
+                    FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
+                    ($6 in S) {
+                        t = subname($5); if (t == "") next
+                        k = $6 SUBSEP t
+                        if (!(k in seen)) { seen[k] = 1; print $6 "\t" t } }
+                ' /dev/stdin > "$tmp.rv.$_ri" &
+                _rpids+=("$!"); _rparts+=("$tmp.rv.$_ri")
+            done
+            for _rp in "${_rpids[@]}"; do wait "$_rp"; done
+            awk -F'\t' '{ if (!($1 in f)) { f[$1] = $2; o[++n] = $1 } else if ($2 != f[$1]) a[$1] = 1 }
+                END { for (i = 1; i <= n; i++) { print o[i] "\t" f[o[i]]; if (o[i] in a) print o[i] "\t\001" } }' "${_rparts[@]}" \
+                | LC_ALL=C sort -u > "$tmp.map"
+            rm -f "${_rparts[@]}"
         fi
         # pass 3: the SESSION JOIN — a session the parse cache could not vote
         # on may still be the connection of logged transfer LEGS: _transfers.tsv
