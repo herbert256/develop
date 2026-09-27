@@ -8,7 +8,7 @@
          days  one line per data day, NEWEST FIRST:
                date \t files \t subscription indices (",") \t m \t bits \t cksum
                (bits = the day's bloom filter, 6 bits per base64 character)
-     search/all/d-<date>.js    AXWAY_AFD(date, `NAME per line`, `rows`) — one
+     search/all/d-<date>.js    AXWAY_AFD(date, `rows`, `NAME per line`) — one
                                day's Files newest first, loaded ON DEMAND:
          name \t HHMMSS \t local subscription index \t bytes \t CoreId (32 hex)
          \t flag ("" delivered, e errored, w waiting, x expired; UPPERCASE =
@@ -116,7 +116,7 @@
 
     // ---- the day cache + the shard loader -------------------------------
     var CACHE = {}, WAIT = {};
-    window.AXWAY_AFD = function (d, subs, rows) {
+    window.AXWAY_AFD = function (d, rows, subs) {
       var names = lines(subs), rl = lines(rows), R = [], j, g;
       for (j = 0; j < rl.length; j++) {
         g = rl[j].split("\t");
