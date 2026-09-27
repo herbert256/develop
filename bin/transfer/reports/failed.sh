@@ -102,6 +102,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+# PHASE TIMINGS (2026-09-27): one "TIME Ns  failed: <phase>" lap per section
+_fl0=$(date +%s)
+_flap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  failed: %s\n' "$((_t1 - _fl0))" "$1" >&2; _fl0=$_t1; }
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -508,6 +511,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
         close(IDS); close(META); close(SESS)
     }
 ' "$TMP/all" "$TMP/extra" "$TMP/filepages" "$PARSED"
+_flap "the failed Files, the drill + File pages"
 # ---- The SERVER-FAILING set (2026-08) ---------------------------------------
 # Every RED subscription that is server-reddened (blue/_redflip.tsv) or has NO
 # failed File at all — exactly the home table-2 red membership. Computed
@@ -575,6 +579,7 @@ LC_ALL=C awk -F'\t' -v OUTS="$TMP/srvsubs" \
     }
 ' /dev/null
 
+_flap "the server-failing set"
 # ---- "What the server log said" — ONE pass over the server parse cache ------
 # The transfer CSVs never carry a failure reason (their detail fields are
 # always UNKNOWN); the server log does. Two joins, both resolved in this single
@@ -695,6 +700,7 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
     | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3 -k4,4 > "$TMP/srvlines"
 fi
 
+_flap "server log pass 1 (what the server log said)"
 # ---- the reddening sessions' conversations (2026-08) ------------------------
 # ONE more pass over the server cache: every line of the sessions the scan
 # above resolved from the server-failing flows' evidence stamps, so their
@@ -788,6 +794,7 @@ if [ -s "$TMP/meta" ]; then
     ' "$TMP/meta" "$TMP/srvlines" "$TMP/srvlines"
 fi
 
+_flap "server log pass 2 (the reddening sessions)"
 # ---- The SERVER-FAILING drill pages (2026-08) -------------------------------
 # One errors/<slug>.rpt per server-failing subscription (the set, slugs,
 # stamps and reasons come from the S1 sidecar $TMP/srvsubs above). Written
@@ -1136,6 +1143,7 @@ if [ -s "$TMP/reasons" ]; then
     ' "$TMP/reasons"
 fi
 
+_flap "server-failing pages + the reasons"
 # ---- The SIX lists (see the header) -----------------------------------------
 # One pass over $TMP/all writes all six bodies to .rpt.tmp files; the mv set
 # below publishes them together, AFTER the drill tree and its server-log
@@ -1339,3 +1347,4 @@ set -- $stats
 nover=$(wc -l < "$TMP/overlap" | tr -d ' ')
 echo "File pages: $nfilep written to $FILEDIR/ + $nover served by their failed-File page (the Transfer patterns links)." >&2
 echo "Data written to $OUT + 3 view variants ($nallf failed file(s), $nleg subscription/legs combination(s)) and $ERRDIR/ ($((nleg + nextra)) drill page(s), $nextra for the File search windows; server-log sections: $1 by session/id carrying $2 line(s), $3 on the time-window fallback)." >&2
+_flap "the six lists + the File pages"

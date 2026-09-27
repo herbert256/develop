@@ -51,6 +51,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"   # INPUT_DIR, CACHE_DIR, IP_DIR, CONFIG_DIR, PARSED (= $CACHE_DIR/_parse.tsv)
 source "$ROOT/bin/skiplist.sh"   # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/<env>/skip.txt
 source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK (rn_load/rn_canon) — input/<env>/renames/
+# PHASE TIMINGS (2026-09-27): "TIME Ns  server parse: <phase>" laps on stderr
+_sl0=$(date +%s)
+_slap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  server parse: %s\n' "$((_t1 - _sl0))" "$1" >&2; _sl0=$_t1; }
 OUT="$CACHE_DIR/_parse.tsv"
 LEGEND="$CACHE_DIR/_parse.txt"
 # SKIP LIST (input/<env>/skip.txt, per environment): a server-log record whose
@@ -817,6 +820,7 @@ elif [ -f "$OUT" ] && [ -f "$MANIFEST" ]; then
         if [ ${#new_files[@]} -eq 0 ]; then
             echo "$OUT already covers all ${#files[@]} input file(s); nothing to parse." >&2
             build_entity_tsvs   # cache unchanged, but refresh the entity files if stale/missing
+            _slap "per-entity mention caches (cache unchanged)"
             exit 0
         fi
     fi
@@ -990,6 +994,7 @@ if [ "$mode" = full ]; then
     [ "$skipped_n" -gt 0 ] && echo "Skip list: set aside $skipped_n server record(s) -> $SKIPOUT." >&2
     for f in "${files[@]}"; do manifest_entry "$f"; done > "$MANIFEST"
 fi
+_slap "tokenize + merge"
 printf '%s\n' "$parser_sig" > "$PSIG"   # record the parser version that built this cache
 
 # Companion legend: the column names of _parse.tsv (kept in sync with the emit
@@ -1023,6 +1028,7 @@ LEGEND_EOF
 echo "Wrote $OUT ($(wc -l < "$OUT" | tr -d ' ') record(s)) and $LEGEND." >&2
 
 build_entity_tsvs         # derive _accounts.tsv / _subscriptions.tsv from the fresh cache
+_slap "per-entity mention caches"
 # full-mode merge parts served as the entity-scan chunks. The if-form, NOT a
 # bare [ -d ] && rm: on the incremental path the dir does not exist, the test
 # fails as the LAST command, and the whole parse exits 1 — which aborted the

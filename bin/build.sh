@@ -615,18 +615,26 @@ bg_step_start() {
     BG_LOGF=$BUILD_DIR/step-$(printf '%02d' "$STEP_N").log
     BG_START=$(date '+%H:%M:%S'); BG_T0=$(date +%s); BG_CMD="$*"
     printf '\n=== %d. %s (in background) ===\n' "$STEP_N" "$BG_LABEL" >&2
-    "$@" > "$BG_LOGF" 2>&1 &
+    # the subshell records the step's OWN end (2026-09-27): measured at the
+    # wait, a step that finished long before looked as slow as the
+    # foreground work beside it
+    rm -f "$BG_LOGF.end"
+    ( "$@"; _bgst=$?; date +%s > "$BG_LOGF.end"; exit "$_bgst" ) > "$BG_LOGF" 2>&1 &
     BG_PID=$!
 }
 bg_step_wait() {
-    local status=0 t1
+    local status=0 t1 tw0 tw1
+    tw0=$(date +%s)
     wait "$BG_PID" || status=$?
-    t1=$(date +%s)
+    tw1=$(date +%s)
+    t1=$tw1; [ -s "$BG_LOGF.end" ] && t1=$(cat "$BG_LOGF.end")
     STEPS+=("$BG_LABEL"$'\037'"$BG_CMD"$'\037'"$BG_START"$'\037'"$((t1-BG_T0))"$'\037'"$status"$'\037'"$BG_LOGF")
     # its duration + the per-script TIME lines (bin/timing.sh) its log holds
-    # go to the console now — a background step never streams there
+    # go to the console now — a background step never streams there; the
+    # WAIT is how long the foreground chain blocked on it (0 = off the
+    # critical path)
     grep '^TIME ' "$BG_LOGF" >&2 || true
-    printf -- '--- %d. %s (in background): %ds\n' "$BG_N" "$BG_LABEL" "$((t1-BG_T0))" >&2
+    printf -- '--- %d. %s (in background): %ds, waited %ds\n' "$BG_N" "$BG_LABEL" "$((t1-BG_T0))" "$((tw1-tw0))" >&2
     if [ "$status" -ne 0 ]; then
         printf '*** background step FAILED (exit %d): %s — output:\n' "$status" "$BG_LABEL" >&2
         tail -40 "$BG_LOGF" >&2
@@ -674,7 +682,7 @@ printf '\n=== building %s (report -> %s) ===\n' "${ENV_LABEL:-<unlabelled checko
 run_step "config: extract the configured entity lists"                    bin/flow-manager.sh
 
 # ---- 1. parse ---------------------------------------------------------------
-bg_step_start "parse: server log cache"                                   bin/server/parse.sh
+bg_step_start "parse: server log cache (+ logon summary)"                   bin/build/parse-server.sh
 run_step "parse: transfer log cache"                                      env AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1 bin/transfer/parse.sh
 bg_step_wait
 # the three server-log -> transfer joins, in this order: the session step

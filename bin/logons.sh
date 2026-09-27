@@ -94,10 +94,14 @@ source "$(dirname "$_LOGONS_SH")/blacklist.sh"
 
 ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_logons-hosts.tsv
     local _lg_cache="$1" _lg_out="$1/_logons.tsv" _lg_hout="$1/_logons-hosts.tsv" _lg_parse="$1/_parse.tsv" _lg_tmp _lg_htmp
-    # fresh when newer than the parse cache, this script and the blacklist (a
-    # missing parse cache still gets an EMPTY summary written once)
-    if [ -f "$_lg_out" ] && [ -f "$_lg_hout" ] && [ ! "$_lg_parse" -nt "$_lg_out" ] && [ ! "$_LOGONS_SH" -nt "$_lg_out" ] \
-        && [ ! "$BLACKLIST_FILE" -nt "$_lg_out" ]; then return 0; fi
+    local _lg_stamp="$1/.logons.stamp"
+    # fresh when the STAMP is newer than the parse cache, this script and the
+    # blacklist (a missing parse cache still gets an EMPTY summary written
+    # once). A stamp, not the two files (2026-09-27): they are cmp-guarded, so
+    # an unchanged result keeps its OLD mtime — older than a re-parsed cache —
+    # and every later caller of the same build recomputed it again
+    if [ -f "$_lg_out" ] && [ -f "$_lg_hout" ] && [ -f "$_lg_stamp" ] && [ ! "$_lg_parse" -nt "$_lg_stamp" ] \
+        && [ ! "$_LOGONS_SH" -nt "$_lg_stamp" ] && [ ! "$BLACKLIST_FILE" -nt "$_lg_stamp" ]; then return 0; fi
     mkdir -p "$_lg_cache"
     _lg_tmp="$_lg_out.tmp.$$"
     _lg_htmp="$_lg_hout.tmp.$$"
@@ -508,5 +512,6 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
     else mv "$_lg_tmp" "$_lg_out"; fi
     if [ -f "$_lg_hout" ] && cmp -s "$_lg_htmp" "$_lg_hout"; then rm -f "$_lg_htmp"
     else mv "$_lg_htmp" "$_lg_hout"; fi
+    touch "$_lg_stamp"   # the summary is current as of now (see the freshness test)
     return 0
 }

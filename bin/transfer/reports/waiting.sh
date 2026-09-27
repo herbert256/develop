@@ -97,6 +97,16 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
         if (b>=1048576) return sprintf("%.1f MB", b/1048576)
         if (b>=1024)    return sprintf("%.1f KB", b/1024)
         return b " B" }
+    # numeric quicksort of A[lo..hi] (2026-09-27: the medians were taken by an
+    # insertion sort over a string-built list — both quadratic in a busy UC2
+    # flow, the long pole of the transfer report stage on production)
+    function nsort(A, lo, hi,   i, j, p, t) {
+        while (lo < hi) {
+            i = lo; j = hi; p = A[int((lo + hi) / 2)]
+            while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
+            if (j - lo < hi - i) { if (lo < j) nsort(A, lo, j); lo = i } else { if (i < hi) nsort(A, i, hi); hi = j }
+        }
+    }
     function flush(   i,j,m,a,tmp,med) {
         if (site == "") return
         if (nw > 0) {
@@ -110,11 +120,8 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
         }
         if (nc > 0) {
             csites++; ctot += nc
-            m = split(waits, a, " ")
-            for (i = 2; i <= m; i++) { tmp = a[i] + 0; j = i - 1
-                while (j >= 1 && a[j] + 0 > tmp) { a[j+1] = a[j]; j-- }
-                a[j+1] = tmp }
-            med = (m % 2) ? a[(m+1)/2] : (a[m/2] + a[m/2+1]) / 2
+            m = nc; nsort(WV, 1, m)
+            med = (m % 2) ? WV[(m+1)/2] : (WV[m/2] + WV[m/2+1]) / 2
             P[csites] = site "|" nc "|" med "|" wsum/nc "|" wmax "|" c1h+0 "|" c24+0 "|" cgt+0
         }
     }
@@ -123,7 +130,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
         if ($12 != site) { flush()
             site = $12; nw = 0; olddt = ""; oldsec = 0; newdt = ""
             nx = 0; xolddt = ""; xnewdt = ""; xlastdel = ""
-            nc = 0; waits = ""; wsum = 0; wmax = 0; c1h = 0; c24 = 0; cgt = 0 }
+            nc = 0; split("", WV); wsum = 0; wmax = 0; c1h = 0; c24 = 0; cgt = 0 }
         if ($6 > g_lastsk) { g_lastsk = $6; g_lastsec = tsec($4, $5); g_lastdt = $4 " " substr($5, 1, 8) }
         if ($2 == "Waiting") {
             nw++
@@ -141,7 +148,9 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
         } else if ($21 != "") {
             nc++
             wv = $21 / 1000
-            waits = waits (waits == "" ? "" : " ") wv
+            # (wv "") + 0: the value as the former space-joined list held it
+            # (CONVFMT, 6 significant digits), so the median stays identical
+            WV[nc] = (wv "") + 0
             wsum += wv; if (wv > wmax) wmax = wv
             if (wv <= 3600) c1h++; else if (wv <= 86400) c24++; else cgt++
         }
@@ -259,10 +268,18 @@ agg2=$(awk -F'\t' -v spx="$SPX" "$COREIDS_AWK"'
         if (b>=1048576) return sprintf("%.1f MB", b/1048576)
         if (b>=1024)    return sprintf("%.1f KB", b/1024)
         return int(b) " B" }
-    # med SUBSEP p95 of a space-separated seconds list (insertion sort; the
-    # magic " " separator ignores the leading blank)
-    function stats(str,  m,a,i,j,t,med){ m = split(str, a, " ")
-        for (i=2;i<=m;i++){ t=a[i]+0; j=i-1; while (j>=1 && a[j]+0>t) { a[j+1]=a[j]; j-- } a[j+1]=t }
+    # numeric quicksort (see the first pass)
+    function nsort(A, lo, hi,   i, j, p, t) {
+        while (lo < hi) {
+            i = lo; j = hi; p = A[int((lo + hi) / 2)]
+            while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
+            if (j - lo < hi - i) { if (lo < j) nsort(A, lo, j); lo = i } else { if (i < hi) nsort(A, i, hi); hi = j }
+        }
+    }
+    # med SUBSEP p95 of the m seconds ARR[k, 1..m] (2026-09-27: arrays + a
+    # quicksort — the space-joined list and its insertion sort were quadratic)
+    function statsA(ARR, k, m,   a, i, med){ for (i = 1; i <= m; i++) a[i] = ARR[k, i]
+        nsort(a, 1, m)
         med = (m%2) ? a[(m+1)/2] : (a[int(m/2)]+a[int(m/2)+1])/2
         return med SUBSEP a[int(0.95*(m-1))+1] }
     BEGIN { while ((getline _l < spx) > 0) { split(_l, _a, "\t")
@@ -295,8 +312,8 @@ agg2=$(awk -F'\t' -v spx="$SPX" "$COREIDS_AWK"'
         if (pl == "") pl = "(none)"
         np = split(pl, pa, SUBSEP)
         for (j = 1; j <= np; j++) { pt = pa[j]
-            if (PW[pt] == "") PLQ[++npq] = pt                       # EMPTINESS, not membership (mawk LHS trap)
-            PW[pt] = PW[pt] " " w; PC[pt]++
+            if (!(pt in PC)) PLQ[++npq] = pt                        # first sighting (PC is only ever incremented below)
+            PC[pt]++; PWA[pt, PC[pt]] = (w "") + 0                  # (w ""): the value the former joined list held
             if (w > PM[pt]) PM[pt] = w
             if (w > 8*86400) PN[pt]++ }
         # per (subscription, staged week) — Monday-start (jdn%7==0 = Monday)
@@ -304,8 +321,8 @@ agg2=$(awk -F'\t' -v spx="$SPX" "$COREIDS_AWK"'
         if (minws == 0 || ws < minws) minws = ws
         if (ws > maxws) maxws = ws
         kk = $12 SUBSEP ws
-        if (KW[kk] == "") KWL[++nkk] = kk
-        KW[kk] = KW[kk] " " w; KC[kk]++; KA[kk] += w
+        if (!(kk in KC)) KWL[++nkk] = kk
+        KC[kk]++; KWA[kk, KC[kk]] = (w "") + 0; KA[kk] += w
         if (KS[$12] == "") KSL[++nks] = $12
         KS[$12] = KS[$12] + 1
     }
@@ -342,7 +359,7 @@ agg2=$(awk -F'\t' -v spx="$SPX" "$COREIDS_AWK"'
             printf "E|%d|%s|%s|%d days|%s\n", EC[st], st, EO[st], EA[st], buildlist(top["E" SUBSEP st]) }
         # ---- per-partner percentiles ----
         for (i = 1; i <= npq; i++) { pt = PLQ[i]
-            split(stats(PW[pt]), sv, SUBSEP)
+            split(statsA(PWA, pt, PC[pt]), sv, SUBSEP)
             printf "Q|%d|%s|%s|%s|%s|%d\n", PC[pt], pt, hdur(sv[1]), hdur(sv[2]), hdur(PM[pt]), PN[pt]+0 }
         # ---- weekly medians for the top-10 subs by collected Files ----
         for (i = 1; i <= nks; i++) R[i] = KSL[i]
@@ -354,7 +371,7 @@ agg2=$(awk -F'\t' -v spx="$SPX" "$COREIDS_AWK"'
             for (ws = minws; ws >= 7 && ws <= maxws; ws += 7) {
                 kk = st SUBSEP ws
                 if (!(kk in KC)) continue
-                split(stats(KW[kk]), sv, SUBSEP)
+                split(statsA(KWA, kk, KC[kk]), sv, SUBSEP)
                 printf "K|%d|%s|%s|%d|%s|%s\n", r, st, jd2date(ws), KC[kk], hdur(sv[1]), hdur(KA[kk]/KC[kk]) } }
     }
 ' "$FILES")

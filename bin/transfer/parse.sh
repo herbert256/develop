@@ -157,6 +157,11 @@ CFG_HPTN="$CONFIG_XREF/_hosts-partners.tsv"          # configured host <TAB> par
 CFG_FLOW="$CONFIG_XREF/_subscriptions-flowdir.tsv"   # subscription <TAB> out|in|relay (file-movement direction)
 mkdir -p "$CACHE_DIR"
 
+# PHASE TIMINGS (2026-09-27): one "TIME Ns  parse: <phase>" lap per phase on
+# stderr (name + duration only) — the build profiles a runtime parse from them
+_pl0=$(date +%s)
+_plap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  parse: %s\n' "$((_t1 - _pl0))" "$1" >&2; _pl0=$_t1; }
+
 # ---- ONE PARSE AT A TIME (2026-09-16, user request) -------------------------
 # See the header: two concurrent runs can interleave their three _files.tsv
 # mv's and leave the unjoined intermediate behind. The lock is taken BEFORE the
@@ -336,6 +341,7 @@ fi
 
 tmp="$PARSED.tmp.$$"
 
+_plap "setup (lock, manifest, mode)"
 if [ "$do_tokenize" = 1 ]; then
 
 if [ "$mode" = incremental ]; then
@@ -743,6 +749,7 @@ fi
 rm -f "$tmp.raw" "$tmp.mapped" "$hmap"
 
 fi   # do_tokenize
+_plap "tokenize (+ merge, address map)"
 
 # ---------------------------------------------------------------------------
 # CoreId-group entity propagation: _transfers0.tsv (the raw, blacklisted cache the
@@ -1269,6 +1276,7 @@ build step after both parses) marks server-log-only entities BLUE in the
 base result column (data/flow-manager/base/*.tsv) and injects nothing here.
 LEGEND_EOF
 
+_plap "derive (propagation, attribution chain, skips)"
 # ---------------------------------------------------------------------------
 # Logical-transfer cache: one row per CoreId. A logical transfer is several
 # records (Inbound row, Outbound row, retries); collapse each CoreId group to a
@@ -1438,6 +1446,7 @@ mv "$ttmp" "$FILES"
 # step after both parses) flips never-collected Waiting files whose staged
 # copy the server-log File Maintenance sweep deleted to outcome Expired and
 # fills col 22 with the deletion timestamp.
+_plap "collapse to Files"
 pda_caches=()
 for cf in "$CFG_AL" "$CFG_AH" "$CFG_AAPP" "$CFG_ADOM" "$CFG_SAPP" "$CFG_SDOM" "$CFG_SPTN" "$CFG_APTN" "$CFG_HPTN" "$CFG_FLOW" "$CFG_SUBS"; do
     [ -f "$cf" ] && pda_caches+=("$cf")
@@ -1498,6 +1507,7 @@ else
 fi
 mv "$ttmp" "$FILES"
 
+_plap "config join (connection, movement, PDA columns)"
 # STILL UNDER WAY (2026-09-15, user rule): a File that STARTED less than
 # INPROG_MS before the newest leg start in _transfers.tsv may not have logged
 # all its legs yet — a lone first leg would read Failed, a retry burst would
@@ -1631,6 +1641,7 @@ TLEGEND_EOF
 
 # (the session cache _sessions.tsv was REMOVED 2026-07 — no consumers remain)
 
+_plap "still-under-way filter"
 printf '%s\n' "$parser_sig" > "$PSIG"   # record the parser version that built this cache
 echo "Wrote $PARSED ($(wc -l < "$PARSED" | tr -d ' ') record(s)), $FILES ($(wc -l < "$FILES" | tr -d ' ') transfer(s)), $LEGEND, $TLEGEND." >&2
 
