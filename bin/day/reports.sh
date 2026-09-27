@@ -477,8 +477,8 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
                         tkind, tname, tmet, tmet, tpage, d, tcol, trows >> out
                 }
             }
-            if (issrv[d]) printf "CARDALT\tPeSIT\tPeSIT problems per slot\t%s · ST \342\206\222 CFT (red) vs CFT \342\206\222 ST (purple) problem lines on the CFT link\t../server/capacity-pesit-per-day.html" q "\tspan2\tslots\tpesit\t%s\t\t\t60:%s\n", d, PESS[30], PESS[60] >> out
-            if (issrv[d]) printf "CARDALT\tEventQueue\tEventQueue lines per slot\t%s · [Pesit Default] Unable to submit event AgentEvent server-log lines per slot\t../server/event-queue.html" q "\tspan2\tslots\teventq\t%s\t\t\t60:%s\n", d, EQSS[30], EQSS[60] >> out
+            if (issrv[d]) printf "CARDALT\tPeSIT\tPeSIT problems per slot\t%s · ST \342\206\222 CFT (red) vs CFT \342\206\222 ST (purple) problem lines on the CFT link\t\tspan2\tslots\tpesit\t%s\t\t\t60:%s\n", d, PESS[30], PESS[60] >> out
+            if (issrv[d]) printf "CARDALT\tEventQueue\tEventQueue lines per slot\t%s · [Pesit Default] Unable to submit event AgentEvent server-log lines per slot\t\tspan2\tslots\teventq\t%s\t\t\t60:%s\n", d, EQSS[30], EQSS[60] >> out
             close(out)
         }
     }
@@ -567,7 +567,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
     # the reduce run: the jobs counter dumps (type TAB key TAB count), summed
     REDUCE && FILENAME != SVF { if ($1 == "rc") rc[$2] += $3; else if ($1 == "er") er[$2] += $3; else if ($1 == "CEIL") CEIL[$2] += $3
         else if ($1 == "AF") AF[$2] += $3; else if ($1 == "CF") CF[$2] += $3; else if ($1 == "LGO") LGO[$2] += $3; else if ($1 == "DEP") DEP[$2] += $3
-        else if ($1 == "LGF") LGF[$2] += $3; else if ($1 == "CLD") CLD[$2] += $3; else if ($1 == "EVE") EVE[$2] += $3; else if ($1 == "SH") SH[$2] += $3
+        else if ($1 == "LGF") LGF[$2] += $3; else if ($1 == "EVE") EVE[$2] += $3; else if ($1 == "SH") SH[$2] += $3
         next }
     fno == 1 {   # server topview.rpt
         if ($1 != "ROW") next
@@ -594,7 +594,6 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             else if ($5 ~ /\[Ssh Default\] User [A-Za-z0-9_.-]+ failed to login successfully/) LGF[d]++   # Key failures
             else if (index($5, "[Ssh Default] User ") && index($5, "is locked")) LGF[d]++           #   Locked
         }
-        if ($5 ~ /unresponsive or stopped/ || $5 ~ /No peer has been selected/ || $5 ~ /Streaming not ready/) CLD[d]++   # cluster distress
         if (index($5, "Unable to submit event") || index($5, "Error sending event")) EVE[d]++       # event-feed errors
         # ERROR message shapes (digits folded to N) — the dominant-error fact
         if ($3 == "E") {
@@ -606,7 +605,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         if (PART) {   # a job: dump the counters for the reduce run
             for (k in rc) print "rc", k, rc[k];   for (k in er) print "er", k, er[k];     for (k in CEIL) print "CEIL", k, CEIL[k]
             for (k in AF) print "AF", k, AF[k];   for (k in CF) print "CF", k, CF[k];     for (k in LGO) print "LGO", k, LGO[k]
-            for (k in DEP) print "DEP", k, DEP[k]; for (k in LGF) print "LGF", k, LGF[k]; for (k in CLD) print "CLD", k, CLD[k]
+            for (k in DEP) print "DEP", k, DEP[k]; for (k in LGF) print "LGF", k, LGF[k]
             for (k in EVE) print "EVE", k, EVE[k]; for (k in SH) print "SH", k, SH[k]
             exit
         }
@@ -692,10 +691,6 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # table, so like went-kaput its link carries no q
             if (DEP[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../server/deploy-errors.html\tDeploy errors\t**%d** route-abandon errors (ARSP0001) — a routing step failed and its configuration stopped the rest of the route\n", DEP[d] >> out
-            if (CEIL[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/capacity-pesit-per-day.html" q "\tPeSIT connection ceiling\t**%d** hits of the PeSIT 100-connection ceiling — new clients were turned away\n", CEIL[d] >> out
-            if (CLD[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/platform-health.html" q "\tCluster distress\t**%d** watchdog / Coherence / dispatch-policy distress messages\n", CLD[d] >> out
             if (EVE[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../server/errors-reasons.html" q "\tEvent-feed errors\t**%d** monitoring-feed delivery errors (unable to submit / error sending event)\n", EVE[d] >> out
             # subscriptions whose last transfer was OK but that logged an

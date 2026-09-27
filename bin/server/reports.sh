@@ -63,17 +63,14 @@ pool_run "$SCRIPT_DIR/reports/failure-flows.sh"
 pool_run "$SCRIPT_DIR/reports/io-errors.sh"          # "IO Error reading file /data/FlowManager/…" — the srv-errors group's third member (2026-09-06)
 pool_run "$SCRIPT_DIR/reports/could-not-send.sh"     # "Could not send file" (AR0074) — the srv-errors group fourth member (2026-09-12)
 pool_run "$SCRIPT_DIR/reports/publish-failed.sh"     # "Publish to account failed" (ARPA0001) — srv-errors (2026-09-12)
-pool_run "$SCRIPT_DIR/reports/event-queue.sh"        # "[Pesit Default] Unable to submit event AgentEvent" + the dashboards' 30-min sidecar — srv-ops (2026-09-14)
+pool_run "$SCRIPT_DIR/reports/event-queue.sh"        # "[Pesit Default] Unable to submit event AgentEvent" -> the dashboards' 30-min sidecar (2026-09-14); an unpublished intermediate since 2026-09-27
 pool_run "$SCRIPT_DIR/reports/post-client-action.sh" # "Post client action error" (ARRC0009) — srv-errors (2026-09-12)
 pool_run "$SCRIPT_DIR/reports/config-defects.sh"     # the config-hygiene page's server-log tables (a TSV sidecar, not a page)
 pool_run "$SCRIPT_DIR/reports/site-failures.sh"
 pool_run "$SCRIPT_DIR/reports/connection-diagnostics.sh"
 pool_run "$SCRIPT_DIR/reports/auth-activity.sh"
 pool_run "$SCRIPT_DIR/reports/ssh-key-auth.sh"
-pool_run "$SCRIPT_DIR/reports/scheduler-overruns.sh"
-pool_run "$SCRIPT_DIR/reports/pesit.sh"
-pool_run "$SCRIPT_DIR/reports/stuck-events.sh"
-pool_run "$SCRIPT_DIR/reports/file-cleanup.sh"
+pool_run "$SCRIPT_DIR/reports/pesit.sh"              # -> pesit-slots.tsv, the dashboards' PeSIT view; an unpublished intermediate since 2026-09-27
 pool_run "$SCRIPT_DIR/../analyses/reports/uc1-status.sh"
 pool_run "$SCRIPT_DIR/reports/deploy-errors.sh"
 pool_run "$SCRIPT_DIR/reports/remote-poll.sh"
@@ -84,7 +81,6 @@ pool_run "$SCRIPT_DIR/../analyses/reports/uc3-status.sh"
 pool_run "$SCRIPT_DIR/reports/no-remote-dir.sh"
 pool_run "$SCRIPT_DIR/reports/no-remote-files.sh"
 pool_run "$SCRIPT_DIR/reports/ssh-sessions.sh"
-pool_run "$SCRIPT_DIR/reports/cluster-health.sh"
 pool_run "$SCRIPT_DIR/reports/inbound-connections.sh"
 pool_run "$SCRIPT_DIR/reports/top-messages.sh"
 pool_run "$SCRIPT_DIR/reports/unknown-entities.sh"   # ONE map-reduce pass -> all five unknown-* rpts (2026-07)
@@ -95,8 +91,12 @@ pool_wait
 "$SCRIPT_DIR/reports/missing-entities.sh"
 "$SCRIPT_DIR/reports/connections.sh"
 "$SCRIPT_DIR/reports/logons.sh"
-"$SCRIPT_DIR/reports/platform-health.sh"
-"$SCRIPT_DIR/reports/capacity.sh"
+# (the "Operations & Capacity" group — Platform health, Capacity & sessions,
+# EventQueue — was removed 2026-09-27, user request: its merges and the
+# cluster-health / stuck-events / scheduler-overruns / file-cleanup
+# components went; pesit.sh and event-queue.sh stay for the graph sidecars.
+# Drop what a pre-removal build left behind.)
+rm -f "$REPORTS_DIR"/{platform-health,capacity,cluster-health,stuck-events,scheduler-overruns,file-cleanup}.rpt
 "$SCRIPT_DIR/reports/ssh-security.sh"
 "$SCRIPT_DIR/../analyses/reports/uc3-polling.sh"   # the UC3 tab's polling tables: reads remote-poll.rpt + its sidecars — after the pool, before the uc-status merge (2026-09-05)
 "$SCRIPT_DIR/../analyses/reports/polling.sh"   # the flat Polling page (Analyses / Configuration): remote-poll.rpt + sidecars + the cron schedules in ONE table (2026-09-05)

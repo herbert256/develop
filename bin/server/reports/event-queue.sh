@@ -8,8 +8,9 @@
 # — the PeSIT service reporting that it could not submit an agent event.
 # Counted whatever the level. Two tables: Per day (lines, first and last
 # time; the Date opens that day's page on its EventQueue chart view) and the
-# newest 1000 Lines verbatim (cut at 300 characters). No prose on the page
-# (help page server-event-queue).
+# newest 1000 Lines verbatim (cut at 300 characters). NO PAGE since 2026-09-27
+# (user request: the Operations & Capacity group went) — the .rpt is an
+# unpublished intermediate; the sidecar below is what the site uses.
 #
 # SIDECAR event-queue-slots.tsv — one "date <TAB> slot <TAB> lines" row per
 # nonzero 30-minute slot (slot 0-47): the EventQueue chart view of the

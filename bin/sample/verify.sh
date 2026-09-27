@@ -741,7 +741,7 @@ if [ "$(exp cnsend)" -gt 0 ]; then
     check $([ -f docs/server/could-not-send.html ] && echo 0 || echo 1) "docs/server/could-not-send.html is missing"
 fi
 
-# the EventQueue report (2026-09-14, user request): the server-log lines starting "[Pesit Default] Unable to
+# the EventQueue data (2026-09-14, user request): the server-log lines starting "[Pesit Default] Unable to
 # submit event AgentEvent" (the sample plants bursts) — the cache, the per-day table and the 30-minute sidecar
 # agree, and the main dashboard and the day pages carry the EventQueue chart view
 R="data/server/reports/event-queue.rpt"; EQ="data/server/reports/event-queue-slots.tsv"
@@ -749,7 +749,9 @@ wn=$(awk -F'\t' 'index($5, "[Pesit Default] Unable to submit event AgentEvent") 
 dn=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" { n += $3 } END { print n + 0 }' "$R" 2>/dev/null)
 sn=$(awk -F'\t' '{ n += $3 } END { print n + 0 }' "$EQ" 2>/dev/null)
 check $([ "${wn:-0}" -gt 0 ] && [ "$dn" = "$wn" ] && [ "$sn" = "$wn" ] && echo 0 || echo 1) "event-queue: cache ${wn:-?} line(s), per-day table ${dn:-?}, sidecar ${sn:-?}"
-check $([ -f docs/server/event-queue.html ] && [ -f docs/help/server-event-queue.html ] && echo 0 || echo 1) "docs/server/event-queue.html or its help page is missing"
+# ... but no PAGE since 2026-09-27 (the Operations & Capacity group was removed; the .rpt and
+# the sidecar stay as the chart views' data), and neither is the group's other pages
+check $([ ! -f docs/server/event-queue.html ] && [ ! -f docs/server/platform-health.html ] && [ ! -f docs/server/capacity.html ] && echo 0 || echo 1) "a removed Operations & Capacity page (event-queue / platform-health / capacity) is back"
 check $(grep -q $'^CARDALT\tEventQueue\t' data/dashboards/reports/overview.rpt 2>/dev/null && echo 0 || echo 1) "the overview dashboard carries no EventQueue chart view"
 d=$(awk -F'\t' '{ print $1; exit }' "$EQ" 2>/dev/null)
 check $(grep -q $'^CARDALT\tEventQueue\t' "data/day/reports/${d:-none}.rpt" 2>/dev/null && echo 0 || echo 1) "day page ${d:-?} carries no EventQueue chart view"

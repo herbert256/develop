@@ -21,12 +21,12 @@
 # leave the nav row linking 404s. KEEP IN SYNC with the component reports.
 _merge_pad() {
     case $(basename "$1" .rpt) in
-        hourly|legs-count|protocol-journey|errors-day|cluster-health|stuck-events|scheduler-overruns) echo 2 ;;
-        resubmissions|error-timing|auth-activity|ssh-key-auth|file-cleanup|trend|dwell-time) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes)
+        hourly|legs-count|protocol-journey|errors-day) echo 2 ;;
+        resubmissions|error-timing|auth-activity|ssh-key-auth|trend|dwell-time) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes)
         attempts|logon) echo 4 ;;         # logon 2->4 (2026-08: + the door-knocker tables)
         volume-src) echo 3 ;;
         size-dist) echo 2 ;;
-        inbound-connections|connection-diagnostics|pesit) echo 5 ;;   # connection-diagnostics 3->5, pesit 4->5 (2026-08)
+        inbound-connections|connection-diagnostics) echo 5 ;;   # connection-diagnostics 3->5 (2026-08)
         ssh-crypto) echo 10 ;;            # 8->10 (2026-08: + negotiation failures + PeSIT TLS)
         uc3-polling) echo 0 ;;            # RIDES the UC3 tab (its tables carry tab=uc3, 2026-09-05): a missing one contributes NO tab page
         *) echo 1 ;;

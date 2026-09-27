@@ -21,7 +21,8 @@ consumer keeps reading them. Transfer: `activity` (day+weekly+hourly+weekday), `
 (retry+attempts+resubmissions), `file-journey` (patterns+legs-count+protocol-journey+arrived-left),
 `files` (size-dist+file-type+duplicate-files), `volume` (volume-src+trend), `went-quiet`
 (went-quiet-src+stale-accounts). Server: `errors`, `connections`, `logons`, `ssh-security`,
-`platform-health`, `capacity`, `missing-entities`, `transfers`. Analyses: `uc-status`.
+`missing-entities`, `transfers`. Analyses: `uc-status`. (`platform-health` and `capacity` went
+with the Operations & Capacity group, 2026-09-27.)
 `report_tabs` names one tab per component table; `_merge_pad` pads a missing component with empty
 stubs so the tab count always matches. Components are listed in `MERGED_COMPONENT_REPORTS`
 (whats-new skips them); merged basenames reuse one component's help slug.
@@ -241,10 +242,12 @@ publishing the file {…} to an account" lines, the same columns; post-client-ac
 before the @)) · **srv-transfers**
 "Transfers & Delivery" (pickups — the `transfers` merge went in 2026-08 with the JSON
 Transfer-start/end lines its two components read) · **srv-connections** (connections · logons) ·
-**srv-security** (ssh-security) · **srv-ops** "Operations & Capacity" (platform-health ·
-capacity) · **srv-missing** (missing-entities). (The **srv-routing** "Routing" group and its one
-report, transfer-site-missing, were removed 2026-09-27, user request; remote-poll is an
-unpublished intermediate since 2026-09-05, its tables on the UC status / UC3 tab.)
+**srv-security** (ssh-security) · **srv-missing** (missing-entities). (Removed 2026-09-27, user
+request: the **srv-routing** "Routing" group with its one report, transfer-site-missing, and the
+**srv-ops** "Operations & Capacity" group — Platform health, Capacity & sessions, EventQueue, with
+the cluster-health / stuck-events / scheduler-overruns / file-cleanup components. pesit.sh and
+event-queue.sh stay as unpublished intermediates for the PeSIT / EventQueue graph sidecars, like
+remote-poll, whose tables ride the UC status / UC3 tab since 2026-09-05.)
 
 ## PDA derivation (partners, domains, applications)
 
@@ -455,7 +458,8 @@ LINKPAT. `Files processed` is the one card that FILLS a3
 (`../transfer/entities/subscription-all.html?axway_date=<d>`), so its plot and title point at
 different pages — its subtitle says so. The PeSIT view reads `pesit-slots.tsv`, the sidecar
 `bin/server/reports/pesit.sh` writes (a missing sidecar forces a pesit.sh rebuild; pesit.sh
-removes it with pesit.rpt). `setupHeroToggle` stores the label in sessionStorage `axway-day-hero`,
+removes it with pesit.rpt), the EventQueue view `event-queue-slots.tsv` (event-queue.sh); both
+scripts have no page since 2026-09-27, so those two views' titles link nowhere. `setupHeroToggle` stores the label in sessionStorage `axway-day-hero`,
 SHARED with the Overview; `?axway_hero=` overrides and persists.
 
 The problem lists are split per log, rows routed by `PROBLEM⇥transfer|server⇥href⇥headline⇥desc`.
@@ -464,7 +468,8 @@ full-period subscription verdicts bucketed by state-change day (`daycount RPT FI
 reports are `nofilter` — links carry NO `?axway_date=`); the server No remote dir/files tables
 (date-aware — links keep it); per-day `_parse.tsv` line counts for the message-family signals
 (logon screening, outbound logon failures, connection failures, deploy route-abandons,
-PeSIT ceiling, cluster distress, event-feed errors). (The UC3 "Failing polls" problem went with
+event-feed errors; the PeSIT-ceiling and cluster-distress problems went with the Operations &
+Capacity pages, 2026-09-27 — the ceiling stays a FACT). (The UC3 "Failing polls" problem went with
 the uc3-status "server - error" state, 2026-09-27.) Together the two lists cover every red/orange box of Subscriptions in
 boxes that has dated log evidence (Missing cron, Went quiet and Not seen have none). Both Top views link Date cells to day pages via the cell attr
 `@{href=URL}`; consumers of topview date cells strip it first (`sub(/^@\{[^}]*\}/,"",d)`:

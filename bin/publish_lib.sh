@@ -292,7 +292,7 @@ CUR_DATES=""
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
 transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out uc4-to-uc2 same-protocol activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files failed-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-trend account-sharing twins)
-server_order=(topview errors failure-flows io-errors could-not-send publish-failed post-client-action pickups uc-status uc2-visits polling went-kaput site-failures logons connections ssh-security platform-health capacity event-queue deploy-errors no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
+server_order=(topview errors failure-flows io-errors could-not-send publish-failed post-client-action pickups uc-status uc2-visits polling went-kaput site-failures logons connections ssh-security deploy-errors no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
 
 # ---- the analyses-housed area reports ---------------------------------------
 # FOUR reports whose DATA belongs to the transfer / server areas — they read
@@ -332,7 +332,7 @@ BOXES_ONLY_REPORTS=" pirates from-green-to-red only-red waiting expired went-qui
 # feed the merged reports and every other consumer) but they have NO page of
 # their own — whats-new must not link them. ranking and double are retired
 # outright; the four uc<n>-status merged into uc-status.
-MERGED_COMPONENT_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity ssh-key-auth cluster-health stuck-events scheduler-overruns pesit file-cleanup ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status double stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling "
+MERGED_COMPONENT_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity ssh-key-auth pesit event-queue ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status double stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling "
 is_merged_component() {
     case $MERGED_COMPONENT_REPORTS in *" $1 "*) return 0 ;; esac
     return 1
@@ -382,7 +382,6 @@ report_tabs() {
         missing-entities) echo "Subscriptions|Accounts|Hosts|Whitelist|Logins" ;;
         connections)   echo "By protocol|Per day|By account|By address|Whitelist usage|Failure reasons|By remote host|Test connections|Host keys|Test outcomes" ;;   # 2026-08: + connection-diagnostics tables 4-5
         logons)        echo "Incoming|Outgoing|Near misses|Scanners|By account|By source IP|Certificates|Key mismatches|Lockouts|Outbound key failures" ;;   # 2026-08: + the door-knocker tables (logon component tables 3-4)
-        capacity)      echo "PeSIT per day|PeSIT problems|Problem types|Diagnostic codes|FPDU ledger|Local deletes|Remote deletes|Maintenance" ;;   # 2026-08: + the outbound FPDU ledger (pesit component table 5)
         uc-status)     echo "UC1|UC2|UC3|UC4" ;;
         failure-rate)  echo "Accounts|Subscriptions|Days" ;;
         protocol)      echo "Protocol|Direction|Crosstab|Action By|Direction x Action|Mode" ;;   # the 2026-07 merge: + direction-action's Action By/Crosstab tables + the Mode split
@@ -419,7 +418,6 @@ group_members() {
         srv-transfers)       echo "pickups" ;;   # transfer-outcomes + file-freshness went with the dropped JSON bookend lines (2026-08)
         srv-connections)     echo "logons connections" ;;        # 2026-07 merges (logons leads since 2026-08); site-failures is boxes-only
         srv-security)        echo "ssh-security" ;;              # 2026-07: ssh-crypto + ssh-sessions merged
-        srv-ops)             echo "platform-health capacity event-queue" ;;  # 2026-07: the seven ops reports merged into two
         srv-missing)         echo "missing-entities" ;;          # 2026-07: the five unknown-* merged (one script all along)
     esac
 }
@@ -440,7 +438,6 @@ group_of() {   # $1 area (transfer|server)  $2 report basename -> group id (empt
         pickups) echo "srv-transfers" ;;
         connections|logons) echo "srv-connections" ;;
         ssh-security) echo "srv-security" ;;
-        platform-health|capacity|event-queue) echo "srv-ops" ;;
         missing-entities) echo "srv-missing" ;;
         *)                                echo "" ;;
     esac
@@ -462,7 +459,6 @@ group_label() {
         srv-transfers)       echo "Transfers & Delivery" ;;
         srv-connections)     echo "Logons & Connections" ;;
         srv-security)        echo "Security" ;;
-        srv-ops)             echo "Operations & Capacity" ;;
         srv-missing)         echo "Missing Entities" ;;
     esac
 }
@@ -483,7 +479,6 @@ group_desc() {
         srv-transfers)       echo "The server's own view of the deliveries: which staged files the partners actually came to collect, and when." ;;
         srv-connections)     echo "The SSH logon screening (incoming funnel + outbound auth failures), successful authentication activity per account and source IP, the inbound connection volume per protocol/account/address, and connection diagnostics." ;;
         srv-security)        echo "The negotiated cipher/crypto posture with weak algorithms flagged, protocol and credential hygiene signals, and session lifecycle problems." ;;
-        srv-ops)             echo "Scheduler overruns, PeSIT protocol activity and link problems, capacity and the retention sweeps, daemon/cluster health, stuck internal events and the PeSIT EventQueue." ;;
         srv-missing)         echo "Entities that appear in the server messages but are absent from the transfer logs — subscriptions, accounts, IPs and logins." ;;
     esac
 }
@@ -503,8 +498,7 @@ member_label() {   # row-1 tab text for a grouped report
         app-partners) echo "Application dependencies" ;; partner-lifecycle) echo "Partner lifecycle" ;;
         cleanup-backlog) echo "Cleanup backlog" ;;
         errors) echo "Errors" ;; connections) echo "Connections" ;; logons) echo "Logons" ;;
-        ssh-security) echo "SSH security" ;; platform-health) echo "Platform health" ;;
-        capacity) echo "Capacity & sessions" ;; event-queue) echo "EventQueue" ;; missing-entities) echo "Missing entities" ;;
+        ssh-security) echo "SSH security" ;; missing-entities) echo "Missing entities" ;;
         uc-status) echo "UC status" ;;
         anomalies) echo "Anomalies" ;;
         account) echo "Accounts" ;; login) echo "Logins" ;; subscription) echo "Subscriptions" ;;
@@ -533,7 +527,7 @@ member_label() {   # row-1 tab text for a grouped report
         errors-day) echo "Errors per day" ;; error-timing) echo "Error timing" ;; error-reasons) echo "Error reasons" ;; top-messages) echo "Top messages" ;;
         site-failures) echo "Connection failures" ;; connection-diagnostics) echo "Diagnostics" ;; inbound-connections) echo "Inbound connections" ;; logon) echo "Logon" ;; auth-activity) echo "Auth activity" ;; ssh-key-auth) echo "Key auth" ;; uc1-status) echo "UC1 status" ;; uc2-status) echo "UC2 status" ;; uc4-status) echo "UC4 status" ;; uc2-visits) echo "UC2 pickup visits" ;; polling) echo "Polling" ;; pickups) echo "Pickups" ;; account-sharing) echo "Account sharing" ;; twins) echo "Twins" ;;
         ssh-crypto) echo "Crypto" ;; ssh-sessions) echo "SSH sessions" ;;
-        scheduler-overruns) echo "Scheduler" ;; pesit) echo "PeSIT" ;; cluster-health) echo "Cluster health" ;; stuck-events) echo "Stuck events" ;; file-cleanup) echo "File cleanup" ;;
+        pesit) echo "PeSIT" ;; event-queue) echo "EventQueue" ;;
         deploy-errors) echo "Deploy errors" ;; uc3-status) echo "UC3 status" ;; no-remote-dir) echo "No remote dir" ;; no-remote-files) echo "No remote files" ;;
         unknown-sites) echo "Subscriptions" ;; unknown-accounts) echo "Accounts" ;; unknown-hosts) echo "Hosts" ;; unknown-whitelisting) echo "Whitelist" ;; unknown-logins) echo "Logins" ;;
     esac
@@ -1035,8 +1029,6 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
         errors)              echo "server-errors-day" ;;
         connections)         echo "server-inbound-connections" ;;
         logons)              echo "server-logon" ;;
-        platform-health)     echo "server-cluster-health" ;;
-        capacity)            echo "server-pesit" ;;
         ssh-security)        echo "server-ssh-crypto" ;;
         uc-status)           echo "server-uc1-status" ;;
         files)               echo "size-dist" ;;

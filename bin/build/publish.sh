@@ -1701,8 +1701,6 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
             unknown-sites|unknown-accounts|unknown-hosts|unknown-whitelisting|unknown-logins) wn_parent=missing-entities ;;
             inbound-connections|connection-diagnostics)             wn_parent=connections ;;
             logon|auth-activity|ssh-key-auth)                       wn_parent=logons ;;
-            cluster-health|stuck-events|scheduler-overruns)          wn_parent=platform-health ;;
-            pesit|file-cleanup)                                     wn_parent=capacity ;;
             ssh-crypto|ssh-sessions)                                wn_parent=ssh-security ;;
             uc1-status|uc2-status|uc3-status|uc4-status|remote-poll|uc3-polling) wn_parent=uc-status ;;   # remote-poll/uc3-polling: the UC3 tab (2026-09-05)
             volume-src|trend)                                       wn_parent=volume ;;

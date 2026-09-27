@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 #
 # pesit.sh — PeSIT protocol activity from the server log (the PESITD component).
+# NO PAGE since 2026-09-27 (user request: the Operations & Capacity group and
+# its Capacity & sessions report went): the .rpt is an unpublished
+# intermediate; its pesit-slots.tsv sidecar still feeds the PeSIT graph view.
 # One pass over the parse cache (data/_parse.tsv: 1=date, 2=time, 3=level,
 # 4=component, 5=message) emits, per calendar day (calendar gaps filled with
 # "0" rows), the PeSIT signals that never reach the transfer logs:

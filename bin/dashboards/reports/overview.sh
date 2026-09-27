@@ -752,8 +752,8 @@ fi
             printf 'CARDALT\tUse cases|UC%s\tUC%s subscription status\tthe UC%s %s, every slot a full stack of the configured subscriptions: green OK at the bottom, the problem states ramping up, never seen (light orange) on top — the total never moves, so only the composition does\t../analyses/uc-status-uc%s.html\tspan2\tslots\t%s\t%s\t../analyses/uc-status-uc%s.html\t%s\t%s\t%s\t%s\t%s\n' \
                 "$u" "$u" "$u" "$w" "$u" "$k" "$s6" "$u" "60:$s1" "120:$s2" "240:$s4" "720:$s12" "1440:$s24"
         done
-        [ -n "$pes6" ] && printf 'CARDALT\tPeSIT\tPeSIT problems\tST %s CFT (red) vs CFT %s ST (purple) problem lines on the CFT link\t../server/capacity-pesit-per-day.html\tspan2\tslots\tpesit\t%s\t../day/{}.html?axway_hero=PeSIT\t%s\t%s\t%s\t%s\t%s\n' "$(printf '\342\206\222')" "$(printf '\342\206\222')" "$pes6" "60:$pes1" "120:$pes2" "240:$pes4" "720:$pes12" "1440:$pes24"
-        [ -n "$eq6" ] && printf 'CARDALT\tEventQueue\tEventQueue\t[Pesit Default] "Unable to submit event AgentEvent" server-log lines per slot\t../server/event-queue.html\tspan2\tslots\teventq\t%s\t../day/{}.html?axway_hero=EventQueue\t%s\t%s\t%s\t%s\t%s\n' "$eq6" "60:$eq1" "120:$eq2" "240:$eq4" "720:$eq12" "1440:$eq24"
+        [ -n "$pes6" ] && printf 'CARDALT\tPeSIT\tPeSIT problems\tST %s CFT (red) vs CFT %s ST (purple) problem lines on the CFT link\t\tspan2\tslots\tpesit\t%s\t../day/{}.html?axway_hero=PeSIT\t%s\t%s\t%s\t%s\t%s\n' "$(printf '\342\206\222')" "$(printf '\342\206\222')" "$pes6" "60:$pes1" "120:$pes2" "240:$pes4" "720:$pes12" "1440:$pes24"
+        [ -n "$eq6" ] && printf 'CARDALT\tEventQueue\tEventQueue\t[Pesit Default] "Unable to submit event AgentEvent" server-log lines per slot\t\tspan2\tslots\teventq\t%s\t../day/{}.html?axway_hero=EventQueue\t%s\t%s\t%s\t%s\t%s\n' "$eq6" "60:$eq1" "120:$eq2" "240:$eq4" "720:$eq12" "1440:$eq24"
     fi
     [ -n "$tops" ] && printf '%s\n' "$tops"
     [ -n "$kpid" ] && printf '%s\n' "$kpid"
