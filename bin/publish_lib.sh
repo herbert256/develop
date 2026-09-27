@@ -2431,6 +2431,20 @@ _inject_after_h1() {
     ' "$f" > "$tmp" && mv "$tmp" "$f"
 }
 
+# THE FILE SEARCH GROUP (2026-09-27, user request): the six
+# search/file-search-*.html window pages and latest/search.html are two
+# implementations of one tool, joined by a FIRST tab row of two buttons —
+# injected right after the <h1>, above the window row of the six. Both pages
+# sit one level below the docs root, so the same ../ hrefs serve either side.
+file_search_impl_row() {   # $1 the current implementation: 1 (period) | 2 (latest 1000)
+    local a="Implementation 1, period" b="Implementation 2, latest 1000"
+    if [ "$1" = 1 ]; then
+        printf '<p class="tabs"><span class="tab active">%s</span><a class="tab" href="../latest/search.html">%s</a></p>' "$a" "$b"
+    else
+        printf '<p class="tabs"><a class="tab" href="../search/file-search-24-hours.html">%s</a><span class="tab active">%s</span></p>' "$a" "$b"
+    fi
+}
+
 # Insert a one-line HTML fragment AFTER the page's intro paragraph — the
 # <p class="range"> / <p class="subtitle"> the renderer writes right after the
 # <h1>. The site-wide "tab bars go between the title and the prose" rule covers

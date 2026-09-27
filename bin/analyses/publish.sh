@@ -2001,6 +2001,8 @@ for _fs_k in 24-hours 48-hours week 2-weeks 3-weeks month; do
         '/<script src=[^>]*report\.js/ && !done { print d; print e; done = 1 } { print }' \
         "$_fs_dir/file-search-$_fs_k.html" > "$_fs_dir/file-search-$_fs_k.html.tmp.$$" \
         && mv "$_fs_dir/file-search-$_fs_k.html.tmp.$$" "$_fs_dir/file-search-$_fs_k.html"
+    # the FIRST tab row: Implementation 1 (these window pages) | 2 (latest/search.html)
+    _inject_after_h1 "$_fs_dir/file-search-$_fs_k.html" "$(file_search_impl_row 1)"
     _fs_n=$((_fs_n + 1))
 done
 [ "$_fs_n" -gt 0 ] && echo "Wrote $_fs_n File search page(s) (+ per-page data files)." >&2

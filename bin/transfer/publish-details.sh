@@ -303,6 +303,8 @@ awk -v tags="$DOCS/latest/.search-tags.$$" '/<script src=[^>]*report\.js/ && !do
     "$DOCS/latest/search.html" > "$DOCS/latest/search.html.tmp.$$" \
     && mv "$DOCS/latest/search.html.tmp.$$" "$DOCS/latest/search.html"
 rm -f "$DOCS/latest/.search-tags.$$"
+# the FIRST tab row: Implementation 1 (search/file-search-*.html) | 2 (this page)
+_inject_after_h1 "$DOCS/latest/search.html" "$(file_search_impl_row 2)"
 unset _ls_rpt _ls_js _ls_tags _ls_jsv
 echo "Wrote docs/latest/search.html (the Latest files search)." >&2
 

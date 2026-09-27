@@ -506,6 +506,16 @@ n=$(grep -c '^<script src="[a-z0-9-]*\.js?v=' docs/latest/search.html 2>/dev/nul
 check $([ "${n:-0}" = "$nl" ] && echo 0 || echo 1) "latest/search.html loads ${n:-0} payloads, expected $nl"
 check $([ "$(grep -c 'latest/search.html' docs/tools/report-finder.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/report-finder.html does not link latest/search.html"
 check $([ "$(grep -c 'href="../latest/search.html"' docs/tools/sitemap.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link ../latest/search.html"
+# the File search group (2026-09-27, user request): the six window pages and
+# latest/search.html share a FIRST tab row — Implementation 1 | Implementation 2
+# — right after the <h1>, the page's own implementation active
+n=0
+for f in docs/search/file-search-*.html; do
+    [ -f "$f" ] || continue
+    awk '/<\/h1>/ { getline; print; exit }' "$f" | grep -q '<span class="tab active">Implementation 1, period</span><a class="tab" href="../latest/search.html">Implementation 2, latest 1000</a>' || n=$((n + 1))
+done
+check $([ "$n" = 0 ] && echo 0 || echo 1) "$n search/file-search-*.html page(s) lack the Implementation row (1 active) right after the <h1>"
+check $(awk '/<\/h1>/ { getline; print; exit }' docs/latest/search.html 2>/dev/null | grep -q '<a class="tab" href="../search/file-search-24-hours.html">Implementation 1, period</a><span class="tab active">Implementation 2, latest 1000</span>' && echo 0 || echo 1) "latest/search.html lacks the Implementation row (2 active) right after the <h1>"
 
 # the tool pages live under docs/tools/ (2026-09-12, user request): the
 # sitemap, the report finder, whats-new AND the build report (back on the
