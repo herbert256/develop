@@ -101,11 +101,15 @@ LC_ALL=C awk -F'\t' -v OUTD="$OUTD" -v MAN="$TMPD/days" -v SUBF="$TMPD/subs" -v 
         while (match(r, /[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-/)) {
             item("#" substr(r, RSTART, 8)); r = substr(r, RSTART + RLENGTH) }
     }
+    # the day shard STREAMS: its rows go to the file as they come (a string
+    # grown row by row re-copies itself on every append — quadratic in the
+    # rows of the day), and the subscription dictionary, complete only at the
+    # end of the day, follows them: AXWAY_AFD(day, rows, subscriptions)
     function flush(   f, s, m, nb, i, it, B, j, v, b, enc, sl, k, nd, DL) {
         if (day == "") return
         f = OUTD "/d-" day ".js"
         s = ""; for (i = 1; i <= nls; i++) s = s (i > 1 ? "\n" : "") tl(LSN[i])
-        printf "AXWAY_AFD(\"%s\",`%s`,`%s`);\n", day, s, rows > f
+        printf "`,`%s`);\n", s > f
         close(f)
         m = 1024; while (m < 8 * nit) m *= 2
         split("", B)
@@ -121,7 +125,7 @@ LC_ALL=C awk -F'\t' -v OUTD="$OUTD" -v MAN="$TMPD/days" -v SUBF="$TMPD/subs" -v 
         sl = ""; for (i = 1; i <= nd; i++) sl = sl (i > 1 ? "," : "") DL[i]
         split("", DL)
         printf "%s\t%d\t%s\t%d\t%s\n", day, nrow, sl, m, enc > MAN
-        day = ""; rows = ""; nrow = 0; nls = 0; nit = 0
+        day = ""; nrow = 0; nls = 0; nit = 0
         split("", LSI); split("", LSN); split("", IT); split("", DS)
     }
     BEGIN {
@@ -132,12 +136,12 @@ LC_ALL=C awk -F'\t' -v OUTD="$OUTD" -v MAN="$TMPD/days" -v SUBF="$TMPD/subs" -v 
         close(SLUGMAP)
     }
     {
-        if ($1 != day) { flush(); day = $1 }
+        if ($1 != day) { flush(); day = $1; sf = OUTD "/d-" day ".js"; printf "AXWAY_AFD(\"%s\",`", day > sf }
         sb = $5
         if (!(sb in LSI)) { LSI[sb] = nls++; LSN[nls] = sb }
         if (!(sb in GSI)) { GSI[sb] = ngs++; GSN[ngs] = sb }
         DS[GSI[sb]] = 1
-        rows = rows (nrow ? "\n" : "") tl($3) "\t" $4 "\t" LSI[sb] "\t" $6 "\t" $7 "\t" $8
+        printf "%s%s\t%s\t%s\t%s\t%s\t%s", (nrow ? "\n" : ""), tl($3), $4, LSI[sb], $6, $7, $8 > sf
         nrow++
         items($3)
         c = $7; items(substr(c, 1, 8) "-")          # the dashed CoreId starts with its only /[0-9a-f]{8}-/ run
