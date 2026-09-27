@@ -188,14 +188,19 @@ past month — the day from its `_yyyy-mm-dd.csv` name, else its first record �
 gitignored repo-root `archive/` as `<name>.7z`, tested before the original goes; a failure is a
 warning that leaves the file in place; it runs BEFORE the parses so the manifests see the final
 input set and reparse in full once, the month the first files go) → the
-have-config check → `bin/flow-manager.sh` → *parse*: server `parse.sh`
-in the background beside transfer `parse.sh` (`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`), then
+have-config check → *parse*: server `parse.sh` in the background (`AXWAY_SKIP_MENTIONS=1`: tokenize +
+merge only, started BEFORE the config step since 2026-09-27 — it reads no config) beside
+`bin/flow-manager.sh` and then transfer `parse.sh` (`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`),
+then — beside the server MENTION caches (a second `parse.sh` call, background slot 2, waited for
+before result.sh) and the logon summary (`bin/build/logon-summary.sh`, background) —
 `bin/session-sites.sh`, `bin/expire-files.sh`, `bin/bookend-ok.sh`,
 `bin/build/result.sh`, a server-mention rescan when
 `data/server/cache/.rescan-mentions` exists, `went-kaput.sh` early (always; its evidence sidecar
 makes the details catch-up self-gate) → *report*: `bin/transfer/reports/details.sh` in the
 background beside transfer phase 1 and the server reports, then transfer phase 2, analyses,
-dashboards ∥ day → *publish*: detail
+the dashboards MONITOR (`monitor.sh`, foreground: whether `monitor.rpt` exists sets every
+page's top bar), then dashboards ∥ day in background slot 2 BESIDE the publishes below, waited
+for right before the dashboards publish → *publish*: detail
 pages ∥ transfer, then partner-groups, server, analyses, then THE CATCH-UPS — re-runs folding the
 cross-phase evidence into THIS build, each self-gating via its own freshness check (a warm build
 skips them in ~0 s): `bin/build/drill-files.sh` (2026-09-21 — lists the first File of every red /
@@ -209,7 +214,53 @@ day → `bin/build/publish.sh` (index pages + the home, reads every area) →
 Dependency rules: transfer reports before server and analyses reports; dashboards + day after both areas;
 `bin/build/publish.sh` last of the publishes (the area publishes clear the dirs its index pages
 live in). `bin/fresh.sh` (no arguments) wipes `build/`, `data/` and `docs/`, re-seeds the assets
-and runs the chain.
+and runs the chain — `data/` and `docs/` are RENAMED into `build/.trash` and deleted in the
+background, and `data/.buildstats` (the build report's input statistics, keyed by name + size +
+mtime) is carried over, so a fresh build does not re-read every export for the report.
+
+**BUILD SPEED (2026-09-27, the "prd build" analysis — production 6:34 → 3:44 min in 12 rounds,
+every round byte-identical on a develop fresh build).** What a change must not break:
+
+- **Background slots**: `bg_step_start/bg_step_wait` and `bg2_step_start/bg2_step_wait` — ONE step
+  per slot in flight; a background step's `TIME` lines are replayed at its wait. Moving a step
+  into a slot needs the proof that nothing between start and wait reads its outputs or rewrites
+  its inputs (the comments at each call say what was checked).
+- **The server parse** (`bin/server/parse.sh`): a file above its fair share (total/NJOBS, ≥ 64 MB;
+  `AXWAY_TOK_SPLIT` bytes overrides) is cut at RECORD boundaries (`csv_cuts`: the quote count
+  from line 2 is even) into several chunks; chunk parts are per date-HOUR (order-preserving
+  names) and merged in ~3 groups per core; the merge's skip filter strips the sort key itself
+  (`MERGE_SKIP_PROG` — never `cut(1)`: macOS cut ran ~7× slower than awk on the ~6 GB) and counts
+  the kept rows. The tokenizer's `quoted_split` fast path splits an all-quoted record on `","`
+  and PROVES the split exact (quotes = 2 ends + 2 per separator + inner ones; inner quotes must
+  come in adjacent pairs, which a `","` inside a value never leaves) — anything else walks.
+  The RENAME MAP is not in the tokenize signature: the mention caches carry
+  `.mention-renames.sig` (content) and the server `skip_if_fresh` watches the map, so a recorded
+  rename re-runs the mention scan and the reports without re-tokenizing. `AXWAY_SKIP_MENTIONS=1`
+  = tokenize + merge only (no `ensure_config`).
+- **Byte-range scans** (`bin/ranges.sh`: `rng_lo/rng_hi/rng_off/rng_feed`; a job owns the lines
+  STARTING in its range): subsets, session-sites, expire-files, bookend-ok, failed.sh passes 1
+  and 2, result.sh's session vote, the mention rescan. A scan whose result depends on line ORDER
+  across parts needs an order-preserving merge (result.sh's vote shows one); `unknown-entities`
+  stays on its `FNR % 6` slicing on purpose (its tie rule depends on the slicing).
+- **Server-cache subsets** (`bin/server/subsets.sh`, `srv_subset NAME` in `bin/server/lib.sh`):
+  the RARE message families of uc1/uc3-status, remote-poll, connection-diagnostics, ssh-key-auth
+  and ssh-sessions, copied once per cache; every line a consumer acts on must contain one of its
+  fixed-string MARKERS — change a consumer's patterns, change its markers. A stale or missing
+  subset falls back to the whole cache.
+- **details.sh**: `aggregate_files` runs as TWO type groups (`AGG_ONLY` in `details_lib.sh`); state
+  shared by every type (gmax, the last failure per subscription) is computed in full by each
+  group, per-type state only for its types; the stream sort orders the union.
+- **Publishing**: the files/ pages render in RUNS (four per pool slot); `render_rpt` takes a page
+  TITLE from line 1 with a builtin read outside `docs/details/` — every writer puts TITLE on line
+  1, and `META dirclass` exists only in the detail-page .rpt files (a writer adding it elsewhere
+  must extend that test).
+- **Archive**: `7zz -mx5 -m0=LZMA2:d=64m:c=64m` (64 MB blocks compress in parallel; -mx5: −34 %
+  time for +6 % size against -mx9).
+- **Profiling**: every step prints `TIME Ns <what> [cpu Ns]` laps (bin/timing.sh `timed` + the
+  per-script `_…lap` helpers, incl. the tokenize part timings) — a runtime build is profiled from
+  its console alone. The lever NOT pulled: a runtime build is always FRESH (`bin/prd.sh` →
+  `fresh.sh`), so the unchanged exports are re-tokenized every time (~45 s of the ~3:44);
+  keeping the server cache across builds is Herbert's call.
 
 ## Running individual stages
 
