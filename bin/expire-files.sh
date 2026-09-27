@@ -66,7 +66,24 @@ if [ ! -f "$DEL" ] || [ "$SRV" -nt "$DEL" ] || [ "${BASH_SOURCE[0]}" -nt "$DEL" 
     dtmp="$DEL.tmp.$$"
     # TM info lines: "File Maintenance for account [X] finished. Deleted files [a, b]."
     # One output row per deleted file: account (@endpoint stripped), basename.
-    { LC_ALL=C grep 'File Maintenance for account' "$SRV" || true; } | awk -F'\t' '
+    # The line filter runs IN PARALLEL (2026-09-27): one job per core over its
+    # own byte range of the server cache (the jobs compute the same line
+    # offsets, so the ranges partition the lines) — the one grep over the 3 GB
+    # production cache took ~8 s; the rows are a sort -u set, so order is free
+    ENJ=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
+    case $ENJ in ""|*[!0-9]*) ENJ=2 ;; esac
+    ESZ=$(wc -c < "$SRV" | tr -d ' ')
+    ex_part() {   # $1 = part index: its range of line starts is [lo, hi)
+        local lo=$(( ($1 - 1) * ESZ / ENJ )) hi
+        if [ "$1" -eq "$ENJ" ]; then hi=$((ESZ + 1)); else hi=$(( $1 * ESZ / ENJ )); fi
+        LC_ALL=C awk -v RLO="$lo" -v RHI="$hi" '
+            { _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
+            index($0, "File Maintenance for account") > 0' "$SRV" > "$dtmp.p$1"
+    }
+    epids=(); eparts=()
+    for ((pi = 1; pi <= ENJ; pi++)); do ex_part "$pi" & epids+=("$!"); eparts+=("$dtmp.p$pi"); done
+    for p in "${epids[@]}"; do wait "$p"; done
+    cat "${eparts[@]}" | awk -F'\t' '
         $5 !~ /finished\. Deleted files \[/ { next }
         {
             acct = $5; sub(/^.*for account \[/, "", acct); sub(/\].*/, "", acct); sub(/@.*/, "", acct)
@@ -78,6 +95,7 @@ if [ ! -f "$DEL" ] || [ "$SRV" -nt "$DEL" ] || [ "${BASH_SOURCE[0]}" -nt "$DEL" 
             }
         }
     ' | LC_ALL=C sort -u > "$dtmp"
+    rm -f "${eparts[@]}"
     if cmp -s "$dtmp" "$DEL" 2>/dev/null; then rm -f "$dtmp"; else mv "$dtmp" "$DEL"; fi   # keep the mtime when unchanged
     echo "expire-files: extracted $(wc -l < "$DEL" | tr -d ' ') deletion entrie(s) from the server cache." >&2
 fi

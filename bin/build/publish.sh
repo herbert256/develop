@@ -2039,24 +2039,39 @@ check_status_consistency() {
 # transfer_menu_order (the top-bar Transfer menu set) excludes the Analyses-menu
 # members (cross-*, seen-in-server-log, entity-coverage, skipped) and Search, so
 # the grouped index matches the menu — those live in the Analyses index instead.
+# laps (2026-09-27): TIME lines on the build console, like the other steps
+_bpl0=$(date +%s)
+_bplap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  index pages: %s\n' "$((_t1 - _bpl0))" "$1" >&2; _bpl0=$_t1; }
 write_area_index transfer "Transfer Reports" "${transfer_menu_order[@]}"
+_bplap "transfer index"
 [ ${#server_order[@]} -gt 0 ] && write_area_index server "Server Reports" "${server_order[@]}"
+_bplap "server index"
 write_report_finder
+_bplap "write_report_finder"
 write_whats_new
+_bplap "write_whats_new"
 write_sitemap
+_bplap "write_sitemap"
 write_root_index
+_bplap "write_root_index"
 write_root_404
+_bplap "write_root_404"
 check_status_consistency
+_bplap "check_status_consistency"
 
 # Every area's report pages are rendered by now (this runs LAST per env), so tag
 # each report <h1> with its "Group &larr; Section" breadcrumb. Analyses first (it
 # claims its members that live in transfer/), then transfer, then server.
 tag_analyses_group_h1s
+_bplap "tag_analyses_group_h1s"
 tag_transfer_group_h1s
+_bplap "tag_transfer_group_h1s"
 tag_server_group_h1s
+_bplap "tag_server_group_h1s"
 
 # The shared help pages' chrome (the site top bar on every help page).
 apply_help_chrome
+_bplap "apply_help_chrome"
 
 echo "Wrote index pages (root + transfer${SERVER_MENU:+ + server})." >&2
 

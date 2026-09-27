@@ -88,19 +88,23 @@ run_bg "$SCRIPT_DIR/reports/partner-lifecycle.sh"
 run_bg "$SCRIPT_DIR/reports/cleanup-backlog.sh"
 run_bg "$SCRIPT_DIR/reports/hosts-overview.sh"       # Partners - Outgoing (2026-09-13): the hosts twin of fe-overview — config + both transfer caches + input/<env>/hosts_old.txt + polling.rpt + site-failures.rpt (server pool outputs)
 run_bg "$SCRIPT_DIR/reports/fe-overview.sh"          # Partners - Incoming: config + files cache + logon summary + input/<env>/logons_old.txt + the UC2 pickup sidecar (server pool output — bin/build.sh runs the server reports first)
+
+# wave 2 — the ensure_pda_tsvs chain, strictly in order (first-seen moved here
+# 2026-08: its seen split now reads the coverage TSVs, incl. the PDA partners).
+# ONE background job BESIDE wave 1 (2026-09-27): the chain reads no wave-1
+# output and wave 1 reads none of its outputs (the grep above, redone that
+# day for the other direction too: no wave-2 script names a wave-1 report,
+# nor partners-in), so it no longer waits for the slowest wave-1 report
+( timed "$SCRIPT_DIR/reports/coverage.sh"   # the 3 PDA Configured cell .rpts — the home page Total links
+  timed "$SCRIPT_DIR/reports/first-seen.sh"
+  timed "$SCRIPT_DIR/reports/data-diff.sh"   # AFTER first-seen.sh: its First-seen table reads the ledger first-seen.sh writes
+  timed "$SCRIPT_DIR/reports/home.sh"
+  timed "$SCRIPT_DIR/reports/entity-search.sh" ) & PIDS+=("$!")
 wait_all
 # MERGED (2026-09-13, user request): fe-overview.rpt (wave 1, just above) + the
 # Incoming table of the server pool's logon.rpt -> Partners - Incoming
 # (analyses/partners-in.html); reads the two .rpt files only
 timed "$SCRIPT_DIR/reports/partners-in.sh"
-
-# wave 2 — the ensure_pda_tsvs chain, strictly in order (first-seen moved here
-# 2026-08: its seen split now reads the coverage TSVs, incl. the PDA partners)
-timed "$SCRIPT_DIR/reports/coverage.sh"   # the 3 PDA Configured cell .rpts — the home page Total links
-timed "$SCRIPT_DIR/reports/first-seen.sh"
-timed "$SCRIPT_DIR/reports/data-diff.sh"   # AFTER first-seen.sh: its First-seen table reads the ledger first-seen.sh writes
-timed "$SCRIPT_DIR/reports/home.sh"
-timed "$SCRIPT_DIR/reports/entity-search.sh"
 
 # wave 3 — reads home.rpt
 timed "$SCRIPT_DIR/reports/seen-in-server-log.sh"

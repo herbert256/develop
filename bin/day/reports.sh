@@ -556,7 +556,16 @@ if [ -f "$UC3" ]; then
           END{ for (k in c) printf "%s:%s ", k, c[k] }' "$UC3")
 fi
 if [ -f "$SV" ] && [ -f "$SP" ] && [ -n "$sdays" ]; then
+# THE SERVER PASS IN PARALLEL (2026-09-27): one job per core over its own
+# byte range of the 3 GB server cache (the jobs compute the same line
+# offsets, so the ranges partition the lines); every per-line figure is a
+# COUNT, so each job dumps its counters and one reduce run sums them and
+# writes the day facts exactly as the single pass did. day_srv is that one
+# program; the mode comes in through the environment (DAYSRV_*).
+day_srv() {
 awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v slfc="$slfc" -v nrdc="$nrdc" -v nrfc="$nrfc" -v u3c="$u3c" -v anomc="$anomc" '
+    BEGIN { PART = ENVIRON["DAYSRV_PART"] + 0; REDUCE = ENVIRON["DAYSRV_REDUCE"] + 0; SVF = ENVIRON["DAYSRV_SVF"]
+            RANGEF = ENVIRON["DAYSRV_RANGEF"]; RLO = ENVIRON["DAYSRV_LO"] + 0; RHI = ENVIRON["DAYSRV_HI"] + 0 }
     BEGIN { ns = split(slfc, _sa, " "); for (i = 1; i <= ns; i++) { if (_sa[i] == "") continue; p = index(_sa[i], ":"); if (p > 1) SLFC[substr(_sa[i], 1, p - 1)] = substr(_sa[i], p + 1) }
         na = split(anomc, _aa, " "); for (i = 1; i <= na; i++) { if (_aa[i] == "") continue; p = index(_aa[i], ":"); if (p > 1) ANOMC[substr(_aa[i], 1, p - 1)] = substr(_aa[i], p + 1) }
         nu = split(u3c, _ua, " "); for (i = 1; i <= nu; i++) { if (_ua[i] == "") continue; p = index(_ua[i], ":"); if (p > 1) U3C[substr(_ua[i], 1, p - 1)] = substr(_ua[i], p + 1) }
@@ -571,12 +580,18 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
     function lvlname(l){ return l == "W" ? "Warning" : (l == "E" ? "Error" : "Info") }
     function compname(c){ return c=="T"?"TM":(c=="P"?"PESITD":(c=="S"?"SSHD":c)) }
     FNR == 1 { fno++ }
+    # the reduce run: the jobs counter dumps (type TAB key TAB count), summed
+    REDUCE && FILENAME != SVF { if ($1 == "rc") rc[$2] += $3; else if ($1 == "er") er[$2] += $3; else if ($1 == "CEIL") CEIL[$2] += $3
+        else if ($1 == "AF") AF[$2] += $3; else if ($1 == "CF") CF[$2] += $3; else if ($1 == "LGO") LGO[$2] += $3; else if ($1 == "DEP") DEP[$2] += $3
+        else if ($1 == "LGF") LGF[$2] += $3; else if ($1 == "CLD") CLD[$2] += $3; else if ($1 == "EVE") EVE[$2] += $3; else if ($1 == "SH") SH[$2] += $3
+        next }
     fno == 1 {   # server topview.rpt
         if ($1 != "ROW") next
         d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10)
         REC[d]=$3; WRN[d]=$6; ERR[d]=$7; CT[d]=$9; CP[d]=$10; CS[d]=$11; FI[d]=$12; LA[d]=$13
         next
     }
+    RANGEF != "" && FILENAME == RANGEF { _lo = _off; _off += length($0) + 1; if (_lo < RLO) next; if (_lo >= RHI) exit }
     {   # _parse.tsv — the one full pass
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) next
         h = substr($2, 1, 2); if (h !~ /^[0-9][0-9]$/) h = "00"
@@ -604,6 +619,13 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         }
     }
     END {
+        if (PART) {   # a job: dump the counters for the reduce run
+            for (k in rc) print "rc", k, rc[k];   for (k in er) print "er", k, er[k];     for (k in CEIL) print "CEIL", k, CEIL[k]
+            for (k in AF) print "AF", k, AF[k];   for (k in CF) print "CF", k, CF[k];     for (k in LGO) print "LGO", k, LGO[k]
+            for (k in DEP) print "DEP", k, DEP[k]; for (k in LGF) print "LGF", k, LGF[k]; for (k in CLD) print "CLD", k, CLD[k]
+            for (k in EVE) print "EVE", k, EVE[k]; for (k in SH) print "SH", k, SH[k]
+            exit
+        }
         split("Monday Tuesday Wednesday Thursday Friday Saturday Sunday", WD0, " ")
         for (i = 0; i < 7; i++) WD[i] = WD0[i + 1]
         nd = split(sdays, D, " ")
@@ -727,7 +749,21 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         if (ps > 0 && ds >= 2 * ps)
             facts[++nfacts] = sprintf("FACT\t**%s** was unusually busy: %.1f%% of the day'"'"'s records vs %.1f%% over the period.", nm, ds*100, ps*100)
     }
-' "$SV" "$SP"
+' "$@"
+}
+DNJ=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
+case $DNJ in ""|*[!0-9]*) DNJ=2 ;; esac
+DSZ=$(wc -c < "$SP" | tr -d " ")
+dparts="$RPTNEW.srvparts.$$"; rm -rf "$dparts"; mkdir -p "$dparts"
+dpids=()
+for ((pi = 1; pi <= DNJ; pi++)); do
+    dlo=$(( (pi - 1) * DSZ / DNJ )); if [ "$pi" -eq "$DNJ" ]; then dhi=$((DSZ + 1)); else dhi=$(( pi * DSZ / DNJ )); fi
+    DAYSRV_PART=1 DAYSRV_RANGEF="$SP" DAYSRV_LO="$dlo" DAYSRV_HI="$dhi" day_srv "$SV" "$SP" > "$dparts/$pi" &
+    dpids+=("$!")
+done
+for p in "${dpids[@]}"; do wait "$p"; done
+DAYSRV_REDUCE=1 DAYSRV_SVF="$SV" day_srv "$SV" "$dparts"/*
+rm -rf "$dparts"
 fi
 
 # Publish the complete staged set with two renames (see the staging comment at

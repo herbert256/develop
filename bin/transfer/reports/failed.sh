@@ -619,7 +619,21 @@ _flap "the server-failing set"
 # chronological.
 : > "$TMP/srvlines"
 if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
-    LC_ALL=C awk -F'\t' -v SSUBF="$TMP/srvsubs" -v SSOUT="$TMP/srvsess2" '
+    # IN PARALLEL (2026-09-27): one job per core over its own byte range of the
+    # server cache (the jobs compute the same line offsets, so the ranges
+    # partition the lines, in cache order). The line output is sorted below
+    # whatever its order; the reddening-session list keeps its FIRST
+    # occurrences, so its parts merge in range order with the same dedup.
+    # The single pass (a UUID regex over every message) ran ~16 s on
+    # production, and again in the build's catch-up.
+    FNJ=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
+    case $FNJ in ""|*[!0-9]*) FNJ=2 ;; esac
+    FSZ=$(wc -c < "$SRVLOG" | tr -d ' ')
+    fpass1() {   # $1 = part index: its range of line starts is [lo, hi)
+    local lo=$(( ($1 - 1) * FSZ / FNJ )) hi
+    if [ "$1" -eq "$FNJ" ]; then hi=$((FSZ + 1)); else hi=$(( $1 * FSZ / FNJ )); fi
+    : > "$TMP/srvsess2.p$1"
+    LC_ALL=C awk -F'\t' -v SSUBF="$TMP/srvsubs" -v SSOUT="$TMP/srvsess2.p$1" -v RANGEF="$SRVLOG" -v RLO="$lo" -v RHI="$hi" '
         function lvlname(x) { if (x == "I") return "Info"; if (x == "W") return "Warning"
                               if (x == "E") return "Error"; return x }
         function compname(x) { if (x == "T") return "TM"; if (x == "P") return "PESITD"
@@ -679,6 +693,7 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
             hbucket(nc, w0[$1], w1[$1])
             next
         }
+        FILENAME == RANGEF { _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
         {                                             # the server parse cache
             m = $5
             # the ID join: every UUID the message carries, in whatever words;
@@ -719,8 +734,14 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
                 if (k >= w0[c] && k <= w1[c] && index(m, pfx[c]) > 0) emit(c, "N", "window")
             }
         }
-    ' "$TMP/ids" "$TMP/sess" "$TMP/meta" "$SRVLOG" \
-    | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3 -k4,4 > "$TMP/srvlines"
+    ' "$TMP/ids" "$TMP/sess" "$TMP/meta" "$SRVLOG" > "$TMP/srvlines.p$1"
+    }
+    fpids=(); fparts=(); fsess=()
+    for ((pi = 1; pi <= FNJ; pi++)); do fpass1 "$pi" & fpids+=("$!"); fparts+=("$TMP/srvlines.p$pi"); fsess+=("$TMP/srvsess2.p$pi"); done
+    for p in "${fpids[@]}"; do wait "$p"; done
+    LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3 -k4,4 "${fparts[@]}" > "$TMP/srvlines"
+    awk '!s[$0]++' "${fsess[@]}" > "$TMP/srvsess2"
+    rm -f "${fparts[@]}" "${fsess[@]}"
 fi
 
 _flap "server log pass 1 (what the server log said)"
