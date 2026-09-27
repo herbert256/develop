@@ -1259,6 +1259,7 @@ bin/fastawk.sh          the mawk PATH shim
 bin/ip.sh               address<->endpoint map        bin/blacklist.sh  field blanking
 bin/skiplist.sh         record dropping               bin/uc-cases.sh   uc_meta()
 bin/renames.sh          subscription rename map (input/renames/) + fm_snapshot_renames
+bin/ranges.sh           the byte-range split of the parallel server-cache scans (rng_feed = a dd seek; jobs own the lines STARTING in [lo,hi))
 bin/publish_lib.sh      shared renderer + globals     bin/cron2human.awk cron -> prose
 bin/render_rpt.awk      the one-pass page-body renderer
 bin/merge_rpt.sh        component .rpt -> merged tabbed report

@@ -177,10 +177,13 @@ cfg_white_in="$CFG_WHITE"; [ -f "$cfg_white_in" ] || cfg_white_in=/dev/null
 #                                     login and account, the raw IP otherwise)
 NW=$( (command -v sysctl >/dev/null 2>&1 && sysctl -n hw.ncpu) 2>/dev/null || echo 4 )
 [ "$NW" -ge 1 ] 2>/dev/null || NW=4
-# (cap 10, was 6 until 2026-09-27: the merge is exact for any NW — counts add,
-# maxima commute, addline keeps the same top 10 — and the blue step it runs in
-# has the machine to itself but for the one-core logon summary)
-[ "$NW" -gt 10 ] && NW=10
+# KEEP THE CAP AT 6 (2026-09-27: raised to 10 for speed and put back the same
+# day): the latest-mention pick is NOT partition-free — a worker keeps the
+# FIRST line of a tied newest stamp, and the reduce keeps the candidate of the
+# lowest-numbered part on a tie, so the FNR % NW slicing decides which of two
+# same-millisecond messages a name shows. Another NW (or byte ranges) would
+# change that choice on production data, where such ties occur.
+[ "$NW" -gt 6 ] && NW=6
 wpids=()
 for ((id = 0; id < NW; id++)); do
     awk -F'\t' -v NW="$NW" -v ID="$id" -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'

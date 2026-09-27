@@ -1135,6 +1135,7 @@ entities_name_only() {
 }
 render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/entities.sh's entities/<name>.rpt)  $4 rlabel  $5 hslug  $6 rkey
     local area=$1 name=$2 rpt=$3 rlabel=$4 hslug=$5 rkey=$6
+    local _evp=() _ev   # the view renders in flight (see the view loop)
     # THE GROUPED LAYOUT (2026-09-13, user request — built the same day as a
     # twin under transfer/entities2/, then made THE layout; the classic Name ·
     # Direction · Files · Volume · OK · Retry · Resubmit · Error · Last seen
@@ -1799,10 +1800,16 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             [ -n "$prow1" ] && nav="${prow1}"$'\t@sep\t'"${nav#NAV$'\t'}"
             tmp=$(mktemp "${TMPDIR:-/tmp}/rpt.XXXXXX")
             { _hdr_with_nav "$HEADER" "$nav"; printf '%s\n' "$blkc"; printf '%s' "$FOOTER"; } > "$tmp"
-            render_rpt "$tmp" "$DOCS/$area/entities/$outf" "../../assets/style.css" "../index.html" "$rlabel" 1 "$hslug" "$rkey"
-            rm -f "$tmp"
+            # the views render FOUR AT A TIME (2026-09-27): the nine entity
+            # reports start first and each rendered its 10-13 pages one after
+            # another, holding nine of the pool slots while the other ~60
+            # reports queued behind them; each view writes its own page
+            { render_rpt "$tmp" "$DOCS/$area/entities/$outf" "../../assets/style.css" "../index.html" "$rlabel" 1 "$hslug" "$rkey"; rm -f "$tmp"; } &
+            _evp+=("$!")
+            if [ "${#_evp[@]}" -ge 4 ]; then wait "${_evp[0]}"; _evp=("${_evp[@]:1}"); fi
         done
     done
+    for _ev in ${_evp[@]+"${_evp[@]}"}; do wait "$_ev"; done
     DLINK_BASE=$saved_dl
     [ -n "$grpmapf" ] && rm -f "$grpmapf"
     return 0
