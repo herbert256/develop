@@ -35,8 +35,8 @@
 #   Error with its own files/<coreid>.html page)
 #
 # The DEDICATED docs/assets/file-search.js parses these and renders only the
-# matches — NOT report.js's esearch: a Search button (no per-keystroke
-# filtering), the NAV row's five sibling links carrying the query as ?q=….
+# matches — NOT report.js's esearch: its own as-you-type search (no Search
+# button since 2026-09-27), the NAV row's sibling links carrying the query as ?q=….
 #
 # THE ROW CAP (2026-08, replacing the old byte budget): a page ships at most
 # AXWAY_FILE_SEARCH_ROWCAP rows (default 100,000), newest first — the window

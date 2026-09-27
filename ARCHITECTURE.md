@@ -912,10 +912,10 @@ slug from the subscriptions `_slugmap.tsv`, `_R` one File per line with dictiona
 engine DOM-renders only the matches). **The BUDGET cap** (`AXWAY_FILE_SEARCH_BUDGET`, default
 64 MiB per page — a backstop, not a routine trim): a page's rows stop at the newest WHOLE data
 days that fit; the window figures
-still count everything and the intro + SUMMARY state the searchable-from day — production-scale
+still count everything and the intro states the searchable-from day (the SUMMARY line went 2026-09-27) while the build report raises a red banner — production-scale
 volumes cap instead of shipping tens of MB.
 The pages are searched by the DEDICATED hand-authored `docs/assets/file-search.js` (injected with
-its own cksum `?v=`), NOT report.js's esearch: search runs only on the Search button (or Enter),
+its own cksum `?v=`), NOT report.js's esearch: search runs AS THE USER TYPES (a 150 ms pause, Enter at once — the Search button and the "N files searchable" idle text went 2026-09-27),
 matches on the Name cell (case-insensitive; `*`/`?` globs, space-separated words AND), shows the
 newest 500, and carries the query as `?q=` — synced onto the page URL and rewritten onto the NAV
 row's five sibling links, so switching windows re-runs the search and a reload repeats it. The

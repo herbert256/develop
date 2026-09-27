@@ -1968,7 +1968,7 @@ done
 # (file-search-<key>-data.js, dictionary-coded data — ~95 B/row where the
 # lifted <tr> markup ran 300-525 B/row): the .rpt renders an EMPTY table and
 # this block copies the sidecar beside the page, injecting its tag AND the
-# DEDICATED engine docs/assets/file-search.js (a Search button, the NAV row
+# DEDICATED engine docs/assets/file-search.js (as-you-type search, the NAV row
 # carrying ?q= between the windows), each with its own cksum ?v=, before
 # report.js (defer order). CUR_DATES cleared: no date filter; DLINK_BASE for
 # any residual site cell.

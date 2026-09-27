@@ -1031,7 +1031,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   window — result rows tint green/red by outcome via restint + a per-row `data-res` — with
   per-page `-data.js` payloads (v5, capped at 100,000 rows; a capped page turns into a RED
   banner on the build report via `file-search-capped.txt`), searched by the DEDICATED
-  `docs/assets/file-search.js` — a Search button, never per-keystroke, the NAV row carrying
+  `docs/assets/file-search.js` — as you type (no Search button, no idle text since 2026-09-27), the NAV row carrying
   `?q=` between the windows; 24 hours = the newest full day + the partial newest day, 48 hours
   = the second full day), the Report finder, the SIX Failed-transfers
   view pages (+ per-CoreId error pages, and since 2026-09-03 the FILE pages `docs/files/<coreid>.html` — the same layout for a File of ANY outcome, written by `failed.sh` for the CoreIds the Transfer patterns page's "Last 5 files" cells link, `_patterns-files.tsv`, and for every File the Longest Files page lists (DELIVERED Files only since 2026-09-13, user request — no Failed / Expired / Waiting and no "All transfers" view; the one-hour threshold went 2026-09-06), `_longest-files.tsv` — its CoreId cell opens the File page), Cross References, Seen in server log, Entity coverage
