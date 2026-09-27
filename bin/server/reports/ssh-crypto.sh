@@ -331,7 +331,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
         printf "PTT\t%d\t%d\t%s\n", ptT+0, npt+0, ptg
         printf "TOT\t%d\t%d\n", neg+0, dep+0
     }
-' <(known_names KA "$TACCT"; known_names KS "$TSITE"; known_names KH "$THOST") "$(srv_subset ssh-crypto)")
+' <(known_names KA "$TACCT"; known_names KS "$TSITE"; known_names KH "$THOST") "$PARSED")
 
 IFS=$'\t' read -r _ neg dep <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ "${neg:-0}" -eq 0 ]; then

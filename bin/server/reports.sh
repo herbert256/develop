@@ -46,8 +46,8 @@ pool_wait() {  # reap every pooled job; abort the run if any report failed
 }
 
 # THE SERVER-CACHE SUBSETS (2026-09-27, build-speed round 2): one parallel
-# pass copies each consumer's message families out of the 3 GB cache
-# (bin/server/subsets.sh); a dozen reports below read their subset
+# pass copies each consumer's RARE message families out of the 3 GB cache
+# (bin/server/subsets.sh); six reports below read their subset
 # (srv_subset) instead of the whole cache. Before the pool: they need it.
 timed "$SCRIPT_DIR/subsets.sh"
 

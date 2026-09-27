@@ -69,9 +69,22 @@ clear_tree build
 mkdir -p build
 exec > >(tee build/fresh.log) 2>&1
 
+# FAST CLEAR (2026-09-27, build-speed round 3): data/ and docs/ are RENAMED
+# into build/.trash — one directory rename each, instant on one filesystem —
+# and deleted in the BACKGROUND while the build runs (a runtime data/ holds a
+# 3 GB cache and thousands of small files; docs/ ~10k pages). build/ is
+# cleared up front, which also takes any trash an interrupted run left.
+move_aside() {   # $1 = dir
+    [ -e "$1" ] || return 0
+    mkdir -p build/.trash
+    mv "$1" "build/.trash/$1.$$" 2>/dev/null || clear_tree "$1"
+}
 echo "fresh.sh: clearing data/ and docs/ ..." >&2
-clear_tree data
-clear_tree docs
+_fc0=$(date +%s)
+move_aside data
+move_aside docs
+{ rm -rf build/.trash >/dev/null 2>&1 & } 2>/dev/null
+echo "fresh.sh: data/ and docs/ moved aside in $(( $(date +%s) - _fc0 ))s (deleted in the background)." >&2
 
 echo "fresh.sh: seeding docs/ from assets/ ..." >&2
 mkdir -p docs/assets docs/help

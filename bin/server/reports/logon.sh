@@ -398,7 +398,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
         # (2026-07-06 in the acceptance window), so the funnel needs a warning
         print "COV\t" (fad == "" ? "-" : fad) "\t" (fss == "" ? "-" : fss)
     }
-' <(known_names KA "$TACCT"; known_names KH "$THOST"; base_logins) "$(srv_subset logon)")
+' <(known_names KA "$TACCT"; known_names KH "$THOST"; base_logins) "$PARSED")
 
 if [ -z "$agg" ]; then
     echo "No usable records found." >&2

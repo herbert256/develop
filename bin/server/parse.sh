@@ -906,7 +906,7 @@ fi
 # tracks the cumulative raw-record count for the drop notes.
 TOK_TOTAL=0
 CHUNK_N=0
-tok_one() {   # $1 = input csv, $2 = 4-digit chunk index
+tok_run() {   # $1 = chunk id; stdin = the CSV (its first line the header)
     # The sorted chunk is SPLIT INTO PER-DATE PARTS (chunk.<idx>.d<isodate>):
     # the sort key starts with the iso date, so a sorted chunk is
     # date-contiguous and each part inherits sortedness. The full-mode merge
@@ -916,20 +916,89 @@ tok_one() {   # $1 = input csv, $2 = 4-digit chunk index
     # no parseable date lands in the bare "chunk.<idx>.d" part, whose key
     # starts with a space and sorts before any date — LC_ALL=C sorted part
     # names reproduce exactly that order.
-    awk -v cntfile="$CHUNK_DIR/count.$2" "$TOK_PROG" "$1" \
+    awk -v cntfile="$CHUNK_DIR/count.$1" "$TOK_PROG" \
         | LC_ALL=C sort $SORT_CHUNK_FLAGS -u \
-        | awk -v pfx="$CHUNK_DIR/chunk.$2.d" '
-            { d = substr($0, 1, index($0, " ") - 1); gsub(/[^0-9-]/, "_", d) }   # clamp: a malformed date in a corrupt export must not leak odd chars into the part FILENAME
+        | awk -v pfx="$CHUNK_DIR/chunk.$1.d" '
+            { p = index($0, " "); d = substr($0, 1, p - 1); gsub(/[^0-9-]/, "_", d)   # clamp: a malformed date in a corrupt export must not leak odd chars into the part FILENAME
+              # PER DATE-HOUR PARTS (2026-09-27, build-speed round 3): the
+              # part name adds the two characters after the date (the hour
+              # of a valid time) so the merge can split a heavy day. The
+              # code keeps the part NAMES in key order under LC_ALL=C: a
+              # non-digit becomes "!" when it sorts below "0", "~" above "9".
+              if (d != "") { c1 = substr($0, p + 1, 1); c2 = substr($0, p + 2, 1)
+                  if (c1 >= "0" && c1 <= "9") h = c1 ((c2 >= "0" && c2 <= "9") ? c2 : (c2 < "0" ? "!" : "~"))
+                  else h = (c1 < "0") ? "!" : "~"
+                  d = d "_" h } }
             d != cur { if (out != "") close(out); cur = d; out = pfx d }
             { print > out }'
 }
+tok_one() {   # $1 = input csv, $2 = 4-digit chunk index
+    tok_run "$2" < "$1"
+}
+# THE BIG-FILE SPLIT (2026-09-27, build-speed round 3): one job per file let
+# the biggest export (3.2 GB of 20 GB in production) set the whole tokenize
+# alone while the other cores idled. A file bigger than its fair share is cut
+# into parts AT RECORD BOUNDARIES and each part is its own chunk — every
+# chunk is sorted + deduped and the per-date merge below takes them all, so
+# more chunks from one file merge to the same cache.
+# A record boundary: TOK_PROG closes a record when the quotes collected since
+# its start are EVEN, and it skips line 1 (the header) whatever it holds — so
+# a newline is a boundary exactly when the quotes from the start of line 2 up
+# to it are even. csv_cuts FILE K prints the K-1 cut offsets: from each
+# target k*size/K the first newline with that parity, the byte after it.
+# (perl: a byte-exact seek and a C-speed quote count; tr ran at ~50 MB/s.)
+csv_cuts() {
+    perl -e '
+        my ($f, $k) = @ARGV; my $size = -s $f;
+        open(my $h, "<", $f) or die "$f: $!"; binmode $h;
+        my $first = <$h>; my $start = defined $first ? length($first) : 0;
+        my ($pos, $q, @cuts) = ($start, 0);
+        for my $t (grep { $_ > $start } map { int($_ * $size / $k) } 1 .. $k - 1) {
+            seek($h, $pos, 0);
+            while ($pos < $t) { my $w = $t - $pos; $w = 16777216 if $w > 16777216;
+                my $n = read($h, my $b, $w); last unless $n; $q += ($b =~ tr/"//); $pos += $n }
+            my ($p, $off, $cut) = ($q % 2, $pos, undef);
+            seek($h, $pos, 0);
+            SCAN: while (1) { my $n = read($h, my $b, 1048576); last unless $n; my $s = 0;
+                while ((my $nl = index($b, "\n", $s)) >= 0) {
+                    $p = ($p + (substr($b, $s, $nl - $s) =~ tr/"//)) % 2;
+                    if ($p == 0) { $cut = $off + $nl + 1; last SCAN } $s = $nl + 1 }
+                $p = ($p + (substr($b, $s) =~ tr/"//)) % 2; $off += $n }
+            push @cuts, $cut if defined $cut && $cut < $size && (!@cuts || $cut > $cuts[-1]);
+        }
+        print "$_\n" for @cuts;' "$1" "$2"
+}
+# the bytes [LO, HI) of a file, byte-exact (dd seeks by block only)
+byte_range() {
+    perl -e 'my ($f, $lo, $hi) = @ARGV; open(my $h, "<", $f) or die "$f: $!"; binmode $h; binmode STDOUT;
+        seek($h, $lo, 0); my $left = $hi - $lo;
+        while ($left > 0) { my $n = read($h, my $b, $left < 4194304 ? $left : 4194304); last unless $n; print $b; $left -= $n }' "$1" "$2" "$3"
+}
+tok_part() {   # $1 = input csv, $2 = lo, $3 = hi, $4 = chunk id
+    # a part after the first gets a stand-in header line for TOK_PROG to skip
+    { if [ "$2" -gt 0 ]; then printf 'x\n'; fi; byte_range "$1" "$2" "$3"; } | tok_run "$4"
+}
 tokenize_batch() {   # tokenize every argument file into its own chunk
-    local f prev=$TOK_TOTAL base=$CHUNK_N idx
+    local f prev=$TOK_TOTAL base=$CHUNK_N idx sz tot=0 thr k lo j c cid
     mkdir -p "$CHUNK_DIR"
+    # the fair share: a file above total/NJOBS (never below 64 MB) is split —
+    # AXWAY_TOK_SPLIT (bytes) overrides the share, for testing the split path
+    for f in "$@"; do sz=$(wc -c < "$f" | tr -d ' '); tot=$((tot + sz)); done
+    thr=$(( tot / NJOBS )); [ "$thr" -lt 67108864 ] && thr=67108864
+    [ -n "${AXWAY_TOK_SPLIT:-}" ] && thr=$AXWAY_TOK_SPLIT
     # biggest file first (see lpt_order); the index still follows argument order,
     # which is what keeps an incremental batch's chunks numbered after the last.
     while IFS=$'\t' read -r idx f; do
-        pool_run tok_one "$f" "$(printf '%04d' "$((base + idx))")"
+        cid=$(printf '%04d' "$((base + idx))")
+        sz=$(wc -c < "$f" | tr -d ' ')
+        if [ "$sz" -gt "$thr" ]; then
+            k=$(( (sz + thr - 1) / thr )); lo=0; j=0
+            for c in $(csv_cuts "$f" "$k") "$sz"; do
+                j=$((j + 1)); pool_run tok_part "$f" "$lo" "$c" "$cid.$j"; lo=$c
+            done
+        else
+            pool_run tok_one "$f" "$cid"
+        fi
     done < <(lpt_order "$@")
     CHUNK_N=$((base + $#))
     pool_wait
@@ -1020,31 +1089,42 @@ if [ "$mode" = full ]; then
     # skip its 2.7 GB `split` copy — CHUNK_DIR is removed after that.
     mkdir -p "$(dirname "$SKIPOUT")"; : > "$SKIPOUT"
     PART_DIR="$CHUNK_DIR/parts"; mkdir -p "$PART_DIR"
-    merge_part() {   # $1 = iso date ("" = the no-date part)  $2 = 4-digit index
-        : > "$PART_DIR/out.$2"; : > "$PART_DIR/skip.$2"
-        LC_ALL=C sort -m -u $SORT_CHUNK_FLAGS "$CHUNK_DIR"/chunk.*.d"$1" | cut -f2- \
-            | awk -F'\t' -v skipfile="$SKIPFILE" -v sc="$PART_DIR/skip.$2" "$SKIP_PROG" > "$PART_DIR/out.$2"
+    # GROUPED DATE-HOUR MERGE (2026-09-27, build-speed round 3): the parts are
+    # per date-HOUR now (tok_run), and consecutive keys are packed into ~3
+    # groups per core by size. A group merges its keys one after another into
+    # ONE stream (the skip filter is a stateless per-row test), so its output
+    # is still a contiguous run of cache rows in key order. Per date, the
+    # heaviest production day (3 GB of one export) was one merge job alone.
+    merge_group() {   # $1 = 4-digit group index; its keys, in key order, in .grp.$1
+        : > "$PART_DIR/out.$1"; : > "$PART_DIR/skip.$1"
+        { while IFS= read -r k; do
+              LC_ALL=C sort -m -u $SORT_CHUNK_FLAGS "$CHUNK_DIR"/chunk.*.d"$k"
+          done < "$CHUNK_DIR/.grp.$1"; } | cut -f2- \
+            | awk -F'\t' -v skipfile="$SKIPFILE" -v sc="$PART_DIR/skip.$1" "$SKIP_PROG" > "$PART_DIR/out.$1"
     }
-    pdates=$(ls "$CHUNK_DIR" | sed -n 's/^chunk\.[0-9]*\.d//p' | LC_ALL=C sort -u)
-    # The INDEX must stay in DATE order — `cat out.*` below is what puts the cache
-    # in date order, and that is the whole reason the per-date merge is
-    # byte-identical to the former global one. Only the DISPATCH order changes:
-    # dates are 6.1x skewed too (1.8M rows against a 295K median), so the heaviest
-    # date starts first instead of last.
-    pi=0
-    : > "$CHUNK_DIR/.lpt"
-    while IFS= read -r pd; do
-        ls "$CHUNK_DIR"/chunk.*.d"$pd" >/dev/null 2>&1 || continue   # zero-record degenerate case
-        pi=$((pi + 1))
-        printf '%s\t%s\t%s\n' \
-            "$(wc -c "$CHUNK_DIR"/chunk.*.d"$pd" 2>/dev/null | awk 'END { print $1 + 0 }')" "$pi" "$pd" \
-            >> "$CHUNK_DIR/.lpt"
-    done <<< "$pdates"
-    while IFS=$'\t' read -r pi pd; do
-        pool_run merge_part "$pd" "$(printf '%04d' "$pi")"
-    done < <(LC_ALL=C sort -k1,1rn -k2,2n "$CHUNK_DIR/.lpt" | cut -f2-)
-    rm -f "$CHUNK_DIR/.lpt"
+    # key <TAB> bytes, in key order (LC_ALL=C — the order the keys sort in the
+    # cache; "" = the no-date part, first), then the greedy grouping. The
+    # group INDEX follows key order: `cat out.*` below is what puts the cache
+    # in order, and the reason this merge is byte-identical to one global
+    # merge. Only the DISPATCH order is biggest-first.
+    : > "$CHUNK_DIR/.lpt"   # no records at all = no groups (the dispatch below reads nothing)
+    find "$CHUNK_DIR" -maxdepth 1 -name 'chunk.*' -exec wc -c {} + \
+        | awk '$2 != "total" { k = $2; sub(/^.*\/chunk\.[0-9.]*\.d/, "", k); s[k] += $1 }
+               END { for (k in s) printf "%s\t%d\n", k, s[k] }' \
+        | LC_ALL=C sort -t"$(printf '\t')" -k1,1 \
+        | awk -F'\t' -v nj="$NJOBS" -v dir="$CHUNK_DIR" '
+            { K[++n] = $1; B[n] = $2; tot += $2 }
+            END { tgt = tot / (nj * 3); g = 0; cum = 0
+                for (i = 1; i <= n; i++) {
+                    if (g == 0 || (cum > 0 && cum + B[i] > tgt)) { g++; cum = 0 }
+                    cum += B[i]; gs[g] += B[i]
+                    printf "%s\n", K[i] > (dir "/.grp." sprintf("%04d", g)) }
+                for (i = 1; i <= g; i++) printf "%d\t%04d\n", gs[i], i > (dir "/.lpt") }'
+    while IFS=$'\t' read -r _ gi; do
+        pool_run merge_group "$gi"
+    done < <(LC_ALL=C sort -k1,1rn -k2,2n "$CHUNK_DIR/.lpt")
     pool_wait
+    rm -f "$CHUNK_DIR/.lpt" "$CHUNK_DIR"/.grp.*
     cat "$PART_DIR"/out.*  > "$OUT"
     cat "$PART_DIR"/skip.* > "$SKIPOUT"
     ENT_PARTS=("$PART_DIR"/out.*)   # build_entity_tsvs consumes these in place
