@@ -234,7 +234,7 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
             close(SL)
         }
     }
-' "$SUBB" "$RFLIP" "$FILESC" "$PARSED")
+' "$SUBB" "$RFLIP" "$FILESC" "$(srv_subset uc1)")
 
 IFS=$'\t' read -r _ n_err n_okerr n_ok n_notseen t_files t_ok t_er t_run t_prob \
     <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"

@@ -138,7 +138,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
             printf "Y\t%s\t%d\t%d\t%d\t%d\t%d\n", d, ys[d]+0, yp[d]+0, yf[d]+0, yo[d]+0, yt[d]+0 }
         printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", conns+0, np, na, ns, allowed+0, nw, ndays
     }
-' <(known_names KA "$TACCT") "$PARSED")
+' <(known_names KA "$TACCT") "$(srv_subset inbound-connections)")
 
 IFS=$'\t' read -r _ t_conn n_proto n_acct n_addr t_allow n_pol n_days <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ $(( ${t_conn:-0} + ${t_allow:-0} )) -eq 0 ]; then

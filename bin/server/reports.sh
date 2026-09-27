@@ -45,6 +45,12 @@ pool_wait() {  # reap every pooled job; abort the run if any report failed
     return 0
 }
 
+# THE SERVER-CACHE SUBSETS (2026-09-27, build-speed round 2): one parallel
+# pass copies each consumer's message families out of the 3 GB cache
+# (bin/server/subsets.sh); a dozen reports below read their subset
+# (srv_subset) instead of the whole cache. Before the pool: they need it.
+timed "$SCRIPT_DIR/subsets.sh"
+
 # LONGEST FIRST (2026-09-27): the four slowest reports of the pool start
 # first (logon 22 s, ssh-crypto 19 s, uc2-status 18 s, uc4-status 16 s on
 # production; they sat 17th-25th). Each reads only the transfer reports and

@@ -105,7 +105,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
         }
         printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\n", tk+0, tl+0, to+0, nk, nl, no
     }
-' <(known_names KA "$TACCT"; known_names KH "$THOST") "$PARSED")
+' <(known_names KA "$TACCT"; known_names KH "$THOST") "$(srv_subset ssh-key-auth)")
 
 IFS=$'\t' read -r _ t_key t_lock t_out n_ku n_lu n_oh <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ $(( t_key + t_lock + t_out )) -eq 0 ]; then

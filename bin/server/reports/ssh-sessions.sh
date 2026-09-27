@@ -71,7 +71,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
         }
         printf "TOT\t%d\t%d\n", tot+0, nc
     }
-' "$PARSED")
+' "$(srv_subset ssh-sessions)")
 
 IFS=$'\t' read -r _ t_tot n_cats <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ "${t_tot:-0}" -eq 0 ]; then

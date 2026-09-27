@@ -132,7 +132,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
         for (x in al9) { split(x, a9, SUBSEP); printf "AL\t%s\t%s\t%d\n", a9[1], a9[2], al9[x] }   # hash order — the shell sorts the sidecar
         printf "TOT\t%d\t%d\t%d\n", tot+0, naccts+0, nips+0
     }
-' <(known_names KA "$TACCT") "$PARSED")
+' <(known_names KA "$TACCT") "$(srv_subset auth-activity)")
 
 # the per-(account, login) sidecar (see the AL comment above): account <TAB>
 # login <TAB> successful logons. Sorted (never awk hash order), atomic.

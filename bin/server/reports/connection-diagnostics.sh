@@ -179,7 +179,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
         printf "ET\t%d\t%d\t%s\t%d\t%s\t%d\n", terr+0, nrs+0, bad, (badn < 0 ? 0 : badn), bed, (bedn < 0 ? 0 : bedn)
         printf "TOT\t%d\t%d\t%d\t%d\n", tfail+0, nr+0, nh+0, ttest+0
     }
-' <(known_names KH "$THOST"; base_names "$HBASE") "$PARSED")
+' <(known_names KH "$THOST"; base_names "$HBASE") "$(srv_subset connection-diagnostics)")
 
 IFS=$'\t' read -r _ t_fail n_reason n_host t_test <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ "${t_fail:-0}" -eq 0 ]; then

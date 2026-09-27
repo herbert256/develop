@@ -656,7 +656,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         close(PKF)
         printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", nnever, nnofiles, ncoll, nok, nnothing, tef, tefn, tpk
     }
-' "$XREF" "$TFILES" "$TTRANS" "$PARSED")
+' "$XREF" "$TFILES" "$TTRANS" "$(srv_subset uc2)")
 
 IFS=$'\t' read -r _ n_never n_nofiles n_coll n_ok n_nothing t_ef t_efn t_pk <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ "$(( n_never + n_nofiles + n_coll + n_ok + n_nothing ))" -eq 0 ]; then

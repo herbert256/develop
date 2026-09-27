@@ -242,7 +242,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
         for (k in lr)  { split(k, K2, SUBSEP); printf "PF\tL\t%s\t%d\t%s\n", K2[1], lr[k], K2[2] }
         printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", tpoll+0, te+0, tne+0, tmatch+0, nsubs+0, tlist+0, nlist+0
     }
-' <(known_names KS "$TSITE") "$PARSED")
+' <(known_names KS "$TSITE") "$(srv_subset remote-poll)")
 
 IFS=$'\t' read -r _ t_polls t_empty t_nonempty t_matched n_subs t_list n_listsubs <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 # the failure sidecar is written even for a zero-poll env — failing schedules

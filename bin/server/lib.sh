@@ -160,6 +160,23 @@ ensure_config() {
 # so refreshed transfer data regenerates them too). Regenerates otherwise.
 # A DEP that is a DIRECTORY counts as one dep covering the whole tree below it.
 # Call it right after ensure_parsed so an unchanged report does no awk work.
+# srv_subset NAME — the path a server-cache CONSUMER reads: its subset of the
+# cache (bin/server/subsets.sh — only the lines carrying one of its marker
+# strings, in cache order) when the subsets were built from THIS cache by
+# THIS spec, else the whole cache. The signature is the cache's size, mtime
+# and inode plus the spec script's checksum (not -nt: whole seconds).
+srv_subset_sig() {
+    printf '%s %s\n' "$(stat -f '%z:%m:%i' "$PARSED" 2>/dev/null || stat -c '%s:%Y:%i' "$PARSED" 2>/dev/null)" \
+        "$(cksum < "$LIB_DIR/subsets.sh" | tr ' ' :)"
+}
+srv_subset() {
+    local d="$CACHE_DIR/subsets"
+    if [ -f "$d/$1.tsv" ] && [ -f "$d/.done" ] && [ "$(cat "$d/.done")" = "$(srv_subset_sig)" ]; then
+        printf '%s' "$d/$1.tsv"
+    else
+        printf '%s' "$PARSED"
+    fi
+}
 skip_if_fresh() {
     local out=$1 script=$2; shift 2
     [ -f "$out" ] || return 0                                  # missing -> build
