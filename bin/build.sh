@@ -682,9 +682,14 @@ printf '\n=== building %s (report -> %s) ===\n' "${ENV_LABEL:-<unlabelled checko
 run_step "config: extract the configured entity lists"                    bin/flow-manager.sh
 
 # ---- 1. parse ---------------------------------------------------------------
-bg_step_start "parse: server log cache (+ logon summary)"                   bin/build/parse-server.sh
+bg_step_start "parse: server log cache"                                   bin/server/parse.sh
 run_step "parse: transfer log cache"                                      env AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1 bin/transfer/parse.sh
 bg_step_wait
+# THE LOGON SUMMARY (2026-09-27): built ONCE, in the background beside the
+# server-log -> transfer steps below (it reads only the finished server parse
+# cache) and waited for before the report stage — its two consumers, details.sh
+# and logon.sh, used to compute it side by side (bin/build/logon-summary.sh)
+bg_step_start "server log: logon summary (per login + per address)"         bin/build/logon-summary.sh
 # the three server-log -> transfer joins, in this order: the session step
 # may re-derive _files.tsv (resetting col 22), so expire re-marks after it
 run_step "server log -> transfer: attribute UCx flows by session"         bin/session-sites.sh
@@ -709,6 +714,7 @@ fi
 # FIRST run, which lets the expensive details catch-up self-gate to a
 # skip. The server-reports step re-invokes it later and skips (fresh).
 run_step "report: went-kaput (early — the failed/details evidence)"       bin/server/reports/went-kaput.sh
+bg_step_wait   # the logon summary: details.sh + logon.sh read it
 
 # ---- 2. report --------------------------------------------------------------
 # details.sh is the longest report step and only the transfer PHASE 2

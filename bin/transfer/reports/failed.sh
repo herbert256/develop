@@ -624,6 +624,22 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
                               if (x == "E") return "Error"; return x }
         function compname(x) { if (x == "T") return "TM"; if (x == "P") return "PESITD"
                                if (x == "S") return "SSHD"; return x }
+        # THE HOUR INDEX of the name fallback (2026-09-27): page i goes into
+        # HB["yyyy-mm-dd HH"] for every hour its window "yyyy-mm-dd HH:MM"
+        # w0..w1 touches; a window over two weeks joins HWIDE, tested for
+        # every line. Keys and windows compare as text, as before.
+        function jdnf(d,   y, mo, dd, a) { y = substr(d, 1, 4) + 0; mo = substr(d, 6, 2) + 0; dd = substr(d, 9, 2) + 0
+            a = int((14 - mo) / 12); y = y + 4800 - a; mo = mo + 12 * a - 3
+            return dd + int((153 * mo + 2) / 5) + 365 * y + int(y / 4) - int(y / 100) + int(y / 400) - 32045 }
+        function fromjdnf(j,   a, b, c2, d2, e2, m2) { a = j + 32044; b = int((4 * a + 3) / 146097); c2 = a - int(146097 * b / 4)
+            d2 = int((4 * c2 + 3) / 1461); e2 = c2 - int(1461 * d2 / 4); m2 = int((5 * e2 + 2) / 153)
+            return sprintf("%04d-%02d-%02d", 100 * b + d2 - 4800 + int(m2 / 10), m2 + 3 - 12 * int(m2 / 10), e2 - int((153 * m2 + 2) / 5) + 1) }
+        function hbucket(i, a, b,   h0, h1, h) {
+            if (a !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]/ || b !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]/) { HWIDE = HWIDE " " i; return }
+            h0 = jdnf(a) * 24 + substr(a, 12, 2); h1 = jdnf(b) * 24 + substr(b, 12, 2)
+            if (h1 - h0 > 336) { HWIDE = HWIDE " " i; return }
+            for (h = h0; h <= h1; h++) HB[fromjdnf(int(h / 24)) " " sprintf("%02d", h % 24)] = HB[fromjdnf(int(h / 24)) " " sprintf("%02d", h % 24)] " " i
+        }
         # one output line per (page, server line): the page CoreId, the section
         # kind (I = this file/connection, N = the window fallback), the cache
         # columns and why it matched. The message is kept whole up to 4000
@@ -660,6 +676,7 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
             pfx[$1] = substr($2, 1, 28)
             if (gmin == "" || w0[$1] < gmin) gmin = w0[$1]
             if (w1[$1] > gmax) gmax = w1[$1]
+            hbucket(nc, w0[$1], w1[$1])
             next
         }
         {                                             # the server parse cache
@@ -690,8 +707,14 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
                         if (!ssd[w9[i9], $6]++) print w9[i9] "\t" $6 > SSOUT } }
             k = $1 " " substr($2, 1, 5)
             if (k < gmin || k > gmax) next            # outside every window
-            for (i = 1; i <= nc; i++) {
-                c = C[i]
+            # only the pages whose window covers this HOUR (+ the few wide
+            # ones) — the same exact tests as the former walk over EVERY page
+            # per E line (E lines x pages: the pass'"'"'s cost on production);
+            # the sort below orders the output, so the walk order does not
+            # matter
+            nb = split(HB[substr(k, 1, 13)] HWIDE, bl, " ")
+            for (i = 1; i <= nb; i++) {
+                c = C[bl[i]]
                 if (c in idc) continue                # already kept by id
                 if (k >= w0[c] && k <= w1[c] && index(m, pfx[c]) > 0) emit(c, "N", "window")
             }

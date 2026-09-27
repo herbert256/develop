@@ -314,17 +314,19 @@ fi
 # parse cache). Each writes a $_pdir file; a missing tool/export/cache leaves
 # it empty, exactly like the empty-var fallback these replaced.
 _tlap "setup (freshness, cleanup, side inputs)"
+# each producer times itself (2026-09-27): the phase is as long as the slowest
+_ptimed() { local _n=$1 _t0 _st=0; shift; _t0=$(date +%s); "$@" || _st=$?; printf 'TIME %5ds  details: producer %s\n' "$(( $(date +%s) - _t0 ))" "$_n" >&2; return $_st; }
 S_JSON="$FM_INPUT_DIR/subscriptions.json"
 _ppids=()   # every producer's PID — the per-PID wait below collects their rcs
-aggregate_files  > "$_pdir/agg0" & _ppids+=($!)
-compute_extras   > "$_pdir/xtra" & _ppids+=($!)
-direction_rows   > "$_pdir/dirs" & _ppids+=($!)
+_ptimed aggregate_files aggregate_files > "$_pdir/agg0" & _ppids+=($!)
+_ptimed compute_extras compute_extras   > "$_pdir/xtra" & _ppids+=($!)
+_ptimed direction_rows direction_rows   > "$_pdir/dirs" & _ppids+=($!)
 # the `|| true` is LOAD-BEARING: whitelist_rows used to run inside $(...),
 # where bash does NOT inherit errexit, and its internal `[ ... ] && ...`
 # tails return 1 on the quiet path — as a plain background job set -e would
 # kill it before the first output line. The || list disables errexit inside
 # the function body, restoring the old command-substitution semantics.
-whitelist_rows   > "$_pdir/wl" || true & _ppids+=($!)
+{ _ptimed whitelist_rows whitelist_rows || true; } > "$_pdir/wl" & _ppids+=($!)
 # the polling schedule per subscription (jq + the shared cron translator):
 # name -> disp-cron (\x1f-joined lines) -> human. Graceful if jq/export absent.
 {

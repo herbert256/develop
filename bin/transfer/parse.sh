@@ -351,6 +351,9 @@ else
     src_files=("${files[@]}")
     echo "Parsing ${#src_files[@]} file(s) into $PARSED0 ..." >&2
 fi
+# the tokenizer over the argument files -> stdout (a function since
+# 2026-09-27: the parse runs it on several file groups in parallel)
+tok_files() {
 awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CFGC="$CFG_CONF" "$BLACKLIST_AWK$RENAMES_AWK"'
     BEGIN { bl_load(BLF); rn_load(RNF, RNP)
             # the configured subscription names, case-folded -> the configured
@@ -523,7 +526,43 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         if (dups > 0)
             printf "NOTE: dropped %d exact-duplicate record line(s) (kept the first occurrence of each).\n", dups > "/dev/stderr"
     }
-' "${src_files[@]}" > "$tmp.raw"
+' "$@"
+}
+# PARALLEL TOKENIZE (2026-09-27): the file list splits into size-balanced
+# groups (the largest file first, each onto the lightest group), one
+# tokenizer per group — it ran on ONE core over every export (~90 s on
+# production). Half the cores: the server parse runs beside this one. The
+# group outputs are concatenated in any order (the sort below orders them);
+# a raw line repeated ACROSS groups — the tokenizer drops a repeat only within
+# its own group now — leaves two identical tokenized rows, which the sort
+# makes adjacent and the full-mode pass below drops (TOK_PAR=1): the trade
+# the incremental merge already makes, one row per identical tokenized row.
+TOKJ=$(( $( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 ) / 2 ))
+[ "$TOKJ" -ge 1 ] 2>/dev/null || TOKJ=1
+[ ${#src_files[@]} -lt "$TOKJ" ] && TOKJ=${#src_files[@]}
+TOK_PAR=0
+if [ "$TOKJ" -le 1 ]; then
+    tok_files "${src_files[@]}" > "$tmp.raw"
+else
+    TOK_PAR=1
+    # LPT: "group<TAB>file" per file, the largest first onto the lightest group
+    for f in "${src_files[@]}"; do printf '%s\t%s\n' "$(wc -c < "$f" | tr -d ' ')" "$f"; done \
+      | LC_ALL=C sort -t"$(printf '\t')" -k1,1nr \
+      | awk -F'\t' -v J="$TOKJ" '{ g = 1; for (i = 2; i <= J; i++) if (L[i] < L[g]) g = i; L[g] += $1; print g "\t" $2 }' > "$tmp.groups"
+    tok_pids=()
+    for ((g = 1; g <= TOKJ; g++)); do
+        grp=()
+        while IFS=$'\t' read -r gi gf; do [ "$gi" = "$g" ] && grp+=("$gf"); done < "$tmp.groups"
+        if [ ${#grp[@]} -eq 0 ]; then : > "$tmp.raw.$g"; continue; fi
+        tok_files "${grp[@]}" > "$tmp.raw.$g" &
+        tok_pids+=("$!")
+    done
+    tok_rc=0
+    for p in "${tok_pids[@]}"; do wait "$p" || tok_rc=$?; done
+    if [ "$tok_rc" != 0 ]; then echo "parse.sh: a tokenizer group failed (exit $tok_rc)." >&2; exit "$tok_rc"; fi
+    cat "$tmp.raw".[0-9]* > "$tmp.raw"
+    rm -f "$tmp.raw".[0-9]* "$tmp.groups"
+fi
 
 # ---------------------------------------------------------------------------
 # Address -> endpoint map — FULLY AUTOMATIC. Nothing here is hand-written: every
@@ -743,6 +782,14 @@ if [ "$mode" = incremental ]; then
     for f in "${src_files[@]}"; do manifest_entry "$f"; done >> "$MANIFEST"
 else
     LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp.mapped" > "$tmp.sorted"
+    # a PARALLEL tokenize (TOK_PAR, above) leaves a raw line repeated across
+    # groups as two identical rows — adjacent after the sort (its last-resort
+    # key is the whole line); keep the first, like the tokenizer did
+    if [ "$TOK_PAR" = 1 ]; then
+        xdups=$(awk -v out="$tmp.sorted2" 'BEGIN { printf "" > out } NR > 1 && $0 == prev { d++; next } { prev = $0; print > out } END { print d + 0 }' "$tmp.sorted")
+        [ "$xdups" -gt 0 ] && echo "NOTE: dropped $xdups exact-duplicate record(s) repeated across tokenizer groups (kept the first)." >&2
+        mv "$tmp.sorted2" "$tmp.sorted"
+    fi
     mv "$tmp.sorted" "$PARSED0"
     for f in "${files[@]}"; do manifest_entry "$f"; done > "$MANIFEST"
 fi
