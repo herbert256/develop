@@ -22,7 +22,7 @@
 <ul>
 <li><strong>Subscription</strong> &mdash; the complete configured name; links the detail page.</li>
 <li><strong>Active</strong> &mdash; <strong>Yes</strong>, or why not (hover for the words): <strong>1</strong> status Undeployed, <strong>2</strong> status SAVED_NOT_DEPLOYED, <strong>3</strong> a receive schedule set to No, <strong>4</strong> folder monitoring Inactive. Several apply = several numbers. A name containing <strong>SWIFT</strong> shows <strong>CFT</strong>.</li>
-<li><strong>Color</strong> &mdash; the result as a word: green, red, orange, blue; white = no result (a skipped subscription).</li>
+<li><strong>Color</strong> &mdash; the result as a word: green, red, orange; white = no result (a skipped subscription).</li>
 <li><strong>Direction</strong> &mdash; connection / file movement, as in the detail page title: <code>out/in</code> = ST connects out and the file comes in; <code>both</code> = a relay; <code>?</code> = unknown; blank for a skipped subscription.</li>
 <li><strong>Endpoint</strong> &mdash; inbound: the login the partner connects with; outbound: the remote host we dial.</li>
 <li><strong>From</strong> / <strong>To</strong> &mdash; the source and target folders exactly as the detail page&rsquo;s Features rows: the pickup side carries its file mask in green; <code>-</code> = nothing configured.</li>
@@ -38,7 +38,7 @@
 <h2>Rules</h2>
 <ul>
 <li>Roster = the pristine configured snapshot: exactly what FlowManager defines, plus the subscriptions <code>skip.txt</code> skips (counts <strong>n/a</strong>, no groups). Groups, endpoint, folders and cron come from the configuration; the counts from the log, the <a href="entities-subscription.html">Entities</a> definitions, all dates. A subscription never seen in the log shows blank counts; a 0 shows blank.</li>
-<li>Row tint: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> a last transfer in Error, <strong>light blue</strong> surfaced only by the server log; none for a skipped subscription.</li>
+<li>Row tint: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> a last transfer in Error; none for a skipped subscription.</li>
 <li>Every load starts at the generated order; click a header to sort.</li>
 </ul>
 </main>

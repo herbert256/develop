@@ -124,9 +124,6 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .stat-green  { background:#e4f6e4; border-color:#bcdcbc; }
 .stat-red    { background:#fde3e3; border-color:#e8c0c0; }
 .stat-orange { background:#fff3d6; border-color:#e8d9b0; }
-/* the site-wide BLUE (seen in the server log only) as an info box — UC3 status
-   uses it for the two statuses a blue subscription can be in */
-.stat-blue   { background:#d3e6fb; border-color:#b3cde8; }
 /* clickable stat FILTER boxes (Subscriptions in boxes: each box narrows
    the table to that report's rows, the left box shows all — report.js
    setupStatFilter). The active box carries the top-bar blue as a border. */
@@ -188,8 +185,8 @@ h2[id] { scroll-margin-top:3.6rem; }
 .alert.warn { color:#7a4a00; background:#fdf0dc; border-color:#e8c99a; border-left-color:#d98c1f; }
 .alert.warn strong { color:#7a4a00; }
 /* LOGCARD directive (render_rpt.awk): one raw log line in a card of its own —
-   the evidencing server-log message under a blue (server-log-only) detail
-   page's INTRO. Timestamp above, the message verbatim in monospace below;
+   the evidencing server-log line under a detail page's red banner.
+   Timestamp above, the message verbatim in monospace below;
    a long message wraps rather than widening the page. */
 .logcard { display:inline-block; max-width:100%; margin:-0.6rem 0 1.3rem; padding:0.55rem 0.9rem;
            background:#fff; border:1px solid #b8d0e8; border-left:4px solid #5b86ad; border-radius:4px; }
@@ -286,7 +283,6 @@ td.metsub { padding-left:1.9rem; }
    (render_rpt full-width cell). Muted + monospace so it reads as the source
    line; a heavier top border marks where each 2-row entry begins, and the
    message wraps instead of stretching the table. */
-td.bluemsg { background:#eef2f6; color:#556; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:.85em; white-space:normal; border-top:2px solid #b8c2cc; }
 /* a cell whose whole value is ONE link (class cl: baked by the renderer for
    link=/href=/entity cells, added in the browser by report.js wholeCellLinks
    for every other single-link cell — 2026-09-14, user rule): the ENTIRE cell
@@ -385,13 +381,8 @@ td.stack { padding:0; vertical-align:top; }
 td.stack .cfg { padding:4px 12px; text-align:center; min-height:1.05em; }   /* spans the Seen/Not-seen pair, centered */
 td.stack .split { display:flex; }
 td.stack .split > div { flex:1 1 50%; padding:4px 12px; text-align:right; min-height:1.05em; }
-/* the entities.html 3-way split cells: Server (blue) | Transfer (green) | Not
-   seen (red)  and  OK (green) | Server (blue) | Error (red) — three columns */
-td.stack .split3 { display:flex; }
-td.stack .split3 > div { flex:1 1 33.33%; padding:4px 9px; text-align:right; min-height:1.05em; }
 td.stack .sn { background-color:#e4f6e4; }
 td.stack .ns { background-color:#fde3e3; }
-td.stack .srv { background-color:#d3e6fb; }   /* seen via the server (fake-files) — blue */
 td.processed { background-color:#e4f6e4; }
 td.failed.z, td.processed.z { background-color:transparent; }   /* a 0 value: no red/green tint (cell is blanked) */
 /* Show Seen "All" tables: tint NOT-SEEN rows light red so they stand out; SEEN rows
@@ -412,7 +403,6 @@ table[data-seenrows] tr[data-seen="0"] td { background-color:#fde3e3; }
 table[data-seenrows] tr[data-seen="0"][data-res="green"] td  { background-color:#e4f6e4; }
 table[data-seenrows] tr[data-seen="0"][data-res="orange"] td { background-color:#fdf1dc; }
 table[data-seenrows] tr[data-seen="0"][data-res="red"] td    { background-color:#fde3e3; }
-table[data-seenrows] tr[data-seen="0"][data-res="blue"] td   { background-color:#d3e6fb; }
 /* …and the ROWS themselves (2026-09-12, user request: an EMPTY cell takes
    the colour of its row — every blank cell is transparent and shows the tr
    behind it, see the tr[data-res] row rules further down). The seen /
@@ -424,11 +414,9 @@ table[data-seenrows] tr[data-seen="0"] { background-color:#fde3e3; }
 table[data-seenrows] tr[data-seen="0"][data-res="green"]  { background-color:#e4f6e4; }
 table[data-seenrows] tr[data-seen="0"][data-res="orange"] { background-color:#fdf1dc; }
 table[data-seenrows] tr[data-seen="0"][data-res="red"]    { background-color:#fde3e3; }
-table[data-seenrows] tr[data-seen="0"][data-res="blue"]   { background-color:#d3e6fb; }
 table[data-restint] tr[data-res="green"]  { background-color:#e4f6e4; }
 table[data-restint] tr[data-res="orange"] { background-color:#fdf1dc; }
 table[data-restint] tr[data-res="red"]    { background-color:#fde3e3; }
-table[data-restint] tr[data-res="blue"]   { background-color:#d3e6fb; }
 /* A 0-blanked Error/OK cell (td.failed.z / td.processed.z, normally
    transparent) must not punch a white hole into a green SEEN row — it takes
    the row's light green (an empty Error cell = zero errors = good). */
@@ -441,15 +429,12 @@ table[data-seenrows] tr[data-seen="1"] td.processed.z { background-color:#e4f6e4
 table[data-restint] tr[data-res="green"] td:not(.failed):not(.processed)  { background-color:#e4f6e4; }
 table[data-restint] tr[data-res="orange"] td:not(.failed):not(.processed) { background-color:#fdf1dc; }
 table[data-restint] tr[data-res="red"] td:not(.failed):not(.processed)    { background-color:#fde3e3; }
-table[data-restint] tr[data-res="blue"] td:not(.failed):not(.processed)   { background-color:#d3e6fb; }
 table[data-restint] tr[data-res="green"] td.failed.z,
 table[data-restint] tr[data-res="green"] td.processed.z  { background-color:#e4f6e4; }
 table[data-restint] tr[data-res="orange"] td.failed.z,
 table[data-restint] tr[data-res="orange"] td.processed.z { background-color:#fdf1dc; }
 table[data-restint] tr[data-res="red"] td.failed.z,
 table[data-restint] tr[data-res="red"] td.processed.z    { background-color:#fde3e3; }
-table[data-restint] tr[data-res="blue"] td.failed.z,
-table[data-restint] tr[data-res="blue"] td.processed.z   { background-color:#d3e6fb; }
 /* A NON-EMPTY Warning-count cell (td.warn — Logons / Incoming's Key failures
    and Locked) keeps its amber inside a tinted row, exactly as the Error/OK
    cells keep theirs; an empty one follows the row (2026-09-02). Same
@@ -624,20 +609,6 @@ th.gband { text-align:center; }
 td.errc { background-color:#fde3e3; }
 td.okc { background-color:#e4f6e4; }
 td.errc.z, td.okc.z { background-color:transparent; }
-/* Home-page status tables: the "including server log" switch (bin/publish.sh
-   _status_table; report.js setupSrvToggle). Default OFF: the Transfer/Server
-   columns (.colsrv) and the server-inclusive .von figures hide; the switch
-   adds .srvon on the .sxscol to show them and hide the .voff variants. */
-.h2row { display:flex; align-items:center; justify-content:space-between; gap:1em; }
-button.srvtoggle { padding:3px 11px; border:1px solid #ddd; border-radius:4px; background:#fff; color:#20344a; font:inherit; font-size:0.78rem; cursor:pointer; white-space:nowrap; }
-button.srvtoggle:hover { background:#e8f0fe; }
-button.srvtoggle[aria-pressed="true"] { background:#20344a; color:#fff; border-color:#20344a; }
-.sxscol .colsrv { display:none; }
-.sxscol.srvon .colsrv { display:table-cell; }
-.sxscol.srvon .colns { display:none; }   /* the OFF view's Not seen column (Total − transfer-Seen) */
-.sxscol .von { display:none; }
-.sxscol.srvon .von { display:inline; }
-.sxscol.srvon .voff { display:none; }
 .tablewrap + .tabs.seenfilter { margin-top:1rem; }   /* the bar sits below the Activity per day table */
 .tabs.herotabs { margin:0 0 0.7rem; }       /* day pages: the hero chart's Start/End time switch (report.js setupHeroToggle) */
 .tabs.herotabs .tab, .tabs.herotabs2 .tab, .tabs.scalebtns .tab, .tabs.switchbtns .tab { cursor:pointer; }   /* client-side button rows (spans, not links): the hero views, Linear/Log, the switch= table groups */
@@ -876,10 +847,6 @@ h1 .fmlink { font-size:0.5em; vertical-align:middle; }
 tr[data-res="green"] td  { background-color:#e4f6e4; }
 tr[data-res="orange"] td { background-color:#fdf1dc; }
 tr[data-res="red"] td    { background-color:#fde3e3; }
-/* BLUE = an entity made visible ONLY by the fake-files.sh Server->Transfer step
-   (data/fakes/<entity>.tsv); it overrides the green/orange/red result tint so a
-   fabricated sighting is never read as a real failure. */
-tr[data-res="blue"] td   { background-color:#d3e6fb; }
 /* …and the ROW ITSELF carries the same tint (2026-09-12, user request: an
    EMPTY cell takes the colour of its row). Every blank cell is
    background-color:transparent — td.warn:empty (the Retry / Resubmit /
@@ -891,7 +858,6 @@ tr[data-res="blue"] td   { background-color:#d3e6fb; }
 tr[data-res="green"]  { background-color:#e4f6e4; }
 tr[data-res="orange"] { background-color:#fdf1dc; }
 tr[data-res="red"]    { background-color:#fde3e3; }
-tr[data-res="blue"]   { background-color:#d3e6fb; }
 /* inside a result-tinted row the Error/OK cells keep their OWN tints where
    they carry a value; an EMPTY cell (zero-blanked .z or a config-only row's
    blank) takes the row tint instead of a stripe or a white hole */
@@ -900,7 +866,6 @@ tr[data-res] td.processed:not(:empty) { background-color:#e4f6e4; }
 tr[data-res="green"] td.failed.z,  tr[data-res="green"] td.processed.z  { background-color:#e4f6e4; }
 tr[data-res="orange"] td.failed.z, tr[data-res="orange"] td.processed.z { background-color:#fdf1dc; }
 tr[data-res="red"] td.failed.z,    tr[data-res="red"] td.processed.z    { background-color:#fde3e3; }
-tr[data-res="blue"] td.failed.z,   tr[data-res="blue"] td.processed.z   { background-color:#d3e6fb; }
 /* Cronjobs: an Observed cell CONTRADICTING its configured schedule (wrong slot,
    or a continuous schedule seen only ~daily). The tr[data-res] variant outranks
    the generic row tints above so the alarm survives the row colour. */
@@ -978,22 +943,19 @@ td.dur-h { background-color:#fde3e3; }
 td.res-green  { background-color:#e4f6e4; }
 td.res-orange { background-color:#fdf1dc; }
 td.res-red    { background-color:#fde3e3; }
-td.res-blue   { background-color:#d3e6fb; }   /* fake-introduced entity (data/fakes) */
 /* inside a seenrows table the row tint has higher specificity — these
    overrides keep the entity cell's own result color winning */
 table[data-seenrows] tr[data-seen] td.res-green:not(.failed):not(.processed)  { background-color:#e4f6e4; }
 table[data-seenrows] tr[data-seen] td.res-orange:not(.failed):not(.processed) { background-color:#fdf1dc; }
 table[data-seenrows] tr[data-seen] td.res-red:not(.failed):not(.processed)    { background-color:#fde3e3; }
-table[data-seenrows] tr[data-seen] td.res-blue:not(.failed):not(.processed)   { background-color:#d3e6fb; }
 /* A NOT-SEEN (data-seen=0) row's plain numeric cells (Files / Volume) fall to
    line 155's flat not-seen red — yet its entity cell (above) and its empty
    Error/OK cells (the data-res .z rules) already follow the row's RESULT. So on
-   the configured-never-seen (orange) and server-log-only (blue) rows Files and
-   Volume stuck out red against an otherwise orange/blue row. Tint the WHOLE
+   the configured-never-seen (orange) rows Files and
+   Volume stuck out red against an otherwise orange row. Tint the WHOLE
    not-seen row by its result so it reads as one colour. (A red result already
    matches line 155's red; green is left to the date-filter re-tint.) */
 table[data-seenrows] tr[data-seen="0"][data-res="orange"] td { background-color:#fdf1dc; }
-table[data-seenrows] tr[data-seen="0"][data-res="blue"]   td { background-color:#d3e6fb; }
 
 /* Detail-page body tint by the entity's RESULT (the base caches' third
    field, bin/result.sh): light green / light orange / light red. Entities
@@ -1003,7 +965,6 @@ table[data-seenrows] tr[data-seen="0"][data-res="blue"]   td { background-color:
 body.res-green  { background-color:#eef9ee; }
 body.res-orange { background-color:#fdf7ea; }
 body.res-red    { background-color:#fdeeee; }
-body.res-blue   { background-color:#e9f2fd; }   /* entity seen only via fake-files.sh */
 
 /* Client-side pagination (data-pager, the detail pages' Activity per day
    table): pager-hidden rows use a CLASS, not inline display, so report.js's
@@ -1056,7 +1017,7 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 .chartbtns .chart-data[open] { align-self:flex-start; }
 .stylebtns .tab, .ivbtns .tab { cursor:pointer; }
 /* .pfbreak: line break between the inline-block boxes — the status boxes
-   (Total…Server log only) sit on the first line(s), the problem boxes start
+   (Total…Error) sit on the first line(s), the problem boxes start
    on a fresh one */
 .pfboxes .pfbreak { display:block; width:100%; height:0; }
 
@@ -1077,7 +1038,6 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] .stat-green { background:#1f3d26;border-color:#2f5a36; }
 :root[data-theme="dark"] .stat-red { background:#4a2020;border-color:#6b2f2f; }
 :root[data-theme="dark"] .stat-orange { background:#4a3a17;border-color:#6b5320; }
-:root[data-theme="dark"] .stat-blue { background:#1f3550;border-color:#2f5077; }
 :root[data-theme="dark"] .stat[data-pf]:hover { border-color:#6f95bd; }
 :root[data-theme="dark"] .stat.pfon { border:2px solid #6f95bd; }
 :root[data-theme="dark"] .pfdesc.pfshow { border-left:3px solid #3a4451; }
@@ -1106,7 +1066,6 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] table.dayrows tr.gbrow > th { background:#15191f;color:#a9c4e4;border-color:#15191f; }
 :root[data-theme="dark"] th, :root[data-theme="dark"] td { border:1px solid #3a4451; }
 :root[data-theme="dark"] td.metgrp { background:#262e38;color:#a9c4e4; }
-:root[data-theme="dark"] td.bluemsg { background:#262e38;color:#a8b2bc;border-top:2px solid #3a4451; }
 :root[data-theme="dark"] th { background-color:#20344a; }
 :root[data-theme="dark"] .colpick { background:#1e242c;color:#d6dbe1;border:1px solid #3a4451; }
 :root[data-theme="dark"] .colpick .cpgrp { color:#7f8a96; }
@@ -1137,7 +1096,6 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] td.st-ok { background-color:#1f3d26; }
 :root[data-theme="dark"] td.stack .sn { background-color:#1f3d26; }
 :root[data-theme="dark"] td.stack .ns { background-color:#4a2020; }
-:root[data-theme="dark"] td.stack .srv { background-color:#1f3550; }
 :root[data-theme="dark"] td.processed { background-color:#1f3d26; }
 :root[data-theme="dark"] table[data-seenmode="all"] tr[data-seen="0"] td { background-color:#4a2020; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen="1"] td:not(.failed):not(.processed) { background-color:#1f3d26; }
@@ -1145,27 +1103,22 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen="0"][data-res="green"] td { background-color:#1f3d26; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen="0"][data-res="orange"] td { background-color:#4a3a17; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen="0"][data-res="red"] td { background-color:#4a2020; }
-:root[data-theme="dark"] table[data-seenrows] tr[data-seen="0"][data-res="blue"] td { background-color:#1f3550; }
 :root[data-theme="dark"] table[data-seenmode="all"] tr[data-seen="0"] { background-color:#4a2020; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen="1"] { background-color:#1f3d26; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen="0"] { background-color:#4a2020; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen="0"][data-res="green"] { background-color:#1f3d26; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen="0"][data-res="orange"] { background-color:#4a3a17; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen="0"][data-res="red"] { background-color:#4a2020; }
-:root[data-theme="dark"] table[data-seenrows] tr[data-seen="0"][data-res="blue"] { background-color:#1f3550; }
 :root[data-theme="dark"] table[data-restint] tr[data-res="green"] { background-color:#1f3d26; }
 :root[data-theme="dark"] table[data-restint] tr[data-res="orange"] { background-color:#4a3a17; }
 :root[data-theme="dark"] table[data-restint] tr[data-res="red"] { background-color:#4a2020; }
-:root[data-theme="dark"] table[data-restint] tr[data-res="blue"] { background-color:#1f3550; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen="1"] td.failed.z, :root[data-theme="dark"] table[data-seenrows] tr[data-seen="1"] td.processed.z { background-color:#1f3d26; }
 :root[data-theme="dark"] table[data-restint] tr[data-res="green"] td:not(.failed):not(.processed) { background-color:#1f3d26; }
 :root[data-theme="dark"] table[data-restint] tr[data-res="orange"] td:not(.failed):not(.processed) { background-color:#4a3a17; }
 :root[data-theme="dark"] table[data-restint] tr[data-res="red"] td:not(.failed):not(.processed) { background-color:#4a2020; }
-:root[data-theme="dark"] table[data-restint] tr[data-res="blue"] td:not(.failed):not(.processed) { background-color:#1f3550; }
 :root[data-theme="dark"] table[data-restint] tr[data-res="green"] td.failed.z, :root[data-theme="dark"] table[data-restint] tr[data-res="green"] td.processed.z { background-color:#1f3d26; }
 :root[data-theme="dark"] table[data-restint] tr[data-res="orange"] td.failed.z, :root[data-theme="dark"] table[data-restint] tr[data-res="orange"] td.processed.z { background-color:#4a3a17; }
 :root[data-theme="dark"] table[data-restint] tr[data-res="red"] td.failed.z, :root[data-theme="dark"] table[data-restint] tr[data-res="red"] td.processed.z { background-color:#4a2020; }
-:root[data-theme="dark"] table[data-restint] tr[data-res="blue"] td.failed.z, :root[data-theme="dark"] table[data-restint] tr[data-res="blue"] td.processed.z { background-color:#1f3550; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen] td.warn:not(:empty), :root[data-theme="dark"] table[data-restint] tr[data-res] td.warn:not(:empty), :root[data-theme="dark"] tr[data-res] td.warn:not(:empty) { background-color:#4a3a17; }
 :root[data-theme="dark"] body.dir-seen-in { background-color:#2a2419; }
 :root[data-theme="dark"] body.dir-seen-out { background-color:#1a2530; }
@@ -1215,9 +1168,6 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] th.gsepw, :root[data-theme="dark"] td.gsepw { border-left:28px solid #15191f; }
 :root[data-theme="dark"] td.errc { background-color:#4a2020; }
 :root[data-theme="dark"] td.okc { background-color:#1f3d26; }
-:root[data-theme="dark"] button.srvtoggle { border:1px solid #3a4451;background:#1e242c;color:#a9c4e4; }
-:root[data-theme="dark"] button.srvtoggle:hover { background:#2a3a52; }
-:root[data-theme="dark"] button.srvtoggle[aria-pressed="true"] { background:#20344a;border-color:#6f95bd; }
 :root[data-theme="dark"] .tabs.herotabs .tab:hover:not(.active), :root[data-theme="dark"] .tabs.herotabs2 .tab:hover:not(.active), :root[data-theme="dark"] .tabs.scalebtns .tab:hover:not(.active) { background:#2a3a52; }
 :root[data-theme="dark"] .daybtn { border:1px solid #3a4451;background:#1e242c;color:#a9c4e4; }
 :root[data-theme="dark"] a.daybtn:hover { background:#2a3a52; }
@@ -1274,17 +1224,14 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] tr[data-res="green"] td { background-color:#1f3d26; }
 :root[data-theme="dark"] tr[data-res="orange"] td { background-color:#4a3a17; }
 :root[data-theme="dark"] tr[data-res="red"] td { background-color:#4a2020; }
-:root[data-theme="dark"] tr[data-res="blue"] td { background-color:#1f3550; }
 :root[data-theme="dark"] tr[data-res="green"] { background-color:#1f3d26; }
 :root[data-theme="dark"] tr[data-res="orange"] { background-color:#4a3a17; }
 :root[data-theme="dark"] tr[data-res="red"] { background-color:#4a2020; }
-:root[data-theme="dark"] tr[data-res="blue"] { background-color:#1f3550; }
 :root[data-theme="dark"] tr[data-res] td.failed:not(:empty) { background-color:#4a2020; }
 :root[data-theme="dark"] tr[data-res] td.processed:not(:empty) { background-color:#1f3d26; }
 :root[data-theme="dark"] tr[data-res="green"] td.failed.z, :root[data-theme="dark"] tr[data-res="green"] td.processed.z { background-color:#1f3d26; }
 :root[data-theme="dark"] tr[data-res="orange"] td.failed.z, :root[data-theme="dark"] tr[data-res="orange"] td.processed.z { background-color:#4a3a17; }
 :root[data-theme="dark"] tr[data-res="red"] td.failed.z, :root[data-theme="dark"] tr[data-res="red"] td.processed.z { background-color:#4a2020; }
-:root[data-theme="dark"] tr[data-res="blue"] td.failed.z, :root[data-theme="dark"] tr[data-res="blue"] td.processed.z { background-color:#1f3550; }
 :root[data-theme="dark"] ul.dayboxlist { border:1px solid #3a4451;border-left:4px solid #6f95bd;background:#1e242c; }
 :root[data-theme="dark"] ul.dayproblems { border-color:#4a3a3a;background:#2e2222; }
 :root[data-theme="dark"] ul.dayproblems .probdesc { color:#a8b2bc; }
@@ -1297,17 +1244,13 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] td.res-green { background-color:#1f3d26; }
 :root[data-theme="dark"] td.res-orange { background-color:#4a3a17; }
 :root[data-theme="dark"] td.res-red { background-color:#4a2020; }
-:root[data-theme="dark"] td.res-blue { background-color:#1f3550; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen] td.res-green:not(.failed):not(.processed) { background-color:#1f3d26; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen] td.res-orange:not(.failed):not(.processed) { background-color:#4a3a17; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen] td.res-red:not(.failed):not(.processed) { background-color:#4a2020; }
-:root[data-theme="dark"] table[data-seenrows] tr[data-seen] td.res-blue:not(.failed):not(.processed) { background-color:#1f3550; }
 :root[data-theme="dark"] table[data-seenrows] tr[data-seen="0"][data-res="orange"] td { background-color:#4a3a17; }
-:root[data-theme="dark"] table[data-seenrows] tr[data-seen="0"][data-res="blue"]   td { background-color:#1f3550; }
 :root[data-theme="dark"] body.res-green { background-color:#16211a; }
 :root[data-theme="dark"] body.res-orange { background-color:#241f14; }
 :root[data-theme="dark"] body.res-red { background-color:#241717; }
-:root[data-theme="dark"] body.res-blue { background-color:#141c26; }
 :root[data-theme="dark"] tr.pagerrow td { background-color:#2b3644; }
 :root[data-theme="dark"] .pagerbar .pagerinfo { color:#9aa5b1; }
 :root[data-theme="dark"] .rfkw { color:#7f8a96; }

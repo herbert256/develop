@@ -29,7 +29,7 @@
 <li>The pipeline unions both, so the BL entity always shows every number a flow has; this page is the difference.</li>
 <li>A subscription whose numbers all come from its tags is not listed; a file that adds nothing gives a one-line page.</li>
 <li>Names in <code>BL.txt</code> match the environment&rsquo;s configured subscriptions case-insensitively; a row naming an unconfigured subscription is skipped by the config step, which reports it on the build.</li>
-<li>Row tint = the subscription&rsquo;s result: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer Error, <strong>light blue</strong> surfaced only by the server log.</li>
+<li>Row tint = the subscription&rsquo;s result: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer Error.</li>
 <li>Source: the config step (<code>bin/flow-manager.sh</code>) keeps the two sources apart while building the union and writes the file-only rows to <code>xref/_subscriptions-bl-added.tsv</code>; the page renders that sidecar, so it cannot disagree with the pipeline.</li>
 </ul>
 </main>

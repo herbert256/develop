@@ -26,17 +26,17 @@
 <li><strong>Error % Files</strong> &mdash; share Failed or Expired; no Files = a gap.</li>
 <li><strong>Transfer errors</strong> &mdash; raw Status Failed / Failed Subtransmission records: legs, not Files (one File can log several); none = a real zero.</li>
 <li><strong>PeSIT</strong> &mdash; CFT-link problem lines: ST&rarr;CFT red (outbound TM client leg), CFT&rarr;ST purple (inbound PESITD server leg); lines, not failed transfers.</li>
-<li><strong>Subscriptions seen</strong>, <strong>Partners seen</strong> &mdash; cumulative at each slot, four counts:
+<li><strong>Subscriptions seen</strong>, <strong>Partners seen</strong>, <strong>Accounts seen</strong> &mdash; cumulative at each slot, three counts:
 <ul>
-<li><strong>blue</strong> = seen in transfer + server logs (the union, always highest); <strong>orange</strong> = seen in the transfer log (the gap to blue = server-only).</li>
+<li><strong>orange</strong> = seen in the transfer log.</li>
 <li><strong>green</strong> = latest File so far OK (delivered or waiting); <strong>red</strong> = latest File so far Failed/Expired.</li>
-<li>Blue and orange only rise; green and red move both ways and always sum to orange.</li>
-<li>Line draws all four; Bar/Solid stack red, green, blue without orange (the red/green boundary is the orange line, blue = the server-only remainder); the Data table lists all four.</li>
+<li>Orange only rises; green and red move both ways and always sum to orange.</li>
+<li>Line draws all three; Bar/Solid stack red and green (their top edge is the orange line); the Data table lists all three.</li>
 </ul></li>
 <li><strong>UC1&ndash;UC4 status</strong> &mdash; the use case&rsquo;s configured subscriptions stacked per slot: composition, not traffic.
 <ul>
 <li>The total is the configured count (no configuration history), so the top edge is flat. Green OK at the bottom, never-seen light orange on top, problem states between by severity &mdash; the report&rsquo;s own verdict at each slot end.</li>
-<li>UC1/UC3/UC4: <em>OK · No result · No files · Server error · OK + error · Error · Not seen</em> (UC1 never has No files); UC2: <em>OK · Both · No files · Never collected · Nothing</em>.</li>
+<li>UC1/UC3/UC4: <em>OK · OK + error · Error · Not seen</em>; UC2: <em>OK · Both · No files · Never collected · Nothing</em>.</li>
 <li>Titles link <a href="server-uc1-status.html">UC1</a>, <a href="server-uc2-status.html">UC2</a>, <a href="server-uc3-status.html">UC3</a>, <a href="server-uc4-status.html">UC4</a>; no configured subscriptions = no button.</li>
 </ul></li>
 </ul>
@@ -46,7 +46,7 @@
 <li>A From/To change picks a fitting interval (a day hourly, a week 4-hour, the full period daily); a manual pick overrides until the next change.</li>
 <li>Each resolution is computed from the raw Files, never merged from a finer one (a median of medians is not a median).</li>
 <li>A slot click opens that day&rsquo;s page in the same view (30-minute slots). Cumulative and status views have no day view: their slots open the day&rsquo;s Files processed graph; a day page opened elsewhere falls back to Duration.</li>
-<li>Activity views: the logical-transfer cache; PeSIT: the PeSIT report&rsquo;s classification. Cumulative views use the union partner attribution &mdash; the final orange matches <a href="first-seen.html">First seen</a>, blue its both-logs view; green/red follow the site-wide subscription rule (red when the latest outcome is Failed or Expired). The server log starts on its own date, so blue can lag orange early, then overtake.</li>
+<li>Activity views: the logical-transfer cache; PeSIT: the PeSIT report&rsquo;s classification. Cumulative views use the union partner attribution &mdash; the final orange matches <a href="first-seen.html">First seen</a>; green/red follow the site-wide subscription rule (red when the latest outcome is Failed or Expired).</li>
 <li>Status stacks re-bucket each use-case report&rsquo;s hourly verdict sidecar: a state, not a rate &mdash; a coarser slot takes its last hour, an empty slot carries the previous state; the right edge equals the report.</li>
 <li><strong>Busiest this period</strong> closes the page: the day pages&rsquo; six Top-5 tables (partners and subscriptions by Files, Volume, Errors), re-selected within the From/To range; no activity = a gap. Union attribution: at the full range they match the Entities view <strong>See more</strong> opens, sorted descending.</li>
 <li>Opens at the full log period; no search box, full From/To controls. KPIs re-sum, the graph clips, Top-5 re-select; the range is remembered for the dashboards only, never carried to the reports.</li>

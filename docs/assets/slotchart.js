@@ -33,7 +33,7 @@
   var BASE0 = H0 - B, IW = W - L - R, IH0 = BASE0 - T0;
   var GRID = "#e9edf2", MUTE = "#8a97a4";
   var CB = "#3b82c4", CG = "#3f9d52", CR = "#df5a4c", CP = "#7d63c6", CO = "#d9821c";
-  var CBL = "#8fb8d8", COL = "#f0c07a";   // the light blue / light orange the UC-status ramp needs
+  var CBL = "#8fb8d8", COL = "#f0c07a";   // light blue (the Connections card) / light orange (the UC-status not-seen band)
   var SKEY = "axway-chart-style", IKEY = "axway-chart-interval", SCKEY = "axway-chart-scale";
 
   // the fixed duration axis (the Overview and day-page Duration heroes):
@@ -106,24 +106,23 @@
   function kindSpec(kind) {
     if (kind === "dur" || kind === "durfit") return { ns: 3, col: ["#1e6b38", "#d9821c", "#95241e"], name: ["P50", "P90", "P98"], empty: "no OK Files in this slot", fmt: hdur };
     if (kind === "pesit") return { ns: 2, col: [CR, CP], name: ["ST → CFT", "CFT → ST"], empty: "no data", fmt: hn };
-    // the CUMULATIVE "seen" curves (Subscriptions seen / Partners seen). FOUR
-    // counts: v0 blue = seen in transfer + server (the union, always the highest),
-    // v1 orange = seen in the transfer log, then v1 split into v2 green (its
-    // latest File was OK) and v3 red (it was not), so v2 + v3 === v1 always.
+    // the CUMULATIVE "seen" curves (Subscriptions / Partners / Accounts seen).
+    // THREE counts: v0 orange = seen in the transfer log, split into v1 green
+    // (its latest File was OK) and v2 red (it was not), so v1 + v2 === v0
+    // always (the blue transfer + server union curve went 2026-09-27).
     // The three STYLES differ here, unlike every other kind — see draw():
-    //   line   all 4 as absolute lines: blue, orange, green, red
-    //   bar    stacked, no orange: red, then green (topping out AT orange), then
-    //          blue as the remaining blue - orange
+    //   line   all 3 as absolute lines: orange, green, red
+    //   bar    stacked, no orange: red, then green (topping out AT orange)
     //   solid  the same stack as areas
-    if (kind === "seen") return { ns: 4, col: [CB, CO, CG, CR], name: ["Transfer + server", "Transfer", "Green", "Red"], empty: "no data", fmt: hn };
-    // the UC-status STACKS (UC1/UC3/UC4 share one 7-series shape, UC2 has its
+    if (kind === "seen") return { ns: 3, col: [CO, CG, CR], name: ["Seen", "Green", "Red"], empty: "no data", fmt: hn };
+    // the UC-status STACKS (UC1/UC3/UC4 share one 4-series shape, UC2 has its
     // own 5). The stack is TOTAL-PRESERVING — every slot sums to the configured
     // subscription count, which does not change (we hold no config history), so
     // the top edge is flat and the card reads as a composition over time.
     // Bottom-up = ascending severity: green OK first, the never-seen bucket
     // (light orange) last, the problem states ramping in between.
-    if (kind === "ucst") return { ns: 7, stack: 1, col: [CG, CBL, CB, CP, CO, CR, COL],
-      name: ["OK", "No result", "No files", "Server error", "OK + error", "Error", "Not seen"], empty: "no data", fmt: hn };
+    if (kind === "ucst") return { ns: 4, stack: 1, col: [CG, CO, CR, COL],
+      name: ["OK", "OK + error", "Error", "Not seen"], empty: "no data", fmt: hn };
     if (kind === "ucst2") return { ns: 5, stack: 1, col: [CG, CB, CO, CR, COL],
       name: ["OK", "Both", "No files", "Never collected", "Nothing"], empty: "no data", fmt: hn };
     if (kind === "count") return { ns: 1, col: [CB], name: ["OK Files"], empty: "no data", fmt: hn };
@@ -232,7 +231,7 @@
     var seen = 0, mxv = -1, mxi = 0, to = 0, ti = 0;
     for (i = 0; i < n; i++) if (slots[i].has) {
       seen++;
-      // the "peak" series: dur's is P98 (its largest), seen's is v0 (blue, the union)
+      // the "peak" series: dur's is P98 (its largest), seen's is v0 (orange, the total)
       var pv = K.stack ? slots[i].v[ns - 1]
              : ns === 3 ? (kind === "dur" ? slots[i].v[2] : slots[i].v[0])
              : (ns === 2 ? slots[i].v[0] + slots[i].v[1] : slots[i].v[0]);
@@ -246,7 +245,7 @@
     else if (kind === "pesit")
       ds = seen + " slots from " + slots[0].lab + " to " + slots[n - 1].lab + ". ST to CFT " + hn(to) + " and CFT to ST " + hn(ti) + " problem lines; busiest slot " + slots[mxi].lab + " (" + K.fmt(mxv) + ").";
     else if (kind === "seen")
-      ds = seen + " slots from " + slots[0].lab + " to " + slots[n - 1].lab + ". Cumulative sightings, so blue and orange only rise; green and red move both ways and always sum to orange. By the last slot: " + hn(slots[n - 1].v[0]) + " seen in the transfer + server logs, " + hn(slots[n - 1].v[1]) + " in the transfer log, of which " + hn(slots[n - 1].v[2]) + " green and " + hn(slots[n - 1].v[3]) + " red.";
+      ds = seen + " slots from " + slots[0].lab + " to " + slots[n - 1].lab + ". Cumulative sightings, so orange only rises; green and red move both ways and always sum to orange. By the last slot: " + hn(slots[n - 1].v[0]) + " seen in the transfer log, of which " + hn(slots[n - 1].v[1]) + " green and " + hn(slots[n - 1].v[2]) + " red.";
     else if (K.stack) {
       var lv = slots[n - 1].v, tot9 = 0, parts = [];
       for (i = 0; i < ns; i++) { tot9 += lv[i]; if (lv[i] > 0) parts.push(hn(lv[i]) + " " + K.name[i]); }
@@ -276,20 +275,18 @@
     }
 
     // ---- the marks, per style ----------------------------------------------
-    // `seen` stacks red -> green -> blue (see seenTop): red at the bottom, green
-    // topping out exactly AT orange (red + green === orange), then blue filling
-    // the rest up to the union total. Orange is not drawn in the stacked styles —
-    // it IS the green/red boundary.
+    // `seen` stacks red -> green (see seenTop): red at the bottom, green
+    // topping out exactly AT orange (red + green === orange). Orange is not
+    // drawn in the stacked styles — it IS the top edge.
     function seenTop(i, s) {
-      var v = slots[i].v;                              // v = [blue, orange, green, red]
-      if (s === 0) return v[3];                        // red
-      if (s === 1) return v[3] + v[2];                 // + green  === orange
-      return v[0];                                     // + (blue - orange) === blue
+      var v = slots[i].v;                              // v = [orange, green, red]
+      if (s === 0) return v[2];                        // red
+      return v[2] + v[1];                              // + green  === orange
     }
     // the plain cumulative top for a total-preserving stack kind
     function stackTop(i, s) { var t = 0, v = slots[i].v; for (var q = 0; q <= s; q++) t += v[q]; return t; }
-    var seenCol = kind === "seen" ? [K.col[3], K.col[2], K.col[0]] : K.col;
-    var seenNS = kind === "seen" ? 3 : ns;
+    var seenCol = kind === "seen" ? [K.col[2], K.col[1]] : K.col;
+    var seenNS = kind === "seen" ? 2 : ns;
 
     if (style === "solid") {
       // stacked bands: series s fills from the band below up to its own top
@@ -317,7 +314,7 @@
       }
     } else if (style === "line") {
       // every series as its own absolute line (pesit not stacked; `seen` draws
-      // all FOUR — blue, orange, green and red — where the stacked styles fold
+      // all THREE — orange, green and red — where the stacked styles fold
       // red and green into the orange they sum to)
       for (s = 0; s < ns; s++) {
         var pl = "", dots = "";
@@ -349,7 +346,7 @@
             if (hi8 > lo8) bar(ypos(hi8), ypos(lo8) - ypos(hi8), K.col[z9]);
           }
         } else if (kind === "seen") {                  // the same stack as solid
-          for (var z = 0; z < 3; z++) {
+          for (var z = 0; z < 2; z++) {
             var lo9 = z === 0 ? 0 : seenTop(i, z - 1), hi9 = seenTop(i, z);
             if (hi9 > lo9) bar(ypos(hi9), ypos(lo9) - ypos(hi9), seenCol[z]);
           }
@@ -369,7 +366,7 @@
       }
       // ONE data-v attribute carrying every formatted value, "|"-joined —
       // per-letter data-a/-b/-c/-d capped the tooltip at four series, and the
-      // UC-status stacks have seven. No fmt() output can contain a "|".
+      // UC2 status stack has five. No fmt() output can contain a "|".
       var da = ' data-l="' + esc(slots[i].lab) + '"';
       if (slots[i].has) {
         var fv = [];

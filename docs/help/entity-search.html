@@ -23,7 +23,7 @@
 <li><strong>Type</strong> &mdash; Partner, Subscription, Host, Login, Application, Domain, BL, IP, Account, Source, Target, Whitelist.</li>
 <li><strong>Error / OK</strong> &mdash; the entity&rsquo;s Files by delivered outcome (Files = Error + OK, so that column is omitted).</li>
 <li><strong>Server log</strong> &mdash; blank for the Logical / Partner / Application / Domain / BL groupings.</li>
-<li><strong>Last seen</strong> &mdash; <code>ccyy-mm-dd hh:mm:ss</code> of the newest File attributed to the entity; blank when it never moved a file (blue ones included).</li>
+<li><strong>Last seen</strong> &mdash; <code>ccyy-mm-dd hh:mm:ss</code> of the newest File attributed to the entity; blank when it never moved a file.</li>
 <li>Last seen for a Whitelist / IP row: the last transfer involving that address; a Source / Target row: its subscription&rsquo;s stamp, a multi-subscription path the newest across them.</li>
 </ul>
 <h2>Rules</h2>
@@ -31,7 +31,7 @@
 <li>Searchable: configured (<code>partners.json</code>, <code>subscriptions.json</code>) and logged accounts, logins, hosts and subscriptions; the groupings; source and target paths; endpoint address aliases from <code>input/ip/ip-hosts.tsv</code>; every whitelisted IP.</li>
 <li>No From/To filter: seen = anywhere in the loaded logs.</li>
 <li>Type checkboxes: none ticked = every kind; ticking narrows. The IP box covers the resolved-host aliases and the whitelisted IPs. Every entity is listed, seen or not; the row colour is its status &mdash; no seen filter.</li>
-<li><strong>Green</strong> = last transfer OK (or, without a status, moved files); <strong>red</strong> = last transfer Error or server-log errors after the last OK; <strong>orange</strong> = configured, never seen or moved no files (zero counts, links the never-seen detail page); <strong>blue</strong> = server log only.</li>
+<li><strong>Green</strong> = last transfer OK (or, without a status, moved files); <strong>red</strong> = last transfer Error or server-log errors after the last OK; <strong>orange</strong> = configured, never seen or moved no files (zero counts, links the never-seen detail page); a name only the server log mentions, configured nowhere, is <strong>red</strong>.</li>
 <li>Groupings (Logical, Partner, Application, Domain, BL) count each File&rsquo;s own attribution (the partner organisation; the application / domain segments of the account name), are seen when one File carries them, and link their detail pages.</li>
 <li><strong>Source</strong> / <strong>Target</strong>: a subscription&rsquo;s From / To directory + file mask (its detail-page Features table); the row links the subscription with its Error / OK. A path on a remote partner appends the host after <code>@</code> (<code>/some/dir @ sftp-test.lifetime.nl</code>).</li>
 <li>A path shared by N subscriptions collapses to <code>&#9656; &lt;path&gt; (N)</code>, counts summed; click to expand one linked row per subscription with its own counts.</li>

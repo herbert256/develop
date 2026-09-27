@@ -8,9 +8,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
-<link rel="stylesheet" href="../assets/style.css?v=2272740125">
+<link rel="stylesheet" href="../assets/style.css?v=833229682">
 <script src="../assets/topbar-data.js?v=1859087117" defer></script>
-<script src="../assets/report.js?v=2272740125" defer></script>
+<script src="../assets/report.js?v=833229682" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="index"></div>
@@ -21,9 +21,8 @@
 <tr><td><a href="../transfer/entity-coverage-accounts.html">Entity coverage</a></td><td class="desc">Per account, partner, domain or application: does each configured direction actually work &mdash; proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out).</td></tr>
 <tr><td><a href="first-seen.html">First seen</a></td><td class="desc">On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs &mdash; the configured names never seen there on top; every count links its item list.</td></tr>
 <tr><td><a href="data-diff.html">Since yesterday</a></td><td class="desc">The data diff against the newest log day: new red flips, flows that just crossed the quiet threshold, recoveries, first-seen entities by name and new server-log-only names.</td></tr>
-<tr><td><a href="../transfer/seen-in-server-log.html">Seen in server log</a></td><td class="desc">The entities that appear in the SERVER log only (blue): their seed messages, what happened, and the status rollups with the blue deltas.</td></tr>
 <tr><th colspan="2">Configuration</th></tr>
-<tr><td><a href="use-cases.html">Use cases</a></td><td class="desc">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; Total, Server (server-log only), Not seen, Error and OK per use case; tabs for the <strong>Use Case definitions</strong> (who connects, which way the file travels, what triggers it) and the <strong>Use Case patterns</strong> (the accounts grouped by their subscription mix, e.g. <code>UC2 (1) UC4 (1)</code>).</td></tr>
+<tr><td><a href="use-cases.html">Use cases</a></td><td class="desc">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; Total, Seen, Error, Warning and OK per use case; tabs for the <strong>Use Case definitions</strong> (who connects, which way the file travels, what triggers it) and the <strong>Use Case patterns</strong> (the accounts grouped by their subscription mix, e.g. <code>UC2 (1) UC4 (1)</code>).</td></tr>
 <tr><td><a href="uc2-visits.html">UC2 pickup visits</a></td><td class="desc">What each UC2 partner actually does when it connects: collected, two-way exchange, delivery-only (the UC4 twin) or empty-handed visits.</td></tr>
 <tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured subscription on one row, the skip-listed ones included: whether it is active (CFT for SWIFT), its result colour and direction, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint (login or remote host), the From and To folders, the cron expression and schedule, the all-time File counts &mdash; total, in, out, Errors, automatic retries, resubmits, Waiting, Expired &mdash; and the last error reason.</td></tr>
 <tr><td><a href="logical-detection.html">Logical detection</a></td><td class="desc">How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID.</td></tr>
@@ -49,7 +48,7 @@
 <tr><td><a href="partner-lifecycle.html">Partner lifecycle</a></td><td class="desc">The quiet failure modes of a partner relation: configured but never live, gone quiet after real history, and still transferring on ever fewer flows.</td></tr>
 <tr><th colspan="2">Boxes</th></tr>
 <tr><td><a href="accounts-in-boxes.html">Accounts in boxes</a></td><td class="desc">Every configured account boxed by what is true of the subscriptions connected to it &mdash; the account view of Subscriptions in boxes, joined through the FlowManager configuration rather than by name.</td></tr>
-<tr><td><a href="subscriptions-in-boxes.html">Subscriptions in boxes</a></td><td class="desc">Every subscription boxed by what is true of it &mdash; its status (OK, Seen, Not seen, Error, Server log only) or any of fifteen problem signals &mdash; one column per box, each cell linking into its report or entity view.</td></tr>
+<tr><td><a href="subscriptions-in-boxes.html">Subscriptions in boxes</a></td><td class="desc">Every subscription boxed by what is true of it &mdash; its status (OK, Seen, Not seen, Error) or any of fourteen problem signals &mdash; one column per box, each cell linking into its report or entity view.</td></tr>
 <tr><td><a href="triage.html">Triage</a></td><td class="desc">The ranked action list: every subscription that is red, holds staged Files about to expire, or just fell silent &mdash; newest flips on the busiest flows first; the per-symptom pages stay the deep-dives.</td></tr>
 <tr><th colspan="2">Errors</th></tr>
 <tr><td><a href="failed.html">Failed Subscriptions</a></td><td class="desc">Every failing subscription with its evidence &mdash; the newest failed File of each (drilling into its transfer legs and server log), plus the flows failing in the server log only; view buttons switch to per-leg-count and full-history views.</td></tr>

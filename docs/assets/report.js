@@ -206,7 +206,6 @@
       r = rows[i];
       if (r.getElementsByTagName("th").length) continue;
       if (/\b(coreid-detail|pagerrow|foldrow)\b/.test(r.className)) continue;
-      if (r.cells[0] && / bluemsg /.test(" " + r.cells[0].className + " ")) continue;
       if (r.style.display === "none" || getComputedStyle(r).display === "none") continue;
       row = r; break;
     }
@@ -550,32 +549,14 @@
     return cand;
   }
   function dataRows(table) {
-    var out = [], r = table.rows, i, c0;
+    var out = [], r = table.rows, i;
     for (i = 0; i < r.length; i++) {
-      c0 = r[i].cells[0];
       if (!r[i].getElementsByTagName("th").length && !isTotal(r[i]) &&
           r[i].className.indexOf("coreid-detail") < 0 &&
           r[i].className.indexOf("pagerrow") < 0 &&
-          r[i].className.indexOf("foldrow") < 0 &&
-          !(c0 && c0.className.indexOf("bluemsg") >= 0)) out.push(r[i]);   // skip injected drill-down rows, the pager footer, fold summaries, and paired message rows
+          r[i].className.indexOf("foldrow") < 0) out.push(r[i]);   // skip injected drill-down rows, the pager footer and fold summaries
     }
     return out;
-  }
-  // 2-row entries (fake-transfers list): a full-width message row (cell class
-  // bluemsg) immediately above its data row. Bind each data row to its message
-  // row so any re-order (sort/unsort) keeps the pair together; the message row
-  // itself is excluded from dataRows so it never sorts on its own.
-  function bindPairs(table) {
-    var r = table.rows, i, c0;
-    for (i = 0; i < r.length; i++) {
-      c0 = r[i].cells[0];
-      if (c0 && c0.className.indexOf("bluemsg") >= 0 && r[i].nextElementSibling)
-        r[i].nextElementSibling._pairmsg = r[i];
-    }
-  }
-  function repositionPairs(table) {
-    var dr = dataRows(table), i, body = table.tBodies[0] || table;
-    for (i = 0; i < dr.length; i++) if (dr[i]._pairmsg) body.insertBefore(dr[i]._pairmsg, dr[i]);
   }
   function totalRows(table) {
     var out = [], r = table.rows, i;
@@ -1995,7 +1976,6 @@
     }
     repositionFoldrow(table);         // the fold summary sits after the (re-ordered) data rows
     applyGroup(table);   // re-blank repeats in the new order
-    repositionPairs(table);           // keep each message row above its (re-ordered) data row
     repage(table);                    // a sort reshuffles the pages
     table._sortKeys = keys;
     replaceHotspots(table);
@@ -3678,31 +3658,6 @@
     for (var r2 = 0; r2 < rows2.length; r2++) rows2[r2].addEventListener("click", onClick);
   }
 
-  // Home-page status tables: the "including server log" switch in the h2 row
-  // (bin/publish.sh _status_table). Toggling flips .srvon on the button's own
-  // .sxscol: the Transfer/Server columns (.colsrv) and the server-inclusive
-  // .von figures show, the transfer-only .voff figures hide (style.css).
-  // Default OFF; state is per table and not persisted.
-  function setupSrvToggle() {
-    var btns = document.querySelectorAll("button.srvtoggle");
-    if (!btns.length) return;
-    // Each "including server log" button drives ONLY ITS OWN table's .sxscol —
-    // the two home status tables toggle independently.
-    function colOf(btn) {
-      var col = btn.parentNode;
-      while (col && col !== document.body && (!col.className || col.className.indexOf("sxscol") < 0)) col = col.parentNode;
-      return (col && col !== document.body) ? col : null;
-    }
-    for (var i = 0; i < btns.length; i++) {
-      btns[i].addEventListener("click", function () {
-        var col = colOf(this); if (!col) return;
-        var on = this.getAttribute("aria-pressed") !== "true";
-        if (on) { if (col.className.indexOf("srvon") < 0) col.className += " srvon"; }
-        else col.className = col.className.replace(/\s*\bsrvon\b/, "");
-        this.setAttribute("aria-pressed", on ? "true" : "false");
-      });
-    }
-  }
 
   // ---- The RUNTIME top bar (2026-07) ---------------------------------------
   // Every html_head page bakes only `<div class="topbar" data-b=…
@@ -3718,7 +3673,7 @@
   // longer needs a site-wide page republish). The baked-chrome pages (help
   // pages, the build report —
   // render_shared_topbar) arrive with a NON-empty topbar div and are left
-  // untouched. Must run before setupSrvToggle, which binds into the bar.
+  // untouched.
   // ---- the shared hero-slot charts (svg_slots): styled hover tooltip -------
   // Every slot rect (.dbz) carries data-l (the slot label) + data-a/-b/-c
   // (the humanized series values); the chart's g.slotmeta carries the series
@@ -4201,7 +4156,7 @@
       tg = el.tagName ? el.tagName.toLowerCase() : "";
       if (tg === "h2") {
         // the heading's OWN text — direct text nodes only, so an embedded
-        // button (srvtoggle) or muted period span stays out of the filename
+        // button or muted period span stays out of the filename
         for (i = 0; i < el.childNodes.length; i++) { c = el.childNodes[i]; if (c.nodeType === 3) ttl += c.nodeValue; }
         if (!ttl.replace(/\s+/g, "")) ttl = el.textContent;
         break;
@@ -4287,7 +4242,7 @@
   }
 
   function init() {
-    buildTopbar();          // FIRST: setupSrvToggle binds into the bar
+    buildTopbar();          // FIRST: later setups bind into the bar
     setupTheme();           // the ◐ toggle (the head script already applied the choice)
     setupRelDates();        // "3 days ago" tooltips on date cells, lazily
     setupPalette();         // Ctrl+K / Cmd+K quick jump
@@ -4298,7 +4253,6 @@
       initColOrder(tables[i]); // FIRST: stamp the built column index + apply a remembered column order
       wholeCellLinks(tables[i]); // single-link cells become whole-cell click targets (class cl) — before the className snapshots below
       initGroup(tables[i]);   // record real group values — before makeSortable's data-sort-init
-      bindPairs(tables[i]);   // bind 2-row message/data pairs BEFORE any sort restore
       makeSortable(tables[i]); // sorts/blanks col 0, which would otherwise memorize a blanked value
       applyGroup(tables[i]);
       setupExpandable(tables[i]);  // clickable drill-down BEFORE the data-origc snapshots below,
@@ -4341,7 +4295,6 @@
     markDayEdges();      // home: the per-day groups' bottom edge sits under the last visible row
     setupSwitches();     // switch=KEY table groups: one table of the group at a time behind a button row
     setupHeroToggle();   // overview + day pages: the hero view switch
-    setupSrvToggle();    // home page: the status tables' "including server log" switch
     setupSearchConfig(); // Entity Search: the collapsed configuration panel
     setupReportFinder(); // Report finder: title/intro/keyword search over the catalog
     setupCollapsible();  // clines cells (patterns): click toggles the collapsed middle lines

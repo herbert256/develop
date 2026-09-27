@@ -30,7 +30,7 @@
 <h2>Rules</h2>
 <ul>
 <li>Ranks never cross types; the second button row picks one of the nine entity types.</li>
-<li>Only entities <strong>seen</strong> with real transfers are ranked; a server-log-only (blue) entity has no metric and is left out, as on its own page. Never timed: <code>-</code> for Duration and Throughput, still ranked on the other three.</li>
+<li>Only entities <strong>seen</strong> with real transfers are ranked; an entity without a transfer has no metric and is left out, as on its own page. Never timed: <code>-</code> for Duration and Throughput, still ranked on the other three.</li>
 <li>Positions are not computed here: each detail page writes its five positions to a sidecar as it renders; this page collates them &mdash; the same numbers by construction.</li>
 <li>A tie shares a position (the next ones are skipped).</li>
 <li><strong>From/To re-ranks</strong>: narrowing recomputes every value <em>and</em> position over the selected days alone; an entity with nothing in range drops out of the table and the population. Duration and Throughput average the <em>timed</em> transfers in range. Widening back restores the baked figures exactly.</li>

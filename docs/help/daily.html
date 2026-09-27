@@ -28,7 +28,7 @@
 <li><em>Transfer errors</em> &mdash; raw Status Failed / Failed Subtransmission records: legs, not Files; none = a real zero.</li>
 <li><em>PeSIT</em> &mdash; CFT-link problem lines, ST&rarr;CFT red vs CFT&rarr;ST purple; only with server-log coverage.</li>
 </ul></li>
-<li><strong>Server log problems this day</strong> &mdash; errors, warnings, any non-zero signal: logon screening failures both ways (partners failing ours, us refused at theirs), connection failures, route-abandon deploy errors, PeSIT ceiling hits, configured remote directories that do not exist, UC3 polls of an always-empty directory, UC3 failing polls (the scheduled poll itself errors).</li>
+<li><strong>Server log problems this day</strong> &mdash; errors, warnings, any non-zero signal: logon screening failures both ways (partners failing ours, us refused at theirs), connection failures, route-abandon deploy errors, PeSIT ceiling hits, configured remote directories that do not exist, UC3 polls of an always-empty directory.</li>
 <li><strong>Transfer log problems this day</strong> &mdash; failures, one-legged transfers, subscriptions gone from green to red or only red, files staged that day still waiting or expired before it, the Anomaly scan when the day has findings.</li>
 <li><strong>Remarkable facts</strong> &mdash; only what stands out.
 <ul>
@@ -41,7 +41,7 @@
 <ul>
 <li>Transfer figures count Files (<a href="general.html">Shared Concepts</a>), server figures raw log records; both reconcile with the day&rsquo;s Top view rows. Rebuilt every build.</li>
 <li>No From/To filter &mdash; the page is the filter; every KPI and chart title links its report pre-narrowed to the day (<code>?axway_date=</code> sets the target&rsquo;s From/To).</li>
-<li>The two lists carry every <a href="subscriptions-in-boxes.html">Subscriptions in boxes</a> signal with dated evidence, on its day; only Missing cron, Went quiet, Not seen have none. Entries open pre-narrowed, except the full-period reports (from green to red, only red, waiting, trouble after success, deploy errors, failing polls). Nothing to report = no list.</li>
+<li>The two lists carry every <a href="subscriptions-in-boxes.html">Subscriptions in boxes</a> signal with dated evidence, on its day; only Missing cron, Went quiet, Not seen have none. Entries open pre-narrowed, except the full-period reports (from green to red, only red, waiting, trouble after success, deploy errors). Nothing to report = no list.</li>
 <li>Partner figures use the union rule (a File counts for every partner of its subscription as well as its own), matching the entity reports.</li>
 <li>&ldquo;First seen&rdquo; / &ldquo;went quiet&rdquo; are relative to the loaded window: first seen on its first day is not called new, quiet on its last day not called gone.</li>
 <li>View and style are remembered across previous/next day and to/from the dashboard, whose slot columns link into these pages.</li>

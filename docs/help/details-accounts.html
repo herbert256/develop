@@ -29,7 +29,7 @@
 <li>Incoming = the configured <code>AllowIP</code> whitelist (partners.json, patterns expanded) plus observed source addresses, coloured against the site-wide expanded whitelist; rows link <code>details/incoming_connections/</code> (none for a never-sighted whitelist address).</li>
 <li>Outgoing = configured endpoints plus observed hosts; IP = forward-resolved address(es), Name = configured hostname; rows link the host page.</li>
 <li>In / Out = Files that entered / left us; Name = the endpoint <code>input/ip/ip-hosts.tsv</code> maps, blank if none (no reverse DNS).</li>
-<li>Light green configured and used; light red traffic on an unconfigured address; light orange configured, never seen (folded behind one summary row); light blue whitelisted, server-log sighting only (not folded).</li>
+<li>Light green configured and used; light red traffic on an unconfigured address; light orange configured, never seen (folded behind one summary row).</li>
 </ul></li>
 <li><strong>Files not picked up</strong> &mdash; files File Maintenance purged uncollected from the account&rsquo;s folder (the log&rsquo;s &ldquo;Deleted files [ &hellip; ]&rdquo; sweeps, keyed on <code>NAME@FEnnn</code>); newest expiry first, up to 100, paged 10 &mdash; a real pickup removes a file before it expires.</li>
 <li><strong>Last server log messages</strong> &mdash; at the bottom: the account&rsquo;s 25 newest lines, together with its configured login(s) and host(s) lines (a host by name and each resolved IP &mdash; address-keyed caches), newest first, full-period.</li>

@@ -17,7 +17,7 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Entities</h1>
 <h2>What it shows</h2>
-<p>The nine entity reports &mdash; Subscriptions, Logical, Partners, Accounts, Logins, Hosts, Domains, Applications, BL &mdash; share one layout: one row per name, its traffic in seven column groups, the Top view way. This page explains the columns, rules, views and scope; each entity&rsquo;s own help page says how a File is attributed to it.</p>
+<p>The nine entity reports &mdash; Subscriptions, Logical, Partners, Accounts, Logins, Hosts, Domains, Applications, BL &mdash; share one layout: one row per name, its traffic in seven column groups, the Top view way. This page explains the columns, rules and views; each entity&rsquo;s own help page says how a File is attributed to it.</p>
 <h2>Columns</h2>
 <ul>
 <li><strong>Files</strong> &mdash; one per CoreId (Waiting = OK, Expired = Error), split <strong>In</strong> / <strong>Out</strong> by the movement direction, with the Error count and rate. A File with no known movement counts in the total and the rate only.</li>
@@ -35,15 +35,13 @@
 <li>An empty cell is a zero: In / Out and the tinted counts never show a 0, an empty Error keeps an empty rate. Red = an Error / Expired count, amber = a Retry / Resubmit / Waiting count.</li>
 <li>Retry / Resubmit and State show only while a visible row carries a value: a view without any drops them; a date range or search that empties them hides them until a value returns.</li>
 <li>The total row is the last row; its <em>cols</em> hotspot opens the column picker.</li>
-<li>Rows tint by the name&rsquo;s result: light green = last transfer OK, light orange = never seen or a mixed rollup, light red = last transfer Error (or server-log Errors after the last OK transfer), light blue = seen in the server log only. An untinted row is logged but not configured. Rolled-up types (accounts, logins, hosts, partners, &hellip;) take the result of their connected subscriptions.</li>
+<li>Rows tint by the name&rsquo;s result: light green = last transfer OK, light orange = never seen or a mixed rollup, light red = last transfer Error (or server-log Errors after the last OK transfer). An untinted row is logged but not configured. Rolled-up types (accounts, logins, hosts, partners, &hellip;) take the result of their connected subscriptions.</li>
 </ul>
-<h2>Views and scope</h2>
+<h2>Views</h2>
 <ul>
-<li>Entity tabs: switching one tab group keeps the other two (entity, view, scope).</li>
-<li>Views: <strong>All</strong> = every configured plus every logged name; <strong>Seen</strong> = the names with activity; <strong>Not seen</strong> = configured in FlowManager, never seen (name column only); <strong>OK</strong> / <strong>Warning</strong> / <strong>Error</strong> = the names whose result is green / orange / red.</li>
-<li>Scope <strong>+Server</strong> (default) counts a server-log sighting as seen: a server-log-only name sits under Seen, light blue. <strong>Transfer</strong> ignores the server log: that name turns orange and moves to Not seen / Warning.</li>
-<li>The scope changes only Seen, Not seen and Warning; All, OK and Error are the same list either way (only a real transfer makes a name green or red), so their scope tabs are greyed out.</li>
-<li>Under +Server a seventh view, <strong>Server</strong> = the names seen in the server log and nowhere else; not offered in the Transfer scope. It is the same choice as the front page&rsquo;s <em>including server log</em> switch, whose figures link into the matching view and scope.</li>
+<li>Entity tabs: switching one tab group keeps the other (entity, view).</li>
+<li>Views: <strong>All</strong> = every configured plus every logged name; <strong>Seen</strong> = the names with transfer activity (plus a UC3 subscription that polls cleanly with nothing to fetch); <strong>Not seen</strong> = configured in FlowManager, never seen in the transfer log (name column only); <strong>OK</strong> / <strong>Warning</strong> / <strong>Error</strong> = the names whose result is green / orange / red.</li>
+<li>A server-log mention alone never makes a name seen: a flow the server log names but that never moved a file is Not seen, orange.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
