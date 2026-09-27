@@ -737,8 +737,9 @@ render_topbar() {
     if [ -n "${TB_PERIOD:-}" ]; then esc "$TB_PERIOD"; printf '<span class="period" title="The data period: the first and last day of the transfer data">%s</span>' "$ESC"; fi
     printf '<span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch/search.html" title="Search" aria-label="Search">&#128269;</a></span>' "$base" "$base"
     # the FILE SEARCH entry (2026-08), mirroring report.js buildTopbar:
-    # between the search icon and the report menus
-    printf '<a class="dashlink" href="%ssearch/file-search-24-hours.html">Files</a>' "$base"
+    # between the search icon and the report menus — the Latest files search
+    # since 2026-09-27 (user request)
+    printf '<a class="dashlink" href="%slatest/search.html">Files</a>' "$base"
     printf '<nav class="nav">'
     printf '<div class="dd"><span class="ddlabel">Transfer reports \342\226\276</span><div class="ddm">%s</div></div>' "${TRANSFER_MENU//@/$base}"
     [ -n "${SERVER_MENU:-}" ] && printf '<div class="dd"><span class="ddlabel">Server reports \342\226\276</span><div class="ddm">%s</div></div>' "${SERVER_MENU//@/$base}"

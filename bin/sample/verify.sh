@@ -506,6 +506,9 @@ n=$(grep -c '^<script src="[a-z0-9-]*\.js?v=' docs/latest/search.html 2>/dev/nul
 check $([ "${n:-0}" = "$nl" ] && echo 0 || echo 1) "latest/search.html loads ${n:-0} payloads, expected $nl"
 check $([ "$(grep -c 'latest/search.html' docs/tools/report-finder.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/report-finder.html does not link latest/search.html"
 check $([ "$(grep -c 'href="../latest/search.html"' docs/tools/sitemap.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link ../latest/search.html"
+# the top bar's Files link opens it (2026-09-27, user request) — checked on
+# the BAKED bar (help pages); report.js buildTopbar draws the same link
+check $(grep -q '<a class="dashlink" href="../latest/search.html">Files</a>' docs/help/index.html 2>/dev/null && echo 0 || echo 1) "the baked top bar's Files link does not open ../latest/search.html"
 # its From/To (2026-09-27): the transfer date list + a rangehook table
 check $(grep -q '<meta name="report-dates" content="[0-9]' docs/latest/search.html 2>/dev/null && grep -q 'data-rangehook="1"' docs/latest/search.html && echo 0 || echo 1) "latest/search.html lacks the report-dates meta or its rangehook table (no From/To)"
 # the File search group (2026-09-27, user request): the six window pages and
