@@ -199,13 +199,24 @@ shopt -u nullglob
 mkdir -p "$DOCS/files"
 rm -f "$DOCS"/files/*.html
 rm -rf "$DOCS/errors"
+# IN BATCHES (2026-09-27, speed round 9): thousands of ~10 ms renders, one
+# pooled job EACH, spent more on the job fork and the pool's polling than on
+# the pages — a job now renders a run of pages (4 runs per pool slot). The
+# errors set still renders after the files set, so it wins a shared name.
+render_files_run() {   # $@ = the .rpt files of one run
+    local f b
+    for f in "$@"; do
+        b=${f##*/}; b=${b%.rpt}
+        render_rpt "$f" "$DOCS/files/$b.html" "../assets/style.css" "../index.html" "TRANSFER" "" "failed" || return $?
+    done
+}
 for set9 in filp errp; do
     if [ "$set9" = filp ]; then pages=(${filp[@]+"${filp[@]}"}); else pages=(${errp[@]+"${errp[@]}"}); fi
     [ ${#pages[@]} -gt 0 ] || continue
     CUR_DATES=""; DLINK_BASE="../details/"
-    for f in "${pages[@]}"; do
-        b=${f##*/}; b=${b%.rpt}
-        pub_run render_rpt "$f" "$DOCS/files/$b.html" "../assets/style.css" "../index.html" "TRANSFER" "" "failed"
+    _per=$(( (${#pages[@]} + PUB_NJOBS * 4 - 1) / (PUB_NJOBS * 4) ))
+    for ((_i = 0; _i < ${#pages[@]}; _i += _per)); do
+        pub_run render_files_run "${pages[@]:_i:_per}"
     done
     pub_wait
     CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"

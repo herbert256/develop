@@ -773,11 +773,23 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
     # grep|cut pipelines cost two subshells and four programs per page, and a
     # build renders several thousand pages (2026-09-27); same values: the
     # first line opening "TITLE<TAB>" / "META<TAB>dirclass<TAB>", the rest of it
-    local title="" bodyclass=""
+    local title="" bodyclass="" _rl=""
+    # NO PROCESS for the title of a page outside docs/details/ (2026-09-27,
+    # speed round 9): every writer puts TITLE on line 1, which a builtin read
+    # takes — the awk below is a fork + exec per page (thousands of files/
+    # pages, rendered twice per build). META dirclass (the body tint) exists
+    # only in the detail-page .rpt files — details_writer.awk and the
+    # incoming-connection pages, both rendered into docs/details/ — at their
+    # END, so those still scan the whole file; so does any .rpt whose line 1
+    # is not a TITLE.
+    if [ "${out#"$DOCS"/details/}" = "$out" ] && IFS= read -r _rl < "$rpt" 2>/dev/null && [ "${_rl#TITLE$'\t'}" != "$_rl" ]; then
+        title=${_rl#TITLE$'\t'}
+    else
     IFS=$'\037' read -r title bodyclass < <(LC_ALL=C awk '
         !t && index($0, "TITLE\t") == 1 { t = 1; ti = substr($0, 7) }
         !m && index($0, "META\tdirclass\t") == 1 { m = 1; bc = substr($0, 15) }
         END { printf "%s\037%s\n", ti, bc }' "$rpt" 2>/dev/null) || true
+    fi
     # The page's AREA (the date-filter persistence key report.js uses), derived
     # from where the output lands — transfer report and detail pages share the
     # transfer dataset, server report pages the server one. Same derivation the
