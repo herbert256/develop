@@ -505,7 +505,8 @@ FNR == 1 { rec = ""; buffering = 0; next }
 
 # The per-file record count feeds the batch total (and the raw-vs-deduped
 # drop note); cntfile is passed with -v by tok_one().
-END { printf "%d\n", total+0 > cntfile }
+END { printf "%d\n", total+0 > cntfile
+      if (tfile != "") { "date +%s" | getline te; print te > tfile } }   # when this awk finished (the part timings, tokenize_batch)
 AWK_EOF
 )
 
@@ -1007,7 +1008,8 @@ tok_run() {   # $1 = chunk id; stdin = the CSV (its first line the header)
     # no parseable date lands in the bare "chunk.<idx>.d" part, whose key
     # starts with a space and sorts before any date — LC_ALL=C sorted part
     # names reproduce exactly that order.
-    awk -v cntfile="$CHUNK_DIR/count.$1" "$TOK_PROG" \
+    local _k0; _k0=$(date +%s)   # the part timings (the summary in tokenize_batch)
+    awk -v cntfile="$CHUNK_DIR/count.$1" -v tfile="$CHUNK_DIR/tend.$1" "$TOK_PROG" \
         | LC_ALL=C sort $SORT_CHUNK_FLAGS -u \
         | awk -v pfx="$CHUNK_DIR/chunk.$1.d" '
             { p = index($0, " "); d = substr($0, 1, p - 1); gsub(/[^0-9-]/, "_", d)   # clamp: a malformed date in a corrupt export must not leak odd chars into the part FILENAME
@@ -1022,6 +1024,7 @@ tok_run() {   # $1 = chunk id; stdin = the CSV (its first line the header)
                   d = d "_" h } }
             d != cur { if (out != "") close(out); cur = d; out = pfx d }
             { print > out }'
+    printf '%s %s %s\n' "$_k0" "$(cat "$CHUNK_DIR/tend.$1" 2>/dev/null || echo "$_k0")" "$(date +%s)" > "$CHUNK_DIR/ttime.$1"
 }
 tok_one() {   # $1 = input csv, $2 = 4-digit chunk index
     tok_run "$2" < "$1"
@@ -1093,6 +1096,12 @@ tokenize_batch() {   # tokenize every argument file into its own chunk
     done < <(lpt_order "$@")
     CHUNK_N=$((base + $#))
     pool_wait
+    # THE PART TIMINGS (2026-09-27, speed round 8): start, tokenizer-awk end
+    # and part end per part — is the tokenize one slow part, the awk or the
+    # sort + split behind it? (a runtime build is profiled from its console)
+    cat "$CHUNK_DIR"/ttime.* 2>/dev/null | awk '{ n++; a = $2 - $1; t = $3 - $1; sa += a; st += t; if (t > mt) { mt = t; ma = a } }
+        END { if (n) printf "TIME %5ds  server parse: tokenize, slowest of %d parts (its awk %ds; all parts: awk %ds + sort/split %ds)\n", mt, n, ma, sa, st - sa }' >&2
+    rm -f "$CHUNK_DIR"/ttime.* "$CHUNK_DIR"/tend.*
     TOK_TOTAL=$(awk '{ s += $1 } END { print s + 0 }' "$CHUNK_DIR"/count.*)
     echo "records: $((TOK_TOTAL - prev))" >&2
 }

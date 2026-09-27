@@ -705,8 +705,13 @@ aggregate_files() {
     function jdnum(y,m,dd,   a) { a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return dd+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     # epoch-second helpers for the store-and-forward dwell (dwell-time.sh twins)
     function secs5(t,  p5){ if (split(t, p5, ":") < 3) return -1; return p5[1]*3600 + p5[2]*60 + p5[3] }
-    function ep_iso(di, t,  p5, s5){ if (split(di, p5, "-") < 3) return -1; s5=secs5(t); if (s5<0) return -1; return jdnum(p5[1]+0,p5[2]+0,p5[3]+0)*86400 + s5 }
-    function ep_us(x,  a5, dp5, s5){ if (split(x, a5, " ") < 2) return -1; if (split(a5[1], dp5, "/") < 3) return -1; s5=secs5(a5[2]); if (s5<0) return -1; return jdnum(dp5[3]+0,dp5[1]+0,dp5[2]+0)*86400 + s5 }
+    # (the day part memoized per date string, EPI/EPU — every leg of the walk
+    # calls these, over a few dozen distinct dates; 2026-09-27)
+    function ep_iso(di, t,  p5, s5, j5){ if (di in EPI) j5=EPI[di]; else { j5=(split(di, p5, "-") < 3) ? -1 : jdnum(p5[1]+0,p5[2]+0,p5[3]+0)*86400; EPI[di]=j5 }
+      if (j5<0) return -1; s5=secs5(t); if (s5<0) return -1; return j5 + s5 }
+    function ep_us(x,  a5, dp5, s5, j5){ if (split(x, a5, " ") < 2) return -1
+      if (a5[1] in EPU) j5=EPU[a5[1]]; else { j5=(split(a5[1], dp5, "/") < 3) ? -1 : jdnum(dp5[3]+0,dp5[1]+0,dp5[2]+0)*86400; EPU[a5[1]]=j5 }
+      if (j5<0) return -1; s5=secs5(a5[2]); if (s5<0) return -1; return j5 + s5 }
     # epoch seconds (fractional — the ms survive) back to "ccyy-mm-dd HH:MM:SS.mmm", the Start cell format (the Latest Files End column, 2026-09-12)
     function fmt_ep(ep,  j6, r6, h6, m6){ j6=int(ep/86400); r6=ep-j6*86400; h6=int(r6/3600); m6=int((r6-h6*3600)/60); return fromjdn(j6) " " sprintf("%02d:%02d:%06.3f", h6, m6, r6-h6*3600-m6*60) }
     function fromjdn(j,   a,b,c,dd,e2,mm,day2,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e2=c-int(1461*dd/4); mm=int((5*e2+2)/153); day2=e2-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day2) }
@@ -738,7 +743,7 @@ aggregate_files() {
       # user rule): the after-last-transfer banner compares its Error against
       # this, not the last Start — a File that FINISHED OK after the error is
       # a transfer that ended OK after it. Totals-row field 30.
-      if(pr2 && g_end>=0){ e7=fmt_ep(g_end); if(!(k in pokend)||e7>pokend[k]) pokend[k]=e7 } }
+      if(pr2 && g_end>=0){ e7=gEND; if(!(k in pokend)||e7>pokend[k]) pokend[k]=e7 } }
     # Read wec[] WITHOUT creating the element: a bare wec[k] reference would
     # add an empty entry, and the "for (k in wec)" loop that builds the
     # section-0.9 table would then emit a phantom "Waiting files 0" row.
@@ -805,13 +810,10 @@ aggregate_files() {
       # leg (gHADF — the same rule as the Activity per day Recovered column)
       # the Pickup cell (UC2 pages): the collect stamp RELATIVE to the File\047s
       # Date — "2d 5h 45m" (2026-09-05, user request); blank when not collected
-      grel=""
-      if(gPICK!=""){ split(gPICK,pp9," "); ds9=ep_iso(pp9[1],pp9[2])-ep_iso(tdt[curcid],ttm[curcid])
-        if(ds9>=0){ dd9=int(ds9/86400); hh9=int((ds9%86400)/3600); mm9=int((ds9%3600)/60)
-          grel=(dd9>0 ? dd9 "d " hh9 "h " mm9 "m" : (hh9>0 ? hh9 "h " mm9 "m" : (mm9>0 ? mm9 "m" : "<1m"))) } }
+      # (grel, computed ONCE per File in flush — 2026-09-27)
       # … then the pickup delay, then (2026-09-12) the File END — the latest
-      # leg end (g_end, the leg walk), in the Start cell format
-      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : "") "|" grel "|" (g_end>=0 ? fmt_ep(g_end) : ""), (ty=="SITE")?1000:100)
+      # leg end (g_end, the leg walk), in the Start cell format (gEND, flush)
+      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : "") "|" grel "|" gEND, (ty=="SITE")?1000:100)
       # Waiting/Expired rollup -> the section-0.9 summary table (per entity):
       # count + first/last STAGED date per state
       if(toc[curcid]=="Waiting" || toc[curcid]=="Expired"){ kwe=ty SUBSEP ent SUBSEP toc[curcid]
@@ -889,6 +891,14 @@ aggregate_files() {
       for(iu6=1;iu6<=npu6;iu6++) gDIM[2.84 SUBSEP PU6[iu6]]=1
       nbu6=split(tbl[curcid], BU6, "\037")
       for(iu6=1;iu6<=nbu6;iu6++) gDIM[2.85 SUBSEP BU6[iu6]]=1
+      # PER-FILE values ent_apply/perday use for every entity of the File —
+      # computed once here, not once per entity (2026-09-27, speed round 8):
+      # the File END in the Start cell format, and the Pickup delay
+      gEND=(g_end>=0 ? fmt_ep(g_end) : "")
+      grel=""
+      if(gPICK!=""){ split(gPICK,pp9," "); ds9=ep_iso(pp9[1],pp9[2])-ep_iso(tdt[curcid],ttm[curcid])
+        if(ds9>=0){ dd9=int(ds9/86400); hh9=int((ds9%86400)/3600); mm9=int((ds9%3600)/60)
+          grel=(dd9>0 ? dd9 "d " hh9 "h " mm9 "m" : (hh9>0 ? hh9 "h " mm9 "m" : (mm9>0 ? mm9 "m" : "<1m"))) } }
       if(tac[curcid]!="") ent_apply("ACC", tac[curcid])
       for(iu6=1;iu6<=nlu6;iu6++) ent_apply("LGC", LU6[iu6])
       for(iu6=1;iu6<=npu6;iu6++) ent_apply("PTN", PU6[iu6])

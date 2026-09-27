@@ -322,12 +322,12 @@ _ppids=()   # every producer's PID — the per-PID wait below collects their rcs
 # pass was ONE awk for ~60 s in production, beside the CPU-bound report stages
 # it must not outlast. The groups (AGG_ONLY, details_lib.sh) each re-read the
 # caches but aggregate only their types; the stream sort below takes all
-# their files, so the result is the one pass's. Four groups of about equal
-# cost (sample: a type adds 0.2-0.5 s to a ~0.6 s shared read + File walk):
-# more groups would repeat that shared part while the report stages beside
-# this step already use every core.
+# their files, so the result is the one pass's. TWO groups of about equal
+# cost: each group repeats the shared read + File walk, which is ~45% of the
+# pass in production (4 groups: 33 s each against 58 s for one — ~75 extra
+# CPU-s beside report stages that already use every core).
 _agi=0
-for _agt in "SITE LGC" "ACC APP" "PTN BL" "LOGIN HOST DOM"; do
+for _agt in "SITE LGC ACC APP" "PTN BL LOGIN HOST DOM"; do
     _agi=$((_agi + 1))
     AGG_ONLY="$_agt" _ptimed "aggregate_files ($_agt)" aggregate_files > "$_pdir/agg0.$_agi" & _ppids+=($!)
 done
