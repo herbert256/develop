@@ -30,6 +30,12 @@
    - the results follow each keystroke (after a short pause);
    - the Subscription cell opens that subscription's Latest files page
      (a whole-cell link, class cl);
+   - the From/To selectors (report.js, the shared transfer-area range; the
+     table is a `rangehook` table) narrow the Files BEFORE the 500 cap: a
+     File counts when its Start..End span overlaps the range — the row rule
+     of the Latest files pages. report.js hands the range over through
+     window.latestSearchSetRange, the window._slotRange stash covering an
+     engine that initialises after the load-time apply;
    - the URL carries ?s=…&f=… (history.replaceState), so a reload or a
      bookmark repeats the search. */
 (function () {
@@ -127,7 +133,27 @@
     var fbox = field("File", "File name or CoreId…", "sep");
     var count = document.createElement("span");
     count.className = "searchhint";
-    var idle = rec.length + " files of " + subs.length + " subscriptions searchable — type a subscription name, a file name or a CoreId";
+
+    // ---- the From/To range (report.js hands it over; null = full period) -
+    var range = null;                           // { f: "yyyy-mm-dd", t: "yyyy-mm-dd" }
+    function inRange(r) {
+      if (!range) return true;
+      var s = r[2].slice(0, 10), e = (r[3] || r[2]).slice(0, 10);
+      if (e < s) { var x = s; s = e; e = x; }
+      return s <= range.t && e >= range.f;       // the span overlaps the range
+    }
+    var idle = "";
+    function setIdle() {
+      var n = rec.length, ss = subs.length, k, seen;
+      if (range) {
+        n = 0; seen = {}; ss = 0;
+        for (k = 0; k < rec.length; k++)
+          if (inRange(rec[k])) { n++; if (!seen[rec[k][0]]) { seen[rec[k][0]] = 1; ss++; } }
+      }
+      idle = n + " files of " + ss + " subscriptions searchable" + (range ? " in the selected period" : "")
+           + " — type a subscription name, a file name or a CoreId";
+    }
+    setIdle();
     count.textContent = idle;
     bar.appendChild(count);
     wrap.parentNode.insertBefore(bar, wrap);
@@ -165,7 +191,11 @@
     }
 
     function sync(sq, fq) {
-      var qs = [];
+      // keep every parameter that is not ours (?axway_date=… is report.js's,
+      // read AFTER this engine's first run)
+      var qs = [], rest = location.search.replace(/^\?/, "").split("&"), i;
+      for (i = 0; i < rest.length; i++)
+        if (rest[i] !== "" && !/^[sf]=/.test(rest[i])) qs.push(rest[i]);
       if (sq !== "") qs.push("s=" + encodeURIComponent(sq));
       if (fq !== "") qs.push("f=" + encodeURIComponent(fq));
       try { history.replaceState(null, "", location.pathname + (qs.length ? "?" + qs.join("&") : "")); } catch (e) {}
@@ -186,7 +216,7 @@
       }
       var hit = [], inSubs = {}, nSubs = 0, k;
       for (k = 0; k < rec.length; k++) {
-        if (!subOk[rec[k][0]]) continue;
+        if (!subOk[rec[k][0]] || !inRange(rec[k])) continue;
         ok = true;
         if (fm) for (t = 0; t < fm.length && ok; t++) ok = fm[t](fkey[k]) || fm[t](ckey[k]);
         if (!ok) continue;
@@ -219,6 +249,18 @@
     function now(e) { if (e.key === "Enter") { if (timer) { clearTimeout(timer); timer = null; } run(); } }
     sbox.addEventListener("keydown", now);
     fbox.addEventListener("keydown", now);
+
+    // the range hook report.js's date filter calls on every change (and at
+    // load when a stored range is restored); the stash covers a range applied
+    // before this engine was ready
+    function takeRange(f, t, narrowed) {
+      range = (narrowed && f && t) ? { f: f < t ? f : t, t: f < t ? t : f } : null;
+      setIdle();
+      run();
+    }
+    window.latestSearchSetRange = takeRange;
+    var sr = window._slotRange;
+    if (sr && sr.narrowed && sr.from && sr.to) { range = { f: sr.from < sr.to ? sr.from : sr.to, t: sr.from < sr.to ? sr.to : sr.from }; setIdle(); count.textContent = idle; }
 
     // ?s=…&f=… (a reload or a bookmark): fill and search now
     var s0 = param("s"), f0 = param("f");
