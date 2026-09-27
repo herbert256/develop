@@ -2789,8 +2789,13 @@
     // switches) belongs BELOW the From/To controls: hoist the anchor back
     // over it, so the controls insert above the row rather than between it
     // and its table.
-    while (anchor && anchor.previousElementSibling && anchor.previousElementSibling.tagName === "P" &&
-           (" " + anchor.previousElementSibling.className + " ").indexOf(" undertabs ") >= 0)
+    // Likewise any element carrying class "underdates" (2026-09-27): a page
+    // engine's own controls row — latest/search.html's File / Subscription
+    // fields — sits BELOW the date selection.
+    while (anchor && anchor.previousElementSibling &&
+           ((anchor.previousElementSibling.tagName === "P" &&
+             (" " + anchor.previousElementSibling.className + " ").indexOf(" undertabs ") >= 0) ||
+            (" " + anchor.previousElementSibling.className + " ").indexOf(" underdates ") >= 0))
       anchor = anchor.previousElementSibling;
     if (dashHero) {
       // above everything the range drives — before the KPI row (fallback:

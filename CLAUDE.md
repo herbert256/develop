@@ -94,8 +94,8 @@ subscription detail pages used to carry, linked from their Features "Files" row;
 lifts them, each payload REGISTERS on `window.AXWAY_LATEST` as `{s, n, h, r}` (slug, name, HEAD
 labels, rendered rows) and report.js `latestRows()` puts them back into the `data-latest` table
 first thing in `init()` — plus `search.html`, the Latest files search: every payload loaded at
-once, searched by the dedicated `docs/assets/latest-search.js` — a Subscription field and a
-File name or CoreId field, results as you type, at most 500 newest-first, `?s=`/`?f=` in the URL;
+once, searched by the dedicated `docs/assets/latest-search.js` — a File name or CoreId field and a
+Subscription field (in that order, BELOW the From/To row — class `underdates`), results as you type, at most 500 newest-first, `?s=`/`?f=` in the URL;
 it and the six `search/file-search-*.html` pages are ONE group, and the top bar's **Files** link opens THIS page (2026-09-27; both bar renderers) — a FIRST tab row right after the
 `<h1>`, **Implementation 1, period** (→ `search/file-search-24-hours.html`) | **Implementation
 2, latest 1000** (→ `latest/search.html`), from publish_lib `file_search_impl_row`),

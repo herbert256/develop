@@ -21,8 +21,10 @@
    empty — each rendered row carries data-res, the restint tint).
 
    Behaviour:
-   - two fields: SUBSCRIPTION (the subscription name) and FILE NAME OR
-     COREID; a filled field must match, an empty one does not constrain;
+   - two fields, in this order (2026-09-27): FILE NAME OR COREID and
+     SUBSCRIPTION (the subscription name), BELOW the From/To row (class
+     underdates — report.js places its date selection above it); a
+     filled field must match, an empty one does not constrain;
      both empty = nothing shown, the count line says what is searchable;
    - matching is case-insensitive; `*` = any run, `?` = one character,
      several space-separated words must ALL match (a File-field word
@@ -118,7 +120,7 @@
     // ---- the controls row, above the table wrap -------------------------
     var wrap = table.closest ? table.closest(".tablewrap") : table.parentNode;
     var bar = document.createElement("div");
-    bar.className = "controls";
+    bar.className = "controls underdates";   // BELOW report.js's From/To row
     function field(label, ph, cls) {
       var l = document.createElement("label");
       if (cls) l.className = cls;
@@ -129,8 +131,8 @@
       bar.appendChild(l); bar.appendChild(b);
       return b;
     }
-    var sbox = field("Subscription", "Subscription name…", "");
-    var fbox = field("File", "File name or CoreId…", "sep");
+    var fbox = field("File", "File name or CoreId…", "");
+    var sbox = field("Subscription", "Subscription name…", "sep");
     var count = document.createElement("span");
     count.className = "searchhint";
 
@@ -265,7 +267,7 @@
     // ?s=…&f=… (a reload or a bookmark): fill and search now
     var s0 = param("s"), f0 = param("f");
     if (s0 !== "" || f0 !== "") { sbox.value = s0; fbox.value = f0; run(); }
-    (s0 !== "" && f0 === "" ? fbox : sbox).focus();
+    (f0 !== "" && s0 === "" ? sbox : fbox).focus();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
