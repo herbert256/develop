@@ -1189,10 +1189,8 @@ awk -F'\t' '{ seen[$1] = 1; nrow[$1]++; if ($6 != "") has[$1] = 1; if ($10 == "h
     END { for (c in seen) if (!(c in has) || (c in ht) || (nrow[c] == 1 && (c in pshape))) { print c; if (nrow[c] == 1 && (c in pshape) && (c in has) && !(c in ht)) np++ }
           printf "%d\n", np + 0 > "/dev/stderr" }' "$PARSED" 2> "$tmp.nprobe" > "$tmp.nosub"
 if [ -s "$tmp.nosub" ]; then
-    awk -F'\t' -v listfile="$tmp.nosub" '
-        BEGIN { while ((getline l < listfile) > 0) drop[l] = 1; close(listfile) }
-        !($1 in drop)' "$PARSED" > "$tmp.nosubkept"
-    mv "$tmp.nosubkept" "$PARSED"
+    # (the drop itself — the listed CoreIds out of $PARSED — happens in the
+    # skip-list pass below since 2026-09-27: one pass over the cache, not two)
     # PREFILTER before tokenizing. This rescans the whole input — 359 MB today —
     # only to copy out the raw lines of a handful of CoreIds (10 on the current
     # dataset), and running the per-character CSV tokenizer on every line of it
@@ -1201,7 +1199,10 @@ if [ -s "$tmp.nosub" ]; then
     # before the character loop starts; the survivors are still tokenized, so a
     # UUID that happens to appear in some OTHER field is still rejected exactly
     # as before. Measured on the real input, same output: 21.5 s -> 0.37 s.
-    awk -v listfile="$tmp.nosub" '
+    # ONE JOB PER INPUT FILE (2026-09-27): each file's matches come out in its
+    # own line order and the parts join in file order, so the sidecar is the
+    # one the single pass over "${files[@]}" wrote
+    nosub_raw() { awk -v listfile="$tmp.nosub" '
         BEGIN { U = "[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]"
                 uu = 1
                 while ((getline l < listfile) > 0) { drop[l] = 1; cidre = cidre (cidre ? "|" : "") l; if (l !~ ("^" U "$")) uu = 0 }
@@ -1234,13 +1235,25 @@ if [ -s "$tmp.nosub" ]; then
         }
         { cid = csv_field($0, 34); sub(/\r$/, "", cid)
           if (cid in drop) print }
-    ' "${files[@]}" > "$tmp.nosubraw"
+    ' "$1"; }
+    _nrj=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
+    case $_nrj in ""|*[!0-9]*) _nrj=2 ;; esac
+    _nrp=(); _nri=0
+    for f in "${files[@]}"; do
+        _nri=$((_nri + 1))
+        nosub_raw "$f" > "$tmp.nosubraw.$_nri" &
+        _nrp+=("$!")
+        if [ "${#_nrp[@]}" -ge "$_nrj" ]; then wait "${_nrp[0]}"; _nrp=("${_nrp[@]:1}"); fi
+    done
+    for p in ${_nrp[@]+"${_nrp[@]}"}; do wait "$p"; done
+    for ((i = 1; i <= _nri; i++)); do cat "$tmp.nosubraw.$i"; done > "$tmp.nosubraw"
+    for ((i = 1; i <= _nri; i++)); do rm -f "$tmp.nosubraw.$i"; done
     mv "$tmp.nosubraw" "$SKIPCSV"
 else
     : > "$SKIPCSV"
 fi
 echo "No-subscription/http/probe skip: dropped $(wc -l < "$tmp.nosub" | tr -d ' ') CoreId(s) ($(cat "$tmp.nprobe" 2>/dev/null || echo 0) empty outbound ssh probe(s)); raw line(s) -> $SKIPCSV." >&2
-rm -f "$tmp.nosub" "$tmp.nprobe"
+rm -f "$tmp.nprobe"
 _plap "derive: no-subscription / http / probe skip"
 
 # SKIP LIST: partition _transfers.tsv into kept (rewrite $PARSED) and skipped
@@ -1254,10 +1267,14 @@ mkdir -p "$(dirname "$SKIPOUT")"
 # agree what a rule means. LOGIN (col 5) is tested alongside account (4) and
 # site (6): a field-specific "login" rule can target it, and an "any" rule
 # covers all three.
-awk -F'\t' -v SLF="$SKIPLIST_FILE" -v sc="$tmp.skip" "$SKIPLIST_AWK"'
-    BEGIN { sl_load(SLF) }
+# + the no-subscription DROP (above): a listed CoreId leaves $PARSED before the
+# skip rules see it, exactly as when the drop was its own pass
+awk -F'\t' -v SLF="$SKIPLIST_FILE" -v sc="$tmp.skip" -v listfile="$tmp.nosub" "$SKIPLIST_AWK"'
+    BEGIN { sl_load(SLF); while ((getline l < listfile) > 0) drop[l] = 1; close(listfile) }
+    $1 in drop { next }
     { if (SL_N > 0 && (sl_hit("account", $4) || sl_hit("login", $5) || sl_hit("site", $6))) print >> sc; else print }
 ' "$PARSED" > "$tmp.kept"
+rm -f "$tmp.nosub"
 mv "$tmp.kept" "$PARSED"
 mv "$tmp.skip" "$SKIPOUT"
 echo "Skip list: set aside $(wc -l < "$SKIPOUT" | tr -d ' ') transfer record(s) -> $SKIPOUT." >&2
