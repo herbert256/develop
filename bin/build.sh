@@ -568,6 +568,7 @@ kill_tree() {
 finalize_report() {
     local rc=$?
     if [ -n "${BG_PID:-}" ]; then kill_tree "$BG_PID"; wait "$BG_PID" 2>/dev/null || true; fi
+    if [ -n "${BG2_PID:-}" ]; then kill_tree "$BG2_PID"; wait "$BG2_PID" 2>/dev/null || true; fi
     write_report "$REPORT" "$rc"
     printf '\nBuild report: %s\n' "$REPORT" >&2
     rm -rf "$BUILD_LOCK"
@@ -639,6 +640,37 @@ bg_step_wait() {
     fi
     BG_PID=""
 }
+# bg2_step_start / bg2_step_wait — a SECOND background slot (2026-09-27,
+# speed round 4), the same code over its own globals: the server mention
+# scan runs beside the logon summary (slot 1) and the joins below.
+BG2_LABEL=""; BG2_N=0; BG2_CMD=""; BG2_START=""; BG2_T0=""; BG2_LOGF=""; BG2_PID=""
+bg2_step_start() {
+    BG2_LABEL=$1; shift
+    STEP_N=$((STEP_N+1))
+    BG2_N=$STEP_N
+    BG2_LOGF=$BUILD_DIR/step-$(printf '%02d' "$STEP_N").log
+    BG2_START=$(date '+%H:%M:%S'); BG2_T0=$(date +%s); BG2_CMD="$*"
+    printf '\n=== %d. %s (in background) ===\n' "$STEP_N" "$BG2_LABEL" >&2
+    rm -f "$BG2_LOGF.end"
+    ( "$@"; _bgst=$?; date +%s > "$BG2_LOGF.end"; exit "$_bgst" ) > "$BG2_LOGF" 2>&1 &
+    BG2_PID=$!
+}
+bg2_step_wait() {
+    local status=0 t1 tw0 tw1
+    tw0=$(date +%s)
+    wait "$BG2_PID" || status=$?
+    tw1=$(date +%s)
+    t1=$tw1; [ -s "$BG2_LOGF.end" ] && t1=$(cat "$BG2_LOGF.end")
+    STEPS+=("$BG2_LABEL"$'\037'"$BG2_CMD"$'\037'"$BG2_START"$'\037'"$((t1-BG2_T0))"$'\037'"$status"$'\037'"$BG2_LOGF")
+    grep '^TIME ' "$BG2_LOGF" >&2 || true
+    printf -- '--- %d. %s (in background): %ds, waited %ds\n' "$BG2_N" "$BG2_LABEL" "$((t1-BG2_T0))" "$((tw1-tw0))" >&2
+    if [ "$status" -ne 0 ]; then
+        printf '*** background step FAILED (exit %d): %s — output:\n' "$status" "$BG2_LABEL" >&2
+        tail -40 "$BG2_LOGF" >&2
+        exit "$status"
+    fi
+    BG2_PID=""
+}
 
 # ---- RUNTIME-ONLY: ingest delivered updates BEFORE anything parses ---------
 # ONE inbox (2026-09-12, user request — the ~/cloud drop folder is gone): the
@@ -679,9 +711,16 @@ printf '\n=== building %s (report -> %s) ===\n' "${ENV_LABEL:-<unlabelled checko
 run_step "config: extract the configured entity lists"                    bin/flow-manager.sh
 
 # ---- 1. parse ---------------------------------------------------------------
-bg_step_start "parse: server log cache"                                   bin/server/parse.sh
+bg_step_start "parse: server log cache"                                   env AXWAY_SKIP_MENTIONS=1 bin/server/parse.sh
 run_step "parse: transfer log cache"                                      env AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1 bin/transfer/parse.sh
 bg_step_wait
+# THE MENTION SCAN IN THE BACKGROUND (2026-09-27, speed round 4): the server
+# parse above stops at the finished cache (AXWAY_SKIP_MENTIONS); its
+# per-entity mention caches are built here, beside the logon summary and the
+# server-log -> transfer joins below — which read only the cache — and are
+# waited for before result.sh, their first reader. A second parse.sh call on
+# a finished cache is exactly the mention build (the rescan below proves it).
+bg2_step_start "parse: server mention caches"                               bin/server/parse.sh
 # THE LOGON SUMMARY (2026-09-27): built ONCE, in the background beside the
 # server-log -> transfer steps below (it reads only the finished server parse
 # cache) and waited for before the report stage — its two consumers, details.sh
@@ -692,6 +731,7 @@ bg_step_start "server log: logon summary (per login + per address)"         bin/
 run_step "server log -> transfer: attribute UCx flows by session"         bin/session-sites.sh
 run_step "server log -> transfer: mark expired staged files"              bin/expire-files.sh
 run_step "server log -> transfer: settle failed Files by ok bookend"      bin/bookend-ok.sh
+bg2_step_wait   # the mention caches: result.sh reads them
 run_step "result: subscription outcomes -> base caches"                   bin/build/result.sh
 # result.sh (discover_logged) may APPEND transfer-log-discovered names to the
 # base rosters — names the server parse's mention scan (which ran above) did

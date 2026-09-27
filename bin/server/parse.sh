@@ -690,6 +690,10 @@ CFG_HOSTS="$CONFIG_BASE/_hosts.tsv"
 
 build_entity_tsvs() {
     [ -f "$OUT" ] || return 0
+    # AXWAY_SKIP_MENTIONS=1 (bin/build.sh, 2026-09-27 speed round 4): the
+    # build runs the mention scan as its OWN background step right after this
+    # parse, beside the server-log -> transfer joins that need only the cache
+    if [ "${AXWAY_SKIP_MENTIONS:-}" = 1 ]; then return 0; fi
     local out cfg fresh=1
     for out in "$ACCOUNTS_TSV" "$SUBS_TSV"; do
         if [ ! -f "$out" ] || [ "$OUT" -nt "$out" ] || [ "${BASH_SOURCE[0]}" -nt "$out" ] \
