@@ -177,7 +177,10 @@ cfg_white_in="$CFG_WHITE"; [ -f "$cfg_white_in" ] || cfg_white_in=/dev/null
 #                                     login and account, the raw IP otherwise)
 NW=$( (command -v sysctl >/dev/null 2>&1 && sysctl -n hw.ncpu) 2>/dev/null || echo 4 )
 [ "$NW" -ge 1 ] 2>/dev/null || NW=4
-[ "$NW" -gt 6 ] && NW=6
+# (cap 10, was 6 until 2026-09-27: the merge is exact for any NW — counts add,
+# maxima commute, addline keeps the same top 10 — and the blue step it runs in
+# has the machine to itself but for the one-core logon summary)
+[ "$NW" -gt 10 ] && NW=10
 wpids=()
 for ((id = 0; id < NW; id++)); do
     awk -F'\t' -v NW="$NW" -v ID="$id" -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
@@ -303,7 +306,7 @@ for ((id = 0; id < NW; id++)); do
             for (k in cnt) { split(k, kp, SUBSEP)
                 print "C\t" kp[1] "\t" kp[2] "\t" cnt[k]
                 print "K\t" kp[1] "\t" kp[2] "\t" lsk[k] "\t" lmsg[k]
-                nl = (k in ltop) ? split(ltop[k], le, _US) : 0
+                nl = (k in _LLn) ? split(loglist(k), le, _US) : 0
                 for (i = 1; i <= nl; i++) { split(le[i], lf, SUBSEP)
                     print "R\t" kp[1] "\t" kp[2] "\t" lf[1] "\t" lf[2] } }
             for (k in cd) { nd = split(k, kp, SUBSEP)

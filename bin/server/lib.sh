@@ -87,14 +87,39 @@ LOGLINES_AWK='
         if (x == "P") return "PESITD"
         if (x == "S") return "SSHD"
         return x }
-    function addline(p, sk, msg,   key, n, a2, i, pos, m, out) { key = sk SUBSEP msg
-        n = (p in ltop) ? split(ltop[p], a2, _US) : 0; pos = n + 1
+    # addline keeps the 10 greatest keys (sk SUBSEP msg) of p, newest first;
+    # a key equal to one kept goes after it. A 10-slot ring per p: element
+    # i of the list is slot (_LLh[p] + i - 1) % 10 (2026-09-27: the cache is
+    # chronological, so nearly every call puts a new FIRST element — O(1)
+    # here, where the former joined string was split, shifted and re-joined
+    # on every call; the rare middle insert still does exactly that)
+    function addline(p, sk, msg,   key, n, h, a2, i, pos, m) { key = sk SUBSEP msg
+        n = _LLn[p] + 0
+        if (n == 0) { _LLn[p] = 1; _LLh[p] = 0; _LLr[p, 0] = key; _LLf[p] = key; _LLl[p] = key; return }
+        h = _LLh[p]
+        if (key > _LLf[p]) {                                  # a new first element
+            h = (h + 9) % 10; _LLh[p] = h; _LLr[p, h] = key; _LLf[p] = key
+            if (n < 10) _LLn[p] = n + 1
+            else _LLl[p] = _LLr[p, (h + 9) % 10]
+            return
+        }
+        if (!(key > _LLl[p])) {                               # at or below the last
+            if (n == 10) return
+            _LLr[p, (h + n) % 10] = key; _LLn[p] = n + 1; _LLl[p] = key
+            return
+        }
+        for (i = 1; i <= n; i++) a2[i] = _LLr[p, (h + i - 1) % 10]
+        pos = n + 1
         for (i = 1; i <= n; i++) if (key > a2[i]) { pos = i; break }
-        if (pos > 10) return
         for (i = (n < 10 ? n : 9); i >= pos; i--) a2[i+1] = a2[i]
         a2[pos] = key; m = (n < 10) ? n + 1 : 10
-        out = a2[1]; for (i = 2; i <= m; i++) out = out _US a2[i]; ltop[p] = out }
-    function lastlines(p,   n, a3, i, f, s) { n = (p in ltop) ? split(ltop[p], a3, _US) : 0
+        for (i = 1; i <= m; i++) _LLr[p, i - 1] = a2[i]
+        _LLh[p] = 0; _LLn[p] = m; _LLf[p] = a2[1]; _LLl[p] = a2[m] }
+    # the kept keys of p, first to last, _US-joined ("" when none)
+    function loglist(p,   n, h, i, out) { n = _LLn[p] + 0; h = _LLh[p] + 0
+        out = ""; for (i = 1; i <= n; i++) out = out (i > 1 ? _US : "") _LLr[p, (h + i - 1) % 10]
+        return out }
+    function lastlines(p,   n, a3, i, f, s) { n = (p in _LLn) ? split(loglist(p), a3, _US) : 0
         s = ""; for (i = 1; i <= n; i++) { split(a3[i], f, SUBSEP); s = s (s == "" ? "" : _US) f[1] "  " f[2] }
         return s }
 '

@@ -478,6 +478,11 @@ BEGIN { outf["A"]=accout; outf["S"]=subout; outf["L"]=logout; outf["H"]=hstout; 
         # below is half of this scan, run on every word of every message; the
         # gate is exact, and off when any name is shorter than 3 characters
         for (rk in RN_S) { RP3[substr(rk, 1, 3)] = 1; if (length(rk) < 3) SP_OFF = 1 } }
+# BYTE-RANGE MODE (ent_range, 2026-09-27): the job scans only the lines of the
+# cache RANGEF that START at an offset in [RLO, RHI) and stops after them —
+# every job computes the same offsets, so the jobs partition the cache in
+# order, exactly like the line chunks a split copy used to write
+RANGEF != "" && FILENAME == RANGEF { _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
 # One matched (type, name) per record: append the mention line and keep
 # the newest 25 full records per name in a ring ($0 is the 6-col record),
 # plus the newest 10 ERROR/WARN records ($3 == "E" || "W") in a second ring.
@@ -612,6 +617,15 @@ ent_one() {   # $1 = cache line chunk, $2 = 4-digit part index
         -v RNF="$RENAMES_FILE" \
         "$RENAMES_AWK$ENT_PROG" ${ENT_CFG_SRCS[@]+"${ENT_CFG_SRCS[@]}"} "$1"
 }
+ent_range() {   # $1 = the cache, $2/$3 = the byte range [lo, hi) of line starts, $4 = 4-digit part index
+    awk -F'\t' \
+        -v accout="$ENT_CHUNK_DIR/A.$4" -v subout="$ENT_CHUNK_DIR/S.$4" \
+        -v logout="$ENT_CHUNK_DIR/L.$4" -v hstout="$ENT_CHUNK_DIR/H.$4" \
+        -v ringout="$ENT_CHUNK_DIR/rings.$4" \
+        -v ewout="$ENT_CHUNK_DIR/ewrings.$4" \
+        -v RNF="$RENAMES_FILE" -v RANGEF="$1" -v RLO="$2" -v RHI="$3" \
+        "$RENAMES_AWK$ENT_PROG" ${ENT_CFG_SRCS[@]+"${ENT_CFG_SRCS[@]}"} "$1"
+}
 
 # ---------------------------------------------------------------------------
 # Companion entity files derived from the cache, one per entity TYPE — for
@@ -739,15 +753,19 @@ build_entity_tsvs() {
         done < <(lpt_order "${ENT_PARTS[@]}")
         pool_wait
     else
-        lines=$(wc -l < "$OUT" | tr -d ' ')
+        # BYTE RANGES, NOT A SPLIT COPY (2026-09-27): the jobs read the cache
+        # in place, each its own contiguous range of lines — the split wrote
+        # the whole cache again first (~20 s of disk writes on 3 GB, the
+        # larger half of the rescan the build runs after the blue step)
+        lines=$(wc -c < "$OUT" | tr -d ' ')
         if [ "$lines" -gt 0 ]; then
-            per=$(( (lines + NJOBS - 1) / NJOBS ))
-            split -l "$per" "$OUT" "$ENT_CHUNK_DIR/in."
-            local inparts=("$ENT_CHUNK_DIR"/in.*)
-            nparts=${#inparts[@]}
-            while IFS=$'\t' read -r i cf; do
-                pool_run ent_one "$cf" "$(printf '%04d' "$i")"
-            done < <(lpt_order "${inparts[@]}")
+            nparts=$NJOBS
+            i=1
+            while [ "$i" -le "$nparts" ]; do
+                if [ "$i" -eq "$nparts" ]; then per=$((lines + 1)); else per=$(( i * lines / nparts )); fi
+                pool_run ent_range "$OUT" "$(( (i - 1) * lines / nparts ))" "$per" "$(printf '%04d' "$i")"
+                i=$((i + 1))
+            done
             pool_wait
         fi
     fi

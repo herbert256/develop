@@ -75,7 +75,7 @@ fi
 
 tmp="$OUT.tmp.$$"
 sess="$OUT.sess.$$"
-trap 'rm -f "$tmp" "$sess"' EXIT
+trap 'rm -f "$tmp" "$sess" "$tmp".part.*' EXIT
 OLDMAP="$OUT"; [ -f "$OUT" ] || OLDMAP=/dev/null
 
 # the sessions to (re)scan: every session a currently-UCx leg ran over
@@ -85,7 +85,19 @@ if [ ! -s "$sess" ]; then
     exit 0
 fi
 
-awk -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
+# THE SCAN RUNS IN PARALLEL (2026-09-27): one job per core, each over its own
+# contiguous byte range of the server cache (every job computes the same line
+# offsets, so the ranges partition the lines). A session verdict does not
+# depend on line order — the one configured flow it names, or "-" once it names
+# a second — so the part verdicts merge exactly (the merge below).
+_ss0=$(date +%s)
+NJ=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
+case $NJ in ""|*[!0-9]*) NJ=2 ;; esac
+SRVSZ=$(wc -c < "$SRV" | tr -d " ")
+scan_part() {   # $1 = part index: its range of line starts is [lo, hi)
+    local lo=$(( ($1 - 1) * SRVSZ / NJ )) hi
+    if [ "$1" -eq "$NJ" ]; then hi=$((SRVSZ + 1)); else hi=$(( $1 * SRVSZ / NJ )); fi
+    awk -v RANGEF="$SRV" -v RLO="$lo" -v RHI="$hi" -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
     # THE PREFIX GATE (2026-09-27): a token can name a configured flow only when
     # its first 3 characters, upper-cased, open a configured name or an old
     # name of the rename map (the tail strip and the rename fold both keep the
@@ -95,6 +107,7 @@ awk -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
     FILENAME ~ /_subscriptions\.tsv$/ { if ($2 != "") { conf[toupper($1)] = $1; CP3[toupper(substr($1, 1, 3))] = 1; if (length($1) < 3) GATE_OFF = 1 }; next }
     FILENAME ~ /\.sess\./             { scan[$1] = 1; next }
     FILENAME ~ /_sessionsites\.tsv$/  { old[$1] = $2; next }
+    RANGEF != "" && FILENAME == RANGEF { _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
     {   # _parse.tsv: col 5 = message, col 6 = session
         if (!($6 in scan)) next
         # a session that already named two flows keeps "-" whatever it logs
@@ -120,6 +133,16 @@ awk -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
             }
         }
     }
+    END { for (s in seen) if (seen[s] != "") print s, seen[s] }
+    ' "$CONFSRC" "$sess" /dev/null "$SRV" > "$tmp.part.$1"
+}
+pids=()
+for ((pi = 1; pi <= NJ; pi++)); do scan_part "$pi" & pids+=("$!"); done
+for p in "${pids[@]}"; do wait "$p"; done
+awk -F'\t' -v OFS='\t' '
+    FILENAME ~ /\.sess\./            { scan[$1] = 1; next }
+    FILENAME ~ /_sessionsites\.tsv$/  { old[$1] = $2; next }
+    { if (!($1 in seen) || seen[$1] == "") seen[$1] = $2; else if (seen[$1] != $2) seen[$1] = "-" }
     END {
         # scanned sessions take the fresh verdict (or lose their entry);
         # unscanned entries persist — they are what keeps a rescued group
@@ -128,7 +151,9 @@ awk -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
         for (s in old)  if (!(s in scan)) nv[s] = old[s]
         for (s in nv) print s, nv[s]
     }
-' "$CONFSRC" "$sess" "$OLDMAP" "$SRV" | LC_ALL=C sort > "$tmp"
+' "$sess" "$OLDMAP" "$tmp".part.* | LC_ALL=C sort > "$tmp"
+rm -f "$tmp".part.*
+printf "TIME %5ds  session-sites: server log scan (%d jobs)\n" "$(( $(date +%s) - _ss0 ))" "$NJ" >&2
 
 n_scan=$(wc -l < "$sess" | tr -d ' ')
 n_map=$(wc -l < "$tmp" | tr -d ' ')

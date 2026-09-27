@@ -107,7 +107,8 @@ srv_inputs=("$ROOT/input/server/"*.csv)   # the ACTIVE ENV's server inputs (pre-
 shopt -u nullglob
 if [ ${#srv_inputs[@]} -gt 0 ]; then
     "$ROOT/bin/server/parse.sh"
-    "$ROOT/bin/server/reports/unknown-entities.sh"
+    . "$ROOT/bin/timing.sh"
+    timed "$ROOT/bin/server/reports/unknown-entities.sh"
 else
     echo "seen-in-server-log.sh: no input/server/*.csv — using the sidecars on disk as-is." >&2
 fi
