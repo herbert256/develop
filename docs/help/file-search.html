@@ -24,7 +24,7 @@
 <li>Windows: <strong>24 hours</strong> (the newest full day, plus the partial newest day when one exists), <strong>48 hours</strong> (the second full day), <strong>Week</strong> (the rest of the last seven days), <strong>2 weeks</strong> and <strong>3 weeks</strong> (a week each further back), <strong>Month</strong> (through data day 30).</li>
 <li>Windows never overlap &mdash; a file is on exactly one page; older than 30 data days is on none. A window with no files gets no page and no button.</li>
 <li>Each page ships at most <strong>100,000</strong> files (newest first); a capped window raises a red warning on the build report.</li>
-<li>Nothing filters while you type: enter a file name or CoreId (or part of either) and press <strong>Search</strong> or Enter. <code>?</code> = one character, <code>*</code> = any run; several space-separated words must all match. Matches newest first, the first 500 shown.</li>
+<li>The results follow as you type a file name or CoreId (or part of either); Enter searches at once. <code>?</code> = one character, <code>*</code> = any run; several space-separated words must all match. Matches newest first, the first 500 shown.</li>
 <li>Switching window re-runs the current search there &mdash; the buttons carry the query, and it survives a reload.</li>
 <li><strong>Green</strong> = OK (Delivered, or Waiting &mdash; staged for a UC2 pickup that has not happened yet); <strong>red</strong> = Error (Failed, or Expired &mdash; a staged file deleted by File Maintenance before pickup).</li>
 </ul>

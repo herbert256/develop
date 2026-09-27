@@ -2,9 +2,10 @@
    (search/file-search-<window>.html — under docs/search/ since 2026-09-12; ONE page per window since 2026-08, the
    Errors/OK pair is gone; every result row tints green (OK) or red (Error)).
    ------------------------------------------------------------------------
-   Deliberately NOT report.js's shared esearch: these pages search ONLY on
-   the Search button (or Enter) — no per-keystroke filtering — over their own
-   per-page COMPACT payload (file-search-<key>-data.js, v5, written by
+   Deliberately NOT report.js's shared esearch: these pages search AS THE
+   USER TYPES (after a short pause; no Search button since 2026-09-27, user
+   request) over their own per-page COMPACT payload
+   (file-search-<key>-data.js, v5, written by
    bin/analyses/reports/file-search.sh):
 
      window.AXWAY_FSEARCH_D  the date dictionary, one date per line
@@ -23,7 +24,11 @@
    — each rendered row carries data-res=green|red, the restint tint).
 
    Behaviour:
-   - builds the controls row (input + Search button + count) above the table;
+   - builds the controls row (input + match count) above the table; the
+     count stays EMPTY until something is typed (no "N files searchable"
+     idle text since 2026-09-27, user request);
+   - the results follow each keystroke (after a short pause; Enter runs at
+     once);
    - matching is on the FILE NAME and the CoreId, case-insensitive; `*` = any run,
      `?` = one character, several space-separated words must ALL match;
    - an ERROR row with its own error page (flag E): every cell and the whole
@@ -38,6 +43,7 @@
   "use strict";
 
   var SHOW = 500;   // matches rendered at most; the count line says the truth
+  var PAUSE = 150;  // ms after the last keystroke before the search runs
 
   function splitLines(s) {
     if (typeof s !== "string") return [];
@@ -88,13 +94,11 @@
     box.type = "text"; box.className = "search";
     box.placeholder = "Search by file name or CoreId…";
     box.title = "Wildcards: ? = one character, * = any run; several space-separated words must all match";
-    var btn = document.createElement("button");
-    btn.type = "button"; btn.className = "daterange"; btn.textContent = "Search";
     var count = document.createElement("span");
     count.className = "searchhint";
-    var idle = rows.length + " files searchable — type a file name or CoreId and press Search";
+    var idle = "";   // nothing typed: no count line
     count.textContent = idle;
-    bar.appendChild(box); bar.appendChild(btn); bar.appendChild(count);
+    bar.appendChild(box); bar.appendChild(count);
     wrap.parentNode.insertBefore(bar, wrap);
 
     // with NO data rows (no search yet, or no matches) the empty table
@@ -200,8 +204,18 @@
         : total + (total === 1 ? " match" : " matches");
     }
 
-    btn.addEventListener("click", run);
-    box.addEventListener("keydown", function (e) { if (e.key === "Enter") run(); });
+    // AS YOU TYPE (2026-09-27, user request): each keystroke re-arms a short
+    // pause, the search runs when it expires; Enter runs at once
+    var timer = null;
+    box.addEventListener("input", function () {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () { timer = null; run(); }, PAUSE);
+    });
+    box.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      if (timer) { clearTimeout(timer); timer = null; }
+      run();
+    });
 
     // WHOLE-ROW links. An error row with its own page carries data-href; every
     // other row follows its FIRST link — the Subscription cell's detail-page
