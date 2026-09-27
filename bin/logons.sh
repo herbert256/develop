@@ -352,18 +352,53 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 # its screening shadowed FE000260 failing 500 ms later).
                 # Unconsumed candidates from two DIFFERENT logins attribute
                 # to neither: a line that identifies nothing accuses nothing.
+                #
+                # PER-SECOND BUCKETS (2026-09-27): the join used to scan EVERY
+                # Allowed line and then EVERY SSH success for each failure —
+                # O(failures x lines), minutes on production (the long pole of
+                # the build, twice over: details.sh and logon.sh both call
+                # ensure_logons). The Allowed lines are now bucketed by whole
+                # second and the successes by (login, second); a failure looks
+                # at the three seconds up to its own (one more than the 1-second
+                # window needs, so float rounding can never drop a line) and
+                # applies the ORIGINAL tests to what it finds. Only the SET of
+                # candidates matters below (the chosen login and the ambiguity
+                # test), so the result is identical. Keys are %.0f strings: an
+                # epoch-second number as a subscript would go through CONVFMT.
+                for (a9 = 1; a9 <= na9; a9++) {
+                    kb9 = sprintf("%.0f", int(AS9[a9]))
+                    ABK9[kb9] = (ABK9[kb9] == "") ? a9 : ABK9[kb9] " " a9
+                }
+                for (t9 = 1; t9 <= nt9; t9++) {
+                    kb9 = TU9[t9] SUBSEP sprintf("%.0f", int(TS9[t9]))
+                    TBK9[kb9] = (TBK9[kb9] == "") ? t9 : TBK9[kb9] " " t9
+                }
                 for (f9 = 1; f9 <= nf9; f9++) {
-                    fs9 = FS9[f9]
+                    fs9 = FS9[f9]; fsec9 = int(fs9)
                     nc9 = 0
-                    for (a9 = 1; a9 <= na9; a9++) {
-                        if (AS9[a9] > fs9 || fs9 - AS9[a9] > 1) continue
-                        nc9++; CS9[nc9] = AS9[a9]; CU9[nc9] = AU9[a9]; CC9[nc9] = 0
+                    for (dd9 = 2; dd9 >= 0; dd9--) {
+                        kb9 = sprintf("%.0f", fsec9 - dd9)
+                        if (!(kb9 in ABK9)) continue
+                        nbb9 = split(ABK9[kb9], BB9, " ")
+                        for (jb9 = 1; jb9 <= nbb9; jb9++) {
+                            a9 = BB9[jb9] + 0
+                            if (AS9[a9] > fs9 || fs9 - AS9[a9] > 1) continue
+                            nc9++; CS9[nc9] = AS9[a9]; CU9[nc9] = AU9[a9]; CC9[nc9] = 0
+                        }
                     }
                     if (nc9 == 0) continue
-                    for (t9 = 1; t9 <= nt9; t9++) {
-                        if (TS9[t9] > fs9) continue
-                        for (c9x = 1; c9x <= nc9; c9x++)
-                            if (!CC9[c9x] && TU9[t9] == CU9[c9x] && TS9[t9] >= CS9[c9x]) CC9[c9x] = 1
+                    # a candidate is CONSUMED by a success of its own login at
+                    # or after its Allowed and not after the failure
+                    for (c9x = 1; c9x <= nc9; c9x++) {
+                        for (ss9 = int(CS9[c9x]); ss9 <= fsec9 && !CC9[c9x]; ss9++) {
+                            kb9 = CU9[c9x] SUBSEP sprintf("%.0f", ss9)
+                            if (!(kb9 in TBK9)) continue
+                            nbb9 = split(TBK9[kb9], BB9, " ")
+                            for (jb9 = 1; jb9 <= nbb9; jb9++) {
+                                t9 = BB9[jb9] + 0
+                                if (!(TS9[t9] > fs9) && TS9[t9] >= CS9[c9x]) { CC9[c9x] = 1; break }
+                            }
+                        }
                     }
                     b9 = 0; amb9 = 0
                     for (c9x = 1; c9x <= nc9; c9x++) {
