@@ -102,17 +102,24 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
     [ -d "$src" ] || return 0
     mkdir -p "$outdir"
     rm -f "$outdir"/*.html
-    local f base t hslug="details-$sub"
+    local hslug="details-$sub"
     # Detail pages sit in docs/<env>/details/<sub>/, so acct/site links resolve
     # from one level up ("../accounts/…", "../subscriptions/…").
     # (The per-subdir index.html listing page was REMOVED 2026-07 — nothing
     # linked it; $2 title only labels the call site now.)
     DLINK_BASE="../"
-    local vf vtmp
-    for f in "$src"/*.rpt; do
+    # THREE STRIPES PER SUBDIR (2026-09-27): the ten subdirs already render in
+    # parallel, but each rendered its pages one after another, so the wall
+    # clock was the biggest subdir; every page is written by exactly one
+    # stripe. (The TITLE lookup per page went too: it only fed render_rpt
+    # its right-label argument, which html_head no longer reads.)
+    local _files=("$src"/*.rpt) _stp=() _k
+    _rd_stripe() {   # $1 = stripe 0..2: every third page from it
+    local i f base vf vtmp srcf _skipv
+    for ((i = $1; i < ${#_files[@]}; i += 3)); do
+        f=${_files[$i]}
         [ -e "$f" ] || continue
-        base=$(basename "$f" .rpt)
-        t=$(field1 TITLE "$f")
+        base=${f##*/}; base=${base%.rpt}
         # Subscriptions open with their UCx status verdict, spliced in right
         # after DESC so it renders under the <h1>, above every table — the same
         # slot the blue and errors-after-last-transfer banners use.
@@ -170,12 +177,15 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
                 { print }
                 $1 == "DESC" && !d { if (!SKIPPROSE) printf "%s", pros; d = 1 }
                 END { if (infeat) printf "%s", tblk }' "$srcf" > "$vtmp"
-            render_rpt "$vtmp" "$outdir/$base.html" "../../assets/style.css" "index.html" "TRANSFER - $t" "" "$hslug"
+            render_rpt "$vtmp" "$outdir/$base.html" "../../assets/style.css" "index.html" "TRANSFER" "" "$hslug"
             rm -f "$vtmp"
         else
-            render_rpt "$srcf" "$outdir/$base.html" "../../assets/style.css" "index.html" "TRANSFER - $t" "" "$hslug"
+            render_rpt "$srcf" "$outdir/$base.html" "../../assets/style.css" "index.html" "TRANSFER" "" "$hslug"
         fi
     done
+    }
+    for _k in 0 1 2; do _rd_stripe "$_k" & _stp+=("$!"); done
+    for _k in "${_stp[@]}"; do wait "$_k"; done
     DLINK_BASE="../details/"
 }
 

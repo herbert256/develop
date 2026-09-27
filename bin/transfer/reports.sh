@@ -55,6 +55,12 @@ case $PHASE in both|phase1|phase2) ;; *) echo "usage: reports.sh [phase1|phase2]
 
 if [ "$PHASE" != phase2 ]; then
 # --- phase 1: independent reports ---
+# LONGEST FIRST (2026-09-27): the two slow independent writers start first —
+# entities.sh (~25 s on production) sat 56th of ~60 in this list, so its
+# whole run was the tail of the stage. Neither reads another report of this
+# phase, and nothing here reads what they write.
+pool_run "$SCRIPT_DIR/reports/entities.sh"   # the Entities PAGES (the grouped layout, 2026-09-13) — the nine classic writers below stay as data producers
+pool_run "$SCRIPT_DIR/reports/pda-entities.sh"
 pool_run "$SCRIPT_DIR/reports/topview.sh"
 pool_run "$SCRIPT_DIR/reports/account.sh"
 pool_run "$SCRIPT_DIR/reports/stale-accounts.sh"
@@ -109,8 +115,6 @@ pool_run "$SCRIPT_DIR/reports/file-in-file-out.sh"   # partner-to-partner handov
 pool_run "$SCRIPT_DIR/reports/uc4-to-uc2.sh"         # a UC4 delivery collected back by the same-named UC2 subscription (2026-09-14)
 pool_run "$SCRIPT_DIR/reports/same-protocol.sh"      # Files whose first inbound and last outbound leg share one protocol (2026-09-14)
 pool_run "$SCRIPT_DIR/reports/remote-host.sh"
-pool_run "$SCRIPT_DIR/reports/pda-entities.sh"
-pool_run "$SCRIPT_DIR/reports/entities.sh"   # the Entities PAGES (the grouped layout, 2026-09-13) — the nine classic writers above stay as data producers
 pool_run "$SCRIPT_DIR/reports/month-stats.sh"   # the Analyses-menu Month stats: this / previous month × the nine entities (2026-09-13)
 # (cross-reference.sh and seen-in-server-log.sh moved to bin/analyses/reports/
 # 2026-07 — their pages sit in the Analyses menu; bin/analyses/reports.sh runs

@@ -45,6 +45,15 @@ pool_wait() {  # reap every pooled job; abort the run if any report failed
     return 0
 }
 
+# LONGEST FIRST (2026-09-27): the four slowest reports of the pool start
+# first (logon 22 s, ssh-crypto 19 s, uc2-status 18 s, uc4-status 16 s on
+# production; they sat 17th-25th). Each reads only the transfer reports and
+# caches built before this stage; their outputs are read after the pool
+# (uc2-visits, pickups) or in later stages.
+pool_run "$SCRIPT_DIR/reports/logon.sh"
+pool_run "$SCRIPT_DIR/reports/ssh-crypto.sh"
+pool_run "$SCRIPT_DIR/../analyses/reports/uc2-status.sh"
+pool_run "$SCRIPT_DIR/../analyses/reports/uc4-status.sh"
 pool_run "$SCRIPT_DIR/reports/topview.sh"
 pool_run "$SCRIPT_DIR/reports/went-kaput.sh"
 pool_run "$SCRIPT_DIR/reports/errors-day.sh"
@@ -61,15 +70,11 @@ pool_run "$SCRIPT_DIR/reports/site-failures.sh"
 pool_run "$SCRIPT_DIR/reports/connection-diagnostics.sh"
 pool_run "$SCRIPT_DIR/reports/auth-activity.sh"
 pool_run "$SCRIPT_DIR/reports/ssh-key-auth.sh"
-pool_run "$SCRIPT_DIR/reports/ssh-crypto.sh"
-pool_run "$SCRIPT_DIR/reports/logon.sh"
 pool_run "$SCRIPT_DIR/reports/scheduler-overruns.sh"
 pool_run "$SCRIPT_DIR/reports/pesit.sh"
 pool_run "$SCRIPT_DIR/reports/stuck-events.sh"
 pool_run "$SCRIPT_DIR/reports/file-cleanup.sh"
 pool_run "$SCRIPT_DIR/../analyses/reports/uc1-status.sh"
-pool_run "$SCRIPT_DIR/../analyses/reports/uc2-status.sh"
-pool_run "$SCRIPT_DIR/../analyses/reports/uc4-status.sh"
 pool_run "$SCRIPT_DIR/reports/deploy-errors.sh"
 pool_run "$SCRIPT_DIR/reports/remote-poll.sh"
 pool_run "$SCRIPT_DIR/reports/transfer-site-missing.sh"
