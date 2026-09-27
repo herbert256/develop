@@ -407,28 +407,6 @@ _stcell() {   # $1 value  $2 class  [$3 coverage href, docs-root-relative]
     fi
 }
 
-# One toggle variant's cell CONTENT — link / plain text / empty (0).
-_stvar() {   # $1 value  [$2 coverage href, docs-root-relative]
-    [ "${1:-0}" = 0 ] && return 0
-    if [ -n "${2:-}" ] && [ -f "docs/$2" ]; then
-        printf '<a href="%s">%s</a>' "$2" "$(dotify "$1")"
-    else
-        printf '%s' "$(dotify "$1")"
-    fi
-}
-
-# A DUAL-VALUE cell for the "including server log" switch: the .von span
-# (server-log-inclusive figure) shows when the table's .sxscol carries
-# .srvon, the .voff span (transfer-only figure) otherwise (style.css;
-# report.js setupSrvToggle).
-_stcell2() {   # $1 on-value  $2 off-value  $3 class  [$4 on-href]  [$5 off-href]
-    # separate hrefs per variant: the coverage pages count blue as SEEN, so
-    # only the server-log-INCLUSIVE (on) figures match them — a transfer-only
-    # (off) figure with no matching list page renders unlinked
-    printf '<td class="%s"><span class="von">%s</span><span class="voff">%s</span></td>' \
-        "$3" "$(_stvar "$1" "${4:-}")" "$(_stvar "$2" "${5:-}")"
-}
-
 # The PERCENTAGE columns link the same page as the count they are a share of,
 # so EVERY figure in a row is clickable — a share of a list is that list. A 0 %
 # still renders (unlike a 0 count, which blanks): it is a real reading.
@@ -436,47 +414,36 @@ _pctvar() {   # $1 percentage  [$2 href, docs-root-relative]
     if [ -n "${2:-}" ] && [ -f "docs/$2" ]; then printf '<a href="%s">%s&nbsp;%%</a>' "$2" "$1"
     else printf '%s&nbsp;%%' "$1"; fi
 }
-_stpct2() {   # $1 on-%  $2 off-%  [$3 on-href]  [$4 off-href]
-    printf '<td class="num"><span class="von">%s</span><span class="voff">%s</span></td>' \
-        "$(_pctvar "$1" "${3:-}")" "$(_pctvar "$2" "${4:-}")"
-}
 
-# One result-status table (Total / Seen / Transfer / Server / Error / Warning /
-# Ok per member) — the analyses Status group as a standalone table. EVERY
-# figure is the row count of the list page its cell links, so a number and its
-# list can never disagree: the Flow manager entities rows link the Transfer >
-# Entities view of that name (2026-07) — the switch state picking the view's
-# SCOPE, +Server pages when it is on, the -transfer ones when it is off — the
-# PDA rows a coverage cell page, and the Server column (no Entities view lists
-# the server-log-only names alone) its status-server coverage cell.
+# One result-status table (Total / Seen % / OK % / Error / Warning / Ok per
+# member) — the analyses Status group as a standalone table. EVERY figure is
+# the row count of the list page its cell links, so a number and its list can
+# never disagree: every row links the Transfer > Entities views of that name
+# (2026-07). (Until 2026-09-27 an "including server log" switch added the
+# Transfer / Server columns — the BLUE server-log-only status, removed.)
 #   $1 = coverage href prefix (docs-relative, e.g. "coverage/")
 #   $2 = <h2> title   rest = label:member:basefile
 # (the former $3 "rpt kind" is gone: both tables now read the SAME home.rpt,
 # keyed by member, and every cell links the member's own Entities views)
 _status_table() {
     local cov=$1 title=$2; shift 2
-    # the title row carries the "including server log" switch (default OFF:
-    # the Transfer/Server columns hide, Seen/Warning show their transfer-only
-    # figures — report.js setupSrvToggle flips .srvon on this .sxscol)
-    printf '<div class="sxscol"><h2 class="h2row">%s<button type="button" class="srvtoggle" aria-pressed="false">including server log</button></h2>\n<div class="tablewrap"><table class="index fit" data-nosearch="1">\n' "$title"
-    printf '<tr><th>Entity</th><th class="num">Total</th><th class="num">Seen</th><th class="num">OK</th><th class="num colsrv">Transfer</th><th class="num colsrv">Server</th><th class="num">Error</th><th class="num">Warning</th><th class="num">Ok</th></tr>\n'
-    # The figures are CALCULATED from the sources — Total / Server / Error /
-    # Warning / Ok from the base result column, Seen from home.rpt
-    # (one line per member), Transfer = Seen - Server, and the
-    # toggle-OFF variants derived (Not seen = Total - Transfer, Warning-off =
-    # Warning + Server). They are NEVER lifted from the linked pages: the
-    # pages must independently list the same rows, and
-    # check_status_consistency (run after the home is written) warns LOUDLY
-    # on any figure/page divergence — agreement is the proof, never the input.
-    local spec label member bf n sv r o g seen tr_ nsoff nson woff
+    printf '<div class="sxscol"><h2>%s</h2>\n<div class="tablewrap"><table class="index fit" data-nosearch="1">\n' "$title"
+    printf '<tr><th>Entity</th><th class="num">Total</th><th class="num">Seen</th><th class="num">OK</th><th class="num">Error</th><th class="num">Warning</th><th class="num">Ok</th></tr>\n'
+    # The figures are CALCULATED from the sources — Total / Error / Warning /
+    # Ok from the base result column, Seen from home.rpt (one line per
+    # member). They are NEVER lifted from the linked pages: the pages must
+    # independently list the same rows, and check_status_consistency (run
+    # after the home is written) warns LOUDLY on any figure/page divergence —
+    # agreement is the proof, never the input.
+    local spec label member bf n r o g seen
     local srpt="$HOME_ENV_DATA/analyses/reports/home.rpt"
     for spec in "$@"; do
         IFS=: read -r label member bf <<< "$spec"
-        n=0; sv=0; r=0; o=0; g=0
+        n=0; r=0; o=0; g=0
         if [ -f "$HOME_ENV_DATA/flow-manager/base/$bf.tsv" ]; then
-            read -r n sv r o g <<< "$(awk -F'\t' '
+            read -r n r o g <<< "$(awk -F'\t' '
                 { n++; c[$3]++ }
-                END { print n+0, c["blue"]+0, c["red"]+0, c["orange"]+0, c["green"]+0 }' \
+                END { print n+0, c["red"]+0, c["orange"]+0, c["green"]+0 }' \
                 "$HOME_ENV_DATA/flow-manager/base/$bf.tsv")"
         fi
         # Seen is the ONE figure the base caches cannot give: the configured
@@ -487,13 +454,10 @@ _status_table() {
         seen=0
         [ -f "$srpt" ] && seen=$(awk -F'\t' -v m="$member" '$1=="SEEN" && $2==m {print $3; exit}' "$srpt")
         seen=${seen:-0}
-        tr_=$(( seen - sv )); nsoff=$(( n - tr_ )); woff=$(( o + sv )); nson=$(( n - seen ))
-        # rounded percentages (of Total)         # name: Seen % toggles with the Seen count (server-inclusive vs
-        # transfer-only via von/voff), OK % (green) is constant. n/2 rounds.
-        local seenpon=0 seenpoff=0 okp=0
+        # rounded percentages (of Total): Seen % and OK % (green). n/2 rounds.
+        local seenp=0 okp=0
         if [ "$n" -gt 0 ]; then
-            seenpon=$(( (100 * seen + n / 2) / n ))
-            seenpoff=$(( (100 * tr_ + n / 2) / n ))
+            seenp=$(( (100 * seen + n / 2) / n ))
             okp=$(( (100 * g + n / 2) / n ))
         fi
         # Every Entity label (the classic four AND the PDA trio) links its
@@ -520,25 +484,12 @@ _status_table() {
         # Transfer > Entities view (2026-07: the PDA rows too — Partners,
         # Domains and Applications are Entities reports like the classic four,
         # so their figures have a view of their own) — the view whose row count
-        # IS this figure (All / Seen / Not seen / OK / Warning / Error, each
-        # carrying datereset so it opens at the full date range) in the SCOPE
-        # this switch state means: +Server (bare page name) when it is on,
-        # Transfer (-transfer) when it is off — for the three SCOPE-DEPENDENT
-        # views. That covers the two figures that used to have no view of their
-        # own — Not seen without the server-log-only names (Total - Transfer) IS
-        # Not seen/Transfer, and Warning + Server IS Warning/Transfer.
-        # Total/Error/Ok are the same list in either scope (one page, one link),
-        # and Server is the +Server scope's own view. A member with NO Entities
-        # report (none today) would fall back to its coverage cell pages.
-        local h_tot h_seen h_seenoff h_ns h_tr h_srv h_err h_warn h_ok
-        local h_nsoff="" h_warnoff=""
+        # IS this figure (All / Seen / OK / Warning / Error, each carrying
+        # datereset so it opens at the full date range). A member with NO
+        # Entities report (none today) would fall back to its coverage cell
+        # pages.
+        local h_tot h_seen h_err h_warn h_ok
         if [ -n "$ebase" ]; then
-            # The switch IS the Entities pages' scope tab (2026-07): ON links the
-            # +Server pages (bare names), OFF the -transfer ones. Only the three
-            # SCOPE-DEPENDENT views have both (Seen / Not seen / Warning) —
-            # Total/Error/Ok list the same names in either scope and have ONE
-            # page, so those cells keep a single link. The Server column links
-            # the Server view (the blue names), which the +Server scope offers.
             h_tot="$ent-all.html"
             # ...EXCEPT the Logical + three PDA rows, whose Total keeps its own
             # COVERAGE CELL page (restored 2026-07): the configured logical
@@ -551,36 +502,25 @@ _status_table() {
                 logicals|partners|applications|domains|bl)
                     [ -f "docs/$cov$member-configured.html" ] && h_tot="$cov$member-configured.html" ;;
             esac
-            h_seen="$ent-seen.html";     h_seenoff="$ent-seen-transfer.html"
-            h_ns="$ent-not-seen.html";   h_nsoff="$ent-not-seen-transfer.html"
-            h_tr="$ent-seen-transfer.html"
-            h_srv="$ent-server.html"
+            h_seen="$ent-seen.html"
             h_err="$ent-error.html"
-            h_warn="$ent-warning.html";  h_warnoff="$ent-warning-transfer.html"
+            h_warn="$ent-warning.html"
             h_ok="$ent-ok.html"
         else
             h_tot="$cov$member-configured.html";     h_seen="$cov$member-seen.html"
-            h_seenoff="$cov$member-status-transfer.html"
-            h_ns="$cov$member-notseen.html";         h_tr="$cov$member-status-transfer.html"
-            h_srv="$cov$member-status-server.html";  h_err="$cov$member-status-error.html"
+            h_err="$cov$member-status-error.html"
             h_warn="$cov$member-status-warning.html"; h_ok="$cov$member-status-ok.html"
         fi
-        # Total first, then the two % columns: Seen % (matches the Seen count
-        # under the toggle via von/voff), then OK % (green/Total, constant).
-        # Total/Error/Ok hold the SAME figure in both toggle states and link the
-        # ONE page that lists it, so they stay single cells. EVERY figure in the
-        # row is a link, the percentages included — each to the page its count
-        # links (a share of a list opens that list). Only a 0, which renders as
-        # an EMPTY cell, has no link: there is no figure to click.
+        # Total first, then the two % columns: Seen %, then OK % (green/Total).
+        # EVERY figure in the row is a link, the percentages included — each
+        # to the page its count links (a share of a list opens that list). Only
+        # a 0, which renders as an EMPTY cell, has no link: there is no figure
+        # to click.
         _stcell  "$n"             "num"                 "$h_tot"
-        _stpct2  "$seenpon" "$seenpoff"                 "$h_seen" "$h_seenoff"
+        printf '<td class="num">%s</td>' "$(_pctvar "$seenp" "$h_seen")"
         printf '<td class="num">%s</td>' "$(_pctvar "$okp" "$h_ok")"
-        # the Seen / Not seen COUNT columns were removed 2026-08 (the Seen %
-        # column keeps the seen figure's link in both toggle states)
-        _stcell  "$tr_"           "num colsrv"          "$h_tr"
-        _stcell  "$sv"            "num res-blue colsrv" "$h_srv"
         _stcell  "$r"             "num st-err"          "$h_err"
-        _stcell2 "$o" "$woff"     "num st-warn"         "$h_warn" "${h_warnoff:-$cov$member-status-warning-server.html}"
+        _stcell  "$o"             "num st-warn"         "$h_warn"
         _stcell  "$g"             "num st-ok"           "$h_ok"
         printf '</tr>\n'
     done
@@ -698,13 +638,13 @@ write_failing_now() {
     # flow-level _subs-boxes.tsv verdict instead, and the two could disagree:
     # a one-legged file whose flow once had connection failures said
     # "Connection failures" here and "One-legged" on the page (2026-08-22).
-    # A SERVER-REDDENED flow never sits here (2026-08-22): a blue/_redflip.tsv
+    # A SERVER-REDDENED flow never sits here (2026-08-22): a colour/_redflip.tsv
     # entry means the flow's LAST transfer ended OK and the server log erred
     # AFTER it — so any failed File it still has on the Failed Subscriptions lists is older
     # history, and this row would open a stale error page while the real story
     # is the server log. Those flows go to table 2, whatever old failures they
     # keep listed.
-    local redflip="$HOME_ENV_DATA/blue/_redflip.tsv"
+    local redflip="$HOME_ENV_DATA/colour/_redflip.tsv"
     [ -f "$redflip" ] || redflip=/dev/null
     rows1=$(awk -F'\t' -v RF="$redflip" '
         BEGIN { while ((getline l < RF) > 0) { n = split(l, a, "\t")
@@ -1165,7 +1105,7 @@ write_home_block() {
         # percentile cannot be summed); empty cells when the report is absent
         [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'   # five: p50 p75 p90 p95 p99
         # the First-seen totals: the report's SEEN line — the SAME figure as
-        # the status tables' Seen column in the Transfer scope (the day cells
+        # the status tables' Seen column (the day cells
         # above plus the report's no-date bucket sum to it); each links its
         # <type>-seen list, whose row count IS that figure
         # an env without the report (2026-09-03, production runtime: the build
@@ -1234,8 +1174,8 @@ finder_row() {   # $1 href  $2 area  $3 title  $4 intro (**bold** markdown, or r
         kl=""
     fi
     if [ -n "${6:-}" ]; then
-        # cap the DISPLAYED line (a many-table report — seen-in-server-log has
-        # 25 headings — would swamp the row); the search set is never capped
+        # cap the DISPLAYED line (a many-table report would swamp the row);
+        # the search set is never capped
         local kv=$6
         if [ ${#kv} -gt 200 ]; then kv="${kv:0:200}…"; fi
         esc "$kv"; kd=" <span class=\"rfkw\">$ESC</span>"
@@ -1272,13 +1212,13 @@ rpt_keywords() {
 }
 # The finder's Area column for a transfer-area report basename: the reports that
 # live in the Analyses menu/sitemap (cross references, partner coverage,
-# seen-in-server-log, skipped + its per-value pages, missing-cronjobs,
+# skipped + its per-value pages, missing-cronjobs,
 # not-in-flow-manager, sources-and-targets) are labelled "Analyses" like the
 # menu, everything else "Transfer". KEEP IN SYNC with _analyses_groups — every
 # member listed there is an Analyses report wherever its page happens to live.
 finder_area() {
     case $1 in
-        cross-*|entity-coverage|entity-coverage-*|sources-and-targets|seen-in-server-log|skipped|skipped-*|missing-cronjobs|not-in-flow-manager) echo "Analyses" ;;
+        cross-*|entity-coverage|entity-coverage-*|sources-and-targets|skipped|skipped-*|missing-cronjobs|not-in-flow-manager) echo "Analyses" ;;
         *) if is_subs_report "$1" || is_boxes_only "$1"; then echo "Analyses"; else echo "Transfer"; fi ;;
     esac
 }
@@ -1448,11 +1388,10 @@ analyses/logical-detection.html|Logical detection|How every configured FlowID de
 analyses/added-bl.html|Added BL|The BL numbers input/<env>/BL.txt adds on top of subscriptions.json — per subscription, the values that are not among its tags.|bl, BL.txt, added, tags, business line|BL, added
 analyses/accounts.html|Accounts (analyses)|The configured accounts analysed against the FlowManager configuration.||
 analyses/first-seen.html|First seen|On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.||
-analyses/first-seen-both.html|First seen (both logs)|On what day each entity was first seen across BOTH the transfer and the server logs.||
 analyses/whitelist-audit.html|Whitelist audit|Whitelisted partner IPs vs the addresses actually connecting: used, connect-only, never seen (prunable), plus sources without any whitelist entry.|whitelist, AllowIP, IP, prune, attack surface, unused|whitelist, AllowIP, prune
 analyses/accounts-in-boxes.html|Accounts in boxes|Every configured account boxed by what is true of the subscriptions connected to it — an account is in a box when one of its subscriptions is. The account view of Subscriptions in boxes.|boxes, account, box, connected, subscriptions, estate, rollup|boxes, box, account rollup
 analyses/config-hygiene.html|Config hygiene|The cleanup backlog: likely-duplicate twins (case / separator folds) and orphaned objects nothing references.|twins, duplicates, orphans, cleanup, legacy|twins, orphans, cleanup
-analyses/subscriptions-in-boxes.html|Subscriptions in boxes|Every subscription boxed by what is true of it — OK, or any of twelve problem signals — one column per box, each cell linking into its report or entity view.|boxes, problems, broken, flagged, trouble, one-legged, kaput, only red, regression, ok, not seen, server only|boxes, problems, flagged, ok
+analyses/subscriptions-in-boxes.html|Subscriptions in boxes|Every subscription boxed by what is true of it — OK, or any of fourteen problem signals — one column per box, each cell linking into its report or entity view.|boxes, problems, broken, flagged, trouble, one-legged, kaput, only red, regression, ok, not seen, server only|boxes, problems, flagged, ok
 analyses/triage.html|Triage|The ranked action list: every subscription that is red, holds staged Files about to expire, or just fell silent — newest flips on the busiest flows first.|triage, action list, worklist, red, expiry, quiet, attention, priority, ranked|triage, action list, priority
 analyses/failing-reasons.html|Error reasons|Every possible Reason of the Failed Subscriptions pages — how many failed Files carry it and the newest occurrence; a nonzero row opens the failed Files behind it.|error, reason, cause, failed, failing, errors, files, count, vocabulary|error reasons, cause, red
 analyses/data-diff.html|Since yesterday|The data diff against the newest log day: new red flips, newly quiet flows, recoveries, first-seen entities by name and new server-log-only names.|diff, yesterday, new, changed, flips, recovered, first seen|diff, yesterday, changed
@@ -1521,7 +1460,6 @@ sm_area_cards() {   # $1 area (transfer|server)
         case $name in entity-coverage|entity-coverage-ok|entity-coverage-once|entity-coverage-diff) continue ;; esac   # listed in the Analyses column
         [ "$name" = sources-and-targets ] && continue # listed in the Analyses column
         [ "$name" = skipped ] && continue           # listed in the Analyses column
-        [ "$name" = seen-in-server-log ] && continue # listed in the Analyses column
         [ "$name" = missing-cronjobs ] && continue  # listed in the Analyses column (Configuration)
         [ "$name" = not-in-flow-manager ] && continue # listed in the Analyses column (Configuration)
         if is_subs_report "$name"; then continue; fi   # listed in the Analyses column (Subscriptions)
@@ -1584,11 +1522,10 @@ write_sitemap() {
         # dir, ...) are distinct reports and stay separate entries.
         # File search left this card 2026-09-07 (user request): the top bar's
         # Files link is its one navigation entry; the report finder still lists it
-        printf '<div class="smcard"><h3>Coverage &amp; seen <span class="smcount">4</span></h3><ul>\n'
+        printf '<div class="smcard"><h3>Coverage &amp; seen <span class="smcount">3</span></h3><ul>\n'
         printf '<li><a href="../transfer/entity-coverage-accounts.html">Entity coverage</a></li>\n'
         printf '<li><a href="../analyses/first-seen.html">First seen</a></li>\n'
         printf '<li><a href="../analyses/data-diff.html">Since yesterday</a></li>\n'
-        printf '<li><a href="../transfer/seen-in-server-log.html">Seen in server log</a></li>\n'
         printf '</ul></div>\n'
         printf '<div class="smcard"><h3>Configuration <span class="smcount">17</span></h3><ul>\n'
         printf '<li><a href="../analyses/use-cases.html">Use Case</a></li>\n'
@@ -2037,7 +1974,7 @@ check_status_consistency() {
 }
 
 # transfer_menu_order (the top-bar Transfer menu set) excludes the Analyses-menu
-# members (cross-*, seen-in-server-log, entity-coverage, skipped) and Search, so
+# members (cross-*, entity-coverage, skipped) and Search, so
 # the grouped index matches the menu — those live in the Analyses index instead.
 # laps (2026-09-27): TIME lines on the build console, like the other steps
 _bpl0=$(date +%s)

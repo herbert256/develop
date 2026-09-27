@@ -59,10 +59,12 @@ check $([ "$n" -eq 0 ] && echo 0 || echo 1) "$n files with EMPTY site"
 B="data/flow-manager/base/_subscriptions.tsv"
 blue=$(awk -F'\t' '$3 == "blue" { n++ } END { print n + 0 }' "$B")
 orange=$(awk -F'\t' '$3 == "orange" { n++ } END { print n + 0 }' "$B")
-eb=$(exp blue); eo=$(exp orange)
-check $([ "$blue" -ge $((eb / 2)) ] && echo 0 || echo 1) "blue subscriptions $blue < half of planted $eb"
+eo=$(exp orange)
+# the blue (server-log-only) result is RETIRED (2026-09-27): the planted
+# server-log-only flows are orange now (or green / red by the UC3 poll rules)
+check $([ "$blue" -eq 0 ] && echo 0 || echo 1) "$blue subscription(s) still carry the retired blue result"
 check $([ "$orange" -ge "$eo" ] && echo 0 || echo 1) "orange subscriptions $orange < planted $eo"
-gp=$(rows "data/blue/_greenpoll.tsv")
+gp=$(rows "data/colour/_greenpoll.tsv")
 egp=$(exp greenpoll)
 [ "$egp" -gt 0 ] && check $([ "$gp" -gt 0 ] && echo 0 || echo 1) "greenpoll empty (planted $egp)"
 
@@ -274,7 +276,7 @@ if [ "$(exp collectdrop)" -gt 0 ]; then
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n bookend(s) leaked into the account mention cache"
 fi
 # the UC3 that never transfers and CANNOT CONNECT (2026-09-10, user rule):
-# no File, every poll a Connection failure — red (not blue/orange), with
+# no File, every poll a Connection failure — red (not orange), with
 # its newest failure in the _redflip sidecar, an error page of its own,
 # and a row on the home page's "Failing subscriptions in Server log"
 if [ "$(exp pollconnfail)" -gt 0 ]; then
@@ -282,7 +284,7 @@ if [ "$(exp pollconnfail)" -gt 0 ]; then
     check $([ "$c" = red ] && echo 0 || echo 1) "UC3_ZG_RATES_OSCORP is '${c:-absent}', expected red (every poll a connection failure, no transfer)"
     n=$(awk -F'\t' '$12=="UC3_ZG_RATES_OSCORP" { n++ } END { print n+0 }' "$F")
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "UC3_ZG_RATES_OSCORP has $n File(s) — the sample must plant none"
-    n=$(awk -F'\t' '$1=="UC3_ZG_RATES_OSCORP" { n++ } END { print n+0 }' "data/blue/_redflip.tsv" 2>/dev/null)
+    n=$(awk -F'\t' '$1=="UC3_ZG_RATES_OSCORP" { n++ } END { print n+0 }' "data/colour/_redflip.tsv" 2>/dev/null)
     check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "_redflip.tsv has $n row(s) for UC3_ZG_RATES_OSCORP, expected 1"
     check $([ -f "docs/files/uc3-zg-rates-oscorp.html" ] && echo 0 || echo 1) "docs/files/uc3-zg-rates-oscorp.html missing (the server-failing error page)"
     n=$(awk 'BEGIN{RS="<h2"} /Failing subscriptions in Server log/ && /UC3_ZG_RATES_OSCORP/ { n++ } END { print n+0 }' docs/index.html 2>/dev/null)
@@ -590,7 +592,7 @@ if [ "$(exp lateok)" -gt 0 ]; then
     check $([ -n "$lerr" ] && [ -n "$len" ] && [ "$lst" \< "$lerr" ] && [ "$lerr" \< "$len" ] && echo 0 || echo 1) "the lateok shape is not start < error < end: start '${lst:-?}', error '${lerr:-none}', end '${len:-empty}'"
     c=$(awk -F'\t' -v s="$lk" '$1 == s { print $3; exit }' "$B" 2>/dev/null)
     check $([ "${c:-x}" = "green" ] && echo 0 || echo 1) "the lateok flow is '${c:-absent}', expected green (a File ended OK after the error)"
-    check $([ "$(grep -c "^$lk"$'\t' data/blue/_redflip.tsv 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the lateok flow is in _redflip.tsv — the error was counted as after the last transfer"
+    check $([ "$(grep -c "^$lk"$'\t' data/colour/_redflip.tsv 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the lateok flow is in _redflip.tsv — the error was counted as after the last transfer"
     check $([ "$(grep -c "$lk" data/transfer/reports/_srvsubs-map.tsv 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the lateok flow is in the server-failing set (_srvsubs-map.tsv)"
     check $([ "$(grep -c $'^ROW\t'"$lk" data/server/reports/went-kaput.rpt 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the lateok flow has a went-kaput row"
     ls9=$(awk -F'\t' -v s="$lk" '$1 == s { print $2; exit }' "data/transfer/reports/details/subscriptions/_slugmap.tsv" 2>/dev/null)
@@ -811,7 +813,7 @@ h=$(awk -F'\t' '$1 == "UC3_SI_TELEMETRY_STARK" { print tolower($2); exit }' data
 n=$(awk -F'\t' -v H="$h" '$1 != "" && tolower($2) == H { n++ } END { print n + 0 }' data/flow-manager/xref/_subscriptions-hosts.tsv 2>/dev/null)
 check $([ -n "$h" ] && [ "${n:-0}" -ge 2 ] && echo 0 || echo 1) "the STARK host '${h:-?}' is not shared (${n:-0} flow(s)) — the session rule is never exercised"
 s=$(awk -F'\t' '$3 == "E" && $5 ~ /^Authentication failure connecting to remote host/ { print $6; exit }' "data/server/cache/hosts/${h:-none}_err_warn.tsv" 2>/dev/null)
-v=$(awk -F'\t' -v S="$s" 'S != "" && $1 == S { print $2; exit }' data/blue/_sessvote.tsv 2>/dev/null)
+v=$(awk -F'\t' -v S="$s" 'S != "" && $1 == S { print $2; exit }' data/colour/_sessvote.tsv 2>/dev/null)
 check $([ -n "$s" ] && [ "$v" = "UC3_SI_TELEMETRY_STARK" ] && echo 0 || echo 1) "the STARK host ring's authentication failure (session '${s:-none}') votes '${v:-nothing}', expected UC3_SI_TELEMETRY_STARK"
 c=$(awk -F'\t' '$1 == "UC1_IT_LEADS_STARK" { print $3; exit }' data/flow-manager/base/_subscriptions.tsv 2>/dev/null)
 check $([ "$c" = green ] && echo 0 || echo 1) "UC1_IT_LEADS_STARK is '${c:-absent}', expected green — the shared host's authentication failure belongs to the UC3 poll flow"
@@ -946,7 +948,7 @@ r=$(awk -F'\t' '
             if (index(P[i], "class=\"num na\"")) na++
         }
         rows++
-        if (col !~ /^(green|red|orange|blue|white)$/) badcol++
+        if (col !~ /^(green|red|orange|white)$/) badcol++
         if (nm in SK) { sk++; if (na != 9 || col != "white") badsk++ }
         else if (na != 0) badsk++
         want = (nm in R) ? R[nm] : ""
@@ -958,7 +960,7 @@ r=$(awk -F'\t' '
     data/flow-manager/filtered/_skipped.tsv data/transfer/reports/failed-files.rpt docs/analyses/subscriptions.html 2>/dev/null)
 read -r srows snsk ssk sbadsk sbadcol swithr sbader ssw sbadsw sex <<< "$r"
 check $([ "${srows:-0}" -gt 0 ] && [ "${snsk:-0}" -gt 0 ] && [ "${ssk:-0}" = "${snsk:-x}" ] && [ "${sbadsk:-1}" = 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: ${ssk:-?} of ${snsk:-?} skipped subscription(s) listed, ${sbadsk:-?} row(s) with wrong n/a counts or colour"
-check $([ "${sbadcol:-1}" = 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: ${sbadcol:-?} row(s) without a green/red/orange/blue/white Color"
+check $([ "${sbadcol:-1}" = 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: ${sbadcol:-?} row(s) without a green/red/orange/white Color"
 check $([ "${swithr:-0}" -gt 0 ] && [ "${sbader:-1}" = 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: ${sbader:-?} Error reason cell(s) differ from the newest failed-files reason (first: ${sex:-?}), ${swithr:-0} filled"
 check $([ "${ssw:-0}" -gt 0 ] && [ "${sbadsw:-1}" = 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: ${sbadsw:-?} of ${ssw:-0} SWIFT subscription(s) without Active CFT"
 

@@ -122,7 +122,7 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
         base=${f##*/}; base=${base%.rpt}
         # Subscriptions open with their UCx status verdict, spliced in right
         # after DESC so it renders under the <h1>, above every table — the same
-        # slot the blue and errors-after-last-transfer banners use.
+        # slot the errors-after-last-transfer banner uses.
         vf=""; [ "$sub" = subscriptions ] && [ -n "$VERDICT_DIR" ] && vf="$VERDICT_DIR/$base.txt"
         # srcf walks through the optional preprocessing steps, each reading
         # the previous one's output (the LAST-ERROR SPLICE was removed
@@ -141,9 +141,8 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
             # Features.
             _skipv=0
             grep -q $'^ALERT\tERROR IN SERVER LOG AFTER LAST TRANSFER$' "$srcf" && _skipv=1
-            # The verdict REPLACES the two one-liners the writer emits for the
-            # same conditions — "Only seen in the server log, never in the
-            # transfer log" and "Configured — never seen …" — which it now says
+            # The verdict REPLACES the one-liner the writer emits for the same
+            # condition — "Configured — never seen …" — which it now says
             # with the numbers and the report's own word for it. Dropping them
             # HERE rather than in details.sh keeps them as the fallback: a page
             # that gets no verdict (an environment with no server reports, so no
@@ -160,10 +159,7 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
                             if (index(l, "TABLE\t") == 1) intbl = 1
                             if (intbl) tblk = tblk l "\n"; else pros = pros l "\n" }
                         close(VF) }
-                # (the blue line opens with the "**" of its bold run, so match
-                # anywhere in the field rather than at position 1)
-                $1 == "INTRO" && (index($2, "Only seen in the server log") > 0 ||
-                                  index($2, "Configured") == 1) { next }
+                $1 == "INTRO" && index($2, "Configured") == 1 { next }
                 infeat && ($1 == "TABLE" || $1 == "NOTE" || $1 == "INTRO" || $1 == "LINK" || $1 == "SUMMARY" || $1 == "FOOT") { printf "%s", tblk; infeat = 0 }
                 # the Features table may ALREADY sit in a flex row — the writer
                 # pairs it with "Activity per day" (sxs=af, 2026-09-16) — so the
@@ -200,8 +196,6 @@ for _rm in accounts:_accounts subscriptions:_subscriptions logins:_logins hosts:
     [ -s "$DATA/flow-manager/base/${_rm#*:}.tsv" ] && RESMAP_FILES+="${RESMAP_FILES:+ }${_rm%%:*}=$DATA/flow-manager/base/${_rm#*:}.tsv"
 done
 unset _rm
-# (Server-log-only entities carry result=blue in the base caches — render_rpt.awk
-# renders res-blue straight from the resmaps above; no separate overlay.)
 
 # The detail pages carry NO From/To date filter (2026-07): they always show
 # the complete period. CUR_DATES stays empty, so html_head emits no

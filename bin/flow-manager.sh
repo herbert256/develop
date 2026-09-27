@@ -1242,9 +1242,9 @@ fm_counts=$(awk '{ c[FILENAME]++ }
 } <<< "$fm_counts" >&2
 # The CONFIGURED-NAME snapshot (2026-08): base/.configured.tsv, "<list>\t<name>"
 # for every entity the EXPORT defines, taken here where the base lists are still
-# exactly the config — the two build steps that follow APPEND discovered
-# entities to them (bin/build/seen-in-server-log.sh its server-log blues,
-# bin/build/result.sh its transfer discoveries). Without this snapshot nothing
+# exactly the config — the build step that follows APPENDS discovered
+# entities to them (bin/build/result.sh its transfer discoveries; the
+# server-log blues went 2026-09-27). Without this snapshot nothing
 # downstream can tell a configured flow from an appended one, so a discovery
 # whose evidence is later withdrawn stays in the estate for ever as a phantom
 # "configured but never seen" row — which is how the caches once grew to 696

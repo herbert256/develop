@@ -291,7 +291,7 @@ CUR_DATES=""
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out uc4-to-uc2 same-protocol activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl seen-in-server-log entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files failed-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-trend account-sharing twins)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out uc4-to-uc2 same-protocol activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files failed-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-trend account-sharing twins)
 server_order=(topview errors failure-flows io-errors could-not-send publish-failed post-client-action pickups uc-status uc2-visits polling went-kaput site-failures logons connections ssh-security platform-health capacity event-queue deploy-errors transfer-site-missing no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -360,7 +360,7 @@ cross_tabs() { printf '%s' "$1"; }   # $1 = "Ent|Ent|..."
 # report-specific knowledge the renderer needs.
 report_tabs() {
     case $1 in
-        account|login|subscription|remote-host|logical|partner|application|domain|bl) echo "All|Seen|Not seen|OK|Warning|Error|Server" ;;   # Entities group (pages under docs/<area>/entities/; default = All via first_page). Every view is listed so member-row links resolve to the same view (member_page_for_label) — Server included, though it is offered only in the +Server scope; the SCOPE (Transfer | +Server, a third tab group) rides on the filename suffix, added by render_entity_report.
+        account|login|subscription|remote-host|logical|partner|application|domain|bl) echo "All|Seen|Not seen|OK|Warning|Error" ;;   # Entities group (pages under docs/<area>/entities/; default = All via first_page). Every view is listed so member-row links resolve to the same view (member_page_for_label).
         cross-account)      cross_tabs "Login|Subscriptions|Hosts|Logical|Partners|Applications|Domains|BL" ;;
         cross-login)        cross_tabs "Account|Subscriptions|Hosts|Logical|Partners|Applications|Domains|BL" ;;
         cross-subscription) cross_tabs "Account|Login|Hosts|Logical|Partners|Applications|Domains|BL" ;;
@@ -1063,34 +1063,13 @@ tab_help_slug() {
     esac
 }
 
-# ---- Entities reports: views x scope ----------------------------------------
-# Each Entities report renders TEN pages into docs/<area>/entities/
-# (9 entities -> 90 pages), with three tab groups on the nav row: the entity
-# members, the views, and the scope.
-#   views  All | Seen | Not seen | OK | Warning | Error [| Server]
-#   scope  Transfer | +Server   (2026-07; Transfer and Server used to be two of
-#          the VIEWS, slicing the same catalog by a different question)
-# The scope answers ONE question: does a SERVER-log sighting count as seen?
-#   +Server   the DEFAULT and the site-wide model — an entity surfaced only by
-#             the server log is result=blue and counts as SEEN. Pages keep the
-#             bare name (<entity>-<view>.html), so every existing link holds.
-#   Transfer  pretend the server log was never read: a blue entity is then just
-#             configured-but-never-seen, so it tints ORANGE and moves out of
-#             Seen into Not seen / Warning. Pages carry the -transfer suffix.
-# Only THREE views are scope-dependent (the `dual` flags below): Seen, Not seen
-# and Warning. All lists every configured + logged name either way, and no blue
-# entity is ever green or red, so All / OK / Error are ONE page each — and on
-# those the two scope tabs render DISABLED (dimmed, unlinked, neither selected)
-# rather than pointing at two identical pages.
-# SERVER is a SEVENTH view belonging to the +Server scope alone (`srvonly`): the
-# blue names by themselves. It is offered, last in the view row, on every page
-# the +Server reading applies to — the +Server pages AND the three
-# scope-independent ones — and is absent from the -transfer pages, where those
-# names are simply never seen. Its own page shows +Server active with Transfer
-# disabled. It is what the status tables' Server column links.
-# The scope pair is exactly the home page's "including server log" switch: its
-# ON figures link the bare pages, its OFF figures the -transfer ones (for the
-# three figures that have one — Total/Error/Ok link their single page).
+# ---- Entities reports: the views ------------------------------------------
+# Each Entities report renders SIX pages into docs/<area>/entities/ (9 entities
+# -> 54 pages), with two tab groups on the nav row: the entity members and the
+# views. (A third group — the Transfer | +Server SCOPE, with a seventh Server
+# view — went with the BLUE server-log-only status, 2026-09-27: without it the
+# two scopes listed the same entities.)
+#   views  All | Seen | Not seen | OK | Warning | Error
 # What each view holds:
 #   All       the Summary rows plus one zero-blank row per configured-but-
 #             never-seen name (the DEFAULT page — see first_page: every
@@ -1099,8 +1078,6 @@ tab_help_slug() {
 #   Not seen  only the configured-never-seen rows (no RECALC and no date
 #             cells, so the page renders no From/To — zero date-aware tables)
 #   OK/Warning/Error   the rows whose entity RESULT is green / orange / red
-#   Server    the result=blue rows — seen in the server log, never in a
-#             transfer (+Server scope only; name column, like Not seen)
 # The not-seen names come from showseen.sh's coverage TSVs (col 1 = configured
 # name, col 3 = seen flag; a PDA name may appear once per DIRECTION — seen when
 # ANY of its rows is), so this view and Show Seen can never disagree. The
@@ -1179,38 +1156,15 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                           for (c = 2; c <= nc; c++) printf "\t"
                           printf "\t@data:seen=0\n" } } }' - "$covf")
     fi
-    # Server-log-only entities are result==blue in the member's base cache
-    # (bin/build/seen-in-server-log.sh): they have NO real transfer (so they are not in the
-    # .rpt Summary), and showseen counts them as seen (so the coverage TSV marks
-    # them seen, not never-seen). ADD them here as BLANK blue rows — only the
-    # name + the blue tint — so the Seen / All / Server views show them; their
-    # Files/Error/OK/Volume/%/First/Last stay empty (no real sighting) and they
-    # carry no drill/buckets (the date filter and drill-downs ignore them). The
-    # numeric TOTAL is unchanged (blue = 0); only the "(N rows)" count grows.
-    local bluebase="" bluerows="" nblue=0
+    # the member's base cache (name, direction, result)
+    local basen=""
     case $name in
-        subscription) bluebase=_subscriptions ;; account) bluebase=_accounts ;; login) bluebase=_logins ;;
-        remote-host) bluebase=_hosts ;; logical) bluebase=_logicals ;; partner) bluebase=_partners ;;
-        application) bluebase=_apps ;; domain) bluebase=_domains ;; bl) bluebase=_bl ;;
+        subscription) basen=_subscriptions ;; account) basen=_accounts ;; login) basen=_logins ;;
+        remote-host) basen=_hosts ;; logical) basen=_logicals ;; partner) basen=_partners ;;
+        application) basen=_apps ;; domain) basen=_domains ;; bl) basen=_bl ;;
     esac
-    local bluef="$DATA/flow-manager/base/$bluebase.tsv"
-    { [ -n "$bluebase" ] && [ -f "$bluef" ] && [ "${ncols:-0}" -gt 0 ]; } || bluef=""
-    if [ -n "$bluef" ]; then
-        bluerows=$(LC_ALL=C awk -F'\t' -v nc="$ncols" '$3=="blue"{ printf "ROW\t%s", $1; for(c=2;c<=nc;c++) printf "\t"; printf "\t@data:res=blue\n" }' "$bluef")
-    fi
-    if [ -n "$bluerows" ]; then
-        nblue=$(printf '%s\n' "$bluerows" | grep -c $'^ROW\t' || true)
-        sumblk=$(printf '%s\n' "$sumblk" | LC_ALL=C awk -F'\t' -v OFS='\t' -v br="$bluerows" -v nb="$nblue" '
-            $1=="TOTAL" {
-                print br                                          # blue rows just before the total
-                if (match($2, /\([0-9,]+/)) { cnt=substr($2,RSTART+1,RLENGTH-1); gsub(/,/,"",cnt); sub(/\([0-9,]+/, "(" (cnt+nb), $2) }
-                print; next }
-            { print }')
-        srows=$(printf '%s\n' "$sumblk" | grep $'^ROW\t' || true)
-        stotal=$(printf '%s\n' "$sumblk" | grep -m1 $'^TOTAL\t' || true)
-    fi
-    # GHOST rows — configured names in NEITHER set: no report row, not blue
-    # (bluerows folded into srows above), and no coverage row at all. Since
+    # GHOST rows — configured names in NEITHER set: no report row and no
+    # coverage row at all. Since
     # the Logical-based derivations (2026-08-30) key every coverage TSV by
     # the real member names this set is EMPTY on a healthy estate — what
     # still lands here is either a flow the COVERAGE TSV vouches for without
@@ -1223,8 +1177,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # and the home figure with them). Both kinds still render on All as blank
     # configured rows, tinted by their base RESULT like every row.
     local ghrows="" ghnsrows="" ngh=0 nghns=0 _ghall=""
-    local ghbase="$DATA/flow-manager/base/${bluebase:-none}.tsv"
-    if [ -n "$bluebase" ] && [ -f "$ghbase" ] && [ "${ncols:-0}" -gt 0 ]; then
+    local ghbase="$DATA/flow-manager/base/${basen:-none}.tsv"
+    if [ -n "$basen" ] && [ -f "$ghbase" ] && [ "${ncols:-0}" -gt 0 ]; then
         _ghall=$(printf '%s\n%s\n' "$srows" "$nsrows" | LC_ALL=C awk -F'\t' -v nc="$ncols" -v basef="$ghbase" \
             -v covf="${covf:-}" -v mem="$name" '
             $1 == "ROW" { have[toupper($2)] = 1 }
@@ -1255,9 +1209,9 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # SORT (sort=COL:DIR -> data-sort-init): every view that CARRIES the count
     # columns opens on Files DESCENDING (sort=1:-1) — the busiest entity first,
     # which is what these pages are read for; rows with no Files of their own
-    # (configured-never-seen, blue, ghost) have an empty cell, and numKey sorts
+    # (configured-never-seen, ghost) have an empty cell, and numKey sorts
     # those last in either direction, so they collect at the bottom. The
-    # name-only views (Not seen, Server) have no Files column and keep A-Z on
+    # name-only view (Not seen) has no Files column and keep A-Z on
     # the name (sort=0:1). It is a page DEFAULT, not a user choice: a remembered
     # header click still wins, and the header toggle works from it.
     # The Not seen view also keeps the seenrows red tint, while the All view
@@ -1312,7 +1266,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             BEGIN { while ((getline l < resf) > 0) { split(l, a, "\t"); res[toupper(a[1])] = a[3] } close(resf) }
             /@data:res=/ { print; next }
             { r = res[toupper($2)]
-              if (r == "green" || r == "orange" || r == "red" || r == "blue") print $0, "@data:res=" r
+              if (r == "green" || r == "orange" || r == "red") print $0, "@data:res=" r
               else print }' -)
     fi
     # Tint the ghost rows HERE, once: they go into the All view (below, where
@@ -1322,19 +1276,18 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
         ghrows=$(printf '%s\n' "$ghrows" | LC_ALL=C awk -F'\t' -v OFS='\t' -v resf="$resfile" '
             BEGIN { while ((getline l < resf) > 0) { split(l, a, "\t"); res[toupper(a[1])] = a[3] } close(resf) }
             { r = res[toupper($2)]
-              if (r == "green" || r == "orange" || r == "red" || r == "blue") print $0, "@data:res=" r
+              if (r == "green" || r == "orange" || r == "red") print $0, "@data:res=" r
               else print }' -)
     fi
     if [ -n "$ghnsrows" ] && [ -n "$resfile" ]; then
         ghnsrows=$(printf '%s\n' "$ghnsrows" | LC_ALL=C awk -F'\t' -v OFS='\t' -v resf="$resfile" '
             BEGIN { while ((getline l < resf) > 0) { split(l, a, "\t"); res[toupper(a[1])] = a[3] } close(resf) }
             { r = res[toupper($2)]
-              if (r == "green" || r == "orange" || r == "red" || r == "blue") print $0, "@data:res=" r
+              if (r == "green" || r == "orange" || r == "red") print $0, "@data:res=" r
               else print }' -)
     fi
-    # The blue rows added above already carry @data:res=blue, so the tint pass
-    # passes them through untouched and only tints the real seen rows
-    # (green/orange/red) and the never-seen rows.
+    # The tint pass: the real seen rows (green/orange/red) and the never-seen
+    # rows; a row that already carries @data:res passes through untouched.
     if [ -n "$all_rows" ] && [ -n "$resfile" ]; then
         all_rows=$(printf '%s\n' "$all_rows" | LC_ALL=C awk -F'\t' -v OFS='\t' -v resf="$resfile" '
             BEGIN { while ((getline l < resf) > 0) { split(l, a, "\t"); res[toupper(a[1])] = a[3] } close(resf) }
@@ -1344,7 +1297,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
               else print }' -)
     fi
     # The SEEN view tints its rows by the entity RESULT too (same lookup as
-    # the All view; the blue rows already carry @data:res=blue). Non-ROW lines
+    # the All view). Non-ROW lines
     # pass through, so the Summary keeps its TABLE/HEAD/TOTAL/NOTEs verbatim.
     local sumblk_tinted=$sumblk
     if [ -n "$resfile" ]; then
@@ -1355,7 +1308,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             { r = res[toupper($2)]
               if (r == "green" || r == "orange" || r == "red") print $0, "@data:res=" r
               else print }' -)
-        sumblk_tinted+=$'\n'"NOTE"$'\t'"Row colors: **light green** = last transfer OK, **light orange** = a mixed OK/Error rollup, **light red** = last transfer Error (or server-log Errors/Warnings after the last OK transfer), **light blue** = seen in the server log only. For entity types other than subscriptions the result rolls up from the connected subscriptions. An UNTINTED row was logged but is not configured in FlowManager — it has no result to color by."
+        sumblk_tinted+=$'\n'"NOTE"$'\t'"Row colors: **light green** = last transfer OK, **light orange** = a mixed OK/Error rollup, **light red** = last transfer Error (or server-log Errors/Warnings after the last OK transfer). For entity types other than subscriptions the result rolls up from the connected subscriptions. An UNTINTED row was logged but is not configured in FlowManager — it has no result to color by."
     fi
     # datereset on the Seen view too (the All view's TABLE variant carries it,
     # and the OK/Warning/Error/Transfer variants below): every Entities view is
@@ -1385,7 +1338,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # (and never saves one); narrowing it stays page-local.
     blk_all="$(tbl_variant "all (logged + configured)" "datereset")"$'\n'"$shead"$'\n'"$tot_all"
     [ -n "$all_rows" ] && blk_all+=$'\n'"$all_rows"
-    blk_all+=$'\n'"NOTE"$'\t'"Row colors: **light green** = last transfer OK, **light orange** = configured but never seen, **light red** = last transfer Error (or server-log Errors/Warnings after the last OK transfer), **light blue** = surfaced only by the Server → Transfer step (bin/build/seen-in-server-log.sh) with no real transfer. For entity types other than subscriptions the result rolls up from the connected subscriptions; configured-but-never-seen rows keep blank counts. A green/red-tinted row with BLANK counts was seen only through a sibling group — a shared endpoint whose Files are credited to the co-tenant, or one side of a two-partner account name. An UNTINTED row was logged but is not configured in FlowManager — it has no result to color by."
+    blk_all+=$'\n'"NOTE"$'\t'"Row colors: **light green** = last transfer OK, **light orange** = configured but never seen, **light red** = last transfer Error (or server-log Errors/Warnings after the last OK transfer). For entity types other than subscriptions the result rolls up from the connected subscriptions; configured-but-never-seen rows keep blank counts. A green/red-tinted row with BLANK counts was seen only through a sibling group — a shared endpoint whose Files are credited to the co-tenant, or one side of a two-partner account name. An UNTINTED row was logged but is not configured in FlowManager — it has no result to color by."
     [ -n "$snotes" ] && blk_all+=$'\n'"$snotes"
     shead_ns=$(printf '%s\n' "$shead" | grep -v $'^RECALC\t' || true)   # no buckets -> no RECALC -> no From/To on this page
     local nsrows_gh=$nsrows
@@ -1397,52 +1350,6 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     [ -n "$nsrows_gh" ] && blk_ns+=$'\n'"$nsrows_gh"
     blk_ns+=$'\n'"NOTE"$'\t'"Configured in FlowManager but never seen in this log window. Every name links to its detail page, which lists the configured cross-references."
     blk_ns=$(printf '%s\n' "$blk_ns" | entities_name_only)   # Not seen: name column only
-    # ---- TRANSFER SCOPE: Seen and Not seen ---------------------------------
-    # Seen (transfer) = the Seen rows MINUS the blue ones — the entities with a
-    # REAL transfer (Seen = Transfer + Server). Same columns and RECALC as
-    # Seen, since these rows carry their @data:buckets. It is what the status
-    # tables' "Transfer" column links, so its row count must equal Seen −
-    # Server; the numeric TOTAL is the Seen one unchanged (blue rows are blank).
-    local blk_seen_tr transfer_rows ntransfer tot_transfer
-    transfer_rows=$(printf '%s\n' "$sumblk_tinted" | grep $'^ROW\t' | grep -v '@data:res=blue' || true)
-    ntransfer=$(printf '%s' "$transfer_rows" | grep -c $'^ROW\t' || true)
-    tot_transfer=$(printf '%s\n' "$stotal" | LC_ALL=C awk -F'\t' -v OFS='\t' -v n="$ntransfer" '{ sub(/\([0-9,]+/, "(" n, $2); print }')
-    blk_seen_tr="$(tbl_variant "seen in the transfer log" "datereset")"$'\n'"$shead"$'\n'"$tot_transfer"
-    [ -n "$transfer_rows" ] && blk_seen_tr+=$'\n'"$transfer_rows"
-    blk_seen_tr+=$'\n'"NOTE"$'\t'"The entities with at least one **real transfer** in this log window — the Seen view minus the server-log-only (blue) rows. Switch the scope to **+Server** to count a server-log sighting as seen. Row colors are the entity RESULT, as on Seen."
-    # Not seen (transfer) = the configured-never-seen rows PLUS the blue ones:
-    # with the server log out of scope those entities were never seen either.
-    # They join as never-seen rows (@data:seen=0) and RETINT ORANGE — the
-    # documented Transfer-scope rule (ARCHITECTURE: "blue tints orange and
-    # moves into Not seen/Warning"), and exactly what the Warning (transfer)
-    # view above already does; keeping the blue here made the two views of ONE
-    # scope disagree about the same rows (2026-08-15 audit D2).
-    local blk_ns_tr nsrows_tr=$nsrows_gh nns_tr=$((nns + nghns)) tot_ns_tr bluens
-    if [ -n "$bluerows" ]; then
-        bluens=$(printf '%s\n' "$bluerows" | LC_ALL=C sed $'s/@data:res=blue/@data:res=orange/; s/$/\t@data:seen=0/')
-        nsrows_tr=${nsrows_gh:+$nsrows_gh$'\n'}$bluens
-        nsrows_tr=$(printf '%s\n' "$nsrows_tr" | LC_ALL=C sort -t$'\t' -k2,2f -k2,2)
-        nns_tr=$((nns + nghns + nblue))
-    fi
-    tot_ns_tr=$(printf '%s\n' "$stotal" | LC_ALL=C awk -F'\t' -v n="$nns_tr" '{ sub(/\([0-9,]+/, "(" n, $2); printf "TOTAL\t%s", $2; for (i = 3; i <= NF; i++) printf "\t"; print "" }')
-    blk_ns_tr="$(tbl_variant "never seen in the transfer log" "seenrows sort=0:1")"$'\n'"$shead_ns"$'\n'"$tot_ns_tr"
-    [ -n "$nsrows_tr" ] && blk_ns_tr+=$'\n'"$nsrows_tr"
-    blk_ns_tr+=$'\n'"NOTE"$'\t'"Configured in FlowManager but never seen in the **transfer log** in this window — including the entities that DID appear in the server log (the **+Server** scope counts those as seen and lists them under Seen). Every name links to its detail page, which lists the configured cross-references."
-    blk_ns_tr=$(printf '%s\n' "$blk_ns_tr" | entities_name_only)   # Not seen: name column only
-    # Server view: ONLY the blue rows — the entities that appear in the server
-    # logs but never in the transfer logs. A view of the +Server SCOPE ALONE
-    # (in the Transfer scope those names are simply never seen, so the tab is
-    # not offered there): the render loop lists it last in the view row on
-    # every non-transfer page, and its own page shows +Server active with
-    # Transfer disabled. Name-only, no RECALC -> no From/To.
-    local blk_server tot_server
-    tot_server=$(printf '%s\n' "$stotal" | LC_ALL=C awk -F'\t' -v n="$nblue" '{ sub(/\([0-9,]+/, "(" n, $2); printf "TOTAL\t%s", $2; for (i = 3; i <= NF; i++) printf "\t"; print "" }')
-    # restint: its rows carry @data:res=blue but the table had no tint attribute
-    # at all, so they rendered UNCOLOURED while their detail pages are blue.
-    blk_server="$(tbl_variant "server-log only" "restint sort=0:1")"$'\n'"$shead_ns"$'\n'"$tot_server"
-    [ -n "$bluerows" ] && blk_server+=$'\n'"$bluerows"
-    blk_server+=$'\n'"NOTE"$'\t'"These entities appear in the **server logs** (runtime Transfer Manager messages) but never in the transfer logs — the Server → Transfer step (bin/build/seen-in-server-log.sh) marked them **blue** (result=blue) so they surface here. They are what the **+Server** scope adds to Seen; under the **Transfer** scope they count as never seen. Each name links to its detail page."
-    blk_server=$(printf '%s\n' "$blk_server" | entities_name_only)   # Server: name column only
     # OK / Warning / Error views: the entities whose site-wide RESULT (the base
     # caches' third column, bin/build/result.sh) is green / orange / red. ONE
     # definition for the three — the same one the row tints, the coverage
@@ -1579,18 +1486,6 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     blk_ok="$(tbl_variant "OK (result green)" "datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block green "$all_rows")"$'\n'"NOTE"$'\t'"$n_ok"
     blk_err="$(tbl_variant "Error (result red)" "datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block red "$all_rows")"$'\n'"NOTE"$'\t'"$n_err"
     blk_warn="$(tbl_variant "Warning (result orange)" "datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block orange "$all_rows")"$'\n'"NOTE"$'\t'"$n_warn"
-    # ---- TRANSFER SCOPE: Warning -------------------------------------------
-    # Retint the blue rows ORANGE (with the server log out of scope a
-    # server-log-only entity is simply configured-but-never-seen, which IS
-    # orange) and rebuild the orange subset from those rows, so Warning gains
-    # the blue names. ONLY Seen / Not seen / Warning are scope-dependent —
-    # All lists the same names either way (only the blue rows' tint would
-    # differ) and no blue entity is ever green or red, so OK / Error are the
-    # same set too. Those three views therefore have ONE page each, with the
-    # scope tabs disabled on it (see the render loop).
-    local all_rows_tr=$all_rows blk_warn_tr
-    [ -n "$all_rows" ] && all_rows_tr=$(printf '%s\n' "$all_rows" | LC_ALL=C sed 's/@data:res=blue/@data:res=orange/')
-    blk_warn_tr="$(tbl_variant "Warning (result orange), transfer log only" "datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block orange "$all_rows_tr")"$'\n'"NOTE"$'\t'"Only the entities whose RESULT is **orange** with the server log OUT of scope: never seen in the transfer log in this window (server-log-only entities included), or a mix of OK and Error across their connected subscriptions. Rows are shown light orange."
     # the partner GROUP icon map (multi-token merged partner names): render_rpt
     # reads GRPICON_MAP (group name -> slug) to draw the icon; empty for every
     # other entity, so no other page gets one
@@ -1610,17 +1505,16 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # The blank-by-construction Warning views of SUBSCRIPTIONS strip to the
     # name (orange = never seen there; for the other entities orange means a
     # connected subscription is unseen, so their own figures are real). Not
-    # seen and Server were stripped above.
+    # seen was stripped above.
     if [ "$name" = subscription ]; then
         blk_warn=$(printf '%s\n' "$blk_warn" | entities_name_only)
-        blk_warn_tr=$(printf '%s\n' "$blk_warn_tr" | entities_name_only)
     fi
     # THE REASON COLUMN — the SUBSCRIPTIONS Error view only (2026-08): the
     # same per-flow Reason the home page's two red tables show, resolved by
     # the same chain (bin/build/publish.sh write_failing_now): the flow's
     # NEWEST red failed-sub-all row keeps ITS OWN verdict — the one baked into
     # the error page that home row opens — unless the flow is server-reddened
-    # (blue/_redflip.tsv, home table 2's set); else the classified newest
+    # (colour/_redflip.tsv, home table 2's set); else the classified newest
     # server E line (_kaput-evidence.tsv through the shared
     # bin/flip-reason.awk); else the most specific box (_subs-boxes.tsv).
     # Appended AFTER Last seen, before the @data cells, so every baked column
@@ -1630,7 +1524,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # primary sources are report-stage and always current.
     if [ "$name" = subscription ] && [ -n "$blk_err" ]; then
         local _lfr="$DATA/$area/reports/failed-sub-all.rpt" _kap="$DATA/server/reports/_kaput-evidence.tsv"
-        local _box="$DATA/analyses/reports/_subs-boxes.tsv" _rfl="$DATA/blue/_redflip.tsv" _reasonf
+        local _box="$DATA/analyses/reports/_subs-boxes.tsv" _rfl="$DATA/colour/_redflip.tsv" _reasonf
         local _svs="$DATA/$area/reports/_srvsubs.tsv"
         [ -f "$_lfr" ] || _lfr=/dev/null
         [ -f "$_kap" ] || _kap=/dev/null
@@ -1730,36 +1624,16 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             { print }')
         rm -f "$_reasonf"
     fi
-    for _b in blk_all sumblk_tinted blk_ok blk_warn blk_err blk_seen_tr blk_warn_tr blk_ns blk_ns_tr blk_server; do
+    for _b in blk_all sumblk_tinted blk_ok blk_warn blk_err blk_ns; do
         eval "[ -n \"\${$_b:-}\" ] || continue"
         eval "$_b=\$(printf '%s\\n' \"\$$_b\" | entity_hide_groups | entity_total_last)"
     done
-    # The views. THREE are scope-dependent (dual=1: Seen / Not seen / Warning)
-    # and render a second, "-transfer" page; All / OK / Error list the same
-    # names in either scope, so they get ONE page whose scope tabs are DISABLED
-    # (state 2 — dimmed, unlinked, neither selected). fil_trf of a single view
-    # is its bare page, so a view tab clicked FROM a -transfer page lands on the
-    # one page that exists. SERVER (srvonly=1) is a view of the +Server scope
-    # ALONE: one page, listed LAST in the view row of every non-transfer page
-    # and absent from the -transfer ones (in that scope its names are just never
-    # seen), its own page showing +Server active and Transfer disabled.
-    local labs=("All" "Seen" "Not seen" "OK" "Warning" "Error" "Server") \
-          dual=(0 1 1 0 1 0 0) \
-          srvonly=(0 0 0 0 0 0 1) \
-          blk_srv=("$blk_all" "$sumblk_tinted" "$blk_ns" "$blk_ok" "$blk_warn" "$blk_err" "$blk_server") \
-          blk_trf=("" "$blk_seen_tr" "$blk_ns_tr" "" "$blk_warn_tr" "" "")
-    local nview=6   # last index of labs
-    local fil_srv=() fil_trf=() i j s a vs nav prow1 tmp views scopes blkc outf
-    for i in $(seq 0 $nview); do
-        vs=$(slugify "${labs[$i]}")
-        fil_srv[$i]="$name-$vs.html"
-        if [ "${dual[$i]}" = 1 ]; then fil_trf[$i]="$name-$vs-transfer.html"; else fil_trf[$i]="$name-$vs.html"; fi
-    done
-    # The group (member) row is built for the current VIEW; on a Transfer-scope
-    # page every one of its hrefs moves to that scope's page, so switching
-    # entity keeps BOTH the view and the scope. Only ever applied on a dual
-    # view, whose every member page has a -transfer twin.
-    scope_hrefs_tr() { LC_ALL=C awk -F'\t' -v OFS='\t' '{ for (i=2;i<=NF;i++) sub(/\.html$/, "-transfer.html", $i); print }'; }
+    # The six views, one page each: <entity>-<view>.html
+    local labs=("All" "Seen" "Not seen" "OK" "Warning" "Error") \
+          blks=("$blk_all" "$sumblk_tinted" "$blk_ns" "$blk_ok" "$blk_warn" "$blk_err")
+    local nview=5   # last index of labs
+    local fil=() i j a nav prow1 tmp views
+    for i in $(seq 0 $nview); do fil[$i]="$name-$(slugify "${labs[$i]}").html"; done
     local saved_dl=${DLINK_BASE:-}
     DLINK_BASE="../../details/"
     # render_rpt reads GRPICON_MAP (partner group name -> slug) to draw the icon;
@@ -1767,47 +1641,24 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     local GRPICON_MAP="$grpmapf"
     mkdir -p "$DOCS/$area/entities"
     for i in $(seq 0 $nview); do
-        for s in 0 1; do        # 0 = +Server (default), 1 = Transfer
-            [ "$s" = 1 ] && [ "${dual[$i]}" != 1 ] && continue   # one page for a scope-independent view
-            # Row: entity members | All Seen Not-seen OK Warning Error [Server] | Transfer +Server
-            views=""
-            for j in $(seq 0 $nview); do
-                # the Server view belongs to the +Server scope only
-                [ "${srvonly[$j]}" = 1 ] && [ "$s" = 1 ] && continue
-                a=0; [ "$j" = "$i" ] && a=1
-                if [ "$s" = 0 ]; then views+=$'\t'"$a|${labs[$j]}|${fil_srv[$j]}"
-                else                   views+=$'\t'"$a|${labs[$j]}|${fil_trf[$j]}"; fi
-            done
-            if [ "${srvonly[$i]}" = 1 ]; then
-                # the Server view exists only under +Server: that tab is the
-                # active one, Transfer is dimmed (no such page in that scope)
-                scopes=$'\t'"2|Transfer|"$'\t'"1|+Server|${fil_srv[$i]}"
-                blkc=${blk_srv[$i]}; outf=${fil_srv[$i]}
-            elif [ "${dual[$i]}" != 1 ]; then
-                # scope-independent view: both tabs dimmed, neither selected
-                scopes=$'\t'"2|Transfer|"$'\t'"2|+Server|"
-                blkc=${blk_srv[$i]}; outf=${fil_srv[$i]}
-            elif [ "$s" = 0 ]; then
-                scopes=$'\t'"0|Transfer|${fil_trf[$i]}"$'\t'"1|+Server|${fil_srv[$i]}"
-                blkc=${blk_srv[$i]}; outf=${fil_srv[$i]}
-            else
-                scopes=$'\t'"1|Transfer|${fil_trf[$i]}"$'\t'"0|+Server|${fil_srv[$i]}"
-                blkc=${blk_trf[$i]}; outf=${fil_trf[$i]}
-            fi
-            nav="NAV${views}"$'\t@sep'"${scopes}"
-            prow1=$(group_nav_row "$area" "$name" "${labs[$i]}")
-            [ "$s" = 1 ] && [ -n "$prow1" ] && prow1=$(printf '%s' "$prow1" | scope_hrefs_tr)
-            [ -n "$prow1" ] && nav="${prow1}"$'\t@sep\t'"${nav#NAV$'\t'}"
-            tmp=$(mktemp "${TMPDIR:-/tmp}/rpt.XXXXXX")
-            { _hdr_with_nav "$HEADER" "$nav"; printf '%s\n' "$blkc"; printf '%s' "$FOOTER"; } > "$tmp"
-            # the views render FOUR AT A TIME (2026-09-27): the nine entity
-            # reports start first and each rendered its 10-13 pages one after
-            # another, holding nine of the pool slots while the other ~60
-            # reports queued behind them; each view writes its own page
-            { render_rpt "$tmp" "$DOCS/$area/entities/$outf" "../../assets/style.css" "../index.html" "$rlabel" 1 "$hslug" "$rkey"; rm -f "$tmp"; } &
-            _evp+=("$!")
-            if [ "${#_evp[@]}" -ge 4 ]; then wait "${_evp[0]}"; _evp=("${_evp[@]:1}"); fi
+        # Row: entity members | All Seen Not-seen OK Warning Error
+        views=""
+        for j in $(seq 0 $nview); do
+            a=0; [ "$j" = "$i" ] && a=1
+            views+=$'\t'"$a|${labs[$j]}|${fil[$j]}"
         done
+        nav="NAV${views}"
+        prow1=$(group_nav_row "$area" "$name" "${labs[$i]}")
+        [ -n "$prow1" ] && nav="${prow1}"$'\t@sep\t'"${nav#NAV$'\t'}"
+        tmp=$(mktemp "${TMPDIR:-/tmp}/rpt.XXXXXX")
+        { _hdr_with_nav "$HEADER" "$nav"; printf '%s\n' "${blks[$i]}"; printf '%s' "$FOOTER"; } > "$tmp"
+        # the views render FOUR AT A TIME (2026-09-27): the nine entity
+        # reports start first and each rendered its pages one after
+        # another, holding nine of the pool slots while the other ~60
+        # reports queued behind them; each view writes its own page
+        { render_rpt "$tmp" "$DOCS/$area/entities/${fil[$i]}" "../../assets/style.css" "../index.html" "$rlabel" 1 "$hslug" "$rkey"; rm -f "$tmp"; } &
+        _evp+=("$!")
+        if [ "${#_evp[@]}" -ge 4 ]; then wait "${_evp[0]}"; _evp=("${_evp[@]:1}"); fi
     done
     for _ev in ${_evp[@]+"${_evp[@]}"}; do wait "$_ev"; done
     DLINK_BASE=$saved_dl
@@ -1940,7 +1791,7 @@ render_report() {   # $1 area  $2 name  $3 rpt
     # report-dates meta (html_head emits it from CUR_DATES) while rendering,
     # in the single-page and per-table branches alike.
     local saved_dates=${CUR_DATES:-}
-    case $name in cross-*|entity-search|seen-in-server-log|entity-coverage|entity-coverage-*|sources-and-targets|skipped|skipped-*) CUR_DATES="" ;; esac
+    case $name in cross-*|entity-search|entity-coverage|entity-coverage-*|sources-and-targets|skipped|skipped-*) CUR_DATES="" ;; esac
     # The Entities reports have their own four-page renderer (see above).
     case $name in
         account|login|subscription|remote-host|logical|partner|application|domain|bl)
@@ -1999,7 +1850,7 @@ render_report() {   # $1 area  $2 name  $3 rpt
             render_rpt "$tmp" "$DOCS/$pagedir/$name.html" "../assets/style.css" "index.html" "$rlabel" 1 "$hslug" "$rkey"
             rm -f "$tmp"
         fi
-        analyses_grouprow_for "$area" "$name"   # analyses group tab bar for entity-coverage/seen-in-server-log/skipped
+        analyses_grouprow_for "$area" "$name"   # analyses group tab bar for entity-coverage/skipped
         skipped_grouprow_for "$area" "$name"    # Skipped pages: the per-value button row, BELOW the intro prose
         CUR_DATES=$saved_dates
         return
@@ -2292,7 +2143,7 @@ transfer_menu_order=()
 for _n in "${transfer_order[@]}"; do
     if is_subs_report "$_n"; then continue; fi   # the Subscriptions analyses group
     if is_boxes_only "$_n"; then continue; fi   # boxes-only: reached from the two Boxes pages, not the menu
-    case $_n in cross-*|entity-search|seen-in-server-log|entity-coverage|entity-coverage-ok|entity-coverage-once|entity-coverage-diff|sources-and-targets|duration-all|skipped|not-in-flow-manager|missing-cronjobs) ;; *) transfer_menu_order+=("$_n") ;; esac
+    case $_n in cross-*|entity-search|entity-coverage|entity-coverage-ok|entity-coverage-once|entity-coverage-diff|sources-and-targets|duration-all|skipped|not-in-flow-manager|missing-cronjobs) ;; *) transfer_menu_order+=("$_n") ;; esac
 done
 TRANSFER_MENU=$(build_menu transfer "${transfer_menu_order[@]}")
 # The Analyses dropdown shows one line per GROUP (like the transfer/server
@@ -2311,11 +2162,11 @@ GOODIES_MENU='<a href="@analyses/partners-in.html">Partners - Incoming</a><a hre
 # bars, the group-of lookup and the h1 group tags. One line per group:
 #   <group label>|<key1>=<Label1>|<key2>=<Label2>|...
 # Keys are hrefs relative to docs/analyses/ (the transfer-area members —
-# partner coverage, seen-in-server-log, skipped, cross references — carry a
+# partner coverage, skipped, cross references — carry a
 # ../transfer/ prefix). KEEP IN SYNC with ANALYSES_MENU and the analyses index/sitemap.
 _analyses_groups() {
     printf '%s\n' \
-        "Coverage & seen|../transfer/entity-coverage-accounts.html=Entity coverage|first-seen.html=First seen|data-diff.html=Since yesterday|../transfer/seen-in-server-log.html=Seen in server log" \
+        "Coverage & seen|../transfer/entity-coverage-accounts.html=Entity coverage|first-seen.html=First seen|data-diff.html=Since yesterday" \
         "Configuration|use-cases.html=Use cases|uc2-visits.html=UC2 pickup visits|subscriptions.html=Subscriptions|logical-detection.html=Logical detection|added-bl.html=Added BL|accounts.html=Accounts|fe-overview.html=FE overview|account-sharing.html=Account sharing|twins.html=Twins|polling.html=Polling|config-hygiene.html=Config hygiene|whitelist-audit.html=Whitelist audit|cleanup-backlog.html=Cleanup backlog|../transfer/sources-and-targets.html=Sources and Targets|../transfer/skipped.html=Skipped|../transfer/not-in-flow-manager.html=Not in Flow Manager|$(group_home cross)=Cross References" \
         "Partners|partners-in.html=Partners - Incoming|hosts-overview.html=Partners - Outgoing|partner-scorecard.html=Partner scorecard|blast-radius.html=Blast radius|app-partners.html=Application dependencies|partner-lifecycle.html=Partner lifecycle" \
         "Boxes|subscriptions-in-boxes.html=Subscriptions in boxes|accounts-in-boxes.html=Accounts in boxes|triage.html=Triage" \
@@ -2387,7 +2238,7 @@ analyses_grouprow_for() {
         # the analyses row injected here is their only group row.
         entity-coverage|entity-coverage-ok|entity-coverage-once|entity-coverage-diff)
                                                       cur="../transfer/entity-coverage-accounts.html"; ctx=transfer ;;   # TABBED: the group key is the FIRST page of the DEFAULT rule, so every rule view marks the group tab active
-        seen-in-server-log|sources-and-targets|skipped|not-in-flow-manager|missing-cronjobs) cur="../transfer/$name.html"; ctx=transfer ;;
+        sources-and-targets|skipped|not-in-flow-manager|missing-cronjobs) cur="../transfer/$name.html"; ctx=transfer ;;
         skipped-*)                                    cur="../transfer/skipped.html"; ctx=transfer ;;
         uc-status)                                    cur="use-cases.html"; ctx=analyses ;;   # 2026-08: a Use-cases VIEW — Configuration row with Use cases active, the view row appended below  # a per-value page: Skipped active in the Configuration group
         cross-*)                                      cur="$(group_home cross)"; ctx=xref ;;
@@ -2618,7 +2469,7 @@ _area_group_label() {   # $1 area  $2 basename
 }
 # Tag every report h1 with its group breadcrumb "Title &larr; Group &larr;
 # Section". ANALYSES runs first — some of its members live in docs/<env>/
-# transfer/ (entity-coverage, seen-in-server-log, the cross pages), so they are
+# transfer/ (entity-coverage, the cross pages), so they are
 # claimed with "Analyses" before the transfer sweep below (idempotent, so it then
 # skips them). Run AFTER every area publish (bin/build/publish.sh, per env).
 tag_analyses_group_h1s() {
@@ -2645,7 +2496,7 @@ tag_analyses_group_h1s() {
             [ -n "$e" ] || continue
             href=${e%%=*}
             # a member's variant/tab pages (<base>-*.html: use-case-patterns,
-            # first-seen-both, skipped-crg, …) carry the same group tag
+            # skipped-crg, …) carry the same group tag
             case $href in
                 xref/*)             for f in "$DOCS/analyses/xref/"cross-*.html; do _tag_h1 "$f" "$label" "Analyses"; done ;;
                 ../transfer/entity-coverage-*)

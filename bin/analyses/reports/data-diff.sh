@@ -9,7 +9,7 @@
 # judged against D OR D-1 (the grace day). Five tables:
 #
 #   New red flips    red subscriptions whose server-log evidence stamp
-#                    (blue/_redflip.tsv) or newest FAILING File is on D/D-1
+#                    (colour/_redflip.tsv) or newest FAILING File is on D/D-1
 #   Newly quiet      flows whose last File is exactly 8 days before the
 #                    transfer window end — the day went-quiet's >7-day rule
 #                    first bites (they crossed the threshold within the last
@@ -19,7 +19,7 @@
 #   First seen       configured entities whose first-ever File is on D/D-1,
 #                    read from the first-seen ledger (data/<env>/first-seen/
 #                    <type>-<day>.rpt, written by first-seen.sh)
-#   New unknown/blue names   names in the data/<env>/unknown/*.tsv sidecars
+#   New unknown names        names in the data/<env>/unknown/*.tsv sidecars
 #                    (server-log mentions with no transfer) whose mention
 #                    timestamp is on D/D-1
 #
@@ -28,7 +28,7 @@
 #
 # Reads data/<env>/transfer/cache/_files.tsv, data/<env>/server/cache/
 # _parse.tsv (dates only), data/<env>/flow-manager/base/_subscriptions.tsv,
-# data/<env>/blue/_redflip.tsv, data/<env>/first-seen/*.rpt and
+# data/<env>/colour/_redflip.tsv, data/<env>/first-seen/*.rpt and
 # data/<env>/unknown/{accounts,logins,sites,hosts,white}.tsv.
 # Writes data/<env>/analyses/reports/data-diff.rpt.
 #
@@ -42,7 +42,7 @@ source "$SCRIPT_DIR/../lib.sh"
 TF="$DATA/transfer/cache/_files.tsv"
 SP="$DATA/server/cache/_parse.tsv"
 BASE_SUBS="$DATA/flow-manager/base/_subscriptions.tsv"
-RFLIP="$DATA/blue/_redflip.tsv"
+RFLIP="$DATA/colour/_redflip.tsv"
 UNK="$DATA/unknown"
 OUT="$REPORTS_DIR/data-diff.rpt"
 
@@ -199,7 +199,7 @@ t4=$(for typ in logicals partners subscriptions accounts logins hosts; do
     done
 done || true)
 
-# ---- T5: new unknown/blue names, from the sidecars ---------------------------
+# ---- T5: new unknown names, from the sidecars --------------------------------
 #   typelabel <TAB> alinksub <TAB> name <TAB> ts <TAB> message(trimmed)
 unk_files=()
 for u in accounts logins sites hosts white; do
@@ -248,7 +248,7 @@ s3_ok=0
     printf 'STAT\torange\t%s\tnewly quiet\n' "$n2"
     printf 'STAT\tgreen\t%s\trecovered\n' "$n3"
     printf 'STAT\twhite\t%s\tfirst seen\n' "$n4"
-    printf 'STAT\tblue\t%s\tnew unknown names\n' "$n5"
+    printf 'STAT\twhite\t%s\tnew unknown names\n' "$n5"
 
     # ---- T1 ----
     printf 'TABLE\tNew red flips\twide\tnofilter\tkeephead\n'
@@ -263,7 +263,7 @@ s3_ok=0
         printf 'ROW\t@{colspan=6}Nothing new — no subscription flipped red on %s or %s.\n' "$D" "$G"
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t@{class=num}%s\t@{class=num}%s\t\n' "$n1" "$s1_run" "$s1_n"
-    printf 'NOTE\tRed subscriptions whose server-log evidence stamp (blue/_redflip.tsv) or newest FAILING File is on **%s** or **%s** — the freshest breakage. A chronically failing flow fails again every day and so stays listed; its old **Failing since** date gives it away. **From green to red** tells each flip'\''s full story.\n' "$D" "$G"
+    printf 'NOTE\tRed subscriptions whose server-log evidence stamp (colour/_redflip.tsv) or newest FAILING File is on **%s** or **%s** — the freshest breakage. A chronically failing flow fails again every day and so stays listed; its old **Failing since** date gives it away. **From green to red** tells each flip'\''s full story.\n' "$D" "$G"
 
     # ---- T2 ----
     printf 'TABLE\tNewly quiet\tnofilter\n'
@@ -314,7 +314,7 @@ s3_ok=0
     printf 'NOTE\tConfigured logical flows, partners, subscriptions, accounts, logins and remote hosts whose FIRST-EVER File is on **%s** or **%s**, read from the first-seen ledger (the same per-day cells behind the **First seen** analysis). A name'\''s first sighting is a one-off event — it appears here once and then only lives on that page.\n' "$D" "$G"
 
     # ---- T5 ----
-    printf 'TABLE\tNew unknown/blue names\twide\tnofilter\n'
+    printf 'TABLE\tNew unknown names\twide\tnofilter\n'
     printf 'HEAD\tType\tName\tMentioned\tEvidence\n'
     printf 'KIND\ttext\ttext\ttext\ttext\n'
     while IFS=$'\t' read -r lbl asub name ts msg; do
@@ -329,7 +329,7 @@ s3_ok=0
         printf 'ROW\t@{colspan=4}Nothing new — no server-log-only name surfaced on %s or %s.\n' "$D" "$G"
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t\n' "$n5"
-    printf 'NOTE\tNames the server log mentions with NO transfer of their own (the data/unknown sidecars — the same set that seeds the blue result colour) whose newest mention is on **%s** or **%s**. A configured name here is blue (server-seen, never transferred); an unconfigured one is a stranger knocking — **Seen in server log** has the full lists.\n' "$D" "$G"
+    printf 'NOTE\tNames the server log mentions with NO transfer of their own (the data/unknown sidecars) whose newest mention is on **%s** or **%s**. A configured name here is orange (server-seen, never transferred); an unconfigured one is a stranger knocking — **Missing entities** has the full lists.\n' "$D" "$G"
 
     printf 'SUMMARY\tSince yesterday (%s/%s): %s red flip(s), %s newly quiet, %s recovered, %s first seen, %s new unknown name(s)\n' \
         "$D" "$G" "$n1" "$n2" "$n3" "$n4" "$n5"

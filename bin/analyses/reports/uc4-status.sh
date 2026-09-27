@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # uc4-status.sh — "UC4 status": every configured UC4 (we are the server, the
-# partner connects IN and DELIVERS a file to us) subscription in ONE of seven
+# partner connects IN and DELIVERS a file to us) subscription in ONE of four
 # statuses. The fourth of the set with uc1-status.sh (we push out),
 # uc2-status.sh (the partner collects from us) and uc3-status.sh (we poll and
 # pull); same idea in all four: a complete partition, one row per subscription,
@@ -9,33 +9,16 @@
 #
 #   ok                 the subscription is green   — its latest File is OK
 #   error              it is red and has NEVER delivered an OK File
-#   ok -> error         it is red but HAS delivered OK Files before — a regression
-#   server - no files  blue, and the partner DOES log in — it just never
-#                      delivers a file
-#   server - error     blue, and the partner never got in at all: its only
-#                      attempts were refused by the account whitelist
-#   server - no result blue, and the server log carries nothing about it either way
-#   not seen           configured, and never observed in EITHER log
+#   ok -> error        it is red but HAS delivered OK Files before — a regression
+#   not seen           configured, and never seen in the transfer log
 #
-# green/red/blue/orange is the site-wide RESULT colour (data/flow-manager/base/
-# _subscriptions.tsv, filled by bin/build/result.sh + bin/build/seen-in-server-log.sh):
-# green/red = real transfer data, its LAST File OK / Failed-or-Expired; blue =
-# seen in the SERVER log only; orange = never seen anywhere.
-#
-# HOW THE STATUS SET COMPARES with the rest of the set:
-#
-#   * "server - no files" is back, and means what UC2's "No files" means rather
-#     than what UC3's does. On UC3 WE poll and the remote directory is empty; on
-#     UC4 the PARTNER connects and simply never sends — the same conclusion
-#     (nothing arrives) reached from the opposite side. It is the most useful
-#     thing this report says: the flow is configured, credentials work, the
-#     partner reaches us, and no file has ever come.
-#   * "not seen" is FIRST-CLASS, as on uc1-status.sh: 64 of acceptance's 142 UC4
-#     subscriptions are configured and never observed in either log.
-#   * "server - error" is narrower here than on UC1/UC3. We are the SERVER, so we
-#     cannot fail to reach anyone; the only way a UC4 flow fails before a file
-#     exists is the partner being turned away at the door — a "Disallowed user"
-#     whitelist rejection with no successful logon to go with it.
+# green/red/orange is the site-wide RESULT colour (data/flow-manager/base/
+# _subscriptions.tsv, filled by bin/build/result.sh): green/red = real transfer
+# data, its LAST File OK / Failed-or-Expired; orange = never seen. The three
+# server-log-only statuses (server - no files / server - error / server - no
+# result) went with the blue result, 2026-09-27: those flows are "not seen"
+# now, and the Logons / Arrivals / Problems columns still show a partner that
+# logs in and never delivers, or is refused at the door.
 #
 # THE SIGNALS ARE ACCOUNT-KEYED, not subscription-keyed. A partner connects to an
 # ACCOUNT; the subscription name barely appears in the server log (only the PeSIT
@@ -83,11 +66,11 @@ FILESC="$TRANSFER_CACHE/_files.tsv"
 # result.sh's red-flip sidecar (green -> red on ring Error/Warn newer than the
 # last transfer; name + evidence stamp). The per-hour walker applies the same
 # flip so its last row matches the STATs.
-RFLIP="$DATA/blue/_redflip.tsv"
+RFLIP="$DATA/colour/_redflip.tsv"
 # The per-HOUR status sidecar for the Overview's UC4 status card — written HERE
 # because the classification lives here (cf. pesit-slots.tsv). date <TAB> hour
-# <TAB> the SEVEN statuses in STACK order: ok, server-no-result,
-# server-no-files, server-error, ok-error, error, not-seen. One hour divides
+# <TAB> the FOUR statuses in STACK order: ok, ok-error, error, not-seen.
+# One hour divides
 # 4/6/12/24 exactly; the Overview re-buckets by taking the LAST hour of each,
 # since a status is a STATE, carried forward, never summed.
 SLOTS_OUT="$REPORTS_DIR/uc4-slots.tsv"               # col 12 = subscription, 2 = outcome
@@ -198,51 +181,33 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v 
             if (lg9 != "" && aln[a] + 0 >= 2 && SUBL[k] != "" && index(SUBL[k] SUBSEP, SUBSEP lg9 SUBSEP) == 0) continue   # not this flow login
             if (d != "" && d > llg[k]) llg[k] = d
             if (sig == "logon") logon[k]++; else if (sig == "arr") arr[k]++; else prob[k]++
-            if (d != "" && $2 ~ /^[0-9][0-9]:/) {                # per-HOUR signals
-                hs = jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 24 + int(substr($2,1,2))
-                span(hs); hk = k SUBSEP hs
-                if (sig == "logon") slog[hk] = 1
-                else if (sig == "arr") sarr[hk] = 1
-                else sprob[hk] = 1
-            }
-            # the drill carries the lines that DECIDE the status: refusals on their
-            # own key, so a refused row is not crowded out by routine logons
+            if (d != "" && $2 ~ /^[0-9][0-9]:/)                  # a server line widens the walked span
+                span(jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 24 + int(substr($2,1,2)))
+            # the drill keeps the refusals on their own key, so a refused flow
+            # is not crowded out by routine logons
             addline((sig == "prob" ? "E" : "L") SUBSEP k, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
         }
     }
     END {
         # statuses, worst first — the row sort is on this number
         #   0 error             red,  no OK File ever
-        #   1 ok -> error        red,  OK Files before it went red
-        #   2 server - error    blue, only refused attempts — it never got in
-        #   3 server - no files blue, it logs in and never delivers
-        #   4 server - no result blue, the log says nothing either way
-        #   5 ok                green
-        #   6 not seen          orange (or unfilled) — never observed at all
-        # A blue subscription whose server log DOES show arrivals (no such case
-        # in either environment: a delivered file leaves a transfer record, which
-        # would make it green or red) has no explanation for the missing transfer
-        # data, so it falls to "no result" rather than claiming "no files".
+        #   1 ok -> error       red,  OK Files before it went red
+        #   2 ok                green
+        #   3 not seen          orange (or unfilled) — never in the transfer log
         for (i = 1; i <= nr; i++) {
             k = R[i]; r = res[k]
-            if (r == "green")      stc = 5
+            if (r == "green")      stc = 2
             else if (r == "red")   stc = (ok[k]+0 > 0) ? 1 : 0
-            else if (r == "blue")  stc = (arr[k]+0 == 0 && logon[k]+0 > 0) ? 3 : \
-                                         (arr[k]+0 == 0 && prob[k]+0 > 0) ? 2 : 4
-            else                   stc = 6
+            else                   stc = 3
             n[stc]++
             tf_ += files[k]+0; tok += ok[k]+0; ter += err[k]+0
             tlg = tlgL + 0; tar = tarL + 0; tpr = tprL + 0   # per LINE, not per credited flow
-            dl = (stc == 2) ? lastlines("E" SUBSEP k) : lastlines("L" SUBSEP k)
+            dl = (stc == 0 && files[k]+0 == 0) ? lastlines("E" SUBSEP k) : lastlines("L" SUBSEP k)
             printf "A\t%d\t%s%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%s\t%s\n", stc, sublink(nm[k]), nm[k], \
                 files[k]+0, ok[k]+0, err[k]+0, (k in lfd ? lfd[k] : "-"), \
                 logon[k]+0, arr[k]+0, prob[k]+0, (k in llg ? llg[k] : "-"), dl
         }
         if (hmin != "" && SL != "") {
-            # SERVER-VISIBLE == the CURATED blue set, not this report\047s own pattern
-            # matches: see uc1-status.sh. Blue carries no date, so it holds for the
-            # whole window; the per-hour signals only refine WHICH blue status.
-            for (i = 1; i <= nr; i++) if (res[R[i]] == "blue") SV[R[i]] = 1
             # the result.sh RED FLIP (_redflip.tsv): a green-by-transfer flow
             # flipped red by ring Error/Warn evidence NEWER than its last
             # transfer. Applied from the evidence hour, clamped into the walked
@@ -263,36 +228,34 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v 
                     k = R[i]; hk = k SUBSEP h
                     if (hk in tsk) { HF[k] = 1; LOK[k] = !tbad[hk] }
                     if (hk in thok) EOK[k] = 1
-                    if (hk in slog)  SLG[k] = 1
-                    if (hk in sarr)  SAR[k] = 1
-                    if (hk in sprob) SPR[k] = 1
-                    if (HF[k])      sc = LOK[k] ? 5 : (EOK[k] ? 1 : 0)
-                    else if (SV[k]) sc = (!SAR[k] && SLG[k]) ? 3 : ((!SAR[k] && SPR[k]) ? 2 : 4)
-                    else            sc = 6
-                    if (sc == 5 && (k in RFH) && h >= RFH[k]) sc = 1   # the red flip: ok -> "ok -> error"
+                    if (HF[k]) sc = LOK[k] ? 2 : (EOK[k] ? 1 : 0)
+                    else       sc = 3
+                    # the red flip: ok -> "ok -> error"; a never-transferred
+                    # flow goes straight to error
+                    if ((k in RFH) && h >= RFH[k]) { if (sc == 2) sc = 1; else if (sc == 3) sc = 0 }
                     cnt[sc]++
                 }
-                printf "%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", fromjdn(int(h/24)), h%24, \
-                    cnt[5]+0, cnt[4]+0, cnt[3]+0, cnt[2]+0, cnt[1]+0, cnt[0]+0, cnt[6]+0 > SL
+                printf "%s\t%d\t%d\t%d\t%d\t%d\n", fromjdn(int(h/24)), h%24, \
+                    cnt[2]+0, cnt[1]+0, cnt[0]+0, cnt[3]+0 > SL
             }
             close(SL)
         }
-        printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", \
-            n[0]+0, n[1]+0, n[2]+0, n[3]+0, n[4]+0, n[5]+0, n[6]+0, \
+        printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", \
+            n[0]+0, n[1]+0, n[2]+0, n[3]+0, \
             tf_+0, tok+0, ter+0, tlg+0, tar+0, tpr+0
     }
 ' "$RFLIP" "$SUBB" "$XREF" "$FILESC" "$PARSED")
 
-IFS=$'\t' read -r _ n_err n_okerr n_serr n_snof n_snor n_ok n_notseen t_files t_ok t_er t_lg t_ar t_prob \
+IFS=$'\t' read -r _ n_err n_okerr n_ok n_notseen t_files t_ok t_er t_lg t_ar t_prob \
     <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
-n_all=$(( n_err + n_okerr + n_serr + n_snof + n_snor + n_ok + n_notseen ))
+n_all=$(( n_err + n_okerr + n_ok + n_notseen ))
 if [ "$n_all" -eq 0 ]; then
     echo "No UC4 subscriptions configured." >&2
     rm -f "$OUT" "$SLOTS_OUT"   # no data for this ENV — page not published
     exit 0
 fi
 
-# Rows ordered by status (stc 0..6), within a status by Error desc, Files desc,
+# Rows ordered by status (stc 0..3), within a status by Error desc, Files desc,
 # then name — the noisiest subscription of a status first. The A lines reach
 # sort(1) UNCHANGED: its last-resort compare is the WHOLE line, which is what
 # breaks the remaining ties, so nothing may be added to or moved within them
@@ -304,10 +267,7 @@ rows=$(awk -F'\t' '
     {
         st = ($2 == 0) ? "@{class=failed}error" : \
              ($2 == 1) ? "@{class=warn}ok -> error" : \
-             ($2 == 2) ? "@{class=failed}server - error" : \
-             ($2 == 3) ? "@{class=warn}server - no files" : \
-             ($2 == 4) ? "@{class=warn}server - no result" : \
-             ($2 == 5) ? "@{class=processed}ok" : "not seen"
+             ($2 == 2) ? "@{class=processed}ok" : "not seen"
         printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", st, $3, $4, $5, $6, \
             ($7 == "-" ? "—" : $7), $8, $9, $10, ($11 == "-" ? "—" : $11), $12
     }
@@ -323,16 +283,13 @@ rows=$(awk -F'\t' '
 
 {
     printf 'TITLE\tUC4 status\n'
-    printf 'DESC\tEvery configured UC4 (the partner connects in and delivers a file to us) subscription in one of seven statuses: healthy, failing, failing after a working history, the partner logs in but never delivers, refused at the door, unexplained, or never observed in either log.\n'
-    printf 'INTRO\tEvery configured **UC4** (we are the server; the partner connects IN and DELIVERS a file to us) subscription, in exactly one status. The first three are the **transfer-log** verdict: **ok** = green, its latest File arrived; **error** = red and never once received an OK File; **ok -> error** = red now, but it HAS received before — a regression. Then the **blue** ones (seen in the server log, never in the transfer log): **server - no files** = the partner DOES log in, it just never sends anything; **server - error** = it never got in at all — its only attempts were refused by the account whitelist; **server - no result** = the log says nothing either way. Last and largest, **not seen** = configured and never observed in EITHER log. Click a row for its most recent server-log lines.\n'
+    printf 'DESC\tEvery configured UC4 (the partner connects in and delivers a file to us) subscription in one of four statuses: healthy, failing, failing after a working history, or not seen in the transfer log — with its logons, arrivals and refusals from the server log.\n'
+    printf 'INTRO\tEvery configured **UC4** (we are the server; the partner connects IN and DELIVERS a file to us) subscription, in exactly one status: **ok** = green, its latest File arrived; **error** = red and never once received an OK File; **ok -> error** = red now, but it HAS received before — a regression; **not seen** = configured and never seen in the transfer log. Click a row for its most recent server-log lines.\n'
 
     printf 'STAT\twhite\t%s\tUC4 subscriptions\n' "$n_all"
     printf 'STAT\tgreen\t%s\tok\n' "$n_ok"
     printf 'STAT\tred\t%s\terror\n' "$n_err"
     printf 'STAT\torange\t%s\tok -> error\n' "$n_okerr"
-    printf 'STAT\tblue\t%s\tserver - no files\n' "$n_snof"
-    printf 'STAT\tred\t%s\tserver - error\n' "$n_serr"
-    printf 'STAT\tblue\t%s\tserver - no result\n' "$n_snor"
     printf 'STAT\torange\t%s\tnot seen\n' "$n_notseen"
 
     printf 'TABLE\tUC4 subscriptions\twide\tnofilter\n'
@@ -341,12 +298,12 @@ rows=$(awk -F'\t' '
     printf '%s\n' "$rows"   # %s\n: $rows already ends in one, so this is the blank line before TOTAL
     printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\n' \
         "$n_all" "$t_files" "$t_ok" "$t_er" "$t_lg" "$t_ar" "$t_prob"
-    printf 'NOTE\tEvery configured **UC4** subscription, classified. The colour is the site-wide **result**: green/red mean real transfer data (its LAST File OK / Failed-or-Expired), blue means the server log has seen it and the transfer log never has, and orange — **not seen** — means neither log ever has. **error** vs **ok -> error** is a per-FILE question: right after any OK File the subscription WAS green, so a red subscription with even one OK File in the window is a regression; that is finer than **From green to red**, which buckets by whole days. The server counts are **account-keyed**, because a partner connects to an account and the subscription name barely reaches the log — the join is 1:1 for UC4. **Logons** counts the "successfully authenticated" server-log line — one per successful SSH logon (an "Allowed user" whitelist admission that then fails authentication does not count). **Arrivals** is a file actually handed over ("will be submitted for processing"), **Problems** a logon the account whitelist **refused**. Because we are the SERVER here, there is no unreachable-partner failure to have: the only way a UC4 flow breaks before a file exists is the partner being turned away, which is exactly **server - error**. Click a row for its most recent server-log lines; on a **server - error** row those are the refusals.\n'
+    printf 'NOTE\tEvery configured **UC4** subscription, classified. The colour is the site-wide **result**: green/red mean real transfer data (its LAST File OK / Failed-or-Expired), and orange — **not seen** — means the transfer log never has. **error** vs **ok -> error** is a per-FILE question: right after any OK File the subscription WAS green, so a red subscription with even one OK File in the window is a regression; that is finer than **From green to red**, which buckets by whole days. The server counts are **account-keyed**, because a partner connects to an account and the subscription name barely reaches the log — the join is 1:1 for UC4. **Logons** counts the "successfully authenticated" server-log line — one per successful SSH logon (an "Allowed user" whitelist admission that then fails authentication does not count). **Arrivals** is a file actually handed over ("will be submitted for processing"), **Problems** a logon the account whitelist **refused**. A **not seen** row with Logons but no Arrivals is a partner that gets in and never delivers; one with only Problems is a partner turned away at the door. Click a row for its most recent server-log lines.\n'
 
-    printf 'KEYWORDS\tuc4, inbound, partner delivers, upload, receive, status, green, red, blue, orange, regression, never worked, never seen, unused, logon, whitelist, refused, disallowed, no files, subscription health\n'
-    printf 'SUMMARY\tok: %s  |  error: %s  |  ok -> error: %s  |  server - no files: %s  |  server - error: %s  |  server - no result: %s  |  not seen: %s\n' \
-        "$n_ok" "$n_err" "$n_okerr" "$n_snof" "$n_serr" "$n_snor" "$n_notseen"
+    printf 'KEYWORDS\tuc4, inbound, partner delivers, upload, receive, status, green, red, orange, regression, never worked, never seen, unused, logon, whitelist, refused, disallowed, no files, subscription health\n'
+    printf 'SUMMARY\tok: %s  |  error: %s  |  ok -> error: %s  |  not seen: %s\n' \
+        "$n_ok" "$n_err" "$n_okerr" "$n_notseen"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-echo "Data written to $OUT ($n_all UC4 subscription(s): $n_ok ok, $n_err error, $n_okerr ok-error, $n_snof server-no-files, $n_serr server-error, $n_snor server-no-result, $n_notseen not-seen)." >&2
+echo "Data written to $OUT ($n_all UC4 subscription(s): $n_ok ok, $n_err error, $n_okerr ok-error, $n_notseen not-seen)." >&2

@@ -63,7 +63,6 @@ SP="$DATA/server/cache/_parse.tsv"         # 1 date 2 time 3 level 4 component 5
 SLF="$DATA/server/reports/went-kaput.rpt"   # ROW: 6 = "Latest issue" date+time (per-day "Problems this day" PROBLEM link)
 NRD="$DATA/server/reports/no-remote-dir.rpt"   # table 2 "Per day": date, errors, subscriptions (per-day PROBLEM link)
 NRF="$DATA/server/reports/no-remote-files.rpt" # table 2 "Per day": date, polls, subscriptions (per-day PROBLEM link)
-UC3="$DATA/server/reports/uc3-status.rpt"      # "server - error" rows: newest failure logline date (per-day PROBLEM link)
 ANOM="$DATA/transfer/reports/anomalies.rpt"    # ROW: 2 = Date, in BOTH tables (per-day PROBLEM link, offered only on flagged days)
 GTR="$DATA/transfer/reports/from-green-to-red.rpt"   # ROW: 4 = "Went red on" date+time (per-day PROBLEM link)
 ORED="$DATA/transfer/reports/only-red.rpt"           # ROW: 6 = "First failure" date+time (per-day PROBLEM link)
@@ -79,7 +78,7 @@ SUBPF="$DATA/flow-manager/xref/_subscriptions-partners.tsv"   # subscription -> 
 oldest_rpt=$(ls -tr "$RPTDIR"/*.rpt 2>/dev/null | head -1 || true)
 if [ -n "$oldest_rpt" ]; then
     stale=0
-    for dep in "${BASH_SOURCE[0]}" "$TF" "$TP" "$TT" "$SV" "$SP" "$SLF" "$NRD" "$NRF" "$UC3" "$ANOM" "$GTR" "$ORED" "$PSLOTS" "$EQSLOTS" "$SUBPF"; do
+    for dep in "${BASH_SOURCE[0]}" "$TF" "$TP" "$TT" "$SV" "$SP" "$SLF" "$NRD" "$NRF" "$ANOM" "$GTR" "$ORED" "$PSLOTS" "$EQSLOTS" "$SUBPF"; do
         if [ -f "$dep" ] && [ "$dep" -nt "$oldest_rpt" ]; then stale=1; break; fi
     done
     if [ "$stale" = 0 ]; then
@@ -541,21 +540,6 @@ slfc=""
 if [ -f "$SLF" ]; then
     slfc=$(awk -F'\t' '$1=="ROW"{ d=substr($6,1,10); if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) c[d]++ } END{ for (k in c) printf "%s:%s ", k, c[k] }' "$SLF")
 fi
-# Per-day count of UC3 subscriptions in "server - error" (the scheduled poll
-# itself fails server-side — the Failing polls box), bucketed by the date of
-# the row's NEWEST failure line: the @data:loglines payload carries the
-# failures newest-first, so entry 1 is the latest — the same instant the boxes
-# page reads. A "server - error" row always has one (its status IS decided by
-# a failure line); a row without stays unbucketed rather than guessing.
-u3c=""
-if [ -f "$UC3" ]; then
-    u3c=$(awk -F'\t' '$1=="ROW"{ st=$2; sub(/^@\{[^}]*\}/,"",st); if (st != "server - error") next
-            for (i=3; i<=NF; i++) if (index($i,"@data:loglines=")==1) {
-                split(substr($i,16), L, "\037"); d=substr(L[1],1,10)
-                if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) c[d]++
-                break } }
-          END{ for (k in c) printf "%s:%s ", k, c[k] }' "$UC3")
-fi
 if [ -f "$SV" ] && [ -f "$SP" ] && [ -n "$sdays" ]; then
 # THE SERVER PASS IN PARALLEL (2026-09-27): one job per core over its own
 # byte range of the 3 GB server cache (the jobs compute the same line
@@ -564,12 +548,11 @@ if [ -f "$SV" ] && [ -f "$SP" ] && [ -n "$sdays" ]; then
 # writes the day facts exactly as the single pass did. day_srv is that one
 # program; the mode comes in through the environment (DAYSRV_*).
 day_srv() {
-awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v slfc="$slfc" -v nrdc="$nrdc" -v nrfc="$nrfc" -v u3c="$u3c" -v anomc="$anomc" '
+awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v slfc="$slfc" -v nrdc="$nrdc" -v nrfc="$nrfc" -v anomc="$anomc" '
     BEGIN { PART = ENVIRON["DAYSRV_PART"] + 0; REDUCE = ENVIRON["DAYSRV_REDUCE"] + 0; SVF = ENVIRON["DAYSRV_SVF"]
             RANGEF = ENVIRON["DAYSRV_RANGEF"]; RLO = ENVIRON["DAYSRV_LO"] + 0; RHI = ENVIRON["DAYSRV_HI"] + 0; ROFF = ENVIRON["DAYSRV_ROFF"] + 0 }
     BEGIN { ns = split(slfc, _sa, " "); for (i = 1; i <= ns; i++) { if (_sa[i] == "") continue; p = index(_sa[i], ":"); if (p > 1) SLFC[substr(_sa[i], 1, p - 1)] = substr(_sa[i], p + 1) }
         na = split(anomc, _aa, " "); for (i = 1; i <= na; i++) { if (_aa[i] == "") continue; p = index(_aa[i], ":"); if (p > 1) ANOMC[substr(_aa[i], 1, p - 1)] = substr(_aa[i], p + 1) }
-        nu = split(u3c, _ua, " "); for (i = 1; i <= nu; i++) { if (_ua[i] == "") continue; p = index(_ua[i], ":"); if (p > 1) U3C[substr(_ua[i], 1, p - 1)] = substr(_ua[i], p + 1) }
         # "date:errors:subscriptions …" — the no-remote-dir per-day table
         nn = split(nrdc, _na, " "); for (i = 1; i <= nn; i++) { if (_na[i] == "") continue
             if (split(_na[i], _nb, ":") == 3) { NRDE[_nb[1]] = _nb[2] + 0; NRDS[_nb[1]] = _nb[3] + 0 } }
@@ -722,11 +705,6 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
                 printf "PROBLEM\tserver\t../server/no-remote-dir.html" q "\tNo remote dir\t**%d** failed listing(s) on **%d** subscription(s) whose configured remote directory does not exist — the partner answered \"No such file\", so no transfer was ever started\n", NRDE[d], NRDS[d] >> out
             if (NRFP[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../server/no-remote-files.html" q "\tNo remote files\t**%d** poll(s) by **%d** UC3 subscription(s) that have NEVER found a file — the listing works, the remote directory is always empty\n", NRFP[d], NRFS[d] >> out
-            # UC3 subscriptions whose scheduled poll itself errors server-side
-            # ("server - error" on UC status / UC3), newest failure this day
-            # (a full-period status report — no date filter, so no q)
-            if (U3C[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html\tFailing polls\t**%d** UC3 subscription(s) whose scheduled poll errors server-side — nothing is ever listed or collected; latest failure this day\n", U3C[d] >> out
             if (SLFC[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../server/went-kaput.html\tWent kaput\t**%d** subscription(s) whose last transfer was OK but that logged a server-log error/warning afterwards, most recently today\n", SLFC[d] >> out
             # A day with NO transfer data got no hero from the transfer pass:

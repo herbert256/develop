@@ -14,7 +14,7 @@
 #   REPORTS_DIR     generated *.rpt files  (data/transfer/reports/)
 #   SERVER_CACHE / SERVER_REPORTS   the server area's cache/reports (cross-area reads)
 #   CONFIG_DIR      bin/flow-manager.sh's configured-entity caches (data/flow-manager/{base,xref}/_*.tsv)
-#   UNKNOWN_DIR / BLUE_TSV / ANALYSES_REPORTS   the env's data/ side-outputs
+#   UNKNOWN_DIR / ANALYSES_REPORTS   the env's data/ side-outputs
 #   PARSED/FILES                 the two transfer caches (in CACHE_DIR)
 #   ensure_parsed   (re)build the caches with parse.sh when they are stale
 #   ensure_config   (re)build the data/flow-manager caches with bin/flow-manager.sh when stale
@@ -26,9 +26,9 @@
 # ensure_parsed rebuilds when a cache is missing, when any input CSV — or any
 # data/flow-manager XREF cache (the parse config-fallback inputs) — is newer than
 # it, or when parse.sh itself is newer (so editing the parser invalidates the
-# cache). Deliberately xref/ only, NOT base/: bin/build/result.sh and
-# bin/build/seen-in-server-log.sh rewrite base/*.tsv AFTER the parse (build steps —
-# they only recolor the result column, which the parse never reads), and
+# cache). Deliberately xref/ only, NOT base/: bin/build/result.sh rewrites
+# base/*.tsv AFTER the parse (a build step — it only recolors the result
+# column, which the parse never reads), and
 # watching base/ made the first report after them re-derive the whole cache
 # for nothing (the fresh-build double derive). A REAL config change re-derives
 # via bin/flow-manager.sh, which rewrites the xref tree too — so xref mtimes
@@ -61,9 +61,8 @@ SERVER_CACHE="$DATA/server/cache"; SERVER_REPORTS="$DATA/server/reports"   # cro
 CONFIG_DIR="$DATA/flow-manager"          # bin/flow-manager.sh's caches of the config exports
 CONFIG_BASE="$CONFIG_DIR/base"          # the 9 entity lists, each "name<TAB>direction" (in/both/out; empty = unclassifiable)
 CONFIG_XREF="$CONFIG_DIR/xref"          # every cross-reference pair BOTH ways (_<a>-<b>.tsv + _<b>-<a>.tsv) + the patterns map
-UNKNOWN_DIR="$DATA/unknown"             # the server unknown-* sidecars (blue seed lists)
-BLUE_TSV="$DATA/seen-in-server-log.tsv"            # bin/build/seen-in-server-log.sh's audit intermediate
-ANALYSES_REPORTS="$DATA/analyses/reports"   # the analyses .rpt files (seen-in-server-log reads pda.rpt)
+UNKNOWN_DIR="$DATA/unknown"             # the server unknown-* sidecars (the server-log sighting lists)
+ANALYSES_REPORTS="$DATA/analyses/reports"   # the analyses .rpt files
 mkdir -p "$CACHE_DIR" "$REPORTS_DIR"
 
 PARSED="$CACHE_DIR/_transfers.tsv"
@@ -163,7 +162,7 @@ skip_if_fresh() {
        || [ "$LIB_DIR/lib.sh" -nt "$out" ] \
        || [ "$LIB_DIR/parse.sh" -nt "$out" ] \
        || { [ -f "$PARSED" ] && [ "$PARSED" -nt "$out" ]; } \
-       || { [ -f "$FILES" ] && [ "$FILES" -nt "$out" ]; }; then  # bin/build/seen-in-server-log.sh can rewrite $FILES/$PARSED together or $FILES alone
+       || { [ -f "$FILES" ] && [ "$FILES" -nt "$out" ]; }; then  # expire-files / bookend-ok can rewrite $FILES alone
         return 0                                               # stale -> build
     fi
     local dep

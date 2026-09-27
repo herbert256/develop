@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #
 # bookend-ok.sh — the "settled by bookend" build step (stage 1, right after
-# bin/expire-files.sh; before bin/build/seen-in-server-log.sh / bin/build/
-# result.sh): flip a FAILED file (_files.tsv outcome col 2) to "Processed"
+# bin/expire-files.sh; before bin/build/result.sh): flip a FAILED file (_files.tsv outcome col 2) to "Processed"
 # when the SERVER log's own verdict on its transfer is OK and nothing in the
 # server log gives the failure a reason. (2026-09-09, user request.)
 #

@@ -70,19 +70,14 @@ skip_if_fresh() {
 # subscriptions' FlowIDs (xref/_subscriptions-logicals.tsv), so a logical's
 # members ARE its subscriptions. One row per (logical, direction) into
 # $COVSRC/logicals.tsv — side from the subscription's coverage row, seen when
-# any member subscription is, Result = the latest transaction; server-log-only
-# (blue) logicals count as SEEN like every PDA member.
+# any member subscription is, Result = the latest transaction.
 logicals_tsv() {
     local scov="$COVSRC/subscriptions.tsv" sl="$DATA/flow-manager/xref/_subscriptions-logicals.tsv"
     local lmap="$DATA/transfer/reports/details/logicals/_slugmap.tsv"
-    local lbase="$DATA/flow-manager/base/_logicals.tsv"
     [ -f "$scov" ] && [ -f "$sl" ] || return 0
     [ -f "$lmap" ] || lmap=/dev/null
-    [ -f "$lbase" ] || lbase=/dev/null
-    awk -F'\t' -v bluef="$lbase" '
-        BEGIN { US = sprintf("%c", 31)
-            # server-log-only (blue) logicals count as SEEN (see internal_apps_tsv)
-            while ((getline l < bluef) > 0) { nb=split(l,ba,"\t"); if (nb>=3 && ba[3]=="blue") blue[toupper(ba[1])]=1 } close(bluef) }
+    awk -F'\t' '
+        BEGIN { US = sprintf("%c", 31) }
         FILENAME ~ /_slugmap\.tsv$/ { lslug[$1]=$2; next }   # logical name -> detail-page slug
         FILENAME ~ /_subscriptions-logicals\.tsv$/ { if($1!="" && $2!="") slg[$1]=((slg[$1]!="")?slg[$1] US:"") $2; next }
         {   # coverage/subscriptions.tsv: name dir seen link ts outcome
@@ -100,7 +95,6 @@ logicals_tsv() {
         }
         END{
             for(k in n){ split(k,x,SUBSEP)
-                if(toupper(x[1]) in blue) seen[k]=1
                 printf "%s\t%s\t%d\t%s\t%s\t%s\t%s\t\n", x[1], x[2], seen[k]+0, ((x[1] in lslug) ? "logicals/" lslug[x[1]] : ""), lts[k], loc[k], substr(mem[k],2) }
         }' "$lmap" "$sl" "$scov" | LC_ALL=C sort -t$'\t' -k1,1 -k2,2 | cov_put "$COVSRC/logicals.tsv"
 }
@@ -109,17 +103,14 @@ logicals_tsv() {
 # source: a BL entity is a subscriptions.json tags entry starting with BL, so
 # its members ARE the subscriptions carrying the tag
 # (xref/_subscriptions-bl.tsv). One row per (bl, direction) into
-# $COVSRC/bl.tsv; server-log-only (blue) BL tags count as SEEN likewise.
+# $COVSRC/bl.tsv.
 bl_tsv() {
     local scov="$COVSRC/subscriptions.tsv" sl="$DATA/flow-manager/xref/_subscriptions-bl.tsv"
     local lmap="$DATA/transfer/reports/details/bl/_slugmap.tsv"
-    local lbase="$DATA/flow-manager/base/_bl.tsv"
     [ -f "$scov" ] && [ -f "$sl" ] || return 0
     [ -f "$lmap" ] || lmap=/dev/null
-    [ -f "$lbase" ] || lbase=/dev/null
-    awk -F'\t' -v bluef="$lbase" '
-        BEGIN { US = sprintf("%c", 31)
-            while ((getline l < bluef) > 0) { nb=split(l,ba,"\t"); if (nb>=3 && ba[3]=="blue") blue[toupper(ba[1])]=1 } close(bluef) }
+    awk -F'\t' '
+        BEGIN { US = sprintf("%c", 31) }
         FILENAME ~ /_slugmap\.tsv$/ { lslug[$1]=$2; next }   # BL name -> detail-page slug
         FILENAME ~ /_subscriptions-bl\.tsv$/ { if($1!="" && $2!="") slg[$1]=((slg[$1]!="")?slg[$1] US:"") $2; next }
         {   # coverage/subscriptions.tsv: name dir seen link ts outcome
@@ -136,7 +127,6 @@ bl_tsv() {
         }
         END{
             for(k in n){ split(k,x,SUBSEP)
-                if(toupper(x[1]) in blue) seen[k]=1
                 printf "%s\t%s\t%d\t%s\t%s\t%s\t%s\t\n", x[1], x[2], seen[k]+0, ((x[1] in lslug) ? "bl/" lslug[x[1]] : ""), lts[k], loc[k], substr(mem[k],2) }
         }' "$lmap" "$sl" "$scov" | LC_ALL=C sort -t$'\t' -k1,1 -k2,2 | cov_put "$COVSRC/bl.tsv"
 }
@@ -163,7 +153,6 @@ external_partners_tsv() {
     local ahf="$DATA/flow-manager/xref/_accounts-hosts.tsv"
     local cov="$COVSRC/accounts.tsv" hosts="$COVSRC/hosts.tsv"
     local pmap="$DATA/transfer/reports/details/partners/_slugmap.tsv"
-    local pfake="$pbase"   # server-log-only (blue) partners are result==blue in the base cache
     # SEEN / RESULT ride the SUBSCRIPTION (2026-08-31 audit): a partner is seen
     # when one of ITS subscriptions on that side (xref/_subscriptions-partners,
     # composed through the FlowID) is seen in the subscription coverage, and
@@ -180,7 +169,6 @@ external_partners_tsv() {
     [ -f "$ahf" ] || ahf=/dev/null
     [ -f "$pacc2" ] || pacc2=/dev/null
     [ -f "$pmap" ] || pmap=/dev/null
-    [ -f "$pfake" ] || pfake=/dev/null
     [ -f "$scov" ] || scov=/dev/null
     [ -f "$spx" ] || spx=/dev/null
     {
@@ -190,14 +178,8 @@ external_partners_tsv() {
         # Out-configured account inside a whitelist cluster, the PLURALSIGHT
         # pair). Seen/Result come from the org's IN-side subscriptions only, so
         # an outbound transfer can never set an In partner's status.
-        awk -F'\t' -v pfake="$pfake" -v SCOV="$scov" -v SPX="$spx" '
+        awk -F'\t' -v SCOV="$scov" -v SPX="$spx" '
             BEGIN { US = sprintf("%c", 31)
-                # Fake/server-only partners (bin/build/seen-in-server-log.sh, data/fakes/partners.tsv)
-                # count as SEEN — the Server bucket already counts them, so Seen
-                # must too, or Transfer = Seen - Server under-counts. An account-
-                # seeded fake names an OUT partner but leaves its endpoint blank,
-                # so the endpoint-keyed seen below would miss it.
-                while ((getline l < pfake) > 0) { np=split(l,pa,"\t"); if (np>=3 && pa[3]=="blue") fake[toupper(pa[1])]=1 } close(pfake)
                 while ((getline l < SPX) > 0) { np=split(l,pa,"\t"); if (np>=2 && pa[1]!="" && pa[2]!="") spx[pa[1]]=spx[pa[1]] US pa[2] } close(SPX) }
             FILENAME ~ /_slugmap\.tsv$/        { pslug[$1]=$2; next }   # partner name -> detail-page slug
             FILENAME ~ /_partners\.tsv$/       { if($2=="in" || $2=="both") indir[$1]=1; next }
@@ -219,7 +201,6 @@ external_partners_tsv() {
                 mem[c]=mem[c] US a "|" cov_link[a]
             }
             END { for(c in indir) {
-                if (toupper(c) in fake) seen[c] = 1
                 printf "%s\tI\t%d\t%s\t%s\t%s\t%s\t%s\n", c, seen[c]+0, ((c in pslug) ? "partners/" pslug[c] : ""), lts[c], loc[c], substr(mem[c],2), substr(cip[c],2) } }
         ' "$pmap" "$pbase" "$aw" "$pw" "$scov" "$cov" "$ap" | LC_ALL=C sort -t$'\t' -k1,1
         # Out rows from coverage hosts.tsv + _hosts-partners.tsv. An endpoint
@@ -235,10 +216,8 @@ external_partners_tsv() {
         # Endpoints column pair); an endpoint with no configured account
         # lists itself, linked to its host page.
         if [ -f "$hosts" ] && [ -f "$hp" ]; then
-            awk -F'\t' -v pfake="$pfake" -v SCOV="$scov" -v SPX="$spx" '
+            awk -F'\t' -v SCOV="$scov" -v SPX="$spx" '
                 BEGIN { US = sprintf("%c", 31)
-                    # fake/server-only partners count as SEEN (see the In block)
-                    while ((getline l < pfake) > 0) { np=split(l,pa,"\t"); if (np>=3 && pa[3]=="blue") fake[toupper(pa[1])]=1 } close(pfake)
                     while ((getline l < SPX) > 0) { np=split(l,pa,"\t"); if (np>=2 && pa[1]!="" && pa[2]!="") spx[pa[1]]=spx[pa[1]] US pa[2] } close(SPX) }
                 # the Out-side SUBSCRIPTION verdict per org (see the header): an
                 # org-keyed ("P") row and an endpoint-less org take it; an
@@ -280,7 +259,6 @@ external_partners_tsv() {
                   } } }
                 END { for (i = 1; i <= n; i++) {
                     if (isP[i]) { seen[i] = (nm[i] in oseen) ? 1 : 0; ts[i] = ots[nm[i]]; oc[i] = ooc[nm[i]] }   # the subscription verdict
-                    if (toupper(nm[i]) in fake) seen[i] = 1
                     printf "%s\tO\t%d\t%s\t%s\t%s\t%s\t%s\n", nm[i], seen[i]+0, lk[i], ts[i], oc[i], substr(mem[i],2), ln[i] }
                     # ENDPOINT-LESS Out orgs (2026-08-29): the rows above are
                     # keyed by ENDPOINT, so an out org no configured host maps
@@ -294,12 +272,12 @@ external_partners_tsv() {
                     # seen in the transfer log". Emit those as ordinary
                     # configured-never-seen rows instead — members are the
                     # org'\''s accounts (endpoint column empty), seen only by
-                    # the blue rule like every other row.
+                    # the subscription verdict like every other row.
                     for (z = 1; z <= no; z++) { o = outn[z]
                         if ((o in inp) || (("P" o) in idx)) continue
                         m = ""; nax = split(substr(pacc[o], 2), PA2, US)
                         for (j = 1; j <= nax; j++) m = m US PA2[j] "|" alk[PA2[j]] "|"
-                        printf "%s\tO\t%d\t%s\t%s\t%s\t%s\t\n", o, (((o in oseen) || (toupper(o) in fake)) ? 1 : 0), ((o in pslug) ? "partners/" pslug[o] : ""), ots[o], ooc[o], substr(m, 2) } }
+                        printf "%s\tO\t%d\t%s\t%s\t%s\t%s\t\n", o, ((o in oseen) ? 1 : 0), ((o in pslug) ? "partners/" pslug[o] : ""), ots[o], ooc[o], substr(m, 2) } }
             ' "$pmap" "$pbase" "$hp" "$ahf" "$pacc2" "$scov" "$cov" "$hosts"
         fi
     } | cov_put "$COVSRC/partners.tsv"
@@ -317,20 +295,18 @@ external_partners_tsv() {
 # One derived member's coverage TSV on the SUBSCRIPTION spine (2026-08-31):
 # members = the subscriptions the xref pair cache connects to the name, side
 # from the subscription's coverage row, seen when any member subscription is,
-# Result = the latest transaction; blue names count as seen. The former
+# Result = the latest transaction. The former
 # applications/domains builders walked the ACCOUNT coverage instead, so one
 # seen hybrid production account (serving many flows) marked every one of its
 # applications seen — the same over-attribution the parse-time union had.
 #   $1 = the _subscriptions-<item>.tsv pair cache   $2 = details slug subdir
-#   $3 = the base cache (blue set)                  $4 = the output TSV name
+#   $3 = the output TSV name
 _sub_spine_tsv() {
-    local scov="$COVSRC/subscriptions.tsv" sl="$1" lmap="$DATA/transfer/reports/details/$2/_slugmap.tsv" lbase="$3" out="$4"
+    local scov="$COVSRC/subscriptions.tsv" sl="$1" lmap="$DATA/transfer/reports/details/$2/_slugmap.tsv" out="$3"
     [ -f "$scov" ] && [ -f "$sl" ] || return 0
     [ -f "$lmap" ] || lmap=/dev/null
-    [ -f "$lbase" ] || lbase=/dev/null
-    awk -F'\t' -v bluef="$lbase" -v MAPF="$sl" -v SUB="$2" '
-        BEGIN { US = sprintf("%c", 31)
-            while ((getline l < bluef) > 0) { nb=split(l,ba,"\t"); if (nb>=3 && ba[3]=="blue") blue[toupper(ba[1])]=1 } close(bluef) }
+    awk -F'\t' -v MAPF="$sl" -v SUB="$2" '
+        BEGIN { US = sprintf("%c", 31) }
         FILENAME ~ /_slugmap\.tsv$/ { lslug[$1]=$2; next }
         FILENAME == MAPF { if($1!="" && $2!="") slg[$1]=((slg[$1]!="")?slg[$1] US:"") $2; next }
         {   d2=$2; if (d2!="I" && d2!="O" && d2!="B") next
@@ -346,18 +322,17 @@ _sub_spine_tsv() {
         }
         END{
             for(k in n){ split(k,x,SUBSEP)
-                if(toupper(x[1]) in blue) seen[k]=1
                 printf "%s\t%s\t%d\t%s\t%s\t%s\t%s\t\n", x[1], x[2], seen[k]+0, ((x[1] in lslug) ? SUB "/" lslug[x[1]] : ""), lts[k], loc[k], substr(mem[k],2) }
         }' "$lmap" "$sl" "$scov" | LC_ALL=C sort -t$'\t' -k1,1 -k2,2 | cov_put "$COVSRC/$out.tsv"
 }
-internal_apps_tsv()    { _sub_spine_tsv "$DATA/flow-manager/xref/_subscriptions-apps.tsv"    applications "$DATA/flow-manager/base/_apps.tsv"    applications; }
+internal_apps_tsv()    { _sub_spine_tsv "$DATA/flow-manager/xref/_subscriptions-apps.tsv"    applications applications; }
 
 # Internal-domain figures for the root index's one-row "Internal Domains"
 # table — External Partners' shape again, one level up:
 # the domain (the FIRST part of the three-part logical flow name) comes from
 # bin/flow-manager.sh's _accounts-domains.tsv cache. One row per (domain,
 # direction) into $COVSRC/domains.tsv, the applications.tsv shape exactly.
-internal_domains_tsv() { _sub_spine_tsv "$DATA/flow-manager/xref/_subscriptions-domains.tsv" domains      "$DATA/flow-manager/base/_domains.tsv" domains; }
+internal_domains_tsv() { _sub_spine_tsv "$DATA/flow-manager/xref/_subscriptions-domains.tsv" domains      domains; }
 
 cov_label() {   # $1 cell key -> human title part
     case $1 in
@@ -370,26 +345,6 @@ cov_label() {   # $1 cell key -> human title part
         seen)                 echo "Seen" ;;
         seen-in)              echo "Seen — In" ;;
         seen-out)             echo "Seen — Out" ;;
-        notseen-transfer)     echo "Not seen in the transfer log" ;;
-        status-warning-server) echo "Warning or server-log only" ;;
-        status-transfer)      echo "Seen in the transfer log" ;;
-        status-transfer-in)   echo "Seen in the transfer log — In" ;;
-        status-transfer-out)  echo "Seen in the transfer log — Out" ;;
-        status-transfer-failed)     echo "Transfer, last transfer Error" ;;
-        status-transfer-failed-in)  echo "Transfer In, last transfer Error" ;;
-        status-transfer-failed-out) echo "Transfer Out, last transfer Error" ;;
-        status-transfer-inonly)     echo "Seen in the transfer log — In only" ;;
-        status-transfer-both)       echo "Seen in the transfer log — In and Out" ;;
-        status-transfer-outonly)    echo "Seen in the transfer log — Out only" ;;
-        status-transfer-failed-inonly)  echo "Transfer In only, last transfer Error" ;;
-        status-transfer-failed-both)    echo "Transfer In and Out, last transfer Error" ;;
-        status-transfer-failed-outonly) echo "Transfer Out only, last transfer Error" ;;
-        status-server)        echo "Server (server-log only)" ;;
-        status-server-in)     echo "Server (server-log only) — In" ;;
-        status-server-out)    echo "Server (server-log only) — Out" ;;
-        status-server-inonly)  echo "Server (server-log only) — In only" ;;
-        status-server-both)    echo "Server (server-log only) — In and Out" ;;
-        status-server-outonly) echo "Server (server-log only) — Out only" ;;
         status-error)         echo "Status Error (result red)" ;;
         status-warning)       echo "Status Warning (result orange)" ;;
         status-ok)            echo "Status Ok (result green)" ;;

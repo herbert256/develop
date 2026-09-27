@@ -25,7 +25,7 @@
 #      page — a whitelisted IP never gets a page of its own.
 #
 # A TRANSFER-data report housed with the ANALYSES scripts (like
-# cross-reference.sh / seen-in-server-log.sh): it sources the transfer lib and
+# cross-reference.sh): it sources the transfer lib and
 # writes a transfer rpt, but must run in the ANALYSES stage — its PDA seen
 # flags read coverage/{partners,applications,domains}.tsv, which only
 # ensure_pda_tsvs (bin/analyses/lib.sh, called by the pda/coverage reports)
@@ -282,17 +282,17 @@ res_lookup() {
                 "Application:_apps" "Domain:_domains" "BL:_bl" "Whitelist:_white"; do
         t=${spec%:*}; f="$CONFIG_BASE/${spec##*:}.tsv"
         if [ -f "$f" ]; then
-            # blue = a server-log-only entity (bin/build/seen-in-server-log.sh), a real 4th result value
-            awk -F'\t' -v t="$t" -v OFS='\t' '$3 == "green" || $3 == "orange" || $3 == "red" || $3 == "blue" { print t, $1, $3 }' "$f"
+            awk -F'\t' -v t="$t" -v OFS='\t' '$3 == "green" || $3 == "orange" || $3 == "red" { print t, $1, $3 }' "$f"
         fi
     done
 }
 
-# ---- fake-file seed lookup (forced red) ---------------------------------------
-# The data/unknown sidecars list the server-log-only entities bin/build/seen-in-server-log.sh
-# fabricates Failed files for. A seed whose base result is not green/red is
-# forced RED: its only "transfer" IS the fake Failed row, and an unconfigured
-# seed has no base-cache row at all. Emits "TYPE<TAB>name".
+# ---- server-log sighting lookup (forced red) ----------------------------------
+# The data/unknown sidecars list the names the server log mentions and the
+# transfer log never carries. A sighting with NO base result — configured
+# nowhere, never transferred — is forced RED: something is reaching us under a
+# name nothing knows. A configured name keeps its own colour (orange when it
+# never transferred). Emits "TYPE<TAB>name".
 unk_lookup() {
     local spec t f
     for spec in "Account:accounts" "Subscription:sites" "Login:logins" "Remote Host:hosts"; do
@@ -303,8 +303,6 @@ unk_lookup() {
     done
 }
 
-# (Server-log-only entities are result==blue in the base cache — res_lookup
-# already tints them blue; no separate overlay.)
 
 # ---- emit the .rpt -----------------------------------------------------------
 # ONE page, one table: report.js's Search configuration panel (the `esearch`
@@ -413,7 +411,7 @@ tuples=$( {
         # no activity (not-seen configured names, IP aliases) -> leave the
         # count/Error/OK cells blank rather than showing 0/0/0.
         c=has?cnt[k]:""; f=has?cf[k]:""; p=has?cp[k]:""
-        # data/unknown seeds (server-log-only) with no green/red/blue result -> red
+        # data/unknown sightings (server-log-only) with no base result at all -> red
         # The Direction column is the CONNECTION/MOVEMENT pair (out/in) the
         # detail page of the entity is titled with. A row with no page of its own —
         # a Whitelist IP, a Remote Host (IP) alias, a Source/Target path —
@@ -428,10 +426,7 @@ tuples=$( {
         if (type == "Whitelist" || type == "Remote Host (IP)") lt = "Remote Host"
         lsn = lseen[lt SUBSEP toupper(ln)]
         rr = res[lk SUBSEP toupper(ln)]
-        if (rr != "green" && rr != "red" && rr != "blue" && ((lk SUBSEP toupper(ln)) in useed)) rr = "red"
-        # a server-log-only entity (result==blue) counts as SEEN with BLANK counts
-        # (no real transfer): its detail page is a never-seen page.
-        if (rr == "blue") { seen = 1; c = ""; f = ""; p = "" }
+        if (rr == "" && ((lk SUBSEP toupper(ln)) in useed)) rr = "red"
         # EVERY row gets a color: a row with no result status (raw-IP hosts, IP
         # aliases, the odd unconfigured account/login) is colored by its Files —
         # filled -> green (it moved files), blank -> orange (none).
@@ -480,7 +475,7 @@ tuples=$( {
             nc = (gsd!="" && gslug!="") ? "@{link=" gsd "/" gslug "}" gpath : gpath
             printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t\t%s\t%s\n", nc, gtype, gseen, gc, gf, gp, grr, gdd, gls
         } else {
-            # show counts only when there ARE real Error/OK counts (a blue-only
+            # show counts only when there ARE real Error/OK counts (a clean-poll
             # aggregate is "seen" but has none) — so an orange (no-counts) row is
             # blank, matching aggcolor() and every other never-seen row.
             hascount = (gsumf > 0 || gsump > 0)
@@ -556,7 +551,7 @@ IFS=$'\t' read -r tsc tsf tsp <<< "$(printf '%s\n' "$tuples" | awk -F'\t' '{c+=$
         # while costing 104 KB in the row payload. The row COLOUR is @data:res.
         printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s%s%s\n", $1, $9, $2, $5, $6, $10, r, sr }'
     printf 'TOTAL\tTotal (%d rows)\t\t\t@{class=num failed}%d\t@{class=num processed}%d\t\n' "$ntot" "$tsf" "$tsp"
-    printf 'NOTE\tRow colors: **green** = last transfer OK (or, for a row with no status, one that moved files), **red** = last transfer Error or server-log errors after the last OK transfer, **orange** = configured but never seen (or moved no files), **blue** = surfaced only in the Server logs.\n'
+    printf 'NOTE\tRow colors: **green** = last transfer OK (or, for a row with no status, one that moved files), **red** = last transfer Error or server-log errors after the last OK transfer, **orange** = configured but never seen (or moved no files); a name surfaced only in the Server logs and configured nowhere is **red**.\n'
     printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT." >&2

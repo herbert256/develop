@@ -116,9 +116,9 @@ pool_run "$SCRIPT_DIR/reports/uc4-to-uc2.sh"         # a UC4 delivery collected 
 pool_run "$SCRIPT_DIR/reports/same-protocol.sh"      # Files whose first inbound and last outbound leg share one protocol (2026-09-14)
 pool_run "$SCRIPT_DIR/reports/remote-host.sh"
 pool_run "$SCRIPT_DIR/reports/month-stats.sh"   # the Analyses-menu Month stats: this / previous month × the nine entities (2026-09-13)
-# (cross-reference.sh and seen-in-server-log.sh moved to bin/analyses/reports/
-# 2026-07 — their pages sit in the Analyses menu; bin/analyses/reports.sh runs
-# them, still writing into the transfer reports dir)
+# (cross-reference.sh moved to bin/analyses/reports/ 2026-07 — its pages sit
+# in the Analyses menu; bin/analyses/reports.sh runs it, still writing into
+# the transfer reports dir)
 pool_run "$SCRIPT_DIR/reports/av-scan.sh"
 pool_run "$SCRIPT_DIR/reports/security-params.sh"
 # (details.sh is its OWN bin/build.sh step since 2026-07 — it runs BEFORE
@@ -148,6 +148,3 @@ fi
 # only the ANALYSES stage materializes (ensure_pda_tsvs), so it is housed
 # with the analyses reports and runs there, after the pda/coverage reports
 
-# NOTE: seen-in-server-log.sh is NOT run here — it reads the ANALYSES pda.rpt
-# (PDA Seen), so bin/analyses/reports.sh runs it as its LAST report step,
-# right after the pda.rpt is written (a fresh build has no pda.rpt earlier).

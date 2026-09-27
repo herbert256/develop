@@ -66,7 +66,7 @@ ent_col()   { case $1 in acct) echo "Account";; login) echo "Login";; site) echo
 ent_kind()  { case $1 in acct) echo acct;; login) echo login;; site) echo site;; host) echo host;; lgc) echo lgc;; ptn) echo ptn;; app) echo app;; dom) echo dom;; bl) echo bl;; esac }   # every entity type links to its detail pages
 ent_xref()  { case $1 in acct) echo accounts;; login) echo logins;; site) echo subscriptions;; host) echo hosts;; lgc) echo logicals;; ptn) echo partners;; app) echo apps;; dom) echo domains;; bl) echo bl;; esac }   # data/flow-manager/xref item names
 ent_base()  { case $1 in acct) echo _accounts;; login) echo _logins;; site) echo _subscriptions;; host) echo _hosts;; lgc) echo _logicals;; ptn) echo _partners;; app) echo _apps;; dom) echo _domains;; bl) echo _bl;; esac }   # base cache (name/direction/result) per entity
-ent_unk()   { case $1 in acct) echo accounts;; login) echo logins;; site) echo sites;; host) echo hosts;; *) echo "";; esac }   # data/unknown sidecar (the fake-file SEED lists) per entity
+ent_unk()   { case $1 in acct) echo accounts;; login) echo logins;; site) echo sites;; host) echo hosts;; *) echo "";; esac }   # data/unknown sidecar (the server-log sighting lists) per entity
 
 # One pass: per row, record every unordered entity pair (e1 < e2 in ENTS
 # order) that appears — existence only, no counting. Emits TAB lines:
@@ -170,7 +170,7 @@ trap 'rm -rf "$TMP"' EXIT
 #           land next to each other instead of pages apart, the same rule
 #           report.js applies when you click the column. The raw names still
 #           break every tie, so the order stays total and deterministic;
-#   awk #2  loads the 9 base result caches + the 4 data/unknown seed lists
+#   awk #2  loads the 9 base result caches + the 4 data/unknown sighting lists
 #           ONCE (not per pair), renders the tinted ROW lines and writes
 #           each first entity's six ready table blocks to $TMP/tables-<ent>.
 printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' -v XD="$CONFIG_XREF" -v XREFS="$XREFS" '
@@ -212,10 +212,10 @@ printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' -v XD="$CONFIG_XREF" -v XREFS="$XR
         split(UNKS, UK, "|"); split(COLS, CL, "|"); split(TABS, TB, "|")
         # each CELL is tinted by ITS OWN entity result (the base caches third
         # field, bin/build/result.sh) — @{class=res-*} per cell, no row tint.
-        # A fake-file SEED (data/unknown sidecars — server-log-only entities,
-        # bin/build/seen-in-server-log.sh) with no green/red base result is
-        # forced RED: its only "transfer" is the fake Failed row, and an
-        # unconfigured seed has no base row at all. A missing file reads empty.
+        # A server-log sighting (data/unknown sidecars — names the server log
+        # mentions and the transfer log never carries) with NO base row is
+        # forced RED: configured nowhere, never transferred. A configured name
+        # keeps its own colour. A missing file reads empty.
         for (i = 1; i <= ne; i++) {
             f = CB "/" BS[i] ".tsv"
             while ((getline l < f) > 0) { split(l, a, "\t"); R[i, toupper(a[1])] = a[3] }
@@ -227,12 +227,12 @@ printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' -v XD="$CONFIG_XREF" -v XREFS="$XR
             }
         }
     }
-    function pfx(r) { return (r == "green" || r == "orange" || r == "red" || r == "blue") ? "@{class=res-" r "}" : "" }
-    # tint: the base result of the entity (green/orange/red, or blue for a
-    # server-log-only entity); a data/unknown seed with no result of its own
-    # is forced red. blue wins (a real base value, never overridden).
-    function tint(e, v,   r, k) { k = toupper(v); r = R[e, k]
-        if (r != "green" && r != "red" && r != "blue" && ((e, k) in U)) r = "red"
+    function pfx(r) { return (r == "green" || r == "orange" || r == "red") ? "@{class=res-" r "}" : "" }
+    # tint: the base result of the entity (green/orange/red); a data/unknown
+    # server-log sighting with NO result of its own (configured nowhere) is
+    # forced red. A configured name keeps its own colour.
+    function tint(e, v,   r, k) { k = toupper(v); r = ((e, k) in R) ? R[e, k] : ""
+        if (r == "" && ((e, k) in U)) r = "red"
         return pfx(r) }
     NF { n = ++cnt[$1, $2]; rows[$1, $2, n] = "ROW\t" tint($1, $4) $4 "\t" tint($2, $5) $5 "\t@data:seen=" $3 }
     END {   # fixed ENTS-order iteration — never awk hash order
@@ -259,9 +259,9 @@ for x in $ENTS; do
     {
         printf 'TITLE\tCross Reference: %s\n' "$xcol"
         printf 'DESC\tEvery %s pair with each other entity — logged pairs plus the configured-but-never-logged ones; each cell is tinted by that entity'\''s result (green = last transfer OK, orange = never seen, red = Error).\n' "$xcol"
-        printf 'INTRO\tWhich %s goes with which other entity: every pair seen together on at least one log row, PLUS the configured pairs that never appear (an analysis of relationships — no counts, no dates). The two tab rows pick the pair of entity types; each cell tints by its own entity'\''s status (green = last transfer OK, orange = never seen, red = Error, blue = server-log only).\n' "$xcol"
+        printf 'INTRO\tWhich %s goes with which other entity: every pair seen together on at least one log row, PLUS the configured pairs that never appear (an analysis of relationships — no counts, no dates). The two tab rows pick the pair of entity types; each cell tints by its own entity'\''s status (green = last transfer OK, orange = never seen, red = Error, or a name the server log mentions and nothing configures).\n' "$xcol"
         cat "$TMP/tables-$x"
-        printf 'NOTE\tAn analysis of the cross references, not a traffic report. Each cell is colored by that entity result: **light green** = last transfer OK, **light orange** = configured but never seen, **light red** = last transfer Error, **light blue** = surfaced only by the Server \342\206\222 Transfer step (bin/build/seen-in-server-log.sh) with no real transfer. The entities are per-leg attributes (a leg inherits its File'\''s partner/application/domain/logical/BL attribution); pairs where either value is blacklisted or unattributed are not listed. There is no date filter here — seen means seen anywhere in the loaded logs.\n'
+        printf 'NOTE\tAn analysis of the cross references, not a traffic report. Each cell is colored by that entity result: **light green** = last transfer OK, **light orange** = configured but never seen, **light red** = last transfer Error, or a name surfaced only in the Server logs that nothing configures. The entities are per-leg attributes (a leg inherits its File'\''s partner/application/domain/logical/BL attribution); pairs where either value is blacklisted or unattributed are not listed. There is no date filter here — seen means seen anywhere in the loaded logs.\n'
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     count=$((count + 1))

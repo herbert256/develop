@@ -92,13 +92,12 @@ awk -F'\t' -v T1="$TMPD/t1.pre" -v T2="$TMPD/t2.pre" -v T3="$TMPD/t3.pre" -v STA
             m = split(substr(DAYS[k], 2), SS, "\036")
             for (i = 1; i <= m; i++) if (!((pu SUBSEP w SUBSEP SS[i]) in WA)) { WA[pu SUBSEP w SUBSEP SS[i]] = 1; WC[pu SUBSEP w]++ }
         }
-        # table 1: configured, never live (includes the server-log-only blues
-        # — blue always means "never transferred")
+        # table 1: configured, never live (never transferred)
         n1 = 0
         for (z = 1; z <= nc; z++) { cu = CORD[z]
             if (cu in SEENN) continue
             n1++
-            res = CRES[cu]; if (res != "green" && res != "red" && res != "orange" && res != "blue") res = "orange"
+            res = CRES[cu]; if (res != "green" && res != "red" && res != "orange") res = "orange"
             printf "%s\t%s\t%d\t%s\n", CNAME[cu], CDIR[cu], NSUB[cu] + 0, res > T1
         }
         close(T1)
@@ -183,7 +182,7 @@ n_quiet=$(sv quiet); n_shrink=$(sv shrink); maxd=$(sv maxd)
         printf 'TOTAL\tTotal (0 partner(s))\t\t\t\n'
     fi
 
-    printf 'NOTE\tPartner attribution is the site-wide UNION rule (the subscription'\''s configured partners unioned with the parse attribution), so these figures match the Entities and coverage views. In the never-live table the row colour is the partner'\''s standard result colour — **orange** never seen anywhere, **blue** seen in the server log only (a connection, still zero Files); its Subscriptions column counts the configured subscriptions waiting behind the name. "Active subscription" in the shrinking table means a distinct subscription with at least one File in the window — the drop threshold of 2 filters ordinary week-to-week noise.\n'
+    printf 'NOTE\tPartner attribution is the site-wide UNION rule (the subscription'\''s configured partners unioned with the parse attribution), so these figures match the Entities and coverage views. In the never-live table the row colour is the partner'\''s standard result colour — **orange**, never seen in the transfer log; its Subscriptions column counts the configured subscriptions waiting behind the name. "Active subscription" in the shrinking table means a distinct subscription with at least one File in the window — the drop threshold of 2 filters ordinary week-to-week noise.\n'
     printf 'KEYWORDS\tpartner,lifecycle,never live,onboarding,gone quiet,silent,shrinking,active subscriptions,decommission,dormant\n'
     printf 'SUMMARY\tConfigured: %s  |  Seen: %s  |  Never live: %s  |  Gone quiet: %s  |  Shrinking: %s\n' \
         "$n_conf" "$n_seen" "$n_never" "$n_quiet" "$n_shrink"

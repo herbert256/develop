@@ -27,7 +27,7 @@
 # transfer log cannot show (a server-log error after its last delivery, a
 # deploy mistake, an authentication failure attributed to it) — gets one row
 # per list: @data:srv=1, Date/time = the server evidence stamp
-# (blue/_redflip.tsv, else the kaput sidecar, else its last File), Reason =
+# (colour/_redflip.tsv, else the kaput sidecar, else its last File), Reason =
 # the classified newest server E line (_kaput-evidence.tsv through
 # bin/flip-reason.awk) else its Subscriptions-in-boxes box (one build behind,
 # like the entities Reason column). Like a file row, the whole row opens the
@@ -185,7 +185,7 @@ SRVCAP=${AXWAY_ERR_LOGCAP:-2000}
 # The three server-row evidence sources (see the header). All cmp-guarded or
 # name-keyed sidecars; a missing one degrades to fewer/reason-less server
 # rows and skip_if_fresh skips a missing dep.
-RFLIP="$DATA/blue/_redflip.tsv"
+RFLIP="$DATA/colour/_redflip.tsv"
 KAPUT="$DATA/server/reports/_kaput-evidence.tsv"
 BOXES="$DATA/analyses/reports/_subs-boxes.tsv"
 # THE ENVIRONMENT LETTER (2026-09-21, user request): the first column of the
@@ -315,7 +315,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
     # The SUBSCRIPTION result colour (bin/build/result.sh fills the third
     # column of the base cache), so a row carries the state of the flow it
     # belongs to: red = still failing, green = it has delivered OK since,
-    # orange = never seen, blue = server-log only. That is a different fact
+    # orange = never seen. That is a different fact
     # from the State column, which is about THIS File, and the more useful one
     # to scan for — the same tint the Ranking report and the Entities views
     # give the entity. A name the base cache does not know stays untinted.
@@ -333,7 +333,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
             if (n9 >= 3 && z9[1] != "") A9[toupper(z9[1])] = z9[3] }
         close(f9) }
     function rescol(A9, nm,   r) { r = (toupper(nm) in A9) ? A9[toupper(nm)] : ""
-        return (r == "green" || r == "orange" || r == "red" || r == "blue") ? r : "" }
+        return (r == "green" || r == "orange" || r == "red") ? r : "" }
     function subtint(nm,   r) { r = rescol(SRES, nm); return (r != "") ? "\t@data:res=" r : "" }
     # A facts-table entity cell: the entity RESULT colour on the cell (the same
     # tint its own page and the Entities views carry) plus the detail-page link,
@@ -514,7 +514,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
 ' "$TMP/all" "$TMP/extra" "$TMP/filepages" "$PARSED"
 _flap "the failed Files, the drill + File pages"
 # ---- The SERVER-FAILING set (2026-08) ---------------------------------------
-# Every RED subscription that is server-reddened (blue/_redflip.tsv) or has NO
+# Every RED subscription that is server-reddened (colour/_redflip.tsv) or has NO
 # failed File at all — exactly the home table-2 red membership. Computed
 # BEFORE the server-cache scan below, so the scan can resolve each flow's
 # evidence STAMP to the SESSION of the reddening Error line (and the second
@@ -523,7 +523,7 @@ _flap "the failed Files, the drill + File pages"
 #   slug   the page basename (lowercased, non-alnum runs folded to "-", the
 #          slugify rule; a separator-twin collision takes a numeric suffix; a
 #          slug can never collide with a CoreId page, those being UUIDs)
-#   stamp  blue/_redflip.tsv, else the kaput sidecar, else the last File
+#   stamp  colour/_redflip.tsv, else the kaput sidecar, else the last File
 #   reason the classified kaput E line, else the Subscriptions-in-boxes box
 #   kind   R = no failed File (a list server-row + a page)
 #          P = redflip WITH failed Files (page only — the lists keep its file
@@ -864,7 +864,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
             if (n9 >= 3 && z9[1] != "") A9[toupper(z9[1])] = z9[3] }
         close(f9) }
     function rescol(A9, nm,   r) { r = (toupper(nm) in A9) ? A9[toupper(nm)] : ""
-        return (r == "green" || r == "orange" || r == "red" || r == "blue") ? r : "" }
+        return (r == "green" || r == "orange" || r == "red") ? r : "" }
     function entcell(A9, sub9, nm,   r, a) {
         if (nm == "") return "-"
         r = rescol(A9, nm); a = "alink=" sub9 "/" nm
@@ -1215,7 +1215,7 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
     -v REAS="$TMP/reasons" -v PAGEDF="$TMP/paged" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" \
     -v SRVS="$TMP/srvsubs" -v ENVL="$ENVL" -v SESSF="$TMP/srvsess2" '
     function rescol(nm,   r) { r = (toupper(nm) in SRES) ? SRES[toupper(nm)] : ""
-        return (r == "green" || r == "orange" || r == "red" || r == "blue") ? r : "" }
+        return (r == "green" || r == "orange" || r == "red") ? r : "" }
     BEGIN {
         while ((getline l < SUBRES) > 0) { n = split(l, a, "\t")
             if (n >= 3 && a[1] != "") SRES[toupper(a[1])] = a[3] }

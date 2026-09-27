@@ -21,17 +21,15 @@
 <h2>Rules</h2>
 <ul>
 <li>The summary rows use the same Seen / Not seen split as the home page&rsquo;s status tables (the coverage universe), so the figures always agree. Per column: <strong>Seen + Not seen = Total</strong> (every configured name of that type); <strong>the day rows + &ldquo;Seen, no date&rdquo; = Seen</strong>.</li>
-<li><strong>Seen, no date</strong> = seen without a dated transfer of its own: a UC3 subscription whose polling works but never had a file to fetch, a name whose transfers are credited to a sibling (a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account), or a blue name without a dated cross-reference.</li>
-<li>Two views: <strong>Transfer log only</strong> (default) = the status tables&rsquo; Transfer scope &mdash; a server-log-only (<strong>blue</strong>) name counts as Not seen. <strong>Both Transfer &amp; Server logs</strong> = the +Server scope, and dates the blue names (the Status tables&rsquo; Server column, the <a href="seen-in-server-log.html">Seen in server log</a> set).</li>
-<li>A blue name never transferred, so it takes the <strong>oldest first transfer of its cross-referenced entities</strong> (its account, subscription, login, host or partner in the FlowManager configuration) as the day its flow became active; cell pages tag those rows <em>Server</em> in the Log column.</li>
-<li>The raw server log is deliberately not scanned for mentions: nightly File Maintenance names virtually every account and would move everything to the first day. A blue name whose cross-references never transferred sits in &ldquo;Seen, no date&rdquo;.</li>
+<li><strong>Seen, no date</strong> = seen without a dated transfer of its own: a UC3 subscription whose polling works but never had a file to fetch, a name whose transfers are credited to a sibling (a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account).</li>
+<li>A name the server log mentions but that never transferred counts as Not seen; the raw server log is deliberately not scanned for first mentions (nightly File Maintenance names virtually every account and would move everything to the first day).</li>
 <li>The split is read from the coverage tables (the files behind the home status tables and the Entities views); dates come from the transfer parse caches &mdash; accounts and partners per File, subscriptions, logins and hosts per log record.</li>
 <li>Matching is exact, case aside; subscriptions match by prefix (a configured subscription matches the logged site values it prefixes).</li>
 </ul>
 <h2>Tips</h2>
 <ul>
 <li>Every count opens a cell page listing exactly the items behind it: the name (linked to its detail page), its configured direction (blank when not configured), its first transfer timestamp.</li>
-<li>Cell-page tints: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer Error (or server-log errors after it), <strong>light blue</strong> server log only.</li>
+<li>Cell-page tints: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer Error (or server-log errors after it).</li>
 </ul>
 </main>
 </body>

@@ -11,7 +11,7 @@
 # Invocation (details.sh, one background job per type over the writer pool):
 #   LC_ALL=C awk -F'\t' -v TYPE=ACC -v ANN=<streams/a.ACC> -v OUTDIR=<dir> \
 #       -v LATESTDIR=<reports/latest> (SITE only — the "Latest files" pages) \
-#       -v SRV=<server cache> -v FWD=<input/<env>/ip/ip-hosts.tsv> -v BLUE=<blue dir> \
+#       -v SRV=<server cache> -v FWD=<input/<env>/ip/ip-hosts.tsv> \
 #       -v UCF=<ucmeta dump> -v UCDF=<derived-uc dump> -v UNCF=<uncollected dump> -v OKF=<last-ok sidecar> \
 #       -v NOW="YYYY-mm-dd HH:MM:SS" -v NFILES=<n input csvs> \
 #       -f details_writer.awk <streams/s.ACC>
@@ -116,7 +116,7 @@ function sort_cap(L, n, cap, D,   i, nd) {
 # lines and the 10 most recent Error/Warning ones are now SEPARATE tables — a
 # line that is both appears in both, and a line the log holds twice is shown
 # twice. `two` = 0 keeps the single merged table for the per-entity lists a
-# blue / never-seen page prints through srv_lines_for (no connected pool
+# never-seen page prints through srv_lines_for (no connected pool
 # there, and one table per connected entity is already the unit).
 function emit_srv_table(title, cutoff, two,   i, ewf, nA, nB, nda, ndb, l) {
     if (nrec == 0 && nconn == 0) return
@@ -175,21 +175,6 @@ function srv_lines_for(sub2, name2, title2) {
 }
 
 # ===== per-page helper tables ================================================
-# blue evidence box: INTRO + LOGCARD from data/<env>/blue/<bt>/<name>.txt;
-# sets bluebox so the generic banner is skipped
-function blue_box(   f, line, i1, bmsg) {
-    bluebox = 0
-    f = BLUE "/" bt "/" pend_e ".txt"
-    if ((getline line < f) > 0) {
-        close(f)
-        i1 = index(line, "\t")
-        bmsg = (i1 ? substr(line, i1 + 1) : line); gsub(/\t/, " ", bmsg)   # a TAB inside the message must not add LOGCARD cells
-        emitl("INTRO\t**Only seen in the server log**, never in the transfer log")
-        emitl("LOGCARD\t" (i1 ? substr(line, 1, i1 - 1) : line) "\t" bmsg)
-        bluebox = 1
-    } else close(f)
-}
-
 # The cut an Error must be NEWER than to be "after the last transfer": the
 # last File's START (tot_last), raised to the newest OK File's END
 # (tot_okend — 2026-09-12, user rule: a File that started before the error
@@ -244,9 +229,6 @@ function ensure_file(   dirtok, xdisp, tpfx) {
     emitl("DESC\t" desc)
     err_after_transfer_banner()
     no_subscription_banner()
-    blue_box()
-    if (IS_BLUE && pend_t != "SITE" && !bluebox)
-        emitl("INTRO\tConfigured — **never seen** in the transfer log - **seen in the server log**")
     if (have_tot != 1) emit_intro()
 }
 
@@ -377,13 +359,8 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
     ucd = (pend_t == "SITE") ? uc_desc(pend_e) : ""
     nca = (pend_t == "LOGIN") ? usplit(a_cfgacct, CA) : 0
     if (have_tot != 1) {
-        # never-seen (and blue) pages: the config banner + the config-only
-        # Features table
-        if (IS_BLUE && pend_t != "SITE") { }   # banner already at file open
-        else if (x_blue != "") {
-            if (!bluebox) emitl("INTRO\tConfigured — **never seen** in the transfer log - **seen in the server log**")
-        }
-        else if (pend_t == "SITE") emitl("INTRO\tConfigured — **never seen** in the loaded transfer logs.")
+        # never-seen pages: the config banner + the config-only Features table
+        if (pend_t == "SITE") emitl("INTRO\tConfigured — **never seen** in the loaded transfer logs.")
         else emitl("INTRO\tConfigured (direction: **" dirv "**) — **never seen** in the loaded transfer logs.")
         if (pend_t == "SITE") {
             emitl("TABLE\tFeatures"); emitl("HEAD\tItem\tValue"); emitl("KIND\ttext\ttext")
@@ -422,7 +399,7 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
     }
 }
 
-# the Duration / Size / Date / Ranking sxs=4 quartet (seen, non-blue pages)
+# the Duration / Size / Date / Ranking sxs=4 quartet (seen pages)
 # 2026-08: the rank rows link the RANKING report (retired 2026-07, back with
 # the sidecars): that entity TYPE's page, sorted on this metric's own position
 # column and scrolled to THIS entity's row (?axway_row), so a click lands on
@@ -449,7 +426,6 @@ function emit_perf_tables(   P, np, pmin, pavg, p50, p95, p99, pmax, pthr, D5, d
     if (perf_done == 1) return
     perf_done = 1
     if (have_tot != 1) return
-    if (IS_BLUE) return
     pmin = "-"; pavg = "-"; p50 = "-"; p95 = "-"; p99 = "-"; pmax = "-"; pthr = "-"
     if (x_perf != "") { np = split(x_perf, P, "|"); pmin = P[2]; pavg = P[3]; p50 = P[4]; p95 = P[5]; p99 = P[6]; pmax = P[7]; pthr = P[8] }
     emitl("TABLE\tDuration\tsxs=4\tnosearch"); emitl("HEAD\tMetric\tValue"); emitl("KIND\ttext\ttext")
@@ -477,7 +453,7 @@ function emit_perf_tables(   P, np, pmin, pavg, p50, p95, p99, pmax, pthr, D5, d
     # per entity, so the standalone report and this table are the same numbers
     # by construction. One file per TYPE — the writers run in parallel — and
     # awk's first `>` truncates it, so a re-run never appends to stale rows.
-    # Only the entities that reach here are ranked: seen, non-blue, with totals.
+    # Only the entities that reach here are ranked: seen, with totals.
     if (RANKOUT != "")
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
             rank_name, tot_n, tot_recs, tot_rank, tot_h, tot_srank, tot_pct, tot_erank, \
@@ -666,27 +642,6 @@ function uncollected_files_table(   u, n, i, L, nrows) {
     for (i = 1; i <= nrows; i++) emitl("ROW\t" L[i])
     emitl(sprintf("TOTAL\tTotal (%d file(s))\t", nrows))
 }
-# blue SITE fallback: the connected accounts' (else logins') and hosts' lines
-function srv_lines_enriched(   n, i, V, any_acct, fw, ip) {
-    if (pend_t != "SITE") return
-    any_acct = 0
-    n = usplit(a_suba, V)
-    for (i = 1; i <= n; i++) {
-        if (!nonempty(SRV "/accounts/" V[i] ".tsv")) continue
-        srv_lines_for("accounts", V[i], "Last server log messages — account " V[i]); any_acct = 1
-    }
-    if (!any_acct) {
-        n = usplit(a_subl, V)
-        for (i = 1; i <= n; i++) if (V[i] != "") srv_lines_for("logins", V[i], "Last server log messages — login " V[i])
-    }
-    n = usplit(a_subh, V)
-    for (i = 1; i <= n; i++) {
-        if (V[i] == "") continue
-        srv_lines_for("hosts", V[i], "Last server log messages — host " V[i])
-        nfw = split(fwd_ips(V[i]), afw, "\037")
-        for (fi = 1; fi <= nfw; fi++) if (afw[fi] != "") srv_lines_for("hosts", afw[fi], "Last server log messages — host " V[i] " (" afw[fi] ")")
-    }
-}
 function page_srv_log(   f, n, i, V, fw, ip, nc, C9) {
     if (sdir == "") return
     nrec = 0; nconn = 0
@@ -704,7 +659,6 @@ function page_srv_log(   f, n, i, V, fw, ip, nc, C9) {
     }
     if (have_tot == 1) { nc = usplit(a_conn, C9); for (i = 1; i <= nc; i++) CN2[++nconn] = C9[i] }
     if (nrec == 0) {
-        if (x_blue != "" || IS_BLUE) srv_lines_enriched()
         # a never-seen login still gets its Logons table — "Never" is a fact
         if (have_tot != 1) { logons_section(); host_logons_section(); return }
     }
@@ -771,7 +725,7 @@ function logons_section(   k9, F9, i9, n9, FL) {
 # Incoming connections table (stream section 2.6 — the section-2 breakdown
 # separates it from section 1) are RELOCATED to directly after the Activity
 # per day table, and all three take sxs=9 so the renderer lays them side by
-# side. A page WITHOUT an Activity per day table — the blue and never-seen
+# side. A page WITHOUT an Activity per day table — the never-seen
 # logins — anchors the row on the Features table instead: Features |
 # Logons | Incoming connections (2026-08). Outgoing connections (the few
 # logins with one) stays in place, a flex row of its own.
@@ -1052,7 +1006,7 @@ function login_lasterr_move(   i, le0, le1, sub0, sub1, n2) {
 # (the "Last OK transfer" section went the same way on 2026-09-16 — the
 # Features "Latest OK" row links that File's page under files/ instead.)
 
-# strip_notseen_counts: a never-seen/blue page's dimension tables keep only
+# strip_notseen_counts: a never-seen page's dimension tables keep only
 # their name column (+ the Subscription Direction cell); @data: cells survive
 function strip_page(   i, n2, keep, dir3, line, m, C, out, j) {
     n2 = 0; keep = 0; dir3 = 0
@@ -1260,15 +1214,15 @@ function close_file(   dircls, resv, out, i) {
     emit_intro()
     emit_perf_tables()
     dircls = (dirv == "in" || dirv == "out") ? dirv : "x"
-    resv = (a_res == "green" || a_res == "orange" || a_res == "red" || a_res == "blue") ? a_res : ""
+    resv = (a_res == "green" || a_res == "orange" || a_res == "red") ? a_res : ""
     if (pend_t == "ACC") uncollected_files_table()
     page_srv_log()
     emitl("FOOT\tGenerated on " NOW " from " NFILES " file(s)")
     emitl("META\tseen\t" (have_tot == 1 ? 1 : 0))
     if (resv != "") emitl("META\tdirclass\tres-" resv)
     else emitl("META\tdirclass\tdir-" (have_tot == 1 ? "seen" : "notseen") "-" dircls)
-    # never-seen AND blue pages reduce their breakdown tables to the name column
-    if (have_tot != 1 || IS_BLUE) strip_page()
+    # never-seen pages reduce their breakdown tables to the name column
+    if (have_tot != 1) strip_page()
     fold_single_dims()
     if (pend_t == "LOGIN") { login_feat_row(); login_sxs_row(); login_lasterr_move() }
     if (pend_t == "HOST") host_sxs_row()
@@ -1286,12 +1240,12 @@ function close_file(   dircls, resv, out, i) {
 # ===== per-entity reset + the stream loop ====================================
 function reset_entity() {
     npg = 0; cur_path = ""; cur_sec = ""; had26 = 0; had27 = 0
-    have_tot = 0; rank_name = ""; day_rows = 0; intro_done = 0; IS_BLUE = 0; HAS_WE = 0; bluebox = 0
+    have_tot = 0; rank_name = ""; day_rows = 0; intro_done = 0; HAS_WE = 0
     x_perf = ""; x_ip = ""; x_dtrank = ""; x_pday = ""; dirv = "unknown"; BOTHMODE = 0; perf_done = 0
     split("", bk_f); split("", bk_e); split("", bk_b); split("", bk_ord); nbk = 0
     split("", LE); nle = 0
     busy_day = "-"; busy_cnt = 0
-    x_blue = ""; x_grpfold = ""
+    x_grpfold = ""
     x_oneacct = ""; x_onedom = ""; x_oneapp = ""; x_oneptn = ""; x_onelgc = ""; x_onebl = ""
     tot_recs = ""; tot_f = ""; tot_p = ""; tot_h = ""; tot_first = ""; tot_last = ""; tot_pct = ""; tot_okend = ""
     tot_share = ""; tot_rank = ""; tot_n = ""; tot_act = ""; tot_idle = ""
@@ -1400,8 +1354,7 @@ NF < 4 { next }
             died = 1
             exit 1
         }
-        a_slug = A[3]; a_mv = A[4]; a_res = A[5]
-        IS_BLUE = (A[6] == "1") ? 1 : 0
+        a_slug = A[3]; a_mv = A[4]; a_res = A[5]   # (A[6] / A[7] retired 2026-09-27)
         a_cfgacct = A[22]; a_acl = A[23]; a_ach = A[24]; a_conn = A[25]; a_bannerdt = A[26]; a_grp = A[27]
         a_suba = A[28]; a_subl = A[29]; a_subh = A[30]; a_nosub = A[31]; a_twin = A[32]
         x_oneacct = A[8]; x_onedom = A[9]; x_oneapp = A[10]; x_oneptn = A[11]; x_onelgc = A[33]; x_onebl = A[34]
@@ -1410,11 +1363,9 @@ NF < 4 { next }
             a_sdh = A[12]; a_sda = A[13]; a_sdl = A[14]
             a_cron = A[15]; a_cronh = A[16]; a_act = A[37]   # 37: the not-active reason codes (APPENDED 2026-09-14)
             a_flowdir = A[17]; a_local = A[18]; a_lmask = A[19]; a_remote = A[20]; a_rmask = A[21]
-            x_blue = (A[7] == "1") ? "1" : ""
         } else {
             a_sdh = ""; a_sda = ""; a_sdl = ""; a_cron = ""; a_cronh = ""; a_act = ""
             a_flowdir = ""; a_local = ""; a_lmask = ""; a_remote = ""; a_rmask = ""
-            x_blue = ""
         }
         # config Domain/Application/Logical/Partner groups: SITE folds them
         # via sum_config; the LGC/PDA quad renders them as own tables; every
@@ -1560,19 +1511,19 @@ NF < 4 { next }
     }
     else if (sec == "2" || sec == "2.8" || sec == "2.81" || sec == "2.82" || sec == "2.83" || sec == "2.84" || sec == "2.85") {
         resm = ""; extra = ""
-        if ($4 == "green" || $4 == "orange" || $4 == "red" || $4 == "blue") resm = "\t@data:res=" $4
+        if ($4 == "green" || $4 == "orange" || $4 == "red") resm = "\t@data:res=" $4
         if (sec == "2") {
             if (substr($4, 1, 2) == "S|") {
                 split($4, S4, "|")
                 extra = "\t" S4[2]
-                resm = (S4[3] == "green" || S4[3] == "orange" || S4[3] == "red" || S4[3] == "blue") ? "\t@data:res=" S4[3] : ""
+                resm = (S4[3] == "green" || S4[3] == "orange" || S4[3] == "red") ? "\t@data:res=" S4[3] : ""
             } else extra = "\t?/?"
         }
         if (sec == "2.8") {
             aresv = ""; alog = ""; ahost = ""
             if (substr($4, 1, 2) == "A|") { split($4, S4, "|"); aresv = S4[2]; alog = S4[3]; ahost = S4[4] }
             extra = "\t" alog "\t" ahost
-            resm = (aresv == "green" || aresv == "orange" || aresv == "red" || aresv == "blue") ? "\t@data:res=" aresv : ""
+            resm = (aresv == "green" || aresv == "orange" || aresv == "red") ? "\t@data:res=" aresv : ""
         }
         # the Subscription table's Waiting / Expired cells (zeros render blank)
         wecells = ""

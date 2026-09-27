@@ -54,7 +54,8 @@ fi
 deps=("$TF" "$BASE/_accounts.tsv" "$ROOT/bin/uc-cases.sh")
 for f in "$BASE/_subscriptions.tsv" "$BASE/_white.tsv" \
          "$XREF/_accounts-subscriptions.tsv" "$XREF/_accounts-white.tsv" "$XREF/_subscriptions-partners.tsv" \
-         "$COV/accounts.tsv" "$COV/subscriptions.tsv" "$COV/logins.tsv" "$COV/hosts.tsv" "$SUBJSON"; do
+         "$COV/accounts.tsv" "$COV/subscriptions.tsv" "$COV/logins.tsv" "$COV/hosts.tsv" "$SUBJSON" \
+         "$DATA/unknown/white.tsv" "$DATA/server/cache/_subscriptions.tsv"; do
     [ -f "$f" ] && deps+=("$f")
 done
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "${deps[@]}"
@@ -101,10 +102,15 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
     FILENAME ~ /base\/_accounts\.tsv$/           { if ($1 != "") ACC[++nacc] = $1; next }
     FILENAME ~ /base\/_subscriptions\.tsv$/      { if ($1 != "") SRES[toupper($1)] = $3; next }
     FILENAME ~ /base\/_white\.tsv$/              { if ($1 != "") WRES[$1] = $3; next }
+    # the server-log sightings, colour-free (2026-09-27, when the blue result
+    # went): a whitelisted IP the server log mentions is not unused, and a
+    # never-transferred subscription the server log names had server contact
+    FILENAME ~ /unknown\/white\.tsv$/            { if ($1 != "") WSEEN[$1] = 1; next }
+    FILENAME ~ /server\/cache\/_subscriptions\.tsv$/ { if ($2 != "") SMEN[toupper($2)] = 1; next }
     FILENAME ~ /_accounts-subscriptions\.tsv$/   { if ($1 != "") HASSUB[toupper($1)] = 1; next }
     FILENAME ~ /_accounts-white\.tsv$/           { if ($1 != "" && $2 != "" && !(($1 SUBSEP $2) in AWP)) { AWP[$1 SUBSEP $2] = 1
                                                        if (AWT[$1] == "") AWORD[++naw] = $1     # emptiness, not membership (mawk)
-                                                       AWT[$1]++; if (WRES[$2] == "orange") AWU[$1]++ }; next }
+                                                       AWT[$1]++; if (WRES[$2] == "orange" && !($2 in WSEEN)) AWU[$1]++ }; next }
     FILENAME ~ /coverage\/accounts\.tsv$/        { CA[++nca] = $1; CAS[toupper($1)] = $3; CAT[toupper($1)] = substr($5, 1, 10); next }
     FILENAME ~ /coverage\/subscriptions\.tsv$/   { CS[++ncs] = $1; CSD[toupper($1)] = $2; CSS[toupper($1)] = $3; CST[toupper($1)] = substr($5, 1, 10); next }
     FILENAME ~ /coverage\/logins\.tsv$/          { CL[++ncl] = $1; CLS[toupper($1)] = $3; CLT[toupper($1)] = substr($5, 1, 10); next }
@@ -141,7 +147,7 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
             if (su in SKIPNC) continue
             d = (CSD[su] == "I") ? "in" : (CSD[su] == "O") ? "out" : "?"
             uc = "other"; if (match(s, /^UC[0-9]+/)) uc = substr(s, 1, RLENGTH)
-            if (SRES[su] == "blue") emit(2, 2, s, "subscription", "subscriptions", "never-any-traffic", \
+            if (su in SMEN) emit(2, 2, s, "subscription", "subscriptions", "never-any-traffic", \
                 "configured " d " (" uc "), zero Files ever - seen in the server log only", "never", "server contact only - check first", "orange")
             else emit(2, 2, s, "subscription", "subscriptions", "never-any-traffic", \
                 "configured " d " (" uc "), zero Files ever", "never", "no traffic ever", "green")
@@ -193,6 +199,7 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
         close(STATS)
     }
 ' "$NOCRON" "$(nul "$BASE/_accounts.tsv")" "$(nul "$BASE/_subscriptions.tsv")" "$(nul "$BASE/_white.tsv")" \
+  "$(nul "$DATA/unknown/white.tsv")" "$(nul "$DATA/server/cache/_subscriptions.tsv")" \
   "$(nul "$XREF/_accounts-subscriptions.tsv")" "$(nul "$XREF/_accounts-white.tsv")" \
   "$(nul "$COV/accounts.tsv")" "$(nul "$COV/subscriptions.tsv")" "$(nul "$COV/logins.tsv")" "$(nul "$COV/hosts.tsv")" \
   "$(nul "$XREF/_subscriptions-partners.tsv")" "$TF"

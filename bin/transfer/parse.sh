@@ -295,9 +295,9 @@ elif [ -f "$PARSED0" ] && [ -f "$MANIFEST" ]; then
             cfg_newer=0
             # every XREF cache the DERIVE reads must be here (CFG_FLOW feeds
             # _files.tsv col 17). CFG_SUBS (base/_subscriptions.tsv) is read
-            # too but deliberately NOT watched: bin/build/result.sh and
-            # bin/build/seen-in-server-log.sh recolor its result column AFTER the
-            # parse (never the names the derive reads), and a real config
+            # too but deliberately NOT watched: bin/build/result.sh recolors
+            # its result column AFTER the parse (never the names the derive
+            # reads), and a real config
             # change rewrites these xref caches as well (bin/flow-manager.sh
             # writes both trees) — same rule as lib.sh's ensure_parsed.
             for cf in "$CFG_AS" "$CFG_SP" "$CFG_PAT" "$CFG_AL" "$CFG_AH" "$CFG_AAPP" "$CFG_ADOM" "$CFG_APTN" "$CFG_HPTN" "$CFG_FLOW"; do
@@ -371,8 +371,8 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
     # _files.tsv movement (col 17) stayed EMPTY, and the outcome rule — which
     # needs the movement to match the protocol of the last leg — could not say
     # Processed. Every one of those files read FAILED although both legs
-    # processed cleanly (production: 418 files over 13 flows; the server side
-    # already folds the same shape in bin/build/seen-in-server-log.sh).
+    # processed cleanly (production: 418 files over 13 flows; the server
+    # reports fold the same shape).
     # The LONGEST configured name the value extends at a name-part boundary
     # wins, and the remainder must be that server/client comm-profile shape —
     # so a genuinely different flow whose name merely starts with a configured
@@ -1386,9 +1386,9 @@ col  name           description
                     skip drops (2026-09-08). NOT the derived application
                     entity (_files.tsv col 18 comes from the configuration).
 
-This cache never contains fabricated rows: bin/build/seen-in-server-log.sh (the
-build step after both parses) marks server-log-only entities BLUE in the
-base result column (data/flow-manager/base/*.tsv) and injects nothing here.
+This cache never contains fabricated rows: bin/build/result.sh (the build step
+after both parses) fills the base result column (data/flow-manager/base/*.tsv)
+and injects nothing here.
 LEGEND_EOF
 
 _plap "derive: skip list"
@@ -1749,9 +1749,7 @@ col  name       rule
                 transfer that ended OK after it, so the error is not "after
                 the last transfer". Cols 4/5 stay the START.
 
-This cache never contains fabricated rows: server-log-only entities are
-marked BLUE in the base result column; the enriched tuples live only in the
-standalone audit file data/<env>/seen-in-server-log.tsv (never appended here).
+This cache never contains fabricated rows: nothing downstream appends to it.
 TLEGEND_EOF
 
 # (the session cache _sessions.tsv was REMOVED 2026-07 — no consumers remain)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # sources-and-targets.sh — "Sources and Targets" (an ANALYSES report published
-# with the transfer pages, like entity-coverage.sh / seen-in-server-log.sh):
+# with the transfer pages, like entity-coverage.sh):
 # the From/To folder paths of every subscription, formatted "path @ host" for
 # remote-partner endpoints EXACTLY like the Search page, in THREE tables:
 #   1. values used as BOTH a Source and a Target  (internal hand-offs / relays)
@@ -65,7 +65,7 @@ inter=$(awk -F'\t' -v HF="$HF" -v FF="$FF" -v CF="$CF" -v RF="$RF" '
             if (a[1] == "TABLE") { t++; continue }
             if (t == 1 && a[1] == "ROW") { sn = a[2]; sub(/^@\{[^}]*\}/, "", sn); err[toupper(sn)] = a[4]; ok[toupper(sn)] = a[5] }
         }
-        # subscription -> RESULT colour (green/red/orange/blue), base col 3
+        # subscription -> RESULT colour (green/red/orange), base col 3
         while ((getline ln < RF) > 0) { n = split(ln, a, "\t"); if (n >= 1) res[toupper(a[1])] = a[3] }
     }
     # "@{mask=<sep+mask>}<dir>" -> "<dir><sep+mask>" (full path as displayed); else verbatim

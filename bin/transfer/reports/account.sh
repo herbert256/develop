@@ -105,7 +105,7 @@ detail_rows=$({ printf '%s\n' "$agg" | grep '^D|' || true; } | sort -t'|' -k2,2 
 {
     printf 'TITLE\tAccounts\n'
     printf 'DESC\tFiles per account: a per-account summary and a per-day detail, both split into Error/OK.\n'
-    printf 'INTRO\tEvery account with its **Files** (one per CoreId), Error/OK split (**Retry** / **Resubmit** = the OK Files that needed a retry — a failed leg, then delivered — healed by the platform'\''s own retry or by an operator'\''s resubmit, the log'\''s Resubmitted flag), volume and last sighting. The view tabs switch between the logged accounts (**Seen**), the whole configuration (**All** / **Not seen**), the status subsets (**OK** / **Warning** / **Error**) and the server-log-only ones (**Server**); the scope tabs decide whether a server-log sighting counts as seen (**+Server**, the default) or not (**Transfer**) — rows tint by each account'\''s status.\n'
+    printf 'INTRO\tEvery account with its **Files** (one per CoreId), Error/OK split (**Retry** / **Resubmit** = the OK Files that needed a retry — a failed leg, then delivered — healed by the platform'\''s own retry or by an operator'\''s resubmit, the log'\''s Resubmitted flag), volume and last sighting. The view tabs switch between the logged accounts (**Seen**), the whole configuration (**All** / **Not seen**) and the status subsets (**OK** / **Warning** / **Error**) — rows tint by each account'\''s status.\n'
 
     printf 'TABLE\tSummary per Account\twide\n'
     printf 'HEAD\tAccount\tFiles\tError\tOK\tRetry\tResubmit\tVolume\tFirst seen\tLast seen\n'

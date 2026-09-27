@@ -46,7 +46,7 @@
 # the flow red (bin/build/result.sh _build_kaputflip — the loose connected-
 # ring join promoted to the colour, deploy-classified flows excluded, the UC3
 # clean-poll keep applied, and since 2026-09-05 a UC3 connection failure
-# counting only after THREE failed polls in a row — blue/_connhold.tsv), so a
+# counting only after THREE failed polls in a row — colour/_connhold.tsv), so a
 # trouble-after-success flow normally arrives
 # on the home "Failing subscriptions in Server log" table RED and leaves this
 # page through the still-green filter; what stays here is the deploy-
@@ -83,7 +83,7 @@ UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/nu
 # read all server log lines with the same session id to find the right
 # subscription): a connected-ring line naming no flow whose session names ONE
 # flow is that flow's trouble alone — never a sibling's on the shared owner
-SV="$ROOT/data/blue/_sessvote.tsv"; [ -f "$SV" ] || SV=/dev/null
+SV="$ROOT/data/colour/_sessvote.tsv"; [ -f "$SV" ] || SV=/dev/null
 # which flow a ring line NAMES (bin/subname.awk, the same helper result.sh's
 # attribution uses): a connected-ring line naming a flow is THAT flow's
 # evidence, never a sibling's (2026-09-05, user report) — see the join below

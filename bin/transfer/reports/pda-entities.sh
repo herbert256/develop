@@ -171,7 +171,7 @@ for dim in logical partner application domain bl; do
         printf 'DESC\tFiles per %s: a summary and a per-day detail, both split into Error/OK.\n' "$dim"
         src="derived from the logical flow names (and, for partners, the endpoint/whitelist/alias merge)"
         [ "$dim" = logical ] && src="derived from the FlowIDs, condensed into logical flow groups"
-        printf 'INTRO\tEvery %s with its **Files** (one per CoreId), Error/OK split (**Retry** / **Resubmit** = the OK Files that needed a retry — a failed leg, then delivered — healed by the platform'\''s own retry or by an operator'\''s resubmit, the log'\''s Resubmitted flag), volume and last sighting — %s. The view tabs switch between logged (**Seen**), configured (**All** / **Not seen**), the status subsets (**OK** / **Warning** / **Error**) and the server-log-only ones (**Server**); the scope tabs decide whether a server-log sighting counts as seen (**+Server**, the default) or not (**Transfer**) — rows tint by each %s'\''s status.\n' "$dim" "$src" "$dim"
+        printf 'INTRO\tEvery %s with its **Files** (one per CoreId), Error/OK split (**Retry** / **Resubmit** = the OK Files that needed a retry — a failed leg, then delivered — healed by the platform'\''s own retry or by an operator'\''s resubmit, the log'\''s Resubmitted flag), volume and last sighting — %s. The view tabs switch between logged (**Seen**), configured (**All** / **Not seen**) and the status subsets (**OK** / **Warning** / **Error**) — rows tint by each %s'\''s status.\n' "$dim" "$src" "$dim"
 
         printf 'TABLE\tSummary per %s\twide\n' "$chead"
         printf 'HEAD\t%s\tFiles\tError\tOK\tRetry\tResubmit\tVolume\tFirst seen\tLast seen\n' "$chead"

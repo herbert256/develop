@@ -308,7 +308,7 @@ function build_roster() {
     addf(1, "CD",  "BATCH",    "MASSIVE",  "", 0, 0, "noxfer,scanoff")
     addf(1, "WA",  "CRM",      "PIEDPIPER","", 0, 0, "noxfer")
     addf(1, "FS",  "PENSION",  "DUNDER",   "", 0, 0, "noxfer,credexp")
-    # server-log-only (blue)
+    # server-log only, never transferred (tag "blue": the retired blue result, 2026-09-27)
     addf(1, "APS", "INVOICE",  "STARK",    "", 0, 0, "blue,hybrid")
     addf(1, "ODV", "RISK",     "TYRELL",   "", 0, 0, "blue")
 
@@ -331,7 +331,7 @@ function build_roster() {
     addf(2, "AB",  "EKDSI",    "STARK",    "", 0, 0, "noxfer")
     addf(2, "ZK",  "ARIVA",    "OSCORP",   "", 0, 0, "noxfer")
     addf(2, "HR",  "MATCH",    "VANDELAY", "", 0, 0, "noxfer")
-    # blue
+    # server-log only (logon), never transferred
     addf(2, "SI",  "SAPBHP",   "APERTURE", "", 0, 0, "bluelogon")
 
     # ======== UC3 — we poll the partner (Inbound ssh/ftp + Outbound pesit) ===
@@ -372,7 +372,7 @@ function build_roster() {
     addf(3, "IT",  "FACTS",    "HOOLI",    "", 0, 0, "noxfer,nocron")
     addf(3, "DPL", "STREAM",   "UMBRELLA", "", 0, 0, "noxfer,schedoff")
     addf(3, "SYNT","NAS",      "TYRELL",   "", 0, 0, "noxfer,undeployed")
-    # blue
+    # server-log only (logon), never transferred
     addf(3, "AIM", "QUOTES",   "WONKA",    "", 0, 0, "blue")
     addf(3, "FIN", "NAS",      "VANDELAY", "", 0, 0, "blue")
 
@@ -404,7 +404,7 @@ function build_roster() {
     addf(4, "ZK",  "SENSOR",   "SOYLENT",  "", 0, 0, "noxfer,credexp")
     addf(4, "HR",  "LAKE",     "BLACKMESA","", 0, 0, "noxfer")
     addf(4, "WA",  "ZKA",      "ABSTERGO", "", 0, 0, "noxfer")
-    # blue
+    # server-log only (logon), never transferred
     addf(4, "DPL", "SCAN",     "CYBERDYNE","", 0, 0, "bluelogon,hybrid")
     addf(4, "IT",  "ARCHIVE",  "ZORG",     "", 0, 0, "bluelogon")
     addf(4, "FIN", "PORTAL",   "DUFF",     "", 0, 0, "bluelogon")

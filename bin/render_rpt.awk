@@ -48,9 +48,7 @@ BEGIN {
         rmsub = substr(rmf[i], 1, eq - 1); rmpath = substr(rmf[i], eq + 1)
         while ((getline rmline < rmpath) > 0) {
             nr = split(rmline, rmp, "\t")
-            # blue = a server-log-only entity (bin/build/seen-in-server-log.sh); a real 4th
-            # result value, tinted like green/orange/red.
-            if (nr >= 3 && (rmp[3] == "green" || rmp[3] == "orange" || rmp[3] == "red" || rmp[3] == "blue"))
+            if (nr >= 3 && (rmp[3] == "green" || rmp[3] == "orange" || rmp[3] == "red"))
                 RESM[rmsub US toupper(rmp[1])] = rmp[3]
         }
         close(rmpath)
@@ -66,7 +64,7 @@ BEGIN {
         stpfx = (i == 1) ? "s" : "a"
         while ((getline stline < stf[i]) > 0) {
             ns = split(stline, stp, "\t")
-            if (ns >= 3 && stp[1] != "" && (stp[3] == "green" || stp[3] == "orange" || stp[3] == "red" || stp[3] == "blue")) {
+            if (ns >= 3 && stp[1] != "" && (stp[3] == "green" || stp[3] == "orange" || stp[3] == "red")) {
                 SUBRES[stpfx US toupper(stp[1])] = stp[3]; nsubres++
             }
         }
@@ -347,7 +345,6 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         else if (kind == "numok") cls = "num okc"
         else if (kind == "numwarn") cls = "num warn"
         else if (kind == "numsep") cls = "num sep"
-        else if (kind == "srv") cls = "srv"
         else if (kind == "file") cls = "file"
         else if (kind == "lines" || kind == "clines" || kind == "clinks") cls = "lines"
         if (kind == "bar") {
@@ -425,8 +422,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         else if (kind == "bl") sd = "bl"
         else sd = "domains"
         slug = slug_for(sd, rawtext)
-        # the entity's own RESULT tint (detail pages: resmaps loaded); a
-        # server-log-only entity carries result=blue in the base cache
+        # the entity's own RESULT tint (detail pages: resmaps loaded)
         r = RESM[sd US toupper(rawtext)]
         if (r != "") cls = (cls != "" ? cls " res-" r : "res-" r)
         # the partner-group icon (grouped partners only): an extra anchor after
@@ -449,8 +445,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # @{href=URL}: an explicit page-relative link, used VERBATIM (no dlink
     # prefix, no .html suffix) — e.g. the Top view date cells -> the per-day
     # pages. Wraps the whole cell like link=.
-    # (allowed on TOTAL rows too — the seen-in-server-log matrix links its
-    # column totals to their cell pages)
+    # (allowed on TOTAL rows too)
     if (rawhref != "") { text = "<a href=\"" esc(rawhref) "\">" text "</a>"; cls = (cls != "" ? cls " cl" : "cl") }
     # a tinted count cell whose value is 0: show nothing, drop the tint (warn
     # included since 2026-08 — the logons Key failures/Locked ask; an empty
@@ -484,8 +479,8 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # register, so it wears the site's warning colour (orange) rather than red.
     else if (dir == "WARN")     printf "<p class=\"alert warn\">%s</p>\n", bold(esc(rest))
     else if (dir == "LOGCARD") {
-        # LOGCARD <date time> <message> — a card holding one raw log line: the
-        # server-log evidence under a blue (server-log-only) detail page's INTRO
+        # LOGCARD <date time> <message> — a card holding one raw log line (the
+        # detail pages' server-log evidence)
         split_cells()
         printf "<div class=\"logcard\"><span class=\"lc-when\">%s</span><span class=\"lc-msg\">%s</span></div>\n", \
             esc(CELL[1]), esc(CELL[2])
@@ -713,7 +708,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         if (start_empty && !is_total) attrs = attrs " data-shide=\"1\""
         # The server pages' subscription row tints (subtint=1): the row carries
         # the RESULT colour of the subscription it names — green delivering,
-        # red failing, orange never seen, blue server-log only — the same tint
+        # red failing, orange never seen — the same tint
         # the entity pages give it. A row the report tinted itself is left
         # alone, and a name the base cache does not know (a server-logged name
         # that is not configured) simply stays untinted. The Error/OK CELLS
@@ -729,12 +724,12 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             if (sr != "") attrs = attrs " data-res=\"" sr "\""
         }
         # Detail-page Subscription breakdown: a subscription whose RESULT is
-        # "not seen" (orange) or "server-log only" (blue) tints the WHOLE row —
+        # "not seen" (orange) tints the WHOLE row —
         # the green/red ones keep just the cell tint. RESM loads on detail pages.
         if (!is_total && HEADC[1] == "Subscription" && attrs !~ / data-res=/ && nreal >= 1) {
             rn = REAL[1]; sub(/^@\{[^}]*\}/, "", rn); rk = "subscriptions" US toupper(rn)
             rr = RESM[rk]
-            if (rr == "orange" || rr == "blue") attrs = attrs " data-res=\"" rr "\""
+            if (rr == "orange") attrs = attrs " data-res=\"" rr "\""
         }
         printf "<tr%s%s>", (is_total ? " class=\"total\"" : ""), attrs
         for (i = 1; i <= nreal; i++) {

@@ -282,11 +282,6 @@ whitelist_rows() {
         function emitrow(sec, t, nm, hv, i2, o2, tt, cfg,   res, ipc, nmc){
             if (cfg) res = (tt > 0) ? "green" : "orange"
             else     res = "red"                       # observed-only: always has traffic
-            # a whitelisted IP sighted ONLY in the server log keeps the site-
-            # wide blue tint (base _white.tsv result; a blue IP has no traffic
-            # by definition, so it never displaces a green) — and blue rows do
-            # not fold behind the orange no-traffic summary row
-            if (sec == "2.6" && res == "orange" && (hv in GB)) res = "blue"
             if (isip(hv)) { ipc = hv; nmc = (hv in rev ? rev[hv] : "-") }
             else          { ipc = (tolower(hv) in fwd ? fwd[tolower(hv)] : "-"); nmc = hv }
             printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", t, nm, sec, skey(hv), ipc, \
@@ -295,7 +290,7 @@ whitelist_rows() {
         # NOTE mawk mis-parses the ternary-in-concat form here (a leading ", "
         # appeared on the first A record); the explicit if/else is unambiguous.
         FILENAME == FWDMAP                      { if ($1 in fwd) fwd[$1] = fwd[$1] ", " $2; else fwd[$1] = $2; next }
-        FILENAME == GWF                         { if ($1 != "") { GW[$1] = 1; if ($3 == "blue") GB[$1] = 1 }; next }   # the GLOBAL expanded whitelist (+ the server-log-only blues)
+        FILENAME == GWF                         { if ($1 != "") GW[$1] = 1; next }   # the GLOBAL expanded whitelist
         FILENAME == GHF                         { if ($1 != "") { GH[tolower($1)] = 1
                                                     # a configured endpoint is its own HOST page outgoing entry
                                                     k = "4" SUBSEP toupper($1); WH[k] = WH[k] "\t" $1; if (!(k in CN)) CN[k] = $1 }
@@ -531,7 +526,7 @@ insert_config_rows() {
             SRC[u] = r; return r
         }
         # The Subscription table (section 2) is ordered by the subscription
-        # RESULT color — red, green, blue, orange (unknown last) — logged and
+        # RESULT color — red, green, orange (unknown last) — logged and
         # config-only rows TOGETHER; within one color the original order holds
         # (logged by count, then the appended config rows by name). All its
         # rows are BUFFERED into per-rank buckets and dumped when the section
@@ -540,7 +535,7 @@ insert_config_rows() {
             u = toupper(nm)
             if (u in RKC) return RKC[u]
             r = subres(nm)
-            r = (r == "red" ? 0 : r == "green" ? 1 : r == "blue" ? 2 : r == "orange" ? 3 : 4)
+            r = (r == "red" ? 0 : r == "green" ? 1 : r == "orange" ? 3 : 4)
             RKC[u] = r; return r
         }
         function bucket2(nm, line,   r) { r = subrank(nm); B2[r, ++B2n[r]] = line }
@@ -1003,7 +998,7 @@ aggregate_files() {
 # ===== the WRITER lives in bin/transfer/details_writer.awk (2026-07) =========
 # Everything below this line used to be the bash writer — run_detail_writer
 # and every emit helper it called (ensure_file, finish_section, emit_intro,
-# emit_perf_tables, start_table, page_srv_log, emit_srv_lines_table, blue_box,
+# emit_perf_tables, start_table, page_srv_log, emit_srv_lines_table,
 # uncollected_files_table, strip_notseen_counts, close_file, the _sum_*
 # helpers). It was ported byte-identically to ONE awk program per entity type
 # — the bash loop forked $(printf …) per dimension row, ran ~11 cat/sort/awk

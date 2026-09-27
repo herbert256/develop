@@ -15,8 +15,7 @@
 #
 # WHY ONLY THIS. bin/build/publish.sh's _status_table computes every other figure
 # straight from data/<env>/flow-manager/base/<member>.tsv (Total = rows,
-# Server = result==blue, Error/Warning/Ok = red/orange/green) and derives the
-# rest (Transfer = Seen - Server, Not seen = Total - Seen). Seen is the
+# Error/Warning/Ok = red/orange/green). Seen is the
 # exception: it counts the configured names that actually appear in the logs,
 # which only the coverage data knows. This script REPLACES entities.sh and
 # partners-domains-applications.sh (2026-07), which produced 12- and
@@ -24,9 +23,7 @@
 # cell tree are gone, and both consumers only ever read the Seen field
 # (entities.rpt field 7 / pda.rpt field 8).
 #
-# Consumers: bin/build/publish.sh (both status tables) and
-# bin/analyses/reports/seen-in-server-log.sh (the PDA half of its audit
-# rollup, which is why THAT report still runs after this one).
+# Consumer: bin/build/publish.sh (both status tables).
 #
 # The classic four lift the number from their Show Seen member report — the
 # canonical config-coverage count, so the home and Show Seen can never
@@ -81,8 +78,8 @@ skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" ${deps[@]+"${deps[@]}"}
 # must equal the row count of the Entities Seen view it links, and that view
 # lists (a) every name the entity REPORT attributes at least one File to —
 # the site-wide PARTNER/APP UNION attribution — plus (b) every base-cache name
-# that is not never-seen per the coverage TSV (the blue and "ghost" rows:
-# seen through a sibling group, a shared endpoint, or the server log). The
+# that is not never-seen per the coverage TSV (the "ghost" rows: seen
+# through a sibling group or a shared endpoint). The
 # old rule counted coverage membership only, and on the production load test
 # (real config, two active accounts) said Seen 2 while the page listed 94.
 # Computed here INDEPENDENTLY from the report + base + coverage sources —
@@ -98,8 +95,7 @@ pda_seen_total() {   # $1 = member  $2 = its coverage TSV  $3 = its base cache  
             if (tb == 1 && $1 == "ROW") { nm = $2; sub(/^@\{[^}]*\}/, "", nm); if (nm != "") S[toupper(nm)] = 1 }
             next
         }
-        FILENAME == ARGV[2] { if ($1 != "") { k = toupper($1); if (!(k in B)) { B[k] = 1; ord[++nb] = k }
-                                              if ($3 == "blue") BLU[k] = 1 }; next }
+        FILENAME == ARGV[2] { if ($1 != "") { k = toupper($1); if (!(k in B)) { B[k] = 1; ord[++nb] = k } }; next }
         {                                          # the coverage TSV: the never-seen determination
             if (mem == "partners" && $4 ~ /^hosts\//) next
             k = toupper($1)
@@ -115,13 +111,12 @@ pda_seen_total() {   # $1 = member  $2 = its coverage TSV  $3 = its base cache  
                 # (an evidence-free "ghost" — since 2026-08-31 only a flow
                 # configured with NO login and NO host produces one: its
                 # direction-less rows are skipped by every derived-coverage
-                # builder) is seen ONLY when the server log vouches (blue).
+                # builder) is never seen.
                 # The old ghost->seen rule made a config-only env show
                 # nonzero Seen; render_entity_report splits its ghost rows
                 # the same way (coverage-vouched -> Seen, evidence-free ->
                 # Not seen), so figure and view stay in lockstep.
-                if ((k in cov) && cov[k] == 1) { seen[k] = 1; continue }
-                if (!(k in cov) && (k in BLU)) seen[k] = 1
+                if ((k in cov) && cov[k] == 1) seen[k] = 1
             }
             s = 0; for (k in seen) s++
             print s + 0
@@ -146,7 +141,6 @@ pda_seen_total() {   # $1 = member  $2 = its coverage TSV  $3 = its base cache  
         case $m in logicals) bc=_logicals; er=logical ;; partners) bc=_partners; er=partner ;; domains) bc=_domains; er=domain ;; bl) bc=_bl; er=bl ;; *) bc=_apps; er=application ;; esac
         printf 'SEEN\t%s\t%s\n' "$m" "$(pda_seen_total "$m" "$tsv" "$DATA/flow-manager/base/$bc.tsv" "$DATA/transfer/reports/$er.rpt")"
     done
-} | cov_put "$OUT"     # content-compared: home.rpt carries no FOOT timestamp, and
-                       # seen-in-server-log.sh watches its mtime — an identical
-                       # rewrite must not drag that report along.
+} | cov_put "$OUT"     # content-compared: home.rpt carries no FOOT timestamp, so
+                       # an identical rewrite keeps its mtime.
 echo "Wrote $OUT ($(grep -c . "$OUT") member(s))." >&2

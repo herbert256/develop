@@ -14,15 +14,12 @@
 #                                                report — it reads the PDA coverage TSVs
 #                                                ensure_pda_tsvs materializes)
 #   reports/first-seen.sh                     -> data/<env>/analyses/reports/first-seen*.rpt + data/<env>/first-seen/
-#   reports/seen-in-server-log.sh             -> data/<env>/transfer/reports/seen-in-server-log.rpt
-#                                                (transfer-data too; runs LAST — it reads the
-#                                                pda.rpt written just above)
 #
 # The analyses read TRANSFER report outputs (showseen.sh's coverage TSVs and
 # METAs, the detail-page slugmaps) and the data/flow-manager config caches — so this
 # orchestrator must run AFTER bin/transfer/reports.sh, like the server
-# reports. Rendering is bin/analyses/publish.sh (the cross-* and
-# seen-in-server-log pages render with the transfer area, bin/transfer/publish.sh).
+# reports. Rendering is bin/analyses/publish.sh (the cross-* pages render
+# with the transfer area, bin/transfer/publish.sh).
 #
 # Usage:  bin/analyses/reports.sh    (from any directory)
 #
@@ -49,7 +46,6 @@ rm -f "$_ROOT/data/analyses/reports"/*.rpt.tmp
 #     cov_put's cmp-guard makes each write atomic but not ordered.
 #   - first-seen/entity-search AFTER coverage.sh: their seen flags read those
 #     TSVs, and on a from-scratch build nothing else has materialized them yet.
-#   - seen-in-server-log LAST: its status tables read the home.rpt written above.
 # Everything in wave 1 touches neither the PDA TSVs nor home.rpt (verified by
 # grep: no ensure_pda_tsvs call, no home.rpt/COVSRC read).
 NJOBS=${AXWAY_NJOBS:-$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}
@@ -74,7 +70,7 @@ run_bg "$SCRIPT_DIR/reports/file-search.sh"           # Files by name (transfer 
 run_bg "$SCRIPT_DIR/reports/failing-reasons.sh"       # Error reasons (reads failed.rpt — the transfer reports ran first)
 run_bg "$SCRIPT_DIR/reports/account-sharing.sh"       # config-only (xref accounts->subscriptions)
 run_bg "$SCRIPT_DIR/reports/twins.sh"                 # formats the twin pair maps details.sh persists
-# the 2026-08 study reports — transfer caches + base/xref/blue reads only,
+# the 2026-08 study reports — transfer caches + base/xref/colour reads only,
 # independent of the PDA TSVs and of home.rpt, so wave 1 is safe.
 # data-diff is NOT here: its First-seen table reads the first-seen LEDGER
 # (data/<env>/first-seen/*.rpt), a wave-2 output — in wave 1 it read the
@@ -106,7 +102,8 @@ wait_all
 # (analyses/partners-in.html); reads the two .rpt files only
 timed "$SCRIPT_DIR/reports/partners-in.sh"
 
-# wave 3 — reads home.rpt
-timed "$SCRIPT_DIR/reports/seen-in-server-log.sh"
+# the Seen-in-server-log report and its BLUE status were removed 2026-09-27:
+# drop what a pre-removal build left behind (a stale .rpt kept its What's-new row)
+_d="$SCRIPT_DIR/../../data"; rm -rf "$_d/transfer/reports/seen-in-server-log.rpt" "$_d/transfer/reports/seenlog" "$_d/seen-in-server-log.tsv"
 
 echo "All analyses reports done." >&2

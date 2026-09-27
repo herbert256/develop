@@ -25,7 +25,7 @@
 <li><strong>Seen</strong> = both values on one physical log row, anywhere in the loaded logs (a leg inherits its File&rsquo;s partner / application / domain / logical / BL attribution).</li>
 <li><strong>Not seen</strong> = configured in the FlowManager exports (the xref caches under <code>data/flow-manager/xref/</code>) but never on a log row: a configured flow with no traffic, or a spelling that never matches.</li>
 <li>A row with either side blank &mdash; including a value blanked by the parse-time blacklist &mdash; establishes no pair; pairs where either value is blacklisted or unattributed are not listed.</li>
-<li>Each cell tints by its own entity&rsquo;s result: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer Error, <strong>light blue</strong> surfaced only by the Server &rarr; Transfer step (<code>bin/build/seen-in-server-log.sh</code>), no real transfer.</li>
+<li>Each cell tints by its own entity&rsquo;s result: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer Error, or a name the server log mentions that nothing configures.</li>
 <li>A repeated first-column value is blanked, so consecutive rows of one entity read as a block; names link their detail pages where those exist.</li>
 </ul>
 </main>

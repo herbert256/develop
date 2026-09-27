@@ -72,7 +72,7 @@ STAMP="$REPORTS_DIR/details/.stamp"
 # the shared scripts details.sh USES (the Subscription Summary's cron schedule +
 # UC-case text) are dependencies too — a change to either must re-trigger a rebuild.
 # the base result caches are DEPS: the pages bake the entity tints/directions,
-# so a recolor (bin/build/seen-in-server-log.sh blue marking, bin/build/result.sh) must retrigger
+# so a recolor (bin/build/result.sh) must retrigger
 # the detail build. The WHOLE base/ tree, not a representative: every writer is
 # cmp-guarded per file, so a recolor confined to e.g. _logins.tsv or _white.tsv
 # leaves the other files' mtimes untouched — a representative would miss it.
@@ -648,17 +648,6 @@ awk -F'\t' \
 # listing the data/flow-manager/xref-configured names.
 # (the com-profile Features row and bin/comm-profiles.sh's caches were
 # removed 2026-07)
-# subscriptions surfaced ONLY by the Server -> Transfer step (result==blue in
-# the base cache): their page shows the config-only Summary and a server-log
-# intro, no operational tables (they have no real transfer). Because there ARE
-# no fake rows any more, a blue entity simply has no content sections — it
-# renders as a never-seen page automatically — so no fabricated-data suppression
-# is needed; only the four folded SITE sections (now in the Summary) are dropped.
-if [ -f "$CONFIG_BASE/_subscriptions.tsv" ]; then
-    awk -F'\t' '$3=="blue"{print $1}' "$CONFIG_BASE/_subscriptions.tsv" > "$_pdir/siteblue"
-else
-    : > "$_pdir/siteblue"
-fi
 # ===== ANNOTATION PASS (2026-07 fork-elimination) ============================
 # ONE awk pass over the sorted agg stream + every per-entity lookup source,
 # emitting ONE line per entity IN FIRST-SEEN STREAM ORDER — exactly the order
@@ -669,7 +658,7 @@ fi
 # existing consumers expect). Fields (the fmlink field was DROPPED 2026-07 —
 # the 🔗 H1 icon it fed is gone, nothing consumed it):
 #  1 type  2 name  3 slug(collision-bumped)  4 mvtok  5 result
-#  6 isblue  7 siteblue  8 oneacct  9 onedom 10 oneapp 11 oneptn
+#  6 (retired)  7 (retired)  8 oneacct  9 onedom 10 oneapp 11 oneptn
 # 12 sd_hosts 13 sd_accts 14 sd_logins 15 cron 16 cronh
 # 17 flowdir 18 local 19 lmask 20 remote 21 rmask
 # 22 cfgacct 23 acct_logins 24 acct_hosts 25 conn1to1-files 26 banner_dt
@@ -694,7 +683,7 @@ printf '%s\n' "$grpmap" > "$_pdir/grpmap"
 LC_ALL=C awk -F'\t' \
     -v XREF="$CONFIG_XREF" -v BASE="$CONFIG_BASE" \
     -v ODF="$_pdir/onedims" -v SDF="$_pdir/sitedims" -v CRF="$_pdir/sitecron" \
-    -v LCF="$_pdir/siteloc" -v BLF="$_pdir/siteblue" -v GRF="$_pdir/grpmap" -v ACF="$_pdir/siteact" \
+    -v LCF="$_pdir/siteloc" -v GRF="$_pdir/grpmap" -v ACF="$_pdir/siteact" \
     -v MOV="$MOVMAP" -v SRV="$SERVER_CACHE" -v FWD="$IP_HOSTS_FILE" -v SDIR="$STREAMDIR" \
     -v TWF="$_pdir/twins" -v TWFS="$_pdir/twins-site" '
     function up(s) { return toupper(s) }
@@ -780,8 +769,6 @@ LC_ALL=C awk -F'\t' \
         close(vf)
         vf = LCF; while ((getline l < vf) > 0)  { i = index(l, "\t"); if (i > 0) { k = up(substr(l, 1, i-1)); if (!(k in LOC)) LOC[k] = substr(l, i+1) } }
         close(vf)
-        vf = BLF; while ((getline l < vf) > 0) { if (l != "") SF[up(l)] = 1 }
-        close(vf)
         # grpmap -> ordered "Label\tName" rows per (type,upname), _compute_grows order
         vf = GRF; while ((getline l < vf) > 0) { n = split(l, a2, "\t"); if (n < 4) continue
             k = a2[1] "|" up(a2[2]); if ((k, a2[3], a2[4]) in gdup) continue; gdup[k, a2[3], a2[4]] = 1
@@ -805,8 +792,7 @@ LC_ALL=C awk -F'\t' \
         mv = (tk in MV) ? MV[tk] : ""
         if (mv == "" && t == "SITE") { bl = 0; for (i = 1; i <= ns; i++) if (index(U, MSN[i]) == 1 && length(MSN[i]) > bl) { mv = MSV[i]; bl = length(MSN[i]) } }
         resv = (tk in RES) ? RES[tk] : ""
-        isblue = (resv == "blue") ? 1 : ""
-        sblue = (t == "SITE" && (U in SF)) ? 1 : ""
+        f6 = ""; f7 = ""   # fields 6/7 retired 2026-09-27 (they flagged the removed server-log-only status): kept EMPTY so every later field keeps its position
         # guarded reads — a bare OD[k] would CREATE the key, and the drop
         # rules below test membership in OD (the awk read-creates-key trap)
         k4 = t "|" e "|2.8";  od1 = (k4 in OD) ? OD[k4] : ""
@@ -889,7 +875,7 @@ LC_ALL=C awk -F'\t' \
         af = SDIR "/a." t
         if (af != aprev) { if (aprev != "") close(aprev); aprev = af }
         printf "%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\036%s\n", \
-            t, e, base, mv, resv, isblue, sblue, od1, od2, od3, od4, sdh, sda, sdl, cr, crh, fdir, lloc, lmask, rloc, rmask, cfa, acl, ach, conn, bdt, grp, suba, subl, subh, nosub, twin, od5, od6, bses, bmsg, act > af
+            t, e, base, mv, resv, f6, f7, od1, od2, od3, od4, sdh, sda, sdl, cr, crh, fdir, lloc, lmask, rloc, rmask, cfa, acl, ach, conn, bdt, grp, suba, subl, subh, nosub, twin, od5, od6, bses, bmsg, act > af
         }
         # ---- the drop rules (the two former filter passes) + the s. slice ---
         if ($3 == 13) next
@@ -958,8 +944,6 @@ _tlap "twins, stream slicing, side tables"
 ensure_logons "$SERVER_CACHE"
 _tlap "logon summary (ensure_logons)"
 LOGONSF="$SERVER_CACHE/_logons.tsv"
-# the blue evidence dir (data/<env>/blue) for the writer's blue_box
-BLUEDIR="${CONFIG_BASE%/flow-manager/base}/blue"
 
 # ---- per-type PARALLEL writers (2026-07) ------------------------------------
 # The stream and annotation slices are written per type by PASS B above (the
@@ -996,7 +980,7 @@ for _ty in ACC SITE LOGIN HOST LGC PTN APP DOM BL; do
     ( _w0=$(date +%s); _wrc=0
     LC_ALL=C awk -F'\t' -v TYPE="$_ty" -v ANN="$STREAMDIR/a.$_ty" -v OUTDIR="$_od" \
         -v RANKOUT="$RANKDIR/$_ty.tsv" -v LATESTDIR="$LATEST_DIR" \
-        -v SRV="$SERVER_CACHE" -v FWD="$IP_HOSTS_FILE" -v BLUE="$BLUEDIR" \
+        -v SRV="$SERVER_CACHE" -v FWD="$IP_HOSTS_FILE" \
         -v UCF="$UCMETA" -v UCDF="$UCDER" -v UNCF="$_pdir/uncollected" -v OKF="$OKTF" \
         -v SSF="$SRVSUBSF" -v ERRD="$REPORTS_DIR/errors" -v LGF="$LOGONSF" -v LGHF="$SERVER_CACHE/_logons-hosts.tsv" \
         -v NOW="$NOW_TS" -v NFILES="${#files[@]}" \

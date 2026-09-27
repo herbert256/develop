@@ -28,11 +28,10 @@
 <li><strong><a href="expired.html">Expired</a></strong> &mdash; newest File expired: the retention sweep deleted the staged copy before any pickup, a lost delivery.</li>
 <li><strong><a href="server-no-remote-dir.html">No Dir</a></strong> &mdash; configured REMOTE directory missing: we reach the partner, the listing fails &ldquo;No such file&rdquo;, no transfer starts. Still-open cases only; a directory found again later is not flagged.</li>
 <li><strong><a href="server-no-remote-files.html">No Files</a></strong> &mdash; UC3 flow polling faultlessly, never found a file: every listing succeeds, remote directory always empty.</li>
-<li><strong>Failing polls</strong> &mdash; the UC3 poll itself errors server-side (UC status / UC3: &ldquo;server - error&rdquo;); nothing listed or collected.</li>
 <li><strong>Login errors (in)</strong> &mdash; a connected login failed the incoming SSH screening (disallowed, unknown key, key failures, locked), no OK File since.</li>
 <li><strong>Login errors (out)</strong> &mdash; we failed to authenticate at the remote host (password, key or certificate policy), no OK File since.</li>
-<li><strong>OK / Seen / Not seen / Error / Server log only</strong> &mdash; site-wide result colours and coverage flag, from the same sources as the Transfer / Entities views (their full lists), so figures cannot drift.</li>
-<li>Seen is the TRANSFER-scope reading; a flow known only from the server log sits in Server log only, so Seen + Server log only + Not seen = the whole estate.</li>
+<li><strong>OK / Seen / Not seen / Error</strong> &mdash; site-wide result colours and coverage flag, from the same sources as the Transfer / Entities views (their full lists), so figures cannot drift.</li>
+<li>Seen = transfer data (or a UC3 flow that polls cleanly with nothing to fetch); a flow only the server log mentions is Not seen, so Seen + Not seen = the whole estate.</li>
 </ul>
 <h2>Rules</h2>
 <ul>

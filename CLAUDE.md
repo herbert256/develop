@@ -72,7 +72,7 @@ label = the inbox skipped with a note) and names the outbox archives
 copy is gone since 2026-09-12); a missing label FAILS the archive step. The docs root holds the site itself: `index.html` (the
 home), `404.html` (self-contained; its home link = the path before the FIRST known top-level dir,
 a trailing `acceptance/`|`production/` stripped for pre-split bookmarks), `assets/`, `help/`,
-`.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `seenlog/`, `expired/` — 2026-09-21, user
+`.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `expired/` — 2026-09-21, user
 request: one page per subscription with expired Files, Start · Expired · File name · CoreId, opened
 from the Expired cells of the Expired report's subscriptions table; `expired.sh` writes the
 `.rpt` set into `data/transfer/reports/expired/`; default sort = Expired descending, baked in that
@@ -191,11 +191,11 @@ input set and reparse in full once, the month the first files go) → the
 have-config check → `bin/flow-manager.sh` → *parse*: server `parse.sh`
 in the background beside transfer `parse.sh` (`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`), then
 `bin/session-sites.sh`, `bin/expire-files.sh`, `bin/bookend-ok.sh`,
-`bin/build/seen-in-server-log.sh`, `bin/build/result.sh`, a server-mention rescan when
+`bin/build/result.sh`, a server-mention rescan when
 `data/server/cache/.rescan-mentions` exists, `went-kaput.sh` early (always; its evidence sidecar
 makes the details catch-up self-gate) → *report*: `bin/transfer/reports/details.sh` in the
-background beside transfer phase 1 and the server reports, then transfer phase 2, analyses (ends
-with seen-in-server-log — it needs a fresh `pda.rpt`), dashboards ∥ day → *publish*: detail
+background beside transfer phase 1 and the server reports, then transfer phase 2, analyses,
+dashboards ∥ day → *publish*: detail
 pages ∥ transfer, then partner-groups, server, analyses, then THE CATCH-UPS — re-runs folding the
 cross-phase evidence into THIS build, each self-gating via its own freshness check (a warm build
 skips them in ~0 s): `bin/build/drill-files.sh` (2026-09-21 — lists the first File of every red /
@@ -206,8 +206,7 @@ rerun leaves it byte-identical and the pair skips), the transfer publish catch-u
 day → `bin/build/publish.sh` (index pages + the home, reads every area) →
 `bin/build/display-rename.sh` → (runtime only) `bin/build/st-reports-archive.sh`.
 
-Dependency rules: transfer reports before server and analyses reports; `seen-in-server-log.sh`
-last inside the analyses step (needs a fresh `pda.rpt`); dashboards + day after both areas;
+Dependency rules: transfer reports before server and analyses reports; dashboards + day after both areas;
 `bin/build/publish.sh` last of the publishes (the area publishes clear the dirs its index pages
 live in). `bin/fresh.sh` (no arguments) wipes `build/`, `data/` and `docs/`, re-seeds the assets
 and runs the chain.
@@ -449,9 +448,8 @@ A page with ZERO date-aware tables
 renders no From/To and neither restores nor persists the shared per-area range.
 
 **Column KINDs**: `text num failed processed numfailed numprocessed numok numerr numwarn numsep
-bar file mono srv acct site login host ptn app dom ip lines clines pre` (`numsep` = a num column
-that also STARTS a column group — the th/td get the divider; `srv` = the server-log-only blue
-marker cell). Entity KINDs link to the detail page, the
+bar file mono acct site login host ptn app dom ip lines clines pre` (`numsep` = a num column
+that also STARTS a column group — the th/td get the divider). Entity KINDs link to the detail page, the
 slug resolved through that dir's comprehensive `_slugmap.tsv` — no map entry, no link. `lines` =
 `\x1f`-separated stacked lines; `clines` collapsible (3+ lines fold behind `⋯`); `pre` = a raw log
 LINE kept verbatim in `<pre>` (the failed-file error pages) — logged spacing preserved, NO wrap
@@ -581,18 +579,19 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    — `parse.sh` when matching message tokens to the configured set, and
    `unknown-entities.sh` via **`rn_canon_pfx`**, since the server log TRUNCATES names: a fold
    there happens only when every completion of the truncated name agrees, never on a guess.
-   Without it every renamed flow reads as an unknown subscription and `seen-in-server-log.sh`
-   appends a phantom blue twin beside the real entity. `rn_canon_pfx` prefers a completion the
+   Without it every renamed flow reads as an unknown subscription on the server side (a
+   phantom "Missing subscriptions" row beside the real entity). `rn_canon_pfx` prefers a completion the
    token stops at a NAME-PART boundary of (`_`, or the whole name) when those agree — the ST short
    form `UC4_ODV-ARE-YARDI` is exactly `UC4_` + the first half of `UC4_ODV-ARE-YARDI_ODV-ARE-YARDI`
    while `UC4_ODV-ARE-YARDI-DWH_…` merely shares the prefix. Still a boundary rule, never a guess
    about content.
-- **The estate is PRUNED of withdrawn discoveries** (`result.sh` `prune_withdrawn`): both colour
-  steps APPEND entities the logs reveal, and nothing removed one whose evidence went away — the
-  row just lost its blue and settled as ORANGE, a phantom "configured but never seen" flow that is
-  not configured at all (this is how the caches once grew to 696 rows for 568 flows). A row
+- **The estate is PRUNED of withdrawn discoveries** (`result.sh` `prune_withdrawn`): the colour
+  step APPENDS entities the transfer log reveals, and nothing removed one whose evidence went
+  away — the row settled as ORANGE, a phantom "configured but never seen" flow that is not
+  configured at all (this is how the caches once grew to 696 rows for 568 flows). A row
   survives when it is in `base/.configured.tsv` (the snapshot `flow-manager.sh` takes BEFORE
-  either step appends), still blue this run, or backed by real transfer data.
+  the step appends) or backed by real transfer data. (Until 2026-09-27 the server-log BLUE
+  step appended too; it is gone with the blue result.)
 1. **Blacklist** — `input/blacklist.txt` (a policy file like the others, COMMITTED in develop; TSV
    `<field>⇥drop|keep⇥<value>`) BLANKS
    platform-internal values (row kept), read only through the sourced `bin/blacklist.sh`;
@@ -604,8 +603,8 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    processed cleanly (production: 418 files over 13 flows). `site_extfold` folds the value onto
    the LONGEST configured name it extends at a name-part boundary, and only when the remainder is
    that server/client comm-profile shape — a different flow whose name merely starts with a
-   configured one stays a logged-but-unconfigured subscription. `bin/build/seen-in-server-log.sh`
-   folds the same shape on the server side. **The configuration outranks the site
+   configured one stays a logged-but-unconfigured subscription. The server reports fold the
+   same shape. **The configuration outranks the site
    keep rule** (2026-08-31 audit): a clean, rename-folded site value that names a configured
    subscription (`base/.configured.tsv`, its names part of `parser_sig`) is kept whatever its
    shape — the production hybrid flows carry no UC prefix, and the `^UC` shape test blanked their
@@ -792,18 +791,29 @@ with id` line on the ADMIN session and the AR0086 post-processing delete on the 
 missing roster is `exit 1`), calling `ensure_config`/`ensure_parsed` once up front. The five
 `unknown-*` reports are ONE script, `bin/server/reports/unknown-entities.sh` — a map-reduce whose
 known sets read the TRANSFER PARSE CACHE directly (cols 4/5/6/16), never a roster (roster-based
-sets oscillate); `bin/build/seen-in-server-log.sh` runs it in build stage 1; its all-outputs
-freshness check is inlined. Transfer reads nothing from the server REPORTS.
+sets oscillate); `bin/server/reports.sh` runs it in its pool; its all-outputs freshness check is
+inlined. Its `data/unknown/*.tsv` sidecars are the SERVER-LOG SIGHTING LISTS the colour-free
+safety checks read (Entity Search / Cross reference: an unconfigured sighting is red; the
+cleanup backlog: a mentioned whitelist IP is not unused). Transfer reads nothing from the server REPORTS.
 
-### Result colours (green / red / orange / blue)
+### Result colours (green / red / orange)
+
+**THE BLUE RESULT IS GONE** (2026-09-27, user request: "remove the /transfer/seen-in-server-log.html report and all use
+of it, the 'blue' status must be gone"): the fourth colour — "seen in the server log
+only, never transferred" — with its step `bin/build/seen-in-server-log.sh`, its report, the
+Entities +Server scope and Server view, the home Transfer/Server columns and "including server
+log" switch, the First seen both-logs view, the UC1/UC3/UC4 `server - …` statuses (those flows
+are plain **not seen**), the Boxes "Server log only" and "Failing polls" boxes, the Overview's
+blue seen curve and the detail pages' server-only evidence card. A server-log mention alone never
+makes an entity seen or coloured; the two UC3 POLL rules below stay. `data/blue/` is
+`data/colour/` (result.sh drops the old directory). Never reintroduce a server-log-only colour.
 
 **Entities DISCOVERED in the transfer log** (2026-08, `result.sh` stage 0, `discover_logged`): a
 subscription (or remote host) can carry real transfers and still be absent from the FlowManager
 export — a flow configured after the export was taken. The entity reports list it, so the Entities
 view has a row the base cache knows nothing about and the home figure disagrees with the page
-footer. The transfer log therefore DISCOVERS entities as the server log already does
-(`seen-in-server-log.sh` appends its unknowns as blue); these are NOT blue — they transferred — so
-they are appended with an empty result and coloured normally. The rosters MIRROR the reports that
+footer. The transfer log therefore DISCOVERS entities: they are appended with an empty result
+and coloured normally. The rosters MIRROR the reports that
 list them: subscriptions = every `_files.tsv` col 12; hosts = col 15 of an OUT-side file (col 16),
 the restriction `remote-host.sh` applies, so raw INCOMING addresses are never invented as
 entities. A discovered host has no configured subscriptions, so the rollup would call it orange —
@@ -811,37 +821,28 @@ entities. A discovered host has no configured subscriptions, so the rollup would
 (`white_own`'s rule; every configured host is in the pair cache, so nothing else moves). The
 append drops `.rescan-mentions` so the server mention scan picks the new names up.
 
-The third column of every `base/*.tsv`, filled after the parses by two build steps (full detail in
-ARCHITECTURE.md): **`bin/build/seen-in-server-log.sh`** marks entities seen only in the server
-logs **blue**; **`bin/build/result.sh`** fills the rest, preserving blue — a subscription goes
-green/red by its LAST File's outcome (red when Failed or Expired; orange = never seen), other
-entities roll up their connected subscriptions (a blue subscription counts like ORANGE in the
-rollup — server-log discovery must never change a health verdict; `_white.tsv` goes by the last
-real transfer from that address instead). **Blue always means "never transferred".** TWO
-deliberate exceptions, both UC3 poll verdicts. The **clean-poll rule** (2026-08): a would-be-blue UC3
-subscription whose newest successful poll is no older than its newest E-level mention flips GREEN —
-working, just nothing to fetch (sidecar `blue/_greenpoll.tsv`; showseen treats a no-data green as
-seen-with-blank-counts like blue; deploy-errors clears a UC3 on a poll after its last message). Its
-mirror, the **cannot-connect rule** (2026-09-10, user rule): a never-transferred UC3 whose own polls
-fail with "Connection failure while <flow> tried to connect …" on THREE polls in a row (newer than
-its newest successful poll, or none at all) flips RED — a flow that polls and cannot connect is
-broken, not idle; the newest failure is its `blue/_redflip.tsv` stamp, so it lands on the home
-"Failing subscriptions in Server log" worklist with its own error page and the reason "Connection
-failures". `seen-in-server-log.sh` keeps BOTH sidecars' names out of the blue marking.
-**The two colour steps must AGREE** (2026-08): `seen-in-server-log.sh` leaves the clean-poll
-greens alone (it reads `blue/_greenpoll.tsv`) and `result.sh`'s rollup counts one like ORANGE, as
-it does a blue subscription — server-log discovery never sets a health verdict, and an entity
-whose only flows have never moved a file is server-log-only, not green. Before that they
-disagreed on ~46 subscriptions and ~16 accounts, so BOTH steps rewrote the base caches every run
-and every report depending on the colours rebuilt for nothing: a no-op build was 1:39, now 36 s.
-The clean-poll flip therefore fires on ORANGE as well as blue — the blue marking is no longer its
-precondition, the poll evidence still is.
+The third column of every `base/*.tsv`, filled after the parses by ONE build step (full detail
+in ARCHITECTURE.md), **`bin/build/result.sh`** — a subscription goes green/red by its LAST File's
+outcome (red when Failed or Expired; orange = never seen in the transfer log), other entities
+roll up their connected subscriptions (`_white.tsv` goes by the last real transfer from that
+address instead). TWO deliberate exceptions, both UC3 poll verdicts. The **clean-poll rule**
+(2026-08): a never-transferred (orange) UC3 subscription whose newest successful poll is no older
+than its newest E-level mention flips GREEN — working, just nothing to fetch (sidecar
+`colour/_greenpoll.tsv`; showseen treats a no-data green as seen-with-blank-counts; deploy-errors
+clears a UC3 on a poll after its last message; the rollup counts one like ORANGE — server-log
+evidence never sets a health verdict for the entities above it). Its mirror, the
+**cannot-connect rule** (2026-09-10, user rule): a never-transferred UC3 whose own polls fail
+with "Connection failure while <flow> tried to connect …" on THREE polls in a row (newer than its
+newest successful poll, or none at all) flips RED — a flow that polls and cannot connect is
+broken, not idle; the newest failure is its `colour/_redflip.tsv` stamp, so it lands on the home
+"Failing subscriptions in Server log" worklist with its own error page and the reason
+"Connection failures".
 
 **A CONNECTED-RING ERROR REDDENS ONE FLOW, NOT ALL OF THEM** (2026-08): a remote host — and just
 as much an account or a login — serves many subscriptions, so taking the newest line of its
 `_err_warn` ring reddened EVERY flow configured for it — one bad endpoint, a dozen false reds all
 carrying the same evidence stamp. `result.sh` `_build_ringattr` attributes each host/account/login
-ring line to the ONE flow it concerns and writes `blue/_ringattr.tsv` (subscription ⇥ newest
+ring line to the ONE flow it concerns and writes `colour/_ringattr.tsv` (subscription ⇥ newest
 attributed E stamp), which the flip reads instead of the rings: first a CONFIGURED NAME in the
 MESSAGE (every name-shaped token, tail-stripped and rename-folded, against the roster — not only
 a UC-prefixed one, since 2026-08-31: the production hybrid flows carry no UC prefix, so the
@@ -852,7 +853,7 @@ carries the same id and col 6 the site the attribution chain gave the leg (canon
 time; message/parse tokens fold through `rn_canon_pfx`). A line that attributes to NOTHING cannot
 redden what it cannot identify; a session naming two flows — in the parse cache or in its legs —
 resolves to neither. **The ring's own entity then owns what is left over** (`orphan_red`,
-`blue/_ringorphan.tsv`, ring kind ⇥ name ⇥ stamp): an authentication failure naming only a
+`colour/_ringorphan.tsv`, ring kind ⇥ name ⇥ stamp): an authentication failure naming only a
 credential, a PeSIT transfer-profile complaint naming only the account, is a real problem at that
 ENDPOINT / account / login, so it goes RED — unless it has moved a file OK SINCE (the "recovered
 since" test the unresolved server reports apply; hosts count OUT-side files only) and never over a
@@ -874,9 +875,9 @@ to the `_kaput-evidence.tsv` the home Reason reads. 1:1 owners are unchanged.
 The SAME evidence also **keeps a UC3 green** (2026-08): the after-last-transfer red flip is
 skipped when a successful poll is NEWER than the E-level stamp that would have flipped it — a
 flow that has since polled cleanly is working, whatever it logged before (acceptance: 14 of the
-15 candidates). `_greenpoll.cand` carries `name⇥newest poll⇥flag`, the flag driving the blue
-rule and the stamp this one.
-The after-last-transfer red flip records its evidence in `blue/_redflip.tsv` (name + ring stamp);
+15 candidates). `_greenpoll.cand` carries `name⇥newest poll⇥flag`, the flag driving the
+clean-poll rule and the stamp this one.
+The after-last-transfer red flip records its evidence in `colour/_redflip.tsv` (name + ring stamp);
 the UC status per-hour walkers read it (+ `_greenpoll.tsv`) so their sidecars' last row equals
 the STAT figures. **"After the last transfer" means after its END** (2026-09-12, user rule: a
 production flow logged a "Could not send file" Error at 09:19 while three Files that had STARTED
@@ -888,10 +889,6 @@ the evidence must be newer than is the last File's start raised to the newest OK
 that end), and the detail pages (details_lib's totals-row field 30 → `last_transfer_cut()`, the
 banner and the connected-lines cutoff); the "Last OK transfer" section picks the newest Processed
 File by its end too. Never lower than the old start-based cut, so it only ever spares a flip.
-Blue counts
-as SEEN with blank counts; the status tables show it as the Server column; in the Transfer scope
-it retints orange. `data/blue/<type>/<name>.txt` holds the evidencing log line per blue
-entity (existence = the signal `blue_box` renders).
 
 **The SSH logon funnel is SESSION-aware** (2026-09-06, user request — the FE000508 finding):
 `_parse.tsv` column 6 is the SSH session id, and `bin/server/reports/logon.sh` + its twin
@@ -950,7 +947,8 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
 ### The page families (details in ARCHITECTURE.md)
 
 - **The home page** (`bin/build/publish.sh`): the two status tables — every cell opens the
-  Entities view whose row count IS that figure, in the active scope; `check_status_consistency`
+  Entities view whose row count IS that figure (Entity · Total · Seen · OK · Error · Warning ·
+  Ok; no scope switch since 2026-09-27); `check_status_consistency`
   verifies each figure; the SEEN figures come from `home.rpt`. The per-day figures are ONE wide
   "Per day" table (2026-08-31, user request — the 2026-08 five-table flex row with its Date
   spine is retired: it could fall out of row-sync whenever a header's height changed): a `gband`
@@ -1004,11 +1002,12 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   "Error" and the two mood boxes are deliberately not reasons and a flow in several cause boxes
   takes the one its newest own Error/Warn line classifies to. The REASON is descriptive, not a
   verdict: the colour still never rests on a line attributed to no flow; Last file comes from `_files.tsv`.
-- **The Entities pages**: 9 entities x 10 views under `docs/transfer/entities/`, assembled at
-  publish time (`render_entity_report`) from `data/transfer/reports/entities/<name>.rpt` — ONE
-  writer for the nine, `bin/transfer/reports/entities.sh` — plus the coverage TSVs and the base
-  caches (the blue / ghost rows); the +Server/Transfer SCOPE decides whether a server-log sighting
-  counts as seen; sort is shared across the nine entities (localStorage, 1-hour sliding expiry,
+- **The Entities pages**: 9 entities x 6 views (All · Seen · Not seen · OK · Warning · Error —
+  `<entity>-<view>.html`, no scope pages since 2026-09-27) under `docs/transfer/entities/`,
+  assembled at publish time (`render_entity_report`) from
+  `data/transfer/reports/entities/<name>.rpt` — ONE writer for the nine,
+  `bin/transfer/reports/entities.sh` — plus the coverage TSVs and the base caches (the ghost
+  rows: a clean-poll green with no Files is Seen with blank counts); sort is shared across the nine entities (localStorage, 1-hour sliding expiry,
   stored by "group › column" label). THE GROUPED LAYOUT (2026-09-13, user request — built that day
   as the `transfer/entities2/` twin experiment and adopted the same day; the classic Name ·
   Direction · Files · Volume · OK · Retry · Resubmit · Error · Last seen pages are GONE): Name,
@@ -1058,7 +1057,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   `docs/assets/file-search.js` — as you type (no Search button, no idle text since 2026-09-27), the NAV row carrying
   `?q=` between the windows; 24 hours = the newest full day + the partial newest day, 48 hours
   = the second full day), the Report finder, the SIX Failed-transfers
-  view pages (+ per-CoreId error pages, and since 2026-09-03 the FILE pages `docs/files/<coreid>.html` — the same layout for a File of ANY outcome, written by `failed.sh` for the CoreIds the Transfer patterns page's "Last 5 files" cells link, `_patterns-files.tsv`, and for every File the Longest Files page lists (DELIVERED Files only since 2026-09-13, user request — no Failed / Expired / Waiting and no "All transfers" view; the one-hour threshold went 2026-09-06), `_longest-files.tsv` — its CoreId cell opens the File page), Cross References, Seen in server log, Entity coverage
+  view pages (+ per-CoreId error pages, and since 2026-09-03 the FILE pages `docs/files/<coreid>.html` — the same layout for a File of ANY outcome, written by `failed.sh` for the CoreIds the Transfer patterns page's "Last 5 files" cells link, `_patterns-files.tsv`, and for every File the Longest Files page lists (DELIVERED Files only since 2026-09-13, user request — no Failed / Expired / Waiting and no "All transfers" view; the one-hour threshold went 2026-09-06), `_longest-files.tsv` — its CoreId cell opens the File page), Cross References, Entity coverage
   (assert OK ⊆ Current ⊆ Once), whitelist-audit, config-hygiene, UC status (its UC3
   tab also carrying the polling tables — the former Remote polls report and Cronjobs page, 2026-09-05), Polling (the SAME polling information as ONE flat table, one row per polling subscription — `bin/analyses/reports/polling.sh` → `polling.rpt`, a `SUBS_GROUP_REPORTS` server member rendered into analyses/, sitting at the old Cronjobs slot of the Configuration row, 2026-09-05)
   (a Use-cases view; pages in analyses/).
@@ -1269,8 +1268,7 @@ bin/bookend-ok.sh       Failed -> Processed on the server log's own ok "Transfer
 bin/session-sites.sh    UCx groups -> real subscription via the server log's session route lines
 
 # BUILD-ONLY — nothing but bin/build.sh invokes these:
-bin/build/seen-in-server-log.sh  mark server-log-only entities blue (+ the unknown-* reports)
-bin/build/result.sh              fill the base result columns (preserve blue)
+bin/build/result.sh              fill the base result columns
 bin/build/publish.sh             index pages + the home; run LAST
 bin/build/drill-files.sh         the first File of every red / orange drill cell -> _drill-files.tsv (failed.sh pages them)
 bin/build/display-rename.sh      the display-rename sweep (input/rename.txt); the last page-touching step
@@ -1304,13 +1302,14 @@ additionally ignores the `*.csv` exports under `input/`, its one bulk item):
   `input/` because a DNS answer cannot be regenerated — `rm -rf data/` must stay safe.
 - `data/<area>/cache/` — the tokenized caches + companions; `data/<area>/reports/` —
   the `.rpt` descriptors (+ `details/`, `coverage/`, `errors/`).
-- `data/unknown/*.tsv` — the unknown-* sidecars + the SSH-logon files; ALL FIVE sidecars
-  seed the blue step (accounts/logins/sites/hosts/white — `white.tsv` carries only TM-mentioned
-  whitelisted IPs and recolors `base/_white.tsv` via `recolor … onlywhite`; the xref `_white-*`
-  pair caches are enrichment inputs, not seeds). Rewritten each run; a type with
-  no unknowns keeps an EMPTY sidecar (a deleted one would force a full rescan every build).
-- `data/blue/` — the blue evidence. `data/flow-manager/{base,xref}/` — the config
-  caches. `data/.publish/*.stamp` — the freshness stamps.
+- `data/unknown/*.tsv` — the unknown-* sidecars, the server-log SIGHTING LISTS
+  (accounts/logins/sites/hosts/white — `white.tsv` carries only TM-mentioned whitelisted IPs),
+  read colour-free by Entity Search, Cross reference, data-diff and the cleanup backlog.
+  Rewritten each run; a type with no unknowns keeps an EMPTY sidecar (a deleted one would force
+  a full rescan every build). (The SSH-logon files went with the blue result, 2026-09-27.)
+- `data/colour/` — `result.sh`'s sidecars (`_redflip`, `_greenpoll`, `_ringattr`,
+  `_ringorphan`, `_kaputflip`, …; `data/blue/` until 2026-09-27). `data/flow-manager/{base,xref}/`
+  — the config caches. `data/.publish/*.stamp` — the freshness stamps.
 
 `input/` is deliberately separate from the wipe-able `data/`: `rm -rf data/` is safe and never
 touches the raw CSVs or the DNS map. The built site is the committed repo-root `docs/`.

@@ -6,39 +6,21 @@
 # WITHOUT a dated transfer of their own. The universe and the seen split are
 # the COVERAGE TSVs (showseen's healed universe — the same files behind the
 # home status tables and the Entities views), so the page's Seen/Not seen
-# figures equal the status tables' by construction. TWO VIEWS, rendered as
-# two tab pages by bin/analyses/publish.sh:
-#
-#   Transfer log only          the coverage seen set MINUS blue (the Entities
-#                              -transfer scope: a blue, server-log-only entity
-#                              counts as Not seen)
-#   Both Transfer & Server     the full coverage seen set (the +Server scope);
-#                              a blue name (the base result column,
-#                              bin/build/seen-in-server-log.sh) never transferred, so it
-#                              takes the OLDEST first-transfer of its
-#                              cross-referenced entities (the
-#                              data/flow-manager/xref pair caches — its
-#                              account, subscription, login, host, partner):
-#                              the day its surrounding flow first became
-#                              active. NO server-log scan — the daily
-#                              housekeeping mentions (File Maintenance) would
-#                              drown the signal; blue is the site's curated
-#                              server-seen set.
+# figures equal the status tables' by construction. (A second "Both
+# Transfer & Server logs" view went with the BLUE server-log-only status,
+# 2026-09-27.)
 #
 # A seen name with NO dated transfer of its own — a UC3 clean-poll green
-# (works, nothing to fetch yet), a sibling-credited name, an undated blue —
-# lands in the "Seen, no date" bucket: per column, Seen + Not seen = Total
-# and the day rows + the no-date row = Seen.
+# (works, nothing to fetch yet), a sibling-credited name — lands in the
+# "Seen, no date" bucket: per column, Seen + Not seen = Total and the day
+# rows + the no-date row = Seen.
 #
-#   -> data/analyses/reports/first-seen.rpt        the Transfer-only page spec
-#   -> data/analyses/reports/first-seen-both.rpt   the both-logs page spec
-#      (each: SEEN / NOTSEEN / NODATE / ROW / TOTAL lines, columns logicals
-#      partners subscriptions accounts logins hosts)
+#   -> data/analyses/reports/first-seen.rpt        the page spec (SEEN /
+#      NOTSEEN / NODATE / ROW / TOTAL lines, columns logicals partners
+#      subscriptions accounts logins hosts)
 #   -> data/first-seen/<type>-<key>.rpt            one per NONZERO cell (key =
-#      YYYY-MM-DD | notseen | nodate | seen | total; the both-logs cells carry
-#      a both- key prefix and a 6th ROW field = Transfer, or Server for a blue
-#      name dated via its crosses) — rendered into docs/first-seen/ by
-#      bin/analyses/publish.sh, like the coverage cells.
+#      YYYY-MM-DD | notseen | nodate | seen | total) — rendered into
+#      docs/first-seen/ by bin/analyses/publish.sh, like the coverage cells.
 #
 # Sources: the coverage TSVs (transfer/reports/coverage/{logicals,partners,
 # subscriptions,accounts,logins,hosts}.tsv — the seen flags; the partner
@@ -47,8 +29,8 @@
 # subscription's configured partners, first-row date/time cols 4/5) and
 # _transfers.tsv (subscriptions col 6, logins col 5, hosts
 # col 16, date/time cols 11/12) — for the DATES, plus the
-# data/flow-manager/base entity lists (configured names + direction + result),
-# the 15 xref pair caches among the six types (+ the FlowID map), and the comprehensive
+# data/flow-manager/base entity lists (configured names + direction), the
+# subscription -> partner / logical pairs (+ the FlowID map), and the comprehensive
 # detail-page slugmaps (links; a name with no map entry renders unlinked).
 # Date matching: exact, case aside — subscriptions by prefix (a configured
 # name matches the logged site values it prefixes).
@@ -64,7 +46,7 @@ if [ ! -f "$TF" ] || [ ! -f "$TT" ]; then
     exit 0
 fi
 OUT="$REPORTS_DIR/first-seen.rpt"
-OUT2="$REPORTS_DIR/first-seen-both.rpt"
+rm -f "$REPORTS_DIR/first-seen-both.rpt"   # the both-logs view, retired 2026-09-27
 
 BASE="$DATA/flow-manager/base"
 DET="$DATA/transfer/reports/details"
@@ -85,35 +67,28 @@ done
 for d in logicals partners subscriptions accounts logins hosts; do
     [ -f "$DET/$d/_slugmap.tsv" ] && srcs+=("$DET/$d/_slugmap.tsv")
 done
-# the 15 cross-reference pairs among the six types (one direction each — the
-# loader stores both ways). Optional: without them the blue names simply stay
-# in the both view's Not seen. Plus _subscriptions-logicals + the FlowID map
-# (_profiles-logicals) for the logical DATE attribution.
-for f in _partners-accounts _partners-subscriptions _partners-logins _partners-hosts \
-         _accounts-subscriptions _accounts-logins _accounts-hosts \
-         _subscriptions-logins _subscriptions-hosts _logins-hosts \
-         _logicals-accounts _logicals-subscriptions _logicals-logins _logicals-hosts _logicals-partners \
-         _subscriptions-partners _subscriptions-logicals _profiles-logicals; do
+# the subscription -> partner / logical pairs + the FlowID map
+# (_profiles-logicals): the partner and logical DATE attribution
+for f in _subscriptions-partners _subscriptions-logicals _profiles-logicals; do
     [ -f "$XREF/$f.tsv" ] && srcs+=("$XREF/$f.tsv")
 done
 
-# This report writes THREE kinds of output — the two .rpt above and one cell
-# .rpt per First-seen day — so all of them must be present before the mtime
+# This report writes TWO kinds of output — the .rpt above and one cell
+# .rpt per First-seen day — so both must be present before the mtime
 # check can stand in for the lot (skip_if_fresh exits on the first fresh one).
 shopt -s nullglob
 _cells=("$FSRPT_DIR"/*.rpt)
 shopt -u nullglob
-if [ -f "$OUT" ] && [ -f "$OUT2" ] && [ ${#_cells[@]} -gt 0 ]; then
+if [ -f "$OUT" ] && [ ${#_cells[@]} -gt 0 ]; then
     skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TF" "$TT" ${srcs[@]+"${srcs[@]}"}
 fi
 rm -f "$FSRPT_DIR"/*.rpt
 
-# ---- pass A: one line per CONFIGURED entity per view -------------------------
-# view <TAB> type <TAB> sortk <TAB> key <TAB> name <TAB> dir <TAB> seen <TAB>
+# ---- pass A: one line per CONFIGURED entity -----------------------------------
+# view (always 1) <TAB> type <TAB> sortk <TAB> key <TAB> name <TAB> dir <TAB> seen <TAB>
 # link <TAB> first_ts <TAB> log   (sortk "0" = notseen, "0z" = seen-no-date,
 # "1<date>" = a day — so notseen, then nodate, sort before the days per type;
-# view 1 = transfer-only, 2 = both logs; log = Transfer, or Server for a blue
-# name dated via its crosses), plus one "#DATE <TAB> 0 <TAB> date" line per
+# log = Transfer), plus one "#DATE <TAB> 0 <TAB> date" line per
 # calendar day in the logs (the main tables list EVERY log day, blank when
 # nothing was first seen). Emission order is hash-order; the sort(1) between
 # the passes makes the output deterministic.
@@ -137,13 +112,8 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
         cu = toupper(n); k = t SUBSEP cu; ts = d " " tm
         if (!(k in first) || ts < first[k]) { first[k] = ts; fdisp[k] = n }
     }
-    function addx(tA, a, tB, b,   ka, kb) {
-        ka = tA SUBSEP toupper(a); kb = tB SUBSEP toupper(b)
-        xn[ka]++; xr[ka SUBSEP xn[ka]] = kb   # (increments separated — see conf())
-        xn[kb]++; xr[kb SUBSEP xn[kb]] = ka
-    }
-    # first transfer of the cross-referenced entity key k2 ("" if never seen);
-    # a subscription cross falls back to the prefix rule against the logged
+    # first transfer of the entity key k2 ("" if never seen); a
+    # subscription falls back to the prefix rule against the logged
     # site values — a configured name matches the logged values it prefixes
     # at a NAME-PART BOUNDARY only (2026-08-31 audit: unbounded, a parent
     # flow inherited the first-seen date of a longer-named sibling)
@@ -202,21 +172,6 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     FILENAME ~ /xref\/_subscriptions-partners\.tsv$/ { if ($1 != "" && $2 != "") SUBP2[toupper($1)] = SUBP2[toupper($1)] SUBSEP $2; next }
     FILENAME ~ /xref\/_subscriptions-logicals\.tsv$/ { if ($1 != "" && $2 != "") SUBL2[toupper($1)] = SUBL2[toupper($1)] SUBSEP $2; next }
     FILENAME ~ /xref\/_profiles-logicals\.tsv$/      { if ($1 != "" && $2 != "") PLG[toupper($1)] = $2; next }
-    FILENAME ~ /xref\/_logicals-accounts\.tsv$/      { addx("logicals", $1, "accounts", $2);      next }
-    FILENAME ~ /xref\/_logicals-subscriptions\.tsv$/ { addx("logicals", $1, "subscriptions", $2); next }
-    FILENAME ~ /xref\/_logicals-logins\.tsv$/        { addx("logicals", $1, "logins", $2);        next }
-    FILENAME ~ /xref\/_logicals-hosts\.tsv$/         { addx("logicals", $1, "hosts", $2);         next }
-    FILENAME ~ /xref\/_logicals-partners\.tsv$/      { addx("logicals", $1, "partners", $2);      next }
-    FILENAME ~ /xref\/_partners-accounts\.tsv$/      { addx("partners", $1, "accounts", $2);      next }
-    FILENAME ~ /xref\/_partners-subscriptions\.tsv$/ { addx("partners", $1, "subscriptions", $2); next }
-    FILENAME ~ /xref\/_partners-logins\.tsv$/        { addx("partners", $1, "logins", $2);        next }
-    FILENAME ~ /xref\/_partners-hosts\.tsv$/         { addx("partners", $1, "hosts", $2);         next }
-    FILENAME ~ /xref\/_accounts-subscriptions\.tsv$/ { addx("accounts", $1, "subscriptions", $2); next }
-    FILENAME ~ /xref\/_accounts-logins\.tsv$/        { addx("accounts", $1, "logins", $2);        next }
-    FILENAME ~ /xref\/_accounts-hosts\.tsv$/         { addx("accounts", $1, "hosts", $2);         next }
-    FILENAME ~ /xref\/_subscriptions-logins\.tsv$/   { addx("subscriptions", $1, "logins", $2);   next }
-    FILENAME ~ /xref\/_subscriptions-hosts\.tsv$/    { addx("subscriptions", $1, "hosts", $2);    next }
-    FILENAME ~ /xref\/_logins-hosts\.tsv$/           { addx("logins", $1, "hosts", $2);           next }
     FILENAME ~ /_files\.tsv$/ {
         if ($4 != "") dates[$4] = 1
         FCN[$1] = $16   # connection side per CoreId, for the hosts out-gate below
@@ -253,41 +208,23 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
             split(k, P, SUBSEP); t = P[1]
             ln[t]++; lv[t SUBSEP ln[t]] = P[2]   # (increment separated — see conf())
         }
-        # one line per CONFIGURED name per view. The seen SPLIT is the
-        # coverage flag (view 1 minus blue — the Entities -transfer scope);
+        # one line per CONFIGURED name. The seen SPLIT is the coverage flag;
         # the DATE is the name'\''s own first transfer (subscriptions by
-        # prefix), for a blue name in view 2 the oldest first-transfer of its
-        # xref crosses. Seen without a date -> the "nodate" bucket, so the
-        # day rows + nodate always sum to Seen.
+        # prefix). Seen without a date -> the "nodate" bucket, so the day
+        # rows + nodate always sum to Seen.
         nt = split("logicals partners subscriptions accounts logins hosts", TL, " ")
         for (i = 1; i <= nt; i++) {
             t = TL[i]
             for (j = 1; j <= cn[t]; j++) {
                 cu = ck[t SUBSEP j]; k = t SUBSEP cu
                 covseen = ((k in cov) && cov[k] == "1")
-                blue = (cres[k] == "blue")
                 d1 = xfirst(k)
                 nm = cname[k]; dl = dirl(cdir[k]); lk2 = smap[k]
-                if (covseen && !blue) {
+                if (covseen) {
                     if (d1 != "") { d = substr(d1, 1, 10); print 1, t, "1" d, d, nm, dl, 1, lk2, d1, "Transfer" }
                     else            print 1, t, "0z", "nodate", nm, dl, 1, lk2, "", ""
                 } else {
                     print 1, t, "0", "notseen", nm, dl, 0, lk2, "", ""
-                }
-                if (covseen) {
-                    d2 = d1; lg = "Transfer"
-                    if (d2 == "" && blue) {
-                        bd = ""
-                        for (m = 1; m <= xn[k] + 0; m++) {
-                            s = xfirst(xr[k SUBSEP m])
-                            if (s != "" && (bd == "" || s < bd)) bd = s
-                        }
-                        if (bd != "") { d2 = bd; lg = "Server" }
-                    }
-                    if (d2 != "") { d = substr(d2, 1, 10); print 2, t, "1" d, d, nm, dl, 1, lk2, d2, lg }
-                    else            print 2, t, "0z", "nodate", nm, dl, 1, lk2, "", ""
-                } else {
-                    print 2, t, "0", "notseen", nm, dl, 0, lk2, "", ""
                 }
             }
         }
@@ -295,31 +232,22 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     }
 ' ${srcs[@]+"${srcs[@]}"} "$TF" "$TT" \
 | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3 -k4,4 -k5,5 \
-| LC_ALL=C awk -F'\t' -v OFS='\t' -v FSD="$FSRPT_DIR" -v MAIN="$OUT.tmp" -v MAIN2="$OUT2.tmp" \
+| LC_ALL=C awk -F'\t' -v OFS='\t' -v FSD="$FSRPT_DIR" -v MAIN="$OUT.tmp" \
       -v GENDATE="$(date '+%Y-%m-%d %H:%M:%S')" '
-    # ---- pass B: split the sorted stream into the cell .rpts + the two page
-    # specs. The stream sorts view 1 (transfer-only) before view 2 (both logs);
-    # the both-logs cell files carry a both- key prefix and a 6th ROW field.
+    # ---- pass B: split the sorted stream into the cell .rpts + the page spec
     function lbl(t) {
         return (t == "logicals") ? "Logical" : \
                (t == "partners") ? "Partners" : (t == "subscriptions") ? "Subscriptions" : \
                (t == "accounts") ? "Accounts" : (t == "logins") ? "Logins" : "Hosts"
     }
     function celltitle(v, t, key, n) {
-        if (v == 2) {
-            if (key == "notseen") return lbl(t) ": Not seen — transfer & server logs (" n ")"
-            if (key == "nodate")  return lbl(t) ": Seen, no dated transfer — transfer & server logs (" n ")"
-            if (key == "seen")    return lbl(t) ": Seen — transfer & server logs (" n ")"
-            if (key == "total")   return lbl(t) ": All — transfer & server logs (" n ")"
-            return lbl(t) ": First seen " key " (" n ") — transfer & server logs"
-        }
         if (key == "notseen") return lbl(t) ": Not seen in the transfer logs (" n ")"
         if (key == "nodate")  return lbl(t) ": Seen, no dated transfer (" n ")"
         if (key == "seen")    return lbl(t) ": Seen in the transfer logs (" n ")"
         if (key == "total")   return lbl(t) ": All (" n ")"
         return lbl(t) ": First seen " key " (" n ")"
     }
-    function fkey(v, key) { return (v == 2) ? "both-" key : key }
+    function fkey(v, key) { return key }
     function flushcell(   f, i, v, t) {
         if (bn == 0) return
         split(cvt, VT, SUBSEP); v = VT[1]; t = VT[2]
@@ -376,7 +304,6 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
         if (vt != cvt) { flushtotal(cvt); flushseen(cvt) }
         cvt = vt; cck = key
         row = "ROW\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9
-        if ($1 == 2) row = row "\t" $10
         buf[++bn] = row
         tn[vt]++; tb[vt SUBSEP tn[vt]] = row   # (increment separated — see pass A conf())
         if (key != "notseen") { sn[vt]++; sb[vt SUBSEP sn[vt]] = row }
@@ -385,17 +312,15 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     END {
         flushcell(); flushtotal(cvt); flushseen(cvt)
         nt = split("logicals partners subscriptions accounts logins hosts", TL, " ")
-        # ordered day list (shared by both views)
+        # ordered day list
         nd = 0; for (d in alldates) days[++nd] = d
         for (i = 2; i <= nd; i++) { v = days[i]; j = i - 1; while (j >= 1 && days[j] > v) { days[j+1] = days[j]; j-- } days[j+1] = v }
         pagespec(1, MAIN,  "On what day each configured logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs — the same Seen/Not seen split as the home status tables. Per column: Seen + Not seen = Total; the day rows plus the no-date row sum to Seen.")
-        pagespec(2, MAIN2, "On what day each configured logical flow, partner, subscription, account, login and remote host was first seen — including the server-log-only (blue) names, each dated by the OLDEST first transfer of its cross-referenced entities. Per column: Seen + Not seen = Total; the day rows plus the no-date row sum to Seen.")
     }
 '
-# The awk wrote both pages to .tmp (after the per-cell rpts); the renames here
-# publish them only once the whole run completed — a killed run leaves the old
+# The awk wrote the page to .tmp (after the per-cell rpts); the rename here
+# publishes it only once the whole run completed — a killed run leaves the old
 # complete reports with stale mtimes (rebuild) instead of fresh truncated ones.
 mv "$OUT.tmp" "$OUT"
-mv "$OUT2.tmp" "$OUT2"
 
-echo "Data written to $OUT + $OUT2 (+ $(ls "$FSRPT_DIR" | wc -l | tr -d ' ') cell rpt(s) in $FSRPT_DIR)." >&2
+echo "Data written to $OUT (+ $(ls "$FSRPT_DIR" | wc -l | tr -d ' ') cell rpt(s) in $FSRPT_DIR)." >&2

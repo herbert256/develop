@@ -60,24 +60,7 @@ for member in logicals partners applications domains bl; do
     [ "$member" = partners ] && mlabel="External Partners"
     [ "$member" = applications ] && mlabel="Internal Applications"
     [ "$member" = domains ] && mlabel="Internal Domains"
-    # The Server (server-log-only) entities are result==blue in the member's base
-    # cache (bin/seen-in-server-log.sh). The coverage TSVs already count them as seen
-    # (showseen marks a blue entity seen; the PDA TSVs mark them too), so the
-    # Seen / Not-seen cells are correct as-is; the Server / Transfer split below
-    # tells blue apart from real transfers by the base result column ($bluef).
-    sbf=""
-    case $member in
-        subscriptions) sbf=_subscriptions ;; accounts) sbf=_accounts ;;
-        logins) sbf=_logins ;; hosts) sbf=_hosts ;;
-        logicals) sbf=_logicals ;;
-        partners) sbf=_partners ;; applications) sbf=_apps ;; domains) sbf=_domains ;;
-        bl) sbf=_bl ;;
-    esac
-    bluef="$DATA/flow-manager/base/$sbf.tsv"; { [ -n "$sbf" ] && [ -f "$bluef" ]; } || bluef=/dev/null
     for key in configured; do
-        # The Server/Transfer 3-way-split keys feed the entities.html (raw
-        # direction I/O) and PDA (merged direction, with the -inonly/-both/
-        # -outonly partition variants) Seen & Not seen / Result Seen cells.
         # The -inonly/-both/-outonly variants are PDA-only, skipped for
         # non-PDA below. (result-*-failed keys were REMOVED 2026-07: the
         # Result pair cells link only their -processed half.)
@@ -101,39 +84,17 @@ for member in logicals partners applications domains bl; do
         # Applications' figures were pointed at their own Entities views — so
         # nothing links these cell pages any more and they are not built.
         case $key in status-error|status-warning|status-ok) continue ;; esac
-        # Likewise the two toggle-OFF (transfer-only) keys: the Entities pages'
-        # SCOPE tab gave those figures a view of their own — Not seen − the
-        # server-log-only names IS <entity>-not-seen-transfer, and Warning +
-        # Server IS <entity>-warning-transfer — so the home links those instead.
-        case $key in notseen-transfer|status-warning-server) continue ;; esac
         # the pda members' per-side cells (the PDA page's In & Out table)
         # filter the MERGED rows by SIDE — In = flowing in at all (I or B),
         # Out = flowing out at all (O or B) — so a both-ways item appears
         # on both side pages; the entity members keep the raw-row filter.
         case $member in partners|applications|domains)
             case $key in
-                configured-in|notseen-in|seen-in|result-in-*|status-server-in|status-transfer-in|status-transfer-failed-in)     mdirf=IB ;;
-                configured-out|notseen-out|seen-out|result-out-*|status-server-out|status-transfer-out|status-transfer-failed-out) mdirf=OB ;;
+                configured-in|notseen-in|seen-in|result-in-*)     mdirf=IB ;;
+                configured-out|notseen-out|seen-out|result-out-*) mdirf=OB ;;
             esac ;;
         esac
         case $key in
-            # Server = the fakes (no seen/outcome filter — the fake block picks
-            # them); Transfer = seen & NOT fake; Transfer-failed = & last outcome
-            # F. Direction: -in/-out set the raw filter (entities); the PDA merged
-            # IB/OB/I/B/O forms come from mdirf above (which forces dirf="").
-            status-server|status-server-in|status-server-out|status-server-inonly|status-server-both|status-server-outonly)
-                                  seenf=""; outf=""; dirf=""
-                                  case $key in status-server-in) dirf=I ;; status-server-out) dirf=O ;; esac ;;
-            status-transfer-failed|status-transfer-failed-in|status-transfer-failed-out|status-transfer-failed-inonly|status-transfer-failed-both|status-transfer-failed-outonly)
-                                  seenf=1;  outf=F;  dirf=""
-                                  case $key in status-transfer-failed-in) dirf=I ;; status-transfer-failed-out) dirf=O ;; esac ;;
-            status-transfer|status-transfer-in|status-transfer-out|status-transfer-inonly|status-transfer-both|status-transfer-outonly)
-                                  seenf=1;  outf=""; dirf=""
-                                  case $key in status-transfer-in) dirf=I ;; status-transfer-out) dirf=O ;; esac ;;
-            status-error|status-warning|status-ok)  dirf=""; seenf=""; outf="" ;;
-            # the home tables' transfer-only (toggle-OFF) figures: both start
-            # from the full merged stream, filtered by result below
-            notseen-transfer|status-warning-server) dirf=""; seenf=""; outf="" ;;
             configured)           dirf=""; seenf=""; outf="" ;;
             configured-in)        dirf=I;  seenf=""; outf="" ;;
             configured-out)       dirf=O;  seenf=""; outf="" ;;
@@ -219,54 +180,6 @@ for member in logicals partners applications domains bl; do
             rows=$(awk -F'\t' -v d="$dirf" -v s="$seenf" -v o="$outf" \
                 '(d=="" || $2==d) && (s=="" || $3==s) && (o=="" || $6==o)' "$tsv")
         fi
-        # the Status cells: keep only the items whose result field (the base
-        # caches' third column, bin/result.sh) matches the cell's color — the
-        # rows come from the same merged/deduped stream as the Configured
-        # Total page, so the page count equals the table cell.
-        case $key in status-*)
-            # Server (light blue) = base result==blue (the Server -> Transfer
-            # step, bin/seen-in-server-log.sh) — the Server page lists exactly these;
-            # Transfer = seen via a REAL transfer (blue excluded); Error/Warning/
-            # Ok = the base result color (blue is a distinct 4th value, so it
-            # never lands there). Server + Error + Warning + Ok = Total, matching
-            # the table cells. $bluef / $sbf were computed at the member top.
-            case $key in
-                status-server*)
-                    # Server = base result==blue (server-log only)
-                    rows=$(printf '%s\n' "$rows" | awk -F'\t' -v bf="$bluef" '
-                        BEGIN { while ((getline l < bf) > 0) { nn=split(l,a,"\t"); if (nn>=3 && a[3]=="blue") blue[toupper(a[1])]=1 } close(bf) }
-                        toupper($1) in blue') ;;
-                status-transfer*)
-                    # Transfer = seen via a REAL transfer (already seen[/outcome]-
-                    # filtered above), blue removed. Transfer + Server = Seen.
-                    rows=$(printf '%s\n' "$rows" | awk -F'\t' -v bf="$bluef" '
-                        BEGIN { while ((getline l < bf) > 0) { nn=split(l,a,"\t"); if (nn>=3 && a[3]=="blue") blue[toupper(a[1])]=1 } close(bf) }
-                        !(toupper($1) in blue)') ;;
-                status-warning-server)
-                    # Warning INCLUDING the server-log-only entities (orange OR
-                    # blue) — the home tables' transfer-only Warning figure
-                    rows=$(printf '%s\n' "$rows" | awk -F'\t' -v bf="$bluef" '
-                        BEGIN { while ((getline l < bf) > 0) { nn=split(l,a,"\t"); if (nn>=3) res[toupper(a[1])]=a[3] } close(bf) }
-                        res[toupper($1)]=="orange" || res[toupper($1)]=="blue"') ;;
-                *)  # status-error/warning/ok: the base-cache result color (blue naturally excluded)
-                    if [ -n "$sbf" ] && [ -f "$bluef" ]; then
-                        case $key in status-error) sres=red ;; status-warning) sres=orange ;; *) sres=green ;; esac
-                        rows=$(printf '%s\n' "$rows" | awk -F'\t' -v want="$sres" -v bf="$bluef" '
-                            BEGIN { while ((getline l < bf) > 0) { split(l, a, "\t"); res[toupper(a[1])] = a[3] } }
-                            res[toupper($1)] == want')
-                    else
-                        rows=""
-                    fi ;;
-            esac
-        ;; esac
-        # Not seen in the TRANSFER logs = never seen at all (seen==0) OR seen
-        # only via the server log (base result blue) — the home tables'
-        # transfer-only Not seen figure
-        case $key in notseen-transfer)
-            rows=$(printf '%s\n' "$rows" | awk -F'\t' -v bf="$bluef" '
-                BEGIN { while ((getline l < bf) > 0) { nn=split(l,a,"\t"); if (nn>=3 && a[3]=="blue") blue[toupper(a[1])]=1 } close(bf) }
-                $3==0 || (toupper($1) in blue)')
-        ;; esac
         [ -n "$rows" ] || continue
         if [ "$member" = partners ]; then
             # every External Partners page sorts on the partner name — the

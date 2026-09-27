@@ -31,13 +31,13 @@
 #     the shared host/account ring: that reds it only after THREE FAILED
 #     POLLS IN A ROW of its own (2026-09-05, user rule — one or two failed
 #     polls are a blip); below three the connection failures are discounted
-#     and the newest other evidence decides; blue/_connhold.tsv lists the
+#     and the newest other evidence decides; colour/_connhold.tsv lists the
 #     flows kept green by it
 #     never transferred, but a UC3 whose own polls FAIL with a "Connection
 #     failure while <flow> tried to connect …" line on THREE POLLS IN A ROW
 #     (newer than its newest successful poll, or none at all)
 #                                           -> red   (2026-09-10, user rule:
-#     a flow that polls and cannot connect is broken, not idle — blue/orange
+#     a flow that polls and cannot connect is broken, not idle — orange
 #     would hide it; the newest failure is its _redflip evidence stamp, so
 #     the home worklist and its error page show it as a server-log failure)
 #
@@ -64,17 +64,10 @@ source "$ROOT/bin/fastawk.sh"   # route unqualified `awk` to mawk when installed
 BASE="$ROOT/data/flow-manager/base"
 XREF="$ROOT/data/flow-manager/xref"
 FILES="$ROOT/data/transfer/cache/_files.tsv"
-UNK="$ROOT/data/unknown"
-# SSH-logon-seen names (bin/build/seen-in-server-log.sh Step F0): a login/account/IP still
-# ORANGE after the rollup below, named in the server SSH-logon lines, AND with no
-# real transfer data (no green/red connected subscription) is server-log-only ->
-# blue. A MIXED entity that DID transfer on some subscription stays orange, so a
-# blue entity never carries a Last transfer.
-LOGON_A="$UNK/logon-accounts.tsv"; LOGON_L="$UNK/logon-logins.tsv"; LOGON_I="$UNK/logon-ips.tsv"
 
 [ -f "$BASE/_subscriptions.tsv" ] || { echo "result.sh: no $BASE/_subscriptions.tsv (run bin/flow-manager.sh first) — nothing to do." >&2; exit 0; }
 
-# cmp-guarded commit (the seen-in-server-log.sh pattern): a no-change run must keep
+# cmp-guarded commit: a no-change run must keep
 # the base caches' mtimes, or every downstream skip_if_fresh/ensure_parsed
 # that watches them re-runs on every build (details rpts, the server
 # per-entity mention rescan, cross-reference, the unknown-* reports, ...).
@@ -87,17 +80,21 @@ commit_tmp() {   # $1 = final path; expects $1.tmp
 # A UC3 subscription the server log shows POLLING SUCCESSFULLY — "Applying the
 # search pattern … for transfer site '…': N file(s) …" — with no NEWER E-level
 # mention is WORKING from our point of view, even when there was never a file
-# to fetch. It has no transfer rows, so stage 1 would leave it blue: flip it
-# GREEN instead. data/<env>/blue/_greenpoll.tsv records the names stage 1
+# to fetch. It has no transfer rows, so stage 1 would leave it orange: flip it
+# GREEN instead. data/colour/_greenpoll.tsv records the names stage 1
 # actually FLIPPED (candidates with real transfers stay untouched and out of
-# it) — the evidence block below keeps those detail pages' server-log card.
+# it).
 # Source: the per-name server mention caches (last 25 rows + last 10
 # Error/Warn per subscription, bin/server/parse.sh) — present once the server
 # parse ran; a missing dir just leaves the list empty.
 SUBMENT="$ROOT/data/server/cache/subscriptions"
-BLUEDIR="$ROOT/data/blue"
-POLLOK="$BLUEDIR/_greenpoll.tsv"
-POLLCAND="$BLUEDIR/_greenpoll.cand"   # candidates; stage 1 writes the final list
+# data/colour/ — this step's working files and sidecars (the red-flip, clean-poll,
+# ring-attribution evidence); data/blue/ until 2026-09-27, when the BLUE status
+# (server-log-only entities) was removed — the old directory is dropped here
+COLDIR="$ROOT/data/colour"
+rm -rf "$ROOT/data/blue"
+POLLOK="$COLDIR/_greenpoll.tsv"
+POLLCAND="$COLDIR/_greenpoll.cand"   # candidates; stage 1 writes the final list
 # The UC3 CONNECTION-FAILURE STREAK (2026-09-05, user rule): a "Connection
 # failure while <UC3 flow> tried to connect to remote host …" line reds the
 # flow only when it happened on THREE POLLS IN A ROW — each such line is one
@@ -112,21 +109,21 @@ POLLCAND="$BLUEDIR/_greenpoll.cand"   # candidates; stage 1 writes the final lis
 # last transfer as the streak, and below three DISCOUNTS the connection
 # failures: the newest of the remaining evidence decides. CONNHOLD is the
 # sidecar of flows the rule kept green (name, stamp, streak).
-CONNCAND="$BLUEDIR/_connfail.cand"
-CONNHOLD="$BLUEDIR/_connhold.tsv"
+CONNCAND="$COLDIR/_connfail.cand"
+CONNHOLD="$COLDIR/_connhold.tsv"
 # The red-flip sidecar (2026-08): every subscription the after-last-transfer
 # rule below flips green -> red, with the ring evidence stamp that did it
 # (name <TAB> "YYYY-MM-DD HH:MM:SS…"). The UC status per-hour walkers
 # (uc{1,3,4}-status.sh) read it so their sidecars apply the same flip at the
 # evidence hour — the last sidecar row must equal the report's STAT figures.
-REDFLIP="$BLUEDIR/_redflip.tsv"
-mkdir -p "$BLUEDIR"
+REDFLIP="$COLDIR/_redflip.tsv"
+mkdir -p "$COLDIR"
 : > "$CONNCAND"
 {
     # every UC3 flow: UC3-NAMED or DERIVED (xref/_subscriptions-ucderived.tsv;
     # the production hybrid flows carry no UC prefix — 2026-08-31 audit: a
     # UC3*.tsv glob built no candidate for them, so a cleanly polling hybrid
-    # pull flow could neither be kept green nor flip blue -> green)
+    # pull flow could neither be kept green nor flip orange -> green)
     if [ -d "$SUBMENT" ]; then
         { awk -F'\t' '$1 ~ /^UC3/ { print $1 }' "$BASE/_subscriptions.tsv"
           [ -f "$XREF/_subscriptions-ucderived.tsv" ] && awk -F'\t' '$2 == "UC3" { print $1 }' "$XREF/_subscriptions-ucderived.tsv"
@@ -141,7 +138,7 @@ mkdir -p "$BLUEDIR"
                             if (t > e) e = t
                             if (iscf) cfs[t] = 1; else if (t > encf) encf = t }
                 # name <TAB> newest successful poll <TAB> 1 when no E-level
-                # mention is newer. The FLAG drives the blue rule (a UC3 that
+                # mention is newer. The FLAG drives the clean-poll rule (a UC3 that
                 # never transferred); the STAMP drives the green-keep below,
                 # where the comparison is against the red-flip evidence rather
                 # than against E-level mentions.
@@ -162,9 +159,7 @@ mkdir -p "$BLUEDIR"
 # the base cache and the view footer counts the rows, and the two disagree.
 # bin/build/publish.sh's check_status_consistency catches exactly that.
 #
-# So the transfer log DISCOVERS entities as well, the way the server log
-# already does (bin/build/seen-in-server-log.sh appends its unknown names as
-# blue). These are not blue — they have transferred — so they are appended
+# So the transfer log DISCOVERS entities: they are appended
 # with an EMPTY result and coloured below like any other row: a subscription by
 # stage 1, a host by the own-transfer rule after the rollups.
 #
@@ -194,8 +189,7 @@ discover_logged() {   # $1 = base name  $2 = the awk condition picking its colum
         "$(printf '%s\n' "$n" | wc -l | tr -d ' ')" "base/_$1.tsv" >&2
     # the per-entity server MENTION caches were built before this step and do
     # not know the new names — their detail pages would lose the server-log
-    # table. The same marker seen-in-server-log.sh drops for an appended name;
-    # bin/build.sh rescans once, right after this step.
+    # table. bin/build.sh rescans once, right after this step.
     : > "$ROOT/data/server/cache/.rescan-mentions" 2>/dev/null || true
 }
 discover_logged subscriptions sub
@@ -235,8 +229,8 @@ source "$ROOT/bin/renames.sh"   # rn_canon_pfx: the log names a flow as it was c
 #      leg's site (col 6, already rename-canonical; two sites -> neither)
 # A line that attributes to NOTHING cannot redden a flow we cannot identify —
 # its E-level residue goes to the ring's own entity instead (orphan_red).
-RINGATTR="$BLUEDIR/_ringattr.tsv"    # subscription <TAB> newest attributed E-level stamp
-RINGORPH="$BLUEDIR/_ringorphan.tsv"  # ring kind <TAB> name <TAB> newest E-level line attributable to NO flow
+RINGATTR="$COLDIR/_ringattr.tsv"    # subscription <TAB> newest attributed E-level stamp
+RINGORPH="$COLDIR/_ringorphan.tsv"  # ring kind <TAB> name <TAB> newest E-level line attributable to NO flow
 # the SESSION VOTE itself, kept for the two wholesale joins (2026-09-12, user
 # rule: "for server errors with a host, read all server log lines with the
 # same session-id to find the right subscription"): session <TAB> the ONE
@@ -247,7 +241,7 @@ RINGORPH="$BLUEDIR/_ringorphan.tsv"  # ring kind <TAB> name <TAB> newest E-level
 # host/account/login (_build_kaputflip, went-kaput.sh). A production host
 # shared by two flows reddened the wrong one on an authentication failure
 # whose session named the other flow's transfer site.
-SESSVOTE="$BLUEDIR/_sessvote.tsv"
+SESSVOTE="$COLDIR/_sessvote.tsv"
 _build_ringattr() {
     local rings=() f tmp
     for f in "$SRVC"/hosts/*_err_warn.tsv "$SRVC"/accounts/*_err_warn.tsv "$SRVC"/logins/*_err_warn.tsv; do
@@ -363,7 +357,7 @@ _build_ringattr
 # bdt via ringmax; this file carries only the connected-ring side. Host rings
 # join only for a single-host flow (two hosts = unattributable, as
 # everywhere), the endpoint's forward addresses included.
-KAPUTFLIP="$BLUEDIR/_kaputflip.tsv"   # subscription <TAB> newest connected-ring E stamp <TAB> 1 = a connection failure (deploy-classified flows absent)
+KAPUTFLIP="$COLDIR/_kaputflip.tsv"   # subscription <TAB> newest connected-ring E stamp <TAB> 1 = a connection failure (deploy-classified flows absent)
 _build_kaputflip() {
     local rings=() f tmp
     for f in "$SRVC"/accounts/*_err_warn.tsv "$SRVC"/logins/*_err_warn.tsv "$SRVC"/hosts/*_err_warn.tsv; do
@@ -487,7 +481,7 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
         if (s != "" && $2 != "Failed" && $2 != "Expired" && $6 != "") { e9 = ($24 != "") ? $24 : $4 " " $5; if (!(s in le) || e9 > le[s]) le[s] = e9 }
         next
     }
-    FILENAME == ARGV[2] { if ($1 != "") { if ($3 + 0 == 1) po[toupper($1)] = 1   # blue -> green (never transferred)
+    FILENAME == ARGV[2] { if ($1 != "") { if ($3 + 0 == 1) po[toupper($1)] = 1   # orange -> green (never transferred)
                                           if ($2 != "") pt[toupper($1)] = $2 }   # newest successful poll, for the green-keep
                           next }   # UC3 clean-poll candidates (see above)
     FILENAME == ARGV[3] { if ($1 != "" && $2 != "") RA[toupper($1)] = $2; next }   # subscription -> newest connected-ring Error attributed to it
@@ -534,8 +528,8 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
             # A UC3 that has POLLED CLEANLY SINCE that Error/Warn is working:
             # "0 file(s) were found of which 0 matched the pattern" is a
             # successful poll with nothing to fetch, and it is the newest
-            # thing the log says about the flow. The same evidence the blue
-            # rule above trusts for a UC3 that never transferred, applied to
+            # thing the log says about the flow. The same evidence the clean-poll
+            # rule below trusts for a UC3 that never transferred, applied to
             # one that has: the flip is skipped and the subscription stays
             # green (2026-08).
             # THE UC3 CONNECTION-FAILURE STREAK (2026-09-05, user rule): when
@@ -577,7 +571,7 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
         # rule): no File at all, but its own polls fail — "Connection failure
         # while <flow> tried to connect …" — on THREE POLLS IN A ROW: three
         # connection failures newer than its newest successful poll, or with
-        # no successful poll at all. Blue/orange would read "never seen", but
+        # no successful poll at all. Orange would read "never seen", but
         # a flow that polls and cannot connect is BROKEN, not idle: RED, with
         # the newest failure as the evidence stamp (the _redflip sidecar), so
         # the home worklist lists it under the server-log failures and its
@@ -588,14 +582,10 @@ awk -F'\t' -v gp="$POLLOK.tmp" -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srv
             for (i4 = 1; i4 <= m4; i4++) if (Z4[i4] != "" && (CFP[k] == "" || Z4[i4] > CFP[k])) { n4++; if (Z4[i4] > b4) b4 = Z4[i4] }
             if (n4 >= 3) { r = "red"; print $1 "\t" b4 > rf }
         }
-        if ($3 == "blue" && r == "orange") r = "blue"   # preserve the server-log-only marking ONLY over orange — an entity whose own data says green/red is already seen (bin/build/seen-in-server-log.sh runs first)
         # The UC3 clean-poll rule: polling verified working, simply nothing
-        # to fetch. It fires on ORANGE as well as BLUE (2026-08): the blue
-        # marking is no longer a precondition, because seen-in-server-log.sh
-        # now leaves these rows alone to stop the two steps rewriting the
-        # base caches on every build. The evidence is unchanged — `po` is
+        # to fetch. It fires on a never-seen (ORANGE) flow; `po` is
         # recomputed from the mention caches each run.
-        if ((r == "blue" || r == "orange") && (k in po)) { r = "green"; print $1 > gp }
+        if (r == "orange" && (k in po)) { r = "green"; print $1 > gp }
         print $1 "\t" $2 "\t" r
     }
 ' "$FILES" "$POLLCAND" "$RINGATTR" "$KAPUTFLIP" "$CONNCAND" "$BASE/_subscriptions.tsv" > "$BASE/_subscriptions.tsv.tmp" \
@@ -613,74 +603,37 @@ rm -f "$POLLCAND" "$CONNCAND"
 # (col 1 = the entity, col 2 = a connected subscription) against the results
 # just computed: all green -> green, any red -> red, else orange (an entity
 # with no connected subscriptions stays orange).
-rollup() {   # $1 = base name (accounts|logins|...)  $2 = its <item>-subscriptions pair cache  $3 = optional SSH-logon-seen list (orange -> blue)
-    local basef="$BASE/_$1.tsv" pair="$XREF/_$2.tsv" logon="${3:-/dev/null}"
+rollup() {   # $1 = base name (accounts|logins|...)  $2 = its <item>-subscriptions pair cache
+    local basef="$BASE/_$1.tsv" pair="$XREF/_$2.tsv"
     [ -f "$basef" ] || return 0
-    [ -f "$logon" ] || logon=/dev/null
     if [ ! -f "$pair" ]; then
-        awk -F'\t' '
-            FILENAME == ARGV[1] { if ($1 != "#") lg[toupper($1)] = 1; next }
-            { r = ($3=="blue" ? "blue" : "orange"); if ((toupper($1) in lg) && r=="orange") r="blue"; print $1 "\t" $2 "\t" r }
-        ' "$logon" "$basef" > "$basef.tmp" && commit_tmp "$basef"
+        awk -F'\t' '{ print $1 "\t" $2 "\torange" }' "$basef" > "$basef.tmp" && commit_tmp "$basef"
         return 0
     fi
     awk -F'\t' '
-        FILENAME == ARGV[1] { if ($1 != "") gp[toupper($1)] = 1; next }   # the UC3 clean-poll greens (blue/_greenpoll.tsv)
+        FILENAME == ARGV[1] { if ($1 != "") gp[toupper($1)] = 1; next }   # the UC3 clean-poll greens (colour/_greenpoll.tsv)
         FILENAME == ARGV[2] { sres[toupper($1)] = $3; next }            # subscription -> its result
         FILENAME == ARGV[3] {                                          # entity -> connected subscriptions
             k = toupper($1); u = toupper($2); s = sres[u]
             # A CLEAN-POLL green counts like ORANGE here (2026-08): it is green
             # because the server log shows it POLLING, having moved no file at
-            # all — the same reason a blue subscription counts like orange, and
-            # the same doctrine (server-log discovery never sets a health
-            # verdict). Letting it through made the rollup call an entity SEEN
-            # that has never transferred, which seen-in-server-log.sh re-marked
-            # blue on the next run: the two steps then rewrote the base caches
-            # every build and every report reading them rebuilt for nothing.
+            # all: server-log evidence never sets a health verdict, and an
+            # entity whose only flows never moved a file is not SEEN.
             if (s == "green" && (u in gp)) s = "orange"
             if (s == "") next                                          # unknown subscription: ignore
             n[k]++
             if (s == "green") g[k]++
-            else if (s == "red") rd[k]++                               # a BLUE (server-log-only) subscription counts like orange here: the blue discovery must never change a red/green health verdict — only REAL transfer data colors the rollup
-            if (s == "green" || s == "red") hd[k] = 1                  # REAL transfer data behind this entity (blue/orange subs carry none)
+            else if (s == "red") rd[k]++                               # only REAL transfer data colours the rollup
             next
         }
-        FILENAME == ARGV[4] { if ($1 != "#") lg[toupper($1)] = 1; next }   # SSH-logon-seen names (bin/build/seen-in-server-log.sh Step F0)
         {
             k = toupper($1)
             r = "orange"
             if ((k in rd) && rd[k] > 0) r = "red"
             else if ((k in n) && n[k] > 0 && g[k] == n[k]) r = "green"
-            # preserve the own server-log-only marking ONLY when no connected
-            # subscription has REAL data — an entity whose subs logged actual
-            # files (green or real red) is already seen, so its rollup wins.
-            if ($3 == "blue" && !(k in hd)) r = "blue"
-            # SSH-logon evidence: a still-ORANGE login/account named in the
-            # server SSH-logon lines is server-log-seen -> blue — but ONLY when it
-            # has NO real transfer data (no green/red connected subscription).
-            # A MIXED entity (orange only because SOME subscription is unseen, yet
-            # it DID transfer on another) stays orange, so blue always means
-            # "never transferred" — no blue row can carry a Last transfer.
-            if ((k in lg) && r == "orange" && !(k in hd)) r = "blue"
             print $1 "\t" $2 "\t" r
         }
-    ' "$POLLOK" "$BASE/_subscriptions.tsv" "$pair" "$logon" "$basef" > "$basef.tmp" && commit_tmp "$basef"
-}
-# An entity marked BLUE that nevertheless has files of its own: re-colour it by
-# its own newest file (green/red), because blue asserts the opposite. $1 = base
-# name, $2 = the _files.tsv column holding that entity (3 account, 12 dest_site,
-# 14 login, 15 host). Touches ONLY blue rows, so nothing else can move.
-blue_with_own_transfers() {   # $1 base name  $2 _files column
-    local basef="$BASE/_$1.tsv"
-    [ -f "$basef" ] || return 0
-    awk -F'\t' -v C="$2" '
-        FILENAME == ARGV[1] { if ($C != "" && $6 != "") { k = toupper($C)
-                                  if ($6 >= sk[k]) { sk[k] = $6; oc[k] = $2 } }
-                              next }
-        { k = toupper($1)
-          if ($3 == "blue" && (k in oc)) $3 = (oc[k] == "Failed" || oc[k] == "Expired") ? "red" : "green"
-          print $1 "\t" $2 "\t" $3 }
-    ' "$FILES" "$basef" > "$basef.tmp" && commit_tmp "$basef"
+    ' "$POLLOK" "$BASE/_subscriptions.tsv" "$pair" "$basef" > "$basef.tmp" && commit_tmp "$basef"
 }
 # The same own-transfer rule for a host with NO connected subscriptions — in
 # practice only one discovered by stage 0, since every configured host is in the
@@ -704,29 +657,25 @@ host_own_unpaired() {
 }
 # the whitelist exception: an IP is colored by ITS OWN transfers (the last
 # real transfer with that remote host), never by its partner's flows
-white_own() {   # $1 = optional SSH-logon-seen source-IP list (orange -> blue)
-    local basef="$BASE/_white.tsv" logon="${1:-/dev/null}"
+white_own() {
+    local basef="$BASE/_white.tsv"
     [ -f "$basef" ] || return 0
-    [ -f "$logon" ] || logon=/dev/null
     awk -F'\t' '
         FILENAME == ARGV[1] {
             h = $15
             if (h != "" && $6 != "" && $6 >= sk[h]) { sk[h] = $6; oc[h] = $2 }
             next
         }
-        FILENAME == ARGV[2] { if ($1 != "#") lg[$1] = 1; next }   # SSH-logon-seen source IPs (bin/build/seen-in-server-log.sh Step F0)
         {
             r = "orange"
             if ($1 in oc) r = (oc[$1] == "Failed" || oc[$1] == "Expired") ? "red" : "green"   # Waiting-last = green; Expired-last = red (like the subscription rule)
-            if ($3 == "blue" && r == "orange") r = "blue"   # own data wins over the server-log marking
-            if (($1 in lg) && r == "orange") r = "blue"     # SSH-logon-seen IP that never carried a real transfer -> blue
             print $1 "\t" $2 "\t" r
         }
-    ' "$FILES" "$logon" "$basef" > "$basef.tmp" && commit_tmp "$basef"
+    ' "$FILES" "$basef" > "$basef.tmp" && commit_tmp "$basef"
 }
 
-rollup accounts accounts-subscriptions "$LOGON_A"
-rollup logins   logins-subscriptions   "$LOGON_L"
+rollup accounts accounts-subscriptions
+rollup logins   logins-subscriptions
 rollup hosts    hosts-subscriptions
 # A host DISCOVERED in the transfer log (stage 0) has no configured
 # subscriptions, so the rollup above leaves it ORANGE — "never seen", which is
@@ -735,25 +684,15 @@ rollup hosts    hosts-subscriptions
 # whitelisted address. Scoped to hosts absent from the pair cache, so no
 # configured host can change colour (all 78 acceptance hosts are in it).
 host_own_unpaired
-white_own "$LOGON_I"
-# BLUE MEANS "NEVER TRANSFERRED" (CLAUDE.md), so an entity with transfer rows of
-# its own can never be blue — whatever the rollup made of its connected
-# subscriptions. The rollup only sees a connected subscription's data (hd[]), so
-# an entity whose own legs are logged but whose flows carry none kept a blue it
-# had contradicted: one acceptance login (FE000509, 26 rows) sat blue in the
-# Entities view AND in its Summary, which is what made the view list it twice.
-# Colour those by their own last file, the white_own rule, per entity type.
-# 2026-08: found when the profile rename fold restored ~64k attributions and the
-# entity turned up seen; it is a latent contradiction, not a rename artefact.
-# PRUNE the estate of withdrawn discoveries (2026-08). Both colour steps APPEND
-# entities the logs revealed — seen-in-server-log.sh its blues, stage 0 above its
-# transfer discoveries — and nothing ever removed one whose evidence went away:
-# the row simply lost its blue and settled as ORANGE, a phantom "configured but
-# never seen" flow that is not configured at all, inflating every estate figure.
-# (One truncated server token folded correctly by a later rename rule left
-# exactly that behind.) A row survives when it is CONFIGURED (the export
-# snapshot flow-manager takes before either step appends), or still marked
-# blue this run, or backed by real transfer data. Nothing else is an entity.
+white_own
+# PRUNE the estate of withdrawn discoveries (2026-08). Stage 0 above APPENDS
+# the entities the transfer log revealed, and nothing ever removed one whose
+# evidence went away: the row settled as ORANGE, a phantom "configured but
+# never seen" flow that is not configured at all, inflating every estate
+# figure. A row survives when it is CONFIGURED (the export snapshot
+# flow-manager takes before stage 0 appends) or backed by real transfer data.
+# Nothing else is an entity. (Until 2026-09-27 the server-log BLUE step
+# appended too; the first run after its removal prunes what it left behind.)
 prune_withdrawn() {   # $1 = base name  $2 = the _files.tsv column (0 = no own data)
     local basef="$BASE/_$1.tsv" conf="$BASE/.configured.tsv"
     [ -f "$basef" ] || return 0
@@ -762,7 +701,7 @@ prune_withdrawn() {   # $1 = base name  $2 = the _files.tsv column (0 = no own d
         FILENAME == ARGV[1] { if ($1 == L && $2 != "") CONF[toupper($2)] = 1; next }
         FILENAME == ARGV[2] { if (C + 0 > 0 && $C != "") HAS[toupper($C)] = 1; next }
         { k = toupper($1)
-          if ((k in CONF) || $3 == "blue" || (k in HAS)) { print; next }
+          if ((k in CONF) || (k in HAS)) { print; next }
           n++ }
         END { if (n) printf "result.sh: pruned %d withdrawn discover(y/ies) from base/_%s.tsv.\n", n, "'"$1"'" > "/dev/stderr" }
     ' "$conf" "$FILES" "$basef" > "$basef.tmp" && commit_tmp "$basef"
@@ -780,7 +719,7 @@ prune_withdrawn logins        14
 # with no flow to carry it the entity itself must. RED unless it has moved a
 # file OK since: a later OK transfer says the problem is over, exactly the
 # "recovered since" test the unresolved server reports apply. E-level only
-# (blue/_ringorphan.tsv holds no warnings) and it never touches a row that is
+# (colour/_ringorphan.tsv holds no warnings) and it never touches a row that is
 # already red.
 orphan_red() {   # $1 = base/ring name (hosts|accounts|logins)  $2 = its _files.tsv column  $3 = "out" = the recovery test counts OUT-side files only (the hosts rule)
     local basef="$BASE/_$1.tsv"
@@ -800,10 +739,6 @@ orphan_red() {   # $1 = base/ring name (hosts|accounts|logins)  $2 = its _files.
     ' "$RINGORPH" "$FILES" "$basef" > "$basef.tmp" && commit_tmp "$basef"
 }
 
-blue_with_own_transfers accounts      3
-blue_with_own_transfers logins       14
-blue_with_own_transfers hosts        15
-blue_with_own_transfers subscriptions 12
 orphan_red hosts    15 out
 orphan_red accounts  3
 orphan_red logins   14
@@ -813,43 +748,9 @@ rollup apps     apps-subscriptions
 rollup domains  domains-subscriptions
 rollup bl       bl-subscriptions
 
-# ---- blue-evidence files -----------------------------------------------------
-# For every entity the rollups left BLUE (server-log-seen, never in the transfer
-# log), record the evidencing server-log line — "date time <TAB> message" — into
-# data/<env>/blue/<type>/<name>.txt, read by the detail-page "seen in the server
-# log" box. The evidence map (latest line per type+value) is produced by
-# bin/build/seen-in-server-log.sh, which ran just before. Rewritten from scratch each run, so a
-# name that stopped being blue leaves no stale file behind.
-BLUEDIR="$ROOT/data/blue"
-EVID="$BLUEDIR/_evidence.tsv"
-# (no whitelisted-ip entry: IPs have no detail pages, so nothing ever read
-# blue/whitelisted-ip/*.txt — dropped 2026-07)
-for _bt in account:accounts subscription:subscriptions login:logins host:hosts application:apps domain:domains logical:logicals partner:partners bl:bl; do
-    _ty=${_bt%%:*}; _bf="$BASE/_${_bt#*:}.tsv"; _dir="$BLUEDIR/$_ty"
-    rm -rf "$_dir"
-    { [ -f "$_bf" ] && [ -f "$EVID" ] && awk -F'\t' '$3=="blue"{f=1} END{exit !f}' "$_bf"; } || continue
-    mkdir -p "$_dir"
-    awk -F'\t' -v ty="$_ty" -v dir="$_dir" '
-        FILENAME==ARGV[1] { if ($1==ty && !($2 in ev)) ev[$2]=$3 "\t" $4; next }   # evidence: already latest-first per (type,value)
-        FILENAME==ARGV[2] && $3=="blue" {
-            k=toupper($1); if (ty=="host") k=tolower($1); if (ty=="whitelisted-ip") k=$1
-            if (k in ev) { f=dir "/" $1 ".txt"; print ev[k] > f; close(f) }
-        }
-    ' "$EVID" "$_bf"
-done
-# The UC3 clean-poll subscriptions flipped GREEN above are still server-log-only
-# entities: keep their evidence card too (the loop covers only FINAL blue rows).
-if [ -s "$POLLOK" ] && [ -f "$EVID" ]; then
-    mkdir -p "$BLUEDIR/subscription"
-    awk -F'\t' -v dir="$BLUEDIR/subscription" '
-        FILENAME == ARGV[1] { if ($1 == "subscription" && !($2 in ev)) ev[$2] = $3 "\t" $4; next }
-        $1 != "" { k = toupper($1); if (k in ev) { f = dir "/" $1 ".txt"; print ev[k] > f; close(f) } }
-    ' "$EVID" "$POLLOK"
-fi
-
 # ---- report ------------------------------------------------------------------
 for f in subscriptions accounts logins hosts white logicals partners apps domains bl; do
     [ -f "$BASE/_$f.tsv" ] || continue
-    awk -F'\t' -v n="$f" '{ c[$3]++ } END { printf "  _%s.tsv: %d green, %d red, %d orange, %d blue, %d unknown\n", n, c["green"]+0, c["red"]+0, c["orange"]+0, c["blue"]+0, c["unknown"]+0 }' "$BASE/_$f.tsv" >&2
+    awk -F'\t' -v n="$f" '{ c[$3]++ } END { printf "  _%s.tsv: %d green, %d red, %d orange, %d unknown\n", n, c["green"]+0, c["red"]+0, c["orange"]+0, c["unknown"]+0 }' "$BASE/_$f.tsv" >&2
 done
 echo "result.sh: result column filled for the 10 base caches." >&2

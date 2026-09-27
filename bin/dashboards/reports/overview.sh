@@ -21,21 +21,16 @@ source "$SCRIPT_DIR/../lib.sh"
 OUT="$REPORTS_DIR/overview.rpt"
 
 # The four cache/report sources come with the lib; the PeSIT card additionally
-# reads the server-side slot sidecar, and the two "seen" cards the partner xref
-# maps + the base result caches, the greenpoll sidecar and the first-seen
-# ledger (the curated server-only sets and their first-sighting days — see
-# the seen block below).
+# reads the server-side slot sidecar, and the three "seen" cards the partner
+# xref maps, the configured rosters and the red-flip sidecar (see the seen
+# block below).
 XR="$DATA/flow-manager/xref"
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$DATA/server/reports/pesit-slots.tsv" "$DATA/server/reports/event-queue-slots.tsv" \
     "$DATA/server/reports/uc1-slots.tsv" "$DATA/server/reports/uc2-slots.tsv" \
     "$DATA/server/reports/uc3-slots.tsv" "$DATA/server/reports/uc4-slots.tsv" \
     "$XR/_subscriptions-partners.tsv" "$XR/_hosts-partners.tsv" \
-    "$XR/_partners-accounts.tsv" "$XR/_partners-subscriptions.tsv" \
-    "$DATA/flow-manager/base/_subscriptions.tsv" "$DATA/flow-manager/base/_partners.tsv" \
-    "$DATA/flow-manager/base/_accounts.tsv" \
-    "$DATA/blue/_greenpoll.tsv" "$DATA/blue/_redflip.tsv" \
-    "$DATA/server/cache/_subscriptions.tsv" "$DATA/server/cache/_accounts.tsv" \
-    "$DATA/first-seen"
+    "$DATA/flow-manager/base/_subscriptions.tsv" "$DATA/flow-manager/base/_accounts.tsv" \
+    "$DATA/colour/_redflip.tsv"
 
 transfer_basics || true
 server_basics || true
@@ -205,16 +200,17 @@ if [ -f "$TR" ]; then
     done
 fi
 
-# ---- the two CUMULATIVE "seen" views ---------------------------------------
-# How many Subscriptions / Partners the site had seen AT OR BEFORE each slot,
-# counted FOUR ways:
-#   v0 blue   seen in transfer + server  — the UNION, so always the HIGHEST
-#   v1 orange seen in the transfer log   — v1 <= v0
-#   v2 green  GREEN at the end of the slot — its latest File so far was OK
-#   v3 red    NOT green at the end of the slot
-# v0 and v1 are cumulative first-sightings, so they only ever RISE. v2 and v3
-# each rise AND fall as entities flip state, and by construction v2 + v3 == v1:
+# ---- the three CUMULATIVE "seen" views -------------------------------------
+# How many Subscriptions / Partners / Accounts the site had seen AT OR BEFORE
+# each slot, counted THREE ways:
+#   v0 orange seen in the transfer log
+#   v1 green  GREEN at the end of the slot — its latest File so far was OK
+#   v2 red    NOT green at the end of the slot
+# v0 is a cumulative first-sighting count, so it only ever RISES. v1 and v2
+# each rise AND fall as entities flip state, and by construction v1 + v2 == v0:
 # every transfer-seen entity is, at every later slot, in exactly one of them.
+# (A fourth, blue "transfer + server" union curve was removed 2026-09-27 with
+# the blue status itself.)
 #
 # GREEN/RED use the site-wide subscription rule (CLAUDE.md Result colours): red
 # when the LATEST outcome so far is Failed or Expired, green otherwise — a
@@ -223,61 +219,26 @@ fi
 # two counts. For a PARTNER this is its own last File, not the config rollup the
 # base cache stores (a rollup over connected subscriptions has no time axis).
 #
-# BOTH curves count CONFIGURED entities (2026-08-15 audit A4 — they used to
-# count distinct raw logged names against the flat server mention TSVs, whose
-# first mentions are dominated by the nightly File Maintenance sweep; the
-# partner blue curve claimed the whole roster while first-seen-both said 26
-# were never seen). A logged site value is canonicalized to the configured
-# subscription it uniquely prefixes (the uc-status/first-seen rule); a value
-# matching no configured name drops out.
-#
-# ORANGE is transfer evidence only. BLUE = orange plus the CURATED server-only
-# sets — the base-cache blue entities (and, for subscriptions, the UC3
-# clean-poll greens of blue/_greenpoll.tsv, seen with no transfer rows) — each
-# entering on its FIRST-SEEN day from the first-seen ledger, clamped into the
-# slot window (a
-# transfer-seen entity enters blue with orange, at its first File). So at the
-# last slot: blue == orange + the blue(+greenpoll) count — which is
-# first-seen-both.rpt's SEEN, while orange ends at first-seen.rpt's DATED Seen
-# (its Seen minus the no-date bucket). Those two identities are the
-# cross-checks after any change here.
+# The curves count CONFIGURED entities (2026-08-15 audit A4). A logged site
+# value is canonicalized to the configured subscription it uniquely prefixes
+# (the uc-status/first-seen rule); a value matching no configured name drops
+# out. Orange ends at first-seen.rpt's DATED Seen (its Seen minus the no-date
+# bucket) — the cross-check after any change here.
 #
 # PARTNER attribution is the site-wide UNION rule plus the coverage pages'
 # host evidence: col 20 ∪ the subscription's configured partner(s) (col 12 on
 # xref/_subscriptions-partners.tsv) ∪ the remote host's partner(s) (col 15 on
 # xref/_hosts-partners.tsv) — a both-partner File carries an EMPTY col 20
 # because the parse abstains on a two-group account.
-#
-# A missing base cache, xref map or ledger just collapses blue onto orange;
-# nothing fails.
 sub1=""; sub2=""; sub4=""; sub6=""; sub12=""; sub24=""
 ptn1=""; ptn2=""; ptn4=""; ptn6=""; ptn12=""; ptn24=""
 acc1=""; acc2=""; acc4=""; acc6=""; acc12=""; acc24=""
-# The first-seen ledger day files, listed for the awk (which cannot glob):
-# <member>-both-<date>.rpt, written by bin/analyses/reports/first-seen.sh —
-# which the build runs BEFORE the dashboards (CLAUDE.md's report order), so
-# the list is this run's. No files -> an empty list -> undated extras, which
-# the walker places at the window start.
-_fsl=$(mktemp "${TMPDIR:-/tmp}/axfsl.XXXXXX")
-_sflat="$DATA/server/cache/_subscriptions.tsv"; [ -f "$_sflat" ] || _sflat=/dev/null
-_aflat="$DATA/server/cache/_accounts.tsv"; [ -f "$_aflat" ] || _aflat=/dev/null
-trap 'rm -f "$_fsl"' EXIT
-if [ -d "$DATA/first-seen" ]; then
-    find "$DATA/first-seen" -name 'subscriptions-both-*.rpt' -o -name 'partners-both-*.rpt' -o -name 'accounts-both-*.rpt' \
-        2>/dev/null | LC_ALL=C sort > "$_fsl" || : > "$_fsl"
-fi
 if [ -f "$TR" ]; then
     sser=$(awk -F'\t' -v SUBPF="$XR/_subscriptions-partners.tsv" \
                -v HPF="$XR/_hosts-partners.tsv" \
                -v SUBBF="$DATA/flow-manager/base/_subscriptions.tsv" \
-               -v PTNBF="$DATA/flow-manager/base/_partners.tsv" \
                -v ACCBF="$DATA/flow-manager/base/_accounts.tsv" \
-               -v GPF="$DATA/blue/_greenpoll.tsv" \
-               -v RFF="$DATA/blue/_redflip.tsv" \
-               -v PACCF="$XR/_partners-accounts.tsv" \
-               -v PSUBF="$XR/_partners-subscriptions.tsv" \
-               -v SFLAT="$_sflat" -v AFLAT="$_aflat" \
-               -v FSLIST="$_fsl" '
+               -v RFF="$DATA/colour/_redflip.tsv" '
         function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
         function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
         # a missing file makes getline return -1, so an absent map is simply empty
@@ -285,16 +246,6 @@ if [ -f "$TR" ]; then
             while ((getline l < f) > 0) { n = split(l, z, "\t")
                 if (n >= 2 && z[1] != "" && z[2] != "") M[toupper(z[1])] = M[toupper(z[1])] SUBSEP z[2] }
             close(f) }
-        # slot index of one "YYYY-MM-DD HH:MM:SS.mmm" server timestamp
-        function ts2slot(ts, r,   d, h, j) {
-            d = substr(ts, 1, 10); h = substr(ts, 12, 2) + 0
-            j = jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0)
-            if (r == 1)  return j*24 + h
-            if (r == 2)  return j*12 + int(h/2)
-            if (r == 4)  return j*6 + int(h/4)
-            if (r == 6)  return j*4 + int(h/6)
-            if (r == 12) return j*2 + int(h/12)
-            return j }
         # a logged site value -> the configured subscription it IS or uniquely
         # prefixes (the uc-status/first-seen canonicalization rule); "" = not
         # configured. Memoized — the fallback is a roster scan.
@@ -314,61 +265,17 @@ if [ -f "$TR" ]; then
         # and the curve endpoints disagreed with the First-seen figures the
         # header promises they equal (orange 279 vs 283). Falls back to the
         # unique reverse match (a truncated logged value) exactly like canon.
-        # A BLUE (server-log-only) roster name is prefix-credited only on an
-        # EXACT match: the First seen transfer view counts blue as Not seen, so
-        # a blue parent (UC2_ZG_IKAZ_CLIX) must stay off the orange curve however
-        # its child flows spell — it enters the BLUE curve at its ledger day.
         # Returns a SUBSEP-joined list, memoized per distinct value.
         function credits(u,   i, s, c) {
             if (u == "") return ""
             if (u in mcred) return mcred[u]
             s = ""; c = ""
             for (i = 1; i <= nro; i++) {
-                if (index(u, RO[i]) == 1) { if (u == RO[i] || !(RO[i] in BXB)) s = s SUBSEP RO[i] }
+                if (index(u, RO[i]) == 1) s = s SUBSEP RO[i]
                 else if (index(RO[i], u) == 1) c = (c == "") ? RO[i] : "?"
             }
             if (s == "" && c != "" && c != "?") s = SUBSEP c
             return mcred[u] = s
-        }
-        # one server-only (blue/greenpoll) entity enters blue on the day it was
-        # FIRST seen, per the first-seen ledger (data/<env>/first-seen/
-        # <member>-both-<date>.rpt — the same dating the First seen (both logs)
-        # page publishes), clamped into the slot window. A day, not a
-        # timestamp: the ledger is day-granular, so the entity joins at that
-        # day\047s first slot. An entity the ledger cannot date (its "no date"
-        # bucket) enters at the window start — the least-wrong choice that
-        # keeps the endpoint equal to orange + the extras.
-        # NEVER blue/_evidence.tsv: that file holds each entity\047s LATEST
-        # mention, so using it made 55 subscriptions enter on the last day
-        # (2026-08-14) in one lump instead of on their real first sighting.
-        # the day a server-only entity was FIRST seen: the ledger where it can
-        # date the entity, else its earliest server MENTION (a subscription /
-        # account by name; a partner through its accounts and subscriptions),
-        # else "" -> the window start
-        function firstday(kind, u,   ts, n2, A2, i2, k2, t2, best) {
-            if ((kind SUBSEP u) in FSD) return FSD[kind SUBSEP u]
-            ts = ""
-            if (kind == "S") { if (u in SM) ts = SM[u] }
-            else if (kind == "A") { if (u in AM) ts = AM[u] }
-            else {
-                if (u in PACC) { n2 = split(substr(PACC[u], 2), A2, SUBSEP)
-                    for (i2 = 1; i2 <= n2; i2++) { k2 = toupper(A2[i2])
-                        if (k2 in AM) { t2 = AM[k2]; if (best == "" || t2 < best) best = t2 } } }
-                if (u in PSUB) { n2 = split(substr(PSUB[u], 2), A2, SUBSEP)
-                    for (i2 = 1; i2 <= n2; i2++) { k2 = toupper(A2[i2])
-                        if (k2 in SM) { t2 = SM[k2]; if (best == "" || t2 < best) best = t2 } } }
-                ts = best
-            }
-            return (ts != "") ? substr(ts, 1, 10) : ""
-        }
-        function mark(kind, u, dy,   ri9, r9, sl9) {
-            for (ri9 = 1; ri9 <= 6; ri9++) {
-                r9 = RQ[ri9]
-                sl9 = (dy != "") ? ts2slot(dy " 00:00:00.000", r9) : tmin[r9]
-                if (sl9 < tmin[r9]) sl9 = tmin[r9]
-                if (sl9 > tmax[r9]) sl9 = tmax[r9]
-                bl[r9 SUBSEP kind SUBSEP sl9]++
-            }
         }
         # one entity sighting: its FIRST slot, its membership in the per-(r,kind)
         # entity list, and the outcome of its LATEST File within this slot (the
@@ -381,16 +288,15 @@ if [ -f "$TR" ]; then
             ek = k SUBSEP t
             if (!(ek in mk) || $6 > mk[ek]) { mk[ek] = $6; lo[ek] = BAD } }
         # one kind at one resolution; spd = buckets per day. Walks the slot range
-        # NUMERICALLY (no awk hash order in the output), carrying four running
-        # figures: two cumulative first-sighting counts and the green/red split,
+        # NUMERICALLY (no awk hash order in the output), carrying three running
+        # figures: the cumulative first-sighting count and the green/red split,
         # which it re-derives from each entity state transition.
-        function build(kind, r, spd,   t, d, lab, s, blue, org, grn, red, ne, EZ, i, e, st, ek) {
+        function build(kind, r, spd,   t, d, lab, s, org, grn, red, ne, EZ, i, e, st, ek) {
             ne = split(substr(ents[r SUBSEP kind], 2), EZ, SUBSEP)
             delete ST
-            s = ""; blue = 0; org = 0; grn = 0; red = 0
+            s = ""; org = 0; grn = 0; red = 0
             for (t = tmin[r]; t <= tmax[r]; t++) {
-                blue += bl[r SUBSEP kind SUBSEP t] + 0
-                org  += og[r SUBSEP kind SUBSEP t] + 0
+                org += og[r SUBSEP kind SUBSEP t] + 0
                 for (i = 1; i <= ne; i++) {
                     e = EZ[i]; ek = r SUBSEP kind SUBSEP e SUBSEP t
                     if (!(ek in lo)) continue
@@ -405,69 +311,28 @@ if [ -f "$TR" ]; then
                 else if (spd == 4) { d = fromjdn(int(t/4)); lab = substr(d,6) sprintf(" %02dh", (t%4)*6) }
                 else if (spd == 2) { d = fromjdn(int(t/2)); lab = substr(d,6) sprintf(" %02dh", (t%2)*12) }
                 else               { d = fromjdn(t);        lab = substr(d,6) }
-                s = s (s==""?"":"|") lab ":" blue ":" org ":" grn ":" red ":" d
+                s = s (s==""?"":"|") lab ":" org ":" grn ":" red ":" d
             }
             print "SEEN" kind r "\t" s }
         BEGIN {
             RQ[1]=1; RQ[2]=2; RQ[3]=4; RQ[4]=6; RQ[5]=12; RQ[6]=24
             load_pairs(SUBPF, SUBP); load_pairs(HPF, HP)
-            load_pairs(PACCF, PACC); load_pairs(PSUBF, PSUB)   # the blue partners\047 mention fallback
-            # the configured subscription roster (canonicalization) + its blue
-            # set; a missing file makes getline return -1 -> empty
+            # the configured subscription roster (canonicalization); a missing
+            # file makes getline return -1 -> empty
             # The base cache is AMENDED after flow-manager (result.sh
             # discover_logged appends every logged-but-unconfigured name, the
             # synthetic "<account>_UNKNOWN" ones included). First seen excludes
             # the synthetic names, and the curve endpoints must keep equalling
             # its figures — so they stay out of the roster here too (2026-08-22).
             while ((getline l9 < SUBBF) > 0) { n9 = split(l9, z9, "\t")
-                if (n9 >= 1 && z9[1] != "" && z9[1] !~ /_UNKNOWN$/) { u9 = toupper(z9[1]); ROST[u9] = 1; RO[++nro] = u9
-                    # BXB = BASE blue only — the credits() prefix-skip must not
-                    # catch the greenpoll names BXS also holds (green, dated in
-                    # First seen, legitimately prefix-credited)
-                    if (n9 >= 3 && z9[3] == "blue") { BXS[u9] = 1; BXB[u9] = 1 } } }
+                if (n9 >= 1 && z9[1] != "" && z9[1] !~ /_UNKNOWN$/) { u9 = toupper(z9[1]); ROST[u9] = 1; RO[++nro] = u9 } }
             close(SUBBF)
-            while ((getline l9 < PTNBF) > 0) { n9 = split(l9, z9, "\t")
-                if (n9 >= 3 && z9[1] != "" && z9[3] == "blue") BXP[toupper(z9[1])] = 1 }
-            close(PTNBF)
             # accounts: the configured roster (only configured names are
-            # counted, as for subscriptions) + its blue set
+            # counted, as for subscriptions)
             while ((getline l9 < ACCBF) > 0) { n9 = split(l9, z9, "\t")
-                if (n9 >= 1 && z9[1] != "") { u9 = toupper(z9[1]); AROST[u9] = 1
-                    if (n9 >= 3 && z9[3] == "blue") BXA[u9] = 1 } }
+                if (n9 >= 1 && z9[1] != "") AROST[toupper(z9[1])] = 1 }
             close(ACCBF)
-            # the UC3 clean-poll greens: seen with no transfer rows -> blue side
-            while ((getline l9 < GPF) > 0) { sub(/\t.*$/, "", l9); if (l9 != "") BXS[toupper(l9)] = 1 }
-            close(GPF)
-            # the FIRST-SEEN ledger, both-logs view: one file per member and
-            # day, its ROWs the entities first seen that day. Read through the
-            # file LIST the shell globbed (awk cannot glob), so a member/day
-            # with no file simply contributes nothing.
-            while ((getline l9 < FSLIST) > 0) {
-                if (l9 == "") continue
-                fb = l9; sub(/^.*\//, "", fb)                       # <member>-both-<date>.rpt
-                if (fb !~ /-both-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\.rpt$/) continue
-                fk = (index(fb, "subscriptions-both-") == 1) ? "S" \
-                     : ((index(fb, "partners-both-") == 1) ? "P" \
-                     : ((index(fb, "accounts-both-") == 1) ? "A" : ""))
-                if (fk == "") continue
-                fd = substr(fb, length(fb) - 13, 10)                 # the date in the name
-                while ((getline m9 < l9) > 0) {
-                    if (substr(m9, 1, 4) != "ROW\t") continue
-                    split(m9, z9, "\t"); if (z9[2] == "") continue
-                    FSD[fk SUBSEP toupper(z9[2])] = fd
-                }
-                close(l9)
-            }
-            close(FSLIST)
         }
-        # the flat server MENTION streams ("date time <TAB> name", one row per
-        # runtime record naming a configured entity), reduced to the EARLIEST
-        # mention per name — the fallback first sighting for a server-only
-        # entity the first-seen ledger cannot date (its dating rule is the
-        # oldest first TRANSFER of the cross-referenced entities, which a
-        # never-transferred flow simply has none of)
-        FILENAME == SFLAT { if ($2 != "") { u9 = toupper($2); if (!(u9 in SM) || $1 < SM[u9]) SM[u9] = $1 } next }
-        FILENAME == AFLAT { if ($2 != "") { u9 = toupper($2); if (!(u9 in AM) || $1 < AM[u9]) AM[u9] = $1 } next }
         $4=="" || $5 !~ /^[0-9][0-9]:/ { next }
         {
             h = int(substr($5,1,2))
@@ -511,7 +376,7 @@ if [ -f "$TR" ]; then
             # THE SERVER-LOG RED FLIPS (2026-08): bin/build/result.sh reddens a
             # flow on an E-level line AFTER its last OK transfer, and the home
             # counts those flows red — so this stack must too, or its last slot
-            # disagrees with the home figure. blue/_redflip.tsv carries the
+            # disagrees with the home figure. colour/_redflip.tsv carries the
             # evidence stamp ("YYYY-MM-DD HH:MM:SS.mmm"), which converts to the
             # sortkey shape and lands in the slot it happened in; injected as an
             # observation, so a LATER OK File still turns the flow back green.
@@ -538,26 +403,16 @@ if [ -f "$TR" ]; then
                 }
             }
             close(RFF)
-            # transfer first-sightings: the orange increments, and blue with
-            # them (a transfer-seen entity enters the union at its first File).
-            # Hash iteration order is fine: every target is a commutative sum.
+            # transfer first-sightings: the orange increments. Hash iteration
+            # order is fine: every target is a commutative sum.
             for (k in f1) {
-                split(k, a, SUBSEP); r = a[1]; kind = a[2]; e = a[3]
-                f = f1[k]
-                og[r SUBSEP kind SUBSEP f]++
-                bl[r SUBSEP kind SUBSEP f]++
-                dn[kind SUBSEP e] = 1                 # already counted in blue
+                split(k, a, SUBSEP); r = a[1]; kind = a[2]
+                og[r SUBSEP kind SUBSEP f1[k]]++
             }
-            # the SERVER-ONLY entities: the curated blue sets (+ greenpoll for
-            # subscriptions), never seen in a File — blue and nothing else, at
-            # their FIRST-SEEN day (the ledger)
-            for (u in BXS) if (!(("S" SUBSEP u) in dn)) mark("S", u, firstday("S", u))
-            for (u in BXP) if (!(("P" SUBSEP u) in dn)) mark("P", u, firstday("P", u))
-            for (u in BXA) if (!(("A" SUBSEP u) in dn)) mark("A", u, firstday("A", u))
             build("S", 1, 24); build("S", 2, 12); build("S", 4, 6); build("S", 6, 4); build("S", 12, 2); build("S", 24, 1)
             build("P", 1, 24); build("P", 2, 12); build("P", 4, 6); build("P", 6, 4); build("P", 12, 2); build("P", 24, 1)
             build("A", 1, 24); build("A", 2, 12); build("A", 4, 6); build("A", 6, 4); build("A", 12, 2); build("A", 24, 1)
-        }' "$_sflat" "$_aflat" "$TR")
+        }' "$TR")
     for r in 1 2 4 6 12 24; do
         eval "sub$r=\$(printf '%s\n' \"\$sser\" | awk -F'\t' -v k=SEENS\$r '\$1==k{print \$2}')"
         eval "ptn$r=\$(printf '%s\n' \"\$sser\" | awk -F'\t' -v k=SEENP\$r '\$1==k{print \$2}')"
@@ -580,8 +435,9 @@ fi
 # A slot with no sidecar row CARRIES THE PREVIOUS STATE FORWARD (that is what a
 # state series does between observations) rather than showing a gap.
 #
-# UC1/UC3/UC4 share the 7-status shape (chart kind `ucst`) — UC1 has no "no
-# files" status and emits a constant 0 there, so one kind covers the three.
+# UC1/UC3/UC4 share the 4-status shape (chart kind `ucst`: ok, ok -> error,
+# error, not seen — the three server-log-only statuses went with the blue
+# result, 2026-09-27), so one kind covers the three.
 # UC2's five statuses are a different set entirely (kind `ucst2`).
 for u in 1 2 3 4; do
     eval "uc${u}s1=''; uc${u}s2=''; uc${u}s4=''; uc${u}s6=''; uc${u}s12=''; uc${u}s24=''"
@@ -874,9 +730,9 @@ fi
         # "seen" curve to show (a single day is one point on it), so clicking a
         # slot opens that day's Files-processed graph. The link pattern is a
         # free-form string — nothing ties it to the card's own view.
-        [ -n "$ptn6" ] && printf 'CARDALT\tSeen|Partners\tPartners seen\thow many partners the site had seen by then: blue in the transfer + server logs, orange in the transfer log, then that orange split into green (its latest File was delivered — expired pickups and waiting files count green, matching the site-wide colours) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/partner-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$ptn6" "60:$ptn1" "120:$ptn2" "240:$ptn4" "720:$ptn12" "1440:$ptn24"
-        [ -n "$acc6" ] && printf 'CARDALT\tSeen|Accounts\tAccounts seen\thow many accounts the site had seen by then: blue in the transfer + server logs, orange in the transfer log, then that orange split into green (its latest File was delivered — expired pickups and waiting files count green, matching the site-wide colours) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/account-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$acc6" "60:$acc1" "120:$acc2" "240:$acc4" "720:$acc12" "1440:$acc24"
-        [ -n "$sub6" ] && printf 'CARDALT\tSeen|Subscriptions\tSubscriptions seen\thow many subscriptions the site had seen by then: blue in the transfer + server logs, orange in the transfer log, then that orange split into green and red by the site-wide RESULT colour: red = the flow is failing (its latest File FAILED, or the server log erred after its last delivery — the same red as the home page), green = everything else, expired pickups and waiting files included. Green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/subscription-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$sub6" "60:$sub1" "120:$sub2" "240:$sub4" "720:$sub12" "1440:$sub24"
+        [ -n "$ptn6" ] && printf 'CARDALT\tSeen|Partners\tPartners seen\thow many partners the site had seen in the transfer log by then (orange), split into green (its latest File was delivered — expired pickups and waiting files count green, matching the site-wide colours) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/partner-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$ptn6" "60:$ptn1" "120:$ptn2" "240:$ptn4" "720:$ptn12" "1440:$ptn24"
+        [ -n "$acc6" ] && printf 'CARDALT\tSeen|Accounts\tAccounts seen\thow many accounts the site had seen in the transfer log by then (orange), split into green (its latest File was delivered — expired pickups and waiting files count green, matching the site-wide colours) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/account-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$acc6" "60:$acc1" "120:$acc2" "240:$acc4" "720:$acc12" "1440:$acc24"
+        [ -n "$sub6" ] && printf 'CARDALT\tSeen|Subscriptions\tSubscriptions seen\thow many subscriptions the site had seen in the transfer log by then (orange), split into green and red by the site-wide RESULT colour: red = the flow is failing (its latest File FAILED, or the server log erred after its last delivery — the same red as the home page), green = everything else, expired pickups and waiting files included. Green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/subscription-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$sub6" "60:$sub1" "120:$sub2" "240:$sub4" "720:$sub12" "1440:$sub24"
         # the four UC status stacks — OVERVIEW ONLY, so their labels deliberately
         # match no day-page button (picking one and opening a day page falls back
         # to Duration, exactly as picking "Partners seen" already does)

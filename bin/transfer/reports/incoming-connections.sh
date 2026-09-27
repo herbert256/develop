@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
 # incoming-connections.sh — one detail page per SIGHTED whitelisted IP:
-# every data/flow-manager/base/_white.tsv entry whose result is green, red
-# or blue (= the IP produced real transfers, or was sighted in the server
-# log; the ~3k orange never-seen range entries get no page).
+# every data/flow-manager/base/_white.tsv entry whose result is green or red
+# (= the IP produced real transfers; the ~3k orange never-seen range entries
+# get no page).
 #
 #   data/transfer/reports/details/incoming_connections/<slug>.rpt
 #   data/transfer/reports/details/incoming_connections/_slugmap.tsv
@@ -12,9 +12,9 @@
 # docs/details/incoming_connections/. Page content: a Summary (result, the
 # configured endpoint if the address maps to one, whitelisting accounts,
 # traffic totals), the whitelisting accounts
-# (acct KIND -> account detail pages), Activity per day, the Latest 10
-# Files, and — for server-log-sighted IPs — the last 10 server log lines
-# lifted from the unknown-whitelisting report's @data:loglines payload.
+# (acct KIND -> account detail pages), Activity per day and the Latest 10
+# Files. (The server-log-only IPs and their last-10-lines table went with the
+# BLUE status, 2026-09-27.)
 #
 # ONE awk pass writes every page (the details.sh discipline — precompute
 # everything, fork nothing per entity): the side inputs load into arrays
@@ -32,7 +32,6 @@ source "$SCRIPT_DIR/../lib.sh"
 
 WHITE="$CONFIG_BASE/_white.tsv"
 WACC="$CONFIG_XREF/_white-accounts.tsv"
-UWRPT="$SERVER_REPORTS/unknown-whitelisting.rpt"
 OUTDIR="$REPORTS_DIR/details/incoming_connections"
 SLUGMAP="$OUTDIR/_slugmap.tsv"
 
@@ -46,7 +45,6 @@ ensure_parsed
 [ -f "$WHITE" ] || { echo "incoming-connections.sh: no $WHITE — nothing to do." >&2; exit 0; }
 deps=("$WHITE")
 [ -f "$WACC" ] && deps+=("$WACC")
-[ -f "$UWRPT" ] && deps+=("$UWRPT")
 skip_if_fresh "$SLUGMAP" "${BASH_SOURCE[0]}" "$FILES" "${deps[@]}"
 echo "Building the incoming-connection (whitelisted IP) detail pages..." >&2
 
@@ -61,7 +59,6 @@ args=()
 [ -f "$IP_HOSTS_FILE" ] && args+=( f=rev "$IP_HOSTS_FILE" )
 args+=( f=white "$WHITE" )
 [ -f "$WACC" ] && args+=( f=wacc "$WACC" )
-[ -f "$UWRPT" ] && args+=( f=uw "$UWRPT" )
 args+=( f=files "$FILES" )
 
 # The slugmap is the freshness key (skip_if_fresh above), so the awk writes it
@@ -79,20 +76,12 @@ npages=$(LC_ALL=C awk -F'\t' \
     # the address -> endpoint map: ip -> host (bin/ip.sh)
     f == "rev" { if ($1 != "" && $2 != "") ptrmap[$1] = tolower($2); next }
 
-    # the sighted IPs (green/red/blue), in _white.tsv order
-    f == "white" { if ($1 != "" && ($3 == "green" || $3 == "red" || $3 == "blue")) { ips[++nip] = $1; res[$1] = $3 }; next }
+    # the sighted IPs (green/red), in _white.tsv order
+    f == "white" { if ($1 != "" && ($3 == "green" || $3 == "red")) { ips[++nip] = $1; res[$1] = $3 }; next }
 
     # the whitelisting accounts per IP (deduped here, name-sorted in END;
     # the "" concat forces string compares, matching LC_ALL=C sort -u)
     f == "wacc" { if (($1 in res) && $2 != "" && !(($1, $2) in aseen)) { aseen[$1, $2] = 1; acc[$1, ++na[$1]] = $2 "" }; next }
-
-    # the first @data:loglines payload per IP (unknown-whitelisting ROWs)
-    f == "uw" {
-        if ($1 == "ROW" && ($2 in res) && !($2 in logset))
-            for (i = 3; i <= NF; i++)
-                if (index($i, "@data:loglines=") == 1) { logset[$2] = 1; loglines[$2] = substr($i, 16); break }
-        next
-    }
 
     # the traffic: aggregate every $FILES row whose host (col 15) is sighted
     f == "files" {
@@ -127,8 +116,7 @@ npages=$(LC_ALL=C awk -F'\t' \
             if (ptr == ip) ptr = ""
 
             if (r == "green")    rlabel = "OK — last transfer processed"
-            else if (r == "red") rlabel = "Error — last transfer failed"
-            else                 rlabel = "Server log only — never a transfer"
+            else                 rlabel = "Error — last transfer failed"
 
             nacc = (ip in na) ? na[ip] : 0
             nn = (ip in n) ? n[ip] : 0
@@ -179,21 +167,6 @@ npages=$(LC_ALL=C awk -F'\t' \
                 printf "KIND\tacct\n" > out
                 for (i = 1; i <= nacc; i++) printf "ROW\t%s\n", sa[i] > out
                 printf "TOTAL\tTotal (%d account(s))\n", nacc > out
-            }
-            if ((ip in logset) && loglines[ip] != "") {
-                # the last-10 server log lines (\x1f-separated payload)
-                printf "TABLE\tLast 10 server log lines\twide\n" > out
-                printf "HEAD\tServer log line\n" > out
-                printf "KIND\tmono\n" > out
-                m = split(loglines[ip], ll, "\037"); cnt = 0
-                for (i = 1; i <= m; i++) {
-                    rec = ll[i]
-                    if (rec !~ /[^ \t\n]/) continue        # blank record (the old per-record NF gate)
-                    gsub(/\t/, " ", rec)
-                    printf "ROW\t%s\n", rec > out
-                    cnt++
-                }
-                printf "TOTAL\tTotal (%d line(s))\n", cnt > out
             }
             printf "FOOT\tGenerated on %s from %s file(s)\n", stamp, nfiles > out
             close(out)

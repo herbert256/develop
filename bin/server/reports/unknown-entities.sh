@@ -18,14 +18,10 @@
 #                             component's messages, never a transfer remote
 #                             host (raw IPs of resolved hostnames included)
 #
-# plus the five data/unknown/ sidecars (the blue-marking seed lists; white.tsv
-# takes only TM-mentioned IPs) and the four SSH-LOGON files
-# logon-{logins,accounts,ips}.tsv + logon-evidence.tsv (2026-07: the former
-# Step F0 of bin/build/seen-in-server-log.sh — a second, UNCONDITIONAL full
-# pass over the same cache — extracted here by the same map workers, so the
-# cache is read once per rebuild and not at all on a fresh skip; consumers
-# are bin/build/result.sh (orange->blue flips), seen-in-server-log.sh's
-# recolor exemption and its Step G evidence merge).
+# plus the five data/unknown/ sidecars (the server-log sighting lists; white.tsv
+# takes only TM-mentioned IPs) — read by Entity Search, Cross reference, the
+# data-diff report and the cleanup-backlog / no-remote-files safety checks.
+# (The four SSH-LOGON files logon-*.tsv went with the BLUE status, 2026-09-27.)
 #
 # MAP-REDUCE (the bin/server/parse.sh pattern): the extraction work is CPU,
 # not I/O (a bare mawk read+field-split of the 2.4 GB cache is ~2 s; the five
@@ -81,9 +77,8 @@ fi
 
 # The two base caches are a freshness dep, but NOT directly: this scan reads
 # only their column 1 (the NAME lists — see the cfg[]/white[] rules below), and
-# bin/build/result.sh REWRITES base/*.tsv's result column (col 3) after this
-# report has already run once per build (bin/build/seen-in-server-log.sh runs
-# us in stage 1, bin/server/reports.sh again in stage 2). Depending on the
+# bin/build/result.sh REWRITES base/*.tsv's result column (col 3) every
+# build. Depending on the
 # files themselves therefore re-ran the whole map-reduce over the server cache
 # on every build for a change we never read. Depend instead on a projection of
 # just the name columns, and rebuild only when a name is actually added or
@@ -111,8 +106,7 @@ cmp -s "$NAMES_NEW" "$NAMES_DEP" || names_changed=1
 all_fresh=1
 [ "$names_changed" = 0 ] || all_fresh=0     # a configured name came or went
 for out in "$REPORTS_DIR"/unknown-{sites,accounts,logins,hosts,whitelisting}.rpt \
-           "$UNKNOWN_DIR"/{sites,accounts,logins,hosts,white}.tsv \
-           "$UNKNOWN_DIR"/logon-{logins,accounts,ips,evidence}.tsv; do
+           "$UNKNOWN_DIR"/{sites,accounts,logins,hosts,white}.tsv; do
     [ "$all_fresh" = 1 ] || break
     [ -f "$out" ] || { all_fresh=0; break; }
     # bin/renames.sh and the MAP decide which logged name a token is folded to
@@ -168,13 +162,6 @@ cfg_white_in="$CFG_WHITE"; [ -f "$cfg_white_in" ] || cfg_white_in=/dev/null
 #                                     the merge; sk = "date time")
 #   T ip sk sid msg                   whitelist: latest TM-mention candidate
 #   R t name sk logline               bounded logline-ring entries (<=10/name)
-#   G t name                          SSH-logon name (t = L login / A account /
-#                                     I source IP), raw spelling
-#   E type VALUE sk msg               SSH-logon evidence, latest per (type,
-#                                     VALUE) in this slice (type = the blue
-#                                     evidence vocabulary login / account /
-#                                     whitelisted-ip; VALUE uppercased for
-#                                     login and account, the raw IP otherwise)
 NW=$( (command -v sysctl >/dev/null 2>&1 && sysctl -n hw.ncpu) 2>/dev/null || echo 4 )
 [ "$NW" -ge 1 ] 2>/dev/null || NW=4
 # KEEP THE CAP AT 6 (2026-09-27: raised to 10 for speed and put back the same
@@ -187,16 +174,6 @@ NW=$( (command -v sysctl >/dev/null 2>&1 && sysctl -n hw.ncpu) 2>/dev/null || ec
 wpids=()
 for ((id = 0; id < NW; id++)); do
     awk -F'\t' -v NW="$NW" -v ID="$id" -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
-        function grabq(m, key,   s3, c3, r3) {   # value inside the quote pair after `key ` (both '\''...'\'' and "..." forms) — the former Step F0 extractor, verbatim
-            if (match(m, key " ['\''\"]")) {
-                c3 = substr(m, RSTART + RLENGTH - 1, 1); s3 = substr(m, RSTART + RLENGTH)
-                r3 = index(s3, c3); if (r3 > 0) return substr(s3, 1, r3 - 1)
-            }
-            return ""
-        }
-        function evput(k, sk3, msg) {   # latest evidence per (type, VALUE); ties broken on the SMALLER message — the exact winner of Step G'\''s `sort -k1,1 -k2,2 -k3,3r` + first-per-key
-            if (!(k in gsk) || sk3 > gsk[k] || (sk3 == gsk[k] && msg < gmsg[k])) { gsk[k] = sk3; gmsg[k] = msg }
-        }
         BEGIN { rn_load(RNF) }
         FILENAME ~ /_hosts\.tsv$/  { if ($1 != "") cfg[tolower($1)] = $1; next }   # config spelling, matched lowercase
         FILENAME ~ /_white\.tsv$/  { if ($1 != "") white[$1] = 1; next }
@@ -206,7 +183,7 @@ for ((id = 0; id < NW; id++)); do
             sk = $1 " " $2
             delete mseen                             # one log line per entity per record (all types)
             # W: whitelisted partner IPs — ALL components (the report counts
-            # every mention; only the TM sighting feeds the sidecar/blue seed)
+            # every mention; only the TM sighting feeds the sidecar)
             if ($5 ~ /[0-9]\.[0-9]/) {
                 s = $5
                 while (match(s, /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/)) {
@@ -221,20 +198,6 @@ for ((id = 0; id < NW; id++)); do
                     }
                 }
             }
-            # G/E: SSH-logon evidence (the former bin/build/seen-in-server-log.sh
-            # Step F0, merged here 2026-07 so the cache is read once, not twice).
-            # ANY component, like the standalone pass (the matching lines are in
-            # practice the TM "[Ssh Default]" logon-screening messages).
-            if ($5 ~ /Allowed user|Disallowed user|successfully authenticated over SSH/) {
-                m0 = $5
-                lg0 = grabq(m0, "user"); if (lg0 == "") lg0 = grabq(m0, "login name")
-                ac0 = grabq(m0, "account"); sub(/@.*/, "", ac0)
-                ip0 = grabq(m0, "from address")
-                if (ip0 == "" && match(m0, /Remote address: [0-9.]+/)) { ip0 = substr(m0, RSTART + 16, RLENGTH - 16); sub(/\.$/, "", ip0) }
-                if (lg0 != "") { gset["L" SUBSEP lg0] = 1; evput("login" SUBSEP toupper(lg0), sk, $5) }
-                if (ac0 != "") { gset["A" SUBSEP ac0] = 1; evput("account" SUBSEP toupper(ac0), sk, $5) }
-                if (ip0 != "") { gset["I" SUBSEP ip0] = 1; evput("whitelisted-ip" SUBSEP ip0, sk, $5) }
-            }
             if ($4 != "T") next                      # S/A/L/H: TM (Transfer Manager) messages only
             # S: UC<n>_ subscription tokens
             if ($5 ~ /UC[0-9]+_/) {
@@ -248,8 +211,7 @@ for ((id = 0; id < NW; id++)); do
                     # formed, so the counts aggregate under the CURRENT name and
                     # the known-set test below compares like with like — without
                     # this, every renamed flow reads as an unknown subscription
-                    # and bin/build/seen-in-server-log.sh appends it as a second,
-                    # blue entity beside the real one (2026-08).
+                    # (2026-08).
                     # rn_canon_pfx, not rn_canon: the server truncates names,
                     # so a renamed flow arrives as a PREFIX of its old name.
                     tk = rn_canon_pfx(tk)
@@ -315,8 +277,6 @@ for ((id = 0; id < NW; id++)); do
             for (k in cd) { nd = split(k, kp, SUBSEP)
                 print "D\t" kp[1] "\t" kp[2] "\t" kp[3] "\t" cd[k] }
             for (ip in lskT) print "T\t" ip "\t" lskT[ip] "\t" lmsgT[ip]
-            for (k in gset) { split(k, kp, SUBSEP); print "G\t" kp[1] "\t" kp[2] }
-            for (k in gsk)  { split(k, kp, SUBSEP); print "E\t" kp[1] "\t" kp[2] "\t" gsk[k] "\t" gmsg[k] }
         }
     ' "$cfg_hosts_in" "$cfg_white_in" "$PARSED" > "$TMPD/part.$id" &
     wpids+=("$!")
@@ -328,14 +288,9 @@ SIDE_S="$UNKNOWN_DIR/sites.tsv"; SIDE_A="$UNKNOWN_DIR/accounts.tsv"
 SIDE_L="$UNKNOWN_DIR/logins.tsv"; SIDE_H="$UNKNOWN_DIR/hosts.tsv"
 SIDE_W="$UNKNOWN_DIR/white.tsv"
 rm -f "$SIDE_S" "$SIDE_A" "$SIDE_L" "$SIDE_H" "$SIDE_W"   # every run first deletes the sidecars
-# the SSH-logon outputs (the merged Step F0). The raw temps are pre-created so
-# the post-reduce writers below always see a file, logons in the window or not.
-LOGON_L="$UNKNOWN_DIR/logon-logins.tsv"; LOGON_A="$UNKNOWN_DIR/logon-accounts.tsv"
-LOGON_I="$UNKNOWN_DIR/logon-ips.tsv";    LOGON_E="$UNKNOWN_DIR/logon-evidence.tsv"
-: > "$TMPD/logon.raw"; : > "$TMPD/evid.raw"
+rm -f "$UNKNOWN_DIR"/logon-{logins,accounts,ips,evidence}.tsv   # the retired SSH-logon files (2026-09-27)
 agg=$(awk -F'\t' -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
         -v side_h="$SIDE_H" -v side_w="$SIDE_W" -v BLF="$BLACKLIST_FILE" \
-        -v logon_raw="$TMPD/logon.raw" -v evid_raw="$TMPD/evid.raw" \
         "$LOGLINES_AWK$BLACKLIST_AWK"'
     # Seeded from input/<env>/blacklist.txt via bin/blacklist.sh — the same file
     # bin/transfer/parse.sh blanks with. Values the parse BLANKS can never
@@ -362,10 +317,6 @@ agg=$(awk -F'\t' -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
     $1 == "K" { k = $2 SUBSEP $3; if ($4 > lsk[k]) { lsk[k] = $4; lmsg[k] = $5 }; next }
     $1 == "T" { if ($3 > lskT[$2]) { lskT[$2] = $3; lmsgT[$2] = $4 }; tmm[$2] = 1; next }
     $1 == "R" { addline($2 SUBSEP $3, $4, $5); next }
-    $1 == "G" { print $2 "\t" $3 > logon_raw; next }              # SSH-logon names (dups across workers fold in the sort -u below)
-    $1 == "E" { k = $2 SUBSEP $3                                  # SSH-logon evidence: same max-pick as the workers (latest sk, then smallest message)
-                if (!(k in gsk) || $4 > gsk[k] || ($4 == gsk[k] && $5 < gmsg[k])) { gsk[k] = $4; gmsg[k] = $5 }
-                next }
     # an IP is known when it appears as a transfer host itself, or when its
     # cached reverse-DNS name does (the parse substituted the name for it)
     function wknown(ip2) { return (ip2 in wH) || ((ip2 in mip) && (mip[ip2] in hknown)) }
@@ -394,12 +345,11 @@ agg=$(awk -F'\t' -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
             else if (t == "A") print nm "\t" lsk[k] "\t" lmsg[k] > side_a
             else if (t == "L") print nm "\t" lsk[k] "\t" lmsg[k] > side_l
             else if (t == "H") print nm "\t" lsk[k] "\t" lmsg[k] > side_h
-            # the WHITE sidecar (the blue-marking seed list) takes only IPs
+            # the WHITE sidecar (the server-log sighting list) takes only IPs
             # with a TRANSFER MANAGER mention, dated/quoted by their latest TM
             # line — an ADMIN/AUDIT config-dump quote is not a partner connecting
             else if (t == "W" && (nm in tmm)) print nm "\t" lskT[nm] "\t" lmsgT[nm] > side_w
         }
-        for (k in gsk) { split(k, kp, SUBSEP); print kp[1] "\t" kp[2] "\t" gsk[k] "\t" gmsg[k] > evid_raw }   # SSH-logon evidence (order fixed by the sort below)
         # per-type totals for the five page headers, in a FIXED order (never a
         # for-in): each was a grep -c + an awk fork per report down in the shell
         ntg = split("S A L H W", TG, " ")
@@ -414,20 +364,6 @@ agg=$(awk -F'\t' -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
 for sc in "$SIDE_S" "$SIDE_A" "$SIDE_L" "$SIDE_H" "$SIDE_W"; do
     if [ -f "$sc" ]; then LC_ALL=C sort -o "$sc" "$sc"; else : > "$sc"; fi
 done
-
-# The SSH-logon files, in the former Step F0's exact shape: one name per line
-# behind a "#" sentinel (never-empty, so downstream awk file routing stays
-# safe), C-collation sorted, dups folded. Rewritten every scan like the five
-# sidecars above — NOT cmp-guarded: these are all-outputs freshness members,
-# and a kept old mtime would read as stale against a newer parse cache,
-# forcing the whole scan every build. The evidence file is the latest line
-# per (type, VALUE), whole-line sorted for determinism; seen-in-server-log.sh
-# Step G merges it with its own candidate evidence.
-for _lp in "L:$LOGON_L" "A:$LOGON_A" "I:$LOGON_I"; do
-    _lt=${_lp%%:*}; _lf=${_lp##*:}
-    { printf '#\n'; awk -F'\t' -v T="$_lt" '$1 == T { print $2 }' "$TMPD/logon.raw" | LC_ALL=C sort -u; } > "$_lf"
-done
-LC_ALL=C sort "$TMPD/evid.raw" > "$LOGON_E"
 
 # The five per-type row counts and mention sums, from the agg's TOT lines (bash
 # 3.2 has no associative arrays, so flat variables).

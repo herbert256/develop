@@ -135,7 +135,7 @@ $1 != "ROW" { next }
 # ---- UC1: we are the client and PUSH the file out to the partner ------------
 FILENAME ~ /uc1-status\.rpt$/ {
     n = $4 + 0; ok = $5 + 0; er = $6 + 0; last = dt($7); runs = $8 + 0; prob = $9 + 0; lg = dt($10)
-    if (st == "error" || st == "ok -> error" || st == "server - error") NEXTMOVE = nextmove(getll())
+    if (st == "error" || st == "ok -> error") NEXTMOVE = nextmove(getll())
     if (st == "ok")
         emit(s, "", sprintf("**Working.** We push files out to this partner: **%d** File%s, the latest delivered on **%s** (%d OK, %d error). **UC1 status** calls this **ok**.", n, plural(n,"","s"), last, ok, er))
     else if (st == "error")
@@ -147,12 +147,13 @@ FILENAME ~ /uc1-status\.rpt$/ {
         emit(s, "This flow used to work and now fails", sprintf("Every one of its **%d** File%s was delivered, the latest on **%s** — but the server log has recorded **errors for this flow after that last transfer** (the banner above carries the evidence), so the latest word is failure. A regression on the connection side rather than a failed File. **UC1 status** calls this **ok -> error**.", n, plural(n,"","s"), last))
     else if (st == "ok -> error")
         emit(s, "This flow used to work and now fails", sprintf("It delivered **%d** of its **%d** File%s, but the latest one failed on **%s** — a regression, so there is a change to find rather than a configuration that was never finished. **UC1 status** calls this **ok -> error**.", ok, n, plural(n,"","s"), last))
-    else if (st == "server - error")
-        emit(s, "Never transferred a file, and the send is failing", sprintf("No File has ever reached the transfer log. The server log explains why: **%d** failure line%s name%s this flow%s — the send could not be made, or the partner could not be reached at all. **UC1 status** calls this **server - error**.", prob, plural(prob,"","s"), plural(prob,"s",""), on(lg)))
-    else if (st == "server - no result")
-        emit(s, "Never transferred a file, and nothing explains why", sprintf("No File has ever reached the transfer log, and no failure in the server log names this flow either%s. It may still be blue on a line attributed to its host or account rather than to itself. **UC1 status** calls this **server - no result**.", on(lg)))
     else if (st == "not seen")
-        emit(s, "", "**Never used.** This flow is configured but has never been observed in either the transfer log or the server log — an open question rather than a failure: either it is waiting on a partner, or it should not be there. **UC1 status** calls this **not seen**.")
+        # the server-log figures still say whether it ever TRIED (the former
+        # server - error / no result statuses, gone with blue 2026-09-27)
+        emit(s, "", "**Never used.** This flow is configured but has never been observed in the transfer log — an open question rather than a failure: either it is waiting on a partner, or it should not be there." \
+            (prob > 0 ? sprintf(" The server log does name it in **%d** failure line%s%s — the send could not be made, or the partner could not be reached.", prob, plural(prob,"","s"), on(lg)) \
+             : runs > 0 ? sprintf(" Advanced Routing did start the route **%d** time%s%s.", runs, plural(runs,"","s"), on(lg)) : "") \
+            " **UC1 status** calls this **not seen**.")
     next
 }
 
@@ -180,9 +181,9 @@ FILENAME ~ /uc2-status\.rpt$/ {
 # ---- UC3: we are the client and POLL the partner for files ------------------
 FILENAME ~ /uc3-status\.rpt$/ {
     n = $4 + 0; ok = $5 + 0; er = $6 + 0; last = dt($7); poll = $8 + 0; emp = $9 + 0; prob = $10 + 0; lg = dt($11)
-    if (st == "error" || st == "ok -> error" || st == "server - error") NEXTMOVE = nextmove(getll())
+    if (st == "error" || st == "ok -> error") NEXTMOVE = nextmove(getll())
     if (st == "ok" && n == 0)
-        # the CLEAN-POLL cohort (blue/_greenpoll.tsv): verified polling, no
+        # the CLEAN-POLL cohort (colour/_greenpoll.tsv): verified polling, no
         # file ever there to fetch — no last-file date exists, so this branch
         # must not interpolate one (an empty **%s** breaks the bold pairing)
         emit(s, "", sprintf("**Working, nothing to fetch.** We poll this partner on schedule and the connection, the credentials and the remote directory are all fine — **%d** poll%s so far — but no file has ever been there to collect, so nothing has reached the transfer log. **UC3 status** calls this **ok** (the clean-poll rule: a verified working poll is green).", poll, plural(poll,"","s")))
@@ -194,14 +195,12 @@ FILENAME ~ /uc3-status\.rpt$/ {
         emit(s, "This flow used to work and now fails", sprintf("Every one of its **%d** File%s was pulled successfully, the latest on **%s** — but the server log has recorded **errors for this flow after that last transfer** (the banner above carries the evidence), so the latest word is failure. A regression on the connection side rather than a failed File. **UC3 status** calls this **ok -> error**.", n, plural(n,"","s"), last))
     else if (st == "ok -> error")
         emit(s, "This flow used to work and now fails", sprintf("It pulled **%d** of its **%d** File%s successfully, but the latest attempt failed on **%s** — a regression, so there is a change to find. **UC3 status** calls this **ok -> error**.", ok, n, plural(n,"","s"), last))
-    else if (st == "server - no files")
-        emit(s, "", sprintf("**Polling faultlessly, finding nothing.** The connection, the credentials and the remote directory are all fine — **%d** poll%s, the last one reporting zero files — but no file has ever been there to fetch, so nothing has ever reached the transfer log. Every slot spent here is a connection and a listing for no data. **UC3 status** calls this **server - no files**.", poll, plural(poll,"","s")))
-    else if (st == "server - error")
-        emit(s, "Never pulled a file, and the poll is failing", sprintf("No File has ever reached the transfer log, and the server log's latest word is that we could not retrieve: **%d** failure line%s%s — a connection failure, or a directory listing that failed once connected. **UC3 status** calls this **server - error**.", prob, plural(prob,"","s"), on(lg)))
-    else if (st == "server - no result")
-        emit(s, "Never pulled a file, and nothing explains why", "No File has ever reached the transfer log. The server log only ever PREPARES a poll for this flow — the \"Remote folder … evaluated to …\" lines — and then records neither a result nor an error. **UC3 status** calls this **server - no result**.")
     else if (st == "not seen")
-        emit(s, "", "**Never used.** Configured, but never observed in either log. **UC3 status** calls this **not seen**.")
+        emit(s, "", "**Never used.** Configured, but never observed in the transfer log." \
+            (poll > 0 ? sprintf(" The server log shows **%d** poll%s (%d empty)", poll, plural(poll,"","s"), emp) \
+                        (prob > 0 ? sprintf(" and **%d** failure line%s", prob, plural(prob,"","s")) : "") on(lg) "." \
+             : prob > 0 ? sprintf(" The server log names it in **%d** failure line%s%s — a connection failure, or a directory listing that failed.", prob, plural(prob,"","s"), on(lg)) : "") \
+            " **UC3 status** calls this **not seen**.")
     next
 }
 
@@ -209,10 +208,6 @@ FILENAME ~ /uc3-status\.rpt$/ {
 FILENAME ~ /uc4-status\.rpt$/ {
     n = $4 + 0; ok = $5 + 0; er = $6 + 0; last = dt($7); lgn = $8 + 0; arr = $9 + 0; prob = $10 + 0; lg = dt($11)
     if (st == "error" || st == "ok -> error") NEXTMOVE = nextmove(getll())
-    # a UC4 "server - error" is BY DEFINITION whitelist refusals (the only way
-    # this flow breaks before a file exists — see that branch's prose), so the
-    # move is hard-wired rather than classified
-    else if (st == "server - error") NEXTMOVE = "**Next move: ours** — credentials/whitelisting."
     u4x = uc4note(nm)
     if (st == "ok")
         emit(s, "", sprintf("**Working.** The partner connects in and delivers: **%d** File%s, the latest on **%s** (%d OK, %d error), across **%d** handover%s. **UC4 status** calls this **ok**.", n, plural(n,"","s"), last, ok, er, arr, plural(arr,"","s")), u4x)
@@ -222,14 +217,11 @@ FILENAME ~ /uc4-status\.rpt$/ {
         emit(s, "This flow used to work and now fails", sprintf("Every one of its **%d** File%s was received, the latest on **%s** — but the server log has recorded **errors for this flow after that last transfer** (the banner above carries the evidence), so the latest word is failure. A regression on the connection side rather than a failed File. **UC4 status** calls this **ok -> error**.", n, plural(n,"","s"), last), u4x)
     else if (st == "ok -> error")
         emit(s, "This flow used to work and now fails", sprintf("It received **%d** of its **%d** File%s, but the latest failed on **%s** — a regression, so there is a change to find. **UC4 status** calls this **ok -> error**.", ok, n, plural(n,"","s"), last), u4x)
-    else if (st == "server - no files")
-        emit(s, "The partner connects, but never sends anything", sprintf("The credentials work and the partner reaches us — **%d** successful logon%s — but it has **never handed over a single file**, so nothing has ever reached the transfer log. The flow is configured correctly; the question is for the partner. **UC4 status** calls this **server - no files**.", lgn, plural(lgn,"","s")), u4x)
-    else if (st == "server - error")
-        emit(s, "The partner is turned away at the door", sprintf("No File has ever reached the transfer log, and the partner never got in: its only attempts were **refused by the account whitelist** (**%d** rejection%s%s). Because we are the server here, that is the only way this flow can break before a file exists. **UC4 status** calls this **server - error**.", prob, plural(prob,"","s"), on(lg)), u4x)
-    else if (st == "server - no result")
-        emit(s, "Never received a file, and nothing explains why", "No File has ever reached the transfer log, and the server log says nothing either way about this flow. **UC4 status** calls this **server - no result**.", u4x)
     else if (st == "not seen")
-        emit(s, "", "**Never used.** Configured, but never observed in either log — a flow set up and never used, or one whose partner side was never finished. **UC4 status** calls this **not seen**.", u4x)
+        emit(s, "", "**Never used.** Configured, but never observed in the transfer log — a flow set up and never used, or one whose partner side was never finished." \
+            (lgn > 0 && arr == 0 ? sprintf(" The partner does log in — **%d** successful logon%s — but has never handed over a file.", lgn, plural(lgn,"","s")) : "") \
+            (prob > 0 ? sprintf(" **%d** logon attempt%s %s refused by the account whitelist%s.", prob, plural(prob,"","s"), plural(prob,"was","were"), on(lg)) : "") \
+            " **UC4 status** calls this **not seen**.", u4x)
     next
 }
 

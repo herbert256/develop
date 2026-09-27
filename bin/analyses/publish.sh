@@ -2,7 +2,7 @@
 #
 # bin/analyses/publish.sh — render the ANALYSES .rpt files into docs/:
 #
-#   docs/analyses/first-seen{,-both}.html   the First seen tables
+#   docs/analyses/first-seen.html          the First seen table
 #   docs/analyses/use-cases.html + use-case-{definitions,patterns}.html
 #   docs/analyses/accounts.html
 #   docs/analyses/index.html                the analyses catalog page
@@ -55,15 +55,13 @@ rm -f "$ADIR"/*.html
 # ---- First seen cell pages (docs/first-seen/) --------------------------------
 # One page per data/first-seen/*.rpt (bin/analyses/reports/first-seen.sh:
 # TITLE / MEMBER / KEY + ROW name|dir|seen|link|first_ts[|log]): the items
-# counted in one cell of the First seen table. A both- KEY prefix marks the
-# "Both Transfer & Server logs" view — its rows carry the log that saw the
-# item first as a 6th field, rendered as a Log column. Row tint = the entity
+# counted in one cell of the First seen table. Row tint = the entity
 # result from the member's base cache (data-res), like the coverage pages.
 # Rebuilt from scratch on every publish.
 # ONE cell page. Split out of the loop below so the pool can run several at
 # once — the body reads a single .rpt and writes a single page, sharing nothing.
 _fs_cell() {   # $1 = the cell .rpt
-    local rpt=$1 title member key rows resfile nlabel bothv back ltcol
+    local rpt=$1 title member key rows resfile nlabel ltcol
     [ -f "$rpt" ] || return 0
     title=$(field1 TITLE "$rpt"); member=$(field1 MEMBER "$rpt"); key=$(field1 KEY "$rpt")
     rows=$(awk -F'\t' '$1 == "ROW" { sub(/^ROW\t/, ""); print }' "$rpt")
@@ -78,25 +76,21 @@ _fs_cell() {   # $1 = the cell .rpt
         *)             nlabel="Name" ;;
     esac
     [ -f "$resfile" ] || resfile=""
-    bothv=0; back="first-seen.html"
-    case $key in both-*) bothv=1; back="first-seen-both.html" ;; esac
-    # the Not seen pages drop the First/Log columns (always blank there)
+    # the Not seen pages drop the First column (always blank there)
     local ltcol=1
-    case $key in notseen|both-notseen) ltcol=0 ;; esac
+    case $key in notseen) ltcol=0 ;; esac
     {
         html_head "$title" "../assets/style.css" "" "HOME" "first-seen"
         esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
-        printf '<p class="range"><a href="../analyses/%s">&larr; Back to First seen</a> &mdash; the items counted in this cell of the First seen table.</p>\n' "$back"
-        printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = seen in the server log only (never in the transfer log).</p>\n'
+        printf '<p class="range"><a href="../analyses/first-seen.html">&larr; Back to First seen</a> &mdash; the items counted in this cell of the First seen table.</p>\n'
+        printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it).</p>\n'
         printf '<div class="tablewrap"><table class="index fit">\n'
-        if [ "$ltcol" = 1 ] && [ "$bothv" = 1 ]; then
-            printf '<tr><th>%s</th><th>First seen</th><th>Log</th></tr>\n' "$nlabel"
-        elif [ "$ltcol" = 1 ]; then
+        if [ "$ltcol" = 1 ]; then
             printf '<tr><th>%s</th><th>First transfer</th></tr>\n' "$nlabel"
         else
             printf '<tr><th>%s</th></tr>\n' "$nlabel"
         fi
-        printf '%s\n' "$rows" | awk -F'\t' -v lc="$ltcol" -v both="$bothv" -v resf="$resfile" '
+        printf '%s\n' "$rows" | awk -F'\t' -v lc="$ltcol" -v resf="$resfile" '
             function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
             BEGIN { if (resf != "") { while ((getline line < resf) > 0) { split(line, a, "\t"); res[toupper(a[1])] = a[3] } close(resf) } }
             NF {
@@ -104,15 +98,13 @@ _fs_cell() {   # $1 = the cell .rpt
                 if ($4 != "") name = "<a href=\"../details/" $4 ".html\">" name "</a>"
                 trattr = " data-seen=\"" $3 "\""
                 rr = res[toupper($1)]
-                if (rr == "green" || rr == "orange" || rr == "red" || rr == "blue") trattr = trattr " data-res=\"" rr "\""
+                if (rr == "green" || rr == "orange" || rr == "red") trattr = trattr " data-res=\"" rr "\""
                 nrows++; if ($3 == 1) nseen++
                 tail = (lc == 1) ? "<td>" e($5) "</td>" : ""
-                if (lc == 1 && both == 1) tail = tail "<td>" e($6) "</td>"
                 printf "<tr%s><td>%s</td>%s</tr>\n", trattr, name, tail
             }
             END {
                 tail = (lc == 1) ? "<td>" (nseen+0) " seen</td>" : ""
-                if (lc == 1 && both == 1) tail = tail "<td></td>"
                 printf "<tr class=\"total\"><td>Total (%d)</td>%s</tr>\n", nrows+0, tail
             }'
         printf '</table></div>\n'
@@ -135,15 +127,12 @@ render_first_seen_pages() {
 }
 
 
-# ---- the First seen pages (docs/analyses/first-seen{,-both}.html) ------------
-# Rendered from data/analyses/reports/first-seen.rpt (Transfer log only) and
-# first-seen-both.rpt (Both Transfer & Server logs — first sighting in either
-# log): the Seen and Not seen header rows, one row per calendar day in the
-# logs, the Total footer — per column, Seen + Not seen = Total and the day
-# rows sum to Seen. A two-button tab
-# row switches the views. Every nonzero cell links its item list
-# (docs/first-seen/, rendered above so the existence checks hold; the both
-# view's cell pages carry a both- key prefix).
+# ---- the First seen page (docs/analyses/first-seen.html) ---------------------
+# Rendered from data/analyses/reports/first-seen.rpt: the Seen and Not seen
+# header rows, one row per calendar day in the logs, the Total footer — per
+# column, Seen + Not seen = Total and the day rows sum to Seen. Every nonzero
+# cell links its item list (docs/first-seen/, rendered above so the
+# existence checks hold).
 render_coverage_pages() {
     rm -rf "$COVDIR"; mkdir -p "$COVDIR"
     local rpt member key title ltcol dircol rows awfile npages=0
@@ -220,7 +209,7 @@ render_coverage_pages() {
             else
                 printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the items counted in this cell of the Entities table.</p>\n'
             fi
-            printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = surfaced only by the Server &rarr; Transfer step (bin/seen-in-server-log.sh) with no real transfer.</p>\n'
+            printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it).</p>\n'
             # the three selector groups (report.js setupSelFilter) —
             # Connection / Movement (the two halves of the Direction pair)
             # and Use case; single-select per group, the groups combine with
@@ -382,8 +371,8 @@ render_coverage_pages() {
                     # orange / red from the base cache (data-res, style.css)
                     trattr = " data-seen=\"" $3 "\""
                     rr = res[toupper($1)]
-                    # base result carries the tint directly, blue included
-                    if (rr == "green" || rr == "orange" || rr == "red" || rr == "blue") trattr = trattr " data-res=\"" rr "\""
+                    # base result carries the tint directly
+                    if (rr == "green" || rr == "orange" || rr == "red") trattr = trattr " data-res=\"" rr "\""
                     if (wl == 1)
                         printf "<tr%s><td><code>%s</code></td><td>%s</td>%s</tr>\n", trattr, name, e(acc[$1]), tail
                     else if (pt == 1) {
@@ -464,15 +453,9 @@ render_coverage_pages() {
     echo "Wrote $npages coverage cell page(s) to docs/coverage/." >&2
 }
 
-write_first_seen_page() {   # $1 view: 1 = transfer-only (default), 2 = both logs
-    local view=${1:-1} base kp note
-    if [ "$view" = 2 ]; then
-        base="first-seen-both"; kp="both-"
-        note='Seen means seen in the <strong>transfer</strong> logs or flagged <strong>blue</strong> (server-log only): a blue name never transferred, so it shows the <strong>oldest first transfer of its cross-referenced entities</strong> (its account, subscription, login, host, logical flow or partner from the FlowManager config) — the day its surrounding flow first became active. The cell pages tag those rows <strong>Server</strong>. Each count links the list of items behind it.'
-    else
-        base="first-seen"; kp=""
-        note='Seen means seen in the <strong>transfer</strong> logs: an entity that only ever appears in the server log counts as Not seen here (its rows are tinted light blue on the cell pages). Each count links the list of items behind it.'
-    fi
+write_first_seen_page() {
+    local base="first-seen" kp=""
+    local note='Seen means seen in the <strong>transfer</strong> logs. Each count links the list of items behind it.'
     local rpt="$ARPT/$base.rpt"
     [ -f "$rpt" ] || { rm -f "$ADIR/$base.html"; return 0; }
     local out="$ADIR/$base.html"
@@ -492,12 +475,6 @@ write_first_seen_page() {   # $1 view: 1 = transfer-only (default), 2 = both log
         printf '<h1>First seen</h1>\n'
         analyses_group_tabs first-seen.html
         printf '<p class="subtitle">%s</p>\n' "$(field1 DESC "$rpt" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')"
-        # the view switch: two buttons, the current one active
-        if [ "$view" = 2 ]; then
-            printf '<p class="tabs"><a class="tab" href="first-seen.html">Transfer log only</a><span class="tab active">Both Transfer &amp; Server logs</span></p>\n'
-        else
-            printf '<p class="tabs"><span class="tab active">Transfer log only</span><a class="tab" href="first-seen-both.html">Both Transfer &amp; Server logs</a></p>\n'
-        fi
         # NOT class="index": index tables get report.js whole-row links, which
         # would make the Date cell navigate to the row's first cell page.
         printf '<div class="tablewrap"><table class="fit" data-nosort="1">\n'
@@ -530,8 +507,7 @@ write_first_seen_page() {   # $1 view: 1 = transfer-only (default), 2 = both log
                     printf '</tr>\n' ;;
                 NODATE)
                     # seen names with no dated transfer of their own (UC3
-                    # clean-poll greens, sibling-credited names, undated
-                    # blues): they count into Seen, so the day rows + this
+                    # clean-poll greens, sibling-credited names): they count into Seen, so the day rows + this
                     # row sum to the Seen row
                     v6=$v5; v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
                     printf '<tr data-res="green"><td>Seen, no date</td>'
@@ -588,7 +564,7 @@ _uclink() {   # $1 text  $2 href — a text cell linked to its detail page (plai
 # One detail page per nonzero Use cases cell (docs/use-cases/<uc>-<metric>.html):
 # the subscriptions counted in that cell, each linked to its subscription
 # detail page — the same idea as the coverage cell pages, but scoped to the
-# UC prefix x status buckets (metric = total/server/notseen/error/ok). Rebuilt
+# UC prefix x status buckets (metric = total/seen/notseen/error/ok). Rebuilt
 # from scratch on every publish; a 0 cell gets no page (and no link).
 render_use_case_pages() {
     local subs="$DATA/flow-manager/base/_subscriptions.tsv"
@@ -600,12 +576,10 @@ render_use_case_pages() {
     local npages=0 uc ucslug metric mlabel rows n title
     for uc in $ucs; do
         ucslug=$(printf '%s' "$uc" | tr '[:upper:]' '[:lower:]')
-        for metric in total seen transfer server notseen error ok; do
+        for metric in total seen notseen error ok; do
             case $metric in
                 total)    mlabel="Total configured" ;;
-                seen)     mlabel="Seen (in the transfer or server logs)" ;;
-                transfer) mlabel="Transfer (seen in the transfer logs)" ;;
-                server)   mlabel="Server (server-log only)" ;;
+                seen)     mlabel="Seen (in the transfer logs)" ;;
                 notseen)  mlabel="Not seen (configured, never seen)" ;;
                 error)    mlabel="Error (last transfer)" ;;
                 ok)       mlabel="OK (last transfer)" ;;
@@ -623,18 +597,15 @@ render_use_case_pages() {
                     name=$1; dir=$2; res=$3
                     u="none"; if (match(name,/^UC[0-9]+/)) u=substr(name,RSTART,RLENGTH)
                     if (u != UC) next
-                    isfake=(res=="blue")   # server-log-only: base result==blue (bin/build/seen-in-server-log.sh)
                     keep=0
                     if (M=="total") keep=1
-                    else if (M=="seen"     && (isfake || res=="green" || res=="red")) keep=1
-                    else if (M=="transfer" && (res=="green" || res=="red")) keep=1
-                    else if (M=="server"  && isfake) keep=1
-                    else if (M=="notseen" && !isfake && res=="orange") keep=1
-                    else if (M=="error"   && !isfake && res=="red")    keep=1
-                    else if (M=="ok"      && !isfake && res=="green")  keep=1
+                    else if (M=="seen"    && (res=="green" || res=="red")) keep=1
+                    else if (M=="notseen" && res=="orange") keep=1
+                    else if (M=="error"   && res=="red")    keep=1
+                    else if (M=="ok"      && res=="green")  keep=1
                     if (!keep) next
-                    col    = isfake ? "blue" : (res=="green"?"green":(res=="orange"?"orange":(res=="red"?"red":"")))
-                    status = isfake ? "Server" : (res=="green"?"OK":(res=="orange"?"Not seen":(res=="red"?"Error":"\xe2\x80\x94")))
+                    col    = (res=="green"?"green":(res=="orange"?"orange":(res=="red"?"red":"")))
+                    status = (res=="green"?"OK":(res=="orange"?"Not seen":(res=="red"?"Error":"\xe2\x80\x94")))
                     # Direction = the CONNECTION/MOVEMENT pair (out/in), lowercase
                     # — the dirfold in render_rpt.awk does that for every .rpt report;
                     # this table is hand-written, so it does it here.
@@ -654,7 +625,7 @@ render_use_case_pages() {
                 html_head "$title" "../assets/style.css" "" "HOME" "use-cases"
                 esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
                 printf '<p class="range"><a href="../analyses/use-cases.html">&larr; Back to Use Case traffic</a> &mdash; the subscriptions counted in this cell of the Use Case traffic table.</p>\n'
-                printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it) &middot; <strong>light blue</strong> = surfaced only by the Server &rarr; Transfer step.</p>\n'
+                printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it).</p>\n'
                 printf '<div class="tablewrap"><table class="index fit">\n'
                 printf '<tr><th>Subscription</th><th>Direction</th><th>Status</th></tr>\n'
                 printf '%s\n' "$rows"
@@ -716,7 +687,7 @@ _uc_direction() {   # $1 "We are"  $2 "We"  -> "out/in" etc; "" when undefined
 }
 
 # ---- the Use cases page (docs/analyses/use-cases.html) — the OPERATIONAL view:
-# per UC prefix the status counts (Total / Server / Not seen / Error / OK) plus
+# per UC prefix the status counts (Total / Seen / Error / Warning / OK) plus
 # each UC's one-line Description for context. The definition columns (Trigger,
 # We are, We) and the direction-vs-prefix consistency check live on
 # the Use Case definitions tab (write_use_case_definitions_page).
@@ -729,12 +700,11 @@ write_use_cases_page() {
             name = $1; res = $3
             uc = "(none)"; if (match(name, /^UC[0-9]+/)) uc = substr(name, RSTART, RLENGTH)
             tot[uc]++; seen[uc] = 1
-            if (res == "blue")           srv[uc]++
-            else if (res == "green")     ok[uc]++
+            if (res == "green")          ok[uc]++
             else if (res == "orange")    ns[uc]++
             else if (res == "red")       err[uc]++
         }
-        END { for (u in seen) print u "\t" tot[u] "\t" (srv[u]+0) "\t" (ns[u]+0) "\t" (err[u]+0) "\t" (ok[u]+0) }
+        END { for (u in seen) print u "\t" tot[u] "\t" (ns[u]+0) "\t" (err[u]+0) "\t" (ok[u]+0) }
     ' "$subs" | LC_ALL=C sort -V)
     # UNION with the template catalog: a UC whose template is published but has
     # no subscriptions yet (today UC6/UC7) still gets a row — all-zero counts.
@@ -743,26 +713,26 @@ write_use_cases_page() {
         rows=$({ printf '%s\n' "$rows"
                  awk -F'\t' -v have="$(printf '%s\n' "$rows" | cut -f1 | tr '\n' ' ')" '
                      BEGIN { n = split(have, H, " "); for (i = 1; i <= n; i++) seen[H[i]] = 1 }
-                     $2 != "" && !($2 in seen) && !dup[$2]++ { print $2 "\t0\t0\t0\t0\t0" }
+                     $2 != "" && !($2 in seen) && !dup[$2]++ { print $2 "\t0\t0\t0\t0" }
                  ' "$tmpl"; } | LC_ALL=C sort -V)
     fi
     {
         html_head "Use Case traffic" "../assets/style.css" "" "" "use-cases" "" "" "sort-fresh"
         printf '<h1>Use Case traffic</h1>\n'
         analyses_group_tabs use-cases.html
-        printf '<p class="subtitle">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; the status columns of the Flow manager Entities table. <strong>Direction</strong> is the pair the detail-page titles use, <em>connection side</em>/<em>file movement</em>: who dials whom, then which way the file travels &mdash; so <strong>out/in</strong> means we connect out to the partner and the file comes towards us. <strong>Seen</strong> = Transfer + Server; <strong>Transfer</strong> = seen in the transfer logs (its subscriptions end the period <strong>Error</strong> or <strong>Ok</strong> by their last transfer); <strong>Server</strong> = surfaced only by the Server&rarr;Transfer step; <strong>Warning</strong> = configured but never seen &mdash; Total = Server + Error + Warning + Ok. Every nonzero count links the list of subscriptions it counts. Every use case with a <strong>published FlowManager template</strong> is listed &mdash; one with no subscriptions yet shows blank counts. What each UC means &mdash; who connects, which way the file travels, what triggers it &mdash; is on the <strong>Use Case definitions</strong> tab.</p>\n'
+        printf '<p class="subtitle">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; the status columns of the Flow manager Entities table. <strong>Direction</strong> is the pair the detail-page titles use, <em>connection side</em>/<em>file movement</em>: who dials whom, then which way the file travels &mdash; so <strong>out/in</strong> means we connect out to the partner and the file comes towards us. <strong>Seen</strong> = seen in the transfer logs (its subscriptions end the period <strong>Error</strong> or <strong>Ok</strong> by their last transfer); <strong>Warning</strong> = configured but never seen &mdash; Total = Error + Warning + Ok. Every nonzero count links the list of subscriptions it counts. Every use case with a <strong>published FlowManager template</strong> is listed &mdash; one with no subscriptions yet shows blank counts. What each UC means &mdash; who connects, which way the file travels, what triggers it &mdash; is on the <strong>Use Case definitions</strong> tab.</p>\n'
         _ucgroup_tabs counts
         printf '<div class="tablewrap"><table class="index fit" data-nosearch="1">\n'
-        printf '<tr><th>Use Case</th><th>Direction</th><th class="num">Total</th><th class="num">Seen</th><th class="num">Transfer</th><th class="num">Server</th><th class="num">Error</th><th class="num">Warning</th><th class="num">Ok</th><th>Description</th></tr>\n'
-        local uc t sv ns er okc sn trn Tt=0 Tsv=0 Tns=0 Ter=0 Tok=0 Tsn=0 Ttr=0
-        while IFS=$'\t' read -r uc t sv ns er okc; do
+        printf '<tr><th>Use Case</th><th>Direction</th><th class="num">Total</th><th class="num">Seen</th><th class="num">Error</th><th class="num">Warning</th><th class="num">Ok</th><th>Description</th></tr>\n'
+        local uc t ns er okc sn Tt=0 Tns=0 Ter=0 Tok=0 Tsn=0
+        while IFS=$'\t' read -r uc t ns er okc; do
             [ -n "$uc" ] || continue
             local ucfrom ucto weare we human exp trigger
             # read on \036 (RS, not IFS whitespace) so an EMPTY middle field keeps
             # its place — UC8's `exp` is empty, and a plain IFS=$'\t' read would
             # collapse it, shifting the trigger (OpsWise) into `exp` and blanking it.
             IFS=$'\036' read -r ucfrom ucto weare we human exp trigger <<< "$(uc_meta "$uc" | tr '\t' '\036')"
-            trn=$((er + okc)); sn=$((trn + sv))   # Transfer = Error + Ok; Seen = Transfer + Server
+            sn=$((er + okc))   # Seen = Error + Ok
             local ucslug; ucslug=$(printf '%s' "$uc" | tr '[:upper:]' '[:lower:]' | tr -d '()')
             # every count links its own docs/use-cases/ detail page; the column
             # set, order and tints mirror the analyses Entities status table
@@ -772,17 +742,15 @@ write_use_cases_page() {
             printf '<td>%s</td>' "$(_uc_direction "$weare" "$we")"
             _uccell "$t"   "num"          "../use-cases/$ucslug-total.html"
             _uccell "$sn"  "num"          "../use-cases/$ucslug-seen.html"
-            _uccell "$trn" "num"          "../use-cases/$ucslug-transfer.html"
-            _uccell "$sv"  "num res-blue" "../use-cases/$ucslug-server.html"
             _uccell "$er"  "num st-err"   "../use-cases/$ucslug-error.html"
             _uccell "$ns"  "num st-warn"  "../use-cases/$ucslug-notseen.html"
             _uccell "$okc" "num st-ok"    "../use-cases/$ucslug-ok.html"
             esc "$human"; printf '<td>%s</td>' "$ESC"
             printf '</tr>\n'
-            Tt=$((Tt+t)); Tsv=$((Tsv+sv)); Tns=$((Tns+ns)); Ter=$((Ter+er)); Tok=$((Tok+okc)); Tsn=$((Tsn+sn)); Ttr=$((Ttr+trn))
+            Tt=$((Tt+t)); Tns=$((Tns+ns)); Ter=$((Ter+er)); Tok=$((Tok+okc)); Tsn=$((Tsn+sn))
         done <<< "$rows"
-        printf '<tr class="total"><td>Total</td><td></td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td></td></tr>\n' \
-            "$(dotify "$Tt")" "$(dotify "$Tsn")" "$(dotify "$Ttr")" "$(dotify "$Tsv")" "$(dotify "$Ter")" "$(dotify "$Tns")" "$(dotify "$Tok")"
+        printf '<tr class="total"><td>Total</td><td></td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td></td></tr>\n' \
+            "$(dotify "$Tt")" "$(dotify "$Tsn")" "$(dotify "$Ter")" "$(dotify "$Tns")" "$(dotify "$Tok")"
         printf '</table></div>\n'
         printf '</body>\n</html>\n'
     } > "$out"
@@ -993,7 +961,7 @@ write_logical_detection_page() {
         NF >= 3 {
             k = toupper($2); tr = "<tr"
             r = res[k]
-            if (r == "green" || r == "orange" || r == "red" || r == "blue") tr = tr " data-res=\"" r "\""
+            if (r == "green" || r == "orange" || r == "red") tr = tr " data-res=\"" r "\""
             lc = e($2)
             if (k in slug) lc = "<a href=\"../details/logicals/" slug[k] ".html\">" lc "</a>"
             print tr "><td><code>" e($1) "</code></td><td>" lc "</td><td class=\"wrap\">" e($3) "</td></tr>"
@@ -1052,7 +1020,7 @@ write_added_bl_page() {
                     if (u in bslug) bc = "<a href=\"../details/bl/" bslug[u] ".html\">" bc "</a>"
                     cell = cell (cell == "" ? "" : ", ") bc }
                 tr = "<tr"; r = res[k]
-                if (r == "green" || r == "orange" || r == "red" || r == "blue") tr = tr " data-res=\"" r "\""
+                if (r == "green" || r == "orange" || r == "red") tr = tr " data-res=\"" r "\""
                 printf "%s><td>%s</td><td class=\"wrap\">%s</td></tr>\n", tr, sc, cell
                 tot += nb[k] }
             printf "#\t%d\n", tot + 0
@@ -1093,8 +1061,8 @@ write_added_bl_page() {
 # Auto Retries · Resubmit OK / Error · Waiting · Expired — from
 # month-stats.sh's _alltime.tsv sidecar (the Entities / Month stats
 # definitions; a subscription never seen in the log shows blanks; 0 shows
-# blank). Rows tint by the subscription's result (green / orange / red /
-# blue); baked order use case (the name prefix, else the derived one) then
+# blank). Rows tint by the subscription's result (green / orange / red);
+# baked order use case (the name prefix, else the derived one) then
 # name. The roster is the pristine configured snapshot (base/.configured.tsv —
 # the base cache gains discovered names after the build's append steps),
 # falling back to the base cache minus the parse-synthetic UCx_ names on a
@@ -1109,7 +1077,7 @@ write_added_bl_page() {
 # the config (filtered/_skipped.tsv) get a row too: Active and cron from the
 # RAW export (input/flow-manager/subscriptions.json still names them), "n/a"
 # in the nine count columns (the parse dropped their records), no groups, no
-# tint. COLOR (2026-09-15): the result as a word, green / red / orange / blue,
+# tint. COLOR (2026-09-15): the result as a word, green / red / orange,
 # white for a skipped or unresulted subscription. ERROR REASON (2026-09-15):
 # the reason of the NEWEST File in error of the subscription (failed-files.rpt,
 # the Failed files page: Failed or Expired), linking its error page; the
@@ -1239,7 +1207,7 @@ write_subscriptions_page() {
             return "<td class=\"act\" title=\"" e(t) "\">" o "</td>"
         }
         # the Color cell (2026-09-15): the result as a word, white = none
-        function colcell(r) { if (r != "green" && r != "orange" && r != "red" && r != "blue") r = "white"; return "<td class=\"rescol\">" r "</td>" }
+        function colcell(r) { if (r != "green" && r != "orange" && r != "red") r = "white"; return "<td class=\"rescol\">" r "</td>" }
         # the Error reason cell (2026-09-15): the newest File in error, linking its error page
         function ercell(k) {
             if (!(k in ERR) || ERR[k] == "") return "<td class=\"wrap ereason\"></td>"
@@ -1317,7 +1285,7 @@ write_subscriptions_page() {
                 epc = ep ((ep != "" && hp != "") ? ", " : "") hp
                 res = (k in RES) ? RES[k] : ""
                 tr = "<tr"
-                if (res == "green" || res == "orange" || res == "red" || res == "blue") tr = tr " data-res=\"" res "\""
+                if (res == "green" || res == "orange" || res == "red") tr = tr " data-res=\"" res "\""
                 if (k in CNT) split(CNT[k], C, "\t"); else for (ci = 1; ci <= 9; ci++) C[ci] = 0
                 for (ci = 1; ci <= 9; ci++) TOT[ci] += C[ci]
                 # column order (2026-09-13, user request): name, Active (2026-09-14), the routing
@@ -1824,9 +1792,8 @@ write_analyses_index() {
         [ -f "$DOCS/transfer/entity-coverage-accounts.html" ] && printf '<tr><td><a href="../transfer/entity-coverage-accounts.html">Entity coverage</a></td><td class="desc">Per account, partner, domain or application: does each configured direction actually work &mdash; proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out).</td></tr>\n'
         [ -f "$ADIR/first-seen.html" ] && printf '<tr><td><a href="first-seen.html">First seen</a></td><td class="desc">On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs &mdash; the configured names never seen there on top; every count links its item list.</td></tr>\n'
         [ -f "$ADIR/data-diff.html" ] && printf '<tr><td><a href="data-diff.html">Since yesterday</a></td><td class="desc">The data diff against the newest log day: new red flips, flows that just crossed the quiet threshold, recoveries, first-seen entities by name and new server-log-only names.</td></tr>\n'
-        [ -f "$DOCS/transfer/seen-in-server-log.html" ] && printf '<tr><td><a href="../transfer/seen-in-server-log.html">Seen in server log</a></td><td class="desc">The entities that appear in the SERVER log only (blue): their seed messages, what happened, and the status rollups with the blue deltas.</td></tr>\n'
         printf '<tr><th colspan="2">Configuration</th></tr>\n'
-        [ -f "$ADIR/use-cases.html" ] && printf '<tr><td><a href="use-cases.html">Use cases</a></td><td class="desc">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; Total, Server (server-log only), Not seen, Error and OK per use case; tabs for the <strong>Use Case definitions</strong> (who connects, which way the file travels, what triggers it) and the <strong>Use Case patterns</strong> (the accounts grouped by their subscription mix, e.g. <code>UC2 (1) UC4 (1)</code>).</td></tr>\n'
+        [ -f "$ADIR/use-cases.html" ] && printf '<tr><td><a href="use-cases.html">Use cases</a></td><td class="desc">The configured subscriptions grouped by their UC&lt;n&gt; prefix &mdash; Total, Seen, Error, Warning and OK per use case; tabs for the <strong>Use Case definitions</strong> (who connects, which way the file travels, what triggers it) and the <strong>Use Case patterns</strong> (the accounts grouped by their subscription mix, e.g. <code>UC2 (1) UC4 (1)</code>).</td></tr>\n'
         [ -f "$ADIR/uc2-visits.html" ] && printf '<tr><td><a href="uc2-visits.html">UC2 pickup visits</a></td><td class="desc">What each UC2 partner actually does when it connects: collected, two-way exchange, delivery-only (the UC4 twin) or empty-handed visits.</td></tr>\n'
         [ -f "$ADIR/subscriptions.html" ] && printf '<tr><td><a href="subscriptions.html">Subscriptions</a></td><td class="desc">Every configured subscription on one row, the skip-listed ones included: whether it is active (CFT for SWIFT), its result colour and direction, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint (login or remote host), the From and To folders, the cron expression and schedule, the all-time File counts &mdash; total, in, out, Errors, automatic retries, resubmits, Waiting, Expired &mdash; and the last error reason.</td></tr>\n'
         [ -f "$ADIR/logical-detection.html" ] && printf '<tr><td><a href="logical-detection.html">Logical detection</a></td><td class="desc">How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID.</td></tr>\n'
@@ -1852,7 +1819,7 @@ write_analyses_index() {
         [ -f "$ADIR/partner-lifecycle.html" ] && printf '<tr><td><a href="partner-lifecycle.html">Partner lifecycle</a></td><td class="desc">The quiet failure modes of a partner relation: configured but never live, gone quiet after real history, and still transferring on ever fewer flows.</td></tr>\n'
         printf '<tr><th colspan="2">Boxes</th></tr>\n'
         [ -f "$ADIR/accounts-in-boxes.html" ] && printf '<tr><td><a href="accounts-in-boxes.html">Accounts in boxes</a></td><td class="desc">Every configured account boxed by what is true of the subscriptions connected to it &mdash; the account view of Subscriptions in boxes, joined through the FlowManager configuration rather than by name.</td></tr>\n'
-        [ -f "$ADIR/subscriptions-in-boxes.html" ] && printf '<tr><td><a href="subscriptions-in-boxes.html">Subscriptions in boxes</a></td><td class="desc">Every subscription boxed by what is true of it &mdash; its status (OK, Seen, Not seen, Error, Server log only) or any of fifteen problem signals &mdash; one column per box, each cell linking into its report or entity view.</td></tr>\n'
+        [ -f "$ADIR/subscriptions-in-boxes.html" ] && printf '<tr><td><a href="subscriptions-in-boxes.html">Subscriptions in boxes</a></td><td class="desc">Every subscription boxed by what is true of it &mdash; its status (OK, Seen, Not seen, Error) or any of fourteen problem signals &mdash; one column per box, each cell linking into its report or entity view.</td></tr>\n'
         [ -f "$ADIR/triage.html" ] && printf '<tr><td><a href="triage.html">Triage</a></td><td class="desc">The ranked action list: every subscription that is red, holds staged Files about to expire, or just fell silent &mdash; newest flips on the busiest flows first; the per-symptom pages stay the deep-dives.</td></tr>\n'
         printf '<tr><th colspan="2">Errors</th></tr>\n'
         [ -f "$ADIR/failed.html" ] && printf '<tr><td><a href="failed.html">Failed Subscriptions</a></td><td class="desc">Every failing subscription with its evidence &mdash; the newest failed File of each (drilling into its transfer legs and server log), plus the flows failing in the server log only; view buttons switch to per-leg-count and full-history views.</td></tr>\n'
@@ -1873,8 +1840,7 @@ write_subscriptions_page
 write_logical_detection_page
 write_added_bl_page
 write_accounts_page
-write_first_seen_page 1
-write_first_seen_page 2
+write_first_seen_page
 "$SCRIPT_DIR/publish-insights.sh"    # the insight pages (whitelist-audit, config-hygiene, expired, the boxes)
 # The SUBS_GROUP_REPORTS pages (four Configuration-group reports whose DATA is
 # transfer/server but whose PAGES belong here). Rendered from THIS script (not

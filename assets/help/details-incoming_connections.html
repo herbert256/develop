@@ -28,13 +28,13 @@
 <h2>Rules</h2>
 <ul>
 <li>Traffic = every File whose remote host equals this address; the side-aware parse keeps an incoming connection&rsquo;s raw source IP, so the address a partner connects from stays visible.</li>
-<li>The whitelisting accounts come from the FlowManager configuration (the expanded <code>AllowIP</code> whitelist); the server-log lines are the ones the <em>Missing whitelisted IPs</em> server report collected.</li>
-<li>Page background = the address&rsquo;s result: <strong>light green</strong> = its last transfer was OK, <strong>light red</strong> = its last transfer failed, <strong>light blue</strong> = sighted in the server log only, never a transfer.</li>
+<li>The whitelisting accounts come from the FlowManager configuration (the expanded <code>AllowIP</code> whitelist).</li>
+<li>Page background = the address&rsquo;s result: <strong>light green</strong> = its last transfer was OK, <strong>light red</strong> = its last transfer failed. An address without a transfer of its own gets no page.</li>
 <li>Coloured by its <em>own</em> transfers exclusively, never by the health of its partner&rsquo;s flows: a healthy flow says nothing about which of its whitelisted addresses actually connect.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>The index page lists every sighted address; the &ldquo;Why blue&rdquo; matrix on the <em>Seen in server log</em> page links its whitelisted-IP entries here.</li>
+<li>The index page lists every whitelisted address with a transfer of its own.</li>
 </ul>
 </main>
 </body>

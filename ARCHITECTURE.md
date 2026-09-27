@@ -125,25 +125,18 @@ in the area orchestrators and feed the boxes and day pages.
    `bin/analyses/reports/skipped.sh` (`sl_match` names WHICH rule), `publish_lib.sh`'s
    `skipped_tokens`.
 
-## Result colours (green / red / orange / blue) — full detail
+## Result colours (green / red / orange) — full detail
 
-1. **`bin/build/seen-in-server-log.sh`** marks entities appearing in the server logs (TM runtime
-   lines) but never in the transfer logs **blue** (a real base value the normal tint path renders;
-   style.css `#d3e6fb`). The blue set: enrich each `data/unknown/*` sidecar seed via the
-   xref caches (single-value vote, fixpoint; a site seed canonicalizes to a configured subscription
-   — a TRUNCATED token to the unique configured name it prefixes, an EXTENDED token (the ST
-   transfer-site shape `<subscription>_SFTP_SERVER_<partner>`, 2026-08-31) to the longest
-   configured name it continues past at a name-part boundary; a host seed enriching to nothing is
-   dropped; duplicates collapse); per
-   entity type, the enriched values on NO real `_files.tsv` row are blue. A NON-subscription
-   candidate whose connected subscriptions include one with real transfer data is skipped (its own
-   column merely went unattributed — only a subscription's orange means truly never-seen).
-   SSH-logon evidence (TM `[Ssh Default]` Allowed/Disallowed/authenticated lines) becomes
-   `data/unknown/logon-{logins,accounts,ips}.tsv` + `logon-evidence.tsv`, extracted by the
-   unknown-entities map-reduce workers.
-2. **`bin/build/result.sh`** fills the rest, preserving blue: a **subscription** goes green/red by
+**No blue** (2026-09-27, user request): the fourth colour — "seen in the server log only, never
+transferred" — and its step `bin/build/seen-in-server-log.sh` are gone, with every consumer. A
+server-log mention alone never makes an entity seen or coloured; the server-log SIGHTING LISTS
+(`data/unknown/*.tsv`, the unknown-entities map-reduce) are read colour-free (Entity Search /
+Cross reference: an unconfigured sighting is red; data-diff; the cleanup backlog). `data/blue/`
+is `data/colour/`; `result.sh` drops the old directory.
+
+**`bin/build/result.sh`** fills the base result column: a **subscription** goes green/red by
    its LAST File's outcome (red when Failed or Expired, green otherwise incl. Waiting; orange =
-   never seen). **The after-last-transfer rule (2026-08)**: a would-be-green subscription flips
+   never seen in the transfer log). **The after-last-transfer rule (2026-08)**: a would-be-green subscription flips
    RED when the server log holds an E-level line NEWER than that last transfer — newer than its
    END since 2026-09-12 (user rule): the cut is the last File's start raised to the newest OK
    File's END (`_files.tsv` col 24, the latest leg end), because a File that started before the
@@ -157,14 +150,14 @@ in the area orchestrators and feed the boxes and day pages.
    (`data/server/cache/_sessions-ended.tsv`, the shared PERSISTENT-SESSION pseudo-session never
    listed), so the banner, the red flip, went-kaput and the server-failing set agree. The evidence is
    its own `_err_warn` ring plus every connected host/account/login ring LINE `_build_ringattr`
-   attributes to THIS flow (`blue/_ringattr.tsv`): each of those entities serves other flows too,
+   attributes to THIS flow (`colour/_ringattr.tsv`): each of those entities serves other flows too,
    so a connected ring never counts wholesale. A line attributes by a CONFIGURED NAME in its
    MESSAGE (every name-shaped token, tail-stripped and rename-folded, roster-checked — not only
    a UC-prefixed token, since 2026-08-31: the hybrid production flows carry no UC prefix),
    else by its SESSION — voted from the parse cache's own lines, then joined against
    `_transfers.tsv` col 24 (the same connection id; col 6 is the leg's site, canonical since
    parse time; legs naming two sites resolve to neither). What attributes to NOTHING goes
-   E-level-only to `blue/_ringorphan.tsv` (ring kind ⇥ name ⇥ stamp; a forward-address ring's
+   E-level-only to `colour/_ringorphan.tsv` (ring kind ⇥ name ⇥ stamp; a forward-address ring's
    residue lands on its endpoint) and `orphan_red` reds the ring's OWN entity — a credential
    failure, a PeSIT profile complaint naming only the account — unless it moved a file OK since
    (hosts count OUT-side files only) and never over an already-red row. The detail page's
@@ -173,7 +166,7 @@ in the area orchestrators and feed the boxes and day pages.
    (`details.sh` checks the reverse `P2N` count), or one line in a hybrid account's ring landed
    on all eight of its subscription pages with a red ALERT each — it shows the log. **The
    trouble-after-success flip (2026-08-22)** adds the LOOSE
-   join to the colour after all: `_build_kaputflip` (`blue/_kaputflip.tsv`) takes each flow's
+   join to the colour after all: `_build_kaputflip` (`colour/_kaputflip.tsv`) takes each flow's
    newest connected account/login/single-host-ring E line WHOLESALE (forward addresses included —
    the went-kaput join), classifies that one newest message with `flip-reason.awk` and drops the
    flow entirely when it reads as a DEPLOY defect (Route stopped / Receive File As not set —
@@ -181,7 +174,7 @@ in the area orchestrators and feed the boxes and day pages.
    after-last-transfer test, clean-poll keep included. **A line whose SESSION names one flow
    is that flow's alone** (2026-09-12, user rule: for a server error with a host, read all the
    log lines with the same session id to find the right subscription): `_build_ringattr`'s
-   session vote is persisted as `blue/_sessvote.tsv` (session → the one flow its lines name /
+   session vote is persisted as `colour/_sessvote.tsv` (session → the one flow its lines name /
    its transfer legs carried, `\001` when two) and both wholesale joins — `_build_kaputflip`
    and went-kaput.sh — skip such a line for the siblings (a production host shared by two
    flows reddened the wrong one on an "Authentication failure connecting to remote host …"
@@ -203,35 +196,25 @@ in the area orchestrators and feed the boxes and day pages.
    flow's OWN failures newer than its newest successful poll and than the last transfer are the
    streak; below three the connection failures are DISCOUNTED and the newest of the remaining
    evidence decides by the usual test. Nothing left = the flow stays green, listed in
-   `blue/_connhold.tsv` (name, stamp, streak); the went-kaput page still shows it as trouble
+   `colour/_connhold.tsv` (name, stamp, streak); the went-kaput page still shows it as trouble
    after success. Evidence of any other kind flips as before. **The UC3 clean-poll
-   exception (2026-08)**: a would-be-blue UC3 subscription whose
+   exception (2026-08)**: a never-transferred (orange) UC3 subscription whose
    newest successful poll line ("Applying the search pattern … for transfer site '…': N file(s) …",
    per-name server mention cache) is no older than its newest E-level mention flips **GREEN** — the
    poll verifiably works, there is simply nothing to fetch. The flipped names land in
-   `data/blue/_greenpoll.tsv` (no-remote-files re-selects on green+blue; the blue evidence
-   card is kept), showseen counts a no-data green as seen-with-blank-counts exactly like blue, and
+   `data/colour/_greenpoll.tsv` (no-remote-files re-selects on green+orange), showseen counts a
+   no-data green as seen-with-blank-counts, and
    deploy-errors clears a UC3 subscription on a successful poll after its last route-stop message.
    Every other entity rolls up its connected subscriptions via the xref caches (all
-   green → green, any red → red, else orange; a blue subscription counts like ORANGE in the rollup
-   — server-log DISCOVERY must never change a health verdict; the clean-poll flip is deliberate —
-   a VERIFIED working poll is a verdict, not mere discovery). EXCEPT `_white.tsv`: a whitelisted
-   IP goes by the LAST real transfer whose remote host is that address, orange when none. It flips
-   the SSH-logon entities orange → blue only when they have no real transfer data
-   (`rollup`'s `hd` set), so **blue always means "never transferred"** and no blue row carries a
-   Last transfer; `seen-in-server-log.sh` exempts those names (`xf`) from its stale-blue reset.
+   green → green, any red → red, else orange; a clean-poll green counts like ORANGE in the rollup
+   — server-log evidence never sets the verdict of the entities above a flow). EXCEPT
+   `_white.tsv`: a whitelisted IP goes by the LAST real transfer whose remote host is that
+   address, orange when none.
 
-Blue counts as SEEN with blank counts (`showseen.sh`), so the coverage TSVs mark it seen; the
-status tables show it as the **Server** column (Transfer = Seen − Server). On the Entities Summary
-views and Entity Search a blue entity is a blank tinted row added at publish time from the base
-result — `RESMAP_FILES` alone carries the tint (no separate overlay map). In the Transfer scope a
-blue row retints orange and moves to Not seen / Warning. The per-row dimension reports, dashboards
-charts and day pages count real `_files.tsv` rows only, so they don't count blue entities.
-`data/blue/<type>/<name>.txt` holds the evidencing server-log line per blue entity
-(`result.sh` writes one file per FINAL blue entity from `blue/_evidence.tsv`, each type dir
-rebuilt from scratch); `details_lib.sh`'s `blue_box` reads it (existence = the signal) and opens
-the detail page with the "Only seen in the server log" INTRO + a LOGCARD.
-`data/seen-in-server-log.tsv` is a standalone audit intermediate, never appended to a cache.
+The coverage TSVs (`showseen.sh`) mark a subscription seen when it has transfer data or is a
+clean-poll green (blank counts); the Entities views and Entity Search add such a green as a blank
+tinted "ghost" row at publish time from the base result — `RESMAP_FILES` alone carries the tint.
+The per-row dimension reports, dashboards charts and day pages count real `_files.tsv` rows only.
 
 ## Report groups (full lists)
 
@@ -393,33 +376,31 @@ top-bar Monitor link.
 
 **The UC status stacks** are TOTAL-PRESERVING compositions: every slot is a full stack of that use
 case's configured subscriptions, bottom-up in ascending severity. UC1/UC3/UC4 share KIND `ucst`
-(7 states; UC1 emits a constant 0 for its missing state), UC2 has `ucst2` (5).
+(4 states: ok · ok -> error · error · not seen — the three `server - …` states went with the
+blue result, 2026-09-27), UC2 has `ucst2` (5).
 `bin/analyses/reports/uc<n>-status.sh` writes a per-hour sidecar
 `data/server/reports/uc<n>-slots.tsv`; `overview.sh` only re-buckets. A status is a STATE: a
 coarser slot takes the LAST hour inside it — never a sum/average — and an empty slot carries the
 previous state forward. Regression test: the last sidecar row must equal the report's own `STAT`
-figures exactly. Server-visibility comes from `res[]=="blue"`. Sidecar guards (same as pesit):
+figures exactly. Sidecar guards (same as pesit):
 `[ -f "$SLOTS_OUT" ] || rm -f "$OUT"`; the sidecar goes with the `.rpt` on a no-data exit; a run
 with data but no timestamped rows creates an EMPTY sidecar; create only when absent, never touch.
 
 **The three cumulative `seen` views** (Subscriptions / Partners / Accounts): per slot, how many
 were seen at or
-before it — `v0` blue Transfer+server UNION / `v1` orange Transfer / split into `v2` green (latest
-File OK) + `v3` red. Invariants at every slot/resolution: blue and orange only RISE; `v2+v3==v1`.
-`bar`/`solid` stack red, green (topping out AT orange), then `blue − orange` (`seenTop()`). All
+before it — `v0` orange (seen in the transfer log) / split into `v1` green (latest File OK) +
+`v2` red (the blue Transfer+server union curve went 2026-09-27). Invariants at every
+slot/resolution: orange only RISES; `v1+v2==v0`. `bar`/`solid` stack red, then green topping
+out AT orange (`seenTop()`). All
 curves count CONFIGURED entities (2026-08; the amended-in synthetic `_UNKNOWN` names stay OUT of
 the roster, mirroring First seen). A logged site value credits EVERY configured subscription that
 prefixes it (`credits()`, 2026-08-22 — the showseen/first-seen rule, so a configured parent name
 is seen through its child flows; the unique-match `canon()` alone missed four such parents and
 broke the endpoint identities below), falling back to the unique reverse match for a truncated
 value; partner attribution = col 20 ∪ subscription partners ∪ host partners; accounts match
-exactly. Orange is transfer
-evidence only; blue = orange + the CURATED server-only sets — the base-cache blues (+ the
-`_greenpoll.tsv` clean-poll subscriptions), each entering at its first-seen-ledger day.
-**Cross-checks after any change**: orange ends at `first-seen.rpt`'s DATED Seen (Seen minus the
-no-date bucket; acceptance 2026-08-22: subscriptions 283, partners 97, accounts 221); blue ends
-at `first-seen-both.rpt`'s SEEN minus its DATELESS entries (acceptance 2026-08-22: subscriptions
-358, partners 106, accounts 260 — no dateless entries that day).
+exactly. Orange is transfer evidence only.
+**Cross-check after any change**: orange ends at `first-seen.rpt`'s DATED Seen (Seen minus the
+no-date bucket; acceptance 2026-08-22: subscriptions 283, partners 97, accounts 221).
 These six overview-only views are not on the day pages; their slot links carry
 `?axway_hero=Files%20processed`.
 
@@ -482,9 +463,8 @@ full-period subscription verdicts bucketed by state-change day (`daycount RPT FI
 reports are `nofilter` — links carry NO `?axway_date=`); the server No remote dir/files tables
 (date-aware — links keep it); per-day `_parse.tsv` line counts for the message-family signals
 (logon screening, outbound logon failures, connection failures, deploy route-abandons,
-PeSIT ceiling, cluster distress, event-feed errors); UC3 "Failing polls"
-= the uc3-status "server - error" rows bucketed by their newest `@data:loglines` failure date
-(went-kaput-style; no q). Together the two lists cover every red/orange box of Subscriptions in
+PeSIT ceiling, cluster distress, event-feed errors). (The UC3 "Failing polls" problem went with
+the uc3-status "server - error" state, 2026-09-27.) Together the two lists cover every red/orange box of Subscriptions in
 boxes that has dated log evidence (Missing cron, Went quiet and Not seen have none). Both Top views link Date cells to day pages via the cell attr
 `@{href=URL}`; consumers of topview date cells strip it first (`sub(/^@\{[^}]*\}/,"",d)`:
 publish_lib's `area_dates`, `bin/build/publish.sh`, `bin/dashboards/lib.sh`,
@@ -545,7 +525,7 @@ only when there are more than 14 days) lifts the cap — report.js `setupShowAll
 capped table inside the button's adjacent wrapper. The baked Total keeps the full-window figures, since
 `recomputeTotals` counts inline display only; the First-seen counts join `first-seen.rpt` by date —
 its summary lines stay out of the day rows, and each First-seen Total cell shows the report's
-SEEN figure — equal to the status tables' Transfer-scope Seen by construction, the day cells
+SEEN figure — equal to the status tables' Seen by construction, the day cells
 plus the report's no-date bucket summing to it — linking its `<type>-seen` list), plus the
 log-exports facts table (`write_log_facts`:
 per log the input-file count from the parse manifests `_parse.files`/`_transfers.files`, total
@@ -555,16 +535,17 @@ Transfers Count (`$13` since 2026-09-12 — the Recovered and Resubmit groups si
 2026-08-31 the transfer half read `$13`, the Transfers Error %, so a clean 0.0 % day counted as a
 hole and an estate with no failed transfer showed the Transfer row without Records/First/Last/Days).
 Every status cell opens the **Transfer > Entities view whose row
-count IS that figure**, in the scope the "including server log" switch is in (ON = the bare
-`+Server` pages, OFF = `-transfer`); the Transfer column links `<e>-seen-transfer`, the Server
-column `<e>-server`; the percentage columns link too; a 0 renders as an empty cell (inert). The
+count IS that figure** (columns Entity · Total · Seen · OK · Error · Warning · Ok — the
+Transfer/Server columns and the "including server log" switch went with the blue result,
+2026-09-27): Total links `<e>-all`, Seen `<e>-seen`, the counts their result views; the
+percentage columns link too; a 0 renders as an empty cell (inert). The
 five Logical/PDA/BL **Total** cells link the coverage cell pages
 `docs/coverage/<member>-configured.html` (written by `bin/analyses/reports/coverage.sh` +
 `render_coverage_pages`, help slug `coverage`). `check_status_consistency` verifies every figure
 against the tinted (`data-res`) row count of its target view. The "configured names actually SEEN"
 figure comes from `bin/analyses/reports/home.sh` → `home.rpt` (nine `SEEN⇥member⇥count` lines;
 the derived Logical/PDA members re-run their both-ways merge over `coverage/<member>.tsv`), consumed by
-`_status_table` and `seen-in-server-log.sh` — why that report runs last.
+`_status_table`.
 
 ## The Entities report pages
 
@@ -638,19 +619,17 @@ describe this layout.
 
 The Reason column (2026-08): the SUBSCRIPTIONS Error view appends it — the same per-flow diagnosis
 the home red tables show, resolved by the same chain (newest red `failed-sub-all.rpt` row's own
-verdict unless the flow is in `blue/_redflip.tsv`; else the classified `_kaput-evidence.tsv` newest
+verdict unless the flow is in `colour/_redflip.tsv`; else the classified `_kaput-evidence.tsv` newest
 E line via the shared `bin/flip-reason.awk`; else `_subs-boxes.tsv`). `_subs-boxes.tsv` is written
 by the LATER analyses publish; the transfer publish stamp watches all three sources + the classifier,
 and build.sh re-invokes the transfer publish right after the analyses publish (the "transfer
 catch-up (boxes reasons)" step) so a changed — or first-build — boxes sidecar lands in the SAME
 build. The sidecar is cmp-guarded, so the catch-up skips in ~0 s when nothing changed.
 
-Nav = three tab groups: member · All/Seen/Not seen/OK/Warning/Error[/Server] · **Transfer |
-+Server**. The SCOPE: does a server-log sighting count as seen? **+Server** is the default and the
-site-wide model (bare filenames); **Transfer** pretends the server log was never read — blue tints
-orange and moves into Not seen/Warning (`-transfer` suffix). Only Seen/Not seen/Warning are
-scope-dependent; All/OK/Error are one page each (both scope tabs disabled); **Server** is a
-seventh view of the blue names only. The variants are assembled at PUBLISH time: All = Summary
+Nav = two tab groups: member · All/Seen/Not seen/OK/Warning/Error — six pages per entity,
+`<entity>-<view>.html` (the Transfer | +Server SCOPE row, its `-transfer` pages and the
+seventh Server view went with the blue result, 2026-09-27; a server-log sighting never counts as
+seen). The views are assembled at PUBLISH time: All = Summary
 rows + one zero-blank row per configured-never-seen name (the DEFAULT page, `first_page`);
 OK/Warning/Error filter by site-wide RESULT (`entity_res_block` — one definition, shared with tints
 and status columns). The not-seen names come from showseen's `coverage/*.tsv`, so Entities and Show
@@ -800,7 +779,7 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   count-0 sidecar row renders there like an absent one). The
   table sits in one `.sxs` flex row with Activity per day and Incoming connections
   (`login_sxs_row()` relocates the two blocks after the Activity table and tags all three
-  `sxs=9`; a page WITHOUT an Activity table — blue and never-seen logins — anchors the row on
+  `sxs=9`; a page WITHOUT an Activity table — a never-seen login — anchors the row on
   Features instead; Outgoing connections, where present, stays put). HOST pages get the same
   table over the ADDRESS evidence (`host_logons_section()`, the `_logons-hosts.tsv` second file
   ensure_logons writes), BOTH directions: inbound per client address — the auth lines'
@@ -870,7 +849,7 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   flows too is not merged — after its last transfer (ACCOUNT pages fold in their logins'/hosts'
   lines). A line that is both recent and an error now appears in BOTH tables, and a line the log
   holds twice is shown twice (`sort_cap`, which replaced `dedup_cap`; `emit_srv_rows` renders one
-  table, `emit_srv_table`'s third argument picks one or two). The per-entity lists a blue /
+  table, `emit_srv_table`'s third argument picks one or two). The per-entity lists a
   never-seen page prints (`srv_lines_for`) stay ONE table each. Any Error/Warn after the last
   transfer opens a red ALERT banner. Only the five classic types have per-name caches.
 - **Partners - Incoming** (2026-09-13, user request), `bin/analyses/reports/partners-in.sh` → `analyses/partners-in.html`: a MERGED report — fe-overview.rpt (the FE overview, renamed back from "Partners - Incoming" the same day) joined with the Incoming table of the server pool's `logon.rpt`, one row per login (the union; funnel-only logins untinted with empty transfer cells), the funnel cell drills re-keyed to their new columns; trimmed the same day (user request) to Login … Pickups + Allowed · Disallowed · Authenticated · Auth Failed (= Bad key + Key failures + Auth failed, its drill the 5 newest lines of the three) · Locked · Pattern. Runs after analyses wave 1. Both source pages stay until the user retires them.
@@ -990,12 +969,6 @@ row links inside it.
   pair of the nine entities both ways, existence only (no counts/drills/date filter); rows =
   seen-together pairs + configured-never-seen (`@data:seen`); table `group`; each cell tinted by
   its own entity's RESULT; two full entity NAV rows (row 1 first entity, row 2 second).
-- **Seen in server log** — `transfer/seen-in-server-log.html` (+ `transfer/seenlog/` breakdowns),
-  the audit page of the blue-marking step: the two result-status rollups (side by side, `sxs`)
-  annotated with the `(+n)`/`(-n)` blue deltas; a "What happened" message-shape table; then each
-  blue entity as TWO physical rows — a full-width message row (a `@data:loglines` drill) above its
-  data row, kept paired through sorts by `bindPairs`/`repositionPairs`; `nosearch`, no date
-  filter.
 - **Entity coverage** — `transfer/entity-coverage[-once|-ok|-diff]-{accounts,partners,domains,applications}.html`
   (4 rules x 4 entities): is each configured DIRECTION working? The RULE rides on the BASENAME
   (shared help slug and group slot); its NAV is emitted INSIDE each table block (per-entity —
@@ -1060,14 +1033,14 @@ Two hand-written analyses pages sharing ONE producer — `_subs_box_rows` (publi
 the `<box>⇥<subscription>` memberships both start from, so they cannot drift about what a box
 means.
 
-**Subscriptions in boxes**: every configured subscription boxed by what is true of it — twenty
-boxes over one row each (the first box counts the whole estate). Sources: (a) a report's own
-`.rpt` (from-green-to-red, went-kaput, only-red, no-remote-dir/-files, uc3-status "failing polls",
+**Subscriptions in boxes**: every configured subscription boxed by what is true of it — eighteen
+boxes over one row each (the first box counts the whole estate; box ids 12 "Server log only" and
+19 "Failing polls" went with the blue result, 2026-09-27, and stay unused). Sources: (a) a
+report's own `.rpt` (from-green-to-red, went-kaput, only-red, no-remote-dir/-files,
 missing-cronjobs, went-quiet, site-failures); (b) derived from `_files.tsv` (One-legged, Waiting,
 Expired); (c) no report at all, read from the same sources as the Entities views: not seen
-(`coverage/subscriptions.tsv` col 3 = 0), seen (col 3 ≠ 0 minus blue — the TRANSFER-scope reading,
-so **Seen + Server + Not seen = Total**, the invariant to re-assert), server (base result blue),
-ok (green), error (red). Login errors in/out come from logon.rpt via the `_logins-subscriptions` /
+(`coverage/subscriptions.tsv` col 3 = 0), seen (col 3 ≠ 0, so **Seen + Not seen = Total**, the
+invariant to re-assert), ok (green), error (red). Login errors in/out come from logon.rpt via the `_logins-subscriptions` /
 `_hosts-subscriptions` xrefs. **connection** (site-failures) applies the one-legged UNRESOLVED
 rule — cleared only by an OK File LATER than the failure instant taken from the row's
 `@data:loglines` payload (entry 1 = newest; fallback: end of the Last-seen day). A flagged cell

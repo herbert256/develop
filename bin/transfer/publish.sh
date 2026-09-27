@@ -30,7 +30,7 @@ STAMP="$PUBLISH_STAMP_DIR/transfer.stamp"
 if publish_is_fresh "$STAMP" "$DOCS/transfer" "${BASH_SOURCE[0]}" \
        "$DATA/transfer/reports" "$DATA/flow-manager" \
        "$DATA/server/reports/_kaput-evidence.tsv" "$DATA/analyses/reports/_subs-boxes.tsv" \
-       "$DATA/blue/_redflip.tsv" "bin/flip-reason.awk"; then
+       "$DATA/colour/_redflip.tsv" "bin/flip-reason.awk"; then
     echo "docs/transfer/ is up to date; skipping." >&2
     exit 0
 fi
@@ -97,27 +97,9 @@ if [ ${#dtop[@]} -gt 0 ]; then
     echo "Rendered docs/transfers/duration/top/ (${#dtop[@]} transaction page(s))." >&2
 fi
 
-# Seen-in-server-log matrix cell pages: seen-in-server-log.sh wrote one .rpt
-# per nonzero "Why blue" cell into data/transfer/reports/seenlog/; render each
-# to docs/transfer/seenlog/<row>-<col>.html (2 levels deep -> ../../ css).
-# The matrix cells link here via @{href=seenlog/...}. No date filter.
-shopt -s nullglob
-slog=("$DATA"/transfer/reports/seenlog/*.rpt)
-shopt -u nullglob
-# clear even when THIS run has no .rpt set (an env can lose the whole
-# family — production 2026-08 — and stale pages would survive forever)
-mkdir -p "$DOCS/transfer/seenlog"
-rm -f "$DOCS"/transfer/seenlog/*.html
-if [ ${#slog[@]} -gt 0 ]; then
-    CUR_DATES=""; DLINK_BASE="../../details/"
-    for f in "${slog[@]}"; do
-        b=${f##*/}; b=${b%.rpt}
-        pub_run render_rpt "$f" "$DOCS/transfer/seenlog/$b.html" "../../assets/style.css" "../../index.html" "TRANSFER" "" "seen-in-server-log"
-    done
-    pub_wait
-    CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
-    echo "Rendered docs/transfer/seenlog/ (${#slog[@]} cell page(s))." >&2
-fi
+# (the Seen-in-server-log matrix cell pages, docs/transfer/seenlog/, went with
+# the BLUE server-log-only status and its report, 2026-09-27)
+rm -rf "$DOCS/transfer/seenlog"
 
 # Security-parameter VALUE pages: security-params.sh wrote one .rpt per
 # (table, value) into data/transfer/reports/secparams/, listing the

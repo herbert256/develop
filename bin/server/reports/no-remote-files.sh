@@ -15,12 +15,15 @@
 # Scope, deliberately narrow (the report answers "which flows have NEVER had
 # anything to fetch"):
 #   * UC3 only        — the pull use case; a poll is its whole reason to exist
-#   * NO transfer data — result blue, or GREEN via result.sh's clean-poll rule
-#                       (2026-08: a cleanly-polling UC3 flips blue -> green but
-#                       still never moved a file). A red subscription HAS moved
-#                       files, so an empty stretch is a lull, not this problem;
-#                       a REAL green is dropped by the every-poll-empty rule
-#                       below (some poll of it found files).
+#   * NO transfer data — result orange (never transferred), or GREEN via
+#                       result.sh's clean-poll rule (2026-08: a cleanly-polling
+#                       UC3 flips green but still never moved a file). A red
+#                       subscription HAS moved files (or cannot connect), so it
+#                       is not this problem; a REAL green is dropped by the
+#                       every-poll-empty rule below (some poll of it found
+#                       files). Colour-free since 2026-09-27: the roster used
+#                       to be the blue (server-log-only) set, and the poll
+#                       lines themselves now decide who is on it.
 #   * every poll empty — 0 file(s) FOUND on every single one. A subscription
 #                       that found files it could not match (found > 0,
 #                       matched = 0) has a pattern problem, not an empty remote
@@ -47,26 +50,26 @@ source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/no-remote-files.rpt"
 
-SUBB="$CONFIG_BASE/_subscriptions.tsv"    # name <TAB> direction <TAB> result (blue = server-log only)
+SUBB="$CONFIG_BASE/_subscriptions.tsv"    # name <TAB> direction <TAB> result
 TSITE="$TRANSFER_REPORTS/subscription.rpt"
 # The no-transfer UC3 roster: "KB<TAB>name" lines, fed in ahead of the cache.
-# Blue OR green: a cleanly-polling UC3 subscription is flipped GREEN by
+# Orange OR green: a cleanly-polling UC3 subscription is flipped GREEN by
 # result.sh's clean-poll rule (2026-08) but still has no transfer data — it
 # belongs here all the same. The every-poll-empty rule below keeps a REAL
 # green (one that transferred: some poll found files) out of the list.
 # UC3-named OR derived-UC3 (xref/_subscriptions-ucderived.tsv): the production
 # hybrid flows carry no UC prefix (2026-08-31 audit)
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
-blue_uc3() {
+notx_uc3() {
     [ -f "$SUBB" ] || return 0
     awk -F'\t' -v ucdf="$UCDF" '
         BEGIN { while ((getline l < ucdf) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[2] == "UC3") ucd[toupper(a[1])] = 1 } close(ucdf) }
-        ($1 ~ /^UC3/ || (toupper($1) in ucd)) && ($3 == "blue" || $3 == "green") && $1 != "" { print "KB\t" toupper($1) }' "$SUBB"
+        ($1 ~ /^UC3/ || (toupper($1) in ucd)) && ($3 == "orange" || $3 == "green") && $1 != "" { print "KB\t" toupper($1) }' "$SUBB"
 }
 # sitelink(): the logged name resolves to its detail page — exact, else the
 # unique known subscription it prefixes, else the raw name (alink resolves
 # through the comprehensive slugmap at render time, so a miss renders
-# unlinked). A blue subscription has no transfer data, so it is usually absent
+# unlinked). A listed subscription has no transfer data, so it is usually absent
 # from the roster and takes the raw path.
 known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" lines
     [ -f "$2" ] || return 0
@@ -108,14 +111,14 @@ ensure_parsed
 skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TSITE" "$SUBB"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-# One pass over the poll lines. A site is kept only when it is a blue UC3
+# One pass over the poll lines. A site is kept only when it is a roster UC3
 # subscription AND every poll of it found ZERO files. Emits TAB-separated:
 #   SUB <TAB> polls <TAB> last <TAB> subscription <TAB> days <TAB> first <TAB> buckets <TAB> loglines
 #   DAY <TAB> date <TAB> polls <TAB> nsubs
 #   TOT <TAB> polls <TAB> nsubs <TAB> ndays <TAB> skipped(found files)
 agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
     BEGIN { rn_load(RNF) }
-    $1 == "KB" { blue[$2] = 1; next }                        # blue UC3 roster         (first input)
+    $1 == "KB" { ros[$2] = 1; next }                         # no-transfer UC3 roster  (first input)
     $1 == "KS" { ksite[$2] = 1; next }                       # known-subscription list (first input)
     $5 !~ /Applying the search pattern .* for transfer site / { next }
     {
@@ -125,7 +128,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
         if (site == "") next
         tail = substr(m, RSTART + RLENGTH)                    # ": N file(s) …"
         u = toupper(site)
-        if (!(u in blue)) next                                # blue UC3 subscriptions only
+        if (!(u in ros)) next                                 # no-transfer UC3 subscriptions only
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) next
         # the file count, from BOTH message shapes — "N file(s) were found of
         # which M matched the pattern." and "N file(s), matching the pattern,
@@ -158,7 +161,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
         for (d in dc) { nday++; printf "DAY\t%s\t%d\t%d\n", d, dc[d], dsn[d] }
         printf "TOT\t%d\t%d\t%d\t%d\n", tot+0, nsub+0, nday+0, nskip+0
     }
-' <(blue_uc3; known_names KS "$TSITE") "$PARSED")
+' <(notx_uc3; known_names KS "$TSITE") "$PARSED")
 
 IFS=$'\t' read -r _ tot_polls n_sub n_day n_skip <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ "${tot_polls:-0}" -eq 0 ]; then
@@ -187,8 +190,8 @@ day_rows() {
 {
     printf 'TITLE\tNo remote files\n'
     printf 'DESC\tUC3 subscriptions that poll the partner successfully but have NEVER found a file — every listing came back empty.\n'
-    printf 'KEYWORDS\tempty poll,no files,nothing to fetch,idle schedule,blue,server-log only,uc3,pull\n'
-    printf 'INTRO\tThese UC3 flows work — the connection, the credentials and the remote directory are all fine and the listing succeeds — but the directory is **always empty**. **%s** subscription(s) polled **%s** time(s) over **%s** day(s) and found **nothing, ever**. None of them has ever produced a transfer row — seen in the server log only; the result shows **green** when the latest poll is clean (the clean-poll rule: the flow verifiably works, there is simply nothing to fetch), else **blue**. Every slot spent here is a connection and a listing for no data, and none of it is visible in the transfer reports — an empty poll starts no transfer.\n' \
+    printf 'KEYWORDS\tempty poll,no files,nothing to fetch,idle schedule,server-log only,uc3,pull\n'
+    printf 'INTRO\tThese UC3 flows work — the connection, the credentials and the remote directory are all fine and the listing succeeds — but the directory is **always empty**. **%s** subscription(s) polled **%s** time(s) over **%s** day(s) and found **nothing, ever**. None of them has ever produced a transfer row — seen in the server log only; the result shows **green** when the latest poll is clean (the clean-poll rule: the flow verifiably works, there is simply nothing to fetch), else **orange**. Every slot spent here is a connection and a listing for no data, and none of it is visible in the transfer reports — an empty poll starts no transfer.\n' \
         "$n_sub" "$tot_polls" "$n_day"
 
     printf 'TABLE\tUC3 subscriptions that never find a file\twide\n'
@@ -204,7 +207,7 @@ day_rows() {
     day_rows
     printf 'TOTAL\tTotal (%s day(s))\t@{class=num warn}%s\t\n' "$n_day" "$tot_polls"
 
-    printf 'NOTE\tSource: the TM message "Applying the search pattern … for transfer site …: **0 file(s) were found** of which 0 matched the pattern." Listed are the **UC3** subscriptions with no transfer data at all (result **green** via the clean-poll rule, or **blue**) whose EVERY poll found zero files; a subscription that did see files it could not match has a pattern problem, not an empty directory, and is left out%s. **UC status / UC3** (Polls by subscription) ranks the empty-poll rate of every subscription, working ones included, and **No remote dir** covers the flows whose listing fails outright. Poll counts are additive, so a date-filtered range re-totals them. Click a row to expand its 10 most recent poll lines.\n' \
+    printf 'NOTE\tSource: the TM message "Applying the search pattern … for transfer site …: **0 file(s) were found** of which 0 matched the pattern." Listed are the **UC3** subscriptions with no transfer data at all (result **green** via the clean-poll rule, or **orange**) whose EVERY poll found zero files; a subscription that did see files it could not match has a pattern problem, not an empty directory, and is left out%s. **UC status / UC3** (Polls by subscription) ranks the empty-poll rate of every subscription, working ones included, and **No remote dir** covers the flows whose listing fails outright. Poll counts are additive, so a date-filtered range re-totals them. Click a row to expand its 10 most recent poll lines.\n' \
         "$([ "${n_skip:-0}" -gt 0 ] && printf ' (%s here)' "$n_skip" || true)"
     printf 'SUMMARY\tSubscriptions: %s  |  Empty polls: %s  |  Days: %s\n' "$n_sub" "$tot_polls" "$n_day"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

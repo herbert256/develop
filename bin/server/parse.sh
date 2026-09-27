@@ -249,9 +249,9 @@ BEGIN {
     # purged, a route start and a route finish for EVERY route run — 1.12M of
     # the 6.38M acceptance records, 18% of the cache, all Info level. The one report built on them
     # (advanced-routing, whose Executions column WAS the AR0076 count) went with
-    # them, 2026-08. Nothing else counts them: no blue evidence line, no
-    # unknown-* seed and no entity mention cache rests on these three, so
-    # seen-in-server-log and the result colours are untouched.
+    # them, 2026-08. Nothing else counts them: no unknown-* sighting and no
+    # entity mention cache rests on these three, so the result colours are
+    # untouched.
     NOISE[++NOISE_N] = "AR0011:"
     NOISE[++NOISE_N] = "AR0032:"
     NOISE[++NOISE_N] = "AR0076:"
@@ -262,7 +262,7 @@ BEGIN {
     # prefixes ("AR0046: [SECURETRANSPORT] [<sub>]  No SMTP…" and the odd
     # ": [<account>@FExxx] [<sub>]  No SMTP…"), so no prefix covers it. All
     # W-level; 38 acceptance entities' err/warn rings were NOTHING but these
-    # lines. No blue evidence, no unknown-* seed and no report reads them
+    # lines. No unknown-* sighting and no report reads them
     # (verified 2026-08; the red flip is E-only anyway).
     NOISE_HAS[++NOISE_HAS_N] = "No SMTP server is configured"
     for (i = 1; i <= NOISE_N; i++) { NOISE_L[i] = length(NOISE[i]); c = substr(NOISE[i], 1, 1); NB[c, ++NB_N[c]] = i }
@@ -653,8 +653,8 @@ ent_range() {   # $1 = the cache, $2/$3 = the byte range [lo, hi) of line starts
 # AUDIT are dropped at tokenize time), so these files count real activity.
 # Rebuilt whenever the cache, the flow-manager XREF caches, or this script is
 # newer than an output (a fresh cache refreshes them). Deliberately xref/ only,
-# NOT the base/ lists the scan reads: bin/build/seen-in-server-log.sh and
-# bin/build/result.sh recolor base/*.tsv's result column AFTER the parse — the scan
+# NOT the base/ lists the scan reads: bin/build/result.sh recolors
+# base/*.tsv's result column AFTER the parse — the scan
 # reads only the name column — so watching base/ made the NEXT build redo the
 # full mention scan over the whole cache for nothing (the transfer-side
 # fresh-build double derive, same fix). A real config change rewrites the xref
@@ -697,11 +697,11 @@ build_entity_tsvs() {
     done
     # The per-name detail dirs share the same derivation; if any is missing, rebuild.
     { [ -d "$ACCOUNTS_DIR" ] && [ -d "$SUBS_DIR" ] && [ -d "$LOGINS_DIR" ] && [ -d "$HOSTS_DIR" ]; } || fresh=0
-    # The rescan marker (2026-08-15 fresh-build fix): bin/build/seen-in-server-log.sh
-    # APPENDS SSH-logon-discovered names to the base rosters AFTER this scan
+    # The rescan marker (2026-08-15 fresh-build fix): bin/build/result.sh
+    # APPENDS transfer-discovered names to the base rosters AFTER this scan
     # ran, so on a from-scratch build those entities' mention rings are one
-    # build behind (their detail pages lose the server-log table). The blue
-    # step drops this marker when it appended; bin/build.sh re-runs this parse
+    # build behind (their detail pages lose the server-log table). result.sh
+    # drops this marker when it appended; bin/build.sh re-runs this parse
     # right after, and the marker forces exactly one rescan.
     [ -f "$CACHE_DIR/.rescan-mentions" ] && fresh=0
     [ "$fresh" = 1 ] && { echo "  the per-entity server caches are up to date; skipping." >&2; return 0; }
@@ -762,7 +762,7 @@ build_entity_tsvs() {
         # BYTE RANGES, NOT A SPLIT COPY (2026-09-27): the jobs read the cache
         # in place, each its own contiguous range of lines — the split wrote
         # the whole cache again first (~20 s of disk writes on 3 GB, the
-        # larger half of the rescan the build runs after the blue step)
+        # larger half of the rescan the build runs after the colour step)
         lines=$(wc -c < "$OUT" | tr -d ' ')
         if [ "$lines" -gt 0 ]; then
             nparts=$NJOBS

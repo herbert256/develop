@@ -30,17 +30,15 @@
 #               bin/server/parse.sh tokenize the input CSVs into the gitignored
 #               caches (only when stale — new/changed input or a changed parse.sh),
 #               then bin/session-sites.sh, bin/expire-files.sh, bin/bookend-ok.sh
-#               (the three server-log -> transfer joins), bin/build/seen-in-server-log.sh
-#               (mark server-log-only entities BLUE in the base result column)
-#               and bin/build/result.sh (fill the remaining base results, preserving blue)
+#               (the three server-log -> transfer joins) and bin/build/result.sh
+#               (fill the base result columns: green / red / orange)
 #   2. report   bin/transfer/reports.sh, then bin/server/reports.sh, then
 #               bin/analyses/reports.sh + bin/dashboards/reports.sh + bin/day/reports.sh
 #               -> data/<area>/reports/*.rpt (no HTML). The dependencies are
 #               ONE-way: server's site-failures.sh (and a dozen more) read
 #               transfer's <entity>.rpt name rosters (a TRANSFER report output)
 #               and `exit 1` if missing — so server must never run before
-#               transfer (the unknown-* reports read the parse cache instead
-#               and already ran in stage 1, via bin/build/seen-in-server-log.sh).
+#               transfer (the unknown-* reports read the parse cache instead).
 #               The analyses reports read transfer outputs too (showseen.sh's
 #               coverage TSVs/METAs, the detail-page slugmaps), and the
 #               dashboards reports read the transfer caches + transfer/server
@@ -578,7 +576,7 @@ trap finalize_report EXIT
 
 # --- stages 1-3, ONE LINEAR CHAIN (2026-09-11; until then two env chains ran
 #     side by side). Every intra-chain dependency — transfer reports before
-#     server reports, analyses before seen-in-server-log, publishes last —
+#     server reports, publishes last —
 #     holds in the order below. What overlaps: the TWO PARSES (bin/server/parse.sh
 #     in the background beside bin/transfer/parse.sh — independent inputs and
 #     caches; the transfer parse's trailing session-sites/expire-files re-marks
@@ -592,11 +590,10 @@ trap finalize_report EXIT
 #    server log's route lines, by the shared session id; re-derives the
 #    transfer caches when it learned something), expire-files.sh (needs both
 #    parse caches: flips Waiting files whose staged copy the File Maintenance
-#    sweep deleted to Expired, _files.tsv cols 2/22), bookend-ok.sh,
-#    seen-in-server-log.sh (marks the server-log-only entities blue) and
-#    result.sh (fills the rest of the base result columns, preserving blue).
+#    sweep deleted to Expired, _files.tsv cols 2/22), bookend-ok.sh and
+#    result.sh (fills the base result columns).
 # 2. report — transfer BEFORE server and analyses (both read transfer report
-#    outputs); the analyses step ends with seen-in-server-log (fresh pda.rpt);
+#    outputs);
 #    dashboards + day after both areas.
 # 3. publish — per-area publishes, then bin/build/publish.sh (the index pages
 #    live in dirs the per-area scripts clear; it also writes the home).
@@ -695,12 +692,11 @@ bg_step_start "server log: logon summary (per login + per address)"         bin/
 run_step "server log -> transfer: attribute UCx flows by session"         bin/session-sites.sh
 run_step "server log -> transfer: mark expired staged files"              bin/expire-files.sh
 run_step "server log -> transfer: settle failed Files by ok bookend"      bin/bookend-ok.sh
-run_step "server log -> transfer: mark server-only entities blue"         bin/build/seen-in-server-log.sh
 run_step "result: subscription outcomes -> base caches"                   bin/build/result.sh
-# The blue step may APPEND SSH-logon-discovered names to the base rosters —
-# names the server parse's mention scan (which ran above) did not know, so
-# their detail pages would lose the server-log table on a from-scratch
-# build. It drops a .rescan-mentions marker then; this re-run rescans
+# result.sh (discover_logged) may APPEND transfer-log-discovered names to the
+# base rosters — names the server parse's mention scan (which ran above) did
+# not know, so their detail pages would lose the server-log table on a
+# from-scratch build. It drops a .rescan-mentions marker then; this re-run rescans
 # exactly once (tokenize skips via the manifest; without the marker the
 # whole call is a seconds-long no-op). 2026-08-15 fresh-build fix.
 if [ -f data/server/cache/.rescan-mentions ]; then
@@ -727,9 +723,8 @@ run_step "report: server .rpt files"                                      bin/se
 bg_step_wait
 run_step "report: transfer .rpt files (phase 2)"                          bin/transfer/reports.sh phase2
 run_step "report: analyses .rpt files"                                    bin/analyses/reports.sh
-# (seen-in-server-log runs INSIDE the analyses step now — last, after the
-# pda.rpt it reads; cross-reference runs there too since the 2026-07 move
-# of the Analyses-menu reports into bin/analyses/reports/)
+# (cross-reference runs inside the analyses step since the 2026-07 move of
+# the Analyses-menu reports into bin/analyses/reports/)
 # dashboards and day both need the two areas' reports and nothing of each
 # other — disjoint output dirs, so they overlap (2026-08)
 bg_step_start "report: dashboards .rpt files"                             bin/dashboards/reports.sh

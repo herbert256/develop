@@ -22,7 +22,7 @@
 #
 # "Days in state" is measured against the LAST DAY IN THE DATA, not today
 # (same convention as went-quiet.sh/stale-accounts.sh). Red-since comes from
-# blue/_redflip.tsv (the server-log evidence stamp) where present, else the
+# colour/_redflip.tsv (the server-log evidence stamp) where present, else the
 # first failure of the current trailing failing run, else the last File.
 #
 # Sites are attributed to their CONFIGURED subscription by the longest
@@ -36,7 +36,7 @@
 #
 # Reads data/<env>/transfer/cache/_files.tsv (2=outcome, 4=date, 5=time,
 # 6=sortkey, 7=jdn, 8=size, 12=dest_site), data/<env>/flow-manager/base/
-# _subscriptions.tsv (name, dir, result) and data/<env>/blue/_redflip.tsv.
+# _subscriptions.tsv (name, dir, result) and data/<env>/colour/_redflip.tsv.
 # Writes data/<env>/analyses/reports/triage.rpt.
 #
 # Usage:
@@ -48,7 +48,7 @@ source "$SCRIPT_DIR/../lib.sh"
 
 TF="$DATA/transfer/cache/_files.tsv"
 BASE_SUBS="$DATA/flow-manager/base/_subscriptions.tsv"
-RFLIP="$DATA/blue/_redflip.tsv"
+RFLIP="$DATA/colour/_redflip.tsv"
 OUT="$REPORTS_DIR/triage.rpt"
 
 RISK_AGE=9     # a Waiting File staged this many days ago (or more) is at risk

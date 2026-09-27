@@ -44,8 +44,7 @@ for _b in _accounts _subscriptions _logins _hosts _white _logicals _partners _ap
 done
 # The base caches are AMENDED after flow-manager wrote them: result.sh
 # discover_logged appends every logged-but-unconfigured subscription/host (the
-# "UCx_" synthetic names included) and seen-in-server-log.sh appends its blue
-# discoveries — so by report time "not in the base cache" no longer means "not
+# "UCx_" synthetic names included) — so by report time "not in the base cache" no longer means "not
 # in Flow Manager", and reading base would silently empty this report. The
 # pristine per-type snapshot flow-manager takes BEFORE either append step
 # (.configured.tsv) is the real configured list (2026-08); the base caches

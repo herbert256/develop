@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # expire-files.sh — the EXPIRED marking build step (stage 1, right after the
-# two parses; before bin/build/seen-in-server-log.sh / bin/build/result.sh): flip every Waiting
+# two parses; before bin/build/result.sh): flip every Waiting
 # file (UC2 staged for pickup, never collected — _files.tsv outcome col 2)
 # whose staged copy the server's nightly File Maintenance retention sweep
 # (~11 days) DELETED to the 4th outcome state "Expired", and set col 22
