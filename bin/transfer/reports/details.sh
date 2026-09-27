@@ -160,7 +160,8 @@ IPMAP="$_pdir/ipmap"
 #   TYPE  ENTITY  SECTION  SORTKEY  payload...
 # SECTION 0 = header data (no table), by SORTKEY:
 #   0 totals: recs failed processed humanVol first last pct share rank ntype
-#             activedays mediangap idledays fi pi fo po largest avgsz srank
+#             activedays - (was mediangap: no reader, "-" since 2026-09-27)
+#             idledays fi pi fo po largest avgsz srank
 #             erank duravg sshare (share = Files %, sshare = Volume % of type)
 #   1 perf (processed rows with a duration): "n|avg|p50|p95|max|thr"  (unit-independent)
 #   3 raw IP behind a resolved hostname (HOST)                        (unit-independent)
