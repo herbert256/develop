@@ -98,7 +98,23 @@ once, searched by the dedicated `docs/assets/latest-search.js` — a File name o
 Subscription field (in that order, BELOW the From/To row — class `underdates`), results as you type, at most 500 newest-first, `?s=`/`?f=` in the URL;
 it and the six `search/file-search-*.html` pages are ONE group, and the top bar's **Files** link opens THIS page (2026-09-27; both bar renderers) — a FIRST tab row right after the
 `<h1>`, **Implementation 1, period** (→ `search/file-search-24-hours.html`) | **Implementation
-2, latest 1000** (→ `latest/search.html`), from publish_lib `file_search_impl_row`),
+2, latest 1000** (→ `latest/search.html`) | **Implementation 3, all files** (→
+`search/all-files.html`), from publish_lib `file_search_impl_row`),
+**the ALL FILES SEARCH** (2026-09-27, user request: every File, balancing the user's wait against
+the size of docs/) — `bin/analyses/publish-all-files.sh`, its OWN build step after the transfer
+publish catch-up (its rows link the files/ pages the failed.sh catch-ups settle; a manual
+re-publish must run it too): ONE SHARD PER DATA DAY `search/all/d-<date>.js` (the day's Files
+newest first, ~95 B each — name ⇥ HHMMSS ⇥ LOCAL subscription index ⇥ bytes ⇥ 32-hex CoreId ⇥
+flag, UPPERCASE flag = the CoreId has a files/ page; each shard carries its own subscription
+dictionary, so an old day's shard is byte-identical build to build) + the manifest
+`search/all/index.js` (`window.AXWAY_AFX`: the subscription→slug dictionary and per day its count,
+subscriptions, shard cksum and a BLOOM FILTER — the name trigrams that hold a non-[0-9a-f-]
+character + "#"+8hex CoreId tokens, 8+ bits per item, three hashes; KEEP THE GENERATOR AND
+`assets/all-files-search.js` IN STEP). The engine loads only the days that can hold a match (a
+pasted CoreId: ~its own day), newest first, 4 at a time, stops at the newest 500; the table is
+a `rangehook` table (From/To narrows the days; the page counts as a TRANSFER-area page in
+render_rpt). linkcheck models the shard links (section 3b), display-rename sweeps the shards,
+verify.sh checks that the shards hold every dated File),
 `first-seen/`, `use-cases/`, `coverage/`, `transfers/duration/`, `switches/`, plus
 `search/` (`search.html` + `search-data.js`, the six `file-search-*.html` + their `-data.js` payloads — 2026-09-12, user request; at the root before) and `tools/` (`sitemap.html`, `report-finder.html`, `whats-new.html` and the build report `build.html` — 2026-09-12, user request; at the root before, the build report local-only 2026-08-29..09-12). `input/` carries
 the exports — logs AND the FlowManager JSONs (the real production flows are the HYBRID pattern
@@ -411,7 +427,7 @@ intro; a row with NO group members sits under the intro (writers: `_hdr_with_nav
 **TABLE modifiers**: `wide` · `group` · `nosearch` · `nofilter` (full-period semantics) ·
 `drill=UNIT` · `totaltop` · `datereset` (always open at the full range) · `seenrows` (green =
 logged, red = configured only) · `restint` (`@data:res` paints the whole row; the SERVER pages get
-it automatically — see below) · `nosort` · `rangehook` (2026-09-27: the rows are built by a page ENGINE that takes the From/To range through a window hook — report.js counts the table date-aware and calls `window.latestSearchSetRange`; paired with `nofilter`, latest/search.html) · `sxs`
+it automatically — see below) · `nosort` · `rangehook` (2026-09-27: the rows are built by a page ENGINE that takes the From/To range through a window hook — report.js counts the table date-aware and calls every function on the `window.AXWAY_RANGEHOOKS` list; paired with `nofilter`, latest/search.html + search/all-files.html) · `sxs`
 (side-by-side; `sxs=ID` — a different id starts a new flex row) · `esearch` · `fold=` · `noagg=` ·
 `sort=` · `startempty` (first paint empty until searched) · `pfnoun=` (the stat-filter total-row
 noun) · `seenmode=all|seen|notseen` · `seenword=` (the Show-Seen intro noun) · `heat` (hour ×

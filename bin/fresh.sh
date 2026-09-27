@@ -12,7 +12,7 @@
 #                     input/ holds everything irreplaceable)
 #   3. clear docs/  — the whole published site
 #   4. seed docs/   — the hand-authored files from the repo-root assets/
-#                     (style.css / report.js / slotchart.js / file-search.js / latest-search.js
+#                     (style.css / report.js / slotchart.js / file-search.js / latest-search.js / all-files-search.js
 #                     -> docs/assets/, assets/help/ -> docs/help/)
 #   5. bin/build.sh — the whole chain (build.sh re-clears
 #                     its scope and re-seeds on its own; the explicit steps
@@ -75,7 +75,7 @@ clear_tree docs
 
 echo "fresh.sh: seeding docs/ from assets/ ..." >&2
 mkdir -p docs/assets docs/help
-cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js assets/latest-search.js docs/assets/
+cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js assets/latest-search.js assets/all-files-search.js docs/assets/
 awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css   # the dark theme, generated from the light rules (2026-09-05)
 cp -R assets/help/. docs/help/
 

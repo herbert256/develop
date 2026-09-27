@@ -511,16 +511,32 @@ check $([ "$(grep -c 'href="../latest/search.html"' docs/tools/sitemap.html 2>/d
 check $(grep -q '<a class="dashlink" href="../latest/search.html">Files</a>' docs/help/index.html 2>/dev/null && echo 0 || echo 1) "the baked top bar's Files link does not open ../latest/search.html"
 # its From/To (2026-09-27): the transfer date list + a rangehook table
 check $(grep -q '<meta name="report-dates" content="[0-9]' docs/latest/search.html 2>/dev/null && grep -q 'data-rangehook="1"' docs/latest/search.html && echo 0 || echo 1) "latest/search.html lacks the report-dates meta or its rangehook table (no From/To)"
-# the File search group (2026-09-27, user request): the six window pages and
-# latest/search.html share a FIRST tab row — Implementation 1 | Implementation 2
-# — right after the <h1>, the page's own implementation active
+# the File search group (2026-09-27, user request): the six window pages,
+# latest/search.html and search/all-files.html share a FIRST tab row —
+# Implementation 1 | 2 | 3 — right after the <h1>, the page's own one active
+I1='Implementation 1, period'; I2='Implementation 2, latest 1000'; I3='Implementation 3, all files'
+H1='../search/file-search-24-hours.html'; H2='../latest/search.html'; H3='../search/all-files.html'
 n=0
 for f in docs/search/file-search-*.html; do
     [ -f "$f" ] || continue
-    awk '/<\/h1>/ { getline; print; exit }' "$f" | grep -q '<span class="tab active">Implementation 1, period</span><a class="tab" href="../latest/search.html">Implementation 2, latest 1000</a>' || n=$((n + 1))
+    awk '/<\/h1>/ { getline; print; exit }' "$f" | grep -qF "<span class=\"tab active\">$I1</span><a class=\"tab\" href=\"$H2\">$I2</a><a class=\"tab\" href=\"$H3\">$I3</a>" || n=$((n + 1))
 done
 check $([ "$n" = 0 ] && echo 0 || echo 1) "$n search/file-search-*.html page(s) lack the Implementation row (1 active) right after the <h1>"
-check $(awk '/<\/h1>/ { getline; print; exit }' docs/latest/search.html 2>/dev/null | grep -q '<a class="tab" href="../search/file-search-24-hours.html">Implementation 1, period</a><span class="tab active">Implementation 2, latest 1000</span>' && echo 0 || echo 1) "latest/search.html lacks the Implementation row (2 active) right after the <h1>"
+check $(awk '/<\/h1>/ { getline; print; exit }' docs/latest/search.html 2>/dev/null | grep -qF "<a class=\"tab\" href=\"$H1\">$I1</a><span class=\"tab active\">$I2</span><a class=\"tab\" href=\"$H3\">$I3</a>" && echo 0 || echo 1) "latest/search.html lacks the Implementation row (2 active) right after the <h1>"
+check $(awk '/<\/h1>/ { getline; print; exit }' docs/search/all-files.html 2>/dev/null | grep -qF "<a class=\"tab\" href=\"$H1\">$I1</a><a class=\"tab\" href=\"$H2\">$I2</a><span class=\"tab active\">$I3</span>" && echo 0 || echo 1) "search/all-files.html lacks the Implementation row (3 active) right after the <h1>"
+
+# the ALL FILES SEARCH (2026-09-27, user request): the page loads its manifest
+# and engine, has the shared From/To (rangehook), and the day shards hold
+# EVERY dated File of the transfer cache — one shard per day, no row missing
+check $([ -f docs/search/all-files.html ] && grep -q '<script src="all/index.js?v=' docs/search/all-files.html && grep -q '<script src="../assets/all-files-search.js?v=' docs/search/all-files.html && echo 0 || echo 1) "search/all-files.html is missing or does not load all/index.js + ../assets/all-files-search.js"
+check $(grep -q '<meta name="report-dates" content="[0-9]' docs/search/all-files.html 2>/dev/null && grep -q 'data-rangehook="1"' docs/search/all-files.html && echo 0 || echo 1) "search/all-files.html lacks the report-dates meta or its rangehook table (no From/To)"
+nfd=$(awk -F'\t' '$4 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ { n++ } END { print n + 0 }' data/transfer/cache/_files.tsv 2>/dev/null)
+nsr=$(cat docs/search/all/d-*.js 2>/dev/null | awk -F'\t' 'NF >= 6 { n++ } END { print n + 0 }')
+check $([ "${nsr:-0}" -gt 0 ] && [ "$nsr" = "$nfd" ] && echo 0 || echo 1) "search/all/ day shards hold ${nsr:-0} File row(s), the transfer cache has $nfd dated File(s)"
+nsd=$(ls docs/search/all/d-*.js 2>/dev/null | wc -l | tr -d ' ')
+nmd=$(grep -oE "(^|\`)[0-9]{4}-[0-9]{2}-[0-9]{2}	[0-9]+	" docs/search/all/index.js 2>/dev/null | wc -l | tr -d " ")
+check $([ "$nsd" = "$nmd" ] && [ "$nsd" -gt 0 ] && echo 0 || echo 1) "search/all/: $nsd day shard(s) but $nmd manifest day line(s)"
+check $([ "$(grep -c 'search/all-files.html' docs/tools/report-finder.html 2>/dev/null)" -ge 1 ] && grep -q 'href="../search/all-files.html"' docs/tools/sitemap.html 2>/dev/null && echo 0 || echo 1) "the report finder or the sitemap does not link search/all-files.html"
 
 # the tool pages live under docs/tools/ (2026-09-12, user request): the
 # sitemap, the report finder, whats-new AND the build report (back on the

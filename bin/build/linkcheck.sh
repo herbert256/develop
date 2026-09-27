@@ -216,6 +216,33 @@ awk -v DOCS="$DOCS" '
             }
             close(DOCS "/" f)
         }
+        # 3b. THE ALL FILES SEARCH (2026-09-27): search/all/index.js (the
+        # subscription -> detail slug dictionary) and the day shards
+        # search/all/d-<date>.js, whose links assets/all-files-search.js
+        # DERIVES — a row with an UPPERCASE flag (its 6th field) opens
+        # files/<coreid>.html (the 32-hex 5th field, dashes re-inserted), any
+        # other row its subscription page. All are edges of the page.
+        # (A shard line may carry the template-literal quote marks around it;
+        # the flag test reads only its first character.)
+        if ("search/all/index.js" in FILE) {
+            src = "search/all-files.html"; sect = ""; hd = "window.AXWAY_AFX={v:1,subs:`"
+            while ((getline l < (DOCS "/search/all/index.js")) > 0) {
+                if (index(l, hd) == 1) { sect = "S"; l = substr(l, length(hd) + 1) }
+                if (sect != "S") continue
+                e9 = index(l, "`,days:`"); if (e9 > 0) { l = substr(l, 1, e9 - 1); sect = "" }
+                n2 = split(l, a2, "\t")
+                if (n2 >= 2 && a2[2] != "") edge(src, "../details/subscriptions/" a2[2] ".html")
+            }
+            close(DOCS "/search/all/index.js")
+            for (f in FILE) if (f ~ /^search\/all\/d-[0-9-]+\.js$/) {
+                while ((getline l < (DOCS "/" f)) > 0) {
+                    n2 = split(l, a2, "\t")
+                    if (n2 >= 6 && a2[6] ~ /^[DEWX]/ && a2[5] ~ /^[0-9a-f]+$/ && length(a2[5]) == 32)
+                        edge(src, "../files/" substr(a2[5], 1, 8) "-" substr(a2[5], 9, 4) "-" substr(a2[5], 13, 4) "-" substr(a2[5], 17, 4) "-" substr(a2[5], 21, 12) ".html")
+                }
+                close(DOCS "/" f)
+            }
+        }
         # 4. reachability: breadth-first from the shared home
         q[1] = "index.html"; SEEN["index.html"] = 1; head = 1; tail = 1
         while (head <= tail) {

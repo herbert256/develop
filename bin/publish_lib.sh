@@ -51,7 +51,7 @@ GENERATED_AT="${GENERATED_AT:-$(date '+%Y-%m-%d %H:%M')}"
 # CDN) never serves a stale style.css/report.js against freshly published HTML.
 # Content-derived (not the build timestamp), so an assets-unchanged rebuild
 # keeps the same URL and the cache stays warm.
-ASSET_VER=$( (cksum docs/assets/style.css docs/assets/report.js docs/assets/slotchart.js docs/assets/file-search.js docs/assets/latest-search.js 2>/dev/null || true) | cksum | cut -d' ' -f1 )
+ASSET_VER=$( (cksum docs/assets/style.css docs/assets/report.js docs/assets/slotchart.js docs/assets/file-search.js docs/assets/latest-search.js docs/assets/all-files-search.js 2>/dev/null || true) | cksum | cut -d' ' -f1 )
 
 # ---- the render job pool ----------------------------------------------------
 # Rendering a page is FORK-BOUND, not compute-bound: measured on a full rebuild,
@@ -782,7 +782,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
     # callers use for the CSS depth, so no caller needs a new argument.
     local rarea=""
     case $out in
-        "$DOCS"/transfer/*|"$DOCS"/details/*|"$DOCS"/latest/*) rarea="transfer" ;;
+        "$DOCS"/transfer/*|"$DOCS"/details/*|"$DOCS"/latest/*|"$DOCS"/search/all-files.html) rarea="transfer" ;;   # all-files.html: the shared transfer From/To (2026-09-27)
         "$DOCS"/server/*)                     rarea="server" ;;
     esac
     # The page body — the whole .rpt line protocol, tables and cells included —
@@ -2437,13 +2437,18 @@ _inject_after_h1() {
 # implementations of one tool, joined by a FIRST tab row of two buttons —
 # injected right after the <h1>, above the window row of the six. Both pages
 # sit one level below the docs root, so the same ../ hrefs serve either side.
-file_search_impl_row() {   # $1 the current implementation: 1 (period) | 2 (latest 1000)
-    local a="Implementation 1, period" b="Implementation 2, latest 1000"
-    if [ "$1" = 1 ]; then
-        printf '<p class="tabs"><span class="tab active">%s</span><a class="tab" href="../latest/search.html">%s</a></p>' "$a" "$b"
-    else
-        printf '<p class="tabs"><a class="tab" href="../search/file-search-24-hours.html">%s</a><span class="tab active">%s</span></p>' "$a" "$b"
-    fi
+file_search_impl_row() {   # $1 the current implementation: 1 (period) | 2 (latest 1000) | 3 (all files)
+    # the THIRD implementation (2026-09-27, user request): search/all-files.html,
+    # every File of the transfer cache (bin/analyses/publish-all-files.sh)
+    local lbl1="Implementation 1, period" lbl2="Implementation 2, latest 1000" lbl3="Implementation 3, all files"
+    local href1="../search/file-search-24-hours.html" href2="../latest/search.html" href3="../search/all-files.html"
+    local out='<p class="tabs">' i lbl href
+    for i in 1 2 3; do
+        eval "lbl=\$lbl$i; href=\$href$i"
+        if [ "$1" = "$i" ]; then out+="<span class=\"tab active\">$lbl</span>"
+        else out+="<a class=\"tab\" href=\"$href\">$lbl</a>"; fi
+    done
+    printf '%s</p>' "$out"
 }
 
 # Insert a one-line HTML fragment AFTER the page's intro paragraph — the
@@ -2738,7 +2743,7 @@ TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU${GOODIES_MENU:-}$
 ensure_assets() {
     # the assets and .nojekyll live at the docs ROOT (docs/assets/); every
     # publish writes the same bytes, so writing them is idempotent.
-    # style.css / report.js / slotchart.js / file-search.js / latest-search.js and docs/help/
+    # style.css / report.js / slotchart.js / file-search.js / latest-search.js / all-files-search.js and docs/help/
     # are SEEDED from the repo-root assets/ by bin/build.sh (2026-08-29 —
     # every build clears its scope's docs tree first, so docs/ is pure build
     # output; EDIT IN assets/, a build overwrites the docs copies). Only the

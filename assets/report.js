@@ -2531,7 +2531,10 @@
       window._slotRange = { from: _fO ? _fO.textContent : null, to: _tO ? _tO.textContent : null, narrowed: narrowed };
       if (window.slotchartSetRange) window.slotchartSetRange(window._slotRange.from, window._slotRange.to, narrowed);
       if (window.daytopSetRange) window.daytopSetRange(window._slotRange.from, window._slotRange.to, narrowed);
-      if (window.latestSearchSetRange) window.latestSearchSetRange(window._slotRange.from, window._slotRange.to, narrowed);   // the Latest files search engine (a rangehook table)
+      // the page ENGINES of rangehook tables (latest-search.js, all-files-search.js)
+      // register a function here — (from, to, narrowed), date strings
+      if (window.AXWAY_RANGEHOOKS) for (var rh = 0; rh < window.AXWAY_RANGEHOOKS.length; rh++)
+        window.AXWAY_RANGEHOOKS[rh](window._slotRange.from, window._slotRange.to, narrowed);
       if (searchReapply) searchReapply(true);   // lift an active search so the recalc below rewrites EVERY row
       var tables = document.getElementsByTagName("table"), t, ri, tr, rows, i, e, mn, mx;
       for (t = 0; t < tables.length; t++) {

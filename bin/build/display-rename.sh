@@ -64,7 +64,7 @@ apply_rules() {
     [ -n "$rules" ] && [ -d "$dir" ] || return 0
     pats=$(mktemp "${TMPDIR:-/tmp}/axdr.XXXXXX")
     printf '%s\n' "$rules" | cut -f1 | LC_ALL=C sort -u > "$pats"
-    hits=$(find "$dir" "$@" -type f \( -name '*.html' -o -name '*-data.js' -o -name 'search-data.js' -o -path '*/latest/*.js' \) -print0 \
+    hits=$(find "$dir" "$@" -type f \( -name '*.html' -o -name '*-data.js' -o -name 'search-data.js' -o -path '*/latest/*.js' -o -path '*/search/all/*.js' \) -print0 \
         | xargs -0 grep -lF -f "$pats" 2>/dev/null || true)
     rm -f "$pats"
     n=$(printf '%s\n' "$rules" | wc -l | tr -d ' ')

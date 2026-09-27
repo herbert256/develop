@@ -120,7 +120,7 @@ printf '%s\n' "$$" > "$BUILD_LOCK/pid"
 # repo-root assets/ — docs/ is pure build output, and a build can never leave
 # a stale page behind (the build report lands back in docs/tools/build.html at the
 # very end, from the EXIT trap — 2026-09-12). assets/ is the ONE place to edit style.css / report.js
-# / slotchart.js / file-search.js / latest-search.js and the help pages (see assets/README.txt);
+# / slotchart.js / file-search.js / latest-search.js / all-files-search.js and the help pages (see assets/README.txt);
 # .nojekyll and topbar-data.js stay generated (ensure_assets).
 # rm -rf with a .DS_Store retry: Finder can drop one into a directory WHILE
 # rm walks the tree ("Directory not empty") — sweep them and try again; the
@@ -135,7 +135,7 @@ clear_tree() {
 }
 clear_tree docs
 mkdir -p docs/assets docs/help
-cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js assets/latest-search.js docs/assets/
+cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js assets/latest-search.js assets/all-files-search.js docs/assets/
 awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css   # the dark theme, generated from the light rules (2026-09-05)
 cp -R assets/help/. docs/help/
 
@@ -768,6 +768,13 @@ run_step "publish catch-up: analyses (failed pages)"                      bin/an
 # and a dep of the transfer stamp, so when its content did not change
 # this step skips in ~0 s.
 run_step "publish: transfer catch-up (boxes reasons)"                     bin/transfer/publish.sh
+# THE ALL FILES SEARCH (2026-09-27, user request — "Implementation 3, all
+# files"): one day shard per data day + the bloom-filter manifest, and the
+# search/all-files.html page. HERE, after the failed.sh catch-ups and the
+# transfer catch-up above: its rows link the files/ pages those just
+# settled, so the rosters it reads are final. Outside the per-area
+# publishes, like publish-partner-groups.sh — a manual re-publish runs it too.
+run_step "publish: all files search (day shards + index)"                 bin/analyses/publish-all-files.sh
 run_step "publish: dashboards"                                            bin/dashboards/publish.sh
 run_step "publish: day pages"                                             bin/day/publish.sh
 bg_step_wait

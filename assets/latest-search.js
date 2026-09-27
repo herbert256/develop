@@ -36,7 +36,7 @@
      table is a `rangehook` table) narrow the Files BEFORE the 500 cap: a
      File counts when its Start..End span overlaps the range — the row rule
      of the Latest files pages. report.js hands the range over through
-     window.latestSearchSetRange, the window._slotRange stash covering an
+     window.AXWAY_RANGEHOOKS (a list), the window._slotRange stash covering an
      engine that initialises after the load-time apply;
    - the URL carries ?s=…&f=… (history.replaceState), so a reload or a
      bookmark repeats the search. */
@@ -260,7 +260,7 @@
       setIdle();
       run();
     }
-    window.latestSearchSetRange = takeRange;
+    (window.AXWAY_RANGEHOOKS = window.AXWAY_RANGEHOOKS || []).push(takeRange);
     var sr = window._slotRange;
     if (sr && sr.narrowed && sr.from && sr.to) { range = { f: sr.from < sr.to ? sr.from : sr.to, t: sr.from < sr.to ? sr.to : sr.from }; setIdle(); count.textContent = idle; }
 
