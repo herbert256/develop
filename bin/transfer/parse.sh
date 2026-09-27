@@ -113,6 +113,9 @@ source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK (rn_load/rn_canon)
 source "$ROOT/bin/skiplist.sh"    # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/<env>/skip.txt
 PARSED0="$CACHE_DIR/_transfers0.tsv"   # raw (blacklisted, UNpropagated) cache — the incremental merge base
 SESSMAP="$CACHE_DIR/_sessionsites.tsv" # session -> subscription, learned from the server log (bin/session-sites.sh)
+# read ONCE and dropped from the environment, so no parse.sh started from
+# inside this one (expire-files, a report's ensure_parsed) inherits it
+_force_derive=${AXWAY_FORCE_DERIVE:-}; unset AXWAY_FORCE_DERIVE
 LEGEND="$CACHE_DIR/_transfers.txt"
 # SKIP LIST (input/<env>/skip.txt, per environment): a record whose ATTRIBUTED
 # account (col 4) or subscription/site (col 6) name contains a skip token
@@ -308,6 +311,10 @@ elif [ -f "$PARSED0" ] && [ -f "$MANIFEST" ]; then
             # a grown session map (bin/session-sites.sh learned a flow from
             # the server log) must re-derive too — the SESSION JOIN pass reads it
             if [ -f "$SESSMAP" ] && [ "$SESSMAP" -nt "$PARSED" ]; then cfg_newer=1; fi
+            # ...and bin/session-sites.sh, which just CHANGED the map, forces
+            # it: -nt compares whole seconds, so a map written in the same
+            # second as $PARSED would not count as newer (2026-09-27)
+            [ "$_force_derive" = 1 ] && cfg_newer=1
             # the derived caches must also be INTACT: at least as new as the
             # row cache (an interrupted run leaves them older) and _files.tsv
             # FULLY JOINED. The join is the second of three mv's (collapse 17

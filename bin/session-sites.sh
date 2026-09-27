@@ -169,5 +169,10 @@ fi
 mv "$tmp" "$OUT"
 echo "session-sites: $n_scan UCx session(s) scanned, map now $n_map entry/-ies — re-deriving the transfer caches." >&2
 # apply immediately: derive-only re-run (the manifest is untouched); the guard
-# stops it re-entering this script, so one extra derive is the ceiling
-AXWAY_SKIP_SESSIONS=1 "$ROOT/bin/transfer/parse.sh"
+# stops it re-entering this script, so one extra derive is the ceiling.
+# FORCED (2026-09-27): parse.sh noticed the new map only through
+# `_sessionsites.tsv -nt _transfers.tsv`, and bash 3.2 compares whole
+# SECONDS — a map written in the same second as the cache (a fast develop
+# build, ~half the fresh builds) was "not newer", the derive was skipped
+# and the session join silently missing (56 sample Files stayed UCx_).
+AXWAY_SKIP_SESSIONS=1 AXWAY_FORCE_DERIVE=1 "$ROOT/bin/transfer/parse.sh"

@@ -22,7 +22,11 @@ cd "$SCRIPT_DIR/../.."
 source bin/envlabel.sh   # ENV_KEY names the archives
 [ -n "$ENV_KEY" ] || { echo "st-reports-archive: input/environment.txt missing or empty — the archive name carries the environment (st-reports-<env>_<stamp>.7z) so the two runtime repos never overwrite each other's copy; write the label (Acceptance / Production) and rebuild." >&2; exit 1; }
 
-command -v 7z >/dev/null 2>&1 || { echo "st-reports-archive: 7z not found (brew install p7zip)." >&2; exit 1; }
+# 7zz (the official 7-Zip, brew install sevenzip) first, p7zip's 7z as the
+# fallback — see the compression note below
+if command -v 7zz >/dev/null 2>&1; then Z7=7zz
+elif command -v 7z >/dev/null 2>&1; then Z7=7z
+else echo "st-reports-archive: neither 7zz nor 7z found (brew install sevenzip)." >&2; exit 1; fi
 [ -d docs ] || { echo "st-reports-archive: no docs/ tree to archive." >&2; exit 1; }
 
 # ---- the archive password (2026-08-31, user request) ------------------------
@@ -58,7 +62,18 @@ rm -f "$out"
 # 7z's per-file listing is noise in the build report — keep its summary only.
 # -mhe=on encrypts the archive HEADERS too: without the password not even the
 # page names are listable.
-7z a -t7z -mx9 -mhe=on -p"$pass" "$out" docs >/dev/null
+# BLOCKED LZMA2 (2026-09-27, build-speed round 1): -mx9 alone is ONE LZMA2
+# block for a site this size, so 7-Zip cannot use more than two threads —
+# 45-48 s single-handedly on production, the build's last step. 64 MB blocks
+# (c=64m, the -mx9 64 MB dictionary kept) compress up to five blocks at once:
+# on the develop site 1.4x faster for +6% size, several times faster on
+# production's ~300 MB. p7zip 17's 7z reads the result (tested); the p7zip
+# fallback keeps the old, unblocked call.
+if [ "$Z7" = 7zz ]; then
+    7zz a -t7z -mx9 -mmt=on -m0=LZMA2:d=64m:c=64m -mhe=on -p"$pass" "$out" docs >/dev/null
+else
+    7z a -t7z -mx9 -mhe=on -p"$pass" "$out" docs >/dev/null
+fi
 
 echo "Wrote $out ($(du -h "$out" | cut -f1 | tr -d ' '))." >&2
 

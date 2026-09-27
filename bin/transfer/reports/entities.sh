@@ -70,7 +70,7 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 OUTDIR="$REPORTS_DIR/entities"
 mkdir -p "$OUTDIR"
-rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp   # orphaned temps from a killed run (reports.sh sweeps the top level only)
+rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp "$OUTDIR"/.agg.tmp.*   # orphaned temps from a killed run (reports.sh sweeps the top level only)
 ensure_parsed
 
 DIMS="account subscription login remote-host logical partner application domain bl"
@@ -102,10 +102,17 @@ AGG="$OUTDIR/.agg.tmp"
 # site / host sets. Pass 2 = _files.tsv: per File the nine name sets, then
 # per (type, name) the counters, first/last by sortkey, the per-date buckets
 # (date:files:in:out:ferr:bytes:tok:terr:rauto:rmok:rmerr:waiting:expired:legs)
-# and the ten drill rings. Writes S| / T| lines to a temp file — ten drill
-# lists per row are too much for a bash variable.
+# and the ten drill rings. Writes S| / T| lines to a temp file PER TYPE
+# ($AGG.<type>) — ten drill lists per row are too much for a bash variable.
+# PARALLEL BY TYPE (2026-09-27, build-speed round 1): a type's rows depend
+# only on its own names' Files, so agg_run SEL computes just the types in
+# SEL (every name set outside it is skipped, and the pass-1 login / site /
+# host sets are built only for the types that read them) — the type groups
+# below run side by side, each reading the caches itself. Same rows, same
+# order of processing, so every value is what the one-process run gave.
 # ---------------------------------------------------------------------------
-awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTF="$AGG" -v DIMS="$DIMS" \
+agg_run() {   # $1 = the space-separated types this run computes
+awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
     -v M_LG="$M_LG" -v M_VLG="$M_VLG" -v M_PT="$M_PT" -v M_AP="$M_AP" -v M_BL="$M_BL" "$COREIDS_AWK"'
     function loadmulti(f, m,   l, n2, z, k) { if (f == "") return   # name -> \037-joined values (UNION maps)
         while ((getline l < f) > 0) { n2 = split(l, z, "\t")
@@ -187,16 +194,22 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTF="$AGG" -v DIMS="$DIMS" \
         for (t in tql) { pctls(tql[t]); TP90[t] = P90; TP95[t] = P95; TP99[t] = P99; TP100[t] = P100 }
     }
     BEGIN {
-        loadmulti(M_LG, LG); loadsingle(M_VLG, VLG); loadmulti(M_PT, PT); loadmulti(M_AP, AP); loadmulti(M_BL, BLM)
+        nsel = split(DSEL, SL, " "); for (i2 = 1; i2 <= nsel; i2++) SEL[SL[i2]] = 1
+        SAC = ("account" in SEL); SSU = ("subscription" in SEL); SLO = ("login" in SEL); SRH = ("remote-host" in SEL)
+        SLC = ("logical" in SEL); SPA = ("partner" in SEL); SAP = ("application" in SEL); SDO = ("domain" in SEL); SBL = ("bl" in SEL)
+        if (SLC) { loadmulti(M_LG, LG); loadsingle(M_VLG, VLG) }
+        if (SPA) loadmulti(M_PT, PT)
+        if (SAP) loadmulti(M_AP, AP)
+        if (SBL) loadmulti(M_BL, BLM)
         PAIRTOT["subscription"] = 1; PAIRTOT["login"] = 1; PAIRTOT["remote-host"] = 1   # totals once per (name, File) pair — the classic join writers
     }
     FILENAME == PF {   # _transfers.tsv first: the per-CoreId leg facts
         cid = $1
         if ($3 == "Processed") tokc[cid]++; else { terrc[cid]++; fl[cid] = 1 }
         if ($22 == "true") rsb[cid] = 1
-        if ($5 != "") lg[cid] = addset(lg[cid], $5)
-        if ($6 != "") st[cid] = addset(st[cid], $6)
-        if ($16 != "") hs[cid] = addset(hs[cid], $16)
+        if (SLO && $5 != "") lg[cid] = addset(lg[cid], $5)
+        if (SSU && $6 != "") st[cid] = addset(st[cid], $6)
+        if (SRH && $16 != "") hs[cid] = addset(hs[cid], $16)
         next }
     # _files.tsv comes TWICE: pass 2 aggregates, pass 3 collects the Duration
     # drills against the thresholds pass 2 produced (counted by the FILES
@@ -210,18 +223,18 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTF="$AGG" -v DIMS="$DIMS" \
         ra = (!f && (cid in fl) && !(cid in rsb)); rmo = (!f && (cid in rsb)); rme = (f && (cid in rsb))
         dur = $9 + 0; hasd = (!f && dur > 0); q = hasd ? qdur(dur) : 0   # the Duration group: OK Files with a positive wall-clock span
         delete NS
-        if ($3 != "") NS["account" SUBSEP $3] = 1
-        if (cid in st) addnames("subscription", st[cid])
-        if (cid in lg) addnames("login", lg[cid])
-        if ($16 == "out" && (cid in hs)) addnames("remote-host", hs[cid])
-        if ($13 != "" && (toupper($13) in VLG)) NS["logical" SUBSEP VLG[toupper($13)]] = 1
-        if ($12 != "" && (toupper($12) in LG)) addnames("logical", LG[toupper($12)])
-        if ($20 != "") NS["partner" SUBSEP $20] = 1
-        if ($12 != "" && (toupper($12) in PT)) addnames("partner", PT[toupper($12)])
-        if ($18 != "") NS["application" SUBSEP $18] = 1
-        if ($12 != "" && (toupper($12) in AP)) addnames("application", AP[toupper($12)])
-        if ($19 != "") NS["domain" SUBSEP $19] = 1
-        if ($12 != "" && (toupper($12) in BLM)) addnames("bl", BLM[toupper($12)])
+        if (SAC && $3 != "") NS["account" SUBSEP $3] = 1
+        if (SSU && (cid in st)) addnames("subscription", st[cid])
+        if (SLO && (cid in lg)) addnames("login", lg[cid])
+        if (SRH && $16 == "out" && (cid in hs)) addnames("remote-host", hs[cid])
+        if (SLC && $13 != "" && (toupper($13) in VLG)) NS["logical" SUBSEP VLG[toupper($13)]] = 1
+        if (SLC && $12 != "" && (toupper($12) in LG)) addnames("logical", LG[toupper($12)])
+        if (SPA && $20 != "") NS["partner" SUBSEP $20] = 1
+        if (SPA && $12 != "" && (toupper($12) in PT)) addnames("partner", PT[toupper($12)])
+        if (SAP && $18 != "") NS["application" SUBSEP $18] = 1
+        if (SAP && $12 != "" && (toupper($12) in AP)) addnames("application", AP[toupper($12)])
+        if (SDO && $19 != "") NS["domain" SUBSEP $19] = 1
+        if (SBL && $12 != "" && (toupper($12) in BLM)) addnames("bl", BLM[toupper($12)])
         if (fpass == 2) {   # the DURATION DRILLS (2026-09-13, user request): per key the 10 newest OK Files at or above each percentile, each entry with its span
             if (!hasd) next
             for (k in NS) { if (!(k in KP90) || KP90[k] == "") continue
@@ -236,14 +249,28 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTF="$AGG" -v DIMS="$DIMS" \
             if (t in PAIRTOT) tot(t) }
         for (t in TS) if (!(t in PAIRTOT)) tot(t)
     }
+    # the entries of a per-day duration histogram ("q.c;q.c"), ordered by q
+    function sortqc(s,   n3, a3, i3, j3, v3, q3) { n3 = split(s, a3, ";"); if (n3 < 2) return s
+        for (i3 = 2; i3 <= n3; i3++) { v3 = a3[i3]; q3 = substr(v3, 1, index(v3, ".") - 1) + 0; j3 = i3 - 1
+            while (j3 > 0 && substr(a3[j3], 1, index(a3[j3], ".") - 1) + 0 > q3) { a3[j3 + 1] = a3[j3]; j3-- }
+            a3[j3 + 1] = v3 }
+        s = a3[1]; for (i3 = 2; i3 <= n3; i3++) s = s ";" a3[i3]; return s }
     END {
-        for (dk in ds) { split(dk, kk, SUBSEP); key = kk[1] SUBSEP kk[2]; nd[key]++
-            bk[key] = bk[key] (bk[key] ? "," : "") kk[3] ":" dl[dk] ":" (din[dk]+0) ":" (dout[dk]+0) ":" (dfe[dk]+0) ":" (db[dk]+0) ":" (dtok[dk]+0) ":" (dter[dk]+0) ":" (dra[dk]+0) ":" (dmo[dk]+0) ":" (dme[dk]+0) ":" (dwt[dk]+0) ":" (dex[dk]+0) ":" (dtok[dk]+dter[dk]) }
+        # The per-DAY payloads (@data:buckets, @data:durdays) list their days
+        # in DATE order (2026-09-27, build-speed round 1): they used to follow
+        # the awk hash order of every key this process held, which moved as
+        # soon as the types ran in separate processes. report.js reads both
+        # as sets (sums, maxima, merged histograms), so only the bytes change.
+        for (dk in ds) { split(dk, kk, SUBSEP); if (!(kk[3] in DSEEN)) { DSEEN[kk[3]] = 1; DL[++ndl] = kk[3] } }
+        for (i2 = 2; i2 <= ndl; i2++) { v2 = DL[i2]; j2 = i2 - 1; while (j2 > 0 && DL[j2] > v2) { DL[j2 + 1] = DL[j2]; j2-- } DL[j2 + 1] = v2 }
+        for (key in sc) for (i2 = 1; i2 <= ndl; i2++) { dk = key SUBSEP DL[i2]; if (!(dk in ds)) continue; nd[key]++
+            bk[key] = bk[key] (bk[key] ? "," : "") DL[i2] ":" dl[dk] ":" (din[dk]+0) ":" (dout[dk]+0) ":" (dfe[dk]+0) ":" (db[dk]+0) ":" (dtok[dk]+0) ":" (dter[dk]+0) ":" (dra[dk]+0) ":" (dmo[dk]+0) ":" (dme[dk]+0) ":" (dwt[dk]+0) ":" (dex[dk]+0) ":" (dtok[dk]+dter[dk]) }
         if (!pdone) calc_pcts()   # no third pass (an empty cache): the percentiles are computed here
         # the per (type, name, DAY) duration histograms — the row payload
         # (";" between the entries of one day: "|" is the S| stream separator)
         for (k in dhd) { split(k, kk, SUBSEP); dk = kk[1] SUBSEP kk[2] SUBSEP kk[3]; dql[dk] = dql[dk] (dql[dk] == "" ? "" : ";") kk[4] "." dhd[k] }
-        for (dk in dql) { split(dk, kk, SUBSEP); key = kk[1] SUBSEP kk[2]; ddp[key] = ddp[key] (ddp[key] == "" ? "" : ",") kk[3] ":" dql[dk] }
+        for (key in sc) for (i2 = 1; i2 <= ndl; i2++) { dk = key SUBSEP DL[i2]; if (!(dk in dql)) continue
+            ddp[key] = ddp[key] (ddp[key] == "" ? "" : ",") DL[i2] ":" sortqc(dql[dk]) }
         for (key in sc) { split(key, kk, SUBSEP); t = kk[1]; ns[t]++
             printf "S|%s|%s|%d|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", \
                 t, kk[2], sc[key], fst[key], lst[key], nd[key]+0, stok[key]+0, ster[key]+0, sfin[key]+0, sfout[key]+0, sfe[key]+0, \
@@ -253,15 +280,24 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTF="$AGG" -v DIMS="$DIMS" \
                 buildlist(top[key SUBSEP "wait"]), buildlist(top[key SUBSEP "exp"]), \
                 ((key in KP90) ? KP90[key] : ""), ((key in KP95) ? KP95[key] : ""), ((key in KP99) ? KP99[key] : ""), ((key in KP100) ? KP100[key] : ""), \
                 ((key in ddp) ? ddp[key] : ""), \
-                buildlist(top[key SUBSEP "d90"]), buildlist(top[key SUBSEP "d95"]), buildlist(top[key SUBSEP "d99"]), buildlist(top[key SUBSEP "d100"]) > OUTF }
+                buildlist(top[key SUBSEP "d90"]), buildlist(top[key SUBSEP "d95"]), buildlist(top[key SUBSEP "d99"]), buildlist(top[key SUBSEP "d100"]) > (OUTP "." t) }
         for (k in tdd) { split(k, kk, SUBSEP); tdays[kk[1]]++ }
-        n2 = split(DIMS, TL, " ")   # a T| line for EVERY type, data or not (the config-only estate renders zero-row tables)
+        n2 = split(DSEL, TL, " ")   # a T| line for EVERY selected type, data or not (the config-only estate renders zero-row tables)
         for (i2 = 1; i2 <= n2; i2++) { t = TL[i2]
             printf "T|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s|%d|%s|%s|%s|%s\n", t, tc[t]+0, tdays[t]+0, ttok[t]+0, tter[t]+0, tin[t]+0, tout[t]+0, tfe[t]+0, \
                 tra[t]+0, tmo[t]+0, tme[t]+0, twt[t]+0, tex[t]+0, tv[t]+0, ns[t]+0, \
-                ((t in TP90) ? TP90[t] : ""), ((t in TP95) ? TP95[t] : ""), ((t in TP99) ? TP99[t] : ""), ((t in TP100) ? TP100[t] : "") > OUTF }
+                ((t in TP90) ? TP90[t] : ""), ((t in TP95) ? TP95[t] : ""), ((t in TP99) ? TP99[t] : ""), ((t in TP100) ? TP100[t] : "") > (OUTP "." t) }
     }
 ' "$PARSED" "$FILES" "$FILES"
+}
+# the type groups, one background job each (fastawk: mawk when present);
+# the groups weigh roughly alike (the develop profile)
+AGG_GROUPS=("subscription remote-host" "login account" "partner logical" "application domain bl")
+AGG_PIDS=()
+agg_timed() { local t0=$SECONDS; agg_run "$1"; printf 'TIME %5ds  %s\n' "$(( SECONDS - t0 ))" "entities: aggregate $1" >&2; }
+for _g in "${AGG_GROUPS[@]}"; do agg_timed "$_g" & AGG_PIDS+=("$!"); done
+for _p in "${AGG_PIDS[@]}"; do wait "$_p" || { echo "entities: an aggregation job failed" >&2; exit 1; }; done
+unset _g _p
 
 # ROW formatter: ONE awk pass over the busiest-first stream (S| fields: 2 type
 # 3 name 4 files 5 first 6 last 7 days 8 tok 9 terr 10 in 11 out 12 ferr
@@ -289,7 +325,9 @@ FMT_AWK='
     function dcell(ms) { return (ms == "") ? "" : "@{class=" dtint(ms) "}" hshort(ms) }
 '
 
-for dim in $DIMS; do
+# one .rpt per type, formatted side by side (each reads only $AGG.<type>)
+fmt_dim() {
+    local dim=$1 title chead nkind noun OUT rows tot_line
     case $dim in
         account)      title="Accounts";      chead="Account";      nkind=acct;  noun="account" ;;
         subscription) title="Subscriptions"; chead="Subscription"; nkind=site;  noun="subscription" ;;
@@ -303,12 +341,12 @@ for dim in $DIMS; do
     esac
     OUT="$OUTDIR/$dim.rpt"
     IFS='|' read -r _ _ tc tdays ttok tter tin tout tfe tra tmo tme twt tex tv ns tp90 tp95 tp99 tp100 \
-        <<< "$({ grep "^T|$dim|" "$AGG" || true; } | awk 'NR == 1')"
+        <<< "$({ grep "^T|$dim|" "$AGG.$dim" 2>/dev/null || true; } | awk 'NR == 1')"
     : "${tc:=0}" "${tdays:=0}" "${ttok:=0}" "${tter:=0}" "${tin:=0}" "${tout:=0}" "${tfe:=0}" "${tra:=0}" "${tmo:=0}" "${tme:=0}" "${twt:=0}" "${tex:=0}" "${tv:=0}" "${ns:=0}" "${tp90:=}" "${tp95:=}" "${tp99:=}" "${tp100:=}"
     # the display order (2026-09-13, user request; Transfers moved after
     # Volume the same day): Files · Retry / Resubmit · Duration (p90 p95 p99
     # p100) · Volume · Transfers · State · Dates — 22 cells, the Dates LAST
-    rows=$({ grep "^S|$dim|" "$AGG" || true; } | LC_ALL=C sort -t'|' -k4,4nr -k3,3f -k3,3 | awk -F'|' "$FMT_AWK"'
+    rows=$({ grep "^S|$dim|" "$AGG.$dim" 2>/dev/null || true; } | LC_ALL=C sort -t'|' -k4,4nr -k3,3f -k3,3 | awk -F'|' "$FMT_AWK"'
         $3 == "" { next }
         { files = $4 + 0; tok = $8 + 0; ter = $9 + 0; fe = $12 + 0; bytes = $18 + 0
           printf "ROW\t%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s\t@data:coreids-ferr=%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:coreids-wait=%s\t@data:coreids-exp=%s\t@data:durdays=%s\t@data:coreids-d90=%s\t@data:coreids-d95=%s\t@data:coreids-d99=%s\t@data:coreids-d100=%s\n", \
@@ -340,5 +378,8 @@ for dim in $DIMS; do
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "Data written to $OUT ($ns $noun(s), $tc file(s))." >&2
-done
-rm -f "$AGG"
+}
+FMT_PIDS=()
+for dim in $DIMS; do fmt_dim "$dim" & FMT_PIDS+=("$!"); done
+for _p in "${FMT_PIDS[@]}"; do wait "$_p" || { echo "entities: a report writer failed" >&2; exit 1; }; done
+rm -f "$AGG".*
