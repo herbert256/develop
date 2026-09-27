@@ -183,7 +183,11 @@ skip_if_fresh() {
     if [ "$script" -nt "$out" ] \
        || [ "$LIB_DIR/lib.sh" -nt "$out" ] \
        || [ "$LIB_DIR/parse.sh" -nt "$out" ] \
-       || { [ -f "$PARSED" ] && [ "$PARSED" -nt "$out" ]; }; then
+       || { [ -f "$PARSED" ] && [ "$PARSED" -nt "$out" ]; } \
+       || { [ -f "$RENAMES_FILE" ] && [ "$RENAMES_FILE" -nt "$out" ]; }; then
+        # (the rename map: a server report folds logged subscription names
+        # through it, and since 2026-09-27 a recorded rename no longer
+        # re-tokenizes the cache — the map is rewritten only on a change)
         return 0                                               # stale -> build
     fi
     local dep

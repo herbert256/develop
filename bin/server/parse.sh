@@ -109,12 +109,15 @@ in_manifest()    { cut -f1 "$MANIFEST" | grep -qxF "$(basename "$1")"; }
 # cache. A changed parser (or a cache with no recorded version) forces a full
 # reparse, so editing parse.sh actually re-tokenizes instead of reusing a stale cache.
 PSIG="$CACHE_DIR/_parse.parser"
-# The RENAME MAP is part of the signature: it decides which logged subscription
-# name a mention is attributed to, so recording a rename must rebuild the
-# per-entity caches (bin/renames.sh).
 # + the skip-list READER (2026-09-09): a change in how a rule line is parsed
-# must reparse like an edit of the rules would
-parser_sig=$(cat "${BASH_SOURCE[0]}" "$SKIPFILE" "$RENAMES_FILE" "$ROOT/bin/skiplist.sh" 2>/dev/null | cksum | awk '{print $1"_"$2}')
+# must reparse like an edit of the rules would.
+# The RENAME MAP is NOT part of it (2026-09-27, build-speed round 6): only the
+# mention scan reads it (which logged subscription name a mention is
+# attributed to), so a recorded rename rebuilds the per-entity caches through
+# their own content check (MENTION_RN_SIG in build_entity_tsvs), never a
+# re-tokenize of every export. That is also what lets bin/build.sh start
+# this parse BESIDE the config step, which may append to the map.
+parser_sig=$(cat "${BASH_SOURCE[0]}" "$SKIPFILE" "$ROOT/bin/skiplist.sh" 2>/dev/null | cksum | awk '{print $1"_"$2}')
 
 # ---------------------------------------------------------------------------
 # Parallel machinery. The 5+ GB of input is embarrassingly parallel two ways:
@@ -483,7 +486,13 @@ BEGIN { outf["A"]=accout; outf["S"]=subout; outf["L"]=logout; outf["H"]=hstout; 
         # fold and the rename lookup all keep the token prefix. The resolution
         # below is half of this scan, run on every word of every message; the
         # gate is exact, and off when any name is shorter than 3 characters
-        for (rk in RN_S) { RP3[substr(rk, 1, 3)] = 1; if (length(rk) < 3) SP_OFF = 1 } }
+        for (rk in RN_S) { RP3[substr(rk, 1, 3)] = 1; if (length(rk) < 3) SP_OFF = 1 }
+        # the LENGTH GATES of name_hit: the shortest account/login name (NMIN),
+        # subscription or old name (SMIN), and the smaller of the two (WMIN)
+        NMIN = SMIN = 1e9
+        for (rk in RN_S) if (length(rk) < SMIN) SMIN = length(rk)
+        WMIN = SMIN }
+function minlen(v, m) { return (length(v) < m) ? length(v) : m }
 # BYTE-RANGE MODE (ent_range, 2026-09-27): the job scans only the lines of the
 # cache RANGEF that START at an offset in [RLO, RHI) and stops after them —
 # every job computes the same offsets, so the jobs partition the cache in
@@ -513,9 +522,9 @@ function hit(ty, w,   k) {
     if (($3 == "E" || $3 == "W") && !($6 in ended) && $5 !~ /Skipping the next scheduled occurrence of this task/) { ewring[k, ewcnt[k] % 10] = $0; ewcnt[k]++ }
 }
 FILENAME ~ /_sessions-ended\.tsv$/ { if ($1 != "") ended[$1] = 1;         next }   # the transfer-ended sessions (col 1 = session id)
-FILENAME ~ /_accounts\.tsv$/      { if ($1 != "") acc[$1] = 1;            next }   # base files: col 1 = name, col 2 = direction
-FILENAME ~ /_subscriptions\.tsv$/ { if ($1 != "") { sub_[$1] = 1; SP3[substr($1, 1, 3)] = 1; if (length($1) < 3) SP_OFF = 1 }; next }
-FILENAME ~ /_logins\.tsv$/        { if ($1 != "") lgn[$1] = 1;            next }
+FILENAME ~ /_accounts\.tsv$/      { if ($1 != "") { acc[$1] = 1; NMIN = minlen($1, NMIN); WMIN = minlen($1, WMIN) }; next }   # base files: col 1 = name, col 2 = direction
+FILENAME ~ /_subscriptions\.tsv$/ { if ($1 != "") { sub_[$1] = 1; SP3[substr($1, 1, 3)] = 1; if (length($1) < 3) SP_OFF = 1; SMIN = minlen($1, SMIN); WMIN = minlen($1, WMIN) }; next }
+FILENAME ~ /_logins\.tsv$/        { if ($1 != "") { lgn[$1] = 1; NMIN = minlen($1, NMIN); WMIN = minlen($1, WMIN) }; next }
 FILENAME ~ /_hosts\.tsv$/         { if ($1 != "") hstU[toupper($1)] = $1; next }   # DNS names: match case-insensitively, attribute under the config spelling
 # the JSON transfer bookends (in the cache since 2026-09-09 for bookend-ok.sh
 # and the drill pages) name the account and the file of every leg — kept OUT
@@ -528,19 +537,36 @@ index($5, "{\"message\":") == 1 { next }
     # the SERVER/CLIENT match only on one holding the marker, and the rename
     # lookup inlines rn_canon — the scan runs twice per build over every
     # record; same hits, same order)
+    # (round 6, 2026-09-27: a DOTLESS word — most of them — goes straight to
+    # name_hit, without the one-element sub2 array the old loop built for it,
+    # and a word shorter than the shortest name that could match it skips
+    # every lookup: same hits, same order)
     for (i = 1; i <= k; i++) {
         w = tok[i]
+        if (w == "") continue
         if (index(w, ".") > 0) {
             gsub(/^\.+|\.+$/, "", w); if (w == "") continue   # trim sentence dots
-        } else if (w == "") continue
-        if (index(w, ".") > 0) {   # dotted: only a host can match (every configured host is dotted)
-            if (toupper(w) in hstU) hit("H", hstU[toupper(w)])
-            n2 = split(w, sub2, /\.+/)
-        } else { n2 = 1; sub2[1] = w }
-        for (i2 = 1; i2 <= n2; i2++) {
-            w2 = sub2[i2]; if (w2 == "") continue
-            if (w2 in acc) hit("A", w2)
-            if (w2 in lgn) hit("L", w2)
+            if (index(w, ".") > 0) {   # dotted: only a host can match (every configured host is dotted)
+                if (toupper(w) in hstU) hit("H", hstU[toupper(w)])
+                n2 = split(w, sub2, /\.+/)
+                for (i2 = 1; i2 <= n2; i2++) if (length(sub2[i2]) >= WMIN) name_hit(sub2[i2])
+                continue
+            }
+        }
+        if (length(w) >= WMIN) name_hit(w)
+    }
+}
+# the account / login / subscription tests of one word (never empty). The
+# LENGTH GATES are exact: a hit needs the word itself (accounts, logins) — or
+# a prefix of it, the tail-stripped or folded candidate (subscriptions, old
+# names of the rename map) — to BE one of those names, so a word shorter than
+# the shortest of them cannot hit (NMIN, SMIN; WMIN the smaller of the two).
+function name_hit(w2,   pf, p, cand, c2) {
+            if (length(w2) >= NMIN) {
+                if (w2 in acc) hit("A", w2)
+                if (w2 in lgn) hit("L", w2)
+            }
+            if (length(w2) < SMIN) return
             # A runtime site token is usually the FULL subscription name: the
             # clean subscription name plus a log-only _SCP_..._PWD|KEY (or
             # _SSCP_... / _CCP_...) tail (subscriptions.json holds the clean names,
@@ -555,7 +581,7 @@ index($5, "{\"message\":") == 1 { next }
             # same fold bin/transfer/parse.sh applies to col 6, so both sides
             # attribute a renamed flow to one name.
             pf = substr(w2, 1, 3)
-            if (!SP_OFF && !(pf in SP3) && !(toupper(pf) in RP3)) continue   # the prefix gate (BEGIN)
+            if (!SP_OFF && !(pf in SP3) && !(toupper(pf) in RP3)) return   # the prefix gate (BEGIN)
             if (!(w2 in sub_)) {
                 p = index(w2, "_SSCP_"); if (p == 0) p = index(w2, "_SCP_"); if (p == 0) p = index(w2, "_CCP_")
                 cand = (p > 1) ? substr(w2, 1, p - 1) : w2
@@ -568,8 +594,6 @@ index($5, "{\"message\":") == 1 { next }
                 else if (cand != "") { c2 = toupper(cand); if ((c2 in RN_S) && (RN_S[c2] in sub_)) w2 = RN_S[c2] }
             }
             if (w2 in sub_) hit("S", w2)
-        }
-    }
 }
 # Emit this chunk's rings, newest first (the chunk is a contiguous slice of
 # the ascending-by-date+time cache, so the ring holds ITS newest 10).
@@ -682,7 +706,12 @@ HOSTS_DIR="$CACHE_DIR/hosts"
 # Configured name lists: bin/flow-manager.sh's caches (one name per line), refreshed
 # from the config exports by ensure_config (lib.sh). A missing cache file (no
 # export anywhere) leaves that type's known set — and its outputs — empty.
-ensure_config
+# Not when only the cache is wanted (AXWAY_SKIP_MENTIONS=1): bin/build.sh runs
+# that parse BESIDE the config step, and the tokenize reads no config.
+[ "${AXWAY_SKIP_MENTIONS:-}" = 1 ] || ensure_config
+# the rename map the mention caches were built with (see parser_sig)
+MENTION_RN_SIG="$CACHE_DIR/.mention-renames.sig"
+mention_rn_sig() { cat "$RENAMES_FILE" 2>/dev/null | cksum | awk '{print $1"_"$2}'; }
 CFG_ACCOUNTS="$CONFIG_BASE/_accounts.tsv"
 CFG_SUBS="$CONFIG_BASE/_subscriptions.tsv"
 CFG_LOGINS="$CONFIG_BASE/_logins.tsv"
@@ -708,6 +737,9 @@ build_entity_tsvs() {
     # drops this marker when it appended; bin/build.sh re-runs this parse
     # right after, and the marker forces exactly one rescan.
     [ -f "$CACHE_DIR/.rescan-mentions" ] && fresh=0
+    # a recorded rename re-attributes mentions (by content: every config run
+    # rewrites the map)
+    [ "$(cat "$MENTION_RN_SIG" 2>/dev/null)" = "$(mention_rn_sig)" ] || fresh=0
     [ "$fresh" = 1 ] && { echo "  the per-entity server caches are up to date; skipping." >&2; return 0; }
     ENT_CFG_SRCS=()   # global: ent_one's background jobs read it
     for cfg in "$CFG_ACCOUNTS" "$CFG_SUBS" "$CFG_LOGINS" "$CFG_HOSTS"; do
@@ -829,6 +861,7 @@ build_entity_tsvs() {
         fi
     done
     rm -f "$CACHE_DIR/.rescan-mentions"   # the appended-names marker is served (see the freshness check)
+    mention_rn_sig > "$MENTION_RN_SIG"
 }
 
 # (The server-log hostname forward-resolution was REMOVED 2026-07. It scanned

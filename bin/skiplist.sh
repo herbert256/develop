@@ -51,6 +51,7 @@ export SKIPLIST_FILE
 SKIPLIST_AWK='
 function sl_load(f,   ln, a, n, b, m, v, i) {   # b/m/v LOCAL: this rides inside consumer programs that use those names
     SL_N = 0
+    split("", SL_MEMO)   # the sl_match memo belongs to the rules loaded here
     while ((getline ln < f) > 0) {
         sub(/\r$/, "", ln)
         if (ln ~ /^[ \t]*#/ || ln ~ /^[ \t]*$/) continue
@@ -86,16 +87,23 @@ function sl_load(f,   ln, a, n, b, m, v, i) {   # b/m/v LOCAL: this rides inside
     close(f)
     for (i = 1; i <= SL_N; i++) SL_UVAL[i] = toupper(SL_VAL[i])   # (2026-09-27: upper-cased ONCE, not per row and rule)
 }
-function sl_match(fld, v,   i, uv) {
+function sl_match(fld, v,   i, uv, mk) {
     if (v == "") return 0
+    # MEMOIZED per (field, value) for the NAME fields (2026-09-27, build-speed
+    # round 6): the verdict is a pure function of the loaded rules, and the
+    # transfer parse asks it three times per record about a few thousand
+    # distinct names. Never for "message" — every server message is unique.
+    if (fld != "message") { mk = fld SUBSEP v; if (mk in SL_MEMO) return SL_MEMO[mk] }
     for (i = 1; i <= SL_N; i++) {
         if (SL_FIELD[i] != fld && SL_FIELD[i] != "any") continue
         # the value is upper-cased once per call, only when a rule needs it (2026-09-27)
-        if (SL_RULE[i] == "exact")    { if (uv == "") uv = toupper(v); if (uv == SL_UVAL[i]) return i }
-        else if (SL_RULE[i] == "regex") { if (v ~ SL_VAL[i]) return i }
-        else                          { if (uv == "") uv = toupper(v); if (index(uv, SL_UVAL[i])) return i }
+        if (SL_RULE[i] == "exact")    { if (uv == "") uv = toupper(v); if (uv == SL_UVAL[i]) break }
+        else if (SL_RULE[i] == "regex") { if (v ~ SL_VAL[i]) break }
+        else                          { if (uv == "") uv = toupper(v); if (index(uv, SL_UVAL[i])) break }
     }
-    return 0
+    if (i > SL_N) i = 0
+    if (fld != "message") SL_MEMO[mk] = i
+    return i
 }
 function sl_hit(fld, v) { return sl_match(fld, v) > 0 }
 '

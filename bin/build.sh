@@ -287,6 +287,7 @@ write_report() {
     # paths arrive as ONE argument — every Input figure came out 0. Globs into
     # an array instead: no ls fork, and safe for spaces.
     local -a g
+    local _st0; _st0=$(date +%s)
     shopt -s nullglob
     g=("input/server"/*.csv)
     r=$(count_stats "in-server" ${g[@]+"${g[@]}"}); IFS=$'\t' read -r sfiles slines sbytes <<<"$r"
@@ -301,6 +302,7 @@ write_report() {
     # cached per file) — gathered here, BEFORE the clock, like the figures above
     local sinv tinv
     sinv=$(log_inventory input/server); tinv=$(log_inventory input/transfer)
+    printf 'TIME %5ds  build report: input + cache statistics (%s)\n' "$(( $(date +%s) - _st0 ))" "$out" >&2
     # THE INPUT CHANGES (2026-09-06, user request): every file under
     # input/{server,transfer,flow-manager}/ and the *.txt policy files at the
     # input root, compared with the manifest the PREVIOUS build left in
@@ -708,10 +710,13 @@ fi
 printf '\n=== building %s (report -> %s) ===\n' "${ENV_LABEL:-<unlabelled checkout — write input/environment.txt>}" "$REPORT" >&2
 
 . "$(dirname "${BASH_SOURCE[0]}")/fastawk.sh"   # create data/.awkshim ONCE, before parallel children race for it
-run_step "config: extract the configured entity lists"                    bin/flow-manager.sh
-
 # ---- 1. parse ---------------------------------------------------------------
+# THE SERVER PARSE STARTS BEFORE THE CONFIG STEP (2026-09-27, speed round 6):
+# with AXWAY_SKIP_MENTIONS it only tokenizes + merges the exports — no config
+# read (ensure_config is skipped, the rename map left its signature) — so it
+# runs beside flow-manager.sh too, not only beside the transfer parse.
 bg_step_start "parse: server log cache"                                   env AXWAY_SKIP_MENTIONS=1 bin/server/parse.sh
+run_step "config: extract the configured entity lists"                    bin/flow-manager.sh
 run_step "parse: transfer log cache"                                      env AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1 bin/transfer/parse.sh
 bg_step_wait
 # THE MENTION SCAN IN THE BACKGROUND (2026-09-27, speed round 4): the server

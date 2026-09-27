@@ -175,7 +175,7 @@ wpids=()
 for ((id = 0; id < NW; id++)); do
     awk -F'\t' -v NW="$NW" -v ID="$id" -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         BEGIN { rn_load(RNF) }
-        FILENAME ~ /_hosts\.tsv$/  { if ($1 != "") cfg[tolower($1)] = $1; next }   # config spelling, matched lowercase
+        FILENAME ~ /_hosts\.tsv$/  { if ($1 != "") { cfg[tolower($1)] = $1; if (!index($1, ".")) hnodot = 1 } next }   # config spelling, matched lowercase (hnodot: the H fast path is off)
         FILENAME ~ /_white\.tsv$/  { if ($1 != "") white[$1] = 1; next }
         FNR % NW != ID { next }                      # this worker'\''s slice only
         {
@@ -204,6 +204,10 @@ for ((id = 0; id < NW; id++)); do
                 s = $5
                 while (match(s, /UC[0-9]+_[A-Za-z0-9_-]+/)) {    # hyphens are part of UC4/UC2 names
                     tk = substr(s, RSTART, RLENGTH)
+                    # the fold below is a pure function of the token, and the
+                    # same few names repeat on most lines: memoized (STK)
+                    if (tk in STK) tk = STK[tk]
+                    else { t0 = tk
                     sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", tk)                                        # canonical subscription name (drop the _SCP_ / _SSCP_ / _CCP_ tail)
                     p14 = index(tk, "_P14303_CFT01"); if (p14 > 0) tk = substr(tk, 1, p14 - 1)   # composite <site>_P14303_CFT01[_flow] identifiers
                     # RENAMES: a server line keeps the name that was current
@@ -214,7 +218,7 @@ for ((id = 0; id < NW; id++)); do
                     # (2026-08).
                     # rn_canon_pfx, not rn_canon: the server truncates names,
                     # so a renamed flow arrives as a PREFIX of its old name.
-                    tk = rn_canon_pfx(tk)
+                    tk = rn_canon_pfx(tk); STK[t0] = tk }
                     k = "S" SUBSEP tk
                     cnt[k]++; cd[k SUBSEP d]++
                     if (sk > lsk[k]) { lsk[k] = sk; lmsg[k] = $5 }
@@ -254,12 +258,35 @@ for ((id = 0; id < NW; id++)); do
             }
             # H: configured endpoint tokens (dots kept so hostnames/IPs stay
             # one token; stray sentence dots trimmed — parse.sh'\''s entity scan)
-            if ($5 ~ /[A-Za-z0-9][._-]/) {
+            # THE DOTTED FAST PATH (2026-09-27, build-speed round 6; half of
+            # this scan was lowercasing and splitting EVERY TM message): when
+            # every configured host holds a dot, only a token run holding one
+            # can match, so match() walks just those runs — leftmost-longest,
+            # each is a whole maximal run of the token class, exactly a split
+            # token — and a message without a dot has none. Same hits, same
+            # counts; a dotless configured host (hnodot) keeps the full split.
+            nh = 0
+            if (!hnodot) {
+                if (index($5, ".") && $5 ~ /[A-Za-z0-9][._-]/) {
+                    n = split($5, tok, /[^A-Za-z0-9._-]+/)
+                    for (i = 1; i <= n; i++) {
+                        w = tok[i]; if (!index(w, ".")) continue
+                        w = tolower(w)
+                        if (substr(w, 1, 1) == "." || substr(w, length(w)) == ".") gsub(/^\.+|\.+$/, "", w)
+                        if (w != "" && (w in cfg)) HW[++nh] = w
+                    }
+                }
+            } else if ($5 ~ /[A-Za-z0-9][._-]/) {
                 s2 = tolower($5)
                 n = split(s2, tok, /[^a-z0-9._-]+/)
                 for (i = 1; i <= n; i++) {
                     w = tok[i]; gsub(/^\.+|\.+$/, "", w)
-                    if (w == "" || !(w in cfg)) continue
+                    if (w != "" && (w in cfg)) HW[++nh] = w
+                }
+            }
+            if (nh) {
+                for (i = 1; i <= nh; i++) {
+                    w = HW[i]
                     k = "H" SUBSEP cfg[w]            # attribute under the config spelling
                     cnt[k]++; cd[k SUBSEP d]++
                     if (sk > lsk[k]) { lsk[k] = sk; lmsg[k] = $5 }

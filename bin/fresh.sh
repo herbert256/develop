@@ -83,6 +83,14 @@ echo "fresh.sh: clearing data/ and docs/ ..." >&2
 _fc0=$(date +%s)
 move_aside data
 move_aside docs
+# ...EXCEPT the build report's input statistics (2026-09-27, speed round 6):
+# data/.buildstats caches the line counts and the per-export First/Last
+# inventory under each file's name + size + mtime, so it can never go stale —
+# and without it every fresh build re-read every export (~20 GB in
+# production) just to fill in the report's figures.
+if [ -d "build/.trash/data.$$/.buildstats" ]; then
+    mkdir -p data && mv "build/.trash/data.$$/.buildstats" data/
+fi
 { rm -rf build/.trash >/dev/null 2>&1 & } 2>/dev/null
 echo "fresh.sh: data/ and docs/ moved aside in $(( $(date +%s) - _fc0 ))s (deleted in the background)." >&2
 
