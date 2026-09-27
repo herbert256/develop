@@ -364,13 +364,18 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                     pkG[g9]++
                     if (!(g9 in GSEEN)) { GSEEN[g9] = 1; GRO[++ngr] = g9 } }
                 if (d != "" && $2 ~ /^[0-9][0-9]:/) {
-                    hs = jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 24 + int(substr($2,1,2)); span(hs)
+                    # (2026-09-27, speed round 12: the day number once per
+                    # DATE — JDd/JDv — and the minute key once per line; the
+                    # SSH logon lines are a fifth of the production cache)
+                    if (d != JDd) { JDd = d; JDv = jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) }
+                    hs = JDv * 24 + int(substr($2,1,2)); span(hs)
                     ts = $1 " " $2
-                    lm = minof(d, $2)
-                    lgm[a SUBSEP lm] = 1                                # logon minutes (distinct)
-                    lgc[a SUBSEP lm]++                                  # raw logons in that minute
-                    if (fts[a SUBSEP lm] == "" || ts < fts[a SUBSEP lm]) fts[a SUBSEP lm] = ts
-                    if (lts[a SUBSEP lm] == "" || ts > lts[a SUBSEP lm]) lts[a SUBSEP lm] = ts
+                    lm = JDv * 1440 + substr($2,1,2) * 60 + substr($2,4,2) + 0   # = minof(d, $2)
+                    k7 = a SUBSEP lm
+                    lgm[k7] = 1                                         # logon minutes (distinct)
+                    lgc[k7]++                                           # raw logons in that minute
+                    if (fts[k7] == "" || ts < fts[k7]) fts[k7] = ts
+                    if (lts[k7] == "" || ts > lts[k7]) lts[k7] = ts
                     if (!(a in lm0) || lm < lm0[a]) lm0[a] = lm
                     if (!(a in lm1) || lm > lm1[a]) lm1[a] = lm
                     if (g9 != "") { k9 = g9 SUBSEP lm
