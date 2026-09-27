@@ -1375,6 +1375,13 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             function pr(x, c) { if (x + 0 == 0 || c + 0 == 0) return ""; return sprintf("%.1f%%", x * 100 / c) }
             function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
             function n(s) { gsub(/[^0-9]/, "", s); return s + 0 }
+            function qsortn(A, lo, hi,   i, j, p, t) {
+                while (lo < hi) {
+                    i = lo; j = hi; p = A[int((lo + hi) / 2)]
+                    while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
+                    if (j - lo < hi - i) { if (lo < j) qsortn(A, lo, j); lo = i } else { if (i < hi) qsortn(A, i, hi); hi = j }
+                }
+            }
             function prank(P,   r, cum, i2) { r = int((HN - 1) * P / 100 + 0.5) + 1; cum = 0
                 for (i2 = 1; i2 <= hq; i2++) { cum += HC[i2]; if (cum >= r) return HQ[i2] } return HQ[hq] }
             $1=="ROW" {
@@ -1390,9 +1397,13 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 rows[++nr]=$0 }
             END {
                 for (d in dd) days++
-                # the merged histogram, sorted by grid value (insertion sort — a few hundred entries at most)
+                # the merged histogram, sorted by grid value — a QUICKSORT of
+                # the distinct values (speed round 5: an insertion sort here
+                # was O(n^2) on production histograms of thousands of values)
                 hq = 0; HN = 0
-                for (k in HH) { v = k + 0; c = HH[k]; HN += c; j = hq; while (j >= 1 && HQ[j] > v) { HQ[j+1] = HQ[j]; HC[j+1] = HC[j]; j-- } HQ[j+1] = v; HC[j+1] = c; hq++ }
+                for (k in HH) { HQ[++hq] = k + 0; HN += HH[k] }
+                qsortn(HQ, 1, hq)
+                for (j = 1; j <= hq; j++) HC[j] = HH[HQ[j]]
                 V[3]=nz(S[3]); V[4]=nz(S[4]); V[5]=S[5]+0; V[6]=pr(S[5], files); V[7]=S[7]+0; V[8]=S[8]+0; V[9]=S[9]+0
                 W[10] = (HN > 0) ? dcell(prank(90)) : ""; W[11] = (HN > 0) ? dcell(prank(95)) : ""; W[12] = (HN > 0) ? dcell(prank(99)) : ""; W[13] = (HN > 0) ? dcell(prank(100)) : ""   # WHOLE cells (their tint follows the value)
                 V[14]=human(sb); V[15]=human(files > 0 ? sb / files : 0); V[16]=S[16]+0; V[17]=S[17]+0; V[18]=pr(S[17], S[16]+S[17]); V[19]=S[19]+0; V[20]=S[20]+0; V[23]=days+0

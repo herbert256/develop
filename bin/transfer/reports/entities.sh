@@ -150,13 +150,23 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
     # P95 / P99 / P100 (grid ms values; "" when empty — the ROW formatter
     # spells and tints them; P100 = the maximum) and HIST (the list sorted by
     # q, comma-joined)
-    function pctls(list,   n2, z, i2, j2, p2, N, Q, C, tmpq, tmpc, out) {
+    # qsortn(A, lo, hi): A[lo..hi] ascending, numerically. The lists below
+    # hold DISTINCT values (histogram keys), so the order is fully defined;
+    # an insertion sort here ran 34M inner steps on the sample alone (the
+    # per-type lists hold thousands of grid values) — speed round 5.
+    function qsortn(A, lo, hi,   i, j, p, t) {
+        while (lo < hi) {
+            i = lo; j = hi; p = A[int((lo + hi) / 2)]
+            while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
+            if (j - lo < hi - i) { if (lo < j) qsortn(A, lo, j); lo = i } else { if (i < hi) qsortn(A, i, hi); hi = j }
+        }
+    }
+    function pctls(list,   n2, z, i2, p2, N, Q, C, CM, out) {
         P90 = ""; P95 = ""; P99 = ""; P100 = ""; HIST = ""; if (list == "") return
         n2 = split(list, z, "|"); N = 0
-        for (i2 = 1; i2 <= n2; i2++) { p2 = index(z[i2], "."); Q[i2] = substr(z[i2], 1, p2 - 1) + 0; C[i2] = substr(z[i2], p2 + 1) + 0; N += C[i2] }
-        for (i2 = 2; i2 <= n2; i2++) { tmpq = Q[i2]; tmpc = C[i2]; j2 = i2 - 1
-            while (j2 >= 1 && Q[j2] > tmpq) { Q[j2 + 1] = Q[j2]; C[j2 + 1] = C[j2]; j2-- }
-            Q[j2 + 1] = tmpq; C[j2 + 1] = tmpc }
+        for (i2 = 1; i2 <= n2; i2++) { p2 = index(z[i2], "."); Q[i2] = substr(z[i2], 1, p2 - 1) + 0; CM[Q[i2]] = substr(z[i2], p2 + 1) + 0; N += CM[Q[i2]] }
+        qsortn(Q, 1, n2)
+        for (i2 = 1; i2 <= n2; i2++) C[i2] = CM[Q[i2]]
         out = ""; for (i2 = 1; i2 <= n2; i2++) out = out (out == "" ? "" : ",") Q[i2] "." C[i2]
         HIST = out
         P90 = prank(Q, C, n2, N, 90); P95 = prank(Q, C, n2, N, 95); P99 = prank(Q, C, n2, N, 99); P100 = prank(Q, C, n2, N, 100) }
@@ -250,11 +260,10 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
         for (t in TS) if (!(t in PAIRTOT)) tot(t)
     }
     # the entries of a per-day duration histogram ("q.c;q.c"), ordered by q
-    function sortqc(s,   n3, a3, i3, j3, v3, q3) { n3 = split(s, a3, ";"); if (n3 < 2) return s
-        for (i3 = 2; i3 <= n3; i3++) { v3 = a3[i3]; q3 = substr(v3, 1, index(v3, ".") - 1) + 0; j3 = i3 - 1
-            while (j3 > 0 && substr(a3[j3], 1, index(a3[j3], ".") - 1) + 0 > q3) { a3[j3 + 1] = a3[j3]; j3-- }
-            a3[j3 + 1] = v3 }
-        s = a3[1]; for (i3 = 2; i3 <= n3; i3++) s = s ";" a3[i3]; return s }
+    function sortqc(s,   n3, a3, i3, p3, Q3, E3) { n3 = split(s, a3, ";"); if (n3 < 2) return s
+        for (i3 = 1; i3 <= n3; i3++) { p3 = index(a3[i3], "."); Q3[i3] = substr(a3[i3], 1, p3 - 1) + 0; E3[Q3[i3]] = a3[i3] }
+        qsortn(Q3, 1, n3)
+        s = E3[Q3[1]]; for (i3 = 2; i3 <= n3; i3++) s = s ";" E3[Q3[i3]]; return s }
     END {
         # The per-DAY payloads (@data:buckets, @data:durdays) list their days
         # in DATE order (2026-09-27, build-speed round 1): they used to follow

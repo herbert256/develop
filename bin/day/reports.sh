@@ -153,6 +153,13 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
     # aggregated from the raw Files, never re-bucketed from each other:
     # percentiles do not merge (a median of medians is not a median) and the
     # error rate is a ratio, not a sum. Fields are the current record.
+    function qsortn(A, lo, hi,   i, j, p, t) {
+        while (lo < hi) {
+            i = lo; j = hi; p = A[int((lo + hi) / 2)]
+            while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
+            if (j - lo < hi - i) { if (lo < j) qsortn(A, lo, j); lo = i } else { if (i < hi) qsortn(A, i, hi); hi = j }
+        }
+    }
     function slotbump(r, d, s,   k) { k = r SUBSEP d SUBSEP s
         SC[k]++                                         # all Files (the rate denominator)
         if ($2 == "Failed" || $2 == "Expired") SF[k]++  # Error Files
@@ -420,7 +427,9 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
                         # END per-day loop, whose counter is x — plain x/y/k/w
                         # here would clobber it (the 2026-07 infinite-loop trap)
                         qk = split(SDL[kk], sdla, " ")
-                        for (qx = 2; qx <= qk; qx++) { qw = sdla[qx] + 0; qy = qx - 1; while (qy >= 1 && sdla[qy] + 0 > qw) { sdla[qy+1] = sdla[qy]; qy-- } sdla[qy+1] = qw }
+                        # a QUICKSORT of the slot durations (speed round 5: an insertion sort, O(n^2) on a busy production slot)
+                        for (qx = 1; qx <= qk; qx++) sdla[qx] = sdla[qx] + 0
+                       qsortn(sdla, 1, qk)
                         i1 = int(0.50 * qk + 0.9999); if (i1 < 1) i1 = 1
                         i2 = int(0.90 * qk + 0.9999); if (i2 < 1) i2 = 1
                         i3 = int(0.98 * qk + 0.9999); if (i3 < 1) i3 = 1

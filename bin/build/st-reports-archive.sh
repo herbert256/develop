@@ -69,6 +69,8 @@ rm -f "$out"
 # on the develop site 1.4x faster for +6% size, several times faster on
 # production's ~300 MB. p7zip 17's 7z reads the result (tested); the p7zip
 # fallback keeps the old, unblocked call.
+_al0=$(date +%s)   # phase laps on the build console (2026-09-27, speed round 5)
+_alap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  archive: %s\n' "$((_t1 - _al0))" "$1" >&2; _al0=$_t1; }
 if [ "$Z7" = 7zz ]; then
     7zz a -t7z -mx9 -mmt=on -m0=LZMA2:d=64m:c=64m -mhe=on -p"$pass" "$out" docs >/dev/null
 else
@@ -76,6 +78,7 @@ else
 fi
 
 echo "Wrote $out ($(du -h "$out" | cut -f1 | tr -d ' '))." >&2
+_alap "7z"
 
 # ---- the OUTBOX copy (2026-08-31, user request) ------------------------------
 # The same archive into the outbox repo under the STABLE name
@@ -91,15 +94,18 @@ if [ -d "$EX/.git" ]; then
     cp "$out" "$EX/st-reports-${ENV_KEY}.7z"
     git -C "$EX" pull --rebase --autostash --quiet 2>/dev/null \
         || echo "outbox: WARNING - pull failed (offline?) — pushing on top of the local state." >&2
+    _alap "outbox copy + pull"
     if [ -n "$(git -C "$EX" status --porcelain)" ]; then
         git -C "$EX" add -A
         git -C "$EX" commit --quiet -m "st-reports-${ENV_KEY} ${stamp}"
     fi
+    _alap "outbox commit"
     if git -C "$EX" push --quiet 2>/dev/null; then
         echo "outbox: st-reports-${ENV_KEY}.7z pushed." >&2
     else
         echo "outbox: WARNING - push failed (offline?) — the commit is local and goes out with the next build." >&2
     fi
+    _alap "outbox push"
 else
     echo "outbox: no git repo at ${EX/#$HOME/~} — the archive stays in build/ only." >&2
 fi

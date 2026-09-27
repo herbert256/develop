@@ -239,6 +239,9 @@ if [ "$fresh" = 1 ]; then
     exit 0
 fi
 
+# phase laps on the build console (2026-09-27, speed round 5)
+_fml0=$(date +%s)
+_fml() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  flow-manager: %s\n' "$((_t1 - _fml0))" "$1" >&2; _fml0=$_t1; }
 # ---- apply the skip list ----------------------------------------------------
 # Build FILTERED copies of the exports (skipped accounts/subscriptions removed)
 # and record the skipped names, THEN repoint PARTNERS/SUBS/TEMPLATES at the
@@ -553,6 +556,7 @@ awk -F'\t' '
     }
 ' "$XREF/_subscriptions-flowdir.tsv" "$XREF/_subscriptions-patterns.tsv" > "$XREF/_subscriptions-ucderived.tsv"
 
+_fml "skip list, entity lists, pair tags"
 # ---- LOGICAL flow groups (2026-08-30 acc-vs-prod; FULL entity 2026-08-31) ----
 # One env's FlowIDs (base/_profiles.tsv = the customAttribute_FlowIdentifier
 # values) condensed into logical flow groups, one name per group, always 3
@@ -882,20 +886,28 @@ EPS="$OUT/.eps.tmp"
 # later — so this is a defensive fold, done once instead of per endpoint.
 awk -F'\t' '{ print tolower($1) }' "$BASE/_hosts.tsv" > "$EPS"
 IPSEED="$OUT/.ipseed.tmp"; : > "$IPSEED"
-while IFS= read -r epl; do
-    [ -n "$epl" ] || continue
-    case $epl in [0-9]*.[0-9]*.[0-9]*.[0-9]*) continue ;; esac   # a raw-IP endpoint names nothing
-    if command -v host >/dev/null 2>&1; then
-        host -W 2 "$epl" 2>/dev/null | awk -v h="$epl" '/has address/ { print $NF "\t" h }' >> "$IPSEED" || true
-    fi
-done < "$EPS"
+# PARALLEL LOOKUPS (2026-09-27, speed round 5): one `host -W 2` at a time was
+# ~100 sequential DNS round trips (and 2 s for every name nobody answers) on
+# the fresh build's critical path; 16 at once now. ip_put sorts what they
+# return, so the order the answers arrive in does not matter. The awk skip is
+# the former case glob [0-9]*.[0-9]*.[0-9]*.[0-9]* (a raw-IP endpoint names
+# nothing), spelled as a regex.
+_fm_t0=$(date +%s)
+fm_lookup() { host -W 2 "$1" 2>/dev/null | awk -v h="$1" '/has address/ { print $NF "\t" h }' || true; }
+export -f fm_lookup
+if command -v host >/dev/null 2>&1; then
+    awk '$0 != "" && $0 !~ /^[0-9].*\.[0-9].*\.[0-9].*\.[0-9]/' "$EPS" \
+        | xargs -n 1 -P 16 bash -c 'fm_lookup "$1"' _ >> "$IPSEED" || true
+fi
 rm -f "$EPS"
+printf 'TIME %5ds  %s\n' "$(( $(date +%s) - _fm_t0 ))" "flow-manager: endpoint DNS lookups" >&2
 ip_put "$BASE/_hosts.tsv" < "$IPSEED"
 rm -f "$IPSEED"
 
 # The PDA both-ways linking needs endpoint -> its address(es): ip-hosts.tsv with
 # the columns swapped. (It used to be built from the reverse cache, whose
 # non-endpoint rows could never match an endpoint and were pure noise.)
+_fml "logical flows, pair caches (to the DNS step)"
 PDAIP="$OUT/.pda.ipmap.tmp"
 : > "$PDAIP"
 [ -f "$IP_HOSTS_FILE" ] && awk -F'\t' '$1 != "" && $2 != "" { print $2 "\t" $1 }' "$IP_HOSTS_FILE" > "$PDAIP"
@@ -1183,6 +1195,7 @@ done
 # login (in) or hosts (out) — never both; a profile takes the union of its
 # subscriptions' sides). Appended LAST so every step above reads the plain
 # single-column lists it just wrote; external consumers read column 1.
+_fml "PDA derivation"
 adddir() {   # $1 base name  $2 in-side pair cache  $3 out-side pair cache (col 1 = the entity)
     awk -F'\t' '
         FILENAME == ARGV[1] { i[$1]=1; next }
@@ -1259,4 +1272,5 @@ LC_ALL=C sort -o "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv.tmp"
 if cmp -s "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv" 2>/dev/null
 then rm -f "$BASE/.configured.tsv.tmp"; else mv "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv"; fi
 
+_fml "directions, BL, the rest"
 echo "flow-manager.sh: wrote 11 entity caches to data/flow-manager/base/ + 110 pair caches (every pair both ways) + the patterns and templates maps to data/flow-manager/xref/" >&2
