@@ -113,17 +113,8 @@ read -r ENDJ PART <<< "$(LC_ALL=C awk -F'\t' '
     $7 != "" && $7 > m { m = $7 + 0 }
     { if ($7 != "" && $7 + 0 == m && $5 > lt[$7]) lt[$7] = $5 }
     END { print m + 0, ((lt[m] != "" && lt[m] < "22:00:00") ? 1 : 0) }' "$FCACHE")"
-
-# The CALENDAR bounds of the six windows (full ISO dates) for the page titles:
-# theoretical bounds from the anchor day — never the per-bucket data span.
-# f = the partial offset: 24-hours = days 0..f, 48-hours = day f+1 alone.
-read -r W24A W24B W48D WKA WKB W2A W2B W3A W3B MOA MOB <<< "$(awk -v j="$ENDJ" -v f="$PART" '
-    function fromjdn(x,   a,b,c,dd,e,mm,day,mon,yr) { a=x+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
-    BEGIN { printf "%s %s %s %s %s %s %s %s %s %s %s", \
-        fromjdn(j-f),  fromjdn(j),    fromjdn(j-f-1), \
-        fromjdn(j-6),  fromjdn(j-f-2), \
-        fromjdn(j-13), fromjdn(j-7),  fromjdn(j-20), fromjdn(j-14), \
-        fromjdn(j-29), fromjdn(j-21) }')"
+# (the page titles name the window only — no calendar bounds since
+# 2026-09-27, user request)
 
 # ---- select, bucket, sort newest-first, format -------------------------------
 # One pass tags each dated File with its bucket key; one sort orders
@@ -234,21 +225,15 @@ for k in $KEYS; do
         rm -f "$REPORTS_DIR/file-search-$k.rpt" "$REPORTS_DIR/file-search-$k-data.js"
         continue ;;
     esac
-    IFS=$'\t' read -r _ NTOT VH DMIN DMAX NSHIP FROM NSKIP NERR <<< "$(command grep "^$k"$'\t' "$TMP/stats")"
+    IFS=$'\t' read -r _ NTOT _ _ _ NSHIP FROM NSKIP _ <<< "$(command grep "^$k"$'\t' "$TMP/stats")"
     TOTKEPT=$((TOTKEPT + NTOT))
     case $k in
-        24-hours) TL="24 hours"; wdesc="the files of the newest **24 hours** (the newest full day, plus the partial newest day when one exists)"
-                  span="$W24A to $W24B"; [ "$W24A" = "$W24B" ] && span="$W24B" ;;
-        48-hours) TL="48 hours"; wdesc="the files of the **second full day**"
-                  span="$W48D" ;;
-        week)     TL="Week";     wdesc="the files of the **last week**, the newest two windows excluded"
-                  span="$WKA to $WKB" ;;
-        2-weeks)  TL="2 weeks";  wdesc="the files of the **last 2 weeks**, the newest week excluded"
-                  span="$W2A to $W2B" ;;
-        3-weeks)  TL="3 weeks";  wdesc="the files of the **last 3 weeks**, the newest 2 weeks excluded"
-                  span="$W3A to $W3B" ;;
-        month)    TL="Month";    wdesc="the files of the **last month**, the newest 3 weeks excluded"
-                  span="$MOA to $MOB" ;;
+        24-hours) TL="24 hours"; wdesc="the files of the newest **24 hours** (the newest full day, plus the partial newest day when one exists)" ;;
+        48-hours) TL="48 hours"; wdesc="the files of the **second full day**" ;;
+        week)     TL="Week";     wdesc="the files of the **last week**, the newest two windows excluded" ;;
+        2-weeks)  TL="2 weeks";  wdesc="the files of the **last 2 weeks**, the newest week excluded" ;;
+        3-weeks)  TL="3 weeks";  wdesc="the files of the **last 3 weeks**, the newest 2 weeks excluded" ;;
+        month)    TL="Month";    wdesc="the files of the **last month**, the newest 3 weeks excluded" ;;
     esac
     older=""
     case $k in month) older="Files older than 30 data days are on no page." ;; esac
@@ -257,7 +242,7 @@ for k in $KEYS; do
     [ "${NSKIP:-0}" -gt 0 ] && capnote=" **CAPPED:** of these, only the newest **$NSHIP** (back to **$FROM**) are searchable here — **$NSKIP** older files in this window are NOT shipped."
     OUT="$REPORTS_DIR/file-search-$k.rpt"
     {
-        printf 'TITLE\tFile search — %s — %s\n' "$TL" "$span"
+        printf 'TITLE\tFile search — %s\n' "$TL"
         printf 'DESC\tSearch %s by file name or CoreId — date, subscription, size and CoreId; OK rows green, Error rows red.\n' "$wdesc"
         printf 'INTRO\tSearch %s by file name or CoreId. Rows tint by outcome — **green** = OK (Delivered or Waiting), **red** = Error (Failed or Expired); a red row with an error page opens it, every other row opens its subscription.%s\n' "$wdesc" "$capnote"
         printf 'KEYWORDS\tfile,filename,file name,search,find,lookup,coreid,delivered,errored,waiting,expired,size,%s\n' "$TL"
@@ -265,7 +250,6 @@ for k in $KEYS; do
         printf 'TABLE\t\twide\trestint\tnosort\tnosearch\tnofilter\n'
         printf 'HEAD\tName\tDate\tSubscription\tSize\tCoreId\n'
         printf 'KIND\tfile\ttext\tsite\tnum\tmono\n'
-        printf 'SUMMARY\tFiles in this window: %s (%s Error)  |  Volume: %s  |  Window: %s to %s%s\n' "$NTOT" "${NERR:-0}" "$VH" "$DMIN" "$DMAX" "$([ "${NSKIP:-0}" -gt 0 ] && printf '  |  Searchable: %s (from %s)' "$NSHIP" "$FROM")"
         printf 'NOTE\tA **red** row is a transfer that **failed**, or a Waiting file whose staged copy the File Maintenance sweep deleted before pickup (**expired**); a red row with its own error page (kept for a subscription'\''s newest 10 failures of each day) opens it — the facts, every transfer leg, and the server log of its connections. A **green** row opens its subscription'\''s detail page. Date is the file'\''s first record'\''s date and time; Size counts the file once (its largest record).\n'
         [ -n "$older" ] && printf 'NOTE\t%s\n' "$older"
         printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
