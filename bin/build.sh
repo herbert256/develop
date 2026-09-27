@@ -771,10 +771,17 @@ run_step "report: analyses .rpt files"                                    bin/an
 # (cross-reference runs inside the analyses step since the 2026-07 move of
 # the Analyses-menu reports into bin/analyses/reports/)
 # dashboards and day both need the two areas' reports and nothing of each
-# other — disjoint output dirs, so they overlap (2026-08)
-bg_step_start "report: dashboards .rpt files"                             bin/dashboards/reports.sh
-run_step "report: day pages .rpt files"                                   bin/day/reports.sh
-bg_step_wait
+# other — disjoint output dirs, so they overlap (2026-08) — and since
+# 2026-09-27 (speed round 8) they run BESIDE THE PUBLISHES below, in the
+# second background slot, waited for right before the dashboards publish:
+# nothing from here to there reads their outputs or rewrites their inputs
+# (the transfer + server reports, the caches, colour/, the config). ONE
+# exception, served first in the foreground: whether monitor.rpt EXISTS
+# sets the top bar's Monitor link in every page a publish bakes (publish_lib
+# TB_MON, folded into the ?v= stamp) — the second run inside the background
+# step finds it fresh and skips.
+run_step "report: dashboards monitor (the top bar's Monitor flag)"        bin/dashboards/reports/monitor.sh
+bg2_step_start "report: dashboards + day pages .rpt files"                bash -c 'bin/dashboards/reports.sh & d=$!; bin/day/reports.sh; s=$?; wait "$d" || s=$?; exit "$s"'
 
 # ---- 3. publish -------------------------------------------------------------
 # the two heaviest publishes write DISJOINT trees — docs/transfer vs
@@ -829,6 +836,7 @@ run_step "publish: transfer catch-up (boxes reasons)"                     bin/tr
 # settled, so the rosters it reads are final. Outside the per-area
 # publishes, like publish-partner-groups.sh — a manual re-publish runs it too.
 run_step "publish: all files search (day shards + index)"                 bin/analyses/publish-all-files.sh
+bg2_step_wait   # the dashboards + day reports (started before the publishes)
 run_step "publish: dashboards"                                            bin/dashboards/publish.sh
 run_step "publish: day pages"                                             bin/day/publish.sh
 bg_step_wait

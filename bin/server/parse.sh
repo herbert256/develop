@@ -316,6 +316,34 @@ function is_noise(m,   i, t, p, c, k) {
 # Count double-quotes in a string (a complete CSV record has an even count).
 function count_quotes(s,   n) { n = gsub(/"/, "\"", s); return n }
 
+# quoted_split(rec, nq): split an all-quoted record (it starts and ends with a
+# quote; nq = its quote count) on "," into the GLOBAL f[1..np], outer quotes
+# dropped and escaped quotes ("") unescaped; 1 when that IS the CSV parse, 0
+# when the caller must walk the record instead (f is then garbage — the walk
+# clears it). The quotes of the record are its two ends, two per separator
+# and the ones INSIDE the pieces, so:
+#  - nq == 2*np: no piece holds a quote — the split is exact (an EMPTY field
+#    "" is two separator quotes side by side and splits to "", as parsed);
+#  - otherwise every piece holding a quote must hold only PAIRS of them (runs
+#    of even length): a raw field value doubles each of its quotes, and a
+#    "," INSIDE a value (the one way a split can cut a field) leaves an ODD
+#    run at the edge of the piece before the cut — so a clean piece set is
+#    the exact parse, and the pairs unescape to one quote each.
+# (2026-09-27, speed round 8: the SSH logon lines — a fifth of the kept
+# production cache — quote their login and account names, and walked.)
+function quoted_split(rec, nq,   i, t) {
+    np = split(rec, f, /","/)
+    f[1] = substr(f[1], 2); f[np] = substr(f[np], 1, length(f[np]) - 1)
+    if (2 * np == nq) return 1
+    for (i = 1; i <= np; i++) {
+        if (!index(f[i], "\"")) continue
+        t = f[i]; gsub(/""/, "", t)
+        if (index(t, "\"")) return 0
+        gsub(/""/, "\"", f[i])
+    }
+    return 1
+}
+
 # FAST head parser. Every field these exports emit is either individually
 # quoted or plain without embedded commas, so the leading fields can be
 # lifted with C-speed match()/index() instead of the per-character loop
@@ -442,14 +470,12 @@ FNR == 1 { rec = ""; buffering = 0; next }
     buffering = 0
 
     # THE ALL-QUOTED FAST PATH (2026-09-27): the exports quote EVERY field, so
-    # a record with no doubled quote ("") that starts and ends with a quote and
-    # holds exactly two quotes per piece of a split on "," IS a row of quoted
-    # fields without inner quotes — the split is exact, and one C-speed split
-    # replaces the two-leg walk below (over half of the tokenize). Anything
-    # else (an escaped quote, an empty "" field, an unquoted field) takes the
-    # walk, which stays the single source of semantics for those.
-    if (index(rec, "\"\"") == 0 && substr(rec, 1, 1) == "\"" && substr(rec, length(rec)) == "\"" && 2 * (np = split(rec, f, /","/)) == nq) {
-        f[1] = substr(f[1], 2); f[np] = substr(f[np], 1, length(f[np]) - 1)
+    # a record that starts and ends with a quote is split on "," in C
+    # (quoted_split) instead of the two-leg walk below (over half of the
+    # tokenize). Anything it cannot prove exact (an unquoted field, a quote
+    # pairing it cannot vouch for) takes the walk, which stays the single
+    # source of semantics for those.
+    if (substr(rec, 1, 1) == "\"" && substr(rec, length(rec)) == "\"" && quoted_split(rec, nq)) {
         if (f[3] == "ADMIN" || f[3] == "AUDIT") next
         if (is_noise(f[5])) next
     } else {
