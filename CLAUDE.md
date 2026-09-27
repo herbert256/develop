@@ -218,7 +218,7 @@ and runs the chain — `data/` and `docs/` are RENAMED into `build/.trash` and d
 background, and `data/.buildstats` (the build report's input statistics, keyed by name + size +
 mtime) is carried over, so a fresh build does not re-read every export for the report.
 
-**BUILD SPEED (2026-09-27, the "prd build" analysis — production 6:34 → 3:44 min in 12 rounds,
+**BUILD SPEED (2026-09-27, the "prd build" analysis — production 6:34 → 3:44 min in 14 rounds,
 every round byte-identical on a develop fresh build).** What a change must not break:
 
 - **Background slots**: `bg_step_start/bg_step_wait` and `bg2_step_start/bg2_step_wait` — ONE step
@@ -254,6 +254,11 @@ every round byte-identical on a develop fresh build).** What a change must not b
   TITLE from line 1 with a builtin read outside `docs/details/` — every writer puts TITLE on line
   1, and `META dirclass` exists only in the detail-page .rpt files (a writer adding it elsewhere
   must extend that test).
+- **Test at production SCALE, not only on the sample**: the develop estate is small per entity and
+  light on SSH lines, so a per-entity sort or a per-logon cost can look free there (the detail
+  percentiles cut 28-44 % on 8x the sample legs and nothing on the sample). Replicate
+  `_files.tsv` / `_transfers.tsv` with prefixed CoreIds, or the SSH lines of `_parse.tsv` with
+  suffixed sessions, in a SCRATCH copy of develop — never in develop itself.
 - **Archive**: `7zz -mx5 -m0=LZMA2:d=64m:c=64m` (64 MB blocks compress in parallel; -mx5: −34 %
   time for +6 % size against -mx9).
 - **Profiling**: every step prints `TIME Ns <what> [cpu Ns]` laps (bin/timing.sh `timed` + the
