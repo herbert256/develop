@@ -149,7 +149,13 @@ compute_extras() {
             if (j - lo < hi - i) { if (lo < j) qsort(A, lo, j); lo = i } else { if (i < hi) qsort(A, i, hi); hi = j }
         }
     }
-    function perf(ty,ent,   k){ if(ent=="")return; k=ty SUBSEP ent; pn[k]++; PV[k,pn[k]]=dur; ps2[k]+=dur; pby[k]+=size; if(dur>pmx[k])pmx[k]=dur; if(pn[k]==1||dur<pmn[k])pmn[k]=dur
+    # the durations per entity as DISTINCT values + counts (PD/PC, 2026-09-28
+    # speed round 14): END sorted every leg duration of every entity (each
+    # leg once per entity type) for three percentiles; the sorted distinct
+    # values with their counts give the same nearest-rank values. No gain on
+    # the develop sample (its entities are small); -28 to -44% of this
+    # producer on 8x the sample legs, the production scale
+    function perf(ty,ent,   k){ if(ent=="")return; k=ty SUBSEP ent; pn[k]++; if(!((k, dur) in PC)) PD[k, ++pd[k]]=dur; PC[k, dur]++; ps2[k]+=dur; pby[k]+=size; if(dur>pmx[k])pmx[k]=dur; if(pn[k]==1||dur<pmn[k])pmn[k]=dur
       # the same three perf figures PER DAY (section 0/7 below): the Ranking
       # report re-aggregates Duration and Throughput over a From/To range, and
       # both are averages over the TIMED population only — the day table (which
@@ -180,8 +186,13 @@ compute_extras() {
       if(host!="") hseen[host]=1
     }
     END {
-      for(k in pn){ n=pn[k]; for(i=1;i<=n;i++)T[i]=PV[k,i]; qsort(T,1,n)
-        p50=T[int((n-1)*50/100+0.5)+1]; p95=T[int((n-1)*95/100+0.5)+1]; p99=T[int((n-1)*99/100+0.5)+1]; split(k,a,SUBSEP)
+      for(k in pn){ n=pn[k]; m=pd[k]; for(i=1;i<=m;i++)T[i]=PD[k,i]; qsort(T,1,m)
+        # the value at sorted position r = the smallest distinct value whose
+        # cumulative count reaches r (r50 <= r95 <= r99)
+        r50=int((n-1)*50/100+0.5)+1; r95=int((n-1)*95/100+0.5)+1; r99=int((n-1)*99/100+0.5)+1
+        c=0; p50=""; p95=""; p99=""
+        for(i=1;i<=m;i++){ c+=PC[k, T[i]]; if(p50==""&&c>=r50)p50=T[i]; if(p95==""&&c>=r95)p95=T[i]; if(c>=r99){ p99=T[i]; break } }
+        split(k,a,SUBSEP)
         printf "%s\t%s\t0\t1\t%d|%s|%s|%s|%s|%s|%s|%s\n", a[1],a[2],n,humandur(pmn[k]+0),humandur(ps2[k]/n),humandur(p50),humandur(p95),humandur(p99),humandur(pmx[k]+0),thr(pby[k],ps2[k]) }
       # 0/7 = the per-day timed triple "date:files:ms:bytes|…" (see perf()).
       # Line ORDER is hash order here as it is above — the stream is sorted
