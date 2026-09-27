@@ -318,7 +318,19 @@ _tlap "setup (freshness, cleanup, side inputs)"
 _ptimed() { local _n=$1 _t0 _st=0; shift; _t0=$(date +%s); "$@" || _st=$?; printf 'TIME %5ds  details: producer %s\n' "$(( $(date +%s) - _t0 ))" "$_n" >&2; return $_st; }
 S_JSON="$FM_INPUT_DIR/subscriptions.json"
 _ppids=()   # every producer's PID — the per-PID wait below collects their rcs
-_ptimed aggregate_files aggregate_files > "$_pdir/agg0" & _ppids+=($!)
+# THE FILES AGGREGATION IN TYPE GROUPS (2026-09-27, build-speed round 6): one
+# pass was ONE awk for ~60 s in production, beside the CPU-bound report stages
+# it must not outlast. The groups (AGG_ONLY, details_lib.sh) each re-read the
+# caches but aggregate only their types; the stream sort below takes all
+# their files, so the result is the one pass's. Four groups of about equal
+# cost (sample: a type adds 0.2-0.5 s to a ~0.6 s shared read + File walk):
+# more groups would repeat that shared part while the report stages beside
+# this step already use every core.
+_agi=0
+for _agt in "SITE LGC" "ACC APP" "PTN BL" "LOGIN HOST DOM"; do
+    _agi=$((_agi + 1))
+    AGG_ONLY="$_agt" _ptimed "aggregate_files ($_agt)" aggregate_files > "$_pdir/agg0.$_agi" & _ppids+=($!)
+done
 _ptimed compute_extras compute_extras   > "$_pdir/xtra" & _ppids+=($!)
 _ptimed direction_rows direction_rows   > "$_pdir/dirs" & _ppids+=($!)
 # the `|| true` is LOAD-BEARING: whitelist_rows used to run inside $(...),
@@ -415,7 +427,7 @@ if [ "$_prc" -ne 0 ]; then
     exit "$_prc"
 fi
 _tlap "prep producers (parallel: files aggregation, extras, directions, whitelist + side scans)"
-sort -t$'\t' -k1,1 -k2,2 -k3,3n -k4,4 -k5,5 "$_pdir/agg0" "$_pdir/xtra" "$_pdir/dirs" "$_pdir/wl" \
+sort -t$'\t' -k1,1 -k2,2 -k3,3n -k4,4 -k5,5 "$_pdir"/agg0.* "$_pdir/xtra" "$_pdir/dirs" "$_pdir/wl" \
     | insert_config_rows > "$_pdir/agg"
 _tlap "stream sort + config rows"
 

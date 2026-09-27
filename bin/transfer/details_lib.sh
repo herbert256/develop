@@ -689,8 +689,15 @@ insert_config_rows() {
 # distinct Files per (entity, dimension, value): within a CoreId'\''s row group
 # each dimension value is taken once. Rows are CoreId-contiguous (the cache is
 # CoreId-sorted), so a group is flushed at each CoreId boundary — memory-bounded.
+# AGG_ONLY="TYPE …" (2026-09-27, build-speed round 6): aggregate only those
+# entity types — details.sh runs the pass as parallel type groups. Every
+# output line leads with its type and the per-type state (ranks, totals) is
+# per type, while the per-File state every type shares (gmax, the last
+# failure per subscription, the dwell labels) is still computed in full by
+# each group, so the groups' outputs together are the one pass's output (the
+# stream sort orders them).
 aggregate_files() {
-  awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK$COREIDS_AWK$RANK_AWK"'
+  awk -F'\t' -v ONLY="${AGG_ONLY:-}" -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK$COREIDS_AWK$RANK_AWK"'
     function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
     function humandur(ms){ if(ms<1000) return sprintf("%d ms",ms); if(ms<60000) return sprintf("%.2f s",ms/1000); if(ms<3600000) return sprintf("%.1f min",ms/60000); return sprintf("%.2f h",ms/3600000) }
     function thr(bytes,ms){ return ms>0 ? human(bytes*1000/ms) "/s" : "-" }
@@ -778,6 +785,7 @@ aggregate_files() {
         _bign[p] = (n > bnd) ? bnd : n
         split("", _BT) }
     function ent_apply(ty,ent,   dv,a2,k5,s9){ if(ent=="")return
+      if(ONLY!="" && !(ty in WANT)) return   # not this group s type (AGG_ONLY)
       # the entity <-> SUBSCRIPTION relation, for the Last error(s) table on
       # every non-subscription page: which flows this entity moves files with.
       # gSITE is the page\047s own notion of that (the same one its Subscription
@@ -891,7 +899,8 @@ aggregate_files() {
       for(v in gSITE)  ent_apply("SITE",  v)
       for(v in gHOST)  ent_apply("HOST",  v)
       split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0; gPICK="" }
-    BEGIN { od["ACC"]=2.8; od["SITE"]=2; od["LOGIN"]=3; od["HOST"]=4
+    BEGIN { if(ONLY!=""){ nw9=split(ONLY, W9, " "); for(iw9=1; iw9<=nw9; iw9++) WANT[W9[iw9]]=1 }
+            od["ACC"]=2.8; od["SITE"]=2; od["LOGIN"]=3; od["HOST"]=4
             od["DOM"]=2.81; od["APP"]=2.82; od["LGC"]=2.83; od["PTN"]=2.84; od["BL"]=2.85   # the quad dims (the former Groups table)
             }
     FNR == 1 { fno++ }

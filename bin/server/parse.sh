@@ -76,6 +76,17 @@ SKIP_PROG="$SKIPLIST_AWK"'
     BEGIN { sl_load(skipfile) }
     { if (SL_N > 0 && sl_hit("message", $5)) print >> sc; else print }
 '
+# the same filter over MERGED CHUNK lines, "<sort key> TAB <cache row>": it
+# drops the key itself (exactly `cut -f2-`: the key holds no TAB) and tests
+# the message, the row's col 5 = the line's field 6
+# — and counts the rows it keeps into the file cf (the cache line count, so
+# the 3 GB cache is not re-read by wc(1) twice after the merge)
+MERGE_SKIP_PROG="$SKIPLIST_AWK"'
+    BEGIN { sl_load(skipfile) }
+    { r = substr($0, index($0, "\t") + 1)
+      if (SL_N > 0 && sl_hit("message", $6)) print r >> sc; else { print r; kept++ } }
+    END { print kept + 0 > cf }
+'
 
 # Collect input files: every *.csv in the input/ directory.
 shopt -s nullglob
@@ -761,12 +772,20 @@ build_entity_tsvs() {
     # this pass ran awk over ALL of it single-threaded, twice per build (the
     # parse and the mention rescan); grep keeps the line order, and the awk
     # still applies the exact test, so the output is the same
+    # KEPT while the cache is (2026-09-27, speed round 6): the build's mention
+    # rescan runs on the same cache minutes later — the list is a function of
+    # the cache and this script alone, so a list newer than both is current
+    # (a same-second tie reads as stale and recomputes)
+    if [ -f "$ENDED_TSV" ] && [ "$ENDED_TSV" -nt "$OUT" ] && [ "$ENDED_TSV" -nt "${BASH_SOURCE[0]}" ]; then :
+    else
     LC_ALL=C grep -F '{"message":"Transfer end logged.' "$OUT" | awk -F'\t' '
         index($5, "{\"message\":\"Transfer end logged.") == 1 && $6 != "" && index($6, "50455253495354454e542d53455353494f4e2d") != 1 {
             if ($6 in s) next
             s[$6] = 1; st = ""
             if (match($5, /"status":"[a-z]+"/)) st = substr($5, RSTART + 10, RLENGTH - 11)
             print $6 "\t" st }' > "$ENDED_TSV.tmp" && mv "$ENDED_TSV.tmp" "$ENDED_TSV"
+    fi
+    _slap "mentions: transfer-ended sessions"
     ENT_CFG_SRCS+=("$ENDED_TSV")
     echo "  transfer-ended sessions: $(wc -l < "$ENDED_TSV" | tr -d ' ') (their Error/Warning lines stay out of the err/warn rings)." >&2
     : > "$ACCOUNTS_TSV"; : > "$SUBS_TSV"
@@ -811,6 +830,7 @@ build_entity_tsvs() {
             pool_wait
         fi
     fi
+    _slap "mentions: scan ($nparts parts)"
     for spec in "A:$ACCOUNTS_TSV" "S:$SUBS_TSV"; do
         ty=${spec%%:*}; dest=${spec#*:}
         i=1
@@ -833,16 +853,24 @@ build_entity_tsvs() {
         if [ -f "$part" ]; then ewringparts+=("$part"); fi
         i=$((i - 1))
     done
+    # (the two merges write disjoint files — <name>.tsv / <name>_err_warn.tsv —
+    # so they run side by side, 2026-09-27)
+    local rpid="" epid=""
     if [ "${#ringparts[@]}" -gt 0 ]; then
         awk -F'\t' -v accdir="$ACCOUNTS_DIR" -v subdir="$SUBS_DIR" -v logdir="$LOGINS_DIR" \
                    -v hstdir="$HOSTS_DIR" -v cap=25 -v suffix="" \
-            "$RING_PROG" "${ringparts[@]}"
+            "$RING_PROG" "${ringparts[@]}" &
+        rpid=$!
     fi
     if [ "${#ewringparts[@]}" -gt 0 ]; then
         awk -F'\t' -v accdir="$ACCOUNTS_DIR" -v subdir="$SUBS_DIR" -v logdir="$LOGINS_DIR" \
                    -v hstdir="$HOSTS_DIR" -v cap=10 -v suffix="_err_warn" \
-            "$RING_PROG" "${ewringparts[@]}"
+            "$RING_PROG" "${ewringparts[@]}" &
+        epid=$!
     fi
+    if [ -n "$rpid" ]; then wait "$rpid"; fi
+    if [ -n "$epid" ]; then wait "$epid"; fi
+    _slap "mentions: lists + rings"
     rm -rf "$ENT_CHUNK_DIR"
     echo "Wrote the per-entity server caches:" >&2
     local i tsvs dirsx
@@ -1063,9 +1091,10 @@ if [ "$mode" = incremental ]; then
     tokenize_batch "${new_files[@]}"
     n_new=$TOK_TOTAL
     tmp_p="$CHUNK_DIR/new.tsv"
-    LC_ALL=C sort -m -u $SORT_MERGE_FLAGS "$CHUNK_DIR"/chunk.* | cut -f2- > "$tmp_p"
-    new_dates=$(cut -f1 "$tmp_p" | LC_ALL=C sort -u)
-    cached_dates=$(cut -f1 "$OUT" | LC_ALL=C sort -u)
+    # (awk, not cut(1): see merge_group — ~7x faster on a big stream)
+    LC_ALL=C sort -m -u $SORT_MERGE_FLAGS "$CHUNK_DIR"/chunk.* | awk '{ print substr($0, index($0, "\t") + 1) }' > "$tmp_p"
+    new_dates=$(awk -F'\t' '!($1 in s) { s[$1]; print $1 }' "$tmp_p" | LC_ALL=C sort -u)
+    cached_dates=$(awk -F'\t' '!($1 in s) { s[$1]; print $1 }' "$OUT" | LC_ALL=C sort -u)
     overlap=$(LC_ALL=C comm -12 <(printf '%s\n' "$new_dates") <(printf '%s\n' "$cached_dates"))
     # BACKFILL guard: a new export whose OLDEST date precedes the cache's
     # NEWEST would append old rows AFTER newer ones — the per-name "last 25"
@@ -1132,12 +1161,16 @@ if [ "$mode" = full ]; then
     # ONE stream (the skip filter is a stateless per-row test), so its output
     # is still a contiguous run of cache rows in key order. Per date, the
     # heaviest production day (3 GB of one export) was one merge job alone.
+    # NO cut(1) (2026-09-27, build-speed round 6): the skip filter strips the
+    # sort key itself (MERGE_SKIP_PROG) — macOS cut runs at ~150 MB/s, and
+    # every cache byte went through it twice over (key + columns, ~6 GB in
+    # production): 7.9 CPU-s against 1.1 per 800 MB, same bytes out.
     merge_group() {   # $1 = 4-digit group index; its keys, in key order, in .grp.$1
         : > "$PART_DIR/out.$1"; : > "$PART_DIR/skip.$1"
         { while IFS= read -r k; do
               LC_ALL=C sort -m -u $SORT_CHUNK_FLAGS "$CHUNK_DIR"/chunk.*.d"$k"
-          done < "$CHUNK_DIR/.grp.$1"; } | cut -f2- \
-            | awk -F'\t' -v skipfile="$SKIPFILE" -v sc="$PART_DIR/skip.$1" "$SKIP_PROG" > "$PART_DIR/out.$1"
+          done < "$CHUNK_DIR/.grp.$1"; } \
+            | awk -F'\t' -v skipfile="$SKIPFILE" -v sc="$PART_DIR/skip.$1" -v cf="$PART_DIR/n.$1" "$MERGE_SKIP_PROG" > "$PART_DIR/out.$1"
     }
     # key <TAB> bytes, in key order (LC_ALL=C — the order the keys sort in the
     # cache; "" = the no-date part, first), then the greedy grouping. The
@@ -1166,7 +1199,8 @@ if [ "$mode" = full ]; then
     cat "$PART_DIR"/skip.* > "$SKIPOUT"
     ENT_PARTS=("$PART_DIR"/out.*)   # build_entity_tsvs consumes these in place
     skipped_n=$(wc -l < "$SKIPOUT" | tr -d ' ')
-    dropped=$(( n_raw - $(wc -l < "$OUT" | tr -d ' ') - skipped_n ))
+    n_out=$(cat "$PART_DIR"/n.* 2>/dev/null | awk '{ s += $1 } END { print s + 0 }')   # the groups' kept-row counts
+    dropped=$(( n_raw - n_out - skipped_n ))
     [ "$dropped" -gt 0 ] && echo "NOTE: dropped $dropped exact-duplicate raw record(s) (kept one of each)." >&2
     [ "$skipped_n" -gt 0 ] && echo "Skip list: set aside $skipped_n server record(s) -> $SKIPOUT." >&2
     for f in "${files[@]}"; do manifest_entry "$f"; done > "$MANIFEST"
@@ -1202,7 +1236,7 @@ Level codes        Component codes
 runtime components only.)
 LEGEND_EOF
 
-echo "Wrote $OUT ($(wc -l < "$OUT" | tr -d ' ') record(s)) and $LEGEND." >&2
+echo "Wrote $OUT (${n_out:-$(wc -l < "$OUT" | tr -d ' ')} record(s)) and $LEGEND." >&2   # n_out: counted by a full merge
 
 build_entity_tsvs         # derive _accounts.tsv / _subscriptions.tsv from the fresh cache
 _slap "per-entity mention caches"

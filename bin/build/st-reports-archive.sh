@@ -5,7 +5,7 @@
 # (user request), commit + push it into the OUTBOX — the same git repo the
 # inbox step pulls, at ~/exchange/ — under the stable name st-reports-<env>.7z:
 #
-#   build/st-reports-<env>_YYYY-MM-DD_HHMM.7z   (7z -mx9, whole docs/ tree)
+#   build/st-reports-<env>_YYYY-MM-DD_HHMM.7z   (7zz -mx5 LZMA2 64 MB blocks, whole docs/ tree)
 #   ~/exchange/st-reports-<env>.7z              (stable name, committed + pushed)
 #
 # (The ~/cloud/ copy is gone — 2026-09-12, user request: the outbox is the
@@ -69,10 +69,13 @@ rm -f "$out"
 # on the develop site 1.4x faster for +6% size, several times faster on
 # production's ~300 MB. p7zip 17's 7z reads the result (tested); the p7zip
 # fallback keeps the old, unblocked call.
+# -mx5, NOT -mx9 (2026-09-27, speed round 6; the 64 MB dictionary and blocks
+# kept): on the develop site 34% less time for a 6% bigger archive (-mx7
+# compressed exactly like -mx9); 32 MB blocks were as fast but +14%.
 _al0=$(date +%s)   # phase laps on the build console (2026-09-27, speed round 5)
 _alap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  archive: %s\n' "$((_t1 - _al0))" "$1" >&2; _al0=$_t1; }
 if [ "$Z7" = 7zz ]; then
-    7zz a -t7z -mx9 -mmt=on -m0=LZMA2:d=64m:c=64m -mhe=on -p"$pass" "$out" docs >/dev/null
+    7zz a -t7z -mx5 -mmt=on -m0=LZMA2:d=64m:c=64m -mhe=on -p"$pass" "$out" docs >/dev/null
 else
     7z a -t7z -mx9 -mhe=on -p"$pass" "$out" docs >/dev/null
 fi
