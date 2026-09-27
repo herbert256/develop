@@ -264,6 +264,7 @@ BEGIN {
     # lines. No blue evidence, no unknown-* seed and no report reads them
     # (verified 2026-08; the red flip is E-only anyway).
     NOISE_HAS[++NOISE_HAS_N] = "No SMTP server is configured"
+    for (i = 1; i <= NOISE_N; i++) { NOISE_L[i] = length(NOISE[i]); c = substr(NOISE[i], 1, 1); NB[c, ++NB_N[c]] = i }
 }
 # 1 when the message STARTS with one of the prefixes: index(t, p) == 1, not a
 # substring test, so a line QUOTING one of these shapes inside a larger message
@@ -282,13 +283,17 @@ BEGIN {
 # and every rule above covers both forms at once (this is what replaced the
 # four hand-written "[Pesit Default] …" entries). Only a "<Word> Default" tag
 # is stripped, so the odd "[server #173 @45f13f1d] …" lines keep their text.
-function is_noise(m,   i, t, p) {
+function is_noise(m,   i, t, p, c, k) {
     t = m
     if (substr(t, 1, 1) == "[") {
         p = index(t, "] ")
         if (p > 9 && substr(t, p - 8, 8) == " Default") t = substr(t, p + 2)
     }
-    for (i = 1; i <= NOISE_N; i++) if (index(t, NOISE[i]) == 1) return 1
+    # (2026-09-27: only the prefixes opening with the first character are
+    # compared, each over its own length — index() scanned the whole message
+    # sixteen times per record; same verdicts)
+    c = substr(t, 1, 1)
+    if (c in NB_N) for (k = 1; k <= NB_N[c]; k++) { i = NB[c, k]; if (substr(t, 1, NOISE_L[i]) == NOISE[i]) return 1 }
     for (i = 1; i <= NOISE_HAS_N; i++) if (index(t, NOISE_HAS[i]) > 0) return 1
     return 0
 }
@@ -996,6 +1001,7 @@ if [ "$mode" = incremental ]; then
 fi
 if [ "$mode" = full ]; then
     if [ "$CHUNK_N" -eq 0 ]; then tokenize_batch "${files[@]}"; fi
+    _slap "tokenize (per file)"
     n_raw=$TOK_TOTAL
     # SKIP LIST: split the deduped cache into kept ($OUT) and skipped ($SKIPOUT,
     # rebuilt from scratch on a full parse). dropped = the raw duplicates
@@ -1047,7 +1053,7 @@ if [ "$mode" = full ]; then
     [ "$skipped_n" -gt 0 ] && echo "Skip list: set aside $skipped_n server record(s) -> $SKIPOUT." >&2
     for f in "${files[@]}"; do manifest_entry "$f"; done > "$MANIFEST"
 fi
-_slap "tokenize + merge"
+_slap "merge (per date)"
 printf '%s\n' "$parser_sig" > "$PSIG"   # record the parser version that built this cache
 
 # Companion legend: the column names of _parse.tsv (kept in sync with the emit

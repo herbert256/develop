@@ -81,21 +81,25 @@ PUB_RC=0
 # "not a child of this shell", exit 127 — a single pub_wait after 7,040
 # queued error-page renders (production 2026-08) aborted the publish on
 # exactly that, with every page actually rendered fine.
+# NO FORK PER PAGE (2026-09-27): liveness is `kill -0` (a builtin; bash reaps
+# a finished child as it exits, so its pid stops answering), and the pool
+# counts the recorded pids. The former `$(jobs -rp | …)` tests cost two
+# subshells and three programs per page in the ONE dispatching shell — on a
+# publish of a few thousand File pages, seconds of serial dispatch before
+# the renders even ran.
 pub_reap() {
-    local running p st keep=()
-    running=" $(jobs -rp | tr '\n' ' ') "
+    local p st keep=()
     for p in ${PUB_PIDS[@]+"${PUB_PIDS[@]}"}; do
-        case $running in
-            *" $p "*) keep+=("$p") ;;
-            *) st=0; wait "$p" || st=$?
-               [ "$st" -ne 0 ] && PUB_RC=$st ;;
-        esac
+        if kill -0 "$p" 2>/dev/null; then keep+=("$p")
+        else st=0; wait "$p" || st=$?
+             [ "$st" -ne 0 ] && PUB_RC=$st
+        fi
     done
     PUB_PIDS=(${keep[@]+"${keep[@]}"})
 }
 pub_run() {    # run "$@" as a background job, at most PUB_NJOBS at once
-    while [ "$(jobs -rp | wc -l | tr -d ' ')" -ge "$PUB_NJOBS" ]; do sleep 0.05; done
     pub_reap
+    while [ "${#PUB_PIDS[@]}" -ge "$PUB_NJOBS" ]; do sleep 0.02; pub_reap; done
     "$@" &
     PUB_PIDS+=("$!")
 }
@@ -775,7 +779,15 @@ render_shared_topbar() {
 
 render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar right label]  [$6 drop first table title]  [$7 help slug]
     local rpt=$1 out=$2 css=$3 home=$4 rlabel=${5:-} droptitle=${6:-} helpslug=${7:-} reportkey=${8:-}
-    local title; title=$(grep -m1 "^TITLE"$'\t' "$rpt" | cut -f2- || true)
+    # the TITLE and the META dirclass value (below) in ONE awk read — the two
+    # grep|cut pipelines cost two subshells and four programs per page, and a
+    # build renders several thousand pages (2026-09-27); same values: the
+    # first line opening "TITLE<TAB>" / "META<TAB>dirclass<TAB>", the rest of it
+    local title="" bodyclass=""
+    IFS=$'\037' read -r title bodyclass < <(LC_ALL=C awk '
+        !t && index($0, "TITLE\t") == 1 { t = 1; ti = substr($0, 7) }
+        !m && index($0, "META\tdirclass\t") == 1 { m = 1; bc = substr($0, 15) }
+        END { printf "%s\037%s\n", ti, bc }' "$rpt" 2>/dev/null) || true
     # The page's AREA (the date-filter persistence key report.js uses), derived
     # from where the output lands — transfer report and detail pages share the
     # transfer dataset, server report pages the server one. Same derivation the
@@ -793,7 +805,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
     # the awk replaces).
     # The detail pages carry a direction/seen body tint: details.sh writes a
     # META dirclass line, html_head turns it into a <body> class (style.css).
-    local bodyclass; bodyclass=$(meta_val "$rpt" dirclass)
+    # (bodyclass: read with the title above — the meta_val "$rpt" dirclass value)
     # (the FlowManager deep links — FMLINK_MAPS/META fmlink — were removed
     # 2026-07; the { } config-JSON link went earlier, no META jsonlink exists)
     # A page rendered with NO date list (CUR_DATES empty -> html_head emits no

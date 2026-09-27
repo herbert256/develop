@@ -73,7 +73,18 @@ fi
 # log holds no bookend), like expire-files' deletion list.
 if [ ! -f "$BK" ] || [ ! -f "$RL" ] || [ "$SRV" -nt "$BK" ] || [ "${BASH_SOURCE[0]}" -nt "$BK" ] || [ "$CLS" -nt "$RL" ]; then
     btmp="$BK.tmp.$$"; rtmp="$RL.tmp.$$"
-    awk -F'\t' -v BOUT="$btmp" -v ROUT="$rtmp" "$(cat "$CLS")"'
+    # IN PARALLEL (2026-09-27): one job per core over its own byte range of the
+    # server cache (the jobs compute the same line offsets, so the ranges
+    # partition the lines); both extracts are sort -u sets, so the parts
+    # concatenate into the same files (the one pass was ~15 s on production).
+    NJ=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
+    case $NJ in ""|*[!0-9]*) NJ=2 ;; esac
+    SRVSZ=$(wc -c < "$SRV" | tr -d " ")
+    bk_part() {   # $1 = part index: its range of line starts is [lo, hi)
+    local lo=$(( ($1 - 1) * SRVSZ / NJ )) hi
+    if [ "$1" -eq "$NJ" ]; then hi=$((SRVSZ + 1)); else hi=$(( $1 * SRVSZ / NJ )); fi
+    : > "$btmp.p$1"; : > "$rtmp.p$1"
+    awk -F'\t' -v BOUT="$btmp.p$1" -v ROUT="$rtmp.p$1" -v RANGEF="$SRV" -v RLO="$lo" -v RHI="$hi" "$(cat "$CLS")"'
         BEGIN { H4 = "[0-9a-f][0-9a-f][0-9a-f][0-9a-f]"; UUID = H4 H4 "-" H4 "-" H4 "-" H4 "-" H4 H4 H4 }
         # the JSON value of key k in message m ("" when absent); the tokenizer
         # flattened the multi-line record to one line and unquoted the CSV
@@ -84,6 +95,7 @@ if [ ! -f "$BK" ] || [ ! -f "$RL" ] || [ "$SRV" -nt "$BK" ] || [ "${BASH_SOURCE[
             if (substr(s, 1, 1) == "\"" ) return ""      # not a string value
             sub(/".*$/, "", s); return s
         }
+        FILENAME == RANGEF { _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
         index($5, "{\"message\":\"Transfer end logged.\"") == 1 {
             if (jval($5, "status") == "ok" && jval($5, "direction") == "Outbound") {
                 t = jval($5, "transferId"); if (t != "") printf "%s\t%s\t%s\t%s\n", jval($5, "coreId"), t, $1, $2 > BOUT
@@ -97,7 +109,11 @@ if [ ! -f "$BK" ] || [ ! -f "$RL" ] || [ "$SRV" -nt "$BK" ] || [ "${BASH_SOURCE[
             printf "%s\t%s\t%s\t%s\t%s\n", $1, $2, $6, ids, r > ROUT
         }
     ' "$SRV"
-    : >> "$btmp"; : >> "$rtmp"
+    }
+    pids=()
+    for ((pi = 1; pi <= NJ; pi++)); do bk_part "$pi" & pids+=("$!"); done
+    for p in "${pids[@]}"; do wait "$p"; done
+    cat "$btmp".p* > "$btmp"; cat "$rtmp".p* > "$rtmp"; rm -f "$btmp".p* "$rtmp".p*
     LC_ALL=C sort -u -o "$btmp" "$btmp"; LC_ALL=C sort -u -o "$rtmp" "$rtmp"
     if cmp -s "$btmp" "$BK" 2>/dev/null; then rm -f "$btmp"; else mv "$btmp" "$BK"; fi   # keep the mtime when unchanged
     if cmp -s "$rtmp" "$RL" 2>/dev/null; then rm -f "$rtmp"; else mv "$rtmp" "$RL"; fi
