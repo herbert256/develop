@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Latest files — Cloud Reports</title>
+<title>Help: Latest files search — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,27 +15,27 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Latest files</h1>
+<h1>Latest files search</h1>
 <h2>What it shows</h2>
-<p>One page per subscription: its most recent Files, newest first, at most 1000. Opened from the <strong>Files</strong> row of the <a href="details-subscriptions.html">subscription page</a>&rsquo;s Features table; it carried this table itself until 2026-09-16.</p>
+<p>Every File on every subscription&rsquo;s <a href="latest.html">Latest files</a> page, searchable from one page: up to 1000 per subscription.</p>
+<h2>Fields</h2>
+<ul>
+<li><strong>Subscription</strong> &mdash; matches the subscription name.</li>
+<li><strong>File</strong> &mdash; matches the file name or the CoreId.</li>
+<li>A filled field must match; an empty one does not narrow. With both empty nothing shows, and the line beside the fields counts what is searchable.</li>
+<li>Case-insensitive. <code>*</code> = any run, <code>?</code> = one character; several space-separated words must all match.</li>
+<li>The results follow each keystroke; <em>Enter</em> searches at once.</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Start</strong> / <strong>End</strong> &mdash; the first leg&rsquo;s start and the latest leg&rsquo;s end.</li>
-<li><strong>Pickup</strong> &mdash; UC2 pages only: how long after Start the partner collected the file.</li>
-<li><strong>State</strong> &mdash; Delivered, Errored, Waiting (staged, not collected) or Expired (staged, deleted unclaimed).</li>
-<li><strong>Recovered</strong> &mdash; <em>yes</em> when the File finished OK after a failed leg; the column shows only when a row carries it.</li>
-<li><strong>Direction</strong> &mdash; the connection / file-movement pair (<code>out/in</code>); <code>?</code> = unknown side, <code>-</code> = neither known.</li>
-<li><strong>Size</strong>, <strong>Throughput</strong>, <strong>Duration</strong> &mdash; the file once, its rate and its wall-clock span.</li>
-<li><strong>File</strong>, <strong>CoreId</strong> &mdash; the name as logged and the transfer key; the CoreId opens File Tracking.</li>
+<li><strong>Subscription</strong> &mdash; opens that subscription&rsquo;s Latest files page.</li>
+<li><strong>Start</strong>, <strong>End</strong>, <strong>State</strong>, <strong>Direction</strong>, <strong>Size</strong>, <strong>Duration</strong>, <strong>File</strong>, <strong>CoreId</strong> &mdash; as on the <a href="latest.html">Latest files</a> page.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>A row is tinted by that File&rsquo;s own state: red Errored or Expired, orange Waiting, green Delivered.</li>
-<li>Files, not transfer records: one row per CoreId, all its legs folded into one.</li>
-<li>The <strong>search box</strong> and the <strong>From/To</strong> selectors apply here (the subscription page has neither); From/To is the shared transfer-area range, so it follows you from other transfer pages.</li>
-<li>25 rows per page; <em>csv</em> in the last header cell exports what is shown.</li>
-<li>Only the newest 1000 Files are kept. A subscription that never carried one has no page, and its Features table has no Files row.</li>
-<li>The rows load from the page&rsquo;s own <code>&lt;slug&gt;.js</code>; the <a href="latest-search.html">Latest files search</a> loads all of them to find a File across every subscription.</li>
+<li>At most 500 matches are shown, newest Start first; the count line gives the full number.</li>
+<li>A row is tinted by its File&rsquo;s state: red Errored or Expired, orange Waiting, green Delivered.</li>
+<li>The address keeps the search (<code>?s=</code> and <code>?f=</code>), so a reload or a bookmark repeats it.</li>
 </ul>
 </main>
 </body>

@@ -1166,6 +1166,8 @@ function latest_page(   i, lp, nrow, txt) {
     txt = txt "INTRO\tThe **" nrow "** most recent File(s) of subscription **" pend_e "**, newest first — at most 1000.\n"
     for (i = 1; i <= nlp; i++) txt = txt LP[i] "\n"
     txt = txt "LINK\t../details/subscriptions/" a_slug ".html\tThe subscription page of " pend_e "\n"
+    # the Latest files search over every subscription's page (2026-09-27)
+    txt = txt "LINK\tsearch.html\tSearch the latest files of every subscription\n"
     txt = txt "FOOT\tGenerated on " NOW " from " NFILES " file(s)\n"
     printf "%s", txt > lp
     close(lp)

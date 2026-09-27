@@ -51,7 +51,7 @@ GENERATED_AT="${GENERATED_AT:-$(date '+%Y-%m-%d %H:%M')}"
 # CDN) never serves a stale style.css/report.js against freshly published HTML.
 # Content-derived (not the build timestamp), so an assets-unchanged rebuild
 # keeps the same URL and the cache stays warm.
-ASSET_VER=$( (cksum docs/assets/style.css docs/assets/report.js docs/assets/slotchart.js docs/assets/file-search.js 2>/dev/null || true) | cksum | cut -d' ' -f1 )
+ASSET_VER=$( (cksum docs/assets/style.css docs/assets/report.js docs/assets/slotchart.js docs/assets/file-search.js docs/assets/latest-search.js 2>/dev/null || true) | cksum | cut -d' ' -f1 )
 
 # ---- the render job pool ----------------------------------------------------
 # Rendering a page is FORK-BOUND, not compute-bound: measured on a full rebuild,
@@ -1850,7 +1850,18 @@ render_month_stats() {   # $1 area
 # untouched, which is why the built rows behave identically to the baked ones.
 # A no-JS visitor loses nothing: the rows were already display:none for them.
 split_search_rows() {   # $1 rendered search.html  $2 data file to write
-    local page=$1 data=$2 tmp="$1.tmp.$$"
+    split_table_rows "$1" "$2" 'window.AXWAY_SEARCH=`' '`;'
+}
+
+# The shared lifter behind split_search_rows and the Latest files pages
+# (docs/latest/<slug>.js, 2026-09-27): every rendered data row of PAGE (a
+# <tr> line with a <td>, total rows excepted) moves into DATA between the
+# PROLOGUE and EPILOGUE lines, the page keeps its header and total, and the
+# payload's <script> tag goes in before report.js. TABLE_ATTR (optional) is
+# stamped onto the page's first <table> — how report.js finds the table a
+# payload belongs to (data-latest="<slug>").
+split_table_rows() {   # $1 page  $2 data file  $3 prologue  $4 epilogue  [$5 table attr]
+    local page=$1 data=$2 pro=$3 epi=$4 tattr=${5:-} tmp="$1.tmp.$$"
     [ -f "$page" ] || return 0
     : > "$data.rows"
     # Encoding: ONE JS template literal, one rendered row per line, and NOTHING
@@ -1859,18 +1870,19 @@ split_search_rows() {   # $1 rendered search.html  $2 data file to write
     # first use for ~10 ms. A template literal needs only three escapes (\ ` ${)
     # where a JSON string would escape every attribute quote; backslashes are
     # escaped because subscription paths are full of them (F:\Data\Opswise\...).
-    awk -v rowfile="$data.rows" '
+    awk -v rowfile="$data.rows" -v tattr="$tattr" '
         function esc(x) { gsub(/\\/, "\\\\", x); gsub(/`/, "\\`", x); gsub(/\$\{/, "\\${", x); return x }
         /^<tr[ >]/ && /<td/ && $0 !~ /class="total"/ {
             printf "%s\n", esc($0) > rowfile
             next
         }
+        tattr != "" && !tdone && /<table[ >]/ { sub(/<table/, "<table " tattr); tdone = 1 }
         { print }
     ' "$page" > "$tmp"
     {
-        printf 'window.AXWAY_SEARCH=`\n'
+        printf '%s\n' "$pro"
         cat "$data.rows"
-        printf '`;\n'
+        printf '%s\n' "$epi"
     } > "$data"
     rm -f "$data.rows"
     mv "$tmp" "$page"
@@ -2711,7 +2723,7 @@ TB_VER=$(printf '%s' "$TRANSFER_MENU$SERVER_MENU$ANALYSES_MENU${GOODIES_MENU:-}$
 ensure_assets() {
     # the assets and .nojekyll live at the docs ROOT (docs/assets/); every
     # publish writes the same bytes, so writing them is idempotent.
-    # style.css / report.js / slotchart.js / file-search.js and docs/help/
+    # style.css / report.js / slotchart.js / file-search.js / latest-search.js and docs/help/
     # are SEEDED from the repo-root assets/ by bin/build.sh (2026-08-29 —
     # every build clears its scope's docs tree first, so docs/ is pure build
     # output; EDIT IN assets/, a build overwrites the docs copies). Only the

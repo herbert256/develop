@@ -1465,6 +1465,7 @@ analyses/partners-in.html|Partners - Incoming|Every FE login on one line: the FE
 analyses/fe-overview.html|FE overview|Every FE login on one line: use cases, the last logon here and on the old gateway, Files in / out with the retrieved, Waiting and Expired ones, and its pickups with their cadence.|partners, incoming, fe, login, overview, status, use case, uc2, uc4, last logon, gateway, migration, files, retrieved, waiting, expired, pickup, pattern|fe, login, overview, pickup
 analyses/hosts-overview.html|Partners - Outgoing|Every remote host we connect to on one line (UC1 we deliver, UC3 we collect): use cases, the last successful transfer here and the old-gateway stamp, Files in / out with the delivered, failed, retried and resubmitted ones, polls with their cadence, and connection problems.|partners, outgoing, hosts, remote host, endpoint, uc1, uc3, push, pull, deliver, collect, gateway, migration, retries, resubmit, polls, connection failures|
 search/file-search-24-hours.html|File search|Find a File by its file name — date, subscription, size and CoreId, OK rows green and Error rows red; six windows (24 hours through a month), each with its own Search button, the query carried between them.|file, search, file name, find, filename, lookup|file search, filename, find
+latest/search.html|Latest files search|Find a File across the latest files of every subscription — one field for the subscription name, one for the file name or CoreId; the results follow each keystroke, newest first, each row tinted by its File's state.|latest, file, files, search, find, subscription, file name, filename, coreid, lookup|latest files search, find file, subscription
 STATIC
     } > "$mf"
     rows=$(LC_ALL=C awk "$FINDER_AWK" "$mf")
@@ -1686,6 +1687,7 @@ write_sitemap() {
         printf '<div class="smcard"><h3>Tools</h3><ul>\n'
         printf '<li><a href="../index.html">Home</a> — the shared landing page</li>\n'
         printf '<li><a href="../search/search.html">Search</a> — find any entity by name</li>\n'
+        printf '<li><a href="../latest/search.html">Latest files search</a> — find a File across every subscription'\''s latest files</li>\n'
         # the sibling tools (docs/tools/, 2026-09-12): ./ links — the ../ rule
         # above is for everything outside this directory
         printf '<li><a href="./report-finder.html">Report finder</a> — find a report by title or description</li>\n'

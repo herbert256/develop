@@ -236,23 +236,75 @@ RESMAP_FILES=""
 # move — so they render with the transfer date list, not the empty CUR_DATES
 # the detail pages use. Cleared wholesale: a subscription that lost its Files
 # (or its name) must not keep a page.
+#
+# THE ROWS SHIP AS DATA (2026-09-27, user request): each page's rendered rows
+# move into the sibling docs/latest/<slug>.js (split_table_rows), which the
+# page loads before report.js; report.js latestRows() puts them back into the
+# table (data-latest="<slug>") before any table setup runs. The payload
+# REGISTERS itself — (window.AXWAY_LATEST ||= []).push({s, n, h, r}) = slug,
+# subscription name, the HEAD labels (tab-separated; Pickup and Recovered come
+# and go per subscription) and the rows — so docs/latest/search.html can load
+# every one of them at once (assets/latest-search.js searches them).
+render_latest_page() {   # $1 rpt  $2 slug
+    local f=$1 b=$2 pro
+    # report key per subscription: a remembered search or sort belongs to
+    # THAT flow's list, not to every other subscription's page
+    render_rpt "$f" "$DOCS/latest/$b.html" "../assets/style.css" "../index.html" "TRANSFER - Latest files" "" "latest" "latest-$b"
+    pro=$(awk -F'\t' -v s="$b" '
+        function js(x) { gsub(/\\/, "\\\\", x); gsub(/"/, "\\\"", x); return x }
+        $1 == "TITLE" && n == "" { n = $2; sub(/^Latest files: /, "", n) }
+        $1 == "HEAD" && h == "" { h = js($2); for (i = 3; i <= NF; i++) h = h "\\t" js($i) }
+        END { printf "(window.AXWAY_LATEST=window.AXWAY_LATEST||[]).push({s:\"%s\",n:\"%s\",h:\"%s\",r:`", s, js(n), h }' "$f")
+    split_table_rows "$DOCS/latest/$b.html" "$DOCS/latest/$b.js" "$pro" '`});' "data-latest=\"$b\""
+}
 shopt -s nullglob
 latp=("$DATA"/transfer/reports/latest/*.rpt)
 shopt -u nullglob
 mkdir -p "$DOCS/latest"
-rm -f "$DOCS"/latest/*.html
+rm -f "$DOCS"/latest/*.html "$DOCS"/latest/*.js
 if [ ${#latp[@]} -gt 0 ]; then
     CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
     for f in "${latp[@]}"; do
         b=${f##*/}; b=${b%.rpt}
-        # report key per subscription: a remembered search or sort belongs to
-        # THAT flow's list, not to every other subscription's page
-        pub_run render_rpt "$f" "$DOCS/latest/$b.html" "../assets/style.css" "../index.html" "TRANSFER - Latest files" "" "latest" "latest-$b"
+        # search.html is the search page's own name
+        if [ "$b" = search ]; then echo "WARNING: subscription slug 'search' collides with docs/latest/search.html — its Latest files page is skipped." >&2; continue; fi
+        pub_run render_latest_page "$f" "$b"
     done
     pub_wait
     CUR_DATES=""; DLINK_BASE="../details/"
-    echo "Rendered docs/latest/ (${#latp[@]} subscription page(s))." >&2
+    echo "Rendered docs/latest/ (${#latp[@]} subscription page(s) + their row payloads)." >&2
 fi
+
+# ---- docs/latest/search.html — the Latest files search (2026-09-27) ---------
+# ONE page over every subscription's payload: an empty table the dedicated
+# docs/assets/latest-search.js fills with the matches of its two fields
+# (Subscription, and File name or CoreId), as the user types. Written even
+# with no payloads (the finder and the sitemap link it unconditionally). The
+# payload tags + the engine go in before report.js (defer order), each with
+# its own cksum ?v= — the File search pages' pattern (bin/analyses/publish.sh).
+_ls_rpt="$DOCS/latest/.search.rpt.$$"
+printf 'TITLE\tLatest files search\nDESC\tFind a File across the latest files of every subscription — by subscription name and by file name or CoreId, the results following each keystroke.\nKEYWORDS\tlatest,file,files,search,find,subscription,filename,file name,coreid\nTABLE\t\twide\trestint\tnosort\tnosearch\tnofilter\nHEAD\tSubscription\tStart\tEnd\tState\tDirection\tSize\tDuration\tFile\tCoreId\nKIND\ttext\ttext\ttext\ttext\ttext\tnum\tnum\tmono\tmono\n' > "$_ls_rpt"
+CUR_DATES=""
+RPT_NOPROSE=1 render_rpt "$_ls_rpt" "$DOCS/latest/search.html" "../assets/style.css" "../index.html" "TRANSFER - Latest files search" 1 "latest-search" "latest-search"
+rm -f "$_ls_rpt"
+shopt -s nullglob
+_ls_js=("$DOCS"/latest/*.js)
+shopt -u nullglob
+_ls_tags=""
+if [ ${#_ls_js[@]} -gt 0 ]; then
+    # one cksum for the whole set: "crc size path" per payload
+    _ls_tags=$(cksum "${_ls_js[@]}" | awk '{ p = $3; sub(/.*\//, "", p); printf "<script src=\"%s?v=%s\" defer></script>\n", p, $1 }')
+fi
+_ls_jsv=$(cksum < "$DOCS/assets/latest-search.js" 2>/dev/null | awk '{print $1}')
+_ls_tags="$_ls_tags"$'\n'"<script src=\"../assets/latest-search.js?v=$_ls_jsv\" defer></script>"
+_ls_tags=${_ls_tags#$'\n'}
+printf '%s\n' "$_ls_tags" > "$DOCS/latest/.search-tags.$$"
+awk -v tags="$DOCS/latest/.search-tags.$$" '/<script src=[^>]*report\.js/ && !done { while ((getline l < tags) > 0) print l; done = 1 } { print }' \
+    "$DOCS/latest/search.html" > "$DOCS/latest/search.html.tmp.$$" \
+    && mv "$DOCS/latest/search.html.tmp.$$" "$DOCS/latest/search.html"
+rm -f "$DOCS/latest/.search-tags.$$"
+unset _ls_rpt _ls_js _ls_tags _ls_jsv
+echo "Wrote docs/latest/search.html (the Latest files search)." >&2
 
 # Redirect stubs were REMOVED 2026-07 (no backwards compatibility): the old
 # details/transfer-sites/ tree and the IP->hostname stubs are gone — old URLs 404.

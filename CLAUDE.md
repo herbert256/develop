@@ -89,7 +89,13 @@ outcome; the separate `errors/` directory is GONE. Only the DATA stays split —
 `data/transfer/reports/errors/` + `files/`, because failed.sh's reason-evidence pass globs the
 first — and `bin/transfer/publish.sh` renders both sets into `docs/files/`, the errors set last),
 `latest/` (2026-09-16: one page per subscription — its newest 1000 Files, the table the
-subscription detail pages used to carry, linked from their Features "Files" row),
+subscription detail pages used to carry, linked from their Features "Files" row; since
+2026-09-27, user request, the rows ship as DATA in the sibling `<slug>.js` — `split_table_rows`
+lifts them, each payload REGISTERS on `window.AXWAY_LATEST` as `{s, n, h, r}` (slug, name, HEAD
+labels, rendered rows) and report.js `latestRows()` puts them back into the `data-latest` table
+first thing in `init()` — plus `search.html`, the Latest files search: every payload loaded at
+once, searched by the dedicated `docs/assets/latest-search.js` — a Subscription field and a
+File name or CoreId field, results as you type, at most 500 newest-first, `?s=`/`?f=` in the URL),
 `first-seen/`, `use-cases/`, `coverage/`, `transfers/duration/`, `switches/`, plus
 `search/` (`search.html` + `search-data.js`, the six `file-search-*.html` + their `-data.js` payloads — 2026-09-12, user request; at the root before) and `tools/` (`sitemap.html`, `report-finder.html`, `whats-new.html` and the build report `build.html` — 2026-09-12, user request; at the root before, the build report local-only 2026-08-29..09-12). `input/` carries
 the exports — logs AND the FlowManager JSONs (the real production flows are the HYBRID pattern

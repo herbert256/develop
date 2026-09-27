@@ -114,7 +114,7 @@ printf '%s\n' "$$" > "$BUILD_LOCK/pid"
 # repo-root assets/ — docs/ is pure build output, and a build can never leave
 # a stale page behind (the build report lands back in docs/tools/build.html at the
 # very end, from the EXIT trap — 2026-09-12). assets/ is the ONE place to edit style.css / report.js
-# / slotchart.js / file-search.js and the help pages (see assets/README.txt);
+# / slotchart.js / file-search.js / latest-search.js and the help pages (see assets/README.txt);
 # .nojekyll and topbar-data.js stay generated (ensure_assets).
 # rm -rf with a .DS_Store retry: Finder can drop one into a directory WHILE
 # rm walks the tree ("Directory not empty") — sweep them and try again; the
@@ -129,7 +129,7 @@ clear_tree() {
 }
 clear_tree docs
 mkdir -p docs/assets docs/help
-cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js docs/assets/
+cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js assets/latest-search.js docs/assets/
 awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css   # the dark theme, generated from the light rules (2026-09-05)
 cp -R assets/help/. docs/help/
 

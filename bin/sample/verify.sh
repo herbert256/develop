@@ -483,6 +483,30 @@ check $([ "$(grep -c 'search/file-search-24-hours.html' docs/tools/report-finder
 check $([ "$(grep -c 'href="../search/search.html"' docs/help/index.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "the baked top bar does not link ../search/search.html"
 check $([ "$(grep -c 'href="\.\./details/' docs/search/search-data.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "search/search-data.js rows do not link ../details/ (one level below the root)"
 
+# the Latest files pages ship their rows as DATA (2026-09-27, user request):
+# docs/latest/<slug>.js beside each page — registered on AXWAY_LATEST, loaded
+# before report.js, the page's table stamped data-latest and left without
+# rows — and latest/search.html loads every payload plus its own engine
+nl=0; nj=0; nd=0; nb=0
+for f in docs/latest/*.html; do
+    [ -f "$f" ] || continue
+    b=${f##*/}; b=${b%.html}; [ "$b" = search ] && continue
+    nl=$((nl + 1))
+    [ -f "docs/latest/$b.js" ] && grep -q 'window.AXWAY_LATEST' "docs/latest/$b.js" && grep -q '^<tr' "docs/latest/$b.js" && nj=$((nj + 1))
+    grep -q "<script src=\"$b.js?v=" "$f" && grep -q "data-latest=\"$b\"" "$f" && nd=$((nd + 1))
+    grep -q '^<tr[^>]*><td' "$f" && nb=$((nb + 1))
+done
+check $([ "$nl" -gt 0 ] && echo 0 || echo 1) "docs/latest/ has no subscription pages"
+check $([ "$nj" = "$nl" ] && echo 0 || echo 1) "docs/latest/: $nj of $nl pages have a <slug>.js payload with rows"
+check $([ "$nd" = "$nl" ] && echo 0 || echo 1) "docs/latest/: $nd of $nl pages load their payload and carry data-latest"
+check $([ "$nb" = 0 ] && echo 0 || echo 1) "docs/latest/: $nb page(s) still bake their rows"
+check $([ -f docs/latest/search.html ] && echo 0 || echo 1) "docs/latest/search.html is missing"
+check $([ "$(grep -c '<script src="../assets/latest-search.js?v=' docs/latest/search.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "latest/search.html does not load ../assets/latest-search.js"
+n=$(grep -c '^<script src="[a-z0-9-]*\.js?v=' docs/latest/search.html 2>/dev/null)
+check $([ "${n:-0}" = "$nl" ] && echo 0 || echo 1) "latest/search.html loads ${n:-0} payloads, expected $nl"
+check $([ "$(grep -c 'latest/search.html' docs/tools/report-finder.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/report-finder.html does not link latest/search.html"
+check $([ "$(grep -c 'href="../latest/search.html"' docs/tools/sitemap.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link ../latest/search.html"
+
 # the tool pages live under docs/tools/ (2026-09-12, user request): the
 # sitemap, the report finder, whats-new AND the build report (back on the
 # site, written last by bin/build.sh) — nothing of them at the root, every
