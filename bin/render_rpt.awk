@@ -567,6 +567,10 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             else if (mi == "totaltop")   tattr = tattr " data-total-top=\"1\""
             else if (mi == "datereset")  tattr = tattr " data-date-reset=\"1\""
             else if (mi == "nofilter")   tattr = tattr " data-nofilter=\"1\""
+            # rangehook (2026-09-27): a page ENGINE builds the rows and takes the
+            # From/To range through a window hook (latest/search.html) — date-aware
+            # for report.js, paired with nofilter so report.js never hides its rows
+            else if (mi == "rangehook")  tattr = tattr " data-rangehook=\"1\""
             else if (index(mi, "pfnoun=") == 1) tattr = tattr " data-pf-noun=\"" esc(substr(mi, 8)) "\""   # the noun setupStatFilter puts in the recomputed total row
             else if (mi == "seenrows")   tattr = tattr " data-seenrows=\"1\""
             else if (mi == "restint")    tattr = tattr " data-restint=\"1\""   # rows tint by their data-res RESULT even when seen (beats the seenrows green)

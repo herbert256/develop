@@ -1292,6 +1292,11 @@
   // as "filtered" unless we say otherwise.
   function isDateAware(table) {
     if (table.dateAware != null) return table.dateAware;   // structural; cache it
+    // an ENGINE-owned table (rangehook, latest/search.html): its rows follow the
+    // range through the page engine's hook (apply() below) — date-aware, so the
+    // From/To controls appear and no full-period badge shows, while its
+    // nofilter keeps apply() from hiding the engine's rows itself
+    if (table.getAttribute("data-rangehook")) { table.dateAware = true; return true; }
     if (table.getAttribute("data-nofilter")) { table.dateAware = false; return false; }   // full-period by design -> show the badge when narrowed
     if (table.getAttribute("data-recalc") || table.getAttribute("data-heat")) { table.dateAware = true; return true; }
     var rows = dataRows(table), i, j, res = false;
@@ -2526,6 +2531,7 @@
       window._slotRange = { from: _fO ? _fO.textContent : null, to: _tO ? _tO.textContent : null, narrowed: narrowed };
       if (window.slotchartSetRange) window.slotchartSetRange(window._slotRange.from, window._slotRange.to, narrowed);
       if (window.daytopSetRange) window.daytopSetRange(window._slotRange.from, window._slotRange.to, narrowed);
+      if (window.latestSearchSetRange) window.latestSearchSetRange(window._slotRange.from, window._slotRange.to, narrowed);   // the Latest files search engine (a rangehook table)
       if (searchReapply) searchReapply(true);   // lift an active search so the recalc below rewrites EVERY row
       var tables = document.getElementsByTagName("table"), t, ri, tr, rows, i, e, mn, mx;
       for (t = 0; t < tables.length; t++) {

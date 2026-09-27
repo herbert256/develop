@@ -403,7 +403,7 @@ intro; a row with NO group members sits under the intro (writers: `_hdr_with_nav
 **TABLE modifiers**: `wide` · `group` · `nosearch` · `nofilter` (full-period semantics) ·
 `drill=UNIT` · `totaltop` · `datereset` (always open at the full range) · `seenrows` (green =
 logged, red = configured only) · `restint` (`@data:res` paints the whole row; the SERVER pages get
-it automatically — see below) · `nosort` · `sxs`
+it automatically — see below) · `nosort` · `rangehook` (2026-09-27: the rows are built by a page ENGINE that takes the From/To range through a window hook — report.js counts the table date-aware and calls `window.latestSearchSetRange`; paired with `nofilter`, latest/search.html) · `sxs`
 (side-by-side; `sxs=ID` — a different id starts a new flex row) · `esearch` · `fold=` · `noagg=` ·
 `sort=` · `startempty` (first paint empty until searched) · `pfnoun=` (the stat-filter total-row
 noun) · `seenmode=all|seen|notseen` · `seenword=` (the Show-Seen intro noun) · `heat` (hour ×

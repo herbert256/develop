@@ -283,9 +283,13 @@ fi
 # payload tags + the engine go in before report.js (defer order), each with
 # its own cksum ?v= — the File search pages' pattern (bin/analyses/publish.sh).
 _ls_rpt="$DOCS/latest/.search.rpt.$$"
-printf 'TITLE\tLatest files search\nDESC\tFind a File across the latest files of every subscription — by subscription name and by file name or CoreId, the results following each keystroke.\nKEYWORDS\tlatest,file,files,search,find,subscription,filename,file name,coreid\nTABLE\t\twide\trestint\tnosort\tnosearch\tnofilter\nHEAD\tSubscription\tStart\tEnd\tState\tDirection\tSize\tDuration\tFile\tCoreId\nKIND\ttext\ttext\ttext\ttext\ttext\tnum\tnum\tmono\tmono\n' > "$_ls_rpt"
-CUR_DATES=""
+printf 'TITLE\tLatest files search\nDESC\tFind a File across the latest files of every subscription — by subscription name and by file name or CoreId, the results following each keystroke.\nKEYWORDS\tlatest,file,files,search,find,subscription,filename,file name,coreid\nTABLE\t\twide\trestint\tnosort\tnosearch\tnofilter\trangehook\nHEAD\tSubscription\tStart\tEnd\tState\tDirection\tSize\tDuration\tFile\tCoreId\nKIND\ttext\ttext\ttext\ttext\ttext\tnum\tnum\tmono\tmono\n' > "$_ls_rpt"
+# the transfer date list (2026-09-27, user request): the page gets the shared
+# From/To selectors — the table is a `rangehook` table, so report.js counts
+# it date-aware and hands the range to latest-search.js
+CUR_DATES=$TRANSFER_DATES
 RPT_NOPROSE=1 render_rpt "$_ls_rpt" "$DOCS/latest/search.html" "../assets/style.css" "../index.html" "TRANSFER - Latest files search" 1 "latest-search" "latest-search"
+CUR_DATES=""
 rm -f "$_ls_rpt"
 shopt -s nullglob
 _ls_js=("$DOCS"/latest/*.js)
