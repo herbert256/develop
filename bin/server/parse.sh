@@ -417,9 +417,22 @@ FNR == 1 { rec = ""; buffering = 0; next }
     else           rec = $0
 
     # Unbalanced quotes => a quoted field spans onto the next physical line.
-    if (count_quotes(rec) % 2 == 1) { buffering = 1; next }
+    nq = count_quotes(rec)
+    if (nq % 2 == 1) { buffering = 1; next }
     buffering = 0
 
+    # THE ALL-QUOTED FAST PATH (2026-09-27): the exports quote EVERY field, so
+    # a record with no doubled quote ("") that starts and ends with a quote and
+    # holds exactly two quotes per piece of a split on "," IS a row of quoted
+    # fields without inner quotes — the split is exact, and one C-speed split
+    # replaces the two-leg walk below (over half of the tokenize). Anything
+    # else (an escaped quote, an empty "" field, an unquoted field) takes the
+    # walk, which stays the single source of semantics for those.
+    if (index(rec, "\"\"") == 0 && substr(rec, 1, 1) == "\"" && substr(rec, length(rec)) == "\"" && 2 * (np = split(rec, f, /","/)) == nq) {
+        f[1] = substr(f[1], 2); f[np] = substr(f[np], 1, length(f[np]) - 1)
+        if (f[3] == "ADMIN" || f[3] == "AUDIT") next
+        if (is_noise(f[5])) next
+    } else {
     # leg 1: fields 1..5, enough to decide whether the record is kept at all
     fastok = parse_head_fast(rec, f, 1, 5)
     if (!fastok) parse_head(rec, f)
@@ -430,6 +443,7 @@ FNR == 1 { rec = ""; buffering = 0; next }
     if (is_noise(f[5])) next                  # the boilerplate shapes above
     # leg 2, only for the records that survive: fields 6..18 for the Session ID
     if (fastok && !parse_head_fast(_rest, f, 6, 18)) parse_head(rec, f)
+    }
     # (`total` counts EMITTED records only, so the duplicate-drop arithmetic
     # below the parse stays about duplicates — noise never enters it)
     # Sort key (field 1, dropped by `cut -f2-`): the CHRONOLOGICAL ccyy-mm-dd+time
@@ -438,7 +452,8 @@ FNR == 1 { rec = ""; buffering = 0; next }
     # before 12/…2026), which is what the per-name "newest 25" ring relies on. The
     # raw record still trails, so `sort -u` dedups exact-duplicate lines exactly as
     # before (byte-identical within a single year, where both keys agree).
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", isodate(f[1]) " " timeofday(f[1]) " " sv(rec), isodate(f[1]), timeofday(f[1]), lvl(f[2]), comp(f[3]), sv(f[5]), sid(f[18])
+    od = isodate(f[1]); ot = timeofday(f[1])
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", od " " ot " " sv(rec), od, ot, lvl(f[2]), comp(f[3]), sv(f[5]), sid(f[18])
     total++
 }
 
@@ -455,7 +470,14 @@ AWK_EOF
 # the sequential append order), and each name's newest-10 ring is emitted as
 # "type TAB name TAB record" lines for the ring merge below.
 ENT_PROG=$(cat <<'AWK_EOF'
-BEGIN { outf["A"]=accout; outf["S"]=subout; outf["L"]=logout; outf["H"]=hstout; rn_load(RNF) }
+BEGIN { outf["A"]=accout; outf["S"]=subout; outf["L"]=logout; outf["H"]=hstout; rn_load(RNF)
+        # THE PREFIX GATE (2026-09-27): a token can resolve to a subscription only
+        # when its first 3 characters open a configured name (exact case) or an
+        # old name of the rename map (upper-cased) — the tail strip, the SERVER
+        # fold and the rename lookup all keep the token prefix. The resolution
+        # below is half of this scan, run on every word of every message; the
+        # gate is exact, and off when any name is shorter than 3 characters
+        for (rk in RN_S) { RP3[substr(rk, 1, 3)] = 1; if (length(rk) < 3) SP_OFF = 1 } }
 # One matched (type, name) per record: append the mention line and keep
 # the newest 25 full records per name in a ring ($0 is the 6-col record),
 # plus the newest 10 ERROR/WARN records ($3 == "E" || "W") in a second ring.
@@ -481,7 +503,7 @@ function hit(ty, w,   k) {
 }
 FILENAME ~ /_sessions-ended\.tsv$/ { if ($1 != "") ended[$1] = 1;         next }   # the transfer-ended sessions (col 1 = session id)
 FILENAME ~ /_accounts\.tsv$/      { if ($1 != "") acc[$1] = 1;            next }   # base files: col 1 = name, col 2 = direction
-FILENAME ~ /_subscriptions\.tsv$/ { if ($1 != "") sub_[$1] = 1;           next }
+FILENAME ~ /_subscriptions\.tsv$/ { if ($1 != "") { sub_[$1] = 1; SP3[substr($1, 1, 3)] = 1; if (length($1) < 3) SP_OFF = 1 }; next }
 FILENAME ~ /_logins\.tsv$/        { if ($1 != "") lgn[$1] = 1;            next }
 FILENAME ~ /_hosts\.tsv$/         { if ($1 != "") hstU[toupper($1)] = $1; next }   # DNS names: match case-insensitively, attribute under the config spelling
 # the JSON transfer bookends (in the cache since 2026-09-09 for bookend-ok.sh
@@ -491,9 +513,16 @@ index($5, "{\"message\":") == 1 { next }
 {
     t = $1 (($2 != "") ? " " $2 : "")
     k = split($5, tok, /[^A-Za-z0-9._-]+/)   # dots kept: hostnames/IPs stay one token
+    # (2026-09-27: the regex trims/tests run only on a token that holds a dot,
+    # the SERVER/CLIENT match only on one holding the marker, and the rename
+    # lookup inlines rn_canon — the scan runs twice per build over every
+    # record; same hits, same order)
     for (i = 1; i <= k; i++) {
-        w = tok[i]; gsub(/^\.+|\.+$/, "", w); if (w == "") continue   # trim sentence dots
-        if (w ~ /\./) {   # dotted: only a host can match (every configured host is dotted)
+        w = tok[i]
+        if (index(w, ".") > 0) {
+            gsub(/^\.+|\.+$/, "", w); if (w == "") continue   # trim sentence dots
+        } else if (w == "") continue
+        if (index(w, ".") > 0) {   # dotted: only a host can match (every configured host is dotted)
             if (toupper(w) in hstU) hit("H", hstU[toupper(w)])
             n2 = split(w, sub2, /\.+/)
         } else { n2 = 1; sub2[1] = w }
@@ -514,6 +543,8 @@ index($5, "{\"message\":") == 1 { next }
             # of those folded through the rename map to its CURRENT name — the
             # same fold bin/transfer/parse.sh applies to col 6, so both sides
             # attribute a renamed flow to one name.
+            pf = substr(w2, 1, 3)
+            if (!SP_OFF && !(pf in SP3) && !(toupper(pf) in RP3)) continue   # the prefix gate (BEGIN)
             if (!(w2 in sub_)) {
                 p = index(w2, "_SSCP_"); if (p == 0) p = index(w2, "_SCP_"); if (p == 0) p = index(w2, "_CCP_")
                 cand = (p > 1) ? substr(w2, 1, p - 1) : w2
@@ -521,9 +552,9 @@ index($5, "{\"message\":") == 1 { next }
                 # (production, 2026-09-05 — the transfer parser folds it too,
                 # site_extfold): the part before the _<PROTO>_SERVER_/_CLIENT_
                 # marker, accepted only when it IS a configured name
-                if (!(cand in sub_) && match(cand, /_[A-Za-z0-9]+_(SERVER|CLIENT)_/)) cand = substr(cand, 1, RSTART - 1)
+                if (!(cand in sub_) && (index(cand, "_SERVER_") > 0 || index(cand, "_CLIENT_") > 0) && match(cand, /_[A-Za-z0-9]+_(SERVER|CLIENT)_/)) cand = substr(cand, 1, RSTART - 1)
                 if (cand in sub_) w2 = cand
-                else { c2 = rn_canon(cand); if (c2 in sub_) w2 = c2 }
+                else if (cand != "") { c2 = toupper(cand); if ((c2 in RN_S) && (RN_S[c2] in sub_)) w2 = RN_S[c2] }
             }
             if (w2 in sub_) hit("S", w2)
         }
@@ -670,12 +701,16 @@ build_entity_tsvs() {
     # retro-mutes the earlier lines of its session. The shared
     # PERSISTENT-SESSION pseudo-session (hex prefix of that literal) is never
     # listed — one bookend on it would mute thousands of unrelated lines.
-    awk -F'\t' '
+    # grep -F first (2026-09-27): the bookends are a sliver of the cache, and
+    # this pass ran awk over ALL of it single-threaded, twice per build (the
+    # parse and the mention rescan); grep keeps the line order, and the awk
+    # still applies the exact test, so the output is the same
+    LC_ALL=C grep -F '{"message":"Transfer end logged.' "$OUT" | awk -F'\t' '
         index($5, "{\"message\":\"Transfer end logged.") == 1 && $6 != "" && index($6, "50455253495354454e542d53455353494f4e2d") != 1 {
             if ($6 in s) next
             s[$6] = 1; st = ""
             if (match($5, /"status":"[a-z]+"/)) st = substr($5, RSTART + 10, RLENGTH - 11)
-            print $6 "\t" st }' "$OUT" > "$ENDED_TSV.tmp" && mv "$ENDED_TSV.tmp" "$ENDED_TSV"
+            print $6 "\t" st }' > "$ENDED_TSV.tmp" && mv "$ENDED_TSV.tmp" "$ENDED_TSV"
     ENT_CFG_SRCS+=("$ENDED_TSV")
     echo "  transfer-ended sessions: $(wc -l < "$ENDED_TSV" | tr -d ' ') (their Error/Warning lines stay out of the err/warn rings)." >&2
     : > "$ACCOUNTS_TSV"; : > "$SUBS_TSV"

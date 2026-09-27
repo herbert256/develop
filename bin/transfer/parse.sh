@@ -411,6 +411,44 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         n++; field[n] = cur
         return n
     }
+    # split_csv_fast (2026-09-27): the same fields at C speed — split on ","
+    # and re-join the pieces of a quoted field an inner comma cut, a regular
+    # field (plain without quotes, or quoted with only "" escapes inside)
+    # decoded in place; anything irregular (a quote inside a plain field,
+    # text after a closing quote, an unterminated quote) goes to split_csv,
+    # which stays the single source of semantics. The per-character walk was
+    # most of the tokenize (6x on the sample exports; output identical).
+    function split_csv_fast(line,   np, i, j, s, L, v, t, q) {
+        if ((np = split(line, CSVP, ",")) == 0) { delete field; field[1] = ""; return 1 }
+        delete field
+        j = 0
+        for (i = 1; i <= np; i++) {
+            s = CSVP[i]
+            if (substr(s, 1, 1) != "\"") {
+                if (index(s, "\"") > 0) return split_csv(line)
+                field[++j] = s
+                continue
+            }
+            L = length(s)
+            if (L >= 2 && substr(s, L, 1) == "\"") {
+                v = substr(s, 2, L - 2)
+                if (index(v, "\"") == 0) { field[++j] = v; continue }
+            }
+            t = s; q = gsub(/"/, "", t)
+            while (q % 2) {
+                if (++i > np) return split_csv(line)
+                s = s "," CSVP[i]; t = CSVP[i]; q += gsub(/"/, "", t)
+            }
+            L = length(s)
+            if (substr(s, L, 1) != "\"") return split_csv(line)
+            v = substr(s, 2, L - 2); t = v
+            gsub(/""/, "", t)
+            if (index(t, "\"") > 0) return split_csv(line)
+            gsub(/""/, "\"", v)
+            field[++j] = v
+        }
+        return j
+    }
     function jdn(y,m,d,   a) { a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function bucket(s) {
         if (s == "" || s == "UNKNOWN")           return "Unknown"
@@ -437,7 +475,7 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
     length($0) == 0 { next }
     {
         if (seen[$0]++) { dups++; next } # drop exact-duplicate record line (keep the first)
-        n = split_csv($0)
+        n = split_csv_fast($0)
 
         # Blacklist, applied at the source: platform-internal pseudo-values are
         # BLANKED (the row itself is kept — only the entity attribution goes),
@@ -1127,6 +1165,7 @@ awk -F'\t' -v OFS='\t' '
 ' "$smap" "$PARSED0" > "$tmp.prop"
 mv "$tmp.prop" "$PARSED"
 rm -f "$smap"
+_plap "derive: propagation + fallbacks"
 
 # NO-SUBSCRIPTION / HTTP SKIP (narrowed 2026-08): a CoreId whose EVERY row
 # still has no site (col 6) after the propagation + config/xref/flowdir
@@ -1163,9 +1202,20 @@ if [ -s "$tmp.nosub" ]; then
     # UUID that happens to appear in some OTHER field is still rejected exactly
     # as before. Measured on the real input, same output: 21.5 s -> 0.37 s.
     awk -v listfile="$tmp.nosub" '
-        BEGIN { while ((getline l < listfile) > 0) { drop[l] = 1; cidre = cidre (cidre ? "|" : "") l }
+        BEGIN { U = "[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]"
+                uu = 1
+                while ((getline l < listfile) > 0) { drop[l] = 1; cidre = cidre (cidre ? "|" : "") l; if (l !~ ("^" U "$")) uu = 0 }
                 close(listfile) }
-        cidre == "" || $0 !~ cidre { next }
+        # THE UUID SCAN (2026-09-27): the alternation above costs one regex
+        # branch per listed CoreId at every character of every line (121 ids
+        # over the production exports: ~18 s, twice per build). When every
+        # listed id is a lowercase UUID, visiting each UUID-shaped substring of
+        # the line and looking it up finds exactly the lines the alternation
+        # matches (every start position is visited); otherwise the alternation
+        uu && cidre != "" { s = $0; hit = 0
+            while (match(s, U)) { if (substr(s, RSTART, 36) in drop) { hit = 1; break }; s = substr(s, RSTART + 1) }
+            if (!hit) next }
+        !uu && (cidre == "" || $0 !~ cidre) { next }
         function csv_field(line, want,    n, i, c, inquotes, cur) {
             n = 0; cur = ""; inquotes = 0
             for (i = 1; i <= length(line); i++) {
@@ -1191,6 +1241,7 @@ else
 fi
 echo "No-subscription/http/probe skip: dropped $(wc -l < "$tmp.nosub" | tr -d ' ') CoreId(s) ($(cat "$tmp.nprobe" 2>/dev/null || echo 0) empty outbound ssh probe(s)); raw line(s) -> $SKIPCSV." >&2
 rm -f "$tmp.nosub" "$tmp.nprobe"
+_plap "derive: no-subscription / http / probe skip"
 
 # SKIP LIST: partition _transfers.tsv into kept (rewrite $PARSED) and skipped
 # (set aside in $SKIPOUT). A record is skipped when its attributed account
@@ -1323,7 +1374,7 @@ build step after both parses) marks server-log-only entities BLUE in the
 base result column (data/flow-manager/base/*.tsv) and injects nothing here.
 LEGEND_EOF
 
-_plap "derive (propagation, attribution chain, skips)"
+_plap "derive: skip list"
 # ---------------------------------------------------------------------------
 # Logical-transfer cache: one row per CoreId. A logical transfer is several
 # records (Inbound row, Outbound row, retries); collapse each CoreId group to a

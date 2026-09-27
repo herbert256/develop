@@ -86,13 +86,21 @@ if [ ! -s "$sess" ]; then
 fi
 
 awk -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
-    BEGIN { rn_load(RNF) }
-    FILENAME ~ /\.configured\.tsv$/   { if ($1 == "_subscriptions") conf[toupper($2)] = $2; next }
-    FILENAME ~ /_subscriptions\.tsv$/ { if ($2 != "") conf[toupper($1)] = $1; next }
+    # THE PREFIX GATE (2026-09-27): a token can name a configured flow only when
+    # its first 3 characters, upper-cased, open a configured name or an old
+    # name of the rename map (the tail strip and the rename fold both keep the
+    # token prefix) — exact, and off when a name is shorter than 3 characters
+    BEGIN { rn_load(RNF); for (rk in RN_S) { CP3[substr(rk, 1, 3)] = 1; if (length(rk) < 3) GATE_OFF = 1 } }
+    FILENAME ~ /\.configured\.tsv$/   { if ($1 == "_subscriptions") { conf[toupper($2)] = $2; CP3[toupper(substr($2, 1, 3))] = 1; if (length($2) < 3) GATE_OFF = 1 }; next }
+    FILENAME ~ /_subscriptions\.tsv$/ { if ($2 != "") { conf[toupper($1)] = $1; CP3[toupper(substr($1, 1, 3))] = 1; if (length($1) < 3) GATE_OFF = 1 }; next }
     FILENAME ~ /\.sess\./             { scan[$1] = 1; next }
     FILENAME ~ /_sessionsites\.tsv$/  { old[$1] = $2; next }
     {   # _parse.tsv: col 5 = message, col 6 = session
         if (!($6 in scan)) next
+        # a session that already named two flows keeps "-" whatever it logs
+        # next (2026-09-27: a busy shared session ran the token loop below on
+        # every one of its lines)
+        if (seen[$6] == "-") next
         m = $5
         # every name-shaped token, not only UC-prefixed ones (2026-08-31
         # audit): the production hybrid flows carry no UC prefix, so the
@@ -102,6 +110,7 @@ awk -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
         # stripped first, as the transfer parse does.
         while (match(m, /[A-Za-z][A-Za-z0-9_-]*[_-][A-Za-z0-9_-]+/)) {
             t = substr(m, RSTART, RLENGTH); m = substr(m, RSTART + RLENGTH)
+            if (!GATE_OFF && !(toupper(substr(t, 1, 3)) in CP3)) continue
             sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", t)
             t = rn_canon(t)
             if (toupper(t) in conf) {
