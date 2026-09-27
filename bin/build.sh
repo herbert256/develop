@@ -250,6 +250,9 @@ run_step() {
     # \037 (unit separator), not '|', so a step whose command legitimately
     # contains a pipe can never misalign the 6-field read in the report.
     STEPS+=("$label"$'\037'"$*"$'\037'"$start"$'\037'"$((t1-t0))"$'\037'"$status"$'\037'"$logf")
+    # the stage's duration ON THE CONSOLE (2026-09-27, user request): a
+    # runtime build is judged by its console only, never by its report or logs
+    printf -- '--- %d. %s: %ds\n' "$STEP_N" "$label" "$((t1-t0))" >&2
     if [ "$status" -ne 0 ]; then
         printf '*** step %d FAILED (exit %d): %s\n' "$STEP_N" "$status" "$label" >&2
         exit "$status"
@@ -598,10 +601,11 @@ export GENERATED_AT="$(date '+%Y-%m-%d %H:%M')"   # one footer stamp shared by a
 # only (no console tee — two live streams would interleave), and the STEPS
 # record is appended at WAIT time with the full start->finish span. At most
 # ONE bg step may be in flight (single set of globals).
-BG_LABEL=""; BG_CMD=""; BG_START=""; BG_T0=""; BG_LOGF=""; BG_PID=""
+BG_LABEL=""; BG_N=0; BG_CMD=""; BG_START=""; BG_T0=""; BG_LOGF=""; BG_PID=""
 bg_step_start() {
     BG_LABEL=$1; shift
     STEP_N=$((STEP_N+1))
+    BG_N=$STEP_N
     BG_LOGF=$BUILD_DIR/step-$(printf '%02d' "$STEP_N").log
     BG_START=$(date '+%H:%M:%S'); BG_T0=$(date +%s); BG_CMD="$*"
     printf '\n=== %d. %s (in background) ===\n' "$STEP_N" "$BG_LABEL" >&2
@@ -613,6 +617,10 @@ bg_step_wait() {
     wait "$BG_PID" || status=$?
     t1=$(date +%s)
     STEPS+=("$BG_LABEL"$'\037'"$BG_CMD"$'\037'"$BG_START"$'\037'"$((t1-BG_T0))"$'\037'"$status"$'\037'"$BG_LOGF")
+    # its duration + the per-script TIME lines (bin/timing.sh) its log holds
+    # go to the console now — a background step never streams there
+    grep '^TIME ' "$BG_LOGF" >&2 || true
+    printf -- '--- %d. %s (in background): %ds\n' "$BG_N" "$BG_LABEL" "$((t1-BG_T0))" >&2
     if [ "$status" -ne 0 ]; then
         printf '*** background step FAILED (exit %d): %s — output:\n' "$status" "$BG_LABEL" >&2
         tail -40 "$BG_LOGF" >&2

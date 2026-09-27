@@ -17,6 +17,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
+source "$SCRIPT_DIR/../timing.sh"   # timed: one TIME line per pooled report (2026-09-27)
 ensure_parsed
 rm -f "$REPORTS_DIR"/*.rpt.tmp   # orphaned atomic-write temps from a killed run
 
@@ -26,7 +27,7 @@ case $NJOBS in ''|*[!0-9]*) NJOBS=4 ;; esac
 POOL_PIDS=()
 pool_run() {   # run "$@" as a background job, at most NJOBS at once
     while [ "$(jobs -rp | wc -l | tr -d ' ')" -ge "$NJOBS" ]; do sleep 0.1; done
-    "$@" &
+    timed "$@" &
     POOL_PIDS+=("$!")
 }
 pool_wait() {  # reap every pooled job; abort the run if any report failed

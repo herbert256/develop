@@ -33,6 +33,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # reports dir (the transfer-dir ones are swept by bin/transfer/reports.sh,
 # which always runs first). rm -f on an unmatched literal glob is a no-op.
 _ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$SCRIPT_DIR/../timing.sh"   # timed: one TIME line per report (2026-09-27)
 rm -f "$_ROOT/data/analyses/reports"/*.rpt.tmp
 
 # THREE waves. Wave 1 overlaps the independent scripts (cross-reference 1.8 s
@@ -54,7 +55,7 @@ rm -f "$_ROOT/data/analyses/reports"/*.rpt.tmp
 NJOBS=${AXWAY_NJOBS:-$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}
 case $NJOBS in ''|*[!0-9]*) NJOBS=4 ;; esac
 PIDS=()
-run_bg() { "$@" & PIDS+=("$!"); }
+run_bg() { timed "$@" & PIDS+=("$!"); }
 wait_all() {
     local p st rc=0
     [ "${#PIDS[@]}" -eq 0 ] && return 0
@@ -91,17 +92,17 @@ wait_all
 # MERGED (2026-09-13, user request): fe-overview.rpt (wave 1, just above) + the
 # Incoming table of the server pool's logon.rpt -> Partners - Incoming
 # (analyses/partners-in.html); reads the two .rpt files only
-"$SCRIPT_DIR/reports/partners-in.sh"
+timed "$SCRIPT_DIR/reports/partners-in.sh"
 
 # wave 2 — the ensure_pda_tsvs chain, strictly in order (first-seen moved here
 # 2026-08: its seen split now reads the coverage TSVs, incl. the PDA partners)
-"$SCRIPT_DIR/reports/coverage.sh"   # the 3 PDA Configured cell .rpts — the home page Total links
-"$SCRIPT_DIR/reports/first-seen.sh"
-"$SCRIPT_DIR/reports/data-diff.sh"   # AFTER first-seen.sh: its First-seen table reads the ledger first-seen.sh writes
-"$SCRIPT_DIR/reports/home.sh"
-"$SCRIPT_DIR/reports/entity-search.sh"
+timed "$SCRIPT_DIR/reports/coverage.sh"   # the 3 PDA Configured cell .rpts — the home page Total links
+timed "$SCRIPT_DIR/reports/first-seen.sh"
+timed "$SCRIPT_DIR/reports/data-diff.sh"   # AFTER first-seen.sh: its First-seen table reads the ledger first-seen.sh writes
+timed "$SCRIPT_DIR/reports/home.sh"
+timed "$SCRIPT_DIR/reports/entity-search.sh"
 
 # wave 3 — reads home.rpt
-"$SCRIPT_DIR/reports/seen-in-server-log.sh"
+timed "$SCRIPT_DIR/reports/seen-in-server-log.sh"
 
 echo "All analyses reports done." >&2
