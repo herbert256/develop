@@ -53,6 +53,13 @@ runtime_refresh() {
         fi
     fi
 
+    # develop's scripts must PARSE before they go anywhere (2026-09-27): the
+    # checkout's fresh.sh wipes data/ and docs/ before its build.sh's own
+    # syntax gate would run, so a broken script caught there would still
+    # leave the runtime site empty
+    "$dev/bin/check-syntax.sh" \
+        || { echo "$me: nothing synced — fix the syntax error(s) above in develop first." >&2; exit 1; }
+
     echo "$me: syncing bin/ and assets/ -> $rt ..." >&2
     # the develop-only tooling is anchored to the bin/ transfer root; the
     # --delete-excluded also REMOVES it from the target when a prior refresh

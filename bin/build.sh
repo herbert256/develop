@@ -85,6 +85,12 @@ source bin/envlabel.sh   # ENV_LABEL / ENV_KEY / ENV_INBOX from input/environmen
 # The report goes to build/index.html AND docs/tools/build.html (2026-09-12 —
 # the site copy, linked from the sitemap Tools card; local-only 2026-08-29..09-12).
 # ---- build lock -------------------------------------------------------------
+# SYNTAX GATE (2026-09-27): `bash -n` over every bin/**/*.sh BEFORE anything
+# is cleared or run — /bin/bash 3.2 exits 0 on a syntax error in a script
+# that set an EXIT trap, so a broken report would otherwise go missing from
+# a green build (bin/check-syntax.sh says why).
+bin/check-syntax.sh || exit 1
+
 # ONE build per checkout: the chains clear and rewrite shared trees (data/,
 # docs/, build/), so two overlapping runs — a second terminal, an automation
 # overlap — would interleave destructive cleanups and writes. mkdir is the

@@ -54,6 +54,13 @@ source "$ROOT/bin/uc-cases.sh"   # uc_meta(): the shared UC<n> description
 source "$ROOT/bin/logons.sh"     # ensure_logons(): the per-login logon summary
 source "$SCRIPT_DIR/../details_lib.sh"   # the rendering machinery (every helper the writer loop calls)
 
+# PHASE TIMINGS (2026-09-27): one "TIME Ns  details: <phase>" line per phase
+# on stderr (name + duration only, never data). This script runs as a
+# BACKGROUND build step, and bin/build.sh replays its TIME lines onto the
+# console when the step is waited for — how a runtime build is profiled.
+_tl0=$(date +%s)
+_tlap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  details: %s\n' "$((_t1 - _tl0))" "$1" >&2; _tl0=$_t1; }
+
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
@@ -305,6 +312,7 @@ fi
 # and the File Maintenance "Deleted files" scan (one grep over the server
 # parse cache). Each writes a $_pdir file; a missing tool/export/cache leaves
 # it empty, exactly like the empty-var fallback these replaced.
+_tlap "setup (freshness, cleanup, side inputs)"
 S_JSON="$FM_INPUT_DIR/subscriptions.json"
 _ppids=()   # every producer's PID — the per-PID wait below collects their rcs
 aggregate_files  > "$_pdir/agg0" & _ppids+=($!)
@@ -403,8 +411,10 @@ if [ "$_prc" -ne 0 ]; then
     echo "details.sh: a prep producer failed (exit $_prc) — aborting before the writers run." >&2
     exit "$_prc"
 fi
+_tlap "prep producers (parallel: files aggregation, extras, directions, whitelist + side scans)"
 sort -t$'\t' -k1,1 -k2,2 -k3,3n -k4,4 -k5,5 "$_pdir/agg0" "$_pdir/xtra" "$_pdir/dirs" "$_pdir/wl" \
     | insert_config_rows > "$_pdir/agg"
+_tlap "stream sort + config rows"
 
 # ACCOUNT TWINS: two accounts whose names differ only in "-" vs "_" are DIFFERENT
 # entities (see CLAUDE.md — separator folding is never an identity rule), but each
@@ -941,7 +951,9 @@ fi
 # itself): per login the first/last successful authentication, the raw count
 # and the cadence label. A login absent from the file never authenticated;
 # the writer renders that as em dashes, 0 and "Never".
+_tlap "twins, stream slicing, side tables"
 ensure_logons "$SERVER_CACHE"
+_tlap "logon summary (ensure_logons)"
 LOGONSF="$SERVER_CACHE/_logons.tsv"
 # the blue evidence dir (data/<env>/blue) for the writer's blue_box
 BLUEDIR="${CONFIG_BASE%/flow-manager/base}/blue"
@@ -976,13 +988,18 @@ for _ty in ACC SITE LOGIN HOST LGC PTN APP DOM BL; do
         HOST) _od=$HOST_DIR ;; LGC) _od=$LGC_DIR ;; PTN) _od=$PTN_DIR ;; APP) _od=$APP_DIR ;; DOM) _od=$DOM_DIR ;;
         BL) _od=$BL_DIR ;;
     esac
+    # each writer times itself into its own log (cat to stderr below, so the
+    # TIME line reaches the build console with the rest)
+    ( _w0=$(date +%s); _wrc=0
     LC_ALL=C awk -F'\t' -v TYPE="$_ty" -v ANN="$STREAMDIR/a.$_ty" -v OUTDIR="$_od" \
         -v RANKOUT="$RANKDIR/$_ty.tsv" -v LATESTDIR="$LATEST_DIR" \
         -v SRV="$SERVER_CACHE" -v FWD="$IP_HOSTS_FILE" -v BLUE="$BLUEDIR" \
         -v UCF="$UCMETA" -v UCDF="$UCDER" -v UNCF="$_pdir/uncollected" -v OKF="$OKTF" \
         -v SSF="$SRVSUBSF" -v ERRD="$REPORTS_DIR/errors" -v LGF="$LOGONSF" -v LGHF="$SERVER_CACHE/_logons-hosts.tsv" \
         -v NOW="$NOW_TS" -v NFILES="${#files[@]}" \
-        -f "$SCRIPT_DIR/../details_writer.awk" "$STREAMDIR/s.$_ty" > "$STREAMDIR/log.$_ty" 2>&1 &
+        -f "$SCRIPT_DIR/../details_writer.awk" "$STREAMDIR/s.$_ty" > "$STREAMDIR/log.$_ty" 2>&1 || _wrc=$?
+    printf 'TIME %5ds  details: writer %s\n' "$(( $(date +%s) - _w0 ))" "$_ty" >> "$STREAMDIR/log.$_ty"
+    exit "$_wrc" ) &
     wpids+=("$!"); wtypes+=("$_ty")
 done
 [ "${#wpids[@]}" -gt 0 ] || { echo "details.sh: no writer spawned (unknown type '$ONLY_TYPE'?)" >&2; exit 1; }
@@ -996,6 +1013,7 @@ for _i in "${!wpids[@]}"; do
 done
 cat "$STREAMDIR"/log.* >&2 2>/dev/null || true
 [ "$_wfail" = 0 ] || exit 1
+_tlap "writers (per type, in parallel)"
 # (every intermediate — side inputs, sorted stream, slices — lives under
 # $_pdir, removed by the EXIT trap)
 

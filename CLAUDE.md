@@ -123,7 +123,15 @@ checkout with logs but no config export: it synthesizes the two JSONs from the t
 ## The pipeline — bin/build.sh
 
 Runs the whole chain. NO argument (`-h` only; anything else is exit 2 — the acc/prd scope went
-with the env split). NO git step — committing and pushing is manual. Writes an HTML run report to
+with the env split). NO git step — committing and pushing is manual. **SYNTAX GATE first**
+(2026-09-27): `bin/check-syntax.sh` (`bash -n` over every `bin/**/*.sh`, ~1 s) runs before
+anything is cleared — and in `bin/runtime-lib.sh` before a sync — because /bin/bash 3.2 exits
+**0** on a syntax error in a script that set an EXIT trap (an apostrophe in a comment inside a
+single-quoted awk program is the usual cause), so a broken report used to vanish from a green
+build. **TIMINGS ON THE CONSOLE** (same day): every stage prints `--- N. <label>: Ns`; the
+report runners wrap each report in `timed` (sourced `bin/timing.sh` → `TIME Ns <script>`),
+`details.sh` prints `TIME Ns details: <phase>` laps, and a background step's TIME lines are
+replayed when it is waited for — a runtime build is profiled from its console alone. Writes an HTML run report to
 `build/index.html` (also on FAILED, EXIT trap) AND, since 2026-09-12 (user request), the SITE copy
 `docs/tools/build.html` — one render with an `@B@` docs-root placeholder, two copies — linked from
 the sitemap Tools card (local-only 2026-08-29..09-12; before that, in `docs/`); still
