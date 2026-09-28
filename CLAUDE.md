@@ -218,8 +218,8 @@ and runs the chain — `data/` and `docs/` are RENAMED into `build/.trash` and d
 background, and `data/.buildstats` (the build report's input statistics, keyed by name + size +
 mtime) is carried over, so a fresh build does not re-read every export for the report.
 
-**BUILD SPEED (2026-09-27, the "prd build" analysis — production 6:34 → 3:44 min in 14 rounds,
-every round byte-identical on a develop fresh build).** What a change must not break:
+**BUILD SPEED (2026-09-27/28, the "prd build" analysis — production 6:34 → 3:44 min in 14 rounds,
+then → 3:18 in rounds 15-24 (2026-09-28); every round byte-identical on a develop fresh build).** What a change must not break:
 
 - **Background slots**: `bg_step_start/bg_step_wait` and `bg2_step_start/bg2_step_wait` — ONE step
   per slot in flight; a background step's `TIME` lines are replayed at its wait. Moving a step
@@ -247,25 +247,69 @@ every round byte-identical on a develop fresh build).** What a change must not b
   and ssh-sessions, copied once per cache; every line a consumer acts on must contain one of its
   fixed-string MARKERS — change a consumer's patterns, change its markers. A stale or missing
   subset falls back to the whole cache.
+- **Key-aligned and line-aligned slices** (2026-09-28, `bin/ranges.sh`): `grp_cuts FILE N` cuts a
+  file SORTED on its first TAB field into byte slices that never split a run of equal keys (blank
+  included), `grp_par FILE OUT N CMD…` runs CMD per slice in parallel (slice on stdin, `GRP_PART`
+  in its env, `GRP_N` afterwards for per-slice side files) and joins the outputs IN ORDER — so a
+  per-key-group filter equals its whole-file run. `line_cuts`/`line_par` = the same over plain
+  line boundaries, for per-LINE filters. Users: the transfer derive (propagation; ONE pass for
+  the no-subscription drop + skip list + the newest leg start; ONE pipeline per slice for the
+  collapse + config join + still-under-way filter — `_files.tsv` is written once; the in-progress
+  leg filter) and the server parse's transfer-ended sessions grep.
+- **Big writes go through `cat`** (2026-09-28): mawk — and sort — write a regular file in 4 KB
+  chunks, and on this Mac's APFS volume ten such writers at once cost several times the work in
+  kernel time (10 × 41 MB: 0.92 s wall / 5.5 s sys at 4 KB, 0.06 s at 64 KB). A PARALLEL step
+  writing a big file pipes it through `cat` (`grp_par` does it for every slice; the transfer
+  tokenize groups and intermediates, the server merge groups); the server tokenize part splitter
+  is a perl `syswrite` splitter (`PART_SPLIT_PL`; production sort/split 107 → 26 part-s). Reads
+  are fine. Many small page writes are not the problem (piping those through `cat` was slower).
+- **Never walk a numeric RANGE per key** (2026-09-28): the logon cadence (`bin/logons.sh`) and
+  uc2-status walked every MINUTE between a key's first and last minute (~36k per key on 25 days)
+  to find the few that are set, and every median walked each gap value up to the largest — the
+  minute sets now also keep their distinct minutes per key (count + list, filled where the set is
+  filled) handed out sorted (`sortmins`, a numeric quicksort; the minutes are integers, so the
+  list is exactly what the walk produced), and a median picks over the sorted DISTINCT values
+  (`medpick`). New cadence/percentile code follows that shape.
+- **The all-files search** builds its day shards per day-aligned slice (`grp_par`); the global
+  subscription dictionary (first appearance, newest day first) is computed by a pre-pass first.
+- **`slugify` has a fork-free fast path** for input made only of ASCII letters, digits, space,
+  `_` and `-` (the set spelled out — a bracket range would follow the locale collation); anything
+  else keeps the `tr | tr | sed` pipeline, the reference. KEEP THE TWO IN STEP.
+- **This Mac is an Apple M5: 4 performance + 6 efficiency cores.** A 10-way CPU-bound pass runs
+  at well under 10× one core (production tokenize: ~6 µs per record in parallel against 1.7 µs
+  alone on a P core) — measure parallel speedups in parallel, not one process on an idle box.
 - **details.sh**: `aggregate_files` runs as TWO type groups (`AGG_ONLY` in `details_lib.sh`); state
   shared by every type (gmax, the last failure per subscription) is computed in full by each
   group, per-type state only for its types; the stream sort orders the union.
+- **The build runs session-sites with `AXWAY_SKIP_EXPIRE=1`** (2026-09-28): its re-derive would
+  run expire-files + bookend-ok at the parse tail and the next two build steps run them again on
+  the same inputs (both idempotent) — a manual parse keeps the full chain.
 - **Publishing**: the files/ pages render in RUNS (four per pool slot); `render_rpt` takes a page
   TITLE from line 1 with a builtin read outside `docs/details/` — every writer puts TITLE on line
   1, and `META dirclass` exists only in the detail-page .rpt files (a writer adding it elsewhere
-  must extend that test).
+  must extend that test). `segment_rpt` is a HYBRID (2026-09-28): the bash loop for a .rpt up to
+  500 lines, above that `SEGMENT_AWK` (one awk pass printing `$'…'` assignments that are eval'd —
+  the bash loop was quadratic, 6.4 s on a 21k-row report); the bash version stays the reference
+  and the fallback. KEEP THE TWO IN STEP (identical on all 13.5k production-size .rpt files).
+- **pda-entities.sh** computes the per-leg flags ONCE (a temp file) and runs its five dimensions
+  as parallel jobs (2026-09-28).
 - **Test at production SCALE, not only on the sample**: the develop estate is small per entity and
   light on SSH lines, so a per-entity sort or a per-logon cost can look free there (the detail
   percentiles cut 28-44 % on 8x the sample legs and nothing on the sample). Replicate
   `_files.tsv` / `_transfers.tsv` with prefixed CoreIds, or the SSH lines of `_parse.tsv` with
   suffixed sessions, in a SCRATCH copy of develop — never in develop itself.
-- **Archive**: `7zz -mx5 -m0=LZMA2:d=64m:c=64m` (64 MB blocks compress in parallel; -mx5: −34 %
-  time for +6 % size against -mx9).
+- **Archive**: `7zz -mx4 -m0=LZMA2:d=128m:c=128m` (2026-09-28: -mx4 is the hash-chain match
+  finder; on a production-size site 16.8 s / 30.0 MB with the former -mx5 64 MB → 6.0 s / 32.4 MB).
+  The outbox `git pull` runs in the background beside the 7z; a rejected push pulls and retries
+  once.
 - **Profiling**: every step prints `TIME Ns <what> [cpu Ns]` laps (bin/timing.sh `timed` + the
   per-script `_…lap` helpers, incl. the tokenize part timings) — a runtime build is profiled from
-  its console alone. The lever NOT pulled: a runtime build is always FRESH (`bin/prd.sh` →
-  `fresh.sh`), so the unchanged exports are re-tokenized every time (~45 s of the ~3:44);
-  keeping the server cache across builds is Herbert's call.
+  its console alone. A BACKGROUND step replays only its `TIME` lines at its wait, so a console
+  statistic from one must be a `TIME` line (the tokenizer's "tokenizer paths" counters — records
+  and MB per path: production 37M records / 20 GB, 96 % fast split, 71 % noise). The lever NOT
+  pulled: a runtime build is always FRESH (`bin/prd.sh` → `fresh.sh`), so the unchanged exports
+  are re-tokenized every time (~33 s, the critical path); keeping the server cache across builds
+  is Herbert's call.
 
 ## Running individual stages
 
@@ -1316,7 +1360,7 @@ bin/fastawk.sh          the mawk PATH shim
 bin/ip.sh               address<->endpoint map        bin/blacklist.sh  field blanking
 bin/skiplist.sh         record dropping               bin/uc-cases.sh   uc_meta()
 bin/renames.sh          subscription rename map (input/renames/) + fm_snapshot_renames
-bin/ranges.sh           the byte-range split of the parallel server-cache scans (rng_feed = a dd seek; jobs own the lines STARTING in [lo,hi))
+bin/ranges.sh           the byte-range split of the parallel server-cache scans (rng_feed = a dd seek; jobs own the lines STARTING in [lo,hi)) + grp_par / line_par (key- / line-aligned slices, outputs joined in order)
 bin/publish_lib.sh      shared renderer + globals     bin/cron2human.awk cron -> prose
 bin/render_rpt.awk      the one-pass page-body renderer
 bin/merge_rpt.sh        component .rpt -> merged tabbed report
