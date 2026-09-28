@@ -759,17 +759,25 @@ fi
 # FIRST run, which lets the expensive details catch-up self-gate to a
 # skip. The server-reports step re-invokes it later and skips (fresh).
 run_step "report: went-kaput (early — the failed/details evidence)"       bin/server/reports/went-kaput.sh
-bg_step_wait   # the logon summary: details.sh + logon.sh read it
 
 # ---- 2. report --------------------------------------------------------------
 # details.sh is the longest report step and only the transfer PHASE 2
 # (showseen, ranking — they read its .rpts/slugmaps) needs it, so it runs
 # in the BACKGROUND (2026-07) while phase 1 and then the server reports
 # (whose rosters are phase-1 outputs) go through in the foreground.
-bg_step_start "report: detail pages .rpt files"                           bin/transfer/reports/details.sh
+# (2026-09-28, speed round 27: details.sh runs in the SECOND slot, so the
+# logon summary — still in the first, started after the server parse — is
+# waited for only before the server reports: logon.sh there and fe-overview.sh
+# in the analyses step read it, no phase-1 report does, and details.sh reads it
+# only after its producers, ~40 s into its run, long after the summary ended —
+# were it ever still running, ensure_logons would compute it again, slower but
+# identical. bg2 is free here: the mention caches were waited for before
+# result.sh, and dashboards + day start in it only after this wait.)
+bg2_step_start "report: detail pages .rpt files"                          bin/transfer/reports/details.sh
 run_step "report: transfer .rpt files (phase 1)"                          bin/transfer/reports.sh phase1
+bg_step_wait   # the logon summary: logon.sh (server reports) + fe-overview.sh (analyses) read it
 run_step "report: server .rpt files"                                      bin/server/reports.sh
-bg_step_wait
+bg2_step_wait  # details.sh
 run_step "report: transfer .rpt files (phase 2)"                          bin/transfer/reports.sh phase2
 run_step "report: analyses .rpt files"                                    bin/analyses/reports.sh
 # (cross-reference runs inside the analyses step since the 2026-07 move of
