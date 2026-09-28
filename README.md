@@ -24,7 +24,7 @@ Code flows one way, develop → runtime, via **`bin/acc.sh`** and
 **`bin/prd.sh`** (no arguments — the runtime checkouts sit beside this repo
 as `../runtime-acceptance` and `../runtime-production`): each syncs `bin/` +
 `assets/` (+ `.gitattributes`) into its checkout and then runs that
-checkout's `bin/fresh.sh`, rebuilding the site from its own real data; run
+checkout's `bin/build.sh`, rebuilding the site from its own real data; run
 the two one after the other, never at the same time. It never touches `input/`, and
 the committed `input/.sample-estate` marker (checked by
 `bin/sample/generate.sh`, absent in a runtime checkout by construction) makes
@@ -74,8 +74,7 @@ Computation is separated from presentation, in three stages:
 - **Parse** — `bin/transfer/parse.sh` and `bin/server/parse.sh` tokenize
   `input/{transfer,server}/*.csv` **once** into gitignored caches
   (`data/transfer/cache/_transfers.tsv` + `_files.tsv`,
-  `data/server/cache/_parse.tsv`); both are incremental — adding an
-  export folds in just that file. `bin/flow-manager.sh` extracts the
+  `data/server/cache/_parse.tsv`). `bin/flow-manager.sh` extracts the
   configuration caches from `input/flow-manager/*.json` first.
 - **Report** — each area's `reports.sh` runs the report scripts; every report
   writes a small TAB-separated **`.rpt` descriptor** to
@@ -88,16 +87,18 @@ Computation is separated from presentation, in three stages:
 The whole chain is one command:
 
 ```bash
-bin/build.sh              # everything — no arguments, NO git step
-bin/fresh.sh              # FULL fresh build: wipe data/ + docs/, then build.sh
+bin/build.sh              # everything, always from scratch — no arguments, NO git step
 bin/sample/generate.sh    # regenerate the sample estate (develop only)
 bin/sample/verify.sh      # assert the built site covers every planted scenario
 ```
 
-Each run writes an HTML **build report** to `build/index.html` (local only,
-gitignored; one row per step with duration and OK/FAILED, plus captured
-output — written even when a step fails). Only one build can run at a time
-(`data/.buildlock`).
+Every build is a FRESH build: it wipes `build/`, `data/` and `docs/`,
+re-seeds `docs/` from `assets/` and runs every step in full — there are no
+incremental builds. Each run writes an HTML **build report** to
+`build/index.html` (local only, gitignored; one row per step with duration and
+OK/FAILED, plus captured output — written even when a step fails) and its
+console to `build/build.log`. Only one build can run at a time
+(`build/.buildlock`).
 
 For running individual stages, the full dependency rules, the `.rpt` protocol
 and every convention, see **`CLAUDE.md`**; deep subsystem notes live in

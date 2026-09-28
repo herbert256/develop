@@ -41,8 +41,8 @@ in the area orchestrators and feed the boxes and day pages.
    **`bin/blacklist.sh`** (`BLACKLIST_FILE` + `BLACKLIST_AWK`) by its two script consumers —
    transfer `parse.sh` (the authoritative blanking) and server `unknown-entities.sh` — plus the
    generated `docs/assets/blacklist-data.js`.
-   COMMITTED in develop (the whole `input/` tree is, CSVs included; a runtime repo keeps its own);
-   `parser_sig` cksums it so an edit forces a full reparse. Blanked (row kept): account
+   COMMITTED in develop (the whole `input/` tree is, CSVs included; a runtime repo keeps its own).
+   Blanked (row kept): account
    `SECURETRANSPORT`; any filled site NOT starting with `UC` (catches the `Clone - …` artifacts);
    logins `SECURETRANSPORT`/`P14303_CFT01`/`*nobody`/`UNKNOWN`; the internal cluster hosts
    (`localhost`/`145.219.156.40`/`.20`/`.21`, applied AFTER the endpoint-map fill). Login
@@ -53,7 +53,7 @@ in the area orchestrators and feed the boxes and day pages.
 2. **CoreId-group propagation**: each still-blank entity value (account, login, site, remote_host;
    profile's blank is `UNKNOWN`) is filled from the first row in the same CoreId group that
    carries one. Only blanks are filled. The unpropagated stream is kept as `_transfers0.tsv` (the
-   incremental merge/dedup base); `_transfers.tsv` is derived from it each run.
+   input of the derive-only re-run); `_transfers.tsv` is derived from it each run.
 3. **Config fallback**, both ways. *Reverse*: a group whose every row lost its site but which
    carries a profile takes its subscription from config keyed on that `FlowIdentifier` — NOT
    unique (a flow is commonly two subscriptions, one per direction), so the group's pesit-leg
@@ -79,14 +79,12 @@ in the area orchestrators and feed the boxes and day pages.
    attribution. `bin/session-sites.sh` (stage 1, after both parses, before expire-files) learns
    the `session⇥subscription` map into `cache/_sessionsites.tsv`: only the sessions of
    currently-UCx rows are (re)scanned, tokens are rename-folded (`rn_canon`) and must be
-   configured subscription names, a session naming two flows maps to NEITHER, and unscanned
-   entries persist (they keep a rescued group attributed on the next full derive). The file is
-   cmp-guarded; when it changed, the script re-runs the transfer parse with
-   `AXWAY_SKIP_SESSIONS=1` (a bounded derive-only re-run). The derive's pass (between FLOWDIR and
+   configured subscription names, and a session naming two flows maps to NEITHER. When the map
+   holds a verdict, the script re-runs the transfer parse DERIVE-ONLY (`AXWAY_DERIVE_ONLY=1`,
+   the raw cache reused). The derive's pass (between FLOWDIR and
    the fake name; the `Z` records of the fallback map) adds two more refusals: the group's mapped
    sessions must be UNANIMOUS, and the flow must be one the group's ACCOUNT is configured for
-   when that account has a configured list at all. `ensure_parsed` and parse.sh's derive-only
-   fast path watch the map's mtime like the xref caches. Acceptance validation: 12 UCx sessions
+   when that account has a configured list at all. Acceptance validation: 12 UCx sessions
    scanned, 4 mapped, 7 of 11 UCx Files rescued onto `UC4_SI_VPS_VDN`/`UC4_WA_VDN` (both already
    carrying the flows' properly-attributed history); the 4 `UCx_ODV-MAIA-EBENEFITS` Files stay —
    their routes log as `{ODV-MAIA-EBENEFITS}` with no UC name, and the account has two configured
@@ -384,9 +382,8 @@ blue result, 2026-09-27), UC2 has `ucst2` (5).
 `data/server/reports/uc<n>-slots.tsv`; `overview.sh` only re-buckets. A status is a STATE: a
 coarser slot takes the LAST hour inside it — never a sum/average — and an empty slot carries the
 previous state forward. Regression test: the last sidecar row must equal the report's own `STAT`
-figures exactly. Sidecar guards (same as pesit):
-`[ -f "$SLOTS_OUT" ] || rm -f "$OUT"`; the sidecar goes with the `.rpt` on a no-data exit; a run
-with data but no timestamped rows creates an EMPTY sidecar; create only when absent, never touch.
+figures exactly. Sidecar rules (same as pesit): the sidecar goes with the `.rpt` on a no-data exit;
+a run with data but no timestamped rows creates an EMPTY sidecar.
 
 **The three cumulative `seen` views** (Subscriptions / Partners / Accounts): per slot, how many
 were seen at or
@@ -501,7 +498,7 @@ duration), `bindDrill` renders the FIRST entry's CoreId as a link to `files/<cor
 it, as for any id that already is a link). Rows and green / plain cells stay text. The page must
 exist: **`bin/build/drill-files.sh`** (a build step right before the failed.sh catch-up) scans the
 transfer `.rpt` tree and lists the first CoreId of every list whose cell is — or can turn — red or
-orange into `data/transfer/reports/_drill-files.tsv` (cmp-guarded): `coreids-failed` / `-retry` /
+orange into `data/transfer/reports/_drill-files.tsv`: `coreids-failed` / `-retry` /
 `-resubmit` always; a `drillcols=` key or a `drill-cell-<col>` when the row's cell at that column is
 red / orange by its KIND (`failed`, `numfailed`, `numerr`, `numwarn`) or its own `@{class=…}`, and
 EVERY cell of a Duration percentile column (RECALC `P…`, retinted per date range) — a superset of
@@ -532,7 +529,7 @@ its summary lines stay out of the day rows, and each First-seen Total cell shows
 SEEN figure — equal to the status tables' Seen by construction, the day cells
 plus the report's no-date bucket summing to it — linking its `<type>-seen` list), plus the
 log-exports facts table (`write_log_facts`:
-per log the input-file count from the parse manifests `_parse.files`/`_transfers.files`, total
+per log the input-file count (the `*.csv` under `input/server/` and `input/transfer/`), total
 records, first/last record stamp and the HOLES — span days with no record — from the topviews;
 Records = the log's own rows — the server topview's Records column, the transfer topview's
 Transfers Count (`$13` since 2026-09-12 — the Recovered and Resubmit groups sit before it — one per physical leg), never a Files or percentage column: until
@@ -625,10 +622,9 @@ The Reason column (2026-08): the SUBSCRIPTIONS Error view appends it — the sam
 the home red tables show, resolved by the same chain (newest red `failed-sub-all.rpt` row's own
 verdict unless the flow is in `colour/_redflip.tsv`; else the classified `_kaput-evidence.tsv` newest
 E line via the shared `bin/flip-reason.awk`; else `_subs-boxes.tsv`). `_subs-boxes.tsv` is written
-by the LATER analyses publish; the transfer publish stamp watches all three sources + the classifier,
-and build.sh re-invokes the transfer publish right after the analyses publish (the "transfer
-catch-up (boxes reasons)" step) so a changed — or first-build — boxes sidecar lands in the SAME
-build. The sidecar is cmp-guarded, so the catch-up skips in ~0 s when nothing changed.
+by the LATER analyses publish, so build.sh re-invokes the transfer publish right after the
+analyses publish (the "transfer catch-up (boxes reasons)" step) and the boxes sidecar lands in the
+SAME build.
 
 Nav = two tab groups: member · All/Seen/Not seen/OK/Warning/Error — six pages per entity,
 `<entity>-<view>.html` (the Transfer | +Server SCOPE row, its `-transfer` pages and the
@@ -757,15 +753,16 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   its subscription). A flow with no such File gets no row. Because nothing is repeated on the page
   any more, **"Last server log messages" no longer suppresses those lines** and shows the page's
   own log in full — the SUPPRESSION SET has no writers left. A SERVER-FAILING subscription (in
-  failed.sh's `_srvsubs-map.tsv` — the REDUCED name⇥slug⇥stamp map, cmp-guarded without the reason
-  column so a reason-only rerun leaves it byte-identical and the details catch-up self-gates;
-  went-kaput runs EARLY in the build so the stamps are final on failed.sh's first pass) gets a
+  failed.sh's `_srvsubs-map.tsv` — the REDUCED name⇥slug⇥stamp map, without the reason column;
+  went-kaput runs EARLY in the build so the stamps are final on failed.sh's first pass and
+  details.sh needs one run) gets a
   THIRD Features row, **"Server log error"** — the map's stamp, linking the flow's OWN
   `files/<slug>.html`, which failed.sh already writes. The section that re-emitted that page's
   server-log table here (`srv_log_error_section`) went with the other two on 2026-09-16.
 - **The "Logons" table** (2026-08, LOGIN pages, `logons_section()`): first/last successful
   authentication, the raw logon count and the cadence label, from **`bin/logons.sh`**
-  (`ensure_logons` → `data/server/cache/_logons.tsv`, atomic + cmp-guarded) — one
+  (`ensure_logons` → `data/server/cache/_logons.tsv`, atomic; built once per build by
+  `bin/build/logon-summary.sh`) — one
   `_parse.tsv` pass over the "User with login name … successfully authenticated" lines (any
   protocol daemon; the same signal uc2-status.sh counts pickups by), the cadence uc2-status's
   pickup-pattern logic verbatim (median gap over distinct logon minutes, bursts collapsed into
@@ -867,7 +864,7 @@ Structure: four stream producers in **`bin/transfer/details_lib.sh`** run CONCUR
 files one sort consumes (`whitelist_rows`' `|| true` is LOAD-BEARING under `set -e`); the stream
 is traversed exactly twice (PASS A dims, PASS B the awk annotation pass); the writer
 **`bin/transfer/details_writer.awk`** runs one awk per type in parallel, reproducing `sort -k1,1r
--k2,2r` exactly. Both are `skip_if_fresh` deps; `details.sh <TYPE>` reruns one type.
+-k2,2r` exactly. `details.sh <TYPE>` reruns one type.
 
 A resolved IP has no page of its own — links resolve to the hostname page; unresolved IPs keep an
 IP-named page.

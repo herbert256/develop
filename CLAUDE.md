@@ -27,7 +27,7 @@ environment each — **never read, edit or build them from an AI session**; they
 by design. (The old combined `runtime` repo — two environments in one checkout — is RETIRED since
 2026-09-11, left in place for Herbert to delete; `bin/acc.sh` / `bin/prd.sh` refuse it.) Code flows one way
 via **`bin/acc.sh`** and **`bin/prd.sh`** (no arguments — the runtime checkouts sit BESIDE this repo as `../runtime-acceptance` and `../runtime-production`; each syncs `bin/` + `assets/` + `.gitattributes` into its checkout, removes CLAUDE/ARCHITECTURE
-there, then runs that checkout's `bin/fresh.sh`; run the two one AFTER the other, never at the
+there, then runs that checkout's `bin/build.sh`; run the two one AFTER the other, never at the
 same time — every runtime build pulls and pushes the shared inbox/outbox repo, `~/exchange` by
 default, which the build report and every message call "the inbox" / "the outbox", never by
 name — 2026-09-12, user request; the `~/cloud` drop folder is gone since the same day); the
@@ -139,7 +139,17 @@ checkout with logs but no config export: it synthesizes the two JSONs from the t
 ## The pipeline — bin/build.sh
 
 Runs the whole chain. NO argument (`-h` only; anything else is exit 2 — the acc/prd scope went
-with the env split). NO git step — committing and pushing is manual. **SYNTAX GATE first**
+with the env split). NO git step — committing and pushing is manual. **EVERY BUILD IS A FRESH
+BUILD** (2026-09-28, user decision — `bin/fresh.sh` folded in, the incremental machinery
+removed): after the syntax gate and the build lock (`build/.buildlock`, owner PID, a dead
+owner's lock reclaimed), `build/` is emptied around the lock, `data/` and `docs/` are RENAMED
+into `build/.trash` and deleted in the background, `docs/` is re-seeded from `assets/`, and every
+step runs in full from the raw inputs — nothing checks whether an output is up to date (no
+`skip_if_fresh`, publish stamps, parse manifests, parser signatures, `ensure_parsed` /
+`ensure_config`, mtime-keeping cmp-guards). The ONE thing carried over is `data/.buildstats` (the
+build report's input statistics, keyed by name + size + mtime — it can never go stale). The whole
+console also lands in `build/build.log`. A script run on its own assumes a complete build before
+it (the config caches and both parse caches exist). **SYNTAX GATE first**
 (2026-09-27): `bin/check-syntax.sh` (`bash -n` over every `bin/**/*.sh`, ~1 s) runs before
 anything is cleared — and in `bin/runtime-lib.sh` before a sync — because /bin/bash 3.2 exits
 **0** on a syntax error in a script that set an EXIT trap (an apostrophe in a comment inside a
@@ -165,16 +175,14 @@ The report carries the timings (start → end · duration) in its title — the 
 before them — and opens with ONE fact row (Input / Cached files / Output), gathered BEFORE the
 end timestamp; `count_stats` caches line counts in `data/.buildstats/<key>` under a signature of
 the file list. Then the Inbox block (which prefixes this checkout consumes and what the inbox
-step did — `build/inbox.tsv`, 3 columns: status ⇥ archive ⇥ detail; the inbox is never named)
-and the Input-changes table (new / updated / removed since the previous build, from the 3-column
-`build/input-manifest.tsv`: path ⇥ size ⇥ mtime). At the BOTTOM (2026-09-12, user request), two
+step did — `build/inbox.tsv`, 3 columns: status ⇥ archive ⇥ detail; the inbox is never named).
+(The Input-changes table went 2026-09-28: the wipe of `build/` had left its manifest empty on
+every build.) At the BOTTOM (2026-09-12, user request), two
 side-by-side tables — Server log files | Transfer log files — Name · First · Last · Lines per
 export in `input/`, sorted on First (`log_inventory`, one awk pass per file cached under
 name+size+mtime in `data/.buildstats/loginv/`, gathered before the clock). Trap: glob
-file lists into an ARRAY, not `read <<<"20 20 12 61 79 80 81 701 33 98 100 204 250 395 398 399 400…)"` (word-splits under the assignment's IFS). Nothing
-on the site links the report. (`PUBLISH_STAMP_EXTRA` still exists in publish_lib for any publish
-that needs an extra freshness ingredient — **never put a run-specific value in every stamp**, it
-would re-render every page on each build.)
+file lists into an ARRAY, not `IFS=$'\t' read … <<<"$(f $(ls …))"` (word-splits under the
+assignment's IFS). Nothing on the site links the report.
 
 Order, ONE linear chain (the rationale of every position is in the script's comments):
 (runtime only) `bin/build/exchange-in.sh` (the inbox, by prefix; it calls
@@ -186,39 +194,38 @@ the JSON exports apart by content — `subscriptions.json` / `partners.json` fro
 PAST month of exports in `input/`; every server/transfer export dated before the first of the
 past month — the day from its `_yyyy-mm-dd.csv` name, else its first record — moves to the
 gitignored repo-root `archive/` as `<name>.7z`, tested before the original goes; a failure is a
-warning that leaves the file in place; it runs BEFORE the parses so the manifests see the final
-input set and reparse in full once, the month the first files go) → the
-have-config check → *parse*: server `parse.sh` in the background (`AXWAY_SKIP_MENTIONS=1`: tokenize +
-merge only, started BEFORE the config step since 2026-09-27 — it reads no config) beside
-`bin/flow-manager.sh` and then transfer `parse.sh` (`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`),
-then — beside the server MENTION caches (a second `parse.sh` call, background slot 2, waited for
+warning that leaves the file in place; it runs BEFORE the parses so they see the final input
+set) → the have-config check → *parse*: server `parse.sh` in the background
+(`AXWAY_SKIP_MENTIONS=1`: tokenize + merge only, started BEFORE the config step since 2026-09-27
+— it reads no config) beside `bin/flow-manager.sh` and then transfer `parse.sh`, then — beside
+the server MENTION caches (`AXWAY_MENTIONS_ONLY=1 parse.sh`, background slot 2, waited for
 before result.sh) and the logon summary (`bin/build/logon-summary.sh`, background slot 1, waited for
-right before the server reports since 2026-09-28) — `bin/session-sites.sh` (run with
-`AXWAY_SKIP_EXPIRE=1`), `bin/expire-files.sh`, `bin/bookend-ok.sh`,
-`bin/build/result.sh`, a server-mention rescan when
-`data/server/cache/.rescan-mentions` exists (skipped when no cache line holds an appended name —
-see BUILD SPEED), `went-kaput.sh` early (always; its evidence sidecar
-makes the details catch-up self-gate) → *report*: `bin/transfer/reports/details.sh` in
+right before the server reports since 2026-09-28) — `bin/session-sites.sh` (its re-derive is
+`AXWAY_DERIVE_ONLY=1` transfer `parse.sh`), `bin/expire-files.sh`, `bin/bookend-ok.sh`,
+`bin/build/result.sh`, a server-mention rescan (`AXWAY_MENTIONS_ONLY=1` again) when
+`data/server/cache/.rescan-mentions` exists (skipped inside when no cache line holds an appended
+name — see BUILD SPEED), `went-kaput.sh` early (its ONLY run: its evidence sidecar makes the
+`_srvsubs-map` final on failed.sh's first run, so details.sh runs once) → *report*:
+`bin/transfer/reports/details.sh` in
 background slot 2 beside transfer phase 1 and the server reports, then transfer phase 2, analyses,
 the dashboards MONITOR (`monitor.sh`, foreground: whether `monitor.rpt` exists sets every
 page's top bar), then dashboards ∥ day in background slot 2 BESIDE the publishes below, waited
 for right before the dashboards publish → *publish*: detail
 pages ∥ transfer, then partner-groups, server, analyses, then THE CATCH-UPS — re-runs folding the
-cross-phase evidence into THIS build, each self-gating via its own freshness check (a warm build
-skips them in ~0 s): `bin/build/drill-files.sh` (2026-09-21 — lists the first File of every red /
-orange drill cell for failed.sh to page, see "Drill-down"), failed.sh (the boxes reasons now on disk), failing-reasons.sh, the
-detail-pages pair (.rpt + publish) in the BACKGROUND beside the analyses publish catch-up
-(details deps on the REDUCED `_srvsubs-map.tsv` — name⇥slug⇥stamp, no reason — so a reason-only
-rerun leaves it byte-identical and the pair skips), the transfer publish catch-up, dashboards,
-day → `bin/build/publish.sh` (index pages + the home, reads every area) →
+cross-phase evidence into THIS build: `bin/build/drill-files.sh` (2026-09-21 — lists the first
+File of every red / orange drill cell for failed.sh to page, see "Drill-down"), failed.sh (the
+boxes reasons now on disk), failed-files.sh, failing-reasons.sh, the detail-pages RE-RENDER
+(`publish-details.sh` only, in the BACKGROUND beside the analyses publish catch-up — the detail
+.rpt files need no second run: their one catch-up input, the REDUCED `_srvsubs-map.tsv`,
+name⇥slug⇥stamp, is final after failed.sh's first run), the transfer publish catch-up,
+dashboards, day → `bin/build/publish.sh` (index pages + the home, reads every area) →
 `bin/build/display-rename.sh` → (runtime only) `bin/build/st-reports-archive.sh`.
 
 Dependency rules: transfer reports before server and analyses reports; dashboards + day after both areas;
 `bin/build/publish.sh` last of the publishes (the area publishes clear the dirs its index pages
-live in). `bin/fresh.sh` (no arguments) wipes `build/`, `data/` and `docs/`, re-seeds the assets
-and runs the chain — `data/` and `docs/` are RENAMED into `build/.trash` and deleted in the
-background, and `data/.buildstats` (the build report's input statistics, keyed by name + size +
-mtime) is carried over, so a fresh build does not re-read every export for the report.
+live in). A script that ran twice in one build only to skip the second time runs ONCE now:
+`went-kaput.sh` (not in the server-reports pool), `monitor.sh` (not in `bin/dashboards/reports.sh`)
+and `details.sh` (not in the catch-up).
 
 **BUILD SPEED (2026-09-27/28, the "prd build" analysis — production 6:34 → 3:44 min in 14 rounds,
 then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a develop fresh build).** What a change must not break:
@@ -235,10 +242,11 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   the kept rows. The tokenizer's `quoted_split` fast path splits an all-quoted record on `","`
   and PROVES the split exact (quotes = 2 ends + 2 per separator + inner ones; inner quotes must
   come in adjacent pairs, which a `","` inside a value never leaves) — anything else walks.
-  The RENAME MAP is not in the tokenize signature: the mention caches carry
-  `.mention-renames.sig` (content) and the server `skip_if_fresh` watches the map, so a recorded
-  rename re-runs the mention scan and the reports without re-tokenizing. `AXWAY_SKIP_MENTIONS=1`
-  = tokenize + merge only (no `ensure_config`).
+  The tokenize reads no config and no rename map (only the mention scan folds names), which is
+  what lets it start beside the config step. Modes: default = tokenize + merge + mentions,
+  `AXWAY_SKIP_MENTIONS=1` = tokenize + merge only, `AXWAY_MENTIONS_ONLY=1` = the mention caches
+  over the existing cache (the transfer-ended session list is computed once per cache and reused
+  by the rescan).
 - **Byte-range scans** (`bin/ranges.sh`: `rng_lo/rng_hi/rng_off/rng_feed`; a job owns the lines
   STARTING in its range): subsets, session-sites, expire-files, bookend-ok, failed.sh passes 1
   and 2, result.sh's session vote, the mention rescan. A scan whose result depends on line ORDER
@@ -247,8 +255,8 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
 - **Server-cache subsets** (`bin/server/subsets.sh`, `srv_subset NAME` in `bin/server/lib.sh`):
   the RARE message families of uc1/uc3-status, remote-poll, connection-diagnostics, ssh-key-auth
   and ssh-sessions, copied once per cache; every line a consumer acts on must contain one of its
-  fixed-string MARKERS — change a consumer's patterns, change its markers. A stale or missing
-  subset falls back to the whole cache.
+  fixed-string MARKERS — change a consumer's patterns, change its markers. A missing subset set
+  (no `subsets/.done`) falls back to the whole cache.
 - **Key-aligned and line-aligned slices** (2026-09-28, `bin/ranges.sh`): `grp_cuts FILE N` cuts a
   file SORTED on its first TAB field into byte slices that never split a run of equal keys (blank
   included), `grp_par FILE OUT N CMD…` runs CMD per slice in parallel (slice on stdin, `GRP_PART`
@@ -293,9 +301,10 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   caches on disk ARE the rescan's output (a name only adds hits on a line containing it). A
   change to the mention matching (name_hit, the host test, the rename fold) must keep that
   property or drop the skip. Production: 11 → 1 s.
-- **The build runs session-sites with `AXWAY_SKIP_EXPIRE=1`** (2026-09-28): its re-derive would
-  run expire-files + bookend-ok at the parse tail and the next two build steps run them again on
-  the same inputs (both idempotent) — a manual parse keeps the full chain.
+- **The server-log -> transfer steps run once each** (2026-09-28): the transfer `parse.sh` no
+  longer calls session-sites / expire-files / bookend-ok at its tail (nor takes the
+  `AXWAY_SKIP_*` flags) — `bin/build.sh` runs the three in order after the parse barrier, and
+  session-sites' re-derive (`AXWAY_DERIVE_ONLY=1`) is the parse's only nested call.
 - **Publishing**: the files/ pages render in RUNS (four per pool slot); `render_rpt` takes a page
   TITLE from line 1 with a builtin read outside `docs/details/` — every writer puts TITLE on line
   1, and `META dirclass` exists only in the detail-page .rpt files (a writer adding it elsewhere
@@ -318,10 +327,9 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   per-script `_…lap` helpers, incl. the tokenize part timings) — a runtime build is profiled from
   its console alone. A BACKGROUND step replays only its `TIME` lines at its wait, so a console
   statistic from one must be a `TIME` line (the tokenizer's "tokenizer paths" counters — records
-  and MB per path: production 37M records / 20 GB, 96 % fast split, 71 % noise). The lever NOT
-  pulled: a runtime build is always FRESH (`bin/prd.sh` → `fresh.sh`), so the unchanged exports
-  are re-tokenized every time (~33 s, the critical path); keeping the server cache across builds
-  is Herbert's call.
+  and MB per path: production 37M records / 20 GB, 96 % fast split, 71 % noise). EVERY build is
+  fresh (2026-09-28, Herbert's decision — no incremental builds at all), so the unchanged exports
+  are re-tokenized every time (~33 s, the critical path).
 
 ## Running individual stages
 
@@ -335,20 +343,17 @@ paths are centralized in `lib.sh` (derived from `LIB_DIR`, its own location): `I
 don't reintroduce `../../data`-style paths or path arguments.
 
 ```bash
-bin/build.sh                          # everything (no git)
-bin/fresh.sh                          # FULL fresh build: wipe data/ + docs/, seed assets/, build
+bin/build.sh                          # everything, always fresh: wipe build/ data/ docs/, seed assets/, build (no git)
 bin/build/linkcheck.sh                # verify: 0 broken links, 0 orphan pages
-bin/transfer/parse.sh                 # -> _transfers.tsv + _files.tsv
+bin/transfer/parse.sh                 # -> _transfers.tsv + _files.tsv (AXWAY_DERIVE_ONLY=1: re-derive from _transfers0.tsv)
 bin/transfer/reports.sh [phase1|phase2]
 bin/transfer/reports/details.sh [TYPE]   # TYPE = ACC SITE LOGIN HOST PTN APP DOM
-bin/server/parse.sh                   # -> _parse.tsv (+ per-entity mention caches)
+bin/server/parse.sh                   # -> _parse.tsv (+ per-entity mention caches; AXWAY_SKIP_MENTIONS / AXWAY_MENTIONS_ONLY)
 bin/server/reports.sh
 bin/analyses/reports.sh; bin/dashboards/reports.sh; bin/day/reports.sh
 bin/transfer/publish.sh               # …and the other per-area publishes; then:
 bin/analyses/publish-partner-groups.sh
 bin/build/publish.sh                  # index pages + the home; run LAST
-AXWAY_FORCE_PUBLISH=1 bin/…/publish.sh   # re-render even when the stamp says fresh
-AXWAY_DEBUG_FRESH=1   bin/…/publish.sh   # name the dep that forced the rebuild
 bash -n script.sh                     # syntax check — there is no test suite
 ```
 
@@ -381,7 +386,7 @@ takes `[{ci, dir}]`, shift-click adds a key, arrows carry `<sup>` ranks; `sortTa
 is the position-based wrapper, `resort()` re-applies a table's keys; saveSort stores "ci:dir,ci:dir")
 · the DARK theme (`data-theme` on `<html>`, localStorage `axway-theme`, unset = LIGHT — never the system preference, user request; the dark CSS
 is GENERATED at publish from the light rules by `bin/darken-css.awk` — colour maps per property
-class, appended to docs/assets/style.css by build.sh/fresh.sh; a new light colour must be added to
+class, appended to docs/assets/style.css by build.sh; a new light colour must be added to
 its maps; the page head applies the theme before the stylesheet, help pages carry the same inline
 line) · RELATIVE dates (`setupRelDates`, mouseover delegation, tooltip only) · the COMMAND palette
 (`setupPalette`, Ctrl/Cmd+K; fetches `tools/report-finder.html` and `search/search-data.js` from the docs root once, stripping the `../` their hrefs carry).
@@ -398,45 +403,24 @@ clicks, so the id opens the platform and nothing else.
 
 **Iterating on HTML/CSS**: edit `assets/style.css`/`assets/report.js` (NOT the docs copies) and
 run `bin/build.sh` — it clears+seeds docs/ and re-renders everything. A MANUAL per-area publish
-reads the docs/assets copies, so after an assets/ edit copy the file over (or run the build);
-a publish SKIPS when its stamp is fresh — the docs asset copies are deps, anything else needs
-`AXWAY_FORCE_PUBLISH=1`. The `.rpt` files stay on disk, so the publishes alone re-render the site.
+reads the docs/assets copies, so after an assets/ edit copy the file over (or run the build); a
+publish always renders. The `.rpt` files stay on disk after a build, so the publishes alone
+re-render the site.
 
-**Incremental parsing.** `parse.sh` (both areas) keeps a manifest (basename + byte size per
-input) and tokenizes only what is new: the transfer side `sort -m`-merges into the CoreId-sorted
-cache (byte-identical to a full parse), the server side appends; a changed/removed manifested
-file — or **editing `parse.sh` / `input/blacklist.txt`** (cksums in `_*.parser`) — forces a full
-reparse. `reports.sh` does not parse; each report calls `ensure_parsed`.
-**ONE TRANSFER PARSE AT A TIME** (2026-09-16): the transfer `parse.sh` rewrites `_files.tsv`
-THREE times (collapse 17 cols → config join 24 → the still-under-way filter), each `> $FILES.tmp.$$`
-+ `mv`, and ~100 scripts call `ensure_parsed` — some CONCURRENTLY (build stage 13's detail reports
-beside stage 14). Two runs interleaving their mv's left the UNJOINED intermediate as the cache, so
-cols 16-20 (connection, movement, application, domain, partner) were gone and every In/Out figure
-on the site was empty (the acceptance damage found that day). A mkdir lock
-`data/<area>/cache/.parselock` (the `bin/build.sh` pattern — owner PID, dead owner reclaimed,
-30-minute wait then a warned fallback) serializes them, taken BEFORE the freshness decision so the
-loser exits with "nothing to parse"; it is RE-ENTRANT via the exported `AXWAY_PARSE_LOCK` because
-`bin/session-sites.sh` re-invokes the parse from inside the critical section. The derive-only
-freshness check tests the JOINED shape (24 columns AND col 17 in `in|out|relay|""`), never a lower
-bound: `expire-files.sh` pads a short row to 22 columns and `bookend-ok.sh` to 23, so the old
-`NF>=20` test passed a damaged cache and no later build ever healed it.
-
-**Incremental publishing.** Each publish writes `data/.publish/<name>.stamp` and skips when
-nothing it reads is newer. `bin/publish_lib.sh` owns `publish_is_fresh STAMP OUTDIR DEP…` /
-`publish_stamp` / `publish_area_stamps`; deps = `PUBLISH_CORE_DEPS` + the trees the caller lists.
-Four rules the machinery depends on:
-
-- **A generated `docs/` page is NEVER a dep** (the display-rename sweep rewrites pages every build); the
-  output DIRECTORY's existence is checked instead.
-- **Files only, never a directory's own mtime** (`find -type f -newer`); the stamp also stores the
-  dep-tree file COUNT so a deletion is noticed.
-- **The cross-cutting step** (`bin/build/publish.sh`) depends on the seven per-AREA stamps BY
-  NAME (`publish_area_stamps`) — never on the `.publish` DIR, which also holds its own stamp.
-- **A writer regenerating identical content must keep its mtime** (cmp-guarded: `cov_put`,
-  `apply_help_chrome`, `_expired.tsv` — tested with `-f`, not `-s`: an empty extraction is
-  valid). A `.rpt` cannot be cmp-guarded — its FOOT carries the run time.
-
-Report scripts use `skip_if_fresh OUT SCRIPT [DEP…]`; a directory dep covers its whole tree.
+**No incremental machinery** (2026-09-28, user decision: only fresh builds). Every step runs in
+full: `parse.sh` (both areas) tokenizes every export (no manifest, no parser signature, no merge
+into an old cache, no parse lock — nothing parses concurrently any more), every report writes its
+.rpt (no `skip_if_fresh`), every publish renders (no `data/.publish` stamps), `flow-manager.sh`
+rebuilds the config caches (no early exit). There is no `ensure_parsed` / `ensure_config`: a
+report reads the caches `bin/build.sh` built before it. A writer never compares content to keep an
+mtime (the former cmp-guards) — except the two under `input/` (`bin/ip.sh`'s map, the rename
+snapshot), whose files outlive the build. Do not reintroduce a freshness check: a script that
+must not repeat work inside one build gets an explicit mode or a single call site instead (the
+server parse's `AXWAY_SKIP_MENTIONS` / `AXWAY_MENTIONS_ONLY`, the transfer parse's
+`AXWAY_DERIVE_ONLY`, went-kaput / monitor run once). Within-build DEPENDENCY guards stay:
+`ensure_logons` builds the logon summary only when it is not there yet (the background step
+normally has), `srv_subset` falls back to the whole cache without `subsets/.done`, and the
+appended-names mention rescan is skipped when it cannot change anything.
 
 ## Tool sets
 
@@ -474,9 +458,8 @@ read the name prefix alone and silently dropped the hybrid flows), `_{accounts,s
 `input/ip/`.
 
 Nothing downstream reads the JSONs directly (except `publish-insights.sh`); everything goes via
-`ensure_config`. Transfer's `ensure_parsed` watches the **xref** cache mtimes only — deliberately
-not base/, whose result column is recolored AFTER the parse. `flow-manager.sh` early-exits when
-every cache is newer than the exports and itself; a missing cache degrades to an empty list.
+the caches `flow-manager.sh` writes in the build's config step (no early exit — it rebuilds every
+build); a missing cache degrades to an empty list.
 **PDA derivation** is owned here too and is LOGICAL-BASED (2026-08-30, user request): the
 three-part Logical name `D_A_P` gives part 1 = domain, part 2 = application, part 3 = partner
 token; partner tokens merge (same host / shared whitelist IP / whitelisted host IP — every merge
@@ -659,7 +642,7 @@ source CSV field indices (both logs) are in ARCHITECTURE.md ("Parse reference");
 `MM/DD/YYYY HH:MM:SS.mmm`. Date arithmetic uses awk Julian-day helpers (`jdn()` etc.), never
 `date`; `dur_ms()` sums the compound Duration values into ms, `humandur()` formats back. Exact
 duplicate record lines are dropped (tokenizer AND post-merge pass), so overlapping exports cannot
-double-count and the incremental cache stays byte-identical to a full reparse.
+double-count.
 
 ### The attribution chain (parse time, in this order)
 
@@ -684,8 +667,8 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    product, whose off-diagonal rows all read as renames (`_01 → _02`, `_03 → _01`, …) and rotated
    every File of the account onto the neighbouring flow. The diff now joins only keys unique on
    both sides, and `_rn_prune` drops such pairs from the existing maps on every config run,
-   naming each on stderr. `parser_sig` cksums the maps and `ensure_parsed` watches them, so recording a
-   rename re-tokenizes. **The PROFILE has its own map** (`profiles.tsv`): the profile is what the
+   naming each on stderr. Every build's parses fold the logged names by the maps as they stand.
+   **The PROFILE has its own map** (`profiles.tsv`): the profile is what the
    reverse config fallback attributes a leg by, and an unmatched one cost 7,743 CoreIds their
    subscription (the no-subscription skip then dropped ~4.6% of Files). The SERVER side folds too
    — `parse.sh` when matching message tokens to the configured set, and
@@ -706,8 +689,8 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
   step appended too; it is gone with the blue result.)
 1. **Blacklist** — `input/blacklist.txt` (a policy file like the others, COMMITTED in develop; TSV
    `<field>⇥drop|keep⇥<value>`) BLANKS
-   platform-internal values (row kept), read only through the sourced `bin/blacklist.sh`;
-   `parser_sig` cksums it so an edit forces a full reparse. **The EXTENDED transfer-site fold**
+   platform-internal values (row kept), read only through the sourced `bin/blacklist.sh`.
+   **The EXTENDED transfer-site fold**
    (2026-09-01, user report): ST logs some flows as `<subscription>_<PROTO>_SERVER_<partner>` —
    not a configured name, so the flow was attributed to NOTHING, its `_files.tsv` movement
    (col 17) stayed empty and the outcome rule (which matches the movement against the last leg's
@@ -718,14 +701,15 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    configured one stays a logged-but-unconfigured subscription. The server reports fold the
    same shape. **The configuration outranks the site
    keep rule** (2026-08-31 audit): a clean, rename-folded site value that names a configured
-   subscription (`base/.configured.tsv`, its names part of `parser_sig`) is kept whatever its
+   subscription (`base/.configured.tsv`) is kept whatever its
    shape — the production hybrid flows carry no UC prefix, and the `^UC` shape test blanked their
    correctly logged subscription on every row; the shape test applies only to values the config
    does not know. The literal `UNKNOWN` remote host is blanked in code (a placeholder, not an
    endpoint). **report.js has no client-side
    blacklist net and must not gain one** — a config-side leak is filtered in `bin/flow-manager.sh`.
 2. **CoreId-group propagation** — blanks fill from the first row in the group that carries a
-   value; the unpropagated stream stays as `_transfers0.tsv`, the incremental merge/dedup base.
+   value; the unpropagated stream stays as `_transfers0.tsv`, the input of the derive-only
+   re-run (`AXWAY_DERIVE_ONLY=1`, session-sites.sh).
 3. **Config fallback** — reverse (profile's `FlowIdentifier` → subscription, disambiguated by the
    pesit-leg direction; never guessed) then forward (site → account/profile).
 4. **XREF single-value fallback** — unanimous vote of the populated fields' one-value maps; HOST
@@ -753,11 +737,10 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    user request) the **EMPTY OUTBOUND SSH PROBE**: a CoreId whose ONE record is Outbound + ssh +
    size 0 + Application "none" (col 25; empty counts the same) — no file moved, so it must not
    become a one-legged Failed File; the Skipped report lists it under its own reason. Distinct from
-   the `input/skip.txt` SKIP LIST (same layout as the blacklist — fields TAB- or whitespace-separated since 2026-09-09: a space-typed `any contains X` used to fall to the bare-token form and match nothing, which is how a skipped production subscription stayed on the site; the two readers `bin/skiplist.sh` / `bin/blacklist.sh` are part of both parser signatures and of the config step's freshness since then — but DROPS THE WHOLE RECORD — and, on the config side, the account, subscription or comm-profile LOGIN whose name contains the value, 2026-09-03;
+   the `input/skip.txt` SKIP LIST (same layout as the blacklist — fields TAB- or whitespace-separated since 2026-09-09: a space-typed `any contains X` used to fall to the bare-token form and match nothing, which is how a skipped production subscription stayed on the site; — but DROPS THE WHOLE RECORD — and, on the config side, the account, subscription or comm-profile LOGIN whose name contains the value, 2026-09-03;
    read only through the sourced `bin/skiplist.sh`; matched cache rows → `_skipped.tsv`).
 
-A changed subscriptions.json re-derives `_transfers.tsv` (export → flow-manager cache mtimes →
-`ensure_parsed`). Reports skip blank entity values, or show a parenthesized/`-` pseudo-value where
+Reports skip blank entity values, or show a parenthesized/`-` pseudo-value where
 the transfer must stay countable.
 
 ### _files.tsv — the logical-transfer cache
@@ -801,10 +784,9 @@ re-flips it. **Processed** = ≥2 legs, last leg Outbound+Processed AND matching
 `ssh`/`ftp`/`ftps`, in → `pesit`); deliberately no bytes condition. **Failed** = everything else
 (incl. a lone leg). **Expired** = a Waiting file whose staged copy the nightly File Maintenance
 sweep (~11 days) deleted before pickup — server-log-only evidence, so **`bin/expire-files.sh`**
-joins those lines onto Waiting rows (col 22 = the timestamp; cached in `_expired.tsv`,
-cmp-guarded, recomputed each run; transfer `parse.sh` re-runs it last unless
-`AXWAY_SKIP_EXPIRE=1`). **SETTLED BY BOOKEND** (2026-09-09, user request, **`bin/bookend-ok.sh`**
-right after expire-files, same gate): a **Failed** File whose LAST leg's transfer id a server-log
+joins those lines onto Waiting rows (col 22 = the timestamp; the deletion list in
+`_expired.tsv`; a build step after session-sites). **SETTLED BY BOOKEND** (2026-09-09, user
+request, **`bin/bookend-ok.sh`** right after expire-files): a **Failed** File whose LAST leg's transfer id a server-log
 `"Transfer end logged."` JSON record ends with `"status":"ok"` + `"direction":"Outbound"` (an ok
 bookend of an earlier leg of the same File does not count; the JSON's own `coreId` is NOT required
 to match — it can differ from the transfer log's CoreId for the same transfer, the transfer id is
@@ -883,8 +865,7 @@ anchored rule would otherwise match the bare form and miss the tagged twin of th
 a `<Word> Default` tag is stripped — the odd `[server #173 @…]` lines keep their text — and every
 rule then covers both forms, which is why no rule names a tag.
 Deliberately NOT `input/skip.txt`: a skip rule archives its records for the Skipped report, which
-is the cost this filter exists to avoid. Editing the list changes `parser_sig`, so the next run
-reparses in full. **Four server reports read those lines and were removed with them**:
+is the cost this filter exists to avoid; every parse applies the list as it stands. **Four server reports read those lines and were removed with them**:
 `concurrency` (a `capacity` component), `event-feed` (a `platform-health` component), and
 `transfer-outcomes` + `file-freshness` — both components of the merged `transfers` report, which
 therefore went too, leaving `pickups` alone in the srv-transfers group. **`advanced-routing` went
@@ -901,11 +882,10 @@ the `.stfs` segments never matched one; what it reaches is the `Error while resu
 with id` line on the ADMIN session and the AR0086 post-processing delete on the route's).
 
 `reports.sh` runs every server report in parallel (rosters come from the TRANSFER reports; a
-missing roster is `exit 1`), calling `ensure_config`/`ensure_parsed` once up front. The five
+missing roster is `exit 1`). The five
 `unknown-*` reports are ONE script, `bin/server/reports/unknown-entities.sh` — a map-reduce whose
 known sets read the TRANSFER PARSE CACHE directly (cols 4/5/6/16), never a roster (roster-based
-sets oscillate); `bin/server/reports.sh` runs it in its pool; its all-outputs freshness check is
-inlined. Its `data/unknown/*.tsv` sidecars are the SERVER-LOG SIGHTING LISTS the colour-free
+sets oscillate); `bin/server/reports.sh` runs it in its pool. Its `data/unknown/*.tsv` sidecars are the SERVER-LOG SIGHTING LISTS the colour-free
 safety checks read (Entity Search / Cross reference: an unconfigured sighting is red; the
 cleanup backlog: a mentioned whitelist IP is not unused). Transfer reads nothing from the server REPORTS.
 
@@ -1257,19 +1237,19 @@ both MANUAL.
 - **All generated links are relative** — the site lives under `/axway/` and Pages is
   case-sensitive; keep paths lowercase and exact. The assets' `cksum` is the `?v=` cache-buster on
   every page (`ASSET_VER`), so an asset edit wants a full re-publish.
-- **To add a transfer report**: a script in `bin/transfer/reports/` sourcing `../lib.sh`, calling
-  `ensure_parsed`, aggregating `$PARSED` or `$FILES` into `$REPORTS_DIR/<name>.rpt`. Add it to
+- **To add a transfer report**: a script in `bin/transfer/reports/` sourcing `../lib.sh`,
+  aggregating `$PARSED` or `$FILES` into `$REPORTS_DIR/<name>.rpt` — no freshness check (every
+  build is fresh; see "No incremental machinery"). Add it to
   `bin/transfer/reports.sh` and `transfer_order` (+ `group_of`/`member_label`, `report_tabs` if
   multi-table), and write its help page. Phase 1 unless it reads another report's output (phase 2
   = `showseen.sh`); build.sh overlaps the phases with `details.sh` in the background, so **a new
   phase-1 report must be safe to run beside the server reports**.
 - **Every `.rpt` write is ATOMIC** (2026-08): `} > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"` — never a
-  direct `> "$OUT"`. skip_if_fresh trusts a fresh mtime, so a killed direct write would leave a
-  truncated report every later run skips. Multi-write reports assemble in the ONE `$OUT.tmp` and
+  direct `> "$OUT"`, so a killed run never leaves a truncated report. Multi-write reports assemble in the ONE `$OUT.tmp` and
   mv once at the end; `bin/day/reports.sh` stages its whole per-day set in `reports.new/` and
   swap-renames (both its passes append across the file set). The `bin/*/reports.sh` orchestrators
   sweep orphaned `*.rpt.tmp` at start. One build runs at a time: `bin/build.sh` takes
-  `data/.buildlock` (owner PID recorded; a dead owner's lock is reclaimed automatically).
+  `build/.buildlock` (owner PID recorded; a dead owner's lock is reclaimed automatically).
 
 ## Target environment (this Mac)
 
@@ -1344,15 +1324,15 @@ files at its root: **`environment.txt`** (the checkout's label — see "Environm
 `rename.txt` (DISPLAY renames, applied to the rendered pages by the build's last step; see the
 manual re-publish gotcha), `logical.txt` (fixed FlowID → Logical
 transforms feeding the Logical entity derivation — owned by `bin/flow-manager.sh` since Logical
-became a full entity, and one of its freshness deps; a listed FlowID skips the derivation),
+became a full entity; a listed FlowID skips the derivation),
 `BL.txt` (BL numbers per subscription, `<subscription> <BL>[,<BL>...]` — several numbers
 comma-separated in the second field — a SECOND source of BL entities beside the subscriptions.json tags,
 unioned in `bin/flow-manager.sh`; the real files live in the runtime repos' `input/`, develop's are
 the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Analyses → Configuration "Partners - Incoming" page's Gateway column; hand-maintained, sample template in develop), `coreid-url.txt` (2026-09-07: the SecureTransport File Tracking URL every CoreId on the site links to — ONE line, `@COREID@` where the id goes; hand-maintained per checkout, the REAL admin hosts live only in the runtime copies, develop's sample carries an `.example` host — read by `publish_lib.sh` into topbar-data.js) and
 `logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
 Logical-based PDA derivation: part 1/2/3 of a three-part Logical name is replaced before it
-becomes the domain / application / partner-merge token — and since 2026-09-06 the Logical NAME ITSELF is recreated as Domain_Application_Partner from the replaced parts (the STREAM partner rule included), in the LOGICAL block before the base list / pair caches / PDA read the map, so two Logicals replacing to the same parts become one (the rule trail says "parts replaced");
-freshness deps too. **`logical_partners.txt` is also where PARTNER ALIASES live** since
+becomes the domain / application / partner-merge token — and since 2026-09-06 the Logical NAME ITSELF is recreated as Domain_Application_Partner from the replaced parts (the STREAM partner rule included), in the LOGICAL block before the base list / pair caches / PDA read the map, so two Logicals replacing to the same parts become one (the rule trail says "parts replaced").
+**`logical_partners.txt` is also where PARTNER ALIASES live** since
 2026-09-01, user request: the retired `partner-aliases.tsv` said "these two tokens are one
 organisation" and merged them into a group; rewriting the variant to its canonical token here
 does the same earlier — the variant never becomes a token, so there is no group to name, and
@@ -1408,7 +1388,7 @@ additionally ignores the `*.csv` exports under `input/`, its one bulk item):
   recovered, and `rm -rf data/` must stay safe. See the attribution chain, step 0.
 - `input/ip/ip-hosts.tsv` — the address ↔ endpoint map (`ip⇥host`), **fully
   automatic, never hand-written**; **`bin/ip.sh`** owns it (`ip_put`, the only writer,
-  cmp-guarded; an empty dir is valid). **There is NO reverse DNS anywhere, and none may be
+  cmp-guarded — the one kind of guard kept: the file outlives the build; an empty dir is valid). **There is NO reverse DNS anywhere, and none may be
   reintroduced** — the configuration names endpoints. Writers: `flow-manager.sh` forward-resolves
   the configured hosts (with `base/_hosts.tsv` as the KEEP list); `parse.sh` records each new
   OUTGOING IPv4 under the host configured for its account (no row on disagreement; an INCOMING
@@ -1419,11 +1399,11 @@ additionally ignores the `*.csv` exports under `input/`, its one bulk item):
 - `data/unknown/*.tsv` — the unknown-* sidecars, the server-log SIGHTING LISTS
   (accounts/logins/sites/hosts/white — `white.tsv` carries only TM-mentioned whitelisted IPs),
   read colour-free by Entity Search, Cross reference, data-diff and the cleanup backlog.
-  Rewritten each run; a type with no unknowns keeps an EMPTY sidecar (a deleted one would force
-  a full rescan every build). (The SSH-logon files went with the blue result, 2026-09-27.)
+  Rewritten each run; a type with no unknowns keeps an EMPTY sidecar (its readers expect one). (The SSH-logon files went with the blue result, 2026-09-27.)
 - `data/colour/` — `result.sh`'s sidecars (`_redflip`, `_ringattr`,
   `_ringorphan`, `_kaputflip`, …; `data/blue/` until 2026-09-27). `data/flow-manager/{base,xref}/`
-  — the config caches. `data/.publish/*.stamp` — the freshness stamps.
+  — the config caches. `data/.buildstats/` — the build report's input statistics, the one
+  directory the build's wipe carries over.
 
-`input/` is deliberately separate from the wipe-able `data/`: `rm -rf data/` is safe and never
-touches the raw CSVs or the DNS map. The built site is the committed repo-root `docs/`.
+`input/` is deliberately separate from `data/`, which EVERY build wipes: that never touches the
+raw CSVs or the DNS map. The built site is the committed repo-root `docs/`.
