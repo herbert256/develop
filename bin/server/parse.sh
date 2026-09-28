@@ -461,11 +461,14 @@ function comp(x) {
 FNR == 1 { rec = ""; buffering = 0; next }
 
 {
-    if (buffering) rec = rec "\n" $0
-    else           rec = $0
+    # (the quote count runs over the NEW line only while buffering — 2026-09-28,
+    # speed round 18: recounting the whole growing record per continuation
+    # line was quadratic in a multi-line record, e.g. a stack trace; a newline
+    # holds no quote, so the running sum is the same count)
+    if (buffering) { rec = rec "\n" $0; nq += count_quotes($0) }
+    else           { rec = $0; nq = count_quotes(rec) }
 
     # Unbalanced quotes => a quoted field spans onto the next physical line.
-    nq = count_quotes(rec)
     if (nq % 2 == 1) { buffering = 1; next }
     buffering = 0
 
