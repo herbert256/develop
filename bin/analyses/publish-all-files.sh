@@ -44,6 +44,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; render_rpt, file_search_impl_row, …
+source "$SCRIPT_DIR/../ranges.sh"        # grp_par: PASS 2 per day-aligned slice (2026-09-28)
 ensure_assets
 
 FCACHE="$DATA/transfer/cache/_files.tsv"
@@ -89,8 +90,23 @@ else
     : > "$TMPD/rows"
 fi
 
-# PASS 2 — the day shards + the manifest lines + the bloom filters
-LC_ALL=C awk -F'\t' -v OUTD="$OUTD" -v MAN="$TMPD/days" -v SUBF="$TMPD/subs" -v SLUGMAP="$SLUGMAP" '
+# The GLOBAL subscription dictionary first (2026-09-28, speed round 23): its
+# index = the order of first appearance in the rows (newest day first), name
+# ⇥ detail slug — the manifest dictionary, and the index the per-day lists
+# use. Computed up front so PASS 2 can run per day-aligned slice.
+LC_ALL=C awk -F'\t' -v SLUGMAP="$SLUGMAP" -v GSIF="$TMPD/gsi" '
+    BEGIN { while ((getline l < SLUGMAP) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") SLUG[a[1]] = a[2] }
+            close(SLUGMAP) }
+    !($5 in GSI) { GSI[$5] = ngs++; printf "%s\t%d\n", $5, GSI[$5] > GSIF; printf "%s\t%s\n", $5, (($5 in SLUG) ? SLUG[$5] : "") }
+    END { close(GSIF) }' "$TMPD/rows" > "$TMPD/subs"
+: >> "$TMPD/gsi"
+_pj=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
+case $_pj in ""|*[!0-9]*) _pj=2 ;; esac
+
+# PASS 2 — the day shards + the manifest lines + the bloom filters, per
+# DAY-ALIGNED slice of the rows in parallel (grp_par: the rows are sorted on
+# the day, a day is never split, the manifest parts join in slice order)
+grp_par "$TMPD/rows" "$TMPD/pass2" "$_pj" env LC_ALL=C awk -F'\t' -v OUTD="$OUTD" -v MAN="$TMPD/days" -v GSIF="$TMPD/gsi" '
     function tl(s) { gsub(/\\/, "\\\\", s); gsub(/`/, "\\`", s); gsub(/\$\{/, "\\${", s); return s }   # template-literal escape
     function hsh(s, b,   i, h) { h = 0; for (i = 1; i <= length(s); i++) h = (h * b + ORD[substr(s, i, 1)]) % 2147483647; return h }
     function item(s) { if (!(s in IT)) { IT[s] = 1; nit++ } }
@@ -132,14 +148,14 @@ LC_ALL=C awk -F'\t' -v OUTD="$OUTD" -v MAN="$TMPD/days" -v SUBF="$TMPD/subs" -v 
         for (i = 1; i < 256; i++) ORD[sprintf("%c", i)] = i
         A64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
         P2[0] = 1; for (i = 1; i < 6; i++) P2[i] = P2[i - 1] * 2
-        while ((getline l < SLUGMAP) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") SLUG[a[1]] = a[2] }
-        close(SLUGMAP)
+        while ((getline l < GSIF) > 0) { n = split(l, a, "\t"); GSI[a[1]] = a[2] + 0 }
+        close(GSIF)
+        MAN = MAN "." ENVIRON["GRP_PART"]; printf "" > MAN
     }
     {
         if ($1 != day) { flush(); day = $1; sf = OUTD "/d-" day ".js"; printf "AXWAY_AFD(\"%s\",`", day > sf }
         sb = $5
         if (!(sb in LSI)) { LSI[sb] = nls++; LSN[nls] = sb }
-        if (!(sb in GSI)) { GSI[sb] = ngs++; GSN[ngs] = sb }
         DS[GSI[sb]] = 1
         printf "%s%s\t%s\t%s\t%s\t%s\t%s", (nrow ? "\n" : ""), tl($3), $4, LSI[sb], $6, $7, $8 > sf
         nrow++
@@ -148,10 +164,11 @@ LC_ALL=C awk -F'\t' -v OUTD="$OUTD" -v MAN="$TMPD/days" -v SUBF="$TMPD/subs" -v 
     }
     END {
         flush()
-        for (i = 1; i <= ngs; i++) printf "%s\t%s\n", GSN[i], ((GSN[i] in SLUG) ? SLUG[GSN[i]] : "") > SUBF
-        close(MAN); close(SUBF)
-    }' "$TMPD/rows"
-: >> "$TMPD/days"; : >> "$TMPD/subs"
+        close(MAN)
+    }' -
+: > "$TMPD/days"
+for ((_i = 1; _i <= GRP_N; _i++)); do cat "$TMPD/days.$_i" >> "$TMPD/days"; done
+: >> "$TMPD/subs"
 
 # the manifest: the global subscription dictionary (name ⇥ detail slug; the
 # per-day lists index it) + one line per day, newest first, with the shard's
