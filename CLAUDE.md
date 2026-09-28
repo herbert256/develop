@@ -192,12 +192,14 @@ have-config check → *parse*: server `parse.sh` in the background (`AXWAY_SKIP_
 merge only, started BEFORE the config step since 2026-09-27 — it reads no config) beside
 `bin/flow-manager.sh` and then transfer `parse.sh` (`AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1`),
 then — beside the server MENTION caches (a second `parse.sh` call, background slot 2, waited for
-before result.sh) and the logon summary (`bin/build/logon-summary.sh`, background) —
-`bin/session-sites.sh`, `bin/expire-files.sh`, `bin/bookend-ok.sh`,
+before result.sh) and the logon summary (`bin/build/logon-summary.sh`, background slot 1, waited for
+right before the server reports since 2026-09-28) — `bin/session-sites.sh` (run with
+`AXWAY_SKIP_EXPIRE=1`), `bin/expire-files.sh`, `bin/bookend-ok.sh`,
 `bin/build/result.sh`, a server-mention rescan when
-`data/server/cache/.rescan-mentions` exists, `went-kaput.sh` early (always; its evidence sidecar
-makes the details catch-up self-gate) → *report*: `bin/transfer/reports/details.sh` in the
-background beside transfer phase 1 and the server reports, then transfer phase 2, analyses,
+`data/server/cache/.rescan-mentions` exists (skipped when no cache line holds an appended name —
+see BUILD SPEED), `went-kaput.sh` early (always; its evidence sidecar
+makes the details catch-up self-gate) → *report*: `bin/transfer/reports/details.sh` in
+background slot 2 beside transfer phase 1 and the server reports, then transfer phase 2, analyses,
 the dashboards MONITOR (`monitor.sh`, foreground: whether `monitor.rpt` exists sets every
 page's top bar), then dashboards ∥ day in background slot 2 BESIDE the publishes below, waited
 for right before the dashboards publish → *publish*: detail
@@ -219,7 +221,7 @@ background, and `data/.buildstats` (the build report's input statistics, keyed b
 mtime) is carried over, so a fresh build does not re-read every export for the report.
 
 **BUILD SPEED (2026-09-27/28, the "prd build" analysis — production 6:34 → 3:44 min in 14 rounds,
-then → 3:18 in rounds 15-24 (2026-09-28); every round byte-identical on a develop fresh build).** What a change must not break:
+then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a develop fresh build).** What a change must not break:
 
 - **Background slots**: `bg_step_start/bg_step_wait` and `bg2_step_start/bg2_step_wait` — ONE step
   per slot in flight; a background step's `TIME` lines are replayed at its wait. Moving a step
@@ -283,6 +285,14 @@ then → 3:18 in rounds 15-24 (2026-09-28); every round byte-identical on a deve
 - **details.sh**: `aggregate_files` runs as TWO type groups (`AGG_ONLY` in `details_lib.sh`); state
   shared by every type (gmax, the last failure per subscription) is computed in full by each
   group, per-type state only for its types; the stream sort orders the union.
+- **The appended-names mention RESCAN is skipped when it cannot change anything** (2026-09-28,
+  `mention_rescan_needed` in `bin/server/parse.sh`): each scan records the name set it matched
+  (`data/server/cache/.mention-names`, type ⇥ name); when result.sh's marker is the only reason to
+  rescan, no name was removed, every new name is a subscription or host, and no cache line holds
+  one of them or a rename alias folding to one (case-insensitive substring, `line_par`), the
+  caches on disk ARE the rescan's output (a name only adds hits on a line containing it). A
+  change to the mention matching (name_hit, the host test, the rename fold) must keep that
+  property or drop the skip. Production: 11 → 1 s.
 - **The build runs session-sites with `AXWAY_SKIP_EXPIRE=1`** (2026-09-28): its re-derive would
   run expire-files + bookend-ok at the parse tail and the next two build steps run them again on
   the same inputs (both idempotent) — a manual parse keeps the full chain.
