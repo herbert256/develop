@@ -598,7 +598,30 @@ dotify() {
     }'
 }
 
-slugify() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed -e 's/^-//' -e 's/-$//'; }
+# (2026-09-28, speed round 24: the page and tab labels are plain words, and
+# the pipeline cost four processes a call — ~1,600 calls per transfer
+# publish. Input made ONLY of ASCII letters, digits, space, "_" and "-" (the
+# set spelled out: a bracket RANGE would follow the locale collation) takes
+# the fork-free loop, which produces the same bytes: lowercase, every run of
+# other characters one "-", one leading and one trailing "-" dropped.
+# Anything else takes the pipeline, the reference.)
+slugify() {
+    case $1 in
+        *[!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\ _-]*)
+            printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed -e 's/^-//' -e 's/-$//'; return ;;
+    esac
+    local s=$1 o="" c x i n=${#1} dash=0 U=ABCDEFGHIJKLMNOPQRSTUVWXYZ L=abcdefghijklmnopqrstuvwxyz
+    for ((i = 0; i < n; i++)); do
+        c=${s:i:1}
+        case $c in
+            [ABCDEFGHIJKLMNOPQRSTUVWXYZ]) x=${U%%"$c"*}; o+=${L:${#x}:1}; dash=0 ;;
+            [abcdefghijklmnopqrstuvwxyz0123456789]) o+=$c; dash=0 ;;
+            *) [ "$dash" = 1 ] || o+=-; dash=1 ;;
+        esac
+    done
+    o=${o#-}; o=${o%-}
+    printf '%s' "$o"
+}
 
 # Slug OVERRIDES for colliding entity names. details.sh suffixes a second entity
 # whose name slugifies to an already-taken slug with -N and records
@@ -1949,9 +1972,15 @@ render_report() {   # $1 area  $2 name  $3 rpt
     # are still rendered here in the transfer loop (area=transfer), so the write
     # path goes up-and-over via outsub. The in-page NAV hrefs are bare filenames.
     local outsub="" pcss="../assets/style.css" phome="index.html" saved_dl=${DLINK_BASE:-}
+    # (the cross members, their labels and this page's own label ONCE per
+    # report — 2026-09-28, speed round 24: the three member loops below forked
+    # ~30 label subshells per page, ~2,000 per publish)
+    local _cxn=() _cxl=() _cxk _cxself=""
     case $name in cross-*)
         outsub="../analyses/xref/"; pcss="../../assets/style.css"; phome="../index.html"
-        DLINK_BASE="../../details/"; mkdir -p "$DOCS/analyses/xref" ;;
+        DLINK_BASE="../../details/"; mkdir -p "$DOCS/analyses/xref"
+        for _cxk in $(group_members cross); do _cxn+=("$_cxk"); _cxl+=("$(member_label "$_cxk")"); done
+        _cxself=$(member_label "$name") ;;
     esac
     for ((i=1; i<=NTAB; i++)); do
         local nav="NAV" a prow1="" ei vi e2 v2 a2 lbl2
@@ -1967,13 +1996,13 @@ render_report() {   # $1 area  $2 name  $3 rpt
         case $name in cross-*)
             local cur2 self m ml
             cur2=${laba[$((i-1))]}                       # the page's second entity, e.g. "Login"
-            self=$(member_label "$name")                 # the page's first entity, e.g. "Account"
+            self=$_cxself                                # the page's first entity, e.g. "Account"
             # Row 1 — first entity: current member active; the member matching
             # the second entity disabled; the rest keep the same second-entity
             # tab (it exists on every other member, only the disabled one lacks it).
             prow1="NAV"
-            for m in $(group_members cross); do
-                ml=$(member_label "$m")
+            for ((_cxk = 0; _cxk < ${#_cxn[@]}; _cxk++)); do
+                m=${_cxn[_cxk]}; ml=${_cxl[_cxk]}
                 if [ "$m" = "$name" ]; then prow1+=$'\t'"1|$ml|"
                 elif [ "$ml" = "$cur2" ]; then prow1+=$'\t'"2|$ml|"
                 else prow1+=$'\t'"0|$ml|$(member_page_for_label "$m" "$cur2")"
@@ -1982,8 +2011,8 @@ render_report() {   # $1 area  $2 name  $3 rpt
             # Row 2 — second entity: all 8 in the same order (this member's tab
             # list is that order minus itself); the page's own entity disabled.
             nav="NAV"; e2=0
-            for m in $(group_members cross); do
-                ml=$(member_label "$m")
+            for ((_cxk = 0; _cxk < ${#_cxn[@]}; _cxk++)); do
+                m=${_cxn[_cxk]}; ml=${_cxl[_cxk]}
                 if [ "$ml" = "$self" ]; then nav+=$'\t'"2|$ml|"
                 else
                     a2=0; [ "$e2" = "$((i-1))" ] && a2=1
@@ -1997,8 +2026,9 @@ render_report() {   # $1 area  $2 name  $3 rpt
             # cross-subscription-account). Appended after a gap on the
             # second-entity row; hrefs here are bare filenames like the rest.
             local m2 swapf=""
-            for m2 in $(group_members cross); do
-                [ "$(member_label "$m2")" = "$cur2" ] || continue
+            for ((_cxk = 0; _cxk < ${#_cxn[@]}; _cxk++)); do
+                m2=${_cxn[_cxk]}
+                [ "${_cxl[_cxk]}" = "$cur2" ] || continue
                 swapf=$(member_page_for_label "$m2" "$self"); break
             done
             [ -n "$swapf" ] && nav+=$'\t@sep\t'"0|Swap|$swapf"
