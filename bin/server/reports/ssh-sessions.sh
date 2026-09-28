@@ -95,10 +95,10 @@ fi
 # The row writer prints STRAIGHT to stdout inside the page block below — a
 # `rows+=$(printf …)` per row forks a subshell per row for nothing.
 rows() {
-    while IFS=$'\t' read -r _ sig count comp bk fst lst lines; do
+    while IFS=$'\036' read -r _ sig count comp bk fst lst lines; do
         [ -z "$sig" ] && continue
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$sig" "$count" "$comp" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^S\t' | sort -t"$(printf '\t')" -k3,3nr)"
+    done <<< "$(printf '%s\n' "$agg" | grep $'^S\t' | sort -t"$(printf '\t')" -k3,3nr | tr '\t' '\036')"
 }
 
 {

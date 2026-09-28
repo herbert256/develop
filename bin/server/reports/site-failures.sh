@@ -44,6 +44,20 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # right there in the END), so the row loop below stays fork-free.
 agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
     BEGIN { rn_load(RNF) }
+    # the token -> "kind SUBSEP display" it counts under, ONCE per token and
+    # BEFORE counting (2026-09-28 fix): a renamed or server-truncated spelling
+    # of one flow resolves to the same key, so it is ONE row — counted per raw
+    # token, the old and the new spelling each made their own R row
+    function resolve(t,   c, k, hits, full) {
+        if (t in RES) return RES[t]
+        c = rn_canon_pfx(t)
+        if (c in known) return (RES[t] = "R" SUBSEP c)
+        hits = 0; full = ""
+        for (k in known) if (index(k, c) == 1) { hits++; full = k; if (hits > 1) break }
+        if (hits == 1)     return (RES[t] = "R" SUBSEP full)
+        if (hits > 1)      return (RES[t] = "U" SUBSEP c " (ambiguous prefix)")
+        return (RES[t] = "U" SUBSEP c)
+    }
     NR == FNR { if ($1 == "ROW" && !($2 in known)) { known[$2] = 1 } next }
     $3 != "E" { next }
     $5 !~ /^Connection failure while / { next }
@@ -56,6 +70,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         if (sp <= 1) next
         tk = substr(m, 1, sp - 1)
         sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", tk)                                        # canonical subscription name (drop the _SCP_ / _SSCP_ / _CCP_ tail)
+        tk = resolve(tk)
         cnt[tk]++; tot++
         addline(tk, $1 " " $2, lvlname($3) " " compname($4) "  " substr($5, 1, 200))
         if (d != "") {
@@ -65,20 +80,14 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         }
     }
     END {
-        for (k in cd2) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" cd2[k] }
+        # RENAMES (2026-08): resolve() folded each logged token to the name the
+        # config uses now BEFORE matching the roster, which carries current
+        # names — a renamed flow lands in the KNOWN table
+        for (k in cd2) { split(k, a, SUBSEP); t = a[1] SUBSEP a[2]; bk[t] = bk[t] (bk[t] ? "," : "") a[3] ":" cd2[k] }
         for (t in cnt) {
-            # RENAMES (2026-08): fold the logged token to the name the config
-            # uses now BEFORE matching the roster, which carries current names.
-            # A renamed flow then resolves into the KNOWN table instead of
-            # sitting in the unresolved one under a name nothing else uses.
-            c = rn_canon_pfx(t)
-            if (c in known) { printf "R\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", cnt[t], c, bk[t], fst[t], lst[t], (tot > 0 ? sprintf("%.1f", cnt[t] * 100 / tot) : "0.0"), lastlines(t); continue }
-            hits = 0; full = ""
-            for (k in known) if (index(k, c) == 1) { hits++; full = k; if (hits > 1) break }
+            split(t, a, SUBSEP)
             share = (tot > 0) ? sprintf("%.1f", cnt[t] * 100 / tot) : "0.0"
-            if (hits == 1)      printf "R\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", cnt[t], full, bk[t], fst[t], lst[t], share, lastlines(t)
-            else if (hits > 1)  printf "U\t%d\t%s (ambiguous prefix)\t%s\t%s\t%s\t%s\t%s\n", cnt[t], c, bk[t], fst[t], lst[t], share, lastlines(t)
-            else                printf "U\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", cnt[t], c, bk[t], fst[t], lst[t], share, lastlines(t)
+            printf "%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", a[1], cnt[t], a[2], bk[t], fst[t], lst[t], share, lastlines(t)
         }
         printf "TOT\t%d\n", tot
     }

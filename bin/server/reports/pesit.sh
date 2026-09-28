@@ -65,6 +65,10 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
             if (m ~ /Send negative FPDU_ACREATE/)                             return "IN|Transfer refused by ST (negative ACREATE sent)"
             return "IN|Other inbound (PESITD) problem"
         }
+        # the [Pesit Default] tagged incoming-profile setup error is an
+        # INBOUND problem whatever component logged it (2026-09-28 fix: it fell
+        # through to the outbound chain as "Other outbound (client) problem")
+        if (m ~ /used for incoming transfer/)                               return "IN|Incoming transfer profile without Receive File As"
         if (m ~ /Received negative SEND_CONF/)                                return "OUT|Transfer rejected mid-send (negative SEND_CONF)"
         if (m ~ /Received negative ABORT_IND/)                                return "OUT|Aborted by the CFT (negative ABORT_IND)"
         if (m ~ /Received negative CONNECT_CONF/) {

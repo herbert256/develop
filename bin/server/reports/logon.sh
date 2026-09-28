@@ -150,7 +150,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
     }
     $1 == "KA" { kacct[$2] = 1; next }                       # known-entity lists (first input)
     $1 == "KH" { khost[$2] = 1; next }
-    $1 == "KL" { klog[$2] = 1; next }                        # configured logins (base cache)
+    $1 == "KL" { klog[$2] = 1; klu[toupper($2)] = $2; next }   # configured logins (base cache)
     {
         m = $5
         # DOOR KNOCKERS (2026-08): the unconsumed Info family
@@ -203,7 +203,10 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
             # last-seen reason by TIMESTAMP, not cache order (the exports are
             # newest-first within a file, so cache row order is NOT chronological)
             osk = $1 " " $2
-            if (!(k in orsk) || osk >= orsk[k]) { orsk[k] = osk; orsn[k] = substr(reason, 1, 80) }
+            # "-" for an EMPTY reason (a line ending at "as user U:"): the row
+            # travels TAB-separated through a bash read, which collapses an
+            # empty field and shifted every later column (2026-09-28 fix)
+            if (!(k in orsk) || osk >= orsk[k]) { orsk[k] = osk; orsn[k] = (reason == "") ? "-" : substr(reason, 1, 80) }
             d = $1
             if (d ~ /^[0-9][0-9][0-9][0-9]-/) { ocd[k SUBSEP d]++; ocdc[k SUBSEP d SUBSEP cls]++
                 if (!(k in ofst) || d < ofst[k]) ofst[k] = d
@@ -236,13 +239,23 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
             # SESSION ERRORS (2026-09-06, user request): an Error/Warning
             # [Ssh Default] line of no counted family, on a session — kept
             # for END, which attributes it to the login of the session once the
-            # whole cache has built the session -> login map
+            # whole cache has built the session -> login map. NOT the
+            # anonymous "Authentication failed using local." line: the logon
+            # summary (bin/logons.sh) counts it as Auth failed, and as a
+            # session error too it was counted twice (2026-09-28 fix)
+            if (index(m, "[Ssh Default] Authentication failed using local.") > 0) next
             if ($3 != "I" && $6 != "") { nxs++; XSs[nxs] = $6; XSd[nxs] = $1; XSt[nxs] = $1 " " $2; XSl[nxs] = lvlname($3) " " compname($4) "  " substr(m, 1, 200) }
             next
         }
         if (u == "") next
         # platform-internal pseudo-logins (blacklist, raw token) get no row
         if (bl_blank("login", u)) next
+        # ONE key per CONFIGURED login whatever case it was typed in: the
+        # configured spelling (2026-09-28 fix: "fe0001" and "FE0001" were two
+        # rows, and partners-in, joining on the upper-cased name, kept only
+        # one of them). A name nothing configures keeps its typed spelling —
+        # a door-knocker tried exactly that.
+        if (toupper(u) in klu) u = klu[toupper(u)]
         users[u] = 1
         # the session -> login map and the LAST SSH authentication of the
         # session (cache col 6; the re-screen test and the session-error

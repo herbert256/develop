@@ -82,13 +82,34 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         if (i > 0) { j = index(substr(u, i + 1), "]"); if (j > 0) return substr(u, i + 1, j - 1) }
         return t
     }
+    # the token -> the flow name it counts under, ONCE per token and BEFORE
+    # counting (2026-09-28 fix): a renamed or server-truncated spelling of one
+    # flow is ONE row, not one per spelling
+    function resolve(t,   c, k, hits, full) {
+        if (t in RES) return RES[t]
+        # RENAMES first (2026-08): a server line keeps the name that was
+        # current when it was written, so fold it before matching the
+        # roster — which carries CURRENT names, the transfer parse having
+        # folded them. rn_canon_pfx also covers the truncated old spelling.
+        c = rn_canon_pfx(t)
+        if (c in known) return (RES[t] = c)
+        hits = 0; full = ""
+        for (k in known) if (index(k, c) == 1) { hits++; full = k; if (hits > 1) break }
+        if (hits == 1)     return (RES[t] = full)
+        if (hits > 1)      return (RES[t] = c " (ambiguous prefix)")
+        return (RES[t] = c)
+    }
     NR == FNR { if ($1 == "ROW" && !($2 in known)) { known[$2] = 1 } next }
     $3 != "E" { next }
     {
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
         m = $5
         # ---- the reason buckets: error-reasons.sh VERBATIM ------------------
-        if (m ~ /(^|[^A-Za-z])[Ii][Oo] [Ee]rror|[Ii]nput\/[Oo]utput [Ee]rror/) b = "IO error (local file)"   # the lines of the IO errors report (2026-09-06)
+        # (the two buckets it gained on 2026-08-31 — "Pull via FTPS failed"
+        # first, "Delete remote file failed" before the transfer-operation
+        # tail — were missing here, their lines read "Other": 2026-09-28 fix)
+        if (m ~ /Pull via FTPS failed/)                             b = "Pull via FTPS failed"
+        else if (m ~ /(^|[^A-Za-z])[Ii][Oo] [Ee]rror|[Ii]nput\/[Oo]utput [Ee]rror/) b = "IO error (local file)"   # the lines of the IO errors report (2026-09-06)
         else if (m ~ /^Connection failure while / && m ~ /Received negative /) b = "PESIT: negative response (internal CFT)"
         else if (m ~ /^Connection failure while /)                  b = "Connection failure (partner unreachable)"
         else if (match(m, /reason=[A-Z_]+/))                        b = "PESIT: " substr(m, RSTART + 7, RLENGTH - 7)
@@ -99,6 +120,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         else if (m ~ /listing files from partner/)                  b = "Listing files from partner failed"
         else if (m ~ /^AR[A-Za-z0-9]*: /)                           b = "Advanced-routing step failure"
         else if (m ~ /CONFIG_PASSWD/)                               b = "CONFIG_PASSWD state variable error"
+        else if (m ~ /[Cc]annot delete|[Cc]ould not delete|[Ff]ailed to delete/) b = "Delete remote file failed"
         else if (m ~ /^Error during transfer operation: /)          b = "Transfer operation error (other)"
         else                                                        b = "Other"
         tot++
@@ -124,6 +146,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         if (tk != "" && index(tk, "_") == 0) tk = ""   # [Ssh Default] etc — a server name, not a flow
         if (tk == "") next
         sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", tk)                  # canonical subscription name
+        tk = resolve(tk)
         cnt[tk SUBSEP b]++; attr++
         addline("F" SUBSEP tk SUBSEP b, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
         if (d != "") {
@@ -132,26 +155,10 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         }
     }
     END {
-        # resolve each distinct token ONCE against the roster (server-side
-        # truncation): a unique prefix match shows the full linked name
-        for (k in cnt) { split(k, a, SUBSEP); if (!(a[1] in res)) res[a[1]] = "?" }
-        for (t in res) {
-            # RENAMES first (2026-08): a server line keeps the name that was
-            # current when it was written, so fold it before matching the
-            # roster — which carries CURRENT names, the transfer parse having
-            # folded them. rn_canon_pfx also covers the truncated old spelling.
-            c = rn_canon_pfx(t)
-            if (c in known) { res[t] = c; continue }
-            hits = 0; full = ""
-            for (k in known) if (index(k, c) == 1) { hits++; full = k; if (hits > 1) break }
-            if (hits == 1)      res[t] = full
-            else if (hits > 1)  res[t] = c " (ambiguous prefix)"
-            else                res[t] = c
-        }
         for (k in cnt) {
             split(k, a, SUBSEP)
             share = (attr > 0) ? sprintf("%.1f", cnt[k] * 100 / attr) : "0.0"
-            printf "F\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", cnt[k], res[a[1]], a[2], \
+            printf "F\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", cnt[k], a[1], a[2], \
                    (k in fst ? fst[k] : ""), (k in lst ? lst[k] : ""), share, lastlines("F" SUBSEP a[1] SUBSEP a[2])
         }
         for (k in wcnt) {

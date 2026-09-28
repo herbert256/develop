@@ -113,10 +113,10 @@ if [ $(( t_key + t_lock + t_out )) -eq 0 ]; then
 fi
 
 rows_for() {   # $1 = namespace (K|L|O)
-    while IFS=$'\t' read -r _ name count bk fst lst lines; do
+    while IFS=$'\036' read -r _ name count bk fst lst lines; do
         [ -z "$name" ] && continue
         printf 'ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$name" "$count" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $"^$1"$'\t' | sort -t"$(printf '\t')" -k3,3nr)"
+    done <<< "$(printf '%s\n' "$agg" | grep $"^$1"$'\t' | sort -t"$(printf '\t')" -k3,3nr | tr '\t' '\036')"
 }
 
 {

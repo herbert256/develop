@@ -317,7 +317,9 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             printf "AN\t%s\t%d\t%s\t%s\t%s\t%s\n", k, anc[k], anf[k], anl[k], anbk[k], lastlines("AN" SUBSEP k) }
         tsw = ""; tswn = -1                              # top remote software; ties break on the name
         for (k in swc) if (swc[k] > tswn || (swc[k] == tswn && k < tsw)) { tswn = swc[k]; tsw = k }
-        printf "ANT\t%d\t%d\t%d\t%s\t%d\t%s\t%s\n", ninc+0, nan+0, nsw+0, tsw, (tswn < 0 ? 0 : tswn), anfi, anla
+        # "-" for an empty field (no software counted, no dated line): the
+        # line is read TAB-split in bash, which collapses an empty field
+        printf "ANT\t%d\t%d\t%d\t%s\t%d\t%s\t%s\n", ninc+0, nan+0, nsw+0, (tsw == "" ? "?" : tsw), (tswn < 0 ? 0 : tswn), (anfi == "" ? "-" : anfi), (anla == "" ? "-" : anla)
         # ---- PeSIT TLS adoption ----
         for (x in ptdd) { split(x, a, SUBSEP); kk = a[1] SUBSEP a[2]; ptbk[kk] = ptbk[kk] (ptbk[kk] ? "," : "") a[3] ":" ptdd[x] }
         npt = 0
@@ -342,14 +344,14 @@ fi
 # into flat variables (bash 3.2 has no associative arrays) — they used to be an
 # awk fork per lookup, eleven in all.
 tot_H=0; tot_K=0; tot_M=0; tot_U=0; wk_H=0; wk_K=0; wk_M=0; wk_U=0
-while IFS=$'\t' read -r _ c t w; do
+while IFS=$'\036' read -r _ c t w; do
     case $c in
         H) tot_H=$t; wk_H=$w ;;
         K) tot_K=$t; wk_K=$w ;;
         M) tot_M=$t; wk_M=$w ;;
         U) tot_U=$t; wk_U=$w ;;
     esac
-done <<< "$(printf '%s\n' "$agg" | grep $'^CT\t')"
+done <<< "$(printf '%s\n' "$agg" | grep $'^CT\t' | tr '\t' '\036')"
 cat_stats() {   # $1 = type letter -> cat_tot / cat_wk
     case $1 in
         H) cat_tot=$tot_H; cat_wk=$wk_H ;;
@@ -366,11 +368,11 @@ cat_stats() {   # $1 = type letter -> cat_tot / cat_wk
 # `rows+=$(printf …)` per row forks a subshell per row for nothing.
 algo_rows() {   # $1 = type letter
     local t=$1 _t algo count share wk bk fst lst lines assess
-    while IFS=$'\t' read -r _t algo count share wk bk fst lst lines; do
+    while IFS=$'\036' read -r _t algo count share wk bk fst lst lines; do
         [ -z "$algo" ] && continue
         if [ "$wk" = "1" ]; then assess='@{class=failed}Weak'; else assess='OK'; fi
         printf 'ROW\t%s\t%s\t%s%%\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$algo" "$count" "$share" "$assess" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep "^$t"$'\t' | sort -t"$(printf '\t')" -k3,3nr)"
+    done <<< "$(printf '%s\n' "$agg" | grep "^$t"$'\t' | sort -t"$(printf '\t')" -k3,3nr | tr '\t' '\036')"
 }
 
 emit_algo_table() {   # $1=type  $2=heading  $3=col-1 header  $4=noun
@@ -386,19 +388,19 @@ emit_algo_table() {   # $1=type  $2=heading  $3=col-1 header  $4=noun
 
 # Protocol overview table.
 proto_rows() {
-    while IFS=$'\t' read -r _ proto count share bk; do
+    while IFS=$'\036' read -r _ proto count share bk; do
         [ -z "$proto" ] && continue
         printf 'ROW\t%s\t%s\t%s%%\t@data:buckets=%s\n' "$proto" "$count" "$share" "$bk"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^P\t' | sort -t"$(printf '\t')" -k3,3nr)"
+    done <<< "$(printf '%s\n' "$agg" | grep $'^P\t' | sort -t"$(printf '\t')" -k3,3nr | tr '\t' '\036')"
 }
 n_proto=$(printf '%s\n' "$agg" | grep -c $'^P\t' || true)
 
 # Deprecated-parameter warnings table.
 dep_rows() {
-    while IFS=$'\t' read -r _ count param acct site host bk fst lst lines; do
+    while IFS=$'\036' read -r _ count param acct site host bk fst lst lines; do
         [ -z "$param" ] && continue
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$param" "$acct" "$site" "$host" "$count" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^D\t' | sort -t"$(printf '\t')" -k2,2nr)"
+    done <<< "$(printf '%s\n' "$agg" | grep $'^D\t' | sort -t"$(printf '\t')" -k2,2nr | tr '\t' '\036')"
 }
 n_dep_rows=$(printf '%s\n' "$agg" | grep -c $'^D\t' || true)
 
@@ -410,7 +412,7 @@ IFS=$'\t' read -r _ tot_sig n_cats n_subj <<< "$(printf '%s\n' "$agg" | grep $'^
 cert_tot=$(printf '%s\n' "$agg" | awk -F'\t' '$1=="C"{s+=$3} END{print s+0}')
 
 sig_rows() {
-    while IFS=$'\t' read -r _ cat count lvl bk fst lst lines; do
+    while IFS=$'\036' read -r _ cat count lvl bk fst lst lines; do
         [ -z "$cat" ] && continue
         case $cat in
             ASCII)         label="ASCII transfer fallback (binary used)" ;;
@@ -427,15 +429,15 @@ sig_rows() {
         esac
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' \
             "$label" "$count" "$lcell" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^S\t' | sort -t"$(printf '\t')" -k3,3nr)"
+    done <<< "$(printf '%s\n' "$agg" | grep $'^S\t' | sort -t"$(printf '\t')" -k3,3nr | tr '\t' '\036')"
 }
 
 subj_rows() {
-    while IFS=$'\t' read -r _ subj count bk fst lst lines; do
+    while IFS=$'\036' read -r _ subj count bk fst lst lines; do
         [ -z "$subj" ] && continue
         printf 'ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' \
             "$subj" "$count" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^C\t' | sort -t"$(printf '\t')" -k3,3nr)"
+    done <<< "$(printf '%s\n' "$agg" | grep $'^C\t' | sort -t"$(printf '\t')" -k3,3nr | tr '\t' '\036')"
 }
 
 weak_ciph=$wk_H; weak_pk=$wk_U
@@ -444,22 +446,22 @@ itemized=$tot_K   # SSH/SFTP connections that break out KEX/MAC/pubkey (TLS logs
 # ---- the two 2026-08 tables: algorithm-negotiation failures + PeSIT TLS ----
 # Emitted UNCONDITIONALLY (placeholder row when the family is absent) so the
 # merged ssh-security report keeps a constant TABLE count across the envs.
-IFS=$'\t' read -r _ an_inc an_rows_n an_nsw an_topsw an_topswn an_first an_last <<< "$(printf '%s\n' "$agg" | grep $'^ANT\t' || printf 'ANT\t0\t0\t0\t\t0\t\t\n')"
+IFS=$'\t' read -r _ an_inc an_rows_n an_nsw an_topsw an_topswn an_first an_last <<< "$(printf '%s\n' "$agg" | grep $'^ANT\t' || printf 'ANT\t0\t0\t0\t?\t0\t-\t-\n')"
 IFS=$'\t' read -r _ pt_tot pt_combos pt_first <<< "$(printf '%s\n' "$agg" | grep $'^PTT\t' || printf 'PTT\t0\t0\t\n')"
 an_lines_tot=$(printf '%s\n' "$agg" | awk -F'\t' '$1=="AN"{s+=$3} END{print s+0}')
 
 an_rows() {
-    while IFS=$'\t' read -r _ lbl count fst lst bk lines; do
+    while IFS=$'\036' read -r _ lbl count fst lst bk lines; do
         [ -z "$lbl" ] && continue
         printf 'ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$lbl" "$count" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^AN\t' | sort -t"$(printf '\t')" -k3,3nr -k2,2)"
+    done <<< "$(printf '%s\n' "$agg" | grep $'^AN\t' | sort -t"$(printf '\t')" -k3,3nr -k2,2 | tr '\t' '\036')"
 }
 
 pt_rows() {
-    while IFS=$'\t' read -r _ suite ver count fst lst weeks bk lines; do
+    while IFS=$'\036' read -r _ suite ver count fst lst weeks bk lines; do
         [ -z "$suite" ] && continue
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$suite" "$ver" "$count" "$fst" "$lst" "$weeks" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^PT\t' | sort -t"$(printf '\t')" -k4,4nr -k2,2 -k3,3)"
+    done <<< "$(printf '%s\n' "$agg" | grep $'^PT\t' | sort -t"$(printf '\t')" -k4,4nr -k2,2 -k3,3 | tr '\t' '\036')"
 }
 
 {

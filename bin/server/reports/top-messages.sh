@@ -43,6 +43,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
         gsub(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/, "IP", m)
         gsub(/[0-9]+/, "N", m)
         m = substr(m, 1, 160)
+        if (m == "") m = "(empty message)"   # never empty: the row is TAB-read in bash, which collapses it (2026-09-28)
         k = $3 SUBSEP m
         cnt[k]++; tot++
         addline(k, $1 " " $2, lvlname($3) " " compname($4) "  " substr(raw, 1, 200))   # the RAW line behind the shape

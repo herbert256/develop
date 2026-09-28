@@ -158,6 +158,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             if (p2 <= 1) next
             lsite = substr(rest2, 1, p2 - 1); sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", lsite)   # clean subscription name
             if (lsite == "") next
+            lsite = sitecanon(lsite)   # the key of the polls (2026-09-28 fix: the listing errors of a renamed flow under its old name were their own row)
             # the reason for the failure sidecar: the tail after "account X. "
             r3 = substr(rest2, p2 + 20); p3 = index(r3, ". ")
             if (p3 > 0) lr[lsite SUBSEP substr(r3, p3 + 2, 120)]++
@@ -176,7 +177,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             if (!match(m, /'\''[^'\'']*'\''/)) next
             ssite = substr(m, RSTART + 1, RLENGTH - 2)
             sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", ssite)
-            if (ssite != "") pfs[ssite]++
+            if (ssite != "") pfs[sitecanon(ssite)]++   # the key of the polls (2026-09-28 fix: starts under an old name missed the join)
         } else if (m ~ /Connection failure while .* tried to connect to remote host /) {
             csite = substr(m, index(m, "Connection failure while ") + 25)
             p2 = index(csite, " tried to connect to remote host "); if (p2 <= 1) next

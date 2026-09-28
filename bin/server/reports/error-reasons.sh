@@ -70,7 +70,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
         cnt[b]++; tot++
         addline(b, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
         sk = $1 " " $2
-        if (!(b in exk) || sk < exk[b]) { exk[b] = sk; ex[b] = substr(m, 1, 160) }
+        if (!(b in exk) || sk < exk[b]) { exk[b] = sk; ex[b] = (m == "") ? "(empty message)" : substr(m, 1, 160) }   # never empty: a TAB read collapses it (2026-09-28)
         if (d != "") cd2[b SUBSEP d]++
     }
     END {
