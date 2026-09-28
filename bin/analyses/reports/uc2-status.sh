@@ -166,12 +166,12 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
     # collect minutes (multi-FE accounts only — groups register only there)
     function classify_group(g,   nl, LG, m, nd, DM, nk, KM, nv, VB, VE, dj, kj, nat, lo, vi, hi, dhit, khit, li, k2, ATM, gh, dh, maxg, ng, half, c2, med, ns, SS, SE, maxd, meddur, gsp) {
         nl = 0
-        if (g in lg0) for (m = lg0[g]; m <= lg1[g]; m++) if ((g SUBSEP m) in lgmG) LG[++nl] = m
+        nl = sortmins(LGGN, LGGV, g, LG)
         if (nl == 0) return
         nd = 0
-        if (g in adG0) for (m = adG0[g]; m <= adG1[g]; m++) if ((g SUBSEP m) in admnG) DM[++nd] = m
+        nd = sortmins(ADGN, ADGV, g, DM)
         nk = 0
-        if (g in ck0) for (m = ck0[g]; m <= ck1[g]; m++) if ((g SUBSEP m) in cmG) KM[++nk] = m
+        nk = sortmins(CKGN, CKGV, g, KM)
         nv = 0
         for (li = 1; li <= nl; li++) { if (li == 1 || LG[li] - LG[li - 1] > 30) VB[++nv] = LG[li]; VE[nv] = li }
         dj = 1; kj = 1; nat = 0; lo = 1
@@ -201,7 +201,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             maxg = 0; ng = 0
             for (li = 2; li <= nat; li++) { gsp = ATM[li] - ATM[li - 1]; gh[gsp]++; ng++; if (gsp > maxg) maxg = gsp }
             half = int(ng / 2) + 1; c2 = 0; med = 0
-            for (gsp = 1; gsp <= maxg; gsp++) if (gsp in gh) { c2 += gh[gsp]; if (c2 >= half) { med = gsp; break } }
+            v9 = medpick(gh, 1, half); if (v9 != "") med = v9   # (medpick: see sortmins)
             ns = 0
             for (li = 1; li <= nat; li++) {
                 if (li == 1 || ATM[li] - ATM[li - 1] > 30) { SS[++ns] = ATM[li]; SE[ns] = ATM[li] }
@@ -217,7 +217,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             maxd = 0
             for (li = 1; li <= ns; li++) { gsp = SE[li] - SS[li]; dh[gsp]++; if (gsp > maxd) maxd = gsp }
             half = int((ns + 1) / 2); c2 = 0; meddur = 0
-            for (gsp = 0; gsp <= maxd; gsp++) if (gsp in dh) { c2 += dh[gsp]; if (c2 >= half) { meddur = gsp; break } }
+            v9 = medpick(dh, 0, half); if (v9 != "") meddur = v9
             if (meddur <= 15 && ns < 3) patG[g] = (ns == 1 ? "Once" : patron(SS[2] - SS[1]))   # one visit: Once; two: the spacing between them (2026-09-03, user request)
             else {
                 if (meddur <= 15) {
@@ -225,7 +225,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                     maxg = 0; ng = 0
                     for (li = 2; li <= ns; li++) { gsp = SS[li] - SS[li - 1]; gh[gsp]++; ng++; if (gsp > maxg) maxg = gsp }
                     half = int(ng / 2) + 1; c2 = 0
-                    for (gsp = 1; gsp <= maxg; gsp++) if (gsp in gh) { c2 += gh[gsp]; if (c2 >= half) { med = gsp; break } }
+                    v9 = medpick(gh, 1, half); if (v9 != "") med = v9   # (medpick: see sortmins)
                 }
                 patG[g] = label(med, gh, ng)
             }
@@ -249,6 +249,30 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
     function label(med, A, ng,   l9) {
         l9 = patron(med); if (l9 != "Rarely" && !regspread(A, ng, med)) return "Irregular"
         return l9 }
+    # THE MINUTE LISTS (2026-09-28, speed round 21): every minute set below
+    # (logons, deliveries, collects; per account, per login group, per
+    # subscription) also keeps its DISTINCT minutes per key in insertion order
+    # (N[key] = count, V[key, i] = minute), and sortmins() hands them out
+    # sorted: the walks from the first to the last minute of a key visited
+    # every minute in between (~36k per key on 25 days, ~130k at the scaled
+    # estate) to find the few that are set. The minutes are integers
+    # (minof), so the sorted list is exactly what the walk produced.
+    # medpick(): the median loops walked every gap value from lo up to the
+    # largest one; the same pick over the sorted DISTINCT values.
+    function qsortn(A, lo, hi,   i, j, p, t) {
+        while (lo < hi) {
+            i = lo; j = hi; p = A[int((lo + hi) / 2)]
+            while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
+            if (j - lo < hi - i) { if (lo < j) qsortn(A, lo, j); lo = i } else { if (i < hi) qsortn(A, i, hi); hi = j }
+        }
+    }
+    function sortmins(N, V, key, OUT,   n, i) { n = (key in N) ? N[key] + 0 : 0; for (i = 1; i <= n; i++) OUT[i] = V[key, i]; if (n > 1) qsortn(OUT, 1, n); return n }
+    # the smallest key >= lo of histogram H whose cumulative count reaches
+    # half ("" when none does — the caller keeps its value then, as before)
+    function medpick(H, lo, half,   k, n, KS, j, c) { n = 0; for (k in H) if (k + 0 >= lo) KS[++n] = k + 0
+        if (n > 1) qsortn(KS, 1, n); c = 0
+        for (j = 1; j <= n; j++) { c += H[KS[j]]; if (c >= half) return KS[j] }
+        return "" }
     function patron(m,   n) {
         if (m <= 0)   return "Rarely"   # never an em dash (2026-09-03, user request)
         if (m <= 2)   return "Continuous"
@@ -318,10 +342,12 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         # (2026-08); the classification happens per logon minute in END.
         if ($2 == "Inbound" && $10 == "ssh" && $4 != "" && ($4 in pickupacct) && $11 != "" && $12 ~ /^[0-9][0-9]:/) {
             dm = minof($11, $12)
+            if (!(($4 SUBSEP dm) in admn)) { ADN[$4]++; ADV[$4, ADN[$4]] = dm }
             admn[$4 SUBSEP dm] = 1
             # the multi-FE mirror: the delivery minute per (account, login) —
             # the leg carries the login in col 5
             if (aln[$4] + 0 >= 2 && $5 != "" && $5 != "UNKNOWN") { gd9 = $4 SUBSEP toupper($5)
+                if (!((gd9 SUBSEP dm) in admnG)) { ADGN[gd9]++; ADGV[gd9, ADGN[gd9]] = dm }
                 admnG[gd9 SUBSEP dm] = 1
                 if (!(gd9 in adG0) || dm < adG0[gd9]) adG0[gd9] = dm
                 if (!(gd9 in adG1) || dm > adG1[gd9]) adG1[gd9] = dm }
@@ -372,6 +398,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                     ts = $1 " " $2
                     lm = JDv * 1440 + substr($2,1,2) * 60 + substr($2,4,2) + 0   # = minof(d, $2)
                     k7 = a SUBSEP lm
+                    if (!(k7 in lgm)) { LMN[a]++; LMV[a, LMN[a]] = lm }
                     lgm[k7] = 1                                         # logon minutes (distinct)
                     lgc[k7]++                                           # raw logons in that minute
                     if (fts[k7] == "" || ts < fts[k7]) fts[k7] = ts
@@ -379,6 +406,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                     if (!(a in lm0) || lm < lm0[a]) lm0[a] = lm
                     if (!(a in lm1) || lm > lm1[a]) lm1[a] = lm
                     if (g9 != "") { k9 = g9 SUBSEP lm
+                        if (!(k9 in lgmG)) { LGGN[g9]++; LGGV[g9, LGGN[g9]] = lm }
                         lgmG[k9] = 1; lgcG[k9]++
                         if (ftsG[k9] == "" || ts < ftsG[k9]) ftsG[k9] = ts
                         if (ltsG[k9] == "" || ts > ltsG[k9]) ltsG[k9] = ts
@@ -395,12 +423,14 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         # set, it never reaches the output.
         for (cid in ccm) {
             su = csu[cid]; cm = ccm[cid]
+            if (!((su SUBSEP cm) in cmn)) { CMN[su]++; CMV[su, CMN[su]] = cm }
             cmn[su SUBSEP cm] = 1
             h9 = int(cm / 60); span(h9); hcs[su SUBSEP h9] = 1   # this flow'\''s collect HOURS (the per-hour sidecar)
             if (!(su in cm0) || cm < cm0[su]) cm0[su] = cm
             if (!(su in cm1) || cm > cm1[su]) cm1[su] = cm
             # the multi-FE mirror: the collect minute per (account, login)
             if (aln[cac[cid]] + 0 >= 2 && clg[cid] != "" && clg[cid] != "UNKNOWN") { gk9 = cac[cid] SUBSEP clg[cid]
+                if (!((gk9 SUBSEP cm) in cmG)) { CKGN[gk9]++; CKGV[gk9, CKGN[gk9]] = cm }
                 cmG[gk9 SUBSEP cm] = 1
                 if (!(gk9 in ck0) || cm < ck0[gk9]) ck0[gk9] = cm
                 if (!(gk9 in ck1) || cm > ck1[gk9]) ck1[gk9] = cm }
@@ -411,7 +441,9 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         # the same collection signal as the final partition
         for (i = 1; i <= npr; i++) {
             split(pr[i], PA, SUBSEP); a = PA[1]; su = toupper(PA[2])
-            if (su in cm0) for (m = cm0[su]; m <= cm1[su]; m++) if ((su SUBSEP m) in cmn) {
+            nm9 = sortmins(CMN, CMV, su, MM9)
+            for (j9 = 1; j9 <= nm9; j9++) { m = MM9[j9]
+                if (!((a SUBSEP m) in acm)) { ACN[a]++; ACV[a, ACN[a]] = m }
                 acm[a SUBSEP m] = 1
                 if (!(a in ak0) || m < ak0[a]) ak0[a] = m
                 if (!(a in ak1) || m > ak1[a]) ak1[a] = m
@@ -437,12 +469,12 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         for (ai = 1; ai <= na; ai++) {
             a = A[ai]
             nl = 0
-            if (a in lm0) for (m = lm0[a]; m <= lm1[a]; m++) if ((a SUBSEP m) in lgm) LG[++nl] = m
+            nl = sortmins(LMN, LMV, a, LG)
             if (nl == 0) continue
             nd = 0
-            if (a in ad0) for (m = ad0[a]; m <= ad1[a]; m++) if ((a SUBSEP m) in admn) DM[++nd] = m
+            nd = sortmins(ADN, ADV, a, DM)
             nk = 0
-            if (a in ak0) for (m = ak0[a]; m <= ak1[a]; m++) if ((a SUBSEP m) in acm) KM[++nk] = m
+            nk = sortmins(ACN, ACV, a, KM)
             # visits: VB[v] = first logon minute, VE[v] = index of the last
             # logon minute belonging to visit v
             nv = 0
@@ -487,7 +519,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 maxg = 0; ng = 0
                 for (li = 2; li <= nat; li++) { g = ATM[li] - ATM[li - 1]; gh[g]++; ng++; if (g > maxg) maxg = g }
                 half = int(ng / 2) + 1; c2 = 0; med = 0
-                for (g = 1; g <= maxg; g++) if (g in gh) { c2 += gh[g]; if (c2 >= half) { med = g; break } }
+                v9 = medpick(gh, 1, half); if (v9 != "") med = v9   # (medpick: see sortmins)
                 ns = 0
                 for (li = 1; li <= nat; li++) {
                     if (li == 1 || ATM[li] - ATM[li - 1] > 30) { SS[++ns] = ATM[li]; SE[ns] = ATM[li] }
@@ -504,7 +536,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 maxd = 0
                 for (li = 1; li <= ns; li++) { g = SE[li] - SS[li]; dh[g]++; if (g > maxd) maxd = g }
                 half = int((ns + 1) / 2); c2 = 0; meddur = 0
-                for (g = 0; g <= maxd; g++) if (g in dh) { c2 += dh[g]; if (c2 >= half) { meddur = g; break } }
+                v9 = medpick(dh, 0, half); if (v9 != "") meddur = v9
                 delete dh
                 if (meddur <= 15 && ns < 3) patA[a] = (ns == 1 ? "Once" : patron(SS[2] - SS[1]))   # one visit: Once; two: the spacing between them (2026-09-03, user request)
                 else {
@@ -513,7 +545,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                         maxg = 0; ng = 0
                         for (li = 2; li <= ns; li++) { g = SS[li] - SS[li - 1]; gh[g]++; ng++; if (g > maxg) maxg = g }
                         half = int(ng / 2) + 1; c2 = 0
-                        for (g = 1; g <= maxg; g++) if (g in gh) { c2 += gh[g]; if (c2 >= half) { med = g; break } }
+                        v9 = medpick(gh, 1, half); if (v9 != "") med = v9   # (medpick: see sortmins)
                     }
                     patA[a] = label(med, gh, ng)
                 }
@@ -628,12 +660,14 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 for (li9 = 1; li9 <= nls; li9++) { g9 = a SUBSEP LS9[li9]
                     if (g9 in lg0) { if (mn9 == "" || lg0[g9] < mn9) mn9 = lg0[g9]
                                      if (mx9 == "" || lg1[g9] > mx9) mx9 = lg1[g9] } }
-                if (mn9 != "") for (m = mn9; m <= mx9; m++)
-                    for (li9 = 1; li9 <= nls; li9++) if (((a SUBSEP LS9[li9]) SUBSEP m) in lgmG) { LG[++nl] = m; break }
+                if (mn9 != "") { split("", UM9)   # the union of the groups DISTINCT minutes, sorted (see sortmins)
+                    for (li9 = 1; li9 <= nls; li9++) { g9 = a SUBSEP LS9[li9]; nn9 = (g9 in LGGN) ? LGGN[g9] + 0 : 0
+                        for (j9 = 1; j9 <= nn9; j9++) { m = LGGV[g9, j9]; if (!(m in UM9)) { UM9[m] = 1; LG[++nl] = m } } }
+                    if (nl > 1) qsortn(LG, 1, nl) }
             }
-            else if (a in lm0) for (m = lm0[a]; m <= lm1[a]; m++) if ((a SUBSEP m) in lgm) LG[++nl] = m
+            else nl = sortmins(LMN, LMV, a, LG)
             nc = 0
-            if (su in cm0) for (m = cm0[su]; m <= cm1[su]; m++) if ((su SUBSEP m) in cmn) CM[++nc] = m
+            nc = sortmins(CMN, CMV, su, CM)
             # PICKUPS with >=1 collect of THIS sub: each collect stamp
             # credits the newest logon MINUTE at or before it — the poll
             # that took the file — and wf counts the credited logon minutes.

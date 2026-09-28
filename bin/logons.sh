@@ -164,7 +164,7 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 if (lst[u] == "" || ts > lst[u]) lst[u] = ts
                 if ($1 ~ /^[0-9][0-9][0-9][0-9]-/ && $2 ~ /^[0-9][0-9]:/) {
                     m = minof($1, $2)
-                    lgm[u SUBSEP m] = 1
+                    if (!((u SUBSEP m) in lgm)) { lgm[u SUBSEP m] = 1; LGN[u]++; LGV[u, LGN[u]] = m }   # + the distinct minutes per login (cadence)
                     if (!(u in m0) || m < m0[u]) m0[u] = m
                     if (!(u in m1) || m > m1[u]) m1[u] = m
                 }
@@ -177,7 +177,7 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                     if (hlst[ha] == "" || ts > hlst[ha]) hlst[ha] = ts
                     if ($1 ~ /^[0-9][0-9][0-9][0-9]-/ && $2 ~ /^[0-9][0-9]:/) {
                         m = minof($1, $2)
-                        hlgm[ha SUBSEP m] = 1
+                        if (!((ha SUBSEP m) in hlgm)) { hlgm[ha SUBSEP m] = 1; HLN[ha]++; HLV[ha, HLN[ha]] = m }
                         if (!(ha in hm0) || m < hm0[ha]) hm0[ha] = m
                         if (!(ha in hm1) || m > hm1[ha]) hm1[ha] = m
                     }
@@ -195,7 +195,7 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                     if (holst[ha] == "" || ts > holst[ha]) holst[ha] = ts
                     if ($1 ~ /^[0-9][0-9][0-9][0-9]-/ && $2 ~ /^[0-9][0-9]:/) {
                         m = minof($1, $2)
-                        holgm[ha SUBSEP m] = 1
+                        if (!((ha SUBSEP m) in holgm)) { holgm[ha SUBSEP m] = 1; HON[ha]++; HOV[ha, HON[ha]] = m }
                         if (!(ha in hom0) || m < hom0[ha]) hom0[ha] = m
                         if (!(ha in hom1) || m > hom1[ha]) hom1[ha] = m
                     }
@@ -420,7 +420,7 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                     u = NM[i9]
                     c9 = (u in cnt) ? cnt[u] : 0
                     # a funnel-only login (screened, never authenticated)
-                    pat = (c9 > 0) ? ((u in m0) ? cadence(lgm, u, m0[u], m1[u]) : "Rarely") : "Never"
+                    pat = (c9 > 0) ? ((u in m0) ? cadence(LGN, LGV, u) : "Rarely") : "Never"
                     printf "%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%s\n", u, \
                         (c9 > 0 ? fst[u] : "-"), (c9 > 0 ? lst[u] : "-"), c9, pat, \
                         fk("A", u), fk("D", u), fk("T", u), fk("N", u), fk("B", u), fk("K", u), fk("L", u), \
@@ -433,9 +433,9 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 for (i9 = 1; i9 <= hno; i9++) {
                     ha = HNM[i9]
                     c9 = (ha in hcnt) ? hcnt[ha] : 0
-                    pat = (c9 > 0) ? ((ha in hm0) ? cadence(hlgm, ha, hm0[ha], hm1[ha]) : "Rarely") : "Never"
+                    pat = (c9 > 0) ? ((ha in hm0) ? cadence(HLN, HLV, ha) : "Rarely") : "Never"
                     oc9 = (ha in hocnt) ? hocnt[ha] : 0
-                    opat = (oc9 > 0) ? ((ha in hom0) ? cadence(holgm, ha, hom0[ha], hom1[ha]) : "Rarely") : "Never"
+                    opat = (oc9 > 0) ? ((ha in hom0) ? cadence(HON, HOV, ha) : "Rarely") : "Never"
                     printf "%s\t%s\t%s\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t%s\t%s\t%s\t%d\t%s\t%d\t%s\t%d\t%s\t%d\t%s\t%d\t%s", ha, \
                         (c9 > 0 ? hfst[ha] : "-"), (c9 > 0 ? hlst[ha] : "-"), c9, pat, \
                         ((("A" SUBSEP ha) in hfc) ? hfc["A" SUBSEP ha] : 0), \
@@ -475,14 +475,30 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
             function label(med, A, ng,   l9) {
                 l9 = patron(med); if (l9 != "Rarely" && !regspread(A, ng, med)) return "Irregular"
                 return l9 }
-            function cadence(LGM, key, lo, hi,   LG2, gh2, SS2, SE2, dh2, nl, li, m, g, maxg, ng, half, c2, med, ns, maxd, meddur) {
-                nl = 0
-                for (m = lo; m <= hi; m++) if ((key SUBSEP m) in LGM) LG2[++nl] = m
+            # (2026-09-28, speed round 21: the minutes come from the per-key
+            # DISTINCT list the main pass keeps, sorted once; the old walk
+            # visited every minute between the first and the last logon, ~36k
+            # per key on 25 days, and every median walked each value up to the
+            # largest gap. Both now step over the sorted DISTINCT values, with
+            # the same picks: a median is the smallest value whose cumulative
+            # count reaches half. It was 3 of the 4 s of the summary at scale.)
+            function qsortn(A, lo, hi,   i, j, p, t) {
+                while (lo < hi) {
+                    i = lo; j = hi; p = A[int((lo + hi) / 2)]
+                    while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
+                    if (j - lo < hi - i) { if (lo < j) qsortn(A, lo, j); lo = i } else { if (i < hi) qsortn(A, i, hi); hi = j }
+                }
+            }
+            function cadence(LN, LV, key,   LG2, gh2, SS2, SE2, dh2, GD, DD, nl, li, m, g, maxg, ng, half, c2, med, ns, maxd, meddur, ngd, ndd, j) {
+                nl = (key in LN) ? LN[key] + 0 : 0
+                for (li = 1; li <= nl; li++) LG2[li] = LV[key, li]
                 if (nl < 3) return "Rarely"
-                maxg = 0; ng = 0
-                for (li = 2; li <= nl; li++) { g = LG2[li] - LG2[li - 1]; gh2[g]++; ng++; if (g > maxg) maxg = g }
+                qsortn(LG2, 1, nl)
+                maxg = 0; ng = 0; ngd = 0
+                for (li = 2; li <= nl; li++) { g = LG2[li] - LG2[li - 1]; if (!(g in gh2)) GD[++ngd] = g; gh2[g]++; ng++; if (g > maxg) maxg = g }
                 half = int(ng / 2) + 1; c2 = 0; med = 0
-                for (g = 1; g <= maxg; g++) if (g in gh2) { c2 += gh2[g]; if (c2 >= half) { med = g; break } }
+                qsortn(GD, 1, ngd)
+                for (j = 1; j <= ngd; j++) { g = GD[j]; if (g < 1) continue; c2 += gh2[g]; if (c2 >= half) { med = g; break } }
                 ns = 0
                 for (li = 1; li <= nl; li++) {
                     if (li == 1 || LG2[li] - LG2[li - 1] > 30) { SS2[++ns] = LG2[li]; SE2[ns] = LG2[li] }
@@ -493,16 +509,18 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 # cadence is a statement about VISITS — fewer than 3 visits is
                 # no cadence at all, so the label is the plain visit count; a
                 # sustained single visit keeps its real cadence
-                maxd = 0
-                for (li = 1; li <= ns; li++) { g = SE2[li] - SS2[li]; dh2[g]++; if (g > maxd) maxd = g }
+                maxd = 0; ndd = 0
+                for (li = 1; li <= ns; li++) { g = SE2[li] - SS2[li]; if (!(g in dh2)) DD[++ndd] = g; dh2[g]++; if (g > maxd) maxd = g }
                 half = int((ns + 1) / 2); c2 = 0; meddur = 0
-                for (g = 0; g <= maxd; g++) if (g in dh2) { c2 += dh2[g]; if (c2 >= half) { meddur = g; break } }
+                qsortn(DD, 1, ndd)
+                for (j = 1; j <= ndd; j++) { g = DD[j]; if (g < 0) continue; c2 += dh2[g]; if (c2 >= half) { meddur = g; break } }
                 if (meddur <= 15 && ns < 3) return (ns == 1 ? "Once" : patron(SS2[2] - SS2[1]))   # one visit: Once; two: the spacing between them (2026-09-03, user request)
                 if (meddur <= 15) {
-                    delete gh2; maxg = 0; ng = 0
-                    for (li = 2; li <= ns; li++) { g = SS2[li] - SS2[li - 1]; gh2[g]++; ng++; if (g > maxg) maxg = g }
+                    delete gh2; split("", GD); maxg = 0; ng = 0; ngd = 0
+                    for (li = 2; li <= ns; li++) { g = SS2[li] - SS2[li - 1]; if (!(g in gh2)) GD[++ngd] = g; gh2[g]++; ng++; if (g > maxg) maxg = g }
                     half = int(ng / 2) + 1; c2 = 0
-                    for (g = 1; g <= maxg; g++) if (g in gh2) { c2 += gh2[g]; if (c2 >= half) { med = g; break } }
+                    qsortn(GD, 1, ngd)
+                    for (j = 1; j <= ngd; j++) { g = GD[j]; if (g < 1) continue; c2 += gh2[g]; if (c2 >= half) { med = g; break } }
                 }
                 return label(med, gh2, ng)
             }
