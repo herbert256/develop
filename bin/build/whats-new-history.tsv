@@ -237,6 +237,7 @@ N	2026-09-02	0	bin/analyses/reports/fe-status.sh
 N	2026-08-30	0	bin/transfer/reports/went-quiet.sh	
 N	2026-08-30	0	bin/server/reports/connections.sh	
 N	2026-09-12	0	bin/server/reports/could-not-send.sh	
+N	2026-09-28	0	bin/server/reports/routing-errors.sh	
 N	2026-08-30	0	bin/transfer/reports/size-profile.sh	
 N	2026-08-30	0	bin/transfer/reports/activity.sh	
 N	2026-08-30	0	bin/server/reports/error-reasons.sh	
