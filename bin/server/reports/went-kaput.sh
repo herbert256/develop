@@ -64,7 +64,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SERVER lib, not the analyses one: this is a server-DATA report (it reads the
 # server parse cache and writes data/<env>/server/reports/). It lives HERE
 # because its page sits in the ANALYSES menu, in the Subscriptions group — the
-# same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
+# same arrangement as cross-reference.sh. bin/build.sh runs it ONCE, early —
+# right after result.sh — not the server-reports pool (2026-09-28).
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/went-kaput.rpt"
@@ -210,9 +211,11 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
     FILENAME == lastokf { cut[$1] = $2; order[++nsub] = $1; next }
     # (atot/ltot/htot: how many flows the owner serves IN TOTAL, cut or not —
     # the shared-owner test above)
-    FILENAME == saf { if ($1 != "" && $2 != "" && !pa2[$1,$2]++) atot[$2]++
+    FILENAME == saf { if ($1 != "" && $2 != "") SUSR[toupper($1) SUBSEP toupper($2)] = 1   # subscription -> its account (the auth-user test)
+                      if ($1 != "" && $2 != "" && !pa2[$1,$2]++) atot[$2]++
                       if (($1 in cut) && $2 != "" && !pa[$1,$2]++) amap[$2] = (amap[$2] != "" ? amap[$2] "\t" : "") $1; next }
-    FILENAME == slf { if ($1 != "" && $2 != "" && !pl2[$1,$2]++) ltot[$2]++
+    FILENAME == slf { if ($1 != "" && $2 != "") SUSR[toupper($1) SUBSEP toupper($2)] = 1   # subscription -> its login (the auth-user test)
+                      if ($1 != "" && $2 != "" && !pl2[$1,$2]++) ltot[$2]++
                       if (($1 in cut) && $2 != "" && !pl[$1,$2]++) lmap[$2] = (lmap[$2] != "" ? lmap[$2] "\t" : "") $1; next }
     # subscription -> host, kept only while the subscription has exactly ONE
     # (result.sh reds on the same restriction: with two hosts configured, a
@@ -251,9 +254,16 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
         # one flow; a session naming two flows (\001) or none changes nothing
         if (nmd == "" && csrc != "Subscription" && NF >= 6 && $6 != "" && ($6 in SV9) && SV9[$6] != "" && SV9[$6] != "\001") nmd = SV9[$6]
         dt = $1 " " $2
+        # a HOST line of an outbound authentication failure concerns the
+        # flows logging in as the user it names, never every flow of the host
+        # (2026-09-28 fix; result.sh _build_kaputflip applies the same)
+        au = ""
+        if (csrc == "Host" && $5 ~ /^Authentication failure connecting to remote host / && match($5, / as user [^:]+:/)) {
+            au = toupper(substr($5, RSTART + 9, RLENGTH - 10)); au0 = substr(au, 1, index(au "@", "@") - 1) }
         for (i = 1; i <= ntgt; i++) {
             s = tgt[i]
             if (nmd != "" && toupper(s) != toupper(nmd)) continue   # the line names another flow
+            if (au != "" && !((toupper(s) SUBSEP au) in SUSR) && !((toupper(s) SUBSEP au0) in SUSR)) continue
             if (dt <= cut[s]) continue                # only lines AFTER the last OK transfer count
             if (seen[s, $1, $2, $3, $4, $5]++) continue   # a line named under two caches counts once
             # TWO evidence sets since 2026-08. The PAGE is ERROR-only — a

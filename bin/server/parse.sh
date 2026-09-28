@@ -555,7 +555,11 @@ function hit(ty, w,   k) {
     print t "\t" w | outc[ty]
     ring[k, cnt[k] % 25] = $0
     cnt[k]++
-    if (($3 == "E" || $3 == "W") && !($6 in ended) && $5 !~ /Skipping the next scheduled occurrence of this task/) { ewring[k, ewcnt[k] % 10] = $0; ewcnt[k]++ }
+    # the Error/Warn ring keeps its 10 newest Errors AND its 10 newest
+    # Warnings (2026-09-28 fix: one shared 10-slot ring let a burst of
+    # Warnings push the flow newest Error out — and the red flip, went-kaput
+    # and failed.sh judge on Errors only)
+    if (($3 == "E" || $3 == "W") && !($6 in ended) && $5 !~ /Skipping the next scheduled occurrence of this task/) { ewring[k, $3, ewc[k, $3] % 10] = $0; ewc[k, $3]++; ewk[k] = 1 }
 }
 FILENAME ~ /_sessions-ended\.tsv$/ { if ($1 != "") ended[$1] = 1;         next }   # the transfer-ended sessions (col 1 = session id)
 FILENAME ~ /_accounts\.tsv$/      { if ($1 != "") { acc[$1] = 1; NMIN = minlen($1, NMIN); WMIN = minlen($1, WMIN) }; next }   # base files: col 1 = name, col 2 = direction
@@ -641,11 +645,17 @@ END {
         for (j = 0; j < m; j++)
             print a[1] "\t" a[2] "\t" ring[k, (cnt[k] - 1 - j) % 25] >> ringout
     }
-    for (k in ewcnt) {
+    # the two levels, each newest first, merged newest first on date+time
+    for (k in ewk) {
         split(k, a, SUBSEP)
-        m = (ewcnt[k] < 10) ? ewcnt[k] : 10
-        for (j = 0; j < m; j++)
-            print a[1] "\t" a[2] "\t" ewring[k, (ewcnt[k] - 1 - j) % 10] >> ewout
+        me = (ewc[k, "E"] < 10) ? ewc[k, "E"] + 0 : 10; mw = (ewc[k, "W"] < 10) ? ewc[k, "W"] + 0 : 10
+        je = 0; jw = 0
+        while (je < me || jw < mw) {
+            if (je < me) { re = ewring[k, "E", (ewc[k, "E"] - 1 - je) % 10]; split(re, b1, "\t"); te = b1[1] " " b1[2] }
+            if (jw < mw) { rw = ewring[k, "W", (ewc[k, "W"] - 1 - jw) % 10]; split(rw, b2, "\t"); tw = b2[1] " " b2[2] }
+            if (jw >= mw || (je < me && te >= tw)) { print a[1] "\t" a[2] "\t" re >> ewout; je++ }
+            else { print a[1] "\t" a[2] "\t" rw >> ewout; jw++ }
+        }
     }
 }
 AWK_EOF
@@ -661,7 +671,10 @@ RING_PROG=$(cat <<'AWK_EOF'
 BEGIN { dirs["A"]=accdir; dirs["S"]=subdir; dirs["L"]=logdir; dirs["H"]=hstdir; if (cap + 0 <= 0) cap = 25 }
 {
     k = $1 SUBSEP $2
-    if (have[k] >= cap) next
+    # lvlcap=1 (the Error/Warn rings): the cap is PER LEVEL — col 5 is the
+    # record level — so the file keeps up to cap Errors AND cap Warnings
+    if (lvlcap) { kl = k SUBSEP $5; if (hv[kl] >= cap) next; hv[kl]++ }
+    else if (have[k] >= cap) next
     keep[k, have[k]++] = substr($0, length($1) + length($2) + 3)   # the record after "type TAB name TAB"
 }
 END {
@@ -799,12 +812,15 @@ build_entity_tsvs() {
     # when it appended; bin/build.sh re-runs the mention build right after,
     # and mention_rescan_needed decides whether the new names can change
     # anything (2026-09-28 — see MENTION_NAMES).
+    local rescan=0
+    rm -f "$CACHE_DIR/.rescanned"
     if [ -f "$CACHE_DIR/.rescan-mentions" ] && [ -f "$MENTION_NAMES" ]; then
         if ! mention_rescan_needed; then
             rm -f "$CACHE_DIR/.rescan-mentions"
             mention_names > "$MENTION_NAMES"
             return 0
         fi
+        rescan=1
     fi
     mention_names > "$MENTION_NAMES.new"   # the names this scan reads (installed at its end)
     ENT_CFG_SRCS=()   # global: ent_one's background jobs read it
@@ -923,7 +939,7 @@ build_entity_tsvs() {
     fi
     if [ "${#ewringparts[@]}" -gt 0 ]; then
         awk -F'\t' -v accdir="$ACCOUNTS_DIR" -v subdir="$SUBS_DIR" -v logdir="$LOGINS_DIR" \
-                   -v hstdir="$HOSTS_DIR" -v cap=10 -v suffix="_err_warn" \
+                   -v hstdir="$HOSTS_DIR" -v cap=10 -v lvlcap=1 -v suffix="_err_warn" \
             "$RING_PROG" "${ewringparts[@]}" &
         epid=$!
     fi
@@ -948,7 +964,10 @@ build_entity_tsvs() {
         fi
     done
     rm -f "$CACHE_DIR/.rescan-mentions"   # the appended-names marker is served
-    mv "$MENTION_NAMES.new" "$MENTION_NAMES"   # the name set this scan matched (mention_rescan_needed)
+    mv "$MENTION_NAMES.new" "$MENTION_NAMES"
+    # a RESCAN that ran tells bin/build.sh to colour again: result.sh coloured
+    # the appended names before their mention rings existed (2026-09-28 fix)
+    if [ "$rescan" = 1 ]; then : > "$CACHE_DIR/.rescanned"; fi   # the name set this scan matched (mention_rescan_needed)
 }
 
 # (The server-log hostname forward-resolution was REMOVED 2026-07. It scanned
@@ -967,8 +986,12 @@ if [ "${AXWAY_MENTIONS_ONLY:-}" = 1 ]; then
 fi
 
 # the derived lists of the OLD cache go with it (the mention build computes
-# them from the cache this run writes)
-rm -f "$ENDED_TSV"
+# them from the cache this run writes) — the transfer-ended sessions, the
+# rescan marker + the scanned name set (a leftover pair made the next
+# mentions-only run skip its scan), the logon summary
+rm -f "$ENDED_TSV" "$CACHE_DIR/.rescan-mentions" "$CACHE_DIR/.rescanned" "$MENTION_NAMES" \
+      "$CACHE_DIR/_logons.tsv" "$CACHE_DIR/_logons-hosts.tsv"
+rm -rf "$CACHE_DIR/subsets"   # the per-consumer subsets of the old cache (srv_subset trusts .done)
 
 # CONFIG-ONLY ESTATE (2026-08): no server CSVs at all — the transfer twin's
 # rule (see bin/transfer/parse.sh): write the cache set EMPTY instead of

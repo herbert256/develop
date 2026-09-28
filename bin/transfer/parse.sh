@@ -314,6 +314,11 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
     {
         if (seen[$0]++) { dups++; next } # drop exact-duplicate record line (keep the first)
         n = split_csv_fast($0)
+        # a line with NO CoreId is no transfer record — a broken or partial
+        # CSV line (an embedded newline, a truncated tail): dropped and counted
+        # (2026-09-28 fix: it stayed a leg with garbage values and a fake UCx_
+        # site, while the File collapse dropped it — legs and Files disagreed)
+        if (field[34] == "" || field[34] ~ /^[ \t]*$/) { nocid++; next }
 
         # Blacklist, applied at the source: platform-internal pseudo-values are
         # BLANKED (the row itself is kept — only the entity attribution goes),
@@ -355,6 +360,14 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         if ((scp = index(cs, "_SSCP_")) > 0 || (scp = index(cs, "_SCP_")) > 0 || (scp = index(cs, "_CCP_")) > 0) cs = substr(cs, 1, scp - 1)
         if (cs != "") cs = rn_canon(cs)
         if (cs != "") cs = site_extfold(cs)   # <subscription>_<PROTO>_SERVER_<partner> -> the subscription
+        # an OLD (renamed) name WITH that extension: strip it first, then fold
+        # (2026-09-28 fix — rn_canon found nothing for the extended value and
+        # site_extfold knows current names only, so the File landed on a
+        # phantom name, with no movement, and read Failed)
+        if (cs != "" && !(toupper(cs) in cfgsub) && match(cs, /_[A-Za-z0-9]+_(SERVER|CLIENT)_/)) {
+            ext9 = rn_canon(substr(cs, 1, RSTART - 1))
+            if (toupper(ext9) in cfgsub) cs = cfgsub[toupper(ext9)]
+        }
         # THE CONFIGURATION OUTRANKS THE SHAPE TEST (2026-08-31 audit): a clean
         # name that IS a configured subscription is kept whatever it looks
         # like. The blacklist keep rule (^UC — every acceptance flow follows
@@ -398,6 +411,8 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
             sv(prof), sv(field[35]), sv(field[29]), sv(field[30]), sv(field[6])
     }
     END {
+        if (nocid > 0)
+            printf "WARNING: dropped %d record line(s) with no CoreId (a broken or partial CSV line).\n", nocid > "/dev/stderr"
         if (dups > 0)
             printf "NOTE: dropped %d exact-duplicate record line(s) (kept the first occurrence of each).\n", dups > "/dev/stderr"
     }
@@ -1301,9 +1316,12 @@ COLLAPSE_AWK='
         }
         # Outcome — the LAST-LEG RULES (2026-07, replacing the plain delivered
         # rule): the last chronological leg must be the REAL delivery.
-        #   Waiting   >= 3 legs, ending on the staging leg (Inbound routing):
-        #             a UC2 file staged for pickup, not collected yet (a later
-        #             export with the collect leg re-flips it).
+        #   Waiting   >= 3 legs, ending on the staging leg (Inbound routing)
+        #             that SUCCEEDED: a UC2 file staged for pickup, not
+        #             collected yet (a later export with the collect leg
+        #             re-flips it). A FAILED staging leg staged nothing — Failed
+        #             (2026-09-28 fix: it read Waiting, i.e. OK, and could never
+        #             turn Expired either).
         #   Processed >= 2 legs, last leg Outbound + status Processed, AND that
         #             leg is the delivery the file movement calls for:
         #             movement out -> ssh/ftp/ftps (handed to the partner;
@@ -1318,7 +1336,7 @@ COLLAPSE_AWK='
         # after a full-content collect must not fail a delivered file.
         oc = "Failed"
         mv = (last_site != "" && (toupper(last_site) in fd)) ? fd[toupper(last_site)] : ""
-        if (rows >= 3 && last_dir == "Inbound" && last_proto == "routing") oc = "Waiting"
+        if (rows >= 3 && last_dir == "Inbound" && last_proto == "routing" && last_st == "Processed") oc = "Waiting"
         else if (rows >= 2 && last_dir == "Outbound" && last_st == "Processed") {
             if (mv == "out" && (last_proto == "ssh" || last_proto == "ftp" || last_proto == "ftps")) oc = "Processed"
             else if (mv == "in" && last_proto == "pesit") oc = "Processed"
@@ -1527,9 +1545,10 @@ col  name       rule
   2  outcome    the LAST-LEG RULES (2026-07): the last chronological leg must
                 be the file's REAL delivery.
                 Waiting   = >= 3 legs ending on the staging leg (Inbound
-                            "routing"): a UC2 file staged for pickup, not
-                            collected yet (a later export with the collect
-                            leg re-flips it on the next re-collapse).
+                            "routing") with status Processed: a UC2 file
+                            staged for pickup, not collected yet (a later
+                            export with the collect leg re-flips it on the
+                            next re-collapse). A failed staging leg is Failed.
                 Processed = >= 2 legs, last leg Outbound with status
                             Processed, AND that leg matches the file MOVEMENT
                             (col 17): out -> protocol ssh/ftp/ftps (handed to

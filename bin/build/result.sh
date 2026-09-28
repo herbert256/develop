@@ -93,7 +93,10 @@ POLLCAND="$COLDIR/_uc3polls.cand"       # name <TAB> newest successful poll, per
 # failure while <UC3 flow> tried to connect to remote host …" line reds the
 # flow only when it happened on THREE POLLS IN A ROW — each such line is one
 # failed poll attempt, and one or two in a row are a blip the next poll
-# clears. CONNCAND carries, per UC3 flow with an own E-level line: name
+# clears. CONNCAND carries, per UC3 flow (EVERY one since 2026-09-28 — before,
+# only a flow with an own E-level line got a row, so a UC3 whose shared host
+# logged a sibling's connection failure went red on that ONE line, its own
+# streak never counted): name
 # <TAB> newest own E stamp <TAB> newest own NON-connection-failure E stamp
 # <TAB> newest successful poll <TAB> the "|"-joined stamps of its connection
 # failures (mention cache AND Error/Warn ring, one entry per stamp). Stage 1
@@ -123,7 +126,9 @@ mkdir -p "$COLDIR"
           [ -f "$XREF/_subscriptions-ucderived.tsv" ] && awk -F'\t' '$2 == "UC3" { print $1 }' "$XREF/_subscriptions-ucderived.tsv"
           :; } 2>/dev/null | LC_ALL=C sort -u | while IFS= read -r _n; do
             _pf="$SUBMENT/$_n.tsv"
-            [ -f "$_pf" ] || continue
+            # no server-log mention at all: a candidate with an empty streak
+            # (its own polls decide — it has none)
+            [ -f "$_pf" ] || { printf '%s\t\t\t\t\n' "$_n" >> "$CONNCAND"; continue; }
             _rf="$SUBMENT/${_n}_err_warn.tsv"; [ -f "$_rf" ] || _rf=/dev/null
             awk -F'\t' -v n="$_n" -v cf="$CONNCAND" '
                 FILENAME == ARGV[1] && $5 ~ /Applying the search pattern/ && $5 ~ /for transfer site/ && $5 ~ /file\(s\)/ { t = $1 " " $2; if (t > p) p = t }
@@ -134,9 +139,10 @@ mkdir -p "$COLDIR"
                 # name <TAB> newest successful poll: the STAMP the green-keep
                 # below compares against the red-flip evidence
                 END { if (p != "") printf "%s\t%s\n", n, p
-                      # the connection-failure streak candidate (see CONNCAND)
-                      if (e != "") { z = ""; for (t in cfs) z = z (z == "" ? "" : "|") t
-                                     printf "%s\t%s\t%s\t%s\t%s\n", n, e, encf, p, z >> cf } }
+                      # the connection-failure streak candidate (see CONNCAND) —
+                      # for every UC3 flow, an own E line or not
+                      z = ""; for (t in cfs) z = z (z == "" ? "" : "|") t
+                      printf "%s\t%s\t%s\t%s\t%s\n", n, e, encf, p, z >> cf }
             ' "$_pf" "$_rf"
         done
     fi
@@ -175,7 +181,8 @@ discover_logged() {   # $1 = base name  $2 = the awk condition picking its colum
     # append and re-sort nothing: the base caches are name-ordered as written by
     # flow-manager.sh, and the colour passes below rewrite them line by line, so
     # the new rows simply join at the end
-    { cat "$basef"; printf '%s\n' "$n"; } > "$basef.tmp" && commit_tmp "$basef"
+    { cat "$basef"; printf '%s\n' "$n"; } > "$basef.tmp"
+    commit_tmp "$basef"
     printf 'result.sh: %s discovered in the transfer log, appended to %s.\n' \
         "$(printf '%s\n' "$n" | wc -l | tr -d ' ')" "base/_$1.tsv" >&2
     # the per-entity server MENTION caches were built before this step and do
@@ -305,8 +312,12 @@ _build_ringattr() {
                 _rpids+=("$!"); _rparts+=("$tmp.rv.$_ri")
             done
             for _rp in "${_rpids[@]}"; do wait "$_rp"; done
+            # ONE line per session: an ambiguous one (it named two flows) is
+            # "\001" alone — every reader keeps the LAST line of a session, and
+            # a sorted "\001" line landed before its flow line, so the session
+            # voted for one of its two flows (2026-09-28 fix)
             awk -F'\t' '{ if (!($1 in f)) { f[$1] = $2; o[++n] = $1 } else if ($2 != f[$1]) a[$1] = 1 }
-                END { for (i = 1; i <= n; i++) { print o[i] "\t" f[o[i]]; if (o[i] in a) print o[i] "\t\001" } }' "${_rparts[@]}" \
+                END { for (i = 1; i <= n; i++) print o[i] "\t" ((o[i] in a) ? "\001" : f[o[i]]) }' "${_rparts[@]}" \
                 | LC_ALL=C sort -u > "$tmp.map"
             rm -f "${_rparts[@]}"
         fi
@@ -426,10 +437,24 @@ _build_kaputflip() {
     # the same rule to its page and evidence sidecar.
     awk -F'\t' -v RINGS="$tmp" "$(cat "$ROOT/bin/flip-reason.awk")"'
         function connlevel(r) { return (r == "Connection failures" || r == "Wrong server fingerprint" || r == "Login errors (out)") }
+        # the USER an outbound authentication failure names ("... as user U:"),
+        # upper-cased, "" when the line is no such failure
+        function authuser(m,   u) {
+            if (m !~ /^Authentication failure connecting to remote host / || !match(m, / as user [^:]+:/)) return ""
+            u = toupper(substr(m, RSTART + 9, RLENGTH - 10)); return u }
+        # does subscription s log in as u (a configured login or account)?
+        function usesuser(s, u,   n, z, i, v) {
+            n = split(substr(SL[s], 2) SUBSEP substr(SA[s], 2), z, SUBSEP)
+            for (i = 1; i <= n; i++) { v = toupper(z[i]); if (v != "" && (v == u || v == substr(u, 1, index(u "@", "@") - 1))) return 1 }
+            return 0 }
         # the candidate ring k (owner serving own flows): its newest E line, if it may speak for s
-        function take(k, own,   r9) {
+        function take(k, own, s,   r9, u9) {
             if (!(k in re) || re[k] <= best) return
             if (own > 1) { r9 = flip_reason(rm[k]); if (!connlevel(r9)) return }
+            # a HOST line of an outbound authentication failure names the user
+            # that failed: it concerns the flows logging in as that user only,
+            # never every flow of the host (2026-09-28 fix)
+            if (substr(k, 1, 1) == "H") { u9 = authuser(rm[k]); if (u9 != "" && !usesuser(s, u9)) return }
             best = re[k]; msg = rm[k]
         }
         FILENAME == RINGS { re[$1 SUBSEP $2] = $3; rm[$1 SUBSEP $2] = $4; next }
@@ -442,14 +467,14 @@ _build_kaputflip() {
             s = $1; if (s == "") next
             best = ""; msg = ""
             n = split(substr(SA[s], 2), Z, SUBSEP)
-            for (i = 1; i <= n; i++) take("A" SUBSEP Z[i], AN[Z[i]] + 0)
+            for (i = 1; i <= n; i++) take("A" SUBSEP Z[i], AN[Z[i]] + 0, s)
             n = split(substr(SL[s], 2), Z, SUBSEP)
-            for (i = 1; i <= n; i++) take("L" SUBSEP Z[i], LN[Z[i]] + 0)
+            for (i = 1; i <= n; i++) take("L" SUBSEP Z[i], LN[Z[i]] + 0, s)
             if (nh[s] + 0 == 1) {
                 h = vh[s]
-                take("H" SUBSEP h, HN[h] + 0)
+                take("H" SUBSEP h, HN[h] + 0, s)
                 n = split(substr(fw[h], 2), Z, SUBSEP)
-                for (i = 1; i <= n; i++) take("H" SUBSEP tolower(Z[i]), HN[h] + 0)   # a forward address carries its endpoint fan-out
+                for (i = 1; i <= n; i++) take("H" SUBSEP tolower(Z[i]), HN[h] + 0, s)   # a forward address carries its endpoint fan-out
             }
             if (best == "") next
             r = flip_reason(msg)
@@ -499,7 +524,7 @@ awk -F'\t' -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srvc="$SRVC" '
                           next }   # the UC3 poll evidence (see above)
     FILENAME == ARGV[3] { if ($1 != "" && $2 != "") RA[toupper($1)] = $2; next }   # subscription -> newest connected-ring Error attributed to it
     FILENAME == ARGV[4] { if ($1 != "" && $2 != "") { KF[toupper($1)] = $2; KFC[toupper($1)] = $3 + 0 }; next }   # subscription -> newest LOOSE connected-ring Error (the went-kaput join; deploy-classified flows absent) + its connection-failure flag
-    FILENAME == ARGV[5] { if ($1 != "" && $2 != "") { u = toupper($1); UC3[u] = 1; ENCF[u] = $3; CFP[u] = $4
+    FILENAME == ARGV[5] { if ($1 != "") { u = toupper($1); UC3[u] = 1; ENCF[u] = $3; CFP[u] = $4
                                                       m5 = split($5, Z5, "|"); for (i5 = 1; i5 <= m5; i5++) if (Z5[i5] != "") { cfset[u SUBSEP Z5[i5]] = 1; CFL[u] = CFL[u] SUBSEP Z5[i5] } }
                           next }   # UC3 connection-failure streak candidates (see CONNCAND)
     {
@@ -599,8 +624,8 @@ awk -F'\t' -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srvc="$SRVC" '
         # transfers is orange — or red by the cannot-connect rule above)
         print $1 "\t" $2 "\t" r
     }
-' "$FILES" "$POLLCAND" "$RINGATTR" "$KAPUTFLIP" "$CONNCAND" "$BASE/_subscriptions.tsv" > "$BASE/_subscriptions.tsv.tmp" \
-    && commit_tmp "$BASE/_subscriptions.tsv"
+' "$FILES" "$POLLCAND" "$RINGATTR" "$KAPUTFLIP" "$CONNCAND" "$BASE/_subscriptions.tsv" > "$BASE/_subscriptions.tsv.tmp"
+commit_tmp "$BASE/_subscriptions.tsv"
 [ -f "$REDFLIP.tmp" ] || : > "$REDFLIP.tmp"   # no flips: an empty (not absent) sidecar
 commit_tmp "$REDFLIP"
 [ -f "$CONNHOLD.tmp" ] || : > "$CONNHOLD.tmp"   # and for the connection-failure hold sidecar
@@ -616,7 +641,8 @@ rollup() {   # $1 = base name (accounts|logins|...)  $2 = its <item>-subscriptio
     local basef="$BASE/_$1.tsv" pair="$XREF/_$2.tsv"
     [ -f "$basef" ] || return 0
     if [ ! -f "$pair" ]; then
-        awk -F'\t' '{ print $1 "\t" $2 "\torange" }' "$basef" > "$basef.tmp" && commit_tmp "$basef"
+        awk -F'\t' '{ print $1 "\t" $2 "\torange" }' "$basef" > "$basef.tmp"
+        commit_tmp "$basef"
         return 0
     fi
     awk -F'\t' '
@@ -636,7 +662,8 @@ rollup() {   # $1 = base name (accounts|logins|...)  $2 = its <item>-subscriptio
             else if ((k in n) && n[k] > 0 && g[k] == n[k]) r = "green"
             print $1 "\t" $2 "\t" r
         }
-    ' "$BASE/_subscriptions.tsv" "$pair" "$basef" > "$basef.tmp" && commit_tmp "$basef"
+    ' "$BASE/_subscriptions.tsv" "$pair" "$basef" > "$basef.tmp"
+    commit_tmp "$basef"
 }
 # The same own-transfer rule for a host with NO connected subscriptions — in
 # practice only one discovered by stage 0, since every configured host is in the
@@ -654,9 +681,12 @@ host_own_unpaired() {
                                   if ($6 >= sk[k]) { sk[k] = $6; oc[k] = $2 } }
                               next }
         { k = toupper($1)
-          if (!(k in P) && (k in oc)) $3 = (oc[k] == "Failed" || oc[k] == "Expired") ? "red" : "green"
+          # Expired-last = ORANGE, like the subscription rule (2026-09-28 fix:
+          # this and white_own still said red, from before 2026-08)
+          if (!(k in P) && (k in oc)) $3 = (oc[k] == "Failed") ? "red" : (oc[k] == "Expired") ? "orange" : "green"
           print $1 "\t" $2 "\t" $3 }
-    ' "$pair" "$FILES" "$basef" > "$basef.tmp" && commit_tmp "$basef"
+    ' "$pair" "$FILES" "$basef" > "$basef.tmp"
+    commit_tmp "$basef"
 }
 # the whitelist exception: an IP is colored by ITS OWN transfers (the last
 # real transfer with that remote host), never by its partner's flows
@@ -671,10 +701,11 @@ white_own() {
         }
         {
             r = "orange"
-            if ($1 in oc) r = (oc[$1] == "Failed" || oc[$1] == "Expired") ? "red" : "green"   # Waiting-last = green; Expired-last = red (like the subscription rule)
+            if ($1 in oc) r = (oc[$1] == "Failed") ? "red" : (oc[$1] == "Expired") ? "orange" : "green"   # Waiting-last = green; Expired-last = orange (like the subscription rule)
             print $1 "\t" $2 "\t" r
         }
-    ' "$FILES" "$basef" > "$basef.tmp" && commit_tmp "$basef"
+    ' "$FILES" "$basef" > "$basef.tmp"
+    commit_tmp "$basef"
 }
 
 rollup accounts accounts-subscriptions
@@ -707,7 +738,8 @@ prune_withdrawn() {   # $1 = base name  $2 = the _files.tsv column (0 = no own d
           if ((k in CONF) || (k in HAS)) { print; next }
           n++ }
         END { if (n) printf "result.sh: pruned %d withdrawn discover(y/ies) from base/_%s.tsv.\n", n, "'"$1"'" > "/dev/stderr" }
-    ' "$conf" "$FILES" "$basef" > "$basef.tmp" && commit_tmp "$basef"
+    ' "$conf" "$FILES" "$basef" > "$basef.tmp"
+    commit_tmp "$basef"
 }
 prune_withdrawn subscriptions 12
 prune_withdrawn hosts         15
@@ -739,7 +771,8 @@ orphan_red() {   # $1 = base/ring name (hosts|accounts|logins)  $2 = its _files.
           if ((e in ORPH) && $3 != "red" && !((e in ok) && ok[e] > ORPH[e])) { $3 = "red"; n++ }
           print $1 "\t" $2 "\t" $3 }
         END { if (n) printf "result.sh: %d %s row(s) reddened by server Errors no flow could claim.\n", n, K > "/dev/stderr" }
-    ' "$RINGORPH" "$FILES" "$basef" > "$basef.tmp" && commit_tmp "$basef"
+    ' "$RINGORPH" "$FILES" "$basef" > "$basef.tmp"
+    commit_tmp "$basef"
 }
 
 orphan_red hosts    15 out

@@ -464,7 +464,10 @@ pair  PH profiles-hosts
 
 # white = the whole whitelist, one IP per line — the second column of
 # _accounts-white.tsv (every AllowIP sits on a named partner), octet-sorted.
-cut -f2 "$XREF/_accounts-white.tsv" | LC_ALL=C sort -u -t. -k1,1n -k2,2n -k3,3n -k4,4n > "$BASE/_white.tsv"
+# dedup on the WHOLE line first, then octet-sort without -u (2026-09-28 fix:
+# `sort -u` compares only the numeric KEYS, so pattern entries such as
+# 198.36.[0-3].x and 198.36.[4-7].x read as equal and all but one vanished)
+cut -f2 "$XREF/_accounts-white.tsv" | LC_ALL=C sort -u | LC_ALL=C sort -t. -k1,1n -k2,2n -k3,3n -k4,4n > "$BASE/_white.tsv"
 
 # The account-joined whitelist pairs: subscription/profile -> its partner's
 # whitelist (an account maps to its subscriptions/profiles via the pair files

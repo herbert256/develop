@@ -72,7 +72,10 @@
 # safe, all asserted by fm_snapshot_renames():
 #   - no two old names may map to one current name (that would MERGE flows);
 #   - a current name may never be some other flow's old name (that would send
-#     one flow's history to another);
+#     one flow's history to another) — the SAME flow renamed again is fine:
+#     OLD -> MID then MID -> NEW is a chain rn_canon follows (2026-09-28; the
+#     pair comes from one flowId, the snapshot join is on keys unique on
+#     both sides);
 #   - an OLD name may never be a name the export STILL CONFIGURES (2026-08-31
 #     audit): a rename is a name that went away. This rule also PRUNES the
 #     map on every config run — a line whose old name is configured today is
@@ -97,7 +100,10 @@ RENAMES_DIR="$ROOT_RN/input/renames"
 RENAMES_FILE="$RENAMES_DIR/subscriptions.tsv"
 RENAMES_PROF="$RENAMES_DIR/profiles.tsv"
 RENAMES_SNAP="$RENAMES_DIR/flowid-names.tsv"
-export RENAMES_DIR RENAMES_FILE RENAMES_PROF RENAMES_SNAP
+# the CONFIGURED subscription names (flow-manager.sh, <list> TAB <name>): a
+# token that IS one is never prefix-folded by rn_canon_pfx (read via ENVIRON)
+RENAMES_CONF="$ROOT_RN/data/flow-manager/base/.configured.tsv"
+export RENAMES_DIR RENAMES_FILE RENAMES_PROF RENAMES_SNAP RENAMES_CONF
 
 # NOTE: no single quotes inside this program — it is carried in a
 # single-quoted shell string.
@@ -115,13 +121,23 @@ function rn_read(f, arr,   ln, a, n) {
 # The arrays are RN_S / RN_P, never RNF / RNP: the caller passes the PATHS in
 # -v variables of those names, and awk refuses one identifier being both a
 # scalar and an array.
-function rn_load(f, pf) {
+function rn_load(f, pf,   cf, ln, a) {
     if (f != "")  rn_read(f, RN_S)
     if (pf != "") rn_read(pf, RN_P)
+    # the configured subscription names (see rn_canon_pfx)
+    cf = ENVIRON["RENAMES_CONF"]
+    if (cf != "") {
+        while ((getline ln < cf) > 0) { split(ln, a, "\t"); if (a[1] == "_subscriptions" && a[2] != "") RN_C[toupper(a[2])] = 1 }
+        close(cf)
+    }
 }
-function rn_canon(v) {
+function rn_canon(v,   u, n) {
     if (v == "") return v
-    return (toupper(v) in RN_S) ? RN_S[toupper(v)] : v
+    # a CHAIN (2026-09-28 fix): a flow renamed twice maps OLD -> MID -> NEW;
+    # follow it to the current name (the hop limit guards a corrupt map)
+    u = toupper(v); n = 0
+    while ((u in RN_S) && n < 16) { v = RN_S[u]; u = toupper(v); n++ }
+    return v
 }
 function rnp_canon(v) {
     if (v == "") return v
@@ -137,8 +153,14 @@ function rnp_canon(v) {
 function rn_canon_pfx(v,   u, k, t, c, bt, bc, bsame, nx) {
     if (v == "") return v
     u = toupper(v)
-    if (u in RN_S) return RN_S[u]
+    if (u in RN_S) return rn_canon(v)
     if (u in RN_PFX) return RN_PFX[u]
+    # a token that IS a configured subscription is that flow, never a prefix
+    # of some other flow old name (2026-09-28 fix: UC1_X was folded onto
+    # UC1_X_FOO when the map held an old name starting UC1_X, and its server
+    # errors reddened the wrong flow). An exact old name cannot be configured
+    # (the map is pruned of those), so the exact lookup above stays first.
+    if (u in RN_C) return (RN_PFX[u] = v)
     t = ""; c = 0; bt = ""; bc = 0; bsame = 1
     for (k in RN_S) {
         if (index(k, u) != 1) continue
@@ -158,8 +180,8 @@ function rn_canon_pfx(v,   u, k, t, c, bt, bc, bsame, nx) {
             if (bt == "") bt = RN_S[k]
             else if (bt != RN_S[k]) bsame = 0 }
     }
-    if (c > 0 && t != "" && t != "\001")      RN_PFX[u] = t
-    else if (bc > 0 && bsame && bt != "")      RN_PFX[u] = bt
+    if (c > 0 && t != "" && t != "\001")      RN_PFX[u] = rn_canon(t)
+    else if (bc > 0 && bsame && bt != "")      RN_PFX[u] = rn_canon(bt)
     else                                       RN_PFX[u] = v
     return RN_PFX[u]
 }
@@ -240,8 +262,12 @@ _rn_record() {   # $1 col  $2 mapfile  $3 noun  $4 tmp prefix
                 printf "renames: REFUSED %s %s -> %s (already maps to %s)\n", NOUN, $1, $2, OLD[toupper($1)] > "/dev/stderr"; next }
             if (toupper($2) in NEW) {
                 printf "renames: REFUSED %s %s -> %s (that name is already the current name of %s)\n", NOUN, $1, $2, NEW[toupper($2)] > "/dev/stderr"; next }
-            if (toupper($1) in NEW) {
-                printf "renames: REFUSED %s %s -> %s (%s is the CURRENT name of %s)\n", NOUN, $1, $2, $1, NEW[toupper($1)] > "/dev/stderr"; next }
+            # a SECOND rename of the same flow (OLD -> MID recorded, now the
+            # same key moved MID -> NEW): recorded as the next link of the
+            # chain rn_canon follows — refused until 2026-09-28, which left the
+            # logs of both old names on a phantom MID and NEW never seen
+            if (toupper($1) in NEW)
+                printf "renames: %s %s -> %s continues the rename of %s\n", NOUN, $1, $2, NEW[toupper($1)] > "/dev/stderr"
             if (toupper($2) in OLD) {
                 printf "renames: REFUSED %s %s -> %s (%s is itself an OLD name, mapping to %s)\n", NOUN, $1, $2, $2, OLD[toupper($2)] > "/dev/stderr"; next }
             if (toupper($1) in CUR) {

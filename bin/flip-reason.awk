@@ -49,7 +49,9 @@ function flip_reason(msg,   m) {
     # stream broke mid-transfer. BEFORE the fingerprint / connection rules,
     # whose words the exception text after it may carry.
     if (m ~ /^(\[[^]]*\] *)?stream read\/write error\./) return "Stream read/write error"
-    if (m ~ /wrong server fingerprint|host key|fingerprint mismatch/) return "Wrong server fingerprint"
+    # "host key" as WORDS (2026-09-28 fix: the substring matched a hostname
+    # such as "remote host keys.partner.example" and blamed its fingerprint)
+    if (m ~ /wrong server fingerprint|fingerprint mismatch/ || m ~ /host key($|[^a-z0-9_.-]|\.$|\. )/) return "Wrong server fingerprint"
     if (m ~ /connection failure|could not be established|failed to connect|failed to create connection|connection refused|connection timed out|connection reset|unable to connect/) return "Connection failures"
     if (m ~ /receive file as/) return "Receive File As not set"
     # the PUBLISH to the account failing — "ARPA0001: … An error occurred while

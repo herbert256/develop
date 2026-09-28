@@ -38,7 +38,7 @@ SPEC='uc1	Could not send file	An error occurred while sending	finished with erro
 uc3	Applying the search pattern	listing files from partner 	Connection failure while 	Remote folder of transfer site: 	Remote files pattern of transfer site:
 ssh-key-auth	no certificate is found for user	locked due to too many failed login	Publickey authentication
 ssh-sessions	Channel is not active	No registered SSH session with ID	No SSH connection with ID	Network stream read/write error	Ignoring message for not active session
-connection-diagnostics	Connection failure while 	could not be established	Error during test connection	Wrong server fingerprint: got
+connection-diagnostics	Connection failure while 	could not be established	Error during test connection	Wrong server fingerprint: got	erforms test connection	ERFORMS TEST CONNECTION	erforms Test Connection
 remote-poll	Applying the search pattern	listing files from partner 	Remote files pattern of transfer site	Connection failure while 	failure connecting to remote host '
 
 SUBDIR="$CACHE_DIR/subsets"
@@ -82,7 +82,10 @@ for p in "${pids[@]}"; do wait "$p"; done
 printf '%s\n' "$SPEC" | cut -f1 | while IFS= read -r c; do
     : > "$SUBDIR/$c.tsv"
     for ((pi = 1; pi <= NJ; pi++)); do
-        [ -f "$SUBDIR/$c.p$pi" ] && { cat "$SUBDIR/$c.p$pi" >> "$SUBDIR/$c.tsv"; rm -f "$SUBDIR/$c.p$pi"; }
+        # an if, not `[ -f ] && …`: a part with no line for this consumer (the
+        # LAST one — a config-only estate, a quiet tail range) made the loop
+        # return 1 and set -e aborted the server reports (2026-09-28 fix)
+        if [ -f "$SUBDIR/$c.p$pi" ]; then cat "$SUBDIR/$c.p$pi" >> "$SUBDIR/$c.tsv"; rm -f "$SUBDIR/$c.p$pi"; fi
     done
 done
 : > "$SUBDIR/.done"   # the set is complete (srv_subset reads it only then)

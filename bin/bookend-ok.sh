@@ -23,6 +23,11 @@
 #               match: it can differ from the transfer log's CoreId for the
 #               same transfer (seen on the runtime), the transfer id is the
 #               unambiguous key
+#          AND  the LAST leg's own transfer-log status is a FAILURE — the
+#               "ended twice" case this step exists for (2026-09-28 fix: a
+#               File Failed for a STRUCTURAL reason — its last leg succeeded,
+#               but the movement or the leg count says it was not delivered —
+#               carries an ok bookend on that successful leg too, and flipped)
 #          AND  no reason is found: no Error/Warning line of the File's
 #               connections (the legs' session ids, _transfers.tsv col 24)
 #               nor one mentioning the CoreId or a leg's transfer id
@@ -143,7 +148,7 @@ awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
         # a few arrays over the CoreId count, cheaper than a second read of
         # the biggest cache.
         if ($23 != "" && ($23 in bkt)) cand[$1] = 1
-        if (!($1 in lastsk) || $13 >= lastsk[$1]) { lastsk[$1] = $13; lasttid[$1] = $23 }
+        if (!($1 in lastsk) || $13 >= lastsk[$1]) { lastsk[$1] = $13; lasttid[$1] = $23; lastst[$1] = $3 }
         if ($24 != "" && ($24 in rsess)) reason[$1] = 1
         if ($23 != "" && ($23 in rid)) reason[$1] = 1
         if ($1 in rid) reason[$1] = 1
@@ -155,7 +160,7 @@ awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
         settled = ($23 != "")
         if ($2 == "Failed" || settled) {
             t = lasttid[$1]
-            if (($1 in cand) && t != "" && (t in bkt) && !($1 in reason)) {
+            if (($1 in cand) && t != "" && (t in bkt) && !($1 in reason) && lastst[$1] ~ /^Failed/) {
                 if ($2 != "Processed" || $23 != bkt[t]) chg++
                 $2 = "Processed"; $23 = bkt[t]; nset++
                 printf "%s\t%s\t%s\n", $1, t, bkt[t] > OKOUT

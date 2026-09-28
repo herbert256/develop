@@ -69,6 +69,11 @@ fi
 tmp="$OUT.tmp.$$"
 sess="$OUT.sess.$$"
 trap 'rm -f "$tmp" "$sess" "$tmp".part.*' EXIT
+# the PREVIOUS verdicts (a second run — a build starts with none): an entry
+# whose session is not rescanned now persists, so a rerun never undoes the
+# rescues of the first (2026-09-28 fix: dropped with the incremental
+# machinery, but it was never a freshness check)
+OLDMAP="$OUT"; [ -f "$OUT" ] || OLDMAP=/dev/null
 
 # the sessions to (re)scan: every session a currently-UCx leg ran over
 awk -F'\t' '$6 ~ /^UCx_/ && $24 != "" { print $24 }' "$PARSED" | LC_ALL=C sort -u > "$sess"
@@ -130,11 +135,18 @@ scan_part() {   # $1 = part index: its range of line starts is [lo, hi)
 pids=()
 for ((pi = 1; pi <= NJ; pi++)); do scan_part "$pi" & pids+=("$!"); done
 for p in "${pids[@]}"; do wait "$p"; done
-awk -F'\t' -v OFS='\t' '
+awk -F'\t' -v OFS='\t' -v OLDF="$OLDMAP" '
     FILENAME ~ /\.sess\./            { scan[$1] = 1; next }
+    FILENAME == OLDF                  { old[$1] = $2; next }
     { if (!($1 in seen) || seen[$1] == "") seen[$1] = $2; else if (seen[$1] != $2) seen[$1] = "-" }
-    END { for (s in scan) if (seen[s] != "" && seen[s] != "-") print s, seen[s] }
-' "$sess" "$tmp".part.* | LC_ALL=C sort > "$tmp"
+    END {
+        # scanned sessions take the fresh verdict (or lose their entry);
+        # unscanned entries of an earlier run persist
+        for (s in scan) if (seen[s] != "" && seen[s] != "-") nv[s] = seen[s]
+        for (s in old)  if (!(s in scan)) nv[s] = old[s]
+        for (s in nv) print s, nv[s]
+    }
+' "$sess" "$OLDMAP" "$tmp".part.* | LC_ALL=C sort > "$tmp"
 rm -f "$tmp".part.*
 printf "TIME %5ds  session-sites: server log scan (%d jobs)\n" "$(( $(date +%s) - _ss0 ))" "$NJ" >&2
 
