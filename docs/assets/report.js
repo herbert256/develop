@@ -1136,9 +1136,29 @@
         else { var rr = v / max, t = rr <= 0.25 ? 1 : rr <= 0.5 ? 2 : rr <= 0.75 ? 3 : 4; c.textContent = String(v); c.className = "num heat" + t; }
       }
     });
+    // Marginal columns after the 7 weekday cells (the server Errors heatmap,
+    // 2026-09-28: Errors / Warnings / Total per hour): re-summed from the
+    // row's data-buckets (date:v1:v2:…), in column order; a zero failed/warn
+    // cell stays blank like the renderer's z cells.
+    var mTot = [];
+    drows.forEach(function (r) {
+      var b = r.getAttribute("data-buckets"); if (!b) return;
+      var s = aggBuckets(b, lo, hi).sum;
+      for (w = 8; w < r.cells.length; w++) {
+        var v = s[w - 8] || 0; c = r.cells[w];
+        mTot[w] = (mTot[w] || 0) + v;
+        setMarginal(c, v);
+      }
+    });
     totalRows(table).forEach(function (tr) {
       for (w = 0; w < 7; w++) { c = tr.cells[w + 1]; if (c) c.textContent = String(colTot[w] || 0); }
+      for (w = 8; w < tr.cells.length; w++) if (mTot[w] != null) setMarginal(tr.cells[w], mTot[w]);
     });
+  }
+  function setMarginal(c, v) {
+    var zc = / (failed|warn) /.test(" " + c.className + " ");
+    c.textContent = v || !zc ? String(v) : "";
+    if (zc) c.classList.toggle("z", !v);
   }
 
 
