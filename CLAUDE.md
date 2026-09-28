@@ -1143,8 +1143,9 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   of the nine types, every configured name gets one; slugs via the comprehensive `_slugmap.tsv`;
   no From/To, no search box, no RECALC.
 - **The special pages**: Entity Search (rows ship as DATA in `search-data.js`; the Type cell is
-  read by INDEX in report.js — adding a column means shifting it), the SIX File search pages
-  (`search/file-search-{24-hours,48-hours,week,2-weeks,3-weeks,month}.html` — under `docs/search/` since 2026-09-12, beside `search/search.html`; the engine-derived links carry `../` — 2026-08: ONE page per
+  read by INDEX in report.js — adding a column means shifting it), the SEVEN File search pages
+  (`search/file-search-{24-hours,48-hours,week,2-weeks,3-weeks,month,older}.html` — `older` = "> 1 month",
+  every File before the month window, 2026-09-28, user request; the windows partition the dated Files — under `docs/search/` since 2026-09-12, beside `search/search.html`; the engine-derived links carry `../` — 2026-08: ONE page per
   window — result rows tint green/red by outcome via restint + a per-row `data-res` — with
   per-page `-data.js` payloads (v5, capped at 100,000 rows; a capped page turns into a RED
   banner on the build report via `file-search-capped.txt`), searched by the DEDICATED

@@ -1,4 +1,4 @@
-/* file-search.js — the dedicated engine of the six FILE SEARCH pages
+/* file-search.js — the dedicated engine of the seven FILE SEARCH pages
    (search/file-search-<window>.html — under docs/search/ since 2026-09-12; ONE page per window since 2026-08, the
    Errors/OK pair is gone; every result row tints green (OK) or red (Error)).
    ------------------------------------------------------------------------
@@ -18,7 +18,7 @@
      (flag: "" = OK, "e" = Error, "E" = Error with its own error page)
 
    The engine renders ONLY the matches (DOM-built, auto-escaped), at most
-   500, newest first (the payload order). Only the six pages load this
+   500, newest first (the payload order). Only the seven pages load this
    script; report.js still runs for the chrome but keeps its hands off the
    table (restint + nosort + nosearch + nofilter, and the table ships empty
    — each rendered row carries data-res=green|red, the restint tint).

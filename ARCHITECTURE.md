@@ -871,7 +871,7 @@ IP-named page.
 
 ## The special pages
 
-**File search** (2026-08, SIX pages — under `docs/search/` since 2026-09-12, beside `search/search.html`; the engine-derived links carry `../`): `file-search-<window>-<outcome>.html` for
+**File search** (2026-08, SIX pages — SEVEN since 2026-09-28: `older`, "> 1 month", takes every File past data day 30, which was on no page before — under `docs/search/` since 2026-09-12, beside `search/search.html`; the engine-derived links carry `../`): `file-search-<window>-<outcome>.html` for
 windows `48-hours` (the newest 2 data days, anchored on the newest day in `_files.tsv`), `week`,
 `2-weeks`, `3-weeks` (the 5 days, then a week each, before) and `month` (through data day 30; older files are on no page — the windows PARTITION, a file is on exactly one page), outcomes
 `errors` (Failed/Expired) and `ok`. `bin/analyses/reports/file-search.sh` writes one `.rpt` per

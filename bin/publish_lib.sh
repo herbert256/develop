@@ -2290,7 +2290,7 @@ _inject_after_h1() {
     ' "$f" > "$tmp" && mv "$tmp" "$f"
 }
 
-# THE FILE SEARCH GROUP (2026-09-27, user request): the six
+# THE FILE SEARCH GROUP (2026-09-27, user request): the seven
 # search/file-search-*.html window pages and latest/search.html are two
 # implementations of one tool, joined by a FIRST tab row of two buttons —
 # injected right after the <h1>, above the window row of the six. Both pages

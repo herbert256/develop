@@ -1922,8 +1922,8 @@ for _fsel in all sub; do
     done
 done
 
-# The SIX File search pages (2026-08): one per window x outcome
-# (48-hours/week/month x errors/ok), each with its OWN data file. Since the
+# The File search pages: one per window (2026-08; seven since 2026-09-28 —
+# 24-hours … month and older, "> 1 month"), each with its OWN data file. Since the
 # compact v2 payload (2026-08) the report script writes the sidecar itself
 # (file-search-<key>-data.js, dictionary-coded data — ~95 B/row where the
 # lifted <tr> markup ran 300-525 B/row): the .rpt renders an EMPTY table and
@@ -1945,7 +1945,7 @@ for _fs_k in 48-hours-errors 48-hours-ok week-errors week-ok 2-weeks-errors 2-we
 done
 _fs_n=0
 _fs_jsv=$(cksum < docs/assets/file-search.js 2>/dev/null | awk '{print $1}')   # publish_lib cd'd to the repo root
-for _fs_k in 24-hours 48-hours week 2-weeks 3-weeks month; do
+for _fs_k in 24-hours 48-hours week 2-weeks 3-weeks month older; do
     if [ ! -f "$ARPT/file-search-$_fs_k.rpt" ] || [ ! -f "$ARPT/file-search-$_fs_k-data.js" ]; then
         rm -f "$_fs_dir/file-search-$_fs_k.html" "$_fs_dir/file-search-$_fs_k-data.js"
         continue

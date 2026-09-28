@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # file-search.sh — "File search": the searchable index of the FILES themselves,
-# by file NAME, split into SIX single pages (2026-08 — the Errors/OK page pair
+# by file NAME, split into SEVEN single pages (2026-08 — the Errors/OK page pair
 # is gone: one page per window, every result row tinted green (OK) or red
 # (Error) by the site outcome policy):
 #
@@ -13,15 +13,18 @@
 #   file-search-2-weeks    the last 2 weeks, the newest week excluded
 #   file-search-3-weeks    the last 3 weeks, the newest 2 weeks excluded
 #   file-search-month      the last month, the newest 3 weeks excluded
+#   file-search-older      "> 1 month" (2026-09-28, user request): every File
+#                          older than the month window — the six above left it
+#                          on no page
 #
 # The windows are DATA days, anchored on the newest day in the transfer cache
-# (an old export must not render six empty pages). Files older than 30 data
-# days are on NO page (the month intro says so); undated files (invalid
-# date_iso) cannot be bucketed and are skipped. Error = Failed or Expired,
+# (an old export must not render seven empty pages). The windows PARTITION the
+# dated Files — each is on exactly one page; undated files (invalid date_iso)
+# cannot be bucketed and are skipped. Error = Failed or Expired,
 # OK = anything else (Waiting counts OK) — the row TINT, not a page split.
 #
 # Each page is one EMPTY table; THIS script writes the page's data sidecar
-# (file-search-<key>-data.js, copied to docs/search/ by the analyses publish — the six pages live there since 2026-09-12)
+# (file-search-<key>-data.js, copied to docs/search/ by the analyses publish — the pages live there since 2026-09-12)
 # in a COMPACT DATA format (v5, 2026-08 — one row shape for every page):
 #
 #   window.AXWAY_FSEARCH_D = `date per line`            (the date dictionary)
@@ -51,7 +54,7 @@
 # neither the PDA TSVs nor home.rpt.
 #
 # Usage:
-#   ./file-search.sh    # -> data/<env>/analyses/reports/file-search-<key>.rpt (x6)
+#   ./file-search.sh    # -> data/<env>/analyses/reports/file-search-<key>.rpt (x7)
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -63,7 +66,7 @@ SLUGMAP="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv"   # name -> 
 ROWCAP=${AXWAY_FILE_SEARCH_ROWCAP:-100000}   # per-page payload row cap
 CAPFILE="$REPORTS_DIR/file-search-capped.txt"
 
-KEYS="24-hours 48-hours week 2-weeks 3-weeks month"
+KEYS="24-hours 48-hours week 2-weeks 3-weeks month older"
 # the 2026-08 Errors/OK page pair — swept so the estate never carries both sets
 OLDKEYS="48-hours-errors 48-hours-ok week-errors week-ok 2-weeks-errors 2-weeks-ok 3-weeks-errors 3-weeks-ok month-errors month-ok"
 for k in $OLDKEYS; do rm -f "$REPORTS_DIR/file-search-$k.rpt" "$REPORTS_DIR/file-search-$k-data.js"; done
@@ -110,13 +113,14 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v endj="$ENDJ" -v f="$PART" '
     $4 == "" || $7 == "" { next }
     {
         d = endj - $7
-        if (d < 0 || d >= 30) next
+        if (d < 0) next
         if (d <= f)          w = "24-hours"
         else if (d == f + 1) w = "48-hours"
         else if (d < 7)      w = "week"
         else if (d < 14)     w = "2-weeks"
         else if (d < 21)     w = "3-weeks"
-        else                 w = "month"
+        else if (d < 30)     w = "month"
+        else                 w = "older"
         print w, $6, $1, $2, $4, $8, $11, $12, $5
     }
 ' "$FCACHE" \
@@ -158,8 +162,8 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v endj="$ENDJ" -v f="$PART" '
         NK[k]++
     }
     END {
-        split("24-hours 48-hours week 2-weeks 3-weeks month", KL, " ")
-        for (i = 1; i <= 6; i++) { k = KL[i]
+        nkl = split("24-hours 48-hours week 2-weeks 3-weeks month older", KL, " ")
+        for (i = 1; i <= nkl; i++) { k = KL[i]
             printf "%s\t%d\t%s\t%s\t%s\t%d\t%s\t%d\t%d\n", k, N[k] + 0, humanbytes(V[k] + 0), \
                 ((k in MN) ? MN[k] : "-"), ((k in MX) ? MX[k] : "-"), \
                 NK[k] + 0, ((k in FROM) ? FROM[k] : "-"), SK[k] + 0, NE[k] + 0 > (tmp "/stats")
@@ -192,6 +196,7 @@ nav_row() {   # $1 = the current key
             2-weeks)  lbl="2 weeks" ;;
             3-weeks)  lbl="3 weeks" ;;
             month)    lbl="Month" ;;
+            older)    lbl="> 1 month" ;;
         esac
         if [ "$k" = "$cur" ]; then out+=$'\t'"1|$lbl|file-search-$k.html"
         else out+=$'\t'"0|$lbl|file-search-$k.html"; fi
@@ -216,9 +221,8 @@ for k in $KEYS; do
         2-weeks)  TL="2 weeks";  wdesc="the files of the **last 2 weeks**, the newest week excluded" ;;
         3-weeks)  TL="3 weeks";  wdesc="the files of the **last 3 weeks**, the newest 2 weeks excluded" ;;
         month)    TL="Month";    wdesc="the files of the **last month**, the newest 3 weeks excluded" ;;
+        older)    TL="> 1 month"; wdesc="the files **older than one month** (every File before the Month window)" ;;
     esac
-    older=""
-    case $k in month) older="Files older than 30 data days are on no page." ;; esac
     # the row cap: state exactly what is and is not searchable
     capnote=""
     [ "${NSKIP:-0}" -gt 0 ] && capnote=" **CAPPED:** of these, only the newest **$NSHIP** (back to **$FROM**) are searchable here — **$NSKIP** older files in this window are NOT shipped."
@@ -233,7 +237,6 @@ for k in $KEYS; do
         printf 'HEAD\tName\tDate\tSubscription\tSize\tCoreId\n'
         printf 'KIND\tfile\ttext\tsite\tnum\tmono\n'
         printf 'NOTE\tA **red** row is a transfer that **failed**, or a Waiting file whose staged copy the File Maintenance sweep deleted before pickup (**expired**); a red row with its own error page (kept for a subscription'\''s newest 10 failures of each day) opens it — the facts, every transfer leg, and the server log of its connections. A **green** row opens its subscription'\''s detail page. Date is the file'\''s first record'\''s date and time; Size counts the file once (its largest record).\n'
-        [ -n "$older" ] && printf 'NOTE\t%s\n' "$older"
         printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     # the page's COMPACT data sidecar (the publish copies it beside the page)

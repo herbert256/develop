@@ -476,14 +476,14 @@ n=$(grep -l '>Latest OK<' docs/details/subscriptions/*.html 2>/dev/null | wc -l 
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "no sample subscription page carries a Features 'Latest OK' row"
 
 # the search pages live under docs/search/ (2026-09-12, user request):
-# search.html + search-data.js and the six file-search pages + payloads —
+# search.html + search-data.js and the seven file-search pages + payloads —
 # nothing of them left at the docs root, the pages load their engine and
 # payload from the right places, and the top bar / sitemap link there
-for p in search.html search-data.js file-search-24-hours.html file-search-24-hours-data.js file-search-month.html file-search-month-data.js; do
+for p in search.html search-data.js file-search-24-hours.html file-search-24-hours-data.js file-search-month.html file-search-month-data.js file-search-older.html file-search-older-data.js; do
     check $([ -f "docs/search/$p" ] && echo 0 || echo 1) "docs/search/$p is missing"
     check $([ ! -e "docs/$p" ] && echo 0 || echo 1) "docs/$p still sits at the docs root"
 done
-check $([ "$(ls docs/search/file-search-*.html 2>/dev/null | wc -l | tr -d ' ')" = 6 ] && echo 0 || echo 1) "docs/search/ has $(ls docs/search/file-search-*.html 2>/dev/null | wc -l | tr -d ' ') file-search pages, expected 6"
+check $([ "$(ls docs/search/file-search-*.html 2>/dev/null | wc -l | tr -d ' ')" = 7 ] && echo 0 || echo 1) "docs/search/ has $(ls docs/search/file-search-*.html 2>/dev/null | wc -l | tr -d ' ') file-search pages, expected 7 (the sample spans 68 data days: every window holds files)"
 check $([ "$(grep -c '<script src="../assets/file-search.js?v=' docs/search/file-search-24-hours.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "search/file-search-24-hours.html does not load ../assets/file-search.js"
 check $([ "$(grep -c '<script src="file-search-24-hours-data.js?v=' docs/search/file-search-24-hours.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "search/file-search-24-hours.html does not load its sibling payload"
 check $([ "$(grep -c 'href="../search/search.html"' docs/tools/sitemap.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link ../search/search.html"
@@ -520,7 +520,7 @@ check $([ "$(grep -c 'href="../latest/search.html"' docs/tools/sitemap.html 2>/d
 check $(grep -q '<a class="dashlink" href="../search/all-files.html">Files</a>' docs/help/index.html 2>/dev/null && echo 0 || echo 1) "the baked top bar's Files link does not open ../search/all-files.html"
 # its From/To (2026-09-27): the transfer date list + a rangehook table
 check $(grep -q '<meta name="report-dates" content="[0-9]' docs/latest/search.html 2>/dev/null && grep -q 'data-rangehook="1"' docs/latest/search.html && echo 0 || echo 1) "latest/search.html lacks the report-dates meta or its rangehook table (no From/To)"
-# the File search group (2026-09-27, user request): the six window pages,
+# the File search group (2026-09-27, user request): the seven window pages,
 # latest/search.html and search/all-files.html share a FIRST tab row —
 # Implementation 1 | 2 | 3 — right after the <h1>, the page's own one active
 I1='Implementation 1, period'; I2='Implementation 2, latest 1000'; I3='Implementation 3, all files'
