@@ -25,26 +25,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines area_entries/html_head/…
 
-ensure_assets   # ALWAYS — see the note in bin/transfer/publish.sh
-
-# The index pages, the finder, the sitemap and the home are written from the
-# data tree, and the per-area publishes CLEAR the dirs the index pages live
-# in — so this must re-run whenever any of them did. Their stamp files are
-# the signal: data/.publish holds one per completed publish, so depending on
-# them says exactly "did anything get re-rendered".
-# Also read directly: every area's .rpt (the index labels come from TITLE/DESC),
-# docs/help/ (the sitemap's help card) and the git history (What is new).
-STAMP="$PUBLISH_STAMP_DIR/index.stamp"
-# the sitemap bakes the scope's build-report link, so the scope is part of this
-# (PUBLISH_STAMP_EXTRA is no longer set here: the scope only mattered for the
-# sitemap's Build-report link, gone 2026-08-29 with the docs/ build report)
-if [ -f docs/index.html ] && publish_is_fresh "$STAMP" "$DOCS" "${BASH_SOURCE[0]}" \
-       $(publish_area_stamps) \
-       data/transfer/reports data/server/reports data/dashboards/reports data/analyses/reports \
-       docs/help input/environment.txt .git/HEAD .git/refs/heads .git/packed-refs; then
-    echo "index pages are up to date; skipping." >&2
-    exit 0
-fi
+ensure_assets   # topbar-data.js (the menus' data file)
 
 # Give the hand-authored help pages the EXACT site top bar + footer (the user
 # asked for one consistent interface). The help BODY stays hand-authored; only
@@ -2009,5 +1990,3 @@ apply_help_chrome
 _bplap "apply_help_chrome"
 
 echo "Wrote index pages (root + transfer${SERVER_MENU:+ + server})." >&2
-
-publish_stamp "$STAMP"

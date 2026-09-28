@@ -33,23 +33,10 @@ GAF="$XREF/_partner-group-accounts.tsv"       # group / token / account (which n
 PSLUG="$DATA/transfer/reports/details/partners/_slugmap.tsv"
 OUTDIR="$DOCS/details/partner-groups"
 
-STAMP="$PUBLISH_STAMP_DIR/partner-groups.stamp"
-# An env with no groups renders no dir at all, so there is no output tree to
-# check for — the stamp dir itself stands in as the "did this ever run" marker.
-PG_OUT="$OUTDIR"; [ -s "$GRPF" ] || PG_OUT="$PUBLISH_STAMP_DIR"
-if publish_is_fresh "$STAMP" "$PG_OUT" "${BASH_SOURCE[0]}" \
-       "$GRPF" "$WHYF" "$GAF" "$PSLUG"; then
-    echo "docs/details/partner-groups/ is up to date; skipping." >&2
-    exit 0
-fi
-
 # Nothing configured / no groups this env -> remove any stale pages and stop.
 if [ ! -s "$GRPF" ]; then
     rm -rf "$OUTDIR"
     echo "publish-partner-groups: no partner groups configured." >&2
-    publish_stamp "$STAMP"   # "nothing to render" is a COMPLETED publish — without
-                             # this, an env with no groups (production) never stamps
-                             # and re-runs this every build
     exit 0
 fi
 
@@ -132,5 +119,3 @@ while IFS=$'\t' read -r gname members direction; do
 done < "$GRPF"
 
 echo "Rendered docs/details/partner-groups/ ($n group page(s))." >&2
-
-publish_stamp "$STAMP"

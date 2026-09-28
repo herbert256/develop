@@ -25,14 +25,7 @@ source "$SCRIPT_DIR/charts_lib.sh"              # kpi_card/card_open/svg_* + the
 DRPT="$DATA/dashboards/reports"
 DDIR="$DOCS/dashboards"
 CSSREL="../assets/style.css"
-ensure_assets   # ALWAYS — see the note in bin/transfer/publish.sh
-
-STAMP="$PUBLISH_STAMP_DIR/dashboards.stamp"
-if publish_is_fresh "$STAMP" "$DDIR" "${BASH_SOURCE[0]}" \
-       "$SCRIPT_DIR/charts_lib.sh" "$DRPT"; then
-    echo "docs/dashboards/ is up to date; skipping." >&2
-    exit 0
-fi
+ensure_assets   # topbar-data.js (the menus' data file)
 
 mkdir -p "$DDIR"
 rm -f "$DDIR"/*.html
@@ -273,5 +266,3 @@ done
 # consolidation (2026-07): ONE dashboard — the old per-topic URLs 404
 # (their redirect stubs were removed 2026-07, no backwards compatibility)
 echo "Wrote $npages dashboard page(s) to docs/dashboards/." >&2
-
-publish_stamp "$STAMP"

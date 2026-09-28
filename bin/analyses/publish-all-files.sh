@@ -53,12 +53,6 @@ FPGD="$DATA/transfer/reports/files"
 SLUGMAP="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv"
 OUTD="$DOCS/search/all"
 PAGE="$DOCS/search/all-files.html"
-STAMP="$PUBLISH_STAMP_DIR/all-files.stamp"
-if publish_is_fresh "$STAMP" "$OUTD" "${BASH_SOURCE[0]}" "$FCACHE" "$ERRD" "$FPGD" "$SLUGMAP" \
-       "$DOCS/assets/all-files-search.js" && [ -f "$PAGE" ]; then
-    echo "docs/search/all-files.html is up to date; skipping." >&2
-    exit 0
-fi
 
 mkdir -p "$DOCS/search"
 rm -rf "$OUTD"
@@ -199,6 +193,4 @@ awk -v a="<script src=\"all/index.js?v=$_mv\" defer></script>" -v b="<script src
     '/<script src=[^>]*report\.js/ && !done { print a; print b; done = 1 } { print }' "$PAGE" > "$PAGE.tmp.$$" \
     && mv "$PAGE.tmp.$$" "$PAGE"
 _inject_after_h1 "$PAGE" "$(file_search_impl_row 3)"
-
-publish_stamp "$STAMP"
 echo "Wrote search/all-files.html + search/all/ ($ndays day shard(s), $nrows File(s))." >&2

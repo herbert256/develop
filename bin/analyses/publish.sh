@@ -33,22 +33,7 @@ ADIR="$DOCS/analyses"
 COVRPT="$DATA/coverage"   # the coverage cell .rpts (the 3 PDA Configured cells)
 COVDIR="$DOCS/coverage"   # and their pages (restored 2026-07, linked from the home)
 
-ensure_assets   # ALWAYS — see the note in bin/transfer/publish.sh
-
-# The widest dep set of any publish: its own .rpt trees, the transfer reports
-# (coverage TSVs, detail slugmaps, the .rpt the insight pages read), the parse
-# cache publish-insights.sh reads directly, the config caches, and the RAW
-# FlowManager exports its jq passes (certificates, cron) go to.
-STAMP="$PUBLISH_STAMP_DIR/analyses.stamp"
-if publish_is_fresh "$STAMP" "$ADIR" "${BASH_SOURCE[0]}" \
-       "$SCRIPT_DIR/publish-insights.sh" "$SCRIPT_DIR/lib.sh" \
-       "$SCRIPT_DIR/../cron2human.awk" "$SCRIPT_DIR/../flip-reason.awk" \
-       docs/assets/file-search.js \
-       "$ARPT" "$FSRPT" "$COVRPT" "$DATA/transfer/reports" "$DATA/transfer/cache" \
-       "$DATA/server/reports" "$DATA/flow-manager" "$FM_CONFIG_DIR"; then
-    echo "docs/analyses/ is up to date; skipping." >&2
-    exit 0
-fi
+ensure_assets   # topbar-data.js (the menus' data file)
 
 mkdir -p "$ADIR"
 rm -f "$ADIR"/*.html
@@ -1985,5 +1970,3 @@ _aplap "the rest + file search pages"
 write_analyses_index
 
 echo "Wrote docs/analyses (index + the analysis pages)." >&2
-
-publish_stamp "$STAMP"

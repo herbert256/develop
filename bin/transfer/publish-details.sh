@@ -20,35 +20,20 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines the renderer
 
-ensure_assets   # ALWAYS — see the note in bin/transfer/publish.sh
+ensure_assets   # topbar-data.js (the menus' data file)
 
-# The detail .rpt tree plus the config caches (the res-* cell tints and the
-# 🔗 FlowManager deep links come from data/<env>/flow-manager).
-STAMP="$PUBLISH_STAMP_DIR/details.stamp"
 UCRPT=()
 # the UC2 pickup sidecar (uc2-status.sh): subscription-verdict.awk renders it
 # as the "Pickup information" table on UC2 pages and the shared-connection
-# note on UC4 pages — an input AND a dep. It must be read BEFORE the uc rpts
+# note on UC4 pages. It must be read BEFORE the uc rpts
 # (the fragments are built per ROW), so it goes FIRST in the list, with the
 # subscription->account map the UC4 note needs to find its account's row.
 [ -f "$DATA/flow-manager/xref/_subscriptions-accounts.tsv" ] && UCRPT+=("$DATA/flow-manager/xref/_subscriptions-accounts.tsv")
 [ -f "$DATA/server/reports/uc2-pickups.tsv" ] && UCRPT+=("$DATA/server/reports/uc2-pickups.tsv")
-# (NB: a DELETED rpt/sidecar drops out of this list and so out of the
-# freshness deps — pages keep the stale baked fragments until any other dep
-# changes; the full build always regenerates the inputs first, so this only
-# matters for hand-pruned data dirs)
 for _u in 1 2 3 4; do
     [ -f "$DATA/server/reports/uc$_u-status.rpt" ] && UCRPT+=("$DATA/server/reports/uc$_u-status.rpt")
 done
 unset _u
-if publish_is_fresh "$STAMP" "$DOCS/details" "${BASH_SOURCE[0]}" \
-       "$SCRIPT_DIR/subscription-verdict.awk" \
-       "$DATA/transfer/reports/details" "$DATA/transfer/reports/latest" "$DATA/flow-manager" \
-       "$DATA/transfer/reports/failed-sub-all.rpt" "$DATA/transfer/reports/errors" \
-       ${UCRPT[@]+"${UCRPT[@]}"} && [ -d "$DOCS/latest" ]; then
-    echo "docs/details/ is up to date; skipping." >&2
-    exit 0
-fi
 
 # ---- the per-subscription VERDICT fragments ---------------------------------
 # Every subscription detail page opens with the verdict its UCx status report
@@ -321,5 +306,3 @@ echo "Wrote docs/latest/search.html (the Latest files search)." >&2
 rm -rf "$DOCS/details/transfer-sites"
 
 echo "Rendered docs/details/ (per-entity pages)." >&2
-
-publish_stamp "$STAMP"

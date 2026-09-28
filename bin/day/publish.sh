@@ -23,14 +23,7 @@ source "$SCRIPT_DIR/../dashboards/charts_lib.sh"   # kpi_card/card_open/svg_* + 
 DRPT="$DATA/day/reports"
 DDIR="$DOCS/day"
 CSSREL="../assets/style.css"
-ensure_assets   # ALWAYS — see the note in bin/transfer/publish.sh
-
-STAMP="$PUBLISH_STAMP_DIR/day.stamp"
-if publish_is_fresh "$STAMP" "$DDIR" "${BASH_SOURCE[0]}" \
-       "$SCRIPT_DIR/../dashboards/charts_lib.sh" "$DRPT"; then
-    echo "docs/day/ is up to date; skipping." >&2
-    exit 0
-fi
+ensure_assets   # topbar-data.js (the menus' data file)
 
 mkdir -p "$DDIR"
 rm -f "$DDIR"/*.html
@@ -335,5 +328,3 @@ pub_wait
 # runs in a child where it could not propagate.
 npages=$(find "$DDIR" -name '*.html' 2>/dev/null | wc -l | tr -d ' ')
 echo "Wrote $npages combined day page(s) to docs/day/." >&2
-
-publish_stamp "$STAMP"

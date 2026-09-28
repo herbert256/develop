@@ -17,23 +17,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines the renderer
 
-ensure_assets   # ALWAYS — topbar-data.js must refresh even on a fully skipped
-                # publish (a MENU change needs no page re-render, only the data
-                # file). The build-stamp asset it also used to write went with
-                # the footer bar in 2026-07.
-
-# Nothing to re-render when no .rpt (or config cache, which colours the entity
-# cells) has changed since the last completed run. The whole reports tree is
-# one dep: it holds the detail .rpt and slugmaps the entity links resolve
-# through, so a details.sh rerun correctly invalidates these pages too.
-STAMP="$PUBLISH_STAMP_DIR/transfer.stamp"
-if publish_is_fresh "$STAMP" "$DOCS/transfer" "${BASH_SOURCE[0]}" \
-       "$DATA/transfer/reports" "$DATA/flow-manager" \
-       "$DATA/server/reports/_kaput-evidence.tsv" "$DATA/analyses/reports/_subs-boxes.tsv" \
-       "$DATA/colour/_redflip.tsv" "bin/flip-reason.awk"; then
-    echo "docs/transfer/ is up to date; skipping." >&2
-    exit 0
-fi
+ensure_assets   # topbar-data.js (the menus' data file)
 
 mkdir -p "$DOCS/transfer"
 rm -f "$DOCS"/transfer/*.html   # clear stale report pages (the index is rewritten by bin/build/publish.sh)
@@ -240,4 +224,3 @@ echo "Rendered docs/transfer/ ($count report(s))." >&2
 render_missing_reports transfer
 
 _tplap "month stats + placeholders"
-publish_stamp "$STAMP"

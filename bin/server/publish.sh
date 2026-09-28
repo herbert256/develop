@@ -15,16 +15,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines the renderer
 
-ensure_assets   # ALWAYS — see the note in bin/transfer/publish.sh
-
-# The server .rpt tree, plus the transfer detail slugmaps its @{alink=} cells
-# resolve entity links through and the config caches carrying the cell tints.
-STAMP="$PUBLISH_STAMP_DIR/server.stamp"
-if publish_is_fresh "$STAMP" "$DOCS/server" "${BASH_SOURCE[0]}" \
-       "$DATA/server/reports" "$DATA/transfer/reports/details" "$DATA/flow-manager"; then
-    echo "docs/server/ is up to date; skipping." >&2
-    exit 0
-fi
+ensure_assets   # topbar-data.js (the menus' data file)
 
 # Guard the expansion: under `set -u`, bash 3.2 errors on "${empty_array[@]}".
 if [ ${#server_order[@]} -eq 0 ]; then
@@ -68,5 +59,3 @@ echo "Rendered docs/server/ ($count report(s))." >&2
 # Every menu/sitemap/group-tab option must exist in this env: write an
 # empty-report placeholder for each order-listed report without a .rpt here.
 render_missing_reports server
-
-publish_stamp "$STAMP"
