@@ -83,8 +83,9 @@
                             .replace(/\*/g, "[\\s\\S]*").replace(/\?/g, "[\\s\\S]"));
     return function (k) { return re.test(k); };
   }
-  function words(q) {
-    q = q.replace(/^\s+|\s+$/g, "").toLowerCase();
+  function words(q, raw) {
+    q = q.replace(/^\s+|\s+$/g, "");
+    if (!raw) q = q.toLowerCase();
     return q === "" ? [] : q.split(/\s+/);
   }
 
@@ -215,8 +216,14 @@
       while (table.rows.length > 1) table.deleteRow(1);
       var fw = words(fq), sw = words(sq);
       if (!fw.length && !sw.length) { count.textContent = ""; showData(false); return; }
+      // the filter items come from the RAW words: norm() is the generator's
+      // C-locale fold (non-ASCII runs -> "?", then ASCII lowercase), and a
+      // Unicode lowercase first can turn a non-ASCII letter ASCII ("İ" ->
+      // "i" + U+0307), asking for a trigram no shard holds — the day of a
+      // real match was skipped (2026-09-28 fix)
+      var fr = words(fq, true);
       var fm = [], sm = [], need = [], k, j;
-      for (k = 0; k < fw.length; k++) { fm.push(matcher(fw[k])); need = need.concat(needs(fw[k])); }
+      for (k = 0; k < fw.length; k++) { fm.push(matcher(fw[k])); need = need.concat(needs(fr[k] || "")); }
       for (k = 0; k < sw.length; k++) sm.push(matcher(sw[k]));
       // which global subscriptions pass the Subscription field
       var subOk = null;

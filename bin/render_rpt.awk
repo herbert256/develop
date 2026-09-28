@@ -430,6 +430,10 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         gu = ""
         if (kind == "ptn" && (toupper(rawtext) in GRP)) gu = dlink "partner-groups/" GRP[toupper(rawtext)] ".html"
         extra = (gu != "" ? gicon(gu) : "")
+        # an EXPLICIT link on the cell (@{link=}, @{alink=}, @{href=}) wraps
+        # the whole value below: the kind link and the group icon would nest
+        # an anchor inside it (2026-09-28 fix) — the tint above stays
+        if (link != "" || rawhref != "") { slug = ""; extra = "" }
         if (rowdrill && slug != "") { text = text dicon(dlink sd "/" slug ".html") extra }
         else if (slug != "" && extra == "") { text = "<a href=\"" dlink sd "/" slug ".html\">" text "</a>"; cls = (cls != "" ? cls " cl" : "cl") }
         else if (slug != "")         text = "<a href=\"" dlink sd "/" slug ".html\">" text "</a>" extra
@@ -441,7 +445,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # On a ROW-DRILL row (rowdrill, see the ROW branch) the click belongs to
     # the drill — the detail page moves to an ICON after the name instead.
     if (!total && link != "" && rowdrill) text = text dicon(dlink link ".html")
-    else if (!total && link != "") { text = "<a href=\"" dlink link ".html\">" text "</a>"; cls = (cls != "" ? cls " cl" : "cl") }
+    else if (!total && link != "" && rawhref == "") { text = "<a href=\"" dlink link ".html\">" text "</a>"; cls = (cls != "" ? cls " cl" : "cl") }
     # @{href=URL}: an explicit page-relative link, used VERBATIM (no dlink
     # prefix, no .html suffix) — e.g. the Top view date cells -> the per-day
     # pages. Wraps the whole cell like link=.

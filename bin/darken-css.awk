@@ -23,6 +23,10 @@ BEGIN {
     B["#fbf4d5"] = "#2a2716"; B["#fbe6cd"] = "#2b2118"; B["#eee2f6"] = "#241f2c"; B["#c2d7f3"] = "#2f4d75"
     B["#93b9e6"] = "#3a6499"; B["#5e93cf"] = "#4a7dbd"; B["#2c4a6b"] = "#3a5f8a"; B["#ffd36b"] = "#ffd36b"
     B["#20344a"] = "#20344a"
+    # the Polling "contradicts the cron" cell (td.obsbad): already dark, kept —
+    # without an entry the rule had no dark twin and the dark row tints painted
+    # over it (2026-09-28 fix)
+    B["#8b1a1a"] = "#8b1a1a"
     # text
     C["#222"] = "#d6dbe1"; C["#444"] = "#b8c0c8"; C["#333"] = "#c4cbd3"; C["#555"] = "#a8b2bc"; C["#556"] = "#a8b2bc"
     C["#666"] = "#9aa5b1"; C["#5a6b7d"] = "#9aa5b1"; C["#66707c"] = "#9aa5b1"; C["#6b7785"] = "#9aa5b1"

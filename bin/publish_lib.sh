@@ -651,6 +651,9 @@ render_topbar() {
     [ -n "${GOODIES_MENU:-}" ] && printf '<div class="dd"><span class="ddlabel">Goodies \342\226\276</span><div class="ddm">%s</div></div>' "${GOODIES_MENU//@/$base}"   # the short cuts (2026-09-13) — KEEP IN STEP with buildTopbar
     printf '</nav>'
     printf '<a class="dashlink" href="%sdashboards/index.html">Dashboard</a>' "$base"
+    # the Monitor link when the site HAS a monitor (TB_MON) — buildTopbar's
+    # M.monitor twin (2026-09-28 fix: the baked bar never showed it)
+    if [ "${TB_MON:-0}" = 1 ]; then printf '<a class="dashlink" href="%sdashboards/monitor.html">Monitor</a>' "$base"; fi
     # Top-bar right: the REPORT FINDER + SITE MAP magnifiers, then the help icon.
     printf '<span class="tr-group">'
     printf '<a class="searchbtn" href="%stools/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a>' "$base"
@@ -2379,7 +2382,10 @@ skipped_tokens() {
                    else v = $0 }
             gsub(/^[ \t]+|[ \t]+$/, "", v); print v }')
         [ -n "$l" ] || continue
-        s=$(printf '%s' "$l" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-'); s=${s%-}; s=${s#-}
+        # skipped.sh slugify: every RUN of other characters is ONE "-", none
+        # at either end (2026-09-28 fix: an unsqueezed run linked a page
+        # that does not exist)
+        s=$(printf '%s' "$l" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C tr -cs 'a-z0-9' '-'); s=${s%-}; s=${s#-}
         printf '%s\t%s\n' "$l" "${s:-_}"
     done < "$f"
 }
