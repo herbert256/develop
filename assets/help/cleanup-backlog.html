@@ -21,14 +21,16 @@
 <h2>Classes (rank order)</h2>
 <ul>
 <li><strong>config-orphan</strong> &mdash; no subscription references the account: nothing can route through it.</li>
-<li><strong>never-any-traffic</strong> &mdash; a configured subscription with zero Files ever.</li>
-<li><strong>unused-whitelist</strong> &mdash; allowed addresses that never connected, grouped per allowing account.</li>
+<li><strong>never-any-traffic</strong> &mdash; a configured subscription with zero Files in the logs.</li>
+<li><strong>unused-whitelist</strong> &mdash; allowed addresses not seen in the logs, grouped per allowing account.</li>
 <li><strong>no-cron</strong> &mdash; a cron-triggered subscription with no cron expression can never poll: the quietest failure mode there is.</li>
 <li><strong>long-quiet</strong> &mdash; no activity for 45+ days, measured against the newest log day.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li><strong>Green</strong> row = never showed any traffic; removing it cannot break a working flow. <strong>Orange</strong> row = had traffic once, or is a config gap; check before acting.</li>
+<li><strong>Green</strong> row = not seen in the loaded logs; the Safety cell names how many days they span. A candidate, not a proof: a quarterly, yearly or disaster-recovery flow looks the same &mdash; confirm with the owner before removing.</li>
+<li>No transfer log loaded = nothing is green: those rows are orange, &ldquo;no logs loaded - cannot judge&rdquo;.</li>
+<li><strong>Orange</strong> row = had traffic once, or is a config gap; check before acting.</li>
 <li>Reads source data only &mdash; the flow-manager config caches, the coverage TSVs, the transfer cache and the SKIP-filtered subscriptions export (the same population as every other report) &mdash; never another report, so the ranking is stable.</li>
 <li>&ldquo;Never seen&rdquo; for a whitelist address is the established rollup: no transfer from that address AND no server-log mention; a server-contact-only address is not listed.</li>
 <li>no-cron is the <a href="missing-cronjobs.html">Missing cronjobs</a> condition (the use-case definitions decide which UCs are cron-triggered); such subscriptions leave no trace in any log, only the configuration reveals them.</li>

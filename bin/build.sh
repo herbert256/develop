@@ -96,6 +96,19 @@ source bin/envlabel.sh   # ENV_LABEL / ENV_KEY / ENV_INBOX from input/environmen
 # a green build (bin/check-syntax.sh says why).
 bin/check-syntax.sh || exit 1
 
+# PREFLIGHT (2026-09-28 audit F05): every file the docs/ seed below copies
+# must exist BEFORE anything is cleared — a missing asset used to fail the
+# seed's cp AFTER data/ and docs/ were already gone: no site, no report.
+SEED_ASSETS="style.css report.js slotchart.js file-search.js latest-search.js all-files-search.js"
+_miss=""
+for _a in $SEED_ASSETS; do [ -f "assets/$_a" ] || _miss="$_miss assets/$_a"; done
+[ -d assets/help ] || _miss="$_miss assets/help/"
+[ -f bin/darken-css.awk ] || _miss="$_miss bin/darken-css.awk"
+if [ -n "$_miss" ]; then
+    printf 'bin/build.sh: missing%s — nothing was cleared, the current site stays.\n' "$_miss" >&2
+    exit 1
+fi
+
 BUILD_DIR="build"
 REPORT="$BUILD_DIR/index.html"
 
@@ -125,6 +138,10 @@ if ! mkdir "$BUILD_LOCK" 2>/dev/null; then
     fi
 fi
 printf '%s\n' "$$" > "$BUILD_LOCK/pid"
+# Until finalize_report takes the EXIT trap over (it needs the step machinery
+# defined below), a failure in the wipe or the seed — a full disk, a signal —
+# still releases the lock and says where the run died (2026-09-28 audit F05).
+trap '_rc=$?; [ "$_rc" -eq 0 ] || printf "*** bin/build.sh: FAILED during the wipe/seed (exit %d) — no build report for this run.\n" "$_rc" >&2; rm -rf "$BUILD_LOCK"' EXIT
 
 # ---- THE WIPE: build/, data/, docs/ (formerly bin/fresh.sh) -----------------
 # rm -rf with a .DS_Store retry: Finder can drop one into a directory WHILE
@@ -188,7 +205,8 @@ echo "build.sh: data/ and docs/ moved aside in $(( $(date +%s) - _fc0 ))s (delet
 # generated (ensure_assets).
 echo "build.sh: seeding docs/ from assets/ ..." >&2
 mkdir -p docs/assets docs/help
-cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js assets/latest-search.js assets/all-files-search.js docs/assets/
+_seed=(); for _a in $SEED_ASSETS; do _seed+=("assets/$_a"); done   # the preflight's list
+cp "${_seed[@]}" docs/assets/
 awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css   # the dark theme, generated from the light rules (2026-09-05)
 cp -R assets/help/. docs/help/
 

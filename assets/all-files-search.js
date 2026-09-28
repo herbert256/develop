@@ -100,6 +100,7 @@
     if (location.pathname.split("/").pop() !== "all-files.html") return;
     var table = document.querySelector(".tablewrap table");
     if (!table || !table.rows.length) return;
+    var NOIDX = !X;   // the manifest script did not load: say so, never "no matches"
     if (!X) X = { subs: "", days: "" };
 
     // ---- the manifest ----------------------------------------------------
@@ -129,15 +130,25 @@
       for (j = 0; j < names.length; j++) gs.push({ name: names[j], key: names[j].toLowerCase() });
       CACHE[d] = { rows: R, subs: gs };
       var cbs = WAIT[d] || []; delete WAIT[d];
-      for (j = 0; j < cbs.length; j++) cbs[j]();
+      for (j = 0; j < cbs.length; j++) cbs[j](true);
     };
+    // cb(ok): ok = false when the shard could not be read. A FAILED shard is
+    // NOT cached (2026-09-28 audit F07): it was stored as an empty day, so
+    // the search said "no matches" for a day it never read and never asked
+    // for it again; now the status counts it and the next search retries it.
+    // A script that loads but never calls AXWAY_AFD fails the same way.
     function load(day, cb) {
-      if (CACHE[day.d]) { cb(); return; }
+      if (CACHE[day.d]) { cb(true); return; }
       if (WAIT[day.d]) { WAIT[day.d].push(cb); return; }
       WAIT[day.d] = [cb];
       var s = document.createElement("script");
       s.src = "all/d-" + day.d + ".js?v=" + day.v;
-      s.onerror = function () { CACHE[day.d] = { rows: [], subs: [] }; var cbs = WAIT[day.d] || []; delete WAIT[day.d]; for (var j = 0; j < cbs.length; j++) cbs[j](); };
+      s.onerror = function () {
+        if (s.parentNode) s.parentNode.removeChild(s);
+        var cbs = WAIT[day.d] || []; delete WAIT[day.d];
+        for (var j = 0; j < cbs.length; j++) cbs[j](false);
+      };
+      s.onload = function () { if (!CACHE[day.d] && WAIT[day.d]) s.onerror(); };
       document.head.appendChild(s);
     }
 
@@ -216,6 +227,7 @@
       while (table.rows.length > 1) table.deleteRow(1);
       var fw = words(fq), sw = words(sq);
       if (!fw.length && !sw.length) { count.textContent = ""; showData(false); return; }
+      if (NOIDX) { count.textContent = "the search index did not load — reload the page; nothing was searched"; showData(false); return; }
       // the filter items come from the RAW words: norm() is the generator's
       // C-locale fold (non-ASCII runs -> "?", then ASCII lowercase), and a
       // Unicode lowercase first can turn a non-ASCII letter ASCII ("İ" ->
@@ -239,12 +251,14 @@
         cand.push(D);
       }
       var hits = [], nsubs = {}, done = 0, next = 0, inflight = 0, stopped = false, painted = 0;
+      var bad = {}, nbad = 0;                // this search's days whose shard failed to load
       function status(final) {
         var nsb = 0; for (var q in nsubs) nsb++;
-        var head = hits.length === 0 ? (final ? "no matches" : "searching…")
+        var head = hits.length === 0 ? (final ? (nbad ? "no matches in the days that loaded" : "no matches") : "searching…")
                  : (stopped ? "the newest " + SHOW + " matches" : hits.length + (hits.length === 1 ? " match" : " matches")) +
                    " in " + nsb + (nsb === 1 ? " subscription" : " subscriptions");
-        count.textContent = head + " · " + done + " of " + cand.length + " day(s) searched" +
+        count.textContent = head + " · " + (done - nbad) + " of " + cand.length + " day(s) searched" +
+          (nbad ? ", " + nbad + " could not be loaded (press Enter to retry)" : "") +
           (skipped ? ", " + skipped + " skipped by the index" : "") + (final ? "" : "…");
       }
       function paint() {                     // append the matches found since the last paint
@@ -268,8 +282,15 @@
       function countSubs() { nsubs = {}; for (var p = 0; p < hits.length; p++) { var c = CACHE[hits[p][0]]; nsubs[c.subs[hits[p][1].si].key] = 1; } }
       function pump() {
         if (my !== gen) return;
-        // scan every loaded day at the head of the queue, in date order
-        while (done < cand.length && !stopped && CACHE[cand[done].d]) { scan(cand[done]); done++; }
+        // scan every settled day at the head of the queue, in date order (a
+        // day whose shard failed is counted, not scanned)
+        while (done < cand.length && !stopped) {
+          var cd = cand[done].d;
+          if (CACHE[cd]) scan(cand[done]);
+          else if (bad[cd]) nbad++;
+          else break;
+          done++;
+        }
         countSubs();
         if (stopped || done >= cand.length) { paint(); status(true); return; }
         paint(); status(false);
@@ -277,9 +298,10 @@
           var D2 = cand[next++];
           if (CACHE[D2.d]) continue;
           inflight++;
-          load(D2, function () { inflight--; pump(); });
+          load(D2, loaded(D2.d));
         }
       }
+      function loaded(d) { return function (ok) { inflight--; if (!ok) bad[d] = 1; pump(); }; }
       status(false);
       pump();
     }

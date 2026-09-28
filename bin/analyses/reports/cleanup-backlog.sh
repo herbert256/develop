@@ -20,8 +20,11 @@
 #                       hosts) whose last activity is 45+ days old
 #
 # An object appears ONCE, under its safest applicable class. The safety
-# column is the honest hint: green = no traffic ever (safest to remove),
-# orange = had traffic or is a config gap — check before acting.
+# column is the honest hint: green = not seen in the loaded logs (the cell
+# names how many days they span — a quarterly or DR flow looks the same, so
+# it is a candidate, not a proof), orange = had traffic or is a config gap —
+# check before acting. No transfer log loaded = nothing is green (2026-09-28
+# audit F04: a config-only build painted MORE rows green, not fewer).
 #
 # PARTNER = UNION attribution for the partner recency (the site-wide rule).
 # Config/analysis page: the table is `nofilter`.
@@ -109,6 +112,7 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
     FILENAME ~ /_subscriptions-partners\.tsv$/   { if ($1 != "" && $2 != "") SP[toupper($1)] = SP[toupper($1)] (SP[toupper($1)] == "" ? "" : "\037") $2; next }
     {   # _files.tsv: the newest log day + the partner last-seen (union rule)
         if ($4 != "" && $4 > maxd) maxd = $4
+        if ($4 != "" && (mind == "" || $4 < mind)) mind = $4
         set = $20
         if ($12 != "" && (toupper($12) in SP)) { n = split(SP[toupper($12)], Z, "\037")
             for (i = 1; i <= n; i++) if (index("\037" set "\037", "\037" Z[i] "\037") == 0)
@@ -122,11 +126,16 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
     }
     END {
         mj = (maxd != "") ? djdn(maxd) : 0
+        # the GREEN verdict rests on the loaded logs alone: "not seen" names the
+        # window it covers, and with no transfer log at all nothing can be
+        # judged — those rows turn orange
+        if (maxd == "") { unseen = "no logs loaded - cannot judge"; ures = "orange"; nev = "no logs" }
+        else { unseen = "not seen in " (mj - djdn(mind) + 1) " day(s) of logs"; ures = "green"; nev = "never" }
         # rank 1: config-orphan accounts
         for (z = 1; z <= nacc; z++) { a = ACC[z]
             if (toupper(a) in HASSUB) continue
             last = CAT[toupper(a)]
-            if (last == "") { safe = "no traffic ever"; res = "green"; last = "never" }
+            if (last == "") { safe = unseen; res = ures; last = nev }
             else           { safe = "had traffic - check first"; res = "orange" }
             emit(1, 1, a, "account", "accounts", "config-orphan", "no subscription references this account", last, safe, res)
         }
@@ -139,22 +148,22 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
             d = (CSD[su] == "I") ? "in" : (CSD[su] == "O") ? "out" : "?"
             uc = "other"; if (match(s, /^UC[0-9]+/)) uc = substr(s, 1, RLENGTH)
             if (su in SMEN) emit(2, 2, s, "subscription", "subscriptions", "never-any-traffic", \
-                "configured " d " (" uc "), zero Files ever - seen in the server log only", "never", "server contact only - check first", "orange")
+                "configured " d " (" uc "), zero Files in the logs - seen in the server log only", nev, "server contact only - check first", "orange")
             else emit(2, 2, s, "subscription", "subscriptions", "never-any-traffic", \
-                "configured " d " (" uc "), zero Files ever", "never", "no traffic ever", "green")
+                "configured " d " (" uc "), zero Files in the logs", nev, unseen, ures)
         }
         # rank 3: unused whitelist addresses, grouped per allowing account
         totun = 0
         for (z = 1; z <= naw; z++) { a = AWORD[z]
             if (AWU[a] + 0 == 0) continue
             totun += AWU[a]
-            last = CAT[toupper(a)]; if (last == "") last = "never"
+            last = CAT[toupper(a)]; if (last == "") last = nev
             emit(3, 3, a, "whitelist", "accounts", "unused-whitelist", \
-                AWU[a] " of " AWT[a] " allowed address(es) never seen - no transfer, no server mention", last, "addresses never connected - safe to prune", "green")
+                AWU[a] " of " AWT[a] " allowed address(es) not seen - no transfer, no server mention", last, unseen, ures)
         }
         # rank 4: cron-triggered subscriptions with no cron expression
         for (z = 1; z <= nnc; z++) { s = NC[z]
-            last = CST[toupper(s)]; if (last == "") last = "never"
+            last = CST[toupper(s)]; if (last == "") last = nev
             emit(4, 4, s, "subscription", "subscriptions", "no-cron", \
                 "cron-triggered use case (" NCU[s] "), no cron expression - it can never poll", last, "config gap - fix or remove", "orange")
         }
@@ -199,16 +208,18 @@ sv() { awk -F'\t' -v k="$1" '$1 == k { print $2 }' "$TMPD/stats.tsv"; }
 n_orphan=$(sv orphan); n_never=$(sv never); n_white=$(sv white); n_whiteips=$(sv whiteips)
 n_nocron=$(sv nocron); n_quiet=$(sv quiet); maxd=$(sv maxd)
 n_total=$(( n_orphan + n_never + n_white + n_nocron + n_quiet ))
+# the three "not seen" tiles follow the rows: orange when no transfer log was loaded
+ucol=green; [ -n "$maxd" ] || ucol=orange
 
 {
     printf 'TITLE\tCleanup backlog\n'
     printf 'DESC\tOne ranked decommission-candidate list: config-orphan accounts, subscriptions that never carried a File, whitelist addresses that never connected, cron-triggered subscriptions that can never run, and entities quiet for 45+ days — safest class first.\n'
-    printf 'INTRO\tEvery cleanup signal the site computes, merged into **one ranked list** and ordered safest-first: an object whose row is **green** never showed ANY traffic — removing it cannot break a working flow — while an **orange** row had traffic once (or is a config gap) and deserves a check before acting. Each object appears once, under its safest applicable class, and every row names its evidence. The classes, in rank order: **config-orphan** (no subscription references the account — nothing can route through it), **never-any-traffic** (configured subscription, zero Files ever), **unused-whitelist** (%s allowed addresses that never connected, grouped per allowing account), **no-cron** (a cron-triggered subscription with no cron expression can never poll — the quietest failure mode there is), and **long-quiet** (no activity for 45+ days, measured against the newest log day, %s).\n' \
+    printf 'INTRO\tEvery cleanup signal the site computes, merged into **one ranked list** and ordered safest-first: a **green** row was not seen anywhere in the loaded logs (its Safety cell names how many days they span) — the safest candidates, not a proof: a flow that runs less often than that window (quarterly, yearly, disaster recovery) looks exactly the same, so confirm with its owner before removing it; with no transfer log loaded nothing is green. An **orange** row had traffic once (or is a config gap) and deserves a check before acting. Each object appears once, under its safest applicable class, and every row names its evidence. The classes, in rank order: **config-orphan** (no subscription references the account — nothing can route through it), **never-any-traffic** (configured subscription, zero Files in the logs), **unused-whitelist** (%s allowed addresses not seen in the logs, grouped per allowing account), **no-cron** (a cron-triggered subscription with no cron expression can never poll — the quietest failure mode there is), and **long-quiet** (no activity for 45+ days, measured against the newest log day, %s).\n' \
         "$n_whiteips" "$maxd"
     printf 'STAT\twhite\t%s\tFindings\n' "$n_total"
-    printf 'STAT\tgreen\t%s\tConfig-orphan accounts\n' "$n_orphan"
-    printf 'STAT\tgreen\t%s\tNever-seen subscriptions\n' "$n_never"
-    printf 'STAT\tgreen\t%s\tAccounts with unused whitelist\n' "$n_white"
+    printf 'STAT\t%s\t%s\tConfig-orphan accounts\n' "$ucol" "$n_orphan"
+    printf 'STAT\t%s\t%s\tNever-seen subscriptions\n' "$ucol" "$n_never"
+    printf 'STAT\t%s\t%s\tAccounts with unused whitelist\n' "$ucol" "$n_white"
     printf 'STAT\torange\t%s\tMissing a cronjob\n' "$n_nocron"
     printf 'STAT\torange\t%s\tLong quiet (45d+)\n' "$n_quiet"
 

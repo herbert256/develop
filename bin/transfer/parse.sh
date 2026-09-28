@@ -319,6 +319,11 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         # (2026-09-28 fix: it stayed a leg with garbage values and a fake UCx_
         # site, while the File collapse dropped it — legs and Files disagreed)
         if (field[34] == "" || field[34] ~ /^[ \t]*$/) { nocid++; next }
+        # the CoreId NAMES FILES (files/<CoreId>.html, the per-File .rpt
+        # descriptors): anything but [A-Za-z0-9._-] after an alphanumeric
+        # first character could be a path ("../x") and is refused, counted
+        # apart from the missing ones (2026-09-28 audit F02)
+        if (field[34] !~ /^[A-Za-z0-9][A-Za-z0-9._-]*$/) { badcid++; next }
 
         # Blacklist, applied at the source: platform-internal pseudo-values are
         # BLANKED (the row itself is kept — only the entity attribution goes),
@@ -413,6 +418,8 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
     END {
         if (nocid > 0)
             printf "WARNING: dropped %d record line(s) with no CoreId (a broken or partial CSV line).\n", nocid > "/dev/stderr"
+        if (badcid > 0)
+            printf "WARNING: dropped %d record line(s) whose CoreId is not a plain identifier (only letters, digits, . _ - are accepted).\n", badcid > "/dev/stderr"
         if (dups > 0)
             printf "NOTE: dropped %d exact-duplicate record line(s) (kept the first occurrence of each).\n", dups > "/dev/stderr"
     }

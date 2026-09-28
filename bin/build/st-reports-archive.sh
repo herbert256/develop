@@ -110,11 +110,16 @@ _alap "7z"
 if [ -d "$EX/.git" ]; then
     { [ -n "$_expull" ] && wait "$_expull"; } \
         || echo "outbox: WARNING - pull failed (offline?) — pushing on top of the local state." >&2
-    cp "$out" "$EX/st-reports-${ENV_KEY}.7z"
+    ob="st-reports-${ENV_KEY}.7z"
+    cp "$out" "$EX/$ob"
     _alap "outbox copy + pull"
-    if [ -n "$(git -C "$EX" status --porcelain)" ]; then
-        git -C "$EX" add -A
-        git -C "$EX" commit --quiet -m "st-reports-${ENV_KEY} ${stamp}"
+    # the ARCHIVE ONLY (2026-09-28 audit F06): `add -A` swept everything else
+    # in the shared repo — a dropped-but-uncommitted inbox archive, a draft —
+    # into this commit; `commit -- PATH` also leaves anything else already
+    # staged there out of it
+    if [ -n "$(git -C "$EX" status --porcelain -- "$ob")" ]; then
+        git -C "$EX" add -- "$ob"
+        git -C "$EX" commit --quiet -m "st-reports-${ENV_KEY} ${stamp}" -- "$ob"
     fi
     _alap "outbox commit"
     if git -C "$EX" push --quiet 2>/dev/null \

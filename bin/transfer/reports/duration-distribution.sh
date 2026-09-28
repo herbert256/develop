@@ -43,7 +43,10 @@ bands() {
             if (ms <= 1800000) return 5
             return 6
         }
-        okonly && ($2 == "Failed" || $2 == "Expired") { next }
+        # delivered Files only: Waiting (staged, pickup still open) is out too —
+        # its span is the staging leg, not a delivery (2026-09-28 audit F08;
+        # duration-longest.sh already filtered this way)
+        okonly && $2 != "Processed" { next }
         {
             d = substr($4, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) next
             ms = $9 + 0; if (ms <= 0) next

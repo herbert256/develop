@@ -60,7 +60,9 @@ slowest() {
             }
         }
         function pctl(P) { return T[int((TN - 1) * P / 100 + 0.5) + 1] }
-        okonly && ($2 == "Failed" || $2 == "Expired") { next }
+        # delivered Files only: Waiting (staged, pickup still open) is out too
+        # (2026-09-28 audit F08 — the duration family now agrees)
+        okonly && $2 != "Processed" { next }
         {
             d = substr($4, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) next
             ms = $9 + 0; if (ms <= 0) next

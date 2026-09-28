@@ -111,7 +111,16 @@ if [ ${#consumed[@]} -gt 0 ]; then
     # build right after the wipe (2026-09-28 fix)
     git -C "$EX" rm -q --cached --ignore-unmatch -- "${consumed[@]}" >/dev/null 2>&1 \
         || echo "inbox: WARNING - could not stage the removal of ${consumed[*]} in the inbox repo." >&2
-    if git -C "$EX" commit --quiet -m "consumed by the $ENV_LABEL runtime build $(date '+%Y-%m-%d %H:%M'): ${consumed[*]}"; then
+    # commit THOSE PATHS ONLY (2026-09-28 audit F06): a bare commit took the
+    # whole index — anything else staged in the shared repo went out with
+    # it. `commit -- PATH` refuses a path git never knew (an archive dropped
+    # without a commit), so only the ones in HEAD are named.
+    tracked=()
+    for p in "${consumed[@]}"; do
+        git -C "$EX" cat-file -e "HEAD:$p" 2>/dev/null && tracked+=("$p")
+    done
+    if [ ${#tracked[@]} -gt 0 ] \
+       && git -C "$EX" commit --quiet -m "consumed by the $ENV_LABEL runtime build $(date '+%Y-%m-%d %H:%M'): ${tracked[*]}" -- "${tracked[@]}"; then
         if git -C "$EX" push --quiet 2>/dev/null; then
             echo "inbox: $narch archive(s) consumed and removed from the inbox (pushed): ${consumed[*]}" >&2
         else

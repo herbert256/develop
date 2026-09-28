@@ -167,6 +167,33 @@ ingest_one() {
     done < <(find "$tmp" -type f ! -name '.DS_Store' -print0)
 
     [ ${#ignored[@]} -eq 0 ] || echo "inbox: ignored (not an export): ${ignored[*]}" >&2
+
+    # ---- 4c. VALIDATE the whole plan BEFORE any copy (2026-09-28 audit F03):
+    # a truncated JSON used to replace the working config, the archive was
+    # consumed as a success and the build then died on it. Now ONE bad file
+    # refuses the WHOLE archive — nothing copied, the archive stays. JSON:
+    # parseable, and the two FlowManager exports a collection of objects
+    # (what bin/flow-manager.sh iterates); CSV: not empty.
+    local -a bad=()
+    i=0
+    while [ $i -lt ${#plan_src[@]} ]; do
+        f=${plan_src[$i]}
+        case "${plan_dst[$i]}" in
+            */subscriptions.json|*/partners.json)
+                jq -e '(type == "array" or type == "object") and all(.[]; type == "object")' "$f" >/dev/null 2>&1 \
+                    || bad+=("${f#$tmp/} (not a valid FlowManager export)") ;;
+            *.json) jq empty "$f" >/dev/null 2>&1 || bad+=("${f#$tmp/} (not valid JSON)") ;;
+            *.csv)  [ -s "$f" ] || bad+=("${f#$tmp/} (empty)") ;;
+        esac
+        i=$((i + 1))
+    done
+    if [ ${#bad[@]} -gt 0 ]; then
+        rm -rf "$tmp"
+        echo "inbox: $UPDD REFUSED — ${bad[*]}; nothing was copied, the file stays: fix or remove it." >&2
+        inbox_note failed "$(basename "$UPD")" "refused: ${bad[*]}"
+        return 1
+    fi
+
     i=0
     while [ $i -lt ${#plan_src[@]} ]; do
         mkdir -p "$(dirname "${plan_dst[$i]}")"

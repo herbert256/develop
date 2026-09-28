@@ -107,8 +107,21 @@ function ok_colspan(s) { return s ~ /^[0-9]+$/ }
 # path traversal, no scheme colon, no quote/angle/entity characters
 function ok_target(s)  { return s ~ /^[A-Za-z0-9][A-Za-z0-9\/_. -]*$/ && index(s, "..") == 0 }
 # href= is used verbatim (esc()-quoted): a relative URL, or absolute http(s)
-# — never a bare scheme like javascript:/data:, never protocol-relative
-function ok_href(s)    { return s !~ /^\/\// && (s !~ /^[A-Za-z][A-Za-z0-9+.\-]*:/ || s ~ /^https?:\/\//) }
+# — never a bare scheme like javascript:/data:, never protocol-relative.
+# POSITIVE, not just a scheme ban (2026-09-28 audit F01): the browser's URL
+# parser TRIMS leading spaces/control characters, DROPS tab/CR/LF anywhere
+# and reads a backslash as a slash, so " javascript:x", "java<CR>script:x"
+# and "\\host" all slipped past the old scheme test — a relative target must
+# START with a path/query/fragment character (no space, slash or backslash:
+# protocol-relative is out too), an absolute one is http(s):// + a host
+# character, and no target may carry a control character anywhere. Every URL
+# sink uses this one test: @{href=}, clinks lines, @data:href row targets,
+# ALERT and LINK directives.
+function ok_href(s) {
+    if (s ~ /[\001-\037\177]/) return 0
+    if (s ~ /^https?:\/\/[A-Za-z0-9]/) return 1
+    return s ~ /^[A-Za-z0-9._?#]/ && s !~ /^[A-Za-z][A-Za-z0-9+.\-]*:/
+}
 function ok_dname(s)   { return s ~ /^[A-Za-z0-9_-]+$/ }
 
 # The partner-GROUP icon: a small anchor after a grouped partner's name, linking
@@ -474,8 +487,10 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         # "Server log error" section this way. A single-cell ALERT renders
         # exactly as before.
         split_cells()
-        if (NCELL >= 3 && CELL[2] != "")
+        if (NCELL >= 3 && CELL[2] != "" && ok_href(CELL[2]))
             printf "<p class=\"alert\">%s<a href=\"%s\">%s</a></p>\n", bold(esc(CELL[1])), esc(CELL[2]), esc(CELL[3])
+        else if (NCELL >= 3 && CELL[2] != "")
+            printf "<p class=\"alert\">%s%s</p>\n", bold(esc(CELL[1])), esc(CELL[3])
         else printf "<p class=\"alert\">%s</p>\n", bold(esc(rest))
     }
     # WARN is ALERT's amber sibling: same banner, lower severity. ALERT is the
@@ -694,6 +709,10 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
                 # data wearing the prefix — keep it as a literal real cell
                 # (column alignment intact), emit no attribute
                 if (!ok_dname(nm)) { REAL[++nreal] = c; continue }
+                # data-href is a NAVIGATION target (report.js bindRowlink
+                # assigns it to location.href): the same URL test as @{href=}
+                # — a raw "@data:href=javascript:…" cell stays a literal cell
+                if (nm == "href" && !ok_href(vv)) { REAL[++nreal] = c; continue }
                 # a page with NO date filter (dropbuckets=1: CUR_DATES empty,
                 # so no report-dates meta) has no consumer for the buckets
                 # re-aggregation payload — drop it instead of shipping it
@@ -745,7 +764,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     }
     # NOTE/LINK/SUMMARY are FULL-WIDTH blocks: also close an open sxs flex
     # row, or they render as a flex item BESIDE the last side-by-side table
-    else if (dir == "NOTE")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; if (!noprose) printf "<p class=\"note\">%s</p>\n", prose(rest) }    else if (dir == "LINK")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); printf "<p class=\"report-link\"><a href=\"%s\" target=\"_blank\" rel=\"noopener\">%s</a></p>\n", esc(CELL[1]), esc(CELL[2]) }
+    else if (dir == "NOTE")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; if (!noprose) printf "<p class=\"note\">%s</p>\n", prose(rest) }    else if (dir == "LINK")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); if (ok_href(CELL[1])) printf "<p class=\"report-link\"><a href=\"%s\" target=\"_blank\" rel=\"noopener\">%s</a></p>\n", esc(CELL[1]), esc(CELL[2]); else printf "<p class=\"report-link\">%s</p>\n", esc(CELL[2]) }
     else if (dir == "SUMMARY") { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<div class=\"summary\">%s</div>\n", esc(rest) }
     else if (dir == "FOOT")    close_table()
     # DESC, META and anything unknown: not rendered
