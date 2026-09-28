@@ -817,12 +817,18 @@ build_entity_tsvs() {
     # (a same-second tie reads as stale and recomputes)
     if [ -f "$ENDED_TSV" ] && [ "$ENDED_TSV" -nt "$OUT" ] && [ "$ENDED_TSV" -nt "${BASH_SOURCE[0]}" ]; then :
     else
-    LC_ALL=C grep -F '{"message":"Transfer end logged.' "$OUT" | awk -F'\t' '
+    # (line_par, 2026-09-28, speed round 19: the grep runs over line-aligned
+    # slices in parallel — 8 s single-threaded on production — and the slices
+    # join in file order, so the awk below sees the same lines in the same order)
+    ended_grep() { LC_ALL=C grep -F '{"message":"Transfer end logged.' || [ $? -eq 1 ]; }
+    line_par "$OUT" "$ENDED_TSV.grep" "$NJOBS" ended_grep
+    awk -F'\t' '
         index($5, "{\"message\":\"Transfer end logged.") == 1 && $6 != "" && index($6, "50455253495354454e542d53455353494f4e2d") != 1 {
             if ($6 in s) next
             s[$6] = 1; st = ""
             if (match($5, /"status":"[a-z]+"/)) st = substr($5, RSTART + 10, RLENGTH - 11)
-            print $6 "\t" st }' > "$ENDED_TSV.tmp" && mv "$ENDED_TSV.tmp" "$ENDED_TSV"
+            print $6 "\t" st }' "$ENDED_TSV.grep" > "$ENDED_TSV.tmp" && mv "$ENDED_TSV.tmp" "$ENDED_TSV"
+    rm -f "$ENDED_TSV.grep"
     fi
     _slap "mentions: transfer-ended sessions"
     ENT_CFG_SRCS+=("$ENDED_TSV")
@@ -1137,9 +1143,10 @@ tokenize_batch() {   # tokenize every argument file into its own chunk
     # sort + split behind it? (a runtime build is profiled from its console)
     cat "$CHUNK_DIR"/ttime.* 2>/dev/null | awk '{ n++; a = $2 - $1; t = $3 - $1; sa += a; st += t; if (t > mt) { mt = t; ma = a } }
         END { if (n) printf "TIME %5ds  server parse: tokenize, slowest of %d parts (its awk %ds; all parts: awk %ds + sort/split %ds)\n", mt, n, ma, sa, st - sa }' >&2
-    # the PATH COUNTERS (see TOK_PROG): records and MB per tokenizer path
+    # the PATH COUNTERS (see TOK_PROG): records and MB per tokenizer path — a
+    # TIME line (0s) because a background step replays only those at its wait
     cat "$CHUNK_DIR"/pstat.* 2>/dev/null | awk '{ for (i = 1; i <= 12; i++) s[i] += $i }
-        END { if (NR) printf "server parse: tokenizer paths — %d records (%.0f MB): fast split %d (%.0f MB), walk %d (%.0f MB; per-character %d + %d), multi-line %d (%.0f MB); dropped ADMIN/AUDIT %d, noise %d\n", s[1], s[2] / 1048576, s[5], s[6] / 1048576, s[7], s[8] / 1048576, s[9], s[10], s[3], s[4] / 1048576, s[11], s[12] }' >&2
+        END { if (NR) printf "TIME %5ds  server parse: tokenizer paths — %d records (%.0f MB): fast split %d (%.0f MB), walk %d (%.0f MB; per-character %d + %d), multi-line %d (%.0f MB); dropped ADMIN/AUDIT %d, noise %d\n", 0, s[1], s[2] / 1048576, s[5], s[6] / 1048576, s[7], s[8] / 1048576, s[9], s[10], s[3], s[4] / 1048576, s[11], s[12] }' >&2
     rm -f "$CHUNK_DIR"/pstat.*
     rm -f "$CHUNK_DIR"/ttime.* "$CHUNK_DIR"/tend.*
     TOK_TOTAL=$(awk '{ s += $1 } END { print s + 0 }' "$CHUNK_DIR"/count.*)

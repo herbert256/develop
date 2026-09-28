@@ -74,10 +74,32 @@ grp_par() {
         i=$((i + 1))
         ( set -o pipefail; byte_feed "$f" "$lo" "$hi" | GRP_PART=$i "$@" | cat > "$out.grp$i" ) &
         pids+=("$!"); parts+=("$out.grp$i")
-    done < <(grp_cuts "$f" "$nj")
+    done < <("${GRP_CUTTER:-grp_cuts}" "$f" "$nj")
     for p in ${pids[@]+"${pids[@]}"}; do wait "$p" || rc=$?; done
     GRP_N=$i
     if [ "$rc" -ne 0 ]; then rm -f ${parts[@]+"${parts[@]}"}; return "$rc"; fi
     if [ "${#parts[@]}" -gt 0 ]; then cat "${parts[@]}" > "$out"; else : > "$out"; fi
     rm -f ${parts[@]+"${parts[@]}"}
 }
+
+# ---- LINE-ALIGNED SLICES (2026-09-28, speed round 19) ----------------------
+# line_cuts FILE N — "lo hi" byte ranges splitting any line file into at most
+# N slices at line starts (a slice never cuts a line; every byte lands in
+# exactly one slice). line_par FILE OUT N CMD... = grp_par over those slices:
+# for a per-LINE filter (no state across lines — a grep) whose output must
+# keep the file's line order.
+line_cuts() {
+    perl -e '
+        my ($f, $n) = @ARGV; my $size = -s $f; my @c = (0);
+        if ($size && $n > 1) {
+            open(my $h, "<", $f) or die "$f: $!";
+            for my $i (1 .. $n - 1) {
+                my $t = int($i * $size / $n); next if $t <= $c[-1];
+                seek($h, $t - 1, 0); my $rest = <$h>; my $cut = tell($h);
+                push @c, $cut if $cut > $c[-1] && $cut < $size;
+            }
+        }
+        push @c, $size;
+        for my $i (0 .. $#c - 1) { print "$c[$i] $c[$i+1]\n" if $c[$i+1] > $c[$i] }' "$1" "$2"
+}
+line_par() { GRP_CUTTER=line_cuts grp_par "$@"; }
