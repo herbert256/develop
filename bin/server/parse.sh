@@ -772,6 +772,51 @@ CFG_SUBS="$CONFIG_BASE/_subscriptions.tsv"
 CFG_LOGINS="$CONFIG_BASE/_logins.tsv"
 CFG_HOSTS="$CONFIG_BASE/_hosts.tsv"
 
+# THE NAME SET of the last mention scan (2026-09-28, speed round 26): type ⇥
+# name (A/S/L/H), sorted — what the scan matched against (column 1 of the four
+# base rosters). The appended-names RESCAN (the .rescan-mentions marker,
+# result.sh) re-reads the whole cache (~10 s on production) for a handful of
+# names — and a name can only ADD hits on a line that contains it: a token
+# resolves to a subscription as itself, its tail-stripped / folded prefix or a
+# rename alias of it, and to a host case-insensitively as the whole token, so
+# the other names resolve exactly as before unless such a line exists (a new
+# prefix or a lower length gate only lets through tokens that can reach the
+# new name). mention_rescan_needed answers "no" only when no name was removed,
+# every new name is a subscription or host, and no cache line holds one of
+# them or a rename alias that folds to one, case-insensitively — then the scan
+# over the new name set would write exactly the caches on disk.
+MENTION_NAMES="$CACHE_DIR/.mention-names"
+mention_names() {
+    { [ -f "$CFG_ACCOUNTS" ] && awk -F'\t' '$1 != "" { print "A\t" $1 }' "$CFG_ACCOUNTS"
+      [ -f "$CFG_SUBS" ]     && awk -F'\t' '$1 != "" { print "S\t" $1 }' "$CFG_SUBS"
+      [ -f "$CFG_LOGINS" ]   && awk -F'\t' '$1 != "" { print "L\t" $1 }' "$CFG_LOGINS"
+      [ -f "$CFG_HOSTS" ]    && awk -F'\t' '$1 != "" { print "H\t" $1 }' "$CFG_HOSTS"
+      true; } | LC_ALL=C sort -u
+}
+mention_rescan_needed() {   # 0 = rescan, 1 = the caches on disk stand
+    [ -f "$MENTION_NAMES" ] || return 0
+    local cur="$CACHE_DIR/.mention-names.cur.$$" pat="$CACHE_DIR/.mention-pat.$$" hit="$CACHE_DIR/.mention-hit.$$" rc=1
+    mention_names > "$cur"
+    if [ -n "$(LC_ALL=C comm -23 "$MENTION_NAMES" "$cur")" ] \
+       || LC_ALL=C comm -13 "$MENTION_NAMES" "$cur" | awk -F'\t' '$1 == "A" || $1 == "L" { f = 1 } END { exit !f }'; then   # (reads it all: no early exit to SIGPIPE comm under pipefail)
+        rm -f "$cur"; return 0
+    fi
+    LC_ALL=C comm -13 "$MENTION_NAMES" "$cur" | cut -f2- > "$pat"
+    if [ -s "$pat" ]; then
+        # + every rename alias whose current name is a new one (renames.sh: old ⇥ current)
+        [ -f "$RENAMES_FILE" ] && awk -F'\t' 'NR == FNR { N[$0] = 1; next }
+            { sub(/\r$/, "") } /^[ \t]*#/ || NF < 2 || $1 == "" || $2 == "" { next } ($2 in N) { print $1 }' "$pat" "$RENAMES_FILE" >> "$pat"
+        mention_hits() { LC_ALL=C awk -v PF="$pat" 'BEGIN { while ((getline l < PF) > 0) if (l != "") P[++n] = tolower(l); close(PF) }
+            !h { s = tolower($0); for (i = 1; i <= n; i++) if (index(s, P[i])) { h = 1; break } }
+            END { if (h) print "hit" }'; }
+        line_par "$OUT" "$hit" "$NJOBS" mention_hits
+        [ -s "$hit" ] && rc=0
+    fi
+    [ "$rc" = 1 ] && echo "  $(wc -l < "$pat" | tr -d ' ') appended name(s) or alias(es): no server-log line holds one — the mention caches stand." >&2
+    rm -f "$cur" "$pat" "$hit"
+    return "$rc"
+}
+
 build_entity_tsvs() {
     [ -f "$OUT" ] || return 0
     # AXWAY_SKIP_MENTIONS=1 (bin/build.sh, 2026-09-27 speed round 4): the
@@ -791,11 +836,21 @@ build_entity_tsvs() {
     # build behind (their detail pages lose the server-log table). result.sh
     # drops this marker when it appended; bin/build.sh re-runs this parse
     # right after, and the marker forces exactly one rescan.
-    [ -f "$CACHE_DIR/.rescan-mentions" ] && fresh=0
+    # (2026-09-28: when the marker is the ONLY reason, mention_rescan_needed
+    # decides — see MENTION_NAMES)
     # a recorded rename re-attributes mentions (by content: every config run
     # rewrites the map)
     [ "$(cat "$MENTION_RN_SIG" 2>/dev/null)" = "$(mention_rn_sig)" ] || fresh=0
+    if [ "$fresh" = 1 ] && [ -f "$CACHE_DIR/.rescan-mentions" ]; then
+        if mention_rescan_needed; then fresh=0
+        else
+            rm -f "$CACHE_DIR/.rescan-mentions"
+            mention_names > "$MENTION_NAMES"
+            return 0
+        fi
+    fi
     [ "$fresh" = 1 ] && { echo "  the per-entity server caches are up to date; skipping." >&2; return 0; }
+    mention_names > "$MENTION_NAMES.new"   # the names this scan reads (installed at its end)
     ENT_CFG_SRCS=()   # global: ent_one's background jobs read it
     for cfg in "$CFG_ACCOUNTS" "$CFG_SUBS" "$CFG_LOGINS" "$CFG_HOSTS"; do
         if [ -f "$cfg" ]; then ENT_CFG_SRCS+=("$cfg")
@@ -940,6 +995,7 @@ build_entity_tsvs() {
     done
     rm -f "$CACHE_DIR/.rescan-mentions"   # the appended-names marker is served (see the freshness check)
     mention_rn_sig > "$MENTION_RN_SIG"
+    mv "$MENTION_NAMES.new" "$MENTION_NAMES"   # the name set this scan matched (mention_rescan_needed)
 }
 
 # (The server-log hostname forward-resolution was REMOVED 2026-07. It scanned
