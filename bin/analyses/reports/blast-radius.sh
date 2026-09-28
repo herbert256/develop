@@ -10,7 +10,7 @@
 #   If this host dies    one row per outbound endpoint, biggest first; a red
 #                        row is the sole endpoint of at least one partner
 #   Partner redundancy   every seen partner classed by its distinct recorded
-#                        endpoints across ALL its Files: single-endpoint,
+#                        endpoints across its OUT-connection Files: single-endpoint,
 #                        multi-endpoint, or none recorded (inbound-only —
 #                        the partner dials us; a legitimate class, not a gap)
 #   Shared endpoints     the endpoints serving MORE than one partner — one
@@ -73,18 +73,23 @@ awk -F'\t' -v T1="$TMPD/t1.pre" -v T2="$TMPD/t2.pre" -v T3="$TMPD/t3.pre" -v STA
             for (i = 1; i <= n; i++) if (index("\037" aset "\037", "\037" Z[i] "\037") == 0)
                 aset = aset (aset == "" ? "" : "\037") Z[i] }
         np = split(pset, P, "\037")
-        # the per-partner endpoint census, ANY connection side
+        # the per-partner endpoint census: every File counts for the partner,
+        # but only an OUT-connection File names an endpoint WE DIAL (2026-09-28
+        # fix: an in-connection File carries the partner SOURCE address in col
+        # 15, which made every inbound partner a single/multi-endpoint one and
+        # left the inbound-only class empty)
+        oh = ($16 == "out") ? $15 : ""
         for (j = 1; j <= np; j++) if (P[j] != "") { p = P[j]
             if (PANY[p] == "") { PORD[++npo] = p }        # emptiness, not membership (mawk)
             PANY[p] = 1; PF[p]++
-            if ($15 != "" && !((p SUBSEP $15) in PE)) { PE[p SUBSEP $15] = 1; PN[p]++
-                PEL[p] = PEL[p] (PEL[p] == "" ? "" : "\037") $15
-                if (!(($15 SUBSEP p) in HP)) { HP[$15 SUBSEP p] = 1; HNP[$15]++
-                    HPL[$15] = HPL[$15] (HPL[$15] == "" ? "" : "\037") p }
-                if (HREG[$15] == "") { HREG[$15] = 1; HORD[++nho] = $15 }   # emptiness, not membership (mawk)
+            if (oh != "" && !((p SUBSEP oh) in PE)) { PE[p SUBSEP oh] = 1; PN[p]++
+                PEL[p] = PEL[p] (PEL[p] == "" ? "" : "\037") oh
+                if (!((oh SUBSEP p) in HP)) { HP[oh SUBSEP p] = 1; HNP[oh]++
+                    HPL[oh] = HPL[oh] (HPL[oh] == "" ? "" : "\037") p }
+                if (HREG[oh] == "") { HREG[oh] = 1; HORD[++nho] = oh }   # emptiness, not membership (mawk)
             }
-            if ($15 != "") HAF[$15]++                      # Files touching the endpoint, any side
         }
+        if (oh != "" && np > 0) HAF[oh]++                  # Files over the endpoint, each ONCE
         # table 1: the out-connection aggregation per endpoint
         if ($16 == "out" && $15 != "") { h = $15
             if (OF[h] == "") OORD[++noo] = h
@@ -183,7 +188,7 @@ n_shared=$(sv shared); n_ptn=$(sv ptn)
         printf 'TOTAL\tTotal (0 host(s))\t\t\t\n'
     fi
 
-    printf 'NOTE\tThe first table counts OUT-connection Files only (the endpoints we dial); its Subscriptions/Applications/Domains/Partners columns are distinct counts over those Files, applications and partners by the site-wide UNION attribution. The redundancy and sharing views count each partner'\''s distinct recorded endpoints over ALL its Files — for an inbound flow that is the partner'\''s recorded source address, and a partner with no endpoint recorded anywhere is the inbound-only class. "Sole endpoint for" flags the hosts that are the ONLY recorded endpoint of at least one partner: losing that address strands those partners entirely.\n'
+    printf 'NOTE\tThe first table counts OUT-connection Files only (the endpoints we dial); its Subscriptions/Applications/Domains/Partners columns are distinct counts over those Files, applications and partners by the site-wide UNION attribution. The redundancy and sharing views count each partner'\''s distinct endpoints over its OUT-connection Files (an in-connection File records the partner'\''s SOURCE address, not an endpoint we dial); a partner with no such endpoint is the inbound-only class. "Sole endpoint for" flags the hosts that are the ONLY recorded endpoint of at least one partner: losing that address strands those partners entirely.\n'
     printf 'KEYWORDS\tendpoint,host,blast radius,outage,redundancy,single point of failure,failover,shared endpoint,partner,dependency\n'
     printf 'SUMMARY\tOutbound endpoints: %s  |  Single-endpoint partners: %s  |  Multi-endpoint: %s  |  Inbound-only: %s  |  Shared endpoints: %s\n' \
         "$n_out" "$n_single" "$n_multi" "$n_inonly" "$n_shared"

@@ -138,14 +138,23 @@ awk -F'\t' -v ROWS="$TMPD/score.pre" -v ALL="$TMPD/all.tsv" -v STATS="$TMPD/stat
             printf "%s\t%d\t%.1f\t%d\t%s\n", p, F[p], errpct, B[p], human(B[p]) > ALL
         }
         close(ROWS); close(ALL)
-        # concentration over ALL seen partners: sorted Files descending
-        for (z = 1; z <= np; z++) A[z] = F[PORD[z]] + 0
-        for (i2 = 2; i2 <= np; i2++) { v = A[i2]; j2 = i2 - 1
-            while (j2 >= 1 && A[j2] < v) { A[j2+1] = A[j2]; j2-- } A[j2+1] = v }
-        tot = 0; for (z = 1; z <= np; z++) tot += A[z]
-        t1 = (np >= 1) ? A[1] : 0
-        t3 = 0; for (z = 1; z <= 3 && z <= np; z++) t3 += A[z]
-        t10 = 0; for (z = 1; z <= 10 && z <= np; z++) t10 += A[z]
+        # concentration over ALL seen partners: ranked by Files descending,
+        # name ascending on a tie
+        for (z = 1; z <= np; z++) IX[z] = PORD[z]
+        for (i2 = 2; i2 <= np; i2++) { v = IX[i2]; j2 = i2 - 1
+            while (j2 >= 1 && (F[IX[j2]] + 0 < F[v] + 0 || (F[IX[j2]] + 0 == F[v] + 0 && IX[j2] > v))) { IX[j2+1] = IX[j2]; j2-- }
+            IX[j2+1] = v }
+        for (z = 1; z <= np; z++) { A[z] = F[IX[z]] + 0; RK[IX[z]] = z }
+        # the top-N shares are DISTINCT Files touching one of the top N
+        # partners over every File with a partner (2026-09-28 fix: the
+        # per-partner counts were summed, and the union attribution counts
+        # a both-partner File for each of them, so the base and a top-N sum
+        # counted such a File twice)
+        tot = 0; t1 = 0; t3 = 0; t10 = 0
+        for (c in PSET) { tot++; mr = np + 1
+            n = split(PSET[c], Z, "\037")
+            for (i = 1; i <= n; i++) if ((Z[i] in RK) && RK[Z[i]] < mr) mr = RK[Z[i]]
+            if (mr <= 1) t1++; if (mr <= 3) t3++; if (mr <= 10) t10++ }
         # Gini over the ascending sequence
         cum = 0; s2 = 0
         for (z = np; z >= 1; z--) { cum += A[z]; s2 += cum }

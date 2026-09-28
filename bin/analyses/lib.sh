@@ -48,10 +48,13 @@ logicals_tsv() {
         FILENAME ~ /_slugmap\.tsv$/ { lslug[$1]=$2; next }   # logical name -> detail-page slug
         FILENAME ~ /_subscriptions-logicals\.tsv$/ { if($1!="" && $2!="") slg[$1]=((slg[$1]!="")?slg[$1] US:"") $2; next }
         {   # coverage/subscriptions.tsv: name dir seen link ts outcome
-            d2=$2; if (d2!="I" && d2!="O" && d2!="B") next
+            d2=$2
             if (!($1 in slg)) next
-            # B (a both-ways subscription) counts once per SIDE, like a both-ways partner
-            ns2=0; if(d2=="I" || d2=="B") S2[++ns2]="I"; if(d2=="O" || d2=="B") S2[++ns2]="O"
+            # B (a both-ways subscription) counts once per SIDE, like a both-ways partner;
+            # a DIRECTION-LESS subscription (no configured side) still makes its
+            # logical a member, on an empty side (2026-09-28 fix: it was dropped,
+            # and the home Total counted one logical more than its page listed)
+            ns2=0; if(d2=="I" || d2=="B") S2[++ns2]="I"; if(d2=="O" || d2=="B") S2[++ns2]="O"; if(!ns2) S2[++ns2]=""
             na=split(slg[$1], av, US)
             for(ai=1; ai<=na; ai++) for(si=1; si<=ns2; si++){
                 k=av[ai] SUBSEP S2[si]
@@ -81,9 +84,10 @@ bl_tsv() {
         FILENAME ~ /_slugmap\.tsv$/ { lslug[$1]=$2; next }   # BL name -> detail-page slug
         FILENAME ~ /_subscriptions-bl\.tsv$/ { if($1!="" && $2!="") slg[$1]=((slg[$1]!="")?slg[$1] US:"") $2; next }
         {   # coverage/subscriptions.tsv: name dir seen link ts outcome
-            d2=$2; if (d2!="I" && d2!="O" && d2!="B") next
+            d2=$2
             if (!($1 in slg)) next
-            ns2=0; if(d2=="I" || d2=="B") S2[++ns2]="I"; if(d2=="O" || d2=="B") S2[++ns2]="O"
+            # a direction-less subscription counts on an empty side (logicals_tsv)
+            ns2=0; if(d2=="I" || d2=="B") S2[++ns2]="I"; if(d2=="O" || d2=="B") S2[++ns2]="O"; if(!ns2) S2[++ns2]=""
             na=split(slg[$1], av, US)
             for(ai=1; ai<=na; ai++) for(si=1; si<=ns2; si++){
                 k=av[ai] SUBSEP S2[si]
@@ -276,9 +280,10 @@ _sub_spine_tsv() {
         BEGIN { US = sprintf("%c", 31) }
         FILENAME ~ /_slugmap\.tsv$/ { lslug[$1]=$2; next }
         FILENAME == MAPF { if($1!="" && $2!="") slg[$1]=((slg[$1]!="")?slg[$1] US:"") $2; next }
-        {   d2=$2; if (d2!="I" && d2!="O" && d2!="B") next
+        {   d2=$2
             if (!($1 in slg)) next
-            ns2=0; if(d2=="I" || d2=="B") S2[++ns2]="I"; if(d2=="O" || d2=="B") S2[++ns2]="O"
+            # a direction-less subscription counts on an empty side (logicals_tsv)
+            ns2=0; if(d2=="I" || d2=="B") S2[++ns2]="I"; if(d2=="O" || d2=="B") S2[++ns2]="O"; if(!ns2) S2[++ns2]=""
             na=split(slg[$1], av, US)
             for(ai=1; ai<=na; ai++) for(si=1; si<=ns2; si++){
                 k=av[ai] SUBSEP S2[si]

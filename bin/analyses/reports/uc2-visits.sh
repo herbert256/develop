@@ -57,7 +57,15 @@ rows=$(LC_ALL=C sort -t$'\t' -k18,18nr -k13,13nr -k5,5nr -k1,1f "$PICKUPS" | awk
     $11 + 0 > 0 {
         printf "ROW\t%s%s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n", \
             sublink($1), $1, $5, $12, $13, $14, $18, $7, $8
-        tp += $5; tc += $12; tb += $13; td += $14; ts += $18; tf += $7; nr++
+        tf += $7; nr++
+        # the logon/visit figures belong to the ACCOUNT (or, on an account with
+        # several FE logins, to the flow login), repeated on each of its UC2
+        # subscriptions: the totals count every such group ONCE (2026-09-28
+        # fix: an account with eight UC2 flows counted its pickups eight
+        # times). The sidecar carries no login, so a group is the account plus
+        # its logon figures, the first/last pickup stamps included.
+        g = $2 SUBSEP $3 SUBSEP $4 SUBSEP $5 SUBSEP $9 SUBSEP $10 SUBSEP $11 SUBSEP $12 SUBSEP $13 SUBSEP $14 SUBSEP $15 SUBSEP $18
+        if (!(g in grp)) { grp[g] = 1; tp += $5; tc += $12; tb += $13; td += $14; ts += $18 }
     }
     END { printf "TOTFOOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", nr+0, tp+0, tc+0, tb+0, td+0, ts+0, tf+0 }
 ')
@@ -81,7 +89,8 @@ fi
     printf 'STAT\tgreen\t%s\tCollected + delivered\n' "$t_b"
     printf 'STAT\twhite\t%s\tDelivered only\n' "$t_d"
     printf 'STAT\twhite\t%s\tSame connection\n' "$t_s"
-    printf 'TABLE\tVisits per UC2 subscription\twide\tnofilter\n'
+    # noagg: the account-level columns cannot be re-summed over a searched subset
+    printf 'TABLE\tVisits per UC2 subscription\twide\tnofilter\tnoagg=1,2,3,4,5\n'
     printf 'HEAD\tSubscription\tPickups\tCollected\tCollected + delivered\tDelivered only\tSame connection\tFiles picked up\tPickup pattern\n'
     printf 'KIND\tmono\tnum\tnumprocessed\tnumprocessed\tnum\tnum\tnum\ttext\n'
     printf '%s\n' "$rows"

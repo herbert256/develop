@@ -91,10 +91,9 @@ pda_seen_total() {   # $1 = member  $2 = its coverage TSV  $3 = its base cache  
             for (i = 1; i <= nb; i++) { k = ord[i]
                 if (k in seen) continue
                 # a coverage row vouches when it says 1; a base name ABSENT from the coverage TSV
-                # (an evidence-free "ghost" — since 2026-08-31 only a flow
-                # configured with NO login and NO host produces one: its
-                # direction-less rows are skipped by every derived-coverage
-                # builder) is never seen.
+                # (an evidence-free "ghost") is never seen. (Since 2026-09-28 the
+                # derived-coverage builders keep a direction-less member on an
+                # empty side instead of skipping it, so its name is in the TSV.)
                 # The old ghost->seen rule made a config-only env show
                 # nonzero Seen; render_entity_report splits its ghost rows
                 # the same way (coverage-vouched -> Seen, evidence-free ->

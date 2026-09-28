@@ -114,6 +114,14 @@ tdays=""
 [ -f "$TT" ] && tdays=$(awk -F'\t' '$1=="ROW" { d=$2; sub(/^@\{[^}]*\}/,"",d); if ($5+0 > 0) print substr(d,1,10) }' "$TT" | LC_ALL=C sort -u | tr '\n' ' ')
 sdays=""
 [ -f "$SV" ] && sdays=$(awk -F'\t' '$1=="ROW" { d=$2; sub(/^@\{[^}]*\}/,"",d); if ($3+0 > 0) print substr(d,1,10) }' "$SV" | LC_ALL=C sort -u | tr '\n' ' ')
+# every day with a page, both logs: the prev/next walk of BOTH passes (2026-09-28
+# fix: each walked its own log, so a transfer day's Next skipped a server-only
+# day and a server-only day's buttons skipped the transfer-only days). A list
+# counts only when its pass will run (the pass guards below), so no button
+# links a page nothing writes.
+_ut=""; [ -f "$TF" ] && _ut=$tdays
+_us=""; [ -f "$SV" ] && [ -f "$SP" ] && _us=$sdays
+udays=$(printf '%s %s' "$_ut" "$_us" | tr ' ' '\n' | awk 'NF' | LC_ALL=C sort -u | tr '\n' ' ')
 
 # ---------------------------------------------------------------------------
 # The TRANSFER pass — it CREATES the day .rpt. Pass 1 = _files.tsv (per-day
@@ -123,7 +131,7 @@ sdays=""
 # transfer problem list, the hero card + its alternates and the facts.
 # ---------------------------------------------------------------------------
 if [ -f "$TF" ] && [ -n "$tdays" ]; then
-awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v PS="$PSLOTS" -v EQF="$EQSLOTS" \
+awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v PS="$PSLOTS" -v EQF="$EQSLOTS" \
     -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SUBPF="$SUBPF" '
     function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
     function humandur(ms,   s,m,h){ ms+=0; if(ms<1000)return int(ms) "ms"; s=int(ms/1000); if(s<60)return s "s"; m=int(s/60); s=s%60; if(m<60)return m "m " s "s"; h=int(m/60); m=m%60; return h "h " m "m" }
@@ -263,6 +271,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         for (i = 0; i < 7; i++) WD[i] = WD0[i + 1]
         nd = split(tdays, D, " ")
         ns = split(sdays, SD, " "); for (i = 1; i <= ns; i++) issrv[SD[i]] = 1
+        nu = split(udays, UD, " "); for (i = 1; i <= nu; i++) UX[UD[i]] = i
         # period figures for the narrative
         avg = nd > 0 ? tC / nd : 0
         avgV = nd > 0 ? tV / nd : 0
@@ -290,11 +299,13 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             print "TITLE\tDay — " d > out
             print "H1\t" wdname(d) " " d > out
             # ---- nav row ------------------------------------------------
-            # nav row: exactly two entries — prev then next; empty href = inactive
-            if (x > 1)  nav = "\t← " D[x-1] "|" D[x-1] ".html"
-            else        nav = "\t← Previous day|"
-            if (x < nd) nav = nav "\t" D[x+1] " →|" D[x+1] ".html"
-            else        nav = nav "\tNext day →|"
+            # nav row: exactly two entries — prev then next; empty href = inactive;
+            # the walk is over the day pages of BOTH logs (udays)
+            ux = UX[d]
+            if (ux > 1)  nav = "\t← " UD[ux-1] "|" UD[ux-1] ".html"
+            else         nav = "\t← Previous day|"
+            if (ux < nu) nav = nav "\t" UD[ux+1] " →|" UD[ux+1] ".html"
+            else         nav = nav "\tNext day →|"
             print "NAVROW" nav > out
             # ---- remarkable facts ----------------------------------------
             # per-day concentration figures used by several facts below
@@ -354,7 +365,10 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # exactly the three transfer-side cards the day page shows, under
             # the labels it renders (the server pass appends its two)
             cov = (FIRSTT[d] != "" && LASTT[d] != "") ? " · " substr(FIRSTT[d],1,8) "–" substr(LASTT[d],1,8) : ""
-            printf "KPI\t%d\tTransfer files\tlogical transfers%s\tblue\t../transfer/activity-per-day.html" q "\t%s\n", C[d], cov, pctd(C[d], wdc[wd] ? aFiles[wd]/wdc[wd] : 0) >> out
+            # the card counts EVERY File of the day, so it opens the Top view,
+            # whose per-day Files Count is that figure (2026-09-28 fix: it
+            # opened Activity per day, which counts the delivered Files only)
+            printf "KPI\t%d\tTransfer files\tlogical transfers%s\tblue\t../transfer/topview.html" q "\t%s\n", C[d], cov, pctd(C[d], wdc[wd] ? aFiles[wd]/wdc[wd] : 0) >> out
             printf "KPI\t%.1f%%\tTransfer error rate\t%d Error / %d OK\tred\t../transfer/failure-rate-days.html" q "\t%s\n", erate, F[d]+0, P[d]+0, pctd(erate, aFiles[wd] ? aErrF[wd]*100/aFiles[wd] : 0) >> out
             printf "KPI\t%s\tVolume\taverage %s per File\tgreen\t../transfer/volume-per-day.html" q "\t%s\n", human(V[d]), human(C[d] ? V[d]/C[d] : 0), pctd(V[d], wdc[wd] ? aVol[wd]/wdc[wd] : 0) >> out
             # ---- problem links ---------------------------------------------
@@ -540,7 +554,7 @@ if [ -f "$SV" ] && [ -f "$SP" ] && [ -n "$sdays" ]; then
 # writes the day facts exactly as the single pass did. day_srv is that one
 # program; the mode comes in through the environment (DAYSRV_*).
 day_srv() {
-awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v slfc="$slfc" -v nrdc="$nrdc" -v nrfc="$nrfc" -v anomc="$anomc" '
+awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v slfc="$slfc" -v nrdc="$nrdc" -v nrfc="$nrfc" -v anomc="$anomc" '
     BEGIN { PART = ENVIRON["DAYSRV_PART"] + 0; REDUCE = ENVIRON["DAYSRV_REDUCE"] + 0; SVF = ENVIRON["DAYSRV_SVF"]
             RANGEF = ENVIRON["DAYSRV_RANGEF"]; RLO = ENVIRON["DAYSRV_LO"] + 0; RHI = ENVIRON["DAYSRV_HI"] + 0; ROFF = ENVIRON["DAYSRV_ROFF"] + 0 }
     BEGIN { ns = split(slfc, _sa, " "); for (i = 1; i <= ns; i++) { if (_sa[i] == "") continue; p = index(_sa[i], ":"); if (p > 1) SLFC[substr(_sa[i], 1, p - 1)] = substr(_sa[i], p + 1) }
@@ -605,6 +619,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         for (i = 0; i < 7; i++) WD[i] = WD0[i + 1]
         nd = split(sdays, D, " ")
         nt = split(tdays, TD, " "); for (i = 1; i <= nt; i++) istr[TD[i]] = 1
+        nu = split(udays, UD, " "); for (i = 1; i <= nu; i++) UX[UD[i]] = i
         trec = 0; twarn = 0; sumAF = 0; tT=0; tP=0; tS=0
         for (x = 1; x <= nd; x++) { d = D[x]; trec += REC[d]+0; twarn += WRN[d]+0; sumAF += AF[d]+0; tT += CT[d]+0; tP += CP[d]+0; tS += CS[d]+0
             wd = wdname(d); wdc[wd]++; aRec[wd] += REC[d]+0; aErr[wd] += ERR[d]+0; aWrn[wd] += WRN[d]+0 }
@@ -630,11 +645,13 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (!(d in istr)) {
                 print "TITLE\tDay — " d >> out
                 print "H1\t" wdname(d) " " d >> out
-                # nav row: exactly two entries — prev then next; empty href = inactive
-                if (x > 1)  nav = "\t← " D[x-1] "|" D[x-1] ".html"
-                else        nav = "\t← Previous day|"
-                if (x < nd) nav = nav "\t" D[x+1] " →|" D[x+1] ".html"
-                else        nav = nav "\tNext day →|"
+                # nav row: exactly two entries — prev then next; empty href = inactive;
+                # the walk is over the day pages of BOTH logs (udays)
+                ux = UX[d]
+                if (ux > 1)  nav = "\t← " UD[ux-1] "|" UD[ux-1] ".html"
+                else         nav = "\t← Previous day|"
+                if (ux < nu) nav = nav "\t" UD[ux+1] " →|" UD[ux+1] ".html"
+                else         nav = nav "\tNext day →|"
                 print "NAVROW" nav >> out
             }
             # ---- facts ----------------------------------------------------

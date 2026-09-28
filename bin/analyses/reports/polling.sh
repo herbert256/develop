@@ -110,12 +110,19 @@ _us="$US"; [ -f "$_us" ] || _us=/dev/null
 # ---- the join: ONE awk over the cron TSV (stdin) and remote-poll.rpt -------
 agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" -v ACTF="$actf" '
     function strip(c) { sub(/^@\{[^}]*\}/, "", c); return c }
-    function pfx(a, b) { return substr(a, 1, length(b)) == b || substr(b, 1, length(a)) == a }
-    # the ONE poll/listing key a name resolves to: exact, else the unique
-    # prefix either way among the keys of map M (its index list I, count n)
-    function resolve(u, I, n, M,   i, c, hit) {
+    # the ONE poll/listing key a name resolves to: exact, else the UNIQUE
+    # truncation among the keys of map M (its index list I, count n) — dir 1:
+    # a key the server truncated, a proper prefix of the full name u; dir 2:
+    # u is the truncated one, a proper prefix of a key. 2026-09-28 fix: the
+    # prefix matched either way, so a configured UC3_X with no polls of its
+    # own took the row of a longer flow UC3_X_2 (whose own row then vanished
+    # as used)
+    function resolve(u, I, n, M, dir,   i, c, hit, k) {
         if (u in M) return u
-        c = 0; for (i = 1; i <= n; i++) if (pfx(I[i], u)) { c++; hit = I[i]; if (c > 1) break }
+        c = 0
+        for (i = 1; i <= n; i++) { k = I[i]
+            if (dir == 1 ? (length(k) < length(u) && substr(u, 1, length(k)) == k) \
+                         : (length(u) < length(k) && substr(k, 1, length(u)) == u)) { c++; hit = k; if (c > 1) break } }
         return (c == 1) ? hit : ""
     }
     BEGIN {
@@ -170,7 +177,7 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" -v ACTF="$a
     # list splits on ",")
     function actcell(u, sk,   ak, c, n3, A3, W3, i3, o, t) {
         if (index(u, "SWIFT") > 0) return "@{class=act,title=SWIFT: runs through CFT}CFT"
-        ak = (u in AN) ? u : ((sk != "" && (sk in AN)) ? sk : resolve(u, AU, nak, AN))
+        ak = (u in AN) ? u : ((sk != "" && (sk in AN)) ? sk : resolve(u, AU, nak, AN, 2))
         if (ak == "") return "@{class=act}"
         c = AC[ak]; if (c == "") return "@{class=act}Yes"
         split("status Undeployed|status SAVED_NOT_DEPLOYED|schedule No|folder monitoring Inactive", W3, "|")
@@ -203,15 +210,15 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" -v ACTF="$a
     END {
         # cron rows first (their own order), then the poll-only names
         for (i = 1; i <= nck; i++) { u = CU[i]
-            pk = resolve(u, PU, npk, PN); lk = resolve(u, LU, nlk, LN); sk = resolve(u, SU, nsk, SN)
+            pk = resolve(u, PU, npk, PN, 1); lk = resolve(u, LU, nlk, LN, 1); sk = resolve(u, SU, nsk, SN, 1)
             if (pk != "") used[pk] = 1; if (lk != "") usedl[lk] = 1; if (sk != "") useds[sk] = 1
             emit(CN[u], u, pk, lk, sk) }
         for (i = 1; i <= npk; i++) { u = PU[i]; if (u in used) continue
             lk = (u in LN) ? u : ""; if (lk != "") usedl[lk] = 1
-            sk = resolve(u, SU, nsk, SN); if (sk != "") useds[sk] = 1
+            sk = resolve(u, SU, nsk, SN, 2); if (sk != "") useds[sk] = 1
             emit(PN[u], u, u, lk, sk) }
         for (i = 1; i <= nlk; i++) { u = LU[i]; if (u in usedl) continue
-            sk = resolve(u, SU, nsk, SN); if (sk != "") useds[sk] = 1
+            sk = resolve(u, SU, nsk, SN, 2); if (sk != "") useds[sk] = 1
             emit(LN[u], u, "", u, sk) }
         # the configured UC3 flows nothing else knows: never seen polling, no cron
         for (i = 1; i <= nsk; i++) { u = SU[i]; if (u in useds) continue

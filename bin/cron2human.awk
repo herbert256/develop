@@ -24,6 +24,23 @@ function dnum(s,   M,n){ M["MON"]=1;M["TUE"]=2;M["WED"]=3;M["THU"]=4;M["FRI"]=5;
   # numeric DOW uses the QUARTZ convention: 1=SUN … 7=SAT (0 tolerated as
   # Sunday), mapped here onto the internal 1=Mon … 7=Sun the name tables use
   if(s in M) return M[s]; if(s ~ /^[0-9]+$/){ n=s+0; return (n<=1?7:n-1) }; return 0 }
+# one cron list SEGMENT into the set S over lo..hi: "*", "N", "A-B", "A/S",
+# "*/S", "A-B/S"; a range whose end lies below its start WRAPS (Quartz:
+# hours "22-2" = 22 23 0 1 2). Returns 0 when the segment does not parse.
+# 2026-09-28 (the bug hunt): every field parser read "8-18/2" as 8 to 18 and
+# a wrapped range as nothing; cron-observed.awk carries the same function.
+function segset(seg,lo,hi,S,   a,b,x,st,k,n){
+  st=1
+  if(index(seg,"/")){ n=split(seg,a,"/"); if(n!=2||a[2]!~/^[0-9]+$/||a[2]+0<1) return 0; st=a[2]+0; seg=a[1] }
+  if(seg=="*"||seg=="?"){ b=lo; x=hi }
+  else if(seg ~ /^[0-9]+$/){ b=seg+0; x=(st>1 ? hi : b) }
+  else if(seg ~ /^[0-9]+-[0-9]+$/){ split(seg,a,"-"); b=a[1]+0; x=a[2]+0 }
+  else return 0
+  if(b<lo||b>hi||x<lo||x>hi) return 0
+  if(x>=b){ for(k=b;k<=x;k+=st) S[k]=1; return 1 }
+  n=0; for(k=b;k<=hi;k++){ if(n%st==0) S[k]=1; n++ }
+  for(k=lo;k<=x;k++){ if(n%st==0) S[k]=1; n++ }
+  return 1 }
 function ordw(n,   W){ split("first second third fourth fifth",W," "); return (n>=1&&n<=5 ? W[n] : n "th") }
 function dayphrase(dow,   parts,np,i,seg,a,b,x,set,k,cnt,keys,mn,mx,j,out){
   if(dow=="*"||dow=="?"||dow=="") return ""
@@ -34,7 +51,12 @@ function dayphrase(dow,   parts,np,i,seg,a,b,x,set,k,cnt,keys,mn,mx,j,out){
   if(dow=="L") dow="SAT"
   np=split(dow,parts,",")
   for(i=1;i<=np;i++){ seg=parts[i]
-    if(seg ~ /-/){ split(seg,a,"-"); b=dnum(a[1]); x=dnum(a[2]); if(b&&x) for(j=b;j<=x;j++) set[j]=1 }
+    # a range walks the week from its first day to its last, WRAPPING past
+    # Sunday: the Quartz numbers run SUN(1)..SAT(7), so "1-5" is Sunday to
+    # Thursday and ends BELOW its start in the internal Mon..Sun order, as
+    # does "FRI-MON" (2026-09-28 fix: both read as every day)
+    if(seg ~ /-/){ split(seg,a,"-"); b=dnum(a[1]); x=dnum(a[2])
+      if(b&&x){ if(b<=x) for(j=b;j<=x;j++) set[j]=1; else { for(j=b;j<=7;j++) set[j]=1; for(j=1;j<=x;j++) set[j]=1 } } }
     else { k=dnum(seg); if(k) set[k]=1 } }
   cnt=0; for(k=1;k<=7;k++) if(k in set) keys[++cnt]=k
   if(cnt==0||cnt==7) return ""
@@ -43,6 +65,10 @@ function dayphrase(dow,   parts,np,i,seg,a,b,x,set,k,cnt,keys,mn,mx,j,out){
   mn=keys[1]; mx=keys[cnt]
   if(cnt==1) return "on " dname(mn)   # a single day is not a range — "on Monday", never "on Monday to Monday"
   if(mx-mn+1==cnt) return "on " dname(mn) " to " dname(mx)
+  # ONE run around the week's end ("Sunday to Thursday"): exactly one day
+  # starts a run, and the run from it covers every chosen day
+  j=0; for(k=1;k<=7;k++) if((k in set) && !(((k+5)%7+1) in set)){ j++; b=k }
+  if(j==1){ x=b; for(k=1;k<cnt;k++) x=x%7+1; return "on " dname(b) " to " dname(x) }
   out=""; for(i=1;i<=cnt;i++) out=out (out==""?"":", ") dshort(keys[i]); return "on " out
 }
 # a set of numbers (S[k]=1 over lo..hi) -> "1 to 7, 15 and 20 to 25": runs
@@ -61,17 +87,18 @@ function runtext(S,lo,hi,NM,   k,a,b,P,n,i,t){ n=0; k=lo
 # days from day 1" | "" (every day); the one-day forms (the 1st, L, LW, L-n,
 # nW) are domone's. Until 2026-09-23 the field was ignored, so
 # "0 0 8 1-7 * ?" read as a plain "Daily at 08:00" (Herbert's report).
-function domphrase(fld,   a,np,parts,i,seg,b,x,k,S,cnt,NM){
+function domphrase(fld,   a,np,parts,i,k,S,cnt,NM,keys,st,ok){
   if(fld=="*"||fld=="?"||fld=="") return ""
   if(fld ~ /^([0-9]+|\*)\/[0-9]+$/){ split(fld,a,"/"); return "every " (a[2]+0) " days from day " (a[1]=="*" ? 1 : a[1]+0) }
-  if(fld !~ /^[0-9,-]+$/) return "on day-of-month " fld
+  split("",S)
   np=split(fld,parts,",")
-  for(i=1;i<=np;i++){ seg=parts[i]
-    if(seg ~ /-/){ split(seg,a,"-"); b=a[1]+0; x=a[2]+0; for(k=b;k<=x;k++) S[k]=1 }
-    else S[seg+0]=1 }
-  cnt=0; for(k=1;k<=31;k++) if(k in S) cnt++
+  for(i=1;i<=np;i++) if(!segset(parts[i],1,31,S)) return "on day-of-month " fld
+  cnt=0; for(k=1;k<=31;k++) if(k in S) keys[++cnt]=k
   if(cnt==0||cnt==31) return ""
-  if(cnt==1) for(k=1;k<=31;k++) if(k in S) return "on the " ordn(k)
+  if(cnt==1) return "on the " ordn(keys[1])
+  # a uniform step through three or more days ("1-31/2"): the step, not the list
+  st=keys[2]-keys[1]; ok=(st>1 && cnt>=3); for(i=3;i<=cnt;i++) if(keys[i]-keys[i-1]!=st) ok=0
+  if(ok) return "every " st " days from day " keys[1] (keys[cnt]+st<=31 ? " to day " keys[cnt] : "")
   return "on days " runtext(S,1,31,NM)
 }
 function ordn(n,   r){ n+=0; r=n%100; if(r>=11&&r<=13) return n "th"; r=n%10
@@ -116,23 +143,27 @@ function monphrase(fld,hasdom,   m,k,t){
   if(k=="step") return t
   return "in " (k=="raw" ? "month " : "") t
 }
-# a numeric cron field -> "all" | "one:V" | "range:A:B" | "step:N" | "list:v,v,.."  (cycle 60|24)
-function fieldinfo(fld,cycle,   parts,np,i,seg,a,b,x,set,k,cnt,keys,mn,mx,step,ok,out){
+# a numeric cron field -> "all" | "one:V" | "range:A:B" | "step:N:FIRST" |
+# "list:v,v,.." | "raw:" (unparsable)  (cycle 60|24). Every form goes through
+# segset, so "30/15" is the list 30,45 and "2/6" the step 6 from 2 (2026-09-28
+# fix: both read as a plain step, the offset and the stop lost)
+function fieldinfo(fld,cycle,   parts,np,i,set,k,cnt,keys,mn,mx,step,ok,out){
   if(fld=="*"||fld=="?") return "all"
-  if(fld ~ /^[0-9]+$/) return "one:" (fld+0)
-  if(fld ~ /^([0-9]+|\*)\/[0-9]+$/){ split(fld,a,"/"); return "step:" (a[2]+0) }
+  split("",set)
   np=split(fld,parts,",")
-  for(i=1;i<=np;i++){ seg=parts[i]
-    if(seg ~ /-/){ split(seg,a,"-"); b=a[1]+0; x=a[2]+0; for(k=b;k<=x;k++) set[k]=1 }
-    else set[seg+0]=1 }
-  cnt=0; for(k=0;k<=59;k++) if(k in set) keys[++cnt]=k
-  if(cnt==0) return "all"
+  for(i=1;i<=np;i++) if(!segset(parts[i],0,cycle-1,set)) return "raw:"
+  cnt=0; for(k=0;k<cycle;k++) if(k in set) keys[++cnt]=k
+  if(cnt==0||cnt==cycle) return "all"
   if(cnt==1) return "one:" keys[1]
   mn=keys[1]; mx=keys[cnt]
   if(mx-mn+1==cnt) return "range:" mn ":" mx
   step=keys[2]-keys[1]; ok=1; for(i=2;i<=cnt;i++) if(keys[i]-keys[i-1]!=step) ok=0
-  if(ok && step>0 && mn<step && mx>=cycle-step) return "step:" step
-  out=""; for(i=1;i<=cnt;i++) out=out (out==""?"":",") keys[i]; return "list:" out
+  if(ok && step>0 && mn<step && mx>=cycle-step) return "step:" step ":" mn
+  out=""; for(i=1;i<=cnt;i++) out=out (out==""?"":",") keys[i]
+  # an HOUR field stepping through a window ("8-18/2"): the step, the window
+  # and the plain list for the phrasings that need the hours themselves
+  if(cycle==24 && ok && step>1 && cnt>=3) return "every:" step ":" mn ":" mx ":" out
+  return "list:" out
 }
 function hourlist(hv,   n,HL,i,t){ n=split(hv,HL,","); t=""; for(i=1;i<=n;i++) t=t (t==""?"":", ") hh(HL[i]); return t }
 # An hour LIST with runs of consecutive hours (2026-09-13, user request:
@@ -151,52 +182,74 @@ function hourruns(hv,mmn,mmx,   n,HL,i,a,b,seg,t){ n=split(hv,HL,","); t=""; i=1
 # Parses the RAW field, so a stepped list with an offset (1,16,31,46) keeps its
 # true min/max — fieldinfo's "step:N" summary drops the offset. Used for the
 # hour-range endpoints so the window ends at the LAST fire, not the whole hour.
-function minutemm(fld,want,   a,parts,np,i,seg,b,x,set,k,step,st,mn,mx){
+function minutemm(fld,want,   parts,np,i,set,k,mn,mx){
   if(fld=="*"||fld=="?") return (want<0 ? 0 : 59)
-  if(fld ~ /^[0-9]+$/) return fld+0
-  if(fld ~ /^([0-9]+|\*)\/[0-9]+$/){ split(fld,a,"/"); step=a[2]+0; st=(a[1]=="*"?0:a[1]+0)
-    if(want<0) return st
-    mx=st; while(mx+step<=59) mx+=step; return mx }
+  split("",set)
   np=split(fld,parts,",")
-  for(i=1;i<=np;i++){ seg=parts[i]
-    if(seg ~ /-/){ split(seg,a,"-"); b=a[1]+0; x=a[2]+0; for(k=b;k<=x;k++) set[k]=1 }
-    else set[seg+0]=1 }
+  for(i=1;i<=np;i++) segset(parts[i],0,59,set)
   mn=-1; mx=0
   for(k=0;k<=59;k++) if(k in set){ if(mn<0) mn=k; mx=k }
   return (want<0 ? (mn<0?0:mn) : mx)
 }
-function cron2human(expr,   f,nf,mi,hi,dp,one,dmp,mop,m,mok,mot,mk,mv,hk,hv,ha,hb,p,freq,time,out,mmn,mmx){
+# the SECONDS field (Quartz field 1) -> "" when it fires once a minute, else
+# "every 30 seconds" | "every second" | "at seconds 0,20,40" (2026-09-28: the
+# field was ignored, so "*/30 * * * * ?" read as a once-a-minute schedule)
+function secphrase(fld,   s,p){
+  s=fieldinfo(fld,60); split(s,p,":")
+  if(p[1]=="one"||p[1]=="raw") return ""
+  if(p[1]=="all") return "every second"
+  if(p[1]=="step") return "every " p[2] " seconds"
+  if(p[1]=="range") return "at seconds " p[2] " to " p[3]
+  return "at seconds " p[2] }
+function cron2human(expr,   f,t,sp,r){
+  # a leading blank would make field 1 empty and shift every field (2026-09-28 fix)
+  t=expr; sub(/^[ \t]+/,"",t); sub(/[ \t]+$/,"",t)
+  if(split(t,f,/[ \t]+/)<6) return expr
+  sp=secphrase(f[1]); SECUSED=0
+  r=c2h(t,sp); if(r==t) return expr
+  if(sp!="" && !SECUSED) r=r ", " sp " within each minute"
+  return r }
+function c2h(expr,sp,   f,nf,mi,hi,dp,one,dmp,mop,m,mok,mot,mk,mv,hk,hv,ha,hb,p,freq,time,out,mmn,mmx,mst,hst,hstep){
   nf=split(expr,f,/[ \t]+/); if(nf<6||f[2]==""||f[3]=="") return expr
   f[4]=toupper(f[4]); f[5]=toupper(f[5]); f[6]=toupper(f[6])   # Quartz names are case-insensitive
   mi=fieldinfo(f[2],60); hi=fieldinfo(f[3],24); dp=dayphrase(f[6])
+  if(mi ~ /^raw:/ || hi ~ /^raw:/) return expr
   # the day-of-month and month fields. ONE day a month (the 1st, the last
   # day, the third Friday, ...) gets its own wording below ("Monthly on the
   # 1st at 08:00"); several days are appended AFTER the time ("Daily at
   # 08:00 on days 1 to 7 for every month")
   one=domone(f[4]); if(one=="" && dp ~ /^on the /){ one=substr(dp,4); dp="" }
   dmp=(one=="" ? domphrase(f[4]) : ""); mop=(one=="" ? monphrase(f[5], dmp!="") : "")
-  split(mi,p,":"); mk=p[1]; mv=p[2]
-  split(hi,p,":"); hk=p[1]; hv=p[2]; ha=p[2]; hb=p[3]
+  split(mi,p,":"); mk=p[1]; mv=p[2]; mst=p[3]+0
+  split(hi,p,":"); hk=p[1]; hv=p[2]; ha=p[2]; hb=p[3]; hst=p[3]+0
+  # a stepped hour window: its own wording beside a single minute, the plain
+  # hour list beside a minute step ("every 15 minutes at 08:00, 10:00, …")
+  if(hk=="every"){ hstep=p[2]; ha=p[3]; hb=p[4]; if(mk!="one"){ hk="list"; hv=p[5] } }
   mmn=minutemm(f[2],-1); mmx=minutemm(f[2],1)   # actual first/last fire minute, for the hour-range endpoints
   freq=""; time=""
-  if(mk=="step"){
-    freq="Every " mv " minute" (mv==1?"":"s")
+  if(mk=="all" || mk=="step"){
+    # every minute (or every Nth): a multi-fire SECONDS field says it
+    # itself here — "Every 30 seconds between 08:00 and 17:59"
+    if(mk=="all"){ freq=(sp!="" ? toupper(substr(sp,1,1)) substr(sp,2) : "Every minute"); SECUSED=1 }
+    else freq="Every " mv " minute" (mv==1?"":"s") ((mst>0 && (hk=="all" || hk=="step")) ? " from :" pad(mst) : "")
     if(hk=="range") time="between " hm(ha,mmn) " and " hm(hb,mmx)
     else if(hk=="one") time="during the " hh(hv) " hour"
-    else if(hk=="step") time="in each " hv "-hour window"
+    else if(hk=="step") time="in each " hv "-hour window" (hst>0 ? " from " hh(hst) : "")
     else if(hk=="list") time="at " (hasrun(hv) ? hourruns(hv,mmn,mmx) : hourlist(hv))
   } else if(mk=="one" && mv==0){
     if(hk=="all") freq="Every hour"
     else if(hk=="range"){ freq="Hourly"; time="between " hm(ha,mmn) " and " hm(hb,mmx) }
     else if(hk=="one"){ freq="Daily"; time="at " hh(hv) }
-    else if(hk=="step") freq="Every " hv " hours"
+    else if(hk=="step") freq="Every " hv " hours" (hst>0 ? " from " hh(hst) : "")
+    else if(hk=="every"){ freq="Every " hstep " hours"; time="between " hh(ha) " and " hh(hb) }
     else if(hasrun(hv)){ freq="Hourly"; time="at " hourruns(hv,mmn,mmx) }
     else { freq="Daily"; time="at " hourlist(hv) }
   } else if(mk=="one"){
     if(hk=="all") freq="Every hour at :" pad(mv)
     else if(hk=="one"){ freq="Daily"; time="at " pad(hv) ":" pad(mv) }
     else if(hk=="range"){ freq="Hourly"; time="between " hm(ha,mmn) " and " hm(hb,mmx) }
-    else if(hk=="step") freq="Every " hv " hours at :" pad(mv)
+    else if(hk=="step") freq="Every " hv " hours " (hst>0 ? "from " hm(hst,mv) : "at :" pad(mv))
+    else if(hk=="every"){ freq="Every " hstep " hours"; time="between " hm(ha,mv) " and " hm(hb,mv) }
     else if(hasrun(hv)){ freq="Hourly"; time="at " hourruns(hv,mmn,mmx) }
     else { freq="At :" pad(mv); time="at " hourlist(hv) }
   } else {

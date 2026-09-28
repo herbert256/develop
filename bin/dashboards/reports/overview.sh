@@ -315,11 +315,12 @@ if [ -f "$TR" ]; then
             # file makes getline return -1 -> empty
             # The base cache is AMENDED after flow-manager (result.sh
             # discover_logged appends every logged-but-unconfigured name, the
-            # synthetic "<account>_UNKNOWN" ones included). First seen excludes
+            # synthetic "UCx_<account>" ones included). First seen excludes
             # the synthetic names, and the curve endpoints must keep equalling
-            # its figures — so they stay out of the roster here too (2026-08-22).
+            # its figures — so they stay out of the roster here too (2026-08-22;
+            # 2026-09-28: the filter still matched the retired "_UNKNOWN" form).
             while ((getline l9 < SUBBF) > 0) { n9 = split(l9, z9, "\t")
-                if (n9 >= 1 && z9[1] != "" && z9[1] !~ /_UNKNOWN$/) { u9 = toupper(z9[1]); ROST[u9] = 1; RO[++nro] = u9 } }
+                if (n9 >= 1 && z9[1] != "" && z9[1] !~ /^UCx_/) { u9 = toupper(z9[1]); ROST[u9] = 1; RO[++nro] = u9 } }
             close(SUBBF)
             # accounts: the configured roster (only configured names are
             # counted, as for subscriptions)
@@ -700,7 +701,9 @@ fi
     printf 'TITLE\tDashboards — Cloud Reports\n'
     printf 'H1\tDashboard\n'
     printf 'DESC\tA single graphical read of both logs — the headline figures and the 6-hour trends; click any slot to drill into that day.\n'
-    printf 'KPI\t%s\tFiles transferred\tlogical transfers\tblue\t../transfer/activity-per-day.html\n' "$(knum_files "${T_FILES:-0}")"
+    # every File, so the Top view (its per-day Files Count), not Activity per
+    # day (delivered Files only since 2026-09-13) — 2026-09-28 fix
+    printf 'KPI\t%s\tFiles transferred\tlogical transfers\tblue\t../transfer/topview.html\n' "$(knum_files "${T_FILES:-0}")"
     printf 'KPI\t%s%%\tTransfer failure rate\t\tred\t../transfer/failure-rate-days.html\n' "${T_FPCT:-0}"
     printf 'KPI\t%s\tVolume moved\t\tgreen\t../transfer/volume-per-day.html\n' "$(humanbytes "${T_VOL:-0}")"
     printf 'KPI\t%s\tServer records\tlog messages\tpurple\t../server/topview.html\n' "$(knum_recs "${S_REC:-0}")"

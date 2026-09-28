@@ -28,8 +28,8 @@
 <ul>
 <li>The first table counts OUT-connection Files only (the endpoints we dial); its distinct counts use the site-wide union attribution.</li>
 <li>A <strong>red</strong> row is the sole recorded endpoint of at least one partner &mdash; no second address to fail over to; losing it strands those partners entirely.</li>
-<li>Redundancy and sharing count each partner&rsquo;s distinct recorded endpoints over ALL its Files; for an inbound flow that is the partner&rsquo;s recorded source address.</li>
-<li>A partner with no endpoint recorded anywhere is <strong>inbound-only</strong>: it dials us, so none of its endpoints can strand us &mdash; a legitimate class, not a gap.</li>
+<li>Redundancy and sharing count each partner&rsquo;s distinct endpoints over its OUT-connection Files only &mdash; an inbound File records the partner&rsquo;s source address, not an endpoint we dial.</li>
+<li>A partner with no such endpoint is <strong>inbound-only</strong>: it dials us, so none of its endpoints can strand us &mdash; a legitimate class, not a gap.</li>
 </ul>
 </main>
 </body>

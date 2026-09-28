@@ -59,7 +59,7 @@ while IFS=$'\t' read -r gname members direction; do
     {
         html_head "Partner group $gname" "../../assets/style.css" "" "" "partner-groups"
         printf '<h1>Partner group <span class="mono">%s</span></h1>\n' "$gesc"
-        printf '<p class="subtitle">FlowManager configures these as separate logical flows, but the grouping logic ties them to ONE partner organisation. This page shows the evidence it used. See the <a href="../../../help/partner-groups.html">help page</a> for how partner groups are formed.</p>\n'
+        printf '<p class="subtitle">FlowManager configures these as separate logical flows, but the grouping logic ties them to ONE partner organisation. This page shows the evidence it used. See the <a href="../../help/partner-groups.html">help page</a> for how partner groups are formed.</p>\n'
 
         # KPI stat row
         printf '<div>'
@@ -112,7 +112,7 @@ while IFS=$'\t' read -r gname members direction; do
         ' "$WHYF"
         printf '</table></div>\n'
 
-        printf '<p class="range">Partner grouping derives from the logical flow names (the last part is the partner code), merged by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases (see <a href="../../../help/partner-groups.html">help</a>). Back to the <a href="../partners/%s.html">%s partner page</a> or the <a href="../../transfer/entities/partner-seen.html">Partners list</a>.</p>\n' "$slug" "$gesc"
+        printf '<p class="range">Partner grouping derives from the logical flow names (the last part is the partner code), merged by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases (see <a href="../../help/partner-groups.html">help</a>). Back to the <a href="../partners/%s.html">%s partner page</a> or the <a href="../../transfer/entities/partner-seen.html">Partners list</a>.</p>\n' "$slug" "$gesc"
         printf '</body>\n</html>\n'
     } > "$out"
     n=$((n + 1))

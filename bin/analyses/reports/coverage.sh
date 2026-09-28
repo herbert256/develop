@@ -148,7 +148,8 @@ for member in logicals partners applications domains bl; do
             rows=$(awk -F'\t' -v s="$seenf" -v o="$outf" -v dm="$mdirf" '
                 BEGIN{ US = sprintf("%c", 31) }
                 { if ($1 in idx) { i = idx[$1]
-                      if (dr[i] != $2) dr[i] = "B"
+                      # an EMPTY side (a direction-less member) adds no direction
+                      if ($2 != "" && dr[i] != $2) dr[i] = (dr[i] == "") ? $2 : "B"
                       if ($3 == 1) sn[i] = 1
                       if ($5 != "" && $5 > ts[i]) { ts[i] = $5; oc[i] = $6 }
                       if ($7 != "") mem[i] = (mem[i] == "" ? $7 : mem[i] US $7) }

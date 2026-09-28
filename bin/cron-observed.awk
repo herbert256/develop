@@ -15,26 +15,40 @@
 #   poll and no File observed) ⇥ poll starts ⇥ failure lines ⇥ what goes wrong
 # one numeric cron field -> "count:min" (how many values it fires at
 # per cycle, and the smallest) — the Observed-vs-Schedule check
-function finfo(fld, cycle,   a, np, parts, i, seg, b, x, k, set, cnt, mn, st, step) {
+# one list segment into the set S over lo..hi — bin/cron2human.awk segset,
+# the same rules ("A-B/S", wrapped ranges); 0 = unparsable
+function segset(seg, lo, hi, S,   a, b, x, st, k, n) {
+    st = 1
+    if (index(seg, "/")) { n = split(seg, a, "/"); if (n != 2 || a[2] !~ /^[0-9]+$/ || a[2]+0 < 1) return 0; st = a[2]+0; seg = a[1] }
+    if (seg == "*" || seg == "?") { b = lo; x = hi }
+    else if (seg ~ /^[0-9]+$/) { b = seg+0; x = (st > 1 ? hi : b) }
+    else if (seg ~ /^[0-9]+-[0-9]+$/) { split(seg, a, "-"); b = a[1]+0; x = a[2]+0 }
+    else return 0
+    if (b < lo || b > hi || x < lo || x > hi) return 0
+    if (x >= b) { for (k = b; k <= x; k += st) S[k] = 1; return 1 }
+    n = 0; for (k = b; k <= hi; k++) { if (n % st == 0) S[k] = 1; n++ }
+    for (k = lo; k <= x; k++) { if (n % st == 0) S[k] = 1; n++ }
+    return 1
+}
+function finfo(fld, cycle,   np, parts, i, k, set, cnt, mn) {
     if (fld == "*" || fld == "?") return cycle ":0"
-    if (fld ~ /^[0-9]+$/) return "1:" (fld+0)
-    if (fld ~ /^([0-9]+|\*)\/[0-9]+$/) { split(fld, a, "/"); step = a[2]+0; st = (a[1] == "*" ? 0 : a[1]+0)
-        if (step <= 0) return "1:" st
-        cnt = 0; for (k = st; k < cycle; k += step) cnt++
-        return cnt ":" st }
     split("", set)
     np = split(fld, parts, ",")
-    for (i = 1; i <= np; i++) { seg = parts[i]
-        if (seg ~ /-/) { split(seg, a, "-"); b = a[1]+0; x = a[2]+0; for (k = b; k <= x; k++) set[k] = 1 }
-        else set[seg+0] = 1 }
+    # 2026-09-28 fix: "8-18/2" counted every hour of the window, a wrapped
+    # "22-2" none (segset)
+    for (i = 1; i <= np; i++) if (!segset(parts[i], 0, cycle - 1, set)) return "1:0"
     cnt = 0; mn = -1
     for (k = 0; k < cycle; k++) if (k in set) { cnt++; if (mn < 0) mn = k }
     return (cnt ? cnt : 1) ":" (mn < 0 ? 0 : mn)
 }
 # circular minute-of-day distance
 function mdist(a, b,   d) { d = a - b; if (d < 0) d = -d; if (1440 - d < d) d = 1440 - d; return d }
-# prefix either way (the server truncates long site names)
-function pfx(a, b) { return substr(a, 1, length(b)) == b || substr(b, 1, length(a)) == a }
+# a server key u for the configured name un: the name itself, or a name
+# the server TRUNCATED — a proper prefix of un that is no configured
+# subscription (XSH) and no flow with transfers (PUNCT) of its own.
+# 2026-09-28 fix: the old prefix-either-way test summed the failures of
+# every longer flow sharing the prefix onto the shorter name.
+function kmatch(u, un) { return u == un || (length(u) < length(un) && substr(un, 1, length(u)) == u && !(u in HS) && !(u in PD)) }
 BEGIN {
     US = sprintf("%c", 31)
     # punctuality rows: site, days, typical, window, class — the
@@ -84,24 +98,29 @@ NF {
     E = 0; early = -1
     nx = split(cronx, CX, US)
     for (i = 1; i <= nx; i++) {
-        if (split(CX[i], CF2, /[ \t]+/) < 3) continue
+        cx1 = CX[i]; sub(/^[ \t]+/, "", cx1)   # a leading blank shifts every field
+        if (split(cx1, CF2, /[ \t]+/) < 3) continue
         split(finfo(CF2[2], 60), A2, ":"); split(finfo(CF2[3], 24), A3, ":")
         E += A2[1] * A3[1]
         em = A3[2] * 60 + A2[2]
         if (early < 0 || em < early) early = em
     }
-    # file-arrival observation (largest active-days prefix match)
+    # file-arrival observation: the punctuality row of THIS name (the
+    # transfer log carries the full, rename-folded name). 2026-09-28 fix: a
+    # prefix match took the arrivals of a LONGER, different flow
+    # (UC3_X picking up UC3_X_2)
     odays = 0; otyp = ""; owin = ""; ocls = ""
-    for (i = 1; i <= npu; i++) { u = PU[i]
-        if (substr(u, 1, length(un)) == un && PD[u] > odays) { odays = PD[u]; otyp = PT[u]; owin = PW[u]; ocls = PC[u] } }
-    # the poll footprint (prefix BOTH ways — the server truncates
-    # long site names); an exact name always wins
+    if (un in PD) { odays = PD[un]; otyp = PT[un]; owin = PW[un]; ocls = PC[un] }
+    # the poll footprint: an exact name, else a TRUNCATED server name
+    # (kmatch; remote-poll.sh already completes a truncation that is
+    # unambiguous). 2026-09-28 fix: the reverse direction also matched,
+    # handing a flow the polls of a longer, different flow
     polls = 0; ocell = ""
     if (un in QN) qk = un
     else {
         qk = ""
         for (i = 1; i <= nqu; i++) { u = QU[i]
-            if ((substr(u, 1, length(un)) == un || substr(un, 1, length(u)) == u) && QN[u] > polls) { qk = u; polls = QN[u] } }
+            if (kmatch(u, un) && QN[u] > polls) { qk = u; polls = QN[u] } }
     }
     if (qk != "") { polls = QN[qk]
         if (polls > 0) { odays = QD[qk]
@@ -134,12 +153,12 @@ NF {
     # with no observed poll; the flat Polling page shows them all)
     st2 = 0; cf2 = 0; lf2 = 0; af2 = 0; best = 0; why = ""
     for (i = 1; i <= nps; i++) { u = PSU[i]
-        if (pfx(u, un) && PS[u] > st2) st2 = PS[u] }
+        if (kmatch(u, un) && PS[u] > st2) st2 = PS[u] }
     for (i = 1; i <= npc; i++) { u = PCU[i]
-        if (pfx(u, un)) { cf2 += PC2[u]
+        if (kmatch(u, un)) { cf2 += PC2[u]
             if (PCB[u]+0 > best) { best = PCB[u]+0; why = PCR[u] } } }
     for (i = 1; i <= npl; i++) { u = PLU[i]
-        if (pfx(u, un)) { lf2 += PL2[u]
+        if (kmatch(u, un)) { lf2 += PL2[u]
             if (PLB[u]+0 > best) { best = PLB[u]+0; why = PLR[u] " (after connecting)" } } }
     nh2 = split(HS[un], HH, " ")
     for (i = 1; i <= nh2; i++) { h2 = HH[i]

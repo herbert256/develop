@@ -905,6 +905,15 @@ write_subscriptions_in_boxes_page() {
             | LC_ALL=C sort -t"$TAB" -k2,2 \
             | awk -F'\t' -v SM="$TRPT/details/subscriptions/_slugmap.tsv" -v SUBF="$FBASE/_subscriptions.tsv" '
                 function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+                # a name as a URL query value, byte by byte (2026-09-28 fix: the
+                # raw name went into ?axway_search=, so a percent sign, an
+                # ampersand, a hash or a space broke the link)
+                function urlq(s,   i, c, o) {
+                    if (!_URLQI) { for (i = 1; i < 256; i++) URLQB[sprintf("%c", i)] = i; _URLQI = 1 }
+                    o = ""
+                    for (i = 1; i <= length(s); i++) { c = substr(s, i, 1); o = o ((c ~ /[A-Za-z0-9_.~-]/) ? c : sprintf("%%%02X", URLQB[c])) }
+                    return o
+                }
                 # a flagged cell carries the COLUMN NAME itself (not a symbol),
                 # linking into that report with the subscription as the search.
                 # The href is relative to docs/<env>/analyses/, so it needs the
@@ -918,7 +927,7 @@ write_subscriptions_in_boxes_page() {
                     # an href already carrying a query is used as-is (the two
                     # login-error boxes: the Logons rows are logins/hosts, so a
                     # subscription-name search would match nothing)
-                    if (index(href, "?") == 0) href = href "?axway_search=" nm
+                    if (index(href, "?") == 0) href = href "?axway_search=" urlq(nm)
                     return "<td class=\"ctr\"><a class=\"pfx" (cls ? " " cls : "") "\" href=\"" href "\" title=\"" ttl "\">" lbl "</a></td>"
                 }
                 BEGIN {
@@ -944,24 +953,24 @@ write_subscriptions_in_boxes_page() {
                     # miscount costs the LAST column its cells site-wide.
                     printf "<tr data-pf=\"%s\"%s><td class=\"cl\">%s</td>%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s</tr>\n", \
                         substr(pf, 2), (res != "" ? " data-res=\"" res "\"" : ""), nm, \
-                        flag($14, "../transfer/entities/subscription-ok.html", e($2), "Newest File delivered \342\200\224 the subscription is green", "ok", "pfok"), \
-                        flag($17, "../transfer/entities/subscription-seen.html", e($2), "Seen in the transfer log \342\200\224 at least one File", "seen", "pfneu"), \
-                        flag($13, "../transfer/entities/subscription-not-seen.html", e($2), "Configured, never seen in either log", "not seen"), \
-                        flag($18, "../transfer/entities/subscription-error.html", e($2), "Newest File Failed or Expired \342\200\224 the subscription is red", "error"), \
-                        flag($5, "../server/went-kaput.html", e($2), "On Trouble after Success", "troubles"), \
-                        flag($7, "../transfer/waiting.html", e($2), "Newest File is Waiting", "waiting"), \
-                        flag($10, "../server/no-remote-files.html", e($2), "On No remote files", "no Files"), \
-                        flag($11, "../transfer/missing-cronjobs.html", e($2), "Cron-triggered, but no cron expression configured", "no cron"), \
-                        flag($12, "../transfer/went-quiet-subscriptions.html", e($2), "Carried Files, then stopped \342\200\224 no traffic in the last 7 days", "quiet"), \
-                        flag($3, "../transfer/pirates-details.html", e($2), "On One-legged transfers", "one leg"), \
-                        flag($4, "../transfer/from-green-to-red.html", e($2), "On From green to red", "green-&gt;red"), \
-                        flag($6, "../transfer/only-red.html", e($2), "On Only red", "red"), \
-                        flag($8, "../transfer/expired.html", e($2), "Newest File is Expired", "expired"), \
-                        flag($15, "../server/site-failures.html", e($2), "The server logged a connection failure and no OK File followed it", "connection"), \
-                        flag($16, "../server/deploy-errors.html", e($2), "A configuration defect stopped the flow (route abandoned, or the profile cannot receive) and no OK File followed it", "deploy"), \
-                        flag($19, "../server/logons-incoming.html?axway_sort=2:-1", e($2), "A connected login failed the incoming SSH screening and no OK File followed", "login in"), \
-                        flag($20, "../server/logons-outgoing.html?axway_sort=2:-1", e($2), "We failed to authenticate at the remote host and no OK File followed", "login out"), \
-                        flag($9, "../server/no-remote-dir.html", e($2), "On No remote dir", "no Dir")
+                        flag($14, "../transfer/entities/subscription-ok.html", $2, "Newest File delivered \342\200\224 the subscription is green", "ok", "pfok"), \
+                        flag($17, "../transfer/entities/subscription-seen.html", $2, "Seen in the transfer log \342\200\224 at least one File", "seen", "pfneu"), \
+                        flag($13, "../transfer/entities/subscription-not-seen.html", $2, "Configured, never seen in either log", "not seen"), \
+                        flag($18, "../transfer/entities/subscription-error.html", $2, "Newest File Failed or Expired \342\200\224 the subscription is red", "error"), \
+                        flag($5, "../server/went-kaput.html", $2, "On Trouble after Success", "troubles"), \
+                        flag($7, "../transfer/waiting.html", $2, "Newest File is Waiting", "waiting"), \
+                        flag($10, "../server/no-remote-files.html", $2, "On No remote files", "no Files"), \
+                        flag($11, "../transfer/missing-cronjobs.html", $2, "Cron-triggered, but no cron expression configured", "no cron"), \
+                        flag($12, "../transfer/went-quiet-subscriptions.html", $2, "Carried Files, then stopped \342\200\224 no traffic in the last 7 days", "quiet"), \
+                        flag($3, "../transfer/pirates-details.html", $2, "On One-legged transfers", "one leg"), \
+                        flag($4, "../transfer/from-green-to-red.html", $2, "On From green to red", "green-&gt;red"), \
+                        flag($6, "../transfer/only-red.html", $2, "On Only red", "red"), \
+                        flag($8, "../transfer/expired.html", $2, "Newest File is Expired", "expired"), \
+                        flag($15, "../server/site-failures.html", $2, "The server logged a connection failure and no OK File followed it", "connection"), \
+                        flag($16, "../server/deploy-errors.html", $2, "A configuration defect stopped the flow (route abandoned, or the profile cannot receive) and no OK File followed it", "deploy"), \
+                        flag($19, "../server/logons-incoming.html?axway_sort=2:-1", $2, "A connected login failed the incoming SSH screening and no OK File followed", "login in"), \
+                        flag($20, "../server/logons-outgoing.html?axway_sort=2:-1", $2, "We failed to authenticate at the remote host and no OK File followed", "login out"), \
+                        flag($9, "../server/no-remote-dir.html", $2, "On No remote dir", "no Dir")
                 }'
             # 18 numeric cells in COLUMN order (the previous version was one
             # cell short — the deploy column was missing, latent because
@@ -1124,14 +1133,25 @@ write_accounts_in_boxes_page() {
             printf '%s\n' "$rows" | LC_ALL=C sort -t"$TAB" -k2,2 -k1,1n -k3,3 \
             | awk -F'\t' -v SPEC="$BOXSPEC" -v SM="$TRPT/details/accounts/_slugmap.tsv" -v ACCF="$ACCF" '
                 function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+                # a name as a URL query value, byte by byte (2026-09-28 fix: the
+                # raw name went into ?axway_search=, so a percent sign, an
+                # ampersand, a hash or a space broke the link)
+                function urlq(s,   i, c, o) {
+                    if (!_URLQI) { for (i = 1; i < 256; i++) URLQB[sprintf("%c", i)] = i; _URLQI = 1 }
+                    o = ""
+                    for (i = 1; i <= length(s); i++) { c = substr(s, i, 1); o = o ((c ~ /[A-Za-z0-9_.~-]/) ? c : sprintf("%%%02X", URLQB[c])) }
+                    return o
+                }
                 # the cell carries the COLUMN NAME and opens that report already
                 # searched for the SUBSCRIPTIONS behind this flag, joined with the
                 # site search operator " or " (%20or%20 once URL-encoded). Box 16
                 # has no subscription, so it searches the ACCOUNT on Config hygiene.
-                function cell(b, acct,   q) {
+                function cell(b, acct,   q, nq, qa, qi) {
                     if (!((acct, b) in SUB)) return "<td></td>"
-                    q = substr(SUB[acct, b], 2); gsub(/\037/, "%20or%20", q)
-                    if (b == 16) q = acct
+                    # each name URL-encoded, joined by the encoded " or "
+                    nq = split(substr(SUB[acct, b], 2), qa, "\037"); q = ""
+                    for (qi = 1; qi <= nq; qi++) q = q (qi > 1 ? "%20or%20" : "") urlq(qa[qi])
+                    if (b == 16) q = urlq(acct)
                     # an href already carrying a query is used as-is (the two
                     # login-error boxes: the Logons rows are logins/hosts)
                     if (index(HREF[b], "?") > 0)

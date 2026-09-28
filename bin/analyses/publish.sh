@@ -1535,7 +1535,7 @@ write_accounts_page() {
         printf '</div>\n'
         printf '<h2>Type &mdash; the name prefix</h2>\n<div class="tablewrap"><table class="index fit">\n'
         printf '<tr><th>Prefix</th><th>Meaning</th><th class="num">Profiles</th><th>Configured type</th></tr>\n'
-        printf '%s\n' "$prefix_rows" | while IFS=$'\t' read -r tok n typ; do
+        printf '%s\n' "$prefix_rows" | tr '\t' '\036' | while IFS=$'\036' read -r tok n typ; do
             [ -n "$tok" ] || continue
             case $tok in SCP) mean="Server comm profile" ;; SSCP) mean="Secure server comm profile" ;; CCP) mean="Client comm profile" ;; *) mean="&mdash;" ;; esac
             esc "$tok"; te=$ESC; esc "$typ"; tye=$ESC
@@ -1574,7 +1574,7 @@ write_accounts_page() {
         printf '<p class="range">An <strong>incoming</strong> account (the partner connects to us) separates its name parts with <code>-</code>; an <strong>outgoing</strong> one (we connect to the partner) uses <code>_</code>. The same flow configured both ways therefore appears twice, once in each spelling &mdash; <code>DPL-AXINI-AO-IMPRESS</code> inbound and <code>DPL_AXINI-AO_IMPRESS</code> outbound. The separator is read <code>_</code>-primary: <code>_</code> wins unless splitting on <code>-</code> yields more parts, so an internal hyphen inside one part (<code>AIM-FIN_TREASURY-SP</code>) is not mistaken for the separator. (A NAMING audit only &mdash; since the logical-based derivation the partner/domain/application entities no longer come from account names.)</p>\n'
         if [ "${nm_bad:-0}" -gt 0 ]; then
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Direction</th><th>Separator used</th><th>Expected</th></tr>\n'
-            printf '%s\n' "$nm_rows" | tr '\t' '\037' | while IFS=$'\037' read -r nm dir prim want res; do
+            printf '%s\n' "$nm_rows" | tr '\t' '\036' | while IFS=$'\036' read -r nm dir prim want res; do
                 [ -n "$nm" ] || continue
                 esc "$nm"; nme=$ESC
                 printf '<tr data-res="%s"><td><code>%s</code></td><td>%s</td><td><code>%s</code></td><td><code>%s</code></td></tr>\n' \
@@ -1594,7 +1594,7 @@ write_accounts_page() {
             # \037, not TAB: a TAB is IFS whitespace, so consecutive empty
             # fields (a missing domain/application/partner is exactly that)
             # collapse on read and shift every later column.
-            printf '%s\n' "$pda_rows" | tr '\t' '\037' | while IFS=$'\037' read -r nm dm ap pt miss why res; do
+            printf '%s\n' "$pda_rows" | tr '\t' '\036' | while IFS=$'\036' read -r nm dm ap pt miss why res; do
                 [ -n "$nm" ] || continue
                 esc "$nm"; nme=$ESC; esc "$dm"; dme=$ESC; esc "$ap"; ape=$ESC; esc "$pt"; pte=$ESC
                 esc "$miss"; mse=$ESC; esc "$why"; whe=$ESC
@@ -1610,7 +1610,7 @@ write_accounts_page() {
         printf '<h2>FTP endpoints (%s) &mdash; insecure</h2>\n' "$(dotify "$nftp")"
         printf '<p class="range"><strong>FTP transfers credentials and data in clear text</strong> and cannot use a public key, so these are the site&rsquo;s only insecure profiles. They are also exactly the %s profiles outside the <code>PWD</code>/<code>KEY</code> naming convention above (their name ends in a partner tag and their <code>clientAuthentication</code> is unset). Migrating them to SFTP would close the last plaintext links.</p>\n' "$(dotify "$nftp")"
         printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Communication profile</th><th>Name suffix</th><th>Authentication</th></tr>\n'
-        printf '%s\n' "$ftp_rows" | while IFS=$'\t' read -r nm suf auth; do
+        printf '%s\n' "$ftp_rows" | tr '\t' '\036' | while IFS=$'\036' read -r nm suf auth; do
             [ -n "$nm" ] || continue
             esc "$nm"; nme=$ESC; esc "$suf"; sfe=$ESC; esc "$auth"; ae=$ESC
             printf '<tr data-res="red"><td><code>%s</code></td><td>%s</td><td>%s</td></tr>\n' "$nme" "$sfe" "$ae"
@@ -1620,7 +1620,7 @@ write_accounts_page() {
         if [ "$niw" -gt 0 ]; then
             printf '<p class="range">An <strong>incoming</strong> partner (a CLIENT profile &mdash; it connects in to us) should be restricted by an <code>AllowIP</code> whitelist. The following %s have none, so any source IP could attempt to connect, relying on authentication alone (weakest when that is a password).</p>\n' "$(dotify "$niw")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Partner</th><th>Protocol</th><th>Authentication</th><th>Status</th></tr>\n'
-            printf '%s\n' "$iw_rows" | while IFS=$'\t' read -r p proto auth; do
+            printf '%s\n' "$iw_rows" | tr '\t' '\036' | while IFS=$'\036' read -r p proto auth; do
                 [ -n "$p" ] || continue
                 res=$(awk -F'\t' -v n="$p" 'toupper($1)==toupper(n){print $3; exit}' $DATA/flow-manager/base/_accounts.tsv)
                 case $res in green) st="seen (last OK)" ;; red) st="seen (last Error)" ;; orange) st="never seen" ;; *) st="-" ;; esac
@@ -1644,7 +1644,7 @@ write_accounts_page() {
                 esc "$label"
                 printf '<h3>%s (%s host(s))</h3>\n<div class="tablewrap"><table class="index fit">\n<tr><th>Remote host</th><th>Value</th><th>Profiles</th></tr>\n' "$ESC" "$(dotify "$anh")"
                 prevh=""
-                printf '%s\n' "$arows" | while IFS=$'\t' read -r h v pf; do
+                printf '%s\n' "$arows" | tr '\t' '\036' | while IFS=$'\036' read -r h v pf; do
                     [ -n "$h" ] || continue
                     if [ "$h" = "$prevh" ]; then hcell=""; else esc "$h"; hcell="<code>$ESC</code>"; prevh="$h"; fi
                     esc "$v"; ve=$ESC; esc "$pf"; pfe=$ESC
@@ -1667,7 +1667,7 @@ write_accounts_page() {
                 esc "$wlabel"
                 printf '<h3>%s (%s IP(s))</h3>\n<div class="tablewrap"><table class="index fit">\n<tr><th>Whitelisted IP</th><th>Value</th><th>Partners</th></tr>\n' "$ESC" "$(dotify "$wanh")"
                 previp=""
-                printf '%s\n' "$warows" | while IFS=$'\t' read -r ip v pf; do
+                printf '%s\n' "$warows" | tr '\t' '\036' | while IFS=$'\036' read -r ip v pf; do
                     [ -n "$ip" ] || continue
                     if [ "$ip" = "$previp" ]; then ic=""; else esc "$ip"; ic="<code>$ESC</code>"; previp="$ip"; fi
                     esc "$v"; ve=$ESC; esc "$pf"; pfe=$ESC
@@ -1686,7 +1686,7 @@ write_accounts_page() {
         if [ "$nnsl" -gt 0 ]; then
             printf '<p class="range">A partner connecting in (a CLIENT profile) authenticates with a provisioned <code>FE&lt;digits&gt;</code> login. These %s use a different login name.</p>\n' "$(dotify "$nnsl")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>\n'
-            printf '%s\n' "$nsl_rows" | while IFS=$'\t' read -r a p l; do
+            printf '%s\n' "$nsl_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC
                 printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td><code>%s</code></td></tr>\n' "$ae" "$pe" "$le"
             done
@@ -1708,7 +1708,7 @@ write_accounts_page() {
         if [ "$nmh" -gt 0 ]; then
             printf '<p class="range">A server endpoint should resolve to exactly one host. These %s list several.</p>\n' "$(dotify "$nmh")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th class="num">Hosts</th><th>Host list</th></tr>\n'
-            printf '%s\n' "$mh_rows" | while IFS=$'\t' read -r a p n hl; do
+            printf '%s\n' "$mh_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p n hl; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$hl"; hle=$ESC
                 printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td class="num">%s</td><td>%s</td></tr>\n' "$ae" "$pe" "$n" "$hle"
             done
@@ -1719,7 +1719,7 @@ write_accounts_page() {
         if [ "$nnpw" -gt 0 ]; then
             printf '<p class="range">These %s incoming (CLIENT) profiles are set to <strong>password</strong> authentication, yet the login credential holds no password (<code>hasPassword=false</code>). Many rely on IP whitelisting instead &mdash; still worth confirming the authentication is what was intended.</p>\n' "$(dotify "$nnpw")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>\n'
-            printf '%s\n' "$npw_rows" | while IFS=$'\t' read -r a p l; do
+            printf '%s\n' "$npw_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC
                 printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td><code>%s</code></td></tr>\n' "$ae" "$pe" "$le"
             done
@@ -1730,7 +1730,7 @@ write_accounts_page() {
         if [ "$nmcp" -gt 0 ]; then
             printf '<p class="range">An account normally has one endpoint. These %s carry several &mdash; confirm they are intentional (a profile named for a <em>different</em> account is a likely mix-up).</p>\n' "$(dotify "$nmcp")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th class="num">Profiles</th><th>Communication profiles</th></tr>\n'
-            printf '%s\n' "$mcp_rows" | while IFS=$'\t' read -r a n ps; do
+            printf '%s\n' "$mcp_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a n ps; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$ps"; pse=$ESC
                 printf '<tr data-res="orange"><td>%s</td><td class="num">%s</td><td><code>%s</code></td></tr>\n' "$ae" "$n" "$pse"
             done
@@ -1741,7 +1741,7 @@ write_accounts_page() {
         if [ "$nlnm" -gt 0 ]; then
             printf '<p class="range">A profile&rsquo;s <code>login</code> and its display <code>loginName</code> should match. These %s differ.</p>\n' "$(dotify "$nlnm")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>login</th><th>loginName</th></tr>\n'
-            printf '%s\n' "$lnm_rows" | while IFS=$'\t' read -r a p l ln; do
+            printf '%s\n' "$lnm_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l ln; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC; esc "$ln"; lne=$ESC
                 printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td><code>%s</code></td><td><code>%s</code></td></tr>\n' "$ae" "$pe" "$le" "$lne"
             done
