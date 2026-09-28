@@ -109,7 +109,9 @@ flag, UPPERCASE flag = the CoreId has a files/ page; each shard carries its own 
 dictionary, so an old day's shard is byte-identical build to build) + the manifest
 `search/all/index.js` (`window.AXWAY_AFX`: the subscription→slug dictionary and per day its count,
 subscriptions, shard cksum and a BLOOM FILTER — the name trigrams that hold a non-[0-9a-f-]
-character + "#"+8hex CoreId tokens, 8+ bits per item, three hashes; KEEP THE GENERATOR AND
+character + "#"+8hex CoreId tokens, 8+ bits per item, three hashes; the engine derives its
+filter items from the RAW query words, never the Unicode-lowercased ones — the generator folds in
+the C locale, and a lowercase like "İ" → "i" + U+0307 asked for a trigram no shard holds, 2026-09-28; KEEP THE GENERATOR AND
 `assets/all-files-search.js` IN STEP). The engine loads only the days that can hold a match (a
 pasted CoreId: ~its own day), newest first, 4 at a time, stops at the newest 500; the table is
 a `rangehook` table (From/To narrows the days; the page counts as a TRANSFER-area page in
@@ -202,10 +204,14 @@ right before the server reports since 2026-09-28) — `bin/session-sites.sh` (it
 `AXWAY_DERIVE_ONLY=1` transfer `parse.sh`), `bin/expire-files.sh`, `bin/bookend-ok.sh`,
 `bin/build/result.sh`, a server-mention rescan (`AXWAY_MENTIONS_ONLY=1` again) when
 `data/server/cache/.rescan-mentions` exists (skipped inside when no cache line holds an appended
-name — see BUILD SPEED), `went-kaput.sh` early (its ONLY run: its evidence sidecar makes the
+name — see BUILD SPEED; a rescan that RAN leaves `data/server/cache/.rescanned`, and `result.sh`
+runs a SECOND time — "re-colour after the mention rescan" — so the colours read the caches the
+rescan rewrote, 2026-09-28), `went-kaput.sh` early (its ONLY run: its evidence sidecar makes the
 `_srvsubs-map` final on failed.sh's first run, so details.sh runs once) → *report*:
 `bin/transfer/reports/details.sh` in
-background slot 2 beside transfer phase 1 and the server reports, then transfer phase 2, analyses,
+background slot 2 beside transfer phase 1 and the server reports (with `AXWAY_WAIT_FAILED=1`: it
+waits — capped at 30 min — for the phase-1 pool's marker `.phase1-pool-done` in the transfer
+reports dir before reading what phase 1 writes, 2026-09-28), then transfer phase 2, analyses,
 the dashboards MONITOR (`monitor.sh`, foreground: whether `monitor.rpt` exists sets every
 page's top bar), then dashboards ∥ day in background slot 2 BESIDE the publishes below, waited
 for right before the dashboards publish → *publish*: detail
@@ -343,7 +349,9 @@ don't reintroduce `../../data`-style paths or path arguments.
 ```bash
 bin/build.sh                          # everything, always fresh: wipe build/ data/ docs/, seed assets/, build (no git)
 bin/build/linkcheck.sh                # verify: 0 broken links, 0 orphan pages
-bin/transfer/parse.sh                 # -> _transfers.tsv + _files.tsv (AXWAY_DERIVE_ONLY=1: re-derive from _transfers0.tsv)
+bin/transfer/parse.sh                 # -> _transfers.tsv + _files.tsv (AXWAY_DERIVE_ONLY=1: re-derive from _transfers0.tsv);
+                                      #    a manual parse must be followed by bin/session-sites.sh, bin/expire-files.sh,
+                                      #    bin/bookend-ok.sh (the build does) — else Expired reads Waiting, settled Files Failed
 bin/transfer/reports.sh [phase1|phase2]
 bin/transfer/reports/details.sh [TYPE]   # TYPE = ACC SITE LOGIN HOST PTN APP DOM
 bin/server/parse.sh                   # -> _parse.tsv (+ per-entity mention caches; AXWAY_SKIP_MENTIONS / AXWAY_MENTIONS_ONLY)
@@ -666,6 +674,10 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    every File of the account onto the neighbouring flow. The diff now joins only keys unique on
    both sides, and `_rn_prune` drops such pairs from the existing maps on every config run,
    naming each on stderr. Every build's parses fold the logged names by the maps as they stand.
+   A name renamed TWICE folds to its newest name (`rn_canon` follows the chain A → B → C, at most
+   16 hops; `_rn_record` accepts the B → C continuation of a recorded A → B and says so), and
+   `rn_canon_pfx` never folds a name the config still carries (`RENAMES_CONF` =
+   `base/.configured.tsv`) — 2026-09-28.
    **The PROFILE has its own map** (`profiles.tsv`): the profile is what the
    reverse config fallback attributes a leg by, and an unmatched one cost 7,743 CoreIds their
    subscription (the no-subscription skip then dropped ~4.6% of Files). The SERVER side folds too
@@ -777,14 +789,17 @@ A **logical transfer** = all records sharing one CoreId (commonly 2–7 rows). `
   two flows (a relay CoreId has legs on two).
 
 **Outcome (col 2), the last-leg rules**: **Waiting** = ≥3 legs ending on the staging leg
-(Inbound+`routing`) — a UC2 file staged, not collected; a later export with the collect leg
+(Inbound+`routing`) whose own status is Processed (a FAILED staging leg is Failed — 2026-09-28) —
+a UC2 file staged, not collected; a later export with the collect leg
 re-flips it. **Processed** = ≥2 legs, last leg Outbound+Processed AND matching the movement (out →
 `ssh`/`ftp`/`ftps`, in → `pesit`); deliberately no bytes condition. **Failed** = everything else
 (incl. a lone leg). **Expired** = a Waiting file whose staged copy the nightly File Maintenance
 sweep (~11 days) deleted before pickup — server-log-only evidence, so **`bin/expire-files.sh`**
 joins those lines onto Waiting rows (col 22 = the timestamp; the deletion list in
 `_expired.tsv`; a build step after session-sites). **SETTLED BY BOOKEND** (2026-09-09, user
-request, **`bin/bookend-ok.sh`** right after expire-files): a **Failed** File whose LAST leg's transfer id a server-log
+request, **`bin/bookend-ok.sh`** right after expire-files): a **Failed** File whose LAST leg's own status
+is a failure (2026-09-28: a File Failed for a STRUCTURAL reason — last leg Processed, wrong
+movement or leg count — also carries an ok bookend and must not flip) and whose last leg's transfer id a server-log
 `"Transfer end logged."` JSON record ends with `"status":"ok"` + `"direction":"Outbound"` (an ok
 bookend of an earlier leg of the same File does not count; the JSON's own `coreId` is NOT required
 to match — it can differ from the transfer log's CoreId for the same transfer, the transfer id is
@@ -844,7 +859,9 @@ UNKNOWN — no session at all on PESITD/SSHD records, ~96% of TM records carry o
 walks to field 18 for it, ~15 % of the tokenize). The exports are newest-first within a file, so cache order is NOT chronological. Runs in
 parallel (per-file tokenize+sort, then per-date merges — byte-identical to a global merge); also
 builds the per-entity mention caches `_{accounts,subscriptions,logins,hosts}.tsv` with per-name
-dirs (last 25 rows + last 10 Error/Warn; hosts match case-insensitively).
+dirs (last 25 rows + the last 10 Error AND the last 10 Warning lines, merged newest first — one
+ring per level since 2026-09-28, so a burst of warnings never pushes the errors out; hosts match
+case-insensitively).
 
 **The NOISE filter** (2026-08, the `NOISE`/`is_noise` list at the top of `TOK_PROG`): message
 PREFIXES the platform logs for every session and every leg — the session Created/Removed
@@ -915,9 +932,10 @@ append drops `.rescan-mentions` so the server mention scan picks the new names u
 
 The third column of every `base/*.tsv`, filled after the parses by ONE build step (full detail
 in ARCHITECTURE.md), **`bin/build/result.sh`** — a subscription goes green/red by its LAST File's
-outcome (red when Failed or Expired; orange = never seen in the transfer log), other entities
-roll up their connected subscriptions (`_white.tsv` goes by the last real transfer from that
-address instead). **A UC3 WITH NO TRANSFERS IS NEVER GREEN** (2026-09-28, user rule: "A UC3
+outcome (red when Failed; ORANGE when Expired — a pickup problem, not a failed delivery, since
+2026-08; orange = never seen in the transfer log), other entities roll up their connected
+subscriptions (`_white.tsv` goes by the last real transfer from that address instead, by the same
+rule — its Expired-last was still red until the 2026-09-28 fix, like `host_own_unpaired`'s). **A UC3 WITH NO TRANSFERS IS NEVER GREEN** (2026-09-28, user rule: "A UC3
 subscription that has no transfers must be orange and not green"): polling fine with nothing to
 fetch leaves it ORANGE (UC3 status "not seen"; the verdict and No remote files name its polls). The
 **clean-poll rule** that flipped it GREEN (2026-08, sidecar `colour/_greenpoll.tsv`, its uc3-status
@@ -1046,7 +1064,9 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   spine is retired: it could fall out of row-sync whenever a header's height changed): a `gband`
   banner row (Files · Duration · Red/Green switch · First seen) over a shared Date column (its
   cells link the day dashboard), then the group columns — Files (In · Out · Ok · Cured ·
-  Error · Error %; Cured = the transfer topview.rpt's Recovered group, Automatic + Manual; the In/Out split is the movement direction, `_files.tsv` col 17; the count
+  Error · Error %; Cured = the transfer topview.rpt's Recovered group, Automatic + Manual; the In/Out split is the movement direction, `_files.tsv` col 17 — a File with none (an
+unconfigured subscription, the synthetic `UCx_` ones) counts by its connection side, col 16, so
+In + Out = Ok + Error (2026-09-28; entities.sh and month-stats.sh apply the same fallback); the count
   column is gone — In + Out carries it), Duration (p50 · p75 · p90 · p95 · p99 — p99 last since 2026-09-13, user request; EVERY cell of the group, banner and headers included, carries `data-href="transfer/duration.html"` and opens the Duration report WITHOUT a date — report.js `setupCellLinks`, which outranks the index row link that would open the day page), Red/Green switch
   (Red · Green) and First seen (Logical · Partners · Subscriptions · Accounts). Group dividers
   are POSITIONAL CSS on `table.dayrows` (columns 2/8/12/14 + the `gbrow` banner cells — adding
@@ -1104,7 +1124,8 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   as the `transfer/entities2/` twin experiment and adopted the same day; the classic Name ·
   Direction · Files · Volume · OK · Retry · Resubmit · Error · Last seen pages are GONE): Name,
   then seven column groups the Top view way (a `GHEAD` banner + `gsep=` dividers) — Files (In ·
-  Out by MOVEMENT, `_files.tsv` col 17 · Error · Error %) · Retry / Resubmit (Auto = an OK File
+  Out by MOVEMENT, `_files.tsv` col 17, a File without one by its connection side col 16 ·
+  Error · Error %) · Retry / Resubmit (Auto = an OK File
   with a failed leg and no resubmitted leg; Ok / Error = every resubmitted File by outcome — the
   Top view's Automatic + Resubmit Ok/Failed rule) · Duration (p90 · p95 · p99 · p100 of the OK
   Files' wall-clock span, the Duration report's scope and nearest-rank rule, FOLLOWING the date
@@ -1174,7 +1195,9 @@ in `group_members`/`group_label`.
 **Merged reports** (`bin/merge_rpt.sh`, run after the report pools) fold component `.rpt`s into
 one tabbed report; the components stay on disk as unpublished intermediates (listed in
 `MERGED_COMPONENT_REPORTS`; whats-new skips them; `_merge_pad` pads a missing component with
-empty stubs — 0 for a component whose tables ride another one's tab via `tab=KEY`). The merge
+empty stubs — 0 for a component whose tables ride another one's tab via `tab=KEY`; the merged
+KEYWORDS = the caller's plus every present component's, each word once — 2026-09-28, the finder
+lost the component words before). The merge
 ends its component run with a `META merged` sentinel so the last component's trailing NOTE
 stays on its own tab instead of footering onto every tab (2026-09-05). **The BOXES-ONLY reports** (`BOXES_ONLY_REPORTS`) are in no group and no
 menu/index/sitemap card; their pages stay at the area URLs with no group tab row, and only the
