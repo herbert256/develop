@@ -17,9 +17,10 @@
 #      remove CLAUDE.md / ARCHITECTURE.md there — a runtime repo carries only
 #      its own README.md (it is operated, never developed; AI never reads or
 #      edits it)
-#   3. exec the checkout's bin/fresh.sh — a full cold rebuild of its site
-#      (wipes its data/ + docs/, reparses its real exports); its exit status
-#      is the wrapper's, its report the checkout's build/index.html
+#   3. exec the checkout's bin/build.sh — a full cold rebuild of its site
+#      (every build wipes its build/ + data/ + docs/ and reparses its real
+#      exports); its exit status is the wrapper's, its report the
+#      checkout's build/index.html
 #
 # NEVER synced: input/ (the REAL, irreplaceable exports, the policy files and
 # environment.txt), README.md, .gitignore (a runtime repo keeps ignoring its
@@ -45,18 +46,18 @@ runtime_refresh() {
     [ ! -f "$rt/input/.sample-estate" ] \
         || { echo "$me: $rt carries input/.sample-estate (a develop checkout?) — refusing." >&2; exit 2; }
     # never yank scripts out from under a RUNNING build there
-    if [ -d "$rt/data/.buildlock" ]; then
-        lock_pid=$(cat "$rt/data/.buildlock/pid" 2>/dev/null || true)
+    if [ -d "$rt/build/.buildlock" ]; then
+        lock_pid=$(cat "$rt/build/.buildlock/pid" 2>/dev/null || true)
         if [ -n "$lock_pid" ] && kill -0 "$lock_pid" 2>/dev/null; then
             echo "$me: a build (PID $lock_pid) is running in $rt — try again when it is done." >&2
             exit 1
         fi
     fi
 
-    # develop's scripts must PARSE before they go anywhere (2026-09-27): the
-    # checkout's fresh.sh wipes data/ and docs/ before its build.sh's own
-    # syntax gate would run, so a broken script caught there would still
-    # leave the runtime site empty
+    # develop's scripts must PARSE before they go anywhere (2026-09-27): a
+    # broken script caught only by the checkout's own syntax gate would stop
+    # its build before anything is rebuilt, with the synced code left broken
+    # there
     "$dev/bin/check-syntax.sh" \
         || { echo "$me: nothing synced — fix the syntax error(s) above in develop first." >&2; exit 1; }
 
@@ -72,7 +73,7 @@ runtime_refresh() {
     # the runtime repo documents itself with README.md alone
     rm -f "$rt/CLAUDE.md" "$rt/ARCHITECTURE.md"
 
-    echo "$me: rebuilding $rt ($(head -1 "$rt/input/environment.txt")) via bin/fresh.sh ..." >&2
+    echo "$me: rebuilding $rt ($(head -1 "$rt/input/environment.txt")) via bin/build.sh ..." >&2
     cd "$rt"
-    exec bin/fresh.sh
+    exec bin/build.sh
 }

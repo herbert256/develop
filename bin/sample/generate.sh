@@ -21,7 +21,7 @@
 #
 # REFUSES to run without input/.sample-estate (see bin/sample/lib.sh) — the
 # guard that keeps a synced copy of bin/ from ever clobbering a runtime
-# repo's real exports. After regenerating: bin/fresh.sh (full rebuild), then
+# repo's real exports. After regenerating: bin/build.sh (full rebuild), then
 # bin/sample/verify.sh.
 #
 set -euo pipefail

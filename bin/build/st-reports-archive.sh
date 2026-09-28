@@ -9,12 +9,12 @@
 #   ~/exchange/st-reports-<env>.7z              (stable name, committed + pushed)
 #
 # (The ~/cloud/ copy is gone — 2026-09-12, user request: the outbox is the
-# repo alone; build/ keeps the stamped copy until the next fresh build.)
+# repo alone; build/ keeps the stamped copy until the next build.)
 # Invoked by bin/build.sh at the end of a successful chain, and ONLY in the
 # runtime checkout (build.sh gates on the ABSENT input/.sample-estate marker
-# — the develop repo carries the marker and skips this). A fresh build
-# (bin/fresh.sh) clears build/ wholesale, archives included (2026-08-30);
-# *.7z is gitignored in both repos.
+# — the develop repo carries the marker and skips this). Every build clears
+# build/ wholesale, archives included (2026-08-30); *.7z is gitignored in
+# both repos.
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

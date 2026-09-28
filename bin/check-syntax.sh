@@ -7,10 +7,9 @@
 # build passes green. The usual cause is an apostrophe in a comment inside a
 # single-quoted awk program, which ends the quoted string.
 #
-# Callers: bin/build.sh, first thing (before it clears docs/ or runs a
-# step), and bin/runtime-lib.sh on DEVELOP's tree before it syncs the code
-# into a runtime checkout — whose bin/fresh.sh wipes data/ and docs/ before
-# bin/build.sh would get to this check.
+# Callers: bin/build.sh, first thing (before it wipes build/, data/ and
+# docs/ or runs a step), and bin/runtime-lib.sh on DEVELOP's tree before it
+# syncs the code into a runtime checkout.
 #
 # Prints each failing file's error; exit 1 when any fails. ~0.5 s for ~200
 # scripts. Usage: bin/check-syntax.sh

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # bin/sample/verify.sh — assert that a FULL BUILD over the generated sample
-# estate produced what the generator planted. Run AFTER bin/fresh.sh:
+# estate produced what the generator planted. Run AFTER bin/build.sh:
 #
 #   bin/sample/verify.sh            # one repo, one estate (2026-09-11)
 #

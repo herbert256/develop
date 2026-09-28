@@ -9,7 +9,7 @@
 # is in the maps below. Rules inside @media blocks and the top bar (already
 # navy) are skipped; a colour the maps do not know keeps its light value.
 #
-# Usage (bin/build.sh, bin/fresh.sh — after the assets copy):
+# Usage (bin/build.sh — after the assets copy):
 #   awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css
 BEGIN {
     # backgrounds (surfaces and tints)

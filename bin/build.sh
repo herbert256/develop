@@ -56,8 +56,14 @@
 # (There is no git stage: commit and push docs/ manually when the result
 # should go live — GitHub Pages redeploys on push.)
 #
-# Each step reuses the caches and skips reports whose data file is already newer
-# than the inputs and scripts, so a re-run with unchanged input is fast.
+# EVERY BUILD IS A FRESH BUILD (2026-09-28, user decision — bin/fresh.sh
+# folded in here, the incremental machinery removed): build/, data/ and docs/
+# are wiped first, docs/ is re-seeded from the repo-root assets/, and every
+# step runs in full from the raw inputs. Nothing checks whether an output is
+# already up to date. The one thing carried over is data/.buildstats — the
+# build report's input statistics, keyed by each export's name + size + mtime,
+# so it can never go stale and a build does not re-read ~20 GB of exports
+# just to fill in the report's figures.
 #
 # Usage (from any directory):
 #
@@ -65,7 +71,8 @@
 #   bin/build.sh -h     this text
 #
 # No arguments: one repo = one environment. The report goes to
-# build/index.html and docs/tools/build.html.
+# build/index.html and docs/tools/build.html; the console of the whole run
+# also lands in build/build.log.
 #
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -89,14 +96,18 @@ source bin/envlabel.sh   # ENV_LABEL / ENV_KEY / ENV_INBOX from input/environmen
 # a green build (bin/check-syntax.sh says why).
 bin/check-syntax.sh || exit 1
 
-# ONE build per checkout: the chains clear and rewrite shared trees (data/,
-# docs/, build/), so two overlapping runs — a second terminal, an automation
-# overlap — would interleave destructive cleanups and writes. mkdir is the
-# atomic primitive (bash-3.2-safe; macOS has no flock); the owner PID is
-# recorded so a lock whose holder died is reclaimed automatically instead of
-# demanding a manual rm. Released by the EXIT trap (finalize_report).
-BUILD_LOCK="data/.buildlock"
-mkdir -p data
+BUILD_DIR="build"
+REPORT="$BUILD_DIR/index.html"
+
+# ONE build per checkout: a build wipes and rewrites build/, data/ and docs/,
+# so two overlapping runs — a second terminal, an automation overlap — would
+# pull the trees out from under each other. mkdir is the atomic primitive
+# (bash-3.2-safe; macOS has no flock); the owner PID is recorded so a lock
+# whose holder died is reclaimed automatically instead of demanding a manual
+# rm. It lives in build/ — the one tree the wipe below empties AROUND it —
+# and is released by the EXIT trap (finalize_report).
+BUILD_LOCK="$BUILD_DIR/.buildlock"
+mkdir -p "$BUILD_DIR"
 if ! mkdir "$BUILD_LOCK" 2>/dev/null; then
     lock_pid=$(cat "$BUILD_LOCK/pid" 2>/dev/null || true)
     if [ -n "$lock_pid" ] && kill -0 "$lock_pid" 2>/dev/null; then
@@ -112,14 +123,7 @@ if ! mkdir "$BUILD_LOCK" 2>/dev/null; then
 fi
 printf '%s\n' "$$" > "$BUILD_LOCK/pid"
 
-
-# ---- CLEAR + SEED docs/ (2026-08-29, user decision) -------------------------
-# Every build CLEARS docs/ and re-seeds the hand-authored files from the
-# repo-root assets/ — docs/ is pure build output, and a build can never leave
-# a stale page behind (the build report lands back in docs/tools/build.html at the
-# very end, from the EXIT trap — 2026-09-12). assets/ is the ONE place to edit style.css / report.js
-# / slotchart.js / file-search.js / latest-search.js / all-files-search.js and the help pages (see assets/README.txt);
-# .nojekyll and topbar-data.js stay generated (ensure_assets).
+# ---- THE WIPE: build/, data/, docs/ (formerly bin/fresh.sh) -----------------
 # rm -rf with a .DS_Store retry: Finder can drop one into a directory WHILE
 # rm walks the tree ("Directory not empty") — sweep them and try again; the
 # last attempt keeps stderr, so a genuine failure still stops the build.
@@ -131,16 +135,59 @@ clear_tree() {
     done
     rm -rf "$d"
 }
-clear_tree docs
+
+# build/ goes FIRST — every prior run's report, step logs and (runtime) the
+# st-reports archives (the stable-name copy in the outbox repo is the keeper),
+# plus any trash an interrupted run left — everything but the lock just
+# taken. It is cleared BEFORE the tee below opens build/build.log: a later
+# clear would unlink the log this very run is writing.
+echo "build.sh: clearing build/ ..." >&2
+for _e in "$BUILD_DIR"/* "$BUILD_DIR"/.[!.]*; do
+    [ -e "$_e" ] || continue
+    [ "$_e" = "$BUILD_LOCK" ] || clear_tree "$_e"
+done
+
+# every line of this run also lands in build/build.log (the per-run log dir;
+# never the repo root)
+exec > >(tee "$BUILD_DIR/build.log") 2>&1
+
+# FAST CLEAR (2026-09-27, build-speed round 3): data/ and docs/ are RENAMED
+# into build/.trash — one directory rename each, instant on one filesystem —
+# and deleted in the BACKGROUND while the build runs (a runtime data/ holds a
+# 3 GB cache and thousands of small files; docs/ ~10k pages). docs/ is pure
+# build output, so a build can never leave a stale page behind.
+move_aside() {   # $1 = dir
+    [ -e "$1" ] || return 0
+    mkdir -p "$BUILD_DIR/.trash"
+    mv "$1" "$BUILD_DIR/.trash/$1.$$" 2>/dev/null || clear_tree "$1"
+}
+echo "build.sh: clearing data/ and docs/ ..." >&2
+_fc0=$(date +%s)
+move_aside data
+move_aside docs
+# ...EXCEPT the build report's input statistics (2026-09-27, speed round 6):
+# data/.buildstats caches the line counts and the per-export First/Last
+# inventory under each file's name + size + mtime, so it can never go stale —
+# and without it every build re-read every export (~20 GB in production) just
+# to fill in the report's figures.
+if [ -d "$BUILD_DIR/.trash/data.$$/.buildstats" ]; then
+    mkdir -p data && mv "$BUILD_DIR/.trash/data.$$/.buildstats" data/
+fi
+{ rm -rf "$BUILD_DIR/.trash" >/dev/null 2>&1 & } 2>/dev/null
+echo "build.sh: data/ and docs/ moved aside in $(( $(date +%s) - _fc0 ))s (deleted in the background)." >&2
+
+# ---- SEED docs/ (2026-08-29, user decision) ---------------------------------
+# the hand-authored files from the repo-root assets/ (the build report lands
+# back in docs/tools/build.html at the very end, from the EXIT trap —
+# 2026-09-12). assets/ is the ONE place to edit style.css / report.js /
+# slotchart.js / file-search.js / latest-search.js / all-files-search.js and
+# the help pages (see assets/README.txt); .nojekyll and topbar-data.js stay
+# generated (ensure_assets).
+echo "build.sh: seeding docs/ from assets/ ..." >&2
 mkdir -p docs/assets docs/help
 cp assets/style.css assets/report.js assets/slotchart.js assets/file-search.js assets/latest-search.js assets/all-files-search.js docs/assets/
 awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css   # the dark theme, generated from the light rules (2026-09-05)
 cp -R assets/help/. docs/help/
-
-BUILD_DIR="build"
-REPORT="$BUILD_DIR/index.html"
-mkdir -p "$BUILD_DIR"
-rm -f "$BUILD_DIR"/step-*.log
 
 BUILD_T0=$(date +%s)
 BUILD_START=$(date '+%Y-%m-%d %H:%M:%S')
@@ -303,31 +350,6 @@ write_report() {
     local sinv tinv
     sinv=$(log_inventory input/server); tinv=$(log_inventory input/transfer)
     printf 'TIME %5ds  build report: input + cache statistics (%s)\n' "$(( $(date +%s) - _st0 ))" "$out" >&2
-    # THE INPUT CHANGES (2026-09-06, user request): every file under
-    # input/{server,transfer,flow-manager}/ and the *.txt policy files at the
-    # input root, compared with the manifest the PREVIOUS build left in
-    # build/input-manifest.tsv (path ⇥ size ⇥ mtime): new, updated (size or
-    # mtime differs) or removed since then. The manifest is rewritten at the
-    # end of this report, so the next build compares against this one. (A
-    # manifest in the pre-2026-09 four-column form — env ⇥ path ⇥ size ⇥ mtime
-    # — is discarded: the first flat build starts the comparison afresh.)
-    local manifest="build/input-manifest.tsv" manifest_new="build/input-manifest.new" changes=""
-    find input/server input/transfer input/flow-manager input -maxdepth 1 -type f \
-         \( -name '*.csv' -o -name '*.json' -o -name '*.txt' \) 2>/dev/null \
-        | LC_ALL=C sort -u | while IFS= read -r f; do
-            printf '%s\t%s\t%s\n' "$f" "$(stat -f%z "$f")" "$(stat -f%m "$f")"
-          done > "$manifest_new"
-    if [ ! -f "$manifest" ] || { [ -s "$manifest" ] && [ "$(head -1 "$manifest" | awk -F'\t' '{ print NF }')" != 3 ]; }; then
-        : > "$manifest"
-    fi
-    changes=$(awk -F'\t' 'NR==FNR { old[$1] = $2 SUBSEP $3; next }
-        { seen[$1] = 1
-          if (!($1 in old)) print "new\t" $1 "\t" $2
-          else if (old[$1] != $2 SUBSEP $3) print "updated\t" $1 "\t" $2 }
-        END { for (k in old) if (!(k in seen)) print "removed\t" k "\t" }' \
-        "$manifest" "$manifest_new" | LC_ALL=C sort -k2)
-    local firstbuild=""
-    [ -s "$manifest" ] || firstbuild=1
     t1=$(date +%s); total=$((t1 - BUILD_T0)); end=$(date '+%Y-%m-%d %H:%M:%S')
     # The report carries the site's standard fixed top bar (the help pages'
     # plain-link style — no dropdown machinery, the report must render even
@@ -468,25 +490,6 @@ HTML
                 printf '</table>\n'
             fi
         fi
-        # ---- Input changes since the previous build ----
-        printf '<h2>Input changes since the previous build</h2>\n'
-        if [ -n "$firstbuild" ]; then
-            printf '<p class="bsnote">No previous manifest — this build recorded the input files; the next report lists what changed.</p>\n'
-        elif [ -z "$changes" ]; then
-            printf '<p class="bsnote">No new, updated or removed input files.</p>\n'
-        else
-            printf '<table>\n<tr><th>Change</th><th>File</th><th>Size</th></tr>\n'
-            local _cw _cf _cz
-            while IFS=$'\t' read -r _cw _cf _cz; do
-                [ -n "$_cw" ] || continue
-                printf '<tr><td class="%s">%s</td><td><code>%s</code></td><td class="r">%s</td></tr>\n' \
-                    "$([ "$_cw" = removed ] && echo failed || echo ok)" "$_cw" "$(printf '%s' "$_cf" | esc)" "$([ -n "$_cz" ] && hbytes "$_cz")"
-            done <<< "$changes"
-            printf '</table>\n'
-        fi
-        # (the PRELIMINARY site copy — see the archive step — leaves the manifest
-        # alone: the final report of this run must still list the input changes)
-        if [ -n "${REPORT_PRELIM:-}" ]; then rm -f "$manifest_new"; else mv -f "$manifest_new" "$manifest"; fi
         [ -n "$note" ] && printf '<p>%s</p>\n' "$note"
         printf '<table>\n<tr><th>#</th><th>Step</th><th>Command</th><th>Started</th><th>Duration</th><th>Status</th></tr>\n'
         local rec label cmd start dur status logf i=0
@@ -872,12 +875,12 @@ if [ ! -f input/.sample-estate ]; then
     # THE BUILD REPORT MUST BE IN THE PACK (2026-09-21, user report: the sitemap
     # link to the build page did not work on the delivered site). The site
     # copy docs/tools/build.html is written by the EXIT trap — AFTER this
-    # step packed docs/ — and a fresh build wiped the previous one, so the
-    # archive carried the Tools-card link without its page. A PRELIMINARY
+    # step packed docs/ — and the build's wipe removed the previous one, so
+    # the archive carried the Tools-card link without its page. A PRELIMINARY
     # site copy is rendered right here, from the steps recorded so far (all
     # but this one); the EXIT trap overwrites it with the complete report
-    # on the build's own site. It leaves build/index.html and the input
-    # manifest to the final render.
+    # on the build's own site. It leaves build/index.html to the final
+    # render.
     REPORT_PRELIM=1
     write_report "$REPORT" 0 "This copy was written just before the site was packed for the outbox, so the delivered site carries its build report: the archive step and the final timings are not in it &mdash; the site of the build itself has the complete report."
     unset REPORT_PRELIM
