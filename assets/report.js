@@ -4077,9 +4077,10 @@
       '<span class="entgroup"><a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
       '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
       // the FILE SEARCH entry (2026-08), between the search icon and the
-      // report menus: the Latest files search since 2026-09-27 (user request;
-      // its Implementation row leads on to the windowed pages)
-      '<a class="dashlink" href="' + b + 'latest/search.html">Files</a>' +
+      // report menus: the ALL FILES search ("Implementation 3, all files")
+      // since 2026-09-28 (user request; its Implementation row leads on to
+      // the other two). KEEP IN STEP with publish_lib.sh render_topbar.
+      '<a class="dashlink" href="' + b + 'search/all-files.html">Files</a>' +
       '<nav class="nav">' +
       '<div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm">' + menu(M.transfer) + "</div></div>" +
       (M.server ? '<div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm">' + menu(M.server) + "</div></div>" : "") +

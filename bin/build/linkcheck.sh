@@ -16,7 +16,7 @@
 #   - every menu href in topbar-data.js, its "@" placeholder replaced by data-b
 #   - brand -> data-b + index.html
 #   - data-b + dashboards/index.html, tools/report-finder.html, search/search.html,
-#     latest/search.html (the Files link, 2026-09-27),
+#     search/all-files.html (the Files link, 2026-09-28),
 #     tools/sitemap.html, transfer/entities/subscription-all.html
 #   - the help icon  -> data-b + help/<data-help>.html
 # A page whose topbar div is NOT empty has a baked bar (help pages, the build
@@ -138,7 +138,7 @@ awk -v DOCS="$DOCS" '
                     edge(page, b "dashboards/index.html")
                     edge(page, b "tools/report-finder.html")
                     edge(page, b "search/search.html")
-                    edge(page, b "latest/search.html")   # the Files link (2026-09-27)
+                    edge(page, b "search/all-files.html")   # the Files link (2026-09-28)
                     edge(page, b "tools/sitemap.html")
                     edge(page, b "transfer/entities/subscription-all.html")
                     if (hlp != "") edge(page, b "help/" hlp ".html")
