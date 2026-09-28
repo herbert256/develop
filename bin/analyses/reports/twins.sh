@@ -48,7 +48,6 @@ ALF="$CONFIG_XREF/_accounts-logins.tsv";      [ -f "$ALF" ] || ALF=/dev/null
 # read from the name alone every hybrid pair rendered empty Direction cells
 # and lumped into a "? / ?" use-case box (2026-08-31 audit)
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TWS" "$TWA" "$SLF" "$ALF"
 
 read -r n_sub n_name n_slip n_same n_twin <<< "$(awk -F'\t' '
     { n++

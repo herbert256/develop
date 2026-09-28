@@ -68,30 +68,6 @@ if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
 ensure_parsed
-STAMP="$REPORTS_DIR/details/.stamp"
-# the shared scripts details.sh USES (the Subscription Summary's cron schedule +
-# UC-case text) are dependencies too — a change to either must re-trigger a rebuild.
-# the base result caches are DEPS: the pages bake the entity tints/directions,
-# so a recolor (bin/build/result.sh) must retrigger
-# the detail build. The WHOLE base/ tree, not a representative: every writer is
-# cmp-guarded per file, so a recolor confined to e.g. _logins.tsv or _white.tsv
-# leaves the other files' mtimes untouched — a representative would miss it.
-# the server per-name caches are DEPS too: the "Last server log messages" table
-# + the after-last-transfer banner read them (incl. the <name>_err_warn.tsv
-# rings), so a server (re)parse must retrigger the detail build. bin/server/
-# parse.sh rewrites the five mention caches with their per-name dirs in ONE pass,
-# so one representative suffices.
-# _srvsubs-map.tsv is a dep too (2026-08): the SITE pages re-emit the server-
-# failing error pages as their "Server log error" section, and failed.sh
-# writes the map AFTER details.sh in the report phase — without the dep, the
-# SECOND build of a fresh estate skipped details and the section never
-# appeared (the map is cmp-guarded and carries the evidence stamp, so its
-# mtime moves exactly when the evidence does).
-skip_if_fresh "$STAMP" "${BASH_SOURCE[0]}" "$SCRIPT_DIR/../details_lib.sh" "$SCRIPT_DIR/../details_writer.awk" \
-    "$ROOT/bin/cron2human.awk" "$ROOT/bin/uc-cases.sh" "$ROOT/bin/subscription-active.jq" \
-    "$CONFIG_BASE" \
-    "$SERVER_CACHE/_accounts.tsv" \
-    "$REPORTS_DIR/_srvsubs-map.tsv"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', building per-entity detail files..." >&2
 
 ensure_config   # the base lists drive the direction suffixes + config-only pages
@@ -153,7 +129,7 @@ IPMAP="$_pdir/ipmap"
 # (the ACCTSRV account -> server-mention count side input was REMOVED 2026-07:
 # its 0/5 stream section fed only x_srv, which lost its renderer when the
 # Metrics table went. The server per-name caches still feed the "Last server
-# log messages" tables, so the skip_if_fresh dep on the server cache stays.)
+# log messages" tables.)
 
 # ---------------------------------------------------------------------------
 # The aggregation emits this line protocol, sorted once:
@@ -313,7 +289,7 @@ fi
 # and the File Maintenance "Deleted files" scan (one grep over the server
 # parse cache). Each writes a $_pdir file; a missing tool/export/cache leaves
 # it empty, exactly like the empty-var fallback these replaced.
-_tlap "setup (freshness, cleanup, side inputs)"
+_tlap "setup (cleanup, side inputs)"
 # each producer times itself (2026-09-27): the phase is as long as the slowest
 _ptimed() { local _n=$1 _t0 _st=0; shift; _t0=$(date +%s); "$@" || _st=$?; printf 'TIME %5ds  details: producer %s\n' "$(( $(date +%s) - _t0 ))" "$_n" >&2; return $_st; }
 S_JSON="$FM_INPUT_DIR/subscriptions.json"
@@ -911,11 +887,11 @@ UCMETA="$_pdir/ucmeta"
 UCDER="$CONFIG_XREF/_subscriptions-ucderived.tsv"
 [ -f "$UCDER" ] || UCDER=/dev/null
 # the server-failing subscriptions map (failed.sh: name, errors/ page slug,
-# evidence stamp — the REDUCED _srvsubs-map, deliberately without the reason
-# column: the reason is what the evidence catch-up rerun changes, and this
-# file's stability is what lets the details catch-up skip) — a SITE page in
-# it gets the "Server log error" section, re-emitting that errors/<slug>.rpt
-# page's server-log table
+# evidence stamp — the REDUCED _srvsubs-map, without the reason column) — a
+# SITE page in it gets the "Server log error" section, re-emitting that
+# errors/<slug>.rpt page's server-log table. failed.sh writes it early in
+# transfer phase 1, long before this script (beside that phase in the build)
+# gets here, after its ~45-second producers
 SRVSUBSF="$REPORTS_DIR/_srvsubs-map.tsv"
 [ -f "$SRVSUBSF" ] || SRVSUBSF=/dev/null
 # ---- the "Last OK transfer" sidecar (SITE pages) ----------------------------
@@ -1015,11 +991,6 @@ cat "$STREAMDIR"/log.* >&2 2>/dev/null || true
 _tlap "writers (per type, in parallel)"
 # (every intermediate — side inputs, sorted stream, slices — lives under
 # $_pdir, removed by the EXIT trap)
-
-# the skip_if_fresh stamp — FULL runs only (a single-TYPE rerun leaves the
-# other types as they were, so it must not mark the whole tree fresh); lost
-# in the per-type-parallel refactor, which made every build redo all pages
-[ -z "$ONLY_TYPE" ] && touch "$STAMP"
 
 count_files=$(find "$REPORTS_DIR/details" -name '*.rpt' | wc -l | tr -d ' ')
 echo "Wrote $count_files detail file(s) across accounts/subscriptions/logins/hosts/logicals/partners/applications/domains/bl." >&2

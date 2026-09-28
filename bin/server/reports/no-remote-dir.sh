@@ -105,7 +105,6 @@ if [ ${#files[@]} -eq 0 ]; then
     exit 0
 fi
 ensure_parsed
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TACCT" "$TSITE" "$FILESC"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass over the failed listings. The site may CONTAIN spaces ("Clone - UC3_…"),

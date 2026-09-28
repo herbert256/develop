@@ -24,7 +24,6 @@ if [ ${#files[@]} -eq 0 ]; then
     exit 0
 fi
 ensure_parsed
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass over the cache (1=date, 2=time, 3=level, 4=component, 5=message):

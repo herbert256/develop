@@ -30,7 +30,6 @@ if [ ${#files[@]} -eq 0 ]; then
     exit 0
 fi
 ensure_parsed
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TSITE"
 if [ ! -f "$TSITE" ]; then
     echo "Transfer-site list not found: $TSITE — run the transfer reports first." >&2
     exit 1

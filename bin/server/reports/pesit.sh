@@ -40,8 +40,6 @@ if [ ${#files[@]} -eq 0 ]; then
     exit 0
 fi
 ensure_parsed
-[ -f "$SLOTS" ] || rm -f "$OUT"   # a missing sidecar must force a rebuild (skip_if_fresh checks $OUT only)
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # ONE pass over the cache for BOTH page halves (formerly two full scans of the
@@ -267,7 +265,7 @@ IFS='|' read -r _ ndays busyd busyc kfrom kto <<< "$(printf '%s\n' "$agg" | grep
 # The report is assembled in THREE writes (this block, the problems append,
 # the FOOT append) — all land in $OUT.tmp; the mv after the last one publishes
 # the complete file atomically, so a killed run can never leave a truncated
-# $OUT with a fresh mtime for skip_if_fresh to trust.
+# $OUT.
 } > "$OUT.tmp"
 
 # ---- PeSIT problems (formerly pesit-problems.sh, absorbed 2026-07): every ----

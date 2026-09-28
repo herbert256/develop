@@ -46,9 +46,6 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 ensure_parsed
 # the record-page dir is an output too: a missing one forces a rebuild
-[ -d "$TOPDIR" ] || rm -f "$OUT"
-[ -f "$FILESIDE" ] || rm -f "$OUT"
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # top_list — the TOP_N longest DELIVERED Files (outcome Processed), ms-descending:

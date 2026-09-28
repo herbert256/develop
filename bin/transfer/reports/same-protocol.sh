@@ -41,10 +41,6 @@ files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
 ensure_config
 ensure_parsed
-DEPS=("${BASH_SOURCE[0]}")
-[ -f "$UCDF" ] && DEPS+=("$UCDF")
-[ -f "$SUBRES" ] && DEPS+=("$SUBRES")
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "${DEPS[@]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 [ -f "$UCDF" ] || UCDF=/dev/null
 [ -f "$SUBRES" ] || SUBRES=/dev/null

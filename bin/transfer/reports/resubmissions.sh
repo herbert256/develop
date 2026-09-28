@@ -27,7 +27,6 @@ ensure_parsed
 # parses are complete before any report stage runs, so the read is safe; the
 # dep makes fresh server data regenerate this report too.
 SRV_PARSE="$DATA/server/cache/_parse.tsv"
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRV_PARSE"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # _transfers.tsv: 1=coreid 3=status 4=account 6=site 9=size 11=date 12=time

@@ -759,8 +759,8 @@ fi
 # its _kaput-evidence.tsv sidecar is the one stamp source failed.sh used
 # to gain only in the evidence catch-up — running it here makes the
 # reddening-session tables (and so the _srvsubs-map) FINAL on failed.sh's
-# FIRST run, which lets the expensive details catch-up self-gate to a
-# skip. The server-reports step re-invokes it later and skips (fresh).
+# FIRST run, so details.sh (which reads that map) needs no second run. It
+# runs ONLY here — bin/server/reports.sh leaves it out.
 run_step "report: went-kaput (early — the failed/details evidence)"       bin/server/reports/went-kaput.sh
 
 # ---- 2. report --------------------------------------------------------------
@@ -793,8 +793,8 @@ run_step "report: analyses .rpt files"                                    bin/an
 # (the transfer + server reports, the caches, colour/, the config). ONE
 # exception, served first in the foreground: whether monitor.rpt EXISTS
 # sets the top bar's Monitor link in every page a publish bakes (publish_lib
-# TB_MON, folded into the ?v= stamp) — the second run inside the background
-# step finds it fresh and skips.
+# TB_MON, folded into the ?v= stamp) — so monitor.sh runs here, once, and
+# bin/dashboards/reports.sh leaves it out.
 run_step "report: dashboards monitor (the top bar's Monitor flag)"        bin/dashboards/reports/monitor.sh
 bg2_step_start "report: dashboards + day pages .rpt files"                bash -c 'bin/dashboards/reports.sh & d=$!; bin/day/reports.sh; s=$?; wait "$d" || s=$?; exit "$s"'
 
@@ -808,31 +808,27 @@ bg_step_wait
 run_step "publish: partner group pages"                                   bin/analyses/publish-partner-groups.sh
 run_step "publish: server report pages"                                   bin/server/publish.sh
 run_step "publish: analyses + coverage pages"                             bin/analyses/publish.sh
-# THE EVIDENCE CATCH-UP (2026-08): three reports read evidence that steps
-# AFTER them produce — failed.sh the kaput/boxes classifications (the
-# server reports and publish-insights above), failing-reasons.sh reads
-# failed.rpt, and details.sh the _srvsubs.tsv map failed.sh writes. On a
-# fresh data/ their first runs happened before that evidence existed, and
-# closing the gaps used to take a whole SECOND build. Re-running them
-# here folds the convergence into THIS build. Self-gating: every input is
-# cmp-guarded and listed in the consumer's skip_if_fresh deps, so a warm
-# build skips each step in ~0 s.
+# THE EVIDENCE CATCH-UP (2026-08): reports that read evidence steps AFTER
+# them produce — failed.sh the kaput/boxes classifications (the server
+# reports and publish-insights above), failed-files.sh the reasons failed.sh
+# classifies, failing-reasons.sh reads failed.rpt. Their first runs happen
+# before that evidence exists, so they run AGAIN here, and the pages they
+# feed are re-rendered below.
 # THE DRILL-CELL FILES (2026-09-21, user request): the first File of every red /
 # orange drill cell links its File page, so failed.sh must page it — this
-# step lists those CoreIds from the reports now on disk (cmp-guarded: an
-# unchanged list keeps its mtime and the catch-up below still skips)
+# step lists those CoreIds from the reports now on disk
 run_step "report catch-up: drill-cell files"                           bin/build/drill-files.sh
 run_step "report catch-up: failed subscriptions"                          bin/transfer/reports/failed.sh
 run_step "report catch-up: failed files"                                  bin/transfer/reports/failed-files.sh   # 2026-09-14: the reasons the failed.sh catch-up just classified
 run_step "report catch-up: error reasons"                                 bin/analyses/reports/failing-reasons.sh
-# The DETAIL-PAGES catch-up runs in the BACKGROUND beside everything
-# below (2026-08): it touches only data/…/details + docs/details,
-# which none of the remaining steps read. With the _srvsubs-map split it
-# fires only when the section membership/stamps truly changed (a fresh
-# estate, a flow entering/leaving the server-failing set) — a reason-only
-# rerun of failed.sh above leaves the map byte-identical and this pair
-# skips in ~0 s.
-bg_step_start "catch-up: detail pages (.rpt + publish)"                   bash -c 'bin/transfer/reports/details.sh && bin/transfer/publish-details.sh'
+# The DETAIL-PAGES re-render runs in the BACKGROUND beside everything
+# below (2026-08): it touches only docs/details + docs/latest, which none of
+# the remaining steps read; the pages bake the error/File rosters and the
+# failed-sub reasons the catch-up above rewrote. The detail .rpt files
+# themselves need no second run: the one input the catch-up could change for
+# them, the _srvsubs-map, is final after failed.sh's FIRST run (went-kaput
+# runs early) and carries no reason column.
+bg_step_start "catch-up: detail pages (publish)"                          bin/transfer/publish-details.sh
 run_step "publish catch-up: analyses (failed pages)"                      bin/analyses/publish.sh
 # THE BOXES-REASON CATCH-UP (2026-08): the Entities Error view's Reason
 # column reads analyses/reports/_subs-boxes.tsv, which the analyses
@@ -840,9 +836,7 @@ run_step "publish catch-up: analyses (failed pages)"                      bin/an
 # already ran — on a fresh data/ the box-tier reasons would render blank
 # until the NEXT build. Re-invoking the transfer publish here folds the
 # catch-up into THIS build (it also re-renders the files/ error pages the
-# failed.sh catch-up refreshed). Self-gating: the sidecar is cmp-guarded
-# and a dep of the transfer stamp, so when its content did not change
-# this step skips in ~0 s.
+# failed.sh catch-up refreshed).
 run_step "publish: transfer catch-up (boxes reasons)"                     bin/transfer/publish.sh
 # THE ALL FILES SEARCH (2026-09-27, user request — "Implementation 3, all
 # files"): one day shard per data day + the bloom-filter manifest, and the

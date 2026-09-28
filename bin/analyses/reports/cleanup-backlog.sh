@@ -51,15 +51,6 @@ if [ ! -f "$TF" ] || [ ! -f "$BASE/_accounts.tsv" ]; then
     exit 0
 fi
 
-deps=("$TF" "$BASE/_accounts.tsv" "$ROOT/bin/uc-cases.sh")
-for f in "$BASE/_subscriptions.tsv" "$BASE/_white.tsv" \
-         "$XREF/_accounts-subscriptions.tsv" "$XREF/_accounts-white.tsv" "$XREF/_subscriptions-partners.tsv" \
-         "$COV/accounts.tsv" "$COV/subscriptions.tsv" "$COV/logins.tsv" "$COV/hosts.tsv" "$SUBJSON" \
-         "$DATA/unknown/white.tsv" "$DATA/server/cache/_subscriptions.tsv"; do
-    [ -f "$f" ] && deps+=("$f")
-done
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "${deps[@]}"
-
 TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')

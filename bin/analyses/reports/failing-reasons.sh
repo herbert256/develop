@@ -54,7 +54,6 @@ if [ ! -f "$SRC" ]; then
     rm -f "$OUT" "$REPORTS_DIR"/failing-reasons-*.rpt
     exit 0
 fi
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRC" "$LIB_DIR/../flip-reason.awk"
 
 GEN=$(date '+%Y-%m-%d %H:%M:%S')
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axereas.XXXXXX")
@@ -133,9 +132,8 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen=
     }
 ' "$SRC"
 
-# publish: the drill set first, the main LAST — a killed run leaves the old
-# complete main (a stale mtime, so skip_if_fresh rebuilds) rather than a fresh
-# list linking missing pages. The sweep also removes retired view pages.
+# publish: the drill set first, the main LAST — a killed run never leaves a
+# main list linking missing pages. The sweep also removes retired view pages.
 rm -f "$REPORTS_DIR"/failing-reasons-*.rpt
 shopt -s nullglob
 for f in "$TMP"/failing-reasons-*.rpt; do mv "$f" "$REPORTS_DIR/${f##*/}"; done

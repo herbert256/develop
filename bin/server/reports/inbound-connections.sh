@@ -55,7 +55,6 @@ if [ ${#files[@]} -eq 0 ]; then
     exit 0
 fi
 ensure_parsed
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TACCT"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass. Emits TAB-separated:

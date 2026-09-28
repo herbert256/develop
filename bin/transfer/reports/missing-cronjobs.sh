@@ -49,7 +49,6 @@ fi
 # carries no UC prefix, so the name test alone made this page a false
 # all-clear for exactly the flows it exists to catch (2026-08-31 audit)
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SUBJSON" "$SCRIPT_DIR/../../uc-cases.sh" "$UCDF"
 
 # the cron-triggered use cases, from the one place that defines them
 cron_ucs=""

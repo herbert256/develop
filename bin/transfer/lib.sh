@@ -38,7 +38,7 @@
 # export -> data/flow-manager -> reparse in one call.
 
 # All paths resolve from THIS file's location (not the caller's SCRIPT_DIR), so
-# ensure_parsed/skip_if_fresh and the report .rpt writes work from either
+# ensure_parsed and the report .rpt writes work from either
 # directory. lib.sh + parse.sh sit in <area>/bin/; the report scripts that
 # source this sit one level down in <area>/bin/reports/. data/ and input/ are
 # the two gitignored roots at the repo top.
@@ -150,40 +150,6 @@ ensure_config() {
     [ -f "$FM_INPUT_DIR/partners.json" ]      || return 0
     [ -f "$FM_INPUT_DIR/subscriptions.json" ] || return 0
     "$ROOT/bin/flow-manager.sh"
-}
-
-# skip_if_fresh OUT SCRIPT [DEP...] — exit the calling report early (status 0)
-# when its data file OUT is already up to date, i.e. OUT exists and is newer
-# than the report SCRIPT, lib.sh, parse.sh, the parse cache and every extra
-# DEP file. Regenerates otherwise.
-# A DEP that is a DIRECTORY counts as one dep covering the whole tree below it
-# (a report reading a whole .rpt/slugmap dir names the dir, not 300 files).
-# FILES only — a directory own mtime is noise here: every cmp-guarded writer
-# creates and removes a .tmp beside its output, bumping the dir on a run that
-# changed nothing.
-# Call it right after ensure_parsed so an unchanged report does no awk work.
-skip_if_fresh() {
-    local out=$1 script=$2; shift 2
-    [ -f "$out" ] || return 0                                  # missing -> build
-    if [ "$script" -nt "$out" ] \
-       || [ "$LIB_DIR/lib.sh" -nt "$out" ] \
-       || [ "$LIB_DIR/parse.sh" -nt "$out" ] \
-       || { [ -f "$PARSED" ] && [ "$PARSED" -nt "$out" ]; } \
-       || { [ -f "$FILES" ] && [ "$FILES" -nt "$out" ]; }; then  # expire-files / bookend-ok can rewrite $FILES alone
-        return 0                                               # stale -> build
-    fi
-    local dep
-    for dep in "$@"; do
-        if [ -d "$dep" ]; then                                 # a whole TREE as one dep
-            if [ -n "$(find "$dep" -type f -newer "$out" -print -quit 2>/dev/null)" ]; then
-                return 0                                       # something in it is newer -> build
-            fi
-        elif [ -f "$dep" ] && [ "$dep" -nt "$out" ]; then
-            return 0                                           # newer input -> build
-        fi
-    done
-    echo "  $(basename "$out") is up to date; skipping." >&2
-    exit 0
 }
 
 # activity_stream — a normalized one-record-per-line stream feeding the

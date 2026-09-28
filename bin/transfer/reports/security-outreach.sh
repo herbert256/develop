@@ -45,7 +45,6 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 ensure_parsed
 SPX="$CONFIG_XREF/_subscriptions-partners.tsv"   # subscription -> partner (UNION attribution)
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SPX"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass: file 1 = $FILES (the host-resolved partner per CoreId), file 2 =

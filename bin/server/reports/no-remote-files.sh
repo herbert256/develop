@@ -107,7 +107,6 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 ensure_config
 ensure_parsed
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TSITE" "$SUBB"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass over the poll lines. A site is kept only when it is a roster UC3

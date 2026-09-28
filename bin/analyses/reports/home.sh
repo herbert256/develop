@@ -41,22 +41,6 @@ OUT="$REPORTS_DIR/home.rpt"
 # see the ordering note in bin/analyses/reports.sh.
 ensure_pda_tsvs
 
-# Inputs: the four classic members' Show Seen INTRO counts and the four
-# derived coverage TSVs ensure_pda_tsvs just re-derived (cov_put keeps their mtime when
-# nothing changed, so this guard is not defeated by the call above).
-deps=()
-for m in subscriptions accounts hosts logins; do
-    [ -f "$DATA/transfer/reports/showseen-$m.rpt" ] && deps+=("$DATA/transfer/reports/showseen-$m.rpt")
-done
-for m in logicals partners domains applications bl; do
-    [ -f "$COVSRC/$m.tsv" ] && deps+=("$COVSRC/$m.tsv")
-done
-# the union rule reads the five derived entity reports too (pda_seen_total)
-for m in logical partner domain application bl; do
-    [ -f "$DATA/transfer/reports/$m.rpt" ] && deps+=("$DATA/transfer/reports/$m.rpt")
-done
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" ${deps[@]+"${deps[@]}"}
-
 # The MERGED seen total of a PDA member: the same universe pda_split_figures
 # counted, reduced to its one "seen, Total" figure.
 #   partners      an Out row whose col 8 names an In partner folds onto that

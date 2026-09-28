@@ -149,42 +149,16 @@ FILESIDE4="$REPORTS_DIR/_expired-files.tsv"
 # ... and the same for the Waiting subscription pages (waiting.sh) — tag W,
 # back link = the Waiting report
 FILESIDE5="$REPORTS_DIR/_waiting-files.tsv"
-# A missing drill dir — or a missing variant list — forces a rebuild:
-# skip_if_fresh only tests the one .rpt, the same guard the pesit/uc-status
-# sidecars carry.
-[ -d "$ERRDIR" ] || rm -f "$OUT"
-[ -d "$FILEDIR" ] || rm -f "$OUT"
-for v in $VARIANTS; do [ -f "$REPORTS_DIR/failed-$v.rpt" ] || rm -f "$OUT"; done
-# A LISTED CoreId WITHOUT A PAGE forces a rebuild too (2026-09-09): the two
-# sidecars are written by reports of the same pool, so a list that changed
-# while this script was already running lands OLDER than failed.rpt and the
-# mtime check would skip the catch-up — leaving the Patterns / Longest cells
-# linking pages that do not exist (5 broken links the day the bookend
-# settlement moved Files into the Last-5 cells).
-if [ -f "$OUT" ]; then
-    while IFS= read -r c9; do
-        [ -n "$c9" ] || continue
-        [ -f "$FILEDIR/$c9.rpt" ] || [ -f "$ERRDIR/$c9.rpt" ] || { rm -f "$OUT"; break; }
-    done < <(cat "$FILESIDE" "$FILESIDE2" "$FILESIDE3" "$FILESIDE4" "$FILESIDE5" 2>/dev/null)
-fi
-# The server parse cache is a dep (the "What the server log said" sections);
-# skip_if_fresh skips a missing dep, so an env without server logs still works.
+# The server parse cache (the "What the server log said" sections); an env
+# without server logs still works.
 SRVLOG="$SERVER_CACHE/_parse.tsv"
 # Page guard for the server-log table: a session is normally tens to a few
 # hundred lines (acceptance: median 35, p90 144, busiest 477), so this ceiling
 # does not bite — it is here so one pathological connection cannot turn a drill
 # page into a megabyte. A capped page says so in a NOTE under its table.
 SRVCAP=${AXWAY_ERR_LOGCAP:-2000}
-# $CONFIG_BASE is a DEP because the rows and the facts tables carry ENTITY
-# RESULT COLOURS (its third column, filled by bin/build/result.sh, which runs
-# before the reports): without it a recolour — a subscription going red, or a
-# UC3 flipping back to green on a clean poll — left this report and its 191
-# error pages showing yesterday's colours until something else forced a
-# rebuild. The cache is cmp-guarded, so an unchanged colour set keeps its
-# mtime and nothing re-runs (2026-08).
-# The three server-row evidence sources (see the header). All cmp-guarded or
-# name-keyed sidecars; a missing one degrades to fewer/reason-less server
-# rows and skip_if_fresh skips a missing dep.
+# The three server-row evidence sources (see the header); a missing one
+# degrades to fewer/reason-less server rows.
 RFLIP="$DATA/colour/_redflip.tsv"
 KAPUT="$DATA/server/reports/_kaput-evidence.tsv"
 BOXES="$DATA/analyses/reports/_subs-boxes.tsv"
@@ -194,10 +168,6 @@ BOXES="$DATA/analyses/reports/_subs-boxes.tsv"
 # so rows copied out of the two runtime sites still say where they came from
 source "$LIB_DIR/../envlabel.sh"
 ENVL=$(printf '%s' "$ENV_LABEL" | cut -c1 | tr '[:lower:]' '[:upper:]')
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SRVLOG" "$CONFIG_BASE" "$LIB_DIR/../flip-reason.awk" \
-    "$RFLIP" "$KAPUT" "$BOXES" "$CONFIG_XREF/_subscriptions-partners.tsv" "$CONFIG_XREF/_subscriptions-logins.tsv" \
-    "$CONFIG_XREF/_subscriptions-hosts.tsv" "$FILESIDE" "$FILESIDE2" "$FILESIDE3" "$FILESIDE4" "$FILESIDE5" \
-    "$LIB_DIR/../envlabel.sh" "$LIB_DIR/../../input/environment.txt"
 
 GEN=$(date '+%Y-%m-%d %H:%M:%S')
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axlastf.XXXXXX")
@@ -1179,7 +1149,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
 ' "$TMP/all" > "$TMP/reasons"
 # the per-CoreId reasons SAVED for the Failed files report (2026-09-14, user
 # request: failed-files.sh shows them per File) — cmp-guarded, so a rerun that
-# classifies the same leaves the sidecar mtime (its skip_if_fresh dep) alone
+# classifies the same leaves the sidecar mtime alone
 LC_ALL=C sort "$TMP/reasons" > "$REPORTS_DIR/_failed-reasons.tsv.tmp" 2>/dev/null || : > "$REPORTS_DIR/_failed-reasons.tsv.tmp"
 if cmp -s "$REPORTS_DIR/_failed-reasons.tsv.tmp" "$REPORTS_DIR/_failed-reasons.tsv" 2>/dev/null; then rm -f "$REPORTS_DIR/_failed-reasons.tsv.tmp"
 else mv "$REPORTS_DIR/_failed-reasons.tsv.tmp" "$REPORTS_DIR/_failed-reasons.tsv"; fi
@@ -1210,9 +1180,8 @@ _flap "server-failing pages + the reasons"
 # ---- The SIX lists (see the header) -----------------------------------------
 # One pass over $TMP/all writes all six bodies to .rpt.tmp files; the mv set
 # below publishes them together, AFTER the drill tree and its server-log
-# sections are complete — a killed run leaves the OLD complete set + a stale
-# mtime (rebuild) rather than fresh truncated lists skip_if_fresh would
-# trust. Rows stream newest first, so every list is newest first (the
+# sections are complete — a killed run leaves the OLD complete set rather
+# than truncated lists. Rows stream newest first, so every list is newest first (the
 # appended server rows land at the end; the page default sort — Started,
 # descending — interleaves them on load). The two all-selection lists carry
 # every failed File (acceptance: ~15k rows), so they page client-side

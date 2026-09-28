@@ -47,17 +47,6 @@ ensure_config
 if [ ! -f "$RP" ] && [ ! -f "$SUBJSON" ]; then
     rm -f "$OUT"; echo "uc3-polling: neither remote-poll.rpt nor a config export — nothing to add to the UC3 tab." >&2; exit 0
 fi
-# a VANISHED input must force a rebuild: skip_if_fresh only sees NEWER deps,
-# so an .rpt still carrying the table of an input that is gone is dropped
-if [ -f "$OUT" ]; then
-    if [ ! -f "$RP" ] && command grep -q $'^HEAD\tSubscription\tPolls\t' "$OUT"; then rm -f "$OUT"; fi
-fi
-if [ -f "$OUT" ]; then
-    if [ ! -f "$SUBJSON" ] && command grep -q $'^TABLE\tConfigured cronjobs' "$OUT"; then rm -f "$OUT"; fi
-fi
-deps=()
-for d in "$RP" "$PT" "$PF" "$PUNCT" "$SUBJSON" "$XSH" "$CRON_AWK" "$ROOT/bin/cron-observed.awk"; do [ -f "$d" ] && deps+=("$d"); done
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" ${deps[@]+"${deps[@]}"}
 echo "uc3-polling: building the UC3 tab's polling tables ..." >&2
 
 # ---- (c)+(d): the cron tables, computed first (the emit block below prints in page order)

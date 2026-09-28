@@ -70,28 +70,11 @@ PSLOTS="$DATA/server/reports/pesit-slots.tsv"   # pesit.sh's 30-min direction sp
 EQSLOTS="$DATA/server/reports/event-queue-slots.tsv"   # event-queue.sh's 30-min line counts (date slot lines) — the EventQueue hero view (2026-09-14)
 SUBPF="$DATA/flow-manager/xref/_subscriptions-partners.tsv"   # subscription -> partner(s), for the Top-5 partner UNION
 
-# Freshness: this writer has no area lib to borrow skip_if_fresh from, so the
-# same test lives here. The output is a WHOLE DIRECTORY of per-day .rpt written
-# in one run, so the newest of them stands for the set — rebuild when any input
-# (or this script) is newer than the OLDEST output, which is the one a partial
-# previous run would have left behind.
-oldest_rpt=$(ls -tr "$RPTDIR"/*.rpt 2>/dev/null | head -1 || true)
-if [ -n "$oldest_rpt" ]; then
-    stale=0
-    for dep in "${BASH_SOURCE[0]}" "$TF" "$TP" "$TT" "$SV" "$SP" "$SLF" "$NRD" "$NRF" "$ANOM" "$GTR" "$ORED" "$PSLOTS" "$EQSLOTS" "$SUBPF"; do
-        if [ -f "$dep" ] && [ "$dep" -nt "$oldest_rpt" ]; then stale=1; break; fi
-    done
-    if [ "$stale" = 0 ]; then
-        echo "  data/day/reports/ is up to date; skipping." >&2
-        exit 0
-    fi
-fi
-# A killed run must not leave a half-written day set that the oldest-rpt test
-# above would then trust (BOTH passes below append across the whole file set,
-# so single-file tmp+mv cannot cover it). The passes write into a STAGING dir
-# and the two-rename swap at the bottom publishes the complete set — $RPTDIR
-# is only ever the old complete set, empty (rebuild), or the new complete set,
-# never a mix. Leftover .new/.old dirs from a killed run are swept here.
+# A killed run must not leave a half-written day set (BOTH passes below append
+# across the whole file set, so single-file tmp+mv cannot cover it). The
+# passes write into a STAGING dir and the two-rename swap at the bottom
+# publishes the complete set — $RPTDIR is only ever the old complete set or
+# the new complete set, never a mix.
 RPTNEW="$RPTDIR.new"
 rm -rf "$RPTNEW" "$RPTDIR.old"
 mkdir -p "$RPTNEW"

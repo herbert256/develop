@@ -43,9 +43,6 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 ensure_parsed
 [ -f "$WHITE" ] || { echo "incoming-connections.sh: no $WHITE — nothing to do." >&2; exit 0; }
-deps=("$WHITE")
-[ -f "$WACC" ] && deps+=("$WACC")
-skip_if_fresh "$SLUGMAP" "${BASH_SOURCE[0]}" "$FILES" "${deps[@]}"
 echo "Building the incoming-connection (whitelisted IP) detail pages..." >&2
 
 mkdir -p "$OUTDIR"
@@ -61,10 +58,9 @@ args+=( f=white "$WHITE" )
 [ -f "$WACC" ] && args+=( f=wacc "$WACC" )
 args+=( f=files "$FILES" )
 
-# The slugmap is the freshness key (skip_if_fresh above), so the awk writes it
-# incrementally to a .tmp; the finalize below publishes it LAST, after every
-# page .rpt exists — a killed run leaves no slugmap and forces a rebuild
-# instead of a fresh-looking partial one.
+# The awk writes the slugmap to a .tmp; the finalize below publishes it LAST,
+# after every page .rpt exists — a killed run leaves no slugmap rather than a
+# partial one.
 npages=$(LC_ALL=C awk -F'\t' \
     -v outdir="$OUTDIR" -v slugmap="$SLUGMAP.tmp" \
     -v stamp="$stamp" -v nfiles="${#files[@]}" '

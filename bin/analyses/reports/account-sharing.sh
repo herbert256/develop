@@ -36,7 +36,6 @@ if [ ! -s "$XREF_AS" ]; then
     rm -f "$OUT"
     exit 0
 fi
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$XREF_AS"
 
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 

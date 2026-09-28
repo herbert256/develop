@@ -38,7 +38,6 @@ if [ ${#files[@]} -eq 0 ]; then
     exit 0
 fi
 ensure_parsed
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Extracting the config-defect families from the server cache..." >&2
 
 awk -F'\t' '

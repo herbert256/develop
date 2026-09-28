@@ -43,7 +43,6 @@ arlist_run() {
         exit 0
     fi
     ensure_parsed
-    skip_if_fresh "$OUT" "${BASH_SOURCE[1]}" "${BASH_SOURCE[0]}" "$ROSTER"   # [1] = the calling report script, [0] = this library
     echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
     # the known-entity roster ("KS<TAB>name", fed in ahead of the cache): a

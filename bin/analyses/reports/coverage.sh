@@ -23,26 +23,6 @@ source "$SCRIPT_DIR/../lib.sh"
 [ -d "$COVSRC" ] || exit 0
 ensure_pda_tsvs
 
-# Four outputs (one Configured cell per Logical/PDA member), so all four must
-# exist before the mtime check on the first one can speak for them. Inputs: the
-# coverage TSVs just re-derived (cov_put keeps their mtime when unchanged), the
-# base caches carrying the result colours, and the detail-page slugmaps.
-deps=()
-for m in logicals partners applications domains bl; do
-    [ -f "$COVSRC/$m.tsv" ] && deps+=("$COVSRC/$m.tsv")
-done
-for b in _logicals _partners _apps _domains _bl; do
-    [ -f "$DATA/flow-manager/base/$b.tsv" ] && deps+=("$DATA/flow-manager/base/$b.tsv")
-done
-for d in logicals partners applications domains bl; do
-    [ -f "$DATA/transfer/reports/details/$d/_slugmap.tsv" ] && deps+=("$DATA/transfer/reports/details/$d/_slugmap.tsv")
-done
-if [ -f "$COVRPT_DIR/logicals-configured.rpt" ] && [ -f "$COVRPT_DIR/partners-configured.rpt" ] \
-   && [ -f "$COVRPT_DIR/applications-configured.rpt" ] \
-   && [ -f "$COVRPT_DIR/domains-configured.rpt" ] \
-   && [ -f "$COVRPT_DIR/bl-configured.rpt" ]; then
-    skip_if_fresh "$COVRPT_DIR/partners-configured.rpt" "${BASH_SOURCE[0]}" ${deps[@]+"${deps[@]}"}
-fi
 rm -f "$COVRPT_DIR"/*.rpt
 
 npages=0

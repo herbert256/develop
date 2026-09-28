@@ -85,8 +85,6 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 ensure_parsed
 ensure_config
-[ -f "$SLOTS_OUT" ] || rm -f "$OUT"   # a missing sidecar must force a rebuild (skip_if_fresh checks $OUT only)
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILESC" "$SUBB" "$RFLIP"
 [ -f "$RFLIP" ] || RFLIP=/dev/null   # first build: result.sh not run yet — no flips
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 

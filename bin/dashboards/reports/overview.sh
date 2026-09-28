@@ -25,12 +25,6 @@ OUT="$REPORTS_DIR/overview.rpt"
 # xref maps, the configured rosters and the red-flip sidecar (see the seen
 # block below).
 XR="$DATA/flow-manager/xref"
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$DATA/server/reports/pesit-slots.tsv" "$DATA/server/reports/event-queue-slots.tsv" \
-    "$DATA/server/reports/uc1-slots.tsv" "$DATA/server/reports/uc2-slots.tsv" \
-    "$DATA/server/reports/uc3-slots.tsv" "$DATA/server/reports/uc4-slots.tsv" \
-    "$XR/_subscriptions-partners.tsv" "$XR/_hosts-partners.tsv" \
-    "$DATA/flow-manager/base/_subscriptions.tsv" "$DATA/flow-manager/base/_accounts.tsv" \
-    "$DATA/colour/_redflip.tsv"
 
 transfer_basics || true
 server_basics || true

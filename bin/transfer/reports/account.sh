@@ -33,7 +33,6 @@ mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/account.rpt"
 
 ensure_parsed
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # ---------------------------------------------------------------------------

@@ -40,7 +40,6 @@ if [ ! -f "$TF" ] || [ ! -f "$PBASE" ]; then
 fi
 [ -f "$SPMAP" ] || SPMAP=/dev/null
 [ -f "$PSUB" ] || PSUB=/dev/null
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TF" "$PBASE" "$SPMAP" "$PSUB"
 
 TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT

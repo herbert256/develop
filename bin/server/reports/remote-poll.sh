@@ -106,8 +106,6 @@ if [ ${#files[@]} -eq 0 ]; then
     exit 0
 fi
 ensure_parsed
-[ -f "$PT_OUT" ] && [ -f "$PF_OUT" ] || rm -f "$OUT"   # a missing sidecar must force a rebuild (skip_if_fresh checks $OUT only)
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TSITE"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass over the "Applying the search pattern … for transfer site '…'" polls.

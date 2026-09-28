@@ -74,19 +74,6 @@ rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp "$OUTDIR"/.agg.tmp.*   # orphaned t
 ensure_parsed
 
 DIMS="account subscription login remote-host logical partner application domain bl"
-# one script, NINE outputs — skip only when ALL are fresh (pda-entities.sh's rule)
-_fresh=1
-for _o in $DIMS; do
-    _f="$OUTDIR/$_o.rpt"
-    if ! { [ -f "$_f" ] && ! [ "$PARSED" -nt "$_f" ] && ! [ "$FILES" -nt "$_f" ] && ! [ "${BASH_SOURCE[0]}" -nt "$_f" ] && ! [ "$LIB_DIR/lib.sh" -nt "$_f" ]; }; then
-        _fresh=0; break
-    fi
-done
-if [ "$_fresh" = 1 ]; then
-    echo "  entities/*.rpt are up to date; skipping." >&2
-    exit 0
-fi
-unset _fresh _o _f
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # the union / value maps (pda-entities.sh's UMAP/VMAP set); a missing map is

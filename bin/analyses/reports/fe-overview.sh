@@ -121,7 +121,6 @@ LOGONS="$SCACHE/_logons.tsv"
 [ -f "$OLD" ]     || OLD=/dev/null
 [ -f "$PICKUPS" ] || PICKUPS=/dev/null   # -f, not -s: an EMPTY sidecar is the valid no-pickup state
 [ -f "$PROBLEMS" ] || PROBLEMS=/dev/null   # same: no Incoming rows = no problems
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$LBASE" "$LSUB" "$UCDF" "$TF" "$LOGONS" "$OLD" "$PICKUPS" "$PROBLEMS"
 
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 

@@ -55,13 +55,6 @@ HOSTS_CACHE="$IP_HOSTS_FILE"                 # the automatic ip -> endpoint map 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
-# freshness dep: a changed name must force a rebuild. ONE file since 2026-07 —
-# it used to be the whole per-<ip>.txt tree (4,241 entries), so the monthly
-# whitelist re-resolution sweep bumped thousands of mtimes and forced this
-# full map-reduce rescan of the 3 GB parse cache in both envs, for names that
-# can never change the answer (see the known.map rule below).
-host_deps=()
-[ -f "$IP_HOSTS_FILE" ] && host_deps=("$IP_HOSTS_FILE")
 if [ ${#files[@]} -eq 0 ]; then
     echo "No files matching '*.csv' found in '$INPUT_DIR'" >&2
     rm -f "$REPORTS_DIR"/unknown-{sites,accounts,logins,hosts,whitelisting}.rpt
@@ -75,59 +68,6 @@ fi
 [ -f "$CFG_HOSTS" ] || echo "No configured host list ($CFG_HOSTS) — unknown-hosts will be empty." >&2
 [ -f "$CFG_WHITE" ] || echo "No whitelist ($CFG_WHITE) — unknown-whitelisting will be empty." >&2
 
-# The two base caches are a freshness dep, but NOT directly: this scan reads
-# only their column 1 (the NAME lists — see the cfg[]/white[] rules below), and
-# bin/build/result.sh REWRITES base/*.tsv's result column (col 3) every
-# build. Depending on the
-# files themselves therefore re-ran the whole map-reduce over the server cache
-# on every build for a change we never read. Depend instead on a projection of
-# just the name columns, and rebuild only when a name is actually added or
-# removed. (Same idea as bin/build/expire-files.sh's cmp guard, and the reason
-# bin/transfer/lib.sh watches xref/ but not base/.)
-# The comparison is by CONTENT, not by mtime: bash 3.2's `-nt` compares whole
-# SECONDS, so a dep rewritten in the same second as an output reads as "not
-# newer" and the stale output survives. The stored projection is replaced only
-# AFTER a successful rebuild (bottom of this script), so an aborted run cannot
-# leave the names recorded as up to date while the outputs are stale.
-NAMES_DEP="$CACHE_DIR/.config-names.tsv"
-mkdir -p "$CACHE_DIR"
-NAMES_NEW="$NAMES_DEP.new"
-: > "$NAMES_NEW"
-if [ -f "$CFG_HOSTS" ]; then cut -f1 "$CFG_HOSTS" >> "$NAMES_NEW"; fi
-if [ -f "$CFG_WHITE" ]; then cut -f1 "$CFG_WHITE" >> "$NAMES_NEW"; fi
-LC_ALL=C sort -u "$NAMES_NEW" -o "$NAMES_NEW"
-names_changed=0
-cmp -s "$NAMES_NEW" "$NAMES_DEP" || names_changed=1
-
-# Freshness: ONE scan feeds all five outputs, so skip only when EVERY .rpt and
-# sidecar is fresh against the shared dep set (skip_if_fresh exits on the
-# first fresh output, so the multi-output check is inlined here; the rules
-# mirror skip_if_fresh — script/lib/parse/PARSED plus the extra deps).
-all_fresh=1
-[ "$names_changed" = 0 ] || all_fresh=0     # a configured name came or went
-for out in "$REPORTS_DIR"/unknown-{sites,accounts,logins,hosts,whitelisting}.rpt \
-           "$UNKNOWN_DIR"/{sites,accounts,logins,hosts,white}.tsv; do
-    [ "$all_fresh" = 1 ] || break
-    [ -f "$out" ] || { all_fresh=0; break; }
-    # bin/renames.sh and the MAP decide which logged name a token is folded to
-    # before the known-set test, so either one changing changes every output
-    # here — they are deps exactly like this script and the parse cache.
-    if [ "${BASH_SOURCE[0]}" -nt "$out" ] || [ "$LIB_DIR/lib.sh" -nt "$out" ] \
-       || [ "$LIB_DIR/parse.sh" -nt "$out" ] \
-       || [ "$ROOT/bin/renames.sh" -nt "$out" ] \
-       || { [ -f "$RENAMES_FILE" ] && [ "$RENAMES_FILE" -nt "$out" ]; } \
-       || { [ -f "$PARSED" ] && [ "$PARSED" -nt "$out" ]; }; then
-        all_fresh=0; break
-    fi
-    for dep in "$TCACHE" ${host_deps[@]+"${host_deps[@]}"}; do
-        if [ -f "$dep" ] && [ "$dep" -nt "$out" ]; then all_fresh=0; break 2; fi
-    done
-done
-if [ "$all_fresh" = 1 ]; then
-    rm -f "$NAMES_NEW"
-    echo "  unknown-* reports are up to date; skipping." >&2
-    exit 0
-fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 TMPD=$(mktemp -d "${TMPDIR:-/tmp}/unkent.XXXXXX")
@@ -472,7 +412,3 @@ write_unknown_rpt A unknown-accounts     account
 write_unknown_rpt L unknown-logins       login
 write_unknown_rpt H unknown-hosts        host
 write_unknown_rpt W unknown-whitelisting IP
-
-# Every output is written: record the name list this scan was built from, so the
-# next run skips when only the RESULT column of the base caches changed.
-mv -f "$NAMES_NEW" "$NAMES_DEP"

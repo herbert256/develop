@@ -102,7 +102,6 @@ ensure_config
 # Rebuild when the transfer cache, the server err/warn rings (the server
 # _subscriptions.tsv mention cache is a representative — rewritten in the same
 # parse pass as the per-name dirs), the connection maps, or this script change.
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILES" "$CACHE_DIR/_subscriptions.tsv" "$SA" "$SL" "$SH" "$SUBRES" "$SV"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # 1) the LAST transfer per subscription (max sortkey), keeping only those whose

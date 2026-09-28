@@ -46,7 +46,6 @@ if [ ! -s "$PICKUPS" ]; then
     rm -f "$OUT"   # env-split legitimate state: the analyses publish renders a placeholder
     exit 0
 fi
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$PICKUPS"
 
 # Rows: one per UC2 subscription whose account logged at least one visit,
 # session-proven shared connections first, then two-way exchangers, then the

@@ -68,13 +68,9 @@ SPX="$CONFIG_XREF/_subscriptions-partners.tsv"   # subscription -> partner (UNIO
 # (Start · Waiting for · File name · CoreId, longest waiting first), one .rpt
 # per subscription in $SUBDIR, rendered by bin/transfer/publish.sh. The CoreId
 # of the first 5 rows links the File page, so those CoreIds go to $FILESIDE,
-# which failed.sh pages (list tag W). A missing dir / list forces a rebuild —
-# skip_if_fresh only tests the one .rpt.
+# which failed.sh pages (list tag W).
 SUBDIR="$REPORTS_DIR/waiting"
 FILESIDE="$REPORTS_DIR/_waiting-files.tsv"
-[ -d "$SUBDIR" ] || rm -f "$OUT"
-[ -f "$FILESIDE" ] || rm -f "$OUT"
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SPX"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Stream _files.tsv grouped by subscription, chronological inside each group.

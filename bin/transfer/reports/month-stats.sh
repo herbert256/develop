@@ -37,18 +37,6 @@ rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp "$OUTDIR"/_alltime.tsv.tmp "$OUTDIR
 ensure_parsed
 
 DIMS="account subscription login remote-host logical partner application domain bl"
-_fresh=1
-for _w in this previous; do for _o in $DIMS; do
-    _f="$OUTDIR/$_w-$_o.rpt"
-    if ! { [ -f "$_f" ] && [ -f "$OUTDIR/_alltime.tsv" ] && ! [ "$PARSED" -nt "$_f" ] && ! [ "$FILES" -nt "$_f" ] && ! [ "${BASH_SOURCE[0]}" -nt "$_f" ] && ! [ "$LIB_DIR/lib.sh" -nt "$_f" ]; }; then
-        _fresh=0; break 2
-    fi
-done; done
-if [ "$_fresh" = 1 ]; then
-    echo "  month-stats/*.rpt are up to date; skipping." >&2
-    exit 0
-fi
-unset _fresh _w _o _f
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 mapf() { [ -f "$CONFIG_XREF/$1.tsv" ] && printf '%s' "$CONFIG_XREF/$1.tsv" || printf ''; }

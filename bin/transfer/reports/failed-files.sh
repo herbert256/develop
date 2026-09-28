@@ -25,8 +25,7 @@
 #
 # Runs after the transfer pool (bin/transfer/reports.sh, serial tail — the
 # pool's failed.sh has finished) and again in bin/build.sh right after the
-# failed.sh catch-up, whose reasons it needs; skip_if_fresh on the reasons
-# sidecar and the error-page tree. No prose on the page (help page
+# failed.sh catch-up, whose reasons it needs. No prose on the page (help page
 # failed-files).
 #
 # Usage:
@@ -45,12 +44,7 @@ shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
 ensure_parsed
-DEPS=("${BASH_SOURCE[0]}")
-[ -f "$REAS" ] && DEPS+=("$REAS")
-[ -d "$ERRDIR" ] && DEPS+=("$ERRDIR")
 SUBRES="$CONFIG_BASE/_subscriptions.tsv"   # name <TAB> ... <TAB> result colour (col 3)
-[ -f "$SUBRES" ] && DEPS+=("$SUBRES")
-skip_if_fresh "$OUT" "${DEPS[@]}"
 
 # the CoreIds that have an error page (their errors/<CoreId>.rpt)
 pages=$(mktemp "${TMPDIR:-/tmp}/ffpages.XXXXXX")

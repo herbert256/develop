@@ -74,7 +74,6 @@ ensure_parsed
 # rewritten every build (a FOOT carries the run time), which would re-scan
 # the whole server cache for nothing — a page that appears later is picked
 # up on the next data change.
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILES" "$ACCB" "$LOGB"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 TMP=$(mktemp "${TMPDIR:-/tmp}/ioerr.XXXXXX")

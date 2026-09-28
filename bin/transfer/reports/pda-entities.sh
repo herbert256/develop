@@ -29,20 +29,6 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 mkdir -p "$REPORTS_DIR"
 ensure_parsed
-# one script, FOUR outputs — skip only when ALL are fresh (guarding just
-# partner.rpt left application/domain.rpt stale after a mid-loop failure)
-_pda_fresh=1
-for _o in logical partner application domain bl; do
-    _f="$REPORTS_DIR/$_o.rpt"
-    if ! { [ -f "$_f" ] && ! [ "$PARSED" -nt "$_f" ] && ! [ "$FILES" -nt "$_f" ] && ! [ "${BASH_SOURCE[0]}" -nt "$_f" ]; }; then
-        _pda_fresh=0; break
-    fi
-done
-if [ "$_pda_fresh" = 1 ]; then
-    echo "  logical/partner/application/domain/bl.rpt are up to date; skipping." >&2
-    exit 0
-fi
-unset _pda_fresh _o _f
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # THE LEG FLAGS ONCE (2026-09-28, speed round 15): every dimension needs the

@@ -41,7 +41,6 @@ if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
 ensure_parsed
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Stream _files.tsv grouped by subscription, chronological inside each group.

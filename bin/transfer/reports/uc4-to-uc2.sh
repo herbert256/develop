@@ -34,7 +34,6 @@ shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
 ensure_parsed
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/uc42.XXXXXX")

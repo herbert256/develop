@@ -53,21 +53,9 @@ if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
 ensure_parsed
-# one script, TWO outputs — skip only when both rpts are fresh (pda-entities pattern)
-_dur_fresh=1
 # the Min/Avg/Max sibling pages are GONE (2026-09-13, user request): their
 # table sits beside the percentiles on the same page — sweep the old .rpts
 rm -f "$REPORTS_DIR/duration-minmax.rpt" "$REPORTS_DIR/duration-all-minmax.rpt"
-for _f in "$REPORTS_DIR/duration.rpt" "$REPORTS_DIR/duration-all.rpt"; do
-    if ! { [ -f "$_f" ] && ! [ "$PARSED" -nt "$_f" ] && ! [ "$FILES" -nt "$_f" ] && ! [ "${BASH_SOURCE[0]}" -nt "$_f" ]; }; then
-        _dur_fresh=0; break
-    fi
-done
-if [ "$_dur_fresh" = 1 ]; then
-    echo "  the two duration .rpt files are up to date; skipping." >&2
-    exit 0
-fi
-unset _dur_fresh _f
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Every duration/size cell is spelled out by the awk that computes it —

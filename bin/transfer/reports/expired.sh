@@ -49,13 +49,9 @@ if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
 ensure_parsed
-# the per-subscription File pages' .rpt set (see below); a missing dir forces a
-# rebuild — skip_if_fresh only tests the one .rpt
+# the per-subscription File pages' .rpt set (see below)
 SUBDIR="$REPORTS_DIR/expired"
-[ -d "$SUBDIR" ] || rm -f "$OUT"
 FILESIDE="$REPORTS_DIR/_expired-files.tsv"   # the CoreIds those pages link → File pages (failed.sh)
-[ -f "$FILESIDE" ] || rm -f "$OUT"
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 TMPD=$(mktemp -d "${TMPDIR:-/tmp}/axexp.XXXXXX")
@@ -107,7 +103,7 @@ IFS=$'\t' read -r nexp bexp agesum ncoll nwait < "$TMPD/x_stats"
 # Expired cell of the subscriptions table links it. The slug is the site-wide
 # slugify, walked over the C-SORTED names so a separator twin's numeric bump is
 # stable (never a hash walk). Staged in expired.new/ and swapped in BEFORE the
-# main .rpt lands — skip_if_fresh rests on that one file.
+# main .rpt lands.
 [ -f "$TMPD/x_sub" ] || : > "$TMPD/x_sub"
 [ -f "$TMPD/x_files" ] || : > "$TMPD/x_files"
 cut -f1 "$TMPD/x_sub" | LC_ALL=C sort | awk '

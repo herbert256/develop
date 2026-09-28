@@ -75,24 +75,6 @@ if [ ! -f "$FCACHE" ]; then
     exit 0
 fi
 
-# freshness: the EXISTING outputs against the cache + the error-page roster
-# (a changed roster moves the CoreId links); the OLDEST existing output
-# decides. Only 24-hours is REQUIRED — an empty window deliberately has no
-# rpt (2026-08), so requiring all six would recompute on every run. A data
-# change that fills a new window makes the inputs newer than the oldest
-# existing rpt, so it still recomputes exactly then.
-FRESH=1
-[ -f "$REPORTS_DIR/file-search-24-hours.rpt" ] || FRESH=0
-[ -f "$REPORTS_DIR/file-search-24-hours-data.js" ] || FRESH=0
-if [ "$FRESH" = 1 ]; then
-    OLDEST="$REPORTS_DIR/file-search-24-hours.rpt"
-    for k in $KEYS; do
-        [ -f "$REPORTS_DIR/file-search-$k.rpt" ] && [ "$REPORTS_DIR/file-search-$k.rpt" -ot "$OLDEST" ] && OLDEST="$REPORTS_DIR/file-search-$k.rpt"
-        [ -f "$REPORTS_DIR/file-search-$k-data.js" ] && [ "$REPORTS_DIR/file-search-$k-data.js" -ot "$OLDEST" ] && OLDEST="$REPORTS_DIR/file-search-$k-data.js"
-    done
-    skip_if_fresh "$OLDEST" "${BASH_SOURCE[0]}" "$FCACHE" "$ERRRPTS" "$SLUGMAP"
-fi
-
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axfsearch.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 

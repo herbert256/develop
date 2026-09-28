@@ -23,8 +23,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 OUT="$REPORTS_DIR/monitor.rpt"
 
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
-
 if [ ! -f "$RW" ]; then
     rm -f "$OUT"
     echo "No transfer cache; monitor.rpt removed." >&2

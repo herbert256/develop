@@ -42,10 +42,6 @@ CF="$REPORTS_DIR/subscription.rpt"
 RF="$CONFIG_BASE/_subscriptions.tsv"
 for v in HF FF CF RF; do eval "[ -f \"\$$v\" ] || $v=/dev/null"; done
 
-# The From/To values come from the subscription DETAIL reports, so the whole
-# details/subscriptions dir is an input (details.sh rewrites them as a set).
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$HF" "$FF" "$CF" "$RF" "${dfiles[@]}"
-
 # ---- (A) per subscription -> its Source and Target value (Search-style) ------
 # emit  <SRC|TGT> \t <value @ host> \t <subname> \t <slug> \t <err> \t <ok> \t <res>
 inter=$(awk -F'\t' -v HF="$HF" -v FF="$FF" -v CF="$CF" -v RF="$RF" '

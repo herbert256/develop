@@ -36,34 +36,6 @@ cov_put() {
     if [ -f "$out" ] && cmp -s "$tmp" "$out"; then rm -f "$tmp"; else mv -f "$tmp" "$out"; fi
 }
 
-# skip_if_fresh OUT SCRIPT [DEP...] — the analyses counterpart of the transfer
-# and server libs' helper: exit the calling report early (status 0) when its
-# data file OUT exists and is newer than the report SCRIPT, this lib and every
-# extra DEP file. The analyses tool set parses nothing of its own, so there is
-# no parse cache to watch — each report names the transfer/config outputs it
-# actually reads instead.
-# A MULTI-OUTPUT report must check its other outputs EXIST before calling this
-# (skip_if_fresh exits on the first fresh one, so it cannot see the rest).
-skip_if_fresh() {
-    local out=$1 script=$2; shift 2
-    [ -f "$out" ] || return 0                                  # missing -> build
-    if [ "$script" -nt "$out" ] || [ "$LIB_DIR/lib.sh" -nt "$out" ]; then
-        return 0                                               # stale -> build
-    fi
-    local dep
-    for dep in "$@"; do
-        if [ -d "$dep" ]; then                                 # a whole TREE as one dep
-            if [ -n "$(find "$dep" -type f -newer "$out" -print -quit 2>/dev/null)" ]; then
-                return 0
-            fi
-        elif [ -f "$dep" ] && [ "$dep" -nt "$out" ]; then
-            return 0                                           # newer input -> build
-        fi
-    done
-    echo "  $(basename "$out") is up to date; skipping." >&2
-    exit 0
-}
-
 # Logical-flow figures for the root index's one-row "Logical" table — the
 # applications.tsv shape and machinery, with the SUBSCRIPTION path as the
 # primary (and only) member source: every Logical derives from the configured

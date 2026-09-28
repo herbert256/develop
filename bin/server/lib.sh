@@ -18,7 +18,6 @@
 #   PARSED          path to the tokenized cache (data/server/cache/_parse.tsv)
 #   ensure_parsed   (re)build the cache with parse.sh when it is stale
 #   ensure_config   (re)build the data/flow-manager caches with bin/flow-manager.sh when stale
-#   skip_if_fresh   exit a report early when its .rpt is already up to date
 #
 # The cache is the shared, pre-tokenized form of input/server/*.csv produced by
 # parse.sh — see parse.sh / _parse.txt for the column layout (time, level,
@@ -30,7 +29,7 @@
 # the cache). A missing cache always rebuilds, so the check is fail-safe.
 
 # All paths resolve from THIS file's location (not the caller's SCRIPT_DIR), so
-# ensure_parsed/skip_if_fresh and the report .rpt writes work from either
+# ensure_parsed and the report .rpt writes work from either
 # directory. lib.sh + parse.sh sit in <area>/bin/; the report scripts that
 # source this sit one level down in <area>/bin/reports/. data/ and input/ are
 # the two gitignored roots at the repo top.
@@ -153,13 +152,6 @@ ensure_config() {
     "$ROOT/bin/flow-manager.sh"
 }
 
-# skip_if_fresh OUT SCRIPT [DEP...] — exit the calling report early (status 0)
-# when its data file OUT is already up to date, i.e. OUT exists and is newer
-# than the report SCRIPT, lib.sh, parse.sh, the parse cache and every extra DEP
-# file (the unknown-* reports pass their transfer-side known-list source here,
-# so refreshed transfer data regenerates them too). Regenerates otherwise.
-# A DEP that is a DIRECTORY counts as one dep covering the whole tree below it.
-# Call it right after ensure_parsed so an unchanged report does no awk work.
 # srv_subset NAME — the path a server-cache CONSUMER reads: its subset of the
 # cache (bin/server/subsets.sh — only the lines carrying one of its marker
 # strings, in cache order) when the subsets were built from THIS cache by
@@ -176,30 +168,4 @@ srv_subset() {
     else
         printf '%s' "$PARSED"
     fi
-}
-skip_if_fresh() {
-    local out=$1 script=$2; shift 2
-    [ -f "$out" ] || return 0                                  # missing -> build
-    if [ "$script" -nt "$out" ] \
-       || [ "$LIB_DIR/lib.sh" -nt "$out" ] \
-       || [ "$LIB_DIR/parse.sh" -nt "$out" ] \
-       || { [ -f "$PARSED" ] && [ "$PARSED" -nt "$out" ]; } \
-       || { [ -f "$RENAMES_FILE" ] && [ "$RENAMES_FILE" -nt "$out" ]; }; then
-        # (the rename map: a server report folds logged subscription names
-        # through it, and since 2026-09-27 a recorded rename no longer
-        # re-tokenizes the cache — the map is rewritten only on a change)
-        return 0                                               # stale -> build
-    fi
-    local dep
-    for dep in "$@"; do
-        if [ -d "$dep" ]; then                                 # a whole TREE as one dep
-            if [ -n "$(find "$dep" -type f -newer "$out" -print -quit 2>/dev/null)" ]; then
-                return 0
-            fi
-        elif [ -f "$dep" ] && [ "$dep" -nt "$out" ]; then
-            return 0                                           # newer input -> build
-        fi
-    done
-    echo "  $(basename "$out") is up to date; skipping." >&2
-    exit 0
 }

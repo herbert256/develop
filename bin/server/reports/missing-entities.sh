@@ -9,11 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/missing-entities.rpt"
-comps=(); exist=()
+comps=()
 for c in unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins; do
-    comps+=("$REPORTS_DIR/$c.rpt"); { [ -f "$REPORTS_DIR/$c.rpt" ] && exist+=("$REPORTS_DIR/$c.rpt"); } || true
+    comps+=("$REPORTS_DIR/$c.rpt")
 done
-if [ ${#exist[@]} -gt 0 ]; then
-    skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SCRIPT_DIR/../../merge_rpt.sh" "${exist[@]}"
-fi
 merge_rpt "$OUT" "Missing entities" "Entity values referenced in server-log messages but absent from the transfer logs — subscriptions, accounts, hosts, whitelisted addresses and logins, one tab each." "Values the SERVER log knows but the TRANSFER log has never seen — one tab per entity type: **subscriptions** (UC… names), **accounts**, configured outbound **hosts**, **whitelisted** partner addresses and **logins**. Something is alive on the platform that never produced a transfer; Entity Search and Cross reference tint such a name red when nothing configures it." "" "${comps[@]}"

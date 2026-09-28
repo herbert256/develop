@@ -81,13 +81,6 @@ ensure_config
 if [ ! -f "$RP" ] && [ ! -f "$SUBJSON" ] && [ ! -f "$US" ]; then
     rm -f "$OUT"; echo "polling: no remote-poll.rpt, no uc3-status.rpt, no config export — page not published." >&2; exit 0
 fi
-# a VANISHED input must force a rebuild (skip_if_fresh only sees NEWER deps):
-# the FOOT records which inputs the file was built from
-have="polls=$([ -f "$RP" ] && echo yes || echo no) cron=$([ -f "$SUBJSON" ] && echo yes || echo no) status=$([ -f "$US" ] && echo yes || echo no)"
-if [ -f "$OUT" ] && ! command grep -q "inputs: $have" "$OUT"; then rm -f "$OUT"; fi
-deps=()
-for d in "$US" "$RP" "$PT" "$PF" "$PUNCT" "$SUBJSON" "$XSH" "$CRON_AWK" "$COBS" "$ACTJQ"; do [ -f "$d" ] && deps+=("$d"); done
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" ${deps[@]+"${deps[@]}"}
 echo "polling: building the flat Polling table ..." >&2
 
 # ---- the cron side: name ⇥ cron ⇥ schedule ⇥ observed ⇥ bad ⇥ polls ⇥ days ⇥ never ⇥ starts ⇥ failures ⇥ why
@@ -247,7 +240,7 @@ pct_empty=$(awk -v p="$t_polls" -v e="$t_empty" 'BEGIN { printf "%.1f%%", (p > 0
     printf 'LINK\thttps://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html\tQuartz cron trigger reference\n'
     printf 'SUMMARY	UC3 polling subscriptions: %s  |  Polls: %s  |  Empty: %s  |  Listing failures: %s  |  Cron schedules: %s  |  Never complete a poll: %s
 ' "$n_rows" "$t_polls" "$pct_empty" "$t_list" "$n_cron" "$n_never"
-    printf 'FOOT\tGenerated on %s (inputs: %s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$have"
+    printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_rows row(s): $n_cron with a cron schedule, $t_polls poll(s))." >&2

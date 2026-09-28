@@ -60,7 +60,6 @@ if [ ! -f "$TF" ] || [ ! -f "$BASE_SUBS" ]; then
     exit 0
 fi
 [ -f "$RFLIP" ] || RFLIP=/dev/null
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TF" "$BASE_SUBS" "$RFLIP"
 
 # ---- window end (last day in the data) --------------------------------------
 read -r endj endd <<< "$(awk -F'\t' '$7 + 0 > j { j = $7 + 0; d = $4 } END { print j + 0, d }' "$TF")"

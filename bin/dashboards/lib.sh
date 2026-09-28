@@ -20,31 +20,6 @@ mkdir -p "$REPORTS_DIR"
 TR="$DATA/transfer/cache/_files.tsv"; RW="$DATA/transfer/cache/_transfers.tsv"
 SV="$DATA/server/reports/topview.rpt"; SER="$DATA/server/reports/error-reasons.rpt"
 
-# skip_if_fresh OUT SCRIPT [DEP...] — the dashboards counterpart of the same
-# helper in the transfer/server/analyses libs: exit the calling report early
-# (status 0) when OUT exists and is newer than the report SCRIPT, this lib and
-# every input. The four sources above are watched automatically; a DEP that is
-# a DIRECTORY covers the whole tree below it.
-skip_if_fresh() {
-    local out=$1 script=$2; shift 2
-    [ -f "$out" ] || return 0                                  # missing -> build
-    if [ "$script" -nt "$out" ] || [ "$LIB_DIR/lib.sh" -nt "$out" ]; then
-        return 0                                               # stale -> build
-    fi
-    local dep
-    for dep in "$TR" "$RW" "$SV" "$SER" "$@"; do
-        if [ -d "$dep" ]; then
-            if [ -n "$(find "$dep" -type f -newer "$out" -print -quit 2>/dev/null)" ]; then
-                return 0
-            fi
-        elif [ -f "$dep" ] && [ "$dep" -nt "$out" ]; then
-            return 0                                           # newer input -> build
-        fi
-    done
-    echo "  $(basename "$out") is up to date; skipping." >&2
-    exit 0
-}
-
 humanbytes(){ awk -v b="${1:-0}" 'BEGIN{ s="B KB MB GB TB PB"; n=split(s,u," "); i=1; v=b+0; while(v>=1024&&i<n){v/=1024;i++} printf (i==1)?"%d %s":"%.2f %s", v, u[i] }'; }   # %.2f like every report table
 pipejoin(){ awk 'BEGIN{ORS=""}{print (NR>1?"|":"") $0}'; }   # stdin lines -> a|b|c
 onlynum(){ grep -oE "$1" "$2" 2>/dev/null | grep -oE '[0-9]+' | head -1; }

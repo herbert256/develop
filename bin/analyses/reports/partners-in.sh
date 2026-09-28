@@ -50,7 +50,6 @@ if [ ! -f "$FE" ]; then
     exit 0
 fi
 [ -f "$LG" ] || LG=/dev/null
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FE" "$LG"
 
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 

@@ -53,15 +53,6 @@ DETAILS_DIR="$REPORTS_DIR/details"
 ensure_config
 ensure_parsed
 
-# Inputs, all of them whole trees: the per-entity detail .rpt + slugmaps
-# (details.sh), the config base/xref caches, showseen's coverage TSVs and the
-# reverse-DNS cache. It reads no parse cache of its own — skip_if_fresh still
-# watches those, which is harmless (a reparse invalidates the details anyway).
-# The DNS dep is the map file itself, never the whole input/<env>/ip/ dir.
-skip_if_fresh "$REPORTS_DIR/entity-search.rpt" "${BASH_SOURCE[0]}" \
-    "$DETAILS_DIR" "$CONFIG_BASE" "$CONFIG_XREF" "$REPORTS_DIR/coverage" "$IP_HOSTS_FILE" "$FILES" \
-    "$UNKNOWN_DIR"   # unk_lookup reads the unknown/ sidecars directly — an undeclared dep would leave stale search rows when only a sidecar changed
-
 # slugify(), ported to awk from bin/publish_lib.sh (lowercase, non-alnum runs -> a
 # single '-', trim leading/trailing '-'), so slugs here match the detail filenames.
 SLUG_AWK='function slug(x){ x=tolower(x); gsub(/[^a-z0-9]+/,"-",x); sub(/^-+/,"",x); sub(/-+$/,"",x); return x }'

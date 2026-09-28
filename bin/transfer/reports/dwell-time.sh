@@ -31,7 +31,6 @@ if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
 ensure_parsed
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 humandur() { awk -v ms="$1" 'BEGIN{
@@ -167,7 +166,7 @@ sitecap=""; [ "$n_site" -gt "$TOP_N" ] && sitecap=$(printf ' (top %s of %s subsc
 # The report is assembled in THREE writes (this block, the gap-per-day append,
 # the SUMMARY/FOOT append) — all land in $OUT.tmp; the mv after the last one
 # publishes the complete file atomically, so a killed run can never leave a
-# truncated $OUT with a fresh mtime for skip_if_fresh to trust.
+# truncated $OUT.
 } > "$OUT.tmp"
 
 # ---- Inbound / Outbound gap per day (formerly inout-gap.sh, absorbed 2026-07):

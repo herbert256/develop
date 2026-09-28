@@ -50,7 +50,6 @@ fi
 [ -f "$SL" ]  || SL=/dev/null
 [ -f "$TF" ]  || TF=/dev/null
 [ -f "$OLD" ] || OLD=/dev/null
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$PICKUPS" "$SL" "$TF" "$OLD"
 
 # One row per UC2 subscription. The rows are BAKED in Pickups-descending
 # order (sidecar col 5, name as the last tiebreak) because that is the

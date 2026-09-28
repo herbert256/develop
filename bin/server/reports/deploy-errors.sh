@@ -86,7 +86,6 @@ ROS="$CONFIG_BASE/_subscriptions.tsv"; [ -f "$ROS" ] || ROS=/dev/null
 # The transfer cache is a cross-area DEP: the "recovered since" test reads it,
 # so a transfer reparse has to re-trigger this report. The profile map is a
 # config dep: a re-derived xref changes which flow a message names.
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$FILES_TSV" "$PROFSUB" "$ASX" "$ROS"
 ensure_parsed
 ensure_config
 

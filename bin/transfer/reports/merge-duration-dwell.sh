@@ -34,7 +34,6 @@ DW="$REPORTS_DIR/dwell-time.rpt"
 if [ ! -f "$DD" ] || [ ! -f "$DW" ]; then
     rm -f "$OUT"; echo "merge-duration-dwell: a component is missing ($DD / $DW) — skipped." >&2; exit 0
 fi
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$DD" "$DW"
 
 awk -F'\t' -v OFS='\t' -v now="$(date '+%Y-%m-%d %H:%M:%S')" '
     # Each component is read into blocks: intro[f] (the header INTRO), then per

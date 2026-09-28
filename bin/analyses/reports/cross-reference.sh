@@ -50,10 +50,6 @@ if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
 ensure_parsed
-skip_if_fresh "$REPORTS_DIR/cross-account.rpt" "${BASH_SOURCE[0]}" \
-    "$UNKNOWN_DIR/accounts.tsv" "$UNKNOWN_DIR/logins.tsv" \
-    "$UNKNOWN_DIR/sites.tsv" "$UNKNOWN_DIR/hosts.tsv" \
-    "$CONFIG_BASE"   # cell tints bake the base RESULT colors — the WHOLE tree: the writers are cmp-guarded per file, so a representative would miss a recolor confined to another file
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Fixed entity order — drives the combos, the table order in each rpt, and

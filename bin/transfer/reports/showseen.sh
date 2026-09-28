@@ -59,26 +59,6 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 ensure_parsed
 ensure_config
-# one script, MANY outputs — guard on the OLDEST one (any missing output
-# builds); deps = the entity summary rpts it lifts rows from, the detail
-# slugmaps it resolves links through, and the config caches (base recolors
-# flip the seen-ness of a green with no rows of its own, so base IS a dep — its rewrites are cmp-guarded, a
-# no-change recolor keeps the mtime)
-_ss_guard=""
-for _f in "$REPORTS_DIR"/showseen-{accounts,subscriptions,logins,hosts}.rpt \
-          "$REPORTS_DIR"/coverage/{accounts,subscriptions,logins,hosts,whitelist}.tsv; do
-    if [ ! -f "$_f" ]; then _ss_guard=""; break; fi
-    if [ -z "$_ss_guard" ] || [ "$_ss_guard" -nt "$_f" ]; then _ss_guard="$_f"; fi
-done
-if [ -n "$_ss_guard" ]; then
-    skip_if_fresh "$_ss_guard" "${BASH_SOURCE[0]}" \
-        "$REPORTS_DIR"/{account,subscription,login,remote-host}.rpt \
-        "$REPORTS_DIR"/details/{accounts,subscriptions,logins,hosts}/_slugmap.tsv \
-        "$CONFIG_BASE"/_*.tsv \
-        "$CONFIG_XREF/_accounts-logins.tsv" "$CONFIG_XREF/_accounts-hosts.tsv" \
-        "$CONFIG_XREF/_subscriptions-logins.tsv" "$CONFIG_XREF/_subscriptions-hosts.tsv"
-fi
-unset _ss_guard _f
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # (The former per-member "Server log" yes/no column + last-10 drill is GONE:

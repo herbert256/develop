@@ -9,11 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/errors.rpt"
-comps=(); exist=()
+comps=()
 for c in errors-day error-timing error-reasons top-messages; do
-    comps+=("$REPORTS_DIR/$c.rpt"); { [ -f "$REPORTS_DIR/$c.rpt" ] && exist+=("$REPORTS_DIR/$c.rpt"); } || true
+    comps+=("$REPORTS_DIR/$c.rpt")
 done
-if [ ${#exist[@]} -gt 0 ]; then
-    skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SCRIPT_DIR/../../merge_rpt.sh" "${exist[@]}"
-fi
 merge_rpt "$OUT" "Errors" "Server-log errors and warnings from every angle: levels per day and component, timing by hour and weekday, the failure-reason classification and the most-repeated message shapes." "The errors and warnings of the server log from every angle, in one report: **levels per day** and **per component**, **when** they happen (hour of day, weekday, the hour × weekday heatmap), the **failure-reason classification** (connection, PESIT refusal codes, network, routing) and the **most-repeated message shapes** (numbers, IDs and quoted values normalized away)." "" "${comps[@]}"

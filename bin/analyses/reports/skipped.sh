@@ -33,8 +33,6 @@ source "$ROOT/bin/skiplist.sh"             # SKIPLIST_AWK (sl_load/sl_match) —
 # config sidecar) plus the rule file and its reader. The per-value
 # skipped-<slug>.rpt files are written in the same run as skipped.rpt, so the
 # mtime check on the latter speaks for them too.
-skip_if_fresh "$REPORTS_DIR/skipped.rpt" "${BASH_SOURCE[0]}" \
-    "$CFG_SKIP" "$T_SKIP" "$S_SKIP" "$SKIPFILE" "$ROOT/bin/skiplist.sh"
 
 # Remove any stale per-value reports from a previous skip list, then (re)write.
 rm -f "$REPORTS_DIR"/skipped-*.rpt
@@ -89,7 +87,7 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         # ---- the OVERVIEW report (skipped.rpt): totals + a section per value.
         # Written as .rpt.tmp — the splice pass below reads it and publishes the
         # final skipped.rpt atomically, so a killed run never leaves a truncated
-        # report with a fresh mtime for skip_if_fresh to trust. ----
+        # report. ----
         main = outdir "/skipped.rpt.tmp"
         printf "TITLE\tSkipped\n" > main
         printf "DESC\tThe accounts, subscriptions and logins ignored because their name matches the skip list (input/skip.txt), plus the transfer- and server-log records set aside for the same reason.\n" > main

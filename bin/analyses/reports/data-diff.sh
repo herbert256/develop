@@ -51,11 +51,6 @@ if [ ! -f "$TF" ] || [ ! -f "$BASE_SUBS" ]; then
     exit 0
 fi
 [ -f "$RFLIP" ] || RFLIP=/dev/null
-deps=("$TF" "$BASE_SUBS" "$RFLIP")
-[ -f "$SP" ] && deps+=("$SP")
-[ -d "$UNK" ] && deps+=("$UNK")
-[ -d "$FSRPT_DIR" ] && deps+=("$FSRPT_DIR")
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "${deps[@]}"
 
 # ---- D (newest data day across both caches), G = D-1, transfer window end ----
 read -r endj endd <<< "$(awk -F'\t' '$7 + 0 > j { j = $7 + 0; d = $4 } END { print j + 0, d }' "$TF")"

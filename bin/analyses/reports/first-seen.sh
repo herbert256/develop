@@ -73,15 +73,6 @@ for f in _subscriptions-partners _subscriptions-logicals _profiles-logicals; do
     [ -f "$XREF/$f.tsv" ] && srcs+=("$XREF/$f.tsv")
 done
 
-# This report writes TWO kinds of output — the .rpt above and one cell
-# .rpt per First-seen day — so both must be present before the mtime
-# check can stand in for the lot (skip_if_fresh exits on the first fresh one).
-shopt -s nullglob
-_cells=("$FSRPT_DIR"/*.rpt)
-shopt -u nullglob
-if [ -f "$OUT" ] && [ ${#_cells[@]} -gt 0 ]; then
-    skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TF" "$TT" ${srcs[@]+"${srcs[@]}"}
-fi
 rm -f "$FSRPT_DIR"/*.rpt
 
 # ---- pass A: one line per CONFIGURED entity -----------------------------------

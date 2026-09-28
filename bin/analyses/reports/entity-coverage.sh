@@ -99,14 +99,6 @@ LSF2="$CONFIG_XREF/_logins-subscriptions.tsv"; [ -f "$LSF2" ] || LSF2=/dev/null
 ALF2="$CONFIG_XREF/_accounts-logins.tsv";      [ -f "$ALF2" ] || ALF2=/dev/null
 [ -f "$CONFIG_BASE/_accounts.tsv" ] || { echo "No base caches — skipping." >&2; rm -f "$OUT"; exit 0; }
 for f in SB AUTH POLL; do eval "[ -f \"\$$f\" ] || $f=/dev/null"; done
-
-# skip_if_fresh guards ONE output, but this writes four (one per rule) — a
-# missing sibling forces the rebuild, the same guard the pesit/uc-status
-# sidecars carry.
-for _rb in entity-coverage-ok entity-coverage-once entity-coverage-diff; do
-    [ -f "$REPORTS_DIR/$_rb.rpt" ] || rm -f "$OUT"
-done
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$CONFIG_BASE" "$CONFIG_XREF" "$AUTH" "$AUTHL" "$POLL"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', building entity coverage..." >&2
 
 # view:label:base:entity->subs:subs->entity:account->entity:$FILES col:KIND

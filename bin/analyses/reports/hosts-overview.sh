@@ -68,7 +68,6 @@ fi
 [ -f "$TF" ]   || TF=/dev/null
 [ -f "$TL" ]   || TL=/dev/null
 [ -f "$OLD" ]  || OLD=/dev/null
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$HBASE" "$HSUB" "$UCDF" "$TF" "$TL" "$OLD"
 
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 

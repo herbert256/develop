@@ -8,11 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/volume.rpt"
-comps=(); exist=()
+comps=()
 for c in volume-src trend; do
-    comps+=("$REPORTS_DIR/$c.rpt"); { [ -f "$REPORTS_DIR/$c.rpt" ] && exist+=("$REPORTS_DIR/$c.rpt"); } || true
+    comps+=("$REPORTS_DIR/$c.rpt")
 done
-if [ ${#exist[@]} -gt 0 ]; then
-    skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$SCRIPT_DIR/../../merge_rpt.sh" "${exist[@]}"
-fi
 merge_rpt "$OUT" "Volume" "Data volume moved per day and top accounts, the per-transfer direction split, and the per-subscription trend: growers, shrinkers and flows gone silent." "How much data moves and which way it is heading: **volume per day**, the **direction split**, the **top accounts** — and the **trend** view: the window split in half and each flow's Files/volume compared across the halves, so growers, shrinkers and flows gone silent stand out." "" "${comps[@]}"

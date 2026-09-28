@@ -100,8 +100,6 @@ ensure_parsed
 # other having written it (the write is atomic and cmp-guarded).
 ensure_logons "$CACHE_DIR"
 LOGONS_TSV="$CACHE_DIR/_logons.tsv"
-[ -f "$REPORTS_DIR/_logon-problems.tsv" ] || rm -f "$OUT"   # the sidecar is an output too
-skip_if_fresh "$OUT" "${BASH_SOURCE[0]}" "$TACCT" "$THOST" "$LBASE" "$LOGONS_TSV" "$BLACKLIST_FILE"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Emits TAB-separated:

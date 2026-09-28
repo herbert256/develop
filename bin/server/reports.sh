@@ -61,7 +61,8 @@ pool_run "$SCRIPT_DIR/reports/ssh-crypto.sh"
 pool_run "$SCRIPT_DIR/../analyses/reports/uc2-status.sh"
 pool_run "$SCRIPT_DIR/../analyses/reports/uc4-status.sh"
 pool_run "$SCRIPT_DIR/reports/topview.sh"
-pool_run "$SCRIPT_DIR/reports/went-kaput.sh"
+# (went-kaput.sh is NOT in this pool: bin/build.sh runs it once, early — right
+# after result.sh — because failed.sh and details.sh read its evidence sidecar)
 pool_run "$SCRIPT_DIR/reports/errors-day.sh"
 pool_run "$SCRIPT_DIR/reports/error-timing.sh"
 pool_run "$SCRIPT_DIR/reports/error-reasons.sh"
