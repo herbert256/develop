@@ -23,17 +23,15 @@
 <li><strong>Host</strong> &mdash; links its detail page.</li>
 <li><strong>Use cases</strong> &mdash; of its subscriptions: <strong>UC1</strong> (we push), <strong>UC3</strong> (we pull), <strong>UC1/UC3</strong> (both).</li>
 <li><strong>Cloud</strong> &mdash; the newest successful transfer leg with the host here; empty when none.</li>
-<li><strong>Gateway</strong> &mdash; the host&rsquo;s stamp on the <em>old</em> gateway, from <code>input/hosts_old.txt</code>.</li>
 <li><strong>Files</strong> (group) &mdash; <strong>In</strong> / <strong>Out</strong>: Files collected from / delivered to the host, by movement direction; <strong>Error</strong>: the Files that failed.</li>
 <li><strong>Auto retries</strong> &mdash; OK Files with a failed leg and no resubmit: the platform&rsquo;s own retry delivered them.</li>
 <li><strong>Resubmit OK</strong> / <strong>Resubmit Error</strong> &mdash; the Files an operator resubmitted, by final outcome.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Tints: <strong>green</strong> delivering, <strong>red</strong> failing, <strong>orange</strong> configured, never seen; an old-gateway-only host (not configured here) is untinted. A 0 renders empty.</li>
+<li>Tints: <strong>green</strong> delivering, <strong>red</strong> failing, <strong>orange</strong> configured, never seen. A 0 renders empty.</li>
 <li>Roster = the FlowManager export&rsquo;s host list; a subscription&rsquo;s use case = its <code>UC&lt;n&gt;</code> name prefix, else the derived one.</li>
 <li>Files: the transfer caches, the <a href="entities-remote-host.html">Entities</a> host rule &mdash; a File counts for every host its legs name when we made the connection. Polls and connection failures: the <a href="server-polling.html">Polling</a> and <a href="server-site-failures.html">Connection failures</a> pages.</li>
-<li><code>input/hosts_old.txt</code>: hand-maintained like <code>logons_old.txt</code>, one host per line: the host, then its stamp as written (<code>sftp.partner.example&nbsp;&nbsp;2026-09-02 14:35</code>); blank and <code>#</code> lines ignored; no file = empty column.</li>
 </ul>
 </main>
 </body>
