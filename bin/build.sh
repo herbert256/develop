@@ -733,7 +733,11 @@ bg2_step_start "parse: server mention caches"                               bin/
 bg_step_start "server log: logon summary (per login + per address)"         bin/build/logon-summary.sh
 # the three server-log -> transfer joins, in this order: the session step
 # may re-derive _files.tsv (resetting col 22), so expire re-marks after it
-run_step "server log -> transfer: attribute UCx flows by session"         bin/session-sites.sh
+# (AXWAY_SKIP_EXPIRE=1, 2026-09-28, speed round 20: that re-derive ran
+# expire-files + bookend-ok at its tail and the two steps below ran them
+# AGAIN on the same inputs — both are idempotent re-marks of the derived
+# _files.tsv, so the second pair alone gives the same cache; ~4 s)
+run_step "server log -> transfer: attribute UCx flows by session"         env AXWAY_SKIP_EXPIRE=1 bin/session-sites.sh
 run_step "server log -> transfer: mark expired staged files"              bin/expire-files.sh
 run_step "server log -> transfer: settle failed Files by ok bookend"      bin/bookend-ok.sh
 bg2_step_wait   # the mention caches: result.sh reads them
