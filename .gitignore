@@ -20,11 +20,10 @@ data/
 *.zip
 *.7z
 
-# The RETENTION archive (2026-09-12): a runtime build moves the log exports
-# older than the current and the past month here, one 7z per file
-# (bin/build/archive-old-logs.sh). Bulk, local, never pushed. LEADING SLASH:
-# the repo root only. Never written on the sample estate, listed here so the
-# rule travels with the develop .gitignore too.
+# The former RETENTION archive (2026-09-12..28): bin/build/archive-old-logs.sh
+# moved the log exports older than the past month here, one 7z per file; the
+# step is gone, but a runtime checkout may still hold what it moved. Bulk,
+# local, never pushed. LEADING SLASH: the repo root only.
 /archive/
 
 # Machine-local secrets (the st-reports archive password, generated on first

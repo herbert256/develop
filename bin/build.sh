@@ -697,11 +697,9 @@ bg2_step_wait() {
 : > build/inbox.tsv   # the report's Inbox block: the inbox scripts append one line per outcome
 if [ ! -f input/.sample-estate ]; then
     run_step "inbox: ingest ${ENV_INBOX:-<no prefix>}* .7z -> input/" bin/build/exchange-in.sh
-    # RETENTION (2026-09-12, user request): the current and the past month of
-    # log exports stay in input/; everything older moves to archive/ (repo
-    # root, gitignored) as one 7z per file — after the inbox, before the
-    # parse, so the parse sees the final set (archive-old-logs.sh)
-    run_step "archive: log exports older than the past month -> archive/ (7z)" bin/build/archive-old-logs.sh
+    # (the RETENTION step — archive-old-logs.sh, moving the exports older than
+    # the past month out of input/ into archive/<name>.7z — was REMOVED
+    # 2026-09-28, user request: every delivered export stays in input/)
 fi
 
 if [ ! -f input/flow-manager/partners.json ] || [ ! -f input/flow-manager/subscriptions.json ]; then
