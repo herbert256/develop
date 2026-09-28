@@ -73,8 +73,13 @@ part() {   # $1 = part index: its range of line starts is [lo, hi)
                 for (j = 2; j <= nm; j++) MK[i, j - 1] = F[j] } }
         RANGEF != "" && FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
         $0 ~ G {
-            for (i = 1; i <= nc; i++) for (j = 1; j <= NM[i]; j++) if (index($0, MK[i, j])) { print > (OUTP C[i] ".p" PART); break }
-        }' /dev/stdin
+            for (i = 1; i <= nc; i++) for (j = 1; j <= NM[i]; j++) if (index($0, MK[i, j])) {
+                # through cat (2026-09-28, speed round 25): awk writes a regular
+                # file in 4 KB chunks, ten parts at once; closed in END
+                if (!(i in OC)) OC[i] = "cat > \"" OUTP C[i] ".p" PART "\""
+                print | OC[i]; break }
+        }
+        END { for (i in OC) close(OC[i]) }' /dev/stdin
 }
 pids=()
 for ((pi = 1; pi <= NJ; pi++)); do part "$pi" & pids+=("$!"); done

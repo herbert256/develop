@@ -530,6 +530,10 @@ AWK_EOF
 # "type TAB name TAB record" lines for the ring merge below.
 ENT_PROG=$(cat <<'AWK_EOF'
 BEGIN { outf["A"]=accout; outf["S"]=subout; outf["L"]=logout; outf["H"]=hstout; rn_load(RNF)
+        # the mention lines go through cat (2026-09-28, speed round 25): awk
+        # writes a regular file in 4 KB chunks, ten parts at once ~300 MB on
+        # production; closed (and waited for) at the top of END
+        for (ty9 in outf) outc[ty9] = "cat >> \"" outf[ty9] "\""
         # THE PREFIX GATE (2026-09-27): a token can resolve to a subscription only
         # when its first 3 characters open a configured name (exact case) or an
         # old name of the rename map (upper-cased) — the tail strip, the SERVER
@@ -566,7 +570,7 @@ function hit(ty, w,   k) {
     k = ty SUBSEP w
     if (seen[k] == NR) return
     seen[k] = NR
-    print t "\t" w >> outf[ty]
+    print t "\t" w | outc[ty]
     ring[k, cnt[k] % 25] = $0
     cnt[k]++
     if (($3 == "E" || $3 == "W") && !($6 in ended) && $5 !~ /Skipping the next scheduled occurrence of this task/) { ewring[k, ewcnt[k] % 10] = $0; ewcnt[k]++ }
@@ -648,6 +652,7 @@ function name_hit(w2,   pf, p, cand, c2) {
 # Emit this chunk's rings, newest first (the chunk is a contiguous slice of
 # the ascending-by-date+time cache, so the ring holds ITS newest 10).
 END {
+    for (ty9 in outc) close(outc[ty9])   # the mention-line pipes (BEGIN)
     for (k in cnt) {
         split(k, a, SUBSEP)
         m = (cnt[k] < 25) ? cnt[k] : 25
