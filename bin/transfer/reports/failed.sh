@@ -264,9 +264,11 @@ if [ -s "$TMP/fileside" ]; then
     ' "$FILES" | LC_ALL=C sort -r > "$TMP/filepages"
 fi
 nfilep=$(wc -l < "$TMP/filepages" | tr -d ' ')
-# pre-create the two sidecars the main awk fills — with no failed files it
-# writes neither, and the reason/list steps below still read them
-: > "$TMP/paged"; : > "$TMP/lastst"
+# pre-create the sidecars the main awk fills — with no failed files it
+# writes none, and the reason/list steps below still read them (the session
+# map too: with no leg carrying a session id it was never created, and the
+# server-log pass died on the missing file — 2026-09-28 fix)
+: > "$TMP/paged"; : > "$TMP/lastst"; : > "$TMP/ids"; : > "$TMP/sess"; : > "$TMP/meta"
 
 # One pass over the parse cache for the legs of exactly the PAGED CoreIds
 # (the leg selection + the guarantee extras), writing one drill .rpt per
@@ -647,12 +649,14 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
                 # interval expressions, they are not portable across awks
                 H4 = "[0-9a-f][0-9a-f][0-9a-f][0-9a-f]"
                 UUID = H4 H4 "-" H4 "-" H4 "-" H4 "-" H4 H4 H4 }
-        FNR == 1 { nf++ }
-        nf == 1 { idmap[$1] = $2; next }              # ids: transfer_id/CoreId -> CoreId
-        nf == 2 {                                     # sess: session -> CoreId(s)
+        # by ARGV POSITION, not an FNR==1 counter: an EMPTY side file (no
+        # session ids at all) never fires FNR==1 and shifted every later file
+        # onto the wrong branch (2026-09-28 fix)
+        FILENAME == ARGV[1] { idmap[$1] = $2; next }  # ids: transfer_id/CoreId -> CoreId
+        FILENAME == ARGV[2] {                         # sess: session -> CoreId(s)
             sesmap[$1] = ($1 in sesmap) ? sesmap[$1] " " $2 : $2; next
         }
-        nf == 3 {                                     # meta: coreid, site, date, time, endt, nses
+        FILENAME == ARGV[3] {                         # meta: coreid, site, date, time, endt, nses
             nc++; C[nc] = $1
             w0[$1] = $3 " " substr($4, 1, 5)
             w1[$1] = ($5 == "") ? w0[$1] : substr($5, 1, 16)
@@ -1067,8 +1071,14 @@ mv "$EVID.tmp" "$EVID"
 # flip_reason() is the SHARED classifier (bin/flip-reason.awk).
 #      Still blank when no rule applies: better than a guess.
 LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -v LASTF="$TMP/lastst" -v CAND=8 \
+    -v FILEDIR="$FILEDIR" -v FSETF="$TMP/fileset" \
     "$(cat "$LIB_DIR/../flip-reason.awk")"'
-    BEGIN { while ((getline l < EVID) > 0) {
+    BEGIN { # the Files with a FILE page (files/, neutral wording, no list
+            # link): classified from THAT page too (2026-09-28 fix — they took
+            # the pair or flow verdict over the evidence on their own page)
+            while ((getline l < FSETF) > 0) { split(l, a, "\t"); if (a[1] != "") FS9[a[1]] = 1 }
+            close(FSETF)
+            while ((getline l < EVID) > 0) {
                 n = split(l, a, "\t")
                 if (n >= 4 && a[1] != "") { k = toupper(a[1])
                     en[k]++; el[k, en[k]] = a[3]; em[k, en[k]] = a[4] } }
@@ -1095,7 +1105,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
         t9 = m; if (!sub(/.*"transferId" *: *"/, "", t9)) return 0
         sub(/".*/, "", t9); return (t9 in ptid) }
     function pagereason(cid,   f, l, a, n, fn, fl, fm, t, prev, ptid) {
-        f = ERRDIR "/" cid ".rpt"; fn = 0; t = 0; LEGST = ""; prev = ""; split("", ptid)
+        f = ((cid in FS9) ? FILEDIR : ERRDIR) "/" cid ".rpt"; fn = 0; t = 0; LEGST = ""; prev = ""; split("", ptid)
         while ((getline l < f) > 0) {
             if (fn >= CAND) break
             n = split(l, a, "\t")
@@ -1133,6 +1143,10 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
             # siblings of the pair below. Stored even when blank: an older
             # sibling page must not outvote the pair newest evidence.
             if (!((site, legs) in PAIRR)) PAIRR[site, legs] = r6
+        }
+        else if (cid in FS9) {   # its own FILE page (never a pair donor)
+            r6 = pagereason(cid)
+            if (r6 == "Unknown error" && legs + 0 == 1) r6 = "One-legged"
         }
         else { r6 = ""; if (cid in LST) LEGST = LST[cid] }
         if (r6 == "" && legs + 0 == 1) r6 = "One-legged"
@@ -1245,10 +1259,11 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
             printf "DESC\t%s\n", DSC[k] > f
             printf "KEYWORDS\tfailed,failure,error,coreid,legs,subscription,still,failing,recent,last\n" > f
             # the ALL views bake their rows but CAP at the newest 10,000
-            # (2026-08, replacing the search-on-demand payloads): the intro
-            # states the cap whenever it bites
+            # (2026-08, replacing the search-on-demand payloads): a WARN banner
+            # states the cap whenever it bites (2026-09-28 fix: it was an
+            # INTRO, which a report page no longer renders — the cap was silent)
             if (k ~ /^all-/ && ((k == "all-all") ? NALLALL : NALLFAIL) > RCAP)
-                printf "INTRO\tThis view holds **%d** rows; the newest **%d** failed Files are shown (the cap keeps the page loadable — every file with its own error page and the server-failing rows always included). Narrow with the From/To dates, or use the **Subscription** view.\n", \
+                printf "WARN\tThis view holds **%d** rows; the newest **%d** failed Files are shown (the cap keeps the page loadable — every file with its own error page and the server-failing rows always included). Narrow with the From/To dates, or use the **Subscription** view.\n", \
                        (k == "all-all") ? NALLALL : NALLFAIL, RCAP > f
             # Newest first is the page DEFAULT (Started, desc), not `nosort` —
             # the rows arrive by recency but must still be sortable by any

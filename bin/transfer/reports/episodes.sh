@@ -120,7 +120,7 @@ open_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | LC_ALL=C sort -t'|'
         printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\n", $2, $7, $8, $9, ok, $3, d }')
 [ -n "$open_rows" ] && open_rows+=$'\n'
 if [ -z "$open_rows" ]; then
-    open_rows=$(printf 'ROW\t@{colspan=6}No open incidents — every subscription'\''s latest File either succeeded or has fewer than %s consecutive failures.\n' "$OPEN_MIN")
+    open_rows=$(printf 'ROW\t@{colspan=6}No open incidents — every subscription'\''s latest File either succeeded or has fewer than %s consecutive failures.' "$OPEN_MIN")$'\n'   # $() strips the newline: put it back (2026-09-28 fix)
 fi
 
 ep_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | LC_ALL=C sort -t'|' -k5,5nr -k6,6nr -k2,2 | awk -F'|' '
@@ -130,7 +130,7 @@ ep_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | LC_ALL=C sort -t'|' -
         d = $15; for (i = 16; i <= NF; i++) d = d "|" $i
         printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\n", $2, $3, $4, $5, $6, $12, $13, $14, ok, d }')
 [ -n "$ep_rows" ] && ep_rows+=$'\n'
-[ -z "$ep_rows" ] && ep_rows=$(printf 'ROW\t@{colspan=9}No failed Files in this data window.\n')
+[ -z "$ep_rows" ] && ep_rows='ROW	@{colspan=9}No failed Files in this data window.'$'\n'
 
 rec_rows=""
 if [ "${n_closed:-0}" -gt 0 ]; then
@@ -142,7 +142,7 @@ if [ "${n_closed:-0}" -gt 0 ]; then
         rec_rows+=$'\n'
     done
 else
-    rec_rows=$(printf 'ROW\t@{colspan=3}No closed episodes (no failure was followed by an OK) in this data window.\n')
+    rec_rows=$(printf 'ROW\t@{colspan=3}No closed episodes (no failure was followed by an OK) in this data window.')$'\n'
 fi
 
 {

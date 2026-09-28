@@ -123,6 +123,10 @@ pool_run "$SCRIPT_DIR/reports/security-params.sh"
 # MANUAL run needs bin/transfer/reports/details.sh first)
 pool_run "$SCRIPT_DIR/reports/incoming-connections.sh"   # whitelisted-IP detail pages (details/incoming_connections/)
 pool_wait
+# the phase-1 POOL is done — failed.sh's _srvsubs-map.tsv is written: the
+# signal details.sh waits for when bin/build.sh runs it beside this phase
+# (AXWAY_WAIT_FAILED, 2026-09-28 fix — it used to race the map)
+: > "$REPORTS_DIR/.phase1-pool-done"
 # The MERGED reports (2026-07 catalog cleanup) concatenate phase-1 .rpt files,
 # so they run after the pool: cheap single-awk merges, no log reading.
 "$SCRIPT_DIR/reports/activity.sh"

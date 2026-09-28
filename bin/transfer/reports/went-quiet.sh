@@ -62,7 +62,7 @@ agg=$(awk -F'\t' -v QD="$QUIET_DAYS" '
             quiet++; qf += n[s]
             printf "ROW\t%s\t%d\t%s\t%d\n", s, ago, lastd[s], n[s]
         }
-        printf "TOT\t%d\t%d\t%s\t%d\n", quiet + 0, tot + 0, endd, qf + 0
+        printf "TOT\t%d\t%d\t%s\t%d\n", quiet + 0, tot + 0, (endd == "" ? "?" : endd), qf + 0   # "?" not "": a TAB read collapses an empty field
     }' "$FILES")
 
 IFS=$'\t' read -r _ n_quiet n_tot end_date n_files <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"

@@ -72,6 +72,9 @@ awk -F'\t' '
     {
         d = $4; if (d == "") next
         if (!(d in DSEEN)) { DSEEN[d] = 1; DL[++ND] = d }
+        st = d " " substr($5, 1, 8)                  # the window edges (see END)
+        if (FDT == "" || st < FDT) FDT = st
+        if (st > LDT) LDT = st
         DFC[d]++; DVB[d] += $8
         if ($2 != "Failed" && $2 != "Expired") { if ($9 + 0 > 0) { DDS[d] += $9; DDN[d]++ } }
         else DFF[d]++
@@ -81,6 +84,16 @@ awk -F'\t' '
         else FF[d, h]++
     }
     END {
+        # THE WINDOW EDGES (2026-09-28 fix): the export starts and ends
+        # mid-day, so the hours before the first File and after the last one
+        # were read as real zeros (Silence episodes at the end of every
+        # window) and a partial edge day as a Files drop. Those hours are no
+        # sample and no finding; an edge day that is PARTIAL by the day
+        # report rule (first File after 02:00, last before 22:00) is no
+        # daily baseline sample and never a Files drop.
+        FD0 = substr(FDT, 1, 10); FH0 = substr(FDT, 12, 2) + 0
+        LD0 = substr(LDT, 1, 10); LH0 = substr(LDT, 12, 2) + 0
+        PF0 = (substr(FDT, 12) > "02:00:00"); PL0 = (substr(LDT, 12) < "22:00:00")
         # day -> weekday/weekend class
         for (x = 1; x <= ND; x++) { d = DL[x]
             CL[d] = (jofd(d) % 7 >= 5) ? "we" : "wd" }
@@ -88,6 +101,7 @@ awk -F'\t' '
         # day (a missing bucket is a real 0), duration/rate only where defined
         for (x = 1; x <= ND; x++) { d = DL[x]; c = CL[d]
             for (h = 0; h < 24; h++) { hh = sprintf("%02d", h); k = c SUBSEP hh
+                if ((d == FD0 && h < FH0) || (d == LD0 && h > LH0)) continue   # outside the log
                 FS_[k, ++FN[k]] = FC[d, hh] + 0
                 VS_[k, ++VN[k]] = VB[d, hh] + 0
                 if (DN[d, hh] + 0 > 0)  { DS_[k, ++DNN[k]] = DS[d, hh] / DN[d, hh] }
@@ -105,6 +119,7 @@ awk -F'\t' '
         for (x = 1; x <= ND; x++) { d = DL[x]; c = CL[d]
             for (m = 1; m <= 5; m++) for (h = 0; h < 24; h++) FLG[m, h] = 0
             for (h = 0; h < 24; h++) { hh = sprintf("%02d", h); k = c SUBSEP hh
+                if ((d == FD0 && h < FH0) || (d == LD0 && h > LH0)) continue   # outside the log
                 f = FC[d, hh] + 0; v = VB[d, hh] + 0; ff = FF[d, hh] + 0
                 rate = f > 0 ? ff * 100 / f : 0
                 avg = DN[d, hh] + 0 > 0 ? DS[d, hh] / DN[d, hh] : 0
@@ -151,6 +166,7 @@ awk -F'\t' '
         # walk (jdn min..max) so a day with no transfers at all still shows as
         # Silence — it has no _files.tsv rows to be seen by.
         for (x = 1; x <= ND; x++) { d = DL[x]; c = CL[d]
+            if ((d == FD0 && PF0) || (d == LD0 && PL0)) continue          # a partial edge day
             FDS[c, ++FDN[c]] = DFC[d] + 0
             VDS[c, ++VDN[c]] = DVB[d] + 0
             if (DDN[d] + 0 > 0) DDSA[c, ++DDNC[c]] = DDS[d] / DDN[d]
@@ -180,7 +196,7 @@ awk -F'\t' '
                 printf "2\t%s\t00\tDuration\t\t%s\t%s\t%.1f\t%d\t%d\tDuration\t%s\n", d, hdur(avg), tyc(hdur(mx(DDB[cl], 60000)), DDB[cl], 60000, hdur(DDB[cl])), r, f, ff, (r >= 10 ? "red" : "orange") }
             if (f >= 100 && f >= 2 * mx(FDB[cl], 50)) { r = f / mx(FDB[cl], 50)
                 printf "2\t%s\t00\tFiles spike\t\t%d Files\t%s\t%.1f\t%d\t%d\tFiles%%20processed\t%s\n", d, f, tyc(sprintf("%d", mx(FDB[cl], 50) + 0.5), FDB[cl], 50, sprintf("%d", FDB[cl] + 0.5)), r, f, ff, (r >= 10 ? "red" : "orange") }
-            else if (FDB[cl] >= 100 && f <= FDB[cl] / 4)
+            else if (FDB[cl] >= 100 && f <= FDB[cl] / 4 && !((d == FD0 && PF0) || (d == LD0 && PL0)))
                 printf "2\t%s\t00\tFiles drop\t\t%d Files\t%d\t%.2f\t%d\t%d\tFiles%%20processed\t%s\n", d, f, FDB[cl] + 0.5, f / FDB[cl], f, ff, (f <= FDB[cl] / 10 ? "red" : "orange")
             if (v >= 200000000 && v >= 2 * mx(VDB[cl], 50000000)) { r = v / mx(VDB[cl], 50000000)
                 printf "2\t%s\t00\tVolume\t\t%s\t%s\t%.1f\t%d\t%d\tVolume\t%s\n", d, hbytes(v), tyc(hbytes(mx(VDB[cl], 50000000)), VDB[cl], 50000000, hbytes(VDB[cl])), r, f, ff, (r >= 10 ? "red" : "orange") }

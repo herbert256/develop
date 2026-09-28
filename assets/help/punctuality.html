@@ -28,7 +28,7 @@
 <h2>Rules</h2>
 <ul>
 <li>Per (subscription, day) the earliest File time is kept; the median of those minutes is the typical slot.</li>
-<li>The missed-day model builds each flow&rsquo;s weekday profile and walks the whole calendar window: a Tuesday flow that skips a Tuesday is flagged, never running on weekends is not.</li>
+<li>The missed-day model builds each flow&rsquo;s weekday profile and walks the calendar from the flow&rsquo;s FIRST day to the end of the window: a Tuesday flow that skips a Tuesday is flagged, never running on weekends is not, and the days before the flow existed are not missed. The window&rsquo;s last day counts only when the log reaches past the flow&rsquo;s typical slot (plus an hour).</li>
 <li>Always the full period (the model needs the whole window), so there is no From/To filter.</li>
 </ul>
 <h2>Tips</h2>

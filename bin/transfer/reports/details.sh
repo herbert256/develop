@@ -483,7 +483,7 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_ls
     # the persisted pair map (the Twins analysis) — dedup per letter
     function addtwin(a, b, r) { if (a == "" || b == "" || a == b) return
                                 if (!((a, b) in SEEN)) { SEEN[a, b] = 1; T[a] = T[a] (T[a] == "" ? "" : "\037") b }
-                                if (index(RT[a, b], r) == 0) RT[a, b] = RT[a, b] r }
+                                if (index(RTX[a, b], r) == 0) RTX[a, b] = RTX[a, b] r }
     # the use case of a subscription: its UC name prefix ([-_] after the
     # digits: the synthetic monitor spells its prefixes with a dash — 2026-08,
     # so its pairs earn rule B like everything else), else the DERIVED one
@@ -546,7 +546,7 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_ls
         for (s in T) print s, T[s]
         # every ORDERED pair with its rule letters, for the persisted pair
         # map below (hash order here — the shell sorts)
-        for (k in SEEN) { split(k, P2, SUBSEP); print "P", P2[1], P2[2], RT[P2[1], P2[2]] > PF }
+        for (k in SEEN) { split(k, P2, SUBSEP); print "P", P2[1], P2[2], RTX[P2[1], P2[2]] > PF }
         close(PF)
     }' "$_ucf" "$_twf" "$_asf" "$_saf" "$_lsf" "$_bsf" \
   | LC_ALL=C sort > "$_pdir/twins-site"
@@ -610,9 +610,11 @@ awk -F'\t' \
         odke=$1 SUBSEP $2 SUBSEP $3; odcnt[odke]++; odval[odke]=$5 }
     END{ for(i=1;i<=ne;i++){ e=el[i]; eu=toupper(e)
         l3=lst[e SUBSEP 3]; l4=lst[e SUBSEP 4]
-        for(j=1;j<=nlg;j++) if(index(eu, lgn[j])==1 && !((e SUBSEP 3 SUBSEP toupper(lgv[j])) in seen)){
+        # a configured prefix counts only at a NAME-PART boundary (the pfxok
+        # rule, 2026-09-28 fix: UC4_X2 took UC4_X logins and hosts)
+        for(j=1;j<=nlg;j++) if(index(eu, lgn[j])==1 && substr(eu, length(lgn[j])+1, 1) !~ /[A-Za-z0-9]/ && !((e SUBSEP 3 SUBSEP toupper(lgv[j])) in seen)){
             seen[e SUBSEP 3 SUBSEP toupper(lgv[j])]=1; l3=l3 (l3==""?"":US) lgv[j] }
-        for(j=1;j<=nhs;j++) if(index(eu, hsn[j])==1 && !((e SUBSEP 4 SUBSEP toupper(hsv[j])) in seen)){
+        for(j=1;j<=nhs;j++) if(index(eu, hsn[j])==1 && substr(eu, length(hsn[j])+1, 1) !~ /[A-Za-z0-9]/ && !((e SUBSEP 4 SUBSEP toupper(hsv[j])) in seen)){
             seen[e SUBSEP 4 SUBSEP toupper(hsv[j])]=1; l4=l4 (l4==""?"":US) hsv[j] }
         printf "%s\t%s\t%s\t%s\n", e, l4, lst[e SUBSEP 2.8], l3 > SDOUT }
         for(odke in odcnt) if(odcnt[odke]==1){ split(odke,a,SUBSEP); print a[1] "\t" a[2] "\t" a[3] "\t" odval[odke] > ODOUT } }' \
@@ -773,7 +775,7 @@ LC_ALL=C awk -F'\t' \
         sl_seen[t, base] = 1
         # mvtok: exact match, else (SITE) the longest configured prefix
         mv = (tk in MV) ? MV[tk] : ""
-        if (mv == "" && t == "SITE") { bl = 0; for (i = 1; i <= ns; i++) if (index(U, MSN[i]) == 1 && length(MSN[i]) > bl) { mv = MSV[i]; bl = length(MSN[i]) } }
+        if (mv == "" && t == "SITE") { bl = 0; for (i = 1; i <= ns; i++) if (index(U, MSN[i]) == 1 && substr(U, length(MSN[i]) + 1, 1) !~ /[A-Za-z0-9]/ && length(MSN[i]) > bl) { mv = MSV[i]; bl = length(MSN[i]) } }   # at a name-part boundary (pfxok, 2026-09-28)
         resv = (tk in RES) ? RES[tk] : ""
         f6 = ""; f7 = ""   # fields 6/7 retired 2026-09-27 (they flagged the removed server-log-only status): kept EMPTY so every later field keeps its position
         # guarded reads — a bare OD[k] would CREATE the key, and the drop
@@ -884,9 +886,21 @@ UCDER="$CONFIG_XREF/_subscriptions-ucderived.tsv"
 # the server-failing subscriptions map (failed.sh: name, errors/ page slug,
 # evidence stamp — the REDUCED _srvsubs-map, without the reason column) — a
 # SITE page in it gets the "Server log error" section, re-emitting that
-# errors/<slug>.rpt page's server-log table. failed.sh writes it early in
-# transfer phase 1, long before this script (beside that phase in the build)
-# gets here, after its ~45-second producers
+# errors/<slug>.rpt page's server-log table. failed.sh writes it in transfer
+# phase 1, which bin/build.sh runs BESIDE this script: with AXWAY_WAIT_FAILED=1
+# (the build) the map is read only once that phase's pool is done — it raced
+# the map before, with a margin of seconds on a small estate (2026-09-28 fix)
+if [ "${AXWAY_WAIT_FAILED:-}" = 1 ]; then
+    _wf=0
+    while [ ! -f "$REPORTS_DIR/.phase1-pool-done" ]; do
+        sleep 1; _wf=$((_wf + 1))
+        if [ "$_wf" -ge 1800 ]; then
+            echo "details.sh: WARNING - transfer phase 1 not done after 30 min; reading the server-failing map as it stands." >&2
+            break
+        fi
+    done
+    _tlap "wait for transfer phase 1 (failed.sh's map)"
+fi
 SRVSUBSF="$REPORTS_DIR/_srvsubs-map.tsv"
 [ -f "$SRVSUBSF" ] || SRVSUBSF=/dev/null
 # ---- the "Last OK transfer" sidecar (SITE pages) ----------------------------

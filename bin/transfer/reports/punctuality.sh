@@ -60,8 +60,10 @@ agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
         if (!(k in fm) || m < fm[k]) fm[k] = m
         if (!(k in seenk)) { seenk[k] = 1; days[s]++; dl[s] = dl[s] " " j }
         if (j < minjd || minjd == 0) minjd = j
-        if (j > maxjd) maxjd = j
+        if (j > maxjd) { maxjd = j; lastm = -1 }
+        if (j == maxjd && m > lastm) lastm = m                 # the newest minute of the window
         if (!(s in lastd) || d > lastd[s]) lastd[s] = d
+        if (!(s in firstj) || j < firstj[s]) firstj[s] = j
         jd2d[j] = d
     }
     END {
@@ -87,15 +89,21 @@ agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
                 # active-day set + per-weekday activity counts
                 delete act; delete wact
                 for (i = 1; i <= nd; i++) { act[D[i]] = 1; wact[D[i] % 7]++ }
-                # calendar occurrences per weekday over the whole window
+                # calendar occurrences per weekday from the first day OF THE FLOW
+                # (2026-09-28 fix: the walk started at the first day of the window,
+                # so a flow that began mid-window "missed" every day before it
+                # existed) to the last day of the window
                 delete wcal
-                for (j2 = minjd; j2 <= maxjd; j2++) wcal[j2 % 7]++
-                for (j2 = minjd; j2 <= maxjd; j2++) {
+                for (j2 = firstj[s]; j2 <= maxjd; j2++) wcal[j2 % 7]++
+                for (j2 = firstj[s]; j2 <= maxjd; j2++) {
                     w = j2 % 7; d2 = jd2d[j2]; if (d2 == "") d2 = fromjdn(j2)
                     if (j2 in act) {
                         am = fm[s SUBSEP d2] + 0
                         if (am > med + 60) { late++
                             drill = drill (drill == "" ? "" : _US) d2 " " hhmm(am) "  late by " (am - med) " min (typical " hhmm(med) ")" }
+                    } else if (j2 == maxjd && lastm < med + 60) {
+                        # the window ends before this flow is even late on its
+                        # last day: the export cut, not a missed day
                     } else if (wcal[w] >= 2 && wact[w] >= 0.75 * wcal[w]) {
                         missed++
                         drill = drill (drill == "" ? "" : _US) d2 " (" WD[w + 1] ")  missed — expected around " hhmm(med)
@@ -145,10 +153,10 @@ n_rows=0
         fi
         n_rows=$((n_rows + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^P|' | LC_ALL=C sort -t'|' -k2,2n -k3,3 -k4,4)"
-    # No trailing newline on the empty-state row — it never had one (it came out
-    # of a $(printf …), which strips it), so the NOTE below runs onto its line.
+    # the empty-state row ends its line like every other (2026-09-28 fix: it
+    # used to run into the next NOTE/TOTAL line, rendering that text as a cell)
     if [ "$n_rows" -eq 0 ]; then
-        printf 'ROW\t@{colspan=8}No subscription reaches %s active days in this data window.' "$MIN_DAYS"
+        printf 'ROW\t@{colspan=8}No subscription reaches %s active days in this data window.\n' "$MIN_DAYS"
     fi
     printf 'NOTE\tThe day'\''s FIRST File defines that day'\''s arrival; the median over the window is the typical slot, the spread (one standard deviation) the Window and Class. **Late** = arrived over an hour past the typical slot; **Missed** = a weekday this flow served on 75%%+ of its calendar occurrences passed with no File at all — both only meaningful for Clockwork/Regular flows (the others show "-"). Tightest flows first. This page always shows the full period — the model needs the whole window. Stale Accounts covers day-level idleness per account; the Cronjobs analysis shows the CONFIGURED schedules these observed slots should match.\n'
 

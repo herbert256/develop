@@ -90,6 +90,11 @@ day_rows=$(render_rows "DAY"  -t'|' -k2,2)
 # it needs no buckets of its own.
 total_row=$(printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num}%s%%' \
     "$tot_total" "$tot_failed" "$tot_processed" "$tot_pct")
+# the ACCOUNT table lists only accounts with an Error, so its total is the sum
+# of THOSE rows (2026-09-28 fix: it carried the all-Files total, OK-only
+# accounts included, so the footer never matched the rows above it)
+acc_total=$(printf '%s\n' "$acc_rows" | awk -F'\t' '$1 == "ROW" { t += $3; f += $4; p += $5 }
+    END { printf "TOTAL\tTotal\t@{class=num}%d\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%s%%", t, f, p, (t ? sprintf("%.1f", f * 100 / t) : "0.0") }')
 
 {
     printf 'TITLE\tTransfer Failure Rates\n'
@@ -104,7 +109,7 @@ total_row=$(printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class
     printf 'HEAD\tAccount\tFiles\tError\tOK\tError %%\n'
     printf 'KIND\tacct\tnum\tnumfailed\tnumprocessed\tnum\n'
     printf 'RECALC\t-\ts0\ts1\ts2\tp1.0\n'
-    printf '%s\n' "$acc_rows"; printf '%s\n' "$total_row"
+    printf '%s\n' "$acc_rows"; printf '%s\n' "$acc_total"
 
     printf 'TABLE\tFailure rate per destination subscription\n'
     printf 'HEAD\tDestination Subscription\tFiles\tError\tOK\tError %%\n'

@@ -97,6 +97,10 @@ out_ok=$(slowest 1); out_all=$(slowest 0)
 read -r ns_ok n_ok  <<<"$(printf '%s\n' "$out_ok"  | awk -F'\t' '$1 == "N" { print $2, $3 }')"
 read -r ns_all n_all <<<"$(printf '%s\n' "$out_all" | awk -F'\t' '$1 == "N" { print $2, $3 }')"
 shown_ok=$(( ${ns_ok:-0} < TOP_SUB ? ${ns_ok:-0} : TOP_SUB )); shown_all=$(( ${ns_all:-0} < TOP_SUB ? ${ns_all:-0} : TOP_SUB ))
+# the Files total of the SHOWN rows (2026-09-28 fix: the footer carried every
+# File of every subscription beside the top 25 rows, so it never matched them)
+f_ok=$(printf '%s\n' "$out_ok" | awk -F'\t' '$1 == "ROW" { t += $3 } END { print t + 0 }')
+f_all=$(printf '%s\n' "$out_all" | awk -F'\t' '$1 == "ROW" { t += $3 } END { print t + 0 }')
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 {
     printf 'TITLE\tSlowest subscriptions\n'
@@ -107,13 +111,13 @@ GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
     printf 'KIND\tsite\tnum\tnum\tnum\tnum\n'
     printf 'RECALC\t-\ts0\t-\t-\tx2\n'
     printf '%s\n' "$out_ok" | command grep $'^ROW\t' || true
-    printf 'TOTAL\tTop %s of %s subscriptions\t@{class=num}%s\t\t\t\n' "$shown_ok" "${ns_ok:-0}" "${n_ok:-0}"
+    printf 'TOTAL\tTop %s of %s subscriptions\t@{class=num}%s\t\t\t\n' "$shown_ok" "${ns_ok:-0}" "$f_ok"
     printf 'TABLE\t\twide\tswitch=scope:All transfers\n'
     printf 'HEAD\tSubscription\tFiles\tMedian\tp95\tMax\n'
     printf 'KIND\tsite\tnum\tnum\tnum\tnum\n'
     printf 'RECALC\t-\ts0\t-\t-\tx2\n'
     printf '%s\n' "$out_all" | command grep $'^ROW\t' || true
-    printf 'TOTAL\tTop %s of %s subscriptions\t@{class=num}%s\t\t\t\n' "$shown_all" "${ns_all:-0}" "${n_all:-0}"
+    printf 'TOTAL\tTop %s of %s subscriptions\t@{class=num}%s\t\t\t\n' "$shown_all" "${ns_all:-0}" "$f_all"
     printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); duration = its **wall-clock span** — from the first record start to the last record end, in milliseconds, gaps included — not the sum of the record durations. The per-day statistics are on the Duration page, the individual slowest transfers on the Longest Files page.\n'
     printf 'KEYWORDS\tduration,slowest,subscriptions,p95,percentile,median,wall-clock,top 25\n'
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$GENDATE" "${#files[@]}"

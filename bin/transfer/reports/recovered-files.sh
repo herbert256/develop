@@ -155,7 +155,10 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     printf 'RECALC\t-\ts0\ts1\ts2\ts3\ts4\tp3.4\n'
     printf '%s\n' "$agg" | grep '^PROTO|' | sort -t'|' -k3,3nr -k2,2 | awk -F'|' '
         $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:coreids=%s\n", $2, $3, ($4 > 0 ? $4 : ""), ($5 > 0 ? $5 : ""), $6, $7, $8, $9, $10 }' || true
-    printf 'TOTAL\tTotal\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s%%\n' "$tR" "$pA" "$pM" "$pHL" "$pAF" "$hshare"
+    # Recovered / Retry / Resubmit total the DISTINCT Files alike (2026-09-28
+    # fix: Recovered was distinct while its split summed the per-protocol rows,
+    # so Retry + Resubmit could exceed Recovered on the same footer)
+    printf 'TOTAL\tTotal\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s%%\n' "$tR" "$tA" "$tM" "$pHL" "$pAF" "$hshare"
     printf 'NOTE\tThe protocol is the FAILED leg'\''s — where the healed failure actually happened, not what finally delivered the File. A File whose failed legs span two protocols counts once under each, so the Recovered column (and its Retry / Resubmit split — how the File got through, the Top view'\''s Automatic and Manual) can sum past the %s distinct Files. **Healed %%** = failed legs belonging to recovered Files over ALL failed legs of that protocol (recovered or not) — how often a failure on that protocol turns out to be transient.\n' "$tR"
 
     printf 'TABLE\tPer day\tpct=5:2:1\n'

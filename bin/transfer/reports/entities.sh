@@ -214,7 +214,13 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
     $4 == "" { next }
     {
         cid = $1; f = ($2 == "Failed" || $2 == "Expired"); date = $4; sk = $6; disp = $4 " " $5; size = $8 + 0
-        isin = ($17 == "in"); isout = ($17 == "out"); wt = ($2 == "Waiting"); ex = ($2 == "Expired")
+        # In / Out by MOVEMENT; a File of an unconfigured subscription (the
+        # synthetic UCx_ ones) has none and counts by its CONNECTION side, so
+        # In + Out = Files and the Error % recompute (Error over In + Out)
+        # holds on a narrowed range (2026-09-28 fix: it read 0.0% there) —
+        # the home page Per day table uses the same fallback
+        mv = ($17 != "") ? $17 : $16
+        isin = (mv == "in"); isout = (mv == "out"); wt = ($2 == "Waiting"); ex = ($2 == "Expired")
         tk = (cid in tokc) ? tokc[cid] : 0; te = (cid in terrc) ? terrc[cid] : 0
         ra = (!f && (cid in fl) && !(cid in rsb)); rmo = (!f && (cid in rsb)); rme = (f && (cid in rsb))
         dur = $9 + 0; hasd = (!f && dur > 0); q = hasd ? qdur(dur) : 0   # the Duration group: OK Files with a positive wall-clock span
@@ -350,9 +356,12 @@ fmt_dim() {
               tok, ter, pr(ter, tok + ter), $16, $17, $5, $6, $7, \
               $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $34, $35, $36, $37, $38 }')
     tot_line=$(awk -F'|' "$FMT_AWK"'BEGIN { tc = ARGV[1]; ttok = ARGV[2]; tter = ARGV[3]; tfe = ARGV[4]; tv = ARGV[5]; tin = ARGV[6]; tout = ARGV[7]
-        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", pr(tter, ttok + tter), pr(tfe, tc), human(tv), human(tc > 0 ? tv / tc : 0), nz(tin), nz(tout), dcell(ARGV[8]), dcell(ARGV[9]), dcell(ARGV[10]), dcell(ARGV[11]); exit }' \
+        printf "%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\n", pr(tter, ttok + tter), pr(tfe, tc), human(tv), human(tc > 0 ? tv / tc : 0), nz(tin), nz(tout), dcell(ARGV[8]), dcell(ARGV[9]), dcell(ARGV[10]), dcell(ARGV[11]); exit }' \
         "$tc" "$ttok" "$tter" "$tfe" "$tv" "$tin" "$tout" "$tp90" "$tp95" "$tp99" "$tp100")
-    IFS=$'\t' read -r tterp tfep tvh tavg tinz toutz td90 td95 td99 td100 <<< "$tot_line"
+    # \037, NOT a TAB: TAB is IFS whitespace, so an EMPTY cell (nz/dcell of a
+    # zero — no errors, no In, no Out) collapsed and shifted every later
+    # total one column left (2026-09-28 fix)
+    IFS=$'\037' read -r tterp tfep tvh tavg tinz toutz td90 td95 td99 td100 <<< "$tot_line"
     {
         printf 'TITLE\t%s\n' "$title"
         printf 'DESC\tOne row per %s: its Files in and out with the error rate, retries and resubmits, duration percentiles, volume, transfer legs, waiting and expired Files, and first and last day — every configured and logged name, in seven views and two scopes.\n' "$noun"

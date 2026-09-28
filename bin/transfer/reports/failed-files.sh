@@ -45,13 +45,15 @@ files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
 SUBRES="$CONFIG_BASE/_subscriptions.tsv"   # name <TAB> ... <TAB> result colour (col 3)
 
-# the CoreIds that have an error page (their errors/<CoreId>.rpt)
+# the CoreIds that have a page: errors/<CoreId>.rpt AND files/<CoreId>.rpt —
+# both render to docs/files/<CoreId>.html (the files/ set was missed, so ~40%
+# of the Files with a page got no link — 2026-09-28 fix)
 pages=$(mktemp "${TMPDIR:-/tmp}/ffpages.XXXXXX")
-if [ -d "$ERRDIR" ]; then
-    find "$ERRDIR" -maxdepth 1 -type f -name '*.rpt' 2>/dev/null | sed 's#.*/##; s#\.rpt$##' > "$pages" || : > "$pages"
-else
-    : > "$pages"
-fi
+: > "$pages"
+for _pd in "$ERRDIR" "$REPORTS_DIR/files"; do
+    [ -d "$_pd" ] || continue
+    find "$_pd" -maxdepth 1 -type f -name '*.rpt' 2>/dev/null | sed 's#.*/##; s#\.rpt$##' >> "$pages" || true
+done
 [ -f "$REAS" ] || REAS=/dev/null
 [ -f "$SUBRES" ] || SUBRES=/dev/null
 
@@ -87,6 +89,8 @@ nff=$(printf '%s\n' "$agg" | awk -F'\t' '$1 == "~N" { print $2 }')
     printf 'HEAD\tSubscription\tDate/time\tError reason\tCoreId\tFilename\n'
     printf 'KIND\tsite\ttext\ttext\ttext\ttext\n'
     printf '%s\n' "$agg" | awk -F'\t' '$1 != "~N" && $1 != ""' | LC_ALL=C sort -t"$(printf '\t')" -k1,1r | cut -f2- || true
+    # every table carries a TOTAL footer (2026-09-28: this one had none)
+    printf 'TOTAL\tTotal (%s Files)\t\t\t\t\n' "${nff:-0}"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

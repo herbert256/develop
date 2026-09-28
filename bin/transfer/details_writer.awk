@@ -153,8 +153,10 @@ function emit_srv_rows(title, L, n,   i, m, C5, lvl, cmp, body, nrows, tj) {
         m = split(L[i], C5, "\t")
         # a literal TAB inside the message text splits into extra fields — fold
         # them back so the ROW keeps exactly five cells (the .rpt protocol
-        # forbids TAB inside a cell)
-        for (tj = 6; tj <= m; tj++) C5[5] = C5[5] " " C5[tj]
+        # forbids TAB inside a cell). The LAST field is the record's session id
+        # (col 6 of the cache): never folded in (2026-09-28 fix — every message
+        # carried a trailing hex session string)
+        for (tj = 6; tj < m; tj++) C5[5] = C5[5] " " C5[tj]
         lvl = (C5[3] == "I") ? "Info" : (C5[3] == "W") ? "@{class=warn}Warning" : (C5[3] == "E") ? "@{class=failed}Error" : C5[3]
         cmp = (C5[4] == "T") ? "TM" : (C5[4] == "P") ? "PESITD" : (C5[4] == "S") ? "SSHD" : C5[4]
         nrows++

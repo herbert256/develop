@@ -100,9 +100,9 @@ fi
 IFS='|' read -r _ n_sil n_grow n_shr d_from d_mid1 d_mid2 d_to n_sites <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 
 # The three row loops run INSIDE the report block below (a herestring keeps them
-# in this shell). Their empty-state rows carry NO trailing newline — they never
-# did (they came out of a $(printf …), which strips it) and the NOTE under each
-# table runs onto that line. Kept verbatim so the rendered pages do not change.
+# in this shell). Their empty-state rows end their line like every other
+# (2026-09-28 fix: they ran into the NOTE under each table, rendering it as a
+# cell).
 n_sil_rows=0; n_grow_rows=0; n_shr_rows=0
 
 {
@@ -121,7 +121,7 @@ n_sil_rows=0; n_grow_rows=0; n_shr_rows=0
         n_sil_rows=$((n_sil_rows + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^S|' | LC_ALL=C sort -t'|' -k2,2r -k3,3)"
     if [ "$n_sil_rows" -eq 0 ]; then
-        printf 'ROW\t@{colspan=5}No subscription with %s+ first-half Files fell silent.' "$MIN_SILENT"
+        printf 'ROW\t@{colspan=5}No subscription with %s+ first-half Files fell silent.\n' "$MIN_SILENT"
     fi
     printf 'NOTE\tActive with %s+ Files in the first half, then NOTHING in the window'\''s final week. Days silent counts to the dataset'\''s last day, not today. Stale Accounts tracks the same signal per ACCOUNT (against its own cadence) — this catches the per-subscription cases.\n' "$MIN_SILENT"
 
@@ -134,7 +134,7 @@ n_sil_rows=0; n_grow_rows=0; n_shr_rows=0
         n_grow_rows=$((n_grow_rows + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^G|' | LC_ALL=C sort -t'|' -k2,2r -k3,3)"
     if [ "$n_grow_rows" -eq 0 ]; then
-        printf 'ROW\t@{colspan=6}No subscription grew %sx or more (with %s+ second-half Files).' "$RATIO" "$MIN_BASE"
+        printf 'ROW\t@{colspan=6}No subscription grew %sx or more (with %s+ second-half Files).\n' "$RATIO" "$MIN_BASE"
     fi
     printf 'NOTE\t%sx+ more Files in the second half (%s+ Files there). "new" = no first-half activity at all — a flow that started mid-window (the First Seen analysis dates every flow'\''s absolute first appearance).\n' "$RATIO" "$MIN_BASE"
 
@@ -147,7 +147,7 @@ n_sil_rows=0; n_grow_rows=0; n_shr_rows=0
         n_shr_rows=$((n_shr_rows + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^K|' | LC_ALL=C sort -t'|' -k2,2r -k3,3)"
     if [ "$n_shr_rows" -eq 0 ]; then
-        printf 'ROW\t@{colspan=6}No still-active subscription shrank %sx or more (from %s+ first-half Files).' "$RATIO" "$MIN_BASE"
+        printf 'ROW\t@{colspan=6}No still-active subscription shrank %sx or more (from %s+ first-half Files).\n' "$RATIO" "$MIN_BASE"
     fi
     printf 'NOTE\t%sx+ fewer Files in the second half (from %s+ in the first), but still alive in the final week — a fading flow, not a dead one (those are in Went silent).\n' "$RATIO" "$MIN_BASE"
 

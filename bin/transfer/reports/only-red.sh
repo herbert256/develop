@@ -107,10 +107,10 @@ n_rows=0
             "$site" "$fcnt" "$nfail" "$nexp" "$first" "$last" "$days" "$vol" "$fdrill"
         n_rows=$((n_rows + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^S|' | LC_ALL=C sort -t'|' -k9,9nr -k2,2)"
-    # No trailing newline on the empty-state row — it never had one (it came out
-    # of a $(printf …), which strips it), so the NOTE below runs onto its line.
+    # the empty-state row ends its line like every other (2026-09-28 fix: it
+    # used to run into the next NOTE/TOTAL line, rendering that text as a cell)
     if [ "$n_rows" -eq 0 ]; then
-        printf 'ROW\t@{colspan=8}No subscription is only-red — every subscription with Files delivered at least one OK File in this window.'
+        printf 'ROW\t@{colspan=8}No subscription is only-red — every subscription with Files delivered at least one OK File in this window.\n'
     fi
     if [ "$n_onlyred" -gt 0 ]; then
         printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t\t\t\t\n' "$n_onlyred"

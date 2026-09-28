@@ -154,10 +154,13 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
     # remembers the partner, so the emit order below never depends on hash order)
     # NOTE the increments are their own statements: `x SUBSEP ++A[i]` parses as
     # `x (SUBSEP++) A[i]`, which quietly renumbers SUBSEP itself.
-    function addp(pi, pname, ac, af, ap,   kk) {
+    function addp(pi, pname, ac, af, ap, st,   kk) {
         kk = pi SUBSEP pname
         if (!(kk in PC)) { PC[kk] = 0; PS[kk] = 0; PF[kk] = 0; PP[kk] = 0; PN[pi]++; PL[pi SUBSEP PN[pi]] = pname }
-        PS[kk]++; PC[kk] += ac; PF[kk] += af; PP[kk] += ap
+        # a subscription counts ONCE per partner — one per host row double
+        # counted a subscription seen on two hosts (2026-09-28 fix)
+        if (!((kk SUBSEP st) in PSS)) { PSS[kk SUBSEP st] = 1; PS[kk]++ }
+        PC[kk] += ac; PF[kk] += af; PP[kk] += ap
     }
     BEGIN {
         # the (disc,value) pairs in their C-sorted order — index i IS the page
@@ -204,8 +207,8 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
                     for (j = 1; j <= np; j++) if (pa[j] == h) { inpl = 1; break }
                     if (!inpl) pl = (pl == "" ? h : pl SUBSEP h)
                 }
-                if (pl == "") addp(i, "(none)", c, ff, ok)
-                else { np = split(pl, pa, SUBSEP); for (j = 1; j <= np; j++) addp(i, pa[j], c, ff, ok) }
+                if (pl == "") addp(i, "(none)", c, ff, ok, site)
+                else { np = split(pl, pa, SUBSEP); for (j = 1; j <= np; j++) addp(i, pa[j], c, ff, ok, site) }
                 # the site row Partner display cell: the union across the site groups
                 np = split(pl, pa, SUBSEP)
                 for (j = 1; j <= np; j++) { k2 = site SUBSEP pa[j]
@@ -222,7 +225,7 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
         close(smap)
     }
 ' \
-  | sort -t$'\t' -k1,1n -k2,2n -k5,5nr \
+  | sort -t$'\t' -k1,1n -k2,2n -k7,7nr \
   | awk -F'\t' -v secdir="$secdir" -v gen="$(date '+%Y-%m-%d %H:%M:%S')" '
     # close the Subscription table and open the Partners one: the partners on this
     # page (a subscription with >1 partner counts under each; subscriptions with

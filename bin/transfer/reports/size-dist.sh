@@ -126,10 +126,10 @@ n_emp=0
         printf 'ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids=%s\n' "$esite" $((10#$ecnt)) "$efirst" "$elast" "$ebk" "$edrill"
         n_emp=$((n_emp + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^EMP|' | LC_ALL=C sort -t'|' -k2,2r -k3,3)"
-    # No trailing newline on the empty-state row — it never had one (it came out
-    # of a $(printf …), which strips it), so the TOTAL below runs onto its line.
+    # the empty-state row ends its line like every other (2026-09-28 fix: it
+    # used to run into the next NOTE/TOTAL line, rendering that text as a cell)
     if [ "$n_emp" -eq 0 ]; then
-        printf 'ROW\t@{colspan=4}No zero-byte Files were delivered OK in this data window.'
+        printf 'ROW\t@{colspan=4}No zero-byte Files were delivered OK in this data window.\n'
     fi
     printf 'TOTAL\tTotal (%s subscription(s))\t@{class=num warn}%s\t\t\n' "$n_empty_sub" "$tot_empty"
     printf 'NOTE\tZero-byte Files whose delivery ended **OK** — the transfer worked, but the file was EMPTY, which usually means the upstream export produced nothing. A flow that legitimately ships empty markers recurs steadily here; a subscription appearing suddenly deserves a look. The failed 0-byte attempts stay in the 0 B bucket above. Click a row for its 10 most recent empty Files.\n'

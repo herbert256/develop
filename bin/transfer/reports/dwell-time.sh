@@ -135,7 +135,10 @@ dist_rows=$(printf '%s\n' "$agg" | grep $'^B\t' | sort -t"$(printf '\t')" -k2,2n
     | awk -F'\t' '{ printf "ROW\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:ord=%s\n", $3, $4, $6, $5, $2 }')
 [ -n "$dist_rows" ] && dist_rows+=$'\n'
 
-site_rows=$(printf '%s\n' "$agg" | grep $'^P\t' | sort -t"$(printf '\t')" -k5,5nr \
+# -g, not -n (2026-09-28 fix): the max carries the CONVFMT %.6g form, and a
+# dwell of ~17 min or more prints as 1e+06-style — -n read "4.45563e+06" as
+# 4.46, so the slowest subscriptions sorted LAST and fell off the top-N cut
+site_rows=$(printf '%s\n' "$agg" | grep $'^P\t' | sort -t"$(printf '\t')" -k5,5gr \
     | awk -F'\t' -v n="$TOP_N" 'NR<=n { printf "ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids=%s\n", $2, $3, $8, $9, $6, $7 }')
 n_site=$(printf '%s\n' "$agg" | grep -c $'^P\t' || true)
 sitecap=""; [ "$n_site" -gt "$TOP_N" ] && sitecap=$(printf ' (top %s of %s subscriptions by max dwell)' "$TOP_N" "$n_site")

@@ -55,6 +55,10 @@ agg=$( { cat "$FILES"; printf '###SPLIT###\n'; LC_ALL=C sort -t"$(printf '\t')" 
         reset()
     }
     function reset() { cur = ""; nf = 0; prevfail = 0; prevt = 0 }
+    # the FIRST group starts reset too (2026-09-28 fix): flush() returns before
+    # reset() while cur is empty, so its nf stayed unset and it landed in a
+    # bucket that is never printed — every table was one File short
+    BEGIN { reset() }
     /^###SPLIT###$/ { mode = 1; next }
     mode == 0 { FOUT[$1] = $2; FDT[$1] = $4; FTM[$1] = $5; FSK[$1] = $6 ; next }
     {

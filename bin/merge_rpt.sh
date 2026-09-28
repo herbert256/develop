@@ -37,6 +37,17 @@ merge_rpt() {
     local have=0 c i n
     for c in "$@"; do [ -f "$c" ] && have=1; done
     if [ "$have" = 0 ]; then rm -f "$out"; echo "merge_rpt: no components for $out — skipped." >&2; return 0; fi
+    # the KEYWORDS: the argument's, then every present component's, each word
+    # once (case-insensitive). 2026-09-28 fix: the component lines were
+    # dropped and most callers pass none, so the Report finder no longer found
+    # a merged report by its components' words ("empty file", "zero byte")
+    local present=()
+    for c in "$@"; do [ -f "$c" ] && present+=("$c"); done
+    kw=$(printf 'KEYWORDS\t%s\n' "$kw" | cat - "${present[@]}" | awk -F'\t' '$1 == "KEYWORDS" {
+            n = split($2, A, ",")
+            for (i = 1; i <= n; i++) { k = A[i]; gsub(/^[ ]+|[ ]+$/, "", k); lk = tolower(k)
+                if (k != "" && !(lk in S)) { S[lk] = 1; o = o (o == "" ? "" : ", ") k } } }
+        END { print o }')
     {
         printf 'TITLE\t%s\n' "$title"
         printf 'DESC\t%s\n' "$desc"

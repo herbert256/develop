@@ -55,6 +55,11 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
         nsites++
         if (lastfail) {
             nred++
+            # never green = red and NEVER one OK File — the Only red definition
+            # (2026-09-28 fix: red minus flipped also counted a red flow that
+            # did deliver OK Files but never ENDED a day on one, and such a
+            # flow is on neither page)
+            if (ok == 0) nnever++
             if (greenday != "") {
                 nflip++
                 L[nflip] = site "|" greenday "|" tailsince "|" tailjd "|" run "|" ok "|" fails "|" fcnt "|" buildlist(top["F" SUBSEP site]) "|" buildlist(top["P" SUBSEP site])
@@ -85,7 +90,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
             split(L[i], f, "|")
             printf "S|%s|%s|%s|%d|%s|%s|%s|%s|%s|%s\n", f[1], f[2], f[3], maxjd - f[4], f[5], f[6], f[7], f[8], f[9], f[10]
         }
-        printf "TOT|%d|%d|%d|%s\n", nsites+0, nred+0, nflip+0, maxdate
+        printf "TOT|%d|%d|%d|%s|%d\n", nsites+0, nred+0, nflip+0, maxdate, nnever+0
     }
 ')
 
@@ -94,9 +99,7 @@ if [ -z "$agg" ]; then
     exit 1
 fi
 
-IFS='|' read -r _ n_sites n_red n_flip last_date <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
-
-n_never=$(( n_red - n_flip ))
+IFS='|' read -r _ n_sites n_red n_flip last_date n_never <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 n_rows=0
 
 {
@@ -116,11 +119,10 @@ n_rows=0
             "$site" "$greenday" "$flip" "$daysred" "$run" "$ok" "$fcnt" "$fdrill" "$pdrill"
         n_rows=$((n_rows + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^S|' | LC_ALL=C sort -t'|' -k4,4r -k2,2)"
-    # The empty-state row deliberately carries NO trailing newline — it never had
-    # one (it came out of a $(printf …), which strips it) and the NOTE below runs
-    # onto its line. Kept verbatim so the rendered page does not change.
+    # the empty-state row ends its line like every other (2026-09-28 fix: it
+    # used to run into the next NOTE/TOTAL line, rendering that text as a cell)
     if [ "$n_rows" -eq 0 ]; then
-        printf 'ROW\t@{colspan=7}No subscription flipped from green to red — every currently-red subscription has never delivered an OK File (the Only red view lists those).'
+        printf 'ROW\t@{colspan=7}No subscription flipped from green to red — every currently-red subscription has never delivered an OK File (the Only red view lists those).\n'
     fi
     if [ "$n_flip" -gt 0 ]; then
         printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t\t\t\n' "$n_flip"

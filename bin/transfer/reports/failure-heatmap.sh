@@ -85,6 +85,15 @@ wdname=(Monday Tuesday Wednesday Thursday Friday Saturday Sunday)
 wd_maxf=$(printf '%s\n' "$agg" | grep '^WD|' | awk -F'|' 'BEGIN{m=1}{if($4>m)m=$4}END{print m}')
 
 heat_rows=$(printf '%s\n' "$agg" | grep $'^HROW\t\|^HTOT\t' | sed 's/^HROW\t/ROW\t/; s/^HTOT\t/TOTAL\t/')
+# the hour and weekday tables list only the buckets WITH an Error, so each
+# total is the sum of the listed rows (2026-09-28 fix: the Files total counted
+# the error-free hours too, so the footer never matched the rows above it)
+lsum() {   # $1 = HOUR|WD -> "files errors pct" over the rows with an Error
+    printf '%s\n' "$agg" | awk -F'|' -v k="$1" '$1 == k && $4 + 0 > 0 { t += $3; f += $4 }
+        END { printf "%d %d %s\n", t, f, (t ? sprintf("%.1f", f * 100 / t) : "0.0") }'
+}
+read -r h_tot h_fail h_pct <<< "$(lsum HOUR)"
+read -r w_tot w_fail w_pct <<< "$(lsum WD)"
 
 {
     printf 'TITLE\tFailure Heatmap\n'
@@ -106,7 +115,7 @@ heat_rows=$(printf '%s\n' "$agg" | grep $'^HROW\t\|^HTOT\t' | sed 's/^HROW\t/ROW
         width=$(( fail * 100 / max_f ))
         printf 'ROW\t%s:00\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\n' "$hh" "$tot" "$fail" "$pct" "$width" "$bk" "$drill"
     done <<< "$(printf '%s\n' "$agg" | grep '^HOUR|')"
-    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s%%\t\n' "$t_tot" "$t_fail" "$tot_pct"
+    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s%%\t\n' "$h_tot" "$h_fail" "$h_pct"
     printf 'NOTE\tFiles by the hour of their start time, all days combined; the Failures bar is that hour'\''s failed count relative to the busiest hour. Hours with zero errors are not listed. Re-aggregates over the selected dates. Click an Error count for its 10 most recent failed Files.\n'
 
     printf 'TABLE\tBy weekday\tzerohide=1\n'
@@ -119,7 +128,7 @@ heat_rows=$(printf '%s\n' "$agg" | grep $'^HROW\t\|^HTOT\t' | sed 's/^HROW\t/ROW
         width=$(( fail * 100 / wd_maxf ))
         printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\n' "${wdname[$w]}" "$tot" "$fail" "$pct" "$width" "$bk" "$drill"
     done <<< "$(printf '%s\n' "$agg" | grep '^WD|')"
-    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s%%\t\n' "$t_tot" "$t_fail" "$tot_pct"
+    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s%%\t\n' "$w_tot" "$w_fail" "$w_pct"
     printf 'NOTE\tThe same counts by day of week (Monday first). Weekdays with zero errors are not listed. Re-aggregates over the selected dates.\n'
 
     printf 'TABLE\tHour × weekday failure heatmap\theat\n'

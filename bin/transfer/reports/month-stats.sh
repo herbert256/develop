@@ -90,7 +90,9 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v ALLF="$ALLF.tmp" -v DIMS="$DIMS" -v
     {
         mon = substr($4, 1, 7); inm = (mon == THIS || mon == PREV)   # the ALL-TIME bucket below takes every File
         cid = $1; f = ($2 == "Failed" || $2 == "Expired")
-        isin = ($17 == "in"); isout = ($17 == "out"); wt = ($2 == "Waiting"); ex = ($2 == "Expired")
+        # In / Out: the movement, else the connection side (entities.sh rule)
+        mv = ($17 != "") ? $17 : $16
+        isin = (mv == "in"); isout = (mv == "out"); wt = ($2 == "Waiting"); ex = ($2 == "Expired")
         ra = (!f && (cid in fl) && !(cid in rsb)); rmo = (!f && (cid in rsb)); rme = (f && (cid in rsb))
         delete NS
         if ($3 != "") NS["account" SUBSEP $3] = 1

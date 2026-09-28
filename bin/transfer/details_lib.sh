@@ -99,8 +99,8 @@ direction_rows() {
         function conf(t, n, d,   k, sp, i) {
             k = t SUBSEP toupper(n); sp = (k in U) ? U[k] : n
             upd(t, sp, d)
-            if (t == "SITE") for (i = 1; i <= nsl; i++)
-                if (index(toupper(SL[i]), toupper(n)) == 1) upd("SITE", SL[i], d)
+            if (t == "SITE") for (i = 1; i <= nsl; i++)   # at a name-part boundary (pfxok, 2026-09-28 fix)
+                if (index(toupper(SL[i]), toupper(n)) == 1 && substr(toupper(SL[i]), length(n) + 1, 1) !~ /[A-Za-z0-9]/) upd("SITE", SL[i], d)
         }
         FILENAME ~ /_files\.tsv$/ {
             if ($3  != "") U["ACC"  SUBSEP toupper($3)]  = $3
