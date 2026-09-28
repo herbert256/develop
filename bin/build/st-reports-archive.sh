@@ -79,6 +79,16 @@ rm -f "$out"
 # MB, -mx5 16 MB blocks 9.0 s / 37.9 MB. p7zip 17's 7z tests the -mx4 archive OK.
 _al0=$(date +%s)   # phase laps on the build console (2026-09-27, speed round 5)
 _alap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  archive: %s\n' "$((_t1 - _al0))" "$1" >&2; _al0=$_t1; }
+# THE OUTBOX PULL runs BESIDE the 7z (2026-09-28, speed round 22): network
+# against CPU, and the two touch different trees (docs/ + build/ vs the
+# outbox repo). Pulling ~7 s earlier widens the window for a concurrent drop
+# on the other side, so a rejected push pulls and retries once (below).
+EX="${AXWAY_EXCHANGE_DIR:-$HOME/exchange}"
+_expull=""
+if [ -d "$EX/.git" ]; then
+    ( git -C "$EX" pull --rebase --autostash --quiet 2>/dev/null ) &
+    _expull=$!
+fi
 if [ "$Z7" = 7zz ]; then
     7zz a -t7z -mx4 -mmt=on -m0=LZMA2:d=128m:c=128m -mhe=on -p"$pass" "$out" docs >/dev/null
 else
@@ -97,18 +107,18 @@ _alap "7z"
 # non-fast-forward; every failure here is a WARNING — the archive is already
 # safe in build/, and a local commit goes out with the next build's push. No
 # git repo there = quiet skip.
-EX="${AXWAY_EXCHANGE_DIR:-$HOME/exchange}"
 if [ -d "$EX/.git" ]; then
-    cp "$out" "$EX/st-reports-${ENV_KEY}.7z"
-    git -C "$EX" pull --rebase --autostash --quiet 2>/dev/null \
+    { [ -n "$_expull" ] && wait "$_expull"; } \
         || echo "outbox: WARNING - pull failed (offline?) — pushing on top of the local state." >&2
+    cp "$out" "$EX/st-reports-${ENV_KEY}.7z"
     _alap "outbox copy + pull"
     if [ -n "$(git -C "$EX" status --porcelain)" ]; then
         git -C "$EX" add -A
         git -C "$EX" commit --quiet -m "st-reports-${ENV_KEY} ${stamp}"
     fi
     _alap "outbox commit"
-    if git -C "$EX" push --quiet 2>/dev/null; then
+    if git -C "$EX" push --quiet 2>/dev/null \
+       || { git -C "$EX" pull --rebase --autostash --quiet 2>/dev/null && git -C "$EX" push --quiet 2>/dev/null; }; then
         echo "outbox: st-reports-${ENV_KEY}.7z pushed." >&2
     else
         echo "outbox: WARNING - push failed (offline?) — the commit is local and goes out with the next build." >&2
