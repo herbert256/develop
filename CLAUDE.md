@@ -1170,8 +1170,8 @@ In + Out = Ok + Error (2026-09-28; entities.sh and month-stats.sh apply the same
   (`search/file-search-{24-hours,48-hours,week,2-weeks,3-weeks,month,older}.html` — `older` = "> 1 month",
   every File before the month window, 2026-09-28, user request; the windows partition the dated Files — under `docs/search/` since 2026-09-12, beside `search/search.html`; the engine-derived links carry `../` — 2026-08: ONE page per
   window — result rows tint green/red by outcome via restint + a per-row `data-res` — with
-  per-page `-data.js` payloads (v5, capped at 100,000 rows; a capped page turns into a RED
-  banner on the build report via `file-search-capped.txt`), searched by the DEDICATED
+  per-page `-data.js` payloads (v5; no row cap since 2026-09-28, user request — every File of a
+  window ships), searched by the DEDICATED
   `docs/assets/file-search.js` — as you type (no Search button, no idle text since 2026-09-27), the NAV row carrying
   `?q=` between the windows; 24 hours = the newest full day + the partial newest day, 48 hours
   = the second full day), the Report finder, the SIX Failed-transfers

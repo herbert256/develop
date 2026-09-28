@@ -767,6 +767,50 @@ function login_sxs_row(   i, act0, act1, lg0, lg1, ic0, ic1, n2) {
     npg = n2
 }
 
+# ONE row per label (2026-09-28, user request — BL): several Features rows of
+# one label (a subscription's BL tags + its input/BL.txt numbers, folded or
+# grouped rows) merge into ONE row at the first one's place, the names
+# ", "-joined, each linked by the renderer's @{alist=SUB} (slugmap-resolved;
+# no page, plain name); a name listed twice is kept once. Runs last, on the
+# assembled page: a multi-line PG entry (x_grpfold) is split into its rows
+# first, so every row is seen.
+function merge_features_rows(lbl, sd,   i, j, n2, nl, L, fe0, fe1, first, cnt, nm, p, lst, SEEN) {
+    n2 = 0
+    for (i = 1; i <= npg; i++) {
+        if (index(PG[i], "\n") == 0) { PG2[++n2] = PG[i]; continue }
+        nl = split(PG[i], L, "\n")
+        for (j = 1; j <= nl; j++) PG2[++n2] = L[j]
+    }
+    for (i = 1; i <= n2; i++) PG[i] = PG2[i]
+    npg = n2
+    fe0 = 0
+    for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\tFeatures") == 1) { fe0 = i; break }
+    if (fe0 == 0) return
+    fe1 = blk_end(fe0)
+    cnt = 0; first = 0; lst = ""
+    for (i = fe0 + 1; i <= fe1; i++) {
+        if (index(PG[i], "ROW\t" lbl "\t") != 1) continue
+        cnt++
+        if (first == 0) first = i
+        nm = substr(PG[i], length(lbl) + 6)
+        if (index(nm, "@{") == 1 && (p = index(nm, "}")) > 0) nm = substr(nm, p + 1)
+        if (nm == "" || (toupper(nm) in SEEN)) continue
+        SEEN[toupper(nm)] = 1
+        lst = lst (lst == "" ? "" : ", ") nm
+    }
+    if (cnt < 2) return
+    n2 = 0
+    for (i = 1; i <= npg; i++) {
+        if (i > fe0 && i <= fe1 && index(PG[i], "ROW\t" lbl "\t") == 1) {
+            if (i == first) PG2[++n2] = "ROW\t" lbl "\t@{alist=" sd "}" lst
+            continue
+        }
+        PG2[++n2] = PG[i]
+    }
+    for (i = 1; i <= n2; i++) PG[i] = PG2[i]
+    npg = n2
+}
+
 # ALL detail pages (2026-08): a Partner / Application / Domain breakdown
 # holding exactly ONE row says nothing a Features row cannot — the table is
 # removed and its name joins Features as a Partner/Application/Domain row,
@@ -1232,6 +1276,7 @@ function close_file(   dircls, resv, out, i) {
     latest_page()              # writes the diverted section 9 + adds its Features row
     lastfiles_features_rows()  # the Latest OK / Latest Error rows
     site_sxs_row()             # "Activity per day" | "Features" on one row
+    merge_features_rows("BL", "bl")   # several BL rows -> ONE "BL | a, b, c" row
     out = ""
     for (i = 1; i <= npg; i++) out = out PG[i] "\n"
     printf "%s", out > cur_path

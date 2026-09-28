@@ -41,12 +41,10 @@
 # matches — NOT report.js's esearch: its own as-you-type search (no Search
 # button since 2026-09-27), the NAV row's sibling links carrying the query as ?q=….
 #
-# THE ROW CAP (2026-08, replacing the old byte budget): a page ships at most
-# AXWAY_FILE_SEARCH_ROWCAP rows (default 100,000), newest first — the window
-# figures still count everything and the intro states the cut. When ANY page
-# drops rows the cut is written to $REPORTS_DIR/file-search-capped.txt, which
-# the BUILD REPORT renders as a RED warning banner — a capped page must be
-# impossible to miss.
+# NO ROW CAP (2026-09-28, user request): every File of a window ships. The
+# 100,000-row cap (2026-08) left 15,158 production Files of the week window
+# unsearchable behind a red build-report banner; the cap, its
+# file-search-capped.txt marker and the banner are gone.
 #
 # An ANALYSES report (pages in the Analyses family, data from the transfer
 # outputs): reads the transfer parse cache _files.tsv directly and the
@@ -63,8 +61,6 @@ source "$SCRIPT_DIR/../lib.sh"
 FCACHE="$DATA/transfer/cache/_files.tsv"
 ERRRPTS="$DATA/transfer/reports/errors"     # failed.sh's per-CoreId drill set
 SLUGMAP="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv"   # name -> detail slug
-ROWCAP=${AXWAY_FILE_SEARCH_ROWCAP:-100000}   # per-page payload row cap
-CAPFILE="$REPORTS_DIR/file-search-capped.txt"
 
 KEYS="24-hours 48-hours week 2-weeks 3-weeks month older"
 # the 2026-08 Errors/OK page pair — swept so the estate never carries both sets
@@ -74,7 +70,6 @@ for k in $OLDKEYS; do rm -f "$REPORTS_DIR/file-search-$k.rpt" "$REPORTS_DIR/file
 if [ ! -f "$FCACHE" ]; then
     echo "file-search: no $FCACHE (transfer parse has not run) — pages not published." >&2
     for k in $KEYS; do rm -f "$REPORTS_DIR/file-search-$k.rpt" "$REPORTS_DIR/file-search-$k-data.js"; done
-    rm -f "$CAPFILE"
     exit 0
 fi
 
@@ -107,8 +102,7 @@ read -r ENDJ PART <<< "$(LC_ALL=C awk -F'\t' '
 # first and deterministic; one final pass writes each bucket's three payload
 # sections (dates d-<k>, subscriptions s-<k>, rows r-<k>) and the stats.
 # Dictionary indices are first-seen order over the sorted stream, so the
-# payload is deterministic. The ROW CAP cuts a bucket at exactly ROWCAP rows
-# (newest first); the rest of the window is counted but not shipped.
+# payload is deterministic.
 LC_ALL=C awk -F'\t' -v OFS='\t' -v endj="$ENDJ" -v f="$PART" '
     $4 == "" || $7 == "" { next }
     {
@@ -125,7 +119,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v endj="$ENDJ" -v f="$PART" '
     }
 ' "$FCACHE" \
 | LC_ALL=C sort -t$'\t' -k1,1 -k2,2r -k3,3 \
-| LC_ALL=C awk -F'\t' -v errfile="$TMP/errpages" -v tmp="$TMP" -v slugf="$SLUGMAP" -v rowcap="$ROWCAP" '
+| LC_ALL=C awk -F'\t' -v errfile="$TMP/errpages" -v tmp="$TMP" -v slugf="$SLUGMAP" '
     function humanbytes(b) {
         b = b + 0
         if (b < 1024)       return sprintf("%d B", b)
@@ -146,27 +140,21 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v endj="$ENDJ" -v f="$PART" '
         k = $1; cid = $3; oc = $4; dt = $5; sz = $6 + 0; nm = $7; sub9 = $8
         tm = substr($9, 1, 8)                      # HH:MM:SS — the ms add nothing here
         err = (oc == "Failed" || oc == "Expired") ? 1 : 0
-        # the window figures count EVERYTHING, capped or not
         N[k]++; V[k] += sz; if (err) NE[k]++
         if (!(k in MX) || dt > MX[k]) MX[k] = dt
         if (!(k in MN) || dt < MN[k]) MN[k] = dt
-        # the hard row cap, newest first
-        if (NK[k] >= rowcap) { SK[k]++; next }
-        FROM[k] = dt                               # oldest SHIPPED day so far
         # the two dictionaries, first-seen order
         if (!((k, dt) in DI)) { DI[k, dt] = ND[k]++; print dt > (tmp "/d-" k) }
         if (!((k, sub9) in SI)) { SI[k, sub9] = NS[k]++
             print esc(sub9) "\t" esc((sub9 in SLUG) ? SLUG[sub9] : "") > (tmp "/s-" k) }
         flag = err ? ((cid in EP) ? "E" : "e") : ""
         print esc(nm) "\t" DI[k, dt] "\t" SI[k, sub9] "\t" tm "\t" sz "\t" cid "\t" flag > (tmp "/r-" k)
-        NK[k]++
     }
     END {
         nkl = split("24-hours 48-hours week 2-weeks 3-weeks month older", KL, " ")
         for (i = 1; i <= nkl; i++) { k = KL[i]
-            printf "%s\t%d\t%s\t%s\t%s\t%d\t%s\t%d\t%d\n", k, N[k] + 0, humanbytes(V[k] + 0), \
-                ((k in MN) ? MN[k] : "-"), ((k in MX) ? MX[k] : "-"), \
-                NK[k] + 0, ((k in FROM) ? FROM[k] : "-"), SK[k] + 0, NE[k] + 0 > (tmp "/stats")
+            printf "%s\t%d\t%s\t%s\t%s\t%d\n", k, N[k] + 0, humanbytes(V[k] + 0), \
+                ((k in MN) ? MN[k] : "-"), ((k in MX) ? MX[k] : "-"), NE[k] + 0 > (tmp "/stats")
         }
         close(tmp "/stats")
     }
@@ -178,7 +166,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v endj="$ENDJ" -v f="$PART" '
 # publisher removes the pages of keys whose rpt is absent.
 DKEYS=""
 for _dk in $KEYS; do
-    IFS=$'\t' read -r _ _dkn _ _ _ _ _ _ _ <<< "$(command grep "^$_dk"$'\t' "$TMP/stats")"
+    IFS=$'\t' read -r _ _dkn _ _ _ _ <<< "$(command grep "^$_dk"$'\t' "$TMP/stats")"
     if [ "$_dk" = "24-hours" ] || [ "${_dkn:-0}" -gt 0 ]; then DKEYS="$DKEYS $_dk"; fi
 done
 
@@ -205,14 +193,13 @@ nav_row() {   # $1 = the current key
 }
 
 TOTKEPT=0
-: > "$TMP/capped"
 for k in $KEYS; do
     # an empty window: no page, no payload — and any stale pair goes
     case " $DKEYS " in *" $k "*) ;; *)
         rm -f "$REPORTS_DIR/file-search-$k.rpt" "$REPORTS_DIR/file-search-$k-data.js"
         continue ;;
     esac
-    IFS=$'\t' read -r _ NTOT _ _ _ NSHIP FROM NSKIP _ <<< "$(command grep "^$k"$'\t' "$TMP/stats")"
+    IFS=$'\t' read -r _ NTOT _ _ _ _ <<< "$(command grep "^$k"$'\t' "$TMP/stats")"
     TOTKEPT=$((TOTKEPT + NTOT))
     case $k in
         24-hours) TL="24 hours"; wdesc="the files of the newest **24 hours** (the newest full day, plus the partial newest day when one exists)" ;;
@@ -223,14 +210,11 @@ for k in $KEYS; do
         month)    TL="Month";    wdesc="the files of the **last month**, the newest 3 weeks excluded" ;;
         older)    TL="> 1 month"; wdesc="the files **older than one month** (every File before the Month window)" ;;
     esac
-    # the row cap: state exactly what is and is not searchable
-    capnote=""
-    [ "${NSKIP:-0}" -gt 0 ] && capnote=" **CAPPED:** of these, only the newest **$NSHIP** (back to **$FROM**) are searchable here — **$NSKIP** older files in this window are NOT shipped."
     OUT="$REPORTS_DIR/file-search-$k.rpt"
     {
         printf 'TITLE\tFile search — %s\n' "$TL"
         printf 'DESC\tSearch %s by file name or CoreId — date, subscription, size and CoreId; OK rows green, Error rows red.\n' "$wdesc"
-        printf 'INTRO\tSearch %s by file name or CoreId. Rows tint by outcome — **green** = OK (Delivered or Waiting), **red** = Error (Failed or Expired); a red row with an error page opens it, every other row opens its subscription.%s\n' "$wdesc" "$capnote"
+        printf 'INTRO\tSearch %s by file name or CoreId. Rows tint by outcome — **green** = OK (Delivered or Waiting), **red** = Error (Failed or Expired); a red row with an error page opens it, every other row opens its subscription.\n' "$wdesc"
         printf 'KEYWORDS\tfile,filename,file name,search,find,lookup,coreid,delivered,errored,waiting,expired,size,%s\n' "$TL"
         nav_row "$k"
         printf 'TABLE\t\twide\trestint\tnosort\tnosearch\tnofilter\n'
@@ -250,12 +234,5 @@ for k in $KEYS; do
         [ -f "$TMP/r-$k" ] && cat "$TMP/r-$k"
         printf '`;\n'
     } > "$DOUT.tmp" && mv "$DOUT.tmp" "$DOUT"
-    if [ "${NSKIP:-0}" -gt 0 ]; then
-        printf '%s\t%s\t%s\n' "file-search-$k" "$NSHIP" "$NSKIP" >> "$TMP/capped"
-        echo "WARNING: file-search-$k CAPPED at $NSHIP rows — $NSKIP file(s) in the window are not searchable." >&2
-    fi
 done
-# the build-report red-banner marker: present (with the figures) exactly when
-# a page dropped rows this run, gone otherwise
-if [ -s "$TMP/capped" ]; then cp "$TMP/capped" "$CAPFILE"; else rm -f "$CAPFILE"; fi
 echo "Data written to $REPORTS_DIR/file-search-*.rpt + -data.js (windows:$DKEYS; $TOTKEPT Files bucketed; newest day jdn $ENDJ, partial=$PART)." >&2

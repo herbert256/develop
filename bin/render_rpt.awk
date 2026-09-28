@@ -300,8 +300,8 @@ function dirfold(v,   pre, body, p, t) {
 function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
               nkv, kva, i, kv, w, rawtext, pout, nseg, segs, pnm, sd, slug,
               av, ap2, asd, anm, aslug, rawhref, maskv, nln, LNS, li, midl,
-              bad, cv, sv, tt) {
-    cls = ""; sp = ""; text = ""; cc = ""; link = ""; nolink = 0; rawhref = ""; maskv = ""; sv = ""; tt = ""
+              bad, cv, sv, tt, alsd, rr, rmix) {
+    cls = ""; sp = ""; text = ""; cc = ""; link = ""; nolink = 0; rawhref = ""; maskv = ""; sv = ""; tt = ""; alsd = ""
     if (substr(raw, 1, 2) == "@{") {
         p = index(raw, "}")
         bad = (p == 0)
@@ -338,11 +338,14 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
                 # Active column) — escaped like text; the attr list splits on
                 # ",", so the words carry none
                 else if (index(kv, "title=") == 1)   tt = substr(kv, 7)
+                # alist=<sub> (2026-09-28): the text is a ", "-joined NAME list,
+                # each name linked to its <sub> detail page (the Features BL row)
+                else if (index(kv, "alist=") == 1)   { alsd = substr(kv, 7); if (!ok_dname(alsd)) bad = 1 }
             }
         }
         # any invalid metadata: the block was data after all — render the
         # whole cell as literal text, nothing from it shapes markup
-        if (bad) { cc = ""; sp = ""; link = ""; nolink = 0; rawhref = ""; maskv = ""; sv = ""; tt = ""; text = raw }
+        if (bad) { cc = ""; sp = ""; link = ""; nolink = 0; rawhref = ""; maskv = ""; sv = ""; tt = ""; alsd = ""; text = raw }
     } else text = raw
     if (!total) {
         if (kind == "num") cls = "num"
@@ -388,6 +391,21 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             if (p > 1 && ok_href(substr(LNS[li], 1, p - 1)) && substr(LNS[li], 1, 1) != "/") lhtml = "<a href=\"" esc(substr(LNS[li], 1, p - 1)) "\">" esc(substr(LNS[li], p + 1)) "</a>"
             else lhtml = esc(LNS[li])
             text = text (li > 1 ? US : "") lhtml }
+    }
+    # @{alist=SUB}: one link per listed name (slugmap-resolved; no page =
+    # plain), ", "-joined. Several anchors, so no whole-cell link; the cell
+    # takes the names' result tint only when they all share one.
+    if (!total && alsd != "") {
+        nln = split(rawtext, LNS, ", "); text = ""; r = ""; rmix = 0
+        for (li = 1; li <= nln; li++) {
+            slug = slug_for(alsd, LNS[li])
+            if (slug != "" && ok_target(alsd "/" slug)) lhtml = "<a href=\"" dlink alsd "/" slug ".html\">" esc(LNS[li]) "</a>"
+            else lhtml = esc(LNS[li])
+            text = text (li > 1 ? ", " : "") lhtml
+            rr = RESM[alsd US toupper(LNS[li])]
+            if (li == 1) r = rr; else if (rr != r) rmix = 1
+        }
+        if (r != "" && !rmix) cls = (cls != "" ? cls " res-" r : "res-" r)
     }
     if (maskv != "") text = text "<span class=\"mask\">" esc(maskv) "</span>"
     if (!total && kind == "mono") text = "<code>" text "</code>"

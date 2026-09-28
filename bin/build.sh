@@ -454,17 +454,6 @@ HTML
         [ "${end%% *}" = "${BUILD_START%% *}" ] && endshow=${end#* }
         printf '<div class="buildwrap">\n<h1>Build report &mdash; %s%s &rarr; %s &middot; %s</h1>\n' \
             "${ENV_LABEL:+$(printf '%s' "$ENV_LABEL" | esc) &mdash; }" "$BUILD_START" "$endshow" "$(hms "$total")"
-        # THE FILE-SEARCH CAP WARNING (2026-08): file-search.sh writes
-        # file-search-capped.txt when a page hit its row cap and dropped
-        # files — a RED banner per capped page, impossible to miss.
-        local _cwf="data/analyses/reports/file-search-capped.txt" _cwp _cws _cwk
-        if [ -s "$_cwf" ]; then
-            while IFS=$'\t' read -r _cwp _cws _cwk; do
-                [ -n "$_cwp" ] || continue
-                printf '<p class="banner failed">WARNING: %s is CAPPED — %s files shipped, %s files in the window are NOT searchable</p>\n' \
-                    "$_cwp" "$_cws" "$_cwk"
-            done < "$_cwf"
-        fi
         if [ "$rc" -eq 0 ]; then
             printf '<p class="banner ok">Build succeeded</p>\n'
         else

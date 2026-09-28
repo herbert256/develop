@@ -37,6 +37,7 @@
 </ul>
 <h2>Rules</h2>
 <ul>
+<li>Title: <strong>FM export</strong> = the time of the FlowManager export (the modification time of <code>input/flow-manager/subscriptions.json</code>).</li>
 <li>Roster = the pristine configured snapshot: exactly what FlowManager defines, plus the subscriptions <code>skip.txt</code> skips (counts <strong>n/a</strong>, no groups). Groups, endpoint, folders and cron come from the configuration; the counts from the log, the <a href="entities-subscription.html">Entities</a> definitions, all dates. A subscription never seen in the log shows blank counts; a 0 shows blank.</li>
 <li>Row tint: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> a last transfer in Error; none for a skipped subscription.</li>
 <li>Every load starts at the generated order; click a header to sort.</li>

@@ -1322,10 +1322,15 @@ write_subscriptions_page() {
     local n; n=$(printf '%s' "$rows" | grep -c '<tr' || true)
     local t1 t2 t3 t4 t5 t6 t7 t8 t9 tcells
     IFS=$'\t' read -r t1 t2 t3 t4 t5 t6 t7 t8 t9 <<< "$tots"
+    # the FM EXPORT stamp in the title (2026-09-28, user request): the RAW
+    # subscriptions.json modification time — the inbox intake copies the
+    # export with cp -p, so this is the export's own time, not the build's
+    local fmts=""
+    [ -f "$RAWS" ] && fmts=$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$RAWS" 2>/dev/null || true)
     tcells="$(_subs_tcell "$t1" num)$(_subs_tcell "$t2" num)$(_subs_tcell "$t3" num)$(_subs_tcell "$t4" "num failed")$(_subs_tcell "$t5" "num warn")$(_subs_tcell "$t6" "num warn")$(_subs_tcell "$t7" "num failed")$(_subs_tcell "$t8" "num warn")$(_subs_tcell "$t9" "num failed")"
     {
         html_head "Subscriptions" "../assets/style.css" "" "" "subscriptions" "" "" "sort-fresh"
-        printf '<h1>Subscriptions</h1>\n'
+        printf '<h1>Subscriptions%s</h1>\n' "${fmts:+ - FM export $fmts}"
         analyses_group_tabs subscriptions.html
         printf '<div class="tablewrap"><table class="index fit">\n'
         printf '<tr><th>Subscription</th><th>Active</th><th>Color</th><th>Direction</th><th>Endpoint</th><th>From</th><th>To</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Auto Retries</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th><th>Error reason</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Cron expression</th><th>Schedule</th></tr>\n'
