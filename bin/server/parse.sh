@@ -465,12 +465,18 @@ FNR == 1 { rec = ""; buffering = 0; next }
     # speed round 18: recounting the whole growing record per continuation
     # line was quadratic in a multi-line record, e.g. a stack trace; a newline
     # holds no quote, so the running sum is the same count)
-    if (buffering) { rec = rec "\n" $0; nq += count_quotes($0) }
-    else           { rec = $0; nq = count_quotes(rec) }
+    if (buffering) { rec = rec "\n" $0; nq += count_quotes($0); ml = 1 }
+    else           { rec = $0; nq = count_quotes(rec); ml = 0 }
 
     # Unbalanced quotes => a quoted field spans onto the next physical line.
     if (nq % 2 == 1) { buffering = 1; next }
     buffering = 0
+    # THE PATH COUNTERS (2026-09-28): how many records, and bytes, take the
+    # fast split, the walk and the per-character fallback, span lines, or are
+    # dropped as ADMIN/AUDIT or noise — aggregate numbers for the console
+    # summary (tokenize_batch), so the tokenizer is profiled from a runtime
+    # console like every other step. No record content leaves.
+    PS_REC++; PS_B += length(rec); if (ml) { PS_ML++; PS_MLB += length(rec) }
 
     # THE ALL-QUOTED FAST PATH (2026-09-27): the exports quote EVERY field, so
     # a record that starts and ends with a quote is split on "," in C
@@ -479,19 +485,21 @@ FNR == 1 { rec = ""; buffering = 0; next }
     # pairing it cannot vouch for) takes the walk, which stays the single
     # source of semantics for those.
     if (substr(rec, 1, 1) == "\"" && substr(rec, length(rec)) == "\"" && quoted_split(rec, nq)) {
-        if (f[3] == "ADMIN" || f[3] == "AUDIT") next
-        if (is_noise(f[5])) next
+        PS_FAST++; PS_FB += length(rec)
+        if (f[3] == "ADMIN" || f[3] == "AUDIT") { PS_ADM++; next }
+        if (is_noise(f[5])) { PS_NOI++; next }
     } else {
+    PS_WALK++; PS_WB += length(rec)
     # leg 1: fields 1..5, enough to decide whether the record is kept at all
     fastok = parse_head_fast(rec, f, 1, 5)
-    if (!fastok) parse_head(rec, f)
+    if (!fastok) { PS_SLOW++; parse_head(rec, f) }
     # ADMIN and AUDIT (config/deploy/API-trail) records are excluded from the
     # cache entirely — only the runtime components (TM, PESITD, SSHD, …) are
     # kept, so no report, mention cache or drill ever sees them.
-    if (f[3] == "ADMIN" || f[3] == "AUDIT") next
-    if (is_noise(f[5])) next                  # the boilerplate shapes above
+    if (f[3] == "ADMIN" || f[3] == "AUDIT") { PS_ADM++; next }
+    if (is_noise(f[5])) { PS_NOI++; next }                  # the boilerplate shapes above
     # leg 2, only for the records that survive: fields 6..18 for the Session ID
-    if (fastok && !parse_head_fast(_rest, f, 6, 18)) parse_head(rec, f)
+    if (fastok && !parse_head_fast(_rest, f, 6, 18)) { PS_SLOW2++; parse_head(rec, f) }
     }
     # (`total` counts EMITTED records only, so the duplicate-drop arithmetic
     # below the parse stays about duplicates — noise never enters it)
@@ -509,6 +517,7 @@ FNR == 1 { rec = ""; buffering = 0; next }
 # The per-file record count feeds the batch total (and the raw-vs-deduped
 # drop note); cntfile is passed with -v by tok_one().
 END { printf "%d\n", total+0 > cntfile
+      if (pstatfile != "") printf "%d %d %d %d %d %d %d %d %d %d %d %d\n", PS_REC, PS_B, PS_ML, PS_MLB, PS_FAST, PS_FB, PS_WALK, PS_WB, PS_SLOW, PS_SLOW2, PS_ADM, PS_NOI > pstatfile
       if (tfile != "") { "date +%s" | getline te; print te > tfile } }   # when this awk finished (the part timings, tokenize_batch)
 AWK_EOF
 )
@@ -1048,7 +1057,7 @@ tok_run() {   # $1 = chunk id; stdin = the CSV (its first line the header)
     # starts with a space and sorts before any date — LC_ALL=C sorted part
     # names reproduce exactly that order.
     local _k0; _k0=$(date +%s)   # the part timings (the summary in tokenize_batch)
-    awk -v cntfile="$CHUNK_DIR/count.$1" -v tfile="$CHUNK_DIR/tend.$1" "$TOK_PROG" \
+    awk -v cntfile="$CHUNK_DIR/count.$1" -v tfile="$CHUNK_DIR/tend.$1" -v pstatfile="$CHUNK_DIR/pstat.$1" "$TOK_PROG" \
         | LC_ALL=C sort $SORT_CHUNK_FLAGS -u \
         | perl -e "$PART_SPLIT_PL" "$CHUNK_DIR/chunk.$1.d"
     printf '%s %s %s\n' "$_k0" "$(cat "$CHUNK_DIR/tend.$1" 2>/dev/null || echo "$_k0")" "$(date +%s)" > "$CHUNK_DIR/ttime.$1"
@@ -1128,6 +1137,10 @@ tokenize_batch() {   # tokenize every argument file into its own chunk
     # sort + split behind it? (a runtime build is profiled from its console)
     cat "$CHUNK_DIR"/ttime.* 2>/dev/null | awk '{ n++; a = $2 - $1; t = $3 - $1; sa += a; st += t; if (t > mt) { mt = t; ma = a } }
         END { if (n) printf "TIME %5ds  server parse: tokenize, slowest of %d parts (its awk %ds; all parts: awk %ds + sort/split %ds)\n", mt, n, ma, sa, st - sa }' >&2
+    # the PATH COUNTERS (see TOK_PROG): records and MB per tokenizer path
+    cat "$CHUNK_DIR"/pstat.* 2>/dev/null | awk '{ for (i = 1; i <= 12; i++) s[i] += $i }
+        END { if (NR) printf "server parse: tokenizer paths — %d records (%.0f MB): fast split %d (%.0f MB), walk %d (%.0f MB; per-character %d + %d), multi-line %d (%.0f MB); dropped ADMIN/AUDIT %d, noise %d\n", s[1], s[2] / 1048576, s[5], s[6] / 1048576, s[7], s[8] / 1048576, s[9], s[10], s[3], s[4] / 1048576, s[11], s[12] }' >&2
+    rm -f "$CHUNK_DIR"/pstat.*
     rm -f "$CHUNK_DIR"/ttime.* "$CHUNK_DIR"/tend.*
     TOK_TOTAL=$(awk '{ s += $1 } END { print s + 0 }' "$CHUNK_DIR"/count.*)
     echo "records: $((TOK_TOTAL - prev))" >&2
