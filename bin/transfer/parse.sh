@@ -87,8 +87,9 @@
 # order-safe, so an incremental result is byte-identical to a full one.
 #
 # ONE PARSE AT A TIME (2026-09-16, user request — the acceptance damage): this
-# script rewrites data/_files.tsv THREE times (collapse 17 cols -> config join
-# 24 -> the still-under-way filter), each as `> $FILES.tmp.$$` + `mv`. ~100
+# script rewrote data/_files.tsv THREE times (collapse 17 cols -> config join
+# 24 -> the still-under-way filter; ONE write since 2026-09-28, the three run
+# as one pipeline per slice), each as `> $FILES.tmp.$$` + `mv`. ~100
 # scripts call ensure_parsed and bin/build.sh runs some of them CONCURRENTLY
 # (the detail reports in the background beside the transfer reports), so two
 # runs could interleave their mv's and leave the UNJOINED intermediate as the
@@ -111,6 +112,9 @@ source "$SCRIPT_DIR/lib.sh"   # INPUT_DIR, CACHE_DIR, IP_DIR, CONFIG_DIR, PARSED
 source "$ROOT/bin/blacklist.sh"   # BLACKLIST_FILE + BLACKLIST_AWK (bl_load/bl_blank) — input/<env>/blacklist.txt
 source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK (rn_load/rn_canon) — input/<env>/renames/
 source "$ROOT/bin/skiplist.sh"    # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/<env>/skip.txt
+source "$ROOT/bin/ranges.sh"      # grp_par: the key-aligned parallel slices of the derive passes (2026-09-28)
+_pj=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
+case $_pj in ""|*[!0-9]*) _pj=2 ;; esac
 PARSED0="$CACHE_DIR/_transfers0.tsv"   # raw (blacklisted, UNpropagated) cache — the incremental merge base
 SESSMAP="$CACHE_DIR/_sessionsites.tsv" # session -> subscription, learned from the server log (bin/session-sites.sh)
 # read ONCE and dropped from the environment, so no parse.sh started from
@@ -317,9 +321,10 @@ elif [ -f "$PARSED0" ] && [ -f "$MANIFEST" ]; then
             [ "$_force_derive" = 1 ] && cfg_newer=1
             # the derived caches must also be INTACT: at least as new as the
             # row cache (an interrupted run leaves them older) and _files.tsv
-            # FULLY JOINED. The join is the second of three mv's (collapse 17
-            # cols -> config join 24 -> still-under-way), so an interrupted or
-            # RACED run can leave the 17-column intermediate as the cache.
+            # FULLY JOINED. The join was the second of three mv's (collapse 17
+            # cols -> config join 24 -> still-under-way; one since 2026-09-28),
+            # so an interrupted or RACED run could leave the 17-column
+            # intermediate as the cache — the check stays for older caches.
             # The test is the JOINED WIDTH (24) plus col 17 holding the
             # movement vocabulary — NOT a lower bound like the old NF>=20,
             # which the intermediate PASSED: bin/expire-files.sh pads a short
@@ -587,7 +592,7 @@ TOKJ=$(( $( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/
 [ ${#src_files[@]} -lt "$TOKJ" ] && TOKJ=${#src_files[@]}
 TOK_PAR=0
 if [ "$TOKJ" -le 1 ]; then
-    tok_files "${src_files[@]}" > "$tmp.raw"
+    tok_files "${src_files[@]}" | cat > "$tmp.raw"
 else
     TOK_PAR=1
     # LPT: "group<TAB>file" per file, the largest first onto the lightest group
@@ -599,7 +604,7 @@ else
         grp=()
         while IFS=$'\t' read -r gi gf; do [ "$gi" = "$g" ] && grp+=("$gf"); done < "$tmp.groups"
         if [ ${#grp[@]} -eq 0 ]; then : > "$tmp.raw.$g"; continue; fi
-        tok_files "${grp[@]}" > "$tmp.raw.$g" &
+        tok_files "${grp[@]}" | cat > "$tmp.raw.$g" &
         tok_pids+=("$!")
     done
     tok_rc=0
@@ -800,14 +805,14 @@ awk -F'\t' -v OFS='\t' -v BLF="$BLACKLIST_FILE" "$BLACKLIST_AWK"'
             if (sd9 == "out") $16 = tolower(map[$16])
         }
         print
-    }' "$al_f" "$ah_f" "$hmap" "$sb_f" "$tmp.raw" > "$tmp.mapped"
+    }' "$al_f" "$ah_f" "$hmap" "$sb_f" "$tmp.raw" | cat > "$tmp.mapped"
 
 # Sort AFTER the mapping (the keys — coreid, direction — are untouched by it),
 # so an incremental chunk merged with `sort -m` lands byte-identical to a full
 # reparse: both orders are the same total order over the final row text.
 if [ "$mode" = incremental ]; then
-    LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp.mapped" > "$tmp.chunk"
-    LC_ALL=C sort -m -t"$(printf '\t')" -k1,1 -k2,2 "$PARSED0" "$tmp.chunk" > "$tmp.merged"
+    LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp.mapped" | cat > "$tmp.chunk"
+    LC_ALL=C sort -m -t"$(printf '\t')" -k1,1 -k2,2 "$PARSED0" "$tmp.chunk" | cat > "$tmp.merged"
     # Cross-run overlap: the in-tokenizer drop (seen[$0] on the RAW record) only
     # sees the new files, so a new export overlapping the cache still yields
     # duplicate rows — which sit adjacent after the merge. Drop them here too
@@ -818,7 +823,7 @@ if [ "$mode" = incremental ]; then
     # divergence would be two distinct raw records that differ SOLELY in a CSV
     # field parse.sh discards yet share an identical Transfer ID, which does not
     # occur. Report how many were dropped.
-    mdups=$(awk -v out="$tmp.dedup" 'BEGIN { printf "" > out } prev == $0 { d++; next } { prev = $0; print > out } END { print d+0 }' "$tmp.merged")   # BEGIN creates $out even for an empty merge, so the mv below never fails under set -e
+    mdups=$(awk -v out="$tmp.dedup" 'BEGIN { printf "" > out; close(out); cmd = "cat > \"" out "\"" } prev == $0 { d++; next } { prev = $0; print | cmd } END { close(cmd); print d+0 }' "$tmp.merged")   # BEGIN creates $out even for an empty merge, so the mv below never fails under set -e
     if [ "$mdups" -gt 0 ]; then
         echo "NOTE: dropped $mdups merged row(s) that duplicate rows already in the cache (overlapping export)." >&2
     fi
@@ -826,12 +831,12 @@ if [ "$mode" = incremental ]; then
     rm -f "$tmp.chunk" "$tmp.merged"
     for f in "${src_files[@]}"; do manifest_entry "$f"; done >> "$MANIFEST"
 else
-    LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp.mapped" > "$tmp.sorted"
+    LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp.mapped" | cat > "$tmp.sorted"
     # a PARALLEL tokenize (TOK_PAR, above) leaves a raw line repeated across
     # groups as two identical rows — adjacent after the sort (its last-resort
     # key is the whole line); keep the first, like the tokenizer did
     if [ "$TOK_PAR" = 1 ]; then
-        xdups=$(awk -v out="$tmp.sorted2" 'BEGIN { printf "" > out } NR > 1 && $0 == prev { d++; next } { prev = $0; print > out } END { print d + 0 }' "$tmp.sorted")
+        xdups=$(awk -v out="$tmp.sorted2" 'BEGIN { printf "" > out; close(out); cmd = "cat > \"" out "\"" } NR > 1 && $0 == prev { d++; next } { prev = $0; print | cmd } END { close(cmd); print d + 0 }' "$tmp.sorted")
         [ "$xdups" -gt 0 ] && echo "NOTE: dropped $xdups exact-duplicate record(s) repeated across tokenizer groups (kept the first)." >&2
         mv "$tmp.sorted2" "$tmp.sorted"
     fi
@@ -964,7 +969,13 @@ smap="$tmp.submap"
         awk -F'\t' -v OFS='\t' '$1 != "" && $2 != "" { print "Z", $1, $2 }' "$SESSMAP"
     fi
 } > "$smap"
-awk -F'\t' -v OFS='\t' '
+# IN PARALLEL (2026-09-28, speed round 16): the pass is a per-CoreId-group
+# transform over the CoreId-sorted _transfers0.tsv (the maps load first, one
+# group is buffered at a time), so it runs once per key-aligned slice
+# (grp_par, bin/ranges.sh) and the slices' outputs concatenate in order; the
+# only other state, the fill counters of the NOTE below, is summed after.
+export GRP_GAIN="$tmp.gain"
+grp_par "$PARSED0" "$tmp.prop" "$_pj" awk -F'\t' -v OFS='\t' '
     # Resolve a profile to its subscription, breaking a multi-claim tie on the
     # direction of the group pesit leg. Returns "" when it cannot be decided.
     function resolve_site(p, in_, out_,   i, want, hits, cand) {
@@ -1158,6 +1169,10 @@ awk -F'\t' -v OFS='\t' '
     }
     END {
         flush()
+        if (ENVIRON["GRP_PART"] != "") {   # a grp_par slice: its counters go to the summing below
+            for (g in xgain) printf "%s\t%d\n", g, xgain[g] > (ENVIRON["GRP_GAIN"] "." ENVIRON["GRP_PART"])
+            exit
+        }
         msg = ""
         if (xgain["site"] > 0)    msg = msg " site=" xgain["site"]
         if (xgain["account"] > 0) msg = msg " account=" xgain["account"]
@@ -1169,7 +1184,19 @@ awk -F'\t' -v OFS='\t' '
         if (xgain["fake"] > 0)    msg = msg " fake-site=" xgain["fake"]
         if (msg != "") print "NOTE: xref single-value fallback filled CoreId-group entities:" msg | "cat 1>&2"
     }
-' "$smap" "$PARSED0" > "$tmp.prop"
+' "$smap" -
+{ cat "$tmp.gain".* 2>/dev/null || true; } | awk -F'\t' '{ xgain[$1] += $2 }
+    END { msg = ""
+        if (xgain["site"] > 0)    msg = msg " site=" xgain["site"]
+        if (xgain["account"] > 0) msg = msg " account=" xgain["account"]
+        if (xgain["login"] > 0)   msg = msg " login=" xgain["login"]
+        if (xgain["profile"] > 0) msg = msg " profile=" xgain["profile"]
+        if (xgain["flowdir"] > 0) msg = msg " site-by-flowdir=" xgain["flowdir"]
+        if (xgain["session"] > 0) msg = msg " site-by-session=" xgain["session"]
+        if (xgain["inleg"] > 0)   msg = msg " site-by-inbound-leg=" xgain["inleg"]
+        if (xgain["fake"] > 0)    msg = msg " fake-site=" xgain["fake"]
+        if (msg != "") print "NOTE: xref single-value fallback filled CoreId-group entities:" msg }' >&2
+rm -f "$tmp.gain".*; unset GRP_GAIN
 mv "$tmp.prop" "$PARSED"
 rm -f "$smap"
 _plap "derive: propagation + fallbacks"
@@ -1191,13 +1218,55 @@ _plap "derive: propagation + fallbacks"
 # raw line set aside with the others (the Skipped report labels the reason);
 # a later export adding a second leg brings the CoreId back, like the
 # no-sub case.
-awk -F'\t' '{ seen[$1] = 1; nrow[$1]++; if ($6 != "") has[$1] = 1; if ($10 == "http") ht[$1] = 1
-              app = tolower($25); if ($2 == "Outbound" && $10 == "ssh" && ($9 + 0) == 0 && (app == "none" || app == "")) pshape[$1] = 1 }
-    END { for (c in seen) if (!(c in has) || (c in ht) || (nrow[c] == 1 && (c in pshape))) { print c; if (nrow[c] == 1 && (c in pshape) && (c in has) && !(c in ht)) np++ }
-          printf "%d\n", np + 0 > "/dev/stderr" }' "$PARSED" 2> "$tmp.nprobe" > "$tmp.nosub"
+#
+# ONE PASS, key-aligned slices in parallel (grp_par, 2026-09-28): the drop
+# decision is per CoreId GROUP (the cache is CoreId-sorted), the SKIP LIST
+# below is per ROW and the newest leg start the still-under-way filter needs is
+# a MAX over the rows both leave standing — so each slice decides, drops, skips
+# and maxes its own groups, and the slices join in order into exactly what the
+# three whole-cache passes wrote (the drop list is a set: its consumers look it
+# up and count it). A blank CoreId is one group like any other key.
+# SKIP LIST: partition _transfers.tsv into kept (rewrite $PARSED) and skipped
+# (set aside in $SKIPOUT). A record is skipped when its attributed account
+# (col 4) or subscription/site (col 6) name contains a skip token (case-
+# insensitive substring). Zero tokens -> nothing skipped, empty sidecar.
+# The rules come from input/<env>/skip.txt via bin/skiplist.sh — the ONE reader, so
+# the transfer parse, the server parse, flow-manager and the Skipped report all
+# agree what a rule means. LOGIN (col 5) is tested alongside account (4) and
+# site (6): a field-specific "login" rule can target it, and an "any" rule
+# covers all three. A dropped CoreId never reaches the skip rules.
+mkdir -p "$(dirname "$SKIPOUT")"
+export GRP_SIDE="$tmp.side"
+grp_par "$PARSED" "$tmp.kept" "$_pj" awk -F'\t' -v SLF="$SKIPLIST_FILE" "$SKIPLIST_AWK"'
+    function hms_ms(t,   a) { if (t == "") return 0; split(t, a, "[:.]"); return ((a[1]*3600) + (a[2]*60) + a[3]) * 1000 + a[4] }
+    function flush(   i, m) {
+        if (n == 0) return
+        if (!has || ht || (n == 1 && psh)) { print cur > NSF; if (n == 1 && psh && has && !ht) np++ }
+        else for (i = 1; i <= n; i++) {
+            if (hit[i]) { print row[i] > SCF; continue }
+            print row[i]
+            if (r14[i] != "") { m = r14[i] * 86400000 + hms_ms(r12[i]); if (m > mx) mx = m }
+        }
+        n = 0; has = 0; ht = 0; psh = 0
+    }
+    BEGIN { sl_load(SLF); P = ENVIRON["GRP_SIDE"] "." ENVIRON["GRP_PART"]; NSF = P ".nosub"; SCF = P ".skip"
+            printf "" > NSF; printf "" > SCF }
+    ($1 "") != cur { flush(); cur = $1 }
+    { n++; row[n] = $0; r14[n] = $14; r12[n] = $12
+      if ($6 != "") has = 1; if ($10 == "http") ht = 1
+      app = tolower($25); if ($2 == "Outbound" && $10 == "ssh" && ($9 + 0) == 0 && (app == "none" || app == "")) psh = 1
+      hit[n] = (SL_N > 0 && (sl_hit("account", $4) || sl_hit("login", $5) || sl_hit("site", $6))) }
+    END { flush(); printf "%d\n", np + 0 > (P ".np"); printf "%.0f\n", mx + 0 > (P ".mx") }
+' -
+: > "$tmp.nosub"; : > "$tmp.skip"; nprobe=0; newest_ms=0
+for ((i = 1; i <= GRP_N; i++)); do
+    cat "$GRP_SIDE.$i.nosub" >> "$tmp.nosub"; cat "$GRP_SIDE.$i.skip" >> "$tmp.skip"
+    nprobe=$((nprobe + $(cat "$GRP_SIDE.$i.np")))
+    _mx=$(cat "$GRP_SIDE.$i.mx"); [ "$_mx" -gt "$newest_ms" ] && newest_ms=$_mx
+    rm -f "$GRP_SIDE.$i.nosub" "$GRP_SIDE.$i.skip" "$GRP_SIDE.$i.np" "$GRP_SIDE.$i.mx"
+done
+unset GRP_SIDE
 if [ -s "$tmp.nosub" ]; then
-    # (the drop itself — the listed CoreIds out of $PARSED — happens in the
-    # skip-list pass below since 2026-09-27: one pass over the cache, not two)
     # PREFILTER before tokenizing. This rescans the whole input — 359 MB today —
     # only to copy out the raw lines of a handful of CoreIds (10 on the current
     # dataset), and running the per-character CSV tokenizer on every line of it
@@ -1259,28 +1328,7 @@ if [ -s "$tmp.nosub" ]; then
 else
     : > "$SKIPCSV"
 fi
-echo "No-subscription/http/probe skip: dropped $(wc -l < "$tmp.nosub" | tr -d ' ') CoreId(s) ($(cat "$tmp.nprobe" 2>/dev/null || echo 0) empty outbound ssh probe(s)); raw line(s) -> $SKIPCSV." >&2
-rm -f "$tmp.nprobe"
-_plap "derive: no-subscription / http / probe skip"
-
-# SKIP LIST: partition _transfers.tsv into kept (rewrite $PARSED) and skipped
-# (set aside in $SKIPOUT). A record is skipped when its attributed account
-# (col 4) or subscription/site (col 6) name contains a skip token (case-
-# insensitive substring). Zero tokens -> nothing skipped, empty sidecar.
-mkdir -p "$(dirname "$SKIPOUT")"
-: > "$tmp.skip"
-# The rules come from input/<env>/skip.txt via bin/skiplist.sh — the ONE reader, so
-# the transfer parse, the server parse, flow-manager and the Skipped report all
-# agree what a rule means. LOGIN (col 5) is tested alongside account (4) and
-# site (6): a field-specific "login" rule can target it, and an "any" rule
-# covers all three.
-# + the no-subscription DROP (above): a listed CoreId leaves $PARSED before the
-# skip rules see it, exactly as when the drop was its own pass
-awk -F'\t' -v SLF="$SKIPLIST_FILE" -v sc="$tmp.skip" -v listfile="$tmp.nosub" "$SKIPLIST_AWK"'
-    BEGIN { sl_load(SLF); while ((getline l < listfile) > 0) drop[l] = 1; close(listfile) }
-    $1 in drop { next }
-    { if (SL_N > 0 && (sl_hit("account", $4) || sl_hit("login", $5) || sl_hit("site", $6))) print >> sc; else print }
-' "$PARSED" > "$tmp.kept"
+echo "No-subscription/http/probe skip: dropped $(wc -l < "$tmp.nosub" | tr -d ' ') CoreId(s) ($nprobe empty outbound ssh probe(s)); raw line(s) -> $SKIPCSV." >&2
 rm -f "$tmp.nosub"
 mv "$tmp.kept" "$PARSED"
 mv "$tmp.skip" "$SKIPOUT"
@@ -1398,7 +1446,7 @@ after both parses) fills the base result column (data/flow-manager/base/*.tsv)
 and injects nothing here.
 LEGEND_EOF
 
-_plap "derive: skip list"
+_plap "derive: no-subscription / http / probe skip + skip list"
 # ---------------------------------------------------------------------------
 # Logical-transfer cache: one row per CoreId. A logical transfer is several
 # records (Inbound row, Outbound row, retries); collapse each CoreId group to a
@@ -1413,7 +1461,9 @@ ttmp="$FILES.tmp.$$"
 # _subscriptions-flowdir.tsv xref cache (the same map the config-column join
 # below uses for col 17). Missing cache -> empty map -> movement unknown.
 flowmap="$CFG_FLOW"; [ -f "$flowmap" ] || flowmap=/dev/null
-LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED" | awk -F'\t' '
+# (the program is RUN further down, in one pipeline with the config join and
+# the still-under-way filter — see "ONE PIPELINE PER SLICE" there)
+COLLAPSE_AWK='
     function hms_ms(t,   a) { if (t == "") return 0; split(t, a, "[:.]"); return ((a[1]*3600) + (a[2]*60) + a[3]) * 1000 + a[4] }
     function fromjdn(j,   a,b,c,dd,e2,mm,day2,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e2=c-int(1461*dd/4); mm=int((5*e2+2)/153); day2=e2-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day2) }
     # an epoch-ms value (jdn * 86400000 + ms of day) -> "ccyy-mm-dd hh:mm:ss.mmm", the col 4/5 format
@@ -1538,8 +1588,7 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED" | awk -F'\t' '
         if (f_host  == "" && $16 != "") f_host  = $16
     }
     END { flush() }
-' "$flowmap" - > "$ttmp"
-mv "$ttmp" "$FILES"
+'
 
 # Config columns 16-20 (connection / movement / app / domain / partner),
 # joined from the bin/flow-manager.sh caches (case-insensitively like
@@ -1568,14 +1617,15 @@ mv "$ttmp" "$FILES"
 # step after both parses) flips never-collected Waiting files whose staged
 # copy the server-log File Maintenance sweep deleted to outcome Expired and
 # fills col 22 with the deletion timestamp.
-_plap "collapse to Files"
 pda_caches=()
 for cf in "$CFG_AL" "$CFG_AH" "$CFG_AAPP" "$CFG_ADOM" "$CFG_SAPP" "$CFG_SDOM" "$CFG_SPTN" "$CFG_APTN" "$CFG_HPTN" "$CFG_FLOW" "$CFG_SUBS"; do
     [ -f "$cf" ] && pda_caches+=("$cf")
 done
 ttmp="$FILES.tmp.$$"
+# (a FILTER — stdin to stdout, one stage of the per-slice pipeline below)
+cfg_join() {
 if [ ${#pda_caches[@]} -eq 0 ]; then
-    awk -F'\t' 'BEGIN{OFS="\t"} { w=$16; e=$17; NF=15; print $0, "", "", "", "", "", w, "", "", e }' "$FILES" > "$ttmp"   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp
+    awk -F'\t' 'BEGIN{OFS="\t"} { w=$16; e=$17; NF=15; print $0, "", "", "", "", "", w, "", "", e }'   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp
 else
     awk -F'\t' 'BEGIN{OFS="\t"; AMB=sprintf("%c",1)}
         FILENAME ~ /_accounts-logins\.tsv$/        { al[toupper($1)]=1; next }
@@ -1625,11 +1675,9 @@ else
             d19=""; if(s!="" && (s in sdo) && sdo[s]!=AMB) d19=sdo[s]; if(d19=="" && (a in ad) && ad[a]!=AMB) d19=ad[a]
             print $0, d, m, a18, d19, p, w, "", "", e   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp
         }
-    ' "${pda_caches[@]}" "$FILES" > "$ttmp"
+    ' "${pda_caches[@]}" -
 fi
-mv "$ttmp" "$FILES"
-
-_plap "config join (connection, movement, PDA columns)"
+}
 # STILL UNDER WAY (2026-09-15, user rule): a File that STARTED less than
 # INPROG_MS before the newest leg start in _transfers.tsv may not have logged
 # all its legs yet — a lone first leg would read Failed, a retry burst would
@@ -1637,19 +1685,31 @@ _plap "config join (connection, movement, PDA columns)"
 # their legs from _transfers.tsv with them. _transfers0.tsv (the merge base)
 # keeps every row, so the next parse re-derives them against a newer newest
 # start and they come back complete. An undated File stays.
+# (newest_ms — the newest leg start over the rows the skip pass kept — comes
+# from that pass; nothing rewrites $PARSED in between)
 INPROG_MS=600000
-newest_ms=$(awk -F'\t' '
+inprog_filter() { awk -F'\t' -v NEWEST="$newest_ms" -v WIN="$INPROG_MS" '
     function hms_ms(t,   a) { if (t == "") return 0; split(t, a, "[:.]"); return ((a[1]*3600) + (a[2]*60) + a[3]) * 1000 + a[4] }
-    $14 != "" { m = $14 * 86400000 + hms_ms($12); if (m > mx) mx = m }
-    END { printf "%.0f\n", mx + 0 }' "$PARSED")
-awk -F'\t' -v NEWEST="$newest_ms" -v WIN="$INPROG_MS" -v DROP="$tmp.inprog" '
-    function hms_ms(t,   a) { if (t == "") return 0; split(t, a, "[:.]"); return ((a[1]*3600) + (a[2]*60) + a[3]) * 1000 + a[4] }
-    BEGIN { printf "" > DROP }
+    BEGIN { DROP = ENVIRON["GRP_SIDE"] "." ENVIRON["GRP_PART"] ".inprog"; printf "" > DROP }
     $7 != "" && NEWEST + 0 > 0 && $7 * 86400000 + hms_ms($5) >= NEWEST - WIN { print $1 > DROP; next }
-    { print }' "$FILES" > "$ttmp"
+    { print }'; }
+# ONE PIPELINE PER SLICE (2026-09-28): $PARSED is CoreId-sorted, so each
+# key-aligned slice (grp_par) re-sorts its own groups by start — every key of
+# a slice sorts before the next slice's, so the per-slice sorts concatenate
+# into the one global sort — collapses them (COLLAPSE_AWK), joins the config
+# columns (cfg_join) and applies the still-under-way filter (inprog_filter).
+# _files.tsv is therefore written ONCE, joined and filtered: the 17-column
+# intermediate never lands as the cache any more.
+collapse_slice() { LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 | awk -F'\t' "$COLLAPSE_AWK" "$flowmap" - | cfg_join | inprog_filter; }
+export GRP_SIDE="$tmp.side"
+grp_par "$PARSED" "$ttmp" "$_pj" collapse_slice
+: > "$tmp.inprog"
+for ((i = 1; i <= GRP_N; i++)); do cat "$GRP_SIDE.$i.inprog" >> "$tmp.inprog"; rm -f "$GRP_SIDE.$i.inprog"; done
+unset GRP_SIDE
 mv "$ttmp" "$FILES"
+_plap "collapse to Files + config join"
 if [ -s "$tmp.inprog" ]; then
-    awk -F'\t' 'NR == FNR { d[$1] = 1; next } !($1 in d)' "$tmp.inprog" "$PARSED" > "$tmp.inprogkept"
+    grp_par "$PARSED" "$tmp.inprogkept" "$_pj" awk -F'\t' 'NR == FNR { d[$1] = 1; next } !($1 in d)' "$tmp.inprog" -
     mv "$tmp.inprogkept" "$PARSED"
 fi
 echo "Still under way: removed $(wc -l < "$tmp.inprog" | tr -d ' ') File(s) started within $((INPROG_MS / 60000)) minutes of the newest transfer, and their legs." >&2

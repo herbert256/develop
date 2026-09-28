@@ -998,6 +998,42 @@ fi
 # tracks the cumulative raw-record count for the drop notes.
 TOK_TOTAL=0
 CHUNK_N=0
+# THE PART SPLITTER (perl since 2026-09-28, build-speed round 16): the sorted
+# chunk -> chunk.<idx>.d<date>_<hour> parts. The part name is the key up to
+# its first space (the iso date; a character outside [0-9-] clamped to "_" —
+# a malformed date in a corrupt export must not leak odd characters into the
+# FILENAME) plus "_" and the two characters after the space (the hour of a
+# valid time) so the merge can split a heavy day (PER DATE-HOUR PARTS,
+# 2026-09-27, build-speed round 3). The part NAMES stay in key order under
+# LC_ALL=C: a non-digit becomes "!" when it sorts below "0", "~" above "9".
+# A key with no date (it starts with the space) goes to the bare
+# "chunk.<idx>.d" part — the awk this replaces never opened that part and
+# died on the empty file name. Written in 1 MB syswrites: awk writes a
+# regular file in 4 KB chunks, and ten tokenize jobs doing that at once spent
+# 5x the kernel time of the whole rest of the chunk pipeline (the same parts
+# byte for byte).
+PART_SPLIT_PL='
+my $pfx = $ARGV[0]; my ($cur, $fh, $buf) = (undef, undef, "");
+sub fl { my $o = 0; my $n = length $buf;
+    while ($o < $n) { my $w = syswrite($fh, $buf, $n - $o, $o); die "$pfx: write: $!\n" unless defined $w; $o += $w }
+    $buf = "" }
+while (my $l = <STDIN>) {
+    my $r = $l; chomp $r;
+    my $p = index($r, " "); my $d = $p > 0 ? substr($r, 0, $p) : "";
+    $d =~ tr/0-9\-/_/c;
+    if ($d ne "") {
+        my $c1 = $p + 1 < length $r ? substr($r, $p + 1, 1) : "";
+        my $c2 = $p + 2 < length $r ? substr($r, $p + 2, 1) : "";
+        $d .= "_" . (($c1 ge "0" && $c1 le "9") ? $c1 . (($c2 ge "0" && $c2 le "9") ? $c2 : ($c2 lt "0" ? "!" : "~"))
+                                                : ($c1 lt "0" ? "!" : "~"));
+    }
+    if (!defined $cur || $d ne $cur) {
+        if (defined $fh) { fl(); close($fh) or die "$pfx: close: $!\n" }
+        $cur = $d; open($fh, ">", $pfx . $d) or die "$pfx$d: $!\n"; binmode $fh;
+    }
+    $buf .= $l; fl() if length $buf >= 1048576;
+}
+if (defined $fh) { fl(); close($fh) or die "$pfx: close: $!\n" }'
 tok_run() {   # $1 = chunk id; stdin = the CSV (its first line the header)
     # The sorted chunk is SPLIT INTO PER-DATE PARTS (chunk.<idx>.d<isodate>):
     # the sort key starts with the iso date, so a sorted chunk is
@@ -1011,19 +1047,7 @@ tok_run() {   # $1 = chunk id; stdin = the CSV (its first line the header)
     local _k0; _k0=$(date +%s)   # the part timings (the summary in tokenize_batch)
     awk -v cntfile="$CHUNK_DIR/count.$1" -v tfile="$CHUNK_DIR/tend.$1" "$TOK_PROG" \
         | LC_ALL=C sort $SORT_CHUNK_FLAGS -u \
-        | awk -v pfx="$CHUNK_DIR/chunk.$1.d" '
-            { p = index($0, " "); d = substr($0, 1, p - 1); gsub(/[^0-9-]/, "_", d)   # clamp: a malformed date in a corrupt export must not leak odd chars into the part FILENAME
-              # PER DATE-HOUR PARTS (2026-09-27, build-speed round 3): the
-              # part name adds the two characters after the date (the hour
-              # of a valid time) so the merge can split a heavy day. The
-              # code keeps the part NAMES in key order under LC_ALL=C: a
-              # non-digit becomes "!" when it sorts below "0", "~" above "9".
-              if (d != "") { c1 = substr($0, p + 1, 1); c2 = substr($0, p + 2, 1)
-                  if (c1 >= "0" && c1 <= "9") h = c1 ((c2 >= "0" && c2 <= "9") ? c2 : (c2 < "0" ? "!" : "~"))
-                  else h = (c1 < "0") ? "!" : "~"
-                  d = d "_" h } }
-            d != cur { if (out != "") close(out); cur = d; out = pfx d }
-            { print > out }'
+        | perl -e "$PART_SPLIT_PL" "$CHUNK_DIR/chunk.$1.d"
     printf '%s %s %s\n' "$_k0" "$(cat "$CHUNK_DIR/tend.$1" 2>/dev/null || echo "$_k0")" "$(date +%s)" > "$CHUNK_DIR/ttime.$1"
 }
 tok_one() {   # $1 = input csv, $2 = 4-digit chunk index
@@ -1200,12 +1224,14 @@ if [ "$mode" = full ]; then
     # sort key itself (MERGE_SKIP_PROG) — macOS cut runs at ~150 MB/s, and
     # every cache byte went through it twice over (key + columns, ~6 GB in
     # production): 7.9 CPU-s against 1.1 per 800 MB, same bytes out.
+    # (| cat: awk writes a regular file in 4 KB chunks — the parallel groups
+    # spent more kernel time on that than the merge itself; 2026-09-28)
     merge_group() {   # $1 = 4-digit group index; its keys, in key order, in .grp.$1
         : > "$PART_DIR/out.$1"; : > "$PART_DIR/skip.$1"
         { while IFS= read -r k; do
               LC_ALL=C sort -m -u $SORT_CHUNK_FLAGS "$CHUNK_DIR"/chunk.*.d"$k"
           done < "$CHUNK_DIR/.grp.$1"; } \
-            | awk -F'\t' -v skipfile="$SKIPFILE" -v sc="$PART_DIR/skip.$1" -v cf="$PART_DIR/n.$1" "$MERGE_SKIP_PROG" > "$PART_DIR/out.$1"
+            | awk -F'\t' -v skipfile="$SKIPFILE" -v sc="$PART_DIR/skip.$1" -v cf="$PART_DIR/n.$1" "$MERGE_SKIP_PROG" | cat > "$PART_DIR/out.$1"
     }
     # key <TAB> bytes, in key order (LC_ALL=C — the order the keys sort in the
     # cache; "" = the no-date part, first), then the greedy grouping. The
