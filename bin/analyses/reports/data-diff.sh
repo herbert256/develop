@@ -56,14 +56,15 @@ fi
 read -r endj endd <<< "$(awk -F'\t' '$7 + 0 > j { j = $7 + 0; d = $4 } END { print j + 0, d }' "$TF")"
 dS=""
 # The newest SERVER day: reading it from the 18M-row parse cache cost ~33 s
-# of sequential wall time (2026-08-15 build-time regression). The errors-day
-# component .rpt carries one ROW per day and the build sequences the server
-# reports before analyses, so its max date IS the cache's max date — read
-# that instead; the full scan stays as the fallback for a standalone run
-# before the server reports exist.
-EDRPT="$DATA/server/reports/errors-day.rpt"
+# of sequential wall time (2026-08-15 build-time regression). The server
+# Top view .rpt carries one ROW per day (its date cell wrapped in the day-page
+# link) and the build sequences the server reports before analyses, so its max
+# date IS the cache's max date — read that instead (the errors-day per-day
+# table it read until 2026-09-28 was the same list); the full scan stays as
+# the fallback for a standalone run before the server reports exist.
+EDRPT="$DATA/server/reports/topview.rpt"
 if [ -f "$EDRPT" ]; then
-    dS=$(awk -F'\t' '$1 == "ROW" && $2 ~ /^[0-9][0-9][0-9][0-9]-/ && $2 > m { m = $2 } END { print m }' "$EDRPT")
+    dS=$(awk -F'\t' '$1 == "ROW" { d = $2; sub(/^@\{[^}]*\}/, "", d); if (d ~ /^[0-9][0-9][0-9][0-9]-/ && d > m) m = d } END { print m }' "$EDRPT")
 fi
 [ -z "$dS" ] && [ -f "$SP" ] && dS=$(awk -F'\t' '$1 > m { m = $1 } END { print m }' "$SP")
 D="$endd"

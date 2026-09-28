@@ -5,13 +5,15 @@
 # account "A", had initiated a connection over SSH|PESIT|FTP. Remote address:
 # <addr>" lines — the only place the per-protocol INBOUND connection volume
 # exists (Auth Activity counts SSH auth successes only, Logon the screening
-# funnel; FTP and PeSIT connection volume appears nowhere else). Five views:
+# funnel; FTP and PeSIT connection volume appears nowhere else). Four views:
 #   By protocol       connection volume per protocol.
 #   Per day           the SSH / PESIT / FTP daily trend.
 #   By account        connections per account (protocol mix, distinct addresses).
 #   By source address the remote peers that connect in, top 50.
-#   Whitelist policies which Login Restriction Policy actually matches, from the
-#                     "Allowed user … corresponding policy name '<P>'" lines.
+# (A fifth, "Whitelist policy usage" — the "Allowed user … corresponding
+# policy name '<P>'" lines per policy — went 2026-09-28, user request: fewer
+# server reports; those are the lines the Logons / Incoming Allowed and
+# Re-screens columns count per login.)
 #
 # An account equal to a known transfer-log account links to its detail page
 # (same alink mechanism as Transfer Outcomes); addresses stay plain — they are
@@ -61,8 +63,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 #   Y <TAB> date <TAB> ssh <TAB> pesit <TAB> ftp <TAB> other <TAB> total
 #   A <TAB> [alink]account <TAB> conns <TAB> protos <TAB> naddr <TAB> buckets <TAB> first <TAB> last <TAB> loglines
 #   S <TAB> addr <TAB> conns <TAB> naccts <TAB> protos <TAB> buckets <TAB> first <TAB> last <TAB> loglines
-#   W <TAB> policy <TAB> allowed <TAB> naccts <TAB> buckets <TAB> first <TAB> last
-#   TOT <TAB> conns <TAB> nproto <TAB> nacct <TAB> naddr <TAB> allowed <TAB> npol <TAB> ndays
+#   TOT <TAB> conns <TAB> nproto <TAB> nacct <TAB> naddr <TAB> ndays
 agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
     # qval(m, key, q): the value right after `key` that is enclosed in quote
     # character q — "" when the key or its opening quote is absent.
@@ -81,16 +82,6 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
     {
         m = $5
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
-        # --- the whitelist-policy "Allowed user" lines ---
-        if (index(m, "corresponding policy name ")) {
-            pol = qval(m, "corresponding policy name ", SQ)
-            if (pol != "") {
-                wacct = qval(m, "corresponding account ", SQ)
-                acc("W", pol, d); allowed++
-                if (wacct != "" && !((pol SUBSEP wacct) in wpa)) { wpa[pol SUBSEP wacct]=1; wpn[pol]++ }
-            }
-            next
-        }
         # --- the inbound-connection lines ---
         if (!index(m, "had initiated a connection over ")) next
         if (!match(m, /had initiated a connection over [A-Za-z0-9]+/)) next
@@ -117,7 +108,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
         }
     }
     END {
-        np=0; na=0; ns=0; nw=0
+        np=0; na=0; ns=0
         for (k in cnt) {
             split(k, a, SUBSEP); nsp=a[1]; key=a[2]
             m2 = split(dlist[k], dz, ","); bk=""
@@ -128,25 +119,23 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
                 printf "A\t%s%s\t%d\t%s\t%d\t%s\t%s\t%s\t%s\n", acctlink(key), key, cnt[k], uni[k], an_addr[key]+0, bk, fst[k], lst[k], lastlines(k) }
             else if (nsp == "S") { ns++
                 printf "S\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\n", key, cnt[k], s_acct[key]+0, uni[k], bk, fst[k], lst[k], lastlines(k) }
-            else { nw++
-                printf "W\t%s\t%d\t%d\t%s\t%s\t%s\n", key, cnt[k], wpn[key]+0, bk, fst[k], lst[k] }
         }
         ndays=0
         for (d in yseen) { ndays++
             printf "Y\t%s\t%d\t%d\t%d\t%d\t%d\n", d, ys[d]+0, yp[d]+0, yf[d]+0, yo[d]+0, yt[d]+0 }
-        printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", conns+0, np, na, ns, allowed+0, nw, ndays
+        printf "TOT\t%d\t%d\t%d\t%d\t%d\n", conns+0, np, na, ns, ndays
     }
 ' <(known_names KA "$TACCT") "$PARSED")
 
-IFS=$'\t' read -r _ t_conn n_proto n_acct n_addr t_allow n_pol n_days <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
-if [ $(( ${t_conn:-0} + ${t_allow:-0} )) -eq 0 ]; then
+IFS=$'\t' read -r _ t_conn n_proto n_acct n_addr n_days <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
+if [ "${t_conn:-0}" -eq 0 ]; then
     # No inbound-connection messages in this log window — write an EMPTY-STATE
     # page (so the report still renders and its group-nav link never 404s).
     echo "No inbound-connection messages found — writing an empty report." >&2
     {
         printf 'TITLE\tInbound Connections\n'
         printf 'DESC\tWho connects in to SecureTransport, over which protocol (SSH, PeSIT, FTP), from which addresses — the per-protocol inbound connection volume.\n'
-        printf 'KEYWORDS\twhitelist, login restriction policy, source IP, partner address\n'
+        printf 'KEYWORDS\tsource IP, partner address, protocol, connection volume\n'
         printf 'INTRO\tNo inbound-connection messages in this log window.\n'
         printf 'TABLE\tConnections by protocol\twide\n'
         printf 'HEAD\tProtocol\tConnections\tFirst\tLast\n'
@@ -158,7 +147,7 @@ if [ $(( ${t_conn:-0} + ${t_allow:-0} )) -eq 0 ]; then
     exit 0
 fi
 
-# The five row writers print STRAIGHT to stdout inside the page block below —
+# The four row writers print STRAIGHT to stdout inside the page block below —
 # a `rows+=$(printf …)` per row forks a subshell per row for nothing.
 proto_rows() {
     while IFS=$'\t' read -r _ proto count bk fst lst lines; do
@@ -195,19 +184,12 @@ addr_rows() {
     done <<< "$(printf '%s\n' "$agg" | grep $'^S\t' | sort -t"$(printf '\t')" -k3,3nr -k2,2)"
 }
 
-pol_rows() {
-    while IFS=$'\t' read -r _ pol count naccts bk fst lst; do
-        [ -z "$pol" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\n' "$pol" "$count" "$naccts" "$fst" "$lst" "$bk"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^W\t' | sort -t"$(printf '\t')" -k3,3nr -k2,2)"
-}
-
 {
     printf 'TITLE\tInbound Connections\n'
     printf 'DESC\tWho connects in to SecureTransport, over which protocol (SSH, PeSIT, FTP), from which addresses — the per-protocol inbound connection volume.\n'
-    printf 'KEYWORDS\twhitelist, login restriction policy, source IP, partner address\n'
-    printf 'INTRO\t**%s** inbound connection(s) over **%s** protocol(s) from **%s** account(s) and **%s** source address(es) across **%s** day(s). This is connection VOLUME — every "had initiated a connection" line, before any transfer happens; Auth Activity counts SSH authentication successes and Logon the screening funnel. Whitelist policies matched **%s** allowed connection(s). Click a row for its 10 most recent connection lines.\n' \
-        "$t_conn" "$n_proto" "$n_acct" "$n_addr" "$n_days" "$t_allow"
+    printf 'KEYWORDS\tsource IP, partner address, protocol, connection volume\n'
+    printf 'INTRO\t**%s** inbound connection(s) over **%s** protocol(s) from **%s** account(s) and **%s** source address(es) across **%s** day(s). This is connection VOLUME — every "had initiated a connection" line, before any transfer happens; Auth Activity counts SSH authentication successes and Logon the screening funnel. Click a row for its 10 most recent connection lines.\n' \
+        "$t_conn" "$n_proto" "$n_acct" "$n_addr" "$n_days"
 
     printf 'TABLE\tConnections by protocol\twide\n'
     printf 'HEAD\tProtocol\tConnections\tFirst\tLast\n'
@@ -245,19 +227,9 @@ pol_rows() {
     printf 'TOTAL\t%s\t@{class=num}%s\t\t\t\t\n' "$addr_total_label" "$shown_conns"
     printf 'NOTE\tThe partners'\'' SOURCE addresses (what actually connects in — the address the whitelist allows), not the configured outbound endpoints. Accounts is the distinct accounts seen from that address over the whole period. Top 50 by connections; the total row sums the shown rows. Click an address for its 10 most recent connection lines.\n'
 
-    if [ "${t_allow:-0}" -gt 0 ]; then
-        printf 'TABLE\tWhitelist policy usage\n'
-        printf 'HEAD\tPolicy\tAllowed\tAccounts\tFirst\tLast\n'
-        printf 'KIND\ttext\tnum\tnum\ttext\ttext\n'
-        printf 'RECALC\t-\ts0\t-\t-\t-\n'
-        pol_rows
-        printf 'TOTAL\tTotal (%s polic(ies))\t@{class=num}%s\t\t\t\n' "$n_pol" "$t_allow"
-        printf 'NOTE\tWhich Login Restriction Policy the "Allowed user … corresponding policy name" screening lines actually matched — the policies doing the work, next to Logon'\''s per-login funnel. Accounts is the distinct accounts allowed under that policy (whole period).\n'
-    fi
-
-    printf 'SUMMARY\tConnections: %s  |  Protocols: %s  |  Accounts: %s  |  Addresses: %s  |  Policy-allowed: %s (%s policies)\n' \
-        "$t_conn" "$n_proto" "$n_acct" "$n_addr" "$t_allow" "$n_pol"
+    printf 'SUMMARY\tConnections: %s  |  Protocols: %s  |  Accounts: %s  |  Addresses: %s\n' \
+        "$t_conn" "$n_proto" "$n_acct" "$n_addr"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-echo "Data written to $OUT ($t_conn connection(s), $n_acct account(s), $n_addr address(es), $t_allow policy-allowed)." >&2
+echo "Data written to $OUT ($t_conn connection(s), $n_acct account(s), $n_addr address(es))." >&2

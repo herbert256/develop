@@ -591,14 +591,14 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         if ($4 == "T" && $5 ~ /uthentication fail|Login failed/) AF[d]++
         # extra per-day problem signals -> PROBLEM links in the combined day page
         # "Problems this day" section (emitted below, one report per non-zero signal)
-        if ($5 ~ /^Connection failure while /) CF[d]++                                              # site-failures
+        if ($5 ~ /^Connection failure while /) CF[d]++                                              # the Per flow connection-failure rows (site-failures until 2026-09-28)
         if ($5 ~ /^Authentication failure connecting to remote host /) LGO[d]++                     # logons-outgoing (us failing AT the partner)
         if (index($5, "stop further route execution")) DEP[d]++                                     # deploy-errors (ARSP0001 route abandoned)
         if ($4 == "T" && index($5, "[Ssh Default]")) {                                              # incoming logon funnel
             if ($5 ~ /\[Ssh Default\] Disallowed user /) LGF[d]++                                   #   Disallowed
             else if (index($5, "no certificate is found for user ")) LGF[d]++                       #   Bad key
             else if ($5 ~ /\[Ssh Default\] User [A-Za-z0-9_.-]+ failed to login successfully/) LGF[d]++   # Key failures
-            else if (index($5, "[Ssh Default] User ") && index($5, "is locked")) LGF[d]++           #   Locked
+            else if (index($5, "[Ssh Default] User ") && (index($5, "is locked") || index($5, "locked due to too many failed login"))) LGF[d]++   #   Locked (+ the lockout itself, 2026-09-28 — as logon.sh)
         }
         if (index($5, "Unable to submit event") || index($5, "Error sending event")) EVE[d]++       # event-feed errors
         # ERROR message shapes (digits folded to N) — the dominant-error fact
@@ -685,7 +685,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             cov = (FI[d] != "" && FI[d] != "-" && LA[d] != "" && LA[d] != "-") ? FI[d] "–" LA[d] : "log messages"
             wd = wdname(d)      # same-weekday means for the KPI deltas
             printf "KPI\t%d\tServer lines\t%s\tpurple\t../server/topview.html" q "\t%s\n", REC[d]+0, cov, pctd(REC[d], wdc[wd] ? aRec[wd]/wdc[wd] : 0) >> out
-            printf "KPI\t%.1f%%\tServer error rate\terrors ÷ records\tblue\t../server/errors-per-day.html" q "\t%s\n", ep, pctd(ep, aRec[wd] ? aErr[wd]*100/aRec[wd] : 0) >> out
+            printf "KPI\t%.1f%%\tServer error rate\terrors ÷ records\tblue\t../server/topview.html" q "\t%s\n", ep, pctd(ep, aRec[wd] ? aErr[wd]*100/aRec[wd] : 0) >> out
             # ---- PROBLEM links: this day problem reports, dated (?axway_date),
             #      surfaced in the combined day page "Problems this day" section ----
             if (ERR[d] + 0 > 0 || WRN[d] + 0 > 0)
@@ -695,7 +695,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (LGO[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../server/logons-outgoing.html" q "\tOutbound logon failures\t**%d** failed authentications AT remote hosts — us being refused by the partner (expired password, refused key, certificate policy)\n", LGO[d] >> out
             if (CF[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/site-failures.html" q "\tConnection failures\t**%d** connection-failure messages — retry storms toward an unreachable partner\n", CF[d] >> out
+                printf "PROBLEM\tserver\t../server/failure-flows.html" q "\tConnection failures\t**%d** connection-failure messages — retry storms toward an unreachable partner\n", CF[d] >> out
             # deploy-errors is a per-entity unresolved list with no date-aware
             # table, so like went-kaput its link carries no q
             if (DEP[d] + 0 > 0)

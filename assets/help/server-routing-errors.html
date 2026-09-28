@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Connection Failures — Cloud Reports</title>
+<title>Help: Advanced Routing errors — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,24 +15,30 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Connection Failures</h1>
+<h1>Advanced Routing errors</h1>
 <h2>What it shows</h2>
-<p>Connection failures per subscription, counted from the server log&rsquo;s &ldquo;Connection failure while &lt;site&gt; tried to connect &hellip;&rdquo; ERROR messages &mdash; a data source separate from the transfer log. Every failing subscription is counted, well-known ones included (the <a href="server-unknown-entities.html">Missing entities</a> report lists only names absent from the transfer logs entirely).</p>
-<h2>Sections</h2>
+<p>Advanced Routing errors where a route gives up on a file, one row per server-log line, newest first:</p>
 <ul>
-<li><strong>Known subscriptions</strong> &mdash; a logged name that is the unique prefix of exactly one known subscription: shown in full, linked to its detail page.</li>
-<li><strong>Unresolved subscription names</strong> &mdash; a logged name matching several subscriptions, or none: listed as logged, unlinked.</li>
+<li><strong>Could not send file</strong> (<code>AR0074</code>) &mdash; the route gave up delivering a file to its transfer site after its retries.</li>
+<li><strong>Publish to account failed</strong> (<code>ARPA0001</code>) &mdash; the route could not publish a received file into its account.</li>
+<li><strong>Post client action error</strong> (<code>ARRC0009</code> and kin) &mdash; the action after a received file (typically deleting the source) failed.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Error</strong> / <strong>Code</strong> &mdash; which of the three, and the line&rsquo;s AR code.</li>
+<li><strong>Account or subscription</strong> &mdash; the subscription (second bracket), or for a post client action the account (first bracket, before the <code>@</code>); opens its detail page, the row carries its result colour.</li>
+<li><strong>File</strong> &mdash; from the braces.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>The server truncates long subscription names in its messages; each token is resolved against the transfer area&rsquo;s subscription list, <code>data/transfer/reports/subscription.rpt</code>.</li>
-<li>Share is of all connection failures across both tables at the full range; a narrowed date range re-shares over each table separately.</li>
-<li>Repeated failures toward one subscription are usually a retry storm against an unreachable partner.</li>
-<li>The report needs the transfer reports first: without <code>subscription.rpt</code> it fails with an error asking you to run them.</li>
+<li>Source: TM lines <code>AR&lt;code&gt;: [&lt;first&gt;] [&lt;second&gt;]  &lt;text&gt;</code> carrying &ldquo;Could not send file:&rdquo;, &ldquo;while publishing the file&rdquo; or &ldquo;post client action&rdquo;.</li>
+<li>Renamed or truncated subscription names resolve to the current configured name.</li>
+<li>At most <strong>1000</strong> rows and <strong>10</strong> per error and entity, the newest; the total row counts every line in the log.</li>
+<li>Date filter, search and sort work over the shown rows.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a row for its 10 most recent connection-failure lines, newest first.</li>
+<li>The failure pages call the first two &ldquo;Duplicate file&rdquo;, the third &ldquo;Post client action failed&rdquo;; a recurring entity has a problem on that step &mdash; <a href="server-errors-day.html">Errors</a> and its detail page give context.</li>
 </ul>
 </main>
 </body>

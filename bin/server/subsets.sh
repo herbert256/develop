@@ -36,9 +36,8 @@ source "$SCRIPT_DIR/../ranges.sh"
 # consumer <TAB> marker <TAB> marker ... (one consumer per line)
 SPEC='uc1	Could not send file	An error occurred while sending	finished with error	Starting execution	Connection failure while 	listing files from partner
 uc3	Applying the search pattern	listing files from partner 	Connection failure while 	Remote folder of transfer site: 	Remote files pattern of transfer site:
-ssh-key-auth	no certificate is found for user	locked due to too many failed login	Publickey authentication
 ssh-sessions	Channel is not active	No registered SSH session with ID	No SSH connection with ID	Network stream read/write error	Ignoring message for not active session
-connection-diagnostics	Connection failure while 	could not be established	Error during test connection	Wrong server fingerprint: got	erforms test connection	ERFORMS TEST CONNECTION	erforms Test Connection
+connection-diagnostics	Connection failure while 	could not be established	Wrong server fingerprint: got	erforms test connection	ERFORMS TEST CONNECTION	erforms Test Connection
 remote-poll	Applying the search pattern	listing files from partner 	Remote files pattern of transfer site	Connection failure while 	failure connecting to remote host '
 
 SUBDIR="$CACHE_DIR/subsets"

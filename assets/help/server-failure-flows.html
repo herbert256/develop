@@ -21,14 +21,15 @@
 <h2>Sections</h2>
 <ul>
 <li><strong>Per subscription and reason</strong> &mdash; how often that failure hit, first and last seen. Only messages that name a flow, so its total is a subset of the platform-wide reason totals.</li>
-<li><strong>Per ISO week</strong> &mdash; all classified ERROR records per week, how the reason mix moves over time; ties exactly to the Errors report.</li>
+<li>The <strong>Connection failure (partner unreachable)</strong> rows are the connection failures per subscription &mdash; the Boxes pages&rsquo; <em>Connection failures</em> box and the day pages link here for them.</li>
+<li>The reason mix per ISO week is on <a href="server-errors-day.html">Errors</a> / Reasons.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>The buckets are the <a href="server-errors-day.html">Errors</a> report&rsquo;s Reasons buckets (Transfer Error Reasons), verbatim.</li>
 <li>The subscription is taken from the connection-failure text, the partner-listing failure text, or the bracketed flow token of an advanced-routing line.</li>
 <li>Server messages truncate long names: a name resolving to exactly one configured subscription is shown in full and linked; the rest appear as logged.</li>
-<li>Both tables always show the full period.</li>
+<li>The table always shows the full period.</li>
 <li>Click a row for its 10 most recent error lines.</li>
 </ul>
 </main>

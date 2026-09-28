@@ -11,6 +11,11 @@
 #                    subscription), with its dominant failure reason.
 #   Test connections the proactive "Performs test connection for <proto> protocol"
 #                    admin/API checks, by protocol.
+#   Host-key mismatches  the "Wrong server fingerprint: got X, expected Y" pairs.
+# (The "Test-connection outcomes" table — the "Error during test connection"
+# reason tails — went 2026-09-28, user request: fewer server reports. It was
+# empty by construction: parse.sh's NOISE filter drops those lines at tokenize
+# time, a manual admin-UI test not being a flow.)
 #
 # Also folds in the "Connection to <host> could not be established due to
 # incompatible security protocols" message (a different shape, same intent).
@@ -72,9 +77,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 #   H <TAB> host <TAB> count <TAB> topreason <TAB> first <TAB> last <TAB> buckets(date:count) <TAB> loglines
 #   T <TAB> protocol <TAB> count <TAB> buckets(date:count) <TAB> loglines
 #   F <TAB> got <TAB> expected <TAB> count <TAB> first <TAB> last <TAB> buckets <TAB> loglines   (host-key mismatches)
-#   E <TAB> reason <TAB> count <TAB> share <TAB> first <TAB> last <TAB> buckets <TAB> loglines   (test-connection errors)
 #   FT <TAB> fp_total <TAB> fp_pairs <TAB> top_got <TAB> top_got_expected_keys <TAB> top_got_count
-#   ET <TAB> err_total <TAB> nreasons <TAB> top_attempt_day <TAB> its_count <TAB> top_error_day <TAB> its_count
 #   TOT <TAB> failures <TAB> nreasons <TAB> nhosts <TAB> tests
 agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
     $1 == "KH" { khost[tolower($2)] = $2; next }             # page-bearing hosts: folded key -> canonical spelling (first input)
@@ -108,19 +111,8 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
             addline("R" SUBSEP r, $1 " " $2, line); addline("H" SUBSEP h, $1 " " $2, line)
         } else if (tolower(m) ~ /performs test connection/) {
             p = "(unknown)"; if (match(m, /for [a-z]+ protocol/)) p = substr(m, RSTART+4, RLENGTH-13)
-            ttest++; tc[p]++; if (d!="") { td[p SUBSEP d]++; tad[d]++ }
+            ttest++; tc[p]++; if (d!="") td[p SUBSEP d]++
             addline("T" SUBSEP p, $1 " " $2, line)
-        } else if (m ~ /^Error during test connection/) {
-            # the explicit test-connection failures: the reason is the message
-            # tail after the fixed prefix, shown as logged (trimmed)
-            r2 = m; sub(/^Error during test connection\.? */, "", r2)
-            sub(/[. ]+$/, "", r2); r2 = substr(r2, 1, 90)
-            if (r2 == "") r2 = "(no reason given)"
-            terr++; ec[r2]++
-            if (d != "") { ed[r2 SUBSEP d]++; ted[d]++
-                if (efst[r2] == "" || d < efst[r2]) efst[r2] = d
-                if (d > elst[r2]) elst[r2] = d }
-            addline("E" SUBSEP r2, $1 " " $2, line)
         } else if (m ~ /^Wrong server fingerprint: got /) {
             # host-key mismatches: the presented (got) vs the stored expected
             # fingerprint; the got value is occasionally truncated in the log
@@ -167,14 +159,6 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
         bg = ""; bgn = -1
         for (g in gcnt) if (gcnt[g] > bgn || (gcnt[g] == bgn && g < bg)) { bgn = gcnt[g]; bg = g }
         printf "FT\t%d\t%d\t%s\t%d\t%d\n", fpn+0, nfp+0, bg, gexp[bg]+0, (bgn < 0 ? 0 : bgn)
-        # test-connection error reasons + the top attempt/error days
-        for (x in ed) { split(x, a, SUBSEP); ebk[a[1]] = ebk[a[1]] (ebk[a[1]]?",":"") a[2] ":" ed[x] }
-        nrs = 0
-        for (r in ec) { nrs++
-            printf "E\t%s\t%d\t%.1f\t%s\t%s\t%s\t%s\n", r, ec[r], (terr ? ec[r]*100/terr : 0), efst[r], elst[r], ebk[r], lastlines("E" SUBSEP r) }
-        bad = ""; badn = -1; for (x in tad) if (tad[x] > badn || (tad[x] == badn && x < bad)) { badn = tad[x]; bad = x }
-        bed = ""; bedn = -1; for (x in ted) if (ted[x] > bedn || (ted[x] == bedn && x < bed)) { bedn = ted[x]; bed = x }
-        printf "ET\t%d\t%d\t%s\t%d\t%s\t%d\n", terr+0, nrs+0, bad, (badn < 0 ? 0 : badn), bed, (bedn < 0 ? 0 : bedn)
         printf "TOT\t%d\t%d\t%d\t%d\n", tfail+0, nr+0, nh+0, ttest+0
     }
 ' <(known_names KH "$THOST"; base_names "$HBASE") "$(srv_subset connection-diagnostics)")
@@ -210,25 +194,17 @@ test_rows() {
     done <<< "$(printf '%s\n' "$agg" | grep $'^T\t' | sort -t"$(printf '\t')" -k3,3nr)"
 }
 
-# The two 2026-08 tables (host-key mismatches + test-connection outcomes) are
-# emitted UNCONDITIONALLY: this report is a merged-component of Connections,
-# whose tab bar enumerates tables, so the TABLE count must not vary per env —
-# an empty family renders the placeholder row instead.
+# The 2026-08 host-key mismatch table is emitted UNCONDITIONALLY: this report
+# is a merged-component of Connections, whose tab bar enumerates tables, so the
+# TABLE count must not vary per env — an empty family renders the placeholder
+# row instead.
 IFS=$'\t' read -r _ fp_tot fp_pairs fp_topgot fp_topexp fp_topcnt <<< "$(printf '%s\n' "$agg" | grep $'^FT\t' || printf 'FT\t0\t0\t\t0\t0\n')"
-IFS=$'\t' read -r _ te_err te_reasons te_topday te_topdayn te_errday te_errdayn <<< "$(printf '%s\n' "$agg" | grep $'^ET\t' || printf 'ET\t0\t0\t\t0\t\t0\n')"
 
 fp_rows() {
     while IFS=$'\t' read -r _ got expd count fst lst bk lines; do
         [ -z "$got" ] && continue
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$got" "$expd" "$count" "$fst" "$lst" "$bk" "$lines"
     done <<< "$(printf '%s\n' "$agg" | grep $'^F\t' | sort -t"$(printf '\t')" -k4,4nr -k2,2 -k3,3)"
-}
-
-terr_rows() {
-    while IFS=$'\t' read -r _ reason count share fst lst bk lines; do
-        [ -z "$reason" ] && continue
-        printf 'ROW\t%s\t%s\t%s%%\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$reason" "$count" "$share" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^E\t' | sort -t"$(printf '\t')" -k3,3nr -k2,2)"
 }
 
 {
@@ -283,29 +259,7 @@ terr_rows() {
         printf 'NOTE\tThe "Wrong server fingerprint: got X, expected Y" warnings, per fingerprint pair: a partner endpoint presenting an SSH host key that does not match the stored known-host entry.\n'
     fi
 
-    # ---- test-connection outcomes (2026-08) ----
-    if [ "${te_err:-0}" -gt 0 ]; then
-        printf 'TABLE\tTest-connection outcomes\twide\n'
-    else
-        printf 'TABLE\tTest-connection outcomes\tnofilter\tnosort\n'
-    fi
-    printf 'HEAD\tError reason\tErrors\tShare\tFirst\tLast\n'
-    printf 'KIND\ttext\tnumfailed\tnum\ttext\ttext\n'
-    printf 'RECALC\t-\ts0\t%%0\t-\t-\n'
-    if [ "${te_err:-0}" -gt 0 ]; then
-        terr_rows
-    else
-        printf 'ROW\t@{colspan=5}No test-connection errors in this data window.\n'
-    fi
-    printf 'TOTAL\tTotal (%s reason(s))\t@{class=num failed}%s\t@{class=num}100.0%%\t\t\n' "${te_reasons:-0}" "${te_err:-0}"
-    if [ "${te_err:-0}" -gt 0 ]; then
-        printf 'NOTE\tHow the **%s** explicit test connection(s) failed: the "Error during test connection" reason tail, as logged. Of the attempts, **%s** logged an explicit error; the busiest test day was **%s** (**%s** attempts) and the worst error day **%s** (**%s** errors) — narrow the date range to see a single campaign. "The host key was not accepted" pairs with the Host-key mismatches table above; the timeouts and negotiation failures pair with the Failure reasons table. Click a reason for its 10 most recent errors.\n' \
-            "$t_test" "$te_err" "$te_topday" "$te_topdayn" "$te_errday" "$te_errdayn"
-    else
-        printf 'NOTE\tHow the explicit test connections failed: the "Error during test connection" reason tail, as logged.\n'
-    fi
-
-    printf 'SUMMARY\tConnection failures: %s  |  Reasons: %s  |  Remote hosts: %s  |  Test connections: %s  |  Test errors: %s  |  Host-key mismatches: %s\n' "$t_fail" "$n_reason" "$n_host" "$t_test" "${te_err:-0}" "${fp_tot:-0}"
+    printf 'SUMMARY\tConnection failures: %s  |  Reasons: %s  |  Remote hosts: %s  |  Test connections: %s  |  Host-key mismatches: %s\n' "$t_fail" "$n_reason" "$n_host" "$t_test" "${fp_tot:-0}"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

@@ -65,22 +65,22 @@ pool_run "$SCRIPT_DIR/reports/error-timing.sh"
 pool_run "$SCRIPT_DIR/reports/error-reasons.sh"
 pool_run "$SCRIPT_DIR/reports/failure-flows.sh"
 pool_run "$SCRIPT_DIR/reports/io-errors.sh"          # "IO Error reading file /data/FlowManager/…" — the srv-errors group's third member (2026-09-06)
-pool_run "$SCRIPT_DIR/reports/could-not-send.sh"     # "Could not send file" (AR0074) — the srv-errors group fourth member (2026-09-12)
-pool_run "$SCRIPT_DIR/reports/publish-failed.sh"     # "Publish to account failed" (ARPA0001) — srv-errors (2026-09-12)
+pool_run "$SCRIPT_DIR/reports/routing-errors.sh"     # "Advanced Routing errors" — the AR0074 / ARPA0001 / ARRC0009 lines in one table (2026-09-28: was could-not-send, publish-failed, post-client-action)
 pool_run "$SCRIPT_DIR/reports/event-queue.sh"        # "[Pesit Default] Unable to submit event AgentEvent" -> the dashboards' 30-min sidecar (2026-09-14); an unpublished intermediate since 2026-09-27
-pool_run "$SCRIPT_DIR/reports/post-client-action.sh" # "Post client action error" (ARRC0009) — srv-errors (2026-09-12)
 pool_run "$SCRIPT_DIR/reports/config-defects.sh"     # the config-hygiene page's server-log tables (a TSV sidecar, not a page)
 pool_run "$SCRIPT_DIR/reports/site-failures.sh"
 pool_run "$SCRIPT_DIR/reports/connection-diagnostics.sh"
 pool_run "$SCRIPT_DIR/reports/auth-activity.sh"
-pool_run "$SCRIPT_DIR/reports/ssh-key-auth.sh"
 pool_run "$SCRIPT_DIR/reports/pesit.sh"              # -> pesit-slots.tsv, the dashboards' PeSIT view; an unpublished intermediate since 2026-09-27
 pool_run "$SCRIPT_DIR/../analyses/reports/uc1-status.sh"
 pool_run "$SCRIPT_DIR/reports/deploy-errors.sh"
 pool_run "$SCRIPT_DIR/reports/remote-poll.sh"
 # (transfer-site-missing.sh — the "Transfer site missing" report — was removed
-# 2026-09-27, user request; its stale .rpt is dropped here)
-rm -f "$REPORTS_DIR/transfer-site-missing.rpt"
+# 2026-09-27, user request; its stale .rpt is dropped here. Likewise the
+# 2026-09-28 fewer-server-reports round: ssh-key-auth — its tables were the
+# Incoming Bad key / Locked columns and a subset of Outgoing — and the three
+# AR-line lists that routing-errors.sh folds into one table.)
+rm -f "$REPORTS_DIR"/{transfer-site-missing,ssh-key-auth,could-not-send,publish-failed,post-client-action}.rpt
 pool_run "$SCRIPT_DIR/../analyses/reports/uc3-status.sh"
 pool_run "$SCRIPT_DIR/reports/no-remote-dir.sh"
 pool_run "$SCRIPT_DIR/reports/no-remote-files.sh"

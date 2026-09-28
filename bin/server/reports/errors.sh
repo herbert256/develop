@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/errors.rpt"
 comps=()
-for c in errors-day error-timing error-reasons top-messages; do
+for c in error-reasons error-timing top-messages errors-day; do   # Reasons leads since 2026-09-28 (the menu lands on the first tab; Per day, the old leader, = the Top view)
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "Errors" "Server-log errors and warnings from every angle: levels per day and component, timing by hour and weekday, the failure-reason classification and the most-repeated message shapes." "The errors and warnings of the server log from every angle, in one report: **levels per day** and **per component**, **when** they happen (hour of day, weekday, the hour × weekday heatmap), the **failure-reason classification** (connection, PESIT refusal codes, network, routing) and the **most-repeated message shapes** (numbers, IDs and quoted values normalized away)." "" "${comps[@]}"
+merge_rpt "$OUT" "Errors" "Server-log errors and warnings from every angle: levels per component, the hour × weekday heatmap, the failure-reason classification (also per week) and the most-repeated message shapes." "The errors and warnings of the server log from every angle, in one report: the levels **per component**, **when** they happen (the hour × weekday heatmap with the hour and weekday totals), the **failure-reason classification** (connection, PESIT refusal codes, network, routing — also per ISO week) and the **most-repeated message shapes** (numbers, IDs and quoted values normalized away). The levels per day are the Top view." "" "${comps[@]}"

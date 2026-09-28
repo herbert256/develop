@@ -257,8 +257,8 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   across parts needs an order-preserving merge (result.sh's vote shows one); `unknown-entities`
   stays on its `FNR % 6` slicing on purpose (its tie rule depends on the slicing).
 - **Server-cache subsets** (`bin/server/subsets.sh`, `srv_subset NAME` in `bin/server/lib.sh`):
-  the RARE message families of uc1/uc3-status, remote-poll, connection-diagnostics, ssh-key-auth
-  and ssh-sessions, copied once per cache; every line a consumer acts on must contain one of its
+  the RARE message families of uc1/uc3-status, remote-poll, connection-diagnostics and
+  ssh-sessions, copied once per cache; every line a consumer acts on must contain one of its
   fixed-string MARKERS — change a consumer's patterns, change its markers. A missing subset set
   (no `subsets/.done`) falls back to the whole cache.
 - **Key-aligned and line-aligned slices** (2026-09-28, `bin/ranges.sh`): `grp_cuts FILE N` cuts a

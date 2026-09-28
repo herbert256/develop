@@ -727,26 +727,42 @@ check $([ "$(grep -c '<a class="brand" href="../index.html">Sample</a><span clas
 # scale verbatim, 1 s .. >= 48 h
 check $([ "$(grep -c '"1 s", "2 s", "3 s", "5 s", "7 s", "10 s", "15 s", "20 s", "25 s", "30 s", "45 s", "1 m", "5 m", "30 m", "1 h", "5 h", "10 h", "24 h", ">= 48 h"' docs/assets/slotchart.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "slotchart.js does not carry the 19-tick duration scale"
 
-# the Could not send file report (2026-09-12, user request): the planted
-# cnsend flow (estate.awk UC1_CD_IDM_VANDELAY) closes every failed burst
-# with an AR0074 line — the report lists them newest first, Date & time ·
-# Subscription · File, at most 1000 rows and 10 per subscription
+# the Advanced Routing errors report (2026-09-28: the merge of the 2026-09-12
+# Could not send file / Publish to account failed / Post client action error
+# pages): one table, Date & time · Error · Code · Account or subscription ·
+# File, newest first, at most 1000 rows and 10 per error and entity. The
+# planted cnsend flow (estate.awk UC1_CD_IDM_VANDELAY) closes every failed
+# burst with an AR0074 line, UC1_ODV_PUBLISH_PIEDPIPER (reason=publishfail)
+# logs ARPA0001, and UC3_CD_NOTARY_BLUTH (pcaerr tag) ARRC0009 — listed per
+# ACCOUNT, the first bracket before the @.
+R="data/server/reports/routing-errors.rpt"
+n=$(rpt_rows "$R")
+check $([ "$n" -gt 0 ] && echo 0 || echo 1) "routing-errors.rpt has 0 rows"
+h=$(awk -F'\t' '$1 == "HEAD" { print; exit }' "$R" 2>/dev/null)
+check $([ "$h" = $'HEAD\tDate & time\tError\tCode\tAccount or subscription\tFile' ] && echo 0 || echo 1) "routing-errors.rpt HEAD is '$h', expected Date & time|Error|Code|Account or subscription|File"
+arerr_rows() {   # $1 error label  $2 code  $3 entity -> the rows of that error for that entity
+    awk -F'\t' -v E="$1" -v C="$2" -v N="$3" '$1 == "ROW" && $3 == E && $4 == C { s = $5; sub(/^@\{[^}]*\}/, "", s); if (s == N) n++ } END { print n + 0 }' "$R" 2>/dev/null
+}
 if [ "$(exp cnsend)" -gt 0 ]; then
-    R="data/server/reports/could-not-send.rpt"
-    n=$(rpt_rows "$R")
-    check $([ "$n" -gt 0 ] && echo 0 || echo 1) "could-not-send.rpt has 0 rows"
-    h=$(awk -F'\t' '$1 == "HEAD" { print; exit }' "$R" 2>/dev/null)
-    check $([ "$h" = $'HEAD\tDate & time\tSubscription\tFile' ] && echo 0 || echo 1) "could-not-send.rpt HEAD is '$h', expected Date & time|Subscription|File"
-    n=$(awk -F'\t' '$1 == "ROW" { s = $3; sub(/^@\{[^}]*\}/, "", s); if (s == "UC1_CD_IDM_VANDELAY") n++ } END { print n + 0 }' "$R" 2>/dev/null)
-    check $([ "${n:-0}" -gt 0 ] && [ "${n:-0}" -le 10 ] && echo 0 || echo 1) "could-not-send.rpt has ${n:-0} row(s) for the planted flow, expected 1-10"
-    n=$(awk -F'\t' '$1 == "ROW" { s = $3; sub(/^@\{[^}]*\}/, "", s); if (++c[s] > 10) over++ } END { print over + 0 }' "$R" 2>/dev/null)
-    check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "could-not-send.rpt: ${n:-?} row(s) beyond the 10-per-subscription cap"
-    n=$(rpt_rows "$R")
-    check $([ "$n" -le 1000 ] && echo 0 || echo 1) "could-not-send.rpt has $n rows, beyond the 1000 cap"
-    n=$(awk -F'\t' '$1 == "ROW" { if (p != "" && $2 > p) bad++; p = $2 } END { print bad + 0 }' "$R" 2>/dev/null)
-    check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "could-not-send.rpt is not newest-first (${n:-?} row(s) out of order)"
-    check $([ -f docs/server/could-not-send.html ] && echo 0 || echo 1) "docs/server/could-not-send.html is missing"
+    n=$(arerr_rows "Could not send file" AR0074 UC1_CD_IDM_VANDELAY)
+    check $([ "${n:-0}" -gt 0 ] && [ "${n:-0}" -le 10 ] && echo 0 || echo 1) "routing-errors.rpt has ${n:-0} Could not send file row(s) for the planted flow, expected 1-10"
 fi
+n=$(arerr_rows "Publish to account failed" ARPA0001 UC1_ODV_PUBLISH_PIEDPIPER)
+check $([ "${n:-0}" -gt 0 ] && [ "${n:-0}" -le 10 ] && echo 0 || echo 1) "routing-errors.rpt has ${n:-0} Publish to account failed row(s) for the planted flow, expected 1-10"
+if [ "$(exp pcaerr)" -gt 0 ]; then
+    # the planted flow's ACCOUNT, as the configuration spells it
+    a=$(awk -F'\t' '$1 == "UC3_CD_NOTARY_BLUTH" { print $2; exit }' data/flow-manager/xref/_subscriptions-accounts.tsv 2>/dev/null)
+    check $([ -n "$a" ] && echo 0 || echo 1) "UC3_CD_NOTARY_BLUTH has no account in _subscriptions-accounts.tsv"
+    n=$(arerr_rows "Post client action error" ARRC0009 "$a")
+    check $([ "${n:-0}" -gt 0 ] && [ "${n:-0}" -le 10 ] && echo 0 || echo 1) "routing-errors.rpt has ${n:-0} Post client action error row(s) for the planted account ${a:-?}, expected 1-10"
+fi
+n=$(awk -F'\t' '$1 == "ROW" { s = $3 "|" $5; sub(/@\{[^}]*\}/, "", s); if (++c[s] > 10) over++ } END { print over + 0 }' "$R" 2>/dev/null)
+check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "routing-errors.rpt: ${n:-?} row(s) beyond the 10-per-error-and-entity cap"
+check $([ "$(rpt_rows "$R")" -le 1000 ] && echo 0 || echo 1) "routing-errors.rpt has more than 1000 rows"
+n=$(awk -F'\t' '$1 == "ROW" { if (p != "" && $2 > p) bad++; p = $2 } END { print bad + 0 }' "$R" 2>/dev/null)
+check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "routing-errors.rpt is not newest-first (${n:-?} row(s) out of order)"
+check $([ -f docs/server/routing-errors.html ] && echo 0 || echo 1) "docs/server/routing-errors.html is missing"
+check $([ ! -f docs/server/could-not-send.html ] && [ ! -f docs/server/publish-failed.html ] && [ ! -f docs/server/post-client-action.html ] && echo 0 || echo 1) "a merged AR-line list page (could-not-send / publish-failed / post-client-action) is back"
 
 # the EventQueue data (2026-09-14, user request): the server-log lines starting "[Pesit Default] Unable to
 # submit event AgentEvent" (the sample plants bursts) — the cache, the per-day table and the 30-minute sidecar
@@ -762,38 +778,6 @@ check $([ ! -f docs/server/event-queue.html ] && [ ! -f docs/server/platform-hea
 check $(grep -q $'^CARDALT\tEventQueue\t' data/dashboards/reports/overview.rpt 2>/dev/null && echo 0 || echo 1) "the overview dashboard carries no EventQueue chart view"
 d=$(awk -F'\t' '{ print $1; exit }' "$EQ" 2>/dev/null)
 check $(grep -q $'^CARDALT\tEventQueue\t' "data/day/reports/${d:-none}.rpt" 2>/dev/null && echo 0 || echo 1) "day page ${d:-?} carries no EventQueue chart view"
-
-# its two twins on the shared body bin/server/arlist.sh (2026-09-12, user
-# request): "Publish to account failed" (the ARPA0001 lines of the planted
-# UC1_ODV_PUBLISH_PIEDPIPER, reason=publishfail) and "Post client action
-# error" (the ARRC0009 lines of the planted UC3_CD_NOTARY_BLUTH, pcaerr tag,
-# listed per ACCOUNT — the first bracket before the @). Same caps and order.
-arlist_checks() {   # $1 basename  $2 entity column  $3 expected entity value (or "")  $4 "File" when the table has a File column
-    local R="data/server/reports/$1.rpt" n h want
-    n=$(rpt_rows "$R")
-    check $([ "$n" -gt 0 ] && echo 0 || echo 1) "$1.rpt has 0 rows"
-    h=$(awk -F'\t' '$1 == "HEAD" { print; exit }' "$R" 2>/dev/null)
-    want=$'HEAD\tDate & time\t'"$2"; [ -n "$4" ] && want="$want"$'\t'"$4"
-    check $([ "$h" = "$want" ] && echo 0 || echo 1) "$1.rpt HEAD is '$h', expected '$want'"
-    if [ -n "$3" ]; then
-        n=$(awk -F'\t' -v E="$3" '$1 == "ROW" { s = $3; sub(/^@\{[^}]*\}/, "", s); if (s == E) n++ } END { print n + 0 }' "$R" 2>/dev/null)
-        check $([ "${n:-0}" -gt 0 ] && [ "${n:-0}" -le 10 ] && echo 0 || echo 1) "$1.rpt has ${n:-0} row(s) for the planted $3, expected 1-10"
-    fi
-    n=$(awk -F'\t' '$1 == "ROW" { s = $3; sub(/^@\{[^}]*\}/, "", s); if (++c[s] > 10) over++ } END { print over + 0 }' "$R" 2>/dev/null)
-    check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "$1.rpt: ${n:-?} row(s) beyond the 10-per-entity cap"
-    n=$(rpt_rows "$R")
-    check $([ "$n" -le 1000 ] && echo 0 || echo 1) "$1.rpt has $n rows, beyond the 1000 cap"
-    n=$(awk -F'\t' '$1 == "ROW" { if (p != "" && $2 > p) bad++; p = $2 } END { print bad + 0 }' "$R" 2>/dev/null)
-    check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "$1.rpt is not newest-first (${n:-?} row(s) out of order)"
-    check $([ -f "docs/server/$1.html" ] && echo 0 || echo 1) "docs/server/$1.html is missing"
-}
-arlist_checks publish-failed Subscription UC1_ODV_PUBLISH_PIEDPIPER File
-if [ "$(exp pcaerr)" -gt 0 ]; then
-    # the planted flow's ACCOUNT, as the configuration spells it
-    a=$(awk -F'\t' '$1 == "UC3_CD_NOTARY_BLUTH" { print $2; exit }' data/flow-manager/xref/_subscriptions-accounts.tsv 2>/dev/null)
-    check $([ -n "$a" ] && echo 0 || echo 1) "UC3_CD_NOTARY_BLUTH has no account in _subscriptions-accounts.tsv"
-    arlist_checks post-client-action Account "$a" ""
-fi
 
 # the TRANSFER-ENDED sessions rule (2026-09-12, user rule): an Error/Warning
 # on a session that also logged {"message":"Transfer end logged." is not a
@@ -986,6 +970,28 @@ r=$(awk -F'\t' '
     END { print cmp + 0, bad + 0, (ex == "" ? "-" : ex) }' data/transfer/reports/details/subscriptions/*.rpt docs/analyses/subscriptions.html 2>/dev/null)
 read -r dcmp dbad dex <<< "$r"
 check $([ "${dcmp:-0}" -gt 0 ] && [ "${dbad:-1}" = 0 ] && echo 0 || echo 1) "analyses/subscriptions.html Direction: ${dbad:-?} of ${dcmp:-?} row(s) differ from the detail title prefix (first: ${dex:-?})"
+
+# the fewer-server-reports round (2026-09-28, user request): the duplicate tab
+# pages are gone — Errors Per day (= the Top view), By hour / By weekday (the
+# heatmap marginals, now its Errors / Warnings / Total columns and Total row),
+# the three ssh-key-auth tabs, Whitelist usage, the empty-by-construction Test
+# outcomes and the Site failures page (= the Per flow connection rows)
+gone=""
+for p in errors-per-day errors-by-hour errors-by-weekday logons-key-mismatches logons-lockouts logons-outbound-key-failures connections-whitelist-usage connections-test-outcomes site-failures; do
+    [ -f "docs/server/$p.html" ] && gone="$gone $p"
+done
+check $([ -z "$gone" ] && echo 0 || echo 1) "removed server page(s) are back:${gone:-}"
+# ... and the lockouts the Lockouts tab listed are in the Incoming Locked
+# column: its sum = every "is locked" + "locked due to too many failed login"
+# line of the cache (the sample plants the lockouts)
+wl=$(awk -F'\t' 'index($5, "[Ssh Default] User ") && (index($5, "is locked") || index($5, "locked due to too many failed login")) { n++ } END { print n + 0 }' data/server/cache/_parse.tsv 2>/dev/null)
+rl=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "HEAD" { for (i = 2; i <= NF; i++) if ($i == "Locked") c = i } t == 1 && $1 == "ROW" && c { v = $c; sub(/^@\{[^}]*\}/, "", v); n += v } END { print n + 0 }' data/server/reports/logon.rpt 2>/dev/null)
+check $([ "${wl:-0}" -gt 0 ] && [ "$rl" = "$wl" ] && echo 0 || echo 1) "logon.rpt Incoming Locked sums to ${rl:-?}, the cache holds ${wl:-?} lock line(s)"
+# the Errors heatmap Total column (field 12: ROW, Hour, 7 weekdays, Errors,
+# Warnings, Total) sums to every Error + Warning line with a date and time
+hm=$(awk -F'\t' '$1 == "TABLE" { h = ($2 == "Hour × weekday heatmap") } h && $1 == "ROW" { v = $12; sub(/^@\{[^}]*\}/, "", v); n += v } END { print n + 0 }' data/server/reports/errors.rpt 2>/dev/null)
+ew=$(awk -F'\t' '($3 == "E" || $3 == "W") && $1 ~ /^[0-9][0-9][0-9][0-9]-/ && $2 ~ /^[0-9][0-9]:/ { n++ } END { print n + 0 }' data/server/cache/_parse.tsv 2>/dev/null)
+check $([ "${ew:-0}" -gt 0 ] && [ "$hm" = "$ew" ] && echo 0 || echo 1) "errors.rpt heatmap Total column sums to ${hm:-?}, the cache holds ${ew:-?} Error/Warning line(s)"
 
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2

@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/logons.rpt"
 comps=()
-for c in logon auth-activity ssh-key-auth; do
+for c in logon auth-activity; do   # ssh-key-auth went 2026-09-28: Key mismatches = Incoming Bad key, Lockouts now in Incoming Locked, Outbound key failures = a subset of Outgoing
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "Logons" "The whole SSH authentication story: the incoming screening funnel, successful logons per account and source IP, shared-certificate detection, key mismatches, lockouts and our outbound auth failures." "The whole SSH authentication story in one report: the **incoming screening funnel** per login, the **successful logons** per account and source IP (with shared-certificate detection), the **key-authentication failures** — key mismatches and account lockouts — and our **outbound** authentication failures at partner systems." "" "${comps[@]}"
+merge_rpt "$OUT" "Logons" "The whole SSH authentication story: the incoming screening funnel (with bad keys and lockouts), successful logons per account and source IP, shared-certificate detection and our outbound auth failures." "The whole SSH authentication story in one report: the **incoming screening funnel** per login (bad keys and lockouts included), the **successful logons** per account and source IP (with shared-certificate detection) and our **outbound** authentication failures at partner systems." "" "${comps[@]}"

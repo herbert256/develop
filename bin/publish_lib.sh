@@ -179,7 +179,7 @@ CUR_DATES=""
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
 transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out uc4-to-uc2 same-protocol activity punctuality expected-arrival cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage entity-coverage-once entity-coverage-ok entity-coverage-diff sources-and-targets skipped not-in-flow-manager volume files top-transfers route-throughput size-profile ranking failed failure-rate episodes recovered recovered-files failed-files from-green-to-red only-red waiting expired missing-cronjobs retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-slowest duration-dwell duration-all duration-trend account-sharing twins)
-server_order=(topview errors failure-flows io-errors could-not-send publish-failed post-client-action pickups uc-status uc2-visits polling went-kaput site-failures logons connections ssh-security deploy-errors no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab)
+server_order=(topview errors failure-flows io-errors routing-errors pickups uc-status uc2-visits polling went-kaput logons connections ssh-security deploy-errors no-remote-dir no-remote-files missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
 # FOUR reports whose DATA belongs to the transfer / server areas — they read
@@ -204,7 +204,7 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 }
 
 # ---- the boxes-only reports (2026-07) ---------------------------------------
-# The ELEVEN reports whose only navigation is the two Boxes pages: every one is
+# The TEN reports whose only navigation is the two Boxes pages: every one is
 # linked from a box's explanation text on Subscriptions/Accounts in boxes, so
 # they are dropped from the area dropdowns, the area index pages, the sitemap
 # area cards and the group tab bars (group_of returns "" — their pages carry NO
@@ -213,13 +213,15 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 # point there), their scripts stay in the area orchestrators, and the sitemap
 # lists them under the Boxes card; the report finder labels them Analyses.
 # Names are unique across the two areas, so one flat list suffices.
-BOXES_ONLY_REPORTS=" pirates from-green-to-red only-red waiting expired went-quiet missing-cronjobs went-kaput site-failures deploy-errors no-remote-dir no-remote-files "
+BOXES_ONLY_REPORTS=" pirates from-green-to-red only-red waiting expired went-quiet missing-cronjobs went-kaput deploy-errors no-remote-dir no-remote-files "   # site-failures left 2026-09-28: no page any more, the Connection failures box links Per flow
 
 # The 2026-07 MERGED-report components: their .rpt files stay on disk (they
 # feed the merged reports and every other consumer) but they have NO page of
 # their own — whats-new must not link them. ranking and double are retired
-# outright; the four uc<n>-status merged into uc-status.
-MERGED_COMPONENT_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity ssh-key-auth pesit event-queue ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status double stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling "
+# outright; the four uc<n>-status merged into uc-status. site-failures (2026-09-28)
+# is a pageless DATA producer like pesit / event-queue: the Boxes and
+# Partners - Outgoing read its .rpt, its page was the Per flow connection rows.
+MERGED_COMPONENT_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity pesit event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status double stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling "
 is_merged_component() {
     case $MERGED_COMPONENT_REPORTS in *" $1 "*) return 0 ;; esac
     return 1
@@ -265,10 +267,10 @@ report_tabs() {
         activity)      echo "Per day|Per week|Per hour|Hour × weekday|Per weekday" ;;
         retries)       echo "Failing flows|Legs before success|Gave up|Retry spacing|Failing side|Resubmitted per day|Per subscription|Resubmission outcomes" ;;   # 2026-08: + the server-log outcome table (resubmissions component table 3)
         file-journey)  echo "Patterns|Leg count|Most legs|Protocol journey|Last leg|In and out" ;;
-        errors)        echo "Per day|Per component|By hour|By weekday|Heatmap|Reasons|Top messages" ;;
+        errors)        echo "Reasons|Heatmap|Top messages|Per component" ;;   # 2026-09-28: Per day went (= the Top view), By hour / By weekday folded into the Heatmap, Reasons carries the per-week table (tab=reasons)
         missing-entities) echo "Subscriptions|Accounts|Hosts|Whitelist|Logins" ;;
-        connections)   echo "By protocol|Per day|By account|By address|Whitelist usage|Failure reasons|By remote host|Test connections|Host keys|Test outcomes" ;;   # 2026-08: + connection-diagnostics tables 4-5
-        logons)        echo "Incoming|Outgoing|Near misses|Scanners|By account|By source IP|Certificates|Key mismatches|Lockouts|Outbound key failures" ;;   # 2026-08: + the door-knocker tables (logon component tables 3-4)
+        connections)   echo "By protocol|Per day|By account|By address|Failure reasons|By remote host|Test connections|Host keys" ;;   # 2026-08: + connection-diagnostics tables 4-5; 2026-09-28: Whitelist usage (= Incoming Allowed + Re-screens) and Test outcomes (empty by construction) gone
+        logons)        echo "Incoming|Outgoing|Near misses|Scanners|By account|By source IP|Certificates" ;;   # 2026-08: + the door-knocker tables (logon component tables 3-4); 2026-09-28: the ssh-key-auth tabs went (Key mismatches = Incoming Bad key, Lockouts now in Incoming Locked, Outbound key failures = a subset of Outgoing)
         uc-status)     echo "UC1|UC2|UC3|UC4" ;;
         failure-rate)  echo "Accounts|Subscriptions|Days" ;;
         protocol)      echo "Protocol|Direction|Crosstab|Action By|Direction x Action|Mode" ;;   # the 2026-07 merge: + direction-action's Action By/Crosstab tables + the Mode split
@@ -301,9 +303,9 @@ group_members() {
         performance-session) echo "duration anomalies duration-longest duration-slowest duration-dwell duration-trend" ;;   # 2026-09-05: Duration leads (user request)   # 2026-08: + duration-trend; 2026-09-03: + the duration split-offs; 2026-09-05: duration-distribution + dwell-time merged into duration-dwell
         cross)               echo "cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl" ;;
         srv-overview)        echo "topview" ;;
-        srv-errors)          echo "errors failure-flows io-errors could-not-send publish-failed post-client-action" ;;      # 2026-07: errors-day/error-timing/error-reasons/top-messages merged; 2026-08: + failure-flows (per-flow reason matrix); 2026-09-06: + io-errors (the platform failing to read its own files)
+        srv-errors)          echo "errors failure-flows io-errors routing-errors" ;;      # 2026-07: errors-day/error-timing/error-reasons/top-messages merged; 2026-08: + failure-flows (per-flow reason matrix); 2026-09-06: + io-errors (the platform failing to read its own files); 2026-09-28: the three AR-line lists merged into routing-errors
         srv-transfers)       echo "pickups" ;;   # transfer-outcomes + file-freshness went with the dropped JSON bookend lines (2026-08)
-        srv-connections)     echo "logons connections" ;;        # 2026-07 merges (logons leads since 2026-08); site-failures is boxes-only
+        srv-connections)     echo "logons connections" ;;        # 2026-07 merges (logons leads since 2026-08)
         srv-security)        echo "ssh-security" ;;              # 2026-07: ssh-crypto + ssh-sessions merged
         srv-missing)         echo "missing-entities" ;;          # 2026-07: the five unknown-* merged (one script all along)
     esac
@@ -321,7 +323,7 @@ group_of() {   # $1 area (transfer|server)  $2 report basename -> group id (empt
         dwell-time|duration|duration-all|duration-longest|duration-slowest|duration-distribution|duration-dwell|anomalies|duration-trend)     echo "performance-session" ;;   # the duration-* siblings: Duration's All-transfers / Percentage views (not group MEMBERS — they share Duration's slot)
         cross-account|cross-login|cross-subscription|cross-host|cross-logical|cross-partner|cross-application|cross-domain|cross-bl) echo "cross" ;;
                 errors) echo "srv-errors" ;;
-        failure-flows|io-errors|could-not-send|publish-failed|post-client-action) echo "srv-errors" ;;
+        failure-flows|io-errors|routing-errors) echo "srv-errors" ;;
         pickups) echo "srv-transfers" ;;
         connections|logons) echo "srv-connections" ;;
         ssh-security) echo "srv-security" ;;
@@ -362,9 +364,9 @@ group_desc() {
         performance-session) echo "Detected unusual hours and days (anomalies), how long transfers take end to end, and the store-and-forward wait inside SecureTransport." ;;
         cross)               echo "Which pairs of the nine entities belong together — green pairs appear in the transfer logs, red pairs are configured but never logged. Pick the first entity in the top row, the second below." ;;
         srv-overview)        echo "The server log at a glance: the wide per-day dashboard (records, level split, per-component activity)." ;;
-        srv-errors)          echo "The error side of the server log: the Info/Warning/Error split per day and by hour/weekday, error reasons classified into failure buckets, the most-repeated warn/error message shapes, the IO errors on the platform's own files, the files a route could not send to its transfer site or publish into its account, and the post client actions that failed." ;;
+        srv-errors)          echo "The error side of the server log: the Info/Warning/Error split per component, the hour × weekday heatmap, error reasons classified into failure buckets (also per week and per flow), the most-repeated warn/error message shapes, the IO errors on the platform's own files, and the Advanced Routing errors — files a route could not send or publish, post client actions that failed." ;;
         srv-transfers)       echo "The server's own view of the deliveries: which staged files the partners actually came to collect, and when." ;;
-        srv-connections)     echo "The SSH logon screening (incoming funnel + outbound auth failures), successful authentication activity per account and source IP, the inbound connection volume per protocol/account/address, and connection diagnostics." ;;
+        srv-connections)     echo "The SSH logon screening (incoming funnel with bad keys and lockouts, outbound auth failures), successful authentication activity per account and source IP, the inbound connection volume per protocol/account/address, and connection diagnostics." ;;
         srv-security)        echo "The negotiated cipher/crypto posture with weak algorithms flagged, protocol and credential hygiene signals, and session lifecycle problems." ;;
         srv-missing)         echo "Entities that appear in the server messages but are absent from the transfer logs — subscriptions, accounts, IPs and logins." ;;
     esac
@@ -378,8 +380,7 @@ member_label() {   # row-1 tab text for a grouped report
         route-throughput) echo "Route throughput" ;; size-profile) echo "Size profile" ;;
         recovered) echo "Recovered flows" ;; recovered-files) echo "Recovered files" ;; failed-files) echo "Failed files" ;; uc4-to-uc2) echo "UC4 to UC2" ;; same-protocol) echo "Inbound and Outbound same Protocol" ;; security-outreach) echo "Security outreach" ;;
         connection-efficiency) echo "Connection efficiency" ;; duration-trend) echo "Duration trend" ;;
-        failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;; could-not-send) echo "Could not send" ;;
-        publish-failed) echo "Publish failed" ;; post-client-action) echo "Post client action" ;;
+        failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;; routing-errors) echo "Routing errors" ;;
         triage) echo "Triage" ;; data-diff) echo "Since yesterday" ;;
         partner-scorecard) echo "Partner scorecard" ;; blast-radius) echo "Blast radius" ;;
         app-partners) echo "Application dependencies" ;; partner-lifecycle) echo "Partner lifecycle" ;;
@@ -412,7 +413,7 @@ member_label() {   # row-1 tab text for a grouped report
         cross-host) echo "Hosts" ;;
         went-kaput) echo "Trouble after success" ;;
         errors-day) echo "Errors per day" ;; error-timing) echo "Error timing" ;; error-reasons) echo "Error reasons" ;; top-messages) echo "Top messages" ;;
-        site-failures) echo "Connection failures" ;; connection-diagnostics) echo "Diagnostics" ;; inbound-connections) echo "Inbound connections" ;; logon) echo "Logon" ;; auth-activity) echo "Auth activity" ;; ssh-key-auth) echo "Key auth" ;; uc1-status) echo "UC1 status" ;; uc2-status) echo "UC2 status" ;; uc4-status) echo "UC4 status" ;; uc2-visits) echo "UC2 pickup visits" ;; polling) echo "Polling" ;; pickups) echo "Pickups" ;; account-sharing) echo "Account sharing" ;; twins) echo "Twins" ;;
+        site-failures) echo "Connection failures" ;; connection-diagnostics) echo "Diagnostics" ;; inbound-connections) echo "Inbound connections" ;; logon) echo "Logon" ;; auth-activity) echo "Auth activity" ;; uc1-status) echo "UC1 status" ;; uc2-status) echo "UC2 status" ;; uc4-status) echo "UC4 status" ;; uc2-visits) echo "UC2 pickup visits" ;; polling) echo "Polling" ;; pickups) echo "Pickups" ;; account-sharing) echo "Account sharing" ;; twins) echo "Twins" ;;
         ssh-crypto) echo "Crypto" ;; ssh-sessions) echo "SSH sessions" ;;
         pesit) echo "PeSIT" ;; event-queue) echo "EventQueue" ;;
         deploy-errors) echo "Deploy errors" ;; uc3-status) echo "UC3 status" ;; no-remote-dir) echo "No remote dir" ;; no-remote-files) echo "No remote files" ;;

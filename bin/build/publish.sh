@@ -1547,7 +1547,7 @@ write_sitemap() {
         printf '<li><a href="../analyses/app-partners.html">Application dependencies</a></li>\n'
         printf '<li><a href="../analyses/partner-lifecycle.html">Partner lifecycle</a></li>\n'
         printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Boxes <span class="smcount">15</span></h3><ul>\n'
+        printf '<div class="smcard"><h3>Boxes <span class="smcount">14</span></h3><ul>\n'
         local sub5
         for sub5 in 'analyses/subscriptions-in-boxes.html|Subscriptions in boxes' \
                     'analyses/accounts-in-boxes.html|Accounts in boxes' \
@@ -1560,7 +1560,6 @@ write_sitemap() {
                     'transfer/expired.html|Expired files' \
                     'transfer/went-quiet-subscriptions.html|Went quiet' \
                     'server/went-kaput.html|Trouble after success' \
-                    'server/site-failures.html|Connection failures' \
                     'server/deploy-errors.html|Deploy errors' \
                     'server/no-remote-dir.html|No remote dir' \
                     'server/no-remote-files.html|No remote files'; do
@@ -1687,7 +1686,7 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
             errors-day|error-timing|error-reasons|top-messages)     wn_parent=errors ;;
             unknown-sites|unknown-accounts|unknown-hosts|unknown-whitelisting|unknown-logins) wn_parent=missing-entities ;;
             inbound-connections|connection-diagnostics)             wn_parent=connections ;;
-            logon|auth-activity|ssh-key-auth)                       wn_parent=logons ;;
+            logon|auth-activity)                                    wn_parent=logons ;;
             ssh-crypto|ssh-sessions)                                wn_parent=ssh-security ;;
             uc1-status|uc2-status|uc3-status|uc4-status|remote-poll|uc3-polling) wn_parent=uc-status ;;   # remote-poll/uc3-polling: the UC3 tab (2026-09-05)
             volume-src|trend)                                       wn_parent=volume ;;

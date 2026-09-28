@@ -7,6 +7,11 @@
 # their "Additional info" / "Pesit Message" fields are always UNKNOWN — so this
 # is the only place the WHY of the ~45% failure rate is visible.
 #
+# Two tables on ONE tab page (both carry tab=reasons): the buckets, and the
+# same buckets per ISO week — the "Reasons over time" table that sat on the
+# Per flow page until 2026-09-28 (user request: fewer server reports; it
+# counted these same E lines and tied to this total exactly).
+#
 # Reads the parse cache (data/_parse.tsv: 1=date, 2=time, 3=level, 5=message).
 #
 # Usage:
@@ -35,8 +40,23 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # "Other" with an example, so new families surface instead of vanishing.
 # Emits TAB-separated (messages may contain "|"): count, share, bucket, per-day
 # buckets, example (the chronologically FIRST message by "date time" sortkey —
-# the cache is NOT in chronological order — truncated).
+# the cache is NOT in chronological order — truncated); W lines = bucket x ISO
+# week.
 agg=$(awk -F'\t' "$LOGLINES_AWK"'
+    function jdn(y, m, d,   a) { a = int((14-m)/12); y = y+4800-a; m = m+12*a-3
+        return d + int((153*m+2)/5) + 365*y + int(y/4) - int(y/100) + int(y/400) - 32045 }
+    # ISO week label from an ISO date: the calendar week of that date Thursday
+    # (jdn%7: 0 = Monday, so Thursday = week start + 3).
+    function isoweek(ds,   y, j, tj, ty) {
+        y = substr(ds, 1, 4) + 0
+        if (y < 1900) return ""
+        j = jdn(y, substr(ds, 6, 2) + 0, substr(ds, 9, 2) + 0)
+        tj = j - (j % 7) + 3
+        ty = y
+        if (jdn(ty, 1, 1) > tj) ty--
+        else if (jdn(ty + 1, 1, 1) <= tj) ty++
+        return sprintf("%04d-W%02d", ty, int((tj - jdn(ty, 1, 1)) / 7) + 1)
+    }
     $3 != "E" { next }
     {
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
@@ -71,13 +91,24 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
         addline(b, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
         sk = $1 " " $2
         if (!(b in exk) || sk < exk[b]) { exk[b] = sk; ex[b] = (m == "") ? "(empty message)" : substr(m, 1, 160) }   # never empty: a TAB read collapses it (2026-09-28)
-        if (d != "") cd2[b SUBSEP d]++
+        if (d != "") {
+            cd2[b SUBSEP d]++
+            wk = isoweek(d)
+            if (wk != "") {
+                wcnt[b SUBSEP wk]++
+                addline("W" SUBSEP b SUBSEP wk, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
+            }
+        }
     }
     END {
         for (k in cd2) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" cd2[k] }
         # share is field 2 — computed HERE, where the pass total already is, not
         # by an awk fork per row down in the shell
         for (b in cnt) printf "%d\t%.1f\t%s\t%s\t%s\t%s\n", cnt[b], (tot ? cnt[b]*100/tot : 0), b, bk[b], ex[b], lastlines(b)
+        for (k in wcnt) {
+            split(k, a, SUBSEP)
+            printf "W\t%s\t%s\t%d\t%s\n", a[2], a[1], wcnt[k], lastlines("W" SUBSEP a[1] SUBSEP a[2])
+        }
         printf "TOT\t%d\n", tot
     }
 ' "$PARSED")
@@ -88,15 +119,23 @@ if [ -z "$tot_err" ] || [ "$tot_err" -eq 0 ]; then
     rm -f "$OUT"   # no data for this ENV — page not published (an env-split legitimate state)
     exit 0
 fi
-nreasons=$(printf '%s\n' "$agg" | grep -cv '^TOT' || true)
+nreasons=$(printf '%s\n' "$agg" | grep -cEv $'^(TOT|W)\t' || true)
+n_weeks=$(printf '%s\n' "$agg" | grep -c $'^W\t' || true)
 
-# The row writer prints STRAIGHT to stdout inside the page block below — a
-# `rows+=$(printf …)` per row forks a subshell per row for nothing.
+# The row writers print STRAIGHT to stdout inside the page block below — a
+# `rows+=$(printf …)` per row forks a subshell per row for nothing. Sorts
+# carry explicit tiebreakers: no output depends on awk hash-iteration order.
 rows() {
     while IFS=$'\t' read -r count share reason bk example lines; do
         [ -z "$reason" ] && continue
         printf 'ROW\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$reason" "$count" "$share" "$example" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep -v '^TOT' | sort -t"$(printf '\t')" -k1,1nr)"
+    done <<< "$(printf '%s\n' "$agg" | grep -Ev $'^(TOT|W)\t' | sort -t"$(printf '\t')" -k1,1nr -k3,3)"
+}
+week_rows() {
+    while IFS=$'\t' read -r _k wk reason count lines; do
+        [ -z "$wk" ] && continue
+        printf 'ROW\t%s\t%s\t%s\t@data:loglines=%s\n' "$wk" "$reason" "$count" "$lines"
+    done <<< "$(printf '%s\n' "$agg" | grep $'^W\t' | sort -t"$(printf '\t')" -k2,2r -k4,4nr -k3,3)"
 }
 
 {
@@ -104,13 +143,20 @@ rows() {
     printf 'DESC\tServer-log ERROR messages classified by failure reason (connection, PESIT refusal codes, network, routing).\n'
     printf 'INTRO\t**%s** ERROR records classified into **%s** reason bucket(s). The transfer logs record only OK/Error with no reason (their detail fields are always UNKNOWN); the server log carries the why — partner connection failures, PESIT refusal codes (`reason=…`), network resets, routing-step errors.\n' \
         "$tot_err" "$nreasons"
-    printf 'TABLE\tErrors by reason\twide\n'
+    printf 'TABLE\tErrors by reason\twide\ttab=reasons\n'
     printf 'HEAD\tReason\tErrors\tShare\tExample message\n'
     printf 'KIND\ttext\tnumfailed\tnum\tfile\n'
     printf 'RECALC\t-\ts0\t%%0\t-\n'
     rows
     printf 'TOTAL\tTotal (%s reason(s))\t@{class=num failed}%s\t@{class=num}100.0%%\t\n' "$nreasons" "$tot_err"
     printf 'NOTE\tOne row per reason bucket; PESIT reason= codes get their own bucket each. "Example message" is the first occurrence, truncated. Unrecognized error families land in "Other" so new problems surface rather than vanish. Click a row to expand its 10 most recent error lines.\n'
+
+    printf 'TABLE\tReasons over time\twide\tnofilter\ttab=reasons\n'
+    printf 'HEAD\tISO week\tReason\tErrors\n'
+    printf 'KIND\ttext\ttext\tnumfailed\n'
+    week_rows
+    printf 'TOTAL\tTotal (%s row(s))\t\t@{class=num failed}%s\n' "$n_weeks" "$tot_err"
+    printf 'NOTE\tThe same buckets per ISO week, newest week first — how the reason mix moves; always the full period. Click a row to expand its 10 most recent error lines.\n'
     printf 'SUMMARY\tErrors: %s  |  Reason buckets: %s\n' "$tot_err" "$nreasons"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

@@ -23,13 +23,26 @@ consumer keeps reading them. Transfer: `activity` (day+weekly+hourly+weekday), `
 (went-quiet-src+stale-accounts). Server: `errors`, `connections`, `logons`, `ssh-security`,
 `missing-entities`, `transfers`. Analyses: `uc-status`. (`platform-health` and `capacity` went
 with the Operations & Capacity group, 2026-09-27.)
-`report_tabs` names one tab per component table; `_merge_pad` pads a missing component with empty
-stubs so the tab count always matches. Components are listed in `MERGED_COMPONENT_REPORTS`
+`report_tabs` names one tab per component table (tables sharing a `tab=KEY` modifier are ONE tab);
+`_merge_pad` pads a missing component with empty stubs so the tab count always matches. **The
+2026-09-28 fewer-server-reports round** (user request: "there are too many, are there
+duplicates?") cut the server tabs that repeated another page number for number: Errors lost Per day
+(= the Top view) and By hour / By weekday (the heatmap marginals — the heatmap now carries per-hour
+Errors / Warnings / Total columns, re-summed by report.js `recalcHeat` from the row's
+`data-buckets`, and a row click expands the hour's lines); Reasons leads and carries Per flow's
+former "Reasons over time" table (`tab=reasons`); Logons lost the whole ssh-key-auth component
+(Key mismatches = Incoming Bad key, Lockouts folded into Incoming Locked — which had missed the
+"locked due to too many failed login" line — Outbound key failures = a subset of Outgoing);
+Connections lost Whitelist usage (= Incoming Allowed + Re-screens per policy) and Test outcomes
+(empty by construction: the NOISE filter drops "Error during test connection"). Components are listed in `MERGED_COMPONENT_REPORTS`
 (whats-new skips them); merged basenames reuse one component's help slug.
 
 **The BOXES-ONLY reports** (`BOXES_ONLY_REPORTS`/`is_boxes_only`): pirates · from-green-to-red ·
 only-red · waiting · expired · went-quiet · missing-cronjobs (transfer) and went-kaput ·
-site-failures · deploy-errors · no-remote-dir · no-remote-files (server). In NO group and NO area
+deploy-errors · no-remote-dir · no-remote-files (server). (site-failures left 2026-09-28: its page
+was the Per flow "Connection failure" rows, row for row — the script stays as a pageless data
+producer in `MERGED_COMPONENT_REPORTS`, the Boxes connection column and Partners - Outgoing read its
+.rpt, and every link to it points at `server/failure-flows.html` now.) In NO group and NO area
 menu/index/sitemap card; their pages stay at the area URLs with no group tab row; the sitemap
 lists them under the Boxes card; the report finder labels them Analyses. Their scripts still run
 in the area orchestrators and feed the boxes and day pages.
@@ -225,17 +238,17 @@ file-in-file-out) · **protocol-security** (protocol · security-params · av-sc
 `duration-all` sibling shares Duration's slot; the Min/Avg/Max pages folded into the Duration pages as a side-by-side second table 2026-09-13) ·
 **cross** "Cross References".
 
-Server groups: **srv-overview** (topview) · **srv-errors** (errors · failure-flows · io-errors · could-not-send ·
-publish-failed · post-client-action — io-errors, 2026-09-06, lists every "IO Error reading file
+Server groups: **srv-overview** (topview) · **srv-errors** (errors · failure-flows · io-errors · routing-errors
+— io-errors, 2026-09-06, lists every "IO Error reading file
 /data/FlowManager/<account>@<login>/<file>" line per folder, per line and per day, each line joined to its
-File by name for the outcome; the three AR-LINE LISTS, 2026-09-12, share one body — `bin/server/arlist.sh`
-(`arlist_run`: one row per matched Advanced Routing line, newest first, capped at 1000 rows and 10 per
-entity, the entity alink'd; the caller sets the title/prose, the match regex and an awk extraction
-snippet over the parsed `[B1] [B2] BODY`) — could-not-send = the AR0074 "Could not send file: {…}"
-lines, Date & time · Subscription (the second bracket) · File; publish-failed = the ARPA0001 "while
-publishing the file {…} to an account" lines, the same columns; post-client-action = the ARRC0009
-"Error deleting the file after a post client action." lines, Date & time · Account (the first bracket
-before the @)) · **srv-transfers**
+File by name for the outcome; **routing-errors** "Advanced Routing errors" (2026-09-28: the merge of the
+three 2026-09-12 AR-line lists could-not-send, publish-failed and post-client-action and their shared
+body `bin/server/arlist.sh`) is ONE table, one pass: one row per matched Advanced Routing line, newest
+first, capped at 1000 rows and 10 per error AND entity — Date & time · Error · Code · Account or
+subscription (the header render_rpt's row tint reads against both caches) · File: the AR0074 "Could not
+send file: {…}" and ARPA0001 "while publishing the file {…} to an account" lines name the SUBSCRIPTION
+(the second bracket), the ARRC0009 "Error deleting the file after a post client action." lines the
+ACCOUNT (the first bracket before the @)) · **srv-transfers**
 "Transfers & Delivery" (pickups — the `transfers` merge went in 2026-08 with the JSON
 Transfer-start/end lines its two components read) · **srv-connections** (connections · logons) ·
 **srv-security** (ssh-security) · **srv-missing** (missing-entities). (Removed 2026-09-27, user
@@ -1038,7 +1051,7 @@ means.
 boxes over one row each (the first box counts the whole estate; box ids 12 "Server log only" and
 19 "Failing polls" went with the blue result, 2026-09-27, and stay unused). Sources: (a) a
 report's own `.rpt` (from-green-to-red, went-kaput, only-red, no-remote-dir/-files,
-missing-cronjobs, went-quiet, site-failures); (b) derived from `_files.tsv` (One-legged, Waiting,
+missing-cronjobs, went-quiet, site-failures — pageless since 2026-09-28, its cells link Per flow); (b) derived from `_files.tsv` (One-legged, Waiting,
 Expired); (c) no report at all, read from the same sources as the Entities views: not seen
 (`coverage/subscriptions.tsv` col 3 = 0), seen (col 3 ≠ 0, so **Seen + Not seen = Total**, the
 invariant to re-assert), ok (green), error (red). Login errors in/out come from logon.rpt via the `_logins-subscriptions` /

@@ -16,9 +16,10 @@
 # The _SCP_/_SSCP_/_CCP_ tail is dropped (canonical subscription name, same as
 # site-failures.sh), and each token is resolved against the transfer
 # subscription roster by unique prefix (server messages truncate long names).
-# An E line naming no flow is excluded from table 1 — so table 1 is a strict
-# SUBSET of error-reasons' totals; table 2 covers ALL E records and ties to
-# error-reasons exactly.
+# An E line naming no flow is excluded — so the table is a strict SUBSET of
+# error-reasons' totals. (Its second table, the reason mix per ISO week over
+# ALL E records, moved to the Errors / Reasons tab on 2026-09-28 — user
+# request: fewer server reports; it tied to error-reasons exactly.)
 #
 # Reads the parse cache (data/_parse.tsv: 1=date, 2=time, 3=level, 5=message)
 # + the transfer subscription report (the roster, like site-failures.sh).
@@ -52,25 +53,11 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # Pass 1 (subscription.rpt): the known subscriptions (ROW field 2).
 # Pass 2 (_parse.tsv): classify every E message with error-reasons.sh's EXACT
 # bucket chain (keep the two in sync — the taxonomy must read identically on
-# both pages), extract the flow token, aggregate per (flow, reason) and per
-# (reason, ISO week). Emits TAB-separated rows for the two tables; the shares
-# are computed HERE (tot is in the END), so the shell row loops stay fork-free.
+# both pages), extract the flow token, aggregate per (flow, reason). Emits
+# TAB-separated rows; the shares are computed HERE (tot is in the END), so the
+# shell row loop stays fork-free.
 agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
     BEGIN { rn_load(RNF) }
-    function jdn(y, m, d,   a) { a = int((14-m)/12); y = y+4800-a; m = m+12*a-3
-        return d + int((153*m+2)/5) + 365*y + int(y/4) - int(y/100) + int(y/400) - 32045 }
-    # ISO week label from an ISO date: the calendar week of that date'"'"'s
-    # THURSDAY (jdn%7: 0 = Monday, so Thursday = week start + 3).
-    function isoweek(ds,   y, j, tj, ty) {
-        y = substr(ds, 1, 4) + 0
-        if (y < 1900) return ""
-        j = jdn(y, substr(ds, 6, 2) + 0, substr(ds, 9, 2) + 0)
-        tj = j - (j % 7) + 3
-        ty = y
-        if (jdn(ty, 1, 1) > tj) ty--
-        else if (jdn(ty + 1, 1, 1) <= tj) ty++
-        return sprintf("%04d-W%02d", ty, int((tj - jdn(ty, 1, 1)) / 7) + 1)
-    }
     # the flow name of a bracketed AR line: the SECOND [token] when a pair
     # exists ("[PARTNER] [FLOW]"), the lone token otherwise
     function flowtok(m,   i, j, t, u) {
@@ -124,14 +111,6 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         else if (m ~ /^Error during transfer operation: /)          b = "Transfer operation error (other)"
         else                                                        b = "Other"
         tot++
-        # ---- table 2: reason x ISO week, ALL E records ----------------------
-        if (d != "") {
-            wk = isoweek(d)
-            if (wk != "") {
-                wcnt[b SUBSEP wk]++
-                addline("W" SUBSEP b SUBSEP wk, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
-            }
-        }
         # ---- the flow token -------------------------------------------------
         tk = ""
         if (m ~ /^Connection failure while /) {
@@ -161,10 +140,6 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
             printf "F\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", cnt[k], a[1], a[2], \
                    (k in fst ? fst[k] : ""), (k in lst ? lst[k] : ""), share, lastlines("F" SUBSEP a[1] SUBSEP a[2])
         }
-        for (k in wcnt) {
-            split(k, a, SUBSEP)
-            printf "W\t%s\t%s\t%d\t%s\n", a[2], a[1], wcnt[k], lastlines("W" SUBSEP a[1] SUBSEP a[2])
-        }
         printf "TOT\t%d\t%d\n", tot, attr
     }
 ' "$TSITE" "$PARSED")
@@ -177,11 +152,10 @@ if [ -z "$tot_err" ] || [ "$tot_err" -eq 0 ]; then
     exit 0
 fi
 n_pairs=$(printf '%s\n' "$agg" | grep -c $'^F\t' || true)
-n_weeks=$(printf '%s\n' "$agg" | grep -c $'^W\t' || true)
 n_flows=$(printf '%s\n' "$agg" | awk -F'\t' '$1=="F" && !s[$3]++ {n++} END{print n+0}')
 attr_share=$(awk -v c="$tot_attr" -v t="$tot_err" 'BEGIN { if (t > 0) printf "%.1f", c * 100 / t; else printf "0.0" }')
 
-# Row writers print STRAIGHT to stdout inside the page block below (a
+# The row writer prints STRAIGHT to stdout inside the page block below (a
 # `$(printf …)` per row would fork a subshell per row — site-failures.sh's
 # pattern). Sorts carry explicit tiebreakers: no output depends on awk
 # hash-iteration order.
@@ -192,19 +166,13 @@ flow_rows() {
             "$disp" "$reason" "$count" "$share" "$fst" "$lst" "$lines"
     done <<< "$(printf '%s\n' "$agg" | grep $'^F\t' | sort -t"$(printf '\t')" -k2,2nr -k3,3 -k4,4)"
 }
-week_rows() {
-    while IFS=$'\t' read -r _k wk reason count lines; do
-        [ -z "$wk" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t@data:loglines=%s\n' "$wk" "$reason" "$count" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^W\t' | sort -t"$(printf '\t')" -k2,2r -k4,4nr -k3,3)"
-}
 
 {
     printf 'TITLE\tFailure reasons per flow\n'
-    printf 'DESC\tServer-log ERROR messages classified by reason and attributed to the subscription each message names, with the reason mix per ISO week.\n'
-    printf 'INTRO\t**%s** of the **%s** server-log ERROR records (**%s%%**) name a flow: **%s** subscription(s), **%s** subscription-and-reason pair(s), classified with the same reason buckets as the **Transfer Error Reasons** report. The transfer logs record only OK/Error with no reason; this page says what breaks for **which flow** — and, below, how the reason mix moves week by week.\n' \
+    printf 'DESC\tServer-log ERROR messages classified by reason and attributed to the subscription each message names.\n'
+    printf 'INTRO\t**%s** of the **%s** server-log ERROR records (**%s%%**) name a flow: **%s** subscription(s), **%s** subscription-and-reason pair(s), classified with the same reason buckets as the **Transfer Error Reasons** report. The transfer logs record only OK/Error with no reason; this page says what breaks for **which flow**.\n' \
         "$tot_attr" "$tot_err" "$attr_share" "$n_flows" "$n_pairs"
-    printf 'KEYWORDS\tfailure,reasons,flow,subscription,error,classified,week,pesit,connection,network,refused,timeline\n'
+    printf 'KEYWORDS\tfailure,reasons,flow,subscription,error,classified,pesit,connection,network,refused,connection failures,site failures\n'
 
     printf 'TABLE\tSubscription × reason\twide\tnofilter\tpager=50\n'
     printf 'HEAD\tSubscription\tReason\tErrors\tShare\tFirst seen\tLast seen\n'
@@ -212,13 +180,7 @@ week_rows() {
     flow_rows
     printf 'TOTAL\tTotal (%s pair(s))\t\t@{class=num failed}%s\t@{class=num}100.0%%\t\t\n' "$n_pairs" "$tot_attr"
 
-    printf 'TABLE\tReasons over time\twide\tnofilter\n'
-    printf 'HEAD\tISO week\tReason\tErrors\n'
-    printf 'KIND\ttext\ttext\tnumfailed\n'
-    week_rows
-    printf 'TOTAL\tTotal (%s row(s))\t\t@{class=num failed}%s\n' "$n_weeks" "$tot_err"
-
-    printf 'NOTE\tThe reason buckets are the **Transfer Error Reasons** buckets, verbatim — the first table narrows them to the ERROR lines that name a flow (a connection-failure line, a partner-listing failure, or an advanced-routing line'"'"'s bracketed flow token), so its total is a subset of that report'"'"'s; the second table counts ALL classified ERROR records per ISO week and ties to it exactly. Server messages truncate long subscription names: a name resolving to exactly one configured subscription is shown in full (and linked); the rest appear as logged. Both tables always show the full period. Click a row to expand its 10 most recent error lines.\n'
+    printf 'NOTE\tThe reason buckets are the **Transfer Error Reasons** buckets, verbatim, narrowed to the ERROR lines that name a flow (a connection-failure line, a partner-listing failure, or an advanced-routing line'"'"'s bracketed flow token), so the total is a subset of that report'"'"'s — whose Reasons tab also has the mix per ISO week. Server messages truncate long subscription names: a name resolving to exactly one configured subscription is shown in full (and linked); the rest appear as logged. The table always shows the full period. Click a row to expand its 10 most recent error lines.\n'
     printf 'SUMMARY\tErrors naming a flow: %s of %s  |  Subscriptions: %s  |  Pairs: %s\n' "$tot_attr" "$tot_err" "$n_flows" "$n_pairs"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
