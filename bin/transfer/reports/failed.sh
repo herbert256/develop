@@ -122,9 +122,9 @@ rm -f "$REPORTS_DIR"/failed-leg-*.rpt          # the removed Subscription-leg vi
 ERRDIR="$REPORTS_DIR/errors"
 # The FILE pages (2026-09-03, user request): the same drill-page layout for
 # ANY outcome, one per CoreId the Transfer patterns page's "Last 5 files"
-# cells link — patterns.sh leaves the CoreId list in $FILESIDE (cmp-guarded;
-# it runs in the same report pool, so the build's failed.sh catch-up is the
-# run that sees the final list). Pages land in data/<env>/transfer/reports/
+# cells link — patterns.sh leaves the CoreId list in $FILESIDE (it runs in
+# the same report pool, so the build's failed.sh catch-up is the run that sees
+# the final list). Pages land in data/<env>/transfer/reports/
 # files/, beside errors/ and never inside it — the reason-evidence pass globs
 # errors/ and must not read an OK File's page. Only the DATA is split: both sets
 # publish into the ONE docs/<env>/files/ (2026-09-21, user request — the
@@ -989,7 +989,6 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
 # an older one. Each page is buffered as it is read and replaces the flow
 # incumbent when its lines are newer.
 #   subscription <TAB> "date time" <TAB> level (Error|Warning) <TAB> message
-# cmp-guarded, so an unchanged run does not drag the analyses publish along.
 EVID="$REPORTS_DIR/_errpage-evidence.tsv"
 LC_ALL=C awk -F'\t' -v CAND=8 "$(cat "$LIB_DIR/../flip-reason.awk")"'
     function flush(   i) {                      # the buffered page -> its subscription
@@ -1025,7 +1024,7 @@ LC_ALL=C awk -F'\t' -v CAND=8 "$(cat "$LIB_DIR/../flip-reason.awk")"'
           for (k in bn) for (i = 1; i <= bn[k]; i++)
               printf "%s\t%s\t%s\t%s\n", k, bs[k, i], bl[k, i], bm[k, i] }
 ' "$ERRDIR"/*.rpt 2>/dev/null | LC_ALL=C sort > "$EVID.tmp" || : > "$EVID.tmp"
-if cmp -s "$EVID.tmp" "$EVID" 2>/dev/null; then rm -f "$EVID.tmp"; else mv "$EVID.tmp" "$EVID"; fi
+mv "$EVID.tmp" "$EVID"
 
 # The REASON pass (2026-08): one Reason per FAILED CoreId ($TMP/reasons,
 # coreid ⇥ reason, blank kept), now that the finishing pass has appended the
@@ -1147,11 +1146,9 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
     }
 ' "$TMP/all" > "$TMP/reasons"
 # the per-CoreId reasons SAVED for the Failed files report (2026-09-14, user
-# request: failed-files.sh shows them per File) — cmp-guarded, so a rerun that
-# classifies the same leaves the sidecar mtime alone
+# request: failed-files.sh shows them per File)
 LC_ALL=C sort "$TMP/reasons" > "$REPORTS_DIR/_failed-reasons.tsv.tmp" 2>/dev/null || : > "$REPORTS_DIR/_failed-reasons.tsv.tmp"
-if cmp -s "$REPORTS_DIR/_failed-reasons.tsv.tmp" "$REPORTS_DIR/_failed-reasons.tsv" 2>/dev/null; then rm -f "$REPORTS_DIR/_failed-reasons.tsv.tmp"
-else mv "$REPORTS_DIR/_failed-reasons.tsv.tmp" "$REPORTS_DIR/_failed-reasons.tsv"; fi
+mv "$REPORTS_DIR/_failed-reasons.tsv.tmp" "$REPORTS_DIR/_failed-reasons.tsv"
 
 # The same Reason lands in each drill page TITLE — "Failed subscription:
 # <name> - <reason>" — so the error page answers WHY in its own heading
@@ -1347,20 +1344,14 @@ for v in $VARIANTS; do mv "$REPORTS_DIR/failed-$v.rpt.tmp" "$REPORTS_DIR/failed-
 # The PUBLISHED server-failing sidecar (name ⇥ slug ⇥ stamp ⇥ reason ⇥ kind):
 # the Entities Subscriptions/Error view links its Reason cells to the
 # errors/<slug> pages through it (publish_lib, kind S) — the slug must come
-# from here, never re-derived (the twin-collision suffix). cmp-guarded so an
-# unchanged set does not re-render the transfer pages.
-if cmp -s "$TMP/srvsubs" "$REPORTS_DIR/_srvsubs.tsv" 2>/dev/null; then :
-else cp "$TMP/srvsubs" "$REPORTS_DIR/_srvsubs.tsv.tmp" && mv "$REPORTS_DIR/_srvsubs.tsv.tmp" "$REPORTS_DIR/_srvsubs.tsv"; fi
-# The STABLE map beside it (2026-08): name + slug + evidence stamp, WITHOUT
-# the reason/kind columns. It is what details.sh actually consumes (the
-# "Server log error" section needs the membership, the slug and — through
-# the stamp — the reddening-session table, never the reason), and the reason
-# is the one column the evidence catch-up rerun changes. cmp-guarded on the
-# REDUCED content, its mtime holds through that rerun, so the details
-# catch-up self-gates to a skip instead of rebuilding every detail page.
+# from here, never re-derived (the twin-collision suffix).
+cp "$TMP/srvsubs" "$REPORTS_DIR/_srvsubs.tsv.tmp" && mv "$REPORTS_DIR/_srvsubs.tsv.tmp" "$REPORTS_DIR/_srvsubs.tsv"
+# The map beside it (2026-08): name + slug + evidence stamp, WITHOUT the
+# reason/kind columns — what details.sh consumes (the "Server log error"
+# section needs the membership, the slug and — through the stamp — the
+# reddening-session table, never the reason).
 cut -f1-3 "$TMP/srvsubs" > "$TMP/srvsubs.map"
-if cmp -s "$TMP/srvsubs.map" "$REPORTS_DIR/_srvsubs-map.tsv" 2>/dev/null; then :
-else cp "$TMP/srvsubs.map" "$REPORTS_DIR/_srvsubs-map.tsv.tmp" && mv "$REPORTS_DIR/_srvsubs-map.tsv.tmp" "$REPORTS_DIR/_srvsubs-map.tsv"; fi
+cp "$TMP/srvsubs.map" "$REPORTS_DIR/_srvsubs-map.tsv.tmp" && mv "$REPORTS_DIR/_srvsubs-map.tsv.tmp" "$REPORTS_DIR/_srvsubs-map.tsv"
 
 # The section stats: pages whose section came from the session/id joins (with
 # the line total those pages show) and pages left to the window fallback — the

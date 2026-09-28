@@ -51,10 +51,9 @@
 IP_DIR="${IP_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/input/ip}"
 IP_HOSTS_FILE="$IP_DIR/ip-hosts.tsv"
 
-# Replace OUT with TMP only when the content differs, so a re-resolution that
-# returns the same A records keeps its mtime. The map is a freshness dep
-# (unknown-entities.sh, entity-search.sh); rewriting it unchanged would drag
-# every consumer along — the same rule cov_put and expire-files.sh follow.
+# Replace OUT with TMP only when the content differs: the map lives under
+# input/ (kept across builds, tracked in develop), so a re-resolution that
+# returns the same A records leaves the file untouched.
 _ip_commit() {
     local tmp=$1 out=$2
     if [ -f "$out" ] && cmp -s "$tmp" "$out"; then rm -f "$tmp"; else mv -f "$tmp" "$out"; fi

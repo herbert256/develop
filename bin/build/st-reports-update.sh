@@ -19,8 +19,7 @@
 #      input/production/ directory in the Acceptance checkout) is refused
 #      BEFORE anything is copied — a half-copied checkout is worse than none;
 #   4. copy the exports onto input/ (existing files overwritten — a
-#      re-delivered export replaces its older self, and the incremental parse
-#      manifests notice the changed sizes and reparse). Two layouts:
+#      re-delivered export replaces its older self). Two layouts:
 #        a. the REPO TREE — flow-manager/ rooted at the archive root or under
 #           input/; the OLD per-environment layout (input/<env>/… or
 #           <env>/…) is accepted when <env> is THIS one;

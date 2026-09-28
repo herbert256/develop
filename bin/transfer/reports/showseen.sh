@@ -198,8 +198,7 @@ exact_tuples() {   # $1 grid-basename  $2 details sub-dir  $3 config cache  [$4 
 # lines in the .rpt (the whitelist set rides with hosts), read by
 # bin/build/publish.sh's root-index Entities coverage table.
 DIRMAP="$REPORTS_DIR/.dirmap.$$"
-# clean the PID-named temps on ANY exit — an orphan in the freshness-watched
-# reports tree would force one extra publish (WLMAP is defined further down;
+# clean the PID-named temps on ANY exit (WLMAP is defined further down;
 # ${…:-} keeps the trap safe before then under set -u)
 trap 'rm -f "$DIRMAP" "${WLMAP:-}"' EXIT
 # Keyed by the RAW config name: two spellings of one DNS name (the configured

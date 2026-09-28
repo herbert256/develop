@@ -96,7 +96,7 @@ fi
 # column that closes the table since 2026-09-08).
 # ensure_logons builds it here rather than trusting another step: the detail
 # pages' consumer runs CONCURRENTLY in the build, so neither may rely on the
-# other having written it (the write is atomic and cmp-guarded).
+# other having written it (the write is atomic).
 ensure_logons "$CACHE_DIR"
 LOGONS_TSV="$CACHE_DIR/_logons.tsv"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
@@ -420,7 +420,7 @@ lgtot=0; aftot=0
 # Disallowed ⇥ Bad key ⇥ Key failures ⇥ Locked ⇥ Auth failed ⇥ Session errors
 # (the 7th field, 2026-09-06), one line per
 # Incoming row — the Partners - Incoming page's "Logon problems" column
-# (bin/analyses/reports/fe-overview.sh); staged here, cmp-guarded below
+# (bin/analyses/reports/fe-overview.sh); staged here, moved in below
 PROBF="$OUT.problems.tmp"; : > "$PROBF"
 rows() {
     while IFS=$'\t' read -r _ user a t d n b k l r x bkt d1 d2 d3 d4 d5 d6 d7 d8 d9 lside lstamp af9 lgf lgl lgn lgp; do
@@ -598,9 +598,8 @@ out_rows() {
         "$nrows" "$atot" "${rtot:-0}" "$ttot" "$dtot" "$nnames" "$ntot" "$btot" "$ktot" "$ltot" "$xtot" "$ototal" "$n_pairs" "${dk_tot:-0}" "${dk_names:-0}" "$n_near"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
-# the problem-counts sidecar (see rows()): cmp-guarded so an unchanged set
-# keeps its mtime — a Partners - Incoming freshness dep
+# the problem-counts sidecar (see rows()) — read by Partners - Incoming
 PROBLEMS="$REPORTS_DIR/_logon-problems.tsv"
-if cmp -s "$PROBF" "$PROBLEMS" 2>/dev/null; then rm -f "$PROBF"; else mv "$PROBF" "$PROBLEMS"; fi
+mv "$PROBF" "$PROBLEMS"
 
 echo "Data written to $OUT ($nrows login(s): $atot allowed, ${rtot:-0} re-screen(s), $ttot authenticated, $dtot disallowed, $ntot no-account, $btot bad-key, $ktot key-failure, $ltot locked, $xtot session error(s); $ototal outbound failure(s))." >&2

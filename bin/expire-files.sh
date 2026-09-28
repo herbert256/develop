@@ -23,11 +23,8 @@
 #
 # Idempotent + self-healing: Waiting and Expired rows are RECOMPUTED from the
 # deletion list every run (a transfer parse rebuild resets col 2 to Waiting
-# and col 22 to empty; the next run re-marks). The rewrite is cmp-guarded so
-# a no-change build does not touch _files.tsv's mtime (which would force every
-# transfer report to rebuild). The expensive part — scanning the server parse
-# cache — is cached in _expired.tsv (the extracted deletion list) and only
-# re-runs when the server cache or this script is newer.
+# and col 22 to empty; the next run re-marks). The server parse cache scan
+# writes _expired.tsv (the extracted deletion list).
 #
 # OUTCOME POLICY (2026-07): Expired counts as ERROR on every report (Waiting
 # stays OK) — consumers compare Error = ("Failed" || "Expired") — and the
@@ -122,10 +119,5 @@ awk -F'\t' -v OFS='\t' '
     END { printf "expire-files: %d Expired, %d still Waiting (%d row(s) changed).\n", ne+0, nw+0, chg+0 > "/dev/stderr" }
 ' "$DEL" "$FILES" > "$ftmp"
 
-if cmp -s "$ftmp" "$FILES"; then
-    rm -f "$ftmp"
-    echo "expire-files: _files.tsv already up to date." >&2
-else
-    mv "$ftmp" "$FILES"
-    echo "expire-files: rewrote $FILES." >&2
-fi
+mv "$ftmp" "$FILES"
+echo "expire-files: rewrote $FILES." >&2

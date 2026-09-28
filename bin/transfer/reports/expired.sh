@@ -122,8 +122,7 @@ cp "$TMPD/x_slugs" "$SUBDIR.new/_slugmap.tsv"
 # page are exactly the first rows here. THE FIRST 5 of that order link their
 # File page — files/<coreid>.html — from the CoreId cell; their CoreIds go to
 # the sidecar $FILESIDE, which failed.sh pages (list tag X) like the Transfer
-# patterns / Longest Files lists. cmp-guarded: an unchanged list keeps its mtime
-# and failed.sh stays fresh.
+# patterns / Longest Files lists.
 LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk -F'\t' \
     -v slugs="$TMPD/x_slugs" -v dir="$SUBDIR.new" -v stamp="$(date '+%Y-%m-%d %H:%M:%S')" -v nin="${#files[@]}" \
     -v side="$TMPD/x_side" -v TOPN=5 '
@@ -153,7 +152,7 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk
 rm -rf "$SUBDIR"; mv "$SUBDIR.new" "$SUBDIR"
 [ -f "$TMPD/x_side" ] || : > "$TMPD/x_side"
 LC_ALL=C sort -u "$TMPD/x_side" > "$FILESIDE.tmp"
-if cmp -s "$FILESIDE.tmp" "$FILESIDE" 2>/dev/null; then rm -f "$FILESIDE.tmp"; else mv "$FILESIDE.tmp" "$FILESIDE"; fi
+mv "$FILESIDE.tmp" "$FILESIDE"
 
 hsz() { awk -v b="$1" 'BEGIN{ if (b>=1073741824) printf "%.1f GB", b/1073741824
     else if (b>=1048576) printf "%.1f MB", b/1048576

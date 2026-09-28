@@ -83,9 +83,8 @@ ASX="$CONFIG_XREF/_accounts-subscriptions.tsv"; [ -f "$ASX" ] || ASX=/dev/null
 # entity when the name is configured (2026-09-05, user report: three
 # account rows fanned out to 18 flows in the Deploy box)
 ROS="$CONFIG_BASE/_subscriptions.tsv"; [ -f "$ROS" ] || ROS=/dev/null
-# The transfer cache is a cross-area DEP: the "recovered since" test reads it,
-# so a transfer reparse has to re-trigger this report. The profile map is a
-# config dep: a re-derived xref changes which flow a message names.
+# The transfer cache is a cross-area input: the "recovered since" test reads
+# it. The profile map decides which flow a message names.
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axdep.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT

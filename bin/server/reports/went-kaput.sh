@@ -311,11 +311,10 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
     }
 ' "${mapargs[@]}" ${rings[@]+"${rings[@]}"})
 IFS=$'\t' read -r _tag nrows terr nred npoll <<< "$totals"
-# the evidence sidecar is cmp-guarded: an unchanged one keeps its mtime, so the
-# analyses publish that reads it does not rebuild for nothing
+# the evidence sidecar
 if [ -f "$EVID.tmp" ]; then
     LC_ALL=C sort -o "$EVID.tmp" "$EVID.tmp"
-    if cmp -s "$EVID.tmp" "$EVID" 2>/dev/null; then rm -f "$EVID.tmp"; else mv "$EVID.tmp" "$EVID"; fi
+    mv "$EVID.tmp" "$EVID"
 else
     : > "$EVID.tmp" && mv "$EVID.tmp" "$EVID"
 fi

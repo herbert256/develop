@@ -109,13 +109,12 @@ if [ -z "$agg" ]; then
 fi
 
 # the CoreIds the Last 5 cells link — every variant's lists together, one
-# CoreId per line; failed.sh writes their pages (cmp-guarded: an unchanged
-# set keeps its mtime, so failed.sh does not rebuild for nothing)
+# CoreId per line; failed.sh writes their pages
 printf '%s\n' "$agg" | awk -F'\t' '$1 == "L" { print $2 }' | LC_ALL=C sort -u > "$FILESIDE.tmp"
 # the P variant lists can name Files the A lists do not (a finer split) — union them
 printf '%s\n' "$agg" | awk -F'\t' -v US="$(printf '\037')" '$1 == "P" { n = split($6, L, US); for (i = 1; i <= n; i++) { s = L[i]; sub(/\|.*$/, "", s); sub(/^\.\.\/files\//, "", s); sub(/\.html$/, "", s); print s } }' >> "$FILESIDE.tmp"
 LC_ALL=C sort -u -o "$FILESIDE.tmp" "$FILESIDE.tmp"
-if [ -f "$FILESIDE" ] && cmp -s "$FILESIDE.tmp" "$FILESIDE"; then rm -f "$FILESIDE.tmp"; else mv "$FILESIDE.tmp" "$FILESIDE"; fi
+mv "$FILESIDE.tmp" "$FILESIDE"
 
 # figures from the plain variant (the same Files, just grouped coarser)
 tot=$(printf '%s\n' "$agg" | awk -F'\t' '$1 == "A" { s += $2 } END { print s + 0 }')    # logical transfers

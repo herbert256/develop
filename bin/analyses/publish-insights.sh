@@ -787,7 +787,7 @@ _write_box_reason_sidecar() {   # $1 = the _subs_box_rows output
                   r = flip_reason(EV[toupper(s)])
                   if (r != "") print s "\t" r } }' | LC_ALL=C sort > "$side.tmp"
     rm -f "$tmpp"
-    if cmp -s "$side.tmp" "$side" 2>/dev/null; then rm -f "$side.tmp"; else mv "$side.tmp" "$side"; fi
+    mv "$side.tmp" "$side"
 }
 write_subscriptions_in_boxes_page() {
     local out="$ADIR/subscriptions-in-boxes.html"

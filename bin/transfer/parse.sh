@@ -553,7 +553,7 @@ awk -F'\t' '
 # ---- OUTGOING: record the configured host for any address not yet mapped ----
 # No DNS here: WE dial these endpoints, so the configuration already knows the
 # name. Rows are emitted only where the map does not already carry that pair, so
-# a settled map is not rewritten and keeps its mtime (ip_put is cmp-guarded too).
+# a settled map (under input/, kept across builds) is not rewritten.
 # INCOMING addresses get no row at all — the partner owns them and they stay raw.
 ip_in="$IP_HOSTS_FILE"; [ -f "$ip_in" ] || ip_in=/dev/null
 b_rows="$tmp.b_rows"

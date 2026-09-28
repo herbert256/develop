@@ -22,18 +22,13 @@ mkdir -p "$REPORTS_DIR" "$COVRPT_DIR" "$FSRPT_DIR"
 
 meta_val() { grep -m1 "^META"$'\t'"$2"$'\t' "$1" 2>/dev/null | cut -f3- || true; }   # META key $2 in file $1
 
-# cov_put FILE — read stdin and replace FILE only when the CONTENT differs, so
-# an unchanged re-derive KEEPS ITS MTIME. ensure_pda_tsvs is called by three
-# report scripts and rewrote these TSVs on every call; every mtime-based
-# freshness check downstream (and every publish stamp) then saw a newer input
-# and rebuilt for nothing. Same idiom as bin/expire-files.sh.
-# Valid HERE and not for a .rpt: these TSVs are pure data, while a .rpt carries
-# the run time in its FOOT line and so never compares equal.
+# cov_put FILE — read stdin into FILE atomically (a unique tmp + mv):
+# ensure_pda_tsvs is called by several report scripts, some side by side.
 cov_put() {
     local out=$1 tmp
     tmp=$(mktemp "${out}.XXXXXX") || return 1
     cat > "$tmp"
-    if [ -f "$out" ] && cmp -s "$tmp" "$out"; then rm -f "$tmp"; else mv -f "$tmp" "$out"; fi
+    mv -f "$tmp" "$out"
 }
 
 # Logical-flow figures for the root index's one-row "Logical" table — the

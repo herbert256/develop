@@ -132,7 +132,7 @@ LOGICALF="$ROOT/input/logical.txt"
 # (input/<env>/logical_{domains,apps,partners}.txt — FROM<ws>TO per line):
 # part 1/2/3 of a three-part Logical name equal to FROM becomes TO before it
 # turns into the domain / application / partner-merge token. The Logical
-# entity name itself is untouched. Freshness deps like the others.
+# entity name itself is untouched.
 LOGDOMF="$ROOT/input/logical_domains.txt"
 LOGAPPF="$ROOT/input/logical_apps.txt"
 LOGPTNF="$ROOT/input/logical_partners.txt"
@@ -194,8 +194,7 @@ _fml() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  flow-manager: %s\n' "$((
 # Build FILTERED copies of the exports (skipped accounts/subscriptions removed)
 # and record the skipped names, THEN repoint PARTNERS/SUBS/TEMPLATES at the
 # filtered files so every extraction below — and every other config reader that
-# prefers data/<env>/flow-manager/filtered/ — excludes them. A cmp-guarded
-# write keeps the mtimes stable on a no-change run.
+# prefers data/<env>/flow-manager/filtered/ — excludes them.
 mkdir -p "$SKIPDIR"
 # The configured objects this filters are ACCOUNTS and SUBSCRIPTIONS (by name)
 # and the comm-profile LOGINS inside a partner, so it takes the values of the
@@ -214,9 +213,7 @@ SKIP_JSON=$({ skip_values account; skip_values site; } 2>/dev/null | LC_ALL=C so
 SKIP_LOGIN_JSON=$(skip_values login 2>/dev/null | LC_ALL=C sort -u \
     | jq -R -s 'split("\n") | map(select(length>0) | ascii_upcase)' 2>/dev/null || echo '[]')
 [ -n "$SKIP_LOGIN_JSON" ] || SKIP_LOGIN_JSON='[]'
-fm_commit() {   # $1 tmp path  $2 final path — keep mtime when unchanged; PID-unique tmp
-    if cmp -s "$1" "$2" 2>/dev/null; then rm -f "$1"; else mv "$1" "$2"; fi
-}
+fm_commit() { mv "$1" "$2"; }   # $1 tmp path (PID-unique)  $2 final path
 # keep only the array elements whose .name has NO skip token as a substring —
 # and, inside a kept partner, only the comm profiles whose .login has no LOGIN
 # skip token as a substring
@@ -1210,8 +1207,7 @@ for _cf in "$BASE"/_*.tsv; do
     cut -f1 "$_cf" | awk -v L="$_cn" 'NF { print L "\t" $0 }' >> "$BASE/.configured.tsv.tmp"
 done
 LC_ALL=C sort -o "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv.tmp"
-if cmp -s "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv" 2>/dev/null
-then rm -f "$BASE/.configured.tsv.tmp"; else mv "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv"; fi
+mv "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv"
 
 _fml "directions, BL, the rest"
 echo "flow-manager.sh: wrote 11 entity caches to data/flow-manager/base/ + 110 pair caches (every pair both ways) + the patterns and templates maps to data/flow-manager/xref/" >&2

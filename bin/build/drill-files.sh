@@ -35,8 +35,7 @@
 #
 # Runs in bin/build.sh right BEFORE the failed.sh catch-up: every report of
 # the build is on disk by then (the detail-pages catch-up after it re-reads
-# the same _files.tsv, so its lists do not move). The sidecar is cmp-guarded:
-# an unchanged list keeps its mtime and failed.sh's catch-up still skips.
+# the same _files.tsv, so its lists do not move).
 #
 # Reads   data/transfer/reports/**/*.rpt   (not errors/ + files/: those ARE the pages)
 # Writes  data/transfer/reports/_drill-files.tsv   one CoreId per line, sorted
@@ -109,6 +108,5 @@ find "$REPORTS_DIR" -name '*.rpt' -not -path "$REPORTS_DIR/errors/*" -not -path 
         }
     }' | LC_ALL=C sort -u > "$OUT.tmp" || true
 
-if cmp -s "$OUT.tmp" "$OUT" 2>/dev/null; then rm -f "$OUT.tmp"
-else mv "$OUT.tmp" "$OUT"; fi
+mv "$OUT.tmp" "$OUT"
 echo "drill-files: $(wc -l < "$OUT" | tr -d ' ') first File(s) of the red / orange drill cells listed in $OUT." >&2

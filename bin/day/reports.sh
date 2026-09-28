@@ -733,8 +733,7 @@ rm -rf "$dparts"
 fi
 
 # Publish the complete staged set with two renames (see the staging comment at
-# the top): a kill between them leaves NO $RPTDIR, which the freshness test
-# reads as "rebuild" — never a half-written set with fresh mtimes.
+# the top): a kill between them leaves NO $RPTDIR — never a half-written set.
 mv "$RPTDIR" "$RPTDIR.old"
 mv "$RPTNEW" "$RPTDIR"
 rm -rf "$RPTDIR.old"

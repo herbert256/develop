@@ -323,10 +323,7 @@ agg=$(awk -F'\t' -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
     }
 ' "$TMPD/known.map" "$TCACHE" "$TMPD"/part.*)
 # for-in emits in hash order; the sidecars are data files, so sort them (name-sorted)
-# a type with NO unknowns keeps an EMPTY sidecar: the all-outputs freshness
-# check above treats a missing one as "rebuild", so deleting a zero-row
-# sidecar made every build redo the whole scan (and its fresh rpts cascaded
-# into incoming-connections + showseen) in an env with nothing unknown
+# a type with NO unknowns keeps an EMPTY sidecar (its readers expect one)
 for sc in "$SIDE_S" "$SIDE_A" "$SIDE_L" "$SIDE_H" "$SIDE_W"; do
     if [ -f "$sc" ]; then LC_ALL=C sort -o "$sc" "$sc"; else : > "$sc"; fi
 done

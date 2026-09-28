@@ -37,10 +37,9 @@
 # run re-evaluates the Failed rows AND the previously settled ones (col 23
 # non-empty) from scratch, so a reason line arriving later, or a transfer
 # parse rebuild (which resets col 2 to Failed and col 23 to empty), settles
-# the same way next run. The rewrite is cmp-guarded. The expensive part —
-# the server cache scan — is cached in _bookends.tsv (the ok bookends) and
-# _reasonlines.tsv (the classifying E/W lines with their session + ids),
-# both re-extracted only when the server cache or this script is newer.
+# the same way next run. The server cache scan writes _bookends.tsv (the ok
+# bookends) and _reasonlines.tsv (the classifying E/W lines with their
+# session + ids).
 #
 # Usage:  bin/bookend-ok.sh
 #
@@ -169,12 +168,6 @@ awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
     END { printf "bookend-ok: %d file(s) settled Processed by an ok bookend, %d reverted (%d row(s) changed).\n", nset+0, nrev+0, chg+0 > "/dev/stderr" }
 ' "$BK" "$RL" "$TRANSFERS" "$FILES" > "$ftmp"
 : >> "$otmp"; LC_ALL=C sort -o "$otmp" "$otmp"
-if cmp -s "$otmp" "$OKF" 2>/dev/null; then rm -f "$otmp"; else mv "$otmp" "$OKF"; fi
-
-if cmp -s "$ftmp" "$FILES"; then
-    rm -f "$ftmp"
-    echo "bookend-ok: _files.tsv already up to date." >&2
-else
-    mv "$ftmp" "$FILES"
-    echo "bookend-ok: rewrote $FILES." >&2
-fi
+mv "$otmp" "$OKF"
+mv "$ftmp" "$FILES"
+echo "bookend-ok: rewrote $FILES." >&2

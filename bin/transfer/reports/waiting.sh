@@ -188,7 +188,7 @@ IFS='|' read -r _ n_wsites n_wait n_csites n_coll n_xsites n_exp oldest_dt oldes
 # Waiting for cell's sortval) — ties by CoreId: report.js sorts stably, so the
 # first 5 rows of the page are exactly the first 5 here, the ones whose CoreId
 # links files/<coreid>.html. Staged in waiting.new/ and swapped in BEFORE the
-# main .rpt lands; the File-page list is cmp-guarded (a failed.sh dep).
+# main .rpt lands.
 # ---------------------------------------------------------------------------
 rm -rf "$SUBDIR.new"; mkdir -p "$SUBDIR.new"
 SLUGS="$SUBDIR.new/_slugmap.tsv"
@@ -233,7 +233,7 @@ printf '%s\n' "$agg" | awk -F'|' '$1 == "F"' | LC_ALL=C sort -t'|' -k4,4 -k2,2n 
 rm -rf "$SUBDIR"; mv "$SUBDIR.new" "$SUBDIR"
 SLUGS="$SUBDIR/_slugmap.tsv"
 LC_ALL=C sort -u "$FILESIDE.raw.$$" > "$FILESIDE.tmp"; rm -f "$FILESIDE.raw.$$"
-if cmp -s "$FILESIDE.tmp" "$FILESIDE" 2>/dev/null; then rm -f "$FILESIDE.tmp"; else mv "$FILESIDE.tmp" "$FILESIDE"; fi
+mv "$FILESIDE.tmp" "$FILESIDE"
 
 # ---------------------------------------------------------------------------
 # Second pass: the staged-inventory curve, the expiry-risk list, the per-

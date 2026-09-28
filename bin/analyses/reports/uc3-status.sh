@@ -275,11 +275,9 @@ rows=$(awk -F'\t' '
 ' <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | sort -t$'\t' -k2,2n -k6,6nr -k4,4nr -k3,3)")
 [ -n "$rows" ] && rows+=$'\n'   # put back the newline the command substitution stripped (the loop ended every row with one)
 
-# A run with data but NO timestamped rows writes no sidecar at all, and the
-# missing-sidecar guard above would then delete this .rpt on every build,
-# for ever. An EMPTY sidecar is the valid "no per-hour data" answer (the
-# unknown-* sidecars carry the same rule). Created only when absent, never
-# touched — overview.rpt lists it as a dep and a bumped mtime would drag it.
+# A run with data but NO timestamped rows writes no sidecar at all; an EMPTY
+# sidecar is the valid "no per-hour data" answer for its readers (the
+# dashboards overview), so one is created when absent.
 [ -f "$SLOTS_OUT" ] || : > "$SLOTS_OUT"
 
 {

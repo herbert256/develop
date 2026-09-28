@@ -67,13 +67,7 @@ FILES="$ROOT/data/transfer/cache/_files.tsv"
 
 [ -f "$BASE/_subscriptions.tsv" ] || { echo "result.sh: no $BASE/_subscriptions.tsv (run bin/flow-manager.sh first) — nothing to do." >&2; exit 0; }
 
-# cmp-guarded commit: a no-change run must keep
-# the base caches' mtimes, or every downstream skip_if_fresh/ensure_parsed
-# that watches them re-runs on every build (details rpts, the server
-# per-entity mention rescan, cross-reference, the unknown-* reports, ...).
-commit_tmp() {   # $1 = final path; expects $1.tmp
-    if cmp -s "$1.tmp" "$1" 2>/dev/null; then rm -f "$1.tmp"; else mv "$1.tmp" "$1"; fi
-}
+commit_tmp() { mv "$1.tmp" "$1"; }   # $1 = final path; expects $1.tmp
 [ -f "$FILES" ] || { echo "result.sh: no $FILES (run bin/transfer/parse.sh first) — nothing to do." >&2; exit 0; }
 
 # ---- the UC3 poll evidence ---------------------------------------------------
@@ -180,7 +174,7 @@ discover_logged() {   # $1 = base name  $2 = the awk condition picking its colum
     [ -n "$n" ] || return 0
     # append and re-sort nothing: the base caches are name-ordered as written by
     # flow-manager.sh, and the colour passes below rewrite them line by line, so
-    # the new rows simply join at the end (cmp-guarded like every other write)
+    # the new rows simply join at the end
     { cat "$basef"; printf '%s\n' "$n"; } > "$basef.tmp" && commit_tmp "$basef"
     printf 'result.sh: %s discovered in the transfer log, appended to %s.\n' \
         "$(printf '%s\n' "$n" | wc -l | tr -d ' ')" "base/_$1.tsv" >&2

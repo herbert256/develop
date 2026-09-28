@@ -120,7 +120,7 @@ pool_run "$SCRIPT_DIR/reports/av-scan.sh"
 pool_run "$SCRIPT_DIR/reports/security-params.sh"
 # (details.sh is its OWN bin/build.sh step since 2026-07 — it runs BEFORE
 # this orchestrator there; the phase-2 scripts below read its outputs, so a
-# MANUAL run needs bin/transfer/reports/details.sh first when details are stale)
+# MANUAL run needs bin/transfer/reports/details.sh first)
 pool_run "$SCRIPT_DIR/reports/incoming-connections.sh"   # whitelisted-IP detail pages (details/incoming_connections/)
 pool_wait
 # The MERGED reports (2026-07 catalog cleanup) concatenate phase-1 .rpt files,

@@ -260,9 +260,9 @@ _rn_record() {   # $1 col  $2 mapfile  $3 noun  $4 tmp prefix
 # _rn_prune — rule 3 applied to what is ALREADY in the map: drop every pair
 # whose old name the export configures today (a current name cannot be an old
 # one), naming each on stderr. The map keeps its order and every other line;
-# it is rewritten only when something goes, so a clean map keeps its mtime.
-# parser_sig cksums the maps, so a prune re-tokenizes the logs under the
-# corrected fold. $1 = column of $4.now, $2 = map file, $3 = noun, $4 = tmp prefix.
+# it is rewritten only when something goes, so a clean map (under input/,
+# kept across builds) keeps its mtime; the parses fold the logs by the
+# corrected map. $1 = column of $4.now, $2 = map file, $3 = noun, $4 = tmp prefix.
 _rn_prune() {   # $1 col  $2 mapfile  $3 noun  $4 tmp prefix
     local col=$1 map=$2 noun=$3 tmp=$4 dropped
     [ -s "$map" ] || return 0

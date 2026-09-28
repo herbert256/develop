@@ -5,8 +5,7 @@
 # older one to archive/ (repo root, gitignored) compressed with 7z.
 #
 # Runs right after the inbox step and BEFORE anything parses, so the parse
-# sees the final input set (the parse manifests notice the removed files
-# and reparse in full — once a month, when the first old files go).
+# sees the final input set.
 #
 #   the cutoff   the first day of the past month (the build's own clock);
 #                a file dated before it is old

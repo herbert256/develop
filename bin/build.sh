@@ -219,12 +219,12 @@ hnum() { awk -v n="${1:-0}" 'BEGIN { s = sprintf("%d", n)
             print s }'; }
 
 # count_stats KEY FILE… -> "<files>\t<lines>\t<bytes>", CACHED.
-# Counting lines means reading every byte: the acceptance server export alone is
-# 10.3 GB (~6.5 s) and the parse cache 2.3 GB, which would put ~8 s on a 39 s
-# no-change build purely to fill in a report line. So the answer is cached under
-# a SIGNATURE of the file list (name + size + mtime): unchanged inputs are never
-# re-read, and a changed one recounts that group only. It lives in data/ because
-# it is derived and `rm -rf data/` must stay safe.
+# Counting lines means reading every byte: the production server exports are
+# ~20 GB, read purely to fill in a report line. So the answer is cached under a
+# SIGNATURE of the file list (name + size + mtime): unchanged inputs are never
+# re-read, and a changed one recounts that group only. It lives in
+# data/.buildstats, the one directory the build's wipe carries over (the
+# signature means it can never go stale).
 BUILD_STATS_DIR="data/.buildstats"
 count_stats() {
     local key=$1; shift
@@ -257,8 +257,8 @@ count_stats() {
 # lines after the header. The report's two bottom tables (2026-09-12, user
 # request). Reading every byte of every export is the count_stats cost
 # again, so the answer is CACHED PER FILE under name + size + mtime
-# (data/.buildstats/loginv/): a warm build re-reads nothing, a new or changed
-# export is scanned once.
+# (data/.buildstats/loginv/): an unchanged export is never re-read, a new or
+# changed one is scanned once.
 log_inventory() {
     local d=$1 f sig cache
     local -a g

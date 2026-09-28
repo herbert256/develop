@@ -47,9 +47,6 @@ if [ ! -d "$RANKDIR" ]; then
     rm -f "$OUT"
     exit 0
 fi
-# $CONFIG_BASE: the rows carry the entity RESULT COLOUR from its third column,
-# so a recolour must rebuild this report (cmp-guarded, so no-change runs do
-# not re-trigger it) — same reason as failed.sh (2026-08).
 echo "Building the Ranking report from the detail-page sidecars..." >&2
 
 # TYPE -> table heading, entity KIND, noun, base result cache. The ORDER is the

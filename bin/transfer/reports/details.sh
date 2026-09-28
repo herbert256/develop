@@ -553,8 +553,7 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_ls
 
 # ---- persist the twin PAIR maps (the Twins analysis reads them) --------------
 # Unordered pairs, each once, the rule letters of both directions unioned in
-# fixed A/B/C order; cmp-guarded so an unchanged map keeps its mtime (the
-# details tree is a freshness dep of entity-search and publish-details).
+# fixed A/B/C order.
 # if/fi, NOT a `[ -f ] &&` guard: with zero twin pairs the pairs file never
 # exists, the && list would exit 1 and pipefail would kill the whole script
 if [ -f "$_pdir/twins-pairs" ]; then
@@ -576,8 +575,7 @@ awk -F'\t' -v OFS='\t' '
       for (i = 1; i <= n; i++) { a = $1; b = V[i]; if (b < a) { t = a; a = b; b = t }; print a, b } }
 ' "$_twf" | LC_ALL=C sort -u > "$_pdir/_twins-accounts.tmp"
 for _tw in _twins-subscriptions _twins-accounts; do
-    if cmp -s "$_pdir/$_tw.tmp" "$REPORTS_DIR/details/$_tw.tsv" 2>/dev/null; then :
-    else cp "$_pdir/$_tw.tmp" "$REPORTS_DIR/details/$_tw.tsv"; fi
+    cp "$_pdir/$_tw.tmp" "$REPORTS_DIR/details/$_tw.tsv"
 done
 # (the writer reads $_pdir/uncollected directly — no UNCOLLECTED variable)
 # --- Subscription (SITE) detail pages only: fold Remote host / Account / Login

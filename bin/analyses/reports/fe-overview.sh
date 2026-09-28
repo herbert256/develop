@@ -111,7 +111,7 @@ if [ ! -f "$LBASE" ]; then
     exit 0
 fi
 # the logon summary: the server reports build it first in bin/build.sh; a
-# manual run builds it here (atomic, cmp-guarded). An env without a server
+# manual run builds it here (atomic). An env without a server
 # parse cache gets an EMPTY summary — every Cloud stamp then stays empty.
 ensure_logons "$SCACHE"
 LOGONS="$SCACHE/_logons.tsv"

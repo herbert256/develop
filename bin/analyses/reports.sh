@@ -43,7 +43,7 @@ rm -f "$_ROOT/data/analyses/reports"/*.rpt.tmp
 #     ensure_pda_tsvs, which writes the SAME three
 #     coverage/{partners,applications,domains}.tsv. They stay strictly
 #     sequential — running them together races writers on one file set, and
-#     cov_put's cmp-guard makes each write atomic but not ordered.
+#     cov_put makes each write atomic but not ordered.
 #   - first-seen/entity-search AFTER coverage.sh: their seen flags read those
 #     TSVs, and on a from-scratch build nothing else has materialized them yet.
 # Everything in wave 1 touches neither the PDA TSVs nor home.rpt (verified by

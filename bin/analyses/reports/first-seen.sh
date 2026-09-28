@@ -53,7 +53,7 @@ DET="$DATA/transfer/reports/details"
 XREF="$DATA/flow-manager/xref"
 COV="$DATA/transfer/reports/coverage"
 # the seen flags come from the coverage TSVs; the three PDA ones are
-# materialized here (idempotent, cmp-guarded — this script runs inside the
+# materialized here (idempotent — this script runs inside the
 # wave-2 ensure_pda_tsvs chain of bin/analyses/reports.sh, never beside
 # another caller)
 ensure_pda_tsvs
@@ -310,8 +310,8 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     }
 '
 # The awk wrote the page to .tmp (after the per-cell rpts); the rename here
-# publishes it only once the whole run completed — a killed run leaves the old
-# complete reports with stale mtimes (rebuild) instead of fresh truncated ones.
+# publishes it only once the whole run completed — a killed run never leaves a
+# truncated page.
 mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (+ $(ls "$FSRPT_DIR" | wc -l | tr -d ' ') cell rpt(s) in $FSRPT_DIR)." >&2

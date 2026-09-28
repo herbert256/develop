@@ -76,12 +76,11 @@ shown_ok=$(printf '%s\n' "$slow_ok" | awk 'length($0) { n++ } END { print n+0 }'
 # File of any outcome; failed.sh writes it from this sidecar (unioned with
 # the Transfer patterns list) and the CoreId cell of every row opens it (the
 # one-hour threshold went 2026-09-06, user request: at most TOP_N pages).
-# cmp-guarded: an unchanged list keeps its mtime (a failed.sh dep); an
-# EMPTY list is valid (-f, not -s)
+# an EMPTY list is valid
 printf '%s\n' "$slow_ok" \
     | awk -F'\t' 'length($0) { print $2 }' \
     | LC_ALL=C sort -u > "$FILESIDE.tmp"
-if cmp -s "$FILESIDE.tmp" "$FILESIDE" 2>/dev/null; then rm -f "$FILESIDE.tmp"; else mv "$FILESIDE.tmp" "$FILESIDE"; fi
+mv "$FILESIDE.tmp" "$FILESIDE"
 
 # the per-transfer RECORD pages of the OK list: every _transfers.tsv record
 # of the CoreId, chronological — the page a Duration / Start Time / CoreId

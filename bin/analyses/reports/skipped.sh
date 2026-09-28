@@ -30,9 +30,7 @@ SKIPFILE="$ROOT/input/skip.txt" # the rules (per environment since 2026-08-31)
 source "$ROOT/bin/skiplist.sh"             # SKIPLIST_AWK (sl_load/sl_match) — the ONE reader
 
 # All the inputs are parse-time products (the two _skipped.tsv sidecars and the
-# config sidecar) plus the rule file and its reader. The per-value
-# skipped-<slug>.rpt files are written in the same run as skipped.rpt, so the
-# mtime check on the latter speaks for them too.
+# config sidecar) plus the rule file and its reader.
 
 # Remove any stale per-value reports from a previous skip list, then (re)write.
 rm -f "$REPORTS_DIR"/skipped-*.rpt
@@ -161,9 +159,8 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
 # just before its SUMMARY line (plus a 5th STAT box after the existing four).
 RAW_SKIP="$DATA/transfer/_skipped.csv"
 rows_tmp="$REPORTS_DIR/skipped.rows.tmp.$$"
-# clean the temps on ANY exit — an orphan in the freshness-watched reports
-# tree would force one extra publish (unmatched globs stay literal; rm -f
-# ignores them)
+# clean the temps on ANY exit (unmatched globs stay literal; rm -f ignores
+# them)
 trap 'rm -f "$rows_tmp" "$REPORTS_DIR"/skipped.rpt.tmp*' EXIT
 if [ -f "$RAW_SKIP" ] && [ -s "$RAW_SKIP" ]; then
     awk '

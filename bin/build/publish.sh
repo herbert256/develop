@@ -106,11 +106,7 @@ apply_help_chrome() {
             /^<div class="topbar"><a class="brand"/         { print tb; next }
             /^<div class="footer"><span class="f-left"/     { next }
             { print }
-        ' "$f" > "$tmp" && { cmp -s "$tmp" "$f" && rm -f "$tmp" || mv "$tmp" "$f"; }
-        # content-compared: the chrome is regenerated identically on almost
-        # every build, and docs/help/ is an INPUT of this script's freshness
-        # check (and of the sitemap) — an unchanged rewrite must not bump its
-        # mtime, or the check could never hold.
+        ' "$f" > "$tmp" && mv "$tmp" "$f"
     done
 }
 

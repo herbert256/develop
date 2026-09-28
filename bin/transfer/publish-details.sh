@@ -78,8 +78,7 @@ trap '[ -n "${VERDICT_DIR:-}" ] && rm -rf "$VERDICT_DIR"' EXIT
 # used to be folded into its detail page here — legs table + server log, above
 # "Last server log messages". REMOVED on user request: the page now carries a
 # Features "Latest Error" row linking that file's own page, so the evidence
-# lives in ONE place. failed-sub-all.rpt stays a freshness dep: the row a
-# subscription is red for still decides what its detail page says elsewhere.)
+# lives in ONE place.)
 
 render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
     local sub=$1 title=$2

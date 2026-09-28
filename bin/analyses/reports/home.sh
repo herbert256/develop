@@ -124,6 +124,5 @@ pda_seen_total() {   # $1 = member  $2 = its coverage TSV  $3 = its base cache  
         case $m in logicals) bc=_logicals; er=logical ;; partners) bc=_partners; er=partner ;; domains) bc=_domains; er=domain ;; bl) bc=_bl; er=bl ;; *) bc=_apps; er=application ;; esac
         printf 'SEEN\t%s\t%s\n' "$m" "$(pda_seen_total "$m" "$tsv" "$DATA/flow-manager/base/$bc.tsv" "$DATA/transfer/reports/$er.rpt")"
     done
-} | cov_put "$OUT"     # content-compared: home.rpt carries no FOOT timestamp, so
-                       # an identical rewrite keeps its mtime.
+} | cov_put "$OUT"
 echo "Wrote $OUT ($(grep -c . "$OUT") member(s))." >&2

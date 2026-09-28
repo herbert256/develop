@@ -73,7 +73,7 @@ awk -F'\t' '$3 != "A" && $8 != "" { print $8 "\t" $7 }' "$IN/.sample/_estate.tsv
     | LC_ALL=C sort -u > "$IN/renames/profiles.tsv"
 # ip-hosts.tsv: every OUT-side endpoint's address rows, in bin/ip.sh
 # ip_put's exact order (zero-padded octet sort key), so the parse's own
-# union pass is a byte-level no-op and the file's mtime stays put.
+# union pass is a byte-level no-op and the file stays put.
 # (an "ownhost" flow — the MULTI-HOST account scenario — seeds only its
 # FIRST address: the second is the endpoint's newer one, deliberately
 # UNKNOWN to the map so the parse has to learn it from the logged rows)
