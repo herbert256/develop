@@ -835,10 +835,70 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
 # volume's per-row note under "Volume by direction") and stays in that block,
 # so it appears only on that table's page; NOTEs after the last table are
 # report-wide and go to FOOTER (rendered on every split page), as before.
+# ONE AWK PASS (2026-09-28, speed round 15): the bash loop below appended
+# every line to a growing string — 6.4 s for a 21k-row report (failed-files
+# at production scale), quadratic in its size. SEGMENT_AWK applies the SAME
+# rules (the bash version below stays their reference and the fallback when
+# awk fails) and prints bash assignments — $'...' strings, only backslash
+# and quote escaped — which segment_rpt evals.
+SEGMENT_AWK='
+# (lines kept in arrays and printed at END — string growth by concatenation
+# is quadratic in mawk too)
+function esc(s,   n, a, i, o) {   # backslash and quote escaped for a bash $'"'"'...'"'"' string
+    if (index(s, "\\")) { n = split(s, a, "\\"); o = a[1]; for (i = 2; i <= n; i++) o = o "\\\\" a[i]; s = o }
+    if (index(s, "\047")) { n = split(s, a, "\047"); o = a[1]; for (i = 2; i <= n; i++) o = o "\\\047" a[i]; s = o }
+    return s }
+function chomp1(s) { return (substr(s, length(s)) == "\n") ? substr(s, 1, length(s) - 1) : s }
+function after(line, mk,   p, r) { r = line; while ((p = index(r, mk)) > 0) r = substr(r, p + length(mk)); return r }   # the text after the LAST mk
+function addT(n, line) { TB[n, ++TN[n]] = line; if (TN[n] > 1 && substr(line, 1, 5) == "HEAD\t") TH[n] = 1 }   # TH: the block holds a HEAD line (not as its first)
+function lines(s, into,   z, m, k) { m = split(chomp1(s), z, "\n"); for (k = 1; k <= m; k++) { if (into == "F") FL[++FN] = z[k]; else addT(into, z[k]) } }
+BEGIN { phase = "head" }
+{
+    line = $0
+    p = index(line, "\t"); dir = p ? substr(line, 1, p - 1) : line
+    if (dir == "TABLE") {
+        if (pending != "") { lines(pending, N); pending = "" }
+        sw = ""; if (index(line, "\tswitch=")) { sw = after(line, "\tswitch="); p = index(sw, "\t"); if (p) sw = substr(sw, 1, p - 1); p = index(sw, ":"); if (p) sw = substr(sw, 1, p - 1) }
+        tk = ""; if (index(line, "\ttab=")) { tk = after(line, "\ttab="); p = index(tk, "\t"); if (p) tk = substr(tk, 1, p - 1) }
+        if (phase == "tab" && ((sw != "" && sw == lastsw) || (tk != "" && tk == lasttab))) addT(N, line)
+        else { phase = "tab"; N++; addT(N, line) }
+        lastsw = sw; lasttab = tk
+    } else if (dir == "NOTE" || dir == "LINK") {
+        if (phase == "tab") pending = pending line "\n"; else FL[++FN] = line
+    } else if (dir == "SUMMARY" || dir == "FOOT") {
+        if (pending != "") {
+            if (TH[N]) lines(pending, "F")
+            else if (N > 0) lines(pending, N)
+            else lines(pending, "F")
+            pending = ""
+        }
+        FL[++FN] = line
+    } else if (phase == "head") HL[++HN] = line
+    else {
+        if (pending != "") { lines(pending, N); pending = "" }
+        addT(N, line)
+    }
+}
+END {
+    if (pending != "") lines(pending, "F")
+    printf "NTAB=%d\nHEADER=$\047", N; for (k = 1; k <= HN; k++) printf "%s\n", esc(HL[k]); printf "\047\n"
+    printf "FOOTER=$\047"; for (k = 1; k <= FN; k++) printf "%s\n", esc(FL[k]); printf "\047\n"
+    for (i = 1; i <= N; i++) { printf "TBLOCK[%d]=$\047", i
+        for (k = 1; k <= TN[i]; k++) printf "%s%s", (k > 1 ? "\n" : ""), esc(TB[i, k]); printf "\047\n" }
+}'
+# Most .rpt files are short, where the fork-free loop beats an awk start
+# (~13 ms): the loop runs first and hands over past 500 lines.
 segment_rpt() {
+    segment_rpt_bash "$1" 500 && return 0
+    local _seg
+    if _seg=$(LC_ALL=C awk "$SEGMENT_AWK" "$1"); then HEADER=""; FOOTER=""; NTAB=0; TBLOCK=(); eval "$_seg"; return 0; fi
+    segment_rpt_bash "$1"
+}
+segment_rpt_bash() {   # $1 = the .rpt  [$2 = a line cap: return 3, state partial, past it]
     HEADER=""; FOOTER=""; NTAB=0; TBLOCK=()
-    local line dir phase="head" pending="" sw="" lastsw="" tk="" lasttab=""
+    local line dir phase="head" pending="" sw="" lastsw="" tk="" lasttab="" cap=${2:-0} nl=0
     while IFS= read -r line || [ -n "$line" ]; do
+        if [ "$cap" -gt 0 ]; then nl=$((nl + 1)); [ "$nl" -le "$cap" ] || return 3; fi
         dir=${line%%$'\t'*}
         case $dir in
             TABLE)

@@ -760,14 +760,14 @@ aggregate_files() {
     # section-0.9 table would then emit a phantom "Waiting files 0" row.
     function wecnt(kk){ return (kk in wec) ? wec[kk]+0 : 0 }
     function bump(ty,ent,dim,val,   key){ if(ent==""||val=="")return; key=ty SUBSEP ent SUBSEP dim SUBSEP val; bc[key]++; if(pr2)bp[key]++; else bf[key]++; bv[key]+=size
-      addtop(key SUBSEP (pr2?"P":"F"), sk, disp, curcid)   # per (dim,value,outcome) drill: last 10 CoreIds
+      addtop(key SUBSEP gOC, sk, disp, curcid)   # per (dim,value,outcome) drill: last 10 CoreIds (gOC = the File outcome letter, flush)
       # Waiting / Expired counted PER DIMENSION VALUE as well, so the
       # Subscription table (section 2) can show which UC2 subscription the
       # staged files belong to. These are a BREAKDOWN, not a third outcome: a
       # Waiting File is already in OK and an Expired one already in Error
       # (the site-wide outcome policy).
-      if(toc[curcid]=="Waiting") bw[key]++
-      else if(toc[curcid]=="Expired") be[key]++
+      if(gWT) bw[key]++
+      else if(gEX) be[key]++
       if(dio!="") bD[key SUBSEP dio]++ }
     # addbig: lib.sh addtop with a per-type bound and its own array — the
     # Latest Files list per entity, newest first (sortkey = date+time desc).
@@ -831,10 +831,12 @@ aggregate_files() {
         wec[kwe]++; if(wef[kwe]=="" || day<wef[kwe]) wef[kwe]=day; if(day>wel[kwe]) wel[kwe]=day }
       # each page omits its own dim; SITE pages skip the PDA dims entirely
       # (their Features table folds Domain/Application/Partner via _sum_config)
-      for(dv in gDIM){ split(dv,a2,SUBSEP); if(a2[1]==od[ty]) continue
-        if(ty=="SITE" && a2[1]+0>2.8 && a2[1]+0<3) continue
-        if((a2[1]+0==3 || a2[1]+0==4) && ty!="PTN" && ty!="APP" && ty!="DOM" && ty!="LGC" && ty!="BL" && ty!="ACC") continue   # the Login/Host dims feed the Logical+PDA+BL+Account pages
-        bump(ty,ent,a2[1],a2[2]) } }
+      # (the dimension values of the File come pre-split from flush — GD1/GD2,
+      # 2026-09-28: this loop ran for every entity of every File)
+      for(ig=1;ig<=ngd;ig++){ if(GD1[ig]==od[ty]) continue
+        if(ty=="SITE" && GD1[ig]+0>2.8 && GD1[ig]+0<3) continue
+        if((GD1[ig]+0==3 || GD1[ig]+0==4) && ty!="PTN" && ty!="APP" && ty!="DOM" && ty!="LGC" && ty!="BL" && ty!="ACC") continue   # the Login/Host dims feed the Logical+PDA+BL+Account pages
+        bump(ty,ent,GD1[ig],GD2[ig]) } }
     function flush(   v){
       day=tdt[curcid]; if(day=="") { split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0; gPICK=""; return }
       jd=tjd[curcid]+0; sk=tsk[curcid]; disp=tdt[curcid]" "ttm[curcid]; pr2=(toc[curcid]!="Failed" && toc[curcid]!="Expired"); size=tsz[curcid]+0
@@ -906,6 +908,11 @@ aggregate_files() {
       # computed once here, not once per entity (2026-09-27, speed round 8):
       # the File END in the Start cell format, and the Pickup delay
       gEND=(g_end>=0 ? fmt_ep(g_end) : "")
+      # ... the dimension values of the File split once (GD1 = the dim code, GD2
+      # = the value; ent_apply walks them per entity) and its outcome
+      # letter / Waiting / Expired flags (bump)
+      ngd=0; for(dv9 in gDIM){ split(dv9,GDS,SUBSEP); ngd++; GD1[ngd]=GDS[1]; GD2[ngd]=GDS[2] }
+      gOC=(pr2?"P":"F"); gWT=(toc[curcid]=="Waiting"); gEX=(toc[curcid]=="Expired")
       grel=""
       if(gPICK!=""){ split(gPICK,pp9," "); ds9=ep_iso(pp9[1],pp9[2])-ep_iso(tdt[curcid],ttm[curcid])
         if(ds9>=0){ dd9=int(ds9/86400); hh9=int((ds9%86400)/3600); mm9=int((ds9%3600)/60)

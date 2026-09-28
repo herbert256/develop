@@ -45,7 +45,21 @@ fi
 unset _pda_fresh _o _f
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-for dim in logical partner application domain bl; do
+# THE LEG FLAGS ONCE (2026-09-28, speed round 15): every dimension needs the
+# same two CoreId sets from _transfers.tsv — a File with a failed leg (Retry /
+# Resubmit) and one with a resubmitted leg — and each of the five passes read
+# the whole leg cache for them. "F<TAB>coreid" / "R<TAB>coreid", deduped.
+PDA_TMP=$(mktemp -d "${TMPDIR:-/tmp}/pda.XXXXXX")
+trap 'rm -rf "$PDA_TMP"' EXIT
+LEGF="$PDA_TMP/legflags"
+awk -F'\t' '$3 != "Processed" && !(("F" SUBSEP $1) in s) { s["F" SUBSEP $1]; print "F\t" $1 }
+            $22 == "true" && !(("R" SUBSEP $1) in s) { s["R" SUBSEP $1]; print "R\t" $1 }' "$PARSED" > "$LEGF"
+
+# THE FIVE DIMENSIONS IN PARALLEL (same round): each writes its own .rpt from
+# the same read-only inputs, one job each instead of one after another.
+pda_dim() {   # $1 = logical|partner|application|domain|bl
+    local dim=$1 col title chead nkind attr VMAP UMAP UKEY OUT agg src
+    local tot_records tot_failed tot_processed tot_human summary_row_count detail_row_count tot_retry tot_resub summary_rows detail_rows
     case $dim in
         logical)     col=13; title="Logical";      chead="Logical"; nkind=lgc
                      attr="the file's logical flow group (its FlowID condensed to a 3-part group name — data/flow-manager/base/_logicals.tsv)" ;;
@@ -92,7 +106,7 @@ for dim in logical partner application domain bl; do
         logical) [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv" ;;
         bl)      [ -f "$CONFIG_XREF/_subscriptions-bl.tsv" ] && VMAP="$CONFIG_XREF/_subscriptions-bl.tsv" ;;
     esac
-    agg=$(awk -F'\t' -v C="$col" -v UMAP="$UMAP" -v UK="$UKEY" -v VMAP="$VMAP" -v PF="$PARSED" "$COREIDS_AWK"'
+    agg=$(awk -F'\t' -v C="$col" -v UMAP="$UMAP" -v UK="$UKEY" -v VMAP="$VMAP" -v PF="$LEGF" "$COREIDS_AWK"'
         function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
             while (v >= 1024 && i < 6) { v /= 1024; i++ }
             return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
@@ -102,7 +116,7 @@ for dim in logical partner application domain bl; do
             if (VMAP != "") { while ((getline l < VMAP) > 0) { n2 = split(l, z, "\t")
                 if (n2 >= 2 && z[1] != "" && z[2] != "") vm[toupper(z[1])] = z[2] } close(VMAP) }
         }
-        FILENAME == PF { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rsb[$1] = 1; next }   # _transfers.tsv first: a Failed leg marks its File (Retry/Resubmit); a Resubmitted=true leg marks the operator resubmit
+        FILENAME == PF { if ($1 == "F") fl[$2] = 1; else if ($1 == "R") rsb[$2] = 1; next }   # the leg flags first (LEGF, from _transfers.tsv): a Failed leg marks its File (Retry/Resubmit); a Resubmitted=true leg marks the operator resubmit
         $4 == "" { next }
         {
             delete P; np2 = 0
@@ -140,11 +154,11 @@ for dim in logical partner application domain bl; do
                     buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "F"]), buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "P"]), buildlist(top["Q" SUBSEP x[1] SUBSEP x[2] SUBSEP "T"]), buildlist(top["Q" SUBSEP x[1] SUBSEP x[2] SUBSEP "S"]) }
             printf "T|%d|%d|%d|%s|%d|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, nd+0, trt+0, trs+0
         }
-    ' "$PARSED" "$FILES")
+    ' "$LEGF" "$FILES")
 
     if [ -z "$agg" ]; then
         echo "No usable records found ($dim)." >&2
-        continue
+        return 0
     fi
 
     IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_count detail_row_count tot_retry tot_resub <<< "$(printf '%s\n' "$agg" | grep '^T|')"
@@ -192,4 +206,9 @@ for dim in logical partner application domain bl; do
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "Data written to $OUT ($summary_row_count $dim(s), $tot_records file(s))." >&2
-done
+}
+_ppids=()
+for dim in logical partner application domain bl; do pda_dim "$dim" & _ppids+=("$!"); done
+_prc=0
+for _pp in "${_ppids[@]}"; do wait "$_pp" || _prc=$?; done
+[ "$_prc" -eq 0 ] || { echo "pda-entities: a dimension failed (exit $_prc)." >&2; exit "$_prc"; }

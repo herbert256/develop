@@ -86,14 +86,21 @@ COREIDS_AWK='
     # dropped before the split. Same ring contents, a fraction of the work:
     # for a busy entity the ring fills early and almost every later file is
     # rejected here.
-    function addtop(p, sk, disp, cid,   key,n,a2,i,pos,m,out){ key=sk SUBSEP disp SUBSEP cid
+    # (2026-09-28) An OLDER sortkey than the smallest kept one is rejected
+    # before the key is even built: the key STARTS with sk, and every sk
+    # character sorts above SUBSEP, so sk < that sortkey means key < the
+    # smallest key — the same verdict as the full test below, which still
+    # decides a tie on the sortkey.
+    function addtop(p, sk, disp, cid,   key,n,a2,i,pos,m,out){
+        if ((p in _topn) && _topn[p] >= 10 && (sk "") < _topmsk[p]) return
+        key=sk SUBSEP disp SUBSEP cid
         if ((p in _topn) && _topn[p] >= 10 && key <= _topmin[p]) return
         n=(p in top)?split(top[p],a2,_US):0; pos=n+1
         for(i=1;i<=n;i++) if(key>a2[i]){pos=i;break}
         if(pos>10) return
         for(i=(n<10?n:9);i>=pos;i--) a2[i+1]=a2[i]
         a2[pos]=key; m=(n<10)?n+1:10; out=a2[1]; for(i=2;i<=m;i++) out=out _US a2[i]; top[p]=out
-        _topn[p]=m; _topmin[p]=a2[m] }
+        _topn[p]=m; _topmin[p]=a2[m]; _topmsk[p]=substr(a2[m], 1, index(a2[m], SUBSEP) - 1) }
     function buildlist(s,   cc,m,i,a3,f){ cc=""; m=(s=="")?0:split(s,a3,_US)
         for(i=1;i<=m;i++){split(a3[i],f,SUBSEP); cc=cc (cc?",":"") f[2] "  " f[3]} return cc }
     function orlist(s){ s=buildlist(s); return (s=="")?"-":s }   # "-" sentinel keeps TAB-delimited fields aligned (details.sh writer)
