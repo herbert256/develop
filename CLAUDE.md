@@ -260,7 +260,9 @@ then → 3:18 in rounds 15-24 (2026-09-28); every round byte-identical on a deve
   chunks, and on this Mac's APFS volume ten such writers at once cost several times the work in
   kernel time (10 × 41 MB: 0.92 s wall / 5.5 s sys at 4 KB, 0.06 s at 64 KB). A PARALLEL step
   writing a big file pipes it through `cat` (`grp_par` does it for every slice; the transfer
-  tokenize groups and intermediates, the server merge groups); the server tokenize part splitter
+  tokenize groups and intermediates, the server merge groups, the mention scan's per-type lines
+  and the server subsets — an awk writing several files per part uses one `print | "cat > …"`
+  per file and `close()`s them in END); the server tokenize part splitter
   is a perl `syswrite` splitter (`PART_SPLIT_PL`; production sort/split 107 → 26 part-s). Reads
   are fine. Many small page writes are not the problem (piping those through `cat` was slower).
 - **Never walk a numeric RANGE per key** (2026-09-28): the logon cadence (`bin/logons.sh`) and
