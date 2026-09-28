@@ -121,9 +121,21 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" -v ACTF="$a
         if (u in M) return u
         c = 0
         for (i = 1; i <= n; i++) { k = I[i]
-            if (dir == 1 ? (length(k) < length(u) && substr(u, 1, length(k)) == k) \
+            if (dir == 1 ? (length(k) < length(u) && substr(u, 1, length(k)) == k && truncok(k)) \
                          : (length(u) < length(k) && substr(k, 1, length(u)) == u)) { c++; hit = k; if (c > 1) break } }
         return (c == 1) ? hit : ""
+    }
+    # a key may stand for a longer configured name only when it is a real
+    # TRUNCATION: no configured flow owns it as its own name, and exactly one
+    # configured name extends it. 2026-09-28 (production run): the own key of
+    # UC3_X was also taken by UC3_X_2, and its polls were summed twice
+    function truncok(k,   i, c) {
+        if (k in TRUNCM) return TRUNCM[k]
+        if ((k in CN) || (k in SN)) { TRUNCM[k] = 0; return 0 }
+        c = 0
+        for (i = 1; i <= nck; i++) if (length(k) < length(CU[i]) && substr(CU[i], 1, length(k)) == k) c++
+        for (i = 1; i <= nsk; i++) if (!(SU[i] in CN) && length(k) < length(SU[i]) && substr(SU[i], 1, length(k)) == k) c++
+        TRUNCM[k] = (c == 1); return TRUNCM[k]
     }
     BEGIN {
         US = sprintf("%c", 31)

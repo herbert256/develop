@@ -923,9 +923,13 @@ export — a flow configured after the export was taken. The entity reports list
 view has a row the base cache knows nothing about and the home figure disagrees with the page
 footer. The transfer log therefore DISCOVERS entities: they are appended with an empty result
 and coloured normally. The rosters MIRROR the reports that
-list them: subscriptions = every `_files.tsv` col 12; hosts = col 15 of an OUT-side file (col 16),
-the restriction `remote-host.sh` applies, so raw INCOMING addresses are never invented as
-entities. A discovered host has no configured subscriptions, so the rollup would call it orange —
+list them: subscriptions = every `_files.tsv` col 12; hosts = every LEG host (`_transfers.tsv`
+col 16) of an OUT-connection File (`_files.tsv` col 16) — exactly the rows `remote-host.sh` and the
+Entities writer list, so raw INCOMING addresses are never invented as entities (2026-09-28: the
+File's first host, col 15, alone missed an outbound leg to an unmapped raw address and a production
+Entities view listed it untinted, home 105 vs page 106). That population is materialized once as
+`colour/_hostlegs.tsv` (host ⇥ File sortkey ⇥ outcome) and read by the discovery, the prune and
+`host_own_unpaired`. A discovered host has no configured subscriptions, so the rollup would call it orange —
 `host_own_unpaired` colours a host absent from the pair cache by its own last file instead
 (`white_own`'s rule; every configured host is in the pair cache, so nothing else moves). The
 append drops `.rescan-mentions` so the server mention scan picks the new names up.

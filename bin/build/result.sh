@@ -163,20 +163,38 @@ mkdir -p "$COLDIR"
 # The two rosters MIRROR the reports that list them, which is what keeps the
 # figures equal:
 #   subscriptions  every dest_site (col 12) in _files.tsv
-#   hosts          the host (col 15) of an OUT-side file (col 16) — the same
-#                  restriction bin/transfer/reports/remote-host.sh applies, so
-#                  the raw INCOMING addresses that never reach that report are
-#                  not invented as entities here either.
+#   hosts          every LEG host (_transfers.tsv col 16) of an OUT-connection
+#                  File (_files.tsv col 16) — the rows remote-host.sh and the
+#                  Entities writer list, so the raw INCOMING addresses of an
+#                  in-connection File are not invented as entities here either.
+#                  2026-09-28 fix (the production run): the File's FIRST host
+#                  (_files col 15) alone missed an outbound leg to an unmapped
+#                  raw address, which the Entities view then listed untinted
+#                  (home 105 against a page footer of 106).
+# HOSTLEGS = that population once, one line per (host, File): host <TAB> File
+# sortkey <TAB> outcome — read by the discovery, the prune and the own-colour
+# rule of an unpaired host below.
+HOSTLEGS="$COLDIR/_hostlegs.tsv"
+if [ -f "$ROOT/data/transfer/cache/_transfers.tsv" ]; then
+    awk -F'\t' '
+        FILENAME == ARGV[1] { if ($16 == "out") { SK[$1] = $6; OC[$1] = $2 }; next }
+        ($1 in SK) && $16 != "" { k = $16 SUBSEP $1; if (!(k in seen)) { seen[k] = 1; print $16 "\t" SK[$1] "\t" OC[$1] } }
+    ' "$FILES" "$ROOT/data/transfer/cache/_transfers.tsv" > "$HOSTLEGS.tmp"
+    commit_tmp "$HOSTLEGS"
+else
+    : > "$HOSTLEGS"
+fi
 discover_logged() {   # $1 = base name  $2 = the awk condition picking its column
-    local basef="$BASE/_$1.tsv" n
+    local basef="$BASE/_$1.tsv" n src="$FILES"
     [ -f "$basef" ] || return 0
+    [ "$2" = host ] && src="$HOSTLEGS"
     n=$(awk -F'\t' -v COND="$2" -v BF="$basef" '
         BEGIN { while ((getline l < BF) > 0) { split(l, a, "\t"); if (a[1] != "") B[toupper(a[1])] = 1 }
                 close(BF) }
-        { v = (COND == "sub") ? $12 : (($16 == "out") ? $15 : "") }
+        { v = (COND == "sub") ? $12 : $1 }
         v != "" && !(toupper(v) in B) && !(toupper(v) in seen) { seen[toupper(v)] = 1; ord[++n] = v }
         END { for (i = 1; i <= n; i++) print ord[i] "\t\t" }
-    ' "$FILES" | LC_ALL=C sort)
+    ' "$src" | LC_ALL=C sort)
     [ -n "$n" ] || return 0
     # append and re-sort nothing: the base caches are name-ordered as written by
     # flow-manager.sh, and the colour passes below rewrite them line by line, so
@@ -668,24 +686,25 @@ rollup() {   # $1 = base name (accounts|logins|...)  $2 = its <item>-subscriptio
 # The same own-transfer rule for a host with NO connected subscriptions — in
 # practice only one discovered by stage 0, since every configured host is in the
 # pair cache. Without it the rollup calls a host that has moved files "never
-# seen". Reads the last OUT-side file per host (cols 15/16/6/2 of _files.tsv),
-# the same population the remote-host report counts.
+# seen". Reads the last OUT-connection File per host from HOSTLEGS (every leg
+# host of such a File, since 2026-09-28), the population the remote-host
+# report counts.
 host_own_unpaired() {
     local basef="$BASE/_hosts.tsv" pair="$XREF/_hosts-subscriptions.tsv"
     [ -f "$basef" ] || return 0
     [ -f "$pair" ] || pair=/dev/null
     awk -F'\t' '
         FILENAME == ARGV[1] { if ($1 != "") P[toupper($1)] = 1; next }         # entity -> has connected subscription(s)
-        FILENAME == ARGV[2] { if ($16 == "out" && $15 != "" && $6 != "") {     # the last OUT-side file per host
-                                  k = toupper($15)
-                                  if ($6 >= sk[k]) { sk[k] = $6; oc[k] = $2 } }
+        FILENAME == ARGV[2] { if ($2 != "") {                                   # the last OUT-connection File per host
+                                  k = toupper($1)
+                                  if ($2 >= sk[k]) { sk[k] = $2; oc[k] = $3 } }
                               next }
         { k = toupper($1)
           # Expired-last = ORANGE, like the subscription rule (2026-09-28 fix:
           # this and white_own still said red, from before 2026-08)
           if (!(k in P) && (k in oc)) $3 = (oc[k] == "Failed") ? "red" : (oc[k] == "Expired") ? "orange" : "green"
           print $1 "\t" $2 "\t" $3 }
-    ' "$pair" "$FILES" "$basef" > "$basef.tmp"
+    ' "$pair" "$HOSTLEGS" "$basef" > "$basef.tmp"
     commit_tmp "$basef"
 }
 # the whitelist exception: an IP is colored by ITS OWN transfers (the last
@@ -728,17 +747,21 @@ white_own
 # Nothing else is an entity. (Until 2026-09-27 the server-log BLUE step
 # appended too; the first run after its removal prunes what it left behind.)
 prune_withdrawn() {   # $1 = base name  $2 = the _files.tsv column (0 = no own data)
-    local basef="$BASE/_$1.tsv" conf="$BASE/.configured.tsv"
+    local basef="$BASE/_$1.tsv" conf="$BASE/.configured.tsv" legs=/dev/null
     [ -f "$basef" ] || return 0
     [ -f "$conf" ] || return 0            # no snapshot yet: never prune blindly
+    # a HOST is also backed by a leg of an OUT-connection File (HOSTLEGS, the
+    # discovery population — 2026-09-28), not only by a File's first host
+    [ "$1" = hosts ] && legs="$HOSTLEGS"
     awk -F'\t' -v L="_$1" -v C="$2" '
         FILENAME == ARGV[1] { if ($1 == L && $2 != "") CONF[toupper($2)] = 1; next }
         FILENAME == ARGV[2] { if (C + 0 > 0 && $C != "") HAS[toupper($C)] = 1; next }
+        FILENAME == ARGV[3] { if ($1 != "") HAS[toupper($1)] = 1; next }
         { k = toupper($1)
           if ((k in CONF) || (k in HAS)) { print; next }
           n++ }
         END { if (n) printf "result.sh: pruned %d withdrawn discover(y/ies) from base/_%s.tsv.\n", n, "'"$1"'" > "/dev/stderr" }
-    ' "$conf" "$FILES" "$basef" > "$basef.tmp"
+    ' "$conf" "$FILES" "$legs" "$basef" > "$basef.tmp"
     commit_tmp "$basef"
 }
 prune_withdrawn subscriptions 12
