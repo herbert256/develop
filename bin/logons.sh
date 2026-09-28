@@ -78,13 +78,14 @@
 # blacklist deliberately does NOT apply — the address's activity is real
 # whichever credential it carried.
 #
+# Built ONCE per build by bin/build/logon-summary.sh (a background step).
 # Two consumers, which the build runs CONCURRENTLY (details.sh in the
 # background beside the server reports): transfer details.sh (the Logons
 # table on the LOGIN pages) and server logon.sh (the Incoming table's last
-# four columns). Each calls ensure_logons itself, so neither depends on the
-# other having run: the write is atomic (unique tmp + mv) and cmp-guarded —
-# two concurrent builders produce identical bytes, and identical content
-# keeps its mtime so downstream freshness checks stay quiet.
+# four columns). Each calls ensure_logons, which returns at once when the
+# summary is there and builds it otherwise — a consumer run on its own, or
+# one that got ahead of the summary step. The write is atomic (unique tmp +
+# mv): two concurrent builders produce identical bytes.
 _LOGONS_SH="${BASH_SOURCE[0]}"
 # the platform-internal pseudo-logins (SECURETRANSPORT, the cluster CFT
 # credentials, *nobody, …) must not get rows here either — the sidecar feeds
@@ -94,14 +95,9 @@ source "$(dirname "$_LOGONS_SH")/blacklist.sh"
 
 ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_logons-hosts.tsv
     local _lg_cache="$1" _lg_out="$1/_logons.tsv" _lg_hout="$1/_logons-hosts.tsv" _lg_parse="$1/_parse.tsv" _lg_tmp _lg_htmp
-    local _lg_stamp="$1/.logons.stamp"
-    # fresh when the STAMP is newer than the parse cache, this script and the
-    # blacklist (a missing parse cache still gets an EMPTY summary written
-    # once). A stamp, not the two files (2026-09-27): they are cmp-guarded, so
-    # an unchanged result keeps its OLD mtime — older than a re-parsed cache —
-    # and every later caller of the same build recomputed it again
-    if [ -f "$_lg_out" ] && [ -f "$_lg_hout" ] && [ -f "$_lg_stamp" ] && [ ! "$_lg_parse" -nt "$_lg_stamp" ] \
-        && [ ! "$_LOGONS_SH" -nt "$_lg_stamp" ] && [ ! "$BLACKLIST_FILE" -nt "$_lg_stamp" ]; then return 0; fi
+    # built already in this build (the data/ wipe leaves none from an earlier
+    # one); a missing parse cache still gets an EMPTY summary
+    if [ -f "$_lg_out" ] && [ -f "$_lg_hout" ]; then return 0; fi
     mkdir -p "$_lg_cache"
     _lg_tmp="$_lg_out.tmp.$$"
     _lg_htmp="$_lg_hout.tmp.$$"
@@ -526,10 +522,8 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
             }
         ' "$_lg_parse" > "$_lg_tmp"
     fi
-    if [ -f "$_lg_out" ] && cmp -s "$_lg_tmp" "$_lg_out"; then rm -f "$_lg_tmp"
-    else mv "$_lg_tmp" "$_lg_out"; fi
-    if [ -f "$_lg_hout" ] && cmp -s "$_lg_htmp" "$_lg_hout"; then rm -f "$_lg_htmp"
-    else mv "$_lg_htmp" "$_lg_hout"; fi
-    touch "$_lg_stamp"   # the summary is current as of now (see the freshness test)
+    # the host file FIRST: the pair counts as built once the login file exists
+    mv "$_lg_htmp" "$_lg_hout"
+    mv "$_lg_tmp" "$_lg_out"
     return 0
 }

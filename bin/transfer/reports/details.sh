@@ -67,10 +67,7 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', building per-entity detail files..." >&2
-
-ensure_config   # the base lists drive the direction suffixes + config-only pages
 
 ACC_DIR="$REPORTS_DIR/details/accounts"
 SITE_DIR="$REPORTS_DIR/details/subscriptions"

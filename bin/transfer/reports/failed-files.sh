@@ -43,7 +43,6 @@ ERRDIR="$REPORTS_DIR/errors"
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
-ensure_parsed
 SUBRES="$CONFIG_BASE/_subscriptions.tsv"   # name <TAB> ... <TAB> result colour (col 3)
 
 # the CoreIds that have an error page (their errors/<CoreId>.rpt)

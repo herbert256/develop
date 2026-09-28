@@ -40,18 +40,15 @@
 set -euo pipefail
 
 # entity-search.sh mostly reads the .rpt other reports wrote and does not
-# tokenize; the ONE parse cache it reads is $FILES (the Last-seen column), so
-# it calls ensure_parsed like every other $FILES consumer. lib.sh also
-# provides the shared paths (REPORTS_DIR, SERVER_CACHE, IP_DIR, CONFIG_DIR).
+# tokenize; the ONE parse cache it reads is $FILES (the Last-seen column).
+# lib.sh provides the shared paths (REPORTS_DIR, SERVER_CACHE, IP_DIR, CONFIG_DIR).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../transfer/lib.sh"
 DETAILS_DIR="$REPORTS_DIR/details"
 
 # Configured account/subscription lists: the bin/flow-manager.sh caches (data/flow-manager/,
-# built from the partners.json / subscriptions.json exports). ensure_config
-# refreshes them; a missing cache file is skipped (empty configured list).
-ensure_config
-ensure_parsed
+# built from the partners.json / subscriptions.json exports); a missing cache
+# file is skipped (empty configured list).
 
 # slugify(), ported to awk from bin/publish_lib.sh (lowercase, non-alnum runs -> a
 # single '-', trim leading/trailing '-'), so slugs here match the detail filenames.

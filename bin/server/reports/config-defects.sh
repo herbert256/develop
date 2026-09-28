@@ -37,7 +37,6 @@ if [ ${#files[@]} -eq 0 ]; then
     rm -f "$OUT"   # no data for this ENV — the page skips its server-log tables
     exit 0
 fi
-ensure_parsed
 echo "Extracting the config-defect families from the server cache..." >&2
 
 awk -F'\t' '

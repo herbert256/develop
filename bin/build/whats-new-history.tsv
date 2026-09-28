@@ -174,7 +174,7 @@ N	2026-08-30	0	bin/transfer/reports/security-params.sh
 N	2026-08-30	0	bin/transfer/reports/merge-volume.sh	
 N	2026-08-30	0	bin/analyses/reports/uc4-status.sh	
 N	2026-08-30	0	bin/analyses/reports/twins.sh	
-N	2026-08-30	0	bin/transfer/reports/topview.sh	
+N	2026-08-30	0	bin/server/reports/topview.sh	
 N	2026-08-30	0	bin/transfer/reports/only-red.sh	
 N	2026-08-30	0	bin/server/reports/ssh-crypto.sh	
 N	2026-08-30	0	bin/analyses/reports/seen-in-server-log.sh	

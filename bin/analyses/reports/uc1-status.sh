@@ -83,8 +83,6 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
-ensure_config
 [ -f "$RFLIP" ] || RFLIP=/dev/null   # first build: result.sh not run yet — no flips
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 

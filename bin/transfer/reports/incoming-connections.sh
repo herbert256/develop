@@ -41,7 +41,6 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
 [ -f "$WHITE" ] || { echo "incoming-connections.sh: no $WHITE — nothing to do." >&2; exit 0; }
 echo "Building the incoming-connection (whitelisted IP) detail pages..." >&2
 

@@ -98,7 +98,6 @@ if [ ${#files[@]} -eq 0 ] || [ ! -s "$FILES" ]; then
     rm -f "$OUT"   # env-split legitimate state: nothing to report
     exit 0
 fi
-ensure_config
 # Rebuild when the transfer cache, the server err/warn rings (the server
 # _subscriptions.tsv mention cache is a representative — rewritten in the same
 # parse pass as the per-name dirs), the connection maps, or this script change.

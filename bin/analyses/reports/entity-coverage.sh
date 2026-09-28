@@ -83,7 +83,6 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
 
 SB="$CONFIG_BASE/_subscriptions.tsv"
 AUTH="$SERVER_REPORTS/auth-activity.rpt"

@@ -28,7 +28,6 @@ if [ ${#files[@]} -eq 0 ]; then
     rm -f "$OUT"   # no data for this ENV — page not published (an env-split legitimate state)
     exit 0
 fi
-ensure_parsed
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass over E/W messages. Emits pipe-delimited HOUR/WD lines, the heat ROW/

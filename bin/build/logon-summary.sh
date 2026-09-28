@@ -11,8 +11,8 @@
 # later mention rescan rebuilds the per-entity caches, never _parse.tsv — so
 # bin/build.sh starts it right after the server parse is waited for: it runs
 # beside the server-log -> transfer steps and is waited for before the
-# report stage. Both consumers still call ensure_logons (stamp-fresh here, so
-# a no-op in the build; still correct for a manual run).
+# report stage. Both consumers still call ensure_logons (the summary exists
+# by then, so a no-op in the build; still correct for a manual run).
 #
 # Usage: bin/build/logon-summary.sh   (bin/build.sh runs it; no arguments)
 set -euo pipefail

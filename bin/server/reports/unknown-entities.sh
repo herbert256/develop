@@ -60,7 +60,6 @@ if [ ${#files[@]} -eq 0 ]; then
     rm -f "$REPORTS_DIR"/unknown-{sites,accounts,logins,hosts,whitelisting}.rpt
     exit 0
 fi
-ensure_parsed
 if [ ! -f "$TCACHE" ]; then
     echo "Transfer parse cache not found: $TCACHE — run bin/transfer/parse.sh first." >&2
     exit 1

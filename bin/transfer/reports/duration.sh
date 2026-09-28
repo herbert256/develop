@@ -52,7 +52,6 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
 # the Min/Avg/Max sibling pages are GONE (2026-09-13, user request): their
 # table sits beside the percentiles on the same page — sweep the old .rpts
 rm -f "$REPORTS_DIR/duration-minmax.rpt" "$REPORTS_DIR/duration-all-minmax.rpt"

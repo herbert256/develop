@@ -43,7 +43,6 @@ if [ ${#files[@]} -eq 0 ]; then
     rm -f "$OUT"   # no data for this ENV — page not published (an env-split legitimate state)
     exit 0
 fi
-ensure_parsed
 if [ ! -f "$TSITE" ]; then
     echo "Transfer-site list not found: $TSITE — run the transfer reports first." >&2
     exit 1

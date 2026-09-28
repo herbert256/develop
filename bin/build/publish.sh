@@ -541,8 +541,8 @@ _daycell() {   # $1 = date
 }
 
 # The log-exports facts table (the bottom of each env block): one row per
-# log — how many raw export files feed the parse (the incremental manifests
-# _parse.files / _transfers.files, one line per input), the total records,
+# log — how many raw export files feed the parse (the *.csv under
+# input/server/ and input/transfer/, what the two parses read), the total records,
 # the first and last record stamp, the days with records and HOLES: calendar
 # days inside the [first,last] span with no record at all. The per-day
 # figures come from the two topview.rpt files (Date cells strip the
@@ -799,14 +799,13 @@ write_failing_now() {
 
 write_log_facts() {
     local srpt="$HOME_ENV_DATA/server/reports/topview.rpt" trpt="$HOME_ENV_DATA/transfer/reports/topview.rpt"
-    local smf="$HOME_ENV_DATA/server/cache/_parse.files" tmf="$HOME_ENV_DATA/transfer/cache/_transfers.files"
     local files=() facts
     [ -f "$srpt" ] && files+=("$srpt")
     [ -f "$trpt" ] && files+=("$trpt")
     [ ${#files[@]} -gt 0 ] || return 0
-    local sfiles="" tfiles=""
-    [ -f "$smf" ] && sfiles=$(awk 'END{print NR}' "$smf")
-    [ -f "$tmf" ] && tfiles=$(awk 'END{print NR}' "$tmf")
+    local sfiles tfiles
+    sfiles=$(find input/server -maxdepth 1 -name '*.csv' 2>/dev/null | wc -l | tr -d ' ')
+    tfiles=$(find input/transfer -maxdepth 1 -name '*.csv' 2>/dev/null | wc -l | tr -d ' ')
     # One line per log: "tag<TAB>records<TAB>first<TAB>last<TAB>days<TAB>
     # holecount<TAB>holelist" — the hole walk is a Julian-day loop over the
     # span (the site's awk date arithmetic; never `date`).

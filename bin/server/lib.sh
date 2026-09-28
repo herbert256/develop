@@ -16,21 +16,16 @@
 #   CONFIG_DIR      bin/flow-manager.sh's configured-entity caches (data/flow-manager/{base,xref}/_*.tsv)
 #   UNKNOWN_DIR     the unknown-* sidecar seed lists (data/unknown/)
 #   PARSED          path to the tokenized cache (data/server/cache/_parse.tsv)
-#   ensure_parsed   (re)build the cache with parse.sh when it is stale
-#   ensure_config   (re)build the data/flow-manager caches with bin/flow-manager.sh when stale
 #
 # The cache is the shared, pre-tokenized form of input/server/*.csv produced by
 # parse.sh — see parse.sh / _parse.txt for the column layout (time, level,
 # component, message). Reports read it with a plain `awk -F'\t'` instead of
-# re-running the CSV tokenizer over the multi-GB input each time.
-#
-# ensure_parsed rebuilds when the cache is missing, when any input CSV is newer
-# than it, or when parse.sh itself is newer (so editing the parser invalidates
-# the cache). A missing cache always rebuilds, so the check is fail-safe.
+# re-running the CSV tokenizer over the multi-GB input each time. bin/build.sh
+# builds it (and the data/flow-manager config caches) before any report runs;
+# a report never parses on its own.
 
 # All paths resolve from THIS file's location (not the caller's SCRIPT_DIR), so
-# ensure_parsed and the report .rpt writes work from either
-# directory. lib.sh + parse.sh sit in <area>/bin/; the report scripts that
+# the report .rpt writes work from either directory. lib.sh + parse.sh sit in <area>/bin/; the report scripts that
 # source this sit one level down in <area>/bin/reports/. data/ and input/ are
 # the two gitignored roots at the repo top.
 LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"       # <area>/bin
@@ -123,47 +118,13 @@ LOGLINES_AWK='
         return s }
 '
 
-ensure_parsed() {
-    local manifest="$CACHE_DIR/_parse.files"
-    if [ ! -f "$PARSED" ] \
-       || [ "$LIB_DIR/parse.sh" -nt "$PARSED" ] \
-       || [ -n "$(find "$INPUT_DIR" -name '*.csv' -newer "$PARSED" 2>/dev/null)" ]; then
-        "$LIB_DIR/parse.sh"
-    elif [ -f "$manifest" ] \
-       && [ "$(find "$INPUT_DIR" -maxdepth 1 -name '*.csv' -exec basename {} \; 2>/dev/null | LC_ALL=C sort)" \
-            != "$(cut -f1 "$manifest" | LC_ALL=C sort)" ]; then
-        # the mtime check above misses an input restored with an OLDER
-        # timestamp (cp -p / rsync -a / tar) or one removed since the last
-        # parse — the input basename set no longer matches parse.sh's
-        # manifest, so reparse (the transfer lib has the same guard)
-        "$LIB_DIR/parse.sh"
-    fi
-}
-
-# ensure_config — (re)build the data/flow-manager/_*.tsv caches with bin/flow-manager.sh
-# (the transfer lib.sh twin). flow-manager.sh early-exits when every cache is newer
-# than the exports and itself, so calling this every time is a cheap no-op;
-# with either export absent from input/flow-manager/ (gitignored, like the log CSVs)
-# it keeps whatever caches exist instead of failing the caller (a missing
-# cache file reads as an empty list).
-ensure_config() {
-    [ -f "$FM_INPUT_DIR/partners.json" ]      || return 0
-    [ -f "$FM_INPUT_DIR/subscriptions.json" ] || return 0
-    "$ROOT/bin/flow-manager.sh"
-}
-
 # srv_subset NAME — the path a server-cache CONSUMER reads: its subset of the
 # cache (bin/server/subsets.sh — only the lines carrying one of its marker
-# strings, in cache order) when the subsets were built from THIS cache by
-# THIS spec, else the whole cache. The signature is the cache's size, mtime
-# and inode plus the spec script's checksum (not -nt: whole seconds).
-srv_subset_sig() {
-    printf '%s %s\n' "$(stat -f '%z:%m:%i' "$PARSED" 2>/dev/null || stat -c '%s:%Y:%i' "$PARSED" 2>/dev/null)" \
-        "$(cksum < "$LIB_DIR/subsets.sh" | tr ' ' :)"
-}
+# strings, in cache order) when the subset set is complete, else the whole
+# cache.
 srv_subset() {
     local d="$CACHE_DIR/subsets"
-    if [ -f "$d/$1.tsv" ] && [ -f "$d/.done" ] && [ "$(cat "$d/.done")" = "$(srv_subset_sig)" ]; then
+    if [ -f "$d/$1.tsv" ] && [ -f "$d/.done" ]; then
         printf '%s' "$d/$1.tsv"
     else
         printf '%s' "$PARSED"

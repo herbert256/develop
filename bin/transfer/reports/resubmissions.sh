@@ -21,7 +21,6 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
 # The server-log resubmission trail (third table) reads the SERVER parse cache
 # — a cross-area CACHE read (the rule forbids reading server REPORTS). Both
 # parses are complete before any report stage runs, so the read is safe; the

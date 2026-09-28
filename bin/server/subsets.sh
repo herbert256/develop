@@ -10,7 +10,7 @@
 # data/server/cache/subsets/<consumer>.tsv, verbatim and in cache order. The
 # consumer then reads its subset instead of the cache (srv_subset in
 # bin/server/lib.sh — which falls back to the whole cache when the subsets
-# are missing or stale, so a manual run is always correct).
+# are missing).
 #
 # THE RULE THAT MAKES IT EXACT: a consumer's markers must be FIXED strings
 # such that every cache line its awk acts on contains at least one of them
@@ -32,7 +32,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 source "$SCRIPT_DIR/../ranges.sh"
-ensure_parsed
 
 # consumer <TAB> marker <TAB> marker ... (one consumer per line)
 SPEC='uc1	Could not send file	An error occurred while sending	finished with error	Starting execution	Connection failure while 	listing files from partner
@@ -43,11 +42,6 @@ connection-diagnostics	Connection failure while 	could not be established	Error 
 remote-poll	Applying the search pattern	listing files from partner 	Remote files pattern of transfer site	Connection failure while 	failure connecting to remote host '
 
 SUBDIR="$CACHE_DIR/subsets"
-sig=$(srv_subset_sig)
-if [ -f "$SUBDIR/.done" ] && [ "$(cat "$SUBDIR/.done")" = "$sig" ]; then
-    echo "  the server-cache subsets are up to date; skipping." >&2
-    exit 0
-fi
 rm -rf "$SUBDIR"; mkdir -p "$SUBDIR"
 _t0=$(date +%s)
 
@@ -91,5 +85,5 @@ printf '%s\n' "$SPEC" | cut -f1 | while IFS= read -r c; do
         [ -f "$SUBDIR/$c.p$pi" ] && { cat "$SUBDIR/$c.p$pi" >> "$SUBDIR/$c.tsv"; rm -f "$SUBDIR/$c.p$pi"; }
     done
 done
-printf '%s\n' "$sig" > "$SUBDIR/.done"
+: > "$SUBDIR/.done"   # the set is complete (srv_subset reads it only then)
 printf 'TIME %5ds  %s\n' "$(( $(date +%s) - _t0 ))" "server-cache subsets ($NJ jobs)" >&2

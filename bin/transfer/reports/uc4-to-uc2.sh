@@ -33,7 +33,6 @@ OUT="$REPORTS_DIR/uc4-to-uc2.rpt"
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
-ensure_parsed
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/uc42.XXXXXX")

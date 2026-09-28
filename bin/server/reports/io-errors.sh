@@ -67,8 +67,6 @@ if [ ${#files[@]} -eq 0 ]; then
     rm -f "$OUT"   # no data for this ENV — page not published (an env-split legitimate state)
     exit 0
 fi
-ensure_config
-ensure_parsed
 # _files.tsv is the join input; the rosters give the linked spelling. The
 # error/File page dirs are deliberately NOT deps: their .rpt files are
 # rewritten every build (a FOOT carries the run time), which would re-scan

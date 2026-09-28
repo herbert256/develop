@@ -76,7 +76,6 @@ XSH="$CONFIG_XREF/_subscriptions-hosts.tsv"
 CRON_AWK="$ROOT/bin/cron2human.awk"
 COBS="$ROOT/bin/cron-observed.awk"
 ACTJQ="$ROOT/bin/subscription-active.jq"
-ensure_config
 
 if [ ! -f "$RP" ] && [ ! -f "$SUBJSON" ] && [ ! -f "$US" ]; then
     rm -f "$OUT"; echo "polling: no remote-poll.rpt, no uc3-status.rpt, no config export — page not published." >&2; exit 0

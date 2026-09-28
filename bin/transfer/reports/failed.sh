@@ -113,7 +113,6 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
 
 OUT="$REPORTS_DIR/failed.rpt"
 # the five view variants beside the default sub-x-failing page (see the header)

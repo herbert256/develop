@@ -39,8 +39,6 @@ SUBRES="$CONFIG_BASE/_subscriptions.tsv"           # subscription <TAB> ... <TAB
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
-ensure_config
-ensure_parsed
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 [ -f "$UCDF" ] || UCDF=/dev/null
 [ -f "$SUBRES" ] || SUBRES=/dev/null

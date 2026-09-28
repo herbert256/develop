@@ -30,7 +30,6 @@ mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/account-sharing.rpt"
 XREF_AS="$CONFIG_XREF/_accounts-subscriptions.tsv"
 
-ensure_config
 if [ ! -s "$XREF_AS" ]; then
     echo "account-sharing: no $XREF_AS — page not published." >&2
     rm -f "$OUT"

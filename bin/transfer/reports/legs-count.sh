@@ -23,7 +23,6 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # _files.tsv: 1=coreid 2=outcome 3=account 4=date 5=time 6=sortkey 8=size

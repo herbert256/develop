@@ -11,7 +11,7 @@
 # double-count records.
 #
 # TWO-STAGE CACHE. The tokenizer + blacklist + hostname mapping produce the
-# raw cache data/_transfers0.tsv (what the incremental merge maintains); a final
+# raw cache data/_transfers0.tsv; a final
 # CoreId-group PROPAGATION pass derives data/_transfers.tsv from it: within each
 # CoreId group, an entity value (account, login, site, host, profile) present
 # on some row fills the rows where it is blank — blacklist first, then
@@ -80,30 +80,15 @@
 # Values are emitted unescaped except that TAB/CR/LF are scrubbed to a space so
 # they can never break the TAB line protocol (none occur in the current data).
 #
-# INCREMENTAL: a manifest (data/_transfers.files: basename + byte size per input
-# already in the cache) lets a run tokenize only NEW input files and merge them
-# into the sorted cache, instead of re-tokenizing everything. A changed/removed
-# manifested file (or `touch input/*.csv`) forces a full reparse; the merge is
-# order-safe, so an incremental result is byte-identical to a full one.
-#
-# ONE PARSE AT A TIME (2026-09-16, user request — the acceptance damage): this
-# script rewrote data/_files.tsv THREE times (collapse 17 cols -> config join
-# 24 -> the still-under-way filter; ONE write since 2026-09-28, the three run
-# as one pipeline per slice), each as `> $FILES.tmp.$$` + `mv`. ~100
-# scripts call ensure_parsed and bin/build.sh runs some of them CONCURRENTLY
-# (the detail reports in the background beside the transfer reports), so two
-# runs could interleave their mv's and leave the UNJOINED intermediate as the
-# cache — every In/Out, partner, application and domain figure on the site
-# then reads a column that is not there. A mkdir lock (data/<area>/cache/
-# .parselock, the bin/build.sh pattern: owner PID recorded, a dead owner's
-# lock reclaimed) serializes them; the loser re-evaluates freshness afterwards
-# and normally exits with "nothing to parse". It is RE-ENTRANT through
-# AXWAY_PARSE_LOCK: bin/session-sites.sh re-invokes this script from inside
-# the critical section, and that nested derive-only run must not wait for a
-# lock its own ancestor holds.
+# ALWAYS A FULL PARSE (2026-09-28: every build is fresh — the manifest, the
+# parser signature and the incremental merge are gone). AXWAY_DERIVE_ONLY=1
+# skips the tokenize and rebuilds only the DERIVED caches from the existing
+# raw cache — bin/session-sites.sh's re-derive, after it learned flows from
+# the server log.
 #
 # Usage:
-#   ./parse.sh            # build/extend data/_transfers.tsv (+ _transfers.txt) from input/*.csv
+#   ./parse.sh                       # build data/_transfers.tsv (+ _transfers.txt) from input/*.csv
+#   AXWAY_DERIVE_ONLY=1 ./parse.sh   # rebuild the derived caches from _transfers0.tsv
 #
 set -euo pipefail
 
@@ -115,11 +100,11 @@ source "$ROOT/bin/skiplist.sh"    # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit
 source "$ROOT/bin/ranges.sh"      # grp_par: the key-aligned parallel slices of the derive passes (2026-09-28)
 _pj=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
 case $_pj in ""|*[!0-9]*) _pj=2 ;; esac
-PARSED0="$CACHE_DIR/_transfers0.tsv"   # raw (blacklisted, UNpropagated) cache — the incremental merge base
+PARSED0="$CACHE_DIR/_transfers0.tsv"   # raw (blacklisted, UNpropagated) cache — the derive's input
 SESSMAP="$CACHE_DIR/_sessionsites.tsv" # session -> subscription, learned from the server log (bin/session-sites.sh)
-# read ONCE and dropped from the environment, so no parse.sh started from
-# inside this one (expire-files, a report's ensure_parsed) inherits it
-_force_derive=${AXWAY_FORCE_DERIVE:-}; unset AXWAY_FORCE_DERIVE
+# read ONCE and dropped from the environment, so nothing started from inside
+# this one inherits it
+_derive_only=${AXWAY_DERIVE_ONLY:-}; unset AXWAY_DERIVE_ONLY
 LEGEND="$CACHE_DIR/_transfers.txt"
 # SKIP LIST (input/<env>/skip.txt, per environment): a record whose ATTRIBUTED
 # account (col 4) or subscription/site (col 6) name contains a skip token
@@ -140,10 +125,9 @@ SKIPOUT="$DATA/transfer/_skipped.tsv"   # skipped _transfers.tsv rows (verbatim)
 # DERIVE step below.
 SKIPCSV="$DATA/transfer/_skipped.csv"   # raw input lines of no-subscription/http CoreIds
 # Config-fallback sources: bin/flow-manager.sh's caches of subscriptions.json (see
-# the CONFIG FALLBACK section below). ensure_config refreshes them from the
-# config exports; if any is missing (no export in input/flow-manager/) the
-# fallback is skipped rather than failing the parse.
-ensure_config
+# the CONFIG FALLBACK section below), built by the config step before this
+# parse; if any is missing (no export in input/flow-manager/) the fallback is
+# skipped rather than failing the parse.
 CFG_SUBS="$CONFIG_BASE/_subscriptions.tsv"           # every configured subscription name
 CFG_AS="$CONFIG_XREF/_accounts-subscriptions.tsv"    # account <TAB> subscription
 CFG_SP="$CONFIG_XREF/_subscriptions-profiles.tsv"    # subscription <TAB> FlowIdentifier profile
@@ -169,200 +153,42 @@ mkdir -p "$CACHE_DIR"
 _pl0=$(date +%s)
 _plap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  parse: %s\n' "$((_t1 - _pl0))" "$1" >&2; _pl0=$_t1; }
 
-# ---- ONE PARSE AT A TIME (2026-09-16, user request) -------------------------
-# See the header: two concurrent runs can interleave their three _files.tsv
-# mv's and leave the unjoined intermediate behind. The lock is taken BEFORE the
-# freshness/mode decision below, so the loser re-evaluates once the winner is
-# done and normally exits with "nothing to parse" instead of parsing again.
-# RE-ENTRANT: bin/session-sites.sh re-invokes this script from inside the
-# critical section, and that nested run inherits AXWAY_PARSE_LOCK.
-PARSE_LOCK="$CACHE_DIR/.parselock"
-if [ -z "${AXWAY_PARSE_LOCK:-}" ]; then
-    _lock_mine=0; _lock_waited=0
-    while :; do
-        if mkdir "$PARSE_LOCK" 2>/dev/null; then _lock_mine=1; break; fi
-        _lock_pid=$(cat "$PARSE_LOCK/pid" 2>/dev/null || true)
-        if [ -z "$_lock_pid" ] || ! kill -0 "$_lock_pid" 2>/dev/null; then
-            printf 'parse.sh: reclaiming stale parse lock (PID %s not running).\n' "${_lock_pid:-unknown}" >&2
-            rm -rf "$PARSE_LOCK"
-            continue
-        fi
-        # a full acceptance parse runs minutes; wait generously, then degrade to
-        # the old behaviour rather than fail a build
-        if [ "$_lock_waited" -ge 1800 ]; then
-            printf 'parse.sh: parse (PID %s) still running after %ss — continuing WITHOUT the lock.\n' "$_lock_pid" "$_lock_waited" >&2
-            break
-        fi
-        [ "$_lock_waited" = 0 ] && printf 'parse.sh: another parse (PID %s) is running — waiting.\n' "$_lock_pid" >&2
-        sleep 2; _lock_waited=$((_lock_waited + 2))
-    done
-    # only the run that CREATED the lock owns it: a timed-out waiter must never
-    # remove the holder's lock on its own exit
-    if [ "$_lock_mine" = 1 ]; then
-        printf '%s\n' "$$" > "$PARSE_LOCK/pid" 2>/dev/null || true
-        export AXWAY_PARSE_LOCK=$$
-        trap 'rm -rf "$PARSE_LOCK"' EXIT
-    fi
-fi
-
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
-# (zero files is a legitimate state — handled below, after parser_sig)
 
-# ---------------------------------------------------------------------------
-# Incremental parsing. data/_transfers.files records every input CSV already in
-# the cache (basename + byte size). A run then only tokenizes files NOT in the
-# manifest and MERGES their rows into the sorted cache — adding a new export
-# costs one small parse, not a re-tokenize of everything. A changed or removed
-# manifest file (or `touch input/*.csv`) forces a full reparse; a cache without
-# a manifest that is newer than every input is adopted as-is (manifest written,
-# nothing reparsed). Editing parse.sh also forces a full reparse: a checksum of
-# the parser is stored in data/_transfers.parser and a mismatch triggers a rebuild.
-# ---------------------------------------------------------------------------
-MANIFEST="$CACHE_DIR/_transfers.files"
-manifest_entry() { printf '%s\t%s\n' "$(basename "$1")" "$(wc -c < "$1" | tr -d ' ')"; }
-in_manifest()    { cut -f1 "$MANIFEST" | grep -qxF "$(basename "$1")"; }
-
-# Parser-version guard: record a checksum of THIS script alongside the cache. A
-# changed parser (or a cache with no recorded version) forces a full reparse, so
-# editing parse.sh actually re-tokenizes instead of reusing a stale cache.
-PSIG="$CACHE_DIR/_transfers.parser"
-# The parser SIGNATURE covers input/<env>/blacklist.txt and the RENAME MAP as well as
-# this script: the blacklist decides what gets blanked and the map decides which
-# logged subscription name folds to which current one, so changing either
-# changes the cache just as
-# surely as changing the code, and must force the same full reparse. The
-# CONFIGURED SUBSCRIPTION NAMES are in it too (2026-08-31): the tokenizer keeps
-# a logged site that names a configured subscription whatever its shape, so a
-# subscription added to the export changes what an old row tokenizes to. Names
-# only, from the pre-discovery snapshot — never base/_subscriptions.tsv, whose
+# The configured subscription names the tokenizer keeps a logged site for,
+# from the pre-discovery snapshot — never base/_subscriptions.tsv, whose
 # result column is recoloured every build and whose discovered rows are logged
 # values, not configuration.
 CFG_CONF="$CONFIG_BASE/.configured.tsv"   # <list> <TAB> <name>: the config lists BEFORE either colour step appends
-# + the two policy READERS (2026-09-09): a change in how a rule line is parsed
-# (bin/skiplist.sh learned space-separated rules) must reparse like an edit
-# of the rules themselves would
-parser_sig=$( { cat "${BASH_SOURCE[0]}" "$BLACKLIST_FILE" "$RENAMES_FILE" "$RENAMES_PROF" "$ROOT/bin/skiplist.sh" "$ROOT/bin/blacklist.sh" 2>/dev/null
-                awk -F'\t' '$1 == "_subscriptions" { print $2 }' "$CFG_CONF" 2>/dev/null; } | cksum | awk '{print $1"_"$2}')
 
 # CONFIG-ONLY ESTATE (2026-08): an env with the flow-manager exports but not a
 # single log CSV is a legitimate state — a fresh clone carries only the JSONs
 # (the *.csv exports are gitignored). Write the complete cache set EMPTY
 # instead of failing: every downstream consumer then renders "configured,
-# never seen" (all orange) rather than aborting the build. Idempotent: a
-# re-run with the empty caches in place and no watched config newer than the
-# cache exits without touching an mtime, so a warm build stays a no-op.
-if [ ${#files[@]} -eq 0 ]; then
-    if [ "$parser_sig" = "$(cat "$PSIG" 2>/dev/null)" ] \
-       && [ -f "$MANIFEST" ] && [ ! -s "$MANIFEST" ] \
-       && [ -f "$PARSED0" ] && [ ! -s "$PARSED0" ] \
-       && [ -f "$PARSED" ] && [ -f "$FILES" ] \
-       && [ -f "$SKIPOUT" ] && [ -f "$SKIPCSV" ] \
-       && [ -z "$(find "$CONFIG_XREF" -name '_*.tsv' -newer "$PARSED" 2>/dev/null)" ]; then
-        echo "No *.csv in $INPUT_DIR — config-only estate; the empty caches are up to date." >&2
-        exit 0
-    fi
+# never seen" (all orange) rather than aborting the build.
+if [ ${#files[@]} -eq 0 ] && [ "$_derive_only" != 1 ]; then
     echo "No *.csv in $INPUT_DIR — writing EMPTY caches (config-only estate)." >&2
     : > "$PARSED0"; : > "$PARSED"; : > "$FILES"
-    : > "$MANIFEST"; : > "$SKIPOUT"; : > "$SKIPCSV"
-    printf '%s\n' "$parser_sig" > "$PSIG"
+    : > "$SKIPOUT"; : > "$SKIPCSV"
     exit 0
 fi
 
-mode=full
 do_tokenize=1
-new_files=()
-if [ "$parser_sig" != "$(cat "$PSIG" 2>/dev/null)" ]; then
-    [ -e "$PSIG" ] && echo "parse.sh changed since the cache was built — full reparse." >&2
-elif [ -f "$PARSED0" ] && [ -f "$MANIFEST" ]; then
-    mode=incremental
-    while IFS=$'\t' read -r name size; do
-        [ -n "$name" ] || continue
-        f="$INPUT_DIR/$name"
-        if [ ! -e "$f" ]; then
-            echo "Input $name was removed since the cache was built — full reparse." >&2
-            mode=full; break
-        fi
-        if [ "$(wc -c < "$f" | tr -d ' ')" != "$size" ] || [ "$f" -nt "$MANIFEST" ]; then
-            echo "Input $name changed since the cache was built — full reparse." >&2
-            mode=full; break
-        fi
-    done < "$MANIFEST"
-    if [ "$mode" = incremental ]; then
-        for f in "${files[@]}"; do
-            in_manifest "$f" || new_files+=("$f")
-        done
-        if [ ${#new_files[@]} -eq 0 ]; then
-            # The raw cache covers every input. Exit only if the DERIVED caches
-            # (_transfers.tsv and the two collapses) are present and up to date —
-            # i.e. no config cache this parse consumes (the fallback inputs AND
-            # the PDA caches behind _files.tsv cols 16-19) is newer; otherwise
-            # fall through to rebuild just the derivations.
-            cfg_newer=0
-            # every XREF cache the DERIVE reads must be here (CFG_FLOW feeds
-            # _files.tsv col 17). CFG_SUBS (base/_subscriptions.tsv) is read
-            # too but deliberately NOT watched: bin/build/result.sh recolors
-            # its result column AFTER the parse (never the names the derive
-            # reads), and a real config
-            # change rewrites these xref caches as well (bin/flow-manager.sh
-            # writes both trees) — same rule as lib.sh's ensure_parsed.
-            for cf in "$CFG_AS" "$CFG_SP" "$CFG_PAT" "$CFG_AL" "$CFG_AH" "$CFG_AAPP" "$CFG_ADOM" "$CFG_APTN" "$CFG_HPTN" "$CFG_FLOW"; do
-                if [ -f "$cf" ] && [ "$cf" -nt "$PARSED" ]; then cfg_newer=1; break; fi
-            done
-            # a changed skip.txt, or a missing skip sidecar, must re-derive too
-            if { [ -f "$SKIPFILE" ] && [ "$SKIPFILE" -nt "$PARSED" ]; } || [ ! -f "$SKIPOUT" ] || [ ! -f "$SKIPCSV" ]; then cfg_newer=1; fi
-            # a grown session map (bin/session-sites.sh learned a flow from
-            # the server log) must re-derive too — the SESSION JOIN pass reads it
-            if [ -f "$SESSMAP" ] && [ "$SESSMAP" -nt "$PARSED" ]; then cfg_newer=1; fi
-            # ...and bin/session-sites.sh, which just CHANGED the map, forces
-            # it: -nt compares whole seconds, so a map written in the same
-            # second as $PARSED would not count as newer (2026-09-27)
-            [ "$_force_derive" = 1 ] && cfg_newer=1
-            # the derived caches must also be INTACT: at least as new as the
-            # row cache (an interrupted run leaves them older) and _files.tsv
-            # FULLY JOINED. The join was the second of three mv's (collapse 17
-            # cols -> config join 24 -> still-under-way; one since 2026-09-28),
-            # so an interrupted or RACED run could leave the 17-column
-            # intermediate as the cache — the check stays for older caches.
-            # The test is the JOINED WIDTH (24) plus col 17 holding the
-            # movement vocabulary — NOT a lower bound like the old NF>=20,
-            # which the intermediate PASSED: bin/expire-files.sh pads a short
-            # row to 22 columns and bin/bookend-ok.sh to 23, so a damaged
-            # cache looked healthy and no later build ever healed it (the
-            # 2026-09-16 acceptance case: col 17 held the end stamp, so every
-            # In/Out figure on the site was empty). A failed check falls
-            # through to the derive-only rebuild below, which heals both.
-            if [ -f "$PARSED" ] && [ -f "$CACHE_DIR/_files.tsv" ] \
-               && ! [ "$PARSED0" -nt "$PARSED" ] && [ "$cfg_newer" = 0 ] \
-               && ! [ "$PARSED" -nt "$CACHE_DIR/_files.tsv" ] \
-               && [ -s "$CACHE_DIR/_files.tsv" ] \
-               && head -1 "$CACHE_DIR/_files.tsv" | LC_ALL=C awk -F'\t' '{exit !(NF >= 24 && ($17 == "" || $17 == "in" || $17 == "out" || $17 == "relay"))}'; then
-                echo "$PARSED already covers all ${#files[@]} input file(s); nothing to parse." >&2
-                exit 0
-            fi
-            echo "$PARSED0 already covers all ${#files[@]} input file(s); rebuilding the derived caches only." >&2
-            do_tokenize=0
-        fi
-    fi
-elif [ -f "$PARSED0" ] && [ -f "$PARSED" ] && [ -z "$(find "$INPUT_DIR" -name '*.csv' -newer "$PARSED0" 2>/dev/null)" ]; then
-    for f in "${files[@]}"; do manifest_entry "$f"; done > "$MANIFEST"
-    echo "Adopted existing $PARSED0 as covering all ${#files[@]} input file(s) (manifest written)." >&2
-    exit 0
+if [ "$_derive_only" = 1 ]; then
+    [ -f "$PARSED0" ] || { echo "parse.sh: AXWAY_DERIVE_ONLY=1 but no $PARSED0 — run the full parse first." >&2; exit 1; }
+    echo "Rebuilding the derived caches from $PARSED0 ..." >&2
+    do_tokenize=0
 fi
 
 tmp="$PARSED.tmp.$$"
 
-_plap "setup (lock, manifest, mode)"
+_plap "setup"
 if [ "$do_tokenize" = 1 ]; then
 
-if [ "$mode" = incremental ]; then
-    src_files=("${new_files[@]}")
-    echo "Incremental: parsing ${#src_files[@]} new file(s) and merging into $PARSED0 ..." >&2
-else
-    src_files=("${files[@]}")
-    echo "Parsing ${#src_files[@]} file(s) into $PARSED0 ..." >&2
-fi
+src_files=("${files[@]}")
+echo "Parsing ${#src_files[@]} file(s) into $PARSED0 ..." >&2
 # the tokenizer over the argument files -> stdout (a function since
 # 2026-09-27: the parse runs it on several file groups in parallel)
 tok_files() {
@@ -524,8 +350,7 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         # logged name to the CURRENT one here, at the same single point the
         # _SCP_ tail is stripped, so every report, cache and detail page sees
         # one name per flow. The map is input/<env>/renames/subscriptions.tsv
-        # (bin/renames.sh, machine-maintained by the config step); it is part of
-        # parser_sig, so recording a rename re-tokenizes the whole cache.
+        # (bin/renames.sh, machine-maintained by the config step).
         cs = site
         if ((scp = index(cs, "_SSCP_")) > 0 || (scp = index(cs, "_SCP_")) > 0 || (scp = index(cs, "_CCP_")) > 0) cs = substr(cs, 1, scp - 1)
         if (cs != "") cs = rn_canon(cs)
@@ -585,8 +410,8 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
 # group outputs are concatenated in any order (the sort below orders them);
 # a raw line repeated ACROSS groups — the tokenizer drops a repeat only within
 # its own group now — leaves two identical tokenized rows, which the sort
-# makes adjacent and the full-mode pass below drops (TOK_PAR=1): the trade
-# the incremental merge already makes, one row per identical tokenized row.
+# makes adjacent and the pass below drops (TOK_PAR=1): one row per identical
+# tokenized row.
 TOKJ=$(( $( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 ) / 2 ))
 [ "$TOKJ" -ge 1 ] 2>/dev/null || TOKJ=1
 [ ${#src_files[@]} -lt "$TOKJ" ] && TOKJ=${#src_files[@]}
@@ -807,50 +632,25 @@ awk -F'\t' -v OFS='\t' -v BLF="$BLACKLIST_FILE" "$BLACKLIST_AWK"'
         print
     }' "$al_f" "$ah_f" "$hmap" "$sb_f" "$tmp.raw" | cat > "$tmp.mapped"
 
-# Sort AFTER the mapping (the keys — coreid, direction — are untouched by it),
-# so an incremental chunk merged with `sort -m` lands byte-identical to a full
-# reparse: both orders are the same total order over the final row text.
-if [ "$mode" = incremental ]; then
-    LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp.mapped" | cat > "$tmp.chunk"
-    LC_ALL=C sort -m -t"$(printf '\t')" -k1,1 -k2,2 "$PARSED0" "$tmp.chunk" | cat > "$tmp.merged"
-    # Cross-run overlap: the in-tokenizer drop (seen[$0] on the RAW record) only
-    # sees the new files, so a new export overlapping the cache still yields
-    # duplicate rows — which sit adjacent after the merge. Drop them here too
-    # (keep the first). NOTE the key here is the whole TOKENIZED row, not the raw
-    # record (the cache holds only tokenized rows at merge time). This matches a
-    # full reparse for all practical purposes — the tokenized row carries every
-    # captured field incl. Transfer ID (col 25, ~unique per row) — the only
-    # divergence would be two distinct raw records that differ SOLELY in a CSV
-    # field parse.sh discards yet share an identical Transfer ID, which does not
-    # occur. Report how many were dropped.
-    mdups=$(awk -v out="$tmp.dedup" 'BEGIN { printf "" > out; close(out); cmd = "cat > \"" out "\"" } prev == $0 { d++; next } { prev = $0; print | cmd } END { close(cmd); print d+0 }' "$tmp.merged")   # BEGIN creates $out even for an empty merge, so the mv below never fails under set -e
-    if [ "$mdups" -gt 0 ]; then
-        echo "NOTE: dropped $mdups merged row(s) that duplicate rows already in the cache (overlapping export)." >&2
-    fi
-    mv "$tmp.dedup" "$PARSED0"
-    rm -f "$tmp.chunk" "$tmp.merged"
-    for f in "${src_files[@]}"; do manifest_entry "$f"; done >> "$MANIFEST"
-else
-    LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp.mapped" | cat > "$tmp.sorted"
-    # a PARALLEL tokenize (TOK_PAR, above) leaves a raw line repeated across
-    # groups as two identical rows — adjacent after the sort (its last-resort
-    # key is the whole line); keep the first, like the tokenizer did
-    if [ "$TOK_PAR" = 1 ]; then
-        xdups=$(awk -v out="$tmp.sorted2" 'BEGIN { printf "" > out; close(out); cmd = "cat > \"" out "\"" } NR > 1 && $0 == prev { d++; next } { prev = $0; print | cmd } END { close(cmd); print d + 0 }' "$tmp.sorted")
-        [ "$xdups" -gt 0 ] && echo "NOTE: dropped $xdups exact-duplicate record(s) repeated across tokenizer groups (kept the first)." >&2
-        mv "$tmp.sorted2" "$tmp.sorted"
-    fi
-    mv "$tmp.sorted" "$PARSED0"
-    for f in "${files[@]}"; do manifest_entry "$f"; done > "$MANIFEST"
+# Sort AFTER the mapping (the keys — coreid, direction — are untouched by it).
+LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp.mapped" | cat > "$tmp.sorted"
+# a PARALLEL tokenize (TOK_PAR, above) leaves a raw line repeated across
+# groups as two identical rows — adjacent after the sort (its last-resort
+# key is the whole line); keep the first, like the tokenizer did
+if [ "$TOK_PAR" = 1 ]; then
+    xdups=$(awk -v out="$tmp.sorted2" 'BEGIN { printf "" > out; close(out); cmd = "cat > \"" out "\"" } NR > 1 && $0 == prev { d++; next } { prev = $0; print | cmd } END { close(cmd); print d + 0 }' "$tmp.sorted")
+    [ "$xdups" -gt 0 ] && echo "NOTE: dropped $xdups exact-duplicate record(s) repeated across tokenizer groups (kept the first)." >&2
+    mv "$tmp.sorted2" "$tmp.sorted"
 fi
+mv "$tmp.sorted" "$PARSED0"
 rm -f "$tmp.raw" "$tmp.mapped" "$hmap"
 
 fi   # do_tokenize
-_plap "tokenize (+ merge, address map)"
+_plap "tokenize (+ address map)"
 
 # ---------------------------------------------------------------------------
-# CoreId-group entity propagation: _transfers0.tsv (the raw, blacklisted cache the
-# incremental merge maintains) -> _transfers.tsv (what every report reads). The
+# CoreId-group entity propagation: _transfers0.tsv (the raw, blacklisted cache)
+# -> _transfers.tsv (what every report reads). The
 # blacklist has already blanked the platform-internal pseudo-values — that
 # stays the first action. Then, within each CoreId group (the rows of one
 # logical transfer), an entity value present on SOME row fills the rows where
@@ -861,8 +661,8 @@ _plap "tokenize (+ merge, address map)"
 # (account, login, site, host, profile — profile's blank value is "UNKNOWN").
 # Only blanks are filled; a row that carries its own value keeps it; the donor
 # is the group's first non-blank value in cache order (Inbound before
-# Outbound). Kept as a derived file so the incremental merge + adjacent-row
-# dedup keep operating on the unpropagated stream (byte-identical guarantee).
+# Outbound). Kept as a derived file: the raw stream stays in _transfers0.tsv,
+# the input of the derive-only re-run (AXWAY_DERIVE_ONLY=1).
 #
 # CONFIG FALLBACK (the data/flow-manager caches of subscriptions.json — see
 # bin/flow-manager.sh), applied in BOTH directions. The map file carries one record
@@ -1367,7 +1167,7 @@ built by bin/flow-manager.sh), both ways round:
            a unanimous vote fills the entity (ambiguous fields abstain; a
            conflict leaves it empty). Votes cascade: a newly filled site
            votes in the account/login/profile decisions.
-The raw, unpropagated rows live in _transfers0.tsv (the incremental merge base; same
+The raw, unpropagated rows live in _transfers0.tsv (the derive's input; same
 columns).
 
 FLOWDIR + SESSION JOIN + FAKE SUBSCRIPTION (2026-08): a group still siteless
@@ -1822,36 +1622,4 @@ TLEGEND_EOF
 # (the session cache _sessions.tsv was REMOVED 2026-07 — no consumers remain)
 
 _plap "still-under-way filter"
-printf '%s\n' "$parser_sig" > "$PSIG"   # record the parser version that built this cache
 echo "Wrote $PARSED ($(wc -l < "$PARSED" | tr -d ' ') record(s)), $FILES ($(wc -l < "$FILES" | tr -d ' ') transfer(s)), $LEGEND, $TLEGEND." >&2
-
-# SESSION JOIN learn/apply: scan the finished server cache for flows it names
-# on the sessions of still-UCx groups; when the map learned something,
-# bin/session-sites.sh re-invokes this script with AXWAY_SKIP_SESSIONS=1 (a
-# derive-only re-run — one bounded extra derive, never a loop) so the rescue
-# lands immediately. AXWAY_SKIP_SESSIONS=1 (bin/build.sh, and the re-run
-# itself): the build runs this parse CONCURRENTLY with bin/server/parse.sh,
-# so the server cache may be mid-rewrite here — the build runs the step after
-# the parse barrier instead, exactly like the expire re-mark below.
-if [ "${AXWAY_SKIP_SESSIONS:-0}" != 1 ]; then
-    "$ROOT/bin/session-sites.sh"
-fi
-
-# Re-mark the Expired files IMMEDIATELY: the collapse above reset every such
-# row to Waiting, and leaving the re-mark to bin/build.sh's expire step would
-# let any ensure_parsed-triggered reparse (a standalone report run, or a
-# result.sh recolor bumping the config-cache mtimes) publish Waiting-only
-# data until the next full build. Idempotent + cmp-guarded; a missing server
-# cache just leaves Waiting as-is (bin/expire-files.sh exits 0 with a note).
-# AXWAY_SKIP_EXPIRE=1 (bin/build.sh only): the build runs this parse
-# CONCURRENTLY with bin/server/parse.sh, so the server cache may be
-# mid-rewrite here — the build's own expire step follows right after the
-# parse barrier and does the re-mark on the finished cache instead.
-if [ "${AXWAY_SKIP_EXPIRE:-0}" != 1 ]; then
-    "$ROOT/bin/expire-files.sh"
-    # ... and the bookend settlement (2026-09-09): a Failed File whose transfer
-    # the server log's own "Transfer end logged." record ends OK, with no
-    # classifying error line about it, reads Processed (col 23 = the stamp).
-    # Same gate, same reasons: it needs the finished server cache.
-    "$ROOT/bin/bookend-ok.sh"
-fi

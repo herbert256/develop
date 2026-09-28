@@ -36,7 +36,6 @@ fi
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/login.rpt"
 
-ensure_parsed
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # ---------------------------------------------------------------------------

@@ -34,7 +34,6 @@ fi
 OUTDIR="$REPORTS_DIR/month-stats"
 mkdir -p "$OUTDIR"
 rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp "$OUTDIR"/_alltime.tsv.tmp "$OUTDIR"/_alltime.tsv.tmp2
-ensure_parsed
 
 DIMS="account subscription login remote-host logical partner application domain bl"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2

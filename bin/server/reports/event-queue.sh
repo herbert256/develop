@@ -41,7 +41,6 @@ if [ ${#files[@]} -eq 0 ]; then
     rm -f "$OUT" "$SLOTS"   # no server data — page not published
     exit 0
 fi
-ensure_parsed
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/evq.XXXXXX")

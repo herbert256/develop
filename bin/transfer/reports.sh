@@ -7,10 +7,8 @@
 # included — it is the longest and paces the wall clock); phase 2 is
 # showseen.sh (lifts rows from the entity summary .rpt files and resolves
 # links through details/*/_slugmap.tsv) and entity-search.sh (reads the detail
-# .rpt files), which both need phase 1 complete. ensure_parsed/ensure_config
-# run ONCE up front so a stale cache is rebuilt exactly once, never
-# concurrently by the forked reports (each report still calls ensure_parsed
-# itself — by then it is a fresh-cache no-op). Strict mode plus a
+# .rpt files), which both need phase 1 complete. The parse caches and the
+# config caches are built by bin/build.sh before this runs. Strict mode plus a
 # fail-collecting pool so any failing report aborts the run instead of leaving
 # a stale .rpt behind and exiting success.
 set -euo pipefail
@@ -18,7 +16,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 source "$SCRIPT_DIR/../timing.sh"   # timed: one TIME line per pooled report (2026-09-27)
-ensure_parsed
 rm -f "$REPORTS_DIR"/*.rpt.tmp   # orphaned atomic-write temps from a killed run
 
 NJOBS=${AXWAY_NJOBS:-$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}   # AXWAY_NJOBS: bin/build.sh caps the parallel production chain

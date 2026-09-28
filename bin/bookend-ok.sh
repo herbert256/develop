@@ -68,10 +68,9 @@ if [ ! -s "$SRV" ]; then
     exit 0
 fi
 
-# ---- 1. the two extracts (cached: the server cache scan is the slow part) --
-# -f, not -s: an EMPTY extract is a valid cached answer (an env whose server
-# log holds no bookend), like expire-files' deletion list.
-if [ ! -f "$BK" ] || [ ! -f "$RL" ] || [ "$SRV" -nt "$BK" ] || [ "${BASH_SOURCE[0]}" -nt "$BK" ] || [ "$CLS" -nt "$RL" ]; then
+# ---- 1. the two extracts (an EMPTY one is valid: an env whose server log
+# holds no bookend) -----------------------------------------------------------
+{
     btmp="$BK.tmp.$$"; rtmp="$RL.tmp.$$"
     # IN PARALLEL (2026-09-27): one job per core over its own byte range of the
     # server cache (the jobs compute the same line offsets, so the ranges
@@ -115,10 +114,9 @@ if [ ! -f "$BK" ] || [ ! -f "$RL" ] || [ "$SRV" -nt "$BK" ] || [ "${BASH_SOURCE[
     for p in "${pids[@]}"; do wait "$p"; done
     cat "$btmp".p* > "$btmp"; cat "$rtmp".p* > "$rtmp"; rm -f "$btmp".p* "$rtmp".p*
     LC_ALL=C sort -u -o "$btmp" "$btmp"; LC_ALL=C sort -u -o "$rtmp" "$rtmp"
-    if cmp -s "$btmp" "$BK" 2>/dev/null; then rm -f "$btmp"; else mv "$btmp" "$BK"; fi   # keep the mtime when unchanged
-    if cmp -s "$rtmp" "$RL" 2>/dev/null; then rm -f "$rtmp"; else mv "$rtmp" "$RL"; fi
+    mv "$btmp" "$BK"; mv "$rtmp" "$RL"
     echo "bookend-ok: extracted $(wc -l < "$BK" | tr -d ' ') ok bookend(s) and $(wc -l < "$RL" | tr -d ' ') classifying error/warning line(s) from the server cache." >&2
-fi
+}
 
 # ---- 2. settle the Failed rows (and re-check the settled ones) -------------
 ftmp="$FILES.tmp.$$"; otmp="$OKF.tmp.$$"

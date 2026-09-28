@@ -86,8 +86,6 @@ ROS="$CONFIG_BASE/_subscriptions.tsv"; [ -f "$ROS" ] || ROS=/dev/null
 # The transfer cache is a cross-area DEP: the "recovered since" test reads it,
 # so a transfer reparse has to re-trigger this report. The profile map is a
 # config dep: a re-derived xref changes which flow a message names.
-ensure_parsed
-ensure_config
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axdep.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT

@@ -23,22 +23,14 @@
 #     be unanimous, and the flow must be configured for the group's account
 #     when that account has a configured list at all.
 #
-# The map is a per-session VERDICT file, not a rescan-everything product: only
-# the sessions of CURRENTLY-UCx rows are (re)scanned each run — a rescued
-# group's session keeps its entry (which is what keeps the rescue standing on
-# the next full derive), an ambiguous or evidence-less session gets none, and
-# an entry whose session is rescanned takes the fresh verdict. So the file
-# only changes when the server log actually teaches us something new, and the
-# cmp-guard below keeps its mtime still otherwise — the mtime is what triggers
-# the (expensive) re-derive.
+# The map is a per-session VERDICT file: only the sessions of CURRENTLY-UCx
+# rows are scanned, an ambiguous or evidence-less session gets no entry.
 #
-# Self-applying: when the map changed, this script re-runs the transfer parse
-# (derive only — the tokenize manifest is untouched) with AXWAY_SKIP_SESSIONS=1
-# so the new knowledge lands in _transfers.tsv/_files.tsv immediately and the
-# re-run cannot recurse back here. parse.sh's own tail calls this script the
-# same way expire-files.sh is called, so a manual parse stays complete;
-# bin/build.sh suppresses that call on its first parse (the server cache is
-# mid-rewrite beside it) and runs this step itself after the parse barrier.
+# Self-applying: when the map holds a verdict, this script re-runs the
+# transfer parse DERIVE-ONLY (AXWAY_DERIVE_ONLY=1 — the raw cache is reused),
+# so the new knowledge lands in _transfers.tsv/_files.tsv immediately.
+# bin/build.sh runs this step after both parses (it reads the finished server
+# cache), before bin/expire-files.sh.
 #
 # Usage:  bin/session-sites.sh
 #
@@ -60,7 +52,7 @@ if [ ! -s "$PARSED" ]; then
     exit 0
 fi
 if [ ! -s "$SRV" ]; then
-    echo "session-sites: no server cache ($SRV) — cannot see the route lines; keeping the map as-is." >&2
+    echo "session-sites: no server cache ($SRV) — cannot see the route lines; no map written." >&2
     exit 0
 fi
 # the configured-subscription set: the pristine snapshot when present (the
@@ -70,19 +62,18 @@ fi
 if [ -f "$BASE/.configured.tsv" ]; then CONFSRC="$BASE/.configured.tsv"
 else CONFSRC="$BASE/_subscriptions.tsv"; fi
 if [ ! -f "$CONFSRC" ]; then
-    echo "session-sites: no configured-subscription list ($CONFSRC) — keeping the map as-is." >&2
+    echo "session-sites: no configured-subscription list ($CONFSRC) — no map written." >&2
     exit 0
 fi
 
 tmp="$OUT.tmp.$$"
 sess="$OUT.sess.$$"
 trap 'rm -f "$tmp" "$sess" "$tmp".part.*' EXIT
-OLDMAP="$OUT"; [ -f "$OUT" ] || OLDMAP=/dev/null
 
 # the sessions to (re)scan: every session a currently-UCx leg ran over
 awk -F'\t' '$6 ~ /^UCx_/ && $24 != "" { print $24 }' "$PARSED" | LC_ALL=C sort -u > "$sess"
 if [ ! -s "$sess" ]; then
-    echo "session-sites: no UCx rows — nothing to learn (map kept)." >&2
+    echo "session-sites: no UCx rows — nothing to learn." >&2
     exit 0
 fi
 
@@ -107,7 +98,6 @@ scan_part() {   # $1 = part index: its range of line starts is [lo, hi)
     FILENAME ~ /\.configured\.tsv$/   { if ($1 == "_subscriptions") { conf[toupper($2)] = $2; CP3[toupper(substr($2, 1, 3))] = 1; if (length($2) < 3) GATE_OFF = 1 }; next }
     FILENAME ~ /_subscriptions\.tsv$/ { if ($2 != "") { conf[toupper($1)] = $1; CP3[toupper(substr($1, 1, 3))] = 1; if (length($1) < 3) GATE_OFF = 1 }; next }
     FILENAME ~ /\.sess\./             { scan[$1] = 1; next }
-    FILENAME ~ /_sessionsites\.tsv$/  { old[$1] = $2; next }
     RANGEF != "" && FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
     {   # _parse.tsv: col 5 = message, col 6 = session
         if (!($6 in scan)) next
@@ -135,44 +125,26 @@ scan_part() {   # $1 = part index: its range of line starts is [lo, hi)
         }
     }
     END { for (s in seen) if (seen[s] != "") print s, seen[s] }
-    ' "$CONFSRC" "$sess" /dev/null /dev/stdin > "$tmp.part.$1"
+    ' "$CONFSRC" "$sess" /dev/stdin > "$tmp.part.$1"
 }
 pids=()
 for ((pi = 1; pi <= NJ; pi++)); do scan_part "$pi" & pids+=("$!"); done
 for p in "${pids[@]}"; do wait "$p"; done
 awk -F'\t' -v OFS='\t' '
     FILENAME ~ /\.sess\./            { scan[$1] = 1; next }
-    FILENAME ~ /_sessionsites\.tsv$/  { old[$1] = $2; next }
     { if (!($1 in seen) || seen[$1] == "") seen[$1] = $2; else if (seen[$1] != $2) seen[$1] = "-" }
-    END {
-        # scanned sessions take the fresh verdict (or lose their entry);
-        # unscanned entries persist — they are what keeps a rescued group
-        # attributed on the next full derive
-        for (s in scan) if (seen[s] != "" && seen[s] != "-") nv[s] = seen[s]
-        for (s in old)  if (!(s in scan)) nv[s] = old[s]
-        for (s in nv) print s, nv[s]
-    }
-' "$sess" "$OLDMAP" "$tmp".part.* | LC_ALL=C sort > "$tmp"
+    END { for (s in scan) if (seen[s] != "" && seen[s] != "-") print s, seen[s] }
+' "$sess" "$tmp".part.* | LC_ALL=C sort > "$tmp"
 rm -f "$tmp".part.*
 printf "TIME %5ds  session-sites: server log scan (%d jobs)\n" "$(( $(date +%s) - _ss0 ))" "$NJ" >&2
 
 n_scan=$(wc -l < "$sess" | tr -d ' ')
 n_map=$(wc -l < "$tmp" | tr -d ' ')
-if [ ! -s "$tmp" ] && [ ! -f "$OUT" ]; then
+if [ ! -s "$tmp" ]; then
     echo "session-sites: $n_scan UCx session(s) scanned, none attributable — no map written." >&2
-    exit 0
-fi
-if [ -f "$OUT" ] && cmp -s "$tmp" "$OUT"; then
-    echo "session-sites: $n_scan UCx session(s) scanned, map unchanged ($n_map entry/-ies)." >&2
     exit 0
 fi
 mv "$tmp" "$OUT"
 echo "session-sites: $n_scan UCx session(s) scanned, map now $n_map entry/-ies — re-deriving the transfer caches." >&2
-# apply immediately: derive-only re-run (the manifest is untouched); the guard
-# stops it re-entering this script, so one extra derive is the ceiling.
-# FORCED (2026-09-27): parse.sh noticed the new map only through
-# `_sessionsites.tsv -nt _transfers.tsv`, and bash 3.2 compares whole
-# SECONDS — a map written in the same second as the cache (a fast develop
-# build, ~half the fresh builds) was "not newer", the derive was skipped
-# and the session join silently missing (56 sample Files stayed UCx_).
-AXWAY_SKIP_SESSIONS=1 AXWAY_FORCE_DERIVE=1 "$ROOT/bin/transfer/parse.sh"
+# apply immediately: the derive-only re-run
+AXWAY_DERIVE_ONLY=1 "$ROOT/bin/transfer/parse.sh"

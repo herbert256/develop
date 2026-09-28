@@ -57,13 +57,9 @@ if [ ! -s "$SRV" ]; then
     exit 0
 fi
 
-# ---- 1. the deletion list (cached: the server cache scan is the slow part) --
-# -f, not -s: an EMPTY extraction is a valid cached answer ("this env's server
-# log holds no File Maintenance deletions"), exactly like the empty reverse-DNS
-# cache files. Testing -s made production — whose example data has none — redo
-# the scan and re-stamp this file on every build, which dragged the analyses
-# publish (it watches the transfer cache) along with it.
-if [ ! -f "$DEL" ] || [ "$SRV" -nt "$DEL" ] || [ "${BASH_SOURCE[0]}" -nt "$DEL" ]; then
+# ---- 1. the deletion list (an EMPTY one is valid: this env's server log may
+# hold no File Maintenance deletions) -----------------------------------------
+{
     dtmp="$DEL.tmp.$$"
     # TM info lines: "File Maintenance for account [X] finished. Deleted files [a, b]."
     # One output row per deleted file: account (@endpoint stripped), basename.
@@ -97,9 +93,9 @@ if [ ! -f "$DEL" ] || [ "$SRV" -nt "$DEL" ] || [ "${BASH_SOURCE[0]}" -nt "$DEL" 
         }
     ' | LC_ALL=C sort -u > "$dtmp"
     rm -f "${eparts[@]}"
-    if cmp -s "$dtmp" "$DEL" 2>/dev/null; then rm -f "$dtmp"; else mv "$dtmp" "$DEL"; fi   # keep the mtime when unchanged
+    mv "$dtmp" "$DEL"
     echo "expire-files: extracted $(wc -l < "$DEL" | tr -d ' ') deletion entrie(s) from the server cache." >&2
-fi
+}
 
 # ---- 2. re-mark the Waiting/Expired rows ------------------------------------
 ftmp="$FILES.tmp.$$"

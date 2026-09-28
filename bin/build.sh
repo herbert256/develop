@@ -585,10 +585,8 @@ trap finalize_report EXIT
 #     server reports, publishes last —
 #     holds in the order below. What overlaps: the TWO PARSES (bin/server/parse.sh
 #     in the background beside bin/transfer/parse.sh — independent inputs and
-#     caches; the transfer parse's trailing session-sites/expire-files re-marks
-#     are suppressed via AXWAY_SKIP_SESSIONS=1/AXWAY_SKIP_EXPIRE=1 — they would
-#     read the server cache mid-rewrite — and the explicit steps right after the
-#     barrier do them instead), details.sh beside transfer phase 1 + the server
+#     caches; the server-log -> transfer steps run after the barrier, on the
+#     finished server cache), details.sh beside transfer phase 1 + the server
 #     reports, dashboards beside day, and the two heaviest publishes.
 #
 # 1. parse — flow-manager.sh (config caches), the two parse.sh, then
@@ -715,20 +713,20 @@ printf '\n=== building %s (report -> %s) ===\n' "${ENV_LABEL:-<unlabelled checko
 . "$(dirname "${BASH_SOURCE[0]}")/fastawk.sh"   # create data/.awkshim ONCE, before parallel children race for it
 # ---- 1. parse ---------------------------------------------------------------
 # THE SERVER PARSE STARTS BEFORE THE CONFIG STEP (2026-09-27, speed round 6):
-# with AXWAY_SKIP_MENTIONS it only tokenizes + merges the exports — no config
-# read (ensure_config is skipped, the rename map left its signature) — so it
-# runs beside flow-manager.sh too, not only beside the transfer parse.
+# with AXWAY_SKIP_MENTIONS it only tokenizes + merges the exports — it reads
+# no config — so it runs beside flow-manager.sh too, not only beside the
+# transfer parse.
 bg_step_start "parse: server log cache"                                   env AXWAY_SKIP_MENTIONS=1 bin/server/parse.sh
 run_step "config: extract the configured entity lists"                    bin/flow-manager.sh
-run_step "parse: transfer log cache"                                      env AXWAY_SKIP_EXPIRE=1 AXWAY_SKIP_SESSIONS=1 bin/transfer/parse.sh
+run_step "parse: transfer log cache"                                      bin/transfer/parse.sh
 bg_step_wait
 # THE MENTION SCAN IN THE BACKGROUND (2026-09-27, speed round 4): the server
 # parse above stops at the finished cache (AXWAY_SKIP_MENTIONS); its
 # per-entity mention caches are built here, beside the logon summary and the
 # server-log -> transfer joins below — which read only the cache — and are
-# waited for before result.sh, their first reader. A second parse.sh call on
-# a finished cache is exactly the mention build (the rescan below proves it).
-bg2_step_start "parse: server mention caches"                               bin/server/parse.sh
+# waited for before result.sh, their first reader (AXWAY_MENTIONS_ONLY: the
+# mention build over the finished cache).
+bg2_step_start "parse: server mention caches"                               env AXWAY_MENTIONS_ONLY=1 bin/server/parse.sh
 # THE LOGON SUMMARY (2026-09-27): built ONCE, in the background beside the
 # server-log -> transfer steps below (it reads only the finished server parse
 # cache) and waited for before the report stage — its two consumers, details.sh
@@ -736,11 +734,7 @@ bg2_step_start "parse: server mention caches"                               bin/
 bg_step_start "server log: logon summary (per login + per address)"         bin/build/logon-summary.sh
 # the three server-log -> transfer joins, in this order: the session step
 # may re-derive _files.tsv (resetting col 22), so expire re-marks after it
-# (AXWAY_SKIP_EXPIRE=1, 2026-09-28, speed round 20: that re-derive ran
-# expire-files + bookend-ok at its tail and the two steps below ran them
-# AGAIN on the same inputs — both are idempotent re-marks of the derived
-# _files.tsv, so the second pair alone gives the same cache; ~4 s)
-run_step "server log -> transfer: attribute UCx flows by session"         env AXWAY_SKIP_EXPIRE=1 bin/session-sites.sh
+run_step "server log -> transfer: attribute UCx flows by session"         bin/session-sites.sh
 run_step "server log -> transfer: mark expired staged files"              bin/expire-files.sh
 run_step "server log -> transfer: settle failed Files by ok bookend"      bin/bookend-ok.sh
 bg2_step_wait   # the mention caches: result.sh reads them
@@ -748,11 +742,11 @@ run_step "result: subscription outcomes -> base caches"                   bin/bu
 # result.sh (discover_logged) may APPEND transfer-log-discovered names to the
 # base rosters — names the server parse's mention scan (which ran above) did
 # not know, so their detail pages would lose the server-log table on a
-# from-scratch build. It drops a .rescan-mentions marker then; this re-run rescans
-# exactly once (tokenize skips via the manifest; without the marker the
-# whole call is a seconds-long no-op). 2026-08-15 fresh-build fix.
+# from-scratch build. It drops a .rescan-mentions marker then, and the mention
+# build runs once more — skipped inside when no server-log line holds one of
+# the appended names (mention_rescan_needed). 2026-08-15 fresh-build fix.
 if [ -f data/server/cache/.rescan-mentions ]; then
-    run_step "parse: rescan server mentions (appended names)"             bin/server/parse.sh
+    run_step "parse: rescan server mentions (appended names)"             env AXWAY_MENTIONS_ONLY=1 bin/server/parse.sh
 fi
 # WENT-KAPUT EARLY (2026-08): its inputs are all parse-phase artifacts
 # (_files.tsv, the mention caches, the xref pairs, the base colours), and

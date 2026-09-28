@@ -5,10 +5,9 @@
 # does not build the cache. The pooled reports are independent of each other
 # (none reads another SERVER report's .rpt — the unknown-*/site-failures rosters come
 # from the TRANSFER reports, produced in the earlier build stage), so they run
-# IN PARALLEL over a core-count job pool. ensure_parsed/ensure_config run ONCE
-# up front so a stale cache is rebuilt exactly once, never concurrently by the
-# forked reports (each report still calls ensure_parsed itself — by then it is
-# a fresh-cache no-op). Mirrors bin/transfer/reports.sh. Strict mode plus a
+# IN PARALLEL over a core-count job pool. The parse caches and the config
+# caches are built by bin/build.sh before this runs. Mirrors
+# bin/transfer/reports.sh. Strict mode plus a
 # fail-collecting pool so any failing report aborts the run instead of leaving
 # a stale .rpt behind.
 set -euo pipefail
@@ -16,8 +15,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 source "$SCRIPT_DIR/../timing.sh"   # timed: one TIME line per pooled report (2026-09-27)
-ensure_config
-ensure_parsed
 rm -f "$REPORTS_DIR"/*.rpt.tmp   # orphaned atomic-write temps from a killed run
 
 NJOBS=${AXWAY_NJOBS:-$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}   # AXWAY_NJOBS: bin/build.sh caps the parallel production chain

@@ -57,16 +57,13 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
-ensure_config
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # (The former per-member "Server log" yes/no column + last-10 drill is GONE:
 # the server-log mentions now live in ONE place — the "Last 10 server log
 # lines" table on a not-seen entity's DETAIL page, details.sh srv_lines_table.)
 
-# A configured-entity list from the bin/flow-manager.sh caches (ensure_config above
-# refreshed them). Tolerates a missing cache file — no config export anywhere —
+# A configured-entity list from the bin/flow-manager.sh caches. Tolerates a missing cache file — no config export anywhere —
 # by leaving that report's configured list empty, like the old missing-JSON case.
 config_list() {
     [ -f "$CONFIG_BASE/$1" ] || { echo "WARNING: data/flow-manager/base/$1 not found — its report will be empty." >&2; return 0; }

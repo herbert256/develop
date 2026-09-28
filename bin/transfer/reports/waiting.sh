@@ -60,7 +60,6 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
 SPX="$CONFIG_XREF/_subscriptions-partners.tsv"   # subscription -> partner (UNION attribution)
 # THE SUBSCRIPTION FILE PAGES (2026-09-21, user request — the Expired report's
 # twin): the Waiting Files cell of the first table opens

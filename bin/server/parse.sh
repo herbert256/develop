@@ -41,7 +41,9 @@
 # - Level and Component are shortened to one letter (see _parse.txt tables)
 #
 # Usage:
-#   ./parse.sh    # processes every *.csv in input/, writes data/_parse.tsv(+.txt)
+#   ./parse.sh                         # every *.csv in input/ -> data/_parse.tsv(+.txt) + the mention caches
+#   AXWAY_SKIP_MENTIONS=1 ./parse.sh   # the cache only
+#   AXWAY_MENTIONS_ONLY=1 ./parse.sh   # the mention caches only, over the existing cache
 #
 set -euo pipefail
 
@@ -60,9 +62,7 @@ LEGEND="$CACHE_DIR/_parse.txt"
 # SKIP LIST (input/<env>/skip.txt, per environment): a server-log record whose
 # MESSAGE (col 5) contains a skip token (case-insensitive substring) is dropped
 # from _parse.tsv (so no server report counts it) and set aside in _skipped.tsv
-# for the "Skipped" analyses report. skip.txt is folded into the parser
-# signature below, so a changed skip list forces a full reparse — the sidecar is
-# then rebuilt from scratch (a full parse truncates it; an incremental appends).
+# for the "Skipped" analyses report; the sidecar is rebuilt on every parse.
 # See bin/flow-manager.sh.
 SKIPFILE="$ROOT/input/skip.txt"
 SKIPOUT="$DATA/server/_skipped.tsv"     # skipped _parse.tsv rows (verbatim)
@@ -99,36 +99,19 @@ shopt -u nullglob
 mkdir -p "$CACHE_DIR"
 
 # ---------------------------------------------------------------------------
-# Incremental parsing (mirrors bin/transfer/parse.sh). data/_parse.files
-# records every input CSV already in the cache (basename + byte size); a run
-# only tokenizes files NOT in the manifest and APPENDS their rows (cache order
-# is documented as non-chronological, so append is safe). A changed or removed
-# manifest file (or `touch input/*.csv`) forces a full reparse; a cache without
-# a manifest that is newer than every input is adopted as-is. Editing parse.sh
-# also forces a full reparse (its checksum is stored in data/_parse.parser).
-# Exact-duplicate RAW records are dropped so overlapping exports cannot
-# double-count (deduping on the raw record, not the 6-column projection, keeps
-# same-millisecond same-message events from different threads).
+# ALWAYS A FULL PARSE (2026-09-28: every build is fresh — the manifest, the
+# parser signature and the incremental append are gone). Exact-duplicate RAW
+# records are dropped so overlapping exports cannot double-count (deduping on
+# the raw record, not the 6-column projection, keeps same-millisecond
+# same-message events from different threads). Three modes, one per
+# bin/build.sh step:
+#   (default)              tokenize + merge the cache, then the mention caches
+#   AXWAY_SKIP_MENTIONS=1  tokenize + merge only — the build starts it BESIDE
+#                          the config step: the tokenize reads no config
+#   AXWAY_MENTIONS_ONLY=1  the per-entity mention caches over the EXISTING
+#                          cache — the build's second step, and the
+#                          appended-names rescan after bin/build/result.sh
 # ---------------------------------------------------------------------------
-MANIFEST="$CACHE_DIR/_parse.files"
-manifest_entry() { printf '%s\t%s\n' "$(basename "$1")" "$(wc -c < "$1" | tr -d ' ')"; }
-in_manifest()    { cut -f1 "$MANIFEST" | grep -qxF "$(basename "$1")"; }
-
-# Parser-version guard: record a checksum of THIS script (and input/<env>/skip.txt,
-# so a changed skip list forces a full reparse — the skipped rows are removed at
-# cache-assembly time, so the sidecar must be rebuilt end to end) alongside the
-# cache. A changed parser (or a cache with no recorded version) forces a full
-# reparse, so editing parse.sh actually re-tokenizes instead of reusing a stale cache.
-PSIG="$CACHE_DIR/_parse.parser"
-# + the skip-list READER (2026-09-09): a change in how a rule line is parsed
-# must reparse like an edit of the rules would.
-# The RENAME MAP is NOT part of it (2026-09-27, build-speed round 6): only the
-# mention scan reads it (which logged subscription name a mention is
-# attributed to), so a recorded rename rebuilds the per-entity caches through
-# their own content check (MENTION_RN_SIG in build_entity_tsvs), never a
-# re-tokenize of every export. That is also what lets bin/build.sh start
-# this parse BESIDE the config step, which may append to the map.
-parser_sig=$(cat "${BASH_SOURCE[0]}" "$SKIPFILE" "$ROOT/bin/skiplist.sh" 2>/dev/null | cksum | awk '{print $1"_"$2}')
 
 # ---------------------------------------------------------------------------
 # Parallel machinery. The 5+ GB of input is embarrassingly parallel two ways:
@@ -236,8 +219,7 @@ TOK_PROG=$(cat <<'AWK_EOF'
 # boilerplate would cost the disk and time this filter exists to save. The skip
 # list stays what it is — traffic that is real but unwanted in the statistics.
 #
-# Editing either list changes parser_sig (parse.sh is cksummed), so the next
-# run reparses in full and the cache matches the lists. Four server reports
+# Every parse applies the lists as they stand. Four server reports
 # were built on these lines and went with them (concurrency, event-feed,
 # transfer-outcomes, file-freshness — 2026-08).
 BEGIN {
@@ -730,14 +712,6 @@ ent_range() {   # $1 = the cache, $2/$3 = the byte range [lo, hi) of line starts
 # @endpoint suffix or a URL name= value). Only names present in the config
 # caches are ever emitted; the cache holds runtime records only (ADMIN and
 # AUDIT are dropped at tokenize time), so these files count real activity.
-# Rebuilt whenever the cache, the flow-manager XREF caches, or this script is
-# newer than an output (a fresh cache refreshes them). Deliberately xref/ only,
-# NOT the base/ lists the scan reads: bin/build/result.sh recolors
-# base/*.tsv's result column AFTER the parse — the scan
-# reads only the name column — so watching base/ made the NEXT build redo the
-# full mention scan over the whole cache for nothing (the transfer-side
-# fresh-build double derive, same fix). A real config change rewrites the xref
-# tree too, so nothing is missed.
 #
 # The SAME pass also keeps, per configured name, its 25 most-recent runtime log
 # rows (newest first) in data/{accounts,subscriptions,logins,hosts}/
@@ -750,7 +724,7 @@ ent_range() {   # $1 = the cache, $2/$3 = the byte range [lo, hi) of line starts
 # banner comparing the last error/warn against the last transfer reads this one).
 # ---------------------------------------------------------------------------
 # Flat mention TSVs exist only for accounts (details.sh's mention-count KPI)
-# and subscriptions (went-kaput.sh's skip_if_fresh dep) — the logins/hosts
+# and subscriptions (cleanup-backlog.sh) — the logins/hosts
 # flats had NO reader and were dropped 2026-07; their per-name DIRS
 # (the last-25 / err-warn rings) remain for all four types.
 ACCOUNTS_TSV="$CACHE_DIR/_accounts.tsv";      ACCOUNTS_DIR="$CACHE_DIR/accounts"
@@ -758,15 +732,9 @@ SUBS_TSV="$CACHE_DIR/_subscriptions.tsv";     SUBS_DIR="$CACHE_DIR/subscriptions
 ENDED_TSV="$CACHE_DIR/_sessions-ended.tsv"    # the sessions that logged a transfer end (session <TAB> status) — their E/W lines stay out of the err/warn rings (2026-09-12)
 LOGINS_DIR="$CACHE_DIR/logins"
 HOSTS_DIR="$CACHE_DIR/hosts"
-# Configured name lists: bin/flow-manager.sh's caches (one name per line), refreshed
-# from the config exports by ensure_config (lib.sh). A missing cache file (no
+# Configured name lists: bin/flow-manager.sh's caches (one name per line), built
+# by the config step before the mention scan runs. A missing cache file (no
 # export anywhere) leaves that type's known set — and its outputs — empty.
-# Not when only the cache is wanted (AXWAY_SKIP_MENTIONS=1): bin/build.sh runs
-# that parse BESIDE the config step, and the tokenize reads no config.
-[ "${AXWAY_SKIP_MENTIONS:-}" = 1 ] || ensure_config
-# the rename map the mention caches were built with (see parser_sig)
-MENTION_RN_SIG="$CACHE_DIR/.mention-renames.sig"
-mention_rn_sig() { cat "$RENAMES_FILE" 2>/dev/null | cksum | awk '{print $1"_"$2}'; }
 CFG_ACCOUNTS="$CONFIG_BASE/_accounts.tsv"
 CFG_SUBS="$CONFIG_BASE/_subscriptions.tsv"
 CFG_LOGINS="$CONFIG_BASE/_logins.tsv"
@@ -823,33 +791,21 @@ build_entity_tsvs() {
     # build runs the mention scan as its OWN background step right after this
     # parse, beside the server-log -> transfer joins that need only the cache
     if [ "${AXWAY_SKIP_MENTIONS:-}" = 1 ]; then return 0; fi
-    local out cfg fresh=1
-    for out in "$ACCOUNTS_TSV" "$SUBS_TSV"; do
-        if [ ! -f "$out" ] || [ "$OUT" -nt "$out" ] || [ "${BASH_SOURCE[0]}" -nt "$out" ] \
-           || [ -n "$(find "$CONFIG_XREF" -name '_*.tsv' -newer "$out" 2>/dev/null)" ]; then fresh=0; fi
-    done
-    # The per-name detail dirs share the same derivation; if any is missing, rebuild.
-    { [ -d "$ACCOUNTS_DIR" ] && [ -d "$SUBS_DIR" ] && [ -d "$LOGINS_DIR" ] && [ -d "$HOSTS_DIR" ]; } || fresh=0
-    # The rescan marker (2026-08-15 fresh-build fix): bin/build/result.sh
-    # APPENDS transfer-discovered names to the base rosters AFTER this scan
-    # ran, so on a from-scratch build those entities' mention rings are one
-    # build behind (their detail pages lose the server-log table). result.sh
-    # drops this marker when it appended; bin/build.sh re-runs this parse
-    # right after, and the marker forces exactly one rescan.
-    # (2026-09-28: when the marker is the ONLY reason, mention_rescan_needed
-    # decides — see MENTION_NAMES)
-    # a recorded rename re-attributes mentions (by content: every config run
-    # rewrites the map)
-    [ "$(cat "$MENTION_RN_SIG" 2>/dev/null)" = "$(mention_rn_sig)" ] || fresh=0
-    if [ "$fresh" = 1 ] && [ -f "$CACHE_DIR/.rescan-mentions" ]; then
-        if mention_rescan_needed; then fresh=0
-        else
+    local cfg
+    # THE APPENDED-NAMES RESCAN (2026-08-15): bin/build/result.sh APPENDS
+    # transfer-discovered names to the base rosters AFTER the first scan ran,
+    # so those entities' mention rings would be missing (their detail pages
+    # lose the server-log table). result.sh drops the .rescan-mentions marker
+    # when it appended; bin/build.sh re-runs the mention build right after,
+    # and mention_rescan_needed decides whether the new names can change
+    # anything (2026-09-28 — see MENTION_NAMES).
+    if [ -f "$CACHE_DIR/.rescan-mentions" ] && [ -f "$MENTION_NAMES" ]; then
+        if ! mention_rescan_needed; then
             rm -f "$CACHE_DIR/.rescan-mentions"
             mention_names > "$MENTION_NAMES"
             return 0
         fi
     fi
-    [ "$fresh" = 1 ] && { echo "  the per-entity server caches are up to date; skipping." >&2; return 0; }
     mention_names > "$MENTION_NAMES.new"   # the names this scan reads (installed at its end)
     ENT_CFG_SRCS=()   # global: ent_one's background jobs read it
     for cfg in "$CFG_ACCOUNTS" "$CFG_SUBS" "$CFG_LOGINS" "$CFG_HOSTS"; do
@@ -868,14 +824,12 @@ build_entity_tsvs() {
     # PERSISTENT-SESSION pseudo-session (hex prefix of that literal) is never
     # listed — one bookend on it would mute thousands of unrelated lines.
     # grep -F first (2026-09-27): the bookends are a sliver of the cache, and
-    # this pass ran awk over ALL of it single-threaded, twice per build (the
-    # parse and the mention rescan); grep keeps the line order, and the awk
-    # still applies the exact test, so the output is the same
-    # KEPT while the cache is (2026-09-27, speed round 6): the build's mention
-    # rescan runs on the same cache minutes later — the list is a function of
-    # the cache and this script alone, so a list newer than both is current
-    # (a same-second tie reads as stale and recomputes)
-    if [ -f "$ENDED_TSV" ] && [ "$ENDED_TSV" -nt "$OUT" ] && [ "$ENDED_TSV" -nt "${BASH_SOURCE[0]}" ]; then :
+    # this pass ran awk over ALL of it single-threaded; grep keeps the line
+    # order, and the awk still applies the exact test, so the output is the same
+    # COMPUTED ONCE PER CACHE (2026-09-27, speed round 6): the list is a
+    # function of the cache alone, so the appended-names rescan reuses the one
+    # the first scan wrote; a tokenize removes it with the old cache.
+    if [ -f "$ENDED_TSV" ]; then :
     else
     # (line_par, 2026-09-28, speed round 19: the grep runs over line-aligned
     # slices in parallel — 8 s single-threaded on production — and the slices
@@ -993,8 +947,7 @@ build_entity_tsvs() {
                 "$(find "${dirsx[$i]}" -name '*_err_warn.tsv' | wc -l | tr -d ' ')" >&2
         fi
     done
-    rm -f "$CACHE_DIR/.rescan-mentions"   # the appended-names marker is served (see the freshness check)
-    mention_rn_sig > "$MENTION_RN_SIG"
+    rm -f "$CACHE_DIR/.rescan-mentions"   # the appended-names marker is served
     mv "$MENTION_NAMES.new" "$MENTION_NAMES"   # the name set this scan matched (mention_rescan_needed)
 }
 
@@ -1005,67 +958,31 @@ build_entity_tsvs() {
 # map is sourced from the CONFIGURATION alone — see bin/ip.sh. The server parse
 # no longer writes to input/ at all.)
 
+# MENTIONS ONLY (AXWAY_MENTIONS_ONLY=1): the cache is there — scan it.
+if [ "${AXWAY_MENTIONS_ONLY:-}" = 1 ]; then
+    [ -f "$OUT" ] || { echo "parse.sh: AXWAY_MENTIONS_ONLY=1 but no $OUT — run the parse first." >&2; exit 1; }
+    build_entity_tsvs
+    _slap "per-entity mention caches"
+    exit 0
+fi
+
+# the derived lists of the OLD cache go with it (the mention build computes
+# them from the cache this run writes)
+rm -f "$ENDED_TSV"
+
 # CONFIG-ONLY ESTATE (2026-08): no server CSVs at all — the transfer twin's
 # rule (see bin/transfer/parse.sh): write the cache set EMPTY instead of
-# failing, idempotently, and still run build_entity_tsvs so the per-entity
-# caches (the two flat TSVs + the four per-name dirs) exist, empty, for every
-# consumer that expects them.
+# failing, and still run build_entity_tsvs so the per-entity caches (the two
+# flat TSVs + the four per-name dirs) exist, empty, for every consumer that
+# expects them.
 if [ ${#files[@]} -eq 0 ]; then
-    if [ "$parser_sig" = "$(cat "$PSIG" 2>/dev/null)" ] \
-       && [ -f "$OUT" ] && [ ! -s "$OUT" ] \
-       && [ -f "$MANIFEST" ] && [ ! -s "$MANIFEST" ] && [ -f "$SKIPOUT" ]; then
-        echo "No *.csv in $INPUT_DIR — config-only estate; the empty cache is up to date." >&2
-        build_entity_tsvs
-        exit 0
-    fi
     echo "No *.csv in $INPUT_DIR — writing an EMPTY cache (config-only estate)." >&2
-    : > "$OUT"; : > "$MANIFEST"; : > "$SKIPOUT"
-    printf '%s\n' "$parser_sig" > "$PSIG"
+    : > "$OUT"; : > "$SKIPOUT"
     build_entity_tsvs
     exit 0
 fi
 
-mode=full
-new_files=()
-if [ "$parser_sig" != "$(cat "$PSIG" 2>/dev/null)" ]; then
-    [ -e "$PSIG" ] && echo "parse.sh changed since the cache was built — full reparse." >&2
-elif [ -f "$OUT" ] && [ -f "$MANIFEST" ]; then
-    mode=incremental
-    while IFS=$'\t' read -r name size; do
-        [ -n "$name" ] || continue
-        f="$INPUT_DIR/$name"
-        if [ ! -e "$f" ]; then
-            echo "Input $name was removed since the cache was built — full reparse." >&2
-            mode=full; break
-        fi
-        if [ "$(wc -c < "$f" | tr -d ' ')" != "$size" ] || [ "$f" -nt "$MANIFEST" ]; then
-            echo "Input $name changed since the cache was built — full reparse." >&2
-            mode=full; break
-        fi
-    done < "$MANIFEST"
-    if [ "$mode" = incremental ]; then
-        for f in "${files[@]}"; do
-            in_manifest "$f" || new_files+=("$f")
-        done
-        if [ ${#new_files[@]} -eq 0 ]; then
-            echo "$OUT already covers all ${#files[@]} input file(s); nothing to parse." >&2
-            build_entity_tsvs   # cache unchanged, but refresh the entity files if stale/missing
-            _slap "per-entity mention caches (cache unchanged)"
-            exit 0
-        fi
-    fi
-elif [ -f "$OUT" ] && [ -z "$(find "$INPUT_DIR" -name '*.csv' -newer "$OUT" 2>/dev/null)" ]; then
-    for f in "${files[@]}"; do manifest_entry "$f"; done > "$MANIFEST"
-    echo "Adopted existing $OUT as covering all ${#files[@]} input file(s) (manifest written)." >&2
-    build_entity_tsvs
-    exit 0
-fi
-
-if [ "$mode" = incremental ]; then
-    echo "Incremental: parsing ${#new_files[@]} new file(s) and appending to $OUT ..." >&2
-else
-    echo "Parsing ${#files[@]} file(s) into $OUT ..." >&2
-fi
+echo "Parsing ${#files[@]} file(s) into $OUT ..." >&2
 
 # Tokenize + per-chunk dedup, in parallel. tok_one pipes TOK_PROG's output —
 # one line per record: the SCRUBBED RAW RECORD as field 1 followed by the 6
@@ -1183,8 +1100,7 @@ tokenize_batch() {   # tokenize every argument file into its own chunk
     for f in "$@"; do sz=$(wc -c < "$f" | tr -d ' '); tot=$((tot + sz)); done
     thr=$(( tot / NJOBS )); [ "$thr" -lt 67108864 ] && thr=67108864
     [ -n "${AXWAY_TOK_SPLIT:-}" ] && thr=$AXWAY_TOK_SPLIT
-    # biggest file first (see lpt_order); the index still follows argument order,
-    # which is what keeps an incremental batch's chunks numbered after the last.
+    # biggest file first (see lpt_order); the index follows argument order
     while IFS=$'\t' read -r idx f; do
         cid=$(printf '%04d' "$((base + idx))")
         sz=$(wc -c < "$f" | tr -d ' ')
@@ -1225,61 +1141,8 @@ tokenize_batch() {   # tokenize every argument file into its own chunk
 # single `sort -u` over their concatenation — same total order, same
 # survivors, byte-identical cache. Cache order is documented
 # non-chronological, so sort order is irrelevant and stays memory-bounded.
-# Incremental: the cache keeps no raws, so cross-cache raw dedup is impossible —
-# but a duplicate needs the same date, so appending is safe whenever the new
-# chunk's dates don't overlap the cache; when they DO overlap, fall back to a
-# full reparse (raw-deduped end to end) — the new files' chunks are reused,
-# only the already-manifested files still need tokenizing.
-if [ "$mode" = incremental ]; then
-    tokenize_batch "${new_files[@]}"
-    n_new=$TOK_TOTAL
-    tmp_p="$CHUNK_DIR/new.tsv"
-    # (awk, not cut(1): see merge_group — ~7x faster on a big stream)
-    LC_ALL=C sort -m -u $SORT_MERGE_FLAGS "$CHUNK_DIR"/chunk.* | awk '{ print substr($0, index($0, "\t") + 1) }' > "$tmp_p"
-    new_dates=$(awk -F'\t' '!($1 in s) { s[$1]; print $1 }' "$tmp_p" | LC_ALL=C sort -u)
-    cached_dates=$(awk -F'\t' '!($1 in s) { s[$1]; print $1 }' "$OUT" | LC_ALL=C sort -u)
-    overlap=$(LC_ALL=C comm -12 <(printf '%s\n' "$new_dates") <(printf '%s\n' "$cached_dates"))
-    # BACKFILL guard: a new export whose OLDEST date precedes the cache's
-    # NEWEST would append old rows AFTER newer ones — the per-name "last 25"
-    # ring extraction reads cache order as recency, so a dropped-in older
-    # logEntry_ file must go through the full per-date-merged reparse even
-    # when its dates don't overlap the cache. (Both lists are sorted; the
-    # first/last non-empty entries are the min/max.)
-    new_min=$(printf '%s\n' "$new_dates" | awk 'NF { print; exit }')
-    cache_max=$(printf '%s\n' "$cached_dates" | awk 'NF { m = $0 } END { print m }')
-    backfill=0
-    if [ -n "$new_min" ] && [ -n "$cache_max" ] && [ "$new_min" \< "$cache_max" ]; then backfill=1; fi
-    if [ -n "$overlap" ] || [ "$backfill" = 1 ]; then
-        if [ -n "$overlap" ]; then
-            echo "NOTE: new export overlaps cached date(s) ($(printf '%s' "$overlap" | tr '\n' ' ')) — raw-level dedup needs the originals; full reparse." >&2
-        else
-            echo "NOTE: new export backfills older date(s) ($new_min < cached max $cache_max) — cache order must stay per-date merged; full reparse." >&2
-        fi
-        rm -f "$tmp_p"
-        mode=full
-        old_files=()
-        for f in "${files[@]}"; do
-            in_manifest "$f" && old_files+=("$f")
-        done
-        if [ "${#old_files[@]}" -gt 0 ]; then tokenize_batch "${old_files[@]}"; fi
-    else
-        appended=$(wc -l < "$tmp_p" | tr -d ' ')
-        # SKIP LIST: append the kept rows to the cache and the skipped rows
-        # (message matches a skip token) to the sidecar (which accumulates
-        # across incrementals — a skip.txt change forces a full reparse instead).
-        mkdir -p "$(dirname "$SKIPOUT")"
-        skip_before=$([ -f "$SKIPOUT" ] && wc -l < "$SKIPOUT" | tr -d ' ' || echo 0)
-        awk -F'\t' -v skipfile="$SKIPFILE" -v sc="$SKIPOUT" "$SKIP_PROG" "$tmp_p" >> "$OUT"
-        rm -rf "$CHUNK_DIR"
-        dropped=$(( n_new - appended ))
-        [ "$dropped" -gt 0 ] && echo "NOTE: dropped $dropped exact-duplicate raw record(s) within the new file(s)." >&2
-        skip_now=$([ -f "$SKIPOUT" ] && wc -l < "$SKIPOUT" | tr -d ' ' || echo 0)
-        [ "$skip_now" -gt "$skip_before" ] && echo "Skip list: set aside $(( skip_now - skip_before )) new server record(s) -> $SKIPOUT." >&2
-        for f in "${new_files[@]}"; do manifest_entry "$f"; done >> "$MANIFEST"
-    fi
-fi
-if [ "$mode" = full ]; then
-    if [ "$CHUNK_N" -eq 0 ]; then tokenize_batch "${files[@]}"; fi
+{
+    tokenize_batch "${files[@]}"
     _slap "tokenize (per file)"
     n_raw=$TOK_TOTAL
     # SKIP LIST: split the deduped cache into kept ($OUT) and skipped ($SKIPOUT,
@@ -1348,10 +1211,8 @@ if [ "$mode" = full ]; then
     dropped=$(( n_raw - n_out - skipped_n ))
     [ "$dropped" -gt 0 ] && echo "NOTE: dropped $dropped exact-duplicate raw record(s) (kept one of each)." >&2
     [ "$skipped_n" -gt 0 ] && echo "Skip list: set aside $skipped_n server record(s) -> $SKIPOUT." >&2
-    for f in "${files[@]}"; do manifest_entry "$f"; done > "$MANIFEST"
-fi
+}
 _slap "merge (per date)"
-printf '%s\n' "$parser_sig" > "$PSIG"   # record the parser version that built this cache
 
 # Companion legend: the column names of _parse.tsv (kept in sync with the emit
 # order above). Rewritten each run; content only changes if the columns do.
@@ -1381,12 +1242,9 @@ Level codes        Component codes
 runtime components only.)
 LEGEND_EOF
 
-echo "Wrote $OUT (${n_out:-$(wc -l < "$OUT" | tr -d ' ')} record(s)) and $LEGEND." >&2   # n_out: counted by a full merge
+echo "Wrote $OUT ($n_out record(s)) and $LEGEND." >&2
 
 build_entity_tsvs         # derive _accounts.tsv / _subscriptions.tsv from the fresh cache
 _slap "per-entity mention caches"
-# full-mode merge parts served as the entity-scan chunks. The if-form, NOT a
-# bare [ -d ] && rm: on the incremental path the dir does not exist, the test
-# fails as the LAST command, and the whole parse exits 1 — which aborted the
-# first incremental build after a fresh one (2026-08-24).
-if [ -d "$CHUNK_DIR" ]; then rm -rf "$CHUNK_DIR"; fi
+# the merge parts served as the entity-scan chunks
+rm -rf "$CHUNK_DIR"

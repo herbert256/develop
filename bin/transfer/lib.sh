@@ -16,30 +16,15 @@
 #   CONFIG_DIR      bin/flow-manager.sh's configured-entity caches (data/flow-manager/{base,xref}/_*.tsv)
 #   UNKNOWN_DIR / ANALYSES_REPORTS   the env's data/ side-outputs
 #   PARSED/FILES                 the two transfer caches (in CACHE_DIR)
-#   ensure_parsed   (re)build the caches with parse.sh when they are stale
-#   ensure_config   (re)build the data/flow-manager caches with bin/flow-manager.sh when stale
 #
 # The caches are the shared, pre-tokenized form of input/transfer/*.csv produced
 # by parse.sh — see parse.sh for the column layout. Reports read them with a
 # plain `awk -F'\t'` instead of re-running the CSV tokenizer over 170 MB each.
+# bin/build.sh builds them (and the data/flow-manager config caches) before any
+# report runs; a report never parses on its own.
 #
-# ensure_parsed rebuilds when a cache is missing, when any input CSV — or any
-# data/flow-manager XREF cache (the parse config-fallback inputs) — is newer than
-# it, or when parse.sh itself is newer (so editing the parser invalidates the
-# cache). Deliberately xref/ only, NOT base/: bin/build/result.sh rewrites
-# base/*.tsv AFTER the parse (a build step — it only recolors the result
-# column, which the parse never reads), and
-# watching base/ made the first report after them re-derive the whole cache
-# for nothing (the fresh-build double derive). A REAL config change re-derives
-# via bin/flow-manager.sh, which rewrites the xref tree too — so xref mtimes
-# still catch every genuine config change.
-# A missing cache always rebuilds, so the check is fail-safe. It refreshes the
-# config caches first (ensure_config), so an updated config export flows
-# export -> data/flow-manager -> reparse in one call.
-
 # All paths resolve from THIS file's location (not the caller's SCRIPT_DIR), so
-# ensure_parsed and the report .rpt writes work from either
-# directory. lib.sh + parse.sh sit in <area>/bin/; the report scripts that
+# the report .rpt writes work from either directory. lib.sh + parse.sh sit in <area>/bin/; the report scripts that
 # source this sit one level down in <area>/bin/reports/. data/ and input/ are
 # the two gitignored roots at the repo top.
 LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"       # <area>/bin
@@ -105,52 +90,6 @@ COREIDS_AWK='
         for(i=1;i<=m;i++){split(a3[i],f,SUBSEP); cc=cc (cc?",":"") f[2] "  " f[3]} return cc }
     function orlist(s){ s=buildlist(s); return (s=="")?"-":s }   # "-" sentinel keeps TAB-delimited fields aligned (details.sh writer)
 '
-
-# The RENAME MAPS are a staleness input like the xref caches: appending a pair
-# changes which logged name a row is attributed to, and parse.sh's parser_sig
-# covers them — but only once parse.sh actually RUNS, which is what this test
-# decides. A hand-added pair would otherwise sit unapplied until something else
-# forced a reparse (2026-08).
-ensure_parsed() {
-    ensure_config
-    local stale=0 manifest="$CACHE_DIR/_transfers.files"
-    if [ ! -f "$PARSED" ] \
-       || [ ! -f "$FILES" ] \
-       || [ "$LIB_DIR/parse.sh" -nt "$PARSED" ] \
-       || [ -n "$(find "$CONFIG_XREF" -name '_*.tsv' -newer "$PARSED" 2>/dev/null)" ] \
-       || [ -n "$(find "$ROOT/input/renames" -name '*.tsv' -newer "$PARSED" 2>/dev/null)" ] \
-       || { [ -f "$CACHE_DIR/_sessionsites.tsv" ] && [ "$CACHE_DIR/_sessionsites.tsv" -nt "$PARSED" ]; } \
-       || [ -n "$(find "$INPUT_DIR" -name '*.csv' -newer "$PARSED" 2>/dev/null)" ]; then
-        stale=1
-    elif [ -f "$manifest" ] \
-       && [ "$(find "$INPUT_DIR" -maxdepth 1 -name '*.csv' -exec basename {} \; 2>/dev/null | LC_ALL=C sort)" \
-            != "$(cut -f1 "$manifest" | LC_ALL=C sort)" ]; then
-        # the mtime checks above miss an input restored with an OLDER timestamp
-        # (cp -p / rsync -a / tar) or one removed since the last parse — the
-        # input basename set no longer matches parse.sh's manifest, so reparse.
-        stale=1
-    fi
-    # NB: an `if`, not `[ "$stale" = 1 ] && parse.sh` — the latter is the LAST
-    # command, so when the cache is fresh (stale=0) it returns 1, and this
-    # function called bare under `set -e` would abort every caller (reports,
-    # reports.sh, build.sh) on an up-to-date cache. Keep parse.sh failures
-    # propagating (they fall through the if), but return 0 when nothing to do.
-    if [ "$stale" = 1 ]; then "$LIB_DIR/parse.sh"; fi
-}
-
-# ensure_config — (re)build the data/flow-manager/_*.tsv caches with bin/flow-manager.sh.
-# flow-manager.sh early-exits when every cache is newer than the exports and itself,
-# so calling this every time is a cheap no-op. Everything downstream (the parse
-# config fallback, the reports needing configured name lists) reads these
-# caches, never the JSON exports. flow-manager.sh needs both exports in input/flow-manager/
-# (gitignored, like the log CSVs); with either one absent this keeps whatever
-# caches exist instead of failing the caller — a missing cache file reads as an
-# empty configured list.
-ensure_config() {
-    [ -f "$FM_INPUT_DIR/partners.json" ]      || return 0
-    [ -f "$FM_INPUT_DIR/subscriptions.json" ] || return 0
-    "$ROOT/bin/flow-manager.sh"
-}
 
 # activity_stream — a normalized one-record-per-line stream feeding the
 # Activity-over-Time reports (day/weekly/hourly/weekday), one line per File

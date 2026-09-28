@@ -71,7 +71,6 @@ fi
 OUTDIR="$REPORTS_DIR/entities"
 mkdir -p "$OUTDIR"
 rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp "$OUTDIR"/.agg.tmp.*   # orphaned temps from a killed run (reports.sh sweeps the top level only)
-ensure_parsed
 
 DIMS="account subscription login remote-host logical partner application domain bl"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2

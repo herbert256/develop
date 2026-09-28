@@ -42,7 +42,6 @@ PUNCT="$TRANSFER_REPORTS/punctuality.rpt"
 SUBJSON="$FM_INPUT_DIR/subscriptions.json"   # the SKIP-filtered copy when present (server/lib.sh)
 XSH="$CONFIG_XREF/_subscriptions-hosts.tsv"
 CRON_AWK="$ROOT/bin/cron2human.awk"
-ensure_config
 
 if [ ! -f "$RP" ] && [ ! -f "$SUBJSON" ]; then
     rm -f "$OUT"; echo "uc3-polling: neither remote-poll.rpt nor a config export — nothing to add to the UC3 tab." >&2; exit 0

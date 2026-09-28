@@ -48,7 +48,6 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
 # the per-subscription File pages' .rpt set (see below)
 SUBDIR="$REPORTS_DIR/expired"
 FILESIDE="$REPORTS_DIR/_expired-files.tsv"   # the CoreIds those pages link → File pages (failed.sh)

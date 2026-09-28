@@ -42,7 +42,6 @@ arlist_run() {
         rm -f "$OUT"   # no data for this ENV — page not published (an env-split legitimate state)
         exit 0
     fi
-    ensure_parsed
     echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
     # the known-entity roster ("KS<TAB>name", fed in ahead of the cache): a

@@ -72,11 +72,8 @@
 # partners/apps/domains, partners-apps/partners-domains/apps-domains, and the
 # *-white joins.
 #
-# The whole set is rebuilt in one go, and the run EARLY-EXITS when every output
-# is newer than both exports and this script — bin/build.sh calls flow-manager.sh
-# unconditionally each run (and every report's ensure_config leans on it), and
-# the parse stage watches these cache mtimes, so a no-change run must not
-# rewrite them.
+# The whole set is rebuilt in one go, once per build (bin/build.sh's config
+# step, before both parses read it).
 #
 # Each output is distinct sorted lines. The JSON exports are parsed with jq (by
 # PATH, not by indentation): the entity lists, the FlowManager deep links and the
@@ -121,8 +118,7 @@ mkdir -p "$BASE" "$XREF"
 # FILTERED copies of the exports to data/<env>/flow-manager/filtered/ and every
 # reader prefers them (publish_lib.sh's FM_CONFIG_DIR, the two lib.sh
 # FM_INPUT_DIR). The skipped config names are recorded in _skipped.tsv for the
-# "Skipped" analyses report. cmp-guarded writes keep mtimes stable so the
-# downstream freshness checks don't re-fire on a no-change run.
+# "Skipped" analyses report.
 SKIPFILE="$ROOT/input/skip.txt"
 # RETIRED 2026-09-01 (user request): the hand-curated partner alias map
 # (input/<env>/partner-aliases.tsv) is folded into the PART REPLACEMENTS
@@ -142,7 +138,7 @@ LOGAPPF="$ROOT/input/logical_apps.txt"
 LOGPTNF="$ROOT/input/logical_partners.txt"
 # the BL numbers per subscription (input/<env>/BL.txt — 2026-08-31, user
 # request): a second source beside the subscriptions.json tags, unioned into
-# _subscriptions-bl; a freshness dep like the rest
+# _subscriptions-bl
 BLF="$ROOT/input/BL.txt"
 source "$ROOT/bin/skiplist.sh"   # skip_values() — the ONE reader for input/<env>/skip.txt
 SKIPDIR="$OUT/filtered"                 # the filtered partners/subscriptions/templates.json
@@ -185,59 +181,11 @@ CANON_PAIRS=$(
 MIRROR_PAIRS=$(printf '%s\n' $CANON_PAIRS | awk -F'-' '{ print $2 "-" $1 }')
 PAIR_CACHES="$(printf '%s ' $CANON_PAIRS $MIRROR_PAIRS)subscriptions-patterns subscriptions-flowdir subscriptions-ucderived logical-rules"
 
-# The PDA both-ways links read the address<->endpoint map, and their output
-# depends only on its content — which is now EXACTLY the configured endpoints'
-# addresses and nothing else, so the whole file IS the fingerprint. (It used to
-# have to filter a shared reverse cache down to endpoint-relevant rows, because
-# the parses kept adding entries for non-endpoint IPs that must not re-trigger a
-# config rebuild — that would re-derive the parse caches and every report on each
-# pipeline run, since the parses run AFTER flow-manager.sh.)
-#
-# ip_put is cmp-guarded, so a re-resolution returning the same records leaves
-# both files byte-identical and this cksum unchanged.
-pda_dns_fingerprint() {
-    { if [ -f "$IP_HOSTS_FILE" ]; then cat "$IP_HOSTS_FILE"; fi; } | cksum
-}
-
-# Early-exit when everything is already fresh (see the header).
-fresh=1
-for f in $ENTITY_CACHES $PAIR_CACHES; do
-    case " $ENTITY_CACHES " in *" $f "*) out="$BASE/_$f.tsv" ;; *) out="$XREF/_$f.tsv" ;; esac
-    if [ ! -f "$out" ] || [ "$PARTNERS" -nt "$out" ] || [ "$SUBS" -nt "$out" ] \
-       || [ "${BASH_SOURCE[0]}" -nt "$out" ] \
-       || [ "$ROOT/bin/skiplist.sh" -nt "$out" ] \
-       || { [ -f "$SKIPFILE" ] && [ "$SKIPFILE" -nt "$out" ]; } \
-       || { [ -f "$LOGICALF" ] && [ "$LOGICALF" -nt "$out" ]; } \
-       || { [ -f "$LOGDOMF" ] && [ "$LOGDOMF" -nt "$out" ]; } \
-       || { [ -f "$LOGAPPF" ] && [ "$LOGAPPF" -nt "$out" ]; } \
-       || { [ -f "$LOGPTNF" ] && [ "$LOGPTNF" -nt "$out" ]; } \
-       || { [ -f "$BLF" ] && [ "$BLF" -nt "$out" ]; }; then fresh=0; break; fi
-done
-# The filtered exports + the skipped-config sidecar must exist (a changed
-# skip.txt is caught above; a manually removed filtered/ dir heals here).
-if [ "$fresh" = 1 ] && { [ ! -f "$SKIPDIR/partners.json" ] || [ ! -f "$SKIPDIR/subscriptions.json" ] || [ ! -f "$SKIP_SIDE" ]; }; then
-    fresh=0
-fi
-if [ "$fresh" = 1 ] && [ "$(pda_dns_fingerprint)" != "$(cat "$OUT/.pda-dns.cksum" 2>/dev/null)" ]; then
-    fresh=0
-fi
-# The templates cache has its own (optional) export: a missing cache, or an
-# export newer than it, re-derives; script edits are caught by the loop above.
-if [ "$fresh" = 1 ]; then
-    tout="$XREF/_templates.tsv"
-    if [ ! -f "$tout" ] || { [ -f "$TEMPLATES" ] && [ "$TEMPLATES" -nt "$tout" ]; }; then fresh=0; fi
-fi
-# RENAME DETECTION runs BEFORE the early exit and on EVERY run: it compares the
-# export against the previous run's flowId->name snapshot, and a rename must be
-# recorded the first time the new export is seen, whether or not the derived
-# caches happen to be fresh. Appending to input/<env>/renames/subscriptions.tsv
-# changes the transfer parser signature, so the next parse re-tokenizes and the
-# logged names fold to the new ones (bin/renames.sh).
+# RENAME DETECTION: compares the export against the previous run's
+# flowId->name snapshot (kept under input/ — it outlives the build's wipe of
+# data/), so a rename is recorded the first time the new export is seen; the
+# parses then fold the logged names to the new ones (bin/renames.sh).
 fm_snapshot_renames "$SUBS"
-if [ "$fresh" = 1 ]; then
-    echo "flow-manager.sh: data/flow-manager caches are up to date; skipping." >&2
-    exit 0
-fi
 
 # phase laps on the build console (2026-09-27, speed round 5)
 _fml0=$(date +%s)
@@ -610,7 +558,7 @@ _fml "skip list, entity lists, pair tags"
 # map (the Logical is the base — part 1 = domain, part 2 = application,
 # part 3 = partner token). The _logicals-{partners,apps,domains} pairs are
 # emitted by the PDA pass itself. Every composed file is ALWAYS written —
-# possibly empty — for the mirror and freshness loops (set -e).
+# possibly empty — for the mirror loop (set -e).
 awk -F'\t' -v LF="$LOGICALF" '
     BEGIN {
         while ((getline fl < LF) > 0) {
@@ -867,13 +815,11 @@ xcompose "$XREF/_profiles-logicals.tsv" _profiles-white.tsv         1 LEFT  logi
 # Endpoint addresses come from the endpoint itself (raw IPs) and from
 # input/<env>/ip/ip-hosts.tsv — the forward-DNS answers this pass writes, plus
 # whatever bin/transfer/parse.sh's rule (b) learned from real outgoing traffic.
-# The map is machine-maintained; nothing here is hand-written. The early-exit
-# above watches its content, so a changed address re-derives the partner links.
+# The map is machine-maintained; nothing here is hand-written.
 # Forward-resolve every configured endpoint and publish the address<->endpoint
-# map (bin/ip.sh). This runs ONLY when flow-manager.sh actually rebuilds — it
-# early-exits when its caches are newer than the exports — so it is not a
-# per-build DNS cost. It replaces the former fwd/<name>.txt tree, which was only
-# ever written when ABSENT, so a changed A record was never picked up.
+# map (bin/ip.sh), once per build. It replaces the former fwd/<name>.txt tree,
+# which was only ever written when ABSENT, so a changed A record was never
+# picked up.
 #
 # ip_put UNIONS with what is already there, so an address bin/transfer/parse.sh
 # learned from real traffic (rule b) survives a re-resolution that no longer
@@ -911,11 +857,6 @@ _fml "logical flows, pair caches (to the DNS step)"
 PDAIP="$OUT/.pda.ipmap.tmp"
 : > "$PDAIP"
 [ -f "$IP_HOSTS_FILE" ] && awk -F'\t' '$1 != "" && $2 != "" { print $2 "\t" $1 }' "$IP_HOSTS_FILE" > "$PDAIP"
-
-# Remember the DNS content this build derived from — the early-exit compares
-# against it (see pda_dns_fingerprint above). Written AFTER ip_put so freshly
-# resolved endpoints are included.
-pda_dns_fingerprint > "$OUT/.pda-dns.cksum"
 
 awk -F'\t' -v BP="$BASE/.pda.partners.tmp" -v BA="$BASE/.pda.apps.tmp" -v BD="$BASE/.pda.domains.tmp" \
     -v FP="$OUT/.pda.fp.tmp" -v FA="$OUT/.pda.fa.tmp" -v FD="$OUT/.pda.fd.tmp" \

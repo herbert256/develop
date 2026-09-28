@@ -44,7 +44,6 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-ensure_parsed
 # the record-page dir is an output too: a missing one forces a rebuild
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
