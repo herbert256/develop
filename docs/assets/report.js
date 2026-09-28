@@ -14,6 +14,14 @@
   var TIME = { ms: 1, s: 1000, sec: 1000, second: 1000, seconds: 1000, m: 60000, min: 60000, minute: 60000, minutes: 60000,
                h: 3600000, hour: 3600000, hours: 3600000, d: 86400000, day: 86400000, days: 86400000 };
 
+  // A URL query value, "+" as a space: decodeURIComponent THROWS on a malformed
+  // escape ("?axway_search=100%"), which stopped the whole script — the raw
+  // value then (2026-09-28 fix; axway_row/axway_column already did this)
+  function urlParam(v) {
+    v = v.replace(/\+/g, " ");
+    try { return decodeURIComponent(v); } catch (e) { return v; }
+  }
+
   // "2026-06-28[ HH:MM:SS[.mmm]]" or "06/28/2026[ HH:MM:SS]" -> epoch ms, else null.
   function parseDate(s) {
     var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}):(\d{2}))?/.exec(s);
@@ -1754,13 +1762,18 @@
       }
       var dcol = tr.getAttribute("data-drill-col");             // session-topview: drill on one named column
       var dlist = tr.getAttribute("data-drill-list");
-      if (dcol !== null && dlist && tr.cells[+dcol]) bindDrill(tr.cells[+dcol], tr, table, dlist, "", null, du);
+      // the BUILT column index -> its cell, wherever a remembered column
+      // order moved it (initColOrder runs first): bound by position, a click
+      // on one column opened another's list (2026-09-28 fix)
+      var dcell0 = dcol !== null ? (cellByCi(tr, +dcol) || tr.cells[+dcol]) : null;
+      if (dcell0 && dlist) bindDrill(dcell0, tr, table, dlist, "", null, du);
       // Per-cell drill lists (duration.sh's Duration per day table): EVERY cell
       // carries data-drill-cell-<i> = its own \x1f-separated "files nearest this
-      // value" list, bound to cell i.
+      // value" list, bound to the cell BUILT at column i.
       for (var dci = 0; dci < tr.cells.length; dci++) {
         var dcl = tr.getAttribute("data-drill-cell-" + dci);
-        if (dcl) bindDrill(tr.cells[dci], tr, table, dcl, "", "\u001F", du);
+        var dce = dcl ? (cellByCi(tr, dci) || tr.cells[dci]) : null;
+        if (dce) bindDrill(dce, tr, table, dcl, "", "\u001F", du);
       }
       // (the former data-srv Server-log drill is gone: the server-log mentions
       // live on the not-seen detail pages' "Last 10 server log lines" table)
@@ -2114,7 +2127,7 @@
   var urlSort = null, urlSortDone = false;
   (function () {
     var m = /[?&]axway_sort=([^&:]+)(?::(-?1))?/.exec(window.location.search || ""), c;
-    if (m) { c = decodeURIComponent(m[1].replace(/\+/g, " ")); urlSort = { col: /^\d+$/.test(c) ? parseInt(c, 10) : -1, label: /^\d+$/.test(c) ? "" : c, dir: m[2] ? parseInt(m[2], 10) : 0 }; }
+    if (m) { c = urlParam(m[1]); urlSort = { col: /^\d+$/.test(c) ? parseInt(c, 10) : -1, label: /^\d+$/.test(c) ? "" : c, dir: m[2] ? parseInt(m[2], 10) : 0 }; }
   })();
   // ?axway_row=NAME (the detail pages' Ranking rows): mark that entity's own
   // row, page the table to it and scroll it into view, so a click on "#12"
@@ -2673,15 +2686,19 @@
     // Month = one CALENDAR month back from the end day, not a fixed 30 days
     // (2026-08): the previous month's same day-of-month + 1 through the last
     // full day — ending 08-20 it starts 07-21; a day the shorter previous
-    // month lacks clamps to that month's last day.
+    // month lacks clamps to that month's last day BEFORE the + 1, so ending
+    // 03-31 it starts 03-01 (2026-09-28 fix: the clamp came after the + 1 and
+    // started 02-28, a 32-day "month")
     function monthStartStr() {
       var end = newestFull(), es = "", i;
       for (i = 0; i < dates.length; i++) if (epochOf[dates[i]] === end) { es = dates[i]; break; }
-      var y = +es.slice(0, 4), m = +es.slice(5, 7) - 1, d = +es.slice(8, 10) + 1;
+      var y = +es.slice(0, 4), m = +es.slice(5, 7) - 1, d = +es.slice(8, 10);
       if (m < 1) { m = 12; y -= 1; }
       var dim = new Date(Date.UTC(y, m, 0)).getUTCDate();   // days in 1-based month m
       if (d > dim) d = dim;
-      return y + "-" + (m < 10 ? "0" : "") + m + "-" + (d < 10 ? "0" : "") + d;
+      var st = new Date(Date.UTC(y, m - 1, d) + 86400000);
+      var sm = st.getUTCMonth() + 1, sd = st.getUTCDate();
+      return st.getUTCFullYear() + "-" + (sm < 10 ? "0" : "") + sm + "-" + (sd < 10 ? "0" : "") + sd;
     }
     var bmo = mkPresetBtn("Month", function () {
       var end = newestFull(), ss = monthStartStr(), fd = dates[0], i;
@@ -2977,6 +2994,21 @@
   // totals, the data-subrows expansion — operates on ordinary DOM rows exactly
   // as it did when they were baked into the page.
   var ES_ROWS = null, ES_NAME = null, ES_TYPE = null;
+  // the TEXT of a rendered cell's markup: tags dropped, the escapes the
+  // renderer writes decoded (2026-09-28 fix: "A&B" was matched and shown as
+  // "A&amp;B" by Entity Search and the command palette)
+  var UNENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+  function htmlText(s) {
+    s = s.replace(/<[^>]*>/g, "");
+    if (s.indexOf("&") < 0) return s;
+    return s.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-z]+);/g, function (m, e) {
+      if (e.charAt(0) === "#") {
+        var n = e.charAt(1) === "x" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+        return isFinite(n) && n > 0 && n < 0x110000 ? String.fromCodePoint(n) : m;
+      }
+      return UNENT.hasOwnProperty(e) ? UNENT[e] : m;
+    });
+  }
   function esData() {
     if (ES_ROWS && ES_ROWS.length) return ES_ROWS;   // never cache an empty payload
 
@@ -2992,8 +3024,8 @@
       var m1 = cellRe.exec(ES_ROWS[i]);
       cellRe.exec(ES_ROWS[i]);                       // cell 2 = Direction, not indexed
       var m2 = cellRe.exec(ES_ROWS[i]);
-      ES_NAME[i] = m1 ? m1[1].replace(/<[^>]*>/g, "").replace(/^\s+|\s+$/g, "") : "";
-      ES_TYPE[i] = m2 ? m2[1].replace(/<[^>]*>/g, "").replace(/^\s+|\s+$/g, "") : "";
+      ES_NAME[i] = m1 ? htmlText(m1[1]).replace(/^\s+|\s+$/g, "") : "";
+      ES_TYPE[i] = m2 ? htmlText(m2[1]).replace(/^\s+|\s+$/g, "") : "";
     }
     return ES_ROWS;
   }
@@ -3157,7 +3189,7 @@
     // The top-bar quick-search submits to Entity Search with ?axway_search=…
     // — it overrides the remembered search and is persisted like a typed one.
     var qm = /[?&]axway_search=([^&]*)/.exec(window.location.search);
-    if (qm) { stored = decodeURIComponent(qm[1].replace(/\+/g, " ")); saveSearch(stored); }
+    if (qm) { stored = urlParam(qm[1]); saveSearch(stored); }
     var tables = document.getElementsByTagName("table"), t, searchable = [], needBox = false;
     for (t = 0; t < tables.length; t++) {
       if (tables[t].getAttribute("data-nosearch") === "1") continue;   // opt-out (TABLE …⇥nosearch)
@@ -3637,7 +3669,7 @@
     // idea as ?axway_date); an unknown label falls back to the first view.
     var um = /[?&]axway_hero=([^&]+)/.exec(window.location.search);
     if (um) {
-      mode = decodeURIComponent(um[1].replace(/\+/g, " "));
+      mode = urlParam(um[1]);
       try { sessionStorage.setItem(KEY, mode); } catch (e) {}
     }
     apply(mode);
@@ -3773,11 +3805,12 @@
         if (lines[i].charAt(0) !== "<") continue;
         m = /<a href="([^"]+)">([^<]*)<\/a>/.exec(lines[i]); if (!m) continue;
         cellRe.lastIndex = 0; m1 = cellRe.exec(lines[i]); cellRe.exec(lines[i]); m3 = cellRe.exec(lines[i]);
-        ty = m3 ? m3[1].replace(/<[^>]*>/g, "").trim() : "";
+        ty = m3 ? htmlText(m3[1]).trim() : "";
         // the rows are rendered for search/search.html, one level below the
         // docs root (2026-09-12), so their hrefs lead with ../ — dropped
-        // here: palGo prefixes the docs-root base TB_EB
-        PAL.ents.push({ t: m[2], h: m[1].replace(/^\.\.\//, ""), s: ty, x: palFold(m[2]) });
+        // here: palGo prefixes the docs-root base TB_EB. Name and href are
+        // markup: decoded (htmlText) before display and navigation
+        PAL.ents.push({ t: htmlText(m[2]), h: htmlText(m[1]).replace(/^\.\.\//, ""), s: ty, x: palFold(htmlText(m[2])) });
       }
       one();
     }).catch(function () { one(); });
@@ -4123,7 +4156,7 @@
         if (c.nodeType !== 1) continue;
         if (c.tagName === "BR") { out += "; "; continue; }
         cl = " " + c.className + " ";
-        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" pickbtn ") >= 0 || cl.indexOf(" colpick ") >= 0 || cl.indexOf(" cpid ") >= 0 || cl.indexOf(" ce ") >= 0) continue;   // the hotspots (csv, cols, the picker, the copy icon) are not cell text
+        if (cl.indexOf(" arrow ") >= 0 || cl.indexOf(" csvbtn ") >= 0 || cl.indexOf(" pickbtn ") >= 0 || cl.indexOf(" colpick ") >= 0 || cl.indexOf(" cpid ") >= 0 || cl.indexOf(" stgo ") >= 0 || cl.indexOf(" ce ") >= 0) continue;   // the hotspots (csv, cols, the picker, the copy icon, the File Tracking ↗) are not cell text
         // skip what CSS hides: the von/voff toggle twin not in effect, a
         // collapsed clines middle — the export is the cell AS DISPLAYED
         try { if (window.getComputedStyle && getComputedStyle(c).display === "none") continue; } catch (err) {}
@@ -4132,7 +4165,14 @@
     })(cell);
     return out.replace(/\u00a0/g, " ").replace(/\s+/g, " ").replace(/^ | $/g, "");
   }
-  function csvField(s) { return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  // a cell a spreadsheet would read as a FORMULA (=, +, @, or a "-" that is
+  // no number) is exported with a leading apostrophe, the text marker Excel
+  // and LibreOffice honour (2026-09-28: a logged file name or message went
+  // into the CSV verbatim)
+  function csvField(s) {
+    if (/^[=+@\t\r]/.test(s) || (/^-./.test(s) && !/^-[\d.,]+ ?[%A-Za-z]*$/.test(s))) s = "'" + s;   // a lone "-" (the empty-value dash) stays
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
   function tableCsv(table) {
     var hr = headerRow(table), rows = dataRows(table), lines = [], i;
     function line(tr) {

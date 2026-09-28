@@ -1232,6 +1232,8 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] tr[data-res="green"] td.failed.z, :root[data-theme="dark"] tr[data-res="green"] td.processed.z { background-color:#1f3d26; }
 :root[data-theme="dark"] tr[data-res="orange"] td.failed.z, :root[data-theme="dark"] tr[data-res="orange"] td.processed.z { background-color:#4a3a17; }
 :root[data-theme="dark"] tr[data-res="red"] td.failed.z, :root[data-theme="dark"] tr[data-res="red"] td.processed.z { background-color:#4a2020; }
+:root[data-theme="dark"] td.obsbad, :root[data-theme="dark"] tr[data-res] td.obsbad { background-color:#8b1a1a; }
+:root[data-theme="dark"] table[data-restint] tr[data-res] td.obsbad:not(.failed):not(.processed) { background-color:#8b1a1a; }
 :root[data-theme="dark"] ul.dayboxlist { border:1px solid #3a4451;border-left:4px solid #6f95bd;background:#1e242c; }
 :root[data-theme="dark"] ul.dayproblems { border-color:#4a3a3a;background:#2e2222; }
 :root[data-theme="dark"] ul.dayproblems .probdesc { color:#a8b2bc; }
