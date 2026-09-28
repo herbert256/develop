@@ -284,7 +284,7 @@ function uc1_file(t0,   fn, sz, mo, ic, sidp, sids, d1, d2, i, tt, ok, late, rr,
 }
 
 # UC2: CFT stages over pesit+routing (one session), the partner collects (new session)
-function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj, dcol) {
+function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj, dcol, cid0, cidn) {
     fn = fname_of(t0); sz = fsize(); mo = fmode()
     sidst = sesshex()
     d1 = 150 + int(rexp(400)) + szdur(sz, pesitthr()); d2 = 40 + int(rexp(120)); d3 = 80 + int(rexp(150))
@@ -333,6 +333,23 @@ function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj,
         # rings — it never raises the after-last-transfer banner. No draw.
         S(tc + dcol + 1370, "E", "TM", sidc, "Error during transfer operation: Error occurred while sending file to partner " srvsite() " defined in account " ACCT ". Connection closed by the remote host")
         s_bookend(tc + dcol + 1387, sidc, "end", "error", fn)
+    } else if (hastag("rekey") && rnd() < 0.3) {
+        # the RE-KEYED COLLECT (2026-09-29, user report — the production
+        # pickups landing on UCx_<account>): the platform loses the session
+        # cycleId mid-download, warns "SENT will not get reported!", and
+        # ends the SAME transfer twice — error under the File CoreId (the
+        # one it started under), ok under a FRESH CoreId. The transfer log
+        # keeps the ok one: a lone Outbound ssh leg under the new CoreId, no
+        # site, profile UNKNOWN. bin/session-sites.sh learns the re-key from
+        # the shared transferId and the derive moves the leg back into its
+        # File. Draws for the tagged flow only (RNG seeded per flow and day).
+        cid0 = CID; CID = uuid4(); cidn = CID
+        ssh_T(tc, dcol, "Outbound", "P", sidc, fn, sz, "User", ACCT "@" LOGIN, LOGIN, "", anyip(), mo, "NP", "false")
+        CID = cid0
+        s_bookend(tc + 30, sidc, "start", "active", fn)
+        S(tc + dcol + 60, "W", "TM", sidc, "[Ssh Default] No session cycleId for file /data/FlowManager/" ACCT "@" LOGIN "/" fn ". SENT will not get reported!")
+        s_bookend(tc + dcol + 90, sidc, "end", "error", fn)
+        CID = cidn; s_bookend(tc + dcol + 120, sidc, "end", "ok", fn); CID = cid0
     } else {
         ssh_T(tc, dcol, "Outbound", "P", sidc, fn, sz, "User", ACCT "@" LOGIN, LOGIN, sitefield(), anyip(), mo, "NP", "false")
         if (hastag("collectdrop")) { s_bookend(tc + 30, sidc, "start", "active", fn); s_bookend(tc + dcol + 120, sidc, "end", "ok", fn) }

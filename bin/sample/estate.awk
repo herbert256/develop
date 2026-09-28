@@ -447,7 +447,7 @@ function build_roster() {
     # NON-UC-NAMED flows (the hybrid generation): the blacklist blanks their
     # logged site (keep ^UC), so the reverse profile fallback must attribute
     # them — and the "Use case" row derives from the pattern.
-    nonuc(2, "STMT",  "EXPORT",  "GLOBEX", 8)          # one account, MANY UC2-derived flows
+    nonuc(2, "STMT",  "EXPORT",  "GLOBEX", 8)          # one account, MANY UC2-derived flows (rekey: some pickups re-keyed, 2026-09-29)
     nonuc1("INV_PAYMENTS_HOOLI",  4, 3, 0.02)          # in+push  -> UC4-derived
     nonuc1("REC_FEEDS_SOYLENT",   3, 2, 0.03)          # in+pull  -> UC3-derived
     nonuc1("GL_POSTINGS_GEKKO",   1, 2, 0.02)          # out+push -> UC1-derived
@@ -492,7 +492,7 @@ function nonuc1(name, uc, vol, fail,   dom, app, ptn, a) {
 function nonuc(uc, w1, w2, ptn, n,   i, acct) {
     acct = w1 "-" w2 "-" ptn
     for (i = 1; i <= n; i++)
-        nonuc_row(w1 "_" w2 "_" ptn "_" sprintf("%02d", i), uc, w1, w2, ptn, 1.2, 0.02, "nonuc,manyuc2,hybrid", acct)
+        nonuc_row(w1 "_" w2 "_" ptn "_" sprintf("%02d", i), uc, w1, w2, ptn, 1.2, 0.02, "nonuc,manyuc2,rekey,hybrid", acct)
 }
 function nonuc_row(name, uc, dom, app, ptn, vol, fail, tags, acctover,
                    site, acct, prof, login, host, ips, spell, port, sched, pat, fdk, fdir, oi, i, n) {
@@ -520,4 +520,5 @@ function nonuc_row(name, uc, dom, app, ptn, vol, fail, tags, acctover,
         sched, vol, fail, 2000 + int(rexp(200000)), J0, J1, "PWD", tags, \
         (uc == 2 || uc == 4 ? ips ";" PBASE[oi] "." (PUNSEEN[oi]) : "") > EST
     T["subs"]++; T["subs_uc" uc]++; T["seen"]++; T["nonuc"]++
+    if (hastag(tags, "rekey")) T["rekey"]++   # pickups re-keyed under a fresh CoreId, moved back by the derive (2026-09-29)
 }

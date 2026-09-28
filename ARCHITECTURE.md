@@ -67,6 +67,15 @@ in the area orchestrators and feed the boxes and day pages.
    profile's blank is `UNKNOWN`) is filled from the first row in the same CoreId group that
    carries one. Only blanks are filled. The unpropagated stream is kept as `_transfers0.tsv` (the
    input of the derive-only re-run); `_transfers.tsv` is derived from it each run.
+   **Re-keyed legs** (2026-09-29) are moved back BEFORE this pass: a download whose session lost
+   its cycleId is ended twice by ST (error under the File's CoreId, ok under a fresh one, same
+   `transferId`), and when the ok end wins the transfer log books the pickup as a lone siteless
+   leg under the fresh CoreId. `bin/session-sites.sh` writes `cache/_rekeys.tsv` from the JSON
+   bookends (lone legs only; exactly two CoreIds per transfer id; the start line under the
+   original) and the prop pass applies it through `K D` (drop the row) / `K G` (the original
+   group rebuilt, pre-sorted outside awk) records of the fallback map, recomputing that group's
+   aggregates (`agg()`/`regroup()`). Guards: the original CoreId is in the raw cache and holds
+   no row of that transfer id; no CoreId is both source and target.
 3. **Config fallback**, both ways. *Reverse*: a group whose every row lost its site but which
    carries a profile takes its subscription from config keyed on that `FlowIdentifier` — NOT
    unique (a flow is commonly two subscriptions, one per direction), so the group's pesit-leg

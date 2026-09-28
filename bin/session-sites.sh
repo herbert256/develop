@@ -26,6 +26,30 @@
 # The map is a per-session VERDICT file: only the sessions of CURRENTLY-UCx
 # rows are scanned, an ambiguous or evidence-less session gets no entry.
 #
+# THE RE-KEY MAP (2026-09-29, user report — a partner's pickups landing on
+# UCx_<account> although their File was attributed): SecureTransport can lose
+# a download's session cycleId mid-transfer ("No session cycleId for file
+# /data/FlowManager/<account>@<login>/<file>. SENT will not get reported!").
+# It then ends the SAME transfer twice — "error" under the File's own CoreId
+# (the one the transfer STARTED under) and "ok" under a FRESH CoreId — and
+# the transfer log keeps one row per transfer id, whichever end came last.
+# When that is the ok one, the pickup leg sits alone under a CoreId no other
+# leg carries, with no Transfer Site and no profile: nothing attributes it,
+# it reads as a one-legged Failed File on UCx_<account>, and its real File
+# stays Waiting. (When the error end comes last, the leg stays in its File
+# as Failed — bin/bookend-ok.sh settles that one.) The JSON bookends join
+# the two: the same "transferId" under both CoreIds. Written to
+# data/<env>/transfer/cache/_rekeys.tsv (lone CoreId <TAB> transfer id <TAB>
+# original CoreId) — the K records of the parse's fallback map, which move
+# the leg back into its File. Refusal-shaped like the session map:
+#   - only LONE legs are candidates (a CoreId group of one row);
+#   - the bookends of that leg's transfer id must name EXACTLY two CoreIds —
+#     the leg's own and one other;
+#   - the other one must carry the transfer's "Transfer start logged." line
+#     and the leg's own CoreId must not (the transfer began under the other);
+#   - the derive adds its own guards: the original CoreId must be in the raw
+#     transfer cache and must not already hold a row of that transfer id.
+#
 # Self-applying: when the map holds a verdict, this script re-runs the
 # transfer parse DERIVE-ONLY (AXWAY_DERIVE_ONLY=1 — the raw cache is reused),
 # so the new knowledge lands in _transfers.tsv/_files.tsv immediately.
@@ -45,6 +69,7 @@ DATA="$ROOT/data"
 PARSED="$DATA/transfer/cache/_transfers.tsv"
 SRV="$DATA/server/cache/_parse.tsv"
 OUT="$DATA/transfer/cache/_sessionsites.tsv"
+RKOUT="$DATA/transfer/cache/_rekeys.tsv"   # re-keyed lone leg -> its original CoreId (the re-key map)
 BASE="$DATA/flow-manager/base"
 
 if [ ! -s "$PARSED" ]; then
@@ -68,17 +93,31 @@ fi
 
 tmp="$OUT.tmp.$$"
 sess="$OUT.sess.$$"
-trap 'rm -f "$tmp" "$sess" "$tmp".part.*' EXIT
+cand="$OUT.cand.$$"
+rktmp="$RKOUT.tmp.$$"
+trap 'rm -f "$tmp" "$sess" "$cand" "$rktmp" "$tmp".part.* "$tmp".rk.*' EXIT
 # the PREVIOUS verdicts (a second run — a build starts with none): an entry
 # whose session is not rescanned now persists, so a rerun never undoes the
 # rescues of the first (2026-09-28 fix: dropped with the incremental
-# machinery, but it was never a freshness check)
+# machinery, but it was never a freshness check). The re-key map the same:
+# a moved leg is no lone leg any more, so a rerun keeps its entry.
 OLDMAP="$OUT"; [ -f "$OUT" ] || OLDMAP=/dev/null
+OLDRK="$RKOUT"; [ -f "$RKOUT" ] || OLDRK=/dev/null
 
-# the sessions to (re)scan: every session a currently-UCx leg ran over
-awk -F'\t' '$6 ~ /^UCx_/ && $24 != "" { print $24 }' "$PARSED" | LC_ALL=C sort -u > "$sess"
-if [ ! -s "$sess" ]; then
-    echo "session-sites: no UCx rows — nothing to learn." >&2
+# ONE pass over the transfer cache: the sessions to (re)scan — every session
+# a currently-UCx leg ran over — and the RE-KEY candidates: the transfer id
+# of every LONE leg (the cache is CoreId-sorted, so a group is a run of equal
+# col 1 and a lone leg a run of one)
+: > "$sess"
+awk -F'\t' -v OFS='\t' -v SESSF="$sess" '
+    $6 ~ /^UCx_/ && $24 != "" { print $24 > SESSF }
+    $1 != pk { if (pn == 1 && pk != "" && pt != "") print pt, pk; pk = $1; pn = 0; pt = $23 }
+    { pn++ }
+    END { if (pn == 1 && pk != "" && pt != "") print pt, pk }
+' "$PARSED" | LC_ALL=C sort -u > "$cand"
+LC_ALL=C sort -u -o "$sess" "$sess"
+if [ ! -s "$sess" ] && [ ! -s "$cand" ]; then
+    echo "session-sites: no UCx rows and no lone legs — nothing to learn." >&2
     exit 0
 fi
 
@@ -94,7 +133,18 @@ SRVSZ=$(wc -c < "$SRV" | tr -d " ")
 scan_part() {   # $1 = part index: its range of line starts is [lo, hi)
     local lo=$(( ($1 - 1) * SRVSZ / NJ )) hi
     if [ "$1" -eq "$NJ" ]; then hi=$((SRVSZ + 1)); else hi=$(( $1 * SRVSZ / NJ )); fi
-    rng_feed "$SRV" "$lo" | awk -v RANGEF=/dev/stdin -v RLO="$lo" -v RHI="$hi" -v ROFF="$(rng_off "$lo")" -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
+    : > "$tmp.rk.$1"
+    rng_feed "$SRV" "$lo" | awk -v RANGEF=/dev/stdin -v RLO="$lo" -v RHI="$hi" -v ROFF="$(rng_off "$lo")" -F'\t' -v OFS='\t' -v RNF="$RENAMES_FILE" -v RKF="$tmp.rk.$1" "$RENAMES_AWK"'
+    # the JSON value of key k in message m ("" when absent) — the reader
+    # bin/bookend-ok.sh uses: the tokenizer flattened the multi-line record
+    # to one line and unquoted the CSV doubling, so it reads "k":"v" with
+    # optional blanks around the colon
+    function jval(m, k,   p, s) {
+        p = index(m, "\"" k "\""); if (p == 0) return ""
+        s = substr(m, p + length(k) + 2); sub(/^[ \t]*:[ \t]*"/, "", s)
+        if (substr(s, 1, 1) == "\"" ) return ""      # not a string value
+        sub(/".*$/, "", s); return s
+    }
     # THE PREFIX GATE (2026-09-27): a token can name a configured flow only when
     # its first 3 characters, upper-cased, open a configured name or an old
     # name of the rename map (the tail strip and the rename fold both keep the
@@ -103,8 +153,19 @@ scan_part() {   # $1 = part index: its range of line starts is [lo, hi)
     FILENAME ~ /\.configured\.tsv$/   { if ($1 == "_subscriptions") { conf[toupper($2)] = $2; CP3[toupper(substr($2, 1, 3))] = 1; if (length($2) < 3) GATE_OFF = 1 }; next }
     FILENAME ~ /_subscriptions\.tsv$/ { if ($2 != "") { conf[toupper($1)] = $1; CP3[toupper(substr($1, 1, 3))] = 1; if (length($1) < 3) GATE_OFF = 1 }; next }
     FILENAME ~ /\.sess\./             { scan[$1] = 1; next }
+    FILENAME ~ /\.cand\./             { cand[$1] = 1; ncand = 1; next }
     RANGEF != "" && FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
     {   # _parse.tsv: col 5 = message, col 6 = session
+        # THE RE-KEY EVIDENCE: a JSON transfer bookend of a lone leg transfer
+        # id — the CoreId it names, S = the transfer STARTED under it. Falls
+        # through: the session verdict below reads every line as before.
+        if (ncand && index($5, "{\"message\":\"Transfer ") == 1) {
+            t = jval($5, "transferId")
+            if (t != "" && (t in cand)) {
+                c = jval($5, "coreId")
+                if (c != "") print t, c, (index($5, "{\"message\":\"Transfer start logged.\"") == 1 ? "S" : "E") > RKF
+            }
+        }
         if (!($6 in scan)) next
         # a session that already named two flows keeps "-" whatever it logs
         # next (2026-09-27: a busy shared session ran the token loop below on
@@ -130,7 +191,7 @@ scan_part() {   # $1 = part index: its range of line starts is [lo, hi)
         }
     }
     END { for (s in seen) if (seen[s] != "") print s, seen[s] }
-    ' "$CONFSRC" "$sess" /dev/stdin > "$tmp.part.$1"
+    ' "$CONFSRC" "$sess" "$cand" /dev/stdin > "$tmp.part.$1"
 }
 pids=()
 for ((pi = 1; pi <= NJ; pi++)); do scan_part "$pi" & pids+=("$!"); done
@@ -148,15 +209,42 @@ awk -F'\t' -v OFS='\t' -v OLDF="$OLDMAP" '
     }
 ' "$sess" "$OLDMAP" "$tmp".part.* | LC_ALL=C sort > "$tmp"
 rm -f "$tmp".part.*
+# the RE-KEY verdicts (the rules in the header): per candidate transfer id,
+# the CoreIds its bookends name — exactly two, the lone leg's own (B) and one
+# other (A), the transfer started under A and not under B
+LC_ALL=C sort -u "$tmp".rk.* | awk -F'\t' -v OFS='\t' -v CANDF="$cand" -v OLDF="$OLDRK" '
+    FILENAME == CANDF { lone[$1] = $2; next }
+    FILENAME == OLDF  { old[$1 SUBSEP $2] = $3; next }
+    {   # tid, coreId, S|E (sort -u: one line per distinct triple)
+        if (!(($1, $2) in seen)) { seen[$1, $2] = 1; n[$1]++; cc[$1, n[$1]] = $2 }
+        if ($3 == "S") st[$1, $2] = 1
+    }
+    END {
+        for (t in n) {
+            if (n[t] != 2 || !(t in lone)) continue
+            b = lone[t]
+            if (cc[t, 1] == b) a = cc[t, 2]; else if (cc[t, 2] == b) a = cc[t, 1]; else continue
+            if (((t, a) in st) && !((t, b) in st)) nv[b SUBSEP t] = a
+        }
+        # an entry of an earlier run whose transfer id is no lone leg now
+        # (its leg was moved back) persists
+        for (k in old) { split(k, kk, SUBSEP); if (!(kk[2] in lone)) nv[k] = old[k] }
+        for (k in nv) { split(k, kk, SUBSEP); print kk[1], kk[2], nv[k] }
+    }
+' "$cand" "$OLDRK" - | LC_ALL=C sort > "$rktmp"
+rm -f "$tmp".rk.*
 printf "TIME %5ds  session-sites: server log scan (%d jobs)\n" "$(( $(date +%s) - _ss0 ))" "$NJ" >&2
 
 n_scan=$(wc -l < "$sess" | tr -d ' ')
 n_map=$(wc -l < "$tmp" | tr -d ' ')
-if [ ! -s "$tmp" ]; then
-    echo "session-sites: $n_scan UCx session(s) scanned, none attributable — no map written." >&2
+n_lone=$(wc -l < "$cand" | tr -d ' ')
+n_rk=$(wc -l < "$rktmp" | tr -d ' ')
+if [ -s "$rktmp" ]; then mv "$rktmp" "$RKOUT"; else rm -f "$RKOUT"; fi
+if [ ! -s "$tmp" ] && [ "$n_rk" -eq 0 ]; then
+    echo "session-sites: $n_scan UCx session(s) scanned, none attributable; $n_lone lone leg(s), none re-keyed — no map written." >&2
     exit 0
 fi
-mv "$tmp" "$OUT"
-echo "session-sites: $n_scan UCx session(s) scanned, map now $n_map entry/-ies — re-deriving the transfer caches." >&2
+if [ -s "$tmp" ]; then mv "$tmp" "$OUT"; fi
+echo "session-sites: $n_scan UCx session(s) scanned, map now $n_map entry/-ies; $n_lone lone leg(s), $n_rk re-keyed — re-deriving the transfer caches." >&2
 # apply immediately: the derive-only re-run
 AXWAY_DERIVE_ONLY=1 "$ROOT/bin/transfer/parse.sh"

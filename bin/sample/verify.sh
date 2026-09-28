@@ -281,6 +281,32 @@ if [ "$(exp collectdrop)" -gt 0 ]; then
     n=$(command grep -c 'Transfer end logged' "data/server/cache/_accounts.tsv" 2>/dev/null || true)   # grep -c prints the 0 itself (exit 1)
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n bookend(s) leaked into the account mention cache"
 fi
+# the RE-KEYED COLLECT (2026-09-29, user report): on the one-account,
+# many-UC2 STMT_EXPORT_GLOBEX_nn flows some pickups lose their session
+# cycleId and the transfer log books them under a FRESH CoreId (a lone
+# siteless leg that read UCx_STMT-EXPORT-GLOBEX). bin/session-sites.sh
+# learns _rekeys.tsv from the shared transferId of the JSON bookends and the
+# derive moves each leg back: no UCx leg on the account, no mapped lone
+# CoreId left, every mapped transfer id inside its original CoreId, and
+# none of those Files Failed
+if [ "$(exp rekey)" -gt 0 ]; then
+    RK="data/transfer/cache/_rekeys.tsv"
+    nrk=$(rows "$RK")
+    check $([ "${nrk:-0}" -gt 0 ] && echo 0 || echo 1) "_rekeys.tsv is empty (no re-keyed pickup learned)"
+    n=$(awk -F'\t' '$6 == "UCx_STMT-EXPORT-GLOBEX" { n++ } END { print n+0 }' "$T")
+    check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n UCx_STMT-EXPORT-GLOBEX leg(s) left (re-keyed pickups not moved back)"
+    r=$(awk -F'\t' 'NR == FNR { b[$1] = 1; mv[$3 SUBSEP $2] = 1; next } ($1 in b) { lone++ } (($1 SUBSEP $23) in mv) { hit++ } END { print lone+0, hit+0 }' "$RK" "$T")
+    read -r rlone rhit <<< "$r"
+    check $([ "$rlone" -eq 0 ] && echo 0 || echo 1) "$rlone re-keyed lone CoreId row(s) still in _transfers.tsv"
+    check $([ "$rhit" -eq "${nrk:-0}" ] && echo 0 || echo 1) "$rhit of $nrk re-keyed leg(s) found inside their original CoreId"
+    # none reads Failed (the lone leg always did); a few read Waiting where
+    # the sample collect precedes the routing pair on a slow day — an
+    # artifact ordinary collects show as well
+    n=$(awk -F'\t' 'NR == FNR { a[$3] = 1; next } ($1 in a) && $2 == "Failed" { n++ } END { print n+0 }' "$RK" "$F")
+    check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n File(s) that got a re-keyed pickup back read Failed"
+    n=$(command grep -c 'No session cycleId for file' "$P" || true)
+    check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "_parse.tsv holds no 'No session cycleId' warning (the re-key shape was not planted)"
+fi
 # the UC3 that never transfers and CANNOT CONNECT (2026-09-10, user rule):
 # no File, every poll a Connection failure — red (not orange), with
 # its newest failure in the _redflip sidecar, an error page of its own,

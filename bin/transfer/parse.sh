@@ -21,7 +21,9 @@
 # (an Inbound and an Outbound row) sharing one CoreId, so CoreId is column 1 and
 # the file is SORTED by CoreId then Direction — the pair of rows for a transfer
 # are adjacent, Inbound before Outbound. Direction is column 2 and Status is 3.
-#   1 coreid          CoreId (field 34) — the logical-transfer key
+#   1 coreid          CoreId (field 34) — the logical-transfer key; a leg the
+#                     platform RE-KEYED (the RE-KEY map, bin/session-sites.sh)
+#                     carries the CoreId its transfer started under instead
 #   2 direction       Direction (field 8), raw (reports default empty->UNKNOWN)
 #   3 status          raw Status (field 1); reports apply their own fold
 #   4 account         Account (field 2) with @... stripped; blacklist blanked
@@ -102,6 +104,7 @@ _pj=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/n
 case $_pj in ""|*[!0-9]*) _pj=2 ;; esac
 PARSED0="$CACHE_DIR/_transfers0.tsv"   # raw (blacklisted, UNpropagated) cache — the derive's input
 SESSMAP="$CACHE_DIR/_sessionsites.tsv" # session -> subscription, learned from the server log (bin/session-sites.sh)
+REKEYS="$CACHE_DIR/_rekeys.tsv"        # re-keyed lone leg -> its original CoreId, learned there too (2026-09-29)
 # read ONCE and dropped from the environment, so nothing started from inside
 # this one inherits it
 _derive_only=${AXWAY_DERIVE_ONLY:-}; unset AXWAY_DERIVE_ONLY
@@ -790,6 +793,56 @@ smap="$tmp.submap"
     if [ -f "$SESSMAP" ]; then
         awk -F'\t' -v OFS='\t' '$1 != "" && $2 != "" { print "Z", $1, $2 }' "$SESSMAP"
     fi
+    # RE-KEY sources (K records, 2026-09-29, user report): a pickup leg the
+    # platform re-keyed — it lost the session cycleId mid-download and logged
+    # the transfer under a FRESH CoreId, so the leg sits alone, siteless, on
+    # UCx_<account> while its File reads Waiting — moves back into the CoreId
+    # the transfer started under. bin/session-sites.sh learns the map from the
+    # JSON bookends (same transferId under both CoreIds; see its header).
+    #   K D <lone CoreId> <transfer id>   drop that row where it was logged
+    #   K G <row, col 1 = original>       the ORIGINAL group, rebuilt: its raw
+    #                                     rows plus the moved leg, sorted like
+    #                                     the cache (so no string comparison
+    #                                     happens in awk)
+    # Guards: the original CoreId must be in the raw cache (a pickup whose
+    # upload predates the export stays where it is), it must not already
+    # hold a row of that transfer id, and no CoreId may be both a source and
+    # a target (no chains). Missing map = the pass never fires.
+    if [ -s "$REKEYS" ]; then
+        { cut -f1 "$REKEYS"; cut -f3 "$REKEYS"; } | LC_ALL=C sort -u > "$tmp.rkids"
+        # the raw rows of those CoreIds: a col-1 filter in parallel slices,
+        # with no field split (never grep -F -f: the BSD grep is quadratic in
+        # the pattern count — 60 s for 362 ids on the 40 MB sample cache)
+        line_par "$PARSED0" "$tmp.rkrows" "$_pj" awk -v IDS="$tmp.rkids" '
+            BEGIN { while ((getline l < IDS) > 0) id[l "\t"] = 1; close(IDS) }
+            (substr($0, 1, index($0, "\t")) in id)'
+        awk -F'\t' -v OFS='\t' -v RKF="$REKEYS" -v DROPF="$tmp.rkdrop" '
+            BEGIN {
+                printf "" > DROPF
+                while ((getline ln < RKF) > 0) {
+                    split(ln, f, "\t")
+                    if (f[1] == "" || f[2] == "" || f[3] == "" || f[1] == f[3]) continue
+                    tgt[f[1] SUBSEP f[2]] = f[3]; isa[f[3]] = 1; isb[f[1]] = 1
+                }
+                close(RKF)
+            }
+            # every filtered row has a mapped id in col 1: an original (A)
+            # row, or the re-keyed row itself (B + its transfer id)
+            ($1 in isa) { arow[$1] = arow[$1] $0 "\n"; atid[$1 SUBSEP $23] = 1 }
+            (($1 SUBSEP $23) in tgt) { mrow[$1 SUBSEP $23] = $0 }
+            END {
+                for (k in mrow) {
+                    a = tgt[k]; split(k, kk, SUBSEP)
+                    if (!(a in arow) || ((a SUBSEP kk[2]) in atid) || (a in isb) || (kk[1] in isa)) continue
+                    r = mrow[k]; sub(/^[^\t]*/, a, r)
+                    grp[a] = grp[a] r "\n"
+                    print "K", "D", kk[1], kk[2] > DROPF
+                }
+                for (a in grp) printf "%s%s", arow[a], grp[a]
+            }' "$tmp.rkrows" | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 | awk '{ print "K\tG\t" $0 }'
+        cat "$tmp.rkdrop"
+        rm -f "$tmp.rkids" "$tmp.rkrows" "$tmp.rkdrop"
+    fi
 } > "$smap"
 # IN PARALLEL (2026-09-28, speed round 16): the pass is a per-CoreId-group
 # transform over the CoreId-sorted _transfers0.tsv (the maps load first, one
@@ -837,7 +890,54 @@ grp_par "$PARSED0" "$tmp.prop" "$_pj" awk -F'\t' -v OFS='\t' '
         v = xone1("P", dk, p); if (v != "") { if (c == "") c = v; else if (toupper(c) != toupper(v)) return "" }
         return c
     }
+    # the group aggregates, one leg at a time in cache order: the first
+    # non-blank value of each entity, the pesit directions, and the two votes
+    function agg(a, l, s, h, p, dir, proto, z24,   mvv) {
+        if (ga == "" && a != "") ga = a
+        if (gl == "" && l != "") gl = l
+        if (gs == "" && s != "") gs = s
+        if (gh == "" && h != "") gh = h
+        if (gp == "" && p != "" && p != "UNKNOWN") gp = p
+        if (proto == "pesit") { if (dir == "Inbound") gpin = 1; else if (dir == "Outbound") gpout = 1 }
+        # the group MOVEMENT vote (the FLOWDIR fallback): each leg names the
+        # file-movement side its protocol+direction implies — a partner
+        # protocol moves the file the way the connection points (ssh Inbound =
+        # a partner delivering IN), the app-side pesit leg the opposite (pesit
+        # Inbound = the app handing us a file to move OUT). http/routing legs
+        # abstain. "x" = the legs disagree; the fallback then stays out.
+        mvv = ""
+        if (proto == "ssh" || proto == "sftp" || proto == "ftp" || proto == "ftps") {
+            mvv = (dir == "Inbound") ? "in" : ((dir == "Outbound") ? "out" : "")
+            if (mvv == "in") gppin = 1   # a partner DELIVERED a file (the INBOUND-LEG TIE-BREAK evidence)
+        }
+        else if (proto == "pesit")
+            mvv = (dir == "Inbound") ? "out" : ((dir == "Outbound") ? "in" : "")
+        if (mvv != "") { if (gmv == "") gmv = mvv; else if (gmv != mvv) gmv = "x" }
+        # the group SESSION vote (the SESSION JOIN fallback): a leg whose
+        # connection (col 24) the server log attributes to exactly ONE flow
+        # (the Z records) names it; legs with an unmapped or missing session
+        # abstain. "-" = the mapped sessions disagree; the fallback then
+        # stays out (no site starts with "-").
+        if (z24 != "" && (z24 in zsite)) {
+            if (gss == "") gss = zsite[z24]
+            else if (gss != zsite[z24]) gss = "-"
+        }
+    }
+    # the ORIGINAL group of a re-keyed leg (the K G records): its rows as the
+    # map carries them — the raw rows plus the moved leg, in cache order —
+    # replace the buffer, and the aggregates are recomputed over them
+    function regroup(   n, j, rr, f) {
+        n = split(rkg[cur], rr, "\n")
+        nb = 0; ga = ""; gl = ""; gs = ""; gh = ""; gp = ""; gpin = 0; gpout = 0; gmv = ""; gss = ""; gppin = 0
+        for (j = 1; j <= n; j++) {
+            if (rr[j] == "") continue
+            buf[++nb] = rr[j]
+            split(rr[j], f, "\t")
+            agg(f[4], f[5], f[6], f[16], f[21], f[2], f[10], f[24])
+        }
+    }
     function flush(   i) {
+        if (nrk && (cur in rkg)) regroup()
         # reverse fallback: no row in the group carried a subscription
         if (gs == "") gs = resolve_site(gp, gpin, gpout)
         # xref single-value fallback: fill every still-missing entity from
@@ -945,6 +1045,11 @@ grp_par "$PARSED0" "$tmp.prop" "$_pj" awk -F'\t' -v OFS='\t' '
         else if ($1 == "P") { pk = toupper($2); i = ++pn[pk]; psub[pk, i] = $3; pdir[pk, i] = $4 }
         else if ($1 == "F") { kk = $2 SUBSEP $3; fdn[kk]++; fdsub[kk] = $4 }
         else if ($1 == "Z") { zsite[$2] = $3 }
+        else if ($1 == "K") {
+            nrk = 1
+            if ($2 == "D") rkdrop[$3 SUBSEP $4] = 1
+            else { r = $0; sub(/^K\tG\t/, "", r); rkg[$3] = (($3 in rkg) ? rkg[$3] "\n" : "") r }
+        }
         else if ($1 == "X") {
             kk = $2 SUBSEP $3 SUBSEP toupper($4)
             if (!((kk, toupper($5)) in xseen)) { xseen[kk, toupper($5)] = 1; xn[kk]++; xone[kk] = $5 }
@@ -952,6 +1057,9 @@ grp_par "$PARSED0" "$tmp.prop" "$_pj" awk -F'\t' -v OFS='\t' '
         next
     }
     {
+        # a RE-KEYED leg (the K D records) leaves the lone CoreId it was
+        # logged under: its row comes back inside its original group (K G)
+        if (nrk && (($1 SUBSEP $23) in rkdrop)) { xgain["rekey"]++; next }
         # capture every field BEFORE flush() — it reassigns $0 while emitting the
         # previous group, which clobbers the fields of the record being read
         line = $0; k = $1; a = $4; l = $5; s = $6; h = $16; p = $21; dir = $2; proto = $10; z24 = $24
@@ -959,35 +1067,7 @@ grp_par "$PARSED0" "$tmp.prop" "$_pj" awk -F'\t' -v OFS='\t' '
         # never cross-fills entity values between unrelated undated transfers.
         if (k != cur || k == "") { flush(); cur = k }
         buf[++nb] = line
-        if (ga == "" && a != "") ga = a
-        if (gl == "" && l != "") gl = l
-        if (gs == "" && s != "") gs = s
-        if (gh == "" && h != "") gh = h
-        if (gp == "" && p != "" && p != "UNKNOWN") gp = p
-        if (proto == "pesit") { if (dir == "Inbound") gpin = 1; else if (dir == "Outbound") gpout = 1 }
-        # the group MOVEMENT vote (the FLOWDIR fallback): each leg names the
-        # file-movement side its protocol+direction implies — a partner
-        # protocol moves the file the way the connection points (ssh Inbound =
-        # a partner delivering IN), the app-side pesit leg the opposite (pesit
-        # Inbound = the app handing us a file to move OUT). http/routing legs
-        # abstain. "x" = the legs disagree; the fallback then stays out.
-        mvv = ""
-        if (proto == "ssh" || proto == "sftp" || proto == "ftp" || proto == "ftps") {
-            mvv = (dir == "Inbound") ? "in" : ((dir == "Outbound") ? "out" : "")
-            if (mvv == "in") gppin = 1   # a partner DELIVERED a file (the INBOUND-LEG TIE-BREAK evidence)
-        }
-        else if (proto == "pesit")
-            mvv = (dir == "Inbound") ? "out" : ((dir == "Outbound") ? "in" : "")
-        if (mvv != "") { if (gmv == "") gmv = mvv; else if (gmv != mvv) gmv = "x" }
-        # the group SESSION vote (the SESSION JOIN fallback): a leg whose
-        # connection (col 24) the server log attributes to exactly ONE flow
-        # (the Z records) names it; legs with an unmapped or missing session
-        # abstain. "-" = the mapped sessions disagree; the fallback then
-        # stays out (no site starts with "-").
-        if (z24 != "" && (z24 in zsite)) {
-            if (gss == "") gss = zsite[z24]
-            else if (gss != zsite[z24]) gss = "-"
-        }
+        agg(a, l, s, h, p, dir, proto, z24)
     }
     END {
         flush()
@@ -1005,6 +1085,7 @@ grp_par "$PARSED0" "$tmp.prop" "$_pj" awk -F'\t' -v OFS='\t' '
         if (xgain["inleg"] > 0)   msg = msg " site-by-inbound-leg=" xgain["inleg"]
         if (xgain["fake"] > 0)    msg = msg " fake-site=" xgain["fake"]
         if (msg != "") print "NOTE: xref single-value fallback filled CoreId-group entities:" msg | "cat 1>&2"
+        if (xgain["rekey"] > 0) print "NOTE: moved " xgain["rekey"] " re-keyed leg(s) back into the CoreId their transfer started under." | "cat 1>&2"
     }
 ' "$smap" -
 { cat "$tmp.gain".* 2>/dev/null || true; } | awk -F'\t' '{ xgain[$1] += $2 }
@@ -1017,7 +1098,8 @@ grp_par "$PARSED0" "$tmp.prop" "$_pj" awk -F'\t' -v OFS='\t' '
         if (xgain["session"] > 0) msg = msg " site-by-session=" xgain["session"]
         if (xgain["inleg"] > 0)   msg = msg " site-by-inbound-leg=" xgain["inleg"]
         if (xgain["fake"] > 0)    msg = msg " fake-site=" xgain["fake"]
-        if (msg != "") print "NOTE: xref single-value fallback filled CoreId-group entities:" msg }' >&2
+        if (msg != "") print "NOTE: xref single-value fallback filled CoreId-group entities:" msg
+        if (xgain["rekey"] > 0) print "NOTE: moved " xgain["rekey"] " re-keyed leg(s) back into the CoreId their transfer started under." }' >&2
 rm -f "$tmp.gain".*; unset GRP_GAIN
 mv "$tmp.prop" "$PARSED"
 rm -f "$smap"
@@ -1206,6 +1288,17 @@ the echo and the group takes the account's single configured movement-in
 subscription; when even that fails, the group keeps
 the SYNTHETIC site "UCx_<account>" — counted like any logged-but-unconfigured
 subscription, except that First seen excludes it by the UCx_ prefix.
+
+RE-KEYED LEGS (2026-09-29): SecureTransport can lose a download's session
+cycleId mid-transfer ("No session cycleId for file ... SENT will not get
+reported!") and log the pickup leg under a FRESH CoreId — alone, siteless,
+profile UNKNOWN — while the File it belongs to reads Waiting. The JSON
+bookends name the same transferId under both CoreIds, the transfer STARTED
+under the original one; bin/session-sites.sh learns that map
+(cache/_rekeys.tsv: lone CoreId, transfer id, original CoreId) and the
+derive moves the leg back into the original group before the propagation,
+so it is attributed and counted as that File's pickup. Only when the
+original CoreId is in this cache and holds no row of that transfer id yet.
 
 NO-SUBSCRIPTION / HTTP SKIP: a CoreId with neither site nor account on every
 row after all the passes above — or with an http leg on ANY row (col 10)

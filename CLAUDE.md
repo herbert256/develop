@@ -719,7 +719,20 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    blacklist net and must not gain one** — a config-side leak is filtered in `bin/flow-manager.sh`.
 2. **CoreId-group propagation** — blanks fill from the first row in the group that carries a
    value; the unpropagated stream stays as `_transfers0.tsv`, the input of the derive-only
-   re-run (`AXWAY_DERIVE_ONLY=1`, session-sites.sh).
+   re-run (`AXWAY_DERIVE_ONLY=1`, session-sites.sh). **RE-KEYED LEGS go back first**
+   (2026-09-29, user report — a production partner's pickups on `UCx_<account>` while their Files
+   read Waiting): ST can lose a download's session cycleId mid-transfer (W `No session cycleId
+   for file … SENT will not get reported!`) and end the SAME transfer twice — `error` under the
+   File's CoreId (the one it STARTED under), `ok` under a FRESH one; the transfer log keeps one
+   row per transfer id, the later end wins. Ok last → a lone siteless profile-UNKNOWN leg under
+   the fresh CoreId (→ `UCx_`); error last → the leg stays in its File as Failed (bookend-ok
+   settles it). `bin/session-sites.sh` learns `cache/_rekeys.tsv` (lone CoreId, transfer id,
+   original CoreId) from the JSON bookends: lone legs only, the transfer id's bookends name
+   EXACTLY two CoreIds, the start line is under the other one. The derive's `K` records move the
+   row back (`K D` drops it, `K G` = the original group rebuilt and pre-sorted by `sort`, so awk
+   compares no strings — BSD awk collates by locale); guards: original CoreId in the raw cache,
+   holding no row of that transfer id, no chains. The sample plants it on the `STMT_EXPORT_GLOBEX_nn`
+   flows (tag `rekey`).
 3. **Config fallback** — reverse (profile's `FlowIdentifier` → subscription, disambiguated by the
    pesit-leg direction; never guessed) then forward (site → account/profile).
 4. **XREF single-value fallback** — unanimous vote of the populated fields' one-value maps; HOST
@@ -1385,7 +1398,7 @@ bin/merge_rpt.sh        component .rpt -> merged tabbed report
 bin/flow-manager.sh     config exports -> data/flow-manager/{base,xref}
 bin/expire-files.sh     Waiting -> Expired from the File Maintenance sweep lines
 bin/bookend-ok.sh       Failed -> Processed on the server log's own ok "Transfer end logged." bookend (no reason line)
-bin/session-sites.sh    UCx groups -> real subscription via the server log's session route lines
+bin/session-sites.sh    UCx groups -> real subscription via the server log's session route lines; re-keyed lone legs -> their original CoreId (_rekeys.tsv)
 
 # BUILD-ONLY — nothing but bin/build.sh invokes these:
 bin/build/result.sh              fill the base result columns
