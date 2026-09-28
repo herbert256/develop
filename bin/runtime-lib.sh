@@ -46,13 +46,16 @@ runtime_refresh() {
     [ ! -f "$rt/input/.sample-estate" ] \
         || { echo "$me: $rt carries input/.sample-estate (a develop checkout?) — refusing." >&2; exit 2; }
     # never yank scripts out from under a RUNNING build there
-    if [ -d "$rt/build/.buildlock" ]; then
-        lock_pid=$(cat "$rt/build/.buildlock/pid" 2>/dev/null || true)
+    # build/.buildlock since 2026-09-28; data/.buildlock is where a build
+    # started by the older code holds it
+    for _lk in "$rt/build/.buildlock" "$rt/data/.buildlock"; do
+        [ -d "$_lk" ] || continue
+        lock_pid=$(cat "$_lk/pid" 2>/dev/null || true)
         if [ -n "$lock_pid" ] && kill -0 "$lock_pid" 2>/dev/null; then
             echo "$me: a build (PID $lock_pid) is running in $rt — try again when it is done." >&2
             exit 1
         fi
-    fi
+    done
 
     # develop's scripts must PARSE before they go anywhere (2026-09-27): a
     # broken script caught only by the checkout's own syntax gate would stop

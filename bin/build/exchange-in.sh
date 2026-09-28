@@ -91,7 +91,7 @@ for f in "${updates[@]}"; do
     # suffix; the intake deletes them all, git must drop them all
     parts=("$rel")
     case "$f" in
-        *.7z.001) parts=(); for pf in "${f%.001}".[0-9][0-9][0-9]; do [ -f "$pf" ] && parts+=("${pf#$EX/}"); done ;;
+        *.[7][zZ].001) parts=(); for pf in "${f%.001}".[0-9][0-9][0-9]; do [ -f "$pf" ] && parts+=("${pf#$EX/}"); done ;;
     esac
     echo "inbox: ingesting $rel ..." >&2
     # the shared intake: unpack, route, copy, delete the archive on success;
@@ -105,7 +105,12 @@ for f in "${updates[@]}"; do
 done
 
 if [ ${#consumed[@]} -gt 0 ]; then
-    git -C "$EX" add -u -- "${consumed[@]}"
+    # stage the deletions: `rm --cached --ignore-unmatch`, NOT `add -u` — an
+    # archive copied into the inbox without a commit is untracked, and
+    # `git add -u -- <untracked path>` exits 128, which (set -e) stopped the
+    # build right after the wipe (2026-09-28 fix)
+    git -C "$EX" rm -q --cached --ignore-unmatch -- "${consumed[@]}" >/dev/null 2>&1 \
+        || echo "inbox: WARNING - could not stage the removal of ${consumed[*]} in the inbox repo." >&2
     if git -C "$EX" commit --quiet -m "consumed by the $ENV_LABEL runtime build $(date '+%Y-%m-%d %H:%M'): ${consumed[*]}"; then
         if git -C "$EX" push --quiet 2>/dev/null; then
             echo "inbox: $narch archive(s) consumed and removed from the inbox (pushed): ${consumed[*]}" >&2
@@ -113,7 +118,7 @@ if [ ${#consumed[@]} -gt 0 ]; then
             echo "inbox: WARNING - push failed (offline?) — the removal of ${consumed[*]} is committed locally and goes out with the next build." >&2
         fi
     else
-        echo "inbox: WARNING - nothing to commit after consuming ${consumed[*]} (already removed?)." >&2
+        echo "inbox: nothing to commit after consuming ${consumed[*]} (never committed to the inbox repo, or already removed)." >&2
     fi
 fi
 [ ${#failed[@]} -eq 0 ] || echo "inbox: ${#failed[@]} archive(s) left in place: ${failed[*]}" >&2

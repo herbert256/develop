@@ -110,6 +110,9 @@ BUILD_LOCK="$BUILD_DIR/.buildlock"
 mkdir -p "$BUILD_DIR"
 if ! mkdir "$BUILD_LOCK" 2>/dev/null; then
     lock_pid=$(cat "$BUILD_LOCK/pid" 2>/dev/null || true)
+    # a lock with no PID yet is being taken THIS instant (mkdir, then the pid
+    # file): give its owner a moment instead of reclaiming a live lock
+    if [ -z "$lock_pid" ]; then sleep 2; lock_pid=$(cat "$BUILD_LOCK/pid" 2>/dev/null || true); fi
     if [ -n "$lock_pid" ] && kill -0 "$lock_pid" 2>/dev/null; then
         printf 'bin/build.sh: another build (PID %s) is already running — refusing to overlap.\n' "$lock_pid" >&2
         exit 1
@@ -275,7 +278,7 @@ log_inventory() {
                     t = iso(substr($0, RSTART, RLENGTH))
                     if (first == "" || t < first) first = t
                     if (t > last) last = t }
-                END { printf "%s\t%s\t%s\t%d\n", N, first, last, (NR > 0 ? NR - 1 : 0) }' "$f" > "$cache.tmp" && mv "$cache.tmp" "$cache"
+                END { printf "%s\t%s\t%s\t%d\n", N, (first == "" ? "-" : first), (last == "" ? "-" : last), (NR > 0 ? NR - 1 : 0) }' "$f" > "$cache.tmp" && mv "$cache.tmp" "$cache"   # "-" for no stamp: an EMPTY field collapsed in the TAB read below (2026-09-28 fix)
         fi
         cat "$cache"
     done | LC_ALL=C sort -t"$(printf '\t')" -k2,2 -k1,1
@@ -481,23 +484,36 @@ HTML
             else
                 printf '<table>\n<tr><th>Outcome</th><th>Archive</th><th>Detail</th></tr>\n'
                 local _io _ia _id _cls
-                while IFS=$'\t' read -r _io _ia _id; do
+                # \037, not TAB: an EMPTY archive column (the none/skipped notes) collapsed
+                # and put the detail text in the Archive cell (2026-09-28 fix)
+                while IFS=$'\037' read -r _io _ia _id; do
                     [ -n "$_io" ] || continue
                     case $_io in consumed) _cls=ok ;; failed) _cls=failed ;; *) _cls="" ;; esac
                     printf '<tr><td class="%s">%s</td><td><code>%s</code></td><td>%s</td></tr>\n' \
                         "$_cls" "$(printf '%s' "$_io" | esc)" "$(printf '%s' "$_ia" | esc)" "$(printf '%s' "$_id" | esc)"
-                done < build/inbox.tsv
+                done < <(tr '\t' '\037' < build/inbox.tsv)
                 printf '</table>\n'
             fi
         fi
         [ -n "$note" ] && printf '<p>%s</p>\n' "$note"
         printf '<table>\n<tr><th>#</th><th>Step</th><th>Command</th><th>Started</th><th>Duration</th><th>Status</th></tr>\n'
-        local rec label cmd start dur status logf i=0
-        for rec in ${STEPS[@]+"${STEPS[@]}"}; do
+        # THE STEP'S OWN NUMBER, in step order (2026-09-28 fix): a background
+        # step is RECORDED at its wait, so the record order is not the step
+        # order and the running index disagreed with the console's "=== N."
+        # and build/step-NN.log — the number is read back from that log name
+        local rec label cmd start dur status logf i=0 sn
+        local -a ORDERED=()
+        while IFS= read -r rec; do ORDERED+=("$rec"); done < <(
+            for rec in ${STEPS[@]+"${STEPS[@]}"}; do
+                logf=${rec##*$'\037'}; sn=${logf##*step-}; sn=${sn%.log}
+                printf '%d\037%s\n' "$((10#${sn:-0}))" "$rec"
+            done | LC_ALL=C sort -t$'\037' -k1,1n | cut -d$'\037' -f2-)
+        for rec in ${ORDERED[@]+"${ORDERED[@]}"}; do
             i=$((i+1))
             IFS=$'\037' read -r label cmd start dur status logf <<<"$rec"
+            sn=${logf##*step-}; sn=$((10#${sn%.log}))
             printf '<tr><td class="r">%d</td><td>%s</td><td class="cmd">%s</td><td class="r">%s</td><td class="r">%s</td>' \
-                "$i" "$(printf '%s' "$label" | esc)" "$(printf '%s' "$cmd" | esc)" "$start" "$(hms "$dur")"
+                "$sn" "$(printf '%s' "$label" | esc)" "$(printf '%s' "$cmd" | esc)" "$start" "$(hms "$dur")"
             if [ "$status" -eq 0 ]; then
                 printf '<td class="ok">OK</td></tr>\n'
             else
@@ -510,14 +526,13 @@ HTML
         if [ "$i" -gt 0 ]; then
             printf '<h2>Step output</h2>\n'
             local open word
-            i=0
-            for rec in ${STEPS[@]+"${STEPS[@]}"}; do
-                i=$((i+1))
+            for rec in ${ORDERED[@]+"${ORDERED[@]}"}; do
                 IFS=$'\037' read -r label cmd start dur status logf <<<"$rec"
+                sn=${logf##*step-}; sn=$((10#${sn%.log}))
                 open=''; word='OK'
                 if [ "$status" -ne 0 ]; then open=' open'; word="FAILED (exit $status)"; fi
                 printf '<details%s><summary>%d. %s &mdash; %s &mdash; %s</summary><pre>' \
-                    "$open" "$i" "$(printf '%s' "$label" | esc)" "$(hms "$dur")" "$word"
+                    "$open" "$sn" "$(printf '%s' "$label" | esc)" "$(hms "$dur")" "$word"
                 if [ -s "$logf" ]; then esc < "$logf"; else printf '(no output)'; fi
                 printf '</pre></details>\n'
             done
@@ -533,11 +548,11 @@ HTML
             if [ -z "$_inv" ]; then
                 printf '<tr><td colspan="4">(none)</td></tr>\n'
             else
-                while IFS=$'\t' read -r _lname _lfirst _llast _llines; do
+                while IFS=$'\037' read -r _lname _lfirst _llast _llines; do   # \037: an empty cached field must not shift the rest
                     [ -n "$_lname" ] || continue
                     printf '<tr><td><code>%s</code></td><td>%s</td><td>%s</td><td class="r">%s</td></tr>\n' \
                         "$(printf '%s' "$_lname" | esc)" "$(printf '%s' "$_lfirst" | esc)" "$(printf '%s' "$_llast" | esc)" "$(hnum "${_llines:-0}")"
-                done <<< "$_inv"
+                done <<< "$(printf '%s' "$_inv" | tr '\t' '\037')"
             fi
             printf '</table></div>\n'
         done
@@ -579,6 +594,15 @@ finalize_report() {
     rm -rf "$BUILD_LOCK"
 }
 trap finalize_report EXIT
+# A SIGNAL ENDS THE BUILD AS A FAILURE (2026-09-28 fix): after an untrapped
+# TERM/HUP bash 3.2 runs the EXIT trap with $? = 0, so a killed build was
+# reported "Build succeeded" and released its lock while its step still ran.
+# bash defers a trapped signal until the running foreground step returns, so
+# the build stops right after it — lock held until then — with the FAILED
+# report (128 + the signal number).
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
 
 # --- stages 1-3, ONE LINEAR CHAIN (2026-09-11; until then two env chains ran
 #     side by side). Every intra-chain dependency — transfer reports before
@@ -746,6 +770,14 @@ run_step "result: subscription outcomes -> base caches"                   bin/bu
 if [ -f data/server/cache/.rescan-mentions ]; then
     run_step "parse: rescan server mentions (appended names)"             env AXWAY_MENTIONS_ONLY=1 bin/server/parse.sh
 fi
+# ... and when that rescan RAN (parse.sh leaves .rescanned), the colours are
+# computed again (2026-09-28 fix): result.sh coloured the appended names
+# before their Error/Warn rings existed, so a discovered flow with a server-log
+# error after its last transfer stayed green. The second run discovers
+# nothing new (the names are in the rosters now) and drops no marker.
+if [ -f data/server/cache/.rescanned ]; then
+    run_step "result: re-colour after the mention rescan"                 bin/build/result.sh
+fi
 # WENT-KAPUT EARLY (2026-08): its inputs are all parse-phase artifacts
 # (_files.tsv, the mention caches, the xref pairs, the base colours), and
 # its _kaput-evidence.tsv sidecar is the one stamp source failed.sh used
@@ -768,7 +800,7 @@ run_step "report: went-kaput (early — the failed/details evidence)"       bin/
 # were it ever still running, ensure_logons would compute it again, slower but
 # identical. bg2 is free here: the mention caches were waited for before
 # result.sh, and dashboards + day start in it only after this wait.)
-bg2_step_start "report: detail pages .rpt files"                          bin/transfer/reports/details.sh
+bg2_step_start "report: detail pages .rpt files"                          env AXWAY_WAIT_FAILED=1 bin/transfer/reports/details.sh
 run_step "report: transfer .rpt files (phase 1)"                          bin/transfer/reports.sh phase1
 bg_step_wait   # the logon summary: logon.sh (server reports) + fe-overview.sh (analyses) read it
 run_step "report: server .rpt files"                                      bin/server/reports.sh

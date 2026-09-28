@@ -263,13 +263,16 @@ daily_loglines_tsv() {   # $1 = the data root (data)
             > "$swf"
     fi
     # the In/Out split of the Files group: per DAY, how many Files MOVED in
-    # and how many out (_files.tsv col 17, the movement direction; every File
-    # carries one, so In + Out = Count)
+    # and how many out (_files.tsv col 17, the movement direction). A File of
+    # an UNCONFIGURED subscription (the synthetic UCx_ ones) has no movement:
+    # it counts by its connection side (col 16), so In + Out = Ok + Error on
+    # every day (2026-09-28 fix: those Files were in neither column)
     local iof=""
     if [ -f "$fc_" ]; then
         iof=$(mktemp "${TMPDIR:-/tmp}/axinout.XXXXXX")
         awk -F'\t' '$4 ~ /^[0-9][0-9][0-9][0-9]-/ {
-                if ($17 == "in") fi_[$4]++; else if ($17 == "out") fo_[$4]++
+                mv = ($17 != "") ? $17 : $16
+                if (mv == "in") fi_[$4]++; else if (mv == "out") fo_[$4]++
                 d[$4] = 1 }
             END { for (k in d) printf "%s\t%d\t%d\n", k, fi_[k] + 0, fo_[k] + 0 }' "$fc_" > "$iof"
         files+=("$iof")
@@ -799,9 +802,14 @@ write_log_facts() {
     [ -f "$srpt" ] && files+=("$srpt")
     [ -f "$trpt" ] && files+=("$trpt")
     [ ${#files[@]} -gt 0 ] || return 0
-    local sfiles tfiles
-    sfiles=$(find input/server -maxdepth 1 -name '*.csv' 2>/dev/null | wc -l | tr -d ' ')
-    tfiles=$(find input/transfer -maxdepth 1 -name '*.csv' 2>/dev/null | wc -l | tr -d ' ')
+    # the SAME glob the two parses read (a nullglob array: no pipeline to fail
+    # under pipefail when a directory is missing — the config-only estate —
+    # and no dotfiles), 2026-09-28 fix
+    local sfiles tfiles; local -a _lg
+    shopt -s nullglob
+    _lg=(input/server/*.csv);   sfiles=${#_lg[@]}
+    _lg=(input/transfer/*.csv); tfiles=${#_lg[@]}
+    shopt -u nullglob
     # One line per log: "tag<TAB>records<TAB>first<TAB>last<TAB>days<TAB>
     # holecount<TAB>holelist" — the hole walk is a Julian-day loop over the
     # span (the site's awk date arithmetic; never `date`).
@@ -1267,8 +1275,11 @@ function scan(f,   l, n, a2, j) {
 }
 function row(href, area, title, intro, kw, kvis,   text, disp, tl, il, kl, kd) {
     if (title == "") return
-    text = intro; gsub(/<[^>]*>/, "", text)                       # sed s/<[^>]*>//g
-    disp = strongify(text)                                        # **bold** -> <strong>
+    # ESCAPED, not tag-stripped (2026-09-28 fix): no source text carries HTML,
+    # but several name placeholders — input/<env>/…, <account>, <file> — and
+    # the strip deleted them from the description and the search
+    text = intro
+    disp = strongify(esc(text))                                   # **bold** -> <strong>
     tl = esc(u_lower(title))
     il = text; gsub(/\*\*/, "", il); gsub(/&[a-zA-Z]*;/, " ", il); il = esc(u_lower(il))
     kl = (kw == "") ? "" : esc(u_lower(kw))
@@ -1796,10 +1807,10 @@ write_whats_new() {
             esc "$t"; et=$ESC; esc "$a"; ea=$ESC; esc "$href"; eh=$ESC
             if [ "$kind" = N ]; then
                 esc "$desc"; ed=$ESC
-                rows_new+="$date\t$seq\t$eh\t<tr><td>$date</td><td><a href=\"../$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>\n"
+                rows_new+="$date"$'\t'"$seq"$'\t'"$eh"$'\t'"<tr><td>$date</td><td><a href=\"../$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>"$'\n'
             else
                 esc "$subj"; ed=$ESC
-                rows_chg+="$date\t$seq\t$eh\t<tr><td>$date</td><td><a href=\"../$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>\n"
+                rows_chg+="$date"$'\t'"$seq"$'\t'"$eh"$'\t'"<tr><td>$date</td><td><a href=\"../$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>"$'\n'
             fi
         done <<< "$meta"
     done <<< "$hist"
@@ -1808,12 +1819,12 @@ write_whats_new() {
     # lists — "new" and "changed on the day it was added" are the same news.
     local ntop="" ctop="" keyf
     if [ -n "$rows_new" ]; then
-        ntop=$(printf "%b" "$rows_new" | LC_ALL=C sort -t$'\t' -k1,1r -k2,2n | awk -F'\t' '!seen[$3]++ && n++ < 25')
+        ntop=$(printf '%s' "$rows_new" | LC_ALL=C sort -t$'\t' -k1,1r -k2,2n | awk -F'\t' '!seen[$3]++ && n++ < 25')
     fi
     if [ -n "$rows_chg" ]; then
         keyf=$(mktemp "${TMPDIR:-/tmp}/wn.XXXXXX")
         printf '%s\n' "$ntop" | cut -f3 > "$keyf"
-        ctop=$(printf "%b" "$rows_chg" | LC_ALL=C sort -t$'\t' -k1,1r -k2,2n | awk -F'\t' -v kf="$keyf" '
+        ctop=$(printf '%s' "$rows_chg" | LC_ALL=C sort -t$'\t' -k1,1r -k2,2n | awk -F'\t' -v kf="$keyf" '
             BEGIN { while ((getline l < kf) > 0) if (l != "") nw[l] = 1 }
             ($3 in nw) { next }
             seen[$3]++ { next }
