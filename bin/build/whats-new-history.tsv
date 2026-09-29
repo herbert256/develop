@@ -173,6 +173,7 @@ N	2026-08-30	0	bin/server/reports/no-remote-files.sh
 N	2026-08-30	0	bin/server/reports/failure-flows.sh	
 N	2026-08-30	0	bin/analyses/reports/entity-coverage.sh	
 N	2026-08-30	0	bin/analyses/reports/app-partners.sh	
+N	2026-09-29	0	bin/transfer/reports/merge-file-in-file-out.sh	
 N	2026-08-30	0	bin/transfer/reports/top-transfers.sh	
 N	2026-08-30	0	bin/analyses/reports/triage.sh	
 N	2026-08-30	0	bin/server/reports/pickups.sh	
@@ -182,7 +183,9 @@ N	2026-08-30	0	bin/transfer/reports/security-params.sh
 N	2026-08-30	0	bin/transfer/reports/merge-volume.sh	
 N	2026-08-30	0	bin/analyses/reports/uc4-status.sh	
 N	2026-08-30	0	bin/analyses/reports/twins.sh	
-N	2026-08-30	0	bin/server/reports/topview.sh	
+N	2026-09-29	0	bin/transfer/reports/merge-punctuality.sh	
+N	2026-09-29	0	bin/transfer/reports/merge-episodes.sh	
+N	2026-08-30	0	bin/transfer/reports/topview.sh	
 N	2026-08-30	0	bin/transfer/reports/only-red.sh	
 N	2026-08-30	0	bin/server/reports/ssh-crypto.sh	
 N	2026-08-30	0	bin/analyses/reports/seen-in-server-log.sh	
@@ -240,6 +243,7 @@ N	2026-09-12	0	bin/server/reports/could-not-send.sh
 N	2026-09-28	0	bin/server/reports/routing-errors.sh	
 N	2026-08-30	0	bin/transfer/reports/size-profile.sh	
 N	2026-08-30	0	bin/transfer/reports/activity.sh	
+N	2026-09-29	0	bin/transfer/reports/alltime-counts.sh	
 N	2026-08-30	0	bin/server/reports/error-reasons.sh	
 N	2026-08-30	0	bin/transfer/reports/file-journey.sh	
 N	2026-08-30	0	bin/transfer/reports/anomalies.sh	
@@ -257,6 +261,7 @@ N	2026-08-30	0	bin/server/reports/remote-poll.sh
 N	2026-09-05	0	bin/transfer/reports/merge-duration-dwell.sh	
 N	2026-08-30	0	bin/transfer/reports/retry.sh	
 N	2026-08-30	0	bin/analyses/reports/entity-search.sh	
+N	2026-09-29	0	bin/transfer/reports/trends.sh	
 N	2026-08-30	0	bin/server/reports/deploy-errors.sh	
 N	2026-08-30	0	bin/transfer/reports/duration-trend.sh	
 N	2026-08-30	0	bin/analyses/reports/skipped.sh	
