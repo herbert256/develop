@@ -1457,9 +1457,15 @@ COLLAPSE_AWK='
         # server Error against this, not the start: a File that FINISHED OK
         # after the error is a transfer that ended OK after it.
         endst = (maxend > 0) ? stamp_ms(maxend) : ""
-        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
+        # the File COLOUR (2026-09-29, user request — the row tint of every
+        # Files table; the config join lands it in col 25): red = Failed (and
+        # Expired, set later by expire-files), orange = Waiting, or Processed
+        # after a RETRY (a failed leg) or a RESUBMIT (a leg with the
+        # Resubmitted flag), green = Processed clean
+        clr = (oc == "Failed") ? "red" : ((oc == "Waiting" || anyfail || anyrsb) ? "orange" : "green")
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
             prev, oc, f_acct, f_date, f_time, \
-            f_sortkey, f_jdn, maxsize, durtot, rows, f_file, last_site, pf9, f_login, f_host, wait, endst
+            f_sortkey, f_jdn, maxsize, durtot, rows, f_file, last_site, pf9, f_login, f_host, wait, endst, clr
     }
     FILENAME ~ /_subscriptions-flowdir\.tsv$/ { if ($2 == "in" || $2 == "out" || $2 == "relay") fd[toupper($1)] = $2; next }
     {
@@ -1469,8 +1475,11 @@ COLLAPSE_AWK='
             maxsize=0; durtot=0; rows=0; gprof=""; sprof=""; last_site=""; f_login=""; f_host=""
             l_jdn=""; l_time=""; l_dur=0; maxend=0
             arr_jdn=""; arr_time=""; arr_dur=0; pick_jdn=""; pick_time=""; pick_sum=0
+            anyfail=0; anyrsb=0
         }
         rows++
+        if ($3 != "Processed") anyfail = 1         # a failed leg (the Recovered rule) -> the colour
+        if ($22 == "true") anyrsb = 1              # an operator resubmit (col 22) -> the colour
         # the latest leg END over the dated rows (col 24, see flush)
         if ($14 != "") { e9 = $14 * 86400000 + hms_ms($12) + ($15 + 0 > 0 ? $15 + 0 : 0); if (e9 > maxend) maxend = e9 }
         # Date/time from the first row that HAS a valid date. Rows are sorted by
@@ -1525,7 +1534,7 @@ COLLAPSE_AWK='
 # endpoint — else the account's partner org (kept only when
 # unambiguous: an account spanning several endpoint orgs stays blank when
 # the host decides nothing). Missing caches leave their column(s) empty, so
-# the cache always carries 24 columns. The collapse above emits the UC2
+# the cache always carries 25 columns (col 25 = the colour, 2026-09-29). The collapse above emits the UC2
 # pickup wait as its 16th field; both branches here move it BEHIND the five
 # config columns so it lands as col 21 and cols 16-20 keep their positions.
 # Col 22 ("expired") is emitted EMPTY here — bin/expire-files.sh (the build
@@ -1540,7 +1549,7 @@ ttmp="$FILES.tmp.$$"
 # (a FILTER — stdin to stdout, one stage of the per-slice pipeline below)
 cfg_join() {
 if [ ${#pda_caches[@]} -eq 0 ]; then
-    awk -F'\t' 'BEGIN{OFS="\t"} { w=$16; e=$17; NF=15; print $0, "", "", "", "", "", w, "", "", e }'   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp
+    awk -F'\t' 'BEGIN{OFS="\t"} { w=$16; e=$17; c=$18; NF=15; print $0, "", "", "", "", "", w, "", "", e, c }'   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp, 25 = the colour
 else
     awk -F'\t' 'BEGIN{OFS="\t"; AMB=sprintf("%c",1)}
         FILENAME ~ /_accounts-logins\.tsv$/        { al[toupper($1)]=1; next }
@@ -1586,10 +1595,10 @@ else
             if(s!="" && (s in sp) && sp[s]!=AMB) p=sp[s]
             else if(h!="" && (h in hp) && hp[h]!=AMB) p=hp[h]
             else if((a in ap) && ap[a]!=AMB) p=ap[a]
-            w=$16; e=$17; NF=15
+            w=$16; e=$17; c=$18; NF=15
             a18=""; if(s!="" && (s in sa) && sa[s]!=AMB) a18=sa[s]; if(a18=="" && (a in aa) && aa[a]!=AMB) a18=aa[a]
             d19=""; if(s!="" && (s in sdo) && sdo[s]!=AMB) d19=sdo[s]; if(d19=="" && (a in ad) && ad[a]!=AMB) d19=ad[a]
-            print $0, d, m, a18, d19, p, w, "", "", e   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp
+            print $0, d, m, a18, d19, p, w, "", "", e, c   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp, 25 = the colour
         }
     ' "${pda_caches[@]}" -
 fi
@@ -1732,6 +1741,15 @@ col  name       rule
                 File's END — a File that finished OK after the error is a
                 transfer that ended OK after it, so the error is not "after
                 the last transfer". Cols 4/5 stay the START.
+ 25  colour     the File's COLOUR, the row tint of every Files table
+                (2026-09-29, user request): red = Failed or Expired; orange =
+                Waiting (UC2 staged, not collected yet) or Processed after a
+                RETRY (a failed leg) or a RESUBMIT (a leg with the Resubmitted
+                flag, col 22 of _transfers.tsv); green = Processed clean.
+                Written here; bin/expire-files.sh turns an Expired File red,
+                bin/bookend-ok.sh a settled one orange (it carries a failed
+                leg) and a reverted one red. The COUNTS keep the outcome policy
+                (Waiting = OK, Expired = Error) — only the tint differs.
 
 This cache never contains fabricated rows: nothing downstream appends to it.
 TLEGEND_EOF

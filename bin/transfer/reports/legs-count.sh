@@ -50,7 +50,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         addtop("L" SUBSEP i SUBSEP (pf ? "F" : "P"), $6, $4 " " $5, $1)
         # bounded top-25 by legs (ties: newest start first via the sortkey)
         tk = sprintf("%012d", legs) $6
-        pay = legs "\t" $4 " " $5 "\t" $12 "\t" $3 "\t" $11 "\t" $1
+        pay = legs "\t" $4 " " $5 "\t" $12 "\t" $3 "\t" $11 "\t" $1 (($25 ~ /^(green|orange|red)$/) ? "\t@data:res=" $25 : "")   # the File colour, col 25
         if (tn < 25) { tn++; TK[tn] = tk; TV[tn] = pay }
         else {
             mi = 1; for (z = 2; z <= tn; z++) if (TK[z] < TK[mi]) mi = z
@@ -113,7 +113,7 @@ top_n=0
     printf 'NOTE\tFiles = the delivered (OK) Files of that bucket. The **1 leg** bucket is the One-legged (Pirates) population.\n'
     printf 'LINK\tpirates-details.html\tOne-legged transfers (the 1-leg Files, per subscription)\n'
 
-    printf 'TABLE\tFiles with the most legs\n'
+    printf 'TABLE\tFiles with the most legs\trestint\n'   # rows tint by the File colour (2026-09-29)
     printf 'HEAD\tLegs\tDate & time\tSubscription\tAccount\tFile\tCoreId\n'
     printf 'KIND\tnum\ttext\tsite\tacct\tfile\tmono\n'
     while IFS= read -r line; do

@@ -630,10 +630,12 @@ function uncollected_files_table(   u, n, i, L, nrows) {
     srt1_sort(L, n)
     nrows = (n < 100) ? n : 100
     if (nrows == 0) return
-    emitl("TABLE\tFiles not picked up\twide\tnofilter\tpager=10")
+    # every row RED (2026-09-29, user request): an Expired File's colour,
+    # _files.tsv col 25
+    emitl("TABLE\tFiles not picked up\twide\tnofilter\tpager=10\trestint")
     emitl("HEAD\tExpired\tFile")
     emitl("KIND\ttext\tmono")
-    for (i = 1; i <= nrows; i++) emitl("ROW\t" L[i])
+    for (i = 1; i <= nrows; i++) emitl("ROW\t" L[i] "\t@data:res=red")
     emitl(sprintf("TOTAL\tTotal (%d file(s))\t", nrows))
 }
 function page_srv_log(   f, n, i, V, fw, ip, nc, C9) {

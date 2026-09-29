@@ -16,9 +16,10 @@
                               the row format); only the shards the shown
                               page's rows live in, PAR at a time, and a
                               loaded day stays cached for the next page.
-   The rows follow the All files search: State OK / Error / Waiting / Expired
-   tinted by the outcome policy (Waiting green, Expired red), and a File with
-   its own page (an UPPERCASE flag) links it from every cell. */
+   The rows follow the All files search: State OK / Error / Waiting / Expired,
+   tinted by the File colour (_files.tsv col 25: green OK, orange OK after a
+   retry or resubmit and Waiting, red Error and Expired), and a File with its
+   own page (an UPPERCASE flag) links it from every cell. */
 (function () {
   "use strict";
 
@@ -32,8 +33,8 @@
     if (b < 1073741824) return (b / 1048576).toFixed(2) + " MB";
     return (b / 1073741824).toFixed(2) + " GB";
   }
-  var STATE = { "": "OK", d: "OK", e: "Error", w: "Waiting", x: "Expired" };
-  var TINT = { OK: "green", Error: "red", Expired: "red", Waiting: "green" };
+  var STATE = { "": "OK", d: "OK", o: "OK", e: "Error", w: "Waiting", x: "Expired" };
+  var TINT = { "": "green", d: "green", o: "orange", e: "red", w: "orange", x: "red" };
 
   function init() {
     var table = document.querySelector("table[data-subfiles]");
@@ -96,10 +97,10 @@
     }
     function row(day, r) {
       var tr = document.createElement("tr");
-      var st = STATE[r.fl.toLowerCase()] || "OK";
+      var fk = r.fl.toLowerCase(), st = STATE[fk] || "OK";
       var when = day + " " + r.tm.substr(0, 2) + ":" + r.tm.substr(2, 2) + ":" + r.tm.substr(4, 2);
       var h = (r.fl !== "" && r.fl !== r.fl.toLowerCase()) ? root + "files/" + r.cid + ".html" : "";
-      tr.setAttribute("data-res", TINT[st]);
+      tr.setAttribute("data-res", TINT[fk] || "green");
       if (h) tr.setAttribute("data-href", h);
       cell(tr, "", when, h); cell(tr, "", st, h); cell(tr, "num", humanBytes(r.by), h);
       cell(tr, "file", r.nm, h, true); cell(tr, "mono", r.cid, h, true);

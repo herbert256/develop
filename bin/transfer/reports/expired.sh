@@ -142,14 +142,16 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk
         printf "TITLE\tExpired files: %s\n", $1 > out
         printf "DESC\tThe staged Files of subscription %s the retention sweep deleted before any pickup, newest first.\n", $1 > out
         printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] that the nightly File Maintenance retention sweep deleted before the partner collected them — never delivered. Last expired first; the CoreId of the first %d opens the File page.\n", $1, TOPN > out
-        printf "TABLE\tExpired files\twide\tnofilter\tsort=1:-1\tpager=25\n" > out
+        # every row RED (2026-09-29, user request): an Expired File\047s colour,
+        # _files.tsv col 25
+        printf "TABLE\tExpired files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
         printf "HEAD\tStart\tExpired\tFile name\tCoreId\n" > out
         printf "KIND\ttext\ttext\tmono\tmono\n" > out
     }
     out != "" {
         nrow++
         if (nrow <= TOPN) { lk = "@{href=../../files/" $5 ".html}"; print $5 > side } else lk = ""
-        printf "ROW\t%s\t%s\t%s\t%s%s\n", $2, $3, $4, lk, $5 > out
+        printf "ROW\t%s\t%s\t%s\t%s%s\t@data:res=red\n", $2, $3, $4, lk, $5 > out
     }
     END { finish() }'
 rm -rf "$SUBDIR"; mv "$SUBDIR.new" "$SUBDIR"

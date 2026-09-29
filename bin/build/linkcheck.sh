@@ -209,7 +209,7 @@ awk -v DOCS="$DOCS" '
             for (f in FILE) if (f ~ /^search\/all\/d-[0-9-]+\.js$/) {
                 while ((getline l < (DOCS "/" f)) > 0) {
                     n2 = split(l, a2, "\t")
-                    if (n2 >= 6 && a2[6] ~ /^[DEWX]/ && a2[5] ~ /^[0-9a-f]+$/ && length(a2[5]) == 32)
+                    if (n2 >= 6 && a2[6] ~ /^[DOEWX]/ && a2[5] ~ /^[0-9a-f]+$/ && length(a2[5]) == 32)
                         edge(src, "../files/" substr(a2[5], 1, 8) "-" substr(a2[5], 9, 4) "-" substr(a2[5], 13, 4) "-" substr(a2[5], 17, 4) "-" substr(a2[5], 21, 12) ".html")
                 }
                 close(DOCS "/" f)

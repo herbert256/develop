@@ -48,7 +48,8 @@ awk -F'\t' '
         size = $8
         d = $9 + 0                                   # transfer duration in ms (wall-clock span)
         tp = thr(size, d)                            # throughput (bytes/s), "-" if no duration
-        printf "S|%d|%s|%s|%s|%s|%s|%s|%s\n", size, human(size), ts, account, dsite, outcome, file, tp
+        clr = ($25 ~ /^(green|orange|red)$/) ? $25 : ""     # the File colour (col 25, 2026-09-29)
+        printf "S|%d|%s|%s|%s|%s|%s|%s|%s|%s\n", size, human(size), ts, account, dsite, outcome, file, tp, clr
     }
 ' "$FILES" > "$tmp"
 
@@ -71,13 +72,13 @@ hum_bytes() { awk -v b="$1" 'BEGIN{ split("B KB MB GB TB PB",u," "); i=1; v=b+0;
     printf 'DESC\tThe largest Files by size, with throughput and outcome.\n'
     printf 'INTRO\tThe %s largest Files by file size. One row = one File. The SLOWEST transfers live on the **Duration** report (2026-07: the former Slowest table here duplicated it).\n' "$TOP_N"
 
-    printf 'TABLE\tTop %s largest Files\twide\n' "$TOP_N"
+    printf 'TABLE\tTop %s largest Files\twide\trestint\n' "$TOP_N"   # rows tint by the File colour (2026-09-29)
     printf 'HEAD\tSize\tThroughput\tStart Time\tAccount\tDestination Subscription\tOutcome\tFile\n'
     printf 'KIND\tnum\tnum\ttext\tacct\tsite\ttext\tfile\n'
-    while IFS='|' read -r _ bytes human ts account dsite outcome file tp; do
+    while IFS='|' read -r _ bytes human ts account dsite outcome file tp clr; do
         [ -z "$human" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-            "$human" "$tp" "$ts" "$account" "$dsite" "$outcome" "$file"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\n' \
+            "$human" "$tp" "$ts" "$account" "$dsite" "$outcome" "$file" "${clr:+$'\t'@data:res=$clr}"
         lg_n=$((lg_n + 1)); lg_bytes=$((lg_bytes + bytes))
     done <<< "$largest"
     printf 'TOTAL\tTotal (%s rows): %s\t\t\t\t\t\t\n' "$lg_n" "$(hum_bytes "$lg_bytes")"

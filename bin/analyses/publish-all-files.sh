@@ -9,7 +9,9 @@
 # THE BALANCE between the end user's wait and the size of docs/:
 #   - ONE SHARD PER DATA DAY, docs/search/all/d-<yyyy-mm-dd>.js — the day's
 #     Files newest first, ~95 B each: name ⇥ HHMMSS ⇥ local subscription
-#     index ⇥ bytes ⇥ CoreId (32 hex, no dashes) ⇥ flag. Each shard carries
+#     index ⇥ bytes ⇥ CoreId (32 hex, no dashes) ⇥ flag ("" / d OK, o OK after
+#     a retry or resubmit — orange, e Error, w Waiting, x Expired; UPPERCASE =
+#     the File has a page). Each shard carries
 #     its OWN subscription dictionary, so an old day's shard is byte-identical
 #     from build to build (git and the outbox archive store it once).
 #   - A SMALL MANIFEST, docs/search/all/index.js (window.AXWAY_AFX): per day
@@ -75,7 +77,9 @@ if [ -s "$FCACHE" ]; then
         $4 !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ { next }
         {
             tm = substr($5, 1, 8); gsub(/:/, "", tm)
-            f = ($2 == "Failed") ? "e" : ($2 == "Waiting") ? "w" : ($2 == "Expired") ? "x" : "d"
+            # "o" = an OK File the colour column (col 25) calls orange: it
+            # got through after a retry or a resubmit (2026-09-29)
+            f = ($2 == "Failed") ? "e" : ($2 == "Waiting") ? "w" : ($2 == "Expired") ? "x" : ($25 == "orange") ? "o" : "d"
             if ($1 in PAGE) f = toupper(f); else if (f == "d") f = ""
             cid = $1; gsub(/-/, "", cid)
             nm = $11; gsub(/[\t\r\n]/, " ", nm)

@@ -209,7 +209,9 @@ printf '%s\n' "$agg" | awk -F'|' '$1 == "F"' | LC_ALL=C sort -t'|' -k4,4 -k2,2n 
         printf "TITLE\tWaiting files: %s\n", $4 > out
         printf "DESC\tThe staged Files of subscription %s the partner has not collected yet, longest waiting first.\n", $4 > out
         printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] the partner has not collected yet — still collectable until the nightly File Maintenance retention sweep (~11 days) deletes them. **Waiting for** counts from the staging moment to the last record of the data (%s). Longest waiting first; the CoreId of the first %d opens the File page.\n", $4, lastdt, TOPN > out
-        printf "TABLE\tWaiting files\twide\tnofilter\tsort=1:-1\tpager=25\n" > out
+        # every row ORANGE (2026-09-29, user request): a Waiting File\047s
+        # colour, _files.tsv col 25
+        printf "TABLE\tWaiting files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
         printf "HEAD\tStart\tWaiting for\tFile name\tCoreId\n" > out
         printf "KIND\ttext\ttext\tmono\tmono\n" > out
     }
@@ -218,7 +220,7 @@ printf '%s\n' "$agg" | awk -F'|' '$1 == "F"' | LC_ALL=C sort -t'|' -k4,4 -k2,2n 
         fn = $11; for (j = 12; j <= NF; j++) fn = fn "|" $j
         nrow++
         if (nrow <= TOPN) { lk = "@{href=../../files/" $10 ".html}"; print $10 > side } else lk = ""
-        printf "ROW\t%s\t@{sortval=%d}%s\t%s\t%s%s\n", $3, $9, $8, clean(fn), lk, $10 > out
+        printf "ROW\t%s\t@{sortval=%d}%s\t%s\t%s%s\t@data:res=orange\n", $3, $9, $8, clean(fn), lk, $10 > out
     }
     END { finish() }'
 rm -rf "$SUBDIR"; mv "$SUBDIR.new" "$SUBDIR"
@@ -407,14 +409,14 @@ oldest_cell="-"
 
     # the same default sort here: Waiting for descending (sort=5:-1 on the
     # sortval) — without it the Staged date column opened the table NEWEST first
-    printf 'TABLE\tFiles waiting the longest\twide\tnofilter\tsort=5:-1\n'
+    printf 'TABLE\tFiles waiting the longest\twide\tnofilter\tsort=5:-1\trestint\n'   # the rows ORANGE: a Waiting File's colour (_files.tsv col 25, 2026-09-29)
     printf 'HEAD\tStaged\tSubscription\tAccount\tFile\tSize\tWaiting for\n'
     printf 'KIND\ttext\tsite\tacct\tfile\ttext\ttext\n'
     # F fields: 2=stagesec 3=staged_dt 4=site 5=acct 6=bytes 7=size 8=wait_for 9=wait_sec 10=coreid 11..=file
     while IFS='|' read -r _ s dt site acct bytes size wf wsec _ fname; do
         [ -z "$site" ] && continue
         n_shown=$((n_shown + 1)); sum_bytes=$((sum_bytes + bytes))
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@{sortval=%s}%s\n' "$dt" "$site" "$acct" "$fname" "$size" "$wsec" "$wf"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@{sortval=%s}%s\t@data:res=orange\n' "$dt" "$site" "$acct" "$fname" "$size" "$wsec" "$wf"
     done <<< "$(printf '%s\n' "$agg" | grep '^F|' | LC_ALL=C sort -t'|' -k2,2n -k4,4 | awk -v n="$TOP_FILES" 'NR<=n')"
     if [ "$n_shown" -eq 0 ]; then
         printf 'ROW\t@{colspan=6}No Waiting Files in this data window.\n'

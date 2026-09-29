@@ -565,6 +565,22 @@ check $([ "$nsl" = "$nsp" ] && echo 0 || echo 1) "Files table: $nsl of $nsp subs
 check $([ "$nsc" = "$nsl" ] && echo 0 || echo 1) "Files table: $nsc of $nsl day lists add up to their page's File count"
 check $([ "$nsd" = "$nsl" ] && echo 0 || echo 1) "Files table: $nsd of $nsl day lists name only days that have a shard"
 check $([ -z "$(grep -l 'data-subfiles=' docs/details/accounts/*.html docs/details/partners/*.html 2>/dev/null)" ] && echo 0 || echo 1) "a non-subscription detail page carries the subscription Files table"
+# THE FILE COLOUR (2026-09-29, user request): _files.tsv col 25 is green /
+# orange / red for every File — red = Failed or Expired, orange = Waiting or
+# an OK File with a failed or resubmitted leg, green = an OK File without —
+# and the Files tables tint their rows by it
+FC=data/transfer/cache/_files.tsv
+n=$(awk -F'\t' 'NF != 25 || $25 !~ /^(green|orange|red)$/ { n++ } END { print n + 0 }' "$FC" 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_files.tsv: $n row(s) without 25 columns or a green / orange / red colour in col 25"
+n=$(awk -F'\t' '(($2 == "Failed" || $2 == "Expired") && $25 != "red") || ($2 == "Waiting" && $25 != "orange") || ($2 == "Processed" && $25 == "red") { n++ } END { print n + 0 }' "$FC" 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_files.tsv: $n row(s) whose col-25 colour contradicts the outcome"
+n=$(awk -F'\t' 'FNR == 1 { f++ } f == 1 { if ($3 != "Processed" || $22 == "true") hit[$1] = 1; next } $2 == "Processed" { if (($1 in hit) != ($25 == "orange")) n++; if ($25 == "orange") o++ } END { print n + 0, o + 0 }' data/transfer/cache/_transfers.tsv "$FC" 2>/dev/null)
+check $([ "${n%% *}" = 0 ] && [ "${n##* }" -gt 0 ] && echo 0 || echo 1) "_files.tsv: ${n%% *} delivered File(s) orange without a failed / resubmitted leg or green with one (${n##* } orange delivered File(s) — the sample plants retries, so some are expected)"
+check $(grep -hq $'\t[oO]$' docs/search/all/d-*.js 2>/dev/null && echo 0 || echo 1) "no day shard carries the o / O flag (an OK File after a retry or resubmit)"
+n=$(cat docs/transfer/waiting/*.html 2>/dev/null | grep -c '<tr data-res="orange"' || true); m=$(cat docs/transfer/expired/*.html 2>/dev/null | grep -c '<tr data-res="red"' || true)
+check $([ "${n:-0}" -gt 0 ] && [ "${m:-0}" -gt 0 ] && echo 0 || echo 1) "the Waiting / Expired File list pages: ${n:-0} orange / ${m:-0} red row(s), expected both"
+n=$(grep -c '<tr data-res="orange"' docs/transfer/duration-longest.html 2>/dev/null || true)
+check $(grep -q 'data-restint' docs/transfer/duration-longest.html 2>/dev/null && grep -q '<tr data-res="green"' docs/transfer/duration-longest.html && echo 0 || echo 1) "transfer/duration-longest.html rows do not carry the File colour (${n:-0} orange)"
 # the top bar's Files link opens the ALL FILES search (2026-09-28, user
 # request; the Latest files search until then) — checked on the BAKED bar
 # (help pages); report.js buildTopbar draws the same link

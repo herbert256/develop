@@ -102,7 +102,8 @@ awk -F'\t' -v OFS='\t' '
         dd[k] = dd[k] "\037" $3 " " $4          # datetime list per (ACCT,file)
         next
     }
-    {   # (parse.sh cfg_join writes all 24 columns, col 22 empty — no row needs padding)
+    {   # (parse.sh cfg_join writes all 25 columns, col 22 empty — no row needs padding;
+        # col 25 = the File colour: an Expired File is red, a Waiting one orange)
         if ($2 == "Waiting" || $2 == "Expired") {
             k = toupper($3) SUBSEP $11; hit = ""
             if (k in dd) {
@@ -110,8 +111,8 @@ awk -F'\t' -v OFS='\t' '
                 for (i = 2; i <= n; i++)         # a[1] is the empty lead-in
                     if (a[i] >= staged && (hit == "" || a[i] < hit)) hit = a[i]
             }
-            if (hit != "") { if ($2 != "Expired" || $22 != hit) chg++; $2 = "Expired"; $22 = hit; ne++ }
-            else           { if ($2 != "Waiting" || $22 != "")  chg++; $2 = "Waiting"; $22 = "";  nw++ }
+            if (hit != "") { if ($2 != "Expired" || $22 != hit) chg++; $2 = "Expired"; $22 = hit; $25 = "red";    ne++ }
+            else           { if ($2 != "Waiting" || $22 != "")  chg++; $2 = "Waiting"; $22 = "";  $25 = "orange"; nw++ }
         }
         print
     }

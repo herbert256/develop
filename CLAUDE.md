@@ -1369,6 +1369,18 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   partner's login-naming line beside every partner authentication (verify.sh fails when
   `_inbound-addr.tsv` is empty); `bin/logons.sh` counts only the `login name ""` lines as our
   outbound targets.
+- **THE FILE COLOUR** (2026-09-29, user request): `_files.tsv` col 25 = green / orange / red,
+  written by the parse collapse — red = Failed, orange = Waiting or an OK (Processed) File with a
+  FAILED leg (a retry) or a RESUBMITTED leg (`_transfers.tsv` col 22), green = Processed clean —
+  and kept in step by `expire-files.sh` (Expired → red, Waiting → orange) and `bookend-ok.sh`
+  (settled → orange, reverted → red). EVERY table of single Files tints its rows by it
+  (`restint` + `@data:res`): the All files search and the subscription Files table (shard flag
+  `o` = OK-orange beside d/e/w/x), Inbound and Outbound same Protocol's Files, Waiting (orange) /
+  Expired (red) lists, Longest Files, Largest Files, Most legs, an incoming connection's Latest 10
+  Files, an account's Files not picked up (red), Last error(s) (red). NOT the Failed files /
+  Failed Subscriptions lists (their rows tint by the SUBSCRIPTION's current colour on purpose),
+  the handover / UC4-to-UC2 pairs (two Files per row), AV Scan's blocked legs, Skipped. The
+  COUNTS keep the outcome policy (Waiting = OK, Expired = Error) — only the row tint differs.
 - **Engine tables** (`rangehook`, `subfiles=`) get `data-nocolmove` — no cols picker, their rows
   arrive after report.js ordered the columns; report.js `hideEmptyTables` (detail pages) skips a
   `data-subfiles` table, which is empty until sub-files.js fills it.

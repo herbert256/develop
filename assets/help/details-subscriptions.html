@@ -35,7 +35,7 @@
 <li>Counts are Files. Error = Failed or Expired; <strong>Recovered</strong> = OK after a failed leg. A nonzero day Error opens <a href="failed-files.html">Failed files</a>.</li>
 <li>An Error line newer than the end of its last transfer raises a red <strong>SERVER LOG AFTER LAST TRANSFER</strong> banner.</li>
 <li>A <strong>pickup</strong> = a successful SSH logon by the pickup account; a gap over 30 minutes starts a new visit.</li>
-<li>The <strong>Files</strong> table is built in the browser from the <a href="all-files-search.html">All files search</a> data, loading only the days a page needs; State tints green (OK, Waiting) or red (Error, Expired); a File with its own page opens it from any cell.</li>
+<li>The <strong>Files</strong> table is built in the browser from the <a href="all-files-search.html">All files search</a> data, loading only the days a page needs; rows tint green (OK), orange (OK after a retry or resubmit, Waiting) or red (Error, Expired); a File with its own page opens it from any cell.</li>
 <li>Connection rows: green configured with traffic, red traffic on an unconfigured address, orange configured without traffic (folded).</li>
 <li>No date filter: full period. A never-seen page shows the verdict, Features and connection tables only.</li>
 </ul>

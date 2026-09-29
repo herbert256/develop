@@ -92,7 +92,7 @@ npages=$(LC_ALL=C awk -F'\t' \
         if (fd[ip] == "" || d < fd[ip]) fd[ip] = d
         if (ld[ip] == "" || d > ld[ip]) ld[ip] = d
         # bounded latest-10 by sortkey (col 6), newest first
-        line = $4 "\t" $5 "\t" $3 "\t" $12 "\t" $11 "\t" hb(sz) "\t" $2
+        line = $4 "\t" $5 "\t" $3 "\t" $12 "\t" $11 "\t" hb(sz) "\t" $2 "\t" $25   # 8 = the File colour (col 25)
         k = $6
         if (nt[ip] < 10 || k > tk[ip, 10]) {
             if (nt[ip] < 10) nt[ip]++
@@ -148,14 +148,14 @@ npages=$(LC_ALL=C awk -F'\t' \
                     printf "ROW\t%s\t%d\t%s\t%s\t%s\n", d, df[ip, d], (((ip, d) in dfd) ? dfd[ip, d] : ""), (((ip, d) in dp) ? dp[ip, d] : ""), hb(dv[ip, d] + 0) > out }
                 # the Error / OK totals keep their column tint and show no 0 (2026-09-29)
                 printf "TOTAL\tTotal (%d days)\t@{class=num}%d\t@{class=num failed}%s\t@{class=num processed}%s\t%s\n", nd[ip], nn, (ko[ip] + 0 > 0 ? ko[ip] + 0 : ""), (ok[ip] + 0 > 0 ? ok[ip] + 0 : ""), hb(vol[ip]) > out
-                printf "TABLE\tLatest %d Files\n", nt[ip] > out
+                printf "TABLE\tLatest %d Files\trestint\n", nt[ip] > out   # rows tint by the File colour (2026-09-29)
                 printf "HEAD\tDate\tTime\tAccount\tSubscription\tFile\tSize\tOutcome\n" > out
                 printf "KIND\ttext\ttext\tacct\tsite\tfile\ttext\ttext\n" > out
                 for (i = 1; i <= nt[ip]; i++) {
                     split(tl[ip, i], a, "\t")
                     oc = a[7]
                     if (oc != "Failed" && oc != "Expired") oc = "@{class=processed}OK"; else oc = "@{class=failed}Error"
-                    printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", a[1], a[2], a[3], a[4], a[5], a[6], oc > out
+                    printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\n", a[1], a[2], a[3], a[4], a[5], a[6], oc, (a[8] ~ /^(green|orange|red)$/ ? "\t@data:res=" a[8] : "") > out
                 }
                 printf "TOTAL\tTotal (%d shown)\t\t\t\t\t\t\n", nt[ip] > out
             }

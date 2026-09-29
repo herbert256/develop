@@ -20,8 +20,10 @@
 # day — whole-window figures, so nofilter) and every File, newest first, 500
 # per page: Subscription, Date/time (the File start — the date filter reads
 # it), Protocol, First inbound and Last outbound (their start times), Legs,
-# Outcome, CoreId, Filename. Rows tint by the subscription's result colour
-# (base/_subscriptions.tsv col 3). No prose on the page (help page
+# Outcome, CoreId, Filename. The per-subscription rows tint by the
+# subscription's result colour (base/_subscriptions.tsv col 3), the File rows
+# by the File's OWN colour (_files.tsv col 25, 2026-09-29: orange = OK after a
+# retry or resubmit, or Waiting). No prose on the page (help page
 # same-protocol).
 #
 # Usage:
@@ -71,11 +73,12 @@ LC_ALL=C awk -F'\t' -v UCDF="$UCDF" -v SUBRES="$SUBRES" -v LEGS="$PARSED" -v FIL
         if (u ~ /^UC[5-8]$/) next
         res = (su in SRES) ? SRES[su] : ""
         tint = (res == "green" || res == "orange" || res == "red") ? "\t@data:res=" res : ""
+        ftint = ($25 == "green" || $25 == "orange" || $25 == "red") ? "\t@data:res=" $25 : ""   # the File colour
         bad = ($2 == "Failed" || $2 == "Expired")
         # the site words (2026-09-29): Processed = OK, Failed = Error; Waiting and
         # Expired keep their names (the states the outcome policy counts as OK / Error)
         oc = ($2 == "Failed") ? "@{class=failed}Error" : ($2 == "Expired") ? "@{class=failed}Expired" : ($2 == "Processed" ? "@{class=processed}OK" : $2)
-        printf "%s\tROW\t%s\t%s %s\t%s\t%s\t%s\t%d\t%s\t@{class=mono}%s\t%s%s\n", $6, s, $4, $5, IP[c], IT[c], OT[c], NL[c], oc, c, $11, tint > FILEROWS
+        printf "%s\tROW\t%s\t%s %s\t%s\t%s\t%s\t%d\t%s\t@{class=mono}%s\t%s%s\n", $6, s, $4, $5, IP[c], IT[c], OT[c], NL[c], oc, c, $11, ftint > FILEROWS
         k = s SUBSEP IP[c]
         FN[k]++; if (bad) FE[k]++; else FO[k]++
         if (!(k in FF) || $4 < FF[k]) FF[k] = $4

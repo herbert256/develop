@@ -55,7 +55,7 @@ top_list() {
         $2 != "Processed" { next }   # delivered Files only: no Failed, no Expired, no Waiting
         { ms = $9 + 0; if (ms <= 0) next
           s = clean($12); if (s == "") s = "(no subscription)"
-          printf "%d\t%s\t%s %s\t%s\t%s\t%s\t%s\n", ms, $1, $4, $5, s, clean($24), clean($11), humandur(ms) }
+          printf "%d\t%s\t%s %s\t%s\t%s\t%s\t%s\t%s\n", ms, $1, $4, $5, s, clean($24), clean($11), humandur(ms), $25 }   # 9 = the File colour (col 25)
     ' "$FILES" | LC_ALL=C sort -t$'\t' -k1,1nr | awk -v n="$TOP_N" 'NR<=n'
 }
 # the scope total (delivered Files with a duration), for the TOTAL row
@@ -82,14 +82,14 @@ mv "$FILESIDE.tmp" "$FILESIDE"
 rows_of() {   # $1 the list
     printf '%s\n' "$1" | awk -F'\t' 'length($0) {
         h = "href=../files/" $2 ".html,"
-        printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t%s\t%s\n", h, $1, $7, h, $1, $3, h, $1, $5, h, $1, $2, $4, $6 }'
+        printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t%s\t%s%s\n", h, $1, $7, h, $1, $3, h, $1, $5, h, $1, $2, $4, $6, ($8 ~ /^(green|orange|red)$/ ? "\t@data:res=" $8 : "") }'
 }
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 {
     printf 'TITLE\tLongest Files\n'
     printf 'DESC\tThe %s longest delivered Files by wall-clock duration, each opening its File page.\n' "$TOP_N"
     printf 'INTRO\tThe **%s longest delivered Files** by **wall-clock duration** — from the first record start to the last record end, store-and-forward gaps and retry idle included. Only **OK** Files are listed (outcome Processed): a Failed, Expired or Waiting File is not a completed transfer, and a failure'\''s run time is a timeout, not a duration. Every listed File has its own **File page** (facts, records and the server log of its connections) — a Duration, Start Time, End Time or CoreId cell opens it. The columns sort by the exact duration.\n' "$TOP_N"
-    printf 'TABLE\tTop %s longest Files by duration\twide\n' "$TOP_N"
+    printf 'TABLE\tTop %s longest Files by duration\twide\trestint\n' "$TOP_N"   # rows tint by the File colour (2026-09-29): green, or orange after a retry / resubmit
     printf 'HEAD\tDuration\tStart Time\tEnd Time\tCoreId\tDestination Subscription\tFile\n'
     printf 'KIND\ttext\ttext\ttext\tmono\tsite\tfile\n'
     rows_of "$slow_ok"
