@@ -8,15 +8,16 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
-<link rel="stylesheet" href="../assets/style.css?v=2513423068">
+<link rel="stylesheet" href="../assets/style.css?v=387017918">
 <script src="../assets/topbar-data.js?v=1653900017" defer></script>
-<script src="../assets/report.js?v=2513423068" defer></script>
+<script src="../assets/report.js?v=387017918" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="index"></div>
 <h1>Reports</h1>
 <p class="subtitle">Every report under its group &mdash; the groups of the Reports menu. On a report page the first row of buttons switches between the reports of its group.</p>
-<div class="tablewrap"><table class="index" data-nosort="1">
+<div class="tablewrap"><table class="index" data-nosort="1" data-nocolmove="1">
+<tr><th>Report</th><th>Description</th></tr>
 <tr><th colspan="2">Overview</th></tr>
 <tr><td><a href="../transfer/topview.html">Transfer top view</a></td><td class="desc">The whole transfer log at a glance, per day: logical Files (per CoreId) with their Count / Ok / Error split and error rate, the physical Transfers (log rows) with the same Ok/Error split, the same Files by their final state — Processed, Failed, Waiting and Expired — and, per day, the Recovered Files (automatic or manual) and the resubmitted Files (Ok or Error).</td></tr>
 <tr><td><a href="../server/topview.html">Server top view</a></td><td class="desc">The whole server log at a glance: per day, the records, the Info/Warning/Error split and error rate, and how busy each component (TM, PESITD, SSHD) was.</td></tr>
@@ -58,7 +59,7 @@
 <tr><td><a href="../transfer/activity-per-week.html">Activity</a></td><td class="desc">Files, Error % and volume per ISO week, hour of day and weekday — one activity report, one tab per resolution (the per-day figures are the Top view).</td></tr>
 <tr><td><a href="../transfer/trends-growers.html">Trends</a></td><td class="desc">The window split in half, each subscription compared across the halves: the flows whose Files grew or shrank, and the flows whose transfers got slower or faster.</td></tr>
 <tr><td><a href="../transfer/ranking-subscriptions.html">Ranking</a></td><td class="desc">Where each entity stands against the others of its own type — its position on Files, Volume, Errors, Duration and Throughput, with the value behind every position.</td></tr>
-<tr><td><a href="../transfer/files-by-size.html">Sizes &amp; types</a></td><td class="desc">Files bucketed by transfer size (plus the empty files delivered OK), split per file extension, the business filenames delivered more than once, the 50 largest Files and the per-subscription size profile.</td></tr>
+<tr><td><a href="../transfer/files-by-size.html">Sizes &amp; types</a></td><td class="desc">Files bucketed by transfer size (plus the empty files delivered OK), split per file extension, the business filenames transferred more than once (any outcome), the 50 largest Files and the per-subscription size profile.</td></tr>
 <tr><td><a href="../transfer/route-throughput.html">Route throughput</a></td><td class="desc">Wire speed (MB/s) per subscription x protocol x direction, slowest routes first, with a per-protocol rollup and a first-half vs second-half trend.</td></tr>
 <tr><td><a href="../transfer/month-stats/this-subscription.html">Month stats</a></td><td class="desc">The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired.</td></tr>
 <tr><th colspan="2">Performance</th></tr>
