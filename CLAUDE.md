@@ -1146,24 +1146,30 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
 - **The home page** (`bin/build/publish.sh`): the two status tables — every cell opens the
   Entities view whose row count IS that figure (Entity · Total · Seen · OK · Error · Warning ·
   Ok; no scope switch since 2026-09-27); `check_status_consistency`
-  verifies each figure; the SEEN figures come from `home.rpt`. The per-day figures are ONE wide
+  verifies each figure; the SEEN figures come from `home.rpt`. The per-day figures are ONE
   "Per day" table (`write_home_block`; 2026-08-31, user request — the 2026-08 five-table flex
   row is retired): a `gband` banner over a shared Date column (its cells link the day page), then
-  five groups separated by SPACER columns (`th/td.spc`; report.js `syncGroups` keeps the spacers
-  and group edges right after a column move or hide): **Transfers** (Ok · Error · Error % — the
-  legs) · **Files** (In · Out · Ok · Cured · Error · Error %; Cured = the transfer topview.rpt's
-  Recovered group, Automatic + Manual, linking Recovered files for that day; Error links Failed
-  files for that day; In/Out = the movement direction, `_files.tsv` col 17 — a File with none (an
-  unconfigured subscription, or none — `Unknown`) counts by its connection side, col 16, so
-  In + Out = Ok + Error (2026-09-28; entities.sh and month-stats.sh apply the same fallback)) ·
-  **UC2 state** (Waiting · Expired) · **Duration** (p50 · p75 · p90 · p95 · p99 — p99 last since
-  2026-09-13; banner, headers and Total carry `data-href="transfer/duration.html?axway_date=all"`,
-  each day's cells `?axway_row=<date>` — report.js `setupCellLinks`, which outranks the row link)
-  · **First seen** (Partners · Subscriptions, linking `first-seen/<type>-<date>.html`).
-  `data-nosort` (newest first); EVERY day shows (2026-09-29, user request: the 14-day cap and its
-  "Show all" button are gone) and the Total row appears only from 10 days up. The Red/Green switch
-  group, its `docs/switches/` pages and the Logical / Accounts First-seen columns went 2026-09-06
-  (user request). The home's RED worklists ("Failing transfers" / "Failing subscriptions in Server
+  two groups separated by SPACER columns (`th/td.spc`; report.js `syncGroups` keeps the spacers
+  and group edges right after a column move or hide): **Files** (Ok · Cured · Error · Error %;
+  Cured = the transfer topview.rpt's Recovered group, Automatic + Manual, linking Recovered files
+  for that day; Error links Failed files for that day) · **Duration** (p50 · p75 · p90 · p95 ·
+  p99 — p99 last since 2026-09-13; banner, headers and Total carry
+  `data-href="transfer/duration.html?axway_date=FROM..TO"` — the shown days — each day's cells
+  `?axway_row=<date>` — report.js `setupCellLinks`, which outranks the row link).
+  **THE NEWEST 14 DAYS ONLY** (`HOME_DAYS`, 2026-09-29, user request: "Remove the Transfers, UC2
+  state, First seen subtables, remove the columns In & Out in the Files subtable … have only 14
+  days in the Date tables" — every day showed that morning; `data-nosort`, newest first); the
+  Total row (only from 10 days up) sums exactly those days — its Duration cells are those days'
+  own nearest-rank percentiles (`daily_loglines_tsv`'s TOTAL sentinel, from `_files.tsv` with
+  duration.sh's `hd()` spelling), its Cured / Error links carry `?axway_date=FROM..TO`. **BESIDE
+  it the Errors table** (`write_home_errors`, one `.sxs homeday` row, same request: "Have a
+  table Errors side by side to the Date table — the columns Subscription / Date/time / Reason
+  from /analyses/failed.html"): every row of `failed.rpt`'s table, newest first, tinted by its
+  `@data:res`; the Subscription cell opens the page the row opens on Failed Subscriptions (else the
+  detail page), the "Errors" banner the report (`data-href` — a link in a banner th would take
+  the header's white). The Red/Green switch group, its `docs/switches/` pages, the Transfers,
+  UC2 state and First seen groups and the Files In / Out columns are GONE — never restore
+  them. The home's RED worklists ("Failing transfers" / "Failing subscriptions in Server
   log", `write_failing_now`, 2026-08) and "The log exports" facts table (`write_log_facts`) are
   GONE since 2026-09-29 (user request): the red flows are on Failed Subscriptions and the Entities
   Subscriptions Error view, the log facts on the build report. THE REASON CHAIN they used lives on

@@ -583,33 +583,28 @@ the set (`fp_keep`).
 ## The home page
 
 `bin/build/publish.sh` writes the centered shared home (body class `home`): the two status tables
-plus the per-day figures — ONE wide "Per day" table (`write_home_block`; 2026-08-31, user
+plus the per-day figures — ONE "Per day" table (`write_home_block`; 2026-08-31, user
 request; the 2026-08 five-table `.sxs` flex row with its blanked Date spine is retired — it could
 fall out of row-sync whenever a header's height changed): a `gband` banner row over a shared Date
-column whose cells link the day page, then five groups, each behind a SPACER column
+column whose cells link the day page, then two groups, each behind a SPACER column
 (`th/td.spc` — no borders, page background, so every group keeps its own edges; report.js
 `syncGroups` re-hides a spacer with its group and sets the edge classes after a move or hide):
-**Transfers** (Ok · Error · Error % — the legs) · **Files** (In · Out · Ok · Cured · Error ·
-Error %) · **UC2 state** (Waiting · Expired) · **Duration** (p50 · p75 · p90 · p95 · p99; the
-banner, headers and Total open `transfer/duration.html?axway_date=all`, each day's cells
-`?axway_row=<date>` via `data-href` / `setupCellLinks`) · **First seen** (Partners ·
-Subscriptions). (The Red/Green switch group, its `docs/switches/` pages and the Logical /
-Accounts First-seen columns went 2026-09-06, user request.) The days are the transfer
-`topview.rpt`'s only — every data group is transfer-derived, so a server-only day (the
-server export running a day ahead of the transfer export) would render a fully empty row. The
-table is `data-nosort` and shows EVERY day (the 14-day cap and its "Show all" button went
-2026-09-29, user request); the Total row exists only from 10 days up. The baked Total keeps the full-window figures, since
-`recomputeTotals` counts inline display only; the First-seen counts join `first-seen.rpt` by date —
-its summary lines stay out of the day rows, and each First-seen Total cell shows the report's
-SEEN figure — equal to the status tables' Seen by construction, the day cells
-plus the report's no-date bucket summing to it — linking its `<type>-seen` list), plus the
-log-exports facts table (`write_log_facts`:
-per log the input-file count (the `*.csv` under `input/server/` and `input/transfer/`), total
-records, first/last record stamp and the HOLES — span days with no record — from the topviews;
-Records = the log's own rows — the server topview's Records column, the transfer topview's
-Transfers Count (`$13` since 2026-09-12 — the Recovered and Resubmit groups sit before it — one per physical leg), never a Files or percentage column: until
-2026-08-31 the transfer half read `$13`, the Transfers Error %, so a clean 0.0 % day counted as a
-hole and an estate with no failed transfer showed the Transfer row without Records/First/Last/Days).
+**Files** (Ok · Cured · Error · Error %) · **Duration** (p50 · p75 · p90 · p95 · p99; the
+banner, headers and Total open `transfer/duration.html?axway_date=FROM..TO`, each day's cells
+`?axway_row=<date>` via `data-href` / `setupCellLinks`). The Transfers, UC2 state and First seen
+groups and the Files In / Out columns went 2026-09-29 (user request; the Red/Green switch group
+2026-09-06). The days are the transfer `topview.rpt`'s — the NEWEST 14 (`HOME_DAYS`, same
+request; every day showed that morning), since a server-only day (the server export running a
+day ahead) would render a fully empty row. The table is `data-nosort`; the Total row exists only
+from 10 days up and covers exactly the shown days: the Files sums, and for Duration the shown
+days' own nearest-rank percentiles (`daily_loglines_tsv` TOTAL sentinel over `_files.tsv`,
+duration.sh's `hd()` spelling — a percentile cannot be summed, and duration.rpt's TOTAL covers
+every day); the Cured / Error totals link `?axway_date=FROM..TO`. Beside it, in one `.sxs
+homeday` row, the **Errors** table (`write_home_errors`): Subscription · Date/time · Reason of
+every `failed.rpt` row (the Failed Subscriptions page), newest first, `data-restint` +
+`data-res` tints; the Subscription cell opens the row's own page (its `href`, else the detail
+page through the subscriptions slugmap); the banner opens the report via `data-href`. (The
+log-exports facts table, `write_log_facts`, went 2026-09-29 — the build report carries it.)
 Every status cell opens the **Entities view whose row
 count IS that figure** (columns Entity · Total · Seen · OK · Error · Warning · Ok — the
 Transfer/Server columns and the "including server log" switch went with the blue result,

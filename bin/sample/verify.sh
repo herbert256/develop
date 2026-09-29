@@ -327,14 +327,27 @@ if [ "$(exp pollconnfail)" -gt 0 ]; then
     check $(grep -q 'UC3_ZG_RATES_OSCORP' docs/analyses/failed.html 2>/dev/null && echo 0 || echo 1) "analyses/failed.html does not list UC3_ZG_RATES_OSCORP"
 fi
 # the HOME PAGE (2026-09-29, user request): no red worklists, no "The log
-# exports" table, no 14-day cap / Show all button — every day shows; the
-# site is called "Axway ST reports"
+# exports" table, no Show all button; the site is called "Axway ST reports"
 check $(grep -qE 'Failing transfers|Failing subscriptions in Server log|The log exports|showallbtn|cap14' docs/index.html 2>/dev/null && echo 1 || echo 0) "docs/index.html still carries a red worklist, The log exports, or the Show all cap"
 check $(grep -q '<h1>Axway ST reports' docs/index.html 2>/dev/null && echo 0 || echo 1) "the home title is not 'Axway ST reports …'"
 check $([ -z "$(grep -rl 'Cloud Reports' docs --include='*.html' 2>/dev/null)" ] && echo 0 || echo 1) "a page still says 'Cloud Reports'"
 nd=$(awk -F'\t' '$1 == "ROW" && $2 ~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { n++ } END { print n + 0 }' data/transfer/reports/topview.rpt 2>/dev/null)
 nh=$(grep -c '<tr><td><a href="day/' docs/index.html 2>/dev/null || true)
-check $([ "${nh:-0}" -gt 14 ] && [ "${nh:-0}" -ge "$((nd - 1))" ] && echo 0 || echo 1) "the home per-day table shows ${nh:-0} linked day(s) of ${nd:-?} (every day expected)"
+# (later that day, user request: "have only 14 days in the Date tables" —
+# the newest 14; the sample holds more, so the cap is exercised)
+check $([ "${nd:-0}" -gt 14 ] && [ "${nh:-0}" = 14 ] && echo 0 || echo 1) "the home per-day table shows ${nh:-0} linked day(s) of ${nd:-?} (the newest 14 expected, the sample must hold more)"
+# ... only the Files (Ok · Cured · Error · Error %) and Duration groups — the
+# Transfers, UC2 state and First seen groups and Files In / Out went (2026-09-29)
+hdr=$(awk '/<table class="index fit dayrows"/ { p = 1 } p && /<tr>/ && /<th/ { print; exit }' docs/index.html 2>/dev/null | grep -o '<th[^>]*>[^<]*</th>' | sed 's/<[^>]*>//g' | tr '\n' '|')
+check $([ "$hdr" = "Date||Ok|Cured|Error|Error %||p50|p75|p90|p95|p99|" ] && echo 0 || echo 1) "the home per-day table headers are '$hdr'"
+check $(grep -qE 'class="gband"[^>]*>(Transfers|UC2 state|First seen)<' docs/index.html 2>/dev/null && echo 1 || echo 0) "the home still carries a Transfers / UC2 state / First seen group"
+# ... and BESIDE it the Errors table: Subscription · Date/time · Reason of
+# every Failed Subscriptions row, in the same side-by-side row
+ne=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "ROW" { n++ } END { print n + 0 }' data/transfer/reports/failed.rpt 2>/dev/null)
+nr=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<tr[ >]/ && /<td/ { n++ } p && /<\/table>/ { exit } END { print n + 0 }' docs/index.html 2>/dev/null)
+eh=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<tr>/ && /<th/ { print; exit }' docs/index.html 2>/dev/null | grep -o '<th[^>]*>[^<]*</th>' | sed 's/<[^>]*>//g' | tr '\n' '|')
+check $([ "${ne:-0}" -gt 0 ] && [ "$nr" = "$ne" ] && [ "$eh" = "Subscription|Date/time|Reason|" ] && echo 0 || echo 1) "the home Errors table: $nr row(s) for ${ne:-?} Failed Subscriptions row(s), headers '$eh'"
+check $(awk '/<div class="sxs homeday">/ { s = 1 } s && /<table class="index fit dayrows"/ { a = 1 } s && a && /homeerr/ { ok = 1; exit } END { exit !ok }' docs/index.html 2>/dev/null && echo 0 || echo 1) "the home Errors table does not sit beside the per-day table (one sxs row)"
 # no detail page lists Files from the stream any more (the Latest 100
 # table went 2026-09-29, user request)
 check $([ -z "$(grep -rlE '<h2>Latest (100|1000) ' docs/details 2>/dev/null)" ] && echo 0 || echo 1) "a detail page still carries a Latest 100 / Latest 1000 Files table"
@@ -488,8 +501,13 @@ check $([ "${rvm:-x}" = "${wrm:-y}" ] && echo 0 || echo 1) "topview Recovered Ma
 check $([ "${rso:-x}" = "${wro:-y}" ] && [ "${rsf:-x}" = "${wrf:-y}" ] && echo 0 || echo 1) "topview Resubmit Ok/Failed = ${rso:-?}/${rsf:-?}, the caches give ${wro:-?}/${wrf:-?}"
 check $([ "${rva:-0}" -gt 0 ] && [ "${rvm:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Automatic (${rva:-0}) or no Manual (${rvm:-0}) recovery — a Recovered column is never exercised"
 check $([ "${rso:-0}" -gt 0 ] && [ "${rsf:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Resubmit Ok (${rso:-0}) or Failed (${rsf:-0}) File — a Resubmit column is never exercised"
-hc=$(grep -o '<a href="transfer/retries-recovered-files.html">[0-9.]*</a>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g; s/\.//g' | head -1)
-check $([ "${hc:-x}" = "${wrv:-y}" ] && echo 0 || echo 1) "home Cured total is '${hc:-absent}', expected the recovered total ${wrv:-?}"
+# the home Cured total covers the SHOWN days (the newest 14 since 2026-09-29):
+# the Top view's Automatic + Manual over exactly those days
+hc=$(grep -o '<a href="transfer/retries-recovered-files.html?axway_date=[0-9-]*\.\.[0-9-]*">[0-9.]*</a>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g; s/\.//g' | head -1)
+w14=$(awk -F'\t' '$1 == "ROW" { d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10); if (d ~ /^[0-9][0-9][0-9][0-9]-/) R[d] = ($9 + 0) + ($10 + 0) }
+    END { n = 0; for (d in R) D[++n] = d; for (i = 1; i <= n; i++) for (j = i + 1; j <= n; j++) if (D[j] > D[i]) { t = D[i]; D[i] = D[j]; D[j] = t }
+          for (i = 1; i <= n && i <= 14; i++) s += R[D[i]]; print s + 0 }' data/transfer/reports/topview.rpt 2>/dev/null)
+check $([ "${hc:-x}" = "${w14:-y}" ] && echo 0 || echo 1) "home Cured total is '${hc:-absent}', expected the newest 14 days' recovered total ${w14:-?}"
 # the Recovered files report's Retry / Resubmit split (2026-09-12, user
 # request): every table carries the two columns after Recovered — the same
 # Automatic / Manual rule as the Top view, so the per-subscription totals
@@ -740,14 +758,15 @@ check $([ "$(grep -rl 'data-envto' docs --include=*.html 2>/dev/null | wc -l | t
 # p50 · p75 · p90 · p95 · p99, five cells per day and in the Total row
 hdr=$(grep -o '<th class="num"[^>]*>p[0-9]*</th>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "$hdr" = "p50|p75|p90|p95|p99|" ] && echo 0 || echo 1) "the home Duration group headers are '$hdr', expected p50|p75|p90|p95|p99|"
-check $([ "$(grep -c '<th class="gband" colspan="5" data-href="transfer/duration.html?axway_date=all">Duration</th>' docs/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the home Duration banner does not span 5 columns or does not link the Duration report"
-# every cell of the Duration group opens transfer/duration.html at the full
-# date range (2026-09-14, user request): the five p-headers and the Total with
-# ?axway_date=all, five cells per day row with ?axway_row=<that row's date>;
+check $([ "$(grep -c '<th class="gband" colspan="5" data-href="transfer/duration.html?axway_date=[0-9-]*\.\.[0-9-]*">Duration</th>' docs/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the home Duration banner does not span 5 columns or does not link the Duration report"
+# every cell of the Duration group opens transfer/duration.html (2026-09-14,
+# user request): the five p-headers and the Total at the shown days' range
+# (?axway_date=FROM..TO since 2026-09-29, the 14-day home; ?axway_date=all
+# before), five cells per day row with ?axway_row=<that row's date>;
 # report.js binds them and outranks the row link
 nrows=$(awk '/<table class="index fit dayrows/ { p = 1 } p && /<tr>/ && /<td/ { n++ } p && /<\/table>/ { exit } END { print n + 0 }' docs/index.html 2>/dev/null)
-ncells=$(grep -o '<td class="num[^"]*" data-href="transfer/duration.html?axway_\(row=[0-9-]*\|date=all\)">' docs/index.html 2>/dev/null | wc -l | tr -d ' ')
-nth=$(grep -o '<th class="num" data-href="transfer/duration.html?axway_date=all">p[0-9]*</th>' docs/index.html 2>/dev/null | wc -l | tr -d ' ')
+ncells=$(grep -o '<td class="num[^"]*" data-href="transfer/duration.html?axway_\(row=[0-9-]*\|date=[0-9-]*\.\.[0-9-]*\)">' docs/index.html 2>/dev/null | wc -l | tr -d ' ')
+nth=$(grep -o '<th class="num" data-href="transfer/duration.html?axway_date=[0-9-]*\.\.[0-9-]*">p[0-9]*</th>' docs/index.html 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${nth:-0}" = 5 ] && [ "${nrows:-0}" -gt 0 ] && [ "${ncells:-0}" -ge $((${nrows:-0} * 5)) ] && echo 0 || echo 1) "the home Duration group links: $nth p-headers, $ncells day cells for $nrows rows (expected 5 and >= 5 per row)"
 bad=$(awk '/<table class="index fit dayrows/ { p = 1 } p && /<\/table>/ { exit } p && /<tr>/ && /<td/ { if (!match($0, /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)) next; d = substr($0, RSTART, RLENGTH); c = $0; if (gsub("axway_row=" d "\"", "", c) != 5) bad++ } END { print bad + 0 }' docs/index.html 2>/dev/null)
 check $([ "${bad:-1}" = 0 ] && echo 0 || echo 1) "${bad:-?} home day row(s) whose five Duration cells do not open their own date (?axway_row=<date>)"

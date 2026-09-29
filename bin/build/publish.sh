@@ -146,129 +146,89 @@ write_reports_index() {
     } > "$out"
 }
 
-# Per-day figures for the root index's log table: the Files group (transfer
-# topview.rpt per-day table, ROW fields 5-8; the Cured figure = its Recovered
-# group's Automatic + Manual, fields 9-10, since 2026-09-12), the
-# duration percentiles (duration.rpt) and the five per-day First-seen counts
-# (analyses first-seen.rpt, joined by date; its SEEN/NOTSEEN lines are not
-# day ROWs and stay out). The transfer topview.rpt sets the DAYS (see below).
-# $1 = the data root (data). One
-# "date<TAB>count<TAB>ok<TAB>err<TAB>err%<TAB>4x(class,value) duration
-# <TAB>5 first-seen counts" line per date. FILENAME (not FNR==NR) keys the
-# source (path segment, env-agnostic), so a missing file just drops its
-# columns.
+# Per-day figures for the home's per-day table (2026-09-29, user request:
+# "Remove the Transfers, UC2 state, First seen subtables, remove the columns
+# In & Out in the Files subtable … have only 14 days in the Date tables"):
+# the Files group from the transfer topview.rpt per-day table (ROW fields
+# 5-8; the Cured figure = its Recovered group's Automatic + Manual, fields
+# 9-10) and the Duration group from duration.rpt's "Duration per day —
+# percentiles" table (Processed Files only). The transfer topview's days set
+# the rows — the newest HOME_DAYS of them, newest first (a server-only day,
+# the server export running a day ahead, would be a fully empty row). One
+#   date ⇥ count ⇥ ok ⇥ cured ⇥ err ⇥ err% ⇥ 5 × (class ⇥ value)
+# line per day, "-" for a missing field (the reader splits on a whitespace
+# IFS, so an empty middle field would collapse), then a TOTAL sentinel line
+# whose five duration pairs are the nearest-rank percentiles of the DELIVERED
+# Files of exactly those days (_files.tsv col 9 — duration.sh's scope, rank
+# rule and whole-unit spelling): a percentile cannot be summed, and the
+# report's own TOTAL covers every day.
+HOME_DAYS=14
 daily_loglines_tsv() {   # $1 = the data root (data)
-    # The day list is the TRANSFER topview's days only: all four data groups
-    # (Transfers / Files / UC2 state / Duration / First seen) are transfer-derived,
-    # so a server-only day — the server export runs a day ahead of the
-    # transfer export — would render a fully empty row under the Date spine.
-    local trpt="$1/transfer/reports/topview.rpt"
-    local drpt="$1/transfer/reports/duration.rpt" frpt="$1/analyses/reports/first-seen.rpt" files=()
-    # (The Red/Green switch group and its docs/switches/ pages went 2026-09-06;
-    # the flip walk that still fed them — a full sort of _files.tsv every
-    # build — went 2026-09-29. Its two output fields stay as "-" placeholders
-    # so the reader's field positions hold.)
-    local fc_="$1/transfer/cache/_files.tsv"
-    # the In/Out split of the Files group: per DAY, how many Files MOVED in
-    # and how many out (_files.tsv col 17, the movement direction). A File of
-    # an UNCONFIGURED subscription (or none — "Unknown") has no movement:
-    # it counts by its connection side (col 16), so In + Out = Ok + Error on
-    # every day (2026-09-28 fix: those Files were in neither column)
-    local iof=""
-    if [ -f "$fc_" ]; then
-        iof=$(mktemp "${TMPDIR:-/tmp}/axinout.XXXXXX")
-        awk -F'\t' '$4 ~ /^[0-9][0-9][0-9][0-9]-/ {
-                mv = ($17 != "") ? $17 : $16
-                if (mv == "in") fi_[$4]++; else if (mv == "out") fo_[$4]++
-                d[$4] = 1 }
-            END { for (k in d) printf "%s\t%d\t%d\n", k, fi_[k] + 0, fo_[k] + 0 }' "$fc_" > "$iof"
-        files+=("$iof")
-    fi
-    [ -f "$trpt" ] && files+=("$trpt")
-    [ -f "$drpt" ] && files+=("$drpt")
-    [ -f "$frpt" ] && files+=("$frpt")
-    # return 0 EXPLICITLY: a bare `return` hands back $? — and with no switch
-    # file the [ -n "$swf" ] guard just FAILED, so the bare form returned 1 and
-    # set -e killed the whole publish. Only reachable when NO source file
-    # exists, i.e. the OTHER env's tree is still cold — which is exactly when
-    # the production chain's index-pages pass runs against a mid-parse
-    # acceptance tree (found by the 2026-08-20 fresh build).
-    if [ ${#files[@]} -eq 0 ]; then [ -z "$iof" ] || rm -f "$iof"; return 0; fi
-    awk -F'\t' '
+    local trpt="$1/transfer/reports/topview.rpt" drpt="$1/transfer/reports/duration.rpt" fc_="$1/transfer/cache/_files.tsv"
+    [ -f "$trpt" ] || return 0
+    local files=("$trpt"); [ -f "$drpt" ] && files+=("$drpt")
+    local dl
+    dl=$(awk -F'\t' -v N="$HOME_DAYS" '
         function nz(v) { return v == "" ? "-" : v }
         # a duration cell "@{class=dur-s}3 s" -> its class / its text ("-" when absent)
         function dcls(v) { if (v !~ /^@\{class=/) return "-"; sub(/^@\{class=/, "", v); sub(/\}.*/, "", v); return v }
         function dtxt(v) { sub(/^@\{[^}]*\}/, "", v); return v == "" ? "-" : v }
-        # the Duration group: p50/p75/p90/p95/p99 (cols 6/7/8/9/11) from the
-        # "Duration per day" table of duration.rpt (Processed Files only);
-        # the overall percentiles come from its TOTAL line — never summed here
+        # the Duration group: p50/p75/p90/p95/p99 (cols 6/7/8/9/11) of the
+        # "Duration per day — percentiles" table (the FIRST of its two
+        # side-by-side tables)
         FILENAME ~ /duration\.rpt$/ {
-            if ($1 == "TABLE") intab = ($2 == "Duration per day — percentiles")   # the FIRST of the two side-by-side tables (2026-09-13)
-            if (!intab) next
-            if ($1 == "TOTAL") for (p = 0; p < 5; p++) { c = (p==4 ? 11 : 6+p); dtc[p] = dcls($c); dtv[p] = dtxt($c) }
-            if ($1 != "ROW") next
+            if ($1 == "TABLE") intab = ($2 == "Duration per day — percentiles")
+            if (!intab || $1 != "ROW") next
             dd = $2; sub(/^@\{[^}]*\}/, "", dd)
             if (dd !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) next
-            for (p = 0; p < 5; p++) { c = (p==4 ? 11 : 6+p); dc[dd,p] = dcls($c); dv[dd,p] = dtxt($c) }
+            for (p = 0; p < 5; p++) { c = (p == 4 ? 11 : 6 + p); dc[dd, p] = dcls($c); dv[dd, p] = dtxt($c) }
             hasdur[dd] = 1
-            next
-        }
-        # the First seen group: one count per entity type (Logicals Partners
-        # Subscriptions Accounts Logins Hosts, ROW fields 3-8) joined by
-        # date; the SEEN/NOTSEEN summary lines fail the ROW match
-        FILENAME ~ /first-seen\.rpt$/ {
-            if ($1 != "ROW" || $2 !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) next
-            for (p = 0; p < 6; p++) fs[$2, p] = $(3+p)
-            hasfs = 1
-            next
-        }
-        # the Files In/Out split (the axinout temp file): date, in, out
-        FILENAME ~ /axinout/ {
-            if ($1 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) { fin[$1] = $2; fout[$1] = $3; hasio = 1 }
             next
         }
         $1 != "ROW" { next }
         { dd = $2; sub(/^@\{[^}]*\}/, "", dd) }
-        # the transfer topview ROW (bin/transfer/reports/topview.sh HEAD, six groups since 2026-09-12): the Files group
-        # (Count Ok Error Error%) is cols 5-8, per-CoreId figures; the Recovered group (Automatic Manual, amber cells blank
-        # on 0) cols 9-10 — the home Cured cell is their sum; the Resubmit group (Ok Failed) cols 11-12 (not shown here)
-        FILENAME ~ /\/transfer\// && dd ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { d=substr(dd,1,10); fc[d]=nz($5); fok[d]=nz($6); fer[d]=nz($7); fpc[d]=nz($8); seen[d]=1
-            frv[d] = ($9+0) + ($10+0)
-            # the Transfers group (Count Ok Error Error%, cols 13-16) and the Waiting/Expired of the State group (cols 19-20; Expired may carry an @{href} prefix) — 2026-09-06, user request
-            tcn[d]=nz($13); tok[d]=nz($14); ter[d]=nz($15); tpc[d]=nz($16)
-            tw=$19; sub(/^@\{[^}]*\}/, "", tw); twt[d]=nz(tw); tex=$20; sub(/^@\{[^}]*\}/, "", tex); txp[d]=nz(tex) }
+        # the transfer topview ROW (bin/transfer/reports/topview.sh): the Files
+        # group (Count Ok Error Error%) cols 5-8, the Recovered group
+        # (Automatic Manual) cols 9-10 — Cured is their sum
+        dd ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { d = substr(dd, 1, 10)
+            fc[d] = nz($5); fok[d] = nz($6); fer[d] = nz($7); fpc[d] = nz($8); frv[d] = ($9 + 0) + ($10 + 0); seen[d] = 1 }
         END {
-            n=0; for (k in seen) a[n++]=k
-            # newest date first (descending); the index table shows recent days on top
-            for (i=0;i<n;i++) for (j=i+1;j<n;j++) if (a[j]>a[i]) { t=a[i]; a[i]=a[j]; a[j]=t }
-            # Emit "-" (not empty) for a missing field: the shell reader uses a
-            # tab IFS (whitespace), so an empty middle field would collapse and
-            # shift the columns. The renderer maps "-" back to a dash.
-            for (i=0;i<n;i++) {
+            n = 0; for (k in seen) a[n++] = k
+            for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) if (a[j] > a[i]) { t = a[i]; a[i] = a[j]; a[j] = t }   # newest first
+            for (i = 0; i < n && i < N; i++) {
                 d = a[i]
-                if (d in fc) printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s", d, fc[d], \
-                    (hasio && (d in fin) ? fin[d] : "-"), (hasio && (d in fout) ? fout[d] : "-"), \
-                    fok[d], (d in frv ? frv[d] : "-"), fer[d], fpc[d]
-                else         printf "%s\t-\t-\t-\t-\t-\t-\t-", d
-                if (d in hasdur) printf "\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s", dc[d,0], dv[d,0], dc[d,1], dv[d,1], dc[d,2], dv[d,2], dc[d,3], dv[d,3], dc[d,4], dv[d,4]
-                else             printf "\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-"
-                # a day the first-seen report does not list (or a missing
-                # report) renders like a 0: blank cells
-                for (p = 0; p < 6; p++) printf "\t%s", (hasfs && (d, p) in fs ? fs[d, p] : "-")
-                printf "\t-\t-"   # the retired Red/Green switch fields (placeholders — the reader'"'"'s positions)
-                # the Transfers + State groups (trailing fields, 2026-09-06)
-                if (d in fc) printf "\t%s\t%s\t%s\t%s\t%s\t%s", tcn[d], tok[d], ter[d], tpc[d], twt[d], txp[d]
-                else         printf "\t-\t-\t-\t-\t-\t-"
+                printf "%s\t%s\t%s\t%s\t%s\t%s", d, fc[d], fok[d], frv[d], fer[d], fpc[d]
+                for (p = 0; p < 5; p++) printf "\t%s\t%s", ((d in hasdur) ? dc[d, p] : "-"), ((d in hasdur) ? dv[d, p] : "-")
                 printf "\n"
             }
-            # the Duration TOTAL as a sentinel LAST line (the shell reader
-            # stores it for the Total row and skips it as a day)
-            printf "TOTAL\t-\t-\t-\t-\t-\t-\t-"
-            for (p = 0; p < 5; p++) printf "\t%s\t%s", (dtv[p] == "" ? "-" : dtc[p]), (dtv[p] == "" ? "-" : dtv[p])
-            printf "\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\n"
-        }
-    ' "${files[@]}"
-    [ -n "$iof" ] && rm -f "$iof"
+        }' "${files[@]}")
+    [ -n "$dl" ] || return 0
+    printf '%s\n' "$dl"
+    # the TOTAL sentinel: the shown days' own percentiles
+    local tot=""
+    if [ -f "$fc_" ]; then
+        tot=$(awk -F'\t' -v days="$(printf '%s\n' "$dl" | cut -f1 | tr '\n' ' ')" '
+            BEGIN { n = split(days, a, " "); for (i = 1; i <= n; i++) D[a[i]] = 1 }
+            $2 == "Processed" { d = substr($4, 1, 10); if (!(d in D)) next; ms = $9 + 0; if (ms > 0) print ms }' "$fc_" \
+            | LC_ALL=C sort -n \
+            | awk '
+            # duration.sh hd() / hdc(): whole units, the unit carries the tint
+            function hd(ms) {
+                if (ms < 1000)    return "<1 s"
+                if (ms < 60000)   return sprintf("%d s", int(ms/1000 + 0.5))
+                if (ms < 3600000) return sprintf("%d m", int(ms/60000 + 0.5))
+                return sprintf("%d h", int(ms/3600000 + 0.5))
+            }
+            { T[++n] = $1 + 0 }
+            END {
+                if (!n) exit
+                split("50 75 90 95 99", P, " ")
+                for (i = 1; i <= 5; i++) { v = hd(T[int((n - 1) * P[i] / 100 + 0.5) + 1]); u = substr(v, length(v))
+                    printf "%sdur-%s\t%s", (i > 1 ? "\t" : ""), ((u == "s" || u == "m") ? u : "h"), v }
+                printf "\n" }')
+    fi
+    [ -n "$tot" ] || tot=$'-\t-\t-\t-\t-\t-\t-\t-\t-\t-'
+    printf 'TOTAL\t-\t-\t-\t-\t-\t%s\n' "$tot"
     return 0
 }
 
@@ -454,217 +414,153 @@ write_home_block() {
     if [ -f "$HOME_ENV_DATA/analyses/reports/home.rpt" ] || [ -f "$HOME_ENV_DATA/flow-manager/base/_subscriptions.tsv" ]; then
         write_status_pair "coverage/"
     fi
-    # The per-day figures: the column groups of ONE table (Transfers / Files /
-    # UC2 state / Duration / First seen) further down — one data pass feeds
-    # them all.
+    # The per-day figures: the Files and Duration groups of ONE table, and
+    # beside it the Errors table (2026-09-29, user request).
     local dl; dl=$(daily_loglines_tsv "$HOME_ENV_DATA")
-    # (the Red/Green switch group and its per-day switch pages are gone —
-    # 2026-09-06, user request)
-    # ONLY with TRANSFERS (2026-08-29): dl always carries the Duration TOTAL
-    # sentinel, so a bare non-empty test rendered the four titled tables as
-    # empty header-only shells on a config-only env (production). The row of
-    # five renders only when at least one DAY line carries transfer Files
-    # (field 2 — "-" on a server-only day).
+    # ONLY with TRANSFERS (2026-08-29): the table renders only when at least
+    # one DAY line carries transfer Files (field 2); a config-only estate
+    # gets none.
     local _hastx=""
     [ -n "$dl" ] && _hastx=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL" && $2!="" && $2!="-" { print 1; exit }')
-    if [ -n "$_hastx" ]; then
-        # THE PER-DAY TABLE (2026-08-31, user request — ONE table again):
-        # Transfers / Files / UC2 state / Duration / First seen are column GROUPS
-        # of one wide table, a gband banner row over a shared Date column
-        # (its cells link the day's combined dashboard). The 2026-08 five-
-        # table flex row (a Date spine + four data tables) is gone: one
-        # table cannot fall out of row-sync, which the spine did whenever a
-        # header's height changed (the csv-hotspot regression). The group
-        # dividers are SPACER columns (th/td.spc — no borders, page
-        # background), one before each group, so each group has its own
-        # table-like edges and the row lines stop at the gaps.
-        #
-        # EVERY DAY SHOWS (2026-09-29, user request: the 14-day cap and its
-        # "Show all" button are gone — "just show all"). The Total row only
-        # from 10 days up (2026-08): a short table's sums add nothing a glance
-        # does not already give. data-nosort: the rows stay newest first.
-        local dcount
-        dcount=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL"' | wc -l | tr -d ' ')
-        local d fc fin fout fok frv fer fpc c v fsum=0 finsum=0 foutsum=0 foksum=0 frvsum=0 fersum=0
-        local dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 dtot=""
-        local fsp fss fsa fsl fsh fsps=0 fsss=0 fsas=0 fsls=0 fshs=0
-        local swr swg swrs=0 swgs=0 dcc=""
-        # every cell of the Duration group — banner, p-headers, day cells, Total — opens
-        # transfer/duration.html at the FULL date range (2026-09-14, user request): the
-        # banner, p-headers and Total with ?axway_date=all (report.js: the All button's
-        # range), each day's five cells with ?axway_row=<that date> — the row marked, the
-        # range full. data-href on the cell; report.js setupCellLinks navigates there and
-        # outranks the row link
-        local DURGO=""; [ -f docs/transfer/duration.html ] && DURGO=' data-href="transfer/duration.html?axway_date=all"'
-        printf '<div class="tablewrap perday"><table class="index fit dayrows" data-nosearch="1" data-nosort="1">\n'
-        # groups (2026-09-06, user request): Transfers (Ok Error Error%) before Files, UC2 state (Waiting Expired — staged pickups) before Duration, First seen without Logical/Accounts; Recovered reads Cured; the Red/Green switch group is gone
-        # the groups are separated by SPACER columns (th/td.spc: no borders,
-        # page background — the root index pattern), so every group keeps its
-        # own left/right/bottom edges like a table of its own and no row line
-        # crosses the gap (2026-09-06, user request; before: a thick
-        # page-coloured left border that the row lines ran through)
-        printf '<tr class="gbrow"><th></th>%s<th class="gband" colspan="3">Transfers</th>%s<th class="gband" colspan="6">Files</th>%s<th class="gband" colspan="2">UC2 state</th>%s<th class="gband" colspan="5"'"$DURGO"'>Duration</th>%s<th class="gband" colspan="2">First seen</th></tr>\n' \
-            '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
-        printf '<tr><th>Date</th>%s<th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Cured</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">Waiting</th><th class="num">Expired</th>%s<th class="num"'"$DURGO"'>p50</th><th class="num"'"$DURGO"'>p75</th><th class="num"'"$DURGO"'>p90</th><th class="num"'"$DURGO"'>p95</th><th class="num"'"$DURGO"'>p99</th>%s<th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n' \
-            '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
-        local tcn tok ter tpc twt txp tcnsum=0 toksum=0 tersum=0 twtsum=0 txpsum=0
-        while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg tcn tok ter tpc twt txp; do
-            [ -n "$d" ] || continue
-            # the sentinel LAST line: the overall duration percentiles for
-            # the Total row (a percentile cannot be summed)
-            if [ "$d" = "TOTAL" ]; then
-                dtot=""
-                for c in "$dc50:$dv50" "$dc75:$dv75" "$dc90:$dv90" "$dc95:$dv95" "$dc99:$dv99"; do   # p99 last (2026-09-13, user request)
-                    dtot="$dtot$(_durcell "${c%%:*}" "${c#*:}")"
-                done
-                continue
-            fi
-            _daycell "$d"
-            printf '<tr><td>%s</td><td class="spc"></td>' "$dcc"
-            # —— Transfers (from transfer/topview.html, the Transfers band):
-            # technical rows, Ok/Error tinted like that page (okc/errc), a 0
-            # blank ——
-            if [ "$tok" = "-" ] || [ "$tok" = 0 ] || [ -z "$tok" ]; then printf '<td class="num okc z"></td>'; else
-                dotify_v "$tok"; esc "$DOT"; printf '<td class="num okc">%s</td>' "$ESC"; toksum=$((toksum + tok)); fi
-            if [ "$ter" = "-" ] || [ "$ter" = 0 ] || [ -z "$ter" ]; then printf '<td class="num errc z"></td>'; else
-                dotify_v "$ter"; esc "$DOT"; printf '<td class="num errc">%s</td>' "$ESC"; tersum=$((tersum + ter)); fi
-            if [ "$tpc" = "-" ] || [ -z "$tpc" ]; then printf '<td class="num"></td>'; else esc "$tpc"; printf '<td class="num">%s</td>' "$ESC"; fi
-            [ "$tcn" != "-" ] && [ -n "$tcn" ] && tcnsum=$((tcnsum + tcn))
-            printf '<td class="spc"></td>'
-            # —— Files (from transfer/topview.html) ——
-            # Ok/Error tint like topview's cells, a 0 rendering as an empty
-            # cell (the render_rpt.awk convention). A nonzero Error cell
-            # links the Entities Subscriptions/ALL view narrowed to that day
-            # (?axway_date — report.js sets From=To and persists it like a
-            # user selection), sorted by its Error column (axway_sort=7:-1 — display index 7 since the Retry · Resubmit columns, 2026-09-12; 6 with the single Cured column of 2026-09-10):
-            # there the Error column total equals this cell exactly, and the
-            # row tints say which of the flows are still red — the ERROR view
-            # cannot show that (2026-08: 24 of a day's 25 errors belonged to
-            # a flow that recovered the same evening, green and absent there,
-            # so the cell said 25 and its target showed 1).
-            if [ "$fc" != "-" ] && [ -n "$fc" ]; then
-                fsum=$((fsum + fc))   # the Files COUNT column is gone (2026-08: In + Out carries it); fsum stays for Error %
-                # the In/Out split (movement direction; In + Out = Count)
-                if [ "$fin" = "-" ] || [ "$fin" = 0 ] || [ -z "$fin" ]; then printf '<td class="num"></td>'; else
-                    dotify_v "$fin"; esc "$DOT"; printf '<td class="num">%s</td>' "$ESC"; finsum=$((finsum + fin)); fi
-                if [ "$fout" = "-" ] || [ "$fout" = 0 ] || [ -z "$fout" ]; then printf '<td class="num"></td>'; else
-                    dotify_v "$fout"; esc "$DOT"; printf '<td class="num">%s</td>' "$ESC"; foutsum=$((foutsum + fout)); fi
-                if [ "$fok" = "-" ] || [ "$fok" = 0 ]; then printf '<td class="num processed z"></td>'; else
-                    dotify_v "$fok"; esc "$DOT"; printf '<td class="num processed">%s</td>' "$ESC"; fi
-                # Recovered, amber like topview's cell; a 0/blank cell stays
-                # untinted (td.warn:empty). A nonzero cell opens the Recovered
-                # files report narrowed to that day (2026-09-01, user
-                # request), the way the Error cell beside it opens its view.
-                if [ "$frv" = "-" ] || [ "$frv" = 0 ] || [ -z "$frv" ]; then printf '<td class="num warn"></td>'; else
-                    dotify_v "$frv"; esc "$DOT"
-                    if [ -f "docs/transfer/retries-recovered-files.html" ]; then
-                        printf '<td class="num warn"><a href="transfer/retries-recovered-files.html?axway_date=%s">%s</a></td>' "$d" "$ESC"
-                    else printf '<td class="num warn">%s</td>' "$ESC"; fi
-                    frvsum=$((frvsum + frv)); fi
-                if [ "$fer" = "-" ] || [ "$fer" = 0 ]; then printf '<td class="num failed z"></td>'; else
-                    dotify_v "$fer"; esc "$DOT"
-                    # 2026-09-14 (user request): the cell opens the FAILED FILES
-                    # list narrowed to its day — one row per File it counts
-                    # (Failed or Expired, on the start day), with reason,
-                    # CoreId and file name; the Entities view is the fallback
-                    if [ -f "docs/transfer/failed-files.html" ]; then
-                        printf '<td class="num failed"><a href="transfer/failed-files.html?axway_date=%s&amp;axway_search=">%s</a></td>' "$d" "$ESC"
-                    elif [ -f "docs/transfer/entities/subscription-all.html" ]; then
-                        printf '<td class="num failed"><a href="transfer/entities/subscription-all.html?axway_date=%s&amp;axway_sort=Error:-1&amp;axway_column=Error">%s</a></td>' "$d" "$ESC"
-                    else printf '<td class="num failed">%s</td>' "$ESC"; fi; fi
-                [ "$fok" != "-" ] && foksum=$((foksum + fok)); [ "$fer" != "-" ] && fersum=$((fersum + fer))
-                if [ "$fpc" = "-" ]; then printf '<td class="num"></td>'; else
-                    esc "$fpc"; printf '<td class="num">%s</td>' "$ESC"; fi
-            else
-                printf '<td class="num"></td><td class="num"></td><td class="num processed"></td><td class="num warn"></td><td class="num failed"></td><td class="num"></td>'
-            fi
-            printf '<td class="spc"></td>'
-            # —— UC2 state (the topview State band): Waiting (amber) and Expired
-            # (red) Files of the day; a nonzero cell opens the report ——
-            if [ "$twt" = "-" ] || [ "$twt" = 0 ] || [ -z "$twt" ]; then printf '<td class="num warn"></td>'; else
-                dotify_v "$twt"; esc "$DOT"
-                if [ -f "docs/transfer/waiting.html" ]; then printf '<td class="num warn"><a href="transfer/waiting.html">%s</a></td>' "$ESC"
-                else printf '<td class="num warn">%s</td>' "$ESC"; fi
-                twtsum=$((twtsum + twt)); fi
-            if [ "$txp" = "-" ] || [ "$txp" = 0 ] || [ -z "$txp" ]; then printf '<td class="num errc z"></td>'; else
-                dotify_v "$txp"; esc "$DOT"
-                if [ -f "docs/transfer/expired.html" ]; then printf '<td class="num errc"><a href="transfer/expired.html">%s</a></td>' "$ESC"
-                else printf '<td class="num errc">%s</td>' "$ESC"; fi
-                txpsum=$((txpsum + txp)); fi
-            printf '<td class="spc"></td>'
-            # —— Duration (from transfer/duration.html): the day's
-            # p50/p75/p90/p95/p99, tinted like that page's cells ——
-            # the day's own link: that row marked on the Duration page (the shared
-            # DURGO restored right after, for the Total and the next row)
-            local _durgo_all=$DURGO
-            [ -n "$DURGO" ] && DURGO=" data-href=\"transfer/duration.html?axway_row=$d\""
-            _durcell "$dc50" "$dv50"; _durcell "$dc75" "$dv75"
-            _durcell "$dc90" "$dv90"; _durcell "$dc95" "$dv95"; _durcell "$dc99" "$dv99"   # p99 last (2026-09-13, user request)
-            DURGO=$_durgo_all
-            printf '<td class="spc"></td>'
-            # —— First seen (from analyses/first-seen.html): a count links
-            # that day's first-seen list when the page exists (a page exists
-            # only for a day with names); 0 renders blank ——
-            for c in "partners:$fsp" "subscriptions:$fss"; do   # Logical and Accounts dropped (2026-09-06, user request)
-                v=${c#*:}
-                if [ "$v" = "-" ] || [ "$v" = 0 ] || [ -z "$v" ]; then printf '<td class="num"></td>'; continue; fi
-                dotify_v "$v"; esc "$DOT"
-                if [ -f "docs/first-seen/${c%%:*}-$d.html" ]; then
-                    printf '<td class="num"><a href="first-seen/%s-%s.html">%s</a></td>' "${c%%:*}" "$d" "$ESC"
-                else printf '<td class="num">%s</td>' "$ESC"; fi
+    [ -n "$_hastx" ] || return 0
+    # THE PER-DAY TABLE (2026-08-31, user request — ONE table): the Files
+    # and Duration groups (the Transfers, UC2 state and First seen groups and
+    # the Files In / Out columns went 2026-09-29, user request) are column
+    # GROUPS of one table, a gband banner row over a shared Date column (its
+    # cells link the day's page). The group dividers are SPACER columns
+    # (th/td.spc — no borders, page background), one before each group, so
+    # each group has its own table-like edges and the row lines stop at the
+    # gaps.
+    #
+    # THE NEWEST 14 DAYS (HOME_DAYS; 2026-09-29, user request "have only 14
+    # days in the Date tables" — the same morning every day showed). The
+    # Total row sums exactly those days (the Duration total = their own
+    # percentiles) and only from 10 days up (2026-08: a short table's sums
+    # add nothing a glance does not give); its links open the reports at the
+    # same FROM..TO range. data-nosort: the rows stay newest first.
+    local dcount dfrom dto
+    dcount=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL"' | wc -l | tr -d ' ')
+    dto=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL" { print $1; exit }')
+    dfrom=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL" { d = $1 } END { print d }')
+    local rng="$dfrom..$dto"
+    local d fc fok frv fer fpc fsum=0 foksum=0 frvsum=0 fersum=0
+    local dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 dtot="" dcc="" c
+    # every cell of the Duration group opens transfer/duration.html (2026-09-14,
+    # user request): the banner, the p-headers and the Total at the shown
+    # FROM..TO range, each day's five cells with ?axway_row=<that date> — the
+    # row marked. data-href on the cell; report.js setupCellLinks navigates
+    # there and outranks the row link
+    local DURGO=""; [ -f docs/transfer/duration.html ] && DURGO=" data-href=\"transfer/duration.html?axway_date=$rng\""
+    printf '<div class="sxs homeday">\n<div class="sxscol">\n'
+    printf '<div class="tablewrap perday"><table class="index fit dayrows" data-nosearch="1" data-nosort="1">\n'
+    printf '<tr class="gbrow"><th></th><th class="spc"></th><th class="gband" colspan="4">Files</th><th class="spc"></th><th class="gband" colspan="5"%s>Duration</th></tr>\n' "$DURGO"
+    printf '<tr><th>Date</th><th class="spc"></th><th class="num">Ok</th><th class="num">Cured</th><th class="num">Error</th><th class="num">Error %%</th><th class="spc"></th><th class="num"%s>p50</th><th class="num"%s>p75</th><th class="num"%s>p90</th><th class="num"%s>p95</th><th class="num"%s>p99</th></tr>\n' \
+        "$DURGO" "$DURGO" "$DURGO" "$DURGO" "$DURGO"
+    while IFS=$'\t' read -r d fc fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99; do
+        [ -n "$d" ] || continue
+        # the sentinel LAST line: the shown days' duration percentiles for
+        # the Total row (a percentile cannot be summed)
+        if [ "$d" = "TOTAL" ]; then
+            dtot=""
+            for c in "$dc50:$dv50" "$dc75:$dv75" "$dc90:$dv90" "$dc95:$dv95" "$dc99:$dv99"; do   # p99 last (2026-09-13, user request)
+                dtot="$dtot$(_durcell "${c%%:*}" "${c#*:}")"
             done
-            printf '</tr>\n'
-        done <<< "$dl"
-        # —— the ONE Total row (from 10 days up) ——
-        dotify_v "$fsum"; esc "$DOT"; local fst=$ESC
-        dotify_v "$foksum"; esc "$DOT"; local fokt=$ESC; dotify_v "$fersum"; esc "$DOT"; local fert=$ESC
-        local fpct=""
-        [ "$fsum" -gt 0 ] && fpct=$(awk -v e="$fersum" -v n="$fsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
-        local fint="" foutt=""
-        if [ "$finsum" -gt 0 ]; then dotify_v "$finsum"; esc "$DOT"; fint=$ESC; fi
-        if [ "$foutsum" -gt 0 ]; then dotify_v "$foutsum"; esc "$DOT"; foutt=$ESC; fi
-        local frvt=""
-        if [ "$frvsum" -gt 0 ]; then dotify_v "$frvsum"; esc "$DOT"; frvt=$ESC
-            # the whole-window Recovered total opens the report unnarrowed
-            [ -f "docs/transfer/retries-recovered-files.html" ] && frvt="<a href=\"transfer/retries-recovered-files.html\">$ESC</a>"; fi
-        # the whole-window Error total opens the Failed files list unnarrowed (2026-09-14);
-        # the empty ?axway_search= on both home links (2026-09-15) clears a search the
-        # subscription pages' Error cells left remembered for the page
-        if [ "$fersum" -gt 0 ] && [ -f "docs/transfer/failed-files.html" ]; then fert="<a href=\"transfer/failed-files.html?axway_search=\">$fert</a>"; fi
-        # the Duration total = the report's own overall percentiles (a
-        # percentile cannot be summed); empty cells when the report is absent
-        [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'   # five: p50 p75 p90 p95 p99
-        # the First-seen totals: the report's SEEN line — the SAME figure as
-        # the status tables' Seen column (the day cells
-        # above plus the report's no-date bucket sum to it); each links its
-        # <type>-seen list, whose row count IS that figure
-        # an env without the report (2026-09-03, production runtime: the build
-        # died on "fsgs: unbound variable" under set -u) shows empty cells
-        local fsgs="" fsps="" fsss="" fsas="" fsls="" fshs="" c
-        if [ -f "$HOME_ENV_DATA/analyses/reports/first-seen.rpt" ]; then
-            IFS=$'\t' read -r c fsgs fsps fsss fsas fsls fshs \
-                <<< "$(awk -F'\t' '$1=="SEEN"{print; exit}' "$HOME_ENV_DATA/analyses/reports/first-seen.rpt")"
+            continue
         fi
-        local fstot=""
-        for c in "partners:$fsps" "subscriptions:$fsss"; do
-            v=${c#*:}
-            if [ -z "$v" ] || [ "$v" = 0 ]; then fstot="$fstot<td class=\"num\"></td>"; continue; fi
-            dotify_v "$v"; esc "$DOT"
-            if [ -f "docs/first-seen/${c%%:*}-seen.html" ]; then
-                fstot="$fstot<td class=\"num\"><a href=\"first-seen/${c%%:*}-seen.html\">$ESC</a></td>"
-            else fstot="$fstot<td class=\"num\">$ESC</td>"; fi
-        done
-        # the Transfers and State totals (2026-09-06)
-        local tokt="" tert="" tpct="" twtt="" txpt=""
-        if [ "$toksum" -gt 0 ]; then dotify_v "$toksum"; esc "$DOT"; tokt=$ESC; fi
-        if [ "$tersum" -gt 0 ]; then dotify_v "$tersum"; esc "$DOT"; tert=$ESC; fi
-        [ "$tcnsum" -gt 0 ] && tpct=$(awk -v e="$tersum" -v n="$tcnsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
-        if [ "$twtsum" -gt 0 ]; then dotify_v "$twtsum"; esc "$DOT"; twtt=$ESC; fi
-        if [ "$txpsum" -gt 0 ]; then dotify_v "$txpsum"; esc "$DOT"; txpt=$ESC; fi
-        [ "$dcount" -ge 10 ] && printf '<tr class="total"><td>Total</td><td class="spc"></td><td class="num okc">%s</td><td class="num errc">%s</td><td class="num">%s</td><td class="spc"></td><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td><td class="spc"></td><td class="num warn">%s</td><td class="num errc">%s</td><td class="spc"></td>%s<td class="spc"></td>%s</tr>\n' \
-            "$tokt" "$tert" "$tpct" "$fint" "$foutt" "$fokt" "$frvt" "$fert" "$fpct" "$twtt" "$txpt" "$dtot" "$fstot"
-        printf '</table></div>\n'
-    fi
+        _daycell "$d"
+        printf '<tr><td>%s</td><td class="spc"></td>' "$dcc"
+        # —— Files (from transfer/topview.html): Ok / Cured / Error tinted
+        # like that page's cells, a 0 an empty cell (the render_rpt.awk
+        # convention) ——
+        if [ "$fc" != "-" ] && [ -n "$fc" ]; then
+            fsum=$((fsum + fc))   # the Files count (no column of its own) — the Error % base
+            if [ "$fok" = "-" ] || [ "$fok" = 0 ]; then printf '<td class="num processed z"></td>'; else
+                dotify_v "$fok"; esc "$DOT"; printf '<td class="num processed">%s</td>' "$ESC"; fi
+            # Cured, amber like topview's Recovered cells; a nonzero cell
+            # opens the Recovered files report narrowed to that day
+            # (2026-09-01, user request)
+            if [ "$frv" = "-" ] || [ "$frv" = 0 ] || [ -z "$frv" ]; then printf '<td class="num warn"></td>'; else
+                dotify_v "$frv"; esc "$DOT"
+                if [ -f "docs/transfer/retries-recovered-files.html" ]; then
+                    printf '<td class="num warn"><a href="transfer/retries-recovered-files.html?axway_date=%s">%s</a></td>' "$d" "$ESC"
+                else printf '<td class="num warn">%s</td>' "$ESC"; fi
+                frvsum=$((frvsum + frv)); fi
+            # Error opens the FAILED FILES list narrowed to its day
+            # (2026-09-14, user request); the empty ?axway_search= clears a
+            # search the subscription pages' Error cells left remembered
+            if [ "$fer" = "-" ] || [ "$fer" = 0 ]; then printf '<td class="num failed z"></td>'; else
+                dotify_v "$fer"; esc "$DOT"
+                if [ -f "docs/transfer/failed-files.html" ]; then
+                    printf '<td class="num failed"><a href="transfer/failed-files.html?axway_date=%s&amp;axway_search=">%s</a></td>' "$d" "$ESC"
+                else printf '<td class="num failed">%s</td>' "$ESC"; fi; fi
+            [ "$fok" != "-" ] && foksum=$((foksum + fok)); [ "$fer" != "-" ] && fersum=$((fersum + fer))
+            if [ "$fpc" = "-" ]; then printf '<td class="num"></td>'; else
+                esc "$fpc"; printf '<td class="num">%s</td>' "$ESC"; fi
+        else
+            printf '<td class="num processed"></td><td class="num warn"></td><td class="num failed"></td><td class="num"></td>'
+        fi
+        printf '<td class="spc"></td>'
+        # —— Duration (from transfer/duration.html): the day's p50 … p99,
+        # tinted like that page's cells; the day's own link marks that row
+        local _durgo_rng=$DURGO
+        [ -n "$DURGO" ] && DURGO=" data-href=\"transfer/duration.html?axway_row=$d\""
+        _durcell "$dc50" "$dv50"; _durcell "$dc75" "$dv75"
+        _durcell "$dc90" "$dv90"; _durcell "$dc95" "$dv95"; _durcell "$dc99" "$dv99"
+        DURGO=$_durgo_rng
+        printf '</tr>\n'
+    done <<< "$dl"
+    # —— the ONE Total row (from 10 days up): the shown days ——
+    dotify_v "$foksum"; esc "$DOT"; local fokt=$ESC; dotify_v "$fersum"; esc "$DOT"; local fert=$ESC
+    local fpct=""
+    [ "$fsum" -gt 0 ] && fpct=$(awk -v e="$fersum" -v n="$fsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
+    local frvt=""
+    if [ "$frvsum" -gt 0 ]; then dotify_v "$frvsum"; esc "$DOT"; frvt=$ESC
+        [ -f "docs/transfer/retries-recovered-files.html" ] && frvt="<a href=\"transfer/retries-recovered-files.html?axway_date=$rng\">$ESC</a>"; fi
+    if [ "$fersum" -gt 0 ] && [ -f "docs/transfer/failed-files.html" ]; then fert="<a href=\"transfer/failed-files.html?axway_date=$rng&amp;axway_search=\">$fert</a>"; fi
+    [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'   # five: p50 p75 p90 p95 p99
+    [ "$dcount" -ge 10 ] && printf '<tr class="total"><td>Total</td><td class="spc"></td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td><td class="spc"></td>%s</tr>\n' \
+        "$fokt" "$frvt" "$fert" "$fpct" "$dtot"
+    printf '</table></div>\n</div>\n'
+    printf '<div class="sxscol">\n'
+    write_home_errors
+    printf '</div>\n</div>\n'
+}
+
+# THE ERRORS TABLE beside the per-day table (2026-09-29, user request: "Have a
+# table Errors side by side to the Date table — the columns Subscription /
+# Date/time / Reason from /analyses/failed.html"): every row of Failed
+# Subscriptions (data/transfer/reports/failed.rpt, its one table), newest
+# first, in that page's row colours. The Subscription cell opens what the row
+# opens there — the File's (or the server-failing flow's) page under files/ —
+# and an unpaged row's name its detail page; the banner opens the report.
+write_home_errors() {
+    local rpt="$HOME_ENV_DATA/transfer/reports/failed.rpt"
+    local smap="$HOME_ENV_DATA/transfer/reports/details/subscriptions/_slugmap.tsv"
+    [ -f "$rpt" ] || return 0
+    # the banner opens the report the way the Duration banner does (data-href,
+    # report.js setupCellLinks) — a plain link would take the header's white
+    local ban=""; [ -f docs/analyses/failed.html ] && ban=' data-href="analyses/failed.html"'
+    printf '<div class="tablewrap perday"><table class="index fit dayrows homeerr" data-nosearch="1" data-nosort="1" data-restint="1">\n'
+    printf '<tr class="gbrow"><th class="gband" colspan="3"%s>Errors</th></tr>\n' "$ban"
+    printf '<tr><th>Subscription</th><th>Date/time</th><th>Reason</th></tr>\n'
+    [ -f "$smap" ] || smap=/dev/null
+    LC_ALL=C awk -F'\t' -v SMAP="$smap" '
+        BEGIN { while ((getline l < SMAP) > 0) { split(l, m, "\t"); if (m[1] != "") { SL[m[1]] = m[2]; if (!(toupper(m[1]) in SU)) SU[toupper(m[1])] = m[2] } } close(SMAP) }
+        $1 == "TABLE" { t++ }
+        t != 1 || $1 != "ROW" { next }
+        {   nm = $2; href = ""
+            if (substr(nm, 1, 2) == "@{") { at = substr(nm, 3, index(nm, "}") - 3); nm = substr(nm, index(nm, "}") + 1)
+                na = split(at, A, ","); for (i = 1; i <= na; i++) if (substr(A[i], 1, 5) == "href=") href = substr(A[i], 6) }
+            sub(/^\.\.\//, "", href)
+            if (href == "") { sg = (nm in SL) ? SL[nm] : ((toupper(nm) in SU) ? SU[toupper(nm)] : ""); if (sg != "") href = "details/subscriptions/" sg ".html" }
+            res = ""; for (i = 3; i <= NF; i++) if (substr($i, 1, 10) == "@data:res=") res = substr($i, 11)
+            print $3 "\t" nm "\t" href "\t" $4 "\t" res }' "$rpt" \
+    | LC_ALL=C sort -t$'\t' -k1,1r -k2,2 \
+    | awk -F'\t' '
+        function esc(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+        { c = ($3 != "") ? "<a href=\"" esc($3) "\">" esc($2) "</a>" : esc($2)
+          printf "<tr%s><td>%s</td><td>%s</td><td>%s</td></tr>\n", ($5 ~ /^(green|orange|red)$/ ? " data-res=\"" $5 "\"" : ""), c, esc($1), esc($4) }'
+    printf '</table></div>\n'
 }
 
 # (The Report finder — docs/tools/report-finder.html, its FINDER_AWK row
