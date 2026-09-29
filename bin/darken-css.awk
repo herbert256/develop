@@ -13,24 +13,24 @@
 #   awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css
 BEGIN {
     # backgrounds (surfaces and tints)
-    B["#f7f7f9"] = "#15191f"; B["#fff"] = "#1e242c"; B["#ffffff"] = "#1e242c"; B["#f2f2f2"] = "#232a33"
+    B["#f7f7f9"] = "#15191f"; B["#fff"] = "#1e242c"; B["#f2f2f2"] = "#232a33"
     B["#e8f0fe"] = "#2a3a52"; B["#dde4ec"] = "#2b3644"; B["#e4f6e4"] = "#1f3d26"; B["#fdf1dc"] = "#4a3a17"
-    B["#fff3d6"] = "#4a3a17"; B["#fde3e3"] = "#4a2020"; B["#eef2f6"] = "#262e38"
+    B["#fff3d6"] = "#4a3a17"; B["#fde3e3"] = "#4a2020"
     B["#f5f6f7"] = "#262b32"; B["#fafbfc"] = "#1e242c"; B["#fff6e0"] = "#3d3320"; B["#fdf0dc"] = "#4a3a17"
     B["#fdf7f7"] = "#2e2222"; B["#f6f9fc"] = "#22303c"; B["#f7f9fc"] = "#232a33"; B["#e3ebf4"] = "#2b3644"
     B["#eef1f5"] = "#2b323b"; B["#eef9ee"] = "#16211a"; B["#fdf7ea"] = "#241f14"; B["#fdeeee"] = "#241717"
     B["#f1e7d8"] = "#2a2419"; B["#e2eef8"] = "#1a2530"; B["#ececec"] = "#222528"
     B["#fbf4d5"] = "#2a2716"; B["#fbe6cd"] = "#2b2118"; B["#eee2f6"] = "#241f2c"; B["#c2d7f3"] = "#2f4d75"
-    B["#93b9e6"] = "#3a6499"; B["#5e93cf"] = "#4a7dbd"; B["#2c4a6b"] = "#3a5f8a"; B["#ffd36b"] = "#ffd36b"
+    B["#93b9e6"] = "#3a6499"; B["#5e93cf"] = "#4a7dbd"; B["#2c4a6b"] = "#3a5f8a"
     B["#20344a"] = "#20344a"
     # the Polling "contradicts the cron" cell (td.obsbad): already dark, kept —
     # without an entry the rule had no dark twin and the dark row tints painted
     # over it (2026-09-28 fix)
     B["#8b1a1a"] = "#8b1a1a"
     # text
-    C["#222"] = "#d6dbe1"; C["#444"] = "#b8c0c8"; C["#333"] = "#c4cbd3"; C["#555"] = "#a8b2bc"; C["#556"] = "#a8b2bc"
+    C["#222"] = "#d6dbe1"; C["#444"] = "#b8c0c8"; C["#333"] = "#c4cbd3"; C["#555"] = "#a8b2bc"
     C["#666"] = "#9aa5b1"; C["#5a6b7d"] = "#9aa5b1"; C["#66707c"] = "#9aa5b1"; C["#6b7785"] = "#9aa5b1"
-    C["#5f6b78"] = "#9aa5b1"; C["#5a6673"] = "#9aa5b1"; C["#888"] = "#7f8a96"; C["#777"] = "#8a95a1"
+    C["#5f6b78"] = "#9aa5b1"; C["#888"] = "#7f8a96"; C["#777"] = "#8a95a1"
     C["#8a94a1"] = "#7f8a96"; C["#8a94a6"] = "#7f8a96"; C["#8a97a5"] = "#7f8a96"; C["#8a97a4"] = "#7f8a96"
     C["#9aa7b4"] = "#7f8a96"; C["#94a2af"] = "#7f8a96"; C["#a9b2bc"] = "#6f7a86"; C["#b3bcc6"] = "#6f7a86"
     C["#7a8894"] = "#8a95a1"; C["#20344a"] = "#a9c4e4"; C["#33475b"] = "#b8c0c8"; C["#3b6ea5"] = "#7fb0e0"
@@ -38,14 +38,17 @@ BEGIN {
     C["#7a4a00"] = "#f0c070"; C["#8a5a00"] = "#f0c070"; C["#c0392b"] = "#ff7b6b"; C["#96281b"] = "#ff9a8a"
     C["#1e7e34"] = "#6ad07f"; C["#155d27"] = "#8ae09a"; C["#566573"] = "#9aa5b1"; C["#39434e"] = "#b8c0c8"
     C["#157a48"] = "#6ad07f"; C["#2c6aa0"] = "#7fb0e0"; C["#2f7d40"] = "#6ad07f"; C["#c14638"] = "#ff7b6b"
-    C["#b97c1e"] = "#f0c070"; C["#5f47a6"] = "#b9a4f0"; C["#b6bfc9"] = "#5a6470"; C["#b9c4d0"] = "#5a6470"
+    C["#b97c1e"] = "#f0c070"; C["#5f47a6"] = "#b9a4f0"; C["#b6bfc9"] = "#5a6470"
     # borders and outlines
     D["#ddd"] = "#3a4451"; D["#dde3ea"] = "#3a4451"; D["#e4e9ef"] = "#3a4451"; D["#cfd7de"] = "#3a4451"
     D["#ccd3db"] = "#3a4451"; D["#e8eaed"] = "#2f3842"; D["#b9c4d0"] = "#3a4451"; D["#c9d4df"] = "#3a4451"
     D["#b8d0e8"] = "#3a5f8a"; D["#20344a"] = "#6f95bd"; D["#bcdcbc"] = "#2f5a36"; D["#e8c0c0"] = "#6b2f2f"
     D["#e8d9b0"] = "#6b5320"; D["#e8b0b0"] = "#6b2f2f"; D["#e8c99a"] = "#6b5320"
-    D["#f0d9a0"] = "#6b5320"; D["#e6d7d7"] = "#4a3a3a"; D["#f7f7f9"] = "#15191f"; D["#c9d2dc"] = "#3a4451"
-    D["#f2f2f2"] = "#232a33"; D["#e4f6e4"] = "#1f3d26"; D["#fde3e3"] = "#4a2020"
+    D["#f0d9a0"] = "#6b5320"; D["#e6d7d7"] = "#4a3a3a"; D["#f7f7f9"] = "#15191f"
+    # the report-link hover underline (.report-link a:hover): the light-theme
+    # hover blue stayed #3a5a80 on the dark page (2.1:1) — now the light blue
+    # of its text twin C["#3a5a80"]
+    D["#3a5a80"] = "#7fb0e0"
     D["#f0f3f7"] = "#2f3842"; D["#e9edf2"] = "#2f3842"   # the day Top-5 and chart-data row rules (2026-09-29: no entry, near-white lines on dark cards)
     # the load BAR (td.bar span, 2026-09-29): its own navy, so the dark twin can
     # lighten it — #20344a stays #20344a in B (the navy surfaces) and a bar in
@@ -63,6 +66,13 @@ function swap(decls,   n, i, d, p, v, out, k, m, lo, prop) {
         p = index(d[i], ":"); if (!p) continue
         prop = d[i]; sub(/^[ \t]+/, "", prop); prop = substr(prop, 1, index(prop, ":") - 1); gsub(/[ \t]/, "", prop)
         v = substr(d[i], p + 1); lo = tolower(v)
+        # a translucent WHITE background (rgba(255,255,255,a) — .card-more,
+        # the "full report" pill over a chart) turns into the dark card
+        # surface #1e242c at the same alpha; without it the pill stayed a
+        # light patch on every dark chart card (2026-09-29 audit)
+        if (prop ~ /^background/ && lo ~ /rgba\( *255 *, *255 *, *255 *,/) {
+            gsub(/rgba\( *255 *, *255 *, *255 *,/, "rgba(30,36,44,", lo); out = out prop ":" lo ";"; continue
+        }
         if (lo !~ /#[0-9a-f]+/) continue
         if (prop == "color") m = 0; else if (prop ~ /^background/) m = 1; else if (prop ~ /^(border|outline)/) m = 2; else continue
         while (match(lo, /#[0-9a-f]+/)) {
@@ -82,7 +92,7 @@ function emit(rule,   b, sel, decls, n, s, i, out, dk) {
     b = index(rule, "{"); if (!b) return
     sel = substr(rule, 1, b - 1); decls = substr(rule, b + 1); sub(/\}[ \t]*$/, "", decls)
     gsub(/\/\*[^*]*\*+([^\/*][^*]*\*+)*\//, "", sel); gsub(/^[ \t\n]+|[ \t\n]+$/, "", sel)
-    if (sel == "" || sel ~ /^@/ || sel ~ /\.topbar|\.ddlabel|\.brand|envswitch|searchbtn|helpbtn|themebtn|\.csvbtn|\.colbtn/) return
+    if (sel == "" || sel ~ /^@/ || sel ~ /\.topbar|\.ddlabel|\.brand|searchbtn|helpbtn|\.csvbtn/) return
     gsub(/\/\*[^*]*\*+([^\/*][^*]*\*+)*\//, "", decls)
     dk = swap(decls); if (dk == "") return
     n = split(sel, s, ","); out = ""

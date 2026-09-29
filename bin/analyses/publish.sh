@@ -3,10 +3,15 @@
 # bin/analyses/publish.sh — render the ANALYSES .rpt files into docs/:
 #
 #   docs/analyses/first-seen.html          the First seen table
-#   docs/analyses/use-cases.html
-#   docs/analyses/accounts.html
-#   docs/analyses/index.html                the analyses catalog page
+#   docs/analyses/use-cases.html, subscriptions.html, logical-detection.html,
+#   accounts.html                           the Configuration pages
+#   docs/analyses/*.html                    the analyses .rpt pages (via
+#                                           publish-insights.sh and the
+#                                           subscription group renders)
 #   docs/first-seen/<member>-<key>.html     one page per First seen cell
+#   docs/coverage/<member>-<key>.html       the 5 PDA Configured cell pages
+# (the Analyses start page, docs/analyses/index.html, went 2026-09-29 — the
+# one Reports pulldown, docs/reports/index.html, is the catalog)
 #
 # The Entities coverage page and the whole docs/coverage/ cell tree were
 # REMOVED 2026-07: the home + analyses Status figures had all moved to the
@@ -17,8 +22,8 @@
 #
 # The cell pages of the tables that remain render FIRST: a table links only
 # the cell pages that exist, so a zero cell stays plain. Run AFTER the
-# per-area publishes and BEFORE bin/build/publish.sh (whose root index card links
-# docs/analyses/index.html). Runs from any working directory.
+# per-area publishes and BEFORE bin/build/publish.sh (which applies the report
+# groups to these pages). Runs from any working directory.
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,7 +34,7 @@ ARPT="$DATA/analyses/reports"
 FSRPT="$DATA/first-seen"
 FSDIR="$DOCS/first-seen"
 ADIR="$DOCS/analyses"
-COVRPT="$DATA/coverage"   # the coverage cell .rpts (the 3 PDA Configured cells)
+COVRPT="$DATA/coverage"   # the coverage cell .rpts (the 5 PDA Configured cells: logicals, partners, domains, applications, BL)
 COVDIR="$DOCS/coverage"   # and their pages (restored 2026-07, linked from the home)
 
 ensure_assets   # topbar-data.js (the menus' data file)
@@ -60,11 +65,10 @@ _fs_cell() {   # $1 = the cell .rpt
         *)             nlabel="Name" ;;
     esac
     [ -f "$resfile" ] || resfile=""
-    # the Not seen pages drop the First column (always blank there)
     local ltcol=1
-    case $key in notseen) ltcol=0 ;; esac
     # the Total / Seen / Not seen cells open the Entities views instead
-    # (write_first_seen_page) — no cell page of their own (2026-09-29)
+    # (write_first_seen_page) — no cell page of their own (2026-09-29), and
+    # first-seen.sh writes no .rpt for them any more; a guard only
     case $key in total|seen|notseen) return 0 ;; esac
     {
         html_head "$title" "../assets/style.css" "" "HOME" "first-seen"
@@ -83,7 +87,7 @@ _fs_cell() {   # $1 = the cell .rpt
             NF {
                 name = e($1)
                 if ($4 != "") name = "<a href=\"../details/" $4 ".html\">" name "</a>"
-                trattr = " data-seen=\"" $3 "\""
+                trattr = ""   # (no data-seen: nothing reads it on these pages — 2026-09-29 audit)
                 rr = res[toupper($1)]
                 if (rr == "green" || rr == "orange" || rr == "red") trattr = trattr " data-res=\"" rr "\""
                 nrows++; if ($3 == 1) nseen++
@@ -361,7 +365,7 @@ render_coverage_pages() {
                     tail = (lc == 2) ? "" : ((lc == 1) ? "<td>" ((ipc == 1) ? substr($5, 1, 10) : e($5)) "</td>" : "<td>" seen "</td>")   # (the Result column is gone — the row tint carries the outcome)
                     # every row is tinted by the entity result — green /
                     # orange / red from the base cache (data-res, style.css)
-                    trattr = " data-seen=\"" $3 "\""
+                    trattr = ""   # (no data-seen: nothing reads it here — 2026-09-29 audit)
                     rr = res[toupper($1)]
                     # base result carries the tint directly
                     if (rr == "green" || rr == "orange" || rr == "red") trattr = trattr " data-res=\"" rr "\""
@@ -553,7 +557,6 @@ _ucsearch() {
     case $uc in UC[0-9]*) ;; *) return 0 ;; esac
     case $2 in
         total)   q="\"$uc\" and not \"white\"" ;;   # the skip-listed rows (result white) are not in the Total (2026-09-29: 49 opened 51 rows)
-        seen)    q="\"$uc\" and \"green\" or \"$uc\" and \"red\"" ;;
         error)   q="\"$uc\" and \"red\"" ;;
         warning) q="\"$uc\" and \"orange\"" ;;
         ok)      q="\"$uc\" and \"green\"" ;;
@@ -598,12 +601,18 @@ _uc_direction() {   # $1 "We are"  $2 "We"  -> "out/in" etc; "" when undefined
 write_use_cases_page() {
     local out="$ADIR/use-cases.html" subs="$DATA/flow-manager/base/_subscriptions.tsv"
     local ucdf="$DATA/flow-manager/xref/_subscriptions-ucderived.tsv"; [ -f "$ucdf" ] || ucdf=/dev/null
+    # SEEN = the coverage seen flag (showseen.sh coverage/subscriptions.tsv
+    # col 3 — "in the transfer log"), the figure every other Seen cell on the
+    # site reads (2026-09-29 audit: Error + Ok counted a red flow that never
+    # transferred — the UC3 cannot-connect red — as seen)
+    local covf="$DATA/transfer/reports/coverage/subscriptions.tsv"; [ -f "$covf" ] || covf=/dev/null
     [ -f "$subs" ] || { rm -f "$out"; return 0; }
-    # per use case: total / not seen / error / ok, and the configured
+    # per use case: total / not seen / error / ok / seen, and the configured
     # directions (out / in / other) for the direction-vs-UC consistency check
     local rows
     rows=$(awk -F'\t' '
-        NR == FNR { if ($1 != "" && $2 != "") UCD[toupper($1)] = $2; next }
+        FILENAME == ARGV[1] { if ($1 != "" && $2 != "") UCD[toupper($1)] = $2; next }
+        FILENAME == ARGV[2] { if ($1 != "" && $3 == "1") SEENF[toupper($1)] = 1; next }
         $1 != "" {
             name = $1; res = $3
             uc = "(none)"
@@ -613,10 +622,11 @@ write_use_cases_page() {
             if (res == "green")          ok[uc]++
             else if (res == "orange")    ns[uc]++
             else if (res == "red")       err[uc]++
+            if (toupper(name) in SEENF)  sn[uc]++
             if ($2 == "out") dout[uc]++; else if ($2 == "in") din[uc]++; else doth[uc]++
         }
-        END { for (u in seen) print u "\t" tot[u] "\t" (ns[u]+0) "\t" (err[u]+0) "\t" (ok[u]+0) "\t" (dout[u]+0) "\t" (din[u]+0) "\t" (doth[u]+0) }
-    ' "$ucdf" "$subs" | LC_ALL=C sort -V)
+        END { for (u in seen) print u "\t" tot[u] "\t" (ns[u]+0) "\t" (err[u]+0) "\t" (ok[u]+0) "\t" (dout[u]+0) "\t" (din[u]+0) "\t" (doth[u]+0) "\t" (sn[u]+0) }
+    ' "$ucdf" "$covf" "$subs" | LC_ALL=C sort -V)
     # UNION with the template catalog: a UC whose template is published but has
     # no subscriptions yet (today UC6/UC7) still gets a row — all-zero counts.
     local tmpl="$DATA/flow-manager/xref/_templates.tsv"
@@ -624,7 +634,7 @@ write_use_cases_page() {
         rows=$({ printf '%s\n' "$rows"
                  awk -F'\t' -v have="$(printf '%s\n' "$rows" | cut -f1 | tr '\n' ' ')" '
                      BEGIN { n = split(have, H, " "); for (i = 1; i <= n; i++) seen[H[i]] = 1 }
-                     $2 != "" && !($2 in seen) && !dup[$2]++ { print $2 "\t0\t0\t0\t0\t0\t0\t0" }
+                     $2 != "" && !($2 in seen) && !dup[$2]++ { print $2 "\t0\t0\t0\t0\t0\t0\t0\t0" }
                  ' "$tmpl"; } | LC_ALL=C sort -V)
     fi
     {
@@ -633,14 +643,14 @@ write_use_cases_page() {
         printf '<div class="tablewrap"><table class="index fit" data-nosearch="1">\n'
         printf '<tr><th>Use Case</th><th>Direction</th><th>Trigger</th><th>We are</th><th>We</th><th class="num">Total</th><th class="num">Seen</th><th class="num">Error</th><th class="num">Warning</th><th class="num">Ok</th><th>Description</th></tr>\n'
         local uc t ns er okc dout din doth sn mm Tt=0 Tns=0 Ter=0 Tok=0 Tsn=0 Tmm=0
-        while IFS=$'\t' read -r uc t ns er okc dout din doth; do
+        while IFS=$'\t' read -r uc t ns er okc dout din doth sn; do
             [ -n "$uc" ] || continue
             local ucfrom ucto weare we human exp trigger
             # read on \036 (RS, not IFS whitespace) so an EMPTY middle field keeps
             # its place — UC8's `exp` is empty, and a plain IFS=$'\t' read would
             # collapse it, shifting the trigger (OpsWise) into `exp` and blanking it.
             IFS=$'\036' read -r ucfrom ucto weare we human exp trigger <<< "$(uc_meta "$uc" | tr '\t' '\036')"
-            sn=$((er + okc))   # Seen = Error + Ok
+            sn=${sn:-0}   # Seen = in the transfer log (the coverage flag), NOT Error + Ok
             mm=0; case $exp in out) mm=$((din + doth)) ;; in) mm=$((dout + doth)) ;; esac
             Tmm=$((Tmm + mm))
             printf '<tr>'
@@ -650,7 +660,7 @@ write_use_cases_page() {
             esc "$weare"; printf '<td>%s</td>' "$ESC"
             esc "$we"; printf '<td>%s</td>' "$ESC"
             _uccell "$t"   "num"          "$(_ucsearch "$uc" total)"
-            _uccell "$sn"  "num"          "$(_ucsearch "$uc" seen)"
+            _uccell "$sn"  "num"          ""   # no link (2026-09-29 audit): Seen = the coverage flag, which no search on the Subscriptions page can reproduce (a red never-transferred flow is not seen)
             _uccell "$er"  "num st-err"   "$(_ucsearch "$uc" error)"
             _uccell "$ns"  "num st-warn"  "$(_ucsearch "$uc" warning)"
             _uccell "$okc" "num st-ok"    "$(_ucsearch "$uc" ok)"
@@ -1180,9 +1190,6 @@ write_accounts_page() {
                 END{ for(i=1;i<=n;i++) if(nset[hh[i]]>1){p=pj[idx[i]]; if(pc[idx[i]]>6) p=p" (+"(pc[idx[i]]-6)" more)"; print hh[i]"\t"vv[i]"\t"p} }')
         [ -n "$r" ] && hc_stream+="$(printf '%s\n' "$r" | awk -v f="$field" -v l="$label" 'BEGIN{FS=OFS="\t"}{print f,l,$0}')"$'\n'
     done
-    local hc_nattr hc_nhosts
-    hc_nattr=$(printf '%s' "$hc_stream" | awk -F'\t' 'NF && !($1 in a){a[$1]=1;n++} END{print n+0}')
-    hc_nhosts=$(printf '%s' "$hc_stream" | awk -F'\t' 'NF && !($3 in h){h[$3]=1;n++} END{print n+0}')
     # Whitelist conflicts, GENERALISED (the inbound mirror of the host check):
     # for EVERY incoming CLIENT attribute, the whitelisted IPs shared by >1
     # incoming partner that carry >1 distinct value. Tagged stream
@@ -1203,9 +1210,6 @@ write_accounts_page() {
                 END{ for(i=1;i<=n;i++) if(nset[ii[i]]>1){p=pj[idx[i]]; if(pc[idx[i]]>6) p=p" (+"(pc[idx[i]]-6)" more)"; print ii[i]"\t"vv[i]"\t"p} }')
         [ -n "$wr" ] && wc_stream+="$(printf '%s\n' "$wr" | awk -v f="$wfield" -v l="$wlabel" 'BEGIN{FS=OFS="\t"}{print f,l,$0}')"$'\n'
     done
-    local wc_nattr wc_nips
-    wc_nattr=$(printf '%s' "$wc_stream" | awk -F'\t' 'NF && !($1 in a){a[$1]=1;n++} END{print n+0}')
-    wc_nips=$(printf '%s' "$wc_stream" | awk -F'\t' 'NF && !($3 in h){h[$3]=1;n++} END{print n+0}')
     # ---- ACCOUNT / LOGIN integrity checks (rendered at the end) --------------
     # A CLIENT profile login (the username a partner connects IN with) is
     # normally a provisioned FE<digits> account; SERVER profiles carry no login.
@@ -1347,7 +1351,7 @@ write_accounts_page() {
         else
             printf '<p class="range">Every incoming (CLIENT) partner has an <code>AllowIP</code> whitelist &mdash; no unrestricted inbound access.</p>\n'
         fi
-        printf '<h2>Remote hosts with conflicting setup</h2>\n'
+        printf '<h2>Hosts with conflicting setup</h2>\n'
         if [ -n "$hc_stream" ]; then
             local aspec arows anh prevh
             for aspec in "port|Port" "serverVerification|Host-key verification" "storedPublicKey|Stored host key" \
@@ -1466,15 +1470,16 @@ write_accounts_page() {
 # laps (2026-09-27, speed round 10): TIME lines on the build console
 _ap0=$(date +%s)
 _aplap() { local _t1; _t1=$(date +%s); printf "TIME %5ds  analyses publish: %s\n" "$((_t1 - _ap0))" "$1" >&2; _ap0=$_t1; }
-render_coverage_pages   # the 3 PDA Configured cell pages (linked from the home)
+render_coverage_pages   # the 5 PDA Configured cell pages (linked from the home)
 _aplap "coverage pages"
-rm -rf "$DOCS/use-cases"   # the per-cell pages went 2026-09-29 (the counts link the Subscriptions page)
+# (the Use cases per-cell pages went 2026-09-29 — the counts link the
+# Subscriptions page; nothing writes docs/use-cases/, use-case-patterns.html,
+# added-bl.html or analyses/index.html any more, and every build starts from
+# an empty docs/, so there is nothing to clean up)
 render_first_seen_pages # docs/first-seen/*.html, before the First seen table links them
 write_use_cases_page
-rm -f "$ADIR/use-case-patterns.html"
 write_subscriptions_page
 write_logical_detection_page
-rm -f "$ADIR/added-bl.html"
 write_accounts_page
 write_first_seen_page
 _aplap "use cases, first seen, configuration pages"
@@ -1532,6 +1537,5 @@ for _ffil in failing all; do
 done
 
 _aplap "the rest"
-rm -f "$ADIR/index.html"   # the Analyses start page went 2026-09-29 (one Reports pulldown: docs/reports/index.html)
 
-echo "Wrote docs/analyses (index + the analysis pages)." >&2
+echo "Wrote docs/analyses (the analysis pages), docs/first-seen and docs/coverage." >&2

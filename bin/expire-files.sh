@@ -27,10 +27,14 @@
 # deletion list).
 #
 # OUTCOME POLICY (2026-07): Expired counts as ERROR on every report (Waiting
-# stays OK) — consumers compare Error = ("Failed" || "Expired") — and the
-# entity RESULT color matches: bin/build/result.sh colors a subscription red when
-# its LAST outcome is Failed OR Expired (a Waiting last file stays green),
-# so a dead pickup flow never hides in green.
+# stays OK) — consumers compare Error = ("Failed" || "Expired"). Two COLOURS
+# follow from it, and they differ: the FILE colour (_files.tsv col 25) of an
+# Expired File is RED (this step sets it; a Waiting one orange), while the
+# SUBSCRIPTION result colour (bin/build/result.sh) of a flow whose LAST File
+# Expired is ORANGE — a pickup problem, not a failed delivery (2026-08); it
+# is red only when server-log evidence after its last transfer says so. A
+# Waiting last File keeps the flow green. Either way a dead pickup flow never
+# hides in green.
 #
 # Usage:  bin/expire-files.sh
 #

@@ -159,7 +159,7 @@ awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS"
         # the UC2 pickup sidecar (see the header): cols 1 subscription, 2
         # account, 5 pickups, 8 pattern — ONCE per
         # (login, account)
-        while ((getline l < PICKUPS) > 0) { n = split(l, a, "\t"); if (n < 18 || a[1] == "") continue
+        while ((getline l < PICKUPS) > 0) { n = split(l, a, "\t"); if (n < 16 || a[1] == "") continue
             su = toupper(a[1]); if (!(su in SL)) continue
             m = split(substr(SL[su], 2), LG9, SUBSEP)
             for (j = 1; j <= m; j++) { k = LG9[j]; key = k SUBSEP a[2]
@@ -223,28 +223,28 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
     # gsep: the column GROUPS (2026-09-03, user request) — a divider + extra
     # space before Cloud, Files in, Files out, Oldest waiting and Pickups (Error sits in the Files out group)
     printf 'TABLE\tFE logins\twide\tnofilter\trestint\tsort=8:-1\tgsep=2,4,5,10,11\n'
-    printf 'HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tError\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\tPickup pattern\n'
-    printf 'KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumfailed\ttext\tnum\ttext\n'
+    printf 'HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tError\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\n'
+    printf 'KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumfailed\ttext\tnum\n'
     # baked Files out DESC, then Files in DESC, then Pickups DESC, then Cloud DESC, then Gateway DESC (no stamp last), then login name (the secondary sort keys — see the
     # TABLE line); the sentinels swap back here, the result colour
     # becomes the row tint, an old-gateway-only login carries no tint. R
     # fields: 2 login 3 uc 4 cloud 5 gw 6 res 7 in 8 out 9 waiting 10 oldest
-    # 11 expired 12 pickups 13 retrieved 14 pattern 15 error. The ROW keeps
-    # @data:res AFTER Pickup pattern (field 15): partners-in.sh takes cells
-    # 3-13 and looks for the tint from field 15 on. The processed-kind count
+    # 11 expired 12 pickups 13 retrieved 14 pattern (not written — its one
+    # reader, partners-in.sh, dropped it; 2026-09-29) 15 error. The ROW
+    # carries @data:res right after Pickups (field 14): partners-in.sh takes
+    # cells 3-13 and looks for the tint from field 14 on. The processed-kind count
     # passes its 0 through: the renderer z-blanks it (an empty non-z
     # processed cell would show the base green on an untinted row).
     command grep $'^R\t' "$OUT.rows" | LC_ALL=C sort -t$'\t' -k8,8nr -k7,7nr -k12,12nr -k4,4r -k5,5r -k2,2f | awk -F'\t' '
         function z(v) { return (v + 0 == 0) ? "" : v }   # a 0 shows empty, like the z-blanked outcome cells
         { uc = ($3 == "-" ? "" : $3); last = ($4 == "-" ? "" : $4); gw = ($5 == "-" ? "" : $5)
-          ow = ($10 == "-" ? "" : $10); pat = ($14 == "-" ? "" : $14)
+          ow = ($10 == "-" ? "" : $10)
           res = ($6 == "-" ? "" : "\t@data:res=" $6)
-          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%s\t%s\t%s%s\n", \
-              $2, uc, last, gw, z($7), z($8), $15, $13, $9, $11, ow, z($12), pat, res }'
-    printf 'TOTAL\tTotal (%s rows)\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t@{class=num}%s\t\n' \
+          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%s\t%s%s\n", \
+              $2, uc, last, gw, z($7), z($8), $15, $13, $9, $11, ow, z($12), res }'
+    printf 'TOTAL\tTotal (%s rows)\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t@{class=num}%s\n' \
         "$n_all" "$(nz "$n_in")" "$(nz "$n_out")" "$n_err" "$n_ret" "$n_wait" "$n_exp" "$t_old" "$(nz "$n_pk")"
-    printf 'NOTE\t**input/logons_old.txt** carries the old gateway'\''s logons, one login per line: the login, then its stamp ("FE000123  2026-09-02 14:35") — the first token is the login (case-insensitive), the rest of the line is shown as written; blank lines and # comments are ignored. The file is per environment and hand-maintained (like BL.txt); when it is missing the column stays empty. A subscription'\''s use case is its name prefix, or the use case DERIVED from the configuration for a flow without one (the hybrid production flows). Files in / Files out count Files (one per CoreId) attributed to the login by their movement direction — the home page'\''s In/Out split — over the whole transfer window; Files out holds every File staged for the login — retrieved, waiting, expired or failed at pickup. **Error** counts the Files that FAILED, delivered (in) or picked up (out); Expired stays its own column, so Retrieved + Waiting + Expired + the failed pickups = Files out. **Oldest waiting** shows one unit, truncated ("5 days", "12 hours", "45 minutes", "10 seconds"), sorts by the exact age, and the Total row carries the oldest of all. **Pickups and Pickup pattern** come from the UC2 pickup sidecar (the data behind the UC2 status and UC2 pickup visits pages) and are taken ONCE per login: on the UC2 pickup visits page the account'\''s figures repeat on each of its UC2 subscriptions, so its totals run higher; on an account carrying several FE logins each login shows its own. Pickups counts LOGONS (an SFTP client opens several connections per visit); the visits they group into — a gap of more than 30 minutes starts a new visit — are what **Pickup pattern** describes: the typical spacing of the visits (their connections'\'' own spacing for a sustained poller); with fewer than three short visits there is no cadence to name, so a lone visit reads "Once" and two visits read the spacing between them; **Irregular** means the gaps have no rhythm — fewer than six in ten fall within half and double the typical spacing. The visit breakdown (collected, two-way, delivery-only, same-connection) stays on the UC2 pickup visits page. A login without a UC2 flow — or whose partner collects over CFT/PESIT and logs no SSH visit — leaves those cells empty while its Files still move.\n'
-    printf 'KEYWORDS\tpartners,incoming,fe,login,overview,status,use case,uc2,uc4,mailbox,last logon,gateway,old gateway,migration,files,in,out,retrieved,collected,waiting,expired,oldest,age,pickup,visit,pattern,cadence\n'
+    printf 'NOTE\t**input/logons_old.txt** carries the old gateway'\''s logons, one login per line: the login, then its stamp ("FE000123  2026-09-02 14:35") — the first token is the login (case-insensitive), the rest of the line is shown as written; blank lines and # comments are ignored. The file is per environment and hand-maintained (like BL.txt); when it is missing the column stays empty. A subscription'\''s use case is its name prefix, or the use case DERIVED from the configuration for a flow without one (the hybrid production flows). Files in / Files out count Files (one per CoreId) attributed to the login by their movement direction — the home page'\''s In/Out split — over the whole transfer window; Files out holds every File staged for the login — retrieved, waiting, expired or failed at pickup. **Error** counts the Files that FAILED, delivered (in) or picked up (out); Expired stays its own column, so Retrieved + Waiting + Expired + the failed pickups = Files out. **Oldest waiting** shows one unit, truncated ("5 days", "12 hours", "45 minutes", "10 seconds"), sorts by the exact age, and the Total row carries the oldest of all. **Pickups** come from the UC2 pickup sidecar (the data behind the UC2 status and UC2 pickup visits tables) and are taken ONCE per login: on the UC2 pickup visits table the account'\''s figures repeat on each of its UC2 subscriptions, so its totals run higher; on an account carrying several FE logins each login shows its own. Pickups counts LOGONS (an SFTP client opens several connections per visit). The visit breakdown (collected, two-way, delivery-only, same-connection) stays on the UC2 pickup visits page. A login without a UC2 flow — or whose partner collects over CFT/PESIT and logs no SSH visit — leaves those cells empty while its Files still move.\n'
     printf 'FOOT\tGenerated on %s\n' "$GENDATE"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 rm -f "$OUT.rows"

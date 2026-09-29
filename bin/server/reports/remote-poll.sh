@@ -124,7 +124,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
         if (m ~ /Applying the search pattern .* for transfer site /) {
             if (!match(m, /for transfer site '\''[^'\'']*'\''/)) next
-            site = substr(m, RSTART + 19, RLENGTH - 20)              # strip "for transfer site '" and trailing "'"
+            site = substr(m, RSTART + 19, RLENGTH - 20)              # strip "for transfer site \047" and the trailing \047
             sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", site)                           # -> clean subscription name (drop _SCP_ / _SSCP_ / _CCP_)
             if (site == "") next
             # the CANONICAL name is the aggregation key (2026-08-31 audit):
@@ -224,8 +224,10 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             else if (spread <= 60)  cls = "Regular"
             else if (spread <= 180) cls = "Loose"
             else                    cls = "Irregular"
-            printf "PT\t%s\t%d\t%d\t%02d:%02d\t%d\t%s\t%d\t%s\t%s\n", \
-                s, poll[s], no, int(med/60), med%60, spread, cls, int(poll[s]/no + 0.5), fst[s], lst[s]
+            # (the first / last poll dates, poll-times cols 8-9, went 2026-09-29:
+            # the one reader, bin/cron-observed.awk, takes cols 1-7)
+            printf "PT\t%s\t%d\t%d\t%02d:%02d\t%d\t%s\t%d\n", \
+                s, poll[s], no, int(med/60), med%60, spread, cls, int(poll[s]/no + 0.5)
         }
         nlist = 0
         for (s in lc) { nlist++

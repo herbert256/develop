@@ -22,14 +22,14 @@
 <li><strong>Features</strong> &mdash; the Account first, then each single linked Partner, Logical, Domain, Application, BL, Host or Login, and <strong>Twin</strong> (the same name spelled with the other separator, a different account).</li>
 <li><strong>Last error(s)</strong> &mdash; Date &amp; time &middot; Subscription &middot; File: per connected subscription with a failed File, its newest one; the whole row opens that File&rsquo;s page.</li>
 <li><strong>Waiting/Expired</strong> &mdash; State &middot; Files &middot; First staged &middot; Last staged.</li>
-<li><strong>Activity per day</strong> &mdash; Date &middot; Files &middot; Error &middot; OK &middot; Volume &middot; Duration (average per File).</li>
+<li><strong>Activity per day</strong> &mdash; Date &middot; Files &middot; Error &middot; OK &middot; Volume &middot; Duration (average per delivered File).</li>
 <li><strong>Subscriptions</strong> &mdash; Subscription &middot; Direction &middot; Files &middot; Error &middot; OK &middot; Waiting &middot; Expired (when any) &middot; Volume; a nonzero Error opens <a href="failed-files.html">Failed files</a> for that subscription.</li>
 <li><strong>Incoming connections</strong> (IP &middot; In &middot; Out) / <strong>Outgoing connections</strong> (IP &middot; In &middot; Out &middot; Name) &mdash; the configured whitelist / endpoints plus the addresses seen; In / Out = Files that entered / left us; an IP opens its <a href="details-incoming_connections.html">incoming connection</a> page.</li>
 <li><strong>Logins</strong>, <strong>Hosts</strong>, <strong>Domains</strong>, <strong>Applications</strong>, <strong>Logical</strong>, <strong>Partners</strong>, <strong>BL</strong> &mdash; name &middot; Files &middot; Error &middot; OK &middot; Volume, when the account has more than one.</li>
 <li><strong>Load by weekday</strong> / <strong>hour</strong> (Files &middot; Error &middot; OK &middot; Volume); <strong>Dwell</strong> (Files per store-and-forward wait, inbound end to outbound start, with Share).</li>
-<li><strong>Duration</strong> (min, avg, max, p50, p95, p99), <strong>Size</strong> (Volume, Throughput, Average, Largest), <strong>Date</strong> (First / Last seen, Busiest day, Active days), <strong>Ranking</strong> (position among all accounts; each row opens <a href="ranking.html">Ranking</a>).</li>
+<li><strong>Duration per leg</strong> (min, avg, max, p50, p95, p99 of the OK legs), <strong>Size</strong> (Volume, Throughput, Average, Largest), <strong>Date</strong> (First / Last seen, Busiest day, Active days), <strong>Ranking</strong> (position among all accounts; each row opens <a href="ranking.html">Ranking</a>).</li>
 <li><strong>Files not picked up</strong> &mdash; Expired &middot; File: files the server&rsquo;s File Maintenance deleted uncollected from the account, newest 100. Rows red (Expired).</li>
-<li><strong>Last server log messages</strong> (the 25 newest lines of the account and its logins and hosts) and <strong>Last server log errors</strong> (their 10 newest Error/Warning lines, plus those of its 1-to-1 connected entities after its last transfer).</li>
+<li><strong>Last server log messages</strong> (the 25 newest lines of the account and its logins and hosts) and <strong>Last server log errors</strong> (their newest 10 Error and 10 Warning lines, plus those of its 1-to-1 connected entities after its last transfer).</li>
 </ul>
 <h2>Rules</h2>
 <ul>

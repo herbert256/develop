@@ -59,8 +59,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SERVER lib, not the analyses one: this is a server-DATA report (it reads the
 # server parse cache and writes data/server/reports/). It lives HERE
-# because its page sits in the ANALYSES menu, in the Subscriptions group — the
-# same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
+# because its page is an analyses/ page (the UC status report group of the one
+# Reports menu, 2026-09-29) — the same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
 source "$SCRIPT_DIR/../../server/lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/uc2-status.rpt"
@@ -86,16 +86,18 @@ SLOTS_OUT="$REPORTS_DIR/uc2-slots.tsv"
 # The per-SUBSCRIPTION pickup sidecar for the detail pages' "Pickup
 # information" table (subscription-verdict.awk renders it): one line per
 # (account, UC2 subscription) pair —
-#   sub <TAB> account <TAB> first-pickup <TAB> last-pickup <TAB> pickups <TAB>
-#   pickups-with-files <TAB> files-picked-up <TAB> pattern <TAB>
-#   delivery-logons <TAB> raw-logons <TAB> visits <TAB> collect-only-visits
-#   <TAB> collect+deliver-visits <TAB> deliver-only-visits <TAB> empty-visits
-#   <TAB> waiting-files <TAB> expired-files <TAB> shared-sessions
-# (cols 11-15 are the account's VISIT classification — the uc2-visits report
-# renders them; visits = the four classes summed. Cols 16-17 are THIS
+#    1 sub   2 account   3 first-pickup   4 last-pickup   5 pickups
+#    6 pickups-with-files   7 files-picked-up   8 pattern   9 delivery-logons
+#   10 visits  11 collect-only-visits  12 collect+deliver-visits
+#   13 deliver-only-visits  14 waiting-files  15 expired-files
+#   16 shared-sessions
+# (cols 10-13 are the account's VISIT classification — the uc2-visits report
+# renders them; visits = the four classes summed, empty-handed visits
+# included. The raw-logon and empty-visit counts, cols 10 and 15 until
+# 2026-09-29, had no reader and went. Cols 14-15 are THIS
 # subscription's staged files still Waiting / Expired uncollected, from
 # _files.tsv outcomes — the same figures its detail page's Waiting/Expired
-# table carries. Col 18 is the account's SHARED-SESSION count: distinct
+# table carries. Col 16 is the account's SHARED-SESSION count: distinct
 # transfer-log Session IDs — one id = one technical SSH connection — in
 # which the account BOTH delivered (Inbound ssh) and collected (Outbound
 # ssh, Processed) a file. THE one same-connection proof: the detail pages'
@@ -681,11 +683,11 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 while (j <= nc && CM[j] < hi) { if (CM[j] >= LG[li]) hit = 1; j++ }
                 if (hit) wf++
             }
-            printf "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", s, a, \
+            printf "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", s, a, \
                 (fatP[ps] == "" ? "-" : fatP[ps]), (latP[ps] == "" ? "-" : latP[ps]), \
                 attP[ps] + 0, wf, prc[ps] + 0, \
-                (patP[ps] != "" ? patP[ps] : (attP[ps] + 0 > 0 ? "Rarely" : "")), delP[ps] + 0, pkP[ps] + 0, \
-                vtP[ps] + 0, vcP[ps] + 0, vbP[ps] + 0, vdP[ps] + 0, vnP[ps] + 0, \
+                (patP[ps] != "" ? patP[ps] : (attP[ps] + 0 > 0 ? "Rarely" : "")), delP[ps] + 0, \
+                vtP[ps] + 0, vcP[ps] + 0, vbP[ps] + 0, vdP[ps] + 0, \
                 wtg[ps] + 0, xpd[ps] + 0, shc[a] + 0 > PKF
         }
         close(PKF)
@@ -719,8 +721,7 @@ rows=$(awk -F'\t' '
         printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", st, $3, $5, \
             ($6 == "-" ? "—" : $6), ($7 == "-" ? "—" : $7), $8, ($9 == "-" ? "—" : $9), $10
     }
-' <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | sort -t$'\t' -k2,2n -k5,5nr -k8,8nr)")
-[ -n "$rows" ] && rows+=$'\n'   # put back the newline the command substitution stripped (the loop ended every row with one)
+' <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | LC_ALL=C sort -t$'\t' -k2,2n -k5,5nr -k8,8nr)")
 
 # A run with data but NO timestamped rows writes no sidecar at all; an EMPTY
 # sidecar is the valid "no per-hour data" answer for its readers (the
@@ -741,10 +742,12 @@ rows=$(awk -F'\t' '
     printf 'STAT\twhite\t%s\tNothing\n' "$n_nothing"
 
     # tab=uc2 (2026-09-29): the Pickups and pickup-visits tables stack under it
-    printf 'TABLE\tUC2 subscriptions\twide\tnofilter\ttab=uc2\n'
+    # noagg=5: Pickups is the ACCOUNT's figure, repeated on each of its UC2
+    # flows (the TOTAL counts it once) — a search must not re-sum it (2026-09-29)
+    printf 'TABLE\tUC2 subscriptions\twide\tnofilter\tnoagg=5\ttab=uc2\n'
     printf 'HEAD\tStatus\tSubscription\tExpired\tFirst\tLast\tPickups\tLast pickup\n'
     printf 'KIND\ttext\tmono\tnum\ttext\ttext\tnum\ttext\n'
-    printf '%s\n' "$rows"   # %s\n: $rows already ends in one, so this is the blank line before TOTAL
+    [ -z "$rows" ] || printf '%s\n' "$rows"   # (no blank line before TOTAL, 2026-09-29 audit)
     printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t\t\t@{class=num}%s\t\n' \
         "$(( n_never + n_nofiles + n_coll + n_ok + n_nothing ))" "$t_ef" "$t_pk"
     printf 'NOTE\tEvery **UC2** (collect-from-us) flow, classified. **Never collected** (red): File Maintenance deleted staged files and **nothing was ever collected** — logon visits alone do not count. **No files** (amber): the partner DOES log in to collect (pickups > 0) but the app **never staged a single file** — a dormant or broken source side. **Both** (green): the partner **provably collects** (Files in the transfer log) AND the odd file still expired — both outcomes on the one flow. **OK** (green): files collected, none expired — healthy. **Nothing** (plain): no collection and no expiry — a quiet flow, one whose partner collects over CFT (which logs no SSH pickup), or one whose visits have so far come up empty. Uncollected detection stays on the retention delete on purpose — arrival + no-pickup would flag almost every pickup flow, since CFT-collecting partners never log an SSH pickup; **No files** and **OK** need the SSH signal, so they only distinguish SFTP-collecting partners (a CFT partner with no expiry lands in **Nothing**). A logon whose session only **delivered** files (the account'\''s UC4 twin flow handing files over) is not a pickup and is not counted. **Arrived** dates come from the transfer log. One row per **flow**: an account serving several UC2 flows (the hybrid production accounts) lists each with its own staged, collected and expired Files, while the **Pickups** figures are the account'\''s — the partner logs on to the account, not to a flow. On an account carrying **several FE logins**, the Pickups figures are the flow'\''s own **login'\''s** instead: each login is a different partner credential, so its logons prove nothing about the other logins'\'' flows. Click a row for its recent server-log lines.\n'

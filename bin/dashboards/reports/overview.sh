@@ -322,12 +322,12 @@ if [ -f "$TR" ]; then
             # file makes getline return -1 -> empty
             # The base cache is AMENDED after flow-manager (result.sh
             # discover_logged appends every logged-but-unconfigured name, the
-            # synthetic "UCx_<account>" ones included). First seen excludes
-            # the synthetic names, and the curve endpoints must keep equalling
-            # its figures — so they stay out of the roster here too (2026-08-22;
-            # 2026-09-28: the filter still matched the retired "_UNKNOWN" form).
+            # synthetic "UCx_<account>" ones included). First seen COUNTS the
+            # synthetic names since 2026-09-29, and the curve endpoints must
+            # keep equalling its figures — so they are in the roster too
+            # (2026-09-29 audit: the curve ended at 108 beside First seen 109).
             while ((getline l9 < SUBBF) > 0) { n9 = split(l9, z9, "\t")
-                if (n9 >= 1 && z9[1] != "" && z9[1] !~ /^UCx_/) { u9 = toupper(z9[1]); ROST[u9] = 1; RO[++nro] = u9 } }
+                if (n9 >= 1 && z9[1] != "") { u9 = toupper(z9[1]); ROST[u9] = 1; RO[++nro] = u9 } }
             close(SUBBF)
             # accounts: the configured roster (only configured names are
             # counted, as for subscriptions)
@@ -389,9 +389,12 @@ if [ -f "$TR" ]; then
                 n9 = split(l9, z9, "\t")
                 if (n9 < 2 || z9[1] == "") continue
                 u9 = canon(toupper(z9[1])); if (u9 == "") continue
-                d9 = substr(z9[2], 1, 10); h9 = int(substr(z9[2], 12, 2))
+                # the FLIP moment = the SINCE column (col 3, 2026-09-29: col 2 is
+                # the NEWEST evidence stamp, not when the flow turned red)
+                st9 = (n9 >= 3 && z9[3] != "") ? z9[3] : z9[2]
+                d9 = substr(st9, 1, 10); h9 = int(substr(st9, 12, 2))
                 if (d9 !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) continue
-                sk9 = substr(d9,1,4) substr(d9,6,2) substr(d9,9,2) substr(z9[2], 12)
+                sk9 = substr(d9,1,4) substr(d9,6,2) substr(d9,9,2) substr(st9, 12)
                 j9 = jdn(substr(d9,1,4)+0, substr(d9,6,2)+0, substr(d9,9,2)+0)
                 TF[1] = j9*24 + h9; TF[2] = j9*12 + int(h9/2); TF[4] = j9*6 + int(h9/4); TF[6] = j9*4 + int(h9/6)
                 TF[12] = j9*2 + int(h9/12); TF[24] = j9

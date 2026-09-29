@@ -104,8 +104,9 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed <<< "$(printf '%s\n' "$agg" |
     # first — printed straight into the report, no per-row command substitution.
     while IFS='|' read -r _ arrived left rec fa pr bk ccf ccp; do
         [ -z "$arrived" ] && continue
+        [ "${pr:-0}" -gt 0 ] || continue   # no OK File: nothing this table counts (2026-09-29 audit: rows of 0 — the Leg count rule)
         printf 'ROW\t%s\t%s\t%s\t@data:buckets=%s\n' "$arrived" "$left" "$pr" "$bk"
-    done <<< "$(printf '%s\n' "$agg" | grep '^X|' | sort -t'|' -k6,6nr)"
+    done <<< "$(printf '%s\n' "$agg" | grep '^X|' | LC_ALL=C sort -t'|' -k6,6nr -k2,2 -k3,3)"
     printf 'TOTAL\t@{colspan=2}Files\t@{class=num}%s\n' "$tot_processed"
     printf 'NOTE\tArrived = the protocol of the earliest Inbound row; Left = the protocol of the latest Outbound row. "(none)" means the File had no Inbound (or no Outbound) row. Files counts the delivered (OK) Files of that pair (2026-09-13 — the Error / OK split is gone), so the rows reconcile to the delivered total.\n'
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

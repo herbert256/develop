@@ -94,6 +94,12 @@ function buildid(   t) {
     if (BUILDID == "") { srand(); BUILDID = srand() }
     return BUILDID
 }
+# the first MARK in S replaced by REP, literally (no sub(): an escaped
+# attribute value carries "&", which a sub() replacement reads as the match)
+function splice(s, mark, rep,   p) {
+    p = index(s, mark); if (p == 0) return s
+    return substr(s, 1, p - 1) rep substr(s, p + length(mark))
+}
 function esc(s) {
     gsub(/&/,  "\\&amp;",  s)
     gsub(/</,  "\\&lt;",   s)
@@ -251,8 +257,7 @@ function emit_header(    i, k, thc) {
     printf "<tr>"
     for (i = 1; i <= nhead; i++) {
         k = (i <= nkind && KINDS[i] != "" ? KINDS[i] : "text")
-        if (k == "numsep") thc = "num sep"
-        else if (k == "num" || k == "numfailed" || k == "numprocessed" || k == "numwarn" || k == "numerr" || k == "numok") thc = "num"
+        if (k == "num" || k == "numfailed" || k == "numprocessed" || k == "numwarn" || k == "numerr" || k == "numok") thc = "num"
         else thc = ""
         if ((i - 1) in gsepset) thc = (thc != "" ? thc " gsep" : "gsep")
         printf "<th%s>%s</th>", (thc != "" ? " class=\"" thc "\"" : ""), esc(HEADC[i])
@@ -357,8 +362,6 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     } else text = raw
     if (!total) {
         if (kind == "num") cls = "num"
-        else if (kind == "failed") cls = "failed"
-        else if (kind == "processed") cls = "processed"
         else if (kind == "numfailed") cls = "num failed"
         else if (kind == "numprocessed") cls = "num processed"
         # tint-only variants: the SAME red/green as failed/processed but
@@ -368,13 +371,16 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         else if (kind == "numerr") cls = "num errc"
         else if (kind == "numok") cls = "num okc"
         else if (kind == "numwarn") cls = "num warn"
-        else if (kind == "numsep") cls = "num sep"
         else if (kind == "file") cls = "file"
-        else if (kind == "lines" || kind == "clines" || kind == "clinks") cls = "lines"
+        # prose (2026-09-29 audit): a SENTENCE cell (the Triage Symptoms /
+        # Evidence columns) — it wraps inside a readable width instead of
+        # stretching the table to thousands of pixels (style.css td.prose)
+        else if (kind == "prose") cls = "prose"
+        else if (kind == "clines" || kind == "clinks") cls = "lines"
         if (kind == "bar") {
             if (text ~ /^[0-9]+$/) { w = int((text + 2) / 5) * 5; if (w > 100) w = 100 }
             else w = 0
-            printf "<td class=\"bar w%d\"><span></span></td>", w
+            CELLOUT = sprintf("<td class=\"bar w%d\"><span></span></td>", w); CELLCLS = "bar"
             return
         }
     } else {
@@ -423,19 +429,11 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # Used by the failed-file error pages, whose server-log table shows the
     # message exactly as logged, JSON payload and all, not a truncated one-liner.
     if (!total && kind == "pre") text = "<pre>" text "</pre>"
-    # KIND ip: a whitelist IP — mono rendering + the _white.tsv result tint
-    if (!total && kind == "ip") {
-        text = "<code>" text "</code>"
-        r = RESM["white" US toupper(rawtext)]
-        if (r != "") cls = (cls != "" ? cls " res-" r : "res-" r)
-    }
-    # a `lines` cell holds \x1f-separated lines; render each on its own row
-    if (kind == "lines") gsub(US, "<br>", text)
     # `clines` = a COLLAPSIBLE lines cell: 3+ lines render collapsed to the
     # first and last line with an ellipsis between (the middle lines sit in a
     # CSS-hidden span.cm, the ellipsis in span.ce); class `clps` on the td is
     # the collapsed state, report.js toggles `open` on click (style.css swaps
-    # the two spans). 1-2 lines render like a plain `lines` cell.
+    # the two spans). 1-2 lines render stacked (<br>).
     if (!total && (kind == "clines" || kind == "clinks")) {
         nln = split(text, LNS, US)
         if (nln <= 2) gsub(US, "<br>", text)
@@ -494,7 +492,11 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # included since 2026-08 — the logons Key failures/Locked ask; an empty
     # warn cell untints via td.warn:empty)
     if ((" " cls " ") ~ / (failed|processed|errc|okc|warn) / && rawtext == "0") { text = ""; cls = cls " z" }
-    printf "<td%s%s%s%s>%s</td>", sp, (cls != "" ? " class=\"" cls "\"" : ""), (sv != "" ? " data-sortval=\"" sv "\"" : ""), (tt != "" ? " title=\"" esc(tt) "\"" : ""), text
+    # the cell is BUFFERED (CELLOUT, its final class list in CELLCLS): the ROW
+    # branch prints the <tr> after its cells, once it knows which Error / OK
+    # cells can carry the row's drill lists
+    CELLOUT = sprintf("<td%s%s%s%s>%s</td>", sp, (cls != "" ? " class=\"" cls "\"" : ""), (sv != "" ? " data-sortval=\"" sv "\"" : ""), (tt != "" ? " title=\"" esc(tt) "\"" : ""), text)
+    CELLCLS = cls
 }
 
 {
@@ -506,8 +508,10 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # INTRO is a full-width paragraph like NOTE: a mid-page section intro
     # (the dwell report's Gap-per-day paragraph) closes the open table and
     # any side-by-side row first — it used to print INSIDE the previous
-    # table's markup (2026-09-05)
-    else if (dir == "INTRO")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; if (!noprose) printf "<p class=\"range\">%s</p>\n", prose(rest) }    else if (dir == "ALERT") {
+    # table's markup (2026-09-05). An INTRO the no-prose rule suppresses is
+    # NO block at all, like a suppressed NOTE: it closes nothing (2026-09-29)
+    else if (dir == "INTRO")    { if (!noprose) { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<p class=\"range\">%s</p>\n", prose(rest) } }
+    else if (dir == "ALERT") {
         # optional cells 2+3 append a LINK to the banner (href, text) — the
         # detail pages' after-last-transfer banner points at the page's own
         # "Server log error" section this way. A single-cell ALERT renders
@@ -545,7 +549,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         # optional cells 4+: a "@data:NAME=VALUE" cell becomes a data-NAME
         # attribute on the box (report.js recalcStats — a data-tok box
         # recomputes its value for the selected date range from its data-sb
-        # per-day payload, and a data-thr box retints); the FIRST plain cell
+        # per-day payload); the FIRST plain cell
         # (present even when empty) keeps its historical meaning as the
         # data-pf row-filter key — report.js setupStatFilter narrows the
         # table to rows whose data-pf lists this key.
@@ -582,7 +586,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         ntables++
         split_cells()
         heading = CELL[1]
-        tclass = ""; tattr = ""; start_empty = 0; this_sxs = 0; this_sxsgrp = "1"; this_swkey = ""; heading_id = ""; keep_heading = 0; heading_period = ""; split("", gsepset)
+        tclass = ""; tattr = ""; start_empty = 0; this_sxs = 0; this_sxsgrp = "1"; this_swkey = ""; heading_id = ""; keep_heading = 0; split("", gsepset); split("", DCK)
         for (i = 2; i <= NCELL; i++) {
             mi = CELL[i]
             if (mi == "sxs")             this_sxs = 1   # side-by-side: this table shares a flex row with adjacent sxs tables
@@ -624,8 +628,6 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             else if (mi == "seenrows")   tattr = tattr " data-seenrows=\"1\""
             else if (mi == "restint")    tattr = tattr " data-restint=\"1\""   # rows tint by their data-res RESULT even when seen (beats the seenrows green)
             else if (mi == "rowlink")    tattr = tattr " data-rowlink=\"1\""   # the WHOLE row opens its target (report.js setupIndexRows): the row's own @data:href, else its first link
-            else if (index(mi, "seenmode=") == 1) tattr = tattr " data-seenmode=\"" substr(mi, 10) "\""
-            else if (index(mi, "seenword=") == 1) tattr = tattr " data-seenword=\"" substr(mi, 10) "\""
             else if (mi == "heat")       tattr = tattr " data-heat=\"1\""
             else if (mi == "esearch")    tattr = tattr " data-esearch=\"1\""
             else if (index(mi, "noagg=") == 1)    tattr = tattr " data-noagg=\"" substr(mi, 7) "\""
@@ -639,7 +641,8 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             # :coreids-<key> list opens under the cell at <col>; the
             # optional noun (underscores = spaces) heads the list, else the
             # column label (report.js setupExpandable)
-            else if (index(mi, "drillcols=") == 1) tattr = tattr " data-drill-cols=\"" esc(substr(mi, 11)) "\""
+            else if (index(mi, "drillcols=") == 1) { tattr = tattr " data-drill-cols=\"" esc(substr(mi, 11)) "\""
+                ndk = split(substr(mi, 11), DKA, ","); for (dk = 1; dk <= ndk; dk++) { dp = index(DKA[dk], ":"); if (dp > 1) DCK[substr(DKA[dk], 1, dp - 1)] = 1 } }
             # autohide=<Group label>;<Group label> (2026-09-13, the Entities
             # pages): a column GROUP (a GHEAD banner cell) whose visible cells
             # are ALL empty is hidden in the browser — after a date-range
@@ -652,20 +655,10 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             # page's subject in the window" row says nothing (report.js
             # recalcTable; the full-range restore brings every row back)
             else if (index(mi, "zerohide=") == 1) tattr = tattr " data-zerohide=\"" substr(mi, 10) "\""
-            # topsel=<N>: a top-N table whose rows are the CANDIDATE set (each
-            # with @data:date + @data:val, value-descending; rows past N baked
-            # @data:dhide=1) — report.js recalcTopsel re-picks the visible N
-            # for the selected date range
-            else if (index(mi, "topsel=") == 1)   tattr = tattr " data-topsel=\"" substr(mi, 8) "\""
             # fold=<res>|<label>: rows with that data-res collapse behind one
             # summary row at load (report.js setupRowFold; {n} = folded count)
             else if (index(mi, "fold=") == 1)     tattr = tattr " data-fold=\"" esc(substr(mi, 6)) "\""
             else if (index(mi, "anchor=") == 1)   heading_id = substr(mi, 8)   # id on the <h2> — an in-page link target
-            # period=<text>: the DATE PERIOD the table aggregates, appended to
-            # the <h2> as a muted span — report.js rewrites every .h2period to
-            # the selected From/To on a range change and restores this baked
-            # text at the full range
-            else if (index(mi, "period=") == 1)   heading_period = substr(mi, 8)
             else if (mi == "keephead")   keep_heading = 1   # keep the heading even on the FIRST table of a report page (droptitle)
         }
         # side-by-side (sxs): open the flex row on the first sxs table, close it
@@ -687,8 +680,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         # with the page <h1>); detail pages keep every section title, and an
         # sxs table always keeps its heading (it labels one column of a pair)
         if (heading != "" && (droptitle != "1" || ntables != 1 || this_sxs || keep_heading))
-            printf "<h2%s>%s%s</h2>\n", (heading_id != "" ? " id=\"" heading_id "\"" : ""), esc(heading), \
-                (heading_period != "" ? " <span class=\"h2period\">— " esc(heading_period) "</span>" : "")
+            printf "<h2%s>%s</h2>\n", (heading_id != "" ? " id=\"" heading_id "\"" : ""), esc(heading)
         table_open = 1; table_printed = 0; hdr_done = 0
         subcol = 0; subacc = 0
         nhead = 0; nkind = 0; split("", HEADC); split("", KINDS)
@@ -732,7 +724,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         is_total = (dir == "TOTAL")
         # @data:NAME=VALUE cells become data-NAME attrs on the <tr>; the rest
         # are the real cells, matched against KINDS by position
-        attrs = ""; nreal = 0; split("", REAL); rowdrill = 0
+        attrs = ""; nreal = 0; split("", REAL); rowdrill = 0; fattr = ""; pattr = ""
         for (i = 1; i <= NCELL; i++) {
             c = CELL[i]
             if (substr(c, 1, 6) == "@data:") {
@@ -755,8 +747,30 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
                 # an EMPTY drill payload (2026-09-29: the server Top view's
                 # SSHD row, no Error/Warning line to show) is no drill — the
                 # row looked clickable and expanded nothing
-                if ((nm == "loglines" || nm == "coreids") && vv == "") continue
-                attrs = attrs " data-" nm "=\"" esc(vv) "\""
+                # — and so is ANY empty drill list (2026-09-29 audit: ~32k empty
+                # coreids-* / drill-cell-* attributes, bound by nothing)
+                if (vv == "" && (nm == "loglines" || nm == "coreids" || index(nm, "coreids-") == 1 || index(nm, "drill-cell-") == 1)) continue
+                # a per-CELL list report.js can never bind (2026-09-29 audit):
+                # coreids-<key> binds through the TABLE's drillcols=<key>:<col>
+                # (the Entities pages — a group entity_hide_groups dropped
+                # took its key with it, the Subscriptions views have no ferr
+                # cell) — only failed / processed bind by the cell CLASS (below)
+                if (index(nm, "coreids-") == 1 && nm != "coreids-failed" && nm != "coreids-processed" && !(substr(nm, 9) in DCK)) continue
+                # srv: failed.sh's .rpt-level marker (publish_lib reads it from
+                # the .rpt) — no page reader
+                if (nm == "srv") continue
+                # seen: the seen / never-seen flag only a SEENROWS table reads
+                # (its row tint + the date filter's re-tint); anywhere else it
+                # is the writers' own marker (the Entities views, the cross
+                # references — 2026-09-29 audit: ~7,700 unread attributes)
+                if (nm == "seen" && index(tattr, "data-seenrows=") == 0) continue
+                ad = " data-" nm "=\"" esc(vv) "\""
+                # coreids-failed / -processed bind only when the row has ONE
+                # such cell (report.js setupExpandable) — held apart until the
+                # cells are rendered
+                if (nm == "coreids-failed")    { fattr = ad; attrs = attrs "\001F"; continue }
+                if (nm == "coreids-processed") { pattr = ad; attrs = attrs "\001P"; continue }
+                attrs = attrs ad
                 # a ROW-LEVEL drill (the whole row is click-to-expand): an
                 # entity cell in it renders as plain name + a detail-page
                 # link ICON — a whole-cell link would fight the row click.
@@ -793,13 +807,22 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             rr = RESM[rk]
             if (rr == "orange") attrs = attrs " data-res=\"" rr "\""
         }
-        printf "<tr%s%s>", (is_total ? " class=\"total\"" : ""), attrs
+        rowcells = ""; nfc = 0; npc = 0
         for (i = 1; i <= nreal; i++) {
             gsephit = 0; if ((i - 1) in gsepset) gsephit = 1
             cell((i <= nkind && KINDS[i] != "" ? KINDS[i] : "text"),
                  (i <= nhead && HEADC[i] == "Direction" ? dirfold(REAL[i]) : REAL[i]), is_total)
+            rowcells = rowcells CELLOUT
+            ccl = " " CELLCLS " "
+            if (ccl !~ / z /) { if (ccl ~ / failed /) nfc++; if (ccl ~ / processed /) npc++ }
         }
-        printf "</tr>\n"
+        # the held coreids-failed / -processed lists: kept only when the row
+        # has exactly ONE non-blank Error (OK) cell — the one report.js binds;
+        # a both-direction row (two Error cells sharing one combined list) or
+        # a row whose only Error cell is a blank 0 ships nothing (2026-09-29)
+        attrs = splice(attrs, "\001F", (nfc == 1 && !is_total) ? fattr : "")
+        attrs = splice(attrs, "\001P", (npc == 1 && !is_total) ? pattr : "")
+        printf "<tr%s%s>%s</tr>\n", (is_total ? " class=\"total\"" : ""), attrs, rowcells
     }
     # NOTE/LINK/SUMMARY are FULL-WIDTH blocks: also close an open sxs flex
     # row, or they render as a flex item BESIDE the last side-by-side table

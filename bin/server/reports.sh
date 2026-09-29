@@ -3,9 +3,10 @@
 # reports.sh — run every server report script, each of which writes
 # data/<name>.rpt. Reports ONLY — parsing is a separate step (parse.sh); this
 # does not build the cache. The pooled reports are independent of each other
-# (none reads another SERVER report's .rpt — the unknown-*/site-failures rosters come
-# from the TRANSFER reports, produced in the earlier build stage), so they run
-# IN PARALLEL over a core-count job pool. The parse caches and the config
+# (none reads another SERVER report's .rpt — the rosters some of them join,
+# e.g. site-failures' subscription list, come from the TRANSFER reports of the
+# earlier build stage; the unknown-* known sets read the transfer parse cache
+# directly), so they run IN PARALLEL over a core-count job pool. The parse caches and the config
 # caches are built by bin/build.sh before this runs. Mirrors
 # bin/transfer/reports.sh. Strict mode plus a
 # fail-collecting pool so any failing report aborts the run instead of leaving
@@ -72,7 +73,7 @@ pool_run "$SCRIPT_DIR/reports/config-defects.sh"     # the config-hygiene page's
 pool_run "$SCRIPT_DIR/reports/site-failures.sh"
 pool_run "$SCRIPT_DIR/reports/connection-diagnostics.sh"
 pool_run "$SCRIPT_DIR/reports/auth-activity.sh"
-pool_run "$SCRIPT_DIR/reports/pesit.sh"              # -> pesit-slots.tsv, the dashboards' PeSIT view; an unpublished intermediate since 2026-09-27
+pool_run "$SCRIPT_DIR/reports/pesit.sh"              # -> pesit-slots.tsv only (the dashboards' / day pages' PeSIT view; no page since 2026-09-27, no .rpt since 2026-09-29)
 pool_run "$SCRIPT_DIR/../analyses/reports/uc1-status.sh"
 pool_run "$SCRIPT_DIR/reports/deploy-errors.sh"
 pool_run "$SCRIPT_DIR/reports/remote-poll.sh"

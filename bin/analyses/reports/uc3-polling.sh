@@ -7,8 +7,8 @@
 # bin/analyses/reports/uc-status.sh merges right behind uc3-status.rpt; every
 # TABLE carries tab=uc3, so publish_lib's segment_rpt keeps them on the UC3 tab
 # page, stacked under the status table, instead of opening tab pages of their
-# own. (This script lives in bin/analyses/reports/ because its PAGE is in the
-# Analyses menu; it sources the SERVER lib because its DATA is server data.)
+# own. (This script lives in bin/analyses/reports/ because its tables ride an
+# analyses/ page; it sources the SERVER lib because its DATA is server data.)
 #
 #   Polls by subscription             } copied from remote-poll.rpt's TABLE blocks
 #   Remote directory listing failures } (bin/server/reports/remote-poll.sh, an
@@ -96,18 +96,18 @@ fi
     if [ -f "$RP" ]; then
         awk -F'\t' '
             $1 == "INTRO" && !t { intro = $0; next }   # the figures paragraph -> the first NOTE under the polls table
-            $1 == "TABLE" { t++; print $0 "\ttab=uc3" (t == 1 ? "\tanchor=polls" : ""); next }
+            $1 == "TABLE" { t++; print $0 "\ttab=uc3"; next }   # (the anchor= ids went 2026-09-29: nothing links them)
             t && ($1 == "HEAD" || $1 == "GHEAD" || $1 == "KIND" || $1 == "RECALC" || $1 == "ROW" || $1 == "TOTAL") { print; next }
             t && $1 == "NOTE" { if (t == 1 && intro != "") { sub(/^INTRO/, "NOTE", intro); print intro; intro = "" }; print; next }
             { next }   # TITLE/DESC/SUMMARY/FOOT: the merged page has its own
         ' "$RP"
     else
-        printf 'TABLE\tPolls by subscription\ttab=uc3\tanchor=polls\n'
+        printf 'TABLE\tPolls by subscription\ttab=uc3\n'
         printf 'NOTE\tNo remote-poll lines ("Applying the search pattern … for transfer site …") in the loaded server log of this environment — no poll ran, or the export holds none.\n'
     fi
     # ---- (c) Configured cronjobs ------------------------------------------
     if [ -f "$SUBJSON" ]; then
-        printf 'TABLE\tConfigured cronjobs\twide\tnofilter\ttab=uc3\tanchor=cronjobs\n'
+        printf 'TABLE\tConfigured cronjobs\twide\tnofilter\ttab=uc3\n'
         printf 'STAT\twhite\t%s\tpolling schedules\n' "$total"
         printf 'STAT\twhite\t%s\tSFTP\n' "$sftp"
         printf 'STAT\twhite\t%s\tFTP\n' "$ftp"

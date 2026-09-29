@@ -110,7 +110,7 @@ top_n=0
         ord=$((ord + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^BKT|')"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\t\n' "$tot_processed" "$tot_vol"
-    printf 'NOTE\tFiles = the delivered (OK) Files of that bucket. The **1 leg** bucket is the One-legged (Pirates) population.\n'
+    printf 'NOTE\tFiles = the delivered (OK) Files of that bucket; a bucket without one is not listed (the 1-leg Files never finish OK — they are the One-legged page).\n'
     printf 'LINK\tpirates-details.html\tOne-legged transfers (the 1-leg Files, per subscription)\n'
 
     printf 'TABLE\tFiles with the most legs\trestint\n'   # rows tint by the File colour (2026-09-29)

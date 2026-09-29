@@ -8,9 +8,10 @@
 # flip late yesterday may only be visible in today's export — everything is
 # judged against D OR D-1 (the grace day). Five tables:
 #
-#   New red flips    red subscriptions whose red RUN started on D/D-1 (a
-#                    failing-File run), or whose server-log evidence stamp
-#                    (colour/_redflip.tsv) after an OK last File is on D/D-1
+#   New red flips    red subscriptions that WENT red on D/D-1: red on
+#                    server-log evidence (colour/_redflip.tsv, its SINCE
+#                    column) since D/D-1, else a failing-File run that
+#                    started on D/D-1
 #   Newly quiet      flows whose last File is exactly 8 days before the
 #                    transfer window end — the day went-quiet's >7-day rule
 #                    first bites (they crossed the threshold within the last
@@ -25,8 +26,8 @@
 #                    (server-log mentions with no transfer) whose mention
 #                    timestamp is on D/D-1
 #
-# Sites are attributed to their configured subscription by the longest
-# uppercase prefix match (log-only tails, e.g. _SCP_), like triage.sh.
+# Files join their subscription EXACTLY (_files.tsv col 12 is the canonical
+# name since parse time), like triage.sh and result.sh.
 #
 # Reads data/transfer/cache/_files.tsv, data/server/cache/
 # _parse.tsv (dates only), data/flow-manager/base/_subscriptions.tsv,
@@ -79,24 +80,14 @@ G=$(awk -v d="$D" 'function jdn(y, m, dd,   a) { a = int((14 - m) / 12); y = y +
         dd = f - int((153 * g + 2) / 5) + 1; mm = g + 3 - 12 * int(g / 10); yy = 100 * b + e - 4800 + int(g / 10)
         printf "%04d-%02d-%02d", yy, mm, dd }')
 
-# ---- pass 1+2: per-subscription aggregates (the triage.sh attribution) -------
+# ---- pass 1+2: per-subscription aggregates (the triage.sh join) --------------
 # K <TAB> key <TAB> n <TAB> ok <TAB> err <TAB> lastdate <TAB> lastj <TAB>
 # lastfail <TAB> runstart <TAB> runlen <TAB> lastfailts <TAB> lastokts <TAB>
 # firstokafter <TAB> okafter
 agg=$(awk -F'\t' -v OFS='\t' '
-    FILENAME ~ /_subscriptions\.tsv$/ { nc++; CFG[nc] = toupper($1); next }
     $12 == "" || $4 == "" || $7 == "" { next }
-    {
-        u = toupper($12)
-        if (!(u in MAP)) {
-            best = ""
-            for (i = 1; i <= nc; i++)
-                if (length(CFG[i]) > length(best) && index(u, CFG[i]) == 1) best = CFG[i]
-            MAP[u] = (best != "") ? best : u
-        }
-        print MAP[u], $6, $7 + 0, $4, $5, $2
-    }
-' "$BASE_SUBS" "$TF" \
+    { print toupper($12), $6, $7 + 0, $4, $5, $2 }
+' "$TF" \
 | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 \
 | awk -F'\t' -v OFS='\t' '
     function flush() {
@@ -135,7 +126,10 @@ tables=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
         if ($3 == "red") { nr++; REDK[nr] = u }
         next
     }
-    FILENAME ~ /_redflip\.tsv$/ { FLIP[toupper($1)] = $2; next }
+    # the red-flip sidecar: SINCE (col 3) = when the flow WENT red (col 2 is
+    # only its newest evidence line — a flow failing since June carries a
+    # fresh one every day)
+    FILENAME ~ /_redflip\.tsv$/ { FLIP[toupper($1)] = ($3 != "") ? $3 : $2; next }
     $1 != "K" { next }
     {
         key = $2; n = $3 + 0; ok = $4 + 0; err = $5 + 0; lastdate = $6; lastj = $7 + 0
@@ -147,17 +141,19 @@ tables=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
         # T1 — new red flips
         if (res == "red") {
             stampd = (key in FLIP) ? substr(FLIP[key], 1, 10) : ""
-            # NEW = the red RUN started on D / D-1 (a failing File run), or —
-            # red by server-log evidence after an OK last File — that evidence
-            # is on D / D-1 (2026-09-29: the newest failing File on D / D-1
-            # was enough, so a flow red since June was "new" every day)
+            # NEW = red by server-log evidence (the flip sidecar — only a flow
+            # whose last File is OK or Expired, or that never transferred, is
+            # in it) SINCE D / D-1, else its failing-File run started on D /
+            # D-1 (2026-09-29: the newest failing File, or the newest evidence
+            # line, on D / D-1 was enough, so a flow red since June was "new"
+            # every day)
             startd = (runstart != "") ? substr(runstart, 1, 10) : ""
-            isnew = (runlen > 0) ? (startd == D || startd == G) : (stampd == D || stampd == G)
+            isnew = (key in FLIP) ? (stampd == D || stampd == G) : (runlen > 0 && (startd == D || startd == G))
             if (isnew) {
-                when = (runlen > 0) ? runstart : FLIP[key]   # when it went red
+                when = (key in FLIP) ? FLIP[key] : runstart   # when it went red
                 if (ok == 0)          ev = "never delivered — " err " Error in " n " File(s)"
-                else if (runlen > 0)  ev = runlen " consecutive failure(s); last OK " lastokts
-                else                  ev = "last File OK (" lastokts ") — server-log evidence after it"
+                else if (key in FLIP) ev = "last OK File " lastokts " — server-log evidence after it"
+                else                  ev = runlen " consecutive failure(s); last OK " lastokts
                 print "T1", when, disp, (runstart != "" ? runstart : "-"), runlen, n, ev
             }
         }
@@ -172,8 +168,8 @@ tables=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
         }
     }
     END {
-        # a red subscription with no attributed Files: a fresh evidence stamp
-        # alone still makes it a new flip
+        # a red subscription with no attributed Files (the UC3 cannot-connect
+        # red): red since D / D-1 makes it a new flip
         for (i = 1; i <= nr; i++) {
             u = REDK[i]
             if (u in seenk || !(u in FLIP)) continue
@@ -242,7 +238,6 @@ s3_ok=0
 {
     printf 'TITLE\tSince yesterday\n'
     printf 'DESC\tThe data diff: what changed on the newest data day — fresh red flips, flows that just went quiet, recoveries, first-ever sightings and new unknown names.\n'
-    printf 'KEYWORDS\tsince yesterday, diff, changed, new, today, fresh, flips, recovered, first seen, unknown, delta, daily\n'
     printf 'INTRO\tThe newest data day is **%s** (the latest date across the transfer and server parse caches); everything below is judged against **%s or %s** — the exports arrive in batches, so a change late on %s may only surface in the next export. This page diffs the **DATA**; the report catalog'\''s changes live on **What'\''s new**.\n' \
         "$D" "$D" "$G" "$G"
 
@@ -266,7 +261,7 @@ s3_ok=0
         printf 'ROW\t@{colspan=6}Nothing new — no subscription flipped red on %s or %s.\n' "$D" "$G"
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t@{class=num}%s\t@{class=num}%s\t\n' "$n1" "$s1_run" "$s1_n"
-    printf 'NOTE\tRed subscriptions whose server-log evidence stamp (colour/_redflip.tsv) or newest FAILING File is on **%s** or **%s** — the freshest breakage. A chronically failing flow fails again every day and so stays listed; its old **Failing since** date gives it away. **From green to red** tells each flip'\''s full story.\n' "$D" "$G"
+    printf 'NOTE\tRed subscriptions that WENT red on **%s** or **%s** — the freshest breakage: red on server-log evidence that began then, or a run of failing Files that started then. A chronically failing flow is not new, however recently it failed again. **Failed Subscriptions** tells each run'\''s full story.\n' "$D" "$G"
 
     # ---- T2 ----
     printf 'TABLE\tNewly quiet\tnofilter\n'
@@ -332,7 +327,7 @@ s3_ok=0
         printf 'ROW\t@{colspan=4}Nothing new — no server-log-only name surfaced on %s or %s.\n' "$D" "$G"
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t\n' "$n5"
-    printf 'NOTE\tNames the server log mentions with NO transfer of their own (the data/unknown sidecars) whose newest mention is on **%s** or **%s**. A configured name here is orange (server-seen, never transferred); an unconfigured one is a stranger knocking — **Missing entities** has the full lists.\n' "$D" "$G"
+    printf 'NOTE\tNames the server log mentions with NO transfer of their own (the data/unknown sidecars) whose newest mention is on **%s** or **%s**. A configured name here never transferred — orange, or red when its own polls cannot connect (the UC3 cannot-connect rule); an unconfigured one is a stranger knocking — **Missing entities** has the full lists.\n' "$D" "$G"
 
     printf 'SUMMARY\tSince yesterday (%s/%s): %s red flip(s), %s newly quiet, %s recovered, %s first seen, %s new unknown name(s)\n' \
         "$D" "$G" "$n1" "$n2" "$n3" "$n4" "$n5"

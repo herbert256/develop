@@ -27,9 +27,11 @@
 #                       - a "keep" regex the value fails.
 #
 # Consumers: bin/transfer/parse.sh (the authoritative blanking),
+# bin/flow-manager-synth.sh (the synthesized config side),
 # bin/server/reports/unknown-entities.sh (so the server side agrees about what
-# is internal) and bin/server/reports/logon.sh (the platform-internal
-# pseudo-logins stay out of its Incoming rows). Those three are ALL of them:
+# is internal), bin/server/reports/logon.sh and its twin bin/logons.sh (the
+# platform-internal pseudo-logins stay out of the logon rows). Those five
+# are ALL of them:
 # report.js has no client-side
 # blacklist net and must not gain one (CLAUDE.md) — filtering happens entirely
 # at parse time.

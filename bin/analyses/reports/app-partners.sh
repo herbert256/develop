@@ -133,7 +133,6 @@ EOF
         END { printf "TOTAL\tTotal (%d pair(s))\t\t@{class=num}%d\t\t\n", n + 0, f + 0 }'
 
     printf 'NOTE\tA pair'\''s Error %% is the Failed-or-Expired share of its Files (the site-wide outcome policy: Waiting counts as OK, Expired as Error). The per-application Files column sums its pairs, so a File shared by two partners counts twice there — exposure, not throughput. A red row runs at 100%% Error: the dependency exists in the logs but never works — usually a decommissioned counterparty still being retried.\n'
-    printf 'KEYWORDS\tapplication,partner,dependency,exposure,pair,matrix,error,external,pda,attribution\n'
     printf 'SUMMARY\tApplications: %s  |  Dependency pairs: %s  |  Pairs at 100%% Error: %s\n' \
         "$n_apps" "$n_pairs" "$n_full"
     printf 'FOOT\tGenerated on %s\n' "$GENDATE"

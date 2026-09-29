@@ -4,7 +4,7 @@
 # split, volume, and first/last time; calendar gaps filled with "0" rows and
 # edge days flagged partial. Emits day.rpt from the shared normalized stream
 # (lib.sh activity_stream): 1=date 2=jdn 3=time 4=proc 5=size 6=sortkey 7=id.
-# Also carries the META lines (first/last record, physical + logical counts)
+# Also carries the META lines (first/last record)
 # that feed the transfer index header and the home page.
 #
 # Usage:
@@ -25,12 +25,8 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-# Physical rows, for the records META. Deliberately NOT `wc -l`: mawk never
-# splits a field it is not asked for, so this scan costs 0.02 s on the 133 MB
-# acceptance cache while `wc -l` on the same file costs 0.08 s (BSD wc walks it
-# a byte at a time, C locale or not). Both count the same rows — the cache
-# always ends in a newline.
-phys_records=$(awk 'END { print NR }' "$PARSED")
+# (the META transfers / records lines went 2026-09-29 — no reader; the
+# readers use the Date / Last Time columns and META first / last only)
 
 clabel="Files"; noun="File"
 OUT="$REPORTS_DIR/day.rpt"
@@ -99,8 +95,6 @@ nodata_days=$(printf '%s\n' "$rows_html" | awk -F'\t' '$1=="ROW" && $3=="0" && $
     printf 'DESC\t%s per calendar day (the delivered ones), volume, first and last time.\n' "$clabel"
     printf 'META\tfirst\t%s\n' "$first_record"
     printf 'META\tlast\t%s\n' "$last_record"
-    printf 'META\ttransfers\t%s\n' "$total_records"
-    printf 'META\trecords\t%s\n' "$phys_records"
     printf 'INTRO\t**%s** %ss over **%s** day(s) with data: **%s** failed, **%s** processed, **%s** total volume.\n' \
         "$total_records" "$noun" "$total_days" "$total_failed" "$total_processed" "$total_human"
     printf 'TABLE\tPer day\n'

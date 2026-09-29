@@ -54,6 +54,11 @@ CLASSIC=""
 for _e in "$REPORTS_DIR"/entities/*.rpt; do
     [ -f "$_e" ] && CLASSIC="$CLASSIC $REPORTS_DIR/${_e##*/}"
 done
+# … and the PAGELESS producers whose drill lists no page shows (2026-09-29
+# audit): from-green-to-red / only-red feed failed.sh and the boxes only
+for _e in from-green-to-red only-red; do
+    [ -f "$REPORTS_DIR/$_e.rpt" ] && CLASSIC="$CLASSIC $REPORTS_DIR/$_e.rpt"
+done
 
 find "$REPORTS_DIR" -name '*.rpt' -not -path "$REPORTS_DIR/errors/*" -not -path "$REPORTS_DIR/files/*" -print0 2>/dev/null \
     | LC_ALL=C xargs -0 awk -v CLASSIC="$CLASSIC" -F'\t' '
@@ -98,7 +103,9 @@ find "$REPORTS_DIR" -name '*.rpt' -not -path "$REPORTS_DIR/errors/*" -not -path 
                 p = index($i, "="); if (p == 0) continue
                 key = substr($i, 15, p - 15); v = substr($i, p + 1)
                 if (v == "" || v == "-" || key == "processed") continue
-                if (key == "failed" || key == "retry" || key == "resubmit" || ((key in DC) && redorange(DC[key]))) {
+                # (retry / resubmit lists lived only in the pageless classic
+                # entity files — no page drills them; 2026-09-29 audit)
+                if (key == "failed" || ((key in DC) && redorange(DC[key]))) {
                     c = first(v, ","); if (c != "") print c }
             } else if (index($i, "@data:drill-cell-") == 1) {
                 p = index($i, "="); if (p == 0) continue
@@ -106,7 +113,7 @@ find "$REPORTS_DIR" -name '*.rpt' -not -path "$REPORTS_DIR/errors/*" -not -path 
                 if (v != "" && col ~ /^[0-9]+$/ && redorange(col + 0)) { c = first(v, US); if (c != "") print c }
             }
         }
-    }' | LC_ALL=C sort -u > "$OUT.tmp" || true
+    }' | LC_ALL=C sort -u > "$OUT.tmp"   # no `|| true` (2026-09-29 audit): an awk failure must fail the step, not leave an empty list
 
 mv "$OUT.tmp" "$OUT"
 echo "drill-files: $(wc -l < "$OUT" | tr -d ' ') first File(s) of the red / orange drill cells listed in $OUT." >&2

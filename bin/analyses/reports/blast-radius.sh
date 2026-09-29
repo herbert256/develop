@@ -186,7 +186,6 @@ n_shared=$(sv shared); n_ptn=$(sv ptn)
     fi
 
     printf 'NOTE\tThe first table counts OUT-connection Files only (the endpoints we dial); its Subscriptions/Applications/Domains/Partners columns are distinct counts over those Files, applications and partners by the site-wide UNION attribution. The partner classes and the sharing view count each partner'\''s distinct endpoints over its OUT-connection Files (an in-connection File records the partner'\''s SOURCE address, not an endpoint we dial); a partner with no such endpoint is the inbound-only class. "Sole endpoint for" names the partners whose ONLY recorded endpoint the host is: losing that address strands them entirely.\n'
-    printf 'KEYWORDS\tendpoint,host,blast radius,outage,redundancy,single point of failure,failover,shared endpoint,partner,dependency\n'
     printf 'SUMMARY\tOutbound endpoints: %s  |  Single-endpoint partners: %s  |  Multi-endpoint: %s  |  Inbound-only: %s  |  Shared endpoints: %s\n' \
         "$n_out" "$n_single" "$n_multi" "$n_inonly" "$n_shared"
     printf 'FOOT\tGenerated on %s\n' "$GENDATE"

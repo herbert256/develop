@@ -30,8 +30,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # TRANSFER lib, not the analyses one: this is a transfer-DATA report (it reads
 # the transfer caches and writes data/transfer/reports/). It lives HERE
-# because its page sits in the ANALYSES menu, in the Subscriptions group — the
-# same arrangement as cross-reference.sh. bin/transfer/reports.sh still runs it.
+# because it reads the transfer caches (its page, if any, is placed by the one
+# Reports menu — _report_groups). bin/transfer/reports.sh still runs it.
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/only-red.rpt"
@@ -92,7 +92,6 @@ n_rows=0
 {
     printf 'TITLE\tOnly red\n'
     printf 'DESC\tSubscriptions whose every File is an Error (Failed or Expired) — flows that never delivered a single OK File in this log window.\n'
-    printf 'KEYWORDS\tonly red, never worked, never green, all failed, no success, dead flow, never delivered, broken\n'
     printf 'INTRO\tThe NEVER-WORKED list: of the **%s** subscription(s) with Files, **%s** have **only Error Files** — Failed or Expired, not one OK delivery in the whole window. The regressions (flows that USED to work and broke later) are on **From green to red** instead. Newest failure first; click an Error count for that subscription'\''s 10 most recent failed Files.\n' \
         "$n_sites" "$n_onlyred"
     printf 'TABLE\tSubscriptions with only Error Files\twide\tnofilter\n'

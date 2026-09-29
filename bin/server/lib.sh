@@ -18,8 +18,8 @@
 #   PARSED          path to the tokenized cache (data/server/cache/_parse.tsv)
 #
 # The cache is the shared, pre-tokenized form of input/server/*.csv produced by
-# parse.sh — see parse.sh / _parse.txt for the column layout (time, level,
-# component, message). Reports read it with a plain `awk -F'\t'` instead of
+# parse.sh — see parse.sh / _parse.txt for the column layout (date, time,
+# level, component, message, session); its rows are in chronological order. Reports read it with a plain `awk -F'\t'` instead of
 # re-running the CSV tokenizer over the multi-GB input each time. bin/build.sh
 # builds it (and the data/flow-manager config caches) before any report runs;
 # a report never parses on its own.
@@ -49,7 +49,7 @@ CACHE_DIR="$DATA/$AREA/cache"
 REPORTS_DIR="$DATA/$AREA/reports"
 TRANSFER_CACHE="$DATA/transfer/cache"; TRANSFER_REPORTS="$DATA/transfer/reports"   # cross-area (unknown-*, TDATA consumers)
 CONFIG_DIR="$DATA/flow-manager"          # bin/flow-manager.sh's caches of the config exports
-CONFIG_BASE="$CONFIG_DIR/base"          # the 9 entity lists, each "name<TAB>direction" (in/both/out; empty = unclassifiable)
+CONFIG_BASE="$CONFIG_DIR/base"          # the entity lists (_<entity>.tsv), each "name<TAB>direction<TAB>result" (direction in/both/out, empty = unclassifiable; result green/red/orange, bin/build/result.sh)
 CONFIG_XREF="$CONFIG_DIR/xref"          # every cross-reference pair BOTH ways (_<a>-<b>.tsv + _<b>-<a>.tsv) + the patterns map
 UNKNOWN_DIR="$DATA/unknown"             # the unknown-* reports' sidecar seed lists
 mkdir -p "$CACHE_DIR" "$REPORTS_DIR"
@@ -61,8 +61,8 @@ PARSED="$CACHE_DIR/_parse.tsv"
 # front of a report's awk program:
 #     awk -F'\t' "$LOGLINES_AWK"' … main … ' "$PARSED"
 # addline(key, sk, msg) keeps, per key, the 10 most-recent messages by the sort
-# key sk ("date time" — a bounded insert, NOT arrival order: the exports are
-# newest-first within a file, so cache order is not chronological).
+# key sk ("date time" — a bounded insert by the key, never arrival order: the
+# cache is chronological, but a report may feed a subset or several inputs).
 # lastlines(key) renders them newest-first as "date time  <msg>" joined with
 # <US>=\x1f for a ROW's @data:loglines cell; report.js splits on \x1f (log
 # messages contain commas, so the coreid list separator won't do). Call sites

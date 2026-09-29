@@ -242,7 +242,7 @@ pct_empty=$(awk -v p="$t_polls" -v e="$t_empty" 'BEGIN { printf "%.1f%%", (p > 0
     printf 'TITLE\tPolling\n'
     printf 'DESC\tEvery UC3 polling subscription in one row — whether it is active, its configured cron expression and schedule, and what the server log observed: polls, empty polls, files matched, listing failures, the poll starts and failure lines of a schedule that never completes, and the contradiction alarm.\n'
     printf 'KEYWORDS\tpoll,polls,polling,remote poll,empty polls,listing failures,cron,cronjobs,schedule,quartz,observed,uc3,uc3 status\n'
-    printf 'TABLE\tPolling\twide\tanchor=polling\n'
+    printf 'TABLE\tPolling\twide\n'   # (its anchor=polling went 2026-09-29: the heading is dropped, nothing linked it)
     printf 'HEAD\tSubscription\tActive\tCron expression\tSchedule\tObserved\tPolls\tEmpty polls\tFiles matched\tEmpty %%\tListing errors\tPoll starts\tFailure lines\tWhat goes wrong\n'
     printf 'KIND\tmono\ttext\tmono\ttext\ttext\tnum\tnumwarn\tnumprocessed\tnum\tnumfailed\tnum\tnum\ttext\n'
     printf 'RECALC\t-\t-\t-\t-\t-\ts0\ts1\ts2\tp1.0\ts3\t-\t-\t-\n'

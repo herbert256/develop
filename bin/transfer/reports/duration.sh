@@ -9,7 +9,7 @@
 # TWO views along one selector (the pair of buttons is a NAV group):
 #   "OK transfers" / "All transfers" — the scope:
 #     OK  = outcome Processed only (the default). Error transfers (mostly
-#           instant 0-byte attempts) are excluded so they do not flatten
+#           short attempts or long retry spans) are excluded so they do not skew
 #           every statistic.
 #     All = every outcome with a measured duration, so a failed transfer's
 #           run time (e.g. a 2h timeout) counts too.
@@ -271,7 +271,7 @@ NAV_ALL=$'NAV\t0|OK transfers|duration.html\t1|All transfers|duration-all.html'
 
 build_view 1 "$REPORTS_DIR/duration.rpt" "$NAV_OK" \
     "Delivered (Processed) Files only — the default; use the All transfers button to include failures." \
-    "Only **Processed** Files count; Error transfers (mostly instant 0-byte attempts) are excluded so they do not flatten the statistics — switch to **All transfers** to include them." \
+    "Only **Processed** Files count; Error transfers (short attempts or long retry spans) are excluded so they do not skew the statistics — switch to **All transfers** to include them." \
     "**Only Processed (OK) Files are counted** here (use the All transfers button to include failures). "
 
 build_view 0 "$REPORTS_DIR/duration-all.rpt" "$NAV_ALL" \

@@ -101,7 +101,7 @@ IFS='|' read -r _ srv_err srv_ok srv_peakd srv_peakn srv_okfirst <<< "$(printf '
         # rows), so a filtered re-total must show "–", not the inflated row sum
         printf 'TABLE\tResubmitted legs per day\tnoagg=4\n'
     fi
-    printf 'HEAD\tDate\tResubmitted legs\tError\tOK\tFiles\n'
+    printf 'HEAD\tDate\tResubmitted legs\tError legs\tOK legs\tFiles\n'   # the legs' OWN status (2026-09-29 audit: named, so they never read as File outcomes — the Top view Resubmit Ok / Error are Files)
     printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\n'
     # The placeholder row keeps its trailing newline, or the TOTAL line below
     # would glue onto it.

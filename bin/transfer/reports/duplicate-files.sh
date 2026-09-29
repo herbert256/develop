@@ -2,7 +2,7 @@
 #
 # duplicate-files.sh — repeated deliveries of the same business filename. Groups
 # logical transfers (_files.tsv) by their file (basename) and lists the names
-# delivered more than once, worst-first. This catches replay loops, a source
+# transferred more than once, worst-first. This catches replay loops, a source
 # re-sending, or a stuck flow retrying — but note that a duplicate FILENAME is not
 # always a replay: date-stamped names are unique, while a fixed name (a daily
 # "export.zip") legitimately recurs. So read this as "filenames seen more than
@@ -67,8 +67,8 @@ if [ "${n_groups:-0}" -eq 0 ]; then
     # page and exit 0, so the build's report pool does not abort.
     {
         printf 'TITLE\tDuplicate Files\n'
-        printf 'DESC\tBusiness filenames delivered more than once — repeated deliveries of the same file, worst-first. Catches replay loops and re-sends (but a fixed filename legitimately recurs).\n'
-        printf 'INTRO\tNo business filename was delivered more than once in this dataset.\n'
+        printf 'DESC\tBusiness filenames transferred more than once — repeated deliveries of the same file, worst-first. Catches replay loops and re-sends (but a fixed filename legitimately recurs).\n'
+        printf 'INTRO\tNo business filename was transferred more than once in this dataset.\n'
         printf 'TABLE\tDuplicate filenames\n'
         printf 'HEAD\tFile\n'
         printf 'KIND\ttext\n'
@@ -92,8 +92,8 @@ capnote=""
 
 {
     printf 'TITLE\tDuplicate Files\n'
-    printf 'DESC\tBusiness filenames delivered more than once — repeated deliveries of the same file, worst-first. Catches replay loops and re-sends (but a fixed filename legitimately recurs).\n'
-    printf 'INTRO\t**%s** filename(s) were delivered more than once, covering **%s** logical transfers.%s A duplicate filename is not always a replay — date-stamped names are unique, while a fixed name (e.g. a daily export) recurs by design — so treat this as "filenames seen more than once, investigate the unexpected ones". Click a row for its 10 most recent Files.\n' \
+    printf 'DESC\tBusiness filenames transferred more than once — repeated deliveries of the same file, worst-first. Catches replay loops and re-sends (but a fixed filename legitimately recurs).\n'
+    printf 'INTRO\t**%s** filename(s) were transferred more than once, covering **%s** logical transfers.%s A duplicate filename is not always a replay — date-stamped names are unique, while a fixed name (e.g. a daily export) recurs by design — so treat this as "filenames seen more than once, investigate the unexpected ones". Click a row for its 10 most recent Files.\n' \
         "$n_groups" "$n_intr" "$capnote"
 
     printf 'TABLE\tRepeated filenames\twide\n'
@@ -104,7 +104,7 @@ capnote=""
     # footer: shown-row count + sums of the summable columns (Accounts is a
     # distinct count, not additive; report.js re-totals on filtering)
     printf '%s\n' "$group_rows" | awk -F'\t' '/^ROW/{n++; c+=$3; f+=$4} END{printf "TOTAL\tTotal (%d rows)\t@{class=num}%d\t@{class=num failed}%d\t\t\t\n", n+0, c+0, f+0}'
-    printf 'NOTE\tOne row per filename delivered more than once (grouped from the logical-transfer cache). Files = how many logical transfers carried that exact filename; Error = how many of them failed; Accounts = distinct accounts that sent it (a full-period figure, not date-adjusted). An Error count lower than the group'\''s Files usually means a failed transfer was re-sent successfully. Files and Error re-aggregate over the selected dates. Click a row for its 10 most recent Files.\n'
+    printf 'NOTE\tOne row per filename transferred more than once (grouped from the logical-transfer cache). Files = how many logical transfers carried that exact filename; Error = how many of them failed; Accounts = distinct accounts that sent it (a full-period figure, not date-adjusted). An Error count lower than the group'\''s Files usually means a failed transfer was re-sent successfully. Files and Error re-aggregate over the selected dates. Click a row for its 10 most recent Files.\n'
     printf 'SUMMARY\tRepeated filenames: %s  |  Files in duplicate groups: %s  |  Shown: %s\n' "$n_groups" "$n_intr" "$shown"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

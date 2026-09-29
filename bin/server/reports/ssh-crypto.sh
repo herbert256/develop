@@ -478,7 +478,7 @@ pt_rows() {
     printf 'HEAD\tProtocol\tNegotiations\tShare\n'
     printf 'KIND\ttext\tnum\tnum\n'
     printf 'RECALC\t-\ts0\t%%0\n'
-    proto_rows; printf '\n'   # the blank line this table has always carried
+    proto_rows   # (the blank line after the rows went 2026-09-29 — no reader wants it)
     printf 'TOTAL\tTotal (%s protocol(s))\t@{class=num}%s\t@{class=num}100.0%%\n' "$n_proto" "$neg"
 
     emit_algo_table H "Cipher suites"          "Cipher suite"      cipher
@@ -490,7 +490,7 @@ pt_rows() {
     printf 'HEAD\tParameter\tAccount\tSubscription\tRemote host\tWarnings\tFirst\tLast\n'
     printf 'KIND\tmono\tmono\tmono\tmono\tnumwarn\ttext\ttext\n'
     printf 'RECALC\t-\t-\t-\t-\ts0\t-\t-\n'
-    dep_rows; printf '\n'     # idem
+    dep_rows
     printf 'TOTAL\t@{colspan=4}Total (%s combination(s))\t@{class=num warn}%s\t\t\n' "$n_dep_rows" "$dep"
 
     printf 'NOTE\tAn SSH/SFTP connection breaks out cipher, key exchange, MAC and public key separately; a TLS connection (HTTPS and PeSIT/FTPS over TLS) logs only a cipher suite — key exchange, MAC and signature are folded into the suite. So the Cipher suites table counts all **%s** negotiations, while Key exchange / MAC / Public-key count only the **%s** SSH/SFTP connection(s) that itemize them. Share is within each table. "Weak" flags known-deprecated algorithms; `ssh-rsa` is flagged because it signs with SHA-1. The deprecated-parameter table is the server'"'"'s own warnings, with the account, subscription and remote host that used the parameter (shown as logged; names matching a known transfer-log entity link to its detail page). All tables re-total under the date filter; click a row to expand its 10 most recent log lines.\n' "$neg" "$itemized"

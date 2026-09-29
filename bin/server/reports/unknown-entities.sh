@@ -50,7 +50,7 @@ mkdir -p "$REPORTS_DIR" "$UNKNOWN_DIR"
 TCACHE="$TRANSFER_CACHE/_transfers.tsv"      # authoritative per-row entity lists (transfer parse cache)
 CFG_HOSTS="$CONFIG_BASE/_hosts.tsv"          # configured outbound endpoints (partners.json host fields)
 CFG_WHITE="$CONFIG_BASE/_white.tsv"          # whitelisted partner IPs (partners.json AllowIPxx fields)
-HOSTS_CACHE="$IP_HOSTS_FILE"                 # the automatic ip -> endpoint map (bin/ip.sh)
+# ($IP_HOSTS_FILE, the ip -> endpoint map of bin/ip.sh, is read below)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -72,16 +72,12 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 TMPD=$(mktemp -d "${TMPDIR:-/tmp}/unkent.XXXXXX")
 trap 'rm -rf "$TMPD"' EXIT
 
-# The reverse-DNS cache map for the whitelisting known set: "M ip name" per
-# cached entry (an IP is known when its cached NAME appears as a transfer
-# host — the out-side substitution replaced the IP by the name). Mere cache
-# existence does NOT count: details.sh pre-resolves every whitelisted IP, so
-# that old rule pinned the report at permanent zero.
-# One read of the cache file. This used to be a bash loop forking a subshell
-# (basename) + a pipeline (tr) PER FILE — ~20 s of pure fork cost at 4,000+
-# cached addresses, paid by EVERY rescan in EVERY env (it was most of the "why
-# is the production scan slow with 375 records" mystery) — then one awk over the
-# same 4,000-file glob. Same output: "M <ip> <lowercased name>", empty skipped.
+# The address -> endpoint map for the whitelisting known set: "M ip name" per
+# entry of input/ip/ip-hosts.tsv (bin/ip.sh — FORWARD DNS over the configured
+# hosts; there is no reverse DNS). An IP is known when its mapped NAME appears
+# as a transfer host (the out-side substitution replaced the IP by the name);
+# mere presence in the map does NOT count. One read of the map file:
+# "M <ip> <lowercased name>", empty fields skipped.
 if [ -f "$IP_HOSTS_FILE" ]; then
     awk -F'\t' '$1 != "" && $2 != "" { print "M\t" $1 "\t" tolower($2) }' "$IP_HOSTS_FILE" > "$TMPD/known.map"
 else

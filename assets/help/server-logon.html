@@ -35,7 +35,7 @@
 <li><strong>Auth failed</strong> = the anonymous &ldquo;Authentication failed using local.&rdquo; line, counted for the login whose Allowed precedes it within a second.</li>
 <li><strong>Re-screens</strong> = an Allowed on an already-authenticated session (a held connection re-keys hourly); not in Allowed.</li>
 <li>Incoming row colour = the latest funnel line: <strong>green</strong> an authentication, <strong>red</strong> anything else, <strong>orange</strong> never in the funnel.</li>
-<li><strong>Session errors</strong> = Error/Warning <code>[Ssh Default]</code> lines of no other column, booked to the session&rsquo;s login.</li>
+<li><strong>Session errors</strong> = Error/Warning <code>[Ssh Default]</code> lines of no other column, booked to the session&rsquo;s login &mdash; not the re-key warning &ldquo;No session cycleId for file &hellip; will not get reported&rdquo; (transfer bookkeeping, not a logon problem).</li>
 <li>Click an Incoming count for its 5 newest lines, another row for its 10. Distinct counts stay full period under a date filter.</li>
 </ul>
 </main>

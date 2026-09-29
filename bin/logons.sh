@@ -151,12 +151,16 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
             $5 ~ /User with login name "/ && $5 ~ /successfully authenticated/ {
                 if (!match($5, /login name "[^"]*"/)) next
                 u = substr($5, RSTART + 12, RLENGTH - 13)
-                # the blacklist tests the RAW token (its rules are exact and
-                # case-sensitive: *nobody would survive a toupper)
-                if (u == "" || bl_blank("login", u)) next
+                ts = $1 " " $2
+                # the LOGIN side — the blacklist tests the RAW token (its rules
+                # are exact and case-sensitive: *nobody would survive a
+                # toupper); a blacklisted or empty login skips THIS part only:
+                # the address below is booked whatever credential it carried
+                # (the header rule — 2026-09-29 audit: the `next` here dropped
+                # the address too)
+                if (u != "" && !bl_blank("login", u)) {
                 u = toupper(u)
                 cnt[u]++
-                ts = $1 " " $2
                 if (fst[u] == "" || ts < fst[u]) fst[u] = ts
                 if (lst[u] == "" || ts > lst[u]) lst[u] = ts
                 if ($1 ~ /^[0-9][0-9][0-9][0-9]-/ && $2 ~ /^[0-9][0-9]:/) {
@@ -166,6 +170,7 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                     if (!(u in m1) || m > m1[u]) m1[u] = m
                 }
                 if (ORD[u] == "") { ORD[u] = ++no; NM[no] = u }   # first-seen order (cache order is stable)
+                }
                 # the same logon, keyed by the client ADDRESS (the host file)
                 ha = addrof($5)
                 if (ha != "" && !bl_blank("host", ha)) {
@@ -282,8 +287,14 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 if (side == "" || u2 == "") {
                     # SESSION ERRORS (2026-09-06): an Error/Warning [Ssh
                     # Default] line of no counted family, on a session —
-                    # attributed to the login of the session in END
-                    if (side == "" && $3 != "I" && $6 != "") { nx9++; XS9[nx9] = $6; XT9[nx9] = $1 " " $2 }
+                    # attributed to the login of the session in END. NOT the
+                    # re-key bookkeeping W line "No session cycleId for file
+                    # … SENT will not get reported!" (2026-09-29 audit: 181 of
+                    # 199 sample session errors): ST lost the download\047s
+                    # cycle id mid-transfer and re-keys it — a transfer-log
+                    # matter (the RE-KEYED LEGS, bin/session-sites.sh), not a
+                    # logon problem. logon.sh skips the same shape.
+                    if (side == "" && $3 != "I" && $6 != "" && index(m9, "No session cycleId for file") == 0) { nx9++; XS9[nx9] = $6; XT9[nx9] = $1 " " $2 }
                     next
                 }
                 # the screening lines carry the client address too (the host
@@ -301,8 +312,9 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 ts9 = $1 " " $2
                 if (side == "A") {
                     # DEFERRED (2026-09-06): re-screen or genuine screening is
-                    # decided in END — the exports are newest-first, so the
-                    # last authentication of the session is known only then
+                    # decided in END — the session\047s LAST authentication may
+                    # come later in the (chronological) cache, so it is known
+                    # only then
                     nr9++; RS9s[nr9] = $6; RS9h[nr9] = ha; RS9t[nr9] = ts9; RS9u[nr9] = ""
                     RS9d[nr9] = ($1 ~ /^[0-9][0-9][0-9][0-9]-/ && $2 ~ /^[0-9][0-9]:/) ? secof($1, $2) : ""
                     if (bl_blank("login", u2)) next   # raw token, pre-toupper: the address activity stays, the login does not

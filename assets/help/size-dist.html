@@ -25,7 +25,7 @@
 <li><strong>By size</strong> &mdash; Size range / Files / Error / OK / Volume / % of Files / Distribution: nine buckets from 0 B to &gt;= 1 GB; the bar is relative to the fullest bucket.</li>
 <li><strong>Empty files</strong> &mdash; Subscription / Empty OK Files / First / Last: zero-byte Files delivered OK.</li>
 <li><strong>By type</strong> &mdash; File type / Transfers / Error / OK / Volume / % of transfers, per extension; counts legs, so a file appears on its Inbound and Outbound leg.</li>
-<li><strong>Duplicates</strong> &mdash; Filename / Files / Error / Accounts / First / Last: names delivered more than once; <strong>Accounts</strong> = distinct senders (full period).</li>
+<li><strong>Duplicates</strong> &mdash; Filename / Files / Error / Accounts / First / Last: names transferred more than once, whatever the outcome (Error counts the failed ones); <strong>Accounts</strong> = distinct senders (full period).</li>
 <li><strong>Largest files</strong> &mdash; the 50 largest Files: Size / Throughput (size &divide; the File&rsquo;s wall-clock span) / Start Time / Account / Destination Subscription / Outcome / File. Rows in the <a href="general.html#colours">File colour</a>.</li>
 <li><strong>Size regime</strong> &mdash; flows with 20+ Files whose median size changed 3&times;+ between the first and second half of their own Files (split by count); &infin; = a first-half median of 0 bytes.</li>
 <li><strong>Stub shippers</strong> &mdash; flows with 10%+ stubs, files smaller than the <strong>Stub limit</strong> = max(1 KB, 1% of the flow&rsquo;s median).</li>
@@ -33,7 +33,7 @@
 <h2>Rules</h2>
 <ul>
 <li>All tabs but By type count Files; Error = Failed or Expired.</li>
-<li>The 0 B bucket is mostly failed Files (no size recorded); only the OK ones reach Empty files.</li>
+<li>The 0 B bucket holds every empty File, failed or not; only the OK ones reach Empty files.</li>
 </ul>
 <h2>Tips</h2>
 <ul>

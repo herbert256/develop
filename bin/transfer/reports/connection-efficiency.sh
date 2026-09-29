@@ -140,7 +140,9 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
     printf 'INTRO\tA **session** is one technical connection — an SFTP login, a PeSIT session — identified by the log'\''s Session ID column (added to the exports 2026-08). One session can carry many Files, but on this platform it mostly does not: **%s** sessions carried **%s** Files between them (a File counted once per session it used — **%s** per connection) and **%s%%** of all sessions moved a single File. **%s** sessions were User-initiated (the partner connected in), the rest Server-initiated; **%s** record(s) without a usable Session ID are excluded. A session is attributed to the account of its first record.\n' \
         "$p_sess" "$p_files" "$p_ratio" "$p_sf" "$p_user" "$p_unk"
 
-    printf 'TABLE\tFiles per connection\twide\tnofilter\n'
+    # noagg: the TOTAL is the PLATFORM-wide figure, not the sum of the listed
+    # accounts — a search must not re-sum it (2026-09-29 audit)
+    printf 'TABLE\tFiles per connection\twide\tnofilter\tnoagg=1,2,3,4\n'
     printf 'HEAD\tAccount\tSessions\tFiles carried\tFiles per session\tSingle-File sessions\n'   # a File counts once per session it used (in + out: twice) — so "carried", not a distinct File count (2026-09-29)
     printf 'KIND\tacct\tnum\tnum\tnum\tnum\n'
     if [ -n "$lg_rows" ]; then

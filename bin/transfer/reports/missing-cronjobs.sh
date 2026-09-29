@@ -84,7 +84,6 @@ nmiss=$(printf '%s\n' "$rows" | grep -c . || true)
             "$nmiss" "$uclist"
     fi
 
-    printf 'STAT\tred\t%s\tMissing a cronjob\n' "$nmiss"
 
     printf 'TABLE\tSubscriptions that can never poll\tnofilter\tnosearch\n'
     printf 'HEAD\tSubscription\tUse case\n'
@@ -97,7 +96,6 @@ nmiss=$(printf '%s\n' "$rows" | grep -c . || true)
     fi
     printf 'TOTAL\tTotal (%s subscription(s))\t\n' "$nmiss"
     printf 'NOTE\tSource: the **subscriptions.json** export directly — the cron expressions live in each subscription'"'"'s `parameters`, which the config caches do not carry. This is PURE CONFIGURATION and reads no log, so the answer does not change with the date range and the table carries no date filter. A use case counts as cron-triggered when **uc-cases.sh** gives it the trigger "Cronjob" (%s today), so the list follows the use-case definitions rather than a hardcoded set here; **UC1** is a client use case too, but pushes on directory scanning, so it is never flagged.\n' "$uclist"
-    printf 'KEYWORDS\tcron, cronjob, quartz, schedule, missing, no schedule, never polls, never runs, uc3, uc5, configuration gap\n'
     printf 'SUMMARY\tMissing a cronjob: %s subscription(s)  |  Cron-triggered use cases: %s\n' "$nmiss" "$uclist"
     printf 'FOOT\tGenerated on %s from the FlowManager subscriptions export\n' "$(date '+%Y-%m-%d %H:%M:%S')"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

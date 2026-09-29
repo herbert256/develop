@@ -173,10 +173,11 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
 # no FMLINK_MAPS; render_rpt.awk's whole fm machinery went with them)
 # Entity RESULT tints on the detail pages (render_rpt.awk resmaps): every
 # entity cell gets class res-<result> from its base cache — keys are the
-# slugmap sub names, plus "white" for the Whitelisted IPs cells (KIND ip).
+# slugmap sub names (the "white" map for the KIND ip Whitelisted IPs cells went
+# 2026-09-29 with that KIND — no writer used it).
 RESMAP_FILES=""
 for _rm in accounts:_accounts subscriptions:_subscriptions logins:_logins hosts:_hosts \
-           logicals:_logicals partners:_partners applications:_apps domains:_domains bl:_bl white:_white; do
+           logicals:_logicals partners:_partners applications:_apps domains:_domains bl:_bl; do
     [ -s "$DATA/flow-manager/base/${_rm#*:}.tsv" ] && RESMAP_FILES+="${RESMAP_FILES:+ }${_rm%%:*}=$DATA/flow-manager/base/${_rm#*:}.tsv"
 done
 unset _rm

@@ -122,16 +122,18 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_vol <<< "$(printf '%s\n' 
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\t\n' "$tot_processed" "$tot_vol"
     printf 'NOTE\tFiles = the delivered (OK) Files of that journey. **?** marks a leg with no protocol logged.\n'
 
-    # the last-leg table: Files = the Delivered count (the former Delivered
-    # column), the Errored column gone; Waiting / Expired stay
-    printf 'TABLE\tWhere the journey ends — protocol of the last leg\n'
+    # the last-leg table: Files (= the delivered, Processed ones — the one
+    # Files column of the File journey tables, 2026-09-13), Waiting, Expired —
+    # FULL-PERIOD figures (nofilter, 2026-09-29 audit: its RECALC was all "-"
+    # and its buckets carried the OK counts, so a narrowed range changed
+    # nothing while the page looked filtered; the badge now says so)
+    printf 'TABLE\tWhere the journey ends — protocol of the last leg\tnofilter\n'
     printf 'HEAD\tLast leg\tFiles\tWaiting\tExpired\n'
     printf 'KIND\tmono\tnum\tnumwarn\tnum\n'
-    printf 'RECALC\t-\t-\t-\t-\n'
     tot_del=0
     while IFS='|' read -r _ p rec del fa wt ex bk ccf ccp; do
         [ -z "$p" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\n' "$p" "$del" "$wt" "$ex" "$bk"
+        printf 'ROW\t%s\t%s\t%s\t%s\n' "$p" "$del" "$wt" "$ex"
         tot_del=$((tot_del + del))
     done <<< "$(printf '%s\n' "$agg" | grep '^END|' | sort -t'|' -k4,4nr)"
     printf 'TOTAL\tTotal\t@{class=num}%s\t\t\n' "$tot_del"

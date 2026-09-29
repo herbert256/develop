@@ -22,7 +22,7 @@
 _merge_pad() {
     case $(basename "$1" .rpt) in
         hourly|legs-count|protocol-journey) echo 2 ;;   # (error-reasons stays 1: its 2026-09-28 second table, Reasons over time, rides its tab — tab=reasons)
-        resubmissions|auth-activity|dwell-time) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes)
+        resubmissions|auth-activity) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes); dwell-time merges in merge-duration-dwell.sh, not here
         trend|duration-trend|size-profile) echo 2 ;;   # trend 3->2 (2026-09-29: Went silent went); the Trends and Sizes components
         # errors-day 2->1 and error-timing 3->1 (2026-09-28: the per-day table = the Top view; hour + weekday folded into the heatmap)
         attempts|logon) echo 4 ;;         # logon 2->4 (2026-08: + the door-knocker tables)

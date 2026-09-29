@@ -6,11 +6,15 @@
 # programs with $(cat …) and MUST keep classifying identically, which is why
 # the function lives here and not in either of them:
 #
-#   bin/analyses/publish-insights.sh  the _subs-boxes.tsv reason sidecar the
-#                                     home page's red-worklist Reason reads
+#   bin/analyses/publish-insights.sh  the _subs-boxes.tsv reason sidecar
+#                                     (the Boxes reasons; the Entities
+#                                     Reason column falls back to it)
 #   bin/transfer/reports/failed.sh  the Reason column of the Failed
-#                                     transfers list, classified per row from
-#                                     that file's own drill page
+#                                     Subscriptions / Failed files lists,
+#                                     classified per row from that file's
+#                                     own drill page
+# (publish_lib.sh's Entities Reason column injects it too, classifying the
+# went-kaput evidence sidecar.)
 #
 # Order matters: the first pattern that matches wins, most specific first —
 # a fingerprint rejection also mentions the connection it failed, and must

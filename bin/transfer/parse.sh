@@ -29,8 +29,9 @@
 #   4 account         Account (field 2) with @... stripped; blacklist blanked
 #   5 login           Login (field 3); blacklist blanked; if then blank and Account
 #                     has an @suffix, the part after @ (the FE endpoint) is used
-#   6 site            Transfer Site (field 7); a LOGGED value MUST start with "UC"
-#                     (every real subscription does) — anything else (P14303_CFT01,
+#   6 site            Transfer Site (field 7); a LOGGED value must start with "UC"
+#                     OR be a configured subscription name (kept whatever its
+#                     shape since 2026-08-31) — anything else (P14303_CFT01,
 #                     "none", "Clone - ..." artifacts) is blanked; kept only up to
 #                     _SCP_ / _SSCP_ / _CCP_ (the clean subscription name, tail dropped).
 #                     A group no pass could attribute — not even the SESSION
@@ -1005,10 +1006,9 @@ grp_par "$PARSED0" "$tmp.prop" "$_pj" awk -F'\t' -v OFS='\t' '
         # extractors all miss it, so it classifies to no use case). The name is
         # never configured; downstream it behaves like any logged-but-unconfigured
         # subscription (result.sh discover_logged appends it to the base
-        # cache, so the Entities/home figures stay consistent) EXCEPT that
-        # first-seen.sh excludes it by the UCx_ prefix — nothing was
-        # configured, so no first sighting can be dated. It surfaces on
-        # not-in-flow-manager and in the per-subscription breakdowns.
+        # cache, so the Entities/home figures stay consistent) — First seen
+        # counts it too since 2026-09-29. It surfaces on not-in-flow-manager
+        # and in the per-subscription breakdowns.
         if (gs == "" && ga != "") { gs = "UCx_" ga; xgain["fake"]++ }
         for (i = 1; i <= nb; i++) {
             $0 = buf[i]
@@ -1284,7 +1284,7 @@ ssh, a purely partner-protocol movement conflict): the Inbound leg outvotes
 the echo and the group takes the account's single configured movement-in
 subscription; when even that fails, the group keeps
 the SYNTHETIC site "UCx_<account>" — counted like any logged-but-unconfigured
-subscription, except that First seen excludes it by the UCx_ prefix.
+subscription (First seen included, since 2026-09-29).
 
 RE-KEYED LEGS (2026-09-29): SecureTransport can lose a download's session
 cycleId mid-transfer ("No session cycleId for file ... SENT will not get
@@ -1315,7 +1315,8 @@ col  name           description
                     UNKNOWN); if then blank and Account has an @suffix, the part after
                     @ (the FE endpoint) is used as the login — unless that value is
                     itself blacklisted (the blacklist outranks the fallback)
-  6  site           Transfer Site; a LOGGED value must start with "UC" — anything
+  6  site           Transfer Site; a LOGGED value must start with "UC" or be a
+                    configured subscription name (kept whatever its shape) — anything
                     else (P14303_CFT01, none, "Clone - ..." artifacts) is blanked; kept
                     only up to _SCP_ / _SSCP_ / _CCP_ (clean name, truncated tail dropped).
                     "UCx_<account>" = the synthetic no-subscription name (see
@@ -1589,7 +1590,10 @@ else
             # known (an account configured BOTH ways carries in- and out-subs;
             # the per-account rule below cannot split those) — else the
             # account rule: configured hosts -> out, else login -> in
-            d=(s!="" && (s in sd))?sd[s]:((a in ah)?"out":((a in al)?"in":""))
+            # an account configured BOTH ways (hosts AND a login) abstains:
+            # only its subscription can tell (2026-09-29 audit: it read "out",
+            # while flow-manager.sh adddir says "both")
+            d=(s!="" && (s in sd))?sd[s]:(((a in ah) && (a in al))?"":((a in ah)?"out":((a in al)?"in":"")))
             m=(s!="" && (s in fd))?fd[s]:""
             p=""
             if(s!="" && (s in sp) && sp[s]!=AMB) p=sp[s]
@@ -1659,8 +1663,9 @@ col  name       rule
                 Processed = >= 2 legs, last leg Outbound with status
                             Processed, AND that leg matches the file MOVEMENT
                             (col 17): out -> protocol ssh/ftp/ftps (handed to
-                            the partner), in -> pesit (handed to CFT). A file
-                            without a movement direction never passes.
+                            the partner), in -> pesit (handed to CFT), relay ->
+                            any of ssh/ftp/ftps/pesit (a relay has no side to
+                            match). A file without a movement never passes.
                 Failed    = everything else (incl. a lone one-row CoreId).
                 There is deliberately NO bytes condition: a 0-byte file
                 delivered end-to-end stays Processed (empty at ORIGIN — see
@@ -1694,16 +1699,18 @@ col  name       rule
  13  profile    the Transfer Profile named on one of the rows ("" if none)
  14  login      the first row that carries a Login (blacklisted values are blank)
  15  host       the first row that carries a Remote Host (blacklisted values are blank)
- 16  connection the CONNECTION side — the account's configured flow side vs the
-                partner: "in" (the partner connects in to us; the account
+ 16  connection the CONNECTION side vs the partner: the file SUBSCRIPTION's
+                comm-profile side first (base _subscriptions.tsv col 2), else the
+                account's — "in" (the partner connects in to us; the account
                 carries a comm-profile login), "out" (we connect out to the
-                partner; the account carries hosts), or "" (account unknown/
+                partner; the account carries hosts), or "" (unknown /
                 unclassified). From the data/flow-manager caches.
  17  movement   the FILE-MOVEMENT direction — which way the FILE travels, from
                 the file's subscription (col 12) via _subscriptions-flowdir
                 (config source_folder_monitoring_scan_dir -> "out": the file
                 leaves us; target_working_dir -> "in": it enters us): "in",
-                "out", or "" (relay subscription, or no/unmapped subscription).
+                "out", "relay" (the subscription moves files both ways), or ""
+                (no or unmapped subscription).
                 Diverges from connection on pull flows (UC2 in/out, UC3 out/in).
  18  app        the file's APPLICATION — part 2 of its logical flow name
                 (domain_application_partner), joined via the SUBSCRIPTION
@@ -1741,7 +1748,9 @@ col  name       rule
                 File's END — a File that finished OK after the error is a
                 transfer that ended OK after it, so the error is not "after
                 the last transfer". Cols 4/5 stay the START.
- 25  colour     the File's COLOUR, the row tint of every Files table
+ 25  colour     the File's COLOUR, the row tint of the tables of single Files
+                (not Failed files / Failed Subscriptions, whose rows tint by the
+                SUBSCRIPTION's current colour on purpose)
                 (2026-09-29, user request): red = Failed or Expired; orange =
                 Waiting (UC2 staged, not collected yet) or Processed after a
                 RETRY (a failed leg) or a RESUBMIT (a leg with the Resubmitted

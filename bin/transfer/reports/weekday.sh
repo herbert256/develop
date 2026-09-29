@@ -27,7 +27,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 names=(Monday Tuesday Wednesday Thursday Friday Saturday Sunday)
 
-clabel="Files"; noun="File"
+clabel="OK Files"; noun="OK File"   # the OK Files (2026-09-29 audit)
 OUT="$REPORTS_DIR/weekday.rpt"
 
 # Bucket the normalized stream by weekday (jdn %% 7, 0=Mon). Same as before,

@@ -29,7 +29,7 @@
 <h2>Rules</h2>
 <ul>
 <li>A File&rsquo;s duration is its wall-clock span, first record start to last record end: the store-and-forward gap and retry idle time included, not the sum of the record durations.</li>
-<li>OK transfers leaves out the Error transfers, mostly instant 0-byte attempts that would flatten every figure; in All transfers a failure counts as long as it ran before giving up, so its Max can far exceed the OK view&rsquo;s.</li>
+<li>OK transfers leaves out the Error transfers, whose span is how long they ran before giving up (short attempts or long retry spans); in All transfers a failure counts as long as it ran before giving up, so its Max can far exceed the OK view&rsquo;s.</li>
 <li>Percentiles use the nearest-rank method. They are not additive: a narrowed date range keeps the day rows but blanks them in the total row; Files re-totals.</li>
 </ul>
 <h2>Tips</h2>

@@ -10,7 +10,8 @@
 #                      it is orange, "not seen" — 2026-09-28, user rule)
 #   error              it is red and has NEVER delivered an OK File
 #   ok -> error        it is red but HAS delivered OK Files before — a regression
-#   not seen           orange: configured, never seen in the transfer log
+#   not seen           orange: configured, never seen in the transfer log (or
+#                      its last File Expired — a pickup problem is orange)
 #
 # green/red/orange is the site-wide RESULT colour (data/flow-manager/base/
 # _subscriptions.tsv, filled by bin/build/result.sh). The three server-log-only
@@ -41,8 +42,9 @@
 #
 # The logged site carries a "_SCP_…"/"_SSCP_…"/"_CCP_…" suffix; it is truncated
 # to the clean subscription name the way the transfer parser and the other
-# server reports do. Transfer Files join by the showseen rule — the configured
-# name PREFIXES the logged _files.tsv value.
+# server reports do. Transfer Files join EXACTLY (_files.tsv col 12 is the
+# canonical subscription name since parse time — result.sh matches the same
+# way); only a server-log token may resolve by prefix (the server truncates).
 #
 # Reads data/_parse.tsv + the transfer _files.tsv cache + base/_subscriptions.tsv;
 # writes data/uc3-status.rpt. The subscription cell links to its detail page.
@@ -55,8 +57,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SERVER lib, not the analyses one: this is a server-DATA report (it reads the
 # server parse cache and writes data/server/reports/). It lives HERE
-# because its page sits in the ANALYSES menu, in the Subscriptions group — the
-# same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
+# because its page is an analyses/ page (the UC status report group of the one
+# Reports menu, 2026-09-29) — the same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
 source "$SCRIPT_DIR/../../server/lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/uc3-status.rpt"
@@ -111,12 +113,24 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
     function span(h) { if (hmin == "" || h < hmin) hmin = h; if (h > hmax) hmax = h }
-    # a logged/configured name -> the configured UC3 roster key. EXACT first —
-    # which is what every line in both caches actually is here — then, purely
-    # defensively (the server truncates long site names), the roster entry it
-    # prefixes or is prefixed by, and ONLY when exactly one matches: an
-    # ambiguous truncation must attribute to nothing rather than to whichever
-    # entry the roster happens to list first. Memoized: the fallback is a scan.
+    # the row drill: its problem lines (E) newest first, then its other lines
+    # (L: polls, poll set-up) newest first, 10 in all — so the failures a
+    # verdict classifies (subscription-verdict.awk nextmove) always lead, on
+    # every row, never crowded out by routine polls
+    function drill(k,   e, l, ne, nl, a9, i9, s9) {
+        e = lastlines("E" SUBSEP k); l = lastlines("L" SUBSEP k)
+        if (e == "" || l == "") return e l
+        ne = split(e, a9, _US); s9 = e; nl = split(l, a9, _US)
+        for (i9 = 1; i9 <= nl && ne < 10; i9++) { s9 = s9 _US a9[i9]; ne++ }
+        return s9
+    }
+    # a SERVER-LOG name -> the configured UC3 roster key. EXACT first — which
+    # is what nearly every line actually is — then, purely defensively (the
+    # server truncates long site names), the roster entry it prefixes or is
+    # prefixed by, and ONLY when exactly one matches: an ambiguous truncation
+    # must attribute to nothing rather than to whichever entry the roster
+    # happens to list first. Memoized: the fallback is a scan. _files.tsv
+    # never goes through this: its col 12 joins EXACTLY.
     function key(u,   i, hit, c) {
         if (u in res) return u
         if (u in memo) return memo[u]
@@ -124,25 +138,26 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
         for (i = 1; i <= nr; i++) if (index(u, R[i]) == 1 || index(R[i], u) == 1) { hit = R[i]; c++ }
         return memo[u] = (c == 1) ? hit : ""
     }
-    FILENAME == rfv { if ($1 != "" && $2 != "") rfd[toupper($1)] = $2; next }   # red-flip sidecar: name -> evidence stamp
+    FILENAME == rfv { if ($1 != "" && $2 != "") rfd[toupper($1)] = ($3 != "") ? $3 : $2; next }   # red-flip sidecar: name -> RED SINCE (col 3; col 2 = the newest evidence)
     FILENAME == sb {                                         # the configured UC3 roster (UC3-named or derived)
         if ($1 == "" || ($1 !~ /^UC3/ && !(toupper($1) in ucd))) next
         u = toupper($1); res[u] = $3; nm[u] = $1; R[++nr] = u
         next
     }
-    FILENAME == tf {                                         # transfer Files, joined by prefix
+    FILENAME == tf {                                         # transfer Files, joined EXACTLY (as result.sh)
         if ($12 == "") next
-        u = toupper($12); k = key(u); if (k == "") next
+        k = toupper($12); if (!(k in res)) next
         files[k]++
         if ($2 == "Failed" || $2 == "Expired") err[k]++; else ok[k]++
         if ($6 > lsk[k]) { lsk[k] = $6; lfd[k] = $4 }        # col 6 sortkey, col 4 date
         # per-HOUR state for the sidecar: the outcome of the LATEST File in this
         # hour (by sortkey — the cache is CoreId-sorted, not chronological) and
-        # whether any OK landed in it
+        # whether any OK landed in it. "F" Failed (red), "X" Expired (ORANGE —
+        # the result colour of an Expired-last flow, not red), "" OK
         if ($5 ~ /^[0-9][0-9]:/) {
             hs = $7 * 24 + int(substr($5, 1, 2)); span(hs)
             hk = k SUBSEP hs
-            if (!(hk in tsk) || $6 > tsk[hk]) { tsk[hk] = $6; tbad[hk] = ($2 == "Failed" || $2 == "Expired") }
+            if (!(hk in tsk) || $6 > tsk[hk]) { tsk[hk] = $6; tbad[hk] = ($2 == "Failed") ? "F" : ($2 == "Expired") ? "X" : "" }
             if ($2 != "Failed" && $2 != "Expired") thok[hk] = 1
         }
         next
@@ -174,8 +189,8 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
         # a server line widens the hours the per-HOUR sidecar walks
         if (d != "" && $2 ~ /^[0-9][0-9]:/)
             span(jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 24 + int(substr($2,1,2)))
-        # the drill keeps the problems apart: on a red flow that never
-        # transferred they are the story, and thousands of routine poll lines
+        # the drill keeps the problems apart (E, shown first — drill()): on a
+        # red flow they are the story, and thousands of routine poll lines
         # would otherwise crowd them out
         addline((sig == "prob" ? "E" : "L") SUBSEP k, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
     }
@@ -192,9 +207,7 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
             else                   stc = 3
             n[stc]++
             tf_ += files[k]+0; tok += ok[k]+0; ter += err[k]+0; tpl += poll[k]+0; tpr += prob[k]+0; tem += empty[k]+0
-            # a red flow that never transferred drills its failures (the
-            # cannot-connect red), anything else its recent lines
-            dl = (stc == 0 && files[k]+0 == 0) ? lastlines("E" SUBSEP k) : lastlines("L" SUBSEP k)
+            dl = drill(k)                                     # problems first, then the recent lines
             printf "A\t%d\t%s%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%s\t%s\n", stc, sublink(nm[k]), nm[k], \
                 files[k]+0, ok[k]+0, err[k]+0, (k in lfd ? lfd[k] : "-"), \
                 poll[k]+0, empty[k]+0, prob[k]+0, (k in llg ? llg[k] : "-"), dl
@@ -214,7 +227,8 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
         if (hmin != "" && SL != "") {
             # the result.sh RED FLIP (_redflip.tsv): a green-by-transfer flow
             # flipped red by ring Error/Warn evidence NEWER than its last
-            # transfer. Applied from the evidence hour, clamped into the walked
+            # transfer, or the cannot-connect red. Applied from the hour it
+            # went red (the sidecar SINCE column), clamped into the walked
             # span, so the LAST row reproduces the snapshot n[] exactly (the
             # regression test). Hash order here only FILLS a map.
             for (k9 in rfd) if (k9 in res) {
@@ -230,13 +244,16 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
                 delete cnt
                 for (i = 1; i <= nr; i++) {
                     k = R[i]; hk = k SUBSEP h
-                    if (hk in tsk) { HF[k] = 1; LOK[k] = !tbad[hk] }
+                    if (hk in tsk) { HF[k] = 1; LST[k] = tbad[hk] }
                     if (hk in thok) EOK[k] = 1
-                    if (HF[k]) sc = LOK[k] ? 2 : (EOK[k] ? 1 : 0)
-                    else       sc = 3   # no File yet: not seen, however it polls (2026-09-28)
-                    # the red flip: ok -> "ok -> error"; a never-transferred flow
-                    # (the cannot-connect rule) goes straight to error
-                    if ((k in RFH) && h >= RFH[k]) { if (sc == 2) sc = 1; else if (sc == 3) sc = 0 }
+                    # the COLOUR so far: no File yet is orange, however it
+                    # polls (2026-09-28); an Expired last File is ORANGE too,
+                    # like the snapshot (result.sh) — "not seen"
+                    col = !HF[k] ? "o" : (LST[k] == "") ? "g" : (LST[k] == "X") ? "o" : "r"
+                    # the red flip (after-last-transfer, or the cannot-connect
+                    # rule on a never-transferred flow): red from its hour on
+                    if ((k in RFH) && h >= RFH[k]) col = "r"
+                    sc = (col == "g") ? 2 : (col == "o") ? 3 : (EOK[k] ? 1 : 0)
                     cnt[sc]++
                 }
                 printf "%s\t%d\t%d\t%d\t%d\t%d\n", fromjdn(int(h/24)), h%24, \
@@ -274,8 +291,7 @@ rows=$(awk -F'\t' '
         printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", st, $3, z($4), z($5), z($6), \
             ($7 == "-" ? "—" : $7), z($8), z($9), z($10), ($11 == "-" ? "—" : $11), $12
     }
-' <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | sort -t$'\t' -k2,2n -k6,6nr -k4,4nr -k3,3)")
-[ -n "$rows" ] && rows+=$'\n'   # put back the newline the command substitution stripped (the loop ended every row with one)
+' <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | LC_ALL=C sort -t$'\t' -k2,2n -k6,6nr -k4,4nr -k3,3)")
 
 # A run with data but NO timestamped rows writes no sidecar at all; an EMPTY
 # sidecar is the valid "no per-hour data" answer for its readers (the
@@ -287,7 +303,7 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, n
 {
     printf 'TITLE\tUC3 status\n'
     printf 'DESC\tEvery configured UC3 (we poll the partner) subscription in one of four statuses: healthy, failing, failing after a working history, or not seen in the transfer log — with its poll counts from the server log.\n'
-    printf 'INTRO\tEvery configured **UC3** (we poll the partner and pull files) subscription, in exactly one status: **ok** = green, its latest File was delivered (or it polls cleanly with nothing to fetch); **error** = red and never once delivered an OK File; **ok -> error** = red now, but it HAS delivered before — a regression; **not seen** = configured, never seen in the transfer log. Click a row for its most recent server-log lines.\n'
+    printf 'INTRO\tEvery configured **UC3** (we poll the partner and pull files) subscription, in exactly one status: **ok** = green, its latest File was delivered; **error** = red and never once delivered an OK File (or its polls cannot connect); **ok -> error** = red now, but it HAS delivered before — a regression; **not seen** = configured, never seen in the transfer log — a flow polling cleanly with nothing to fetch stays here. Click a row for its newest problem lines, then its most recent poll lines.\n'
 
     printf 'STAT\twhite\t%s\tUC3 subscriptions\n' "$n_all"
     printf 'STAT\tgreen\t%s\tok\n' "$n_ok"
@@ -298,10 +314,10 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, n
     printf 'TABLE\tUC3 subscriptions\twide\tnofilter\ttab=uc3\n'   # tab=uc3: uc3-polling.sh's tables stack under this one on the UC3 tab page (2026-09-05)
     printf 'HEAD\tStatus\tSubscription\tFiles\tOK\tError\tLast file\tPolls\tEmpty polls\tProblems\tLast log\n'
     printf 'KIND\ttext\tmono\tnum\tnumprocessed\tnumfailed\ttext\tnum\tnum\tnumfailed\ttext\n'
-    printf '%s\n' "$rows"   # %s\n: $rows already ends in one, so this is the blank line before TOTAL
+    [ -z "$rows" ] || printf '%s\n' "$rows"   # (no blank line before TOTAL, 2026-09-29 audit)
     printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t\n' \
         "$n_all" "$(nz0 "$t_files")" "$(nz0 "$t_ok")" "$(nz0 "$t_er")" "$(nz0 "$t_poll")" "$(nz0 "$t_empty")" "$(nz0 "$t_prob")"
-    printf 'NOTE\tEvery configured **UC3** subscription, classified. The colour is the site-wide **result**: green/red mean real transfer data (its LAST File OK / Failed-or-Expired), orange means the transfer log has never seen it. **error** vs **ok -> error** is a per-FILE question — right after any OK File the subscription WAS green — so a red subscription with even one OK File in the window is a regression; that is finer than **From green to red**, which buckets by whole days and so misses a flow that fails at the end of every day. **Files/OK/Error** are logical transfers from the transfer cache; **Polls/Empty polls/Problems** are server-log line counts (a poll result; a Connection failure or failing directory listing). **Last log** is the newest line of ANY counted kind, the ones that merely PREPARE a poll included — so it answers "is this flow still running at all". Click a row for its most recent server-log lines.\n'
+    printf 'NOTE\tEvery configured **UC3** subscription, classified. The colour is the site-wide **result**: green = its LAST File OK, red = its last File Failed, a server-log Error after it, or three failed connection attempts in a row on a flow that never transferred; orange = never in the transfer log, or its last File Expired. **error** vs **ok -> error** is a per-FILE question — right after any OK File the subscription WAS green — so a red subscription with even one OK File in the window is a regression; that is finer than **From green to red**, which buckets by whole days and so misses a flow that fails at the end of every day. **Files/OK/Error** are logical transfers from the transfer cache; **Polls/Empty polls/Problems** are server-log line counts (a poll result; a Connection failure or failing directory listing). **Last log** is the newest line of ANY counted kind, the ones that merely PREPARE a poll included — so it answers "is this flow still running at all". Click a row for its newest problem lines, then its most recent poll lines.\n'
 
     printf 'KEYWORDS\tuc3, poll, pull, remote poll, status, green, red, regression, never worked, not seen, connection failure, listing, subscription health\n'
     printf 'SUMMARY\tok: %s  |  error: %s  |  ok -> error: %s  |  not seen: %s\n' \

@@ -4,7 +4,7 @@
 #
 #   reports/cross-reference.sh                -> data/transfer/reports/cross-*.rpt
 #                                                (a TRANSFER-data report housed here —
-#                                                its pages sit in the Analyses menu)
+#                                                its pages are analyses/ pages)
 #   reports/home.sh                           -> data/analyses/reports/home.rpt
 #                                                (the per-member SEEN counts the home
 #                                                page's two status tables need; it also

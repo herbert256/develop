@@ -14,7 +14,8 @@
 #                                      data/flow-manager/base/_profiles.tsv   (customAttribute_FlowIdentifier)
 #
 # ... plus the CROSS-REFERENCE caches under data/flow-manager/xref/: EVERY pair of
-# the nine items, BOTH WAYS — data/flow-manager/xref/_<a>-<b>.tsv AND _<b>-<a>.tsv
+# the eleven ITEMS, BOTH WAYS — data/flow-manager/xref/_<a>-<b>.tsv AND _<b>-<a>.tsv
+# (but the UNREAD_PAIRS, which nothing reads — 2026-09-29)
 # (two TAB-separated columns, column 1 = the item the file is named-first
 # for; the mirror is the column-swapped twin). A pair not actually
 # configured is an empty file, so e.g.
@@ -119,12 +120,12 @@ mkdir -p "$BASE" "$XREF"
 # FILTERED copies of the exports to data/flow-manager/filtered/ and every
 # reader prefers them (publish_lib.sh's FM_CONFIG_DIR, the two lib.sh
 # FM_INPUT_DIR). The skipped config names are recorded in _skipped.tsv for the
-# "Skipped" analyses report.
-SKIPFILE="$ROOT/input/skip.txt"
+# "Skipped" analyses report. (The skip list itself is read through the
+# sourced bin/skiplist.sh — SKIPLIST_FILE; the unused SKIPFILE went 2026-09-29.)
 # RETIRED 2026-09-01 (user request): the hand-curated partner alias map
 # (input/partner-aliases.tsv) is folded into the PART REPLACEMENTS
-# below — bin/build/migrate-input.sh moves a checkout's pairs into
-# input/logical_partners.txt once. See the partner-merge header.
+# below — its pairs live in input/logical_partners.txt (the one-off
+# migration script that moved them is gone). See the partner-merge header.
 # the FIXED FlowID -> Logical transforms (input/logical.txt, COMMITTED
 # in develop) — consumed by the LOGICAL derivation block below; a pin edit
 # re-derives the caches (and, through them, everything downstream).
@@ -143,15 +144,14 @@ LOGPTNF="$ROOT/input/logical_partners.txt"
 BLF="$ROOT/input/BL.txt"
 source "$ROOT/bin/skiplist.sh"   # skip_values() — the ONE reader for input/skip.txt
 SKIPDIR="$OUT/filtered"                 # the filtered partners/subscriptions/templates.json
-# The skipped-config sidecar lives INSIDE filtered/ (NOT directly in $OUT) so
-# the legacy "rm -f $OUT/_*.tsv" cleanup below never deletes it — putting it in
-# $OUT made every run see it missing and needlessly re-derive.
 SKIP_SIDE="$SKIPDIR/_skipped.tsv"       # type<TAB>name of every skipped account/subscription
-rm -f "$OUT"/_*.tsv   # legacy flat layout (pre base/xref split) — regenerable, so just drop
+# (the legacy flat-layout cleanup "rm -f $OUT/_*.tsv" went 2026-09-29: every
+# build wipes data/ first — fresh-only builds — so nothing of the pre
+# base/xref split can be there)
 
 # The full output list (display order for the report at the bottom). The
-# cross references exist BOTH WAYS: for every unordered pair of the nine
-# items a canonical _a-b.tsv (left = the item earlier in ITEMS order — what
+# cross references exist BOTH WAYS: for every unordered pair of the eleven
+# ITEMS a canonical _a-b.tsv (left = the item earlier in ITEMS order — what
 # the builders below write) PLUS its column-swapped mirror _b-a.tsv, so a
 # consumer can always pick the file keyed on the item it joins from.
 # PROFILES are PARSE-INTERNAL ONLY (2026-07). The transfer profile stopped
@@ -180,6 +180,13 @@ CANON_PAIRS=$(
     done
 )
 MIRROR_PAIRS=$(printf '%s\n' $CANON_PAIRS | awk -F'-' '{ print $2 "-" $1 }')
+# the pair caches NOTHING reads (2026-09-29 audit — grep bin/ before bringing
+# one back): the whitelist's mirrors but _white-accounts, the profile mirrors
+# of the Logical / PDA items, and the profiles <-> BL pair both ways. Not
+# written, and out of both lists (the mirror loop and the report walk them).
+UNREAD_PAIRS=" profiles-bl bl-profiles apps-profiles domains-profiles logicals-profiles partners-profiles white-subscriptions white-profiles white-logins white-hosts white-logicals white-partners white-apps white-domains white-bl "
+CANON_PAIRS=$(printf '%s\n' $CANON_PAIRS | awk -v U="$UNREAD_PAIRS" 'index(U, " " $0 " ") == 0')
+MIRROR_PAIRS=$(printf '%s\n' $MIRROR_PAIRS | awk -v U="$UNREAD_PAIRS" 'index(U, " " $0 " ") == 0')
 PAIR_CACHES="$(printf '%s ' $CANON_PAIRS $MIRROR_PAIRS)subscriptions-patterns subscriptions-flowdir subscriptions-ucderived logical-rules"
 
 # RENAME DETECTION: compares the export against the previous run's
@@ -256,13 +263,9 @@ SUBS="$SKIPDIR/subscriptions.json"
 jq -r '.[].name | select(. != null and . != "")' "$PARTNERS" | LC_ALL=C sort -u > "$BASE/_accounts.tsv"
 jq -r '.[].name | select(. != null and . != "")' "$SUBS"     | LC_ALL=C sort -u > "$BASE/_subscriptions.tsv"
 
-# FlowManager deep links: each top-level element's meta.href paired with its
-# .name -> xref/_{accounts,subscriptions}-fmlink.tsv (name<TAB>url). The detail
-# pages render them as a link icon next to the entity name (render_rpt.awk); an
-# element without a meta.href simply gets no link.
-fm_links() { jq -r '.[] | select(.meta.href != null and .name != null and .name != "") | "\(.name)\t\(.meta.href)"' "$1" | LC_ALL=C sort -u; }
-fm_links "$PARTNERS" > "$XREF/_accounts-fmlink.tsv"
-fm_links "$SUBS"     > "$XREF/_subscriptions-fmlink.tsv"
+# (The FlowManager deep links — xref/_{accounts,subscriptions}-fmlink.tsv, one
+# meta.href per element — went 2026-09-29: their one consumer, the detail
+# pages' link icon, was removed 2026-07.)
 
 # The flow-template catalog (templates.json, optional): one row per template ->
 # xref/_templates.tsv "name<TAB>uc<TAB>status<TAB>flowPatternName<TAB>href<TAB>modified".
@@ -1114,7 +1117,7 @@ cut -f2 "$XREF/_subscriptions-bl.tsv" | LC_ALL=C sort -u > "$BASE/_bl.tsv"
 xcompose "$XREF/_subscriptions-bl.tsv" _accounts-subscriptions.tsv      2 RIGHT accounts-bl
 xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-logins.tsv        1 RIGHT logins-bl
 xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-hosts.tsv         1 RIGHT hosts-bl
-xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-profiles.tsv      1 RIGHT profiles-bl
+# (profiles-bl went 2026-09-29: no reader — UNREAD_PAIRS)
 xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-logicals.tsv      1 RIGHT logicals-bl
 xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-partners.tsv      1 RIGHT partners-bl
 xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-apps.tsv          1 RIGHT apps-bl
@@ -1126,6 +1129,7 @@ xcompose "$XREF/_subscriptions-bl.tsv" _subscriptions-white.tsv         1 LEFT  
 # the new left column), so joins never need to know the fixed item order.
 for p in $CANON_PAIRS; do
     a=${p%%-*}; b=${p#*-}
+    case "$UNREAD_PAIRS" in (*" $b-$a "*) continue ;; esac   # an unread mirror (see UNREAD_PAIRS)
     awk -F'\t' '{ print $2 "\t" $1 }' "$XREF/_$p.tsv" | LC_ALL=C sort -u > "$XREF/_$b-$a.tsv"
 done
 
@@ -1214,4 +1218,4 @@ LC_ALL=C sort -o "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv.tmp"
 mv "$BASE/.configured.tsv.tmp" "$BASE/.configured.tsv"
 
 _fml "directions, BL, the rest"
-echo "flow-manager.sh: wrote 11 entity caches to data/flow-manager/base/ + 110 pair caches (every pair both ways) + the patterns and templates maps to data/flow-manager/xref/" >&2
+echo "flow-manager.sh: wrote 11 entity caches to data/flow-manager/base/ + $(printf '%s\n' $CANON_PAIRS $MIRROR_PAIRS | wc -l | tr -d ' ') pair caches (every read pair both ways) + the patterns and templates maps to data/flow-manager/xref/" >&2

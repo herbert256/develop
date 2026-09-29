@@ -33,8 +33,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SERVER lib, not the analyses one: this is a server-DATA report (it reads the
 # server parse cache and writes data/server/reports/). It lives HERE
-# because its page sits in the ANALYSES menu, in the Subscriptions group — the
-# same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
+# because its page is an analyses/ page (the UC status report group of the one
+# Reports menu, 2026-09-29) — the same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/no-remote-dir.rpt"
@@ -50,14 +50,18 @@ known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" line
     [ -f "$2" ] || return 0
     awk -F'\t' -v M="$1" '$1=="TABLE"{t++; if(t>1)exit} t==1&&$1=="ROW"{print M "\t" $2}' "$2"
 }
-# The RESOLVED filter: per subscription, the sortkey of its LAST OK File
-# (_files.tsv col 12 = subscription, 6 = sortkey "YYYYMMDDhh:mm:ss.mmm",
-# 2 = outcome — OK is the site-wide "not Failed/Expired", which on these pull
-# flows is exactly Processed). A row whose last error PRECEDES that File is
-# dropped: the directory was found again afterwards, so it is fixed, not broken.
+# The RESOLVED filter: per subscription, the END of its LAST OK File
+# (_files.tsv col 12 = subscription, 24 = the File end "YYYY-MM-DD hh:mm:ss.mmm"
+# put in the col 6 sortkey shape "YYYYMMDDhh:mm:ss.mmm" — the start when the
+# parse wrote no end; 2 = outcome — OK is the site-wide "not Failed/Expired",
+# which on these pull flows is exactly Processed). A row whose last error
+# PRECEDES that File's end is dropped: the directory was found again
+# afterwards, so it is fixed, not broken (result.sh's "ended OK after it" rule).
 last_ok_files() {   # emits "KF<TAB>subscription<TAB>sortkey" lines
     [ -f "$FILESC" ] || return 0
-    awk -F'\t' '$12 != "" && $2 != "Failed" && $2 != "Expired" { if ($6 > m[$12]) m[$12] = $6 }
+    awk -F'\t' '$12 != "" && $2 != "Failed" && $2 != "Expired" {
+                    k = $6; if ($24 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) k = substr($24, 1, 4) substr($24, 6, 2) substr($24, 9, 2) substr($24, 12)
+                    if (k > m[$12]) m[$12] = k }
                 END { for (s in m) print "KF\t" s "\t" m[s] }' "$FILESC"
 }
 # sitelink(): exact match or unique prefix of one known subscription (the server

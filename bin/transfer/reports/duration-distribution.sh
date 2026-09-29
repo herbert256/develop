@@ -6,7 +6,7 @@
 #
 # TWO tables in ONE switch group on the page (the TABLE switch= modifier):
 #   OK transfers   Processed Files only (the default) — Error transfers are
-#                  mostly instant 0-byte attempts and would pile up in the
+#                  often short-lived attempts and would pile up in the
 #                  first band
 #   All transfers  every outcome with a measured duration
 # Each row carries @data:buckets (date:count) so the From/To filter
@@ -85,8 +85,7 @@ GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
     printf 'RECALC\t-\ts0\t%%0\n'
     printf '%s\n' "$out_all" | command grep $'^ROW\t'
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}100.0%%\n' "${n_all:-0}"
-    printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId). Error transfers are mostly instant 0-byte attempts, which is why the OK view is the default — in the All view they pile up in the first band. The per-day figures and percentiles are on the Duration page, the individual longest Files on the Longest Files page.\n'
-    printf 'KEYWORDS\tduration,distribution,histogram,bands,buckets,seconds,minutes,wall-clock\n'
+    printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId). Error transfers are often short-lived attempts (or long retry spans), which is why the OK view is the default — in the All view they pile up in the first band. The per-day figures and percentiles are on the Duration page, the individual longest Files on the Longest Files page.\n'
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$GENDATE" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

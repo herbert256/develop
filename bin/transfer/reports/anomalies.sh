@@ -6,7 +6,7 @@
 # anomalies-{hourly,daily}.html, until 2026-08):
 #
 #   HOURLY — for every (day, hour) bucket the five signals — Error rate,
-#   Duration (avg per OK File), Files spike, Files silence, Volume — are
+#   Duration (avg per delivered File), Files spike, Files silence, Volume — are
 #   compared against that hour-of-day TYPICAL value (the median across the
 #   window days, weekdays and weekends baselined separately so a quiet Sunday
 #   is not "silent" against a Tuesday median). Hours that exceed the
@@ -76,12 +76,14 @@ awk -F'\t' '
         if (FDT == "" || st < FDT) FDT = st
         if (st > LDT) LDT = st
         DFC[d]++; DVB[d] += $8
-        if ($2 != "Failed" && $2 != "Expired") { if ($9 + 0 > 0) { DDS[d] += $9; DDN[d]++ } }
-        else DFF[d]++
+        # the duration sums: DELIVERED Files only (2026-09-29 audit — a Waiting
+        # File span is its staging wait); the failure counts: Failed / Expired
+        if ($2 == "Processed" && $9 + 0 > 0) { DDS[d] += $9; DDN[d]++ }
+        if ($2 == "Failed" || $2 == "Expired") DFF[d]++
         h = substr($5, 1, 2); if (h !~ /^[0-9][0-9]$/) next
         FC[d, h]++; VB[d, h] += $8
-        if ($2 != "Failed" && $2 != "Expired") { if ($9 + 0 > 0) { DS[d, h] += $9; DN[d, h]++ } }
-        else FF[d, h]++
+        if ($2 == "Processed" && $9 + 0 > 0) { DS[d, h] += $9; DN[d, h]++ }
+        if ($2 == "Failed" || $2 == "Expired") FF[d, h]++
     }
     END {
         # THE WINDOW EDGES (2026-09-28 fix): the export starts and ends
@@ -220,7 +222,7 @@ awk -F'\t' '
 | LC_ALL=C sort -t$'\t' -k1,1r -k2,2r -k3,3 -k4,4 \
 | awk -F'\t' -v nfiles="${#files[@]}" -v now="$(date '+%Y-%m-%d %H:%M:%S')" '
     function open_daily() {
-        printf "TABLE\tDaily — unusual days\twide\tkeephead\tsxs\tanchor=daily\n"
+        printf "TABLE\tDaily — unusual days\twide\tkeephead\tsxs\n"
         printf "HEAD\tDate\tWhat\tValue\tTypical\t× typical\n"
         printf "KIND\ttext\ttext\tnum\tnum\tnum\n"
     }
@@ -228,14 +230,14 @@ awk -F'\t' '
         printf "TOTAL\tTotal (%d rows)\t\t\t\t\n", n2
     }
     function open_hourly() {
-        printf "TABLE\tHourly — unusual hours\twide\tsxs\tanchor=hourly\tpager=50\n"
+        printf "TABLE\tHourly — unusual hours\twide\tsxs\tpager=50\n"
         printf "HEAD\tDate\tHours\tWhat\tPeak\tTypical\t× typical\n"
         printf "KIND\ttext\tmono\ttext\tnum\tnum\tnum\n"
     }
     function close_hourly() {
         printf "TOTAL\tTotal (%d rows)\t\t\t\t\t\n", n1
-        printf "NOTE\t**Daily** — signals per calendar day vs the typical day: **Error rate** (≥10%%, ≥20 Files, ≥4× typical), **Duration** (avg per OK File ≥5 min, ≥20 OK Files, ≥4×), **Files spike** (≥100 Files, ≥2×), **Files drop** (≤¼ of a ≥100-Files typical), **Silence** (a calendar day with NO transfers where ≥20 are typical — missing days are walked via the calendar), **Volume** (≥200 MB, ≥2×).\n"
-        printf "NOTE\t**Hourly** — signals per start hour: **Error rate** (≥25%% and ≥5 Files), **Duration** (avg per OK File ≥5 min, ≥5 OK Files), **Files spike** (≥30 Files), **Silence** (0 Files in an hour that typically moves ≥20), **Volume** (≥100 MB) — each also ≥4× its typical. Consecutive flagged hours merge into one episode; its Peak, Typical and × typical are the three figures of its worst hour. **Typical** is the baseline the ratio was computed against: the historical median, lifted to the floor of the rule when the median sits below it (then shown as \"1 m (floor; typical 25.3 s)\"), so Value ÷ Typical always gives × typical.\n"
+        printf "NOTE\t**Daily** — signals per calendar day vs the typical day: **Error rate** (≥10%%, ≥20 Files, ≥4× typical), **Duration** (avg per delivered File ≥5 min, ≥20 OK Files, ≥4×), **Files spike** (≥100 Files, ≥2×), **Files drop** (≤¼ of a ≥100-Files typical), **Silence** (a calendar day with NO transfers where ≥20 are typical — missing days are walked via the calendar), **Volume** (≥200 MB, ≥2×).\n"
+        printf "NOTE\t**Hourly** — signals per start hour: **Error rate** (≥25%% and ≥5 Files), **Duration** (avg per delivered File ≥5 min, ≥5 delivered Files), **Files spike** (≥30 Files), **Silence** (0 Files in an hour that typically moves ≥20), **Volume** (≥100 MB) — each also ≥4× its typical. Consecutive flagged hours merge into one episode; its Peak, Typical and × typical are the three figures of its worst hour. **Typical** is the baseline the ratio was computed against: the historical median, lifted to the floor of the rule when the median sits below it (then shown as \"1 m (floor; typical 25.3 s)\"), so Value ÷ Typical always gives × typical.\n"
         printf "NOTE\tEnd-of-window caution: on the newest day the outbound legs of just-arrived files may not be exported yet, which can flag late hours or the whole day as Error rate — recheck after the next log export.\n"
         printf "FOOT\tGenerated on %s from %s file(s)\n", now, nfiles
     }

@@ -126,6 +126,7 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
     FILENAME ~ /coverage\/logins\.tsv$/          { CL[++ncl] = $1; CLS[toupper($1)] = $3; CLT[toupper($1)] = substr($5, 1, 10); next }
     FILENAME ~ /coverage\/hosts\.tsv$/           { CH[++nch] = $1; CHS[toupper($1)] = $3; CHT[toupper($1)] = substr($5, 1, 10); next }
     FILENAME ~ /_subscriptions-partners\.tsv$/   { if ($1 != "" && $2 != "") SP[toupper($1)] = SP[toupper($1)] (SP[toupper($1)] == "" ? "" : "\037") $2; next }
+    FILENAME ~ /_subscriptions-ucderived\.tsv$/  { if ($1 != "" && $2 != "") UCD[toupper($1)] = $2; next }   # the derived use case of a flow with no UC name prefix
     {   # _files.tsv: the newest log day + the partner last-seen (union rule)
         if ($4 != "" && $4 > maxd) maxd = $4
         if ($4 != "" && (mind == "" || $4 < mind)) mind = $4
@@ -156,13 +157,18 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
             emit(1, 1, a, "account", "accounts", "config-orphan", "no subscription references this account", last, safe, res)
         }
         # rank 2: never-any-traffic subscriptions (skip the no-cron ones —
-        # rank 4 explains WHY those never ran)
+        # rank 4 explains WHY those never ran — and the RED ones: a flow that
+        # never transferred and is red is the UC3 cannot-connect rule, a
+        # BROKEN flow to fix, not an unused one to remove, 2026-09-29 audit)
         for (z = 1; z <= nnc; z++) SKIPNC[toupper(NC[z])] = 1
         for (z = 1; z <= ncs; z++) { s = CS[z]; su = toupper(s)
             if (CSS[su] != "0") continue
             if (su in SKIPNC) continue
+            if ((su in SRES) && SRES[su] == "red") continue
             d = (CSD[su] == "I") ? "in" : (CSD[su] == "O") ? "out" : "?"
-            uc = "other"; if (match(s, /^UC[0-9]+/)) uc = substr(s, 1, RLENGTH)
+            # the use case: its UC name prefix, else the DERIVED one (the
+            # site-wide rule), else "other"
+            uc = "other"; if (match(s, /^UC[0-9]+/)) uc = substr(s, 1, RLENGTH); else if (su in UCD) uc = UCD[su]
             if (su in SMEN) emit(2, 2, s, "subscription", "subscriptions", "never-any-traffic", \
                 "configured " d " (" uc "), zero Files in the logs - named in the server log only", nev, "server contact only - check first", "orange")
             else emit(2, 2, s, "subscription", "subscriptions", "never-any-traffic", \
@@ -218,7 +224,7 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
   "$(nul "$DATA/unknown/white.tsv")" "$SRVADDR" "$(nul "$DATA/server/cache/_subscriptions.tsv")" \
   "$(nul "$XREF/_accounts-subscriptions.tsv")" "$(nul "$XREF/_accounts-white.tsv")" \
   "$(nul "$COV/accounts.tsv")" "$(nul "$COV/subscriptions.tsv")" "$(nul "$COV/logins.tsv")" "$(nul "$COV/hosts.tsv")" \
-  "$(nul "$XREF/_subscriptions-partners.tsv")" "$TF"
+  "$(nul "$XREF/_subscriptions-partners.tsv")" "$(nul "$XREF/_subscriptions-ucderived.tsv")" "$TF"
 
 sv() { awk -F'\t' -v k="$1" '$1 == k { print $2 }' "$TMPD/stats.tsv"; }
 n_orphan=$(sv orphan); n_never=$(sv never); n_white=$(sv white); n_whiteips=$(sv whiteips)
@@ -253,7 +259,6 @@ ucol=green; [ -n "$maxd" ] || ucol=orange
     printf 'TOTAL\tTotal (%s object(s))\t\t\t\t\t\n' "$n_total"
 
     printf 'NOTE\tEverything here reads SOURCE data — the flow-manager config caches, the coverage TSVs, the transfer cache and the subscriptions export (the SKIP-filtered copy, the same population as every other report) — never another report, so the ranking is stable. "Never seen" for a whitelist address is the Whitelist audit'\''s rule: no transfer from that address, no server-log mention AND no inbound server connection (a server-contact-only address is NOT listed). The no-cron class is the Missing-cronjobs condition (the use-case definitions decide which UCs are cron-triggered); those subscriptions leave no trace in any log, so only the configuration can reveal them. Whitelist entries paired with no account at all are on **Config hygiene**. A partner'\''s recency uses the site-wide UNION attribution, so it matches the Entities views.\n'
-    printf 'KEYWORDS\tcleanup,backlog,decommission,orphan,unused,whitelist,never seen,no cron,quiet,dormant,prune,legacy,attack surface\n'
     printf 'SUMMARY\tFindings: %s  |  Orphan accounts: %s  |  Never-seen subscriptions: %s  |  Unused-whitelist accounts: %s (%s addresses)  |  No cron: %s  |  Long quiet: %s\n' \
         "$n_total" "$n_orphan" "$n_never" "$n_white" "$n_whiteips" "$n_nocron" "$n_quiet"
     printf 'FOOT\tGenerated on %s\n' "$GENDATE"

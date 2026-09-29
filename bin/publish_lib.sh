@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 #
-# publish_lib.sh — shared machinery for the three publish scripts:
+# publish_lib.sh — shared machinery for every publish script:
 #
-#   bin/transfer/publish.sh   renders the transfer report pages + detail pages
+#   bin/transfer/publish.sh   renders the transfer report pages (+ the Entities views)
 #   bin/server/publish.sh     renders the server report pages
-#   bin/build/publish.sh            writes the three index pages (root + per area)
+#   bin/analyses/publish*.sh  render the analyses pages (+ the partner groups, All files search)
+#   bin/transfer/publish-details.sh  the detail pages
+#   bin/dashboards/publish.sh, bin/day/publish.sh  the Dashboard and the day pages
+#   bin/build/publish.sh      writes the home, the Reports start page, the tools/
+#                             pages and the 404, then the group rows + tags
 #
 # Source this (it is not executable on its own). It cd's to the repo root, then
 # computes the shared globals (report order, dates, dataset figures, top-bar menus)
@@ -14,8 +18,7 @@
 #
 # A report whose .rpt contains more than one table is split into one HTML page
 # per table (docs/<area>/<name>-<slug>.html), each carrying a tab bar linking to
-# its siblings; the index lists one line per report with a bracketed link per
-# table. Single-table reports render to docs/<area>/<name>.html.
+# its siblings. Single-table reports render to docs/<area>/<name>.html.
 #
 set -euo pipefail
 # This lib lives in bin/; operate from the repo root (its parent) so all the
@@ -32,19 +35,12 @@ source bin/envlabel.sh  # ENV_LABEL — the checkout's environment label (input/
 # hand-authored assets and help live at docs/assets/ and docs/help/.
 DOCS="docs"
 DATA="data"
-CSS_SRC="docs/assets/style.css"   # hand-authored + published in ONE place (see ensure_assets)
 # The FlowManager config exports every raw-JSON reader (the
 # accounts insight page, publish-insights.sh, uc3-polling.sh) should read: the
 # SKIP-filtered copies bin/flow-manager.sh writes (input/skip.txt) when they
 # exist, else the raw exports. (Repo-root-relative — publish_lib.sh cd's to ROOT.)
 FM_CONFIG_DIR="input/flow-manager"
 [ -f "$DATA/flow-manager/filtered/partners.json" ] && FM_CONFIG_DIR="$DATA/flow-manager/filtered"
-
-# Build timestamp shown at the right of the footer bar on every page. Computed
-# once when this library is sourced, so all pages of one publish run share it;
-# honours an inherited GENERATED_AT (bin/build.sh exports one) so the whole site —
-# rendered by three separate publish processes — carries a single stamp.
-GENERATED_AT="${GENERATED_AT:-$(date '+%Y-%m-%d %H:%M')}"
 
 # Cache-buster for the two shared assets: a content checksum appended as ?v=…
 # to every stylesheet/script link html_head emits, so a browser (or the Pages
@@ -204,15 +200,20 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 # 2026-07..09-29, reached only from the Boxes pages — are ordinary members of
 # their report groups since the one Reports pulldown, 2026-09-29.)
 
-# The 2026-07 MERGED-report components: their .rpt files stay on disk (they
-# feed the merged reports and every other consumer) but they have NO page of
-# their own — whats-new must not link them. ranking and double are retired (not listed)
-# outright; the four uc<n>-status merged into uc-status. site-failures (2026-09-28)
-# is a pageless DATA producer like pesit / event-queue: the Boxes and
-# Partners - Outgoing read its .rpt, its page was the Per flow connection rows.
-MERGED_COMPONENT_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity pesit event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status went-quiet-src stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling missing-cronjobs duration-trend top-transfers size-profile uc4-to-uc2 file-in-file-out-src episodes-src recovered recovered-files uc2-visits pickups no-remote-dir no-remote-files deploy-errors from-green-to-red only-red punctuality-src expected-arrival "
-is_merged_component() {
-    case $MERGED_COMPONENT_REPORTS in *" $1 "*) return 0 ;; esac
+# The PAGELESS reports: .rpt files that stay on disk (they feed a merged
+# report, another page or a data reader) but have NO page of their own, so
+# whats-new must not link them — wn_meta (bin/build/publish.sh) maps each to
+# the page that shows its data, or skips it. Two kinds: the 2026-07 MERGED-
+# report components (merge_rpt.sh / append_rpt_tables: weekly … expected-
+# arrival, the four uc<n>-status in uc-status) and the pageless DATA producers
+# whose rows ride another page or no page at all (day, event-queue, site-failures — the
+# Boxes and Partners - Outgoing read its .rpt —, remote-poll, missing-cronjobs,
+# deploy-errors, from-green-to-red, only-red). Not listed: ranking (a report
+# with its own page), the retired double; pesit writes no .rpt since
+# 2026-09-29 (its sidecar only).
+PAGELESS_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status went-quiet-src stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling missing-cronjobs duration-trend top-transfers size-profile uc4-to-uc2 file-in-file-out-src episodes-src recovered recovered-files uc2-visits pickups no-remote-dir no-remote-files deploy-errors from-green-to-red only-red punctuality-src expected-arrival "
+is_pageless_report() {
+    case $PAGELESS_REPORTS in *" $1 "*) return 0 ;; esac
     return 1
 }
 
@@ -307,52 +308,49 @@ group_label() {
         cross)               echo "Cross References" ;;
     esac
 }
-member_label() {   # row-1 tab text for a grouped report
+member_label() {   # a report's own label: the group-row tab text (Entities / cross), the placeholder title
+    # ONLY the names the callers pass — the transfer / server orders, the
+    # SUBS_GROUP_REPORTS members, the Entities and cross members (2026-09-29:
+    # 50 entries for merged-report components and pageless producers were
+    # never asked for)
     case $1 in
         topview) echo "Top view" ;;
         entity-search) echo "Search" ;;
         activity) echo "Activity" ;; punctuality) echo "Punctuality" ;;
         retries) echo "Retries & resubmissions" ;; file-journey) echo "File journey" ;;
-        route-throughput) echo "Route throughput" ;; size-profile) echo "Size profile" ;;
-        recovered) echo "Recovered flows" ;; recovered-files) echo "Recovered files" ;; failed-files) echo "Failed files" ;; uc4-to-uc2) echo "UC4 to UC2" ;; same-protocol) echo "Inbound and Outbound same Protocol" ;; security-outreach) echo "Security outreach" ;;
-        connection-efficiency) echo "Connection efficiency" ;; duration-trend) echo "Duration trend" ;;
+        route-throughput) echo "Route throughput" ;;
+        failed-files) echo "Failed files" ;; same-protocol) echo "Inbound and Outbound same Protocol" ;; security-outreach) echo "Security outreach" ;;
+        connection-efficiency) echo "Connection efficiency" ;;
         failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;; routing-errors) echo "Routing errors" ;;
         triage) echo "Triage" ;; data-diff) echo "Since yesterday" ;;
         partner-scorecard) echo "Partner scorecard" ;; blast-radius) echo "Blast radius" ;;
         app-partners) echo "Application dependencies" ;;
-        cleanup-backlog) echo "Cleanup backlog" ;;
+        cleanup-backlog) echo "Cleanup backlog" ;; partners-in) echo "Partners - Incoming" ;;
         errors) echo "Errors" ;; connections) echo "Connections" ;; logons) echo "Logons" ;;
         ssh-security) echo "SSH security" ;; missing-entities) echo "Missing entities" ;;
-        uc-status) echo "UC status" ;;
+        uc-status) echo "UC status" ;; polling) echo "Polling" ;;
         anomalies) echo "Anomalies" ;;
         account) echo "Accounts" ;; login) echo "Logins" ;; subscription) echo "Subscriptions" ;;
         remote-host) echo "Hosts" ;;
         logical) echo "Logical" ;;
         partner) echo "Partners" ;; application) echo "Applications" ;; domain) echo "Domains" ;;
         bl) echo "BL" ;;
-        cross-logical) echo "Logical" ;;
+        cross-account) echo "Account" ;; cross-login) echo "Login" ;; cross-subscription) echo "Subscriptions" ;;
+        cross-host) echo "Hosts" ;; cross-logical) echo "Logical" ;;
         cross-partner) echo "Partners" ;; cross-application) echo "Applications" ;; cross-domain) echo "Domains" ;;
         cross-bl) echo "BL" ;;
-
-        trends) echo "Trends" ;; trend) echo "Growers & shrinkers" ;; size-dist) echo "Size distribution" ;;
+        entity-coverage) echo "Entity coverage" ;; sources-and-targets) echo "Sources and Targets" ;; skipped) echo "Skipped" ;;
+        trends) echo "Trends" ;;
         files) echo "Sizes & types" ;;   # the MERGED report (size-dist + file-type + duplicate-files): its own group tab was an EMPTY span until 2026-09-13 (user report)
-        file-type) echo "File types" ;; top-transfers) echo "Largest files" ;; duplicate-files) echo "Duplicate files" ;;
-        failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; episodes) echo "Episodes" ;; from-green-to-red) echo "From green to red" ;; expired) echo "Expired" ;; missing-cronjobs) echo "Missing cronjobs" ;; only-red) echo "Only red" ;; waiting) echo "Waiting" ;; retry) echo "Repeat failures" ;; pirates) echo "One-legged" ;; stale-accounts) echo "Stale accounts" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
-        patterns) echo "Patterns" ;; arrived-left) echo "Arrived / Left" ;; legs-count) echo "Legs count" ;; protocol-journey) echo "Protocol journey" ;; attempts) echo "Attempts" ;; resubmissions) echo "Resubmissions" ;; file-in-file-out) echo "File in - File out" ;;
+        failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; episodes) echo "Episodes" ;; expired) echo "Expired" ;; waiting) echo "Waiting" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
+        file-in-file-out) echo "File in - File out" ;;
         protocol) echo "Protocol, Direction & Mode" ;;
-        dwell-time) echo "Store-and-forward" ;; ranking) echo "Ranking" ;;
-        duration) echo "Duration" ;; duration-longest) echo "Longest Files" ;; duration-distribution) echo "Duration distribution" ;;
+        ranking) echo "Ranking" ;;
+        duration|duration-all) echo "Duration" ;; duration-longest) echo "Longest Files" ;;
         duration-dwell) echo "Distribution & Store-and-forward" ;;
         security-params) echo "Security Parameters" ;; av-scan) echo "AV Scan" ;;
-        cross-account) echo "Account" ;; cross-login) echo "Login" ;; cross-subscription) echo "Subscriptions" ;;
-        cross-host) echo "Hosts" ;;
         went-kaput) echo "Trouble after success" ;;
-        errors-day) echo "Errors per day" ;; error-timing) echo "Error timing" ;; error-reasons) echo "Error reasons" ;; top-messages) echo "Top messages" ;;
-        site-failures) echo "Connection failures" ;; connection-diagnostics) echo "Diagnostics" ;; inbound-connections) echo "Inbound connections" ;; logon) echo "Logon" ;; auth-activity) echo "Auth activity" ;; uc1-status) echo "UC1 status" ;; uc2-status) echo "UC2 status" ;; uc4-status) echo "UC4 status" ;; uc2-visits) echo "UC2 pickup visits" ;; polling) echo "Polling" ;; pickups) echo "Pickups" ;; account-sharing) echo "Account sharing" ;; twins) echo "Twins" ;;
-        ssh-crypto) echo "Crypto" ;; ssh-sessions) echo "SSH sessions" ;;
-        pesit) echo "PeSIT" ;; event-queue) echo "EventQueue" ;;
-        deploy-errors) echo "Deploy errors" ;; uc3-status) echo "UC3 status" ;; no-remote-dir) echo "No remote dir" ;; no-remote-files) echo "No remote files" ;;
-        unknown-sites) echo "Subscriptions" ;; unknown-accounts) echo "Accounts" ;; unknown-hosts) echo "Hosts" ;; unknown-whitelisting) echo "Whitelist" ;; unknown-logins) echo "Logins" ;;
+        account-sharing) echo "Account sharing" ;; twins) echo "Twins" ;;
     esac
 }
 # First rendered page of a report (its first table page, or its single page).
@@ -375,8 +373,7 @@ group_home() {   # $1 group id
     case $1 in
         cross)        echo "xref/cross-account-subscriptions.html" ;;   # the cross pages live in docs/analyses/xref/ (analyses-relative href)
         account-login-site) first_page subscription ;;   # Entities DEFAULTS to Subscriptions / All — the same member the tab bar leads with
-        *)            local fm; fm=$(group_members "$1"); first_page "${fm%% *}" ;;
-    esac
+    esac   # (the two render-time groups only — every other group lands through rg_landing)
 }
 
 # ---- helpers ----------------------------------------------------------------
@@ -410,16 +407,17 @@ top_table() {   # $1 kind  $2 title  $3 unit  $4 href  $5 rows
         "$col" "$et" "$ee" "$eu" "$body" "$eh"
 }
 
-# Thousands separators with a dot (159048 -> 159.048), POSIX awk; a non-integer
-# (date, percent) passes through.
-dotify() {
-    awk -v n="$1" 'BEGIN{
-        if (n !~ /^[0-9]+$/) { printf "%s", n; exit }
-        s = ""; c = 0
-        for (i = length(n); i >= 1; i--) { s = substr(n, i, 1) s; if (++c % 3 == 0 && i > 1) s = "." s }
-        printf "%s", s
-    }'
+# Thousands separators with a dot (159048 -> 159.048); a non-integer (date,
+# percent) passes through. PURE BASH (2026-09-29 audit: it was an awk per call,
+# ~800 on the home page alone): dotify_v sets DOT without any fork, dotify
+# prints it for the $( ) callers.
+dotify_v() {
+    local n=$1 s=""
+    case $n in ''|*[!0-9]*) DOT=$n; return 0 ;; esac
+    while [ ${#n} -gt 3 ]; do s=".${n: -3}$s"; n=${n:0:${#n}-3}; done
+    DOT=$n$s
 }
+dotify() { dotify_v "$1"; printf '%s' "$DOT"; }
 
 # (2026-09-28, speed round 24: the page and tab labels are plain words, and
 # the pipeline cost four processes a call — ~1,600 calls per transfer
@@ -490,7 +488,6 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
     # docs/transfer/), and base is the path back to that root — the assets,
     # help/, index.html (home) and every in-site link hang off it.
     local base=${2%assets/style.css}
-    local home=${base}index.html
     printf '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>%s</title>\n' "$ESC"
     # never cache a page (2026-09-12, user request — stale pages in the local
     # browser): the http-equiv trio on EVERY document head. KEEP IN STEP with
@@ -513,7 +510,19 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
     fi
     # A stable per-AREA key for report.js's date-filter persistence — emitted
     # ONLY alongside a date list (pages without the From/To filter get neither).
-    [ -n "${3:-}" ] && [ -n "${6:-}" ] && printf '<meta name="report-area" content="%s">\n' "$6"
+    # A caller without an area (the analyses pages: Failed Subscriptions, UC
+    # status, Polling, Triage, …) is keyed by the list it carries — an area's
+    # own list IS that area, the match the partial days above make — so its
+    # From/To joins that area's shared range instead of a silo keyed by the
+    # whole date list (2026-09-29 audit).
+    if [ -n "${3:-}" ]; then
+        _hh_area=${6:-}
+        if [ -z "$_hh_area" ]; then
+            if [ "$3" = "${TRANSFER_DATES:-}" ]; then _hh_area=transfer
+            elif [ "$3" = "${SERVER_DATES:-}" ]; then _hh_area=server; fi
+        fi
+        [ -n "$_hh_area" ] && printf '<meta name="report-area" content="%s">\n' "$_hh_area"
+    fi
     # A stable per-REPORT key for report.js's search/sort persistence: identical
     # on every page of one report — all its table-tab pages — so e.g. Entity
     # Search keeps the typed search when switching All / Seen / Not Seen. Pages
@@ -585,7 +594,7 @@ render_topbar() {
     # ONE pulldown, Reports (2026-09-29, user request: the Transfer reports /
     # Server reports / Analyses / Goodies four went) — KEEP IN STEP with
     # report.js buildTopbar
-    printf '<div class="dd"><span class="ddlabel">Reports \342\226\276</span><div class="ddm">%s</div></div>' "${REPORTS_MENU//@/$base}"
+    printf '<div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports \342\226\276</span><div class="ddm">%s</div></div>' "${REPORTS_MENU//@/$base}"
     printf '</nav>'
     printf '<a class="dashlink" href="%sdashboards/index.html">Dashboard</a>' "$base"
     # the Monitor link when the site HAS a monitor (TB_MON) — buildTopbar's
@@ -605,9 +614,8 @@ render_topbar() {
 }
 # (The site-wide fixed FOOTER BAR was removed 2026-07, with its "Build report"
 # link and build timestamp. The build report is reachable from the SITE MAP,
-# which links the report of the run that built that env — see write_sitemap in
-# bin/build/publish.sh. Nothing bakes a build identity into a page any more,
-# which is also why a scope switch re-renders nothing.)
+# which links the report of the run that built the site — see write_sitemap in
+# bin/build/publish.sh. Nothing bakes a build identity into a page any more.)
 # The baked top bar of a shared-chrome page (the local build report, help/…)
 # whose docs-root prefix is $1; $2 = help slug. (Kept as a separate name: the
 # callers predate the one-prefix bar.)
@@ -617,8 +625,10 @@ render_shared_topbar() {
 
 # ---- report page renderer ---------------------------------------------------
 
-render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar right label]  [$6 drop first table title]  [$7 help slug]
-    local rpt=$1 out=$2 css=$3 home=$4 rlabel=${5:-} droptitle=${6:-} helpslug=${7:-} reportkey=${8:-}
+render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 (unused)  $5 (unused)  [$6 drop first table title]  [$7 help slug]  [$8 report key]
+    # ($4 was the home href, $5 the top-bar right label — neither is read since
+    # the runtime top bar; the slots stay so no caller renumbers)
+    local rpt=$1 out=$2 css=$3 droptitle=${6:-} helpslug=${7:-} reportkey=${8:-}
     # the TITLE and the META dirclass value (below) in ONE awk read — the two
     # grep|cut pipelines cost two subshells and four programs per page, and a
     # build renders several thousand pages (2026-09-27); same values: the
@@ -652,6 +662,8 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
         "$DOCS"/transfer/*|"$DOCS"/details/*|"$DOCS"/search/all-files.html) rarea="transfer" ;;   # all-files.html: the shared transfer From/To (2026-09-27)
         "$DOCS"/server/*)                     rarea="server" ;;
     esac
+    # (a page outside those trees that carries a date list — the analyses
+    # pages — gets its area from that list in html_head)
     # The page body — the whole .rpt line protocol, tables and cells included —
     # is rendered by ONE awk pass (bin/render_rpt.awk): rendering it in bash
     # cost ~5 process forks per entity-linked cell and put a full transfer
@@ -671,7 +683,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
     # no-dates page.)
     local dropbuckets=0; [ -z "$CUR_DATES" ] && dropbuckets=1
     {
-        html_head "$title" "$css" "$CUR_DATES" "$rlabel" "$helpslug" "$rarea" "$reportkey" "$bodyclass" "$xassets"
+        html_head "$title" "$css" "$CUR_DATES" "" "$helpslug" "$rarea" "$reportkey" "$bodyclass" "$xassets"
         LC_ALL=C awk -F'\t' -v droptitle="$droptitle" -v dlink="${DLINK_BASE:-../details/}" \
             -v slugmaps="$SLUGMAP_FILES" -v resmaps="${RESMAP_FILES:-}" \
             -v subtint="${RPT_SUBTINT:-}" \
@@ -934,8 +946,8 @@ combine_group_nav() { [ -n "$(group_of "$1" "$2")" ]; }   # $1 area  $2 report n
 # own "topview" report).
 # KEEP IN SYNC: a new/renamed/regrouped report needs its help page created (or
 # an existing one extended) or its help icon 404s — see CLAUDE.md's
-# `docs/help/*.html` bullet; docs/help/index.html is the START PAGES' help text
-# (data-help="index" on the three area start pages) — it catalogs nothing.
+# `docs/help/*.html` bullet; docs/help/index.html is the Reports START PAGE's
+# help text (data-help="index" on docs/reports/index.html) — it catalogs nothing.
 help_slug_for() {   # $1 area (transfer|server)  $2 report basename
     local area=$1 n=$2
     case $n in
@@ -1038,7 +1050,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # pages are gone): the .rpt is already in display order — Name, then the
     # Files / Retry-Resubmit / Duration / Volume / Transfers / State / Dates
     # column groups (a GHEAD banner + gsep dividers) — its rows baked
-    # busiest-first with no sort= marker. Below: the views and scopes, the
+    # busiest-first with no sort= marker. Below: the views, the
     # subset totals re-summing the grouped columns (entity_res_block), an
     # empty group hidden per view (entity_hide_groups), the TOTAL row last
     # (entity_total_last). The nine classic <name>.rpt stay DATA producers
@@ -1046,12 +1058,11 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     local _nreal=23   # the directive + Name + 21 figure columns (the Reason column follows Days)
     segment_rpt "$rpt"                                  # TBLOCK[1]=Summary
     local sumblk=${TBLOCK[1]:-}
-    local stable shead stotal srows snotes
+    local stable shead stotal srows
     stable=$(printf '%s\n' "$sumblk" | grep -m1 $'^TABLE\t' || true)
     shead=$(printf '%s\n' "$sumblk" | grep -E $'^(GHEAD|HEAD|KIND|RECALC)\t' || true)   # GHEAD = the group banner row
     stotal=$(printf '%s\n' "$sumblk" | grep -m1 $'^TOTAL\t' || true)
     srows=$(printf '%s\n' "$sumblk" | grep $'^ROW\t' || true)
-    snotes=$(printf '%s\n' "$sumblk" | grep $'^NOTE\t' || true)
     # a not-seen row = the name + one empty cell per remaining HEAD column
     local ncols; ncols=$(printf '%s\n' "$shead" | awk -F'\t' '/^HEAD\t/{ print NF - 1; exit }')
     local covf="$DATA/$area/reports/coverage/$(entity_cov_base "$name").tsv" nsrows=""
@@ -1227,7 +1238,6 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             { r = res[toupper($2)]
               if (r == "green" || r == "orange" || r == "red") print $0, "@data:res=" r
               else print }' -)
-        sumblk_tinted+=$'\n'"NOTE"$'\t'"Row colors: **light green** = last transfer OK, **light orange** = a mixed OK/Error rollup, **light red** = last transfer Error (or server-log Errors/Warnings after the last OK transfer). For entity types other than subscriptions the result rolls up from the connected subscriptions. An UNTINTED row was logged but is not configured in FlowManager — it has no result to color by."
     fi
     # datereset on the Seen view too (the All view's TABLE variant carries it,
     # and the OK/Warning/Error/Transfer variants below): every Entities view is
@@ -1257,8 +1267,6 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # (and never saves one); narrowing it stays page-local.
     blk_all="$(tbl_variant "all (logged + configured)" "datereset")"$'\n'"$shead"$'\n'"$tot_all"
     [ -n "$all_rows" ] && blk_all+=$'\n'"$all_rows"
-    blk_all+=$'\n'"NOTE"$'\t'"Row colors: **light green** = last transfer OK, **light orange** = configured but never seen, **light red** = last transfer Error (or server-log Errors/Warnings after the last OK transfer). For entity types other than subscriptions the result rolls up from the connected subscriptions; configured-but-never-seen rows keep blank counts. A green/red-tinted row with BLANK counts was seen only through a sibling group — a shared endpoint whose Files are credited to the co-tenant, or one side of a two-partner account name. An UNTINTED row was logged but is not configured in FlowManager — it has no result to color by."
-    [ -n "$snotes" ] && blk_all+=$'\n'"$snotes"
     shead_ns=$(printf '%s\n' "$shead" | grep -v $'^RECALC\t' || true)   # no buckets -> no RECALC -> no From/To on this page
     local nsrows_gh=$nsrows
     if [ -n "$ghnsrows" ]; then
@@ -1267,7 +1275,6 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     fi
     blk_ns="$(tbl_variant "configured, never seen" "seenrows sort=0:1")"$'\n'"$shead_ns"$'\n'"$tot_ns"
     [ -n "$nsrows_gh" ] && blk_ns+=$'\n'"$nsrows_gh"
-    blk_ns+=$'\n'"NOTE"$'\t'"Configured in FlowManager but never seen in this log window. Every name links to its detail page, which lists the configured cross-references."
     blk_ns=$(printf '%s\n' "$blk_ns" | entities_name_only)   # Not seen: name column only
     # OK / Warning / Error views: the entities whose site-wide RESULT (the base
     # caches' third column, bin/build/result.sh) is green / orange / red. ONE
@@ -1415,13 +1422,10 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # (the "% of Files" column was removed 2026-07 — the subset views use the
     # summary header unchanged)
     local shead_subset=$shead
-    local blk_ok blk_err blk_warn n_ok n_err n_warn
-    n_ok="Only the entities whose site-wide RESULT is **green**: their last transfer ended OK — for a type other than subscriptions, every connected subscription's did. Rows are shown light green."
-    n_err="Only the entities whose site-wide RESULT is **red**: their last transfer ended in an Error (Failed, or a staged file that Expired before pickup) — for a type other than subscriptions, at least one connected subscription's did. Rows are shown light red."
-    n_warn="Only the entities whose site-wide RESULT is **orange**: never seen in this log window, or a mix of OK and Error across their connected subscriptions. Rows are shown light orange."
-    blk_ok="$(tbl_variant "OK (result green)" "datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block green "$all_rows")"$'\n'"NOTE"$'\t'"$n_ok"
-    blk_err="$(tbl_variant "Error (result red)" "datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block red "$all_rows")"$'\n'"NOTE"$'\t'"$n_err"
-    blk_warn="$(tbl_variant "Warning (result orange)" "datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block orange "$all_rows")"$'\n'"NOTE"$'\t'"$n_warn"
+    local blk_ok blk_err blk_warn
+    blk_ok="$(tbl_variant "OK (result green)" "datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block green "$all_rows")"
+    blk_err="$(tbl_variant "Error (result red)" "datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block red "$all_rows")"
+    blk_warn="$(tbl_variant "Warning (result orange)" "datereset")"$'\n'"$shead_subset"$'\n'"$(entity_res_block orange "$all_rows")"
     # the partner GROUP icon map (multi-token merged partner names): render_rpt
     # reads GRPICON_MAP (group name -> slug) to draw the icon; empty for every
     # other entity, so no other page gets one
@@ -1446,11 +1450,11 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
         blk_warn=$(printf '%s\n' "$blk_warn" | entities_name_only)
     fi
     # THE REASON COLUMN — the SUBSCRIPTIONS Error view only (2026-08): the
-    # same per-flow Reason the home page's two red tables show, resolved by
-    # the same chain (bin/build/publish.sh write_failing_now): the flow's
+    # per-flow Reason the home page's two red tables showed until 2026-09-29,
+    # resolved by the same chain: the flow's
     # NEWEST red failed-sub-all row keeps ITS OWN verdict — the one baked into
-    # the error page that home row opens — unless the flow is server-reddened
-    # (colour/_redflip.tsv, home table 2's set); else the classified newest
+    # the error page that row opens — unless the flow is server-reddened
+    # (colour/_redflip.tsv); else the classified newest
     # server E line (_kaput-evidence.tsv through the shared
     # bin/flip-reason.awk); else the most specific box (_subs-boxes.tsv).
     # Appended AFTER Last seen, before the @data cells, so every baked column
@@ -1658,8 +1662,10 @@ render_report() {   # $1 area  $2 name  $3 rpt
     # record pages (files/ — the error and File pages, the record and value pages, the detail
     # pages) keep their INTRO — there it states facts, not explanations.
     local RPT_NOPROSE=1
-    # Top-bar right text: "TRANSFER"/"SERVER" + this report's index-entry name.
-    local rlabel; rlabel="$(printf '%s' "$area" | tr '[:lower:]' '[:upper:]') - $(entry_label "$area" "$name")"
+    # (the top-bar right label — "TRANSFER - <entry label>", two subshells +
+    # tr + awk per report — went 2026-09-29: html_head has not printed it since
+    # the quick-search box replaced it; the positional slot stays, empty)
+    local rlabel=""
     local hslug; hslug=$(help_slug_for "$area" "$name")
     # The search/sort persistence key (html_head's report-key meta): the same on
     # every page of this report — all its table-tab pages — so a typed search
@@ -1739,10 +1745,12 @@ render_report() {   # $1 area  $2 name  $3 rpt
     # with fewer TABLEs than report_tabs lists, but the group nav's
     # same-label carry (member_page_for_label) links EVERY label's page from
     # the sibling reports — so each missing trailing table gets the
-    # merge_rpt no-data stub and its page renders instead of 404ing.
+    # merge_rpt no-data stub and its page renders instead of 404ing. The pad
+    # carries an (empty) HEAD: a report page renders no NOTE, and a header row
+    # over zero data rows is what report.js reads as "no rows" and says so.
     while [ "$NTAB" -lt "${#laba[@]}" ]; do
         NTAB=$((NTAB+1))
-        TBLOCK[$NTAB]=$'TABLE\t\nNOTE\tThis view has no data in this environment.'
+        TBLOCK[$NTAB]=$'TABLE\t\nHEAD\t\nNOTE\tThis view has no data in this environment.'
     done
     local i j files=() lbl
     for ((i=1; i<=NTAB; i++)); do
@@ -1949,9 +1957,9 @@ _subs_placeholder() {   # $1 area  $2 name
 
 # ---- index helpers -----------------------------------------------------------
 
-# entry_label AREA NAME — the label a report shows on its area index (grouped ->
-# the group label; else its TITLE with the few index overrides). Also the name
-# used in the top-bar right text, so the two never drift.
+# entry_label AREA NAME — a report's title where no member label exists (the
+# empty-report placeholders): grouped -> the group label; else its TITLE, else
+# the static member label, else the basename.
 entry_label() {   # $1 area  $2 basename
     local area=$1 name=$2 g t
     g=$(group_of "$area" "$name")
@@ -1964,15 +1972,7 @@ entry_label() {   # $1 area  $2 basename
         t=$(member_label "$name")
         [ -n "$t" ] || t=$name
     fi
-    case $name in
-        day) echo "Day" ;;
-        unknown-sites) echo "Missing subscriptions" ;;
-        unknown-accounts) echo "Missing accounts" ;;
-        unknown-hosts) echo "Missing hosts" ;;
-        unknown-whitelisting) echo "Missing whitelist IPs" ;;
-        unknown-logins) echo "Missing logins" ;;
-        *) t=${t#Transfer }; echo "${t% Counts}" ;;
-    esac
+    t=${t#Transfer }; echo "${t% Counts}"
 }
 # ---- Month stats (2026-09-13, user request) ---------------------------------
 # The 18 pages of bin/transfer/reports/month-stats.sh — {this,previous} × the
@@ -2315,7 +2315,7 @@ ensure_assets() {
     # publish writes the same bytes, so writing them is idempotent.
     # style.css / report.js / slotchart.js / all-files-search.js / sub-files.js and docs/help/
     # are SEEDED from the repo-root assets/ by bin/build.sh (2026-08-29 —
-    # every build clears its scope's docs tree first, so docs/ is pure build
+    # every build clears the docs tree first, so docs/ is pure build
     # output; EDIT IN assets/, a build overwrites the docs copies). Only the
     # GENERATED files below and .nojekyll are written here.
     mkdir -p docs/assets
@@ -2333,11 +2333,11 @@ ensure_assets() {
     }
     # (build-stamp.js is GONE with the footer bar: no page shows a build time
     # any more, so there is nothing to stamp.)
-    # The runtime top bar's menu data (buildTopbar in report.js): the three
-    # dropdown menu strings, docs-root-relative with their "@" placeholder
-    # kept verbatim (report.js swaps it for the page's data-b prefix).
-    # the ONE Reports pulldown (2026-09-29: the transfer / server / analyses /
-    # goodies keys went with their four dropdowns)
+    # The runtime top bar's menu data (buildTopbar in report.js): the ONE
+    # Reports pulldown string (2026-09-29: the transfer / server / analyses /
+    # goodies keys went with their four dropdowns), docs-root-relative with
+    # its "@" placeholder kept verbatim (report.js swaps it for the page's
+    # data-b prefix).
     local r=$REPORTS_MENU
     r=${r//\\/\\\\}; r=${r//\"/\\\"}
     # + the CoreId -> File Tracking URL template (TB_CID) and the environment

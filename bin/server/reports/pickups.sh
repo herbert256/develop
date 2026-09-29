@@ -5,14 +5,15 @@
 # information" table turned into columns, one row per UC2 subscription.
 #
 # The pickup figures come verbatim from the uc2-pickups.tsv sidecar
-# uc2-status.sh computes (see the column list there), so this page, the UC2
-# status page, the UC2 pickup visits page and the detail-page tables can
-# never disagree. Must run AFTER uc2-status.sh (bin/server/reports.sh runs
-# it past the pool barrier). Two JOINED columns (2026-09-02, user request):
+# uc2-status.sh computes (see the column list there), so this table, the UC2
+# status table, the visits table (uc2-visits.sh — all three on the UC2 tab of
+# UC status since 2026-09-29) and the detail-page tables can never disagree.
+# Must run AFTER uc2-status.sh (bin/server/reports.sh runs it past the pool
+# barrier). Two JOINED columns (2026-09-02, user request):
 #
 #   Last Gateway    the flow's login(s)' last logon on the OLD gateway, from
-#                   the hand-maintained input/logons_old.txt (the FE
-#                   status information page's Last Gateway; same file, same
+#                   the hand-maintained input/logons_old.txt (the Partners -
+#                   Incoming page's Gateway column; same file, same
 #                   tolerant format: first token = the login, the rest of the
 #                   line = the stamp as written) through the subscription ->
 #                   login xref; several logins join ", "-separated
@@ -110,14 +111,17 @@ rows=$(LC_ALL=C sort -t$'\t' -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' -v SL="$SL" 
         ow = oldest($1)
         k = toupper($1); if (k in WOLD) { ag = NEWEST - WOLD[k]; if (ag > GOLD) GOLD = ag }   # ag, not a: mawk forbids one name as array (BEGIN) and scalar
         printf "ROW\t%s%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%d\t%s\n", \
-            sublink($1), $1, stamp($3), stamp($4), gateway($1), z($5), z($6), $7, z($16), ow, $17, $8
+            sublink($1), $1, stamp($3), stamp($4), gateway($1), z($5), z($6), $7, z($14), ow, $15, $8
         # the pickup logons belong to the ACCOUNT (or, on a multi-FE account, to
         # the login) and repeat on each of its UC2 subscriptions: the Total counts
         # each such group ONCE (2026-09-29 fix — an 8-subscription account put
         # its 804 pickups into the total eight times; UC2 status sums once)
+        # THE group key, shared with uc2-visits.sh (2026-09-29: the two used
+        # different keys): the account plus its logon figures (first / last
+        # pickup, pickups) — the sidecar carries no login
         pkk = $2 SUBSEP $3 SUBSEP $4 SUBSEP $5
         if (!(pkk in PKS)) { PKS[pkk] = 1; tp += $5 }
-        tw += $6; tf += $7; twt += $16; txp += $17; nr++
+        tw += $6; tf += $7; twt += $14; txp += $15; nr++
     }
     END { printf "TOTFOOT\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n", nr+0, tp+0, tw+0, tf+0, twt+0, txp+0, (GOLD >= 0 ? hage(GOLD) : "") }
 ')
@@ -139,7 +143,9 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
     # preserved by report.js'\''s stable sort. sort=, never nosort, so the
     # header clicks keep working.
     # tab=uc2 (2026-09-29): rides the UC2 tab of UC status, under its status table
-    printf 'TABLE\tPickups per UC2 subscription\twide\tnofilter\tsort=7:-1\ttab=uc2\n'
+    # noagg=4: Pickups is the ACCOUNT's figure, repeated per UC2 flow (the
+    # TOTAL counts it once) — a search must not re-sum it (2026-09-29)
+    printf 'TABLE\tPickups per UC2 subscription\twide\tnofilter\tsort=7:-1\tnoagg=4\ttab=uc2\n'
     printf 'HEAD\tSubscription\tFirst pickup\tLast pickup\tLast Gateway\tPickups\tWith files\tFiles picked up\tWaiting\tOldest waiting\tExpired\tPattern\n'
     printf 'KIND\tmono\ttext\ttext\ttext\tnum\tnum\tnumprocessed\tnum\ttext\tnumfailed\ttext\n'
     printf '%s\n' "$rows"

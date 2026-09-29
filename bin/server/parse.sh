@@ -6,22 +6,25 @@
 #   data/_parse.tsv   one TAB-separated row per log record, 6 columns:
 #                     Date, Time, Level, Component, Message, Session ID
 
+#   data/_parse.count the cache's row count (one number, written right after
+#                     _parse.tsv — bin/build.sh reads it for the build report
+#                     instead of re-counting the multi-GB cache)
 #   data/_parse.txt   the column legend (names + descriptions + code tables)
-#   data/_accounts.tsv       "<date time> <TAB> <name>" for every configured
-#                            account (data/flow-manager/base/_accounts.tsv — bin/flow-manager.sh's
-#                            cache of partners.json) mentioned in a RUNTIME
-#                            record (a transfer actually running)
-#   data/_subscriptions.tsv  the same, for every configured subscription
-#                            (the logins/hosts FLAT tsvs were dropped
-#                            2026-07 — no reader; the per-name DIRS below cover
-#                            all five types, logins/hosts matched like before)
+#   data/_subscriptions.tsv  "<date time> <TAB> <name>" for every configured
+#                            subscription (data/flow-manager/base/_subscriptions.tsv)
+#                            mentioned in a RUNTIME record — the one FLAT mention
+#                            list (cleanup-backlog.sh reads it); the accounts /
+#                            logins / hosts flats went (no reader: logins/hosts
+#                            2026-07, accounts 2026-09-29) — the per-name DIRS
+#                            below cover all four types
 #   data/{accounts,subscriptions,logins,hosts}/<name>.tsv
 #                            per configured name, its 25 most-recent runtime
 #                            log rows (newest first), each a full _parse.tsv
 #                            row (same 6-column layout as _parse.txt)
 #   data/{accounts,...}/<name>_err_warn.tsv
-#                            the same, but only the 10 most-recent Error/Warn
-#                            (level E or W) rows for that name (newest first),
+#                            the same, but only the 10 most-recent Errors AND
+#                            the 10 most-recent Warnings for that name (one
+#                            ring per level, merged newest first),
 #                            EXCLUDING the "… Skipping the next scheduled
 #                            occurrence of this task." poll-backlog warnings
 #
@@ -36,8 +39,10 @@
 # - Accepts DOS (CRLF) or Unix (LF) input; TAB/CR/LF are scrubbed from every
 #   value so each record stays on one TAB-separated output line
 # - Date is ccyy-mm-dd (sortable report key); Time is HH:MM:SS.mmm — together
-#   they order records chronologically (the exports themselves are newest-first
-#   within a file, so cache order is NOT chronological)
+#   they order records chronologically, and the cache IS in that order: the
+#   merge sorts on a date+time key (the exports themselves are newest-first
+#   within a file; the per-name rings, the parallel range scans and addline
+#   rely on the sorted cache)
 # - Level and Component are shortened to one letter (see _parse.txt tables)
 #
 # Usage:
@@ -58,6 +63,7 @@ source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK (rn_load/rn_canon)
 _sl0=$(date +%s)
 _slap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  server parse: %s\n' "$((_t1 - _sl0))" "$1" >&2; _sl0=$_t1; }
 OUT="$CACHE_DIR/_parse.tsv"
+COUNTF="$CACHE_DIR/_parse.count"   # its row count (see the merge) — nothing else rewrites _parse.tsv
 LEGEND="$CACHE_DIR/_parse.txt"
 # SKIP LIST (input/skip.txt, per environment): a server-log record whose
 # MESSAGE (col 5) contains a skip token (case-insensitive substring) is dropped
@@ -72,11 +78,7 @@ SKIPOUT="$DATA/server/_skipped.tsv"     # skipped _parse.tsv rows (verbatim)
 # so a rule reaches it through the "message" field, which an "any" rule also
 # satisfies. That keeps the legacy flat-token behaviour (scrub any line
 # mentioning the token) while a field-specific transfer rule stays out of here.
-SKIP_PROG="$SKIPLIST_AWK"'
-    BEGIN { sl_load(skipfile) }
-    { if (SL_N > 0 && sl_hit("message", $5)) print >> sc; else print }
-'
-# the same filter over MERGED CHUNK lines, "<sort key> TAB <cache row>": it
+# The filter runs over MERGED CHUNK lines, "<sort key> TAB <cache row>": it
 # drops the key itself (exactly `cut -f2-`: the key holds no TAB) and tests
 # the message, the row's col 5 = the line's field 6
 # — and counts the rows it keeps into the file cf (the cache line count, so
@@ -136,12 +138,12 @@ case $NJOBS in ''|*[!0-9]*) NJOBS=$(detect_njobs) ;; esac
 # not POSIX but exist on GNU and BSD/macOS sort; each is used only when this
 # box's sort accepts it. Every value is a single token (-S256M), so the
 # UNQUOTED $SORT_*_FLAGS expansions word-split safely (empty = no flags).
-# Chunk sorts run NJOBS at a time, so they get a modest buffer each; the
-# single merge pass gets a big one.
+# Chunk sorts and the grouped merges run NJOBS at a time, so they get a
+# modest buffer each. (The single-merge SORT_MERGE_FLAGS and its --parallel
+# probe went 2026-09-29: the merge is per date-hour group now and uses these.)
 sort_flag_ok() { printf 'a\n' | sort "$1" >/dev/null 2>&1; }
-SORT_CHUNK_FLAGS=""; SORT_MERGE_FLAGS=""
-if sort_flag_ok -S1M; then SORT_CHUNK_FLAGS="-S256M"; SORT_MERGE_FLAGS="-S1G"; fi
-if sort_flag_ok --parallel=2; then SORT_MERGE_FLAGS="$SORT_MERGE_FLAGS --parallel=$NJOBS"; fi
+SORT_CHUNK_FLAGS=""
+if sort_flag_ok -S1M; then SORT_CHUNK_FLAGS="-S256M"; fi
 
 POOL_PIDS=()
 pool_run() {   # run "$@" as a background job, at most NJOBS at once
@@ -511,11 +513,13 @@ AWK_EOF
 # the sequential append order), and each name's newest-10 ring is emitted as
 # "type TAB name TAB record" lines for the ring merge below.
 ENT_PROG=$(cat <<'AWK_EOF'
-BEGIN { outf["A"]=accout; outf["S"]=subout; outf["L"]=logout; outf["H"]=hstout; rn_load(RNF)
-        # the mention lines go through cat (2026-09-28, speed round 25): awk
-        # writes a regular file in 4 KB chunks, ten parts at once ~300 MB on
-        # production; closed (and waited for) at the top of END
-        for (ty9 in outf) outc[ty9] = "cat >> \"" outf[ty9] "\""
+BEGIN { rn_load(RNF)
+        # the SUBSCRIPTION mention lines (the one flat list with a reader —
+        # the account / login / host lines went 2026-09-29) go through cat
+        # (2026-09-28, speed round 25): awk writes a regular file in 4 KB
+        # chunks, ten parts at once ~300 MB on production; closed (and
+        # waited for) at the top of END
+        outc["S"] = "cat >> \"" subout "\""
         # THE PREFIX GATE (2026-09-27): a token can resolve to a subscription only
         # when its first 3 characters open a configured name (exact case) or an
         # old name of the rename map (upper-cased) — the tail strip, the SERVER
@@ -552,7 +556,7 @@ function hit(ty, w,   k) {
     k = ty SUBSEP w
     if (seen[k] == NR) return
     seen[k] = NR
-    print t "\t" w | outc[ty]
+    if (ty == "S") print t "\t" w | outc[ty]
     ring[k, cnt[k] % 25] = $0
     cnt[k]++
     # the Error/Warn ring keeps its 10 newest Errors AND its 10 newest
@@ -690,8 +694,7 @@ AWK_EOF
 
 ent_one() {   # $1 = cache line chunk, $2 = 4-digit part index
     awk -F'\t' \
-        -v accout="$ENT_CHUNK_DIR/A.$2" -v subout="$ENT_CHUNK_DIR/S.$2" \
-        -v logout="$ENT_CHUNK_DIR/L.$2" -v hstout="$ENT_CHUNK_DIR/H.$2" \
+        -v subout="$ENT_CHUNK_DIR/S.$2" \
         -v ringout="$ENT_CHUNK_DIR/rings.$2" \
         -v ewout="$ENT_CHUNK_DIR/ewrings.$2" \
         -v RNF="$RENAMES_FILE" \
@@ -699,8 +702,7 @@ ent_one() {   # $1 = cache line chunk, $2 = 4-digit part index
 }
 ent_range() {   # $1 = the cache, $2/$3 = the byte range [lo, hi) of line starts, $4 = 4-digit part index
     rng_feed "$1" "$2" | awk -F'\t' \
-        -v accout="$ENT_CHUNK_DIR/A.$4" -v subout="$ENT_CHUNK_DIR/S.$4" \
-        -v logout="$ENT_CHUNK_DIR/L.$4" -v hstout="$ENT_CHUNK_DIR/H.$4" \
+        -v subout="$ENT_CHUNK_DIR/S.$4" \
         -v ringout="$ENT_CHUNK_DIR/rings.$4" \
         -v ewout="$ENT_CHUNK_DIR/ewrings.$4" \
         -v RNF="$RENAMES_FILE" -v RANGEF=/dev/stdin -v RLO="$2" -v RHI="$3" -v ROFF="$(rng_off "$2")" \
@@ -736,13 +738,13 @@ ent_range() {   # $1 = the cache, $2/$3 = the byte range [lo, hi) of line starts
 # a visible trail of its last problems (the detail pages merge the two, and the
 # banner comparing the last error/warn against the last transfer reads this one).
 # ---------------------------------------------------------------------------
-# Flat mention TSVs exist only for accounts (details.sh's mention-count KPI)
-# and subscriptions (cleanup-backlog.sh) — the logins/hosts
-# flats had NO reader and were dropped 2026-07; their per-name DIRS
-# (the last-25 / err-warn rings) remain for all four types.
-ACCOUNTS_TSV="$CACHE_DIR/_accounts.tsv";      ACCOUNTS_DIR="$CACHE_DIR/accounts"
+# ONE flat mention TSV: subscriptions (cleanup-backlog.sh) — the logins/hosts
+# flats had NO reader and were dropped 2026-07, the accounts one 2026-09-29
+# (its details.sh mention-count KPI was long gone); the per-name DIRS (the
+# last-25 / err-warn rings) remain for all four types.
+ACCOUNTS_DIR="$CACHE_DIR/accounts"
 SUBS_TSV="$CACHE_DIR/_subscriptions.tsv";     SUBS_DIR="$CACHE_DIR/subscriptions"
-ENDED_TSV="$CACHE_DIR/_sessions-ended.tsv"    # the sessions that logged a transfer end (session <TAB> status) — their E/W lines stay out of the err/warn rings (2026-09-12)
+ENDED_TSV="$CACHE_DIR/_sessions-ended.tsv"    # the sessions that logged a transfer end (one session id per line; the status column went 2026-09-29 — no reader) — their E/W lines stay out of the err/warn rings (2026-09-12)
 LOGINS_DIR="$CACHE_DIR/logins"
 HOSTS_DIR="$CACHE_DIR/hosts"
 # Configured name lists: bin/flow-manager.sh's caches (one name per line), built
@@ -834,7 +836,7 @@ build_entity_tsvs() {
     # NOT a server-log error (ENT_PROG keeps it out of the err/warn rings, the
     # one input of the after-last-transfer judgement everywhere: the detail
     # page banner, result.sh's red flip, went-kaput, failed.sh's server-failing
-    # set). One line per session: session <TAB> status. Recomputed from the
+    # set). One line per session: the session id. Recomputed from the
     # WHOLE cache on every rescan, so a bookend arriving in a later export
     # retro-mutes the earlier lines of its session. The shared
     # PERSISTENT-SESSION pseudo-session (hex prefix of that literal) is never
@@ -855,15 +857,14 @@ build_entity_tsvs() {
     awk -F'\t' '
         index($5, "{\"message\":\"Transfer end logged.") == 1 && $6 != "" && index($6, "50455253495354454e542d53455353494f4e2d") != 1 {
             if ($6 in s) next
-            s[$6] = 1; st = ""
-            if (match($5, /"status":"[a-z]+"/)) st = substr($5, RSTART + 10, RLENGTH - 11)
-            print $6 "\t" st }' "$ENDED_TSV.grep" > "$ENDED_TSV.tmp" && mv "$ENDED_TSV.tmp" "$ENDED_TSV"
+            s[$6] = 1
+            print $6 }' "$ENDED_TSV.grep" > "$ENDED_TSV.tmp" && mv "$ENDED_TSV.tmp" "$ENDED_TSV"
     rm -f "$ENDED_TSV.grep"
     fi
     _slap "mentions: transfer-ended sessions"
     ENT_CFG_SRCS+=("$ENDED_TSV")
     echo "  transfer-ended sessions: $(wc -l < "$ENDED_TSV" | tr -d ' ') (their Error/Warning lines stay out of the err/warn rings)." >&2
-    : > "$ACCOUNTS_TSV"; : > "$SUBS_TSV"
+    : > "$SUBS_TSV"
     # Rebuild the per-name detail dirs from scratch so a name that dropped out of
     # the config (or the logs) leaves no stale <name>.tsv behind.
     rm -rf "$ACCOUNTS_DIR" "$SUBS_DIR" "$LOGINS_DIR" "$HOSTS_DIR"
@@ -906,7 +907,7 @@ build_entity_tsvs() {
         fi
     fi
     _slap "mentions: scan ($nparts parts)"
-    for spec in "A:$ACCOUNTS_TSV" "S:$SUBS_TSV"; do
+    for spec in "S:$SUBS_TSV"; do
         ty=${spec%%:*}; dest=${spec#*:}
         i=1
         while [ "$i" -le "$nparts" ]; do
@@ -949,7 +950,7 @@ build_entity_tsvs() {
     rm -rf "$ENT_CHUNK_DIR"
     echo "Wrote the per-entity server caches:" >&2
     local i tsvs dirsx
-    tsvs=("$ACCOUNTS_TSV" "$SUBS_TSV" "" "")
+    tsvs=("" "$SUBS_TSV" "" "")
     dirsx=("$ACCOUNTS_DIR" "$SUBS_DIR" "$LOGINS_DIR" "$HOSTS_DIR")
     for i in 0 1 2 3; do
         if [ -n "${tsvs[$i]}" ]; then
@@ -995,12 +996,12 @@ rm -rf "$CACHE_DIR/subsets"   # the per-consumer subsets of the old cache (srv_s
 
 # CONFIG-ONLY ESTATE (2026-08): no server CSVs at all — the transfer twin's
 # rule (see bin/transfer/parse.sh): write the cache set EMPTY instead of
-# failing, and still run build_entity_tsvs so the per-entity caches (the two
-# flat TSVs + the four per-name dirs) exist, empty, for every consumer that
+# failing, and still run build_entity_tsvs so the per-entity caches (the
+# flat TSV + the four per-name dirs) exist, empty, for every consumer that
 # expects them.
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — writing an EMPTY cache (config-only estate)." >&2
-    : > "$OUT"; : > "$SKIPOUT"
+    : > "$OUT"; : > "$SKIPOUT"; printf '0\n' > "$COUNTF"
     build_entity_tsvs
     exit 0
 fi
@@ -1162,8 +1163,8 @@ tokenize_batch() {   # tokenize every argument file into its own chunk
 # after the merge (identical raw => identical whole line). Each chunk is
 # already sorted+deduped, so `sort -m -u` over the chunks equals the former
 # single `sort -u` over their concatenation — same total order, same
-# survivors, byte-identical cache. Cache order is documented
-# non-chronological, so sort order is irrelevant and stays memory-bounded.
+# survivors, byte-identical cache. The sort key leads with the ISO date +
+# time, so the cache comes out CHRONOLOGICAL (see the tokenizer's sort key).
 {
     tokenize_batch "${files[@]}"
     _slap "tokenize (per file)"
@@ -1231,6 +1232,11 @@ tokenize_batch() {   # tokenize every argument file into its own chunk
     ENT_PARTS=("$PART_DIR"/out.*)   # build_entity_tsvs consumes these in place
     skipped_n=$(wc -l < "$SKIPOUT" | tr -d ' ')
     n_out=$(cat "$PART_DIR"/n.* 2>/dev/null | awk '{ s += $1 } END { print s + 0 }')   # the groups' kept-row counts
+    # the ROW COUNT beside the cache (2026-09-29): written AFTER it, so its
+    # mtime is never older — bin/build.sh reads it for the build report instead
+    # of re-counting the multi-GB cache (and falls back to counting when the
+    # cache is newer). The merge counted the kept rows; no second pass.
+    printf '%s\n' "$n_out" > "$COUNTF"
     dropped=$(( n_raw - n_out - skipped_n ))
     [ "$dropped" -gt 0 ] && echo "NOTE: dropped $dropped exact-duplicate raw record(s) (kept one of each)." >&2
     [ "$skipped_n" -gt 0 ] && echo "Skip list: set aside $skipped_n server record(s) -> $SKIPOUT." >&2
@@ -1240,9 +1246,9 @@ _slap "merge (per date)"
 # Companion legend: the column names of _parse.tsv (kept in sync with the emit
 # order above). Rewritten each run; content only changes if the columns do.
 cat > "$LEGEND" <<'LEGEND_EOF'
-_parse.tsv — one row per Axway server-log record, TAB-separated. NOTE: the
-exports are newest-first within a file, so cache row order is NOT
-chronological — sort or compare on date + time.
+_parse.tsv — one row per Axway server-log record, TAB-separated, in
+CHRONOLOGICAL order (sorted on date + time; the exports themselves are
+newest-first within a file). _parse.count holds the row count.
 
 col  name        description
   1  date        Record date as ccyy-mm-dd
@@ -1267,7 +1273,7 @@ LEGEND_EOF
 
 echo "Wrote $OUT ($n_out record(s)) and $LEGEND." >&2
 
-build_entity_tsvs         # derive _accounts.tsv / _subscriptions.tsv from the fresh cache
+build_entity_tsvs         # derive _subscriptions.tsv + the per-name rings from the fresh cache
 _slap "per-entity mention caches"
 # the merge parts served as the entity-scan chunks
 rm -rf "$CHUNK_DIR"

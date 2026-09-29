@@ -132,10 +132,12 @@ function emit_srv_table(title, cutoff, two,   i, ewf, nA, nB, nda, ndb, l) {
     split("", SA); split("", DA); nA = 0; split("", PC)
     for (i = 1; i <= nrec; i++) nA = pool(REC[i], SA, nA)
     nda = sort_cap(SA, nA, 25, DA)
-    # pool B — its own _err_warn rings, cap 10 …
+    # pool B — its own _err_warn rings (10 Errors + 10 Warnings), cap 20:
+    # the whole ring (2026-09-29 audit — a cap of 10 let newer Warnings push
+    # the Errors out) …
     split("", SB); split("", DB); nB = 0; split("", PC)
     for (i = 1; i <= nrec; i++) { ewf = REC[i]; sub(/\.tsv$/, "_err_warn.tsv", ewf); if (nonempty(ewf)) nB = pool(ewf, SB, nB) }
-    ndb = sort_cap(SB, nB, 10, DB)
+    ndb = sort_cap(SB, nB, 20, DB)
     split("", PC); for (i = 1; i <= ndb; i++) PC[DB[i]]++   # what the table holds — the connected rings pool against it
     # … plus the CONNECTED rings after the cutoff (uncapped), which only the
     # main table has (cutoff "" = the srv_lines_for path)
@@ -175,7 +177,7 @@ function emit_srv_rows(title, L, n,   i, m, C5, lvl, cmp, body, nrows, tj) {
     if (body == "") return
     emitl("TABLE\t" title "\twide\tnofilter")
     emitl("HEAD\tDate\tTime\tLevel\tComponent\tMessage")
-    emitl("KIND\ttext\ttext\ttext\ttext\ttext")
+    emitl("KIND\ttext\ttext\ttext\ttext\tprose")   # the Message wraps (2026-09-29 audit: the account pages ran 2,480 px wide)
     npg++; PG[npg] = body   # pre-joined rows, one buffer slot
     # the TOTAL row LAST, after the rows (2026-09-29: it came first and ended
     # last only because the page re-sorted on the date column)
@@ -200,6 +202,11 @@ function last_transfer_cut() { return (tot_okend > tot_last) ? tot_okend : tot_l
 
 function err_after_transfer_banner(   m9) {
     if (have_tot != 1 || tot_last == "" || a_bannerdt == "") return
+    # a GREEN subscription gets no red ALERT (2026-09-29 audit): an error after
+    # its last transfer that did not turn it red is on hold (colour/
+    # _connhold.tsv — a cannot-connect streak below its threshold); the
+    # line still shows in its Last server log tables
+    if (pend_t == "SITE" && a_res == "green") return
     if (a_bannerdt > last_transfer_cut()) {
         # when the page carries its own "Server log error" section (the flow
         # is in the server-failing set), the banner is followed by the error
@@ -442,7 +449,10 @@ function emit_perf_tables(   P, np, pmin, pavg, p50, p95, p99, pmax, pthr, D5, d
     if (have_tot != 1) return
     pmin = "-"; pavg = "-"; p50 = "-"; p95 = "-"; p99 = "-"; pmax = "-"; pthr = "-"
     if (x_perf != "") { np = split(x_perf, P, "|"); pmin = P[2]; pavg = P[3]; p50 = P[4]; p95 = P[5]; p99 = P[6]; pmax = P[7]; pthr = P[8] }
-    emitl("TABLE\tDuration\tsxs=4\tnosearch"); emitl("HEAD\tMetric\tValue"); emitl("KIND\ttext\ttext")
+    # "per leg" (2026-09-29 audit): the figures are the OK LEGS' own durations
+    # — the Ranking report's Duration per leg — not the delivered Files'
+    # wall-clock span the Duration report and the Entities Duration group use
+    emitl("TABLE\tDuration per leg\tsxs=4\tnosearch"); emitl("HEAD\tMetric\tValue"); emitl("KIND\ttext\ttext")
     emitl("ROW\tmin\t" pmin); emitl("ROW\tavg\t" pavg); emitl("ROW\tmax\t" pmax)
     emitl("ROW\tp50\t" p50); emitl("ROW\tp95\t" p95); emitl("ROW\tp99\t" p99)
     emitl("TABLE\tSize\tsxs=4\tnosearch"); emitl("HEAD\tMetric\tValue"); emitl("KIND\ttext\ttext")
@@ -1469,6 +1479,9 @@ NF < 4 { next }
         ccf = $9; ccp = $10
         if (ccf == "-") ccf = ""
         if (ccp == "-") ccp = ""
+        # a SUBSCRIPTION page's Error cell is a link to Failed files (ffcell),
+        # so its drill list could never open — not shipped (2026-09-29 audit)
+        if (pend_t == "SITE") ccf = ""
         dcnt = ($6 + 0) + ($7 + 0)
         if (dcnt > busy_cnt) { busy_cnt = dcnt; busy_day = $5 }
         ddur = ($15 != "") ? $15 : "-"
@@ -1570,15 +1583,17 @@ NF < 4 { next }
         emitl(sprintf("ROW\t%s\t%s\t%s%%", $5, $6, dwsh))
     }
     else {   # dimension breakdowns: value count failed processed volume fi pi fo po coreidsF coreidsP
+        # (@data:seen=1: these rows are LOGGED — the seenrows tables tint them
+        # green beside the red config-only rows; 2026-09-29 audit, they were untinted)
         cf = $14; cp = $15
         if (cf == "-") cf = ""
         if (cp == "-") cp = ""
         if (BOTHMODE == 1) {
-            rb = sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, $6, ($10 != "" ? $10 : 0), ($11 != "" ? $11 : 0), ($12 != "" ? $12 : 0), ($13 != "" ? $13 : 0), $9, cf, cp)
-            rp = sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, $6, $7, $8, $9, cf, cp)
+            rb = sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:seen=1\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, $6, ($10 != "" ? $10 : 0), ($11 != "" ? $11 : 0), ($12 != "" ? $12 : 0), ($13 != "" ? $13 : 0), $9, cf, cp)
+            rp = sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t@data:seen=1\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, $6, $7, $8, $9, cf, cp)
             push_row(rb, rp, ($10 + 0) + ($11 + 0), ($12 + 0) + ($13 + 0))
         } else {
-            emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, $6, $7, $8, $9, cf, cp))
+            emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t@data:seen=1\t@data:coreids-failed=%s\t@data:coreids-processed=%s", $5, $6, $7, $8, $9, cf, cp))
         }
     }
 }

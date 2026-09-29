@@ -107,7 +107,7 @@ IFS='|' read -r _ n_sites n_fail n_open worst_tail n_closed b5m b1h b24 b3d bgt 
 ep_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | LC_ALL=C sort -t'|' -k5,5nr -k6,6nr -k2,2 | awk -F'|' '
     $2 == "" { next }
     $4 + 0 > 0 {
-        ok = $7; if (ok == "") ok = "@{class=failed}never"
+        ok = $7; if (ok == "") ok = "@{class=errc}never"   # errc: tinted red without being a second Error cell (it cost the row its Error drill, 2026-09-29 audit)
         d = $11; for (i = 12; i <= NF; i++) d = d "|" $i
         printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\n", $2, $3, $4, $5, $6, $8, $9, $10, ok, d }')
 [ -n "$ep_rows" ] && ep_rows+=$'\n'

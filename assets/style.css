@@ -167,7 +167,6 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 
 h1 { color:#20344a; margin:0 0 1.1rem; }   /* tight to the top bar above, more breathing room below */
 h1 .grouptag { font-size:0.55em; font-weight:400; color:#6b7785; margin-left:0.5em; white-space:nowrap; }   /* the report group (the Reports menu) a page belongs to, appended to its title */
-h2 .h2period { white-space:nowrap; }   /* the date period a table aggregates (period= TABLE modifier); report.js keeps it on the selected range. Deliberately UNSTYLED otherwise: it reads as part of the heading */
 h2 { color:#20344a; font-size:1.1rem; margin-top:1.8rem; }
 /* an anchored heading (TABLE anchor=…): a jump to it lands clear of the fixed top bar */
 h2[id] { scroll-margin-top:3.6rem; }
@@ -203,7 +202,6 @@ a:hover { text-decoration:underline; }
    value + padding, never stretched to fill a fixed table width. A table wider
    than the page still scrolls inside its .tablewrap. */
 table { border-collapse:collapse; width:auto; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin:0; border:2px solid #cfd7de; }   /* a 2 px outer edge (2026-09-06, user request); the cells keep their 1 px grid */
-table.fit { width:auto; }   /* historical alias — every table shrinks to content now */
 tr.rowlink { cursor:pointer; }   /* index rows are fully clickable (report.js setupIndexRows) */
 tr.rowlink td:empty { cursor:auto; }   /* ...except empty cells — not click targets */
 /* CELL LINKS (2026-09-13, user request): a td/th carrying data-href opens its
@@ -215,11 +213,6 @@ td[data-href], th[data-href], tr.rowlink td[data-href]:empty { cursor:pointer; }
 td.errlink { cursor:pointer; }   /* the Entities subscription pages' Files Error count (report.js setupEntityErrorLinks) */
 td.errlink:empty { cursor:auto; }
 td[data-href]:hover, th[data-href]:hover { text-decoration:underline; }
-/* A row carrying data-dhide=1 is hidden by ATTRIBUTE, so a writer can bake it
-   (the topsel candidate rows past the top N start hidden without a script
-   running); report.js applyRowVis keeps the attribute and the inline style in
-   step, so the runtime date filter and this rule never disagree. */
-tr[data-dhide="1"] { display:none; }
 /* Every table is wrapped in .tablewrap, which carries the table's outer
    spacing. A table wider than the page WIDENS THE PAGE (2026-09-08, user
    request): the wrap used to be a scroll box (overflow-x:auto), whose only
@@ -257,14 +250,16 @@ table.dayrows th:empty::before, table.dayrows td:empty::before { content:"\00a0"
    top rule must not paint the spacer either. */
 table.dayrows { border:none; box-shadow:none; }   /* no table-wide edge or shadow: both would run across the gaps — each GROUP gets its own 2 px edges below */
 table.dayrows th.spc, table.dayrows td.spc { width:30px; min-width:30px; max-width:30px; padding:0; border:none; background:#f7f7f9; }   /* 30 px gaps (2026-09-06, user request: more space) */
+table.dayrows th:not(.spc), table.dayrows td:not(.spc) { padding-left:10px; padding-right:10px; }   /* 19 columns: 2 px less side padding each keeps the table inside a 1512 px window (2026-09-29 audit: it overflowed by ~25 px) */
 /* the group edges: left of the first cell of a group (the Date column and
    every cell after a spacer), right of the last (before a spacer, and the
-   last column), top of the field header, bottom of the last VISIBLE row —
-   report.js marks that row tr.edge-b, the Show-all cap hides the rest */
+   last column), top of the field header, bottom of the LAST row — every day
+   shows since 2026-09-29 (no Show-all cap, no search, no date filter), so the
+   last row is the last visible one and CSS alone finds it */
 table.dayrows tr:not(.gbrow) > .gedge-l { border-left:2px solid #cfd7de; }    /* report.js syncGroups marks each group's first / last VISIBLE cell */
 table.dayrows tr:not(.gbrow) > .gedge-r { border-right:2px solid #cfd7de; }
 table.dayrows tr.gbrow + tr > th:not(.spc) { border-top:2px solid #cfd7de; }   /* not the spacers: no line across a gap */
-table.dayrows tr.edge-b > td:not(.spc) { border-bottom:2px solid #cfd7de; }
+table.dayrows tr:last-child > td:not(.spc) { border-bottom:2px solid #cfd7de; }
 table.dayrows tr.total td.spc { border:none; background:#f7f7f9; }
 table.dayrows tr:hover td.spc { background:#f7f7f9; }
 table.dayrows th.spc::before, table.dayrows td.spc::before { content:none; }
@@ -290,7 +285,11 @@ th.num, td.num { text-align:right; }
    cell's padding box (the card-title pattern below), so every padding
    variant (wide, sep, subname, pagerrow…) keeps its own layout */
 td.cl { position:relative; }
-td.cl > a::after { content:""; position:absolute; top:0; right:0; bottom:0; left:0; }
+/* a CoreId link: report.js addCoreIdLinks wraps it in span.stwrap with its
+   ⧉ copy icon and the ↗ File Tracking link — the first <a> still stretches
+   over the cell, the two icons sit above that overlay so they stay clickable */
+td.cl > a::after, td.cl > .stwrap > a:first-child::after { content:""; position:absolute; top:0; right:0; bottom:0; left:0; }
+td.cl .cpid, td.cl .stgo { position:relative; z-index:1; }
 th { background-color:#20344a; color:#fff; }
 th a { color:#fff; }                    /* linked column headers (traffic matrix) stay readable on the dark bar */
 /* CSV download (report.js setupCsvBtn): a small hotspot in the upper-right
@@ -302,9 +301,6 @@ table tr th.csvhost { position:relative; }   /* no extra padding: the hotspot si
 .csvbtn { position:absolute; top:0; right:0; padding:0 0.3rem 0; font-size:0.6rem; line-height:1; font-weight:normal;
           color:#fff; opacity:0.3; cursor:pointer; user-select:none; -webkit-user-select:none; }
 tr:hover .csvbtn, .csvbtn:hover { opacity:0.9; }
-/* Column order (report.js initColOrder): every header of a movable table is
-   draggable; while a header is dragged the drop side shows as an amber edge
-   on the header under the pointer. */
 /* the column PICKER ("cols", report.js initColOrder): the cols hotspot sits bottom-RIGHT in
    the last visible cell of the total row — of the last visible data row on a
    table without one, of the header on an empty table (placeHotspots). The
@@ -375,21 +371,8 @@ td.failed { background-color:#fde3e3; }
 td.st-err  { background-color:#fde3e3; }
 td.st-warn { background-color:#fdf1dc; }
 td.st-ok   { background-color:#e4f6e4; }
-/* analyses combined Configured cells: the configured total on top, the Seen
-   (light green) and Not seen (light red) values side by side below it */
-td.stack { padding:0; vertical-align:top; }
-td.stack .cfg { padding:4px 12px; text-align:center; min-height:1.05em; }   /* spans the Seen/Not-seen pair, centered */
-td.stack .split { display:flex; }
-td.stack .split > div { flex:1 1 50%; padding:4px 12px; text-align:right; min-height:1.05em; }
-td.stack .sn { background-color:#e4f6e4; }
-td.stack .ns { background-color:#fde3e3; }
 td.processed { background-color:#e4f6e4; }
 td.failed.z, td.processed.z { background-color:transparent; }   /* a 0 value: no red/green tint (cell is blanked) */
-/* Show Seen "All" tables: tint NOT-SEEN rows light red so they stand out; SEEN rows
-   stay untinted so their Error (red) / OK (green) cells show the standard
-   per-cell colours. Scoped to the "all" view — the Seen/Not-Seen views also carry
-   data-seen (for the date filter's re-partitioning) but stay untinted. */
-table[data-seenmode="all"] tr[data-seen="0"] td { background-color:#fde3e3; }
 /* Detail-page entity tables (seenrows): the rows cross-reference the FlowManager
    config — green = the pair has logged data (in the selected range), red = a
    configured partner with none. The Error/OK cells keep their own tints
@@ -406,9 +389,8 @@ table[data-seenrows] tr[data-seen="0"][data-res="red"] td    { background-color:
 /* …and the ROWS themselves (2026-09-12, user request: an EMPTY cell takes
    the colour of its row — every blank cell is transparent and shows the tr
    behind it, see the tr[data-res] row rules further down). The seen /
-   not-seen / own-result row tints of the seenmode and seenrows tables, and
+   not-seen / own-result row tints of the seenrows tables, and
    the restint tables' whole-row result tint, repeated on the tr. */
-table[data-seenmode="all"] tr[data-seen="0"] { background-color:#fde3e3; }
 table[data-seenrows] tr[data-seen="1"] { background-color:#e4f6e4; }
 table[data-seenrows] tr[data-seen="0"] { background-color:#fde3e3; }
 table[data-seenrows] tr[data-seen="0"][data-res="green"]  { background-color:#e4f6e4; }
@@ -478,15 +460,11 @@ tr.rowmark td:last-child { border-right:2px solid #20344a; }
 td[data-colmark] { border-left:2px solid #20344a; border-right:2px solid #20344a; }
 tbody > tr:last-child > td[data-colmark], tr.total td[data-colmark] { border-bottom:2px solid #20344a; }
 th[data-colmark] { box-shadow:inset 0 0 0 2px #fff; }
-/* column separator: extra whitespace + a faint rule (e.g. between the session
-   shape columns and the count columns on Session Statistics). */
-th.sep, td.sep { border-left:2px solid #c9d2dc; padding-left:1.8rem; }
 /* spacer column (the root-index Entities table): a borderless page-background
    column BETWEEN the Entity / Configured / Seen / Result groups, so each group
    reads as its own block. The opaque page background masks the row striping
    and the hover tint (both sit on the tr) so the gap never colors. */
 th.spc, td.spc { border:none; background:#f7f7f9; padding:0; width:1.2rem; min-width:1.2rem; }
-th.ctr { text-align:center; }   /* a header spanning a cell pair, centered over it (Result Total/In/Out) */
 td.ctr { text-align:center; }   /* a centered data cell (the Subscriptions-with-problems flag cells) */
 /* the Subscriptions-in-boxes cell: the box name in RED, linking into its report.
    A text glyph, not the ⚠️ emoji it replaced (2026-07) — an emoji-presentation
@@ -502,6 +480,7 @@ a.pfx.pfok:hover { color:#155d27; }
 a.pfx.pfneu { color:#566573; }
 a.pfx.pfneu:hover { color:#39434e; }
 td.wrap { white-space:normal; max-width:46rem; }   /* a long list cell (partner coverage pages' member accounts) wraps instead of stretching the row */
+td.prose { white-space:normal; min-width:30rem; max-width:46rem; }   /* KIND prose — a sentence cell (Triage Symptoms / Evidence): wraps at a readable width, never below 30rem (2026-09-29 audit) */
 /* collapsed list cell (partner coverage pages' Whitelisted IPs): the summary
    shows just the count, the native disclosure triangle + pointer say "click
    to open"; the expanded address list gets a little air above. */
@@ -532,8 +511,7 @@ table[data-esearch] tr.expandable.expanded > td:first-child::before { content:"\
 tr.subrow td.subname { padding-left:2.2rem; }
 tr.subrow td.subname::before { content:"\21B3\00a0"; color:#8a94a6; }
 
-/* ---- wide table variant (historical: tables now size to content) ---- */
-table.wide { width:auto; }
+/* ---- wide table variant (historical: tables now size to content; only the tighter padding remains) ---- */
 table.wide th, table.wide td { padding:6px 10px; }
 td.file { max-width:480px; overflow:hidden; text-overflow:ellipsis; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.85rem; }
 code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
@@ -576,7 +554,6 @@ td.bar span { display:block; height:14px; min-width:1px; background:#25405c; bor
 .report-link a:hover { color:#3a5a80; border-bottom-color:#3a5a80; }
 .filter-note { font-size:0.85rem; color:#8a5a00; background:#fff6e0; border:1px solid #f0d9a0; border-radius:4px; padding:4px 10px; margin:0.6rem 0 0; max-width:800px; }
 .summary { margin-top:1.5rem; font-size:0.95rem; color:#444; }
-.generated { margin-top:2rem; font-size:0.8rem; color:#888; }
 
 /* ---- per-table page tabs ---- */
 .tabs { margin:0 0 1.2rem; }
@@ -599,8 +576,6 @@ a.tab:hover { background:#e8f0fe; text-decoration:none; }
    the table's border grid before each section (plain padding only widens the
    cell — with full cell borders that never reads as space) */
 th.gsep, td.gsep { border-left:10px solid #f7f7f9; }
-/* the WIDE column-group gap (report.js keeps the gsepw class beside gsep; no renderer emits it since the acc-vs-prod pages went, 2026-09-11) */
-th.gsepw, td.gsepw { border-left:28px solid #f7f7f9; }
 th.gband { text-align:center; }
 /* tint-only Error/OK columns (KIND numerr/numok — same colors as failed/
    processed, but without those class names so the drill binding stays on
@@ -621,10 +596,6 @@ td.errc.z, td.okc.z { background-color:transparent; }
 .daybtn { display:inline-block; padding:0.55rem 1.15rem; border:1px solid #ccd3db; border-radius:6px; background:#fff; color:#20344a; font-size:1.05rem; font-weight:600; white-space:nowrap; }
 a.daybtn:hover { background:#e8f0fe; text-decoration:none; }
 .daybtn.disabled { color:#b3bcc6; background:#f5f6f7; border-color:#e8eaed; cursor:default; }   /* no such prev/next day */
-/* the centered cross-link row below the day title (other area this day + the dashboards) */
-.daylinks { display:flex; justify-content:center; flex-wrap:wrap; gap:0.6rem; margin:0 0 1.4rem; }
-.daylink { display:inline-block; padding:0.4rem 0.9rem; border:1px solid #ccd3db; border-radius:6px; background:#fff; color:#20344a; font-size:0.9rem; font-weight:600; white-space:nowrap; }
-a.daylink:hover { background:#e8f0fe; text-decoration:none; }
 /* the Search page's collapsible configuration panel (report.js setupSearchConfig) */
 .searchcfg { margin:0 0 1.2rem; }
 /* the Search page controls: the view buttons and type checkboxes first, the
@@ -676,7 +647,6 @@ th.sortable:hover { background-color:#2c4a6b; }
 .arrow { font-size:0.75em; }
 
 /* ---- landing pages ---- */
-table.index { max-width:none; }
 td.desc { color:#444; white-space:normal; }
 /* .card base — the dashboards' chart/KPI cards build on it (.dash-grid .card);
    the root index's section-card links are gone (navigation is the top-bar
@@ -767,22 +737,15 @@ body.home .tablewrap table { margin-left:auto; margin-right:auto; }
              text-decoration:none; background:rgba(255,255,255,0.85); padding:0 4px; border-radius:4px; z-index:2; }
 .card-more:hover { color:#20344a; text-decoration:underline; }
 .chartbox .svg { display:block; width:100%; height:auto; font-family:Arial,Helvetica,sans-serif; }
-.svg-vbar, .svg-area { height:210px; }
 .svg-vbar { height:200px; }
 
 /* in-chart SVG text roles */
-.c-big  { font-size:24px; font-weight:700; letter-spacing:-0.01em; }
-.c-cap  { font-size:11px; text-transform:uppercase; letter-spacing:0.06em; }
-.c-lbl  { font-size:12.5px; }
-.c-val  { font-size:12px; font-weight:600; }
 .c-axis { font-size:10.5px; }
 
 .dash-foot { margin:1.6rem 0 0; font-size:0.85rem; color:#9aa7b4; }
 .dash-foot a { color:#3b6ea5; }
 
 @media (max-width:720px){ .dash-grid { grid-template-columns:1fr; } .dash-grid .card.span2 { grid-column:auto; } }
-.svg-gauge { height:180px; } .svg-heat { height:auto; max-height:440px; }
-.c-gbig { font-size:32px; font-weight:700; letter-spacing:-0.02em; }
 
 /* Zero-result empty state: report.js updateEmptyState() renders this under a
    table whose every row is hidden — names the cause (query miss, type/Seen
@@ -802,8 +765,8 @@ body.home .tablewrap table { margin-left:auto; margin-right:auto; }
 .chart-data th { color:#33475b; font-weight:600; }
 .chart-data th.num, .chart-data td.num { text-align:right; }
 
-/* FlowManager deep-link icon: a second, small anchor next to an entity name
-   (detail pages; render_rpt.awk fmicon). Muted until hovered. */
+/* FlowManager deep-link icon: a second, small anchor next to a name (the Use
+   cases page's Templates table, bin/analyses/publish.sh). Muted until hovered. */
 .fmlink { text-decoration:none; font-size:0.78em; opacity:0.5; }
 .fmlink:hover { opacity:1; text-decoration:none; }
 /* Partner-GROUP icon: a small anchor after a grouped partner's name (the
@@ -815,9 +778,6 @@ body.home .tablewrap table { margin-left:auto; margin-right:auto; }
    small arrow after the entity name opens its detail page */
 .dlicon { text-decoration:none; font-size:0.85em; opacity:0.55; padding:0 0.15rem; }
 .dlicon:hover { opacity:1; text-decoration:none; }
-h1 .fmlink { font-size:0.5em; vertical-align:middle; }
-/* Config-JSON source icon: sits next to the FlowManager link (render_rpt.awk
-   jsonicon) on account/subscription pages and name cells. Monospace braces. */
 /* File filter/mask appended to a directory (the Subscription Features table's
    Local/Remote location cells; render_rpt.awk @{mask=…}) — a distinct green so
    the pattern reads apart from the path it follows. */
@@ -935,14 +895,6 @@ td.res-red    { background-color:#fde3e3; }
 table[data-seenrows] tr[data-seen] td.res-green:not(.failed):not(.processed)  { background-color:#e4f6e4; }
 table[data-seenrows] tr[data-seen] td.res-orange:not(.failed):not(.processed) { background-color:#fdf1dc; }
 table[data-seenrows] tr[data-seen] td.res-red:not(.failed):not(.processed)    { background-color:#fde3e3; }
-/* A NOT-SEEN (data-seen=0) row's plain numeric cells (Files / Volume) fall to
-   line 155's flat not-seen red — yet its entity cell (above) and its empty
-   Error/OK cells (the data-res .z rules) already follow the row's RESULT. So on
-   the configured-never-seen (orange) rows Files and
-   Volume stuck out red against an otherwise orange row. Tint the WHOLE
-   not-seen row by its result so it reads as one colour. (A red result already
-   matches line 155's red; green is left to the date-filter re-tint.) */
-table[data-seenrows] tr[data-seen="0"][data-res="orange"] td { background-color:#fdf1dc; }
 
 /* Detail-page body tint by the entity's RESULT (the base caches' third
    field, bin/result.sh): light green / light orange / light red. Entities
@@ -1007,6 +959,3 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
    (Total…Error) sit on the first line(s), the problem boxes start
    on a fresh one */
 .pfboxes .pfbreak { display:block; width:100%; height:0; }
-
-/* the dashboards' date controls, joined to the hero's footer rows (report.js
-   dashboards mode): the LEFT item of the row, before the interval buttons */

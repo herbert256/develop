@@ -2,8 +2,7 @@
 #
 # bin/build/publish.sh — write the index pages of the site:
 #   docs/index.html            the root landing page (all parts centered):
-#                              the two result-status tables, the per-day
-#                              table, the red worklists and the log-files
+#                              the two result-status tables and the per-day
 #                              table — one environment per checkout since
 #                              2026-09-11, so ONE block; the title carries the
 #                              environment label (input/environment.txt)
@@ -31,10 +30,10 @@ source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines html_h
 
 ensure_assets   # topbar-data.js (the menus' data file)
 
-# Give the hand-authored help pages the EXACT site top bar + footer (the user
-# asked for one consistent interface). The help BODY stays hand-authored; only
-# the chrome is regenerated — render_shared_topbar. A leftover footer bar from before its 2026-07 removal
-# is DROPPED here, so the hand-authored help pages need no manual edit.
+# Give the hand-authored help pages the EXACT site top bar (the user asked for
+# one consistent interface). The help BODY stays hand-authored; only the chrome
+# is regenerated — render_shared_topbar. (The footer bar went 2026-07; no help
+# page carries one any more.)
 # This is the one publish step that writes into docs/help/ (see CLAUDE.md).
 apply_help_chrome() {
     local tb f tmp
@@ -44,7 +43,6 @@ apply_help_chrome() {
         tmp=$(mktemp "${TMPDIR:-/tmp}/help.XXXXXX")
         awk -v tb="$tb" '
             /^<div class="topbar"><a class="brand"/         { print tb; next }
-            /^<div class="footer"><span class="f-left"/     { next }
             { print }
         ' "$f" > "$tmp" && mv "$tmp" "$f"
     done
@@ -56,29 +54,65 @@ apply_help_chrome() {
 # server/ and analyses/index.html): every report under its group, the
 # _report_groups order, each with its one-line description. The menu's
 # "Start page" line opens it.
-# rg_desc MEMBER -> the member's one-line description: the report's DESC, or
-# the fixed text of a hand-written page (they carry no .rpt)
+# rg_desc MEMBER -> RG_DESC, the member's one-line description: the report's
+# DESC, or the fixed text of a hand-written page (they carry no .rpt). Sets a
+# global instead of echoing, and reads the DESC lines of every .rpt in ONE awk
+# pass on first use — the start page and the finder asked ~100 times, each a
+# subshell plus a field1 fork (2026-09-29 audit: ~1 s). The DESCs land in one
+# variable per .rpt, RGD_<path escaped injectively like wn_meta_cached's memo>
+# (bash 3.2 has no associative arrays, and a glob match over one big string of
+# them took ~0.2 s per lookup in a UTF-8 locale).
+RG_DESC_LOADED=0
+rg_key() {   # $1 path -> RG_KEY, a variable-name-safe injective escape ("" = unsafe path)
+    local k=$1
+    case $k in *[!A-Za-z0-9/_.-]*) RG_KEY=""; return 0 ;; esac
+    k=${k//_/_u}; k=${k//-/_h}; k=${k//\//_s}; k=${k//./_d}; RG_KEY=$k
+}
+rg_desc_load() {
+    local x fs=()
+    RG_DESC_LOADED=1
+    for x in "$DATA"/transfer/reports/*.rpt "$DATA"/transfer/reports/entities/*.rpt "$DATA"/server/reports/*.rpt "$DATA"/analyses/reports/*.rpt; do
+        [ -f "$x" ] && fs+=("$x")
+    done
+    [ ${#fs[@]} -gt 0 ] || return 0
+    # the FIRST DESC line of each file (field1's rule), read with getline so a
+    # file stops at its DESC (line 2) instead of being read whole
+    local p d
+    while IFS=$'\t' read -r p d; do
+        [ -n "$p" ] || continue
+        rg_key "$p"; [ -n "$RG_KEY" ] && printf -v "RGD_$RG_KEY" '%s' "$d"
+    done < <(LC_ALL=C awk 'BEGIN { for (i = 1; i < ARGC; i++) { f = ARGV[i]
+        while ((getline l < f) > 0) if (substr(l, 1, 5) == "DESC\t") { print f "\t" substr(l, 6); break }
+        close(f) } exit }' "${fs[@]}")
+    return 0
+}
 rg_desc() {
-    local m=$1 dir=${1%/*} stem=${1##*/} rpt="" a
+    local m=$1 dir=${1%/*} stem=${1##*/} rpt="" spec
+    RG_DESC=""
     case $stem in
-        use-cases)              echo "Every use case on one row: who connects, which way the file travels and what triggers it, the configured subscriptions per use case by status — each count opening the Subscriptions page filtered to it — and the FlowManager templates behind them."; return ;;
-        subscriptions)          echo "Every configured subscription on one row, the skip-listed ones included: active or not, its result colour and direction, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint and the From / To folders."; return ;;
-        logical-detection)      echo "How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID."; return ;;
-        accounts)               echo "The accounts (partners) and their communication profiles — naming vs configured type and authentication, insecure and unrestricted endpoints, conflicting host / whitelist setup, and the account and login integrity checks."; return ;;
-        first-seen)             echo "On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs — the configured names never seen on top; every count links its item list."; return ;;
-        config-hygiene)         echo "Likely-duplicate twins (case / separator folds) and orphaned objects nothing references."; return ;;
-        whitelist-audit)        echo "Whitelisted partner IPs against the addresses actually connecting: used, connect-only, never seen (prunable), and the sources without any whitelist entry."; return ;;
-        subscriptions-in-boxes) echo "Every subscription boxed by what is true of it — its status or any of the problem signals — one column per box, each cell linking into its report or entity view."; return ;;
-        cross)                  echo "Every pair of the nine entities cross-tabulated — which values appear together on at least one transfer, the configured-but-never-seen pairs flagged."; return ;;
-        this)                   [ "$dir" = transfer/month-stats ] && { echo "The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired."; return; } ;;
+        use-cases) RG_DESC="Every use case on one row: who connects, which way the file travels and what triggers it, the configured subscriptions per use case by status — each count opening the Subscriptions page filtered to it — and the FlowManager templates behind them."; return ;;
+        subscriptions) RG_DESC="Every configured subscription on one row, the skip-listed ones included: active or not, its result colour and direction, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint and the From / To folders."; return ;;
+        logical-detection) RG_DESC="How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID."; return ;;
+        accounts) RG_DESC="The accounts (partners) and their communication profiles — naming vs configured type and authentication, insecure and unrestricted endpoints, conflicting host / whitelist setup, and the account and login integrity checks."; return ;;
+        first-seen) RG_DESC="On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs — the configured names never seen on top; every count links its item list."; return ;;
+        config-hygiene) RG_DESC="Likely-duplicate twins (case / separator folds) and orphaned objects nothing references."; return ;;
+        whitelist-audit) RG_DESC="Whitelisted partner IPs against the addresses actually connecting: used, connect-only, never seen (prunable), and the sources without any whitelist entry."; return ;;
+        subscriptions-in-boxes) RG_DESC="Every subscription boxed by what is true of it — its status or any of the problem signals — one column per box, each cell linking into its report or entity view."; return ;;
+        cross) RG_DESC="Every pair of the nine entities cross-tabulated — which values appear together on at least one transfer, the configured-but-never-seen pairs flagged."; return ;;
+        this)                   [ "$dir" = transfer/month-stats ] && { RG_DESC="The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired."; return; } ;;
     esac
     case $dir in
         transfer/entities) rpt="$DATA/transfer/reports/entities/$stem.rpt" ;;
         transfer|server)   rpt="$DATA/$dir/reports/$stem.rpt" ;;
-        analyses)          a=$(subs_report_area "$stem") || a=""
-                           [ -n "$a" ] && rpt="$DATA/$a/reports/$stem.rpt" ;;
+        analyses)          for spec in $SUBS_GROUP_REPORTS; do   # subs_report_area, without its subshell
+                               [ "${spec#*:}" = "$stem" ] && { rpt="$DATA/${spec%%:*}/reports/$stem.rpt"; break; }
+                           done ;;
     esac
-    [ -n "$rpt" ] && [ -f "$rpt" ] && field1 DESC "$rpt"
+    [ -n "$rpt" ] && [ -f "$rpt" ] || return 0
+    [ "$RG_DESC_LOADED" = 1 ] || rg_desc_load
+    rg_key "$rpt"
+    if [ -n "$RG_KEY" ]; then eval "RG_DESC=\${RGD_$RG_KEY-}"
+    else RG_DESC=$(field1 DESC "$rpt"); fi
     return 0
 }
 write_reports_index() {
@@ -90,8 +124,14 @@ write_reports_index() {
         printf '<h1>Reports</h1>\n'
         printf '<p class="subtitle">Every report under its group &mdash; the groups of the Reports menu. On a report page the first row of buttons switches between the reports of its group.</p>\n'
         # data-nosort: a hand-ordered catalog with colspan group bands —
-        # report.js's fallback sort would collapse it (and persist that)
-        printf '<div class="tablewrap"><table class="index" data-nosort="1">\n'
+        # report.js's fallback sort would collapse it (and persist that);
+        # data-nocolmove: the bands span both columns, nothing to reorder.
+        # The FIELD header row comes first: report.js headerRow() takes the
+        # first flat th row — without one it took the "Overview" band (the
+        # csv hotspot sat there, the CSV header read "Overview" and a search
+        # left that band standing over no rows)
+        printf '<div class="tablewrap"><table class="index" data-nosort="1" data-nocolmove="1">\n'
+        printf '<tr><th>Report</th><th>Description</th></tr>\n'
         while IFS= read -r line; do
             [ -n "$line" ] || continue
             esc "${line%%|*}"; printf '<tr><th colspan="2">%s</th></tr>\n' "$ESC"
@@ -99,7 +139,7 @@ write_reports_index() {
             for e in "${arr[@]}"; do
                 m=${e%%=*}; lbl=${e#*=}
                 rg_landing "$m"; rg_rel "reports/index.html" "$RG_LANDING"
-                d=$(rg_desc "$m")
+                rg_desc "$m"; d=$RG_DESC
                 esc "$lbl"; el=$ESC; esc "$d"
                 printf '<tr><td><a href="%s">%s</a></td><td class="desc">%s</td></tr>\n' "$RG_REL" "$el" "$ESC"
             done
@@ -122,7 +162,7 @@ write_reports_index() {
 # columns.
 daily_loglines_tsv() {   # $1 = the data root (data)
     # The day list is the TRANSFER topview's days only: all four data groups
-    # (Files / Duration / Red/Green switch / First seen) are transfer-derived,
+    # (Transfers / Files / UC2 state / Duration / First seen) are transfer-derived,
     # so a server-only day — the server export runs a day ahead of the
     # transfer export — would render a fully empty row under the Date spine.
     local trpt="$1/transfer/reports/topview.rpt"
@@ -242,10 +282,11 @@ daily_loglines_tsv() {   # $1 = the data root (data)
 # against docs/, never the env-scoped $DOCS.
 _stcell() {   # $1 value  $2 class  [$3 coverage href, docs-root-relative]
     if [ "${1:-0}" = 0 ]; then printf '<td class="%s"></td>' "$2"; return 0; fi
+    dotify_v "$1"
     if [ -n "${3:-}" ] && [ -f "docs/$3" ]; then
-        printf '<td class="%s"><a href="%s">%s</a></td>' "$2" "$3" "$(dotify "$1")"
+        printf '<td class="%s"><a href="%s">%s</a></td>' "$2" "$3" "$DOT"
     else
-        printf '<td class="%s">%s</td>' "$2" "$(dotify "$1")"
+        printf '<td class="%s">%s</td>' "$2" "$DOT"
     fi
 }
 
@@ -406,9 +447,9 @@ _daycell() {   # $1 = date
 # facts table, write_log_facts, went 2026-09-29, user request: the Failed
 # Subscriptions page and the build report carry them.)
 
-# The home-page content: the status pair, the per-day table, the red
-# worklists and "The log files" table, all links docs-root-relative (the home
-# lives at the docs root). Reads $HOME_ENV_DATA (set by the caller).
+# The home-page content: the status pair and the per-day table, all links
+# docs-root-relative (the home lives at the docs root). Reads $HOME_ENV_DATA
+# (set by the caller).
 write_home_block() {
     # The two result-status tables (copied from the Flow manager Entities /
     # Logical, Partners, Domains, Applications & BL analyses pages), side by side with
@@ -431,7 +472,7 @@ write_home_block() {
     [ -n "$dl" ] && _hastx=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL" && $2!="" && $2!="-" { print 1; exit }')
     if [ -n "$_hastx" ]; then
         # THE PER-DAY TABLE (2026-08-31, user request — ONE table again):
-        # Files / Duration / Red/Green switch / First seen are column GROUPS
+        # Transfers / Files / UC2 state / Duration / First seen are column GROUPS
         # of one wide table, a gband banner row over a shared Date column
         # (its cells link the day's combined dashboard). The 2026-08 five-
         # table flex row (a Date spine + four data tables) is gone: one
@@ -487,9 +528,9 @@ write_home_block() {
             # technical rows, Ok/Error tinted like that page (okc/errc), a 0
             # blank ——
             if [ "$tok" = "-" ] || [ "$tok" = 0 ] || [ -z "$tok" ]; then printf '<td class="num okc z"></td>'; else
-                esc "$(dotify "$tok")"; printf '<td class="num okc">%s</td>' "$ESC"; toksum=$((toksum + tok)); fi
+                dotify_v "$tok"; esc "$DOT"; printf '<td class="num okc">%s</td>' "$ESC"; toksum=$((toksum + tok)); fi
             if [ "$ter" = "-" ] || [ "$ter" = 0 ] || [ -z "$ter" ]; then printf '<td class="num errc z"></td>'; else
-                esc "$(dotify "$ter")"; printf '<td class="num errc">%s</td>' "$ESC"; tersum=$((tersum + ter)); fi
+                dotify_v "$ter"; esc "$DOT"; printf '<td class="num errc">%s</td>' "$ESC"; tersum=$((tersum + ter)); fi
             if [ "$tpc" = "-" ] || [ -z "$tpc" ]; then printf '<td class="num"></td>'; else esc "$tpc"; printf '<td class="num">%s</td>' "$ESC"; fi
             [ "$tcn" != "-" ] && [ -n "$tcn" ] && tcnsum=$((tcnsum + tcn))
             printf '<td class="spc"></td>'
@@ -508,23 +549,23 @@ write_home_block() {
                 fsum=$((fsum + fc))   # the Files COUNT column is gone (2026-08: In + Out carries it); fsum stays for Error %
                 # the In/Out split (movement direction; In + Out = Count)
                 if [ "$fin" = "-" ] || [ "$fin" = 0 ] || [ -z "$fin" ]; then printf '<td class="num"></td>'; else
-                    esc "$(dotify "$fin")"; printf '<td class="num">%s</td>' "$ESC"; finsum=$((finsum + fin)); fi
+                    dotify_v "$fin"; esc "$DOT"; printf '<td class="num">%s</td>' "$ESC"; finsum=$((finsum + fin)); fi
                 if [ "$fout" = "-" ] || [ "$fout" = 0 ] || [ -z "$fout" ]; then printf '<td class="num"></td>'; else
-                    esc "$(dotify "$fout")"; printf '<td class="num">%s</td>' "$ESC"; foutsum=$((foutsum + fout)); fi
+                    dotify_v "$fout"; esc "$DOT"; printf '<td class="num">%s</td>' "$ESC"; foutsum=$((foutsum + fout)); fi
                 if [ "$fok" = "-" ] || [ "$fok" = 0 ]; then printf '<td class="num processed z"></td>'; else
-                    esc "$(dotify "$fok")"; printf '<td class="num processed">%s</td>' "$ESC"; fi
+                    dotify_v "$fok"; esc "$DOT"; printf '<td class="num processed">%s</td>' "$ESC"; fi
                 # Recovered, amber like topview's cell; a 0/blank cell stays
                 # untinted (td.warn:empty). A nonzero cell opens the Recovered
                 # files report narrowed to that day (2026-09-01, user
                 # request), the way the Error cell beside it opens its view.
                 if [ "$frv" = "-" ] || [ "$frv" = 0 ] || [ -z "$frv" ]; then printf '<td class="num warn"></td>'; else
-                    esc "$(dotify "$frv")"
+                    dotify_v "$frv"; esc "$DOT"
                     if [ -f "docs/transfer/retries-recovered-files.html" ]; then
                         printf '<td class="num warn"><a href="transfer/retries-recovered-files.html?axway_date=%s">%s</a></td>' "$d" "$ESC"
                     else printf '<td class="num warn">%s</td>' "$ESC"; fi
                     frvsum=$((frvsum + frv)); fi
                 if [ "$fer" = "-" ] || [ "$fer" = 0 ]; then printf '<td class="num failed z"></td>'; else
-                    esc "$(dotify "$fer")"
+                    dotify_v "$fer"; esc "$DOT"
                     # 2026-09-14 (user request): the cell opens the FAILED FILES
                     # list narrowed to its day — one row per File it counts
                     # (Failed or Expired, on the start day), with reason,
@@ -544,12 +585,12 @@ write_home_block() {
             # —— UC2 state (the topview State band): Waiting (amber) and Expired
             # (red) Files of the day; a nonzero cell opens the report ——
             if [ "$twt" = "-" ] || [ "$twt" = 0 ] || [ -z "$twt" ]; then printf '<td class="num warn"></td>'; else
-                esc "$(dotify "$twt")"
+                dotify_v "$twt"; esc "$DOT"
                 if [ -f "docs/transfer/waiting.html" ]; then printf '<td class="num warn"><a href="transfer/waiting.html">%s</a></td>' "$ESC"
                 else printf '<td class="num warn">%s</td>' "$ESC"; fi
                 twtsum=$((twtsum + twt)); fi
             if [ "$txp" = "-" ] || [ "$txp" = 0 ] || [ -z "$txp" ]; then printf '<td class="num errc z"></td>'; else
-                esc "$(dotify "$txp")"
+                dotify_v "$txp"; esc "$DOT"
                 if [ -f "docs/transfer/expired.html" ]; then printf '<td class="num errc"><a href="transfer/expired.html">%s</a></td>' "$ESC"
                 else printf '<td class="num errc">%s</td>' "$ESC"; fi
                 txpsum=$((txpsum + txp)); fi
@@ -570,7 +611,7 @@ write_home_block() {
             for c in "partners:$fsp" "subscriptions:$fss"; do   # Logical and Accounts dropped (2026-09-06, user request)
                 v=${c#*:}
                 if [ "$v" = "-" ] || [ "$v" = 0 ] || [ -z "$v" ]; then printf '<td class="num"></td>'; continue; fi
-                esc "$(dotify "$v")"
+                dotify_v "$v"; esc "$DOT"
                 if [ -f "docs/first-seen/${c%%:*}-$d.html" ]; then
                     printf '<td class="num"><a href="first-seen/%s-%s.html">%s</a></td>' "${c%%:*}" "$d" "$ESC"
                 else printf '<td class="num">%s</td>' "$ESC"; fi
@@ -578,15 +619,15 @@ write_home_block() {
             printf '</tr>\n'
         done <<< "$dl"
         # —— the ONE Total row (from 10 days up) ——
-        esc "$(dotify "$fsum")"; local fst=$ESC
-        esc "$(dotify "$foksum")"; local fokt=$ESC; esc "$(dotify "$fersum")"; local fert=$ESC
+        dotify_v "$fsum"; esc "$DOT"; local fst=$ESC
+        dotify_v "$foksum"; esc "$DOT"; local fokt=$ESC; dotify_v "$fersum"; esc "$DOT"; local fert=$ESC
         local fpct=""
         [ "$fsum" -gt 0 ] && fpct=$(awk -v e="$fersum" -v n="$fsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
         local fint="" foutt=""
-        if [ "$finsum" -gt 0 ]; then esc "$(dotify "$finsum")"; fint=$ESC; fi
-        if [ "$foutsum" -gt 0 ]; then esc "$(dotify "$foutsum")"; foutt=$ESC; fi
+        if [ "$finsum" -gt 0 ]; then dotify_v "$finsum"; esc "$DOT"; fint=$ESC; fi
+        if [ "$foutsum" -gt 0 ]; then dotify_v "$foutsum"; esc "$DOT"; foutt=$ESC; fi
         local frvt=""
-        if [ "$frvsum" -gt 0 ]; then esc "$(dotify "$frvsum")"; frvt=$ESC
+        if [ "$frvsum" -gt 0 ]; then dotify_v "$frvsum"; esc "$DOT"; frvt=$ESC
             # the whole-window Recovered total opens the report unnarrowed
             [ -f "docs/transfer/retries-recovered-files.html" ] && frvt="<a href=\"transfer/retries-recovered-files.html\">$ESC</a>"; fi
         # the whole-window Error total opens the Failed files list unnarrowed (2026-09-14);
@@ -611,18 +652,18 @@ write_home_block() {
         for c in "partners:$fsps" "subscriptions:$fsss"; do
             v=${c#*:}
             if [ -z "$v" ] || [ "$v" = 0 ]; then fstot="$fstot<td class=\"num\"></td>"; continue; fi
-            esc "$(dotify "$v")"
+            dotify_v "$v"; esc "$DOT"
             if [ -f "docs/first-seen/${c%%:*}-seen.html" ]; then
                 fstot="$fstot<td class=\"num\"><a href=\"first-seen/${c%%:*}-seen.html\">$ESC</a></td>"
             else fstot="$fstot<td class=\"num\">$ESC</td>"; fi
         done
         # the Transfers and State totals (2026-09-06)
         local tokt="" tert="" tpct="" twtt="" txpt=""
-        if [ "$toksum" -gt 0 ]; then esc "$(dotify "$toksum")"; tokt=$ESC; fi
-        if [ "$tersum" -gt 0 ]; then esc "$(dotify "$tersum")"; tert=$ESC; fi
+        if [ "$toksum" -gt 0 ]; then dotify_v "$toksum"; esc "$DOT"; tokt=$ESC; fi
+        if [ "$tersum" -gt 0 ]; then dotify_v "$tersum"; esc "$DOT"; tert=$ESC; fi
         [ "$tcnsum" -gt 0 ] && tpct=$(awk -v e="$tersum" -v n="$tcnsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
-        if [ "$twtsum" -gt 0 ]; then esc "$(dotify "$twtsum")"; twtt=$ESC; fi
-        if [ "$txpsum" -gt 0 ]; then esc "$(dotify "$txpsum")"; txpt=$ESC; fi
+        if [ "$twtsum" -gt 0 ]; then dotify_v "$twtsum"; esc "$DOT"; twtt=$ESC; fi
+        if [ "$txpsum" -gt 0 ]; then dotify_v "$txpsum"; esc "$DOT"; txpt=$ESC; fi
         [ "$dcount" -ge 10 ] && printf '<tr class="total"><td>Total</td><td class="spc"></td><td class="num okc">%s</td><td class="num errc">%s</td><td class="num">%s</td><td class="spc"></td><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td><td class="spc"></td><td class="num warn">%s</td><td class="num errc">%s</td><td class="spc"></td>%s<td class="spc"></td>%s</tr>\n' \
             "$tokt" "$tert" "$tpct" "$fint" "$foutt" "$fokt" "$frvt" "$fert" "$fpct" "$twtt" "$txpt" "$dtot" "$fstot"
         printf '</table></div>\n'
@@ -780,7 +821,6 @@ write_report_finder() {
         for rpt in "$DATA"/dashboards/reports/*.rpt; do
             [ -f "$rpt" ] || continue
             name=${rpt##*/}; name=${name%.rpt}
-            if [ "$name" = transfer ] || [ "$name" = server ]; then continue; fi   # the Transfer/Server dashboards are unlinked from the site
             fp="dashboards/$name.html"; [ "$name" = overview ] && fp="dashboards/index.html"
             printf 'R\t%s\t%s\t%s\n' "$fp" "Dashboard" "$rpt"
         done
@@ -797,26 +837,27 @@ write_report_finder() {
             # the description = the report's own one-line DESC (or the fixed
             # text of a hand-written page) — rg_desc, the start page's source
             # (2026-09-29: this list kept its own copies, which had drifted);
-            # the text below stays only for pages rg_desc knows nothing about
-            _rd=$(rg_desc "${sh%.html}"); [ -n "$_rd" ] && si=$_rd
+            # the text field below is filled only for the pages rg_desc knows
+            # nothing about (the All files search, Month stats)
+            rg_desc "${sh%.html}"; [ -n "$RG_DESC" ] && si=$RG_DESC
             printf 'S\t%s\t%s\t%s\t%s\t%s\t%s\n' "$sh" "$a4" "$st" "$si" "$sk" "$sv"
         done <<'STATIC'
-analyses/use-cases.html|Use cases|Every use case on one row: who connects, which way the file travels and what triggers it, the configured subscriptions per use case by status, and the FlowManager templates behind them.|use case, uc1, uc2, uc3, uc4, definition, trigger, template, direction|
-analyses/subscriptions.html|Configured subscriptions|Every configured subscription on one row, the skip-listed ones included: whether it is active (CFT for SWIFT), its result colour and direction, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint (login or remote host), the From and To folders, the all-time File counts (total, in, out, Errors, automatic retries, resubmits, Waiting, Expired) and the last error reason.|mapping, flowid, tags, BL, endpoint, from, to, folders, cron, schedule, counts, files, errors, active, inactive, undeployed, disabled, skipped, skip, swift, cft, color, colour, direction, error reason|mapping, BL tag
-analyses/logical-detection.html|Logical detection|How every configured FlowID detected to its Logical flow group — the rule trail per FlowID: separator normalization, variant folds, digit tails, pins and the 3-part reshape.|logical, flowid, derivation, rules, detection|logical, derivation
-analyses/accounts.html|Configured accounts|The configured accounts analysed against the FlowManager configuration.||
-analyses/first-seen.html|First seen|On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.||
-analyses/whitelist-audit.html|Whitelist audit|Whitelisted partner IPs vs the addresses actually connecting: used, connect-only, never seen (prunable), plus sources without any whitelist entry.|whitelist, AllowIP, IP, prune, attack surface, unused|whitelist, AllowIP, prune
-analyses/config-hygiene.html|Config hygiene|The cleanup backlog: likely-duplicate twins (case / separator folds) and orphaned objects nothing references.|twins, duplicates, orphans, cleanup, legacy|twins, orphans, cleanup
-analyses/subscriptions-in-boxes.html|Subscriptions in boxes|Every subscription boxed by what is true of it — OK, or any of fourteen problem signals — one column per box, each cell linking into its report or entity view.|boxes, problems, broken, flagged, trouble, one-legged, kaput, only red, regression, ok, not seen, server only|boxes, problems, flagged, ok
-analyses/triage.html|Triage|The ranked action list: every subscription that is red, holds staged Files about to expire, or just fell silent — newest flips on the busiest flows first.|triage, action list, worklist, red, expiry, quiet, attention, priority, ranked|triage, action list, priority
-analyses/failing-reasons.html|Error reasons|Every possible Reason of the Failed Subscriptions pages — how many failed Files carry it and the newest occurrence; a nonzero row opens the failed Files behind it.|error, reason, cause, failed, failing, errors, files, count, vocabulary|error reasons, cause, red
-analyses/data-diff.html|Since yesterday|The data diff against the newest log day: new red flips, newly quiet flows, recoveries, first-seen entities by name and new server-log-only names.|diff, yesterday, new, changed, flips, recovered, first seen|diff, yesterday, changed
-analyses/partner-scorecard.html|Partner scorecard|One composite health score per partner relation, worst first — error share, trend, pickup wait, security posture, endpoint redundancy and silence — with the traffic-concentration panel.|partner, scorecard, health, score, gini, concentration, trend|partner, scorecard, health
-analyses/blast-radius.html|Blast radius|What stops when a remote host dies: the Files, subscriptions, applications and partners behind every outbound endpoint, sole-endpoint partners flagged.|blast radius, endpoint, host, redundancy, single point of failure, spof|blast radius, endpoint, spof
-analyses/app-partners.html|Application dependencies|Which external partners each internal application exchanges Files with — the dependency matrix with traffic weights and dead pairs at 100% Error.|application, dependencies, partner, matrix, lineage, exposure|application, dependencies, lineage
-analyses/cleanup-backlog.html|Cleanup backlog|Every cleanup signal merged into one ranked decommission-candidate list, safest first — config orphans, never-seen subscriptions, unused whitelist addresses, cron-less polls and long-quiet entities.|cleanup, backlog, decommission, orphans, unused, prune|cleanup, decommission, prune
-analyses/partners-in.html|Partners - Incoming|Every FE login on one line: the FE overview (use cases, the last logon here and on the old gateway, Files in / out, retrieved, Waiting, Expired, pickups) combined with the Incoming logon funnel (Allowed, Disallowed, Authenticated, Auth Failed, Locked, logon pattern).|partners, incoming, fe, login, funnel, allowed, disallowed, authenticated, auth failed, bad key, locked, pickups, gateway, migration|
+analyses/use-cases.html|Use cases||use case, uc1, uc2, uc3, uc4, definition, trigger, template, direction|
+analyses/subscriptions.html|Configured subscriptions||mapping, flowid, tags, BL, endpoint, from, to, folders, cron, schedule, counts, files, errors, active, inactive, undeployed, disabled, skipped, skip, swift, cft, color, colour, direction, error reason|mapping, BL tag
+analyses/logical-detection.html|Logical detection||logical, flowid, derivation, rules, detection|logical, derivation
+analyses/accounts.html|Configured accounts|||
+analyses/first-seen.html|First seen|||
+analyses/whitelist-audit.html|Whitelist audit||whitelist, AllowIP, IP, prune, attack surface, unused|whitelist, AllowIP, prune
+analyses/config-hygiene.html|Config hygiene||twins, duplicates, orphans, cleanup, legacy|twins, orphans, cleanup
+analyses/subscriptions-in-boxes.html|Subscriptions in boxes||boxes, problems, broken, flagged, trouble, one-legged, kaput, only red, regression, ok, not seen, server only|boxes, problems, flagged, ok
+analyses/triage.html|Triage||triage, action list, worklist, red, expiry, quiet, attention, priority, ranked|triage, action list, priority
+analyses/failing-reasons.html|Error reasons||error, reason, cause, failed, failing, errors, files, count, vocabulary|error reasons, cause, red
+analyses/data-diff.html|Since yesterday||diff, yesterday, new, changed, flips, recovered, first seen|diff, yesterday, changed
+analyses/partner-scorecard.html|Partner scorecard||partner, scorecard, health, score, gini, concentration, trend|partner, scorecard, health
+analyses/blast-radius.html|Blast radius||blast radius, endpoint, host, redundancy, single point of failure, spof|blast radius, endpoint, spof
+analyses/app-partners.html|Application dependencies||application, dependencies, partner, matrix, lineage, exposure|application, dependencies, lineage
+analyses/cleanup-backlog.html|Cleanup backlog||cleanup, backlog, decommission, orphans, unused, prune|cleanup, decommission, prune
+analyses/partners-in.html|Partners - Incoming||partners, incoming, fe, login, funnel, allowed, disallowed, authenticated, auth failed, bad key, locked, pickups, gateway, migration|
 search/all-files.html|All files search|Find a File among ALL the Files of the transfer logs by file name or CoreId and subscription, as you type, newest first; the index loads only the days that can hold a match, and the From/To selection narrows the days further.|all files, file, files, search, find, file name, filename, coreid, subscription, history, archive, lookup|all files search, file search, find file, history
 transfer/month-stats/this-subscription.html|Month stats|The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired.|month, monthly, this month, previous month, calendar, statistics|
 STATIC
@@ -831,7 +872,7 @@ STATIC
         html_head "Report finder" "../assets/style.css" "" "" "report-finder"
         printf '<h1>Report finder</h1>\n'
         printf '<p class="range">%d reports, each with its <strong>group</strong> of the Reports menu. Find a report by its <strong>title</strong> or <strong>description</strong> &mdash; title matches list first.</p>\n' "$rf_n"
-        printf '<div class="controls"><label>Search</label><span class="search-wrap"><input type="search" id="rfq" class="search" autocomplete="off" autofocus></span><span class="searchhint">Wildcards: ? = 1 character, * = 0..n characters. Logical operators: or / and / and not</span></div>\n'
+        printf '<div class="controls"><label>Search</label><span class="search-wrap"><input type="search" id="rfq" class="search" autocomplete="off" autofocus placeholder="Find a report by title, description or keyword" aria-label="Find a report"></span><span class="searchhint">Wildcards: ? = 1 character, * = 0..n characters. Logical operators: or / and / and not</span></div>\n'
         printf '<div class="tablewrap"><table class="index" data-rfinder="1" data-nosearch="1" data-nosort="1">\n<tr><th>Report</th><th>Group</th><th>Description</th></tr>\n'
         printf '%s\n' "$rows"
         printf '</table></div>\n'
@@ -988,15 +1029,16 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
     # the Subscriptions group scripts all live in bin/analyses/reports/, so the
     # path says nothing about which area holds their .rpt — ask the group table
     local sa; if sa=$(subs_report_area "$2"); then area=$sa; fi
-    # A component of a 2026-07 merged report has no page of its own — but a
-    # CHANGE to it is a change to its MERGED report's page, so map it to the
+    # A PAGELESS report (publish_lib PAGELESS_REPORTS: a merged-report
+    # component or a data producer) has no page of its own — but a CHANGE to
+    # it is a change to the page that shows its data, so map it to that
     # parent and recurse (2026-08-15: was a plain skip, which hid every
     # extended component — e.g. the seven-table server batch — from the
     # Changed table). Retired components (no parent page) still return 0.
-    if is_merged_component "$2"; then
+    if is_pageless_report "$2"; then
         local wn_parent=""
         case $2 in
-            day|weekly|hourly|weekday)                              wn_parent=activity ;;
+            weekly|hourly|weekday)                                  wn_parent=activity ;;   # (day: a pageless data producer since Activity dropped it — the default skip below)
             retry|attempts|resubmissions|recovered-files)           wn_parent=retries ;;
             episodes-src|recovered)                                 wn_parent=episodes ;;   # 2026-09-29
             patterns|legs-count|protocol-journey|arrived-left)      wn_parent=file-journey ;;
@@ -1016,7 +1058,7 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
             punctuality-src|expected-arrival)                       wn_parent=punctuality ;;   # 2026-09-29: the Rhythm tab
             duration-distribution|dwell-time)                       wn_parent=duration-dwell ;;   # 2026-09-05 merge
             size-dist|file-type|duplicate-files|top-transfers|size-profile) wn_parent=files ;;
-            *) return 0 ;;   # retired (ranking, double, stale-accounts, ...) — no page
+            *) return 0 ;;   # no page shows its data (day, event-queue, site-failures, …)
         esac
         wn_meta "bin/$area/reports/$wn_parent.sh" "$wn_parent"
         return $?
@@ -1032,6 +1074,20 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
     elif [ "$area" = server ]; then printf '%s\tServer\t%s\t%s\n' "$t" "$(sm_href server "$2")" "$i"
     else printf '%s\tTransfer\t%s\t%s\n' "$t" "$(sm_href transfer "$2")" "$i"
     fi
+}
+# WN_META = wn_meta PATH BASENAME, computed ONCE per generator path: the
+# history names ~150 generators over ~300 rows, and every uncached call was a
+# subshell plus its own awk / sm_href forks (2026-09-29 audit: ~2 s). Bash 3.2
+# has no associative arrays, so the memo is a variable per path, its name the
+# path escaped injectively (rg_key: _ -> _u first, then - / . -> _h _s _d); a
+# path with any other character is simply not cached.
+wn_meta_cached() {   # $1 script path  $2 basename -> WN_META
+    rg_key "$1"
+    if [ -z "$RG_KEY" ]; then WN_META=$(wn_meta "$1" "$2") || WN_META=""; return 0; fi
+    local k=$RG_KEY
+    if eval "[ -n \"\${WNM_$k+x}\" ]"; then eval "WN_META=\$WNM_$k"; return 0; fi
+    WN_META=$(wn_meta "$1" "$2") || WN_META=""
+    eval "WNM_$k=\$WN_META"
 }
 write_whats_new() {
     local out="$DOCS/tools/whats-new.html"   # under docs/tools/ since 2026-09-12 (user request) — the row hrefs carry ../
@@ -1109,14 +1165,14 @@ write_whats_new() {
     while IFS=$'\t' read -r kind date seq path subj; do
         [ -n "$path" ] || continue
         nm=${path##*/}; nm=${nm%.sh}
-        meta=$(wn_meta "$path" "$nm") || continue
+        wn_meta_cached "$path" "$nm"; meta=$WN_META
         [ -n "$meta" ] || continue
-        # a multi-page writer (publish-insights.sh renders eight insight pages)
+        # a multi-page writer (publish-insights.sh renders three insight pages)
         # emits several meta lines, so a CHANGE to it names no single report —
         # unless the commit SUBJECT does. Keep the page whose slug or title the
         # subject mentions; drop the commit when that is not exactly one page
         # (a subscriptions-in-boxes commit would otherwise stamp its message
-        # onto all eight).
+        # onto all three).
         if [ "$kind" = C ]; then
             meta=$(printf '%s\n' "$meta" | awk -F'\t' -v s="$subj" '
                 function fold(x) { x = tolower(x); gsub(/[^a-z0-9]/, "", x); return x }
@@ -1197,9 +1253,11 @@ write_whats_new() {
 write_root_404() {
     local out="docs/404.html" dirs
     dirs=$(cd docs && ls -d */ 2>/dev/null | sed 's#/$##' | LC_ALL=C sort | tr '\n' '|' | sed 's/|$//')
-    # the retired errors/ (2026-09-21: its pages moved into files/) stays a KNOWN
-    # top-level dir, so an old errors/<page> bookmark still finds the home link
-    dirs="${dirs:+$dirs|}errors"
+    # the RETIRED top-level dirs stay KNOWN, so an old bookmark into one still
+    # finds the home link: errors/ (2026-09-21: its pages moved into files/),
+    # latest/ (2026-09-29: the Latest files pages, now the subscription pages'
+    # Files table) and switches/ (2026-09-06: the home Red/Green switch pages)
+    dirs="${dirs:+$dirs|}errors|latest|switches"
     {
         printf '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         printf '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
@@ -1221,10 +1279,9 @@ write_root_404() {
 }
 
 # The root landing page — everything centered (body class "home", style.css):
-# the status snapshot, the per-day table, the red worklists and the log-files
-# table of THIS checkout's one environment (2026-09-11; the per-env .envblock
-# toggle went with the env split). The title carries the environment label.
-# Navigation is the top-bar dropdowns.
+# the status snapshot and the per-day table of THIS checkout's one environment
+# (2026-09-11; the per-env .envblock toggle went with the env split). The title
+# carries the environment label. Navigation is the top bar.
 write_root_index() {
     local out="docs/index.html" title="Axway ST reports"
     [ -n "${ENV_LABEL:-}" ] && title="Axway ST reports — $ENV_LABEL"
@@ -1237,14 +1294,10 @@ write_root_index() {
     } > "$out"
 }
 
-# The Entities coverage table (configured vs seen vs last-transaction result,
-# per entity group) on its own root-level page — linked from the Analyses
-# top-bar dropdown. Lives at the docs root so the coverage/… and per-area
-
 # The home status tables' figures are CALCULATED (base caches + analyses
-# rpts) while their cells link a LIST page — the Transfer > Entities view for
-# the Flow manager entities table, a coverage cell page for the PDA table and
-# the two toggle-OFF variants — two INDEPENDENT derivations that must agree.
+# rpts) while their cells link a LIST page — a Transfer > Entities view, or a
+# coverage cell page for the five derived Totals — two INDEPENDENT
+# derivations that must agree.
 # Verify every linked figure against its page's row count (the cell rpt's ROW
 # lines / the rendered view's "Total (N …)" footer) and warn LOUDLY on any
 # divergence: a mismatch means a real bug in one of the derivations (never
@@ -1278,7 +1331,9 @@ check_status_consistency() {
             # data-res tint — the base cache has no row for them, so the
             # log says which name leaked instead of sending the reader to
             # the page to look for an uncoloured row
-            leak=$(perl -ne 'next if !/<tr\b/ || /class="total"/ || /data-res=/ || /<th/; if (m{<td[^>]*>(?:<a[^>]*>)?([^<]+)}) { print "$1\n" }' "$page" | head -5 | tr '\n' ' ')
+            # (perl stops at five itself: a `| head -5` could SIGPIPE perl,
+            # and under pipefail + set -e that killed the last publish step)
+            leak=$(perl -ne 'next if !/<tr\b/ || /class="total"/ || /data-res=/ || /<th/; if (m{<td[^>]*>(?:<a[^>]*>)?([^<]+)}) { print "$1\n"; exit if ++$n >= 5 }' "$page" | tr '\n' ' ')
             echo "CONSISTENCY WARNING: home shows $num for $href but the page's Total footer says $foot — an untinted (unconfigured) row leaked into the view: ${leak:-(name not extracted)}" >&2
             mism=$((mism+1))
         fi

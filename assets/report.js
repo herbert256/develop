@@ -183,7 +183,7 @@
   }
   function colOrderKey(table, hr) {
     var labels = [], i;
-    for (i = 0; i < hr.cells.length; i++) labels.push(hr.cells[i].textContent.replace(/[▲▼]/g, "").trim());
+    for (i = 0; i < hr.cells.length; i++) labels.push(thLabel(hr.cells[i]));
     return "colorder:" + pageKeyBase() + ":" + labels.join("|");
   }
   function loadOrder(key, n) {
@@ -304,7 +304,7 @@
       }
     }
     for (i = 0; i < n; i++) {
-      var th = hr.cells[i], m = / (gsepw|gsep)( |$)/.exec(" " + th.className + " ");
+      var th = hr.cells[i], m = / (gsep)( |$)/.exec(" " + th.className + " ");
       if (m && !(gid[i] in seps)) seps[gid[i]] = m[1];
     }
     table._colGroup = gid; table._banners = banners; table._groupSep = seps; table._groupLabel = labels;
@@ -346,11 +346,11 @@
         if (el) cl2 += " gedge-l"; if (er) cl2 += " gedge-r";
         if (cl2 !== c.className) c.className = cl2.replace(/^ /, "");
         if (c.hasAttribute("data-origc")) { var oc2 = c.getAttribute("data-origc").replace(/ ?\bgedge-[lr]\b/g, ""); if (el) oc2 += " gedge-l"; if (er) oc2 += " gedge-r"; c.setAttribute("data-origc", oc2.replace(/^ /, "")); }
-        cls = " " + c.className + " "; has = / (gsepw|gsep) /.test(cls);
-        if (want && firstVis[g] === ci) { if (!(new RegExp(" " + want + " ")).test(cls)) c.className = (c.className.replace(/ ?\bgsepw?\b/g, "") + " " + want).replace(/^ /, ""); }
-        else if (has) c.className = c.className.replace(/ ?\bgsepw?\b/g, "");
+        cls = " " + c.className + " "; has = / gsep /.test(cls);
+        if (want && firstVis[g] === ci) { if (!(new RegExp(" " + want + " ")).test(cls)) c.className = (c.className.replace(/ ?\bgsep\b/g, "") + " " + want).replace(/^ /, ""); }
+        else if (has) c.className = c.className.replace(/ ?\bgsep\b/g, "");
         if (c.hasAttribute("data-origc")) {   // keep the restore in step
-          var oc = c.getAttribute("data-origc").replace(/ ?\bgsepw?\b/g, "");
+          var oc = c.getAttribute("data-origc").replace(/ ?\bgsep\b/g, "");
           if (want && firstVis[g] === ci) oc = (oc + " " + want).replace(/^ /, "");
           c.setAttribute("data-origc", oc);
         }
@@ -430,7 +430,7 @@
     }
     initGroups(table, hr);
     var key = colOrderKey(table, hr), hkey = "colhide:" + key.slice(9), labels = [];
-    for (i = 0; i < n; i++) labels.push(hr.cells[i].textContent.replace(/[▲▼]/g, "").trim());
+    for (i = 0; i < n; i++) labels.push(thLabel(hr.cells[i]));
     // the reset: the Reset link at the foot of the picker (the ↺ hotspot it
     // replaced is gone, user request 2026-09-06) — built order AND every column
     function resetColumns() {
@@ -717,99 +717,37 @@
     for (i = 0; i < keys.length; i++) { cum += d.h[keys[i]]; if (cum >= r) return keys[i]; }
     return keys[keys.length - 1];
   }
-  // ---- top-N re-select tables (data-topsel) ---------------------------------
-  // The table's rows are the CANDIDATE set — per qualifying date its own top N,
-  // each row carrying data-date + data-val, baked value-descending with rows
-  // past the global top N hidden (data-dhide, backed by CSS so no script needs
-  // to run at load). On a range change the visible set becomes the N highest
-  // values among the in-range candidates; the full range reproduces the baked
-  // list exactly. The selection is by VALUE, so an active user sort holds.
-  function recalcTopsel(table, lo, hi, narrowed) {
-    var N = parseInt(table.getAttribute("data-topsel"), 10) || 0, i;
-    var drows = dataRows(table), cands = [];
-    for (i = 0; i < drows.length; i++) {
-      if (!drows[i].hasAttribute("data-val")) continue;
-      var e = parseDate(drows[i].getAttribute("data-date") || "");
-      cands.push({ r: drows[i], v: +drows[i].getAttribute("data-val"),
-                   ok: !narrowed || (e !== null && e >= lo && e <= hi) });
-    }
-    cands.sort(function (a, b) { return b.v - a.v; });   // stable: ties keep DOM order
-    var shown = 0;
-    for (i = 0; i < cands.length; i++) {
-      var keep = cands[i].ok && shown < N;
-      if (keep) shown++;
-      cands[i].r.setAttribute("data-dhide", keep ? "0" : "1");
-      applyRowVis(cands[i].r);
-    }
-    // the custom "Top N of M Files" footer label follows the selection; the
-    // baked text restores at the full range
-    var trs = totalRows(table);
-    if (trs.length && trs[0].cells.length) {
-      var lc = cell0(trs[0]);
-      if (!lc.hasAttribute("data-tsl0")) lc.setAttribute("data-tsl0", lc.textContent);
-      var lbl = narrowed ? ("Top " + shown + " of the selected days") : lc.getAttribute("data-tsl0");
-      // data-orig too: recomputeTotals runs after this on the apply() path and
-      // rebuilds the label cell from data-orig, which would undo the rewrite
-      lc.textContent = lbl; lc.setAttribute("data-orig", lbl);
-    }
-  }
   // ---- date-aware STAT boxes ------------------------------------------------
   // A .stat carrying data-tok recomputes its value for the selected range from
   // its data-sb per-day payload; the full range restores the baked original
   // (the recalcTable rule). Payload "date:V,date:V" — V per token:
   //   sum     V = count                    -> plain sum
   //   share   V = total:matching           -> 100*sum(matching)/sum(total) "%"
-  //   maxdur  V = max ms                   -> humanDur(max)
-  //   p50/p90 V = ms.count|ms.count|...    -> nearest-rank percentile of the
-  //           merged histogram, humanDur; the writer quantizes each ms to the
-  //           humanDur DISPLAY grid, so the shown value equals the exact one.
   //   uniq    V = id|id|...                -> size of the id UNION over the
   //           range (recovered-files: distinct subscriptions/protocols).
-  // data-thr retints the box: "le:A:B" green<=A / orange<=B / red on the ms (or
-  // %) result; "ge:A:B" the same with >= (a high share is the good end).
+  // (the maxdur / p50 / p90 tokens and the data-thr retint went 2026-09-29:
+  // their one producer, recovered-files.sh, emits sum / share / uniq only)
   function recalcStats(lo, hi, narrowed) {
     var els = document.querySelectorAll(".stat[data-tok]"), i, j, k;
     for (i = 0; i < els.length; i++) {
       var el = els[i], vEl = el.querySelector(".stat-v");
       if (!vEl) continue;
-      if (!el.hasAttribute("data-vorig")) { el.setAttribute("data-vorig", vEl.textContent); el.setAttribute("data-corig", el.className); }
-      if (!narrowed) { vEl.textContent = el.getAttribute("data-vorig"); el.className = el.getAttribute("data-corig"); continue; }
-      var tok = el.getAttribute("data-tok"), segs = (el.getAttribute("data-sb") || "").split(","), out = "-", num = null;
-      var tot = 0, mt = 0, mx = null, map = {}, pp, e, pr;
+      if (!el.hasAttribute("data-vorig")) el.setAttribute("data-vorig", vEl.textContent);
+      if (!narrowed) { vEl.textContent = el.getAttribute("data-vorig"); continue; }
+      var tok = el.getAttribute("data-tok"), segs = (el.getAttribute("data-sb") || "").split(","), out = "-";
+      var tot = 0, mt = 0, map = {}, pp, e;
       for (j = 0; j < segs.length; j++) {
         if (!segs[j]) continue;
         pp = segs[j].split(":"); e = parseDate(pp[0]);
         if (e === null || e < lo || e > hi) continue;
         if (tok === "sum") tot += +pp[1] || 0;
         else if (tok === "share") { tot += +pp[1] || 0; mt += +pp[2] || 0; }
-        else if (tok === "maxdur") { if (mx === null || +pp[1] > mx) mx = +pp[1]; }
         else if (tok === "uniq") { var us = pp[1].split("|"); for (k = 0; k < us.length; k++) if (us[k]) map[us[k]] = 1; }
-        else if (tok === "p50" || tok === "p90") {
-          var prs = pp[1].split("|");
-          for (k = 0; k < prs.length; k++) {
-            pr = prs[k].split("."); if (pr.length < 2) continue;
-            map[pr[0]] = (map[pr[0]] || 0) + (+pr[1]); tot += +pr[1];
-          }
-        }
       }
-      if (tok === "sum") { out = String(tot); num = tot; }
-      else if (tok === "uniq") { num = Object.keys(map).length; out = String(num); }
-      else if (tok === "share") { num = tot ? 100 * mt / tot : 0; out = num.toFixed(1) + "%"; }
-      else if (tok === "maxdur") { if (mx !== null) { out = humanDur(mx); num = mx; } }
-      else if (tok === "p50" || tok === "p90") {
-        if (tot) {
-          var keys = Object.keys(map).map(Number).sort(function (a, b) { return a - b; });
-          var rank = Math.max(1, Math.floor(tot * (tok === "p50" ? 0.5 : 0.9))), cum = 0;
-          for (k = 0; k < keys.length; k++) { cum += map[keys[k]]; if (cum >= rank) { num = keys[k]; break; } }
-          if (num !== null) out = humanDur(num);
-        }
-      }
+      if (tok === "sum") out = String(tot);
+      else if (tok === "uniq") out = String(Object.keys(map).length);
+      else if (tok === "share") out = (tot ? 100 * mt / tot : 0).toFixed(1) + "%";
       vEl.textContent = out;
-      var thr = el.getAttribute("data-thr");
-      if (thr && num !== null) {
-        var tp = thr.split(":"), good = tp[0] === "ge" ? num >= +tp[1] : num <= +tp[1], mid = tp[0] === "ge" ? num >= +tp[2] : num <= +tp[2];
-        el.className = "stat stat-" + (good ? "green" : mid ? "orange" : "red");
-      }
     }
   }
   function recalcCell(tok, agg, colSum) {
@@ -829,7 +767,6 @@
     if (t === "q") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? humanDur((agg.sum[+p[0]] || 0) / den) : "-"; }
     if (t === "x") { N = +rest; return humanDur(agg.max[N] > 0 ? agg.max[N] : 0); }
     if (t === "t") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? humanBytes((agg.sum[+p[0]] || 0) * 1000 / den) + "/s" : "-"; }
-    if (t === "v") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? humanBytes((agg.sum[+p[0]] || 0) / den) : "-"; }
     return null;
   }
   // The NUMBER behind a recalc token — recalcCell without the formatting, so a
@@ -851,7 +788,6 @@
     if (t === "q") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? (agg.sum[+p[0]] || 0) / den : null; }
     if (t === "x") { return agg.max[+rest] > 0 ? agg.max[+rest] : 0; }
     if (t === "t") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? (agg.sum[+p[0]] || 0) * 1000 / den : null; }
-    if (t === "v") { p = rest.split("."); den = agg.sum[+p[1]] || 0; return den ? (agg.sum[+p[0]] || 0) / den : null; }
     return null;
   }
   // Write one logical column of a row (colspans make cell index != column).
@@ -1049,20 +985,16 @@
     autoHideGroups(table);   // a group the range left empty on every visible row hides (data-autohide)
     replaceHotspots(table);
   }
-  // ---- Show-Seen coverage tables (configured vs. observed) ------------------
-  // Three complementary views of the SAME configured entity set. Every data row
-  // carries data-buckets (date:rows:failed:processed) and data-seen (its
-  // full-period seen flag, 1/0). "Seen" means ">=1 matching row IN THE SELECTED
-  // RANGE", so narrowing the date filter re-counts the numbers AND moves
-  // entities between the Seen / Not-Seen views. data-seenmode picks the view:
-  //   all     — every entity, with a Seen (yes/no) column and a row tint
-  //   seen    — only the entities active in range
-  //   notseen — only the entities NOT active in range
+  // ---- seen-rows tables (data-seenrows: the detail pages' entity tables) -----
+  // Every data row carries data-seen (its full-period seen flag, 1/0) — the
+  // green / red row tint recalcTable moves with the date range. (The Show-Seen
+  // tables — data-seenmode all / seen / notseen and their seenword= intro
+  // noun — went 2026-09-29: no writer emits them since showseen.sh stopped.)
   function initSeen(table) {
-    // only the Show-Seen / seen-rows tables (2026-09-29: it snapshotted every
-    // cell of EVERY table — 28,000 on one page — while initRecalc already
-    // covers the re-aggregatable ones)
-    if (!table.getAttribute("data-seenmode") && !table.getAttribute("data-seenrows")) return;
+    // only the seen-rows tables (2026-09-29: it snapshotted every cell of
+    // EVERY table — 28,000 on one page — while initRecalc already covers the
+    // re-aggregatable ones)
+    if (!table.getAttribute("data-seenrows")) return;
     dataRows(table).forEach(function (tr) {
       // remember data-seen ONLY where it exists: stamping a default "0" here
       // would make recalcTable's full-range restore INJECT data-seen onto
@@ -1078,54 +1010,6 @@
       }
     });
   }
-  // The INTRO ("Seen: X of N …") sits just above the table — a p.range sibling,
-  // possibly past the injected From/To + search controls; walk back to find it.
-  function seenIntro(table) {
-    var e = tunit(table).previousElementSibling;
-    while (e) { if (e.tagName === "P" && (" " + e.className + " ").indexOf(" range ") >= 0) return e; e = e.previousElementSibling; }
-    return null;
-  }
-  function recalcSeen(table, lo, hi, narrowed) {
-    var mode = table.getAttribute("data-seenmode");
-    var drows = dataRows(table), seenN = 0, total = drows.length;
-    // The "all" view's Seen (yes/no) column, found by its header label — cell 1
-    // on the Show Seen tables, cell 2 on Entity Search (after Type).
-    var seenCol = -1, hr = headerRow(table);
-    if (mode === "all" && hr) for (var h = 0; h < hr.cells.length; h++)
-      if (hr.cells[h].textContent.replace(/[▲▼]/g, "").trim() === "Seen") { seenCol = h; break; }
-    drows.forEach(function (tr) {
-      var agg = narrowed ? aggBuckets(tr.getAttribute("data-buckets"), lo, hi) : null;
-      var active = narrowed ? (agg.sum[0] || 0) > 0 : tr.getAttribute("data-seen-orig") === "1";
-      if (active) seenN++;
-      tr.setAttribute("data-dhide", (mode === "all" ? false : mode === "seen" ? !active : active) ? "1" : "0");
-      applyRowVis(tr);
-      if (mode === "all") tr.setAttribute("data-seen", active ? "1" : "0");   // row tint
-      for (var j = 0; j < tr.cells.length; j++) {
-        var c = tr.cells[j], cl = " " + c.className + " ";
-        if (!narrowed) {                                          // full range -> restore exact originals
-          if (c.hasAttribute("data-origc")) c.className = c.getAttribute("data-origc");
-          if (c.hasAttribute("data-html")) c.innerHTML = c.getAttribute("data-html");   // markup cell: keep <br>/<a>/<code>
-          else if (c.hasAttribute("data-orig")) c.textContent = c.getAttribute("data-orig");
-          continue;
-        }
-        if (j === seenCol) { c.textContent = active ? "yes" : "no"; continue; }   // Seen column ("all" view only; -1 otherwise)
-        var metric = cl.indexOf(" failed ") >= 0 ? 1 : cl.indexOf(" processed ") >= 0 ? 2 : cl.indexOf(" num ") >= 0 ? 0 : -1;
-        if (metric < 0) continue;
-        var v = agg.sum[metric] || 0;
-        if (metric === 0) { c.textContent = v === 0 ? "" : String(v); continue; }   // the count column: blank when 0
-        var base = (c.getAttribute("data-origc") || c.className).replace(/ ?\bz\b/g, "");   // Failed/Processed: 0 -> blank + no tint
-        if (v === 0) { c.textContent = ""; c.className = base + " z"; } else { c.textContent = String(v); c.className = base; }
-      }
-    });
-    var p = seenIntro(table), notN = total - seenN;
-    // The intro noun: "configured" on the Show Seen tables (the default),
-    // "entries" on Entity Search (data-seenword, from the seenword= modifier).
-    var word = table.getAttribute("data-seenword") || "configured";
-    if (p) p.textContent = mode === "all" ? word.charAt(0).toUpperCase() + word.slice(1) + ": " + total + "  |  Seen: " + seenN + "  |  Not seen: " + notN
-      : mode === "seen" ? "Seen in the logs: " + seenN + " of " + total + " " + word
-      : "Not seen in the logs: " + notN + " of " + total + " " + word;
-  }
-
   // ---- Hour × weekday heatmap (the one 2-D per-cell table) ------------------
   // Each data cell (weekday columns 1..7 of an hour row) carries its own per-date
   // series in data-h<col-1> (date:count,…). On a date change we re-sum every cell
@@ -1596,7 +1480,7 @@
     // own short label)
     var ROWLABEL = { "Load by weekday": "Load", "Load by hour": "Load",
                      "Incoming connections": "Connections", "Outgoing connections": "Connections",
-                     "Dwell": "Statistics", "Duration": "Statistics",
+                     "Dwell": "Statistics", "Duration": "Statistics", "Duration per leg": "Statistics",
                      "Domain": "Groups", "Application": "Groups" };
     function sxsOf(el) {
       while (el && el !== document.body) {
@@ -1783,32 +1667,16 @@
         if (cf && failedCells.length === 1)    bindDrill(failedCells[0], tr, table, cf, "Error", null, du);
         if (cp && processedCells.length === 1) bindDrill(processedCells[0], tr, table, cp, "OK", null, du);
       }
-      // The Entities pages' RETRY / RESUBMIT cells (2026-09-13, user request):
-      // data-coreids-retry / data-coreids-resubmit on the row, each bound to
-      // its cell. Both are numwarn cells, so the class cannot tell them apart:
-      // the cell is found by its HEADER LABEL — the header row and the data
-      // rows are reordered together (initColOrder), so position i of the
-      // header is the label of cell i whatever the current column order. A
-      // blank z cell (0) stays unclickable, like the OK/Error ones.
-      var cr = tr.getAttribute("data-coreids-retry");
-      var cs = tr.getAttribute("data-coreids-resubmit");
-      if (cr || cs) {
-        var hr9 = headerRow(table), rtCells = [], rsCells = [], hi;
-        if (hr9) for (hi = 0; hi < tr.cells.length && hi < hr9.cells.length; hi++) {
-          if ((" " + tr.cells[hi].className + " ").indexOf(" z ") >= 0) continue;
-          var lab9 = hr9.cells[hi].textContent.replace(/[▲▼]/g, "").replace(/\s+/g, " ").trim();
-          if (lab9 === "Retry") rtCells.push(tr.cells[hi]);
-          else if (lab9 === "Resubmit") rsCells.push(tr.cells[hi]);
-        }
-        if (cr && rtCells.length === 1) bindDrill(rtCells[0], tr, table, cr, "Retry", null, du);
-        if (cs && rsCells.length === 1) bindDrill(rsCells[0], tr, table, cs, "Resubmit", null, du);
-      }
+      // (The classic Entities pages' data-coreids-retry / data-coreids-resubmit
+      // cell lists went with those pages, 2026-09-13: the grouped Entities
+      // pages drill their Retry / Resubmit cells through drillcols= below —
+      // keys rauto / rmok / rmerr.)
       // Per-CELL drills by BUILT column index (the drillcols= TABLE modifier
       // -> data-drill-cols="key:col[:Noun_words],…", 2026-09-13, the Entities
       // pages): the row's data-coreids-<key> list opens under the cell at
       // <col>; the noun (underscores = spaces) heads the list, else the
       // column's own header label. The keys are the table's own, so the
-      // failed/processed/retry/resubmit bindings above never double-bind a
+      // failed/processed bindings above never double-bind a
       // cell. A blank z cell (0) stays unclickable.
       var dcs = table.getAttribute("data-drill-cols");
       if (dcs) {
@@ -1823,13 +1691,6 @@
           bindDrill(cell8, tr, table, lst8, noun8, null, du);
         });
       }
-      var dcol = tr.getAttribute("data-drill-col");             // session-topview: drill on one named column
-      var dlist = tr.getAttribute("data-drill-list");
-      // the BUILT column index -> its cell, wherever a remembered column
-      // order moved it (initColOrder runs first): bound by position, a click
-      // on one column opened another's list (2026-09-28 fix)
-      var dcell0 = dcol !== null ? (cellByCi(tr, +dcol) || tr.cells[+dcol]) : null;
-      if (dcell0 && dlist) bindDrill(dcell0, tr, table, dlist, "", null, du);
       // Per-cell drill lists (duration.sh's Duration per day table): EVERY cell
       // carries data-drill-cell-<i> = its own \x1f-separated "files nearest this
       // value" list, bound to the cell BUILT at column i.
@@ -2103,12 +1964,14 @@
   }
   function sortStoreKey(table) {
     var hr = headerRow(table);
-    var label = hr && cell0(hr) ? cell0(hr).textContent.replace(/[▲▼]/g, "").trim() : "";
+    // thLabel: the label WITHOUT the sort arrow, its shift-click rank and the
+    // hotspots — a "Name ▲²" header keyed the save apart from the load
+    var label = hr && cell0(hr) ? thLabel(cell0(hr)) : "";
     var tables = document.getElementsByTagName("table"), n = 0;
     for (var i = 0; i < tables.length; i++) {
       if (tables[i] === table) break;
       var h2 = headerRow(tables[i]);
-      if (h2 && cell0(h2) && cell0(h2).textContent.replace(/[▲▼]/g, "").trim() === label) n++;
+      if (h2 && cell0(h2) && thLabel(cell0(h2)) === label) n++;
     }
     return "sort:" + pageKeyBase() + ":" + label + ":" + n;
   }
@@ -2430,7 +2293,7 @@
   // the first table that has it), stamp data-colmark on it and on that
   // column's cell in every data and total row, and scroll it into view
   // (style.css: side borders down the column, the header outlined). An
-  // ATTRIBUTE, like the hidden columns: the recalc / seenmode className
+  // ATTRIBUTE, like the hidden columns: the recalc / seen-rows className
   // restores would drop a class. Cells are matched by their built index
   // (data-ci), so a remembered column order or hidden neighbours do not
   // matter; the GHEAD banner, spanning message rows, the pager row and drill
@@ -2615,8 +2478,6 @@
       var tables = document.getElementsByTagName("table"), t, ri, tr, rows, i, e, mn, mx;
       for (t = 0; t < tables.length; t++) {
         if (tables[t].getAttribute("data-nofilter")) continue;   // full-period table: never hide rows (the badge says so)
-        if (tables[t].getAttribute("data-topsel")) { recalcTopsel(tables[t], lo, hi, narrowed); continue; }
-        if (tables[t].getAttribute("data-seenmode")) { recalcSeen(tables[t], lo, hi, narrowed); continue; }
         if (tables[t].getAttribute("data-heat")) { recalcHeat(tables[t], lo, hi, narrowed); continue; }
         if (tables[t].getAttribute("data-recalc")) { recalcTable(tables[t], lo, hi, narrowed); continue; }
         rows = tables[t].rows;                                          // date-cell tables: show/hide rows by their date span
@@ -2633,17 +2494,6 @@
         }
       }
       recalcStats(lo, hi, narrowed);   // the date-aware STAT boxes (data-tok)
-      // the period tags on table headings (the period= TABLE modifier): show
-      // the selected range, restore the baked full-period text at the full one
-      var h2ps = document.querySelectorAll("h2 .h2period"), hpi, hpe;
-      for (hpi = 0; hpi < h2ps.length; hpi++) {
-        hpe = h2ps[hpi];
-        if (!hpe.hasAttribute("data-orig")) hpe.setAttribute("data-orig", hpe.textContent);
-        hpe.textContent = narrowed
-          ? ("— " + (window._slotRange.from === window._slotRange.to ? window._slotRange.from
-                                                                     : window._slotRange.from + " to " + window._slotRange.to))
-          : hpe.getAttribute("data-orig");
-      }
       if (searchReapply) searchReapply();   // re-evaluate the active search against the recalculated text
       for (t = 0; t < tables.length; t++) if (!tables[t].getAttribute("data-recalc") && !tables[t].getAttribute("data-heat")) recomputeTotals(tables[t]);   // recalcHeat owns their totals
       for (t = 0; t < tables.length; t++) resort(tables[t]);          // an active sort must hold on the re-aggregated values
@@ -2687,14 +2537,11 @@
     // Carry a narrowed range across pages — unless this page opts to always load
     // at the full range (data-date-reset, the Top view dashboards). The From/To
     // still work; a change from here on persists as usual.
-    // Show-Seen pages must ALSO run apply() at load even with no saved range: the
-    // seen/not-seen partitioning (recalcSeen, inside apply()) is what hides the
-    // not-seen rows on the Seen tab (and vice-versa) — without this they'd all show.
     if (urlDay) {
       from.value = String(urlLo);
       to.value = String(urlHi);
       apply();
-    } else if ((!resetDates && !urlRow && restoreSel()) || document.querySelector("table[data-seenmode]")) apply();
+    } else if (!resetDates && !urlRow && restoreSel()) apply();
 
     // DASHBOARDS MODE (2026-08): on the dashboards the controls lead the
     // page — right under the title, before the KPI row — because EVERYTHING
@@ -2973,8 +2820,16 @@
   // (and / or / not): then the query is taken exactly as written, so a LITERAL
   // "and"/"or"/"not" is reached by giving the operator explicitly — "abc and and"
   // searches for "abc" AND the literal word "and".
+  // A bare "not" BETWEEN two terms reads as "and not" (2026-09-29 audit:
+  // "hooli not match" searched for that literal phrase): "a not b" == "a and
+  // not b". A "not" after an operator, or leading, keeps its meaning above.
   function parseQuery(q) {
-    var toks = q.split(/\s+/).filter(Boolean);
+    var toks = q.split(/\s+/).filter(Boolean), ti, t2 = [];
+    for (ti = 0; ti < toks.length; ti++) {
+      if (toks[ti] === "not" && ti > 0 && ti < toks.length - 1 && !/^(and|or|not)$/.test(toks[ti - 1])) t2.push("and");
+      t2.push(toks[ti]);
+    }
+    if (t2.length !== toks.length) { toks = t2; q = toks.join(" "); }
     var hasOp = toks.some(function (t) { return t === "and" || t === "or" || t === "not"; });
     if (toks.length > 1 && !hasOp) q = toks.join(" and ");   // implicit AND between bare terms
     return q.split(/\s+or\s+/).map(function (part) {          // OR: lower precedence
@@ -3048,8 +2903,19 @@
     // says its own thing
     if (table.getAttribute("data-rangehook")) return;
     var noSearch = table.getAttribute("data-nosearch") === "1";
-    var rows = dataRows(table), hasQ = !noSearch && activeQuery !== "";
-    if (!rows.length && table.getAttribute("data-start-empty") !== "1") return;
+    // (a cell-less <tr> — the header-less no-data stub's — is no data row)
+    var rows = dataRows(table).filter(function (tr) { return tr.cells.length > 0; }), hasQ = !noSearch && activeQuery !== "";
+    var msg, hint;
+    if (!rows.length && table.getAttribute("data-start-empty") !== "1") {
+      // a table with NO data rows at all (2026-09-29 audit): a report page
+      // renders no INTRO / NOTE, so a report's own "nothing in this window"
+      // prose — and the no-data stub's note — never shows, and the page read
+      // as a bare header over "Total (0 …)". Say it here. The subscription
+      // Files table and Entity Search build their rows later and say their own
+      // thing; a detail page hides an empty table whole (hideEmptyTables).
+      if (table.getAttribute("data-subfiles") || table.getAttribute("data-esearch") !== null) return;
+      msg = "No rows in this data window."; hint = "";
+    } else {
     var visible = 0, hidV = 0, hidD = 0, typc = {}, isES = table.getAttribute("data-escfg") !== null;   // the CONFIG PANEL's presence, not mere esearch (an esearch table need not have one)
     rows.forEach(function (tr) {
       if (tr.style.display !== "none") { visible++; return; }
@@ -3064,7 +2930,6 @@
       } else if (tr.getAttribute("data-dhide") === "1") hidD++;
     });
     if (visible > 0) return;
-    var msg, hint;
     if (hasQ && hidV + hidD > 0) {
       var parts = [];
       if (hidV) {
@@ -3087,12 +2952,20 @@
       msg = "No rows in the selected date range.";
       hint = "Widen the From/To above.";
     } else return;   // start-empty idle state (the page intro explains it) / nothing to say
+    }
     var div = document.createElement("div");
     div.className = "empty-state";
     var s1 = document.createElement("span"); s1.textContent = msg;
-    var s2 = document.createElement("span"); s2.className = "es-hint"; s2.textContent = " " + hint;
-    div.appendChild(s1); div.appendChild(s2);
+    div.appendChild(s1);
+    if (hint) { var s2 = document.createElement("span"); s2.className = "es-hint"; s2.textContent = " " + hint; div.appendChild(s2); }
     table.parentNode.insertBefore(div, table.nextSibling);
+  }
+  // the load-time pass for the tables with NO data rows at all (their message,
+  // above) — every other empty state follows a search / date / view change
+  function markEmptyTables() {
+    var ts = document.getElementsByTagName("table"), i;
+    for (i = 0; i < ts.length; i++)
+      if (!dataRows(ts[i]).some(function (tr) { return tr.cells.length > 0; })) updateEmptyState(ts[i]);
   }
 
   // Filter a table's data rows by a free-text query over ALL columns. Runs on
@@ -3488,7 +3361,6 @@
   function setupCellLinks() {
     var cells = document.querySelectorAll("td[data-href], th[data-href]"), i;
     for (i = 0; i < cells.length; i++) (function (c) {
-      c.classList.add("celllink");
       c.addEventListener("click", function (ev) {
         var el = ev.target;
         while (el && el !== c) { if (el.tagName === "A") return; el = el.parentNode; }
@@ -3710,25 +3582,6 @@
   }
 
 
-  // ---- "Show all" (the home per-day tables, capped to the newest 14 days) ----
-  // The home per-day table draws each column group with its own 2 px edges
-  // (style.css table.dayrows); the bottom edge needs the last VISIBLE row —
-  // the Show-all cap hides the older rows and the Total by class, so CSS
-  // alone cannot tell which row ends the table (2026-09-06).
-  function markDayEdges() {
-    var ts = document.querySelectorAll("table.dayrows"), t, rows, i, r, last;
-    for (t = 0; t < ts.length; t++) {
-      rows = ts[t].rows; last = null;
-      for (i = 0; i < rows.length; i++) {
-        r = rows[i]; r.className = r.className.replace(/ ?\bedge-b\b/, "");
-        if (r.getElementsByTagName("th").length) continue;
-        if (getComputedStyle(r).display === "none") continue;
-        last = r;
-      }
-      if (last) last.className += (last.className ? " " : "") + "edge-b";
-    }
-  }
-
   // .herotabs button row whose buttons match the cards IN ORDER (button i ↔
   // grid card i). The picked view's label persists in sessionStorage under
   // ONE key, so the previous/next day pages (and every other day page in the
@@ -3804,31 +3657,8 @@
   }
 
 
-  // ---- The RUNTIME top bar (2026-07) ---------------------------------------
-  // Every html_head page bakes only `<div class="topbar" data-b=…
-  // [data-help=…]></div>` (~0.1 KB instead of the ~2.7 KB baked bar × ~4,000
-  // pages) — this renders the full bar from window.AXWAY_TB
-  // (assets/topbar-data.js: the three dropdown menu strings with their "@"
-  // docs-root placeholder, the monitor flag, the CoreId URL template and the
-  // environment LABEL of this site — input/environment.txt, the TEXT OF THE
-  // BRAND link itself since 2026-09-12 (2026-09-11, when the
-  // Acceptance/Production switch went with the two-environment layout, it
-  // was a static span beside a fixed "Cloud" brand; a site without the file
-  // still says "Cloud"); rewritten by every publish, so a MENU change no
-  // longer needs a site-wide page republish). The baked-chrome pages (help
-  // pages, the build report —
-  // render_shared_topbar) arrive with a NON-empty topbar div and are left
-  // untouched.
-  // ---- the shared hero-slot charts (svg_slots): styled hover tooltip -------
-  // Every slot rect (.dbz) carries data-l (the slot label) + data-a/-b/-c
-  // (the humanized series values); the chart's g.slotmeta carries the series
-  // names/colors and the empty-slot text. ONE floating .dbtip per chart (all
-  // three baked styles of a card share the box, each svg gets its own tip);
-  // the native <title> tooltips are removed here — they stay in the markup
-  // only as the no-JS fallback. Series rows render LAST first (P98 on top).
-  // (setupSlotTips and the Line/Bar/Solid + interval switcher moved to
-  // docs/assets/slotchart.js in 2026-07, with the charts themselves: the
-  // tooltip has to be rebound on every redraw, so it belongs to the renderer.)
+  // (the slot charts' hover tooltip and their Line/Bar/Solid + interval
+  // switches live in assets/slotchart.js, with the charts themselves)
 
   var TB_EB = "";   // the docs-root base of this page (buildTopbar) — the palette's link root
 
@@ -3954,7 +3784,7 @@
       var seen = {}; items.forEach(function (it) { seen[it.t] = (seen[it.t] || 0) + 1; });
       items.forEach(function (it) {
         var e = document.createElement("li"); e.className = "cpi"; e.setAttribute("data-h", it.h);
-        e.innerHTML = '<span class="cpt"></span><span class="cps"></span>';
+        e.innerHTML = '<span></span><span class="cps"></span>';   // the title, then its muted section
         // a title the catalog carries several times (Entity coverage, one page
         // per entity kind) gets its page name so the rows can be told apart
         e.firstChild.textContent = it.t + (seen[it.t] > 1 ? " — " + it.h.replace(/^.*\//, "").replace(/\.html$/, "") : "");
@@ -4193,6 +4023,17 @@
     if (fitPending) return; fitPending = true;
     (window.requestAnimationFrame || setTimeout)(function () { fitPending = false; fitTopbar(); });
   });
+  // ---- The RUNTIME top bar (2026-07) ---------------------------------------
+  // Every html_head page bakes only `<div class="topbar" data-b=…
+  // [data-help=…]></div>` (~0.1 KB instead of the ~2.7 KB baked bar × ~4,000
+  // pages) — this renders the full bar from window.AXWAY_TB
+  // (assets/topbar-data.js: the ONE Reports menu string with its "@"
+  // docs-root placeholder, the monitor flag, the CoreId URL template and the
+  // environment LABEL of this site — input/environment.txt, the TEXT OF THE
+  // BRAND link itself; rewritten by every publish, so a MENU change needs no
+  // site-wide page republish). The baked-chrome pages (help pages, the build
+  // report — render_shared_topbar) arrive with a NON-empty topbar div and are
+  // left untouched.
   function buildTopbar() {
     var tb = document.querySelector("div.topbar");
     if (!tb || tb.firstChild) return;                     // baked bar (help/build) — leave it
@@ -4248,7 +4089,7 @@
       // line per report group (publish_lib _report_groups); the Transfer
       // reports / Server reports / Analyses / Goodies four went. KEEP IN STEP
       // with publish_lib.sh render_topbar.
-      '<div class="dd"><span class="ddlabel">Reports ▾</span><div class="ddm">' + menu(M.reports) + "</div></div>" +
+      '<div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm">' + menu(M.reports) + "</div></div>" +
       "</nav>" +
       '<a class="dashlink" href="' + b + 'dashboards/index.html">Dashboard</a>' +
       // the Monitor dashboard link renders only when this site HAS one
@@ -4301,7 +4142,11 @@
     if (/^[=+@\t\r]/.test(s) || (/^-./.test(s) && !/^-[\d.,]+ ?[%A-Za-z]*$/.test(s))) s = "'" + s;   // a lone "-" (the empty-value dash) stays
     return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
-  function tableCsv(table) {
+  // all (optional): an ENGINE table's full row set — arrays of cell texts in
+  // BUILT column order, supplied by the page engine through table._csvAll
+  // (sub-files.js: the subscription Files table shows 25 rows of thousands);
+  // exported instead of the DOM rows, through the same header and quoting
+  function tableCsv(table, all) {
     var hr = headerRow(table), rows = dataRows(table), lines = [], i;
     function line(tr) {
       var out = [], j;
@@ -4321,6 +4166,14 @@
       }
       lines.push(hout.join(","));
     }
+    if (all) {
+      for (i = 0; i < all.length; i++) {
+        var aout = [], aj, ac;
+        if (hr) { for (aj = 0; aj < hr.cells.length; aj++) { ac = hr.cells[aj]; if (!ac.hidden) aout.push(csvField(String(all[i][ciOf(ac)] == null ? "" : all[i][ciOf(ac)]))); } }
+        else for (aj = 0; aj < all[i].length; aj++) aout.push(csvField(String(all[i][aj])));
+        lines.push(aout.join(","));
+      }
+    } else
     for (i = 0; i < rows.length; i++) if (rows[i].style.display !== "none") lines.push(line(rows[i]));
     return "\ufeff" + lines.join("\r\n") + "\r\n";
   }
@@ -4354,8 +4207,23 @@
     if (base && slug) return base + "-" + slug + ".csv";
     return (base || slug || "table") + ".csv";
   }
-  function downloadCsv(table) {
-    var blob = new Blob([tableCsv(table)], { type: "text/csv;charset=utf-8" });
+  // An ENGINE table (its rows built page by page in the browser) may hand over
+  // its WHOLE row set: table._csvAll(cb) calls cb(rows) — rows as tableCsv's
+  // `all` — or cb(null) when it cannot, and the export falls back to the rows
+  // on screen. The hotspot reads "…" while the engine loads.
+  function downloadCsv(table, btn) {
+    if (typeof table._csvAll === "function") {
+      if (btn) { if (btn._busy) return; btn._busy = true; btn.textContent = "…"; }
+      table._csvAll(function (all) {
+        if (btn) { btn._busy = false; btn.textContent = "csv"; }
+        saveCsv(table, tableCsv(table, all || null));
+      });
+      return;
+    }
+    saveCsv(table, tableCsv(table));
+  }
+  function saveCsv(table, text) {
+    var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url;
@@ -4374,7 +4242,7 @@
     b.title = "Download this table as CSV";
     b.addEventListener("click", function (e) {
       e.preventDefault(); e.stopPropagation();   // never reach the th's sort handler
-      downloadCsv(table);
+      downloadCsv(table, b);
     });
     th.className += (th.className ? " " : "") + "csvhost";
     th.appendChild(b);
@@ -4397,6 +4265,43 @@
       td.className = (td.className ? td.className + " " : "") + "cl";
     }
   }
+  // ---- KEYBOARD access (2026-09-29 audit) ----------------------------------
+  // The site's clickable SPANS — the tab-style buttons (hero views, chart
+  // style / interval / scale, switch groups, the pagers), the csv / cols
+  // hotspots — and the sortable headers are neither links nor buttons, so a
+  // keyboard could not reach them: each gets a tab stop (and a span the button
+  // role), and ONE delegated handler turns Enter / Space on it into the click
+  // its own handler already listens for (shift kept: shift+Enter on a header
+  // adds a sort key like shift-click). The Reports menu label is focusable in
+  // its markup (buildTopbar / render_topbar): focus opens the menu through the
+  // CSS :focus-within, Tab walks its links, Escape leaves it. Engine scripts
+  // that build such spans after init (sub-files.js) stamp their own.
+  var KB_SEL = "span.tab, .csvbtn, .pickbtn, th.sortable";
+  function kbStamp(root) {
+    var els = root.querySelectorAll(KB_SEL), i, el;
+    for (i = 0; i < els.length; i++) {
+      el = els[i];
+      if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "0");
+      if (el.tagName === "SPAN" && !el.hasAttribute("role")) el.setAttribute("role", "button");
+    }
+  }
+  function setupKeyboard() {
+    kbStamp(document);
+    document.addEventListener("keydown", function (e) {
+      var t = e.target;
+      if (e.key === "Escape") {                       // leave the Reports menu
+        if (t && t.closest && t.closest(".dd") && t.blur) t.blur();
+        return;
+      }
+      if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+      if (!t || !t.matches || !(t.matches(KB_SEL) || (t.getAttribute("role") === "button" && t.tagName === "SPAN"))) return;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      e.preventDefault();                             // Space would scroll the page
+      if (/(^| )disabled( |$)/.test(t.className)) return;
+      t.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window, shiftKey: e.shiftKey }));
+    });
+  }
+
   // (The Latest files pages' latestRows() — docs/latest/<slug>.html rows
   // shipped as DATA — went 2026-09-29 with the pages: a subscription page's
   // Files table is built by assets/sub-files.js.)
@@ -4416,12 +4321,12 @@
       makeSortable(tables[i]); // sorts/blanks col 0, which would otherwise memorize a blanked value
       applyGroup(tables[i]);
       setupExpandable(tables[i]);  // clickable drill-down BEFORE the data-origc snapshots below,
-                                   // so a recalc/seenmode className restore keeps the .expandable affordance
+                                   // so a recalc/seen-rows className restore keeps the .expandable affordance
       setupSubrows(tables[i]);     // Entity Search: multi-use Source/Target rows expand into per-subscription rows
       setupRowFold(tables[i]);     // fold=<res> rows collapse behind one summary row (Incoming IPs)
       initTotals(tables[i]);  // remember original totals so the filter can restore them
       initRecalc(tables[i]);  // remember originals of re-aggregatable cells
-      initSeen(tables[i]);    // Show-Seen tables: remember originals + full-period seen flag
+      initSeen(tables[i]);    // seen-rows tables: remember originals + full-period seen flag
       if (tables[i].getAttribute("data-heat")) initHeat(tables[i]);   // heatmap: remember each cell's text + tint
       recomputeTotals(tables[i]);  // fold the skipped rows out of the totals (non-bucket tables)
       setupCsvBtn(tables[i]);      // the CSV-download hotspot in the last header cell's corner
@@ -4451,19 +4356,20 @@
     setupIndexRows();    // whole-row links on the index tables
     setupCellLinks();    // td/th[data-href] cell links (the home Duration group), outranking the row link
     setupEntityErrorLinks(); // Entities subscription pages: the Files Error count opens Failed files for that subscription + the active dates
-    markDayEdges();      // home: the per-day groups' bottom edge sits under the last visible row
     setupSwitches();     // switch=KEY table groups: one table of the group at a time behind a button row
     setupHeroToggle();   // overview + day pages: the hero view switch
     setupSearchConfig(); // Entity Search: the collapsed configuration panel
     setupReportFinder(); // Report finder: title/intro/keyword search over the catalog
     setupCollapsible();  // clines cells (patterns): click toggles the collapsed middle lines
     hideEmptyTables();   // after the search/date filters have hidden rows
+    markEmptyTables();   // a table with NO data rows says so (the report pages render no no-data prose)
     setupSectionTabs();  // detail pages: the fixed h1 + section-tab header (after empty sections are hidden)
     setupStatFilter();   // Subscriptions in boxes: the stat boxes narrow the table
     setupSelFilter();    // coverage partners page: Connection / Movement / Use case selectors
     markUrlColumn();     // LAST with markUrlRow: the column order it marks and scrolls to must be final
     markUrlRow();        // LAST: the sort/date/pager order it scrolls to must be final
     setupCopyIds();      // after every snapshot: the File Tracking link + the ⧉ on each id must not be captured as cell text
+    setupKeyboard();     // LAST: every clickable span / sortable header built above gets its tab stop
   }
 
   // Clickable STAT boxes as row filters (Subscriptions in boxes): each

@@ -197,7 +197,10 @@ LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v as
     }
     {                                           # _files.tsv: a later OK File clears it
         if ($2 == "Failed" || $2 == "Expired") next
+        # "later" = the OK File ENDED after the line (col 24, in the sortkey
+        # shape; the start when the parse wrote no end) — result.sh\047s rule
         a = toupper($3); s = toupper($12); sk = $6
+        if ($24 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) sk = substr($24, 1, 4) substr($24, 6, 2) substr($24, 9, 2) substr($24, 12)
         if (s != "" && sk > SOK[s]) SOK[s] = sk    # the newest OK File per subscription (the account test below)
         if (a != "" && (a in LASTK) && sk > LASTK[a]) CLR[a] = 1
         if (s != "" && (s in LASTK) && sk > LASTK[s]) CLR[s] = 1
@@ -239,7 +242,6 @@ nlist=$(wc -l < "$TMP/rows" | tr -d ' ')
     printf 'DESC\tAccounts and subscriptions a configuration defect stops dead — a route abandoned mid-execution, or a PeSIT profile that cannot receive — and that have not had a successful transfer since.\n'
     printf 'INTRO\tTwo server-log lines, both a **deployment mistake** rather than a runtime fault. **"Step configuration suggests to stop further route execution"** (ARSP0001) means a routing step failed and its configuration told SecureTransport to **abandon the rest of the route** — nothing downstream ran for that file. **"…is used for incoming transfer, but '"'"'Receive File As'"'"' field not set"** means a PeSIT transfer profile is missing one field, so **every incoming transfer of that flow errors**; the row names the **subscription** the profile belongs to, since the message itself names only the platform account. The **Cause** column says which applies. One row per **account**, or per **subscription** where the line names the platform account SECURETRANSPORT; newest problem first. **Only the unresolved ones are listed**: an entity that had an **OK File after its last such message** is left out, because something has got through since — and a **UC3 subscription whose poll succeeded after it** is left out too, even when the poll found nothing: the listing works again. Of **%s** entities with a message, **%s** recovered and **%s** are listed.\n' \
         "$ntot" "$ncleared" "$nlist"
-    printf 'KEYWORDS\tdeploy,route,routing,step,ARSP0001,stopped,abandon,advanced routing,unresolved,receive file as,pesit,profile,incoming,config\n'
     # Newest problem first is the page DEFAULT (sort=COL:DIR, dir -1 = desc),
     # never `nosort` — that would disable the header clicks altogether. The
     # Last message column is ISO, so a text sort is chronological.

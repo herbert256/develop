@@ -46,7 +46,6 @@ if [ ! -f "$TF" ] || [ ! -f "$TT" ]; then
     exit 0
 fi
 OUT="$REPORTS_DIR/first-seen.rpt"
-rm -f "$REPORTS_DIR/first-seen-both.rpt"   # the both-logs view, retired 2026-09-27
 
 BASE="$DATA/flow-manager/base"
 DET="$DATA/transfer/reports/details"
@@ -240,8 +239,15 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
         return lbl(t) ": First seen " key " (" n ")"
     }
     function fkey(v, key) { return key }
+    # ONE .rpt per DATED cell and the no-date cell — the ones that get a cell
+    # page (analyses/publish.sh _fs_cell) and the dated ones data-diff.sh
+    # reads. The Total / Seen / Not seen cells open the Entities views since
+    # 2026-09-29, so their .rpts (flushtotal / flushseen and the notseen
+    # cell) had no reader and went the same day; tn / cnt still feed the
+    # page spec.
     function flushcell(   f, i, v, t) {
         if (bn == 0) return
+        if (cck == "notseen") { bn = 0; return }
         split(cvt, VT, SUBSEP); v = VT[1]; t = VT[2]
         f = FSD "/" t "-" fkey(v, cck) ".rpt"
         print "TITLE\t" celltitle(v, t, cck, bn) > f
@@ -249,26 +255,6 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
         print "KEY\t" fkey(v, cck) > f
         for (i = 1; i <= bn; i++) print buf[i] > f
         close(f); bn = 0
-    }
-    function flushtotal(vt,   f, i, v, t) {
-        if (vt == "" || tn[vt] + 0 == 0) return
-        split(vt, VT, SUBSEP); v = VT[1]; t = VT[2]
-        f = FSD "/" t "-" fkey(v, "total") ".rpt"
-        print "TITLE\t" celltitle(v, t, "total", tn[vt]) > f
-        print "MEMBER\t" t > f
-        print "KEY\t" fkey(v, "total") > f
-        for (i = 1; i <= tn[vt]; i++) print tb[vt SUBSEP i] > f
-        close(f)
-    }
-    function flushseen(vt,   f, i, v, t) {   # every seen row: dated days + nodate (Total minus Not seen)
-        if (vt == "" || sn[vt] + 0 == 0) return
-        split(vt, VT, SUBSEP); v = VT[1]; t = VT[2]
-        f = FSD "/" t "-" fkey(v, "seen") ".rpt"
-        print "TITLE\t" celltitle(v, t, "seen", sn[vt]) > f
-        print "MEMBER\t" t > f
-        print "KEY\t" fkey(v, "seen") > f
-        for (i = 1; i <= sn[vt]; i++) print sb[vt SUBSEP i] > f
-        close(f)
     }
     function pagespec(v, out, desc,   line, i, k) {
         print "TITLE\tFirst seen" > out
@@ -293,16 +279,14 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     {
         vt = $1 SUBSEP $2; key = $4
         if (vt != cvt || key != cck) flushcell()
-        if (vt != cvt) { flushtotal(cvt); flushseen(cvt) }
         cvt = vt; cck = key
         row = "ROW\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9
         buf[++bn] = row
-        tn[vt]++; tb[vt SUBSEP tn[vt]] = row   # (increment separated — see pass A conf())
-        if (key != "notseen") { sn[vt]++; sb[vt SUBSEP sn[vt]] = row }
+        tn[vt]++
         cnt[vt SUBSEP key]++
     }
     END {
-        flushcell(); flushtotal(cvt); flushseen(cvt)
+        flushcell()
         nt = split("logicals partners subscriptions accounts logins hosts", TL, " ")
         # ordered day list
         nd = 0; for (d in alldates) days[++nd] = d

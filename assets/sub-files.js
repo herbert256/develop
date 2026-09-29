@@ -51,6 +51,11 @@
     var prev = document.createElement("span"); prev.textContent = "‹ Previous";
     var info = document.createElement("span"); info.className = "pagerinfo";
     var next = document.createElement("span"); next.textContent = "Next ›";
+    // keyboard: a tab stop + the button role (report.js ran its keyboard pass
+    // before this engine built them; its delegated Enter / Space handler
+    // clicks any span with role=button)
+    prev.setAttribute("tabindex", "0"); prev.setAttribute("role", "button");
+    next.setAttribute("tabindex", "0"); next.setAttribute("role", "button");
     var bar = document.createElement("div"); bar.className = "pagerbar";
     bar.appendChild(prev); bar.appendChild(info); bar.appendChild(next);
     var ptd = document.createElement("td"); ptd.colSpan = ncols; ptd.appendChild(bar);
@@ -82,6 +87,7 @@
     }
 
     // ---- one File -> a <tr> ----------------------------------------------
+    function whenOf(day, r) { return day + " " + r.tm.substr(0, 2) + ":" + r.tm.substr(2, 2) + ":" + r.tm.substr(4, 2); }
     function cell(tr, cls, text, href, mono) {
       var c = document.createElement("td"), t = null, a;
       if (href) cls = cls ? cls + " cl" : "cl";                 // the whole cell is the link target
@@ -98,7 +104,7 @@
     function row(day, r) {
       var tr = document.createElement("tr");
       var fk = r.fl.toLowerCase(), st = STATE[fk] || "OK";
-      var when = day + " " + r.tm.substr(0, 2) + ":" + r.tm.substr(2, 2) + ":" + r.tm.substr(4, 2);
+      var when = whenOf(day, r);
       var h = (r.fl !== "" && r.fl !== r.fl.toLowerCase()) ? root + "files/" + r.cid + ".html" : "";
       tr.setAttribute("data-res", TINT[fk] || "green");
       if (h) tr.setAttribute("data-href", h);
@@ -181,6 +187,41 @@
       }
       pump();
     }
+    // ---- the CSV export: EVERY File, not the 25 on screen -----------------
+    // report.js downloadCsv asks table._csvAll(cb) first: every day shard of
+    // the subscription is loaded (PAR at a time, cached for the pager too) and
+    // cb gets all rows, newest first, as the cell texts the table shows
+    // (Start, State, Size, File, CoreId — built column order); cb(null) when
+    // the list or a shard could not be loaded (report.js then exports the
+    // page on screen)
+    table._csvAll = function (cb) {
+      if (!got) { cb(null); return; }
+      var k = 0, inflight = 0, left = DAYS.length, failed = 0, fin = false;
+      function finish() {
+        if (fin) return;
+        fin = true;
+        if (failed) { cb(null); return; }
+        var out = [], i, j, R, r, fk;
+        for (i = 0; i < DAYS.length; i++) {
+          R = DAYS[i].rows || [];
+          for (j = 0; j < R.length; j++) {
+            r = R[j]; fk = r.fl.toLowerCase();
+            out.push([whenOf(DAYS[i].d, r), STATE[fk] || "OK", humanBytes(r.by), r.nm, r.cid]);
+          }
+        }
+        cb(out);
+      }
+      function done1(ok) { inflight--; left--; if (!ok) failed++; pump(); }
+      function pump() {
+        while (inflight < PAR && k < DAYS.length) {
+          var D = DAYS[k++];
+          if (D.rows) { left--; continue; }
+          inflight++; load(D, done1);
+        }
+        if (left <= 0) finish();
+      }
+      pump();
+    };
     prev.addEventListener("click", function () { if (page > 1) show(page - 1); });
     next.addEventListener("click", function () { if (page < pages()) show(page + 1); });
     // a File-page row opens its page from anywhere in the row

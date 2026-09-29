@@ -6,10 +6,10 @@
 #   [Pesit Default] Unable to submit event AgentEvent
 #
 # — the PeSIT service reporting that it could not submit an agent event.
-# Counted whatever the level. Two tables: Per day (lines, first and last
-# time; the Date opens that day's page on its EventQueue chart view) and the
-# newest 1000 Lines verbatim (cut at 300 characters). NO PAGE since 2026-09-27
-# (user request: the Operations & Capacity group went) — the .rpt is an
+# Counted whatever the level. ONE table: Per day (lines, first and last
+# time) — read only by bin/sample/verify.sh's reconciliation (the newest-1000
+# Lines table went 2026-09-29: no reader). NO PAGE since 2026-09-27 (user
+# request: the Operations & Capacity group went) — the .rpt is an
 # unpublished intermediate; the sidecar below is what the site uses.
 #
 # SIDECAR event-queue-slots.tsv — one "date <TAB> slot <TAB> lines" row per
@@ -31,7 +31,6 @@ source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/event-queue.rpt"
 SLOTS="$REPORTS_DIR/event-queue-slots.tsv"
-LCAP=1000   # the Lines table shows at most this many newest lines
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -46,9 +45,8 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/evq.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 
-# ONE pass over the cache: the per-day figures, the 30-minute slots and
-# every matching line (to a file — sorted and capped below)
-LC_ALL=C awk -F'\t' -v LINF="$TMP/lines" -v DAYF="$TMP/days" -v SLTF="$TMP/slots" "$LOGLINES_AWK"'
+# ONE pass over the cache: the per-day figures and the 30-minute slots
+LC_ALL=C awk -F'\t' -v DAYF="$TMP/days" -v SLTF="$TMP/slots" '
     index($5, "[Pesit Default] Unable to submit event AgentEvent") != 1 { next }
     {
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) next
@@ -58,8 +56,6 @@ LC_ALL=C awk -F'\t' -v LINF="$TMP/lines" -v DAYF="$TMP/days" -v SLTF="$TMP/slots
         if (!(d in DL) || t > DL[d]) DL[d] = t
         s = int((substr(t, 1, 2) * 60 + substr(t, 4, 2)) / 30)
         SL[d SUBSEP s]++
-        m = $5; gsub(/\t/, " ", m); if (length(m) > 300) m = substr(m, 1, 300) "..."
-        printf "%s %s\tROW\t%s %s\t%s\t%s\t%s\n", d, t, d, substr(t, 1, 8), lvlname($3), compname($4), m > LINF
     }
     END {
         for (d in D) printf "%s\tROW\t@{href=../day/%s.html?axway_hero=EventQueue}%s\t%d\t%s\t%s\n", d, d, d, D[d], substr(DF[d], 1, 8), substr(DL[d], 1, 8) > DAYF
@@ -67,7 +63,7 @@ LC_ALL=C awk -F'\t' -v LINF="$TMP/lines" -v DAYF="$TMP/days" -v SLTF="$TMP/slots
         printf "%d\n", n + 0
     }
 ' "$PARSED" > "$TMP/total"
-touch "$TMP/lines" "$TMP/days" "$TMP/slots"
+touch "$TMP/days" "$TMP/slots"
 n_lines=$(cat "$TMP/total")
 n_days=$(wc -l < "$TMP/days" | tr -d ' ')
 d_first=$(LC_ALL=C sort "$TMP/days" | awk -F'\t' 'NR == 1 { print $1 }')
@@ -78,17 +74,13 @@ LC_ALL=C sort -t"$TAB" -k1,1 -k2,2n "$TMP/slots" > "$SLOTS.tmp" && mv "$SLOTS.tm
 
 {
     printf 'TITLE\tEventQueue\n'
-    printf 'DESC\tThe server-log lines starting with "[Pesit Default] Unable to submit event AgentEvent" — the PeSIT service could not submit an agent event: per day and line by line, newest first.\n'
+    printf 'DESC\tThe server-log lines starting with "[Pesit Default] Unable to submit event AgentEvent" — the PeSIT service could not submit an agent event: per day, newest first.\n'
     printf 'KEYWORDS\teventqueue,event queue,agentevent,unable to submit event,pesit,pesit default,queue full,server log\n'
     printf 'TABLE\tPer day\tsort=0:-1\n'
     printf 'HEAD\tDate\tLines\tFirst\tLast\n'
     printf 'KIND\ttext\tnumwarn\ttext\ttext\n'
     LC_ALL=C sort -t"$TAB" -k1,1r "$TMP/days" | cut -f2-
     printf 'TOTAL\tTotal (%s days)\t@{class=num warn}%s\t\t\n' "${n_days:-0}" "${n_lines:-0}"
-    printf 'TABLE\tLines\twide\tpager=100\tsort=0:-1\n'
-    printf 'HEAD\tDate & time\tLevel\tComponent\tMessage\n'
-    printf 'KIND\ttext\ttext\ttext\ttext\n'
-    LC_ALL=C sort -t"$TAB" -k1,1r "$TMP/lines" | awk -v c="$LCAP" 'NR <= c' | cut -f2-
     printf 'SUMMARY\tEventQueue lines: %s  |  Days: %s  |  First: %s  |  Last: %s\n' "${n_lines:-0}" "${n_days:-0}" "${d_first:--}" "${d_last:--}"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

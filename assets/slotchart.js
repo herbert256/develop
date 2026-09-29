@@ -374,7 +374,9 @@
         da += ' data-v="' + esc(fv.join("|")) + '"';
       }
       var rect = '<rect class="dbz"' + da + ' x="' + rx.toFixed(1) + '" y="' + T0 + '" width="' + rw.toFixed(1) + '" height="' + (BASE - T0) + '" fill="transparent"/>';
-      if (linkpat && slots[i].dt) o.push('<a href="' + esc(linkpat.replace("{}", slots[i].dt)) + '">' + rect + "</a>");
+      // the day link's accessible NAME: the slot label (a bare <a> around a
+      // transparent rect announced nothing to a screen reader or a keyboard user)
+      if (linkpat && slots[i].dt) o.push('<a href="' + esc(linkpat.replace("{}", slots[i].dt)) + '" aria-label="' + esc(slots[i].lab) + '">' + rect + "</a>");
       else o.push(rect);
     }
 

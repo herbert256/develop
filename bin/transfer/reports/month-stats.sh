@@ -163,7 +163,7 @@ for which in this previous; do
         {
             printf 'TITLE\tMonth stats — %s — %s\n' "$title" "$mon"
             printf 'DESC\tThe %ss with Files that started in %s (%s): total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired Files.\n' "$noun" "$mon" "$wlabel"
-            printf 'META\tmonth\t%s\nMETA\twhich\t%s\n' "$mon" "$which"
+            printf 'META\tmonth\t%s\n' "$mon"
             printf 'TABLE\t%s — Files started in %s\twide\tsort=1:-1\n' "$title" "$mon"
             printf 'HEAD\t%s\tTotal files\tIn Files\tOut Files\tErrors\tAuto Retries\tResubmit OK\tResubmit Error\tWaiting\tExpired\n' "$chead"
             printf 'KIND\t%s\tnum\tnum\tnum\tnumfailed\tnumwarn\tnumwarn\tnumfailed\tnumwarn\tnumfailed\n' "$nkind"

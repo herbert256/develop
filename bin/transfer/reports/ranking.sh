@@ -56,7 +56,7 @@ echo "Building the Ranking report from the detail-page sidecars..." >&2
 SPECS="SITE:Subscriptions:site:subscription:_subscriptions
 ACC:Accounts:acct:account:_accounts
 LOGIN:Logins:login:login:_logins
-HOST:Remote hosts:host:remote host:_hosts
+HOST:Hosts:host:remote host:_hosts
 LGC:Logical:lgc:logical flow:_logicals
 PTN:Partners:ptn:partner:_partners
 APP:Applications:app:application:_apps

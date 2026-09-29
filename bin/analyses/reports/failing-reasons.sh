@@ -11,8 +11,7 @@
 # subscription, start date/time, the reason failed.sh classified (Expired =
 # "Expired (not collected)", "-" = no rule applied, counted as "(none)"), its
 # CoreId, file name and the subscription's result tint. So the Total equals
-# the Failed files list and the home page's Error total, and a busy flow
-# counts as often as it failed.
+# the Failed files list, and a busy flow counts as often as it failed.
 #
 # (Until 2026-09-14 the source was failed-all-all.rpt — failed Files plus one
 # row per server-failing subscription — first on a four-page view grid, then
@@ -20,13 +19,13 @@
 #
 # A member of the Failures group of the Reports menu.
 #
-# The ROW SET is every possible Reason, listed even when empty: the
-# bin/flip-reason.awk vocabulary — PARSED FROM THE CLASSIFIER ITSELF (its
-# `return "…"` strings, in classifier order), so a new verdict appears here
-# on its own — plus the chain extras One-legged and Failed Subtransmission,
-# UNIONed with any reason actually present in the source (Expired (not
-# collected), an unlisted raw status, "(none)"). A reason with no counted
-# File keeps its row with Count and Last BLANK.
+# The ROW SET is every Reason that OCCURS: the bin/flip-reason.awk
+# vocabulary — PARSED FROM THE CLASSIFIER ITSELF (its `return "…"` strings,
+# in classifier order), so a new verdict appears here on its own — plus the
+# chain extras One-legged and Failed Subtransmission, UNIONed with any reason
+# actually present in the source (Expired (not collected), an unlisted raw
+# status, "(none)"); a reason with no counted File gets no row (2026-09-15,
+# user request).
 #
 # A ROW opens the Failed files page searched on its reason as a whole cell
 # (2026-09-29: the per-reason drill pages failing-reasons-<slug>.html of
@@ -37,7 +36,7 @@
 # so the source is always this build's.
 #
 # Usage:
-#   ./failing-reasons.sh    # -> data/analyses/reports/failing-reasons*.rpt
+#   ./failing-reasons.sh    # -> data/analyses/reports/failing-reasons.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -60,7 +59,7 @@ grep -o 'return "[^"]*"' "$LIB_DIR/../flip-reason.awk" \
     | sed -e 's/^return "//' -e 's/"$//' | awk 'NF' > "$TMP/vocab"
 printf 'One-legged\nFailed Subtransmission\n' >> "$TMP/vocab"
 
-LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen="$GEN" '
+LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v gen="$GEN" '
     # the Failed files page searched on the reason as a WHOLE cell (quoted),
     # URL-encoded — the list the per-reason drill pages held until 2026-09-29
     function srch(r,   q) { q = r; gsub(/%/, "%25", q); gsub(/ /, "%20", q); gsub(/"/, "%22", q)
@@ -70,18 +69,13 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen=
                 if (l != "" && !(l in RIX)) { RN[++nr] = l; RIX[l] = nr }
             close(VOC) }
     # a failed-files row: 2 Subscription, 3 Date/time, 4 Error reason (an
-    # @{href=../files/<CoreId>.html} prefix when the File has an error page),
-    # 5 @{class=mono}CoreId, 6 Filename, then @data cells (res = the tint)
+    # @{href=../files/<CoreId>.html} prefix when the File has an error page —
+    # stripped: only the reason text counts here)
     $1 == "ROW" {
-        rc = $4; href = ""
-        if (substr(rc, 1, 2) == "@{") {
-            p = index(rc, "}"); at = substr(rc, 3, p - 3); rc = substr(rc, p + 1)
-            if (index(at, "href=") == 1) href = substr(at, 6)
-        }
+        rc = $4
+        if (substr(rc, 1, 2) == "@{") rc = substr(rc, index(rc, "}") + 1)
         r = (rc == "" || rc == "-") ? "(none)" : rc
         if (!(r in RIX)) { RN[++nr] = r; RIX[r] = nr }   # a reason outside the vocabulary
-        cid = $5; sub(/^@\{[^}]*\}/, "", cid)
-        res = ""; for (i = 7; i <= NF; i++) if ($i ~ /^@data:res=/) res = $i
         CN[r]++; tot++
         if ($3 > LS[r]) LS[r] = $3
         next
@@ -91,7 +85,6 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen=
         f = OUT
         printf "TITLE\tError reasons\n" > f
         printf "DESC\tEvery error Reason that occurs — how many Files in error (Failed or Expired) carry it and the newest occurrence; a row opens the Failed files page filtered to it.\n" > f
-        printf "KEYWORDS\terror,reason,cause,failed,failing,errors,expired,count,files,vocabulary,classifier\n" > f
         # a snapshot per reason, so no date semantics: nofilter keeps the
         # From/To machinery off this table
         # sort=2:-1 (2026-09-14, user request): Last (the newest occurrence)

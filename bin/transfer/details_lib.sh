@@ -336,7 +336,7 @@ whitelist_rows() {
             # ... and the OBSERVED addresses per entity and connection side
             # (col 16), split by movement (col 17)
             if ($15 != "") {
-                ip = $15; mv = $17
+                ip = $15; mv = ($17 != "") ? $17 : $16   # movement, else the connection side (UCx Files carry no movement)
                 if ($16 == "in") {
                     # NO obs("4", $15) here: on an incoming file col 15 is the
                     # SOURCE address, and attributing it to a HOST entity named
@@ -723,10 +723,6 @@ aggregate_files() {
     function ep_us(x,  a5, dp5, s5, j5){ if (split(x, a5, " ") < 2) return -1
       if (a5[1] in EPU) j5=EPU[a5[1]]; else { j5=(split(a5[1], dp5, "/") < 3) ? -1 : jdnum(dp5[3]+0,dp5[1]+0,dp5[2]+0)*86400; EPU[a5[1]]=j5 }
       if (j5<0) return -1; s5=secs5(a5[2]); if (s5<0) return -1; return j5 + s5 }
-    # epoch seconds (fractional — the ms survive) back to "ccyy-mm-dd HH:MM:SS.mmm", the Start cell format (the Latest Files End column, 2026-09-12)
-    function fmt_ep(ep,  j6, r6, h6, m6){ j6=int(ep/86400); r6=ep-j6*86400; h6=int(r6/3600); m6=int((r6-h6*3600)/60); return fromjdn(j6) " " sprintf("%02d:%02d:%06.3f", h6, m6, r6-h6*3600-m6*60) }
-    function fromjdn(j,   a,b,c,dd,e2,mm,day2,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e2=c-int(1461*dd/4); mm=int((5*e2+2)/153); day2=e2-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day2) }
-    function wkkey(jd,   thu,yy) { thu = jd - (jd % 7) + 3; split(fromjdn(thu), yy, "-"); return sprintf("%04d%02d", yy[1], int((thu - jdnum(yy[1]+0,1,1)) / 7) + 1) }
     function qsort(A, lo, hi,   i, j, p2, t) {
         while (lo < hi) {
             i = lo; j = hi; p2 = A[int((lo + hi) / 2)]
@@ -737,7 +733,11 @@ aggregate_files() {
     function perday(ty,ent,   k,kd,wk,wkd,hk,dk) { if(ent=="")return; k=ty SUBSEP ent; kd=k SUBSEP day; pdseen[kd]=1
       if(pr2){pdp[kd]++;ptp[k]++; if(gHADF)pdr[kd]++}else{pdf[kd]++;ptf[k]++}   # pdr = RECOVERED: an OK File that carried a failed leg
       pdb[kd]+=size; ptb[k]+=size; ptr[k]++; if(size>ptmx[k])ptmx[k]=size
-      pddur[kd]+=dur2; ptdur[k]+=dur2   # duration sums -> the day table average Duration column (per day and page total)
+      # duration sums -> the day table average Duration column (per day and
+      # page total): DELIVERED Files only (2026-09-29 audit — the site-wide
+      # duration rule; one Failed File of a 116-minute retry span made a day
+      # read 38.9 min)
+      if(toc[curcid]=="Processed"){ pddur[kd]+=dur2; ptdur[k]+=dur2; pddn[kd]++; ptdn[k]++ }
       if(dio!=""){ ptD[k SUBSEP dio]++; pdD[kd SUBSEP dio]++ }
       adays[k SUBSEP jd]=1
       # (the Activity per week table — section 12, the wl/wb/wp/wf per-ISO-week
@@ -750,11 +750,12 @@ aggregate_files() {
       if(dio!="") dD[dk SUBSEP dio]++
       if(!(k in pmin)||sk<pmink[k]){pmink[k]=sk;pfirst[k]=disp;pmin[k]=1}
       if(!(k in pmax)||sk>pmaxk[k]){pmaxk[k]=sk;plast[k]=disp;pmaxjd[k]=jd;pmax[k]=1}
-      # the newest OK File END per entity (g_end, the leg walk — 2026-09-12
-      # user rule): the after-last-transfer banner compares its Error against
+      # the newest OK File END per entity (_files.tsv col 24 — 2026-09-12
+      # user rule; read from the cache since 2026-09-29 instead of a leg walk
+      # of its own): the after-last-transfer banner compares its Error against
       # this, not the last Start — a File that FINISHED OK after the error is
       # a transfer that ended OK after it. Totals-row field 30.
-      if(pr2 && g_end>=0){ e7=gEND; if(!(k in pokend)||e7>pokend[k]) pokend[k]=e7 } }
+      if(pr2 && tend[curcid]!=""){ e7=tend[curcid]; if(!(k in pokend)||e7>pokend[k]) pokend[k]=e7 } }
     # Read wec[] WITHOUT creating the element: a bare wec[k] reference would
     # add an empty entry, and the "for (k in wec)" loop that builds the
     # section-0.9 table would then emit a phantom "Waiting files 0" row.
@@ -803,9 +804,13 @@ aggregate_files() {
       hh=""; if(ttm[curcid] ~ /^[0-9][0-9]:/) hh=substr(ttm[curcid],1,2)
       if(jd>gmax) gmax=jd
       oc2=(pr2?"OK":"Error")
-      # the File own direction (col 16) -> the 4-way In/Out x Error/OK split a
-      # direction=both page shows; a File with no direction stays out of it
-      dio=""; if(tfd[curcid]=="in") dio=(pr2?"pi":"fi"); else if(tfd[curcid]=="out") dio=(pr2?"po":"fo")
+      # the File own direction -> the 4-way In/Out x Error/OK split a
+      # direction=both page shows: the MOVEMENT (col 17), a File without one
+      # by its connection side (col 16) — the Entities / home rule (2026-09-29
+      # audit: the connection side alone swapped In and Out on pull flows);
+      # a File with neither stays out of it
+      fdir9=(tmv[curcid]!="") ? tmv[curcid] : tfd[curcid]
+      dio=""; if(fdir9=="in") dio=(pr2?"pi":"fi"); else if(fdir9=="out") dio=(pr2?"po":"fo")
       # store-and-forward dwell bucket (dwell-time.sh'\''s distribution): the
       # gap between the latest Inbound completion and the earliest Outbound
       # start; unmeasurable (one-leg / overlapping) groups set no bucket
@@ -850,9 +855,7 @@ aggregate_files() {
       for(iu6=1;iu6<=nbu6;iu6++) gDIM[2.85 SUBSEP BU6[iu6]]=1
       # PER-FILE values ent_apply/perday use for every entity of the File —
       # computed once here, not once per entity (2026-09-27, speed round 8):
-      # the File END in the Start cell format
-      gEND=(g_end>=0 ? fmt_ep(g_end) : "")
-      # ... the dimension values of the File split once (GD1 = the dim code, GD2
+      # the dimension values of the File split once (GD1 = the dim code, GD2
       # = the value; ent_apply walks them per entity) and its outcome
       # letter / Waiting / Expired flags (bump)
       ngd=0; for(dv9 in gDIM){ split(dv9,GDS,SUBSEP); ngd++; GD1[ngd]=GDS[1]; GD2[ngd]=GDS[2] }
@@ -872,21 +875,15 @@ aggregate_files() {
             od["DOM"]=2.81; od["APP"]=2.82; od["LGC"]=2.83; od["PTN"]=2.84; od["BL"]=2.85   # the quad dims (the former Groups table)
             }
     FNR == 1 { fno++ }
-    fno == 1 { toc[$1]=$2; tac[$1]=$3; tdt[$1]=$4; ttm[$1]=$5; tsk[$1]=$6; tjd[$1]=$7; tsz[$1]=$8; tdur[$1]=$9; tfl[$1]=$11
+    fno == 1 { toc[$1]=$2; tac[$1]=$3; tdt[$1]=$4; ttm[$1]=$5; tsk[$1]=$6; tjd[$1]=$7; tsz[$1]=$8; tdur[$1]=$9; tfl[$1]=$11; tmv[$1]=$17; tend[$1]=$24
                tfd[$1]=$16; tsite[$1]=$12; tpt[$1]=sp_union($20,$12); tap[$1]=ap_union($18,$12); tlg[$1]=lg_union($13,$12); tbl[$1]=bl_union($12); tdm[$1]=$19; next }   # _files.tsv by CoreId (col 16 = connection; col 12 = subscription, for the file-movement lookup; partner/application/logical = UNION sets)
     {   # _transfers.tsv, CoreId-sorted: collect the group'\''s entity & dimension values
-      if($1 != curcid){ if(curcid!="") flush(); curcid=$1; g_inend=-1; g_outst=-1; g_end=-1 }
+      if($1 != curcid){ if(curcid!="") flush(); curcid=$1; g_inend=-1; g_outst=-1 }
       # store-and-forward dwell inputs (mirrors dwell-time.sh): the group'\''s
       # latest Inbound completion ($18 raw end_time, US format) and earliest
       # Outbound start ($11 date_iso + $12 time)
       if($2=="Inbound" && $18!=""){ e5=ep_us($18); if(e5>g_inend) g_inend=e5 }
       if($2=="Outbound" && $12 ~ /^[0-9][0-9]:/){ s5=ep_iso($11,$12); if(s5>=0 && (g_outst<0 || s5<g_outst)) g_outst=s5 }
-      # the File END (2026-09-12, user request — the Latest Files table): the
-      # latest leg end of the group, any direction — the raw $18 End Time,
-      # else the leg start + its own $15 duration
-      e6=-1; if($18!="") e6=ep_us($18)
-      if(e6<0 && $15+0>=0 && $12 ~ /^[0-9][0-9]:/){ s6=ep_iso($11,$12); if(s6>=0) e6=s6+$15/1000 }
-      if(e6>g_end) g_end=e6
       if($3!="Processed") gHADF=1   # the group carried a FAILED leg (the Activity per day Recovered column, 2026-08-29)
       if($5!="")  gLOGIN[$5]=1
       if($6!="")  gSITE[$6]=1
@@ -931,7 +928,7 @@ aggregate_files() {
         share=ttot[a[1]]>0?sprintf("%.1f",ptr[k]*100/ttot[a[1]]):"0.0"
         sshare=ttotb[a[1]]>0?sprintf("%.1f",ptb[k]*100/ttotb[a[1]]):"0.0"
         avgsz=(ptr[k]>0?human(ptb[k]/ptr[k]):"-")
-        printf "%s\t%s\t0\t0\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\n", a[1], a[2], ptr[k], ptf[k]+0, ptp[k]+0, human(ptb[k]), pfirst[k], plast[k], pct, share, rank, tcnt2[a[1]], nact[k]+0, "-", gmax-pmaxjd[k], ptD[k SUBSEP "fi"]+0, ptD[k SUBSEP "pi"]+0, ptD[k SUBSEP "fo"]+0, ptD[k SUBSEP "po"]+0, human(ptmx[k]+0), avgsz, srank, erank, (ptr[k]>0?humandur(ptdur[k]/ptr[k]):"-"), sshare, wecnt(k SUBSEP "Waiting"), wecnt(k SUBSEP "Expired"), ((k in pokend)?pokend[k]:"") }   # field 30 = the newest OK File END (the banner cut)
+        printf "%s\t%s\t0\t0\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\n", a[1], a[2], ptr[k], ptf[k]+0, ptp[k]+0, human(ptb[k]), pfirst[k], plast[k], pct, share, rank, tcnt2[a[1]], nact[k]+0, "-", gmax-pmaxjd[k], ptD[k SUBSEP "fi"]+0, ptD[k SUBSEP "pi"]+0, ptD[k SUBSEP "fo"]+0, ptD[k SUBSEP "po"]+0, human(ptmx[k]+0), avgsz, srank, erank, (ptdn[k]>0?humandur(ptdur[k]/ptdn[k]):"-"), sshare, wecnt(k SUBSEP "Waiting"), wecnt(k SUBSEP "Expired"), ((k in pokend)?pokend[k]:"") }   # field 30 = the newest OK File END (the banner cut)
       # section 0.4 — the Last error(s) rows: one per connected SUBSCRIPTION
       # that has an error, carrying the newest error of that subscription. The SORTKEY
       # is the File sortkey, so the global sort hands them to the writer
@@ -944,7 +941,7 @@ aggregate_files() {
       # $8/$15 above cannot be re-summed): details_writer.awk folds them into
       # the Ranking sidecar @data:buckets payload so the Ranking report can
       # re-aggregate — and re-rank — for a From/To range.
-      for(kd in pdseen){ split(kd,a,SUBSEP); dc=pdf[kd]+pdp[kd]; printf "%s\t%s\t1\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%d\n", a[1], a[2], a[3], a[3], pdf[kd]+0, pdp[kd]+0, human(pdb[kd]), orlist(top[a[1] SUBSEP a[2] SUBSEP a[3] SUBSEP "F"]), orlist(top[a[1] SUBSEP a[2] SUBSEP a[3] SUBSEP "P"]), pdD[kd SUBSEP "fi"]+0, pdD[kd SUBSEP "pi"]+0, pdD[kd SUBSEP "fo"]+0, pdD[kd SUBSEP "po"]+0, (dc>0?humandur(pddur[kd]/dc):"-"), pdb[kd]+0, pddur[kd]+0, pdr[kd]+0 }
+      for(kd in pdseen){ split(kd,a,SUBSEP); dc=pdf[kd]+pdp[kd]; printf "%s\t%s\t1\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%d\n", a[1], a[2], a[3], a[3], pdf[kd]+0, pdp[kd]+0, human(pdb[kd]), orlist(top[a[1] SUBSEP a[2] SUBSEP a[3] SUBSEP "F"]), orlist(top[a[1] SUBSEP a[2] SUBSEP a[3] SUBSEP "P"]), pdD[kd SUBSEP "fi"]+0, pdD[kd SUBSEP "pi"]+0, pdD[kd SUBSEP "fo"]+0, pdD[kd SUBSEP "po"]+0, (pddn[kd]>0?humandur(pddur[kd]/pddn[kd]):"-"), pdb[kd]+0, pddur[kd]+0, pdr[kd]+0 }
       # (the @data:buckets payload builders — bkH/bkD/bkB/dwbk over the
       # per-date twins — are GONE, 2026-07: the detail pages have no From/To
       # filter, so the re-aggregation payload had no consumer)

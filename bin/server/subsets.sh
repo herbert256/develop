@@ -19,6 +19,10 @@
 # changes nothing — the consumer's own tests still run on every kept line.
 # CHANGE A CONSUMER'S MESSAGE PATTERNS -> CHANGE ITS MARKERS HERE. The
 # markers are matched against the WHOLE line (a superset of the message).
+# A marker written "~text" matches CASE-INSENSITIVELY (text lowercase): for a
+# consumer that lower-cases the message before matching — connection-
+# diagnostics' tolower(m) ~ /performs test connection/ — where a list of
+# casings (three, until 2026-09-29) would miss any other one.
 #
 # ONLY FOR RARE FAMILIES: round 2 also gave subsets to uc2/uc4-status,
 # logon, ssh-crypto, auth-activity and inbound-connections — but their
@@ -34,10 +38,10 @@ source "$SCRIPT_DIR/lib.sh"
 source "$SCRIPT_DIR/../ranges.sh"
 
 # consumer <TAB> marker <TAB> marker ... (one consumer per line)
-SPEC='uc1	Could not send file	An error occurred while sending	finished with error	Starting execution	Connection failure while 	listing files from partner
+SPEC='uc1	Could not send file	An error occurred while sending	finished with error	Connection failure while 	listing files from partner
 uc3	Applying the search pattern	listing files from partner 	Connection failure while 	Remote folder of transfer site: 	Remote files pattern of transfer site:
 ssh-sessions	Channel is not active	No registered SSH session with ID	No SSH connection with ID	Network stream read/write error	Ignoring message for not active session
-connection-diagnostics	Connection failure while 	could not be established	Wrong server fingerprint: got	erforms test connection	ERFORMS TEST CONNECTION	erforms Test Connection
+connection-diagnostics	Connection failure while 	could not be established	Wrong server fingerprint: got	~performs test connection
 remote-poll	Applying the search pattern	listing files from partner 	Remote files pattern of transfer site	Connection failure while 	failure connecting to remote host '
 
 SUBDIR="$CACHE_DIR/subsets"
@@ -46,10 +50,15 @@ _t0=$(date +%s)
 
 # the GATE: one regex over every marker — a line matching none (most of the
 # cache) costs one test; the per-consumer index() checks run only on the rest.
-# Built here, metacharacters escaped, and handed over via ENVIRON (a -v value
-# would have its backslashes eaten).
+# Built here, metacharacters escaped (a "~" marker's letters as [xX] pairs),
+# and handed over via ENVIRON (a -v value would have its backslashes eaten).
 SUBSET_GATE=$(printf '%s\n' "$SPEC" | cut -f2- | tr '\t' '\n' | LC_ALL=C sort -u \
-    | sed 's/[][\\.^$*+?(){}|/]/\\&/g' | paste -sd'|' -)
+    | awk '{ ci = (substr($0, 1, 1) == "~"); s = ci ? substr($0, 2) : $0; o = ""
+             for (i = 1; i <= length(s); i++) { c = substr(s, i, 1)
+                 if (ci && c ~ /[A-Za-z]/) o = o "[" tolower(c) toupper(c) "]"
+                 else if (index("][\\.^$*+?(){}|/", c)) o = o "\\" c
+                 else o = o c }
+             print o }' | paste -sd'|' -)
 export SUBSET_GATE SUBSET_SPEC="$SPEC"
 
 SRV="$PARSED"
@@ -63,10 +72,13 @@ part() {   # $1 = part index: its range of line starts is [lo, hi)
         BEGIN { G = ENVIRON["SUBSET_GATE"]
             nc = split(ENVIRON["SUBSET_SPEC"], L, "\n")
             for (i = 1; i <= nc; i++) { nm = split(L[i], F, "\t"); C[i] = F[1]; NM[i] = nm - 1
-                for (j = 2; j <= nm; j++) MK[i, j - 1] = F[j] } }
+                for (j = 2; j <= nm; j++) {
+                    if (substr(F[j], 1, 1) == "~") { MK[i, j - 1] = tolower(substr(F[j], 2)); CI[i, j - 1] = 1 }
+                    else MK[i, j - 1] = F[j] } } }
         RANGEF != "" && FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
         $0 ~ G {
-            for (i = 1; i <= nc; i++) for (j = 1; j <= NM[i]; j++) if (index($0, MK[i, j])) {
+            lz = ""   # tolower($0), computed once, only for a "~" marker
+            for (i = 1; i <= nc; i++) for (j = 1; j <= NM[i]; j++) if (((i, j) in CI) ? index((lz != "") ? lz : (lz = tolower($0)), MK[i, j]) : index($0, MK[i, j])) {
                 # through cat (2026-09-28, speed round 25): awk writes a regular
                 # file in 4 KB chunks, ten parts at once; closed in END
                 if (!(i in OC)) OC[i] = "cat > \"" OUTP C[i] ".p" PART "\""

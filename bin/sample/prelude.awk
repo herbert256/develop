@@ -56,7 +56,6 @@ function fmt_ts(abs,   j, ms, d) {
     return sprintf("%s/%s/%s %02d:%02d:%02d.%03d", substr(d,6,2), substr(d,9,2), substr(d,1,4), int(ms/3600000), int(ms/60000)%60, int(ms/1000)%60, ms%1000)
 }
 function abs_iso(abs) { return fromjdn(int(abs / 86400000)) }
-function abs_mmdd(abs,   d) { d = abs_iso(abs); return substr(d,6,2) "-" substr(d,9,2) }
 # duration ms -> the export's humanized form. Must round-trip parse.sh
 # dur_ms(): a string containing "ms" must be EXACTLY "^[0-9]+ ms$", so the
 # compound forms never mention ms.

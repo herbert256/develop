@@ -17,13 +17,11 @@
 #   * UC3 only        — the pull use case; a poll is its whole reason to exist
 #   * NO transfer data — result orange (never transferred; a cleanly-polling
 #                       UC3 stays orange since 2026-09-28 — until then
-#                       result.sh's clean-poll rule flipped it green). A red
-#                       subscription HAS moved files (or cannot connect), so it
-#                       is not this problem; a green is dropped by the
-#                       every-poll-empty rule below (some poll of it found
-#                       files). Colour-free since 2026-09-27: the roster used
-#                       to be the blue (server-log-only) set, and the poll
-#                       lines themselves now decide who is on it.
+#                       result.sh's clean-poll rule flipped it green). A green
+#                       or red subscription HAS moved files (or, red, cannot
+#                       connect), so it is not this problem. (An Expired-last
+#                       UC3 is orange too, but it found files, so the
+#                       every-poll-empty rule below drops it.)
 #   * every poll empty — 0 file(s) FOUND on every single one. A subscription
 #                       that found files it could not match (found > 0,
 #                       matched = 0) has a pattern problem, not an empty remote
@@ -42,20 +40,17 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# SERVER lib, not the analyses one: this is a server-DATA report (it reads the
-# server parse cache and writes data/server/reports/). It lives HERE
-# because its page sits in the ANALYSES menu, in the Subscriptions group — the
-# same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
+# A server-DATA report (it reads the server parse cache and writes
+# data/server/reports/); its rows are a table on the UC status / UC3 tab.
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/no-remote-files.rpt"
 
 SUBB="$CONFIG_BASE/_subscriptions.tsv"    # name <TAB> direction <TAB> result
 TSITE="$TRANSFER_REPORTS/subscription.rpt"
-# The no-transfer UC3 roster: "KB<TAB>name" lines, fed in ahead of the cache.
-# Orange OR green (green for the clean-poll greens of 2026-08..09-27; a green
-# flow has transferred now, and the every-poll-empty rule below keeps it out:
-# some poll of it found files).
+# The no-transfer UC3 roster: "KB<TAB>name" lines, fed in ahead of the cache —
+# the ORANGE ones (2026-09-29 audit: green was still admitted, a leftover of
+# the clean-poll greens of 2026-08..09-27; a green UC3 has transferred).
 # UC3-named OR derived-UC3 (xref/_subscriptions-ucderived.tsv): the production
 # hybrid flows carry no UC prefix (2026-08-31 audit)
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
@@ -63,7 +58,7 @@ notx_uc3() {
     [ -f "$SUBB" ] || return 0
     awk -F'\t' -v ucdf="$UCDF" '
         BEGIN { while ((getline l < ucdf) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[2] == "UC3") ucd[toupper(a[1])] = 1 } close(ucdf) }
-        ($1 ~ /^UC3/ || (toupper($1) in ucd)) && ($3 == "orange" || $3 == "green") && $1 != "" { print "KB\t" toupper($1) }' "$SUBB"
+        ($1 ~ /^UC3/ || (toupper($1) in ucd)) && $3 == "orange" && $1 != "" { print "KB\t" toupper($1) }' "$SUBB"
 }
 # sitelink(): the logged name resolves to its detail page — exact, else the
 # unique known subscription it prefixes, else the raw name (alink resolves

@@ -22,13 +22,15 @@
 #
 # "Days in state" is measured against the LAST DAY IN THE DATA, not today
 # (same convention as went-quiet.sh/stale-accounts.sh). Red-since comes from
-# colour/_redflip.tsv (the server-log evidence stamp) where present, else the
-# first failure of the current trailing failing run, else the last File.
+# colour/_redflip.tsv where present — its SINCE column (col 3), when the
+# server-log evidence began; col 2, the NEWEST evidence line, is what the
+# Evidence cell quotes — else the first failure of the current trailing
+# failing run, else the last File.
 #
-# Sites are attributed to their CONFIGURED subscription by the longest
-# uppercase prefix match (the logged values carry log-only tails, e.g. _SCP_);
-# an unmatched logged site stands as its own row (it can be expiry-risk or
-# just-went-quiet, never red — red is a configured-name verdict).
+# Files join their subscription EXACTLY: _files.tsv col 12 is the canonical
+# name since parse time (tails stripped, renames folded — the join result.sh
+# makes). A logged subscription the config does not know stands as its own row
+# (discovered in the transfer log; it can be red like any other).
 #
 # This page is an ADDITION, not a replacement: the per-symptom deep-dives
 # (Failed Subscriptions — which carries the red-run figures of the retired
@@ -66,28 +68,16 @@ fi
 # ---- window end (last day in the data) --------------------------------------
 read -r endj endd <<< "$(awk -F'\t' '$7 + 0 > j { j = $7 + 0; d = $4 } END { print j + 0, d }' "$TF")"
 
-# ---- pass 1: attribute each File to its configured subscription --------------
-# Longest-uppercase-prefix match against the configured names (memoized per
-# distinct logged site); unmatched sites keep their own (uppercased) name.
+# ---- pass 1: each File under its subscription (col 12, upper-cased) ----------
 # Emits: key <TAB> sortkey <TAB> jdn <TAB> date <TAB> time <TAB> outcome <TAB> size
 # ---- pass 2 (after the sort): one aggregate line per key ---------------------
 #   K <TAB> key <TAB> n <TAB> ok <TAB> err <TAB> bytes <TAB> lastdate <TAB>
 #   lastj <TAB> lastfail <TAB> runstart <TAB> runjd <TAB> runlen <TAB>
 #   lastokd <TAB> wtot <TAB> wrisk <TAB> wriskb <TAB> wriskolddate <TAB> wriskoldjd
 agg=$(awk -F'\t' -v OFS='\t' '
-    FILENAME ~ /_subscriptions\.tsv$/ { nc++; CFG[nc] = toupper($1); next }
     $12 == "" || $4 == "" || $7 == "" { next }
-    {
-        u = toupper($12)
-        if (!(u in MAP)) {
-            best = ""
-            for (i = 1; i <= nc; i++)
-                if (length(CFG[i]) > length(best) && index(u, CFG[i]) == 1) best = CFG[i]
-            MAP[u] = (best != "") ? best : u
-        }
-        print MAP[u], $6, $7 + 0, $4, $5, $2, $8 + 0
-    }
-' "$BASE_SUBS" "$TF" \
+    { print toupper($12), $6, $7 + 0, $4, $5, $2, $8 + 0 }
+' "$TF" \
 | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 \
 | awk -F'\t' -v OFS='\t' -v endj="$endj" -v riskage="$RISK_AGE" '
     function flush() {
@@ -149,7 +139,9 @@ rows_raw=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
         if ($3 == "red") { nr++; REDK[nr] = u }
         next
     }
-    FILENAME ~ /_redflip\.tsv$/ { FLIP[toupper($1)] = $2; next }
+    # the red-flip sidecar: SINCE (col 3 — when it went red) dates the row,
+    # the newest evidence (col 2) is what the Evidence cell quotes
+    FILENAME ~ /_redflip\.tsv$/ { FLIP[toupper($1)] = ($3 != "") ? $3 : $2; FLIPE[toupper($1)] = $2; next }
     $1 != "K" { next }
     {
         key = $2; n = $3 + 0; ok = $4 + 0; err = $5 + 0; bytes = $6 + 0
@@ -169,7 +161,7 @@ rows_raw=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
             else if (lastfail)    sym = "used to work — " runlen " consecutive failure(s), last OK " lastokd
             else                  sym = "last File OK (" lastdate ") — flipped red by server-log evidence"
             if (wrisk > 0)        sym = sym "; " wrisk " staged at risk"
-            if (key in FLIP)      ev = "server-log evidence " FLIP[key] " — see Failed Subscriptions (Last green day)"
+            if (key in FLIP)      ev = "server-log evidence since " FLIP[key] ", newest " FLIPE[key] " — see Failed Subscriptions (Last green day)"
             else if (ok == 0)     ev = "never green — see Failed Subscriptions (Last green day never)"
             else                  ev = "first failure of the run " runstart " — see Failed Subscriptions (Last green day)"
             emit(disp, "red", since, days, n, ok, err, bytes, 0, sym, ev)
@@ -216,7 +208,6 @@ sum_n=0; sum_ok=0; sum_err=0
 {
     printf 'TITLE\tTriage\n'
     printf 'DESC\tThe ranked action list: every subscription that is red, has staged Files about to expire, or just went quiet — newest flips with the biggest history first.\n'
-    printf 'KEYWORDS\ttriage, action list, priority, ranked, broken, red, expiry, at risk, staged, quiet, silence, needs attention, worklist\n'
     printf 'INTRO\tOne worklist instead of six symptom pages: **%s** subscription(s) currently need eyes — **%s** are **red** (last File failed, or server-log evidence after the last OK), **%s** carry staged Files at **expiry risk** (Waiting for **%s+ days**; the retention sweep deletes at ~11), and **%s** **just went quiet** (last File %s-%s days before the window end **%s** — the freshest silences). Ranked by state recency times historical weight, so the newest problems on the busiest flows come first. The per-symptom pages remain the deep-dives; the Evidence column says where to read on.\n' \
         "${n_rows:-0}" "${n_red:-0}" "${n_risk:-0}" "$RISK_AGE" "${n_quiet:-0}" "$QUIET_LO" "$QUIET_HI" "${endd:-?}"
 
@@ -227,7 +218,7 @@ sum_n=0; sum_ok=0; sum_err=0
 
     printf 'TABLE\tRanked action list\twide\tnofilter\tsort=9:-1\n'
     printf 'HEAD\tSubscription\tStatus\tSince\tDays in state\tFiles\tOK\tError\tVolume in window\tAt expiry risk\tScore\tSymptoms\tEvidence\n'
-    printf 'KIND\tsite\ttext\ttext\tnum\tnum\tnumprocessed\tnumfailed\ttext\ttext\tnum\ttext\ttext\n'
+    printf 'KIND\tsite\ttext\ttext\tnum\tnum\tnumprocessed\tnumfailed\ttext\ttext\tnum\tprose\tprose\n'   # prose: Symptoms / Evidence wrap (2026-09-29 audit — the page ran 2,325 px wide)
     if [ "${n_rows:-0}" -eq 0 ]; then
         printf 'ROW\t@{colspan=12}Nothing to triage — no red, no staged Files at risk, no fresh silences.\n'
     else
@@ -241,7 +232,7 @@ sum_n=0; sum_ok=0; sum_err=0
     fi
     printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t\t\t\n' \
         "${n_rows:-0}" "$sum_n" "$sum_ok" "$sum_err" "$t_vol_h" "$t_risk_h"
-    printf 'NOTE\tRank score = **lifetime Files / (days in state + 1)** — state recency times historical weight: a flow that flipped yesterday after carrying hundreds of Files outranks one red for a month, which outranks a one-file wonder. **Days in state** counts against the last day in the data (**%s**), never the wall clock. Red-since is the server-log evidence stamp where one exists, else the first failure of the current failing run. **Volume in window** is the flow'\''s volume over the loaded data window — historical throughput, not an undelivered backlog; **At expiry risk** is the staged, uncollected bytes the sweep is about to delete (expiry-risk rows only). They were one column until 2026-09-05. One row per subscription, priority red > expiry-risk > just-went-quiet; the symptoms mention any second condition. This page is an ADDITION: **Failed Subscriptions** (Last green day, Days red, Failures in a row), **Went quiet**, **Waiting**, **Expired** and the **Boxes** pages remain the per-symptom deep-dives — the Evidence column points the way.\n' \
+    printf 'NOTE\tRank score = **lifetime Files / (days in state + 1)** — state recency times historical weight: a flow that flipped yesterday after carrying hundreds of Files outranks one red for a month, which outranks a one-file wonder. **Days in state** counts against the last day in the data (**%s**), never the wall clock. Red-since is when the server-log evidence began where the flow is red on it, else the first failure of the current failing run. **Volume in window** is the flow'\''s volume over the loaded data window — historical throughput, not an undelivered backlog; **At expiry risk** is the staged, uncollected bytes the sweep is about to delete (expiry-risk rows only). They were one column until 2026-09-05. One row per subscription, priority red > expiry-risk > just-went-quiet; the symptoms mention any second condition. This page is an ADDITION: **Failed Subscriptions** (Last green day, Days red, Failures in a row), **Went quiet**, **Waiting**, **Expired** and the **Boxes** pages remain the per-symptom deep-dives — the Evidence column points the way.\n' \
         "${endd:-?}"
     printf 'LINK\tfailed.html\tFailed Subscriptions — the red worklist, with the Last green day and Days red of every run\n'
     printf 'LINK\t../transfer/went-quiet-subscriptions.html\tWent quiet — every silence, not just the fresh ones\n'

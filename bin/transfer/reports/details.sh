@@ -367,18 +367,16 @@ _ptimed direction_rows direction_rows   > "$_pdir/dirs" & _ppids+=($!)
             | join("\t")' "$S_JSON" 2>/dev/null || true
     fi
 } > "$_pdir/siteloc" & _ppids+=($!)
-# Files staged for a partner but never collected: the server log's File
-# Maintenance "Deleted files [/f1, /f2]" lines, extracted ONCE (one grep over the
-# server cache) into "ACCOUNT(upper)<TAB>filename<TAB>expiry-date" rows, looked up
-# per Account page by uncollected_files_table. Empty without a server cache.
+# Files staged for a partner but never collected: the EXPIRED Files of the
+# transfer cache (_files.tsv col 2 = Expired, col 22 = the deletion stamp
+# bin/expire-files.sh joined from the server log's File Maintenance sweep),
+# as "ACCOUNT(upper)<TAB>file name<TAB>expiry stamp" rows, looked up per
+# Account page by uncollected_files_table. Since 2026-09-29 (audit) from the
+# cache: this step re-derived them from its own server-log scan, listed
+# routine deletions of already-collected copies too, and showed the path.
 {
-    if [ -s "$SERVER_CACHE/_parse.tsv" ]; then
-        LC_ALL=C grep -a 'Deleted files \[/' "$SERVER_CACHE/_parse.tsv" 2>/dev/null | awk -F'\t' '
-            { if (!match($5, /[A-Za-z0-9_.-]+@FE[0-9]+/)) next
-              a=substr($5,RSTART,RLENGTH); sub(/@.*/,"",a); a=toupper(a)
-              if (!match($5, /Deleted files \[[^]]*\]/)) next
-              c=substr($5,RSTART+15,RLENGTH-16); n=split(c,z,", ")
-              for(i=1;i<=n;i++){ f=z[i]; sub(/^\//,"",f); gsub(/^ +| +$/,"",f); if(f!="") print a "\t" f "\t" $1 } }' || true
+    if [ -s "$FILES" ]; then
+        awk -F'\t' '$2 == "Expired" && $3 != "" { f = $11; gsub(/[\t\r]/, " ", f); print toupper($3) "\t" f "\t" $22 }' "$FILES" || true
     fi
 } > "$_pdir/uncollected" & _ppids+=($!)
 # Per-PID wait — a bare `wait` swallows child exit codes, so a producer dying

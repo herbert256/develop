@@ -25,7 +25,6 @@ mkdir -p "$DOCS/transfer/entities"
 rm -f "$DOCS"/transfer/entities/*.html   # the Entities All/Seen/Not seen/Server/OK/Warning/Error pages (render_entity_report)
 mkdir -p "$DOCS/analyses/xref"
 rm -f "$DOCS"/analyses/xref/*.html       # the cross-reference pages (render_report's cross-* branch, now under analyses/)
-rm -rf "$DOCS/transfer/xref"             # the cross pages moved to analyses/xref/ (2026-07) — drop the old dir
 
 # (the per-entity detail pages moved to bin/transfer/publish-details.sh —
 # their OWN bin/build.sh step since 2026-07)
@@ -51,11 +50,9 @@ pub_wait
 # (the Longest Files record pages, docs/transfers/duration/top/<coreid>.html,
 # went 2026-09-29: each was a copy of the File page docs/files/<coreid>.html,
 # which the Longest Files cells open instead)
-rm -rf "$DOCS/transfers"
 
 # (the Seen-in-server-log matrix cell pages, docs/transfer/seenlog/, went with
 # the BLUE server-log-only status and its report, 2026-09-27)
-rm -rf "$DOCS/transfer/seenlog"
 
 # Security-parameter VALUE pages: security-params.sh wrote one .rpt per
 # (table, value) into data/transfer/reports/secparams/, listing the
@@ -154,7 +151,6 @@ shopt -u nullglob
 # retired docs/errors/ goes too (a manual publish over a pre-merge tree)
 mkdir -p "$DOCS/files"
 rm -f "$DOCS"/files/*.html
-rm -rf "$DOCS/errors"
 # IN BATCHES (2026-09-27, speed round 9): thousands of ~10 ms renders, one
 # pooled job EACH, spent more on the job fork and the pool's polling than on
 # the pages — a job now renders a run of pages (4 runs per pool slot). The

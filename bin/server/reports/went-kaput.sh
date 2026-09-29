@@ -41,17 +41,17 @@
 # door: $REPORTS_DIR/_kaput-evidence.tsv carries one line per subscription with
 # post-transfer errors, green or not (name, latest issue, source, message,
 # newest E-level message), and
-# bin/analyses/publish-insights.sh reads it to name the fault behind a red flow
-# in the home page's Reason column. Since 2026-08-22 the same evidence FLIPS
+# bin/analyses/publish-insights.sh (the Boxes reasons), failed.sh (its
+# server rows) and publish_lib.sh (the Entities Reason) read it to name the
+# fault behind a red flow. Since 2026-08-22 the same evidence FLIPS
 # the flow red (bin/build/result.sh _build_kaputflip — the loose connected-
 # ring join promoted to the colour, deploy-classified flows excluded, the UC3
-# clean-poll keep applied, and since 2026-09-05 a UC3 connection failure
+# poll green-keep applied, and since 2026-09-05 a UC3 connection failure
 # counting only after THREE failed polls in a row — colour/_connhold.tsv), so a
-# trouble-after-success flow normally arrives
-# on the home "Failing subscriptions in Server log" table RED and leaves this
-# page through the still-green filter; what stays here is the deploy-
-# classified and poll-cleared remainder. bin/build/publish.sh's green-row
-# path remains as a safety net for any green candidate the flip did not take. NOTE a connected account serves other flows too, so an account
+# trouble-after-success flow normally arrives on Failed Subscriptions RED
+# and leaves this page through the still-green filter; what stays here is the
+# deploy-classified, poll-cleared and connection-held remainder. NOTE a
+# connected account serves other flows too, so an account
 # Error/Warn need not be about THIS subscription; the Source column says which
 # entity logged it, and the click-to-expand drill shows the lines.
 #
@@ -63,8 +63,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SERVER lib, not the analyses one: this is a server-DATA report (it reads the
 # server parse cache and writes data/server/reports/). It lives HERE
-# because its page sits in the ANALYSES menu, in the Subscriptions group — the
-# same arrangement as cross-reference.sh. bin/build.sh runs it ONCE, early —
+# because its page is an analyses/ page (the UC status report group of the one
+# Reports menu, 2026-09-29) — the same arrangement as cross-reference.sh. bin/build.sh runs it ONCE, early —
 # right after result.sh — not the server-reports pool (2026-09-28).
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
@@ -99,9 +99,6 @@ if [ ${#files[@]} -eq 0 ] || [ ! -s "$FILES" ]; then
     rm -f "$OUT"   # env-split legitimate state: nothing to report
     exit 0
 fi
-# Rebuild when the transfer cache, the server err/warn rings (the server
-# _subscriptions.tsv mention cache is a representative — rewritten in the same
-# parse pass as the per-name dirs), the connection maps, or this script change.
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # 1) the LAST transfer per subscription (max sortkey), keeping only those whose
@@ -117,7 +114,7 @@ trap 'rm -f "$rowfile" "$lastokf" "$pollf"' EXIT
 # E-level evidence has VERIFIED itself working since the error — the same
 # evidence bin/build/result.sh trusts to keep a would-be-red UC3 green — so it
 # is not "trouble after success" any more and is skipped: off this page AND
-# off the evidence sidecar (the home early-warning table reads that), counted
+# off the evidence sidecar (the Reason readers take it from there), counted
 # in the INTRO like the red ones. Newest poll stamp per UC3, from the per-name
 # MENTION caches (the same scan result.sh's POLLCAND uses; the _err_warn ring
 # is the ERROR ring, not the mention cache).
@@ -193,7 +190,7 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
     # flow-level line on a shared account, login or host concerns ONE of its
     # flows and is not an early warning for the others. The same rule keeps
     # bin/build/result.sh _build_kaputflip (the colour) and this page (the
-    # warning + the home Reason sidecar) in step. 1:1 owners are unchanged.
+    # warning + the Reason sidecar) in step. 1:1 owners are unchanged.
     function connlevel(r) { return (r == "Connection failures" || r == "Wrong server fingerprint" || r == "Login errors (out)") }
     # the subscriptions this host ring speaks for: every single-host flow whose
     # host is this endpoint, or an endpoint this ADDRESS forwards to (hmap is
@@ -271,7 +268,7 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
             # "Transfer site ID is not present in environment", which has its
             # own report now) — so the row columns, the Source list, the
             # Latest issue and the drill all read the E-level facts. The
-            # EVIDENCE SIDECAR keeps BOTH levels: the home Reason walks it
+            # EVIDENCE SIDECAR keeps BOTH levels: the Reason readers walk it
             # (newest E line preferred), and a warnings-only candidate must
             # stay nameable even though a Warning no longer flips a flow red
             # (bin/build/result.sh, errors-only since 2026-08).
@@ -292,17 +289,18 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
             s = order[i]
             if (ne[s] + nw[s] == 0) continue          # nothing after the last transfer: no candidate
             # the UC3 CLEAN-POLL CLEAR, greens only and BEFORE the evidence
-            # line, so the home early-warning table (fed by the sidecar) skips
-            # the flow too: a successful poll no older than the newest error
-            # means the flow has verified itself working since — the same
-            # >= comparison result.sh trusts to keep a would-be-red UC3 green.
-            # Red flows keep their evidence unconditionally (the home Reason).
+            # line, so the sidecar skips the flow too: a successful poll NEWER
+            # than the newest error means the flow has verified itself working
+            # since — the same strict > comparison result.sh trusts to keep a
+            # would-be-red UC3 green (2026-09-29 audit: this was >=; result.sh,
+            # which decides the colour, is the master).
+            # Red flows keep their evidence unconditionally (the Reason).
             if (ne[s] > 0 && col[toupper(s)] == "green" && (toupper(s) ~ /^UC3/ || (toupper(s) in ucd3)) \
-                && (toupper(s) in pol) && pol[toupper(s)] >= ldtE[s]) { npoll++; continue }
+                && (toupper(s) in pol) && pol[toupper(s)] > ldtE[s]) { npoll++; continue }
             ss = ""
             for (j = 1; j <= 4; j++) if (has[s, ord[j]]) ss = ss (ss == "" ? "" : ", ") ord[j]
             # the evidence sidecar carries EVERY candidate, whatever its colour
-            # or LEVEL: the home page names the fault behind a red flow from it.
+            # or LEVEL: the Reason readers name the fault behind a red flow from it.
             # Column 5 is the newest E-LEVEL message ("" when only warnings
             # followed): the Reason prefers a real error over a benign warning
             # that merely happens to be newer.
@@ -335,7 +333,7 @@ fi
     printf 'DESC\tStill-GREEN subscriptions whose last transfer succeeded but which then logged a server-log ERROR — for the subscription or a connected login, account or remote host. Warnings do not count.\n'
     printf 'KEYWORDS\tsubscription,error,warning,after last transfer,post-transfer,server log,failing,login,account,kaput,went kaput\n'
     printf 'INTRO\tSubscriptions whose **last transfer was OK** but which then logged an **Error** in the server log **after** that transfer — either the subscription itself or a connected login, account or remote host. A recent problem on a flow that last looked healthy. **Errors only** (2026-08): a Warning does not put a flow on this page — the warnings-only shape was the benign "Transfer site ID is not present in environment", which has its own report in this group.\n'
-    printf 'INTRO\t**Still green only.** The same evidence is what turns a flow RED site-wide, so a subscription this page would name that has already gone red is not an early warning any more — it is simply failing, and the **home page** lists every red flow with its reason. What is left here is the useful half: flows that still count as healthy and have started logging errors.%s%s\n' \
+    printf 'INTRO\t**Still green only.** The same evidence is what turns a flow RED site-wide, so a subscription this page would name that has already gone red is not an early warning any more — it is simply failing, and **Failed Subscriptions** lists every red flow with its reason. What is left here is the useful half: flows that still count as healthy and have started logging errors.%s%s\n' \
         "$( [ "${nred:-0}" -gt 0 ] && printf ' **%s** subscription(s) were left out this run for being red already.' "$nred" || printf '' )" \
         "$( [ "${npoll:-0}" -gt 0 ] && printf ' **%s** UC3 subscription(s) were cleared by a successful poll no older than their newest error — "0 file(s) were found" is the flow verifying itself working, the same evidence that keeps a UC3 green site-wide.' "$npoll" || printf '' )"
     if [ "$nrows" -eq 0 ]; then

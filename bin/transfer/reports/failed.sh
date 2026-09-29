@@ -27,19 +27,22 @@
 # server-log error after its last delivery, a deploy mistake, an
 # authentication failure attributed to it) — kind R without a failed File in
 # the data, kind P with older ones (its server row replaces its file row) —
-# gets one row per list: @data:srv=1, Date/time = the server evidence stamp
-# (colour/_redflip.tsv, else the kaput sidecar, else its last File), Reason =
+# gets one row per list: @data:srv=1, Date/time = the NEWEST server evidence
+# stamp (colour/_redflip.tsv col 2, else the kaput sidecar, else its last
+# File), Last green day = its newest OK File's day ("never"), Days red = from
+# the flip's SINCE (_redflip.tsv col 3 — when it went red) to the data
+# window's last day, Reason =
 # the classified newest server E line (_kaput-evidence.tsv through
 # bin/flip-reason.awk) else its Subscriptions-in-boxes box (one build behind,
 # like the entities Reason column). Like a file row, the whole row opens the
 # flow's OWN error page — files/<slug>.html, NAMED BY THE SUBSCRIPTION,
 # holding the facts and the server-log mention ring (the page step below the
 # finishing pass writes them). So each view covers ALL failing
-# subscriptions, transfer and server alike — the same total the home
-# page's two red tables split between them. Consumers of failed-sub-all.rpt
-# (home table 1 in bin/build/publish.sh, the entities Reason in
-# publish_lib.sh) skip these rows by their @data:srv cell and take a file
-# row's CoreId page from its @data:href — the columns are Subscription,
+# subscriptions, transfer and server alike (the home page's red worklists
+# that split them went; this page is THE red list). The consumer of
+# failed-sub-all.rpt (the Entities Reason column, publish_lib.sh) skips
+# these rows by their @data:srv cell and takes a file row's CoreId page
+# from its @data:href — the columns are Subscription,
 # Date/time, Reason, CoreId / SessionId and the red-run trio Last green day,
 # Days red, Failures in a row (see the list writer below).
 #
@@ -87,9 +90,9 @@
 #
 # The REASON column (2026-08, replacing Ended): the fault the file's
 # own drill page shows, classified by bin/flip-reason.awk — the SAME function
-# behind the home page's red-worklist Reason, whose first-priority source is
-# exactly these pages (_errpage-evidence.tsv + pagereason() in
-# publish-insights.sh). Per file: the page's first 8 Error/Warning lines,
+# behind the Boxes reasons (publish-insights.sh) and the Entities Reason
+# column (publish_lib.sh), whose first-priority source is exactly these pages
+# (_errpage-evidence.tsv + pagereason() in publish-insights.sh). Per file: the page's first 8 Error/Warning lines,
 # ERROR lines first in page order, first classification wins — the opening
 # error of a failure is the cause, everything after it consequence. A file
 # WITHOUT a page (most older Files — the pass reasons EVERY File in error,
@@ -307,7 +310,6 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
         close(f9) }
     function rescol(A9, nm,   r) { r = (toupper(nm) in A9) ? A9[toupper(nm)] : ""
         return (r == "green" || r == "orange" || r == "red") ? r : "" }
-    function subtint(nm,   r) { r = rescol(SRES, nm); return (r != "") ? "\t@data:res=" r : "" }
     # A facts-table entity cell: the entity RESULT colour on the cell (the same
     # tint its own page and the Entities views carry) plus the detail-page link,
     # resolved through that sub-dir\047s slugmap at render time. A name the
@@ -489,7 +491,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
 _flap "the failed Files, the drill + File pages"
 # ---- The SERVER-FAILING set (2026-08) ---------------------------------------
 # Every RED subscription that is server-reddened (colour/_redflip.tsv) or has NO
-# failed File at all — exactly the home table-2 red membership. Computed
+# failed File at all — red on the server log's word, not a failed File's. Computed
 # BEFORE the server-cache scan below, so the scan can resolve each flow's
 # evidence STAMP to the SESSION of the reddening Error line (and the second
 # pass after it collect that session's whole conversation for the drill
@@ -497,19 +499,28 @@ _flap "the failed Files, the drill + File pages"
 #   slug   the page basename (lowercased, non-alnum runs folded to "-", the
 #          slugify rule; a separator-twin collision takes a numeric suffix; a
 #          slug can never collide with a CoreId page, those being UUIDs)
-#   stamp  colour/_redflip.tsv, else the kaput sidecar, else the last File
+#   stamp  colour/_redflip.tsv col 2 (the NEWEST evidence — its session is
+#          the page's reddening session), else the kaput sidecar, else the
+#          last File
 #   reason the classified kaput E line, else the Subscriptions-in-boxes box
 #   kind   R = no failed File (a list server-row + a page)
-#          P = redflip WITH failed Files (page only — the lists keep its file
-#              rows; home table 2 links the page)
+#          P = redflip WITH failed Files (its server row REPLACES its file
+#              row on the lists, and it gets the page)
 [ -f "$RFLIP" ] || RFLIP=/dev/null
 [ -f "$KAPUT" ] || KAPUT=/dev/null
 [ -f "$BOXES" ] || BOXES=/dev/null
 # the last-File stamp per subscription (ALL outcomes — a server-reddened
 # flow's last File is usually an OK one), the Started fallback
-LC_ALL=C awk -F'\t' -v OFS='\t' '$12 != "" { k = $12
-        if ($6 > mx[k]) { mx[k] = $6; d[k] = $4 " " $5 } }
-    END { for (k in d) print k, d[k] }' "$FILES" > "$TMP/lastfile"
+# ... and, for the server rows' red-run columns, the newest OK File's day per
+# subscription (outcome policy: not Failed / Expired) and the data window's
+# last day (max col 7, the from-green-to-red Days red end)
+LC_ALL=C awk -F'\t' -v OFS='\t' -v OKF="$TMP/lastok" -v MJF="$TMP/maxjd" '$12 != "" { k = $12
+        if ($6 > mx[k]) { mx[k] = $6; d[k] = $4 " " $5 }
+        if ($2 != "Failed" && $2 != "Expired" && $6 > ox[k]) { ox[k] = $6; od[k] = $4 } }
+    $7 + 0 > mj { mj = $7 + 0 }
+    END { for (k in d) print k, d[k]
+          printf "" > OKF; for (k in od) print k, od[k] > OKF
+          print mj + 0 > MJF }' "$FILES" > "$TMP/lastfile"
 : > "$TMP/srvsubs"; : > "$TMP/srvsess2"
 LC_ALL=C awk -F'\t' -v OUTS="$TMP/srvsubs" \
     -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" \
@@ -657,7 +668,10 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
         # onto the wrong branch (2026-09-28 fix)
         FILENAME == ARGV[1] { idmap[$1] = $2; next }  # ids: transfer_id/CoreId -> CoreId
         FILENAME == ARGV[2] {                         # sess: session -> CoreId(s)
-            sesmap[$1] = ($1 in sesmap) ? sesmap[$1] " " $2 : $2; next
+            # if/else, never A[k] = (k in A) ? …: mawk creates the key before the
+            # test runs, and every first value gained a leading separator
+            if ($1 in sesmap) sesmap[$1] = sesmap[$1] " " $2; else sesmap[$1] = $2
+            next
         }
         FILENAME == ARGV[3] {                         # meta: coreid, site, date, time, endt, nses
             nc++; C[nc] = $1
@@ -748,7 +762,7 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/srvsess2" ]; then
                               if (x == "E") return "Error"; return x }
         BEGIN { while ((getline l < SS) > 0) { p = index(l, "\t")
                     if (p > 0) { s = substr(l, p + 1); m = substr(l, 1, p - 1)
-                        SM[s] = (s in SM) ? SM[s] "\n" m : m } }
+                        if (s in SM) SM[s] = SM[s] "\n" m; else SM[s] = m } }   # if/else: see sesmap above
                 close(SS) }
         FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
         $6 != "" && ($6 in SM) {
@@ -974,8 +988,9 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
 ' "$TMP/srvsubs"
 
 # The ERROR-PAGE EVIDENCE sidecar (2026-08): per subscription, the newest
-# Error/Warning line any of its drill pages shows. The home page's Reason column
-# names the fault behind a red flow from the server log, and its first source —
+# Error/Warning line any of its drill pages shows. The Boxes reason
+# (publish-insights.sh pagereason) names the fault behind a red flow from the
+# server log, and its other source —
 # went-kaput's sidecar — only covers flows whose LAST TRANSFER WAS OK. A flow
 # whose last transfer FAILED and which sits in no specific box therefore had no
 # reason at all, though its own error page was showing the very line that
@@ -991,7 +1006,8 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
 # "No files were processed during step execution". Reading from the end names
 # the symptom; reading from the start names the fault.
 #
-# The NEWEST page, because that is the one the home row links to: a flow with
+# The NEWEST page, because that is the one the Failed Subscriptions row links
+# to: a flow with
 # several drill pages must be explained by the failure the reader opens, not by
 # an older one. Each page is buffered as it is read and replaces the flow
 # incumbent when its lines are newer.
@@ -1043,7 +1059,7 @@ mv "$EVID.tmp" "$EVID"
 #      Error/Warning ROW lines, the same candidate rule the sidecar applies.
 #      Each file explains ITS OWN failure where it can.
 #   2. ONE-LEGGED (2026-08): a file its own page did not classify which
-#      took a single leg reads "One-legged" — the home names that box for
+#      took a single leg reads "One-legged" — the Boxes page names that box for
 #      exactly these flows (a lone inbound arrival, nothing ever went out),
 #      and the two pages should agree. BEFORE the flow borrow below
 #      (2026-08-22): a one-legged file whose own session logged only clean
@@ -1065,7 +1081,7 @@ mv "$EVID.tmp" "$EVID"
 #      the same staleness rule that narrowed the flow borrow.
 #   4. the FLOW's sidecar candidates — the newest page of that subscription BY
 #      SERVER-LINE STAMP, which is publish-insights.sh pagereason()'s exact
-#      first-priority source for the home page's Reason. A MULTI-leg file
+#      first-priority source for the Boxes reasons. A MULTI-leg file
 #      whose sessions logged no error at all still gets the flow's verdict.
 #   5. the LAST LEG's raw Status ("Failed Subtransmission") — from the page
 #      for a paged file, from the $TMP/lastst sidecar for an unpaged one.
@@ -1202,7 +1218,7 @@ _flap "server-failing pages + the reasons"
 # descending — interleaves them on load).
 LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" \
     -v REAS="$TMP/reasons" -v PAGEDF="$TMP/paged" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" \
-    -v SRVS="$TMP/srvsubs" -v SESSF="$TMP/srvsess2" \
+    -v SRVS="$TMP/srvsubs" -v SESSF="$TMP/srvsess2" -v RF="$RFLIP" -v LOKF="$TMP/lastok" -v MJF="$TMP/maxjd" \
     -v FGR="$REPORTS_DIR/from-green-to-red.rpt" -v ORED="$REPORTS_DIR/only-red.rpt" '
     function rescol(nm,   r) { r = (toupper(nm) in SRES) ? SRES[toupper(nm)] : ""
         return (r == "green" || r == "orange" || r == "red") ? r : "" }
@@ -1214,7 +1230,28 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" \
     function redcols(nm,   k) { k = toupper(nm)
         if (k in RLG) return "\t" RLG[k] "\t" RDR[k] "\t" RCF[k]
         return "\t\t\t" }
+    function jdn(y, m, d,   a) { a = int((14 - m) / 12); y = y + 4800 - a; m = m + 12 * a - 3
+        return d + int((153 * m + 2) / 5) + 365 * y + int(y / 4) - int(y / 100) + int(y / 400) - 32045 }
+    # ... and a SERVER row\047s (2026-09-29 audit — they read blank): Last green
+    # day = its newest OK File\047s day ("never"), Days red = from the flip\047s
+    # SINCE (_redflip.tsv col 3, when it went red — not its newest evidence)
+    # to the data window\047s last day, Failures in a row blank (no failed File
+    # is the current story)
+    function srvcols(nm,   k, s9, dr) { k = toupper(nm); dr = ""
+        if (k in RSN) { s9 = RSN[k]
+            if (s9 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) {
+                dr = MAXJ - jdn(substr(s9, 1, 4) + 0, substr(s9, 6, 2) + 0, substr(s9, 9, 2) + 0)
+                if (dr < 0) dr = 0 } }
+        return "\t" ((k in LOKD) ? LOKD[k] : "never") "\t" dr "\t" }
     BEGIN {
+        while ((getline l < RF) > 0) { n = split(l, a, "\t")
+            if (n >= 2 && a[1] != "") RSN[toupper(a[1])] = (n >= 3 && a[3] != "") ? a[3] : a[2] }
+        close(RF)
+        while ((getline l < LOKF) > 0) { n = split(l, a, "\t")
+            if (n >= 2 && a[1] != "") LOKD[toupper(a[1])] = a[2] }
+        close(LOKF)
+        if ((getline l < MJF) > 0) MAXJ = l + 0
+        close(MJF)
         # from-green-to-red.rpt ROW: 2 site, 3 last green day, 5 days red,
         # 6 consecutive failures; only-red.rpt ROW: 2 site, 3 Files, 8 days
         # failing — both written by the report pool, present on the catch-up
@@ -1239,7 +1276,7 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" \
         # it was kind R only): kind R (no failed File anywhere) is the one
         # row of the flow; kind P (server-reddened WITH failed Files)
         # REPLACES the file row of the flow — the CURRENT story is the server
-        # verdict, exactly what the home page must agree on.
+        # verdict, exactly what the flow colour says.
         while ((getline l < SRVS) > 0) { n = split(l, a, "\t")
             if (n >= 2 && a[1] != "") { nsv++
                 SVN[nsv] = a[1]; SVS[nsv] = a[2]
@@ -1264,7 +1301,9 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" \
             F[k] = f
             printf "TITLE\tFailed Subscriptions\n" > f
             printf "DESC\t%s\n", DSC[k] > f
-            printf "KEYWORDS\tfailed,failure,error,coreid,legs,subscription,still,failing,recent,last\n" > f
+            # KEYWORDS on the finder page only (failed.rpt); the All view is
+            # reached through the selector row, the finder never scans it
+            if (k == "sub-failing") printf "KEYWORDS\tfailed,failure,error,coreid,legs,subscription,still,failing,recent,last\n" > f
             # Newest first is the page DEFAULT (Date/time, desc), not `nosort` —
             # the rows arrive by recency but must still be sortable by any
             # column. `restint` + the per-row @data:res: the row carries its
@@ -1276,10 +1315,9 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" \
             # user request: the id of the last error last — a failed File row its
             # CoreId, a server-log row the SESSION of its reddening error line,
             # never a transfer id; the Environment letter column in front went
-            # 2026-09-29, user request) — the positional readers of
-            # failed-sub-all.rpt (home table 1, bin/build/publish.sh; the Entities
-            # Reason, publish_lib.sh) read Subscription = field 2, Date/time = 3,
-            # Reason = 4
+            # 2026-09-29, user request) — the positional reader of
+            # failed-sub-all.rpt (the Entities Reason, publish_lib.sh) reads
+            # Subscription = field 2, Date/time = 3, Reason = 4
             printf "TABLE\t\twide\tsort=1:-1\trowlink\trestint\tnosearch\n" > f
             printf "HEAD\tSubscription\tDate/time\tReason\tCoreId / SessionId\tLast green day\tDays red\tFailures in a row\n" > f
             printf "KIND\tsite\ttext\ttext\tmono\ttext\tnum\tnum\n" > f
@@ -1301,7 +1339,7 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" \
         # the same target (rowlink). The CoreId is the LAST column again (headed
         # CoreId / SessionId — a server-log row carries its session there) since
         # 2026-09-21 (report.js links it to File Tracking); the failed-sub-all
-        # consumers (home table 1, the entities Reason) still extract the
+        # consumer (the entities Reason) still extracts the
         # page from @data:href. S implies L, so every listed row is PAGED; the
         # unpaged branch (the Subscription cell'"'"'s ordinary detail link,
         # nothing else) is a guard.
@@ -1330,16 +1368,16 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" \
             # reddening line (blank when the scan resolved none), never a CoreId
             sk = toupper(SVN[j])
             srow = sprintf("ROW\t@{href=../files/%s.html,nolink=1}%s\t%s\t%s\t%s%s\t@data:href=../files/%s.html\t@data:srv=1\t@data:res=red", \
-                           SVS[j], SVN[j], SVT[j], SVR[j], ((sk in SVSES) ? SVSES[sk] : ""), redcols(SVN[j]), SVS[j])
+                           SVS[j], SVN[j], SVT[j], SVR[j], ((sk in SVSES) ? SVSES[sk] : ""), srvcols(SVN[j]), SVS[j])
             for (i = 1; i <= NP; i++) { print srow > F[PK[i]]; CNT[PK[i]]++ }
         }
         for (i = 1; i <= NP; i++) {
             k = PK[i]; f = F[k]
             printf "TOTAL\tTotal (%d rows)\t\t\t\t\t\t\n", CNT[k] + 0 > f
             printf "NOTE\tOne row per subscription: its newest failed File. The buttons pick the flows: **Still failing** hides the subscriptions that are green again (they have delivered OK since); **All** keeps them. Every File in error is on the Failed files page.\n" > f
-            printf "NOTE\tA File is one logical transfer (all records sharing a CoreId — the id is on the error page the row opens, and in the row'"'"'s link). A row carries the **colour of its subscription**: red = still failing, green = recovered since. **Reason** is the fault the file'"'"'s own error page shows — its first error line that classifies, in the home page'"'"'s red-worklist vocabulary; a single-leg file whose log names nothing recognisable reads **One-legged** (the arrival with no delivery IS the failure); a file without its own error page takes the reason of the **newest paged file of its subscription + leg-count combination** — the same failure shape; a multi-leg file whose sessions logged no error shows its last leg'"'"'s raw status (**Failed Subtransmission**); blank only when no rule applies. Outcome **Failed** or **Expired** (a file staged for a UC2 pickup that never came) — the site-wide Error rule; an Expired row reads **Expired (not collected)**. **Last green day** is the newest day that ended on an OK File (**never** for a flow that never delivered), **Days red** counts from the first failure of the current run to the data window last day, **Failures in a row** the consecutive Files in error.\n" > f
+            printf "NOTE\tA File is one logical transfer (all records sharing a CoreId — the id is on the error page the row opens, and in the row'"'"'s link). A row carries the **colour of its subscription**: red = still failing, green = recovered since. **Reason** is the fault the file'"'"'s own error page shows — its first error line that classifies (the vocabulary of every Reason column on the site); a single-leg file whose log names nothing recognisable reads **One-legged** (the arrival with no delivery IS the failure); a file without its own error page takes the reason of the **newest paged file of its subscription + leg-count combination** — the same failure shape; a multi-leg file whose sessions logged no error shows its last leg'"'"'s raw status (**Failed Subtransmission**); blank only when no rule applies. Outcome **Failed** or **Expired** (a file staged for a UC2 pickup that never came) — the site-wide Error rule; an Expired row reads **Expired (not collected)**. **Last green day** is the newest day that ended on an OK File (**never** for a flow that never delivered), **Days red** counts from the first failure of the current run to the data window last day, **Failures in a row** the consecutive Files in error. On a server-log row, **Last green day** is the day of its newest OK File and **Days red** counts from when the server-log evidence began.\n" > f
             printf "NOTE\tA file row opens the file'"'"'s own error page: the facts, every transfer leg with its status and timing, and the server-log lines of the connections it ran over.\n" > f
-            printf "NOTE\tA row is either a FAILED FILE (its Date/time is the file'"'"'s start, the row opens that file'"'"'s error page) or a subscription whose CURRENT failure is the **server log'"'"'s** — no failed File at all, or its last transfer ended OK and the server log erred after it: a post-delivery error, a deploy mistake, an authentication failure attributed to the flow. For those the Date/time is the server evidence stamp and the row opens the flow'"'"'s own error page — named by the subscription — with the server-log lines behind the verdict; the detail page is linked from its facts table. Together the two kinds are **every failing subscription**, transfer and server alike — the same set the home page'"'"'s two red tables split between them.\n" > f
+            printf "NOTE\tA row is either a FAILED FILE (its Date/time is the file'"'"'s start, the row opens that file'"'"'s error page) or a subscription whose CURRENT failure is the **server log'"'"'s** — no failed File at all, or its last transfer ended OK and the server log erred after it: a post-delivery error, a deploy mistake, an authentication failure attributed to the flow. For those the Date/time is the newest server evidence stamp and the row opens the flow'"'"'s own error page — named by the subscription — with the server-log lines behind the verdict; the detail page is linked from its facts table. Together the two kinds are **every failing subscription**, transfer and server alike.\n" > f
             printf "FOOT\tGenerated on %s\n", gen > f
             close(f)
         }

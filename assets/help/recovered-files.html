@@ -18,17 +18,18 @@
 <h1>Retries &amp; resubmissions &rsaquo; Recovered files</h1>
 <h2>What it shows</h2>
 <ul>
-<li>A <strong>recovered File</strong> carried at least one failed leg and still finished OK. Eight boxes: <strong>Recovered Files</strong>, <strong>Retry (automatic)</strong>, <strong>Resubmit (manual)</strong>, their share <strong>of all Files</strong>, <strong>Failed legs healed</strong>, and the <strong>Subscriptions</strong>, <strong>Protocols</strong> and <strong>Days</strong> involved.</li>
+<li>A <strong>recovered File</strong> carried at least one failed leg and still finished OK. Eight boxes: <strong>Recovered Files</strong>, <strong>Automatic</strong>, <strong>Manual</strong>, their share <strong>of all Files</strong>, <strong>Failed legs healed</strong>, and the <strong>Subscriptions</strong>, <strong>Protocols</strong> and <strong>Days</strong> involved.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Per subscription</strong> &mdash; <strong>Recovered</strong> = <strong>Retry</strong> + <strong>Resubmit</strong>; <strong>Files</strong> = all its Files; <strong>Recovered %</strong> = the share that needed a retry.</li>
+<li><strong>Per subscription</strong> &mdash; <strong>Recovered</strong> = <strong>Automatic</strong> + <strong>Manual</strong>; <strong>Files</strong> = all its Files; <strong>Recovered %</strong> = the share that needed a retry.</li>
 <li><strong>Per protocol</strong> &mdash; the same split, plus <strong>Failed legs healed</strong> over all <strong>Failed legs</strong> of that protocol = <strong>Healed %</strong>, how often a failure there is transient.</li>
-<li><strong>Per day</strong> &mdash; <strong>Files</strong>, <strong>Recovered</strong>, <strong>Retry</strong>, <strong>Resubmit</strong>, <strong>Share %</strong>; only days with a recovery; the Date opens the day page.</li>
+<li><strong>Per day</strong> &mdash; <strong>Files</strong>, <strong>Recovered</strong>, <strong>Automatic</strong>, <strong>Manual</strong>, <strong>Share %</strong>; only days with a recovery; the Date opens the day page.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Retry = the platform&rsquo;s automatic retry delivered it; Resubmit = one of its legs carries the Resubmitted flag (an operator). They are the Transfer top view&rsquo;s Recovered Automatic / Manual and the home page&rsquo;s Cured.</li>
+<li>Automatic = a later leg delivered it without an operator (a platform retry, or a failed last leg the server log shows ended ok &mdash; a bookend-settled File); Manual = one of its legs carries the Resubmitted flag (an operator). They are the Transfer top view&rsquo;s Recovered Automatic / Manual and the home page&rsquo;s Cured.</li>
+<li>Orange File rows elsewhere cover MORE: every OK File with a failed leg (this page) <em>or</em> a resubmitted leg &mdash; a resubmitted File that never failed is orange but not Recovered.</li>
 <li>OK = Processed or Waiting. A File counts on its <strong>start day</strong>.</li>
 <li>Per protocol uses the <em>failed</em> leg&rsquo;s protocol; failed legs on two protocols count under each, while its Total row counts each File once, narrowed dates included.</li>
 <li>A narrowed date range hides a subscription or protocol with no recovered File in it.</li>

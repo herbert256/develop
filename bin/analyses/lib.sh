@@ -16,8 +16,8 @@ source "$ROOT/bin/ip.sh"         # IP_HOSTS_FILE (input/ip/ip-hosts.tsv) + ip_pu
 DATA="data"
 REPORTS_DIR="$DATA/analyses/reports"        # home.rpt (the status tables' SEEN counts) + first-seen*.rpt
 FSRPT_DIR="$DATA/first-seen"                # one .rpt per First-seen cell page
-COVRPT_DIR="$DATA/coverage"                  # one .rpt per coverage cell page (the 3 PDA Configured cells)
-COVSRC="$DATA/transfer/reports/coverage"    # showseen.sh's coverage TSVs (+ the 3 derived ones below)
+COVRPT_DIR="$DATA/coverage"                  # one .rpt per coverage cell page (the 5 Logical / PDA / BL Configured cells)
+COVSRC="$DATA/transfer/reports/coverage"    # showseen.sh's coverage TSVs (+ the 5 derived ones below: logicals, bl, partners, applications, domains)
 mkdir -p "$REPORTS_DIR" "$COVRPT_DIR" "$FSRPT_DIR"
 
 meta_val() { grep -m1 "^META"$'\t'"$2"$'\t' "$1" 2>/dev/null | cut -f3- || true; }   # META key $2 in file $1

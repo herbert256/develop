@@ -61,19 +61,23 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
             }
             close(cfg)
         }
-        # transfer sidecar -> per-token record counts (attributed account col 4 or subscription/site col 6)
+        # transfer sidecar -> per-rule record counts, by the fields the
+        # transfer parse tests (bin/transfer/parse.sh: account col 4, LOGIN
+        # col 5, site col 6 — 2026-09-29 audit: the login rules were never
+        # counted here, and account/site rules were tried on the wrong column)
         if (tfile != "") {
             while ((getline l < tfile) > 0) {
                 n = split(l, a, "\t")
-                k = tokof(a[4]); if (k == 0) k = tokof(a[6])
+                k = sl_match("account", a[4]); if (k == 0) k = sl_match("login", a[5]); if (k == 0) k = sl_match("site", a[6])
                 if (k > 0) tcnt[k]++
             }
             close(tfile)
         }
-        # server sidecar -> per-token record counts (message col 5)
+        # server sidecar -> per-rule record counts: the server parse tests the
+        # MESSAGE (col 5) with the message / any rules (bin/server/parse.sh)
         if (sfile != "") {
             while ((getline l < sfile) > 0) {
-                n = split(l, a, "\t"); k = tokof(a[5]); if (k > 0) scnt[k]++
+                n = split(l, a, "\t"); k = sl_match("message", a[5]); if (k > 0) scnt[k]++
             }
             close(sfile)
         }

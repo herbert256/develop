@@ -259,7 +259,7 @@ fp_rows() {
         printf 'NOTE\tThe "Wrong server fingerprint: got X, expected Y" lines, per fingerprint pair: a partner endpoint presenting an SSH host key that does not match the stored known-host entry.\n'
     fi
 
-    printf 'SUMMARY\tConnection failures: %s  |  Reasons: %s  |  Remote hosts: %s  |  Test connections: %s  |  Host-key mismatches: %s\n' "$t_fail" "$n_reason" "$n_host" "$t_test" "${fp_tot:-0}"
+    printf 'SUMMARY\tConnection failures: %s  |  Reasons: %s  |  Hosts: %s  |  Test connections: %s  |  Host-key mismatches: %s\n' "$t_fail" "$n_reason" "$n_host" "$t_test" "${fp_tot:-0}"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

@@ -156,7 +156,10 @@ IFS='|' read -r _ tC tP tRVF tF tfp tT tTP tTF ttp wP wF wW wX ndays tRVA tRVM t
     printf 'TABLE\t\twide\ttotaltop\tdatereset\tpct=6:5:3;14:13:11\tgsep=3,7,9,11,15,19\n'
     printf 'GHEAD\t@{colspan=3}\t@{colspan=4,class=gband gsep}Files\t@{colspan=2,class=gband gsep}Recovered\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Transfers\t@{colspan=4,class=gband gsep}State\t@{class=gband gsep}\n'
     printf 'HEAD\tDate\tFirst\tLast\tCount\tOk\tError\tError %%\tAutomatic\tManual\tOk\tError\tCount\tOk\tError\tError %%\tProcessed\tFailed\tWaiting\tExpired\tVolume\n'
-    printf 'KIND\ttext\ttext\ttext\tnum\tnumprocessed\tnumfailed\tnum\tnumwarn\tnumwarn\tnumprocessed\tnumfailed\tnum\tnumok\tnumerr\tnum\tnumok\tnumerr\tnumwarn\tnumerr\tnum\n'
+    # the Resubmit Ok / Error pair uses the TINT-ONLY kinds numok / numerr
+    # (2026-09-29 audit): as numprocessed / numfailed they made a second OK /
+    # Error cell on the row and report.js bound neither Files drill there
+    printf 'KIND\ttext\ttext\ttext\tnum\tnumprocessed\tnumfailed\tnum\tnumwarn\tnumwarn\tnumok\tnumerr\tnum\tnumok\tnumerr\tnum\tnumok\tnumerr\tnumwarn\tnumerr\tnum\n'
     # a nonzero Waiting / Expired total opens its report too (2026-08-31)
     wW_cell="@{class=num warn}"; [ "${wW:-0}" -gt 0 ] && wW_cell="@{class=num warn,href=waiting.html}$wW"   # 0 -> blank (td.warn:empty drops the tint)
     wX_cell="@{class=num errc}$wX"; [ "${wX:-0}" -gt 0 ] && wX_cell="@{class=num errc,href=expired.html}$wX"

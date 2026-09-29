@@ -29,13 +29,12 @@ humanbytes(){ awk -v b="${1:-0}" 'BEGIN{ s="B KB MB GB TB PB"; n=split(s,u," ");
 knum_files(){ awk -v n="${1:-0}" 'BEGIN{printf (n>=1e6)?"%.2fM":(n>=1e3)?"%.1fk":"%d", (n>=1e6)?n/1e6:(n>=1e3)?n/1e3:n}'; }
 knum_recs(){  awk -v n="${1:-0}" 'BEGIN{printf (n>=1e6)?"%.1fM":(n>=1e3)?"%.0fk":"%d",(n>=1e6)?n/1e6:(n>=1e3)?n/1e3:n}'; }
 
-# TRANSFER basics (the logical-transfer cache): T_FILES/T_FAIL/T_VOL/T_FPCT/
-# T_PROC. Returns 1 (script exits/skips) when the cache is missing.
+# TRANSFER basics (the logical-transfer cache): T_FILES/T_FAIL/T_VOL/T_FPCT.
+# Returns 1 (script exits/skips) when the cache is missing.
 transfer_basics(){
     [ -f "$TR" ] || return 1
     read -r T_FILES T_FAIL T_VOL < <(awk -F'\t' '{n++; if($2=="Failed"||$2=="Expired")f++; v+=$8} END{print n+0, f+0, v+0}' "$TR")   # Waiting = OK, Expired = Error (2026-07 policy)
     T_FPCT=$(awk -v f="$T_FAIL" -v t="$T_FILES" 'BEGIN{printf "%.1f", t? f*100/t : 0}')
-    T_PROC=$(( T_FILES - T_FAIL ))
 }
 
 # SERVER basics (the topview report): S_REC/S_INFO/S_WARN/S_ERR/S_EPCT.

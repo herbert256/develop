@@ -102,7 +102,7 @@ n_emp=0
     printf 'TITLE\tTransfer Size Distribution\n'
     printf 'DESC\tFiles, Error/OK and volume bucketed by transfer size — plus the zero-byte files that were delivered OK.\n'
     printf 'KEYWORDS\tempty file, zero byte, 0 B, empty export\n'
-    printf 'INTRO\t%s total volume across all Files, bucketed by size (one File = its file, counted once). The 0 B bucket is mostly failed Files.\n' \
+    printf 'INTRO\t%s total volume across all Files, bucketed by size (one File = its file, counted once). The 0 B bucket holds the empty Files, failed or not.\n' \
         "$tot_human"
     printf 'TABLE\tFiles by size bucket\n'
     printf 'HEAD\tSize range\tFiles\tError\tOK\tVolume\t%% of Files\tDistribution\n'

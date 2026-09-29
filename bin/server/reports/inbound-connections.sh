@@ -18,7 +18,13 @@
 # table 2026-09-29 — the per-day table carries its per-protocol split.)
 #
 # An account equal to a known transfer-log account links to its detail page
-# (same alink mechanism as Transfer Outcomes); addresses stay plain.
+# (the alink mechanism — the renderer resolves it through the details
+# slugmap); addresses stay plain. The account is the ACCOUNT: the log writes
+# "ACCOUNT@LOGIN" on an inbound line and the bare ACCOUNT on an outbound one,
+# so the @LOGIN tail is stripped: an account is ONE row, its In and Out
+# together, whichever login connected (2026-09-29 audit). The row count is
+# the inbound accounts (Logons > By account) plus the accounts only our
+# outbound connections name.
 #
 # Reads the parse cache (data/server/cache/_parse.tsv). Writes
 # data/server/reports/inbound-connections.rpt + _inbound-addr.tsv.
@@ -34,7 +40,7 @@ mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/inbound-connections.rpt"
 
 # Entity cross-links: known account names from the transfer-side account report
-# (ROW field 2 of its FIRST table) — same mechanism as transfer-outcomes.sh.
+# (ROW field 2 of its FIRST table).
 TDATA="$TRANSFER_REPORTS"
 TACCT="$TDATA/account.rpt"
 known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" lines
@@ -89,15 +95,22 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
         if (!index(m, "had initiated a connection over ")) next
         if (!match(m, /had initiated a connection over [A-Za-z0-9]+/)) next
         proto = substr(m, RSTART + 32, RLENGTH - 32)   # 32 = length of "had initiated a connection over "
-        un = qval(m, "login name ", DQ)
         # THE DIRECTION (2026-09-29): a partner connecting IN logs its login
         # name; SecureTransport opening a connection OUT logs login name ""
         # (bin/logons.sh books those as OUR outbound connections, the Remote
         # address being the TARGET) — until this day every line counted as
         # inbound, and the Whitelist audit / Cleanup backlog read our
-        # outbound targets as partner source addresses
-        io = (un != "") ? "I" : "O"
+        # outbound targets as partner source addresses. ONE TEST, the one
+        # bin/logons.sh applies (2026-09-29 audit — an absent key or a
+        # single-quoted name used to read as Out here): the literal
+        # login name "" = Out, a login NAMED in either quote style = In, a
+        # line with neither is no connection this report can place (skipped)
+        if (index(m, "login name " DQ DQ)) io = "O"
+        else { un = qval(m, "login name ", DQ); if (un == "") un = qval(m, "login name ", SQ)
+               if (un == "") next
+               io = "I" }
         an = qval(m, "associated with account ", DQ)
+        sub(/@.*$/, "", an)                                  # ACCOUNT@LOGIN -> the account (see the header)
         if (an == "") an = "(none)"
         addr = ""
         if (match(m, /Remote address: [^ ]+/)) { addr = substr(m, RSTART + 16, RLENGTH - 16); sub(/[.,;]+$/, "", addr) }
@@ -178,14 +191,14 @@ day_rows() {
     while IFS=$'\t' read -r _ d i o s p f x t; do
         [ -z "$d" ] && continue
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$d" "$(nz "$i")" "$(nz "$o")" "$(nz "$s")" "$(nz "$p")" "$(nz "$f")" "$(nz "$x")" "$t"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^Y\t' | sort -t"$(printf '\t')" -k2,2)"
+    done <<< "$(printf '%s\n' "$agg" | grep $'^Y\t' | LC_ALL=C sort -t"$(printf '\t')" -k2,2)"
 }
 
 acct_rows() {
     while IFS=$'\t' read -r _ name count ci co protos naddr bk fst lst lines; do
         [ -z "$name" ] && continue
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$name" "$(nz "$ci")" "$(nz "$co")" "$count" "$protos" "$naddr" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | sort -t"$(printf '\t')" -k3,3nr -k2,2)"
+    done <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | LC_ALL=C sort -t"$(printf '\t')" -k3,3nr -k2,2)"
 }
 
 # Top 50 by connections: shown_addr / shown_conns carry the capped counts out to
@@ -201,7 +214,7 @@ addr_rows() {
         [ "$shown_addr" -ge 50 ] && break
         shown_addr=$((shown_addr + 1)); shown_conns=$((shown_conns + count)); shown_in=$((shown_in + ci)); shown_out=$((shown_out + co))
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$addr" "$(nz "$ci")" "$(nz "$co")" "$count" "$naccts" "$protos" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^S\t' | sort -t"$(printf '\t')" -k3,3nr -k2,2)"
+    done <<< "$(printf '%s\n' "$agg" | grep $'^S\t' | LC_ALL=C sort -t"$(printf '\t')" -k3,3nr -k2,2)"
 }
 
 {

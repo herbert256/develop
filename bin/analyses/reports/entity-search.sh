@@ -50,9 +50,6 @@ DETAILS_DIR="$REPORTS_DIR/details"
 # built from the partners.json / subscriptions.json exports); a missing cache
 # file is skipped (empty configured list).
 
-# slugify(), ported to awk from bin/publish_lib.sh (lowercase, non-alnum runs -> a
-# single '-', trim leading/trailing '-'), so slugs here match the detail filenames.
-SLUG_AWK='function slug(x){ x=tolower(x); gsub(/[^a-z0-9]+/,"-",x); sub(/^-+/,"",x); sub(/-+$/,"",x); return x }'
 
 # A configured-entity list from the bin/flow-manager.sh caches — same source Show
 # Seen uses. Tolerates a missing cache file (emits nothing).
@@ -534,7 +531,7 @@ IFS=$'\t' read -r tsc tsf tsp <<< "$(printf '%s\n' "$tuples" | awk -F'\t' '{c+=$
         sr = ($8 != "") ? "\t@data:subrows=" $8 : ""    # multi-use Source/Target: per-subscription drill
         # NO @data:seen: it existed only for the All/Seen/Not seen/Server view
         # buttons, which are gone. Every CSS rule and every report.js reader of
-        # data-seen is gated on table[data-seenrows] or table[data-seenmode],
+        # data-seen is gated on table[data-seenrows] (seenmode went 2026-09-29),
         # and this table carries neither — so it painted and filtered nothing
         # while costing 104 KB in the row payload. The row COLOUR is @data:res.
         printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s%s%s\n", $1, $9, $2, $5, $6, $10, r, sr }'

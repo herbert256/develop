@@ -279,7 +279,9 @@ if [ "$(exp collectdrop)" -gt 0 ]; then
     check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "no settled File on UC2_ZG_MATCH_HOOLI (the collectdrop flow)"
     n=$(rows "data/transfer/cache/_bookendok.tsv")
     check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "_bookendok.tsv is empty"
-    n=$(command grep -c 'Transfer end logged' "data/server/cache/_accounts.tsv" 2>/dev/null || true)   # grep -c prints the 0 itself (exit 1)
+    # (the flat _accounts.tsv mention cache went 2026-09-29 — no reader; the
+    # per-account rings under accounts/ are what the pages read)
+    n=$(find data/server/cache/accounts -name '*.tsv' -print0 2>/dev/null | xargs -0 grep -h 'Transfer end logged' 2>/dev/null | wc -l | tr -d ' ')
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n bookend(s) leaked into the account mention cache"
 fi
 # the RE-KEYED COLLECT (2026-09-29, user report): on the one-account,
@@ -334,9 +336,11 @@ nh=$(grep -c '<tr><td><a href="day/' docs/index.html 2>/dev/null || true)
 check $([ "${nh:-0}" -gt 14 ] && [ "${nh:-0}" -ge "$((nd - 1))" ] && echo 0 || echo 1) "the home per-day table shows ${nh:-0} linked day(s) of ${nd:-?} (every day expected)"
 # no detail page lists Files from the stream any more (the Latest 100
 # table went 2026-09-29, user request)
-check $([ -z "$(grep -rl '<h2>Latest 100 Files</h2>' docs/details 2>/dev/null)" ] && echo 0 || echo 1) "a detail page still carries the Latest 100 Files table"
+check $([ -z "$(grep -rlE '<h2>Latest (100|1000) ' docs/details 2>/dev/null)" ] && echo 0 || echo 1) "a detail page still carries a Latest 100 / Latest 1000 Files table"
 # the failure heatmap's By hour / By weekday sit side by side (2026-09-29)
-check $(awk '/<div class="sxs">/ { s = 1 } s && /By hour of day/ { h = 1 } s && h && /By weekday/ { ok = 1; exit } END { exit !ok }' docs/transfer/failure-heatmap.html 2>/dev/null && echo 0 || echo 1) "transfer/failure-heatmap.html: By hour of day and By weekday are not side by side"
+# (the ONE flex row: no new sxs row may open between the two headings — the
+# 2026-09-29 audit: the old test passed on stacked tables after any sxs)
+check $(awk '/<div class="sxs">/ { s = NR } /By hour of day/ && s { h = s } /By weekday/ && h { ok = (s == h); exit } END { exit !ok }' docs/transfer/failure-heatmap.html 2>/dev/null && echo 0 || echo 1) "transfer/failure-heatmap.html: By hour of day and By weekday are not side by side"
 # the MULTI-HOST account (2026-08-31): CD_ROUTE_WONKA carries TWO
 # endpoints, and its _ALT flow logs half its rows as the raw ADDRESS.
 # The endpoint vote rides the SUBSCRIPTION, so those rows must resolve
@@ -425,7 +429,8 @@ check $([ "${dr1:-1}" = 0 ] && echo 0 || echo 1) "subscription.rpt: ${dr1:-?} ro
 check $([ "${dr2:-1}" = 0 ] && echo 0 || echo 1) "subscription.rpt: ${dr2:-?} Retry/Resubmit drill list(s) longer than 10"
 check $([ "${dr3:-0}" = 1 ] && echo 0 || echo 1) "the sample subscription table has no Retry drill or no Resubmit drill — one of the two is never exercised"
 check $([ "$(grep -c 'data-coreids-rauto="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && [ "$(grep -c 'data-coreids-rmok="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "entities/subscription-all.html ships no Retry / Resubmit drill lists"
-check $([ "$(grep -c 'data-coreids-retry' docs/assets/report.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "report.js does not bind the Retry / Resubmit drills"
+# (the report.js binding of data-coreids-retry / -resubmit went 2026-09-29:
+# no page ships those lists — the Entities pages drill rauto / rmok / rmerr)
 
 # NO EMPTY GROUP TAB (2026-09-13, user report: transfer/files-by-size.html
 # showed a blank second button — the merged "files" report had no
@@ -466,13 +471,13 @@ check $([ "${hc:-x}" = "${wrv:-y}" ] && echo 0 || echo 1) "home Cured total is '
 # must equal the recount above, and the per-day totals the same
 RF="data/transfer/reports/recovered-files.rpt"
 h=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "HEAD" { print; exit }' "$RF" 2>/dev/null)
-check $([ "$h" = $'HEAD\tSubscription\tRecovered\tRetry\tResubmit\tFiles\tRecovered %' ] && echo 0 || echo 1) "recovered-files.rpt table 1 HEAD is '$h' — expected Recovered · Retry · Resubmit"
+check $([ "$h" = $'HEAD\tSubscription\tRecovered\tAutomatic\tManual\tFiles\tRecovered %' ] && echo 0 || echo 1) "recovered-files.rpt table 1 HEAD is '$h' — expected Recovered · Automatic · Manual (the Top view words, 2026-09-29)"
 read -r rfr rfa rfm <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "TOTAL" { a = $3; b = $4; c = $5; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); print a + 0, b + 0, c + 0; exit }' "$RF" 2>/dev/null)"
 check $([ "${rfr:-x}" = "${wrv:-y}" ] && [ "$((${rfa:-0} + ${rfm:-0}))" = "${wrv:-y}" ] && echo 0 || echo 1) "recovered-files Recovered/Retry/Resubmit = ${rfr:-?}/${rfa:-?}/${rfm:-?}, the caches give ${wrv:-?} recovered"
 check $([ "${rfm:-x}" = "${wrm:-y}" ] && echo 0 || echo 1) "recovered-files Resubmit = ${rfm:-absent}, the caches give ${wrm:-?}"
 read -r dfa dfm <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 3 && $1 == "TOTAL" { b = $5; c = $6; sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); print b + 0, c + 0; exit }' "$RF" 2>/dev/null)"
 check $([ "${dfa:-x}" = "${rfa:-y}" ] && [ "${dfm:-x}" = "${rfm:-y}" ] && echo 0 || echo 1) "recovered-files per-day Retry/Resubmit totals ${dfa:-?}/${dfm:-?} differ from the per-subscription ${rfa:-?}/${rfm:-?}"
-check $([ "$(grep -c 'Retry (automatic)\|Resubmit (manual)' "docs/transfer/retries-recovered-files.html" 2>/dev/null)" -ge 2 ] && echo 0 || echo 1) "transfer/recovered-files.html lacks the Retry (automatic) / Resubmit (manual) boxes"
+check $([ "$(grep -c '>Automatic<\|>Manual<' "docs/transfer/retries-recovered-files.html" 2>/dev/null)" -ge 2 ] && echo 0 || echo 1) "transfer/recovered-files.html lacks the Automatic / Manual boxes"
 # the Failed files list (2026-09-14, user request): one row per Failed/Expired File, per start day equal
 # to the Top view's Files/Error column (the home Error cells), which now open it narrowed to their day
 FF="data/transfer/reports/failed-files.rpt"
@@ -1148,6 +1153,27 @@ for g in 'transfer/skipped-*.html' 'transfer/duration-slowest*.html' 'transfer/f
     n=$(ls docs/$g 2>/dev/null | wc -l | tr -d ' ')
     check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "docs/$g: $n retired page(s) still published (retired 2026-09-29)"
 done
+
+# ---- the 2026-09-29 audit's gate additions ----------------------------------
+# linkcheck runs here (read-only): 0 broken, 0 unexpected unreachable
+lc=$(bin/build/linkcheck.sh 2>&1 | grep '^linkcheck: [0-9]* pages' | head -1)
+check $(printf '%s' "$lc" | grep -q ' 0 broken, 0 unreachable' && echo 0 || echo 1) "linkcheck: ${lc:-no summary line}"
+# the home-figure gate only WARNS in the build — a CONSISTENCY WARNING fails verify
+if [ -f build/build.log ]; then
+    n=$(grep -c 'CONSISTENCY WARNING' build/build.log || true)
+    check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "build/build.log holds ${n:-?} CONSISTENCY WARNING line(s)"
+fi
+# the planted display rename (input/rename.txt: login FE000000 FE-MONITOR)
+# lands on the rendered pages
+n=$(grep -rl 'FE-MONITOR' docs --include='*.html' 2>/dev/null | wc -l | tr -d ' ')
+m=$(grep -rl '>FE000000<' docs --include='*.html' 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" -gt 0 ] && [ "${m:-1}" = 0 ] && echo 0 || echo 1) "display rename FE000000 -> FE-MONITOR: ${n:-0} page(s) show the new name, ${m:-?} still show the old one"
+# the Failures group carries the former Server log errors members (positive)
+for p in server/errors-log-reasons server/failure-flows server/io-errors server/routing-errors server/went-kaput; do
+    check $(grep -q 'grouptag">&larr; Failures' "docs/$p.html" 2>/dev/null && echo 0 || echo 1) "docs/$p.html lacks the Failures group tag"
+done
+# the home per-day table keeps its Total row (10 days and more)
+check $(grep -q '<tr class="total"><td>Total</td>' docs/index.html 2>/dev/null && echo 0 || echo 1) "the home per-day table lost its Total row"
 
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2

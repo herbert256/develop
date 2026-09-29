@@ -43,7 +43,7 @@ month to `archive/` was removed 2026-09-28).
 ## What it publishes
 
 A static HTML site under `docs/` — one environment per checkout, its home page
-(status tables, the per-day table, the red worklists) at the docs root:
+(the status tables and the per-day table) at the docs root:
 
 - **Reports** — ONE top-bar menu of 12 groups over both logs and the
   FlowManager configuration (the Entities group opens from its own top-bar

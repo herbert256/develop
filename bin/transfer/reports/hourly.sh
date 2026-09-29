@@ -100,7 +100,7 @@ n_hours=$(printf '%s\n' "$agg" | grep -c '^HOUR|' || true)
     # (ok) for Files and the bar, metric 3 for Volume
     # the column reads "Delivered" (2026-09-29): it counts the OK Files only,
     # and the Volume beside it is their bytes; the grid below counts every File
-    printf 'HEAD\tHour\tDelivered\tVolume\tLoad\n'
+    printf 'HEAD\tHour\tOK Files\tVolume\tLoad\n'   # OK = Processed + Waiting (2026-09-29 audit: "Delivered" held the staged Waiting Files)
     printf 'KIND\ttext\tnum\tnum\tbar\n'
     printf 'RECALC\t-\ts2\th3\tb2\n'
     # the 24 hour rows, the Load bar scaled against the busiest hour (by OK Files)

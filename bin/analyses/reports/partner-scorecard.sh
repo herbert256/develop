@@ -43,7 +43,6 @@ if [ ! -f "$TF" ] || [ ! -f "$TT" ]; then
     exit 0
 fi
 [ -f "$SPMAP" ] || SPMAP=/dev/null
-UCDMAP="$DATA/flow-manager/xref/_subscriptions-ucderived.tsv"; [ -f "$UCDMAP" ] || UCDMAP=/dev/null   # the derived use case of a hybrid flow (2026-09-29)
 
 TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT
@@ -64,7 +63,6 @@ awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" '
     function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
         while (v >= 1024 && i < 6) { v /= 1024; i++ }
         return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
-    FILENAME ~ /_subscriptions-ucderived\.tsv$/ { if ($1 != "" && $2 == "UC2") UCD2[toupper($1)] = 1; next }
     FILENAME ~ /_subscriptions-partners\.tsv$/ {
         if ($1 != "" && $2 != "") SP[toupper($1)] = SP[toupper($1)] (SP[toupper($1)] == "" ? "" : "\037") $2
         next }
@@ -76,14 +74,18 @@ awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" '
         if (set == "") next
         PSET[$1] = set
         err = ($2 == "Failed" || $2 == "Expired") ? 1 : 0
-        uc2 = (substr($12, 1, 3) == "UC2" || (toupper($12) in UCD2)) ? 1 : 0   # UC2-named, or DERIVED UC2 (2026-09-29)
         if ($4 != "" && $4 > maxd) maxd = $4
         n = split(set, Z, "\037")
         for (i = 1; i <= n; i++) { p = Z[i]
             if (F[p] == "") PORD[++np] = p          # emptiness, not membership (mawk)
             F[p]++; E[p] += err; B[p] += $8
             if ($4 != "") { if ($4 > L[p]) L[p] = $4; DF[p SUBSEP $4]++; DE[p SUBSEP $4] += err }
-            if (uc2 && $21 + 0 > 0) { W[p] += $21; WN[p]++ }
+            # the pickup WAIT: col 21 is set by the parse on a File of the UC2
+            # SHAPE (staged, then collected) whatever its name — gated on the
+            # shape itself (2026-09-29 audit: the UC2-name / derived-UC2 gate
+            # dropped the waits of configured flows with neither, e.g. the
+            # sample STMT_EXPORT_GLOBEX_nn pickups)
+            if ($21 + 0 > 0) { W[p] += $21; WN[p]++ }
             if ($16 == "out" && $15 != "" && !((p SUBSEP $15) in OH)) { OH[p SUBSEP $15] = 1; NH[p]++ }
             if ($16 == "in") DI[p] = 1; else if ($16 == "out") DO[p] = 1
             else if ($17 == "in") DI[p] = 1; else if ($17 == "out") DO[p] = 1
@@ -164,7 +166,7 @@ awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" '
             np, nsc, (tot ? 100 * t1 / tot : 0), (tot ? 100 * t3 / tot : 0), (tot ? 100 * t10 / tot : 0), gini, tot > STATS
         close(STATS)
     }
-' "$UCDMAP" "$SPMAP" "$TF" "$TT"
+' "$SPMAP" "$TF" "$TT"
 
 sv() { awk -F'\t' -v k="$1" '$1 == k { print $2 }' "$TMPD/stats.tsv"; }
 n_seen=$(sv seen); n_scored=$(sv scored)
@@ -196,7 +198,6 @@ top1=$(sv top1); top3=$(sv top3); top10=$(sv top10); gini=$(sv gini)
         "$TMPD/score.pre"
 
     printf 'NOTE\tThe score starts at **100 minus the Error %%** (Failed or Expired Files — the heaviest weight by far) and deducts: **0.5 points per percentage point** the last-14-days Error %% worsened against the 14 days before (capped at 15; improving never adds), **5 points** when the average UC2 partner pickup wait exceeds 24 h, up to **5 points** scaled by the share of transfer legs on a weak security parameter (ssh-rsa host key or TLSv1.2), **3 points** when everything we send the partner rides a single outbound endpoint, and **10 points** when the partner has been quiet for 14+ days — all measured against the newest log day, then clamped to 0-100. Every component sits in its own column, so the arithmetic is checkable per row. Partner attribution is the site-wide UNION rule (the subscription'\''s configured partners unioned with the parse attribution); the concentration boxes cover all seen partners, the scorecard only those with at least 100 Files.\n'
-    printf 'KEYWORDS\tpartner,scorecard,score,health,error rate,trend,pickup wait,security,ssh-rsa,tlsv1.2,redundancy,concentration,gini,volume\n'
     printf 'SUMMARY\tPartners seen: %s  |  Scored: %s  |  Top-1 share: %s%%  |  Top-10 share: %s%%  |  Gini: %s\n' \
         "$n_seen" "$n_scored" "$top1" "$top10" "$gini"
     printf 'FOOT\tGenerated on %s\n' "$GENDATE"

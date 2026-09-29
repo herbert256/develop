@@ -24,9 +24,14 @@
 #   moving the row tint. (An Allowed that an authentication follows is a real
 #   screening, whatever the session logged before.) SESSION ERRORS are the Error/Warning [Ssh Default] lines of no
 #   counted family ("Stream read/write error. Exception message is: CMS
-#   parsing has failed" …), attributed to the login of their session. Both
-#   need the whole cache read first (the exports are newest-first, not
-#   chronological), so every Allowed line is booked in END.
+#   parsing has failed" …), attributed to the login of their session — NOT
+#   the re-key bookkeeping W line "No session cycleId for file … SENT will
+#   not get reported!" (2026-09-29 audit: 181 of 199 sample session errors;
+#   a transfer-log matter, the RE-KEYED LEGS of bin/session-sites.sh, never
+#   a logon problem; bin/logons.sh skips the same shape). Both need the
+#   whole cache read first (a session's LAST authentication may come later
+#   in the cache than its Allowed line), so every Allowed line is booked in
+#   END.
 #   One row per logon user: Allowed (whitelist pass) -> Authenticated
 #   (credentials pass), plus the failure modes Disallowed (whitelist
 #   reject), No account (the username exists on no account — probing or
@@ -142,7 +147,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
     }
     # one funnel event, booked: the counts, the per-day bucket, the
     # newest stamp per family (the row tint — compared by TIMESTAMP, never by
-    # cache order: the exports are newest-first within a file) and the drill
+    # cache order, so no reader depends on how the cache is sorted) and the drill
     function book(side9, u9, d9, ts9, txt9,   k9) {
         cnt[side9 SUBSEP u9]++; tot[side9]++
         if (d9 ~ /^[0-9][0-9][0-9][0-9]-/) { bk[u9 SUBSEP d9 SUBSEP side9]++; days[u9 SUBSEP d9] = 1
@@ -202,8 +207,8 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
             if (cls == "p") { opw[k]++; opwT++ } else if (cls == "k") { oky[k]++; okyT++ } \
             else if (cls == "c") { ocr[k]++; ocrT++ } else { oot[k]++; ootT++ }
             addline("O" SUBSEP k, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
-            # last-seen reason by TIMESTAMP, not cache order (the exports are
-            # newest-first within a file, so cache row order is NOT chronological)
+            # last-seen reason by TIMESTAMP, not cache order (robust whatever
+            # the cache order — it is chronological since the sorted parse)
             osk = $1 " " $2
             # "-" for an EMPTY reason (a line ending at "as user U:"): the row
             # travels TAB-separated through a bash read, which collapses an
@@ -249,6 +254,9 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
             # summary (bin/logons.sh) counts it as Auth failed, and as a
             # session error too it was counted twice (2026-09-28 fix)
             if (index(m, "[Ssh Default] Authentication failed using local.") > 0) next
+            # ... nor the re-key bookkeeping "No session cycleId for file …
+            # SENT will not get reported!" (see the header; = bin/logons.sh)
+            if (index(m, "No session cycleId for file") > 0) next
             if ($3 != "I" && $6 != "") { nxs++; XSs[nxs] = $6; XSd[nxs] = $1; XSt[nxs] = $1 " " $2; XSl[nxs] = lvlname($3) " " compname($4) "  " substr(m, 1, 200) }
             next
         }

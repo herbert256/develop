@@ -25,7 +25,7 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-clabel="Files"; noun="File"
+clabel="OK Files"; noun="OK File"   # the OK Files (2026-09-29 audit: "Files" read as every File beside an Error % over all Files)
 OUT="$REPORTS_DIR/weekly.rpt"
 
 # Group the normalized stream by ISO week (the week of the date's Thursday).

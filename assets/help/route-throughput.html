@@ -30,7 +30,7 @@
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Only legs that measure a real rate count: duration over 500 ms and size over 1 MB; smaller legs are mostly session setup and rounding.</li>
+<li>Only legs that measure a real rate count: duration over 500 ms and size over 1 MB; smaller legs are mostly session setup and rounding. Failed legs count too: a leg that moved its bytes before failing still measured the route&rsquo;s wire speed.</li>
 <li>A leg&rsquo;s duration is the record&rsquo;s own wire time; the store-and-forward dwell between legs is never in it (<a href="duration-dwell.html">Distribution &amp; Store-and-forward</a> measures that).</li>
 <li><code>routing</code> is the internal store-and-forward leg between the inbound and outbound sides.</li>
 </ul>

@@ -209,7 +209,13 @@ write_config_hygiene_page() {
                     delete G; delete GN
                     for (i = 1; i <= CNT[t]; i++) { nm = N[t, i]; k2 = fold(nm)
                         G[k2]++; GN[k2] = GN[k2] (GN[k2] == "" ? "" : "\t") nm }
-                    for (k2 in G) if (G[k2] > 1) {
+                    # the twin groups in KEY order (an insertion sort — a
+                    # hash walk put them on the page in a different order per
+                    # awk build)
+                    delete KS; nks = 0
+                    for (k2 in G) if (G[k2] > 1) KS[++nks] = k2
+                    for (i = 2; i <= nks; i++) { v9 = KS[i]; for (j = i - 1; j >= 1 && KS[j] > v9; j--) KS[j + 1] = KS[j]; KS[j + 1] = v9 }
+                    for (q9 = 1; q9 <= nks; q9++) { k2 = KS[q9]
                         ng = split(GN[k2], gg, "\t")
                         for (i = 1; i <= ng; i++) { twins = ""
                             for (j = 1; j <= ng; j++) if (j != i) twins = twins (twins == "" ? "" : ", ") e(gg[j])
@@ -293,7 +299,7 @@ emit_double_sections() {
             function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
             function loadbase(t, f,   l, a) { while ((getline l < f) > 0) { split(l, a, "\t")
                 if (a[1] == "") continue
-                NM[t, toupper(a[1])] = a[1]; DIRV[t, toupper(a[1])] = a[2]; RES[t, toupper(a[1])] = a[3] } close(f) }
+                NM[t, toupper(a[1])] = a[1]; RES[t, toupper(a[1])] = a[3] } close(f) }
             function loadslugs(t, f,   l, a) { while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") SL[t, toupper(a[1])] = a[2] } close(f) }
             function loadpairs(arr, f, tag,   l, a, k) { while ((getline l < f) > 0) { split(l, a, "\t")
                 if (a[1] == "" || a[2] == "") continue
@@ -377,6 +383,14 @@ emit_double_sections() {
 # _subs_box_rows -> "<colno>\t<subscription>" for every box, one line per
 # (box, subscription). (The Accounts in boxes page that shared it went
 # 2026-09-29.)
+# endk() — a _files.tsv row's END (col 24, "YYYY-MM-DD HH:MM:SS.mmm") in the
+# col 6 sortkey shape "YYYYMMDDHH:MM:SS.mmm", the start sortkey when the parse
+# wrote no end: "an OK File after it" means one that ENDED after it, the
+# 2026-09-12 rule result.sh applies (a retry burst that started before the
+# error and delivered after it is a recovery). Shared by every box below.
+ENDK_AWK='
+    function endk(   e) { e = $24; return (e ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) ? substr(e, 1, 4) substr(e, 6, 2) substr(e, 9, 2) substr(e, 12) : $6 }
+'
 _subs_box_rows() {
     local spec f c nf
         # column 1 — One-legged, REFINED (2026-07): a one-legged CoreId is only
@@ -385,18 +399,22 @@ _subs_box_rows() {
         # _files.tsv directly (pirates' own condition is col 10 == 1, so the
         # membership can only shrink, never disagree with pirates-details);
         # the cache carries full sortkeys, so "after" is exact, not per-day.
-        # OK = not Failed/Expired (the site-wide rule: Waiting counts as OK).
+        # OK = not Failed/Expired (the site-wide rule: Waiting counts as OK),
+        # and "after" means the OK File ENDED after it (col 24, the 2026-09-12
+        # rule result.sh applies — endk() puts that end in the sortkey shape;
+        # the start when the parse wrote no end).
         # columns 5 + 6 — Waiting / Expired: the subscription's LAST _files
-        # entry (max sortkey) has that outcome — the newest staged file is
-        # still awaiting pickup (5) or was deleted before any pickup (6).
+        # entry (max sortkey; the later row wins a tie, as in result.sh) has
+        # that outcome — the newest staged file is still awaiting pickup (5)
+        # or was deleted before any pickup (6).
         if [ -f "$FILESC" ]; then
-            awk -F'\t' '
+            awk -F'\t' "$ENDK_AWK"'
                 $12 == "" { next }
                 {
                     if (!(($12) in ls)) orda[++na] = $12
-                    if ($6 > ls[$12]) { ls[$12] = $6; lout[$12] = $2 }
+                    if ($6 >= ls[$12]) { ls[$12] = $6; lout[$12] = $2 }
                     if ($10 == 1) { if (!(($12) in lp)) ord[++n] = $12; if ($6 > lp[$12]) lp[$12] = $6 }
-                    if ($2 != "Failed" && $2 != "Expired") { if ($6 > lo[$12]) lo[$12] = $6 }
+                    if ($2 != "Failed" && $2 != "Expired") { ek = endk(); if (ek > lo[$12]) lo[$12] = ek }
                 }
                 END {
                     for (i = 1; i <= n; i++) { s = ord[i]
@@ -445,9 +463,11 @@ _subs_box_rows() {
         #   17 seen — coverage col 3 != 0, the exact complement of 11. The
         #      Subscriptions / Seen entity view is the list, and the invariant
         #      is Seen + Not seen = Total.
-        #   18 error — result "red": the newest File Failed or Expired, the
-        #      exact opposite of 13. The Subscriptions / Error entity view is
-        #      the list.
+        #   18 error — result "red": its newest File Failed, or a server-log
+        #      Error after its last transfer, or (a UC3 that never transferred)
+        #      three failed connection attempts in a row — never merely an
+        #      Expired newest File, which is orange. The Subscriptions / Error
+        #      entity view is the list.
         [ -f "$TRPT/coverage/subscriptions.tsv" ] && \
             awk -F'\t' '$1 != "" && $3 != 0 { print "17\t" $1 }' "$TRPT/coverage/subscriptions.tsv"
         [ -f "$FBASE/_subscriptions.tsv" ] && \
@@ -456,7 +476,8 @@ _subs_box_rows() {
         # server logged a connection failure for this subscription and NO OK File
         # followed it. A flow whose connections failed and then delivered has
         # recovered; site-failures keeps the full history either way. The filter
-        # is what makes the column mean "still broken" — it drops 36 of 48 here.
+        # is what makes the column mean "still broken". "Followed" = the OK
+        # File ENDED after the failure (col 24 — result.sh's rule; endk()).
         # The failure instant comes from the @data:loglines payload (newest
         # first, so entry 1 is the latest) rather than the row's Last seen DATE,
         # which is too coarse to order against an OK File on the same day; a row
@@ -464,7 +485,7 @@ _subs_box_rows() {
         # OK on a LATER day clears it — the conservative reading, since wrongly
         # clearing hides a live problem while wrongly flagging only costs a look.
         if [ -f "$SRPT/site-failures.rpt" ] && [ -f "$FILESC" ]; then
-            awk -F'\t' '
+            awk -F'\t' "$ENDK_AWK"'
                 FILENAME ~ /site-failures/ {
                     if ($1 == "TABLE") { t++; next }
                     if ($1 != "ROW" || t != 1) next
@@ -482,7 +503,7 @@ _subs_box_rows() {
                     if (key != "") cf[nm] = key
                     next
                 }
-                { if ($12 != "" && $2 != "Failed" && $2 != "Expired" && $6 > lok[$12]) lok[$12] = $6 }
+                { if ($12 != "" && $2 != "Failed" && $2 != "Expired") { ek = endk(); if (ek > lok[$12]) lok[$12] = ek } }
                 END { for (s in cf) if (lok[s] == "" || lok[s] < cf[s]) print "14\t" s }
             ' "$SRPT/site-failures.rpt" "$FILESC"
         fi
@@ -497,7 +518,7 @@ _subs_box_rows() {
         # (metrics m2/m4/m5/m6 = Disallowed/Bad key/Key failures/Locked), so
         # the error date counts as end-of-day — only a LATER day's OK clears.
         if [ -f "$SRPT/logon.rpt" ] && [ -f "$FILESC" ]; then
-            awk -F'\t' -v LS="$XREF/_logins-subscriptions.tsv" '
+            awk -F'\t' -v LS="$XREF/_logins-subscriptions.tsv" "$ENDK_AWK"'
                 BEGIN { while ((getline l < LS) > 0) { n = split(l, a, "\t")
                             if (n >= 2 && a[1] != "") SUBS[toupper(a[1])] = SUBS[toupper(a[1])] "\037" a[2] }
                         close(LS) }
@@ -519,10 +540,10 @@ _subs_box_rows() {
                         for (i2 = 1; i2 <= m2; i2++) if (S2[i2] != "" && (!(S2[i2] in ce) || key > ce[S2[i2]])) ce[S2[i2]] = key }
                     next
                 }
-                { if ($12 != "" && $2 != "Failed" && $2 != "Expired" && $6 > lok[$12]) lok[$12] = $6 }
+                { if ($12 != "" && $2 != "Failed" && $2 != "Expired") { ek = endk(); if (ek > lok[$12]) lok[$12] = ek } }
                 END { for (s in ce) if (lok[s] == "" || lok[s] < ce[s]) print "20\t" s }
             ' "$SRPT/logon.rpt" "$FILESC"
-            awk -F'\t' -v HS="$XREF/_hosts-subscriptions.tsv" '
+            awk -F'\t' -v HS="$XREF/_hosts-subscriptions.tsv" "$ENDK_AWK"'
                 BEGIN { while ((getline l < HS) > 0) { n = split(l, a, "\t")
                             if (n >= 2 && a[1] != "") SUBS[tolower(a[1])] = SUBS[tolower(a[1])] "\037" a[2] }
                         close(HS) }
@@ -543,7 +564,7 @@ _subs_box_rows() {
                         for (i2 = 1; i2 <= m2; i2++) if (S2[i2] != "" && (!(S2[i2] in ce) || key > ce[S2[i2]])) ce[S2[i2]] = key }
                     next
                 }
-                { if ($12 != "" && $2 != "Failed" && $2 != "Expired" && $6 > lok[$12]) lok[$12] = $6 }
+                { if ($12 != "" && $2 != "Failed" && $2 != "Expired") { ek = endk(); if (ek > lok[$12]) lok[$12] = ek } }
                 END { for (s in ce) if (lok[s] == "" || lok[s] < ce[s]) print "21\t" s }
             ' "$SRPT/logon.rpt" "$FILESC"
         fi
@@ -557,19 +578,20 @@ _subs_box_rows() {
         # ACCOUNT or a SUBSCRIPTION, so a subscription is flagged when it is
         # named directly OR when one of its configured accounts is — and, for
         # the account case, only when the flow itself has NOT moved a file OK
-        # after the row's last message (2026-08-31 audit: box 15 is the
-        # top-ranked home Reason, and an account row fanned onto every flow
-        # of a hybrid account put its healthy siblings in the red Deploy box).
+        # (ENDED, col 24) after the row's last message (2026-08-31 audit: box
+        # 15 is the top-ranked Reason, and an account row fanned onto every
+        # flow of a hybrid account put its healthy siblings in the red Deploy
+        # box).
         if [ -f "$SRPT/deploy-errors.rpt" ]; then
             _fc15="$FILESC"; [ -f "$_fc15" ] || _fc15=/dev/null
-            awk -F'\t' -v AS="$XREF/_accounts-subscriptions.tsv" -v SUBF="$FBASE/_subscriptions.tsv" -v FC="$_fc15" '
+            awk -F'\t' -v AS="$XREF/_accounts-subscriptions.tsv" -v SUBF="$FBASE/_subscriptions.tsv" -v FC="$_fc15" "$ENDK_AWK"'
                 BEGIN { while ((getline l < AS) > 0) { n = split(l, a, "\t")
                             if (n >= 2 && a[1] != "") ASUB[toupper(a[1])] = ASUB[toupper(a[1])] "\037" a[2] }
                         close(AS)
                         while ((getline l < SUBF) > 0) { split(l, a, "\t")
                             if (a[1] != "") EST[toupper(a[1])] = 1 }
                         close(SUBF) }
-                FILENAME == FC { if ($12 != "" && $2 != "Failed" && $2 != "Expired" && $6 > lok[toupper($12)]) lok[toupper($12)] = $6; next }
+                FILENAME == FC { if ($12 != "" && $2 != "Failed" && $2 != "Expired") { ek = endk(); if (ek > lok[toupper($12)]) lok[toupper($12)] = ek }; next }
                 $1 == "TABLE" { t++; next }
                 $1 != "ROW" || t != 1 { next }
                 { nm = $2; sub(/^@\{[^}]*\}/, "", nm); if (nm == "") next
@@ -590,9 +612,9 @@ _subs_box_rows() {
 
 # The "main reason" sidecar (2026-08): data/analyses/reports/
 # _subs-boxes.tsv, "subscription <TAB> box label" — ONE line per subscription,
-# naming the most specific box it sits in. The home page's Still-failing table
-# shows it as the Reason column, so a red flow says WHY in the same vocabulary
-# this page uses. Membership comes from _subs_box_rows (the one authority); the
+# naming the most specific box it sits in. The Entities Subscriptions Error
+# view (publish_lib.sh) and failed.sh's server rows fall back to it for their
+# Reason, so a red flow says WHY in the same vocabulary this page uses. Membership comes from _subs_box_rows (the one authority); the
 # order below is the only thing decided here — most specific cause first.
 # Boxes that are states rather than a cause are left out entirely: OK, Seen,
 # Not seen, and — deliberately — ERROR, box 18. "Error" only
@@ -632,7 +654,7 @@ _box_reason_order() {
 # vocabulary, or "" when the line says nothing recognisable — better a blank
 # cell than a guess. The function TEXT lives in bin/flip-reason.awk (2026-08):
 # failed.sh classifies its Reason column with the same function, and the
-# two must never drift apart — the home page's Reason and the Failed Subscriptions
+# two must never drift apart — the Entities Reason and the Failed Subscriptions
 # page's Reason are the same verdict about the same evidence.
 _flip_reason_awk() {
     cat "$SCRIPT_DIR/../flip-reason.awk"
@@ -731,7 +753,7 @@ _write_box_reason_sidecar() {   # $1 = the _subs_box_rows output
             if (!($2 in best) || rank[$1] + 0 < best[$2] + 0) { best[$2] = rank[$1]; bl[$2] = lb } }
         END { for (s in all) {
                   # THE SERVER LOG ON ITS OWN ERROR PAGE COMES FIRST (2026-08).
-                  # For a flow with a failed File, the page the home row opens
+                  # For a flow with a failed File, the page its Failed Subscriptions row opens
                   # is the evidence a reader will check, so the Reason has to be
                   # what that page says — not a box the flow also happens to
                   # sit in.
@@ -852,7 +874,7 @@ write_subscriptions_in_boxes_page() {
         printf '<p class="range pfdesc" data-pf="4"><a href="failed.html?axway_search="><strong>Only red</strong></a> &mdash; the NEVER-WORKED list: not one OK delivery in the whole window, every File Failed or Expired. This is not a regression (those carry a Last green day on <a href="failed.html?axway_search=">Failed Subscriptions</a>) &mdash; nothing here ever worked, which points at the configuration or the partner side never having been finished, rather than at something that broke. <a href="failed.html?axway_search=">Failed Subscriptions</a> lists them with Last green day <em>never</em>.</p>\n'
         printf '<p class="range pfdesc" data-pf="5"><a href="../transfer/waiting.html?axway_search="><strong>Waiting</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> File is still STAGED for pickup: it arrived and sits in the folder, but the partner has not dialled in to collect it (UC2). Not an error &mdash; briefly waiting is the normal state of a pickup flow &mdash; but a newest file that has been waiting for days means the partner stopped collecting, and the retention sweep will delete it. <a href="../transfer/waiting.html?axway_search=">Waiting Files</a> has the full list.</p>\n'
         printf '<p class="range pfdesc" data-pf="6"><a href="../transfer/expired.html?axway_search="><strong>Expired</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> staged File was DELETED by the nightly File Maintenance retention sweep (~11 days) before any pickup. It was never delivered and can no longer be collected &mdash; a silent failure: nothing errored, the file just aged out. Expired counts as an Error site-wide; <a href="../transfer/expired.html?axway_search=">the Expired report</a> has the retention timing and the per-account pickup behavior.</p>\n'
-        printf '<p class="range pfdesc" data-pf="14"><a href="../server/failure-flows.html?axway_search="><strong>Connection failures</strong></a> &mdash; the server log records a failed CONNECTION to the partner for this subscription (timeout, refused, dropped, an SSH negotiation that never completed), and <strong>no OK File has followed it</strong>. That filter is the whole point: connections fail transiently all the time and a flow that failed and then delivered has recovered, so only the still-unresolved ones are boxed here &mdash; 36 of 48 are cleared this way. It usually adds the <em>reason</em> to a subscription already boxed as Only red or One-legged: not merely &ldquo;nothing arrives&rdquo; but &ldquo;we cannot get a connection to the partner at all&rdquo;, which points at the partner host, the port or the credentials rather than at the flow. <a href="../server/failure-flows.html?axway_search=">Errors / Per flow</a> has the full list with the failure messages (the Connection failure reason rows).</p>\n'
+        printf '<p class="range pfdesc" data-pf="14"><a href="../server/failure-flows.html?axway_search="><strong>Connection failures</strong></a> &mdash; the server log records a failed CONNECTION to the partner for this subscription (timeout, refused, dropped, an SSH negotiation that never completed), and <strong>no OK File has followed it</strong>. That filter is the whole point: connections fail transiently all the time and a flow that failed and then delivered has recovered, so only the still-unresolved ones are boxed here &mdash; most of them are cleared this way. It usually adds the <em>reason</em> to a subscription already boxed as Only red or One-legged: not merely &ldquo;nothing arrives&rdquo; but &ldquo;we cannot get a connection to the partner at all&rdquo;, which points at the partner host, the port or the credentials rather than at the flow. <a href="../server/failure-flows.html?axway_search=">Errors / Per flow</a> has the full list with the failure messages (the Connection failure reason rows).</p>\n'
         printf '<p class="range pfdesc" data-pf="15"><a href="../server/routing-errors.html?axway_search="><strong>Deploy</strong></a> &mdash; the server log records a <strong>configuration defect</strong> for this subscription: the Advanced Routing step error <span class="mono">ARSP0001</span>, where a routing step failed and <strong>its configuration told SecureTransport to abandon the rest of the route</strong> so nothing downstream ran for that file; or a PeSIT transfer profile <strong>missing its &ldquo;Receive File As&rdquo; field</strong>, which errors every incoming transfer of the flow. Like Connection failures, only the <strong>unresolved</strong> ones are boxed &mdash; an OK File after the last such message means something has got through since. The distinction from a plain failure is that the flow does not merely error, it <em>stops</em>: no onward delivery, no follow-up step, and the subscription can sit that way looking quiet rather than broken. The line names an account or a subscription, so an account is counted against every subscription configured for it. <a href="../server/routing-errors.html?axway_search=">Routing errors</a> lists the lines (Route stopped).</p>\n'
         printf '<p class="range pfdesc" data-pf="20"><a href="../server/logons-incoming.html?axway_search="><strong>Login errors (in)</strong></a> &mdash; a login connected to this subscription FAILED the incoming SSH screening &mdash; disallowed address, unknown key, repeated key failures or a lockout &mdash; and <strong>no OK File has followed</strong> (the error day counts to its end, so only a later day&rsquo;s delivery clears it). The partner is knocking and not getting in; <a href="../server/logons-incoming.html?axway_search=">Logons / Incoming</a> has the per-login funnel with the drill-down log lines.</p>\n'
         printf '<p class="range pfdesc" data-pf="21"><a href="../server/logons-outgoing.html?axway_search="><strong>Login errors (out)</strong></a> &mdash; WE failed to authenticate at the remote host behind this subscription (wrong password, refused key or certificate policy) and <strong>no OK File has followed</strong>. The flow cannot fetch or deliver until the credential is fixed; <a href="../server/logons-outgoing.html?axway_search=">Logons / Outgoing</a> has the per-host failures split into Password / Key / Other.</p>\n'
@@ -860,10 +882,10 @@ write_subscriptions_in_boxes_page() {
         printf '<p class="range pfdesc" data-pf="8"><a href="uc-status-uc3.html?axway_search="><strong>No Files</strong></a> &mdash; the UC3 poll works end to end (connection, credentials and listing all succeed) but the remote directory is <strong>always empty</strong>. Every slot spent here is a connection and a listing for no data: either the partner never delivers, or we are polling the wrong place. The <a href="uc-status-uc3.html?axway_search=">UC status / UC3</a> tab lists them (never find a file).</p>\n'
         printf '<p class="range pfdesc" data-pf="9"><a href="polling.html?axway_search=%%22no%%20cron%%22"><strong>Missing cron</strong></a> &mdash; the only <em>configuration</em> signal here, and the only one that stops the flow before it ever starts. A subscription of a cron-triggered use case carries <strong>no cron expression at all</strong>, and nothing else would make it poll, so it simply never runs: no connection, no file, no error, and nothing in either log to notice. Nothing is broken and nothing errored &mdash; the flow was simply never finished, and its silence looks exactly like a partner that has gone quiet unless you check the configuration. <a href="polling.html?axway_search=%%22no%%20cron%%22">Polling</a> lists them (Schedule <em>no cron</em>).</p>\n'
         printf '<p class="range pfdesc" data-pf="10"><a href="../transfer/went-quiet-subscriptions.html?axway_search="><strong>Went quiet</strong></a> &mdash; the flow carried Files and then simply stopped: nothing at all in the last <strong>7 days</strong> of the window, whatever the outcome used to be. It fires on an <em>absence where there used to be traffic</em>, which is why no error report catches it &mdash; nothing failed, there is just nothing there. Usually the partner stopped sending, the source system stopped producing, or the flow was decommissioned and never cleaned up. A subscription can be green and still be listed: green only means its LAST File was delivered, however long ago. <a href="../transfer/went-quiet-subscriptions.html?axway_search=">Went quiet</a> has the full list with the days.</p>\n'
-        printf '<p class="range pfdesc" data-pf="11"><a href="../transfer/entities/subscription-not-seen.html?axway_search="><strong>Not seen</strong></a> &mdash; configured in FlowManager and never seen in the transfer log: not one File. Not a broken flow but an unbuilt or abandoned one, and the emptiest box on the page: every box that judges delivery needs the flow to have run at least once. A UC3 flow that polls cleanly with nothing to fetch is here too: without a File it stays orange. It has no report of its own &mdash; the <a href="../transfer/entities/subscription-not-seen.html?axway_search=">Subscriptions / Not seen</a> entity view is the full list.</p>\n'
+        printf '<p class="range pfdesc" data-pf="11"><a href="../transfer/entities/subscription-not-seen.html?axway_search="><strong>Not seen</strong></a> &mdash; configured in FlowManager and never seen in the transfer log: not one File. Usually not a broken flow but an unbuilt or abandoned one &mdash; except a UC3 whose polls cannot connect (three failures in a row), which is red and in <strong>Error</strong> too &mdash; and the emptiest box on the page: every box that judges delivery needs the flow to have run at least once. A UC3 flow that polls cleanly with nothing to fetch is here too: without a File it stays orange. It has no report of its own &mdash; the <a href="../transfer/entities/subscription-not-seen.html?axway_search=">Subscriptions / Not seen</a> entity view is the full list.</p>\n'
         printf '<p class="range pfdesc" data-pf="13"><a href="../transfer/entities/subscription-ok.html?axway_search="><strong>OK</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> File was delivered: the site-wide <strong>green</strong> result. Green describes that LAST File and nothing else, so an OK subscription can still sit in other boxes &mdash; a flow whose last File was delivered a month ago and which has carried nothing since is OK <em>and</em> Went quiet. No report of its own &mdash; the <a href="../transfer/entities/subscription-ok.html?axway_search=">Subscriptions / OK</a> entity view is the full list.</p>\n'
         printf '<p class="range pfdesc" data-pf="17"><a href="../transfer/entities/subscription-seen.html?axway_search="><strong>Seen</strong></a> &mdash; the subscription has real TRANSFER data: at least one File in the transfer log. Seen and Not seen together are always the whole estate. No report of its own &mdash; the <a href="../transfer/entities/subscription-seen.html?axway_search=">Subscriptions / Seen</a> entity view is the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="18"><a href="../transfer/entities/subscription-error.html?axway_search="><strong>Error</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> File Failed or Expired: the site-wide <strong>red</strong> result, the exact opposite of <strong>OK</strong>. <em>Which way</em> it is failing is what the other red boxes say &mdash; a red subscription is usually also in From green to red (it used to work) or Only red (it never did). No report of its own &mdash; the <a href="../transfer/entities/subscription-error.html?axway_search=">Subscriptions / Error</a> entity view is the full list.</p>\n'
+        printf '<p class="range pfdesc" data-pf="18"><a href="../transfer/entities/subscription-error.html?axway_search="><strong>Error</strong></a> &mdash; the site-wide <strong>red</strong> result: the subscription&rsquo;s <strong>newest</strong> File Failed, or the server log recorded an Error after its last transfer, or &mdash; a UC3 that never transferred &mdash; its polls cannot connect. A newest File that <strong>Expired</strong> is orange, not red (a pickup problem, see Expired). <em>Which way</em> it is failing is what the other red boxes say &mdash; a red subscription is usually also in From green to red (it used to work) or Only red (it never did). No report of its own &mdash; the <a href="../transfer/entities/subscription-error.html?axway_search=">Subscriptions / Error</a> entity view is the full list.</p>\n'
         # nosearch: the stat-box filters are this page's narrowing mechanism —
         # report.js must not add its search box on top of them
         # SHORT column names, and .pftable for the 90% font — ELEVEN columns beside
@@ -934,8 +956,8 @@ write_subscriptions_in_boxes_page() {
                         substr(pf, 2), (res != "" ? " data-res=\"" res "\"" : ""), nm, \
                         flag($14, "../transfer/entities/subscription-ok.html", $2, "Newest File delivered \342\200\224 the subscription is green", "ok", "pfok"), \
                         flag($17, "../transfer/entities/subscription-seen.html", $2, "Seen in the transfer log \342\200\224 at least one File", "seen", "pfneu"), \
-                        flag($13, "../transfer/entities/subscription-not-seen.html", $2, "Configured, never seen in either log", "not seen"), \
-                        flag($18, "../transfer/entities/subscription-error.html", $2, "Newest File Failed or Expired \342\200\224 the subscription is red", "error"), \
+                        flag($13, "../transfer/entities/subscription-not-seen.html", $2, "Configured, never seen in the transfer log", "not seen"), \
+                        flag($18, "../transfer/entities/subscription-error.html", $2, "The subscription is red \342\200\224 its newest File Failed, or server-log errors after its last transfer", "error"), \
                         flag($5, "../server/went-kaput.html", $2, "On Trouble after Success", "troubles"), \
                         flag($7, "../transfer/waiting.html", $2, "Newest File is Waiting", "waiting"), \
                         flag($10, "uc-status-uc3.html", $2, "On No remote files", "no Files"), \

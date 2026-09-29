@@ -29,8 +29,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # TRANSFER lib, not the analyses one: this is a transfer-DATA report (it reads
 # the transfer caches and writes data/transfer/reports/). It lives HERE
-# because its page sits in the ANALYSES menu, in the Subscriptions group — the
-# same arrangement as cross-reference.sh. bin/transfer/reports.sh still runs it.
+# because it reads the transfer caches (its page, if any, is placed by the one
+# Reports menu — _report_groups). bin/transfer/reports.sh still runs it.
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/from-green-to-red.rpt"
@@ -105,7 +105,6 @@ n_rows=0
 {
     printf 'TITLE\tFrom green to red\n'
     printf 'DESC\tSubscriptions that flipped from green to red: their latest File failed, but on an earlier day they were green — flows that used to work and are broken now.\n'
-    printf 'KEYWORDS\tregression, flipped, went red, was working, status change, broken now, used to work, last green\n'
     printf 'INTRO\tThe REGRESSION list: of the **%s** subscription(s) with Files, **%s** are **red right now** (latest File Failed or Expired) — and **%s** of those were **green on an earlier day** (that day ended on an OK File). They are listed here, newest flip first; the other **%s** never delivered an OK File at all and belong on the Only red view, not here. Click the Error count for the 10 most recent failed Files, the OK count for the last successful ones.\n' \
         "$n_sites" "$n_red" "$n_flip" "$n_never"
     printf 'TABLE\tSubscriptions now red that were green before\twide\tnofilter\n'
@@ -127,7 +126,7 @@ n_rows=0
     if [ "$n_flip" -gt 0 ]; then
         printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t\t\t\n' "$n_flip"
     fi
-    printf 'NOTE\tA subscription is **red** when its LATEST File'\''s outcome is Failed or Expired, **green** otherwise — the same rule that colors it site-wide (Waiting counts as OK, Expired as Error). "Last green day" is the most recent day that ENDED on an OK File; "Went red on" is the first failure of the current run (an OK and a failure on the same day leave that day red, so the two can sit days apart). Days red counts to the dataset'\''s last day (%s), not today. OK Files and Files are lifetime counts for the subscription. **This table always shows the full period** — the flip is a sequence in time, so a narrowed From/To range would fabricate or hide flips.\n' "$last_date"
+    printf 'NOTE\tA subscription counts as **red** here when its LATEST File'\''s outcome is an Error — Failed or Expired (Waiting counts as OK), the outcome policy; the site-wide subscription colour differs for an Expired last File, which reads ORANGE there. "Last green day" is the most recent day that ENDED on an OK File; "Went red on" is the first failure of the current run (an OK and a failure on the same day leave that day red, so the two can sit days apart). Days red counts to the dataset'\''s last day (%s), not today. OK Files and Files are lifetime counts for the subscription. **This table always shows the full period** — the flip is a sequence in time, so a narrowed From/To range would fabricate or hide flips.\n' "$last_date"
     printf 'SUMMARY\tSubscriptions: %s  |  Red now: %s  |  Flipped from green: %s  |  Never green: %s\n' \
         "$n_sites" "$n_red" "$n_flip" "$n_never"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

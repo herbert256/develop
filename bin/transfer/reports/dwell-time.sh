@@ -59,6 +59,11 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
     function ep_iso(di, t,  p, s){ if (split(di, p, "-") < 3) return -1; s=secs(t); if (s<0) return -1; return jdn(p[1]+0,p[2]+0,p[3]+0)*86400 + s }
     function ep_us(x,  a, dp, s){ if (split(x, a, " ") < 2) return -1; if (split(a[1], dp, "/") < 3) return -1; s=secs(a[2]); if (s<0) return -1; return jdn(dp[3]+0,dp[1]+0,dp[2]+0)*86400 + s }
     function flush(   dw, r, o, site2){
+        # DELIVERED Files only, dated by their START day (2026-09-29 audit:
+        # the population held ~960 Failed Files and bucketed on the outbound
+        # leg date — the site-wide duration and start-day rules)
+        if (!(gcid in PROC)) return
+        gd = SD[gcid]
         if (in_end < 0 || out_start < 0 || out_start < in_end) { if (in_end>=0 && out_start>=0) neg++; return }
         dw = (out_start - in_end) * 1000                          # ms
         n++
@@ -80,6 +85,8 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
             if (!((site2 SUBSEP gd) in sds)) sdl[site2]=sdl[site2] (sdl[site2]?",":"") gd; sds[site2 SUBSEP gd]=1 }
         addtop(site2, gsk, gd " " gtime, gcid)
     }
+    FNR == 1 { fno++ }
+    fno == 1 { if ($2 == "Processed" && $4 != "") { PROC[$1] = 1; SD[$1] = $4 }; next }   # _files.tsv: the delivered Files and their start day
     $1 != cur {
         if (cur != "") flush()
         cur=$1; in_end=-1; out_start=-1; gsite=""; gd=""; gtime=""; gsk=""; gcid=$1
@@ -101,7 +108,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
             print "P\t" p "\t" sc[p] "\t" ss[p] "\t" sm[p] "\t" bk "\t" buildlist(top[p]) "\t" humandur(int(psum/sc[p])) "\t" humandur(pmax) }
         print "TOT\t" n+0 "\t" neg+0
     }
-' "$PARSED")
+' "$FILES" "$PARSED")
 
 IFS=$'\t' read -r _ n_meas n_neg <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ "${n_meas:-0}" -eq 0 ]; then
@@ -124,8 +131,9 @@ fi
 # overall percentiles from the DWELL lines (no early awk `exit` — it would SIGPIPE
 # the upstream printf under pipefail; just select the row and read to EOF)
 sorted=$(printf '%s\n' "$agg" | awk '/^DWELL /{print $2}' | LC_ALL=C sort -n)
-med_idx=$(( (n_meas + 1) / 2 )); [ "$med_idx" -lt 1 ] && med_idx=1
-p95_idx=$(awk -v n="$n_meas" 'BEGIN{i=int(n*0.95); print (i<1?1:i)}')
+# nearest rank (the site rule: int((n-1)*P+0.5)+1), 2026-09-29 audit
+med_idx=$(awk -v n="$n_meas" 'BEGIN{ print int((n-1)*0.50+0.5)+1 }')
+p95_idx=$(awk -v n="$n_meas" 'BEGIN{ print int((n-1)*0.95+0.5)+1 }')
 med_ms=$(printf '%s\n' "$sorted" | awk -v i="$med_idx" 'NR==i{print}')
 p95_ms=$(printf '%s\n' "$sorted" | awk -v i="$p95_idx" 'NR==i{print}')
 max_ms=$(printf '%s\n' "$sorted" | tail -1)

@@ -171,44 +171,6 @@ done
 # never the repo root)
 exec > >(tee "$BUILD_DIR/build.log") 2>&1
 
-# FAST CLEAR (2026-09-27, build-speed round 3): data/ and docs/ are RENAMED
-# into build/.trash — one directory rename each, instant on one filesystem —
-# and deleted in the BACKGROUND while the build runs (a runtime data/ holds a
-# 3 GB cache and thousands of small files; docs/ ~10k pages). docs/ is pure
-# build output, so a build can never leave a stale page behind.
-move_aside() {   # $1 = dir
-    [ -e "$1" ] || return 0
-    mkdir -p "$BUILD_DIR/.trash"
-    mv "$1" "$BUILD_DIR/.trash/$1.$$" 2>/dev/null || clear_tree "$1"
-}
-echo "build.sh: clearing data/ and docs/ ..." >&2
-_fc0=$(date +%s)
-move_aside data
-move_aside docs
-# ...EXCEPT the build report's input statistics (2026-09-27, speed round 6):
-# data/.buildstats caches the line counts and the per-export First/Last
-# inventory under each file's name + size + mtime, so it can never go stale —
-# and without it every build re-read every export (~20 GB in production) just
-# to fill in the report's figures.
-if [ -d "$BUILD_DIR/.trash/data.$$/.buildstats" ]; then
-    mkdir -p data && mv "$BUILD_DIR/.trash/data.$$/.buildstats" data/
-fi
-{ rm -rf "$BUILD_DIR/.trash" >/dev/null 2>&1 & } 2>/dev/null
-echo "build.sh: data/ and docs/ moved aside in $(( $(date +%s) - _fc0 ))s (deleted in the background)." >&2
-
-# ---- SEED docs/ (2026-08-29, user decision) ---------------------------------
-# the hand-authored files from the repo-root assets/ (the build report lands
-# back in docs/tools/build.html at the very end, from the EXIT trap —
-# 2026-09-12). assets/ is the ONE place to edit style.css / report.js /
-# slotchart.js / all-files-search.js / sub-files.js and
-# the help pages (see assets/README.txt); .nojekyll and topbar-data.js stay
-# generated (ensure_assets).
-echo "build.sh: seeding docs/ from assets/ ..." >&2
-mkdir -p docs/assets docs/help
-_seed=(); for _a in $SEED_ASSETS; do _seed+=("assets/$_a"); done   # the preflight's list
-cp "${_seed[@]}" docs/assets/
-awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css   # the dark theme, generated from the light rules (2026-09-05)
-cp -R assets/help/. docs/help/
 
 BUILD_T0=$(date +%s)
 BUILD_START=$(date '+%Y-%m-%d %H:%M:%S')
@@ -361,15 +323,33 @@ write_report() {
     r=$(count_stats "in-server" ${g[@]+"${g[@]}"}); IFS=$'\t' read -r sfiles slines sbytes <<<"$r"
     g=("input/transfer"/*.csv)
     r=$(count_stats "in-transfer" ${g[@]+"${g[@]}"}); IFS=$'\t' read -r tfiles tlines tbytes <<<"$r"
-    g=("data/server/cache/_parse.tsv")
-    r=$(count_stats "cache-server" ${g[@]+"${g[@]}"}); IFS=$'\t' read -r a cslines csbytes <<<"$r"
+    # the server cache (~6 GB in production) is rewritten by every fresh build,
+    # so a count_stats signature never hits: its parse writes its row count
+    # to _parse.count (2026-09-29 audit) — read that when it is not older than
+    # the cache, else count
+    if [ -s data/server/cache/_parse.count ] && [ -f data/server/cache/_parse.tsv ] \
+       && [ ! data/server/cache/_parse.count -ot data/server/cache/_parse.tsv ]; then
+        cslines=$(head -1 data/server/cache/_parse.count | tr -dc '0-9'); csbytes=$(stat -f%z data/server/cache/_parse.tsv)
+    else
+        g=("data/server/cache/_parse.tsv")
+        r=$(count_stats "cache-server" ${g[@]+"${g[@]}"}); IFS=$'\t' read -r a cslines csbytes <<<"$r"
+    fi
     g=("data/transfer/cache/_files.tsv")
     r=$(count_stats "cache-transfer" ${g[@]+"${g[@]}"}); IFS=$'\t' read -r a ctlines ctbytes <<<"$r"
     shopt -u nullglob
     # the per-export inventory for the report's bottom tables (log_inventory,
     # cached per file) — gathered here, BEFORE the clock, like the figures above
-    local sinv tinv
+    local sinv tinv _keep _c
     sinv=$(log_inventory input/server); tinv=$(log_inventory input/transfer)
+    # PRUNE the per-export inventory cache (2026-09-29 audit: 408 entries, 272
+    # stale): keep only the signatures of the exports in input/ right now
+    if [ -d "$BUILD_STATS_DIR/loginv" ]; then
+        _keep=$(for _c in input/server/*.csv input/transfer/*.csv; do [ -f "$_c" ] && stat -f'%N %z %m' "$_c" | cksum | cut -d' ' -f1; done)
+        for _c in "$BUILD_STATS_DIR"/loginv/*; do
+            [ -f "$_c" ] || continue
+            case $'\n'"$_keep"$'\n' in *$'\n'"${_c##*/}"$'\n'*) ;; *) rm -f "$_c" ;; esac
+        done
+    fi
     printf 'TIME %5ds  build report: input + cache statistics (%s)\n' "$(( $(date +%s) - _st0 ))" "$out" >&2
     t1=$(date +%s); total=$((t1 - BUILD_T0)); end=$(date '+%Y-%m-%d %H:%M:%S')
     # The report carries the site's standard fixed top bar (the help pages'
@@ -423,6 +403,7 @@ code,pre,td.cmd{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-
 .bs table{margin:0;width:auto}
 .bs tr{background:none}   /* style.css zebra-stripes table rows; these are 2-3 row fact blocks, not data */
 .bs td{border:0;padding:.1rem .9rem .1rem 0;white-space:nowrap}
+.bs th[scope=row]{background:none;color:inherit;font-weight:normal;text-align:left;border:0;padding:.1rem .9rem .1rem 0;white-space:nowrap}
 .bs td.v{font-variant-numeric:tabular-nums;padding-right:0}
 .bsnote{color:#667;font-size:.92em;margin:.2rem 0 0}
 details{margin:.6rem 0}
@@ -468,14 +449,14 @@ HTML
                                             | awk '{ s += $1 } END { printf "%d", s + 0 }')
         printf '<div class="bstats bsrow">\n'   # Input/Cache/Output on one row
         printf '<div class="bs"><h3>Input</h3><table>'
-        printf '<tr><td>Server logs</td><td class="v">%s files, %s lines, %s</td></tr>' "$(hnum "$sfiles")" "$(hnum "$slines")" "$(hbytes "$sbytes")"
-        printf '<tr><td>Transfer logs</td><td class="v">%s files, %s lines, %s</td></tr></table></div>\n' "$(hnum "$tfiles")" "$(hnum "$tlines")" "$(hbytes "$tbytes")"
+        printf '<tr><th scope="row">Server logs</th><td class="v">%s files, %s lines, %s</td></tr>' "$(hnum "$sfiles")" "$(hnum "$slines")" "$(hbytes "$sbytes")"
+        printf '<tr><th scope="row">Transfer logs</th><td class="v">%s files, %s lines, %s</td></tr></table></div>\n' "$(hnum "$tfiles")" "$(hnum "$tlines")" "$(hbytes "$tbytes")"
         printf '<div class="bs"><h3>Cached files</h3><table>'
-        printf '<tr><td>Server <code>_parse.tsv</code></td><td class="v">%s lines, %s</td></tr>' "$(hnum "$cslines")" "$(hbytes "$csbytes")"
-        printf '<tr><td>Transfer <code>_files.tsv</code></td><td class="v">%s lines, %s</td></tr></table></div>\n' "$(hnum "$ctlines")" "$(hbytes "$ctbytes")"
+        printf '<tr><th scope="row">Server <code>_parse.tsv</code></th><td class="v">%s lines, %s</td></tr>' "$(hnum "$cslines")" "$(hbytes "$csbytes")"
+        printf '<tr><th scope="row">Transfer <code>_files.tsv</code></th><td class="v">%s lines, %s</td></tr></table></div>\n' "$(hnum "$ctlines")" "$(hbytes "$ctbytes")"
         printf '<div class="bs"><h3>Output</h3><table>'
-        printf '<tr><td>HTML files</td><td class="v">%s</td></tr>' "$(hnum "$nhtml")"
-        printf '<tr><td>Size</td><td class="v">%s</td></tr></table></div>\n' "$(hbytes "$obytes")"
+        printf '<tr><th scope="row">HTML files</th><td class="v">%s</td></tr>' "$(hnum "$nhtml")"
+        printf '<tr><th scope="row">Size</th><td class="v">%s</td></tr></table></div>\n' "$(hbytes "$obytes")"
         printf '</div>\n'
         # ---- Inbox: what the inbox delivered (never named — 2026-09-12) -------
         printf '<h2>Inbox</h2>\n'
@@ -595,11 +576,16 @@ kill_tree() {
 # LAST, after every writer this build owns is confirmed gone.
 finalize_report() {
     local rc=$?
+    # set -e stays ON inside an EXIT trap in bash 3.2 (2026-09-29 audit,
+    # tested): one failing command in the report writer aborted the trap —
+    # no report, the lock left behind, a green build exiting 1
+    set +e
     if [ -n "${BG_PID:-}" ]; then kill_tree "$BG_PID"; wait "$BG_PID" 2>/dev/null || true; fi
     if [ -n "${BG2_PID:-}" ]; then kill_tree "$BG2_PID"; wait "$BG2_PID" 2>/dev/null || true; fi
-    write_report "$REPORT" "$rc"
+    write_report "$REPORT" "$rc" || printf '*** bin/build.sh: the build report could not be written completely\n' >&2
     printf '\nBuild report: %s\n' "$REPORT" >&2
     rm -rf "$BUILD_LOCK"
+    exit "$rc"
 }
 trap finalize_report EXIT
 # A SIGNAL ENDS THE BUILD AS A FAILURE (2026-09-28 fix): after an untrapped
@@ -633,7 +619,11 @@ trap 'exit 129' HUP
 #    dashboards + day after both areas.
 # 3. publish — per-area publishes, then bin/build/publish.sh (the index pages
 #    live in dirs the per-area scripts clear; it also writes the home).
-export GENERATED_AT="$(date '+%Y-%m-%d %H:%M')"   # one footer stamp shared by all publish processes
+# BYTE-ORDER COLLATION for every step (2026-09-29 audit): ~80 report sorts
+# run without LC_ALL=C, so their tie order followed the machine's locale.
+# LC_COLLATE only — LC_ALL would also switch LC_CTYPE, which the slugify tr
+# reference path depends on for non-ASCII names.
+export LC_COLLATE=C
 # the BUILD ID (2026-09-29): render_rpt.awk stamps it as data-v on a
 # subscription page's Files table — the cache-buster of its day list
 # docs/search/all/s/<slug>.js, which is written after the pages render
@@ -646,6 +636,7 @@ export AXWAY_BUILD_ID="$BUILD_T0"
 # ONE bg step may be in flight (single set of globals).
 BG_LABEL=""; BG_N=0; BG_CMD=""; BG_START=""; BG_T0=""; BG_LOGF=""; BG_PID=""
 bg_step_start() {
+    [ -z "${BG_PID:-}" ] || { printf '*** bin/build.sh: background slot 1 still busy — bg_step_wait missing before "%s"\n' "$1" >&2; exit 1; }
     BG_LABEL=$1; shift
     STEP_N=$((STEP_N+1))
     BG_N=$STEP_N
@@ -663,6 +654,7 @@ bg_step_wait() {
     local status=0 t1 tw0 tw1
     tw0=$(date +%s)
     wait "$BG_PID" || status=$?
+    BG_PID=""   # reaped: the EXIT trap must never kill_tree a PID the system may reuse (2026-09-29 audit)
     tw1=$(date +%s)
     t1=$tw1; [ -s "$BG_LOGF.end" ] && t1=$(cat "$BG_LOGF.end")
     STEPS+=("$BG_LABEL"$'\037'"$BG_CMD"$'\037'"$BG_START"$'\037'"$((t1-BG_T0))"$'\037'"$status"$'\037'"$BG_LOGF")
@@ -677,13 +669,13 @@ bg_step_wait() {
         tail -40 "$BG_LOGF" >&2
         exit "$status"
     fi
-    BG_PID=""
 }
 # bg2_step_start / bg2_step_wait — a SECOND background slot (2026-09-27,
 # speed round 4), the same code over its own globals: the server mention
 # scan runs beside the logon summary (slot 1) and the joins below.
 BG2_LABEL=""; BG2_N=0; BG2_CMD=""; BG2_START=""; BG2_T0=""; BG2_LOGF=""; BG2_PID=""
 bg2_step_start() {
+    [ -z "${BG2_PID:-}" ] || { printf '*** bin/build.sh: background slot 2 still busy — bg2_step_wait missing before "%s"\n' "$1" >&2; exit 1; }
     BG2_LABEL=$1; shift
     STEP_N=$((STEP_N+1))
     BG2_N=$STEP_N
@@ -698,6 +690,7 @@ bg2_step_wait() {
     local status=0 t1 tw0 tw1
     tw0=$(date +%s)
     wait "$BG2_PID" || status=$?
+    BG2_PID=""   # reaped (see bg_step_wait)
     tw1=$(date +%s)
     t1=$tw1; [ -s "$BG2_LOGF.end" ] && t1=$(cat "$BG2_LOGF.end")
     STEPS+=("$BG2_LABEL"$'\037'"$BG2_CMD"$'\037'"$BG2_START"$'\037'"$((t1-BG2_T0))"$'\037'"$status"$'\037'"$BG2_LOGF")
@@ -708,7 +701,6 @@ bg2_step_wait() {
         tail -40 "$BG2_LOGF" >&2
         exit "$status"
     fi
-    BG2_PID=""
 }
 
 # ---- RUNTIME-ONLY: ingest delivered updates BEFORE anything parses ---------
@@ -742,6 +734,49 @@ if [ ! -f input/flow-manager/partners.json ] || [ ! -f input/flow-manager/subscr
     printf 'bin/build.sh: no input/flow-manager/{partners,subscriptions}.json — nothing to build (drop the FlowManager exports there, or run bin/flow-manager-synth.sh to synthesize them from the transfer logs).\n' >&2
     exit 1
 fi
+# THE WIPE comes only NOW (2026-09-29 audit): after the inbox step and the
+# have-config check above, so a checkout missing its FlowManager exports (or
+# an inbox step that dies) leaves the previous site and data untouched — the
+# F05 class the preflight guards. Nothing above reads data/ or docs/.
+# FAST CLEAR (2026-09-27, build-speed round 3): data/ and docs/ are RENAMED
+# into build/.trash — one directory rename each, instant on one filesystem —
+# and deleted in the BACKGROUND while the build runs (a runtime data/ holds a
+# 3 GB cache and thousands of small files; docs/ ~10k pages). docs/ is pure
+# build output, so a build can never leave a stale page behind.
+move_aside() {   # $1 = dir
+    [ -e "$1" ] || return 0
+    mkdir -p "$BUILD_DIR/.trash"
+    mv "$1" "$BUILD_DIR/.trash/$1.$$" 2>/dev/null || clear_tree "$1"
+}
+echo "build.sh: clearing data/ and docs/ ..." >&2
+_fc0=$(date +%s)
+move_aside data
+move_aside docs
+# ...EXCEPT the build report's input statistics (2026-09-27, speed round 6):
+# data/.buildstats caches the line counts and the per-export First/Last
+# inventory under each file's name + size + mtime, so it can never go stale —
+# and without it every build re-read every export (~20 GB in production) just
+# to fill in the report's figures.
+if [ -d "$BUILD_DIR/.trash/data.$$/.buildstats" ]; then
+    mkdir -p data && mv "$BUILD_DIR/.trash/data.$$/.buildstats" data/
+fi
+{ rm -rf "$BUILD_DIR/.trash" >/dev/null 2>&1 & } 2>/dev/null
+echo "build.sh: data/ and docs/ moved aside in $(( $(date +%s) - _fc0 ))s (deleted in the background)." >&2
+
+# ---- SEED docs/ (2026-08-29, user decision) ---------------------------------
+# the hand-authored files from the repo-root assets/ (the build report lands
+# back in docs/tools/build.html at the very end, from the EXIT trap —
+# 2026-09-12). assets/ is the ONE place to edit style.css / report.js /
+# slotchart.js / all-files-search.js / sub-files.js and
+# the help pages (see assets/README.txt); .nojekyll and topbar-data.js stay
+# generated (ensure_assets).
+echo "build.sh: seeding docs/ from assets/ ..." >&2
+mkdir -p docs/assets docs/help
+_seed=(); for _a in $SEED_ASSETS; do _seed+=("assets/$_a"); done   # the preflight's list
+cp "${_seed[@]}" docs/assets/
+awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css   # the dark theme, generated from the light rules (2026-09-05)
+cp -R assets/help/. docs/help/
+
 printf '\n=== building %s (report -> %s) ===\n' "${ENV_LABEL:-<unlabelled checkout — write input/environment.txt>}" "$REPORT" >&2
 
 . "$(dirname "${BASH_SOURCE[0]}")/fastawk.sh"   # create data/.awkshim ONCE, before parallel children race for it

@@ -59,30 +59,42 @@ load_rules() {
 # repo's perl trap: an escaped | inside s|…| is alternation).
 apply_rules() {
     local rules=$1 dir=$2; shift 2
-    local pats hits n
+    local pats lst n np
     [ -n "$rules" ] && [ -d "$dir" ] || return 0
     pats=$(mktemp "${TMPDIR:-/tmp}/axdr.XXXXXX")
+    lst=$(mktemp "${TMPDIR:-/tmp}/axdl.XXXXXX")
     printf '%s\n' "$rules" | cut -f1 | LC_ALL=C sort -u > "$pats"
-    hits=$(find "$dir" "$@" -type f \( -name '*.html' -o -name '*-data.js' -o -name 'search-data.js' -o -path '*/search/all/*.js' \) -print0 \
-        | xargs -0 grep -lF -f "$pats" 2>/dev/null || true)
+    # the matching pages NUL-separated (2026-09-29 audit: an unquoted list
+    # broke on spaces and could exceed ARG_MAX on a sweeping rename)
+    find "$dir" "$@" -type f \( -name '*.html' -o -name '*-data.js' -o -name 'search-data.js' -o -path '*/search/all/*.js' \) -print0 \
+        | xargs -0 grep -lF --null -f "$pats" > "$lst" 2>/dev/null || true
     rm -f "$pats"
     n=$(printf '%s\n' "$rules" | wc -l | tr -d ' ')
-    if [ -z "$hits" ]; then
+    np=$(tr -cd '\000' < "$lst" | wc -c | tr -d ' ')
+    if [ "$np" -eq 0 ]; then
+        rm -f "$lst"
         echo "display-rename: $dir: $n rule(s), 0 pages carry an old value." >&2
         return 0
     fi
-    RULES="$rules" perl -pi -e '
+    # ONE pass per line over ONE alternation, longest name first (2026-09-29
+    # audit: the rules ran one after the other, so a chain A->B, B->C turned
+    # an A into C)
+    RULES="$rules" xargs -0 perl -pi -e '
         BEGIN {
-            my %seen;
+            my %seen; my @alt;
             for my $l (split /\n/, $ENV{RULES}) {
                 my ($old, $new) = split /\t/, $l;
-                next if $seen{$old}++;
-                push @R, [qr{(?<![A-Za-z0-9_.-])\Q$old\E(?![A-Za-z0-9_.-])}, $new];
+                next if !defined $new || $seen{$old}++;
+                $MAP{$old} = $new; push @alt, quotemeta($old);
             }
+            @alt = sort { length($b) <=> length($a) } @alt;
+            my $a = join("|", @alt);
+            $RE = qr{(?<![A-Za-z0-9_.-])($a)(?![A-Za-z0-9_.-])};
         }
-        for my $r (@R) { s{$r->[0]}{$r->[1]}g; }
-    ' $hits
-    echo "display-rename: $dir: applied $n rule(s) to $(printf '%s\n' "$hits" | wc -l | tr -d ' ') page(s)." >&2
+        s{$RE}{$MAP{$1}}g;
+    ' < "$lst"
+    rm -f "$lst"
+    echo "display-rename: $dir: applied $n rule(s) to $np page(s)." >&2
 }
 
 r=$(load_rules "input/rename.txt")

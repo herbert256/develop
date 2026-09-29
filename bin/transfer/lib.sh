@@ -14,7 +14,7 @@
 #   REPORTS_DIR     generated *.rpt files  (data/transfer/reports/)
 #   SERVER_CACHE / SERVER_REPORTS   the server area's cache/reports (cross-area reads)
 #   CONFIG_DIR      bin/flow-manager.sh's configured-entity caches (data/flow-manager/{base,xref}/_*.tsv)
-#   UNKNOWN_DIR / ANALYSES_REPORTS   the env's data/ side-outputs
+#   UNKNOWN_DIR                     the env's data/ side-outputs
 #   PARSED/FILES                 the two transfer caches (in CACHE_DIR)
 #
 # The caches are the shared, pre-tokenized form of input/transfer/*.csv produced
@@ -47,7 +47,6 @@ CONFIG_DIR="$DATA/flow-manager"          # bin/flow-manager.sh's caches of the c
 CONFIG_BASE="$CONFIG_DIR/base"          # the 9 entity lists, each "name<TAB>direction" (in/both/out; empty = unclassifiable)
 CONFIG_XREF="$CONFIG_DIR/xref"          # every cross-reference pair BOTH ways (_<a>-<b>.tsv + _<b>-<a>.tsv) + the patterns map
 UNKNOWN_DIR="$DATA/unknown"             # the server unknown-* sidecars (the server-log sighting lists)
-ANALYSES_REPORTS="$DATA/analyses/reports"   # the analyses .rpt files
 mkdir -p "$CACHE_DIR" "$REPORTS_DIR"
 
 PARSED="$CACHE_DIR/_transfers.tsv"

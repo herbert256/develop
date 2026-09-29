@@ -6,9 +6,9 @@
 # Files and its pickups) with the Incoming logon funnel (logon.rpt's Incoming
 # table — Allowed … Session errors, First logon, Logons, Pattern, Re-screens),
 # one row per login. A MERGED report (reads the two .rpt files, like
-# activity.sh): every figure is the source page's own, so the three pages
-# never disagree. The two source pages stay (user request: "do not yet
-# remove those 2 reports").
+# activity.sh): every figure is the source report's own, so the pages never
+# disagree. (fe-overview.rpt has no page of its own any more — this is its
+# only reader; the Logons page keeps the full Incoming table.)
 #
 #   Login … Pickups          fe-overview.rpt columns 0-11, verbatim
 #   Allowed, Disallowed, Authenticated, Auth Failed, Locked, Pattern
@@ -70,13 +70,13 @@ awk -F'\t' -v FE="$FE" -v LG="$LG" -v GEN="$GENDATE" '
     }
     BEGIN {
         E11 = "\t\t\t\t\t\t\t\t\t\t\t"; E6 = "\t\t\t\t\t\t"
-        # fe-overview.rpt ROW: 2 login, 3 use cases .. 13 pickups, 14 pickup
-        # pattern (dropped), 15 logon problems (dropped), then @data:res=;
-        # TOTAL: 2 label, 3..13 the same cells
+        # fe-overview.rpt ROW: 2 login, 3 use cases .. 13 pickups, then
+        # @data:res= (field 14 — fe-overview writes no Pickup pattern since
+        # 2026-09-29); TOTAL: 2 label, 3..13 the same cells
         while ((getline l < FE) > 0) { n = split(l, a, "\t")
             if (a[1] == "ROW") { k = toupper(a[2]); if (!(k in IDX)) { IDX[k] = ++nr; NAME[nr] = a[2] }
                 s = ""; for (i = 3; i <= 13; i++) s = s "\t" a[i]; FEROW[k] = s
-                for (i = 15; i <= n; i++) if (index(a[i], "@data:res=") == 1) FERES[k] = a[i]
+                for (i = 14; i <= n; i++) if (index(a[i], "@data:res=") == 1) FERES[k] = a[i]
                 nfe++ }
             else if (a[1] == "TOTAL") { FETOT = ""; for (i = 3; i <= 13; i++) FETOT = FETOT "\t" a[i] }
         } close(FE)
@@ -124,7 +124,6 @@ awk -F'\t' -v FE="$FE" -v LG="$LG" -v GEN="$GENDATE" '
             res = (k in FERES) ? "\t" FERES[k] : ""
             print "ROW\t" NAME[i] fe lg res ((k in LGDR) ? LGDR[k] : "") }
         print "TOTAL\tTotal (" nr " logins)" FETOT LGTOT
-        print "KEYWORDS\tpartners,incoming,fe,login,overview,status,use case,uc2,uc4,mailbox,last logon,gateway,old gateway,migration,files,in,out,retrieved,collected,waiting,expired,oldest,age,pickup,visit,pattern,cadence,logon,funnel,allowed,disallowed,authenticated,bad key,key failures,locked,auth failed,ssh"
         print "FOOT\tGenerated on " GEN
         printf "%d\t%d\t%d\n", nr, nfe + 0, nonly + 0 > "/dev/stderr"
     }

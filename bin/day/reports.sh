@@ -139,7 +139,6 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
     function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
     function humandur(ms,   s,m,h){ ms+=0; if(ms<1000)return int(ms) "ms"; s=int(ms/1000); if(s<60)return s "s"; m=int(s/60); s=s%60; if(m<60)return m "m " s "s"; h=int(m/60); m=m%60; return h "h " m "m" }
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
-    function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
     function wdname(d,   p){ split(d,p,"-"); return WD[jdn(p[1]+0,p[2]+0,p[3]+0) % 7] }
     function pctd(v, avg,   p) { if (avg <= 0) return ""; p = (v - avg) * 100 / avg; if (p > -0.5 && p < 0.5) return "0%"; return sprintf("%+.0f%%", p) }
     # unpack a "date:count …" string (daycount) into a per-day array
@@ -217,8 +216,14 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         C[d]++; V[d] += $8; tC++; tV += $8
         if (FIRSTK[d] == "" || $6 < FIRSTK[d]) { FIRSTK[d] = $6; FIRSTT[d] = $5 }
         if (LASTK[d] == "" || $6 > LASTK[d]) { LASTK[d] = $6; LASTT[d] = $5 }
-        if ($16 == "in") IN[d]++; else if ($16 == "out") OUT[d]++          # per-file CONNECTION side (col 16, renamed from direction)
-        if ($9 + 0 > MAXD[d] + 0) { MAXD[d] = $9 + 0; MAXDA[d] = $3; MAXDO[d] = $2 }   # longest transfer (dur_ms)
+        # per-File direction: the MOVEMENT (col 17), else the connection side
+        # (col 16) — the Entities / home rule (2026-09-29 audit: the connection
+        # side alone counted UC2 pickups as partners sending to us)
+        dv9 = ($17 != "") ? $17 : $16
+        if (dv9 == "in") IN[d]++; else if (dv9 == "out") OUT[d]++
+        # the longest DELIVERED File (dur_ms) — the site-wide duration rule
+        # (2026-09-29 audit: a Failed File retry span won on 58 of 64 days)
+        if ($2 == "Processed" && $9 + 0 > MAXD[d] + 0) { MAXD[d] = $9 + 0; MAXDA[d] = $3 }
         if ($8 + 0 == 0) Z[d]++           # zero-byte files
         if ($10 + 0 > MAXR[d] + 0) { MAXR[d] = $10 + 0; MAXRF[d] = $11; MAXRA[d] = $3 }   # most legs (retries) in one transfer
         if ($10 + 0 == 1) PIR[d]++   # single-leg (pirate) transfers -> Problems this day
@@ -348,7 +353,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (dprt >= 50 && dprc >= 0.70 * dprt)
                 printf "FACT\t**%s** carried **%.0f%%** of the day'"'"'s transfer legs.\n", toupper(dprn), dprc * 100 / dprt >> out
             if (MAXD[d] + 0 >= 1800000)
-                printf "FACT\tLongest-running transfer took **%s** — account %s (it %s).\n", humandur(MAXD[d]), MAXDA[d], (MAXDO[d] != "Failed" && MAXDO[d] != "Expired" ? "succeeded" : "failed") >> out
+                printf "FACT\tLongest delivered File took **%s** — account %s.\n", humandur(MAXD[d]), MAXDA[d] >> out
             if (MAXR[d] + 0 >= 15)
                 printf "FACT\tOne transfer logged **%d** legs — repeated retries of %s (account %s).\n", MAXR[d], MAXRF[d], MAXRA[d] >> out
             if (bfnm[d] != "")
@@ -572,8 +577,6 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function wdname(d,   p){ split(d,p,"-"); return WD[jdn(p[1]+0,p[2]+0,p[3]+0) % 7] }
     function pctd(v, avg,   p) { if (avg <= 0) return ""; p = (v - avg) * 100 / avg; if (p > -0.5 && p < 0.5) return "0%"; return sprintf("%+.0f%%", p) }
-    function lvlname(l){ return l == "W" ? "Warning" : (l == "E" ? "Error" : "Info") }
-    function compname(c){ return c=="T"?"TM":(c=="P"?"PESITD":(c=="S"?"SSHD":c)) }
     FNR == 1 { fno++ }
     # the reduce run: the jobs counter dumps (type TAB key TAB count), summed
     REDUCE && FILENAME != SVF { if ($1 == "rc") rc[$2] += $3; else if ($1 == "er") er[$2] += $3; else if ($1 == "CEIL") CEIL[$2] += $3

@@ -46,8 +46,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # TRANSFER lib, not the analyses one: this is a transfer-DATA report (it reads
 # the transfer caches and writes data/transfer/reports/). It lives HERE
-# because its page sits in the ANALYSES menu, in the Subscriptions group — the
-# same arrangement as cross-reference.sh. bin/transfer/reports.sh still runs it.
+# because it reads the transfer caches (its page, if any, is placed by the one
+# Reports menu — _report_groups). bin/transfer/reports.sh still runs it.
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/waiting.rpt"
@@ -476,7 +476,7 @@ oldest_cell="-"
     while IFS='|' read -r _ ecnt esite eold eage edrill; do
         [ -z "$esite" ] && continue
         n_erows=$((n_erows + 1)); e_files_sum=$((e_files_sum + ecnt))
-        printf 'ROW\t%s\t%s\t%s\t%s\t@data:coreids=%s\t@data:res=red\n' "$esite" "$ecnt" "$eold" "$eage" "$edrill"
+        printf 'ROW\t%s\t%s\t%s\t%s\t@data:coreids=%s\t@data:res=orange\n' "$esite" "$ecnt" "$eold" "$eage" "$edrill"   # orange: at risk but still collectable, not an error yet (2026-09-29 audit)
     done <<< "$(printf '%s\n' "$agg2" | grep '^E|' | LC_ALL=C sort -t'|' -k2,2nr -k3,3)"
     if [ "$n_erows" -eq 0 ]; then
         printf 'ROW\t@{colspan=4}No Waiting File has been staged for 9 days or more — nothing is close to the retention sweep.\n'

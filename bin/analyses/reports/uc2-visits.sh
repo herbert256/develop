@@ -12,24 +12,24 @@
 #                          pickup (excluded from every pickup figure)
 # The visit classes are TIME windows; the "Same connection" column is the
 # hard evidence beside them: distinct technical SSH connections (transfer-log
-# Session IDs, sidecar col 18) in which the account both delivered and
+# Session IDs, sidecar col 16) in which the account both delivered and
 # collected — the ONLY figure the detail pages' "Connection shared with UC4
 # drop" row fires on (2026-08).
 # The leading Pickups column is the account's pickup-LOGON count — the same
-# figure the detail page's Pickup information table shows as Total pickups
-# (sidecar col 5); empty-handed visits exist in the sidecar (col 15) but are
-# not shown here.
+# figure the detail page's Pickup information table shows as Pickup logons (SSH)
+# (sidecar col 5); empty-handed visits are in the visit total (col 10) but
+# not shown as a class here.
 #
 # All figures come from the uc2-pickups.tsv sidecar uc2-status.sh computes
 # (one line per (account, UC2 subscription); col 5 is the pickup-logon count,
-# cols 11-15 the visit classification, col 18 the shared-session count) —
+# cols 10-13 the visit classification, col 16 the shared-session count) —
 # this script only formats, so the two
 # reports can never disagree. It must run AFTER uc2-status.sh (bin/server/reports.sh runs it
 # past the pool barrier).
 #
-# A report whose PAGE sits in the Analyses menu (Configuration group, page
-# docs/analyses/uc2-visits.html via SUBS_GROUP_REPORTS) but whose DATA
-# is server-side — the uc2-status.sh arrangement.
+# A report whose table rides the UC2 tab of UC status (tab=uc2, 2026-09-29 —
+# no page of its own) but whose DATA is server-side — the uc2-status.sh
+# arrangement.
 #
 # Usage:
 #   ./uc2-visits.sh   # -> data/server/reports/uc2-visits.rpt
@@ -52,20 +52,21 @@ fi
 # most pickups; name breaks ties so the order never depends on input order.
 # The account's pickup/visit figures repeat on each of its UC2 subscriptions
 # (the logon evidence is account-level).
-rows=$(LC_ALL=C sort -t$'\t' -k18,18nr -k13,13nr -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' '
+rows=$(LC_ALL=C sort -t$'\t' -k16,16nr -k12,12nr -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' '
     function sublink(s) { return (s != "") ? "@{alink=subscriptions/" s "}" : "" }
-    $11 + 0 > 0 {
+    $10 + 0 > 0 {
         printf "ROW\t%s%s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n", \
-            sublink($1), $1, $5, $12, $13, $14, $18, $7, $8
+            sublink($1), $1, $5, $11, $12, $13, $16, $7, $8
         tf += $7; nr++
         # the logon/visit figures belong to the ACCOUNT (or, on an account with
         # several FE logins, to the flow login), repeated on each of its UC2
         # subscriptions: the totals count every such group ONCE (2026-09-28
         # fix: an account with eight UC2 flows counted its pickups eight
         # times). The sidecar carries no login, so a group is the account plus
-        # its logon figures, the first/last pickup stamps included.
-        g = $2 SUBSEP $3 SUBSEP $4 SUBSEP $5 SUBSEP $9 SUBSEP $10 SUBSEP $11 SUBSEP $12 SUBSEP $13 SUBSEP $14 SUBSEP $15 SUBSEP $18
-        if (!(g in grp)) { grp[g] = 1; tp += $5; tc += $12; tb += $13; td += $14; ts += $18 }
+        # its logon figures (first / last pickup, pickups) — THE key
+        # pickups.sh uses too (2026-09-29: the two keys had drifted apart)
+        g = $2 SUBSEP $3 SUBSEP $4 SUBSEP $5
+        if (!(g in grp)) { grp[g] = 1; tp += $5; tc += $11; tb += $12; td += $13; ts += $16 }
     }
     END { printf "TOTFOOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", nr+0, tp+0, tc+0, tb+0, td+0, ts+0, tf+0 }
 ')
@@ -82,7 +83,7 @@ fi
 {
     printf 'TITLE\tUC2 pickup visits\n'
     printf 'DESC\tWhat each UC2 partner actually does when it connects: total pickups, visits that collected, two-way exchange visits (delivered and collected in one visit), delivery-only visits (the UC4 twin) and the same-connection proof — SSH sessions that both delivered and collected.\n'
-    printf 'INTRO\tA pickup account'\''s SSH logons group into **visits** (a gap of more than 30 minutes starts a new one); every visit is classified by what its window shows in the transfer log. **Pickups** counts the account'\''s pickup logons — the figure the detail page'\''s Pickup information table shows as Total pickups. **Collected** took at least one staged file; **Collected + delivered** is a two-way exchange — the partner dropped its own files (the UC4 twin flow) AND took ours in one visit; **Delivered only** is a UC4 delivery, not a pickup, and is excluded from every pickup figure. **Same connection** is the hard evidence beside those time windows: distinct technical SSH connections (transfer-log Session IDs) in which the account **both delivered and collected** a file — the only figure the detail pages'\'' "Connection shared with UC4 drop" row fires on. The pickup and visit figures are the ACCOUNT'\''s, so they repeat on each of its UC2 subscriptions — except on an account carrying **several FE logins** (production), where they are the flow'\''s own **login'\''s**; each subscription links to its detail page, whose Pickup information table carries that flow'\''s own figures.\n'
+    printf 'INTRO\tA pickup account'\''s SSH logons group into **visits** (a gap of more than 30 minutes starts a new one); every visit is classified by what its window shows in the transfer log. **Pickups** counts the account'\''s pickup logons — the figure the detail page'\''s Pickup information table shows as Pickup logons (SSH). **Collected** took at least one staged file; **Collected + delivered** is a two-way exchange — the partner dropped its own files (the UC4 twin flow) AND took ours in one visit; **Delivered only** is a UC4 delivery, not a pickup, and is excluded from every pickup figure. **Same connection** is the hard evidence beside those time windows: distinct technical SSH connections (transfer-log Session IDs) in which the account **both delivered and collected** a file — the only figure the detail pages'\'' "Connection shared with UC4 drop" row fires on. The pickup and visit figures are the ACCOUNT'\''s, so they repeat on each of its UC2 subscriptions — except on an account carrying **several FE logins** (production), where they are the flow'\''s own **login'\''s**; each subscription links to its detail page, whose Pickup information table carries that flow'\''s own figures.\n'
     printf 'STAT\twhite\t%s\tUC2 flows with visits\n' "$n_rows"
     printf 'STAT\twhite\t%s\tPickups\n' "$t_p"
     printf 'STAT\tgreen\t%s\tCollected\n' "$t_c"

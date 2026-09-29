@@ -77,11 +77,17 @@ function pktable(nm,   k, t) {
     t = "TABLE\tPickup information\tsxs=feat\n"   # sxs=feat: rendered beside the Features table (publish-details.sh splices it there, 2026-09-05)
     t = t "HEAD\tItem\tValue\n"
     t = t "KIND\ttext\ttext\n"
-    t = t "ROW\tFirst pickup\t" stamp(pkf[k]) "\n"
-    t = t "ROW\tLast pickup\t" stamp(pkl[k]) "\n"
-    t = t "ROW\tTotal pickups\t" (pkn[k] + 0) "\n"
-    t = t "ROW\tPickups with actual files\t" (pkw[k] + 0) "\n"
-    t = t "ROW\tTotal files picked up\t" (pkc[k] + 0) "\n"
+    # the LABELS say what each figure counts (2026-09-29 audit): the pickup
+    # rows are successful SSH LOGONS of the pickup login (server log), the
+    # files picked up are collected Files (transfer log) — a flow whose
+    # partner collects without an SSH logon line (CFT/PESIT, or a login the
+    # server log never names) reads 0 logons beside thousands of Files, and
+    # must not look like a contradiction
+    t = t "ROW\tFirst pickup logon (SSH)\t" stamp(pkf[k]) "\n"
+    t = t "ROW\tLast pickup logon (SSH)\t" stamp(pkl[k]) "\n"
+    t = t "ROW\tPickup logons (SSH)\t" (pkn[k] + 0) "\n"
+    t = t "ROW\tPickup logons that collected files\t" (pkw[k] + 0) "\n"
+    t = t "ROW\tFiles picked up (transfer log)\t" (pkc[k] + 0) "\n"
     t = t "ROW\tCurrent waiting files\t" (pkwt[k] + 0) "\n"
     t = t "ROW\tExpired files\t" (pkxp[k] + 0) "\n"
     t = t "ROW\tPickup pattern\t" pkp[k] "\n"
@@ -107,20 +113,20 @@ FILENAME ~ /uc2-pickups\.tsv$/ {
     # sidecar is one line per (account, sub); 1:1 in practice)
     pki[k] = 1; pkf[k] = $3; pkl[k] = $4; pkn[k] = $5; pkw[k] = $6; pkc[k] = $7; pkp[k] = $8
     pkdl[k] = $9              # logons in delivery-only visits (the UC4 twin) — not pickups
-    pkvx[k] = $18             # SHARED SESSIONS: technical connections (transfer-log Session
+    pkvx[k] = $16             # SHARED SESSIONS: technical connections (transfer-log Session
                               # IDs) that both delivered AND collected — the only
                               # same-connection proof; the time-window visit classes
-                              # (cols 13/14) deliberately do NOT fire this row (2026-08)
-    pkwt[k] = $16             # this subscription's staged files still Waiting
-    pkxp[k] = $17             # … and Expired uncollected
+                              # (cols 12/13) deliberately do NOT fire this row (2026-08)
+    pkwt[k] = $14             # this subscription's staged files still Waiting
+    pkxp[k] = $15             # … and Expired uncollected
     a9 = toupper($2)
-    acv[a9] = $18             # the same shared-session count, keyed by ACCOUNT (the UC4 mirror)
+    acv[a9] = $16             # the same shared-session count, keyed by ACCOUNT (the UC4 mirror)
     if (acu2[a9] == "") acu2[a9] = $1   # its (first) UC2 subscription, for the UC4 note's link
     next
 }
 # the UC4 mirror of the UC2 "Connection shared with UC4 drop" row: an extra
 # INTRO line when this UC4 flow's account also COLLECTS UC2 files in the
-# SAME technical SSH connection (the shared-session count — sidecar col 18;
+# SAME technical SSH connection (the shared-session count — sidecar col 16;
 # same-connection proof, never the time-window visit classes)
 function uc4note(nm4,   a4, n4) {
     a4 = toupper(suac[toupper(nm4)])
@@ -230,20 +236,8 @@ FILENAME ~ /uc4-status\.rpt$/ {
     next
 }
 
-# ---- fallback: the Pickup information table WITHOUT a verdict row -----------
-# The uc2-status table is ACCOUNT-keyed — one row per pickup account, its
-# subscription cell the account's first UC2 flow. An account owning MANY UC2
-# subscriptions (the production hybrid estate: one account, 350 derived-UC2
-# flows) therefore carries one verdict row while the uc2-pickups.tsv sidecar
-# holds every flow. Any UC2 subscription with sidecar figures but no verdict
-# of its own still gets its Pickup information table.
-END {
-    for (k in pki) {
-        s = slug[k]
-        if (s == "" || (s in done)) continue
-        done[s] = 1
-        f = OUT "/" s ".txt"
-        printf "%s", pktable(k) > f
-        close(f)
-    }
-}
+# (The END fallback — a Pickup information table for a UC2 subscription with
+# sidecar figures but no verdict row — went 2026-09-29: the uc2-status table
+# is keyed by the (account, subscription) PAIRS since the 2026-08-31 audit and
+# the uc2-pickups.tsv sidecar walks the same pair roster, so every sidecar
+# subscription has its verdict row, which carries the table.)

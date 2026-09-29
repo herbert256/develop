@@ -47,8 +47,8 @@ former "Reasons over time" table (`tab=reasons`); Logons lost the whole ssh-key-
 (Key mismatches = Incoming Bad key, Lockouts folded into Incoming Locked — which had missed the
 "locked due to too many failed login" line — Outbound key failures = a subset of Outgoing);
 Connections lost Whitelist usage (= Incoming Allowed + Re-screens per policy) and Test outcomes
-(empty by construction: the NOISE filter drops "Error during test connection"). Components are listed in `MERGED_COMPONENT_REPORTS`
-(whats-new skips them); merged basenames reuse one component's help slug.
+(empty by construction: the NOISE filter drops "Error during test connection"). Components are listed with the other pageless producers in `PAGELESS_REPORTS`
+(`is_pageless_report`; whats-new skips them); merged basenames reuse one component's help slug.
 
 **The former BOXES-ONLY reports** (2026-07..09-29, `BOXES_ONLY_REPORTS`, reached only from the
 Boxes pages): pirates · waiting · expired · went-quiet (transfer) and went-kaput (server) are
@@ -56,7 +56,7 @@ ordinary members of their report groups since the one Reports pulldown (Failures
 delivery); from-green-to-red, only-red, missing-cronjobs, deploy-errors and
 no-remote-dir/-files lost their pages 2026-09-29 (pageless producers, see above). (site-failures
 left 2026-09-28: its page was the Per flow "Connection failure" rows, row for row — the script
-stays as a pageless data producer in `MERGED_COMPONENT_REPORTS`, the Boxes connection column reads
+stays as a pageless data producer in `PAGELESS_REPORTS`, the Boxes connection column reads
 its .rpt, and every link to it points at `server/failure-flows.html` now.)
 
 ## The attribution chain (parse time, in this order)
@@ -227,7 +227,7 @@ is `data/colour/`; `result.sh` drops the old directory.
    the failure `_build_ringattr` was written to kill, reintroduced by the loose join.
    `went-kaput.sh` applies the identical rule (page + evidence sidecar), so the two stay in
    step; 1:1 owners are unchanged. So a Trouble-after-success flow arrives
-   on the home "Failing subscriptions in Server log" table RED; the went-kaput page keeps only
+   RED on Failed Subscriptions (the home red tables went 2026-09-29); the went-kaput page keeps only
    the deploy-classified and poll-cleared remainder. **The UC3 connection-failure streak (2026-09-05, user rule)**: a "Connection failure while
    <UC3 flow> tried to connect …" line reds a UC3 flow only after THREE failed polls in a row.
    When the newest evidence is a connection failure — the flow's own line (its stamp is in
@@ -543,7 +543,7 @@ fields 2-21 in that order; the home page's Cured cell is Automatic + Manual (fie
 
 ## Click-to-expand drill-down
 
-`data-coreids` makes a row clickable; `data-coreids-failed`/`-processed` its Error/OK cell (bound by cell class), `data-coreids-retry`/`-resubmit` its Retry/Resubmit cell (bound by HEADER LABEL — both are `numwarn` cells; the Entities pages, 2026-09-13).
+`data-coreids` makes a row clickable; `data-coreids-failed`/`-processed` its Error/OK cell (bound by cell class — only on a row with exactly ONE Error / OK cell; render_rpt.awk drops the lists a row could never bind, 2026-09-29); the Entities pages bind their lists per cell through `drillcols=` (the retry / resubmit binding went 2026-09-29 — no page shipped those lists).
 Clicking inserts a detail row listing that outcome's 10 most-recent transfers; detail rows are
 excluded from `dataRows` and torn down before sort/filter/search. Lists are built by the shared
 `COREIDS_AWK` helper (`addtop` bounded top-10 + `buildlist`/`orlist`). Every transfer report with
@@ -589,11 +589,8 @@ Subscriptions). (The Red/Green switch group, its `docs/switches/` pages and the 
 Accounts First-seen columns went 2026-09-06, user request.) The days are the transfer
 `topview.rpt`'s only — every data group is transfer-derived, so a server-only day (the
 server export running a day ahead of the transfer export) would render a fully empty row. The
-table is `data-nosort` — **capped to the newest 14 days** (2026-08), the older rows and the
-Total row carrying class `capx`, hidden while the table carries `cap14` (a sort would
-interleave the class-hidden oldest rows), and the "Show all" button under the tablewrap (baked
-only when there are more than 14 days) lifts the cap — report.js `setupShowAll` uncaps every
-capped table inside the button's adjacent wrapper; the Total row exists only from 10 days up. The baked Total keeps the full-window figures, since
+table is `data-nosort` and shows EVERY day (the 14-day cap and its "Show all" button went
+2026-09-29, user request); the Total row exists only from 10 days up. The baked Total keeps the full-window figures, since
 `recomputeTotals` counts inline display only; the First-seen counts join `first-seen.rpt` by date —
 its summary lines stay out of the day rows, and each First-seen Total cell shows the report's
 SEEN figure — equal to the status tables' Seen by construction, the day cells
@@ -689,7 +686,7 @@ the positions shift when a group is hidden. The hand-written help pages `entitie
 describe this layout.
 
 The Reason column (2026-08): the SUBSCRIPTIONS Error view appends it — the same per-flow diagnosis
-the home red tables show, resolved by the same chain (newest red `failed-sub-all.rpt` row's own
+the removed home red tables showed, resolved by the same chain (newest red `failed-sub-all.rpt` row's own
 verdict unless the flow is in `colour/_redflip.tsv`; else the classified `_kaput-evidence.tsv` newest
 E line via the shared `bin/flip-reason.awk`; else `_subs-boxes.tsv`). `_subs-boxes.tsv` is written
 by the LATER analyses publish, so build.sh re-invokes the transfer publish right after the
@@ -747,8 +744,8 @@ From/To, no search box, no RECALC/@data:buckets** (`CUR_DATES` stays empty; `set
 
 Page order IS the section number: -1 direction · 0 header data · 0.9 Waiting/Expired summary ·
 1 Activity per day · 2 subscription · 2.6/2.7 Incoming/Outgoing connections · 2.8 account ·
-2.81–2.83 domain/application/partner · 3 login · 5 protocol · 6 av · 9 latest 100 Files
-(SITE: DIVERTED to its own page since 2026-09-16, see below) ·
+2.81–2.83 domain/application/partner · 3 login · 5 protocol · 6 av · (9, the latest Files,
+went 2026-09-29) ·
 10 weekday · 11 hour · 13 direction · 14 action-by · 15 mode; then `close_file` appends the
 Duration/Size perf tables, a Groups fact table (classic types only — a PDA page IS the group) and
 "Last server log messages" + "Last server log errors" (two tables since 2026-09-16, see below).
@@ -1070,9 +1067,8 @@ newest first); the all-files shards flag those CoreIds and link them.
 
 ### Page mechanisms (available to every report)
 
-Introduced by the CFT to ST delay report (removed 2026-08-29 on request): `topsel=` (per-day
-top-N candidate rows baked, report.js `recalcTopsel` re-picks the visible N for the range),
-`period=` (the aggregated-period span on the `<h2>`, kept on the selected range), and
+Introduced by the CFT to ST delay report (removed 2026-08-29 on request): `topsel=` and
+`period=` (both REMOVED 2026-09-29 — no writer emitted them any more), and
 **DATE-AWARE STAT cards** — a STAT line's cells 4+ may carry `@data:NAME=VALUE` (render_rpt.awk
 emits them as `data-NAME` on the box; the first PLAIN cell >=4 stays the historical `data-pf`
 filter key) — report.js `recalcStats` recomputes a `data-tok` box from its `data-sb` per-day
