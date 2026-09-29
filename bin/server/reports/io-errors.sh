@@ -232,12 +232,6 @@ day_rows() { printf '%s\n' "$agg" | grep $'^DAY\t' | sort -t"$TAB" -k2,2 | cut -
 {
     printf 'TITLE\tIO errors\n'
     printf 'DESC\tThe platform failing to read (or write) a file on its own storage — "IO Error reading file /data/FlowManager/<account>@<login>/<file>" — per folder, per line and per day, each line joined to the File it concerns and its outcome.\n'
-    if [ "${n_lines:-0}" -eq 0 ]; then
-        printf 'INTRO\tThe server log carries **no IO error** in this window: no "IO Error reading file …" (or "Input/output error") line at all. The platform read every file it was asked to read from its own storage.\n'
-    else
-        printf 'INTRO\t**%s** IO error line(s) in **%s** FlowManager folder(s) of **%s** account(s), over **%s** day(s) (**%s** to **%s**). The connection and the upload were fine — the platform then **could not read the file back from its own storage** (a file deleted or moved while a route ran, a stale NFS handle, a slow or full volume, a permission). The transfer log cannot show this on its own: the route that failed to read the file writes no transfer row, so each line is **joined to the File it concerns by its file name** — **%s** File(s) ended in **Error** (the route never read the file: a one-legged File), **%s** went **OK** anyway (a retry read it), and **%s** line(s) name a file the transfer log never saw.\n' \
-            "$n_lines" "$n_fold" "$n_acct" "$n_days" "$d_first" "$d_last" "$n_err" "$n_ok" "$n_nl"
-    fi
 
     printf 'TABLE\tIO errors per folder\twide\n'
     printf 'HEAD\tLast\tAccount\tLogin\tSubscriptions\tIO errors\tFiles\tError\tOK\tNot logged\tDays\tFirst\tFolder\n'

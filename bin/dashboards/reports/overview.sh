@@ -729,7 +729,6 @@ fi
     printf 'PAGE\tindex\n'
     printf 'TITLE\tDashboards — Axway ST reports\n'
     printf 'H1\tDashboard\n'
-    printf 'DESC\tA single graphical read of both logs — the headline figures and the 6-hour trends; click any slot to drill into that day.\n'
     # every File, so the Top view (its per-day Files Count), not Activity per
     # day (delivered Files only since 2026-09-13) — 2026-09-28 fix
     printf 'KPI\t%s\tFiles transferred\tlogical transfers\tblue\t../transfer/topview.html\n' "$(knum_files "${T_FILES:-0}")"

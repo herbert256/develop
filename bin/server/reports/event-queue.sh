@@ -6,11 +6,10 @@
 #   [Pesit Default] Unable to submit event AgentEvent
 #
 # — the PeSIT service reporting that it could not submit an agent event.
-# Counted whatever the level. ONE table: Per day (lines, first and last
-# time) — read only by bin/sample/verify.sh's reconciliation (the newest-1000
-# Lines table went 2026-09-29: no reader). NO PAGE since 2026-09-27 (user
-# request: the Operations & Capacity group went) — the .rpt is an
-# unpublished intermediate; the sidecar below is what the site uses.
+# Counted whatever the level. NO PAGE since 2026-09-27 (user request: the
+# Operations & Capacity group went) and NO .rpt since 2026-09-29 (its per-day
+# table had no reader but bin/sample/verify.sh) — the sidecar below is what
+# the site uses.
 #
 # SIDECAR event-queue-slots.tsv — one "date <TAB> slot <TAB> lines" row per
 # nonzero 30-minute slot (slot 0-47): the EventQueue chart view of the
@@ -22,14 +21,13 @@
 # 3=level, 4=component, 5=message, 6=session).
 #
 # Usage:
-#   ./event-queue.sh   # -> data/server/reports/event-queue.rpt + event-queue-slots.tsv
+#   ./event-queue.sh   # -> data/server/reports/event-queue-slots.tsv
 #
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
-OUT="$REPORTS_DIR/event-queue.rpt"
 SLOTS="$REPORTS_DIR/event-queue-slots.tsv"
 
 shopt -s nullglob
@@ -37,7 +35,7 @@ files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No files matching '*.csv' found in '$INPUT_DIR'" >&2
-    rm -f "$OUT" "$SLOTS"   # no server data — page not published
+    rm -f "$SLOTS"   # no server data
     exit 0
 fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
@@ -45,39 +43,24 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/evq.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 
-# ONE pass over the cache: the per-day figures and the 30-minute slots
-LC_ALL=C awk -F'\t' -v DAYF="$TMP/days" -v SLTF="$TMP/slots" '
+# ONE pass over the cache: the 30-minute slots
+LC_ALL=C awk -F'\t' -v SLTF="$TMP/slots" '
     index($5, "[Pesit Default] Unable to submit event AgentEvent") != 1 { next }
     {
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) next
         t = $2; n++
-        D[d]++
-        if (!(d in DF) || t < DF[d]) DF[d] = t
-        if (!(d in DL) || t > DL[d]) DL[d] = t
         s = int((substr(t, 1, 2) * 60 + substr(t, 4, 2)) / 30)
         SL[d SUBSEP s]++
     }
     END {
-        for (d in D) printf "%s\tROW\t@{href=../day/%s.html?axway_hero=EventQueue}%s\t%d\t%s\t%s\n", d, d, d, D[d], substr(DF[d], 1, 8), substr(DL[d], 1, 8) > DAYF
         for (k in SL) { split(k, a, SUBSEP); printf "%s\t%d\t%d\n", a[1], a[2], SL[k] > SLTF }
         printf "%d\n", n + 0
     }
 ' "$PARSED" > "$TMP/total"
-touch "$TMP/days" "$TMP/slots"
+touch "$TMP/slots"
 n_lines=$(cat "$TMP/total")
-n_days=$(wc -l < "$TMP/days" | tr -d ' ')
 TAB=$(printf '\t')
 
 LC_ALL=C sort -t"$TAB" -k1,1 -k2,2n "$TMP/slots" > "$SLOTS.tmp" && mv "$SLOTS.tmp" "$SLOTS"
 
-{
-    printf 'TITLE\tEventQueue\n'
-    printf 'TABLE\tPer day\tsort=0:-1\n'
-    printf 'HEAD\tDate\tLines\tFirst\tLast\n'
-    printf 'KIND\ttext\tnumwarn\ttext\ttext\n'
-    LC_ALL=C sort -t"$TAB" -k1,1r "$TMP/days" | cut -f2-
-    printf 'TOTAL\tTotal (%s days)\t@{class=num warn}%s\t\t\n' "${n_days:-0}" "${n_lines:-0}"
-    printf 'FOOT\n'
-} > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
-
-echo "Data written to $OUT (${n_lines:-0} EventQueue line(s) on ${n_days:-0} day(s))." >&2
+echo "Data written to $SLOTS (${n_lines:-0} EventQueue line(s))." >&2

@@ -48,8 +48,6 @@ rm -f "$_ROOT/data/analyses/reports"/*.rpt.tmp
 #     TSVs, and on a from-scratch build nothing else has materialized them yet.
 # Everything in wave 1 touches neither the PDA TSVs nor home.rpt (verified by
 # grep: no ensure_pda_tsvs call, no home.rpt/COVSRC read).
-NJOBS=${AXWAY_NJOBS:-$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}
-case $NJOBS in ''|*[!0-9]*) NJOBS=4 ;; esac
 PIDS=()
 run_bg() { timed "$@" & PIDS+=("$!"); }
 wait_all() {

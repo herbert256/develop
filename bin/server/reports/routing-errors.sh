@@ -141,12 +141,6 @@ if [ "$n_lines" -gt 0 ]; then n_shown=$(lin_rows | grep -c $'^ROW\t' || true); f
 {
     printf 'TITLE\tRouting errors\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tThe Advanced Routing errors a route gives up on — Could not send file (AR0074), Publish to account failed (ARPA0001), Post client action error (ARRC0009), Route stopped (ARSP0001) — one row per line, newest first, with the subscription or account and the file.\n'
-    if [ "$n_lines" -eq 0 ]; then
-        printf 'INTRO\tNo Advanced Routing **Could not send file**, **publish to account**, **post client action** or **route stopped** error in this data window.\n'
-    else
-        printf 'INTRO\t**%s** Advanced Routing error line(s) for **%s** subscription(s) / account(s) on **%s** day(s): **%s** Could not send file, **%s** Publish to account failed, **%s** Post client action error, **%s** Route stopped. Newest first; at most **%s** rows and **%s** per error and entity (**%s** shown here).\n' \
-            "$n_lines" "$n_ents" "$n_days" "$n_cns" "$n_pub" "$n_pca" "$n_rst" "$MAXROWS" "$MAXPER" "$n_shown"
-    fi
 
     printf 'TABLE\tAdvanced Routing errors\twide\tpager=100\n'
     printf 'HEAD\tDate & time\tError\tCode\tAccount or subscription\tFile\n'

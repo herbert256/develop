@@ -47,39 +47,19 @@ for member in logicals partners applications domains bl; do
     [ "$member" = domains ] && mlabel="Internal Domains"
     # Every member lives in ONE name space, so the Configured cell counts
     # UNIQUE names: the In and Out rows merge per name (direction "In + Out"
-    # = B, Seen = either side, Result = the latest transaction of both sides,
-    # members concatenated).
+    # = B, Seen = either side, Result = the latest transaction of both sides).
+    # Field 7 (the member list) stays EMPTY since 2026-09-29: the page builds
+    # its lists from the xref caches, nothing read it (two thirds of the bytes).
     if [ "$member" = partners ]; then
         # partners: an Out endpoint IP-linked to an In partner (col 8) folds
-        # into that partner's row — direction "In + Out", its
-        # account|covlink|endpoint members join the In member list, Seen =
-        # either side, Result = the latest transaction of both. Unlinked rows
-        # pass through.
+        # into that partner's row — direction "In + Out", Seen = either side,
+        # Result = the latest transaction of both. Unlinked rows pass through.
         rows=$(awk -F'\t' '
-            BEGIN{ US = sprintf("%c", 31) }
-            $2 == "I" { idx[$1] = ++n; nm[n] = $1; dr[n] = "I"; sn[n] = $3; lk[n] = $4; ts[n] = $5; oc[n] = $6; mem[n] = $7; ips[n] = $8; next }
+            $2 == "I" { idx[$1] = ++n; nm[n] = $1; dr[n] = "I"; sn[n] = $3; lk[n] = $4; ts[n] = $5; oc[n] = $6; ips[n] = $8; next }
             { if ($8 != "" && ($8 in idx)) { i = idx[$8]
                   dr[i] = "B"
                   if ($3 == 1) sn[i] = 1
-                  if ($5 != "" && $5 > ts[i]) { ts[i] = $5; oc[i] = $6 }
-                  ent = ($7 != "") ? $7 : $1 "|" $4 "|" $1
-                  # fold per account NAME: a partner whose In and Out side
-                  # are the SAME account (the monitor) must list it ONCE —
-                  # the endpoint-carrying variant wins over the plain one
-                  na = split(ent, AD, US)
-                  for (j = 1; j <= na; j++) {
-                      split(AD[j], tp, "|"); dup = 0
-                      nb = (mem[i] == "") ? 0 : split(mem[i], BD, US)
-                      for (k = 1; k <= nb; k++) {
-                          split(BD[k], tq, "|")
-                          if (tq[1] == tp[1]) { dup = 1
-                              if (split(AD[j], t3, "|") >= 3 && split(BD[k], t4, "|") < 3) {
-                                  BD[k] = AD[j]
-                                  mem[i] = BD[1]; for (m = 2; m <= nb; m++) mem[i] = mem[i] US BD[m]
-                              }
-                              break } }
-                      if (!dup) mem[i] = (mem[i] == "" ? AD[j] : mem[i] US AD[j])
-                  } }
+                  if ($5 != "" && $5 > ts[i]) { ts[i] = $5; oc[i] = $6 } }
               else { # a SELF-NAMED ENDPOINT row (link -> hosts/…): its account
                      # derives no partner org (a one-part name like EUROPORT or
                      # P2P — PDA rule 1 skips it), so it is a HOST, not a
@@ -88,21 +68,19 @@ for member in logicals partners applications domains bl; do
                      # made the page total 172 against the home card 125
                      # (2026-08-29).
                      if ($4 ~ /^hosts\//) next
-                     ++n; nm[n] = $1; dr[n] = "O"; sn[n] = $3; lk[n] = $4; ts[n] = $5; oc[n] = $6; mem[n] = $7; ips[n] = "" } }
+                     ++n; nm[n] = $1; dr[n] = "O"; sn[n] = $3; lk[n] = $4; ts[n] = $5; oc[n] = $6; ips[n] = "" } }
             END{ for (i = 1; i <= n; i++)
-                    printf "%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\n", nm[i], dr[i], sn[i], lk[i], ts[i], oc[i], mem[i], ips[i] }' "$tsv")
+                    printf "%s\t%s\t%d\t%s\t%s\t%s\t\t%s\n", nm[i], dr[i], sn[i], lk[i], ts[i], oc[i], ips[i] }' "$tsv")
     else
         rows=$(awk -F'\t' '
-            BEGIN{ US = sprintf("%c", 31) }
             { if ($1 in idx) { i = idx[$1]
                   # an EMPTY side (a direction-less member) adds no direction
                   if ($2 != "" && dr[i] != $2) dr[i] = (dr[i] == "") ? $2 : "B"
                   if ($3 == 1) sn[i] = 1
-                  if ($5 != "" && $5 > ts[i]) { ts[i] = $5; oc[i] = $6 }
-                  if ($7 != "") mem[i] = (mem[i] == "" ? $7 : mem[i] US $7) }
-              else { idx[$1] = ++n; nm[n] = $1; dr[n] = $2; sn[n] = $3; lk[n] = $4; ts[n] = $5; oc[n] = $6; mem[n] = $7 } }
+                  if ($5 != "" && $5 > ts[i]) { ts[i] = $5; oc[i] = $6 } }
+              else { idx[$1] = ++n; nm[n] = $1; dr[n] = $2; sn[n] = $3; lk[n] = $4; ts[n] = $5; oc[n] = $6 } }
             END{ for (i = 1; i <= n; i++)
-                    printf "%s\t%s\t%d\t%s\t%s\t%s\t%s\t\n", nm[i], dr[i], sn[i], lk[i], ts[i], oc[i], mem[i] }' "$tsv")
+                    printf "%s\t%s\t%d\t%s\t%s\t%s\t\t\n", nm[i], dr[i], sn[i], lk[i], ts[i], oc[i] }' "$tsv")
     fi
     [ -n "$rows" ] || continue
     # the External Partners page sorts on the partner name — the merged

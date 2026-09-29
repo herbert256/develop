@@ -60,7 +60,8 @@ TRANSFERS="$DATA/transfer/cache/_transfers.tsv"
 SRV="$DATA/server/cache/_parse.tsv"
 BK="$DATA/transfer/cache/_bookends.tsv"      # ok Outbound bookends: coreid \t transferid \t date \t time
 RL="$DATA/transfer/cache/_reasonlines.tsv"   # classifying E/W lines: date \t time \t session \t uuids \t reason
-OKF="$DATA/transfer/cache/_bookendok.tsv"    # the settled rows: coreid \t transferid \t stamp (transparency)
+# (the _bookendok.tsv list of the settled rows went 2026-09-29 — only verify.sh
+# read it; the settled stamp is _files.tsv col 23)
 CLS="$ROOT/bin/flip-reason.awk"
 
 if [ ! -s "$FILES" ] || [ ! -s "$TRANSFERS" ]; then
@@ -123,8 +124,8 @@ fi
 }
 
 # ---- 2. settle the Failed rows (and re-check the settled ones) -------------
-ftmp="$FILES.tmp.$$"; otmp="$OKF.tmp.$$"
-awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
+ftmp="$FILES.tmp.$$"
+awk -F'\t' -v OFS='\t' '
     # the ok bookends, keyed by TRANSFER ID: the ok must belong to THE
     # transfer the outcome rests on — the LAST leg of the CoreId — not to an
     # earlier, successful leg of the same File (one acceptance File had ok
@@ -163,7 +164,6 @@ awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
             if (($1 in cand) && t != "" && (t in bkt) && !($1 in reason) && lastst[$1] ~ /^Failed/ && $10 + 0 >= 2) {   # >= 2 legs: a lone leg is Failed for its LEG COUNT (parse forces its status Failed) — never settled (2026-09-29)
                 if ($2 != "Processed" || $23 != bkt[t]) chg++
                 $2 = "Processed"; $23 = bkt[t]; $25 = "orange"; nset++   # col 25: OK after a failed leg (the colour rule); col 26 stays "1" — it HAD a failed leg (a Recovered File, Automatic unless col 27)
-                printf "%s\t%s\t%s\n", $1, t, bkt[t] > OKOUT
             } else if (settled) {
                 chg++; $2 = "Failed"; $23 = ""; $25 = "red"; nrev++       # the evidence no longer holds
             }
@@ -172,7 +172,5 @@ awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
     }
     END { printf "bookend-ok: %d file(s) settled Processed by an ok bookend, %d reverted (%d row(s) changed).\n", nset+0, nrev+0, chg+0 > "/dev/stderr" }
 ' "$BK" "$RL" "$TRANSFERS" "$FILES" > "$ftmp"
-: >> "$otmp"; LC_ALL=C sort -o "$otmp" "$otmp"
-mv "$otmp" "$OKF"
 mv "$ftmp" "$FILES"
 echo "bookend-ok: rewrote $FILES." >&2

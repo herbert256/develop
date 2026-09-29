@@ -88,8 +88,6 @@ IFS='|' read -r _ ndays busyd busyc worstd worste noisy noisyc kfrom kto <<< "$(
 {
     printf 'TITLE\tServer top view\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tThe whole server log at a glance: per day, the records, the Info/Warning/Error split and error rate, and how busy each component (TM, PESITD, SSHD) was.\n'
-    printf 'INTRO\tThe server log at a glance. Over **%s** day(s) (%s → %s): **%s** records — **%s** errors (**%s%%**) and **%s** warnings. Busiest day **%s** (**%s** records); most errors on **%s** (**%s**). The noisiest component is **%s** (**%s** records). Click a day for its 10 most recent Warning/Error lines.\n' \
-        "$ndays" "$kfrom" "$kto" "$trec" "$terr" "$tep" "$twarn" "$busyd" "$busyc" "$worstd" "$worste" "$noisy" "$noisyc"
     printf 'TABLE\t\twide\ttotaltop\tdatereset\tpct=6:5:1\n'
     printf 'HEAD\tDate\tRecords\tLoad\tInfo\tWarnings\tErrors\tError %%\tTM\tPESITD\tSSHD\tFirst\tLast\n'
     printf 'KIND\ttext\tnum\tbar\tnum\tnumwarn\tnumfailed\tnum\tnum\tnum\tnum\ttext\ttext\n'

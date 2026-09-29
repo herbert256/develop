@@ -45,12 +45,13 @@ month to `archive/` was removed 2026-09-28).
 A static HTML site under `docs/` — one environment per checkout, its home page
 (the status tables and the per-day table) at the docs root:
 
-- **Reports** — ONE top-bar menu of 12 groups over both logs and the
-  FlowManager configuration (the Entities group opens from its own top-bar
-  link): Overview · Failures (the server log errors included) · Use cases & delivery · Activity & volume · Performance · Flow
+- **Reports** — 12 groups over both logs and the FlowManager configuration.
+  Three open from their own top-bar links — Overview (the two Top views),
+  Entities and Errors (the server log errors included) — and the ONE
+  **Reports ▾** menu holds a start page (`reports/index.html`) plus the other
+  nine: Use cases & delivery · Activity & volume · Performance · Flow
   patterns · Protocols & security · Logons & connections · Partners ·
-  Configuration · Coverage · Cleanup, with a start page
-  (`reports/index.html`); the reports of a group link each other through
+  Configuration · Coverage. The reports of a group link each other through
   the first row of buttons.
 - **Entities** — nine types (subscription, logical flow, partner, account,
   login, host, domain, application, BL) × six views (All · Seen · Not seen
@@ -59,8 +60,9 @@ A static HTML site under `docs/` — one environment per checkout, its home page
   Entity Search.
 - **Dashboard, Monitor and day pages** — the graphical overview, the CFT
   end-to-end Monitor and one page per calendar day.
-- **Tools** — the site map, the report finder, what's new and the build
-  report.
+- **Tools** — the site map (`tools/sitemap.html`, whose Tools card links
+  Home, Search, All files search, Help and the build report) and the build
+  report (`tools/build.html`).
 
 ## How it works
 

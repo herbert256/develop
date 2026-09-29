@@ -81,7 +81,6 @@ rows_of() {   # $1 the list
 {
     printf 'TITLE\tLongest Files\n'
     printf 'DESC\tThe %s longest delivered Files by wall-clock duration.\n' "$TOP_N"
-    printf 'INTRO\tThe **%s longest delivered Files** by **wall-clock duration** — from the first record start to the last record end, store-and-forward gaps and retry idle included. Only **OK** Files are listed (outcome Processed): a Failed, Expired or Waiting File is not a completed transfer, and a failure'\''s run time is a timeout, not a duration. A File that has a **File page** (facts, records and the server log of its connections — its subscription\x27s newest OK File) opens it from its Duration, Start Time, End Time or CoreId cell. The columns sort by the exact duration.\n' "$TOP_N"
     printf 'TABLE\tTop %s longest Files by duration\twide\trestint\n' "$TOP_N"   # rows tint by the File colour (2026-09-29): green, or orange after a retry / resubmit
     printf 'HEAD\tDuration\tStart Time\tEnd Time\tCoreId\tDestination Subscription\tFile\n'
     printf 'KIND\ttext\ttext\ttext\tmono\tsite\tfile\n'

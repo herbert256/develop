@@ -4,8 +4,8 @@
 # (data/analyses/reports/_subs-boxes.tsv: subscription <TAB> the reason of the
 # most specific box it sits in), read by the Entities Subscriptions Error
 # view's Reason column (publish_lib.sh) and failed.sh's server rows. Called by
-# bin/analyses/publish.sh (its full run and its catch-up — the failed.sh
-# catch-up rewrote _errpage-evidence.tsv, the sidecar's one input that moved).
+# bin/analyses/publish.sh (its full run; the build's catch-up does not re-run
+# it — failed.sh's catch-up mode leaves _errpage-evidence.tsv as it was).
 # Its three insight PAGES went 2026-09-29 (user request): Whitelist audit and
 # Config hygiene with the Cleanup group, Subscriptions in boxes with the
 # Overview trim — the box memberships (_subs_box_rows) stay, as the sidecar's
@@ -28,9 +28,9 @@ trap 'rm -rf "$TMPD"' EXIT
 # ---- the BOXES --------------------------------------------------------------
 # What is true of each CONFIGURED subscription, one box per signal (the former
 # Subscriptions in boxes page's columns). The boxes come from three kinds of
-# source: a report's own .rpt, boxes derived here from _files.tsv (One-legged,
-# Waiting, Expired), and the config/coverage caches (Not seen, Seen, OK,
-# Error). _subs_box_rows below is the ONE authority for the box list. A
+# source: a report's own .rpt (or sidecar), boxes derived here from _files.tsv
+# (One-legged, Waiting, Expired), and the base colours (Error, box 18 — the
+# set the sidecar speaks for). _subs_box_rows below is the ONE authority for the box list. A
 # missing source .rpt (production skips some server reports) contributes no
 # rows.
 # Missing cron reads the pageless missing-cronjobs.rpt like any report-backed
@@ -79,16 +79,16 @@ _subs_box_rows() {
                         else if (lout[s] == "Expired") print "6\t" s }
                 }' "$FILESC"
         fi
-        # colno : rpt : page href (analyses-relative) : column label : ROW field
-        # holding the subscription name (no-remote-dir leads with its Last date)
+        # colno : rpt : ROW field holding the subscription name (no-remote-dir
+        # leads with its Last date). (Boxes 3 Trouble after success and 10 Went
+        # quiet went 2026-09-29 with the page: no Reason rank, so they only
+        # named flows no reader looks up.)
         for spec in \
-            "2:$TRPT/from-green-to-red.rpt:failed.html:From green to red:2" \
-            "3:$SRPT/went-kaput.rpt:-:Trouble after success:2" \
-            "4:$TRPT/only-red.rpt:failed.html:Only red:2" \
-            "7:$SRPT/no-remote-dir.rpt:uc-status-uc3.html:No Dir:3" \
-            "8:$SRPT/no-remote-files.rpt:uc-status-uc3.html:No Files:3" \
-            "9:$TRPT/missing-cronjobs.rpt:polling.html:Missing cron:2" \
-            "10:$TRPT/went-quiet.rpt:../transfer/went-quiet-subscriptions.html:Went quiet:2"; do
+            "2:$TRPT/from-green-to-red.rpt:2" \
+            "4:$TRPT/only-red.rpt:2" \
+            "7:$SRPT/no-remote-dir.rpt:3" \
+            "8:$SRPT/no-remote-files.rpt:3" \
+            "9:$TRPT/missing-cronjobs.rpt:2"; do
             c=${spec%%:*}; f=${spec#*:}; f=${f%%:*}; nf=${spec##*:}
             [ -f "$f" ] || continue
             # table 1 only; skip empty-state colspan rows and pseudo-values —
@@ -103,28 +103,14 @@ _subs_box_rows() {
                     print c "\t" nm
                 }' "$f"
         done
-        # column 11 has NO report of its own — it is a state, read straight from
-        # the source the Entities views are built from, so the figures here and
-        # there cannot drift:
-        #   11 not seen — showseen's coverage TSV, col 3 = the seen flag.
-        [ -f "$TRPT/coverage/subscriptions.tsv" ] && \
-            awk -F'\t' '$1 != "" && $3 == 0 { print "11\t" $1 }' "$TRPT/coverage/subscriptions.tsv"
-        #   13 OK — result "green": the newest File was delivered. Also no report;
-        #      the Subscriptions / OK entity view is the list. Including it is what
-        #      turns this from a problem list into a complete box-up of the estate,
-        #      so the first box can honestly say TOTAL.
-        [ -f "$FBASE/_subscriptions.tsv" ] && \
-            awk -F'\t' '$1 != "" && $3 == "green" { print "13\t" $1 }' "$FBASE/_subscriptions.tsv"
-        #   17 seen — coverage col 3 != 0, the exact complement of 11. The
-        #      Subscriptions / Seen entity view is the list, and the invariant
-        #      is Seen + Not seen = Total.
+        # (columns 11 not seen, 13 OK and 17 seen — the states that made the
+        # Boxes page a complete box-up of the estate — went 2026-09-29 with that
+        # page: the sidecar speaks for the RED flows only, box 18 below.)
         #   18 error — result "red": its newest File Failed, or a server-log
         #      Error after its last transfer, or (a UC3 that never transferred)
         #      three failed connection attempts in a row — never merely an
         #      Expired newest File, which is orange. The Subscriptions / Error
         #      entity view is the list.
-        [ -f "$TRPT/coverage/subscriptions.tsv" ] && \
-            awk -F'\t' '$1 != "" && $3 != 0 { print "17\t" $1 }' "$TRPT/coverage/subscriptions.tsv"
         [ -f "$FBASE/_subscriptions.tsv" ] && \
             awk -F'\t' '$1 != "" && $3 == "red" { print "18\t" $1 }' "$FBASE/_subscriptions.tsv"
         # column 14 — Connection failures, UNRESOLVED (the One-legged rule): the
@@ -133,34 +119,21 @@ _subs_box_rows() {
         # recovered; site-failures keeps the full history either way. The filter
         # is what makes the column mean "still broken". "Followed" = the OK
         # File ENDED after the failure (col 24 — result.sh's rule; endk()).
-        # The failure instant comes from the @data:loglines payload (newest
-        # first, so entry 1 is the latest) rather than the row's Last seen DATE,
-        # which is too coarse to order against an OK File on the same day; a row
-        # without the payload falls back to that date at END of day, so only an
-        # OK on a LATER day clears it — the conservative reading, since wrongly
-        # clearing hides a live problem while wrongly flagging only costs a look.
-        if [ -f "$SRPT/site-failures.rpt" ] && [ -f "$FILESC" ]; then
+        # The failure instant is the newest failure STAMP of the sidecar
+        # (site-failures.tsv, 2026-09-29 — the report it read before went: no
+        # other reader), exact enough to order against an OK File on the same day.
+        if [ -s "$SRPT/site-failures.tsv" ] && [ -f "$FILESC" ]; then
             awk -F'\t' "$ENDK_AWK"'
                 FILENAME ~ /site-failures/ {
-                    if ($1 == "TABLE") { t++; next }
-                    if ($1 != "ROW" || t != 1) next
-                    nm = $2; sub(/^@\{[^}]*\}/, "", nm); if (nm == "") next
-                    key = ""
-                    for (i = 3; i <= NF; i++)
-                        if (index($i, "@data:loglines=") == 1) {
-                            split(substr($i, 16), L, "\037"); s = L[1]
-                            if (s ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) {
-                                d = substr(s, 1, 10); gsub(/-/, "", d); key = d substr(s, 12, 12)
-                            }
-                            break
-                        }
-                    if (key == "" && $6 ~ /^[0-9]/) { d = $6; gsub(/-/, "", d); key = d "23:59:59.999" }
-                    if (key != "") cf[nm] = key
+                    # subscription <TAB> newest failure stamp (site-failures.sh)
+                    s = $2
+                    if ($1 != "" && s ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) {
+                        d = substr(s, 1, 10); gsub(/-/, "", d); cf[$1] = d substr(s, 12, 12) }
                     next
                 }
                 { if ($12 != "" && $2 != "Failed" && $2 != "Expired") { ek = endk(); if (ek > lok[$12]) lok[$12] = ek } }
                 END { for (s in cf) if (lok[s] == "" || lok[s] < cf[s]) print "14\t" s }
-            ' "$SRPT/site-failures.rpt" "$FILESC"
+            ' "$SRPT/site-failures.tsv" "$FILESC"
         fi
         # columns 20 / 21 — Login errors (in / out), UNRESOLVED (2026-08): the
         # Logons report's failure rows joined onto subscriptions — in: the
@@ -397,11 +370,13 @@ _write_box_reason_sidecar() {   # $1 = the _subs_box_rows output
             if (box != 15) return lab[box]
             c = DC[toupper(nm2)]
             return (c != "") ? c : lab[box] }
-        # every subscription the boxes named at all, box or not: the ones with
-        # no ranked box are the candidates for the evidence reason. LB[] keeps
-        # every label a flow qualifies for, so the END block can let RECENCY
-        # choose between them.
-        $2 != "" { all[$2] = 1 }
+        # every RED subscription (box 18), box or not: the ones with no ranked
+        # box are the candidates for the evidence reason (2026-09-29: only the
+        # red flows get a line — both readers, the Entities Error view and
+        # the server rows of failed.sh, look up red flows only). LB[] keeps every
+        # label a flow qualifies for, so the END block can let RECENCY choose
+        # between them.
+        $2 != "" && $1 == 18 { all[$2] = 1 }
         $2 != "" && ($1 in rank) {
             lb = label($1, $2)
             LB[$2] = LB[$2] "\037" lb "\037"

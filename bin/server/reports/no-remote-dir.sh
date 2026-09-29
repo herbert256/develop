@@ -39,11 +39,10 @@ source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/no-remote-dir.rpt"
 
-# Entity cross-links: known account/subscription names from the transfer-side
-# reports (ROW field 2 of each report's FIRST table). A resolved name gets an
+# Entity cross-links: known subscription names from the transfer-side
+# subscription.rpt (ROW field 2 of its FIRST table). A resolved name gets an
 # @{alink=…} prefix on its cell; unresolved names stay plain text.
 TDATA="$TRANSFER_REPORTS"
-TACCT="$TDATA/account.rpt"
 TSITE="$TDATA/subscription.rpt"
 FILESC="$TRANSFER_CACHE/_files.tsv"
 known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" lines
@@ -69,8 +68,7 @@ last_ok_files() {   # emits "KF<TAB>subscription<TAB>sortkey" lines
 # an unresolved name still tries the RAW one: a subscription whose listing always
 # fails has no transfer data to appear in the roster, yet it has a detail page
 # from the config (alink resolves through the comprehensive slugmap at render
-# time, so a genuine miss simply renders unlinked). acctlink(): exact match, also
-# @endpoint-stripped.
+# time, so a genuine miss simply renders unlinked).
 LINK_AWK='
     # RENAMES (2026-08): a server line keeps the name that was current when it
     # was written, so fold it to the CURRENT one before matching the roster —
@@ -93,12 +91,6 @@ LINK_AWK='
         hits = 0
         for (k in ksite) if (index(k, t) == 1) { hits++; full = k; if (hits > 1) { hits = 0; break } }
         return hits == 1 ? "@{alink=subscriptions/" full "}" : "@{alink=subscriptions/" t "}"
-    }
-    function acctlink(t,   s) {
-        if (t in kacct) return "@{alink=accounts/" t "}"
-        s = t; sub(/@.*$/, "", s)
-        if (s in kacct) return "@{alink=accounts/" s "}"
-        return ""
     }
 '
 
@@ -126,7 +118,6 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
     BEGIN { rn_load(RNF)
             while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf) }
     BEGIN { US = sprintf("%c", 31) }                         # the lines/clines cell separator
-    $1 == "KA" { kacct[$2] = 1; next }                       # known-account list       (first input)
     $1 == "KS" { ksite[$2] = 1; next }                       # known-subscription list  (first input)
     $1 == "KF" { okmax[$2] = $3; next }                      # last OK File per subscription (first input)
     # the logged site (the server truncates names) -> the configured name the
@@ -266,7 +257,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
         npath = 0; for (x in pseen) npath++
         printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", tot+0, nsub+0, nacc+0, npath+0, nday+0, nres+0, reserr+0, nresf+0, nresp+0
     }
-' <(known_names KA "$TACCT"; known_names KS "$TSITE"; last_ok_files) "$PARSED")
+' <(known_names KS "$TSITE"; last_ok_files) "$PARSED")
 
 IFS=$'\t' read -r _ tot_err n_sub n_acc n_path n_day n_res n_reserr n_resfile n_respoll <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ "${tot_err:-0}" -eq 0 ]; then

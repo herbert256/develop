@@ -12,4 +12,4 @@ comps=()
 for c in went-quiet-src stale-accounts; do
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "Went quiet" "Subscriptions that carried Files and then stopped, and accounts idle against their own transfer cadence." "The silence report, both units: **subscriptions** that carried Files and then stopped — no traffic at all in the last 7 days of the window, whatever the outcome used to be — and **accounts** whose idle time is long measured against their OWN cadence (a daily account three days quiet is news; a monthly one is not)." "" "${comps[@]}"
+merge_rpt "$OUT" "Went quiet" "Subscriptions that carried Files and then stopped, and accounts idle against their own transfer cadence." "${comps[@]}"

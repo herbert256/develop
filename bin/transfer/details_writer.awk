@@ -124,10 +124,8 @@ function sort_cap(L, n, cap, D,   i, nd) {
 # lines and the 10 most recent Error/Warning ones are now SEPARATE tables — a
 # line that is both appears in both, and a line the log holds twice is shown
 # twice (in ONE source — the pools add each source through pool(), so a
-# line two caches share is listed once, 2026-09-29). `two` = 0 keeps the single merged table for the per-entity lists a
-# never-seen page prints through srv_lines_for (no connected pool
-# there, and one table per connected entity is already the unit).
-function emit_srv_table(title, cutoff, two,   i, ewf, nA, nB, nda, ndb, l) {
+# line two caches share is listed once, 2026-09-29).
+function emit_srv_table(title, cutoff,   i, ewf, nA, nB, nda, ndb, l) {
     if (nrec == 0 && nconn == 0) return
     # pool A — the entity's OWN recent lines, cap 25
     split("", SA); split("", DA); nA = 0; split("", PC)
@@ -141,19 +139,13 @@ function emit_srv_table(title, cutoff, two,   i, ewf, nA, nB, nda, ndb, l) {
     ndb = sort_cap(SB, nB, 20, DB)
     split("", PC); for (i = 1; i <= ndb; i++) PC[DB[i]]++   # what the table holds — the connected rings pool against it
     # … plus the CONNECTED rings after the cutoff (uncapped), which only the
-    # main table has (cutoff "" = the srv_lines_for path)
+    # errors table has (cutoff "" = no transfer to cut at)
     if (cutoff != "") for (i = 1; i <= nconn; i++) {
         ewf = CN2[i]; sub(/\.tsv$/, "_err_warn.tsv", ewf)
         if (!nonempty(ewf)) continue
         split("", FC)
         while ((getline l < ewf) > 0) { if (keyf(l, 1) " " keyf(l, 2) > cutoff) { FC[l]++; if (FC[l] > PC[l] + 0) { PC[l] = FC[l]; DB[++ndb] = l } } }
         close(ewf)
-    }
-    if (two == 0) {                      # one merged table, as before
-        for (i = 1; i <= ndb; i++) DA[++nda] = DB[i]
-        srv_sort(DA, nda)
-        emit_srv_rows(title, DA, nda)
-        return
     }
     srv_sort(DA, nda); srv_sort(DB, ndb)
     emit_srv_rows(title, DA, nda)
@@ -184,12 +176,6 @@ function emit_srv_rows(title, L, n,   i, m, C5, lvl, cmp, body, nrows, tj) {
     # last only because the page re-sorted on the date column)
     emitl(sprintf("TOTAL\tTotal (%d line(s))\t\t\t\t", nrows))
 }
-# srv_lines_for SUBDIR NAME TITLE — one entity's recent (+ Error/Warn) lines,
-# no connected sources (cutoff empty)
-function srv_lines_for(sub2, name2, title2) {
-    nrec = 1; REC[1] = SRV "/" sub2 "/" name2 ".tsv"; nconn = 0
-    emit_srv_table(title2, "", 0)
-}
 
 # ===== per-page helper tables ================================================
 # The cut an Error must be NEWER than to be "after the last transfer": the
@@ -204,8 +190,8 @@ function last_transfer_cut() { return (tot_okend > tot_last) ? tot_okend : tot_l
 function err_after_transfer_banner(   m9) {
     if (have_tot != 1 || tot_last == "" || a_bannerdt == "") return
     # a GREEN subscription gets no red ALERT (2026-09-29 audit): an error after
-    # its last transfer that did not turn it red is on hold (colour/
-    # _connhold.tsv — a cannot-connect streak below its threshold); the
+    # its last transfer that did not turn it red is on hold (a cannot-connect
+    # streak below its threshold, bin/build/result.sh); the
     # line still shows in its Last server log tables
     if (pend_t == "SITE" && a_res == "green") return
     if (a_bannerdt > last_transfer_cut()) {
@@ -673,7 +659,7 @@ function page_srv_log(   f, n, i, V, fw, ip, nc, C9) {
     # (the "Server log error", "Last error" and "Last OK transfer" SECTIONS
     # were all removed 2026-09-16, user request: the Features table's "Server
     # log error" / "Latest Error" / "Latest OK" rows link those pages instead)
-    emit_srv_table("Last server log messages", last_transfer_cut(), 1)   # TWO tables (2026-09-16); connected lines after the last transfer — its END cut (2026-09-12)
+    emit_srv_table("Last server log messages", last_transfer_cut())   # TWO tables (2026-09-16); connected lines after the last transfer — its END cut (2026-09-12)
 }
 
 # The "Logons" table (LOGIN pages, 2026-08): first/last successful

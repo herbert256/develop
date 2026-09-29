@@ -8,10 +8,10 @@
 #   Clockwork  ± 15 min or tighter   (cron-driven flows land here, many at ±0)
 #   Regular    ± 1 hour
 #   Loose      ± 3 hours
-#   Irregular  wider (event-driven; late/missed have no meaning there)
-# For Clockwork/Regular flows it then flags LATE arrivals (over an hour past
-# the typical slot) and MISSED DAYS: a weekday the flow served on 75%+ of its
-# calendar occurrences that passed without any File.
+#   Irregular  wider (event-driven)
+# (The LATE arrivals and MISSED DAYS of the removed Punctuality page — and the
+# Last seen column — went 2026-09-29: the one reader takes the five columns
+# below.)
 #
 # Complements: stale-accounts measures idle DAYS vs an account's own cadence
 # (day granularity, accounts); this is time-OF-DAY granularity per
@@ -47,10 +47,10 @@ fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass. Per (site, day): the first arrival minute. END classifies each
-# 8+-day site and walks the calendar for expected-weekday misses. Emits
+# 8+-day site. Emits
 # pipe-separated (the late / missed drill went with the page, 2026-09-29):
-#   P|clsord|spread|site|days|typical|window|class|late|missed|lastd
-#   TOT|sites|clock|reg|loose|irreg|late|missed
+#   P|clsord|spread|site|days|typical|window|class
+#   TOT|sites|clock|reg|loose|irreg
 agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
     BEGIN { PI2 = 8 * atan2(1, 1) }
     function fromjdn(j,  a,b,c,dd,e,mm,day,mon,yr){ a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d",yr,mon,day) }
@@ -64,12 +64,6 @@ agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
         k = s SUBSEP d
         if (!(k in fm) || m < fm[k]) fm[k] = m
         if (!(k in seenk)) { seenk[k] = 1; days[s]++; dl[s] = dl[s] " " j }
-        if (j < minjd || minjd == 0) minjd = j
-        if (j > maxjd) { maxjd = j; lastm = -1 }
-        if (j == maxjd && m > lastm) lastm = m                 # the newest minute of the window
-        if (!(s in lastd) || d > lastd[s]) lastd[s] = d
-        if (!(s in firstj) || j < firstj[s]) firstj[s] = j
-        jd2d[j] = d
     }
     END {
         for (s in days) {
@@ -97,35 +91,10 @@ agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
             else if (spread <= 180) { cls = "Loose";     co = 2; nloose++ }
             else                    { cls = "Irregular"; co = 3; nirr++ }
 
-            late = 0; missed = 0
-            if (co <= 1) {
-                # active-day set + per-weekday activity counts
-                delete act; delete wact
-                for (i = 1; i <= nd; i++) { act[D[i]] = 1; wact[D[i] % 7]++ }
-                # calendar occurrences per weekday from the first day OF THE FLOW
-                # (2026-09-28 fix: the walk started at the first day of the window,
-                # so a flow that began mid-window "missed" every day before it
-                # existed) to the last day of the window
-                delete wcal
-                for (j2 = firstj[s]; j2 <= maxjd; j2++) wcal[j2 % 7]++
-                for (j2 = firstj[s]; j2 <= maxjd; j2++) {
-                    w = j2 % 7; d2 = jd2d[j2]; if (d2 == "") d2 = fromjdn(j2)
-                    if (j2 in act) {
-                        am = unwrap(fm[s SUBSEP d2] + 0, ctr)
-                        if (am > med + 60) late++
-                    } else if (j2 == maxjd && unwrap(lastm, ctr) < med + 60) {
-                        # the window ends before this flow is even late on its
-                        # last day: the export cut, not a missed day
-                    } else if (wcal[w] >= 2 && wact[w] >= 0.75 * wcal[w]) {
-                        missed++
-                    }
-                }
-                tlate += late; tmissed += missed
-            }
-            printf "P|%d|%09d|%s|%d|%s|%d|%s|%s|%s|%s\n", co, spread, s, days[s], hhmm(med), spread, cls, (co <= 1 ? late : "-"), (co <= 1 ? missed : "-"), lastd[s]
+            printf "P|%d|%09d|%s|%d|%s|%d|%s\n", co, spread, s, days[s], hhmm(med), spread, cls
             nsites++
         }
-        printf "TOT|%d|%d|%d|%d|%d|%d|%d\n", nsites+0, nclock+0, nreg+0, nloose+0, nirr+0, tlate+0, tmissed+0
+        printf "TOT|%d|%d|%d|%d|%d\n", nsites+0, nclock+0, nreg+0, nloose+0, nirr+0
     }
 ' "$FILES")
 
@@ -134,7 +103,7 @@ if [ -z "$agg" ]; then
     exit 1
 fi
 
-IFS='|' read -r _ n_sites n_clock n_reg n_loose n_irr t_late t_missed <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
+IFS='|' read -r _ n_sites n_clock n_reg n_loose n_irr <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 
 n_rows=0
 
@@ -142,24 +111,21 @@ n_rows=0
     printf 'TITLE\tPunctuality\n'
 
     printf 'TABLE\tArrival regularity per subscription\twide\tnofilter\n'
-    printf 'HEAD\tSubscription\tActive days\tTypical arrival\tWindow\tClass\tLate\tMissed days\tLast seen\n'
-    printf 'KIND\tsite\tnum\ttext\ttext\ttext\tnum\tnum\ttext\n'
-    while IFS='|' read -r _ co _spd site adays typ spread cls late missed lastd; do
+    printf 'HEAD\tSubscription\tActive days\tTypical arrival\tWindow\tClass\n'
+    printf 'KIND\tsite\tnum\ttext\ttext\ttext\n'
+    while IFS='|' read -r _ co _spd site adays typ spread cls; do
         [ -z "$site" ] && continue
-        late_cell=$late; missed_cell=$missed
-        [ "$late" != "-" ] && [ "$late" -gt 0 ] && late_cell="@{class=warn}$late"
-        [ "$missed" != "-" ] && [ "$missed" -gt 0 ] && missed_cell="@{class=failed}$missed"
-        printf 'ROW\t%s\t%s\t%s\t± %s min\t%s\t%s\t%s\t%s\n' \
-            "$site" "$adays" "$typ" "$spread" "$cls" "$late_cell" "$missed_cell" "$lastd"
+        printf 'ROW\t%s\t%s\t%s\t± %s min\t%s\n' \
+            "$site" "$adays" "$typ" "$spread" "$cls"
         n_rows=$((n_rows + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^P|' | LC_ALL=C sort -t'|' -k2,2n -k3,3 -k4,4)"
     # the empty-state row ends its line like every other (2026-09-28 fix: it
     # used to run into the next NOTE/TOTAL line, rendering that text as a cell)
     if [ "$n_rows" -eq 0 ]; then
-        printf 'ROW\t@{colspan=8}No subscription reaches %s active days in this data window.\n' "$MIN_DAYS"
+        printf 'ROW\t@{colspan=5}No subscription reaches %s active days in this data window.\n' "$MIN_DAYS"
     fi
 
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-echo "Data written to $OUT ($n_sites subscription(s), $t_late late, $t_missed missed)." >&2
+echo "Data written to $OUT ($n_sites subscription(s): $n_clock clockwork, $n_reg regular, $n_loose loose, $n_irr irregular)." >&2

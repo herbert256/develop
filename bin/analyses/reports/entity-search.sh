@@ -482,8 +482,6 @@ IFS=$'\t' read -r tsc tsf tsp <<< "$(printf '%s\n' "$tuples" | awk -F'\t' '{c+=$
 
 {
     printf 'TITLE\tSearch\n'
-    printf 'DESC\tSearch every account, subscription, login, remote host, logical flow, partner, application, domain, BL tag and subscription source/target path by name — with its Error/OK split and when it last moved a file.\n'
-    printf 'INTRO\tType in the box below to search **every configured or logged entity by name** — the checkboxes narrow the kinds (none checked = all). Wildcards and operators are explained right under the box; rows tint by each entity'\''s status.\n'
     # ONE page, one table (no All/Seen/Not-Seen tab pages, no intro/notes —
     # the how-to lives on the help page). The `esearch` modifier makes
     # report.js insert the collapsed "Search configuration" panel: the

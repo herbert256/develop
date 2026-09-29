@@ -151,12 +151,12 @@ awk -v DOCS="$DOCS" '
                     if (hlp != "") edge(page, b "help/" hlp ".html")
                 }
             }
-            # 2b. THE DRILL LINKS: report.js bindDrill links the FIRST File of
-            # a red / orange drill cell to files/<coreid>.html (data-b + the
-            # path) — since 2026-09-29 only a File the row names in data-fp
-            # (render_rpt: the published File pages, bin/transfer/filepages.sh),
-            # so every data-fp CoreId is a STRICT edge: a missing page is a
-            # broken link.
+            # 2b. THE DRILL LINKS: report.js bindDrill links every drill entry
+            # whose File the row names in data-fp to files/<coreid>.html
+            # (data-b + the path; render_rpt lists the Files of the ROW
+            # shipped File lists that are in the published set,
+            # bin/transfer/filepages.sh), so every data-fp CoreId is a STRICT
+            # edge: a missing page is a broken link.
             if (index(txt, "data-fp=\"") > 0) {
                 b9 = match(txt, /<div class="topbar"[^>]*>/) ? attr(substr(txt, RSTART, RLENGTH), "data-b") : ""
                 s = txt

@@ -13,4 +13,4 @@ comps=()
 for c in error-reasons error-timing top-messages; do   # Reasons leads since 2026-09-28 (the menu lands on the first tab; Per day, the old leader, = the Top view); errors-day (the levels per component) rides the Top view since 2026-09-29
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "Errors" "Server-log errors and warnings from every angle: the hour × weekday heatmap, the failure-reason classification (also per week) and the most-repeated message shapes." "The errors and warnings of the server log from every angle, in one report: **when** they happen (the hour × weekday heatmap with the hour and weekday totals), the **failure-reason classification** (connection, PESIT refusal codes, network, routing — also per ISO week) and the **most-repeated message shapes** (numbers, IDs and quoted values normalized away). The levels per day and per component are the Top view." "" "${comps[@]}"
+merge_rpt "$OUT" "Errors" "Server-log errors and warnings from every angle: the hour × weekday heatmap, the failure-reason classification (also per week) and the most-repeated message shapes." "${comps[@]}"

@@ -241,7 +241,6 @@ awk -F'\t' '
     BEGIN {
         printf "TITLE\tAnomalies\n"
         printf "DESC\tDetected unusual hours and days: error-rate spikes, duration surges, file-count spikes, drops and silences, and volume bursts — each compared to its typical value across the window.\n"
-        printf "INTRO\tEvery calendar day (the **Daily** table) and every hour (the **Hourly** table beside it) is compared against its TYPICAL value — the median across the window days, weekdays and weekends baselined separately. A finding must beat a multiple of its typical (4× for hours; 4× for daily Error rate and Duration, 2× for daily Files and Volume) plus an absolute floor per signal, so quiet-window noise never flags. **Value/Peak** is the flagged figure, **× typical** the figure vs the baseline; **red** rows are ≥10× typical (or a silence), **orange** the rest. The Date links open the day page with the matching chart view selected — and each day page links back here only when that day has findings of its own.\n"
         open_daily()
     }
     $1 == "2" {

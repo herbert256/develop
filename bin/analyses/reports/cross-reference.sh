@@ -244,8 +244,6 @@ for x in $ENTS; do
     xcol=${COL_ARR[$count]}
     {
         printf 'TITLE\tCross Reference: %s\n' "$xcol"
-        printf 'DESC\tEvery %s pair with each other entity — logged pairs plus the configured-but-never-logged ones; each cell is tinted by that entity'\''s result (green = last transfer OK, orange = never seen, red = Error).\n' "$xcol"
-        printf 'INTRO\tWhich %s goes with which other entity: every pair seen together on at least one log row, PLUS the configured pairs that never appear (an analysis of relationships — no counts, no dates). The two tab rows pick the pair of entity types; each cell tints by its own entity'\''s status (green = last transfer OK, orange = never seen, red = Error, or a name the server log mentions and nothing configures).\n' "$xcol"
         cat "$TMP/tables-$x"
         printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

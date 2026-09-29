@@ -70,7 +70,6 @@ out_ok=$(bands 1); out_all=$(bands 0)
 n_ok=$(printf '%s\n' "$out_ok" | awk -F'\t' '$1 == "N" { print $2 }'); n_all=$(printf '%s\n' "$out_all" | awk -F'\t' '$1 == "N" { print $2 }')
 {
     printf 'TITLE\tDuration distribution\n'
-    printf 'INTRO\tA histogram of the Files by **wall-clock duration** — from the first record start to the last record end, store-and-forward gaps and retry idle included — in seven bands. **OK transfers** (the default) counts delivered Files only; **All transfers** adds the failed ones, whose duration is how long they ran before giving up. The **Share** column is each band'\''s part of the scope'\''s Files; a From/To range re-aggregates both.\n'
     printf 'TABLE\tDuration distribution\twide\tswitch=scope:OK transfers\n'
     printf 'HEAD\tDuration bucket\tFiles\tShare\n'
     printf 'KIND\ttext\tnum\tnum\n'

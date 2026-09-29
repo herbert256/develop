@@ -381,8 +381,6 @@ oldest_cell="-"
 {
     printf 'TITLE\tWaiting\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tUC2 files staged for pickup: which subscriptions have Files the partner has not collected yet, how long they have been waiting, and how fast partners usually collect.\n'
-    printf 'INTRO\tA UC2 file is COLLECTED by the partner: it arrives from CFT in three quick legs (PeSIT in, routing out, routing in), then sits STAGED until the partner dials in over SSH and picks it up. A file still staged at the end of the data window has outcome **Waiting** — not an error, just not collected yet. A staged file the nightly File Maintenance retention sweep (~11 days) DELETED before any pickup is **Expired** — never delivered. Right now **%s** File(s) across **%s** subscription(s) are waiting (oldest staged **%s**), **%s** File(s) across **%s** subscription(s) have expired, and **%s** staged File(s) were collected. The pickup wait is EXCLUDED from every UC2 Duration figure on this site. Below the three state tables: the day-by-day **staged backlog** curve (peak **%s** file(s) on %s), the **Will expire next** call list, and the per-partner and per-week **pickup-wait** statistics. Click a row for the 10 most recent Files.\n' \
-        "$n_wait" "$n_wsites" "$oldest_cell" "$n_exp" "$n_xsites" "$n_coll" "$bk_peak" "${bk_peakdate:--}"
 
     # default sort = Waiting for descending (2026-09-21, user request): declared
     # (sort=3:-1, the cell's sortval = the wait in seconds) AND baked in that

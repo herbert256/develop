@@ -14,4 +14,4 @@ source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/episodes.rpt"
 comps=("$REPORTS_DIR/recovered.rpt")
-merge_rpt "$OUT" "Recovered flows" "The subscriptions that came back to green after a red episode." "The subscriptions that **recovered**: back to green after a red episode." "" "${comps[@]}"
+merge_rpt "$OUT" "Recovered flows" "The subscriptions that came back to green after a red episode." "${comps[@]}"

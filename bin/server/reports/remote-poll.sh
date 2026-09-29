@@ -66,11 +66,9 @@ known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" line
     [ -f "$2" ] || return 0
     awk -F'\t' -v M="$1" '$1=="TABLE"{t++; if(t>1)exit} t==1&&$1=="ROW"{print M "\t" $2}' "$2"
 }
-# LINK_AWK — slug() matches bin/publish_lib.sh's slugify (the same function as
-# entity-search.sh's SLUG_AWK); sitelink() returns the @{link=…} cell prefix
+# LINK_AWK — sitelink() returns the @{alink=…} cell prefix
 # for a resolved subscription name, or "" when it stays unresolved.
 LINK_AWK='
-    function slug(x){ x=tolower(x); gsub(/[^a-z0-9]+/,"-",x); sub(/^-+/,"",x); sub(/-+$/,"",x); return x }
     # RENAMES (2026-08): a server line keeps the name that was current when it
     # was written, so fold it to the CURRENT one before matching the roster —
     # which carries current names, the transfer parse having folded them — and

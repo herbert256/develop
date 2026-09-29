@@ -106,15 +106,13 @@ pda_seen_total() {   # $1 = member  $2 = its coverage TSV  $3 = its base cache  
 }
 
 {
-    # the four Flow manager entities: "Configured: N | Seen: X | Not seen: Y"
-    # in the member's Show Seen INTRO ("Not seen" is lowercase-s, so /Seen: /
-    # anchors the middle field only)
+    # the four Flow manager entities: the configured names showseen.sh
+    # flagged seen — col 3 of the member's coverage TSV (one row per
+    # configured name; the showseen-*.rpt counts line went 2026-09-29)
     for m in subscriptions accounts hosts logins; do
-        rpt="$DATA/transfer/reports/showseen-$m.rpt"
-        [ -f "$rpt" ] || continue
-        seen=$(awk -F'\t' '$1 == "INTRO" && $2 ~ /^Configured: / {
-            s = $2; sub(/.*Seen: /, "", s); sub(/[^0-9].*/, "", s); print s; exit }' "$rpt")
-        [ -n "$seen" ] && printf 'SEEN\t%s\t%s\n' "$m" "$seen"
+        tsv="$COVSRC/$m.tsv"
+        [ -f "$tsv" ] || continue
+        printf 'SEEN\t%s\t%s\n' "$m" "$(awk -F'\t' '$3 == 1 { n++ } END { print n + 0 }' "$tsv")"
     done
     # the five derived Logical/PDA/BL members
     for m in logicals partners domains applications bl; do

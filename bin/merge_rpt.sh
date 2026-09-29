@@ -1,8 +1,9 @@
 # merge_rpt.sh — sourced by the MERGED report scripts (2026-07 catalog cleanup).
 #
-# merge_rpt OUT TITLE DESC INTRO KEYWORDS COMP.rpt...
-#   (KEYWORDS is IGNORED since 2026-09-29: its one reader, the Report finder,
-#   went — callers pass "")
+# merge_rpt OUT TITLE DESC COMP.rpt...
+#   (the INTRO and KEYWORDS arguments went 2026-09-29: a report page renders no
+#   INTRO — its help page explains it — and the Report finder, the one
+#   KEYWORDS reader, is gone)
 #
 # Builds one merged .rpt from component .rpt files: the header directives come
 # from the arguments, each component contributes its TABLE blocks unchanged and
@@ -37,14 +38,13 @@ _merge_pad() {
     esac
 }
 merge_rpt() {
-    local out=$1 title=$2 desc=$3 intro=$4 kw=$5; shift 5
+    local out=$1 title=$2 desc=$3; shift 3
     local have=0 c i n
     for c in "$@"; do [ -f "$c" ] && have=1; done
     if [ "$have" = 0 ]; then rm -f "$out"; echo "merge_rpt: no components for $out — skipped." >&2; return 0; fi
     {
         printf 'TITLE\t%s\n' "$title"
         printf 'DESC\t%s\n' "$desc"
-        printf 'INTRO\t%s\n' "$intro"
         for c in "$@"; do
             if [ -f "$c" ]; then
                 awk -F'\t' '

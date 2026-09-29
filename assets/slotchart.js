@@ -5,7 +5,7 @@
    styles x three intervals that meant NINE copies of the same card in the
    HTML, and the overview weighed 1.2 MB. Now the publish emits one compact
    placeholder per card carrying the series as data attributes, and this file
-   draws the SVG, the data table and the tooltip, redrawing on a style or
+   draws the SVG and the tooltip, redrawing on a style or
    interval click. It is a SEPARATE asset from report.js: only the two page
    kinds that own a slot chart load it.
 
@@ -134,7 +134,7 @@
     if (kind === "bytes") return { ns: 1, col: [CG], name: ["Volume"], empty: "no data", fmt: hb };
     // wire SPEED, not bytes: the slot's counted bytes over its counted leg
     // durations. Only legs big and slow enough to measure a rate count (the
-    // Route throughput report's floors), so a slot can legitimately be empty.
+    // writer's floors), so a slot can legitimately be empty.
     // Token "speed", NOT "rate" (2026-08): "rate" is the ERROR-PERCENTAGE kind
     // the overview AND every day page have always emitted — claiming it here
     // painted the Error % Files hero in MB/s.
@@ -173,7 +173,7 @@
   // log-spaced values (an unlabelled log axis misreads as linear). log10(v+1) so a
   // real zero stays on the floor. On a STACKED kind the segment tops are
   // log-placed, so the bands still order correctly but their heights are no
-  // longer proportional shares — the tooltip and the data table keep the real
+  // longer proportional shares — the tooltip keeps the real
   // numbers. Duration keeps its own fixed ms->h axis, which is already
   // non-linear, so it is never offered the toggle.
   function draw(kind, style, slots, linkpat, cid, title, scale) {
@@ -184,7 +184,7 @@
     // the durfit remap below. Shadows the module H0/BASE0/IH0 for this draw.
     var H = (kind === "dur") ? HDUR : H0, BASE = H - B, IH = BASE - T0;
     // durfit = dur on a per-chart fitted axis; remapped HERE so every other
-    // dur branch (marks, tooltip, data table) is shared untouched
+    // dur branch (marks, tooltip) is shared untouched
     var DTv = DT, DTLv = DTL;
     if (kind === "durfit") { var ft = fitTicks(slots); DTv = ft.t; DTLv = ft.l; kind = "dur"; }
     var K = kindSpec(kind), ns = K.ns, n = slots.length, i, s, g;
@@ -487,7 +487,7 @@
     }
     // The From/To range (2026-08): report.js's date filter drives it via the
     // window hook below — each slot carries its date (s.dt), so narrowing is
-    // a plain clip of the slot list; the axes, ticks and data table all
+    // a plain clip of the slot list; the axes and ticks all
     // follow because draw() only ever sees the clipped slots. Charts whose
     // slots carry no date (none today) fall back to the full series.
     var RANGE = (window._slotRange && window._slotRange.narrowed) ? window._slotRange : null;

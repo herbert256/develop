@@ -94,11 +94,9 @@ fi
     # ---- (a)+(b): remote-poll.rpt's TABLE blocks, verbatim (+ tab=uc3) ------
     if [ -f "$RP" ]; then
         awk -F'\t' '
-            $1 == "INTRO" && !t { intro = $0; next }   # the figures paragraph -> the first NOTE under the polls table
             $1 == "TABLE" { t++; print $0 "\ttab=uc3"; next }   # (the anchor= ids went 2026-09-29: nothing links them)
             t && ($1 == "HEAD" || $1 == "GHEAD" || $1 == "KIND" || $1 == "RECALC" || $1 == "ROW" || $1 == "TOTAL") { print; next }
-            t && $1 == "NOTE" { if (t == 1 && intro != "") { sub(/^INTRO/, "NOTE", intro); print intro; intro = "" }; print; next }
-            { next }   # TITLE/DESC/SUMMARY/FOOT: the merged page has its own
+            { next }   # TITLE/DESC/INTRO/NOTE/SUMMARY/FOOT: the merged page has its own (a report page renders no prose)
         ' "$RP"
     else
         printf 'TABLE\tPolls by subscription\ttab=uc3\n'

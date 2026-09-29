@@ -113,7 +113,6 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human <<< "$(pr
 {
     printf 'TITLE\tProtocol, Direction & Mode\n'
     printf 'DESC\tTransfers (the OK legs) and volume by protocol × direction, the direction × action-by breakdown, and the BINARY/ASCII transfer mode split — the per-leg dimensions on one page.\n'
-    printf 'INTRO\t%s OK volume across all protocols.\n' "$tot_human"
 
     # TRANSFERS = the OK legs in every table (2026-09-13, user request: one
     # Transfers column, no Error / OK pair, no green/red cells, no drills);

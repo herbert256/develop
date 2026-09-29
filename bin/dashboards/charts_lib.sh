@@ -22,7 +22,6 @@
 CH_BLUE="#3b82c4"; CH_GREEN="#3f9d52"; CH_RED="#df5a4c"; CH_AMBER="#e8a13a"
 CH_PURPLE="#7d63c6"; CH_TEAL="#2ba397"; CH_INK="#33475b"; CH_MUTE="#8a97a4"
 CH_GRID="#e9edf2"; CH_TRACK="#eef1f5"
-CH_PALETTE="$CH_BLUE|$CH_TEAL|$CH_AMBER|$CH_PURPLE|$CH_GREEN|$CH_RED|#5c9ead|#c58a7b"
 
 # humannum — 1234567 -> 1.2M etc, COUNTS ONLY (byte values use hb()). hn takes an
 # optional unit suffix (e.g. " GB") and keeps one decimal for non-integer values

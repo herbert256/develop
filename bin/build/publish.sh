@@ -57,9 +57,9 @@ apply_help_chrome() {
 # rg_desc MEMBER -> RG_DESC, the member's one-line description: the report's
 # DESC, or the fixed text of a hand-written page (they carry no .rpt). Sets a
 # global instead of echoing, and reads the DESC lines of every .rpt in ONE awk
-# pass on first use — the start page and the finder asked ~100 times, each a
-# subshell plus a field1 fork (2026-09-29 audit: ~1 s). The DESCs land in one
-# variable per .rpt, RGD_<path escaped injectively like wn_meta_cached's memo>
+# pass on first use — the start page asks ~50 times, each a subshell plus a
+# field1 fork (2026-09-29 audit: ~1 s). The DESCs land in one
+# variable per .rpt, RGD_<path escaped injectively>
 # (bash 3.2 has no associative arrays, and a glob match over one big string of
 # them took ~0.2 s per lookup in a UTF-8 locale).
 RG_DESC_LOADED=0
@@ -101,7 +101,7 @@ rg_desc() {
     case $dir in
         transfer/entities) rpt="$DATA/transfer/reports/entities/$stem.rpt" ;;
         transfer|server)   rpt="$DATA/$dir/reports/$stem.rpt" ;;
-        analyses)          for spec in $SUBS_GROUP_REPORTS; do   # subs_report_area, without its subshell
+        analyses)          for spec in $SUBS_GROUP_REPORTS; do   # the member area its DATA lives in
                                [ "${spec#*:}" = "$stem" ] && { rpt="$DATA/${spec%%:*}/reports/$stem.rpt"; break; }
                            done ;;
     esac
@@ -526,18 +526,6 @@ write_home_errors() {
 # (the Reports pulldown, 2026-09-29), its members tree-listed beneath, then
 # the Dashboards card and the Tools card — all alike, one flow (2026-09-29).
 # A docs/tools/ page (css depth 1, 2026-09-12) linked from the top-bar map icon.
-sm_href() {   # $1 area  $2 basename -> env-root-relative page
-    local fp; fp=$(first_page "$2")
-    # the Subscriptions group renders into docs/analyses/, whichever area
-    # its DATA comes from
-    if is_subs_report "$2"; then printf 'analyses/%s' "$fp"; return; fi
-    if [ "$1" = server ]; then printf 'server/%s' "$fp"; return; fi
-    case $2 in
-        entity-search) printf 'search/search.html' ;;
-        cross-*)       printf 'analyses/xref/%s' "$fp" ;;
-        *)             printf 'transfer/%s' "$fp" ;;
-    esac
-}
 write_sitemap() {
     local out="$DOCS/tools/sitemap.html"   # under docs/tools/ since 2026-09-12 (user request) — every link carries ../, the sibling tools ./
     mkdir -p "$DOCS/tools"   # before the redirected block below opens $out

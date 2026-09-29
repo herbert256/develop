@@ -668,7 +668,6 @@ aggregate_files() {
   awk -F'\t' -v ONLY="${AGG_ONLY:-}" -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK$COREIDS_AWK$RANK_AWK"'
     function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
     function humandur(ms){ if(ms<1000) return sprintf("%d ms",ms); if(ms<60000) return sprintf("%.2f s",ms/1000); if(ms<3600000) return sprintf("%.1f min",ms/60000); return sprintf("%.2f h",ms/3600000) }
-    function thr(bytes,ms){ return ms>0 ? human(bytes*1000/ms) "/s" : "-" }
     function inv(c){ return sprintf("%012d", 1000000000 - c) }
     function jdnum(y,m,dd,   a) { a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return dd+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     # epoch-second helpers for the store-and-forward dwell (dwell-time.sh twins)

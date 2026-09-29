@@ -985,8 +985,7 @@ bg2_step_start "publish: all files search + dashboards + day pages"         bash
 # that read what the report catch-ups above rewrote — the dependency trace is
 # in each script (THE CATCH-UP MODE). The analyses one: Configured
 # subscriptions (failed-files.rpt), Failed Subscriptions + its All view and
-# Error reasons (catchup-pages: its box-reason sidecar is not recomputed —
-# see below).
+# Error reasons (its box-reason sidecar is not recomputed — see below).
 # THE BOXES-REASON CATCH-UP (2026-08): the Entities Error view's Reason
 # column reads analyses/reports/_subs-boxes.tsv, which the analyses
 # publishes above (publish-insights.sh) write AFTER the transfer publish
@@ -1005,14 +1004,15 @@ bg2_step_start "publish: all files search + dashboards + day pages"         bash
 # server reports, _kaput-evidence.tsv and failed.sh's _errpage-evidence.tsv,
 # which the failed.sh CATCH-UP MODE leaves as the full run wrote it — a
 # catch-up that rewrote the evidence would need the sidecar step back here).
-# `catchup-pages` is the analyses catch-up without it. Checked: the analyses
+# (The `catchup-pages` name went 2026-09-29: `catchup` is that mode now.)
+# Checked: the analyses
 # catch-up renders docs/analyses/ only (Configured subscriptions, Failed
 # Subscriptions + its All view, Error reasons — from failed-files.rpt,
 # failed*.rpt, failing-reasons.rpt) and reads no page; the transfer catch-up
 # renders docs/transfer/entities/subscription-*, failed-files,
 # unknown-transfers and docs/files/ from the data/ trees and reads no
 # docs/analyses/ page; both share only topbar-data.js, written atomically.
-run_step "publish catch-ups: analyses (failed pages) + transfer (boxes reasons)" bash -c 'bin/analyses/publish.sh catchup-pages & a=$!; bin/transfer/publish.sh catchup; s=$?; wait "$a" || s=$?; exit "$s"'
+run_step "publish catch-ups: analyses (failed pages) + transfer (boxes reasons)" bash -c 'bin/analyses/publish.sh catchup & a=$!; bin/transfer/publish.sh catchup; s=$?; wait "$a" || s=$?; exit "$s"'
 # (THE ALL FILES SEARCH — 2026-09-27, user request, "Implementation 3, all
 # files": one day shard per data day + the bloom-filter manifest, and the
 # search/all-files.html page — runs in the second slot started above, after

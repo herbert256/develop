@@ -289,7 +289,6 @@ emit_attr_rows() {   # $1 = attribute key
 {
     printf 'TITLE\tSecurity Parameters\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tEvery attribute parsed from the SecurityParameters column — TLS version, cipher, cipher suite, MAC, key exchange, public key — in one table.\n'
-    printf 'INTRO\tConnection security by SecurityParameters attribute (TLS version, Cipher, MAC, Key Exchange, Public Key, ...), one table. Click a value for the subscriptions that use it.\n'
     printf 'TABLE\t\tdrill=transfer\tnoagg=2\n'
     printf 'HEAD\tAttribute\tValue\tTransfers\n'
     printf 'KIND\ttext\ttext\tnum\n'

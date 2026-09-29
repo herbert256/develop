@@ -137,7 +137,6 @@ mdur4=""; mdur6=""; mdur12=""; mdur24=""
 mstg4=""; mstg6=""; mstg12=""; mstg24=""
 if [ -f "$RW" ]; then
     dser=$(awk -F'\t' '
-        function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
         function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
         function qsort(A, lo, hi,   i, j, p, tmp) {
             while (lo < hi) {
@@ -242,7 +241,6 @@ fi
     printf 'PAGE\tmonitor\n'
     printf 'TITLE\tMonitor — Axway ST reports\n'
     printf 'H1\tMonitor\n'
-    printf 'DESC\tThe CFT end-to-end monitor: pickup, loop and staging latency per slot.\n'
     printf 'INTRO\tThe end-to-end monitor drops one file every 15 minutes on the CFT and sends it through all four use cases with ourselves as the remote partner. The three views cut its trip into disjoint segments — before ST (CFT pickup), the whole loop, and inside ST without the poll wait (staging) — so an incident shows up in exactly the segment that owns it.\n'
     printf 'HERO0\tMonitor CFT pickup\n'
     printf 'CARD\tMonitor CFT pickup time per slot\tper monitor file, the time from its drop on the CFT (the timestamp in its name) to the start of its inbound UC1 leg into ST — CFT directory pickup + PeSIT delivery; P50 dark green, P90 orange, P98 dark red; click a slot for its day\t\tspan2\tslots\tdurfit\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\n' "$mcp6" "240:$mcp4" "720:$mcp12" "1440:$mcp24"

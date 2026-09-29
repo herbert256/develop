@@ -47,7 +47,7 @@
 # the flow red (bin/build/result.sh _build_kaputflip — the loose connected-
 # ring join promoted to the colour, deploy-classified flows excluded, the UC3
 # poll green-keep applied, and since 2026-09-05 a UC3 connection failure
-# counting only after THREE failed polls in a row — colour/_connhold.tsv), so a
+# counting only after THREE failed polls in a row — result.sh HOLDs it), so a
 # trouble-after-success flow normally arrives on Failed Subscriptions RED
 # and leaves this page through the still-green filter; what stays here is the
 # deploy-classified, poll-cleared and connection-held remainder. NOTE a
@@ -178,7 +178,7 @@ mapargs+=("$lastokf")
 [ -f "$SH" ] && mapargs+=("$SH")
 [ -f "$IPH" ] && mapargs+=("$IPH")
 
-totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v rowfile="$rowfile" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" -v ucdf="$UCDF" -v svf="$SV" -v RNF="$RENAMES_FILE" "$RENAMES_AWK$SUBNAME_AWK$(cat "$ROOT/bin/flip-reason.awk")$LOGLINES_AWK"'
+totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v rowfile="$rowfile" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" -v ucdf="$UCDF" -v svf="$SV" -v RNF="$RENAMES_FILE" "$RENAMES_AWK$SUBNAME_AWK$(cat "$ROOT/bin/flip-reason.awk")"'
     BEGIN { while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf)
             while ((getline l9 < svf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[1] != "") SV9[a9[1]] = a9[2] } close(svf)   # the session vote (see SV above)
             rn_load(RNF); ros_load(subres) }
@@ -278,7 +278,6 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
                 ne[s]++
                 hasE[s, csrc] = 1
                 if (dt > ldtE[s]) { ldtE[s] = dt; lmE[s] = $5 }
-                addline(s, dt, lvlname($3) " " compname($4) "  " substr($5, 1, 200))
             } else nw[s]++
         }
     }
@@ -309,9 +308,10 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
             if (col[toupper(s)] != "green") { nred++; continue }   # already red: not a warning any more
             ssE = ""
             for (j = 1; j <= 4; j++) if (hasE[s, ord[j]]) ssE = ssE (ssE == "" ? "" : ", ") ord[j]
-            # ROW: Subscription | Last OK transfer | Errors after | Latest error | Source | Latest message  (+ drill)
-            printf "ROW\t%s\t%s\t%d\t%s\t%s\t%s\t@data:loglines=%s\n",
-                s, cut[s], ne[s]+0, ldtE[s], ssE, substr(lmE[s], 1, 200), lastlines(s) >> rowfile
+            # ROW: Subscription | Last OK transfer | Errors after | Latest error | Source | Latest message
+            # (the log-line drill went 2026-09-29 with the page: no reader)
+            printf "ROW\t%s\t%s\t%d\t%s\t%s\t%s\n",
+                s, cut[s], ne[s]+0, ldtE[s], ssE, substr(lmE[s], 1, 200) >> rowfile
             nrows++; terr += ne[s]
         }
         close(evid)
@@ -330,8 +330,6 @@ fi
 # 3) write the .rpt (sorted by Latest error, newest first — ROW field 5)
 {
     printf 'TITLE\tTrouble after success\n'   # = its Reports menu label (2026-09-29)
-    printf 'DESC\tStill-GREEN subscriptions whose last transfer succeeded but which then logged a server-log ERROR — for the subscription or a connected login, account or remote host. Warnings do not count.\n'
-    printf 'INTRO\tSubscriptions whose **last transfer was OK** but which then logged an **Error** in the server log **after** that transfer — either the subscription itself or a connected login, account or remote host. A recent problem on a flow that last looked healthy. **Errors only** (2026-08): a Warning does not put a flow on this page — the warnings-only shape was the benign "Transfer site ID is not present in environment", which has its own report in this group.\n'
     if [ "$nrows" -eq 0 ]; then
         printf 'TABLE\tSubscriptions failing after last successful transfer\tnosort\tnofilter\n'
         printf 'HEAD\tSubscription\tLast OK transfer\tErrors after\tLatest error\tSource\tLatest message\n'

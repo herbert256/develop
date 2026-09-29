@@ -209,32 +209,12 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 # 2026-07..09-29, reached only from the Boxes pages — are ordinary members of
 # their report groups since the one Reports pulldown, 2026-09-29.)
 
-# The PAGELESS reports: .rpt files that stay on disk (they feed a merged
-# report, another page or a data reader) but have NO page of their own (no
-# menu entry, no page render, no help page). Two kinds: the 2026-07 MERGED-
-# report components (merge_rpt.sh / append_rpt_tables: weekly … expected-
-# arrival, the four uc<n>-status in uc-status) and the pageless DATA producers
-# whose rows ride another page or no page at all (day, event-queue, site-failures — the
-# Boxes and Partners - Outgoing read its .rpt —, remote-poll, missing-cronjobs,
-# deploy-errors, from-green-to-red, only-red, and — 2026-09-29, user request
-# "Remove server/went-kaput.html" — went-kaput, whose evidence sidecar feeds
-# the red flip, the detail banner and failed.sh, and whose rows feed the
-# Trouble after success box and the day pages). Not listed: ranking (a report
-# with its own page), the retired double; pesit writes no .rpt since
-# 2026-09-29 (its sidecar only).
-PAGELESS_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status went-quiet-src stale-accounts size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling missing-cronjobs top-transfers size-profile uc4-to-uc2 file-in-file-out-src recovered recovered-files uc2-visits pickups no-remote-dir no-remote-files deploy-errors from-green-to-red only-red punctuality-src went-kaput "
-is_pageless_report() {
-    case $PAGELESS_REPORTS in *" $1 "*) return 0 ;; esac
-    return 1
-}
-
-subs_report_area() {   # $1 report basename -> the area its .rpt lives in ("" if not a member)
-    local spec
-    for spec in $SUBS_GROUP_REPORTS; do
-        [ "${spec#*:}" = "$1" ] && { printf '%s' "${spec%%:*}"; return 0; }
-    done
-    return 1
-}
+# (The PAGELESS reports — merged-report components and the data producers
+# whose rows ride another page or none (day, went-kaput, from-green-to-red,
+# only-red, deploy-errors, missing-cronjobs, punctuality-src, fe-overview, the
+# classic entity records …) — are simply the .rpt files no order list names.
+# Their registry PAGELESS_REPORTS / is_pageless_report and subs_report_area
+# went 2026-09-29: their one caller was What is new.)
 
 # The cross reports' tabs are the second-entity list as-is — one table page
 # per second entity, matching cross-reference.sh's emit order; render_report's

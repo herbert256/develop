@@ -96,7 +96,6 @@ if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
     {
         printf 'TITLE\tConnection efficiency\n'
         printf 'DESC\tHow the technical connections (Session IDs) are used: Files per connection per account, connection storms per minute, and the anatomy of failing sessions.\n'
-        printf 'INTRO\tNo records with a usable Session ID in this dataset.\n'
         printf 'TABLE\tConnection efficiency\tnofilter\n'
         printf 'HEAD\tAccount\n'
         printf 'KIND\ttext\n'
@@ -136,8 +135,6 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
 {
     printf 'TITLE\tConnection efficiency\n'
     printf 'DESC\tHow the technical connections (Session IDs) are used: Files per connection per account, connection storms per minute, and the anatomy of failing sessions.\n'
-    printf 'INTRO\tA **session** is one technical connection — an SFTP login, a PeSIT session — identified by the log'\''s Session ID column (added to the exports 2026-08). One session can carry many Files, but on this platform it mostly does not: **%s** sessions carried **%s** Files between them (a File counted once per session it used — **%s** per connection) and **%s%%** of all sessions moved a single File. **%s** sessions were User-initiated (the partner connected in), the rest Server-initiated; **%s** record(s) without a usable Session ID are excluded. A session is attributed to the account of its first record.\n' \
-        "$p_sess" "$p_files" "$p_ratio" "$p_sf" "$p_user" "$p_unk"
 
     # noagg: the TOTAL is the PLATFORM-wide figure, not the sum of the listed
     # accounts — a search must not re-sum it (2026-09-29 audit)

@@ -13,11 +13,8 @@
 #       transaction, its outcome (coverage_items below). Read by the analyses
 #       (bin/analyses/lib.sh ensure_pda_tsvs, home.sh, entity-search.sh,
 #       first-seen.sh) and the Entities views' not-seen rows (publish_lib).
-#   data/transfer/reports/showseen-<member>.rpt   UNPUBLISHED: ONE line,
-#       "INTRO  Configured: N | Seen: N | Not seen: N", which home.sh reads for
-#       the status tables' Seen figure. (Until 2026-09-29 it carried All / Seen
-#       / Not Seen tables, direction/result META lines and a whitelist
-#       coverage TSV pair — no reader was left for any of them.)
+#   (the showseen-<member>.rpt files went 2026-09-29: home.sh read only their
+#   "Seen: N", which it now counts from the coverage TSV — the same tuples)
 # The seen flags and last transactions are lifted straight from the classic
 # entity records (<basename>.rpt, their FIRST table — account.sh and its
 # twins) so this and the entity reports agree.
@@ -50,7 +47,7 @@
 # this report must run AFTER details.sh (see reports.sh).
 #
 # Usage:
-#   ./showseen.sh    # reads data/flow-manager/_*.tsv + the cache, writes data/showseen-*.rpt
+#   ./showseen.sh    # reads data/flow-manager/_*.tsv + the cache, writes data/transfer/reports/coverage/<member>.tsv
 #
 set -euo pipefail
 
@@ -85,18 +82,6 @@ slugmap_lines() {   # $1 = details sub-dir (accounts | subscriptions)
     local f="$REPORTS_DIR/details/$1/_slugmap.tsv"
     [ -f "$f" ] && cat "$f" || true
 }
-
-# The one line home.sh reads from a member's .rpt: the configured / seen /
-# not-seen counts over the (name<TAB>seen<TAB>…) tuples on stdin. (The All /
-# Seen / Not Seen tables this used to emit — data-seenmode tables for
-# report.js recalcSeen — went 2026-09-29: the .rpt renders no page and no
-# reader looked past this line.)
-emit_counts() {
-    awk -F'\t' 'NF { n++; if ($2==1) nseen++ }
-        END { print "INTRO\tConfigured: " n+0 "  |  Seen: " nseen+0 "  |  Not seen: " n - (nseen+0) }'
-}
-
-foot() { printf 'FOOT\n'; }
 
 # Parse a classic entity .rpt (its FIRST/Summary table) into one line per entity value:
 #   value<TAB>count<TAB>failed<TAB>processed<TAB>lastf<TAB>lastp
@@ -207,13 +192,8 @@ mkdir -p "$REPORTS_DIR/coverage"
 
 # accounts: EXACT match (case-insensitive) of config name <-> account value.
 acc_tuples=$(exact_tuples account accounts _accounts.tsv)
-{
-    printf 'TITLE\tSeen — Accounts\n'
-    printf '%s\n' "$acc_tuples" | emit_counts
-    printf '%s\n' "$acc_tuples" | coverage_items A > "$REPORTS_DIR/coverage/accounts.tsv"
-    foot
-} > "$REPORTS_DIR/showseen-accounts.rpt.tmp" && mv "$REPORTS_DIR/showseen-accounts.rpt.tmp" "$REPORTS_DIR/showseen-accounts.rpt"
-echo "Data written to $REPORTS_DIR/showseen-accounts.rpt." >&2
+printf '%s\n' "$acc_tuples" | coverage_items A > "$REPORTS_DIR/coverage/accounts.tsv"
+echo "Data written to $REPORTS_DIR/coverage/accounts.tsv." >&2
 
 # subscriptions: config name is an EXACT (case-insensitive) PREFIX of a
 # subscription value — '-' and '_' stay distinct, so a UC1_X_Y config name
@@ -238,37 +218,22 @@ sub_tuples=$( {
       ps = pageslug(seenreal ? sv[mi] : name)
       print name "\t" s "\t" (seenreal?cnt[mi]:"") "\t" (seenreal?fail[mi]:"") "\t" (seenreal?proc[mi]:"") "\t" (seenreal?cf[mi]:"") "\t" (seenreal?cp[mi]:"") "\t" (ps != "" ? "subscriptions/" ps : "") }
 ' | LC_ALL=C sort)
-{
-    printf 'TITLE\tSeen — Subscriptions\n'
-    printf '%s\n' "$sub_tuples" | emit_counts
-    printf '%s\n' "$sub_tuples" | coverage_items S > "$REPORTS_DIR/coverage/subscriptions.tsv"
-    foot
-} > "$REPORTS_DIR/showseen-subscriptions.rpt.tmp" && mv "$REPORTS_DIR/showseen-subscriptions.rpt.tmp" "$REPORTS_DIR/showseen-subscriptions.rpt"
-echo "Data written to $REPORTS_DIR/showseen-subscriptions.rpt." >&2
+printf '%s\n' "$sub_tuples" | coverage_items S > "$REPORTS_DIR/coverage/subscriptions.tsv"
+echo "Data written to $REPORTS_DIR/coverage/subscriptions.tsv." >&2
 
 # logins / hosts: the same EXACT-match seen split, against the partners.json
 # comm-profile logins/hosts (the tuples carry the CONFIG spelling).
 login_tuples=$(exact_tuples login logins _logins.tsv)
-{
-    printf 'TITLE\tSeen — Logins\n'
-    printf '%s\n' "$login_tuples" | emit_counts
-    printf '%s\n' "$login_tuples" | coverage_items L > "$REPORTS_DIR/coverage/logins.tsv"
-    foot
-} > "$REPORTS_DIR/showseen-logins.rpt.tmp" && mv "$REPORTS_DIR/showseen-logins.rpt.tmp" "$REPORTS_DIR/showseen-logins.rpt"
-echo "Data written to $REPORTS_DIR/showseen-logins.rpt." >&2
+printf '%s\n' "$login_tuples" | coverage_items L > "$REPORTS_DIR/coverage/logins.tsv"
+echo "Data written to $REPORTS_DIR/coverage/logins.tsv." >&2
 
 # A configured RAW-IP endpoint used to log under its PTR name, so an alias
 # bridged the two for the exact match. With no reverse DNS the parse leaves such
 # an address raw in col 16, where it matches _hosts.tsv directly — the alias is
 # gone. (It resolved exactly 2 endpoints when removed; both stay seen.)
 host_tuples=$(exact_tuples remote-host hosts _hosts.tsv)
-{
-    printf 'TITLE\tSeen — Hosts\n'
-    printf '%s\n' "$host_tuples" | emit_counts
-    printf '%s\n' "$host_tuples" | coverage_items H > "$REPORTS_DIR/coverage/hosts.tsv"
-    foot
-} > "$REPORTS_DIR/showseen-hosts.rpt.tmp" && mv "$REPORTS_DIR/showseen-hosts.rpt.tmp" "$REPORTS_DIR/showseen-hosts.rpt"
-echo "Data written to $REPORTS_DIR/showseen-hosts.rpt." >&2
+printf '%s\n' "$host_tuples" | coverage_items H > "$REPORTS_DIR/coverage/hosts.tsv"
+echo "Data written to $REPORTS_DIR/coverage/hosts.tsv." >&2
 
 # (the Flows / transfer-profiles member was REMOVED 2026-07 and the transfer
 # profile left the application entirely 2026-07; the _profiles config caches
@@ -280,7 +245,7 @@ echo "Data written to $REPORTS_DIR/showseen-hosts.rpt." >&2
 # BOTH ways is ONE row whose Seen cannot be summed from the per-direction rows
 # — bin/analyses/reports/home.sh's pda_seen_total over
 # data/transfer/reports/coverage/{partners,domains,applications}.tsv,
-# materialized by ensure_pda_tsvs. The classic four still come from the INTRO
-# counts line of the .rpt written above.)
+# materialized by ensure_pda_tsvs. The classic four count their coverage TSV
+# written above.)
 
 rm -f "$DIRMAP"

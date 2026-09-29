@@ -13,4 +13,4 @@ comps=()
 for c in retry attempts resubmissions recovered-files; do   # + recovered-files (2026-09-29: its page went; its three tables ride one tab)
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "Retries & resubmissions" "Everything about retried and resubmitted transfers: failing flows, the retry anatomy of delivered and abandoned Files, retry spacing, which side fails, and the manual resubmissions." "Everything about transfers that did not succeed at the first attempt: the **failing flows** (by failure count, with successes and last failure), the **retry anatomy** — how many failed legs before delivery or before giving up, the spacing between attempts and **which side fails** — the **manual resubmissions** (Resubmitted=true legs), per day and per subscription — and the **recovered Files**: the Files that carried a failed leg yet finished OK, per subscription, protocol and day." "" "${comps[@]}"
+merge_rpt "$OUT" "Retries & resubmissions" "Everything about retried and resubmitted transfers: failing flows, the retry anatomy of delivered and abandoned Files, retry spacing, which side fails, and the manual resubmissions." "${comps[@]}"

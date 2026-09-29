@@ -54,11 +54,9 @@ base_names() {     # $1 base cache — every configured host
     [ -f "$1" ] || return 0
     awk -F'\t' '$1 != "" { print "KH\t" $1 }' "$1"
 }
-# LINK_AWK — slug() matches bin/publish_lib.sh's slugify (the same function as
-# entity-search.sh's SLUG_AWK); hostlink() returns the @{alink=…} cell prefix
+# LINK_AWK — hostlink() returns the @{alink=…} cell prefix
 # for a page-bearing host, or "" when it stays unresolved.
 LINK_AWK='
-    function slug(x){ x=tolower(x); gsub(/[^a-z0-9]+/,"-",x); sub(/^-+/,"",x); sub(/-+$/,"",x); return x }
     function hostlink(t) { return (tolower(t) in khost) ? "@{alink=hosts/" khost[tolower(t)] "}" : "" }
 '
 

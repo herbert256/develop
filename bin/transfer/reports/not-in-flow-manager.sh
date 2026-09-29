@@ -143,7 +143,6 @@ awk -F'\t' \
         split("accounts|subscriptions|logins|hosts||logicals|partners|applications|domains|bl", SD, "|")
         printf "TITLE\tNot in Flow Manager\n"
         printf "DESC\tEvery entity value seen in the transfer logs that the current FlowManager configuration does not know — all ten entity lists checked.\n"
-        printf "INTRO\tEvery entity VALUE that appears in the transfer logs but is **not in the current FlowManager configuration** — checked against all ten configured lists (accounts, subscriptions, logins, hosts, whitelist, logical flows, partners, applications, domains, BL tags). These are the flows running outside the configuration: test uploads, renamed or deleted config objects, or unlisted partner addresses.\n"
         printf "TABLE\tLogged but not configured\twide\tgroup\n"
         printf "HEAD\tType\tName\tFiles\tError\tOK\tVolume\tFirst seen\tLast seen\n"
         printf "KIND\ttext\ttext\tnum\tnumfailed\tnumprocessed\tnum\ttext\ttext\n"

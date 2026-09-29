@@ -35,8 +35,8 @@
 #     the shared host/account ring: that reds it only after THREE FAILED
 #     POLLS IN A ROW of its own (2026-09-05, user rule — one or two failed
 #     polls are a blip); below three the connection failures are discounted
-#     and the newest other evidence decides; colour/_connhold.tsv lists the
-#     flows kept green by it
+#     and the newest other evidence decides (the flows it keeps green are
+#     HELD; their sidecar _connhold.tsv went 2026-09-29 — no reader)
 #     never transferred, but a UC3 whose own polls FAIL with a "Connection
 #     failure while <flow> tried to connect …" line on THREE POLLS IN A ROW
 #     (newer than its newest successful poll, or none at all)
@@ -150,10 +150,8 @@ POLLCAND="$COLDIR/_uc3polls.cand"       # name <TAB> newest successful poll, per
 # line, or the same failure kind arriving through a shared host/account
 # ring — counts the failures newer than the newest successful poll and the
 # last transfer as the streak, and below three DISCOUNTS the connection
-# failures: the newest of the remaining evidence decides. CONNHOLD is the
-# sidecar of flows the rule kept green (name, stamp, streak).
+# failures: the newest of the remaining evidence decides.
 CONNCAND="$COLDIR/_connfail.cand"
-CONNHOLD="$COLDIR/_connhold.tsv"
 # The red-flip sidecar (2026-08): every subscription the after-last-transfer
 # rule (or the cannot-connect rule) below turns red on server-log evidence:
 #   name <TAB> EVIDENCE <TAB> SINCE          (both "YYYY-MM-DD HH:MM:SS…")
@@ -658,7 +656,7 @@ _build_kaputflip
 [ -f "$KAPUTFLIP" ] || : > "$KAPUTFLIP"
 [ -f "$RINGORPH" ] || : > "$RINGORPH"
 
-awk -F'\t' -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srvc="$SRVC" '
+awk -F'\t' -v rf="$REDFLIP.tmp" -v srvc="$SRVC" '
     # raise bdt to ring file f'\''s newest E-LEVEL line "date time" when newer
     # (a missing file reads nothing), and collect EVERY E stamp of the ring in
     # EVL ("|"-joined) — the candidates of the flip SINCE. ERRORS ONLY
@@ -748,10 +746,9 @@ awk -F'\t' -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srvc="$SRVC" '
             # failure while <flow> tried to connect …" line, it reds the flow
             # only after THREE failed polls in a row — its connection failures
             # newer than the newest successful poll (CONNCAND) and newer than
-            # the last transfer. Fewer = HELD: the flow stays green and lands
-            # in the _connhold sidecar (the went-kaput page still shows it as
-            # trouble after success). Evidence of any other kind, or a newer
-            # line, flips as before.
+            # the last transfer. Fewer = HELD: the flow stays green (the
+            # went-kaput evidence still lists it as trouble after success).
+            # Evidence of any other kind, or a newer line, flips as before.
             due = (bdt != "" && bdt > ct && !((k in pt) && pt[k] > bdt))
             held = 0
             if (due && (k in UC3)) {
@@ -772,7 +769,7 @@ awk -F'\t' -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srvc="$SRVC" '
                         if ((k in RA) && !((k SUBSEP RA[k]) in cfset) && RA[k] > b2) b2 = RA[k]
                         if ((k in KF) && KFC[k] != 1 && KF[k] > b2) b2 = KF[k]
                         if (b2 != "" && b2 > ct && !((k in pt) && pt[k] > b2)) { bdt = b2; disc = 1 }
-                        else { held = 1; print $1 "\t" bdt "\t" n3 > ch }
+                        else held = 1
                     }
                 }
             }
@@ -816,8 +813,6 @@ awk -F'\t' -v rf="$REDFLIP.tmp" -v ch="$CONNHOLD.tmp" -v srvc="$SRVC" '
 commit_tmp "$BASE/_subscriptions.tsv"
 [ -f "$REDFLIP.tmp" ] || : > "$REDFLIP.tmp"   # no flips: an empty (not absent) sidecar
 commit_tmp "$REDFLIP"
-[ -f "$CONNHOLD.tmp" ] || : > "$CONNHOLD.tmp"   # and for the connection-failure hold sidecar
-commit_tmp "$CONNHOLD"
 rm -f "$POLLCAND" "$CONNCAND" "$CCAND" "$CCSINCE"
 
 # ---- stage 2: everything else, rolled up from its subscriptions ------------

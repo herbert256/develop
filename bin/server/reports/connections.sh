@@ -13,4 +13,4 @@ comps=()
 for c in inbound-connections connection-diagnostics; do
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "Connections" "Connection volume in and out per day, account and address, and why our outbound connections fail: failure reasons, per remote host, test connections and rejected host keys." "Both directions of the connection story in one report. **Volume**: every connection line, split In (a partner login connected to SecureTransport) and Out (SecureTransport connected to a partner), per day, account and address. **Outbound failures**: why and where our own connections fail — the failure-reason breakdown, the per-remote-host view, the test connections and the rejected host keys." "" "${comps[@]}"
+merge_rpt "$OUT" "Connections" "Connection volume in and out per day, account and address, and why our outbound connections fail: failure reasons, per remote host, test connections and rejected host keys." "${comps[@]}"

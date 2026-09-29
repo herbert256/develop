@@ -49,7 +49,10 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # green day. Emits pipe-separated (drill lists carry no pipes):
 #   S|site|greenday|flipmoment|daysred|run|ok|fails|files|faildrill|okdrill
 #   TOT|sites|red|flipped|maxdate
-agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COREIDS_AWK"'
+agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' '
+    # (the Error / OK drill lists went 2026-09-29: the page is gone and its
+    # readers — failed.sh, the day pages, the box-reason producer — take the
+    # name and the red-run columns only)
     function flush() {
         if (site == "") return
         nsites++
@@ -62,7 +65,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
             if (ok == 0) nnever++
             if (greenday != "") {
                 nflip++
-                L[nflip] = site "|" greenday "|" tailsince "|" tailjd "|" run "|" ok "|" fails "|" fcnt "|" buildlist(top["F" SUBSEP site]) "|" buildlist(top["P" SUBSEP site])
+                L[nflip] = site "|" greenday "|" tailsince "|" tailjd "|" run "|" ok "|" fails "|" fcnt
             }
         }
     }
@@ -76,19 +79,17 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
         if ($7 + 0 > maxjd) { maxjd = $7 + 0; maxdate = $4 }
         if ($2 != "Failed" && $2 != "Expired") {
             ok++; run = 0; dayok = 1; lastfail = 0
-            addtop("P" SUBSEP site, $6, $4 " " $5, $1)
         } else {
             fails++; dayok = 0; lastfail = 1
             if (run == 0) { tailsince = $4 " " substr($5, 1, 8); tailjd = $7 + 0 }
             run++
-            addtop("F" SUBSEP site, $6, $4 " " $5, $1)
         }
     }
     END {
         flush()
         for (i = 1; i <= nflip; i++) {
             split(L[i], f, "|")
-            printf "S|%s|%s|%s|%d|%s|%s|%s|%s|%s|%s\n", f[1], f[2], f[3], maxjd - f[4], f[5], f[6], f[7], f[8], f[9], f[10]
+            printf "S|%s|%s|%s|%d|%s|%s|%s|%s\n", f[1], f[2], f[3], maxjd - f[4], f[5], f[6], f[7], f[8]
         }
         printf "TOT|%d|%d|%d|%s|%d\n", nsites+0, nred+0, nflip+0, maxdate, nnever+0
     }
@@ -109,10 +110,10 @@ n_rows=0
     printf 'KIND\tsite\ttext\ttext\tnum\tnumfailed\tnumprocessed\tnum\n'
     # Newest flips first (the freshest regressions are the actionable ones),
     # printed straight into the report — no per-row command substitution.
-    while IFS='|' read -r _ site greenday flip daysred run ok fails fcnt fdrill pdrill; do
+    while IFS='|' read -r _ site greenday flip daysred run ok fails fcnt; do
         [ -z "$site" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n' \
-            "$site" "$greenday" "$flip" "$daysred" "$run" "$ok" "$fcnt" "$fdrill" "$pdrill"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$site" "$greenday" "$flip" "$daysred" "$run" "$ok" "$fcnt"
         n_rows=$((n_rows + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^S|' | LC_ALL=C sort -t'|' -k4,4r -k2,2)"
     # the empty-state row ends its line like every other (2026-09-28 fix: it

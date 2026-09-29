@@ -1055,11 +1055,7 @@ LC_ALL=C awk -F'\t' -v CAND=8 "$(cat "$LIB_DIR/../flip-reason.awk")"'
     FNR == 1 { flush(); site = ""; fn = 0; fmax = ""; prev = ""; tno = 0; split("", ptid) }
     $1 == "TABLE" { prev = ""; tno++ }
     $1 == "TITLE" { site = $2; sub(/^Failed subscription: /, "", site)
-                    sub(/^Expired pickup: /, "", site)   # the drill-only Expired pages (the 30-day guarantee)
-                    # a page from a previous run carries the Reason suffix in
-                    # its title ("<name> - <reason>"); a name never contains a
-                    # space, so stripping from " - " recovers it exactly
-                    sub(/ - .*$/, "", site); next }
+                    sub(/^Expired pickup: /, "", site); next }   # the drill-only Expired pages (the 30-day guarantee)
     $1 == "ROW" && tno == 2 && NF >= 9 && $9 != "" { ptid[$9] = 1 }   # the legs table: the page own transfer ids
     $1 == "ROW" && site != "" && NF >= 4 && ($3 == "Error" || $3 == "Warning" || ($3 == "Info" && ownbookend($4))) {
         if ($2 > fmax) fmax = $2                # the page own newest line, for picking the page
@@ -1212,12 +1208,14 @@ mv "$REPORTS_DIR/_failed-reasons.tsv.tmp" "$REPORTS_DIR/_failed-reasons.tsv"
 # The same Reason lands in each drill page TITLE — "Failed subscription:
 # <name> - <reason>" — so the error page answers WHY in its own heading
 # (2026-08). Rewrite-in-place: the page is buffered whole, then written back
-# with the one line changed. The EVIDENCE parser above strips the suffix when
-# it reads a title (a subscription name never contains a space, so the
-# " - " separator cannot occur inside one).
+# with the one line changed. Only the pages that RENDER (2026-09-29 audit):
+# a CoreId page outside the published set (_filepages.tsv) stays an evidence
+# intermediate, and nothing reads its title after the evidence pass above.
 if [ -s "$TMP/reasons" ]; then
-    LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" '
+    LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v FPF="$FPF" '
+        BEGIN { while ((getline l < FPF) > 0) { split(l, a, "\t"); if (a[1] != "") pub[a[1]] = 1 } close(FPF) }   # (not FNR==NR: FPF may be empty)
         { cid = $1; r = $2; if (cid == "" || r == "") next
+          if (cid ~ /^[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+$/ && !(cid in pub)) next
           f = ERRDIR "/" cid ".rpt"; n = 0
           while ((getline l < f) > 0) buf[++n] = l
           close(f)
@@ -1321,13 +1319,12 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
         close(SESSF)
         NP = split("sub-failing sub-all", PK, " ")
         DSC["sub-failing"] = "Every failing subscription — the newest failed File of each, one row per subscription, plus the subscriptions failing in the server log only."
-        DSC["sub-all"]     = "The newest failed File of every subscription that ever failed, recovered flows included — one row per subscription — plus the subscriptions failing in the server log only."
         for (i = 1; i <= NP; i++) {
             k = PK[i]
             f = RD "/" ((k == "sub-failing") ? "failed" : "failed-" k) ".rpt.tmp"
             F[k] = f
             printf "TITLE\tFailed Subscriptions\n" > f
-            printf "DESC\t%s\n", DSC[k] > f
+            if (k in DSC) printf "DESC\t%s\n", DSC[k] > f   # the Reports start page reads the DESC of failed.rpt only
             # Newest first is the page DEFAULT (Date/time, desc), not `nosort` —
             # the rows arrive by recency but must still be sortable by any
             # column. `restint` + the per-row @data:res: the row carries its

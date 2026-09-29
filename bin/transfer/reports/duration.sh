@@ -177,8 +177,7 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
     if [ -z "$agg" ]; then
         {
             printf 'TITLE\tDuration\n'
-            printf 'DESC\tHow long transfers take — per-day percentiles and min / avg / median / max (the longest Files and the distribution have their own pages). %s\n' "$SCOPE_DESC"
-            printf 'INTRO\tNo Files with a measured duration in this view.\n'
+            if [ "$OKONLY" = 1 ]; then printf 'DESC\tHow long transfers take — per-day percentiles and min / avg / median / max (the longest Files and the distribution have their own pages). %s\n' "$SCOPE_DESC"; fi   # the start page reads duration.rpt's DESC only
             printf '%s\n' "$NAVLINE"
             printf 'TABLE\tTransfer duration\n'
             printf 'HEAD\tDuration\n'
@@ -226,9 +225,7 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
         local OUT=$1 NAVLINE=$2
     {
         printf 'TITLE\tDuration\n'
-        printf 'DESC\tHow long transfers take — per-day percentiles and min / avg / median / max (the longest Files and the distribution have their own pages). %s\n' "$SCOPE_DESC"
-        printf 'INTRO\tDuration of the **%s** Files over **%s** day(s). Overall **min %s**, **median (p50) %s**, **p95 %s**, **p99 %s**, **max %s**. %s The two per-day tables sit side by side — the percentiles, then min / avg / median / max; the stats are shown in **whole seconds, minutes or hours**, and a narrowed date range keeps each day but blanks the non-additive totals.\n' \
-            "$g_n" "$g_days" "$u_min" "$u_p50" "$u_p95" "$u_p99" "$u_max" "$SCOPE_INTRO"
+        if [ "$OKONLY" = 1 ]; then printf 'DESC\tHow long transfers take — per-day percentiles and min / avg / median / max (the longest Files and the distribution have their own pages). %s\n' "$SCOPE_DESC"; fi   # the start page reads duration.rpt's DESC only
         printf '%s\n' "$NAVLINE"
 
         # Files keeps an explicit @{class=num}; the duration cells arrive

@@ -27,14 +27,9 @@
 #
 # Usage:  bin/analyses/publish.sh            every analyses page
 #         bin/analyses/publish.sh catchup    ONLY the pages the report catch-ups
-#                                            feed + the box-reason sidecar (see
-#                                            THE CATCH-UP MODE at the bottom)
-#         bin/analyses/publish.sh catchup-pages   the same WITHOUT the sidecar —
-#                                            bin/build.sh's catch-up, beside the
-#                                            transfer catch-up (2026-09-29): the
-#                                            full run's sidecar is final, since
-#                                            failed.sh's catch-up mode no longer
-#                                            rewrites the evidence it reads
+#                                            feed (see THE CATCH-UP MODE at the
+#                                            bottom) — bin/build.sh's catch-up,
+#                                            beside the transfer catch-up
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -43,11 +38,9 @@ source "$SCRIPT_DIR/../uc-cases.sh"      # uc_meta(): the shared UC<n> descripti
 
 # the MODE (2026-09-29): an explicit argument — never a freshness check
 AP_MODE=${1:-full}
-AP_SIDECAR=1
 case $AP_MODE in
     full|catchup) ;;
-    catchup-pages) AP_MODE=catchup; AP_SIDECAR=0 ;;   # the sidecar ran as its own step
-    *) printf 'usage: bin/analyses/publish.sh [catchup|catchup-pages]\n' >&2; exit 2 ;;
+    *) printf 'usage: bin/analyses/publish.sh [catchup]\n' >&2; exit 2 ;;
 esac
 
 ARPT="$DATA/analyses/reports"
@@ -1475,25 +1468,19 @@ _aplap() { local _t1; _t1=$(date +%s); printf "TIME %5ds  analyses publish: %s\n
 # Their readers here:
 #   subscriptions.html            failed-files.rpt (the Error reason column —
 #                                 write_subscriptions_page)
-#   _subs-boxes.tsv (data)        _errpage-evidence.tsv — publish-insights.sh
-#                                 sidecar; the transfer catch-up after this step
-#                                 reads it (the Entities Error view's Reason)
+#   (_subs-boxes.tsv, the publish-insights.sh sidecar, reads
+#   _errpage-evidence.tsv — written by failed.sh's FULL run only, so the
+#   sidecar of this script's first run is final: no re-run here, 2026-09-29)
 #   failed.html                   failed.rpt       } render_subs_group_pages,
 #   failing-reasons.html          failing-reasons.rpt } those two members only
 #   failed-sub-all.html           failed-sub-all.rpt (+ the selector row on it
 #                                 and on failed.html, below)
 # Everything else here reads report-stage .rpt files, caches and config that no
-# step since the first run rewrites — the boxes page itself included (its box
-# rows read the report-stage lists; only its sidecar reads the evidence) — and
-# no docs/ page but the Entities views, which exist since the transfer publish.
+# step since the first run rewrites, and no docs/ page but the Entities views, which exist since the transfer publish.
 # A NEW analyses-page reader of one of the files above joins this list.
 if [ "$AP_MODE" = catchup ]; then
     write_subscriptions_page
     _aplap "catch-up: Configured subscriptions"
-    if [ "$AP_SIDECAR" = 1 ]; then
-        "$SCRIPT_DIR/publish-insights.sh"   # the box-reason sidecar _subs-boxes.tsv (no page)
-        _aplap "catch-up: the box-reason sidecar"
-    fi
     # the two members through the ONE group renderer: its member list
     # narrowed for the call (render_report reads it only for its own name)
     _ap_sgr=$SUBS_GROUP_REPORTS

@@ -44,7 +44,7 @@
 # line / the writer awk; never reintroduce per-entity shell work.
 #
 # Usage:
-#   ./details.sh    # reads input/*.csv (via the caches), writes data/details/**
+#   ./details.sh    # reads input/*.csv (via the caches), writes data/transfer/reports/details/**
 #
 set -euo pipefail
 
@@ -455,7 +455,7 @@ _bsf="$CONFIG_BASE/_subscriptions.tsv";          [ -f "$_bsf" ] || _bsf=/dev/nul
 # side()/the rule letters read the config where the name says nothing
 # (2026-08-31 audit — no hybrid flow could earn a twin at all)
 _ucf="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$_ucf" ] || _ucf=/dev/null
-awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_lsf" -v UCF="$_ucf" -v PF="$_pdir/twins-pairs" '
+awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_lsf" -v UCF="$_ucf" '
     FILENAME == UCF { if ($1 != "" && $2 != "") UCD[toupper($1)] = $2; next }   # subscription -> derived use case
     FILENAME == TWF { i = index($0, "\t")                    # account -> twin account(s)
                       if (i > 1) TWA[substr($0, 1, i - 1)] = substr($0, i + 1); next }
@@ -469,11 +469,10 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_ls
     FILENAME == LSF { if (LSUB[$1] == "") LORD[++nlord] = $1                # login -> subscription(s)
                       LSUB[$1] = (LSUB[$1] == "" ? "" : LSUB[$1] "\037") $2; next }
     { SUBS[$1] = 1 }                                          # base/_subscriptions.tsv: the universe
-    # r = the detecting rule letter (A/B/C), accumulated per ORDERED pair for
-    # the persisted pair map (the Twins analysis) — dedup per letter
+    # r = the detecting rule letter (A/B/C) — informational only since the
+    # persisted pair map and its Twins analysis went (2026-09-29)
     function addtwin(a, b, r) { if (a == "" || b == "" || a == b) return
-                                if (!((a, b) in SEEN)) { SEEN[a, b] = 1; T[a] = T[a] (T[a] == "" ? "" : "\037") b }
-                                if (index(RTX[a, b], r) == 0) RTX[a, b] = RTX[a, b] r }
+                                if (!((a, b) in SEEN)) { SEEN[a, b] = 1; T[a] = T[a] (T[a] == "" ? "" : "\037") b } }
     # the use case of a subscription: its UC name prefix ([-_] after the
     # digits: the synthetic monitor spells its prefixes with a dash — 2026-08,
     # so its pairs earn rule B like everything else), else the DERIVED one
@@ -534,39 +533,11 @@ awk -F'\t' -v OFS='\t' -v TWF="$_twf" -v ASF="$_asf" -v SAF="$_saf" -v LSF="$_ls
             }
         }
         for (s in T) print s, T[s]
-        # every ORDERED pair with its rule letters, for the persisted pair
-        # map below (hash order here — the shell sorts)
-        for (k in SEEN) { split(k, P2, SUBSEP); print "P", P2[1], P2[2], RTX[P2[1], P2[2]] > PF }
-        close(PF)
     }' "$_ucf" "$_twf" "$_asf" "$_saf" "$_lsf" "$_bsf" \
   | LC_ALL=C sort > "$_pdir/twins-site"
 
-# ---- persist the twin PAIR maps (the Twins analysis reads them) --------------
-# Unordered pairs, each once, the rule letters of both directions unioned in
-# fixed A/B/C order.
-# if/fi, NOT a `[ -f ] &&` guard: with zero twin pairs the pairs file never
-# exists, the && list would exit 1 and pipefail would kill the whole script
-if [ -f "$_pdir/twins-pairs" ]; then
-    awk -F'\t' -v OFS='\t' '
-        { a = $2; b = $3; r = $4
-          if (b < a) { t = a; a = b; b = t }
-          k = a SUBSEP b
-          if (RU[k] == "") O[++n] = k                       # emptiness test, not membership (mawk)
-          s2 = RU[k] r; nr = ""
-          if (index(s2, "A")) nr = "A"
-          if (index(s2, "B")) nr = nr "B"
-          if (index(s2, "C")) nr = nr "C"
-          RU[k] = nr }
-        END { for (i = 1; i <= n; i++) { split(O[i], P2, SUBSEP); print P2[1], P2[2], RU[O[i]] } }
-    ' "$_pdir/twins-pairs"
-fi | LC_ALL=C sort > "$_pdir/_twins-subscriptions.tmp"
-awk -F'\t' -v OFS='\t' '
-    { n = split($2, V, "\037")
-      for (i = 1; i <= n; i++) { a = $1; b = V[i]; if (b < a) { t = a; a = b; b = t }; print a, b } }
-' "$_twf" | LC_ALL=C sort -u > "$_pdir/_twins-accounts.tmp"
-for _tw in _twins-subscriptions _twins-accounts; do
-    cp "$_pdir/$_tw.tmp" "$REPORTS_DIR/details/$_tw.tsv"
-done
+# (the persisted twin PAIR maps, details/_twins-{subscriptions,accounts}.tsv,
+# went 2026-09-29 with their one reader, the Twins analysis)
 # (the writer reads $_pdir/uncollected directly — no UNCOLLECTED variable)
 # --- Subscription (SITE) detail pages only: fold Remote host / Account / Login
 # into the Summary and add the polling schedule. Account (2.8) comes
@@ -968,7 +939,7 @@ for _ty in ACC SITE LOGIN HOST LGC PTN APP DOM BL; do
         -v RANKOUT="$RANKDIR/$_ty.tsv" \
         -v SRV="$SERVER_CACHE" -v FWD="$IP_HOSTS_FILE" \
         -v UCF="$UCMETA" -v UCDF="$UCDER" -v UNCF="$_pdir/uncollected" -v OKF="$OKTF" \
-        -v SSF="$SRVSUBSF" -v ERRD="$REPORTS_DIR/errors" -v LGF="$LOGONSF" -v LGHF="$SERVER_CACHE/_logons-hosts.tsv" \
+        -v SSF="$SRVSUBSF" -v LGF="$LOGONSF" -v LGHF="$SERVER_CACHE/_logons-hosts.tsv" \
         -f "$SCRIPT_DIR/../details_writer.awk" "$STREAMDIR/s.$_ty" > "$STREAMDIR/log.$_ty" 2>&1 || _wrc=$?
     printf 'TIME %5ds  details: writer %s\n' "$(( $(date +%s) - _w0 ))" "$_ty" >> "$STREAMDIR/log.$_ty"
     exit "$_wrc" ) &

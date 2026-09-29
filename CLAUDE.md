@@ -249,10 +249,10 @@ failing-reasons.sh, then the two publish catch-ups SIDE BY SIDE — the transfer
 (`bin/transfer/publish.sh catchup` — 2026-09-29: only the Subscriptions Entities views, Failed
 files and docs/files/ — docs/files/'s ONLY render in a build: the first transfer publish runs
 `bin/transfer/publish.sh firstpass`, every transfer page but docs/files/; a hand-run publish with
-no argument still renders everything; the analyses one is `bin/analyses/publish.sh catchup-pages` —
-Configured subscriptions, Failed Subscriptions, Error reasons; its `catchup` mode also re-runs
-`publish-insights.sh` for `_subs-boxes.tsv`, which the build no longer needs: nothing that sidecar
-reads changes after the analyses publish; the trace of what reads the catch-up inputs is in each
+no argument still renders everything; the analyses one is `bin/analyses/publish.sh catchup` —
+Configured subscriptions, Failed Subscriptions, Error reasons; it does not re-run
+`publish-insights.sh` for `_subs-boxes.tsv`: nothing that sidecar reads changes after the analyses
+publish (the separate `catchup-pages` name went 2026-09-29 — one catch-up mode); the trace of what reads the catch-up inputs is in each
 script, THE CATCH-UP MODE),
 the all-files search (`bin/analyses/publish-all-files.sh` — its rows link the files/ pages the
 catch-ups settle), dashboards, day → `bin/build/publish.sh` (index pages + the home, reads every area) →
@@ -918,8 +918,8 @@ the key), and about which NO
 Error/Warning line classifies to a reason (`flip-reason.awk` over the legs' sessions and the
 CoreId/transfer-id mentions), reads **Processed** — the platform ends one transfer twice when the
 client tears the connection down after the bytes went (ok on its fresh connection, error on the
-dropped one; the transfer log keeps the error). Col 23 = the ok bookend's stamp; `_bookendok.tsv`
-lists the settled rows; extracts cached in `_bookends.tsv` / `_reasonlines.tsv`; settled rows are
+dropped one; the transfer log keeps the error). Col 23 = the ok bookend's stamp (the separate `_bookendok.tsv` list
+went 2026-09-29 — no reader); extracts cached in `_bookends.tsv` / `_reasonlines.tsv`; settled rows are
 re-evaluated every run. The JSON bookends therefore stay in the server cache (out of the noise
 list since 2026-09-09) but the mention scanner skips them.
 

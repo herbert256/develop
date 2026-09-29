@@ -89,7 +89,6 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         main = outdir "/skipped.rpt.tmp"
         printf "TITLE\tSkipped\n" > main
         printf "DESC\tThe accounts, subscriptions and logins ignored because their name matches the skip list (input/skip.txt), plus the transfer- and server-log records set aside for the same reason.\n" > main
-        printf "INTRO\tNames matching the **skip list** (**input/skip.txt**, this checkout'\''s own — %s) are removed at parse time — from the FlowManager config, the transfer logs and the server logs alike — so **no other report counts them**. On the configuration side matching is a case-insensitive **substring** of the account, subscription or comm-profile login name (a skipped login loses its detail page); the log records follow the rule kind (contains, exact or regex).\n", (tokens == "" ? "(empty)" : tokens) > main
         # totals across all values
         for (i = 1; i <= nt; i++) { TA += nacc[i]; TS += nsub[i]; TL += nlog[i]; TT += tcnt[i]; TV += scnt[i] }
         printf "STAT\twhite\t%d\tSkipped accounts\n", TA + 0 > main

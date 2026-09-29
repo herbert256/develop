@@ -20,8 +20,6 @@ COVRPT_DIR="$DATA/coverage"                  # one .rpt per coverage cell page (
 COVSRC="$DATA/transfer/reports/coverage"    # showseen.sh's coverage TSVs (+ the 5 derived ones below: logicals, bl, partners, applications, domains)
 mkdir -p "$REPORTS_DIR" "$COVRPT_DIR" "$FSRPT_DIR"
 
-meta_val() { grep -m1 "^META"$'\t'"$2"$'\t' "$1" 2>/dev/null | cut -f3- || true; }   # META key $2 in file $1
-
 # cov_put FILE — read stdin into FILE atomically (a unique tmp + mv):
 # ensure_pda_tsvs is called by several report scripts, some side by side.
 cov_put() {

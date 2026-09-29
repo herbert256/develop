@@ -121,8 +121,7 @@
   // keeps its baked look on a table nobody reorders.
   //
   // Fixed tables: a grouped header band (GHEAD), the hour x weekday heat map,
-  // the Boxes pages (their stat filter hides columns by position), Entity
-  // Search (builds its rows on demand), the day-rows layout and the root
+  // Entity Search (builds its rows on demand), the day-rows layout and the root
   // index (spacer columns), and any row whose spans cannot be split cleanly.
   //
   // The order is stored in localStorage — it must outlive the tab — under the
@@ -160,7 +159,6 @@
     var n = hr.cells.length, i, j, r, cs, sum;
     if (n < 2) return false;
     if (table.getAttribute("data-heat") || table.getAttribute("data-esearch") || table.getAttribute("data-nocolmove")) return false;
-    if (table.querySelector("th[data-pf]")) return false;
     // (spacer columns — th/td.spc, the home per-day table and the root index —
     // are fine since 2026-09-06: never listed, never moved, group boundaries)
     for (i = 0; i < table.rows.length; i++) {
@@ -662,12 +660,12 @@
   // (100*sumN/columnTotalN) · pN.M 100*sumN/sumM · aN round(sumN/days) · c
   // in-range day count · dN count of in-range days with metric N > 0 ·
   // qN.M humanDur(sumN/sumM) · xN humanDur(max N) · tN.M
-  // humanBytes(sumN*1000/sumM)+"/s" · vN.M humanBytes(sumN/sumM) · bN bar
+  // humanBytes(sumN*1000/sumM)+"/s" · bN bar
   // of sumN vs column max · rN position by column N descending (rN.a
   // ascending, rN.z zeros last) — see rankCols.
   // The grouped-Entities variants (2026-09-13): SN sum, BLANK when 0 · eN.M the
   // pN.M rate, BLANK when sumN is 0 (an empty Error keeps an empty rate) ·
-  // HN / VN.M the hN / vN.M bytes in WHOLE units · PN the nearest-rank
+  // HN the hN bytes in WHOLE units · VN.M sumN/sumM bytes in whole units · PN the nearest-rank
   // percentile N of the row's per-day DURATION histograms (data-durdays, see
   // aggDurDays), spelled s/m/h/d and TINTED by its unit (writeRecalc).
   // `dates` = the in-range dates themselves (a set): recalcTable unions them
@@ -1380,14 +1378,9 @@
     var hrow = document.createElement("p"); hrow.className = "essearchhint";
     hrow.appendChild(hint); // row 4: the syntax hint, on its OWN line below the box
     box.appendChild(hrow);
-    // insert AFTER the page's intro paragraph(s) (p.range follows the h1 in
-    // the static HTML), so the intro text stays right below the title
+    // insert right after the title (a report page renders no intro)
     var h1 = document.getElementsByTagName("h1")[0];
-    if (h1 && h1.parentNode) {
-      var anchor = h1, nx = h1.nextElementSibling;
-      while (nx && nx.tagName === "P" && (" " + nx.className + " ").indexOf(" range ") >= 0) { anchor = nx; nx = nx.nextElementSibling; }
-      h1.parentNode.insertBefore(box, anchor.nextSibling);
-    }
+    if (h1 && h1.parentNode) h1.parentNode.insertBefore(box, h1.nextSibling);
     refreshMap(); apply();   // the defaults take effect immediately
     // put the cursor in the search field on load (Entity Search is search-first)
     var sfocus = box.querySelector("input.search");
@@ -1410,20 +1403,17 @@
     if (location.pathname.indexOf("/details/") < 0) return;
     var h1 = document.getElementsByTagName("h1")[0];
     if (!h1) return;
-    var SHORT = { "Activity per day": "Day", "Activity per week": "Week",
+    var SHORT = { "Activity per day": "Day",
                   "Load by hour": "Hour", "Load by weekday": "Weekday",
-                  "Whitelisted IPs": "Whitelist",
+                  "Whitelisted by": "Whitelist",
                   "Last server log messages": "Server log",
-                  "Last server log errors": "Server errors",
-                  "Last 25 log lines": "Log lines",
-                  "Last 10 server log lines": "Server log" };
+                  "Last server log errors": "Server errors" };
     // a SIDE-BY-SIDE row (div.sxs) gets ONE combined button — labeled by the
     // row's FIRST visible table, mapped to a row name (fallback: that table's
     // own short label)
     var ROWLABEL = { "Load by weekday": "Load", "Load by hour": "Load",
                      "Incoming connections": "Connections", "Outgoing connections": "Connections",
-                     "Dwell": "Statistics", "Duration": "Statistics", "Duration per leg": "Statistics",
-                     "Domain": "Groups", "Application": "Groups" };
+                     "Dwell": "Statistics", "Duration per leg": "Statistics" };
     function sxsOf(el) {
       while (el && el !== document.body) {
         if ((" " + (el.className || "") + " ").indexOf(" sxs ") >= 0) return el;
@@ -1440,15 +1430,7 @@
       if (u.style.display === "none") continue;            // empty section, hidden
       var prev = u.previousElementSibling, label = "", target = u;
       if (prev && prev.tagName === "H2") { label = prev.textContent.trim(); target = prev; }
-      if (!label) {
-        var hr0 = headerRow(tables[i]);
-        label = hr0 && hr0.cells[0] ? hr0.cells[0].textContent.replace(/[▲▼]/g, "").trim() : "";
-        // the Subscription table leads with a Direction column — name its
-        // button after the table's subject, not the first column
-        if (label === "Direction" && hr0.cells[1] &&
-            hr0.cells[1].textContent.replace(/[▲▼]/g, "").trim() === "Subscription") label = "Subscriptions";
-      }
-      if (!label) continue;
+      if (!label) continue;                               // every detail-page section has its <h2>
       var sxs = sxsOf(u);
       if (sxs) {
         if (seenSxs.indexOf(sxs) >= 0) continue;           // one button per side-by-side row
@@ -1506,10 +1488,9 @@
 
   // Expandable drill-down: a clickable element (a whole row, or a single Error /
   // OK cell) inserts a full-width detail row under its row listing the
-  // "date time  coreid" entries, one open at a time. Duplicate Files and Dwell
-  // Time use a row-level list (data-coreids); Arrived/Left uses per-cell lists
-  // (data-coreids-failed / data-coreids-processed on the row, bound to the
-  // matching cell). The detail rows are excluded from dataRows and torn down
+  // "date time  coreid" entries, one open at a time. A row-level list
+  // (data-coreids) binds the row; per-cell lists (data-coreids-failed /
+  // data-coreids-processed, drill-cell-N, drillcols= keys) bind their cell. The detail rows are excluded from dataRows and torn down
   // before any sort/filter/search.
   function closeDetails(table) {
     var d = table.getElementsByClassName("coreid-detail"), ex;
@@ -1547,27 +1528,24 @@
         (unit || "File") + (entries.length === 1 ? "" : "s") +
         (curRange && curRange.narrowed ? " (full period, not the selected range)" : "") + ":";
       td.appendChild(h);
-      // THE FIRST FILE OF A RED / ORANGE CELL LINKS ITS FILE PAGE (2026-09-21,
-      // user request): when the drill opens under a CELL that is red or orange
-      // right now (an Error count, a Retry / Resubmit / Waiting count, an amber
-      // or red duration), the CoreId of the first entry opens
-      // files/<coreid>.html — when that File has a published page (below).
-      // The File Tracking link stays: addCoreIdLinks puts its ↗ after an id
-      // that already is a link. Rows and green / plain cells stay text — and so
-      // does a list whose unit is not the File (the leg tables, unit
-      // "transfer": their ids are TRANSFER ids, no page is keyed by one).
-      // ... and only when that File HAS a page (2026-09-29, user request: per
-      // subscription only the newest OK and the three newest Failed Files are
-      // published) — render_rpt names those first Files on the row (data-fp)
+      // A LISTED FILE THAT HAS A FILE PAGE LINKS IT (2026-09-29 audit — the
+      // 2026-09-21 rule linked only the FIRST entry under a red / orange
+      // cell; with the published File-page set, per subscription the newest
+      // OK and the three newest Failed Files, that hid most pages): render_rpt
+      // names on the row (data-fp) every File of its shipped File lists that
+      // has a page, so any entry whose CoreId is listed there opens
+      // files/<coreid>.html, whatever the cell. The File Tracking link stays:
+      // addCoreIdLinks puts its ↗ after an id that already is a link. A list
+      // whose unit is not the File (the leg tables, unit "transfer": their
+      // ids are TRANSFER ids) stays text.
       var fpset = " " + (row.getAttribute("data-fp") || "") + " ";
-      var ro = el.tagName === "TD" && (!unit || unit === "File") && fpset !== "  " &&
-               / (failed|errc|warn|dur-m|dur-h) /.test(" " + el.className + " ");
+      var ro = (!unit || unit === "File") && fpset !== "  ";
       var tb9 = ro ? document.querySelector("div.topbar") : null;
       var root9 = tb9 ? (tb9.getAttribute("data-b") || "") : "";
-      entries.forEach(function (e, ei) {
+      entries.forEach(function (e) {
         var line = document.createElement("div");
         line.className = "coreid-item";
-        var m9 = (ro && ei === 0) ? /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/.exec(e) : null;
+        var m9 = ro ? /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/.exec(e) : null;
         if (m9 && fpset.indexOf(" " + m9[0] + " ") < 0) m9 = null;   // no published page: plain text
         if (m9) {
           var fa = document.createElement("a");
@@ -2840,17 +2818,17 @@
 
   // Zero-result EMPTY STATE. A table filtered down to nothing shows only its
   // "Total (0 rows)" footer, which explains neither WHY nor what to do — the
-  // worst case being Entity Search, where a query can match rows that the
-  // Search-configuration type/Seen filters exclude (Flow is
-  // OFF by default), reading as "no matches" when it isn't. This renders a
-  // note right under the table naming the reason and the recovery:
-  //   - matching rows hidden by the view filters -> their count (per entity
-  //     type on Entity Search) + "open Search configuration / adjust filters"
+  // worst case being Entity Search, where a query can match rows that its
+  // entity-type checkboxes exclude, reading as "no matches" when it isn't.
+  // This renders a note right under the table naming the reason and the
+  // recovery:
+  //   - matching rows hidden by the type checkboxes -> their count per entity
+  //     type + "tick more entity types"
   //   - matching rows outside the selected date range -> their count + widen
   //   - a genuine miss -> "No matches for X. Clear or change the search."
   //   - no query, narrowed range emptied the table -> widen the From/To
   // Re-rendered by every path that changes row visibility (search, date
-  // filter, the Seen tabs, the Entity Search type checkboxes).
+  // filter, the Entity Search type checkboxes).
   // General rule: when the From/To range is a SINGLE day and the table shows
   // exactly ONE data row, the total row is pure repetition — hide it. Any
   // wider range, a second visible row, or a full-period (data-nofilter)
@@ -2878,13 +2856,6 @@
       for (esI = 0; esI < esRows.length; esI++)
         if (esRows[esI].style.display !== "none") { esVis = true; break; }
       table.style.display = esVis ? "" : "none";
-      // the "Row colors" NOTE explains the row tints — show it only when
-      // there ARE rows (it trails the tablewrap as <p class="note"> siblings)
-      var esN = wrap.nextElementSibling;
-      while (esN && esN.tagName === "P" && (" " + esN.className + " ").indexOf(" note ") >= 0) {
-        esN.style.display = esVis ? "" : "none";
-        esN = esN.nextElementSibling;
-      }
     }
     var old = wrap.querySelector(".empty-state");
     if (old && old.parentNode) old.parentNode.removeChild(old);
@@ -2929,13 +2900,12 @@
         tl.sort();
         parts.push(hidV + " matching row" + (hidV === 1 ? "" : "s") +
                    (tl.length ? " (" + tl.join(", ") + ")" : "") +
-                   (isES ? " excluded by the Search configuration" : " excluded by the Seen filter"));
+                   " excluded by the entity-type checkboxes");   // data-vhide: only Entity Search's type filter sets it
       }
       if (hidD) parts.push(hidD + " matching row" + (hidD === 1 ? "" : "s") + " outside the selected date range");
       msg = "No visible matches for “" + activeQuery + "” — " + parts.join("; ") + ".";
-      hint = isES ? "Open “Search configuration” above to include more entity types, or clear the search."
-                  : (hidD && !hidV ? "Widen the From/To above, or clear the search."
-                                   : "Adjust the filters above, or clear the search.");
+      hint = hidV ? "Tick more entity types above, or clear the search."
+                  : "Widen the From/To above, or clear the search.";
     } else if (hasQ) {
       msg = "No matches for “" + activeQuery + "”.";
       hint = "Clear or change the search (wildcards: ? = one character, * = any run).";
@@ -2977,7 +2947,7 @@
   var ES_ROWS = null, ES_NAME = null, ES_TYPE = null;
   // the TEXT of a rendered cell's markup: tags dropped, the escapes the
   // renderer writes decoded (2026-09-28 fix: "A&B" was matched and shown as
-  // "A&amp;B" by Entity Search and the command palette)
+  // "A&amp;B" by Entity Search)
   var UNENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
   function htmlText(s) {
     s = s.replace(/<[^>]*>/g, "");
@@ -3056,17 +3026,6 @@
     table.setAttribute("data-es-omitted", String(rows.length - out.length));   // see recomputeTotals
     setupSubrows(table);                              // the 38 Source/Target rows expand again
     if (table.esApplyTypes) table.esApplyTypes();      // re-apply the type checkboxes
-    // an esearch table that is ALSO rowlink (the Failed Subscriptions All
-    // views): the materialised rows are fresh DOM nodes, so the whole-row
-    // link binding at load never saw them — bind each build's rows here
-    if (out.length && ((" " + table.className + " ").indexOf(" index ") >= 0 || table.getAttribute("data-rowlink"))) {
-      var body2 = table.tBodies[0] || table;
-      for (i = 0; i < body2.rows.length; i++) {
-        var r2 = body2.rows[i];
-        if (!r2.getElementsByTagName("th").length && (" " + r2.className + " ").indexOf(" total ") < 0 &&
-            (" " + r2.className + " ").indexOf(" rowlink ") < 0) bindRowlink(r2);
-      }
-    }
     return true;
   }
 
@@ -3180,7 +3139,7 @@
     // From/To filter (whose report-dates meta publish-details.sh no longer
     // emits) they always show the complete data. The per-subdir index.html
     // link lists keep their box.
-    if (location.pathname.indexOf("/details/") >= 0 && !/\/(index\.html)?$/.test(location.pathname)) return;
+    if (location.pathname.indexOf("/details/") >= 0) return;
     var stored = loadSearch();
     // The top-bar quick-search submits to Entity Search with ?axway_search=…
     // — it overrides the remembered search and is persisted like a typed one.
@@ -3709,7 +3668,7 @@
       var el = els[e], t = el.textContent;
       if (t.length > 200 || t.indexOf("-") < 0) continue;
       ID_RE.lastIndex = 0; if (!ID_RE.test(t)) continue;
-      if (el.closest && el.closest(".cpal, .colpick, .topbar")) continue;
+      if (el.closest && el.closest(".colpick, .topbar")) continue;
       // the text nodes carrying an id, one icon after each (after the node's
       // element when that element IS the id — <code>id</code>, <a>id</a>)
       var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), node, nodes = [], count = 0;
@@ -3793,7 +3752,7 @@
       var el = els[e], t = el.textContent, prose = /^(P|H1|H2|H3)$/.test(el.tagName);
       if ((!prose && t.length > 200) || t.indexOf("-") < 0) continue;
       ID_RE.lastIndex = 0; if (!ID_RE.test(t)) continue;
-      if (el.closest && el.closest(".cpal, .colpick, .topbar")) continue;
+      if (el.closest && el.closest(".colpick, .topbar")) continue;
       if (isTransferIdCell(el) || (el.tagName === "CODE" && el.parentNode && el.parentNode.closest && isTransferIdCell(el.parentNode.closest("td, dd") || el))) continue;
       var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), node, nodes = [], count = 0;
       while ((node = walker.nextNode())) { if (!isIcon(node.parentNode) && !isStGo(node.parentNode)) nodes.push(node); }
@@ -4223,115 +4182,11 @@
     hideEmptyTables();   // after the search/date filters have hidden rows
     markEmptyTables();   // a table with NO data rows says so (the report pages render no no-data prose)
     setupSectionTabs();  // detail pages: the fixed h1 + section-tab header (after empty sections are hidden)
-    setupStatFilter();   // STAT boxes as row filters (render_rpt STAT lines)
     setupSelFilter();    // coverage partners page: Connection / Movement / Use case selectors
     markUrlColumn();     // LAST with markUrlRow: the column order it marks and scrolls to must be final
     markUrlRow();        // LAST: the sort/date/pager order it scrolls to must be final
     setupCopyIds();      // after every snapshot: the File Tracking link + the ⧉ on each id must not be captured as cell text
     setupKeyboard();     // LAST: every clickable span / sortable header built above gets its tab stop
-  }
-
-  // Clickable STAT boxes as row filters (Subscriptions in boxes): each
-  // .stat[data-pf] box narrows the table to the rows whose data-pf token list
-  // contains the box's key; the data-pf="" box (the left one) shows all rows.
-  // The active box carries .pfon. Rows without data-pf (the total row) are
-  // never hidden. The p.pfdesc[data-pf] explanations between the boxes and the
-  // table follow the pick: the matching one carries .pfshow, the rest are
-  // display:none, so the text always describes the ACTIVE box.
-  function setupStatFilter() {
-    var boxes = document.querySelectorAll(".stat[data-pf]"); if (!boxes.length) return;
-    var rows = document.querySelectorAll("tr[data-pf]"); if (!rows.length) return;
-    var descs = document.querySelectorAll("p.pfdesc[data-pf]");
-
-    // Column hiding. The publisher stamps each flag column's <th> with the same
-    // data-pf token the boxes and rows carry, which is the whole flag -> column
-    // map: without those attributes this degrades to plain row filtering.
-    // A filtered view hides any column with no hit left among the visible rows.
-    // The ACTIVE box's own column stays, every visible row carrying its flag —
-    // the filter confirmed in the table itself.
-    // Hidden by ONE generated stylesheet rule of :nth-child() selectors rather
-    // than by touching cells: a filter would otherwise write to 13 cells x 524
-    // rows on every click, and the rule covers the header and total rows for
-    // free (they are `tr > *` like the rest).
-    var table = rows[0].parentNode;
-    while (table && table.tagName !== "TABLE") table = table.parentNode;
-    var colOf = {}, heads = table ? table.querySelectorAll("th[data-pf]") : [], i, j, kids;
-    for (i = 0; i < heads.length; i++) {
-      kids = heads[i].parentNode.children;
-      for (j = 0; j < kids.length; j++)
-        if (kids[j] === heads[i]) { colOf[heads[i].getAttribute("data-pf")] = j + 1; break; }
-    }
-    var style = null;
-    function hideCols(cols) {
-      if (!style) {
-        if (!cols.length) return;                       // nothing to hide, nothing to create
-        style = document.createElement("style"); document.head.appendChild(style);
-        if (!table.id) table.id = "pftable";
-      }
-      var sel = [];
-      for (var i = 0; i < cols.length; i++) sel.push("#" + table.id + " tr > :nth-child(" + cols[i] + ")");
-      style.textContent = sel.length ? sel.join(",") + "{display:none}" : "";
-    }
-
-    // The generic recomputeTotals sums the cells that parse as numbers; these
-    // cells hold the box NAME ("ok", "quiet"), so the footer has to be counted
-    // from the same data-pf tokens instead — exact, and free once they are read.
-    var totalRow = table ? table.querySelector("tr.total") : null;
-    // the unit for that footer: "subscription" on Subscriptions in boxes (which
-    // predates the attribute and so does not carry it), "account" on Accounts in
-    // boxes. The row label is rewritten on every click, so a hardcoded noun here
-    // was the one thing stopping a second box page from reusing all of this.
-    var pfNoun = (table && table.getAttribute("data-pf-noun")) || "subscription";
-
-    function apply(k) {
-      var i, b, on, count = {}, nvis = 0, toks, t, f;
-      for (i = 0; i < boxes.length; i++) {
-        b = boxes[i]; on = (b.getAttribute("data-pf") === k);
-        b.className = b.className.replace(/ ?\bpfon\b/, "") + (on ? " pfon" : "");
-      }
-      for (i = 0; i < descs.length; i++) {
-        b = descs[i]; on = (b.getAttribute("data-pf") === k);
-        b.className = b.className.replace(/ ?\bpfshow\b/, "") + (on ? " pfshow" : "");
-      }
-      for (i = 0; i < rows.length; i++) {
-        on = (!k || (" " + rows[i].getAttribute("data-pf") + " ").indexOf(" " + k + " ") >= 0);
-        rows[i].style.display = on ? "" : "none";
-        // a row's data-pf already lists its boxes, so both the surviving columns
-        // and the footer counts come off the attributes — no cell is inspected
-        if (on) {
-          nvis++;
-          toks = rows[i].getAttribute("data-pf").split(" ");
-          for (t = 0; t < toks.length; t++) if (toks[t]) count[toks[t]] = (count[toks[t]] || 0) + 1;
-        }
-      }
-      var hide = [];
-      for (f in colOf)
-        if (Object.prototype.hasOwnProperty.call(colOf, f) && !count[f]) hide.push(colOf[f]);
-      hideCols(hide);
-      if (totalRow) {
-        totalRow.cells[0].textContent = "Total (" + nvis + " " + pfNoun + (nvis === 1 ? "" : "s") + ")";
-        for (f in colOf)                              // colOf is 1-based (nth-child), cells[] is 0-based
-          if (Object.prototype.hasOwnProperty.call(colOf, f) && totalRow.cells[colOf[f] - 1])
-            totalRow.cells[colOf[f] - 1].textContent = count[f] || 0;
-      }
-    }
-    for (var b0 = 0; b0 < boxes.length; b0++) (function (b) {
-      b.addEventListener("click", function () { apply(b.getAttribute("data-pf")); });
-    })(boxes[b0]);
-    // The page opens on the box the publisher stamped as the default (the OK
-    // box on the Boxes pages); no stamp — or a stamp naming no box — opens the
-    // baked all-rows view, which is also the no-JS fallback. ?axway_pf=N (a
-    // link INTO one box — the day pages' Trouble after success line, since
-    // that report's own page went 2026-09-29) outranks the stamp when it
-    // names a box.
-    var dflt = "", pfb = document.querySelector(".pfboxes[data-pf-default]");
-    if (pfb) {
-      dflt = pfb.getAttribute("data-pf-default") || "";
-      if (dflt && !document.querySelector('.stat[data-pf="' + dflt + '"]')) dflt = "";
-    }
-    var pfq = /[?&]axway_pf=([0-9]+)/.exec(window.location.search);
-    if (pfq && document.querySelector('.stat[data-pf="' + pfq[1] + '"]')) dflt = pfq[1];
-    apply(dflt);
   }
 
   // Selector-group row filters (the coverage partners page): each

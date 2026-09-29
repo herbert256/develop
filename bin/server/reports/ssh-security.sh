@@ -13,4 +13,4 @@ comps=()
 for c in ssh-crypto ssh-sessions; do
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "SSH security" "Negotiated SSH ciphers, key-exchange, MACs and key algorithms with weak ones flagged, deprecated-parameter warnings, and session lifecycle problems." "The SSH security picture on one page: the **negotiated algorithms** in live use (ciphers, key exchange, MACs, public keys) with weak ones flagged, the **deprecated-parameter** warnings, and the **session lifecycle problems** — sessions referenced after teardown and streams aborted mid-transfer." "" "${comps[@]}"
+merge_rpt "$OUT" "SSH security" "Negotiated SSH ciphers, key-exchange, MACs and key algorithms with weak ones flagged, deprecated-parameter warnings, and session lifecycle problems." "${comps[@]}"

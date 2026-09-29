@@ -277,8 +277,6 @@ if [ "$(exp collectdrop)" -gt 0 ]; then
     check $([ "${n:-0}" -gt 0 ] && [ "${nb:-0}" -eq 0 ] && echo 0 || echo 1) "$n settled File(s) in _files.tsv ($nb not Processed) — expected some, all Processed"
     n=$(awk -F'\t' '$12=="UC2_ZG_MATCH_HOOLI" && $23 != "" { n++ } END { print n+0 }' "$F")
     check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "no settled File on UC2_ZG_MATCH_HOOLI (the collectdrop flow)"
-    n=$(rows "data/transfer/cache/_bookendok.tsv")
-    check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "_bookendok.tsv is empty"
     # (the flat _accounts.tsv mention cache went 2026-09-29 — no reader; the
     # per-account rings under accounts/ are what the pages read)
     n=$(find data/server/cache/accounts -name '*.tsv' -print0 2>/dev/null | xargs -0 grep -h 'Transfer end logged' 2>/dev/null | wc -l | tr -d ' ')
@@ -885,13 +883,12 @@ check $([ -f docs/server/routing-errors.html ] && echo 0 || echo 1) "docs/server
 check $([ ! -f docs/server/could-not-send.html ] && [ ! -f docs/server/publish-failed.html ] && [ ! -f docs/server/post-client-action.html ] && echo 0 || echo 1) "a merged AR-line list page (could-not-send / publish-failed / post-client-action) is back"
 
 # the EventQueue data (2026-09-14, user request): the server-log lines starting "[Pesit Default] Unable to
-# submit event AgentEvent" (the sample plants bursts) — the cache, the per-day table and the 30-minute sidecar
-# agree, and the main dashboard and the day pages carry the EventQueue chart view
-R="data/server/reports/event-queue.rpt"; EQ="data/server/reports/event-queue-slots.tsv"
+# submit event AgentEvent" (the sample plants bursts) — the cache and the 30-minute sidecar agree (the
+# per-day .rpt went 2026-09-29: no reader), and the main dashboard and the day pages carry the EventQueue view
+EQ="data/server/reports/event-queue-slots.tsv"
 wn=$(awk -F'\t' 'index($5, "[Pesit Default] Unable to submit event AgentEvent") == 1 { n++ } END { print n + 0 }' data/server/cache/_parse.tsv 2>/dev/null)
-dn=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" { n += $3 } END { print n + 0 }' "$R" 2>/dev/null)
 sn=$(awk -F'\t' '{ n += $3 } END { print n + 0 }' "$EQ" 2>/dev/null)
-check $([ "${wn:-0}" -gt 0 ] && [ "$dn" = "$wn" ] && [ "$sn" = "$wn" ] && echo 0 || echo 1) "event-queue: cache ${wn:-?} line(s), per-day table ${dn:-?}, sidecar ${sn:-?}"
+check $([ "${wn:-0}" -gt 0 ] && [ "$sn" = "$wn" ] && [ ! -e data/server/reports/event-queue.rpt ] && echo 0 || echo 1) "event-queue: cache ${wn:-?} line(s), sidecar ${sn:-?} (and no event-queue.rpt)"
 # ... but no PAGE since 2026-09-27 (the Operations & Capacity group was removed; the .rpt and
 # the sidecar stay as the chart views' data), and neither is the group's other pages
 check $([ ! -f docs/server/event-queue.html ] && [ ! -f docs/server/platform-health.html ] && [ ! -f docs/server/capacity.html ] && echo 0 || echo 1) "a removed Operations & Capacity page (event-queue / platform-health / capacity) is back"

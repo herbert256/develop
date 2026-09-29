@@ -30,7 +30,7 @@
 #
 # Reads data/_files.tsv (1 coreid, 2 outcome, 4 date, 5 time, 8 size, 11 file,
 # 12 subscription, 20 partner, 21 wait_ms, 22 expired-at). Writes
-# data/expired.rpt + data/expired/<slug>.rpt (+ its _slugmap.tsv).
+# data/expired.rpt + data/expired/<slug>.rpt.
 #
 # Usage:
 #   ./expired.sh
@@ -120,7 +120,6 @@ cut -f1 "$TMPD/x_sub" | LC_ALL=C sort | awk '
       used[slug] = 1
       printf "%s\t%s\n", $0, slug }' > "$TMPD/x_slugs"
 rm -rf "$SUBDIR.new"; mkdir -p "$SUBDIR.new"
-cp "$TMPD/x_slugs" "$SUBDIR.new/_slugmap.tsv"
 # LAST EXPIRED FIRST per subscription (2026-09-21, user request) — the page's
 # declared default sort (sort=1:-1, the Expired column descending). The rows are
 # BAKED in that order on the DISPLAYED value, ties by Start descending then
@@ -169,8 +168,6 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
 {
     printf 'TITLE\tExpired\n'
     printf 'DESC\tStaged UC2 files the retention sweep deleted before any pickup: how long until expiry, which subscriptions never get collected, what each sweep night removed, and the never-delivered volume.\n'
-    printf 'INTRO\tA **UC2** file waits **staged** until the partner collects it — and the nightly File Maintenance retention sweep (03:00, ~11 days) deletes whatever nobody picked up: outcome **Expired**, never delivered. **%s** File(s) went that way, **%s%%** of every staged file whose fate is already decided, worth **%s** that never reached a partner. The files still staged are on **Waiting**.\n' \
-        "$nexp" "$share" "$hb"
 
     printf 'STAT\tred\t%s\tExpired Files\n' "$nexp"
     printf 'STAT\twhite\t%s%%\tof resolved staged Files\n' "$share"

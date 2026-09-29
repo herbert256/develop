@@ -7,8 +7,9 @@
 # xref/_profiles-logicals.tsv):
 #   logical.rpt  partner.rpt  application.rpt  domain.rpt
 # (+ bl.rpt). Each is the exact account.sh record — ONE table, one ROW per
-# name (Files, Error, OK, the start of the newest Error / OK File; trimmed
-# 2026-09-29 to what its readers use) — so entity-search.sh (the counts) and
+# name (Files, Error, OK; trimmed 2026-09-29 to what its readers use — the
+# newest Error / OK File columns of the classic four are read by showseen.sh
+# for account / subscription / login / remote-host only) — so entity-search.sh (the counts) and
 # home.sh (the names) read them exactly like the classic four. NO PAGE of
 # their own: the Entities pages render from entities.sh's grouped
 # entities/<dim>.rpt. (The per-day "Detail per <name> / Date" table went
@@ -36,12 +37,6 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # (THE LEG FLAGS pre-pass over _transfers.tsv — 2026-09-28, speed round 15
 # — went 2026-09-29: the record no longer carries Retry / Resubmit, and the
 # parse stores the two leg flags in _files.tsv cols 26 / 27 anyway.)
-# newest(k, v) / lastts(k): the newest File start per key (see account.sh)
-LAST_AWK='
-    function newest(k, v) { if (!(k in LT) || v > LT[k]) LT[k] = v }
-    function lastts(k,   s, c) { if (!(k in LT)) return ""; s = LT[k]; s = substr(s, index(s, SUBSEP) + 1) "  "
-        c = index(s, ","); if (c) s = substr(s, 1, c - 1); c = index(s, "  "); return c ? substr(s, 1, c - 1) : s }
-'
 
 # THE FIVE DIMENSIONS IN PARALLEL (same round): each writes its own .rpt from
 # the same read-only inputs, one job each instead of one after another.
@@ -81,7 +76,7 @@ pda_dim() {   # $1 = logical|partner|application|domain|bl
     #   logical:     col 13 through the FlowID map ∪ its subscription's
     #                logicals; bl: its subscription's tag(s)
     # Domains stay single-valued (part 1 of the name — never doubles).
-    agg=$(awk -F'\t' -v DIM="$dim" "${SP_AWK_V[@]}" "$SP_AWK$LAST_AWK"'
+    agg=$(awk -F'\t' -v DIM="$dim" "${SP_AWK_V[@]}" "$SP_AWK"'
         $4 == "" { next }
         {
             if (DIM == "partner") u = sp_union($20, $12)
@@ -92,22 +87,21 @@ pda_dim() {   # $1 = logical|partner|application|domain|bl
             if (u == "") next
             delete P
             n2 = split(u, z, "\037"); for (i2 = 1; i2 <= n2; i2++) P[z[i2]] = 1
-            f = ($2 == "Failed" || $2 == "Expired"); k = $6 SUBSEP $4 " " $5
-            for (a in P) { sc[a]++
-                if (f) { sfl[a]++; newest("F" SUBSEP a, k) } else { spr[a]++; newest("P" SUBSEP a, k) } }
+            f = ($2 == "Failed" || $2 == "Expired")
+            for (a in P) { sc[a]++; if (f) sfl[a]++; else spr[a]++ }
         }
-        END { for (a in sc) printf "S|%s|%d|%d|%d|%s|%s\n", a, sc[a], sfl[a]+0, spr[a]+0, lastts("F" SUBSEP a), lastts("P" SUBSEP a) }
+        END { for (a in sc) printf "S|%s|%d|%d|%d\n", a, sc[a], sfl[a]+0, spr[a]+0 }
     ' "$FILES")
 
     # The rows, busiest first (by File count).
     summary_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | sort -t'|' -k3,3nr | awk -F'|' '
         $2 == "" { next }
-        { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\n", $2, $3, $4, $5, $6, $7 }')
+        { printf "ROW\t%s\t%s\t%s\t%s\n", $2, $3, $4, $5 }')
 
     {
         printf 'TITLE\t%s\n' "$title"
         printf 'TABLE\tSummary per %s\n' "$chead"
-        printf 'HEAD\t%s\tFiles\tError\tOK\tLast Error\tLast OK\n' "$chead"
+        printf 'HEAD\t%s\tFiles\tError\tOK\n' "$chead"
         [ -n "$summary_rows" ] && printf '%s\n' "$summary_rows"
         printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

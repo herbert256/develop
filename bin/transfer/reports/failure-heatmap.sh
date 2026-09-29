@@ -98,8 +98,6 @@ read -r w_tot w_fail w_pct <<< "$(lsum WD)"
 {
     printf 'TITLE\tFailure heatmap\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tWhen transfers fail — by hour of day, by weekday, and an hour × weekday failure heatmap. Surfaces recurring failure windows that a per-day view hides.\n'
-    printf 'INTRO\t**%s** Files (one logical transfer each), **%s** failed (**%s%%**). Below: the failure split by **hour of day**, by **weekday**, and a **heatmap** of failures per hour × weekday — darker cells are more failures. Click an Error count for that bucket'\''s 10 most recent failed Files.\n' \
-        "$t_tot" "$t_fail" "$tot_pct"
 
     printf 'TABLE\tBy hour of day\tzerohide=1\tsxs=1\n'   # side by side with By weekday (2026-09-29, user request)
     printf 'HEAD\tHour\tFiles\tError\tError %%\tFailures\n'

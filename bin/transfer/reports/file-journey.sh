@@ -13,4 +13,4 @@ comps=()
 for c in patterns legs-count protocol-journey; do   # (arrived-left — the In and out tab — went 2026-09-29, user request)
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "File journey" "The shape of each File through the platform: row/status patterns, leg counts and the ordered protocol chain." "How a File moves through the platform, in one report: the **row/status patterns** (the transfers sharing a CoreId), the **leg counts** (the shape of store-and-forward, retries and UC2 pickups) and the ordered **protocol journey** of each File." "" "${comps[@]}"
+merge_rpt "$OUT" "File journey" "The shape of each File through the platform: row/status patterns, leg counts and the ordered protocol chain." "${comps[@]}"
