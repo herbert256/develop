@@ -26,10 +26,13 @@
 # groups to these pages). Runs from any working directory.
 #
 # Usage:  bin/analyses/publish.sh            every analyses page
-#         bin/analyses/publish.sh catchup    bin/build.sh's "publish catch-up:
-#                                            analyses" step only — ONLY the pages
-#                                            the report catch-ups feed (see THE
-#                                            CATCH-UP MODE at the bottom)
+#         bin/analyses/publish.sh catchup    ONLY the pages the report catch-ups
+#                                            feed + the box-reason sidecar (see
+#                                            THE CATCH-UP MODE at the bottom)
+#         bin/analyses/publish.sh catchup-pages   the same WITHOUT the sidecar —
+#                                            bin/build.sh runs the sidecar as its
+#                                            own step first, then this beside the
+#                                            transfer catch-up (2026-09-29)
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -38,9 +41,11 @@ source "$SCRIPT_DIR/../uc-cases.sh"      # uc_meta(): the shared UC<n> descripti
 
 # the MODE (2026-09-29): an explicit argument — never a freshness check
 AP_MODE=${1:-full}
+AP_SIDECAR=1
 case $AP_MODE in
     full|catchup) ;;
-    *) printf 'usage: bin/analyses/publish.sh [catchup]\n' >&2; exit 2 ;;
+    catchup-pages) AP_MODE=catchup; AP_SIDECAR=0 ;;   # the sidecar ran as its own step
+    *) printf 'usage: bin/analyses/publish.sh [catchup|catchup-pages]\n' >&2; exit 2 ;;
 esac
 
 ARPT="$DATA/analyses/reports"
@@ -1483,8 +1488,10 @@ _aplap() { local _t1; _t1=$(date +%s); printf "TIME %5ds  analyses publish: %s\n
 if [ "$AP_MODE" = catchup ]; then
     write_subscriptions_page
     _aplap "catch-up: Configured subscriptions"
-    "$SCRIPT_DIR/publish-insights.sh"   # the box-reason sidecar _subs-boxes.tsv (no page)
-    _aplap "catch-up: the box-reason sidecar"
+    if [ "$AP_SIDECAR" = 1 ]; then
+        "$SCRIPT_DIR/publish-insights.sh"   # the box-reason sidecar _subs-boxes.tsv (no page)
+        _aplap "catch-up: the box-reason sidecar"
+    fi
     # the two members through the ONE group renderer: its member list
     # narrowed for the call (render_report reads it only for its own name)
     _ap_sgr=$SUBS_GROUP_REPORTS

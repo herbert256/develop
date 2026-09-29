@@ -115,6 +115,31 @@ source "$SCRIPT_DIR/../../ranges.sh"   # rng_feed / rng_off: the byte-range spli
 _fl0=$(date +%s)
 _flap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  failed: %s\n' "$((_t1 - _fl0))" "$1" >&2; _fl0=$_t1; }
 
+# THE MODE (2026-09-29, build speed) — an explicit argument, never a
+# freshness check:
+#   (none) | full   everything below; the build's phase-1 run
+#   catchup         bin/build.sh's "report catch-up: failed subscriptions":
+#                   ONLY what reads an input that changed since the full run
+#                   of THIS build — the Subscriptions-in-boxes sidecar
+#                   (_subs-boxes.tsv, the Reason of a server-failing row
+#                   without a kaput reason; written after phase 1) and the
+#                   from-green-to-red / only-red .rpt files (the lists'
+#                   red-run columns; written by phase-1 PEERS of the full
+#                   run). So: the server-failing set again (its REASON column;
+#                   the rest must come out identical, else a full run), their
+#                   pages (the reason is in the TITLE), the two lists and the
+#                   _srvsubs sidecars. The drill and File pages, both
+#                   server-log passes, the evidence sidecar and the File
+#                   reasons read nothing that changed and are left as the full
+#                   run wrote them; the full run leaves the intermediates this
+#                   mode reads in $REPORTS_DIR/.failed-state/ (no state = a
+#                   full run).
+FAILED_MODE=${1:-full}
+case $FAILED_MODE in
+    full|catchup) ;;
+    *) printf 'usage: failed.sh [full|catchup]\n' >&2; exit 2 ;;
+esac
+
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
@@ -160,6 +185,18 @@ BOXES="$DATA/analyses/reports/_subs-boxes.tsv"
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axlastf.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
+STATE="$REPORTS_DIR/.failed-state"   # the full run's intermediates the catch-up reads
+STATE_FILES="all srvsubs srvsess2 srvsublines reasons"
+if [ "$FAILED_MODE" = catchup ]; then
+    for _sf in $STATE_FILES; do
+        [ -f "$STATE/$_sf" ] || { echo "failed.sh catchup: no full-run state ($_sf) — a full run." >&2; FAILED_MODE=full; break; }
+    done
+    if [ "$FAILED_MODE" = catchup ]; then
+        for _sf in $STATE_FILES; do cp "$STATE/$_sf" "$TMP/$_sf"; done
+    fi
+fi
+
+if [ "$FAILED_MODE" = full ]; then   # ---- (the catch-up skips down to THE SERVER-FAILING set)
 
 # EVERY failed File, newest first, with the two dedup MARKS the selections
 # read: S = the subscription's newest failure (the first row of its site in
@@ -467,6 +504,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
     }
 ' "$TMP/all" "$TMP/extra" "$TMP/filepages" "$PARSED"
 _flap "the failed Files, the drill + File pages"
+fi   # (full mode)
 # ---- The SERVER-FAILING set (2026-08) ---------------------------------------
 # Every RED subscription that is server-reddened (colour/_redflip.tsv) or has NO
 # failed File at all — red on the server log's word, not a failed File's. Computed
@@ -544,6 +582,17 @@ LC_ALL=C awk -F'\t' -v OUTS="$TMP/srvsubs" \
 ' /dev/null
 
 _flap "the server-failing set"
+if [ "$FAILED_MODE" = catchup ]; then
+    # only the REASON column may change (the boxes) — a different set, slug,
+    # stamp or kind would mean the server-log passes are stale: a full run
+    if ! cmp -s <(cut -f1,2,3,5 "$TMP/srvsubs") <(cut -f1,2,3,5 "$STATE/srvsubs"); then
+        echo "failed.sh catchup: the server-failing set changed since the full run — a full run." >&2
+        rm -rf "$TMP"; trap - EXIT
+        exec "$0" full
+    fi
+    cp "$STATE/srvsess2" "$TMP/srvsess2"   # the set computation above truncated it
+fi
+if [ "$FAILED_MODE" = full ]; then   # ---- the two server-log passes (the catch-up keeps the full run's)
 # ---- "What the server log said" — ONE pass over the server parse cache ------
 # The transfer CSVs never carry a failure reason (their detail fields are
 # always UNKNOWN); the server log does. Two joins, both resolved in this single
@@ -822,6 +871,7 @@ if [ -s "$TMP/meta" ]; then
 fi
 
 _flap "server log pass 2 (the reddening sessions)"
+fi   # (full mode)
 # ---- The SERVER-FAILING drill pages (2026-08) -------------------------------
 # One errors/<slug>.rpt per server-failing subscription (the set, slugs,
 # stamps and reasons come from the S1 sidecar $TMP/srvsubs above). Written
@@ -959,6 +1009,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v CAP="$SRVCAP" \
     }
 ' "$TMP/srvsubs"
 
+if [ "$FAILED_MODE" = full ]; then   # ---- the evidence sidecar + the File reasons (the catch-up keeps the full run's)
 # The ERROR-PAGE EVIDENCE sidecar (2026-08): per subscription, the newest
 # Error/Warning line any of its drill pages shows. The Boxes reason
 # (publish-insights.sh pagereason) names the fault behind a red flow from the
@@ -1179,6 +1230,7 @@ if [ -s "$TMP/reasons" ]; then
           for (i = 1; i <= n; i++) delete buf[i] }
     ' "$TMP/reasons"
 fi
+fi   # (full mode)
 
 _flap "server-failing pages + the reasons"
 # ---- The TWO lists (see the header) -----------------------------------------
@@ -1368,6 +1420,14 @@ cp "$TMP/srvsubs" "$REPORTS_DIR/_srvsubs.tsv.tmp" && mv "$REPORTS_DIR/_srvsubs.t
 cut -f1-3 "$TMP/srvsubs" > "$TMP/srvsubs.map"
 cp "$TMP/srvsubs.map" "$REPORTS_DIR/_srvsubs-map.tsv.tmp" && mv "$REPORTS_DIR/_srvsubs-map.tsv.tmp" "$REPORTS_DIR/_srvsubs-map.tsv"
 
+if [ "$FAILED_MODE" = catchup ]; then
+    echo "Data written to $OUT + failed-sub-all.rpt, $(wc -l < "$TMP/srvsubs" | tr -d ' ') server-failing page(s) (the catch-up: reasons + lists; the drill and File pages are the full run's)." >&2
+    _flap "the two lists (catch-up)"
+    exit 0
+fi
+# the intermediates the catch-up mode reads (see THE MODE above)
+rm -rf "$STATE"; mkdir -p "$STATE"
+for _sf in $STATE_FILES; do if [ -f "$TMP/$_sf" ]; then cp "$TMP/$_sf" "$STATE/$_sf"; else : > "$STATE/$_sf"; fi; done
 # The section stats: pages whose section came from the session/id joins (with
 # the line total those pages show) and pages left to the window fallback — the
 # fallback rows exist for more pages than that, but the finishing pass drops

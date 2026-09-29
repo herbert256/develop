@@ -301,7 +301,7 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         if (s ~ /[Ee][Rr][Rr][Oo][Rr]/)          return "Error"
         return "Other"
     }
-    function sv(s) { gsub(/[\t\r\n]/, " ", s); return s }
+    function sv(s) { if (index(s, "\t") || index(s, "\n") || index(s, "\r")) gsub(/[\t\r\n]/, " ", s); return s }   # index() probes first: ~20 calls per record, the regex only when needed (2026-09-29, build speed)
     # Duration -> milliseconds. Mixed and COMPOUND units: "574 ms", "1.314 s",
     # "1 min 0.550 s", even "19 h 36 min 22.939 s". Sum every h/min/s component
     # (ms is always standalone). Returns -1 when nothing parses.

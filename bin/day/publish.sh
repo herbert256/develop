@@ -41,21 +41,26 @@ prose() {
     }'
 }
 
-# swap CH_* palette tokens in a chart arg for their hex values (charts_lib)
+# swap CH_* palette tokens in a chart arg for their hex values (charts_lib) -> RCH
 resolve_ch() {
     local s=$1
     s=${s//CH_BLUE/$CH_BLUE}; s=${s//CH_GREEN/$CH_GREEN}; s=${s//CH_RED/$CH_RED}
     s=${s//CH_AMBER/$CH_AMBER}; s=${s//CH_PURPLE/$CH_PURPLE}; s=${s//CH_TEAL/$CH_TEAL}
-    printf '%s' "$s"
+    RCH=$s   # a variable, not stdout: see render_card (EINTR)
 }
 
 # one CARD line -> card html (the dashboards renderer, verbatim)
+# render_card -> RC_OUT (2026-09-29): the card HTML goes back in a VARIABLE,
+# never through stdout — a caller's $(render_card …) pipe fills with a big
+# card, and a SIGCHLD landing on the blocked write made bash 3.2's printf fail
+# with "write error: Interrupted system call" (the intermittent build
+# failure); resolve_ch -> RCH for the same reason (a series can be large)
 render_card() {   # $1 chart id  $2 title  $3 sub  $4 href  $5 span  $6 chart  $7..$12 args
     local cid=$1; shift
     local title=$1 sub=$2 href=$3 span=$4 chart=$5; shift 5
     export CH_ID="$cid" CH_TITLE="$title"
     local args=() a n
-    for a in "$@"; do args+=("$(resolve_ch "$a")"); done
+    for a in "$@"; do resolve_ch "$a"; args+=("$RCH"); done
     n=${#args[@]}
     while [ "$n" -gt 0 ] && [ -z "${args[n-1]}" ]; do unset "args[$((n-1))]"; n=$((n-1)); done
     local svg=""
@@ -119,9 +124,9 @@ render_card() {   # $1 chart id  $2 title  $3 sub  $4 href  $5 span  $6 chart  $
     if [ "$chart" = "area" ] && [ -n "${args[5]:-}" ]; then cardcls="${cardcls:+$cardcls }ptlinks"; fi
     if [ "$chart" = "slots" ]; then cardcls="${cardcls:+$cardcls }ptlinks"; fi
     if [ -n "$cardcls" ]; then
-        printf '%s%s%s' "$(card_open "$title" "$sub" "$href" "$cardcls")" "$svg" "$(card_end)"
+        RC_OUT="$(card_open "$title" "$sub" "$href" "$cardcls")$svg$(card_end)"
     else
-        printf '%s%s%s' "$(card_open "$title" "$sub" "$href")" "$svg" "$(card_end)"
+        RC_OUT="$(card_open "$title" "$sub" "$href")$svg$(card_end)"
     fi
 }
 
@@ -182,12 +187,12 @@ hero_html() {
     while IFS=$'\037' read -r _ ctit csub chref cspan cchart a1 a2 a3 a4 a5 a6; do
         chn=$((chn + 1)); [ "$chn" -eq 1 ] || continue
         CIDN=$((CIDN + 1))
-        HERO_CARD="$(render_card "ch$CIDN" "$ctit" "$csub" "$chref" "$cspan" "$cchart" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6")"
+        render_card "ch$CIDN" "$ctit" "$csub" "$chref" "$cspan" "$cchart" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6"; HERO_CARD="$RC_OUT"
     done < <(grep '^CARD'$'\t' "$rpt" | tr '\t' '\037' || true)
     while IFS=$'\037' read -r _ blab ctit csub chref cspan cchart a1 a2 a3 a4 a5 a6; do
         altn=$((altn + 1))
         CIDN=$((CIDN + 1))
-        ALT_CARDS+="$(render_card "ch$CIDN" "$ctit" "$csub" "$chref" "${cspan:+$cspan }althero" "$cchart" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6")"
+        render_card "ch$CIDN" "$ctit" "$csub" "$chref" "${cspan:+$cspan }althero" "$cchart" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6"; ALT_CARDS+="$RC_OUT"
         esc "$blab"; ALT_BTNS+="<span class=\"tab\" data-hero=\"$ESC\">$ESC</span>"
     done < <(grep '^CARDALT'$'\t' "$rpt" | tr '\t' '\037' || true)
 }

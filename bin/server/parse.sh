@@ -388,7 +388,10 @@ function parse_head(str, arr,   i, c, len, field, inq, n) {
 }
 
 # Scrub TAB/CR/LF from a value so it stays inside one TAB-separated column.
-function sv(s) { gsub(/[\t\r\n]/, " ", s); return s }
+# (2026-09-29, build speed: three index() probes first — a C scan each — and
+# the regex gsub only for the rare value that holds one; ~5 % of the
+# tokenize CPU, same output)
+function sv(s) { if (index(s, "\t") || index(s, "\n") || index(s, "\r")) gsub(/[\t\r\n]/, " ", s); return s }
 
 # Session ID (CSV field 18) as the cache keeps it: the export writes the
 # literal UNKNOWN (and "unknown" for the start time) where the record belongs

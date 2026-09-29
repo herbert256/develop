@@ -292,6 +292,13 @@ esc() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
 # build/step-NN.log and recording label/command/start/duration/status for the
 # report. A failing step stops the build; the EXIT trap still writes the
 # report, with the failure on record.
+# step_cpu FILE — the CPU seconds of a `times` dump (shell + children, user +
+# system; "?" when the step left none — e.g. it exited through set -e)
+step_cpu() {
+    [ -s "$1" ] || { printf '?'; return 0; }
+    awk 'function t(v,   m) { m = v; sub(/m.*/, "", m); sub(/^[0-9]+m/, "", v); sub(/s$/, "", v); return m * 60 + v }
+         { s += t($1) + t($2) } END { printf "%.0fs", s }' "$1"
+}
 run_step() {
     local label=$1; shift
     STEP_N=$((STEP_N+1))
@@ -300,14 +307,17 @@ run_step() {
     printf '\n=== %d. %s ===\n' "$STEP_N" "$label" >&2
     local t0 t1 status=0
     t0=$(date +%s)
-    "$@" 2>&1 | tee "$logf" || status=$?   # pipefail: tee cannot mask a failure
+    # the step's CPU (2026-09-29, build speed): `times` in the pipeline's own
+    # subshell — its shell + its reaped children; measured in THIS shell the
+    # figure would also take in a background step reaped meanwhile
+    { "$@"; _st=$?; times > "$logf.cpu"; exit "$_st"; } 2>&1 | tee "$logf" || status=$?   # pipefail: tee cannot mask a failure
     t1=$(date +%s)
     # \037 (unit separator), not '|', so a step whose command legitimately
     # contains a pipe can never misalign the 6-field read in the report.
     STEPS+=("$label"$'\037'"$*"$'\037'"$start"$'\037'"$((t1-t0))"$'\037'"$status"$'\037'"$logf")
     # the stage's duration ON THE CONSOLE (2026-09-27, user request): a
     # runtime build is judged by its console only, never by its report or logs
-    printf -- '--- %d. %s: %ds\n' "$STEP_N" "$label" "$((t1-t0))" >&2
+    printf -- '--- %d. %s: %ds  [cpu %s]\n' "$STEP_N" "$label" "$((t1-t0))" "$(step_cpu "$logf.cpu")" >&2
     if [ "$status" -ne 0 ]; then
         printf '*** step %d FAILED (exit %d): %s\n' "$STEP_N" "$status" "$label" >&2
         exit "$status"
@@ -667,7 +677,7 @@ bg_step_start() {
     # wait, a step that finished long before looked as slow as the
     # foreground work beside it
     rm -f "$BG_LOGF.end"
-    ( "$@"; _bgst=$?; date +%s > "$BG_LOGF.end"; exit "$_bgst" ) > "$BG_LOGF" 2>&1 &
+    ( "$@"; _bgst=$?; times > "$BG_LOGF.cpu"; date +%s > "$BG_LOGF.end"; exit "$_bgst" ) > "$BG_LOGF" 2>&1 &
     BG_PID=$!
 }
 bg_step_wait() {
@@ -683,7 +693,7 @@ bg_step_wait() {
     # WAIT is how long the foreground chain blocked on it (0 = off the
     # critical path)
     grep '^TIME ' "$BG_LOGF" >&2 || true
-    printf -- '--- %d. %s (in background): %ds, waited %ds\n' "$BG_N" "$BG_LABEL" "$((t1-BG_T0))" "$((tw1-tw0))" >&2
+    printf -- '--- %d. %s (in background): %ds, waited %ds  [cpu %s]\n' "$BG_N" "$BG_LABEL" "$((t1-BG_T0))" "$((tw1-tw0))" "$(step_cpu "$BG_LOGF.cpu")" >&2
     if [ "$status" -ne 0 ]; then
         printf '*** background step FAILED (exit %d): %s — output:\n' "$status" "$BG_LABEL" >&2
         tail -40 "$BG_LOGF" >&2
@@ -703,7 +713,7 @@ bg2_step_start() {
     BG2_START=$(date '+%H:%M:%S'); BG2_T0=$(date +%s); BG2_CMD="$*"
     printf '\n=== %d. %s (in background) ===\n' "$STEP_N" "$BG2_LABEL" >&2
     rm -f "$BG2_LOGF.end"
-    ( "$@"; _bgst=$?; date +%s > "$BG2_LOGF.end"; exit "$_bgst" ) > "$BG2_LOGF" 2>&1 &
+    ( "$@"; _bgst=$?; times > "$BG2_LOGF.cpu"; date +%s > "$BG2_LOGF.end"; exit "$_bgst" ) > "$BG2_LOGF" 2>&1 &
     BG2_PID=$!
 }
 bg2_step_wait() {
@@ -715,7 +725,7 @@ bg2_step_wait() {
     t1=$tw1; [ -s "$BG2_LOGF.end" ] && t1=$(cat "$BG2_LOGF.end")
     STEPS+=("$BG2_LABEL"$'\037'"$BG2_CMD"$'\037'"$BG2_START"$'\037'"$((t1-BG2_T0))"$'\037'"$status"$'\037'"$BG2_LOGF")
     grep '^TIME ' "$BG2_LOGF" >&2 || true
-    printf -- '--- %d. %s (in background): %ds, waited %ds\n' "$BG2_N" "$BG2_LABEL" "$((t1-BG2_T0))" "$((tw1-tw0))" >&2
+    printf -- '--- %d. %s (in background): %ds, waited %ds  [cpu %s]\n' "$BG2_N" "$BG2_LABEL" "$((t1-BG2_T0))" "$((tw1-tw0))" "$(step_cpu "$BG2_LOGF.cpu")" >&2
     if [ "$status" -ne 0 ]; then
         printf '*** background step FAILED (exit %d): %s — output:\n' "$status" "$BG2_LABEL" >&2
         tail -40 "$BG2_LOGF" >&2
@@ -933,7 +943,12 @@ run_step "publish: analyses + coverage pages"                             bin/an
 # classifies, failing-reasons.sh reads failed-files.rpt. Their first runs happen
 # before that evidence exists, so they run AGAIN here, and the pages they
 # feed are re-rendered below.
-run_step "report catch-up: failed subscriptions"                          bin/transfer/reports/failed.sh
+# failed.sh in its explicit CATCH-UP MODE (2026-09-29, build speed — the
+# whole script ran again, both server-log passes included): only the
+# server-failing set's reasons (the boxes sidecar), their pages, the two
+# lists (their red-run columns read phase-1 peers) and the _srvsubs
+# sidecars; the trace is at THE MODE in the script
+run_step "report catch-up: failed subscriptions"                          bin/transfer/reports/failed.sh catchup
 run_step "report catch-up: failed files"                                  bin/transfer/reports/failed-files.sh   # 2026-09-14: the reasons the failed.sh catch-up just classified
 run_step "report catch-up: unknown transfers"                             bin/transfer/reports/unknown-transfers.sh   # 2026-09-29: the File-page links of the sets the failed.sh catch-up just rewrote
 run_step "report catch-up: error reasons"                                 bin/analyses/reports/failing-reasons.sh
@@ -962,18 +977,30 @@ bg2_step_start "publish: all files search + dashboards + day pages"         bash
 # subscriptions (failed-files.rpt), Failed Subscriptions + its All view,
 # Error reasons, and the box-reason sidecar _subs-boxes.tsv (from the
 # rewritten _errpage-evidence.tsv; publish-insights.sh sidecar, no page).
-run_step "publish catch-up: analyses (failed pages)"                      bin/analyses/publish.sh catchup
 # THE BOXES-REASON CATCH-UP (2026-08): the Entities Error view's Reason
 # column reads analyses/reports/_subs-boxes.tsv, which the analyses
 # publishes above (publish-insights.sh) write AFTER the transfer publish
 # already ran — on a fresh data/ the box-tier reasons would render blank
 # until the NEXT build — and failed-sub-all.rpt + _srvsubs.tsv, which the
-# failed.sh catch-up rewrote. The catch-up mode re-renders the Subscriptions
-# entity views, the Failed files page (failed-files.rpt) and the whole
-# docs/files/ tree (the errors/ + files/ .rpt sets failed.sh rewrote; its
-# ONLY render in the build — the first pass above is `firstpass`) — nothing
-# else of the transfer area.
-run_step "publish: transfer catch-up (boxes reasons)"                     bin/transfer/publish.sh catchup
+# failed.sh catch-up rewrote. The transfer catch-up mode re-renders the
+# Subscriptions entity views, the Failed files page (failed-files.rpt) and
+# the whole docs/files/ tree (the errors/ + files/ .rpt sets failed.sh
+# rewrote; its ONLY render in the build — the first pass above is
+# `firstpass`) — nothing else of the transfer area.
+# THE SIDECAR FIRST, THEN THE TWO CATCH-UPS SIDE BY SIDE (2026-09-29, build
+# speed — they ran one after the other, ~4 s each, in the half-idle tail):
+# the box-reason sidecar is the ONE thing the transfer catch-up takes from
+# the analyses one, so it runs as its own step (publish-insights.sh — the
+# analyses catch-up's former second action), and `catchup-pages` is the
+# analyses catch-up without it. Checked: the analyses catch-up renders
+# docs/analyses/ only (Configured subscriptions, Failed Subscriptions + its
+# All view, Error reasons — from failed-files.rpt, failed*.rpt,
+# failing-reasons.rpt) and reads no page; the transfer catch-up renders
+# docs/transfer/entities/subscription-*, failed-files, unknown-transfers and
+# docs/files/ from the data/ trees and reads no docs/analyses/ page; both
+# share only topbar-data.js, written atomically.
+run_step "report catch-up: the box-reason sidecar"                        bin/analyses/publish-insights.sh
+run_step "publish catch-ups: analyses (failed pages) + transfer (boxes reasons)" bash -c 'bin/analyses/publish.sh catchup-pages & a=$!; bin/transfer/publish.sh catchup; s=$?; wait "$a" || s=$?; exit "$s"'
 # (THE ALL FILES SEARCH — 2026-09-27, user request, "Implementation 3, all
 # files": one day shard per data day + the bloom-filter manifest, and the
 # search/all-files.html page — runs in the second slot started above, after

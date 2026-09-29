@@ -96,7 +96,16 @@ pub_reap() {
 pub_run() {    # run "$@" as a background job, at most PUB_NJOBS at once
     pub_reap
     while [ "${#PUB_PIDS[@]}" -ge "$PUB_NJOBS" ]; do sleep 0.02; pub_reap; done
-    "$@" &
+    # a job of 2 s or more says so on the console (2026-09-29, build speed:
+    # which page renders are a pool's long poles) — the render_report REPORT
+    # name only, never a data-derived argument (a render_rpt path can carry a
+    # subscription slug); $SECONDS, not date: no fork per page
+    ( _ps=$SECONDS; "$@"; _st=$?; _pd=$((SECONDS - _ps))
+      if [ "$_pd" -ge 2 ]; then
+          if [ "$1" = render_report ]; then printf 'TIME %5ds  render %s/%s\n' "$_pd" "$2" "$3" >&2
+          else printf 'TIME %5ds  render (%s)\n' "$_pd" "$1" >&2; fi
+      fi
+      exit "$_st" ) &
     PUB_PIDS+=("$!")
 }
 pub_wait() {   # reap every pooled job; abort the publish if any page failed
