@@ -149,7 +149,7 @@ while read -r lo hi; do
         FILENAME ~ /known\.tsv$/ { if ($1 == "S") KS[$2] = 1; else if ($1 == "A") KA[$2] = 1; else if ($1 == "L") KL[$2] = 1
                                    else if ($1 == "H") KH[$2] = 1; else if ($1 == "W") KW[$2] = 1
                                    next }
-        FILENAME ~ /_hosts\.tsv$/  { if ($1 != "" && !(tolower($1) in KH)) { cfg[tolower($1)] = $1; if (!index($1, ".")) hnodot = 1 } next }   # config spelling, matched lowercase (hnodot: the H fast path is off)
+        FILENAME ~ /_hosts\.tsv$/  { if ($1 != "" && !(tolower($1) in KH)) { if (!(tolower($1) in cfg)) HLS[++nhl] = tolower($1); cfg[tolower($1)] = $1; if (!index($1, ".")) hnodot = 1 } next }   # config spelling, matched lowercase (hnodot: the H fast path is off); HLS = the list
         FILENAME ~ /_white\.tsv$/  { if ($1 != "" && !($1 in KW)) white[$1] = 1; next }
         # an S token is known when a transfer-log subscription starts with it
         # (the server truncated the name) or it starts with one at a name-part
@@ -164,7 +164,9 @@ while read -r lo hi; do
             sk = $1 " " $2
             delete mseen                             # one log line per entity per record (all types)
             # W: whitelisted partner IPs — ALL components (the report counts
-            # every mention; only the TM sighting feeds the sidecar)
+            # every mention; only the TM sighting feeds the sidecar). (An
+            # index() prefilter over the unknown IPs, like the H one below,
+            # was SLOWER — a whitelist holds ~100 IPs; 2026-09-29.)
             if ($5 ~ /[0-9]\.[0-9]/) {
                 s = $5
                 while (match(s, /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/)) {
@@ -244,7 +246,15 @@ while read -r lo hi; do
             # token — and a message without a dot has none. Same hits, same
             # counts; a dotless configured host (hnodot) keeps the full split.
             nh = 0
-            if (!hnodot) {
+            # THE PREFILTER (2026-09-29, speed round 3): cfg holds only the
+            # UNKNOWN configured hosts now, and a token the split below
+            # matches is a substring of the lowercased message — so the split
+            # (41 % of this scan) runs only on a message holding one of them
+            # (production: 10 unknown hosts, 56 mentions in 11M lines). Exact.
+            ph = 0
+            if (nhl && (hnodot || index($5, "."))) { lm = tolower($5); for (ih = 1; ih <= nhl; ih++) if (index(lm, HLS[ih])) { ph = 1; break } }
+            if (!ph) { }
+            else if (!hnodot) {
                 if (index($5, ".") && $5 ~ /[A-Za-z0-9][._-]/) {
                     n = split($5, tok, /[^A-Za-z0-9._-]+/)
                     for (i = 1; i <= n; i++) {
