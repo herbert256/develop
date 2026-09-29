@@ -227,15 +227,12 @@ td[data-href]:hover, th[data-href]:hover { text-decoration:underline; }
 .sxs .sxscol { flex:0 0 auto; }
 .sxs .sxscol > h2:first-child { margin-top:1.6rem; }
 /* the home's ONE per-day table (2026-08-31 — the five-table flex row with
-   its Date spine is gone): Files / Duration / Red-Green switch / First seen
-   are column GROUPS of one wide table. An empty cell still gets a no-break
-   space via ::before so an all-empty row keeps the shared row height. */
+   its Date spine is gone): Files / Duration are column GROUPS of one table
+   (2026-09-29: the other groups went), the Errors table beside it the same
+   dayrows look. An empty cell still gets a no-break space via ::before so an
+   all-empty row keeps the shared row height. */
 table.dayrows th:empty::before, table.dayrows td:empty::before { content:"\00a0"; }
-/* the group dividers, POSITIONAL so the emit carries no per-cell class:
-   a group starts at columns 2 (Files) / 8 (Duration) / 12 (Red-Green) /
-   14 (First seen) on the header, data and Total rows — and on every cell
-   but the first of the gbrow banner row (its cells are one per group). */
-/* the gaps between the seven groups are SPACER columns (th/td.spc, the root
+/* the gaps between the groups are SPACER columns (th/td.spc, the root
    index pattern): no borders and the page background, so each group shows its
    own left/right/bottom edges like a table of its own and no row line runs
    across the gap (2026-09-06, user request). The total row's tint and navy
