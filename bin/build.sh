@@ -963,14 +963,13 @@ run_step "report catch-up: failed subscriptions"                          bin/tr
 run_step "report catch-up: failed files"                                  bin/transfer/reports/failed-files.sh   # 2026-09-14: the reasons the failed.sh catch-up just classified
 run_step "report catch-up: unknown transfers"                             bin/transfer/reports/unknown-transfers.sh   # 2026-09-29: the File-page links of the sets the failed.sh catch-up just rewrote
 run_step "report catch-up: error reasons"                                 bin/analyses/reports/failing-reasons.sh
-# The DETAIL-PAGES re-render runs in the BACKGROUND beside everything
-# below (2026-08): it touches only docs/details, which none of
-# the remaining steps read; the pages bake the error/File rosters and the
-# failed-sub reasons the catch-up above rewrote. The detail .rpt files
-# themselves need no second run: the one input the catch-up could change for
-# them, the _srvsubs-map, is final after failed.sh's FIRST run (went-kaput
-# runs early) and carries no reason column.
-bg_step_start "catch-up: detail pages (publish)"                          bin/transfer/publish-details.sh
+# (The DETAIL-PAGES re-render that ran here — 2026-08 — is GONE, 2026-09-29,
+# build speed: the detail pages read the detail .rpt files, the slugmaps,
+# the base colours and the published File-page set (_filepages.tsv, final
+# before phase 1), never a failed.sh output, and failed.sh's catch-up mode no
+# longer rewrites the error/File .rpt sets — a probe build compared the first
+# render with the re-render: identical but for the display renames, which
+# the sweep below applies to the final pages anyway.)
 # THE TAIL IN PARALLEL (2026-09-29, build speed): the all files search, the
 # dashboards and the day pages go to the second slot together, BESIDE the two
 # publish catch-ups below (the tail left most cores idle, ~11 s in a row).
@@ -1021,7 +1020,6 @@ run_step "publish catch-ups: analyses (failed pages) + transfer (boxes reasons)"
 # settled, so the rosters it reads are final. Outside the per-area
 # publishes, like publish-partner-groups.sh — a manual re-publish runs it too.)
 bg2_step_wait   # the all files search + dashboards + day pages
-bg_step_wait
 # the index pages + the home LAST: they live in dirs the per-area publishes
 # clear, and the home reads every area's outputs
 run_step "publish: index pages + home"                                    bin/build/publish.sh

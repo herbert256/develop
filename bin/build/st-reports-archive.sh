@@ -5,7 +5,7 @@
 # (user request), commit + push it into the OUTBOX — the same git repo the
 # inbox step pulls, at ~/exchange/ — under the stable name st-reports-<env>.7z:
 #
-#   build/st-reports-<env>_YYYY-MM-DD_HHMM.7z   (7zz -mx4 LZMA2 32 MB blocks, whole docs/ tree)
+#   build/st-reports-<env>_YYYY-MM-DD_HHMM.7z   (7zz -mx4 LZMA2 128 MB blocks, whole docs/ tree)
 #   ~/exchange/st-reports-<env>.7z              (stable name, committed + pushed)
 #
 # (The ~/cloud/ copy is gone — 2026-09-12, user request: the outbox is the
@@ -90,11 +90,7 @@ if [ -d "$EX/.git" ]; then
     _expull=$!
 fi
 if [ "$Z7" = 7zz ]; then
-    # c=32m (2026-09-29, build speed; 128m before): LZMA2 compresses one
-    # BLOCK per thread, and 128 MB blocks gave a ~250 MB site two or three
-    # threads — 32 MB blocks spread it over the cores for ~5 % more bytes
-    # (develop: 0.82 -> 0.46 s, 4.9 -> 5.1 MB), far less than the push saves
-    7zz a -t7z -mx4 -mmt=on -m0=LZMA2:d=128m:c=32m -mhe=on -p"$pass" "$out" docs >/dev/null
+    7zz a -t7z -mx4 -mmt=on -m0=LZMA2:d=128m:c=128m -mhe=on -p"$pass" "$out" docs >/dev/null
 else
     7z a -t7z -mx9 -mhe=on -p"$pass" "$out" docs >/dev/null
 fi
