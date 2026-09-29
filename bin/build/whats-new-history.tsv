@@ -320,3 +320,4 @@ N	2026-09-29	0	bin/transfer/reports/merge-episodes.sh
 N	2026-09-29	0	bin/transfer/reports/merge-file-in-file-out.sh	
 N	2026-09-29	0	bin/transfer/reports/merge-punctuality.sh	
 N	2026-09-29	0	bin/transfer/reports/trends.sh	
+N	2026-09-29	0	bin/transfer/reports/unknown-transfers.sh	
