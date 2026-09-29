@@ -5,10 +5,12 @@
 # duration.sh 2026-09-03 (user request) into its own Performance-group page.
 #
 # TWO tables in ONE switch group on the page (the TABLE switch= modifier):
-#   OK transfers   Processed Files only (the default) — Error transfers are
-#                  often short-lived attempts and would pile up in the
-#                  first band
-#   All transfers  every outcome with a measured duration
+#   Delivered Files  Processed Files only (the default) — Error Files are
+#                    often short-lived attempts and would pile up in the
+#                    first band
+#   All Files        every outcome with a measured duration
+# (the Duration page's view words; "OK transfers" / "All transfers" until
+# the 2026-09-29 audit)
 # Each row carries @data:buckets (date:count) so the From/To filter
 # re-aggregates the counts and shares over the selected range.
 #
@@ -70,13 +72,13 @@ out_ok=$(bands 1); out_all=$(bands 0)
 n_ok=$(printf '%s\n' "$out_ok" | awk -F'\t' '$1 == "N" { print $2 }'); n_all=$(printf '%s\n' "$out_all" | awk -F'\t' '$1 == "N" { print $2 }')
 {
     printf 'TITLE\tDuration distribution\n'
-    printf 'TABLE\tDuration distribution\twide\tswitch=scope:OK transfers\n'
+    printf 'TABLE\tDuration distribution\twide\tswitch=scope:Delivered Files\n'
     printf 'HEAD\tDuration bucket\tFiles\tShare\n'
     printf 'KIND\ttext\tnum\tnum\n'
     printf 'RECALC\t-\ts0\t%%0\n'
     printf '%s\n' "$out_ok" | command grep $'^ROW\t'
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}100.0%%\n' "${n_ok:-0}"
-    printf 'TABLE\t\twide\tswitch=scope:All transfers\n'
+    printf 'TABLE\t\twide\tswitch=scope:All Files\n'
     printf 'HEAD\tDuration bucket\tFiles\tShare\n'
     printf 'KIND\ttext\tnum\tnum\n'
     printf 'RECALC\t-\ts0\t%%0\n'

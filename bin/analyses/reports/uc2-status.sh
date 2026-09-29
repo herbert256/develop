@@ -718,8 +718,9 @@ rows=$(awk -F'\t' '
              ($2 == 1) ? "@{class=warn}No files" : \
              ($2 == 2) ? "@{class=processed}Both" : \
              ($2 == 3) ? "@{class=processed}OK" : "Nothing"
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", st, $3, $5, \
-            ($6 == "-" ? "—" : $6), ($7 == "-" ? "—" : $7), $8, ($9 == "-" ? "—" : $9), $10
+        # a 0 count is BLANK, as on the UC1 / UC3 / UC4 tabs (2026-09-29 audit)
+        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", st, $3, ($5 + 0 ? $5 : ""), \
+            ($6 == "-" ? "—" : $6), ($7 == "-" ? "—" : $7), ($8 + 0 ? $8 : ""), ($9 == "-" ? "—" : $9), $10
     }
 ' <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | LC_ALL=C sort -t$'\t' -k2,2n -k5,5nr -k8,8nr)")
 
@@ -747,7 +748,7 @@ rows=$(awk -F'\t' '
     printf 'KIND\ttext\tmono\tnum\ttext\ttext\tnum\ttext\n'
     [ -z "$rows" ] || printf '%s\n' "$rows"   # (no blank line before TOTAL, 2026-09-29 audit)
     printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t\t\t@{class=num}%s\t\n' \
-        "$(( n_never + n_nofiles + n_coll + n_ok + n_nothing ))" "$t_ef" "$t_pk"
+        "$(( n_never + n_nofiles + n_coll + n_ok + n_nothing ))" "$([ "${t_ef:-0}" = 0 ] || printf '%s' "$t_ef")" "$([ "${t_pk:-0}" = 0 ] || printf '%s' "$t_pk")"
 
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

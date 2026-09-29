@@ -274,12 +274,17 @@ function uc1_file(t0,   fn, sz, mo, ic, sidp, sids, d1, d2, i, tt, ok, late, rr,
         # resubmit comes ~30 min-2 h after the burst, on its own session.
         if (hastag("resub") && (rr = rnd()) < 0.8) {
             sidr = sesshex(); tr = tt + 1800000 + int(rexp(5400000))
+            # + the ADMIN session's own resubmit trail (2026-09-29 audit: the
+            # Resubmission outcomes table never had a row on the sample) —
+            # no PRNG draw: fixed offsets, no session, LAST_TID from the leg
             if (rr < 0.5) {   # MANUAL recovery: the resubmitted leg delivers — an OK File with failed legs AND a resubmitted leg
                 ssh_T(tr, 600 + int(rexp(900)), "Outbound", "P", sidr, fn, sz, "Server", "SECURETRANSPORT", "UNKNOWN", sitefield(), hostspelled(), mo, "NP", "true")
                 s_initconn(tr - 2000, sidr)
+                S(tr - 3000, "I", "TM", "", "Resubmission successfully executed for file: " fn)
             } else {          # FAILED resubmit: the operator's attempt fails too and nothing follows — the File stays Failed
                 ssh_T(tr, 200 + int(rexp(600)), "Outbound", "F", sidr, fn, 0, "Server", "SECURETRANSPORT", "UNKNOWN", sitefield(), hostspelled(), mo, "NP", "true")
                 s_reason_err(tr + 100, sidr, fn)
+                S(tr + 150, "E", "TM", "", "Error while resubmitting transfer with id " LAST_TID ". Resubmit failed for file: " fn)
             }
         } else {
             late = (rnd() < 0.012)
@@ -587,6 +592,11 @@ function env_ambient(   ci, jd, base, i, n, k, sid, lst) {
         if (jd % 7 == 4) {
             S(base + rint(86400000), "W", "TM", "", "Value of 'Server.ProtocolCommands.batchSize' is too low and may lead to performance degradation.")
             S(base + rint(86400000), "E", "TM", sesshex(), "Error during test connection. Connection refused")
+            # the admin-UI test connections themselves (2026-09-29 audit: the
+            # Connections Test connections table was always empty on the
+            # sample) — fixed times, no session: no PRNG draw
+            S(base + 36000000, "I", "TM", "", "Performs test connection for ssh protocol")
+            S(base + 50400000, "I", "TM", "", "Performs test connection for pesit protocol")
         }
         if (jd % 7 == 5)
             S(base + rint(86400000), "W", "TM", sesshex(), "Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT")

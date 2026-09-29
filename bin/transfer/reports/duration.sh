@@ -7,7 +7,7 @@
 # row's end, gaps included), NOT the sum of the row durations.
 #
 # TWO views along one selector (the pair of buttons is a NAV group):
-#   "OK transfers" / "All transfers" — the scope:
+#   "Delivered Files" / "All Files" — the scope:
 #     OK  = outcome Processed only (the default). Error transfers (mostly
 #           short attempts or long retry spans) are excluded so they do not skew
 #           every statistic.
@@ -64,15 +64,15 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # ---- build one scope (one output, two tables side by side) -------------------
 # Parameters via the calls below: OKONLY (1 = Processed only), OUT (the .rpt
 # of this scope), NAVLINE (the OK/All button row), and the scope words for
-# the DESC/INTRO.
+# the DESC (the start page reads the default view's).
 build_view() {   # ONE output per scope since 2026-09-13: the percentiles table and the min/avg/max table side by side
-    local OKONLY=$1 OUT=$2 NAVLINE=$3 SCOPE_DESC=$4 SCOPE_INTRO=$5
+    local OKONLY=$1 OUT=$2 NAVLINE=$3 SCOPE_DESC=$4
 
     # main pass: per-day stats. Tagged col 1: 1=per-day (min/avg/max and
     # the percentiles on one line), O=overall. (S=subscription left
     # 2026-09-05; the D=distribution lines went with the histogram, owned
     # by duration-distribution.sh.) OKONLY drops non-Processed Files (the
-    # "OK transfers" view).
+    # "Delivered Files" view).
     local agg; agg=$(awk -F'\t' -v okonly="$OKONLY" '
         function humandur(ms) {
             if (ms < 1000)    return sprintf("%d ms", ms)
@@ -260,15 +260,14 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
     emit_view "$OUT" "$NAVLINE"
 }
 
-# ONE button pair on the NAV row (2026-09-13): OK transfers / All transfers —
+# ONE button pair on the NAV row (2026-09-13): Delivered Files / All Files —
 # the Percentage vs Min/Avg/Max pair is gone, both tables sit on each page.
-NAV_OK=$'NAV\t1|OK transfers|duration.html\t0|All transfers|duration-all.html'
-NAV_ALL=$'NAV\t0|OK transfers|duration.html\t1|All transfers|duration-all.html'
+# ("OK transfers" / "All transfers" until the 2026-09-29 audit: both views
+# count FILES, and the default one DELIVERED Files — Waiting ones are OK but
+# never delivered, so "OK" said more than it counts.)
+NAV_OK=$'NAV\t1|Delivered Files|duration.html\t0|All Files|duration-all.html'
+NAV_ALL=$'NAV\t0|Delivered Files|duration.html\t1|All Files|duration-all.html'
 
 build_view 1 "$REPORTS_DIR/duration.rpt" "$NAV_OK" \
-    "Delivered (Processed) Files only — the default; use the All transfers button to include failures." \
-    "Only **Processed** Files count; Error transfers (short attempts or long retry spans) are excluded so they do not skew the statistics — switch to **All transfers** to include them."
-
-build_view 0 "$REPORTS_DIR/duration-all.rpt" "$NAV_ALL" \
-    "ALL Files, including failed (Error) transfers." \
-    "**All** Files count, including Error transfers — a failed transfer's duration is how long it ran before failing (e.g. a timeout), so long-hanging failures show up here (switch to **OK transfers** for delivered-only statistics)."
+    "Delivered (Processed) Files only — the default; use the All Files button to include failures."
+build_view 0 "$REPORTS_DIR/duration-all.rpt" "$NAV_ALL" ""

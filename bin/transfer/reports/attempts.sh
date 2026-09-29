@@ -129,8 +129,10 @@ tot_legs=0
 {
     printf 'TITLE\tAttempts to Success\n'
 
-    printf 'TABLE\tDelivered Files — failed legs before success\tdrill=File\n'
-    printf 'HEAD\tAttempts\tFiles\t%% of delivered\n'
+    # OK Files, not "delivered" (2026-09-29 audit): the outcome policy counts
+    # a Waiting File OK, and the 91 Waiting ones sit in this table's total
+    printf 'TABLE\tOK Files — failed legs before success\tdrill=File\n'
+    printf 'HEAD\tAttempts\tFiles\t%% of OK Files\n'
     printf 'KIND\ttext\tnum\tnum\n'
     printf 'RECALC\t-\ts0\t%%0\n'
     mkrows SUC

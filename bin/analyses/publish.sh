@@ -774,7 +774,7 @@ write_logical_detection_page() {
 # suffix), the Cron expression and Schedule exactly as the Polling page shows
 # them (subscriptions.json via jq + bin/cron2human.awk, the same pipeline as
 # polling.sh; blank without a cron), and the ALL-TIME File counts — Total files · In · Out · Errors ·
-# Auto Retries · Resubmit OK / Error · Waiting · Expired — from
+# Automatic · Resubmit OK / Error · Waiting · Expired — from
 # month-stats.sh's _alltime.tsv sidecar (the Entities
 # definitions; a subscription never seen in the log shows blanks; 0 shows
 # blank). Rows tint by the subscription's result (green / orange / red);
@@ -1067,7 +1067,12 @@ write_subscriptions_page() {
     rm -f "$cronf" "$actf" "$cronrf" "$actrf"
     rows=$(printf '%s\n' "$all" | awk -F'\t' '$1 != "~"' | cut -f3-)
     tots=$(printf '%s\n' "$all" | awk -F'\t' '$1 == "~"' | cut -f3-)
-    local n; n=$(printf '%s' "$rows" | grep -c '<tr' || true)
+    local n nsk tlbl; n=$(printf '%s' "$rows" | grep -c '<tr' || true)
+    # the skipped rows are NOT configured subscriptions (2026-09-29 audit: the
+    # page said "Total (154)" beside the estate's 152) — named after the count,
+    # as a full-set annotation report.js drops while a filter is on
+    nsk=$(printf '%s' "$rows" | grep -c 'data-skipped="1"' || true)
+    tlbl="Total ($n)"; [ "${nsk:-0}" -gt 0 ] && tlbl="Total ($n): $((n - nsk)) configured + $nsk skipped"
     local t1 t2 t3 t4 t5 t6 t7 t8 t9 tcells
     IFS=$'\t' read -r t1 t2 t3 t4 t5 t6 t7 t8 t9 <<< "$tots"
     # the FM EXPORT stamp in the title (2026-09-28, user request): the RAW
@@ -1080,9 +1085,9 @@ write_subscriptions_page() {
         html_head "Configured subscriptions" "../assets/style.css" "" "" "subscriptions" "" "" "sort-fresh"
         printf '<h1>Configured subscriptions%s</h1>\n' "${fmts:+ - FM export $fmts}"
         printf '<div class="tablewrap"><table class="index fit">\n'
-        printf '<tr><th>Subscription</th><th>Use case</th><th>Active</th><th>Color</th><th>Direction</th><th>Endpoint</th><th>From</th><th>To</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Auto Retries</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th><th>Error reason</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Cron expression</th><th>Schedule</th></tr>\n'
+        printf '<tr><th>Subscription</th><th>Use case</th><th>Active</th><th>Color</th><th>Direction</th><th>Endpoint</th><th>From</th><th>To</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Automatic</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th><th>Error reason</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Cron expression</th><th>Schedule</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
-        printf '<tr class="total"><td>Total (%s)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>%s<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$n" "$tcells"
+        printf '<tr class="total"><td>%s</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>%s<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$tlbl" "$tcells"
         printf '</table></div>\n'
         printf '</body>\n</html>\n'
     } > "$out"

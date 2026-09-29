@@ -450,7 +450,7 @@ HTML
         # isolated; a from-scratch clone (or a build that died before any data)
         # yields empty strings and we fall back to a plain-link bar.
         local BUILD_TB
-        BUILD_TB=$( source bin/publish_lib.sh >/dev/null 2>&1; render_shared_topbar "$base" "index" ) || true
+        BUILD_TB=$( source bin/publish_lib.sh >/dev/null 2>&1; render_shared_topbar "$base" "general" ) || true
         if [ -n "${BUILD_TB:-}" ]; then printf '%s' "$BUILD_TB"
         else
             # (the brand's text is the environment label, like render_topbar)

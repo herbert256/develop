@@ -89,11 +89,14 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         for(k in sp){ split(k,a,SUBSEP); c=a[1]; p=a[2]; if(!(c in rec)) continue; d=fday[c]
             if(c in rsb){ rpM[p]++; rpdM[p SUBSEP d]++ } else { rpA[p]++; rpdA[p SUBSEP d]++ } }
         for(k in scd){ split(k,a,SUBSEP); if(a[1] in rs) sbk[a[1]] = sbk[a[1]] (sbk[a[1]] ? "," : "") a[2] ":" (rsd[k]+0) ":" (rsdA[k]+0) ":" (rsdM[k]+0) ":" scd[k] }
-        for(k in afd){ split(k,a,SUBSEP); if(a[1] in rp) pbk[a[1]] = pbk[a[1]] (pbk[a[1]] ? "," : "") a[2] ":" (rpd[k]+0) ":" (rpdA[k]+0) ":" (rpdM[k]+0) ":" (hld[k]+0) ":" afd[k] }
+        for(k in afd){ split(k,a,SUBSEP); pbk[a[1]] = pbk[a[1]] (pbk[a[1]] ? "," : "") a[2] ":" ((k in rpd) ? rpd[k] : 0) ":" ((k in rpdA) ? rpdA[k] : 0) ":" ((k in rpdM) ? rpdM[k] : 0) ":" ((k in hld) ? hld[k] : 0) ":" afd[k] }
         # key | recovered | retry | resubmit | files | share | buckets | drill
         for(s in rs){ printf "SUB|%s|%d|%d|%d|%d|%s|%s|%s\n", s, rs[s], rsA[s]+0, rsM[s]+0, sc[s], pc(rs[s], sc[s]), sbk[s], buildlist(top["S" SUBSEP s]); sFC += sc[s]; nsub++ }
         # key | recovered files | retry | resubmit | healed legs | all failed legs | healed % | buckets | drill
-        for(p in rp){ printf "PROTO|%s|%d|%d|%d|%d|%d|%s|%s|%s\n", p, rp[p], rpA[p]+0, rpM[p]+0, hl[p], af[p], pc(hl[p], af[p]), pbk[p], buildlist(top["P" SUBSEP p]); pHL += hl[p]; pA += rpA[p]; pM += rpM[p]; np++ }
+        # EVERY protocol with a failed leg gets its row (2026-09-29 audit: only
+        # the protocols with a healed File did, so the rows summed 7,006 Failed
+        # legs under a 7,057 TOTAL — the 51 ftp legs had no row)
+        for(p in af){ printf "PROTO|%s|%d|%d|%d|%d|%d|%s|%s|%s\n", p, ((p in rp) ? rp[p] : 0), ((p in rpA) ? rpA[p] : 0), ((p in rpM) ? rpM[p] : 0), ((p in hl) ? hl[p] : 0), af[p], pc(((p in hl) ? hl[p] : 0), af[p]), pbk[p], ((("P" SUBSEP p) in top) ? buildlist(top["P" SUBSEP p]) : ""); if (p in hl) pHL += hl[p]; if (p in rp) np++ }   # np: the protocols a File recovered on (the Protocols STAT, as its per-day uniq payload)
         # the Failed legs TOTAL covers EVERY failed leg (2026-09-29 audit: it
         # summed only the protocols with a healed File — 7,006 beside the Top
         # view 7,057), so the TOTAL Healed % is healed over ALL failed legs
@@ -120,11 +123,11 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
             sbh = sbh (sbh ? "," : "") d ":" thld[d] }
         for(d in dayc){ sbs = sbs (sbs ? "," : "") d ":" dayc[d] ":" ((d in rd) ? rd[d] : 0) }
         printf "SBR|%s\nSBS|%s\nSBH|%s\nSBU|%s\nSBP|%s\nSBD|%s\nSBA|%s\nSBM|%s\n", sbr, sbs, sbh, sbu, sbp, sbd, sba, sbm
-        printf "TOT|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d\n", tR+0, tFC+0, thl+0, nsub+0, np+0, nd+0, sFC+0, pAF+0, pHL+0, dFC+0, tA+0, tM+0, pA+0, pM+0
+        printf "TOT|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d\n", tR+0, tFC+0, thl+0, nsub+0, np+0, nd+0, sFC+0, pAF+0, pHL+0, dFC+0, tA+0, tM+0
     }
 ' "$FILES" "$PARSED")
 
-IFS='|' read -r _ tR tFC thl nsub nprot ndays sFC pAF pHL dFC tA tM pA pM \
+IFS='|' read -r _ tR tFC thl nsub nprot ndays sFC pAF pHL dFC tA tM \
     <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 sba=$(printf '%s\n' "$agg" | sed -n 's/^SBA|//p')
 sbm=$(printf '%s\n' "$agg" | sed -n 's/^SBM|//p')
@@ -168,7 +171,7 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     printf 'KIND\ttext\tnumwarn\tnumwarn\tnumwarn\tnum\tnum\tnum\n'
     printf 'RECALC\t-\ts0\ts1\ts2\ts3\ts4\tp3.4\n'
     printf '%s\n' "$agg" | grep '^PROTO|' | sort -t'|' -k3,3nr -k2,2 | awk -F'|' '
-        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:coreids=%s\n", $2, $3, ($4 > 0 ? $4 : ""), ($5 > 0 ? $5 : ""), $6, $7, $8, $9, $10 }' || true
+        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:coreids=%s\n", $2, ($3 > 0 ? $3 : ""), ($4 > 0 ? $4 : ""), ($5 > 0 ? $5 : ""), ($6 > 0 ? $6 : ""), $7, $8, $9, $10 }' || true
     # Recovered / Retry / Resubmit total the DISTINCT Files alike (2026-09-28
     # fix: Recovered was distinct while its split summed the per-protocol rows,
     # so Retry + Resubmit could exceed Recovered on the same footer)

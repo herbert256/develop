@@ -13,11 +13,11 @@
 # PLUS the ALL-TIME sidecar $REPORTS_DIR/_alltime.tsv — every File, the same
 # nine counts per (entity type, name) — the analyses Subscriptions page reads it.
 #
-# Columns per name: Total files · In Files · Out Files · Errors · Auto Retries ·
+# Columns per name: Total files · In Files · Out Files · Errors · Automatic ·
 # Resubmit OK · Resubmit Error · Waiting · Expired — the Entities pages'
 # definitions (In/Out = the movement direction, _files.tsv col 17, else the
 # connection side col 16; Errors =
-# Failed + Expired; Auto Retries = an OK File with a failed leg and no
+# Failed + Expired; Automatic = an OK File with a failed leg and no
 # resubmitted leg; Resubmit OK / Error = every File with a resubmitted leg, by
 # outcome — the leg flags _files.tsv col 26 / col 27; Waiting / Expired = the
 # outcome col 2). Attribution per entity
@@ -145,15 +145,26 @@ for which in this previous; do
             function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
             $4 == "" { next }
             { printf "ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", $4, $5, nz($6), nz($7), nz($8), nz($9), nz($10), nz($11), nz($12), nz($13) }')
+        # the HOST pages have no Waiting / Expired columns (2026-09-29 audit):
+        # a host counts OUT-connection Files, and Waiting / Expired are UC2
+        # pickups — Files the partner connects IN for — so the two were blank
+        # on every row (the Entities host views drop that State group too)
+        if [ "$dim" = remote-host ]; then
+            rows=$(printf '%s\n' "$rows" | awk -F'\t' -v OFS='\t' 'NF { NF = 9; print }')
+            hstate=""; kstate=""; tstate=""
+        else
+            hstate=$'\tWaiting\tExpired'; kstate=$'\tnumwarn\tnumfailed'
+            tstate=$'\t@{class=num warn}'"$(nz0 "$twt")"$'\t@{class=num failed}'"$(nz0 "$tex")"
+        fi
         {
             printf 'TITLE\tMonth stats — %s — %s\n' "$title" "$mon"
             printf 'META\tmonth\t%s\n' "$mon"
             printf 'TABLE\t%s — Files started in %s\twide\tsort=1:-1\n' "$title" "$mon"
-            printf 'HEAD\t%s\tTotal files\tIn Files\tOut Files\tErrors\tAuto Retries\tResubmit OK\tResubmit Error\tWaiting\tExpired\n' "$chead"
-            printf 'KIND\t%s\tnum\tnum\tnum\tnumfailed\tnumwarn\tnumwarn\tnumfailed\tnumwarn\tnumfailed\n' "$nkind"
+            printf 'HEAD\t%s\tTotal files\tIn Files\tOut Files\tErrors\tAutomatic\tResubmit OK\tResubmit Error%s\n' "$chead" "$hstate"
+            printf 'KIND\t%s\tnum\tnum\tnum\tnumfailed\tnumwarn\tnumwarn\tnumfailed%s\n' "$nkind" "$kstate"
             [ -n "$rows" ] && printf '%s\n' "$rows"
-            printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num failed}%s\n' \
-                "$ns" "$noun" "$tc" "$(nz0 "$tin")" "$(nz0 "$tout")" "$(nz0 "$tfe")" "$(nz0 "$tra")" "$(nz0 "$tmo")" "$(nz0 "$tme")" "$(nz0 "$twt")" "$(nz0 "$tex")"
+            printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s%s\n' \
+                "$ns" "$noun" "$tc" "$(nz0 "$tin")" "$(nz0 "$tout")" "$(nz0 "$tfe")" "$(nz0 "$tra")" "$(nz0 "$tmo")" "$(nz0 "$tme")" "$tstate"
             printf 'FOOT\n'
         } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     done

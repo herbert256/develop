@@ -139,7 +139,10 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
     # noagg: the TOTAL is the PLATFORM-wide figure, not the sum of the listed
     # accounts — a search must not re-sum it (2026-09-29 audit)
     printf 'TABLE\tFiles per connection\twide\tnofilter\tnoagg=1,2,3,4\n'
-    printf 'HEAD\tAccount\tSessions\tFiles carried\tFiles per session\tSingle-File sessions\n'   # a File counts once per session it used (in + out: twice) — so "carried", not a distinct File count (2026-09-29)
+    # "User sessions" (2026-09-29 audit): the rows count User-initiated
+    # sessions, the storms table ALL sessions — one word "Sessions" on both
+    # read as one figure (FIN_BILLING_GLOBEX 3364 vs 6731)
+    printf 'HEAD\tAccount\tUser sessions\tFiles carried\tFiles per session\tSingle-File sessions\n'   # a File counts once per session it used (in + out: twice) — so "carried", not a distinct File count (2026-09-29)
     printf 'KIND\tacct\tnum\tnum\tnum\tnum\n'
     if [ -n "$lg_rows" ]; then
         printf '%s\n' "$lg_rows"
@@ -150,7 +153,7 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
         "$p_sess" "$p_files" "$p_ratio" "$p_sf"
 
     printf 'TABLE\tConnection storms (top %s accounts by peak starts per minute)\twide\tnofilter\n' "$TOP_N"
-    printf 'HEAD\tAccount\tPeak sessions/min\tMinute\tSessions\n'
+    printf 'HEAD\tAccount\tPeak sessions/min\tMinute\tAll sessions\n'
     printf 'KIND\tacct\tnum\tmono\tnum\n'
     if [ -n "$storm_rows" ]; then
         printf '%s\n' "$storm_rows"

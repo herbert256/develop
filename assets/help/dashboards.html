@@ -17,12 +17,12 @@
 <h1>Dashboard</h1>
 <h2>What it shows</h2>
 <ul>
-<li>Five KPI cards (Files transferred, Transfer failure rate, Volume moved, Server records, Server error rate), one graph with 16 views, and <strong>Busiest this period</strong>: the top 5 partners and subscriptions by Files, Volume and Errors.</li>
+<li>Five KPI cards (Files transferred, File error rate, Volume moved, Server records, Server error rate), one graph with 16 views, and <strong>Busiest this period</strong>: the top 5 partners and subscriptions by Files, Volume and Errors.</li>
 </ul>
 <h2>Tabs</h2>
 <ul>
 <li><strong>Duration</strong> &mdash; P50 / P90 / P98 of the slot&rsquo;s delivered (Processed) File durations, nearest rank like the <a href="duration.html">Duration</a> report; stacked bands on a fixed scale.</li>
-<li><strong>Files processed</strong> (OK Files) &middot; <strong>Volume</strong> &middot; <strong>Throughput</strong> (MB/s over legs above 1 MB and 500 ms) &middot; <strong>Error % Files</strong> (Failed or Expired) &middot; <strong>Transfer errors</strong> (every non-Processed leg, not Files).</li>
+<li><strong>OK Files</strong> (Processed + Waiting) &middot; <strong>Volume</strong> &middot; <strong>Throughput</strong> (MB/s over legs above 1 MB and 500 ms) &middot; <strong>Error % Files</strong> (Failed or Expired) &middot; <strong>Transfer errors</strong> (every non-Processed leg, not Files).</li>
 <li><strong>Connections</strong> (SSH / PeSIT sessions opened, by who dialled) &middot; <strong>PeSIT</strong> (CFT-link problem lines, ST&rarr;CFT vs CFT&rarr;ST) &middot; <strong>EventQueue</strong> (&ldquo;Unable to submit event&rdquo; lines).</li>
 <li><strong>Seen</strong> &rsaquo; Partners / Accounts / Subscriptions &mdash; how many were seen by then (orange), split green / red. Only a Failed last File counts red; Subscriptions also count server-log reds. Green + red = orange.</li>
 <li><strong>Use cases</strong> &rsaquo; UC1&ndash;UC4 &mdash; the configured subscriptions stacked by status per slot (UC1/UC3/UC4: OK &middot; OK + error &middot; Error &middot; Not seen; UC2: OK &middot; Both &middot; No files &middot; Never collected &middot; Nothing).</li>

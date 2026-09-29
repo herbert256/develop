@@ -7,7 +7,7 @@
 #
 # ONE table: the DELIVERED Files only — outcome Processed; not Failed, not
 # Expired and not Waiting either (2026-09-13, user request: the former
-# "All transfers" switch view, every outcome with a measured duration, is
+# "All Files" switch view, every outcome with a measured duration, is
 # gone — a failed transfer's run time is a timeout, not a duration). Every
 # cell of a row opens the File's page, docs/files/<coreid>.html (2026-09-29:
 # the per-transfer record pages under docs/transfers/duration/top/ went —

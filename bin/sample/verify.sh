@@ -824,7 +824,7 @@ for p in duration duration-all; do
     check $([ "${n:-0}" = 2 ] && echo 0 || echo 1) "transfer/$p.html has ${n:-0} table(s), expected the two side-by-side per-day tables"
     check $([ "$(grep -c '<h2[^>]*>Duration per day — percentiles' "docs/transfer/$p.html" 2>/dev/null)" = 1 ] && [ "$(grep -c '<h2[^>]*>Duration per day — min / avg / median / max' "docs/transfer/$p.html" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "transfer/$p.html lacks one of the two per-day table headings"
     check $([ "$(grep -c 'class="sxs"' "docs/transfer/$p.html" 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "transfer/$p.html does not lay its tables out side by side (.sxs)"
-    n=$(grep -o 'class="tab[^"]*"[^>]*>[^<]*<' "docs/transfer/$p.html" 2>/dev/null | grep -c 'OK transfers\|All transfers')
+    n=$(grep -o 'class="tab[^"]*"[^>]*>[^<]*<' "docs/transfer/$p.html" 2>/dev/null | grep -c 'Delivered Files\|All Files')
     check $([ "${n:-0}" = 2 ] && [ "$(grep -c 'Min/Avg/Max\|>Percentage<' "docs/transfer/$p.html" 2>/dev/null)" = 0 ] && echo 0 || echo 1) "transfer/$p.html button row: ${n:-0} scope buttons, and the Percentage / Min/Avg/Max pair must be gone"
 done
 check $([ ! -e docs/transfer/duration-minmax.html ] && [ ! -e docs/transfer/duration-all-minmax.html ] && [ ! -e data/transfer/reports/duration-minmax.rpt ] && echo 0 || echo 1) "the Min/Avg/Max sibling pages or .rpts still exist"
@@ -1289,6 +1289,27 @@ nm=$(cut -f1 "$FP" 2>/dev/null | LC_ALL=C sort -u | while read -r c; do [ -f "do
 check $([ "${nw:-0}" -gt 0 ] && [ "$nw" = "$nh" ] && [ "${nm:-1}" = 0 ] && echo 0 || echo 1) "docs/files/: $nh CoreId page(s), the published set holds ${nw:-0} ($nm without a page)"
 n=$(awk -F'\t' '$2 == "O" { o[$3]++ } $2 == "E" { e[$3]++ } END { for (k in o) if (o[k] > 1) b++; for (k in e) if (e[k] > 3) b++; print b + 0 }' "$FP" 2>/dev/null)
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_filepages.tsv: $n subscription(s) with more than one OK or three Error File pages"
+# UC status and the Polling page count the SAME polls (2026-09-29 audit): a
+# renamed flow's polls logged under its old name fold into UC3 status too
+# (the sample renames UC3_AB_NAS2_GLOBEX), and the UC3 tab's copied poll
+# table keeps only UC3 flows, so its total equals the Polling page's
+n=$(awk -F'\t' '
+    function strip(c) { sub(/^@\{[^}]*\}/, "", c); return c }
+    FNR == 1 { f++ }
+    f == 1 && $1 == "ROW" && $8 ~ /^[0-9]+$/ { us[toupper(strip($3))] = $8 }
+    f == 2 && $1 == "ROW" && $7 ~ /^[0-9]+$/ { u = toupper(strip($2)); if ((u in us) && us[u] != $7) { b++; print "  " u ": UC status " us[u] ", Polling " $7 > "/dev/stderr" } }
+    END { print b + 0 }' data/server/reports/uc3-status.rpt data/server/reports/polling.rpt 2>&1 | tail -1)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n UC3 flow(s) whose UC status Polls differ from the Polling page"
+a=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "TOTAL" { sub(/^@\{[^}]*\}/, "", $3); print $3; exit }' data/server/reports/uc3-polling.rpt 2>/dev/null)
+b=$(awk -F'\t' '$1 == "TOTAL" { sub(/^@\{[^}]*\}/, "", $7); print $7; exit }' data/server/reports/polling.rpt 2>/dev/null)
+check $([ -n "$a" ] && [ "$a" = "$b" ] && echo 0 || echo 1) "UC3 tab Polls total ${a:-?} differs from the Polling page's ${b:-?}"
+# the two tables the sample left empty until the 2026-09-29 audit: the server
+# log's resubmit trail (gen-events.awk plants it beside the "resub" flows'
+# resubmits) and the admin-UI test connections
+n=$(awk -F'\t' '$1 == "TABLE" { t = ($2 ~ /^Resubmission outcomes/) } t && $1 == "ROW" && $3 ~ /^[0-9]+$/ { n++ } END { print n + 0 }' data/transfer/reports/resubmissions.rpt 2>/dev/null)
+check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "resubmissions.rpt: the Resubmission outcomes (server log) table has no dated row"
+n=$(awk -F'\t' '$1 == "TABLE" { t = ($2 == "Test connections") } t && $1 == "ROW" && $0 ~ /\tssh\t|\tpesit\t/ { n++ } END { print n + 0 }' data/server/reports/connection-diagnostics.rpt 2>/dev/null)
+check $([ "${n:-0}" -ge 2 ] && echo 0 || echo 1) "connection-diagnostics.rpt: the Test connections table lacks its ssh / pesit rows (${n:-0})"
 
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2

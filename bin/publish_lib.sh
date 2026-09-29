@@ -1701,7 +1701,7 @@ render_report() {   # $1 area  $2 name  $3 rpt
             render_rpt "$rpt" "$DOCS/$pagedir/$name.html" "../assets/style.css" "index.html" "$rlabel" 1 "$hslug" "$rkey"
         else
             segment_rpt "$rpt"   # grouped single-page report: inject the group row, keep EVERY table
-            # A report-emitted NAV (e.g. Duration's "OK transfers / All transfers"
+            # A report-emitted NAV (e.g. Duration's "Delivered Files / All Files"
             # view buttons) merges onto the group row to the RIGHT (@sep) — like a
             # tabbed report's table-tabs — instead of rendering as its own row.
             local mynav; mynav=$(printf '%s' "$HEADER" | awk -F'\t' '$1=="NAV"{print; exit}')

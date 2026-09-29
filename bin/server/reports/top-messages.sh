@@ -30,9 +30,21 @@ fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Normalize each W/E message to its shape: "…" -> "…", UUIDs -> UUID, dotted
-# quads -> IP, digit runs -> N; truncate so endless stack-trace tails cluster
-# too. Emits TAB-separated: count, level letter, buckets, first, last, shape.
+# quads -> IP, free-standing digit runs -> N (a run right after a letter or
+# "_" is part of a name or code and stays: 2026-09-29 audit — UC1_X, UC3_X
+# and UC4_X all read "UCN_X", a name that exists nowhere, and folded three
+# flows into one shape; ARRC0029 kept its number too); truncate so endless
+# stack-trace tails cluster too. Emits TAB-separated: count, level letter, buckets, first, last, shape.
 agg=$(awk -F'\t' "$LOGLINES_AWK"'
+    function numn(s,   out, pre) {
+        out = ""
+        while (match(s, /[0-9]+/)) {
+            pre = (RSTART > 1) ? substr(s, RSTART - 1, 1) : ""
+            out = out substr(s, 1, RSTART - 1) ((pre ~ /[A-Za-z_]/) ? substr(s, RSTART, RLENGTH) : "N")
+            s = substr(s, RSTART + RLENGTH)
+        }
+        return out s
+    }
     $3 == "I" { next }
     {
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
@@ -41,7 +53,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
         gsub(/"[^"]*"/, "\"…\"", m)
         gsub(/[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f-]*[0-9a-f]/, "UUID", m)
         gsub(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/, "IP", m)
-        gsub(/[0-9]+/, "N", m)
+        m = numn(m)
         m = substr(m, 1, 160)
         if (m == "") m = "(empty message)"   # never empty: the row is TAB-read in bash, which collapses it (2026-09-28)
         k = $3 SUBSEP m

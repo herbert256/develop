@@ -52,16 +52,16 @@ agg=$(awk -F'\t' '
 n_total=$(printf '%s\n' "$agg" | grep -c . || true)
 
 # Per-day counts for the "Top view" tab: date (first token of the datetime) ->
-# total, Error, OK. Deterministic (sort by date), newest first.
+# the count. Deterministic (sort by date), newest first.
 pd=$(printf '%s\n' "$agg" | awk -F'\t' '
         { split($1, dt, " "); d = dt[1]; if (d == "") next
-          c[d]++; if ($3 == "Error") e[d]++; else if ($3 == "OK") o[d]++ }
-        END { for (d in c) printf "%s\t%d\t%d\t%d\n", d, c[d], e[d] + 0, o[d] + 0 }' \
+          c[d]++ }
+        END { for (d in c) printf "%s\t%d\n", d, c[d] }' \
     | LC_ALL=C sort -t$'\t' -k1,1r)
 
 {
     printf 'TITLE\tOne-legged\n'   # = its Reports menu label (2026-09-29)
-    printf 'DESC\tLogical transfers (CoreIds) with only ONE leg — an incomplete, one-sided crossing that never completed.\n'
+    printf 'DESC\tFiles (CoreIds) with only ONE leg — an incomplete, one-sided crossing that never completed.\n'
 
     # ---- tab 1: Details — per-subscription rollup of the single-leg transfers ----
     if [ "$n_total" -eq 0 ]; then
@@ -86,23 +86,26 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
                 END { printf "TOTAL\tTotal (%d subscription(s))\t@{class=num}%d\t\t\n", NR, t }'
     fi
 
-    # ---- tab 2: Top view — the count of single-leg transfers per day ----
+    # ---- tab 2: Top view — the one-legged Files per day ----
+    # (2026-09-29 audit: "Single-leg transfers" + Error / OK columns — the
+    # count is FILES, and a lone leg is Failed by the outcome rule, so Error
+    # always equalled the count and OK was always empty: one column now)
     if [ -z "$pd" ]; then
-        printf 'TABLE\tSingle-leg transfers per day\tnofilter\tnosort\n'
-        printf 'HEAD\tDate\tSingle-leg transfers\tError\tOK\n'
-        printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\n'
-        printf 'ROW\t(none)\t\t\t\n'
+        printf 'TABLE\tOne-legged Files per day\tnofilter\tnosort\n'
+        printf 'HEAD\tDate\tOne-legged Files\n'
+        printf 'KIND\ttext\tnumfailed\n'
+        printf 'ROW\t(none)\t\n'
     else
-        printf 'TABLE\tSingle-leg transfers per day\n'
-        printf 'HEAD\tDate\tSingle-leg transfers\tError\tOK\n'
-        printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\n'
+        printf 'TABLE\tOne-legged Files per day\n'
+        printf 'HEAD\tDate\tOne-legged Files\n'
+        printf 'KIND\ttext\tnumfailed\n'
         printf '%s\n' "$pd" | awk -F'\t' '
-            { printf "ROW\t%s\t%s\t%s\t%s\n", $1, $2, $3, $4; t += $2; te += $3; to += $4 }
-            END { printf "TOTAL\tTotal (%d day(s))\t@{class=num}%d\t@{class=num failed}%d\t@{class=num processed}%d\n", NR, t, te, to }'
+            { printf "ROW\t%s\t%s\n", $1, $2; t += $2 }
+            END { printf "TOTAL\tTotal (%d day(s))\t@{class=num failed}%d\n", NR, t }'
     fi
 
-    printf 'SUMMARY\tSingle-leg (pirate) transfers: %s\n' "$n_total"
+    printf 'SUMMARY\tOne-legged Files: %s\n' "$n_total"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-echo "Data written to $OUT ($n_total single-leg transfer(s))." >&2
+echo "Data written to $OUT ($n_total one-legged File(s))." >&2

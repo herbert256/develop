@@ -19,14 +19,14 @@
 #   TITLE / H1                  page title + <h1> heading ("<Weekday> <date>")
 #   NAVROW  label|href ...      prev/next day
 #   KPI     val label sub accent href [delta]   the FIVE headline cards, in
-#           display order and under their display labels: Transfer files /
-#           Transfer error rate / Volume (transfer pass) then Server lines /
+#           display order and under their display labels: Files /
+#           File error rate / Volume (transfer pass) then Server lines /
 #           Server error rate (server pass)
 #   CARD    title sub href span chart a1..a5    the HERO chart
 #   CARDALT label title sub href span chart a1..a5   an ALTERNATE view of the
 #           hero chart (one line per view): label = the switch-button text,
 #           the rest = the CARD fields. The six shared slot views — Duration
-#           (the CARD) / Files processed / Volume / Error % Files /
+#           (the CARD) / OK Files / Volume / Error % Files /
 #           Transfer errors / PeSIT, the
 #           same labels as the dashboards overview. publish.sh renders them
 #           CSS-hidden next to the hero card under a button row; report.js
@@ -233,7 +233,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         if (h ~ /^[0-9][0-9]$/) {
             HH[d, h]++
             # the hero chart 30-MINUTE slot accumulators (the shared views —
-            # Duration/Files processed/Error % Files/Volume; PeSIT comes from
+            # Duration/OK Files/Error % Files/Volume; PeSIT comes from
             # the pesit-slots.tsv sidecar, Transfer errors from the
             # _transfers.tsv pass below): slot 0-47 by start time
             mi = h * 60 + (substr($5, 4, 2) + 0)               # minute of the day
@@ -371,8 +371,8 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # the card counts EVERY File of the day, so it opens the Top view,
             # whose per-day Files Count is that figure (2026-09-28 fix: it
             # opened Activity per day, which counts the delivered Files only)
-            printf "KPI\t%d\tTransfer files\tlogical transfers%s\tblue\t../transfer/topview.html" q "\t%s\n", C[d], cov, pctd(C[d], wdc[wd] ? aFiles[wd]/wdc[wd] : 0) >> out
-            printf "KPI\t%.1f%%\tTransfer error rate\t%d Error / %d OK\tred\t../transfer/topview.html" q "\t%s\n", erate, F[d]+0, P[d]+0, pctd(erate, aFiles[wd] ? aErrF[wd]*100/aFiles[wd] : 0) >> out
+            printf "KPI\t%d\tFiles\tlogical transfers%s\tblue\t../transfer/topview.html" q "\t%s\n", C[d], cov, pctd(C[d], wdc[wd] ? aFiles[wd]/wdc[wd] : 0) >> out
+            printf "KPI\t%.1f%%\tFile error rate\t%d Error / %d OK\tred\t../transfer/topview.html" q "\t%s\n", erate, F[d]+0, P[d]+0, pctd(erate, aFiles[wd] ? aErrF[wd]*100/aFiles[wd] : 0) >> out
             printf "KPI\t%s\tVolume\taverage %s per File\tgreen\t../transfer/topview.html" q "\t%s\n", human(V[d]), human(C[d] ? V[d]/C[d] : 0), pctd(V[d], wdc[wd] ? aVol[wd]/wdc[wd] : 0) >> out
             # ---- problem links ---------------------------------------------
             # PROBLEM<TAB>side<TAB>href<TAB>headline<TAB>desc — side (transfer|
@@ -454,15 +454,15 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
                 DURS[rr] = sdur; CNTS[rr] = scnt; RATES[rr] = srate; VOLS[rr] = svol; PESS[rr] = spes; ERRS[rr] = serr; EQSS[rr] = seqq
             }
             printf "CARD\tFile duration percentiles per slot\t%s · P50 dark green, P90 orange, P98 dark red — each band tops out at that percentile of the delivered (Processed) File durations in that slot\t../transfer/duration.html" q "\tspan2\tslots\tdur\t%s\t\t15:%s\t60:%s\n", d, DURS[30], DURS[15], DURS[60] >> out
-            # Files processed is the ONE day card that fills a3 (the plot link):
+            # OK Files is the ONE day card that fills a3 (the plot link):
             # clicking the graph opens the SUBSCRIPTIONS behind this day rather
             # than the per-day report the title links. The other slot cards leave
             # a3 empty and fall back to their own href (bin/day/publish.sh).
             # ?axway_date beats the Entities pages datereset, so the view opens
             # narrowed to this day — the same target the Top-5 "See more" links use.
-            printf "CARDALT\tFiles processed\tFiles processed per slot\t%s · OK Files (Processed + Waiting) per slot, by start time — the graph opens the subscriptions of this day\t../transfer/topview.html" q "\tspan2\tslots\tcount\t%s\t../transfer/entities/subscription-all.html" q "\t15:%s\t60:%s\n", d, CNTS[30], CNTS[15], CNTS[60] >> out
+            printf "CARDALT\tOK Files\tOK Files per slot\t%s · OK Files (Processed + Waiting) per slot, by start time — the graph opens the subscriptions of this day\t../transfer/topview.html" q "\tspan2\tslots\tcount\t%s\t../transfer/entities/subscription-all.html" q "\t15:%s\t60:%s\n", d, CNTS[30], CNTS[15], CNTS[60] >> out
             printf "CARDALT\tVolume\tVolume per slot\t%s · bytes moved per slot, by start time\t../transfer/topview.html" q "\tspan2\tslots\tbytes\t%s\t\t15:%s\t60:%s\n", d, VOLS[30], VOLS[15], VOLS[60] >> out
-            printf "CARDALT\tError %% Files\tTransfer error rate per slot\t%s · per slot, the %% of its Files that Failed or Expired — a slot with no Files shows a gap\t../transfer/topview.html" q "\tspan2\tslots\trate\t%s\t\t15:%s\t60:%s\n", d, RATES[30], RATES[15], RATES[60] >> out
+            printf "CARDALT\tError %% Files\tFile error rate per slot\t%s · per slot, the %% of its Files that Failed or Expired — a slot with no Files shows a gap\t../transfer/topview.html" q "\tspan2\tslots\trate\t%s\t\t15:%s\t60:%s\n", d, RATES[30], RATES[15], RATES[60] >> out
             printf "CARDALT\tTransfer errors\tTransfer errors per slot\t%s · Transfers (raw log records) whose Status is anything but Processed, per slot — one File can contribute several failed legs; a quiet slot is a real zero\t../transfer/failure-heatmap.html" q "\tspan2\tslots\terrs\t%s\t\t15:%s\t60:%s\n", d, ERRS[30], ERRS[15], ERRS[60] >> out
             # ---- the six Top-5 tables --------------------------------------
             # TOP<TAB>kind<TAB>title<TAB>unit<TAB>href<TAB>name US value US …

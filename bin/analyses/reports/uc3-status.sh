@@ -106,7 +106,8 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # is a UC3 flow here exactly like a UC3_-named one (2026-08-31 audit — the
 # roster read the name alone and silently dropped them)
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
-agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK"'
+agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v SL="$SLOTS_OUT" -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
+    BEGIN { rn_load(RNF) }
     BEGIN { while ((getline ucl < ucdf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[2] == "UC3") ucd[toupper(uca[1])] = 1 } close(ucdf) }
     # the logged site -> the clean subscription name (as the transfer parser does)
     function clean(s) { sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", s); return s }
@@ -181,7 +182,11 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
             s = clean(substr(m, RSTART + 1, RLENGTH - 2)); sig = "prep"
         } else next
         if (s == "") next
-        k = key(toupper(s)); if (k == "") next
+        # a RENAMED flow logs its polls under the name current when written
+        # (2026-09-29 audit: UC3_AB_NAS2_GLOBEX -> UC3_AB_NAS_GLOBEX lost 1352
+        # polls here while the Polling page counted them) — fold it first,
+        # the way remote-poll.sh sitecanon does
+        k = key(toupper(rn_canon_pfx(s))); if (k == "") next
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
         if (d != "" && d > llg[k]) llg[k] = d
         if (sig == "poll") { poll[k]++; if (found == 0) empty[k]++ }

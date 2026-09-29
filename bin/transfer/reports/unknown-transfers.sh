@@ -71,7 +71,8 @@ agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" '
             $6, $4, $5, clean($3), clean($14), clean($15), side, $10 + 0, st, $8 + 0, human($8), cid, lit(clean($11)), tint
         a = $3; err = ($2 == "Failed" || $2 == "Expired")
         if (!(a in AF)) AO[++na] = a
-        AF[a]++; if (err) AE[a]++; else AK[a]++
+        AF[a]++; if (err) { AE[a]++; te++ } else { AK[a]++; tk++ }
+        tl += $10; tv += $8
         t = $4 " " substr($5, 1, 8)
         if (!(a in FT) || t < FT[a]) FT[a] = t
         if (!(a in LT) || t > LT[a]) LT[a] = t
@@ -79,11 +80,15 @@ agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" '
     END {
         for (i = 1; i <= na; i++) { a = AO[i]
             printf "A\t%s\tROW\t%s\t%d\t%s\t%s\t%s\t%s\n", a, clean(a), AF[a], nz(AK[a]), nz(AE[a]), FT[a], LT[a] }
-        printf "~N\t%d\t%d\n", n + 0, na + 0
+        # the totals of the additive columns (2026-09-29 audit: the TOTAL rows
+        # left Legs, Volume, OK and Error blank)
+        printf "~N\t%d\t%d\t%d\t%s\t%s\t%s\n", n + 0, na + 0, tl + 0, (tv > 0 ? human(tv) : ""), nz(tk), nz(te)
     }' "$FSRC")
 rm -f "$pages"
 nf=$(printf '%s\n' "$agg" | awk -F'\t' '$1 == "~N" { print $2 }')
 na=$(printf '%s\n' "$agg" | awk -F'\t' '$1 == "~N" { print $3 }')
+# ("|", not TAB: TAB is IFS whitespace, so an empty field would collapse)
+IFS='|' read -r tlegs tvol tok terr <<< "$(printf '%s\n' "$agg" | awk -F'\t' '$1 == "~N" { printf "%s|%s|%s|%s", ($4 > 0 ? $4 : ""), $5, $6, $7 }')"
 T=$(printf '\t')
 
 {
@@ -97,7 +102,7 @@ T=$(printf '\t')
     else
         printf 'ROW\t@{colspan=10}No unknown transfers in this data window.\n'
     fi
-    printf 'TOTAL\tTotal (%s Files)\t\t\t\t\t\t\t\t\t\n' "${nf:-0}"
+    printf 'TOTAL\tTotal (%s Files)\t\t\t\t\t@{class=num}%s\t\t@{class=num}%s\t\t\n' "${nf:-0}" "${tlegs:-}" "${tvol:-}"
     printf 'TABLE\tPer account\tnofilter\tsort=2:-1\n'
     printf 'HEAD\tAccount\tFiles\tOK\tError\tFirst\tLast\n'
     printf 'KIND\tacct\tnum\tnumprocessed\tnumfailed\ttext\ttext\n'
@@ -106,7 +111,7 @@ T=$(printf '\t')
     else
         printf 'ROW\t@{colspan=6}No unknown transfers in this data window.\n'
     fi
-    printf 'TOTAL\tTotal (%s account(s))\t@{class=num}%s\t\t\t\t\n' "${na:-0}" "${nf:-0}"
+    printf 'TOTAL\tTotal (%s account(s))\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t\t\n' "${na:-0}" "${nf:-0}" "${tok:-}" "${terr:-}"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

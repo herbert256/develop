@@ -8,9 +8,9 @@
 # unselected KPIs). Every directive in the .rpt lands on the page.
 #
 # Page layout: h1 → nav row (prev/next day) → ONE KPI card row (the five
-# headline cards: Transfer files / Transfer error rate / Volume / Server lines
+# headline cards: Files / File error rate / Volume / Server lines
 # / Server error rate) → the hero chart (the SIX shared 30-minute slot views:
-# Duration hero + Files processed/Error % Files/Volume/PeSIT — same labels as the
+# Duration hero + OK Files/Error % Files/Volume/PeSIT — same labels as the
 # dashboards overview, so the picked view carries between the pages) → the two
 # problem lists (server, then transfer) → Remarkable facts, which CLOSE the
 # page. Day pages carry NO From/To filter: the page IS a date filter.
@@ -141,7 +141,7 @@ render_card() {   # $1 chart id  $2 title  $3 sub  $4 href  $5 span  $6 chart  $
 CIDN=0
 
 # The ONE KPI row above the hero graph — every KPI line of the day .rpt, in
-# file order: Transfer files / Transfer error rate / Volume (the transfer
+# file order: Files / File error rate / Volume (the transfer
 # pass) then Server lines / Server error rate (the server pass). The .rpt
 # carries exactly these five, under the labels shown, so nothing is selected
 # here. A KPI line's optional 7th field is the same-weekday delta (e.g. +30% /

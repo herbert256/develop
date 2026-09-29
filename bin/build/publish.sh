@@ -37,7 +37,7 @@ ensure_assets   # topbar-data.js (the menus' data file)
 # This is the one publish step that writes into docs/help/ (see CLAUDE.md).
 apply_help_chrome() {
     local tb f tmp
-    tb=$(render_shared_topbar "../" "index")
+    tb=$(render_shared_topbar "../" "general")   # a help page's "?" = the general help (2026-09-29 audit: it opened the Reports start page's help)
     for f in docs/help/*.html; do
         [ -f "$f" ] || continue
         tmp=$(mktemp "${TMPDIR:-/tmp}/help.XXXXXX")
@@ -565,7 +565,7 @@ write_sitemap() {
         printf '<li><a href="../index.html">Home</a> — the shared landing page</li>\n'
         printf '<li><a href="../search/search.html">Search</a> — find any entity by name</li>\n'
         printf '<li><a href="../search/all-files.html">All files search</a> — find a File among all the Files of the transfer logs</li>\n'
-        printf '<li><a href="../help/index.html">Help</a> — how to read the report catalogs (per-report help sits behind each page'\''s <b>?</b> button)</li>\n'
+        printf '<li><a href="../help/general.html">Help</a> — how to read the site: colours, tables, drill-downs, search (per-report help sits behind each page'\''s <b>?</b> button)</li>\n'
         # THE BUILD REPORT (2026-09-12, user request): back on the site as
         # docs/tools/build.html — bin/build.sh writes it LAST, from its EXIT
         # trap, so the link points at the report of the build that wrote this

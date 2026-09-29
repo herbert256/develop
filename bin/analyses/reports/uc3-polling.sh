@@ -48,6 +48,23 @@ if [ ! -f "$RP" ] && [ ! -f "$SUBJSON" ]; then
 fi
 echo "uc3-polling: building the UC3 tab's polling tables ..." >&2
 
+# UC3 ONLY (2026-09-29 audit): every table of the UC3 tab keeps the flows the
+# flat Polling page keeps (polling.sh) — in the UC3 status roster (exactly, or
+# by a unique prefix either way: the server truncates names) or UC3-named; the
+# copy was verbatim, so the tab listed a UC5 and two UC1 pollers
+USF="$REPORTS_DIR/uc3-status.rpt"; [ -f "$USF" ] || USF=/dev/null
+UC3_AWK='
+    function strip(c) { sub(/^@\{[^}]*\}/, "", c); return c }
+    function isuc3(n,   u, i, c) {
+        u = toupper(n)
+        if (substr(u, 1, 3) == "UC3" || (u in ROST)) return 1
+        c = 0
+        for (i = 1; i <= nr; i++) if (index(RL[i], u) == 1 || index(u, RL[i]) == 1) c++
+        return c == 1
+    }
+    BEGIN { while ((getline l < USF) > 0) { n = split(l, a, "\t"); if (a[1] == "ROW" && n >= 3) { u = toupper(strip(a[3])); if (u != "" && !(u in ROST)) { ROST[u] = 1; RL[++nr] = u } } } close(USF) }
+'
+
 # ---- (c)+(d): the cron tables, computed first (the emit block below prints in page order)
 crows=""; xrows=""; total=0; sftp=0; ftp=0; distinct=0; sumpolls=0
 if [ -f "$SUBJSON" ] && command -v jq >/dev/null 2>&1; then
@@ -59,7 +76,7 @@ if [ -f "$SUBJSON" ] && command -v jq >/dev/null 2>&1; then
            | ($s.parameters["hybrid_partner_\($p)_relay0_receive_scheduler_cron_expression"]) as $c
            | select($c != null and $c != "")
            | [ $s.name, ($p|ascii_upcase), $c ] | @tsv)
-      ' "$SUBJSON" | awk -F'\t' -v CF=3 -f "$CRON_AWK" | LC_ALL=C sort -f)
+      ' "$SUBJSON" | awk -F'\t' -v USF="$USF" "$UC3_AWK"' isuc3($1)' | awk -F'\t' -v CF=3 -f "$CRON_AWK" | LC_ALL=C sort -f)
     # `grep -c .` exits 1 on zero matches — an env with NO cron-scheduled
     # subscriptions must not abort under set -e
     total=$(printf '%s\n' "$rows" | grep -c . || true)
@@ -91,11 +108,18 @@ fi
 
 {
     printf 'TITLE\tUC3 polling\n'
-    # ---- (a)+(b): remote-poll.rpt's TABLE blocks, verbatim (+ tab=uc3) ------
+    # ---- (a)+(b): remote-poll.rpt's TABLE blocks (+ tab=uc3), UC3 ONLY ------
+    # (UC3_AWK above; each TOTAL is re-summed over the rows kept, in
+    # remote-poll.sh's own formats)
     if [ -f "$RP" ]; then
-        awk -F'\t' '
-            $1 == "TABLE" { t++; print $0 "\ttab=uc3"; next }   # (the anchor= ids went 2026-09-29: nothing links them)
-            t && ($1 == "HEAD" || $1 == "GHEAD" || $1 == "KIND" || $1 == "RECALC" || $1 == "ROW" || $1 == "TOTAL") { print; next }
+        awk -F'\t' -v USF="$USF" "$UC3_AWK"'
+            $1 == "TABLE" { t++; print $0 "\ttab=uc3"; k = 0; p = 0; e = 0; m = 0; le = 0; next }
+            t && ($1 == "HEAD" || $1 == "GHEAD" || $1 == "KIND" || $1 == "RECALC") { print; next }
+            t && $1 == "ROW" { if (!isuc3(strip($2))) next
+                               k++; if (t == 1) { p += $3; e += $4; m += $5 } else le += $3
+                               print; next }
+            t == 1 && $1 == "TOTAL" { printf "TOTAL\tTotal (%d subscription(s))\t@{class=num}%d\t@{class=num warn}%d\t@{class=num processed}%d\t@{class=num}%.1f%%\t\t\n", k, p, e, m, (p ? e * 100 / p : 0); next }
+            t == 2 && $1 == "TOTAL" { printf "TOTAL\tTotal (%d subscription(s))\t@{class=num failed}%d\t\t\n", k, le; next }
             { next }   # TITLE/DESC/INTRO/NOTE/SUMMARY/FOOT: the merged page has its own (a report page renders no prose)
         ' "$RP"
     else

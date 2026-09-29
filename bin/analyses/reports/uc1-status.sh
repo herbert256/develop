@@ -100,7 +100,8 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # is a UC1 flow here exactly like a UC1_-named one (2026-08-31 audit — the
 # roster read the name alone and silently dropped them)
 UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
-agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK"'
+agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v SL="$SLOTS_OUT" -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
+    BEGIN { rn_load(RNF) }
     BEGIN { while ((getline ucl < ucdf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[2] == "UC1") ucd[toupper(uca[1])] = 1 } close(ucdf) }
     # the logged site -> the clean subscription name (as the transfer parser does)
     function clean(s) { sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", s); return s }
@@ -173,7 +174,7 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
             sub(/ defined in account.*$/, "", s); sub(/\..*$/, "", s); s = clean(s); sig = "prob"
         } else next
         if (s == "") next
-        k = key(toupper(s)); if (k == "") next
+        k = key(toupper(rn_canon_pfx(s))); if (k == "") next   # a RENAMED flow logs its old name (2026-09-29 audit; uc3-status.sh)
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
         if (d != "" && d > llg[k]) llg[k] = d
         prob[k]++                                            # every counted UC1 line is a problem

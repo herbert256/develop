@@ -54,9 +54,10 @@ fi
 # (the logon evidence is account-level).
 rows=$(LC_ALL=C sort -t$'\t' -k16,16nr -k12,12nr -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' '
     function sublink(s) { return (s != "") ? "@{alink=subscriptions/" s "}" : "" }
+    function nz(x) { return (x + 0 == 0) ? "" : x + 0 }   # a 0 count is BLANK, as on the sibling tabs (2026-09-29 audit)
     $10 + 0 > 0 {
-        printf "ROW\t%s%s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n", \
-            sublink($1), $1, $5, $11, $12, $13, $16, $7, $8
+        printf "ROW\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
+            sublink($1), $1, nz($5), nz($11), nz($12), nz($13), nz($16), nz($7), $8
         tf += $7; nr++
         # the logon/visit figures belong to the ACCOUNT (or, on an account with
         # several FE logins, to the flow login), repeated on each of its UC2
@@ -94,8 +95,9 @@ fi
     printf 'HEAD\tSubscription\tPickups\tCollected\tCollected + delivered\tDelivered only\tSame connection\tFiles picked up\tPickup pattern\n'
     printf 'KIND\tmono\tnum\tnumprocessed\tnumprocessed\tnum\tnum\tnum\ttext\n'
     printf '%s\n' "$rows"
+    nzs() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
     printf 'TOTAL\tTotal (%s subscription(s))\t@{class=num}%s\t@{class=num processed}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\n' \
-        "$n_rows" "$t_p" "$t_c" "$t_b" "$t_d" "$t_s" "$t_f"
+        "$n_rows" "$(nzs "$t_p")" "$(nzs "$t_c")" "$(nzs "$t_b")" "$(nzs "$t_d")" "$(nzs "$t_s")" "$(nzs "$t_f")"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

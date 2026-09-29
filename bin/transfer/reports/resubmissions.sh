@@ -137,7 +137,7 @@ IFS='|' read -r _ srv_err srv_ok srv_peakd srv_peakn srv_okfirst <<< "$(printf '
     else
         printf 'TABLE\tResubmission outcomes (server log)\tnofilter\tnosort\n'
     fi
-    printf 'HEAD\tDate\tErrors\tSuccesses\n'
+    printf 'HEAD\tDate\tError\tOK\n'   # the site words ("Errors / Successes" until the 2026-09-29 audit)
     printf 'KIND\ttext\tnumfailed\tnumprocessed\n'
     if [ "${srv_err:-0}" -gt 0 ] || [ "${srv_ok:-0}" -gt 0 ]; then
         while IFS='|' read -r _ d se ss; do
