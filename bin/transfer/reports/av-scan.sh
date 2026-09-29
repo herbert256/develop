@@ -198,6 +198,9 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
             [ -z "$bdate" ] && continue
             nblk=$((nblk + 1))
             bproto=${brest%%$'\t'*}; bfile=${brest#*$'\t'}
+            # a raw name starting with @ would read as renderer metadata: the
+            # empty block @{} keeps it literal (audit 2026-09-29 F07)
+            case $bfile in @*) bfile="@{}$bfile" ;; esac
             printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$bdate" "$btime" "$bacct" "$blogin" "$bsite" "$bproto" "$bfile"
         done <<< "$blocked_rows"
         printf 'TOTAL\tTotal (%s rows)\t\t\t\t\t\t\n' "$nblk"

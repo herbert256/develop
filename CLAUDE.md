@@ -623,7 +623,8 @@ A ROW/TOTAL cell may lead with `@{class=…,colspan=N,link=…,alink=…,href=�
 cell's hover title, 2026-09-20 — the Polling page's Active column — its words carry no `,`,
 the attr list splits on it). A ROW may carry
 `@data:NAME=VALUE` cells (emitted as `data-NAME` on the `<tr>`). Scripts emit values UNESCAPED
-(the renderer escapes); keep TAB/CR/LF out of cells. Tables size to content; a wide table WIDENS THE
+(the renderer escapes); keep TAB/CR/LF out of cells. A RAW value that can begin with `@` (a file
+name) goes through `lit()` — the empty block `@{}` in front keeps it literal (2026-09-29 audit F07). Tables size to content; a wide table WIDENS THE
 PAGE (2026-09-08, user request — `.tablewrap` and `.sxs` are no longer scroll boxes: their bottom
 scrollbar was off-screen on a tall table, so the browser's own horizontal bar now does the job; the
 fixed top bar keeps its right icons in view).
@@ -1558,6 +1559,47 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   catchup, for its File-page links) lists every such File + a per-account table; verify checks
   its row count against `_files.tsv`. Unknown Files cannot read Processed (no movement), so they
   are Error or Waiting / Expired.
+
+
+## Rules from the external audit of 2026-09-29 (audit.html in develop/, 17 findings)
+
+Herbert: "drop F17, skip the items that need a decision, fix the rest". F03 (the JSON kind
+sniffing) and F06 (what "now" is for Waiting ages) are open ON PURPOSE; F17 was about the
+removed trend.sh. Fixed:
+
+- **A raw value that can begin with `@` goes out through `lit()`** (F07): `@{}` + the value — the
+  EMPTY metadata block — so a partner-chosen file name like `@data:res=green` or
+  `@{colspan=7}x.csv` renders as literal text instead of a row attribute or a cell attribute.
+  Every file-name cell writer carries `function lit(s)` (bash writers: `case $v in @*)
+  v="@{}$v"`). A cell that already leads with a writer block (`@{href=…}name`) needs none — the
+  text after a block is always literal. **A new writer of raw names uses lit() too**; the check is
+  a scratch build with every sample file name prefixed `@data:pwnd=1` (0 pages may carry `data-pwnd`).
+- **The transfer tokenizer frames LOGICAL records** (F08): a line that leaves a quoted field open
+  (`csv_open`, set by split_csv) is held and the next physical line joins it; a held record that
+  never closes (the next line opens like a record, 64 lines, or end of file) is dropped and
+  counted (`WARNING: dropped N CSV record(s) whose quoted field never closed`).
+- **Search globs never become a RegExp** (F12): `globMatcher` (report.js and
+  all-files-search.js, KEEP IN STEP) is the two-pointer walk. **A "quoted phrase" is ONE search
+  term** (F10): parseQuery swaps each phrase for a placeholder before the operator split, so
+  and/or/not inside quotes is text — the Failing reasons links search `"<reason>"`.
+- **The all-files bloom files the Unicode-lowercase trigrams too** (F11) for a name holding
+  U+212A (Kelvin → k) or U+0130 (İ → i + U+0307).
+- **A failed full CSV export saves NOTHING** (F13): `_csvAll` answers `cb(null, why)`, the hotspot
+  reads `csv ✗` with the reason in its title, a click retries.
+- **`?axway_date` follows USER date changes** (F14, `syncDateUrl`): from..to (one day: the day),
+  `all` when the URL carried a date, nothing otherwise; data-date-reset pages only rewrite a
+  date the URL already had.
+- **Fitted duration axes keep two ticks** (F16): the ladder runs to 7 d.
+- **punctuality.sh is circular** (F15): minutes unwrap around their circular mean before the
+  median / spread / late test (a 23:58 / 00:02 flow is 00:00, not 12:00 ±718).
+- **Expiry needs a deletion at/after the STAGING END** (F05): `_files.tsv` col 24, not the start.
+- **Triage clamps every "days in state" at 0** (F02): server evidence can date past the newest File.
+- **Intake** (F01, F04): `environment.txt` / `README.txt` are refused in ANY case (APFS is
+  case-insensitive); `fm_valid` rejects a FlowManager export whose string-processed fields
+  (`.name`, logins, hosts, AllowIP*, tags, parameters/status/participants shapes) have the wrong
+  type, or that holds more than one JSON document — the archive stays in the inbox.
+- **The build lock** (F09): a stale lock is reclaimed under `build/.buildlock.reclaim` with the
+  PID re-read while holding it; `release_lock` removes the lock only for its owner.
 
 ## Conventions / gotchas
 

@@ -80,9 +80,26 @@
   // ---- the matcher -------------------------------------------------------
   function matcher(term) {
     if (!/[*?]/.test(term)) return function (k) { return k.indexOf(term) !== -1; };
-    var re = new RegExp(term.replace(/[.+^${}()|[\]\\]/g, "\\$&")
-                            .replace(/\*/g, "[\\s\\S]*").replace(/\?/g, "[\\s\\S]"));
-    return function (k) { return re.test(k); };
+    return globMatcher(term);
+  }
+  // the glob test WITHOUT a RegExp (2026-09-29 audit F12: "************z"
+  // backtracked for seconds per name): the two-pointer walk, retrying only
+  // from the LAST star; unanchored (wrapped in stars, star runs collapsed).
+  // KEEP IN STEP with assets/report.js globMatcher.
+  function globMatcher(q) {
+    var p = ("*" + q + "*").replace(/\*+/g, "*"), m = p.length;
+    return function (s) {
+      var i = 0, j = 0, star = -1, mark = 0, n = s.length, c;
+      while (i < n) {
+        c = j < m ? p.charAt(j) : "";
+        if (c === "*") { star = j++; mark = i; }
+        else if (c !== "" && (c === "?" || c === s.charAt(i))) { i++; j++; }
+        else if (star >= 0) { j = star + 1; i = ++mark; }
+        else return false;
+      }
+      while (j < m && p.charAt(j) === "*") j++;
+      return j === m;
+    };
   }
   function words(q, raw) {
     q = q.replace(/^\s+|\s+$/g, "");

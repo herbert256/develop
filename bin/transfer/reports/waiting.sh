@@ -197,6 +197,8 @@ printf '%s\n' "$agg" | awk -F'|' '$1 == "F"' | LC_ALL=C sort -t'|' -k4,4 -k2,2n 
     -v side="$FILESIDE.raw.$$" -v lastdt="$last_dt" -v TOPN=5 '
     BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
     function clean(s) { gsub(/[\t\r]/, " ", s); return s }
+    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
     function finish() {
         if (out == "") return
         printf "FOOT\n" > out
@@ -219,7 +221,7 @@ printf '%s\n' "$agg" | awk -F'|' '$1 == "F"' | LC_ALL=C sort -t'|' -k4,4 -k2,2n 
         fn = $11; for (j = 12; j <= NF; j++) fn = fn "|" $j
         nrow++
         if (nrow <= TOPN) { lk = "@{href=../../files/" $10 ".html}"; print $10 > side } else lk = ""
-        printf "ROW\t%s\t@{sortval=%d}%s\t%s\t%s%s\t@data:res=orange\n", $3, $9, $8, clean(fn), lk, $10 > out
+        printf "ROW\t%s\t@{sortval=%d}%s\t%s\t%s%s\t@data:res=orange\n", $3, $9, $8, lit(clean(fn)), lk, $10 > out
     }
     END { finish() }'
 rm -rf "$SUBDIR"; mv "$SUBDIR.new" "$SUBDIR"
@@ -418,6 +420,7 @@ oldest_cell="-"
     while IFS='|' read -r _ s dt site acct bytes size wf wsec _ fname; do
         [ -z "$site" ] && continue
         n_shown=$((n_shown + 1)); sum_bytes=$((sum_bytes + bytes))
+        case $fname in @*) fname="@{}$fname" ;; esac   # the lit() rule of the awk above (audit 2026-09-29 F07)
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@{sortval=%s}%s\t@data:res=orange\n' "$dt" "$site" "$acct" "$fname" "$size" "$wsec" "$wf"
     done <<< "$(printf '%s\n' "$agg" | grep '^F|' | LC_ALL=C sort -t'|' -k2,2n -k4,4 | awk -v n="$TOP_FILES" 'NR<=n')"
     if [ "$n_shown" -eq 0 ]; then

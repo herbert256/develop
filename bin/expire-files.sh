@@ -17,7 +17,7 @@
 # Join rule (validated 2026-07: 2803 of 3394 Waiting files matched, ALL at
 # 10-12 days after staging; the unmatched rest were all younger than the
 # retention window): account (@endpoint-stripped, case aside) + file basename,
-# EARLIEST deletion dated at/after the file's staging start. Only Waiting
+# EARLIEST deletion dated at/after the file's staging END (col 24). Only Waiting
 # (or previously Expired) rows are touched — a deleted file whose transfer
 # was Processed/Failed is ordinary retention cleanup, not an expiry.
 #
@@ -112,7 +112,13 @@ awk -F'\t' -v OFS='\t' '
         if ($2 == "Waiting" || $2 == "Expired") {
             k = toupper($3) SUBSEP $11; hit = ""
             if (k in dd) {
-                n = split(dd[k], a, "\037"); staged = $4 " " $5
+                # the deletion must come at/after the copy was STAGED — col 24,
+                # the File END, which for a Waiting File is the end of its staging leg
+                # (the start, cols 4/5, let a cleanup of an older same-name copy
+                # between arrival and staging expire the new File — audit
+                # 2026-09-29 F05); an undated end falls back to the start
+                staged = ($24 != "") ? $24 : $4 " " $5
+                n = split(dd[k], a, "\037")
                 for (i = 2; i <= n; i++)         # a[1] is the empty lead-in
                     if (a[i] >= staged && (hit == "" || a[i] < hit)) hit = a[i]
             }

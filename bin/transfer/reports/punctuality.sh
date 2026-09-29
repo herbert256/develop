@@ -52,8 +52,11 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 #   P|clsord|spread|site|days|typical|window|class|late|missed|lastd
 #   TOT|sites|clock|reg|loose|irreg|late|missed
 agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
+    BEGIN { PI2 = 8 * atan2(1, 1) }
     function fromjdn(j,  a,b,c,dd,e,mm,day,mon,yr){ a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d",yr,mon,day) }
-    function hhmm(m) { return sprintf("%02d:%02d", int(m / 60), m % 60) }
+    function hhmm(m) { m = int(m) % 1440; if (m < 0) m += 1440; return sprintf("%02d:%02d", int(m / 60), m % 60) }
+    # the minute m moved by whole days to within 12 hours of the centre c
+    function unwrap(m, c) { while (m - c > 720) m -= 1440; while (c - m >= 720) m += 1440; return m }
     $12 == "" || $12 == "Unknown" || $4 == "" || $5 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         s = $12; d = $4; j = $7 + 0
@@ -72,9 +75,17 @@ agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
         for (s in days) {
             if (days[s] < MINDAYS) continue
             nd = split(dl[s], D, " ")
-            # per-day arrival minutes, insertion-sorted for the median
-            n = 0
-            for (i = 1; i <= nd; i++) { n++; M[n] = fm[s SUBSEP fromjdn(D[i])] + 0 }
+            # per-day arrival minutes, insertion-sorted for the median. The
+            # clock is a CIRCLE (2026-09-29 audit F15: arrivals at 23:58 and
+            # 00:02 read as a linear 12:00 +-718 min, Irregular, so the
+            # late / missed checks skipped a tight midnight flow): the circular
+            # mean of the minutes is the centre, every minute is unwrapped to
+            # within 12 hours of it, and median, spread and the late test work
+            # on those unwrapped minutes. A daytime cluster is unchanged.
+            n = 0; cs = 0; sn = 0
+            for (i = 1; i <= nd; i++) { m0 = fm[s SUBSEP fromjdn(D[i])] + 0; cs += cos(m0 * PI2 / 1440); sn += sin(m0 * PI2 / 1440) }
+            ctr = atan2(sn, cs) * 1440 / PI2
+            for (i = 1; i <= nd; i++) { n++; M[n] = unwrap(fm[s SUBSEP fromjdn(D[i])] + 0, ctr) }
             for (i = 2; i <= n; i++) { v = M[i]; j2 = i - 1; while (j2 >= 1 && M[j2] > v) { M[j2+1] = M[j2]; j2-- } M[j2+1] = v }
             med = (n % 2) ? M[(n + 1) / 2] : int((M[n / 2] + M[n / 2 + 1]) / 2)
             sum = 0; ss = 0
@@ -100,9 +111,9 @@ agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
                 for (j2 = firstj[s]; j2 <= maxjd; j2++) {
                     w = j2 % 7; d2 = jd2d[j2]; if (d2 == "") d2 = fromjdn(j2)
                     if (j2 in act) {
-                        am = fm[s SUBSEP d2] + 0
+                        am = unwrap(fm[s SUBSEP d2] + 0, ctr)
                         if (am > med + 60) late++
-                    } else if (j2 == maxjd && lastm < med + 60) {
+                    } else if (j2 == maxjd && unwrap(lastm, ctr) < med + 60) {
                         # the window ends before this flow is even late on its
                         # last day: the export cut, not a missed day
                     } else if (wcal[w] >= 2 && wact[w] >= 0.75 * wcal[w]) {

@@ -251,6 +251,7 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
             }
         }
         n++; field[n] = cur
+        csv_open = inquotes              # a quoted field still open at the end of the line
         return n
     }
     # split_csv_fast (2026-09-27): the same fields at C speed — split on ","
@@ -313,11 +314,28 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         return total
     }
     { sub(/\r$/, "") }
-    FNR == 1 { next }
-    length($0) == 0 { next }
+    FNR == 1 { if (rbuf) unterm++; rbuf = 0; next }
+    # A QUOTED FIELD MAY HOLD A NEWLINE (2026-09-29 audit F08: a valid export
+    # with a line break inside the Local Filename was two physical lines,
+    # each dropped as a line with no CoreId — the File vanished). A line that
+    # leaves a quoted field open (split_csv sets csv_open; the fast split
+    # hands every open quote to it) is held, and the next physical line joins
+    # it ("\n" between — sv() makes it a space) until the record closes: the
+    # server parse frames its records the same way. A held record that never
+    # closes — the next line opens like a record ("…","…",), 64 lines pass,
+    # or its file ends — is counted as unterminated and dropped; the line
+    # that ended it starts afresh.
+    !rbuf && length($0) == 0 { next }
     {
-        if (seen[$0]++) { dups++; next } # drop exact-duplicate record line (keep the first)
+        if (rbuf) {
+            if ($0 ~ /^"[^"]*","[^"]*","/ || ++rbl > 64) { unterm++; rbuf = 0 }
+            else $0 = rrec "\n" $0
+        }
+        if ($0 in seen) { dups++; rbuf = 0; next }   # drop an exact-duplicate record (keep the first)
+        csv_open = 0
         n = split_csv_fast($0)
+        if (csv_open) { if (!rbuf) rbl = 0; rbuf = 1; rrec = $0; next }
+        rbuf = 0; seen[$0] = 1
         # a line with NO CoreId is no transfer record — a broken or partial
         # CSV line (an embedded newline, a truncated tail): dropped and counted
         # (2026-09-28 fix: it stayed a leg with garbage values and a fake
@@ -420,6 +438,9 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
             sv(prof), sv(field[35]), sv(field[29]), sv(field[30]), sv(field[6])
     }
     END {
+        if (rbuf) unterm++
+        if (unterm > 0)
+            printf "WARNING: dropped %d CSV record(s) whose quoted field never closed (a truncated or corrupt line).\n", unterm > "/dev/stderr"
         if (nocid > 0)
             printf "WARNING: dropped %d record line(s) with no CoreId (a broken or partial CSV line).\n", nocid > "/dev/stderr"
         if (badcid > 0)

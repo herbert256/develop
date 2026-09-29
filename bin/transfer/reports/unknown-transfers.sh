@@ -62,6 +62,8 @@ agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" '
         return sprintf("%.0f %s", v, u[i]) }
     function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
     function clean(s) { gsub(/[\t\r]/, " ", s); return s }
+    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
     $12 == "Unknown" && $4 != "" {
         cid = $1; n++
         st = ($2 == "Processed") ? "OK" : ($2 == "Failed") ? "Error" : $2
@@ -69,7 +71,7 @@ agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" '
         side = ($16 == "in") ? "In" : ($16 == "out") ? "Out" : ""
         res = $25; tint = (res == "green" || res == "orange" || res == "red") ? "\t@data:res=" res : ""
         printf "F\t%s\tROW\t%s %s\t%s\t%s\t%s\t%s\t%s\t%s\t@{sortval=%d}%s\t@{class=mono}%s\t%s%s\n", \
-            $6, $4, $5, clean($3), clean($14), clean($15), side, $10 + 0, st, $8 + 0, human($8), cid, clean($11), tint
+            $6, $4, $5, clean($3), clean($14), clean($15), side, $10 + 0, st, $8 + 0, human($8), cid, lit(clean($11)), tint
         a = $3; err = ($2 == "Failed" || $2 == "Expired")
         if (!(a in AF)) AO[++na] = a
         AF[a]++; if (err) AE[a]++; else AK[a]++

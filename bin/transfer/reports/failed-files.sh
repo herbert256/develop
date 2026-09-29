@@ -59,6 +59,8 @@ done
 
 # one "sortkey TAB ROW..." line per failed File, plus the "~N TAB count" line
 agg=$(LC_ALL=C awk -F'\t' -v REAS="$REAS" -v PAGES="$pages" -v SUBRES="$SUBRES" '
+    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
     BEGIN {
         while ((getline l < SUBRES) > 0) { n9 = split(l, a9, "\t"); if (n9 >= 3 && a9[1] != "") SRES[toupper(a9[1])] = a9[3] }
         close(SUBRES)
@@ -74,7 +76,7 @@ agg=$(LC_ALL=C awk -F'\t' -v REAS="$REAS" -v PAGES="$pages" -v SUBRES="$SUBRES" 
         if (cid in PG) r = "@{href=../files/" cid ".html}" r
         res = SRES[toupper($12)]
         tint = (res == "green" || res == "orange" || res == "red") ? "\t@data:res=" res : ""
-        printf "%s\tROW\t%s\t%s %s\t%s\t@{class=mono}%s\t%s%s\n", $6, $12, $4, $5, r, cid, $11, tint
+        printf "%s\tROW\t%s\t%s %s\t%s\t@{class=mono}%s\t%s%s\n", $6, $12, $4, $5, r, cid, lit($11), tint
         n++
     }
     END { printf "~N\t%d\n", n + 0 }' "$FILES")

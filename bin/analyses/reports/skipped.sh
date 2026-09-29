@@ -143,6 +143,8 @@ rows_tmp="$REPORTS_DIR/skipped.rows.tmp.$$"
 trap 'rm -f "$rows_tmp" "$REPORTS_DIR"/skipped.rpt.tmp*' EXIT
 if [ -f "$RAW_SKIP" ] && [ -s "$RAW_SKIP" ]; then
     awk '
+        # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+        function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
         function f(line, want,    n, i, c, q, cur) {
             n = 0; cur = ""; q = 0
             for (i = 1; i <= length(line); i++) {
@@ -170,7 +172,7 @@ if [ -f "$RAW_SKIP" ] && [ -s "$RAW_SKIP" ]; then
             reason = (cid in ht) ? "http" : (probe ? "empty ssh probe" : "no subscription")
             printf "%s %s\tROW\t%s %s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
                 iso, dt[2], iso, dt[2], reason, f($0, 1), f($0, 2), f($0, 3), \
-                f($0, 8), f($0, 20), f($0, 15), f($0, 19), cid
+                f($0, 8), f($0, 20), lit(f($0, 15)), f($0, 19), cid
         }
     ' "$RAW_SKIP" "$RAW_SKIP" | LC_ALL=C sort -r | cut -f2- > "$rows_tmp"
 else

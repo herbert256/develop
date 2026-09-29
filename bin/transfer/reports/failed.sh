@@ -346,6 +346,8 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
         return m[3] "-" m[1] "-" m[2] " " t
     }
     function esc(s) { gsub(/[\t\r\n]/, " ", s); return s }
+    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
 
     # FILENAME dispatch, not an FNR==1 counter: the extras file is legitimately
     # EMPTY when every window error made the list, and an empty file never
@@ -451,7 +453,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
             printf "TABLE\t\tnosearch\n" > f
             printf "HEAD\tItem\tValue\n" > f
             printf "KIND\ttext\ttext\n" > f
-            printf "ROW\tFile name\t%s\n", nm > f
+            printf "ROW\tFile name\t%s\n", lit(nm) > f
             printf "ROW\tCoreId\t@{class=mono}%s\n", c > f
             printf "ROW\tDate/time\t%s %s\n", SD[c], ST[c] > f
             printf "ROW\tSubscription\t%s\n", entcell(SRES, "subscriptions", SITE[c]) > f

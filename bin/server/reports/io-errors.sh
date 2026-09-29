@@ -127,6 +127,8 @@ nline=$(wc -l < "$TMP" | tr -d ' ')
 #   TOT <n> <folders> <accounts> <files> <err> <ok> <nl> <days> <first> <last>
 agg=$(awk -F'\t' -v IOF="$TMP" -v FILES="$FILES" -v TRANSFERS="$TRANSFERS" \
         -v ACCB="$ACCB" -v LOGB="$LOGB" -v ERRDIR="$ERRDIR" -v FILEDIR="$FILEDIR" "$LOGLINES_AWK"'
+    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
     function exists(f,   l, r) { r = (getline l < f); if (r >= 0) close(f); return r >= 0 }
     function canon(map, v) { return (toupper(v) in map) ? map[toupper(v)] : v }
     BEGIN {
@@ -193,10 +195,12 @@ agg=$(awk -F'\t' -v IOF="$TMP" -v FILES="$FILES" -v TRANSFERS="$TRANSFERS" \
             if (L_base[i] != "" && !((d SUBSEP L_base[i]) in dfb)) { dfb[d, L_base[i]] = 1; D_b[d]++ }
             # ---- the line row
             fcell = (L_base[i] != "" ? L_base[i] : (L_path[i] != "" ? L_path[i] : "-"))
+            fpre = ""
             if (cid != "") {
-                if (exists(ERRDIR "/" cid ".rpt")) fcell = "@{href=../files/" cid ".html}" fcell
-                else if (exists(FILEDIR "/" cid ".rpt")) fcell = "@{href=../files/" cid ".html}" fcell
+                if (exists(ERRDIR "/" cid ".rpt")) fpre = "@{href=../files/" cid ".html}"
+                else if (exists(FILEDIR "/" cid ".rpt")) fpre = "@{href=../files/" cid ".html}"
             }
+            fcell = (fpre != "") ? fpre fcell : lit(fcell)
             if (oc == "Failed" || oc == "Expired") scell = "@{class=failed}" oc
             else if (oc != "") scell = "@{class=processed}" oc
             else scell = "not logged"

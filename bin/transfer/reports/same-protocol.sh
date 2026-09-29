@@ -53,6 +53,8 @@ TAB=$(printf '\t')
 # (outcome, subscription, name, start) — emits the File rows and the
 # per-subscription figures, each behind a sort prefix
 LC_ALL=C awk -F'\t' -v UCDF="$UCDF" -v SUBRES="$SUBRES" -v LEGS="$PARSED" -v FILEROWS="$TMP/files" -v SUBROWS="$TMP/subs" '
+    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
     BEGIN {
         while ((getline l < UCDF) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "" && a[2] != "") UCD[toupper(a[1])] = toupper(a[2]) }
         close(UCDF)
@@ -78,7 +80,7 @@ LC_ALL=C awk -F'\t' -v UCDF="$UCDF" -v SUBRES="$SUBRES" -v LEGS="$PARSED" -v FIL
         # the site words (2026-09-29): Processed = OK, Failed = Error; Waiting and
         # Expired keep their names (the states the outcome policy counts as OK / Error)
         oc = ($2 == "Failed") ? "@{class=failed}Error" : ($2 == "Expired") ? "@{class=failed}Expired" : ($2 == "Processed" ? "@{class=processed}OK" : $2)
-        printf "%s\tROW\t%s\t%s %s\t%s\t%s\t%s\t%d\t%s\t@{class=mono}%s\t%s%s\n", $6, s, $4, $5, IP[c], IT[c], OT[c], NL[c], oc, c, $11, ftint > FILEROWS
+        printf "%s\tROW\t%s\t%s %s\t%s\t%s\t%s\t%d\t%s\t@{class=mono}%s\t%s%s\n", $6, s, $4, $5, IP[c], IT[c], OT[c], NL[c], oc, c, lit($11), ftint > FILEROWS
         if (s == "Unknown") next   # no subscription (2026-09-29): a Files row, no Per subscription row
         k = s SUBSEP IP[c]
         FN[k]++; if (bad) FE[k]++; else FO[k]++

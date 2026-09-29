@@ -32,6 +32,8 @@
 # ===== small helpers =========================================================
 # The page buffer
 function emitl(s) { PG[++npg] = s }
+# lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
 
 function wdname(d) {
     if (d == 0) return "Monday";   if (d == 1) return "Tuesday"
@@ -1370,7 +1372,7 @@ BEGIN {
     # BEFORE evaluating the RHS, so `A[1] in UNL` would be true on the very
     # first insert and prepend a spurious "\n" (an empty table row).
     if (TYPE == "ACC") {
-        while ((getline l < UNCF) > 0) { n = split(l, A, "\t"); if (n >= 3) { k = A[1]; UNL[k] = (UNL[k] != "" ? UNL[k] "\n" : "") A[3] "\t" A[2] } }
+        while ((getline l < UNCF) > 0) { n = split(l, A, "\t"); if (n >= 3) { k = A[1]; UNL[k] = (UNL[k] != "" ? UNL[k] "\n" : "") A[3] "\t" lit(A[2]) } }
         close(UNCF)
     }
     cur_key = ""; pend_t = ""; pend_e = ""

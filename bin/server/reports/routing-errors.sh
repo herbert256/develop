@@ -85,6 +85,8 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
         B2 = substr(r, 1, q - 1); BODY = substr(r, q + 1); sub(/^ */, "", BODY)
         return 1 }
     function ar_brace(s) { if (!match(s, /\{[^}]*\}/)) return ""; return substr(s, RSTART + 1, RLENGTH - 2) }
+    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
     function basename(p,   n, P) { n = split(p, P, "/"); return (P[n] != "" ? P[n] : p) }
     BEGIN { rn_load(RNF) }
     $1 == "KS" { ksite[$2] = 1; next }                       # the known-subscription list (first input)
@@ -112,7 +114,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
         nl++; fl[fam]++
         if (!((kind SUBSEP ent) in seen)) { seen[kind SUBSEP ent] = 1; ne++ }
         if (!(d in dseen)) { dseen[d] = 1; nd++ }
-        printf "LIN\t%s %s\t%s|%s\tROW\t%s %s\t%s\t%s\t@{alink=%s/%s}%s\t%s\n", d, $2, fam, ent, d, substr($2, 1, 8), fam, code, kind, ent, ent, fn
+        printf "LIN\t%s %s\t%s|%s\tROW\t%s %s\t%s\t%s\t@{alink=%s/%s}%s\t%s\n", d, $2, fam, ent, d, substr($2, 1, 8), fam, code, kind, ent, ent, lit(fn)
     }
     END {
         for (f in fl) printf "FAM\t%s\t%d\n", f, fl[f]

@@ -88,6 +88,29 @@ json_kind() {
             if (index(h, "\"communicationProfiles\"")) { print "partners"; exit }
             print "" }'
 }
+# fm_valid KIND FILE -> 0 when FILE is ONE JSON document holding a FlowManager
+# collection (KIND subscriptions | partners) whose fields bin/flow-manager.sh
+# and its jq siblings put through string functions carry the types they
+# expect — null or absent always passes, an empty collection too. A numeric
+# .name used to pass the collection-of-objects test, replace the working
+# config and then kill flow-manager.sh (audit 2026-09-29 F04).
+fm_valid() {
+    jq -e -s --arg k "$1" '
+        def str:  . == null or type == "string";
+        def strs: . == null or (type == "array" and all(.[]; str));
+        def obj:  . == null or type == "object";
+        def objs: . == null or (type == "array" and all(.[]; type == "object"));
+        length == 1 and (.[0] | (type == "array" or type == "object") and all(.[];
+            type == "object" and (.name | str) and
+            if $k == "partners" then
+                (.communicationProfiles | objs)
+                and all(.communicationProfiles[]?; (.login | str) and (.hosts | strs) and (.businessId | str))
+                and (.customAttributes | obj)
+                and all(.customAttributes // {} | to_entries[] | select(.key | test("^AllowIP[0-9]+$")); .value | str)
+            else
+                (.parameters | obj) and (.status | obj) and (.tags | strs) and (.participants | objs)
+            end))' "$2" >/dev/null 2>&1
+}
 
 # ingest_one ARCHIVE -> 0 consumed, 1 left in place (with the reason on stderr
 # and in the Inbox block)
@@ -159,11 +182,17 @@ ingest_one() {
         [ -n "$ENV_KEY" ] && rel="${rel#$ENV_KEY/}"
         base=$(basename "$f")
         sub=""; dst=$base
+        # a checkout's own files are never delivered — in ANY case: APFS is
+        # case-insensitive, so an Environment.txt IS input/environment.txt and
+        # the *.txt branch turned an Acceptance checkout into Production
+        # (audit 2026-09-29 F01)
+        case "$(printf '%s' "$base" | tr '[:upper:]' '[:lower:]')" in
+            environment.txt|readme.txt) ignored+=("$rel"); continue ;;
+        esac
         case "$base" in
             logEntry*.csv)                      sub=server;   ymd=$(csv_ymd "$f"); [ -n "$ymd" ] && dst="logEntry_$ymd.csv" ;;
             transferLog*.csv|fileTransfer*.csv) sub=transfer; ymd=$(csv_ymd "$f"); [ -n "$ymd" ] && dst="fileTransfer_$ymd.csv" ;;
             *.json)            sub=flow-manager; kind=$(json_kind "$f"); [ -n "$kind" ] && dst="$kind.json" ;;   # by content, not by name
-            environment.txt|README.txt) sub="" ;;   # a checkout's own files, never delivered
             *.txt)             sub=. ;;             # the policy files live at the input root
         esac
         if [ -z "$sub" ]; then ignored+=("$rel"); continue; fi
@@ -182,16 +211,17 @@ ingest_one() {
     # a truncated JSON used to replace the working config, the archive was
     # consumed as a success and the build then died on it. Now ONE bad file
     # refuses the WHOLE archive — nothing copied, the archive stays. JSON:
-    # parseable, and the two FlowManager exports a collection of objects
-    # (what bin/flow-manager.sh iterates); CSV: not empty.
+    # parseable, and the two FlowManager exports ONE collection of objects
+    # (what bin/flow-manager.sh iterates) with its string fields typed
+    # (fm_valid); CSV: not empty.
     local -a bad=()
     i=0
     while [ $i -lt ${#plan_src[@]} ]; do
         f=${plan_src[$i]}
         case "${plan_dst[$i]}" in
             */subscriptions.json|*/partners.json)
-                jq -e '(type == "array" or type == "object") and all(.[]; type == "object")' "$f" >/dev/null 2>&1 \
-                    || bad+=("${f#$tmp/} (not a valid FlowManager export)") ;;
+                kind=$(basename "${plan_dst[$i]}" .json)
+                fm_valid "$kind" "$f" || bad+=("${f#$tmp/} (not a valid FlowManager $kind export)") ;;
             *.json) jq empty "$f" >/dev/null 2>&1 || bad+=("${f#$tmp/} (not valid JSON)") ;;
             *.csv)  [ -s "$f" ] || bad+=("${f#$tmp/} (empty)") ;;
         esac

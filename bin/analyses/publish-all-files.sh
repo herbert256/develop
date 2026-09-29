@@ -109,7 +109,17 @@ grp_par "$TMPD/rows" "$TMPD/pass2" "$_pj" env LC_ALL=C awk -F'\t' -v OUTD="$OUTD
     function tl(s) { gsub(/\\/, "\\\\", s); gsub(/`/, "\\`", s); gsub(/\$\{/, "\\${", s); return s }   # template-literal escape
     function hsh(s, b,   i, h) { h = 0; for (i = 1; i <= length(s); i++) h = (h * b + ORD[substr(s, i, 1)]) % 2147483647; return h }
     function item(s) { if (!(s in IT)) { IT[s] = 1; nit++ } }
-    function items(txt,   t, i, g, r) {
+    # The engine matches the UNICODE-lowercased name, where two non-ASCII
+    # capitals fold INTO ASCII: KELVIN SIGN U+212A -> "k", I WITH DOT ABOVE
+    # U+0130 -> "i" + U+0307. A name holding one files the trigrams of that
+    # form too, or "kpi" pruned the day of a Kelvin-sign KPI.csv the matcher
+    # finds (audit 2026-09-29 F11); the engine keeps asking the RAW words
+    function items(txt,   u) {
+        if (index(txt, "\342\204\252") || index(txt, "\304\260")) {
+            u = txt; gsub("\342\204\252", "k", u); gsub("\304\260", "i\314\207", u); items1(u) }
+        items1(txt)
+    }
+    function items1(txt,   t, i, g, r) {
         t = tolower(txt); gsub(/[\200-\377]+/, "?", t)
         for (i = 1; i + 2 <= length(t); i++) { g = substr(t, i, 3); if (g ~ /[^0-9a-f-]/) item(g) }
         r = t

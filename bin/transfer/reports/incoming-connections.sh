@@ -60,6 +60,8 @@ args+=( f=files "$FILES" )
 # partial one.
 npages=$(LC_ALL=C awk -F'\t' \
     -v outdir="$OUTDIR" -v slugmap="$SLUGMAP.tmp" '
+    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
     function hb(b) { if (b >= 1073741824) return sprintf("%.1f GB", b/1073741824)
                      if (b >= 1048576)    return sprintf("%.1f MB", b/1048576)
                      if (b >= 1024)       return sprintf("%.1f KB", b/1024)
@@ -152,7 +154,7 @@ npages=$(LC_ALL=C awk -F'\t' \
                     split(tl[ip, i], a, "\t")
                     oc = a[7]
                     if (oc != "Failed" && oc != "Expired") oc = "@{class=processed}OK"; else oc = "@{class=failed}Error"
-                    printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\n", a[1], a[2], a[3], a[4], a[5], a[6], oc, (a[8] ~ /^(green|orange|red)$/ ? "\t@data:res=" a[8] : "") > out
+                    printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\n", a[1], a[2], a[3], a[4], lit(a[5]), a[6], oc, (a[8] ~ /^(green|orange|red)$/ ? "\t@data:res=" a[8] : "") > out
                 }
                 printf "TOTAL\tTotal (%d shown)\t\t\t\t\t\t\n", nt[ip] > out
             }

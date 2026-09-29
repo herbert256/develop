@@ -128,7 +128,11 @@ rows_raw=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
     function emit(key, cls, since, days, n, ok, err, volb, riskb, sym, ev,   sc) {
         # volb = the volume of the flow in the loaded window (every row); riskb = the
         # staged bytes at expiry risk (expiry-risk rows only) — two columns since
-        # audit F09 (2026-09-05): one "at stake" column had mixed the two
+        # audit F09 (2026-09-05): one "at stake" column had mixed the two.
+        # days >= 0 for EVERY class: the window end is the newest File, and
+        # server-log evidence can date past it (a no-Files red flow one day
+        # past it made 1 + days = 0 and killed the build — audit 2026-09-29 F02)
+        if (days < 0) days = 0
         sc = n / (1 + days)
         print "R", int(sc * 1000 + 0.5), key, cls, since, days, n, ok, err, volb, hsize(volb), (riskb > 0 ? hsize(riskb) : "-"), sprintf("%.1f", sc), sym, ev   # "-": an EMPTY field would vanish under the tab-splitting read below
         rows++; tvol += volb; trisk += riskb
@@ -156,8 +160,8 @@ rows_raw=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
             if (key in FLIP)      { since = FLIP[key]; sjd = dj(substr(FLIP[key], 1, 10)) }
             else if (lastfail)    { since = runstart;  sjd = $11 + 0 }
             else                  { since = lastdate;  sjd = lastj }
-            days = endj - sjd; if (days < 0) days = 0
-            if (ok == 0)          sym = "never delivered — " err " Error in " n " File(s)"
+            days = endj - sjd
+            if (ok == 0)         sym = "never delivered — " err " Error in " n " File(s)"
             else if (lastfail)    sym = "used to work — " runlen " consecutive failure(s), last OK " lastokd
             else                  sym = "last File OK (" lastdate ") — flipped red by server-log evidence"
             if (wrisk > 0)        sym = sym "; " wrisk " staged at risk"

@@ -51,8 +51,12 @@
   // shared 1 s..1 h axis parks it in a sliver. Ticks are picked from a
   // nice-duration ladder spanning [min, max] of the plotted values (every
   // entry integral in its display unit), thinned to at most 8.
-  var DLAD = [1000, 2000, 5000, 10000, 15000, 30000, 60000, 120000, 300000, 600000, 900000, 1200000, 1800000, 2700000, 3600000, 7200000, 14400000, 43200000, 86400000];
-  function dtick(ms) { return ms < 60000 ? ms / 1000 + " s" : ms < 3600000 ? ms / 60000 + " m" : ms / 3600000 + " h"; }
+  // The ladder runs past 24 h and the fit always keeps TWO ticks (2026-09-29
+  // audit F16: a chart whose values were all >= 24 h fitted ONE tick, and the
+  // axis divided by ticks - 1 = 0 — every coordinate NaN); a value beyond the
+  // top tick draws at the top, like the fixed axis.
+  var DLAD = [1000, 2000, 5000, 10000, 15000, 30000, 60000, 120000, 300000, 600000, 900000, 1200000, 1800000, 2700000, 3600000, 7200000, 14400000, 43200000, 86400000, 172800000, 345600000, 604800000];
+  function dtick(ms) { return ms < 60000 ? ms / 1000 + " s" : ms < 3600000 ? ms / 60000 + " m" : ms < 172800000 ? ms / 3600000 + " h" : ms / 86400000 + " d"; }
   function fitTicks(slots) {
     var mn = Infinity, mxv = 0, i, q, t;
     for (i = 0; i < slots.length; i++) if (slots[i].has)
@@ -62,6 +66,7 @@
     while (lo < DLAD.length - 1 && DLAD[lo + 1] <= mn) lo++;
     while (hi > 0 && DLAD[hi - 1] >= mxv) hi--;
     if (hi <= lo) hi = lo + 1;
+    if (hi > DLAD.length - 1) { hi = DLAD.length - 1; lo = hi - 1; }
     var t2 = DLAD.slice(lo, hi + 1);
     while (t2.length > 8) {
       var th = [], j;

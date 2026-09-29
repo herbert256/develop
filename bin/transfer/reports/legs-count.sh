@@ -37,6 +37,8 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         return sprintf("%.2f %s", v, u[i])
     }
     function bucket(n) { if (n <= 10) return n; if (n <= 100) return 11; return 12 }
+    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
     {
         legs = $10 + 0; d = $4; size = $8 + 0
         pf = ($2 == "Failed" || $2 == "Expired")
@@ -50,7 +52,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         addtop("L" SUBSEP i SUBSEP (pf ? "F" : "P"), $6, $4 " " $5, $1)
         # bounded top-25 by legs (ties: newest start first via the sortkey)
         tk = sprintf("%012d", legs) $6
-        pay = legs "\t" $4 " " $5 "\t" $12 "\t" $3 "\t" $11 "\t" $1 (($25 ~ /^(green|orange|red)$/) ? "\t@data:res=" $25 : "")   # the File colour, col 25
+        pay = legs "\t" $4 " " $5 "\t" $12 "\t" $3 "\t" lit($11) "\t" $1 (($25 ~ /^(green|orange|red)$/) ? "\t@data:res=" $25 : "")   # the File colour, col 25
         if (tn < 25) { tn++; TK[tn] = tk; TV[tn] = pay }
         else {
             mi = 1; for (z = 2; z <= tn; z++) if (TK[z] < TK[mi]) mi = z

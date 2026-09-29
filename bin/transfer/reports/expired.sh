@@ -134,6 +134,8 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk
     -v slugs="$TMPD/x_slugs" -v dir="$SUBDIR.new" \
     -v side="$TMPD/x_side" -v TOPN=5 '
     BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
+    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
     function finish() {
         if (out == "") return
         printf "FOOT\n" > out
@@ -154,7 +156,7 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk
     out != "" {
         nrow++
         if (nrow <= TOPN) { lk = "@{href=../../files/" $5 ".html}"; print $5 > side } else lk = ""
-        printf "ROW\t%s\t%s\t%s\t%s%s\t@data:res=red\n", $2, $3, $4, lk, $5 > out
+        printf "ROW\t%s\t%s\t%s\t%s%s\t@data:res=red\n", $2, $3, lit($4), lk, $5 > out
     }
     END { finish() }'
 rm -rf "$SUBDIR"; mv "$SUBDIR.new" "$SUBDIR"

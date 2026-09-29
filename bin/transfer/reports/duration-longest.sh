@@ -80,9 +80,12 @@ mv "$FILESIDE.tmp" "$FILESIDE"
 # Subscription ⇥ File; the Duration, Start Time, End Time and CoreId cells
 # open the File page
 rows_of() {   # $1 the list
-    printf '%s\n' "$1" | awk -F'\t' 'length($0) {
+    printf '%s\n' "$1" | awk -F'\t' '
+    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
+    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+    length($0) {
         h = "href=../files/" $2 ".html,"
-        printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t%s\t%s%s\n", h, $1, $7, h, $1, $3, h, $1, $5, h, $1, $2, $4, $6, ($8 ~ /^(green|orange|red)$/ ? "\t@data:res=" $8 : "") }'
+        printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t%s\t%s%s\n", h, $1, $7, h, $1, $3, h, $1, $5, h, $1, $2, $4, lit($6), ($8 ~ /^(green|orange|red)$/ ? "\t@data:res=" $8 : "") }'
 }
 {
     printf 'TITLE\tLongest Files\n'

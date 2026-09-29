@@ -113,7 +113,10 @@ function esc(s) {
 # name) reaches the renderer looking like writer metadata. Every parsed
 # metadata value is therefore allowlisted before it may shape markup; a cell
 # whose block fails any check renders as inert literal text instead
-# (escaped, unlinked, visibly carrying its @-prefix).
+# (escaped, unlinked, visibly carrying its @-prefix). A VALID raw value
+# (@data:res=green is a legal file name) passes those checks, so the writers
+# mark raw values: lit() puts the EMPTY block @{} in front, and the text after
+# any block is literal (2026-09-29 audit F07).
 function ok_class(s)   { return s ~ /^[A-Za-z0-9_ -]+$/ }
 function ok_colspan(s) { return s ~ /^[0-9]+$/ }
 # link=/alink targets are wrapped as dlink TARGET ".html": site-local

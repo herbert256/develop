@@ -75,6 +75,9 @@ hum_bytes() { awk -v b="$1" 'BEGIN{ split("B KB MB GB TB PB",u," "); i=1; v=b+0;
     printf 'KIND\tnum\tnum\ttext\tacct\tsite\ttext\tfile\n'
     while IFS='|' read -r _ bytes human ts account dsite outcome file tp clr; do
         [ -z "$human" ] && continue
+        # a raw name starting with @ reads as renderer metadata: the empty
+        # block @{} keeps it literal text (audit 2026-09-29 F07)
+        case $file in @*) file="@{}$file" ;; esac
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\n' \
             "$human" "$tp" "$ts" "$account" "$dsite" "$outcome" "$file" "${clr:+$'\t'@data:res=$clr}"
         lg_n=$((lg_n + 1)); lg_bytes=$((lg_bytes + bytes))

@@ -121,6 +121,13 @@ REPORT="$BUILD_DIR/index.html"
 # and is released by the EXIT trap (finalize_report).
 BUILD_LOCK="$BUILD_DIR/.buildlock"
 mkdir -p "$BUILD_DIR"
+# A STALE lock is reclaimed under a second atomic lock, .buildlock.reclaim,
+# and its PID re-read while holding it (2026-09-29 audit F09: two builds that
+# both saw the same dead PID could both remove-and-recreate the lock — the
+# later rm took the first one's fresh lock — and both run). Whoever loses the
+# reclaim lock, or finds a live owner on the re-read, refuses. A reclaim lock
+# older than a minute is itself stale (its holder died in the few lines below).
+# The release checks the PID too: only the owner removes the lock.
 if ! mkdir "$BUILD_LOCK" 2>/dev/null; then
     lock_pid=$(cat "$BUILD_LOCK/pid" 2>/dev/null || true)
     # a lock with no PID yet is being taken THIS instant (mkdir, then the pid
@@ -130,18 +137,33 @@ if ! mkdir "$BUILD_LOCK" 2>/dev/null; then
         printf 'bin/build.sh: another build (PID %s) is already running — refusing to overlap.\n' "$lock_pid" >&2
         exit 1
     fi
+    [ -n "$(find "$BUILD_LOCK.reclaim" -maxdepth 0 -mmin +1 2>/dev/null)" ] && rm -rf "$BUILD_LOCK.reclaim"
+    if ! mkdir "$BUILD_LOCK.reclaim" 2>/dev/null; then
+        printf 'bin/build.sh: another build is reclaiming the stale lock — refusing to overlap.\n' >&2
+        exit 1
+    fi
+    lock_pid2=$(cat "$BUILD_LOCK/pid" 2>/dev/null || true)
+    if [ -n "$lock_pid2" ] && [ "$lock_pid2" != "$lock_pid" ] && kill -0 "$lock_pid2" 2>/dev/null; then
+        rmdir "$BUILD_LOCK.reclaim" 2>/dev/null || true
+        printf 'bin/build.sh: another build (PID %s) took the lock first — refusing to overlap.\n' "$lock_pid2" >&2
+        exit 1
+    fi
     printf 'bin/build.sh: reclaiming stale build lock (PID %s not running).\n' "${lock_pid:-unknown}" >&2
     rm -rf "$BUILD_LOCK"
     if ! mkdir "$BUILD_LOCK" 2>/dev/null; then
+        rmdir "$BUILD_LOCK.reclaim" 2>/dev/null || true
         printf 'bin/build.sh: lost the lock race to another build — refusing to overlap.\n' >&2
         exit 1
     fi
+    printf '%s\n' "$$" > "$BUILD_LOCK/pid"
+    rmdir "$BUILD_LOCK.reclaim" 2>/dev/null || true
 fi
 printf '%s\n' "$$" > "$BUILD_LOCK/pid"
+release_lock() { [ "$(cat "$BUILD_LOCK/pid" 2>/dev/null)" = "$$" ] && rm -rf "$BUILD_LOCK"; return 0; }
 # Until finalize_report takes the EXIT trap over (it needs the step machinery
 # defined below), a failure in the wipe or the seed — a full disk, a signal —
 # still releases the lock and says where the run died (2026-09-28 audit F05).
-trap '_rc=$?; [ "$_rc" -eq 0 ] || printf "*** bin/build.sh: FAILED during the wipe/seed (exit %d) — no build report for this run.\n" "$_rc" >&2; rm -rf "$BUILD_LOCK"' EXIT
+trap '_rc=$?; [ "$_rc" -eq 0 ] || printf "*** bin/build.sh: FAILED during the wipe/seed (exit %d) — no build report for this run.\n" "$_rc" >&2; release_lock' EXIT
 
 # ---- THE WIPE: build/, data/, docs/ (formerly bin/fresh.sh) -----------------
 # rm -rf with a .DS_Store retry: Finder can drop one into a directory WHILE
@@ -584,7 +606,7 @@ finalize_report() {
     if [ -n "${BG2_PID:-}" ]; then kill_tree "$BG2_PID"; wait "$BG2_PID" 2>/dev/null || true; fi
     write_report "$REPORT" "$rc" || printf '*** bin/build.sh: the build report could not be written completely\n' >&2
     printf '\nBuild report: %s\n' "$REPORT" >&2
-    rm -rf "$BUILD_LOCK"
+    release_lock
     exit "$rc"
 }
 trap finalize_report EXIT
