@@ -3372,7 +3372,7 @@
     // fixed: files, failed, volume, records, errors)
     var kpis = [];
     if (kdays.length) {
-      var kmap = { "Files transferred": "files", "Transfer failure rate": "fpct",
+      var kmap = { "Files transferred": "files", "File error rate": "fpct",
                    "Volume moved": "vol", "Server records": "recs", "Server error rate": "epct" };
       var kels = document.querySelectorAll(".kpi-row .kpi");
       for (var ke = 0; ke < kels.length; ke++) {
