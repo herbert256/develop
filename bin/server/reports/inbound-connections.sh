@@ -159,16 +159,13 @@ INADDR="$REPORTS_DIR/_inbound-addr.tsv"
 printf '%s\n' "$agg" | awk -F'\t' '$1 == "S" && $4 + 0 > 0 { print $2 "\t" $4 }' | LC_ALL=C sort > "$INADDR.tmp" && mv "$INADDR.tmp" "$INADDR"
 
 TITLE_TXT='Connection volume'
-DESC_TXT='Connection volume per day, account and address, split In (a partner login connected to SecureTransport) and Out (SecureTransport connected to a partner).'
 if [ "${t_conn:-0}" -eq 0 ]; then
     # No connection messages in this log window — write an EMPTY-STATE page
     # (so the report still renders and its group-nav link never 404s).
     echo "No connection messages found — writing an empty report." >&2
     {
         printf 'TITLE\t%s\n' "$TITLE_TXT"
-        printf 'DESC\t%s\n' "$DESC_TXT"
         printf 'KEYWORDS\tsource IP, target address, partner address, protocol, connection volume, inbound, outbound\n'
-        printf 'INTRO\tNo connection messages in this log window.\n'
         # one stub per table of the full report, so the merged Connections
         # tabs keep their places
         for _t in 'Connections per day' 'By account' 'By address'; do
@@ -177,8 +174,7 @@ if [ "${t_conn:-0}" -eq 0 ]; then
             printf 'KIND\ttext\n'
             printf 'ROW\tNo connection messages in this data window.\n'
         done
-        printf 'SUMMARY\tConnections: 0\n'
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     exit 0
 fi
@@ -219,10 +215,7 @@ addr_rows() {
 
 {
     printf 'TITLE\t%s\n' "$TITLE_TXT"
-    printf 'DESC\t%s\n' "$DESC_TXT"
     printf 'KEYWORDS\tsource IP, target address, partner address, protocol, connection volume, inbound, outbound\n'
-    printf 'INTRO\t**%s** connection(s) — **%s** in, **%s** out — over **%s** protocol(s) from **%s** account(s) and **%s** address(es) across **%s** day(s). This is connection VOLUME — every "had initiated a connection" line, before any transfer happens.\n' \
-        "$t_conn" "${t_in:-0}" "${t_out:-0}" "$n_proto" "$n_acct" "$n_addr" "$n_days"
 
     printf 'TABLE\tConnections per day\twide\n'
     printf 'HEAD\tDate\tIn\tOut\tSSH\tPESIT\tFTP\tOther\tTotal\n'
@@ -250,9 +243,7 @@ addr_rows() {
     fi
     printf 'TOTAL\t%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\t\t\t\n' "$addr_total_label" "$(nz "$shown_in")" "$(nz "$shown_out")" "$shown_conns"
 
-    printf 'SUMMARY\tConnections: %s (in %s, out %s)  |  Protocols: %s  |  Accounts: %s  |  Addresses: %s\n' \
-        "$t_conn" "${t_in:-0}" "${t_out:-0}" "$n_proto" "$n_acct" "$n_addr"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($t_conn connection(s): $t_in in, $t_out out; $n_acct account(s), $n_addr address(es))." >&2

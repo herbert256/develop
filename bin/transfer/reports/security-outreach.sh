@@ -62,7 +62,7 @@ agg=$(awk -F'\t' -v spx="$SPX" '
         dep["Protocol" SUBSEP "TLSv1.2"]   = 1
         want["Public Key"] = 1; want["Protocol"] = 1
         while ((getline _l < spx) > 0) { split(_l, _a, "\t")
-            if (_a[1] != "" && _a[2] != "") sp[_a[1]] = (sp[_a[1]] == "" ? _a[2] : sp[_a[1]] SUBSEP _a[2]) }
+            if (_a[1] != "" && _a[2] != "") { _k = toupper(_a[1]); sp[_k] = (sp[_k] == "" ? _a[2] : sp[_k] SUBSEP _a[2]) } }   # case-folded like sp_union (2026-09-29 audit)
         close(spx)
     }
     # file 1 = $FILES: the per-CoreId host-resolved partner (col 20) — the
@@ -73,9 +73,12 @@ agg=$(awk -F'\t' -v spx="$SPX" '
         s = $19
         if (s == "" || s == "UNKNOWN") next
         if ($11 == "") next
+        # (NOT the shared sp_union of bin/pda-union.sh: this union is per LEG
+        # — the leg own subscription, _transfers col 6, not the File col 12 —
+        # keyed on the EXACT spelling, and "(none)" books the unattributed)
         # the partner UNION for this leg: the subscription configured partners
         # plus the CoreId host-resolved one, deduped
-        pl = ($6 in sp) ? sp[$6] : ""
+        pl = (toupper($6) in sp) ? sp[toupper($6)] : ""
         h = ($1 in hp) ? hp[$1] : ""
         if (h != "") { inp = 0; np = split(pl, pa, SUBSEP)
             for (j = 1; j <= np; j++) if (pa[j] == h) { inp = 1; break }
@@ -174,7 +177,6 @@ n_d3=0; d3_legs=0; d3_still=0
         printf 'ROW\t@{colspan=5}No partner used a deprecated parameter in the last 7 days of the window.\n'
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t@{class=num}%s\t\t\n' "$n_d1" "$d1_legs"
-    printf 'NOTE\tOne row per (partner, deprecated parameter) seen in the **last 7 days** — the partners to contact about an upgrade. Transfers counts every leg in the window negotiated with that value, so the busiest offenders sort to the top. A partner that stopped using the value earlier in the window (a completed cutover) is NOT listed here — the Upgrades table below carries it.\n'
 
     printf 'TABLE\tUpgrades in the window\twide\tnofilter\n'
     printf 'HEAD\tPartner\tDeprecated parameter\tUpgraded to\tOld last seen\tNew first seen\tCutover\n'
@@ -194,7 +196,6 @@ n_d3=0; d3_legs=0; d3_still=0
         printf 'ROW\t@{colspan=6}No partner used both a deprecated value and a modern one of the same parameter in this window.\n'
     fi
     printf 'TOTAL\tTotal (%s upgrade pairs, %s mixed)\t\t\t\t\t\n' "$n_d2" "$n_mixed"
-    printf 'NOTE\tEvery partner that used a deprecated value AND a modern value of the same parameter in the window. A **clean cutover** shows its date — the modern value'\''s first sighting, on or after the deprecated value'\''s last (same-day switches count as clean). **Mixed fleet** means the deprecated value kept appearing after the modern one started — typically several client systems or keys on the partner side, only some of them upgraded; those partners also stay on the outreach list above while the old value keeps showing up.\n'
 
     printf 'TABLE\tDeprecated-parameter timeline\tnofilter\tnosearch\n'
     printf 'HEAD\tDeprecated parameter\tPartners still on it\tPartners in window\tTransfers\tNewest seen\n'
@@ -206,11 +207,10 @@ n_d3=0; d3_legs=0; d3_still=0
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\n' "$param" "$nstill" "$nptn" "$legs" "$newest"
     done <<< "$(printf '%s\n' "$agg" | grep '^D3|')"
     printf 'TOTAL\tTotal (%s parameters)\t@{class=num warn}%s\t\t@{class=num}%s\t\n' "$n_d3" "$d3_still" "$d3_legs"
-    printf 'NOTE\tWhy these two count as deprecated: **ssh-rsa** is the SSH signature algorithm that pairs an RSA key with **SHA-1** — broken enough that OpenSSH disables it by default since 8.8; the same RSA key works fine with the rsa-sha2-256/-512 algorithms, so this is a partner-side software/config upgrade, not a new key. **TLSv1.2** is the legacy TLS version; TLSv1.3 is current. Reading the Public Key rows: an OUTBOUND leg (we connect out) shows the REMOTE SERVER'\''s host key — the partner must upgrade their server — while an INBOUND leg shows the connecting CLIENT'\''s authentication key, so the fix sits in the partner'\''s client software. Partners use the site-wide UNION attribution (a leg counts for every partner of its subscription plus the host-resolved one).\n'
 
     printf 'SUMMARY\tStill using a deprecated parameter: %s partner/parameter pair(s), %s transfer(s)  |  Upgrade pairs seen: %s (%s mixed fleet)  |  Deprecated transfers in window: %s  |  Dataset end: %s\n' \
         "$n_d1" "$d1_legs" "$n_d2" "$n_mixed" "$d3_legs" "$last_date"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_d1 outreach row(s), $n_d2 upgrade pair(s), $n_mixed mixed)." >&2

@@ -874,7 +874,10 @@ bg2_step_start "report: dashboards + day pages .rpt files"                bash -
 # docs/details — so the detail pages render in the background beside the
 # report pages (2026-07; ~11 s off the critical path)
 bg_step_start "publish: detail pages"                                     bin/transfer/publish-details.sh
-run_step "publish: transfer report pages"                                 bin/transfer/publish.sh
+# FIRSTPASS (2026-09-29): every transfer page but docs/files/ — the transfer
+# catch-up below renders that directory from the .rpt sets the failed.sh
+# catch-up rewrites, so it renders ONCE per build (nothing in between reads it)
+run_step "publish: transfer report pages"                                 bin/transfer/publish.sh firstpass
 bg_step_wait
 run_step "publish: partner group pages"                                   bin/analyses/publish-partner-groups.sh
 run_step "publish: server report pages"                                   bin/server/publish.sh
@@ -900,15 +903,25 @@ run_step "report catch-up: error reasons"                                 bin/an
 # them, the _srvsubs-map, is final after failed.sh's FIRST run (went-kaput
 # runs early) and carries no reason column.
 bg_step_start "catch-up: detail pages (publish)"                          bin/transfer/publish-details.sh
-run_step "publish catch-up: analyses (failed pages)"                      bin/analyses/publish.sh
+# THE TWO PUBLISH CATCH-UPS run in their explicit CATCH-UP MODE (2026-09-29;
+# until then both re-ran their whole script): each re-renders ONLY the pages
+# that read what the report catch-ups above rewrote — the dependency trace is
+# in each script (THE CATCH-UP MODE). The analyses one: Configured
+# subscriptions (failed-files.rpt), Failed Subscriptions + its All view,
+# Error reasons, and the box-reason sidecar _subs-boxes.tsv (from the
+# rewritten _errpage-evidence.tsv; publish-insights.sh sidecar, no page).
+run_step "publish catch-up: analyses (failed pages)"                      bin/analyses/publish.sh catchup
 # THE BOXES-REASON CATCH-UP (2026-08): the Entities Error view's Reason
 # column reads analyses/reports/_subs-boxes.tsv, which the analyses
-# publish above (publish-insights.sh) writes AFTER the transfer publish
+# publishes above (publish-insights.sh) write AFTER the transfer publish
 # already ran — on a fresh data/ the box-tier reasons would render blank
-# until the NEXT build. Re-invoking the transfer publish here folds the
-# catch-up into THIS build (it also re-renders the files/ error pages the
-# failed.sh catch-up refreshed).
-run_step "publish: transfer catch-up (boxes reasons)"                     bin/transfer/publish.sh
+# until the NEXT build — and failed-sub-all.rpt + _srvsubs.tsv, which the
+# failed.sh catch-up rewrote. The catch-up mode re-renders the Subscriptions
+# entity views, the Failed files page (failed-files.rpt) and the whole
+# docs/files/ tree (the errors/ + files/ .rpt sets failed.sh rewrote; its
+# ONLY render in the build — the first pass above is `firstpass`) — nothing
+# else of the transfer area.
+run_step "publish: transfer catch-up (boxes reasons)"                     bin/transfer/publish.sh catchup
 # THE ALL FILES SEARCH (2026-09-27, user request — "Implementation 3, all
 # files"): one day shard per data day + the bloom-filter manifest, and the
 # search/all-files.html page. HERE, after the failed.sh catch-ups and the

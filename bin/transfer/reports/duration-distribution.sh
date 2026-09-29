@@ -68,10 +68,8 @@ bands() {
 }
 out_ok=$(bands 1); out_all=$(bands 0)
 n_ok=$(printf '%s\n' "$out_ok" | awk -F'\t' '$1 == "N" { print $2 }'); n_all=$(printf '%s\n' "$out_all" | awk -F'\t' '$1 == "N" { print $2 }')
-GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 {
     printf 'TITLE\tDuration distribution\n'
-    printf 'DESC\tHow many Files fall in each wall-clock duration band — up to 100 ms, 1 s, 10 s, 1 min, 5 min, 30 min and beyond — for delivered (OK) Files or every outcome.\n'
     printf 'INTRO\tA histogram of the Files by **wall-clock duration** — from the first record start to the last record end, store-and-forward gaps and retry idle included — in seven bands. **OK transfers** (the default) counts delivered Files only; **All transfers** adds the failed ones, whose duration is how long they ran before giving up. The **Share** column is each band'\''s part of the scope'\''s Files; a From/To range re-aggregates both.\n'
     printf 'TABLE\tDuration distribution\twide\tswitch=scope:OK transfers\n'
     printf 'HEAD\tDuration bucket\tFiles\tShare\n'
@@ -85,8 +83,7 @@ GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
     printf 'RECALC\t-\ts0\t%%0\n'
     printf '%s\n' "$out_all" | command grep $'^ROW\t'
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}100.0%%\n' "${n_all:-0}"
-    printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId). Error transfers are often short-lived attempts (or long retry spans), which is why the OK view is the default — in the All view they pile up in the first band. The per-day figures and percentiles are on the Duration page, the individual longest Files on the Longest Files page.\n'
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$GENDATE" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (${n_ok:-0} OK Files, ${n_all:-0} in all)." >&2

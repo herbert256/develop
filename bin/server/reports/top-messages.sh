@@ -77,7 +77,6 @@ fi
 top=$(printf '%s\n' "$agg" | grep -v $'^TOT\t' | sort -t"$(printf '\t')" -k1,1nr -k2,2 -k6,6 | awk -v n="$TOP_N" 'NR<=n')
 shown=$(printf '%s\n' "$top" | grep -c . || true)
 shown_msgs=$(printf '%s\n' "$top" | awk -F'\t' '{s += $1} END {print s + 0}')
-shown_pct=$(awk -v s="$shown_msgs" -v t="$tot_msgs" 'BEGIN { if (t > 0) printf "%.1f", s * 100 / t; else printf "0.0" }')
 
 # The row writer prints STRAIGHT to stdout inside the page block below — a
 # `rows+=$(printf …)` per row forks a subshell per row for nothing.
@@ -95,18 +94,13 @@ rows() {
 
 {
     printf 'TITLE\tTop Warning & Error Messages\n'
-    printf 'DESC\tThe most-repeated warning/error message shapes (numbers, IDs and quoted values normalized away).\n'
-    printf 'INTRO\t**%s** warning/error records collapse into **%s** distinct message shapes; the **%s** listed below cover **%s%%** of them. Quoted values, UUIDs, IPs and numbers are normalized so repeats cluster; a shape that suddenly appears or explodes in count is the thing to chase.\n' \
-        "$tot_msgs" "$shape_count" "$shown" "$shown_pct"
     printf 'TABLE\tMost repeated message shapes\twide\tsort=1:-1\n'
     printf 'HEAD\tLevel\tCount\tFirst\tLast\tMessage shape\n'
     printf 'KIND\ttext\tnum\ttext\ttext\tfile\n'
     printf 'RECALC\t-\ts0\t-\t-\t-\n'
     rows
     printf 'TOTAL\tTop %s of %s shapes\t@{class=num}%s\t\t\t\n' "$shown" "$shape_count" "$shown_msgs"
-    printf 'NOTE\tShapes are truncated to 160 characters before clustering, so long stack-trace variants group together. Info-level records (3.2M routine lines) are excluded. Click a row to expand its 10 most recent raw log lines.\n'
-    printf 'SUMMARY\tWarn/error records: %s  |  Distinct shapes: %s  |  Top %s cover: %s%%\n' "$tot_msgs" "$shape_count" "$shown" "$shown_pct"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($shape_count shape(s), top $shown listed)." >&2

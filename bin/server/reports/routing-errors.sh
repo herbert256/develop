@@ -154,9 +154,8 @@ if [ "$n_lines" -gt 0 ]; then n_shown=$(lin_rows | grep -c $'^ROW\t' || true); f
     else printf 'ROW\t@{colspan=5}No Advanced Routing error line in this data window.\n'; fi
     printf 'TOTAL\t@{colspan=5}%s row(s) shown — %s line(s) in the log (%s Could not send file, %s Publish to account failed, %s Post client action error, %s Route stopped), %s entities, %s day(s)\n' \
         "$n_shown" "$n_lines" "$n_cns" "$n_pub" "$n_pca" "$n_rst" "$n_ents" "$n_days"
-    printf 'NOTE\tAt most %s rows and %s per error and entity, the newest ones; the totals name what the log holds.\n' "$MAXROWS" "$MAXPER"
     printf 'SUMMARY\tLines: %s  |  Could not send file: %s  |  Publish to account failed: %s  |  Post client action error: %s  |  Route stopped: %s  |  Shown: %s\n' "$n_lines" "$n_cns" "$n_pub" "$n_pca" "$n_rst" "$n_shown"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_lines line(s), $n_ents entit(ies), $n_shown shown)." >&2

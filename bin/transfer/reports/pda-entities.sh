@@ -6,11 +6,11 @@
 # the Logical resolves the profile column 13 through the FlowID map,
 # xref/_profiles-logicals.tsv):
 #   logical.rpt  partner.rpt  application.rpt  domain.rpt
-# (+ bl.rpt). Each is the exact account.sh shape — ONE table, a summary per
-# name (Files, Error, OK, Retry, Resubmit, Volume, First/Last seen, the per-day
-# buckets and the drill lists) — so entity-search.sh and home.sh can lift
-# counts/buckets/drill from the summaries exactly like the classic four. NO
-# PAGE of their own: the Entities pages render from entities.sh's grouped
+# (+ bl.rpt). Each is the exact account.sh record — ONE table, one ROW per
+# name (Files, Error, OK, the start of the newest Error / OK File; trimmed
+# 2026-09-29 to what its readers use) — so entity-search.sh (the counts) and
+# home.sh (the names) read them exactly like the classic four. NO PAGE of
+# their own: the Entities pages render from entities.sh's grouped
 # entities/<dim>.rpt. (The per-day "Detail per <name> / Date" table went
 # 2026-09-29: no reader.)
 #
@@ -21,6 +21,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union / ap_union / lg_union / bl_union)
 
 
 shopt -s nullglob
@@ -32,42 +33,43 @@ fi
 mkdir -p "$REPORTS_DIR"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-# THE LEG FLAGS ONCE (2026-09-28, speed round 15): every dimension needs the
-# same two CoreId sets from _transfers.tsv — a File with a failed leg (Retry /
-# Resubmit) and one with a resubmitted leg — and each of the five passes read
-# the whole leg cache for them. "F<TAB>coreid" / "R<TAB>coreid", deduped.
-PDA_TMP=$(mktemp -d "${TMPDIR:-/tmp}/pda.XXXXXX")
-trap 'rm -rf "$PDA_TMP"' EXIT
-LEGF="$PDA_TMP/legflags"
-awk -F'\t' '$3 != "Processed" && !(("F" SUBSEP $1) in s) { s["F" SUBSEP $1]; print "F\t" $1 }
-            $22 == "true" && !(("R" SUBSEP $1) in s) { s["R" SUBSEP $1]; print "R\t" $1 }' "$PARSED" > "$LEGF"
+# (THE LEG FLAGS pre-pass over _transfers.tsv — 2026-09-28, speed round 15
+# — went 2026-09-29: the record no longer carries Retry / Resubmit, and the
+# parse stores the two leg flags in _files.tsv cols 26 / 27 anyway.)
+# newest(k, v) / lastts(k): the newest File start per key (see account.sh)
+LAST_AWK='
+    function newest(k, v) { if (!(k in LT) || v > LT[k]) LT[k] = v }
+    function lastts(k,   s, c) { if (!(k in LT)) return ""; s = LT[k]; s = substr(s, index(s, SUBSEP) + 1) "  "
+        c = index(s, ","); if (c) s = substr(s, 1, c - 1); c = index(s, "  "); return c ? substr(s, 1, c - 1) : s }
+'
 
 # THE FIVE DIMENSIONS IN PARALLEL (same round): each writes its own .rpt from
 # the same read-only inputs, one job each instead of one after another.
 pda_dim() {   # $1 = logical|partner|application|domain|bl
-    local dim=$1 col title chead nkind attr VMAP UMAP UKEY OUT agg src
-    local tot_records tot_failed tot_processed tot_human summary_row_count tot_retry tot_resub summary_rows
+    local dim=$1 col title chead attr OUT agg
+    local summary_rows
     case $dim in
-        logical)     col=13; title="Logical";      chead="Logical"; nkind=lgc
+        logical)     col=13; title="Logical";      chead="Logical"
                      attr="the file's logical flow group (its FlowID condensed to a 3-part group name — data/flow-manager/base/_logicals.tsv)" ;;
-        partner)     col=20; title="Partners";     chead="Partner"; nkind=ptn
+        partner)     col=20; title="Partners";     chead="Partner"
                      attr="the file's partner organisation (part 3 of its logical flow name, merged into organisations — data/flow-manager/base/_partners.tsv)" ;;
-        application) col=18; title="Applications"; chead="Application"; nkind=app
+        application) col=18; title="Applications"; chead="Application"
                      attr="part 2 of the file's logical flow name (data/flow-manager/base/_apps.tsv)" ;;
-        domain)      col=19; title="Domains";      chead="Domain"; nkind=dom
+        domain)      col=19; title="Domains";      chead="Domain"
                      attr="part 1 of the file's logical flow name (data/flow-manager/base/_domains.tsv)" ;;
-        bl)          col=12; title="BL";           chead="BL"; nkind=bl
+        bl)          col=12; title="BL";           chead="BL"
                      attr="the subscription's BL tag from subscriptions.json (data/flow-manager/base/_bl.tsv)" ;;
     esac
     OUT="$REPORTS_DIR/$dim.rpt"
 
     # One pass over _files.tsv (1=coreid, 2=outcome, 4=date_iso, 5=time,
-    # 6=sortkey, 8=size, C=the dimension value) — account.sh's aggregation
-    # with the account column swapped for the PDA attribution. Files without
-    # the attribution or a valid date are skipped.
-    # UNION attribution: a File counts for EVERY name its config maps to,
-    # UNIONED with the parse-time attribution ($C) — deduped per (name,
-    # CoreId), so these Files can sum to more than the distinct total.
+    # 6=sortkey, col=the dimension's direct column) — account.sh's
+    # aggregation (and record) with the account column swapped for the PDA
+    # attribution. Files without the attribution or a valid date are skipped.
+    # UNION attribution (the shared sets of bin/pda-union.sh): a File counts
+    # for EVERY name its config maps to, UNIONED with the parse-time
+    # attribution — deduped per (name, CoreId), so these Files can sum to
+    # more than the distinct total.
     #   partner:     col 12 (subscription) joined on _subscriptions-partners
     #                — a UC5 relay / both-partner file belongs to BOTH
     #                organisations, and the both-partner case carries an
@@ -76,104 +78,40 @@ pda_dim() {   # $1 = logical|partner|application|domain|bl
     #                the FlowID spine (2026-08-31; the former ACCOUNT union
     #                credited every File of a shared hybrid production
     #                account to every application the account touches)
+    #   logical:     col 13 through the FlowID map ∪ its subscription's
+    #                logicals; bl: its subscription's tag(s)
     # Domains stay single-valued (part 1 of the name — never doubles).
-    UMAP=""; UKEY=0
-    case $dim in
-        logical)     [ -f "$CONFIG_XREF/_subscriptions-logicals.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-logicals.tsv"; UKEY=12; } ;;
-        partner)     [ -f "$CONFIG_XREF/_subscriptions-partners.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-partners.tsv"; UKEY=12; } ;;
-        application) [ -f "$CONFIG_XREF/_subscriptions-apps.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-apps.tsv"; UKEY=12; } ;;   # the SUBSCRIPTION spine (2026-08-31; the account union over-credited shared production accounts)
-        bl)          [ -f "$CONFIG_XREF/_subscriptions-bl.tsv" ] && { UMAP="$CONFIG_XREF/_subscriptions-bl.tsv"; UKEY=12; } ;;
-    esac
-    # the logical/bl dims'"'"' DIRECT attribution is a column resolved through a
-    # map (logical: the profile col 13 through the FlowID map; bl: the
-    # subscription col 12 through the tag map) — an unmapped or blank value
-    # abstains (the union may still count the File)
-    VMAP=""
-    case $dim in
-        logical) [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv" ;;
-        bl)      [ -f "$CONFIG_XREF/_subscriptions-bl.tsv" ] && VMAP="$CONFIG_XREF/_subscriptions-bl.tsv" ;;
-    esac
-    agg=$(awk -F'\t' -v C="$col" -v UMAP="$UMAP" -v UK="$UKEY" -v VMAP="$VMAP" -v PF="$LEGF" "$COREIDS_AWK"'
-        function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
-            while (v >= 1024 && i < 6) { v /= 1024; i++ }
-            return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
-        BEGIN {
-            if (UMAP != "") { while ((getline l < UMAP) > 0) { n2 = split(l, z, "\t")
-                if (n2 >= 2 && z[1] != "" && z[2] != "") sp[toupper(z[1])] = sp[toupper(z[1])] (sp[toupper(z[1])] == "" ? "" : "\037") z[2] } close(UMAP) }
-            if (VMAP != "") { while ((getline l < VMAP) > 0) { n2 = split(l, z, "\t")
-                if (n2 >= 2 && z[1] != "" && z[2] != "") vm[toupper(z[1])] = z[2] } close(VMAP) }
-        }
-        FILENAME == PF { if ($1 == "F") fl[$2] = 1; else if ($1 == "R") rsb[$2] = 1; next }   # the leg flags first (LEGF, from _transfers.tsv): a Failed leg marks its File (Retry/Resubmit); a Resubmitted=true leg marks the operator resubmit
+    agg=$(awk -F'\t' -v DIM="$dim" "${SP_AWK_V[@]}" "$SP_AWK$LAST_AWK"'
         $4 == "" { next }
         {
-            delete P; np2 = 0
-            if ($C != "") { v = $C
-                if (VMAP != "") v = ((toupper($C) in vm) ? vm[toupper($C)] : "")
-                if (v != "") { P[v] = 1; np2++ } }
-            if (UMAP != "" && $UK != "" && (toupper($UK) in sp)) {
-                n2 = split(sp[toupper($UK)], z, "\037")
-                for (i2 = 1; i2 <= n2; i2++) if (!(z[i2] in P)) { P[z[i2]] = 1; np2++ }
-            }
-            if (np2 == 0) next
-            f = ($2 == "Failed" || $2 == "Expired"); date = $4; sk = $6; disp = $4 " " $5; cid = $1; size = $8
-            cu = (!f && (cid in fl)); rt = (cu && !(cid in rsb)); rs = (cu && (cid in rsb))   # CURED (an OK File that carried a failed leg — the home page rule): RETRY when no leg was resubmitted, RESUBMIT when one was (the Top view Automatic/Manual split)
-            for (a in P) {
-                sc[a]++; if (f) sfl[a]++; else spr[a]++; if (rt) srt[a]++; if (rs) srs[a]++; sv[a] += size
-                if (!(a in havemin) || sk < mink[a]) { mink[a] = sk; fst[a] = date; havemin[a] = 1 }
-                if (!(a in havemax) || sk > maxk[a]) { maxk[a] = sk; lst[a] = date; havemax[a] = 1 }
-                addtop("S" SUBSEP a SUBSEP (f ? "F" : "P"), sk, disp, cid)
-                if (rt) addtop("R" SUBSEP a SUBSEP "T", sk, disp, cid); if (rs) addtop("R" SUBSEP a SUBSEP "S", sk, disp, cid)   # the Retry / Resubmit drill lists, 10 newest each (2026-09-13, user request)
-                dk = a SUBSEP date; ds[dk] = 1; dl[dk]++; if (f) dfl[dk]++; else dpr[dk]++; if (rt) drt[dk]++; if (rs) drs[dk]++; ddb[dk] += size
-            }
-            tc++; if (f) tfl++; else tpr++; if (rt) trt++; if (rs) trs++; tvol += size
+            if (DIM == "partner") u = sp_union($20, $12)
+            else if (DIM == "application") u = ap_union($18, $12)
+            else if (DIM == "logical") u = lg_union($13, $12)
+            else if (DIM == "bl") u = bl_union($12)
+            else u = $19
+            if (u == "") next
+            delete P
+            n2 = split(u, z, "\037"); for (i2 = 1; i2 <= n2; i2++) P[z[i2]] = 1
+            f = ($2 == "Failed" || $2 == "Expired"); k = $6 SUBSEP $4 " " $5
+            for (a in P) { sc[a]++
+                if (f) { sfl[a]++; newest("F" SUBSEP a, k) } else { spr[a]++; newest("P" SUBSEP a, k) } }
         }
-        END {
-            for (dk in ds) { split(dk, kk, SUBSEP)
-                bk[kk[1]] = bk[kk[1]] (bk[kk[1]] ? "," : "") kk[2] ":" dl[dk] ":" (dfl[dk]+0) ":" (dpr[dk]+0) ":" ddb[dk] ":" (drt[dk]+0) ":" (drs[dk]+0) }
-            for (a in sc) { ns++
-                sh = tc > 0 ? sprintf("%.1f", sc[a] * 100 / tc) : "0.0"
-                printf "S|%s|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", a, sc[a], sfl[a]+0, spr[a]+0, srt[a]+0, srs[a]+0, human(sv[a]+0), sh, fst[a], lst[a], \
-                    bk[a], buildlist(top["S" SUBSEP a SUBSEP "F"]), buildlist(top["S" SUBSEP a SUBSEP "P"]), buildlist(top["R" SUBSEP a SUBSEP "T"]), buildlist(top["R" SUBSEP a SUBSEP "S"]) }
-            printf "T|%d|%d|%d|%s|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, trt+0, trs+0
-        }
-    ' "$LEGF" "$FILES")
+        END { for (a in sc) printf "S|%s|%d|%d|%d|%s|%s\n", a, sc[a], sfl[a]+0, spr[a]+0, lastts("F" SUBSEP a), lastts("P" SUBSEP a) }
+    ' "$FILES")
 
-    if [ -z "$agg" ]; then
-        echo "No usable records found ($dim)." >&2
-        return 0
-    fi
-
-    IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_count tot_retry tot_resub <<< "$(printf '%s\n' "$agg" | grep '^T|')"
-
-    # Summary rows, busiest first. ONE awk pass formats the sorted stream into
-    # finished ROW lines — a bash while-read with a $(printf) per row forked a
-    # subshell per name, three dims deep. The last field takes the line's
-    # remainder, like read into the final variable did.
+    # The rows, busiest first (by File count).
     summary_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | sort -t'|' -k3,3nr | awk -F'|' '
         $2 == "" { next }
-        { ccp = $14   # field 14 = the OK list; 15/16 = the Retry / Resubmit lists (2026-09-13)
-          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\t@data:coreids-retry=%s\t@data:coreids-resubmit=%s\n", \
-              $2, $3, $4, $5, $6, $7, $8, $10, $11, $12, $13, ccp, $15, $16 }')
+        { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\n", $2, $3, $4, $5, $6, $7 }')
 
     {
         printf 'TITLE\t%s\n' "$title"
-        printf 'DESC\tFiles per %s, split into Error/OK.\n' "$dim"
-        src="derived from the logical flow names (and, for partners, the endpoint/whitelist/alias merge)"
-        [ "$dim" = logical ] && src="derived from the FlowIDs, condensed into logical flow groups"
-        printf 'INTRO\tEvery %s with its **Files** (one per CoreId), Error/OK split (**Retry** / **Resubmit** = the OK Files that needed a retry — a failed leg, then delivered — healed by the platform'\''s own retry or by an operator'\''s resubmit, the log'\''s Resubmitted flag), volume and last sighting — %s. The view tabs switch between logged (**Seen**), configured (**All** / **Not seen**) and the status subsets (**OK** / **Warning** / **Error**) — rows tint by each %s'\''s status.\n' "$dim" "$src" "$dim"
-
-        printf 'TABLE\tSummary per %s\twide\n' "$chead"
-        printf 'HEAD\t%s\tFiles\tError\tOK\tRetry\tResubmit\tVolume\tFirst seen\tLast seen\n' "$chead"
-        printf "KIND\t$nkind\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumwarn\tnum\ttext\ttext\n"
-        printf 'RECALC\t-\ts0\ts1\ts2\ts4\ts5\th3\t-\t-\n'
+        printf 'TABLE\tSummary per %s\n' "$chead"
+        printf 'HEAD\t%s\tFiles\tError\tOK\tLast Error\tLast OK\n' "$chead"
         [ -n "$summary_rows" ] && printf '%s\n' "$summary_rows"
-        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t\t\n' \
-            "$summary_row_count" "$dim" "$tot_records" "$tot_failed" "$tot_processed" "$tot_retry" "$tot_resub" "$tot_human"
-
-        printf 'NOTE\tCounts Files — one logical transfer each; the %s is %s. Names link to the logical / partner / application / domain detail pages. Volume is the file counted once; First/Last seen stay full-period under the date filter. **The Total row counts each File once** (the site-wide distinct figure); a narrowed date range re-totals over the per-%s rows, whose union attribution can claim one File for several %ss — so a filtered Total can run slightly higher than the distinct figure it replaces, and snaps back to it at the full range. Click an Error or OK count for that outcome'\''s 10 most recent Files (newest first).\n' "$dim" "$attr" "$dim" "$dim"
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
-    echo "Data written to $OUT ($summary_row_count $dim(s), $tot_records file(s))." >&2
+    echo "Data written to $OUT ($(printf '%s\n' "$summary_rows" | grep -c '^ROW' || true) $dim(s))." >&2
 }
 _ppids=()
 for dim in logical partner application domain bl; do pda_dim "$dim" & _ppids+=("$!"); done

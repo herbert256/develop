@@ -294,16 +294,7 @@ day_rows() {
 
 {
     printf 'TITLE\tNo remote dir\n'
-    printf 'DESC\tSubscriptions whose configured REMOTE directory does not exist — we reach the partner, the listing fails with "No such file".\n'
     printf 'KEYWORDS\tno such file,missing directory,remote directory,listing,scan directory,path,configuration fault\n'
-    intro_res=""
-    if [ "${n_res:-0}" -gt 0 ]; then
-        intro_res=$(printf ' **%s** further director(y/ies) (**%s** error(s)) are NOT listed — the flow recovered afterwards: **%s** proven by a later OK File, **%s** by a later successful listing of that same UC3 site (a poll that finds nothing leaves no transfer record, so the server log is the only witness).' \
-            "$n_res" "$n_reserr" "${n_resfile:-0}" "${n_respoll:-0}")
-    fi
-    printf 'INTRO\tWe reached the partner and asked for a directory listing, and the partner answered **No such file**: the configured REMOTE directory is not there. **%s** failed listing(s) over **%s** day(s), across **%s** subscription(s), **%s** account(s) and **%s** distinct director(y/ies) — all still UNRESOLVED.%s The connection itself is fine, so this is a **configuration fault** — a renamed or never-created path, or an account chrooted somewhere else — and it never shows in the transfer logs: a listing that fails starts no transfer, so the flow just looks silent there.\n' \
-        "$tot_err" "$n_day" "$n_sub" "$n_acc" "$n_path" "$intro_res"
-    printf 'INTRO\tA row stays only while the flow has NOT recovered since its last error: a later **OK File** of the subscription (any flow) or, on a UC3 pull flow, a later **successful listing** of the same site clears it. The two evidence columns show the newest of each the row has — both OLDER than the error (or absent), or the row would be gone.\n'
 
     # tab=uc3 (2026-09-29): both tables ride the UC3 tab of UC status
     printf 'TABLE\tMissing remote directories\twide\ttab=uc3\n'
@@ -319,9 +310,7 @@ day_rows() {
     day_rows
     printf 'TOTAL\tTotal (%s day(s))\t@{class=num failed}%s\t\n' "$n_day" "$tot_err"
 
-    printf 'NOTE\tSource: TM errors "Error occurred while listing files from partner … defined in account …. No such file[: '\''<path>'\''] " (with or without the "Error during transfer operation:" prefix). Only the **No such file** reason is counted — other listing failures (Permission denied, …) are counted per subscription on the **UC status / UC3** tab (Polls by subscription), which also covers the polls that do list a directory. **Only OPEN problems are listed**: a row is dropped when the flow recovered AFTER that row'\''s last error — either an OK File in the transfer cache, or, on a **UC3** subscription, a later "Applying the search pattern … for transfer site" line for that same site, which proves the poll reached the directory even though it downloaded nothing (an empty poll leaves no transfer record at all, so nothing else can witness it). Each row therefore still describes a directory the partner was rejecting at the end of the window. The subscription is the logged site truncated at its _SCP_ suffix, linked to its detail page when the name resolves. **One row per subscription**: a flow rejected on several directories (or several spellings of one) stacks them in the Remote directory cell, newest failure first — click the cell to expand a long list. **Last** is that subscription'\''s most recent failed listing. Error counts are additive, so a date-filtered range re-totals them. Click a row to expand its 10 most recent log lines.\n'
-    printf 'SUMMARY\tOpen failed listings: %s  |  Subscriptions: %s  |  Directories: %s  |  Days: %s  |  Resolved since: %s\n' "$tot_err" "$n_sub" "$n_path" "$n_day" "${n_res:-0}"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_err error(s), $n_sub subscription(s), $n_path director(y/ies))." >&2

@@ -50,6 +50,7 @@ ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$ROOT"
 source bin/fastawk.sh   # route unqualified `awk` to mawk when installed
 source bin/ranges.sh    # rng_feed / rng_off: the byte-range split of the parallel server pass (2026-09-27)
+source bin/pda-union.sh # SP_MAP + SP_AWK: the File attribution UNION (sp_union) — the Top-5 partner tables
 DATA="data"
 
 RPTDIR="$DATA/day/reports"
@@ -68,7 +69,6 @@ GTR="$DATA/transfer/reports/from-green-to-red.rpt"   # ROW: 4 = "Went red on" da
 ORED="$DATA/transfer/reports/only-red.rpt"           # ROW: 6 = "First failure" date+time (per-day PROBLEM link)
 PSLOTS="$DATA/server/reports/pesit-slots.tsv"   # pesit.sh's 30-min direction split (date slot out in) — the PeSIT hero view
 EQSLOTS="$DATA/server/reports/event-queue-slots.tsv"   # event-queue.sh's 30-min line counts (date slot lines) — the EventQueue hero view (2026-09-14)
-SUBPF="$DATA/flow-manager/xref/_subscriptions-partners.tsv"   # subscription -> partner(s), for the Top-5 partner UNION
 
 # A killed run must not leave a half-written day set (BOTH passes below append
 # across the whole file set, so single-file tmp+mv cannot cover it). The
@@ -135,7 +135,7 @@ udays=$(printf '%s %s' "$_ut" "$_us" | tr ' ' '\n' | awk 'NF' | LC_ALL=C sort -u
 # ---------------------------------------------------------------------------
 if [ -f "$TF" ] && [ -n "$tdays" ]; then
 awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v PS="$PSLOTS" -v EQF="$EQSLOTS" \
-    -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SUBPF="$SUBPF" '
+    -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SPMAP="$SP_MAP" "$SP_AWK"'
     function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
     function humandur(ms,   s,m,h){ ms+=0; if(ms<1000)return int(ms) "ms"; s=int(ms/1000); if(s<60)return s "s"; m=int(s/60); s=s%60; if(m<60)return m "m " s "s"; h=int(m/60); m=m%60; return h "h " m "m" }
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
@@ -201,11 +201,6 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
     # the PeSIT 30-min direction sidecar (pesit.sh) — a missing file is a
     # no-op (getline returns < 0), leaving PO/PI empty = an all-zero series
     BEGIN { US = sprintf("%c", 31)
-        # subscription -> its configured partner(s); a missing map just leaves the
-        # partner tables to col 20 alone (getline returns < 0, so no error)
-        while ((getline sl < SUBPF) > 0) { np2 = split(sl, sz, "\t")
-            if (np2 >= 2 && sz[1] != "" && sz[2] != "") SUBP[toupper(sz[1])] = SUBP[toupper(sz[1])] US sz[2] }
-        close(SUBPF)
         if (PS != "") { while ((getline pl < PS) > 0) { n = split(pl, pz, "\t"); if (n >= 4) { PO[pz[1], pz[2]+0] = pz[3]+0; PI[pz[1], pz[2]+0] = pz[4]+0 } } close(PS) }
         # the EventQueue 30-min sidecar (event-queue.sh, 2026-09-14) — missing = all zeros
         if (EQF != "") { while ((getline el < EQF) > 0) { n = split(el, ez, "\t"); if (n >= 3) EQC[ez[1], ez[2]+0] = ez[3]+0 } close(EQF) }
@@ -243,13 +238,10 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         }
         # the six Top-5 tables: subscription (col 12) and the partner UNION
         # (col 20 ∪ the subscription\047s configured partners — a both-partner File
-        # carries an EMPTY col 20, the parse abstains there)
+        # carries an EMPTY col 20, the parse abstains there; bin/pda-union.sh)
         tally("S", $12, d)
-        tally("P", $20, d)
-        if ($12 != "" && (toupper($12) in SUBP)) {
-            npt = split(substr(SUBP[toupper($12)], 2), PTZ, US)
-            for (ipt = 1; ipt <= npt; ipt++) if (PTZ[ipt] != $20) tally("P", PTZ[ipt], d)
-        }
+        npt = split(sp_union($20, $12), PTZ, "\037")
+        for (ipt = 1; ipt <= npt; ipt++) tally("P", PTZ[ipt], d)
         a = $3
         if (a != "") {
             ac[d, a]++

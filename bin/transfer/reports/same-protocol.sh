@@ -107,7 +107,7 @@ nf=$(wc -l < "$TMP/files" | tr -d ' ')
     printf 'KIND\tsite\ttext\ttext\ttext\ttext\tnum\ttext\ttext\ttext\n'
     LC_ALL=C sort -t"$TAB" -k1,1r "$TMP/files" | cut -f2-
     printf 'SUMMARY\tFiles with the same inbound and outbound protocol: %s\n' "${nf:-0}"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (${nf:-0} File(s) with the same inbound and outbound protocol)." >&2

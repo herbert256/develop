@@ -89,16 +89,12 @@ rows=$(printf '%s\n' "$agg" | grep '^WK|' | sort -t'|' -k2,2n | awk -F'|' '
 
 {
     printf 'TITLE\tPer Week\n'
-    printf 'DESC\t%s, failure rate, volume and week-over-week change per ISO week.\n' "$clabel"
-    printf 'INTRO\t**%s** ISO week(s) (Mon-Sun). "Δ %ss" compares each week'\''s count with the previous week; **(partial)** marks a week observed on fewer than 7 days — the edges of the data window — whose delta is not meaningful.\n' "$nweeks" "$noun"
     printf 'TABLE\tPer ISO week\twide\n'
     printf 'HEAD\tWeek\tFrom\tTo\tDays\t%s\tAvg/day\tError %%\tVolume\tΔ %ss\n' "$clabel" "$noun"
     printf 'KIND\ttext\ttext\ttext\tnum\tnum\tnum\tnum\tnum\tnum\n'
     printf '%s\n' "$rows"
     printf 'TOTAL\tTotal (%s week(s))\t\t\t\t@{class=num}%s\t\t@{class=num}%s%%\t@{class=num}%s\t\n' \
         "$nweeks" "$tot_proc" "$tot_pct" "$tot_vol"
-    printf 'NOTE\tOne row = one ISO week (Monday-Sunday) by start date. "Days" counts the calendar days with data; Avg/day divides by it. The From/To dates make the date filter hide out-of-range weeks.\n'
-    printf 'SUMMARY\tWeeks: %s  |  Total %ss: %s  |  Error: %s (%s%%)  |  OK volume: %s\n' "$nweeks" "$noun" "$tot_cnt" "$tot_fail" "$tot_pct" "$tot_vol"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($nweeks week(s), $tot_cnt $noun(s))." >&2

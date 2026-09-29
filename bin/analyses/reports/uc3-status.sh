@@ -302,8 +302,6 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, n
 
 {
     printf 'TITLE\tUC3 status\n'
-    printf 'DESC\tEvery configured UC3 (we poll the partner) subscription in one of four statuses: healthy, failing, failing after a working history, or not seen in the transfer log — with its poll counts from the server log.\n'
-    printf 'INTRO\tEvery configured **UC3** (we poll the partner and pull files) subscription, in exactly one status: **ok** = green, its latest File was delivered; **error** = red and never once delivered an OK File (or its polls cannot connect); **ok -> error** = red now, but it HAS delivered before — a regression; **not seen** = configured, never seen in the transfer log — a flow polling cleanly with nothing to fetch stays here. Click a row for its newest problem lines, then its most recent poll lines.\n'
 
     printf 'STAT\twhite\t%s\tUC3 subscriptions\n' "$n_all"
     printf 'STAT\tgreen\t%s\tok\n' "$n_ok"
@@ -317,12 +315,9 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, n
     [ -z "$rows" ] || printf '%s\n' "$rows"   # (no blank line before TOTAL, 2026-09-29 audit)
     printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t\n' \
         "$n_all" "$(nz0 "$t_files")" "$(nz0 "$t_ok")" "$(nz0 "$t_er")" "$(nz0 "$t_poll")" "$(nz0 "$t_empty")" "$(nz0 "$t_prob")"
-    printf 'NOTE\tEvery configured **UC3** subscription, classified. The colour is the site-wide **result**: green = its LAST File OK, red = its last File Failed, a server-log Error after it, or three failed connection attempts in a row on a flow that never transferred; orange = never in the transfer log, or its last File Expired. **error** vs **ok -> error** is a per-FILE question — right after any OK File the subscription WAS green — so a red subscription with even one OK File in the window is a regression; that is finer than **From green to red**, which buckets by whole days and so misses a flow that fails at the end of every day. **Files/OK/Error** are logical transfers from the transfer cache; **Polls/Empty polls/Problems** are server-log line counts (a poll result; a Connection failure or failing directory listing). **Last log** is the newest line of ANY counted kind, the ones that merely PREPARE a poll included — so it answers "is this flow still running at all". Click a row for its newest problem lines, then its most recent poll lines.\n'
 
     printf 'KEYWORDS\tuc3, poll, pull, remote poll, status, green, red, regression, never worked, not seen, connection failure, listing, subscription health\n'
-    printf 'SUMMARY\tok: %s  |  error: %s  |  ok -> error: %s  |  not seen: %s\n' \
-        "$n_ok" "$n_err" "$n_okerr" "$n_notseen"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_all UC3 subscription(s): $n_ok ok, $n_err error, $n_okerr ok-error, $n_notseen not-seen)." >&2

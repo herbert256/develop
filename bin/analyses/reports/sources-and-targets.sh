@@ -160,7 +160,6 @@ tbl_both() {
     printf 'KIND\ttext\ttext\tnumfailed\tnumprocessed\n'
     tbl_multi TGT
 
-    printf 'NOTE\tA **remote** source/target (an endpoint we dial) carries its partner host after **@**; a local SecureTransport path has none. A value in the first table is written by one subscription and read by another — an internal hand-off. Error/OK are each subscription'"'"'s own transfer outcome.\n'
-    printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT." >&2

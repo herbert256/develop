@@ -69,8 +69,6 @@ hum_bytes() { awk -v b="$1" 'BEGIN{ split("B KB MB GB TB PB",u," "); i=1; v=b+0;
 
 {
     printf 'TITLE\tLargest Files\n'
-    printf 'DESC\tThe largest Files by size, with throughput and outcome.\n'
-    printf 'INTRO\tThe %s largest Files by file size. One row = one File. The SLOWEST transfers live on the **Duration** report (2026-07: the former Slowest table here duplicated it).\n' "$TOP_N"
 
     printf 'TABLE\tTop %s largest Files\twide\trestint\n' "$TOP_N"   # rows tint by the File colour (2026-09-29)
     printf 'HEAD\tSize\tThroughput\tStart Time\tAccount\tDestination Subscription\tOutcome\tFile\n'
@@ -83,7 +81,7 @@ hum_bytes() { awk -v b="$1" 'BEGIN{ split("B KB MB GB TB PB",u," "); i=1; v=b+0;
     done <<< "$largest"
     printf 'TOTAL\tTotal (%s rows): %s\t\t\t\t\t\t\n' "$lg_n" "$(hum_bytes "$lg_bytes")"
 
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (top $TOP_N largest & slowest)." >&2

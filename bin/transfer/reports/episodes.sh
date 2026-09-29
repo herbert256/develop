@@ -128,28 +128,21 @@ fi
 
 {
     printf 'TITLE\tEpisodes\n'   # = its Reports menu label (2026-09-29)
-    printf 'DESC\tConsecutive failures collapsed into episodes: how often each subscription breaks, and how long outages last before they recover.\n'
     printf 'KEYWORDS\topen incident, outage, broken, recovery, consecutive failures, time to recovery, never delivered\n'
-    printf 'INTRO\tFailure RUNS in time, per subscription: **%s** of **%s** subscription(s) failed at least once; **%s** are in an **open incident** right now (latest File failed, %s+ consecutive failures — worst run: **%s**), **%s** of them have NEVER delivered an OK File. Of the **%s** closed episode(s), most self-heal quickly but the slow tail is real (longest recovery: **%s** days). The other failure reports show failure rates; this one shows how failures cluster and how long they last. Click a row for its 10 most recent failed Files.\n' \
-        "$n_fail" "$n_sites" "$n_open" "$OPEN_MIN" "$worst_tail" "$n_neverok" "$n_closed" "$max_rec"
 
     # tab=episodes (2026-09-29): the two tables ride ONE tab of the Episodes page
     printf 'TABLE\tEpisodes per subscription\twide\tnofilter\ttab=episodes\n'
     printf 'HEAD\tSubscription\tFiles\tError\tEpisodes\tLongest run\tHealed <= 1 h\t1 - 24 h\tOver 24 h\tLast OK\n'
     printf 'KIND\tsite\tnum\tnumfailed\tnum\tnum\tnumprocessed\tnum\tnumwarn\ttext\n'
     printf '%s' "$ep_rows"
-    printf 'NOTE\tOne episode = an unbroken run of failed Files ended by the next OK (or still open). The healed columns split the CLOSED episodes by their time to recovery; a subscription with many quick-healing episodes flaps, one with few long ones breaks hard. Sorted by episode count. Click the Error count for the 10 most recent failed Files.\n'
 
     printf 'TABLE\tTime to recovery\tnofilter\ttab=episodes\n'
     printf 'HEAD\tRecovered within\tEpisodes\tShare\n'
     printf 'KIND\ttext\tnum\tnum\n'
     printf '%s' "$rec_rows"
     printf 'TOTAL\tTotal (closed episodes)\t@{class=num}%s\t100.0%%\n' "$n_closed"
-    printf 'NOTE\tThe distribution over all closed episodes: from the episode'\''s first failure to the next OK File of the same subscription. Open incidents (no OK yet) are not counted here.\n'
 
-    printf 'SUMMARY\tSubscriptions with failures: %s of %s  |  Open incidents: %s (worst run %s, never-OK %s)  |  Closed episodes: %s  |  Longest recovery: %s days\n' \
-        "$n_fail" "$n_sites" "$n_open" "$worst_tail" "$n_neverok" "$n_closed" "$max_rec"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_sites subscription(s), $n_open open incident(s), $n_closed closed episode(s))." >&2

@@ -12,11 +12,24 @@
 #                          defects and the "one name, two roles" tables
 #   subscriptions-in-boxes.html  every subscription boxed by what is true of it
 # Every page degrades gracefully: a missing source skips that column/section
-# rather than failing the publish. No arguments; runs from any directory.
+# rather than failing the publish. Runs from any directory.
+#
+# Usage:  bin/analyses/publish-insights.sh           the three pages (+ the sidecar)
+#         bin/analyses/publish-insights.sh sidecar   ONLY the box-reason sidecar
+#             _subs-boxes.tsv, no page (2026-09-29) — bin/analyses/publish.sh
+#             catchup: the failed.sh catch-up rewrote _errpage-evidence.tsv, the
+#             sidecar's one input that moved; the pages read none of it
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; html_head/esc/…
+
+# the MODE: an explicit argument — never a freshness check
+PI_MODE=${1:-all}
+case $PI_MODE in
+    all|sidecar) ;;
+    *) printf 'usage: bin/analyses/publish-insights.sh [sidecar]\n' >&2; exit 2 ;;
+esac
 
 ADIR="$DOCS/analyses"
 mkdir -p "$ADIR"
@@ -31,41 +44,43 @@ TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT
 
 # ---- shared extracts --------------------------------------------------------
+# (the page writers' inputs only — the sidecar mode skips them)
+if [ "$PI_MODE" = all ]; then
+    # Credentials: account, credential name, type, private, expiry date, days left
+    # (empty when the credential carries no expiration). jq's strftime/now do the
+    # date math, so the awk side stays POSIX.
+    CERTS="$TMPD/certs.tsv"
+    if [ -f "$FMJ/partners.json" ]; then
+        jq -r '.[] | .name as $n | (.credentials // [])[]
+            | [$n, (.name // "-"), (.type // "-"), (if (.isPrivateCertificate // false) then "private" else "public" end),
+               (if .expiration then ((.expiration/1000) | strftime("%Y-%m-%d")) else "" end),
+               (if .expiration then (((.expiration/1000 - now)/86400) | floor | tostring) else "" end)]
+            | @tsv' "$FMJ/partners.json" > "$CERTS" 2>/dev/null || : > "$CERTS"
+    else
+        : > "$CERTS"
+    fi
 
-# Credentials: account, credential name, type, private, expiry date, days left
-# (empty when the credential carries no expiration). jq's strftime/now do the
-# date math, so the awk side stays POSIX.
-CERTS="$TMPD/certs.tsv"
-if [ -f "$FMJ/partners.json" ]; then
-    jq -r '.[] | .name as $n | (.credentials // [])[]
-        | [$n, (.name // "-"), (.type // "-"), (if (.isPrivateCertificate // false) then "private" else "public" end),
-           (if .expiration then ((.expiration/1000) | strftime("%Y-%m-%d")) else "" end),
-           (if .expiration then (((.expiration/1000 - now)/86400) | floor | tostring) else "" end)]
-        | @tsv' "$FMJ/partners.json" > "$CERTS" 2>/dev/null || : > "$CERTS"
-else
-    : > "$CERTS"
+    # Observed INBOUND source addresses from the transfer logs: addr, Files, last date
+    OBSADDR="$TMPD/obsaddr.tsv"
+    if [ -f "$FILESC" ]; then
+        awk -F'\t' '$16 == "in" && $15 != "" { c[$15]++; if ($4 > l[$15]) l[$15] = $4 }
+            END { for (a in c) printf "%s\t%d\t%s\n", a, c[a], l[a] }' "$FILESC" | LC_ALL=C sort > "$OBSADDR"
+    else
+        : > "$OBSADDR"
+    fi
+
+    # Server-side INBOUND contact per client address: the inbound connection
+    # lines (_inbound-addr.tsv, uncapped) plus the SSH logon lines of that
+    # address (_logons-hosts.tsv: field 4 authentications + field 7 disallowed,
+    # else field 6 allowed) — bin/server-inbound-addr.awk, shared with the
+    # Cleanup backlog. (Until 2026-09-29 this read the Connections report's
+    # top-50 "By source address" table, whose lines were mostly OUR outbound
+    # connections — the targets read as partner sources.)
+    SRVADDR="$TMPD/srvaddr.tsv"
+    _ia="$SRPT/_inbound-addr.tsv"; [ -f "$_ia" ] || _ia=/dev/null
+    _lh="$DATA/server/cache/_logons-hosts.tsv"; [ -f "$_lh" ] || _lh=/dev/null
+    awk -F'\t' -f "$SCRIPT_DIR/../server-inbound-addr.awk" "$_ia" "$_lh" | LC_ALL=C sort > "$SRVADDR"
 fi
-
-# Observed INBOUND source addresses from the transfer logs: addr, Files, last date
-OBSADDR="$TMPD/obsaddr.tsv"
-if [ -f "$FILESC" ]; then
-    awk -F'\t' '$16 == "in" && $15 != "" { c[$15]++; if ($4 > l[$15]) l[$15] = $4 }
-        END { for (a in c) printf "%s\t%d\t%s\n", a, c[a], l[a] }' "$FILESC" | LC_ALL=C sort > "$OBSADDR"
-else
-    : > "$OBSADDR"
-fi
-
-# Server-side INBOUND contact per client address: the inbound connection
-# lines (_inbound-addr.tsv, uncapped) plus the SSH logon lines of that
-# address (_logons-hosts.tsv: field 4 authentications + field 7 disallowed,
-# else field 6 allowed) — bin/server-inbound-addr.awk, shared with the
-# Cleanup backlog. (Until 2026-09-29 this read the Connections report's
-# top-50 "By source address" table, whose lines were mostly OUR outbound
-# connections — the targets read as partner sources.)
-SRVADDR="$TMPD/srvaddr.tsv"
-_ia="$SRPT/_inbound-addr.tsv"; [ -f "$_ia" ] || _ia=/dev/null
-_lh="$DATA/server/cache/_logons-hosts.tsv"; [ -f "$_lh" ] || _lh=/dev/null
-awk -F'\t' -f "$SCRIPT_DIR/../server-inbound-addr.awk" "$_ia" "$_lh" | LC_ALL=C sort > "$SRVADDR"
 
 # ---- 4. Whitelist audit -----------------------------------------------------
 write_whitelist_audit_page() {
@@ -988,6 +1003,15 @@ write_subscriptions_in_boxes_page() {
 # the same box memberships joined onto accounts — 9 of 137 accounts carried
 # more than one subscription, and its one account-only box, "no subs", is the
 # Cleanup backlog / Config hygiene config-orphan row.)
+
+# the SIDECAR MODE (see Usage): the sidecar exactly as the boxes page writes
+# it — the same box rows, the same writer — and no page
+if [ "$PI_MODE" = sidecar ]; then
+    _pi_probs=$(_subs_box_rows)
+    _write_box_reason_sidecar "$_pi_probs"
+    echo "Wrote the box-reason sidecar $DATA/analyses/reports/_subs-boxes.tsv (no page)." >&2
+    exit 0
+fi
 
 write_whitelist_audit_page
 write_config_hygiene_page

@@ -228,7 +228,13 @@ File of every red / orange drill cell for failed.sh to page, see "Drill-down"), 
 boxes reasons now on disk), failed-files.sh, failing-reasons.sh, the detail-pages RE-RENDER
 (`publish-details.sh` only, in the BACKGROUND beside the analyses publish catch-up — the detail
 .rpt files need no second run: their one catch-up input, the REDUCED `_srvsubs-map.tsv`,
-name⇥slug⇥stamp, is final after failed.sh's first run), the transfer publish catch-up,
+name⇥slug⇥stamp, is final after failed.sh's first run), the transfer publish catch-up
+(`bin/transfer/publish.sh catchup` — 2026-09-29: only the Subscriptions Entities views, Failed
+files and docs/files/ — docs/files/'s ONLY render in a build: the first transfer publish runs
+`bin/transfer/publish.sh firstpass`, every transfer page but docs/files/; a hand-run publish with
+no argument still renders everything; the analyses one is `bin/analyses/publish.sh catchup` — Configured
+subscriptions, Failed Subscriptions, Error reasons + `publish-insights.sh sidecar` for
+`_subs-boxes.tsv`; the trace of what reads the catch-up inputs is in each script, THE CATCH-UP MODE),
 the all-files search (`bin/analyses/publish-all-files.sh` — its rows link the files/ pages the
 catch-ups settle), dashboards, day → `bin/build/publish.sh` (index pages + the home, reads every area) →
 `bin/build/display-rename.sh` → (runtime only) `bin/build/st-reports-archive.sh`.
@@ -439,7 +445,9 @@ mtime (the former cmp-guards) — except the two under `input/` (`bin/ip.sh`'s m
 snapshot), whose files outlive the build. Do not reintroduce a freshness check: a script that
 must not repeat work inside one build gets an explicit mode or a single call site instead (the
 server parse's `AXWAY_SKIP_MENTIONS` / `AXWAY_MENTIONS_ONLY`, the transfer parse's
-`AXWAY_DERIVE_ONLY`, went-kaput / monitor run once). Within-build DEPENDENCY guards stay:
+`AXWAY_DERIVE_ONLY`, the transfer publish's `firstpass` / `catchup` and the analyses publish's
+`catchup` modes, `publish-insights.sh sidecar`,
+went-kaput / monitor run once). Within-build DEPENDENCY guards stay:
 `ensure_logons` builds the logon summary only when it is not there yet (the background step
 normally has), `srv_subset` falls back to the whole cache without `subsets/.done`, and the
 appended-names mention rescan is skipped when it cannot change anything. ONE tracked file outside
@@ -797,7 +805,9 @@ the transfer must stay countable.
 ### _files.tsv — the logical-transfer cache
 
 A **logical transfer** = all records sharing one CoreId (commonly 2–7 rows). `parse.sh` collapses
-`_transfers.tsv` into one row per CoreId, 25 columns (col 25 = the File colour; `$FILES`; legend `data/transfer/cache/_files.txt`, written by the parse):
+`_transfers.tsv` into one row per CoreId, 27 columns (col 25 = the File colour, col 26 = "1" when a
+leg FAILED, col 27 = "1" when a leg was RESUBMITTED — 2026-09-29: the per-File retry / resubmit
+facts every report reads instead of re-scanning `_transfers.tsv`; `$FILES`; legend `data/transfer/cache/_files.txt`, written by the parse):
 
 ```
  1 coreid                                    12 dest_site (last row)
@@ -884,8 +894,11 @@ CoreIds (`login.sh`/`subscription.sh`/`remote-host.sh` join `$PARSED`→`$FILES`
 by abstention). **APPLICATION = the same union via the SUBSCRIPTION** (col 12 on
 `xref/_subscriptions-apps.tsv` ∪ col 18 — the FlowID spine, 1:1; until 2026-08-31 it rode the
 ACCOUNT, and a hybrid production account serving many flows credited every File of it to every
-application the account touches). Applied in EVERY partner/application-counting consumer
-(`details_lib.sh` carries the shared `SP_MAP`/`AP_MAP`); the parse fills cols 18/19 from the
+application the account touches). LOGICAL = col 13 through `xref/_profiles-logicals.tsv` ∪ the
+subscription's logicals; BL = the subscription's tags. ONE implementation: `bin/pda-union.sh`
+(`SP_AWK`: `sp_union`/`ap_union`/`lg_union`/`bl_union` + the `SP_MAP`… maps, 2026-09-29) —
+every File-attributing consumer sources it; never hand-copy the join (the few copies left carry a
+comment naming why their rule differs); the parse fills cols 18/19 from the
 subscription first, the account map only when unambiguous. Domains stay single-valued (part 1 of
 the logical flow name — parse col 19 keeps one).
 
@@ -1469,12 +1482,18 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   helpers); display-rename applies all rules in ONE pass per line (a chain A→B, B→C never turns A
   into C) over a NUL-separated page list; the build report prunes `data/.buildstats/loginv`.
   verify.sh runs linkcheck and fails on any CONSISTENCY WARNING in build/build.log.
-- **Deliberately LEFT (judged churn over value)**: the ~300 NOTE / INTRO / FOOT lines and ~2,560
-  DESC lines on pages that never render them (the writers' in-code documentation); the classic
-  entity .rpt files' unread columns and their Retry / Resubmit passes (pageless, read by position);
-  the per-report retry / resubmit re-derivations (two intended meanings); the partner / app /
-  logical / BL union-set copies; the catch-up publishes re-rendering whole areas; runtime-lib.sh
-  leftovers; the File page's raw log lines stay unwrapped (one logged line = one rendered line).
+- **The CLASSIC entity .rpt files** (`data/transfer/reports/{account,subscription,login,remote-host,
+  domain,application,partner,logical,bl}.rpt`, no page) hold ONE record per name since the same
+  day: name · Files · Error · OK · newest Error File start · newest OK File start (1.46 MB →
+  40 KB) — what their readers use (the server rosters, entity-search, sources-and-targets,
+  showseen, home). The Recovered / Retry / Resubmit rules read `_files.tsv` cols 26 / 27.
+- **Dead .rpt text is GONE** (2026-09-29, the same day's follow-up — Herbert: "why … Left on
+  purpose and not fix those?"): every NOTE / INTRO / DESC / SUMMARY / KEYWORDS line no consumer
+  reads was removed from the writers and FOOT carries no text (each class PROVEN dead by a
+  marker build, the removal proven by a byte-identical site). Write a NOTE / INTRO only where it
+  renders (detail / drill pages — no noprose) or is read (the finder's first INTRO, home.sh's
+  showseen INTRO); a report page's explanation belongs on its help page.
+- The File page's raw log lines stay unwrapped on purpose (one logged line = one rendered line).
 
 ## Conventions / gotchas
 

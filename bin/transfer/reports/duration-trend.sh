@@ -98,8 +98,6 @@ agg=$(awk -F'\t' -v minhalf="$MIN_HALF" -v slowr="$SLOW_R" -v fastr="$FAST_R" '
 if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
     {
         printf 'TITLE\tDuration Trend\n'
-        printf 'DESC\tFlows whose median transfer duration changed between the first and second half of the data window — slower and faster movers, with the average file size beside them.\n'
-        printf 'INTRO\tNo delivered Files with a measured duration in this dataset.\n'
         # BOTH tables of a normal run (2026-09-29: one stub made the merged
         # Trends report one tab short, its labels shifted)
         for _t in 'Slower than they were' 'Faster than they were'; do
@@ -109,7 +107,7 @@ if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
             printf 'ROW\tNo delivered Files with a measured duration in this dataset.\n'
             printf 'TOTAL\tTotal (0 rows)\n'
         done
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "No delivered Files with a duration — wrote empty-state $OUT." >&2
     exit 0
@@ -130,9 +128,6 @@ IFS=$'\t' read -r fa_n fa_a fa_b <<< "$fa_tot"
 
 {
     printf 'TITLE\tDuration Trend\n'
-    printf 'DESC\tFlows whose median transfer duration changed between the first and second half of the data window — slower and faster movers, with the average file size beside them.\n'
-    printf 'INTRO\tThe **%s** delivered (OK) Files with a measured duration, window **%s → %s**, split at **%s**. Per subscription with **%s+ delivered Files in each half**: the median duration per half and the ratio between them. **%s** of the **%s** comparable flows moved: **%s got slower** (ratio ≥ %s×) and **%s got faster** (ratio ≤ %s×). The average file size per half sits beside the medians — when the size grew with the duration, the flow is not degrading, the files are just bigger.\n' \
-        "$t_files" "$w_start" "$w_end" "$w_mid" "$MIN_HALF" "$(( sl_n + fa_n ))" "$t_cand" "$sl_n" "$SLOW_R" "$fa_n" "$FAST_R"
 
     printf 'TABLE\tSlower than they were\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tMedian (1st half)\tMedian (2nd half)\tRatio\tAvg size (1st)\tAvg size (2nd)\tFiles (1st / 2nd)\n'
@@ -144,7 +139,6 @@ IFS=$'\t' read -r fa_n fa_a fa_b <<< "$fa_tot"
         printf 'ROW\t@{colspan=7}No flow got slower by %s\303\227 or more.\n' "$SLOW_R"
         printf 'TOTAL\tTotal (0 subscriptions)\t\t\t\t\t\t\n'
     fi
-    printf 'NOTE\tBiggest slowdown first. Read the size columns before alarming: a ratio of 2\303\227 with the average size also doubling is load growth, not degradation — a slowdown at UNCHANGED size is the interesting row.\n'
 
     printf 'TABLE\tFaster than they were\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tMedian (1st half)\tMedian (2nd half)\tRatio\tAvg size (1st)\tAvg size (2nd)\tFiles (1st / 2nd)\n'
@@ -156,12 +150,8 @@ IFS=$'\t' read -r fa_n fa_a fa_b <<< "$fa_tot"
         printf 'ROW\t@{colspan=7}No flow got faster by %s\303\227 or less.\n' "$FAST_R"
         printf 'TOTAL\tTotal (0 subscriptions)\t\t\t\t\t\t\n'
     fi
-    printf 'NOTE\tBiggest speed-up first — usually good news (a fixed route, smaller files, an off-peak reschedule), but a sudden drop can also mean the flow now ships stubs instead of real content: check the size columns and the Size profile report.\n'
 
-    printf 'NOTE\tOnly **delivered (Processed)** Files count — a failed transfer'\''s run time is a timeout artefact, not a trend. Duration is the File'\''s wall-clock span (first record start to last record end, store-and-forward gap included). Medians use the nearest-rank method over each half; flows without %s Files in both halves are not compared.\n' "$MIN_HALF"
     printf 'KEYWORDS\tslower, faster, trend, degradation, regression, duration, median, speed, performance, over time, drift\n'
-    printf 'SUMMARY\tComparable flows: %s  |  Slower: %s  |  Faster: %s  |  Window: %s → %s\n' \
-        "$t_cand" "$sl_n" "$fa_n" "$w_start" "$w_end"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($t_cand comparable, $sl_n slower, $fa_n faster)." >&2

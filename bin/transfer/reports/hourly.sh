@@ -23,7 +23,7 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-clabel="Files"; noun="File"
+noun="File"
 OUT="$REPORTS_DIR/hourly.rpt"
 
 # ONE walk over the normalized stream feeds both tables: the per-hour aggregate
@@ -91,8 +91,6 @@ n_hours=$(printf '%s\n' "$agg" | grep -c '^HOUR|' || true)
 
 {
     printf 'TITLE\tLoad by Hour\n'
-    printf 'DESC\t%s (the delivered ones) and volume per hour of day, with a load bar.\n' "$clabel"
-    printf 'INTRO\t%s across the 24 hours of the day, by start time. The bar shows load relative to the busiest hour.\n' "$clabel"
     printf 'TABLE\tPer hour of day\n'
     # FILES = the delivered (OK) count, HOUR field 5 (2026-09-13, user request:
     # one Files column, no Error / OK pair, no green/red cells, no drills);
@@ -110,14 +108,11 @@ n_hours=$(printf '%s\n' "$agg" | grep -c '^HOUR|' || true)
         $2 != "" { printf "ROW\t%s:00\t%s\t%s\t%d\t@data:buckets=%s\n", $2, $5, $7, int($5 * 100 / mx), $8 }' || true
     printf 'TOTAL\tTotal (%s hour(s))\t@{class=num}%s\t@{class=num}%s\t\n' \
         "$n_hours" "$tot_processed" "$tot_human"
-    printf 'NOTE\tDelivered = the OK %ss started in that hour; Volume = their bytes; the bar shows load relative to the busiest hour.\n' "$noun"
 
     printf 'TABLE\tHour × weekday\theat\n'
     printf 'HEAD\tHour\tMonday\tTuesday\tWednesday\tThursday\tFriday\tSaturday\tSunday\n'
     printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
     cat "$HEAT"
-    printf 'NOTE\tEach cell counts the %ss starting in that hour on that weekday, tinted by quartile of the busiest cell — batch windows show as dark blocks. The date filter re-sums every cell and re-tints for the selected range.\n' "$noun"
-    printf 'SUMMARY\tTotal %ss: %s  |  Error: %s  |  OK: %s  |  OK volume: %s\n' "$noun" "$tot_rec" "$tot_failed" "$tot_processed" "$tot_human"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($tot_rec $noun(s))." >&2

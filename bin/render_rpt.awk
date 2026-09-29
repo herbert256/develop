@@ -495,7 +495,10 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # the cell is BUFFERED (CELLOUT, its final class list in CELLCLS): the ROW
     # branch prints the <tr> after its cells, once it knows which Error / OK
     # cells can carry the row's drill lists
-    CELLOUT = sprintf("<td%s%s%s%s>%s</td>", sp, (cls != "" ? " class=\"" cls "\"" : ""), (sv != "" ? " data-sortval=\"" sv "\"" : ""), (tt != "" ? " title=\"" esc(tt) "\"" : ""), text)
+    # CONCATENATION, not sprintf (2026-09-29): mawk caps a sprintf result at
+    # 8192 bytes ("program limit exceeded: sprintf buffer") — a long cell
+    # (a server-log message list, a prose cell) aborted the acceptance render
+    CELLOUT = "<td" sp (cls != "" ? " class=\"" cls "\"" : "") (sv != "" ? " data-sortval=\"" sv "\"" : "") (tt != "" ? " title=\"" esc(tt) "\"" : "") ">" text "</td>"
     CELLCLS = cls
 }
 

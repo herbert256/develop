@@ -40,6 +40,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # pages are analyses/xref/ pages. The lib resolves every path from its own
 # location, so sourcing it across areas is safe by design.
 source "$SCRIPT_DIR/../../transfer/lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union / ap_union / lg_union / bl_union)
 mkdir -p "$REPORTS_DIR"
 
 
@@ -66,34 +67,17 @@ ent_unk()   { case $1 in acct) echo accounts;; login) echo logins;; site) echo s
 # One pass: per row, record every unordered entity pair (e1 < e2 in ENTS
 # order) that appears — existence only, no counting. Emits TAB lines:
 #   e1 e2 v1 v2
-agg=$(awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$CONFIG_XREF/_subscriptions-apps.tsv" \
-    -v PLMAP="$CONFIG_XREF/_profiles-logicals.tsv" -v SLMAP="$CONFIG_XREF/_subscriptions-logicals.tsv" \
-    -v SBMAP="$CONFIG_XREF/_subscriptions-bl.tsv" '
-    function uload(f6, M6,   l6, z6, n6) {
-        while ((getline l6 < f6) > 0) { n6 = split(l6, z6, "\t")
-            if (n6 >= 2 && z6[1] != "" && z6[2] != "")
-                M6[toupper(z6[1])] = M6[toupper(z6[1])] (M6[toupper(z6[1])] == "" ? "" : "\037") z6[2] }
-        close(f6) }
-    function ujoin(v6, k6, M6,   n6, i6, r6) {
-        r6 = v6
-        if (k6 != "" && (toupper(k6) in M6)) { n6 = split(M6[toupper(k6)], UZ6, "\037")
-            for (i6 = 1; i6 <= n6; i6++) if (index("\037" r6 "\037", "\037" UZ6[i6] "\037") == 0)
-                r6 = r6 (r6 == "" ? "" : "\037") UZ6[i6] }
-        return r6 }
-    BEGIN { split("acct login site host lgc ptn app dom bl", E, " ")
-        # UNION attribution (cf. pda-entities.sh): partner = _files col 20 ∪
-        # the subscription'\''s configured partner(s) (a both-partner file
-        # carries an empty col 20); application = col 18 ∪ the subscription'\''s
-        # configured application(s) (the FlowID spine — 2026-08-31, no longer
-        # the account'\''s); logical = col 13 through the FlowID map ∪ the
-        # subscription'\''s configured logical(s)
-        uload(SPMAP, sp); uload(APMAP, ap2); uload(PLMAP, pl); uload(SLMAP, sl); uload(SBMAP, sb) }
+agg=$(awk -F'\t' "${SP_AWK_V[@]}" "$SP_AWK"'
+    BEGIN { split("acct login site host lgc ptn app dom bl", E, " ") }
     NR == FNR {   # CoreId -> the PDA attribution (both rows inherit) + connection side
-        pu6 = ujoin($20, $12, sp); if (pu6 != "") ptn[$1] = pu6
-        au6 = ujoin($18, $12, ap2); if (au6 != "") app[$1] = au6
-        lg0 = ""; if ($13 != "" && (toupper($13) in pl)) lg0 = pl[toupper($13)]
-        lu6 = ujoin(lg0, $12, sl); if (lu6 != "") lgc[$1] = lu6
-        bu6 = ujoin("", $12, sb); if (bu6 != "") blv[$1] = bu6
+        # the UNION attribution sets (bin/pda-union.sh): partner = col 20 ∪
+        # the subscription'\''s configured partner(s), application = col 18 ∪
+        # its configured application(s), logical = col 13 through the FlowID
+        # map ∪ its configured logical(s), BL = its configured tag(s)
+        pu6 = sp_union($20, $12); if (pu6 != "") ptn[$1] = pu6
+        au6 = ap_union($18, $12); if (au6 != "") app[$1] = au6
+        lu6 = lg_union($13, $12); if (lu6 != "") lgc[$1] = lu6
+        bu6 = bl_union($12); if (bu6 != "") blv[$1] = bu6
         if ($19 != "") dom[$1] = $19
         cn[$1] = $16
         next }
@@ -263,8 +247,7 @@ for x in $ENTS; do
         printf 'DESC\tEvery %s pair with each other entity — logged pairs plus the configured-but-never-logged ones; each cell is tinted by that entity'\''s result (green = last transfer OK, orange = never seen, red = Error).\n' "$xcol"
         printf 'INTRO\tWhich %s goes with which other entity: every pair seen together on at least one log row, PLUS the configured pairs that never appear (an analysis of relationships — no counts, no dates). The two tab rows pick the pair of entity types; each cell tints by its own entity'\''s status (green = last transfer OK, orange = never seen, red = Error, or a name the server log mentions and nothing configures).\n' "$xcol"
         cat "$TMP/tables-$x"
-        printf 'NOTE\tAn analysis of the cross references, not a traffic report. Each cell is colored by that entity result: **light green** = last transfer OK, **light orange** = configured but never seen, **light red** = last transfer Error, or a name surfaced only in the Server logs that nothing configures. The entities are per-leg attributes (a leg inherits its File'\''s partner/application/domain/logical/BL attribution); pairs where either value is blacklisted or unattributed are not listed. There is no date filter here — seen means seen anywhere in the loaded logs.\n'
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     count=$((count + 1))
 done

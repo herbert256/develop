@@ -200,9 +200,8 @@ combos=$(awk -F'\t' -v UCDF="$UCDF" '
                 close(ALF) }
         $1 != "" && $2 != "" { printf "ROW\t@{alink=accounts/%s}%s\t@{alink=accounts/%s}%s\t%s\n", $1, $1, $2, $2, logcell($1, $2) }' "$TWA"
     printf 'TOTAL\tTotal (%s pair(s))\t\t\n' "$n_acc"
-    printf 'NOTE\tEach pair is listed ONCE (the relation is symmetric; the detail pages carry it on both sides). The subscription rules are unioned, so one pair can be proven several ways; a pair proven ONLY by the shared login (or, for the login-less UC1+UC3 mirror, the shared account) means the two flows belong together while their names disagree — the rename backlog. The account twins are the `-`/`_` double configurations the Separator collision analysis and Config hygiene also track; renaming one side merges the pair.\n'
     printf 'KEYWORDS\ttwin,twins,pair,mailbox,uc2,uc4,uc1,uc3,separator,spelling,naming slip,rename\n'
-    printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_sub subscription pair(s): $n_name name-matched, $n_slip naming slip(s), $n_same same-account, $n_twin twin-account; $n_acc account spelling pair(s))." >&2

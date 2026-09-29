@@ -92,9 +92,7 @@ top_n=0
 
 {
     printf 'TITLE\tLegs Count\n'
-    printf 'DESC\tFiles by their number of legs (physical rows per CoreId) — the shape of the store-and-forward, retries and UC2 pickups.\n'
     printf 'KEYWORDS\tlegs, rows per file, leg count, retries, repeat collect, single leg, one-legged\n'
-    printf 'INTRO\tEvery File is a set of physical log rows sharing one CoreId — its **legs**. A clean store-and-forward is **2 legs** (Inbound + Outbound), retries add legs, a **UC2 pickup is 4+** (arrival, the staging pair, then one leg per partner collect — repeat collectors reach hundreds), and **1 leg** is a one-sided crossing (see One-legged). **%s** Files: **%s** Error, **%s** OK.\n' "$tot_rec" "$tot_failed" "$tot_processed"
 
     printf 'TABLE\tFiles by leg count\n'
     # FILES = the delivered (OK) count (2026-09-13, user request: the Patterns
@@ -110,7 +108,6 @@ top_n=0
         ord=$((ord + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^BKT|')"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\t\n' "$tot_processed" "$tot_vol"
-    printf 'NOTE\tFiles = the delivered (OK) Files of that bucket; a bucket without one is not listed (the 1-leg Files never finish OK — they are the One-legged page).\n'
     printf 'LINK\tpirates-details.html\tOne-legged transfers (the 1-leg Files, per subscription)\n'
 
     printf 'TABLE\tFiles with the most legs\trestint\n'   # rows tint by the File colour (2026-09-29)
@@ -122,10 +119,8 @@ top_n=0
         top_n=$((top_n + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^TOP|')"
     printf 'TOTAL\tTop %s of %s Files\t\t\t\t\t\n' "$top_n" "$tot_rec"
-    printf 'NOTE\tThe extreme repeat-collectors: a UC2 file the partner keeps re-collecting adds one ssh leg per pickup, so its CoreId accumulates legs for as long as it stays staged.\n'
 
-    printf 'SUMMARY\tFiles: %s | Error: %s | OK: %s\n' "$tot_rec" "$tot_failed" "$tot_processed"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_rec File(s))." >&2

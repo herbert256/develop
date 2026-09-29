@@ -50,7 +50,6 @@ if [ ! -f "$SRC" ]; then
     exit 0
 fi
 
-GEN=$(date '+%Y-%m-%d %H:%M:%S')
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axereas.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 
@@ -59,7 +58,7 @@ grep -o 'return "[^"]*"' "$LIB_DIR/../flip-reason.awk" \
     | sed -e 's/^return "//' -e 's/"$//' | awk 'NF' > "$TMP/vocab"
 printf 'One-legged\nFailed Subtransmission\n' >> "$TMP/vocab"
 
-LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v gen="$GEN" '
+LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" '
     # the Failed files page searched on the reason as a WHOLE cell (quoted),
     # URL-encoded — the list the per-reason drill pages held until 2026-09-29
     function srch(r,   q) { q = r; gsub(/%/, "%25", q); gsub(/ /, "%20", q); gsub(/"/, "%22", q)
@@ -102,7 +101,7 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v gen="$GEN" '
                    sl, r, sl, CN[r], LS[r], sl > f
         }
         printf "TOTAL\tTotal (%d reasons)\t%d\t\n", nz, tot + 0 > f
-        printf "FOOT\tGenerated on %s\n", gen > f
+        printf "FOOT\n" > f
         close(f)
     }
 ' "$SRC"

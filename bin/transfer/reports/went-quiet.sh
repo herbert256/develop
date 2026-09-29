@@ -79,14 +79,6 @@ rows=$(printf '%s\n' "$agg" | grep $'^ROW\t' \
 
 {
     printf 'TITLE\tWent quiet\n'
-    printf 'DESC\tSubscriptions that carried Files and then stopped: no traffic at all in the last %s days of the window, whatever the outcome was.\n' "$QUIET_DAYS"
-    if [ "${n_quiet:-0}" -eq 0 ]; then
-        printf 'INTRO\tEvery one of the **%s** subscriptions that carried a File was still active within the last **%s** days of the window (which ends **%s**). Nothing has gone quiet.\n' \
-            "${n_tot:-0}" "$QUIET_DAYS" "${end_date:-?}"
-    else
-        printf 'INTRO\t**%s** of the **%s** subscriptions that have ever carried a File went **quiet**: their last File is more than **%s days** before the end of the window (**%s**), so nothing at all has happened on them since. The outcome does not matter — Processed, Failed, Waiting and Expired all count as traffic — so this asks whether **anything is still happening**, not whether it is **working**. Between them they carried **%s** Files before stopping. Longest-quiet first; sort the column the other way for the flows that stopped most recently.\n' \
-            "$n_quiet" "$n_tot" "$QUIET_DAYS" "$end_date" "$n_files"
-    fi
 
     # total first, then the flagged count — the order every status report uses
     printf 'STAT\twhite\t%s\tSubscriptions with Files\n' "${n_tot:-0}"
@@ -100,12 +92,8 @@ rows=$(printf '%s\n' "$agg" | grep $'^ROW\t' \
     else
         printf '%s\n' "$rows"
     fi
-    printf 'NOTE\tA subscription is **quiet** when its most recent File is more than **%s days** before the last day in the data (**%s**) — counted against the WINDOW END, not against today, so the figures do not drift with the age of the export. Every outcome counts as traffic, so a flow that fails daily is not quiet; **Only red** and **From green to red** are where health is judged. A subscription that has never carried a File cannot have gone quiet and is not listed — the Entities **Not seen** view has those. The per-account equivalent, weighed against each account'"'"'s own cadence, is **Stale accounts**.\n' \
-        "$QUIET_DAYS" "${end_date:-?}"
     printf 'KEYWORDS\tquiet, silent, stopped, dormant, idle, inactive, no traffic, last seen, days ago, decommissioned, went quiet\n'
-    printf 'SUMMARY\tWent quiet: %s of %s subscription(s)  |  Window ends: %s  |  Threshold: %s days\n' \
-        "${n_quiet:-0}" "${n_tot:-0}" "${end_date:-?}" "$QUIET_DAYS"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (${n_quiet:-0} of ${n_tot:-0} subscription(s) quiet for more than $QUIET_DAYS days)." >&2

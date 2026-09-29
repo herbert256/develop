@@ -443,8 +443,6 @@ subj_rows() {
     done <<< "$(printf '%s\n' "$agg" | grep $'^C\t' | sort -t"$(printf '\t')" -k3,3nr | tr '\t' '\036')"
 }
 
-weak_ciph=$wk_H; weak_pk=$wk_U
-itemized=$tot_K   # SSH/SFTP connections that break out KEX/MAC/pubkey (TLS logs a suite only)
 
 # ---- the two 2026-08 tables: algorithm-negotiation failures + PeSIT TLS ----
 # Emitted UNCONDITIONALLY (placeholder row when the family is absent) so the
@@ -469,9 +467,6 @@ pt_rows() {
 
 {
     printf 'TITLE\tSSH & TLS Crypto\n'
-    printf 'DESC\tNegotiated cipher / key exchange / MAC / public-key algorithms in live use, with weak ones flagged, plus deprecated-parameter warnings and the protocol/credential hygiene signals (ASCII fallback, FTPS establishment failures, CONFIG_PASSWD read errors, certificate-chain and disconnect errors).\n'
-    printf 'INTRO\t**%s** authenticated connections logged their negotiated cryptography. Weak algorithms still in use: **%s** connection(s) on a CBC/legacy cipher and **%s** on an `ssh-rsa`/`ssh-dss` (SHA-1) host key. The server separately flagged **%s** connection(s) using a deprecated parameter, and **%s** protocol/credential **hygiene** signal(s) — connection-level problems distinct from algorithm posture — are collected in the two tables at the bottom. "Weak" marks known-deprecated algorithms (CBC/3DES/RC4 ciphers, SHA-1 key exchange or MAC, ssh-rsa/ssh-dss keys). This posture is invisible in the transfer logs.\n' \
-        "$neg" "$weak_ciph" "$weak_pk" "$dep" "${tot_sig:-0}"
     printf 'KEYWORDS\tprotocol hygiene, ASCII fallback, FTPS, CONFIG_PASSWD, certificate chain, disconnect, algorithm negotiation, PeSIT TLS, encryption milestone\n'
 
     printf 'TABLE\tNegotiations by protocol\n'
@@ -493,7 +488,6 @@ pt_rows() {
     dep_rows
     printf 'TOTAL\t@{colspan=4}Total (%s combination(s))\t@{class=num warn}%s\t\t\n' "$n_dep_rows" "$dep"
 
-    printf 'NOTE\tAn SSH/SFTP connection breaks out cipher, key exchange, MAC and public key separately; a TLS connection (HTTPS and PeSIT/FTPS over TLS) logs only a cipher suite — key exchange, MAC and signature are folded into the suite. So the Cipher suites table counts all **%s** negotiations, while Key exchange / MAC / Public-key count only the **%s** SSH/SFTP connection(s) that itemize them. Share is within each table. "Weak" flags known-deprecated algorithms; `ssh-rsa` is flagged because it signs with SHA-1. The deprecated-parameter table is the server'"'"'s own warnings, with the account, subscription and remote host that used the parameter (shown as logged; names matching a known transfer-log entity link to its detail page). All tables re-total under the date filter; click a row to expand its 10 most recent log lines.\n' "$neg" "$itemized"
 
     if [ "${tot_sig:-0}" -gt 0 ]; then
         printf 'TABLE\tHygiene signals\twide\n'
@@ -502,7 +496,6 @@ pt_rows() {
         printf 'RECALC\t-\ts0\t-\t-\t-\n'
         sig_rows
         printf 'TOTAL\tTotal (%s signal(s))\t@{class=num}%s\t\t\t\n' "$n_cats" "$tot_sig"
-        printf 'NOTE\tConnection- and credential-level problems distinct from cipher/algorithm posture: a failed FTPS handshake, an unreadable stored password, a broken certificate chain or an abrupt disconnect each points at a specific config or trust issue. Each signal is classified from a distinct TM message. Occurrences are additive and re-total under the date filter. The "Insecure or deprecated SSH parameter" warnings are not here — they are in the Deprecated-parameter warnings table above, resolved to account/subscription/host.\n'
 
         printf 'TABLE\tCertificate chain errors by subject\n'
         printf 'HEAD\tSubject (CN)\tOccurrences\tFirst\tLast\n'
@@ -510,7 +503,6 @@ pt_rows() {
         printf 'RECALC\t-\ts0\t-\t-\n'
         subj_rows
         printf 'TOTAL\tTotal (%s subject(s))\t@{class=num}%s\t\t\n' "$n_subj" "$cert_tot"
-        printf 'NOTE\tThe "Error in certificate chain for Subject DN:CN=…" errors broken down by the certificate subject (the PUBKEY_/PRIVKEY_ key name). Click a subject for its 10 most recent errors.\n'
     fi
 
     # ---- algorithm negotiation failures (2026-08) ----
@@ -528,12 +520,6 @@ pt_rows() {
         printf 'ROW\t@{colspan=4}No algorithm-negotiation failures in this data window.\n'
     fi
     printf 'TOTAL\tTotal (%s signal shape(s))\t@{class=num failed}%s\t\t\n' "${an_rows_n:-0}" "${an_lines_tot:-0}"
-    if [ "${an_inc:-0}" -gt 0 ]; then
-        printf 'NOTE\tOutbound SSH connections that failed BEFORE any authentication because no common algorithm exists: **%s** incident(s) between %s and %s (each logs a "could not be negotiated" header, one line per un-negotiable direction, and the remote software banner — the rows above). Every incident in this window identifies the peer as **%s** (**%s** banner line(s)%s) — the remote endpoint offers only algorithms this server does not accept, so the fix is a policy change on one of the two sides. These connections never reach the negotiated-crypto tables above. Click a row for its 10 most recent lines.\n' \
-            "$an_inc" "${an_first:--}" "${an_last:--}" "${an_topsw:-?}" "${an_topswn:-0}" "$( [ "${an_nsw:-0}" -gt 1 ] && printf '; %s distinct software strings in all' "$an_nsw" )"
-    else
-        printf 'NOTE\tOutbound SSH connections that failed before any authentication because no common algorithm exists — none in this data window.\n'
-    fi
 
     # ---- PeSIT TLS adoption (2026-08) ----
     if [ "${pt_tot:-0}" -gt 0 ]; then
@@ -550,14 +536,8 @@ pt_rows() {
         printf 'ROW\t@{colspan=6}No PeSIT SSL/TLS connections in this data window.\n'
     fi
     printf 'TOTAL\tTotal (%s combination(s))\t\t@{class=num}%s\t\t\t\n' "${pt_combos:-0}" "${pt_tot:-0}"
-    if [ "${pt_tot:-0}" -gt 0 ]; then
-        printf 'NOTE\tThe "Establishing PeSIT SSL connection with host …, using cipher suite: …" lines from the PESITD component: the internal ST ↔ CFT PeSIT link running over TLS. The first such line is dated **%s** — the milestone that PeSIT went ENCRYPTED; before that date the link ran in the clear (no PeSIT SSL line appears). The Per-week column shows the adoption ramp, one line per calendar week (dated by its Monday). Click a row for its 10 most recent connections.\n' "${pt_first:--}"
-    else
-        printf 'NOTE\tThe PESITD "Establishing PeSIT SSL connection" lines — the internal ST ↔ CFT PeSIT link running over TLS. None in this data window: the link ran in the clear throughout.\n'
-    fi
 
-    printf 'SUMMARY\tNegotiations: %s  |  Weak ciphers: %s  |  ssh-rsa/ssh-dss keys: %s  |  Deprecated-parameter warnings: %s  |  Hygiene signals: %s  |  Negotiation failures: %s  |  PeSIT TLS connections: %s\n' "$neg" "$weak_ciph" "$weak_pk" "$dep" "${tot_sig:-0}" "${an_inc:-0}" "${pt_tot:-0}"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($neg negotiation(s), $dep deprecated warning(s))." >&2

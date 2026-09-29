@@ -162,7 +162,7 @@ awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
             t = lasttid[$1]
             if (($1 in cand) && t != "" && (t in bkt) && !($1 in reason) && lastst[$1] ~ /^Failed/ && $10 + 0 >= 2) {   # >= 2 legs: a lone leg is Failed for its LEG COUNT (parse forces its status Failed) — never settled (2026-09-29)
                 if ($2 != "Processed" || $23 != bkt[t]) chg++
-                $2 = "Processed"; $23 = bkt[t]; $25 = "orange"; nset++   # col 25: OK after a failed leg (the colour rule)
+                $2 = "Processed"; $23 = bkt[t]; $25 = "orange"; nset++   # col 25: OK after a failed leg (the colour rule); col 26 stays "1" — it HAD a failed leg (a Recovered File, Automatic unless col 27)
                 printf "%s\t%s\t%s\n", $1, t, bkt[t] > OKOUT
             } else if (settled) {
                 chg++; $2 = "Failed"; $23 = ""; $25 = "red"; nrev++       # the evidence no longer holds

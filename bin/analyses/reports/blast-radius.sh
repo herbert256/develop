@@ -34,25 +34,21 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union / ap_union)
 OUT="$REPORTS_DIR/blast-radius.rpt"
 
 TF="$DATA/transfer/cache/_files.tsv"
-SPMAP="$DATA/flow-manager/xref/_subscriptions-partners.tsv"
-APMAP="$DATA/flow-manager/xref/_subscriptions-apps.tsv"
 if [ ! -f "$TF" ]; then
     echo "blast-radius: transfer cache missing; skipping." >&2
     rm -f "$OUT"
     exit 0
 fi
-[ -f "$SPMAP" ] || SPMAP=/dev/null
-[ -f "$APMAP" ] || APMAP=/dev/null
 
 TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT
 # pre-create the awk side outputs — an empty estate writes no row, and a
 # later sort over a missing file errors (config-only clone)
 : > "$TMPD/t1.pre"; : > "$TMPD/t3.pre"; : > "$TMPD/stats.tsv"
-GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 
 # One pass over the union maps + $FILES. Table 1 aggregates the OUT-connection
 # Files per endpoint; the redundancy/sharing views count each partner's
@@ -60,27 +56,15 @@ GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 # endpoint is its recorded source address; a partner with none recorded is
 # the inbound-only class). END emits sortable row files — every list sorted
 # with explicit tiebreakers, nothing depends on hash order.
-awk -F'\t' -v T1="$TMPD/t1.pre" -v T3="$TMPD/t3.pre" -v STATS="$TMPD/stats.tsv" '
+awk -F'\t' -v T1="$TMPD/t1.pre" -v T3="$TMPD/t3.pre" -v STATS="$TMPD/stats.tsv" -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" "$SP_AWK"'
     # a \037 list sorted ascending (insertion sort: a handful of names)
     function sortl(s,   n, X, i, j, t, r) { if (s == "") return ""
         n = split(s, X, "\037")
         for (i = 2; i <= n; i++) { t = X[i]; for (j = i - 1; j >= 1 && X[j] > t; j--) X[j + 1] = X[j]; X[j + 1] = t }
         r = X[1]; for (i = 2; i <= n; i++) r = r "\037" X[i]; return r }
-    FILENAME ~ /_subscriptions-partners\.tsv$/ {
-        if ($1 != "" && $2 != "") SP[toupper($1)] = SP[toupper($1)] (SP[toupper($1)] == "" ? "" : "\037") $2
-        next }
-    FILENAME ~ /_subscriptions-apps\.tsv$/ {
-        if ($1 != "" && $2 != "") AP[toupper($1)] = AP[toupper($1)] (AP[toupper($1)] == "" ? "" : "\037") $2
-        next }
     {
-        pset = $20
-        if ($12 != "" && (toupper($12) in SP)) { n = split(SP[toupper($12)], Z, "\037")
-            for (i = 1; i <= n; i++) if (index("\037" pset "\037", "\037" Z[i] "\037") == 0)
-                pset = pset (pset == "" ? "" : "\037") Z[i] }
-        aset = $18
-        if ($12 != "" && (toupper($12) in AP)) { n = split(AP[toupper($12)], Z, "\037")
-            for (i = 1; i <= n; i++) if (index("\037" aset "\037", "\037" Z[i] "\037") == 0)
-                aset = aset (aset == "" ? "" : "\037") Z[i] }
+        pset = sp_union($20, $12)   # the partner / application UNION sets (bin/pda-union.sh)
+        aset = ap_union($18, $12)
         np = split(pset, P, "\037")
         # the per-partner endpoint census: every File counts for the partner,
         # but only an OUT-connection File names an endpoint WE DIAL (2026-09-28
@@ -138,7 +122,7 @@ awk -F'\t' -v T1="$TMPD/t1.pre" -v T3="$TMPD/t3.pre" -v STATS="$TMPD/stats.tsv" 
             noo, single, multi, inonly, nsh, npo > STATS
         close(STATS)
     }
-' "$SPMAP" "$APMAP" "$TF"
+' "$TF"
 
 sv() { awk -F'\t' -v k="$1" '$1 == k { print $2 }' "$TMPD/stats.tsv"; }
 n_out=$(sv outhosts); n_single=$(sv single); n_multi=$(sv multi); n_inonly=$(sv inonly)
@@ -147,8 +131,6 @@ n_shared=$(sv shared); n_ptn=$(sv ptn)
 {
     printf 'TITLE\tBlast radius\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tWhat dies with each remote host: per outbound endpoint the Files, volume, subscriptions, applications, domains and partners routed over it — plus which partners have no second endpoint and which endpoints serve several partners at once.\n'
-    printf 'INTRO\tAn endpoint outage is never one flow. The first table answers **"if this host dies, what stops?"** — one row per outbound endpoint we dial, everything behind it counted; a **red** row is the sole recorded endpoint of the partners it names, so there is no second address to fail over to. Per partner: **%s** partner(s) ride a single endpoint, **%s** have more than one, and **%s** are inbound-only — they dial us, so no endpoint of theirs can strand us (a legitimate class, not a gap). The last table lists the endpoints shared by several partner organisations: one address, several relationships in the blast radius.\n' \
-        "$n_single" "$n_multi" "$n_inonly"
     printf 'STAT\twhite\t%s\tOutbound endpoints\n' "$n_out"
     printf 'STAT\twhite\t%s\tPartners seen\n' "$n_ptn"
     printf 'STAT\tred\t%s\tSingle-endpoint partners\n' "$n_single"
@@ -185,10 +167,9 @@ n_shared=$(sv shared); n_ptn=$(sv ptn)
         printf 'TOTAL\tTotal (0 host(s))\t\t\t\n'
     fi
 
-    printf 'NOTE\tThe first table counts OUT-connection Files only (the endpoints we dial); its Subscriptions/Applications/Domains/Partners columns are distinct counts over those Files, applications and partners by the site-wide UNION attribution. The partner classes and the sharing view count each partner'\''s distinct endpoints over its OUT-connection Files (an in-connection File records the partner'\''s SOURCE address, not an endpoint we dial); a partner with no such endpoint is the inbound-only class. "Sole endpoint for" names the partners whose ONLY recorded endpoint the host is: losing that address strands them entirely.\n'
     printf 'SUMMARY\tOutbound endpoints: %s  |  Single-endpoint partners: %s  |  Multi-endpoint: %s  |  Inbound-only: %s  |  Shared endpoints: %s\n' \
         "$n_out" "$n_single" "$n_multi" "$n_inonly" "$n_shared"
-    printf 'FOOT\tGenerated on %s\n' "$GENDATE"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_out outbound endpoint(s); $n_single/$n_multi/$n_inonly single/multi/inbound-only partner(s); $n_shared shared)." >&2

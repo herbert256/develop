@@ -145,7 +145,6 @@ if [ "${tot:-0}" -eq 0 ]; then
 fi
 n_cert=$(printf '%s\n' "$agg" | grep -c $'^CT\t' || true)
 # max accounts on ONE certificate = field 4 (field 3 is the attempt count)
-max_shared=$(printf '%s\n' "$agg" | awk -F'\t' '$1=="CT" && $4>m{m=$4} END{print m+0}')
 # serials appearing on MORE than one distinct certificate (for the display suffix)
 multi_ser=$(printf '%s\n' "$agg" | awk -F'\t' '$1=="CT"{split($2,p,"#"); c[p[1]]++} END{for(k in c) if(c[k]>1) printf " %s ", k}')
 
@@ -179,9 +178,6 @@ cert_rows() {
 
 {
     printf 'TITLE\tAuthentication Activity\n'
-    printf 'DESC\tSuccessful inbound SSH authentications per account and source IP, plus shared-certificate detection — the complement to Failed Logins.\n'
-    printf 'INTRO\t**%s** successful SSH authentication(s) from **%s** account(s) across **%s** source IP(s). This is the baseline of who is actually connecting (Failed Logins shows only what did not get in). The certificate table flags **shared certificates** — one certificate authorizes up to **%s** accounts, so a single key compromise would expose all of them (rows are per distinct certificate; the self-signed default serial 01 covers several).\n' \
-        "$tot" "$naccts" "$nips" "$max_shared"
 
     printf 'TABLE\tBy account\n'
     printf 'HEAD\tAccount\tLogins\tSource IPs\tFirst seen\tLast seen\n'
@@ -204,9 +200,7 @@ cert_rows() {
     cert_rows
     printf 'TOTAL\tTotal (%s certificate(s))\t\t\t\t\n' "$n_cert"
 
-    printf 'NOTE\tSource: SSHD "successfully authenticated over SSH" lines (successful logins only; the @endpoint suffix is stripped from the account name, and an account known from the transfer logs links to its detail page). Logins are additive and re-total under the date filter; Source IPs and Accounts are distinct counts (kept at full-range). The certificate table counts "Authentication attempt with certificate" lines; "Accounts on certificate" is how many accounts that serial is authorized for — more than one (amber) means a shared key. Click a row to expand its 10 most recent authentications.\n'
-    printf 'SUMMARY\tSuccessful auths: %s  |  Accounts: %s  |  Source IPs: %s  |  Max accounts on one cert: %s\n' "$tot" "$naccts" "$nips" "$max_shared"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot auth(s), $naccts account(s), $nips IP(s))." >&2

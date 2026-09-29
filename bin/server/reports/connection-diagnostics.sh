@@ -209,9 +209,6 @@ fp_rows() {
 
 {
     printf 'TITLE\tConnection Diagnostics\n'
-    printf 'DESC\tWhy and where outbound connections fail — the failure-reason breakdown and per-remote-host view that Connection Failures (counted per subscription) does not provide, plus the explicit partner test connections.\n'
-    printf 'INTRO\t**%s** outbound connection failure(s) classified into **%s** reason(s) across **%s** remote host(s), plus **%s** explicit test-connection attempt(s). Connection Failures counts these per subscription; this answers **why** (reason) and **where** (host). Click a row for its 10 most recent messages.\n' \
-        "$t_fail" "$n_reason" "$n_host" "$t_test"
 
     printf 'TABLE\tFailure reasons\twide\n'
     printf 'HEAD\tReason\tFailures\tShare\n'
@@ -219,7 +216,6 @@ fp_rows() {
     printf 'RECALC\t-\ts0\t%%0\n'
     reason_rows
     printf 'TOTAL\tTotal (%s reason(s))\t@{class=num failed}%s\t@{class=num}100.0%%\n' "$n_reason" "$t_fail"
-    printf 'NOTE\tThe reason is classified from the failure tail. "SSH exception (generic)" is a com.maverick.ssh.SshException without a more specific cause (often a reset/aborted SSH connection); Timeout, Bad certificate, Incompatible security protocols and Algorithm negotiation each point at a different fix. Failures and share re-aggregate over the selected dates.\n'
 
     printf 'TABLE\tBy remote host\twide\n'
     printf 'HEAD\tRemote host\tFailures\tTop reason\tFirst seen\tLast seen\n'
@@ -227,7 +223,6 @@ fp_rows() {
     printf 'RECALC\t-\ts0\t-\t-\t-\n'
     host_rows
     printf 'TOTAL\tTotal (%s host(s))\t@{class=num failed}%s\t\t\t\n' "$n_host" "$t_fail"
-    printf 'NOTE\tThe physical partner endpoint (host, not subscription — a host can serve several subscriptions), with the reason that dominates its failures. Shown as logged; a host with a detail page links to it (matched case-insensitively — the canonical endpoint spelling is lowercase). Click a host for its 10 most recent failures.\n'
 
     printf 'TABLE\tTest connections\n'
     printf 'HEAD\tProtocol\tAttempts\n'
@@ -235,7 +230,6 @@ fp_rows() {
     printf 'RECALC\t-\ts0\n'
     test_rows
     printf 'TOTAL\tTotal (%s protocol(s))\t@{class=num}%s\n' "$n_tproto" "$t_test"
-    printf 'NOTE\tExplicit "Performs test connection for <protocol> protocol" checks — an admin/API testing a partner configuration before real transfers.\n'
 
     # ---- host-key mismatches (2026-08) ----
     if [ "${fp_tot:-0}" -gt 0 ]; then
@@ -252,15 +246,8 @@ fp_rows() {
         printf 'ROW\t@{colspan=5}No host-key mismatches in this data window.\n'
     fi
     printf 'TOTAL\tTotal (%s pair(s))\t\t@{class=num failed}%s\t\t\n' "${fp_pairs:-0}" "${fp_tot:-0}"
-    if [ -n "${fp_topgot:-}" ] && [ "${fp_topcnt:-0}" -gt 0 ]; then
-        printf 'NOTE\tThe "Wrong server fingerprint: got X, expected Y" lines, per fingerprint pair: a partner endpoint presenting an SSH host key that does not match the stored known-host entry. One presented key (`%s`) accounts for **%s** of the **%s** line(s), checked against **%s** different expected keys — ONE endpoint presenting a NEW key that many stored entries no longer match (a server-side key rotation), not many endpoints drifting at once. A short "got" value is the log itself truncating; shown as logged. Click a pair for its 10 most recent lines.\n' \
-            "$fp_topgot" "$fp_topcnt" "$fp_tot" "$fp_topexp"
-    else
-        printf 'NOTE\tThe "Wrong server fingerprint: got X, expected Y" lines, per fingerprint pair: a partner endpoint presenting an SSH host key that does not match the stored known-host entry.\n'
-    fi
 
-    printf 'SUMMARY\tConnection failures: %s  |  Reasons: %s  |  Hosts: %s  |  Test connections: %s  |  Host-key mismatches: %s\n' "$t_fail" "$n_reason" "$n_host" "$t_test" "${fp_tot:-0}"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($t_fail failure(s), $n_reason reason(s), $n_host host(s), $t_test test(s))." >&2

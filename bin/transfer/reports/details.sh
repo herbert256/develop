@@ -861,7 +861,6 @@ LC_ALL=C awk -F'\t' \
         print > sf
     }
 ' "$_pdir/agg"
-NOW_TS=$(date '+%Y-%m-%d %H:%M:%S')
 
 # the shared UC descriptions for the Subscription "Use case" row: dumped from
 # bin/uc-cases.sh (the single source of truth) for the awk writer to load
@@ -970,7 +969,6 @@ for _ty in ACC SITE LOGIN HOST LGC PTN APP DOM BL; do
         -v SRV="$SERVER_CACHE" -v FWD="$IP_HOSTS_FILE" \
         -v UCF="$UCMETA" -v UCDF="$UCDER" -v UNCF="$_pdir/uncollected" -v OKF="$OKTF" \
         -v SSF="$SRVSUBSF" -v ERRD="$REPORTS_DIR/errors" -v LGF="$LOGONSF" -v LGHF="$SERVER_CACHE/_logons-hosts.tsv" \
-        -v NOW="$NOW_TS" -v NFILES="${#files[@]}" \
         -f "$SCRIPT_DIR/../details_writer.awk" "$STREAMDIR/s.$_ty" > "$STREAMDIR/log.$_ty" 2>&1 || _wrc=$?
     printf 'TIME %5ds  details: writer %s\n' "$(( $(date +%s) - _w0 ))" "$_ty" >> "$STREAMDIR/log.$_ty"
     exit "$_wrc" ) &

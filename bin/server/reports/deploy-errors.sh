@@ -239,9 +239,6 @@ nlist=$(wc -l < "$TMP/rows" | tr -d ' ')
 
 {
     printf 'TITLE\tDeploy errors\n'
-    printf 'DESC\tAccounts and subscriptions a configuration defect stops dead — a route abandoned mid-execution, or a PeSIT profile that cannot receive — and that have not had a successful transfer since.\n'
-    printf 'INTRO\tTwo server-log lines, both a **deployment mistake** rather than a runtime fault. **"Step configuration suggests to stop further route execution"** (ARSP0001) means a routing step failed and its configuration told SecureTransport to **abandon the rest of the route** — nothing downstream ran for that file. **"…is used for incoming transfer, but '"'"'Receive File As'"'"' field not set"** means a PeSIT transfer profile is missing one field, so **every incoming transfer of that flow errors**; the row names the **subscription** the profile belongs to, since the message itself names only the platform account. The **Cause** column says which applies. One row per **account**, or per **subscription** where the line names the platform account SECURETRANSPORT; newest problem first. **Only the unresolved ones are listed**: an entity that had an **OK File after its last such message** is left out, because something has got through since — and a **UC3 subscription whose poll succeeded after it** is left out too, even when the poll found nothing: the listing works again. Of **%s** entities with a message, **%s** recovered and **%s** are listed.\n' \
-        "$ntot" "$ncleared" "$nlist"
     # Newest problem first is the page DEFAULT (sort=COL:DIR, dir -1 = desc),
     # never `nosort` — that would disable the header clicks altogether. The
     # Last message column is ISO, so a text sort is chronological.
@@ -254,11 +251,7 @@ nlist=$(wc -l < "$TMP/rows" | tr -d ' ')
           m += $3 }
         END { printf "TOTAL\tTotal (%d entities)\t\t\t@{class=num}%d\t\n", NR, m + 0 }
     ' "$TMP/rows"
-    printf 'NOTE\tThe entity is the **subscription** the line names — an ARSP0001 line carries the flow whose route was stopped in its second bracket (2026-09-05; before, the **account** in its first bracket was the row, and Subscriptions in boxes counted every sibling flow of that account against it) — and the **account** only when no bracket names a configured flow (the ARPA0001 "publishing to an account" variant names a destination account, and a name the platform'"'"'s own SECURETRANSPORT account fronts is taken as the flow).\n'
-    printf 'NOTE\tOnly UNRESOLVED entities appear: one whose last message is followed by an **OK File** has recovered and is left out — as has a **UC3 subscription** whose last message is followed by a **successful poll**, files or no files. The comparison is exact to the millisecond, so a recovery on the SAME day still counts.\n'
-    printf 'NOTE\tA **Receive File As** row names the subscription its transfer profile belongs to: the message names the platform account `SECURETRANSPORT`, and a transfer profile is internal flow plumbing with no page of its own. **Config hygiene** lists the same defect per profile, including the ones already recovered.%s\n' \
-        "$( [ "${nunmapped:-0}" -gt 0 ] && printf ' **%s** profile(s) matched no single configured flow and are only counted there.' "$nunmapped" )"
-    printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($nlist unresolved of $ntot; $ncleared recovered)." >&2

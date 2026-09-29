@@ -25,10 +25,23 @@
 # per-area publishes and BEFORE bin/build/publish.sh (which applies the report
 # groups to these pages). Runs from any working directory.
 #
+# Usage:  bin/analyses/publish.sh            every analyses page
+#         bin/analyses/publish.sh catchup    bin/build.sh's "publish catch-up:
+#                                            analyses" step only — ONLY the pages
+#                                            the report catch-ups feed (see THE
+#                                            CATCH-UP MODE at the bottom)
+#
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; html_head/esc/dotify/first_page/…
 source "$SCRIPT_DIR/../uc-cases.sh"      # uc_meta(): the shared UC<n> description (From/To/role/human)
+
+# the MODE (2026-09-29): an explicit argument — never a freshness check
+AP_MODE=${1:-full}
+case $AP_MODE in
+    full|catchup) ;;
+    *) printf 'usage: bin/analyses/publish.sh [catchup]\n' >&2; exit 2 ;;
+esac
 
 ARPT="$DATA/analyses/reports"
 FSRPT="$DATA/first-seen"
@@ -40,7 +53,7 @@ COVDIR="$DOCS/coverage"   # and their pages (restored 2026-07, linked from the h
 ensure_assets   # topbar-data.js (the menus' data file)
 
 mkdir -p "$ADIR"
-rm -f "$ADIR"/*.html
+if [ "$AP_MODE" = full ]; then rm -f "$ADIR"/*.html; fi   # the catch-up overwrites its own pages only
 # ---- First seen cell pages (docs/first-seen/) --------------------------------
 # One page per data/first-seen/*.rpt (bin/analyses/reports/first-seen.sh:
 # TITLE / MEMBER / KEY + ROW name|dir|seen|link|first_ts[|log]): the items
@@ -1470,27 +1483,73 @@ write_accounts_page() {
 # laps (2026-09-27, speed round 10): TIME lines on the build console
 _ap0=$(date +%s)
 _aplap() { local _t1; _t1=$(date +%s); printf "TIME %5ds  analyses publish: %s\n" "$((_t1 - _ap0))" "$1" >&2; _ap0=$_t1; }
-render_coverage_pages   # the 5 PDA Configured cell pages (linked from the home)
-_aplap "coverage pages"
-# (the Use cases per-cell pages went 2026-09-29 — the counts link the
-# Subscriptions page; nothing writes docs/use-cases/, use-case-patterns.html,
-# added-bl.html or analyses/index.html any more, and every build starts from
-# an empty docs/, so there is nothing to clean up)
-render_first_seen_pages # docs/first-seen/*.html, before the First seen table links them
-write_use_cases_page
-write_subscriptions_page
-write_logical_detection_page
-write_accounts_page
-write_first_seen_page
-_aplap "use cases, first seen, configuration pages"
-"$SCRIPT_DIR/publish-insights.sh"    # the insight pages (whitelist-audit, config-hygiene, expired, the boxes)
-_aplap "insights (the boxes, audits)"
-# The SUBS_GROUP_REPORTS pages (four Configuration-group reports whose DATA is
-# transfer/server but whose PAGES belong here). Rendered from THIS script (not
-# the area publishes, which run earlier — the rm -f above would wipe their
-# output) and AFTER publish-insights.sh, which renders into the same tree.
-render_subs_group_pages
-_aplap "subscription group pages"
+# ---- THE CATCH-UP MODE ------------------------------------------------------
+# `bin/analyses/publish.sh catchup` (2026-09-29) is bin/build.sh's "publish
+# catch-up: analyses" step. It runs after the report catch-ups (drill-files.sh,
+# failed.sh, failed-files.sh, failing-reasons.sh) and re-renders ONLY the
+# analyses outputs that read what those rewrote after the first (full) run of
+# this script. Until 2026-09-29 the step re-ran the whole script.
+# THE DEPENDENCY TRACE (keep it in step with the readers). What changed since
+# the first run: failed.sh's outputs (failed.rpt, failed-sub-all.rpt,
+# _failed-reasons.tsv, _errpage-evidence.tsv, _srvsubs.tsv, _srvsubs-map.tsv,
+# the errors/ + files/ .rpt sets), failed-files.rpt, failing-reasons.rpt and
+# _drill-files.tsv. Their readers here:
+#   subscriptions.html            failed-files.rpt (the Error reason column —
+#                                 write_subscriptions_page)
+#   _subs-boxes.tsv (data)        _errpage-evidence.tsv — publish-insights.sh
+#                                 sidecar; the transfer catch-up after this step
+#                                 reads it (the Entities Error view's Reason)
+#   failed.html                   failed.rpt       } render_subs_group_pages,
+#   failing-reasons.html          failing-reasons.rpt } those two members only
+#   failed-sub-all.html           failed-sub-all.rpt (+ the selector row on it
+#                                 and on failed.html, below)
+# Everything else here reads report-stage .rpt files, caches and config that no
+# step since the first run rewrites — the boxes page itself included (its box
+# rows read the report-stage lists; only its sidecar reads the evidence) — and
+# no docs/ page but the Entities views, which exist since the transfer publish.
+# A NEW analyses-page reader of one of the files above joins this list.
+if [ "$AP_MODE" = catchup ]; then
+    write_subscriptions_page
+    _aplap "catch-up: Configured subscriptions"
+    "$SCRIPT_DIR/publish-insights.sh" sidecar   # _subs-boxes.tsv only, no page
+    _aplap "catch-up: the box-reason sidecar"
+    # the two members through the ONE group renderer: its member list
+    # narrowed for the call (render_report reads it only for its own name)
+    _ap_sgr=$SUBS_GROUP_REPORTS
+    SUBS_GROUP_REPORTS=" "
+    for _ap_spec in $_ap_sgr; do
+        case ${_ap_spec#*:} in failed|failing-reasons) SUBS_GROUP_REPORTS="$SUBS_GROUP_REPORTS$_ap_spec " ;; esac
+    done
+    render_subs_group_pages
+    SUBS_GROUP_REPORTS=$_ap_sgr
+    _aplap "catch-up: Failed Subscriptions + Error reasons"
+    # the view pages below render only when their .rpt exists: clear the
+    # first run's copies, as the full mode's rm -f does (never a page with a
+    # stale view or a second selector row)
+    rm -f "$ADIR"/failed-sub-*.html
+else
+    render_coverage_pages   # the 5 PDA Configured cell pages (linked from the home)
+    _aplap "coverage pages"
+    # (the Use cases per-cell pages went 2026-09-29 — the counts link the
+    # Subscriptions page; nothing writes docs/use-cases/, use-case-patterns.html,
+    # added-bl.html or analyses/index.html any more, and every build starts from
+    # an empty docs/, so there is nothing to clean up)
+    render_first_seen_pages # docs/first-seen/*.html, before the First seen table links them
+    write_use_cases_page
+    write_subscriptions_page
+    write_logical_detection_page
+    write_accounts_page
+    write_first_seen_page
+    _aplap "use cases, first seen, configuration pages"
+    "$SCRIPT_DIR/publish-insights.sh"    # the insight pages (whitelist-audit, config-hygiene, expired, the boxes)
+    _aplap "insights (the boxes, audits)"
+    # The SUBS_GROUP_REPORTS pages (four Configuration-group reports whose DATA is
+    # transfer/server but whose PAGES belong here). Rendered from THIS script (not
+    # the area publishes, which run earlier — the rm -f above would wipe their
+    # output) and AFTER publish-insights.sh, which renders into the same tree.
+    render_subs_group_pages
+    _aplap "subscription group pages"
+fi
 
 # The Failed Subscriptions VIEW page (failed-sub-all.rpt, written by
 # bin/transfer/reports/failed.sh beside the default failed.rpt, which
@@ -1538,4 +1597,8 @@ done
 
 _aplap "the rest"
 
-echo "Wrote docs/analyses (the analysis pages), docs/first-seen and docs/coverage." >&2
+if [ "$AP_MODE" = catchup ]; then
+    echo "Wrote the analyses catch-up (subscriptions, failed, failed-sub-*, failing-reasons + the box-reason sidecar)." >&2
+else
+    echo "Wrote docs/analyses (the analysis pages), docs/first-seen and docs/coverage." >&2
+fi

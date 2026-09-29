@@ -90,8 +90,6 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed <<< "$(printf '%s\n' "$agg" |
 
 {
     printf 'TITLE\tArrived / Left\n'
-    printf 'DESC\tHow each File arrived (first Inbound protocol) and how it left (last Outbound protocol), with the delivered outcome.\n'
-    printf 'INTRO\tEach **File** is counted once by how its file **arrived** — the protocol of its earliest **Inbound** row — and how it **left** — the protocol of its latest **Outbound** row. **Files** counts the delivered (OK) ones — the final-row outcome. Every File has exactly one arrival and one departure protocol, so the rows reconcile to the total.\n'
     printf 'TABLE\t\n'
     # FILES = the delivered (OK) count (2026-09-13, user request: the Patterns
     # group tables carry ONE Files column, no Error / OK pair, no green/red
@@ -108,8 +106,7 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed <<< "$(printf '%s\n' "$agg" |
         printf 'ROW\t%s\t%s\t%s\t@data:buckets=%s\n' "$arrived" "$left" "$pr" "$bk"
     done <<< "$(printf '%s\n' "$agg" | grep '^X|' | LC_ALL=C sort -t'|' -k6,6nr -k2,2 -k3,3)"
     printf 'TOTAL\t@{colspan=2}Files\t@{class=num}%s\n' "$tot_processed"
-    printf 'NOTE\tArrived = the protocol of the earliest Inbound row; Left = the protocol of the latest Outbound row. "(none)" means the File had no Inbound (or no Outbound) row. Files counts the delivered (OK) Files of that pair (2026-09-13 — the Error / OK split is gone), so the rows reconcile to the delivered total.\n'
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_rec logical transfer(s))." >&2

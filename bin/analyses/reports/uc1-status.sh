@@ -293,8 +293,6 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, n
 
 {
     printf 'TITLE\tUC1 status\n'
-    printf 'DESC\tEvery configured UC1 (we send a file to the partner) subscription in one of four statuses: healthy, failing, failing after a working history, or not seen in the transfer log — with its problems from the server log.\n'
-    printf 'INTRO\tEvery configured **UC1** (we are the client and SEND a file to the partner) subscription, in exactly one status: **ok** = green, its latest File was delivered; **error** = red and never once delivered an OK File; **ok -> error** = red now, but it HAS delivered before — a regression; **not seen** = configured and never seen in the transfer log. Click a row for its most recent server-log problem lines.\n'
 
     printf 'STAT\twhite\t%s\tUC1 subscriptions\n' "$n_all"
     printf 'STAT\tgreen\t%s\tok\n' "$n_ok"
@@ -309,12 +307,9 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, n
     # the OK / Error / Problems totals keep their column tint (2026-09-29)
     printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t\t@{class=num failed}%s\t\n' \
         "$n_all" "$(nz0 "$t_files")" "$(nz0 "$t_ok")" "$(nz0 "$t_er")" "$(nz0 "$t_prob")"
-    printf 'NOTE\tEvery configured **UC1** subscription, classified. The colour is the site-wide **result**: green = its LAST File OK, red = its last File Failed or a server-log Error after it, orange — **not seen** — = never in the transfer log, or its last File Expired (a pickup problem, not a failed send). **error** vs **ok -> error** is a per-FILE question: right after any OK File the subscription WAS green, so a red subscription with even one OK File in the window is a regression; that is finer than **From green to red**, which buckets by whole days. **Problems** counts the Advanced Routing lines (the route in their second bracket) of a send that could not be made ("Could not send file", "An error occurred while sending", a step "finished with error") plus the partner being unreachable at all (a **Connection failure**, a failing directory listing). **Last log** is the newest line of either kind, so it answers "is this flow still running at all" and can be newer than the failures the drill shows. Unlike **UC3 status** there is no "no files" status: a UC1 push is triggered by a file APPEARING, so no file means no route run and no log line — nothing to report. Click a row for its newest problem lines from the server log.\n'
 
     printf 'KEYWORDS\tuc1, push, send, sendtopartner, advanced routing, status, green, red, orange, regression, never worked, never seen, unused, connection failure, could not send, subscription health\n'
-    printf 'SUMMARY\tok: %s  |  error: %s  |  ok -> error: %s  |  not seen: %s\n' \
-        "$n_ok" "$n_err" "$n_okerr" "$n_notseen"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_all UC1 subscription(s): $n_ok ok, $n_err error, $n_okerr ok-error, $n_notseen not-seen)." >&2

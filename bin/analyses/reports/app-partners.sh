@@ -28,45 +28,29 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union / ap_union)
 OUT="$REPORTS_DIR/app-partners.rpt"
 
 TF="$DATA/transfer/cache/_files.tsv"
-SPMAP="$DATA/flow-manager/xref/_subscriptions-partners.tsv"
-APMAP="$DATA/flow-manager/xref/_subscriptions-apps.tsv"
 if [ ! -f "$TF" ]; then
     echo "app-partners: transfer cache missing; skipping." >&2
     rm -f "$OUT"
     exit 0
 fi
-[ -f "$SPMAP" ] || SPMAP=/dev/null
-[ -f "$APMAP" ] || APMAP=/dev/null
 
 TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT
 # pre-create the awk side outputs — an empty estate writes no row, and a
 # later sort over a missing file errors (config-only clone)
 : > "$TMPD/t1.pre"; : > "$TMPD/t2.pre"; : > "$TMPD/stats.tsv"
-GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 
 # One pass: both unions per File, then every (application, partner) pair gets
 # Files / Error / last-seen counters. END emits sortable rows for the two
 # tables (explicit sort keys — no hash-order output).
-awk -F'\t' -v T1="$TMPD/t1.pre" -v T2="$TMPD/t2.pre" -v STATS="$TMPD/stats.tsv" '
-    FILENAME ~ /_subscriptions-partners\.tsv$/ {
-        if ($1 != "" && $2 != "") SP[toupper($1)] = SP[toupper($1)] (SP[toupper($1)] == "" ? "" : "\037") $2
-        next }
-    FILENAME ~ /_subscriptions-apps\.tsv$/ {
-        if ($1 != "" && $2 != "") AP[toupper($1)] = AP[toupper($1)] (AP[toupper($1)] == "" ? "" : "\037") $2
-        next }
+awk -F'\t' -v T1="$TMPD/t1.pre" -v T2="$TMPD/t2.pre" -v STATS="$TMPD/stats.tsv" -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" "$SP_AWK"'
     {
-        pset = $20
-        if ($12 != "" && (toupper($12) in SP)) { n = split(SP[toupper($12)], Z, "\037")
-            for (i = 1; i <= n; i++) if (index("\037" pset "\037", "\037" Z[i] "\037") == 0)
-                pset = pset (pset == "" ? "" : "\037") Z[i] }
-        aset = $18
-        if ($12 != "" && (toupper($12) in AP)) { n = split(AP[toupper($12)], Z, "\037")
-            for (i = 1; i <= n; i++) if (index("\037" aset "\037", "\037" Z[i] "\037") == 0)
-                aset = aset (aset == "" ? "" : "\037") Z[i] }
+        pset = sp_union($20, $12)   # the partner / application UNION sets (bin/pda-union.sh)
+        aset = ap_union($18, $12)
         err = ($2 == "Failed" || $2 == "Expired") ? 1 : 0
         na = split(aset, A, "\037"); np = split(pset, P, "\037")
         for (i = 1; i <= na; i++) if (A[i] != "") for (j = 1; j <= np; j++) if (P[j] != "") {
@@ -93,7 +77,7 @@ awk -F'\t' -v T1="$TMPD/t1.pre" -v T2="$TMPD/t2.pre" -v STATS="$TMPD/stats.tsv" 
         printf "apps\t%d\npairs\t%d\nfull\t%d\n", nap, nk, tot100 > STATS
         close(STATS)
     }
-' "$SPMAP" "$APMAP" "$TF"
+' "$TF"
 
 sv() { awk -F'\t' -v k="$1" '$1 == k { print $2 }' "$TMPD/stats.tsv"; }
 n_apps=$(sv apps); n_pairs=$(sv pairs); n_full=$(sv full)
@@ -106,8 +90,6 @@ EOF
 {
     printf 'TITLE\tApplication dependencies\n'
     printf 'DESC\tWhich external partner organisations each internal application exchanges Files with: partner count, Files and worst-pair Error %% per application, plus the full (application, partner) dependency matrix.\n'
-    printf 'INTRO\tEvery internal application seen in the logs, by how many **external partner organisations** it depends on — and how well each of those pairs actually runs. The most exposed application is **%s** with **%s** partners (%s of those pairs at 100%% Error). Applications and partners are parts 2 and 3 of the logical flow name (domain_application_partner) a File'"'"'s subscription resolves to through its FlowID, so this attribution is only as good as that naming convention — good enough to see exposure and failing pairs, but not a configuration export. Both sides use the site-wide UNION rules: a File counts for every application and every partner of its subscription.\n' \
-        "$x_app" "$x_ptn" "${x_full:-0}"
     printf 'STAT\twhite\t%s\tApplications seen\n' "$n_apps"
     printf 'STAT\twhite\t%s\tDependency pairs\n' "$n_pairs"
     printf 'STAT\tred\t%s\tPairs at 100%% Error\n' "$n_full"
@@ -132,10 +114,9 @@ EOF
         }
         END { printf "TOTAL\tTotal (%d pair(s))\t\t@{class=num}%d\t\t\n", n + 0, f + 0 }'
 
-    printf 'NOTE\tA pair'\''s Error %% is the Failed-or-Expired share of its Files (the site-wide outcome policy: Waiting counts as OK, Expired as Error). The per-application Files column sums its pairs, so a File shared by two partners counts twice there — exposure, not throughput. A red row runs at 100%% Error: the dependency exists in the logs but never works — usually a decommissioned counterparty still being retried.\n'
     printf 'SUMMARY\tApplications: %s  |  Dependency pairs: %s  |  Pairs at 100%% Error: %s\n' \
         "$n_apps" "$n_pairs" "$n_full"
-    printf 'FOOT\tGenerated on %s\n' "$GENDATE"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_apps application(s), $n_pairs pair(s), $n_full at 100% error)." >&2

@@ -107,10 +107,7 @@ n_rows=0; sum_out=0; sum_ff=0; sum_ok=0
 
 {
     printf 'TITLE\tRecovered flows\n'
-    printf 'DESC\tSubscriptions back to green after a red episode: their latest File is OK, but earlier in the window whole days ended on failures — did yesterday'\''s fix work?\n'
     printf 'KEYWORDS\trecovered, fixed, back to green, working again, resolved, healed, restored, outage over, fix worked, good news\n'
-    printf 'INTRO\tThe GOOD-NEWS mirror of **From green to red** — did yesterday'\''s fix work? Of the **%s** subscription(s) with Files, **%s** are **green right now** (latest File OK) — and **%s** of those went through a **red episode** earlier in the window: at least one day that ended on a failed File. They are listed here, most recent recovery first, so a fix applied yesterday shows up at the top with its first OK Files. Click the Error count for the episode'\''s 10 most recent failed Files, the OK count for the freshest successes since.\n' \
-        "$n_sites" "$n_green" "$n_rec"
     printf 'TABLE\tSubscriptions back to green after a red episode\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tRed from\tRed until\tOutage days\tError Files in episode\tOK Files since\tRecovered on\n'
     printf 'KIND\tsite\ttext\ttext\tnum\tnumfailed\tnumprocessed\ttext\n'
@@ -127,10 +124,7 @@ n_rows=0; sum_out=0; sum_ff=0; sum_ok=0
     fi
     printf 'TOTAL\tTotal (%s subscriptions)\t\t\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t\n' \
         "$n_rows" "$sum_out" "$sum_ff" "$sum_ok"
-    printf 'NOTE\tA subscription is **green** when its LATEST File'\''s outcome is OK, **red** otherwise — the same rule that colors it site-wide (Waiting counts as OK, Expired as Error). The **episode** is the most recent run of consecutive active days that each ENDED on a failed File (a day with a failure but a later OK stays green, matching From green to red); "Recovered on" is the first active day after it, which by construction ended green. Outage days span the episode'\''s calendar days; Error Files count the episode'\''s failures, OK Files everything delivered since (dataset end: %s). An earlier, already-recovered episode of the same subscription is not shown — only the most recent one. **This table always shows the full period** — the flip back is a sequence in time, so a narrowed From/To range would fabricate or hide recoveries.\n' "$last_date"
-    printf 'SUMMARY\tSubscriptions: %s  |  Green now: %s  |  Recovered from a red episode: %s  |  Error Files in those episodes: %s  |  OK Files since: %s\n' \
-        "$n_sites" "$n_green" "$n_rec" "$sum_ff" "$sum_ok"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_rec of $n_green green subscription(s) recovered from a red episode)." >&2

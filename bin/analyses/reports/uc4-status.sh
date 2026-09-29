@@ -287,8 +287,6 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, n
 
 {
     printf 'TITLE\tUC4 status\n'
-    printf 'DESC\tEvery configured UC4 (the partner connects in and delivers a file to us) subscription in one of four statuses: healthy, failing, failing after a working history, or not seen in the transfer log — with its logons, arrivals and refusals from the server log.\n'
-    printf 'INTRO\tEvery configured **UC4** (we are the server; the partner connects IN and DELIVERS a file to us) subscription, in exactly one status: **ok** = green, its latest File arrived; **error** = red and never once received an OK File; **ok -> error** = red now, but it HAS received before — a regression; **not seen** = configured and never seen in the transfer log. Click a row for its newest refusals, then its most recent server-log lines.\n'
 
     printf 'STAT\twhite\t%s\tUC4 subscriptions\n' "$n_all"
     printf 'STAT\tgreen\t%s\tok\n' "$n_ok"
@@ -305,12 +303,9 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, n
     [ -z "$rows" ] || printf '%s\n' "$rows"   # (no blank line before TOTAL, 2026-09-29 audit)
     printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t\n' \
         "$n_all" "$(nz0 "$t_files")" "$(nz0 "$t_ok")" "$(nz0 "$t_er")" "$(nz0 "$t_lg")" "$(nz0 "$t_ar")" "$(nz0 "$t_prob")"
-    printf 'NOTE\tEvery configured **UC4** subscription, classified. The colour is the site-wide **result**: green = its LAST File OK, red = its last File Failed or a server-log Error after it, orange — **not seen** — = never in the transfer log, or its last File Expired. **error** vs **ok -> error** is a per-FILE question: right after any OK File the subscription WAS green, so a red subscription with even one OK File in the window is a regression; that is finer than **From green to red**, which buckets by whole days. The server counts are **account-keyed**, because a partner connects to an account and the subscription name barely reaches the log — the join is 1:1 for UC4. **Logons** counts the "successfully authenticated" server-log line — one per successful SSH logon (an "Allowed user" whitelist admission that then fails authentication does not count). **Arrivals** is a file actually handed over ("will be submitted for processing"), **Problems** a logon the account whitelist **refused**. A **not seen** row with Logons but no Arrivals is a partner that gets in and never delivers; one with only Problems is a partner turned away at the door. Click a row for its newest refusals, then its most recent server-log lines.\n'
 
     printf 'KEYWORDS\tuc4, inbound, partner delivers, upload, receive, status, green, red, orange, regression, never worked, never seen, unused, logon, whitelist, refused, disallowed, no files, subscription health\n'
-    printf 'SUMMARY\tok: %s  |  error: %s  |  ok -> error: %s  |  not seen: %s\n' \
-        "$n_ok" "$n_err" "$n_okerr" "$n_notseen"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_all UC4 subscription(s): $n_ok ok, $n_err error, $n_okerr ok-error, $n_notseen not-seen)." >&2

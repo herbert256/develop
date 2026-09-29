@@ -104,10 +104,7 @@ n_grow_rows=0; n_shr_rows=0
 
 {
     printf 'TITLE\tGrowers & Shrinkers\n'
-    printf 'DESC\tPer-subscription growth and decline: the window split in half, each flow'\''s Files/volume compared across the halves — growers and shrinkers.\n'
     printf 'KEYWORDS\tgrowth, shrink, decline, delta, new flow, grower, shrinker\n'
-    printf 'INTRO\tWhich flows are changing: the window (**%s → %s**) split at its midpoint (first half to %s, second from %s), each of the **%s** subscription(s) compared across the halves. **%s** grew **%sx+**, **%s** shrank **%sx+** while still alive (a flow silent in the final week is on Went quiet instead). The Weekly report shows the site-wide trend; this names the flows behind it.\n' \
-        "$d_from" "$d_to" "$d_mid1" "$d_mid2" "$n_sites" "$n_grow" "$RATIO" "$n_shr" "$RATIO"
 
     # (the Went silent table went 2026-09-29: Expected arrival's Overdue
     # verdict and the Went quiet report list the same flows)
@@ -122,7 +119,6 @@ n_grow_rows=0; n_shr_rows=0
     if [ "$n_grow_rows" -eq 0 ]; then
         printf 'ROW\t@{colspan=6}No subscription grew %sx or more (with %s+ second-half Files).\n' "$RATIO" "$MIN_BASE"
     fi
-    printf 'NOTE\t%sx+ more Files in the second half (%s+ Files there). "new" = no first-half activity at all — a flow that started mid-window (the First Seen analysis dates every flow'\''s absolute first appearance).\n' "$RATIO" "$MIN_BASE"
 
     printf 'TABLE\tShrinkers\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tFirst-half Files\tSecond-half Files\tShrink\tFirst-half volume\tSecond-half volume\n'
@@ -135,11 +131,8 @@ n_grow_rows=0; n_shr_rows=0
     if [ "$n_shr_rows" -eq 0 ]; then
         printf 'ROW\t@{colspan=6}No still-active subscription shrank %sx or more (from %s+ first-half Files).\n' "$RATIO" "$MIN_BASE"
     fi
-    printf 'NOTE\t%sx+ fewer Files in the second half (from %s+ in the first), but still alive in the final week — a fading flow, not a dead one (those are on Went quiet).\n' "$RATIO" "$MIN_BASE"
 
-    printf 'SUMMARY\tSubscriptions: %s  |  Growers (%sx+): %s  |  Shrinkers (%sx+): %s  |  Window: %s → %s\n' \
-        "$n_sites" "$RATIO" "$n_grow" "$RATIO" "$n_shr" "$d_from" "$d_to"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (growers $n_grow, shrinkers $n_shr)." >&2

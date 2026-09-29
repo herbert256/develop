@@ -89,9 +89,7 @@ IFS='|' read -r _ srv_err srv_ok srv_peakd srv_peakn srv_okfirst <<< "$(printf '
 
 {
     printf 'TITLE\tResubmissions\n'
-    printf 'DESC\tThe manually resubmitted transfer legs (Resubmitted=true) — human intervention on flows that did not recover on their own.\n'
     printf 'KEYWORDS\tresubmit, resubmitted, manual, intervention, operator, rerun\n'
-    printf 'INTRO\tLegs carrying the transfer log'\''s **Resubmitted** flag — someone (or an automation) explicitly resubmitted the transfer, so every row here is a flow that needed a push. **%s** resubmitted leg(s) on **%s** File(s): **%s** still Error, **%s** OK after the resubmit.\n' "$tot_legs" "$tot_files" "$tot_failed" "$tot_processed"
 
     if [ -n "$emptym" ]; then
         printf 'TABLE\tResubmitted legs per day\tnofilter\tnosort\n'
@@ -133,7 +131,6 @@ IFS='|' read -r _ srv_err srv_ok srv_peakd srv_peakn srv_okfirst <<< "$(printf '
         done <<< "$(printf '%s\n' "$agg" | grep '^SUB|' | sort -t'|' -k2,2r)"
     fi
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t\t\n' "$tot_legs" "$tot_files"
-    printf 'NOTE\tClick a row for that subscription'\''s 10 most recent resubmitted Files. Error/OK is the LEG'\''s own status — an OK resubmitted leg is the retry that finally worked. Files and First/Last stay full-period under a narrowed date range.\n'
 
     # ---- table 3: the server log's own resubmission trail (2026-08) ----
     if [ "${srv_err:-0}" -gt 0 ] || [ "${srv_ok:-0}" -gt 0 ]; then
@@ -152,15 +149,8 @@ IFS='|' read -r _ srv_err srv_ok srv_peakd srv_peakn srv_okfirst <<< "$(printf '
         printf 'ROW\t@{colspan=3}No server-log resubmission lines in this data window.\n'
     fi
     printf 'TOTAL\tTotal\t@{class=num failed}%s\t@{class=num processed}%s\n' "${srv_err:-0}" "${srv_ok:-0}"
-    if [ "${srv_err:-0}" -gt 0 ] || [ "${srv_ok:-0}" -gt 0 ]; then
-        printf 'NOTE\tThe SERVER log'\''s own resubmission trail, per day: "Error while resubmitting transfer with id …" (Error) vs "Resubmission successfully executed for file: …" (Info). This complements the leg view above — the server lines also catch resubmit attempts that never produced a transfer-log leg. The worst error day was **%s** (**%s** errors); the error spike rides the PeSIT abort storm (the server report'\''s PeSIT diagCode 310 wave) — resubmitting into a broken ST → CFT link fails again until the link recovers.%s\n' \
-            "${srv_peakd:--}" "${srv_peakn:-0}" "$( [ -n "${srv_okfirst:-}" ] && printf ' The first success line is dated %s.' "$srv_okfirst" )"
-    else
-        printf 'NOTE\tThe SERVER log'\''s own resubmission trail — "Error while resubmitting transfer" vs "Resubmission successfully executed" lines, per day. None in this data window.\n'
-    fi
 
-    printf 'SUMMARY\tResubmitted legs: %s | Files: %s | Server-log resubmissions: %s errors / %s successes\n' "$tot_legs" "$tot_files" "${srv_err:-0}" "${srv_ok:-0}"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_legs resubmitted leg(s))." >&2

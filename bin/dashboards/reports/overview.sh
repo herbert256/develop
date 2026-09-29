@@ -18,6 +18,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union) — the Top-5 partner tables
 OUT="$REPORTS_DIR/overview.rpt"
 
 # The four cache/report sources come with the lib; the PeSIT card additionally
@@ -362,6 +363,11 @@ if [ -f "$TR" ]; then
                 # its green/red is its own last File, like a partner\047s
                 if ($3 != "" && (toupper($3) in AROST)) note(r, "A", $3, t)
             }
+            # NOT the shared sp_union (bin/pda-union.sh) on purpose: the
+            # curves key the partner join on the CANONICAL configured flow
+            # (canon: the one configured name the logged value is or uniquely
+            # prefixes) and add the remote host evidence below — the
+            # coverage pages\047 seen rule, not the per-File union
             if (cs != "" && (cs in SUBP)) {
                 np = split(substr(SUBP[cs], 2), PZ, SUBSEP)
                 for (ip = 1; ip <= np; ip++)
@@ -603,7 +609,7 @@ fi
 # no ?axway_date, so the page opens at its full-range default (datereset).
 tops=""
 if [ -f "$TR" ]; then
-    tops=$(awk -F'\t' -v SUBPF="$XR/_subscriptions-partners.tsv" '
+    tops=$(awk -F'\t' -v SPMAP="$SP_MAP" "$SP_AWK"'
         function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
         function tally(kind, nm,   k, kd, e9) {
             if (nm == "") return
@@ -646,19 +652,13 @@ if [ -f "$TR" ]; then
             nn = split(raw, Z, US); s = ""
             for (i = 1; i <= nn; i += 2) s = s (s == "" ? "" : US) Z[i] US human(Z[i+1])
             return s }
-        BEGIN { US = sprintf("%c", 31)
-            # subscription -> its configured partner(s); a missing map just
-            # leaves the partner tables to col 20 alone (getline returns < 0)
-            while ((getline sl < SUBPF) > 0) { np2 = split(sl, sz, "\t")
-                if (np2 >= 2 && sz[1] != "" && sz[2] != "") SUBP[toupper(sz[1])] = SUBP[toupper(sz[1])] US sz[2] }
-            close(SUBPF) }
+        BEGIN { US = sprintf("%c", 31) }
         {
             tally("S", $12)
-            tally("P", $20)
-            if ($12 != "" && (toupper($12) in SUBP)) {
-                npt = split(substr(SUBP[toupper($12)], 2), PTZ, US)
-                for (ipt = 1; ipt <= npt; ipt++) if (PTZ[ipt] != $20) tally("P", PTZ[ipt])
-            }
+            # the partner UNION set (bin/pda-union.sh; a missing map leaves
+            # the partner tables to col 20 alone)
+            npt = split(sp_union($20, $12), PTZ, "\037")
+            for (ipt = 1; ipt <= npt; ipt++) tally("P", PTZ[ipt])
         }
         END {
             # the Entities layout is Name 0 · Direction 1 · Files 2 · Volume 3

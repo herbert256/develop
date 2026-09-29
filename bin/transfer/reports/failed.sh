@@ -173,7 +173,6 @@ BOXES="$DATA/analyses/reports/_subs-boxes.tsv"
 # row — went 2026-09-29, user request: one repo = one environment, and the
 # top bar already names it.)
 
-GEN=$(date '+%Y-%m-%d %H:%M:%S')
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axlastf.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 
@@ -283,7 +282,7 @@ nfilep=$(wc -l < "$TMP/filepages" | tr -d ' ')
 # failed CoreId, the LAST leg's raw status ($TMP/lastst) — the reason pass
 # needs it for the unpaged Files (_failed-reasons.tsv) — and the paged-CoreId set
 # ($TMP/paged) the list writer marks its links by.
-LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
+LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
     -v TOPF="$TMP/all" -v EXTRAF="$TMP/extra" -v LASTF="$TMP/lastst" -v PAGEDF="$TMP/paged" \
     -v IDS="$TMP/ids" -v META="$TMP/meta" -v SESS="$TMP/sess" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" -v ACCRES="$CONFIG_BASE/_accounts.tsv" -v HSTRES="$CONFIG_BASE/_hosts.tsv" \
     -v LGNRES="$CONFIG_BASE/_logins.tsv" -v PTNRES="$CONFIG_BASE/_partners.tsv" -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" \
@@ -298,11 +297,15 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
     BEGIN { resload(SUBRES, SRES); resload(ACCRES, ARES); resload(HSTRES, HRES)
         resload(LGNRES, LRES); resload(PTNRES, PRES); spload(SPMAP) }
     # the subscription -> partner(s) map (the site-wide UNION attribution: a
-    # File belongs to every partner of its subscription), SUBSEP-joined
+    # File belongs to every partner of its subscription), SUBSEP-joined.
+    # NOT the shared sp_union (bin/pda-union.sh): the facts row names the
+    # SUBSCRIPTION configured partners only (no col 20 — the facts row names
+    # the partners of the subscription by design); the key is CASE-FOLDED like
+    # sp_union (2026-09-29 audit)
     function spload(f9,   l9, n9, z9) {
         while ((getline l9 < f9) > 0) { n9 = split(l9, z9, "\t")
             if (n9 >= 2 && z9[1] != "" && z9[2] != "" && !((z9[1] SUBSEP z9[2]) in spseen)) {
-                spseen[z9[1] SUBSEP z9[2]] = 1; SPM[z9[1]] = SPM[z9[1]] SUBSEP z9[2] } }
+                spseen[z9[1] SUBSEP z9[2]] = 1; SPM[toupper(z9[1])] = SPM[toupper(z9[1])] SUBSEP z9[2] } }
         close(f9) }
     function resload(f9, A9,   l9, n9, z9) {
         while ((getline l9 < f9) > 0) { n9 = split(l9, z9, "\t")
@@ -435,13 +438,10 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
                 # a FILE page (any outcome, 2026-09-03): named by the File,
                 # the outcome stated, no verdict in the title
                 printf "TITLE\tFile: %s\n", nm > f
-                printf "DESC\tThe File %s of subscription %s (CoreId %s, outcome %s): every transfer leg and the server log behind it.\n", nm, SITE[c], c, (OC[c] != "" ? OC[c] : "unknown") > f
             } else if (OC[c] == "Expired") {
                 printf "TITLE\tExpired pickup: %s\n", SITE[c] > f
-                printf "DESC\tThe expired File %s of subscription %s (CoreId %s): every transfer leg and the server log behind it.\n", nm, SITE[c], c > f
             } else {
                 printf "TITLE\tFailed subscription: %s\n", SITE[c] > f
-                printf "DESC\tThe failed File %s of subscription %s (CoreId %s): every transfer leg and the server log behind it.\n", nm, SITE[c], c > f
             }
             # The FACTS table (2026-08), first thing on the page and in place of
             # the prose line that used to open it: what this File was, where it
@@ -460,7 +460,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" \
             # subscription (one links like the other entities; several list
             # plainly), the account / login / endpoint from the first leg
             # that carries one
-            np9 = split(substr(SPM[SITE[c]], 2), PP9, SUBSEP)
+            np9 = split(substr(SPM[toupper(SITE[c])], 2), PP9, SUBSEP)
             if (np9 == 1) printf "ROW\tPartner\t%s\n", entcell(PRES, "partners", PP9[1]) > f
             else if (np9 > 1) { pl9 = PP9[1]; for (q9 = 2; q9 <= np9; q9++) pl9 = pl9 ", " PP9[q9]; printf "ROW\tPartner\t%s\n", pl9 > f }
             if (ACCTN[c] != "")  printf "ROW\tAccount\t%s\n", entcell(ARES, "accounts", ACCTN[c]) > f
@@ -786,7 +786,7 @@ fi
 # WITHOUT them, so appending here keeps LINK/FOOT the last lines. `>>` is
 # deliberate (a fresh awk process'"'"'s `>` would truncate the finished pages).
 if [ -s "$TMP/meta" ]; then
-    LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" -v FILEDIR="$FILEDIR" -v FSETF="$TMP/fileset" '
+    LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v CAP="$SRVCAP" -v FILEDIR="$FILEDIR" -v FSETF="$TMP/fileset" '
         # the FILE pages live in FILEDIR (2026-09-03): the same sections, the
         # page path and the back link decided per CoreId
         BEGIN { while ((getline l9 < FSETF) > 0) { split(l9, y9, "\t"); if (y9[1] != "") { FSET[y9[1]] = 1; FSRC[y9[1]] = y9[2] } } close(FSETF) }
@@ -840,7 +840,7 @@ if [ -s "$TMP/meta" ]; then
                     if (FSRC[MC[i]] ~ /W/) printf "LINK\t../transfer/waiting.html\tBack to Waiting\n" >> f
                 }
                 else printf "LINK\t../analyses/failed.html\tBack to Failed Subscriptions\n" >> f
-                printf "FOOT\tGenerated on %s\n", gen >> f
+                printf "FOOT\n" >> f
                 close(f)
             }
         }
@@ -861,7 +861,7 @@ _flap "server log pass 2 (the reddening sessions)"
 # RING (the last-25 + E/W caches, deduped, oldest first) is only the
 # FALLBACK when no session line was found: no stamp, a stamp outside the
 # exports, or a session-less component logged the error.
-LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
+LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v CAP="$SRVCAP" \
     -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" -v ACCRES="$CONFIG_BASE/_accounts.tsv" \
     -v SAX="$CONFIG_XREF/_subscriptions-accounts.tsv" \
     -v SPX="$CONFIG_XREF/_subscriptions-partners.tsv" -v SLX="$CONFIG_XREF/_subscriptions-logins.tsv" -v SHX="$CONFIG_XREF/_subscriptions-hosts.tsv" \
@@ -915,6 +915,8 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
     BEGIN {
         resload(SUBRES, SRES); resload(ACCRES, ARES)
         resload(PTNRES, PRES); resload(LGNRES, LRES); resload(HSTRES, HRES)
+        # (a subscription page, no File: its CONFIGURED values only — not
+        # the per-File union of bin/pda-union.sh)
         # ALL of a subscription'\''s accounts, ", "-joined (a relay has two —
         # first-wins named one arbitrary account as fact; a multi-value cell
         # simply renders unlinked) — and likewise its partners, logins and
@@ -932,10 +934,6 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
         k = toupper(nm)
         f = ERRDIR "/" sl ".rpt"
         printf "TITLE\tFailed subscription: %s%s\n", nm, (rs != "" ? " - " rs : "") > f
-        if (kind == "P")
-            printf "DESC\tThe subscription %s is failing in the server log — its last transfer ended OK, the server log erred after it.\n", nm > f
-        else
-            printf "DESC\tThe subscription %s is failing in the server log — no failed File; the evidence is the server log of the failing connection.\n", nm > f
         printf "TABLE\t\tnosearch\n" > f
         printf "HEAD\tItem\tValue\n" > f
         printf "KIND\ttext\ttext\n" > f
@@ -982,7 +980,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v gen="$GEN" -v CAP="$SRVCAP" \
                 printf "INTRO\t%s Its server-log mention ring is empty: the evidence is on the subscription'"'"'s detail page and the report its box names.\n", pre > f
         }
         printf "LINK\t../analyses/failed.html\tBack to Failed Subscriptions\n" > f
-        printf "FOOT\tGenerated on %s\n", gen > f
+        printf "FOOT\n" > f
         close(f)
     }
 ' "$TMP/srvsubs"
@@ -1216,7 +1214,7 @@ _flap "server-failing pages + the reasons"
 # than truncated lists. Rows stream newest first, so every list is newest first (the
 # appended server rows land at the end; the page default sort — Date/time,
 # descending — interleaves them on load).
-LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" \
+LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
     -v REAS="$TMP/reasons" -v PAGEDF="$TMP/paged" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" \
     -v SRVS="$TMP/srvsubs" -v SESSF="$TMP/srvsess2" -v RF="$RFLIP" -v LOKF="$TMP/lastok" -v MJF="$TMP/maxjd" \
     -v FGR="$REPORTS_DIR/from-green-to-red.rpt" -v ORED="$REPORTS_DIR/only-red.rpt" '
@@ -1374,11 +1372,7 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" \
         for (i = 1; i <= NP; i++) {
             k = PK[i]; f = F[k]
             printf "TOTAL\tTotal (%d rows)\t\t\t\t\t\t\n", CNT[k] + 0 > f
-            printf "NOTE\tOne row per subscription: its newest failed File. The buttons pick the flows: **Still failing** hides the subscriptions that are green again (they have delivered OK since); **All** keeps them. Every File in error is on the Failed files page.\n" > f
-            printf "NOTE\tA File is one logical transfer (all records sharing a CoreId — the id is on the error page the row opens, and in the row'"'"'s link). A row carries the **colour of its subscription**: red = still failing, green = recovered since. **Reason** is the fault the file'"'"'s own error page shows — its first error line that classifies (the vocabulary of every Reason column on the site); a single-leg file whose log names nothing recognisable reads **One-legged** (the arrival with no delivery IS the failure); a file without its own error page takes the reason of the **newest paged file of its subscription + leg-count combination** — the same failure shape; a multi-leg file whose sessions logged no error shows its last leg'"'"'s raw status (**Failed Subtransmission**); blank only when no rule applies. Outcome **Failed** or **Expired** (a file staged for a UC2 pickup that never came) — the site-wide Error rule; an Expired row reads **Expired (not collected)**. **Last green day** is the newest day that ended on an OK File (**never** for a flow that never delivered), **Days red** counts from the first failure of the current run to the data window last day, **Failures in a row** the consecutive Files in error. On a server-log row, **Last green day** is the day of its newest OK File and **Days red** counts from when the server-log evidence began.\n" > f
-            printf "NOTE\tA file row opens the file'"'"'s own error page: the facts, every transfer leg with its status and timing, and the server-log lines of the connections it ran over.\n" > f
-            printf "NOTE\tA row is either a FAILED FILE (its Date/time is the file'"'"'s start, the row opens that file'"'"'s error page) or a subscription whose CURRENT failure is the **server log'"'"'s** — no failed File at all, or its last transfer ended OK and the server log erred after it: a post-delivery error, a deploy mistake, an authentication failure attributed to the flow. For those the Date/time is the newest server evidence stamp and the row opens the flow'"'"'s own error page — named by the subscription — with the server-log lines behind the verdict; the detail page is linked from its facts table. Together the two kinds are **every failing subscription**, transfer and server alike.\n" > f
-            printf "FOOT\tGenerated on %s\n", gen > f
+            printf "FOOT\n" > f
             close(f)
         }
     }

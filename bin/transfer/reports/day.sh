@@ -52,11 +52,11 @@ raw_stats=$(awk -F'\t' '
 if [ -z "$raw_stats" ]; then echo "No usable records found." >&2; exit 0; fi
 sorted_stats=$(printf '%s\n' "$raw_stats" | sort -t'|' -k1,1)
 
-total_records=0; total_days=0; total_failed=0; total_processed=0; total_bytes=0
+total_records=0; total_days=0; total_processed=0; total_bytes=0
 first_record=""; last_record=""
 while IFS='|' read -r day count failed processed bytes human first last; do
     [ -z "$day" ] && continue
-    total_records=$((total_records + count)); total_failed=$((total_failed + failed))
+    total_records=$((total_records + count))
     total_processed=$((total_processed + processed)); total_bytes=$((total_bytes + bytes))
     total_days=$((total_days + 1))
     [ -z "$first_record" ] && first_record="$day $first"
@@ -92,23 +92,14 @@ nodata_days=$(printf '%s\n' "$rows_html" | awk -F'\t' '$1=="ROW" && $3=="0" && $
 
 {
     printf 'TITLE\tPer Day\n'
-    printf 'DESC\t%s per calendar day (the delivered ones), volume, first and last time.\n' "$clabel"
     printf 'META\tfirst\t%s\n' "$first_record"
     printf 'META\tlast\t%s\n' "$last_record"
-    printf 'INTRO\t**%s** %ss over **%s** day(s) with data: **%s** failed, **%s** processed, **%s** total volume.\n' \
-        "$total_records" "$noun" "$total_days" "$total_failed" "$total_processed" "$total_human"
     printf 'TABLE\tPer day\n'
     printf 'HEAD\tDate\t%s\tVolume\tFirst Time\tLast Time\n' "$clabel"
     printf 'KIND\ttext\tnum\tnum\ttext\ttext\n'
     printf '%s\n' "$rows_html"
     printf 'TOTAL\tTotal (%s day(s))\t@{class=num}%s\t@{class=num}%s\t\t\n' \
         "$((total_days + nodata_days))" "$total_processed" "$total_human"
-    printf 'NOTE\tOne row = one calendar day. A "0" row with no times is a day with no %ss; "(partial start/end)" marks a day whose collection window began or ended mid-day. The Top view shows this same per-day table together with each day'\''s active accounts, subscriptions, flows, hosts and logins.\n' "$noun"
-    if [ "$nodata_days" -gt 0 ]; then
-        printf 'SUMMARY\tDays with data: %s  |  Days with no data: %s  |  Total %ss: %s  |  Volume: %s\n' "$total_days" "$nodata_days" "$noun" "$total_records" "$total_human"
-    else
-        printf 'SUMMARY\tDays with data: %s  |  Total %ss: %s  |  Volume: %s\n' "$total_days" "$noun" "$total_records" "$total_human"
-    fi
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($total_days day(s), $total_records $noun(s))." >&2

@@ -121,21 +121,8 @@ unres_sum=$(printf '%s\n' "$agg" | awk -F'\t' '$1=="U"{s+=$2} END{print s+0}')
 res_share=$(awk -v c="$res_sum" -v t="$tot_fail" 'BEGIN { if (t > 0) printf "%.1f", c * 100 / t; else printf "0.0" }')
 unres_share=$(awk -v c="$unres_sum" -v t="$tot_fail" 'BEGIN { if (t > 0) printf "%.1f", c * 100 / t; else printf "0.0" }')
 
-# P14303_CFT01 (the internal cluster CFT, blanked from the transfer logs by the
-# parse-time blacklist — see bin/transfer/parse.sh) can only ever land in the
-# unresolved table. Keep the row (its failures are real), but say what it is.
-# (Pure-bash substring test: a `grep -q` would exit at the first match and
-# SIGPIPE the printf feeding it, which pipefail turns into a failure.)
-cft_note=""
-if [ "${unres_rows#*P14303_CFT01}" != "$unres_rows" ]; then
-    cft_note=" **P14303_CFT01** is the internal cluster CFT — a platform-internal endpoint (blanked from the transfer logs), not a partner."
-fi
-
 {
     printf 'TITLE\tConnection Failures per Subscription\n'
-    printf 'DESC\tServer-log connection failures counted per subscription (known subscriptions linked, truncated names listed as logged).\n'
-    printf 'INTRO\t**%s** connection-failure messages: **%s** subscription(s) resolved to a known subscription, **%s** name(s) unresolved (truncated beyond a unique match, or absent from the transfer logs — see the Missing subscriptions report). Repeated connection failures are retry storms toward an unreachable partner.\n' \
-        "$tot_fail" "$n_res" "$n_unres"
 
     printf 'TABLE\tKnown subscriptions\twide\n'
     printf 'HEAD\tSubscription\tConnection failures\tShare\tFirst seen\tLast seen\n'
@@ -151,9 +138,7 @@ fi
     printf '%s\n' "$unres_rows"
     printf 'TOTAL\tTotal (%s name(s))\t@{class=num failed}%s\t@{class=num}%s%%\t\t\n' "$n_unres" "$unres_sum" "$unres_share"
 
-    printf 'NOTE\tServer messages truncate long subscription names; a name is shown in full (and linked) when it is the prefix of exactly one subscription. Share is of all connection failures across both tables at the full range (a narrowed date range re-shares over each table separately).%s Click a row to expand its 10 most recent failure lines.\n' "$cft_note"
-    printf 'SUMMARY\tConnection failures: %s  |  Resolved subscriptions: %s  |  Unresolved names: %s\n' "$tot_fail" "$n_res" "$n_unres"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_fail failure(s), $n_res resolved site(s))." >&2

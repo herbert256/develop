@@ -186,7 +186,6 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
                           $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13 }' || true
     printf 'TOTAL\tTotal\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\n' \
         "$tot_allowed" "$tot_blocked" "$tot_notperf" "$tot_other" "$tot_all"
-    printf 'NOTE\tThe protocol of the first Inbound leg — HOW the file entered the system (pesit = from CFT, ssh/ftp = a partner delivering in).\n'
 
     # Blocked detail: every first-inbound Blocked leg individually, newest first.
     printf 'TABLE\tBlocked transfers\twide\n'
@@ -202,9 +201,6 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
             printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$bdate" "$btime" "$bacct" "$blogin" "$bsite" "$bproto" "$bfile"
         done <<< "$blocked_rows"
         printf 'TOTAL\tTotal (%s rows)\t\t\t\t\t\t\n' "$nblk"
-        if [ "$nblk" -eq 200 ] && [ "$tot_blocked" -gt 200 ]; then
-            printf 'NOTE\tShowing the 200 most recent of %s blocked Files.\n' "$tot_blocked"
-        fi
     else
         printf 'ROW\t@{colspan=7}No blocked transfers in this data window.\n'
     fi
@@ -226,7 +222,6 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
         $2 != "" { printf "ROW\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:coreids=%s\n", \
                           nplabel($2 + 0), $3, (tot > 0 ? sprintf("%.1f", $3 * 100 / tot) : "0.0"), $4, $5 }'
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_notperf"
-    printf 'NOTE\tWhy the scanner skipped these arrivals. **Before scanning was active**: everything ahead of the window'\''s FIRST Allowed verdict — the boundary is derived from the data each run, and in this window scanning went live mid-2026-06-25; before that, every arrival entered unscanned. **Failed or empty**: the receive aborted or brought 0 bytes — nothing whole to scan. **Encrypted**: the scanner cannot see inside a .pgp/.enc file. **Oversized**: above the ICAP scan-size cap. **Other** catches what no known reason explains — it should sit at (or near) 0, and growth there is a new skip reason worth investigating. Click a row for its 10 most recent Files.\n'
 
     # The CHECK tab: real scan verdicts on legs that are NOT the first Inbound.
     printf 'TABLE\tNot first inbound\n'
@@ -241,14 +236,12 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
                 printf "ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids=%s\n", $2, $3, cell, $5, $6, $7
             }'
         printf 'TOTAL\tTotal\t\t\t@{class=num}%s\n' "$tot_nfi"
-        printf 'NOTE\tScan verdicts (Allowed/Blocked/Error) on legs OTHER than the File'\''s first Inbound leg — the check on the "scan on entry" model. What legitimately shows up: **Inbound retries** (a re-entry is re-scanned) and the **UC2 staging re-entry** (Inbound routing). An **Outbound** row here would break the model. The plain "Scanning was not performed" boilerplate on outbound legs is excluded.\n'
     else
         printf 'ROW\t@{colspan=4}No scan verdicts outside the first Inbound leg — the scan-on-entry model holds.\n'
         printf 'TOTAL\tTotal\t\t\t@{class=num}0\n'
     fi
 
-    printf 'NOTE\tOne scan verdict per File — its first Inbound leg (a File with no Inbound leg has no scan). Outcomes are parsed from the free-text "ICAP Details" column; "Other" groups Error/Unknown and unrecognized text.\n'
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_blocked blocked, $tot_allowed allowed, $tot_nfi off-model leg(s))." >&2

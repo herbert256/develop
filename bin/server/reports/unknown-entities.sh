@@ -363,28 +363,18 @@ write_unknown_rpt() {   # $1 tag  $2 basename  $3 unit label ("subscription"…)
     {
         case $tag in
         S)  printf 'TITLE\tSubscriptions Missing from Transfer Logs\n'
-            printf 'DESC\tSubscription names (UC…) referenced in server-log messages but absent from the transfer logs.\n'
-            printf 'INTRO\t**%s** subscription names appear in server-log messages (Transfer Manager log lines only) but never in the transfer logs (checked against every transfer row'"'"'s subscription in the parse cache). These are subscriptions the server touched — typically failed connections — that produced no transfer. Server messages may truncate long names, so a name counts as known when it is a prefix of a real subscription.\n' "$n"
             printf 'TABLE\tSubscriptions in server logs, not in transfer logs\twide\n'
             printf 'HEAD\tSubscription (as logged by the server)\tServer-log mentions\n' ;;
         A)  printf 'TITLE\tAccounts Missing from Transfer Logs\n'
-            printf 'DESC\tAccount names referenced in server-log messages but absent from the transfer logs.\n'
-            printf 'INTRO\t**%s** account names appear in server-log messages (Transfer Manager log lines only, as `associated with account "…"`) but never in the transfer logs (checked against every transfer row'"'"'s account in the parse cache). These are accounts that connected to the server but produced no transfer. Any @login suffix is stripped to match the transfer account format.\n' "$n"
             printf 'TABLE\tAccounts in server logs, not in transfer logs\n'
             printf 'HEAD\tAccount (as logged by the server)\tServer-log mentions\n' ;;
         L)  printf 'TITLE\tLogins Missing from Transfer Logs\n'
-            printf 'DESC\tLogin names referenced in server-log messages but absent from the transfer logs.\n'
-            printf 'INTRO\t**%s** login names appear in server-log messages (Transfer Manager log lines only, as `login name "…"`) but never in the transfer logs (checked against every transfer row'"'"'s login in the parse cache). These are logins that authenticated to the server but produced no transfer.\n' "$n"
             printf 'TABLE\tLogins in server logs, not in transfer logs\n'
             printf 'HEAD\tLogin (as logged by the server)\tServer-log mentions\n' ;;
         H)  printf 'TITLE\tOutbound Hosts Missing from Transfer Logs\n'
-            printf 'DESC\tConfigured outbound endpoints (the partners.json host fields) referenced in server-log messages but absent from the transfer logs.\n'
-            printf 'INTRO\t**%s** configured outbound hosts appear in server-log messages (Transfer Manager log lines only) but never as a remote host in the transfer logs (checked against every transfer row'"'"'s remote host in the parse cache). These are endpoints the server tried to reach — typically failed connections — that never produced a transfer. Incoming partner addresses are the **Missing whitelist IPs** report.\n' "$n"
             printf 'TABLE\tConfigured hosts in server logs, not in transfer logs\n'
             printf 'HEAD\tHost (as configured)\tServer-log mentions\n' ;;
         W)  printf 'TITLE\tWhitelisted IPs Missing from Transfer Logs\n'
-            printf 'DESC\tWhitelisted partner addresses (the partners.json AllowIP fields) referenced in server-log messages but absent from the transfer logs.\n'
-            printf 'INTRO\t**%s** whitelisted partner IPs appear in server-log messages (any component) but never as a remote host in the transfer logs (checked against every transfer row'"'"'s remote host in the parse cache, raw IPs of resolved hostnames included). These are addresses a partner is allowed to connect from that connected — or tried to — without ever producing a transfer. Outgoing endpoints are the **Missing hosts** report.\n' "$n"
             printf 'TABLE\tWhitelisted IPs in server logs, not in transfer logs\n'
             printf 'HEAD\tIP address (whitelisted)\tServer-log mentions\n' ;;
         esac
@@ -405,8 +395,7 @@ write_unknown_rpt() {   # $1 tag  $2 basename  $3 unit label ("subscription"…)
         printf 'RECALC\t-\ts0\n'
         unknown_rows "$tag"
         printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\n' "$n" "$unit" "$mentions"
-        printf 'NOTE\tClick a row to expand its 10 most recent server-log lines.\n'
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$REPORTS_DIR/$base.rpt.tmp" && mv "$REPORTS_DIR/$base.rpt.tmp" "$REPORTS_DIR/$base.rpt"
     echo "Data written to $REPORTS_DIR/$base.rpt ($n unknown $unit(s), $mentions mention(s))." >&2
 }

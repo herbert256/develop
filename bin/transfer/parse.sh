@@ -1464,9 +1464,15 @@ COLLAPSE_AWK='
         # after a RETRY (a failed leg) or a RESUBMIT (a leg with the
         # Resubmitted flag), green = Processed clean
         clr = (oc == "Failed") ? "red" : ((oc == "Waiting" || anyfail || anyrsb) ? "orange" : "green")
-        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
+        # the two LEG FACTS behind it, stored ONCE per File (2026-09-29): the
+        # config join lands them in col 26 (a FAILED leg, any leg whose status
+        # is not Processed) and col 27 (a RESUBMITTED leg, _transfers.tsv col
+        # 22 true) as "1" / "" — the Recovered / Automatic / Manual and
+        # Resubmit Ok / Error rules read these instead of a _transfers.tsv pass
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
             prev, oc, f_acct, f_date, f_time, \
-            f_sortkey, f_jdn, maxsize, durtot, rows, f_file, last_site, pf9, f_login, f_host, wait, endst, clr
+            f_sortkey, f_jdn, maxsize, durtot, rows, f_file, last_site, pf9, f_login, f_host, wait, endst, clr, \
+            (anyfail ? "1" : ""), (anyrsb ? "1" : "")
     }
     FILENAME ~ /_subscriptions-flowdir\.tsv$/ { if ($2 == "in" || $2 == "out" || $2 == "relay") fd[toupper($1)] = $2; next }
     {
@@ -1479,8 +1485,8 @@ COLLAPSE_AWK='
             anyfail=0; anyrsb=0
         }
         rows++
-        if ($3 != "Processed") anyfail = 1         # a failed leg (the Recovered rule) -> the colour
-        if ($22 == "true") anyrsb = 1              # an operator resubmit (col 22) -> the colour
+        if ($3 != "Processed") anyfail = 1         # a failed leg (the Recovered rule) -> the colour + col 26
+        if ($22 == "true") anyrsb = 1              # an operator resubmit (col 22) -> the colour + col 27
         # the latest leg END over the dated rows (col 24, see flush)
         if ($14 != "") { e9 = $14 * 86400000 + hms_ms($12) + ($15 + 0 > 0 ? $15 + 0 : 0); if (e9 > maxend) maxend = e9 }
         # Date/time from the first row that HAS a valid date. Rows are sorted by
@@ -1535,9 +1541,12 @@ COLLAPSE_AWK='
 # endpoint — else the account's partner org (kept only when
 # unambiguous: an account spanning several endpoint orgs stays blank when
 # the host decides nothing). Missing caches leave their column(s) empty, so
-# the cache always carries 25 columns (col 25 = the colour, 2026-09-29). The collapse above emits the UC2
+# the cache always carries 27 columns (col 25 = the colour, cols 26/27 = the
+# failed-leg / resubmitted-leg flags, 2026-09-29). The collapse above emits the UC2
 # pickup wait as its 16th field; both branches here move it BEHIND the five
-# config columns so it lands as col 21 and cols 16-20 keep their positions.
+# config columns so it lands as col 21 and cols 16-20 keep their positions
+# (the end stamp, the colour and the two leg flags — collapse fields 17-20 —
+# land as cols 24-27).
 # Col 22 ("expired") is emitted EMPTY here — bin/expire-files.sh (the build
 # step after both parses) flips never-collected Waiting files whose staged
 # copy the server-log File Maintenance sweep deleted to outcome Expired and
@@ -1550,7 +1559,7 @@ ttmp="$FILES.tmp.$$"
 # (a FILTER — stdin to stdout, one stage of the per-slice pipeline below)
 cfg_join() {
 if [ ${#pda_caches[@]} -eq 0 ]; then
-    awk -F'\t' 'BEGIN{OFS="\t"} { w=$16; e=$17; c=$18; NF=15; print $0, "", "", "", "", "", w, "", "", e, c }'   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp, 25 = the colour
+    awk -F'\t' 'BEGIN{OFS="\t"} { w=$16; e=$17; c=$18; fl=$19; rs=$20; NF=15; print $0, "", "", "", "", "", w, "", "", e, c, fl, rs }'   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp, 25 = the colour, 26/27 = the failed-leg / resubmitted-leg flags
 else
     awk -F'\t' 'BEGIN{OFS="\t"; AMB=sprintf("%c",1)}
         FILENAME ~ /_accounts-logins\.tsv$/        { al[toupper($1)]=1; next }
@@ -1599,10 +1608,10 @@ else
             if(s!="" && (s in sp) && sp[s]!=AMB) p=sp[s]
             else if(h!="" && (h in hp) && hp[h]!=AMB) p=hp[h]
             else if((a in ap) && ap[a]!=AMB) p=ap[a]
-            w=$16; e=$17; c=$18; NF=15
+            w=$16; e=$17; c=$18; fl=$19; rs=$20; NF=15
             a18=""; if(s!="" && (s in sa) && sa[s]!=AMB) a18=sa[s]; if(a18=="" && (a in aa) && aa[a]!=AMB) a18=aa[a]
             d19=""; if(s!="" && (s in sdo) && sdo[s]!=AMB) d19=sdo[s]; if(d19=="" && (a in ad) && ad[a]!=AMB) d19=ad[a]
-            print $0, d, m, a18, d19, p, w, "", "", e, c   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp, 25 = the colour
+            print $0, d, m, a18, d19, p, w, "", "", e, c, fl, rs   # cols 22/23 empty (expire-files / bookend-ok), 24 = the end stamp, 25 = the colour, 26/27 = the failed-leg / resubmitted-leg flags
         }
     ' "${pda_caches[@]}" -
 fi
@@ -1759,6 +1768,18 @@ col  name       rule
                 bin/bookend-ok.sh a settled one orange (it carries a failed
                 leg) and a reverted one red. The COUNTS keep the outcome policy
                 (Waiting = OK, Expired = Error) — only the tint differs.
+ 26  failed_leg "1" when at least one leg of the File FAILED (its _transfers.tsv
+                status, col 3, is not Processed), "" otherwise (2026-09-29).
+                The Recovered rule reads it: Recovered = an OK File (not
+                Failed / Expired) with col 26 set — Automatic without col 27,
+                Manual with it. A File settled by its ok bookend
+                (bin/bookend-ok.sh) keeps "1": it had a failed leg.
+                bin/expire-files.sh and bin/bookend-ok.sh never change it
+ 27  resubmitted "1" when at least one leg carries the log's Resubmitted flag
+                (_transfers.tsv col 22 = true — an operator resubmit), ""
+                otherwise (2026-09-29). The Resubmit Ok / Error rule reads it:
+                every File with col 27 set, by its outcome. Never changed
+                after the parse either
 
 This cache never contains fabricated rows: nothing downstream appends to it.
 TLEGEND_EOF

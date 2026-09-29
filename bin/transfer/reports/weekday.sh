@@ -69,9 +69,6 @@ maxavg=$(printf '%s\n' "$agg" | grep '^WD|' | awk -F'|' 'BEGIN{m=0} $5+0>m{m=$5+
 
 {
     printf 'TITLE\tLoad by Weekday\n'
-    printf 'DESC\t%s (the delivered ones), average per day, failure rate and volume by day of week, with a load bar.\n' "$clabel"
-    printf 'INTRO\t%s by day of week (overall **%s%%** failed). "Avg/day" divides by the number of that weekday actually observed; the bar shows load relative to the busiest weekday (by average per day).\n' \
-        "$clabel" "$tot_pct"
     printf 'TABLE\tBy day of week\n'
     # FILES = the delivered (OK) count (2026-09-13, user request: one Files
     # column, no Error / OK pair, no green/red cells, no drills); the bucket
@@ -90,8 +87,6 @@ maxavg=$(printf '%s\n' "$agg" | grep '^WD|' | awk -F'|' 'BEGIN{m=0} $5+0>m{m=$5+
     done <<< "$(printf '%s\n' "$agg" | grep '^WD|' | sort -t'|' -k2,2n)"
     printf 'TOTAL\tTotal (%s weekday(s))\t\t@{class=num}%s\t\t@{class=num}%s%%\t@{class=num}%s\t\n' \
         "$n_wdays" "$tot_processed" "$tot_pct" "$tot_human"
-    printf 'NOTE\tOne row = one day of week; Files = the delivered (OK) %ss, Error %% the failures over every File of that weekday.\n' "$noun"
-    printf 'SUMMARY\tTotal %ss: %s  |  Error: %s (%s%%)  |  OK volume: %s\n' "$noun" "$tot_rec" "$tot_failed" "$tot_pct" "$tot_human"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($tot_rec $noun(s))." >&2

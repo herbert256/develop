@@ -44,6 +44,7 @@ set -euo pipefail
 # lib.sh provides the shared paths (REPORTS_DIR, SERVER_CACHE, IP_DIR, CONFIG_DIR).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../transfer/lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union / ap_union / lg_union / bl_union)
 DETAILS_DIR="$REPORTS_DIR/details"
 
 # Configured account/subscription lists: the bin/flow-manager.sh caches (data/flow-manager/,
@@ -229,25 +230,17 @@ typebase() { case $1 in
     "Remote Host") echo remote-host ;; Logical) echo logical ;; BL) echo bl ;;
     Partner) echo partner ;; Application) echo application ;; Domain) echo domain ;; esac; }
 
-# Emit "TYPE<TAB>name<TAB>count<TAB>failed<TAB>processed<TAB>ccf<TAB>ccp"
-# from the FIRST (Summary) table of each <base>.rpt. ccf/ccp are the
-# @data:coreids-{failed,processed} drill lists, reused verbatim for the drill.
+# Emit "TYPE<TAB>name<TAB>count<TAB>failed<TAB>processed" from the FIRST
+# (Summary) table of each <base>.rpt (ROW fields 2-5 — Files / Error / OK;
+# the drill lists and buckets it once lifted had no use here and went
+# 2026-09-29 with the trimmed record).
 count_lookup() {
     local tl base f
     for tl in "Account" "Subscription" "Login" "Remote Host" "Logical" "Partner" "Application" "Domain" "BL"; do
         base=$(typebase "$tl"); f="$REPORTS_DIR/$base.rpt"; [ -f "$f" ] || continue
         awk -F'\t' -v tl="$tl" '
             /^TABLE\t/ { t++ }
-            t==1 && $1=="ROW" {
-                ccf=""; ccp=""; bk=""
-                for (i=6;i<=NF;i++) {
-                    x=$i
-                    if      (x ~ /^@data:coreids-failed=/)    { sub(/^@data:coreids-failed=/,"",x);    ccf=x }
-                    else if (x ~ /^@data:coreids-processed=/) { sub(/^@data:coreids-processed=/,"",x); ccp=x }
-                    else if (x ~ /^@data:buckets=/)           { sub(/^@data:buckets=/,"",x);           bk=x }
-                }
-                print tl "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" ccf "\t" ccp "\t" bk
-            }' "$f"
+            t==1 && $1=="ROW" { print tl "\t" $2 "\t" $3 "\t" $4 "\t" $5 }' "$f"
     done
 }
 
@@ -321,20 +314,12 @@ cov_lookup() {
 # login col 14, host col 15 (the same map serves the Whitelist / IP-alias
 # rows — an in-side raw IP sits in that column), domain col 19; PARTNER =
 # col 20 ∪ col 12 over _subscriptions-partners and APPLICATION = col 18 ∪
-# col 12 over _subscriptions-apps — the union attribution every partner/application
-# consumer applies. Emits "TYPE<TAB>NAME<TAB>stamp", the name uppercased (the
-# tuple join keys case-folded).
+# col 12 over _subscriptions-apps (LOGICAL / BL likewise) — the shared union
+# sets of bin/pda-union.sh. Emits "TYPE<TAB>NAME<TAB>stamp", the name
+# uppercased (the tuple join keys case-folded).
 seen_lookup() {
     [ -f "$FILES" ] || return 0
-    awk -F'\t' -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" -v APMAP="$CONFIG_XREF/_subscriptions-apps.tsv" \
-        -v PLMAP="$CONFIG_XREF/_profiles-logicals.tsv" -v SLMAP="$CONFIG_XREF/_subscriptions-logicals.tsv" \
-        -v SBMAP="$CONFIG_XREF/_subscriptions-bl.tsv" '
-        function uni_load(f, M,   l, z, n, k) {
-            while ((getline l < f) > 0) { n = split(l, z, "\t")
-                if (n >= 2 && z[1] != "" && z[2] != "") { k = toupper(z[1])
-                    M[k] = M[k] (M[k] == "" ? "" : "\037") z[2] } }
-            close(f) }
-        BEGIN { uni_load(SPMAP, SP); uni_load(APMAP, AP); uni_load(PLMAP, PL); uni_load(SLMAP, SL); uni_load(SBMAP, SB) }
+    awk -F'\t' "${SP_AWK_V[@]}" "$SP_AWK"'
         function upd(t, nm,   k) {
             if (nm == "") return
             k = t "\t" toupper(nm)
@@ -345,15 +330,10 @@ seen_lookup() {
         {
             upd("Account", $3); upd("Subscription", $12)
             upd("Login", $14); upd("Remote Host", $15); upd("Domain", $19)
-            p = $20; if ($12 != "" && (toupper($12) in SP)) p = p (p == "" ? "" : "\037") SP[toupper($12)]
-            upds("Partner", p)
-            a = $18; if ($12 != "" && (toupper($12) in AP)) a = a (a == "" ? "" : "\037") AP[toupper($12)]
-            upds("Application", a)
-            lg = ""; if ($13 != "" && (toupper($13) in PL)) lg = PL[toupper($13)]
-            if ($12 != "" && (toupper($12) in SL)) lg = lg (lg == "" ? "" : "\037") SL[toupper($12)]
-            upds("Logical", lg)
-            b = ""; if ($12 != "" && (toupper($12) in SB)) b = SB[toupper($12)]
-            upds("BL", b)
+            upds("Partner", sp_union($20, $12))
+            upds("Application", ap_union($18, $12))
+            upds("Logical", lg_union($13, $12))
+            upds("BL", bl_union($12))
         }
         END { for (k in best) print k "\t" ts[k] }
     ' "$FILES"
@@ -377,7 +357,7 @@ tuples=$( {
     $1=="U" { useed[$2 SUBSEP toupper($3)] = 1; next }
     $1=="V" { covseen[$2 SUBSEP toupper($3)] = 1; next }
     $1=="S" { lseen[$2 SUBSEP $3] = $4; next }         # (type, NAME uppercased) -> newest _files stamp
-    $1=="C" { k=$2 SUBSEP $3; cnt[k]=$4; cf[k]=$5; cp[k]=$6; df[k]=$7; dp[k]=$8; bk[k]=$9; next }
+    $1=="C" { k=$2 SUBSEP $3; cnt[k]=$4; cf[k]=$5; cp[k]=$6; next }
     $1=="R" {
         name=$2; type=$3; sd=$4; slug=$5; seen=$6; subname=$7
         # Source/Target are subscription attributes (a From/To path): they
@@ -536,7 +516,6 @@ IFS=$'\t' read -r tsc tsf tsp <<< "$(printf '%s\n' "$tuples" | awk -F'\t' '{c+=$
         # while costing 104 KB in the row payload. The row COLOUR is @data:res.
         printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s%s%s\n", $1, $9, $2, $5, $6, $10, r, sr }'
     printf 'TOTAL\tTotal (%d rows)\t\t\t@{class=num failed}%d\t@{class=num processed}%d\t\n' "$ntot" "$tsf" "$tsp"
-    printf 'NOTE\tRow colors: **green** = last transfer OK (or, for a row with no status, one that moved files), **red** = last transfer Error or server-log errors after the last OK transfer, **orange** = configured but never seen (or moved no files); a name surfaced only in the Server logs and configured nowhere is **red**.\n'
-    printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT." >&2

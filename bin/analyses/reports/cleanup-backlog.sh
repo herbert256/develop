@@ -36,6 +36,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 source "$ROOT/bin/uc-cases.sh"    # uc_meta: which use cases are cron-triggered
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union)
 OUT="$REPORTS_DIR/cleanup-backlog.rpt"
 
 TF="$DATA/transfer/cache/_files.tsv"
@@ -56,7 +57,6 @@ fi
 
 TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT
-GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 
 # ---- the Missing-cronjobs condition, from the subscriptions export ----------
 # (the cron expressions live in .parameters, which the config caches do not
@@ -97,7 +97,7 @@ awk -F'\t' -f "$SCRIPT_DIR/../../server-inbound-addr.awk" \
 # Emits sortable rows: rank, type-order, NAME, type, alink sub-dir, reason,
 # evidence, last activity, safety text, result colour. Every class walks an
 # ordered roster (file order), the final sort(1) fixes the page order.
-awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
+awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" -v SPMAP="$SP_MAP" "$SP_AWK"'
     function jdn(y, m, d,   a2, y2, m2) { a2 = int((14 - m) / 12); y2 = y + 4800 - a2; m2 = m + 12 * a2 - 3
         return d + int((153 * m2 + 2) / 5) + 365 * y2 + int(y2 / 4) - int(y2 / 100) + int(y2 / 400) - 32045 }
     function djdn(s) { return jdn(substr(s,1,4)+0, substr(s,6,2)+0, substr(s,9,2)+0) }
@@ -125,15 +125,11 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
     FILENAME ~ /coverage\/subscriptions\.tsv$/   { CS[++ncs] = $1; CSD[toupper($1)] = $2; CSS[toupper($1)] = $3; CST[toupper($1)] = substr($5, 1, 10); next }
     FILENAME ~ /coverage\/logins\.tsv$/          { CL[++ncl] = $1; CLS[toupper($1)] = $3; CLT[toupper($1)] = substr($5, 1, 10); next }
     FILENAME ~ /coverage\/hosts\.tsv$/           { CH[++nch] = $1; CHS[toupper($1)] = $3; CHT[toupper($1)] = substr($5, 1, 10); next }
-    FILENAME ~ /_subscriptions-partners\.tsv$/   { if ($1 != "" && $2 != "") SP[toupper($1)] = SP[toupper($1)] (SP[toupper($1)] == "" ? "" : "\037") $2; next }
     FILENAME ~ /_subscriptions-ucderived\.tsv$/  { if ($1 != "" && $2 != "") UCD[toupper($1)] = $2; next }   # the derived use case of a flow with no UC name prefix
-    {   # _files.tsv: the newest log day + the partner last-seen (union rule)
+    {   # _files.tsv: the newest log day + the partner last-seen (the UNION set, bin/pda-union.sh)
         if ($4 != "" && $4 > maxd) maxd = $4
         if ($4 != "" && (mind == "" || $4 < mind)) mind = $4
-        set = $20
-        if ($12 != "" && (toupper($12) in SP)) { n = split(SP[toupper($12)], Z, "\037")
-            for (i = 1; i <= n; i++) if (index("\037" set "\037", "\037" Z[i] "\037") == 0)
-                set = set (set == "" ? "" : "\037") Z[i] }
+        set = sp_union($20, $12)
         if (set == "") next
         n = split(set, Z, "\037")
         for (i = 1; i <= n; i++) { p = Z[i]; pu = toupper(p)
@@ -224,7 +220,7 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
   "$(nul "$DATA/unknown/white.tsv")" "$SRVADDR" "$(nul "$DATA/server/cache/_subscriptions.tsv")" \
   "$(nul "$XREF/_accounts-subscriptions.tsv")" "$(nul "$XREF/_accounts-white.tsv")" \
   "$(nul "$COV/accounts.tsv")" "$(nul "$COV/subscriptions.tsv")" "$(nul "$COV/logins.tsv")" "$(nul "$COV/hosts.tsv")" \
-  "$(nul "$XREF/_subscriptions-partners.tsv")" "$(nul "$XREF/_subscriptions-ucderived.tsv")" "$TF"
+  "$(nul "$XREF/_subscriptions-ucderived.tsv")" "$TF"
 
 sv() { awk -F'\t' -v k="$1" '$1 == k { print $2 }' "$TMPD/stats.tsv"; }
 n_orphan=$(sv orphan); n_never=$(sv never); n_white=$(sv white); n_whiteips=$(sv whiteips)
@@ -236,8 +232,6 @@ ucol=green; [ -n "$maxd" ] || ucol=orange
 {
     printf 'TITLE\tCleanup backlog\n'
     printf 'DESC\tOne ranked decommission-candidate list: config-orphan accounts, subscriptions that never carried a File, whitelist addresses that never connected, cron-triggered subscriptions that can never run, and entities quiet for 45+ days — safest class first.\n'
-    printf 'INTRO\tEvery cleanup signal the site computes, merged into **one ranked list** and ordered safest-first: a **green** row was not seen anywhere in the loaded logs (its Safety cell names how many days they span) — the safest candidates, not a proof: a flow that runs less often than that window (quarterly, yearly, disaster recovery) looks exactly the same, so confirm with its owner before removing it; with no transfer log loaded nothing is green. An **orange** row had traffic once (or is a config gap) and deserves a check before acting. Each object appears once, under its safest applicable class, and every row names its evidence. The classes, in rank order: **config-orphan** (no subscription references the account — nothing can route through it), **never-any-traffic** (configured subscription, zero Files in the logs), **unused-whitelist** (%s allowed addresses not seen in the logs, grouped per allowing account), **no-cron** (a cron-triggered subscription with no cron expression can never poll — the quietest failure mode there is), and **long-quiet** (no activity for 45+ days, measured against the newest log day, %s).\n' \
-        "$n_whiteips" "$maxd"
     printf 'STAT\twhite\t%s\tFindings\n' "$n_total"
     printf 'STAT\t%s\t%s\tConfig-orphan accounts\n' "$ucol" "$n_orphan"
     printf 'STAT\t%s\t%s\tNever-seen subscriptions\n' "$ucol" "$n_never"
@@ -258,10 +252,9 @@ ucol=green; [ -n "$maxd" ] || ucol=orange
     fi
     printf 'TOTAL\tTotal (%s object(s))\t\t\t\t\t\n' "$n_total"
 
-    printf 'NOTE\tEverything here reads SOURCE data — the flow-manager config caches, the coverage TSVs, the transfer cache and the subscriptions export (the SKIP-filtered copy, the same population as every other report) — never another report, so the ranking is stable. "Never seen" for a whitelist address is the Whitelist audit'\''s rule: no transfer from that address, no server-log mention AND no inbound server connection (a server-contact-only address is NOT listed). The no-cron class is the Missing-cronjobs condition (the use-case definitions decide which UCs are cron-triggered); those subscriptions leave no trace in any log, so only the configuration can reveal them. Whitelist entries paired with no account at all are on **Config hygiene**. A partner'\''s recency uses the site-wide UNION attribution, so it matches the Entities views.\n'
     printf 'SUMMARY\tFindings: %s  |  Orphan accounts: %s  |  Never-seen subscriptions: %s  |  Unused-whitelist accounts: %s (%s addresses)  |  No cron: %s  |  Long quiet: %s\n' \
         "$n_total" "$n_orphan" "$n_never" "$n_white" "$n_whiteips" "$n_nocron" "$n_quiet"
-    printf 'FOOT\tGenerated on %s\n' "$GENDATE"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_total finding(s): $n_orphan orphan, $n_never never-seen, $n_white whitelist, $n_nocron no-cron, $n_quiet long-quiet)." >&2

@@ -180,9 +180,8 @@ flow_rows() {
     flow_rows
     printf 'TOTAL\tTotal (%s pair(s))\t\t@{class=num failed}%s\t@{class=num}100.0%%\t\t\n' "$n_pairs" "$tot_attr"
 
-    printf 'NOTE\tThe reason buckets are the **Transfer Error Reasons** buckets, verbatim, narrowed to the ERROR lines that name a flow (a connection-failure line, a partner-listing failure, or an advanced-routing line'"'"'s bracketed flow token), so the total is a subset of that report'"'"'s — whose Reasons tab also has the mix per ISO week. Server messages truncate long subscription names: a name resolving to exactly one configured subscription is shown in full (and linked); the rest appear as logged. The table always shows the full period. Click a row to expand its 10 most recent error lines.\n'
     printf 'SUMMARY\tErrors naming a flow: %s of %s  |  Subscriptions: %s  |  Pairs: %s\n' "$tot_attr" "$tot_err" "$n_flows" "$n_pairs"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_attr of $tot_err error(s) attributed, $n_flows flow(s), $n_pairs pair(s))." >&2

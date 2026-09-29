@@ -333,9 +333,6 @@ fi
     printf 'DESC\tStill-GREEN subscriptions whose last transfer succeeded but which then logged a server-log ERROR — for the subscription or a connected login, account or remote host. Warnings do not count.\n'
     printf 'KEYWORDS\tsubscription,error,warning,after last transfer,post-transfer,server log,failing,login,account,kaput,went kaput\n'
     printf 'INTRO\tSubscriptions whose **last transfer was OK** but which then logged an **Error** in the server log **after** that transfer — either the subscription itself or a connected login, account or remote host. A recent problem on a flow that last looked healthy. **Errors only** (2026-08): a Warning does not put a flow on this page — the warnings-only shape was the benign "Transfer site ID is not present in environment", which has its own report in this group.\n'
-    printf 'INTRO\t**Still green only.** The same evidence is what turns a flow RED site-wide, so a subscription this page would name that has already gone red is not an early warning any more — it is simply failing, and **Failed Subscriptions** lists every red flow with its reason. What is left here is the useful half: flows that still count as healthy and have started logging errors.%s%s\n' \
-        "$( [ "${nred:-0}" -gt 0 ] && printf ' **%s** subscription(s) were left out this run for being red already.' "$nred" || printf '' )" \
-        "$( [ "${npoll:-0}" -gt 0 ] && printf ' **%s** UC3 subscription(s) were cleared by a successful poll no older than their newest error — "0 file(s) were found" is the flow verifying itself working, the same evidence that keeps a UC3 green site-wide.' "$npoll" || printf '' )"
     if [ "$nrows" -eq 0 ]; then
         printf 'TABLE\tSubscriptions failing after last successful transfer\tnosort\tnofilter\n'
         printf 'HEAD\tSubscription\tLast OK transfer\tErrors after\tLatest error\tSource\tLatest message\n'
@@ -348,8 +345,7 @@ fi
         LC_ALL=C sort -t"$(printf '\t')" -k5,5r "$rowfile"
         printf 'TOTAL\tTotal (%d subscription(s))\t\t@{class=num failed}%d\t\t\t\n' "$nrows" "$terr"   # red like its column (2026-09-29)
     fi
-    printf 'NOTE\tSource: the server per-name Error/Warn caches for the subscription and its connected login(s), account(s) and remote host — the host only where the flow has exactly ONE configured, the same restriction the result colours use. Only **E-level** lines count and are shown; warnings are ignored. A connected account or host serves other flows too, so its Error need not concern this subscription — the Source column names the entity that logged it. Poll-backlog warnings ("Skipping the next scheduled occurrence of this task.") are excluded. Click a row to expand its 10 most recent Error/Warning lines.\n'
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Wrote $OUT ($nrows subscription(s), $terr error(s) after last OK transfer; warnings do not list)." >&2

@@ -72,7 +72,7 @@ merge_rpt() {
             else
                 n=$(_merge_pad "$c"); i=0
                 while [ "$i" -lt "$n" ]; do
-                    printf 'TABLE\t\nNOTE\tThis view has no data in this environment.\n'
+                    printf 'TABLE\t\n'
                     i=$((i + 1))
                 done
             fi
@@ -83,7 +83,7 @@ merge_rpt() {
         # tabs (the UC4 note on the UC1/2/3 pages). Any other directive after
         # that note pins it to its own block; the renderer ignores META.
         printf 'META\tmerged\t%s\n' "$#"
-        printf 'FOOT\tGenerated on %s from %s component report(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$#"
+        printf 'FOOT\n'
     } > "$out.tmp" && mv "$out.tmp" "$out"
     echo "Data written to $out ($(command grep -c '^TABLE' "$out") table(s), $# component slot(s))." >&2
 }

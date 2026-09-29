@@ -134,8 +134,6 @@ shown=$(printf '%s\n' "$agg" | awk -F'\t' -v n="$TOP_N" '$1 == "A" { c++ } END {
 
 {
     printf 'TITLE\tTransfer Patterns\n'
-    printf 'DESC\tThe row/status shape of a File (the transfers sharing it) and how often each occurs.\n'
-    printf 'INTRO\tEach **File** is the set of records sharing it — an Inbound row, an Outbound row, and any retries. Every row is one distinct pattern of **Direction / Status** lines (in order). **Legs** = rows in the pattern, **Files** = Files with that shape, **Transfers** = their records. **Protocol on** adds each leg'\''s protocol to its line ("Outbound / ssh / Processed"), which splits a shape by the way it travelled. **Last 5 files** lists the pattern'\''s most recent Files, each opening the File'\''s own page — every leg and the server log behind it, the failed-file page layout for any outcome.\n'
     printf 'TABLE\tTransfer patterns\tnosearch\tswitch=protocol:Protocol off\n'
     printf 'HEAD\tPattern\tLegs\tFiles\tTransfers\tLast 5 files\n'
     printf 'KIND\tclines\tnum\tnum\tnum\tclinks\n'
@@ -148,11 +146,7 @@ shown=$(printf '%s\n' "$agg" | awk -F'\t' -v n="$TOP_N" '$1 == "A" { c++ } END {
     printf 'RECALC\t-\t-\ts0\ts1\t-\n'
     emit_rows P
     printf 'TOTAL\tTotal (%s patterns)\t\t@{class=num}%s\t@{class=num}%s\t\n' "$npp" "$tot" "$phys"
-    if [ "$shown" -lt "$np" ]; then
-        printf 'NOTE\tShowing the top %s of %s patterns by frequency.\n' "$shown" "$np"
-    fi
-    printf 'SUMMARY\tDistinct patterns: %s (%s with the protocol)  |  Files: %s  |  Transfers: %s\n' "$np" "$npp" "$tot" "$phys"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($np pattern(s), $npp with the protocol, $tot transfer(s); $(wc -l < "$FILESIDE" | tr -d ' ') linked File(s) in $FILESIDE)." >&2

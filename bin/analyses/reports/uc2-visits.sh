@@ -82,8 +82,6 @@ fi
 
 {
     printf 'TITLE\tUC2 pickup visits\n'
-    printf 'DESC\tWhat each UC2 partner actually does when it connects: total pickups, visits that collected, two-way exchange visits (delivered and collected in one visit), delivery-only visits (the UC4 twin) and the same-connection proof — SSH sessions that both delivered and collected.\n'
-    printf 'INTRO\tA pickup account'\''s SSH logons group into **visits** (a gap of more than 30 minutes starts a new one); every visit is classified by what its window shows in the transfer log. **Pickups** counts the account'\''s pickup logons — the figure the detail page'\''s Pickup information table shows as Pickup logons (SSH). **Collected** took at least one staged file; **Collected + delivered** is a two-way exchange — the partner dropped its own files (the UC4 twin flow) AND took ours in one visit; **Delivered only** is a UC4 delivery, not a pickup, and is excluded from every pickup figure. **Same connection** is the hard evidence beside those time windows: distinct technical SSH connections (transfer-log Session IDs) in which the account **both delivered and collected** a file — the only figure the detail pages'\'' "Connection shared with UC4 drop" row fires on. The pickup and visit figures are the ACCOUNT'\''s, so they repeat on each of its UC2 subscriptions — except on an account carrying **several FE logins** (production), where they are the flow'\''s own **login'\''s**; each subscription links to its detail page, whose Pickup information table carries that flow'\''s own figures.\n'
     printf 'STAT\twhite\t%s\tUC2 flows with visits\n' "$n_rows"
     printf 'STAT\twhite\t%s\tPickups\n' "$t_p"
     printf 'STAT\tgreen\t%s\tCollected\n' "$t_c"
@@ -98,11 +96,8 @@ fi
     printf '%s\n' "$rows"
     printf 'TOTAL\tTotal (%s subscription(s))\t@{class=num}%s\t@{class=num processed}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\n' \
         "$n_rows" "$t_p" "$t_c" "$t_b" "$t_d" "$t_s" "$t_f"
-    printf 'NOTE\tThe classification is per **visit**, not per logon: an SFTP client typically opens several connections per visit, and they all inherit the visit'\''s class. **Pickups** counts the LOGONS (as on the detail pages), so it runs higher than the visit columns. A visit that collected counts as a pickup **even when it also delivered** — only delivery-only visits are excluded. **Same connection** counts SESSIONS, not visits: a two-way exchange visit whose deliveries and pickups travelled in separate connections (an SFTP client typically opens a fresh connection per operation) shows here as 0 — only a session that provably carried both directions counts, and only that figure raises the detail pages'\'' "Connection shared with UC4 drop" row. A partner collecting over **CFT/PESIT** logs no SSH visit at all, so a flow can pick files up while absent here (its Files picked up still shows on its detail page). **Files picked up** is per subscription; the pickup, visit and session columns are per ACCOUNT and repeat on each of its UC2 subscriptions.\n'
-    printf 'SUMMARY\tFlows: %s  |  Pickups: %s  |  Collected: %s  |  Two-way: %s  |  Delivered only: %s  |  Same connection: %s\n' \
-        "$n_rows" "$t_p" "$t_c" "$t_b" "$t_d" "$t_s"
     printf 'KEYWORDS\tuc2,pickup,visit,logon,collect,deliver,exchange,two-way,uc4 twin,sftp,session,same connection\n'
-    printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_rows flow(s), $t_p pickup(s): $t_c collected, $t_b two-way, $t_d delivered-only visit(s))." >&2

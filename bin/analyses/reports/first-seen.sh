@@ -38,6 +38,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union / lg_union)
 
 TF="$DATA/transfer/cache/_files.tsv"
 TT="$DATA/transfer/cache/_transfers.tsv"
@@ -49,7 +50,6 @@ OUT="$REPORTS_DIR/first-seen.rpt"
 
 BASE="$DATA/flow-manager/base"
 DET="$DATA/transfer/reports/details"
-XREF="$DATA/flow-manager/xref"
 COV="$DATA/transfer/reports/coverage"
 # the seen flags come from the coverage TSVs; the three PDA ones are
 # materialized here (idempotent — this script runs inside the
@@ -66,11 +66,6 @@ done
 for d in logicals partners subscriptions accounts logins hosts; do
     [ -f "$DET/$d/_slugmap.tsv" ] && srcs+=("$DET/$d/_slugmap.tsv")
 done
-# the subscription -> partner / logical pairs + the FlowID map
-# (_profiles-logicals): the partner and logical DATE attribution
-for f in _subscriptions-partners _subscriptions-logicals _profiles-logicals; do
-    [ -f "$XREF/$f.tsv" ] && srcs+=("$XREF/$f.tsv")
-done
 
 rm -f "$FSRPT_DIR"/*.rpt
 
@@ -86,7 +81,7 @@ rm -f "$FSRPT_DIR"/*.rpt
 # bridged the two. With no reverse DNS (2026-07) such an address stays raw in
 # col 16 and matches _hosts.tsv directly, so the alias is gone — showseen.sh
 # dropped the same bridge, and the two pages still cannot disagree.
-LC_ALL=C awk -F'\t' -v OFS='\t' '
+LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP="$PL_MAP" "$SP_AWK"'
     function dirl(d) { return (d == "in") ? "I" : (d == "out") ? "O" : (d == "both") ? "B" : "" }
     function conf(t, n, d, r,   cu) {
         cu = toupper(n)
@@ -160,27 +155,19 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     FILENAME ~ /details\/accounts\/_slugmap\.tsv$/       { smap["accounts"      SUBSEP toupper($1)] = "accounts/" $2;       next }
     FILENAME ~ /details\/logins\/_slugmap\.tsv$/         { smap["logins"        SUBSEP toupper($1)] = "logins/" $2;         next }
     FILENAME ~ /details\/hosts\/_slugmap\.tsv$/          { smap["hosts"         SUBSEP toupper($1)] = "hosts/" $2;          next }
-    FILENAME ~ /xref\/_subscriptions-partners\.tsv$/ { if ($1 != "" && $2 != "") SUBP2[toupper($1)] = SUBP2[toupper($1)] SUBSEP $2; next }
-    FILENAME ~ /xref\/_subscriptions-logicals\.tsv$/ { if ($1 != "" && $2 != "") SUBL2[toupper($1)] = SUBL2[toupper($1)] SUBSEP $2; next }
-    FILENAME ~ /xref\/_profiles-logicals\.tsv$/      { if ($1 != "" && $2 != "") PLG[toupper($1)] = $2; next }
     FILENAME ~ /_files\.tsv$/ {
         if ($4 != "") dates[$4] = 1
         FCN[$1] = $16   # connection side per CoreId, for the hosts out-gate below
-        upd("accounts", $3, $4, $5); upd("partners", $20, $4, $5)
+        upd("accounts", $3, $4, $5)
         # partner = the UNION of col 20 and the subscription'\''s configured
         # partner(s) — a both-partner file carries an empty col 20 (the parse
-        # abstains on a two-group account); cf. pda-entities.sh
-        if ($12 != "" && (toupper($12) in SUBP2)) {
-            n9 = split(substr(SUBP2[toupper($12)], 2), Z9, SUBSEP)
-            for (i9 = 1; i9 <= n9; i9++) upd("partners", Z9[i9], $4, $5)
-        }
-        # logical = the profile (col 13) through the FlowID map, UNIONED with
-        # the subscription'\''s configured logical(s) — cf. pda-entities.sh
-        if ($13 != "" && (toupper($13) in PLG)) upd("logicals", PLG[toupper($13)], $4, $5)
-        if ($12 != "" && (toupper($12) in SUBL2)) {
-            n8 = split(substr(SUBL2[toupper($12)], 2), Z8, SUBSEP)
-            for (i8 = 1; i8 <= n8; i8++) upd("logicals", Z8[i8], $4, $5)
-        }
+        # abstains on a two-group account); logical = the profile (col 13)
+        # through the FlowID map, UNIONED with the subscription'\''s
+        # configured logical(s) — the shared sets of bin/pda-union.sh
+        n9 = split(sp_union($20, $12), Z9, "\037")
+        for (i9 = 1; i9 <= n9; i9++) upd("partners", Z9[i9], $4, $5)
+        n8 = split(lg_union($13, $12), Z8, "\037")
+        for (i8 = 1; i8 <= n8; i8++) upd("logicals", Z8[i8], $4, $5)
         next
     }
     FILENAME ~ /_transfers\.tsv$/ {
@@ -223,8 +210,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     }
 ' ${srcs[@]+"${srcs[@]}"} "$TF" "$TT" \
 | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3 -k4,4 -k5,5 \
-| LC_ALL=C awk -F'\t' -v OFS='\t' -v FSD="$FSRPT_DIR" -v MAIN="$OUT.tmp" \
-      -v GENDATE="$(date '+%Y-%m-%d %H:%M:%S')" '
+| LC_ALL=C awk -F'\t' -v OFS='\t' -v FSD="$FSRPT_DIR" -v MAIN="$OUT.tmp" '
     # ---- pass B: split the sorted stream into the cell .rpts + the page spec
     function lbl(t) {
         return (t == "logicals") ? "Logical" : \
@@ -258,7 +244,6 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     }
     function pagespec(v, out, desc,   line, i, k) {
         print "TITLE\tFirst seen" > out
-        print "DESC\t" desc > out
         line = "SEEN"; for (i = 1; i <= nt; i++) line = line OFS ((tn[v SUBSEP TL[i]] + 0) - (cnt[v SUBSEP TL[i] SUBSEP "notseen"] + 0))
         print line > out
         line = "NOTSEEN"; for (i = 1; i <= nt; i++) line = line OFS (cnt[v SUBSEP TL[i] SUBSEP "notseen"] + 0)
@@ -272,7 +257,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
         }
         line = "TOTAL"; for (i = 1; i <= nt; i++) line = line OFS (tn[v SUBSEP TL[i]] + 0)
         print line > out
-        print "FOOT\tGenerated on " GENDATE > out
+        print "FOOT" > out
         close(out)
     }
     $1 == "#DATE" { alldates[$3] = 1; next }

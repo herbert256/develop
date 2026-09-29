@@ -66,23 +66,18 @@ LC_ALL=C awk -F'\t' -v DAYF="$TMP/days" -v SLTF="$TMP/slots" '
 touch "$TMP/days" "$TMP/slots"
 n_lines=$(cat "$TMP/total")
 n_days=$(wc -l < "$TMP/days" | tr -d ' ')
-d_first=$(LC_ALL=C sort "$TMP/days" | awk -F'\t' 'NR == 1 { print $1 }')
-d_last=$(LC_ALL=C sort -r "$TMP/days" | awk -F'\t' 'NR == 1 { print $1 }')
 TAB=$(printf '\t')
 
 LC_ALL=C sort -t"$TAB" -k1,1 -k2,2n "$TMP/slots" > "$SLOTS.tmp" && mv "$SLOTS.tmp" "$SLOTS"
 
 {
     printf 'TITLE\tEventQueue\n'
-    printf 'DESC\tThe server-log lines starting with "[Pesit Default] Unable to submit event AgentEvent" — the PeSIT service could not submit an agent event: per day, newest first.\n'
-    printf 'KEYWORDS\teventqueue,event queue,agentevent,unable to submit event,pesit,pesit default,queue full,server log\n'
     printf 'TABLE\tPer day\tsort=0:-1\n'
     printf 'HEAD\tDate\tLines\tFirst\tLast\n'
     printf 'KIND\ttext\tnumwarn\ttext\ttext\n'
     LC_ALL=C sort -t"$TAB" -k1,1r "$TMP/days" | cut -f2-
     printf 'TOTAL\tTotal (%s days)\t@{class=num warn}%s\t\t\n' "${n_days:-0}" "${n_lines:-0}"
-    printf 'SUMMARY\tEventQueue lines: %s  |  Days: %s  |  First: %s  |  Last: %s\n' "${n_lines:-0}" "${n_days:-0}" "${d_first:--}" "${d_last:--}"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (${n_lines:-0} EventQueue line(s) on ${n_days:-0} day(s))." >&2

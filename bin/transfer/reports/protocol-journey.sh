@@ -102,9 +102,7 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_vol <<< "$(printf '%s\n' 
 
 {
     printf 'TITLE\tProtocol Journey\n'
-    printf 'DESC\tThe ordered protocol chain of each File'\''s legs — the technical route a file takes through the platform.\n'
     printf 'KEYWORDS\tprotocol chain, route, journey, pesit, routing, ssh, ftp, last leg, stuck in staging\n'
-    printf 'INTRO\tEach File'\''s legs, in start-time order, as a **protocol chain** — consecutive repeats collapse to **proto+** (one or more), so every UC2 repeat-collect variant folds into one journey like **pesit \342\206\222 routing+ \342\206\222 ssh+**. Patterns shows the Direction/Status shape; this shows the **route**. **%s** Files: **%s** Error, **%s** OK.\n' "$tot_rec" "$tot_failed" "$tot_processed"
 
     printf 'TABLE\tFiles by protocol journey\n'
     # FILES = the delivered (OK) count (2026-09-13, user request: the Patterns
@@ -120,7 +118,6 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_vol <<< "$(printf '%s\n' 
         printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\n' "$chain" "$pr" "$human" "$sh" "$w" "$bk"
     done <<< "$(printf '%s\n' "$agg" | grep '^CHN|' | sort -t'|' -k5,5nr)"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\t\n' "$tot_processed" "$tot_vol"
-    printf 'NOTE\tFiles = the delivered (OK) Files of that journey. **?** marks a leg with no protocol logged.\n'
 
     # the last-leg table: Files (= the delivered, Processed ones — the one
     # Files column of the File journey tables, 2026-09-13), Waiting, Expired —
@@ -137,10 +134,8 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_vol <<< "$(printf '%s\n' 
         tot_del=$((tot_del + del))
     done <<< "$(printf '%s\n' "$agg" | grep '^END|' | sort -t'|' -k4,4nr)"
     printf 'TOTAL\tTotal\t@{class=num}%s\t\t\n' "$tot_del"
-    printf 'NOTE\tThe protocol each File'\''s FINAL leg used — Files = the delivered ones, beside the Waiting / Expired population. A journey ending on **routing** never left staging — the Waiting / Expired population; a healthy delivery ends on **ssh**/**ftp** (partner side) or **pesit** (CFT side). The state columns show full-period values under a narrowed date range.\n'
 
-    printf 'SUMMARY\tFiles: %s | Error: %s | OK: %s\n' "$tot_rec" "$tot_failed" "$tot_processed"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_rec File(s))." >&2

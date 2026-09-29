@@ -43,7 +43,7 @@ unset _u
 # it, which is the only reason the lookup is possible here and not in
 # bin/transfer/reports/details.sh (which runs before the server reports exist).
 # One awk builds one <slug>.txt fragment per subscription; the render loop
-# splices it in after the DESC line. An env with no status reports (production
+# splices it in after the TITLE line. An env with no status reports (production
 # configures no UC4 at all) simply gets fewer fragments.
 VERDICT_DIR=""
 _vsm="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv"
@@ -105,7 +105,7 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
         [ -e "$f" ] || continue
         base=${f##*/}; base=${base%.rpt}
         # Subscriptions open with their UCx status verdict, spliced in right
-        # after DESC so it renders under the <h1>, above every table — the same
+        # after TITLE so it renders under the <h1>, above every table — the same
         # slot the errors-after-last-transfer banner uses.
         vf=""; [ "$sub" = subscriptions ] && [ -n "$VERDICT_DIR" ] && vf="$VERDICT_DIR/$base.txt"
         # srcf walks through the optional preprocessing steps, each reading
@@ -133,7 +133,7 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
             # uc<n>-status.rpt) still carries its original line.
             # The fragment splits in two (2026-09-05, user request): its PROSE
             # (the verdict INTRO lines, everything before its first TABLE)
-            # lands after DESC as before; its TABLE block — the UC2 "Pickup
+            # lands after TITLE as before; its TABLE block — the UC2 "Pickup
             # information" table, sxs=feat — lands right after the Features
             # table, which gets the same sxs=feat, so the two render side by
             # side (Features left, Pickup right) above whatever follows.
@@ -155,7 +155,7 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
                     if (sxid == "feat") print $0 "\tsxs=feat"; else { print $0; gsub(/\tsxs=feat/, "\tsxs=" sxid, tblk) }
                     infeat = 1; next }
                 { print }
-                $1 == "DESC" && !d { if (!SKIPPROSE) printf "%s", pros; d = 1 }
+                $1 == "TITLE" && !d { if (!SKIPPROSE) printf "%s", pros; d = 1 }
                 END { if (infeat) printf "%s", tblk }' "$srcf" > "$vtmp"
             render_rpt "$vtmp" "$outdir/$base.html" "../../assets/style.css" "index.html" "TRANSFER" "" "$hslug"
             rm -f "$vtmp"

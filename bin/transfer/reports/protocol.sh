@@ -129,10 +129,8 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human <<< "$(pr
         $2 != "" && $6 + 0 > 0 { printf "ROW\t%s\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\n", $2, $3, $6, $8, $9, $10 }' || true   # a pair with no OK leg: nothing this table counts (2026-09-29)
     printf 'TOTAL\t@{colspan=2}Total\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_processed" "$tot_human"
 
-    printf 'NOTE\tCounts individual transfers (legs), not Files: one File has an Inbound row (e.g. ssh) and an Outbound row (e.g. pesit), so protocol/direction are per leg.\n'
 
     # ---- Direction x Action By (formerly direction-action.sh, absorbed 2026-07)
-    printf 'INTRO\tTransfer legs by **Direction** (Inbound/Outbound) and **Action By** — the OK legs. Counts physical **Transfers** — one per log row — so one File'\''s inbound and outbound legs count once each.\n'
 
     # (the By action by table went 2026-09-29: the subtotals of Direction x
     # action by)
@@ -144,10 +142,8 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human <<< "$(pr
         $2 != "" && $6 + 0 > 0 { printf "ROW\t%s\t%s\t%s\t@data:buckets=%s\n", $2, $3, $6, $7 }' || true   # no OK leg: nothing this table counts
     printf 'TOTAL\t@{colspan=2}Total\t@{class=num}%s\n' "$tot_processed"
 
-    printf 'NOTE\tCounts individual transfers (legs), not Files: direction and action-by are per leg (a File has an Inbound and an Outbound row).\n'
 
     # ---- Transfer mode BINARY/ASCII (formerly mode.sh, absorbed 2026-07) -----
-    printf 'INTRO\tHow transfers moved their files, from the log **Mode** column: **BINARY** vs **ASCII**. Counts are per transfer.\n'
     printf 'TABLE\t\tdrill=transfer\n'
     printf 'HEAD\tMode\tTransfers\n'
     printf 'KIND\ttext\tnum\n'
@@ -155,12 +151,11 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human <<< "$(pr
     printf '%s\n' "$agg" | grep '^MODE|' | sort -t'|' -k5,5nr | awk -F'|' '
         $2 != "" && $5 + 0 > 0 { printf "ROW\t%s\t%s\t@data:buckets=%s\n", $2, $5, $6 }' || true   # no OK leg: nothing this table counts
     printf 'TOTAL\tTotal\t@{class=num}%s\n' "$tot_processed"
-    printf 'NOTE\tCounts individual transfers (legs), not Files: Mode is a per-leg attribute.\n'
 
     # the tables' own scope — the OK legs and their bytes (2026-09-29: the
     # summary counted EVERY leg beside the OK-only volume and tables)
     printf 'SUMMARY\tOK transfers: %s  |  OK volume: %s\n' "$tot_processed" "$tot_human"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_rec record(s))." >&2

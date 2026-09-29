@@ -32,45 +32,37 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union)
 OUT="$REPORTS_DIR/partner-scorecard.rpt"
 
 TF="$DATA/transfer/cache/_files.tsv"
 TT="$DATA/transfer/cache/_transfers.tsv"
-SPMAP="$DATA/flow-manager/xref/_subscriptions-partners.tsv"
 if [ ! -f "$TF" ] || [ ! -f "$TT" ]; then
     echo "partner-scorecard: transfer caches missing; skipping." >&2
     rm -f "$OUT"
     exit 0
 fi
-[ -f "$SPMAP" ] || SPMAP=/dev/null
 
 TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT
 # pre-create the awk side outputs: with an EMPTY estate (config-only clone)
 # the main pass writes no row, and a later sort over a missing file is fatal
 : > "$TMPD/score.pre"; : > "$TMPD/stats.tsv"
-GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 
 # One pass: the SP union per CoreId, per-partner counters (Files, errors,
 # bytes, per-day counts for the trend, UC2 wait, out-endpoints, direction,
 # last seen), then the PARSED legs for the security share. END writes the
 # sortable scorecard rows and
 # the STAT figures (all explicitly ordered/sorted — no hash-order output).
-awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" '
+awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" -v SPMAP="$SP_MAP" "$SP_AWK"'
     function jdn(y, m, d,   a2, y2, m2) { a2 = int((14 - m) / 12); y2 = y + 4800 - a2; m2 = m + 12 * a2 - 3
         return d + int((153 * m2 + 2) / 5) + 365 * y2 + int(y2 / 4) - int(y2 / 100) + int(y2 / 400) - 32045 }
     function djdn(s) { return jdn(substr(s,1,4)+0, substr(s,6,2)+0, substr(s,9,2)+0) }
     function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
         while (v >= 1024 && i < 6) { v /= 1024; i++ }
         return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
-    FILENAME ~ /_subscriptions-partners\.tsv$/ {
-        if ($1 != "" && $2 != "") SP[toupper($1)] = SP[toupper($1)] (SP[toupper($1)] == "" ? "" : "\037") $2
-        next }
     FILENAME ~ /_files\.tsv$/ {
-        set = $20
-        if ($12 != "" && (toupper($12) in SP)) { n = split(SP[toupper($12)], Z, "\037")
-            for (i = 1; i <= n; i++) if (index("\037" set "\037", "\037" Z[i] "\037") == 0)
-                set = set (set == "" ? "" : "\037") Z[i] }
+        set = sp_union($20, $12)   # the partner UNION set (bin/pda-union.sh)
         if (set == "") next
         PSET[$1] = set
         err = ($2 == "Failed" || $2 == "Expired") ? 1 : 0
@@ -166,7 +158,7 @@ awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" '
             np, nsc, (tot ? 100 * t1 / tot : 0), (tot ? 100 * t3 / tot : 0), (tot ? 100 * t10 / tot : 0), gini, tot > STATS
         close(STATS)
     }
-' "$SPMAP" "$TF" "$TT"
+' "$TF" "$TT"
 
 sv() { awk -F'\t' -v k="$1" '$1 == k { print $2 }' "$TMPD/stats.tsv"; }
 n_seen=$(sv seen); n_scored=$(sv scored)
@@ -175,7 +167,6 @@ top1=$(sv top1); top3=$(sv top3); top10=$(sv top10); gini=$(sv gini)
 {
     printf 'TITLE\tPartner scorecard\n'
     printf 'DESC\tOne composite 0-100 health score per partner with at least 100 Files, built from error rate, 14-day trend, UC2 pickup wait, security posture, endpoint redundancy and recency — every component visible as its own column, worst partner first.\n'
-    printf 'INTRO\tOne number per partner relation, worst first — and every ingredient of that number in its own column, so a low score is never a mystery. The concentration boxes show why a plain count ranking misleads: the top partner alone carries **%s%%** of all Files.\n' "$top1"
     printf 'STAT\twhite\t%s\tPartners seen\n' "$n_seen"
     printf 'STAT\twhite\t%s\tScored (>= 100 Files)\n' "$n_scored"
     printf 'STAT\torange\t%s%%\tTop-1 share of Files\n' "$top1"
@@ -197,10 +188,9 @@ top1=$(sv top1); top3=$(sv top3); top10=$(sv top10); gini=$(sv gini)
             printf "TOTAL\tTotal (%d partner(s))\t\t@{class=num}%d\t\t\t@{class=num}%s\t\t\t\t\t\n", n + 0, f + 0, h }' \
         "$TMPD/score.pre"
 
-    printf 'NOTE\tThe score starts at **100 minus the Error %%** (Failed or Expired Files — the heaviest weight by far) and deducts: **0.5 points per percentage point** the last-14-days Error %% worsened against the 14 days before (capped at 15; improving never adds), **5 points** when the average UC2 partner pickup wait exceeds 24 h, up to **5 points** scaled by the share of transfer legs on a weak security parameter (ssh-rsa host key or TLSv1.2), **3 points** when everything we send the partner rides a single outbound endpoint, and **10 points** when the partner has been quiet for 14+ days — all measured against the newest log day, then clamped to 0-100. Every component sits in its own column, so the arithmetic is checkable per row. Partner attribution is the site-wide UNION rule (the subscription'\''s configured partners unioned with the parse attribution); the concentration boxes cover all seen partners, the scorecard only those with at least 100 Files.\n'
     printf 'SUMMARY\tPartners seen: %s  |  Scored: %s  |  Top-1 share: %s%%  |  Top-10 share: %s%%  |  Gini: %s\n' \
         "$n_seen" "$n_scored" "$top1" "$top10" "$gini"
-    printf 'FOOT\tGenerated on %s\n' "$GENDATE"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_scored scored partner(s) of $n_seen seen)." >&2

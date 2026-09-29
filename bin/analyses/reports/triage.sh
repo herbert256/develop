@@ -208,8 +208,6 @@ sum_n=0; sum_ok=0; sum_err=0
 {
     printf 'TITLE\tTriage\n'
     printf 'DESC\tThe ranked action list: every subscription that is red, has staged Files about to expire, or just went quiet — newest flips with the biggest history first.\n'
-    printf 'INTRO\tOne worklist instead of six symptom pages: **%s** subscription(s) currently need eyes — **%s** are **red** (last File failed, or server-log evidence after the last OK), **%s** carry staged Files at **expiry risk** (Waiting for **%s+ days**; the retention sweep deletes at ~11), and **%s** **just went quiet** (last File %s-%s days before the window end **%s** — the freshest silences). Ranked by state recency times historical weight, so the newest problems on the busiest flows come first. The per-symptom pages remain the deep-dives; the Evidence column says where to read on.\n' \
-        "${n_rows:-0}" "${n_red:-0}" "${n_risk:-0}" "$RISK_AGE" "${n_quiet:-0}" "$QUIET_LO" "$QUIET_HI" "${endd:-?}"
 
     printf 'STAT\twhite\t%s\tFlows to triage\n' "${n_rows:-0}"
     printf 'STAT\tred\t%s\tred\n' "${n_red:-0}"
@@ -232,15 +230,13 @@ sum_n=0; sum_ok=0; sum_err=0
     fi
     printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t\t\t\n' \
         "${n_rows:-0}" "$sum_n" "$sum_ok" "$sum_err" "$t_vol_h" "$t_risk_h"
-    printf 'NOTE\tRank score = **lifetime Files / (days in state + 1)** — state recency times historical weight: a flow that flipped yesterday after carrying hundreds of Files outranks one red for a month, which outranks a one-file wonder. **Days in state** counts against the last day in the data (**%s**), never the wall clock. Red-since is when the server-log evidence began where the flow is red on it, else the first failure of the current failing run. **Volume in window** is the flow'\''s volume over the loaded data window — historical throughput, not an undelivered backlog; **At expiry risk** is the staged, uncollected bytes the sweep is about to delete (expiry-risk rows only). They were one column until 2026-09-05. One row per subscription, priority red > expiry-risk > just-went-quiet; the symptoms mention any second condition. This page is an ADDITION: **Failed Subscriptions** (Last green day, Days red, Failures in a row), **Went quiet**, **Waiting**, **Expired** and the **Boxes** pages remain the per-symptom deep-dives — the Evidence column points the way.\n' \
-        "${endd:-?}"
     printf 'LINK\tfailed.html\tFailed Subscriptions — the red worklist, with the Last green day and Days red of every run\n'
     printf 'LINK\t../transfer/went-quiet-subscriptions.html\tWent quiet — every silence, not just the fresh ones\n'
     printf 'LINK\t../transfer/waiting.html\tWaiting — staged Files, expiries and pickup waits\n'
     printf 'LINK\t../analyses/subscriptions-in-boxes.html\tSubscriptions in boxes — every flow sorted into its box\n'
     printf 'SUMMARY\tTriage: %s flow(s) — %s red, %s expiry risk, %s just went quiet  |  Window ends: %s\n' \
         "${n_rows:-0}" "${n_red:-0}" "${n_risk:-0}" "${n_quiet:-0}" "${endd:-?}"
-    printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (${n_rows:-0} flow(s): ${n_red:-0} red, ${n_risk:-0} expiry risk, ${n_quiet:-0} just quiet)." >&2

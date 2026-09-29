@@ -36,8 +36,10 @@ fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Pass 1 = _files.tsv: outcome, start day, subscription and sortkey per
-# CoreId, plus the per-subscription/per-day Files totals (the context
-# columns). Pass 2 = _transfers.tsv, failed legs only: a failed leg of an
+# CoreId, the resubmitted-leg flag (col 27, the Manual split), plus the
+# per-subscription/per-day Files totals (the context columns). Pass 2 =
+# _transfers.tsv, failed legs only (it stays: the PROTOCOL of the failed leg
+# and the per-leg counts are not in _files.tsv): a failed leg of an
 # OK File marks the File recovered (counted once), its protocol counted
 # per distinct (File, protocol); every failed leg also feeds the
 # per-protocol context, so Healed % is healed legs over ALL failed legs
@@ -50,16 +52,16 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         s=$12; if(s=="") s="-"
         fday[c]=d; fsite[c]=s
         if($2!="Failed" && $2!="Expired"){ okf[c]=1; fsk[c]=$6; ftm[c]=$5 }
+        # HOW the File recovered (2026-09-12, user request — the Top view'\''s
+        # Automatic / Manual rule): a leg carrying Resubmitted=true (on ANY
+        # leg — the delivering one included) makes it a manual RESUBMIT, every
+        # other recovered File an automatic RETRY — col 27, the parse'\''s
+        # resubmitted-leg flag (2026-09-29; a _transfers.tsv test until then).
+        # The split is decided in END.
+        if($27=="1") rsb[c]=1
         sc[s]++; scd[s SUBSEP d]++; dayc[d]++; tFC++
         next
     }
-    # HOW the File recovered (2026-09-12, user request — the Top view'\''s
-    # Automatic / Manual rule): a leg carrying Resubmitted=true (col 22, the
-    # OPERATOR resubmit flag, on ANY leg — the delivering one included) makes
-    # it a manual RESUBMIT, every other recovered File an automatic RETRY.
-    # Marked on every leg before the Processed skip; the split is decided in
-    # END, once all the legs of a File are in.
-    $22=="true" && ($1 in fday) { rsb[$1]=1 }
     $3=="Processed" { next }
     {   # a FAILED leg
         c=$1; if(!(c in fday)) next
@@ -139,9 +141,7 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
 
 {
     printf 'TITLE\tRecovered files\n'
-    printf 'DESC\tThe Files that carried a failed transfer leg yet still finished OK — a retry delivered them: which subscriptions have them, which protocols the healed failures happened on, and on what days.\n'
     printf 'KEYWORDS\trecovered, retry, healed, self-healing, failed leg, retries, resilience, per subscription, per protocol, per day\n'
-    printf 'INTRO\tA **recovered File** carried at least one FAILED transfer leg and still finished **OK** — a retry delivered it, so it sits under Files/Ok on the Top view while its failed legs sit under Transfers/Error. The same rule and the same figures as the Top view'\''s **Recovered** columns (Automatic + Manual), the home page'\''s Cured cell and the subscription detail pages (OK per the site-wide outcome policy: Processed or Waiting; everything on the File'\''s START day). **How** it recovered is split in every table: **Retry** = the platform'\''s own automatic retry delivered it; **Resubmit** = an operator resubmitted it (a leg carries the Resubmitted flag) — the Top view'\''s Automatic and Manual. Three breakdowns: which **subscriptions** have it, which **protocols** the healed failures happened on, and on what **days**. Click a row for its 10 most recent recovered Files.\n'
     # every box carries its per-day payload so the values follow the From/To
     # range (report.js recalcStats; the full range restores the baked figures)
     printf 'STAT\torange\t%s\tRecovered Files\t@data:tok=sum\t@data:sb=%s\n' "$tR" "$sbr"
@@ -163,7 +163,6 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     printf '%s\n' "$agg" | grep '^SUB|' | sort -t'|' -k3,3nr -k2,2 | awk -F'|' '
         $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:coreids=%s\n", $2, $3, ($4 > 0 ? $4 : ""), ($5 > 0 ? $5 : ""), $6, $7, $8, $9 }' || true
     printf 'TOTAL\tTotal\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t@{class=num}%s%%\n' "$tR" "$tA" "$tM" "$sFC" "$sshare"
-    printf 'NOTE\t**Retry** and **Resubmit** split Recovered by HOW the File got through: Retry = the platform'\''s automatic retry delivered it, Resubmit = an operator resubmitted it (one of its legs carries the Resubmitted flag) — the Top view'\''s Automatic and Manual. **Recovered %%** = the share of that subscription'\''s Files (in the whole loaded window) that needed a retry to get through — a high share on a busy flow points at a flaky endpoint that succeeds on the second try. The Files column counts ALL of the subscription'\''s Files, whatever their outcome; only subscriptions with at least one recovered File are listed.\n'
 
     printf 'TABLE\tPer protocol\tzerohide=0\ttab=recfiles\n'
     printf 'HEAD\tProtocol\tRecovered\tAutomatic\tManual\tFailed legs healed\tFailed legs\tHealed %%\n'
@@ -176,7 +175,6 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     # so Retry + Resubmit could exceed Recovered on the same footer)
     tbk=$(printf "%s\n" "$agg" | awk -F"|" "\$1 == \"TB\" { print \$2; exit }")
     printf 'TOTAL\tTotal\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s%%%s\n' "$tR" "$tA" "$tM" "$pHL" "$pAF" "$hshare" "${tbk:+$'\t'@data:buckets=$tbk}"
-    printf 'NOTE\tThe protocol is the FAILED leg'\''s — where the healed failure actually happened, not what finally delivered the File. A File whose failed legs span two protocols counts once under each, so the Recovered column (and its Retry / Resubmit split — how the File got through, the Top view'\''s Automatic and Manual) can sum past the %s distinct Files. **Healed %%** = failed legs belonging to recovered Files over ALL failed legs of that protocol (recovered or not) — how often a failure on that protocol turns out to be transient.\n' "$tR"
 
     printf 'TABLE\tPer day\tpct=5:2:1\ttab=recfiles\n'
     printf 'HEAD\tDate\tFiles\tRecovered\tAutomatic\tManual\tShare %%\n'
@@ -184,10 +182,8 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     printf '%s\n' "$agg" | grep '^DAY|' | sort -t'|' -k2,2r | awk -F'|' '
         $2 != "" { printf "ROW\t@{href=../day/%s.html}%s\t%s\t%s\t%s\t%s\t%s%%\t@data:coreids=%s\n", $2, $2, $3, $4, ($5 > 0 ? $5 : ""), ($6 > 0 ? $6 : ""), $7, $8 }' || true
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s%%\n' "$dFC" "$tR" "$tA" "$tM" "$dshare"
-    printf 'NOTE\tOnly days with at least one recovered File are listed (the Top view shows every day); the Date cell opens that day'\''s page. Days are the File'\''s START day, so the figures line up with the Top view'\''s Recovered columns exactly — Retry is its Automatic, Resubmit its Manual.\n'
 
-    printf 'SUMMARY\tRecovered Files: %s (%s%% of %s)  |  Automatic: %s  |  Manual: %s  |  Failed legs healed: %s\n' "$tR" "$oshare" "$tFC" "$tA" "$tM" "$thl"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tR recovered file(s))." >&2

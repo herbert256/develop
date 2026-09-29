@@ -75,7 +75,6 @@ HD='function hd(s) { if (s < 90) return sprintf("%d s", s)
 
 {
     printf 'TITLE\tUC4 to UC2\n'
-    printf 'DESC\tFiles a partner delivered on a UC4 subscription that the same-named UC2 subscription then collected with the same login: the delivered file did not move on to the CFT in time.\n'
     printf 'KEYWORDS\tuc4 to uc2,uc4,uc2,collected back,picked up,pickup,delivered,same file name,same login,cft,staging,twin\n'
     # tab=uc4uc2 (2026-09-29): both tables ride ONE tab of File in - File out
     printf 'TABLE\tPer subscription pair\twide\tnofilter\ttab=uc4uc2\n'
@@ -96,8 +95,7 @@ HD='function hd(s) { if (s < 90) return sprintf("%d s", s)
     printf 'KIND\tfile\tlogin\tsite\ttext\tsite\ttext\ttext\ttext\ttext\n'
     LC_ALL=C sort -t"$TAB" -k12,12r "$TMP/pairs" | awk -F'\t' "$HD"'
         { printf "ROW\t%s\t%s\t%s\t%s %s\t%s\t%s %s\t%s\t@{class=mono}%s\t@{class=mono}%s\n", $4, $3, $1, $5, $6, $2, $7, $8, hd($9), $10, $11 }'
-    printf 'SUMMARY\tUC4 to UC2 Files: %s\n' "${np:-0}"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (${np:-0} UC4 to UC2 File(s))." >&2

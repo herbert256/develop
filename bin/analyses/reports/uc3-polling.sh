@@ -91,7 +91,6 @@ fi
 
 {
     printf 'TITLE\tUC3 polling\n'
-    printf 'DESC\tThe polling evidence behind the UC3 status — polls per subscription, listing failures, the configured cron schedules against what the log observed, and the schedules that never complete a poll.\n'
     # ---- (a)+(b): remote-poll.rpt's TABLE blocks, verbatim (+ tab=uc3) ------
     if [ -f "$RP" ]; then
         awk -F'\t' '
@@ -103,7 +102,6 @@ fi
         ' "$RP"
     else
         printf 'TABLE\tPolls by subscription\ttab=uc3\n'
-        printf 'NOTE\tNo remote-poll lines ("Applying the search pattern … for transfer site …") in the loaded server log of this environment — no poll ran, or the export holds none.\n'
     fi
     # ---- (c) Configured cronjobs ------------------------------------------
     if [ -f "$SUBJSON" ]; then
@@ -116,8 +114,6 @@ fi
         printf 'KIND\tmono\tmono\ttext\ttext\tnum\tnum\n'
         [ -n "$crows" ] && printf '%s\n' "$crows"
         printf 'TOTAL\tTotal (%s cronjobs)\t\t\t\t@{class=num}%s\t\n' "$total" "$([ "${sumpolls:-0}" = 0 ] || printf '%s' "$sumpolls")"
-        printf 'NOTE\tThe client polling schedules in subscriptions.json, joined against what actually happens. Where we are the **client** and pull from the partner (**UC3**, and the pull side of UC5), SecureTransport connects to the server of the partner on a timer and collects whatever is waiting; the schedule is a Quartz cron expression (sec min hour day-of-month month day-of-week — reference below), translated to plain English in the **Schedule** column. UC1 is a client use case too, but pushes on directory scanning — no cron. All schedules are enabled; none skip holidays. Rows are tinted by the result of the subscription — **green** OK, **orange** never seen, **red** Error.\n'
-        printf 'NOTE\t**Observed** says when the schedule actually fires — from the poll lines of the server log where they exist (the **Polls by subscription** table above: the median of the FIRST poll of each day (the first and the last active day left out — the export window cuts into both), ± one standard deviation; a schedule firing more than 3× a day has no single slot and shows its poll rate instead), else from the file arrivals: slots marked **· files** fall back to the transfer **Punctuality** report (the same model over file arrivals). Matching is name-prefix, both ways (the server truncates long site names). A **-** means no poll and no File in the loaded logs — the schedule never fires. A **dark red** Observed cell contradicts its schedule: the observed slot sits off the scheduled time, the poll rate is more than 3× off the expected one, or a continuous schedule is only seen firing a few times a day.\n'
         printf 'LINK\thttps://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html\tQuartz cron trigger reference\n'
         # ---- (d) Schedules that never complete a poll ----------------------
         if [ -n "$xrows" ]; then
@@ -127,11 +123,9 @@ fi
             printf 'KIND\tmono\tnum\tnum\ttext\n'
             printf '%s\n' "$xrows" | cut -f4-
             printf 'TOTAL\tTotal (%s subscription(s))\t@{class=num}%s\t@{class=num}%s\t\n' "$x_n" "$([ "$x_st" = 0 ] || printf '%s' "$x_st")" "$([ "$x_fail" = 0 ] || printf '%s' "$x_fail")"
-            printf 'NOTE\tThe **%s** schedule(s) whose Observed column shows **-**: the server log holds **no completed poll** for them. Most DO fire — their setup lines appear right on the scheduled minutes (**Poll starts**) — but the poll dies before the listing. **What goes wrong** is the dominant failure line the server log pairs with the flow; **Failure lines** counts them all.\n' "$x_n"
-            printf 'NOTE\tConnection and listing failures name the subscription in the log and are counted directly. **Authentication failures name only host + user**, so they are matched through the configured host of the subscription and can be shared between the flows of that host. A row with neither starts nor failure lines never fires at all in the loaded logs. The evidence comes from the same server-log pass as the Polls by subscription table above.\n'
         fi
     fi
-    printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($(command grep -c '^TABLE' "$OUT") table(s): polls $( [ -f "$RP" ] && echo copied || echo absent ), $total cronjob(s))." >&2

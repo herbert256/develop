@@ -84,7 +84,6 @@ rows_of() {   # $1 the list
         h = "href=../files/" $2 ".html,"
         printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t%s\t%s%s\n", h, $1, $7, h, $1, $3, h, $1, $5, h, $1, $2, $4, $6, ($8 ~ /^(green|orange|red)$/ ? "\t@data:res=" $8 : "") }'
 }
-GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 {
     printf 'TITLE\tLongest Files\n'
     printf 'DESC\tThe %s longest delivered Files by wall-clock duration, each opening its File page.\n' "$TOP_N"
@@ -94,9 +93,8 @@ GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
     printf 'KIND\ttext\ttext\ttext\tmono\tsite\tfile\n'
     rows_of "$slow_ok"
     printf 'TOTAL\tTop %s of %s Files\t\t\t\t\t\n' "$shown_ok" "$n_ok"
-    printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); its duration is the wall-clock span of those records, so it includes the store-and-forward wait inside SecureTransport and any retry idle. Delivered (Processed) Files only — the failed, expired and still-waiting ones are left out (2026-09-13). Every listed File has a File page.\n'
     printf 'KEYWORDS\tduration,longest,slowest,slow,top,wall-clock,record,coreid,transfer\n'
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$GENDATE" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($shown_ok of $n_ok delivered Files)." >&2

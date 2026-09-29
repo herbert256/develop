@@ -25,6 +25,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (bl_union — the BL set)
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/not-in-flow-manager.rpt"
 
@@ -62,7 +63,7 @@ fi
 awk -F'\t' \
     -v ACC="$f_accounts" -v SUB="$f_subscriptions" -v LOG="$f_logins" -v HST="$f_hosts" \
     -v WHT="$f_white" -v LGC="$f_logicals" -v PTN="$f_partners" -v APP="$f_apps" -v DOM="$f_domains" -v BLB="$f_bl" \
-    -v PLM="$CONFIG_XREF/_profiles-logicals.tsv" -v SBLM="$CONFIG_XREF/_subscriptions-bl.tsv" '
+    -v PLM="$CONFIG_XREF/_profiles-logicals.tsv" -v BLMAP="$BL_MAP" "$SP_AWK"'
     function load(t, f,   l, a) {
         while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") cfg[t SUBSEP toupper(a[1])] = 1 }
         close(f)
@@ -72,8 +73,6 @@ awk -F'\t' \
         load(6, LGC); load(7, PTN); load(8, APP); load(9, DOM); load(10, BLB)
         while ((getline l < PLM) > 0) { split(l, a, "\t"); if (a[1] != "" && a[2] != "") PL[toupper(a[1])] = a[2] }
         close(PLM)
-        while ((getline l < SBLM) > 0) { split(l, a, "\t"); if (a[1] != "" && a[2] != "") SBL[toupper(a[1])] = SBL[toupper(a[1])] "\037" a[2] }
-        close(SBLM)
         # configured subscription names as a LIST (prefix matching)
         while ((getline l < SUB) > 0) { split(l, a, "\t"); if (a[1] != "") SN[++ns] = toupper(a[1]) }
         close(SUB)
@@ -106,13 +105,18 @@ awk -F'\t' \
         if ($14 != "" && !((3 SUBSEP toupper($14)) in cfg)) add(3, $14)
         if ($15 != "" && $16 == "out" && !((4 SUBSEP toupper($15)) in cfg)) add(4, $15)
         if ($15 != "" && $16 == "in"  && !((5 SUBSEP toupper($15)) in cfg)) add(5, $15)
+        # logical / partner / application: the File OWN column only, NOT the
+        # shared union (bin/pda-union.sh) — on purpose: the union adds the
+        # subscription configured values, which come from Flow Manager by
+        # definition, so only the File column can name something unconfigured.
+        # BL has no File column: its set IS the configured tag map (bl_union).
         if ($13 != "" && (toupper($13) in PL)) { lg9 = PL[toupper($13)]
             if (!((6 SUBSEP toupper(lg9)) in cfg)) add(6, lg9) }
         if ($20 != "" && !((7 SUBSEP toupper($20)) in cfg)) add(7, $20)
         if ($18 != "" && !((8 SUBSEP toupper($18)) in cfg)) add(8, $18)
         if ($19 != "" && !((9 SUBSEP toupper($19)) in cfg)) add(9, $19)
-        if ($12 != "" && (toupper($12) in SBL)) { nb9 = split(substr(SBL[toupper($12)], 2), B9, "\037")
-            for (ib9 = 1; ib9 <= nb9; ib9++) if (!((10 SUBSEP toupper(B9[ib9])) in cfg)) add(10, B9[ib9]) }
+        nb9 = split(bl_union($12), B9, "\037")
+        for (ib9 = 1; ib9 <= nb9; ib9++) if (!((10 SUBSEP toupper(B9[ib9])) in cfg)) add(10, B9[ib9])
     }
     END {
         for (i = 1; i <= nk; i++) { k = ord[i]
@@ -126,7 +130,7 @@ awk -F'\t' \
     }
 ' "$FILES" \
 | LC_ALL=C sort -t$'\t' -k1,1n -k2,2nr -k3,3 \
-| awk -F'\t' -v nfiles="${#files[@]}" -v now="$(date '+%Y-%m-%d %H:%M:%S')" '
+| awk -F'\t' '
     function human(b,   u, i, v) {
         split("B KB MB GB TB PB", u, " ")
         i = 1; v = b + 0
@@ -154,10 +158,8 @@ awk -F'\t' \
     }
     END {
         printf "TOTAL\tTotal (%d rows)\t\t@{class=num}%d\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%s\t\t\n", rows+0, tf+0, te+0, to+0, human(tb+0)
-        printf "NOTE\tCounts Files — one logical transfer each. Matching is case-insensitive; a logged subscription value counts as configured when a configured subscription name **prefixes** it (the site-wide rule). **Host** rows are outbound endpoints we dialed that partners.json does not list; **Whitelist** rows are incoming source addresses that no AllowIP whitelist entry covers. A missing FlowManager export makes every logged value of that type appear here.\n"
-        printf "NOTE\tThese are the same values that render UNTINTED (no status color) on the Entities pages — FlowManager has no result for them.\n"
         printf "SUMMARY\tUnconfigured values: %d  |  Files touched: %d  |  Volume: %s\n", rows+0, tf+0, human(tb+0)
-        printf "FOOT\tGenerated on %s from %s file(s)\n", now, nfiles
+        printf "FOOT\n"
     }
 ' > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

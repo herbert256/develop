@@ -398,36 +398,44 @@ check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no UCx_ synthetic-site legs"
 n=$(awk -F'\t' '$22 == "true" { n++ } END { print n + 0 }' "$T")
 check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no resubmitted legs"
 
-# the Retry · Resubmit columns of the Entities pages (Cured 2026-09-10, split
-# 2026-09-12, user request): every entity .rpt Summary carries
-# Files·Error·OK·Retry·Resubmit (ROW $3..$7; Retry + Resubmit = the OK Files
-# that carried a failed leg — the home page Cured rule — Resubmit when a leg
-# carries Resubmitted=true, like the Top view's Automatic/Manual), the
-# rendered views show them between OK and Error, and the account totals
-# equal an independent recount of the two caches
-n=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" && ($6 + $7 > $5 + 0) { n++ } END { print n + 0 }' "data/transfer/reports/subscription.rpt" 2>/dev/null)
-check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "subscription.rpt: ${n:-?} row(s) with Retry + Resubmit > OK"
+# the Retry / Resubmit group of the Entities pages (Cured 2026-09-10, split
+# 2026-09-12, grouped 2026-09-13, user requests): Auto = an OK File with a
+# failed leg and no resubmitted leg, Ok / Error = every File with a
+# resubmitted leg, by its outcome (the Top view rule). Checked on the GROUPED
+# entities/<name>.rpt since 2026-09-29 — the classic <name>.rpt records carry
+# Files / Error / OK only: per row Auto + Ok never exceed the row's OK Files
+# (its per-day buckets date:files:in:out:ferr:…), the rendered views show the
+# group, and the account totals equal an independent recount of the two caches
+EA="data/transfer/reports/entities/account.rpt"; ES="data/transfer/reports/entities/subscription.rpt"
+n=$(awk -F'\t' '$1 == "ROW" { ok = 0
+        for (i = 2; i <= NF; i++) if (index($i, "@data:buckets=") == 1) { nb = split(substr($i, 15), B, ","); for (j = 1; j <= nb; j++) { split(B[j], z, ":"); ok += z[2] - z[5] } }
+        if ($7 + $8 > ok) n++ } END { print n + 0 }' "$ES" 2>/dev/null)
+check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "entities/subscription.rpt: ${n:-?} row(s) with Auto + Resubmit Ok > the OK Files"
 hdr=$(grep -o '<tr><th>Account</th>.*' "docs/transfer/entities/account-all.html" 2>/dev/null | head -1 | sed 's/^<tr>//; s/<\/tr>.*//; s/<th[^>]*>//g; s/<\/th>/|/g')
 check $([ "$hdr" = "Account|In|Out|Error|Error %|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|Waiting|Expired|First|Last|Days|" ] && echo 0 || echo 1) "entities/account-all.html header is '$hdr', expected the grouped layout Account|In|Out|Error|Error %|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|Waiting|Expired|First|Last|Days"
-read -r want wantm <<< "$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rs[$1] = 1; next } $3 != "" && $4 != "" && $2 != "Failed" && $2 != "Expired" && ($1 in fl) { n++; if ($1 in rs) m++ } END { print n + 0, m + 0 }' "$T" "$F" 2>/dev/null)"
-read -r got gotm <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "TOTAL" { a = $6; b = $7; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); print a + b, b + 0; exit }' "data/transfer/reports/account.rpt" 2>/dev/null)"
-check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "account.rpt Retry + Resubmit total is '${got:-absent}', an independent recount of the caches gives '${want:-?}'"
-check $([ "${gotm:-x}" = "${wantm:-y}" ] && echo 0 || echo 1) "account.rpt Resubmit total is '${gotm:-absent}', an independent recount of the caches gives '${wantm:-?}'"
-check $([ "${want:-0}" -gt "${wantm:-0}" ] && [ "${wantm:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Retry (${want:-0} cured, ${wantm:-0} resubmitted) or no Resubmit File — an Entities column is never exercised"
-# the Retry / Resubmit DRILLS (2026-09-13, user request): every summary row
-# with a Retry (Resubmit) count carries a non-empty coreids-retry
-# (coreids-resubmit) list of at most 10 entries, a row without one carries
-# an empty list, and the rendered page ships the attributes
-read -r dr1 dr2 dr3 <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 1 && $1 == "ROW" {
-        r = ""; s = ""; for (i = 8; i <= NF; i++) { if (index($i, "@data:coreids-retry=") == 1) r = substr($i, 21); if (index($i, "@data:coreids-resubmit=") == 1) s = substr($i, 24) }
-        nr = (r == "" ? 0 : split(r, a, ",")); ns = (s == "" ? 0 : split(s, b, ","))
-        if (($6 + 0 > 0) != (nr > 0) || ($7 + 0 > 0) != (ns > 0)) bad++
-        if (nr > 10 || ns > 10) big++
+read -r want wantm wante <<< "$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rs[$1] = 1; next }
+    $3 != "" && $4 != "" { ok = ($2 != "Failed" && $2 != "Expired"); if (ok && ($1 in fl) && !($1 in rs)) a++; if ($1 in rs) { if (ok) m++; else e++ } }
+    END { print a + 0, m + 0, e + 0 }' "$T" "$F" 2>/dev/null)"
+read -r got gotm gote <<< "$(awk -F'\t' '$1 == "TOTAL" { a = $7; b = $8; c = $9; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); print a + 0, b + 0, c + 0; exit }' "$EA" 2>/dev/null)"
+check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "entities/account.rpt Auto total is '${got:-absent}', an independent recount of the caches gives '${want:-?}'"
+check $([ "${gotm:-x}" = "${wantm:-y}" ] && echo 0 || echo 1) "entities/account.rpt Resubmit Ok total is '${gotm:-absent}', an independent recount of the caches gives '${wantm:-?}'"
+check $([ "${gote:-x}" = "${wante:-y}" ] && echo 0 || echo 1) "entities/account.rpt Resubmit Error total is '${gote:-absent}', an independent recount of the caches gives '${wante:-?}'"
+check $([ "${want:-0}" -gt 0 ] && [ "${wantm:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Auto (${want:-0}) or no Resubmit Ok (${wantm:-0}) File — an Entities column is never exercised"
+# the Retry / Resubmit DRILLS (2026-09-13, user request): every row with an
+# Auto / Ok / Error count carries a non-empty coreids-rauto / -rmok / -rmerr
+# list of at most 10 entries, a row without one an empty list, and the
+# rendered page ships the attributes
+read -r dr1 dr2 dr3 <<< "$(awk -F'\t' '$1 == "ROW" {
+        r = ""; s = ""; e = ""
+        for (i = 2; i <= NF; i++) { if (index($i, "@data:coreids-rauto=") == 1) r = substr($i, 21); if (index($i, "@data:coreids-rmok=") == 1) s = substr($i, 20); if (index($i, "@data:coreids-rmerr=") == 1) e = substr($i, 21) }
+        nr = (r == "" ? 0 : split(r, a, ",")); ns = (s == "" ? 0 : split(s, b, ",")); ne = (e == "" ? 0 : split(e, c, ","))
+        if (($7 + 0 > 0) != (nr > 0) || ($8 + 0 > 0) != (ns > 0) || ($9 + 0 > 0) != (ne > 0)) bad++
+        if (nr > 10 || ns > 10 || ne > 10) big++
         if (nr > 0) anyr++; if (ns > 0) anys++ }
-    END { print bad + 0, big + 0, (anyr > 0 && anys > 0) + 0 }' "data/transfer/reports/subscription.rpt" 2>/dev/null)"
-check $([ "${dr1:-1}" = 0 ] && echo 0 || echo 1) "subscription.rpt: ${dr1:-?} row(s) whose Retry/Resubmit count and drill list disagree"
-check $([ "${dr2:-1}" = 0 ] && echo 0 || echo 1) "subscription.rpt: ${dr2:-?} Retry/Resubmit drill list(s) longer than 10"
-check $([ "${dr3:-0}" = 1 ] && echo 0 || echo 1) "the sample subscription table has no Retry drill or no Resubmit drill — one of the two is never exercised"
+    END { print bad + 0, big + 0, (anyr > 0 && anys > 0) + 0 }' "$ES" 2>/dev/null)"
+check $([ "${dr1:-1}" = 0 ] && echo 0 || echo 1) "entities/subscription.rpt: ${dr1:-?} row(s) whose Auto / Resubmit count and drill list disagree"
+check $([ "${dr2:-1}" = 0 ] && echo 0 || echo 1) "entities/subscription.rpt: ${dr2:-?} Auto / Resubmit drill list(s) longer than 10"
+check $([ "${dr3:-0}" = 1 ] && echo 0 || echo 1) "the sample subscription table has no Auto drill or no Resubmit Ok drill — one of the two is never exercised"
 check $([ "$(grep -c 'data-coreids-rauto="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && [ "$(grep -c 'data-coreids-rmok="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "entities/subscription-all.html ships no Retry / Resubmit drill lists"
 # (the report.js binding of data-coreids-retry / -resubmit went 2026-09-29:
 # no page ships those lists — the Entities pages drill rauto / rmok / rmerr)
@@ -575,8 +583,19 @@ check $([ -z "$(grep -l 'data-subfiles=' docs/details/accounts/*.html docs/detai
 # an OK File with a failed or resubmitted leg, green = an OK File without —
 # and the Files tables tint their rows by it
 FC=data/transfer/cache/_files.tsv
-n=$(awk -F'\t' 'NF != 25 || $25 !~ /^(green|orange|red)$/ { n++ } END { print n + 0 }' "$FC" 2>/dev/null)
-check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_files.tsv: $n row(s) without 25 columns or a green / orange / red colour in col 25"
+n=$(awk -F'\t' 'NF != 27 || $25 !~ /^(green|orange|red)$/ { n++ } END { print n + 0 }' "$FC" 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_files.tsv: $n row(s) without 27 columns or a green / orange / red colour in col 25"
+# THE LEG FLAGS (2026-09-29): col 26 = "1" when a leg FAILED (_transfers.tsv
+# col 3 not Processed), col 27 = "1" when a leg was RESUBMITTED (col 22
+# true), "" otherwise — each must equal a recount from the legs, both must
+# be exercised, and an OK (Processed) File is orange exactly when one is set
+read -r n n26 n27 <<< "$(awk -F'\t' 'FNR == 1 { f++ } f == 1 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rs[$1] = 1; next }
+    { if (!($26 == "1" || $26 == "") || !($27 == "1" || $27 == "") || (($1 in fl) != ($26 == "1")) || (($1 in rs) != ($27 == "1"))) n++; if ($26 == "1") a++; if ($27 == "1") b++ }
+    END { print n + 0, a + 0, b + 0 }' data/transfer/cache/_transfers.tsv "$FC" 2>/dev/null)"
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_files.tsv: ${n:-?} row(s) whose col 26 / 27 leg flags disagree with a recount of _transfers.tsv (failed leg / resubmitted leg)"
+check $([ "${n26:-0}" -gt 0 ] && [ "${n27:-0}" -gt 0 ] && echo 0 || echo 1) "_files.tsv: ${n26:-0} File(s) with the failed-leg flag, ${n27:-0} with the resubmitted-leg flag — one of the two is never exercised"
+n=$(awk -F'\t' '$2 == "Processed" && (($25 == "orange") != ($26 == "1" || $27 == "1")) { n++ } END { print n + 0 }' "$FC" 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_files.tsv: $n delivered File(s) whose orange colour (col 25) disagrees with the col 26 / 27 leg flags"
 n=$(awk -F'\t' '(($2 == "Failed" || $2 == "Expired") && $25 != "red") || ($2 == "Waiting" && $25 != "orange") || ($2 == "Processed" && $25 == "red") { n++ } END { print n + 0 }' "$FC" 2>/dev/null)
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_files.tsv: $n row(s) whose col-25 colour contradicts the outcome"
 n=$(awk -F'\t' 'FNR == 1 { f++ } f == 1 { if ($3 != "Processed" || $22 == "true") hit[$1] = 1; next } $2 == "Processed" { if (($1 in hit) != ($25 == "orange")) n++; if ($25 == "orange") o++ } END { print n + 0, o + 0 }' data/transfer/cache/_transfers.tsv "$FC" 2>/dev/null)

@@ -33,7 +33,7 @@ source "$ROOT/bin/skiplist.sh"             # SKIPLIST_AWK (sl_load/sl_match) —
 
 
 awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S_SKIP" \
-    -v outdir="$REPORTS_DIR" -v now="$(date '+%Y-%m-%d %H:%M:%S')" "$SKIPLIST_AWK"'
+    -v outdir="$REPORTS_DIR" "$SKIPLIST_AWK"'
     # which skip RULE (1..nt) does value V match first? 0 = none. The rules come
     # from bin/skiplist.sh, so a value here is caught by exactly the rule that
     # dropped it at parse time — including a field-specific or regex rule, which
@@ -98,7 +98,6 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         printf "STAT\twhite\t%d\tSkipped logins\n", TL + 0 > main
         printf "STAT\twhite\t%d\tSkipped transfer log lines\n", TT + 0 > main
         printf "STAT\twhite\t%d\tSkipped server log lines\n", TV + 0 > main
-        if (nt == 0) printf "NOTE\tThe skip list (input/skip.txt) is empty — nothing was skipped.\n" > main
 
         # the per-rule counts, then one table per kind with the rule column
         printf "TABLE\tSkip rules\tnosort\tkeephead\n" > main
@@ -114,7 +113,7 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         # (bin/flow-manager.sh, 2026-09-03) — with them go their detail pages
         emit_kind(main, "logins", "Login", nlog, LOG)
         printf "SUMMARY\tSkipped: %d account(s), %d subscription(s), %d login(s), %d transfer line(s), %d server line(s) across %d value(s)\n", TA+0, TS+0, TL+0, TT+0, TV+0, nt > main
-        printf "FOOT\tGenerated on %s\n", now > main
+        printf "FOOT\n" > main
         close(main)
     }
     # one table of every skipped name of a kind, each with the rule that caught it
@@ -189,7 +188,6 @@ awk -v rowsfile="$rows_tmp" -v nraw="$nraw" '
         close(rowsfile)
         if (n == 0) printf "ROW\t@{class=desc}(none — every CoreId got a subscription attributed, none ran over http and none was an empty outbound ssh probe)\t\t\t\t\t\t\t\t\t\n"
         printf "TOTAL\tTotal (%d record(s))\t\t\t\t\t\t\t\t\t\n", n
-        printf "NOTE\tThe RAW transfer-log records of the CoreIds dropped at parse time because **no leg** carried a subscription or even an **account** (after the propagation and config/xref/flow-direction fallbacks — a record with an account is never dropped: it keeps the synthetic subscription **UCx_account** and counts everywhere except First seen and the coverage figures), because a leg ran over **http** (web-UI hand traffic, never flow traffic), or because the CoreId is an **empty ssh probe** (2026-09-08): one lone **Outbound ssh** record of **size 0** whose Application field reads **none** — no file moved, so it must not count as a one-legged Error File. Kept verbatim in data/transfer/_skipped.csv; no other report counts these. Reason **http** = the CoreId has an http leg; **empty ssh probe** = the shape above; otherwise **no subscription**.\n"
         spliced = 1
     }
     { print }

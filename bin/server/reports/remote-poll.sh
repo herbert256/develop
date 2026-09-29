@@ -277,9 +277,6 @@ done <<< "$(printf '%s\n' "$agg" | grep $'^SUB\t' | sort -t$'\t' -k4,4nr -k3,3nr
 
 {
     printf 'TITLE\tRemote Polls\n'
-    printf 'DESC\tScheduled remote-poll effectiveness per subscription — how many polls pick up files versus how many find nothing (chronic empty polling that never reaches the transfer logs).\n'
-    printf 'INTRO\t**%s** scheduled polls across **%s** subscription(s): **%s** (**%s%%**) picked up **nothing**, only **%s** returned files (**%s** files matched in total). Chronic empty polling burns schedule cycles without ever starting a transfer — none of it shows in the transfer logs. A separate table lists **%s** remote-directory **listing failure(s)** (the poll could not list the folder at all — a wrong-path problem). Sorted worst-first. Click a subscription for its 10 most recent lines.\n' \
-        "$t_polls" "$n_subs" "$t_empty" "$empty_pct" "$t_nonempty" "$t_matched" "$t_list"
 
     printf 'TABLE\tPolls by subscription\twide\n'
     printf 'HEAD\tSubscription\tPolls\tEmpty polls\tFiles matched\tEmpty %%\tFirst\tLast\n'
@@ -289,7 +286,6 @@ done <<< "$(printf '%s\n' "$agg" | grep $'^SUB\t' | sort -t$'\t' -k4,4nr -k3,3nr
     printf 'TOTAL\tTotal (%s subscription(s))\t@{class=num}%s\t@{class=num warn}%s\t@{class=num processed}%s\t@{class=num}%s%%\t\t\n' \
         "$n_subs" "$t_polls" "$t_empty" "$t_matched" "$empty_pct"
 
-    printf 'NOTE\tSource: TM "Applying the search pattern … for transfer site '\''SITE'\'': N file(s) were found of which M matched the pattern." A poll is **empty** when M = 0. Subscription names are truncated at _SCP_ to the clean name and shown as logged; a name matching a known subscription from the transfer logs links to its detail page (a chronic empty poller may never appear there). Polls/empty/matched are additive and re-total under the date filter.\n'
 
     if [ "${t_list:-0}" -gt 0 ]; then
         printf 'TABLE\tRemote directory listing failures\twide\n'
@@ -298,12 +294,9 @@ done <<< "$(printf '%s\n' "$agg" | grep $'^SUB\t' | sort -t$'\t' -k4,4nr -k3,3nr
         printf 'RECALC\t-\ts0\t-\t-\n'
         printf '%s' "$list_rows"
         printf 'TOTAL\tTotal (%s subscription(s))\t@{class=num failed}%s\t\t\n' "$n_listsubs" "$t_list"
-        printf 'NOTE\tSource: TM "Error occurred while listing files from partner SITE." The poll could not even list the remote folder — usually a wrong remote path or permissions, distinct from an empty poll (right folder, no files). Almost all are concentrated on a few subscriptions. Additive; re-totals under the date filter. Click a subscription for its 10 most recent listing errors.\n'
     fi
 
-    printf 'SUMMARY\tPolls: %s  |  Empty: %s (%s%%)  |  With files: %s  |  Listing failures: %s  |  Subscriptions: %s\n' \
-        "$t_polls" "$t_empty" "$empty_pct" "$t_nonempty" "$t_list" "$n_subs"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($t_polls poll(s), $t_empty empty, $n_subs subscription(s))." >&2

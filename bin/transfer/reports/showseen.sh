@@ -18,9 +18,9 @@
 #       the status tables' Seen figure. (Until 2026-09-29 it carried All / Seen
 #       / Not Seen tables, direction/result META lines and a whitelist
 #       coverage TSV pair — no reader was left for any of them.)
-# The seen flags and counts are lifted straight from the entity grid
-# summaries (<basename>.rpt, their FIRST table) so this and the entity
-# reports agree.
+# The seen flags and last transactions are lifted straight from the classic
+# entity records (<basename>.rpt, their FIRST table — account.sh and its
+# twins) so this and the entity reports agree.
 #
 # "Seen" match (case-insensitive, but '-' and '_' are DIFFERENT characters):
 #   accounts      — name == an account value (_transfers.tsv col 4), EXACTLY
@@ -96,26 +96,18 @@ emit_counts() {
         END { print "INTRO\tConfigured: " n+0 "  |  Seen: " nseen+0 "  |  Not seen: " n - (nseen+0) }'
 }
 
-foot() { printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"; }
+foot() { printf 'FOOT\n'; }
 
-# Parse a grid summary .rpt (its FIRST/Summary table) into one line per entity value:
-#   value<TAB>count<TAB>failed<TAB>processed<TAB>buckets<TAB>ccf<TAB>ccp
-# buckets = @data:buckets ("date:count:failed:processed:bytes,…"); ccf/ccp = the
-# @data:coreids-{failed,processed} last-10 drill lists. Show Seen reuses these so its
-# Files counts, date re-aggregation and drill match the entity report exactly.
+# Parse a classic entity .rpt (its FIRST/Summary table) into one line per entity value:
+#   value<TAB>count<TAB>failed<TAB>processed<TAB>lastf<TAB>lastp
+# lastf/lastp = the start ("date time") of the value's newest Error / OK File
+# (ROW fields 6/7 — the first entry of the former drill lists, trimmed
+# 2026-09-29), the entity's last transaction below.
 summary_lookup() {   # $1 = <basename>.rpt
     [ -f "$1" ] || return 0
     awk -F'\t' '
         /^TABLE\t/ { t++ }
-        t==1 && $1=="ROW" {
-            bk=""; cf=""; cp=""
-            for (i=6;i<=NF;i++) { x=$i
-                if      (x ~ /^@data:buckets=/)           { sub(/^@data:buckets=/,"",x);           bk=x }
-                else if (x ~ /^@data:coreids-failed=/)    { sub(/^@data:coreids-failed=/,"",x);    cf=x }
-                else if (x ~ /^@data:coreids-processed=/) { sub(/^@data:coreids-processed=/,"",x); cp=x }
-            }
-            print $2 "\t" $3 "\t" $4 "\t" $5 "\t" bk "\t" cf "\t" cp
-        }' "$1"
+        t==1 && $1=="ROW" { print $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' "$1"
 }
 
 # EXACT-match tuple builder (accounts, logins, hosts): each configured
@@ -123,7 +115,7 @@ summary_lookup() {   # $1 = <basename>.rpt
 # logged values; a seen name links to its detail page (slugmap overrides
 # honoured). Three tagged streams: C = the logged values + their counts, O = the
 # slug overrides, N = the configured names. C and O must precede N. Output:
-#   name<TAB>seen<TAB>count<TAB>failed<TAB>processed<TAB>ccf<TAB>ccp<TAB>buckets<TAB>link
+#   name<TAB>seen<TAB>count<TAB>failed<TAB>processed<TAB>lastf<TAB>lastp<TAB>link
 exact_tuples() {   # $1 grid-basename  $2 details sub-dir  $3 config cache  [$4 alias tsv: config-name -> logged-name]
     {
         summary_lookup "$REPORTS_DIR/$1.rpt" | awk -F'\t' 'NF{print "C\t" $0}'
@@ -135,7 +127,7 @@ exact_tuples() {   # $1 grid-basename  $2 details sub-dir  $3 config cache  [$4 
         # slug carries the direction suffix) — a name absent from it has no
         # page, so there is no slugify fallback: no map entry, no link.
         function pageslug(n){ return (n in ovr) ? ovr[n] : "" }
-        $1=="C" { k=toupper($2); real[k]=$2; cnt[k]=$3; fail[k]=$4; proc[k]=$5; bkt[k]=$6; cf[k]=$7; cp[k]=$8; next }
+        $1=="C" { k=toupper($2); real[k]=$2; cnt[k]=$3; fail[k]=$4; proc[k]=$5; cf[k]=$6; cp[k]=$7; next }
         $1=="O" { ovr[$2]=$3; next }
         $1=="A" { al[toupper($2)]=toupper($3); next }   # config spelling -> its logged alias (raw-IP endpoint -> PTR name)
         # N = the configured name; $4 = its base result. A name matched in the
@@ -149,7 +141,7 @@ exact_tuples() {   # $1 grid-basename  $2 details sub-dir  $3 config cache  [$4 
           if (!(k in cnt) && (k in al) && (al[k] in cnt)) mk=al[k]
           seenreal=(mk in cnt); s=(seenreal || $4=="green")?1:0   # a GREEN name with no log rows: seen, blank counts
           ps = (dsub != "") ? pageslug(seenreal ? real[mk] : name) : ""
-          print name "\t" s "\t" (seenreal?cnt[mk]:"") "\t" (seenreal?fail[mk]:"") "\t" (seenreal?proc[mk]:"") "\t" (seenreal?cf[mk]:"") "\t" (seenreal?cp[mk]:"") "\t" (seenreal?bkt[mk]:"") "\t" (ps != "" ? dsub "/" ps : "") }
+          print name "\t" s "\t" (seenreal?cnt[mk]:"") "\t" (seenreal?fail[mk]:"") "\t" (seenreal?proc[mk]:"") "\t" (seenreal?cf[mk]:"") "\t" (seenreal?cp[mk]:"") "\t" (ps != "" ? dsub "/" ps : "") }
     ' | LC_ALL=C sort
 }
 
@@ -190,26 +182,24 @@ awk -F'\t' '
 # pages (docs/coverage/, rendered by bin/build/publish.sh): one line per configured
 # name — "name<TAB>dir<TAB>seen<TAB>link<TAB>last-ts<TAB>last-outcome" — the
 # exact item set behind every Configured / Seen / Result cell. The last
-# transaction: each tuple carries the 10 most-recent failed and processed
-# Files (the ccf/ccp drill lists, newest first, "date time  id,…"); whichever
-# list's newest timestamp is later is the entity's last transaction — F when
+# transaction: each tuple carries the start ("date time") of the newest
+# failed and the newest processed File (lastf / lastp — the classic .rpt ROW
+# fields 6/7); whichever is later is the entity's last transaction — F when
 # the failed side is newer.
 coverage_items() {   # $1 = the member's type code in DIRMAP; tuples on stdin
     awk -F'\t' -v t="$1" '
-        function ts(s,   c) { c=index(s, ","); if (c) s=substr(s, 1, c-1)
-            c=index(s, "  "); return (c ? substr(s, 1, c-1) : s) }
         FNR==NR { if ($1==t) dm[toupper($2)]=$3; next }
         NF {
-            f=ts($6); p=ts($7); lastts=""; lo=""
+            f=$6; p=$7; lastts=""; lo=""
             if (f!="" || p!="") { if (p=="" || (f!="" && f>p)) { lastts=f; lo="F" } else { lastts=p; lo="P" } }
-            print $1 "\t" dm[toupper($1)] "\t" $2 "\t" $9 "\t" lastts "\t" lo
+            print $1 "\t" dm[toupper($1)] "\t" $2 "\t" $8 "\t" lastts "\t" lo
         }
     ' "$DIRMAP" -
 }
 
 # ---- the per-member outputs --------------------------------------------------
-# Reuse the entity grid summaries (<basename>.rpt) — already one row per entity
-# value with the Files count/Error/OK, @data:buckets and drill — and
+# Reuse the classic entity records (<basename>.rpt) — already one row per entity
+# value with the Files count/Error/OK and the newest Error / OK File start — and
 # match the configured account/subscription names against them. Accounts and
 # subscriptions are both 1:1 (no configured name maps to >1 value), so a plain
 # normalized (account) / prefix (subscription) join suffices.
@@ -219,7 +209,6 @@ mkdir -p "$REPORTS_DIR/coverage"
 acc_tuples=$(exact_tuples account accounts _accounts.tsv)
 {
     printf 'TITLE\tSeen — Accounts\n'
-    printf 'DESC\tConfigured accounts (partners.json) checked against the accounts that actually appear in the transfer logs.\n'
     printf '%s\n' "$acc_tuples" | emit_counts
     printf '%s\n' "$acc_tuples" | coverage_items A > "$REPORTS_DIR/coverage/accounts.tsv"
     foot
@@ -236,7 +225,7 @@ sub_tuples=$( {
 } | awk -F'\t' '
     # comprehensive slugmap: no map entry, no page, no link (see exact_tuples)
     function pageslug(n){ return (n in ovr) ? ovr[n] : "" }
-    $1=="C" { sv[++nv]=$2; svu[nv]=toupper($2); cnt[nv]=$3; fail[nv]=$4; proc[nv]=$5; bkt[nv]=$6; cf[nv]=$7; cp[nv]=$8; next }
+    $1=="C" { sv[++nv]=$2; svu[nv]=toupper($2); cnt[nv]=$3; fail[nv]=$4; proc[nv]=$5; cf[nv]=$6; cp[nv]=$7; next }
     $1=="O" { ovr[$2]=$3; next }
     $1=="N" { name=$2; if (name=="") next; nn=toupper(name); mi=0
       # the EXACT match first, then the clean sub name as a prefix of the site
@@ -247,11 +236,10 @@ sub_tuples=$( {
       if (mi==0) for (i=1;i<=nv;i++) if (index(svu[i], nn)==1 && substr(svu[i], length(nn)+1, 1) !~ /[A-Za-z0-9]/) { mi=i; break }
       seenreal=(mi>0); s=(seenreal || $4=="green")?1:0   # an unmatched GREEN: seen, blank counts (the UC3 clean-poll greens until 2026-09-28)
       ps = pageslug(seenreal ? sv[mi] : name)
-      print name "\t" s "\t" (seenreal?cnt[mi]:"") "\t" (seenreal?fail[mi]:"") "\t" (seenreal?proc[mi]:"") "\t" (seenreal?cf[mi]:"") "\t" (seenreal?cp[mi]:"") "\t" (seenreal?bkt[mi]:"") "\t" (ps != "" ? "subscriptions/" ps : "") }
+      print name "\t" s "\t" (seenreal?cnt[mi]:"") "\t" (seenreal?fail[mi]:"") "\t" (seenreal?proc[mi]:"") "\t" (seenreal?cf[mi]:"") "\t" (seenreal?cp[mi]:"") "\t" (ps != "" ? "subscriptions/" ps : "") }
 ' | LC_ALL=C sort)
 {
     printf 'TITLE\tSeen — Subscriptions\n'
-    printf 'DESC\tConfigured subscriptions (subscriptions.json) checked against the subscription values that actually appear in the transfer logs.\n'
     printf '%s\n' "$sub_tuples" | emit_counts
     printf '%s\n' "$sub_tuples" | coverage_items S > "$REPORTS_DIR/coverage/subscriptions.tsv"
     foot
@@ -263,7 +251,6 @@ echo "Data written to $REPORTS_DIR/showseen-subscriptions.rpt." >&2
 login_tuples=$(exact_tuples login logins _logins.tsv)
 {
     printf 'TITLE\tSeen — Logins\n'
-    printf 'DESC\tConfigured logins (the partners.json comm-profile login names) checked against the logins that actually appear in the transfer logs.\n'
     printf '%s\n' "$login_tuples" | emit_counts
     printf '%s\n' "$login_tuples" | coverage_items L > "$REPORTS_DIR/coverage/logins.tsv"
     foot
@@ -277,7 +264,6 @@ echo "Data written to $REPORTS_DIR/showseen-logins.rpt." >&2
 host_tuples=$(exact_tuples remote-host hosts _hosts.tsv)
 {
     printf 'TITLE\tSeen — Hosts\n'
-    printf 'DESC\tConfigured partner hosts (the partners.json comm-profile hosts) checked against the remote hosts that actually appear in the transfer logs.\n'
     printf '%s\n' "$host_tuples" | emit_counts
     printf '%s\n' "$host_tuples" | coverage_items H > "$REPORTS_DIR/coverage/hosts.tsv"
     foot

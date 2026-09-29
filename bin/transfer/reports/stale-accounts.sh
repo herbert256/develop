@@ -100,17 +100,12 @@ rows=$(printf '%s\n' "$agg" | grep '^ACC|' | LC_ALL=C sort -t'|' -k2,2r -k3,3nr 
 
 {
     printf 'TITLE\tStale Accounts\n'
-    printf 'DESC\tAccounts gone quiet: idle time compared against each account'\''s own transfer cadence.\n'
-    printf 'INTRO\t**%s** accounts total; **%s** idle for **%s+ days**, **%s** overdue by at least **2×** their own cadence. "Median gap" is the account'\''s typical spacing between active days; "Idle ÷ gap" says how many of its own cycles it has missed — a daily account idle 3 days (ratio 3.0) is more alarming than a weekly one idle 5 days (ratio 0.7).\n' \
-        "$acct_count" "$stale_count" "$STALE_DAYS" "$quiet_count"
     printf 'TABLE\tAccounts by idle time vs own cadence\twide\tnofilter\n'
     printf 'HEAD\tAccount\tFirst activity\tLast activity\tActive days\tMedian gap\tDays idle\tIdle ÷ gap\tFiles\n'
     printf 'KIND\tacct\ttext\ttext\tnum\tnum\tnum\tnum\tnum\n'
     printf '%s' "$rows"
     printf 'TOTAL\tTotal (%s accounts)\t\t\t\t\t@{class=num failed}%s stale\t@{class=num failed}%s overdue\t@{class=num}%s\n' "$acct_count" "$stale_count" "$quiet_count" "$tot_records"
-    printf 'NOTE\tOne File = all the transfers (rows) that make up one logical transfer. Days idle is relative to the most recent File across all accounts, not today. Idle %s+ days is tinted; so is an Idle ÷ gap ratio of 2 or more (two missed cycles). Accounts seen on a single day have no cadence ("-") and sort last. Files without an account attribution (platform-internal, blanked at parse time) are excluded. **This table always shows the full period** — staleness is measured against the dataset'\''s end, so narrowing the From/To range would hide exactly the stalest accounts.\n' "$STALE_DAYS"
-    printf 'SUMMARY\tAccounts: %s  |  Idle %s+ days: %s  |  Overdue vs own cadence (2x+): %s\n' "$acct_count" "$STALE_DAYS" "$stale_count" "$quiet_count"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($acct_count account(s), $stale_count stale)." >&2

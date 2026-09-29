@@ -69,7 +69,7 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 # _files.tsv is the join input; the rosters give the linked spelling. The
 # error/File page dirs are deliberately NOT deps: their .rpt files are
-# rewritten every build (a FOOT carries the run time), which would re-scan
+# rewritten every build, which would re-scan
 # the whole server cache for nothing — a page that appears later is picked
 # up on the next data change.
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
@@ -259,9 +259,8 @@ day_rows() { printf '%s\n' "$agg" | grep $'^DAY\t' | sort -t"$TAB" -k2,2 | cut -
     [ "${n_lines:-0}" -gt 0 ] && day_rows
     printf 'TOTAL\tTotal (%s day(s))\t@{class=num failed}%s\t\t\n' "${n_days:-0}" "${n_lines:-0}"
 
-    printf 'NOTE\tSource: every server-log line carrying **IO Error** (as a word, any case) or **Input/output error**; the path is the first /… token after it and the **Folder** its directory — a FlowManager folder is named **account@login**, which is where the Account and Login columns come from (a path outside FlowManager keeps an empty account unless the joined File names one). Each line is joined to the transfer log **by file name**: the File in flight at the time (the newest one starting before the error, else the first after), whose subscription and **State** the line shows — **Failed** means the route never read the file (a one-legged File), **Processed** that a retry read it and the file went through, **not logged** that no File carries that name. A File cell opens the file'"'"'s error page (or File page) when the site has one. **IO errors** counts lines; **Files** distinct file names; **Error** / **OK** distinct Files by their outcome (Waiting counts as OK, Expired as Error). Line and File counts are additive and re-total under the date filter; click a folder row for its 10 most recent lines, a line row for the verbatim message.\n'
     printf 'SUMMARY\tIO errors: %s  |  Folders: %s  |  Files in error: %s  |  Days: %s\n' "${n_lines:-0}" "${n_fold:-0}" "${n_err:-0}" "${n_days:-0}"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (${n_lines:-0} IO error line(s), ${n_fold:-0} folder(s))." >&2

@@ -99,7 +99,7 @@ if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
         printf 'KIND\ttext\n'
         printf 'ROW\tNo measurable legs in this dataset.\n'
         printf 'TOTAL\tTotal (0 rows)\n'
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "No measurable legs found — wrote empty-state $OUT." >&2
     exit 0
@@ -128,7 +128,6 @@ proto_rows=$(printf '%s\n' "$agg" | grep $'^P\t' | LC_ALL=C sort -t"$(printf '\t
     printf '%s\n' "$route_rows"
     printf 'TOTAL\tTotal (%s route(s))\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\n' \
         "$n_routes" "$t_n" "$t_vol" "$t_wire" "$t_rate"
-    printf 'NOTE\tMB/s = the route'\''s counted bytes divided by its summed leg durations (a volume-weighted rate, so one big slow file outweighs ten quick ones). The **500 ms / 1 MB floors** drop the legs whose measured rate is mostly session setup and rounding. A leg'\''s duration is the log record'\''s own wire time — the store-and-forward dwell BETWEEN legs is never in it (the Store-and-Forward report measures that). Trend: first-half vs second-half MB/s of the window; shown when both halves have at least %s Transfers.\n' "$MIN_HALF"
 
     printf 'TABLE\tPer protocol\tnofilter\n'
     printf 'HEAD\tProtocol\tTransfers\tVolume\tWire time\tMB/s\n'
@@ -136,11 +135,10 @@ proto_rows=$(printf '%s\n' "$agg" | grep $'^P\t' | LC_ALL=C sort -t"$(printf '\t
     printf '%s\n' "$proto_rows"
     printf 'TOTAL\tTotal (%s protocol(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\n' \
         "$n_protos" "$t_n" "$t_vol" "$t_wire" "$t_rate"
-    printf 'NOTE\tThe same figures rolled up per protocol — the fair baseline for a route: PeSIT throttles far below SFTP by design. `routing` is the internal store-and-forward leg between the inbound and outbound sides.\n'
 
     printf 'KEYWORDS\tthroughput, MB/s, bandwidth, speed, slow, wire time, rate, transfer speed, pesit, sftp, ssh, performance\n'
     printf 'SUMMARY\tRoutes: %s  |  Measured Transfers: %s  |  Volume: %s  |  Overall: %s MB/s\n' \
         "$n_routes" "$t_n" "$t_vol" "$t_rate"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($n_routes routes, $t_n measured Transfers, $t_rate MB/s overall)." >&2

@@ -96,9 +96,8 @@ IFS='|' read -r _ ndays busyd busyc worstd worste noisy noisyc kfrom kto <<< "$(
     printf 'TOTAL\t%s\t@{class=num}%s\t\t@{class=num}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num}%s%%\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\t\n' \
         "$total_label" "$trec" "$tinf" "$twarn" "$terr" "$tep" "$tT" "$tP" "$tS"
     printf '%s\n' "$rows"
-    printf 'NOTE\tOne row = one calendar day. Records and the Info/Warning/Error and per-component (TM/PESITD/SSHD) columns are additive — a date-filtered range re-totals them. Error %% is that day'\''s Errors ÷ Records. Warnings are tinted amber, Errors red. Click a day to expand its 10 most recent Warning/Error lines (newest first); days with none are not clickable. To see what caused a spike day, open **Error Reasons** or **Top Messages** (tabs above) and narrow their From/To to that day — this page always loads at the full range, so set the range on those tabs.\n'
     printf 'SUMMARY\tDays: %s  |  Records: %s  |  Errors: %s (%s%%)  |  Warnings: %s  |  Noisiest: %s\n' "$ndays" "$trec" "$terr" "$tep" "$twarn" "$noisy"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($ndays day(s), $trec record(s))." >&2

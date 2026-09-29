@@ -731,8 +731,6 @@ rows=$(awk -F'\t' '
 
 {
     printf 'TITLE\tUC2 status\n'
-    printf 'DESC\tEvery UC2 (partner collects from us) pickup flow, classified: files expired uncollected, partner logs in but nothing was staged, both collects and expiries, healthy, or nothing at all.\n'
-    printf 'INTRO\tEvery **UC2** (partner collects from us) pickup flow, classified by outcome. **Never collected** = staged files expired and nothing was ever collected; **No files** = the partner logs in to collect but the app never staged a file; **Both** = the partner provably collects, yet files still expired; **OK** = collected and nothing expired; **Nothing** = no collection and no expiry (quiet, CFT-collected, or only empty-handed visits). "Collects" needs proof — a collected File in the transfer log, not mere logon evidence. **Arrived** is when the app last staged a file (transfer log). Click a row for its recent server-log lines.\n'
 
     printf 'STAT\twhite\t%s\tUC2 pickup flows\n' "$(( n_never + n_nofiles + n_coll + n_ok + n_nothing ))"
     printf 'STAT\tred\t%s\tNever collected\n' "$n_never"
@@ -750,10 +748,8 @@ rows=$(awk -F'\t' '
     [ -z "$rows" ] || printf '%s\n' "$rows"   # (no blank line before TOTAL, 2026-09-29 audit)
     printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t\t\t@{class=num}%s\t\n' \
         "$(( n_never + n_nofiles + n_coll + n_ok + n_nothing ))" "$t_ef" "$t_pk"
-    printf 'NOTE\tEvery **UC2** (collect-from-us) flow, classified. **Never collected** (red): File Maintenance deleted staged files and **nothing was ever collected** — logon visits alone do not count. **No files** (amber): the partner DOES log in to collect (pickups > 0) but the app **never staged a single file** — a dormant or broken source side. **Both** (green): the partner **provably collects** (Files in the transfer log) AND the odd file still expired — both outcomes on the one flow. **OK** (green): files collected, none expired — healthy. **Nothing** (plain): no collection and no expiry — a quiet flow, one whose partner collects over CFT (which logs no SSH pickup), or one whose visits have so far come up empty. Uncollected detection stays on the retention delete on purpose — arrival + no-pickup would flag almost every pickup flow, since CFT-collecting partners never log an SSH pickup; **No files** and **OK** need the SSH signal, so they only distinguish SFTP-collecting partners (a CFT partner with no expiry lands in **Nothing**). A logon whose session only **delivered** files (the account'\''s UC4 twin flow handing files over) is not a pickup and is not counted. **Arrived** dates come from the transfer log. One row per **flow**: an account serving several UC2 flows (the hybrid production accounts) lists each with its own staged, collected and expired Files, while the **Pickups** figures are the account'\''s — the partner logs on to the account, not to a flow. On an account carrying **several FE logins**, the Pickups figures are the flow'\''s own **login'\''s** instead: each login is a different partner credential, so its logons prove nothing about the other logins'\'' flows. Click a row for its recent server-log lines.\n'
 
-    printf 'SUMMARY\tNever collected: %s  |  No files: %s  |  Both: %s  |  OK: %s  |  Nothing: %s  |  Files uncollected: %s\n' "$n_never" "$n_nofiles" "$n_coll" "$n_ok" "$n_nothing" "$t_efn"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_never never-collected, $n_nofiles no-files, $n_coll both, $n_ok ok, $n_nothing nothing, $t_efn file(s) uncollected)." >&2

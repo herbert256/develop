@@ -74,9 +74,6 @@ shown=$(printf '%s\n' "$top_ext" | grep -c '^EXT|' || true)
 
 {
     printf 'TITLE\tTransfer File Types\n'
-    printf 'DESC\tTransfers, Error/OK, volume and share per file extension.\n'
-    printf 'INTRO\t**%s** distinct file types (%s total volume). Extension is taken from the File column.\n' \
-        "$ext_count" "$tot_human"
     printf 'TABLE\tBy file type\tdrill=transfer\n'
     printf 'HEAD\tFile type\tTransfers\tError\tOK\tVolume\t%% of transfers\n'
     printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\tnum\n'
@@ -88,13 +85,7 @@ shown=$(printf '%s\n' "$top_ext" | grep -c '^EXT|' || true)
     done <<< "$top_ext"
     printf 'TOTAL\tTotal (%s of %s types)\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num}100.0%%\n' \
         "$shown" "$ext_count" "$tot_rec" "$tot_failed" "$tot_processed" "$tot_human"
-    if [ "$shown" -lt "$ext_count" ]; then
-        printf 'NOTE\tShowing the top %s file types by transfer count; %s rarer types are not listed but are included in the total.\n' \
-            "$shown" "$((ext_count - shown))"
-    fi
-    printf 'NOTE\tCounts individual transfers (legs), not Files — a file appears on both its Inbound and Outbound leg. Click an Error or OK count for that outcome'\''s 10 most recent transfers (newest first).\n'
-    printf 'SUMMARY\tFile types: %s  |  Total transfers: %s  |  Total volume: %s\n' "$ext_count" "$tot_rec" "$tot_human"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($ext_count file type(s))." >&2

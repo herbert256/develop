@@ -8,56 +8,13 @@
 # annotation pass) and the WRITER is bin/transfer/details_writer.awk — one
 # awk per entity type over the per-type slices (see the note at the bottom).
 # See details.sh for the stream protocol and section numbering.
-# ===== partner / application UNION attribution ===============================
-# A File counts for EVERY partner of its subscription (col 12 joined on
-# xref/_subscriptions-partners.tsv) UNIONED with the parse-time attribution
-# (col 20) — mirrors pda-entities.sh: a UC5 relay / both-partner file belongs
-# to BOTH organisations, and the both-partner case carries an EMPTY col 20
-# (the account maps to two groups, so the parse abstains). Likewise a File
-# counts for every application of its SUBSCRIPTION (col 12 joined on
-# xref/_subscriptions-apps.tsv — the FlowID spine, 1:1) unioned with col 18.
-# NOT the account any more (2026-08-31): a hybrid production account serves
-# many flows, so the account union credited every File of it to every
-# application the account touches.
-# And a File counts for EVERY logical flow group of its profile (col 13
-# resolved through xref/_profiles-logicals.tsv — the FlowID map) UNIONED with
-# its subscription'\''s logicals (col 12 on xref/_subscriptions-logicals.tsv).
-# And a File counts for every BL tag of its SUBSCRIPTION (col 12 on
-# xref/_subscriptions-bl.tsv — no direct column of its own).
-# sp_union()/ap_union()/lg_union()/bl_union() return the \037-joined set;
-# callers split and loop. Inject as
+# ===== partner / application / logical / BL UNION attribution ================
+# SP_MAP / AP_MAP / PL_MAP / SLG_MAP / BL_MAP + SP_AWK (sp_union / ap_union /
+# lg_union / bl_union) live in the ONE shared helper bin/pda-union.sh
+# (2026-09-29) — every report that attributes a File to its partner /
+# application / logical / BL sets sources it. Inject as
 #   awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK"'...'
-SP_MAP="$CONFIG_XREF/_subscriptions-partners.tsv"
-[ -f "$SP_MAP" ] || SP_MAP=""
-AP_MAP="$CONFIG_XREF/_subscriptions-apps.tsv"
-[ -f "$AP_MAP" ] || AP_MAP=""
-PL_MAP="$CONFIG_XREF/_profiles-logicals.tsv"
-[ -f "$PL_MAP" ] || PL_MAP=""
-SLG_MAP="$CONFIG_XREF/_subscriptions-logicals.tsv"
-[ -f "$SLG_MAP" ] || SLG_MAP=""
-BL_MAP="$CONFIG_XREF/_subscriptions-bl.tsv"
-[ -f "$BL_MAP" ] || BL_MAP=""
-SP_AWK='
-    function uni_load(f6, M6,   l6, z6, n6) { if (f6 == "") return
-        while ((getline l6 < f6) > 0) { n6 = split(l6, z6, "\t")
-            if (n6 >= 2 && z6[1] != "" && z6[2] != "")
-                M6[toupper(z6[1])] = M6[toupper(z6[1])] (M6[toupper(z6[1])] == "" ? "" : "\037") z6[2] }
-        close(f6) }
-    function uni_join(v6, k6, M6,   n6, i6, r6) {
-        r6 = v6
-        if (k6 != "" && (toupper(k6) in M6)) { n6 = split(M6[toupper(k6)], SPZ6, "\037")
-            for (i6 = 1; i6 <= n6; i6++)
-                if (index("\037" r6 "\037", "\037" SPZ6[i6] "\037") == 0)
-                    r6 = r6 (r6 == "" ? "" : "\037") SPZ6[i6] }
-        return r6 }
-    function sp_union(p6, s6) { return uni_join(p6, s6, SPX) }
-    function ap_union(a6, ac6) { return uni_join(a6, ac6, APX) }
-    function lg_union(p6, s6,   b6) { b6 = ""
-        if (p6 != "" && (toupper(p6) in PLX)) b6 = PLX[toupper(p6)]
-        return uni_join(b6, s6, SLGX) }
-    function bl_union(s6) { return uni_join("", s6, BLX) }
-    BEGIN { uni_load(SPMAP, SPX); uni_load(APMAP, APX); uni_load(PLMAP, PLX); uni_load(SLGMAP, SLGX); uni_load(BLMAP, BLX) }
-'
+source "$ROOT/bin/pda-union.sh"
 # ===== same-type RANKS (2026-09-27) ==========================================
 # The Ranking positions (aggregate_files: Files / Volume / Error rate;
 # compute_extras: Duration / Throughput) used to be counted by an all-pairs
@@ -799,7 +756,8 @@ aggregate_files() {
         if((GD1[ig]+0==3 || GD1[ig]+0==4) && ty!="PTN" && ty!="APP" && ty!="DOM" && ty!="LGC" && ty!="BL" && ty!="ACC") continue   # the Login/Host dims feed the Logical+PDA+BL+Account pages
         bump(ty,ent,GD1[ig],GD2[ig]) } }
     function flush(   v){
-      day=tdt[curcid]; if(day=="") { split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0; return }
+      day=tdt[curcid]; if(day=="") { split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); return }
+      gHADF=(curcid in thf)   # the File carried a FAILED leg (_files.tsv col 26 — the Activity per day Recovered column, 2026-08-29)
       jd=tjd[curcid]+0; sk=tsk[curcid]; disp=tdt[curcid]" "ttm[curcid]; pr2=(toc[curcid]!="Failed" && toc[curcid]!="Expired"); size=tsz[curcid]+0
       hh=""; if(ttm[curcid] ~ /^[0-9][0-9]:/) hh=substr(ttm[curcid],1,2)
       if(jd>gmax) gmax=jd
@@ -869,14 +827,15 @@ aggregate_files() {
       for(v in gLOGIN) ent_apply("LOGIN", v)
       for(v in gSITE)  ent_apply("SITE",  v)
       for(v in gHOST)  ent_apply("HOST",  v)
-      split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0 }
+      split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM) }
     BEGIN { if(ONLY!=""){ nw9=split(ONLY, W9, " "); for(iw9=1; iw9<=nw9; iw9++) WANT[W9[iw9]]=1 }
             od["ACC"]=2.8; od["SITE"]=2; od["LOGIN"]=3; od["HOST"]=4
             od["DOM"]=2.81; od["APP"]=2.82; od["LGC"]=2.83; od["PTN"]=2.84; od["BL"]=2.85   # the quad dims (the former Groups table)
             }
     FNR == 1 { fno++ }
     fno == 1 { toc[$1]=$2; tac[$1]=$3; tdt[$1]=$4; ttm[$1]=$5; tsk[$1]=$6; tjd[$1]=$7; tsz[$1]=$8; tdur[$1]=$9; tfl[$1]=$11; tmv[$1]=$17; tend[$1]=$24
-               tfd[$1]=$16; tsite[$1]=$12; tpt[$1]=sp_union($20,$12); tap[$1]=ap_union($18,$12); tlg[$1]=lg_union($13,$12); tbl[$1]=bl_union($12); tdm[$1]=$19; next }   # _files.tsv by CoreId (col 16 = connection; col 12 = subscription, for the file-movement lookup; partner/application/logical = UNION sets)
+               tfd[$1]=$16; tsite[$1]=$12; tpt[$1]=sp_union($20,$12); tap[$1]=ap_union($18,$12); tlg[$1]=lg_union($13,$12); tbl[$1]=bl_union($12); tdm[$1]=$19
+               if($26=="1") thf[$1]=1; next }   # _files.tsv by CoreId (col 16 = connection; col 12 = subscription, for the file-movement lookup; partner/application/logical = UNION sets)
     {   # _transfers.tsv, CoreId-sorted: collect the group'\''s entity & dimension values
       if($1 != curcid){ if(curcid!="") flush(); curcid=$1; g_inend=-1; g_outst=-1 }
       # store-and-forward dwell inputs (mirrors dwell-time.sh): the group'\''s
@@ -884,7 +843,6 @@ aggregate_files() {
       # Outbound start ($11 date_iso + $12 time)
       if($2=="Inbound" && $18!=""){ e5=ep_us($18); if(e5>g_inend) g_inend=e5 }
       if($2=="Outbound" && $12 ~ /^[0-9][0-9]:/){ s5=ep_iso($11,$12); if(s5>=0 && (g_outst<0 || s5<g_outst)) g_outst=s5 }
-      if($3!="Processed") gHADF=1   # the group carried a FAILED leg (the Activity per day Recovered column, 2026-08-29)
       if($5!="")  gLOGIN[$5]=1
       if($6!="")  gSITE[$6]=1
       # HOST entities are OUTBOUND endpoints only (the hosts we dial) — an

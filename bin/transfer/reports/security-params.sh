@@ -201,6 +201,10 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
                 site = F[1]; h = F[2]; c = F[3] + 0; ff = F[4] + 0; ok = F[5] + 0
                 if (!(site in SSEEN)) { SSEEN[site] = 1; SL2[++ns] = site }
                 SC[site] += c; SFF[site] += ff; SOK[site] += ok
+                # (NOT the shared sp_union of bin/pda-union.sh: the key is the
+                # per-LEG site of the group, the configured partners come FIRST
+                # — the Partner display cell order — and "(none)" books the
+                # unattributed legs)
                 pl = (toupper(site) in part) ? part[toupper(site)] : ""
                 if (h != "") {
                     inpl = 0; np = split(pl, pa, SUBSEP)
@@ -226,7 +230,7 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
     }
 ' \
   | LC_ALL=C sort -t$'\t' -k1,1n -k2,2n -k7,7nr \
-  | awk -F'\t' -v secdir="$secdir" -v gen="$(date '+%Y-%m-%d %H:%M:%S')" '
+  | awk -F'\t' -v secdir="$secdir" '
     # close the Subscription table and open the Partners one: the partners on this
     # page (a subscription with >1 partner counts under each; subscriptions with
     # no configured partner -> "(none)")
@@ -241,7 +245,7 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
         if (!ptbl) subtotal()
         printf "TOTAL\tTotal (%d partner(s))\t@{class=num}%d\t@{class=num}%d\n", pn, ps, pp > out
         printf "NOTE\tCounts individual transfers (legs) — security parameters are negotiated per leg. Full period (this page is not date-filtered). Click a subscription or partner to open its detail page. Partners use the site-wide UNION attribution: a leg counts under every partner of its subscription AND under the partner its remote host resolves to, so a subscription with more than one partner is counted under each in the Partners table.\n" > out
-        printf "FOOT\tGenerated on %s\n", gen > out
+        printf "FOOT\n" > out
         close(out)
     }
     $2 == 0 {
@@ -249,7 +253,6 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
         out = secdir "/" $3 ".rpt"
         sn = sc = sf = sp = 0; pn = ps = pc = pf = pp = 0; ptbl = 0
         printf "TITLE\tSubscriptions using %s %s\n", $4, $5 > out
-        printf "DESC\tSubscriptions that used %s \"%s\" on at least one transfer.\n", $4, $5 > out
         printf "INTRO\tEvery subscription (and its partner) that used **%s: %s** on at least one transfer leg. Counts are transfers (legs), full period.\n", $4, $5 > out
         printf "TABLE\t\n" > out                 # empty heading — the h1 names the page
         printf "HEAD\tSubscription\tPartner\tTransfers\n" > out
@@ -295,9 +298,8 @@ emit_attr_rows() {   # $1 = attribute key
         emit_attr_rows "$pk"
     done
     printf 'TOTAL\t@{colspan=2}Total\t\n'
-    printf 'NOTE\tCounts individual transfers (legs), not Files: security parameters are negotiated per leg (the Inbound and Outbound rows use different ciphers/protocols). Transfers = the OK legs; click a value for the subscriptions that use it.\n'
     printf 'SUMMARY\tTotal transfers: %s  |  Error: %s  |  OK: %s\n' "$tot_legs" "$tot_failed" "$tot_processed"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT." >&2

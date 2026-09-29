@@ -79,15 +79,12 @@ if [ "${t_tot:-0}" -eq 0 ]; then
     echo "No session-lifecycle messages found — writing an empty report." >&2
     {
         printf 'TITLE\tSSH Session Problems\n'
-        printf 'DESC\tSession lifecycle problems — sessions and channels referenced after teardown, and streams aborted mid-transfer by the client or the network. Distinct from authentication failures.\n'
     printf 'KEYWORDS\tstream abort, client stopped transfer, inactive session, channel not active, registry, network error\n'
-        printf 'INTRO\tNo session-lifecycle problem messages in this log window.\n'
         printf 'TABLE\tSession-lifecycle problems\twide\n'
         printf 'HEAD\tSignal\tOccurrences\tComponent\tFirst\tLast\n'
         printf 'KIND\ttext\tnumwarn\ttext\ttext\ttext\n'
         printf 'ROW\t@{colspan=5}No session-lifecycle problem messages in this data window.\n'
-        printf 'SUMMARY\tSession-lifecycle problems: 0\n'
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     exit 0
 fi
@@ -103,10 +100,7 @@ rows() {
 
 {
     printf 'TITLE\tSSH Session Problems\n'
-    printf 'DESC\tSession lifecycle problems — sessions and channels referenced after teardown, and streams aborted mid-transfer by the client or the network. Distinct from authentication failures.\n'
     printf 'KEYWORDS\tstream abort, client stopped transfer, inactive session, channel not active, registry, network error\n'
-    printf 'INTRO\t**%s** session-lifecycle problem message(s) across **%s** type(s). These all happen AFTER a session is established: the registry signals (a channel or session ID used past its teardown) are lifecycle/race/cleanup issues; the **stream aborts** are the partner or the network dying mid-transfer; the inactive-session messages are internal traffic arriving after teardown. None are auth failures (see Logon and SSH Key Auth for those). Worth watching if a count climbs. Click a row for its 10 most recent messages.\n' \
-        "$t_tot" "$n_cats"
 
     printf 'TABLE\tSession-lifecycle problems\twide\n'
     printf 'HEAD\tSignal\tOccurrences\tComponent\tFirst\tLast\n'
@@ -114,10 +108,8 @@ rows() {
     printf 'RECALC\t-\ts0\t-\t-\t-\n'
     rows
     printf 'TOTAL\tTotal (%s type(s))\t@{class=num warn}%s\t\t\t\n' "$n_cats" "$t_tot"
-    printf 'NOTE\tThe session IDs are opaque, so there is nothing to group by beyond the message type. The stream-abort line does not name the culprit — the drill lines carry the session context. Occurrences are additive and re-total under the date filter. Click a signal for its 10 most recent messages.\n'
 
-    printf 'SUMMARY\tSession-lifecycle problems: %s across %s type(s)\n' "$t_tot" "$n_cats"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($t_tot message(s), $n_cats type(s))." >&2

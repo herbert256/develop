@@ -85,7 +85,6 @@ IFS='|' read -r _ pair_count chronic_count tot_fail tot_proc <<< "$(printf '%s\n
 # guard a clean window kills the script (a zero-match grep exits 1 under
 # set -euo pipefail); the row loop below already skips blank lines.
 top=$(printf '%s\n' "$agg" | grep '^PAIR|' | sort -t'|' -k2,2n -k3,3nr | awk -v n="$TOP_N" 'NR<=n' || true)
-shown=$(printf '%s\n' "$top" | grep -c '^PAIR|' || true)
 
 # The TOTAL line used to come from a second awk pass over the row text; the
 # four columns it summed are all %d integers, so bash adds them up as the rows
@@ -94,9 +93,6 @@ n_rows=0; sum_failures=0; sum_successes=0; sum_resubs=0
 
 {
     printf 'TITLE\tRepeat Failures\n'
-    printf 'DESC\tAccount/subscription flows by failed-leg count, with OK legs, resubmissions and last-failure time.\n'
-    printf 'INTRO\t**%s** account/subscription flows failed at least once; **%s** never succeeded in this window. %s failures vs %s successes overall.\n' \
-        "$pair_count" "$chronic_count" "$tot_fail" "$tot_proc"
     printf 'TABLE\tFailing flows\twide\tdrill=transfer\n'
     printf 'HEAD\tAccount\tSubscription\tFail days\tError transfers\tOK transfers\tResubmitted\tLast failure\n'
     printf 'KIND\tacct\tsite\tnum\tnumfailed\tnumprocessed\tnum\ttext\n'
@@ -117,14 +113,7 @@ n_rows=0; sum_failures=0; sum_successes=0; sum_resubs=0
     # Blank is the house pattern for a/c/d/q/x-token total cells (cf. weekday).
     printf 'TOTAL\tTotal (%d rows)\t\t\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%d\t\n' \
         "$n_rows" "$sum_failures" "$sum_successes" "$sum_resubs"
-    if [ "$shown" -lt "$pair_count" ]; then
-        printf 'NOTE\tShowing the top %s of %s failing flows (never-succeeded first, then by failure count). "Fail days" is the number of distinct days the flow failed on; "Resubmitted" counts rows flagged as resubmissions. Error and OK transfers count individual legs, so a failed leg later re-sent successfully appears on both sides — the File-level reports fold such intra-File recoveries into one OK File (the delivered rule). Click an Error or OK transfers count for that outcome'\''s 10 most recent transfers (newest first).\n' \
-            "$shown" "$pair_count"
-    else
-        printf 'NOTE\t"Fail days" is the number of distinct days the flow failed on; a flow with no OK transfers never succeeded in the range. "Resubmitted" counts rows flagged as resubmissions. Error and OK transfers count individual legs, so a failed leg later re-sent successfully appears on both sides — the File-level reports fold such intra-File recoveries into one OK File (the delivered rule). Click an Error or OK transfers count for that outcome'\''s 10 most recent transfers (newest first).\n'
-    fi
-    printf 'SUMMARY\tFailing flows: %s  |  Never succeeded: %s  |  Total failures: %s\n' "$pair_count" "$chronic_count" "$tot_fail"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($pair_count failing flow(s), $chronic_count never succeeded)." >&2

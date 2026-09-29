@@ -68,6 +68,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../transfer/lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union / ap_union / lg_union / bl_union / uni_join)
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/entity-coverage.rpt"
 
@@ -108,7 +109,6 @@ SPECS=(
     "bl:BL:_bl:_bl-subscriptions:_subscriptions-bl:_accounts-bl:12:bl"
 )
 
-now=$(date '+%Y-%m-%d %H:%M:%S')
 ASF="$CONFIG_XREF/_accounts-subscriptions.tsv"; [ -f "$ASF" ] || ASF=/dev/null   # the logon-proof composition (see the awk)
 TMPD=$(mktemp -d "${TMPDIR:-/tmp}/axecov.XXXXXX")
 trap 'rm -rf "$TMPD"' EXIT
@@ -127,16 +127,9 @@ cov_view() {
     [ -f "$SE" ] || SE=/dev/null
     ident=0
     if [ "$ae" = "-" ]; then ident=1; AE=/dev/null; elif [ ! -f "$AE" ]; then AE=/dev/null; fi
-    # the Logical view's direct column holds the FlowID, the BL view's the
-    # subscription — each resolves through its map
-    VMAP=""
-    case $_key in
-        logical) [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv" ;;
-        bl)      [ -f "$CONFIG_XREF/_subscriptions-bl.tsv" ] && VMAP="$CONFIG_XREF/_subscriptions-bl.tsv" ;;
-    esac
-    awk -F'\t' -v EB="$EB" -v SB="$SB" -v ES="$ES" -v SE="$SE" -v AE="$AE" -v VMAP="$VMAP" -v ASF="$ASF" \
+    awk -F'\t' -v EB="$EB" -v SB="$SB" -v ES="$ES" -v SE="$SE" -v AE="$AE" -v KEY="$_key" -v ASF="$ASF" \
         -v AUTH="$AUTH" -v POLL="$POLL" -v AUTHL="$AUTHL" -v AUTHLOK="$AUTHLOK" -v LSF2="$LSF2" -v ALF2="$ALF2" \
-        -v FCOL="$fcol" -v IDENT="$ident" '
+        -v FCOL="$fcol" -v IDENT="$ident" "${SP_AWK_V[@]}" "$SP_AWK"'
         function stripattr(v) { sub(/^@\{[^}]*\}/, "", v); return v }
         function yn(b) { return b ? "@{class=processed}yes" : "@{class=failed}no" }
         BEGIN {
@@ -168,8 +161,9 @@ cov_view() {
                           close(LSF2)
                           while ((getline l < ALF2) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") aln[toupper(a[1])]++ }
                           close(ALF2) }
-            if (VMAP != "") { while ((getline l < VMAP) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "" && a[2] != "") VM[toupper(a[1])] = a[2] }
-                              close(VMAP) }
+            # the Accounts / Domains views: the same File union over their own
+            # subscription pair cache (SE) — the other four have theirs in SP_AWK
+            if (KEY == "accounts" || KEY == "domains") uni_load(SE, SEX)
             t = 0
             while ((getline l < AUTH) > 0) {
                 n = split(l, a, "\t")
@@ -222,16 +216,21 @@ cov_view() {
             close(POLL)
         }
         # $FILES: the entity of a File is the UNION of its DIRECT attribution
-        # column and the subscription configured entities (col 12 via SUBP) —
-        # a both-partner file carries an EMPTY col 20 because the parse abstains
-        # on a two-group account, so counting the direct column alone left such
-        # entities uncovered despite real traffic (cf. pda-entities.sh).
+        # column and the subscription configured entities (col 12) — the
+        # shared sets of bin/pda-union.sh (the Logical view resolves its
+        # direct column, the FlowID, through the FlowID map; BL has no direct
+        # column) — a both-partner file carries an EMPTY col 20 because the
+        # parse abstains on a two-group account, so counting the direct column
+        # alone left such entities uncovered despite real traffic. The set is
+        # keyed UPPERCASED, like every lookup here.
         {
             split("", FP)
-            if ($FCOL != "") { v9 = $FCOL
-                if (VMAP != "") v9 = ((toupper(v9) in VM) ? VM[toupper(v9)] : "")
-                if (v9 != "") FP[toupper(v9)] = 1 }
-            if ($12 != "") { m = split(substr(SUBP[toupper($12)], 2), PL, SUBSEP); for (i = 1; i <= m; i++) FP[PL[i]] = 1 }
+            if (KEY == "partners") u9 = sp_union($20, $12)
+            else if (KEY == "applications") u9 = ap_union($18, $12)
+            else if (KEY == "logical") u9 = lg_union($13, $12)
+            else if (KEY == "bl") u9 = bl_union($12)
+            else u9 = uni_join($FCOL, $12, SEX)
+            m = split(u9, PL, "\037"); for (i = 1; i <= m; i++) FP[toupper(PL[i])] = 1
             # OK vs Error follows the site-wide outcome policy: Error is
             # Failed or Expired, everything else (incl. Waiting) is OK.
             ok = ($2 != "Failed" && $2 != "Expired")
@@ -316,6 +315,6 @@ for spec in "${SPECS[@]}"; do
     _key=${spec%%:*}
     [ -f "$TMPD/$_key.part" ] && cat "$TMPD/$_key.part"
 done
-printf 'FOOT\tGenerated on %s from %s file(s)\n' "$now" "${#files[@]}"
+printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($(command grep -c '^TABLE' "$OUT") view(s))." >&2

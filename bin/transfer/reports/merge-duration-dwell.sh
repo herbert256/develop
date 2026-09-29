@@ -35,7 +35,7 @@ if [ ! -f "$DD" ] || [ ! -f "$DW" ]; then
     rm -f "$OUT"; echo "merge-duration-dwell: a component is missing ($DD / $DW) — skipped." >&2; exit 0
 fi
 
-awk -F'\t' -v OFS='\t' -v now="$(date '+%Y-%m-%d %H:%M:%S')" '
+awk -F'\t' -v OFS='\t' '
     # Each component is read into blocks: intro[f] (the header INTRO), then per
     # table t: tab[f,t] (its TABLE line + body up to the next block), note[f,t]
     # (the NOTE lines that follow it), pre[f,t] (an INTRO paragraph placed
@@ -60,7 +60,6 @@ awk -F'\t' -v OFS='\t' -v now="$(date '+%Y-%m-%d %H:%M:%S')" '
         print "DESC", "Two clocks on the same Files, side by side: how long the whole trip takes (the wall-clock duration histogram) and how long a file waits inside SecureTransport between its inbound and outbound leg (the store-and-forward dwell), with the dwell per subscription and per day below."
         print "KEYWORDS", "duration,distribution,histogram,bands,buckets,dwell,store-and-forward,queue,latency,gap,wall-clock"
         print "INTRO", "Two clocks on the same Files. **Duration distribution** (left) is the whole trip: " lcfirst(intro[1])
-        print "INTRO", "**Store-and-forward** (right) is one piece of that trip — the wait inside SecureTransport between the inbound leg completing and the outbound leg starting, which no other report measures: " lcfirst(intro[2])
         # the pair: the duration switch tables, then the dwell histogram
         for (i = 1; i <= ntab[1]; i++) print sxs(tab[1, i])
         print sxs(tab[2, 1])
@@ -74,7 +73,7 @@ awk -F'\t' -v OFS='\t' -v now="$(date '+%Y-%m-%d %H:%M:%S')" '
             if (note[2, i] != "") print note[2, i]
         }
         if (summary[2] != "") print summary[2]
-        print "FOOT", "Generated on " now " from 2 component report(s)"
+        print "FOOT"
     }
 ' "$DD" "$DW" > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($(command grep -c '^TABLE' "$OUT") table(s))." >&2

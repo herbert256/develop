@@ -91,7 +91,7 @@ nff=$(printf '%s\n' "$agg" | awk -F'\t' '$1 == "~N" { print $2 }')
     printf '%s\n' "$agg" | awk -F'\t' '$1 != "~N" && $1 != ""' | LC_ALL=C sort -t"$(printf '\t')" -k1,1r | cut -f2- || true
     # every table carries a TOTAL footer (2026-09-28: this one had none)
     printf 'TOTAL\tTotal (%s Files)\t\t\t\t\n' "${nff:-0}"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (${nff:-0} failed file(s))." >&2

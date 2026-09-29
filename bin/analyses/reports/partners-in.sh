@@ -51,9 +51,8 @@ if [ ! -f "$FE" ]; then
 fi
 [ -f "$LG" ] || LG=/dev/null
 
-GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 
-awk -F'\t' -v FE="$FE" -v LG="$LG" -v GEN="$GENDATE" '
+awk -F'\t' -v FE="$FE" -v LG="$LG" '
     function strip(c) { while (index(c, "@{") == 1) sub(/^@\{[^}]*\}/, "", c); return c }
     function num(c) { c = strip(c); return (c ~ /^[0-9]+$/) ? c + 0 : 0 }
     # the Auth Failed drill: the three source lists (each newest first,
@@ -124,7 +123,7 @@ awk -F'\t' -v FE="$FE" -v LG="$LG" -v GEN="$GENDATE" '
             res = (k in FERES) ? "\t" FERES[k] : ""
             print "ROW\t" NAME[i] fe lg res ((k in LGDR) ? LGDR[k] : "") }
         print "TOTAL\tTotal (" nr " logins)" FETOT LGTOT
-        print "FOOT\tGenerated on " GEN
+        print "FOOT"
         printf "%d\t%d\t%d\n", nr, nfe + 0, nonly + 0 > "/dev/stderr"
     }
 ' /dev/null > "$OUT.tmp" 2> "$OUT.stat" && mv "$OUT.tmp" "$OUT"

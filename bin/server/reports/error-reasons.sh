@@ -140,25 +140,19 @@ week_rows() {
 
 {
     printf 'TITLE\tTransfer Error Reasons\n'
-    printf 'DESC\tServer-log ERROR messages classified by failure reason (connection, PESIT refusal codes, network, routing).\n'
-    printf 'INTRO\t**%s** ERROR records classified into **%s** reason bucket(s). The transfer logs record only OK/Error with no reason (their detail fields are always UNKNOWN); the server log carries the why — partner connection failures, PESIT refusal codes (`reason=…`), network resets, routing-step errors.\n' \
-        "$tot_err" "$nreasons"
     printf 'TABLE\tLog lines by reason\twide\ttab=reasons\n'
     printf 'HEAD\tReason\tErrors\tShare\tExample message\n'
     printf 'KIND\ttext\tnumfailed\tnum\tfile\n'
     printf 'RECALC\t-\ts0\t%%0\t-\n'
     rows
     printf 'TOTAL\tTotal (%s reason(s))\t@{class=num failed}%s\t@{class=num}100.0%%\t\n' "$nreasons" "$tot_err"
-    printf 'NOTE\tOne row per reason bucket; PESIT reason= codes get their own bucket each. "Example message" is the first occurrence, truncated. Unrecognized error families land in "Other" so new problems surface rather than vanish. Click a row to expand its 10 most recent error lines.\n'
 
     printf 'TABLE\tReasons over time\twide\tnofilter\ttab=reasons\n'
     printf 'HEAD\tISO week\tReason\tErrors\n'
     printf 'KIND\ttext\ttext\tnumfailed\n'
     week_rows
     printf 'TOTAL\tTotal (%s row(s))\t\t@{class=num failed}%s\n' "$n_weeks" "$tot_err"
-    printf 'NOTE\tThe same buckets per ISO week, newest week first — how the reason mix moves; always the full period. Click a row to expand its 10 most recent error lines.\n'
-    printf 'SUMMARY\tErrors: %s  |  Reason buckets: %s\n' "$tot_err" "$nreasons"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_err error(s), $nreasons reason(s))." >&2

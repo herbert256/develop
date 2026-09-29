@@ -91,9 +91,6 @@ n_rows=0
 
 {
     printf 'TITLE\tOnly red\n'
-    printf 'DESC\tSubscriptions whose every File is an Error (Failed or Expired) — flows that never delivered a single OK File in this log window.\n'
-    printf 'INTRO\tThe NEVER-WORKED list: of the **%s** subscription(s) with Files, **%s** have **only Error Files** — Failed or Expired, not one OK delivery in the whole window. The regressions (flows that USED to work and broke later) are on **From green to red** instead. Newest failure first; click an Error count for that subscription'\''s 10 most recent failed Files.\n' \
-        "$n_sites" "$n_onlyred"
     printf 'TABLE\tSubscriptions with only Error Files\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tFiles\tFailed\tExpired\tFirst failure\tLast failure\tDays failing\tVolume\n'
     printf 'KIND\tsite\tnumfailed\tnum\tnum\ttext\ttext\tnum\tnum\n'
@@ -117,9 +114,7 @@ n_rows=0
     if [ "$n_onlyred" -gt 0 ]; then
         printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t\t\t\t\n' "$n_onlyred"
     fi
-    printf 'NOTE\tEvery File of these subscriptions is an **Error** — outcome Failed, or Expired (a staged UC2 file the retention sweep deleted before pickup). One Processed or **Waiting** File disqualifies a subscription (Waiting counts as OK site-wide: staged and still collectable). Days failing counts from the first failure to the dataset'\''s last day (%s). Volume is the bytes of the failed attempts. **This table always shows the full period** — "never delivered" is a whole-window property, so a narrowed From/To range would fabricate entries.\n' "$last_date"
-    printf 'SUMMARY\tSubscriptions: %s  |  Only red: %s\n' "$n_sites" "$n_onlyred"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_onlyred of $n_sites subscription(s) only-red)." >&2

@@ -19,7 +19,8 @@
 #   Retry / Resubmit   Auto · Ok · Error   the Top view rule: Auto = an OK
 #              File that carried a failed leg and no resubmitted leg (the
 #              classic Retry column); Ok / Error = EVERY File with a
-#              resubmitted leg (_transfers.tsv col 22), by its outcome
+#              resubmitted leg (_files.tsv col 27 — a _transfers.tsv col 22
+#              true leg), by its outcome; the failed leg = _files.tsv col 26
 #   Duration   p90 · p95 · p99 · p100 of the OK Files' wall-clock span
 #   Volume     Total · Avg (per File)
 #   Transfers  Ok · Error · Error %      the LEGS (log rows) of the entity's
@@ -34,8 +35,9 @@
 # (publish_lib).
 #
 # Attribution per entity mirrors the five classic writers EXACTLY (account.sh,
-# subscription.sh, login.sh, remote-host.sh, pda-entities.sh) — so Files,
-# Error, Auto, Volume, First and Last agree row for row with their .rpt:
+# subscription.sh, login.sh, remote-host.sh, pda-entities.sh) — so Files and
+# Error agree row for row with their .rpt (the classic records carry only
+# Files / Error / OK and the newest Error / OK File start since 2026-09-29):
 #   account      _files col 3
 #   subscription the distinct non-empty _transfers col 6 over the File's legs
 #   login        the distinct non-empty _transfers col 5   (each: one count
@@ -61,6 +63,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union / ap_union / lg_union / bl_union)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -75,17 +78,12 @@ rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp "$OUTDIR"/.agg.tmp.*   # orphaned t
 DIMS="account subscription login remote-host logical partner application domain bl"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-# the union / value maps (pda-entities.sh's UMAP/VMAP set); a missing map is
-# an empty one
-mapf() { [ -f "$CONFIG_XREF/$1.tsv" ] && printf '%s' "$CONFIG_XREF/$1.tsv" || printf ''; }
-M_LG=$(mapf _subscriptions-logicals); M_VLG=$(mapf _profiles-logicals)
-M_PT=$(mapf _subscriptions-partners); M_AP=$(mapf _subscriptions-apps); M_BL=$(mapf _subscriptions-bl)
-
 AGG="$OUTDIR/.agg.tmp"
 # ---------------------------------------------------------------------------
 # ONE awk, two passes. Pass 1 = _transfers.tsv: per CoreId the OK / failed
-# LEG counts, the failed-leg and resubmitted flags, and the distinct login /
-# site / host sets. Pass 2 = _files.tsv: per File the nine name sets, then
+# LEG counts and the distinct login / site / host sets. Pass 2 = _files.tsv
+# (whose cols 26 / 27 carry the failed-leg and resubmitted-leg flags since
+# 2026-09-29 — pass 1 derived them until then): per File the nine name sets, then
 # per (type, name) the counters, first/last by sortkey, the per-date buckets
 # (date:files:in:out:ferr:bytes:tok:terr:rauto:rmok:rmerr:waiting:expired:legs)
 # and the ten drill rings. Writes S| / T| lines to a temp file PER TYPE
@@ -99,14 +97,7 @@ AGG="$OUTDIR/.agg.tmp"
 # ---------------------------------------------------------------------------
 agg_run() {   # $1 = the space-separated types this run computes
 awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
-    -v M_LG="$M_LG" -v M_VLG="$M_VLG" -v M_PT="$M_PT" -v M_AP="$M_AP" -v M_BL="$M_BL" "$COREIDS_AWK"'
-    function loadmulti(f, m,   l, n2, z, k) { if (f == "") return   # name -> \037-joined values (UNION maps)
-        while ((getline l < f) > 0) { n2 = split(l, z, "\t")
-            if (n2 >= 2 && z[1] != "" && z[2] != "") { k = toupper(z[1]); m[k] = m[k] (m[k] == "" ? "" : "\037") z[2] } }
-        close(f) }
-    function loadsingle(f, m,   l, n2, z) { if (f == "") return      # name -> ONE value (the profile -> Logical map)
-        while ((getline l < f) > 0) { n2 = split(l, z, "\t"); if (n2 >= 2 && z[1] != "" && z[2] != "") m[toupper(z[1])] = z[2] }
-        close(f) }
+    "${SP_AWK_V[@]}" "$SP_AWK$COREIDS_AWK"'
     function addset(s, v) { return index("\037" s "\037", "\037" v "\037") ? s : (s == "" ? v : s "\037" v) }   # a distinct-value set as a \037 string (tests emptiness, never membership — the mawk LHS trap)
     function addnames(t, s,   n2, z, i2) { if (s == "") return; n2 = split(s, z, "\037"); for (i2 = 1; i2 <= n2; i2++) NS[t SUBSEP z[i2]] = 1 }
     # THE DURATION GROUP (p90 · p95 · p99): the wall-clock span (_files col 9)
@@ -199,16 +190,11 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
         nsel = split(DSEL, SL, " "); for (i2 = 1; i2 <= nsel; i2++) SEL[SL[i2]] = 1
         SAC = ("account" in SEL); SSU = ("subscription" in SEL); SLO = ("login" in SEL); SRH = ("remote-host" in SEL)
         SLC = ("logical" in SEL); SPA = ("partner" in SEL); SAP = ("application" in SEL); SDO = ("domain" in SEL); SBL = ("bl" in SEL)
-        if (SLC) { loadmulti(M_LG, LG); loadsingle(M_VLG, VLG) }
-        if (SPA) loadmulti(M_PT, PT)
-        if (SAP) loadmulti(M_AP, AP)
-        if (SBL) loadmulti(M_BL, BLM)
         PAIRTOT["subscription"] = 1; PAIRTOT["login"] = 1; PAIRTOT["remote-host"] = 1   # totals once per (name, File) pair — the classic join writers
     }
     FILENAME == PF {   # _transfers.tsv first: the per-CoreId leg facts
         cid = $1
-        if ($3 == "Processed") tokc[cid]++; else { terrc[cid]++; fl[cid] = 1 }
-        if ($22 == "true") rsb[cid] = 1
+        if ($3 == "Processed") tokc[cid]++; else terrc[cid]++
         if (SLO && $5 != "") lg[cid] = addset(lg[cid], $5)
         if (SSU && $6 != "") st[cid] = addset(st[cid], $6)
         if (SRH && $16 != "") hs[cid] = addset(hs[cid], $16)
@@ -228,21 +214,19 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
         mv = ($17 != "") ? $17 : $16
         isin = (mv == "in"); isout = (mv == "out"); wt = ($2 == "Waiting"); ex = ($2 == "Expired")
         tk = (cid in tokc) ? tokc[cid] : 0; te = (cid in terrc) ? terrc[cid] : 0
-        ra = (!f && (cid in fl) && !(cid in rsb)); rmo = (!f && (cid in rsb)); rme = (f && (cid in rsb))
+        ra = (!f && $26 == "1" && $27 != "1"); rmo = (!f && $27 == "1"); rme = (f && $27 == "1")   # the leg flags: col 26 = a failed leg, col 27 = a resubmitted leg
         dur = $9 + 0; hasd = ($2 == "Processed" && dur > 0); q = hasd ? qdur(dur) : 0   # the Duration group: DELIVERED Files with a positive wall-clock span — the Duration report scope (F08, 2026-09-28; 2026-09-29: a Waiting File span, its staging wait, counted here)
         delete NS
         if (SAC && $3 != "") NS["account" SUBSEP $3] = 1
         if (SSU && (cid in st)) addnames("subscription", st[cid])
         if (SLO && (cid in lg)) addnames("login", lg[cid])
         if (SRH && $16 == "out" && (cid in hs)) addnames("remote-host", hs[cid])
-        if (SLC && $13 != "" && (toupper($13) in VLG)) NS["logical" SUBSEP VLG[toupper($13)]] = 1
-        if (SLC && $12 != "" && (toupper($12) in LG)) addnames("logical", LG[toupper($12)])
-        if (SPA && $20 != "") NS["partner" SUBSEP $20] = 1
-        if (SPA && $12 != "" && (toupper($12) in PT)) addnames("partner", PT[toupper($12)])
-        if (SAP && $18 != "") NS["application" SUBSEP $18] = 1
-        if (SAP && $12 != "" && (toupper($12) in AP)) addnames("application", AP[toupper($12)])
+        # logical / partner / application / BL = the UNION sets (bin/pda-union.sh)
+        if (SLC) addnames("logical", lg_union($13, $12))
+        if (SPA) addnames("partner", sp_union($20, $12))
+        if (SAP) addnames("application", ap_union($18, $12))
         if (SDO && $19 != "") NS["domain" SUBSEP $19] = 1
-        if (SBL && $12 != "" && (toupper($12) in BLM)) addnames("bl", BLM[toupper($12)])
+        if (SBL) addnames("bl", bl_union($12))
         if (fpass == 2) {   # the DURATION DRILLS (2026-09-13, user request): per key the 10 newest OK Files at or above each percentile, each entry with its span
             if (!hasd) next
             for (k in NS) { if (!(k in KP90) || KP90[k] == "") continue
@@ -389,8 +373,7 @@ fmt_dim() {
         printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t%s\t%s\t%s\t@{class=num}%s\t@{class=num}%s\t@{class=num okc}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num failed}%s\t\t\t@{class=num}%s%s\n' \
             "$ns" "$noun" "$tinz" "$toutz" "$tfe" "$tfep" "$tra" "$tmo" "$tme" "$td90" "$td95" "$td99" "$td100" "$tvh" "$tavg" "$ttok" "$tter" "$tterp" "$twt" "$tex" "$tdays" \
             "${tbk:+$'\t'@data:buckets=$tbk}"   # the DISTINCT per-day totals (2026-09-29: report.js re-totals a narrowed range from them)
-        printf 'NOTE\t**Files** = logical transfers (one per CoreId; Waiting counts as OK, Expired as Error), **Transfers** = the physical log rows of those Files (one per leg). **In** / **Out** is the movement direction of the File (a File with no known movement counts in the Files total and Error %% only); an empty Error cell keeps an empty rate beside it, and In / Out never show a 0. **Retry / Resubmit**: **Auto** = an OK File that carried at least one failed leg and no resubmitted leg — the platform'\''s own retry delivered it (the classic Retry column); **Ok** / **Error** = every File with a resubmitted leg (the log'\''s Resubmitted flag), OK or Error by its final outcome (the Top view'\''s Resubmit rule — a resubmitted re-delivery that never failed counts under Ok). **Duration** = the p90 / p95 / p99 / p100 (the longest) of the wall-clock duration of the OK Files (first record start to last record end, as on the Duration report — the Error attempts, mostly instant, are left out), re-picked for the selected From/To like every other figure, as whole seconds / minutes / hours / days (s m h d) — seconds green, minutes amber, hours and days red. **Volume** in whole units; **Avg** = the volume divided by the Files. **Retry / Resubmit** and **State** are shown only on a view where at least one File carries such a value. **Days** = the days with at least one File; First / Last stay full-period under the date filter. Click any count for its 10 most recent Files (newest first, by start time); the Transfers cells list the Files that carried a leg of that outcome, and a Duration cell the 10 most recent OK Files whose span is at or above that percentile, each with its span.\n'
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "Data written to $OUT ($ns $noun(s), $tc file(s))." >&2
 }

@@ -7,14 +7,13 @@
 # Inbound source host and the Outbound destination host differ), so a transfer
 # is counted once per DISTINCT remote host it involves; the per-host counts can
 # therefore sum to more than the number of distinct transfers. Failed /
-# Processed is the transfer's delivered (final-row) outcome and volume is the
-# file counted once. ONE table, a summary per Remote Host (Files, Error, OK,
-# Retry, Resubmit, Volume, First/Last seen, the per-day buckets and the
-# 10-newest drill lists). NO PAGE of its own: the Entities pages render from
-# entities.sh's grouped entities/remote-host.rpt (2026-09-13); this .rpt is
-# read — its FIRST (Summary) table only — by showseen.sh, entity-search.sh and
-# the server rosters (known_names). (The "Detail per Remote Host / Date"
-# table went 2026-09-29: no reader.)
+# Processed is the transfer's delivered (final-row) outcome. ONE table, one
+# ROW per remote host — the account.sh record (name · Files · Error · OK ·
+# newest Error / OK File start; trimmed 2026-09-29 to what its readers use).
+# NO PAGE of its own: the Entities pages render from entities.sh's grouped
+# entities/remote-host.rpt (2026-09-13); this .rpt is read by showseen.sh,
+# entity-search.sh and the server rosters (known_names: the ROW names). (The
+# "Detail per Remote Host / Date" table went 2026-09-29: no reader.)
 #
 # Usage:
 #   ./remote-host.sh    # reads input/*.csv (via the caches), writes data/remote-host.rpt
@@ -38,88 +37,55 @@ fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # ---------------------------------------------------------------------------
-# Two-pass join. Pass 1 (data/_files.tsv) loads per CoreId the logical
-# outcome (2), file size (8), and start date/time/sortkey (4/5/6). Pass 2
-# (data/_transfers.tsv) walks the rows; for each distinct (host, CoreId) pair — so
-# a transfer is counted at most once per remote host — it accumulates the
-# transfer into that host using the CoreId's logical facts (see the login report
-# for the field layout). Rows with no host (blacklist-blanked internal nodes) or
-# whose transfer has no valid date are skipped. Column 16 is the endpoint as
-# parse.sh resolved it (the input/ip forward map — never reverse DNS).
+# Two-pass join. Pass 1 (data/_files.tsv) loads per dated CoreId the logical
+# outcome (2) and its start as "sortkey SUBSEP date time" (6, 4 5), and marks
+# the Files that connect OUT (16). Pass 2 (data/_transfers.tsv) walks the rows;
+# for each distinct (host, CoreId) pair — so a transfer is counted at most
+# once per remote host — it counts the File into that host, split Error/OK by
+# the delivered outcome, and keeps the newest Error / OK File start (see
+# account.sh for the record). Rows with no host (blacklist-blanked internal
+# nodes) or whose transfer has no valid date are skipped. Column 16 is the
+# endpoint as parse.sh resolved it (the input/ip forward map — never reverse
+# DNS).
 # ---------------------------------------------------------------------------
-agg=$(awk -F'\t' "$COREIDS_AWK"'
-    function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
+LAST_AWK='
+    function newest(k, v) { if (!(k in LT) || v > LT[k]) LT[k] = v }
+    function lastts(k,   s, c) { if (!(k in LT)) return ""; s = LT[k]; s = substr(s, index(s, SUBSEP) + 1) "  "
+        c = index(s, ","); if (c) s = substr(s, 1, c - 1); c = index(s, "  "); return c ? substr(s, 1, c - 1) : s }
+'
+agg=$(awk -F'\t' "$LAST_AWK"'
     FNR == 1 { fno++ }
-    fno == 1 { oc[$1] = $2; sz[$1] = $8; dt[$1] = $4; tm[$1] = $5; skf[$1] = $6; cn[$1] = $16; next }
-    fno == 2 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rsb[$1] = 1; next }   # every leg of every File: a Failed leg marks its File (Retry/Resubmit); a Resubmitted=true leg marks the operator resubmit
+    fno == 1 { if ($16 == "out") cout[$1] = 1
+               if ($4 != "") { fe[$1] = ($2 == "Failed" || $2 == "Expired"); fk[$1] = $6 SUBSEP $4 " " $5 }; next }
     $16 == "" { next }
     # A HOST entity is an OUTBOUND endpoint only — the hosts we dial (the
     # partners.json hosts[] of Out accounts). The source addresses of INCOMING
     # connections are NOT hosts (they belong to the whitelist/incoming views:
     # the incoming-connections report and the detail pages 2.6 tables), so a
     # row whose File connects IN (or has no side) never attributes a host.
-    cn[$1] != "out" { next }
+    !($1 in cout) { next }
     {
         e = $16; cid = $1; pk = e SUBSEP cid
         if (pk in pseen) next                         # count each transfer once per remote host
         pseen[pk] = 1
-        date = dt[cid]; if (date == "") next
-        f = (oc[cid] == "Failed" || oc[cid] == "Expired"); sk = skf[cid]; disp = date " " tm[cid]; size = sz[cid] + 0
-        cu = (!f && (cid in fl)); rt = (cu && !(cid in rsb)); rs = (cu && (cid in rsb))   # CURED (an OK File that carried a failed leg — the home page rule): RETRY when no leg was resubmitted, RESUBMIT when one was (the Top view Automatic/Manual split)
-        sc[e]++; if (f) sfl[e]++; else spr[e]++; if (rt) srt[e]++; if (rs) srs[e]++; sv[e] += size
-        if (!(e in havemin) || sk < mink[e]) { mink[e] = sk; fst[e] = date; havemin[e] = 1 }
-        if (!(e in havemax) || sk > maxk[e]) { maxk[e] = sk; lst[e] = date; havemax[e] = 1 }
-        addtop("S" SUBSEP e SUBSEP (f ? "F" : "P"), sk, disp, cid)
-        if (rt) addtop("R" SUBSEP e SUBSEP "T", sk, disp, cid); if (rs) addtop("R" SUBSEP e SUBSEP "S", sk, disp, cid)   # the Retry / Resubmit drill lists, 10 newest each (2026-09-13, user request)
-        dk = e SUBSEP date; ds[dk] = 1; dl[dk]++; if (f) dfl[dk]++; else dpr[dk]++; if (rt) drt[dk]++; if (rs) drs[dk]++; ddb[dk] += size
-        tc++; if (f) tfl++; else tpr++; if (rt) trt++; if (rs) trs++; tvol += size
+        if (!(cid in fk)) next                        # no valid date
+        sc[e]++
+        if (fe[cid]) { sfl[e]++; newest("F" SUBSEP e, fk[cid]) } else { spr[e]++; newest("P" SUBSEP e, fk[cid]) }
     }
-    END {
-        for (dk in ds) { split(dk, kk, SUBSEP)
-            bk[kk[1]] = bk[kk[1]] (bk[kk[1]] ? "," : "") kk[2] ":" dl[dk] ":" (dfl[dk]+0) ":" (dpr[dk]+0) ":" ddb[dk] ":" (drt[dk]+0) ":" (drs[dk]+0) }
-        for (e in sc) { ns++
-            sh = tc > 0 ? sprintf("%.1f", sc[e] * 100 / tc) : "0.0"
-            printf "S|%s|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", e, sc[e], sfl[e]+0, spr[e]+0, srt[e]+0, srs[e]+0, human(sv[e]+0), sh, fst[e], lst[e], \
-                bk[e], buildlist(top["S" SUBSEP e SUBSEP "F"]), buildlist(top["S" SUBSEP e SUBSEP "P"]), buildlist(top["R" SUBSEP e SUBSEP "T"]), buildlist(top["R" SUBSEP e SUBSEP "S"]) }
-        printf "T|%d|%d|%d|%s|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, trt+0, trs+0
-    }
-' "$FILES" "$PARSED" "$PARSED")
+    END { for (e in sc) printf "S|%s|%d|%d|%d|%s|%s\n", e, sc[e], sfl[e]+0, spr[e]+0, lastts("F" SUBSEP e), lastts("P" SUBSEP e) }
+' "$FILES" "$PARSED")
 
-if [ -z "$agg" ]; then
-    echo "No usable records found." >&2
-    exit 1
-fi
-
-IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_count tot_retry tot_resub <<< "$(printf '%s\n' "$agg" | grep '^T|')"
-
-# Summary rows, busiest first (by transfer count). ONE awk pass formats the
-# sorted stream into finished ROW lines — a bash while-read with a $(printf)
-# per row forked a subshell per host. The last field takes the line's
-# remainder, like read into the final variable did.
+# The rows, busiest first (by File count).
 summary_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | sort -t'|' -k3,3nr | awk -F'|' '
     $2 == "" { next }
-    { ccp = $14   # field 14 = the OK list; 15/16 = the Retry / Resubmit lists (2026-09-13)
-      printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\t@data:coreids-retry=%s\t@data:coreids-resubmit=%s\n", \
-          $2, $3, $4, $5, $6, $7, $8, $10, $11, $12, $13, ccp, $15, $16 }')
-
+    { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\n", $2, $3, $4, $5, $6, $7 }')
 
 {
-    printf 'TITLE\tHosts\n'   # the menu label (Entities › Hosts); a data producer, its page renders from entities/remote-host.rpt
-    printf 'DESC\tFiles per remote host, split into Error/OK.\n'
-    printf 'INTRO\tEvery remote host — the **outbound endpoints we dial** (the partners.json host fields plus the logged out-connection endpoints; incoming source addresses are not hosts) — with its **Files**, Error/OK split (**Retry** / **Resubmit** = the OK Files that needed a retry — a failed leg, then delivered — healed by the platform'\''s own retry or by an operator'\''s resubmit, the log'\''s Resubmitted flag), volume and last sighting. The view tabs switch between logged (**Seen**), configured (**All** / **Not seen**) and the status subsets (**OK** / **Warning** / **Error**).\n'
-
-    printf 'TABLE\tSummary per Remote Host\twide\n'
-    printf 'HEAD\tRemote Host\tFiles\tError\tOK\tRetry\tResubmit\tVolume\tFirst seen\tLast seen\n'
-    printf 'KIND\thost\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumwarn\tnum\ttext\ttext\n'
-    printf 'RECALC\t-\ts0\ts1\ts2\ts4\ts5\th3\t-\t-\n'
+    printf 'TITLE\tHosts\n'   # the Entities › Hosts label; a data producer, its page renders from entities/remote-host.rpt
+    printf 'TABLE\tSummary per Remote Host\n'
+    printf 'HEAD\tRemote Host\tFiles\tError\tOK\tLast Error\tLast OK\n'
     [ -n "$summary_rows" ] && printf '%s\n' "$summary_rows"
-    printf 'TOTAL\tTotal (%s host(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t\t\n' \
-        "$summary_row_count" "$tot_records" "$tot_failed" "$tot_processed" "$tot_retry" "$tot_resub" "$tot_human"
-
-    printf 'NOTE\tCounts Files — one logical transfer each. A transfer is counted once per distinct remote host it involves (the Inbound source host and the Outbound destination host differ), so the per-host counts can sum to more than the number of distinct transfers. Error/OK is the transfer'\''s delivered outcome; volume is the file counted once. Click an Error or OK count for that outcome'\''s 10 most recent Files (newest first, by start time).\n'
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-echo "Data written to $OUT ($summary_row_count host(s), $tot_records host-transfer(s))." >&2
+echo "Data written to $OUT ($(printf '%s\n' "$summary_rows" | grep -c '^ROW' || true) host(s))." >&2

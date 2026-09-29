@@ -106,8 +106,9 @@ awk -F'\t' -v OFS='\t' '
         dd[k] = dd[k] "\037" $3 " " $4          # datetime list per (ACCT,file)
         next
     }
-    {   # (parse.sh cfg_join writes all 25 columns, col 22 empty — no row needs padding;
-        # col 25 = the File colour: an Expired File is red, a Waiting one orange)
+    {   # (parse.sh cfg_join writes all 27 columns, col 22 empty — no row needs padding;
+        # col 25 = the File colour: an Expired File is red, a Waiting one orange;
+        # cols 26/27 — the failed-leg / resubmitted-leg flags — pass through unchanged)
         if ($2 == "Waiting" || $2 == "Expired") {
             k = toupper($3) SUBSEP $11; hit = ""
             if (k in dd) {

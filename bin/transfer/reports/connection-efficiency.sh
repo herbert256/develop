@@ -102,7 +102,7 @@ if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
         printf 'KIND\ttext\n'
         printf 'ROW\tNo records with a usable Session ID in this dataset.\n'
         printf 'TOTAL\tTotal (0 rows)\n'
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "No usable Session IDs found — wrote empty-state $OUT." >&2
     exit 0
@@ -115,7 +115,6 @@ IFS=$'\t' read -r _ p_sess p_files p_ratio p_sf p_user p_unk p_af p_mx p_rm p_fa
 # file partners), biggest session count breaking the tie, then the name.
 lg_rows=$(printf '%s\n' "$agg" | { grep $'^L\t' || true; } | LC_ALL=C sort -t"$(printf '\t')" -k2,2 -k4,4nr -k3,3 \
     | awk -F'\t' '{ printf "ROW\t%s\t%s\t%s\t%s\t%s\n", $3, $4, $5, $6, $7 }')
-n_lg=$(printf '%s\n' "$agg" | grep -c $'^L\t' || true)
 
 storm_rows=$(printf '%s\n' "$agg" | { grep $'^S\t' || true; } | LC_ALL=C sort -t"$(printf '\t')" -k3,3nr -k2,2 \
     | awk -F'\t' -v n="$TOP_N" 'NR<=n { printf "ROW\t%s\t%s\t%s\t%s\n", $2, $3, $4, $5 }')
@@ -152,8 +151,6 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
     fi
     printf 'TOTAL\tAll sessions (platform, any initiator)\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s%%\n' \
         "$p_sess" "$p_files" "$p_ratio" "$p_sf"
-    printf 'NOTE\t**User-initiated sessions only** (the first record'\''s Action By is User — the partner controls the reconnect behaviour), accounts with **%s+** such sessions, least efficient first. A ratio of **1.00** means a fresh connection for every single File — at tens of thousands of sessions that is real overhead on both ends, and batching would cut it. The TOTAL row is the WHOLE platform (all %s sessions, any initiator), so it exceeds the sum of the %s listed account(s).\n' \
-        "$MIN_SESS" "$p_sess" "$n_lg"
 
     printf 'TABLE\tConnection storms (top %s accounts by peak starts per minute)\twide\tnofilter\n' "$TOP_N"
     printf 'HEAD\tAccount\tPeak sessions/min\tMinute\tSessions\n'
@@ -165,7 +162,6 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
         printf 'ROW\t@{colspan=4}No sessions in this dataset.\n'
         printf 'TOTAL\tTotal (0 accounts)\t\t\t\n'
     fi
-    printf 'NOTE\tThe most sessions one account STARTED inside a single minute (any initiator), and when. A three-digit peak is a client script opening a connection per file as fast as it can loop — harmless for one partner, but a load spike and a noisy-neighbour risk on shared listeners. Peak is a maximum, not additive; Sessions is the account'\''s whole-window total.\n'
 
     printf 'TABLE\tSession failure anatomy (top %s accounts by all-Error sessions)\twide\tnofilter\n' "$TOP_N"
     printf 'HEAD\tAccount\tAll-Error sessions\tMixed OK+Error\tRetry marathons\n'
@@ -178,12 +174,10 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
         printf 'ROW\t@{colspan=4}No failing sessions in this dataset.\n'
         printf 'TOTAL\tTotal (0 accounts)\t\t\t\n'
     fi
-    printf 'NOTE\t**All-Error** = a session of 2+ records where every record failed (a connection that achieved nothing — platform-wide %s such sessions). **Mixed OK+Error** = the session delivered some Files and failed others (platform-wide %s). **Retry marathons** = %s+ records, one single File, all Error: a client hammering the same broken transfer inside one connection (platform-wide %s). Per-record status is used here (a record is OK when its raw Status is Processed), not the per-File outcome.\n' \
-        "$p_af" "$p_mx" "$MARATHON" "$p_rm"
 
     printf 'KEYWORDS\tsession, connection, reconnect, storm, per minute, single file, efficiency, chatty, batch, marathons, retry, sftp login, overhead\n'
     printf 'SUMMARY\tSessions: %s  |  Files/connection: %s  |  Single-File: %s%%  |  All-Error sessions: %s\n' \
         "$p_sess" "$p_ratio" "$p_sf" "$p_af"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($p_sess sessions, $p_ratio Files/connection, $p_sf% single-File)." >&2

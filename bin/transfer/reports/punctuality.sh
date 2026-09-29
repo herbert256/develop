@@ -129,10 +129,7 @@ n_rows=0
 
 {
     printf 'TITLE\tPunctuality\n'
-    printf 'DESC\tArrival-time regularity per subscription: the typical arrival slot of flows with a rhythm, late arrivals, and expected days that passed without a file.\n'
     printf 'KEYWORDS\tlate, missed, on time, arrival, cadence, rhythm, schedule, cron, clockwork\n'
-    printf 'INTRO\tDoes the daily file arrive on time? Of the **%s** subscription(s) active on **%s+ days**: **%s** run like **clockwork** (arrival within ±15 min), **%s** are regular (±1 h), **%s** loose (±3 h) and **%s** irregular (event-driven). Across the clockwork/regular flows there were **%s** late arrival(s) (over an hour past the typical slot) and **%s** missed expected day(s). Click a row with late/missed counts for the dates.\n' \
-        "$n_sites" "$MIN_DAYS" "$n_clock" "$n_reg" "$n_loose" "$n_irr" "$t_late" "$t_missed"
 
     printf 'TABLE\tArrival regularity per subscription\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tActive days\tTypical arrival\tWindow\tClass\tLate\tMissed days\tLast seen\n'
@@ -158,11 +155,8 @@ n_rows=0
     if [ "$n_rows" -eq 0 ]; then
         printf 'ROW\t@{colspan=8}No subscription reaches %s active days in this data window.\n' "$MIN_DAYS"
     fi
-    printf 'NOTE\tThe day'\''s FIRST File defines that day'\''s arrival; the median over the window is the typical slot, the spread (one standard deviation) the Window and Class. **Late** = arrived over an hour past the typical slot; **Missed** = a weekday this flow served on 75%%+ of its calendar occurrences passed with no File at all — both only meaningful for Clockwork/Regular flows (the others show "-"). Tightest flows first. This page always shows the full period — the model needs the whole window. Stale Accounts covers day-level idleness per account; the Cronjobs analysis shows the CONFIGURED schedules these observed slots should match.\n'
 
-    printf 'SUMMARY\tSubscriptions with a rhythm: %s (clockwork %s, regular %s, loose %s, irregular %s)  |  Late arrivals: %s  |  Missed days: %s\n' \
-        "$n_sites" "$n_clock" "$n_reg" "$n_loose" "$n_irr" "$t_late" "$t_missed"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_sites subscription(s), $t_late late, $t_missed missed)." >&2

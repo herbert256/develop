@@ -45,10 +45,10 @@ runtime_refresh() {
     # a runtime repo; refuse rather than turn a second develop into a runtime
     [ ! -f "$rt/input/.sample-estate" ] \
         || { echo "$me: $rt carries input/.sample-estate (a develop checkout?) — refusing." >&2; exit 2; }
-    # never yank scripts out from under a RUNNING build there
-    # build/.buildlock since 2026-09-28; data/.buildlock is where a build
-    # started by the older code holds it
-    for _lk in "$rt/build/.buildlock" "$rt/data/.buildlock"; do
+    # never yank scripts out from under a RUNNING build there (the lock is
+    # build/.buildlock; the pre-2026-09-28 data/.buildlock probe went
+    # 2026-09-29 — both runtime checkouts have built with the new code since)
+    for _lk in "$rt/build/.buildlock"; do
         [ -d "$_lk" ] || continue
         lock_pid=$(cat "$_lk/pid" 2>/dev/null || true)
         if [ -n "$lock_pid" ] && kill -0 "$lock_pid" 2>/dev/null; then
@@ -69,7 +69,7 @@ runtime_refresh() {
     # --delete-excluded also REMOVES it from the target when a prior refresh
     # copied it there
     rsync -a --delete --delete-excluded --exclude=.DS_Store \
-          --exclude=/acc.sh --exclude=/prd.sh --exclude=/runtime-lib.sh --exclude=/runtime.sh --exclude=/sample/ \
+          --exclude=/acc.sh --exclude=/prd.sh --exclude=/runtime-lib.sh --exclude=/sample/ \
           "$dev/bin/" "$rt/bin/"
     rsync -a --delete --exclude=.DS_Store "$dev/assets/" "$rt/assets/"
     cp "$dev/.gitattributes" "$rt/.gitattributes"

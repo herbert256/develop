@@ -100,10 +100,7 @@ n_emp=0
 
 {
     printf 'TITLE\tTransfer Size Distribution\n'
-    printf 'DESC\tFiles, Error/OK and volume bucketed by transfer size — plus the zero-byte files that were delivered OK.\n'
     printf 'KEYWORDS\tempty file, zero byte, 0 B, empty export\n'
-    printf 'INTRO\t%s total volume across all Files, bucketed by size (one File = its file, counted once). The 0 B bucket holds the empty Files, failed or not.\n' \
-        "$tot_human"
     printf 'TABLE\tFiles by size bucket\n'
     printf 'HEAD\tSize range\tFiles\tError\tOK\tVolume\t%% of Files\tDistribution\n'
     printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\tnum\tbar\n'
@@ -115,7 +112,6 @@ n_emp=0
     done <<< "$(printf '%s\n' "$agg" | grep '^BKT|')"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num}100.0%%\t\n' \
         "$tot_rec" "$tot_failed" "$tot_processed" "$tot_human"
-    printf 'NOTE\tClick an Error or OK count for that outcome'\''s 10 most recent Files (newest first).\n'
 
     printf 'TABLE\tEmpty files delivered OK\twide\n'
     printf 'HEAD\tSubscription\tEmpty OK Files\tFirst\tLast\n'
@@ -132,9 +128,7 @@ n_emp=0
         printf 'ROW\t@{colspan=4}No zero-byte Files were delivered OK in this data window.\n'
     fi
     printf 'TOTAL\tTotal (%s subscription(s))\t@{class=num warn}%s\t\t\n' "$n_empty_sub" "$tot_empty"
-    printf 'NOTE\tZero-byte Files whose delivery ended **OK** — the transfer worked, but the file was EMPTY, which usually means the upstream export produced nothing. A flow that legitimately ships empty markers recurs steadily here; a subscription appearing suddenly deserves a look. The failed 0-byte attempts stay in the 0 B bucket above. Click a row for its 10 most recent empty Files.\n'
-    printf 'SUMMARY\tTotal Files: %s  |  Total volume: %s  |  Empty OK Files: %s across %s subscription(s)\n' "$tot_rec" "$tot_human" "$tot_empty" "$n_empty_sub"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_rec record(s))." >&2

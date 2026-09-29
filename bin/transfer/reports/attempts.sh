@@ -128,9 +128,7 @@ tot_legs=0
 
 {
     printf 'TITLE\tAttempts to Success\n'
-    printf 'DESC\tRetry anatomy: how many failed legs before delivery (or before giving up), the retry spacing, and which side fails.\n'
     printf 'KEYWORDS\tretry, attempts, backoff, failed legs, gave up, hammering, retry spacing\n'
-    printf 'INTRO\tEach File'\''s **failed legs** (status other than Processed) are its wasted attempts; the delivered outcome says whether trying helped. **%s** Files delivered, **%s** ended Error/Expired.\n' "$tot_ok" "$tot_gave"
 
     printf 'TABLE\tDelivered Files — failed legs before success\tdrill=File\n'
     printf 'HEAD\tAttempts\tFiles\t%% of delivered\n'
@@ -138,7 +136,6 @@ tot_legs=0
     printf 'RECALC\t-\ts0\t%%0\n'
     mkrows SUC
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_ok"
-    printf 'NOTE\tOnly Files that DELIVERED (incl. Waiting). Click a row for that bucket'\''s 10 most recent Files. A big "first try" row is healthy; weight further down means the platform delivers by insisting.\n'
 
     printf 'TABLE\tGave up — failed legs on Error / Expired Files\tdrill=File\n'
     printf 'HEAD\tAttempts\tFiles\t%% of failed\n'
@@ -146,7 +143,6 @@ tot_legs=0
     printf 'RECALC\t-\ts0\t%%0\n'
     mkrows GVE
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_gave"
-    printf 'NOTE\tFiles that ended **Error or Expired**. "first try (0 failed legs)" here is mostly the **Expired** population — every leg processed, the partner just never collected the staged file.\n'
 
     printf 'TABLE\tRetry spacing — failed leg to the next attempt\n'
     printf 'HEAD\tGap\tRetries\tFiles\n'
@@ -158,7 +154,6 @@ tot_legs=0
         tot_ret=$((tot_ret + cnt))
     done <<< "$(printf '%s\n' "$agg" | grep '^GAP|' | sort -t'|' -k2,2n)"
     printf 'TOTAL\tTotal\t@{class=num}%s\t\n' "$tot_ret"
-    printf 'NOTE\tThe time from a failed leg'\''s start to the NEXT leg of the same File. Under 10 seconds = automatic hammering; minutes/hours = scheduled re-runs; the Files column is full-period under a narrowed date range.\n'
 
     printf 'TABLE\tWhich side fails\n'
     printf 'HEAD\tDirection\tFailed legs\tFiles\n'
@@ -170,10 +165,8 @@ tot_legs=0
         tot_legs=$((tot_legs + cnt))
     done <<< "$(printf '%s\n' "$agg" | grep '^DIR|' | sort -t'|' -k1,1)"
     printf 'TOTAL\tTotal\t@{class=num}%s\t\n' "$tot_legs"
-    printf 'NOTE\tInbound = the arrival side (partner/CFT delivering to ST); Outbound = the delivery side (ST pushing onward, or the partner collecting). The Files column is full-period under a narrowed date range.\n'
 
-    printf 'SUMMARY\tDelivered: %s | Gave up: %s\n' "$tot_ok" "$tot_gave"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($tot_ok + $tot_gave File(s))." >&2

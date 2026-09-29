@@ -185,10 +185,7 @@ day_rows() {
 
 {
     printf 'TITLE\tNo remote files\n'
-    printf 'DESC\tUC3 subscriptions that poll the partner successfully but have NEVER found a file — every listing came back empty.\n'
     printf 'KEYWORDS\tempty poll,no files,nothing to fetch,idle schedule,server-log only,uc3,pull\n'
-    printf 'INTRO\tThese UC3 flows work — the connection, the credentials and the remote directory are all fine and the listing succeeds — but the directory is **always empty**. **%s** subscription(s) polled **%s** time(s) over **%s** day(s) and found **nothing, ever**. None of them has ever produced a transfer row — seen in the server log only, so the result is **orange** (never seen in the transfer log), however cleanly it polls. Every slot spent here is a connection and a listing for no data, and none of it is visible in the transfer reports — an empty poll starts no transfer.\n' \
-        "$n_sub" "$tot_polls" "$n_day"
 
     # tab=uc3 (2026-09-29): both tables ride the UC3 tab of UC status
     printf 'TABLE\tUC3 subscriptions that never find a file\twide\ttab=uc3\n'
@@ -204,10 +201,7 @@ day_rows() {
     day_rows
     printf 'TOTAL\tTotal (%s day(s))\t@{class=num warn}%s\t\n' "$n_day" "$tot_polls"
 
-    printf 'NOTE\tSource: the TM message "Applying the search pattern … for transfer site …: **0 file(s) were found** of which 0 matched the pattern." Listed are the **UC3** subscriptions with no transfer data at all (result **orange**) whose EVERY poll found zero files; a subscription that did see files it could not match has a pattern problem, not an empty directory, and is left out%s. **UC status / UC3** (Polls by subscription) ranks the empty-poll rate of every subscription, working ones included, and **No remote dir** covers the flows whose listing fails outright. Poll counts are additive, so a date-filtered range re-totals them. Click a row to expand its 10 most recent poll lines.\n' \
-        "$([ "${n_skip:-0}" -gt 0 ] && printf ' (%s here)' "$n_skip" || true)"
-    printf 'SUMMARY\tSubscriptions: %s  |  Empty polls: %s  |  Days: %s\n' "$n_sub" "$tot_polls" "$n_day"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_sub subscription(s), $tot_polls empty poll(s))." >&2

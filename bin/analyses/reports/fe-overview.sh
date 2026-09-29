@@ -111,7 +111,6 @@ LOGONS="$SCACHE/_logons.tsv"
 [ -f "$OLD" ]     || OLD=/dev/null
 [ -f "$PICKUPS" ] || PICKUPS=/dev/null   # -f, not -s: an EMPTY sidecar is the valid no-pickup state
 
-GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 
 # One awk pass: the roster + joins in BEGIN (small files), the files cache
 # streamed, then one "R" line per login and one "S" line of stat figures.
@@ -215,7 +214,6 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
 
 {
     printf 'TITLE\tFE overview\n'
-    printf 'DESC\tEvery FE login on one line: its use cases, the last logon here and on the old gateway, its Files in and out with the retrieved, Waiting and Expired ones and how long the oldest has waited, and its pickups with their cadence.\n'
     # default sort (user request): Waiting (column 8, 0-based) descending, then
     # Files out descending, then Files in descending, then Pickups descending, then Cloud descending, then Gateway descending — the primary key is this modifier; the rest is
     # the BAKED row order below, which report.js'\''s stable sort preserves (the
@@ -244,8 +242,7 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
               $2, uc, last, gw, z($7), z($8), $15, $13, $9, $11, ow, z($12), res }'
     printf 'TOTAL\tTotal (%s rows)\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t@{class=num}%s\n' \
         "$n_all" "$(nz "$n_in")" "$(nz "$n_out")" "$n_err" "$n_ret" "$n_wait" "$n_exp" "$t_old" "$(nz "$n_pk")"
-    printf 'NOTE\t**input/logons_old.txt** carries the old gateway'\''s logons, one login per line: the login, then its stamp ("FE000123  2026-09-02 14:35") — the first token is the login (case-insensitive), the rest of the line is shown as written; blank lines and # comments are ignored. The file is per environment and hand-maintained (like BL.txt); when it is missing the column stays empty. A subscription'\''s use case is its name prefix, or the use case DERIVED from the configuration for a flow without one (the hybrid production flows). Files in / Files out count Files (one per CoreId) attributed to the login by their movement direction — the home page'\''s In/Out split — over the whole transfer window; Files out holds every File staged for the login — retrieved, waiting, expired or failed at pickup. **Error** counts the Files that FAILED, delivered (in) or picked up (out); Expired stays its own column, so Retrieved + Waiting + Expired + the failed pickups = Files out. **Oldest waiting** shows one unit, truncated ("5 days", "12 hours", "45 minutes", "10 seconds"), sorts by the exact age, and the Total row carries the oldest of all. **Pickups** come from the UC2 pickup sidecar (the data behind the UC2 status and UC2 pickup visits tables) and are taken ONCE per login: on the UC2 pickup visits table the account'\''s figures repeat on each of its UC2 subscriptions, so its totals run higher; on an account carrying several FE logins each login shows its own. Pickups counts LOGONS (an SFTP client opens several connections per visit). The visit breakdown (collected, two-way, delivery-only, same-connection) stays on the UC2 pickup visits page. A login without a UC2 flow — or whose partner collects over CFT/PESIT and logs no SSH visit — leaves those cells empty while its Files still move.\n'
-    printf 'FOOT\tGenerated on %s\n' "$GENDATE"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 rm -f "$OUT.rows"
 

@@ -127,12 +127,12 @@ cp "$TMPD/x_slugs" "$SUBDIR.new/_slugmap.tsv"
 # the sidecar $FILESIDE, which failed.sh pages (list tag X) like the Transfer
 # patterns / Longest Files lists.
 LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk -F'\t' \
-    -v slugs="$TMPD/x_slugs" -v dir="$SUBDIR.new" -v stamp="$(date '+%Y-%m-%d %H:%M:%S')" -v nin="${#files[@]}" \
+    -v slugs="$TMPD/x_slugs" -v dir="$SUBDIR.new" \
     -v side="$TMPD/x_side" -v TOPN=5 '
     BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
     function finish() {
         if (out == "") return
-        printf "FOOT\tGenerated on %s from %s file(s)\n", stamp, nin > out
+        printf "FOOT\n" > out
         close(out)
     }
     ($1 "") != cur {
@@ -140,7 +140,6 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk
         if (!($1 in SL)) next
         out = dir "/" SL[$1] ".rpt"
         printf "TITLE\tExpired files: %s\n", $1 > out
-        printf "DESC\tThe staged Files of subscription %s the retention sweep deleted before any pickup, newest first.\n", $1 > out
         printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] that the nightly File Maintenance retention sweep deleted before the partner collected them — never delivered. Last expired first; the CoreId of the first %d opens the File page.\n", $1, TOPN > out
         # every row RED (2026-09-29, user request): an Expired File\047s colour,
         # _files.tsv col 25
@@ -191,7 +190,6 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
         printf 'ROW\t@{colspan=3}No expired Files in this data window.\n'
         printf 'TOTAL\tTotal (0 rows)\t\t\n'
     fi
-    printf 'NOTE\tCalendar days between the staging start and the deletion: ONE global retention (~11 days) — the sweep runs at 03:00, so a file staged before 03:00 expires on calendar day 11, a later one on day 10-11. No subscription deviates (see the per-subscription average below), so retention is **not** configured per partner.\n'
 
     # ---- 2. the subscriptions (per ACCOUNT until 2026-09-19, user request) ---
     # default sort = Last deletion descending (2026-09-21, user request): declared
@@ -226,7 +224,6 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
         printf 'ROW\t@{colspan=11}No expired Files in this data window.\n'
         printf 'TOTAL\tTotal (0 subscriptions)\t\t\t\t\t\t\t\t\t\t\n'
     fi
-    printf 'NOTE\tPickup rate = Collected / (Collected + Expired) for the same subscription — how often the partner actually fetches what this flow stages for it. **Red** rows never collected a single file (a dead pickup flow: everything staged for them expires); **orange** rows collect some and let the rest expire. Waiting = staged within the last ~11 days, still collectable.\n'
 
     # ---- 3. the sweep nights ------------------------------------------------
     printf 'TABLE\tExpiries per sweep night\tnofilter\n'
@@ -244,7 +241,6 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
         printf 'ROW\t@{colspan=4}No expired Files in this data window.\n'
         printf 'TOTAL\tTotal (0 nights)\t\t\t\n'
     fi
-    printf 'NOTE\tEach row is one 03:00 File Maintenance run and what it removed unclaimed. A missing night means that sweep deleted nothing — nothing staged ~11 days earlier went uncollected. The Subscriptions column is per night and not additive (one subscription expires files on many nights), so the Total leaves it blank.\n'
 
     # ---- 4. the staging weekday --------------------------------------------
     printf 'TABLE\tStaged on which weekday - expired vs collected\tnofilter\tnosearch\n'
@@ -260,13 +256,11 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
         printf 'ROW\t@{colspan=4}No staged UC2 Files in this data window.\n'
         printf 'TOTAL\tTotal (0 weekdays)\t\t\t\n'
     fi
-    printf 'NOTE\tThe weekday the file was **STAGED** (not deleted). NOTE one subscription can dominate this split — check the per-subscription table before reading a weekday pattern as partner behaviour.\n'
 
-    printf 'NOTE\tSource: the transfer parse cache (_files.tsv) — outcome **Expired** and the col-22 deletion timestamp set by **bin/expire-files.sh** from the server log'"'"'s "File Maintenance … finished. Deleted files […]" lines (the deletion leaves NO transfer-log record). Collected = delivered (Processed) staged files with a pickup (col 21) — the Waiting report'"'"'s rule; the sweep also removes already-collected staged copies — routine cleanup, not counted here. Expired files count as **Error** on every report; Waiting files count as **OK**.\n'
     printf 'KEYWORDS\texpired, retention, file maintenance, sweep, deleted, never delivered, uncollected, pickup, staged, uc2, waiting\n'
     printf 'SUMMARY\tExpired: %s Files (%s%% of resolved staged)  |  Volume: %s  |  Average staged to deleted: %s d  |  Still waiting: %s\n' \
         "$nexp" "$share" "$hb" "$avgage" "$nwait"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($nexp expired, $ncoll collected, $nwait waiting)." >&2

@@ -64,9 +64,9 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # ---- build one scope (one output, two tables side by side) -------------------
 # Parameters via the calls below: OKONLY (1 = Processed only), OUT (the .rpt
 # of this scope), NAVLINE (the OK/All button row), and the scope words for
-# the DESC/INTRO/NOTE.
+# the DESC/INTRO.
 build_view() {   # ONE output per scope since 2026-09-13: the percentiles table and the min/avg/max table side by side
-    local OKONLY=$1 OUT=$2 NAVLINE=$3 SCOPE_DESC=$4 SCOPE_INTRO=$5 SCOPE_NOTE=$6
+    local OKONLY=$1 OUT=$2 NAVLINE=$3 SCOPE_DESC=$4 SCOPE_INTRO=$5
 
     # main pass: per-day stats. Tagged col 1: 1=per-day (min/avg/max and
     # the percentiles on one line), O=overall. (S=subscription left
@@ -184,7 +184,7 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
             printf 'HEAD\tDuration\n'
             printf 'KIND\ttext\n'
             printf 'ROW\tNo transfers with a measured duration in this view.\n'
-            printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+            printf 'FOOT\n'
         } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
         echo "No transfers with a duration found for $OUT — wrote empty-state." >&2
         return 0
@@ -253,10 +253,9 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
         printf '%s\n' "$perday_mm"
 
 
-        printf 'NOTE\tOne "File" = one logical transfer (all records sharing a CoreId); duration = its **wall-clock span** — from the first record start to the last record end, in milliseconds (so it includes the store-and-forward gap between the inbound and outbound legs, and the idle time between retries), NOT the sum of the record durations. %sPer-day min/median/max and percentiles are **not additive**: a narrowed date range keeps each day row but blanks the total. Percentiles use the nearest-rank method; **p100** is the day'\''s longest File — the Max of the other view — so the gap between p99 and p100 says how far the worst case sits from the rest.\n' "$SCOPE_NOTE"
         printf 'SUMMARY\tFiles: %s  |  Median: %s  |  p95: %s  |  p99: %s  |  Max: %s\n' \
             "$g_n" "$u_p50" "$u_p95" "$u_p99" "$u_max"
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
     echo "Data written to $OUT ($g_n Files over $g_days days)." >&2
@@ -271,10 +270,8 @@ NAV_ALL=$'NAV\t0|OK transfers|duration.html\t1|All transfers|duration-all.html'
 
 build_view 1 "$REPORTS_DIR/duration.rpt" "$NAV_OK" \
     "Delivered (Processed) Files only — the default; use the All transfers button to include failures." \
-    "Only **Processed** Files count; Error transfers (short attempts or long retry spans) are excluded so they do not skew the statistics — switch to **All transfers** to include them." \
-    "**Only Processed (OK) Files are counted** here (use the All transfers button to include failures). "
+    "Only **Processed** Files count; Error transfers (short attempts or long retry spans) are excluded so they do not skew the statistics — switch to **All transfers** to include them."
 
 build_view 0 "$REPORTS_DIR/duration-all.rpt" "$NAV_ALL" \
     "ALL Files, including failed (Error) transfers." \
-    "**All** Files count, including Error transfers — a failed transfer's duration is how long it ran before failing (e.g. a timeout), so long-hanging failures show up here (switch to **OK transfers** for delivered-only statistics)." \
-    "**All Files are counted, including failed (Error) ones** — a failure's duration is how long it ran before giving up (use the OK transfers button for delivered-only). "
+    "**All** Files count, including Error transfers — a failed transfer's duration is how long it ran before failing (e.g. a timeout), so long-hanging failures show up here (switch to **OK transfers** for delivered-only statistics)."

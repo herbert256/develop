@@ -90,18 +90,13 @@ heat_rows=$(printf '%s\n' "$agg" | grep $'^HROW\t\|^HTOT\t' | sed 's/^HROW\t/ROW
 
 {
     printf 'TITLE\tError Timing\n'
-    printf 'DESC\tWhen errors and warnings happen — an hour × weekday heatmap with the per-hour Errors / Warnings / Total beside it. Surfaces batch-window and nightly-maintenance failure patterns that a per-day view hides.\n'
-    printf 'INTRO\t**%s** Error/Warning messages (**%s** errors, **%s** warnings). Darker cells are busier hours; the last three columns are the hour totals, the Total row the weekday totals. Click an hour for its 10 most recent messages.\n' \
-        "$t_tot" "$t_err" "$t_warn"
 
     printf 'TABLE\tHour × weekday heatmap\theat\n'
     printf 'HEAD\tHour\tMonday\tTuesday\tWednesday\tThursday\tFriday\tSaturday\tSunday\tErrors\tWarnings\tTotal\n'
     printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnumfailed\tnumwarn\tnum\n'
     printf '%s\n' "$heat_rows"
-    printf 'NOTE\tEach weekday cell is the total Error + Warning count for that hour and weekday; cells are tinted by quartile (darker = busier). Errors / Warnings / Total are the hour over all days, the Total row the weekday over all hours. The date filter re-sums and re-tints every cell for the selected range. Click an hour for its 10 most recent messages.\n'
 
-    printf 'SUMMARY\tError/Warning messages: %s  |  Errors: %s  |  Warnings: %s\n' "$t_tot" "$t_err" "$t_warn"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($t_tot msg(s): $t_err err, $t_warn warn)." >&2

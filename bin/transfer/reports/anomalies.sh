@@ -220,7 +220,7 @@ awk -F'\t' '
     }
 ' "$FILES" \
 | LC_ALL=C sort -t$'\t' -k1,1r -k2,2r -k3,3 -k4,4 \
-| awk -F'\t' -v nfiles="${#files[@]}" -v now="$(date '+%Y-%m-%d %H:%M:%S')" '
+| awk -F'\t' '
     function open_daily() {
         printf "TABLE\tDaily — unusual days\twide\tkeephead\tsxs\n"
         printf "HEAD\tDate\tWhat\tValue\tTypical\t× typical\n"
@@ -236,10 +236,7 @@ awk -F'\t' '
     }
     function close_hourly() {
         printf "TOTAL\tTotal (%d rows)\t\t\t\t\t\n", n1
-        printf "NOTE\t**Daily** — signals per calendar day vs the typical day: **Error rate** (≥10%%, ≥20 Files, ≥4× typical), **Duration** (avg per delivered File ≥5 min, ≥20 OK Files, ≥4×), **Files spike** (≥100 Files, ≥2×), **Files drop** (≤¼ of a ≥100-Files typical), **Silence** (a calendar day with NO transfers where ≥20 are typical — missing days are walked via the calendar), **Volume** (≥200 MB, ≥2×).\n"
-        printf "NOTE\t**Hourly** — signals per start hour: **Error rate** (≥25%% and ≥5 Files), **Duration** (avg per delivered File ≥5 min, ≥5 delivered Files), **Files spike** (≥30 Files), **Silence** (0 Files in an hour that typically moves ≥20), **Volume** (≥100 MB) — each also ≥4× its typical. Consecutive flagged hours merge into one episode; its Peak, Typical and × typical are the three figures of its worst hour. **Typical** is the baseline the ratio was computed against: the historical median, lifted to the floor of the rule when the median sits below it (then shown as \"1 m (floor; typical 25.3 s)\"), so Value ÷ Typical always gives × typical.\n"
-        printf "NOTE\tEnd-of-window caution: on the newest day the outbound legs of just-arrived files may not be exported yet, which can flag late hours or the whole day as Error rate — recheck after the next log export.\n"
-        printf "FOOT\tGenerated on %s from %s file(s)\n", now, nfiles
+        printf "FOOT\n"
     }
     BEGIN {
         printf "TITLE\tAnomalies\n"

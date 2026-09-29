@@ -238,8 +238,6 @@ s3_ok=0
 {
     printf 'TITLE\tSince yesterday\n'
     printf 'DESC\tThe data diff: what changed on the newest data day — fresh red flips, flows that just went quiet, recoveries, first-ever sightings and new unknown names.\n'
-    printf 'INTRO\tThe newest data day is **%s** (the latest date across the transfer and server parse caches); everything below is judged against **%s or %s** — the exports arrive in batches, so a change late on %s may only surface in the next export. This page diffs the **DATA**; the report catalog'\''s changes live on **What'\''s new**.\n' \
-        "$D" "$D" "$G" "$G"
 
     printf 'STAT\twhite\t%s\tNewest data day\n' "$D"
     printf 'STAT\tred\t%s\tnew red flips\n' "$n1"
@@ -261,7 +259,6 @@ s3_ok=0
         printf 'ROW\t@{colspan=6}Nothing new — no subscription flipped red on %s or %s.\n' "$D" "$G"
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t@{class=num}%s\t@{class=num}%s\t\n' "$n1" "$s1_run" "$s1_n"
-    printf 'NOTE\tRed subscriptions that WENT red on **%s** or **%s** — the freshest breakage: red on server-log evidence that began then, or a run of failing Files that started then. A chronically failing flow is not new, however recently it failed again. **Failed Subscriptions** tells each run'\''s full story.\n' "$D" "$G"
 
     # ---- T2 ----
     printf 'TABLE\tNewly quiet\tnofilter\n'
@@ -276,7 +273,6 @@ s3_ok=0
         printf 'ROW\t@{colspan=5}Nothing new — no flow crossed the went-quiet threshold within the last data day.\n'
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t@{class=num}%s\t\n' "$n2" "$s2_n"
-    printf 'NOTE\tFlows whose last File is exactly **8 days** before the transfer window end (**%s**): **Went quiet** flags a flow once its silence exceeds 7 days, so these crossed that line within the last data day — the freshest silences, before they fade into old news.\n' "$endd"
 
     # ---- T3 ----
     printf 'TABLE\tRecovered\tnofilter\n'
@@ -291,7 +287,6 @@ s3_ok=0
         printf 'ROW\t@{colspan=5}Nothing new — no broken flow came back on %s or %s.\n' "$D" "$G"
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t@{class=num}%s\t\n' "$n3" "$s3_ok"
-    printf 'NOTE\tGreen flows whose FIRST OK File after their last failure is on **%s** or **%s**: they were failing, and started working again since yesterday. Waiting counts as OK, Expired as Error — the site-wide outcome policy.\n' "$D" "$G"
 
     # ---- T4 ----
     printf 'TABLE\tFirst seen\tnofilter\n'
@@ -309,7 +304,6 @@ s3_ok=0
         printf 'ROW\t@{colspan=4}Nothing new — no configured entity carried its first-ever File on %s or %s.\n' "$D" "$G"
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t\n' "$n4"
-    printf 'NOTE\tConfigured logical flows, partners, subscriptions, accounts, logins and remote hosts whose FIRST-EVER File is on **%s** or **%s**, read from the first-seen ledger (the same per-day cells behind the **First seen** analysis). A name'\''s first sighting is a one-off event — it appears here once and then only lives on that page.\n' "$D" "$G"
 
     # ---- T5 ----
     printf 'TABLE\tServer-only names still mentioned\twide\tnofilter\n'
@@ -327,11 +321,10 @@ s3_ok=0
         printf 'ROW\t@{colspan=4}Nothing new — no server-log-only name surfaced on %s or %s.\n' "$D" "$G"
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t\n' "$n5"
-    printf 'NOTE\tNames the server log mentions with NO transfer of their own (the data/unknown sidecars) whose newest mention is on **%s** or **%s**. A configured name here never transferred — orange, or red when its own polls cannot connect (the UC3 cannot-connect rule); an unconfigured one is a stranger knocking — **Missing entities** has the full lists.\n' "$D" "$G"
 
     printf 'SUMMARY\tSince yesterday (%s/%s): %s red flip(s), %s newly quiet, %s recovered, %s first seen, %s new unknown name(s)\n' \
         "$D" "$G" "$n1" "$n2" "$n3" "$n4" "$n5"
-    printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT (D=$D: $n1 flip(s), $n2 quiet, $n3 recovered, $n4 first-seen, $n5 unknown)." >&2

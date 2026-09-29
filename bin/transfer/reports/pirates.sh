@@ -87,8 +87,6 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
                 { printf "ROW\t%s\t%s\t%s\t%s\n", $2, $1, $3, $4; t += $1 }
                 END { printf "TOTAL\tTotal (%d subscription(s))\t@{class=num}%d\t\t\n", NR, t }'
     fi
-    # this NOTE sits between the two tables, so it stays on the Details page only
-    printf 'NOTE\tOne row per subscription: how many of its transfers were single-leg, and the first and last date one occurred. Single-leg transfers do not complete the store-and-forward, so they end up **Error**. The Subscription links to its detail page.\n'
 
     # ---- tab 2: Top view — the count of single-leg transfers per day ----
     if [ -z "$pd" ]; then
@@ -106,7 +104,7 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
     fi
 
     printf 'SUMMARY\tSingle-leg (pirate) transfers: %s\n' "$n_total"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_total single-leg transfer(s))." >&2

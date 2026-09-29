@@ -116,7 +116,6 @@ read -r w_tot w_fail w_pct <<< "$(lsum WD)"
         printf 'ROW\t%s:00\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\n' "$hh" "$tot" "$fail" "$pct" "$width" "$bk" "$drill"
     done <<< "$(printf '%s\n' "$agg" | grep '^HOUR|')"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s%%\t\n' "$h_tot" "$h_fail" "$h_pct"
-    printf 'NOTE\tFiles by the hour of their start time, all days combined; the Failures bar is that hour'\''s failed count relative to the busiest hour. Hours with zero errors are not listed. Re-aggregates over the selected dates. Click an Error count for its 10 most recent failed Files.\n'
 
     printf 'TABLE\tBy weekday\tzerohide=1\tsxs=1\n'
     printf 'HEAD\tWeekday\tFiles\tError\tError %%\tFailures\n'
@@ -129,16 +128,14 @@ read -r w_tot w_fail w_pct <<< "$(lsum WD)"
         printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\n' "${wdname[$w]}" "$tot" "$fail" "$pct" "$width" "$bk" "$drill"
     done <<< "$(printf '%s\n' "$agg" | grep '^WD|')"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s%%\t\n' "$w_tot" "$w_fail" "$w_pct"
-    printf 'NOTE\tThe same counts by day of week (Monday first). Weekdays with zero errors are not listed. Re-aggregates over the selected dates.\n'
 
     printf 'TABLE\tHour × weekday failure heatmap\theat\n'
     printf 'HEAD\tHour\tMonday\tTuesday\tWednesday\tThursday\tFriday\tSaturday\tSunday\n'
     printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
     printf '%s\n' "$heat_rows"
-    printf 'NOTE\tEach cell is the number of FAILED Files for that hour and weekday; cells are tinted by quartile (darker = more failures). The date filter re-sums and re-tints every cell for the selected range.\n'
 
     printf 'SUMMARY\tFiles: %s  |  Error: %s (%s%%)\n' "$t_tot" "$t_fail" "$tot_pct"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($t_tot CoreId(s), $t_fail failed)." >&2

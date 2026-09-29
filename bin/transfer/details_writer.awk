@@ -12,7 +12,6 @@
 #   LC_ALL=C awk -F'\t' -v TYPE=ACC -v ANN=<streams/a.ACC> -v OUTDIR=<dir> \
 #       -v SRV=<server cache> -v FWD=<input/ip/ip-hosts.tsv> \
 #       -v UCF=<ucmeta dump> -v UCDF=<derived-uc dump> -v UNCF=<uncollected dump> -v OKF=<last-ok sidecar> \
-#       -v NOW="YYYY-mm-dd HH:MM:SS" -v NFILES=<n input csvs> \
 #       -f details_writer.awk <streams/s.ACC>
 #
 # The stream slice (s.TYPE) is the sorted per-type agg stream (see details.sh
@@ -247,7 +246,6 @@ function ensure_file(   dirtok, xdisp, tpfx) {
     tpfx = ""
     if (xdisp != "?" || a_mv != "") tpfx = xdisp "/" (a_mv == "" ? "?" : a_mv) ": "
     emitl("TITLE\t" tpfx label ": " pend_e)
-    emitl("DESC\t" desc)
     err_after_transfer_banner()
     no_subscription_banner()
     if (have_tot != 1) emit_intro()
@@ -737,7 +735,7 @@ function logons_section(   k9, F9, i9, n9, FL) {
 # logins with one) stays in place, a flex row of its own.
 function blk_end(s,   j) {
     for (j = s + 1; j <= npg; j++)
-        if (index(PG[j], "TABLE\t") == 1 || PG[j] ~ /^(FOOT|META)\t/) return j - 1
+        if (index(PG[j], "TABLE\t") == 1 || PG[j] ~ /^(FOOT|META)(\t|$)/) return j - 1
     return npg
 }
 function login_sxs_row(   i, act0, act1, lg0, lg1, ic0, ic1, n2) {
@@ -1172,7 +1170,7 @@ function files_table(   i, j, at, n2, blk, nb) {
     blk[++nb] = "KIND\ttext\ttext\tnum\tmono\tmono"
     at = 0
     for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\tLoad by weekday") == 1) { at = i; break }
-    if (at == 0) for (i = 1; i <= npg; i++) if (PG[i] ~ /^(FOOT|META)\t/) { at = i; break }
+    if (at == 0) for (i = 1; i <= npg; i++) if (PG[i] ~ /^(FOOT|META)(\t|$)/) { at = i; break }
     if (at == 0) at = npg + 1
     n2 = 0
     for (i = 1; i <= npg; i++) {
@@ -1258,7 +1256,7 @@ function close_file(   dircls, resv, out, i) {
     resv = (a_res == "green" || a_res == "orange" || a_res == "red") ? a_res : ""
     if (pend_t == "ACC") uncollected_files_table()
     page_srv_log()
-    emitl("FOOT\tGenerated on " NOW " from " NFILES " file(s)")
+    emitl("FOOT")
     emitl("META\tseen\t" (have_tot == 1 ? 1 : 0))
     if (resv != "") emitl("META\tdirclass\tres-" resv)
     else emitl("META\tdirclass\tdir-" (have_tot == 1 ? "seen" : "notseen") "-" dircls)
@@ -1308,7 +1306,6 @@ BEGIN {
     else if (TYPE == "APP")   { label = "Application";  typenoun = "applications";  sdir = "";              bt = "application";  rk = "applications" }
     else if (TYPE == "DOM")   { label = "Domain";       typenoun = "domains";       sdir = "";              bt = "domain";       rk = "domains" }
     else                      { label = "BL";           typenoun = "BL tags";       sdir = "";              bt = "bl";           rk = "bl" }
-    desc = cntlabel " per day for this " label ", plus load, every other dimension and the largest " cntlabel " seen for it."
     SM = OUTDIR "/_slugmap.tsv"
     # the shared UC descriptions (bin/uc-cases.sh, dumped by details.sh so the
     # single source of truth stays bash): token \t From..trigger — field 6 = Human

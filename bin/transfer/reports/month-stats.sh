@@ -19,7 +19,8 @@
 # connection side col 16; Errors =
 # Failed + Expired; Auto Retries = an OK File with a failed leg and no
 # resubmitted leg; Resubmit OK / Error = every File with a resubmitted leg, by
-# outcome; Waiting / Expired = the outcome col 2). Attribution per entity
+# outcome — the leg flags _files.tsv col 26 / col 27; Waiting / Expired = the
+# outcome col 2). Attribution per entity
 # mirrors entities.sh exactly (see there); totals per (name, File) pair for
 # subscription / login / remote-host, once per File for the rest.
 #
@@ -30,6 +31,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union / ap_union / lg_union / bl_union)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -43,10 +45,6 @@ rm -f "$OUTDIR"/*.rpt.tmp "$OUTDIR"/.agg.tmp "$REPORTS_DIR"/_alltime.tsv.tmp "$R
 
 DIMS="account subscription login remote-host logical partner application domain bl"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
-
-mapf() { [ -f "$CONFIG_XREF/$1.tsv" ] && printf '%s' "$CONFIG_XREF/$1.tsv" || printf ''; }
-M_LG=$(mapf _subscriptions-logicals); M_VLG=$(mapf _profiles-logicals)
-M_PT=$(mapf _subscriptions-partners); M_AP=$(mapf _subscriptions-apps); M_BL=$(mapf _subscriptions-bl)
 
 # THIS month = the month of the newest File start date in the cache (the
 # data, not the wall clock — a lagging export must not show an empty month);
@@ -64,14 +62,7 @@ AGG="$OUTDIR/.agg.tmp"
 ALLF="$REPORTS_DIR/_alltime.tsv"   # beside the .rpt files (2026-09-29 — not in month-stats/)
 : > "$ALLF.tmp"
 awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v ALLF="$ALLF.tmp" -v DIMS="$DIMS" -v THIS="$THIS" -v PREV="$PREV" \
-    -v M_LG="$M_LG" -v M_VLG="$M_VLG" -v M_PT="$M_PT" -v M_AP="$M_AP" -v M_BL="$M_BL" '
-    function loadmulti(f, m,   l, n2, z, k) { if (f == "") return
-        while ((getline l < f) > 0) { n2 = split(l, z, "\t")
-            if (n2 >= 2 && z[1] != "" && z[2] != "") { k = toupper(z[1]); m[k] = m[k] (m[k] == "" ? "" : "\037") z[2] } }
-        close(f) }
-    function loadsingle(f, m,   l, n2, z) { if (f == "") return
-        while ((getline l < f) > 0) { n2 = split(l, z, "\t"); if (n2 >= 2 && z[1] != "" && z[2] != "") m[toupper(z[1])] = z[2] }
-        close(f) }
+    "${SP_AWK_V[@]}" "$SP_AWK"'
     function addset(s, v) { return index("\037" s "\037", "\037" v "\037") ? s : (s == "" ? v : s "\037" v) }
     function addnames(t, s,   n2, z, i2) { if (s == "") return; n2 = split(s, z, "\037"); for (i2 = 1; i2 <= n2; i2++) NS[t SUBSEP z[i2]] = 1 }
     function acc(key) {   # key = month SUBSEP type SUBSEP name
@@ -81,13 +72,10 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v ALLF="$ALLF.tmp" -v DIMS="$DIMS" -v
         tc[k]++; if (isin) tin[k]++; if (isout) tout[k]++; if (f) tfe[k]++
         if (ra) tra[k]++; if (rmo) tmo[k]++; if (rme) tme[k]++; if (wt) twt[k]++; if (ex) tex[k]++ }
     BEGIN {
-        loadmulti(M_LG, LG); loadsingle(M_VLG, VLG); loadmulti(M_PT, PT); loadmulti(M_AP, AP); loadmulti(M_BL, BLM)
         PAIRTOT["subscription"] = 1; PAIRTOT["login"] = 1; PAIRTOT["remote-host"] = 1
     }
-    FILENAME == PF {
+    FILENAME == PF {   # _transfers.tsv: the per-File login / site / host sets (the leg flags come from _files.tsv col 26 / 27)
         cid = $1
-        if ($3 != "Processed") fl[cid] = 1
-        if ($22 == "true") rsb[cid] = 1
         if ($5 != "") lg[cid] = addset(lg[cid], $5)
         if ($6 != "") st[cid] = addset(st[cid], $6)
         if ($16 != "") hs[cid] = addset(hs[cid], $16)
@@ -99,20 +87,18 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v ALLF="$ALLF.tmp" -v DIMS="$DIMS" -v
         # In / Out: the movement, else the connection side (entities.sh rule)
         mv = ($17 != "") ? $17 : $16
         isin = (mv == "in"); isout = (mv == "out"); wt = ($2 == "Waiting"); ex = ($2 == "Expired")
-        ra = (!f && (cid in fl) && !(cid in rsb)); rmo = (!f && (cid in rsb)); rme = (f && (cid in rsb))
+        ra = (!f && $26 == "1" && $27 != "1"); rmo = (!f && $27 == "1"); rme = (f && $27 == "1")   # col 26 = a failed leg, col 27 = a resubmitted leg
         delete NS
         if ($3 != "") NS["account" SUBSEP $3] = 1
         if (cid in st) addnames("subscription", st[cid])
         if (cid in lg) addnames("login", lg[cid])
         if ($16 == "out" && (cid in hs)) addnames("remote-host", hs[cid])
-        if ($13 != "" && (toupper($13) in VLG)) NS["logical" SUBSEP VLG[toupper($13)]] = 1
-        if ($12 != "" && (toupper($12) in LG)) addnames("logical", LG[toupper($12)])
-        if ($20 != "") NS["partner" SUBSEP $20] = 1
-        if ($12 != "" && (toupper($12) in PT)) addnames("partner", PT[toupper($12)])
-        if ($18 != "") NS["application" SUBSEP $18] = 1
-        if ($12 != "" && (toupper($12) in AP)) addnames("application", AP[toupper($12)])
+        # logical / partner / application / BL = the UNION sets (bin/pda-union.sh)
+        addnames("logical", lg_union($13, $12))
+        addnames("partner", sp_union($20, $12))
+        addnames("application", ap_union($18, $12))
         if ($19 != "") NS["domain" SUBSEP $19] = 1
-        if ($12 != "" && (toupper($12) in BLM)) addnames("bl", BLM[toupper($12)])
+        addnames("bl", bl_union($12))
         delete TS
         for (k in NS) { split(k, kk, SUBSEP); t = kk[1]
             acc("all" SUBSEP k)                     # the _alltime.tsv sidecar (analyses/subscriptions.html)
@@ -159,10 +145,8 @@ for which in this previous; do
             function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
             $4 == "" { next }
             { printf "ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", $4, $5, nz($6), nz($7), nz($8), nz($9), nz($10), nz($11), nz($12), nz($13) }')
-        [ "$which" = this ] && wlabel="the current month" || wlabel="the previous month"
         {
             printf 'TITLE\tMonth stats — %s — %s\n' "$title" "$mon"
-            printf 'DESC\tThe %ss with Files that started in %s (%s): total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired Files.\n' "$noun" "$mon" "$wlabel"
             printf 'META\tmonth\t%s\n' "$mon"
             printf 'TABLE\t%s — Files started in %s\twide\tsort=1:-1\n' "$title" "$mon"
             printf 'HEAD\t%s\tTotal files\tIn Files\tOut Files\tErrors\tAuto Retries\tResubmit OK\tResubmit Error\tWaiting\tExpired\n' "$chead"
@@ -170,7 +154,7 @@ for which in this previous; do
             [ -n "$rows" ] && printf '%s\n' "$rows"
             printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num failed}%s\n' \
                 "$ns" "$noun" "$tc" "$(nz0 "$tin")" "$(nz0 "$tout")" "$(nz0 "$tfe")" "$(nz0 "$tra")" "$(nz0 "$tmo")" "$(nz0 "$tme")" "$(nz0 "$twt")" "$(nz0 "$tex")"
-            printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+            printf 'FOOT\n'
         } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     done
 done

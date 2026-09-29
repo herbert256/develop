@@ -47,8 +47,6 @@ echo "Building the incoming-connection (whitelisted IP) detail pages..." >&2
 mkdir -p "$OUTDIR"
 rm -f "$OUTDIR"/*.rpt "$SLUGMAP"
 
-stamp=$(date '+%Y-%m-%d %H:%M:%S')
-
 # the side inputs ride in ARGV behind f= markers; the optional ones only
 # when present (a missing cache degrades to an empty join, as before)
 args=()
@@ -61,8 +59,7 @@ args+=( f=files "$FILES" )
 # after every page .rpt exists — a killed run leaves no slugmap rather than a
 # partial one.
 npages=$(LC_ALL=C awk -F'\t' \
-    -v outdir="$OUTDIR" -v slugmap="$SLUGMAP.tmp" \
-    -v stamp="$stamp" -v nfiles="${#files[@]}" '
+    -v outdir="$OUTDIR" -v slugmap="$SLUGMAP.tmp" '
     function hb(b) { if (b >= 1073741824) return sprintf("%.1f GB", b/1073741824)
                      if (b >= 1048576)    return sprintf("%.1f MB", b/1048576)
                      if (b >= 1024)       return sprintf("%.1f KB", b/1024)
@@ -169,7 +166,7 @@ npages=$(LC_ALL=C awk -F'\t' \
                 for (i = 1; i <= nacc; i++) printf "ROW\t%s\n", sa[i] > out
                 printf "TOTAL\tTotal (%d account(s))\n", nacc > out
             }
-            printf "FOOT\tGenerated on %s from %s file(s)\n", stamp, nfiles > out
+            printf "FOOT\n" > out
             close(out)
             np++
         }

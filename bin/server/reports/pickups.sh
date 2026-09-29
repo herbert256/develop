@@ -134,8 +134,6 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
 
 {
     printf 'TITLE\tPickups\n'
-    printf 'DESC\tEvery UC2 (partner collects from us) flow'\''s pickup figures side by side: first/last pickup, the last logon on the old gateway, pickup logons, collected files, waiting files and how long the oldest has waited, expired files and the pickup cadence.\n'
-    printf 'INTRO\tOne row per **UC2** (partner collects from us) subscription — the detail pages'\'' **Pickup information** tables collated. A **pickup** is a successful SSH logon by the flow'\''s pickup account (shared across that account'\''s UC2 subscriptions); a visit that only **delivered** files (the UC4 twin flow) is not a pickup. **Last Gateway** is the flow'\''s login'\''s last logon on the OLD gateway, from input/logons_old.txt (the Partners - Incoming page'\''s Gateway column). **With files** counts the pickups that collected at least one file of the subscription (each collected file credits the logon that took it); **Files picked up** matches the flow'\''s OK figure; **Waiting**/**Expired** are its staged files by outcome, and **Oldest waiting** is how long the oldest staged file has been waiting — aged against the newest transfer in the log, so an unchanged export does not age between builds. A partner collecting over CFT/PESIT logs no SSH pickup, so its logon columns stay empty while files still move. Stamps show date and hh:mm; a 0 renders empty.\n'
     # default sort: Waiting (column 7, 0-based — Last Gateway sits before it
     # since 2026-09-02) descending, then Pickups (column 4) descending —
     # 2026-09-01, user request. The primary key is this modifier; the
@@ -151,11 +149,8 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
     printf '%s\n' "$rows"
     printf 'TOTAL\tTotal (%s subscription(s))\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num processed}%s\t@{class=num}%s\t%s\t@{class=num failed}%s\t\n' \
         "$n_rows" "$(nz "$t_pk")" "$(nz "$t_wf")" "$t_f" "$(nz "$t_wt")" "$t_old" "$t_xp"
-    printf 'NOTE\tThe logon figures (Pickups, Pattern) are the pickup ACCOUNT'\''s and repeat on each of its UC2 subscriptions (the Total counts them once) — except on an account carrying **several FE logins** (production), where they are the flow'\''s own **login'\''s**: each login is a different partner credential. With files, Files picked up, Waiting, Oldest waiting and Expired are each subscription'\''s own. **Last Gateway** joins the hand-maintained input/logons_old.txt ("<login> <stamp>" per line, shown as written) through the subscription'\''s configured login(s); a flow whose login the file does not name shows an em dash. **Oldest waiting** shows one unit, truncated ("5 days", "12 hours", "45 minutes", "10 seconds"), and sorts by the exact age; the Total row carries the oldest of all. The per-flow story — the visit classification and the shared-connection evidence — is on each subscription'\''s detail page and the UC2 pickup visits analysis.\n'
-    printf 'SUMMARY\tFlows: %s  |  Pickups: %s  |  Files picked up: %s  |  Waiting: %s  |  Expired: %s\n' \
-        "$n_rows" "$t_pk" "$t_f" "$t_wt" "$t_xp"
     printf 'KEYWORDS\tuc2,pickup,pickups,collect,sftp,logon,waiting,oldest,age,expired,pattern,cadence,gateway,old gateway\n'
-    printf 'FOOT\tGenerated on %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($n_rows UC2 flow(s), $t_pk pickup logon(s), $t_f file(s) picked up)." >&2

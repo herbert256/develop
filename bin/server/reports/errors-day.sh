@@ -81,9 +81,6 @@ comp_rows() {
 
 {
     printf 'TITLE\tErrors & Warnings per Component\n'
-    printf 'DESC\tServer-log records by level (Info/Warning/Error) per component.\n'
-    printf 'INTRO\t**%s** records across **%s** day(s): **%s** errors (**%s%%**), **%s** warnings. The component table shows where the noise comes from; the Top view has the same levels per day.\n' \
-        "$tot_rec" "$day_count" "$tot_err" "$tot_pct" "$tot_warn"
 
     printf 'TABLE\tLevels per component\n'
     printf 'HEAD\tComponent\tInfo\tWarnings\tErrors\tRecords\n'
@@ -93,9 +90,7 @@ comp_rows() {
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num}%s\n' \
         "$tot_info" "$tot_warn" "$tot_err" "$tot_rec"
 
-    printf 'NOTE\tComponents: TM (transaction manager), PESITD, SSHD. Levels other than Info/Warning/Error (none expected) are counted in Records only. Click a row to expand its 10 most recent warning/error lines.\n'
-    printf 'SUMMARY\tRecords: %s  |  Errors: %s (%s%%)  |  Warnings: %s\n' "$tot_rec" "$tot_err" "$tot_pct" "$tot_warn"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($day_count day(s), $tot_err error(s))." >&2

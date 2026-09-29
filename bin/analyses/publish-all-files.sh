@@ -225,7 +225,7 @@ ndays=$(wc -l < "$TMPD/days" | tr -d ' '); nrows=$(wc -l < "$TMPD/rows" | tr -d 
 
 # the page: an EMPTY table the engine fills (rangehook: the shared From/To)
 _rpt="$TMPD/page.rpt"
-printf 'TITLE\tAll files search\nDESC\tFind a File among ALL the Files of the transfer logs by file name or CoreId and subscription, the results following each keystroke; the index loads only the days that can hold a match.\nKEYWORDS\tall files,file,files,search,find,filename,file name,coreid,subscription,history,archive\nTABLE\t\twide\trestint\tnosort\tnosearch\tnofilter\trangehook\nHEAD\tStart\tSubscription\tState\tSize\tFile\tCoreId\nKIND\ttext\ttext\ttext\tnum\tmono\tmono\n' > "$_rpt"
+printf 'TITLE\tAll files search\nTABLE\t\twide\trestint\tnosort\tnosearch\tnofilter\trangehook\nHEAD\tStart\tSubscription\tState\tSize\tFile\tCoreId\nKIND\ttext\ttext\ttext\tnum\tmono\tmono\n' > "$_rpt"
 CUR_DATES=$TRANSFER_DATES
 RPT_NOPROSE=1 render_rpt "$_rpt" "$PAGE" "../assets/style.css" "../index.html" "ANALYSES - All files search" 1 "all-files-search" "all-files-search"
 _mv=$(cksum < "$OUTD/index.js" | awk '{print $1}')

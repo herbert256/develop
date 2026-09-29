@@ -104,8 +104,6 @@ agg=$(awk -F'\t' -v minfiles="$MIN_FILES" -v drifthi="$DRIFT_HI" -v stubpct="$ST
 if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
     {
         printf 'TITLE\tSize Profile\n'
-        printf 'DESC\tPer-subscription file-size fingerprint: median size, first-half vs second-half drift, and the share of stub (near-empty) files.\n'
-        printf 'INTRO\tNo Files in this dataset.\n'
         # BOTH tables of a normal run (2026-09-29: one stub made the merged
         # Sizes report one tab short, its labels shifted)
         for _t in 'Size regime changed' 'Stub shippers'; do
@@ -115,7 +113,7 @@ if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
             printf 'ROW\tNo Files in this dataset.\n'
             printf 'TOTAL\tTotal (0 rows)\n'
         done
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "No Files found — wrote empty-state $OUT." >&2
     exit 0
@@ -136,9 +134,6 @@ IFS=$'\t' read -r s_n s_f s_s s_share <<< "$s_tot"
 
 {
     printf 'TITLE\tSize Profile\n'
-    printf 'DESC\tPer-subscription file-size fingerprint: median size, first-half vs second-half drift, and the share of stub (near-empty) files.\n'
-    printf 'INTRO\tWhat each flow'\''s files weigh, over the **%s** subscriptions with **%s+ Files** (of %s Files total). Two findings: **%s** flows whose typical file size **changed regime** — the median of their first half of files vs their second half (chronological) drifted by **%s\303\227 or more** in either direction — and **%s** flows shipping **stubs**: %s%%+ of their files smaller than max(1 KB, 1%% of the flow'\''s own median).\n' \
-        "$t_prof" "$MIN_FILES" "$t_files" "$d_n" "$DRIFT_HI" "$s_n" "$STUB_PCT"
 
     printf 'TABLE\tSize regime changed\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tFiles\tMedian (all)\tMedian (1st half)\tMedian (2nd half)\tDrift\n'
@@ -150,7 +145,6 @@ IFS=$'\t' read -r s_n s_f s_s s_share <<< "$s_tot"
         printf 'ROW\t@{colspan=6}No flow'\''s median size drifted by %s\303\227 or more.\n' "$DRIFT_HI"
         printf 'TOTAL\tTotal (0 subscriptions)\t\t\t\t\t\n'
     fi
-    printf 'NOTE\tThe halves are the flow'\''s OWN files split by count in chronological order (not calendar halves), so a burst-shaped flow is still compared fairly. Drift = 2nd-half median / 1st-half median; \342\210\236 marks a flow whose first-half median was 0 bytes. A regime change is worth understanding — a new file format, a changed upstream export, or content replaced by placeholders — but is not by itself an error.\n'
 
     printf 'TABLE\tStub shippers\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tFiles\tStubs\tStub share\tStub limit\tMedian (all)\n'
@@ -162,11 +156,8 @@ IFS=$'\t' read -r s_n s_f s_s s_share <<< "$s_tot"
         printf 'ROW\t@{colspan=6}No flow ships %s%%+ stub files.\n' "$STUB_PCT"
         printf 'TOTAL\tTotal (0 subscriptions)\t\t\t\t\t\n'
     fi
-    printf 'NOTE\tA **stub** is a file smaller than max(1 KB, 1%% of the flow'\''s median size) — the per-flow limit is in the Stub limit column. **Two-regime flows are often legitimate**: a data file plus a 0-byte semaphore/flag companion produces a steady ~50%% stub share by design. This table shows the mix so an UNEXPECTED stub surge (real content replaced by empties) stands out — it is informational, not an alarm list.\n'
 
     printf 'KEYWORDS\tsize, stub, empty, zero byte, semaphore, flag file, regime, drift, grew, shrank, median size, small files, placeholder\n'
-    printf 'SUMMARY\tProfiled flows: %s  |  Regime changes: %s  |  Stub shippers: %s\n' \
-        "$t_prof" "$d_n" "$s_n"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($t_prof profiled, $d_n regime changes, $s_n stub shippers)." >&2

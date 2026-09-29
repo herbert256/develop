@@ -116,13 +116,11 @@ if [ "${n_meas:-0}" -eq 0 ]; then
     # page and exit 0, so the build's report pool does not abort.
     {
         printf 'TITLE\tStore-and-Forward\n'
-        printf 'DESC\tHow long a file waits inside SecureTransport between finishing its inbound leg and starting its outbound leg — the store-and-forward queue dwell time, which no other report measures.\n'
-        printf 'INTRO\tNo files had a measurable store-and-forward dwell in this dataset (an inbound leg finishing, then a matching outbound leg).\n'
         printf 'TABLE\tStore-and-forward dwell\n'
         printf 'HEAD\tDwell\n'
         printf 'KIND\ttext\n'
         printf 'ROW\tNo measurable store-and-forward transfers in this dataset.\n'
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "No measurable store-and-forward transfers found — wrote empty-state $OUT." >&2
     exit 0
@@ -148,14 +146,9 @@ dist_rows=$(printf '%s\n' "$agg" | grep $'^B\t' | LC_ALL=C sort -t"$(printf '\t'
 # 4.46, so the slowest subscriptions sorted LAST and fell off the top-N cut
 site_rows=$(printf '%s\n' "$agg" | grep $'^P\t' | LC_ALL=C sort -t"$(printf '\t')" -k5,5gr \
     | awk -F'\t' -v n="$TOP_N" 'NR<=n { printf "ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids=%s\n", $2, $3, $8, $9, $6, $7 }')
-n_site=$(printf '%s\n' "$agg" | grep -c $'^P\t' || true)
-sitecap=""; [ "$n_site" -gt "$TOP_N" ] && sitecap=$(printf ' (top %s of %s subscriptions by max dwell)' "$TOP_N" "$n_site")
 
 {
     printf 'TITLE\tStore-and-Forward\n'
-    printf 'DESC\tHow long a file waits inside SecureTransport between finishing its inbound leg and starting its outbound leg — the store-and-forward queue dwell time, which no other report measures.\n'
-    printf 'INTRO\t**%s** Files had a measurable store-and-forward dwell (inbound completed, then forwarded). **Median %s**, **p95 %s**, **max %s**. %s File(s) forwarded before the inbound finished (overlapping legs) are excluded. Dwell = earliest outbound start − latest inbound completion. Click a subscription for its 10 most recent Files.\n' \
-        "$n_meas" "$med" "$p95" "$mx" "$n_neg"
 
     printf 'TABLE\tDwell-time distribution\n'
     printf 'HEAD\tDwell\tFiles\tShare\n'
@@ -163,7 +156,6 @@ sitecap=""; [ "$n_site" -gt "$TOP_N" ] && sitecap=$(printf ' (top %s of %s subsc
     printf 'RECALC\t-\ts0\t%%0\n'
     printf '%s' "$dist_rows"
     printf '%s' "$dist_rows" | awk -F'\t' '/^ROW/{n++; c+=$3} END{printf "TOTAL\tTotal (%d rows)\t@{class=num}%d\t100%%\n", n+0, c+0}'
-    printf 'NOTE\tHow the measurable dwell times are distributed. Most files forward almost immediately; the long tail is where store-and-forward latency lives. Re-aggregates over the selected dates.\n'
 
     printf 'TABLE\tDwell by subscription\twide\n'
     printf 'HEAD\tSubscription\tFiles\tAvg dwell\tMax dwell\n'
@@ -171,7 +163,6 @@ sitecap=""; [ "$n_site" -gt "$TOP_N" ] && sitecap=$(printf ' (top %s of %s subsc
     printf 'RECALC\t-\ts0\tq1.0\tx2\n'
     printf '%s\n' "$site_rows"
     printf '%s\n' "$site_rows" | awk -F'\t' '/^ROW/{n++; c+=$3} END{printf "TOTAL\tTotal (%d rows)\t@{class=num}%d\t\t\n", n+0, c+0}'
-    printf 'NOTE\tAverage and maximum dwell per subscription%s, slowest-first. Avg and Max re-aggregate over the selected dates. Click a subscription for its 10 most recent Files.\n' "$sitecap"
 
 # The report is assembled in THREE writes (this block, the gap-per-day append,
 # the SUMMARY/FOOT append) — all land in $OUT.tmp; the mv after the last one
@@ -184,7 +175,7 @@ sitecap=""; [ "$n_site" -gt "$TOP_N" ] && sitecap=$(printf ' (top %s of %s subsc
 # delivered Files only — the same wait measured per DAY with percentiles.
 (
 
-awk -F'\t' -v GENDATE="$(date '+%Y-%m-%d %H:%M:%S')" -v NFILES="${#files[@]}" '
+awk -F'\t' '
     # HH:MM:SS.mmm -> ms since midnight ("" -> 0)
     function hms(t,   a) { if (t == "") return 0; split(t, a, "[:.]"); return ((a[1]*3600) + (a[2]*60) + a[3]) * 1000 + a[4] }
     # compact cell format (mirrors duration.sh hd()): ms<5000, then whole s<300s,
@@ -231,7 +222,6 @@ awk -F'\t' -v GENDATE="$(date '+%Y-%m-%d %H:%M:%S')" -v NFILES="${#files[@]}" '
             g25 = hd(pct(O,AN,25)); g50 = hd(pct(O,AN,50)); g75 = hd(pct(O,AN,75)); g95 = hd(pct(O,AN,95)); g99 = hd(pct(O,AN,99)) }
         else { gmin = gmed = gmax = g25 = g50 = g75 = g95 = g99 = "-" }
 
-        printf "INTRO\tInbound-to-outbound gap for the **%d** delivered (OK) Files that have exactly one Inbound and one Outbound record, over **%d** day(s). Overall **min %s**, **median (p50) %s**, **p95 %s**, **p99 %s**, **max %s**. The gap is the outbound record start minus the inbound record END (its start plus its duration) — how long a file waits inside SecureTransport between arriving and leaving. Per-day columns are shown as **ms / s / m / h** (whole units); a narrowed date range keeps each day but blanks the non-additive totals.\n", AN, nd, gmin, gmed, g95, g99, gmax
 
         print "TABLE\tGap per day\twide\ttotaltop\tnoagg=2,3,4,5,6,7,8,9"
         print "HEAD\tDate\tFiles\tMin\tMedian\tMax\tP25\tP50\tP75\tP95\tP99"
@@ -241,7 +231,6 @@ awk -F'\t' -v GENDATE="$(date '+%Y-%m-%d %H:%M:%S')" -v NFILES="${#files[@]}" '
             for (k = 1; k <= n; k++) T[k] = DV[d SUBSEP k]; qsort(T, 1, n)
             printf "ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", d, n, hd(T[1]), hd(pct(T,n,50)), hd(T[n]), hd(pct(T,n,25)), hd(pct(T,n,50)), hd(pct(T,n,75)), hd(pct(T,n,95)), hd(pct(T,n,99)) }
 
-        print "NOTE\tOne \"File\" = one logical transfer (all records sharing a CoreId). Only Files with **exactly one Inbound and one Outbound** record, **both status Processed**, are counted (retries and any failed leg are excluded). **Gap = outbound start - (inbound start + inbound duration)** — the wait inside SecureTransport between the two legs. Per-day min/median/max and percentiles are **not additive**: a narrowed date range keeps each day row but blanks the total. Median is the same value as P50. Percentiles use the nearest-rank method."
     }
 ' "$PARSED" >> "$OUT.tmp"
 
@@ -249,7 +238,7 @@ awk -F'\t' -v GENDATE="$(date '+%Y-%m-%d %H:%M:%S')" -v NFILES="${#files[@]}" '
 
 {
     printf 'SUMMARY\tMeasurable: %s  |  Median: %s  |  p95: %s  |  Max: %s\n' "$n_meas" "$med" "$p95" "$mx"
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } >> "$OUT.tmp"
 mv "$OUT.tmp" "$OUT"
 

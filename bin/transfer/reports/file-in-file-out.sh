@@ -122,13 +122,11 @@ nh=$(grep -c . "$TMP.pairs" || true)
 if [ "${nh:-0}" -eq 0 ]; then
     {
         printf 'TITLE\tFile in - File out\n'
-        printf 'DESC\tPartner-to-partner handovers carried by TWO subscriptions: a file arrives from one partner and the same filename leaves to another, copied across in between.\n'
-        printf 'INTRO\tNo file arrived on one subscription and left on another within %s hours in this dataset.\n' "$WINDOW_H"
         printf 'TABLE\tHandover routes\ttab=fifo\n'
         printf 'HEAD\tRoute\n'
         printf 'KIND\ttext\n'
         printf 'ROW\tNo partner-to-partner handovers detected.\n'
-        printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+        printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "No handovers found — wrote empty-state $OUT." >&2
     exit 0
@@ -170,10 +168,7 @@ IFS=' ' read -r nroutes ncross <<< "$(printf '%s\n' "$route_rows" | awk -F'\t' '
 
 {
     printf 'TITLE\tFile in - File out\n'
-    printf 'DESC\tPartner-to-partner handovers carried by TWO subscriptions: the same filename is carried by two different flows within the window — it arrives from one partner and leaves to another, or the other way round — copied across in between.\n'
     printf 'KEYWORDS\thandover, relay, partner to partner, opswise, two subscriptions, file in file out, copy, uc5, uc8, same filename, direction, in out, out in\n'
-    printf 'INTRO\t**%s** handover route(s) carrying **%s** file(s): the SAME FILENAME is carried by two different flows within %s hours, with nothing in the data linking the two transfers except the name. **Direction** tells the two shapes apart — *In --> Out* (it arrives from a partner, then leaves to another) and *Out --> In* (it leaves to a partner, then arrives from another). **%s** of the routes cross partners the grouping does not merge, so the two halves are otherwise counted as unrelated one-partner flows. The platform also has a documented single-subscription form of this (UC5 / UC8 relays) — this report finds the two-subscription form. Matching is on the FILENAME only: the size may change in transit (re-encryption), so the **Same size** column reports that as evidence rather than requiring it.\n' \
-        "$nroutes" "$nh" "$WINDOW_H" "$ncross"
 
     # nofilter: the route figures (files, median gap, size split, first/last)
     # are whole-window aggregates with no per-day buckets behind them, so a
@@ -196,8 +191,6 @@ IFS=' ' read -r nroutes ncross <<< "$(printf '%s\n' "$route_rows" | awk -F'\t' '
                $2,$3,$13,$4,$5,$9,$10,$6,$7,$8,$11,$12 }' | LC_ALL=C sort -t"$(printf '\t')" -k5,5nr \
         | awk -F'\t' '{ print; n++; f+=$5; nf+=$6; s+=$12; c+=$13 }
             END{printf "TOTAL\tTotal (%d route(s))\t\t\t@{class=num}%d\t@{class=num}%d\t\t\t\t\t\t@{class=num}%d\t@{class=num}%d\n", n+0, f+0, nf+0, s+0, c+0}'
-    printf 'NOTE\tOne row per ROUTE, and a route is a (First flow, Second flow, Direction) triple: **First** carried the file first, **Second** carried it next. **Direction** *In --> Out* is a file that arrived from a partner and then left to another; *Out --> In* is one that left to a partner and then arrived from another — the same pattern the other way round. **Files** = handovers detected; **Filenames** = how many DISTINCT names they carried — when the two are equal every name was unique (timestamped), so the match cannot be coincidence; a route with far fewer filenames than files is repeating a fixed name and deserves a look. **Same size** / **Size changed** split the files by whether the byte count survived the copy: all-same is a byte-for-byte copy, all-changed usually means it was re-encrypted or re-wrapped. Gaps are the time from the inbound file to the outbound one.\n'
-    printf 'NOTE\tA route whose **First partner** and **Second partner** are the same group is usually NOT a partner-to-partner handover but a pull-then-stage flow (we fetch a file and stage it back for the same partner) — the row is kept so the pattern is visible, but read it differently.\n'
 
     printf 'TABLE\tLatest handovers\twide\ttab=fifo\n'
     printf 'HEAD\tFile\tFirst time\tFirst\tSecond time\tSecond\tDirection\tGap\tSize first\tSize second\n'
@@ -212,9 +205,8 @@ IFS=' ' read -r nroutes ncross <<< "$(printf '%s\n' "$route_rows" | awk -F'\t' '
         NR <= n { printf "ROW\t%s\t%s %s\t%s\t%s %s\t%s\t%s\t%s\t%s\t%s\n", $8, $9, $10, $1, $11, $12, $2, ($15 == "out" ? "Out --> In" : "In --> Out"), hd($3), $4, $5
                   c++; a += $4; b += $5 }
         END { printf "TOTAL\tTotal (%d row(s))\t\t\t\t\t\t\t@{class=num}%d\t@{class=num}%d\n", c+0, a+0, b+0 }'
-    printf 'NOTE\tThe %s most recent handovers, newest first. **First** is the leg that carried the file first and **Second** the one that carried it next; **Direction** says which way round that was — *In --> Out* (it arrived from a partner and then left to another) or *Out --> In* (it left to a partner and then arrived from another). The subscription cells link to their detail pages.\n' "$LATEST_N"
 
-    printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
+    printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($nroutes route(s), $nh handover(s))." >&2
