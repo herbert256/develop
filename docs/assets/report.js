@@ -2727,6 +2727,28 @@
     }, true, function () { return monthStartStr() >= dates[0]; });
     if (newestFull() !== newest) bmo.title = "One month back from the last full day — the newest day's collection window stopped mid-day, so it does not count";
     wrap.appendChild(bmo);
+    // This month / Previous month = the CALENDAR month of the newest data day
+    // and the one before it, every data day of the month (2026-09-29: they
+    // replace the Month stats pages — the Entities pages under these two
+    // presets show exactly what those 18 pages did). A month without data
+    // days is grayed like an unreachable span preset.
+    function calMonth(back) {
+      var ns = dates[dates.length - 1], y = +ns.slice(0, 4), m = +ns.slice(5, 7) - back;
+      while (m < 1) { m += 12; y -= 1; }
+      return y + "-" + (m < 10 ? "0" : "") + m;
+    }
+    function monthRange(back) {
+      var ym = calMonth(back), lo = null, hi = null, i;
+      for (i = 0; i < dates.length; i++) if (dates[i].slice(0, 7) === ym) { if (lo == null) lo = epochOf[dates[i]]; hi = epochOf[dates[i]]; }
+      return lo == null ? [oldest, newest] : [lo, hi];
+    }
+    function monthHas(back) { var ym = calMonth(back), i; for (i = 0; i < dates.length; i++) if (dates[i].slice(0, 7) === ym) return true; return false; }
+    var bthis = mkPresetBtn("This month", function () { return monthRange(0); }, true, function () { return monthHas(0); });
+    bthis.title = "Every data day of " + calMonth(0) + ", the calendar month of the newest data day";
+    wrap.appendChild(bthis);
+    var bprev = mkPresetBtn("Previous month", function () { return monthRange(1); }, true, function () { return monthHas(1); });
+    bprev.title = "Every data day of " + calMonth(1) + ", the calendar month before the newest data day";
+    wrap.appendChild(bprev);
     // First day = the OLDEST data day; Last day = the NEWEST data day — the
     // really-last one, partial or not (2026-08; only Week/4 weeks/Month skip
     // a partial newest day)
@@ -4130,17 +4152,16 @@
       '<span class="entgroup"><a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
       '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
       // the FILE SEARCH entry (2026-08), between the search icon and the
-      // report menus: the ALL FILES search ("Implementation 3, all files")
+      // report menus: the ALL FILES search ("Implementation 2, all files")
       // since 2026-09-28 (user request; its Implementation row leads on to
       // the other two). KEEP IN STEP with publish_lib.sh render_topbar.
       '<a class="dashlink" href="' + b + 'search/all-files.html">Files</a>' +
       '<nav class="nav">' +
-      '<div class="dd"><span class="ddlabel">Transfer reports ▾</span><div class="ddm">' + menu(M.transfer) + "</div></div>" +
-      (M.server ? '<div class="dd"><span class="ddlabel">Server reports ▾</span><div class="ddm">' + menu(M.server) + "</div></div>" : "") +
-      (M.analyses ? '<div class="dd"><span class="ddlabel">Analyses ▾</span><div class="ddm">' + menu(M.analyses) + "</div></div>" : "") +
-      // GOODIES (2026-09-13, user request): a short cut to the best reports,
-      // hand-written in publish_lib GOODIES_MENU — KEEP IN STEP with render_topbar
-      (M.goodies ? '<div class="dd"><span class="ddlabel">Goodies ▾</span><div class="ddm">' + menu(M.goodies) + "</div></div>" : "") +
+      // ONE pulldown, Reports (2026-09-29, user request): Start page + one
+      // line per report group (publish_lib _report_groups); the Transfer
+      // reports / Server reports / Analyses / Goodies four went. KEEP IN STEP
+      // with publish_lib.sh render_topbar.
+      '<div class="dd"><span class="ddlabel">Reports ▾</span><div class="ddm">' + menu(M.reports) + "</div></div>" +
       "</nav>" +
       '<a class="dashlink" href="' + b + 'dashboards/index.html">Dashboard</a>' +
       // the Monitor dashboard link renders only when this site HAS one
