@@ -116,6 +116,11 @@ case $RS_MODE in
     all|discover-hosts|discover) ;;
     *) echo "usage: bin/build/result.sh [discover-hosts|discover]" >&2; exit 2 ;;
 esac
+# laps (2026-09-29, speed round 3): TIME lines on the build console, sub-second
+# (one perl per lap, ~10 per run) — the full run only; a discover mode is quick
+_rl0=$(perl -MTime::HiRes=time -e 'printf "%.2f", time')
+_rlap() { [ "$RS_MODE" = all ] || return 0; local _t1; _t1=$(perl -MTime::HiRes=time -e 'printf "%.2f", time')
+          awk -v a="$_rl0" -v b="$_t1" -v w="$1" 'BEGIN { printf "TIME %5.1fs  result: %s\n", b - a, w }' >&2; _rl0=$_t1; }
 
 # ---- the UC3 poll evidence ---------------------------------------------------
 # The newest SUCCESSFUL poll per UC3 subscription — "Applying the search
@@ -212,6 +217,7 @@ awk -F'\t' '{ n = 0; m = split($5, Z, "|")
 : > "$CCSINCE"
 fi   # RS_MODE = all
 
+_rlap "UC3 poll evidence"
 # ---- stage 0: entities DISCOVERED in the transfer log ----------------------
 # A subscription (or remote host) can carry real transfers and still be absent
 # from the FlowManager export — a flow configured after the export was taken.
@@ -350,6 +356,7 @@ case $RS_MODE in
 esac
 discover_logged subscriptions sub
 discover_logged hosts host
+_rlap "leg hosts, observed pairs, discovery"
 
 # ---- stage 1: the subscriptions' own result --------------------------------
 # One pass over _files.tsv keyed on the UPPERCASED site name: keep the outcome
@@ -546,6 +553,7 @@ _build_ringattr() {
     commit_tmp "$RINGORPH"
 }
 _build_ringattr
+_rlap "own last Files + connected rings attributed (ringattr)"
 [ -f "$RINGATTR" ] || : > "$RINGATTR"
 
 # ---- the TROUBLE-AFTER-SUCCESS flip evidence (2026-08-22) -------------------
@@ -668,6 +676,7 @@ _build_kaputflip() {
     commit_tmp "$KAPUTFLIP"
 }
 _build_kaputflip
+_rlap "trouble-after-success evidence (kaputflip)"
 [ -f "$KAPUTFLIP" ] || : > "$KAPUTFLIP"
 [ -f "$RINGORPH" ] || : > "$RINGORPH"
 
@@ -830,6 +839,7 @@ commit_tmp "$BASE/_subscriptions.tsv"
 commit_tmp "$REDFLIP"
 rm -f "$POLLCAND" "$CONNCAND" "$CCAND" "$CCSINCE"
 
+_rlap "the red flips (after last transfer, cannot connect)"
 # ---- stage 2: everything else, rolled up from its subscriptions ------------
 # For each other base file, join its _<item>-subscriptions.tsv pair cache
 # (col 1 = the entity, col 2 = a connected subscription) against the results
@@ -922,6 +932,7 @@ rollup hosts    hosts-subscriptions    "$OBS_HST"
 # configured host can change colour (all 78 acceptance hosts are in it).
 host_own_unpaired
 white_own
+_rlap "rollups: accounts / logins / hosts / white"
 # PRUNE the estate of withdrawn discoveries (2026-08). Stage 0 above APPENDS
 # the entities the transfer log revealed, and nothing ever removed one whose
 # evidence went away: the row settled as ORANGE, a phantom "configured but
@@ -951,6 +962,7 @@ prune_withdrawn subscriptions 12
 prune_withdrawn hosts         15
 prune_withdrawn accounts       3
 prune_withdrawn logins        14
+_rlap "prune withdrawn discoveries"
 
 # The ring owner keeps the Error lines nothing can pin on a flow (2026-08).
 # Attribution gives a connected-ring error to the ONE subscription it concerns;
@@ -988,11 +1000,13 @@ orphan_red() {   # $1 = base/ring name (hosts|accounts|logins)  $2 = its _files.
 orphan_red hosts    legs
 orphan_red accounts  3
 orphan_red logins   14
+_rlap "orphan reds"
 rollup logicals logicals-subscriptions
 rollup partners partners-subscriptions
 rollup apps     apps-subscriptions
 rollup domains  domains-subscriptions
 rollup bl       bl-subscriptions
+_rlap "rollups: logical / PDA / BL"
 
 # ---- report ------------------------------------------------------------------
 for f in subscriptions accounts logins hosts white logicals partners apps domains bl; do

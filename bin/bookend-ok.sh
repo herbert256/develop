@@ -46,7 +46,7 @@
 # bookends) and _reasonlines.tsv (the classifying E/W lines with their
 # session + ids).
 #
-# Usage:  bin/bookend-ok.sh
+# Usage:  bin/bookend-ok.sh [extract|settle]   (no argument: both)
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -63,6 +63,13 @@ RL="$DATA/transfer/cache/_reasonlines.tsv"   # classifying E/W lines: date \t ti
 # (the _bookendok.tsv list of the settled rows went 2026-09-29 — only verify.sh
 # read it; the settled stamp is _files.tsv col 23)
 CLS="$ROOT/bin/flip-reason.awk"
+# THE MODE (2026-09-29, speed round 3): step 1, the extraction, reads the
+# server cache alone — final once the server parse is done — so bin/build.sh
+# starts it (extract) in a background slot beside session-sites and
+# expire-files, and runs step 2 (settle) as the bookend step; no argument =
+# both, in order (a manual run)
+BO_MODE=${1:-both}
+case $BO_MODE in both|extract|settle) ;; *) echo "usage: bin/bookend-ok.sh [extract|settle]" >&2; exit 2 ;; esac
 
 if [ ! -s "$FILES" ] || [ ! -s "$TRANSFERS" ]; then
     echo "bookend-ok: no transfer cache ($FILES) — nothing to settle." >&2
@@ -75,6 +82,7 @@ fi
 
 # ---- 1. the two extracts (an EMPTY one is valid: an env whose server log
 # holds no bookend) -----------------------------------------------------------
+if [ "$BO_MODE" != settle ]; then
 {
     btmp="$BK.tmp.$$"; rtmp="$RL.tmp.$$"
     # IN PARALLEL (2026-09-27): one job per core over its own byte range of the
@@ -122,6 +130,8 @@ fi
     mv "$btmp" "$BK"; mv "$rtmp" "$RL"
     echo "bookend-ok: extracted $(wc -l < "$BK" | tr -d ' ') ok bookend(s) and $(wc -l < "$RL" | tr -d ' ') classifying error/warning line(s) from the server cache." >&2
 }
+fi
+if [ "$BO_MODE" = extract ]; then exit 0; fi
 
 # ---- 2. settle the Failed rows (and re-check the settled ones) -------------
 ftmp="$FILES.tmp.$$"

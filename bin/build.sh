@@ -625,6 +625,7 @@ finalize_report() {
     set +e
     if [ -n "${BG_PID:-}" ]; then kill_tree "$BG_PID"; wait "$BG_PID" 2>/dev/null || true; fi
     if [ -n "${BG2_PID:-}" ]; then kill_tree "$BG2_PID"; wait "$BG2_PID" 2>/dev/null || true; fi
+    if [ -n "${BG3_PID:-}" ]; then kill_tree "$BG3_PID"; wait "$BG3_PID" 2>/dev/null || true; fi
     write_report "$REPORT" "$rc" || printf '*** bin/build.sh: the build report could not be written completely\n' >&2
     printf '\nBuild report: %s\n' "$REPORT" >&2
     release_lock
@@ -745,6 +746,39 @@ bg2_step_wait() {
         exit "$status"
     fi
 }
+# bg3_step_start / bg3_step_wait — a THIRD background slot (2026-09-29, speed
+# round 3), the same code over its own globals: the bookend extraction runs
+# beside session-sites and expire-files (slots 1 and 2 hold the logon
+# summary and the mention scan then).
+BG3_LABEL=""; BG3_N=0; BG3_CMD=""; BG3_START=""; BG3_T0=""; BG3_LOGF=""; BG3_PID=""
+bg3_step_start() {
+    [ -z "${BG3_PID:-}" ] || { printf '*** bin/build.sh: background slot 3 still busy — bg3_step_wait missing before "%s"\n' "$1" >&2; exit 1; }
+    BG3_LABEL=$1; shift
+    STEP_N=$((STEP_N+1))
+    BG3_N=$STEP_N
+    BG3_LOGF=$BUILD_DIR/step-$(printf '%02d' "$STEP_N").log
+    BG3_START=$(date '+%H:%M:%S'); BG3_T0=$(date +%s); BG3_CMD="$*"
+    printf '\n=== %d. %s (in background) ===\n' "$STEP_N" "$BG3_LABEL" >&2
+    rm -f "$BG3_LOGF.end"
+    ( "$@"; _bgst=$?; times > "$BG3_LOGF.cpu"; date +%s > "$BG3_LOGF.end"; exit "$_bgst" ) > "$BG3_LOGF" 2>&1 &
+    BG3_PID=$!
+}
+bg3_step_wait() {
+    local status=0 t1 tw0 tw1
+    tw0=$(date +%s)
+    wait "$BG3_PID" || status=$?
+    BG3_PID=""   # reaped (see bg_step_wait)
+    tw1=$(date +%s)
+    t1=$tw1; [ -s "$BG3_LOGF.end" ] && t1=$(cat "$BG3_LOGF.end")
+    STEPS+=("$BG3_LABEL"$'\037'"$BG3_CMD"$'\037'"$BG3_START"$'\037'"$((t1-BG3_T0))"$'\037'"$status"$'\037'"$BG3_LOGF")
+    grep '^TIME ' "$BG3_LOGF" >&2 || true
+    printf -- '--- %d. %s (in background): %ds, waited %ds  [cpu %s]\n' "$BG3_N" "$BG3_LABEL" "$((t1-BG3_T0))" "$((tw1-tw0))" "$(step_cpu "$BG3_LOGF.cpu")" >&2
+    if [ "$status" -ne 0 ]; then
+        printf '*** background step FAILED (exit %d): %s — output:\n' "$status" "$BG3_LABEL" >&2
+        tail -40 "$BG3_LOGF" >&2
+        exit "$status"
+    fi
+}
 
 # ---- RUNTIME-ONLY: ingest delivered updates BEFORE anything parses ---------
 # ONE inbox (2026-09-12, user request — the ~/cloud drop folder is gone): the
@@ -859,6 +893,12 @@ bg2_step_start "parse: server mention caches"                               env 
 # CPU-bound parallel scans, not idle time: session-sites went 8 -> 12-14 s,
 # the mention scan 20 -> 25 s, the build +6..+11 s. Reverted.)
 bg_step_start "server log: logon summary (per login + per address)"         bin/build/logon-summary.sh
+# THE BOOKEND EXTRACTION in slot 3 (2026-09-29, speed round 3): bookend-ok's
+# step 1 reads the server cache alone (final now) and writes only its own
+# extracts _bookends.tsv / _reasonlines.tsv, which nothing before its settle
+# step reads — so it runs beside session-sites, the discovery and
+# expire-files (a ~5 s full-cache scan off the critical chain)
+bg3_step_start "server log -> transfer: the ok bookends + reason lines (extract)" bin/bookend-ok.sh extract
 # the three server-log -> transfer joins, in this order: the session step
 # may re-derive _files.tsv (resetting col 22), so expire re-marks after it
 run_step "server log -> transfer: attribute Unknown flows by session"     bin/session-sites.sh
@@ -869,7 +909,8 @@ run_step "server log -> transfer: attribute Unknown flows by session"     bin/se
 # marker — production discovers no subscription, so normally nothing fires.
 run_step "result: discover the transfer-log subscriptions (+ re-check the hosts)" bin/build/result.sh discover
 run_step "server log -> transfer: mark expired staged files"              bin/expire-files.sh
-run_step "server log -> transfer: settle failed Files by ok bookend"      bin/bookend-ok.sh
+bg3_step_wait   # the bookend extracts: the settle step reads them
+run_step "server log -> transfer: settle failed Files by ok bookend"      bin/bookend-ok.sh settle
 # THE PUBLISHED FILE PAGES (2026-09-29, user request: per subscription only
 # the newest OK File and the three newest Failed Files get a docs/files/
 # page) — the outcomes are final now; every page writer and linker reads it
