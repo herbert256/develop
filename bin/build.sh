@@ -907,10 +907,6 @@ run_step "report: transfer .rpt files (phase 1)"                          bin/tr
 bg_step_wait   # the logon summary: logon.sh (server reports) + fe-overview.sh (analyses) read it
 run_step "report: server .rpt files"                                      bin/server/reports.sh
 bg2_step_wait  # details.sh
-run_step "report: transfer .rpt files (phase 2)"                          bin/transfer/reports.sh phase2
-run_step "report: analyses .rpt files"                                    bin/analyses/reports.sh
-# (cross-reference runs inside the analyses step since the 2026-07 move of
-# the Analyses-menu reports into bin/analyses/reports/)
 # dashboards and day both need the two areas' reports and nothing of each
 # other — disjoint output dirs, so they overlap (2026-08) — and since
 # 2026-09-27 (speed round 8) they run BESIDE THE PUBLISHES below, in the
@@ -921,8 +917,23 @@ run_step "report: analyses .rpt files"                                    bin/an
 # sets the top bar's Monitor link in every page a publish bakes (publish_lib
 # TB_MON, folded into the ?v= stamp) — so monitor.sh runs here, once, and
 # bin/dashboards/reports.sh leaves it out.
+# STARTED RIGHT AFTER THE SERVER REPORTS (2026-09-29, build speed — until
+# then after phase 2 + the analyses reports, ~6 s later, and the build then
+# waited up to 8 s for it): their inputs are the transfer caches, phase-1
+# reports (topview, anomalies, from-green-to-red, only-red), the server
+# reports and their slot sidecars (topview, went-kaput, no-remote-dir/-files,
+# pesit / event-queue / uc<n>-slots), colour/ and the config — all final here.
+# Checked: phase 2 writes showseen / ranking, the analyses step data/analyses/,
+# the cross-* and entity-search .rpt files and data/first-seen/ — none of
+# them an input here, and nothing below reads data/day/ or overview.rpt
+# before the wait. monitor.sh (the transfer cache only) moved up with them, so
+# the dashboards' orphaned-.rpt.tmp sweep can never meet its atomic write.
 run_step "report: dashboards monitor (the top bar's Monitor flag)"        bin/dashboards/reports/monitor.sh
 bg2_step_start "report: dashboards + day pages .rpt files"                bash -c 'bin/dashboards/reports.sh & d=$!; bin/day/reports.sh; s=$?; wait "$d" || s=$?; exit "$s"'
+run_step "report: transfer .rpt files (phase 2)"                          bin/transfer/reports.sh phase2
+run_step "report: analyses .rpt files"                                    bin/analyses/reports.sh
+# (cross-reference runs inside the analyses step since the 2026-07 move of
+# the Analyses-menu reports into bin/analyses/reports/)
 
 # ---- 3. publish -------------------------------------------------------------
 # the two heaviest publishes write DISJOINT trees — docs/transfer vs

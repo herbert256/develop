@@ -17,7 +17,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"   # REPORTS_DIR (the orphaned-temp sweep below)
 rm -f "$REPORTS_DIR"/*.rpt.tmp   # orphaned atomic-write temps from a killed run
 
-"$SCRIPT_DIR/reports/overview.sh"
+source "$SCRIPT_DIR/../timing.sh"   # timed: its TIME line (2026-09-29, build speed)
+timed "$SCRIPT_DIR/reports/overview.sh"
 # (monitor.sh is NOT run here: bin/build.sh runs it once, in the foreground
 # before this step — whether monitor.rpt exists sets every page's top bar)
 # (ONE dashboard since 2026-07: the per-topic specs folded into overview.sh)

@@ -133,6 +133,9 @@ udays=$(printf '%s %s' "$_ut" "$_us" | tr ' ' '\n' | awk 'NF' | LC_ALL=C sort -u
 # resubmitted legs). END writes the header, the three transfer KPIs, the
 # transfer problem list, the hero card + its alternates and the facts.
 # ---------------------------------------------------------------------------
+_dy0=$(date +%s)   # laps (2026-09-29, build speed): TIME lines, replayed by the build's background slot
+_dylap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  day reports: %s\n' "$((_t1 - _dy0))" "$1" >&2; _dy0=$_t1; }
+_dylap "setup (the per-day counts)"
 if [ -f "$TF" ] && [ -n "$tdays" ]; then
 awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v PS="$PSLOTS" -v EQF="$EQSLOTS" \
     -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SPMAP="$SP_MAP" "$SP_AWK"'
@@ -534,6 +537,7 @@ fi
 # Subscriptions) — the missing-remote-directory errors of that day, surfaced as
 # a "Server log problems this day" PROBLEM link. The report lists only OPEN
 # problems, so a day whose directories were fixed later contributes nothing.
+_dylap "the transfer pass"
 nrdc=""
 if [ -f "$NRD" ]; then
     nrdc=$(awk -F'\t' '$1=="TABLE"{t++} $1=="ROW" && t==2 && $2 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ { printf "%s:%s:%s ", $2, $3, $4 }' "$NRD")
@@ -754,6 +758,7 @@ fi
 
 # Publish the complete staged set with two renames (see the staging comment at
 # the top): a kill between them leaves NO $RPTDIR — never a half-written set.
+_dylap "the server pass"
 mv "$RPTDIR" "$RPTDIR.old"
 mv "$RPTNEW" "$RPTDIR"
 rm -rf "$RPTDIR.old"
