@@ -17,45 +17,29 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Failed Subscriptions</h1>
 <h2>What it shows</h2>
-<p>One row per failing subscription &mdash; its newest File in error (Failed or Expired) &mdash; plus the subscriptions failing in the <strong>server log only</strong>: together every red subscription, transfer and server alike, the set the home page&rsquo;s two red tables split. Every File in error is on <a href="failed-files.html">Failed files</a>.</p>
-<h2>Views</h2>
 <ul>
-<li><strong>Still failing</strong> (default) hides the subscriptions green again (delivered OK since); <strong>All</strong> keeps them. Each view is its own page (bookmarkable).</li>
-<li>Outcome <strong>Failed</strong> or <strong>Expired</strong> &mdash; the site-wide Error rule; an Expired row (a UC2 copy the retention sweep deleted before pickup) reads <em>Expired (not collected)</em>.</li>
+<li>One row per failing subscription: its newest File in error (Failed or Expired), or a <strong>server row</strong> when only the server log reddens it &mdash; together every red subscription.</li>
+<li>Views: <strong>Still failing</strong> (default, first) hides the subscriptions green again; <strong>All</strong> keeps them.</li>
+<li>Also the help of the <strong>File pages</strong> (<code>File: &lt;name&gt;</code>, any outcome) and the <strong>error pages</strong> (<code>Failed subscription: &lt;subscription&gt; - &lt;reason&gt;</code>; an Expired File&rsquo;s: <code>Expired pickup: &lt;subscription&gt; - Expired (not collected)</code>).</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Subscription</strong> &mdash; the file&rsquo;s flow.</li>
-<li><strong>Date/time</strong> &mdash; the first leg&rsquo;s start; server-log row: the server evidence stamp (its last File when none).</li>
-<li><strong>Reason</strong> &mdash; the first classifying error line of the file&rsquo;s server-log section, in the home page&rsquo;s red-worklist vocabulary (<em>Connection failures</em>, <em>Route stopped</em>, <em>Wrong server fingerprint</em>, &hellip;); for a red row the home page&rsquo;s Reason.
-<ul>
-<li><em>One-legged</em>: a single-leg file naming nothing recognisable &mdash; arrival without delivery is the failure. A single-leg file whose only evidence would read <em>Unknown error</em> (a bare error end-of-transfer record) reads <em>One-legged</em> too.</li>
-<li>No own error page: the reason of the newest paged file of the same Subscription + leg-count.</li>
-<li>Multi-leg, no logged error: the last leg&rsquo;s raw status (<em>Failed Subtransmission</em>). Blank only when no rule applies.</li>
-<li>Server-log row: the classified newest server error line, else its Subscriptions-in-boxes box.</li>
-</ul></li>
-<li><strong>Last green day</strong> &mdash; the newest day that ended on an OK File; <strong>never</strong> for a flow that never delivered. <strong>Days red</strong> &mdash; from the first failure of the current run to the data window&rsquo;s last day. <strong>Failures in a row</strong> &mdash; the consecutive Files in error. Blank for a flow neither rule lists (a server-log-only red).</li>
-<li><strong>CoreID / SessionID</strong> &mdash; the id of the last error. Failed File row: its CoreId, linking SecureTransport File Tracking. Server-log row: the <em>session</em> id of the server-log error line the red verdict rests on (the connection its error page shows) &mdash; never a transfer id; blank when the log names no session for it.</li>
+<li><strong>Subscription</strong>; <strong>Date/time</strong> &mdash; the File&rsquo;s start; a server row: the reddening error&rsquo;s time.</li>
+<li><strong>Reason</strong> &mdash; the File&rsquo;s first classifying server-log error (<em>Connection failures</em>, <em>Route stopped</em>&hellip;), <em>One-legged</em>, <em>Expired (not collected)</em>, else the last leg&rsquo;s raw status.</li>
+<li><strong>CoreId / SessionId</strong> &mdash; the File&rsquo;s CoreId; a server row: the session of the reddening error.</li>
+<li><strong>Last green day</strong> (<em>never</em> = never delivered), <strong>Days red</strong> (the current run&rsquo;s first failure to the window end), <strong>Failures in a row</strong> &mdash; blank on server rows.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Row colour = the <strong>subscription&rsquo;s</strong> result, not the file&rsquo;s: <strong>red</strong> = newest File an error, <strong>green</strong> = delivered OK since (All filter only).</li>
-<li>Source: the logical-transfer cache (one row per CoreId), outcome Failed, newest first; Subscription view = first row per subscription; Still failing drops the greens. Deduped views catalogue failure <em>shapes</em>, not counts.</li>
-<li>A server-log row is red without a failed File: a server error after its last delivery, a deploy mistake (<em>&lsquo;Receive File As&rsquo; field not set</em>) or an authentication failure attributed to the flow. Identical on every view.</li>
-<li>Related: the <a href="topview.html">Top view</a> and <a href="retry.html">Repeat failures</a> for volumes, <a href="failure-heatmap.html">Failure heatmap</a> for the shape over time, <a href="episodes.html">Episodes</a> for outages; this page explains one file.</li>
+<li>Row tint = the subscription&rsquo;s colour (see Generic help); a row opens its error page.</li>
+<li>A server row: a server error after the last delivery, a deploy mistake, or an attributed authentication failure.</li>
+<li>File and error pages: the <strong>facts</strong> (File name, CoreId, Date/time, Subscription, Partner, Account, Login, Remote host, each when known) and the <strong>legs</strong> in chronological order.</li>
+<li>Then the <strong>server log</strong>, oldest first: the legs&rsquo; sessions and every line naming the CoreId or a transfer ID.</li>
+<li>A subscription&rsquo;s error page: facts, <strong>Last server error</strong>, the reddening connection&rsquo;s log.</li>
 </ul>
-<h2>The error page</h2>
+<h2>Tips</h2>
 <ul>
-<li>Any cell of a row (gaps too) opens the file&rsquo;s own page. Pages exist for every Subscription-view row, the newest failure of every Subscription + leg-count combination, and a subscription&rsquo;s newest 10 failures per day in the File search windows.</li>
-<li>An older row of a busy flow (All views) has none &mdash; its Subscription cell links the detail page, the rest is plain.</li>
-<li>Titled by the subscription. Facts: file name, CoreId (for Cloud support; also the page address), date/time, subscription, remote host, account &mdash; tinted, linked to their detail pages; a bare-IP host stays plain.</li>
-<li>Legs: every leg&rsquo;s status, direction, protocol, size, timing, remote host, Transfer ID &mdash; every parse-cache record sharing the CoreId, cache order.</li>
-<li>Server log: every line verbatim (date/time, level, the line with its JSON), one logged line per page line (no wrapping, scrolls sideways), oldest first; Error red, Warning amber.</li>
-<li>Join <strong>by session</strong>: the legs&rsquo; connection ids, so the whole conversation &mdash; handshake, authentication, PESIT dialogue, abort.</li>
-<li>Join <strong>by id</strong>: lines naming a transfer ID or the CoreId anywhere, also on other connections &mdash; <em>Error while resubmitting transfer with id</em> on the admin session, the route&rsquo;s post-processing delete <em>AR0086 &hellip; transferStatusId=</em> on the route&rsquo;s session.</li>
-<li>Neither matching: the Error lines naming the subscription in the failure&rsquo;s time window, said above the table.</li>
-<li>A session is a connection, not a file: it mentions every file it carried &mdash; a neighbour failing the same second is evidence, not noise.</li>
-<li>A server-log row opens the flow&rsquo;s own error page, named by the subscription: facts (subscription, account &mdash; linked, tinted) and its newest server-log mentions, Error / Warning tinted, oldest first.</li>
+<li>Every File in error: <a href="failed-files.html">Failed files</a>; outages over time: <a href="episodes.html">Episodes</a>.</li>
 </ul>
 </main>
 </body>

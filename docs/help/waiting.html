@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Waiting Files — Cloud Reports</title>
+<title>Help: Waiting — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,37 +15,32 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Waiting Files</h1>
+<h1>Waiting</h1>
 <h2>What it shows</h2>
-<p>UC2 files staged for pickup: which subscriptions have Files the partner has not collected, how long they have waited, how fast partners usually collect.</p>
-<p>Always the full period (like <a href="episodes.html">Failure Episodes</a> and <a href="went-quiet.html">Went quiet</a>): Waiting is a state at the window end, not a per-day statistic; a narrower range would fake &ldquo;waiting&rdquo; for files collected later.</p>
+<ul>
+<li>UC2 Files staged for the partner to collect: which are still waiting, how long, and how fast partners usually collect.</li>
+<li>A <strong>Waiting</strong> File&rsquo;s last leg is the Inbound routing leg into the pickup area, with no collect leg after it and its staged copy not yet deleted &mdash; not an error.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Waiting now</strong> (first table) &mdash; per subscription: <strong>Waiting Files</strong> (opens its list of staged Files), <strong>Oldest staged</strong>, <strong>Waiting for</strong>, <strong>Newest staged</strong>, <strong>Collected</strong>.</li>
+<li><strong>Files waiting the longest</strong> &mdash; the 50 oldest staged Files.</li>
+<li><strong>Pickup wait &mdash; collected files</strong> &mdash; median, average, max; within 1 h, 1&ndash;24 h, over 24 h.</li>
+<li><strong>Staged backlog over time</strong> &mdash; the uncollected inventory per day; its last day equals the Waiting count.</li>
+<li><strong>Will expire next</strong> &mdash; Waiting Files staged 9+ days: call the partner today.</li>
+<li><strong>Pickup wait percentiles per partner</strong> &mdash; median, <strong>p95</strong>, max, <strong>Waited over 8 days</strong> (near-misses).</li>
+<li><strong>Pickup wait per week</strong> &mdash; median and average per staged week for the 10 busiest subscriptions.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>A UC2 file (the partner collects from us) has four legs: Inbound/PeSIT from the internal CFT; Outbound/routing (internal staging, seconds later); Inbound/routing into the pickup area; Outbound/SSH, the partner dials in and collects (later, sometimes repeatedly).</li>
-<li><strong>Waiting</strong> = a File whose final leg is a successfully processed Inbound routing leg, staged copy still on disk; not an error, the partner may not have polled yet.</li>
-<li><strong>Waiting for</strong> runs from staging to the dataset&rsquo;s last record; a later export with the collect leg flips it to OK (or Error) automatically. The two waiting tables open longest-waiting first.</li>
-<li>A <strong>Waiting Files</strong> cell opens the subscription&rsquo;s own page: its staged Files, longest waiting first &mdash; Start, Waiting for, File name, CoreId. The CoreId of the first 5 opens the File page.</li>
-<li><strong>Expired</strong> = the nightly <strong>File Maintenance</strong> retention sweep (~03:00, ~11 days after staging) deleted the staged copy before any pickup: never delivered, no longer collectable.</li>
-<li>The deletion leaves no transfer-log trace; <code>bin/expire-files.sh</code> joins the server log&rsquo;s &ldquo;File Maintenance &hellip; Deleted files&rdquo; lines (same account and file name, deletion after staging) into the <em>Expired</em> field, <code>_files.tsv</code> col 22.</li>
-<li>Every report counts Waiting as <strong>OK</strong> and Expired as <strong>Error</strong>; only here are they apart.</li>
-<li><strong>Pickup wait</strong> = staging leg end to FIRST collect leg start (repeat collects count once). <code>parse.sh</code> excludes it, and the idle time between repeat collects, from every UC2 <a href="duration.html">Duration</a> figure.</li>
-<li><a href="episodes.html">Failure Episodes</a> shows broken flows; these are merely uncollected.</li>
-</ul>
-<h2>Sections</h2>
-<ul>
-<li><strong>Waiting now &mdash; per subscription</strong> &mdash; staged Files still on disk: count, oldest/newest staging moment, longest wait; <strong>Collected</strong> = its Files that were picked up. Oldest-waiting first: chase the top rows.</li>
-<li><strong>Files waiting the longest</strong> &mdash; the 50 oldest staged Files.</li>
-<li><strong>Pickup wait &mdash; collected files</strong> &mdash; median / average / max; collected within an hour, within a day, or later.</li>
-<li><strong>Staged backlog</strong> &mdash; the uncollected inventory per day: a File occupies the days from staging up to (not including) its collect or delete day, so the last day equals the Waiting count.</li>
-<li>Same-day pickups never sit overnight; a still-Waiting File runs to the window end. Volume = staged bytes in inventory that day; the peak day is named.</li>
-<li><strong>Will expire next</strong> &mdash; Waiting Files staged 9+ days against the dataset&rsquo;s last day; without a pickup within a day or two they expire: call the partner today. Age = the oldest File&rsquo;s.</li>
-<li><strong>Percentile table</strong> &mdash; collected pickups per partner: median, <strong>p95</strong> (slow tail), max, <strong>Waited over 8 days</strong> (near-misses, one pause from Expired).</li>
-<li>Partner attribution is the site-wide UNION: a File counts for every partner of its subscription plus the host-resolved one, so partner counts can sum past the collected total.</li>
-<li><strong>Weekly table</strong> &mdash; median and average wait per staged week (Monday start), the 10 subscriptions with most collected Files, busiest first. A rising average flags a pausing partner before the median moves; never-collected subscriptions are absent.</li>
+<li><strong>Waiting for</strong> runs from staging to the data&rsquo;s last record. The nightly retention sweep deletes a staged copy after ~11 days: the File becomes <a href="expired.html">Expired</a>.</li>
+<li>Pickup wait = staging end to the first collect; it is left out of the UC2 <a href="duration.html">Duration</a> figures. <strong>Collected</strong> = the delivered (Processed) Files with a pickup wait, in every table.</li>
+<li>A partner counts every File of its subscriptions, so partner totals can exceed the collected total.</li>
+<li>Always the full period: Waiting is the state at the window end.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a row for that table&rsquo;s 10 most recent Files.</li>
+<li>On a subscription&rsquo;s list, the first 5 CoreIds open the File page.</li>
 </ul>
 </main>
 </body>

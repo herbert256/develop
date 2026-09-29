@@ -17,16 +17,23 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Cross References</h1>
 <h2>What it shows</h2>
-<p>Which pairs of the nine entities (Account, Login, Subscription, Remote Host, Logical, Partner, Application, Domain, BL) belong together: every pair seen on at least one log row, plus the configured pairs that never appear. Relationships only &mdash; no counts, no volumes, no date filter.</p>
+<ul>
+<li>Which pairs of the nine entities (Account, Login, Subscription, Remote Host, Logical, Partner, Application, Domain, BL) belong together: every pair seen on one transfer-log row, plus the configured pairs that never logged. Relationships only &mdash; no counts, no date filter.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>first entity</strong> &middot; <strong>second entity</strong> &mdash; one row per pair, names linking their detail pages; a repeated first value is blanked, so one entity&rsquo;s pairs read as a block. The total row counts the pairs.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>The top tab row picks the first entity, the row below the second; each grays out the other&rsquo;s choice, so a pair is never crossed with itself. The data is symmetric: Account&times;Login and Login&times;Account are the same pairs.</li>
-<li>One row = one pair; the intro line gives the totals: all / seen / not seen.</li>
-<li><strong>Seen</strong> = both values on one physical log row, anywhere in the loaded logs (a leg inherits its File&rsquo;s partner / application / domain / logical / BL attribution).</li>
-<li><strong>Not seen</strong> = configured in the FlowManager exports (the xref caches under <code>data/flow-manager/xref/</code>) but never on a log row: a configured flow with no traffic, or a spelling that never matches.</li>
-<li>A row with either side blank &mdash; including a value blanked by the parse-time blacklist &mdash; establishes no pair; pairs where either value is blacklisted or unattributed are not listed.</li>
-<li>Each cell tints by its own entity&rsquo;s result: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer Error, or a name the server log mentions that nothing configures.</li>
-<li>A repeated first-column value is blanked, so consecutive rows of one entity read as a block; names link their detail pages where those exist.</li>
+<li>Under the Configuration row, the second tab row picks the first entity, the third row the second; each grays out the other&rsquo;s pick. <strong>Swap</strong> opens the same pair of types the other way round.</li>
+<li>Seen = both values on one log row, anywhere in the loaded logs; a leg inherits its File&rsquo;s partner, application, domain, logical and BL.</li>
+<li>A pair with a blank side &mdash; blacklisted or unattributed &mdash; is not listed.</li>
+<li>Each cell tints by its own entity&rsquo;s result colour (see <a href="general.html">Generic help</a>).</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>A configured pair that never logged is a flow without traffic, or a spelling that never matches.</li>
 </ul>
 </main>
 </body>

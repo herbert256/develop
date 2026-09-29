@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Login Details — Cloud Reports</title>
+<title>Help: Login details — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,47 +15,31 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Login Details</h1>
+<h1>Login details</h1>
 <h2>What it shows</h2>
-<p>One page per login name, linked from every <code>Login</code> cell across the site.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>KPI line</strong> &mdash; rank and share among all logins, failure rate, volume, cadence, processed-transfer performance where a duration is recorded, and (like accounts) a distinct session count.</li>
-<li><strong>Features</strong> and <strong>Waiting/Expired</strong> &mdash; side by side at the top. A single-row Partner, Application, Domain or Logical breakdown is folded into a Features row, keeping its link and colour. The first Features row is the Login itself.</li>
-<li><strong>Activity per day</strong> row &mdash; with <strong>Logons</strong> and <strong>Incoming connections</strong> beside it; without transfer data (never-seen logins) the row is Features, Logons, Incoming connections. Then Activity per week / hour / weekday.</li>
-<li><strong>Subscriptions</strong> breakdown, <strong>Last error(s)</strong> directly under it, then <strong>Accounts</strong>; further breakdowns: remote host, protocol, AV scan, security parameters, direction, action-by, mode.</li>
-<li><strong>Last error(s)</strong> &mdash; only when a subscription it moves files with has an error: one row per such subscription, its most recent error, newest first &mdash; date and time, subscription, file. Red = failed, orange = expired before the partner collected it.</li>
-<li><strong>10 largest transfers</strong>.</li>
-<li><strong>Whitelisted IPs</strong> &mdash; when the login&rsquo;s partner carries an <code>AllowIP</code> whitelist (partners.json): the source addresses allowed to connect with this login; the whitelist belongs to the partner account owning the login. Configuration, not activity: the date filter leaves it unchanged.</li>
-<li><strong>Last server log messages</strong> &mdash; at the very bottom: its 25 most recent lines, newest first, full-period.</li>
-<li><strong>Last server log errors</strong> &mdash; a separate table below it: its 10 most recent Error/Warning lines, plus the Error/Warning lines of its 1-to-1 connected entities (its one account, subscription, host) after the login&rsquo;s last transfer. Not deduplicated against the table above (2026-09-16).</li>
-<li>Any such after-the-last-transfer line raises the red top banner <em>ERRORS IN SERVER LOG AFTER LAST TRANSFER &ndash; SEE LOG AT BOTTOM OF THIS PAGE</em>.</li>
-</ul>
-<h2>Logons table</h2>
-<ul>
-<li>A logon = a successful authentication in the server log, any protocol. Rows: the <strong>first</strong> logon, <strong>how many</strong> (newest in <em>Last</em>), the <strong>pattern</strong>.</li>
-<li>Pattern = the typical spacing, in the UC2 <em>Pickup pattern</em> vocabulary: <em>Continuous</em>, <em>Every 15 minutes</em>, <em>Hourly</em>, <em>Daily</em>, <em>Weekly</em>, <em>Every N hours/days</em>, <em>Rarely</em>; <em>Once</em> for a single visit, the spacing between two when too few for a median; <em>Irregular</em> when fewer than six in ten gaps fall within half and double the typical spacing.</li>
-<li>A gap over 30 minutes starts a new visit; a burst of connections seconds apart is one visit, so the pattern says how often the partner comes, not how many connections a visit opens.</li>
-<li>These rows appear only for a login that has logged on; a login moving files without them connects in a way that logs no authentication line (CFT/PeSIT-side transfers).</li>
-<li>Below them the SSH <strong>screening-funnel</strong> counts, row for column as the <em>Logons / Incoming</em> server report: <strong>Allowed</strong>, <strong>Disallowed</strong>, <strong>Authenticated</strong> (SSH only; shown only when it differs from the any-protocol count above), <strong>No account</strong>, <strong>Bad key</strong>, <strong>Key failures</strong>, <strong>Locked</strong>, <strong>Auth failed</strong>.</li>
-<li><strong>Auth failed</strong> = the platform&rsquo;s anonymous <code>Authentication failed using local.</code> line, attributed to the login whose whitelist-Allowed it follows within a second.</li>
-<li>Two session-keyed rows can follow: <strong>Re-screens</strong> (an Allowed on a connection that had already authenticated &mdash; the hourly re-key of a kept-open connection, not a logon attempt) and <strong>Session errors</strong> (the Error/Warning SSH lines of its sessions, red).</li>
-<li>Each funnel row&rsquo;s <em>Last</em> is its newest occurrence: an old Bad key beside fresh Key failures is a problem that changed shape.</li>
-<li>Zero rows are not shown: a clean login shows only Allowed; only funnel rows = a login that knocks (or is knocked for) without getting in; no logon evidence at all = no table.</li>
+<li>One page per login, configured or seen in the transfer log, opened from every <strong>Login</strong> cell. Title prefix = connection/movement direction.</li>
+<li><strong>Features</strong> &mdash; the Login first, then each single linked Account, Partner, Domain, Logical, Application or BL; <strong>Waiting/Expired</strong> (State &middot; Files &middot; First / Last staged) beside it.</li>
+<li><strong>Activity per day</strong> &mdash; Date &middot; Files &middot; Error &middot; OK &middot; Volume &middot; Duration (average per File).</li>
+<li><strong>Logons</strong> &mdash; Item &middot; Value &middot; Last: First logon, Pattern, Number of logons, then the SSH screening counts Allowed, Disallowed, Authenticated, No account, Bad key, Key failures, Locked, Auth failed, Re-screens, Session errors.</li>
+<li><strong>Incoming connections</strong> (IP &middot; In &middot; Out) &mdash; the whitelisted addresses plus those seen; In / Out = Files that entered / left us; an IP opens its <a href="details-incoming_connections.html">incoming connection</a> page. <strong>Outgoing connections</strong> (adds Name) when the login connects out.</li>
+<li><strong>Subscriptions</strong> &mdash; Subscription &middot; Direction &middot; Files &middot; Error &middot; OK &middot; Waiting &middot; Expired (when any) &middot; Volume; a nonzero Error opens <a href="failed-files.html">Failed files</a> for that subscription.</li>
+<li><strong>Last error(s)</strong> &mdash; Date &amp; time &middot; Subscription &middot; File: per subscription with a failed File, its newest one; the whole row opens that File&rsquo;s page.</li>
+<li><strong>Accounts</strong>, <strong>Logical</strong>, <strong>Applications</strong>, <strong>BL</strong> &mdash; when there are several.</li>
+<li><strong>Latest 100 Files</strong> &mdash; Date &middot; State &middot; Direction &middot; Size &middot; Throughput &middot; Duration &middot; File &middot; CoreId.</li>
+<li><strong>Load by weekday</strong> / <strong>hour</strong> (Files &middot; Error &middot; OK &middot; Volume); <strong>Dwell</strong> (Files per store-and-forward wait, with Share).</li>
+<li><strong>Duration</strong> (min, avg, max, p50, p95, p99), <strong>Size</strong> (Volume, Throughput, Average, Largest), <strong>Date</strong> (First / Last seen, Busiest day, Active days), <strong>Ranking</strong> (position among all logins; each row opens <a href="ranking.html">Ranking</a>).</li>
+<li><strong>Last server log messages</strong> (its 25 newest lines) and <strong>Last server log errors</strong> (its 10 newest Error/Warning lines, plus those of its 1-to-1 connected entities after its last transfer).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>The <strong>Subscriptions</strong> table&rsquo;s nonzero <strong>Error</strong> count opens <a href="failed-files.html">Failed files</a> for that subscription at the full date range: every failed File of the subscription, so a page that sees only part of its traffic can list more.</li>
-<li>Every count is in <strong>Files</strong>, as distinct (login, CoreId) pairs: a File touching several logins counts once on each login&rsquo;s page.</li>
-<li>The account / subscription / remote host tables are cross-referenced with the FlowManager configuration: every partner configured for this login is listed &mdash; <strong>green</strong> = logged data; <strong>red</strong> = configured, never seen with it (no counts, a link to its never-seen page). Partners logged but not configured are listed too (green).</li>
-<li>Narrowing the date filter re-tints: a partner without activity in the range turns red instead of being hidden.</li>
-<li>Every configured name from the FlowManager exports has a page. Background: <strong>light brown</strong> = seen &amp; in, <strong>light blue</strong> = seen &amp; out, <strong>light gray</strong> = seen &amp; both/unknown, <strong>light yellow</strong> = never seen &amp; in, <strong>light orange</strong> = never seen &amp; out, <strong>light purple</strong> = never seen &amp; both/unknown.</li>
-<li>A never-seen page opens with a &ldquo;configured, never seen&rdquo; line, its configured cross-references (all red) and any whitelisted IPs.</li>
-<li>Configured <strong>both</strong> ways: every outcome splits into <strong>In - Error / In - OK / Out - Error / Out - OK</strong> by each file&rsquo;s own direction; a file without a direction counts in Files and Volume only.</li>
-</ul>
-<h2>Tips</h2>
-<ul>
-<li>Click anywhere on a Last error(s) row (name included) for the file&rsquo;s error page: every leg plus the server log of the failure &mdash; the files of the <a href="failed.html">Failed Subscriptions</a> list, which guarantees every subscription&rsquo;s last error has a page.</li>
+<li>Page background = the login&rsquo;s result colour: red when any connected subscription is red, green when all are green, else orange (see <a href="general.html">Generic help</a>).</li>
+<li>A logon = a successful authentication in the server log, any protocol; <strong>Pattern</strong> = the typical spacing of its visits (a gap over 30 minutes starts a new one).</li>
+<li>Logons rows with a zero count are left out; failure rows are red. <strong>Re-screens</strong> = an Allowed on an already authenticated connection (a re-key), not an attempt. Same figures as the <a href="server-logon.html">Logons</a> Incoming tab.</li>
+<li>Counts are Files (Error = Failed or Expired). Subscriptions and breakdown rows take the linked entity&rsquo;s result colour.</li>
+<li>Connection rows: green configured with traffic, red traffic on an unconfigured address, orange configured without traffic (folded behind one orange row).</li>
+<li>An Error line newer than the end of its last transfer raises the red <strong>ERRORS IN SERVER LOG AFTER LAST TRANSFER</strong> banner.</li>
+<li>No date filter: full period. A never-seen page keeps Features, Logons, Subscriptions and the connection tables.</li>
 </ul>
 </main>
 </body>

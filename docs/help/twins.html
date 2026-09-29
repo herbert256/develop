@@ -17,29 +17,24 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Twins</h1>
 <h2>What it shows</h2>
-<p>Every Twin relation the detail pages know, collated; each pair once (the relation is symmetric, the detail pages carry it on both sides). Configuration only, no log data.</p>
-<h2>Rules</h2>
 <ul>
-<li><strong>Subscription twin</strong> = the same flow configured the opposite way: the UC2+UC4 mailbox pair (partner drops and picks up over one connection) or the UC1+UC3 outbound pair (we push to and poll the same partner).</li>
-<li>Detection rules, unioned (one pair can be proven several ways):
-<ul>
-<li><strong>name</strong> &mdash; same name body, opposite side.</li>
-<li><strong>shared login</strong> &mdash; one FE login (the partner&rsquo;s actual credential) serves both the UC2 and the UC4 flow, even across accounts; the login-less UC1+UC3 mirror pairs an account whose only two subscriptions are that UC1 and that UC3.</li>
-<li><strong>spelling-twin accounts</strong> &mdash; each side&rsquo;s account is the other spelled with the other separator.</li>
-</ul></li>
-<li><strong>Naming slip</strong> = proven only by login or account: the flows belong together but their names disagree &mdash; the rename backlog.</li>
-<li><strong>Account twin</strong> = one partner relation configured under both separator spellings (<code>-</code> vs <code>_</code>), as tracked by the Separator collision analysis and <a href="config-hygiene.html">Config hygiene</a>; renaming one side merges the pair.</li>
-<li>A formatter over the pair maps the detail-page build persists, so this page and the detail pages&rsquo; Twin rows never disagree.</li>
+<li>Every twin pair the detail pages&rsquo; Twin rows know, each pair once. Configuration only.</li>
+<li>Boxes: Subscription twin pairs &middot; Name-matched &middot; Shared login/account &middot; Twin account, then the pairs per use-case combination (e.g. UC1 + UC3, UC4 + UC2); a box filters the rows.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Detected by</strong> &mdash; which rule(s) proved the pair.</li>
-<li><strong>Login</strong> &mdash; the <strong>FE&hellip;</strong> service login the pair connects with (FlowManager configuration); a mailbox pair usually shares ONE login (the twin relation from the credential side), linked to its detail page.</li>
-<li>Different logins list both; an out-only UC1+UC3 pair shows <code>-</code>: outbound flows hold the remote credential in the communication profile, not a login.</li>
+<li><strong>Subscription twins</strong> &mdash; <strong>Subscription</strong> &middot; <strong>Twin</strong> &middot; <strong>Direction</strong> of each side (connection/movement) &middot; <strong>Login</strong> &middot; <strong>Detected by</strong>.</li>
+<li><strong>Account twins (separator spellings)</strong> &mdash; <strong>Account</strong> &middot; <strong>Twin</strong> &middot; <strong>Login</strong>: one partner relation configured under both the <code>-</code> and the <code>_</code> spelling.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>A subscription twin is the same flow configured the opposite way. Detected by (unioned): <strong>Name</strong> &mdash; same name body, opposite side; <strong>shared login/account</strong> &mdash; a UC2 + UC4 pair on one FE login, or an account&rsquo;s single UC1 + UC3; <strong>spelling-twin accounts</strong>.</li>
+<li><strong>Shared login/account only &mdash; naming slip</strong>: the flows belong together but their names disagree &mdash; the rename backlog, listed first.</li>
+<li><strong>Login</strong> &mdash; the FE login the pair connects with (both when they differ); <code>-</code> for outbound flows, whose credential sits in the communication profile.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Opens naming slips first; every header sorts; the detection and use-case boxes above narrow the rows.</li>
+<li>Renaming one side of an account twin merges the pair; <a href="config-hygiene.html">Config hygiene</a> lists the same twins.</li>
 </ul>
 </main>
 </body>

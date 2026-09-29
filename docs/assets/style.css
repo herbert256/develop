@@ -105,10 +105,7 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .smcard li::before { content:"\251C\2500"; position:absolute; left:0.1rem; color:#b6bfc9;
                      font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.78rem; }
 .smcard li:last-child::before { content:"\2514\2500"; }
-.sm-transfer .smcard { border-left-color:#3c6e9f; }
-.sm-server   .smcard { border-left-color:#7a5ea6; }
 .sm-dash     .smcard { border-left-color:#2f8f6b; }
-.sm-ana      .smcard { border-left-color:#c07a2e; }
 .sm-tools    .smcard { border-left-color:#8a94a1; }
 /* the Reports section (2026-09-29: one Reports pulldown) spans the page and
    flows its group cards into columns */
@@ -282,8 +279,6 @@ th, td { border:1px solid #ddd; padding:8px 12px; text-align:left; white-space:n
 th.num, td.num { text-align:right; }
 /* the detail-page Metrics table: bold full-width group headers (Date / Files /
    Transfers / Size / Rank) and indented sub-metric rows */
-td.metgrp { font-weight:bold; background:#eef2f6; color:#20344a; }
-td.metsub { padding-left:1.9rem; }
 /* fake-transfers list: the server-log message row above each injected entry
    (render_rpt full-width cell). Muted + monospace so it reads as the source
    line; a heavier top border marks where each 2-row entry begins, and the
@@ -293,7 +288,7 @@ td.metsub { padding-left:1.9rem; }
    for every other single-link cell — 2026-09-14, user rule): the ENTIRE cell
    is the click target. The <a> stays inline; its ::after stretches over the
    cell's padding box (the card-title pattern below), so every padding
-   variant (wide, sep, metsub, subname, pagerrow…) keeps its own layout */
+   variant (wide, sep, subname, pagerrow…) keeps its own layout */
 td.cl { position:relative; }
 td.cl > a::after { content:""; position:absolute; top:0; right:0; bottom:0; left:0; }
 th { background-color:#20344a; color:#fff; }
@@ -568,7 +563,7 @@ td.heat4 { background-color:#5e93cf; color:#fff; }
 
 /* ---- load bar (class-driven width; no inline style) ---- */
 td.bar { width:240px; }
-td.bar span { display:block; height:14px; min-width:1px; background:#20344a; border-radius:2px; width:var(--w,0); }
+td.bar span { display:block; height:14px; min-width:1px; background:#25405c; border-radius:2px; width:var(--w,0); }
 .w0{--w:0%}.w5{--w:5%}.w10{--w:10%}.w15{--w:15%}.w20{--w:20%}.w25{--w:25%}
 .w30{--w:30%}.w35{--w:35%}.w40{--w:40%}.w45{--w:45%}.w50{--w:50%}.w55{--w:55%}
 .w60{--w:60%}.w65{--w:65%}.w70{--w:70%}.w75{--w:75%}.w80{--w:80%}.w85{--w:85%}
@@ -592,7 +587,6 @@ td.bar span { display:block; height:14px; min-width:1px; background:#20344a; bor
 a.tab:hover { background:#e8f0fe; text-decoration:none; }
 .tab.active { background:#20344a; color:#fff; border-color:#20344a; }
 .tab.disabled { background:#f5f6f7; color:#a9b2bc; border-color:#e8eaed; cursor:default; }   /* the entity already taken by the other cross-reference row */
-.tabs.seenfilter .tab { cursor:pointer; }   /* the detail pages' client-side All/Seen/Not-seen view buttons */
 /* Selector-group filters (coverage partners page, report.js setupSelFilter):
    real <button>s styled as tabs — reset the UA button font, tighter group gap */
 .tabs.selrow .sel-l { margin-right:0.5rem; color:#5f6b78; font-size:0.9rem; }
@@ -614,7 +608,6 @@ th.gband { text-align:center; }
 td.errc { background-color:#fde3e3; }
 td.okc { background-color:#e4f6e4; }
 td.errc.z, td.okc.z { background-color:transparent; }
-.tablewrap + .tabs.seenfilter { margin-top:1rem; }   /* the bar sits below the Activity per day table */
 .tabs.herotabs { margin:0 0 0.7rem; }       /* day pages: the hero chart's Start/End time switch (report.js setupHeroToggle) */
 .tabs.herotabs .tab, .tabs.herotabs2 .tab, .tabs.scalebtns .tab, .tabs.switchbtns .tab { cursor:pointer; }   /* client-side button rows (spans, not links): the hero views, Linear/Log, the switch= table groups */
 .tabs.herotabs .tab:hover:not(.active), .tabs.herotabs2 .tab:hover:not(.active), .tabs.scalebtns .tab:hover:not(.active) { background:#e8f0fe; }   /* span tabs get no a.tab:hover — give the hero rows their own feedback */
@@ -701,12 +694,6 @@ td.desc { color:#444; white-space:normal; }
    where the page's own horizontal bar reaches it (a centered overflowing flex
    row would stick out on both sides, and the left part is unreachable). */
 body.home h1, body.home .subtitle, body.home h2 { text-align:center; }
-/* the "Still failing" note under its heading: one muted, centered sentence
-   stating the rule the table follows (home only — the report pages carry their
-   prose as INTRO lines). Width-capped so it wraps like a paragraph rather than
-   running the width of a wide table. */
-body.home p.hnote { text-align:center; color:#5a6673; font-size:0.92rem;
-                    max-width:70ch; margin:0.2rem auto 0.9rem; }
 body.home .sxs { width:max-content; max-width:100%; margin-left:auto; margin-right:auto; }
 body.home .tablewrap table { margin-left:auto; margin-right:auto; }
 /* ---- help pages (docs/help/*.html) ----
@@ -1032,6 +1019,10 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 /* ---- DARK THEME: generated by bin/darken-css.awk from the light rules above — do not edit here ---- */
 :root[data-theme="dark"] { color-scheme:dark; }
 :root[data-theme="dark"] body { background:#15191f;color:#d6dbe1; }
+:root[data-theme="dark"] .dd .ddm { background:#1e242c;border:1px solid #3a4451; }
+:root[data-theme="dark"] .dd .ddm a { color:#a9c4e4; }
+:root[data-theme="dark"] .dd .ddm a:hover { background:#2a3a52; }
+:root[data-theme="dark"] .dd .ddm a.ddtop { border-bottom:1px solid #3a4451; }
 :root[data-theme="dark"] .smarea > h2 { border-bottom:2px solid #6f95bd; }
 :root[data-theme="dark"] .smcard { background:#1e242c;border:1px solid #3a4451;border-left:4px solid #6f95bd; }
 :root[data-theme="dark"] .smcard h3 { color:#a9c4e4; }
@@ -1070,8 +1061,8 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] table.dayrows tr:hover td.spc { background:#15191f; }
 :root[data-theme="dark"] table.dayrows tr.gbrow > th { background:#15191f;color:#a9c4e4;border-color:#15191f; }
 :root[data-theme="dark"] th, :root[data-theme="dark"] td { border:1px solid #3a4451; }
-:root[data-theme="dark"] td.metgrp { background:#262e38;color:#a9c4e4; }
 :root[data-theme="dark"] th { background-color:#20344a; }
+:root[data-theme="dark"] .pickbtn { color:#a9c4e4; }
 :root[data-theme="dark"] .colpick { background:#1e242c;color:#d6dbe1;border:1px solid #3a4451; }
 :root[data-theme="dark"] .colpick .cpgrp { color:#7f8a96; }
 :root[data-theme="dark"] .colpick .cprow .grip { color:#7f8a96; }
@@ -1157,7 +1148,7 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] td.heat2 { background-color:#2f4d75; }
 :root[data-theme="dark"] td.heat3 { background-color:#3a6499; }
 :root[data-theme="dark"] td.heat4 { background-color:#4a7dbd; }
-:root[data-theme="dark"] td.bar span { background:#20344a; }
+:root[data-theme="dark"] td.bar span { background:#6f95bd; }
 :root[data-theme="dark"] .note { color:#9aa5b1; }
 :root[data-theme="dark"] .report-link a { color:#a9c4e4;border-bottom:1px solid #6f95bd; }
 :root[data-theme="dark"] .report-link a:hover { color:#7fb0e0; }
@@ -1195,7 +1186,6 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] .card { background:#1e242c;border:1px solid #3a4451; }
 :root[data-theme="dark"] .card h2 { color:#a9c4e4; }
 :root[data-theme="dark"] .card p { color:#b8c0c8; }
-:root[data-theme="dark"] body.home p.hnote { color:#9aa5b1; }
 :root[data-theme="dark"] .help-content code { background:#2b323b; }
 :root[data-theme="dark"] .help-back { color:#9aa5b1; }
 :root[data-theme="dark"] .showallbtn { border:1px solid #3a4451;background:#1e242c;color:#a9c4e4; }
@@ -1224,6 +1214,7 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] .empty-state { color:#9aa5b1;border:1px dashed #3a4451;background:#1e242c; }
 :root[data-theme="dark"] .empty-state .es-hint { color:#f0c070; }
 :root[data-theme="dark"] .chart-data summary { color:#7fb0e0; }
+:root[data-theme="dark"] .chart-data th, :root[data-theme="dark"] .chart-data td { border-bottom:1px solid #2f3842; }
 :root[data-theme="dark"] .chart-data th { color:#b8c0c8; }
 :root[data-theme="dark"] .mask { color:#6ad07f; }
 :root[data-theme="dark"] tr[data-res="green"] td { background-color:#1f3d26; }
@@ -1244,6 +1235,7 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 :root[data-theme="dark"] ul.dayproblems .probdesc { color:#a8b2bc; }
 :root[data-theme="dark"] ul.dayfacts { background:#22303c; }
 :root[data-theme="dark"] .daytop h3 { color:#a9c4e4; }
+:root[data-theme="dark"] .daytop td { border-bottom:1px solid #2f3842; }
 :root[data-theme="dark"] .daytop td.num { color:#a9c4e4; }
 :root[data-theme="dark"] td.dur-s { background-color:#1f3d26; }
 :root[data-theme="dark"] td.dur-m { background-color:#4a3a17; }

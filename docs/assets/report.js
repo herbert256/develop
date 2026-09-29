@@ -143,6 +143,19 @@
     return c ? c.cellIndex : -1;
   }
   function cell0(tr) { return cellByCi(tr, 0) || tr.cells[0]; }   // the built first column's cell
+  // a header cell's LABEL: its text without the hotspots this script adds —
+  // the csv / cols buttons, the sort arrows (2026-09-29: a regex stripping a
+  // trailing "csv"/"cols" also ate the end of "Protocols", and the dashboard
+  // Top-5 cards compared the whole text, "Filescsv", and never matched)
+  function thLabel(th) {
+    var s = "", k = th.childNodes, i, n;
+    for (i = 0; i < k.length; i++) {
+      n = k[i];
+      if (n.nodeType === 3) s += n.nodeValue;
+      else if (n.nodeType === 1 && !/(^| )(arrow|csvbtn|pickbtn|colpick|cpid|stgo)( |$)/.test(n.className || "")) s += n.textContent;
+    }
+    return s.replace(/[▲▼]/g, "").trim();
+  }
   function colMovable(table, hr) {
     var n = hr.cells.length, i, j, r, cs, sum;
     if (n < 2) return false;
@@ -1016,7 +1029,23 @@
     });
     rankCols(toks, drows, aggs, colSum);   // positions renumber over the rows the range left standing
     var totAgg = { sum: colSum, max: {}, days: totDays, dur: totDur };
-    totalRows(table).forEach(function (r) { writeRecalc(r, toks, totAgg, colSum, colMax, colMaxA, true); updateTotalLabel(r, vis); });
+    // A TOTAL row that ships its OWN per-day buckets (2026-09-29: the Entities
+    // totals of an OVERLAPPING membership — a File counts for every BL /
+    // partner / application it belongs to, so the rows sum to more than the
+    // distinct total the page bakes): its in-range DISTINCT figures — as long
+    // as only the date filter hides rows. A search or view filter leaves the
+    // visible-row sum the only honest total.
+    var onlyDate = drows.every(function (r) {
+      return r.getAttribute("data-shide") !== "1" && r.getAttribute("data-vhide") !== "1" && r.getAttribute("data-fhide") !== "1";
+    });
+    totalRows(table).forEach(function (r) {
+      var ta = totAgg, tb;
+      if (onlyDate && r.hasAttribute("data-buckets")) {
+        tb = aggBuckets(r.getAttribute("data-buckets"), lo, hi);
+        ta = { sum: tb.sum, max: {}, days: totDays, dur: totDur };
+      }
+      writeRecalc(r, toks, ta, colSum, colMax, colMaxA, true); updateTotalLabel(r, vis);
+    });
     autoHideGroups(table);   // a group the range left empty on every visible row hides (data-autohide)
     replaceHotspots(table);
   }
@@ -1030,6 +1059,10 @@
   //   seen    — only the entities active in range
   //   notseen — only the entities NOT active in range
   function initSeen(table) {
+    // only the Show-Seen / seen-rows tables (2026-09-29: it snapshotted every
+    // cell of EVERY table — 28,000 on one page — while initRecalc already
+    // covers the re-aggregatable ones)
+    if (!table.getAttribute("data-seenmode") && !table.getAttribute("data-seenrows")) return;
     dataRows(table).forEach(function (tr) {
       // remember data-seen ONLY where it exists: stamping a default "0" here
       // would make recalcTable's full-range restore INJECT data-seen onto
@@ -1301,7 +1334,7 @@
   // as "filtered" unless we say otherwise.
   function isDateAware(table) {
     if (table.dateAware != null) return table.dateAware;   // structural; cache it
-    // an ENGINE-owned table (rangehook, latest/search.html): its rows follow the
+    // an ENGINE-owned table (rangehook, search/all-files.html): its rows follow the
     // range through the page engine's hook (apply() below) — date-aware, so the
     // From/To controls appear and no full-period badge shows, while its
     // nofilter keeps apply() from hiding the engine's rows itself
@@ -1339,8 +1372,8 @@
     var table = document.querySelector("table[data-esearch]");
     if (!table) return;
     // The panel's checkboxes filter the Type column and its view toggle the
-    // seen flags — both Entity Search concepts. A second esearch page exists
-    // since 2026-08 (File search: Name/Date/Subscription/State/Size/CoreId),
+    // seen flags — both Entity Search concepts. A second esearch page existed
+    // 2026-08..09-29 (File search: Name/Date/Subscription/State/Size/CoreId),
     // where the panel filtered nothing: build it only when the table actually
     // HAS a Type header, and stamp data-escfg so the zero-results hint knows.
     var hasType = false, hr = table.tHead ? table.tHead.rows[0] : table.rows[0];
@@ -1502,6 +1535,10 @@
         });
       });
     }
+    // a zero-match search says so (2026-09-29: it left a bare header row)
+    var none = document.createElement("tr"), noneTd = document.createElement("td");
+    noneTd.colSpan = (headerRow(table) || { cells: [0, 0, 0] }).cells.length; noneTd.className = "empty-state";
+    none.appendChild(noneTd); none.style.display = "none";
     function apply() {
       var q = foldSep(box.value.toLowerCase().replace(/^\s+|\s+$/g, ""));
       var groups = q ? parseQuery(q) : null;
@@ -1509,6 +1546,7 @@
       var body = table.tBodies[0] || table;
       if (!groups) {
         orig.forEach(function (r) { r.style.display = ""; body.appendChild(r); });
+        none.style.display = "none";
         return;
       }
       var tHits = [], iHits = [];
@@ -1522,6 +1560,10 @@
         else r.style.display = "none";
       });
       tHits.concat(iHits).forEach(function (r) { body.appendChild(r); });
+      if (!tHits.length && !iHits.length) {
+        noneTd.textContent = "No report matches \u201c" + box.value.trim() + "\u201d \u2014 try fewer or shorter words (wildcards: ? = one character, * = any run).";
+        none.style.display = ""; body.appendChild(none);
+      } else none.style.display = "none";
     }
     box.addEventListener("input", apply);
   }
@@ -1625,6 +1667,7 @@
     if (location.pathname.indexOf("/details/") < 0) return;
     var tables = document.getElementsByTagName("table"), t, k;
     for (t = 0; t < tables.length; t++) {
+      if (tables[t].getAttribute("data-subfiles")) continue;   // the Files table: sub-files.js fills it later
       var rows = dataRows(tables[t]), any = false;
       for (k = 0; k < rows.length; k++) if (rows[k].style.display !== "none") { any = true; break; }
       if (!any && tables[t].querySelector("tr.foldrow")) any = true;   // an all-folded table is not empty — its summary row shows
@@ -2009,6 +2052,7 @@
     }
     repositionFoldrow(table);         // the fold summary sits after the (re-ordered) data rows
     applyGroup(table);   // re-blank repeats in the new order
+    table.pagerPage = 1;              // a new order starts on its FIRST page (2026-09-29: a sort on page 2 showed ranks 11-20)
     repage(table);                    // a sort reshuffles the pages
     table._sortKeys = keys;
     replaceHotspots(table);
@@ -2101,7 +2145,7 @@
   // sort on the wrong group. The csv / cols hotspot text is stripped.
   function entLabel(th) {
     if (!th) return "";
-    var lab = th.textContent.replace(/[▲▼]/g, "").replace(/\s*(csv|cols)$/, "").trim();
+    var lab = thLabel(th);
     var t = th.closest ? th.closest("table") : null;
     if (t && t._groupLabel && t._colGroup) { var g = groupOf(t, ciOf(th)); if (t._groupLabel[g]) lab = t._groupLabel[g] + " › " + lab; }
     return lab;
@@ -2115,10 +2159,19 @@
       return v;
     } catch (e) { return null; }
   }
-  function entSave(col, dir, ths) {
-    var lbl = col === 0 ? "#name" : entLabel(ths[col]);
-    if (!lbl) return;
-    try { localStorage.setItem(entKey(), JSON.stringify({ c: lbl, d: dir === -1 ? -1 : 1, t: Date.now() })); } catch (e) {}
+  // EVERY sort key (2026-09-29: only the primary one was kept, so a
+  // shift-click multi-key sort came back as a single key) — k = [{c, d}],
+  // c/d = the primary one too (an entry written before this reads the same);
+  // the name column (BUILT index 0) is "#name" whatever each entity calls it
+  function entSave(keys, hr, ths) {
+    var ks = [], i, pos, lbl;
+    for (i = 0; i < keys.length; i++) {
+      pos = colByCi(hr, keys[i].ci);
+      lbl = keys[i].ci === 0 ? "#name" : (pos >= 0 ? entLabel(ths[pos]) : "");
+      if (lbl) ks.push({ c: lbl, d: keys[i].dir === -1 ? -1 : 1 });
+    }
+    if (!ks.length) return;
+    try { localStorage.setItem(entKey(), JSON.stringify({ c: ks[0].c, d: ks[0].d, k: ks, t: Date.now() })); } catch (e) {}
   }
   // Slide the hour: called on every Entities page view, whether or not the
   // remembered column applies to the view being opened.
@@ -2250,7 +2303,7 @@
           }
           // Entities pages write the SHARED hour-long entry instead of the
           // per-report one, so the pick carries to the next entity.
-          if (isEntitiesPage()) entSave(colByCi(hr, keys[0].ci), keys[0].dir, ths);
+          if (isEntitiesPage()) entSave(keys, hr, ths);
           else if (!SORT_FRESH) saveSort(table, keys);   // survives unit switches + page revisits this session (stored by BUILT index)
         });
       })(i, ths[i]);
@@ -2259,7 +2312,9 @@
     var init = table.getAttribute("data-sort-init");
     if (init) {
       var p = init.split(":"), col = parseInt(p[0], 10), dir = parseInt(p[1], 10) || 1;
-      if (col >= 0 && col < ths.length) applySort(col, dir);
+      // sort= names a BUILT column index: after a stored column move the
+      // position differs (2026-09-29 fix — applySort took it as a position)
+      if (col >= 0 && col < ths.length) applyKeys([{ ci: col, dir: dir }]);
     } else {
       // GENERIC DEFAULT: a table whose report gives no sort of its own
       // (no sort= TABLE modifier) and whose FIRST column holds dates opens
@@ -2271,13 +2326,13 @@
       // first-dir IS descending, so a click sorts ascending, the next back).
       var dd = 0, di, dc, dt;
       for (di = 0; di < origOrder.length && di < 5; di++) {
-        dc = origOrder[di].cells[0]; if (!dc) { dd = 0; break; }
+        dc = cell0(origOrder[di]); if (!dc) { dd = 0; break; }   // the BUILT first column, wherever it was moved
         dt = dc.textContent.trim();
         if (dt === "" || dt === "-") continue;
         if (parseDate(dt) === null) { dd = 0; break; }
         dd++;
       }
-      if (dd > 0) applySort(0, -1);
+      if (dd > 0) applyKeys([{ ci: 0, dir: -1 }]);
     }
     // ?axway_sort beats everything on the page's FIRST sortable table and
     // persists like a user click; else a sort the user made earlier this
@@ -2285,12 +2340,16 @@
     // page's default.
     if (urlSort && !urlSortDone && urlSort.label) {   // a header label -> its first position on this table
       for (var ul = 0; ul < ths.length; ul++)
-        if (ths[ul].textContent.replace(/[▲▼]/g, "").replace(/\s*(csv|cols)$/, "").trim() === urlSort.label) { urlSort.col = ul; break; }
+        if (thLabel(ths[ul]) === urlSort.label) { urlSort.col = ul; break; }
     }
     if (urlSort && !urlSortDone && urlSort.col >= 0 && urlSort.col < ths.length) {
       urlSortDone = true;
-      var udir = urlSort.dir || colFirstDir(urlSort.col);
-      applySort(urlSort.col, udir);
+      // a LABEL resolved to a current position above; a NUMBER is a BUILT
+      // index (the ?axway_sort=N contract) — map it to where that column is now
+      var upos = urlSort.col;
+      if (!urlSort.label) for (var up = 0; up < ths.length; up++) if (ciOf(ths[up]) === urlSort.col) { upos = up; break; }
+      var udir = urlSort.dir || colFirstDir(upos);
+      applySort(upos, udir);
       if (!SORT_FRESH) saveSort(table, keys);
       return;
     }
@@ -2298,8 +2357,12 @@
     // (one catalog, seven entities — see entLoad above). An entry whose column
     // this view does not have leaves the page on its own default.
     if (isEntitiesPage()) {
-      var ev = entLoad(), ecol = entResolve(ev, ths);
-      if (ecol >= 0 && ecol < ths.length) applySort(ecol, ev.d);
+      var ev = entLoad(), ekeys = [];
+      if (ev) (ev.k && ev.k.length ? ev.k : [{ c: ev.c, d: ev.d }]).forEach(function (e) {
+        var p = entResolve(e, ths);
+        if (p >= 0 && p < ths.length) ekeys.push({ ci: ciOf(ths[p]), dir: e.d === -1 ? -1 : 1 });
+      });
+      if (ekeys.length) applyKeys(ekeys);
       return;
     }
     var stored = SORT_FRESH ? null : loadSort(table);
@@ -2349,7 +2412,7 @@
     for (t = 0; t < tables.length && !hit; t++) {
       rows = dataRows(tables[t]);
       for (i = 0; i < rows.length; i++) {
-        c = rows[i].cells[0];
+        c = cell0(rows[i]);   // the BUILT first column, wherever it was moved
         if (c && c.textContent.trim() === urlRow) { hit = rows[i]; tbl = tables[t]; break; }
       }
     }
@@ -2379,7 +2442,7 @@
       hr = headerRow(tables[t]); if (!hr) continue;
       ths = hr.cells;
       for (i = 0; i < ths.length; i++)
-        if (ths[i].textContent.replace(/[▲▼]/g, "").replace(/\s*(csv|cols)$/, "").trim() === urlCol) { th = ths[i]; tbl = tables[t]; break; }
+        if (thLabel(ths[i]) === urlCol) { th = ths[i]; tbl = tables[t]; break; }
     }
     if (!th) return;
     th.setAttribute("data-colmark", "1");
@@ -2544,7 +2607,7 @@
       window._slotRange = { from: _fO ? _fO.textContent : null, to: _tO ? _tO.textContent : null, narrowed: narrowed };
       if (window.slotchartSetRange) window.slotchartSetRange(window._slotRange.from, window._slotRange.to, narrowed);
       if (window.daytopSetRange) window.daytopSetRange(window._slotRange.from, window._slotRange.to, narrowed);
-      // the page ENGINES of rangehook tables (latest-search.js, all-files-search.js)
+      // the page ENGINE of a rangehook table (all-files-search.js)
       // register a function here — (from, to, narrowed), date strings
       if (window.AXWAY_RANGEHOOKS) for (var rh = 0; rh < window.AXWAY_RANGEHOOKS.length; rh++)
         window.AXWAY_RANGEHOOKS[rh](window._slotRange.from, window._slotRange.to, narrowed);
@@ -2839,7 +2902,7 @@
     // over it, so the controls insert above the row rather than between it
     // and its table.
     // Likewise any element carrying class "underdates" (2026-09-27): a page
-    // engine's own controls row — latest/search.html's File / Subscription
+    // engine's own controls row — search/all-files.html's File / Subscription
     // fields — sits BELOW the date selection.
     while (anchor && anchor.previousElementSibling &&
            ((anchor.previousElementSibling.tagName === "P" &&
@@ -2979,10 +3042,15 @@
     }
     var old = wrap.querySelector(".empty-state");
     if (old && old.parentNode) old.parentNode.removeChild(old);
-    if (table.getAttribute("data-nosearch") === "1") return;
-    var rows = dataRows(table), hasQ = activeQuery !== "";
+    // a table without a search box still gets the DATE-RANGE message
+    // (2026-09-29: it returned here, and a narrowed Failed Subscriptions list
+    // showed a bare "Total (0 rows)"); an engine-built table (rangehook)
+    // says its own thing
+    if (table.getAttribute("data-rangehook")) return;
+    var noSearch = table.getAttribute("data-nosearch") === "1";
+    var rows = dataRows(table), hasQ = !noSearch && activeQuery !== "";
     if (!rows.length && table.getAttribute("data-start-empty") !== "1") return;
-    var visible = 0, hidV = 0, hidD = 0, typc = {}, isES = table.getAttribute("data-escfg") !== null;   // the CONFIG PANEL's presence, not mere esearch — File search has no panel (2026-08)
+    var visible = 0, hidV = 0, hidD = 0, typc = {}, isES = table.getAttribute("data-escfg") !== null;   // the CONFIG PANEL's presence, not mere esearch (an esearch table need not have one)
     rows.forEach(function (tr) {
       if (tr.style.display !== "none") { visible++; return; }
       if (!hasQ) return;                                          // no query: only the date-range message below
@@ -3174,6 +3242,21 @@
       tr.setAttribute("data-shide", match ? "0" : "1");
       applyRowVis(tr);
     });
+    // group HEADING rows (a hand-built catalog's <tr><th colspan>, the Reports
+    // start page) follow their rows: a heading with no matching row under it
+    // hides (2026-09-29: a search left every heading standing over nothing)
+    (function () {
+      var hr0 = headerRow(table), all = table.rows, i, head = null, any = false, past = !hr0;
+      function close() { if (head) head.style.display = any ? "" : "none"; }
+      for (i = 0; i < all.length; i++) {
+        var r = all[i];
+        if (r === hr0) { past = true; continue; }
+        if (!past) continue;   // a GHEAD banner above the field header is no group heading
+        if (r.cells.length && !r.getElementsByTagName("td").length) { close(); head = r; any = false; continue; }
+        if (r.style.display !== "none") any = true;
+      }
+      close();
+    })();
     // A data-recalc table under a NARROWED date range must be re-aggregated for
     // that range, not text-summed: recalcTable only rewrites visible rows, so a
     // row hidden while the range was applied still holds full-period text —
@@ -3383,7 +3466,7 @@
       var hr = headerRow(table); if (!hr) return;
       var ci = -1, i, k;
       for (i = 0; i < hr.cells.length; i++) {
-        if (hr.cells[i].textContent.replace(/[▲▼]/g, "").replace(/\s*(csv|cols)$/, "").trim() !== "Error") continue;
+        if (thLabel(hr.cells[i]) !== "Error") continue;
         k = ciOf(hr.cells[i]); if (ci < 0 || k < ci) ci = k;
       }
       if (ci < 0) return;
@@ -3482,7 +3565,7 @@
     for (s = 0; s < secs.length; s++) {
       var t = secs[s].getElementsByTagName("table")[0];
       if (!t || t.rows.length < 2) continue;
-      var th = t.querySelector("th.num"), unit = th ? th.textContent.trim() : "";
+      var th = t.querySelector("th.num"), unit = th ? thLabel(th) : "";
       var mi = unit === "Files" ? 1 : unit === "Volume" ? 2 : unit === "Errors" ? 3 : 0;
       if (!mi) continue;
       var kind = (" " + secs[s].className + " ").indexOf(" dt-p ") >= 0 ? "P" : "S";
@@ -3843,7 +3926,10 @@
       var doc = new DOMParser().parseFromString(html, "text/html"), rows = doc.querySelectorAll("tr[data-t]"), i, a, cells;
       for (i = 0; i < rows.length; i++) {
         a = rows[i].querySelector("a"); if (!a) continue; cells = rows[i].cells;
-        PAL.reports.push({ t: a.textContent.trim(), h: (a.getAttribute("href") || "").replace(/^\.\.\//, ""),   // the finder sits in tools/ (2026-09-12): its hrefs lead with ../, dropped for the docs-root base s: cells[1] ? cells[1].textContent.trim() : "",
+        // the finder sits in tools/ (2026-09-12): its hrefs lead with ../,
+        // dropped for the docs-root base; s = the Group cell (2026-09-29 fix:
+        // it sat inside this comment, and every result read "undefined")
+        PAL.reports.push({ t: a.textContent.trim(), h: (a.getAttribute("href") || "").replace(/^\.\.\//, ""), s: cells[1] ? cells[1].textContent.trim() : "",
                            x: palFold(a.textContent + " " + (rows[i].getAttribute("data-k") || "") + " " + (a.getAttribute("href") || "")) });
       }
       one();
@@ -4113,6 +4199,19 @@
     });
   }
 
+  // A narrow window WRAPS the fixed top bar onto a second line, and the body's
+  // fixed top padding (3.2rem, one line) then hid the page title behind it
+  // (2026-09-29): the padding follows the bar's real height instead.
+  function fitTopbar() {
+    var bar = document.querySelector(".topbar"); if (!bar || !document.body) return;
+    var h = bar.offsetHeight;
+    document.body.style.paddingTop = h > 48 ? (h + 12) + "px" : "";
+  }
+  var fitPending = false;
+  window.addEventListener("resize", function () {
+    if (fitPending) return; fitPending = true;
+    (window.requestAnimationFrame || setTimeout)(function () { fitPending = false; fitTopbar(); });
+  });
   function buildTopbar() {
     var tb = document.querySelector("div.topbar");
     if (!tb || tb.firstChild) return;                     // baked bar (help/build) — leave it
@@ -4228,7 +4327,19 @@
       for (j = 0; j < tr.cells.length; j++) if (!tr.cells[j].hidden) out.push(csvField(csvCellText(tr.cells[j])));   // a picker-hidden column stays out
       return out.join(",");
     }
-    if (hr) lines.push(line(hr));
+    // a GROUPED table (a GHEAD banner \u2014 Files / Transfers / \u2026) prefixes each
+    // header with its group, "Files Error" / "Transfers Error" (2026-09-29:
+    // the export read "Error" three times, "Ok" twice, and lost the group)
+    if (hr) {
+      var hout = [], hj, hc, hl, hg;
+      for (hj = 0; hj < hr.cells.length; hj++) {
+        hc = hr.cells[hj]; if (hc.hidden) continue;
+        hl = csvCellText(hc);
+        if (table._groupLabel && table._colGroup) { hg = table._groupLabel[groupOf(table, ciOf(hc))]; if (hg) hl = hg + " " + hl; }
+        hout.push(csvField(hl));
+      }
+      lines.push(hout.join(","));
+    }
     for (i = 0; i < rows.length; i++) if (rows[i].style.display !== "none") lines.push(line(rows[i]));
     return "\ufeff" + lines.join("\r\n") + "\r\n";
   }
@@ -4305,38 +4416,17 @@
       td.className = (td.className ? td.className + " " : "") + "cl";
     }
   }
-  // ---- Latest files pages: rows arrive as DATA (2026-09-27) -----------------
-  // docs/latest/<slug>.html ships an EMPTY table stamped data-latest="<slug>";
-  // its rows — EXACTLY as render_rpt wrote them — sit in the sibling <slug>.js
-  // (publish-details.sh render_latest_page), which registers itself on
-  // window.AXWAY_LATEST so latest/search.html can load every payload at once.
-  // Materialised here, before init() touches any table, so the sort, pager,
-  // From/To, search, tints, whole-cell links and CoreId links all see
-  // ordinary DOM rows. A total row (none today) keeps its place last.
-  function latestRows() {
-    var L = window.AXWAY_LATEST;
-    if (!L || !L.length) return;
-    var table = document.querySelector("table[data-latest]");
-    if (!table) return;
-    var slug = table.getAttribute("data-latest"), i, j;
-    for (i = 0; i < L.length; i++) {
-      if (!L[i] || L[i].s !== slug || typeof L[i].r !== "string") continue;
-      var body = table.tBodies[0] || table, total = null;
-      for (j = 0; j < body.rows.length; j++)
-        if ((" " + body.rows[j].className + " ").indexOf(" total ") >= 0) { total = body.rows[j]; break; }
-      if (total) total.insertAdjacentHTML("beforebegin", L[i].r);
-      else body.insertAdjacentHTML("beforeend", L[i].r);
-      return;
-    }
-  }
+  // (The Latest files pages' latestRows() — docs/latest/<slug>.html rows
+  // shipped as DATA — went 2026-09-29 with the pages: a subscription page's
+  // Files table is built by assets/sub-files.js.)
 
   function init() {
     buildTopbar();          // FIRST: later setups bind into the bar
+    fitTopbar();            // the body clears the bar at its real (wrapped) height
     setupTheme();           // the ◐ toggle (the head script already applied the choice)
     setupRelDates();        // "3 days ago" tooltips on date cells, lazily
     setupPalette();         // Ctrl+K / Cmd+K quick jump
     entTouch();             // Entities: slide the shared sort's hour on every view
-    latestRows();           // Latest files pages: the rows arrive as DATA — BEFORE any table setup below
     var tables = document.getElementsByTagName("table");
     for (var i = 0; i < tables.length; i++) {
       initColOrder(tables[i]); // FIRST: stamp the built column index + apply a remembered column order

@@ -17,25 +17,25 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Month stats</h1>
 <h2>What it shows</h2>
-<p>One row per name of the chosen entity, counting the Files that <strong>started</strong> in the chosen calendar month. Two tab rows: the month (<strong>This month</strong> = the month of the newest File start in the data, <strong>Previous month</strong> = the one before) and the entity (Subscriptions, Logical, Partners, Accounts, Logins, Hosts, Domains, Applications, BL) &mdash; 18 pages.</p>
+<ul>
+<li>One row per name of one entity type, counting the Files that <strong>started</strong> in one calendar month; busiest first, each name linking its detail page.</li>
+<li>One tab row: the month &mdash; <strong>Current month (yyyy-mm)</strong> &middot; <strong>Previous month (yyyy-mm)</strong> &mdash; then, after a separator, the nine entities (Subscriptions &hellip; BL): 18 pages.</li>
+</ul>
 <h2>Columns</h2>
 <ul>
 <li><strong>Total files</strong> &mdash; Files (one per CoreId) started in the month.</li>
-<li><strong>In Files</strong> / <strong>Out Files</strong> &mdash; by the movement direction; a File with no known movement (an unconfigured subscription) counts by its connection side, so In + Out = Total. A 0 shows blank.</li>
-<li><strong>Errors</strong> &mdash; Files that ended Failed or Expired (red).</li>
-<li><strong>Auto Retries</strong> &mdash; OK Files that carried a failed leg and no resubmitted leg: the platform&rsquo;s own retry delivered them (amber).</li>
-<li><strong>Resubmit OK</strong> / <strong>Resubmit Error</strong> &mdash; every File an operator resubmitted (the log&rsquo;s Resubmitted flag), by its final outcome.</li>
-<li><strong>Waiting</strong> / <strong>Expired</strong> &mdash; the UC2 Files staged but not collected yet, and the ones deleted unclaimed.</li>
+<li><strong>In Files</strong> / <strong>Out Files</strong> &mdash; by movement direction; a File without one counts by its connection side, so In + Out = Total.</li>
+<li><strong>Errors</strong> &mdash; Files that ended Failed or Expired.</li>
+<li><strong>Auto Retries</strong> &mdash; OK Files with a failed leg and no resubmitted leg: the platform&rsquo;s retry delivered them.</li>
+<li><strong>Resubmit OK</strong> / <strong>Resubmit Error</strong> &mdash; every File with a resubmitted leg, by final outcome.</li>
+<li><strong>Waiting</strong> / <strong>Expired</strong> &mdash; Files staged but not collected yet, and those deleted unclaimed.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Source: the per-CoreId cache <code>_files.tsv</code>, its start date (col 4) picking the month; a File is attributed to each entity exactly as on the <a href="entities.html">Entities</a> pages (see each entity&rsquo;s help page). The total row counts each File once, except for subscriptions, logins and hosts, where it counts (name, File) pairs.</li>
-<li>Only names with at least one File in the month are listed; rows open busiest first. No From/To range: a page is one month.</li>
-<li>An empty data set falls back to the calendar month.</li>
-</ul>
-<h2>Tips</h2>
-<ul>
-<li>Every name links its detail page; the search box narrows the rows. Sorting, <em>cols</em>, csv: <a href="general.html">Generic help</a>.</li>
+<li>Current month = the month of the newest File start in the data, not the calendar.</li>
+<li>A File is attributed to names exactly as on the <a href="entities-subscription.html">Entities</a> pages; only names with a File in the month are listed.</li>
+<li>The total row counts each File once, except for subscriptions, logins and hosts, where it sums the rows.</li>
+<li>No From/To: a page is one month.</li>
 </ul>
 </main>
 </body>

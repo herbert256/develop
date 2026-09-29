@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Subscription Details — Cloud Reports</title>
+<title>Help: Subscription details — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,60 +15,29 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Subscription Details</h1>
+<h1>Subscription details</h1>
 <h2>What it shows</h2>
-<p>One page per subscription, linked from every <code>Subscription</code> cell across the site. Internally the entity is still the Transfer Site; every label reads Subscription.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>Banner</strong> &mdash; when the server log holds an error for this flow after its last transfer: a red <strong>ERROR IN SERVER LOG AFTER LAST TRANSFER</strong> banner with that log line (date, time, session id) right under it; the line is the verdict.</li>
-<li><strong>KPI line</strong> &mdash; rank and share among all subscriptions, failure rate, volume, cadence, processed-transfer performance where a duration is recorded.</li>
-<li><strong>Pickup information</strong> &mdash; UC2 pages only (the partner connects in and collects from us); see below.</li>
-<li><strong>Features</strong> &mdash; a single-row Partner, Application, Domain or Logical breakdown is folded into a Features row, keeping its link and colour. The first Features row is the Subscription itself.</li>
-<li><strong>Files</strong> row in Features &mdash; opens <a href="latest.html">Latest files</a>, this subscription&rsquo;s 1000 most recent Files on their own page, with a search box and the From/To selectors. That table sat on this page until 2026-09-16; a subscription that never carried a File has no such row.</li>
-<li><strong>Status</strong> rows in Features &mdash; only when the subscription is not active, one row per reason: <strong>Undeployed</strong>, <strong>SAVED_NOT_DEPLOYED</strong>, <strong>Schedule No</strong> (a receive schedule switched off), <strong>Folder monitoring Inactive</strong>. The same reasons as the Active column of <a href="subscriptions.html">Subscriptions</a>.</li>
-<li><strong>Activity per day / week / hour / weekday</strong> &mdash; the day table leads with the Files count; a nonzero <strong>Error</strong> count opens <a href="failed-files.html">Failed files</a> for that day and this subscription. Activity per day and <strong>Features</strong> sit side by side on one row (2026-09-16), joined by <strong>Pickup information</strong> on a UC2 page; a never-seen page opens with Features instead and keeps it full width.</li>
-<li><strong>Latest OK</strong> / <strong>Latest Error</strong> rows in Features &mdash; the newest delivered File and the newest failed one, each shown as <em>date/time filename</em> and opening that file&rsquo;s own page (under <code>files/</code>). Both files are guaranteed a page. The page itself no longer repeats their legs or server-log lines, and a flow without such a File has no row (2026-09-16).</li>
-<li><strong>Server log error</strong> row in Features &mdash; only for a flow that is red for what the <em>server</em> log shows: its evidence stamp, opening that flow&rsquo;s own error page under <code>files/</code> (the subscription-named one, listing every after-the-last-transfer error line). The section that repeated those lines here is gone (2026-09-16).</li>
-<li><strong>Breakdowns</strong> &mdash; account, login, remote host, protocol, AV scan, security parameters, direction, action-by, mode; Subscription comes first below Activity, Account right under the Incoming/Outgoing connections tables.</li>
-<li><strong>10 largest transfers</strong>.</li>
-<li><strong>Whitelisted IPs</strong> &mdash; when the subscription&rsquo;s partner carries an <code>AllowIP</code> whitelist (partners.json): the source addresses allowed to connect for it; the whitelist belongs to the partner account, joined via the subscription&rsquo;s participant. Configuration, not activity: the date filter leaves it unchanged.</li>
-<li><strong>Last server log messages</strong> &mdash; at the very bottom: its own 25 most recent lines, newest first, full-period.</li>
-<li><strong>Last server log errors</strong> &mdash; a separate table below it: its 10 most recent Error/Warning lines (a recent problem stays visible when the newest 25 are routine), plus the Error/Warning lines of its 1-to-1 connected entities (typically its one account, login and host) after its last transfer. Not deduplicated against the table above &mdash; a line that is both recent and an error appears in both (2026-09-16).</li>
-<li>Any such after-the-last-transfer line, own or connected, raises the red banner <em>ERRORS IN SERVER LOG AFTER LAST TRANSFER &ndash; SEE LOG AT BOTTOM OF THIS PAGE</em>.</li>
-</ul>
-<h2>Server log error rules</h2>
-<ul>
-<li>&ldquo;After its last transfer&rdquo; = after the last transfer <em>ended</em>: a File started before the error but delivered after it (a retry that went through) ended OK after the error, so the error does not count and the flow stays green.</li>
-<li>An error whose session also logged a transfer end (the platform&rsquo;s &ldquo;Transfer end logged.&rdquo; record, any status) does not count: the transfer log has the last word on that session.</li>
-</ul>
-<h2>Pickup information (UC2)</h2>
-<ul>
-<li>A <strong>pickup</strong> = a successful SSH logon by the flow&rsquo;s pickup account in the <em>server</em> log &mdash; a connection, not a transfer. The account is shared across its UC2 subscriptions, so the logon figures repeat on each.</li>
-<li>Logons group into <em>visits</em>; a gap over 30 minutes starts a new one.</li>
-<li>A visit in which the account <strong>only delivered</strong> files (its UC4 twin handing files over &mdash; inbound SSH rows in the transfer log) is no pickup: those logons sit on <strong>Logons that only delivered files</strong> (shown only when any) and are excluded from every other figure and from the UC2 status classification.</li>
-<li><strong>First / Last pickup</strong>, <strong>Total pickups</strong> &mdash; the remaining pickup logons. <strong>Pickups with actual files</strong> &mdash; visits that collected at least one file of <em>this</em> subscription. <strong>Total files picked up</strong> &mdash; its collected Files (= the page&rsquo;s OK figure).</li>
-<li><strong>Current waiting files</strong>, <strong>Expired files</strong> &mdash; its own staged files by outcome, the Waiting/Expired table&rsquo;s figures.</li>
-<li><strong>Connection shared with UC4 drop</strong> &mdash; only on proof: at least one technical SSH connection (the transfer log&rsquo;s Session ID &mdash; one connection, one id) in which the account both delivered <em>and</em> collected a file. A delivery over a separate connection, even seconds apart in the same visit, does not raise it (an SFTP client typically opens a fresh connection per operation).</li>
-<li>Its value links the UC2 pickup visits table on the UC status &rsaquo; UC2 tab, whose <strong>Same connection</strong> column carries it; the UC4 twin&rsquo;s page carries the mirror note (&ldquo;Same connection, both directions&rdquo;) on the same evidence.</li>
-<li><strong>Pickup pattern</strong> &mdash; the typical spacing of the pickup logons (&ldquo;Daily&rdquo;, &ldquo;Every 15 minutes&rdquo;, &hellip;; &ldquo;Once&rdquo; for a single visit, the spacing between two when too few for a median; &ldquo;Irregular&rdquo; when fewer than six in ten gaps fall within half and double the typical spacing). A partner arriving in bursts is read by how often it visits, not the seconds between a burst&rsquo;s logons.</li>
-<li>A partner collecting over CFT/PESIT logs no SSH pickup: its pickups stay 0 while files are still picked up.</li>
-</ul>
-<h2>Last error</h2>
-<ul>
-<li>Present only when something went wrong on this subscription in the loaded window: the failed file&rsquo;s own error page spliced in under <strong>Last error &mdash; &lt;file name&gt;</strong> &mdash; every <strong>leg</strong> (status, direction, protocol, size, timing, remote host, Transfer ID), then the <strong>server log</strong> of the sessions those legs ran on, verbatim, errors red, warnings amber.</li>
-<li>A link below opens the full error page, which adds the file&rsquo;s facts table.</li>
-<li>Error = a <strong>failed</strong> file or one that <strong>expired</strong> before the partner collected it; the error page&rsquo;s title says which. These are the files of the <a href="failed.html">Failed Subscriptions</a> list, which guarantees every subscription&rsquo;s last error has a page.</li>
-<li>The other entity pages show the same as a <strong>Last error(s)</strong> table, one row per connected subscription, each opening that file&rsquo;s error page.</li>
+<li>One page per subscription, configured or seen in the transfer log, opened from every <strong>Subscription</strong> cell. Title prefix = connection/movement direction (<code>OUT/IN</code>).</li>
+<li>A <strong>verdict</strong>: what its <a href="server-uc1-status.html">UC status</a> tab calls the flow; a failing flow can add a red headline and a <em>Next move</em> line.</li>
+<li><strong>Features</strong> &mdash; Use case, Twin (the same flow configured the other way), Remote host, Login, Account, Domain, Application, Logical, Partner, BL, Cron + Schedule, From / To; when they apply <strong>Status</strong> (why it is inactive), <strong>Latest OK</strong> / <strong>Latest Error</strong> (that File&rsquo;s page) and <strong>Server log error</strong>.</li>
+<li><strong>Pickup information</strong> (UC2) &mdash; the pickup counts, stamps, waiting / expired Files and Pickup pattern.</li>
+<li><strong>Waiting/Expired</strong> &mdash; State &middot; Files &middot; First / Last staged.</li>
+<li><strong>Activity per day</strong> &mdash; Date &middot; Files &middot; Error &middot; Recovered &middot; OK &middot; Volume &middot; Duration (average per File).</li>
+<li><strong>Incoming</strong> / <strong>Outgoing connections</strong> &mdash; the configured whitelist / endpoints plus the addresses seen; In / Out = Files that entered / left us.</li>
+<li><strong>Files</strong> &mdash; every File, newest first, 25 per page (Previous / Next): Start &middot; State &middot; Size &middot; File &middot; CoreId; the total row counts them all.</li>
+<li><strong>Load by weekday</strong> / <strong>hour</strong>, <strong>Dwell</strong> (store-and-forward wait, inbound end to outbound start), <strong>Duration</strong> (min to p99), <strong>Size</strong>, <strong>Date</strong>, <strong>Ranking</strong> (opens <a href="ranking.html">Ranking</a>).</li>
+<li><strong>Last server log messages</strong> (25 newest) and <strong>errors</strong> (10 newest Error/Warning lines, its own and its 1-to-1 connected account, login and host&rsquo;s after its last transfer).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Every count is in <strong>Files</strong>, as distinct (subscription, CoreId) pairs: a File touching several subscriptions counts once on each subscription&rsquo;s page.</li>
-<li>Server-side connection failures (login/handshake attempts that never became a transfer) are not here &mdash; see the server area&rsquo;s Connection failures report.</li>
-<li>The account / login / remote host tables are cross-referenced with the FlowManager configuration: every partner configured for this subscription is listed &mdash; <strong>green</strong> = logged data; <strong>red</strong> = configured, never seen with it (no counts, a link to its never-seen page). Partners logged but not configured are listed too (green).</li>
-<li>Narrowing the date filter re-tints: a partner without activity in the range turns red instead of being hidden.</li>
-<li>Every configured name from the FlowManager exports has a page. Background: <strong>light brown</strong> = seen &amp; in, <strong>light blue</strong> = seen &amp; out, <strong>light gray</strong> = seen &amp; both/unknown, <strong>light yellow</strong> = never seen &amp; in, <strong>light orange</strong> = never seen &amp; out, <strong>light purple</strong> = never seen &amp; both/unknown.</li>
-<li>A never-seen page opens with a &ldquo;configured, never seen&rdquo; line, its configured cross-references (all red) and any whitelisted IPs.</li>
-<li>Configured <strong>both</strong> ways: every outcome splits into <strong>In - Error / In - OK / Out - Error / Out - OK</strong> by each file&rsquo;s own direction; a file without a direction counts in Files and Volume only.</li>
+<li>Page background = the result colour: green last File OK, red last File Failed or server-log errors after it, orange never seen or last File Expired (see <a href="general.html">Generic help</a>).</li>
+<li>Counts are Files. Error = Failed or Expired; <strong>Recovered</strong> = OK after a failed leg. A nonzero day Error opens <a href="failed-files.html">Failed files</a>.</li>
+<li>An Error line newer than the end of its last transfer raises a red <strong>SERVER LOG AFTER LAST TRANSFER</strong> banner.</li>
+<li>A <strong>pickup</strong> = a successful SSH logon by the pickup account; a gap over 30 minutes starts a new visit.</li>
+<li>The <strong>Files</strong> table is built in the browser from the <a href="all-files-search.html">All files search</a> data, loading only the days a page needs; State tints green (OK, Waiting) or red (Error, Expired); a File with its own page opens it from any cell.</li>
+<li>Connection rows: green configured with traffic, red traffic on an unconfigured address, orange configured without traffic (folded).</li>
+<li>No date filter: full period. A never-seen page shows the verdict, Features and connection tables only.</li>
 </ul>
 </main>
 </body>

@@ -17,26 +17,27 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Account sharing</h1>
 <h2>What it shows</h2>
-<p>Accounts serving <strong>more than one subscription</strong>, one row each, and the shape of the sharing (an account is a partner relation that often carries several flows, in a few recurring shapes).</p>
-<h2>Kinds</h2>
 <ul>
-<li><strong>Mailbox pair</strong> &mdash; exactly UC2 + UC4: the partner&rsquo;s inbound mailbox, one connection to drop (UC4) and pick up (UC2). Hence the UC2/UC4 pages&rsquo; shared-connection notes; such pairs are Twins.</li>
-<li><strong>Outbound pair</strong> &mdash; exactly UC1 + UC3: we push to and poll the same partner.</li>
-<li><strong>Outbound fan-out</strong> &mdash; several UC1/UC3 flows over one relation, up to dozens.</li>
-<li><strong>Inbound (irregular)</strong> &mdash; inbound sharing beyond the pair (two UC2s, two UC4s): the hybrid production accounts.</li>
-<li><strong>Both directions</strong> &mdash; inbound and outbound on one account. Real partners never; the synthetic ST end-to-end monitor account is built so on purpose.</li>
+<li>Accounts serving <strong>more than one subscription</strong>, one row each, with the shape of the sharing. The boxes count all accounts with subscriptions, the single-subscription ones (not listed), the shared ones and each kind.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Account</strong> (links its detail page), <strong>Kind</strong>, <strong>Per use case</strong> (subscriptions per UC), <strong>Subscriptions</strong> (the full list; three or more fold behind an ellipsis, click to expand).</li>
+<li><strong>Account</strong> &mdash; links its detail page. <strong>Kind</strong> &mdash; the shape (below).</li>
+<li><strong>UC1</strong> &hellip; <strong>UC4</strong> &mdash; its subscriptions per use case; <strong>Other</strong> &mdash; those of any other use case.</li>
+<li><strong>Subs</strong> &mdash; the number of subscriptions; <strong>Subscriptions</strong> &mdash; the list (three or more fold behind &hellip;).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Configuration only: the account &rarr; subscription pairs of the FlowManager export (xref cache); no log data, identical however much traffic ran.</li>
-<li>Kind reads the names&rsquo; <code>UC&lt;n&gt;</code> prefix (UC1/UC3 = we connect out, UC2/UC4 = the partner connects in); a flow without one (hybrid production) uses the use case derived from its configuration.</li>
-<li>Only shared accounts are listed; the single-subscription majority is counted in the boxes above.</li>
-<li>Ordered by kind, then size, largest first.</li>
-<li>A login usually rides its account 1-to-1 (&ldquo;same account&rdquo; = &ldquo;same FE login&rdquo;); a hybrid production account shares one login across its flows or carries several FE logins, one per flow (the multi-FE shape).</li>
+<li><strong>Mailbox pair</strong> &mdash; exactly UC2 + UC4: one partner connection to drop and pick up.</li>
+<li><strong>Outbound pair</strong> &mdash; exactly UC1 + UC3: we push to and poll the same partner.</li>
+<li><strong>Outbound fan-out</strong> &mdash; several UC1/UC3 flows over one account.</li>
+<li><strong>Both directions</strong> &mdash; inbound and outbound on one account; real partners rarely, the ST monitor account by design.</li>
+<li><strong>Inbound (irregular)</strong> &mdash; inbound beyond the pair (two UC2s, two UC4s). <strong>Ungrouped flows</strong> &mdash; no UC1&ndash;UC4 flow at all.</li>
+<li>The use case is the name&rsquo;s <code>UC&lt;n&gt;</code> prefix, else the one derived from the configuration. Configuration only; ordered by kind, then size.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>A login usually rides its account 1-to-1, so a shared account is a shared FE login too; some hybrid accounts carry one FE login per flow.</li>
 </ul>
 </main>
 </body>

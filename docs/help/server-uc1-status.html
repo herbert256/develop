@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: UC1 status — Cloud Reports</title>
+<title>Help: UC status &rsaquo; UC1 — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,39 +15,36 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>UC1 status</h1>
+<h1>UC status &rsaquo; UC1</h1>
 <h2>What it shows</h2>
-<p>Every configured <strong>UC1</strong> subscription (the push use case: we are the client and send a file out as soon as one appears), one row each, in exactly one of four statuses; the info boxes count them. Siblings: <a href="server-uc2-status.html">UC2</a> (the partner collects from us), <a href="server-uc3-status.html">UC3</a> (we poll and pull), <a href="server-uc4-status.html">UC4</a> (the partner delivers to us).</p>
+<ul>
+<li>Every configured <strong>UC1</strong> subscription &mdash; we are the client and push a file to the partner as soon as one appears &mdash; one row each, worst status first; the boxes count the four statuses.</li>
+<li>The other tabs: <a href="server-uc2-status.html">UC2</a> (the partner collects from us), <a href="server-uc3-status.html">UC3</a> (we poll and pull), <a href="server-uc4-status.html">UC4</a> (the partner delivers to us).</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Status</strong> &mdash; one of four, a complete partition (below).</li>
-<li><strong>Subscription</strong> &mdash; the configured name, linked to its detail page.</li>
-<li><strong>Files</strong> / <strong>OK</strong> / <strong>Error</strong> / <strong>Last file</strong> &mdash; Files pushed out, by outcome, and the newest one&rsquo;s date (<code>_files.tsv</code>); blank on a never-seen subscription.</li>
-<li><strong>Route runs</strong> &mdash; &ldquo;Starting execution of route&rdquo; lines; one run per file, so roughly &ldquo;how often did we have something to send&rdquo;.</li>
-<li><strong>Problems</strong> &mdash; a send that could not be made (&ldquo;Could not send file&rdquo;, &ldquo;An error occurred while sending&rdquo;, a step &ldquo;finished with error&rdquo;) or the partner unreachable (a Connection failure, a failing directory listing).</li>
-<li><strong>Last log</strong> &mdash; the newest line of either kind: &ldquo;is this flow still running at all&rdquo;.</li>
-</ul>
-<h2>Statuses</h2>
-<ul>
-<li><strong>ok</strong> (green) &mdash; its latest File was delivered.</li>
-<li><strong>error</strong> (red) &mdash; its latest File failed and no OK File in the window: nothing ever worked &mdash; the configuration, or a partner side never finished.</li>
-<li><strong>ok -> error</strong> (red, was green) &mdash; OK Files before, the latest failed: a regression, a change to find.</li>
-<li><strong>not seen</strong> (orange) &mdash; configured, never in the transfer log: set up and never used, or a partner side never finished. Not a failure, an open question &mdash; usually the largest block, worth a periodic review. Route runs / Problems still show whether the server log ever saw it try.</li>
+<li><strong>Status</strong> &mdash; ok, error, ok -&gt; error or not seen (Rules).</li>
+<li><strong>Subscription</strong> &mdash; the configured name; &#8599; opens its detail page.</li>
+<li><strong>Files</strong> / <strong>OK</strong> / <strong>Error</strong> / <strong>Last file</strong> &mdash; its Files by outcome and the newest one&rsquo;s date.</li>
+<li><strong>Problems</strong> &mdash; a send that failed (&ldquo;Could not send file&rdquo;, &ldquo;An error occurred while sending&rdquo;, a step &ldquo;finished with error&rdquo;) or an unreachable partner (a Connection failure, a failing directory listing).</li>
+<li><strong>Last log</strong> &mdash; the date of the flow&rsquo;s newest counted server-log line.</li>
+<li>Total row: OK green, Error and Problems red.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Roster: every <code>UC1</code> name in the FlowManager subscription export, run or not. Colour = the site-wide result: green/red are real transfer data (the LAST File OK / Failed-or-Expired), orange never in the transfer log.</li>
-<li><strong>error</strong> vs <strong>ok -> error</strong> is per File &mdash; right after any OK File the subscription WAS green &mdash; finer than <a href="failed.html">Failed Subscriptions</a>, which buckets by whole days.</li>
-<li>Server counts read the Advanced Routing lines of the server parse cache (<code>ARn: [account] [route] &hellip;</code>, the route in the second bracket) plus the two client-side failures that mean we never reached the partner.</li>
-<li>No &ldquo;no files&rdquo; status, unlike UC3: a push is triggered by a file appearing &mdash; no file, no route run, no log line.</li>
-<li>We are the active party, so red rows, and not-seen rows with Problems, are ours to fix (our route, our send, our connection).</li>
+<li>Roster: every configured UC1 subscription (by name prefix, else by its derived use case), run or not. Rows carry the subscription&rsquo;s result colour (<a href="general.html">Generic help</a>).</li>
+<li><strong>ok</strong> (green) &mdash; its last File is OK; Waiting counts as OK.</li>
+<li><strong>error</strong> (red, never an OK File) &mdash; its last File Failed, or the server log reported errors after it: nothing ever worked, the configuration or the partner side was never finished.</li>
+<li><strong>ok -&gt; error</strong> (red after OK Files; a red box, like its rows) &mdash; the same red, on a flow that has delivered before: a regression, a change to find.</li>
+<li><strong>not seen</strong> (orange) &mdash; never in the transfer log; a flow whose last File Expired is orange and lands here too. Problems still show whether it ever tried.</li>
+<li>No &ldquo;no files&rdquo; status: a push starts only when a file appears &mdash; no file, no route run, no log line.</li>
+<li>The whole table is the current state; a date range does not narrow it.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a row for its most recent server-log lines; on a red row that never transferred those are the failures.</li>
+<li>We are the active party: red rows, and not-seen rows with Problems, are ours to fix &mdash; our route, our send, our connection.</li>
+<li>A row&rsquo;s drill lists its newest server-log lines; on a red row that never transferred, those are the failures.</li>
 </ul>
 </main>
-
-
 </body>
 </html>

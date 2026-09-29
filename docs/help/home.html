@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Help: Home — Cloud Reports</title>
+<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../search/all-files.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../transfer/topview.html">Overview</a><a href="../transfer/entities/subscription-all.html">Entities</a><a href="../analyses/failed.html">Failures</a><a href="../server/errors-log-reasons.html">Server log errors</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a><a href="../analyses/cleanup-backlog.html">Cleanup</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Home</h1>
+<h2>What it shows</h2>
+<ul>
+<li><strong>Flow manager entities</strong> and <strong>Logical, Partners, Domains, Applications &amp; BL</strong> &mdash; one status row per entity type.</li>
+<li><strong>Failing transfers</strong> and <strong>Failing subscriptions in Server log</strong> &mdash; together every red subscription.</li>
+<li><strong>The log exports</strong> &mdash; per log its input files, records, first and last record, days and <strong>Holes</strong> (missing days).</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li>Status tables: <strong>Total</strong> &middot; <strong>Seen</strong> (% in the transfer log) &middot; <strong>OK</strong> (% green) &middot; <strong>Error</strong> (red) &middot; <strong>Warning</strong> (orange) &middot; <strong>Ok</strong> (green).</li>
+<li><strong>Per day</strong>, newest first: <strong>Transfers</strong> &mdash; Ok &middot; Error &middot; Error % of the log rows (legs).</li>
+<li><strong>Files</strong> &mdash; In &middot; Out (by movement, else by connection side) &middot; Ok &middot; Cured (OK after a retry or resubmit) &middot; Error &middot; Error %.</li>
+<li><strong>UC2 state</strong> &mdash; Waiting &middot; Expired; <strong>Duration</strong> &mdash; p50 &middot; p75 &middot; p90 &middot; p95 &middot; p99 of the delivered (Processed) Files; <strong>First seen</strong> &mdash; new Partners &middot; Subscriptions.</li>
+<li>Failing tables: <strong>Subscription</strong> &middot; <strong>Reason</strong> (the first error on the linked page) &middot; <strong>Last</strong> (the failed File&rsquo;s start, or the newest server-log error).</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>A status figure opens the Entities view it counts; the second table&rsquo;s Total opens the <a href="coverage.html">configured list</a>. Colours: <a href="general.html#colours">Generic help</a>.</li>
+<li>Per day: Date opens the <a href="daily.html">day page</a>, Error that day&rsquo;s Failed files, Cured the Recovered files, Waiting / Expired / Duration their reports, First seen that day&rsquo;s list.</li>
+<li>The newest 14 days (a failing table: 15 rows) show until <strong>Show all</strong>.</li>
+<li><strong>Failing transfers</strong> &mdash; red by its own failed File; one row per subscription, opening its newest failed File&rsquo;s page.</li>
+<li><strong>Failing subscriptions in Server log</strong> &mdash; red by server-log errors after its last File (or a UC3 that cannot connect); a row opens the subscription&rsquo;s error page.</li>
+</ul>
+</main>
+</body>
+</html>

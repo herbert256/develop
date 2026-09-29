@@ -17,22 +17,26 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Use cases</h1>
 <h2>What it shows</h2>
-<p>One row per use case &mdash; what it means and how many configured subscriptions it has, by status &mdash; then the FlowManager templates behind them. Every use case with a published template (<code>templates.json</code>) is listed, one no subscription uses yet with blank counts.</p>
+<ul>
+<li>One row per use case &mdash; what it means and how many configured subscriptions it has, by colour &mdash; then, when the FlowManager template export is loaded, the templates behind them.</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Direction</strong> &mdash; connection side / file movement: <strong>out/in</strong> = we connect out, the file comes towards us.</li>
-<li><strong>Trigger</strong> &mdash; <em>OpsWise</em> = our automation initiates (UC1, UC8); <em>Partner</em> = the partner connects in (UC2, UC4, UC7); <em>Cronjob</em> = a Quartz receive scheduler polls the partner (UC3, and the pull side of UC5/UC6).</li>
-<li><strong>We are</strong> &mdash; SecureTransport as client or server. <strong>We</strong> &mdash; send, receive or relay.</li>
-<li><strong>Total</strong> / <strong>Seen</strong> / <strong>Error</strong> / <strong>Warning</strong> / <strong>Ok</strong> &mdash; configured subscriptions; the most recent transfer ended Error / OK; never seen = Warning. Seen = Error + Ok. A count opens the <a href="subscriptions.html">Subscriptions</a> page filtered to that use case and colour.</li>
-<li><strong>Templates</strong> &mdash; the published flow templates (&#128279; opens one in FlowManager); <strong>Route</strong> = the flow pattern a subscription instantiates; <strong>Subscriptions</strong> = those created from it. UC1 and UC3 each have two variants (via SecureTransport <code>ST</code> or the CFT hub directly <code>CFT</code>).</li>
+<li><strong>Use Case</strong> &mdash; <code>UC1</code>&hellip;<code>UC8</code>; <strong>(none)</strong> collects the subscriptions with no use case.</li>
+<li><strong>Direction</strong> &mdash; connection side / file movement: <strong>out/in</strong> = we connect out, the file comes to us.</li>
+<li><strong>Trigger</strong> &mdash; <em>OpsWise</em> (our automation starts it), <em>Partner</em> (the partner connects in) or <em>Cronjob</em> (a receive schedule polls the partner).</li>
+<li><strong>We are</strong> &mdash; client, server or both; <strong>We</strong> &mdash; send, receive or relay.</li>
+<li><strong>Total</strong> &middot; <strong>Seen</strong> (Error + Ok) &middot; <strong>Error</strong> (red) &middot; <strong>Warning</strong> (orange) &middot; <strong>Ok</strong> (green) &mdash; a count opens <a href="subscriptions.html">Configured subscriptions</a> filtered to that use case and colour; Total leaves out the skipped (white) ones.</li>
+<li><strong>Description</strong> &mdash; the use case in one sentence.</li>
+<li><strong>Templates</strong> &mdash; Template (&#128279; opens it in FlowManager) &middot; Use Case &middot; <strong>Route</strong> (the flow pattern a subscription instantiates) &middot; <strong>Subscriptions</strong> created from it &middot; <strong>Status</strong> (the template&rsquo;s own status code) &middot; Last modified.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Subscriptions: <code>subscriptions.json</code> via <code>data/flow-manager/base/_subscriptions.tsv</code>. Status buckets read that cache&rsquo;s result column, filled by the build&rsquo;s Server &rarr; Transfer and result steps.</li>
-<li>Use case of a subscription: its <code>UC&lt;n&gt;</code> name prefix, else the use case derived from its configured pattern &mdash; the one derivation every page uses.</li>
-<li>UC1&ndash;UC4 bridge one partner to our internal application; UC5&ndash;UC8 are direct relays with no CFT leg. Definitions: one shared table (<code>bin/uc-cases.sh</code>), also behind the Subscription detail pages.</li>
-<li>A warning appears under the table when a subscription&rsquo;s configured direction disagrees with its use case.</li>
-<li>Templates: <code>templates.json</code> via <code>data/flow-manager/xref/_templates.tsv</code>; a template&rsquo;s flow pattern equals the pattern on its subscriptions (the join). Without that export the pages fall back to the subscription-derived UC list and omit the Templates table.</li>
+<li>A subscription&rsquo;s use case is its <code>UC&lt;n&gt;</code> name prefix, else the one derived from its configured pattern &mdash; the same everywhere on the site.</li>
+<li>UC1&ndash;UC4 bridge one partner to our internal application; UC5&ndash;UC8 relay between two partners with no internal CFT leg.</li>
+<li>A use case with a published template but no subscriptions gets a row with blank counts.</li>
+<li>&#9888; under the table: subscriptions whose configured direction disagrees with their use case &mdash; a naming or configuration error.</li>
+<li>Colours per <a href="general.html">Generic help</a>.</li>
 </ul>
 </main>
 </body>

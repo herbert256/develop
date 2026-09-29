@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: One-Legged Transfers — Cloud Reports</title>
+<title>Help: One-legged — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,25 +15,26 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>One-Legged Transfers</h1>
+<h1>One-legged</h1>
 <h2>What it shows</h2>
-<p><strong>Pirates</strong>: logical transfers (CoreIds) with only <strong>one leg</strong> &mdash; a single technical row in the transfer log. <strong>Details</strong> counts them per subscription, <strong>Top view</strong> per day split Error / OK; the buttons at the top right switch, the From/To filter narrows both.</p>
-<h2>Columns</h2>
 <ul>
-<li><strong>Details</strong> &mdash; one row per subscription (linking its detail page): how many of its transfers were single-leg, and the first and last date one occurred.</li>
-<li><strong>Top view</strong> &mdash; the count of single-leg transfers per day, Error / OK.</li>
+<li>Files (CoreIds) with only <strong>one leg</strong> &mdash; a single row in the transfer log. A complete transfer is store-and-forward: an Inbound leg (partner &rarr; ST) and an Outbound leg (ST &rarr; partner), commonly 2&ndash;7 rows with retries.</li>
+<li>A single leg is one-sided: the file arrived and was never forwarded, or a send had no matching arrival. It never made the full crossing.</li>
+</ul>
+<h2>Tabs</h2>
+<ul>
+<li><strong>Details</strong> &mdash; one row per subscription (links its detail page): <strong>Count</strong> of one-legged Files, <strong>First date</strong>, <strong>Last date</strong>; most first.</li>
+<li><strong>Top view</strong> &mdash; per day: <strong>Single-leg transfers</strong>, split <strong>Error</strong> / <strong>OK</strong> by the File&rsquo;s outcome.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>A complete transfer is store-and-forward: an <strong>Inbound</strong> leg (partner &rarr; ST) and an <strong>Outbound</strong> leg (ST &rarr; partner), so one logical transfer is commonly 2&ndash;7 rows (the two legs plus retries).</li>
-<li>A single-leg CoreId is one-sided: only the Inbound leg (the file arrived, was never forwarded) or only the Outbound leg (a send with no matching arrival). The counterpart never happened, the file never made the full crossing, so these end up <strong>Error</strong>.</li>
-<li>The leg count comes from the logical-transfer cache <code>_files.tsv</code> (one row per CoreId; its <em>rows</em> column = the technical legs); exactly 1 selects the pirates. The leg&rsquo;s direction is read from the parse cache <code>_transfers.tsv</code>; account, subscription, partner, size and file from the same per-CoreId row.</li>
-<li>Every count is one logical transfer (one CoreId), full period.</li>
+<li>The two tabs are the second button row, under the Failures group row.</li>
+<li>Every count is one File (one CoreId).</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Days with a single-leg transfer also appear in the combined day page&rsquo;s <em>Problems this day</em> list.</li>
-<li>The 1-leg bucket of <a href="patterns.html">File journey</a> is this same population.</li>
+<li>A day page&rsquo;s transfer-log problems link here for that day.</li>
+<li>The 1-leg bucket of <a href="patterns.html">File journey</a> is this same population; <a href="failed.html">Failed Subscriptions</a> gives such a File the reason <em>One-legged</em> when its log names no other cause.</li>
 </ul>
 </main>
 </body>

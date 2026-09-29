@@ -17,25 +17,30 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>IO errors</h1>
 <h2>What it shows</h2>
-<p>The platform failing to read (or write) a file on <strong>its own storage</strong>, per folder, per line and per day, each line joined to the File it concerns: <code>IO Error reading file /data/FlowManager/VDN@FE000436/25U_&hellip;.xml</code>.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>Per folder</strong> &mdash; one row per FlowManager folder (account + login). <strong>IO errors</strong> = lines; <strong>Files</strong> = distinct file names; <strong>Error</strong>/<strong>OK</strong> = distinct Files by outcome (Waiting = OK, Expired = Error); <strong>Not logged</strong> = lines naming a file the transfer log never saw; <strong>Subscriptions</strong> = the joined Files&rsquo; flows. Click a row for its 10 most recent lines.</li>
-<li><strong>Lines</strong> &mdash; every line, newest first. <strong>Operation</strong> = the wording between &ldquo;IO Error&rdquo; and the path (&ldquo;reading file&rdquo;); <strong>State</strong> = the joined File&rsquo;s outcome: <em>Failed</em> (the route never read the file: a one-legged File), <em>Processed</em> (a retry read it), <em>not logged</em> (no File carries the name); <strong>Transfer</strong> = that File&rsquo;s timestamp. The File cell opens its error page (or File page) when one exists; the row expands to the verbatim message.</li>
-<li><strong>Per day</strong> &mdash; lines, folders and files per day: a one-day burst across folders is a storage incident; a daily trickle from one folder is that folder&rsquo;s disk, mount or permissions.</li>
+<li>The platform failing to read or write a file on <strong>its own storage</strong> (<code>IO Error reading file /data/FlowManager/&lt;account&gt;@&lt;login&gt;/&hellip;</code>).</li>
+<li>The upload landed, then the file could not be read back: moved or deleted mid-route, a stale NFS handle, a full volume, a permission.</li>
+<li>The summary line totals lines, folders, Files in error and days.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Per folder</strong> &mdash; <strong>Last</strong> / <strong>First</strong> line, <strong>Account</strong>, <strong>Login</strong>, <strong>Subscriptions</strong>, <strong>Folder</strong>.</li>
+<li><strong>Per folder</strong> counts &mdash; <strong>IO errors</strong> (lines), <strong>Files</strong> (distinct names), <strong>Error</strong> / <strong>OK</strong> (distinct Files by outcome), <strong>Not logged</strong> (lines naming no File), <strong>Days</strong> with a line.</li>
+<li><strong>IO error lines</strong> &mdash; <strong>Date</strong>, <strong>Time</strong>, <strong>Account</strong>, <strong>Login</strong>, <strong>Subscription</strong>, <strong>File</strong> (opens its File page), <strong>Operation</strong> (&ldquo;reading file&rdquo;), <strong>State</strong>, <strong>Transfer</strong> (the joined File&rsquo;s start).</li>
+<li><strong>Per day</strong> &mdash; <strong>Date</strong>, <strong>IO errors</strong>, <strong>Folders</strong>, <strong>Files</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>The path is the account&rsquo;s FlowManager folder (the landing directory a partner pushes into), named <code>account@login</code>: one line names account, login and file. The upload landed; the platform then could not read it back &mdash; deleted or moved while a route ran, a stale NFS handle, a slow or full volume, a folder permission.</li>
-<li>Source: every server-log line carrying <strong>IO Error</strong> (as a word, any case) or <strong>Input/output error</strong> (the Java/POSIX wording); the path is the first <code>/&hellip;</code> token after it, the folder its directory. A path outside FlowManager keeps an empty account (unless the joined File names one), so nothing is dropped.</li>
-<li>Joined <strong>by file name</strong> to the File in flight at the time &mdash; the newest starting before the error, else the first after &mdash; which supplies subscription and outcome; with no match, the line&rsquo;s session is looked up in the transfer legs for the subscription alone.</li>
-<li>The transfer log alone cannot show this: the upload leg looks fine and the failed read writes no row, so the File ends one-legged (Failed) or, after a retry, goes through as if nothing happened.</li>
-<li>Account and login show in configured spelling and link to their detail pages. Line and File counts are additive and re-total under the date filter.</li>
-<li>Error is the real damage &mdash; files a partner delivered that went nowhere and were never reported failed by the transfer; OK is how often a retry papered over it. Every flow whose folder shares the volume is exposed.</li>
-<li>The same lines classify as <em>IO error</em> on the Failed transfers list and the home Reason column, and as their own bucket on <a href="server-errors-day.html">Errors</a> / Reasons and <a href="server-failure-flows.html">Per flow</a>.</li>
+<li>Source: every server-log line with <strong>IO Error</strong> or <strong>Input/output error</strong>; the folder <code>account@login</code> gives Account and Login.</li>
+<li>Each line joins <strong>by file name</strong> to the File in flight (the newest starting before it, else the first after).</li>
+<li><strong>State</strong>: <em>Failed</em> = the route never read it (a one-legged File), <em>Processed</em> = a retry read it, <em>not logged</em> = no File has that name.</li>
+<li>Error / OK follow the site outcome (Waiting = OK, Expired = Error). Counts re-total under the date filter.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a folder row for its 10 most recent lines, a line row for the verbatim message.</li>
+<li>A one-day burst across folders is a storage incident; a daily trickle from one folder is that folder&rsquo;s disk, mount or permissions.</li>
 </ul>
 </main>
-
-
 </body>
 </html>

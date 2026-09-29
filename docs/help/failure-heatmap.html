@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Failure Heatmap — Cloud Reports</title>
+<title>Help: Failure heatmap — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,24 +15,28 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Failure Heatmap</h1>
+<h1>Failure heatmap</h1>
 <h2>What it shows</h2>
-<p>When transfers fail &mdash; by hour of day, by weekday, and an hour &times; weekday heatmap &mdash; over Files (one logical transfer each, delivered outcome). Where <a href="day.html">Activity per Day</a> shows volume, this page shows failures on both axes. Headline: Files, failed, failed %.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>By hour of day</strong> &mdash; Files, Error and Error % per hour of the start time, all days combined, with a Failures bar relative to the busiest failure hour. Hours with zero errors are not listed.</li>
-<li><strong>By weekday</strong> &mdash; the same by day of week, Monday first; zero-error weekdays not listed.</li>
-<li><strong>Hour &times; weekday heatmap</strong> &mdash; a 24&times;7 grid, each cell the number of failed Files for that hour on that weekday, tinted by quartile (darker = more). A recurring window (a Monday-10:00 batch, a nightly poll) jumps out instead of being averaged away.</li>
+<li>When Files fail: by hour of day, by weekday, and an hour &times; weekday grid. A summary line under the tables gives the Files, the Files in error and their share.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>By hour of day</strong> (the first table) &mdash; <strong>Hour</strong>, <strong>Files</strong>, <strong>Error</strong>, <strong>Error %</strong>, and a <strong>Failures</strong> bar relative to the worst hour.</li>
+<li><strong>By weekday</strong> &mdash; the same per <strong>Weekday</strong>, Monday first.</li>
+<li><strong>Hour &times; weekday failure heatmap</strong> &mdash; 24 rows &times; 7 weekdays, each cell the Files in error for that hour on that weekday, tinted by quartile (darker = more).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>A File is placed by the hour of its start time and the weekday of its date (Julian day number, 0 = Monday); it is failed when its delivered (final-row) outcome is not OK.</li>
-<li>The hour and weekday tables re-aggregate under the date filter; the heatmap re-sums and re-tints every cell for the selected range.</li>
+<li>A File is placed by its start hour and weekday; it is in error when its outcome is Failed or Expired.</li>
+<li>Hours and weekdays without errors are not listed.</li>
+<li>Every table follows the date filter; the heatmap re-sums and re-tints its cells.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
 <li>Click an Error count for that bucket&rsquo;s 10 most recent failed Files.</li>
-<li>One dominant window makes every other cell pale: narrow the date range to compare a normal day with an incident. Failures in one hour, or every Monday morning, point at a schedule, job or upstream feed rather than a background rate.</li>
+<li>One dominant window makes every other cell pale: narrow the range to compare a normal week with an incident. Failures in one hour, or every Monday morning, point at a schedule or upstream feed.</li>
+<li>Volume over the same axes: <a href="day.html">Activity</a>.</li>
 </ul>
 </main>
 </body>

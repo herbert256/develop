@@ -17,13 +17,21 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Subscriptions</h1>
 <h2>What it shows</h2>
-<p>One row per subscription. Internally the entity is the &ldquo;Transfer Site&rdquo; (report basename <code>transfer-site</code>, cache column, detail-page folder); every label the browser shows reads Subscription. Columns, rules, views and drills are the same on all nine entity pages: see <a href="entities.html">Entities</a>.</p>
-<h2>How a File is attributed</h2>
 <ul>
-<li>A subscription is a per-row attribute (a transfer has a source and a destination subscription): distinct <code>(subscription, CoreId)</code> pairs are counted, so a File on two subscriptions counts for both and the per-subscription counts can sum to more than the distinct total.</li>
-<li>The Files group&rsquo;s <strong>Error</strong> count opens <a href="failed-files.html">Failed files</a> for that subscription and the selected From/To dates (the other count cells still open their 10 most recent Files).</li>
-<li>Only logged transfer activity counts here; whether a <em>configured</em> subscription has been seen at all is the <a href="coverage.html">Coverage</a> question.</li>
-<li>The <strong>Error</strong> view adds a <strong>Reason</strong> column, the per-flow diagnosis of the front page&rsquo;s two red tables: the verdict of the flow&rsquo;s newest failed File (its error page) unless the flow is red for server-log reasons; else the classified newest server Error line; else the most specific box of the <a href="subscriptions-in-boxes.html">Boxes</a> page.</li>
+<li>One row per subscription, in the shared <a href="entities.html">Entities</a> layout.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Reason</strong> &mdash; Error view only: why the flow is red, the same Reason as the home page&rsquo;s Failing tables. It links the evidence: the failed File&rsquo;s error page, the flow&rsquo;s server-log error page, or its detail page.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>A subscription is named per leg: a File whose legs name two subscriptions counts for both, so the rows can add up to more than the Files.</li>
+<li>The Files group&rsquo;s <strong>Error</strong> count opens <a href="failed-files.html">Failed files</a> for that subscription and the selected dates instead of a drill-down.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Which configured subscriptions were seen at all: <a href="entity-coverage.html">Entity coverage</a>.</li>
 </ul>
 </main>
 </body>

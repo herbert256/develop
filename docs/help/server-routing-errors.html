@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Advanced Routing errors — Cloud Reports</title>
+<title>Help: Routing errors — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,31 +15,31 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Advanced Routing errors</h1>
+<h1>Routing errors</h1>
 <h2>What it shows</h2>
-<p>Advanced Routing errors where a route gives up on a file, one row per server-log line, newest first:</p>
 <ul>
-<li><strong>Could not send file</strong> (<code>AR0074</code>) &mdash; the route gave up delivering a file to its transfer site after its retries.</li>
-<li><strong>Publish to account failed</strong> (<code>ARPA0001</code>) &mdash; the route could not publish a received file into its account.</li>
+<li>The Advanced Routing lines where a route gives up on a file, one row per line, newest first. Four families:</li>
+<li><strong>Could not send file</strong> (<code>AR0074</code>) &mdash; delivery to the transfer site failed after its retries.</li>
+<li><strong>Publish to account failed</strong> (<code>ARPA0001</code>) &mdash; a received file could not be published into its account.</li>
 <li><strong>Post client action error</strong> (<code>ARRC0009</code> and kin) &mdash; the action after a received file (typically deleting the source) failed.</li>
-<li><strong>Route stopped</strong> (<code>ARSP0001</code>) &mdash; a routing step failed and its configuration abandoned the rest of the route: nothing downstream ran for that file. These lines, still unresolved (no OK File since), make the Boxes <strong>Deploy</strong> column.</li>
+<li><strong>Route stopped</strong> (<code>ARSP0001</code>) &mdash; a step failed and its configuration abandoned the rest of the route.</li>
+<li>The summary line counts the lines per family and the rows shown.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Error</strong> / <strong>Code</strong> &mdash; which of the three, and the line&rsquo;s AR code.</li>
-<li><strong>Account or subscription</strong> &mdash; the subscription (second bracket), or for a post client action the account (first bracket, before the <code>@</code>); opens its detail page, the row carries its result colour.</li>
-<li><strong>File</strong> &mdash; from the braces.</li>
+<li><strong>Date &amp; time</strong>, <strong>Error</strong> (the family), <strong>Code</strong> (the AR code).</li>
+<li><strong>Account or subscription</strong> &mdash; the subscription; for a post client action the account. Links its detail page; the row carries its result colour.</li>
+<li><strong>File</strong> &mdash; the file the line names.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Source: TM lines <code>AR&lt;code&gt;: [&lt;first&gt;] [&lt;second&gt;]  &lt;text&gt;</code> carrying &ldquo;Could not send file:&rdquo;, &ldquo;while publishing the file&rdquo; or &ldquo;post client action&rdquo;.</li>
-<li>Renamed or truncated subscription names resolve to the current configured name.</li>
-<li>At most <strong>1000</strong> rows and <strong>10</strong> per error and entity, the newest; the total row counts every line in the log.</li>
-<li>Date filter, search and sort work over the shown rows.</li>
+<li>A truncated or renamed subscription name resolves to its current configured name.</li>
+<li>At most 1000 rows and 10 per family and entity, the newest; the summary counts every line in the log.</li>
+<li>Unresolved Route stopped lines (no OK File since) feed the <strong>deploy</strong> column of <a href="subscriptions-in-boxes.html">Subscriptions in boxes</a>.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>The failure pages call the first two &ldquo;Duplicate file&rdquo;, the third &ldquo;Post client action failed&rdquo;; a recurring entity has a problem on that step &mdash; <a href="server-errors-day.html">Errors</a> and its detail page give context.</li>
+<li>Error pages and the home Reason name these lines <em>Duplicate file</em>, <em>Route stopped</em> or <em>Post client action failed</em>; a recurring entity has a problem on that step.</li>
 </ul>
 </main>
 </body>

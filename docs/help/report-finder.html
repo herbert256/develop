@@ -17,17 +17,24 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Report finder</h1>
 <h2>What it shows</h2>
-<p>The whole report catalog on one searchable page: every report, dashboard and tool, by title with its <strong>group</strong> (the group of the Reports menu) and its one-line description. Type in the box to narrow the list; click a title to open the report.</p>
+<ul>
+<li>The whole catalog on one searchable page: every report, both dashboards and the search pages (Search, All files search).</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Report</strong> &mdash; the title, a link to the page.</li>
+<li><strong>Group</strong> &mdash; its group of the Reports menu.</li>
+<li><strong>Description</strong> &mdash; the report&rsquo;s one-line description.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>The query is matched against each report&rsquo;s <strong>title</strong>, its <strong>description and introduction</strong> words, its <strong>keywords</strong> and its <strong>page file name</strong> (so <code>went-kaput</code> finds &ldquo;Trouble after Success&rdquo;).</li>
-<li>A title match weighs more: title matches list first, then the reports matched through description, keywords or file name &mdash; each group in catalog order.</li>
-<li>The search grammar is the site-wide one: <code>?</code> matches one character, <code>*</code> any run of characters, and the whole-word operators <code>or</code>, <code>and</code>, <code>not</code> combine terms (<code>failure and not heatmap</code>).</li>
+<li>The box matches each row&rsquo;s title, description, keywords and page file name (<code>went-kaput</code> finds Trouble after success). Title matches list first.</li>
+<li>Search syntax as everywhere: <code>?</code>, <code>*</code>, <code>and</code> / <code>or</code> / <code>not</code> (<code>failure and not heatmap</code>). A search with no match says so.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li><strong>Ctrl/Cmd+K</strong> opens the finder from any page.</li>
-<li>This page finds <strong>reports</strong>. To find an <strong>entity</strong> (account, subscription, login, host, logical flow, partner, application, domain or IP) use the magnifier beside the Entities link at the left of the top bar.</li>
+<li><strong>Ctrl+K</strong> / <strong>Cmd+K</strong> on any page opens the <strong>command palette</strong>: reports from this catalog plus entities by name.</li>
+<li>To find an entity (subscription, account, login, host, logical flow, partner, application, domain, BL, IP, source or target path) use <a href="entity-search.html">Search</a>, the &#128269; beside Entities.</li>
 </ul>
 </main>
 </body>

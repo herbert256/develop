@@ -551,7 +551,11 @@
     });
     window.slotchartSetRange = function (f, t, narrowed) {
       RANGE = narrowed && f && t ? { from: f, to: t, narrowed: true } : null;
-      var av = autoIv(f, t);   // f/t carry the full-range dates on Reset too
+      // the FULL range goes back to the page's own base interval — the one it
+      // opens on (2026-09-29: All auto-picked 1 day for a 68-day span, so
+      // clicking the already-active All changed the charts); a narrowed
+      // range picks the interval that fits it
+      var av = RANGE ? autoIv(f, t) : cards[0]._base;
       if (av) {
         iv = av;
         try { sessionStorage.setItem(ivkey, av); } catch (e) {}

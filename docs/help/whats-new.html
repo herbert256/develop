@@ -17,13 +17,22 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>What is new</h1>
 <h2>What it shows</h2>
-<p>Two tables from the git history of the report scripts: the 10 most recently <strong>added</strong> reports and the 10 most recently <strong>changed</strong> ones, each linking its page with a one-line description.</p>
+<ul>
+<li>From the git history of the report generators: the 25 most recently <strong>added</strong> reports (<strong>New reports</strong>) and the 25 most recently <strong>changed</strong> ones (<strong>Changed reports</strong>), newest first.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Date</strong> &mdash; the commit day. <strong>Report</strong> &mdash; a link to the page. <strong>Group</strong> &mdash; its group of the Reports menu. <strong>Description</strong> (New reports) &mdash; the report&rsquo;s one-line description. <strong>Change</strong> (Changed reports) &mdash; the subject line of its latest commit.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>A change counts only when a commit was about one report (it modified exactly one generator).</li>
-<li>A report in the New table is not repeated in Changed &mdash; added and changed on the same day is one piece of news.</li>
-<li>Unpublished intermediates (the merged reports&rsquo; components) never appear; the tables are empty when git is unavailable.</li>
-<li>Reached from the Site map&rsquo;s Tools card only.</li>
+<li>A change counts only when its commit touched at most eight generators; a sweep across more is about the site, not a report.</li>
+<li>A report in New reports is not repeated in Changed reports.</li>
+<li>Unpublished intermediates (the components of merged reports) never appear.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Reached from the <a href="sitemap.html">Site map</a>&rsquo;s Tools card.</li>
 </ul>
 </main>
 </body>

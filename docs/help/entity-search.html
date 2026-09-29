@@ -17,27 +17,23 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Search</h1>
 <h2>What it shows</h2>
-<p>One flat, searchable list of <strong>every</strong> name the site knows, with its Error / OK Files and when it last moved a file. The table starts <strong>empty</strong>; rows appear once you type a search term (syntax: <a href="general.html">General</a>).</p>
+<ul>
+<li>One searchable list of every name the site knows, configured or logged. It starts empty; rows appear as you type (syntax: <a href="general.html">Generic help</a>).</li>
+<li>Twelve type boxes narrow the search: Logical, Partner, Subscription, Account, Host, Login, Application, Domain, BL, IP, Source, Target. None ticked = every type.</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Type</strong> &mdash; Partner, Subscription, Host, Login, Application, Domain, BL, IP, Account, Source, Target, Whitelist.</li>
-<li><strong>Error / OK</strong> &mdash; the entity&rsquo;s Files by delivered outcome (Files = Error + OK, so that column is omitted).</li>
-<li><strong>Server log</strong> &mdash; blank for the Logical / Partner / Application / Domain / BL groupings.</li>
-<li><strong>Last seen</strong> &mdash; <code>ccyy-mm-dd hh:mm:ss</code> of the newest File attributed to the entity; blank when it never moved a file.</li>
-<li>Last seen for a Whitelist / IP row: the last transfer involving that address; a Source / Target row: its subscription&rsquo;s stamp, a multi-subscription path the newest across them.</li>
+<li><strong>Name</strong> &mdash; links the detail page. <strong>Direction</strong> &mdash; the connection/movement pair of that page.</li>
+<li><strong>Type</strong> &mdash; as above; <code>Remote Host</code> is the Host box, <code>Remote Host (IP)</code> and <code>Whitelist</code> the IP box.</li>
+<li><strong>Error</strong> / <strong>OK</strong> &mdash; the entity&rsquo;s Files by outcome.</li>
+<li><strong>Last seen</strong> &mdash; the newest File of the entity; blank when it never moved one.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Searchable: configured (<code>partners.json</code>, <code>subscriptions.json</code>) and logged accounts, logins, hosts and subscriptions; the groupings; source and target paths; endpoint address aliases from <code>input/ip/ip-hosts.tsv</code>; every whitelisted IP.</li>
-<li>No From/To filter: seen = anywhere in the loaded logs.</li>
-<li>Type checkboxes: none ticked = every kind; ticking narrows. The IP box covers the resolved-host aliases and the whitelisted IPs. Every entity is listed, seen or not; the row colour is its status &mdash; no seen filter.</li>
-<li><strong>Green</strong> = last transfer OK (or, without a status, moved files); <strong>red</strong> = last transfer Error or server-log errors after the last OK; <strong>orange</strong> = configured, never seen or moved no files (zero counts, links the never-seen detail page); a name only the server log mentions, configured nowhere, is <strong>red</strong>.</li>
-<li>Groupings (Logical, Partner, Application, Domain, BL) count each File&rsquo;s own attribution (the partner organisation; the application / domain segments of the account name), are seen when one File carries them, and link their detail pages.</li>
-<li><strong>Source</strong> / <strong>Target</strong>: a subscription&rsquo;s From / To directory + file mask (its detail-page Features table); the row links the subscription with its Error / OK. A path on a remote partner appends the host after <code>@</code> (<code>/some/dir @ sftp-test.lifetime.nl</code>).</li>
-<li>A path shared by N subscriptions collapses to <code>&#9656; &lt;path&gt; (N)</code>, counts summed; click to expand one linked row per subscription with its own counts.</li>
-<li><strong>Whitelist</strong>: one row per (allowing account, IP) from the <code>AllowIP</code> whitelists; an IP has no page &mdash; the row opens the allowing account&rsquo;s detail page, once per account.</li>
-<li>One raw-IP alias per configured endpoint address in <code>ip-hosts.tsv</code>, unless already a host entity or Whitelist row; it links the endpoint&rsquo;s host detail page when known.</li>
-<li>No drill-downs: for an entity&rsquo;s 10 most recent transfers open its detail page or the Seen reports.</li>
+<li>Row colour = the entity&rsquo;s result (<a href="general.html#colours">Generic help</a>); a row without one is green when it moved Files, else orange.</li>
+<li><strong>Source</strong> / <strong>Target</strong> &mdash; a subscription&rsquo;s From / To directory and file mask (a remote one adds <code>@ host</code>), with that subscription&rsquo;s counts and colour. A path shared by N subscriptions shows once as <code>&#9656; path (N)</code>; click to list them.</li>
+<li><strong>Whitelist</strong> &mdash; one row per allowing account and IP; it opens the account&rsquo;s detail page. <strong>Remote Host (IP)</strong> &mdash; a configured endpoint address, linking its host when known.</li>
+<li>No From/To filter and no drill-downs: open the detail page for the newest Files.</li>
 </ul>
 </main>
 </body>

@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Shared Concepts — Cloud Reports</title>
+<title>Help: Generic help — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -14,48 +14,59 @@
 <div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><a class="dashlink" href="../search/all-files.html">Files</a><nav class="nav"><div class="dd"><span class="ddlabel">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../transfer/topview.html">Overview</a><a href="../transfer/entities/subscription-all.html">Entities</a><a href="../analyses/failed.html">Failures</a><a href="../server/errors-log-reasons.html">Server log errors</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a><a href="../analyses/cleanup-backlog.html">Cleanup</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
-<h1>Shared Concepts</h1>
+<h1>Generic help</h1>
 <h2>Terminology</h2>
 <ul>
-<li>Sources: the <strong>transfer</strong> log (every file movement) and the <strong>server</strong> log (the platform&rsquo;s info/warning/error messages).</li>
-<li><strong>File</strong> &mdash; one logical transfer: all rows sharing a CoreId (Inbound partner&rarr;ST leg, Outbound ST&rarr;CFT leg, retries), counted once, volume once: files moved, not log lines. E.g. 3 files retrieved from a partner = 3 Files, 6 rows, 4 sessions (one partner&harr;ST, three ST&harr;CFT). Files never exceed rows; equal only when every File has one leg. A File that started less than 10 minutes before the newest transfer is still under way and left out, with its rows, until the next export.</li>
-<li><strong>Transfer</strong> &mdash; one physical row (a leg). Per-leg reports (protocol, direction/action, security parameters, AV scan) count Transfers and say so.</li>
-<li><strong>OK</strong> &mdash; the File&rsquo;s <em>final</em> row is <code>Processed</code> (a failed retry then a success is OK), or Waiting (staged, still collectable). <strong>Error</strong> &mdash; any other status: Failed, the <code>Failed Subtransmission</code> variants, Expired. On Transfers reports each row counts by its own status.</li>
-<li><strong>Entities</strong> &mdash; nine types: subscriptions, accounts, logins, hosts, logical flows, partners, applications, domains, BL tags.</li>
+<li><strong>File</strong> &mdash; one logical transfer: every log row sharing a CoreId (inbound leg, outbound leg, retries), counted once. A File started under 10 minutes before the newest transfer is still under way: it waits for the next export.</li>
+<li><strong>Transfer</strong> &mdash; one log row (a leg). Per-leg reports (protocol, security parameters, AV scan) count Transfers and say so.</li>
+<li><strong>OK</strong> &mdash; the File&rsquo;s final status is Processed or Waiting. <strong>Error</strong> &mdash; Failed (incl. <code>Failed Subtransmission</code>) or Expired.</li>
+<li><strong>Entities</strong> &mdash; subscriptions, accounts, logins, hosts, logical flows, partners, applications, domains, BL.</li>
 </ul>
-<h2>Colours</h2>
+<h2 id="colours">Colours</h2>
 <ul>
-<li>Row tint = the entity&rsquo;s site-wide result: <strong>green</strong> last transfer OK; <strong>red</strong> last transfer Error (Failed, or Expired before pickup); <strong>orange</strong> never seen in this window, or mixed OK/Error across its subscriptions; <strong>untinted</strong> not in the FlowManager configuration. A non-subscription is green when all its subscriptions are, red when one is.</li>
-<li>Cells: <strong>red</strong> = an Error / Expired count, <strong>amber</strong> = Retry / Resubmit / Waiting; empty = zero. Server-log lines: errors red, warnings amber.</li>
+<li><strong>Green</strong> &mdash; the subscription&rsquo;s last File is OK (Waiting counts as OK).</li>
+<li><strong>Red</strong> &mdash; its last File Failed, or the server log reports errors after it (incl. a UC3 that cannot connect on 3 polls in a row).</li>
+<li><strong>Orange</strong> &mdash; never in the transfer log, or its last File Expired. <strong>Untinted</strong> &mdash; not configured.</li>
+<li>Other entities: red when any connected subscription is red, green when all are green, else orange.</li>
+<li>Cells: red = an Error / Expired count, amber = Retry / Resubmit / Waiting; an empty cell is zero.</li>
+</ul>
+<h2>Top bar</h2>
+<ul>
+<li><strong>Environment</strong> name (the <a href="home.html">home page</a>) and the <strong>data period</strong> (first and last transfer day).</li>
+<li><strong>Entities</strong> &mdash; the Subscriptions page; <strong>&#128269;</strong> &mdash; <a href="entity-search.html">Search</a>; <strong>Files</strong> &mdash; <a href="all-files-search.html">All files search</a>.</li>
+<li><strong>Reports &#9662;</strong> &mdash; the <a href="index.html">Start page</a> and one line per report group.</li>
+<li><strong>Dashboard</strong>; <strong>Monitor</strong> when the logs carry monitor traffic.</li>
+<li><strong>&#128270;</strong> <a href="report-finder.html">Report finder</a> &middot; <strong>&#9680;</strong> dark / light theme &middot; <strong>&#128506;</strong> <a href="sitemap.html">Site map</a> &middot; <strong>?</strong> the page&rsquo;s help.</li>
 </ul>
 <h2>Tab rows</h2>
 <ul>
-<li>Up to two under the title: the <strong>group members</strong> (sibling reports) and the <strong>views</strong> (Details / Top view, All / Seen / Not seen &hellip;). Every combination is its own page &mdash; bookmarkable, survives a reload.</li>
+<li>Up to three rows under the title: the report&rsquo;s <strong>group</strong> members first (<code>&larr; Group</code> after the title names it), then its own tabs and views; each combination is a bookmarkable page.</li>
 </ul>
 <h2>Search box</h2>
 <ul>
-<li>Pages with a table over 25 rows get one box filtering every table across all visible columns. <code>?</code> = one character, <code>*</code> = any run (<code>FE?????</code>, <code>AB*</code>); <code>and</code> / <code>or</code> / <code>not</code> combine terms (<code>RABO or SAP</code>, <code>ABC and not XYZ</code>, a leading <code>not XYZ</code>).</li>
-<li>A space means AND unless an operator word is typed &mdash; then the query is taken as written (literal &ldquo;and&rdquo;: <code>abc and and</code>). Remembered per page for the session; a few tables are excluded (transfer patterns).</li>
-<li>The <a href="entity-search.html">Search</a> page starts empty and searches every account, subscription, login and remote host as you type.</li>
+<li>A page with a table over 25 rows gets one box filtering every table. <code>?</code> = one character, <code>*</code> = any run, <code>"&hellip;"</code> = the whole cell; a space means AND; <code>and</code> / <code>or</code> / <code>not</code> combine terms (<code>RABO or SAP</code>, <code>ABC and not XYZ</code>).</li>
+<li>Search and sort are remembered per report for the session; the Entities pages share one sort, every key of it, for an hour.</li>
 </ul>
 <h2>Date range (From / To)</h2>
 <ul>
-<li>Buttons: <strong>All</strong>; <strong>Week</strong> / <strong>4 weeks</strong> (last 7 or 28 full days; a newest day collected mid-day never counts); <strong>Month</strong> (one calendar month back from the newest data day &mdash; ending 17 September it selects 18 August to 17 September; always shown, from the first data day when the data is shorter); <strong>Current month</strong> / <strong>Previous month</strong> (every data day of the newest day&rsquo;s calendar month, or of the month before; hidden without data); <strong>First</strong> / <strong>Last day</strong>; <strong>Previous</strong> / <strong>Next day</strong> (only when From = To, grayed at the ends).</li>
-<li>Narrowing re-sums every visible number in the browser from embedded per-date figures. Remembered per session, shared across an area; Top-view pages reset to the full period on load. Figures that cannot re-aggregate (distinct counts) carry the note <em>&ldquo;&#9888; The date filter does not adjust this table; values cover the full period.&rdquo;</em></li>
+<li><strong>All</strong> &middot; <strong>Week</strong> / <strong>4 weeks</strong> (the last 7 / 28 full days; hidden when the data is shorter) &middot; <strong>Month</strong> (one calendar month back from the newest data day; always shown).</li>
+<li><strong>Current month</strong> / <strong>Previous month</strong> (every data day of that calendar month; hidden without data) &middot; <strong>First day</strong> / <strong>Last day</strong> &middot; <strong>Previous day</strong> / <strong>Next day</strong> (on a one-day selection).</li>
+<li>Narrowing re-sums the figures in the browser, shared across an area for the session; Top views and Entities open at the full period.</li>
+<li>A table that cannot follow the range says so; one left empty says &ldquo;No rows in the selected date range&rdquo;.</li>
 </ul>
 <h2>Tables</h2>
 <ul>
-<li><strong>Sorting</strong> &mdash; click a header (numbers largest first, text A&ndash;Z), again to reverse; Shift-click adds a key (rank &sup2;, &sup3;; shift-click again flips it); a plain click starts over. Remembered per report. Bar columns do not sort; range columns sort naturally.</li>
-<li><strong>cols</strong> (last cell of the total or last row) &mdash; untick columns; drag by the grip to reorder (mouse only), the total row follows; <strong>Reset</strong> restores the built order and all columns. Remembered per report; a report whose columns change restarts from its built order. Grouped header bands (Top view, home page) move within their group; hour&times;weekday heat maps and Boxes pages are fixed.</li>
-<li><strong>csv</strong> (upper-right of the last header cell, on hover) &mdash; the table as shown: filtered rows, current sort, hidden columns and totals left out; named <code>&lt;page&gt;-&lt;heading&gt;.csv</code>.</li>
-<li><strong>Drill-downs</strong> &mdash; dotted-underlined cells (Error/OK counts, the Seen and Search reports&rsquo; Server Log yes cells) expand to the 10 most recent entries, newest first, always full period. Under a <strong>red or orange</strong> cell (an Error, Retry, Resubmit, Waiting or Expired count, an amber or red duration) the <strong>first</strong> File&rsquo;s CoreId opens that File&rsquo;s own page &mdash; facts, every leg, the server-log lines; the <strong>&#8599;</strong> after it still opens File Tracking.</li>
+<li><strong>Sorting</strong> &mdash; click a header, again to reverse; Shift-click adds a key; a paged table returns to page 1.</li>
+<li><strong>cols</strong> (last cell of the total or last row) &mdash; hide or drag-reorder columns; <strong>Reset</strong> restores them.</li>
+<li><strong>csv</strong> (upper-right of the last header cell, on hover) &mdash; the table as shown, totals left out; a grouped header carries its group (&ldquo;Files Error&rdquo;).</li>
+<li><strong>Drill-downs</strong> &mdash; dotted-underlined counts expand to their 10 most recent Files, newest first, over the full period. Under a red or orange cell the first CoreId opens that File&rsquo;s page.</li>
 </ul>
 <h2>Page tools</h2>
 <ul>
-<li><strong>Ctrl+K</strong> / <strong>Cmd+K</strong> &mdash; the command palette: type part of a report name, keyword or entity name; arrows move, Enter opens, Shift+Enter opens a new tab, Escape closes.</li>
-<li><strong>&#9680;</strong> in the top bar toggles the dark theme (light is default); remembered in your browser.</li>
-<li>Every CoreId / transfer id carries <strong>&#10697;</strong>: click copies it (a tick confirms). The id links to SecureTransport&rsquo;s <strong>File Tracking</strong> (new tab); where the id opens a site page instead, <strong>&#8599;</strong> after it opens File Tracking.</li>
-<li>Hover a date (a cell, the &ldquo;Generated on&rdquo; line) for &ldquo;3 days ago&rdquo;, from your clock.</li>
+<li><strong>Ctrl+K</strong> / <strong>Cmd+K</strong> &mdash; the command palette: type part of a report or entity name; arrows move, Enter opens (Shift+Enter in a new tab), Escape closes.</li>
+<li>A CoreId links SecureTransport&rsquo;s <strong>File Tracking</strong> (where it opens a site page, the <strong>&#8599;</strong> after it does); <strong>&#10697;</strong> copies it.</li>
+<li>Hover a date for &ldquo;3 days ago&rdquo;, from your clock.</li>
+<li>Site links (&ldquo;Back to &hellip;&rdquo; too) open in the same tab, external ones in a new tab.</li>
 </ul>
 </main>
 </body>

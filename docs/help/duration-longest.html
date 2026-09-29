@@ -17,21 +17,24 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Longest Files</h1>
 <h2>What it shows</h2>
-<p>The <strong>50 longest delivered Files</strong> by wall-clock duration &mdash; first record start to last record end, so the store-and-forward wait inside SecureTransport and any retry idle are included.</p>
+<ul>
+<li>The 50 longest delivered Files by wall-clock duration &mdash; first record start to last record end, so the store-and-forward wait inside SecureTransport and any retry idle are included.</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Duration</strong> &mdash; sorts by the exact milliseconds.</li>
-<li><strong>Start Time</strong>, <strong>End Time</strong> (the latest record end), <strong>CoreId</strong>, <strong>File</strong> name.</li>
-<li><strong>Subscription</strong> &mdash; the destination, linked to its detail page.</li>
+<li><strong>Duration</strong> &mdash; the span; sorts by the exact milliseconds.</li>
+<li><strong>Start Time</strong> / <strong>End Time</strong> &mdash; the first record start and the latest record end.</li>
+<li><strong>CoreId</strong> &mdash; the File&rsquo;s id.</li>
+<li><strong>Destination Subscription</strong> &mdash; linked to its detail page.</li>
+<li><strong>File</strong> &mdash; the file name.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Only <strong>Processed</strong> (OK) Files are listed: a Failed, Expired or still-Waiting File is not a completed transfer, and a failure&rsquo;s run time is a timeout, not a duration. Error transfers are mostly instant 0-byte attempts, a hanging one is a timeout &mdash; neither is a delivery.</li>
-<li>Read from the logical-transfer cache (one row per CoreId): the 50 largest durations among the Processed Files.</li>
+<li>Only Processed (OK) Files: a Failed, Expired or Waiting File is not a completed transfer, and a failure&rsquo;s run time is a timeout, not a duration.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A Duration, Start Time, End Time or CoreId cell opens the File&rsquo;s own <strong>File page</strong> under <code>files/</code>: the facts table, every record of that CoreId and the server log of its connections.</li>
+<li>The Duration, Start Time, End Time and CoreId cells open the File page: its facts, every record of the CoreId and the server log of its connections.</li>
 </ul>
 </main>
 </body>

@@ -17,33 +17,27 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Polling</h1>
 <h2>What it shows</h2>
-<p>One row per <strong>UC3</strong> polling subscription (SecureTransport is the client and collects from the partner&rsquo;s server on a timer) &mdash; its configured cron expression and schedule, and what the server log observed.</p>
-<p>A bare table, no intro or boxes; the same tables sit on the <a href="server-uc3-status.html">UC status / UC3</a> tab.</p>
+<ul>
+<li>One row per <strong>UC3</strong> polling subscription: its configured schedule and what the server log observed. The <a href="server-uc3-status.html">UC status &rsaquo; UC3</a> tab holds the same facts as separate tables.</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Subscription</strong> &mdash; configured name, links to its detail page; row tinted by its result.</li>
-<li><strong>Active</strong> (column two) &mdash; the <a href="subscriptions.html">Subscriptions</a> page&rsquo;s column: <strong>Yes</strong>, or why not (hover for the words): <strong>1</strong> status Undeployed, <strong>2</strong> status SAVED_NOT_DEPLOYED, <strong>3</strong> a receive schedule set to No, <strong>4</strong> folder monitoring Inactive. Several apply = several numbers. A name containing <strong>SWIFT</strong> shows <strong>CFT</strong>; blank = the configuration does not name the flow.</li>
-<li><strong>Cron expression</strong> &mdash; Quartz <code>sec min hour day-of-month month day-of-week</code> (<code>?</code> no specific value, <code>5/30</code> every 30 from minute 5, <code>MON-FRI</code> weekdays, <code>1-7</code> in day-of-month = days 1 to 7); <strong>Schedule</strong> spells it out; consecutive hours of a list read as one window from the first to the last fire (<code>0,8-23</code> with every 10 minutes = <em>00:00-00:50, 08:00-23:50</em>). <strong>no cron</strong> = a UC3 without a receive schedule: nothing makes it poll, so it never runs and leaves no trace in either log (the Boxes &ldquo;no cron&rdquo; box).</li>
-<li><strong>Observed</strong> &mdash; when the schedule really fires (rules below).</li>
-<li><strong>Polls</strong> / <strong>Empty polls</strong> / <strong>Files matched</strong> / <strong>Empty %</strong> &mdash; the &ldquo;Applying the search pattern &hellip; N file(s) were found of which M matched&rdquo; lines; empty = M is 0; matched = sum of M.</li>
-<li><strong>Listing errors</strong> &mdash; &ldquo;Error occurred while listing files from partner &hellip;&rdquo;: wrong remote directory, permissions, or a partner dropping the connection mid-listing.</li>
-<li><strong>Poll starts</strong> / <strong>Failure lines</strong> / <strong>What goes wrong</strong> &mdash; filled for a schedule that fires but never completes a poll: the &ldquo;Remote files pattern &hellip; evaluated&rdquo; setup lines, the connection and authentication failures naming the flow or its host, and the dominant reason (host and port, account, error).</li>
+<li><strong>Subscription</strong> &mdash; the configured name; the row carries its result colour.</li>
+<li><strong>Active</strong> &mdash; <strong>Yes</strong>, or why not (hover for the words): <strong>1</strong> Undeployed, <strong>2</strong> SAVED_NOT_DEPLOYED, <strong>3</strong> receive schedule No, <strong>4</strong> folder monitoring Inactive; <strong>CFT</strong> for a SWIFT name.</li>
+<li><strong>Cron expression</strong> (Quartz, raw) &middot; <strong>Schedule</strong> (plain English) &middot; <strong>Observed</strong> (Rules); Schedule <strong>no cron</strong> = nothing makes it poll (the Missing cron box of <a href="subscriptions-in-boxes.html">Subscriptions in boxes</a>).</li>
+<li><strong>Polls</strong> / <strong>Empty polls</strong> / <strong>Files matched</strong> / <strong>Empty %</strong> &mdash; from &ldquo;Applying the search pattern &hellip; N file(s) were found of which M matched&rdquo;; empty = M is 0.</li>
+<li><strong>Listing errors</strong> &mdash; the remote folder could not be listed (path, permissions, a dropped connection).</li>
+<li><strong>Poll starts</strong> / <strong>Failure lines</strong> / <strong>What goes wrong</strong> &mdash; filled for a schedule that never completes a poll: its setup lines, its connection and authentication failures, and the dominant reason.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>UC3 only: every configured UC3 flow (by name prefix or derived use case), never-seen ones with empty poll columns, plus any UC3-named flow the server log shows polling (empty cron columns). Other pollers &mdash; the UC5 pull side, a UC1 flow with a cron &mdash; are not listed; the UC3 tab keeps the Files, OK and Error figures.</li>
-<li>Observed = the median of each day&rsquo;s first poll &plusmn; one standard deviation (first and last active day left out &mdash; the export window cuts into both); a poll rate (<em>~23 polls/day</em>) for a schedule firing more than 3&times; a day.</li>
-<li><strong>&middot; files</strong> = no poll line, only the file arrivals (the Punctuality report) give a slot; <strong>-</strong> = nothing ever observed.</li>
-<li><strong>Dark red</strong> Observed contradicts the schedule (a daily one firing at another hour, an hourly one polling once a day): the export and the running server disagree, or the flow runs on another schedule.</li>
-<li>An empty poll costs a slot, a connection and a listing but leaves no trace in the transfer log &mdash; chronic empty polling shows only here.</li>
-<li>From/To re-totals the poll figures; the cron columns and Observed are whole-period.</li>
-<li>Names are the configured ones (logged <code>_SCP_</code> / <code>_SFTP_SERVER_</code> tails dropped); a server-truncated name matches by unique prefix, either way.</li>
-<li>Cron from <code>subscriptions.json</code>; polls from the per-subscription aggregation that feeds the UC3 tab. A schedule set to No shows as Active <strong>3</strong>; none skip holidays. UC1 is a client use case too but pushes on directory scanning &mdash; no cron.</li>
+<li>Rows: every configured UC3 flow plus any UC3-named flow the log shows polling. A server-truncated name matches by unique prefix.</li>
+<li><strong>Observed</strong>: the median of each day&rsquo;s first poll &plusmn; one standard deviation, or the poll rate above 3 a day; <strong>&middot; files</strong> = only file arrivals give a slot; <strong>-</strong> = never observed; <strong>dark red</strong> = contradicts the schedule.</li>
+<li>From/To re-totals Polls through Listing errors; the other columns are full-period.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a row: its 10 most recent poll lines (on a flow without poll lines, the server-log lines that decided its status).</li>
-<li>Reference: <a href="https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html">Quartz cron trigger tutorial</a>.</li>
+<li>An empty poll costs a slot, a connection and a listing but leaves no transfer record &mdash; chronic empty polling shows only here.</li>
 </ul>
 </main>
 </body>

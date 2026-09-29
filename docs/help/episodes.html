@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Failure Episodes — Cloud Reports</title>
+<title>Help: Episodes — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,27 +15,27 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Failure Episodes</h1>
+<h1>Episodes</h1>
 <h2>What it shows</h2>
-<p>Failure <em>runs in time</em>, per subscription: consecutive failed Files collapsed into <strong>episodes</strong> &mdash; an unbroken run of failures ended by the next OK File, or still open. Other failure reports show rates; this one shows how often a flow breaks and how long outages last.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>Episodes per subscription</strong> &mdash; every subscription that failed at least once: episode count, longest run, and its closed episodes by time to recovery (within an hour / within a day / longer). Sorted by episode count.</li>
-<li><strong>Time to recovery</strong> &mdash; the distribution over all closed episodes, first failure to the next OK File of the same subscription; open incidents not counted.</li>
-<li><strong>Recovered flows</strong> tab &mdash; the subscriptions back to green after a red episode (<a href="recovered.html">its own help</a>).</li>
+<li>Failure <em>runs in time</em> per subscription: consecutive Files in error collapsed into <strong>episodes</strong>, each ended by the next OK File or still open &mdash; how often a flow breaks and how long it stays broken.</li>
+</ul>
+<h2>Tabs</h2>
+<ul>
+<li><strong>Episodes</strong> &mdash; per failed subscription, most episodes first: <strong>Files</strong>, <strong>Error</strong>, <strong>Episodes</strong>, <strong>Longest run</strong>, its closed episodes by time to recovery (<strong>Healed &lt;= 1 h</strong>, <strong>1 - 24 h</strong>, <strong>Over 24 h</strong>), <strong>Last OK</strong> (<em>never</em> = no OK File in the window).</li>
+<li>Below it, <strong>Time to recovery</strong>: all closed episodes by <strong>Recovered within</strong> (5 minutes, 1 hour, 24 hours, 3 days, longer), <strong>Episodes</strong>, <strong>Share</strong>.</li>
+<li><strong>Recovered flows</strong> &mdash; subscriptions green again after a red episode (<a href="recovered.html">its own help</a>).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Files (delivered outcome) are walked chronologically per subscription: a failure after an OK (or at the start) opens an episode, the next OK closes it; recovery time = first failure to that OK.</li>
-<li>A run reaching the end of the data with no OK is still open: not in Time to recovery. What is broken right now, with its <strong>Failures in a row</strong> and <strong>Days red</strong>, is on <a href="failed.html">Failed Subscriptions</a>. <strong>never</strong> = no OK File in the whole window.</li>
-<li>Many quick-healing episodes = a flapping flow; few long ones = a flow that breaks hard.</li>
-<li>No date filter, always the full period: narrowing would cut runs in half and turn open incidents into closed ones.</li>
-<li>Headline: subscriptions that failed at least once, the runs still open (3+ in a row, and the worst run), those that never delivered OK, closed episodes, longest recovery.</li>
+<li>Files are walked chronologically per subscription: a File in error (Failed or Expired) after an OK one, or at the start, opens an episode, the next OK File closes it; recovery time = first failure to that OK.</li>
+<li>A run with no OK File yet is still open and not in Time to recovery; what is broken right now is on <a href="failed.html">Failed Subscriptions</a>.</li>
+<li>Always the full period: a date range would cut runs in half.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a row (its failure / Error count) for the 10 most recent failed Files.</li>
-<li>The error rate per day, subscription or account: the <a href="topview.html">Top view</a> and the <a href="entities-subscription.html">Entities</a> Error % column; <a href="retry.html">Repeat failures</a> = physical retries inside one transfer; <a href="anomalies.html">Anomalies</a> = unusual hours.</li>
+<li>Many quick-healing episodes = a flapping flow; few long ones = a flow that breaks hard.</li>
+<li>Click an Error count for the 10 most recent failed Files. Retried and resubmitted Files: <a href="retry.html">Retries &amp; resubmissions</a>.</li>
 </ul>
 </main>
 </body>

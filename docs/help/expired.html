@@ -17,26 +17,26 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Expired</h1>
 <h2>What it shows</h2>
-<p>Staged <strong>UC2</strong> files the nightly <strong>File Maintenance</strong> retention sweep (03:00, ~11 days after staging) deleted before any pickup &mdash; outcome <strong>Expired</strong>: never delivered, no longer collectable. Headline: the Expired Files, their share of every staged file whose fate is decided, and the volume that never reached a partner.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>How long until expiry</strong> &mdash; calendar days from staging start to deletion. One global retention (~11 days): staged before 03:00 expires on day 11, later on day 10&ndash;11. No subscription deviates, so retention is <strong>not</strong> configured per partner.</li>
-<li><strong>Subscriptions</strong> &mdash; the flows the expired files were staged on (per account until 2026-09-19; an account can serve several UC2 flows, and the flow is what gets fixed), with the <strong>pickup rate</strong> = Collected / (Collected + Expired). <strong>Red</strong> = never collected a single file (a dead pickup flow: everything staged expires); <strong>orange</strong> = collects some, lets the rest expire.</li>
-<li>Waiting there = staged within the last ~11 days, still collectable.</li>
-<li>An <strong>Expired</strong> cell there opens the subscription&rsquo;s own page: its expired Files, last expired first &mdash; Start (staged), Expired (deleted by the sweep), File name, CoreId. The CoreId of the first 5 opens the File page.</li>
-<li><strong>Expiries per sweep night</strong> &mdash; one row per 03:00 run and what it removed unclaimed; a missing night deleted nothing. The Subscriptions column is per night, not additive, so the Total leaves it blank.</li>
-<li><strong>Staged weekday</strong> &mdash; the weekday the file was <strong>staged</strong>, not deleted. One subscription can dominate this split: check the per-subscription table before reading a weekday pattern as partner behaviour.</li>
+<li>Staged <strong>UC2</strong> Files the nightly File Maintenance sweep (03:00, ~11 days after staging) deleted before any pickup: outcome <strong>Expired</strong>, never delivered. Boxes: <strong>Expired Files</strong>, their share <strong>of resolved staged Files</strong>, <strong>Never-delivered volume</strong>, <strong>Average staged to deleted</strong>, <strong>Still waiting</strong>.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Staged to deleted</strong> (the first table) &mdash; calendar days from staging to deletion: <strong>Files</strong>, <strong>Share</strong>.</li>
+<li><strong>Subscriptions</strong> &mdash; <strong>Partner</strong>; <strong>Expired</strong> (opens its list of expired Files); <strong>Collected</strong> (picked up and delivered &mdash; as on Waiting); <strong>Waiting</strong> (still collectable); <strong>Pickup rate</strong> = Collected &divide; (Collected + Expired); <strong>Avg age</strong> at deletion; <strong>Volume</strong>; <strong>First</strong> / <strong>Last staged</strong>; <strong>Last deletion</strong> (the default sort).</li>
+<li><strong>Expiries per sweep night</strong> &mdash; <strong>Files expired</strong>, <strong>Volume</strong>, <strong>Subscriptions</strong> (per night, not additive).</li>
+<li><strong>Staged on which weekday</strong> &mdash; <strong>Expired</strong>, <strong>Collected</strong>, <strong>Expired share</strong> by staging weekday.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Source: the transfer parse cache <code>_files.tsv</code>, outcome Expired, with the col-22 deletion timestamp set by <code>bin/expire-files.sh</code> from the server log&rsquo;s <em>File Maintenance &hellip; finished. Deleted files [&hellip;]</em> lines &mdash; the deletion leaves no transfer-log record.</li>
-<li>Join: same account and file basename, deletion dated after staging.</li>
-<li>Collected = staged files with a pickup (col 21). The sweep also removes already-collected staged copies &mdash; routine cleanup, not counted.</li>
-<li>Expired counts as <strong>Error</strong> on every report, Waiting as <strong>OK</strong>; this page and <a href="waiting.html">Waiting Files</a> show the two states separately.</li>
+<li>Subscription rows: <strong>red</strong> = never collected a File (everything staged expires), <strong>orange</strong> = collects some, lets the rest expire.</li>
+<li>The deletion leaves no transfer-log record: it is taken from the server log&rsquo;s File Maintenance &ldquo;Deleted files&rdquo; lines, matched on account and file name.</li>
+<li>One global retention: staged before 03:00 expires on day 11, later on day 10&ndash;11. Always the full period.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li><a href="waiting.html">Waiting Files</a> (same group) shows both states per subscription and the individual files; this page aggregates the expired population. The Partner league gives each partner&rsquo;s overall health verdict.</li>
+<li>On a subscription&rsquo;s list the first 5 CoreIds open the File page. The Files still staged are on <a href="waiting.html">Waiting</a>; each partner&rsquo;s overall verdict on <a href="partner-scorecard.html">Partner scorecard</a>.</li>
+<li>One subscription can dominate the weekday split: check the Subscriptions table first.</li>
 </ul>
 </main>
 </body>

@@ -12,8 +12,8 @@
 <body>
 <h1>Page not found</h1>
 <p>There is no page at this address.</p>
-<p>The site dropped its environment level in 2026-09 (<code>production/&hellip;</code> became <code>&hellip;</code>), so older bookmarks may need updating.</p>
-<p><a id="homelink" href="/"><strong>Go to the home page</strong></a></p>
-<script>(function(){var p=location.pathname,m=p.match(/^(.*?\/)(?:analyses|assets|coverage|dashboards|day|details|files|first-seen|help|latest|reports|search|server|tools|transfer|errors)\//);var r=m?m[1]:p.replace(/[^/]*$/,"");r=r.replace(/(?:acceptance|production)\/$/,"");document.getElementById("homelink").href=r+"index.html";})();</script>
+<p>Reports are renamed, merged or retired now and then (the Transfer / Server / Analyses start pages became one <strong>Reports</strong> page in 2026-09), and the site dropped its environment level in 2026-09 (<code>production/&hellip;</code> became <code>&hellip;</code>), so an older bookmark may need updating.</p>
+<p><a id="homelink" href="/"><strong>Go to the home page</strong></a> &nbsp;&middot;&nbsp; <a id="reportslink" href="/"><strong>All reports</strong></a></p>
+<script>(function(){var p=location.pathname,m=p.match(/^(.*?\/)(?:analyses|assets|coverage|dashboards|day|details|files|first-seen|help|reports|search|server|tools|transfer|errors)\//);var r=m?m[1]:p.replace(/[^/]*$/,"");r=r.replace(/(?:acceptance|production)\/$/,"");document.getElementById("homelink").href=r+"index.html";document.getElementById("reportslink").href=r+"reports/index.html";})();</script>
 </body>
 </html>

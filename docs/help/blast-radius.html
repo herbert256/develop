@@ -17,19 +17,17 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Blast radius</h1>
 <h2>What it shows</h2>
-<p>What stops when a remote host dies. One row per outbound endpoint we dial, with everything routed over it, and the endpoints several partners share.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>Blast radius</strong> &mdash; per endpoint: Files, volume, and distinct Subscriptions, Applications, Domains and Partners routed over it; <strong>Sole endpoint for</strong> names the partners for which it is the only recorded endpoint.</li>
-<li>The boxes class every seen partner by its distinct recorded endpoints: single, multiple, or none recorded (inbound-only).</li>
-<li><strong>Shared endpoints</strong> &mdash; endpoints used by several partner organisations: one address, several relationships in the blast radius.</li>
+<li>What stops when a remote host dies. Boxes: outbound endpoints, partners seen, and the partners with a <strong>single</strong> endpoint, <strong>multiple</strong> endpoints or none (<strong>inbound-only</strong>), plus the <strong>shared</strong> endpoints.</li>
+<li><strong>If this host dies</strong> &mdash; one row per outbound endpoint, busiest first: <strong>Host</strong>, <strong>Files</strong>, <strong>Volume</strong>, distinct <strong>Subscriptions</strong>, <strong>Applications</strong>, <strong>Domains</strong> and <strong>Partners</strong>, their names in <strong>Partner(s)</strong>, and <strong>Sole endpoint for</strong> &mdash; the partners with no other endpoint.</li>
+<li><strong>Shared endpoints</strong> &mdash; hosts serving several partners: <strong>Host</strong>, <strong>Partners</strong>, <strong>Partner(s)</strong>, <strong>Files</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>The first table counts OUT-connection Files only (the endpoints we dial); its distinct counts use the site-wide union attribution.</li>
-<li>A <strong>red</strong> row is the sole recorded endpoint of at least one partner &mdash; no second address to fail over to; losing it strands those partners entirely.</li>
-<li>The partner classes and the sharing view count each partner&rsquo;s distinct endpoints over its OUT-connection Files only &mdash; an inbound File records the partner&rsquo;s source address, not an endpoint we dial.</li>
-<li>A partner with no such endpoint is <strong>inbound-only</strong>: it dials us, so none of its endpoints can strand us &mdash; a legitimate class, not a gap.</li>
+<li>Endpoints come from OUT-connection Files only: an inbound File records the partner&rsquo;s source address, not an endpoint we dial.</li>
+<li>A <strong>red</strong> row is the sole endpoint of at least one partner &mdash; nothing to fail over to.</li>
+<li>Inbound-only partners dial us, so no endpoint of theirs can strand us: a legitimate class, not a gap.</li>
+<li>Applications and partners use the union rule: a File counts for its own and every configured one of its subscription.</li>
 </ul>
 </main>
 </body>

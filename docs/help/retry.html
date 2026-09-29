@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Repeat Failures — Cloud Reports</title>
+<title>Help: Retries &amp; resubmissions — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,30 +15,33 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Repeat Failures</h1>
+<h1>Retries &amp; resubmissions</h1>
 <h2>What it shows</h2>
-<p>Transfers that did not succeed at the first attempt: failing flows, retry anatomy, retry spacing, which side fails, manual resubmissions.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>Failing flows</strong> &mdash; one row per <strong>(Account, Subscription)</strong> pair; top 60, never-succeeded first, then by failure count. <strong>Fail days</strong> = distinct days with a failure; <strong>Error transfers</strong>/<strong>OK transfers</strong> = legs (a flow with no OK transfers never succeeded in the range); <strong>Resubmitted</strong> = legs flagged as resubmissions; last failure time.</li>
-<li><strong>Retry anatomy, delivered</strong> &mdash; failed legs before delivery, delivered Files only (incl. Waiting). A big &ldquo;first try&rdquo; row is healthy; weight further down = the platform delivers by insisting.</li>
-<li><strong>Retry anatomy, abandoned</strong> &mdash; Files ended Error or Expired; &ldquo;first try (0 failed legs)&rdquo; is mostly Expired: every leg processed, the partner never collected.</li>
-<li><strong>Retry spacing</strong> &mdash; a failed leg&rsquo;s start to the next leg of the same File. Under 10 seconds = automatic hammering; minutes/hours = scheduled re-runs.</li>
-<li><strong>Which side fails</strong> &mdash; Inbound = arrival (partner/CFT delivering to ST); Outbound = delivery (ST pushing onward, or the partner collecting).</li>
-<li><strong>Manual resubmissions</strong> &mdash; <code>Resubmitted=true</code> legs per day and per subscription. Error/OK is the leg&rsquo;s own status: an OK resubmitted leg is the retry that worked.</li>
-<li><strong>Resubmission outcomes (server log)</strong> &mdash; &ldquo;Error while resubmitting transfer&rdquo; vs &ldquo;Resubmission successfully executed&rdquo; per day; also catches attempts that produced no transfer-log leg.</li>
-<li><strong>Recovered files</strong> tab &mdash; the Files that carried a failed leg yet finished OK, per subscription, protocol and day, split Retry (automatic) / Resubmit (manual) (<a href="recovered-files.html">its own help</a>).</li>
+<li>Transfers that did not succeed at the first attempt: the failing flows, the retries inside a File, and the manual resubmissions.</li>
+</ul>
+<h2>Tabs</h2>
+<ul>
+<li><strong>Failing flows</strong> &mdash; the top 60 Account + Subscription pairs, never-succeeded first: <strong>Fail days</strong>, <strong>Error</strong> / <strong>OK transfers</strong> (legs), <strong>Resubmitted</strong> legs, <strong>Last failure</strong>.</li>
+<li><strong>Legs before success</strong> &mdash; delivered Files (Waiting included) by failed legs before delivery: <strong>Attempts</strong>, <strong>Files</strong>, <strong>% of delivered</strong>.</li>
+<li><strong>Gave up</strong> &mdash; the same for Files ended Failed or Expired; its 0-failed-legs row is mostly Expired.</li>
+<li><strong>Retry spacing</strong> &mdash; a failed leg&rsquo;s start to the File&rsquo;s next leg: <strong>Gap</strong>, <strong>Retries</strong>, <strong>Files</strong>.</li>
+<li><strong>Failing side</strong> &mdash; <strong>Failed legs</strong> and <strong>Files</strong> per <strong>Direction</strong>: inbound = arrival at ST, outbound = delivery onward or partner pickup.</li>
+<li><strong>Resubmitted per day</strong> &mdash; <strong>Resubmitted legs</strong>, their own <strong>Error</strong> / <strong>OK</strong> status, <strong>Files</strong>.</li>
+<li><strong>Per subscription</strong> &mdash; <strong>Resubmitted legs</strong>, <strong>Files</strong>, <strong>First</strong>, <strong>Last</strong>.</li>
+<li><strong>Resubmission outcomes</strong> &mdash; the server log&rsquo;s resubmit <strong>Errors</strong> and <strong>Successes</strong> per day, including attempts that left no transfer-log leg.</li>
+<li><strong>Recovered files</strong> &mdash; <a href="recovered-files.html">its own help</a>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Flow key = Account+Subscription: file names carry timestamps, so a retry never repeats as a name; the pair does.</li>
-<li>Failing flows count parse-cache rows, not Files: a failed leg later re-sent OK appears on both sides; the File-level reports fold such intra-File recoveries into one OK File (the delivered rule). Only flows with a failure are listed.</li>
-<li>Resubmitted = the log&rsquo;s own marker, set only by an operator&rsquo;s manual resubmission, never by automatic retries (the Top view splits Recovered into Automatic and Manual by it).</li>
-<li>Under a narrowed date range the Files columns of spacing, side and resubmissions, and the resubmissions&rsquo; First/Last, stay full-period.</li>
+<li>Failing flows counts legs, not Files: a failed leg re-sent OK counts on both sides.</li>
+<li>Resubmitted = the transfer log&rsquo;s own flag, set only by a manual resubmission, never by an automatic retry.</li>
+<li>Under a narrowed date range the Files columns and First / Last stay full-period.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click an Error/OK transfers count for that outcome&rsquo;s 10 most recent transfers, an anatomy row for its 10 most recent Files, a resubmission row for the subscription&rsquo;s 10 most recent resubmitted Files (newest first).</li>
+<li>Under 10 seconds between attempts = automatic hammering; minutes or hours = scheduled re-runs.</li>
+<li>A count cell drills to its 10 most recent transfers or Files.</li>
 </ul>
 </main>
 </body>

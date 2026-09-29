@@ -17,20 +17,25 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Errors</h1>
 <h2>What it shows</h2>
-<p>The server log&rsquo;s own info/warning/error records (<code>data/server/cache/_parse.tsv</code>, not the transfer log) from every angle, one tab per table. Every number is a count of log records, not Files.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>Log reasons</strong> &mdash; server-log LINES (not Files) by failure-reason bucket, one row per bucket (connection, PESIT refusal codes, network, routing); each PESIT <code>reason=</code> code gets its own bucket; Example message = the first occurrence, truncated; unrecognized families land in &ldquo;Other&rdquo; so new problems surface rather than vanish. Below it, <strong>Reasons over time</strong>: the same buckets per ISO week, newest first, full period.</li>
-<li><strong>Heatmap</strong> &mdash; hour &times; weekday, each cell the Error + Warning total, tinted by quartile (darker = busier); <strong>Errors / Warnings / Total</strong> = the hour over all days, the Total row = the weekday over all hours.</li>
-<li><strong>Top messages</strong> &mdash; the most-repeated messages with numbers, IDs and quoted values normalized away; truncated to 160 characters before clustering so stack-trace variants group; Info records excluded.</li>
+<li>The server log&rsquo;s Error and Warning lines from three angles, one tab each. Every figure counts log lines, not Files; the transfer log records no reason, the server log carries the why.</li>
+</ul>
+<h2>Tabs</h2>
+<ul>
+<li><strong>Log reasons</strong> &mdash; Error lines per reason bucket (connection, PESIT refusal codes, network, routing): <strong>Reason</strong>, <strong>Errors</strong>, <strong>Share</strong>, <strong>Example message</strong> (the first occurrence, truncated). Below it, <strong>Reasons over time</strong>: <strong>ISO week</strong>, <strong>Reason</strong>, <strong>Errors</strong>, newest week first.</li>
+<li><strong>Heatmap</strong> &mdash; <strong>Hour</strong> &times; <strong>Monday</strong>&hellip;<strong>Sunday</strong>, each cell the Error + Warning lines, tinted by quartile (darker = busier); <strong>Errors</strong> / <strong>Warnings</strong> / <strong>Total</strong> per hour, the Total row per weekday.</li>
+<li><strong>Top messages</strong> &mdash; the 50 most-repeated Warning/Error message shapes: <strong>Level</strong>, <strong>Count</strong>, <strong>First</strong>, <strong>Last</strong>, <strong>Message shape</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Every number is re-aggregated from per-day buckets under the date filter (the heatmap re-sums and re-tints; Reasons over time always shows the full period).</li>
-<li>The levels <strong>per day</strong> and <strong>per component</strong> are the <a href="server-topview.html">Top view</a>.</li>
-<li>Levels other than Info/Warning/Error (none expected) are counted in Records only.</li>
-<li>Click a reason, week, hour or shape row for its 10 most recent lines (Warning/Error, newest first; the shapes table shows raw lines).</li>
-<li>The same reasons per subscription: <a href="server-failure-flows.html">Failure reasons per flow</a>. The Files in error per reason are on <a href="failing-reasons.html">Error reasons</a> (another vocabulary: the reason each failed File&rsquo;s own error page classifies to).</li>
+<li>Each PESIT <code>reason=</code> code is its own bucket; an unrecognised family lands in <strong>Other</strong>, so a new problem surfaces instead of vanishing.</li>
+<li>A message shape has numbers, IDs, IPs and quoted values normalised away and is cut at 160 characters, so stack-trace variants group. Info lines are left out.</li>
+<li>The date filter re-sums Log reasons, the heatmap (re-tinted) and the shape counts; Reasons over time always covers the full period.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a reason, week, hour or shape for its 10 most recent lines.</li>
+<li>Levels per day and per component: <a href="server-topview.html">Server top view</a>. The same reasons per subscription: <a href="server-failure-flows.html">Per flow</a>. The failed Files per reason: <a href="failing-reasons.html">Error reasons</a>.</li>
 </ul>
 </main>
 </body>

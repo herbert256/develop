@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: UC2 status — Cloud Reports</title>
+<title>Help: UC status &rsaquo; UC2 — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,44 +15,34 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>UC2 status</h1>
+<h1>UC status &rsaquo; UC2</h1>
 <h2>What it shows</h2>
-<p>Every <strong>UC2</strong> flow (the partner collects from us), one row per flow, in one of five statuses; the info boxes count them. Siblings: <a href="server-uc1-status.html">UC1</a> (we push out), <a href="server-uc3-status.html">UC3</a> (we poll and pull), <a href="server-uc4-status.html">UC4</a> (the partner delivers to us).</p>
+<ul>
+<li>Every <strong>UC2</strong> flow &mdash; we stage a file, the partner connects in and collects it &mdash; in three stacked tables: the status of each flow, what the partner&rsquo;s visits did, and its pickups.</li>
+<li>The other tabs: <a href="server-uc1-status.html">UC1</a> (we push out), <a href="server-uc3-status.html">UC3</a> (we poll and pull), <a href="server-uc4-status.html">UC4</a> (the partner delivers to us).</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Subscription</strong> &mdash; the &ldquo;collect from us&rdquo; subscription (the account&rsquo;s primary movement-out flow, else its configured subscription), linked to its detail page. Keyed internally by the account owning the pickup folder &mdash; the token the server-log lines carry; the account is one click away.</li>
-<li><strong>Expired</strong> &mdash; files File Maintenance deleted from the account&rsquo;s folder (&ldquo;File Maintenance &hellip; finished. Deleted files [ &hellip; ]&rdquo;).</li>
-<li><strong>First / Last arrived</strong> &mdash; when the app first and last <em>staged</em> a file (transfer log): the timeline of a file waiting uncollected.</li>
-<li><strong>Pickups</strong> / <strong>Last pickup</strong> &mdash; successful partner logons (&ldquo;Allowed user &hellip; from address &hellip;&rdquo;); zero = never connected over SSH to collect.</li>
-<li><strong>Status</strong> &mdash; one of five, a complete partition (below).</li>
-</ul>
-<h2>Statuses</h2>
-<ul>
-<li><strong>Never collected</strong> (red) &mdash; files expired and nothing was ever collected; logon visits alone do not count.</li>
-<li><strong>No files</strong> (amber) &mdash; the partner logs in (pickups &gt; 0) but the app never staged a file: a dormant or broken source side.</li>
-<li><strong>Both</strong> (green) &mdash; the partner provably collects (Files in the transfer log) and the odd file still expired.</li>
-<li><strong>OK</strong> (green) &mdash; files staged and collected, none expired.</li>
-<li><strong>Nothing</strong> (plain) &mdash; no collection, no expiry: a quiet flow, a partner collecting over CFT (no SSH pickup logged), or visits that came up empty.</li>
-</ul>
-<h2>Tables below the status table</h2>
-<ul>
-<li><strong>Pickups per UC2 subscription</strong> &mdash; first / last pickup, the last logon on the old gateway, pickup logons, the pickups that collected files, files picked up, waiting (with the oldest wait), expired and the pickup cadence (<a href="server-pickups.html">details</a>). The Total counts an account&rsquo;s shared pickups once.</li>
-<li><strong>Visits per UC2 subscription</strong> &mdash; what the partner does when it connects: collected, two-way, delivery-only or empty-handed visits, and the shared-connection proof (<a href="server-uc2-visits.html">details</a>).</li>
+<li><strong>UC2 subscriptions</strong> &mdash; Status (Rules) &middot; Subscription &middot; <strong>Expired</strong> (files File Maintenance deleted from the account&rsquo;s folder) &middot; <strong>First</strong> / <strong>Last</strong> (when the app first and last staged a File) &middot; <strong>Pickups</strong> / <strong>Last pickup</strong> (successful partner SSH logons). Boxes count the five statuses.</li>
+<li><strong>Visits per UC2 subscription</strong> &mdash; <strong>Pickups</strong> (the logons) &middot; <strong>Collected</strong> &middot; <strong>Collected + delivered</strong> (a two-way visit) &middot; <strong>Delivered only</strong> (a UC4 delivery, never a pickup) &middot; <strong>Same connection</strong> &middot; Files picked up &middot; Pickup pattern.</li>
+<li>Logons group into visits (a gap over 30 minutes starts a new one); <strong>Same connection</strong> counts SSH sessions that provably both delivered and collected.</li>
+<li><strong>Pickups per UC2 subscription</strong> &mdash; the detail pages&rsquo; Pickup information collated, most Waiting first: First / Last pickup &middot; <strong>Last Gateway</strong> &middot; Pickups &middot; <strong>With files</strong> &middot; Files picked up &middot; Waiting &middot; Oldest waiting &middot; Expired &middot; <strong>Pattern</strong>.</li>
+<li><strong>Last Gateway</strong> = the login&rsquo;s last logon on the old gateway (<code>logons_old.txt</code>; &mdash; when not named); <strong>With files</strong> = pickups that collected a file; <strong>Pattern</strong> = the pickup cadence.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Expiry and SSH pickups come from the server log, keyed on the <code>NAME@FEnnn</code> account token; subscription and arrival dates from <code>_files.tsv</code> (files the subscription staged, movement out).</li>
-<li>Uncollected detection is on the <strong>retention delete</strong>, not on arrival: &ldquo;staged and no SSH pickup&rdquo; would flag almost every pickup flow, since CFT/PESIT collectors never log an SSH pickup. A file the sweep deleted was collected by nobody &mdash; an SFTP pickup logs its connection, a CFT pickup removes the file before it can expire.</li>
-<li><strong>No files</strong> and <strong>OK</strong> need the positive SSH signal, so they only distinguish SFTP collectors; a CFT partner with no expiry lands in <strong>Nothing</strong>.</li>
-<li>A logon whose session only <em>delivered</em> files (the account&rsquo;s UC4 twin flow) is not a pickup.</li>
-<li>An account serving several UC2 flows (the hybrid production accounts) lists each with its own staged, collected and expired Files; the Pickups figures are the account&rsquo;s &mdash; the partner logs on to the account. On an account with several FE logins they are the flow&rsquo;s own login&rsquo;s: each login is a different partner credential.</li>
-<li>A current-state audit &mdash; the date filter does not narrow it.</li>
+<li><strong>Never collected</strong> (red) &mdash; staged files expired and nothing was ever collected; logons alone do not count.</li>
+<li><strong>No files</strong> (orange) &mdash; the partner logs in, but the app never staged a file: a dormant or broken source side.</li>
+<li><strong>Both</strong> (green) &mdash; the partner provably collects (Files in the transfer log), yet some files still expired. <strong>OK</strong> (green) &mdash; collected, none expired.</li>
+<li><strong>Nothing</strong> (plain) &mdash; no collection, no expiry: a quiet flow, a partner collecting over CFT (no SSH pickup logged), or only empty-handed visits.</li>
+<li>Uncollected detection rests on the retention delete, not on arrival: CFT collectors never log an SSH pickup. No files and OK need that SSH signal, so a CFT partner without expiry lands in Nothing.</li>
+<li>Pickup and visit figures are the pickup <strong>account&rsquo;s</strong> (with several FE logins, the flow&rsquo;s own login&rsquo;s) and repeat on each of its UC2 subscriptions; Totals count them once. File figures are each subscription&rsquo;s own.</li>
+<li>Rows carry the subscription&rsquo;s result colour; all three tables are the current state, a date range does not narrow them.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a row for the account&rsquo;s 10 most recent maintenance-delete messages; No files and OK rows drill to the partner&rsquo;s recent pickup logons.</li>
-<li>An uncollected flow fails <em>silently</em> &mdash; nothing errors, the file expires. Usually the partner side: another channel, changed credentials or schedule, or refused at the door (the <strong>Disallowed</strong> column of the <a href="server-logon.html">Logon</a> report).</li>
-<li>High Expired, recent Last arrived, no pickups = a live flow to chase; a one-off expiry on a collecting account is normal.</li>
+<li>An uncollected flow fails silently &mdash; nothing errors, the file expires. High Expired, a recent Last and no pickups is a live flow to chase; check the Disallowed logons on <a href="server-logon.html">Logons</a>.</li>
+<li>Drills: an expiry row lists the maintenance deletes; No files and OK rows the partner&rsquo;s recent pickup logons.</li>
 </ul>
 </main>
 </body>

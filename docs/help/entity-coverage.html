@@ -17,25 +17,22 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Entity coverage</h1>
 <h2>What it shows</h2>
-<p>One row per configured entity (account, logical flow, partner, domain, application or BL), answering per direction: <strong>is the connection working?</strong> Two row colours only, by the <strong>Current</strong> verdict &mdash; <strong>green</strong> = covered (listed first), <strong>red</strong> = not covered; this verdict overrules the usual status colours.</p>
+<ul>
+<li>Per configured entity, per direction: <strong>is the connection working?</strong> One tab per entity: Accounts, Logical, Partners, Domains, Applications, BL.</li>
+<li>Boxes: Total, <strong>Covered (Current)</strong>, <strong>Not covered</strong>, <strong>Covered once</strong>, <strong>OK transfers</strong>, <strong>Regressed</strong>.</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Subs</strong> &mdash; configured subscriptions per side; a both-ways subscription counts on both.</li>
-<li><strong>Files</strong> &mdash; real logical transfers on that side.</li>
-<li><strong>Logons</strong> (In) / <strong>Polls</strong> (Out) &mdash; the server-log proofs; they count towards <em>Current</em> and <em>Once</em>, not towards <em>OK transfers</em>.</li>
-<li><strong>Covered</strong> &mdash; the three verdicts side by side (yes / no) plus <strong>Regressed</strong>; the rules below.</li>
+<li>Name, <strong>Direction</strong>, then per side (<strong>In</strong>, <strong>Out</strong>): <strong>Subs</strong> (configured subscriptions; a both-ways one counts on both), <strong>Files</strong>, and the proof &mdash; <strong>Logons</strong> (In) or <strong>Polls</strong> (Out).</li>
+<li><strong>Covered</strong>: <strong>Current</strong>, <strong>Once</strong>, <strong>OK transfers</strong> (yes / no) and <strong>Regressed</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>A side is <strong>covered</strong> when at least one real File moved that way or the server log proves the connection. 0 Subs = nothing to prove, covered; a <strong>Both</strong> entity needs In AND Out. One File on one of ten configured outgoing connections covers Out.</li>
-<li><strong>In proof</strong>: an account of the entity authenticated over SSH &mdash; <code>User with login name "FE&hellip;", associated with account "&hellip;", successfully authenticated&hellip;</code> &mdash; so the connection works even when no file was submitted.</li>
-<li>Logons are counted per account on <a href="server-logon.html">Logon</a> and rolled up to the account&rsquo;s entity; on the Accounts view that rollup is the identity.</li>
-<li><strong>Out proof</strong>: a UC3 remote poll succeeded &mdash; <code>Applying the search pattern '&hellip;' for transfer site '&hellip;': N file(s) were found&hellip;</code>, logged only when ST could connect and list the remote folder; 0 files found still proves it.</li>
-<li>Polls are counted per subscription on <a href="server-uc3-status.html">UC3 status</a> (Polls by subscription) and rolled up to the subscription&rsquo;s entity.</li>
-<li>The buttons pick the <strong>entity</strong>. <strong>Current</strong> (the row colour): works <em>now</em> &mdash; the most recent File that way was OK, or a logon / poll proves the link. <strong>Once</strong>: has <em>ever</em> worked &mdash; any File, logon or poll.</li>
-<li><strong>OK transfers</strong>: the transfer, not the link &mdash; the most recent File must be OK; logons and polls do not count.</li>
-<li><strong>Regressed</strong>: covered Once, not Current &mdash; it worked, the latest attempt did not. Type <code>regressed</code> in the search box for just those; their count = Covered once minus Covered (Current). OK transfers &sube; Current &sube; Once.</li>
-<li>Full-period; no date filter.</li>
+<li>A side is covered when a real File moved that way or the server log proves the link; 0 Subs = covered. A both-ways entity needs In and Out.</li>
+<li><strong>In proof</strong>: a successful SSH authentication by one of the entity&rsquo;s logins (see <a href="server-logon.html">Logons</a>). <strong>Out proof</strong>: a successful UC3 remote poll, even one finding 0 files (see <a href="server-uc3-status.html">UC status &rsaquo; UC3</a>).</li>
+<li><strong>Current</strong>: the newest File that way was OK, or a logon / poll proves the link. <strong>Once</strong>: any File, logon or poll ever. <strong>OK transfers</strong>: the newest File was OK; proofs do not count.</li>
+<li><strong>Regressed</strong> = covered Once, not Current; search <code>regressed</code> for that list. OK transfers &sube; Current &sube; Once.</li>
+<li>Rows are green (Current covered) or red (not), overruling the usual result colours. Full period, no date filter.</li>
 </ul>
 </main>
 </body>

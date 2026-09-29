@@ -17,19 +17,22 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>First seen</h1>
 <h2>What it shows</h2>
-<p>For six entity types &mdash; <strong>Logical, Partners, Subscriptions, Accounts, Logins, Hosts</strong> &mdash; the calendar day each <strong>configured</strong> name was <strong>first seen in the transfer logs</strong>: one row per day in the loaded logs, a blank cell = nothing of that type was new that day. The first day of the logs is naturally the largest row.</p>
+<ul>
+<li>For six entity types &mdash; <strong>Logical</strong>, <strong>Partners</strong>, <strong>Subscriptions</strong>, <strong>Accounts</strong>, <strong>Logins</strong>, <strong>Hosts</strong> &mdash; the day each <strong>configured</strong> name first appeared in the transfer log: one row per log day, newest first.</li>
+<li>Above the days: <strong>Total</strong>, <strong>Seen</strong>, <strong>Not seen</strong> (opening the matching Entities view) and <strong>Seen, no date</strong>.</li>
+<li>A day cell opens a page of its names &mdash; each linking its detail page, with its <strong>First transfer</strong> timestamp, tinted by its result colour.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>The summary rows use the same Seen / Not seen split as the home page&rsquo;s status tables (the coverage universe), so the figures always agree. Per column: <strong>Seen + Not seen = Total</strong> (every configured name of that type); <strong>the day rows + &ldquo;Seen, no date&rdquo; = Seen</strong>.</li>
-<li><strong>Seen, no date</strong> = seen without a dated transfer of its own: a name whose transfers are credited to a sibling (a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account).</li>
-<li>A name the server log mentions but that never transferred counts as Not seen; the raw server log is deliberately not scanned for first mentions (nightly File Maintenance names virtually every account and would move everything to the first day).</li>
-<li>The split is read from the coverage tables (the files behind the home status tables and the Entities views); dates come from the transfer parse caches &mdash; accounts and partners per File, subscriptions, logins and hosts per log record.</li>
-<li>Matching is exact, case aside; subscriptions match by prefix (a configured subscription matches the logged site values it prefixes).</li>
+<li>Per column: Seen + Not seen = Total; the day rows + Seen, no date = Seen.</li>
+<li>Subscriptions include the synthetic <code>UCx_&lt;account&gt;</code> ones (transfers no subscription claimed), so a Total or Seen cell equals the Entities view it opens.</li>
+<li><strong>Seen, no date</strong> = seen without a dated transfer of its own, credited through a sibling (a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account).</li>
+<li>Only transfers count: a name the server log mentions but that never transferred is Not seen.</li>
+<li>Dates: accounts and partners per File; subscriptions, logins and hosts per log record. Names match exactly, case aside; a subscription also matches the logged names it prefixes.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Every count opens a cell page listing exactly the items behind it: the name (linked to its detail page), its configured direction (blank when not configured), its first transfer timestamp.</li>
-<li>Cell-page tints: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer Error (or server-log errors after it).</li>
+<li>The first log day is naturally the largest row: everything already running is first seen there.</li>
 </ul>
 </main>
 </body>

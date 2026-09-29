@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Connection Efficiency</title>
+<title>Connection efficiency</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -11,16 +11,16 @@
 <meta name="report-area" content="transfer">
 <meta name="report-key" content="connection-efficiency">
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
-<link rel="stylesheet" href="../assets/style.css?v=597789093">
+<link rel="stylesheet" href="../assets/style.css?v=3203472234">
 <script src="../assets/topbar-data.js?v=2555610011" defer></script>
-<script src="../assets/report.js?v=597789093" defer></script>
+<script src="../assets/report.js?v=3203472234" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="connection-efficiency"></div>
-<h1>Connection Efficiency <span class="grouptag">&larr; Protocols &amp; security</span></h1>
+<h1>Connection efficiency <span class="grouptag">&larr; Protocols &amp; security</span></h1>
 <p class="tabs"><a class="tab" href="protocol-protocol-direction.html">Protocol, Direction &amp; Mode</a><a class="tab" href="security-params.html">Security Parameters</a><a class="tab" href="security-outreach.html">Security outreach</a><a class="tab" href="av-scan-breakdown.html">AV Scan</a><span class="tab active">Connection efficiency</span><a class="tab" href="../server/ssh-security.html">SSH security</a></p>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
-<tr><th>Account</th><th class="num">Sessions</th><th class="num">Files</th><th class="num">Files per session</th><th class="num">Single-File sessions</th></tr>
+<tr><th>Account</th><th class="num">Sessions</th><th class="num">Files carried</th><th class="num">Files per session</th><th class="num">Single-File sessions</th></tr>
 <tr><td class="cl"><a href="../details/accounts/infra-st-monitor-infra.html">INFRA_ST-MONITOR_INFRA</a></td><td class="num">12496</td><td class="num">12496</td><td class="num">1.00</td><td class="num">100.0%</td></tr>
 <tr><td class="cl"><a href="../details/accounts/fin-billing-globex.html">FIN_BILLING_GLOBEX</a></td><td class="num">3364</td><td class="num">3364</td><td class="num">1.00</td><td class="num">100.0%</td></tr>
 <tr><td class="cl"><a href="../details/accounts/aps-cosmos-globex.html">APS-COSMOS-GLOBEX</a></td><td class="num">2201</td><td class="num">2201</td><td class="num">1.00</td><td class="num">100.0%</td></tr>
@@ -76,27 +76,27 @@
 <h2>Session failure anatomy (top 20 accounts by all-Error sessions)</h2>
 <div class="tablewrap"><table class="wide" data-nofilter="1">
 <tr><th>Account</th><th class="num">All-Error sessions</th><th class="num">Mixed OK+Error</th><th class="num">Retry marathons</th></tr>
-<tr><td class="cl"><a href="../details/accounts/fin-billing-globex.html">FIN_BILLING_GLOBEX</a></td><td class="num failed">124</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/aps-fmgenlog-cyberdyne.html">APS_FMGENLOG_CYBERDYNE</a></td><td class="num failed">48</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/cd-printmgmt-wonka.html">CD_PRINTMGMT_WONKA</a></td><td class="num failed">43</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/cd-cosmos-wonka.html">CD_COSMOS_WONKA</a></td><td class="num failed">39</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/si-telemetry-stark.html">SI_TELEMETRY_STARK</a></td><td class="num failed">36</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/aps-stream-soylent.html">APS_STREAM_SOYLENT</a></td><td class="num failed">33</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/it-tdrs-bluth.html">IT-TDRS-BLUTH</a></td><td class="num failed">32</td><td class="num warn z"></td><td class="num">32</td></tr>
-<tr><td class="cl"><a href="../details/accounts/aps-risk-tyrell.html">APS_RISK_TYRELL</a></td><td class="num failed">30</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/fin-treasury-gekko.html">FIN_TREASURY_GEKKO</a></td><td class="num failed">27</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/si-ros-sabre.html">SI-ROS-SABRE</a></td><td class="num failed">27</td><td class="num warn z"></td><td class="num">27</td></tr>
-<tr><td class="cl"><a href="../details/accounts/fin-facts-massive.html">FIN_FACTS_MASSIVE</a></td><td class="num failed">25</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/ab-snowflake-globex.html">AB_SNOWFLAKE_GLOBEX</a></td><td class="num failed">19</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/ab-stream-weyland.html">AB_STREAM_WEYLAND</a></td><td class="num failed">19</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/aps-cosmos-globex.html">APS-COSMOS-GLOBEX</a></td><td class="num failed">19</td><td class="num warn z"></td><td class="num">19</td></tr>
-<tr><td class="cl"><a href="../details/accounts/cd-invoice-vandelay.html">CD_INVOICE_VANDELAY</a></td><td class="num failed">19</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/hr-pension-oscorp.html">HR-PENSION-OSCORP</a></td><td class="num failed">19</td><td class="num warn z"></td><td class="num">19</td></tr>
-<tr><td class="cl"><a href="../details/accounts/ab-nas-globex.html">AB_NAS_GLOBEX</a></td><td class="num failed">18</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/cb-quotes-gekko.html">CB_QUOTES_GEKKO</a></td><td class="num failed">18</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/cd-quotes-stark.html">CD_QUOTES_STARK</a></td><td class="num failed">18</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr><td class="cl"><a href="../details/accounts/odv-publish-piedpiper.html">ODV_PUBLISH_PIEDPIPER</a></td><td class="num failed">18</td><td class="num warn z"></td><td class="num">0</td></tr>
-<tr class="total"><td>Top 20 of 74 account(s)</td><td class="num failed">631</td><td class="num warn z"></td><td class="num">97</td></tr>
+<tr><td class="cl"><a href="../details/accounts/fin-billing-globex.html">FIN_BILLING_GLOBEX</a></td><td class="num failed">124</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/aps-fmgenlog-cyberdyne.html">APS_FMGENLOG_CYBERDYNE</a></td><td class="num failed">48</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/cd-printmgmt-wonka.html">CD_PRINTMGMT_WONKA</a></td><td class="num failed">43</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/cd-cosmos-wonka.html">CD_COSMOS_WONKA</a></td><td class="num failed">39</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/si-telemetry-stark.html">SI_TELEMETRY_STARK</a></td><td class="num failed">36</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/aps-stream-soylent.html">APS_STREAM_SOYLENT</a></td><td class="num failed">33</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/it-tdrs-bluth.html">IT-TDRS-BLUTH</a></td><td class="num failed">32</td><td class="num warn"></td><td class="num">32</td></tr>
+<tr><td class="cl"><a href="../details/accounts/aps-risk-tyrell.html">APS_RISK_TYRELL</a></td><td class="num failed">30</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/fin-treasury-gekko.html">FIN_TREASURY_GEKKO</a></td><td class="num failed">27</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/si-ros-sabre.html">SI-ROS-SABRE</a></td><td class="num failed">27</td><td class="num warn"></td><td class="num">27</td></tr>
+<tr><td class="cl"><a href="../details/accounts/fin-facts-massive.html">FIN_FACTS_MASSIVE</a></td><td class="num failed">25</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/ab-snowflake-globex.html">AB_SNOWFLAKE_GLOBEX</a></td><td class="num failed">19</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/ab-stream-weyland.html">AB_STREAM_WEYLAND</a></td><td class="num failed">19</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/aps-cosmos-globex.html">APS-COSMOS-GLOBEX</a></td><td class="num failed">19</td><td class="num warn"></td><td class="num">19</td></tr>
+<tr><td class="cl"><a href="../details/accounts/cd-invoice-vandelay-2.html">CD_INVOICE_VANDELAY</a></td><td class="num failed">19</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/hr-pension-oscorp.html">HR-PENSION-OSCORP</a></td><td class="num failed">19</td><td class="num warn"></td><td class="num">19</td></tr>
+<tr><td class="cl"><a href="../details/accounts/ab-nas-globex.html">AB_NAS_GLOBEX</a></td><td class="num failed">18</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/cb-quotes-gekko.html">CB_QUOTES_GEKKO</a></td><td class="num failed">18</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/cd-quotes-stark.html">CD_QUOTES_STARK</a></td><td class="num failed">18</td><td class="num warn"></td><td class="num"></td></tr>
+<tr><td class="cl"><a href="../details/accounts/odv-publish-piedpiper.html">ODV_PUBLISH_PIEDPIPER</a></td><td class="num failed">18</td><td class="num warn"></td><td class="num"></td></tr>
+<tr class="total"><td>Top 20 of 74 account(s)</td><td class="num failed">631</td><td class="num warn"></td><td class="num">97</td></tr>
 </table></div>
 <div class="summary">Sessions: 54091  |  Files/connection: 1.00  |  Single-File: 100.0%  |  All-Error sessions: 935</div>
 </body>

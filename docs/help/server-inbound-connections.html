@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Inbound Connections — Cloud Reports</title>
+<title>Help: Connections — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,24 +15,31 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Inbound Connections</h1>
+<h1>Connections</h1>
 <h2>What it shows</h2>
-<p><strong>Inbound</strong>: who connects in to SecureTransport, over which protocol, from where. <strong>Outbound</strong>: why and where our own connections fail.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>Connections per day</strong> &mdash; one count per &ldquo;&hellip; had initiated a connection over SSH|PESIT|FTP &hellip;&rdquo; line, per day and protocol; the column totals are the per-protocol volume. A protocol falling silent or a spike shows here first.</li>
-<li><strong>By account</strong> &mdash; connections per account (as logged), protocol mix, distinct source addresses; a known account links to its detail page.</li>
-<li><strong>By source address</strong> &mdash; the partners&rsquo; SOURCE addresses (what connects in, what a whitelist allows &mdash; not the configured outbound endpoints), top 50, the total over shown rows; Accounts = distinct accounts from that address.</li>
-<li><strong>Outbound failure reasons</strong> &mdash; classified from the failure tail. &ldquo;SSH exception (generic)&rdquo; = a com.maverick.ssh.SshException with no more specific cause (often a reset/aborted connection); Timeout, Bad certificate, Incompatible security protocols and Algorithm negotiation each point at a different fix.</li>
-<li><strong>Per remote host</strong> &mdash; the physical endpoint (a host serves several subscriptions) with its dominant reason; as logged, linked to a detail page when one exists (matched case-insensitively).</li>
-<li><strong>Test connections</strong> &mdash; explicit &ldquo;Performs test connection for &lt;protocol&gt; protocol&rdquo; checks (an admin/API testing a configuration).</li>
-<li><strong>Host-key mismatches</strong> &mdash; presented-vs-expected pairs from the &ldquo;Wrong server fingerprint: got X, expected Y&rdquo; warnings; one presented key against many stored keys = a server-side key rotation (or worth a closer look); a short &ldquo;got&rdquo; is the log truncating.</li>
+<li>Raw server-log connection lines, before any authentication: who connects <strong>in</strong>, where SecureTransport connects <strong>out</strong>, over which protocol, and why our outbound connections fail.</li>
+</ul>
+<h2>Tabs</h2>
+<ul>
+<li><strong>Per day</strong> &mdash; <strong>Date</strong>, <strong>In</strong>, <strong>Out</strong>, <strong>SSH</strong>, <strong>PESIT</strong>, <strong>FTP</strong>, <strong>Other</strong> (any other protocol), <strong>Total</strong>.</li>
+<li><strong>By account</strong> &mdash; <strong>Account</strong> (a known one links its detail page), <strong>In</strong>, <strong>Out</strong>, <strong>Connections</strong>, <strong>Protocols</strong>, <strong>Addresses</strong> (distinct), <strong>First</strong>, <strong>Last</strong>.</li>
+<li><strong>By address</strong> &mdash; the top 50 addresses: <strong>Address</strong>, <strong>In</strong>, <strong>Out</strong>, <strong>Connections</strong>, <strong>Accounts</strong> (distinct), <strong>Protocols</strong>, <strong>First</strong>, <strong>Last</strong>.</li>
+<li><strong>Failure reasons</strong> &mdash; outbound failures by <strong>Reason</strong> (Timeout, Connection refused, Unknown host, &hellip;, Other): <strong>Failures</strong>, <strong>Share</strong>.</li>
+<li><strong>By remote host</strong> &mdash; the endpoint we connect to: <strong>Remote host</strong>, <strong>Failures</strong>, <strong>Top reason</strong>, <strong>First seen</strong>, <strong>Last seen</strong>.</li>
+<li><strong>Test connections</strong> &mdash; admin/API &ldquo;Performs test connection&rdquo; checks: <strong>Protocol</strong>, <strong>Attempts</strong>.</li>
+<li><strong>Host keys</strong> &mdash; &ldquo;Wrong server fingerprint&rdquo; lines: <strong>Presented fingerprint</strong>, <strong>Expected fingerprint</strong>, <strong>Mismatches</strong> (red), <strong>First</strong>, <strong>Last</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>A connection line counts before any authentication or transfer &mdash; connection <em>volume</em>. Connection and failure counts re-total under the date filter; distinct counts (Addresses per account, Accounts per address) are full-period.</li>
-<li>Click a row for its 10 most recent lines.</li>
-<li><a href="server-logon.html">Logon</a> is the screening <em>funnel</em> (allowed / disallowed / no-account / lockouts per login) and the successful SSH authentications; this report is raw connections, every protocol, regardless of authentication. Many connections, few authentications = clients failing (or probing); an address the whitelist does not know is worth a look.</li>
+<li><strong>In</strong> = the line names a login: a partner connected in. <strong>Out</strong> = login name &ldquo;&rdquo;: SecureTransport connected out, the address being the target.</li>
+<li>Counts are log lines and re-total under the date filter; the distinct Addresses and Accounts stay full period.</li>
+<li>One presented key against many expected ones is a server-side key rotation; a short fingerprint is the log truncating.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a row (not on Per day or Test connections) for its 10 most recent lines.</li>
+<li>Screening and successful logons per login: <a href="server-logon.html">Logons</a>.</li>
 </ul>
 </main>
 </body>

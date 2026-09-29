@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: UC4 status — Cloud Reports</title>
+<title>Help: UC status &rsaquo; UC4 — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,40 +15,37 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>UC4 status</h1>
+<h1>UC status &rsaquo; UC4</h1>
 <h2>What it shows</h2>
-<p>Every configured <strong>UC4</strong> subscription (inbound delivery: we are the server, the partner connects in and hands us a file), one row each, in exactly one of four statuses; the info boxes count them. Siblings: <a href="server-uc1-status.html">UC1</a> (we push out), <a href="server-uc2-status.html">UC2</a> (the partner collects from us), <a href="server-uc3-status.html">UC3</a> (we poll and pull).</p>
+<ul>
+<li>Every configured <strong>UC4</strong> subscription &mdash; we are the server, the partner connects in and delivers a file to us &mdash; one row each, worst status first; the boxes count the four statuses.</li>
+<li>The other tabs: <a href="server-uc1-status.html">UC1</a> (we push out), <a href="server-uc2-status.html">UC2</a> (the partner collects from us), <a href="server-uc3-status.html">UC3</a> (we poll and pull).</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Status</strong> &mdash; one of four, a complete partition (below).</li>
-<li><strong>Subscription</strong> &mdash; the configured name, linked to its detail page.</li>
-<li><strong>Files</strong> / <strong>OK</strong> / <strong>Error</strong> / <strong>Last file</strong> &mdash; Files received, by outcome, and the newest one&rsquo;s date (<code>_files.tsv</code>); blank on a never-seen subscription.</li>
-<li><strong>Logons</strong> &mdash; the &ldquo;successfully authenticated&rdquo; line, one per successful SSH logon; an &ldquo;Allowed user&rdquo; whitelist admission that then fails authentication does not count.</li>
+<li><strong>Status</strong> &mdash; ok, error, ok -&gt; error or not seen (Rules).</li>
+<li><strong>Subscription</strong> &mdash; the configured name; &#8599; opens its detail page.</li>
+<li><strong>Files</strong> / <strong>OK</strong> / <strong>Error</strong> / <strong>Last file</strong> &mdash; its Files by outcome and the newest one&rsquo;s date.</li>
+<li><strong>Logons</strong> &mdash; &ldquo;successfully authenticated&rdquo; lines, one per successful SSH logon; an &ldquo;Allowed user&rdquo; admission that then fails authentication does not count.</li>
 <li><strong>Arrivals</strong> &mdash; files actually handed over (&ldquo;will be submitted for processing&rdquo;).</li>
-<li><strong>Problems</strong> &mdash; logon attempts the account whitelist <em>refused</em>.</li>
-<li><strong>Last log</strong> &mdash; the newest line of those kinds: &ldquo;is this partner still knocking at all&rdquo;.</li>
-</ul>
-<h2>Statuses</h2>
-<ul>
-<li><strong>ok</strong> (green) &mdash; its latest File arrived.</li>
-<li><strong>error</strong> (red) &mdash; its latest File failed and no OK File in the window: nothing ever worked.</li>
-<li><strong>ok -> error</strong> (red, was green) &mdash; OK Files before, the latest failed: a regression, a change to find.</li>
-<li><strong>not seen</strong> (orange) &mdash; configured, never in the transfer log: set up and never used, or a partner side never finished. Estate to review, not an incident &mdash; unless Logons shows a partner that gets in and never sends (a question for the partner) or Problems one the whitelist turns away (fix the whitelist).</li>
+<li><strong>Problems</strong> &mdash; logons the account whitelist refused (&ldquo;Disallowed user&rdquo;).</li>
+<li><strong>Last log</strong> &mdash; the newest line of those kinds: is the partner still knocking at all.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Roster: every <code>UC4</code> name in the FlowManager subscription export, run or not. Colour = the site-wide result: green/red are real transfer data (the LAST File OK / Failed-or-Expired), orange never in the transfer log.</li>
-<li>The server signals are <strong>account-keyed</strong>: the partner connects to an account, and the subscription name barely reaches the log (only the PeSIT confirmation of the onward internal leg carries it). The account&harr;subscription cross-reference is 1:1 both ways for UC4, so every line attributes to exactly one subscription.</li>
-<li><strong>error</strong> vs <strong>ok -> error</strong> is per File &mdash; right after any OK File the subscription WAS green &mdash; finer than <a href="failed.html">Failed Subscriptions</a>, which buckets by whole days.</li>
-<li>We are the server: no unreachable-partner failure exists, so a refusal at the door is the only way a UC4 flow breaks before a file exists.</li>
-<li>Inbound fails silently &mdash; never sent, never connected and turned away look alike and write no transfer record; the Logons / Arrivals / Problems columns separate them.</li>
+<li>Roster: every configured UC4 subscription (by name prefix, else by its derived use case), run or not. Rows carry the subscription&rsquo;s result colour (<a href="general.html">Generic help</a>).</li>
+<li><strong>ok</strong> (green) &mdash; its last File is OK; Waiting counts as OK.</li>
+<li><strong>error</strong> (red, never an OK File) &mdash; its last File Failed, or the server log reported errors after it: nothing ever worked.</li>
+<li><strong>ok -&gt; error</strong> (red after OK Files; a red box, like its rows) &mdash; the same red on a flow that has received before: a regression.</li>
+<li><strong>not seen</strong> (orange) &mdash; never in the transfer log; a flow whose last File Expired is orange and lands here too.</li>
+<li>The server columns are keyed on the <strong>account</strong>: the partner connects to an account and the subscription name barely reaches the log. For UC4 the account&ndash;subscription pairing is one to one.</li>
+<li>The whole table is the current state; a date range does not narrow it.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a row for its most recent server-log lines.</li>
+<li>Inbound fails silently: a not-seen row with Logons but no Arrivals is a partner that gets in and never delivers; one with only Problems is turned away at the door (fix the whitelist).</li>
+<li>A row&rsquo;s drill lists its newest server-log lines.</li>
 </ul>
 </main>
-
-
 </body>
 </html>

@@ -17,12 +17,14 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Logical</h1>
 <h2>What it shows</h2>
-<p>One row per logical flow &mdash; the FlowID families of the configured subscriptions condensed to one three-part name. Columns, rules, views and drills are the same on all nine entity pages: see <a href="entities.html">Entities</a>.</p>
-<h2>How a File is attributed</h2>
 <ul>
-<li>Every configured subscription carries a FlowID (<code>customAttribute_FlowIdentifier</code>); numbered variants and per-label branches of one flow fold into a single <code>_</code>-separated three-part name. A <code>-</code> inside a part marks parts the derivation combined, which is why these names are never separator-folded.</li>
-<li>A fixed mapping in <code>input/logical.txt</code> wins verbatim over the derivation.</li>
-<li>A File counts for a logical flow through its FlowID attribution, unioned with its subscription&rsquo;s configured logical(s); the total row counts each File once.</li>
+<li>One row per logical flow, in the shared <a href="entities.html">Entities</a> layout.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>A logical flow is the FlowID family of the configured subscriptions, condensed to one three-part name <code>domain_application_partner</code>; a hyphen inside a part marks parts the derivation combined.</li>
+<li><code>input/logical.txt</code> pins a FlowID&rsquo;s logical name verbatim.</li>
+<li>A File counts for the logical of its profile&rsquo;s FlowID and for every logical of its subscription; the Total row, narrowed dates included, counts each File once.</li>
 </ul>
 </main>
 </body>

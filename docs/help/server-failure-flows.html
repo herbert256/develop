@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Failure reasons per flow — Cloud Reports</title>
+<title>Help: Per flow — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,22 +15,29 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Failure reasons per flow</h1>
+<h1>Per flow</h1>
 <h2>What it shows</h2>
-<p>The server log&rsquo;s ERROR messages classified into failure-reason buckets and attributed to the subscription each one names &mdash; what breaks for <strong>which flow</strong>, which the transfer log (OK/Error, no reason) cannot say.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>Per subscription and reason</strong> &mdash; how often that failure hit, first and last seen. Only messages that name a flow, so its total is a subset of the platform-wide reason totals.</li>
-<li>The <strong>Connection failure (partner unreachable)</strong> rows are the connection failures per subscription &mdash; the Boxes pages&rsquo; <em>Connection failures</em> box and the day pages link here for them.</li>
-<li>The reason mix per ISO week is on <a href="server-errors-day.html">Errors</a> / Reasons.</li>
+<li>The server-log <strong>Error</strong> lines that name a flow, classified by reason: what breaks for <strong>which subscription</strong> &mdash; the transfer log only says OK or Error.</li>
+<li>The summary line: errors naming a flow out of all errors, subscriptions, subscription-and-reason pairs.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Subscription</strong> &mdash; the flow the line names; the row carries its result colour.</li>
+<li><strong>Reason</strong> &mdash; the bucket, the same as on <a href="server-errors-day.html">Errors</a> &rsaquo; Log reasons.</li>
+<li><strong>Errors</strong> &mdash; lines for this pair; <strong>Share</strong> = its part of all the lines naming a flow.</li>
+<li><strong>First seen</strong> / <strong>Last seen</strong> &mdash; the pair&rsquo;s first and last line.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>The buckets are the <a href="server-errors-day.html">Errors</a> report&rsquo;s Reasons buckets (Transfer Error Reasons), verbatim.</li>
-<li>The subscription is taken from the connection-failure text, the partner-listing failure text, or the bracketed flow token of an advanced-routing line.</li>
-<li>Server messages truncate long names: a name resolving to exactly one configured subscription is shown in full and linked; the rest appear as logged.</li>
-<li>The table always shows the full period.</li>
+<li>The flow comes from a connection-failure line, a partner-listing failure or an advanced-routing line&rsquo;s bracketed flow token; lines naming no flow are left out, so the total is a subset of Errors&rsquo;.</li>
+<li>The server truncates long names: one resolving to exactly one configured subscription shows in full and links its detail page; the rest show as logged.</li>
+<li>Always the full period; 50 rows per page.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
 <li>Click a row for its 10 most recent error lines.</li>
+<li>The <em>Connection failure</em> rows are each flow&rsquo;s connection failures, the <em>Connection failures</em> box of <a href="subscriptions-in-boxes.html">Subscriptions in boxes</a>.</li>
 </ul>
 </main>
 </body>
