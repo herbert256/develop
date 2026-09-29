@@ -157,14 +157,12 @@ write_reports_index() {
 # the server export running a day ahead, would be a fully empty row). One
 #   date ⇥ count ⇥ ok ⇥ cured ⇥ err ⇥ err% ⇥ 5 × (class ⇥ value)
 # line per day, "-" for a missing field (the reader splits on a whitespace
-# IFS, so an empty middle field would collapse), then a TOTAL sentinel line
-# whose five duration pairs are the nearest-rank percentiles of the DELIVERED
-# Files of exactly those days (_files.tsv col 9 — duration.sh's scope, rank
-# rule and whole-unit spelling): a percentile cannot be summed, and the
-# report's own TOTAL covers every day.
+# IFS, so an empty middle field would collapse). (The TOTAL sentinel — the
+# shown days' own percentiles for the Total row — went with that row,
+# 2026-09-29.)
 HOME_DAYS=14
 daily_loglines_tsv() {   # $1 = the data root (data)
-    local trpt="$1/transfer/reports/topview.rpt" drpt="$1/transfer/reports/duration.rpt" fc_="$1/transfer/cache/_files.tsv"
+    local trpt="$1/transfer/reports/topview.rpt" drpt="$1/transfer/reports/duration.rpt"
     [ -f "$trpt" ] || return 0
     local files=("$trpt"); [ -f "$drpt" ] && files+=("$drpt")
     local dl
@@ -202,33 +200,7 @@ daily_loglines_tsv() {   # $1 = the data root (data)
                 printf "\n"
             }
         }' "${files[@]}")
-    [ -n "$dl" ] || return 0
-    printf '%s\n' "$dl"
-    # the TOTAL sentinel: the shown days' own percentiles
-    local tot=""
-    if [ -f "$fc_" ]; then
-        tot=$(awk -F'\t' -v days="$(printf '%s\n' "$dl" | cut -f1 | tr '\n' ' ')" '
-            BEGIN { n = split(days, a, " "); for (i = 1; i <= n; i++) D[a[i]] = 1 }
-            $2 == "Processed" { d = substr($4, 1, 10); if (!(d in D)) next; ms = $9 + 0; if (ms > 0) print ms }' "$fc_" \
-            | LC_ALL=C sort -n \
-            | awk '
-            # duration.sh hd() / hdc(): whole units, the unit carries the tint
-            function hd(ms) {
-                if (ms < 1000)    return "<1 s"
-                if (ms < 60000)   return sprintf("%d s", int(ms/1000 + 0.5))
-                if (ms < 3600000) return sprintf("%d m", int(ms/60000 + 0.5))
-                return sprintf("%d h", int(ms/3600000 + 0.5))
-            }
-            { T[++n] = $1 + 0 }
-            END {
-                if (!n) exit
-                split("50 75 90 95 99", P, " ")
-                for (i = 1; i <= 5; i++) { v = hd(T[int((n - 1) * P[i] / 100 + 0.5) + 1]); u = substr(v, length(v))
-                    printf "%sdur-%s\t%s", (i > 1 ? "\t" : ""), ((u == "s" || u == "m") ? u : "h"), v }
-                printf "\n" }')
-    fi
-    [ -n "$tot" ] || tot=$'-\t-\t-\t-\t-\t-\t-\t-\t-\t-'
-    printf 'TOTAL\t-\t-\t-\t-\t-\t%s\n' "$tot"
+    [ -n "$dl" ] && printf '%s\n' "$dl"
     return 0
 }
 
@@ -421,7 +393,7 @@ write_home_block() {
     # one DAY line carries transfer Files (field 2); a config-only estate
     # gets none.
     local _hastx=""
-    [ -n "$dl" ] && _hastx=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL" && $2!="" && $2!="-" { print 1; exit }')
+    [ -n "$dl" ] && _hastx=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $2!="" && $2!="-" { print 1; exit }')
     [ -n "$_hastx" ] || return 0
     # THE PER-DAY TABLE (2026-08-31, user request — ONE table): the Files
     # and Duration groups (the Transfers, UC2 state and First seen groups and
@@ -433,21 +405,19 @@ write_home_block() {
     # gaps.
     #
     # THE NEWEST 14 DAYS (HOME_DAYS; 2026-09-29, user request "have only 14
-    # days in the Date tables" — the same morning every day showed). The
-    # Total row sums exactly those days (the Duration total = their own
-    # percentiles) and only from 10 days up (2026-08: a short table's sums
-    # add nothing a glance does not give); its links open the reports at the
+    # days in the Date tables" — the same morning every day showed), and NO
+    # Total row (later that day, user request "remove the Total row in the
+    # date tables"). The Duration banner / p-headers open the report at the
     # same FROM..TO range. data-nosort: the rows stay newest first.
-    local dcount dfrom dto
-    dcount=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL"' | wc -l | tr -d ' ')
-    dto=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL" { print $1; exit }')
-    dfrom=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL" { d = $1 } END { print d }')
+    local dfrom dto
+    dto=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" { print $1; exit }')
+    dfrom=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" { d = $1 } END { print d }')
     local rng="$dfrom..$dto"
-    local d fc fok frv fer fpc fsum=0 foksum=0 frvsum=0 fersum=0
-    local dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 dtot="" dcc="" c
+    local d fc fok frv fer fpc
+    local dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 dcc=""
     # every cell of the Duration group opens transfer/duration.html (2026-09-14,
-    # user request): the banner, the p-headers and the Total at the shown
-    # FROM..TO range, each day's five cells with ?axway_row=<that date> — the
+    # user request): the banner and the p-headers at the shown FROM..TO
+    # range, each day's five cells with ?axway_row=<that date> — the
     # row marked. data-href on the cell; report.js setupCellLinks navigates
     # there and outranks the row link
     local DURGO=""; [ -f docs/transfer/duration.html ] && DURGO=" data-href=\"transfer/duration.html?axway_date=$rng\""
@@ -458,22 +428,12 @@ write_home_block() {
         "$DURGO" "$DURGO" "$DURGO" "$DURGO" "$DURGO"
     while IFS=$'\t' read -r d fc fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99; do
         [ -n "$d" ] || continue
-        # the sentinel LAST line: the shown days' duration percentiles for
-        # the Total row (a percentile cannot be summed)
-        if [ "$d" = "TOTAL" ]; then
-            dtot=""
-            for c in "$dc50:$dv50" "$dc75:$dv75" "$dc90:$dv90" "$dc95:$dv95" "$dc99:$dv99"; do   # p99 last (2026-09-13, user request)
-                dtot="$dtot$(_durcell "${c%%:*}" "${c#*:}")"
-            done
-            continue
-        fi
         _daycell "$d"
         printf '<tr><td>%s</td><td class="spc"></td>' "$dcc"
         # —— Files (from transfer/topview.html): Ok / Cured / Error tinted
         # like that page's cells, a 0 an empty cell (the render_rpt.awk
         # convention) ——
         if [ "$fc" != "-" ] && [ -n "$fc" ]; then
-            fsum=$((fsum + fc))   # the Files count (no column of its own) — the Error % base
             if [ "$fok" = "-" ] || [ "$fok" = 0 ]; then printf '<td class="num processed z"></td>'; else
                 dotify_v "$fok"; esc "$DOT"; printf '<td class="num processed">%s</td>' "$ESC"; fi
             # Cured, amber like topview's Recovered cells; a nonzero cell
@@ -483,8 +443,7 @@ write_home_block() {
                 dotify_v "$frv"; esc "$DOT"
                 if [ -f "docs/transfer/retries-recovered-files.html" ]; then
                     printf '<td class="num warn"><a href="transfer/retries-recovered-files.html?axway_date=%s">%s</a></td>' "$d" "$ESC"
-                else printf '<td class="num warn">%s</td>' "$ESC"; fi
-                frvsum=$((frvsum + frv)); fi
+                else printf '<td class="num warn">%s</td>' "$ESC"; fi; fi
             # Error opens the FAILED FILES list narrowed to its day
             # (2026-09-14, user request); the empty ?axway_search= clears a
             # search the subscription pages' Error cells left remembered
@@ -493,7 +452,6 @@ write_home_block() {
                 if [ -f "docs/transfer/failed-files.html" ]; then
                     printf '<td class="num failed"><a href="transfer/failed-files.html?axway_date=%s&amp;axway_search=">%s</a></td>' "$d" "$ESC"
                 else printf '<td class="num failed">%s</td>' "$ESC"; fi; fi
-            [ "$fok" != "-" ] && foksum=$((foksum + fok)); [ "$fer" != "-" ] && fersum=$((fersum + fer))
             if [ "$fpc" = "-" ]; then printf '<td class="num"></td>'; else
                 esc "$fpc"; printf '<td class="num">%s</td>' "$ESC"; fi
         else
@@ -509,17 +467,8 @@ write_home_block() {
         DURGO=$_durgo_rng
         printf '</tr>\n'
     done <<< "$dl"
-    # —— the ONE Total row (from 10 days up): the shown days ——
-    dotify_v "$foksum"; esc "$DOT"; local fokt=$ESC; dotify_v "$fersum"; esc "$DOT"; local fert=$ESC
-    local fpct=""
-    [ "$fsum" -gt 0 ] && fpct=$(awk -v e="$fersum" -v n="$fsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
-    local frvt=""
-    if [ "$frvsum" -gt 0 ]; then dotify_v "$frvsum"; esc "$DOT"; frvt=$ESC
-        [ -f "docs/transfer/retries-recovered-files.html" ] && frvt="<a href=\"transfer/retries-recovered-files.html?axway_date=$rng\">$ESC</a>"; fi
-    if [ "$fersum" -gt 0 ] && [ -f "docs/transfer/failed-files.html" ]; then fert="<a href=\"transfer/failed-files.html?axway_date=$rng&amp;axway_search=\">$fert</a>"; fi
-    [ -n "$dtot" ] || dtot='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>'   # five: p50 p75 p90 p95 p99
-    [ "$dcount" -ge 10 ] && printf '<tr class="total"><td>Total</td><td class="spc"></td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td><td class="spc"></td>%s</tr>\n' \
-        "$fokt" "$frvt" "$fert" "$fpct" "$dtot"
+    # (the Total row went 2026-09-29, user request: "remove the Total row in
+    # the date tables")
     printf '</table></div>\n</div>\n'
     printf '<div class="sxscol">\n'
     write_home_errors
@@ -528,9 +477,10 @@ write_home_block() {
 
 # THE ERRORS TABLE beside the per-day table (2026-09-29, user request: "Have a
 # table Errors side by side to the Date table — the columns Subscription /
-# Date/time / Reason from /analyses/failed.html"): every row of Failed
-# Subscriptions (data/transfer/reports/failed.rpt, its one table), newest
-# first, in that page's row colours. The Subscription cell opens what the row
+# Date/time / Reason from /analyses/failed.html"): every RED row of Failed
+# Subscriptions (data/transfer/reports/failed.rpt, its one table — the
+# orange ones left out, same day's request), newest first, red-tinted like
+# that page. The Subscription cell opens what the row
 # opens there — the File's (or the server-failing flow's) page under files/ —
 # and an unpaged row's name its detail page; the banner opens the report.
 write_home_errors() {
@@ -554,6 +504,7 @@ write_home_errors() {
             sub(/^\.\.\//, "", href)
             if (href == "") { sg = (nm in SL) ? SL[nm] : ((toupper(nm) in SU) ? SU[toupper(nm)] : ""); if (sg != "") href = "details/subscriptions/" sg ".html" }
             res = ""; for (i = 3; i <= NF; i++) if (substr($i, 1, 10) == "@data:res=") res = substr($i, 11)
+            if (res != "red") next   # the RED rows only (2026-09-29, user request: "show only the Errors (red) and not the warnings (orange)")
             print $3 "\t" nm "\t" href "\t" $4 "\t" res }' "$rpt" \
     | LC_ALL=C sort -t$'\t' -k1,1r -k2,2 \
     | awk -F'\t' '
@@ -626,9 +577,6 @@ write_sitemap() {
         printf '<li><a href="../index.html">Home</a> — the shared landing page</li>\n'
         printf '<li><a href="../search/search.html">Search</a> — find any entity by name</li>\n'
         printf '<li><a href="../search/all-files.html">All files search</a> — find a File among all the Files of the transfer logs</li>\n'
-        # the sibling tools (docs/tools/, 2026-09-12): ./ links — the ../ rule
-        # above is for everything outside this directory
-        printf '<li><a href="./whats-new.html">What is new</a> — new and changed reports</li>\n'
         printf '<li><a href="../help/index.html">Help</a> — how to read the report catalogs (per-report help sits behind each page'\''s <b>?</b> button)</li>\n'
         # THE BUILD REPORT (2026-09-12, user request): back on the site as
         # docs/tools/build.html — bin/build.sh writes it LAST, from its EXIT
@@ -640,251 +588,9 @@ write_sitemap() {
     } > "$out"
 }
 
-# ---- What is new (docs/tools/whats-new.html) ---------------------------------
-# Two tables from the GIT history of the report scripts (transfer/server/
-# analyses bin/reports/): the 10 most recently ADDED reports, and the 10 most
-# recently CHANGED ones. Linked ONLY from the Site Map's Tools card. Degrades
-# to empty tables when git is unavailable.
-# Two rules keep the Changed table meaningful (2026-07): a commit counts only
-# when it is ABOUT ONE REPORT (it modified exactly one generator — see the awk
-# below), and a report the New table already lists is not repeated, since
-# "added" and "changed on the day it was added" are the same news.
-# A short one-liner from a report INTRO: drop **bold** markers, keep the first
-# sentence, cap the length — the "New reports" Description column.
-# Sets WN_SHORT rather than echoing: every call sat inside $( ), and a subshell
-# per listed report is one of the six forks this function used to cost.
-wn_short() {
-    local s=$1
-    s=${s//\*\*/}
-    s=${s%%. *}
-    [ ${#s} -gt 150 ] && s="${s:0:147}…"
-    WN_SHORT=$s
-}
-wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intro" lines ("" = not a published report)
-    local area=transfer rpt t i
-    case $2 in
-        details|showseen|coverage|entities|partners-domains-applications|incoming-connections) return 0 ;;
-        merge-duration-dwell) wn_meta "$1" duration-dwell; return $? ;;   # the 2026-09-05 merged page IS a new report: read its own .rpt (the generator name differs from the page name)
-        first-seen)      printf 'First seen\tAnalyses\tanalyses/first-seen.html\tOn what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.\n'; return 0 ;;
-        # Month stats: 18 pages in their own directory, no month-stats.rpt at the
-        # reports root (2026-09-29: it could never be listed)
-        month-stats)     printf 'Month stats\tTransfer\ttransfer/month-stats/this-subscription.html\tThe nine entities counted over the Files that started this month or the previous one.\n'; return 0 ;;
-        cross-reference) printf 'Cross References\tAnalyses\tanalyses/xref/cross-account-subscriptions.html\tEvery pair of the nine entities cross-tabulated both ways — which appear together on a transfer, which are configured but never seen.\n'; return 0 ;;
-        # the analyses PUBLISH writers render several pages each — one row per
-        # page that exists (the insight pages have no .rpt to read a title from)
-        publish-insights) return 0 ;;   # a sidecar writer since its three insight pages went (2026-09-29)
-    esac
-    case $1 in bin/server/*|server/bin/*) area=server ;; esac   # (the pre-2026-07 path too — see write_whats_new)
-    # the Subscriptions group scripts all live in bin/analyses/reports/, so the
-    # path says nothing about which area holds their .rpt — ask the group table
-    local sa; if sa=$(subs_report_area "$2"); then area=$sa; fi
-    # A PAGELESS report (publish_lib PAGELESS_REPORTS: a merged-report
-    # component or a data producer) has no page of its own — but a CHANGE to
-    # it is a change to the page that shows its data, so map it to that
-    # parent and recurse (2026-08-15: was a plain skip, which hid every
-    # extended component — e.g. the seven-table server batch — from the
-    # Changed table). Retired components (no parent page) still return 0.
-    if is_pageless_report "$2"; then
-        local wn_parent=""
-        case $2 in
-            weekly|hourly|weekday)                                  wn_parent=activity ;;   # (day: a pageless data producer since Activity dropped it — the default skip below)
-            retry|attempts|resubmissions|recovered-files)           wn_parent=retries ;;
-            recovered)                                              wn_parent=episodes ;;   # 2026-09-29
-            patterns|legs-count|protocol-journey)                   wn_parent=file-journey ;;
-            uc4-to-uc2|file-in-file-out-src)                        wn_parent=file-in-file-out ;;   # 2026-09-29
-            errors-day)                                             wn_parent=topview ;;   # 2026-09-29: rides the server Top view
-            deploy-errors)                                          wn_parent=routing-errors ;;
-            from-green-to-red|only-red)                             wn_parent=failed ;;   # 2026-09-29: their columns ride Failed Subscriptions   # 2026-09-29: its page went (the Routing errors page lists the lines)
-            error-timing|error-reasons|top-messages)                wn_parent=errors ;;
-            unknown-sites|unknown-accounts|unknown-hosts|unknown-whitelisting|unknown-logins) wn_parent=missing-entities ;;   # the Missing entities page (retired and brought back 2026-09-29)
-            inbound-connections|connection-diagnostics)             wn_parent=connections ;;
-            logon|auth-activity)                                    wn_parent=logons ;;
-            ssh-crypto|ssh-sessions)                                wn_parent=ssh-security ;;
-            uc1-status|uc2-status|uc3-status|uc4-status|remote-poll|uc3-polling|uc2-visits|pickups|no-remote-dir|no-remote-files) wn_parent=uc-status ;;   # the UC2 / UC3 tabs (2026-09-29)   # uc2-visits/pickups: the UC2 tab (2026-09-29)   # remote-poll/uc3-polling: the UC3 tab (2026-09-05)
-            missing-cronjobs)                                       wn_parent=polling ;;   # 2026-09-29: its rows are the Polling rows marked "no cron"
-            went-quiet-src|stale-accounts)                          wn_parent=went-quiet ;;
-            duration-distribution|dwell-time)                       wn_parent=duration-dwell ;;   # 2026-09-05 merge
-            size-dist|file-type|duplicate-files|top-transfers|size-profile) wn_parent=files ;;
-            *) return 0 ;;   # no page shows its data (day, event-queue, site-failures, …)
-        esac
-        wn_meta "bin/$area/reports/$wn_parent.sh" "$wn_parent"
-        return $?
-    fi
-    rpt="$DATA/$area/reports/$2.rpt"
-    [ -f "$rpt" ] || return 0
-    # the one-line DESC (2026-09-29: was the INTRO — blank or a data sentence
-    # for many reports; the DESC is what the finder and the start page show)
-    { read -r t; read -r i2; } <<<"$(field2 "$rpt" TITLE DESC)"   # one awk, both directives
-    [ -n "$t" ] || t=$2
-    wn_short "$i2"; i=$WN_SHORT
-    if is_subs_report "$2"; then printf '%s\tAnalyses\t%s\t%s\n' "$t" "$(sm_href "$area" "$2")" "$i"
-    elif [ "$area" = server ]; then printf '%s\tServer\t%s\t%s\n' "$t" "$(sm_href server "$2")" "$i"
-    else printf '%s\tTransfer\t%s\t%s\n' "$t" "$(sm_href transfer "$2")" "$i"
-    fi
-}
-# WN_META = wn_meta PATH BASENAME, computed ONCE per generator path: the
-# history names ~150 generators over ~300 rows, and every uncached call was a
-# subshell plus its own awk / sm_href forks (2026-09-29 audit: ~2 s). Bash 3.2
-# has no associative arrays, so the memo is a variable per path, its name the
-# path escaped injectively (rg_key: _ -> _u first, then - / . -> _h _s _d); a
-# path with any other character is simply not cached.
-wn_meta_cached() {   # $1 script path  $2 basename -> WN_META
-    rg_key "$1"
-    if [ -z "$RG_KEY" ]; then WN_META=$(wn_meta "$1" "$2") || WN_META=""; return 0; fi
-    local k=$RG_KEY
-    if eval "[ -n \"\${WNM_$k+x}\" ]"; then eval "WN_META=\$WNM_$k"; return 0; fi
-    WN_META=$(wn_meta "$1" "$2") || WN_META=""
-    eval "WNM_$k=\$WN_META"
-}
-write_whats_new() {
-    local out="$DOCS/tools/whats-new.html"   # under docs/tools/ since 2026-09-12 (user request) — the row hrefs carry ../
-    mkdir -p "$DOCS/tools"   # before the redirected block below opens $out
-    # The generator dirs, CURRENT and pre-2026-07 (the tool sets moved from
-    # <area>/bin/ to bin/<area>/): git log's path limiting does not follow a
-    # rename, so without the legacy paths every report's history would start at
-    # the move commit — the catalog went empty the first time this ran after it.
-    local dirs=(bin/transfer/reports bin/server/reports bin/analyses/reports \
-                bin/analyses/publish-insights.sh \
-                transfer/bin/reports server/bin/reports analyses/bin/reports \
-                analyses/bin/publish-insights.sh)
-    # Over ALL history: per generator, its ADD date (a "new" report) and its
-    # latest MODIFY date + that commit's subject (a "changed" report — the
-    # subject is the "what changed" message). The "site update" build commits
-    # only touch docs/, not these script dirs, so they never appear here.
-    # Keyed on the script's BASENAME, not its path, so the two spellings of a
-    # moved generator are ONE report; the newest path seen wins for the lookup
-    # below (git log is newest-first), which is what wn_meta reads the area from.
-    # A CHANGE is listed per MODIFIED generator, for commits that modified at
-    # most 8 of them (2026-08-15: was exactly-one — that skipped genuine
-    # feature batches like "extend six server reports with new tables", so
-    # none of the extended reports ever surfaced). A LARGER sweep — "perf:
-    # every report renders its rows in the agg awk END" — is about the site,
-    # not about any one report, and stays skipped: dozens of rows repeating
-    # one subject is what filled this table with noise. ADDED generators
-    # never disqualify a commit (they are the New table's news) and never
-    # emit a C line themselves. Deduped per report later (each report shows
-    # its NEWEST qualifying change).
-    # THE HISTORY IS DERIVED IN DEVELOP AND SHIPPED (2026-09-12, user report:
-    # "whats-new is not updated anymore"): the runtime checkouts get bin/ by
-    # rsync and their own git log holds one commit touching the generators —
-    # the 2026-09-11 import — so there every report was "new" that day and
-    # nothing ever changed. The develop build (the .sample-estate marker)
-    # runs the git pipeline below and writes bin/build/whats-new-history.tsv
-    # (committed, synced with bin/ by acc.sh/prd.sh); every build — develop
-    # and runtime — then renders the page from that file, with the titles
-    # and intros of its own .rpt files.
-    local hist histf="bin/build/whats-new-history.tsv"
-    if [ -f input/.sample-estate ]; then
-    git log --format='@@@%x09%as%x09%s' --name-status -M -- "${dirs[@]}" 2>/dev/null | awk -F'\t' -v CMAX=100 '
-        function bn(p) { sub(/^.*\//, "", p); return p }
-        # emit the commit just finished: one C line per MODIFIED generator
-        # (cp[i] == "" marks an ADD — news for the New table, not a change),
-        # for commits modifying at most 8; more = a site-wide sweep, skipped
-        function flush(   i, m) {
-            m = 0
-            for (i = 1; i <= nc; i++) if (cp[i] != "") m++
-            if (m >= 1 && m <= 8 && ncom < CMAX) {
-                for (i = 1; i <= nc; i++) if (cp[i] != "") print "C\t" d "\t" ncom "\t" cp[i] "\t" subj
-                ncom++
-            }
-            nc = 0
-        }
-        $1 == "@@@" { flush(); d = $2; subj = $3; next }
-        $1 == "A" { k = bn($2); if (!(k in pth)) pth[k] = $2
-                    if (!(k in add) || d < add[k]) add[k] = d
-                    cp[++nc] = ""; next }
-        $1 == "M" { k = bn($2); if (!(k in pth)) pth[k] = $2
-                    cp[++nc] = $2; next }
-        # a rename (git mv, -M) is "R<score>\told\tnew". A RENAMED report (the
-        # basename changed) counts as a CHANGE of the new name, dated at the
-        # rename commit — without that it would vanish from the catalog until
-        # its next plain edit. A pure MOVE (same basename, another directory —
-        # the 2026-07 bin/ move) is no change at all: it would have flagged
-        # every report as "changed" on one day and buried the real history (and
-        # it must not count toward nc either, or a move commit looks specific).
-        $1 ~ /^R/ { ko = bn($2); kn = bn($3); if (!(kn in pth)) pth[kn] = $3
-                    if (ko == kn) next
-                    cp[++nc] = $3; next }
-        END { flush(); for (k in add) print "N\t" add[k] "\t0\t" pth[k] "\t" }' | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3n -k4,4 > "$histf.tmp" && mv "$histf.tmp" "$histf" || rm -f "$histf.tmp"
-    fi
-    hist=$( [ -f "$histf" ] && cat "$histf" || true )
-    local kind date seq path subj nm meta t a href desc rows_new="" rows_chg="" et ea eh ed
-    while IFS=$'\t' read -r kind date seq path subj; do
-        [ -n "$path" ] || continue
-        nm=${path##*/}; nm=${nm%.sh}
-        wn_meta_cached "$path" "$nm"; meta=$WN_META
-        [ -n "$meta" ] || continue
-        # a multi-page writer (publish-insights.sh renders three insight pages)
-        # emits several meta lines, so a CHANGE to it names no single report —
-        # unless the commit SUBJECT does. Keep the page whose slug or title the
-        # subject mentions; drop the commit when that is not exactly one page
-        # (a commit touching one shared writer would otherwise stamp its
-        # message onto every page it feeds).
-        if [ "$kind" = C ]; then
-            meta=$(printf '%s\n' "$meta" | awk -F'\t' -v s="$subj" '
-                function fold(x) { x = tolower(x); gsub(/[^a-z0-9]/, "", x); return x }
-                BEGIN { fs = fold(s) }
-                NF > 1 { nl++; last = $0
-                         k = $3; sub(/^.*\//, "", k); sub(/\.html$/, "", k)
-                         if (index(fs, fold(k)) || index(fs, fold($1))) hit[++n] = $0 }
-                END { if (nl == 1) print last; else if (n == 1) print hit[1] }')
-            [ -n "$meta" ] || continue
-        fi
-        while IFS=$'\t' read -r t a href desc; do
-            [ -n "$t" ] || continue
-            # the Group column (2026-09-29: was the Transfer / Server /
-            # Analyses area) — the report group of the Reports menu
-            # — a page in no group (the All files search) reads "Search", never a
-            # retired area name
-            rg_group_for "$href"
-            if [ -n "$RG_GROUP" ]; then a=$RG_GROUP
-            else case $href in search/*) a=Search ;; tools/*) a=Tools ;; *) a="" ;; esac; fi
-            esc "$t"; et=$ESC; esc "$a"; ea=$ESC; esc "$href"; eh=$ESC
-            if [ "$kind" = N ]; then
-                esc "$desc"; ed=$ESC
-                rows_new+="$date"$'\t'"$seq"$'\t'"$eh"$'\t'"<tr><td>$date</td><td><a href=\"../$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>"$'\n'
-            else
-                esc "$subj"; ed=$ESC
-                rows_chg+="$date"$'\t'"$seq"$'\t'"$eh"$'\t'"<tr><td>$date</td><td><a href=\"../$eh\">$et</a></td><td>$ea</td><td class=\"desc\">$ed</td></tr>"$'\n'
-            fi
-        done <<< "$meta"
-    done <<< "$hist"
-    # New: the 25 newest adds. Changed: the 25 newest qualifying commits, ONE
-    # row per report (its latest) and never a report the New table already
-    # lists — "new" and "changed on the day it was added" are the same news.
-    local ntop="" ctop="" keyf
-    if [ -n "$rows_new" ]; then
-        ntop=$(printf '%s' "$rows_new" | LC_ALL=C sort -t$'\t' -k1,1r -k2,2n | awk -F'\t' '!seen[$3]++ && n++ < 25')
-    fi
-    if [ -n "$rows_chg" ]; then
-        keyf=$(mktemp "${TMPDIR:-/tmp}/wn.XXXXXX")
-        printf '%s\n' "$ntop" | cut -f3 > "$keyf"
-        ctop=$(printf '%s' "$rows_chg" | LC_ALL=C sort -t$'\t' -k1,1r -k2,2n | awk -F'\t' -v kf="$keyf" '
-            BEGIN { while ((getline l < kf) > 0) if (l != "") nw[l] = 1 }
-            ($3 in nw) { next }
-            seen[$3]++ { next }
-            n++ < 25')
-        rm -f "$keyf"
-    fi
-    {
-        html_head "What is new" "../assets/style.css" "" "" "whats-new"   # its help page (2026-09-13: every page carries one)
-        printf '<h1>What is new</h1>\n'
-        printf '<p class="range">The report catalog’s history, from the generators’ git log: the <strong>25 most recently added</strong> reports and the <strong>25 most recently changed</strong> ones. A change is listed only when its commit was about <strong>a few reports</strong> (up to eight — a sweep across more is about the site, not about any one of them), and a report the New table already names is not repeated below it. Newest first; Description is a new report’s one-line description, Change a changed report’s latest change (its commit message).</p>\n'
-        printf '<h2>New reports</h2>\n'
-        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Date</th><th>Report</th><th>Group</th><th>Description</th></tr>\n'
-        if [ -n "$ntop" ]; then printf '%s\n' "$ntop" | cut -f4-
-        else printf '<tr><td></td><td>(none)</td><td></td><td></td></tr>\n'; fi
-        printf '</table></div>\n'
-        printf '<h2>Changed reports</h2>\n'
-        # "Change", not "Description" (2026-09-29): the cell is the commit
-        # subject of the report's latest qualifying change, never its DESC
-        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Date</th><th>Report</th><th>Group</th><th>Change</th></tr>\n'
-        if [ -n "$ctop" ]; then printf '%s\n' "$ctop" | cut -f4-
-        else printf '<tr><td></td><td>(none)</td><td></td><td></td></tr>\n'; fi
-        printf '</table></div>\n'
-        printf '</body>\n</html>\n'
-    } > "$out"
-}
+# (What is new — docs/tools/whats-new.html, write_whats_new and its wn_*
+# helpers, built from git log into the tracked bin/build/whats-new-history.tsv
+# — went 2026-09-29, user request: "remove /tools/whats-new.html".)
 
 # The 404 page (docs/404.html) — what GitHub Pages (and any webserver
 # configured for it) serves for a URL that matches nothing at all, instead of
@@ -1002,8 +708,6 @@ _bpl0=$(date +%s)
 _bplap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  index pages: %s\n' "$((_t1 - _bpl0))" "$1" >&2; _bpl0=$_t1; }
 write_reports_index
 _bplap "reports start page"
-write_whats_new
-_bplap "write_whats_new"
 write_sitemap
 _bplap "write_sitemap"
 write_root_index

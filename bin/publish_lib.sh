@@ -201,9 +201,8 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 # their report groups since the one Reports pulldown, 2026-09-29.)
 
 # The PAGELESS reports: .rpt files that stay on disk (they feed a merged
-# report, another page or a data reader) but have NO page of their own, so
-# whats-new must not link them — wn_meta (bin/build/publish.sh) maps each to
-# the page that shows its data, or skips it. Two kinds: the 2026-07 MERGED-
+# report, another page or a data reader) but have NO page of their own (no
+# menu entry, no page render, no help page). Two kinds: the 2026-07 MERGED-
 # report components (merge_rpt.sh / append_rpt_tables: weekly … expected-
 # arrival, the four uc<n>-status in uc-status) and the pageless DATA producers
 # whose rows ride another page or no page at all (day, event-queue, site-failures — the
@@ -280,7 +279,7 @@ report_tabs() {
 # Reports, create logical groups, have all reports in the same group link to
 # each other with the first selection buttons") live in _report_groups below
 # — ONE table for the Reports menu, the reports start page, the sitemap, the
-# finder / whats-new group column, the h1 group tags and the ROW-1 buttons,
+# h1 group tags and the ROW-1 buttons,
 # whichever directory a member's page renders into. The functions here are
 # what is left of the per-AREA groups (Transfer / Server, 2026-07..09-29): the
 # two groups whose pages build their OWN first row at render time —
@@ -465,18 +464,10 @@ RENDER_AWK="$PWD/bin/render_rpt.awk"
 FILEPAGES_F="$PWD/data/transfer/cache/_filepages.tsv"; [ -f "$FILEPAGES_F" ] || FILEPAGES_F=""
 
 # value of directive $1 in file $2. ONE awk with an early exit, not grep|cut: it
-# is called a few hundred times per publish (the finder, What is new, the area
-# indexes, the day pages) and halving two processes to one is worth ~0.3 s a run.
-# field2 FILE A B -> the values of directives A and B, one per line (A first,
-# blank when absent). One awk instead of two field1 calls — What is new asks for
-# TITLE and INTRO of every report it lists.
-field2() { LC_ALL=C awk -F'\t' -v a="$2" -v b="$3" '
-    function v(l,   i) { i = index(l, "\t"); return (i ? substr(l, i + 1) : "") }
-    $1 == a && !ga { ga = 1; va = v($0) }
-    $1 == b && !gb { gb = 1; vb = v($0) }
-    ga && gb { exit }
-    END { print va; print vb }' "$1" 2>/dev/null || printf '\n\n'; }
-
+# is called a few hundred times per publish (the start page, the area indexes,
+# the day pages) and halving two processes to one is worth ~0.3 s a run.
+# (field2 — two directives in one awk — went 2026-09-29 with What is new, its
+# one caller.)
 field1() { LC_ALL=C awk -F'\t' -v k="$1" '$1 == k { i = index($0, "\t"); print (i ? substr($0, i + 1) : ""); exit }' "$2" 2>/dev/null || true; }
 meta_val() { grep -m1 "^META"$'\t'"$2"$'\t' "$1" 2>/dev/null | cut -f3- || true; }   # META key $2 in file $1
 
@@ -2027,8 +2018,8 @@ render_month_stats() {   # $1 area
 # member carries the group's members as its FIRST row of buttons (injected by
 # bin/build/publish.sh apply_report_groups — Entities keeps its native
 # members | views row). THE SINGLE SOURCE OF TRUTH for the menu, the start
-# page (reports/index.html), the sitemap's Reports cards, the finder's and
-# whats-new's Group column, the h1 group tags and the rows.
+# page (reports/index.html), the sitemap's group cards, the h1 group tags
+# and the rows.
 # One line per group: "<Group label>|<member>|<member>|…", member =
 # "<dir>/<stem>=<Label>":
 #   dir   transfer | server | analyses — the docs/ directory the page renders
@@ -2127,35 +2118,6 @@ while IFS= read -r _rgl; do
     REPORTS_MENU+="<a href=\"@$RG_LANDING\">$ESC</a>"
 done < <(_report_groups)
 unset _rgl _rgf
-
-# rg_group_for PAGE (docs-root-relative) -> RG_GROUP, the label of the group
-# the page belongs to ("" when none) — the apply_report_groups rule (the
-# member whose stem the page name equals or extends at a "-", longest stem
-# first, in the page's directory). Fork-free over an index built once here;
-# the finder and whats-new label their rows with it.
-RG_IDX_DIR=(); RG_IDX_STEM=(); RG_IDX_GRP=()
-while IFS= read -r _rgl; do
-    [ -n "$_rgl" ] || continue
-    IFS='|' read -r -a _rga <<< "${_rgl#*|}"
-    for _rge in "${_rga[@]}"; do
-        _rgm=${_rge%%=*}
-        RG_IDX_DIR+=("${_rgm%/*}"); RG_IDX_STEM+=("${_rgm##*/}"); RG_IDX_GRP+=("${_rgl%%|*}")
-    done
-done < <(_report_groups)
-unset _rgl _rga _rge _rgm
-rg_group_for() {
-    local dir=${1%/*} b=${1##*/} i st best=-1 bl=0
-    b=${b%.html}; [ "$dir" = "$1" ] && dir=""
-    for ((i = 0; i < ${#RG_IDX_DIR[@]}; i++)); do
-        [ "${RG_IDX_DIR[$i]}" = "$dir" ] || continue
-        st=${RG_IDX_STEM[$i]}
-        [ "$dir" = transfer/month-stats ] && { best=$i; break; }   # every page of the dir (this-* and previous-*)
-        if [ "$b" = "$st" ] || [ "${b#"$st"-}" != "$b" ]; then
-            if [ ${#st} -gt $bl ]; then best=$i; bl=${#st}; fi
-        fi
-    done
-    if [ "$best" -ge 0 ]; then RG_GROUP=${RG_IDX_GRP[$best]}; else RG_GROUP=""; fi
-}
 
 # (The former analyses group rows — _analyses_groups and its no-op stubs
 # analyses_group_tabs[_ctx] / analyses_grouprow_for — went 2026-09-29: every

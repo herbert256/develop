@@ -342,11 +342,12 @@ hdr=$(awk '/<table class="index fit dayrows"/ { p = 1 } p && /<tr>/ && /<th/ { p
 check $([ "$hdr" = "Date||Ok|Cured|Error|Error %||p50|p75|p90|p95|p99|" ] && echo 0 || echo 1) "the home per-day table headers are '$hdr'"
 check $(grep -qE 'class="gband"[^>]*>(Transfers|UC2 state|First seen)<' docs/index.html 2>/dev/null && echo 1 || echo 0) "the home still carries a Transfers / UC2 state / First seen group"
 # ... and BESIDE it the Errors table: Subscription · Date/time · Reason of
-# every Failed Subscriptions row, in the same side-by-side row
-ne=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "ROW" { n++ } END { print n + 0 }' data/transfer/reports/failed.rpt 2>/dev/null)
+# every RED Failed Subscriptions row (no orange ones), in the same side-by-side row
+ne=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "ROW" && /\t@data:res=red(\t|$)/ { n++ } END { print n + 0 }' data/transfer/reports/failed.rpt 2>/dev/null)
 nr=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<tr[ >]/ && /<td/ { n++ } p && /<\/table>/ { exit } END { print n + 0 }' docs/index.html 2>/dev/null)
 eh=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<tr>/ && /<th/ { print; exit }' docs/index.html 2>/dev/null | grep -o '<th[^>]*>[^<]*</th>' | sed 's/<[^>]*>//g' | tr '\n' '|')
-check $([ "${ne:-0}" -gt 0 ] && [ "$nr" = "$ne" ] && [ "$eh" = "Subscription|Date/time|Reason|" ] && echo 0 || echo 1) "the home Errors table: $nr row(s) for ${ne:-?} Failed Subscriptions row(s), headers '$eh'"
+check $([ "${ne:-0}" -gt 0 ] && [ "$nr" = "$ne" ] && [ "$eh" = "Subscription|Date/time|Reason|" ] && echo 0 || echo 1) "the home Errors table: $nr row(s) for ${ne:-?} red Failed Subscriptions row(s), headers '$eh'"
+check $(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<\/table>/ { exit } p && /<tr[ >]/ && /<td/ && !/data-res="red"/ { bad = 1 } END { exit bad }' docs/index.html 2>/dev/null && echo 0 || echo 1) "the home Errors table carries a row that is not red"
 # ... its Date/time to the minute (2026-09-29, user request: "only hh:mm, no ss.mmm")
 n=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<\/table>/ { exit } p && /<td/ && /[0-9]:[0-9][0-9]:[0-9][0-9]/ { n++ } END { print n + 0 }' docs/index.html 2>/dev/null)
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "the home Errors table: $n row(s) whose Date/time still carries seconds"
@@ -504,13 +505,13 @@ check $([ "${rvm:-x}" = "${wrm:-y}" ] && echo 0 || echo 1) "topview Recovered Ma
 check $([ "${rso:-x}" = "${wro:-y}" ] && [ "${rsf:-x}" = "${wrf:-y}" ] && echo 0 || echo 1) "topview Resubmit Ok/Failed = ${rso:-?}/${rsf:-?}, the caches give ${wro:-?}/${wrf:-?}"
 check $([ "${rva:-0}" -gt 0 ] && [ "${rvm:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Automatic (${rva:-0}) or no Manual (${rvm:-0}) recovery — a Recovered column is never exercised"
 check $([ "${rso:-0}" -gt 0 ] && [ "${rsf:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Resubmit Ok (${rso:-0}) or Failed (${rsf:-0}) File — a Resubmit column is never exercised"
-# the home Cured total covers the SHOWN days (the newest 14 since 2026-09-29):
-# the Top view's Automatic + Manual over exactly those days
-hc=$(grep -o '<a href="transfer/retries-recovered-files.html?axway_date=[0-9-]*\.\.[0-9-]*">[0-9.]*</a>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g; s/\.//g' | head -1)
+# the home Cured cells cover the SHOWN days (the newest 14, no Total row since
+# 2026-09-29): their sum = the Top view's Automatic + Manual over those days
+hc=$(grep -o '<a href="transfer/retries-recovered-files.html?axway_date=[0-9-]*">[0-9.]*</a>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g; s/\.//g' | awk '{ s += $1 } END { print s + 0 }')
 w14=$(awk -F'\t' '$1 == "ROW" { d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10); if (d ~ /^[0-9][0-9][0-9][0-9]-/) R[d] = ($9 + 0) + ($10 + 0) }
     END { n = 0; for (d in R) D[++n] = d; for (i = 1; i <= n; i++) for (j = i + 1; j <= n; j++) if (D[j] > D[i]) { t = D[i]; D[i] = D[j]; D[j] = t }
           for (i = 1; i <= n && i <= 14; i++) s += R[D[i]]; print s + 0 }' data/transfer/reports/topview.rpt 2>/dev/null)
-check $([ "${hc:-x}" = "${w14:-y}" ] && echo 0 || echo 1) "home Cured total is '${hc:-absent}', expected the newest 14 days' recovered total ${w14:-?}"
+check $([ "${hc:-x}" = "${w14:-y}" ] && echo 0 || echo 1) "home Cured cells sum to '${hc:-absent}', expected the newest 14 days' recovered total ${w14:-?}"
 # the Recovered files report's Retry / Resubmit split (2026-09-12, user
 # request): every table carries the two columns after Recovered — the same
 # Automatic / Manual rule as the Top view, so the per-subscription totals
@@ -674,16 +675,18 @@ check $([ "$nsd" = "$nmd" ] && [ "$nsd" -gt 0 ] && echo 0 || echo 1) "search/all
 check $(grep -q 'href="../search/all-files.html"' docs/tools/sitemap.html 2>/dev/null && echo 0 || echo 1) "the sitemap does not link search/all-files.html"
 
 # the tool pages live under docs/tools/ (2026-09-12, user request): the
-# sitemap, the report finder, whats-new AND the build report (back on the
-# site, written last by bin/build.sh) — nothing of them at the root, every
-# outward link carrying ../, the sibling tools ./, the sitemap Tools card
-# linking the build report, the runtime bar data pointing at tools/
-for p in sitemap.html whats-new.html build.html; do
+# sitemap AND the build report (back on the site, written last by
+# bin/build.sh) — nothing of them at the root, every outward link carrying
+# ../, the sitemap Tools card linking the build report ./, the runtime bar
+# data pointing at tools/. (The report finder went 2026-09-29, What is new
+# the same day — "remove /tools/whats-new.html".)
+for p in sitemap.html build.html; do
     check $([ -f "docs/tools/$p" ] && echo 0 || echo 1) "docs/tools/$p is missing"
     check $([ ! -e "docs/$p" ] && echo 0 || echo 1) "docs/$p still sits at the docs root"
 done
 check $([ "$(grep -c 'href="\./build.html"' docs/tools/sitemap.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link ./build.html under Tools"
-check $([ "$(grep -c 'href="\./whats-new.html"' docs/tools/sitemap.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link its sibling tools with ./"
+check $([ -z "$(ls docs/tools/whats-new.html docs/help/whats-new.html bin/build/whats-new-history.tsv 2>/dev/null)" ] && echo 0 || echo 1) "What is new (tools/whats-new.html, its help page or bin/build/whats-new-history.tsv) still exists"
+check $(grep -rlq 'whats-new' docs --include='*.html' 2>/dev/null && echo 1 || echo 0) "a page still links whats-new"
 check $([ "$(grep -c 'href="\.\./reports/index.html"' docs/tools/sitemap.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link the Reports start page ../reports/index.html"
 check $([ "$(grep -c 'href="\.\./assets/style.css"' docs/tools/build.html 2>/dev/null)" = 1 ] && [ "$(grep -c '@B@' docs/tools/build.html build/index.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')" = 0 ] && echo 0 || echo 1) "tools/build.html does not load ../assets/style.css, or a @B@ placeholder survived"
 check $([ "$(grep -c 'href="\.\./docs/assets/style.css"' build/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "build/index.html (the local copy) does not load ../docs/assets/style.css"
@@ -763,7 +766,7 @@ hdr=$(grep -o '<th class="num"[^>]*>p[0-9]*</th>' docs/index.html 2>/dev/null | 
 check $([ "$hdr" = "p50|p75|p90|p95|p99|" ] && echo 0 || echo 1) "the home Duration group headers are '$hdr', expected p50|p75|p90|p95|p99|"
 check $([ "$(grep -c '<th class="gband" colspan="5" data-href="transfer/duration.html?axway_date=[0-9-]*\.\.[0-9-]*">Duration</th>' docs/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the home Duration banner does not span 5 columns or does not link the Duration report"
 # every cell of the Duration group opens transfer/duration.html (2026-09-14,
-# user request): the five p-headers and the Total at the shown days' range
+# user request): the five p-headers at the shown days' range
 # (?axway_date=FROM..TO since 2026-09-29, the 14-day home; ?axway_date=all
 # before), five cells per day row with ?axway_row=<that row's date>;
 # report.js binds them and outranks the row link
@@ -1253,8 +1256,9 @@ check $(grep -q '<a class="tab" href="../server/errors-log-reasons.html">Server 
 # evidence sidecar, the Trouble after success box, the day pages)
 check $([ -f docs/server/went-kaput.html ] && echo 1 || echo 0) "docs/server/went-kaput.html still exists"
 check $(grep -rlq 'went-kaput.html' docs --include='*.html' --include='*.js' 2>/dev/null && echo 1 || echo 0) "a page still links went-kaput.html"
-# the home per-day table keeps its Total row (10 days and more)
-check $(grep -q '<tr class="total"><td>Total</td>' docs/index.html 2>/dev/null && echo 0 || echo 1) "the home per-day table lost its Total row"
+# the home per-day table has NO Total row (2026-09-29, user request: "remove
+# the Total row in the date tables")
+check $(grep -q '<tr class="total"><td>Total</td>' docs/index.html 2>/dev/null && echo 1 || echo 0) "the home per-day table still has a Total row"
 
 # the second 2026-09-29 removal batch (user request): Sources and targets,
 # Data diff, Triage, File journey Last leg / In and out, Episodes › Episodes,

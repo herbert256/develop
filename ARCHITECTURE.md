@@ -50,7 +50,7 @@ former "Reasons over time" table (`tab=reasons`); Logons lost the whole ssh-key-
 "locked due to too many failed login" line — Outbound key failures = a subset of Outgoing);
 Connections lost Whitelist usage (= Incoming Allowed + Re-screens per policy) and Test outcomes
 (empty by construction: the NOISE filter drops "Error during test connection"). Components are listed with the other pageless producers in `PAGELESS_REPORTS`
-(`is_pageless_report`; whats-new skips them); merged basenames reuse one component's help slug.
+(`is_pageless_report`); merged basenames reuse one component's help slug.
 
 **The former BOXES-ONLY reports** (2026-07..09-29, `BOXES_ONLY_REPORTS`, reached only from the
 Boxes pages — gone themselves since 2026-09-29): pirates · waiting · expired · went-quiet (transfer) and went-kaput (server) are
@@ -590,18 +590,15 @@ column whose cells link the day page, then two groups, each behind a SPACER colu
 (`th/td.spc` — no borders, page background, so every group keeps its own edges; report.js
 `syncGroups` re-hides a spacer with its group and sets the edge classes after a move or hide):
 **Files** (Ok · Cured · Error · Error %) · **Duration** (p50 · p75 · p90 · p95 · p99; the
-banner, headers and Total open `transfer/duration.html?axway_date=FROM..TO`, each day's cells
+banner and headers open `transfer/duration.html?axway_date=FROM..TO`, each day's cells
 `?axway_row=<date>` via `data-href` / `setupCellLinks`). The Transfers, UC2 state and First seen
 groups and the Files In / Out columns went 2026-09-29 (user request; the Red/Green switch group
 2026-09-06). The days are the transfer `topview.rpt`'s — the NEWEST 14 (`HOME_DAYS`, same
 request; every day showed that morning), since a server-only day (the server export running a
-day ahead) would render a fully empty row. The table is `data-nosort`; the Total row exists only
-from 10 days up and covers exactly the shown days: the Files sums, and for Duration the shown
-days' own nearest-rank percentiles (`daily_loglines_tsv` TOTAL sentinel over `_files.tsv`,
-duration.sh's `hd()` spelling — a percentile cannot be summed, and duration.rpt's TOTAL covers
-every day); the Cured / Error totals link `?axway_date=FROM..TO`. Beside it, in one `.sxs
-homeday` row, the **Errors** table (`write_home_errors`): Subscription · Date/time · Reason of
-every `failed.rpt` row (the Failed Subscriptions page), newest first, Date/time to the minute
+day ahead) would render a fully empty row. The table is `data-nosort` and has NO Total row
+(2026-09-29, user request). Beside it, in one `.sxs homeday` row, the **Errors** table
+(`write_home_errors`): Subscription · Date/time · Reason of every RED `failed.rpt` row (the Failed
+Subscriptions page; orange rows left out, user request), newest first, Date/time to the minute
 (yyyy-mm-dd hh:mm), `data-restint` +
 `data-res` tints; the Subscription cell opens the row's own page (its `href`, else the detail
 page through the subscriptions slugmap); the banner opens the report via `data-href`. (The

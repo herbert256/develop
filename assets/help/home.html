@@ -24,13 +24,12 @@
 <ul>
 <li>Status tables: <strong>Total</strong> &middot; <strong>Seen</strong> (% in the transfer log) &middot; <strong>OK</strong> (% green) &middot; <strong>Error</strong> (red) &middot; <strong>Warning</strong> (orange) &middot; <strong>Ok</strong> (green).</li>
 <li><strong>Per day</strong>: <strong>Files</strong> &mdash; Ok &middot; Cured (OK after a retry or resubmit) &middot; Error &middot; Error %; <strong>Duration</strong> &mdash; p50 &middot; p75 &middot; p90 &middot; p95 &middot; p99 of the delivered (Processed) Files.</li>
-<li><strong>Total</strong> &mdash; the 14 days shown; its Duration cells are those days&rsquo; own percentiles.</li>
-<li><strong>Errors</strong> &mdash; Subscription &middot; Date/time (to the minute) &middot; Reason of every row of <a href="failed.html">Failed Subscriptions</a>, newest first.</li>
+<li><strong>Errors</strong> &mdash; Subscription &middot; Date/time (to the minute) &middot; Reason of every red row of <a href="failed.html">Failed Subscriptions</a> (the orange ones left out), newest first.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>A status figure opens the Entities view it counts; the second table&rsquo;s Total opens the <a href="coverage.html">configured list</a>. Colours: <a href="general.html#colours">Generic help</a>.</li>
-<li>Per day: Date opens the <a href="daily.html">day page</a>, Error that day&rsquo;s Failed files, Cured the Recovered files, a Duration cell the Duration report; the Total&rsquo;s links open them at the 14 days shown.</li>
+<li>Per day: Date opens the <a href="daily.html">day page</a>, Error that day&rsquo;s Failed files, Cured the Recovered files, a Duration cell the Duration report; the Duration headings open it at the 14 days shown. No Total row.</li>
 <li>Errors: a Subscription opens the File page the row opens on Failed Subscriptions (its detail page when there is none); the Errors heading opens the report.</li>
 <li>The log exports (files, records, first / last record, holes) are on the build report.</li>
 </ul>

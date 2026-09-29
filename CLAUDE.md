@@ -139,7 +139,7 @@ verify.sh checks that the shards hold every dated File),
 `first-seen/`, `coverage/` (the per-use-case `use-cases/` pages and the
 `transfers/duration/` record pages went 2026-09-29: a Subscriptions page search and the files/
 pages hold them; `switches/` went 2026-09-06 with the home Red/Green switch group), plus
-`search/` (`search.html` + `search-data.js`, `all-files.html` + the `all/` day shards — 2026-09-12, user request; at the root before) and `tools/` (`sitemap.html`, `whats-new.html` and the build report `build.html` — 2026-09-12, user request; at the root before, the build report local-only 2026-08-29..09-12). `input/` carries
+`search/` (`search.html` + `search-data.js`, `all-files.html` + the `all/` day shards — 2026-09-12, user request; at the root before) and `tools/` (`sitemap.html` and the build report `build.html` — 2026-09-12; `whats-new.html` went 2026-09-29, user request, user request; at the root before, the build report local-only 2026-08-29..09-12). `input/` carries
 the exports — logs AND the FlowManager JSONs (the real production flows are the HYBRID pattern
 generation: no folder parameters, flowdir from `{source,target}_hybrid_participant`; the sample
 estate carries both shapes). The manual `bin/flow-manager-synth.sh` stays as the fallback for a
@@ -482,11 +482,9 @@ server parse's `AXWAY_SKIP_MENTIONS` / `AXWAY_MENTIONS_ONLY`, the transfer parse
 went-kaput / monitor run once). Within-build DEPENDENCY guards stay:
 `ensure_logons` builds the logon summary only when it is not there yet (the background step
 normally has), `srv_subset` falls back to the whole cache without `subsets/.done`, and the
-appended-names mention rescan is skipped when it cannot change anything. ONE tracked file outside
-`docs/` is build output: **`bin/build/whats-new-history.tsv`** — a develop build (the `.sample-estate`
-marker) rewrites it from `git log` over the report generators (`bin/build/publish.sh`), acc/prd
-ship it with `bin/`, and every build renders What's new from it (a runtime's own git log knows
-only the import) — commit it with the code change.
+appended-names mention rescan is skipped when it cannot change anything. (The one tracked
+build output outside `docs/`, `bin/build/whats-new-history.tsv`, went 2026-09-29 with What is new
+— user request "remove /tools/whats-new.html"; never bring the page or its git-log history back.)
 
 ## Tool sets
 
@@ -575,7 +573,7 @@ TABLE / HEAD / GHEAD / KIND / RECALC / ROW / TOTAL / NOTE / LINK / SUMMARY / FOO
   itself on its HELP page only) — `render_report` sets `RPT_NOPROSE=1` and render_rpt.awk skips
   the two directives; the report's HAND-WRITTEN help page (`assets/help/<slug>.html`, compact
   bullets — see the `docs/help/*.html` bullet under Publishing) carries those facts instead, so a
-  changed INTRO/NOTE means an updated help page; the Reports start page and What's new show the
+  changed INTRO/NOTE means an updated help page; the Reports start page shows the
   one-line `DESC`. The drill and record
   pages (files/ — the error and File pages, the record and value pages, the detail pages) keep their INTRO — there
   it states facts. `ALERT` → red banner (the
@@ -1153,19 +1151,19 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   and group edges right after a column move or hide): **Files** (Ok · Cured · Error · Error %;
   Cured = the transfer topview.rpt's Recovered group, Automatic + Manual, linking Recovered files
   for that day; Error links Failed files for that day) · **Duration** (p50 · p75 · p90 · p95 ·
-  p99 — p99 last since 2026-09-13; banner, headers and Total carry
+  p99 — p99 last since 2026-09-13; banner and headers carry
   `data-href="transfer/duration.html?axway_date=FROM..TO"` — the shown days — each day's cells
   `?axway_row=<date>` — report.js `setupCellLinks`, which outranks the row link).
   **THE NEWEST 14 DAYS ONLY** (`HOME_DAYS`, 2026-09-29, user request: "Remove the Transfers, UC2
   state, First seen subtables, remove the columns In & Out in the Files subtable … have only 14
-  days in the Date tables" — every day showed that morning; `data-nosort`, newest first); the
-  Total row (only from 10 days up) sums exactly those days — its Duration cells are those days'
-  own nearest-rank percentiles (`daily_loglines_tsv`'s TOTAL sentinel, from `_files.tsv` with
-  duration.sh's `hd()` spelling), its Cured / Error links carry `?axway_date=FROM..TO`. **BESIDE
+  days in the Date tables" — every day showed that morning; `data-nosort`, newest first) and NO
+  Total row (later that day, user request: "remove the Total row in the date tables" — its
+  14-day percentile sentinel went with it). **BESIDE
   it the Errors table** (`write_home_errors`, one `.sxs homeday` row, same request: "Have a
   table Errors side by side to the Date table — the columns Subscription / Date/time / Reason
-  from /analyses/failed.html"): every row of `failed.rpt`'s table, newest first (Date/time to the
-  minute — "only hh:mm, no ss.mmm"), tinted by its
+  from /analyses/failed.html"): every RED row of `failed.rpt`'s table ("show only the Errors
+  (red) and not the warnings (orange)"), newest first (Date/time to the minute — "only hh:mm, no
+  ss.mmm"), tinted by its
   `@data:res`; the Subscription cell opens the page the row opens on Failed Subscriptions (else the
   detail page), the "Errors" banner the report (`data-href` — a link in a banner th would take
   the header's white). The Red/Green switch group, its `docs/switches/` pages, the Transfers,
@@ -1289,8 +1287,7 @@ sidecars `_inbound-addr.tsv` / the flat server `_subscriptions.tsv` deleted; nev
   (`write_reports_index` + `rg_desc`: a report's DESC, fixed texts for the hand-written pages),
   the sitemap (ONE `.smcols` flow of cards since 2026-09-29, user request — no Reports /
   Dashboards / Tools sections: the Start page card, one card per group, a Dashboards card and
-  the Tools card — "Data pages & tools" until then), whats-new's **Group** column
-  (`rg_group_for`) and the rows + tags below.
+  the Tools card — "Data pages & tools" until then) and the rows + tags below.
 - **THE FIRST ROW = the group's members**, on EVERY page of every member, injected by ONE pass
   over the finished site — `apply_report_groups`, run by `bin/build/publish.sh` after every page
   writer (so a MANUAL area re-publish lacks rows until `bin/build/publish.sh` runs): the row lands
@@ -1315,7 +1312,7 @@ sidecars `_inbound-addr.tsv` / the flat server `_subscriptions.tsv` deleted; nev
 
 **Merged reports** (`bin/merge_rpt.sh`, run after the report pools) fold component `.rpt`s into
 one tabbed report; the components stay on disk as unpublished intermediates (listed with the
-other pageless producers in `PAGELESS_REPORTS` / `is_pageless_report`; whats-new skips them; `_merge_pad` pads a missing component with
+other pageless producers in `PAGELESS_REPORTS` / `is_pageless_report`; `_merge_pad` pads a missing component with
 empty stubs — 0 for a component whose tables ride another one's tab via `tab=KEY`). The merge
 ends its component run with a `META merged` sentinel so the last component's trailing NOTE
 stays on its own tab instead of footering onto every tab (2026-09-05). **`append_rpt_tables
@@ -1419,7 +1416,7 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 
 - **A report page's TITLE is its Reports-menu label** (`_report_groups`): "Transfer top view",
   "Server top view", "One-legged", "Episodes", "Per flow", "Routing errors", "Waiting", "Activity",
-  "Sizes & types", "Duration", … — the start page and whats-new read the TITLE, the help `<h1>` repeats
+  "Sizes & types", "Duration", … — the start page reads the TITLE, the help `<h1>` repeats
   it. The Configuration pair is **Configured subscriptions** / **Configured accounts** (the Entities
   group keeps Subscriptions / Accounts). A new report: label and TITLE the same.
 - **Connections split In / Out** (`inbound-connections.sh`, the three volume tabs): a TM
@@ -1473,8 +1470,8 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 - `td.bar span` has its own navy `#25405c` so load bars stay visible on tinted cells (the dark
   theme went 2026-09-29).
 - **Help**: the home page opens `help/home.html`; Failed files its own `failed-files.html`.
-- The Reports start page and whats-new describe a report by its one-line DESC (`rg_desc` for the
-  hand-written pages); `bin/build/whats-new-history.tsv` is written SORTED (stable diffs).
+- The Reports start page describes a report by its one-line DESC (`rg_desc` for the
+  hand-written pages).
 
 ## Rules from the second 2026-09-29 audit ("check every .rpt and every field … technical and logical")
 
@@ -1598,7 +1595,7 @@ last 3 errors of a subscription … Move Overview to the top menu bar, just befo
   Ctrl+K palette, the dark theme (◐ button, `setupTheme`, `bin/darken-css.awk`, the head
   scripts), `bin/build/drill-files.sh`. verify.sh asserts the absence.
 - **The sitemap** is ONE flow of cards (`.smcols`); the last card is **Tools** (Home, Search, All
-  files search, What is new, Help, Build report).
+  files search, Help, Build report; What is new went later that day).
 - **analyses/accounts.html** has no Breaking naming rules table; **Failed Subscriptions** ends
   with the CoreId / SessionId column.
 - **docs/files/** = the `_filepages.tsv` set (see `files/` above): per subscription the newest OK
@@ -1742,7 +1739,6 @@ bin/build/result.sh              fill the base result columns
 bin/build/publish.sh             index pages + the home; run LAST
 bin/build/logon-summary.sh       the logon summary, once per build (background slot 1)
 bin/build/display-rename.sh      the display-rename sweep (input/rename.txt); the last page-touching step
-bin/build/whats-new-history.tsv  TRACKED data: What's new's history, rewritten by a develop build (see "No incremental machinery")
 bin/build/linkcheck.sh           every link resolves + every page is reachable — a MANUAL gate, build.sh never runs it
 
 # DEVELOP-ONLY (never synced to a runtime):
