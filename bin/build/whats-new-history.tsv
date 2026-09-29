@@ -229,6 +229,7 @@ N	2026-08-30	0	bin/server/reports/ssh-security.sh
 N	2026-08-30	0	bin/server/reports/ssh-sessions.sh	
 N	2026-08-30	0	bin/server/reports/stuck-events.sh	
 N	2026-08-30	0	bin/server/reports/top-messages.sh	
+N	2026-08-30	0	bin/server/reports/topview.sh	
 N	2026-08-30	0	bin/server/reports/transfer-site-missing.sh	
 N	2026-08-30	0	bin/server/reports/unknown-entities.sh	
 N	2026-08-30	0	bin/server/reports/went-kaput.sh	
@@ -287,7 +288,6 @@ N	2026-08-30	0	bin/transfer/reports/size-profile.sh
 N	2026-08-30	0	bin/transfer/reports/stale-accounts.sh	
 N	2026-08-30	0	bin/transfer/reports/subscription.sh	
 N	2026-08-30	0	bin/transfer/reports/top-transfers.sh	
-N	2026-08-30	0	bin/transfer/reports/topview.sh	
 N	2026-08-30	0	bin/transfer/reports/trend.sh	
 N	2026-08-30	0	bin/transfer/reports/volume.sh	
 N	2026-08-30	0	bin/transfer/reports/waiting.sh	

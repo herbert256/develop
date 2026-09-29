@@ -8,9 +8,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
-<link rel="stylesheet" href="../assets/style.css?v=387017918">
-<script src="../assets/topbar-data.js?v=1653900017" defer></script>
-<script src="../assets/report.js?v=387017918" defer></script>
+<link rel="stylesheet" href="../assets/style.css?v=2657791692">
+<script src="../assets/topbar-data.js?v=2101984655" defer></script>
+<script src="../assets/report.js?v=2657791692" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="index"></div>
@@ -34,10 +34,11 @@
 <tr><td><a href="../transfer/entities/domain-all.html">Domains</a></td><td class="desc">One row per domain: its Files in and out with the error rate, retries and resubmits, duration percentiles, volume, transfer legs, waiting and expired Files, and first and last day — every configured and logged name, in six views (All, Seen, Not seen, OK, Warning, Error).</td></tr>
 <tr><td><a href="../transfer/entities/application-all.html">Applications</a></td><td class="desc">One row per application: its Files in and out with the error rate, retries and resubmits, duration percentiles, volume, transfer legs, waiting and expired Files, and first and last day — every configured and logged name, in six views (All, Seen, Not seen, OK, Warning, Error).</td></tr>
 <tr><td><a href="../transfer/entities/bl-all.html">BL</a></td><td class="desc">One row per BL: its Files in and out with the error rate, retries and resubmits, duration percentiles, volume, transfer legs, waiting and expired Files, and first and last day — every configured and logged name, in six views (All, Seen, Not seen, OK, Warning, Error).</td></tr>
-<tr><th colspan="2">Failures</th></tr>
+<tr><th colspan="2">Errors</th></tr>
 <tr><td><a href="../analyses/failed.html">Failed Subscriptions</a></td><td class="desc">Every failing subscription — the newest failed File of each, one row per subscription, plus the subscriptions failing in the server log only.</td></tr>
 <tr><td><a href="../analyses/failing-reasons.html">Error reasons</a></td><td class="desc">Every error Reason that occurs — how many Files in error (Failed or Expired) carry it and the newest occurrence; a row opens the Failed files page filtered to it.</td></tr>
 <tr><td><a href="../transfer/failed-files.html">Failed files</a></td><td class="desc">Every File that ended in error (Failed or Expired), newest first: its subscription, start date/time, error reason, CoreId and file name. The Files the home page Error cells count; a cell opens this page narrowed to its day.</td></tr>
+<tr><td><a href="../transfer/unknown-transfers.html">Unknown transfers</a></td><td class="desc">Every File no subscription could be found for (subscription Unknown), newest first: account, login, remote host, side, legs, state, volume, CoreId and file name, plus a per-account summary. A routing gap to investigate; subscription tables leave these Files out.</td></tr>
 <tr><td><a href="../transfer/pirates-details.html">One-legged</a></td><td class="desc">Logical transfers (CoreIds) with only ONE leg — an incomplete, one-sided crossing that never completed.</td></tr>
 <tr><td><a href="../transfer/episodes-episodes.html">Episodes</a></td><td class="desc">Every red run of each subscription with its time to recovery, and the subscriptions that came back to green after a red episode.</td></tr>
 <tr><td><a href="../transfer/retries-failing-flows.html">Retries &amp; resubmissions</a></td><td class="desc">Everything about retried and resubmitted transfers: failing flows, the retry anatomy of delivered and abandoned Files, retry spacing, which side fails, and the manual resubmissions.</td></tr>
@@ -46,7 +47,6 @@
 <tr><td><a href="../server/failure-flows.html">Per flow</a></td><td class="desc">Server-log ERROR messages classified by reason and attributed to the subscription each message names.</td></tr>
 <tr><td><a href="../server/io-errors.html">IO errors</a></td><td class="desc">The platform failing to read (or write) a file on its own storage — &quot;IO Error reading file /data/FlowManager/&lt;account&gt;@&lt;login&gt;/&lt;file&gt;&quot; — per folder, per line and per day, each line joined to the File it concerns and its outcome.</td></tr>
 <tr><td><a href="../server/routing-errors.html">Routing errors</a></td><td class="desc">The Advanced Routing errors a route gives up on — Could not send file (AR0074), Publish to account failed (ARPA0001), Post client action error (ARRC0009), Route stopped (ARSP0001) — one row per line, newest first, with the subscription or account and the file.</td></tr>
-<tr><td><a href="../server/went-kaput.html">Trouble after success</a></td><td class="desc">Still-GREEN subscriptions whose last transfer succeeded but which then logged a server-log ERROR — for the subscription or a connected login, account or remote host. Warnings do not count.</td></tr>
 <tr><th colspan="2">Use cases &amp; delivery</th></tr>
 <tr><td><a href="../analyses/use-cases.html">Use cases</a></td><td class="desc">Every use case on one row: who connects, which way the file travels and what triggers it, the configured subscriptions per use case by status — each count opening the Subscriptions page filtered to it — and the FlowManager templates behind them.</td></tr>
 <tr><td><a href="../analyses/uc-status-uc1.html">UC status</a></td><td class="desc">Every configured subscription of each use case in one status view per UC — healthy, failing, failing after a working history, or never seen — the result colour with the server-log polls, pickups and problems beside it.</td></tr>

@@ -1404,8 +1404,8 @@
     var table = document.querySelector("table[data-rfinder]"); if (!table) return;
     var box = document.getElementById("rfq"); if (!box) return;
     var orig = dataRows(table);
-    // the page's FILE NAME is searchable too (e.g. "went-kaput" finds the
-    // "Trouble after Success" report): index each row's link href once —
+    // the page's FILE NAME is searchable too (e.g. "pirates" finds the
+    // "One-legged" report): index each row's link href once —
     // ranked with the keyword hits, below title hits
     orig.forEach(function (r) {
       var a0 = r.cells[0] && r.cells[0].getElementsByTagName("a")[0];
@@ -4077,13 +4077,17 @@
       // as `period`), second — after the environment, before Entities. KEEP
       // IN STEP with publish_lib.sh render_topbar.
       (M.period ? '<span class="period" title="The data period: the first and last day of the transfer data">' + esc(M.period) + "</span>" : "") +
+      // THE ENTITIES / ERRORS / FILES CLUSTER (2026-09-29, user request: the
+      // Errors group out of the Reports pulldown, "an own link in the Top
+      // Menu bar before Files", "have Entities, Files, Errors next to each
+      // other"): the three links side by side, then the entity-search icon.
+      // M.errors = the group's first page (publish_lib ERRORS_HREF); Files =
+      // the ALL FILES search (2026-09-28). KEEP IN STEP with publish_lib.sh
+      // render_topbar.
       '<span class="entgroup"><a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
+      (M.errors ? '<a class="entlabel" href="' + b + esc(M.errors) + '">Errors</a>' : "") +
+      '<a class="entlabel" href="' + b + 'search/all-files.html">Files</a>' +
       '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
-      // the FILE SEARCH entry (2026-08), between the search icon and the
-      // report menus: the ALL FILES search ("Implementation 2, all files")
-      // since 2026-09-28 (user request; its Implementation row leads on to
-      // the other two). KEEP IN STEP with publish_lib.sh render_topbar.
-      '<a class="dashlink" href="' + b + 'search/all-files.html">Files</a>' +
       '<nav class="nav">' +
       // ONE pulldown, Reports (2026-09-29, user request): Start page + one
       // line per report group (publish_lib _report_groups); the Transfer
@@ -4461,12 +4465,17 @@
     })(boxes[b0]);
     // The page opens on the box the publisher stamped as the default (the OK
     // box on the Boxes pages); no stamp — or a stamp naming no box — opens the
-    // baked all-rows view, which is also the no-JS fallback.
+    // baked all-rows view, which is also the no-JS fallback. ?axway_pf=N (a
+    // link INTO one box — the day pages' Trouble after success line, since
+    // that report's own page went 2026-09-29) outranks the stamp when it
+    // names a box.
     var dflt = "", pfb = document.querySelector(".pfboxes[data-pf-default]");
     if (pfb) {
       dflt = pfb.getAttribute("data-pf-default") || "";
       if (dflt && !document.querySelector('.stat[data-pf="' + dflt + '"]')) dflt = "";
     }
+    var pfq = /[?&]axway_pf=([0-9]+)/.exec(window.location.search);
+    if (pfq && document.querySelector('.stat[data-pf="' + pfq[1] + '"]')) dflt = pfq[1];
     apply(dflt);
   }
 

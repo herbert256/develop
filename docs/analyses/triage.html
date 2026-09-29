@@ -11,16 +11,16 @@
 <meta name="report-area" content="transfer">
 <meta name="report-key" content="triage">
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
-<link rel="stylesheet" href="../assets/style.css?v=387017918">
-<script src="../assets/topbar-data.js?v=1653900017" defer></script>
-<script src="../assets/report.js?v=387017918" defer></script>
+<link rel="stylesheet" href="../assets/style.css?v=2657791692">
+<script src="../assets/topbar-data.js?v=2101984655" defer></script>
+<script src="../assets/report.js?v=2657791692" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="triage"></div>
 <h1>Triage <span class="grouptag">&larr; Overview</span></h1>
 <p class="tabs"><a class="tab" href="../transfer/topview.html">Transfer top view</a><a class="tab" href="../server/topview.html">Server top view</a><a class="tab" href="data-diff.html">Since yesterday</a><span class="tab active">Triage</span><a class="tab" href="subscriptions-in-boxes.html">Subscriptions in boxes</a></p>
-<div class="stat"><span class="stat-v">17</span><span class="stat-l">Flows to triage</span></div>
-<div class="stat stat-red"><span class="stat-v">10</span><span class="stat-l">red</span></div>
+<div class="stat"><span class="stat-v">16</span><span class="stat-l">Flows to triage</span></div>
+<div class="stat stat-red"><span class="stat-v">9</span><span class="stat-l">red</span></div>
 <div class="stat stat-orange"><span class="stat-v">6</span><span class="stat-l">expiry risk</span></div>
 <div class="stat stat-orange"><span class="stat-v">1</span><span class="stat-l">just went quiet</span></div>
 <div class="tablewrap"><table class="wide" data-nofilter="1" data-sort-init="9:-1">
@@ -40,14 +40,13 @@
 <tr><td class="cl"><a href="../details/subscriptions/uc1-dpl-payout-dunder.html">UC1_DPL_PAYOUT_DUNDER</a></td><td>just-went-quiet</td><td>2026-08-19</td><td class="num">10</td><td class="num">50</td><td class="num processed">50</td><td class="num failed z"></td><td>31.0 MB</td><td></td><td class="num">4.5</td><td class="prose">just went quiet — no traffic for 10 day(s) after 50 File(s)</td><td class="prose">last File 2026-08-19 — see Went quiet</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc1-dpl-ledger-dunder.html">UC1_DPL_LEDGER_DUNDER</a></td><td>red</td><td>2026-08-16 06:36:00.237</td><td class="num">13</td><td class="num">48</td><td class="num processed">48</td><td class="num failed z"></td><td>6.1 MB</td><td></td><td class="num">3.4</td><td class="prose">last File OK (2026-08-13) — flipped red by server-log evidence</td><td class="prose">server-log evidence since 2026-08-16 06:36:00.237, newest 2026-08-16 06:36:00.237 — see Failed Subscriptions (Last green day)</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/stmt-export-globex-02.html">STMT_EXPORT_GLOBEX_02</a></td><td>expiry-risk</td><td>2026-07-23</td><td class="num">37</td><td class="num">76</td><td class="num processed">72</td><td class="num failed">4</td><td>54.0 MB</td><td>1.4 MB</td><td class="num">2.0</td><td class="prose">2 of 2 staged File(s) at risk — oldest staged 2026-07-23 (sweep deletes at ~11 days)</td><td class="prose">staged, uncollected — see Waiting</td></tr>
-<tr><td class="cl"><a href="../details/subscriptions/ucx-cb-isolated-soylent.html">UCx_CB-ISOLATED-SOYLENT</a></td><td>red</td><td>2026-06-23 11:09:21</td><td class="num">67</td><td class="num">127</td><td class="num processed z"></td><td class="num failed">127</td><td>117.8 MB</td><td></td><td class="num">1.9</td><td class="prose">never delivered — 127 Error in 127 File(s)</td><td class="prose">never green — see Failed Subscriptions (Last green day never)</td></tr>
 <tr><td class="cl"><a href="../details/subscriptions/uc3-zg-rates-oscorp.html">UC3_ZG_RATES_OSCORP</a></td><td>red</td><td>2026-06-23 06:01:02.804</td><td class="num">67</td><td class="num">0</td><td class="num processed z"></td><td class="num failed z"></td><td>0 B</td><td></td><td class="num">0.0</td><td class="prose">no Files in the window</td><td class="prose">see Failed Subscriptions (Last green day never)</td></tr>
-<tr class="total"><td>Total (17 subscriptions)</td><td></td><td></td><td class="num"></td><td class="num">5312</td><td class="num processed">4764</td><td class="num failed">548</td><td class="num">1.1 GB</td><td class="num">2.0 MB</td><td class="num"></td><td></td><td></td></tr>
+<tr class="total"><td>Total (16 subscriptions)</td><td></td><td></td><td class="num"></td><td class="num">5185</td><td class="num processed">4764</td><td class="num failed">421</td><td class="num">985.6 MB</td><td class="num">2.0 MB</td><td class="num"></td><td></td><td></td></tr>
 </table></div>
 <p class="report-link"><a href="failed.html">Failed Subscriptions — the red worklist, with the Last green day and Days red of every run</a></p>
 <p class="report-link"><a href="../transfer/went-quiet-subscriptions.html">Went quiet — every silence, not just the fresh ones</a></p>
 <p class="report-link"><a href="../transfer/waiting.html">Waiting — staged Files, expiries and pickup waits</a></p>
 <p class="report-link"><a href="../analyses/subscriptions-in-boxes.html">Subscriptions in boxes — every flow sorted into its box</a></p>
-<div class="summary">Triage: 17 flow(s) — 10 red, 6 expiry risk, 1 just went quiet  |  Window ends: 2026-08-29</div>
+<div class="summary">Triage: 16 flow(s) — 9 red, 6 expiry risk, 1 just went quiet  |  Window ends: 2026-08-29</div>
 </body>
 </html>
