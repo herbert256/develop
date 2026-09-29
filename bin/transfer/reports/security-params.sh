@@ -96,7 +96,7 @@ agg=$(awk -F'\t' -v subout="$subfile" "$COREIDS_AWK"'
             if (key == "" || val == "") continue
             cnt[key SUBSEP val]++; if (f) cf[key SUBSEP val]++; else cp[key SUBSEP val]++
             if (d != "") { cd2[key SUBSEP val SUBSEP d]++; if (f) cfd[key SUBSEP val SUBSEP d]++; else cpd[key SUBSEP val SUBSEP d]++ }
-            if (site != "") { sk4 = key SUBSEP val SUBSEP site SUBSEP h; asc[sk4]++; if (f) asf[sk4]++; else asp[sk4]++ }
+            if (site != "" && site != "Unknown") { sk4 = key SUBSEP val SUBSEP site SUBSEP h; asc[sk4]++; if (f) asf[sk4]++; else asp[sk4]++ }
             addtop("A" SUBSEP key SUBSEP val SUBSEP oc, sk, disp, tid)   # drill: 10 most recent rows per attribute-value + outcome
         }
     }

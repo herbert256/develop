@@ -75,7 +75,7 @@ read -r endj endd <<< "$(awk -F'\t' '$7 + 0 > j { j = $7 + 0; d = $4 } END { pri
 #   lastj <TAB> lastfail <TAB> runstart <TAB> runjd <TAB> runlen <TAB>
 #   lastokd <TAB> wtot <TAB> wrisk <TAB> wriskb <TAB> wriskolddate <TAB> wriskoldjd
 agg=$(awk -F'\t' -v OFS='\t' '
-    $12 == "" || $4 == "" || $7 == "" { next }
+    $12 == "" || $12 == "Unknown" || $4 == "" || $7 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     { print toupper($12), $6, $7 + 0, $4, $5, $2, $8 + 0 }
 ' "$TF" \
 | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 \

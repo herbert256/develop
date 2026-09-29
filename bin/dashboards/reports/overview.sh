@@ -322,10 +322,10 @@ if [ -f "$TR" ]; then
             # the configured subscription roster (canonicalization); a missing
             # file makes getline return -1 -> empty
             # The base cache is AMENDED after flow-manager (result.sh
-            # discover_logged appends every logged-but-unconfigured name, the
-            # synthetic "UCx_<account>" ones included). First seen COUNTS the
-            # synthetic names since 2026-09-29, and the curve endpoints must
-            # keep equalling its figures — so they are in the roster too
+            # discover_logged appends every logged-but-unconfigured name —
+            # never "Unknown", the no-subscription value). First seen counts
+            # the discovered names too, and the curve endpoints must keep
+            # equalling its figures — so they are in the roster
             # (2026-09-29 audit: the curve ended at 108 beside First seen 109).
             while ((getline l9 < SUBBF) > 0) { n9 = split(l9, z9, "\t")
                 if (n9 >= 1 && z9[1] != "") { u9 = toupper(z9[1]); ROST[u9] = 1; RO[++nro] = u9 } }
@@ -654,7 +654,7 @@ if [ -f "$TR" ]; then
             return s }
         BEGIN { US = sprintf("%c", 31) }
         {
-            tally("S", $12)
+            if ($12 != "Unknown") tally("S", $12)   # "Unknown" = no subscription (2026-09-29): not a Top-5 subscription
             # the partner UNION set (bin/pda-union.sh; a missing map leaves
             # the partner tables to col 20 alone)
             npt = split(sp_union($20, $12), PTZ, "\037")

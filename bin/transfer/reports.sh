@@ -139,6 +139,7 @@ pool_wait
 "$SCRIPT_DIR/reports/trends.sh"   # 2026-09-29: Growers / Shrinkers + Slower / Faster on one page (was merge-volume.sh)
 "$SCRIPT_DIR/reports/merge-went-quiet.sh"
 "$SCRIPT_DIR/reports/failed-files.sh"          # 2026-09-14: every failed File + its reason — reads the pool failed.sh's reasons sidecar, so after pool_wait
+"$SCRIPT_DIR/reports/unknown-transfers.sh"     # 2026-09-29: every File with subscription "Unknown" — links the File pages the pool wrote, so after pool_wait
 "$SCRIPT_DIR/reports/merge-duration-dwell.sh"   # 2026-09-05: duration-distribution + dwell-time on one page, histograms side by side
 fi
 

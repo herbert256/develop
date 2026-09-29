@@ -85,7 +85,7 @@ G=$(awk -v d="$D" 'function jdn(y, m, dd,   a) { a = int((14 - m) / 12); y = y +
 # lastfail <TAB> runstart <TAB> runlen <TAB> lastfailts <TAB> lastokts <TAB>
 # firstokafter <TAB> okafter
 agg=$(awk -F'\t' -v OFS='\t' '
-    $12 == "" || $4 == "" || $7 == "" { next }
+    $12 == "" || $12 == "Unknown" || $4 == "" || $7 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     { print toupper($12), $6, $7 + 0, $4, $5, $2 }
 ' "$TF" \
 | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 \

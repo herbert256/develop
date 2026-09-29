@@ -87,7 +87,7 @@ awk -F'\t' -v T1="$TMPD/t1.pre" -v T3="$TMPD/t3.pre" -v STATS="$TMPD/stats.tsv" 
         if ($16 == "out" && $15 != "") { h = $15
             if (OF[h] == "") OORD[++noo] = h
             OF[h]++; OB[h] += $8
-            if ($12 != "" && !((h SUBSEP "S" $12) in SEEN)) { SEEN[h SUBSEP "S" $12] = 1; NS[h]++ }
+            if ($12 != "" && $12 != "Unknown" && !((h SUBSEP "S" $12) in SEEN)) { SEEN[h SUBSEP "S" $12] = 1; NS[h]++ }
             if ($19 != "" && !((h SUBSEP "D" $19) in SEEN)) { SEEN[h SUBSEP "D" $19] = 1; ND[h]++ }
             na = split(aset, A, "\037")
             for (i = 1; i <= na; i++) if (A[i] != "" && !((h SUBSEP "A" A[i]) in SEEN)) { SEEN[h SUBSEP "A" A[i]] = 1; NA[h]++ }

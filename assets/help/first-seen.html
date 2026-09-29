@@ -25,7 +25,7 @@
 <h2>Rules</h2>
 <ul>
 <li>Per column: Seen + Not seen = Total; the day rows + Seen, no date = Seen.</li>
-<li>Subscriptions include the synthetic <code>UCx_&lt;account&gt;</code> ones (transfers no subscription claimed), so a Total or Seen cell equals the Entities view it opens.</li>
+<li>Transfers no subscription claimed (subscription <strong>Unknown</strong>) are no subscription and are not counted; a Total or Seen cell equals the Entities view it opens.</li>
 <li><strong>Seen, no date</strong> = seen without a dated transfer of its own, credited through a sibling (a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account).</li>
 <li>Only transfers count: a name the server log mentions but that never transferred is Not seen.</li>
 <li>Dates: accounts and partners per File; subscriptions, logins and hosts per log record. Names match exactly, case aside; a subscription also matches the logged names it prefixes.</li>

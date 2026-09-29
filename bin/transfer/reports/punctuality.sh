@@ -52,7 +52,7 @@ agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
     function fromjdn(j,  a,b,c,dd,e,mm,day,mon,yr){ a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d",yr,mon,day) }
     function hhmm(m) { return sprintf("%02d:%02d", int(m / 60), m % 60) }
     BEGIN { _US = sprintf("%c", 31); split("Mon Tue Wed Thu Fri Sat Sun", WD, " ") }
-    $12 == "" || $4 == "" || $5 == "" { next }
+    $12 == "" || $12 == "Unknown" || $4 == "" || $5 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         s = $12; d = $4; j = $7 + 0
         m = substr($5, 1, 2) * 60 + substr($5, 4, 2)

@@ -52,8 +52,10 @@
 #     one or more red                       -> red
 #     everything else (incl. no connected
 #     subscriptions at all)                 -> orange
-# A subscription the CONFIG does not know (discovered in the transfer log —
-# the UCx_<account> fallback included) has no configured pairs, so for it the
+# A subscription the CONFIG does not know (discovered in the transfer log;
+# never "Unknown", the no-subscription value — no subscription, no colour, no
+# pairs: 2026-09-29, the UCx_<account> fallback it replaced was one) has no
+# configured pairs, so for it the
 # rollup reads the OBSERVED pairs instead: _files.tsv col 3 (account) and
 # col 14 (login) -> col 12, and the leg hosts of its OUT-connection Files
 # (_hostlegs.tsv) — 2026-09-29 audit; the rule for configured pairs is
@@ -209,14 +211,14 @@ awk -F'\t' '{ n = 0; m = split($5, Z, "|")
 HOSTLEGS="$COLDIR/_hostlegs.tsv"
 # the OBSERVED pairs (see the header, stage 2): entity <TAB> subscription for
 # every subscription the CONFIG does not know (base/.configured.tsv — the
-# discovered ones, the UCx_<account> fallback included), from _files.tsv
+# discovered ones; "Unknown" is no subscription and pairs with nothing), from _files.tsv
 # col 3 (account) / col 14 (login) -> col 12, and the leg hosts of its
 # OUT-connection Files (HOSTLEGS col 1 -> col 4)
 OBS_ACC="$COLDIR/_observed-accounts.tsv"; OBS_LGN="$COLDIR/_observed-logins.tsv"; OBS_HST="$COLDIR/_observed-hosts.tsv"
 awk -F'\t' -v C="$BASE/.configured.tsv" -v OA="$OBS_ACC.tmp" -v OL="$OBS_LGN.tmp" '
     BEGIN { while ((getline l < C) > 0) { split(l, a, "\t"); if (a[1] == "_subscriptions" && a[2] != "") K[toupper(a[2])] = 1 }
             close(C); printf "" > OA; printf "" > OL }
-    $12 != "" && !(toupper($12) in K) {
+    $12 != "" && $12 != "Unknown" && !(toupper($12) in K) {
         if ($3 != ""  && !(("A" SUBSEP $3 SUBSEP $12) in d)) { d["A" SUBSEP $3 SUBSEP $12] = 1; print $3 "\t" $12 > OA }
         if ($14 != "" && !(("L" SUBSEP $14 SUBSEP $12) in d)) { d["L" SUBSEP $14 SUBSEP $12] = 1; print $14 "\t" $12 > OL } }
 ' "$FILES"
@@ -233,7 +235,7 @@ else
 fi
 awk -F'\t' -v C="$BASE/.configured.tsv" '
     BEGIN { while ((getline l < C) > 0) { split(l, a, "\t"); if (a[1] == "_subscriptions" && a[2] != "") K[toupper(a[2])] = 1 } close(C) }
-    $4 != "" && !(toupper($4) in K) && !(($1 SUBSEP $4) in d) { d[$1 SUBSEP $4] = 1; print $1 "\t" $4 }
+    $4 != "" && $4 != "Unknown" && !(toupper($4) in K) && !(($1 SUBSEP $4) in d) { d[$1 SUBSEP $4] = 1; print $1 "\t" $4 }
 ' "$HOSTLEGS" | LC_ALL=C sort > "$OBS_HST.tmp"
 commit_tmp "$OBS_HST"
 discover_logged() {   # $1 = base name  $2 = the awk condition picking its column
@@ -244,6 +246,7 @@ discover_logged() {   # $1 = base name  $2 = the awk condition picking its colum
         BEGIN { while ((getline l < BF) > 0) { split(l, a, "\t"); if (a[1] != "") B[toupper(a[1])] = 1 }
                 close(BF) }
         { v = (COND == "sub") ? $12 : $1 }
+        COND == "sub" && v == "Unknown" { next }   # the no-subscription value (2026-09-29): never an entity
         v != "" && !(toupper(v) in B) && !(toupper(v) in seen) { seen[toupper(v)] = 1; ord[++n] = v }
         END { for (i = 1; i <= n; i++) print ord[i] "\t\t" }
     ' "$src" | LC_ALL=C sort)
@@ -753,7 +756,9 @@ rm -f "$POLLCAND" "$CONNCAND" "$CCAND" "$CCSINCE"
 # pairs of the subscriptions the config does not know (see the header): they
 # join the configured pairs — a discovered subscription has none of its own,
 # so its account / login / host would otherwise ignore it (2026-09-29 audit:
-# an account whose 127 Files all failed on its UCx_<account> flow was orange).
+# an account whose 127 Files all failed on its UCx_<account> flow was orange;
+# since UCx went the same day those Files read subscription "Unknown", which
+# colours nothing — the Unknown transfers report lists them).
 rollup() {   # $1 = base name (accounts|logins|...)  $2 = its <item>-subscriptions pair cache  $3 = observed pairs (optional)
     local basef="$BASE/_$1.tsv" pair="$XREF/_$2.tsv" obs="${3:-/dev/null}"
     [ -f "$basef" ] || return 0

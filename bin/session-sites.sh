@@ -2,8 +2,9 @@
 #
 # session-sites.sh — the SESSION JOIN learning step (stage 1, right after the
 # two parses, before bin/expire-files.sh): learn the REAL subscription of the
-# CoreId groups the attribution chain could not place (the synthetic
-# "UCx_<account>" fake-subscription names) from the SERVER log, via the
+# CoreId groups the attribution chain could not place (subscription
+# "Unknown" — the synthetic "UCx_<account>" names until 2026-09-29) from the
+# SERVER log, via the
 # connection they ran over: _transfers.tsv col 24 carries each leg's session
 # id and _parse.tsv col 6 the same id, so the route lines of the very
 # connection that moved the file name the flow ST itself executed —
@@ -23,11 +24,11 @@
 #     be unanimous, and the flow must be configured for the group's account
 #     when that account has a configured list at all.
 #
-# The map is a per-session VERDICT file: only the sessions of CURRENTLY-UCx
+# The map is a per-session VERDICT file: only the sessions of CURRENTLY-Unknown
 # rows are scanned, an ambiguous or evidence-less session gets no entry.
 #
 # THE RE-KEY MAP (2026-09-29, user report — a partner's pickups landing on
-# UCx_<account> although their File was attributed): SecureTransport can lose
+# UCx_<account>, now "Unknown", although their File was attributed): SecureTransport can lose
 # a download's session cycleId mid-transfer ("No session cycleId for file
 # /data/FlowManager/<account>@<login>/<file>. SENT will not get reported!").
 # It then ends the SAME transfer twice — "error" under the File's own CoreId
@@ -35,7 +36,7 @@
 # the transfer log keeps one row per transfer id, whichever end came last.
 # When that is the ok one, the pickup leg sits alone under a CoreId no other
 # leg carries, with no Transfer Site and no profile: nothing attributes it,
-# it reads as a one-legged Failed File on UCx_<account>, and its real File
+# it reads as a one-legged Failed File on "Unknown", and its real File
 # stays Waiting. (When the error end comes last, the leg stays in its File
 # as Failed — bin/bookend-ok.sh settles that one.) The JSON bookends join
 # the two: the same "transferId" under both CoreIds. Written to
@@ -81,8 +82,8 @@ if [ ! -s "$SRV" ]; then
     exit 0
 fi
 # the configured-subscription set: the pristine snapshot when present (the
-# not-in-flow-manager rule — base/ is amended with discovered names, the UCx
-# rows themselves included), else the base rows that carry a direction (a
+# not-in-flow-manager rule — base/ is amended with discovered names; never
+# "Unknown", which is no subscription), else the base rows that carry a direction (a
 # discovered append has none)
 if [ -f "$BASE/.configured.tsv" ]; then CONFSRC="$BASE/.configured.tsv"
 else CONFSRC="$BASE/_subscriptions.tsv"; fi
@@ -105,19 +106,19 @@ OLDMAP="$OUT"; [ -f "$OUT" ] || OLDMAP=/dev/null
 OLDRK="$RKOUT"; [ -f "$RKOUT" ] || OLDRK=/dev/null
 
 # ONE pass over the transfer cache: the sessions to (re)scan — every session
-# a currently-UCx leg ran over — and the RE-KEY candidates: the transfer id
+# a currently-Unknown leg ran over — and the RE-KEY candidates: the transfer id
 # of every LONE leg (the cache is CoreId-sorted, so a group is a run of equal
 # col 1 and a lone leg a run of one)
 : > "$sess"
 awk -F'\t' -v OFS='\t' -v SESSF="$sess" '
-    $6 ~ /^UCx_/ && $24 != "" { print $24 > SESSF }
+    $6 == "Unknown" && $24 != "" { print $24 > SESSF }
     $1 != pk { if (pn == 1 && pk != "" && pt != "") print pt, pk; pk = $1; pn = 0; pt = $23 }
     { pn++ }
     END { if (pn == 1 && pk != "" && pt != "") print pt, pk }
 ' "$PARSED" | LC_ALL=C sort -u > "$cand"
 LC_ALL=C sort -u -o "$sess" "$sess"
 if [ ! -s "$sess" ] && [ ! -s "$cand" ]; then
-    echo "session-sites: no UCx rows and no lone legs — nothing to learn." >&2
+    echo "session-sites: no Unknown-subscription rows and no lone legs — nothing to learn." >&2
     exit 0
 fi
 
@@ -241,10 +242,10 @@ n_lone=$(wc -l < "$cand" | tr -d ' ')
 n_rk=$(wc -l < "$rktmp" | tr -d ' ')
 if [ -s "$rktmp" ]; then mv "$rktmp" "$RKOUT"; else rm -f "$RKOUT"; fi
 if [ ! -s "$tmp" ] && [ "$n_rk" -eq 0 ]; then
-    echo "session-sites: $n_scan UCx session(s) scanned, none attributable; $n_lone lone leg(s), none re-keyed — no map written." >&2
+    echo "session-sites: $n_scan Unknown-subscription session(s) scanned, none attributable; $n_lone lone leg(s), none re-keyed — no map written." >&2
     exit 0
 fi
 if [ -s "$tmp" ]; then mv "$tmp" "$OUT"; fi
-echo "session-sites: $n_scan UCx session(s) scanned, map now $n_map entry/-ies; $n_lone lone leg(s), $n_rk re-keyed — re-deriving the transfer caches." >&2
+echo "session-sites: $n_scan Unknown-subscription session(s) scanned, map now $n_map entry/-ies; $n_lone lone leg(s), $n_rk re-keyed — re-deriving the transfer caches." >&2
 # apply immediately: the derive-only re-run
 AXWAY_DERIVE_ONLY=1 "$ROOT/bin/transfer/parse.sh"

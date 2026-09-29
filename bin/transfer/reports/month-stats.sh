@@ -77,7 +77,7 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v ALLF="$ALLF.tmp" -v DIMS="$DIMS" -v
     FILENAME == PF {   # _transfers.tsv: the per-File login / site / host sets (the leg flags come from _files.tsv col 26 / 27)
         cid = $1
         if ($5 != "") lg[cid] = addset(lg[cid], $5)
-        if ($6 != "") st[cid] = addset(st[cid], $6)
+        if ($6 != "" && $6 != "Unknown") st[cid] = addset(st[cid], $6)   # "Unknown" = no subscription (2026-09-29)
         if ($16 != "") hs[cid] = addset(hs[cid], $16)
         next }
     $4 == "" { next }

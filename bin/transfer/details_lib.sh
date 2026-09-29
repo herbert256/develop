@@ -68,7 +68,7 @@ direction_rows() {
             next }
         FILENAME ~ /_transfers\.tsv$/ {
             if ($5  != "") U["LOGIN" SUBSEP toupper($5)]  = $5
-            if ($6  != "" && !(("SITE" SUBSEP toupper($6)) in U)) { U["SITE" SUBSEP toupper($6)] = $6; SL[++nsl] = $6 }
+            if ($6  != "" && $6 != "Unknown" && !(("SITE" SUBSEP toupper($6)) in U)) { U["SITE" SUBSEP toupper($6)] = $6; SL[++nsl] = $6 }   # "Unknown" = no subscription (2026-09-29)
             # only OUTBOUND endpoints are HOST entities (no pages for the
             # source IPs of incoming connections)
             if ($16 != "" && cn[$1] == "out") U["HOST" SUBSEP toupper($16)] = $16
@@ -136,7 +136,7 @@ compute_extras() {
       acct=$4; site=$6; login=$5; host=(cn[$1]=="out" ? $16 : ""); size=$9; dur=$15+0; dt=$11
       npt2=split(fptn[$1], PT2, "\037"); nap2=split(fapp[$1], AP2, "\037"); dm2=fdom[$1]
       nlg2=split(flgc[$1], LG2, "\037"); nbl2=split(fbl[$1], BL2, "\037")
-      if(pr2 && dur>=0){ perf("ACC",acct); perf("SITE",site); perf("LOGIN",login); perf("HOST",host)
+      if(pr2 && dur>=0){ perf("ACC",acct); perf("SITE",(site=="Unknown"?"":site)); perf("LOGIN",login); perf("HOST",host)
                          for(ip2=1;ip2<=nlg2;ip2++) perf("LGC",LG2[ip2])
                          for(ip2=1;ip2<=npt2;ip2++) perf("PTN",PT2[ip2]); for(ip2=1;ip2<=nap2;ip2++) perf("APP",AP2[ip2]); perf("DOM",dm2)
                          for(ip2=1;ip2<=nbl2;ip2++) perf("BL",BL2[ip2]) }
@@ -293,20 +293,20 @@ whitelist_rows() {
             # ... and the OBSERVED addresses per entity and connection side
             # (col 16), split by movement (col 17)
             if ($15 != "") {
-                ip = $15; mv = ($17 != "") ? $17 : $16   # movement, else the connection side (UCx Files carry no movement)
+                ip = $15; mv = ($17 != "") ? $17 : $16   # movement, else the connection side (Unknown / unconfigured-subscription Files carry no movement)
                 if ($16 == "in") {
                     # NO obs("4", $15) here: on an incoming file col 15 is the
                     # SOURCE address, and attributing it to a HOST entity named
                     # by itself materialized a phantom never-seen host page per
                     # inbound IP — HOST entities are OUTBOUND endpoints only
                     # (the partners.json host fields + the endpoints we dial)
-                    obs("1", $3); obs("2", $12); obs("3", $14)
+                    obs("1", $3); obs("2", ($12 == "Unknown") ? "" : $12); obs("3", $14)   # "Unknown" = no subscription (2026-09-29)
                     for (iu6 = 1; iu6 <= nu6; iu6++) obs("6", PU6[iu6])
                     for (iu6 = 1; iu6 <= na6; iu6++) obs("7", AU6[iu6]); obs("8", $19)
                     for (iu6 = 1; iu6 <= nl6; iu6++) obs("9", LU6[iu6])
                     for (iu6 = 1; iu6 <= nb6; iu6++) obs("10", BU6[iu6])
                 } else if ($16 == "out") {
-                    obso("1", $3); obso("2", $12); obso("3", $14); obso("4", $15)
+                    obso("1", $3); obso("2", ($12 == "Unknown") ? "" : $12); obso("3", $14); obso("4", $15)
                     for (iu6 = 1; iu6 <= nu6; iu6++) obso("6", PU6[iu6])
                     for (iu6 = 1; iu6 <= na6; iu6++) obso("7", AU6[iu6]); obso("8", $19)
                     for (iu6 = 1; iu6 <= nl6; iu6++) obso("9", LU6[iu6])
@@ -317,7 +317,7 @@ whitelist_rows() {
         }
         {   # $PARSED: remember each logged entity value under its type
             if ($4  != "") seen["1" SUBSEP toupper($4)]  = $4
-            if ($6  != "") seen["2" SUBSEP toupper($6)]  = $6
+            if ($6  != "" && $6 != "Unknown") seen["2" SUBSEP toupper($6)]  = $6
             if ($5  != "") seen["3" SUBSEP toupper($5)]  = $5
             if ($16 != "") seen["4" SUBSEP toupper($16)] = $16
         }
@@ -844,7 +844,7 @@ aggregate_files() {
       if($2=="Inbound" && $18!=""){ e5=ep_us($18); if(e5>g_inend) g_inend=e5 }
       if($2=="Outbound" && $12 ~ /^[0-9][0-9]:/){ s5=ep_iso($11,$12); if(s5>=0 && (g_outst<0 || s5<g_outst)) g_outst=s5 }
       if($5!="")  gLOGIN[$5]=1
-      if($6!="")  gSITE[$6]=1
+      if($6!="" && $6!="Unknown")  gSITE[$6]=1   # "Unknown" = no subscription (2026-09-29): no page, no Subscriptions / Last error(s) row
       # HOST entities are OUTBOUND endpoints only (the hosts we dial) — an
       # incoming connection'\''s source IP is not a host (it lives in the
       # whitelist/incoming views), so only out-connection Files attribute one
@@ -855,7 +855,7 @@ aggregate_files() {
       if($16!="" && tfd[$1]=="out") gDIM[4 SUBSEP $16]=1
       # (the Direction (13) and Mode (15) dims are GONE — 13 since the Features
       # era, 15 removed 2026-07; neither is collected any more)
-      if($6!="")  gDIM[2 SUBSEP $6]=1
+      if($6!="" && $6!="Unknown")  gDIM[2 SUBSEP $6]=1
       # (no section-4 Remote Host dimension any more — the Outgoing connections
       # table, section 2.7, replaced it; the Protocol dimension table was
       # REMOVED 2026-07 — the protocol report covers it)

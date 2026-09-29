@@ -781,8 +781,8 @@ write_logical_detection_page() {
 # baked order use case (the name prefix, else the derived one) then
 # name. The roster is the pristine configured snapshot (base/.configured.tsv —
 # the base cache gains discovered names after the build's append steps),
-# falling back to the base cache minus the parse-synthetic UCx_ names on a
-# pre-snapshot tree. No prose on the page (help page subscriptions).
+# falling back to the base cache on a pre-snapshot tree ("Unknown", the
+# no-subscription value, never enters it). No prose on the page (help page subscriptions).
 # ACTIVE (2026-09-14, user request), the second column: "Yes", or the
 # ", "-joined codes of why the subscription is not active, read from
 # subscriptions.json with jq — 1 status.code UNDEPLOYED, 2 status.code
@@ -961,7 +961,7 @@ write_subscriptions_page() {
             if ($1 == "ROW" && ($2 == "From" || $2 == "To") && !((lslug SUBSEP $2) in LOC)) LOC[lslug SUBSEP $2] = $3
             next }
         FILENAME ~ /base\/_subscriptions\.tsv$/ { RES[toupper($1)] = $3; CDIR[toupper($1)] = $2
-            if (CONF == "" && $1 !~ /^UCx_/ && $1 != "" && !(toupper($1) in seenr)) { seenr[toupper($1)] = 1; RN[++nr] = $1 }
+            if (CONF == "" && $1 != "" && !(toupper($1) in seenr)) { seenr[toupper($1)] = 1; RN[++nr] = $1 }
             next }
         FILENAME ~ /subact\.[A-Za-z0-9]+$/ { if ($1 != "") ACT[toupper($1)] = $2; next }
         FILENAME ~ /subactr\.[A-Za-z0-9]+$/ { if ($1 != "") ACTR[toupper($1)] = $2; next }

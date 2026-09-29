@@ -91,7 +91,7 @@ agg=$(awk -F'\t' "${SP_AWK_V[@]}" "$SP_AWK"'
         tk = $4 SUBSEP $5 SUBSEP $6 SUBSEP hv SUBSEP dom[$1] SUBSEP ptn[$1] SUBSEP app[$1] SUBSEP lgc[$1] SUBSEP blv[$1]
         if (tk in TUP) next
         TUP[tk] = 1
-        V["acct"] = $4; V["login"] = $5; V["site"] = $6; V["host"] = hv
+        V["acct"] = $4; V["login"] = $5; V["site"] = ($6 == "Unknown") ? "" : $6; V["host"] = hv   # "Unknown" = no subscription: pairs with nothing (2026-09-29)
         V["dom"] = dom[$1]
         # the partner × application sets: one pair-emission pass per member
         # combination (seen[] dedups, so the pairs repeating across

@@ -32,7 +32,7 @@
 <li>The rules are <code>input/skip.txt</code>, one token per line, this checkout&rsquo;s own; edit it and rebuild.</li>
 <li>Configuration names match on a case-insensitive <strong>substring</strong> (<code>CRG</code> matches <code>IPO_CRG-OK01_RABOBANK</code>); log records follow the rule kind (contains, exact or regex). A skipped login loses its detail page; to hide it from the server log too, use an <code>any</code> rule.</li>
 <li>Reasons: <strong>http</strong> = the CoreId has an http leg (web-UI traffic); <strong>empty ssh probe</strong> = one lone outbound ssh record of size 0, Application <code>none</code>; otherwise <strong>no subscription</strong> = no leg carried a subscription or account.</li>
-<li>A record with an account but no subscription is kept, under the synthetic <code>UCx_&lt;account&gt;</code>: a routing gap to investigate.</li>
+<li>A record with an account but no subscription is kept, with subscription <strong>Unknown</strong>: a routing gap to investigate, listed on <a href="../transfer/unknown-transfers.html">Unknown transfers</a>.</li>
 </ul>
 </main>
 </body>

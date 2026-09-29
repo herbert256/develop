@@ -66,18 +66,22 @@ awk -F'\t' -v D="$TMPD" '
     # keyed on the SUBSCRIPTION (col 12) since 2026-09-19 (user request — the
     # table was per ACCOUNT before): an account can serve several UC2 flows,
     # and the flow is what a reader fixes
-    { s = ($12 != "" ? $12 : "-") }
+    # "Unknown" = NO subscription (2026-09-29, user request): its Files
+    # count in the totals, the ages, the nights and the weekdays, but get no
+    # subscription row, no Subscriptions count and no per-subscription page
+    { s = ($12 != "" ? $12 : "-"); nosub = (s == "Unknown") }
     $2 == "Expired" {
         n++; b += $8
         split($22, dp, " "); age = j(dp[1]) - j($4); agesum += age
         ages[age]++
+        night[dp[1]]++; nightb[dp[1]] += $8
+        ewd[j($4) % 7]++
+        if (nosub) next
         ea[s]++; eb[s] += $8; eage[s] += age
         if (fs[s] == "" || $4 " " $5 < fs[s]) fs[s] = $4 " " substr($5, 1, 8)
         if ($4 " " $5 > lsx[s]) lsx[s] = $4 " " substr($5, 1, 8)
         if ($22 > ld[s]) ld[s] = $22
-        night[dp[1]]++; nightb[dp[1]] += $8
         if (!((dp[1] SUBSEP s) in na)) { na[dp[1] SUBSEP s] = 1; nsub[dp[1]]++ }
-        ewd[j($4) % 7]++
         if (pt[s] == "" && $20 != "") pt[s] = $20
         # the per-subscription File pages: subscription, staged, deleted, file, coreid
         printf "%s\t%s %s\t%s\t%s\t%s\n", s, $4, substr($5, 1, 8), substr($22, 1, 19), $11, $1 > (D "/x_files")
@@ -85,8 +89,8 @@ awk -F'\t' -v D="$TMPD" '
     }
     # COLLECTED = a DELIVERED File with a pickup wait — the Waiting report and
     # partner table rule (2026-09-29: a Failed File with a wait counted here too)
-    $21 != "" && $2 == "Processed" { cn++; ca[s]++; cwd[j($4) % 7]++; next }
-    $2 == "Waiting" { wn++; wa[s]++ }
+    $21 != "" && $2 == "Processed" { cn++; if (!nosub) ca[s]++; cwd[j($4) % 7]++; next }
+    $2 == "Waiting" { wn++; if (!nosub) wa[s]++ }
     END {
         printf "%d\t%d\t%d\t%d\t%d\n", n+0, b+0, agesum+0, cn+0, wn+0 > (D "/x_stats")
         for (a in ea) printf "%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\n", \
@@ -226,7 +230,9 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
     fi
 
     # ---- 3. the sweep nights ------------------------------------------------
-    printf 'TABLE\tExpiries per sweep night\tnofilter\n'
+    # (3 and 4 side by side — sxs, 2026-09-29, user request: "have the last 2
+    # tables next to each other")
+    printf 'TABLE\tExpiries per sweep night\tnofilter\tsxs\n'
     printf 'HEAD\tDeletion night\tFiles expired\tVolume\tSubscriptions\n'
     printf 'KIND\ttext\tnum\tnum\tnum\n'
     if [ -s "$TMPD/x_night" ]; then
@@ -243,7 +249,7 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
     fi
 
     # ---- 4. the staging weekday --------------------------------------------
-    printf 'TABLE\tStaged on which weekday - expired vs collected\tnofilter\tnosearch\n'
+    printf 'TABLE\tStaged on which weekday - expired vs collected\tnofilter\tnosearch\tsxs\n'
     printf 'HEAD\tStaged on\tExpired\tCollected\tExpired share\n'
     printf 'KIND\ttext\tnumfailed\tnumprocessed\tnum\n'
     if [ -s "$TMPD/x_wd" ] && [ "$nexp" -gt 0 ]; then

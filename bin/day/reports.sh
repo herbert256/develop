@@ -224,7 +224,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         if ($10 + 0 == 1) PIR[d]++   # single-leg (pirate) transfers -> Problems this day
         # UC2 staged files, by the day they were STAGED -> Problems this day
         if ($2 == "Waiting") WAI[d]++; else if ($2 == "Expired") XPD[d]++
-        if ($12 != "") { pf[d SUBSEP $12]++; if ($2 == "Failed" || $2 == "Expired") pff[d SUBSEP $12]++ }   # per-subscription totals/fails
+        if ($12 != "" && $12 != "Unknown") { pf[d SUBSEP $12]++; if ($2 == "Failed" || $2 == "Expired") pff[d SUBSEP $12]++ }   # per-subscription totals/fails
         if ($2 != "Failed" && $2 != "Expired") P[d]++; else F[d]++
         h = substr($5, 1, 2)
         if (h ~ /^[0-9][0-9]$/) {
@@ -239,7 +239,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         # the six Top-5 tables: subscription (col 12) and the partner UNION
         # (col 20 ∪ the subscription\047s configured partners — a both-partner File
         # carries an EMPTY col 20, the parse abstains there; bin/pda-union.sh)
-        tally("S", $12, d)
+        if ($12 != "Unknown") tally("S", $12, d)   # "Unknown" = no subscription (2026-09-29): no Top-5 row
         npt = split(sp_union($20, $12), PTZ, "\037")
         for (ipt = 1; ipt <= npt; ipt++) tally("P", PTZ[ipt], d)
         a = $3
@@ -703,15 +703,17 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
                 printf "PROBLEM\tserver\t../server/routing-errors.html" q "\tRoute stopped\t**%d** route-abandon errors (ARSP0001) — a routing step failed and its configuration stopped the rest of the route\n", DEP[d] >> out
             if (EVE[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../server/errors-log-reasons.html" q "\tEvent-feed errors\t**%d** monitoring-feed delivery errors (unable to submit / error sending event)\n", EVE[d] >> out
-            # subscriptions whose last transfer was OK but that logged an
-            # error/warning in the server log afterwards, latest issue this day
-            # (the went-kaput report — no date filter, so no q)
             if (NRDE[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html" q "\tNo remote dir\t**%d** failed listing(s) on **%d** subscription(s) whose configured remote directory does not exist — the partner answered \"No such file\", so no transfer was ever started\n", NRDE[d], NRDS[d] >> out
             if (NRFP[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html" q "\tNo remote files\t**%d** poll(s) by **%d** UC3 subscription(s) that have NEVER found a file — the listing works, the remote directory is always empty\n", NRFP[d], NRFS[d] >> out
+            # subscriptions whose last transfer was OK but that logged an
+            # error/warning in the server log afterwards, latest issue this day
+            # (went-kaput.rpt; its page went 2026-09-29, so the link opens the
+            # Trouble after success box of Subscriptions in boxes — no date
+            # filter there, so no q)
             if (SLFC[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/went-kaput.html\tWent kaput\t**%d** subscription(s) whose last transfer was OK but that logged a server-log error/warning afterwards, most recently today\n", SLFC[d] >> out
+                printf "PROBLEM\tserver\t../analyses/subscriptions-in-boxes.html?axway_pf=3\tTrouble after success\t**%d** subscription(s) whose last transfer was OK but that logged a server-log error/warning afterwards, most recently today\n", SLFC[d] >> out
             # A day with NO transfer data got no hero from the transfer pass:
             # give it the records-per-hour chart, plus the anomaly-scan entry
             # the transfer pass adds on the days the scan flagged (such a day

@@ -48,7 +48,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 #   ROW <TAB> subscription <TAB> days ago
 #   TOT <TAB> quiet <TAB> total <TAB> window-end date <TAB> files-in-quiet
 agg=$(awk -F'\t' -v QD="$QUIET_DAYS" '
-    $12 == "" || $4 == "" || $7 == "" { next }
+    $12 == "" || $12 == "Unknown" || $4 == "" || $7 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         n[$12]++
         if ($7 + 0 > last[$12] + 0) { last[$12] = $7 + 0; lastd[$12] = $4 }

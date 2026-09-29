@@ -17,7 +17,7 @@
 # row per server-failing subscription — first on a four-page view grid, then
 # on All / Subscription pages; the drills were capped at 500 rows.)
 #
-# A member of the Failures group of the Reports menu.
+# A member of the Errors group (Failures until 2026-09-29) — the top bar's Errors link.
 #
 # The ROW SET is every Reason that OCCURS: the bin/flip-reason.awk
 # vocabulary — PARSED FROM THE CLASSIFIER ITSELF (its `return "…"` strings,

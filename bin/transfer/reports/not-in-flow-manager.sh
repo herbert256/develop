@@ -42,8 +42,8 @@ for _b in _accounts _subscriptions _logins _hosts _white _logicals _partners _ap
     eval "f$_b=\"$B/$_b.tsv\""
 done
 # The base caches are AMENDED after flow-manager wrote them: result.sh
-# discover_logged appends every logged-but-unconfigured subscription/host (the
-# "UCx_" synthetic names included) — so by report time "not in the base cache" no longer means "not
+# discover_logged appends every logged-but-unconfigured subscription/host
+# (never "Unknown", the no-subscription value) — so by report time "not in the base cache" no longer means "not
 # in Flow Manager", and reading base would silently empty this report. The
 # pristine per-type snapshot flow-manager takes BEFORE either append step
 # (.configured.tsv) is the real configured list (2026-08); the base caches
@@ -101,7 +101,7 @@ awk -F'\t' \
         date = $4; if (date == "") next
         dt = $4; tm = $5; sk = $6; size = $8 + 0; pr = ($2 != "Failed" && $2 != "Expired")
         if ($3  != "" && !((1 SUBSEP toupper($3))  in cfg)) add(1, $3)
-        if ($12 != "" && !subcfg($12))                      add(2, $12)
+        if ($12 != "" && $12 != "Unknown" && !subcfg($12))  add(2, $12)   # "Unknown" = no subscription (2026-09-29): the Unknown transfers report lists it
         if ($14 != "" && !((3 SUBSEP toupper($14)) in cfg)) add(3, $14)
         if ($15 != "" && $16 == "out" && !((4 SUBSEP toupper($15)) in cfg)) add(4, $15)
         if ($15 != "" && $16 == "in"  && !((5 SUBSEP toupper($15)) in cfg)) add(5, $15)

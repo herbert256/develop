@@ -608,7 +608,7 @@ trap 'exit 129' HUP
 #     reports, dashboards beside day, and the two heaviest publishes.
 #
 # 1. parse — flow-manager.sh (config caches), the two parse.sh, then
-#    session-sites.sh (learn the real subscription of UCx groups from the
+#    session-sites.sh (learn the real subscription of "Unknown" groups from the
 #    server log's route lines, by the shared session id; re-derives the
 #    transfer caches when it learned something), expire-files.sh (needs both
 #    parse caches: flips Waiting files whose staged copy the File Maintenance
@@ -803,7 +803,7 @@ bg2_step_start "parse: server mention caches"                               env 
 bg_step_start "server log: logon summary (per login + per address)"         bin/build/logon-summary.sh
 # the three server-log -> transfer joins, in this order: the session step
 # may re-derive _files.tsv (resetting col 22), so expire re-marks after it
-run_step "server log -> transfer: attribute UCx flows by session"         bin/session-sites.sh
+run_step "server log -> transfer: attribute Unknown flows by session"     bin/session-sites.sh
 run_step "server log -> transfer: mark expired staged files"              bin/expire-files.sh
 run_step "server log -> transfer: settle failed Files by ok bookend"      bin/bookend-ok.sh
 bg2_step_wait   # the mention caches: result.sh reads them
@@ -894,6 +894,7 @@ run_step "publish: analyses + coverage pages"                             bin/an
 run_step "report catch-up: drill-cell files"                           bin/build/drill-files.sh
 run_step "report catch-up: failed subscriptions"                          bin/transfer/reports/failed.sh
 run_step "report catch-up: failed files"                                  bin/transfer/reports/failed-files.sh   # 2026-09-14: the reasons the failed.sh catch-up just classified
+run_step "report catch-up: unknown transfers"                             bin/transfer/reports/unknown-transfers.sh   # 2026-09-29: the File-page links of the sets the failed.sh catch-up just rewrote
 run_step "report catch-up: error reasons"                                 bin/analyses/reports/failing-reasons.sh
 # The DETAIL-PAGES re-render runs in the BACKGROUND beside everything
 # below (2026-08): it touches only docs/details, which none of

@@ -110,6 +110,8 @@ render_file_pages() {
 #       _srvsubs.tsv and _subs-boxes.tsv; the six views render together (the
 #       other five read nothing that moved, so they come out the same)
 #   transfer/failed-files.html             failed-files.rpt
+#   transfer/unknown-transfers.html        unknown-transfers.rpt (its File-page
+#       links follow the errors/ + files/ sets; 2026-09-29)
 #   files/*.html                           the errors/ + files/ .rpt sets —
 #       cleared and rendered in full (render_file_pages): the ONLY render of
 #       docs/files/ in a build, the first run being the firstpass mode
@@ -120,7 +122,7 @@ render_file_pages() {
 # A NEW transfer-page reader of one of the files above joins this list.
 if [ "$TP_MODE" = catchup ]; then
     CUR_DATES=$TRANSFER_DATES
-    for name in subscription failed-files; do
+    for name in subscription failed-files unknown-transfers; do
         rpt="$DATA/transfer/reports/$name.rpt"
         [ -f "$rpt" ] || { echo "  (no data yet: $name)" >&2; continue; }
         pub_run render_report "transfer" "$name" "$rpt"
@@ -131,8 +133,8 @@ if [ "$TP_MODE" = catchup ]; then
     # docs/files/), each job with its own CUR_DATES copy — and
     # render_file_pages' first pub_wait reaps them with its own jobs
     render_file_pages
-    _tplap "catch-up: Subscriptions entity views + Failed files + files/ pages"
-    echo "Rendered the transfer catch-up (the Subscriptions entity views, Failed files, docs/files/)." >&2
+    _tplap "catch-up: Subscriptions entity views + Failed files + Unknown transfers + files/ pages"
+    echo "Rendered the transfer catch-up (the Subscriptions entity views, Failed files, Unknown transfers, docs/files/)." >&2
     exit 0
 fi
 

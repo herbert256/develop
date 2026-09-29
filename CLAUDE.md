@@ -755,12 +755,12 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
 2. **CoreId-group propagation** — blanks fill from the first row in the group that carries a
    value; the unpropagated stream stays as `_transfers0.tsv`, the input of the derive-only
    re-run (`AXWAY_DERIVE_ONLY=1`, session-sites.sh). **RE-KEYED LEGS go back first**
-   (2026-09-29, user report — a production partner's pickups on `UCx_<account>` while their Files
+   (2026-09-29, user report — a production partner's pickups on `UCx_<account>` — now `Unknown` — while their Files
    read Waiting): ST can lose a download's session cycleId mid-transfer (W `No session cycleId
    for file … SENT will not get reported!`) and end the SAME transfer twice — `error` under the
    File's CoreId (the one it STARTED under), `ok` under a FRESH one; the transfer log keeps one
    row per transfer id, the later end wins. Ok last → a lone siteless profile-UNKNOWN leg under
-   the fresh CoreId (→ `UCx_`); error last → the leg stays in its File as Failed (bookend-ok
+   the fresh CoreId (→ `Unknown`); error last → the leg stays in its File as Failed (bookend-ok
    settles it). `bin/session-sites.sh` learns `cache/_rekeys.tsv` (lone CoreId, transfer id,
    original CoreId) from the JSON bookends: lone legs only, the transfer id's bookends name
    EXACTLY two CoreIds, the start line is under the other one. The derive's `K` records move the
@@ -786,11 +786,14 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    delivered-file-plus-echo shape (Inbound + Outbound partner-protocol legs, no pesit vote —
    the movement conflict FLOWDIR abstains on): the Inbound leg outvotes the echo and the group
    takes the account's single configured movement-in subscription (39-0 validation; the
-   session-joined groups agree 7-for-7). When even that fails, the group keeps the SYNTHETIC
-   site **`UCx_<account>`** — counted like any logged-but-unconfigured subscription (result.sh
-   `discover_logged` appends it to the base cache) — First seen included since 2026-09-29 (its
-   exclusion left the Total / Seen cells one short of the Entities views they open); it surfaces
-   on not-in-flow-manager.
+   session-joined groups agree 7-for-7). When even that fails, the group keeps the site
+   **`Unknown`** (2026-09-29, user request: "drop support for UCx on the complete site, give
+   those the value Unknown for subscription, do not show Unknown rows in any subscription based
+   table, add a new report Unknown transfers in the Errors group" — the synthetic
+   `UCx_<account>` names before). `Unknown` is NO subscription: never in the base cache
+   (result.sh `discover_logged` skips it), no entity / detail page / slugmap entry / per-
+   subscription Files data, no First seen, not on not-in-flow-manager, no observed pairs (it
+   colours no account / login / host). See "The Unknown subscription" below.
 6. **NO-SUBSCRIPTION / HTTP / PROBE SKIP** — a CoreId with neither site nor ACCOUNT anywhere, or any
    http leg, is dropped from both caches; its raw CSV lines go to `_skipped.csv`. So is (2026-09-08,
    user request) the **EMPTY OUTBOUND SSH PROBE**: a CoreId whose ONE record is Outbound + ssh +
@@ -1118,7 +1121,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   legs) · **Files** (In · Out · Ok · Cured · Error · Error %; Cured = the transfer topview.rpt's
   Recovered group, Automatic + Manual, linking Recovered files for that day; Error links Failed
   files for that day; In/Out = the movement direction, `_files.tsv` col 17 — a File with none (an
-  unconfigured subscription, the synthetic `UCx_` ones) counts by its connection side, col 16, so
+  unconfigured subscription, or none — `Unknown`) counts by its connection side, col 16, so
   In + Out = Ok + Error (2026-09-28; entities.sh and month-stats.sh apply the same fallback)) ·
   **UC2 state** (Waiting · Expired) · **Duration** (p50 · p75 · p90 · p95 · p99 — p99 last since
   2026-09-13; banner, headers and Total carry `data-href="transfer/duration.html?axway_date=all"`,
@@ -1223,9 +1226,9 @@ group link to each other with the first selection buttons")** the top bar has ON
 analyses/ `index.html` start pages) and one line per GROUP, landing on the group's first member.
 The four dropdowns (Transfer reports · Server reports · Analyses · Goodies) are gone. The groups
 MIX areas by question: Overview (both Top views, Since yesterday, Triage, Subscriptions in boxes)
-· Entities · Failures (+ the server log errors: Errors, Per flow, IO errors, Routing errors,
-Trouble after success — the separate "Server log errors" group was folded in 2026-09-29, user
-request) · Use cases & delivery · Activity & volume · Performance
+· Entities · Errors (Failures until 2026-09-29; + the server log errors: Errors, Per flow, IO
+errors, Routing errors — the separate "Server log errors" group was folded in 2026-09-29, user
+request; + Unknown transfers) · Use cases & delivery · Activity & volume · Performance
 · Flow patterns · Protocols & security (incl. the server SSH security) · Logons & connections ·
 Partners · Configuration · Coverage · Cleanup — every published report is in exactly one (the
 former boxes-only reports included).
@@ -1435,8 +1438,8 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   line newer than the cut. Triage "Since / Days in state", Since yesterday's new red flips,
   Failed Subscriptions' server rows (Last green day, Days red), the UC per-hour walkers and the
   dashboard flip slot date by it. `_ringattr.tsv` carries every attributed stamp for it.
-- **The rollup (result.sh) uses OBSERVED pairs for UNCONFIGURED subscriptions** (UCx_ and other
-  discovered names): account → subscription, login → subscription, the hosts of their outbound
+- **The rollup (result.sh) uses OBSERVED pairs for UNCONFIGURED subscriptions** (the
+  discovered names; never `Unknown`, the no-subscription value): account → subscription, login → subscription, the hosts of their outbound
   Files (`_hostlegs.tsv` has 5 columns); configured pairs keep the xref rule. `orphan_red` host
   recovery reads the leg hosts and the File END. Every "newest OK File after the error" test
   compares the File END (`_files.tsv` col 24) — result.sh is the master rule.
@@ -1494,6 +1497,41 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   renders (detail / drill pages — no noprose) or is read (the finder's first INTRO, home.sh's
   showseen INTRO); a report page's explanation belongs on its help page.
 - The File page's raw log lines stay unwrapped on purpose (one logged line = one rendered line).
+
+## Rules from the 2026-09-29 Errors / Unknown change (user request)
+
+- **The Errors group** (Failures until 2026-09-29, "Rename Failures to Errors"): NOT on the
+  Reports pulldown — its own top-bar link (`ERRORS_HREF`, the group's first page, Failed
+  Subscriptions; `errors` in topbar-data.js). The top bar's Entities · Errors · Files are ONE
+  cluster (`span.entgroup`, the entity-search icon after them) in render_topbar AND report.js
+  buildTopbar.
+- **Sub-rows** (`_report_subrows`, publish_lib.sh): members of a group that collapse into ONE
+  entry of the group's first row (its label, landing on the first of them) and get a SECOND row
+  of their own on their pages — "Server log" = server errors / failure-flows / io-errors /
+  routing-errors ("move the 4 server logs to … a second selection, have Server log as first
+  selection"). apply_report_groups emits both rows on one queue line.
+- **went-kaput.html is gone** ("Remove server/went-kaput.html"): went-kaput is a PAGELESS report
+  (`PAGELESS_REPORTS`, not in `server_order`, no help page) — its .rpt and evidence sidecar stay
+  (red flip, detail banner, failed.sh, the Trouble after success box, the day pages). The box's
+  flags open the subscription's detail page; the day pages' Trouble after success line opens
+  `analyses/subscriptions-in-boxes.html?axway_pf=3` (report.js setupStatFilter: `axway_pf=N`
+  opens box N).
+- **transfer/expired.html**: the last two tables (sweep nights, staging weekday) side by side.
+- **The Unknown subscription**: `_files.tsv` col 12 / `_transfers.tsv` col 6 = `Unknown` for a
+  File no attribution pass could place (parse.sh; session-sites.sh rescans those sessions).
+  EVERY subscription-keyed table skips it (an explicit `== "Unknown"` test in the writer:
+  subscription / entities / month-stats / cross-reference / details (+ details_lib stream) /
+  failed / episodes / punctuality / expected-arrival / only-red / from-green-to-red / recovered
+  / retry / route-throughput / security-params / same-protocol / size-dist / size-profile /
+  trend / went-quiet / duration-trend / waiting / expired / file-in-file-out / entity-search /
+  not-in-flow-manager / data-diff / triage / blast-radius / the boxes / the day and overview
+  Top-5s); FILES tables (failed-files, File pages, incoming-connections, all-files, …) keep it as
+  the Subscription value, unlinked. **A new subscription-keyed writer must skip it too** —
+  verify.sh fails on any `ROW⇥Unknown⇥` outside the Files tables. `Unknown transfers`
+  (transfer/unknown-transfers.sh, Errors group; serial tail + build catch-up + transfer publish
+  catchup, for its File-page links) lists every such File + a per-account table; verify checks
+  its row count against `_files.tsv`. Unknown Files cannot read Processed (no movement), so they
+  are Error or Waiting / Expired.
 
 ## Conventions / gotchas
 

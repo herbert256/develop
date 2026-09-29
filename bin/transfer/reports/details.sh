@@ -910,7 +910,7 @@ OKTF="$_pdir/lastok"
 if [ -s "$FILES" ]; then
     awk -F'\t' '
         function esc9(s) { gsub(/[\t\r\n]/, " ", s); return s }
-        $12 == "" || $2 != "Processed" { next }
+        $12 == "" || $12 == "Unknown" || $2 != "Processed" { next }
         {   # the newest Processed File by its END (col 24, 2026-09-12 user
             # rule — a File that finished OK last IS the last OK transfer,
             # whenever it started); the start when the parse wrote no end.

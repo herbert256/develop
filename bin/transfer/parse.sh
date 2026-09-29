@@ -37,8 +37,8 @@
 #                     A group no pass could attribute — not even the SESSION
 #                     JOIN (the server log naming the flow of the connection,
 #                     joined on col 24; bin/session-sites.sh) — keeps the
-#                     SYNTHETIC name "UCx_<account>" (see the FAKE SUBSCRIPTION
-#                     step) — the UC shape with an unknowable UC number.
+#                     name "Unknown" (see the UNKNOWN SUBSCRIPTION step —
+#                     "UCx_<account>" until 2026-09-29): no subscription at all.
 #                     When the rule blanked it on EVERY row of a CoreId group,
 #                     recovered from the config via the profile (see CONFIG FALLBACK)
 #   7 action_by       Action By (field 9)
@@ -320,8 +320,8 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         n = split_csv_fast($0)
         # a line with NO CoreId is no transfer record — a broken or partial
         # CSV line (an embedded newline, a truncated tail): dropped and counted
-        # (2026-09-28 fix: it stayed a leg with garbage values and a fake UCx_
-        # site, while the File collapse dropped it — legs and Files disagreed)
+        # (2026-09-28 fix: it stayed a leg with garbage values and a fake
+        # no-subscription site, while the File collapse dropped it — legs and Files disagreed)
         if (field[34] == "" || field[34] ~ /^[ \t]*$/) { nocid++; next }
         # the CoreId NAMES FILES (files/<CoreId>.html, the per-File .rpt
         # descriptors): anything but [A-Za-z0-9._-] after an alphanumeric
@@ -794,7 +794,7 @@ smap="$tmp.submap"
     # RE-KEY sources (K records, 2026-09-29, user report): a pickup leg the
     # platform re-keyed — it lost the session cycleId mid-download and logged
     # the transfer under a FRESH CoreId, so the leg sits alone, siteless, on
-    # UCx_<account> while its File reads Waiting — moves back into the CoreId
+    # "Unknown" while its File reads Waiting — moves back into the CoreId
     # the transfer started under. bin/session-sites.sh learns the map from the
     # JSON bookends (same transferId under both CoreIds; see its header).
     #   K D <lone CoreId> <transfer id>   drop that row where it was logged
@@ -998,18 +998,19 @@ grp_par "$PARSED0" "$tmp.prop" "$_pj" awk -F'\t' -v OFS='\t' '
             kk = toupper(ga) SUBSEP "in"
             if ((kk in fdn) && fdn[kk] == 1) { gs = fdsub[kk]; xgain["inleg"]++ }
         }
-        # FAKE SUBSCRIPTION (2026-08): a group with an account but no
-        # subscription ANY pass could find keeps its rows under the synthetic
-        # name "UCx_<account>" instead of being dropped by the no-subscription
-        # skip — the transfers are real and must count. "UCx" = the UC naming
-        # shape with an unknowable UC number (the digit-anchored /^UC[0-9]+/
-        # extractors all miss it, so it classifies to no use case). The name is
-        # never configured; downstream it behaves like any logged-but-unconfigured
-        # subscription (result.sh discover_logged appends it to the base
-        # cache, so the Entities/home figures stay consistent) — First seen
-        # counts it too since 2026-09-29. It surfaces on not-in-flow-manager
-        # and in the per-subscription breakdowns.
-        if (gs == "" && ga != "") { gs = "UCx_" ga; xgain["fake"]++ }
+        # UNKNOWN SUBSCRIPTION (2026-08 as the synthetic "UCx_<account>";
+        # 2026-09-29, user request: "drop support for UCx on the complete
+        # site, give those the value Unknown for subscription"): a group with
+        # an account but no subscription ANY pass could find keeps its rows
+        # under the ONE name "Unknown" instead of being dropped by the
+        # no-subscription skip — the transfers are real and count in every
+        # non-subscription figure. "Unknown" is NO subscription: result.sh
+        # discover_logged keeps it out of the base cache (no entity, no
+        # detail page, no First seen, not on not-in-flow-manager), every
+        # subscription-keyed table leaves it out, the Files tables show it as
+        # the Subscription value, and the "Unknown transfers" report (Errors
+        # group) lists them. It classifies to no use case (no /^UC[0-9]/).
+        if (gs == "" && ga != "") { gs = "Unknown"; xgain["fake"]++ }
         for (i = 1; i <= nb; i++) {
             $0 = buf[i]
             if ($4  == "") $4  = ga
@@ -1283,8 +1284,8 @@ TIE-BREAK resolves the delivered-file-plus-echo shape (Inbound ssh + Outbound
 ssh, a purely partner-protocol movement conflict): the Inbound leg outvotes
 the echo and the group takes the account's single configured movement-in
 subscription; when even that fails, the group keeps
-the SYNTHETIC site "UCx_<account>" — counted like any logged-but-unconfigured
-subscription (First seen included, since 2026-09-29).
+the site "Unknown" ("UCx_<account>" until 2026-09-29) — no subscription:
+kept out of every subscription-keyed table, listed by Unknown transfers.
 
 RE-KEYED LEGS (2026-09-29): SecureTransport can lose a download's session
 cycleId mid-transfer ("No session cycleId for file ... SENT will not get
@@ -1319,8 +1320,9 @@ col  name           description
                     configured subscription name (kept whatever its shape) — anything
                     else (P14303_CFT01, none, "Clone - ..." artifacts) is blanked; kept
                     only up to _SCP_ / _SSCP_ / _CCP_ (clean name, truncated tail dropped).
-                    "UCx_<account>" = the synthetic no-subscription name (see
-                    above; only after even the SESSION JOIN found nothing)
+                    "Unknown" = the no-subscription name (see above; only after
+                    even the SESSION JOIN found nothing; "UCx_<account>" until
+                    2026-09-29)
   7  action_by      Action By
   8  file           Local Filename — the real file basename, populated on every row
                     (field 10 "File" holds the account name on outbound rows)

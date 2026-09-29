@@ -287,17 +287,18 @@ fi
 # the RE-KEYED COLLECT (2026-09-29, user report): on the one-account,
 # many-UC2 STMT_EXPORT_GLOBEX_nn flows some pickups lose their session
 # cycleId and the transfer log books them under a FRESH CoreId (a lone
-# siteless leg that read UCx_STMT-EXPORT-GLOBEX). bin/session-sites.sh
-# learns _rekeys.tsv from the shared transferId of the JSON bookends and the
-# derive moves each leg back: no UCx leg on the account, no mapped lone
+# siteless leg that read subscription Unknown — UCx_STMT-EXPORT-GLOBEX until
+# 2026-09-29). bin/session-sites.sh learns _rekeys.tsv from the shared
+# transferId of the JSON bookends and the derive moves each leg back: no
+# Unknown leg on the account, no mapped lone
 # CoreId left, every mapped transfer id inside its original CoreId, and
 # none of those Files Failed
 if [ "$(exp rekey)" -gt 0 ]; then
     RK="data/transfer/cache/_rekeys.tsv"
     nrk=$(rows "$RK")
     check $([ "${nrk:-0}" -gt 0 ] && echo 0 || echo 1) "_rekeys.tsv is empty (no re-keyed pickup learned)"
-    n=$(awk -F'\t' '$6 == "UCx_STMT-EXPORT-GLOBEX" { n++ } END { print n+0 }' "$T")
-    check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n UCx_STMT-EXPORT-GLOBEX leg(s) left (re-keyed pickups not moved back)"
+    n=$(awk -F'\t' '$6 == "Unknown" && $4 == "STMT-EXPORT-GLOBEX" { n++ } END { print n+0 }' "$T")
+    check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n Unknown-subscription STMT-EXPORT-GLOBEX leg(s) left (re-keyed pickups not moved back)"
     r=$(awk -F'\t' 'NR == FNR { b[$1] = 1; mv[$3 SUBSEP $2] = 1; next } ($1 in b) { lone++ } (($1 SUBSEP $23) in mv) { hit++ } END { print lone+0, hit+0 }' "$RK" "$T")
     read -r rlone rhit <<< "$r"
     check $([ "$rlone" -eq 0 ] && echo 0 || echo 1) "$rlone re-keyed lone CoreId row(s) still in _transfers.tsv"
@@ -386,15 +387,31 @@ n=$(rpt_rows "data/transfer/reports/missing-cronjobs.rpt"); en=$(exp nocron)
 [ "$en" -gt 0 ] && check $([ "$n" -ge "$en" ] && echo 0 || echo 1) "missing-cronjobs rows $n < planted $en"
 
 # AV verdicts beyond Allowed/Not performed (the estate plants Blocked+Error),
-# the session join, the skip list, the UCx_ synthetic sites, resubmissions
+# the session join, the skip list, the Unknown subscription, resubmissions
 n=$(awk -F'\t' '$17 == "Blocked" || $17 == "Error" { n++ } END { print n + 0 }' "$T")
 check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no Blocked/Error AV rows"
 n=$(rows "data/transfer/cache/_sessionsites.tsv")
 check $([ "$n" -gt 0 ] && echo 0 || echo 1) "_sessionsites.tsv empty (session join unexercised)"
 n=$(rows "data/transfer/_skipped.tsv")
 check $([ "$n" -gt 0 ] && echo 0 || echo 1) "skip list caught 0 transfer rows"
+n=$(awk -F'\t' '$6 == "Unknown" { n++ } END { print n + 0 }' "$T")
+check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no Unknown-subscription legs"
+# UCx is GONE (2026-09-29, user request: "drop support for UCx on the
+# complete site, give those the value Unknown for subscription, do not show
+# Unknown rows in any subscription based table, add Unknown transfers"):
+# no UCx_ name anywhere; Unknown is no entity (base, detail page, per-
+# subscription Files data) and no row of a subscription table; the Unknown
+# transfers page lists exactly the Unknown Files
 n=$(awk -F'\t' '$6 ~ /^UCx_/ { n++ } END { print n + 0 }' "$T")
-check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no UCx_ synthetic-site legs"
+check $([ "$n" -eq 0 ] && echo 0 || echo 1) "$n UCx_ synthetic-site leg(s) — UCx went 2026-09-29"
+check $(grep -q $'^Unknown\t' data/flow-manager/base/_subscriptions.tsv 2>/dev/null && echo 1 || echo 0) "base/_subscriptions.tsv lists Unknown (the no-subscription value)"
+check $([ -f docs/details/subscriptions/unknown.html ] || [ -f docs/search/all/s/unknown.js ] && echo 1 || echo 0) "Unknown has a subscription detail page or per-subscription Files data"
+n=$(grep -rlE $'^ROW\t(@\\{[^}]*\\})?Unknown\t' data/transfer/reports data/analyses/reports data/dashboards/reports 2>/dev/null | grep -v '/errors/\|/files/\|failed-files.rpt\|unknown-transfers.rpt' | wc -l | tr -d ' ')
+check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "$n subscription table(s) still carry an Unknown row"
+nu=$(awk -F'\t' '$12 == "Unknown" && $4 != "" { n++ } END { print n + 0 }' "$F")
+nr=$(awk -F'\t' '$1 == "TABLE" { t++ } $1 == "ROW" && t == 1 && $2 !~ /^@\{colspan/ { n++ } END { print n + 0 }' data/transfer/reports/unknown-transfers.rpt 2>/dev/null)
+check $([ "${nu:-0}" -gt 0 ] && [ "$nu" = "$nr" ] && echo 0 || echo 1) "Unknown transfers lists ${nr:-0} File(s), _files.tsv holds ${nu:-0} Unknown File(s)"
+check $([ -f docs/transfer/unknown-transfers.html ] && grep -q '<a class="tab" href="../transfer/unknown-transfers.html">Unknown transfers</a>' docs/analyses/failed.html 2>/dev/null && echo 0 || echo 1) "Unknown transfers is missing or not in the Errors group row"
 n=$(awk -F'\t' '$22 == "true" { n++ } END { print n + 0 }' "$T")
 check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no resubmitted legs"
 
@@ -607,8 +624,13 @@ n=$(grep -c '<tr data-res="orange"' docs/transfer/duration-longest.html 2>/dev/n
 check $(grep -q 'data-restint' docs/transfer/duration-longest.html 2>/dev/null && grep -q '<tr data-res="green"' docs/transfer/duration-longest.html && echo 0 || echo 1) "transfer/duration-longest.html rows do not carry the File colour (${n:-0} orange)"
 # the top bar's Files link opens the ALL FILES search (2026-09-28, user
 # request; the Latest files search until then) — checked on the BAKED bar
-# (help pages); report.js buildTopbar draws the same link
-check $(grep -q '<a class="dashlink" href="../search/all-files.html">Files</a>' docs/help/index.html 2>/dev/null && echo 0 || echo 1) "the baked top bar's Files link does not open ../search/all-files.html"
+# (help pages); report.js buildTopbar draws the same link. Since 2026-09-29
+# it sits in ONE cluster with Entities and Errors (Errors = the Errors
+# group's first page, Failed Subscriptions), the search icon after them.
+check $(grep -q '<span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html"' docs/help/index.html 2>/dev/null && echo 0 || echo 1) "the baked top bar lacks the Entities / Errors / Files cluster (Errors -> ../analyses/failed.html, Files -> ../search/all-files.html)"
+# Errors is a top-bar link, not a Reports pulldown line
+check $(grep -oE 'reports:"([^"\\]|\\.)*"' docs/assets/topbar-data.js 2>/dev/null | grep -q 'analyses/failed.html' && echo 1 || echo 0) "the Reports pulldown still lists the Errors group"
+check $(grep -q 'errors:"analyses/failed.html"' docs/assets/topbar-data.js 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks errors:\"analyses/failed.html\" (the runtime bar's Errors link)"
 # the Implementation 1 | 2 tab row went with the File search pages
 # (2026-09-29): the all-files page is the only implementation left
 check $(grep -q 'Implementation 1, period' docs/search/all-files.html 2>/dev/null && echo 1 || echo 0) "search/all-files.html still carries the Implementation tab row"
@@ -883,7 +905,7 @@ c=$(awk -F'\t' '$1 == "UC1_IT_LEADS_STARK" { print $3; exit }' data/flow-manager
 check $([ "$c" = green ] && echo 0 || echo 1) "UC1_IT_LEADS_STARK is '${c:-absent}', expected green — the shared host's authentication failure belongs to the UC3 poll flow"
 
 # the NON-UC-NAMED hybrid flows must come out attributed to their real site
-# (the reverse profile fallback) — never UCx_ — and every planted one is a
+# (the reverse profile fallback) — never Unknown — and every planted one is a
 # configured subscription of the base roster
 n=$(awk -F'\t' '$12 ~ /^(STMT_EXPORT|INV_PAYMENTS|REC_FEEDS|GL_POSTINGS|CRM_SYNC|HR_ROSTER)/ { n++ } END { print n + 0 }' "$F")
 check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no files attributed to the non-UC hybrid flows"
@@ -991,8 +1013,9 @@ check $(grep -q 'reports:"' "$t" 2>/dev/null && ! grep -qE '(transfer|server|ana
 n=$(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -o '<a ' | wc -l | tr -d ' ')
 # (2026-09-29, user request: Server log errors folded into Failures — 13
 # groups — and Entities left off the menu, the top bar's own Entities link
-# opens it)
-check $([ "${n:-0}" = 13 ] && echo 0 || echo 1) "the Reports menu has ${n:-0} line(s), expected 13 (Start page + 12 groups; Entities not listed)"
+# opens it; Failures renamed Errors the same day and taken off the menu too,
+# a top-bar link of its own)
+check $([ "${n:-0}" = 12 ] && echo 0 || echo 1) "the Reports menu has ${n:-0} line(s), expected 12 (Start page + 11 groups; Entities and Errors not listed)"
 check $(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -q 'transfer/entities/' && echo 1 || echo 0) "the Reports menu still lists the Entities group"
 check $(grep -q '>Server log errors<' docs/reports/index.html 2>/dev/null && echo 1 || echo 0) "reports/index.html still has a Server log errors group (folded into Failures)"
 check $([ -f docs/reports/index.html ] && [ ! -f docs/transfer/index.html ] && [ ! -f docs/server/index.html ] && [ ! -f docs/analyses/index.html ] && echo 0 || echo 1) "docs/reports/index.html missing, or a retired area start page (transfer / server / analyses index.html) still published"
@@ -1000,7 +1023,7 @@ check $([ -f docs/reports/index.html ] && [ ! -f docs/transfer/index.html ] && [
 # views, and every group member page carries exactly one group tag
 check $(grep -q '<a class="tab" href="../server/topview.html">Server top view</a>' docs/transfer/topview.html 2>/dev/null && grep -q '<a class="tab" href="../transfer/topview.html">Transfer top view</a>' docs/server/topview.html 2>/dev/null && echo 0 || echo 1) "the Overview first row does not join transfer/topview.html and server/topview.html"
 check $(grep -q '<a class="tab" href="../server/ssh-security.html">SSH security</a>' docs/transfer/av-scan-*.html 2>/dev/null; r1=$?; grep -q 'href="../transfer/protocol-' docs/server/ssh-security*.html 2>/dev/null; r2=$?; [ "$r1" = 0 ] && [ "$r2" = 0 ] && echo 0 || echo 1) "the Protocols & security first row does not join the transfer protocol pages and server SSH security"
-bad=0; for f in docs/transfer/duration.html docs/transfer/duration-all.html docs/transfer/duration-longest.html docs/analyses/failed.html docs/analyses/failed-sub-all.html docs/analyses/xref/cross-account-subscriptions.html docs/transfer/entities/subscription-all.html docs/transfer/waiting.html docs/server/went-kaput.html; do
+bad=0; for f in docs/transfer/duration.html docs/transfer/duration-all.html docs/transfer/duration-longest.html docs/analyses/failed.html docs/analyses/failed-sub-all.html docs/analyses/xref/cross-account-subscriptions.html docs/transfer/entities/subscription-all.html docs/transfer/waiting.html; do
     [ "$(grep -o 'class="grouptag"' "$f" 2>/dev/null | wc -l | tr -d ' ')" = 1 ] || { bad=$((bad + 1)); echo "  no single group tag: $f" >&2; }
 done
 check $([ "$bad" = 0 ] && echo 0 || echo 1) "$bad report page(s) without exactly one group tag"
@@ -1187,10 +1210,19 @@ fi
 n=$(grep -rl 'FE-MONITOR' docs --include='*.html' 2>/dev/null | wc -l | tr -d ' ')
 m=$(grep -rl '>FE000000<' docs --include='*.html' 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-0}" -gt 0 ] && [ "${m:-1}" = 0 ] && echo 0 || echo 1) "display rename FE000000 -> FE-MONITOR: ${n:-0} page(s) show the new name, ${m:-?} still show the old one"
-# the Failures group carries the former Server log errors members (positive)
-for p in server/errors-log-reasons server/failure-flows server/io-errors server/routing-errors server/went-kaput; do
-    check $(grep -q 'grouptag">&larr; Failures' "docs/$p.html" 2>/dev/null && echo 0 || echo 1) "docs/$p.html lacks the Failures group tag"
+# the Errors group (Failures until 2026-09-29) carries the former Server log
+# errors members, collapsed into ONE "Server log" entry of the first row with
+# a SECOND row of the four (2026-09-29, user request) — positive
+for p in server/errors-log-reasons server/failure-flows server/io-errors server/routing-errors; do
+    check $(grep -q 'grouptag">&larr; Errors' "docs/$p.html" 2>/dev/null && echo 0 || echo 1) "docs/$p.html lacks the Errors group tag"
+    check $(grep -q '<span class="tab active">Server log</span>' "docs/$p.html" 2>/dev/null && echo 0 || echo 1) "docs/$p.html: the first row lacks the active Server log entry"
+    check $(grep -c '<a class="tab" href="[^"]*">\(Errors\|Per flow\|IO errors\|Routing errors\)</a>' "docs/$p.html" 2>/dev/null | awk '{ exit !($1 >= 1) }' && echo 0 || echo 1) "docs/$p.html lacks the Server log second row"
 done
+check $(grep -q '<a class="tab" href="../server/errors-log-reasons.html">Server log</a>' docs/analyses/failed.html 2>/dev/null && grep -q '>Per flow</a>' docs/analyses/failed.html && echo 1 || echo 0) "analyses/failed.html: the Server log entry is missing or the four server members are still in the first row"
+# went-kaput.html is gone (2026-09-29, user request); its .rpt stays (the
+# evidence sidecar, the Trouble after success box, the day pages)
+check $([ -f docs/server/went-kaput.html ] && echo 1 || echo 0) "docs/server/went-kaput.html still exists"
+check $(grep -rlq 'went-kaput.html' docs --include='*.html' --include='*.js' 2>/dev/null && echo 1 || echo 0) "a page still links went-kaput.html"
 # the home per-day table keeps its Total row (10 days and more)
 check $(grep -q '<tr class="total"><td>Total</td>' docs/index.html 2>/dev/null && echo 0 || echo 1) "the home per-day table lost its Total row"
 

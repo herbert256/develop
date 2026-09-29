@@ -61,7 +61,7 @@ agg=$(awk -F'\t' -v minhalf="$MIN_HALF" -v slowr="$SLOW_R" -v fastr="$FAST_R" '
         dy = e - int((153*m + 2) / 5) + 1; mo = m + 3 - 12*int(m/10); yr = 100*b + d - 4800 + int(m/10)
         return sprintf("%04d-%02d-%02d", yr, mo, dy) }
     $2 != "Processed" { next }
-    $12 == "" || $7 == "" || $9 + 0 <= 0 { next }
+    $12 == "" || $12 == "Unknown" || $7 == "" || $9 + 0 <= 0 { next }   # "Unknown" = no subscription (2026-09-29)
     {
         s = $12; j = $7 + 0
         nv[s]++; VJ[s SUBSEP nv[s]] = j; VD[s SUBSEP nv[s]] = $9 + 0; VS[s SUBSEP nv[s]] = $8 + 0

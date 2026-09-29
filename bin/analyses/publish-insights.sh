@@ -424,7 +424,7 @@ _subs_box_rows() {
         # or was deleted before any pickup (6).
         if [ -f "$FILESC" ]; then
             awk -F'\t' "$ENDK_AWK"'
-                $12 == "" { next }
+                $12 == "" || $12 == "Unknown" { next }   # "Unknown" = no subscription (2026-09-29): in no box
                 {
                     if (!(($12) in ls)) orda[++na] = $12
                     if ($6 >= ls[$12]) { ls[$12] = $6; lout[$12] = $2 }
@@ -443,7 +443,7 @@ _subs_box_rows() {
         # holding the subscription name (no-remote-dir leads with its Last date)
         for spec in \
             "2:$TRPT/from-green-to-red.rpt:failed.html:From green to red:2" \
-            "3:$SRPT/went-kaput.rpt:../server/went-kaput.html:Trouble after success:2" \
+            "3:$SRPT/went-kaput.rpt:-:Trouble after success:2" \
             "4:$TRPT/only-red.rpt:failed.html:Only red:2" \
             "7:$SRPT/no-remote-dir.rpt:uc-status-uc3.html:No Dir:3" \
             "8:$SRPT/no-remote-files.rpt:uc-status-uc3.html:No Files:3" \
@@ -885,7 +885,7 @@ write_subscriptions_in_boxes_page() {
         printf '<p class="range pfdesc pfshow" data-pf=""><a href="../transfer/entities/subscription-all.html?axway_search="><strong>Total subscriptions</strong></a> &mdash; every subscription configured in FlowManager, whatever its state. Not a selection but the whole estate: each one is in at least one of the boxes above. The other boxes narrow this list; this box brings it all back. The same estate with each subscription&rsquo;s traffic figures is the <a href="../transfer/entities/subscription-all.html?axway_search=">Subscriptions / All</a> entity view.</p>\n'
         printf '<p class="range pfdesc" data-pf="1"><a href="../transfer/pirates-details.html?axway_search="><strong>One-legged</strong></a> &mdash; a logical transfer that logged only ONE leg. A complete transfer is store-and-forward: an Inbound leg (partner &rarr; ST) and an Outbound leg (ST &rarr; partner). A single-leg CoreId is one-sided &mdash; the counterpart leg never happened &mdash; so the file never made the full crossing. Flagged here only while it is <strong>unresolved</strong>: an OK File delivered after the last one-legged transfer clears it, though <a href="../transfer/pirates-details.html?axway_search=">One-Legged Transfers</a> still lists the full history.</p>\n'
         printf '<p class="range pfdesc" data-pf="2"><a href="failed.html?axway_search="><strong>From green to red</strong></a> &mdash; the REGRESSION list: the subscription is red right now (its latest File Failed or Expired) but an earlier day ended on an OK File. It <em>used to work</em> and broke since; <a href="failed.html?axway_search=">Failed Subscriptions</a> names the day it flipped (Last green day), which is where to start looking for what changed.</p>\n'
-        printf '<p class="range pfdesc" data-pf="3"><a href="../server/went-kaput.html?axway_search="><strong>Trouble after success</strong></a> &mdash; the SERVER-log signal: the subscription&rsquo;s last transfer was OK, but it (or a connected login, account or remote host) logged an <strong>Error</strong> <em>after</em> that transfer, and the flow is <strong>still green</strong>. Warnings do not count. A fresh problem on a flow whose transfer history still looks healthy &mdash; the earliest warning you get, before a file fails. Where the same evidence has already reddened a flow it is no longer a warning but a failure, and the box for it is one of the red ones. <a href="../server/went-kaput.html?axway_search=">Trouble after Success</a> has the full list.</p>\n'
+        printf '<p class="range pfdesc" data-pf="3"><strong>Trouble after success</strong> &mdash; the SERVER-log signal: the subscription&rsquo;s last transfer was OK, but it (or a connected login, account or remote host) logged an <strong>Error</strong> <em>after</em> that transfer, and the flow is <strong>still green</strong>. Warnings do not count. A fresh problem on a flow whose transfer history still looks healthy &mdash; the earliest warning you get, before a file fails. Where the same evidence has already reddened a flow it is no longer a warning but a failure, and the box for it is one of the red ones. Each flag opens the subscription&rsquo;s page, whose banner names the error.</p>\n'
         printf '<p class="range pfdesc" data-pf="4"><a href="failed.html?axway_search="><strong>Only red</strong></a> &mdash; the NEVER-WORKED list: not one OK delivery in the whole window, every File Failed or Expired. This is not a regression (those carry a Last green day on <a href="failed.html?axway_search=">Failed Subscriptions</a>) &mdash; nothing here ever worked, which points at the configuration or the partner side never having been finished, rather than at something that broke. <a href="failed.html?axway_search=">Failed Subscriptions</a> lists them with Last green day <em>never</em>.</p>\n'
         printf '<p class="range pfdesc" data-pf="5"><a href="../transfer/waiting.html?axway_search="><strong>Waiting</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> File is still STAGED for pickup: it arrived and sits in the folder, but the partner has not dialled in to collect it (UC2). Not an error &mdash; briefly waiting is the normal state of a pickup flow &mdash; but a newest file that has been waiting for days means the partner stopped collecting, and the retention sweep will delete it. <a href="../transfer/waiting.html?axway_search=">Waiting Files</a> has the full list.</p>\n'
         printf '<p class="range pfdesc" data-pf="6"><a href="../transfer/expired.html?axway_search="><strong>Expired</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> staged File was DELETED by the nightly File Maintenance retention sweep (~11 days) before any pickup. It was never delivered and can no longer be collected &mdash; a silent failure: nothing errored, the file just aged out. Expired counts as an Error site-wide; <a href="../transfer/expired.html?axway_search=">the Expired report</a> has the retention timing and the per-account pickup behavior.</p>\n'
@@ -943,7 +943,10 @@ write_subscriptions_in_boxes_page() {
                     # an href already carrying a query is used as-is (the two
                     # login-error boxes: the Logons rows are logins/hosts, so a
                     # subscription-name search would match nothing)
-                    if (index(href, "?") == 0) href = href "?axway_search=" urlq(nm)
+                    # an EMPTY href = a plain flag (troubles of a subscription
+                    # with no detail page: its report page went 2026-09-29)
+                    if (href == "") return "<td class=\"ctr\"><span class=\"pfx" (cls ? " " cls : "") "\" title=\"" ttl "\">" lbl "</span></td>"
+                    if (index(href, "?") == 0 && index(href, "/details/") == 0) href = href "?axway_search=" urlq(nm)   # a detail page needs no search
                     return "<td class=\"ctr\"><a class=\"pfx" (cls ? " " cls : "") "\" href=\"" href "\" title=\"" ttl "\">" lbl "</a></td>"
                 }
                 BEGIN {
@@ -973,7 +976,7 @@ write_subscriptions_in_boxes_page() {
                         flag($17, "../transfer/entities/subscription-seen.html", $2, "Seen in the transfer log \342\200\224 at least one File", "seen", "pfneu"), \
                         flag($13, "../transfer/entities/subscription-not-seen.html", $2, "Configured, never seen in the transfer log", "not seen"), \
                         flag($18, "../transfer/entities/subscription-error.html", $2, "The subscription is red \342\200\224 its newest File Failed, or server-log errors after its last transfer", "error"), \
-                        flag($5, "../server/went-kaput.html", $2, "On Trouble after Success", "troubles"), \
+                        flag($5, (u in SL) ? "../details/subscriptions/" SL[u] ".html" : "", $2, "Trouble after success \342\200\224 an Error was logged after the last OK transfer; the subscription page banner names it", "troubles"), \
                         flag($7, "../transfer/waiting.html", $2, "Newest File is Waiting", "waiting"), \
                         flag($10, "uc-status-uc3.html", $2, "On No remote files", "no Files"), \
                         flag($11, "polling.html", $2, "Cron-triggered, but no cron expression configured", "no cron"), \

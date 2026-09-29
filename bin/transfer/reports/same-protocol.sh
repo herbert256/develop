@@ -79,6 +79,7 @@ LC_ALL=C awk -F'\t' -v UCDF="$UCDF" -v SUBRES="$SUBRES" -v LEGS="$PARSED" -v FIL
         # Expired keep their names (the states the outcome policy counts as OK / Error)
         oc = ($2 == "Failed") ? "@{class=failed}Error" : ($2 == "Expired") ? "@{class=failed}Expired" : ($2 == "Processed" ? "@{class=processed}OK" : $2)
         printf "%s\tROW\t%s\t%s %s\t%s\t%s\t%s\t%d\t%s\t@{class=mono}%s\t%s%s\n", $6, s, $4, $5, IP[c], IT[c], OT[c], NL[c], oc, c, $11, ftint > FILEROWS
+        if (s == "Unknown") next   # no subscription (2026-09-29): a Files row, no Per subscription row
         k = s SUBSEP IP[c]
         FN[k]++; if (bad) FE[k]++; else FO[k]++
         if (!(k in FF) || $4 < FF[k]) FF[k] = $4

@@ -58,7 +58,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         addtop("Z" SUBSEP i SUBSEP (pf ? "F" : "P"), $6, $4 " " $5, $1)
         # empty-but-OK deliveries per subscription — an empty "successful"
         # export is often a real business fault upstream
-        if (!pf && size + 0 == 0 && $12 != "") {
+        if (!pf && size + 0 == 0 && $12 != "" && $12 != "Unknown") {   # "Unknown" = no subscription (2026-09-29)
             es[$12]++; etot++
             if (d != "") { edd[$12 SUBSEP d]++
                 if (!(($12 SUBSEP d) in eds)) { eds[$12 SUBSEP d] = 1; edl[$12] = edl[$12] (edl[$12] ? "," : "") d }

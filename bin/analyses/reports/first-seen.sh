@@ -115,12 +115,10 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
     }
     FILENAME ~ /base\/_logicals\.tsv$/      { conf("logicals",      $1, $2, $3); next }
     FILENAME ~ /base\/_partners\.tsv$/      { conf("partners",      $1, $2, $3); next }
-    # "UCx_<account>" = the parse-time SYNTHETIC subscription for transfers no
-    # attribution pass could place (bin/transfer/parse.sh). It reaches the base
-    # cache like every logged-but-unconfigured name (result.sh discover_logged)
-    # and is COUNTED here like one (2026-09-29: it was excluded, so the Total /
-    # Seen cells — which open the Entities views, where it is a row — read one
-    # short of the lists they open, 152 / 108 against 153 / 109)
+    # (Transfers no attribution pass could place read subscription "Unknown"
+    # — bin/transfer/parse.sh; the synthetic "UCx_<account>" until
+    # 2026-09-29 — which never reaches the base cache: no row here, as in the
+    # Entities views the Total / Seen cells open.)
     FILENAME ~ /base\/_subscriptions\.tsv$/ { conf("subscriptions", $1, $2, $3); next }
     FILENAME ~ /base\/_accounts\.tsv$/      { conf("accounts",      $1, $2, $3); next }
     FILENAME ~ /base\/_logins\.tsv$/        { conf("logins",        $1, $2, $3); next }

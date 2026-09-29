@@ -60,7 +60,7 @@ LAST_AWK='
 agg=$(awk -F'\t' "$LAST_AWK"'
     FNR == 1 { fno++ }
     fno == 1 { if ($4 != "") { fe[$1] = ($2 == "Failed" || $2 == "Expired"); fk[$1] = $6 SUBSEP $4 " " $5 }; next }
-    $6 == "" { next }
+    $6 == "" || $6 == "Unknown" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         e = $6; cid = $1; pk = e SUBSEP cid
         if (pk in pseen) next                         # count each transfer once per subscription

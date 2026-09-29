@@ -70,7 +70,7 @@ trap 'rm -f "$TMP" "$TMP.pairs"' EXIT
 # ---- 1. the candidate legs, sorted by filename then time ---------------------
 # seconds = jdn*86400 + time-of-day, so the ordering is exact across midnight.
 awk -F'\t' '
-    $11 == "" || $12 == "" { next }
+    $11 == "" || $12 == "" || $12 == "Unknown" { next }   # a handover between two SUBSCRIPTIONS: "Unknown" is none (2026-09-29)
     $17 != "in" && $17 != "out" { next }
     {
         split($5, t, ":")

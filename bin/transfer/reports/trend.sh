@@ -54,7 +54,7 @@ agg=$(awk -F'\t' -v RATIO="$RATIO" -v MINBASE="$MIN_BASE" -v MINSIL="$MIN_SILENT
         if (i == 1) return sprintf("%d %s", v, u[i])
         return sprintf("%.2f %s", v, u[i])
     }
-    $12 == "" || $4 == "" { next }
+    $12 == "" || $12 == "Unknown" || $4 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         s = $12; j = $7 + 0
         k = s SUBSEP j

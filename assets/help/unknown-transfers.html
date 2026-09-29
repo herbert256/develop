@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Trouble after success — Axway ST reports</title>
+<title>Help: Unknown transfers — Axway ST reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,31 +15,27 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Trouble after success</h1>
+<h1>Unknown transfers</h1>
 <h2>What it shows</h2>
 <ul>
-<li>Still-<strong>green</strong> subscriptions whose last File was OK but which then logged a server-log <strong>Error</strong> &mdash; the flow itself or a connected login, account or remote host. An early warning, full period.</li>
+<li>Every File with an account but <strong>no subscription</strong>: no configuration match, cross-reference vote, direction rule or server-log session could place it. It reads subscription <strong>Unknown</strong>.</li>
+<li>A routing gap to investigate: the Files count in every day, account, login, host and protocol figure, but no subscription table shows them.</li>
 </ul>
-<h2>Columns</h2>
+<h2>Files</h2>
 <ul>
-<li><strong>Subscription</strong> &mdash; links its detail page.</li>
-<li><strong>Last OK transfer</strong> &mdash; when the newest OK File <em>ended</em>.</li>
-<li><strong>Errors after</strong> &mdash; Error lines logged after it; <strong>Latest error</strong> the newest one&rsquo;s date and time; <strong>Latest message</strong> its text.</li>
-<li><strong>Source</strong> &mdash; who logged them: Subscription, Account, Login and/or Host.</li>
+<li><strong>Date/time</strong> &mdash; the File&rsquo;s start. <strong>Account</strong>, <strong>Login</strong>, <strong>Remote host</strong> link their detail pages.</li>
+<li><strong>Side</strong> &mdash; the connection side (In / Out); an Unknown File has no movement direction.</li>
+<li><strong>Legs</strong>, <strong>State</strong> (OK / Error / Waiting / Expired; opens the File&rsquo;s own page when it has one), <strong>Volume</strong>, <strong>CoreId</strong> (links SecureTransport File Tracking), <strong>Filename</strong>.</li>
+<li>Rows tint by the File colour: green, orange after a retry or resubmit, red for Error / Expired. Newest first, 500 rows per page.</li>
 </ul>
-<h2>Rules</h2>
+<h2>Per account</h2>
 <ul>
-<li><strong>Errors only</strong>: a Warning never lists a flow; the poll-backlog &ldquo;Skipping the next scheduled occurrence&rdquo; line is ignored too.</li>
-<li>The cut is the newest OK File&rsquo;s end: an error before a retry delivered the file does not count.</li>
-<li>A host counts only when the flow has exactly one configured.</li>
-<li>An account, login or host serving several flows counts only connection-level lines (connection failure, wrong server fingerprint, outbound login error); a line naming one flow concerns that flow alone.</li>
-<li>The same evidence normally turns a flow <strong>red</strong>, and it leaves this page for <a href="failed.html">Failed Subscriptions</a>.</li>
-<li>What stays is mainly deploy-classified errors. A UC3 that polled successfully after its newest error is left out.</li>
+<li><strong>Files</strong>, <strong>OK</strong>, <strong>Error</strong> (Failed or Expired), <strong>First</strong> and <strong>Last</strong> start per account.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a row for its 10 most recent Error lines.</li>
-<li>Deploy defects: <a href="server-routing-errors.html">Routing errors</a>.</li>
+<li>Most rows need one config fix: give the account (or its login) the subscription it should run, or check the route the server log names on the File&rsquo;s page.</li>
+<li>These Files do not colour their account, login or host; the <a href="skipped.html">Skipped</a> report lists the records without even an account.</li>
 </ul>
 </main>
 </body>

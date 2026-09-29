@@ -53,7 +53,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
     function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
         while (v >= 1024 && i < 6) { v /= 1024; i++ }
         return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
-    $12 == "" || $4 == "" { next }
+    $12 == "" || $12 == "Unknown" || $4 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         s = $12
         if (!(s in cnt)) { ord[++ns] = s }

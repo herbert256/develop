@@ -56,7 +56,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' -v OP
         if (run >= OPENMIN) { open++; if (run > worsttail) worsttail = run
             if (lastok == "") neverok++ }
     }
-    $12 == "" || $4 == "" { next }
+    $12 == "" || $12 == "Unknown" || $4 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         if ($12 != site) { flush()
             site = $12; files=0; fails=0; episodes=0; maxrun=0; run=0

@@ -52,8 +52,9 @@ Connections lost Whitelist usage (= Incoming Allowed + Re-screens per policy) an
 
 **The former BOXES-ONLY reports** (2026-07..09-29, `BOXES_ONLY_REPORTS`, reached only from the
 Boxes pages): pirates · waiting · expired · went-quiet (transfer) and went-kaput (server) are
-ordinary members of their report groups since the one Reports pulldown (Failures, Use cases &
-delivery); from-green-to-red, only-red, missing-cronjobs, deploy-errors and
+ordinary members of their report groups since the one Reports pulldown (Failures — Errors since
+2026-09-29 — and Use cases & delivery; went-kaput lost its page 2026-09-29, user request, a
+pageless producer now); from-green-to-red, only-red, missing-cronjobs, deploy-errors and
 no-remote-dir/-files lost their pages 2026-09-29 (pageless producers, see above). (site-failures
 left 2026-09-28: its page was the Per flow "Connection failure" rows, row for row — the script
 stays as a pageless data producer in `PAGELESS_REPORTS`, the Boxes connection column reads
@@ -117,7 +118,7 @@ its .rpt, and every link to it points at `server/failure-flows.html` now.)
    `[account] [route]` brackets — name the subscription ST itself ran, the platform's own
    attribution. `bin/session-sites.sh` (stage 1, after both parses, before expire-files) learns
    the `session⇥subscription` map into `cache/_sessionsites.tsv`: only the sessions of
-   currently-UCx rows are (re)scanned, tokens are rename-folded (`rn_canon`) and must be
+   currently-Unknown rows (UCx until 2026-09-29) are (re)scanned, tokens are rename-folded (`rn_canon`) and must be
    configured subscription names, and a session naming two flows maps to NEITHER. When the map
    holds a verdict, the script re-runs the transfer parse DERIVE-ONLY (`AXWAY_DERIVE_ONLY=1`,
    the raw cache reused). The derive's pass (between FLOWDIR and
@@ -139,7 +140,10 @@ its .rpt, and every link to it points at `server/failure-flows.html` now.)
    has only that one flow — so this pass never sees them); on the 7 session-rescued groups the
    session evidence and this inference agree 7-for-7. The SESSION JOIN outranks it: that is the
    platform naming the flow, this is an inference.
-   When even that fails, a group WITH an account keeps the SYNTHETIC site **`UCx_<account>`**
+   When even that fails, a group WITH an account keeps the site **`Unknown`** (since 2026-09-29,
+   user request — no subscription at all: kept out of every subscription table and listed by
+   the Unknown transfers report; CLAUDE.md "The Unknown subscription"). UNTIL 2026-09-29 it was
+   the SYNTHETIC site **`UCx_<account>`**
    (the account is already `@…`-stripped; `UCx` = the UC naming shape with an unknowable UC
    number — every UC extractor is digit-anchored, so it classifies to no use case): the
    transfers count everywhere a site is counted, and
@@ -227,8 +231,9 @@ is `data/colour/`; `result.sh` drops the old directory.
    the failure `_build_ringattr` was written to kill, reintroduced by the loose join.
    `went-kaput.sh` applies the identical rule (page + evidence sidecar), so the two stay in
    step; 1:1 owners are unchanged. So a Trouble-after-success flow arrives
-   RED on Failed Subscriptions (the home red tables went 2026-09-29); the went-kaput page keeps only
-   the deploy-classified and poll-cleared remainder. **The UC3 connection-failure streak (2026-09-05, user rule)**: a "Connection failure while
+   RED on Failed Subscriptions (the home red tables went 2026-09-29); the went-kaput rows (no
+   page since 2026-09-29 — the Trouble after success box) keep only the deploy-classified and
+   poll-cleared remainder. **The UC3 connection-failure streak (2026-09-05, user rule)**: a "Connection failure while
    <UC3 flow> tried to connect …" line reds a UC3 flow only after THREE failed polls in a row.
    When the newest evidence is a connection failure — the flow's own line (its stamp is in
    `_uc3polls.cand`'s sibling `_connfail.cand`, from the per-name mention cache + Error/Warn
@@ -236,8 +241,8 @@ is `data/colour/`; `result.sh` drops the old directory.
    flow's OWN failures newer than its newest successful poll and than the last transfer are the
    streak; below three the connection failures are DISCOUNTED and the newest of the remaining
    evidence decides by the usual test. Nothing left = the flow stays green, listed in
-   `colour/_connhold.tsv` (name, stamp, streak); the went-kaput page still shows it as trouble
-   after success. Evidence of any other kind flips as before. **No UC3 clean-poll green (2026-09-28,
+   `colour/_connhold.tsv` (name, stamp, streak); went-kaput still lists it as trouble after
+   success (the box). Evidence of any other kind flips as before. **No UC3 clean-poll green (2026-09-28,
    user rule "A UC3 subscription that has no transfers must be orange and not green")**: a
    never-transferred UC3 whose polls work ("Applying the search pattern … for transfer site '…':
    N file(s) …") stays ORANGE — the 2026-08 exception that flipped it GREEN (sidecar
@@ -266,11 +271,14 @@ S = server/, A = analyses/):
   Applications · BL (transfer/entities; native members | views row). NOT on the Reports menu
   (2026-09-29, user request — the top bar's Entities link opens it); the group stays for the
   start page, the finder and the h1 tags.
-- **Failures** — Failed Subscriptions (A failed) · Error reasons (A failing-reasons) · Failed files
-  (T) · One-legged (T pirates) · Episodes (T) · Retries & resubmissions (T retries) · Failure
-  heatmap (T) · Errors (S errors: Log reasons / Heatmap / Top messages) · Per flow (S
-  failure-flows) · IO errors (S) · Routing errors (S) · Trouble after success (S went-kaput) — the
-  last five were the "Server log errors" group until 2026-09-29 (user request)
+- **Errors** (Failures until 2026-09-29, user request — out of the pulldown, its own top-bar
+  link between Entities and Files) — Failed Subscriptions (A failed) · Error reasons (A
+  failing-reasons) · Failed files (T) · Unknown transfers (T unknown-transfers, 2026-09-29) ·
+  One-legged (T pirates) · Episodes (T) · Retries & resubmissions (T retries) · Failure heatmap
+  (T) · **Server log** — ONE first-row entry (`_report_subrows`) whose pages carry a second row:
+  Errors (S errors: Log reasons / Heatmap / Top messages) · Per flow (S failure-flows) · IO
+  errors (S) · Routing errors (S) — the "Server log errors" group until 2026-09-29 (user
+  request); Trouble after success (S went-kaput) lost its page the same day
 - **Use cases & delivery** — Use cases (A use-cases) · UC status (A uc-status) · Polling (A) ·
   Punctuality (T: Arrival time / Rhythm) · Waiting (T) · Expired (T) · Went quiet (T)
 - **Activity & volume** — Activity (T) · Trends (T) · Ranking (T) · Sizes & types (T files) · Route

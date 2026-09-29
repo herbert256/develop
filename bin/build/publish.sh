@@ -174,7 +174,7 @@ daily_loglines_tsv() {   # $1 = the data root (data)
     local fc_="$1/transfer/cache/_files.tsv"
     # the In/Out split of the Files group: per DAY, how many Files MOVED in
     # and how many out (_files.tsv col 17, the movement direction). A File of
-    # an UNCONFIGURED subscription (the synthetic UCx_ ones) has no movement:
+    # an UNCONFIGURED subscription (or none — "Unknown") has no movement:
     # it counts by its connection side (col 16), so In + Out = Ok + Error on
     # every day (2026-09-28 fix: those Files were in neither column)
     local iof=""

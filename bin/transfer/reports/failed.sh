@@ -1326,6 +1326,7 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
         # each subscription newest File (mark S) — but the row of a kind-P
         # flow is its SERVER row, appended in END, never a stale newest file
         if (m !~ /S/ || (toupper(site) in PSET)) next
+        if (site == "Unknown") next   # no subscription (2026-09-29): no Failed Subscriptions row — Unknown transfers lists it
         col = rescol(site)
         r = (cid in RE) ? RE[cid] : ""
         tint = (col != "") ? "\t@data:res=" col : ""

@@ -53,7 +53,7 @@ agg=$(awk -F'\t' -v mindays="$MIN_DAYS" -v lockpct="$LOCK_PCT" -v longmed="$LONG
         dy = e - int((153*m + 2) / 5) + 1; mo = m + 3 - 12*int(m/10); yr = 100*b + d - 4800 + int(m/10)
         return sprintf("%04d-%02d-%02d", yr, mo, dy) }
     BEGIN { split("Monday Tuesday Wednesday Thursday Friday Saturday Sunday", WN, " ") }
-    $12 == "" || $7 == "" { next }
+    $12 == "" || $12 == "Unknown" || $7 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         s = $12; j = $7 + 0
         nf[s]++

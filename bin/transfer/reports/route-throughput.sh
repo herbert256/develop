@@ -48,7 +48,8 @@ agg=$(awk -F'\t' -v mindur="$MIN_DUR" -v minsize="$MIN_SIZE" -v minhalf="$MIN_HA
     function rate(bytes, ms) { return (ms > 0) ? (bytes / 1048576) / (ms / 1000) : 0 }
     $15 + 0 <= mindur || $9 + 0 <= minsize { next }
     {
-        s = $6; if (s == "") s = "(no subscription)"
+        s = $6; if (s == "Unknown") next   # no subscription (2026-09-29): no route row, nor in the totals
+        if (s == "") s = "(no subscription)"
         k = s SUBSEP $10 SUBSEP $2
         n[k]++; sz[k] += $9; du[k] += $15
         j = $14 + 0

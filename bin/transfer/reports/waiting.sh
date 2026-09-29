@@ -116,7 +116,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
             P[csites] = site "|" nc "|" med "|" wsum/nc "|" wmax "|" c1h+0 "|" c24+0 "|" cgt+0
         }
     }
-    $12 == "" || $4 == "" { next }
+    $12 == "" || $12 == "Unknown" || $4 == "" { next }   # "Unknown" = no subscription (2026-09-29): no Waiting page / row
     {
         if ($12 != site) { flush()
             site = $12; nw = 0; olddt = ""; oldsec = 0; newdt = ""
@@ -339,6 +339,7 @@ agg2=$(awk -F'\t' -v spx="$SPX" "$COREIDS_AWK"'
             age = maxj - WJ[i]
             if (age < 9) continue
             st = WSITE[i]
+            if (st == "Unknown") continue   # no subscription (2026-09-29)
             if (EC[st] == "") ESL[++nes] = st
             EC[st] = EC[st] + 1
             if (EO[st] == "" || WD[i] " " WT[i] < EO[st]) EO[st] = WD[i] " " substr(WT[i], 1, 8)

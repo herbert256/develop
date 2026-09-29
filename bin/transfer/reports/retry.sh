@@ -43,6 +43,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
     {
         status = $3; sub(/ Subtransmission$/, "", status)
         account = $4; site = $6
+        if (site == "Unknown") next   # no subscription (2026-09-29): no (account, subscription) row
         key = account SUBSEP site
         kacct[key] = account; ksite[key] = site
         iso = $11

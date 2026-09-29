@@ -196,7 +196,7 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
         cid = $1
         if ($3 == "Processed") tokc[cid]++; else terrc[cid]++
         if (SLO && $5 != "") lg[cid] = addset(lg[cid], $5)
-        if (SSU && $6 != "") st[cid] = addset(st[cid], $6)
+        if (SSU && $6 != "" && $6 != "Unknown") st[cid] = addset(st[cid], $6)   # "Unknown" = no subscription (2026-09-29)
         if (SRH && $16 != "") hs[cid] = addset(hs[cid], $16)
         next }
     # _files.tsv comes TWICE: pass 2 aggregates, pass 3 collects the Duration
@@ -206,8 +206,8 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
     $4 == "" { next }
     {
         cid = $1; f = ($2 == "Failed" || $2 == "Expired"); date = $4; sk = $6; disp = $4 " " $5; size = $8 + 0
-        # In / Out by MOVEMENT; a File of an unconfigured subscription (the
-        # synthetic UCx_ ones) has none and counts by its CONNECTION side, so
+        # In / Out by MOVEMENT; a File of an unconfigured subscription (or of
+        # none — "Unknown") has none and counts by its CONNECTION side, so
         # In + Out = Files and the Error % recompute (Error over In + Out)
         # holds on a narrowed range (2026-09-28 fix: it read 0.0% there) —
         # the home page Per day table uses the same fallback

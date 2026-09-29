@@ -75,7 +75,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
         printf "S|%s|%s|%s|%d|%d|%d|%s|%s|%s\n", site, DD[s], DD[e], DJ[e]-DJ[s]+1, ff, oks, DD[e+1], \
             buildlist(top["EF" SUBSEP site]), buildlist(top["EP" SUBSEP site])
     }
-    $12 == "" || $4 == "" { next }
+    $12 == "" || $12 == "Unknown" || $4 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         if ($12 != site) { flush()
             site = $12; day = ""; nd = 0; lastfail = 0

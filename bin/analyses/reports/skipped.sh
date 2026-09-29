@@ -130,8 +130,9 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
 
 # ---- the NO-SUBSCRIPTION / HTTP skip table (data/transfer/_skipped.csv:
 # the RAW input lines of the CoreIds bin/transfer/parse.sh dropped because no
-# leg carried a subscription OR an account — a group with an account keeps a
-# synthetic "UCx_<account>" site since 2026-08 and counts — or because a leg
+# leg carried a subscription OR an account — a group with an account keeps
+# the site "Unknown" (the synthetic "UCx_<account>" 2026-08..09-29) and
+# counts, listed by Unknown transfers — or because a leg
 # ran over http). Tokenize each
 # raw CSV line into readable columns and splice the table into skipped.rpt
 # just before its SUMMARY line (plus a 5th STAT box after the existing four).

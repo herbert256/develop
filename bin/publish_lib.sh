@@ -173,8 +173,8 @@ CUR_DATES=""
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity punctuality cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage sources-and-targets skipped not-in-flow-manager ranking files route-throughput trends failed episodes failed-files waiting expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all account-sharing twins)
-server_order=(topview errors failure-flows io-errors routing-errors uc-status polling went-kaput logons connections ssh-security missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity punctuality cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage sources-and-targets skipped not-in-flow-manager ranking files route-throughput trends failed episodes failed-files unknown-transfers waiting expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all account-sharing twins)
+server_order=(topview errors failure-flows io-errors routing-errors uc-status polling logons connections ssh-security missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
 # The reports whose PAGES live in docs/analyses/ — whatever area their DATA
@@ -208,10 +208,13 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 # arrival, the four uc<n>-status in uc-status) and the pageless DATA producers
 # whose rows ride another page or no page at all (day, event-queue, site-failures — the
 # Boxes and Partners - Outgoing read its .rpt —, remote-poll, missing-cronjobs,
-# deploy-errors, from-green-to-red, only-red). Not listed: ranking (a report
+# deploy-errors, from-green-to-red, only-red, and — 2026-09-29, user request
+# "Remove server/went-kaput.html" — went-kaput, whose evidence sidecar feeds
+# the red flip, the detail banner and failed.sh, and whose rows feed the
+# Trouble after success box and the day pages). Not listed: ranking (a report
 # with its own page), the retired double; pesit writes no .rpt since
 # 2026-09-29 (its sidecar only).
-PAGELESS_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status went-quiet-src stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling missing-cronjobs duration-trend top-transfers size-profile uc4-to-uc2 file-in-file-out-src episodes-src recovered recovered-files uc2-visits pickups no-remote-dir no-remote-files deploy-errors from-green-to-red only-red punctuality-src expected-arrival "
+PAGELESS_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status went-quiet-src stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling missing-cronjobs duration-trend top-transfers size-profile uc4-to-uc2 file-in-file-out-src episodes-src recovered recovered-files uc2-visits pickups no-remote-dir no-remote-files deploy-errors from-green-to-red only-red punctuality-src expected-arrival went-kaput "
 is_pageless_report() {
     case $PAGELESS_REPORTS in *" $1 "*) return 0 ;; esac
     return 1
@@ -319,7 +322,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         activity) echo "Activity" ;; punctuality) echo "Punctuality" ;;
         retries) echo "Retries & resubmissions" ;; file-journey) echo "File journey" ;;
         route-throughput) echo "Route throughput" ;;
-        failed-files) echo "Failed files" ;; same-protocol) echo "Inbound and Outbound same Protocol" ;; security-outreach) echo "Security outreach" ;;
+        failed-files) echo "Failed files" ;; unknown-transfers) echo "Unknown transfers" ;; same-protocol) echo "Inbound and Outbound same Protocol" ;; security-outreach) echo "Security outreach" ;;
         connection-efficiency) echo "Connection efficiency" ;;
         failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;; routing-errors) echo "Routing errors" ;;
         triage) echo "Triage" ;; data-diff) echo "Since yesterday" ;;
@@ -349,7 +352,6 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         duration|duration-all) echo "Duration" ;; duration-longest) echo "Longest Files" ;;
         duration-dwell) echo "Distribution & Store-and-forward" ;;
         security-params) echo "Security Parameters" ;; av-scan) echo "AV Scan" ;;
-        went-kaput) echo "Trouble after success" ;;
         account-sharing) echo "Account sharing" ;; twins) echo "Twins" ;;
     esac
 }
@@ -552,16 +554,16 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
 # KEEP THE TWO IN STEP). $1 base (docs-root prefix), $2 help slug (""=none).
 render_topbar() {
     local base=$1 helpslug=${2:-} home=${1}index.html brand
-    # SIX evenly-spaced parts (the bar's justify-content:space-between does the
+    # evenly-spaced parts (the bar's justify-content:space-between does the
     # spacing — no pushing margins, 2026-07 redesign): 1 the brand (-> home;
     # its TEXT is the ENVIRONMENT LABEL, input/environment.txt — "Axway ST" on a
     # checkout without one; 2026-09-12, user request: the static label span
     # that stood beside a fixed "Cloud" brand since the env split of
-    # 2026-09-11 is gone) · 2 the Entities link + search icon · 3 the Files
-    # link · 4 the Reports pulldown (ONE, 2026-09-29 — the Transfer / Server /
-    # Analyses dropdowns went) · 5 the
-    # plain Dashboard link (ONE dashboard page — no dropdown) · 6 the three
-    # right icons. The precomputed menu strings carry an "@" placeholder; swap
+    # 2026-09-11 is gone) · 2 the data period · 3 the Entities / Errors /
+    # Files links + the search icon (one cluster since 2026-09-29) · 4 the
+    # Reports pulldown (ONE, 2026-09-29 — the Transfer / Server / Analyses
+    # dropdowns went) · 5 the plain Dashboard link (ONE dashboard page — no
+    # dropdown; + Monitor when the site has one) · 6 the three right icons. The precomputed menu strings carry an "@" placeholder; swap
     # it for this page's prefix.
     esc "${ENV_LABEL:-Axway ST}"; brand=$ESC
     if env_has_switch; then
@@ -585,11 +587,16 @@ render_topbar() {
     # THE DATA PERIOD (2026-09-13, user request): second, after the
     # environment and before Entities — KEEP IN STEP with report.js buildTopbar
     if [ -n "${TB_PERIOD:-}" ]; then esc "$TB_PERIOD"; printf '<span class="period" title="The data period: the first and last day of the transfer data">%s</span>' "$ESC"; fi
-    printf '<span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a><a class="searchbtn" href="%ssearch/search.html" title="Search" aria-label="Search">&#128269;</a></span>' "$base" "$base"
-    # the FILE SEARCH entry (2026-08), mirroring report.js buildTopbar:
-    # between the search icon and the report menus — the ALL FILES search
-    # ("Implementation 2, all files") since 2026-09-28 (user request)
-    printf '<a class="dashlink" href="%ssearch/all-files.html">Files</a>' "$base"
+    # THE ENTITIES / ERRORS / FILES CLUSTER (2026-09-29, user request: the
+    # Errors group — Failures before — out of the Reports pulldown, "an own
+    # link in the Top Menu bar before Files", and "have Entities, Files,
+    # Errors next to each other"): ONE bar part, the three links side by
+    # side, then the entity-search icon (it stood between Entities and Files
+    # before). Files = the ALL FILES search (2026-09-28). KEEP IN STEP with
+    # report.js buildTopbar.
+    printf '<span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a>' "$base"
+    [ -n "${ERRORS_HREF:-}" ] && printf '<a class="entlabel" href="%s%s">Errors</a>' "$base" "$ERRORS_HREF"
+    printf '<a class="entlabel" href="%ssearch/all-files.html">Files</a><a class="searchbtn" href="%ssearch/search.html" title="Search" aria-label="Search">&#128269;</a></span>' "$base" "$base"
     printf '<nav class="nav">'
     # ONE pulldown, Reports (2026-09-29, user request: the Transfer reports /
     # Server reports / Analyses / Goodies four went) — KEEP IN STEP with
@@ -2041,12 +2048,14 @@ render_month_stats() {   # $1 area
 #         duration-longest / duration-dwell)
 # A report in no group has no row and no menu line — every published report
 # belongs to one (the former boxes-only reports included). The "Server log
-# errors" group was folded into Failures (2026-09-29, user request).
+# errors" group was folded into Failures (2026-09-29, user request), and
+# Failures was renamed ERRORS the same day (user request: "Rename Failures to
+# Errors") — out of the pulldown, a top-bar link of its own (render_topbar).
 _report_groups() {
     printf '%s\n' \
         "Overview|transfer/topview=Transfer top view|server/topview=Server top view|analyses/data-diff=Since yesterday|analyses/triage=Triage|analyses/subscriptions-in-boxes=Subscriptions in boxes" \
         "Entities|transfer/entities/subscription=Subscriptions|transfer/entities/logical=Logical|transfer/entities/partner=Partners|transfer/entities/account=Accounts|transfer/entities/login=Logins|transfer/entities/remote-host=Hosts|transfer/entities/domain=Domains|transfer/entities/application=Applications|transfer/entities/bl=BL" \
-        "Failures|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/pirates=One-legged|transfer/episodes=Episodes|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors|server/went-kaput=Trouble after success" \
+        "Errors|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/unknown-transfers=Unknown transfers|transfer/pirates=One-legged|transfer/episodes=Episodes|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors" \
         "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/punctuality=Punctuality|transfer/waiting=Waiting|transfer/expired=Expired|transfer/went-quiet=Went quiet" \
         "Activity & volume|transfer/activity=Activity|transfer/trends=Trends|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/route-throughput=Route throughput|transfer/month-stats/this=Month stats" \
         "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Distribution & Store-and-forward|transfer/anomalies=Anomalies" \
@@ -2057,6 +2066,18 @@ _report_groups() {
         "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/logical-detection=Logical detection|transfer/sources-and-targets=Sources and Targets|analyses/xref/cross=Cross References" \
         "Coverage|transfer/entity-coverage=Entity coverage|analyses/first-seen=First seen|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped|server/missing-entities=Missing entities" \
         "Cleanup|analyses/cleanup-backlog=Cleanup backlog|analyses/config-hygiene=Config hygiene|analyses/whitelist-audit=Whitelist audit|analyses/account-sharing=Account sharing|analyses/twins=Twins"
+}
+# THE SUB-ROWS (2026-09-29, user request: "On the group Failures move the 4
+# server logs to 4 buttons as [a second] selection, have "Server log" as first
+# selection for it"): members of a group that collapse into ONE entry of the
+# group's first row — its label, landing on the sub-row's first member — and
+# get a SECOND row of their own on their pages (apply_report_groups).
+# One line per sub-row: "<Group>|<Entry label>|<member>|<member>|…", every
+# member also a member of that group in _report_groups (their order and
+# labels come from there; the entry sits where the first of them is).
+_report_subrows() {
+    printf '%s\n' \
+        "Errors|Server log|server/errors|server/failure-flows|server/io-errors|server/routing-errors"
 }
 # rg_landing MEMBER ("dir/stem") -> RG_LANDING, the member's landing page,
 # docs-root-relative (a variable, not stdout: the callers loop over hundreds of
@@ -2091,10 +2112,18 @@ rg_rel() {
 # page by render_topbar / report.js buildTopbar (topbar-data.js `reports`).
 # NOT Entities (2026-09-29, user request): the top bar's own Entities link
 # opens them; the group stays for the start page, the finder and the h1 tags.
+# NOT Errors either (2026-09-29, user request: "Remove Failures from the
+# Reports Pulldown, have it as an own link in the Top Menu bar"): its link is
+# ERRORS_HREF, the group's first member's landing page.
 REPORTS_MENU='<a class="ddtop" href="@reports/index.html">Start page</a>'
+ERRORS_HREF=""
 while IFS= read -r _rgl; do
     [ -n "$_rgl" ] || continue
     [ "${_rgl%%|*}" = Entities ] && continue
+    if [ "${_rgl%%|*}" = Errors ]; then
+        _rgf=${_rgl#*|}; _rgf=${_rgf%%|*}; rg_landing "${_rgf%%=*}"; ERRORS_HREF=$RG_LANDING
+        continue
+    fi
     _rgf=${_rgl#*|}; _rgf=${_rgf%%|*}; _rgf=${_rgf%%=*}
     rg_landing "$_rgf"; esc "${_rgl%%|*}"
     REPORTS_MENU+="<a href=\"@$RG_LANDING\">$ESC</a>"
@@ -2178,8 +2207,8 @@ _hdr_with_nav() {
 # one-member group gets no row. Idempotent: a page already carrying a
 # grouptag is left alone (a re-run of bin/build/publish.sh alone).
 apply_report_groups() {
-    local q line glabel rest allstems=" " e m dir stem f b s st best page row tag i j n
-    local -a arr MP ML MLAND fam
+    local q line glabel rest allstems=" " e m dir stem f b s st best page row tag i j n k sline sm
+    local -a arr MP ML MLAND fam SUBOF SL_LBL SL_FIRST sarr
     q=$(mktemp "${TMPDIR:-/tmp}/axrg.XXXXXX")
     while IFS= read -r line; do
         [ -n "$line" ] || continue
@@ -2194,6 +2223,24 @@ apply_report_groups() {
         for ((i = 0; i < n; i++)); do
             e=${arr[$i]}; MP[$i]=${e%%=*}; ML[$i]=${e#*=}
             rg_landing "${MP[$i]}"; MLAND[$i]=$RG_LANDING
+        done
+        # this group's SUB-ROWS (_report_subrows): SUBOF[j] = the sub-row
+        # member j belongs to (-1: none), SL_FIRST[k] = its first member in
+        # group order — where the sub-row's one entry sits in the first row
+        SUBOF=(); SL_LBL=(); SL_FIRST=(); k=0
+        for ((j = 0; j < n; j++)); do SUBOF[$j]=-1; done
+        while IFS= read -r sline; do
+            [ "${sline%%|*}" = "$glabel" ] || continue
+            IFS='|' read -r -a sarr <<< "${sline#*|}"
+            SL_LBL[$k]=${sarr[0]}; SL_FIRST[$k]=-1
+            for sm in "${sarr[@]:1}"; do
+                for ((j = 0; j < n; j++)); do [ "${MP[$j]}" = "$sm" ] && SUBOF[$j]=$k; done
+            done
+            k=$((k + 1))
+        done < <(_report_subrows)
+        for ((j = 0; j < n; j++)); do
+            k=${SUBOF[$j]}
+            [ "$k" -ge 0 ] && [ "${SL_FIRST[$k]}" -lt 0 ] && SL_FIRST[$k]=$j
         done
         esc "$glabel"; tag=" <span class=\"grouptag\">&larr; $ESC</span>"
         for ((i = 0; i < n; i++)); do
@@ -2220,11 +2267,33 @@ apply_report_groups() {
                 if [ "$glabel" != Entities ] && [ "$n" -gt 1 ]; then
                     row='<p class="tabs">'
                     for ((j = 0; j < n; j++)); do
+                        k=${SUBOF[$j]}
+                        if [ "$k" -ge 0 ]; then
+                            # a sub-row: ONE entry, at its first member
+                            [ "${SL_FIRST[$k]}" = "$j" ] || continue
+                            esc "${SL_LBL[$k]}"
+                            if [ "${SUBOF[$i]}" = "$k" ]; then row+="<span class=\"tab active\">$ESC</span>"
+                            else rg_rel "$page" "${MLAND[$j]}"; row+="<a class=\"tab\" href=\"$RG_REL\">$ESC</a>"; fi
+                            continue
+                        fi
                         esc "${ML[$j]}"
                         if [ "$j" = "$i" ]; then row+="<span class=\"tab active\">$ESC</span>"
                         else rg_rel "$page" "${MLAND[$j]}"; row+="<a class=\"tab\" href=\"$RG_REL\">$ESC</a>"; fi
                     done
                     row+='</p>'
+                    # a sub-row member's page: the SECOND row, its sub-row's
+                    # members (no newline — the queue is one line per page)
+                    k=${SUBOF[$i]}
+                    if [ "$k" -ge 0 ]; then
+                        row+='<p class="tabs">'
+                        for ((j = 0; j < n; j++)); do
+                            [ "${SUBOF[$j]}" = "$k" ] || continue
+                            esc "${ML[$j]}"
+                            if [ "$j" = "$i" ]; then row+="<span class=\"tab active\">$ESC</span>"
+                            else rg_rel "$page" "${MLAND[$j]}"; row+="<a class=\"tab\" href=\"$RG_REL\">$ESC</a>"; fi
+                        done
+                        row+='</p>'
+                    fi
                 fi
                 printf '%s\t%s\t%s\n' "$f" "$tag" "$row" >> "$q"
             done
@@ -2303,7 +2372,7 @@ if [ -f "$DATA/transfer/reports/day.rpt" ]; then
     TB_PERIOD=$(awk -F'\t' '$1 == "META" && ($2 == "first" || $2 == "last") && $3 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { v[$2] = substr($3, 1, 10) }
         END { if (("first" in v) && ("last" in v)) print v["first"] " / " v["last"] }' "$DATA/transfer/reports/day.rpt")
 fi
-TB_VER=$(printf '%s' "$REPORTS_MENU$TB_MON$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS$TB_PERIOD" | cksum | cut -d' ' -f1)
+TB_VER=$(printf '%s' "$REPORTS_MENU$ERRORS_HREF$TB_MON$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS$TB_PERIOD" | cksum | cut -d' ' -f1)
 
 # Copy the shared assets into docs/ and write .nojekyll. Idempotent, so each
 # publish script can call it and still produce a valid site when run on its own.
@@ -2351,7 +2420,9 @@ ensure_assets() {
     # (ENVSWITCH_JS — the one implementation, see TB_VER above)
     # + the data period (TB_PERIOD, "yyyy-mm-dd / yyyy-mm-dd" — plain digits,
     # slashes and spaces, nothing to escape)
-    local _tb; printf -v _tb 'window.AXWAY_TB={reports:"%s",monitor:%s,coreid:"%s",env:"%s",envkey:"%s",period:"%s"};%s' "$r" "${TB_MON:-0}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENVSWITCH_JS"
+    # + errors: the top bar's Errors link (ERRORS_HREF, docs-root-relative —
+    # a plain page path, nothing to escape)
+    local _tb; printf -v _tb 'window.AXWAY_TB={reports:"%s",errors:"%s",monitor:%s,coreid:"%s",env:"%s",envkey:"%s",period:"%s"};%s' "$r" "${ERRORS_HREF:-}" "${TB_MON:-0}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENVSWITCH_JS"
     _asset_put docs/assets/topbar-data.js "$_tb"
     [ -f docs/.nojekyll ] || : > docs/.nojekyll
 }

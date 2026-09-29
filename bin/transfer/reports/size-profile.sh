@@ -48,7 +48,7 @@ agg=$(awk -F'\t' -v minfiles="$MIN_FILES" -v drifthi="$DRIFT_HI" -v stubpct="$ST
             if (j - lo < hi - i) { if (lo < j) qsort(A, lo, j); lo = i }
             else                 { if (i < hi) qsort(A, i, hi); hi = j } } }
     function median(A, n) { return A[int((n - 1) * 50 / 100 + 0.5) + 1] }   # nearest rank
-    $12 == "" || $7 == "" { next }
+    $12 == "" || $12 == "Unknown" || $7 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         s = $12
         n[s]++

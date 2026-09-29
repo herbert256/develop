@@ -328,7 +328,7 @@ seen_lookup() {
         function upds(t, set,   n, i, Z) { n = split(set, Z, "\037"); for (i = 1; i <= n; i++) upd(t, Z[i]) }
         $4 == "" { next }
         {
-            upd("Account", $3); upd("Subscription", $12)
+            upd("Account", $3); upd("Subscription", ($12 == "Unknown") ? "" : $12)   # "Unknown" = no subscription (2026-09-29)
             upd("Login", $14); upd("Remote Host", $15); upd("Domain", $19)
             upds("Partner", sp_union($20, $12))
             upds("Application", ap_union($18, $12))
