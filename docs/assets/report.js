@@ -1394,64 +1394,6 @@
     if (sfocus) sfocus.focus();
   }
 
-  // ---- The Report finder (docs/tools/report-finder.html) -------------------
-  // A static catalog table (data-rfinder) + its own search box (#rfq): the
-  // query matches each report's TITLE (data-t) and INTRO (data-i) with the
-  // site search grammar (wildcards ? and *, or/and/not); TITLE matches rank
-  // ABOVE intro-only matches, both keeping their catalog order. An empty
-  // query shows the full catalog in the original order.
-  function setupReportFinder() {
-    var table = document.querySelector("table[data-rfinder]"); if (!table) return;
-    var box = document.getElementById("rfq"); if (!box) return;
-    var orig = dataRows(table);
-    // the page's FILE NAME is searchable too (e.g. "pirates" finds the
-    // "One-legged" report): index each row's link href once —
-    // ranked with the keyword hits, below title hits
-    orig.forEach(function (r) {
-      var a0 = r.cells[0] && r.cells[0].getElementsByTagName("a")[0];
-      r.setAttribute("data-f", ((a0 && a0.getAttribute("href")) || "").toLowerCase());
-    });
-    function hits(groups, text) {
-      return groups.some(function (g) {
-        return g.every(function (term) {
-          var f = term.m(text);
-          return term.neg ? !f : f;
-        });
-      });
-    }
-    // a zero-match search says so (2026-09-29: it left a bare header row)
-    var none = document.createElement("tr"), noneTd = document.createElement("td");
-    noneTd.colSpan = (headerRow(table) || { cells: [0, 0, 0] }).cells.length; noneTd.className = "empty-state";
-    none.appendChild(noneTd); none.style.display = "none";
-    function apply() {
-      var q = foldSep(box.value.toLowerCase().replace(/^\s+|\s+$/g, ""));
-      var groups = q ? parseQuery(q) : null;
-      if (groups && !groups.length) groups = null;
-      var body = table.tBodies[0] || table;
-      if (!groups) {
-        orig.forEach(function (r) { r.style.display = ""; body.appendChild(r); });
-        none.style.display = "none";
-        return;
-      }
-      var tHits = [], iHits = [];
-      orig.forEach(function (r) {
-        var t = foldSep(r.getAttribute("data-t") || "");
-        var i2 = foldSep(r.getAttribute("data-i") || "");
-        var k = foldSep(r.getAttribute("data-k") || "");
-        var f = foldSep(r.getAttribute("data-f") || "");
-        if (hits(groups, t)) { tHits.push(r); r.style.display = ""; }
-        else if (hits(groups, t + " " + i2 + " " + k + " " + f)) { iHits.push(r); r.style.display = ""; }
-        else r.style.display = "none";
-      });
-      tHits.concat(iHits).forEach(function (r) { body.appendChild(r); });
-      if (!tHits.length && !iHits.length) {
-        noneTd.textContent = "No report matches \u201c" + box.value.trim() + "\u201d \u2014 try fewer or shorter words (wildcards: ? = one character, * = any run).";
-        none.style.display = ""; body.appendChild(none);
-      } else none.style.display = "none";
-    }
-    box.addEventListener("input", apply);
-  }
-
   // Detail pages only: hide a section whose every data row is hidden (e.g. by
   // the search or date filter) — table plus its title, if any — and hide a
   // table with no data rows at all. Idempotent; re-run after any visibility
@@ -1609,13 +1551,16 @@
       // user request): when the drill opens under a CELL that is red or orange
       // right now (an Error count, a Retry / Resubmit / Waiting count, an amber
       // or red duration), the CoreId of the first entry opens
-      // files/<coreid>.html — bin/build/drill-files.sh lists exactly those
-      // Files (a superset: every cell that CAN tint) and failed.sh pages them.
+      // files/<coreid>.html — when that File has a published page (below).
       // The File Tracking link stays: addCoreIdLinks puts its ↗ after an id
       // that already is a link. Rows and green / plain cells stay text — and so
       // does a list whose unit is not the File (the leg tables, unit
       // "transfer": their ids are TRANSFER ids, no page is keyed by one).
-      var ro = el.tagName === "TD" && (!unit || unit === "File") &&
+      // ... and only when that File HAS a page (2026-09-29, user request: per
+      // subscription only the newest OK and the three newest Failed Files are
+      // published) — render_rpt names those first Files on the row (data-fp)
+      var fpset = " " + (row.getAttribute("data-fp") || "") + " ";
+      var ro = el.tagName === "TD" && (!unit || unit === "File") && fpset !== "  " &&
                / (failed|errc|warn|dur-m|dur-h) /.test(" " + el.className + " ");
       var tb9 = ro ? document.querySelector("div.topbar") : null;
       var root9 = tb9 ? (tb9.getAttribute("data-b") || "") : "";
@@ -1623,6 +1568,7 @@
         var line = document.createElement("div");
         line.className = "coreid-item";
         var m9 = (ro && ei === 0) ? /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/.exec(e) : null;
+        if (m9 && fpset.indexOf(" " + m9[0] + " ") < 0) m9 = null;   // no published page: plain text
         if (m9) {
           var fa = document.createElement("a");
           fa.href = root9 + "files/" + m9[0] + ".html";
@@ -3705,31 +3651,6 @@
   // (the slot charts' hover tooltip and their Line/Bar/Solid + interval
   // switches live in assets/slotchart.js, with the charts themselves)
 
-  var TB_EB = "";   // the docs-root base of this page (buildTopbar) — the palette's link root
-
-  // ---- Dark / light theme (2026-09-05): the html data-theme attribute, the
-  // stylesheet's generated dark block (bin/darken-css.awk) does the rest. The
-  // choice lives in localStorage; unset = LIGHT, the site's own look (user
-  // request — never the system preference). The page head applies a stored
-  // dark choice before the stylesheet loads, so there is no light flash.
-  var THEME_KEY = "axway-theme";
-  function themeApply(t) {
-    if (t !== "dark") t = "light";
-    document.documentElement.setAttribute("data-theme", t);
-    var b = document.querySelector(".themebtn");
-    if (b) b.title = t === "dark" ? "Switch to the light theme" : "Switch to the dark theme";
-  }
-  function setupTheme() {
-    var t = ""; try { t = localStorage.getItem(THEME_KEY) || ""; } catch (e) {}
-    themeApply(t);
-    var b = document.querySelector(".themebtn"); if (!b) return;
-    b.addEventListener("click", function (e) {
-      e.preventDefault();
-      var nt = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
-      try { localStorage.setItem(THEME_KEY, nt); } catch (x) {}
-      themeApply(nt);
-    });
-  }
 
   // ---- Relative dates (2026-09-05): hovering a date cell (or the footer's
   // "Generated on …") shows "3 days ago" as its tooltip. Lazy, by event
@@ -3764,123 +3685,6 @@
       if (ms === null) return;
       el.setAttribute("data-rel", "1");
       if (!el.title) el.title = relTime(ms, !!m[2]);
-    });
-  }
-
-  // ---- The command palette (2026-09-05): Ctrl+K / Cmd+K anywhere opens a
-  // box that finds REPORTS (the report finder's catalog, fetched once) and
-  // ENTITIES (search-data.js, the Entity Search payload, fetched once) of
-  // this site. Arrow keys move, Enter opens, Escape closes.
-  var PAL = null, palEl = null, palIn = null, palList = null, palItems = [], palAct = 0, palQ = "";
-  function palFold(s) { return s.toLowerCase().replace(/_/g, "-"); }
-  function palLoad(done) {
-    if (PAL) { done(); return; }
-    PAL = { reports: [], ents: [], pending: 2, err: "" };
-    function one() { if (--PAL.pending <= 0) done(); }
-    if (!window.fetch) { PAL.pending = 0; PAL.err = "no fetch in this browser"; done(); return; }
-    fetch(TB_EB + "tools/report-finder.html").then(function (r) { return r.ok ? r.text() : ""; }).then(function (html) {
-      var doc = new DOMParser().parseFromString(html, "text/html"), rows = doc.querySelectorAll("tr[data-t]"), i, a, cells;
-      for (i = 0; i < rows.length; i++) {
-        a = rows[i].querySelector("a"); if (!a) continue; cells = rows[i].cells;
-        // the finder sits in tools/ (2026-09-12): its hrefs lead with ../,
-        // dropped for the docs-root base; s = the Group cell (2026-09-29 fix:
-        // it sat inside this comment, and every result read "undefined")
-        PAL.reports.push({ t: a.textContent.trim(), h: (a.getAttribute("href") || "").replace(/^\.\.\//, ""), s: cells[1] ? cells[1].textContent.trim() : "",
-                           x: palFold(a.textContent + " " + (rows[i].getAttribute("data-k") || "") + " " + (a.getAttribute("href") || "")) });
-      }
-      one();
-    }).catch(function () { PAL.err = "the report catalog could not be loaded"; one(); });
-    fetch(TB_EB + "search/search-data.js").then(function (r) { return r.ok ? r.text() : ""; }).then(function (txt) {
-      var lines = txt.split("\n"), i, m, ty, cellRe = /<td[^>]*>([\s\S]*?)<\/td>/g, m1, m3;
-      for (i = 0; i < lines.length; i++) {
-        if (lines[i].charAt(0) !== "<") continue;
-        m = /<a href="([^"]+)">([^<]*)<\/a>/.exec(lines[i]); if (!m) continue;
-        cellRe.lastIndex = 0; m1 = cellRe.exec(lines[i]); cellRe.exec(lines[i]); m3 = cellRe.exec(lines[i]);
-        ty = m3 ? htmlText(m3[1]).trim() : "";
-        // the rows are rendered for search/search.html, one level below the
-        // docs root (2026-09-12), so their hrefs lead with ../ — dropped
-        // here: palGo prefixes the docs-root base TB_EB. Name and href are
-        // markup: decoded (htmlText) before display and navigation
-        PAL.ents.push({ t: htmlText(m[2]), h: htmlText(m[1]).replace(/^\.\.\//, ""), s: ty, x: palFold(htmlText(m[2])) });
-      }
-      one();
-    }).catch(function () { one(); });
-  }
-  function palMatch(list, q, cap) {
-    var toks = palFold(q).split(/\s+/).filter(Boolean), out = [], i, k, it, ok, sc;
-    if (!toks.length) return out;
-    for (i = 0; i < list.length; i++) {
-      it = list[i]; ok = true;
-      for (k = 0; k < toks.length; k++) if (it.x.indexOf(toks[k]) < 0) { ok = false; break; }
-      if (!ok) continue;
-      sc = palFold(it.t).indexOf(toks[0]) === 0 ? 0 : palFold(it.t).indexOf(toks[0]) > 0 ? 1 : 2;
-      out.push({ it: it, sc: sc });
-    }
-    out.sort(function (a, b) { return a.sc - b.sc || (a.it.t < b.it.t ? -1 : a.it.t > b.it.t ? 1 : 0); });
-    return out.slice(0, cap).map(function (o) { return o.it; });
-  }
-  function palRender() {
-    palList.innerHTML = ""; palItems = []; palAct = 0;
-    if (!PAL || PAL.pending > 0) { palList.innerHTML = '<li class="cpe">Loading…</li>'; return; }
-    var q = palQ.trim(), reps = palMatch(PAL.reports, q, 8), ents = palMatch(PAL.ents, q, 12), li;
-    function group(title, items, kind) {
-      if (!items.length) return;
-      li = document.createElement("li"); li.className = "cph"; li.textContent = title; palList.appendChild(li);
-      var seen = {}; items.forEach(function (it) { seen[it.t] = (seen[it.t] || 0) + 1; });
-      items.forEach(function (it) {
-        var e = document.createElement("li"); e.className = "cpi"; e.setAttribute("data-h", it.h);
-        e.innerHTML = '<span></span><span class="cps"></span>';   // the title, then its muted section
-        // a title the catalog carries several times (Entity coverage, one page
-        // per entity kind) gets its page name so the rows can be told apart
-        e.firstChild.textContent = it.t + (seen[it.t] > 1 ? " — " + it.h.replace(/^.*\//, "").replace(/\.html$/, "") : "");
-        e.lastChild.textContent = it.s;
-        e.addEventListener("click", function (ev) { palGo(it.h, ev.shiftKey || ev.ctrlKey || ev.metaKey); });
-        palList.appendChild(e); palItems.push(e);
-      });
-    }
-    group("Reports", reps, "r"); group("Entities", ents, "e");
-    if (!palItems.length) { li = document.createElement("li"); li.className = "cpe"; li.textContent = q ? "Nothing matches" + (PAL.err ? " (" + PAL.err + ")" : "") : "Type a report name, a keyword or an entity name"; palList.appendChild(li); }
-    palMark();
-  }
-  function palMark() {
-    for (var i = 0; i < palItems.length; i++) palItems[i].className = "cpi" + (i === palAct ? " act" : "");
-    if (palItems[palAct] && palItems[palAct].scrollIntoView) palItems[palAct].scrollIntoView({ block: "nearest" });
-  }
-  function palGo(h, newTab) {
-    if (!h) return;
-    var url = TB_EB + h;
-    if (newTab) window.open(url, "_blank"); else window.location.href = url;
-    palClose();
-  }
-  function palClose() { if (palEl) palEl.className = "cpal"; }
-  function palOpen() {
-    if (!palEl) {
-      palEl = document.createElement("div"); palEl.className = "cpal";
-      palEl.innerHTML = '<div class="cpbox"><input type="text" placeholder="Jump to a report or an entity…" spellcheck="false"><ul class="cplist"></ul>' +
-                        '<div class="cphint"><kbd>↑</kbd><kbd>↓</kbd> move &nbsp; <kbd>Enter</kbd> open &nbsp; <kbd>Shift+Enter</kbd> new tab &nbsp; <kbd>Esc</kbd> close</div></div>';
-      document.body.appendChild(palEl);
-      palIn = palEl.querySelector("input"); palList = palEl.querySelector(".cplist");
-      palEl.addEventListener("click", function (e) { if (e.target === palEl) palClose(); });
-      palIn.addEventListener("input", function () { palQ = palIn.value; palRender(); });
-      palIn.addEventListener("keydown", function (e) {
-        if (e.key === "ArrowDown") { e.preventDefault(); if (palItems.length) { palAct = (palAct + 1) % palItems.length; palMark(); } }
-        else if (e.key === "ArrowUp") { e.preventDefault(); if (palItems.length) { palAct = (palAct - 1 + palItems.length) % palItems.length; palMark(); } }
-        else if (e.key === "Enter") { e.preventDefault(); var it = palItems[palAct]; if (it) palGo(it.getAttribute("data-h"), e.shiftKey || e.ctrlKey || e.metaKey); }
-        else if (e.key === "Escape") { e.preventDefault(); palClose(); }
-      });
-    }
-    palEl.className = "cpal open";
-    palIn.value = palQ; palIn.focus(); palIn.select();
-    palRender();
-    palLoad(palRender);
-  }
-  function setupPalette() {
-    if (!document.querySelector("div.topbar")) return;
-    document.addEventListener("keydown", function (e) {
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "k" || e.key === "K")) {
-        e.preventDefault();
-        if (palEl && /\bopen\b/.test(palEl.className)) palClose(); else palOpen();
-      }
     });
   }
 
@@ -4084,7 +3888,6 @@
     if (!tb || tb.firstChild) return;                     // baked bar (help/build) — leave it
     var M = window.AXWAY_TB || {};
     var b = tb.getAttribute("data-b") || "";   // ONE prefix: back to the docs root (the site is one tree)
-    TB_EB = b;
     var help = tb.getAttribute("data-help") || "";
     function menu(s) { return (s || "").replace(/@/g, b); }
     function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
@@ -4129,7 +3932,12 @@
       // M.errors = the group's first page (publish_lib ERRORS_HREF); Files =
       // the ALL FILES search (2026-09-28). KEEP IN STEP with publish_lib.sh
       // render_topbar.
-      '<span class="entgroup"><a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
+      // OVERVIEW first (2026-09-29, user request: the Overview group out of
+      // the Reports pulldown, "just before Entities"; M.overview = its first
+      // page, publish_lib OVERVIEW_HREF)
+      '<span class="entgroup">' +
+      (M.overview ? '<a class="entlabel" href="' + b + esc(M.overview) + '">Overview</a>' : "") +
+      '<a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
       (M.errors ? '<a class="entlabel" href="' + b + esc(M.errors) + '">Errors</a>' : "") +
       '<a class="entlabel" href="' + b + 'search/all-files.html">Files</a>' +
       '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
@@ -4146,8 +3954,6 @@
       // monitor.rpt's existence)
       (M.monitor ? '<a class="dashlink" href="' + b + 'dashboards/monitor.html">Monitor</a>' : "") +
       '<span class="tr-group">' +
-      '<a class="searchbtn" href="' + b + 'tools/report-finder.html" title="Report finder (Ctrl+K / Cmd+K: quick jump from any page)" aria-label="Report finder">🔎</a>' +
-      '<a class="searchbtn themebtn" href="#" title="Dark / light theme" aria-label="Dark or light theme">◐</a>' +
       '<a class="searchbtn" href="' + b + 'tools/sitemap.html" title="Site map" aria-label="Site map">🗺</a>' +
       (help ? '<a class="helpbtn" href="' + b + "help/" + help + '.html" title="Help" aria-label="Help">?</a>' : "") +
       "</span>";
@@ -4365,9 +4171,7 @@
   function init() {
     buildTopbar();          // FIRST: later setups bind into the bar
     fitTopbar();            // the body clears the bar at its real (wrapped) height
-    setupTheme();           // the ◐ toggle (the head script already applied the choice)
     setupRelDates();        // "3 days ago" tooltips on date cells, lazily
-    setupPalette();         // Ctrl+K / Cmd+K quick jump
     entTouch();             // Entities: slide the shared sort's hour on every view
     var tables = document.getElementsByTagName("table");
     for (var i = 0; i < tables.length; i++) {
@@ -4415,12 +4219,11 @@
     setupSwitches();     // switch=KEY table groups: one table of the group at a time behind a button row
     setupHeroToggle();   // overview + day pages: the hero view switch
     setupSearchConfig(); // Entity Search: the collapsed configuration panel
-    setupReportFinder(); // Report finder: title/intro/keyword search over the catalog
     setupCollapsible();  // clines cells (patterns): click toggles the collapsed middle lines
     hideEmptyTables();   // after the search/date filters have hidden rows
     markEmptyTables();   // a table with NO data rows says so (the report pages render no no-data prose)
     setupSectionTabs();  // detail pages: the fixed h1 + section-tab header (after empty sections are hidden)
-    setupStatFilter();   // Subscriptions in boxes: the stat boxes narrow the table
+    setupStatFilter();   // STAT boxes as row filters (render_rpt STAT lines)
     setupSelFilter();    // coverage partners page: Connection / Movement / Use case selectors
     markUrlColumn();     // LAST with markUrlRow: the column order it marks and scrolls to must be final
     markUrlRow();        // LAST: the sort/date/pager order it scrolls to must be final

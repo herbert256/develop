@@ -7,10 +7,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
-<link rel="stylesheet" href="../assets/style.css?v=3737940598">
-<script src="../assets/topbar-data.js?v=2101984655" defer></script>
-<script src="../assets/report.js?v=3737940598" defer></script>
+<link rel="stylesheet" href="../assets/style.css?v=199423882">
+<script src="../assets/topbar-data.js?v=3962830833" defer></script>
+<script src="../assets/report.js?v=199423882" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="index"></div>
@@ -21,9 +20,6 @@
 <tr><th colspan="2">Overview</th></tr>
 <tr><td><a href="../transfer/topview.html">Transfer top view</a></td><td class="desc">The whole transfer log at a glance, per day: logical Files (per CoreId) with their Count / Ok / Error split and error rate, the physical Transfers (log rows) with the same Ok/Error split, the same Files by their final state — Processed, Failed, Waiting and Expired — and, per day, the Recovered Files (automatic or manual) and the resubmitted Files (Ok or Error).</td></tr>
 <tr><td><a href="../server/topview.html">Server top view</a></td><td class="desc">The whole server log at a glance: per day, the records, the Info/Warning/Error split and error rate, and how busy each component (TM, PESITD, SSHD) was.</td></tr>
-<tr><td><a href="../analyses/data-diff.html">Since yesterday</a></td><td class="desc">The data diff: what changed on the newest data day — fresh red flips, flows that just went quiet, recoveries, first-ever sightings and new unknown names.</td></tr>
-<tr><td><a href="../analyses/triage.html">Triage</a></td><td class="desc">The ranked action list: every subscription that is red, has staged Files about to expire, or just went quiet — newest flips with the biggest history first.</td></tr>
-<tr><td><a href="../analyses/subscriptions-in-boxes.html">Subscriptions in boxes</a></td><td class="desc">Every subscription boxed by what is true of it — its status or any of the problem signals — one column per box, each cell linking into its report or entity view.</td></tr>
 <tr><th colspan="2">Entities</th></tr>
 <tr><td><a href="../transfer/entities/subscription-all.html">Subscriptions</a></td><td class="desc">One row per subscription: its Files in and out with the error rate, retries and resubmits, duration percentiles, volume, transfer legs, waiting and expired Files, and first and last day — every configured and logged name, in six views (All, Seen, Not seen, OK, Warning, Error).</td></tr>
 <tr><td><a href="../transfer/entities/logical-all.html">Logical</a></td><td class="desc">One row per logical: its Files in and out with the error rate, retries and resubmits, duration percentiles, volume, transfer legs, waiting and expired Files, and first and last day — every configured and logged name, in six views (All, Seen, Not seen, OK, Warning, Error).</td></tr>
@@ -40,7 +36,7 @@
 <tr><td><a href="../transfer/failed-files.html">Failed files</a></td><td class="desc">Every File that ended in error (Failed or Expired), newest first: its subscription, start date/time, error reason, CoreId and file name. The Files the home page Error cells count; a cell opens this page narrowed to its day.</td></tr>
 <tr><td><a href="../transfer/unknown-transfers.html">Unknown transfers</a></td><td class="desc">Every File no subscription could be found for (subscription Unknown), newest first: account, login, remote host, side, legs, state, volume, CoreId and file name, plus a per-account summary. A routing gap to investigate; subscription tables leave these Files out.</td></tr>
 <tr><td><a href="../transfer/pirates-details.html">One-legged</a></td><td class="desc">Logical transfers (CoreIds) with only ONE leg — an incomplete, one-sided crossing that never completed.</td></tr>
-<tr><td><a href="../transfer/episodes-episodes.html">Episodes</a></td><td class="desc">Every red run of each subscription with its time to recovery, and the subscriptions that came back to green after a red episode.</td></tr>
+<tr><td><a href="../transfer/episodes-recovered-flows.html">Recovered flows</a></td><td class="desc">The subscriptions that came back to green after a red episode.</td></tr>
 <tr><td><a href="../transfer/retries-failing-flows.html">Retries &amp; resubmissions</a></td><td class="desc">Everything about retried and resubmitted transfers: failing flows, the retry anatomy of delivered and abandoned Files, retry spacing, which side fails, and the manual resubmissions.</td></tr>
 <tr><td><a href="../transfer/failure-heatmap.html">Failure heatmap</a></td><td class="desc">When transfers fail — by hour of day, by weekday, and an hour × weekday failure heatmap. Surfaces recurring failure windows that a per-day view hides.</td></tr>
 <tr><td><a href="../server/errors-log-reasons.html">Errors</a></td><td class="desc">Server-log errors and warnings from every angle: the hour × weekday heatmap, the failure-reason classification (also per week) and the most-repeated message shapes.</td></tr>
@@ -61,11 +57,11 @@
 <tr><td><a href="../transfer/month-stats/this-subscription.html">Month stats</a></td><td class="desc">The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired.</td></tr>
 <tr><th colspan="2">Performance</th></tr>
 <tr><td><a href="../transfer/duration.html">Duration</a></td><td class="desc">How long transfers take — per-day percentiles and min / avg / median / max (the longest Files and the distribution have their own pages). Delivered (Processed) Files only — the default; use the All transfers button to include failures.</td></tr>
-<tr><td><a href="../transfer/duration-longest.html">Longest Files</a></td><td class="desc">The 50 longest delivered Files by wall-clock duration, each opening its File page.</td></tr>
+<tr><td><a href="../transfer/duration-longest.html">Longest Files</a></td><td class="desc">The 50 longest delivered Files by wall-clock duration.</td></tr>
 <tr><td><a href="../transfer/duration-dwell.html">Distribution &amp; Store-and-forward</a></td><td class="desc">Two clocks on the same Files, side by side: how long the whole trip takes (the wall-clock duration histogram) and how long a file waits inside SecureTransport between its inbound and outbound leg (the store-and-forward dwell), with the dwell per subscription and per day below.</td></tr>
 <tr><td><a href="../transfer/anomalies.html">Anomalies</a></td><td class="desc">Detected unusual hours and days: error-rate spikes, duration surges, file-count spikes, drops and silences, and volume bursts — each compared to its typical value across the window.</td></tr>
 <tr><th colspan="2">Flow patterns</th></tr>
-<tr><td><a href="../transfer/file-journey-patterns.html">File journey</a></td><td class="desc">The shape of each File through the platform: row/status patterns, leg counts, the ordered protocol chain, and how files arrive vs how they leave.</td></tr>
+<tr><td><a href="../transfer/file-journey-patterns.html">File journey</a></td><td class="desc">The shape of each File through the platform: row/status patterns, leg counts and the ordered protocol chain.</td></tr>
 <tr><td><a href="../transfer/file-in-file-out-handovers.html">File in - File out</a></td><td class="desc">Files that arrive on one subscription and leave on another: the partner-to-partner handovers, and the UC4 deliveries collected back through the same-named UC2 subscription.</td></tr>
 <tr><td><a href="../transfer/same-protocol.html">Inbound and Outbound same Protocol</a></td><td class="desc">Files whose first inbound leg used the same protocol as their last outbound leg (for example an SFTP upload that also left over SFTP instead of going on to the CFT): per subscription and File by File.</td></tr>
 <tr><th colspan="2">Protocols &amp; security</th></tr>
@@ -87,7 +83,6 @@
 <tr><td><a href="../analyses/subscriptions.html">Configured subscriptions</a></td><td class="desc">Every configured subscription on one row, the skip-listed ones included: active or not, its result colour and direction, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint and the From / To folders.</td></tr>
 <tr><td><a href="../analyses/accounts.html">Configured accounts</a></td><td class="desc">The accounts (partners) and their communication profiles — naming vs configured type and authentication, insecure and unrestricted endpoints, conflicting host / whitelist setup, and the account and login integrity checks.</td></tr>
 <tr><td><a href="../analyses/logical-detection.html">Logical detection</a></td><td class="desc">How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID.</td></tr>
-<tr><td><a href="../transfer/sources-and-targets.html">Sources and Targets</a></td><td class="desc">The From/To folder paths of every subscription (shown &quot;path @ host&quot; for remote-partner endpoints, like the Search page): values used as both a source and a target, and sources/targets shared by more than one subscription.</td></tr>
 <tr><td><a href="../analyses/xref/cross-account-subscriptions.html">Cross References</a></td><td class="desc">Every pair of the nine entities cross-tabulated — which values appear together on at least one transfer, the configured-but-never-seen pairs flagged.</td></tr>
 <tr><th colspan="2">Coverage</th></tr>
 <tr><td><a href="../transfer/entity-coverage-accounts.html">Entity coverage</a></td><td class="desc">Per account, logical flow, partner, domain, application or BL: covered (green) or not (red) — each side proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out); the Current, Once and OK-transfers verdicts side by side, the regressions marked.</td></tr>
@@ -95,12 +90,6 @@
 <tr><td><a href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a></td><td class="desc">Every entity value seen in the transfer logs that the current FlowManager configuration does not know — all ten entity lists checked.</td></tr>
 <tr><td><a href="../transfer/skipped.html">Skipped</a></td><td class="desc">The accounts, subscriptions and logins ignored because their name matches the skip list (input/skip.txt), plus the transfer- and server-log records set aside for the same reason.</td></tr>
 <tr><td><a href="../server/missing-entities-subscriptions.html">Missing entities</a></td><td class="desc">Entity values referenced in server-log messages but absent from the transfer logs — subscriptions, accounts, hosts, whitelisted addresses and logins, one tab each.</td></tr>
-<tr><th colspan="2">Cleanup</th></tr>
-<tr><td><a href="../analyses/cleanup-backlog.html">Cleanup backlog</a></td><td class="desc">One ranked decommission-candidate list: config-orphan accounts, subscriptions that never carried a File, whitelist addresses that never connected, cron-triggered subscriptions that can never run, and entities quiet for 45+ days — safest class first.</td></tr>
-<tr><td><a href="../analyses/config-hygiene.html">Config hygiene</a></td><td class="desc">Likely-duplicate twins (case / separator folds) and orphaned objects nothing references.</td></tr>
-<tr><td><a href="../analyses/whitelist-audit.html">Whitelist audit</a></td><td class="desc">Whitelisted partner IPs against the addresses actually connecting: used, connect-only, never seen (prunable), and the sources without any whitelist entry.</td></tr>
-<tr><td><a href="../analyses/account-sharing.html">Account sharing</a></td><td class="desc">Which accounts serve more than one subscription, and in what shape: the UC2+UC4 mailbox pair (one partner connection, drop + pickup), the UC1+UC3 outbound pair, outbound fan-outs — and the accounts mixing both directions.</td></tr>
-<tr><td><a href="../analyses/twins.html">Twins</a></td><td class="desc">Every twin pair on one page: subscriptions that are the same flow configured the opposite way (by name, by shared login, or by spelling-twin accounts — with the naming slips listed first), and the accounts spelled with both separators.</td></tr>
 </table></div>
 </body>
 </html>

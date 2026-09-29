@@ -7,10 +7,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
-<link rel="stylesheet" href="../assets/style.css?v=3737940598">
-<script src="../assets/topbar-data.js?v=2101984655" defer></script>
-<script src="../assets/report.js?v=3737940598" defer></script>
+<link rel="stylesheet" href="../assets/style.css?v=199423882">
+<script src="../assets/topbar-data.js?v=3962830833" defer></script>
+<script src="../assets/report.js?v=199423882" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="whats-new"></div>
@@ -30,20 +29,20 @@
 <tr><td>2026-09-05</td><td><a href="../analyses/polling.html">Polling</a></td><td>Use cases &amp; delivery</td><td class="desc">Every UC3 polling subscription in one row — whether it is active, its configured cron expression and schedule, and what the server log observed: po…</td></tr>
 <tr><td>2026-09-05</td><td><a href="../analyses/uc-status-uc1.html">UC status</a></td><td>Use cases &amp; delivery</td><td class="desc">Every configured subscription of each use case in one status view per UC — healthy, failing, failing after a working history, or never seen — the r…</td></tr>
 <tr><td>2026-09-05</td><td><a href="../transfer/duration-dwell.html">Distribution &amp; Store-and-forward</a></td><td>Performance</td><td class="desc">Two clocks on the same Files, side by side: how long the whole trip takes (the wall-clock duration histogram) and how long a file waits inside Secu…</td></tr>
-<tr><td>2026-09-03</td><td><a href="../transfer/duration-longest.html">Longest Files</a></td><td>Performance</td><td class="desc">The 50 longest delivered Files by wall-clock duration, each opening its File page.</td></tr>
-<tr><td>2026-08-30</td><td><a href="../analyses/account-sharing.html">Account sharing</a></td><td>Cleanup</td><td class="desc">Which accounts serve more than one subscription, and in what shape: the UC2+UC4 mailbox pair (one partner connection, drop + pickup), the UC1+UC3 o…</td></tr>
+<tr><td>2026-09-03</td><td><a href="../transfer/duration-longest.html">Longest Files</a></td><td>Performance</td><td class="desc">The 50 longest delivered Files by wall-clock duration.</td></tr>
 <tr><td>2026-08-30</td><td><a href="../analyses/app-partners.html">Application dependencies</a></td><td>Partners</td><td class="desc">Which external partner organisations each internal application exchanges Files with: partner count, Files and worst-pair Error % per application, p…</td></tr>
 <tr><td>2026-08-30</td><td><a href="../analyses/blast-radius.html">Blast radius</a></td><td>Partners</td><td class="desc">What dies with each remote host: per outbound endpoint the Files, volume, subscriptions, applications, domains and partners routed over it — plus w…</td></tr>
-<tr><td>2026-08-30</td><td><a href="../analyses/cleanup-backlog.html">Cleanup backlog</a></td><td>Cleanup</td><td class="desc">One ranked decommission-candidate list: config-orphan accounts, subscriptions that never carried a File, whitelist addresses that never connected, …</td></tr>
-<tr><td>2026-08-30</td><td><a href="../analyses/config-hygiene.html">Config hygiene</a></td><td>Cleanup</td><td class="desc">Likely-duplicate twins, server-log configuration defects and orphaned objects nothing references.</td></tr>
-<tr><td>2026-08-30</td><td><a href="../analyses/data-diff.html">Since yesterday</a></td><td>Overview</td><td class="desc">The data diff: what changed on the newest data day — fresh red flips, flows that just went quiet, recoveries, first-ever sightings and new unknown …</td></tr>
 <tr><td>2026-08-30</td><td><a href="../analyses/failed.html">Failed Subscriptions</a></td><td>Errors</td><td class="desc">Every failing subscription — the newest failed File of each, one row per subscription, plus the subscriptions failing in the server log only.</td></tr>
 <tr><td>2026-08-30</td><td><a href="../analyses/failing-reasons.html">Error reasons</a></td><td>Errors</td><td class="desc">Every error Reason that occurs — how many Files in error (Failed or Expired) carry it and the newest occurrence; a row opens the Failed files page …</td></tr>
 <tr><td>2026-08-30</td><td><a href="../analyses/first-seen.html">First seen</a></td><td>Coverage</td><td class="desc">On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.</td></tr>
 <tr><td>2026-08-30</td><td><a href="../analyses/partner-scorecard.html">Partner scorecard</a></td><td>Partners</td><td class="desc">One composite 0-100 health score per partner with at least 100 Files, built from error rate, 14-day trend, UC2 pickup wait, security posture, endpo…</td></tr>
-<tr><td>2026-08-30</td><td><a href="../analyses/subscriptions-in-boxes.html">Subscriptions in boxes</a></td><td>Overview</td><td class="desc">Every subscription boxed by what is true of it — its status or any of the problem signals.</td></tr>
-<tr><td>2026-08-30</td><td><a href="../analyses/triage.html">Triage</a></td><td>Overview</td><td class="desc">The ranked action list: every subscription that is red, has staged Files about to expire, or just went quiet — newest flips with the biggest histor…</td></tr>
-<tr><td>2026-08-30</td><td><a href="../analyses/twins.html">Twins</a></td><td>Cleanup</td><td class="desc">Every twin pair on one page: subscriptions that are the same flow configured the opposite way (by name, by shared login, or by spelling-twin accoun…</td></tr>
+<tr><td>2026-08-30</td><td><a href="../analyses/xref/cross-account-subscriptions.html">Cross References</a></td><td>Configuration</td><td class="desc">Every pair of the nine entities cross-tabulated both ways — which appear together on a transfer, which are configured but never seen.</td></tr>
+<tr><td>2026-08-30</td><td><a href="../search/search.html">Search</a></td><td>Search</td><td class="desc">Search every account, subscription, login, remote host, logical flow, partner, application, domain, BL tag and subscription source/target path by n…</td></tr>
+<tr><td>2026-08-30</td><td><a href="../server/connections-per-day.html">Connections</a></td><td>Logons &amp; connections</td><td class="desc">Connection volume in and out per day, account and address, and why our outbound connections fail: failure reasons, per remote host, test connection…</td></tr>
+<tr><td>2026-08-30</td><td><a href="../server/errors-log-reasons.html">Errors</a></td><td>Errors</td><td class="desc">Server-log errors and warnings from every angle: the hour × weekday heatmap, the failure-reason classification (also per week) and the most-repeate…</td></tr>
+<tr><td>2026-08-30</td><td><a href="../server/failure-flows.html">Per flow</a></td><td>Errors</td><td class="desc">Server-log ERROR messages classified by reason and attributed to the subscription each message names.</td></tr>
+<tr><td>2026-08-30</td><td><a href="../server/logons-incoming.html">Logons</a></td><td>Logons &amp; connections</td><td class="desc">The whole SSH authentication story: the incoming screening funnel (with bad keys and lockouts), successful logons per account and source IP, shared…</td></tr>
+<tr><td>2026-08-30</td><td><a href="../server/missing-entities-subscriptions.html">Missing entities</a></td><td>Coverage</td><td class="desc">Entity values referenced in server-log messages but absent from the transfer logs — subscriptions, accounts, hosts, whitelisted addresses and login…</td></tr>
 </table></div>
 <h2>Changed reports</h2>
 <div class="tablewrap"><table class="index fit">
@@ -54,11 +53,7 @@
 <tr><td>2026-09-29</td><td><a href="../transfer/waiting.html">Waiting</a></td><td>Use cases &amp; delivery</td><td class="desc">File colour: _files.tsv col 25 green / orange / red tints every Files table</td></tr>
 <tr><td>2026-09-29</td><td><a href="../transfer/failure-heatmap.html">Failure heatmap</a></td><td>Errors</td><td class="desc">Home trimmed, Axway ST reports, Failures absorbs server log errors, no Latest 100</td></tr>
 <tr><td>2026-09-28</td><td><a href="../transfer/duration.html">Duration</a></td><td>Performance</td><td class="desc">Audit fixes: URL sinks, intake validation, scoped exchange commits, honest cleanup</td></tr>
-<tr><td>2026-09-28</td><td><a href="../search/search.html">Search</a></td><td>Search</td><td class="desc">A UC3 subscription with no transfers is orange, never green</td></tr>
-<tr><td>2026-09-27</td><td><a href="../analyses/xref/cross-account-subscriptions.html">Cross References</a></td><td>Configuration</td><td class="desc">Build speed round 11: cross-reference per distinct tuple, coverage rules and failed pass 2 in parallel</td></tr>
 <tr><td>2026-09-27</td><td><a href="../transfer/entity-coverage-accounts.html">Entity coverage</a></td><td>Coverage</td><td class="desc">Build speed round 11: cross-reference per distinct tuple, coverage rules and failed pass 2 in parallel</td></tr>
-<tr><td>2026-09-27</td><td><a href="../server/connections-per-day.html">Connections</a></td><td>Logons &amp; connections</td><td class="desc">Build speed round 3: split big exports, grouped date-hour merge, fast clear</td></tr>
-<tr><td>2026-09-27</td><td><a href="../server/logons-incoming.html">Logons</a></td><td>Logons &amp; connections</td><td class="desc">Build speed round 3: split big exports, grouped date-hour merge, fast clear</td></tr>
 <tr><td>2026-09-27</td><td><a href="../server/ssh-security.html">SSH security</a></td><td>Protocols &amp; security</td><td class="desc">Build speed round 3: split big exports, grouped date-hour merge, fast clear</td></tr>
 <tr><td>2026-09-15</td><td><a href="../transfer/pirates-details.html">One-legged</a></td><td>Errors</td><td class="desc">Parse drops Files still under way instead of reading them In progress</td></tr>
 <tr><td>2026-09-13</td><td><a href="../transfer/protocol-protocol-direction.html">Protocol, Direction &amp; Mode</a></td><td>Protocols &amp; security</td><td class="desc">protocol &amp; security: one Transfers column (the OK legs) instead of the Ok / Error pair</td></tr>

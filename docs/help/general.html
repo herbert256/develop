@@ -7,11 +7,10 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Generic help — Axway ST reports</title>
-<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><nav class="nav"><div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../transfer/topview.html">Overview</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a><a href="../analyses/cleanup-backlog.html">Cleanup</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/topview.html">Overview</a><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><nav class="nav"><div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/index.html" title="Help" aria-label="Help">?</a></span></div>
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <h1>Generic help</h1>
@@ -37,7 +36,7 @@
 <li><strong>Entities</strong> &mdash; the Subscriptions page; <strong>&#128269;</strong> &mdash; <a href="entity-search.html">Search</a>; <strong>Files</strong> &mdash; <a href="all-files-search.html">All files search</a>.</li>
 <li><strong>Reports &#9662;</strong> &mdash; the <a href="index.html">Start page</a> and one line per report group.</li>
 <li><strong>Dashboard</strong>; <strong>Monitor</strong> when the logs carry monitor traffic.</li>
-<li><strong>&#128270;</strong> <a href="report-finder.html">Report finder</a> &middot; <strong>&#9680;</strong> dark / light theme &middot; <strong>&#128506;</strong> <a href="sitemap.html">Site map</a> &middot; <strong>?</strong> the page&rsquo;s help.</li>
+<li><strong>&#128506;</strong> <a href="sitemap.html">Site map</a> &middot; <strong>?</strong> the page&rsquo;s help.</li>
 </ul>
 <h2>Tab rows</h2>
 <ul>
@@ -60,11 +59,10 @@
 <li><strong>Sorting</strong> &mdash; click a header, again to reverse; Shift-click adds a key; a paged table returns to page 1.</li>
 <li><strong>cols</strong> (last cell of the total or last row) &mdash; hide or drag-reorder columns; <strong>Reset</strong> restores them.</li>
 <li><strong>csv</strong> (upper-right of the last header cell, on hover) &mdash; the table as shown, totals left out; a grouped header carries its group (&ldquo;Files Error&rdquo;).</li>
-<li><strong>Drill-downs</strong> &mdash; dotted-underlined counts expand to their 10 most recent Files, newest first, over the full period. Under a red or orange cell the first CoreId opens that File&rsquo;s page.</li>
+<li><strong>Drill-downs</strong> &mdash; dotted-underlined counts expand to their 10 most recent Files, newest first, over the full period. A CoreId that has a File page (per subscription the newest OK File and the three newest Error Files) opens it.</li>
 </ul>
 <h2>Page tools</h2>
 <ul>
-<li><strong>Ctrl+K</strong> / <strong>Cmd+K</strong> &mdash; the command palette: type part of a report or entity name; arrows move, Enter opens (Shift+Enter in a new tab), Escape closes.</li>
 <li>A CoreId links SecureTransport&rsquo;s <strong>File Tracking</strong> (where it opens a site page, the <strong>&#8599;</strong> after it does); <strong>&#10697;</strong> copies it.</li>
 <li>Hover a date for &ldquo;3 days ago&rdquo;, from your clock.</li>
 <li>Site links (&ldquo;Back to &hellip;&rdquo; too) open in the same tab, external ones in a new tab.</li>
