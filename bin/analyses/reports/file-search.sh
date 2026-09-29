@@ -161,13 +161,16 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v endj="$ENDJ" -v f="$PART" '
 '
 
 # the windows that actually HOLD data (2026-08): an empty window gets no
-# page and no NAV button — 24-hours always stays, being the top bar's
-# landing. DKEYS drives the NAV row and the writer loop below; the
+# page and no NAV button — EXCEPT 24-hours, the top bar's landing, and
+# older, "> 1 month" (2026-09-29, user request: "bring back the 7th period …
+# with all the files not in the other 6 periods" — a checkout whose data
+# spans a month or less left it empty, and it vanished; it now always shows,
+# empty or not). DKEYS drives the NAV row and the writer loop below; the
 # publisher removes the pages of keys whose rpt is absent.
 DKEYS=""
 for _dk in $KEYS; do
     IFS=$'\t' read -r _ _dkn _ _ _ _ <<< "$(command grep "^$_dk"$'\t' "$TMP/stats")"
-    if [ "$_dk" = "24-hours" ] || [ "${_dkn:-0}" -gt 0 ]; then DKEYS="$DKEYS $_dk"; fi
+    if [ "$_dk" = "24-hours" ] || [ "$_dk" = older ] || [ "${_dkn:-0}" -gt 0 ]; then DKEYS="$DKEYS $_dk"; fi
 done
 
 # the NAV row: one sibling button per DATA-holding window, self marked

@@ -179,7 +179,7 @@ CUR_DATES=""
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
 transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity punctuality cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage sources-and-targets skipped not-in-flow-manager ranking files route-throughput trends failed episodes failed-files waiting expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all account-sharing twins)
-server_order=(topview errors failure-flows io-errors routing-errors uc-status polling went-kaput logons connections ssh-security)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
+server_order=(topview errors failure-flows io-errors routing-errors uc-status polling went-kaput logons connections ssh-security missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
 # The reports whose PAGES live in docs/analyses/ — whatever area their DATA
@@ -258,6 +258,7 @@ report_tabs() {
         file-journey)  echo "Patterns|Leg count|Most legs|Protocol journey|Last leg|In and out" ;;
         file-in-file-out) echo "Handovers|UC4 to UC2" ;;   # 2026-09-29: + uc4-to-uc2 (each component's two tables on one tab)
         errors)        echo "Log reasons|Heatmap|Top messages" ;;   # 2026-09-29: "Log reasons" — server-log LINES by reason, not the Files in error the analyses Error reasons page counts   # 2026-09-29: Per component (the levels per component) rides the server Top view   # 2026-09-28: Per day went (= the Top view), By hour / By weekday folded into the Heatmap, Reasons carries the per-week table (tab=reasons)
+        missing-entities) echo "Subscriptions|Accounts|Hosts|Whitelist|Logins" ;;   # the five unknown-* tables (retired and brought back 2026-09-29, user request)
         connections)   echo "Per day|By account|By address|Failure reasons|By remote host|Test connections|Host keys" ;;   # 2026-09-29: By protocol went (= the Per day column totals)   # 2026-08: + connection-diagnostics tables 4-5; 2026-09-28: Whitelist usage (= Incoming Allowed + Re-screens) and Test outcomes (empty by construction) gone
         logons)        echo "Incoming|Outgoing|Near misses|Scanners|By account|By source IP|Certificates" ;;   # 2026-08: + the door-knocker tables (logon component tables 3-4); 2026-09-28: the ssh-key-auth tabs went (Key mismatches = Incoming Bad key, Lockouts now in Incoming Locked, Outbound key failures = a subset of Outgoing)
         uc-status)     echo "UC1|UC2|UC3|UC4" ;;
@@ -322,7 +323,7 @@ member_label() {   # row-1 tab text for a grouped report
         app-partners) echo "Application dependencies" ;;
         cleanup-backlog) echo "Cleanup backlog" ;;
         errors) echo "Errors" ;; connections) echo "Connections" ;; logons) echo "Logons" ;;
-        ssh-security) echo "SSH security" ;;
+        ssh-security) echo "SSH security" ;; missing-entities) echo "Missing entities" ;;
         uc-status) echo "UC status" ;;
         anomalies) echo "Anomalies" ;;
         account) echo "Accounts" ;; login) echo "Logins" ;; subscription) echo "Subscriptions" ;;
@@ -939,6 +940,7 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
         failed-*)                                                       echo "failed" ;;    # the Failed Subscriptions view pages share one help page
         duration-all)     echo "duration" ;;  # the All-transfers sibling view shares the Duration help page (the Min/Avg/Max pages are gone, 2026-09-13)
         cross-*)                                                        echo "cross-reference" ;;
+        missing-entities)    echo "server-unknown-entities" ;;   # the merged report keeps the unknown-* family help page
         # the 2026-07 merged reports keep one component's existing help page
         activity)            echo "day" ;;
         retries)             echo "retry" ;;
@@ -1384,7 +1386,12 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 if (skip || (hasR && hasS)) { for (k = 1; k <= n; k++) print L[k]; exit }
                 # DF = the .rpt fields to drop, DD = the same as display columns, DB = the banner cells
                 if (!hasR) { DF[7] = 1; DF[8] = 1; DF[9] = 1; DD[5] = 1; DD[6] = 1; DD[7] = 1; DB[4] = 1 }
-                if (!hasS) { DF[19] = 1; DF[20] = 1; DD[17] = 1; DD[18] = 1; DB[7] = 1 }
+                # the banner cells: GHEAD $3 Files · $4 Retry / Resubmit · $5 Duration ·
+                # $6 Volume · $7 Transfers · $8 State · $9 Dates (2026-09-29 fix: State
+                # dropped $7 since Transfers moved in front of it, 2026-09-13 — a view
+                # without Waiting / Expired lost the Transfers BANNER and kept "State"
+                # over the Transfers columns, the Hosts page)
+                if (!hasS) { DF[19] = 1; DF[20] = 1; DD[17] = 1; DD[18] = 1; DB[8] = 1 }
                 for (k = 1; k <= n; k++) { $0 = L[k]
                     if ($1 == "TABLE") {
                         for (i = 3; i <= NF; i++) {
@@ -1481,11 +1488,11 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             # page by CoreId), S = a server-failing flow (the cell links its
             # subscription-named errors/<slug> page), D = a boxes verdict with
             # no page (the cell links the subscription'\''s detail page).
-            # the failed-sub-all row is Environment / Subscription / Date/time /
-            # Reason / CoreId since 2026-09-21 (Subscription / Date/time / Reason
-            # since 2026-08) — the CoreId page still comes from the @data:href
-            # cell, and a server-failing row carries @data:srv=1 (the END
-            # srvslug entries cover those)
+            # the failed-sub-all row is Subscription / Date/time / Reason /
+            # CoreId (2026-09-29: the Environment column in front went;
+            # 2026-09-21 added the CoreId last) — the CoreId page still comes
+            # from the @data:href cell, and a server-failing row carries
+            # @data:srv=1 (the END srvslug entries cover those)
             $1 == "ROW" {
                 red = 0; srv = 0; pg = ""
                 for (i = 2; i <= NF; i++) {
@@ -1494,12 +1501,12 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                     if (index($i, "@data:href=../files/") == 1) pg = substr($i, 21)
                 }
                 if (!red || srv) next
-                site = $3; sub(/^@\{[^}]*\}/, "", site)
+                site = $2; sub(/^@\{[^}]*\}/, "", site)
                 k = toupper(site)
                 if (site == "" || (k in claimed) || (k in rfs)) next
                 claimed[k] = 1
                 sub(/\.html$/, "", pg)
-                if ($5 != "" && pg != "") print site "\t" $5 "\tE\t" pg
+                if ($4 != "" && pg != "") print site "\t" $4 "\tE\t" pg
             }
             END {
                 for (k in srvslug) if (!(k in claimed)) { claimed[k] = 1
@@ -1968,6 +1975,46 @@ entry_label() {   # $1 area  $2 basename
         *) t=${t#Transfer }; echo "${t% Counts}" ;;
     esac
 }
+# ---- Month stats (2026-09-13, user request) ---------------------------------
+# The 18 pages of bin/transfer/reports/month-stats.sh — {this,previous} × the
+# nine entities — under docs/<area>/month-stats/, the Reports pulldown's
+# Activity & volume group (retired and brought back 2026-09-29). Two tab rows: the MONTH (This month · Previous month, each
+# with its yyyy-mm from the .rpt META) and the ENTITY (the Entities order).
+# No date filter (a page IS one month); no prose (help page month-stats).
+render_month_stats() {   # $1 area
+    local area=$1
+    local rdir="$DATA/$area/reports/month-stats" odir="$DOCS/$area/month-stats"
+    mkdir -p "$odir"; rm -f "$odir"/*.html
+    [ -f "$rdir/this-subscription.rpt" ] || { echo "  (no month-stats .rpt yet — bin/transfer/reports/month-stats.sh writes them)" >&2; return 0; }
+    local ents="subscription logical partner account login remote-host domain application bl"
+    local w e a rpt tmp nav row1 row2 lbl n=0 mon_this mon_prev
+    mon_this=$(meta_val "$rdir/this-subscription.rpt" month); mon_prev=$(meta_val "$rdir/previous-subscription.rpt" month)
+    local saved_dates=${CUR_DATES:-} saved_dl=${DLINK_BASE:-}
+    CUR_DATES=""; DLINK_BASE="../../details/"
+    for w in this previous; do
+        for e in $ents; do
+            rpt="$rdir/$w-$e.rpt"; [ -f "$rpt" ] || continue
+            row1=""
+            for a in this previous; do
+                if [ "$a" = this ]; then lbl="This month ($mon_this)"; else lbl="Previous month ($mon_prev)"; fi
+                if [ "$a" = "$w" ]; then row1+=$'\t'"1|$lbl|$a-$e.html"; else row1+=$'\t'"0|$lbl|$a-$e.html"; fi
+            done
+            row2=""
+            for a in $ents; do
+                if [ "$a" = "$e" ]; then row2+=$'\t'"1|$(member_label "$a")|$w-$a.html"; else row2+=$'\t'"0|$(member_label "$a")|$w-$a.html"; fi
+            done
+            nav="NAV${row1}"$'\t@sep'"${row2}"
+            segment_rpt "$rpt"
+            tmp=$(mktemp "${TMPDIR:-/tmp}/rpt.XXXXXX")
+            { _hdr_with_nav "$HEADER" "$nav"; printf '%s\n' "${TBLOCK[1]:-}"; printf '%s' "$FOOTER"; } > "$tmp"
+            RPT_NOPROSE=1 render_rpt "$tmp" "$odir/$w-$e.html" "../../assets/style.css" "../index.html" "TRANSFER - Month stats" 1 "month-stats" "month-stats"
+            rm -f "$tmp"; n=$((n + 1))
+        done
+    done
+    CUR_DATES=$saved_dates; DLINK_BASE=$saved_dl
+    echo "Rendered docs/$area/month-stats/ ($n page(s))." >&2
+}
+
 # ---- THE REPORT GROUPS: one "Reports" pulldown (2026-09-29, user request) ---
 # "Reorganise Transfer Reports and Server Reports and Analyses and Goodies,
 # just one pulldown named Reports, create logical groups, have all reports in
@@ -1985,7 +2032,10 @@ entry_label() {   # $1 area  $2 basename
 #   dir   transfer | server | analyses — the docs/ directory the page renders
 #         into (the SUBS_GROUP_REPORTS render into analyses/ whatever their
 #         data area) — plus transfer/entities (the nine Entities, landing on
-#         <stem>-all.html) and analyses/xref (Cross References, stem cross)
+#         <stem>-all.html), analyses/xref (Cross References, stem cross) and
+#         transfer/month-stats (Month stats: EVERY page of the directory, the
+#         {this,previous}-<entity> pairs; stem "this", landing on
+#         this-subscription.html — 2026-09-29)
 #   stem  the report basename, or a hand-written page's name; the member's
 #         pages are <dir>/<stem>.html and <dir>/<stem>-*.html (its tabs and
 #         views), a LONGER member stem in the same dir winning (duration vs
@@ -1999,14 +2049,14 @@ _report_groups() {
         "Failures|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/pirates=One-legged|transfer/episodes=Episodes|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap" \
         "Server log errors|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors|server/went-kaput=Trouble after success" \
         "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/punctuality=Punctuality|transfer/waiting=Waiting|transfer/expired=Expired|transfer/went-quiet=Went quiet" \
-        "Activity & volume|transfer/activity=Activity|transfer/trends=Trends|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/route-throughput=Route throughput" \
+        "Activity & volume|transfer/activity=Activity|transfer/trends=Trends|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/route-throughput=Route throughput|transfer/month-stats/this=Month stats" \
         "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Distribution & Store-and-forward|transfer/anomalies=Anomalies" \
         "Flow patterns|transfer/file-journey=File journey|transfer/file-in-file-out=File in - File out|transfer/same-protocol=Inbound and Outbound same Protocol" \
         "Protocols & security|transfer/protocol=Protocol, Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency|server/ssh-security=SSH security" \
         "Logons & connections|server/logons=Logons|server/connections=Connections" \
         "Partners|analyses/partners-in=Partners - Incoming|analyses/partner-scorecard=Partner scorecard|analyses/blast-radius=Blast radius|analyses/app-partners=Application dependencies" \
         "Configuration|analyses/subscriptions=Subscriptions|analyses/accounts=Accounts|analyses/logical-detection=Logical detection|transfer/sources-and-targets=Sources and Targets|analyses/xref/cross=Cross References" \
-        "Coverage|transfer/entity-coverage=Entity coverage|analyses/first-seen=First seen|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped" \
+        "Coverage|transfer/entity-coverage=Entity coverage|analyses/first-seen=First seen|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped|server/missing-entities=Missing entities" \
         "Cleanup|analyses/cleanup-backlog=Cleanup backlog|analyses/config-hygiene=Config hygiene|analyses/whitelist-audit=Whitelist audit|analyses/account-sharing=Account sharing|analyses/twins=Twins"
 }
 # rg_landing MEMBER ("dir/stem") -> RG_LANDING, the member's landing page,
@@ -2017,6 +2067,7 @@ rg_landing() {
     case $dir in
         transfer/entities) RG_LANDING="transfer/entities/$stem-all.html" ;;
         analyses/xref)     RG_LANDING="analyses/$(group_home cross)" ;;
+        transfer/month-stats) RG_LANDING="transfer/month-stats/this-subscription.html" ;;
         *)                 RG_LANDING="$dir/$(first_page "$stem")" ;;
     esac
 }
@@ -2069,6 +2120,7 @@ rg_group_for() {
     for ((i = 0; i < ${#RG_IDX_DIR[@]}; i++)); do
         [ "${RG_IDX_DIR[$i]}" = "$dir" ] || continue
         st=${RG_IDX_STEM[$i]}
+        [ "$dir" = transfer/month-stats ] && { best=$i; break; }   # every page of the dir (this-* and previous-*)
         if [ "$b" = "$st" ] || [ "${b#"$st"-}" != "$b" ]; then
             if [ ${#st} -gt $bl ]; then best=$i; bl=${#st}; fi
         fi
@@ -2204,6 +2256,7 @@ apply_report_groups() {
             case $dir in
                 transfer/entities) for f in "$DOCS/$dir/$stem"-*.html; do [ -f "$f" ] && fam+=("$f"); done ;;
                 analyses/xref)     for f in "$DOCS/$dir/cross"-*.html; do [ -f "$f" ] && fam+=("$f"); done ;;
+                transfer/month-stats) for f in "$DOCS/$dir"/*.html; do [ -f "$f" ] && fam+=("$f"); done ;;   # this-* AND previous-*
                 *)  for f in "$DOCS/$dir/$stem.html" "$DOCS/$dir/$stem"-*.html; do
                         [ -f "$f" ] || continue
                         b=${f##*/}; b=${b%.html}; best=""

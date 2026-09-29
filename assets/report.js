@@ -2652,11 +2652,13 @@
 
     // Quick-range buttons next to the From/To pulldowns. They set the two selects
     // and apply like a manual change (persisted across the area by apply()'s
-    // saveSel). Reset = the full range; Last day = the last FULL data day;
-    // Week / Month = the last 7 / 30 calendar days of FULL days — all three
-    // end on the last full day, a partial newest day never counts (2026-08,
-    // Week/Month replacing "Last 7 days"). Dates are DATA days, so every value
-    // set is a real option (an arbitrary calendar epoch could select nothing).
+    // saveSel). All = the full range; Week / 4 weeks = the last 7 / 28 days
+    // of FULL days — a partial newest day never counts (2026-08, replacing
+    // "Last 7 days"); Month = one calendar month back from the NEWEST data
+    // day (2026-09-29); Current / Previous month = calendar months; First /
+    // Last day = the oldest / newest data day. Dates are DATA days, so every
+    // value set is a real option (an arbitrary calendar epoch could select
+    // nothing).
     var newest = epochOf[dates[dates.length - 1]], oldest = epochOf[dates[0]];
     function setRange(f, tv) { from.value = String(f); to.value = String(tv); apply(); }
     function mkRangeBtn(label, fn) {
@@ -2704,14 +2706,16 @@
     wrap.appendChild(mkSpanBtn("Week", 7));
     wrap.appendChild(mkSpanBtn("4 weeks", 28));
     // Month = one CALENDAR month back from the end day, not a fixed 30 days
-    // (2026-08): the previous month's same day-of-month + 1 through the last
-    // full day — ending 08-20 it starts 07-21; a day the shorter previous
-    // month lacks clamps to that month's last day BEFORE the + 1, so ending
-    // 03-31 it starts 03-01 (2026-09-28 fix: the clamp came after the + 1 and
-    // started 02-28, a 32-day "month")
+    // (2026-08): the previous month's same day-of-month + 1 through the end
+    // day — ending 09-17 it starts 08-18; a day the shorter previous month
+    // lacks clamps to that month's last day BEFORE the + 1, so ending 03-31
+    // it starts 03-01 (2026-09-28 fix: the clamp came after the + 1 and
+    // started 02-28, a 32-day "month"). THE END DAY IS THE NEWEST DATA DAY
+    // (2026-09-29, user request: "if the last day with data is 17 september
+    // it must show 18 august to 17 september") — partial or not, unlike
+    // Week / 4 weeks, which end on the last FULL day.
     function monthStartStr() {
-      var end = newestFull(), es = "", i;
-      for (i = 0; i < dates.length; i++) if (epochOf[dates[i]] === end) { es = dates[i]; break; }
+      var es = dates[dates.length - 1];
       var y = +es.slice(0, 4), m = +es.slice(5, 7) - 1, d = +es.slice(8, 10);
       if (m < 1) { m = 12; y -= 1; }
       var dim = new Date(Date.UTC(y, m, 0)).getUTCDate();   // days in 1-based month m
@@ -2720,18 +2724,21 @@
       var sm = st.getUTCMonth() + 1, sd = st.getUTCDate();
       return st.getUTCFullYear() + "-" + (sm < 10 ? "0" : "") + sm + "-" + (sd < 10 ? "0" : "") + sd;
     }
+    // ALWAYS shown (2026-09-29, user request — between 4 weeks and Current
+    // month): no coverage test, so a data set shorter than a month still
+    // offers it; From is then the first data day (the part of the month the
+    // data holds). Week / 4 weeks keep their hide-when-unreachable rule.
     var bmo = mkPresetBtn("Month", function () {
-      var end = newestFull(), ss = monthStartStr(), fd = dates[0], i;
+      var ss = monthStartStr(), fd = dates[0], i;
       for (i = 0; i < dates.length; i++) if (dates[i] >= ss) { fd = dates[i]; break; }
-      return [epochOf[fd], end];
-    }, true, function () { return monthStartStr() >= dates[0]; });
-    if (newestFull() !== newest) bmo.title = "One month back from the last full day — the newest day's collection window stopped mid-day, so it does not count";
+      return [epochOf[fd], newest];
+    }, true);
+    bmo.title = "One month back from the newest data day: " + monthStartStr() + " to " + dates[dates.length - 1];
     wrap.appendChild(bmo);
-    // This month / Previous month = the CALENDAR month of the newest data day
-    // and the one before it, every data day of the month (2026-09-29: they
-    // replace the Month stats pages — the Entities pages under these two
-    // presets show exactly what those 18 pages did). A month without data
-    // days is grayed like an unreachable span preset.
+    // Current month / Previous month = the CALENDAR month of the newest data
+    // day and the one before it, every data day of the month (2026-09-29 —
+    // "Current month" was "This month" until the same day, user request). A
+    // month without data days is hidden like an unreachable span preset.
     function calMonth(back) {
       var ns = dates[dates.length - 1], y = +ns.slice(0, 4), m = +ns.slice(5, 7) - back;
       while (m < 1) { m += 12; y -= 1; }
@@ -2743,7 +2750,7 @@
       return lo == null ? [oldest, newest] : [lo, hi];
     }
     function monthHas(back) { var ym = calMonth(back), i; for (i = 0; i < dates.length; i++) if (dates[i].slice(0, 7) === ym) return true; return false; }
-    var bthis = mkPresetBtn("This month", function () { return monthRange(0); }, true, function () { return monthHas(0); });
+    var bthis = mkPresetBtn("Current month", function () { return monthRange(0); }, true, function () { return monthHas(0); });
     bthis.title = "Every data day of " + calMonth(0) + ", the calendar month of the newest data day";
     wrap.appendChild(bthis);
     var bprev = mkPresetBtn("Previous month", function () { return monthRange(1); }, true, function () { return monthHas(1); });

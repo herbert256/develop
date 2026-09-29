@@ -100,6 +100,7 @@ pool_wait
 # overview.sh, area_dates … all filter on a yyyy-mm-dd Date cell).
 append_rpt_tables "$REPORTS_DIR/topview.rpt" "$REPORTS_DIR/errors-day.rpt"
 "$SCRIPT_DIR/reports/errors.sh"
+"$SCRIPT_DIR/reports/missing-entities.sh"   # the five unknown-* tables as one tabbed page (retired and brought back 2026-09-29, user request)
 "$SCRIPT_DIR/reports/connections.sh"
 "$SCRIPT_DIR/reports/logons.sh"
 # (the "Operations & Capacity" group — Platform health, Capacity & sessions,

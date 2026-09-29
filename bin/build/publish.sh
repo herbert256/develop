@@ -130,6 +130,7 @@ rg_desc() {
         whitelist-audit)        echo "Whitelisted partner IPs against the addresses actually connecting: used, connect-only, never seen (prunable), and the sources without any whitelist entry."; return ;;
         subscriptions-in-boxes) echo "Every subscription boxed by what is true of it — its status or any of the problem signals — one column per box, each cell linking into its report or entity view."; return ;;
         cross)                  echo "Every pair of the nine entities cross-tabulated — which values appear together on at least one transfer, the configured-but-never-seen pairs flagged."; return ;;
+        this)                   [ "$dir" = transfer/month-stats ] && { echo "The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired."; return; } ;;
     esac
     case $dir in
         transfer/entities) rpt="$DATA/transfer/reports/entities/$stem.rpt" ;;
@@ -603,10 +604,10 @@ write_failing_now() {
                     if (n >= 1 && a[1] != "") rfs[toupper(a[1])] = 1 }
                 close(RF) }
         $1 != "ROW" { next }
-        # the failed-sub-all row is Environment / Subscription / Date/time / Reason /
-        # CoreId since 2026-09-21 (Subscription / Date/time / Reason since
-        # 2026-08) — the page still comes from the @data:href cell, and a
-        # server-failing row carries @data:srv=1 (table 2 owns those)
+        # the failed-sub-all row is Subscription / Date/time / Reason / CoreId
+        # (2026-09-29: the Environment column in front went; 2026-09-21 added
+        # the CoreId last) — the page still comes from the @data:href cell, and
+        # a server-failing row carries @data:srv=1 (table 2 owns those)
         { red = 0; srv = 0; pg = ""
           for (i = 2; i <= NF; i++) {
               if ($i == "@data:res=red") red = 1
@@ -614,7 +615,7 @@ write_failing_now() {
               if (index($i, "@data:href=../files/") == 1) pg = substr($i, 21)
           }
           if (!red || srv) next
-          site = $3; sub(/^@\{[^}]*\}/, "", site)
+          site = $2; sub(/^@\{[^}]*\}/, "", site)
           if (site == "" || (site in seen)) next          # newest-first: the first row wins
           if (toupper(site) in rfs) next                  # server-reddened: table 2 owns it
           seen[site] = 1
@@ -622,7 +623,7 @@ write_failing_now() {
           sub(/\.html$/, "", pg)                          # -> the CoreId
           # "-" where a field would be empty: the reader below splits on TAB and
           # bash read() collapses a run of IFS whitespace, shifting the columns
-          printf "%s\t%s\t%s\t%s\t%s\n", $4, site, ($5 != "" ? $5 : "-"), pg, $4 }
+          printf "%s\t%s\t%s\t%s\t%s\n", $3, site, ($4 != "" ? $4 : "-"), pg, $3 }
     ' "$rpt" | LC_ALL=C sort -r | cut -f2-)
 
     # --- table 2: every OTHER red subscription (the still-green early warnings
@@ -1343,6 +1344,7 @@ analyses/cleanup-backlog.html|Cleanup backlog|Every cleanup signal merged into o
 analyses/partners-in.html|Partners - Incoming|Every FE login on one line: the FE overview (use cases, the last logon here and on the old gateway, Files in / out, retrieved, Waiting, Expired, pickups) combined with the Incoming logon funnel (Allowed, Disallowed, Authenticated, Auth Failed, Locked, logon pattern).|partners, incoming, fe, login, funnel, allowed, disallowed, authenticated, auth failed, bad key, locked, pickups, gateway, migration|
 search/file-search-24-hours.html|File search|Find a File by its file name — date, subscription, size and CoreId, OK rows green and Error rows red; seven windows (24 hours through a month, then everything older), the results following each keystroke, the query carried between them.|file, search, file name, find, filename, lookup|file search, filename, find
 search/all-files.html|All files search|Find a File among ALL the Files of the transfer logs by file name or CoreId and subscription, as you type, newest first; the index loads only the days that can hold a match, and the From/To selection narrows the days further.|all files, file, files, search, find, file name, filename, coreid, subscription, history, archive, lookup|all files search, find file, history
+transfer/month-stats/this-subscription.html|Month stats|The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired.|month, monthly, this month, previous month, calendar, statistics|
 STATIC
     } > "$mf"
     rows=$(LC_ALL=C awk "$FINDER_AWK" "$mf")
@@ -1524,7 +1526,7 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
             deploy-errors)                                          wn_parent=routing-errors ;;
             from-green-to-red|only-red)                             wn_parent=failed ;;   # 2026-09-29: their columns ride Failed Subscriptions   # 2026-09-29: its page went (the Routing errors page lists the lines)
             error-timing|error-reasons|top-messages)                wn_parent=errors ;;
-            unknown-sites|unknown-accounts|unknown-hosts|unknown-whitelisting|unknown-logins) wn_parent=data-diff ;;   # 2026-09-29: the Missing entities page went; Since yesterday reads the same sidecars
+            unknown-sites|unknown-accounts|unknown-hosts|unknown-whitelisting|unknown-logins) wn_parent=missing-entities ;;   # the Missing entities page (retired and brought back 2026-09-29)
             inbound-connections|connection-diagnostics)             wn_parent=connections ;;
             logon|auth-activity)                                    wn_parent=logons ;;
             ssh-crypto|ssh-sessions)                                wn_parent=ssh-security ;;

@@ -27,11 +27,14 @@ consumer keeps reading them. Transfer: `activity` (weekly+hourly+weekday — `da
 Top view takes errors-day's levels-per-component table through `append_rpt_tables` (2026-09-29).
 Analyses: `uc-status` (uc1-status · uc2-status+uc2-visits+pickups on the UC2 tab · uc3-status+uc3-polling+no-remote-dir+no-remote-files
 on the UC3 tab · uc4-status). (`platform-health` and `capacity` went with the Operations & Capacity
-group, 2026-09-27; `missing-entities` and `transfers` 2026-09-29.) Pageless producers read by
+group, 2026-09-27; `transfers` 2026-09-29. `missing-entities` — the five unknown-* tables, one tab each — went the
+morning of 2026-09-29 and came back the same day, user request, in the Coverage group; its
+value column carries the ENTITY kind, so each drill row shows a ↗ detail-page icon beside a name
+that has a detail page.) Pageless producers read by
 another page: from-green-to-red + only-red (Failed Subscriptions' Last green day / Days red /
 Failures in a row columns and the Boxes), missing-cronjobs (the Boxes; Polling shows Schedule
 "no cron"), deploy-errors (the Boxes Deploy column; Routing errors lists the lines), fe-overview
-(Partners - Incoming), alltime-counts (`_alltime.tsv`, the Subscriptions page).
+(Partners - Incoming). month-stats.sh also writes `_alltime.tsv` (the Subscriptions page).
 `report_tabs` names one tab per component table (tables sharing a `tab=KEY` modifier are ONE tab);
 `_merge_pad` pads a missing component with empty stubs so the tab count always matches. **The
 2026-09-28 fewer-server-reports round** (user request: "there are too many, are there
@@ -388,13 +391,18 @@ grid hole) and restores every baked value exactly at the full range. A dateless 
 full-period figures only. **The date controls LEAD the page** — under the centered H1
 ("Dashboard"; a narrowed range joins it as "Dashboard - <from> to <to>", a single day alone, the
 full range plain) — before the KPI row — with the FULL report-page button set (All / Week /
-4 weeks / Month / First day / Last day / Previous / Next day, the active preset in the group tab bars' active style; until 2026-08 a reduced
+4 weeks / Month / Current month / Previous month / First day / Last day / Previous / Next day, the active preset in the group tab bars' active style; until 2026-08 a reduced
 set lived in the hero card's `.chartbtns` row). **A span preset the estate cannot fill is
-GRAYED** (2026-08, report.js `mkPresetBtn` cov functions): on a short estate Week / 4 weeks /
-Month clamp their From to the first data day, collapsing into what All or First day already
-select, so they could never show as the chosen range — they disable with a "data does not reach
-back this far" tooltip, the Previous/Next-day affordance, whenever the window reaches past the
-oldest data day (an exact fit stays enabled). The card titles carry no "per slot" / "up to each slot" tail — the slot semantics live in
+GRAYED** (2026-08, report.js `mkPresetBtn` cov functions): on a short estate Week / 4 weeks
+clamp their From to the first data day, collapsing into what All or First day already
+select, so they could never show as the chosen range — they are HIDDEN whenever the window
+reaches past the oldest data day (an exact fit stays). **Month is the exception** (2026-09-29,
+user request): always shown, one calendar month back from the NEWEST data day (ending 09-17 it
+selects 08-18 .. 09-17; a partial newest day counts, unlike Week / 4 weeks), From clamped to the
+first data day on a shorter estate. "This month" is **Current month** since the same day. **The
+Linear/Log row of a card** sits in its `.chartbtns` wrapper, beside the chart, not above it:
+slotchart.js finds the card's chart from the enclosing `.chartbox` (2026-09-29 fix — the
+`parentNode` lookup found none and stored every click under kind `count`). The card titles carry no "per slot" / "up to each slot" tail — the slot semantics live in
 the card subtitles. Twelve hero views, all
 chart type `slots` at 6-hour slots: Duration (hero) /
 Files processed / Volume / Error % Files / Transfer errors (raw `Failed` + `Failed Subtransmission`
@@ -687,13 +695,21 @@ lifts figures straight from the entity summary `.rpt`s (subscriptions = prefix m
 name match, case aside). Runs after `details.sh` (needs the slugmaps). No Logical/PDA members
 (their Seen figures come from the coverage-TSV union path instead).
 
-### Month stats (Analyses menu, 2026-09-13 — RETIRED 2026-09-29)
+### Month stats (2026-09-13; retired and brought back 2026-09-29 — Activity & volume group)
 
-The 18 Month stats pages (this / previous month × nine entities) went in the 2026-09-29
-consolidation: the Entities pages with the date filter's **This month** / **Previous month**
-presets (report.js `calMonth` / `monthRange`) show the same counts, date-aware. The writer lives on
-as `bin/transfer/reports/alltime-counts.sh`, whose only output is the all-time sidecar
-`_alltime.tsv` the analyses Subscriptions page reads.
+`bin/transfer/reports/month-stats.sh` reuses the Entities attribution (same rules, same nine
+entities, same total-row pair/once rule) but counts only the Files whose START date (`_files.tsv`
+col 4) falls in ONE calendar month: "this" = the month of the newest File start, "previous" = the
+month before. 18 `.rpt` under `data/transfer/reports/month-stats/{this,previous}-<entity>.rpt`
+(`META month` / `META which`), columns Total files · In · Out · Errors · Auto Retries · Resubmit
+OK · Resubmit Error · Waiting · Expired, busiest first. `render_month_stats` (publish_lib, from the
+transfer publish) renders them into `docs/transfer/month-stats/` with two NAV tab rows (the month
+with its yyyy-mm, then the entity) and no From/To filter; help slug `month-stats`. Its Reports
+group member is `transfer/month-stats/this` — `rg_landing`, `apply_report_groups` and
+`rg_group_for` special-case that directory (every page of it belongs to the member). The same
+script writes the all-time sidecar `$REPORTS_DIR/_alltime.tsv` (every File, the nine counts per
+entity name) the analyses Subscriptions page reads. (The morning of 2026-09-29 the pages went and
+the script was cut down to `alltime-counts.sh`; Herbert asked for them back the same day.)
 
 ## Per-entity detail pages
 
@@ -972,7 +988,7 @@ row links inside it.
   (Failed AND Expired — the site-wide Error rule; Expired reads "Expired (not collected)"), one row
   per subscription (its newest): **Still failing** (default, `analyses/failed.html`) and **All**
   (`failed-sub-all.html`, green-again subscriptions kept) — the "All files" views went (Failed
-  files lists every File). Columns Environment · Subscription · Date/time · Reason · CoreID /
+  files lists every File). Columns Subscription · Date/time · Reason · CoreID /
   SessionID · Last green day · Days red · Failures in a row — the last three from the pageless
   from-green-to-red / only-red producers (the Only red / From green to red pages and Episodes'
   Open incidents table went the same day). The selector row is rendered by a dedicated block in

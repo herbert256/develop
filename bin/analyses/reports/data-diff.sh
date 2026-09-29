@@ -326,7 +326,7 @@ s3_ok=0
         printf 'ROW\t@{colspan=4}Nothing new — no server-log-only name surfaced on %s or %s.\n' "$D" "$G"
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t\n' "$n5"
-    printf 'NOTE\tNames the server log mentions with NO transfer of their own (the data/unknown sidecars) whose newest mention is on **%s** or **%s**. A configured name here is orange (server-seen, never transferred); an unconfigured one is a stranger knocking. The configured never-seen names are on the Entities **Not seen** views.\n' "$D" "$G"
+    printf 'NOTE\tNames the server log mentions with NO transfer of their own (the data/unknown sidecars) whose newest mention is on **%s** or **%s**. A configured name here is orange (server-seen, never transferred); an unconfigured one is a stranger knocking — **Missing entities** has the full lists.\n' "$D" "$G"
 
     printf 'SUMMARY\tSince yesterday (%s/%s): %s red flip(s), %s newly quiet, %s recovered, %s first seen, %s new unknown name(s)\n' \
         "$D" "$G" "$n1" "$n2" "$n3" "$n4" "$n5"

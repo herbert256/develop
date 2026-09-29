@@ -1024,7 +1024,16 @@ for f in transfer/expected-arrival.html transfer/entity-coverage-once-accounts.h
          analyses/partner-lifecycle.html analyses/use-case-patterns.html latest/search.html; do
     check $([ ! -f "docs/$f" ] && echo 0 || echo 1) "docs/$f still published (retired 2026-09-29)"
 done
-check $([ ! -d "docs/transfer/month-stats" ] && [ ! -d "docs/use-cases" ] && [ ! -d "docs/transfers" ] && echo 0 || echo 1) "a retired page directory (transfer/month-stats, use-cases, transfers) is still published"
+check $([ ! -d "docs/use-cases" ] && [ ! -d "docs/transfers" ] && echo 0 || echo 1) "a retired page directory (use-cases, transfers) is still published"
+# brought back the same day (2026-09-29, user request): Month stats (18 pages,
+# Activity & volume group) and Missing entities (five tabs, Coverage group)
+n=$(ls docs/transfer/month-stats/*.html 2>/dev/null | wc -l | tr -d " ")
+check $([ "${n:-0}" = 18 ] && echo 0 || echo 1) "docs/transfer/month-stats holds ${n:-0} page(s), expected the 18 Month stats pages"
+check $(grep -q "grouptag\">&larr; Activity &amp; volume" docs/transfer/month-stats/previous-bl.html 2>/dev/null && echo 0 || echo 1) "transfer/month-stats/previous-bl.html lacks the Activity & volume group tag"
+n=$(ls docs/server/missing-entities-*.html 2>/dev/null | wc -l | tr -d " ")
+check $([ "${n:-0}" = 5 ] && echo 0 || echo 1) "docs/server holds ${n:-0} Missing entities tab page(s), expected 5"
+check $(grep -q "grouptag\">&larr; Coverage" docs/server/missing-entities-subscriptions.html 2>/dev/null && echo 0 || echo 1) "server/missing-entities-subscriptions.html lacks the Coverage group tag"
+check $(grep -q "class=\"dlicon\" href=\"../details/subscriptions/" docs/server/missing-entities-subscriptions.html 2>/dev/null && echo 0 || echo 1) "server/missing-entities-subscriptions.html: no detail-page icon next to a missing subscription"
 # Punctuality carries the Rhythm tab (expected-arrival's three tables stacked;
 # the tab page's first table renders without its <h2>, the tab names it)
 n=$(grep -c '<table' docs/transfer/punctuality-rhythm.html 2>/dev/null)

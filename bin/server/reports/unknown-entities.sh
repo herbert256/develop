@@ -393,7 +393,20 @@ write_unknown_rpt() {   # $1 tag  $2 basename  $3 unit label ("subscription"…)
             printf 'TABLE\tWhitelisted IPs in server logs, not in transfer logs\n'
             printf 'HEAD\tIP address (whitelisted)\tServer-log mentions\n' ;;
         esac
-        printf 'KIND\tmono\tnum\n'
+        # the value column's KIND is the ENTITY kind (2026-09-29, user request:
+        # "have a link next to the entity value that goes to the detail page of
+        # that entity"): every row drills to its log lines, so render_rpt keeps
+        # the name plain (the drill's click) and puts the ↗ detail-page icon
+        # after it — only for a name with a detail page (the slugmap; an
+        # unconfigured or truncated name stays plain). A whitelisted IP has
+        # no detail page type: mono, as before.
+        case $tag in
+            S) printf 'KIND\tsite\tnum\n' ;;
+            A) printf 'KIND\tacct\tnum\n' ;;
+            L) printf 'KIND\tlogin\tnum\n' ;;
+            H) printf 'KIND\thost\tnum\n' ;;
+            *) printf 'KIND\tmono\tnum\n' ;;
+        esac
         printf 'RECALC\t-\ts0\n'
         unknown_rows "$tag"
         printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\n' "$n" "$unit" "$mentions"

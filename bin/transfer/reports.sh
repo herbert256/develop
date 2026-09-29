@@ -109,7 +109,7 @@ pool_run "$SCRIPT_DIR/reports/file-in-file-out.sh"   # partner-to-partner handov
 pool_run "$SCRIPT_DIR/reports/uc4-to-uc2.sh"         # a UC4 delivery collected back by the same-named UC2 subscription (2026-09-14)
 pool_run "$SCRIPT_DIR/reports/same-protocol.sh"      # Files whose first inbound and last outbound leg share one protocol (2026-09-14)
 pool_run "$SCRIPT_DIR/reports/remote-host.sh"
-pool_run "$SCRIPT_DIR/reports/alltime-counts.sh"   # the Subscriptions page's all-time counts sidecar (2026-09-29: was month-stats.sh — its pages went)
+pool_run "$SCRIPT_DIR/reports/month-stats.sh"   # Month stats: this / previous month × the nine entities (2026-09-13; retired and brought back 2026-09-29) + the Subscriptions page's _alltime.tsv sidecar
 # (cross-reference.sh moved to bin/analyses/reports/ 2026-07 — its pages sit
 # in the Analyses menu; bin/analyses/reports.sh runs it, still writing into
 # the transfer reports dir)

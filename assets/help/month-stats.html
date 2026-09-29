@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: File search — Cloud Reports</title>
+<title>Help: Month stats — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,22 +15,27 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>File search</h1>
+<h1>Month stats</h1>
 <h2>What it shows</h2>
-<p>Search the transfer logs&rsquo; Files by file name or CoreId, split into <strong>up to seven pages</strong> so each loads and answers fast. A match shows date and time, subscription, size and CoreId; the row colour is its outcome.</p>
+<p>One row per name of the chosen entity, counting the Files that <strong>started</strong> in the chosen calendar month. Two tab rows: the month (<strong>This month</strong> = the month of the newest File start in the data, <strong>Previous month</strong> = the one before) and the entity (Subscriptions, Logical, Partners, Accounts, Logins, Hosts, Domains, Applications, BL) &mdash; 18 pages.</p>
+<h2>Columns</h2>
+<ul>
+<li><strong>Total files</strong> &mdash; Files (one per CoreId) started in the month.</li>
+<li><strong>In Files</strong> / <strong>Out Files</strong> &mdash; by the movement direction; a File with no known movement (an unconfigured subscription) counts by its connection side, so In + Out = Total. A 0 shows blank.</li>
+<li><strong>Errors</strong> &mdash; Files that ended Failed or Expired (red).</li>
+<li><strong>Auto Retries</strong> &mdash; OK Files that carried a failed leg and no resubmitted leg: the platform&rsquo;s own retry delivered them (amber).</li>
+<li><strong>Resubmit OK</strong> / <strong>Resubmit Error</strong> &mdash; every File an operator resubmitted (the log&rsquo;s Resubmitted flag), by its final outcome.</li>
+<li><strong>Waiting</strong> / <strong>Expired</strong> &mdash; the UC2 Files staged but not collected yet, and the ones deleted unclaimed.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>The first button row switches implementation: <strong>Implementation 1, period</strong> &mdash; these window pages; <strong>Implementation 2, all files</strong> &mdash; the <a href="all-files-search.html">All files search</a>.</li>
-<li>Windows: <strong>24 hours</strong> (the newest full day, plus the partial newest day when one exists), <strong>48 hours</strong> (the second full day), <strong>Week</strong> (the rest of the last seven days), <strong>2 weeks</strong> and <strong>3 weeks</strong> (a week each further back), <strong>Month</strong> (through data day 30), <strong>&gt; 1 month</strong> (every file older than that &mdash; always shown, empty when the data spans a month or less; the other windows appear only when they hold files).</li>
-<li>Windows never overlap &mdash; a file is on exactly one page. A window with no files gets no page and no button.</li>
-<li>Each page ships every file of its window &mdash; no cap.</li>
-<li>The results follow as you type a file name or CoreId (or part of either); Enter searches at once. <code>?</code> = one character, <code>*</code> = any run; several space-separated words must all match. Matches newest first, the first 500 shown.</li>
-<li>Switching window re-runs the current search there &mdash; the buttons carry the query, and it survives a reload.</li>
-<li><strong>Green</strong> = OK (Delivered, or Waiting &mdash; staged for a UC2 pickup that has not happened yet); <strong>red</strong> = Error (Failed, or Expired &mdash; a staged file deleted by File Maintenance before pickup).</li>
+<li>Source: the per-CoreId cache <code>_files.tsv</code>, its start date (col 4) picking the month; a File is attributed to each entity exactly as on the <a href="entities.html">Entities</a> pages (see each entity&rsquo;s help page). The total row counts each File once, except for subscriptions, logins and hosts, where it counts (name, File) pairs.</li>
+<li>Only names with at least one File in the month are listed; rows open busiest first. No From/To range: a page is one month.</li>
+<li>An empty data set falls back to the calendar month.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A red row with its own error page (the facts, every transfer leg and the server log behind it; kept for a subscription&rsquo;s <strong>newest 10</strong> failures of each day) opens it from anywhere on the row; every other row opens its subscription&rsquo;s detail page.</li>
+<li>Every name links its detail page; the search box narrows the rows. Sorting, <em>cols</em>, csv: <a href="general.html">Generic help</a>.</li>
 </ul>
 </main>
 </body>

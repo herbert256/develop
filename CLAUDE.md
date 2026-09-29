@@ -1086,7 +1086,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   cells link the day dashboard), then the group columns — Files (In · Out · Ok · Cured ·
   Error · Error %; Cured = the transfer topview.rpt's Recovered group, Automatic + Manual; the In/Out split is the movement direction, `_files.tsv` col 17 — a File with none (an
 unconfigured subscription, the synthetic `UCx_` ones) counts by its connection side, col 16, so
-In + Out = Ok + Error (2026-09-28; entities.sh and alltime-counts.sh apply the same fallback); the count
+In + Out = Ok + Error (2026-09-28; entities.sh and month-stats.sh apply the same fallback); the count
   column is gone — In + Out carries it), Duration (p50 · p75 · p90 · p95 · p99 — p99 last since 2026-09-13, user request; EVERY cell of the group, banner and headers included, carries `data-href="transfer/duration.html"` and opens the Duration report WITHOUT a date — report.js `setupCellLinks`, which outranks the index row link that would open the day page), Red/Green switch
   (Red · Green) and First seen (Logical · Partners · Subscriptions · Accounts). Group dividers
   are POSITIONAL CSS on `table.dayrows` (columns 2/8/12/14 + the `gbrow` banner cells — adding
@@ -1184,7 +1184,7 @@ In + Out = Ok + Error (2026-09-28; entities.sh and alltime-counts.sh apply the s
 - **The special pages**: Entity Search (rows ship as DATA in `search-data.js`; the Type cell is
   read by INDEX in report.js — adding a column means shifting it), the SEVEN File search pages
   (`search/file-search-{24-hours,48-hours,week,2-weeks,3-weeks,month,older}.html` — `older` = "> 1 month",
-  every File before the month window, 2026-09-28, user request; the windows partition the dated Files — under `docs/search/` since 2026-09-12, beside `search/search.html`; the engine-derived links carry `../` — 2026-08: ONE page per
+  every File before the month window, 2026-09-28, user request — ALWAYS present since 2026-09-29, empty or not, like 24 hours; a window of the other five holding no File gets no page; the windows partition the dated Files — under `docs/search/` since 2026-09-12, beside `search/search.html`; the engine-derived links carry `../` — 2026-08: ONE page per
   window — result rows tint green/red by outcome via restint + a per-row `data-res` — with
   per-page `-data.js` payloads (v5; no row cap since 2026-09-28, user request — every File of a
   window ships), searched by the DEDICATED
@@ -1266,9 +1266,13 @@ errors (+ Deploy errors), Polling (+ Missing cronjobs as Schedule "no cron"), En
 Boxes pages 2026-07..09-29 — are ordinary group members since the one Reports pulldown.) The full
 merged-component list is in ARCHITECTURE.md.
 
-(The **Month stats** group — 18 pages, 2026-09-13 — WENT 2026-09-29: the Entities pages under the
-date filter's This month / Previous month presets show the same counts; its writer lives on as
-`alltime-counts.sh`, the Subscriptions page's `_alltime.tsv` sidecar. The **Goodies** short-cut
+(**Month stats** — 18 pages, 2026-09-13, `month-stats.sh` → `docs/transfer/month-stats/` — and
+**Missing entities** — the five unknown-* tables, `missing-entities.sh` — went the morning of
+2026-09-29 and CAME BACK the same day, user request: Month stats in Activity & volume (its member
+`transfer/month-stats/this` is special-cased in `rg_landing` / `apply_report_groups` /
+`rg_group_for` — every page of the directory belongs to it; month-stats.sh also writes the
+Subscriptions page's `_alltime.tsv`), Missing entities in Coverage (a ↗ detail-page icon beside
+each name that has a detail page — its value column carries the entity KIND). The **Goodies** short-cut
 dropdown of 2026-09-13 went with the one Reports pulldown; Partners - Incoming —
 `bin/analyses/reports/partners-in.sh` = fe-overview.rpt + the Incoming logon funnel of logon.rpt,
 one row per login — is a Partners member.)

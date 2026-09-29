@@ -164,12 +164,9 @@ SRVCAP=${AXWAY_ERR_LOGCAP:-2000}
 RFLIP="$DATA/colour/_redflip.tsv"
 KAPUT="$DATA/server/reports/_kaput-evidence.tsv"
 BOXES="$DATA/analyses/reports/_subs-boxes.tsv"
-# THE ENVIRONMENT LETTER (2026-09-21, user request): the first column of the
-# four lists — the first letter of the checkout's label (input/environment.txt
-# via bin/envlabel.sh): A = Acceptance, P = Production, S = the Sample estate —
-# so rows copied out of the two runtime sites still say where they came from
-source "$LIB_DIR/../envlabel.sh"
-ENVL=$(printf '%s' "$ENV_LABEL" | cut -c1 | tr '[:lower:]' '[:upper:]')
+# (THE ENVIRONMENT LETTER column of 2026-09-21 — A / P / S first on every
+# row — went 2026-09-29, user request: one repo = one environment, and the
+# top bar already names it.)
 
 GEN=$(date '+%Y-%m-%d %H:%M:%S')
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/axlastf.XXXXXX")
@@ -1216,7 +1213,7 @@ NFAILING=$(LC_ALL=C awk -F'\t' -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" '
 LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
     -v NALLALL=$((nallf + NSRVR)) -v NALLFAIL=$((NFAILING + NSRVR)) \
     -v REAS="$TMP/reasons" -v PAGEDF="$TMP/paged" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" \
-    -v SRVS="$TMP/srvsubs" -v ENVL="$ENVL" -v SESSF="$TMP/srvsess2" \
+    -v SRVS="$TMP/srvsubs" -v SESSF="$TMP/srvsess2" \
     -v FGR="$REPORTS_DIR/from-green-to-red.rpt" -v ORED="$REPORTS_DIR/only-red.rpt" '
     function rescol(nm,   r) { r = (toupper(nm) in SRES) ? SRES[toupper(nm)] : ""
         return (r == "green" || r == "orange" || r == "red") ? r : "" }
@@ -1299,16 +1296,17 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
             # (2026-08, replacing the search-on-demand payloads): the all
             # lists cap at the newest RCAP file rows instead (the intro
             # above says so when it bites), so the page loads whole.
-            # Environment · Subscription · Date/time · Reason · CoreID / SessionID
-            # (2026-09-21, user request: the environment letter first, the id of the
-            # last error last — a failed File row its CoreId, a server-log row the
-            # SESSION of its reddening error line, never a transfer id) — the
-            # positional readers of failed-sub-all.rpt (home
-            # table 1, bin/build/publish.sh; the Entities Reason, publish_lib.sh)
-            # read Subscription = field 3, Date/time = 4, Reason = 5
-            printf "TABLE\t\twide\tsort=2:-1\trowlink\trestint\tnosearch\n" > f
-            printf "HEAD\tEnvironment\tSubscription\tDate/time\tReason\tCoreID / SessionID\tLast green day\tDays red\tFailures in a row\n" > f
-            printf "KIND\ttext\tsite\ttext\ttext\tmono\ttext\tnum\tnum\n" > f
+            # Subscription · Date/time · Reason · CoreID / SessionID (2026-09-21,
+            # user request: the id of the last error last — a failed File row its
+            # CoreId, a server-log row the SESSION of its reddening error line,
+            # never a transfer id; the Environment letter column in front went
+            # 2026-09-29, user request) — the positional readers of
+            # failed-sub-all.rpt (home table 1, bin/build/publish.sh; the Entities
+            # Reason, publish_lib.sh) read Subscription = field 2, Date/time = 3,
+            # Reason = 4
+            printf "TABLE\t\twide\tsort=1:-1\trowlink\trestint\tnosearch\n" > f
+            printf "HEAD\tSubscription\tDate/time\tReason\tCoreID / SessionID\tLast green day\tDays red\tFailures in a row\n" > f
+            printf "KIND\tsite\ttext\ttext\tmono\ttext\tnum\tnum\n" > f
         }
     }
     {   # $TMP/all: sortkey, coreid, site, legs, date, time, outcome, marks
@@ -1329,10 +1327,10 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
         # beyond the guarantee) keeps the Subscription cell'"'"'s ordinary
         # detail link and nothing else.
         if (cid in PG)
-            row = sprintf("ROW\t%s\t@{href=../files/%s.html,nolink=1}%s\t%s %s\t%s\t%s%s\t@data:href=../files/%s.html%s", \
-                          ENVL, cid, site, d, t, r, cid, redcols(site), cid, tint)
+            row = sprintf("ROW\t@{href=../files/%s.html,nolink=1}%s\t%s %s\t%s\t%s%s\t@data:href=../files/%s.html%s", \
+                          cid, site, d, t, r, cid, redcols(site), cid, tint)
         else
-            row = sprintf("ROW\t%s\t%s\t%s %s\t%s\t%s%s%s", ENVL, site, d, t, r, cid, redcols(site), tint)
+            row = sprintf("ROW\t%s\t%s %s\t%s\t%s%s%s", site, d, t, r, cid, redcols(site), tint)
         for (i = 1; i <= NP; i++) {
             k = PK[i]
             # each subscription newest — but the sub row of a kind-P flow
@@ -1360,13 +1358,13 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" -v gen="$GEN" -v RCAP=10000 \
             # CoreID / SessionID: a server-log error shows the SESSION of its
             # reddening line (blank when the scan resolved none), never a CoreId
             sk = toupper(SVN[j])
-            srow = sprintf("ROW\t%s\t@{href=../files/%s.html,nolink=1}%s\t%s\t%s\t%s%s\t@data:href=../files/%s.html\t@data:srv=1\t@data:res=red", \
-                           ENVL, SVS[j], SVN[j], SVT[j], SVR[j], ((sk in SVSES) ? SVSES[sk] : ""), redcols(SVN[j]), SVS[j])
+            srow = sprintf("ROW\t@{href=../files/%s.html,nolink=1}%s\t%s\t%s\t%s%s\t@data:href=../files/%s.html\t@data:srv=1\t@data:res=red", \
+                           SVS[j], SVN[j], SVT[j], SVR[j], ((sk in SVSES) ? SVSES[sk] : ""), redcols(SVN[j]), SVS[j])
             for (i = 1; i <= NP; i++) { print srow > F[PK[i]]; CNT[PK[i]]++ }
         }
         for (i = 1; i <= NP; i++) {
             k = PK[i]; f = F[k]
-            printf "TOTAL\t@{colspan=2}Total (%d rows)\t\t\t\t\t\t\n", CNT[k] + 0 > f
+            printf "TOTAL\tTotal (%d rows)\t\t\t\t\t\t\n", CNT[k] + 0 > f
             printf "NOTE\tOne row per subscription: its newest failed File. The buttons pick the flows: **Still failing** hides the subscriptions that are green again (they have delivered OK since); **All** keeps them. Every File in error is on the Failed files page.\n" > f
             printf "NOTE\tA File is one logical transfer (all records sharing a CoreId — the id is on the error page the row opens, and in the row'"'"'s link). A row carries the **colour of its subscription**: red = still failing, green = recovered since. **Reason** is the fault the file'"'"'s own error page shows — its first error line that classifies, in the home page'"'"'s red-worklist vocabulary; a single-leg file whose log names nothing recognisable reads **One-legged** (the arrival with no delivery IS the failure); a file without its own error page takes the reason of the **newest paged file of its subscription + leg-count combination** — the same failure shape; a multi-leg file whose sessions logged no error shows its last leg'"'"'s raw status (**Failed Subtransmission**); blank only when no rule applies. Outcome **Failed** or **Expired** (a file staged for a UC2 pickup that never came) — the site-wide Error rule; an Expired row reads **Expired (not collected)**. **Last green day** is the newest day that ended on an OK File (**never** for a flow that never delivered), **Days red** counts from the first failure of the current run to the data window last day, **Failures in a row** the consecutive Files in error.\n" > f
             if (k ~ /^all-/)

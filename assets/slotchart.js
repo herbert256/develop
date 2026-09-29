@@ -533,12 +533,18 @@
     }
     bindRow(".stylebtns", "data-cstyle", SKEY, function (v) { style = v; });
     bindRow(".ivbtns", "data-civ", ivkey, function (v) { iv = v; });
-    // the Linear/Log row stores its pick under the CARD'S KIND (see scaleFor)
+    // the Linear/Log row stores its pick under the CARD'S KIND (see scaleFor).
+    // The row sits inside the .chartbtns wrapper, a SIBLING of the chart: the
+    // card's chart is found from the enclosing .chartbox (2026-09-29 fix —
+    // the parentNode lookup found no chart there, so every card's click was
+    // stored under the default kind "count" and only the count-kind chart
+    // ever switched)
     var sbars = document.querySelectorAll(".scalebtns");
     for (var sb = 0; sb < sbars.length; sb++) sbars[sb].addEventListener("click", function (e) {
       var v = e.target && e.target.getAttribute && e.target.getAttribute("data-cscale");
       if (!v) return;
-      var host = this.parentNode && this.parentNode.querySelector("div.slotchart");
+      var box = this.parentNode, host = null;
+      while (box && box.nodeType === 1 && !(host = box.querySelector("div.slotchart"))) box = box.parentNode;
       var k = host ? (host.getAttribute("data-kind") || "count") : "count";
       try { sessionStorage.setItem(scaleKey(k), v); } catch (e2) {}
       render();

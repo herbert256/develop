@@ -180,10 +180,11 @@ done
 echo "Rendered docs/files/ (${#errp[@]} failed-file page(s) + ${#filp[@]} File page(s))." >&2
 _tplap "files/ pages"
 
-# (the 18 Month stats pages, docs/transfer/month-stats/, went 2026-09-29: the
-# Entities pages under the This month / Previous month date presets show the
-# same figures)
-rm -rf "$DOCS/transfer/month-stats"
+# MONTH STATS (2026-09-13, user request; retired the morning of 2026-09-29
+# and brought back the same day): the 18 {this,previous} × entity pages of
+# month-stats.sh -> docs/transfer/month-stats/ (publish_lib
+# render_month_stats clears the dir itself)
+render_month_stats transfer
 
 # Redirect stubs were REMOVED 2026-07 (no backwards compatibility): the old
 # flat entities/showseen/session/topview-split/direction-action/mode/inout-gap/
