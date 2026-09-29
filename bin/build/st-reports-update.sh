@@ -18,8 +18,10 @@
 #   3. an archive carrying the OTHER environment's tree (a production/ or
 #      input/production/ directory in the Acceptance checkout) is refused
 #      BEFORE anything is copied — a half-copied checkout is worse than none;
-#   4. copy the exports onto input/ (existing files overwritten — a
-#      re-delivered export replaces its older self). Two layouts:
+#   4. copy the exports onto input/ (the config / policy files overwrite
+#      their older selves; a LOG export never replaces a different one — an
+#      identical re-delivery is skipped, a different export with the same
+#      first-record day is kept under a numbered name, 2026-09-29). Two layouts:
 #        a. the REPO TREE — flow-manager/ rooted at the archive root or under
 #           input/; the OLD per-environment layout (input/… or
 #           <env>/…) is accepted when <env> is THIS one;
@@ -203,16 +205,35 @@ ingest_one() {
     fi
 
     i=0
+    local k stem skipped=0
     while [ $i -lt ${#plan_src[@]} ]; do
-        mkdir -p "$(dirname "${plan_dst[$i]}")"
-        cp -p "${plan_src[$i]}" "${plan_dst[$i]}"
+        src=${plan_src[$i]}; dst=${plan_dst[$i]}
+        mkdir -p "$(dirname "$dst")"
+        case $dst in
+            input/server/*.csv|input/transfer/*.csv)
+                # A LOG export never replaces a DIFFERENT one (2026-09-29): the
+                # name is the day of the first record, so two exports starting
+                # on the same day collided and the one applied LATER silently
+                # replaced the other — that export's whole window vanished from
+                # input/. The same content is a re-delivery (skipped); different
+                # content is kept beside it under a numbered name (the parse
+                # drops the records two overlapping exports share).
+                k=1; stem=${dst%.csv}
+                while [ -f "$dst" ] && ! cmp -s "$src" "$dst"; do k=$((k + 1)); dst="${stem}_$k.csv"; done
+                plan_dst[$i]=$dst
+                if [ -f "$dst" ]; then
+                    echo "inbox: ${src#$tmp/} = $dst (already there, identical — skipped)" >&2
+                    skipped=$((skipped + 1)); i=$((i + 1)); continue
+                fi ;;
+        esac
+        cp -p "$src" "$dst"
         total=$((total + 1))
-        echo "inbox: ${plan_src[$i]#$tmp/} -> ${plan_dst[$i]}" >&2
+        echo "inbox: ${src#$tmp/} -> $dst" >&2
         i=$((i + 1))
     done
     rm -rf "$tmp"
 
-    if [ "$total" -eq 0 ]; then
+    if [ "$total" -eq 0 ] && [ "$skipped" -eq 0 ]; then
         echo "inbox: $UPDD holds NO export at all — the file stays; check its layout (expected input/flow-manager/... or logEntry*.csv / fileTransfer*.csv / partners.json / subscriptions.json / the policy .txt files, at any depth)." >&2
         inbox_note failed "$(basename "$UPD")" "holds no export"
         return 1
