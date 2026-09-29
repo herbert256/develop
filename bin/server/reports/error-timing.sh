@@ -77,7 +77,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
         tl = tl "\t@{class=num failed}" toterr+0 "\t@{class=num warn}" totwarn+0 "\t@{class=num}" tot+0; print tl
         printf "TOT|%d|%d|%d\n", tot+0, toterr+0, totwarn+0
     }
-' "$PARSED")
+' "$(srv_subset noninfo)")   # the non-Info lines (bin/server/subsets.sh — 2026-09-29, speed round 3)
 
 IFS='|' read -r _ t_tot t_err t_warn <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 if [ "${t_tot:-0}" -eq 0 ]; then

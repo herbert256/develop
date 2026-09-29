@@ -90,7 +90,11 @@ TMP=$(mktemp -d "${TMPDIR:-/tmp}/axdep.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 
 # tuple: sortkey \t name \t messages \t last-message \t kind
-LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v asx="$ASX" -v ros="$ROS" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v ucdf="$UCDF" "$RENAMES_AWK"'
+# the server lines it acts on — polls, the Receive File As profile gap, the
+# route abandons — are a marker subset (bin/server/subsets.sh, 2026-09-29,
+# speed round 3); pf names the file the awk tells apart by FILENAME
+SRVF=$(srv_subset deploy-errors)
+LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$SRVF" -v asx="$ASX" -v ros="$ROS" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v ucdf="$UCDF" "$RENAMES_AWK"'
     BEGIN { rn_load(RNF, RNP)
             while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf)
             while ((getline l9 < ros) > 0) { split(l9, a9, "\t"); if (a9[1] != "") ROS[toupper(a9[1])] = a9[1] } close(ros) }
@@ -232,7 +236,7 @@ LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v as
         for (up in UNMAP) nun++
         printf "%d\t%d\t%d\n", tot + 0, cleared + 0, nun + 0 > STATS
     }
-' "$ASX" "$PROFSUB" "$PARSED" "$FILES_TSV" | LC_ALL=C sort -r > "$TMP/rows"
+' "$ASX" "$PROFSUB" "$SRVF" "$FILES_TSV" | LC_ALL=C sort -r > "$TMP/rows"
 
 IFS=$'\t' read -r ntot ncleared nunmapped < "$TMP/stats"
 nlist=$(wc -l < "$TMP/rows" | tr -d ' ')

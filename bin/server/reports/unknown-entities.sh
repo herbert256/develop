@@ -91,6 +91,44 @@ fi
 cfg_hosts_in="$CFG_HOSTS"; [ -f "$cfg_hosts_in" ] || cfg_hosts_in=/dev/null
 cfg_white_in="$CFG_WHITE"; [ -f "$cfg_white_in" ] || cfg_white_in=/dev/null
 
+# ---- THE KNOWN SETS, ONCE, BEFORE THE SCAN (2026-09-29, build speed round 3)
+# Only UNKNOWN entities are ever reported, yet the workers counted, bucketed
+# and ring-inserted every mention of every KNOWN name too (most mentions) and
+# the merge threw them away — the per-mention bookkeeping was most of this
+# report's 71 CPU-s on production. The known sets depend on the transfer
+# cache, the blacklist and the configured lists only, so they are computed
+# first — the merge's former rules, verbatim — and the workers skip a known
+# name before any bookkeeping; the merge keeps its filter, reading this small
+# file instead of the transfer cache. Exact: an unknown name's counts,
+# buckets and ring are untouched, a known one never reached the output.
+#   S name   a transfer-log subscription (the S rule matches prefixes of these)
+#   A name   a transfer-log account, or a blacklisted one
+#   L name   a transfer-log login, or a blacklisted one
+#   H host   a CONFIGURED host (lowercase) that is also a transfer host
+#   W ip     a whitelisted IP that is a transfer host, or maps to one
+awk -F'\t' -v BLF="$BLACKLIST_FILE" "$BLACKLIST_AWK"'
+    BEGIN { bl_load(BLF)
+            for (blk in BL_DROP) { split(blk, blf_, SUBSEP)
+                if (blf_[1] == "account") aknown[blf_[2]] = 1
+                else if (blf_[1] == "login") lknown[blf_[2]] = 1 } }
+    FILENAME ~ /known\.map$/ { if ($1 == "M") mip[$2] = $3; next }
+    FILENAME ~ /_transfers\.tsv$/ {
+        if ($6 != "" && !bl_blank("site", $6)) sknown[$6] = 1
+        if ($4 != "") aknown[$4] = 1
+        if ($5 != "") lknown[$5] = 1
+        if ($16 != "") { hknown[tolower($16)] = 1; wH[$16] = 1 }
+        next }
+    FILENAME ~ /_hosts\.tsv$/ { if ($1 != "") CH[tolower($1)] = 1; next }
+    FILENAME ~ /_white\.tsv$/ { if ($1 != "") CW[$1] = 1; next }
+    END {
+        for (k in sknown) print "S\t" k
+        for (k in aknown) print "A\t" k
+        for (k in lknown) print "L\t" k
+        for (k in CH) if (k in hknown) print "H\t" k
+        for (k in CW) if ((k in wH) || ((k in mip) && (mip[k] in hknown))) print "W\t" k
+    }
+' "$TMPD/known.map" "$TCACHE" "$cfg_hosts_in" "$cfg_white_in" > "$TMPD/known.tsv"
+
 # ---- MAP: NW workers, each scanning one byte slice of the parse cache ------
 # Extraction rules are copied VERBATIM from the five former scripts; all state
 # is namespaced "T SUBSEP name" (T = S sites / A accounts / L logins / H hosts
@@ -105,8 +143,22 @@ wpids=(); id=0
 while read -r lo hi; do
     ( byte_feed "$PARSED" "$lo" "$hi" | awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         BEGIN { rn_load(RNF) }
-        FILENAME ~ /_hosts\.tsv$/  { if ($1 != "") { cfg[tolower($1)] = $1; if (!index($1, ".")) hnodot = 1 } next }   # config spelling, matched lowercase (hnodot: the H fast path is off)
-        FILENAME ~ /_white\.tsv$/  { if ($1 != "") white[$1] = 1; next }
+        # the KNOWN sets (the pre-pass above): a known name is skipped before
+        # any bookkeeping, and the known configured hosts / whitelisted IPs
+        # never enter cfg / white at all
+        FILENAME ~ /known\.tsv$/ { if ($1 == "S") KS[$2] = 1; else if ($1 == "A") KA[$2] = 1; else if ($1 == "L") KL[$2] = 1
+                                   else if ($1 == "H") KH[$2] = 1; else if ($1 == "W") KW[$2] = 1
+                                   next }
+        FILENAME ~ /_hosts\.tsv$/  { if ($1 != "" && !(tolower($1) in KH)) { cfg[tolower($1)] = $1; if (!index($1, ".")) hnodot = 1 } next }   # config spelling, matched lowercase (hnodot: the H fast path is off)
+        FILENAME ~ /_white\.tsv$/  { if ($1 != "" && !($1 in KW)) white[$1] = 1; next }
+        # an S token is known when a transfer-log subscription starts with it
+        # (the server truncated the name) or it starts with one at a name-part
+        # boundary (the token overran the name) — the merge rule, memoized
+        function sunk(nm,   kk) {
+            for (kk in KS) if (index(kk, nm) == 1) return 0
+            for (kk in KS) if (index(nm, kk) == 1 && (length(nm) == length(kk) || substr(nm, length(kk) + 1, 1) ~ /[_-]/)) return 0
+            return 1
+        }
         {
             d = substr($1, 1, 10)
             sk = $1 " " $2
@@ -146,6 +198,8 @@ while read -r lo hi; do
                     # rn_canon_pfx, not rn_canon: the server truncates names,
                     # so a renamed flow arrives as a PREFIX of its old name.
                     tk = rn_canon_pfx(tk); STK[t0] = tk }
+                    if (!(tk in SUN)) SUN[tk] = sunk(tk)
+                    if (!SUN[tk]) { s = substr(s, RSTART + RLENGTH); continue }   # a known subscription
                     k = "S" SUBSEP tk
                     cnt[k]++; cd[k SUBSEP d]++
                     if (!(k in mseen)) { mseen[k] = 1; addline(k, sk, lvlname($3) " " compname($4) "  " substr($5, 1, 200)) }
@@ -158,7 +212,7 @@ while read -r lo hi; do
                 while (match(s, /account "[^"]+"/)) {
                     m = substr(s, RSTART, RLENGTH)
                     sub(/^account "/, "", m); sub(/"$/, "", m); sub(/@.*/, "", m)
-                    if (m != "") {
+                    if (m != "" && !(m in KA)) {
                         k = "A" SUBSEP m
                         cnt[k]++; cd[k SUBSEP d]++
                             if (!(k in mseen)) { mseen[k] = 1; addline(k, sk, lvlname($3) " " compname($4) "  " substr($5, 1, 200)) }
@@ -172,7 +226,7 @@ while read -r lo hi; do
                 while (match(s, /login name "[^"]+"/)) {
                     m = substr(s, RSTART, RLENGTH)
                     sub(/^login name "/, "", m); sub(/"$/, "", m)
-                    if (m != "") {
+                    if (m != "" && !(m in KL)) {
                         k = "L" SUBSEP m
                         cnt[k]++; cd[k SUBSEP d]++
                             if (!(k in mseen)) { mseen[k] = 1; addline(k, sk, lvlname($3) " " compname($4) "  " substr($5, 1, 200)) }
@@ -226,7 +280,7 @@ while read -r lo hi; do
             for (k in cd) { nd = split(k, kp, SUBSEP)
                 print "D\t" kp[1] "\t" kp[2] "\t" kp[3] "\t" cd[k] }
         }
-    ' "$cfg_hosts_in" "$cfg_white_in" /dev/stdin > "$TMPD/part.$id" ) &
+    ' "$TMPD/known.tsv" "$cfg_hosts_in" "$cfg_white_in" /dev/stdin > "$TMPD/part.$id" ) &
     wpids+=("$!")
     id=$((id + 1))
 done < "$TMPD/cuts"
@@ -237,34 +291,22 @@ SIDE_S="$UNKNOWN_DIR/sites.tsv"; SIDE_A="$UNKNOWN_DIR/accounts.tsv"
 SIDE_L="$UNKNOWN_DIR/logins.tsv"; SIDE_H="$UNKNOWN_DIR/hosts.tsv"
 rm -f "$SIDE_S" "$SIDE_A" "$SIDE_L" "$SIDE_H"   # every run first deletes the sidecars
 agg=$(awk -F'\t' -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
-        -v side_h="$SIDE_H" -v BLF="$BLACKLIST_FILE" \
-        "$LOGLINES_AWK$BLACKLIST_AWK"'
-    # Seeded from input/blacklist.txt via bin/blacklist.sh — the same file
-    # bin/transfer/parse.sh blanks with. Values the parse BLANKS can never
-    # enter the cache-built known sets, yet server messages name them
-    # constantly, so they are seeded as known here.
-    BEGIN { bl_load(BLF)
-            for (blk in BL_DROP) { split(blk, blf_, SUBSEP)
-                if (blf_[1] == "account") aknown[blf_[2]] = 1
-                else if (blf_[1] == "login") lknown[blf_[2]] = 1 } }
-    FILENAME ~ /known\.map$/ { if ($1 == "M") mip[$2] = $3; next }             # ip -> cached reverse-DNS name
-    FILENAME ~ /_transfers\.tsv$/ {                  # ONE read fills all five known sets
-        # ^UC — the SAME expression bin/transfer/parse.sh blanks sites with
-        # (site !~ /^UC/), not a narrower one: a UC-prefixed name that is not
-        # UC<digits>_ survives the parse, so registering it here too keeps it
-        # out of the unknown list. col 6 is already the clean pre-_SCP_ name.
-        if ($6 != "" && !bl_blank("site", $6)) { sknown[$6] = 1; sbase[$6] = 1 }
-        if ($4 != "") aknown[$4] = 1                 # col 4 accounts (@-stripped by the parse)
-        if ($5 != "") lknown[$5] = 1                 # col 5 logins
-        if ($16 != "") { hknown[tolower($16)] = 1; wH[$16] = 1 }   # col 16 remote hosts (lowercase / raw)
-        next }
+        -v side_h="$SIDE_H" \
+        "$LOGLINES_AWK"'
+    # the KNOWN sets — the pre-pass file (see above): the blacklist seeding,
+    # the transfer-cache read and the host / IP rules happened there; the
+    # workers already dropped every known name, so this filter is a guard
+    FILENAME ~ /known\.tsv$/ { if ($1 == "S") { sknown[$2] = 1; sbase[$2] = 1 }
+                               else if ($1 == "A") aknown[$2] = 1; else if ($1 == "L") lknown[$2] = 1
+                               else if ($1 == "H") hknown[$2] = 1; else if ($1 == "W") wkn[$2] = 1
+                               next }
     # worker aggregate lines
     $1 == "C" { k = $2 SUBSEP $3; cnt[k] += $4; next }
     $1 == "D" { k = $2 SUBSEP $3; cd[k SUBSEP $4] += $5; next }
     $1 == "R" { addline($2 SUBSEP $3, $4, $5); next }
     # an IP is known when it appears as a transfer host itself, or when its
-    # cached reverse-DNS name does (the parse substituted the name for it)
-    function wknown(ip2) { return (ip2 in wH) || ((ip2 in mip) && (mip[ip2] in hknown)) }
+    # mapped endpoint name does (the pre-pass decided it)
+    function wknown(ip2) { return (ip2 in wkn) }
     END {
         for (k in cd) { p = k; sub(SUBSEP "[^" SUBSEP "]*$", "", p)   # strip the trailing date
             nd = split(k, kp, SUBSEP)
@@ -302,7 +344,7 @@ agg=$(awk -F'\t' -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
         ntg = split("S A L H W", TG, " ")
         for (i = 1; i <= ntg; i++) printf "TOT\t%s\t%d\t%d\n", TG[i], un[TG[i]]+0, um[TG[i]]+0
     }
-' "$TMPD/known.map" "$TCACHE" "$TMPD"/part.*)
+' "$TMPD/known.tsv" "$TMPD"/part.*)
 # for-in emits in hash order; the sidecars are data files, so sort them (name-sorted)
 # a type with NO unknowns keeps an EMPTY sidecar (its readers expect one)
 for sc in "$SIDE_S" "$SIDE_A" "$SIDE_L" "$SIDE_H"; do

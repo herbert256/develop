@@ -75,7 +75,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
             printf "%d\t%s\t%s\t%s\t%s\t%s\t%s\n", cnt[k], a[1], bk[k], fst[k], lst[k], a[2], lastlines(k) }
         printf "TOT\t%d\t%d\n", tot+0, shapes+0
     }
-' "$PARSED")
+' "$(srv_subset noninfo)")   # the non-Info lines (bin/server/subsets.sh — 2026-09-29, speed round 3)
 
 IFS=$'\t' read -r _ tot_msgs shape_count <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ "${tot_msgs:-0}" -eq 0 ]; then

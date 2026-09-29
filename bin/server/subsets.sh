@@ -42,7 +42,17 @@ SPEC='uc1	Could not send file	An error occurred while sending	finished with erro
 uc3	Applying the search pattern	listing files from partner 	Connection failure while 	Remote folder of transfer site: 	Remote files pattern of transfer site:
 ssh-sessions	Channel is not active	No registered SSH session with ID	No SSH connection with ID	Network stream read/write error	Ignoring message for not active session
 connection-diagnostics	Connection failure while 	could not be established	Wrong server fingerprint: got	~performs test connection
-remote-poll	Applying the search pattern	listing files from partner 	Remote files pattern of transfer site	Connection failure while 	failure connecting to remote host '
+remote-poll	Applying the search pattern	listing files from partner 	Remote files pattern of transfer site	Connection failure while 	failure connecting to remote host 
+io-errors	~io error	~input/output error
+deploy-errors	Applying the search pattern	is used for incoming transfer	stop further route execution
+routing-errors	Could not send file	while publishing the file	post client action	stop further route execution'
+# + THE NON-INFO SUBSET "noninfo" (2026-09-29, speed round 3): every line whose
+# level (field 3) is not I — ~2 % of the production cache (199k of 11.3M) —
+# for the reports that act on Warning / Error lines only: top-messages
+# ($3 == "I" -> next), error-timing (W / E), error-reasons and failure-flows
+# (E). A LEVEL rule, not a marker (a marker cannot hold the TAB around the
+# level field): a line is in unless it reads "date TAB time TAB I TAB".
+SPEC_EXTRA=noninfo
 
 SUBDIR="$CACHE_DIR/subsets"
 rm -rf "$SUBDIR"; mkdir -p "$SUBDIR"
@@ -84,13 +94,17 @@ part() {   # $1 = part index: its range of line starts is [lo, hi)
                 if (!(i in OC)) OC[i] = "cat > \"" OUTP C[i] ".p" PART "\""
                 print | OC[i]; break }
         }
-        END { for (i in OC) close(OC[i]) }' /dev/stdin
+        # the non-Info subset (see SPEC_EXTRA): its own rule, every line
+        $0 !~ /^[^\t]*\t[^\t]*\tI\t/ {
+            if (NIC == "") NIC = "cat > \"" OUTP "noninfo.p" PART "\""
+            print | NIC }
+        END { for (i in OC) close(OC[i]); if (NIC != "") close(NIC) }' /dev/stdin
 }
 pids=()
 for ((pi = 1; pi <= NJ; pi++)); do part "$pi" & pids+=("$!"); done
 for p in "${pids[@]}"; do wait "$p"; done
 # stitch each consumer's parts in RANGE order (= cache order)
-printf '%s\n' "$SPEC" | cut -f1 | while IFS= read -r c; do
+{ printf '%s\n' "$SPEC" | cut -f1; printf '%s\n' "$SPEC_EXTRA"; } | while IFS= read -r c; do
     : > "$SUBDIR/$c.tsv"
     for ((pi = 1; pi <= NJ; pi++)); do
         # an if, not `[ -f ] && …`: a part with no line for this consumer (the

@@ -142,7 +142,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         }
         printf "TOT\t%d\t%d\n", tot, attr
     }
-' "$TSITE" "$PARSED")
+' "$TSITE" "$(srv_subset noninfo)")   # the non-Info lines (bin/server/subsets.sh — 2026-09-29, speed round 3)
 
 tot_err=$(printf '%s\n' "$agg" | awk -F'\t' '$1=="TOT"{print $2}')
 tot_attr=$(printf '%s\n' "$agg" | awk -F'\t' '$1=="TOT"{print $3}')

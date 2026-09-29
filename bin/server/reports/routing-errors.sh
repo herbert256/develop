@@ -120,7 +120,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
         for (f in fl) printf "FAM\t%s\t%d\n", f, fl[f]
         printf "TOT\t%d\t%d\t%d\n", nl+0, ne+0, nd+0
     }
-' <(known_names) "$PARSED")
+' <(known_names) "$(srv_subset routing-errors)")   # its marker subset (bin/server/subsets.sh — 2026-09-29, speed round 3)
 
 IFS=$'\t' read -r _ n_lines n_ents n_days <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t' || printf 'TOT\t0\t0\t0\n')"
 n_lines=${n_lines:-0}; n_ents=${n_ents:-0}; n_days=${n_days:-0}

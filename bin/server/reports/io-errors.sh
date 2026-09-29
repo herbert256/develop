@@ -108,7 +108,7 @@ awk -F'\t' '
         sk = substr(d, 1, 4) substr(d, 6, 2) substr(d, 9, 2) $2      # _files.tsv col 6 shape
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", d, $2, $3, $4, $6, op, path, dir, base, acct, login, substr(m, 1, 200), sk
     }
-' "$PARSED" > "$TMP"
+' "$(srv_subset io-errors)" > "$TMP"   # its marker subset (bin/server/subsets.sh — 2026-09-29, speed round 3)
 
 nline=$(wc -l < "$TMP" | tr -d ' ')
 [ -f "$FILES" ] || FILES=/dev/null

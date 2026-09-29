@@ -59,6 +59,10 @@ pool_run "$SCRIPT_DIR/reports/logon.sh"
 pool_run "$SCRIPT_DIR/reports/ssh-crypto.sh"
 pool_run "$SCRIPT_DIR/../analyses/reports/uc2-status.sh"
 pool_run "$SCRIPT_DIR/../analyses/reports/uc4-status.sh"
+# unknown-entities right behind them (2026-09-29, speed round 3): it was the
+# LAST job and, six workers wide, the one that ran on alone at the end of
+# the stage (11 s on production); an early start folds it into the busy part
+pool_run "$SCRIPT_DIR/reports/unknown-entities.sh"   # ONE map-reduce pass -> all five unknown-* rpts (2026-07)
 pool_run "$SCRIPT_DIR/reports/topview.sh"
 # (went-kaput.sh is NOT in this pool: bin/build.sh runs it once, early — right
 # after result.sh — because failed.sh and details.sh read its evidence sidecar)
@@ -87,7 +91,6 @@ pool_run "$SCRIPT_DIR/reports/no-remote-files.sh"
 pool_run "$SCRIPT_DIR/reports/ssh-sessions.sh"
 pool_run "$SCRIPT_DIR/reports/inbound-connections.sh"
 pool_run "$SCRIPT_DIR/reports/top-messages.sh"
-pool_run "$SCRIPT_DIR/reports/unknown-entities.sh"   # ONE map-reduce pass -> all five unknown-* rpts (2026-07)
 pool_wait
 # The MERGED reports (2026-07 catalog cleanup) concatenate the pool's .rpt
 # files, so they run after it: cheap single-awk merges, no log reading.
