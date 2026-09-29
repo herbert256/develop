@@ -45,9 +45,9 @@ month to `archive/` was removed 2026-09-28).
 A static HTML site under `docs/` — one environment per checkout, its home page
 (status tables, the per-day table, the red worklists) at the docs root:
 
-- **Reports** — ONE top-bar menu of 14 groups over both logs and the
-  FlowManager configuration: Overview · Entities · Failures · Server log
-  errors · Use cases & delivery · Activity & volume · Performance · Flow
+- **Reports** — ONE top-bar menu of 12 groups over both logs and the
+  FlowManager configuration (the Entities group opens from its own top-bar
+  link): Overview · Failures (the server log errors included) · Use cases & delivery · Activity & volume · Performance · Flow
   patterns · Protocols & security · Logons & connections · Partners ·
   Configuration · Coverage · Cleanup, with a start page
   (`reports/index.html`); the reports of a group link each other through

@@ -161,13 +161,11 @@ IPMAP="$_pdir/ipmap"
 #   and every row carries @data:seen, so the seenrows tables tint by
 #   data-presence (green logged / red config-only; the former client-side
 #   All/Seen/Not seen filter was removed 2026-07 — the tint alone remains).
-# SECTION 9 = the latest 100 Files (newest first) of every type but SITE —
-#   a subscription page builds its Files table in the browser (2026-09-29,
-#   details_writer.awk files_table) — see details_lib.sh addbig; payload
-#   pipe-joined (date-time|file|coreid|size|dur|thr|direction|outcome). Sorts after the
-#   entity dims so the table renders right above the Load by weekday table
-#   (renumbered from 2.5 in 2026-07);
-#   Direction = the FILE MOVEMENT (Inbound/Outbound/Relay — which way the FILE
+# (SECTION 9, the latest Files per entity — Latest 100 / on SITE Latest
+#   1000 — is GONE since 2026-09-29, user request: a subscription page builds
+#   its Files table in the browser, details_writer.awk files_table; the other
+#   types show no File list.) Its Direction cell was
+#   the FILE MOVEMENT (Inbound/Outbound/Relay — which way the FILE
 #   travels, from the file subscription's scan_dir/target config via flowd[]),
 #   NOT the connection direction.
 # SECTION 17 = the whitelisted IPs allowed for the entity (the partner AllowIP
@@ -208,8 +206,7 @@ grpmap=$(
     done
 )
 
-# (the writer labels — cntlabel "Files", the Latest-100 File column — are
-# constants inside details_writer.awk now)
+# (the writer label cntlabel "Files" is a constant inside details_writer.awk)
 # Per-subscription FILE-MOVEMENT direction (scan_dir=out / target_working_dir=in /
 # else relay), keyed by subscription name (upper) — the bin/flow-manager.sh
 # cache xref/_subscriptions-flowdir.tsv (the same source parse.sh joins into

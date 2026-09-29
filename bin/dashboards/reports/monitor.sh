@@ -240,7 +240,7 @@ fi
 
 {
     printf 'PAGE\tmonitor\n'
-    printf 'TITLE\tMonitor — Cloud Reports\n'
+    printf 'TITLE\tMonitor — Axway ST reports\n'
     printf 'H1\tMonitor\n'
     printf 'DESC\tThe CFT end-to-end monitor: pickup, loop and staging latency per slot.\n'
     printf 'INTRO\tThe end-to-end monitor drops one file every 15 minutes on the CFT and sends it through all four use cases with ourselves as the remote partner. The three views cut its trip into disjoint segments — before ST (CFT pickup), the whole loop, and inside ST without the poll wait (staging) — so an incident shows up in exactly the segment that owns it.\n'

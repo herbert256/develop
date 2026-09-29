@@ -545,7 +545,7 @@ render_topbar() {
     local base=$1 helpslug=${2:-} home=${1}index.html brand
     # SIX evenly-spaced parts (the bar's justify-content:space-between does the
     # spacing — no pushing margins, 2026-07 redesign): 1 the brand (-> home;
-    # its TEXT is the ENVIRONMENT LABEL, input/environment.txt — "Cloud" on a
+    # its TEXT is the ENVIRONMENT LABEL, input/environment.txt — "Axway ST" on a
     # checkout without one; 2026-09-12, user request: the static label span
     # that stood beside a fixed "Cloud" brand since the env split of
     # 2026-09-11 is gone) · 2 the Entities link + search icon · 3 the Files
@@ -554,7 +554,7 @@ render_topbar() {
     # plain Dashboard link (ONE dashboard page — no dropdown) · 6 the three
     # right icons. The precomputed menu strings carry an "@" placeholder; swap
     # it for this page's prefix.
-    esc "${ENV_LABEL:-Cloud}"; brand=$ESC
+    esc "${ENV_LABEL:-Axway ST}"; brand=$ESC
     if env_has_switch; then
         # THE ENVIRONMENT SWITCH (2026-09-12, user request; ENVSWITCH_JS): the
         # pair "Acceptance / Production" — the active one (.envcur: bold,
@@ -2040,13 +2040,13 @@ render_month_stats() {   # $1 area
 #         views), a LONGER member stem in the same dir winning (duration vs
 #         duration-longest / duration-dwell)
 # A report in no group has no row and no menu line — every published report
-# belongs to one (the former boxes-only reports included).
+# belongs to one (the former boxes-only reports included). The "Server log
+# errors" group was folded into Failures (2026-09-29, user request).
 _report_groups() {
     printf '%s\n' \
         "Overview|transfer/topview=Transfer top view|server/topview=Server top view|analyses/data-diff=Since yesterday|analyses/triage=Triage|analyses/subscriptions-in-boxes=Subscriptions in boxes" \
         "Entities|transfer/entities/subscription=Subscriptions|transfer/entities/logical=Logical|transfer/entities/partner=Partners|transfer/entities/account=Accounts|transfer/entities/login=Logins|transfer/entities/remote-host=Hosts|transfer/entities/domain=Domains|transfer/entities/application=Applications|transfer/entities/bl=BL" \
-        "Failures|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/pirates=One-legged|transfer/episodes=Episodes|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap" \
-        "Server log errors|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors|server/went-kaput=Trouble after success" \
+        "Failures|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/pirates=One-legged|transfer/episodes=Episodes|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors|server/went-kaput=Trouble after success" \
         "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/punctuality=Punctuality|transfer/waiting=Waiting|transfer/expired=Expired|transfer/went-quiet=Went quiet" \
         "Activity & volume|transfer/activity=Activity|transfer/trends=Trends|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/route-throughput=Route throughput|transfer/month-stats/this=Month stats" \
         "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Distribution & Store-and-forward|transfer/anomalies=Anomalies" \
@@ -2089,9 +2089,12 @@ rg_rel() {
 # THE REPORTS PULLDOWN — Start page (reports/index.html) + one line per group,
 # landing on its first member. "@" = the page's docs-root prefix, swapped per
 # page by render_topbar / report.js buildTopbar (topbar-data.js `reports`).
+# NOT Entities (2026-09-29, user request): the top bar's own Entities link
+# opens them; the group stays for the start page, the finder and the h1 tags.
 REPORTS_MENU='<a class="ddtop" href="@reports/index.html">Start page</a>'
 while IFS= read -r _rgl; do
     [ -n "$_rgl" ] || continue
+    [ "${_rgl%%|*}" = Entities ] && continue
     _rgf=${_rgl#*|}; _rgf=${_rgf%%|*}; _rgf=${_rgf%%=*}
     rg_landing "$_rgf"; esc "${_rgl%%|*}"
     REPORTS_MENU+="<a href=\"@$RG_LANDING\">$ESC</a>"

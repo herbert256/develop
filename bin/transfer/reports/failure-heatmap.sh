@@ -101,7 +101,7 @@ read -r w_tot w_fail w_pct <<< "$(lsum WD)"
     printf 'INTRO\t**%s** Files (one logical transfer each), **%s** failed (**%s%%**). Below: the failure split by **hour of day**, by **weekday**, and a **heatmap** of failures per hour × weekday — darker cells are more failures. Click an Error count for that bucket'\''s 10 most recent failed Files.\n' \
         "$t_tot" "$t_fail" "$tot_pct"
 
-    printf 'TABLE\tBy hour of day\tzerohide=1\n'
+    printf 'TABLE\tBy hour of day\tzerohide=1\tsxs=1\n'   # side by side with By weekday (2026-09-29, user request)
     printf 'HEAD\tHour\tFiles\tError\tError %%\tFailures\n'
     printf 'KIND\ttext\tnum\tnumfailed\tnum\tbar\n'
     printf 'RECALC\t-\ts0\ts1\tp1.0\tb1\n'
@@ -118,7 +118,7 @@ read -r w_tot w_fail w_pct <<< "$(lsum WD)"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s%%\t\n' "$h_tot" "$h_fail" "$h_pct"
     printf 'NOTE\tFiles by the hour of their start time, all days combined; the Failures bar is that hour'\''s failed count relative to the busiest hour. Hours with zero errors are not listed. Re-aggregates over the selected dates. Click an Error count for its 10 most recent failed Files.\n'
 
-    printf 'TABLE\tBy weekday\tzerohide=1\n'
+    printf 'TABLE\tBy weekday\tzerohide=1\tsxs=1\n'
     printf 'HEAD\tWeekday\tFiles\tError\tError %%\tFailures\n'
     printf 'KIND\ttext\tnum\tnumfailed\tnum\tbar\n'
     printf 'RECALC\t-\ts0\ts1\tp1.0\tb1\n'

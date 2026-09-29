@@ -401,351 +401,10 @@ _daycell() {   # $1 = date
     return 0
 }
 
-# The log-exports facts table (the bottom of each env block): one row per
-# log — how many raw export files feed the parse (the *.csv under
-# input/server/ and input/transfer/, what the two parses read), the total records,
-# the first and last record stamp, the days with records and HOLES: calendar
-# days inside the [first,last] span with no record at all. The per-day
-# figures come from the two topview.rpt files (Date cells strip the
-# @{href=…} attr first — the documented topview consumer rule); a day counts
-# as covered only when its record count is nonzero. Reads $HOME_ENV_DATA.
-# ---------------------------------------------------------------------------
-# "Still failing", in TWO tables (2026-08). A red subscription is red for one
-# of two reasons, and they want different columns and different destinations:
-#
-#   Failing transfers                 it is red BY ITS OWN FILES: a failed
-#                                     File and NO server red-flip. The rows are
-#                                     transfer/failed-sub-all.rpt's own, red only
-#                                     and one per subscription (its newest —
-#                                     the .rpt is newest-first, so the first row
-#                                     of a subscription is it). Subscription,
-#                                     the row's OWN Reason (the linked page's
-#                                     verdict) and Started; no Legs.
-#                                     The WHOLE row, the subscription cell
-#                                     included, opens that file's error page.
-#   Failing subscriptions in Server   everything else: red for something the
-#   log                               transfer log cannot show — a server-log
-#                                     error after the last delivery, a deploy
-#                                     mistake, an expired pickup. These rows
-#                                     carry the Reason and the evidence stamp;
-#                                     a RED row opens the flow's OWN error page
-#                                     (files/<slug>.html, named by the
-#                                     subscription — failed.sh writes one for
-#                                     every table-2 red).
-#
-# Membership across the two is the RESULT COLOUR (bin/build/result.sh's third
-# column), not a report's selection, so the two together are still every red
-# flow — the split only decides which half a flow lands in.
-#
-# The TROUBLE-AFTER-SUCCESS early warnings — still-GREEN flows whose connected
-# server logs carry an E-level line dated after their last delivery — were
-# listed here too from 2026-08-22 to 2026-09-03 and are GONE (user request:
-# a green row under a "Failing" heading contradicts itself). They stay on the
-# went-kaput page, which is their report. Every row of both tables is RED.
-#
-# Two joins dress the second table, neither deciding membership: the Reason
-# (analyses/reports/_subs-boxes.tsv, written by publish-insights.sh; the
-# fresh kaput/red-flip verdicts outrank it) and the Last error stamp (the
-# red-flip / kaput evidence line; _files.tsv only as a last resort).
-# Both tables are class="index" + report.js setupIndexRows, which follows the
-# row's first link.
-#
-# THE 15-ROW CAP (2026-08): each table opens showing only its newest 15 rows,
-# the same mechanism as the per-day table above them — rows past 15 and the
-# Total row carry class capx, hidden while the table carries cap14, and a
-# "Show all" button directly after the .tablewrap (report.js setupShowAll
-# reads its previousElementSibling) lifts the cap. Baked only when a table
-# holds more than 15 rows. cap14 is the shared cap CLASS, not the count —
-# the hidden set is whatever rows the publish marked capx.
-# ---------------------------------------------------------------------------
-write_failing_now() {
-    local rows1 rows2
-    local base="$HOME_ENV_DATA/flow-manager/base/_subscriptions.tsv"
-    [ -f "$base" ] || return 0
-    local boxes="$HOME_ENV_DATA/analyses/reports/_subs-boxes.tsv"
-    local rpt="$HOME_ENV_DATA/transfer/reports/failed-sub-all.rpt"
-    local filesc="$HOME_ENV_DATA/transfer/cache/_files.tsv"
-    local kaput="$HOME_ENV_DATA/server/reports/_kaput-evidence.tsv"
-    [ -f "$boxes" ]  || boxes=/dev/null
-    [ -f "$rpt" ]    || rpt=/dev/null
-    [ -f "$filesc" ] || filesc=/dev/null
-    [ -f "$kaput" ]  || kaput=/dev/null
-
-    # --- table 1: the red rows of failed-sub-all.rpt (one per subscription, its newest failure) ---
-    # ROW layout there: Subscription | CoreId | Legs | Started | Reason, each
-    # cell carrying the error page in an @{href=…} prefix, plus @data:res.
-    # The Reason is THE ROW'S OWN field 6 — the verdict failed.sh baked
-    # into the very page this row opens (its title suffix), so the home cell
-    # and the page it lands on agree BY CONSTRUCTION. It used to join the
-    # flow-level _subs-boxes.tsv verdict instead, and the two could disagree:
-    # a one-legged file whose flow once had connection failures said
-    # "Connection failures" here and "One-legged" on the page (2026-08-22).
-    # A SERVER-REDDENED flow never sits here (2026-08-22): a colour/_redflip.tsv
-    # entry means the flow's LAST transfer ended OK and the server log erred
-    # AFTER it — so any failed File it still has on the Failed Subscriptions lists is older
-    # history, and this row would open a stale error page while the real story
-    # is the server log. Those flows go to table 2, whatever old failures they
-    # keep listed.
-    local redflip="$HOME_ENV_DATA/colour/_redflip.tsv"
-    [ -f "$redflip" ] || redflip=/dev/null
-    rows1=$(awk -F'\t' -v RF="$redflip" '
-        BEGIN { while ((getline l < RF) > 0) { n = split(l, a, "\t")
-                    if (n >= 1 && a[1] != "") rfs[toupper(a[1])] = 1 }
-                close(RF) }
-        $1 != "ROW" { next }
-        # the failed-sub-all row is Subscription / Date/time / Reason / CoreId
-        # (2026-09-29: the Environment column in front went; 2026-09-21 added
-        # the CoreId last) — the page still comes from the @data:href cell, and
-        # a server-failing row carries @data:srv=1 (table 2 owns those)
-        { red = 0; srv = 0; pg = ""
-          for (i = 2; i <= NF; i++) {
-              if ($i == "@data:res=red") red = 1
-              if ($i == "@data:srv=1") srv = 1
-              if (index($i, "@data:href=../files/") == 1) pg = substr($i, 21)
-          }
-          if (!red || srv) next
-          site = $2; sub(/^@\{[^}]*\}/, "", site)
-          if (site == "" || (site in seen)) next          # newest-first: the first row wins
-          if (toupper(site) in rfs) next                  # server-reddened: table 2 owns it
-          seen[site] = 1
-          if (pg == "") next
-          sub(/\.html$/, "", pg)                          # -> the CoreId
-          # "-" where a field would be empty: the reader below splits on TAB and
-          # bash read() collapses a run of IFS whitespace, shifting the columns
-          printf "%s\t%s\t%s\t%s\t%s\n", $3, site, ($4 != "" ? $4 : "-"), pg, $3 }
-    ' "$rpt" | LC_ALL=C sort -r | cut -f2-)
-
-    # --- table 2: every OTHER red subscription (the still-green early warnings
-    # that used to join them are gone since 2026-09-03 — see the header) ----
-    rows2=$(awk -F'\t' -v BOXES="$boxes" -v FILESC="$filesc" -v KAP="$kaput" -v RF="$redflip" "$(cat bin/flip-reason.awk)"'
-        BEGIN {
-            while ((getline l < BOXES) > 0) { n = split(l, a, "\t")
-                if (n >= 2 && a[1] != "") why[toupper(a[1])] = a[2] }
-            close(BOXES)
-            # the red-flip evidence stamps: the Last column shows the SERVER
-            # LOG line the red verdict rests on, not the last transfer
-            # (2026-08-22) — for a server-reddened flow the transfer date is
-            # exactly the thing the server log outdates
-            while ((getline l < RF) > 0) { n = split(l, a, "\t")
-                if (n >= 2 && a[1] != "" && a[2] != "") rfst[toupper(a[1])] = a[2] }
-            close(RF)
-            while ((getline l < FILESC) > 0) { n = split(l, a, "\t")
-                if (n < 12 || a[12] == "") continue
-                k = toupper(a[12])
-                if (a[6] > mx[k]) { mx[k] = a[6]; last[k] = a[4] " " a[5] } }
-            close(FILESC)
-            # the kaput evidence: name, latest stamp, sources, latest message,
-            # newest E-LEVEL message (empty = warnings only). The Reason of a red row
-            # prefers this fresh verdict — the classified newest server E line
-            # (bin/flip-reason.awk, the shared vocabulary) — over the boxes join:
-            # a server-reddened flow must name the server error, not an old box.
-            while ((getline l < KAP) > 0) { n = split(l, a, "\t")
-                if (n < 5 || a[1] == "" || a[5] == "") continue
-                r = flip_reason(a[5])
-                if (r != "") kapall[toupper(a[1])] = r
-            }
-            close(KAP)
-        }
-        FILENAME == ARGV[1] { if ($1 != "") intbl1[toupper($1)] = 1; next }   # the names table 1 took
-        $1 == "" { next }
-        toupper($1) in intbl1 { next }
-        # sort key first (newest File first, never-transferred last, name
-        # breaking the tie). Never leave a field EMPTY: the reader below
-        # splits on TAB and bash read() collapses a run of IFS whitespace,
-        # which would shift every later column — the blanks are dashes.
-        $3 == "red" {
-            k = toupper($1)
-            # Last = the server-log evidence stamp (the red-flip line), never
-            # the last transfer — the fallback covers a red with no flip entry
-            st = (k in rfst) ? rfst[k] : ((k in last) ? last[k] : "-")
-            printf "%s\t%s\t%s\t%s\tred\n", \
-                (st != "-" ? st : "0000") "\t" $1, $1, st, \
-                (k in kapall ? kapall[k] : (k in why ? why[k] : "-"))
-            next }
-        ' \
-        <(printf '%s\n' "$rows1" | cut -f1) "$base" \
-        | LC_ALL=C sort -t"$(printf '\t')" -k1,1r -k2,2 | cut -f3-)
-
-    local n1=0 n2=0
-    [ -n "$rows1" ] && n1=$(printf '%s\n' "$rows1" | wc -l | tr -d ' ')
-    [ -n "$rows2" ] && n2=$(printf '%s\n' "$rows2" | wc -l | tr -d ' ')
-    [ "$n1" -gt 0 ] || [ "$n2" -gt 0 ] || return 0
-
-    local site cid started lastf reason href
-    # the 15-row cap (see the header): baked only when a table has more to show
-    local cap1="" totcap1="" cap2="" totcap2="" rown trc
-    [ "$n1" -gt 15 ] && { cap1=" cap14"; totcap1=" capx"; }
-    [ "$n2" -gt 15 ] && { cap2=" cap14"; totcap2=" capx"; }
-    # SIDE BY SIDE: the same .sxs / .sxscol pair the .rpt renderer emits for a
-    # sxs table (style.css: a flex row of content-sized columns that scrolls
-    # horizontally rather than wrapping). Each column carries its own heading
-    # and note. With only one table — production has no server-log-only reds —
-    # the row simply holds one column.
-    printf '<div class="sxs">\n'
-    if [ "$n1" -gt 0 ]; then
-        printf '<div class="sxscol">\n'
-        printf '<h2>Failing transfers</h2>\n'
-        # data-sort-init: newest LAST first. The rows are emitted in that order
-        # anyway, but makeSortable re-sorts on load, so the default has to be
-        # declared or the generic fallback would pick a different column.
-        # The CoreId is NOT a column — it is only the row's destination, and the
-        # error page names it in its own facts table.
-        printf '<div class="tablewrap"><table class="index fit%s" data-nosearch="1" data-sort-init="2:-1">\n' "$cap1"
-        printf '<tr><th>Subscription</th><th>Reason</th><th>Last</th></tr>\n'
-        rown=0
-        while IFS=$'\t' read -r site reason cid started; do
-            [ -n "$site" ] || continue
-            rown=$((rown + 1)); trc=""
-            [ -n "$cap1" ] && [ "$rown" -gt 15 ] && trc=' class="capx"'
-            href="files/$cid.html"
-            [ "$reason" = "-" ] && reason=""
-            esc "$site";    local hsite=$ESC
-            esc "$reason";  local hreas=$ESC
-            esc "${started:0:16}"; local hstart=$ESC   # minutes precision — no seconds/.mmm (2026-08)
-            esc "$href";    local hhref=$ESC
-            # every cell links the error page, the subscription included, so the
-            # whole row has ONE destination and no cell goes somewhere else
-            printf '<tr%s><td class="res-red"><a href="%s">%s</a></td><td><a href="%s">%s</a></td><td><a href="%s">%s</a></td></tr>\n' \
-                "$trc" "$hhref" "$hsite" "$hhref" "$hreas" "$hhref" "$hstart"
-        done <<< "$rows1"
-        # the site-wide TOTAL footer (no numeric columns, so the count alone);
-        # hidden while the cap stands, like the per-day table's Total — and
-        # not emitted at all under 15 rows (2026-08: a small table's count is
-        # visible at a glance, the footer just added noise)
-        [ "$n1" -ge 15 ] && printf '<tr class="total%s"><td>Total (%s rows)</td><td></td><td></td></tr>\n' "$totcap1" "$n1"
-        printf '</table></div>\n'
-        [ -n "$cap1" ] && printf '<button class="showallbtn" type="button">Show all</button>\n'
-        printf '</div>\n'
-    fi
-    if [ "$n2" -gt 0 ]; then
-        printf '<div class="sxscol">\n'
-        printf '<h2>Failing subscriptions in Server log</h2>\n'
-        printf '<div class="tablewrap"><table class="index fit%s" data-nosearch="1" data-sort-init="2:-1">\n' "$cap2"
-        printf '<tr><th>Subscription</th><th>Reason</th><th>Last</th></tr>\n'
-        rown=0
-        while IFS=$'\t' read -r site lastf reason colr; do
-            [ -n "$site" ] || continue
-            rown=$((rown + 1)); trc=""
-            [ -n "$cap2" ] && [ "$rown" -gt 15 ] && trc=' class="capx"'
-            # slugify mirrors the detail-page slug rule
-            href="details/subscriptions/$(slugify "$site").html"
-            # A RED row opens the flow's OWN error page instead (2026-08):
-            # files/<slug>.html, named by the subscription — failed.sh
-            # writes one for every table-2 red (server-reddened or file-less),
-            # holding the very server-log evidence this row's verdict rests
-            # on. Existence-checked (the error slugs suffix on a twin
-            # collision); every row is red since 2026-09-03 (the early warnings went).
-            [ "$lastf"  = "-" ] && lastf=""
-            [ "$reason" = "-" ] && reason=""
-            case $colr in red|green) ;; *) colr=red ;; esac
-            if [ "$colr" = red ] && [ -f "docs/files/$(slugify "$site").html" ]; then
-                href="files/$(slugify "$site").html"
-            fi
-            esc "$site";   local hsite2=$ESC
-            esc "${lastf:0:16}"; local hlast=$ESC   # minutes precision — no seconds/.mmm (2026-08)
-            esc "$href";   local hhref2=$ESC
-            esc "$reason"; local hreason=$ESC
-            printf '<tr%s><td class="res-%s"><a href="%s">%s</a></td><td>%s</td><td>%s</td></tr>\n' \
-                "$trc" "$colr" "$hhref2" "$hsite2" "$hreason" "$hlast"
-        done <<< "$rows2"
-        # the site-wide TOTAL footer — same rules as table 1 (cap-hidden, and
-        # not emitted at all under 15 rows)
-        [ "$n2" -ge 15 ] && printf '<tr class="total%s"><td>Total (%s rows)</td><td></td><td></td></tr>\n' "$totcap2" "$n2"
-        printf '</table></div>\n'
-        [ -n "$cap2" ] && printf '<button class="showallbtn" type="button">Show all</button>\n'
-        printf '</div>\n'
-    fi
-    printf '</div>\n'
-}
-
-write_log_facts() {
-    local srpt="$HOME_ENV_DATA/server/reports/topview.rpt" trpt="$HOME_ENV_DATA/transfer/reports/topview.rpt"
-    local files=() facts
-    [ -f "$srpt" ] && files+=("$srpt")
-    [ -f "$trpt" ] && files+=("$trpt")
-    [ ${#files[@]} -gt 0 ] || return 0
-    # the SAME glob the two parses read (a nullglob array: no pipeline to fail
-    # under pipefail when a directory is missing — the config-only estate —
-    # and no dotfiles), 2026-09-28 fix
-    local sfiles tfiles; local -a _lg
-    shopt -s nullglob
-    _lg=(input/server/*.csv);   sfiles=${#_lg[@]}
-    _lg=(input/transfer/*.csv); tfiles=${#_lg[@]}
-    shopt -u nullglob
-    # One line per log: "tag<TAB>records<TAB>first<TAB>last<TAB>days<TAB>
-    # holecount<TAB>holelist" — the hole walk is a Julian-day loop over the
-    # span (the site's awk date arithmetic; never `date`).
-    facts=$(awk -F'\t' '
-        function jdn(y, m, d) { return int((1461*(y+4800+int((m-14)/12)))/4) \
-            + int((367*(m-2-12*int((m-14)/12)))/12) \
-            - int((3*int((y+4900+int((m-14)/12))/100))/4) + d - 32075 }
-        function jdate(j,   l, n, i, k, y, m, d) {
-            l=j+68569; n=int(4*l/146097); l-=int((146097*n+3)/4)
-            i=int(4000*(l+1)/1461001); l=l-int(1461*i/4)+31; k=int(80*l/2447)
-            d=l-int(2447*k/80); l=int(k/11); m=k+2-12*l; y=100*(n-49)+i+l
-            return sprintf("%04d-%02d-%02d", y, m, d) }
-        function j_of(ds) { split(ds, JP, "-"); return jdn(JP[1]+0, JP[2]+0, JP[3]+0) }
-        $1 != "ROW" { next }
-        { dd=$2; sub(/^@\{[^}]*\}/, "", dd) }
-        dd !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { next }
-        FILENAME ~ /\/server\// {
-            d=substr(dd,1,10)
-            if ($3+0 > 0) { sd[d]=1; spd++; ssum+=$3
-                if (smin=="" || d<smin) { smin=d; sft=$12 }
-                if (smax=="" || d>smax) { smax=d; slt=$13 } }
-            next
-        }
-        # The transfer topview ROW (bin/transfer/reports/topview.sh HEAD):
-        # 3=First 4=Last 5=Files 13=Transfers (physical log rows) 16=Transfers
-        # Error % (the Recovered and Resubmit groups sit between Files and
-        # Transfers since 2026-09-12). Records = $13, the rows of the log itself — the server row
-        # counts its lines the same way. (NO apostrophes here: this comment
-        # sits INSIDE the single-quoted awk program.) NOT the Error % field (fixed 2026-08-31): that
-        # summed the daily error PERCENTAGES as "records" and treated every
-        # 0.0%-day as a day without records — a clean weekend became a "hole",
-        # and an env with no failed transfer at all (production) lost its
-        # Records / First / Last / Days cells entirely.
-        FILENAME ~ /\/transfer\// {
-            d=substr(dd,1,10)
-            if ($13+0 > 0) { td[d]=1; tpd++; tsum+=$13
-                if (tmin=="" || d<tmin) { tmin=d; tft=$3 }
-                if (tmax=="" || d>tmax) { tmax=d; tlt=$4 } }
-        }
-        # "-" placeholders, never empty middle fields: the shell reader uses a
-        # tab IFS (whitespace), so an empty field would collapse and shift the
-        # columns (same rule as daily_loglines_tsv).
-        function emit(tag, sum, dmin, ft, dmax, lt, present, A,   j, ds, n, miss) {
-            if (dmin == "") { printf "%s\t0\t-\t-\t0\t0\t-\n", tag; return }
-            n=0; miss=""
-            for (j = j_of(dmin); j <= j_of(dmax); j++) {
-                ds = jdate(j)
-                if (!(ds in A)) { n++; miss = miss (miss=="" ? "" : ", ") ds }
-            }
-            printf "%s\t%d\t%s %s\t%s %s\t%d\t%d\t%s\n", tag, sum, dmin, ft, dmax, lt, present, n, (miss=="" ? "-" : miss)
-        }
-        END {
-            emit("S", ssum+0, smin, sft, smax, slt, spd+0, sd)
-            emit("T", tsum+0, tmin, tft, tmax, tlt, tpd+0, td)
-        }
-    ' "${files[@]}")
-    printf '<h2>The log exports</h2>\n'
-    printf '<div class="tablewrap"><table class="index fit" data-nosearch="1">\n'
-    printf '<tr><th>Log</th><th class="num">Input files</th><th class="num">Records</th><th>First record</th><th>Last record</th><th class="num">Days</th><th>Holes</th></tr>\n'
-    local tag sum first last present nholes holelist label nf rec hc
-    while IFS=$'\t' read -r tag sum first last present nholes holelist; do
-        [ -n "$tag" ] || continue
-        if [ "$tag" = S ]; then label="Server"; nf=$sfiles; [ -f "$srpt" ] || continue
-        else label="Transfer"; nf=$tfiles; [ -f "$trpt" ] || continue; fi
-        rec=$(dotify "$sum")
-        if [ "$sum" = 0 ]; then rec=""; first=""; last=""; present=""; fi
-        # a hole is a coverage WARNING — the amber count tint; "none" stays muted
-        if [ "$nholes" = 0 ]; then hc='<td>none</td>'
-        else esc "$holelist"; hc="<td class=\"st-warn\">$nholes: $ESC</td>"; fi
-        printf '<tr><td>%s</td><td class="num">%s</td><td class="num">%s</td><td>%s</td><td>%s</td><td class="num">%s</td>%s</tr>\n' \
-            "$label" "$nf" "$rec" "$first" "$last" "${present:-}" "$hc"
-    done <<< "$facts"
-    printf '</table></div>\n'
-}
+# (The home page's red worklists — "Failing transfers" / "Failing
+# subscriptions in Server log", write_failing_now — and "The log exports"
+# facts table, write_log_facts, went 2026-09-29, user request: the Failed
+# Subscriptions page and the build report carry them.)
 
 # The home-page content: the status pair, the per-day table, the red
 # worklists and "The log files" table, all links docs-root-relative (the home
@@ -782,20 +441,12 @@ write_home_block() {
         # background), one before each group, so each group has its own
         # table-like edges and the row lines stop at the gaps.
         #
-        # THE 14-DAY CAP (2026-08): the table opens showing only the newest
-        # 14 days and NO Total row; the older rows and the Total carry class
-        # capx, hidden by CSS while the table carries cap14; the "Show all"
-        # button (baked only when there are more than 14 days) removes the
-        # cap — setupShowAll uncaps every capped table inside the button's
-        # adjacent wrapper, here the one tablewrap. The baked Total keeps
-        # the FULL-window figures — report.js recomputeTotals counts inline
-        # display only, so the class-hidden rows never leave its sums. The
-        # Total row only from 10 days up (2026-08): a short table's sums add
-        # nothing a glance does not already give. Still data-nosort: the cap
-        # hides the OLDEST rows by class, which a user sort would interleave.
-        local dcount capcls="" totcap="" rown=0 trc=""
+        # EVERY DAY SHOWS (2026-09-29, user request: the 14-day cap and its
+        # "Show all" button are gone — "just show all"). The Total row only
+        # from 10 days up (2026-08): a short table's sums add nothing a glance
+        # does not already give. data-nosort: the rows stay newest first.
+        local dcount
         dcount=$(printf '%s\n' "$dl" | awk -F'\t' '$1!="" && $1!="TOTAL"' | wc -l | tr -d ' ')
-        if [ "$dcount" -gt 14 ]; then capcls=" cap14"; totcap=" capx"; fi
         local d fc fin fout fok frv fer fpc c v fsum=0 finsum=0 foutsum=0 foksum=0 frvsum=0 fersum=0
         local dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 dtot=""
         local fsp fss fsa fsl fsh fsps=0 fsss=0 fsas=0 fsls=0 fshs=0
@@ -807,7 +458,7 @@ write_home_block() {
         # range full. data-href on the cell; report.js setupCellLinks navigates there and
         # outranks the row link
         local DURGO=""; [ -f docs/transfer/duration.html ] && DURGO=' data-href="transfer/duration.html?axway_date=all"'
-        printf '<div class="tablewrap perday"><table class="index fit dayrows%s" data-nosearch="1" data-nosort="1">\n' "$capcls"
+        printf '<div class="tablewrap perday"><table class="index fit dayrows" data-nosearch="1" data-nosort="1">\n'
         # groups (2026-09-06, user request): Transfers (Ok Error Error%) before Files, UC2 state (Waiting Expired — staged pickups) before Duration, First seen without Logical/Accounts; Recovered reads Cured; the Red/Green switch group is gone
         # the groups are separated by SPACER columns (th/td.spc: no borders,
         # page background — the root index pattern), so every group keeps its
@@ -818,7 +469,6 @@ write_home_block() {
             '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
         printf '<tr><th>Date</th>%s<th class="num">Ok</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">In</th><th class="num">Out</th><th class="num">Ok</th><th class="num">Cured</th><th class="num">Error</th><th class="num">Error %%</th>%s<th class="num">Waiting</th><th class="num">Expired</th>%s<th class="num"'"$DURGO"'>p50</th><th class="num"'"$DURGO"'>p75</th><th class="num"'"$DURGO"'>p90</th><th class="num"'"$DURGO"'>p95</th><th class="num"'"$DURGO"'>p99</th>%s<th class="num">Partners</th><th class="num">Subscriptions</th></tr>\n' \
             '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>' '<th class="spc"></th>'
-        rown=0
         local tcn tok ter tpc twt txp tcnsum=0 toksum=0 tersum=0 twtsum=0 txpsum=0
         while IFS=$'\t' read -r d fc fin fout fok frv fer fpc dc50 dv50 dc75 dv75 dc90 dv90 dc95 dv95 dc99 dv99 fsg fsp fss fsa fsl fsh swr swg tcn tok ter tpc twt txp; do
             [ -n "$d" ] || continue
@@ -831,9 +481,8 @@ write_home_block() {
                 done
                 continue
             fi
-            _daycell "$d"; rown=$((rown + 1)); trc=""
-            [ -n "$capcls" ] && [ "$rown" -gt 14 ] && trc=' class="capx"'
-            printf '<tr%s><td>%s</td><td class="spc"></td>' "$trc" "$dcc"
+            _daycell "$d"
+            printf '<tr><td>%s</td><td class="spc"></td>' "$dcc"
             # —— Transfers (from transfer/topview.html, the Transfers band):
             # technical rows, Ok/Error tinted like that page (okc/errc), a 0
             # blank ——
@@ -974,15 +623,10 @@ write_home_block() {
         [ "$tcnsum" -gt 0 ] && tpct=$(awk -v e="$tersum" -v n="$tcnsum" 'BEGIN{printf "%.1f%%", 100*e/n}')
         if [ "$twtsum" -gt 0 ]; then esc "$(dotify "$twtsum")"; twtt=$ESC; fi
         if [ "$txpsum" -gt 0 ]; then esc "$(dotify "$txpsum")"; txpt=$ESC; fi
-        [ "$dcount" -ge 10 ] && printf '<tr class="total%s"><td>Total</td><td class="spc"></td><td class="num okc">%s</td><td class="num errc">%s</td><td class="num">%s</td><td class="spc"></td><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td><td class="spc"></td><td class="num warn">%s</td><td class="num errc">%s</td><td class="spc"></td>%s<td class="spc"></td>%s</tr>\n' \
-            "$totcap" "$tokt" "$tert" "$tpct" "$fint" "$foutt" "$fokt" "$frvt" "$fert" "$fpct" "$twtt" "$txpt" "$dtot" "$fstot"
+        [ "$dcount" -ge 10 ] && printf '<tr class="total"><td>Total</td><td class="spc"></td><td class="num okc">%s</td><td class="num errc">%s</td><td class="num">%s</td><td class="spc"></td><td class="num">%s</td><td class="num">%s</td><td class="num processed">%s</td><td class="num warn">%s</td><td class="num failed">%s</td><td class="num">%s</td><td class="spc"></td><td class="num warn">%s</td><td class="num errc">%s</td><td class="spc"></td>%s<td class="spc"></td>%s</tr>\n' \
+            "$tokt" "$tert" "$tpct" "$fint" "$foutt" "$fokt" "$frvt" "$fert" "$fpct" "$twtt" "$txpt" "$dtot" "$fstot"
         printf '</table></div>\n'
-        # the "Show all": setupShowAll uncaps the capped table inside the
-        # tablewrap above it
-        [ -n "$capcls" ] && printf '<button class="showallbtn" type="button">Show all</button>\n'
     fi
-    write_failing_now
-    write_log_facts
 }
 
 # ---- The Report finder (docs/tools/report-finder.html) -----------------------
@@ -1047,7 +691,7 @@ function add(s,   k) { sub(/^ +/, "", s); sub(/ +$/, "", s)
 function scan(f,   l, n, a2, j) {
     title = ""; intro = ""; desc = ""; kw = ""; kvis = ""; split("", kseen); split("", vseen)
     while ((getline l < f) > 0) {
-        if (title == "" && index(l, "TITLE\t") == 1) { title = val(l); sub(/ — Cloud Reports$/, "", title); continue }   # the dashboards TITLE carries the site suffix (2026-09-29)
+        if (title == "" && index(l, "TITLE\t") == 1) { title = val(l); sub(/ — Axway ST reports$/, "", title); continue }   # the dashboards TITLE carries the site suffix (2026-09-29)
         if (desc == "" && index(l, "DESC\t") == 1) { desc = val(l); continue }
         if (intro == "" && index(l, "INTRO\t") == 1) { intro = val(l); continue }
         if (index(l, "KEYWORDS\t") == 1) { visnow = 1
@@ -1561,7 +1205,7 @@ write_root_404() {
         printf '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         # never cache (2026-09-12) — the same trio html_head bakes into every page
         printf '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n'
-        printf '<title>Page not found — Cloud Reports</title>\n'
+        printf '<title>Page not found — Axway ST reports</title>\n'
         printf '<style>body{font-family:Arial,Helvetica,sans-serif;background:#f7f7f9;color:#222;text-align:center;padding:5rem 2rem}h1{color:#20344a}a{color:#1a5dab}</style>\n'
         printf '</head>\n<body>\n'
         printf '<h1>Page not found</h1>\n'
@@ -1582,8 +1226,8 @@ write_root_404() {
 # toggle went with the env split). The title carries the environment label.
 # Navigation is the top-bar dropdowns.
 write_root_index() {
-    local out="docs/index.html" title="Cloud Reports"
-    [ -n "${ENV_LABEL:-}" ] && title="Cloud Reports — $ENV_LABEL"
+    local out="docs/index.html" title="Axway ST reports"
+    [ -n "${ENV_LABEL:-}" ] && title="Axway ST reports — $ENV_LABEL"
     {
         html_head "$title" "assets/style.css" "" "" "home" "" "" "home"   # its own help page (2026-09-29: it opened the Reports-menu help)
         esc "$title"; printf '<h1>%s</h1>\n' "$ESC"

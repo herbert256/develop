@@ -1566,10 +1566,10 @@ else
         FILENAME ~ /_subscriptions-partners\.tsv$/ { k=toupper($1); if(!(k in sp)) sp[k]=$2; else if(sp[k]!=$2) sp[k]=AMB; next }
         FILENAME ~ /_accounts-partners\.tsv$/      { k=toupper($1); if(!(k in ap)) ap[k]=$2; else if(ap[k]!=$2) ap[k]=AMB; next }
         FILENAME ~ /_hosts-partners\.tsv$/         { k=tolower($1); if(!(k in hp)) hp[k]=$2; else if(hp[k]!=$2) hp[k]=AMB; next }
-        # RELAY is carried too (col 17 = in|out|relay|""): the Latest-100
-        # Direction column on the detail pages renders it as "Relay", and it
-        # used to get that by re-deriving this same xref cache itself. An empty
-        # col 17 now means only "no or unmapped subscription".
+        # RELAY is carried too (col 17 = in|out|relay|""; the detail pages\047
+        # Latest-100 Direction column that rendered it as "Relay" went
+        # 2026-09-29). An empty col 17 means only "no or unmapped
+        # subscription".
         # (No apostrophes in here — the program rides in a single-quoted shell
         # string, so one would end it.)
         FILENAME ~ /_subscriptions-flowdir\.tsv$/  { if($2=="in"||$2=="out"||$2=="relay") fd[toupper($1)]=$2; next }

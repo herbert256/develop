@@ -54,8 +54,9 @@
 #                                  scan_dir set — the file leaves us), "in"
 #                                  (target_working_dir set — it enters us),
 #                                  else "relay". Feeds _files.tsv col 17
-#                                  (movement), details.sh's Latest-100
-#                                  Direction column and last-file's Movement.
+#                                  (movement) and last-file's Movement (the
+#                                  detail pages' Latest-100 Direction column
+#                                  went 2026-09-29).
 #     _templates.tsv               the flow-template catalog (from the OPTIONAL
 #                                  input/flow-manager/templates.json): name, UC
 #                                  token, status, flowPatternName (= the

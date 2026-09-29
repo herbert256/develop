@@ -53,7 +53,7 @@ Connections lost Whitelist usage (= Incoming Allowed + Re-screens per policy) an
 **The former BOXES-ONLY reports** (2026-07..09-29, `BOXES_ONLY_REPORTS`, reached only from the
 Boxes pages): pirates · waiting · expired · went-quiet (transfer) and went-kaput (server) are
 ordinary members of their report groups since the one Reports pulldown (Failures, Use cases &
-delivery, Server log errors); from-green-to-red, only-red, missing-cronjobs, deploy-errors and
+delivery); from-green-to-red, only-red, missing-cronjobs, deploy-errors and
 no-remote-dir/-files lost their pages 2026-09-29 (pageless producers, see above). (site-failures
 left 2026-09-28: its page was the Per flow "Connection failure" rows, row for row — the script
 stays as a pageless data producer in `MERGED_COMPONENT_REPORTS`, the Boxes connection column reads
@@ -263,12 +263,14 @@ S = server/, A = analyses/):
 - **Overview** — Transfer top view (T topview) · Server top view (S topview) · Since yesterday (A
   data-diff) · Triage (A) · Subscriptions in boxes (A)
 - **Entities** — Subscriptions · Logical · Partners · Accounts · Logins · Hosts · Domains ·
-  Applications · BL (transfer/entities; native members | views row)
+  Applications · BL (transfer/entities; native members | views row). NOT on the Reports menu
+  (2026-09-29, user request — the top bar's Entities link opens it); the group stays for the
+  start page, the finder and the h1 tags.
 - **Failures** — Failed Subscriptions (A failed) · Error reasons (A failing-reasons) · Failed files
   (T) · One-legged (T pirates) · Episodes (T) · Retries & resubmissions (T retries) · Failure
-  heatmap (T)
-- **Server log errors** — Errors (S errors: Log reasons / Heatmap / Top messages) · Per flow (S
-  failure-flows) · IO errors (S) · Routing errors (S) · Trouble after success (S went-kaput)
+  heatmap (T) · Errors (S errors: Log reasons / Heatmap / Top messages) · Per flow (S
+  failure-flows) · IO errors (S) · Routing errors (S) · Trouble after success (S went-kaput) — the
+  last five were the "Server log errors" group until 2026-09-29 (user request)
 - **Use cases & delivery** — Use cases (A use-cases) · UC status (A uc-status) · Polling (A) ·
   Punctuality (T: Arrival time / Rhythm) · Waiting (T) · Expired (T) · Went quiet (T)
 - **Activity & volume** — Activity (T) · Trends (T) · Ranking (T) · Sizes & types (T files) · Route
@@ -894,11 +896,10 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   same-movement flows — the EQUENS UC3/UC4 pair does); an estate without any qualifying pair must degrade
   to no rows. The cell is `@{alink=…}`, tinted by the TWIN's own result.
 - A KPI Summary table (`nosearch`, not date-aware) renders before section 10 on seen pages.
-- Section 9, the latest 100 Files — every type EXCEPT the subscription (SITE) pages: State =
-  OK/Error/Waiting/Expired (row tinted via `restint`+`@data:res`, Waiting green); Direction = the
-  FILE MOVEMENT (col 12 via `FLOWMAP`); paged 10 at a time. A SUBSCRIPTION page has no section 9
-  (2026-09-29, user request — its 1000-row list, the `docs/latest/` page it fed since 2026-09-16
-  and the Features row "Files → Latest 1000 files" are gone): `details_writer.awk` `files_table()`
+- Section 9, the latest Files per entity (Latest 100; Latest 1000 on subscription pages) is GONE
+  (2026-09-29, user request — no detail page lists Files from the stream any more; the SITE list's
+  `docs/latest/` page, since 2026-09-16, and the Features row "Files → Latest 1000 files" went
+  with it): `details_writer.awk` `files_table()`
   puts an EMPTY **Files** table (`subfiles=<slug>`) right above Load by weekday on every page with
   Files, and `assets/sub-files.js` fills it in the browser — every File of the subscription, 25 per
   page, Previous / Next — from the all-files data: the per-subscription day list

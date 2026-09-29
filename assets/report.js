@@ -1586,7 +1586,7 @@
     if (!h1) return;
     var SHORT = { "Activity per day": "Day", "Activity per week": "Week",
                   "Load by hour": "Hour", "Load by weekday": "Weekday",
-                  "Latest 100 Files": "Latest 100", "Whitelisted IPs": "Whitelist",
+                  "Whitelisted IPs": "Whitelist",
                   "Last server log messages": "Server log",
                   "Last server log errors": "Server errors",
                   "Last 25 log lines": "Log lines",
@@ -3711,25 +3711,6 @@
 
 
   // ---- "Show all" (the home per-day tables, capped to the newest 14 days) ----
-  // The publish caps a table (class cap14) with the older rows and the
-  // Total row class-hidden (capx); the button removes the cap and itself.
-  // A button uncaps EVERY capped table inside its adjacent wrapper: the
-  // home's per-day tables share one button under their .sxs flex row (the
-  // five must cap and uncap together — their rows align on the shared Date
-  // spine), while a button directly under one .tablewrap still finds just
-  // its own table. The baked Total keeps the FULL-window figures:
-  // recomputeTotals counts inline display only, so class-hidden rows never
-  // leave its sums.
-  function setupShowAll() {
-    var btns = document.querySelectorAll("button.showallbtn"), i;
-    for (i = 0; i < btns.length; i++) btns[i].addEventListener("click", function () {
-      var w = this.previousElementSibling;
-      var ts = w && w.querySelectorAll ? w.querySelectorAll("table.cap14") : [], j;
-      for (j = 0; j < ts.length; j++) ts[j].className = ts[j].className.replace(/\s*\bcap14\b/, "");
-      this.style.display = "none";
-      markDayEdges();
-    });
-  }
   // The home per-day table draws each column group with its own 2 px edges
   // (style.css table.dayrows); the bottom edge needs the last VISIBLE row —
   // the Show-all cap hides the older rows and the Total by class, so CSS
@@ -4224,8 +4205,8 @@
     // the ENVIRONMENT LABEL of this site (input/environment.txt via
     // ensure_assets) IS the brand — the home link's text (2026-09-12, user
     // request: no separate label beside it); a site without the file says
-    // "Cloud"
-    var brand = (typeof M.env === "string" && M.env) ? M.env : "Cloud";
+    // "Axway ST" (2026-09-29; "Cloud" before)
+    var brand = (typeof M.env === "string" && M.env) ? M.env : "Axway ST";
     // THE ENVIRONMENT SWITCH (2026-09-12, user request): a RUNTIME checkout
     // (envkey acceptance|production) leads with the pair "Acceptance /
     // Production" instead — the active one (.envcur: bold, yellow) links the
@@ -4470,7 +4451,6 @@
     setupIndexRows();    // whole-row links on the index tables
     setupCellLinks();    // td/th[data-href] cell links (the home Duration group), outranking the row link
     setupEntityErrorLinks(); // Entities subscription pages: the Files Error count opens Failed files for that subscription + the active dates
-    setupShowAll();      // home: the per-day table's 14-day cap lifter
     markDayEdges();      // home: the per-day groups' bottom edge sits under the last visible row
     setupSwitches();     // switch=KEY table groups: one table of the group at a time behind a button row
     setupHeroToggle();   // overview + day pages: the hero view switch

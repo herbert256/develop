@@ -769,37 +769,6 @@ aggregate_files() {
       if(gWT) bw[key]++
       else if(gEX) be[key]++
       if(dio!="") bD[key SUBSEP dio]++ }
-    # addbig: lib.sh addtop with a per-type bound and its own array — the
-    # Latest Files list per entity, newest first (sortkey = date+time desc),
-    # 100 per entity. NOT for SITE (2026-09-29, user request): a subscription
-    # page lists its Files in the browser from docs/search/all/ (the Files
-    # table, assets/sub-files.js), so its 1000-row list and the docs/latest/
-    # pages it fed are gone. The bound also caps the insert cost, so widening
-    # it would multiply the aggregation cost across the board.
-    # AN ARRAY POOL, NOT A JOINED STRING (2026-09-27): the list used to live
-    # in one \x1f-joined string per entity, split and re-joined on EVERY
-    # accepted insert — and with the SITE bound at 1000 (then) that string is
-    # ~200 KB, re-built by 1000 concatenations each copying the growing
-    # string: tens of MB of copying per File, the long pole of the whole
-    # build (35 of the 40 s of the sample run). The candidates now go into
-    # array slots _bigk[p, 1.._bign[p]] unsorted; when the pool reaches
-    # twice the bound it is sorted ONCE and cut back to the bound, whose last
-    # key becomes the floor: a key not above it cannot be among the newest,
-    # so it is rejected on one compare. The kept set is the same: the bnd
-    # largest keys (a File enters each entity once, so keys never tie).
-    function addbig(p, sk2, disp2, cid2, bnd,   key, n){ key=sk2 SUBSEP disp2 SUBSEP cid2
-        if ((p in _bigfl) && key <= _bigfl[p]) return
-        n = ++_bign[p]; _bigk[p, n] = key; _bigb[p] = bnd
-        if (n >= 2 * bnd) bigtrim(p) }
-    # sort the pool of p NEWEST FIRST into its slots and keep at most its bound
-    function bigtrim(p,   n, i, bnd) {
-        n = _bign[p]; bnd = _bigb[p]
-        for (i = 1; i <= n; i++) _BT[i] = _bigk[p, i]
-        qsort(_BT, 1, n)                          # ascending string order ...
-        if (n > bnd) { for (i = bnd + 1; i <= n; i++) delete _bigk[p, i]; _bigfl[p] = _BT[n - bnd + 1] }
-        for (i = 1; i <= n && i <= bnd; i++) _bigk[p, i] = _BT[n - i + 1]   # ... read back from the top
-        _bign[p] = (n > bnd) ? bnd : n
-        split("", _BT) }
     function ent_apply(ty,ent,   dv,a2,k5,s9){ if(ent=="")return
       if(ONLY!="" && !(ty in WANT)) return   # not this group s type (AGG_ONLY)
       # the entity <-> SUBSCRIPTION relation, for the Last error(s) table on
@@ -816,9 +785,6 @@ aggregate_files() {
       # into its dwell bucket for the entity (only when the group had a
       # measurable dwell — gdwb set in flush)
       if(gdwb!=""){ k5=ty SUBSEP ent; dwt[k5]++; dwc[k5 SUBSEP gdwb]++ }
-      # the entry ends with the state (the SITE-only Recovered / Pickup / End
-      # cells went with the SITE list, 2026-09-29)
-      if(ty!="SITE") addbig(ty SUBSEP ent, sk, bigdisp, st4, 100)
       # Waiting/Expired rollup -> the section-0.9 summary table (per entity):
       # count + first/last STAGED date per state
       if(toc[curcid]=="Waiting" || toc[curcid]=="Expired"){ kwe=ty SUBSEP ent SUBSEP toc[curcid]
@@ -837,11 +803,6 @@ aggregate_files() {
       hh=""; if(ttm[curcid] ~ /^[0-9][0-9]:/) hh=substr(ttm[curcid],1,2)
       if(jd>gmax) gmax=jd
       oc2=(pr2?"OK":"Error")
-      # the 4-state label for the Latest-100 State column (toc = _files col 2)
-      st4="OK"   # the site words OK / Error (2026-09-29: Delivered / Errored)
-      if(toc[curcid]=="Failed") st4="Error"
-      else if(toc[curcid]=="Waiting") st4="Waiting"
-      else if(toc[curcid]=="Expired") st4="Expired"
       # the File own direction (col 16) -> the 4-way In/Out x Error/OK split a
       # direction=both page shows; a File with no direction stays out of it
       dio=""; if(tfd[curcid]=="in") dio=(pr2?"pi":"fi"); else if(tfd[curcid]=="out") dio=(pr2?"po":"fo")
@@ -873,17 +834,6 @@ aggregate_files() {
           if(!(tsite[curcid] in LEsk) || sk>LEsk[tsite[curcid]]) {
               LEsk[tsite[curcid]]=sk
               LEpay[tsite[curcid]]=disp "\t" tsite[curcid] "\t" fl "\t" curcid "\t" toc[curcid] }
-      # Latest-100 payload; last field = the Direction cell, the CONNECTION /
-      # FILE-MOVEMENT pair (out/in) for THIS file: col 16 is which side dialled,
-      # col 17 which way the file travels (parse.sh already joined the
-      # subscription onto _subscriptions-flowdir there, so re-deriving that map
-      # here was duplicate work — verified identical on all 119,306 rows).
-      # It used to show the movement alone, which hid the side that differs:
-      # the two DIVERGE on 17.8% of files (every pull flow). A missing side
-      # renders "?" like the XXX/YYY page title; neither known renders "-".
-      fmv=tmv[curcid]; fcn=tfd[curcid]
-      fdir=(fcn=="" && fmv=="") ? "-" : ((fcn==""?"?":fcn) "/" (fmv==""?"?":fmv))
-      bigdisp=tdt[curcid] " " ttm[curcid] "|" fl "|" curcid "|" human(size) "|" (dur2>=0?humandur(dur2):"-") "|" thr(size, (dur2>=0?dur2:0)) "|" fdir
       # the quad dims (sections 2.81-2.84, right under the Account table): the
       # File'\''s Domain / Application / Logical / Partner attribution — the
       # separate tables that replaced the Groups fact table (SITE pages keep
@@ -922,7 +872,7 @@ aggregate_files() {
             od["DOM"]=2.81; od["APP"]=2.82; od["LGC"]=2.83; od["PTN"]=2.84; od["BL"]=2.85   # the quad dims (the former Groups table)
             }
     FNR == 1 { fno++ }
-    fno == 1 { toc[$1]=$2; tac[$1]=$3; tdt[$1]=$4; ttm[$1]=$5; tsk[$1]=$6; tjd[$1]=$7; tsz[$1]=$8; tdur[$1]=$9; tfl[$1]=$11; tmv[$1]=$17
+    fno == 1 { toc[$1]=$2; tac[$1]=$3; tdt[$1]=$4; ttm[$1]=$5; tsk[$1]=$6; tjd[$1]=$7; tsz[$1]=$8; tdur[$1]=$9; tfl[$1]=$11
                tfd[$1]=$16; tsite[$1]=$12; tpt[$1]=sp_union($20,$12); tap[$1]=ap_union($18,$12); tlg[$1]=lg_union($13,$12); tbl[$1]=bl_union($12); tdm[$1]=$19; next }   # _files.tsv by CoreId (col 16 = connection; col 12 = subscription, for the file-movement lookup; partner/application/logical = UNION sets)
     {   # _transfers.tsv, CoreId-sorted: collect the group'\''s entity & dimension values
       if($1 != curcid){ if(curcid!="") flush(); curcid=$1; g_inend=-1; g_outst=-1; g_end=-1 }
@@ -1008,13 +958,9 @@ aggregate_files() {
         printf "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\n", a[1], a[2], a[3], inv(bc[key]), a[4], bc[key], bf[key]+0, bp[key]+0, human(bv[key]+0), bD[key SUBSEP "fi"]+0, bD[key SUBSEP "pi"]+0, bD[key SUBSEP "fo"]+0, bD[key SUBSEP "po"]+0, orlist(top[key SUBSEP "F"]), orlist(top[key SUBSEP "P"]), bw[key]+0, be[key]+0 }
       for(k in wec){ split(k,a,SUBSEP)
         printf "%s\t%s\t0.9\t%d\t%s|%d|%s|%s\n", a[1], a[2], (a[3]=="Waiting"?0:1), a[3], wec[k], wef[k], wel[k] }
-      # section 9 -> the Latest-Files table renders right above the Load by
-      # weekday table. The row index is %04d (2026-09-27): the stream sort
-      # compares it as TEXT, and with %03d a full 1000-row SITE list put its
-      # row "1000" — the OLDEST File — between rows 100 and 101
-      for(k in _bign){ bigtrim(k); split(k,a,SUBSEP)
-        for(i=1;i<=_bign[k];i++){ split(_bigk[k, i],f2,SUBSEP)
-          printf "%s\t%s\t9\t%04d\t%s|%s\n", a[1], a[2], i, f2[2], f2[3] } }
+      # (section 9, the Latest 100 / Latest 1000 Files list per entity, went
+      # 2026-09-29, user request: no detail page shows it any more — a
+      # subscription page lists its Files from docs/search/all/)
     }' "$FILES" "$PARSED"
 }
 # ===== the WRITER lives in bin/transfer/details_writer.awk (2026-07) =========

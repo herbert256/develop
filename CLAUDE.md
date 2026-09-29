@@ -52,7 +52,8 @@ committed, NEVER-synced **`input/environment.txt`** — one line, the display la
 the label is the TEXT of the top bar's brand/home link (report.js `buildTopbar` reads `env:"…"`
 from `topbar-data.js`; `render_topbar` bakes the same link on the help/build pages; "Cloud" on a
 checkout without the file — 2026-09-12, the separate label span beside a fixed "Cloud" brand is
-gone) and the home title (`Cloud Reports — <label>`). **THE ENVIRONMENT SWITCH** (2026-09-12,
+gone; the fallback reads "Axway ST" since 2026-09-29) and the home title (`Axway ST reports — <label>`, "Cloud
+Reports" until 2026-09-29, user request). **THE ENVIRONMENT SWITCH** (2026-09-12,
 user request, later the same day): on a RUNTIME checkout (`ENV_KEY` acceptance|production —
 `env_has_switch`) the brand slot holds the pair **Acceptance / Production** instead — the ACTIVE
 site bold and YELLOW (`.envcur`), its link the home page; the OTHER one the SAME PAGE on the
@@ -97,8 +98,9 @@ empty `TABLE … subfiles=<slug>` (details_writer.awk `files_table`, above Load 
 render_rpt.awk stamps `data-subfiles` + `data-v` = the build id `AXWAY_BUILD_ID` + `data-nocolmove`,
 render_rpt adds the script), the engine loads `search/all/s/<slug>.js`
 (`AXWAY_AFS(slug, day ⇥ Files ⇥ shard cksum ⇥ local indices)`, newest first, written by
-publish-all-files.sh) and only the day shards the shown page needs; SITE no longer gets a
-section-9 list at all (details_lib.sh `addbig` skips it); never bring `latest/` back)
+publish-all-files.sh) and only the day shards the shown page needs; NO detail page gets a
+section-9 list any more — the other types' "Latest 100 Files" table went the same day, user
+request, with details_lib.sh `addbig`; never bring `latest/` or section 9 back)
 the top bar's **Files** link opens the ALL FILES search (2026-09-28, user request; both bar renderers, `linkcheck` and `verify.sh` model it) — the ONE file search since 2026-09-29 (user
 request: "keep only search/all-files.html" — the seven `search/file-search-*.html` window pages,
 `file-search.sh`, `assets/file-search.js` and the Implementation 1 | 2 tab row are GONE; never
@@ -1109,27 +1111,19 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   2026-09-13; banner, headers and Total carry `data-href="transfer/duration.html?axway_date=all"`,
   each day's cells `?axway_row=<date>` — report.js `setupCellLinks`, which outranks the row link)
   · **First seen** (Partners · Subscriptions, linking `first-seen/<type>-<date>.html`).
-  `data-nosort` (the 14-day cap hides the OLDEST rows by class, which a sort would interleave):
-  the newest 14 days show, the "Show all" button under the tablewrap lifts the cap
-  (setupShowAll), and the Total row appears only from 10 days up. The Red/Green switch group, its
-  `docs/switches/` pages and the Logical / Accounts First-seen columns went 2026-09-06 (user
-  request). Then the RED worklist
-  (`write_failing_now`, 2026-08), split in TWO tables because a red flow is red for one of two
-  reasons and they want different columns and destinations: **Failing transfers** — it has a
-  failed File, so the rows are `failed-sub-all.rpt`'s own, red only and ONE PER SUBSCRIPTION (its
-  newest; the .rpt is newest-first) — and **Failing subscriptions in Server log** — everything else,
-  red for what the transfer log cannot show. BOTH show Subscription / **Reason** / **Last**; the
-  first opens that file's ERROR PAGE from every cell (the CoreId is the row's destination, not a
-  column), the second the flow's OWN subscription-named error page for red rows (its DETAIL page
-  for the green early warnings). They sit SIDE BY SIDE in the renderer's own
-  `.sxs`/`.sxscol` flex row, and both carry `data-sort-init` on Last (descending — the emitted
-  order, but `makeSortable` re-sorts on load, so the default must be declared). Membership across the two is the COLOUR, not a report's selection, so
-  together they are still every red flow. The Reason is
+  `data-nosort` (newest first); EVERY day shows (2026-09-29, user request: the 14-day cap and its
+  "Show all" button are gone) and the Total row appears only from 10 days up. The Red/Green switch
+  group, its `docs/switches/` pages and the Logical / Accounts First-seen columns went 2026-09-06
+  (user request). The home's RED worklists ("Failing transfers" / "Failing subscriptions in Server
+  log", `write_failing_now`, 2026-08) and "The log exports" facts table (`write_log_facts`) are
+  GONE since 2026-09-29 (user request): the red flows are on Failed Subscriptions and the Entities
+  Subscriptions Error view, the log facts on the build report. THE REASON CHAIN they used lives on
+  in the Entities Subscriptions Error view's Reason column (publish_lib): the Reason is
   `analyses/reports/_subs-boxes.tsv` (the most specific Subscriptions-in-boxes box, written by
   `publish-insights.sh`). **The SERVER LOG ON THE FLOW'S OWN ERROR PAGE COMES FIRST** (2026-08):
-  the page a home row opens is the evidence a reader checks, so the Reason must be what that page
+  the page a red row opens is the evidence a reader checks, so the Reason must be what that page
   says — `_errpage-evidence.tsv` (written by `failed.sh`: the first 8 Error/Warning
-  lines, with their level, of the flow's NEWEST drill page — the page the home row opens —
+  lines, with their level, of the flow's NEWEST drill page — the page the red row opens —
   PLUS, since 2026-09-10, an Info `"Transfer end logged."` bookend with `"status":"error"` whose
   transferId is one of the page's own legs: the only evidence a silently dropped connection
   leaves, read by the classifier as **"Unknown error"**, its LAST rule)
@@ -1217,7 +1211,9 @@ group link to each other with the first selection buttons")** the top bar has ON
 analyses/ `index.html` start pages) and one line per GROUP, landing on the group's first member.
 The four dropdowns (Transfer reports · Server reports · Analyses · Goodies) are gone. The groups
 MIX areas by question: Overview (both Top views, Since yesterday, Triage, Subscriptions in boxes)
-· Entities · Failures · Server log errors · Use cases & delivery · Activity & volume · Performance
+· Entities · Failures (+ the server log errors: Errors, Per flow, IO errors, Routing errors,
+Trouble after success — the separate "Server log errors" group was folded in 2026-09-29, user
+request) · Use cases & delivery · Activity & volume · Performance
 · Flow patterns · Protocols & security (incl. the server SSH security) · Logons & connections ·
 Partners · Configuration · Coverage · Cleanup — every published report is in exactly one (the
 former boxes-only reports included).

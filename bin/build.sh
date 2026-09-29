@@ -394,7 +394,7 @@ write_report() {
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Build report — Cloud Reports</title>
+<title>Build report — Axway ST reports</title>
 HTML
         printf '%s\n' '<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>'
         printf '<link rel="stylesheet" href="%sassets/style.css">\n' "$base"

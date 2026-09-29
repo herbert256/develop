@@ -311,7 +311,8 @@ fi
 # the UC3 that never transfers and CANNOT CONNECT (2026-09-10, user rule):
 # no File, every poll a Connection failure — red (not orange), with
 # its newest failure in the _redflip sidecar, an error page of its own,
-# and a row on the home page's "Failing subscriptions in Server log"
+# and a row on Failed Subscriptions (the home page's "Failing subscriptions
+# in Server log" table that listed it went 2026-09-29)
 if [ "$(exp pollconnfail)" -gt 0 ]; then
     c=$(awk -F'\t' '$1=="UC3_ZG_RATES_OSCORP" { print $3 }' "$B")
     check $([ "$c" = red ] && echo 0 || echo 1) "UC3_ZG_RATES_OSCORP is '${c:-absent}', expected red (every poll a connection failure, no transfer)"
@@ -320,9 +321,22 @@ if [ "$(exp pollconnfail)" -gt 0 ]; then
     n=$(awk -F'\t' '$1=="UC3_ZG_RATES_OSCORP" { n++ } END { print n+0 }' "data/colour/_redflip.tsv" 2>/dev/null)
     check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "_redflip.tsv has $n row(s) for UC3_ZG_RATES_OSCORP, expected 1"
     check $([ -f "docs/files/uc3-zg-rates-oscorp.html" ] && echo 0 || echo 1) "docs/files/uc3-zg-rates-oscorp.html missing (the server-failing error page)"
-    n=$(awk 'BEGIN{RS="<h2"} /Failing subscriptions in Server log/ && /UC3_ZG_RATES_OSCORP/ { n++ } END { print n+0 }' docs/index.html 2>/dev/null)
-    check $([ "${n:-0}" -ge 1 ] && echo 0 || echo 1) "the home worklist 'Failing subscriptions in Server log' does not list UC3_ZG_RATES_OSCORP"
+    check $(grep -q 'UC3_ZG_RATES_OSCORP' docs/analyses/failed.html 2>/dev/null && echo 0 || echo 1) "analyses/failed.html does not list UC3_ZG_RATES_OSCORP"
 fi
+# the HOME PAGE (2026-09-29, user request): no red worklists, no "The log
+# exports" table, no 14-day cap / Show all button — every day shows; the
+# site is called "Axway ST reports"
+check $(grep -qE 'Failing transfers|Failing subscriptions in Server log|The log exports|showallbtn|cap14' docs/index.html 2>/dev/null && echo 1 || echo 0) "docs/index.html still carries a red worklist, The log exports, or the Show all cap"
+check $(grep -q '<h1>Axway ST reports' docs/index.html 2>/dev/null && echo 0 || echo 1) "the home title is not 'Axway ST reports …'"
+check $([ -z "$(grep -rl 'Cloud Reports' docs --include='*.html' 2>/dev/null)" ] && echo 0 || echo 1) "a page still says 'Cloud Reports'"
+nd=$(awk -F'\t' '$1 == "ROW" && $2 ~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { n++ } END { print n + 0 }' data/transfer/reports/topview.rpt 2>/dev/null)
+nh=$(grep -c '<tr><td><a href="day/' docs/index.html 2>/dev/null || true)
+check $([ "${nh:-0}" -gt 14 ] && [ "${nh:-0}" -ge "$((nd - 1))" ] && echo 0 || echo 1) "the home per-day table shows ${nh:-0} linked day(s) of ${nd:-?} (every day expected)"
+# no detail page lists Files from the stream any more (the Latest 100
+# table went 2026-09-29, user request)
+check $([ -z "$(grep -rl '<h2>Latest 100 Files</h2>' docs/details 2>/dev/null)" ] && echo 0 || echo 1) "a detail page still carries the Latest 100 Files table"
+# the failure heatmap's By hour / By weekday sit side by side (2026-09-29)
+check $(awk '/<div class="sxs">/ { s = 1 } s && /By hour of day/ { h = 1 } s && h && /By weekday/ { ok = 1; exit } END { exit !ok }' docs/transfer/failure-heatmap.html 2>/dev/null && echo 0 || echo 1) "transfer/failure-heatmap.html: By hour of day and By weekday are not side by side"
 # the MULTI-HOST account (2026-08-31): CD_ROUTE_WONKA carries TWO
 # endpoints, and its _ALT flow logs half its rows as the raw ADDRESS.
 # The endpoint vote rides the SUBSCRIPTION, so those rows must resolve
@@ -935,7 +949,12 @@ check $([ "$(grep -c 'function setupEntityErrorLinks' docs/assets/report.js 2>/d
 t=docs/assets/topbar-data.js
 check $(grep -q 'reports:"' "$t" 2>/dev/null && ! grep -qE '(transfer|server|analyses|goodies):"' "$t" && echo 0 || echo 1) "topbar-data.js lacks the reports menu or still carries a transfer / server / analyses / goodies menu"
 n=$(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -o '<a ' | wc -l | tr -d ' ')
-check $([ "${n:-0}" = 15 ] && echo 0 || echo 1) "the Reports menu has ${n:-0} line(s), expected 15 (Start page + 14 groups)"
+# (2026-09-29, user request: Server log errors folded into Failures — 13
+# groups — and Entities left off the menu, the top bar's own Entities link
+# opens it)
+check $([ "${n:-0}" = 13 ] && echo 0 || echo 1) "the Reports menu has ${n:-0} line(s), expected 13 (Start page + 12 groups; Entities not listed)"
+check $(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -q 'transfer/entities/' && echo 1 || echo 0) "the Reports menu still lists the Entities group"
+check $(grep -q '>Server log errors<' docs/reports/index.html 2>/dev/null && echo 1 || echo 0) "reports/index.html still has a Server log errors group (folded into Failures)"
 check $([ -f docs/reports/index.html ] && [ ! -f docs/transfer/index.html ] && [ ! -f docs/server/index.html ] && [ ! -f docs/analyses/index.html ] && echo 0 || echo 1) "docs/reports/index.html missing, or a retired area start page (transfer / server / analyses index.html) still published"
 # the FIRST ROW links across directories: the Overview group joins both Top
 # views, and every group member page carries exactly one group tag

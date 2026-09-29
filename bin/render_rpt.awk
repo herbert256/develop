@@ -803,7 +803,11 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     }
     # NOTE/LINK/SUMMARY are FULL-WIDTH blocks: also close an open sxs flex
     # row, or they render as a flex item BESIDE the last side-by-side table
-    else if (dir == "NOTE")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; if (!noprose) printf "<p class=\"note\">%s</p>\n", prose(rest) }    else if (dir == "LINK")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); if (ok_href(CELL[1])) printf "<p class=\"report-link\"><a href=\"%s\"%s>%s</a></p>\n", esc(CELL[1]), (CELL[1] ~ /^https?:\/\// ? " target=\"_blank\" rel=\"noopener\"" : ""), esc(CELL[2]); else printf "<p class=\"report-link\">%s</p>\n", esc(CELL[2]) }
+    # (a NOTE the no-prose rule suppresses is NO block at all — 2026-09-29: it
+    # still closed the flex row, splitting the failure heatmap's side-by-side
+    # By hour / By weekday pair)
+    else if (dir == "NOTE")    { if (!noprose) { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<p class=\"note\">%s</p>\n", prose(rest) } }
+    else if (dir == "LINK")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); if (ok_href(CELL[1])) printf "<p class=\"report-link\"><a href=\"%s\"%s>%s</a></p>\n", esc(CELL[1]), (CELL[1] ~ /^https?:\/\// ? " target=\"_blank\" rel=\"noopener\"" : ""), esc(CELL[2]); else printf "<p class=\"report-link\">%s</p>\n", esc(CELL[2]) }
     else if (dir == "SUMMARY") { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<div class=\"summary\">%s</div>\n", esc(rest) }
     else if (dir == "FOOT")    close_table()
     # DESC, META and anything unknown: not rendered

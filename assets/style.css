@@ -715,11 +715,6 @@ body.home .tablewrap table { margin-left:auto; margin-right:auto; }
    ====================================================================== */
 .dash { max-width:1180px; margin:0 auto; }
 .dash > h1 { text-align:center; }   /* the dashboards pages center their title (the day pages' .daynav h1 centers itself) */
-/* the home per-day table opens capped to the newest 14 days (rows + Total carry
-   capx while the table carries cap14); the "Show all" button below lifts it */
-table.cap14 tr.capx { display:none; }
-.showallbtn { display:block; margin:0.6rem auto 1.4rem; padding:3px 14px; border:1px solid #ddd; border-radius:4px; background:#fff; color:#20344a; font:inherit; font-size:0.85rem; cursor:pointer; }
-.showallbtn:hover { background:#e8f0fe; }
 .dash > .controls { text-align:center; }   /* the date row right under it centers with it */
 .dash-intro { color:#5a6b7d; font-size:1rem; margin:-0.4rem 0 1.5rem; max-width:70ch; }
 .dash-intro strong { color:#20344a; }

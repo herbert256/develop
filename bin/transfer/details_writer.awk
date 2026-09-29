@@ -575,10 +575,8 @@ function start_table(s,   WEH, WEK) {
     else if (s == "11") time_table("Load by hour", "Hour", "sxs")
     else if (s == "12.6") { emitl("TABLE\tDwell\tsxs=4"); emitl("HEAD\tDwell\tFiles\tShare"); emitl("KIND\ttext\tnum\tnum") }
     else if (s == "0.9") { emitl("TABLE\tWaiting/Expired\trestint\tnosearch"); emitl("HEAD\tState\tFiles\tFirst staged\tLast staged"); emitl("KIND\ttext\tnum\ttext\ttext") }
-    # the Latest 100 of every type but SITE (a subscription page has the
-    # browser-built Files table instead — files_table(), 2026-09-29)
-    else if (s == "9") { emitl("TABLE\tLatest 100 " cntlabel "\twide\tpager=10\trestint")
-        emitl("HEAD\tDate\tState\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"); emitl("KIND\ttext\ttext\ttext\tnum\tnum\tnum\t" big_kind "\tmono") }
+    # (section 9, the Latest 100 Files table, went 2026-09-29, user request —
+    # a subscription page has the browser-built Files table, files_table())
     else if (s == "2.6") { emitl("TABLE\tIncoming connections\tsxs=3\tfold=orange|{n} IPs in whitelist without traffic"); emitl("HEAD\tIP\tIn\tOut"); emitl("KIND\tmono\tnum\tnum") }   # no Name column: incoming addresses are the partner's own and never resolve to a configured endpoint (verified 0 of 30k rows)
     else if (s == "2.7") { emitl("TABLE\tOutgoing connections\tsxs=3\tfold=orange|{n} hosts configured without traffic"); emitl("HEAD\tIP\tIn\tOut\tName"); emitl("KIND\tmono\tnum\tnum\tmono") }
     else if (s == "2.8") {
@@ -1288,7 +1286,7 @@ function reset_entity() {
 
 BEGIN {
     for (oi = 32; oi < 127; oi++) ORD[sprintf("%c", oi)] = oi   # uenc()'s char -> code table
-    cntlabel = "Files"; big_col = "File"; big_kind = "mono"
+    cntlabel = "Files"
     if      (TYPE == "ACC")   { label = "Account";      typenoun = "accounts";      sdir = "accounts";      bt = "account";      rk = "accounts" }
     else if (TYPE == "SITE")  { label = "Subscription"; typenoun = "subscriptions"; sdir = "subscriptions"; bt = "subscription"; rk = "subscriptions" }
     else if (TYPE == "LOGIN") { label = "Login";        typenoun = "logins";        sdir = "logins";        bt = "login";        rk = "logins" }
@@ -1453,7 +1451,7 @@ NF < 4 { next }
         if (sec == "2.6") had26 = 1
         if (sec == "2.7") had27 = 1
         cur_sec = sec
-        if (sec == "0.9" || sec == "2.6" || sec == "2.7" || sec == "9" || sec == "12.6") { TMODE = 0; start_table(sec) }
+        if (sec == "0.9" || sec == "2.6" || sec == "2.7" || sec == "12.6") { TMODE = 0; start_table(sec) }
         else if (BOTHMODE == 1) { buf_sec = sec; sec_in = 0; sec_out = 0 }
         else { TMODE = 0; start_table(sec) }
     }
@@ -1499,14 +1497,6 @@ NF < 4 { next }
         res = (W9[1] == "Expired") ? "red" : "orange"
         HAS_WE = 1
         emitl(sprintf("ROW\t%s files\t%s\t%s\t%s\t@data:res=%s", W9[1], W9[2], W9[3], W9[4], res))
-    }
-    else if (sec == "9") {
-        split($5, B9, "|")
-        res = "green"
-        # the outcome policy (2026-09-29: Waiting read orange here, green on
-        # the All files search): Waiting counts OK, Expired as Error
-        if (B9[8] == "Error" || B9[8] == "Expired") res = "red"
-        emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[8], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res))
     }
     else if (sec == "2.6" || sec == "2.7") {
         win = $6; wout = $7; wrev = $8
