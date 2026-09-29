@@ -985,9 +985,9 @@ bg2_step_start "publish: all files search + dashboards + day pages"         bash
 # until then both re-ran their whole script): each re-renders ONLY the pages
 # that read what the report catch-ups above rewrote — the dependency trace is
 # in each script (THE CATCH-UP MODE). The analyses one: Configured
-# subscriptions (failed-files.rpt), Failed Subscriptions + its All view,
-# Error reasons, and the box-reason sidecar _subs-boxes.tsv (from the
-# rewritten _errpage-evidence.tsv; publish-insights.sh sidecar, no page).
+# subscriptions (failed-files.rpt), Failed Subscriptions + its All view and
+# Error reasons (catchup-pages: its box-reason sidecar is not recomputed —
+# see below).
 # THE BOXES-REASON CATCH-UP (2026-08): the Entities Error view's Reason
 # column reads analyses/reports/_subs-boxes.tsv, which the analyses
 # publishes above (publish-insights.sh) write AFTER the transfer publish
@@ -995,22 +995,24 @@ bg2_step_start "publish: all files search + dashboards + day pages"         bash
 # until the NEXT build — and failed-sub-all.rpt + _srvsubs.tsv, which the
 # failed.sh catch-up rewrote. The transfer catch-up mode re-renders the
 # Subscriptions entity views, the Failed files page (failed-files.rpt) and
-# the whole docs/files/ tree (the errors/ + files/ .rpt sets failed.sh
-# rewrote; its ONLY render in the build — the first pass above is
-# `firstpass`) — nothing else of the transfer area.
-# THE SIDECAR FIRST, THEN THE TWO CATCH-UPS SIDE BY SIDE (2026-09-29, build
-# speed — they ran one after the other, ~4 s each, in the half-idle tail):
-# the box-reason sidecar is the ONE thing the transfer catch-up takes from
-# the analyses one, so it runs as its own step (publish-insights.sh — the
-# analyses catch-up's former second action), and `catchup-pages` is the
-# analyses catch-up without it. Checked: the analyses catch-up renders
-# docs/analyses/ only (Configured subscriptions, Failed Subscriptions + its
-# All view, Error reasons — from failed-files.rpt, failed*.rpt,
-# failing-reasons.rpt) and reads no page; the transfer catch-up renders
-# docs/transfer/entities/subscription-*, failed-files, unknown-transfers and
-# docs/files/ from the data/ trees and reads no docs/analyses/ page; both
-# share only topbar-data.js, written atomically.
-run_step "report catch-up: the box-reason sidecar"                        bin/analyses/publish-insights.sh
+# the whole docs/files/ tree (the errors/ + files/ .rpt sets failed.sh wrote;
+# its ONLY render in the build — the first pass above is `firstpass`) —
+# nothing else of the transfer area.
+# THE TWO CATCH-UPS SIDE BY SIDE (2026-09-29, build speed — they ran one
+# after the other, ~4 s each, in the half-idle tail). The box-reason sidecar
+# _subs-boxes.tsv — the one thing the transfer catch-up took from the
+# analyses one — is NOT recomputed any more: the analyses publish above wrote
+# it, and nothing it reads has changed since (the report-stage lists, the
+# server reports, _kaput-evidence.tsv and failed.sh's _errpage-evidence.tsv,
+# which the failed.sh CATCH-UP MODE leaves as the full run wrote it — a
+# catch-up that rewrote the evidence would need the sidecar step back here).
+# `catchup-pages` is the analyses catch-up without it. Checked: the analyses
+# catch-up renders docs/analyses/ only (Configured subscriptions, Failed
+# Subscriptions + its All view, Error reasons — from failed-files.rpt,
+# failed*.rpt, failing-reasons.rpt) and reads no page; the transfer catch-up
+# renders docs/transfer/entities/subscription-*, failed-files,
+# unknown-transfers and docs/files/ from the data/ trees and reads no
+# docs/analyses/ page; both share only topbar-data.js, written atomically.
 run_step "publish catch-ups: analyses (failed pages) + transfer (boxes reasons)" bash -c 'bin/analyses/publish.sh catchup-pages & a=$!; bin/transfer/publish.sh catchup; s=$?; wait "$a" || s=$?; exit "$s"'
 # (THE ALL FILES SEARCH — 2026-09-27, user request, "Implementation 3, all
 # files": one day shard per data day + the bloom-filter manifest, and the

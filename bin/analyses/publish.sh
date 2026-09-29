@@ -30,9 +30,11 @@
 #                                            feed + the box-reason sidecar (see
 #                                            THE CATCH-UP MODE at the bottom)
 #         bin/analyses/publish.sh catchup-pages   the same WITHOUT the sidecar —
-#                                            bin/build.sh runs the sidecar as its
-#                                            own step first, then this beside the
-#                                            transfer catch-up (2026-09-29)
+#                                            bin/build.sh's catch-up, beside the
+#                                            transfer catch-up (2026-09-29): the
+#                                            full run's sidecar is final, since
+#                                            failed.sh's catch-up mode no longer
+#                                            rewrites the evidence it reads
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
