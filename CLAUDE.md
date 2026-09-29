@@ -222,7 +222,8 @@ it moved) → *parse*: server `parse.sh` in the background
 the server MENTION caches (`AXWAY_MENTIONS_ONLY=1 parse.sh`, background slot 2, waited for
 before result.sh) and the logon summary (`bin/build/logon-summary.sh`, background slot 1, waited for
 right before the server reports since 2026-09-28) — `bin/session-sites.sh` (its re-derive is
-`AXWAY_DERIVE_ONLY=1` transfer `parse.sh`), `bin/expire-files.sh`, `bin/bookend-ok.sh`,
+`AXWAY_DERIVE_ONLY=1` transfer `parse.sh`), `bin/expire-files.sh`, `bin/bookend-ok.sh settle`
+(its `extract` half runs in background slot 3 beside the two before it, 2026-09-29),
 `bin/transfer/filepages.sh` (the published File-page set),
 `bin/build/result.sh`, a server-mention rescan (`AXWAY_MENTIONS_ONLY=1` again) when
 `data/server/cache/.rescan-mentions` exists (skipped inside when no cache line holds an appended
@@ -267,8 +268,8 @@ and `details.sh` (not in the catch-up).
 **BUILD SPEED (2026-09-27/28, the "prd build" analysis — production 6:34 → 3:44 min in 14 rounds,
 then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a develop fresh build).** What a change must not break:
 
-- **Background slots**: `bg_step_start/bg_step_wait` and `bg2_step_start/bg2_step_wait` — ONE step
-  per slot in flight; a background step's `TIME` lines are replayed at its wait. Moving a step
+- **Background slots**: `bg_step_start/bg_step_wait`, `bg2_step_start/bg2_step_wait` and (since
+  2026-09-29) `bg3_step_start/bg3_step_wait` — ONE step per slot in flight; a background step's `TIME` lines are replayed at its wait. Moving a step
   into a slot needs the proof that nothing between start and wait reads its outputs or rewrites
   its inputs (the comments at each call say what was checked).
 - **The server parse** (`bin/server/parse.sh`): a file above its fair share (total/NJOBS, ≥ 64 MB;
@@ -290,9 +291,12 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   across parts needs an order-preserving merge (result.sh's vote shows one); `unknown-entities`
   scans line-aligned byte slices (NW = the core count, capped at 6).
 - **Server-cache subsets** (`bin/server/subsets.sh`, `srv_subset NAME` in `bin/server/lib.sh`):
-  the RARE message families of uc1/uc3-status, remote-poll, connection-diagnostics and
-  ssh-sessions, copied once per cache; every line a consumer acts on must contain one of its
-  fixed-string MARKERS — change a consumer's patterns, change its markers. A missing subset set
+  the RARE message families of uc1/uc3-status, remote-poll, connection-diagnostics,
+  ssh-sessions, deploy-errors and routing-errors, copied once per cache; every line a consumer
+  acts on must contain one of its fixed-string MARKERS — change a consumer's patterns, change
+  its markers. Two RULE subsets sit outside the marker gate (2026-09-29): `noninfo` (every
+  line whose level is not I — top-messages, error-timing, error-reasons, failure-flows) and
+  `io-errors` (its own regex behind an `index()`); the pass runs beside the server pool. A missing subset set
   (no `subsets/.done`) falls back to the whole cache.
 - **Key-aligned and line-aligned slices** (2026-09-28, `bin/ranges.sh`): `grp_cuts FILE N` cuts a
   file SORTED on its first TAB field into byte slices that never split a run of equal keys (blank
@@ -392,6 +396,35 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   unknown-entities (its cost is the per-mention `addline` bookkeeping); overview's durations
   in an ARRAY instead of the growing string (slower); 7z with 32 MB LZMA2 blocks (the 7z
   5 → 4 s, the archive 17 → 19 MB, the push lost more).
+- **2026-09-29 round 3 (after the audit; prd ~150 → ~147.5 s over five timed runs, 147-149;
+  every change byte-identical on develop and on an 8x SCALED scratch copy):** the build is
+  CPU-BOUND nearly throughout (~1,000 CPU-s on ~7 effective cores; a 1-s `top` sampler
+  mapped onto epoch-stamped console lines shows 96-100 % busy in every stage but the first
+  5 s, result.sh and the archive), so moving work between stages only trades seconds — only
+  LESS CPU shortens it. What went in: `unknown-entities.sh` computes its KNOWN sets once up
+  front (the merge's rules, moved) and the workers skip known names; its host scan runs only
+  on a message holding one of the UNKNOWN configured hosts (an `index()` prefilter — exact:
+  a matched token is a substring of the lowercased message) — 71 → 55 CPU-s. `subsets.sh`
+  gained marker subsets for deploy-errors and routing-errors, a rule subset for io-errors
+  (its regex behind `index($0, "rror")` — case-insensitive gate markers doubled the gate's
+  cost) and the level-rule `noninfo` subset (~2 % of the cache) that top-messages,
+  error-timing, error-reasons and failure-flows read; it runs BESIDE the pool now
+  (`bin/server/reports.sh`: the whole-cache jobs queue first, the 12 subset consumers after
+  its wait) — server stage 235 → 196 CPU-s. bookend-ok's extraction is its own mode
+  (`bookend-ok.sh extract` / `settle`) in a THIRD background slot (`bg3_step_start/wait`)
+  beside session-sites and expire-files (the settle step 10 → 3 CPU-s on the chain).
+  result.sh prints sub-second `TIME … result:` laps and builds HOSTLEGS over `grp_par`
+  slices; the build report escapes / groups digits with bash builtins (`esc_v`, `hnum_v`)
+  instead of ~400 forks per render. **Measured, no gain — do not retry:** the same
+  `index()` prefilter for the whitelisted IPs (~100 IPs: slower than the regex walk);
+  feeding entities.sh its Files newest-first so `addtop` rejects early (-5 %, the sort costs
+  as much — the cost is the per-File arithmetic; `addtop` is 13 % of details.sh); a
+  parallel offset-write assembly of `_parse.tsv` (`cat` copies ~7 GB/s — the merge's tail
+  is its last groups). **Still open:** logon / ssh-crypto / uc2-status / uc4-status /
+  auth-activity each scan the whole cache for SSH families (20-45 % of it — per-consumer
+  subsets lost, 2026-09-27); ONE shared union subset might pay, but it needs an exact marker
+  audit of six consumers and production-like SSH data to prove (the sample's SSH mix is
+  thin).
 - **Test at production SCALE, not only on the sample**: the develop estate is small per entity and
   light on SSH lines, so a per-entity sort or a per-logon cost can look free there (the detail
   percentiles cut 28-44 % on 8x the sample legs and nothing on the sample). Replicate
