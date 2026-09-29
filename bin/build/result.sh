@@ -262,6 +262,11 @@ if [ "$RS_MODE" != all ]; then
         : > "$HOSTLEGS"
     fi
 else
+    source "$ROOT/bin/ranges.sh"    # grp_par: the leg-host pass below (and the session vote further down)
+    # (the observed account / login pairs — one _files.tsv pass — run in the
+    # BACKGROUND beside the leg-host pass: 2026-09-29, speed round 3; result.sh
+    # ran at ~40 % CPU on production)
+    (
     awk -F'\t' -v C="$BASE/.configured.tsv" -v OA="$OBS_ACC.tmp" -v OL="$OBS_LGN.tmp" '
         BEGIN { while ((getline l < C) > 0) { split(l, a, "\t"); if (a[1] == "_subscriptions" && a[2] != "") K[toupper(a[2])] = 1 }
                 close(C); printf "" > OA; printf "" > OL }
@@ -271,15 +276,25 @@ else
     ' "$FILES"
     LC_ALL=C sort -o "$OBS_ACC.tmp" "$OBS_ACC.tmp"; commit_tmp "$OBS_ACC"
     LC_ALL=C sort -o "$OBS_LGN.tmp" "$OBS_LGN.tmp"; commit_tmp "$OBS_LGN"
+    ) & OBS_AL_PID=$!
+    # THE LEG-HOST PASS in key-aligned slices of _transfers.tsv (grp_par — the
+    # cache is CoreId-sorted, so a slice never splits a File's legs and the
+    # per-(host, File) dedup stays exact; outputs joined in slice order = the
+    # serial order). The OUT Files' facts ride a small map instead of every
+    # slice reading _files.tsv itself. (2026-09-29, speed round 3: one serial
+    # pass over the leg cache was a third of result.sh.)
     if [ -f "$ROOT/data/transfer/cache/_transfers.tsv" ]; then
-        awk -F'\t' '
-            FILENAME == ARGV[1] { if ($16 == "out") { SK[$1] = $6; OC[$1] = $2; SB[$1] = $12; EN[$1] = ($24 != "") ? $24 : $4 " " $5 }; next }
-            ($1 in SK) && $16 != "" { k = $16 SUBSEP $1; if (!(k in seen)) { seen[k] = 1; print $16 "\t" SK[$1] "\t" OC[$1] "\t" SB[$1] "\t" EN[$1] } }
-        ' "$FILES" "$ROOT/data/transfer/cache/_transfers.tsv" > "$HOSTLEGS.tmp"
+        awk -F'\t' '$16 == "out" { print $1 "\t" $6 "\t" $2 "\t" $12 "\t" (($24 != "") ? $24 : $4 " " $5) }' "$FILES" > "$COLDIR/_outfiles.tmp"
+        _rnj=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
+        grp_par "$ROOT/data/transfer/cache/_transfers.tsv" "$HOSTLEGS.tmp" "$_rnj" awk -F'\t' -v OM="$COLDIR/_outfiles.tmp" '
+            BEGIN { while ((getline l < OM) > 0) { split(l, a, "\t"); SK[a[1]] = a[2]; OC[a[1]] = a[3]; SB[a[1]] = a[4]; EN[a[1]] = a[5] } close(OM) }
+            ($1 in SK) && $16 != "" { k = $16 SUBSEP $1; if (!(k in seen)) { seen[k] = 1; print $16 "\t" SK[$1] "\t" OC[$1] "\t" SB[$1] "\t" EN[$1] } }'
+        rm -f "$COLDIR/_outfiles.tmp"
         commit_tmp "$HOSTLEGS"
     else
         : > "$HOSTLEGS"
     fi
+    wait "$OBS_AL_PID" || { echo "result.sh: the observed account / login pairs failed" >&2; exit 1; }
     awk -F'\t' -v C="$BASE/.configured.tsv" '
         BEGIN { while ((getline l < C) > 0) { split(l, a, "\t"); if (a[1] == "_subscriptions" && a[2] != "") K[toupper(a[2])] = 1 } close(C) }
         $4 != "" && $4 != "Unknown" && !(toupper($4) in K) && !(($1 SUBSEP $4) in d) { d[$1 SUBSEP $4] = 1; print $1 "\t" $4 }

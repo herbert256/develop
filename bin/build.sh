@@ -287,6 +287,15 @@ log_inventory() {
 
 # HTML-escape stdin (the report embeds commands and raw step output)
 esc() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
+# the SAME two for one value, into a variable, without a fork (2026-09-29,
+# speed round 3: the report forked a sed / awk per cell — ~400 per render,
+# two renders per build, ~2 s of the build's tail). "\&" is the literal "&"
+# in bash 3.2 and bash 5.2 alike (5.2's patsub_replacement reads a bare "&"
+# as the match).
+esc_v()  { local _s=$2; _s=${_s//&/\&amp;}; _s=${_s//</\&lt;}; _s=${_s//>/\&gt;}; printf -v "$1" '%s' "$_s"; }
+hnum_v() { local _n=$(( ${2:-0} + 0 )) _o="" _g=""; [ "$_n" -lt 0 ] && { _g=-; _n=$(( -_n )); }
+           while [ "$_n" -ge 1000 ]; do printf -v _o ',%03d%s' $(( _n % 1000 )) "$_o"; _n=$(( _n / 1000 )); done
+           printf -v "$1" '%s%d%s' "$_g" "$_n" "$_o"; }
 
 # run_step LABEL COMMAND [ARG...] — run one step, teeing its output to
 # build/step-NN.log and recording label/command/start/duration/status for the
@@ -527,12 +536,14 @@ HTML
                 logf=${rec##*$'\037'}; sn=${logf##*step-}; sn=${sn%.log}
                 printf '%d\037%s\n' "$((10#${sn:-0}))" "$rec"
             done | LC_ALL=C sort -t$'\037' -k1,1n | cut -d$'\037' -f2-)
+        local elab ecmd
         for rec in ${ORDERED[@]+"${ORDERED[@]}"}; do
             i=$((i+1))
             IFS=$'\037' read -r label cmd start dur status logf <<<"$rec"
             sn=${logf##*step-}; sn=$((10#${sn%.log}))
+            esc_v elab "$label"; esc_v ecmd "$cmd"
             printf '<tr><td class="r">%d</td><td>%s</td><td class="cmd">%s</td><td class="r">%s</td><td class="r">%s</td>' \
-                "$sn" "$(printf '%s' "$label" | esc)" "$(printf '%s' "$cmd" | esc)" "$start" "$(hms "$dur")"
+                "$sn" "$elab" "$ecmd" "$start" "$(hms "$dur")"
             if [ "$status" -eq 0 ]; then
                 printf '<td class="ok">OK</td></tr>\n'
             else
@@ -550,8 +561,9 @@ HTML
                 sn=${logf##*step-}; sn=$((10#${sn%.log}))
                 open=''; word='OK'
                 if [ "$status" -ne 0 ]; then open=' open'; word="FAILED (exit $status)"; fi
+                esc_v elab "$label"
                 printf '<details%s><summary>%d. %s &mdash; %s &mdash; %s</summary><pre>' \
-                    "$open" "$sn" "$(printf '%s' "$label" | esc)" "$(hms "$dur")" "$word"
+                    "$open" "$sn" "$elab" "$(hms "$dur")" "$word"
                 if [ -s "$logf" ]; then esc < "$logf"; else printf '(no output)'; fi
                 printf '</pre></details>\n'
             done
@@ -560,7 +572,7 @@ HTML
         # transfer export in input/, two tables side by side — Name · First ·
         # Last · Lines, sorted on First (log_inventory, gathered up top)
         printf '<h2>Log files</h2>\n<div class="sxs">\n'
-        local _spec _lname _lfirst _llast _llines _inv
+        local _spec _lname _lfirst _llast _llines _inv _en _ef _el _ec
         for _spec in "Server log files|$sinv" "Transfer log files|$tinv"; do
             _inv="${_spec#*|}"
             printf '<div class="sxscol"><h3>%s</h3>\n<table>\n<tr><th>Name</th><th>First</th><th>Last</th><th class="r">Lines</th></tr>\n' "${_spec%%|*}"
@@ -569,8 +581,9 @@ HTML
             else
                 while IFS=$'\037' read -r _lname _lfirst _llast _llines; do   # \037: an empty cached field must not shift the rest
                     [ -n "$_lname" ] || continue
+                    esc_v _en "$_lname"; esc_v _ef "$_lfirst"; esc_v _el "$_llast"; hnum_v _ec "${_llines:-0}"
                     printf '<tr><td><code>%s</code></td><td>%s</td><td>%s</td><td class="r">%s</td></tr>\n' \
-                        "$(printf '%s' "$_lname" | esc)" "$(printf '%s' "$_lfirst" | esc)" "$(printf '%s' "$_llast" | esc)" "$(hnum "${_llines:-0}")"
+                        "$_en" "$_ef" "$_el" "$_ec"
                 done <<< "$(printf '%s' "$_inv" | tr '\t' '\037')"
             fi
             printf '</table></div>\n'
