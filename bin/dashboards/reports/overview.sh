@@ -27,6 +27,25 @@ OUT="$REPORTS_DIR/overview.rpt"
 # block below).
 XR="$DATA/flow-manager/xref"
 
+# series_vars BLOCK KEY:VAR … — ONE pass over a series block ("KEY<r><TAB>value"
+# lines, one per resolution): the line KEY<r> sets VAR<r> (2026-09-29, build
+# speed — each variable was an `eval "VAR$r=$(printf '%s\n' "$block" | awk
+# '$1==k{print $2}')"`, 42 pipes of a ~1 MB string for the slot series alone,
+# and a big printf into a $(…) pipe is the bash 3.2 EINTR failure; a here-
+# string is a temp file). Keys are unique per block; values hold no TAB.
+series_vars() {
+    local _blk=$1 _k _v _p _n _m; shift
+    while IFS=$'\t' read -r _k _v; do
+        _p=${_k%%[0-9]*}; _n=${_k#"$_p"}
+        case $_n in ''|*[!0-9]*) continue ;; esac
+        for _m in "$@"; do
+            if [ "${_m%%:*}" = "$_p" ]; then printf -v "${_m#*:}$_n" '%s' "$_v"; break; fi
+        done
+    done <<< "$_blk"
+}
+OVTMP=$(mktemp -d "${TMPDIR:-/tmp}/overview.XXXXXX")
+trap 'rm -rf "$OVTMP"' EXIT
+
 transfer_basics || true
 server_basics || true
 
@@ -48,9 +67,14 @@ dur4=""; cnt4=""; rate4=""; vol4=""; err4=""; thr4=""; con4=""
 dur6=""; cnt6=""; rate6=""; vol6=""; err6=""; thr6=""; con6=""
 dur12=""; cnt12=""; rate12=""; vol12=""; err12=""; thr12=""; con12=""
 dur24=""; cnt24=""; rate24=""; vol24=""; err24=""; thr24=""; con24=""
+# THE SLOT PASS RUNS IN THE BACKGROUND (2026-09-29, build speed): it and the
+# seen pass below are independent reads of the caches (neither reads what the
+# other computes), ~40 % of this script each, one after the other until now;
+# the series are split into their variables after the seen pass
+ser_pid=""
 if [ -f "$TR" ]; then
     RWSRC="$RW"; [ -f "$RWSRC" ] || RWSRC=/dev/null
-    ser=$(awk -F'\t' '
+    awk -F'\t' '
         function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
         # O(n log n) — a daily bucket holds thousands of durations, where the
         # insertion sort this replaced would be O(n^2). Tail-recursion on the
@@ -190,16 +214,8 @@ if [ -f "$TR" ]; then
                 }
             }
             build(1, 24); build(2, 12); build(4, 6); build(6, 4); build(12, 2); build(24, 1)
-        }' "$TR" raw=1 "$RWSRC")
-    for r in 1 2 4 6 12 24; do
-        eval "dur$r=\$(printf '%s\n' \"\$ser\" | awk -F'\t' -v k=DUR\$r  '\$1==k{print \$2}')"
-        eval "cnt$r=\$(printf '%s\n' \"\$ser\" | awk -F'\t' -v k=CNT\$r  '\$1==k{print \$2}')"
-        eval "rate$r=\$(printf '%s\n' \"\$ser\" | awk -F'\t' -v k=RATE\$r '\$1==k{print \$2}')"
-        eval "vol$r=\$(printf '%s\n' \"\$ser\" | awk -F'\t' -v k=VOL\$r  '\$1==k{print \$2}')"
-        eval "err$r=\$(printf '%s\n' \"\$ser\" | awk -F'\t' -v k=ERR\$r  '\$1==k{print \$2}')"
-        eval "thr$r=\$(printf '%s\n' \"\$ser\" | awk -F'\t' -v k=THR\$r  '\$1==k{print \$2}')"
-        eval "con$r=\$(printf '%s\n' \"\$ser\" | awk -F'\t' -v k=CON\$r  '\$1==k{print \$2}')"
-    done
+        }' "$TR" raw=1 "$RWSRC" > "$OVTMP/ser" &
+    ser_pid=$!
 fi
 
 # ---- the three CUMULATIVE "seen" views -------------------------------------
@@ -293,15 +309,20 @@ if [ -f "$TR" ]; then
         # NUMERICALLY (no awk hash order in the output), carrying three running
         # figures: the cumulative first-sighting count and the green/red split,
         # which it re-derives from each entity state transition.
-        function build(kind, r, spd,   t, d, lab, s, org, grn, red, ne, EZ, i, e, st, ek) {
-            ne = split(substr(ents[r SUBSEP kind], 2), EZ, SUBSEP)
+        # (2026-09-29, build speed: the walk visits only the entities SIGHTED in
+        # a slot — LX, the slot index of lo[] built once in END — where it
+        # used to test every entity of the kind at every slot; each entity
+        # moves its own state and the green / red figures are sums, so the
+        # order within a slot cannot change them)
+        function build(kind, r, spd,   t, d, lab, s, org, grn, red, ne, EZ, i, e, st, ek, lx) {
             delete ST
             s = ""; org = 0; grn = 0; red = 0
             for (t = tmin[r]; t <= tmax[r]; t++) {
                 org += og[r SUBSEP kind SUBSEP t] + 0
+                lx = r SUBSEP kind SUBSEP t
+                ne = (lx in LX) ? split(substr(LX[lx], 2), EZ, SUBSEP) : 0
                 for (i = 1; i <= ne; i++) {
                     e = EZ[i]; ek = r SUBSEP kind SUBSEP e SUBSEP t
-                    if (!(ek in lo)) continue
                     st = lo[ek]
                     if (!(e in ST))       { if (st) red++; else grn++ }
                     else if (ST[e] != st) { if (st) { red++; grn-- } else { grn++; red-- } }
@@ -414,6 +435,9 @@ if [ -f "$TR" ]; then
                 }
             }
             close(RFF)
+            # the slot index of the sightings (see build): r ⇥ kind ⇥ slot ->
+            # the entities with an observation there
+            for (ek in lo) { split(ek, a, SUBSEP); lx = a[1] SUBSEP a[2] SUBSEP a[4]; LX[lx] = LX[lx] SUBSEP a[3] }
             # transfer first-sightings: the orange increments. Hash iteration
             # order is fine: every target is a commutative sum.
             for (k in f1) {
@@ -424,11 +448,12 @@ if [ -f "$TR" ]; then
             build("P", 1, 24); build("P", 2, 12); build("P", 4, 6); build("P", 6, 4); build("P", 12, 2); build("P", 24, 1)
             build("A", 1, 24); build("A", 2, 12); build("A", 4, 6); build("A", 6, 4); build("A", 12, 2); build("A", 24, 1)
         }' "$TR")
-    for r in 1 2 4 6 12 24; do
-        eval "sub$r=\$(printf '%s\n' \"\$sser\" | awk -F'\t' -v k=SEENS\$r '\$1==k{print \$2}')"
-        eval "ptn$r=\$(printf '%s\n' \"\$sser\" | awk -F'\t' -v k=SEENP\$r '\$1==k{print \$2}')"
-        eval "acc$r=\$(printf '%s\n' \"\$sser\" | awk -F'\t' -v k=SEENA\$r '\$1==k{print \$2}')"
-    done
+    series_vars "$sser" SEENS:sub SEENP:ptn SEENA:acc
+fi
+# the slot pass (started above, in the background) -> its seven series per resolution
+if [ -n "$ser_pid" ]; then
+    wait "$ser_pid"
+    series_vars "$(cat "$OVTMP/ser")" DUR:dur CNT:cnt RATE:rate VOL:vol ERR:err THR:thr CON:con
 fi
 
 # ---- the four UC STATUS views ----------------------------------------------
@@ -482,9 +507,7 @@ for u in 1 2 3 4; do
                 print "S" r "\t" ser
             }
         }' "$US")
-    for r in 1 2 4 6 12 24; do
-        eval "uc${u}s$r=\$(printf '%s\n' \"\$userr\" | awk -F'\t' -v k=S\$r '\$1==k{print \$2}')"
-    done
+    series_vars "$userr" "S:uc${u}s"
 done
 
 # the PeSIT view: bin classification lives in bin/server/reports/pesit.sh,
@@ -524,9 +547,7 @@ if [ -s "$PS" ]; then
           bump(12, j*2 + int($2/24))
           bump(24, j) }
         END { if (6 in tmax) { build(1, 24); build(2, 12); build(4, 6); build(6, 4); build(12, 2); build(24, 1) } }' "$PS")
-    for r in 1 2 4 6 12 24; do
-        eval "pes$r=\$(printf '%s\n' \"\$pser\" | awk -F'\t' -v k=PES\$r '\$1==k{print \$2}')"
-    done
+    series_vars "$pser" PES:pes
 fi
 
 # the EventQueue view (2026-09-14, user request): bin/server/reports/event-queue.sh
@@ -564,9 +585,7 @@ if [ -s "$EQS" ]; then
           bump(12, j*2 + int($2/24))
           bump(24, j) }
         END { if (6 in tmax) { build(1, 24); build(2, 12); build(4, 6); build(6, 4); build(12, 2); build(24, 1) } }' "$EQS")
-    for r in 1 2 4 6 12 24; do
-        eval "eq$r=\$(printf '%s\n' \"\$eqser\" | awk -F'\t' -v k=EQ\$r '\$1==k{print \$2}')"
-    done
+    series_vars "$eqser" EQ:eq
 fi
 
 # ---- the KPI daily series ---------------------------------------------------
