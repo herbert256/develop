@@ -333,6 +333,27 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   and the fallback. KEEP THE TWO IN STEP (identical on all 13.5k production-size .rpt files).
 - **pda-entities.sh** computes the per-leg flags ONCE (a temp file) and runs its five dimensions
   as parallel jobs (2026-09-28).
+- **2026-09-29 round (prd 197 → ~184 s; six timed prd runs with a 1-s CPU sampler):** the
+  appended-names RESCAN is gone from the normal run — `result.sh discover-hosts` appends the
+  transfer-log-discovered HOSTS right after the transfer parse (during the server-parse wait;
+  nothing before result.sh reads `base/_hosts.tsv`), so the mention scan, still started the
+  moment the server parse ends, matches them in its one pass; `result.sh discover` after
+  session-sites re-checks the hosts against the pristine roster (`colour/_pristine_hosts.tsv`)
+  and appends the discovered SUBSCRIPTIONS (never earlier: the session-sites re-derive reads
+  `base/_subscriptions.tsv`) — a change or an append drops the rescan marker, the old path
+  stays the safety net. Proven byte-identical on a scratch clone with a planted discovered
+  host and one with a discovered subscription. `unknown-entities.sh` scans line-aligned byte
+  slices; its latest-mention tie rule is explicit (`TIEMOD`: newest stamp, then the smallest
+  global line number mod 6, then the smallest line — exactly the former FNR % 6 workers'
+  pick), buckets date-sorted. The tail: the all files search + dashboards + day publishes
+  run in slot 2 beside the two publish catch-ups.
+  **Tried and reverted — do not retry:** the server reports that read only the server cache
+  (topview, errors-day, error-*, event-queue, config-defects, pesit, top-messages,
+  ssh-sessions + subsets) in the background beside the server-log -> transfer steps, plain
+  and under `nice -n 15`: those steps are CPU-bound parallel scans, not idle time (the ps
+  CPU samples overstate the free capacity on the 6 E-cores) — session-sites 8 → 12-14 s,
+  the mention scan 20 → 25 s, the build +6..+11 s. The outbox push is network time (5 s,
+  once 14 s) — judge a run by its stages, not only its wall.
 - **Test at production SCALE, not only on the sample**: the develop estate is small per entity and
   light on SSH lines, so a per-entity sort or a per-logon cost can look free there (the detail
   percentiles cut 28-44 % on 8x the sample legs and nothing on the sample). Replicate

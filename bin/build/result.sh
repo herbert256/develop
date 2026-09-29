@@ -85,6 +85,37 @@ FILES="$ROOT/data/transfer/cache/_files.tsv"
 
 commit_tmp() { mv "$1.tmp" "$1"; }   # $1 = final path; expects $1.tmp
 [ -f "$FILES" ] || { echo "result.sh: no $FILES (run bin/transfer/parse.sh first) — nothing to do." >&2; exit 0; }
+# THE MODE: an explicit argument (never a freshness check).
+#   (none)          the whole step: discovery + every colour
+#   discover-hosts  stage 0 for the HOSTS only, and stop (2026-09-29, build
+#                   speed): bin/build.sh runs it right after the transfer
+#                   parse, so the server MENTION SCAN — which starts the moment
+#                   the server parse is done — already matches the discovered
+#                   hosts. Until then every production build paid the
+#                   appended-names RESCAN (~13 s: its one discovered host is
+#                   in the server log) plus a second result.sh run (~4 s) on
+#                   the critical path. Safe that early because nothing before
+#                   result.sh reads base/_hosts.tsv (the transfer parse and
+#                   its session-sites re-derive read the xref pairs) — and the
+#                   re-derive CAN still move a leg, so `discover` re-checks.
+#                   Drops no rescan marker (the scan has not started yet).
+#   discover        stage 0 after session-sites (the transfer caches final for
+#                   it — expire-files / bookend-ok rewrite outcome and stamps
+#                   only): the HOST RE-CHECK — the discovery recomputed
+#                   against the pristine roster; when the re-derive changed
+#                   it, base/_hosts.tsv is rewritten to what the full run
+#                   would append and the rescan marker drops — and the
+#                   SUBSCRIPTIONS (appended here, never before session-sites:
+#                   the re-derive reads base/_subscriptions.tsv); an append
+#                   drops the marker, the mention scan being under way.
+#                   The full run then finds nothing left to append, and the
+#                   rescan + re-colour steps of bin/build.sh fire only when
+#                   a marker dropped here.
+RS_MODE=${1:-all}
+case $RS_MODE in
+    all|discover-hosts|discover) ;;
+    *) echo "usage: bin/build/result.sh [discover-hosts|discover]" >&2; exit 2 ;;
+esac
 
 # ---- the UC3 poll evidence ---------------------------------------------------
 # The newest SUCCESSFUL poll per UC3 subscription — "Applying the search
@@ -141,6 +172,7 @@ REDFLIP="$COLDIR/_redflip.tsv"
 CCSINCE="$COLDIR/_ccsince.tsv"
 CCAND="$COLDIR/_ccand.tsv"
 mkdir -p "$COLDIR"
+if [ "$RS_MODE" = all ]; then   # (the poll / connection evidence reads the mention caches — not built yet in the discover modes)
 : > "$CONNCAND"
 {
     # every UC3 flow: UC3-NAMED or DERIVED (xref/_subscriptions-ucderived.tsv;
@@ -180,6 +212,7 @@ awk -F'\t' '{ n = 0; m = split($5, Z, "|")
               for (i = 1; i <= m; i++) if (Z[i] != "" && ($4 == "" || Z[i] > $4)) n++
               if ($1 != "" && n >= 3) print toupper($1) }' "$CONNCAND" | LC_ALL=C sort -u > "$CCAND"
 : > "$CCSINCE"
+fi   # RS_MODE = all
 
 # ---- stage 0: entities DISCOVERED in the transfer log ----------------------
 # A subscription (or remote host) can carry real transfers and still be absent
@@ -215,54 +248,93 @@ HOSTLEGS="$COLDIR/_hostlegs.tsv"
 # col 3 (account) / col 14 (login) -> col 12, and the leg hosts of its
 # OUT-connection Files (HOSTLEGS col 1 -> col 4)
 OBS_ACC="$COLDIR/_observed-accounts.tsv"; OBS_LGN="$COLDIR/_observed-logins.tsv"; OBS_HST="$COLDIR/_observed-hosts.tsv"
-awk -F'\t' -v C="$BASE/.configured.tsv" -v OA="$OBS_ACC.tmp" -v OL="$OBS_LGN.tmp" '
-    BEGIN { while ((getline l < C) > 0) { split(l, a, "\t"); if (a[1] == "_subscriptions" && a[2] != "") K[toupper(a[2])] = 1 }
-            close(C); printf "" > OA; printf "" > OL }
-    $12 != "" && $12 != "Unknown" && !(toupper($12) in K) {
-        if ($3 != ""  && !(("A" SUBSEP $3 SUBSEP $12) in d)) { d["A" SUBSEP $3 SUBSEP $12] = 1; print $3 "\t" $12 > OA }
-        if ($14 != "" && !(("L" SUBSEP $14 SUBSEP $12) in d)) { d["L" SUBSEP $14 SUBSEP $12] = 1; print $14 "\t" $12 > OL } }
-' "$FILES"
-LC_ALL=C sort -o "$OBS_ACC.tmp" "$OBS_ACC.tmp"; commit_tmp "$OBS_ACC"
-LC_ALL=C sort -o "$OBS_LGN.tmp" "$OBS_LGN.tmp"; commit_tmp "$OBS_LGN"
-if [ -f "$ROOT/data/transfer/cache/_transfers.tsv" ]; then
-    awk -F'\t' '
-        FILENAME == ARGV[1] { if ($16 == "out") { SK[$1] = $6; OC[$1] = $2; SB[$1] = $12; EN[$1] = ($24 != "") ? $24 : $4 " " $5 }; next }
-        ($1 in SK) && $16 != "" { k = $16 SUBSEP $1; if (!(k in seen)) { seen[k] = 1; print $16 "\t" SK[$1] "\t" OC[$1] "\t" SB[$1] "\t" EN[$1] } }
-    ' "$FILES" "$ROOT/data/transfer/cache/_transfers.tsv" > "$HOSTLEGS.tmp"
-    commit_tmp "$HOSTLEGS"
+if [ "$RS_MODE" != all ]; then
+    # THE DISCOVER MODES need the host NAMES only (2026-09-29, build speed —
+    # they run on the critical path): the distinct leg hosts of the
+    # OUT-connection Files in _transfers.tsv order — the first spelling of
+    # each first, exactly the order HOSTLEGS lists them in — instead of the
+    # full per-(host, File) HOSTLEGS and the observed pairs, which the full
+    # run builds anyway
+    HOSTLEGS="$COLDIR/_hostset.tsv"
+    if [ -f "$ROOT/data/transfer/cache/_transfers.tsv" ]; then
+        awk -F'\t' 'FILENAME == ARGV[1] { if ($16 == "out") o[$1] = 1; next }
+            ($1 in o) && $16 != "" && !($16 in seen) { seen[$16] = 1; print $16 }
+        ' "$FILES" "$ROOT/data/transfer/cache/_transfers.tsv" > "$HOSTLEGS"
+    else
+        : > "$HOSTLEGS"
+    fi
 else
-    : > "$HOSTLEGS"
+    awk -F'\t' -v C="$BASE/.configured.tsv" -v OA="$OBS_ACC.tmp" -v OL="$OBS_LGN.tmp" '
+        BEGIN { while ((getline l < C) > 0) { split(l, a, "\t"); if (a[1] == "_subscriptions" && a[2] != "") K[toupper(a[2])] = 1 }
+                close(C); printf "" > OA; printf "" > OL }
+        $12 != "" && $12 != "Unknown" && !(toupper($12) in K) {
+            if ($3 != ""  && !(("A" SUBSEP $3 SUBSEP $12) in d)) { d["A" SUBSEP $3 SUBSEP $12] = 1; print $3 "\t" $12 > OA }
+            if ($14 != "" && !(("L" SUBSEP $14 SUBSEP $12) in d)) { d["L" SUBSEP $14 SUBSEP $12] = 1; print $14 "\t" $12 > OL } }
+    ' "$FILES"
+    LC_ALL=C sort -o "$OBS_ACC.tmp" "$OBS_ACC.tmp"; commit_tmp "$OBS_ACC"
+    LC_ALL=C sort -o "$OBS_LGN.tmp" "$OBS_LGN.tmp"; commit_tmp "$OBS_LGN"
+    if [ -f "$ROOT/data/transfer/cache/_transfers.tsv" ]; then
+        awk -F'\t' '
+            FILENAME == ARGV[1] { if ($16 == "out") { SK[$1] = $6; OC[$1] = $2; SB[$1] = $12; EN[$1] = ($24 != "") ? $24 : $4 " " $5 }; next }
+            ($1 in SK) && $16 != "" { k = $16 SUBSEP $1; if (!(k in seen)) { seen[k] = 1; print $16 "\t" SK[$1] "\t" OC[$1] "\t" SB[$1] "\t" EN[$1] } }
+        ' "$FILES" "$ROOT/data/transfer/cache/_transfers.tsv" > "$HOSTLEGS.tmp"
+        commit_tmp "$HOSTLEGS"
+    else
+        : > "$HOSTLEGS"
+    fi
+    awk -F'\t' -v C="$BASE/.configured.tsv" '
+        BEGIN { while ((getline l < C) > 0) { split(l, a, "\t"); if (a[1] == "_subscriptions" && a[2] != "") K[toupper(a[2])] = 1 } close(C) }
+        $4 != "" && $4 != "Unknown" && !(toupper($4) in K) && !(($1 SUBSEP $4) in d) { d[$1 SUBSEP $4] = 1; print $1 "\t" $4 }
+    ' "$HOSTLEGS" | LC_ALL=C sort > "$OBS_HST.tmp"
+    commit_tmp "$OBS_HST"
 fi
-awk -F'\t' -v C="$BASE/.configured.tsv" '
-    BEGIN { while ((getline l < C) > 0) { split(l, a, "\t"); if (a[1] == "_subscriptions" && a[2] != "") K[toupper(a[2])] = 1 } close(C) }
-    $4 != "" && $4 != "Unknown" && !(toupper($4) in K) && !(($1 SUBSEP $4) in d) { d[$1 SUBSEP $4] = 1; print $1 "\t" $4 }
-' "$HOSTLEGS" | LC_ALL=C sort > "$OBS_HST.tmp"
-commit_tmp "$OBS_HST"
-discover_logged() {   # $1 = base name  $2 = the awk condition picking its column
-    local basef="$BASE/_$1.tsv" n src="$FILES"
-    [ -f "$basef" ] || return 0
-    [ "$2" = host ] && src="$HOSTLEGS"
-    n=$(awk -F'\t' -v COND="$2" -v BF="$basef" '
+# the rows discovery appends for roster file $1 ($2 = sub | host), sorted
+disc_block() {
+    local src="$FILES"; [ "$2" = host ] && src="$HOSTLEGS"
+    awk -F'\t' -v COND="$2" -v BF="$1" '
         BEGIN { while ((getline l < BF) > 0) { split(l, a, "\t"); if (a[1] != "") B[toupper(a[1])] = 1 }
                 close(BF) }
         { v = (COND == "sub") ? $12 : $1 }
         COND == "sub" && v == "Unknown" { next }   # the no-subscription value (2026-09-29): never an entity
         v != "" && !(toupper(v) in B) && !(toupper(v) in seen) { seen[toupper(v)] = 1; ord[++n] = v }
         END { for (i = 1; i <= n; i++) print ord[i] "\t\t" }
-    ' "$src" | LC_ALL=C sort)
+    ' "$src" | LC_ALL=C sort
+}
+discover_logged() {   # $1 = base name  $2 = the awk condition picking its column
+    local basef="$BASE/_$1.tsv" n
+    [ -f "$basef" ] || return 0
+    local pris="$COLDIR/_pristine_$1.tsv" blk="$COLDIR/_discovered_$1.txt"
+    # THE HOST RE-CHECK (discover mode, after an early discover-hosts): the
+    # block against the PRISTINE roster the early run saved; unchanged -> the
+    # roster stands; changed -> rewritten as the full run would append it
+    if [ "$RS_MODE" = discover ] && [ "$1" = hosts ] && [ -f "$pris" ] && [ -f "$blk" ]; then
+        n=$(disc_block "$pris" "$2")
+        [ "$n" = "$(cat "$blk")" ] && return 0
+        { cat "$pris"; [ -z "$n" ] || printf '%s\n' "$n"; } > "$basef.tmp"
+        commit_tmp "$basef"
+        printf '%s' "$n" > "$blk"
+        : > "$ROOT/data/server/cache/.rescan-mentions" 2>/dev/null || true
+        echo "result.sh: the session join changed the discovered hosts — base/_hosts.tsv rewritten, the mention rescan will run." >&2
+        return 0
+    fi
+    [ "$RS_MODE" = discover-hosts ] && { cp "$basef" "$pris"; : > "$blk"; }
+    n=$(disc_block "$basef" "$2")
     [ -n "$n" ] || return 0
-    # append and re-sort nothing: the base caches are name-ordered as written by
-    # flow-manager.sh, and the colour passes below rewrite them line by line, so
-    # the new rows simply join at the end
     { cat "$basef"; printf '%s\n' "$n"; } > "$basef.tmp"
     commit_tmp "$basef"
+    [ "$RS_MODE" = discover-hosts ] && printf '%s' "$n" > "$blk"
     printf 'result.sh: %s discovered in the transfer log, appended to %s.\n' \
         "$(printf '%s\n' "$n" | wc -l | tr -d ' ')" "base/_$1.tsv" >&2
-    # the per-entity server MENTION caches were built before this step and do
-    # not know the new names — their detail pages would lose the server-log
-    # table. bin/build.sh rescans once, right after this step.
-    : > "$ROOT/data/server/cache/.rescan-mentions" 2>/dev/null || true
+    # the per-entity server MENTION caches did not match the new names —
+    # their detail pages would lose the server-log table: the rescan marker
+    # (bin/build.sh rescans once, after this step). Not for the early hosts
+    # (discover-hosts): the mention scan starts after them and reads them.
+    [ "$RS_MODE" = discover-hosts ] || : > "$ROOT/data/server/cache/.rescan-mentions" 2>/dev/null || true
 }
+case $RS_MODE in
+    discover-hosts) discover_logged hosts host; exit 0 ;;
+    discover)       discover_logged hosts host; discover_logged subscriptions sub; exit 0 ;;
+esac
 discover_logged subscriptions sub
 discover_logged hosts host
 

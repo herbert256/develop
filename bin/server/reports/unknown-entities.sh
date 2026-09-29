@@ -24,17 +24,20 @@
 # (The four SSH-LOGON files logon-*.tsv went with the BLUE status, 2026-09-27.)
 #
 # MAP-REDUCE (the bin/server/parse.sh pattern): the extraction work is CPU,
-# not I/O (a bare mawk read+field-split of the 2.4 GB cache is ~2 s; the five
-# extraction rule sets are ~28 s of regex/tokenize work), so NW workers each
-# scan the cache gated on FNR % NW == ID — a skipped line costs only the read,
-# mawk splits fields lazily — and dump their LOCAL aggregates (per-name
+# not I/O, so NW workers each scan ONE line-aligned BYTE SLICE of the cache
+# (bin/ranges.sh line_cuts + byte_feed; 2026-09-29, build speed — until then
+# every worker read the WHOLE cache gated on FNR % NW == ID, six full reads:
+# 71 CPU-s on production) and dump their LOCAL aggregates (per-name
 # counts, per-name-per-day counts, latest-mention candidates, the bounded
 # logline rings) as small tagged files. ONE merge pass then sums the counts,
 # max-picks the latest mentions, re-inserts the ring entries through addline
 # (the global top-10 is a subset of the per-worker top-10s), loads the known
 # sets from ONE read of the transfer cache, and writes the five .rpt files +
 # sidecars. Aggregation is exact: counts add, maxima commute, and addline
-# inserts by (timestamp, message) key regardless of arrival order.
+# inserts by (timestamp, message) key regardless of arrival order. The two
+# order-dependent picks are made order-FREE: the latest-mention tie rule (see
+# TIEMOD) compares GLOBAL line numbers, and the per-day buckets are emitted
+# date-sorted (they were in hash order, which follows the insertion history).
 #
 # Usage:
 #   ./unknown-entities.sh    # reads input/*.csv (via the caches) + transfer _transfers.tsv
@@ -45,6 +48,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 source "$ROOT/bin/blacklist.sh"   # BLACKLIST_FILE + BLACKLIST_AWK — the ONE blacklist (input/blacklist.txt)
 source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK — fold a logged name to its CURRENT one
+source "$ROOT/bin/ranges.sh"     # line_cuts + byte_feed: the workers' byte slices
 mkdir -p "$REPORTS_DIR" "$UNKNOWN_DIR"
 
 TCACHE="$TRANSFER_CACHE/_transfers.tsv"      # authoritative per-row entity lists (transfer parse cache)
@@ -99,21 +103,33 @@ cfg_white_in="$CFG_WHITE"; [ -f "$cfg_white_in" ] || cfg_white_in=/dev/null
 #   R t name sk logline               bounded logline-ring entries (<=10/name)
 NW=$( (command -v sysctl >/dev/null 2>&1 && sysctl -n hw.ncpu) 2>/dev/null || echo 4 )
 [ "$NW" -ge 1 ] 2>/dev/null || NW=4
-# KEEP THE CAP AT 6 (2026-09-27: raised to 10 for speed and put back the same
-# day): the latest-mention pick is NOT partition-free — a worker keeps the
-# FIRST line of a tied newest stamp, and the reduce keeps the candidate of the
-# lowest-numbered part on a tie, so the FNR % NW slicing decides which of two
-# same-millisecond messages a name shows. Another NW (or byte ranges) would
-# change that choice on production data, where such ties occur.
-[ "$NW" -gt 6 ] && NW=6
-wpids=()
-for ((id = 0; id < NW; id++)); do
-    awk -F'\t' -v NW="$NW" -v ID="$id" -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
+# THE LATEST-MENTION TIE RULE: of the lines carrying a name's newest stamp,
+# the one whose GLOBAL line number g (1-based, the cache's FNR) has the
+# smallest g % TIEMOD, then the smallest g. That is exactly the pick of the
+# former FNR % NW workers (NW capped at 6: a worker kept the FIRST line of a
+# tied newest stamp, the reduce the lowest-numbered worker's), so the byte
+# slices below change no choice — and TIEMOD stays that cap, whatever NW is.
+TIEMOD=$NW; [ "$TIEMOD" -gt 6 ] && TIEMOD=6
+# the slices and the lines BEFORE each one (its first line's g - 1): one
+# parallel line count, a fraction of a second against the scan
+line_cuts "$PARSED" "$NW" > "$TMPD/cuts"
+nsl=0; cpids=()
+while read -r lo hi; do
+    ( byte_feed "$PARSED" "$lo" "$hi" | wc -l | tr -d ' ' > "$TMPD/lc.$nsl" ) &
+    cpids+=("$!"); nsl=$((nsl + 1))
+done < "$TMPD/cuts"
+for p in ${cpids[@]+"${cpids[@]}"}; do wait "$p"; done
+wpids=(); id=0; base=0
+while read -r lo hi; do
+    ( byte_feed "$PARSED" "$lo" "$hi" | awk -F'\t' -v BASE="$base" -v TM="$TIEMOD" -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         BEGIN { rn_load(RNF) }
+        # a newer stamp wins; a tie goes to the smaller g % TM (see TIEMOD) —
+        # within one slice g only grows, so the first line of a residue stays
+        function newer(k, s2, g2) { return (s2 > lsk[k]) || (s2 == lsk[k] && g2 % TM < lg[k] % TM) }
         FILENAME ~ /_hosts\.tsv$/  { if ($1 != "") { cfg[tolower($1)] = $1; if (!index($1, ".")) hnodot = 1 } next }   # config spelling, matched lowercase (hnodot: the H fast path is off)
         FILENAME ~ /_white\.tsv$/  { if ($1 != "") white[$1] = 1; next }
-        FNR % NW != ID { next }                      # this worker'\''s slice only
         {
+            g = BASE + FNR                           # the line number in the whole cache
             d = substr($1, 1, 10)
             sk = $1 " " $2
             delete mseen                             # one log line per entity per record (all types)
@@ -127,8 +143,8 @@ for ((id = 0; id < NW; id++)); do
                     if (ip in white) {
                         k = "W" SUBSEP ip
                         cnt[k]++; cd[k SUBSEP d]++
-                        if (sk > lsk[k]) { lsk[k] = sk; lmsg[k] = $5 }
-                        if ($4 == "T" && sk > lskT[ip]) { lskT[ip] = sk; lmsgT[ip] = $5 }
+                        if (newer(k, sk, g)) { lsk[k] = sk; lmsg[k] = $5; lg[k] = g }
+                        if ($4 == "T" && ((sk > lskT[ip]) || (sk == lskT[ip] && g % TM < lgT[ip] % TM))) { lskT[ip] = sk; lmsgT[ip] = $5; lgT[ip] = g }
                         if (!(k in mseen)) { mseen[k] = 1; addline(k, sk, lvlname($3) " " compname($4) "  " substr($5, 1, 200)) }
                     }
                 }
@@ -156,7 +172,7 @@ for ((id = 0; id < NW; id++)); do
                     tk = rn_canon_pfx(tk); STK[t0] = tk }
                     k = "S" SUBSEP tk
                     cnt[k]++; cd[k SUBSEP d]++
-                    if (sk > lsk[k]) { lsk[k] = sk; lmsg[k] = $5 }
+                    if (newer(k, sk, g)) { lsk[k] = sk; lmsg[k] = $5; lg[k] = g }
                     if (!(k in mseen)) { mseen[k] = 1; addline(k, sk, lvlname($3) " " compname($4) "  " substr($5, 1, 200)) }
                     s = substr(s, RSTART + RLENGTH)
                 }
@@ -170,7 +186,7 @@ for ((id = 0; id < NW; id++)); do
                     if (m != "") {
                         k = "A" SUBSEP m
                         cnt[k]++; cd[k SUBSEP d]++
-                        if (sk > lsk[k]) { lsk[k] = sk; lmsg[k] = $5 }
+                        if (newer(k, sk, g)) { lsk[k] = sk; lmsg[k] = $5; lg[k] = g }
                         if (!(k in mseen)) { mseen[k] = 1; addline(k, sk, lvlname($3) " " compname($4) "  " substr($5, 1, 200)) }
                     }
                     s = substr(s, RSTART + RLENGTH)
@@ -185,7 +201,7 @@ for ((id = 0; id < NW; id++)); do
                     if (m != "") {
                         k = "L" SUBSEP m
                         cnt[k]++; cd[k SUBSEP d]++
-                        if (sk > lsk[k]) { lsk[k] = sk; lmsg[k] = $5 }
+                        if (newer(k, sk, g)) { lsk[k] = sk; lmsg[k] = $5; lg[k] = g }
                         if (!(k in mseen)) { mseen[k] = 1; addline(k, sk, lvlname($3) " " compname($4) "  " substr($5, 1, 200)) }
                     }
                     s = substr(s, RSTART + RLENGTH)
@@ -224,7 +240,7 @@ for ((id = 0; id < NW; id++)); do
                     w = HW[i]
                     k = "H" SUBSEP cfg[w]            # attribute under the config spelling
                     cnt[k]++; cd[k SUBSEP d]++
-                    if (sk > lsk[k]) { lsk[k] = sk; lmsg[k] = $5 }
+                    if (newer(k, sk, g)) { lsk[k] = sk; lmsg[k] = $5; lg[k] = g }
                     if (!(k in mseen)) { mseen[k] = 1; addline(k, sk, lvlname($3) " " compname($4) "  " substr($5, 1, 200)) }
                 }
             }
@@ -232,25 +248,26 @@ for ((id = 0; id < NW; id++)); do
         END {
             for (k in cnt) { split(k, kp, SUBSEP)
                 print "C\t" kp[1] "\t" kp[2] "\t" cnt[k]
-                print "K\t" kp[1] "\t" kp[2] "\t" lsk[k] "\t" lmsg[k]
+                print "K\t" kp[1] "\t" kp[2] "\t" lsk[k] "\t" lg[k] "\t" lmsg[k]
                 nl = (k in _LLn) ? split(loglist(k), le, _US) : 0
                 for (i = 1; i <= nl; i++) { split(le[i], lf, SUBSEP)
                     print "R\t" kp[1] "\t" kp[2] "\t" lf[1] "\t" lf[2] } }
             for (k in cd) { nd = split(k, kp, SUBSEP)
                 print "D\t" kp[1] "\t" kp[2] "\t" kp[3] "\t" cd[k] }
-            for (ip in lskT) print "T\t" ip "\t" lskT[ip] "\t" lmsgT[ip]
+            for (ip in lskT) print "T\t" ip "\t" lskT[ip] "\t" lgT[ip] "\t" lmsgT[ip]
         }
-    ' "$cfg_hosts_in" "$cfg_white_in" "$PARSED" > "$TMPD/part.$id" &
+    ' "$cfg_hosts_in" "$cfg_white_in" /dev/stdin > "$TMPD/part.$id" ) &
     wpids+=("$!")
-done
-for p in "${wpids[@]}"; do wait "$p"; done
+    base=$((base + $(cat "$TMPD/lc.$id"))); id=$((id + 1))
+done < "$TMPD/cuts"
+for p in ${wpids[@]+"${wpids[@]}"}; do wait "$p"; done
 
 # ---- REDUCE: merge the worker aggregates, filter against the known sets -----
 SIDE_S="$UNKNOWN_DIR/sites.tsv"; SIDE_A="$UNKNOWN_DIR/accounts.tsv"
 SIDE_L="$UNKNOWN_DIR/logins.tsv"; SIDE_H="$UNKNOWN_DIR/hosts.tsv"
 SIDE_W="$UNKNOWN_DIR/white.tsv"
 rm -f "$SIDE_S" "$SIDE_A" "$SIDE_L" "$SIDE_H" "$SIDE_W"   # every run first deletes the sidecars
-agg=$(awk -F'\t' -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
+agg=$(awk -F'\t' -v TM="$TIEMOD" -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
         -v side_h="$SIDE_H" -v side_w="$SIDE_W" -v BLF="$BLACKLIST_FILE" \
         "$LOGLINES_AWK$BLACKLIST_AWK"'
     # Seeded from input/blacklist.txt via bin/blacklist.sh — the same file
@@ -275,8 +292,11 @@ agg=$(awk -F'\t' -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
     # worker aggregate lines
     $1 == "C" { k = $2 SUBSEP $3; cnt[k] += $4; next }
     $1 == "D" { k = $2 SUBSEP $3; cd[k SUBSEP $4] += $5; next }
-    $1 == "K" { k = $2 SUBSEP $3; if ($4 > lsk[k]) { lsk[k] = $4; lmsg[k] = $5 }; next }
-    $1 == "T" { if ($3 > lskT[$2]) { lskT[$2] = $3; lmsgT[$2] = $4 }; tmm[$2] = 1; next }
+    # the latest mention: the newer stamp, on a tie the smaller g % TM, then
+    # the smaller g (the TIEMOD rule — slice order no longer matters)
+    function tiewin(s2, g2, s1, g1) { return (s2 > s1) || (s2 == s1 && (g2 % TM < g1 % TM || (g2 % TM == g1 % TM && g2 + 0 < g1 + 0))) }
+    $1 == "K" { k = $2 SUBSEP $3; if (!(k in lsk) || tiewin($4, $5, lsk[k], lg[k])) { lsk[k] = $4; lg[k] = $5; lmsg[k] = $6 }; next }
+    $1 == "T" { if (!($2 in lskT) || tiewin($3, $4, lskT[$2], lgT[$2])) { lskT[$2] = $3; lgT[$2] = $4; lmsgT[$2] = $5 }; tmm[$2] = 1; next }
     $1 == "R" { addline($2 SUBSEP $3, $4, $5); next }
     # an IP is known when it appears as a transfer host itself, or when its
     # cached reverse-DNS name does (the parse substituted the name for it)
@@ -285,6 +305,12 @@ agg=$(awk -F'\t' -v side_s="$SIDE_S" -v side_a="$SIDE_A" -v side_l="$SIDE_L" \
         for (k in cd) { p = k; sub(SUBSEP "[^" SUBSEP "]*$", "", p)   # strip the trailing date
             nd = split(k, kp, SUBSEP)
             bk[p] = bk[p] (bk[p] ? "," : "") kp[nd] ":" cd[k] }
+        # DATE-SORTED (2026-09-29): the for-in above follows the insertion
+        # history, which the worker slicing sets; one date per entry, so a
+        # plain string sort of "yyyy-mm-dd:count" is the date order
+        for (p in bk) { nb = split(bk[p], BE, ","); for (i = 2; i <= nb; i++) { v = BE[i]; j = i - 1
+                while (j >= 1 && BE[j] > v) { BE[j + 1] = BE[j]; j-- } BE[j + 1] = v }
+            s9 = BE[1]; for (i = 2; i <= nb; i++) s9 = s9 "," BE[i]; bk[p] = s9 }
         for (k in cnt) {
             split(k, kp, SUBSEP); t = kp[1]; nm = kp[2]
             unknown = 0

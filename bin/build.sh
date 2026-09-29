@@ -788,22 +788,42 @@ printf '\n=== building %s (report -> %s) ===\n' "${ENV_LABEL:-<unlabelled checko
 bg_step_start "parse: server log cache"                                   env AXWAY_SKIP_MENTIONS=1 bin/server/parse.sh
 run_step "config: extract the configured entity lists"                    bin/flow-manager.sh
 run_step "parse: transfer log cache"                                      bin/transfer/parse.sh
+# THE DISCOVERED HOSTS FIRST (2026-09-29, build speed): result.sh's stage 0
+# for the hosts alone, while the server parse is still running — so the
+# mention scan below, which starts the moment that parse is done, matches
+# them in its ONE pass. Until then the scan ran before result.sh discovered
+# them, and every production build paid the appended-names RESCAN (~13 s,
+# its discovered host is in the server log) plus a second result.sh run
+# (~4 s) on the critical path; both steps below stay as the safety net. Safe
+# here: nothing before result.sh reads base/_hosts.tsv; the session-sites
+# re-derive can move a leg, so the `discover` step below re-checks.
+run_step "result: discover the transfer-log hosts (before the mention scan)" bin/build/result.sh discover-hosts
 bg_step_wait
 # THE MENTION SCAN IN THE BACKGROUND (2026-09-27, speed round 4): the server
 # parse above stops at the finished cache (AXWAY_SKIP_MENTIONS); its
 # per-entity mention caches are built here, beside the logon summary and the
 # server-log -> transfer joins below — which read only the cache — and are
 # waited for before result.sh, their first reader (AXWAY_MENTIONS_ONLY: the
-# mention build over the finished cache).
+# mention build over the finished cache, the discovered hosts included).
 bg2_step_start "parse: server mention caches"                               env AXWAY_MENTIONS_ONLY=1 bin/server/parse.sh
 # THE LOGON SUMMARY (2026-09-27): built ONCE, in the background beside the
 # server-log -> transfer steps below (it reads only the finished server parse
 # cache) and waited for before the report stage — its two consumers, details.sh
-# and logon.sh, used to compute it side by side (bin/build/logon-summary.sh)
+# and logon.sh, used to compute it side by side (bin/build/logon-summary.sh).
+# (2026-09-29: the server reports that read only the server cache were tried
+# in this slot too, plain and niced — the server-log -> transfer steps are
+# CPU-bound parallel scans, not idle time: session-sites went 8 -> 12-14 s,
+# the mention scan 20 -> 25 s, the build +6..+11 s. Reverted.)
 bg_step_start "server log: logon summary (per login + per address)"         bin/build/logon-summary.sh
 # the three server-log -> transfer joins, in this order: the session step
 # may re-derive _files.tsv (resetting col 22), so expire re-marks after it
 run_step "server log -> transfer: attribute Unknown flows by session"     bin/session-sites.sh
+# ... then the discovery's second half (result.sh `discover`, 2026-09-29):
+# the host re-check against the transfer caches session-sites re-derived,
+# and the transfer-log-discovered SUBSCRIPTIONS (never earlier: the re-derive
+# reads base/_subscriptions.tsv). A change or an append drops the rescan
+# marker — production discovers no subscription, so normally nothing fires.
+run_step "result: discover the transfer-log subscriptions (+ re-check the hosts)" bin/build/result.sh discover
 run_step "server log -> transfer: mark expired staged files"              bin/expire-files.sh
 run_step "server log -> transfer: settle failed Files by ok bookend"      bin/bookend-ok.sh
 bg2_step_wait   # the mention caches: result.sh reads them
@@ -904,6 +924,16 @@ run_step "report catch-up: error reasons"                                 bin/an
 # them, the _srvsubs-map, is final after failed.sh's FIRST run (went-kaput
 # runs early) and carries no reason column.
 bg_step_start "catch-up: detail pages (publish)"                          bin/transfer/publish-details.sh
+# THE TAIL IN PARALLEL (2026-09-29, build speed): the all files search, the
+# dashboards and the day pages go to the second slot together, BESIDE the two
+# publish catch-ups below (the tail left most cores idle, ~11 s in a row).
+# Checked: the all files search reads the data rosters the failed.sh
+# catch-up above settled (errors/ + files/ .rpt sets, the slugmap), never a
+# rendered page; dashboards + day read their own .rpt (the slot's previous
+# step) — none reads what the catch-ups write, and every writer owns its own
+# docs/ directory (topbar-data.js: an atomic rename, _asset_put).
+bg2_step_wait   # the dashboards + day reports (started before the publishes)
+bg2_step_start "publish: all files search + dashboards + day pages"         bash -c 'bin/analyses/publish-all-files.sh & a=$!; bin/dashboards/publish.sh && bin/day/publish.sh; s=$?; wait "$a" || s=$?; exit "$s"'
 # THE TWO PUBLISH CATCH-UPS run in their explicit CATCH-UP MODE (2026-09-29;
 # until then both re-ran their whole script): each re-renders ONLY the pages
 # that read what the report catch-ups above rewrote — the dependency trace is
@@ -923,16 +953,13 @@ run_step "publish catch-up: analyses (failed pages)"                      bin/an
 # ONLY render in the build — the first pass above is `firstpass`) — nothing
 # else of the transfer area.
 run_step "publish: transfer catch-up (boxes reasons)"                     bin/transfer/publish.sh catchup
-# THE ALL FILES SEARCH (2026-09-27, user request — "Implementation 3, all
-# files"): one day shard per data day + the bloom-filter manifest, and the
-# search/all-files.html page. HERE, after the failed.sh catch-ups and the
-# transfer catch-up above: its rows link the files/ pages those just
+# (THE ALL FILES SEARCH — 2026-09-27, user request, "Implementation 3, all
+# files": one day shard per data day + the bloom-filter manifest, and the
+# search/all-files.html page — runs in the second slot started above, after
+# the failed.sh catch-up: its rows link the files/ pages that catch-up
 # settled, so the rosters it reads are final. Outside the per-area
-# publishes, like publish-partner-groups.sh — a manual re-publish runs it too.
-run_step "publish: all files search (day shards + index)"                 bin/analyses/publish-all-files.sh
-bg2_step_wait   # the dashboards + day reports (started before the publishes)
-run_step "publish: dashboards"                                            bin/dashboards/publish.sh
-run_step "publish: day pages"                                             bin/day/publish.sh
+# publishes, like publish-partner-groups.sh — a manual re-publish runs it too.)
+bg2_step_wait   # the all files search + dashboards + day pages
 bg_step_wait
 # the index pages + the home LAST: they live in dirs the per-area publishes
 # clear, and the home reads every area's outputs
