@@ -2504,8 +2504,28 @@
       for (t = 0; t < tables.length; t++) replaceHotspots(tables[t]);   // the last visible row may have changed
       hideEmptyTables();
     }
-    from.addEventListener("change", function () { apply("from"); });
-    to.addEventListener("change", function () { apply("to"); });
+    // Keep ?axway_date= in the address bar equal to the range ON SCREEN after
+    // a USER change — the From/To pulldowns and the range buttons, never the
+    // load-time restore (2026-09-29 audit F14: a day link, then All, still
+    // read ?axway_date=<day>, so a reload or a shared link opened the day
+    // again). A narrowed range writes from..to (one day: the day); the full
+    // range writes "all" when the URL carried a date (it must beat another
+    // tab's remembered range) and nothing otherwise. A data-date-reset page
+    // keeps its narrowing page-local unless its URL already carries a date.
+    // The syncSearchUrl twin: replaceState, other parameters and the hash kept.
+    function syncDateUrl() {
+      if (!window.history || !history.replaceState) return;
+      var s = window.location.search.replace(/^\?/, ""), parts = s ? s.split("&") : [], out = [], i, had = false;
+      for (i = 0; i < parts.length; i++) { if (parts[i].indexOf("axway_date=") === 0) had = true; else out.push(parts[i]); }
+      if (resetDates && !had) return;
+      var v = window.AXWAY_DATESEL(), p = v.split("..");
+      if (v !== "all") out.push("axway_date=" + (p[0] === p[1] ? p[0] : v));
+      else if (had) out.push("axway_date=all");
+      var q = out.length ? "?" + out.join("&") : "";
+      try { history.replaceState(null, "", window.location.pathname + q + window.location.hash); } catch (e) {}
+    }
+    from.addEventListener("change", function () { apply("from"); syncDateUrl(); });
+    to.addEventListener("change", function () { apply("to"); syncDateUrl(); });
     // ?axway_date=YYYY-MM-DD (the day pages' links): open narrowed to that
     // single day. An explicit link beats both the remembered range and
     // data-date-reset, and persists like a user selection (apply() saves it),
@@ -2570,7 +2590,7 @@
     // value set is a real option (an arbitrary calendar epoch could select
     // nothing).
     var newest = epochOf[dates[dates.length - 1]], oldest = epochOf[dates[0]];
-    function setRange(f, tv) { from.value = String(f); to.value = String(tv); apply(); }
+    function setRange(f, tv) { from.value = String(f); to.value = String(tv); apply(); syncDateUrl(); }
     function mkRangeBtn(label, fn) {
       var b = document.createElement("button");
       b.type = "button"; b.className = "daterange"; b.textContent = label;
@@ -2793,13 +2813,29 @@
     }
     if (q.indexOf("*") < 0 && q.indexOf("?") < 0)
       return function (text) { return text.indexOf(q) >= 0; };
-    // Escape every regex metacharacter EXCEPT * and ?, then translate those two.
-    var src = q.replace(/[.+^${}()|[\]\\]/g, "\\$&")
-               .replace(/\*/g, ".*").replace(/\?/g, ".");
-    var rx = null;
-    try { rx = new RegExp(src); } catch (e) { rx = null; }   // q is already lower-cased
-    if (!rx) return function (text) { return text.indexOf(q) >= 0; };
-    return function (text) { return rx.test(text); };
+    return globMatcher(q);
+  }
+
+  // The glob test WITHOUT a RegExp (2026-09-29 audit F12: every * became a
+  // .* and a short "************z" backtracked for seconds on one long name,
+  // freezing the page): the classic two-pointer walk that, on a mismatch,
+  // retries only from the LAST star — at most text x pattern steps. Unanchored
+  // like the substring search: the pattern is wrapped in stars, runs of stars
+  // collapse. KEEP IN STEP with assets/all-files-search.js globMatcher.
+  function globMatcher(q) {
+    var p = ("*" + q + "*").replace(/\*+/g, "*"), m = p.length;
+    return function (s) {
+      var i = 0, j = 0, star = -1, mark = 0, n = s.length, c;
+      while (i < n) {
+        c = j < m ? p.charAt(j) : "";
+        if (c === "*") { star = j++; mark = i; }
+        else if (c !== "" && (c === "?" || c === s.charAt(i))) { i++; j++; }
+        else if (star >= 0) { j = star + 1; i = ++mark; }
+        else return false;
+      }
+      while (j < m && p.charAt(j) === "*") j++;
+      return j === m;
+    };
   }
 
   // Parse a whole query into boolean groups, so terms can be combined with the
@@ -2823,7 +2859,16 @@
   // A bare "not" BETWEEN two terms reads as "and not" (2026-09-29 audit:
   // "hooli not match" searched for that literal phrase): "a not b" == "a and
   // not b". A "not" after an operator, or leading, keeps its meaning above.
+  // A "QUOTED PHRASE" is ONE term (2026-09-29 audit F10: the Failing reasons
+  // links search "io error" in quotes, and the whitespace split below cut it
+  // into two halves that each failed the whole-cell match — 21 of 22 reason
+  // links opened an empty Failed files page): each phrase is swapped for a
+  // placeholder without whitespace before the operator parse, so an
+  // and / or / not INSIDE quotes is text, and put back in the term.
   function parseQuery(q) {
+    var phr = [];
+    q = q.replace(/"[^"]+"/g, function (m) { phr.push(m); return "\u0000" + (phr.length - 1) + "\u0000"; });
+    function unq(t) { return t.replace(/\u0000(\d+)\u0000/g, function (m, n) { return phr[+n]; }); }
     var toks = q.split(/\s+/).filter(Boolean), ti, t2 = [];
     for (ti = 0; ti < toks.length; ti++) {
       if (toks[ti] === "not" && ti > 0 && ti < toks.length - 1 && !/^(and|or|not)$/.test(toks[ti - 1])) t2.push("and");
@@ -2838,8 +2883,8 @@
                  .filter(Boolean)
                  .map(function (t) {                          // "not <term>" -> a negated term (bare "not" stays literal)
                    var mm = /^not\s+(.+)$/.exec(t);
-                   if (mm) return { neg: true, m: makeMatcher(mm[1].replace(/^\s+|\s+$/g, "")) };
-                   return { neg: false, m: makeMatcher(t) };
+                   if (mm) return { neg: true, m: makeMatcher(unq(mm[1].replace(/^\s+|\s+$/g, ""))) };
+                   return { neg: false, m: makeMatcher(unq(t)) };
                  });
     }).filter(function (g) { return g.length; });
   }
@@ -4213,14 +4258,21 @@
   }
   // An ENGINE table (its rows built page by page in the browser) may hand over
   // its WHOLE row set: table._csvAll(cb) calls cb(rows) — rows as tableCsv's
-  // `all` — or cb(null) when it cannot, and the export falls back to the rows
-  // on screen. The hotspot reads "…" while the engine loads.
+  // `all` — or cb(null, why) when it cannot. Then NOTHING is saved: the rows
+  // on screen used to go out as if they were the whole history (2026-09-29
+  // audit F13); the hotspot reads "csv ✗", its title says why, a click
+  // retries. The hotspot reads "…" while the engine loads.
   function downloadCsv(table, btn) {
     if (typeof table._csvAll === "function") {
       if (btn) { if (btn._busy) return; btn._busy = true; btn.textContent = "…"; }
-      table._csvAll(function (all) {
-        if (btn) { btn._busy = false; btn.textContent = "csv"; }
-        saveCsv(table, tableCsv(table, all || null));
+      table._csvAll(function (all, why) {
+        if (btn) btn._busy = false;
+        if (!all) {
+          if (btn) { btn.textContent = "csv \u2717"; btn.title = "Not exported: " + (why || "the rows could not be loaded") + " — click to retry"; }
+          return;
+        }
+        if (btn) { btn.textContent = "csv"; btn.title = "Download this table as CSV"; }
+        saveCsv(table, tableCsv(table, all));
       });
       return;
     }

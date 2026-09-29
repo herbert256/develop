@@ -191,16 +191,17 @@
     // report.js downloadCsv asks table._csvAll(cb) first: every day shard of
     // the subscription is loaded (PAR at a time, cached for the pager too) and
     // cb gets all rows, newest first, as the cell texts the table shows
-    // (Start, State, Size, File, CoreId — built column order); cb(null) when
-    // the list or a shard could not be loaded (report.js then exports the
-    // page on screen)
+    // (Start, State, Size, File, CoreId — built column order); cb(null, why)
+    // when the list or a shard could not be loaded — report.js then saves
+    // NOTHING (2026-09-29 audit F13: it exported the page on screen as if it
+    // were every File) and the next click retries the failed days
     table._csvAll = function (cb) {
-      if (!got) { cb(null); return; }
+      if (!got) { cb(null, "the Files list did not load"); return; }
       var k = 0, inflight = 0, left = DAYS.length, failed = 0, fin = false;
       function finish() {
         if (fin) return;
         fin = true;
-        if (failed) { cb(null); return; }
+        if (failed) { cb(null, failed + " of " + DAYS.length + " day(s) could not be loaded"); return; }
         var out = [], i, j, R, r, fk;
         for (i = 0; i < DAYS.length; i++) {
           R = DAYS[i].rows || [];
