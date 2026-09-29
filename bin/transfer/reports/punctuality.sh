@@ -21,7 +21,10 @@
 # window, so the date filter never narrows this page.
 #
 # Reads data/_files.tsv (4=date_iso, 5=time, 7=jdn, 12=dest_site).
-# Writes data/punctuality-src.rpt (the first tab of the merged Punctuality page).
+# Writes data/punctuality-src.rpt — a PAGELESS data producer since 2026-09-29
+# (user request: the Punctuality pages were removed): its rows are the
+# file-arrival fallback slot of the Polling pages (polling.sh / uc3-polling.sh
+# via bin/cron-observed.awk: site, active days, typical, window, class).
 #
 # Usage:
 #   ./punctuality.sh    # reads input/*.csv (via the cache), writes data/transfer/reports/punctuality-src.rpt
@@ -31,7 +34,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
-OUT="$REPORTS_DIR/punctuality-src.rpt"   # a component since 2026-09-29: merge-punctuality.sh adds the Rhythm tab (expected-arrival); polling.sh / uc3-polling.sh read THIS file
+OUT="$REPORTS_DIR/punctuality-src.rpt"   # pageless since 2026-09-29; polling.sh / uc3-polling.sh read THIS file
 
 MIN_DAYS=8   # active days a subscription needs before a rhythm is claimed
 
@@ -45,13 +48,12 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass. Per (site, day): the first arrival minute. END classifies each
 # 8+-day site and walks the calendar for expected-weekday misses. Emits
-# pipe-separated (the drill list uses \x1f entries, no pipes):
-#   P|clsord|spread|site|days|typical|window|class|late|missed|lastd|drill
+# pipe-separated (the late / missed drill went with the page, 2026-09-29):
+#   P|clsord|spread|site|days|typical|window|class|late|missed|lastd
 #   TOT|sites|clock|reg|loose|irreg|late|missed
 agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
     function fromjdn(j,  a,b,c,dd,e,mm,day,mon,yr){ a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d",yr,mon,day) }
     function hhmm(m) { return sprintf("%02d:%02d", int(m / 60), m % 60) }
-    BEGIN { _US = sprintf("%c", 31); split("Mon Tue Wed Thu Fri Sat Sun", WD, " ") }
     $12 == "" || $12 == "Unknown" || $4 == "" || $5 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         s = $12; d = $4; j = $7 + 0
@@ -84,7 +86,7 @@ agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
             else if (spread <= 180) { cls = "Loose";     co = 2; nloose++ }
             else                    { cls = "Irregular"; co = 3; nirr++ }
 
-            late = 0; missed = 0; drill = ""
+            late = 0; missed = 0
             if (co <= 1) {
                 # active-day set + per-weekday activity counts
                 delete act; delete wact
@@ -99,19 +101,17 @@ agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
                     w = j2 % 7; d2 = jd2d[j2]; if (d2 == "") d2 = fromjdn(j2)
                     if (j2 in act) {
                         am = fm[s SUBSEP d2] + 0
-                        if (am > med + 60) { late++
-                            drill = drill (drill == "" ? "" : _US) d2 " " hhmm(am) "  late by " (am - med) " min (typical " hhmm(med) ")" }
+                        if (am > med + 60) late++
                     } else if (j2 == maxjd && lastm < med + 60) {
                         # the window ends before this flow is even late on its
                         # last day: the export cut, not a missed day
                     } else if (wcal[w] >= 2 && wact[w] >= 0.75 * wcal[w]) {
                         missed++
-                        drill = drill (drill == "" ? "" : _US) d2 " (" WD[w + 1] ")  missed — expected around " hhmm(med)
                     }
                 }
                 tlate += late; tmissed += missed
             }
-            printf "P|%d|%09d|%s|%d|%s|%d|%s|%s|%s|%s|%s\n", co, spread, s, days[s], hhmm(med), spread, cls, (co <= 1 ? late : "-"), (co <= 1 ? missed : "-"), lastd[s], drill
+            printf "P|%d|%09d|%s|%d|%s|%d|%s|%s|%s|%s\n", co, spread, s, days[s], hhmm(med), spread, cls, (co <= 1 ? late : "-"), (co <= 1 ? missed : "-"), lastd[s]
             nsites++
         }
         printf "TOT|%d|%d|%d|%d|%d|%d|%d\n", nsites+0, nclock+0, nreg+0, nloose+0, nirr+0, tlate+0, tmissed+0
@@ -129,25 +129,17 @@ n_rows=0
 
 {
     printf 'TITLE\tPunctuality\n'
-    printf 'KEYWORDS\tlate, missed, on time, arrival, cadence, rhythm, schedule, cron, clockwork\n'
 
     printf 'TABLE\tArrival regularity per subscription\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tActive days\tTypical arrival\tWindow\tClass\tLate\tMissed days\tLast seen\n'
     printf 'KIND\tsite\tnum\ttext\ttext\ttext\tnum\tnum\ttext\n'
-    # One printf per row — the optional drill payload picks the wider format
-    # instead of a second command substitution appending it.
-    while IFS='|' read -r _ co _spd site adays typ spread cls late missed lastd drill; do
+    while IFS='|' read -r _ co _spd site adays typ spread cls late missed lastd; do
         [ -z "$site" ] && continue
         late_cell=$late; missed_cell=$missed
         [ "$late" != "-" ] && [ "$late" -gt 0 ] && late_cell="@{class=warn}$late"
         [ "$missed" != "-" ] && [ "$missed" -gt 0 ] && missed_cell="@{class=failed}$missed"
-        if [ -n "$drill" ]; then
-            printf 'ROW\t%s\t%s\t%s\t± %s min\t%s\t%s\t%s\t%s\t@data:loglines=%s\n' \
-                "$site" "$adays" "$typ" "$spread" "$cls" "$late_cell" "$missed_cell" "$lastd" "$drill"
-        else
-            printf 'ROW\t%s\t%s\t%s\t± %s min\t%s\t%s\t%s\t%s\n' \
-                "$site" "$adays" "$typ" "$spread" "$cls" "$late_cell" "$missed_cell" "$lastd"
-        fi
+        printf 'ROW\t%s\t%s\t%s\t± %s min\t%s\t%s\t%s\t%s\n' \
+            "$site" "$adays" "$typ" "$spread" "$cls" "$late_cell" "$missed_cell" "$lastd"
         n_rows=$((n_rows + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^P|' | LC_ALL=C sort -t'|' -k2,2n -k3,3 -k4,4)"
     # the empty-state row ends its line like every other (2026-09-28 fix: it

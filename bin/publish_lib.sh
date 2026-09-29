@@ -173,7 +173,7 @@ CUR_DATES=""
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity punctuality cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage sources-and-targets skipped not-in-flow-manager ranking files route-throughput trends failed episodes failed-files unknown-transfers waiting expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all account-sharing twins)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage sources-and-targets skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all account-sharing twins)
 server_order=(topview errors failure-flows io-errors routing-errors uc-status polling logons connections ssh-security missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -214,7 +214,7 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 # Trouble after success box and the day pages). Not listed: ranking (a report
 # with its own page), the retired double; pesit writes no .rpt since
 # 2026-09-29 (its sidecar only).
-PAGELESS_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status went-quiet-src stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling missing-cronjobs duration-trend top-transfers size-profile uc4-to-uc2 file-in-file-out-src episodes-src recovered recovered-files uc2-visits pickups no-remote-dir no-remote-files deploy-errors from-green-to-red only-red punctuality-src expected-arrival went-kaput "
+PAGELESS_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status went-quiet-src stale-accounts size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling missing-cronjobs top-transfers size-profile uc4-to-uc2 file-in-file-out-src episodes-src recovered recovered-files uc2-visits pickups no-remote-dir no-remote-files deploy-errors from-green-to-red only-red punctuality-src went-kaput "
 is_pageless_report() {
     case $PAGELESS_REPORTS in *" $1 "*) return 0 ;; esac
     return 1
@@ -249,8 +249,6 @@ report_tabs() {
         cross-application)  cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Partners|Domains|BL" ;;
         cross-domain)       cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Partners|Applications|BL" ;;
         cross-bl)           cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Partners|Applications|Domains" ;;
-        punctuality)   echo "Arrival time|Rhythm" ;;   # 2026-09-29: punctuality-src + expected-arrival (its three tables stacked, tab=rhythm)
-        trends)        echo "Growers|Shrinkers|Slower|Faster" ;;   # 2026-09-29: trend + duration-trend (the Volume page and its Per day / By direction / Top accounts / Went silent tabs went)
         files)         echo "By size|Empty files|By type|Duplicates|Largest files|Size regime|Stub shippers" ;;   # 2026-09-29: + top-transfers and size-profile
         went-quiet)    echo "Subscriptions|Accounts" ;;   # 2026-07 Tier 3: + stale-accounts
         # ---- the 2026-07 MERGED reports: one tab per component TABLE, in
@@ -319,9 +317,8 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
     case $1 in
         topview) echo "Top view" ;;
         entity-search) echo "Search" ;;
-        activity) echo "Activity" ;; punctuality) echo "Punctuality" ;;
+        activity) echo "Activity" ;;
         retries) echo "Retries & resubmissions" ;; file-journey) echo "File journey" ;;
-        route-throughput) echo "Route throughput" ;;
         failed-files) echo "Failed files" ;; unknown-transfers) echo "Unknown transfers" ;; same-protocol) echo "Inbound and Outbound same Protocol" ;; security-outreach) echo "Security outreach" ;;
         connection-efficiency) echo "Connection efficiency" ;;
         failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;; routing-errors) echo "Routing errors" ;;
@@ -343,7 +340,6 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         cross-partner) echo "Partners" ;; cross-application) echo "Applications" ;; cross-domain) echo "Domains" ;;
         cross-bl) echo "BL" ;;
         entity-coverage) echo "Entity coverage" ;; sources-and-targets) echo "Sources and Targets" ;; skipped) echo "Skipped" ;;
-        trends) echo "Trends" ;;
         files) echo "Sizes & types" ;;   # the MERGED report (size-dist + file-type + duplicate-files): its own group tab was an EMPTY span until 2026-09-13 (user report)
         failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; episodes) echo "Episodes" ;; expired) echo "Expired" ;; waiting) echo "Waiting" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
         file-in-file-out) echo "File in - File out" ;;
@@ -974,7 +970,6 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
         ssh-security)        echo "server-ssh-crypto" ;;
         uc-status)           echo "server-uc1-status" ;;
         files)               echo "size-dist" ;;
-        trends)              echo "trends" ;;   # 2026-09-29: its own help page (volume growers/shrinkers + duration trend merged)
         duration-dwell)      echo "duration-dwell" ;;   # 2026-09-05 merge: its own help page (assets/help/duration-dwell.html, the two components' help merged)
         *) if [ "$area" = server ]; then echo "server-$n"; else echo "$n"; fi ;;
     esac
@@ -991,7 +986,6 @@ tab_help_slug() {
         uc-status/UC3) echo server-uc3-status ;;
         uc-status/UC4) echo server-uc4-status ;;
         file-in-file-out/UC4\ to\ UC2) echo uc4-to-uc2 ;;
-        punctuality/Rhythm) echo expected-arrival ;;
         retries/Recovered\ files) echo recovered-files ;;
         episodes/Recovered\ flows) echo recovered ;;
         *) help_slug_for "$1" "$2" ;;
@@ -2056,8 +2050,8 @@ _report_groups() {
         "Overview|transfer/topview=Transfer top view|server/topview=Server top view|analyses/data-diff=Since yesterday|analyses/triage=Triage|analyses/subscriptions-in-boxes=Subscriptions in boxes" \
         "Entities|transfer/entities/subscription=Subscriptions|transfer/entities/logical=Logical|transfer/entities/partner=Partners|transfer/entities/account=Accounts|transfer/entities/login=Logins|transfer/entities/remote-host=Hosts|transfer/entities/domain=Domains|transfer/entities/application=Applications|transfer/entities/bl=BL" \
         "Errors|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/unknown-transfers=Unknown transfers|transfer/pirates=One-legged|transfer/episodes=Episodes|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors" \
-        "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/punctuality=Punctuality|transfer/waiting=Waiting|transfer/expired=Expired|transfer/went-quiet=Went quiet" \
-        "Activity & volume|transfer/activity=Activity|transfer/trends=Trends|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/route-throughput=Route throughput|transfer/month-stats/this=Month stats" \
+        "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/waiting=Waiting|transfer/expired=Expired|transfer/went-quiet=Went quiet" \
+        "Activity & volume|transfer/activity=Activity|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/month-stats/this=Month stats" \
         "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Distribution & Store-and-forward|transfer/anomalies=Anomalies" \
         "Flow patterns|transfer/file-journey=File journey|transfer/file-in-file-out=File in - File out|transfer/same-protocol=Inbound and Outbound same Protocol" \
         "Protocols & security|transfer/protocol=Protocol, Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency|server/ssh-security=SSH security" \

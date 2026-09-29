@@ -21,9 +21,10 @@ consumer keeps reading them. Transfer: `activity` (weekly+hourly+weekday — `da
 2026-09-29, the Top view carries the per-day table with a Volume group), `retries`
 (retry+attempts+resubmissions+recovered-files), `file-journey` (patterns+legs-count+protocol-journey+arrived-left),
 `file-in-file-out` (file-in-file-out-src+uc4-to-uc2), `files` (size-dist+file-type+duplicate-files+top-transfers+size-profile),
-`trends` (trend+duration-trend — was `volume`, whose volume-src went), `episodes` (episodes-src+recovered),
-`went-quiet` (went-quiet-src+stale-accounts), `duration-dwell`, `punctuality`
-(punctuality-src+expected-arrival, `merge-punctuality.sh` — Arrival time / Rhythm). Server: `errors`
+`episodes` (episodes-src+recovered),
+`went-quiet` (went-quiet-src+stale-accounts), `duration-dwell` (the `trends` and `punctuality`
+merges went 2026-09-29 with their pages — user request; punctuality-src stays, pageless, for
+the Polling file-arrival slot). Server: `errors`
 (error-reasons+error-timing+top-messages), `connections`, `logons`, `ssh-security`; the server
 Top view takes errors-day's levels-per-component table through `append_rpt_tables` (2026-09-29).
 Analyses: `uc-status` (uc1-status · uc2-status+uc2-visits+pickups on the UC2 tab · uc3-status+uc3-polling+no-remote-dir+no-remote-files
@@ -280,9 +281,10 @@ S = server/, A = analyses/):
   errors (S) · Routing errors (S) — the "Server log errors" group until 2026-09-29 (user
   request); Trouble after success (S went-kaput) lost its page the same day
 - **Use cases & delivery** — Use cases (A use-cases) · UC status (A uc-status) · Polling (A) ·
-  Punctuality (T: Arrival time / Rhythm) · Waiting (T) · Expired (T) · Went quiet (T)
-- **Activity & volume** — Activity (T) · Trends (T) · Ranking (T) · Sizes & types (T files) · Route
-  throughput (T) · Month stats (transfer/month-stats/this — every page of that directory)
+  Waiting (T) · Expired (T) · Went quiet (T) (Punctuality went 2026-09-29, user request)
+- **Activity & volume** — Activity (T) · Ranking (T) · Sizes & types (T files) · Month stats
+  (transfer/month-stats/this — every page of that directory) (Trends and Route throughput went
+  2026-09-29, user request)
 - **Performance** — Duration (T; + duration-all) · Longest Files (T duration-longest) ·
   Distribution & Store-and-forward (T duration-dwell) · Anomalies (T)
 - **Flow patterns** — File journey (T) · File in - File out (T) · Inbound and Outbound same

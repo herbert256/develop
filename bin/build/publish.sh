@@ -1053,9 +1053,7 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
             ssh-crypto|ssh-sessions)                                wn_parent=ssh-security ;;
             uc1-status|uc2-status|uc3-status|uc4-status|remote-poll|uc3-polling|uc2-visits|pickups|no-remote-dir|no-remote-files) wn_parent=uc-status ;;   # the UC2 / UC3 tabs (2026-09-29)   # uc2-visits/pickups: the UC2 tab (2026-09-29)   # remote-poll/uc3-polling: the UC3 tab (2026-09-05)
             missing-cronjobs)                                       wn_parent=polling ;;   # 2026-09-29: its rows are the Polling rows marked "no cron"
-            trend|duration-trend)                                   wn_parent=trends ;;   # 2026-09-29
             went-quiet-src|stale-accounts)                          wn_parent=went-quiet ;;
-            punctuality-src|expected-arrival)                       wn_parent=punctuality ;;   # 2026-09-29: the Rhythm tab
             duration-distribution|dwell-time)                       wn_parent=duration-dwell ;;   # 2026-09-05 merge
             size-dist|file-type|duplicate-files|top-transfers|size-profile) wn_parent=files ;;
             *) return 0 ;;   # no page shows its data (day, event-queue, site-failures, …)

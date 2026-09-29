@@ -146,8 +146,8 @@ if [ -f "$TR" ]; then
         {
           h = int(substr($12,1,2))
           # THROUGHPUT: only legs big and slow enough to measure a real rate —
-          # the same floors bin/transfer/reports/route-throughput.sh uses, so
-          # the card and that report cannot tell different stories. Duration is
+          # the floors the Route throughput report used (the report went
+          # 2026-09-29, user request). Duration is
           # the record\047s own wire time; the dwell between legs is not in it.
           if ($15 + 0 > 500 && $9 + 0 > 1048576) {
               tby[1  SUBSEP ($14*24 + h)]        += $9; tms[1  SUBSEP ($14*24 + h)]        += $15
@@ -728,7 +728,7 @@ fi
         printf 'CARD\tFile duration percentiles\tP50 dark green, P90 orange, P98 dark red — each band tops out at that percentile of the delivered (Processed) File durations in that slot; click a slot for its day\t../transfer/duration.html\tspan2\tslots\tdur\t%s\t../day/{}.html?axway_hero=Duration\t%s\t%s\t%s\t%s\t%s\n' "$dur6" "60:$dur1" "120:$dur2" "240:$dur4" "720:$dur12" "1440:$dur24"
         printf 'CARDALT\tFiles processed\tFiles processed\tOK Files (Processed + Waiting) per slot; click a slot for its day\t../transfer/topview.html\tspan2\tslots\tcount\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$cnt6" "60:$cnt1" "120:$cnt2" "240:$cnt4" "720:$cnt12" "1440:$cnt24"
         printf 'CARDALT\tVolume\tVolume\tbytes moved per slot; click a slot for its day\t../transfer/topview.html\tspan2\tslots\tbytes\t%s\t../day/{}.html?axway_hero=Volume\t%s\t%s\t%s\t%s\t%s\n' "$vol6" "60:$vol1" "120:$vol2" "240:$vol4" "720:$vol12" "1440:$vol24"
-        [ -n "$thr6" ] && printf 'CARDALT\tThroughput\tWire throughput\tMB/s per slot — the slot'"'"'s counted bytes over its counted leg durations, from the legs big and slow enough to measure a rate (over 1 MB, over 500 ms); an empty slot had none\t../transfer/route-throughput.html\tspan2\tslots\tspeed\t%s\t../day/{}.html?axway_hero=Duration\t%s\t%s\t%s\t%s\t%s\n' "$thr6" "60:$thr1" "120:$thr2" "240:$thr4" "720:$thr12" "1440:$thr24"
+        [ -n "$thr6" ] && printf 'CARDALT\tThroughput\tWire throughput\tMB/s per slot — the slot'"'"'s counted bytes over its counted leg durations, from the legs big and slow enough to measure a rate (over 1 MB, over 500 ms); an empty slot had none\t\tspan2\tslots\tspeed\t%s\t../day/{}.html?axway_hero=Duration\t%s\t%s\t%s\t%s\t%s\n' "$thr6" "60:$thr1" "120:$thr2" "240:$thr4" "720:$thr12" "1440:$thr24"
         printf 'CARDALT\tError %% Files\tTransfer error rate\tper slot, the %% of its Files that Failed or Expired — a slot with no Files shows a gap\t../transfer/topview.html\tspan2\tslots\trate\t%s\t../day/{}.html?axway_hero=Error%%20%%25%%20Files\t%s\t%s\t%s\t%s\t%s\n' "$rate6" "60:$rate1" "120:$rate2" "240:$rate4" "720:$rate12" "1440:$rate24"
         printf 'CARDALT\tTransfer errors\tTransfer errors\tTransfers (raw log records) whose Status is anything but Processed, per slot — one File can contribute several failed legs; a quiet slot is a real zero\t../transfer/failure-heatmap.html\tspan2\tslots\terrs\t%s\t../day/{}.html?axway_hero=Transfer%%20errors\t%s\t%s\t%s\t%s\t%s\n' "$err6" "60:$err1" "120:$err2" "240:$err4" "720:$err12" "1440:$err24"
         [ -n "$con6" ] && printf 'CARDALT\tConnections\tConnections opened\ttechnical connections (SSH or PeSIT sessions) OPENED in the slot, split by who dialled: the partner'"'"'s client, or us; one session counts once, in the slot it started\t../transfer/connection-efficiency.html\tspan2\tslots\tconns\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$con6" "60:$con1" "120:$con2" "240:$con4" "720:$con12" "1440:$con24"

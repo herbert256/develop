@@ -1275,10 +1275,8 @@ TARGET COMP…`** (same file, 2026-09-29) is the lighter sibling: it inserts the
 blocks into an EXISTING report before its first SUMMARY/FOOT — the server Top view carries the
 errors-day levels-per-component table that way. **The 2026-09-29 consolidation** ("too many
 reports", user request) folded pages into tabs and stacked tables (`tab=KEY`) instead of
-separate pages: Trends (Growers / Shrinkers / Slower / Faster — trend + duration-trend,
-`trends.sh`), Sizes (files + top-transfers + size-profile), File in - File out (+ UC4 to UC2),
-Retries (+ Recovered files), Episodes (+ Recovered flows, `merge-episodes.sh`), Punctuality
-(+ Rhythm = expected-arrival, `merge-punctuality.sh`), UC status UC2 /
+separate pages: Sizes (files + top-transfers + size-profile), File in - File out (+ UC4 to UC2),
+Retries (+ Recovered files), Episodes (+ Recovered flows, `merge-episodes.sh`), UC status UC2 /
 UC3 tabs (+ UC2 pickup visits, Pickups, No remote dir / files), Failed Subscriptions (+ From
 green to red / Only red as the Last green day · Days red · Failures in a row columns), Routing
 errors (+ Deploy errors), Polling (+ Missing cronjobs as Schedule "no cron"), Entity coverage
@@ -1517,13 +1515,20 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   `analyses/subscriptions-in-boxes.html?axway_pf=3` (report.js setupStatFilter: `axway_pf=N`
   opens box N).
 - **transfer/expired.html**: the last two tables (sweep nights, staging weekday) side by side.
+- **Trends, Route throughput and Punctuality are GONE** (later the same day, user request "Remove
+  the reports trends-*, route-throughput, punctuality-*"): trend.sh, duration-trend.sh,
+  trends.sh, expected-arrival.sh, merge-punctuality.sh, route-throughput.sh and their help pages
+  deleted; `punctuality.sh` stays as a PAGELESS producer (`punctuality-src.rpt`, one table, no
+  drill) — the Polling / UC3 polling file-arrival slot (bin/cron-observed.awk). The dashboard
+  Wire throughput and Monitor CFT pickup cards lost their card link (slots still open the day).
+  Never restore them.
 - **The Unknown subscription**: `_files.tsv` col 12 / `_transfers.tsv` col 6 = `Unknown` for a
   File no attribution pass could place (parse.sh; session-sites.sh rescans those sessions).
   EVERY subscription-keyed table skips it (an explicit `== "Unknown"` test in the writer:
   subscription / entities / month-stats / cross-reference / details (+ details_lib stream) /
-  failed / episodes / punctuality / expected-arrival / only-red / from-green-to-red / recovered
-  / retry / route-throughput / security-params / same-protocol / size-dist / size-profile /
-  trend / went-quiet / duration-trend / waiting / expired / file-in-file-out / entity-search /
+  failed / episodes / punctuality / only-red / from-green-to-red / recovered
+  / retry / security-params / same-protocol / size-dist / size-profile /
+  went-quiet / waiting / expired / file-in-file-out / entity-search /
   not-in-flow-manager / data-diff / triage / blast-radius / the boxes / the day and overview
   Top-5s); FILES tables (failed-files, File pages, incoming-connections, all-files, …) keep it as
   the Subscription value, unlinked. **A new subscription-keyed writer must skip it too** —

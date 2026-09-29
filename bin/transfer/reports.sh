@@ -64,9 +64,6 @@ pool_run "$SCRIPT_DIR/reports/topview.sh"
 pool_run "$SCRIPT_DIR/reports/account.sh"
 pool_run "$SCRIPT_DIR/reports/stale-accounts.sh"
 pool_run "$SCRIPT_DIR/reports/went-quiet.sh"
-pool_run "$SCRIPT_DIR/reports/expected-arrival.sh"
-pool_run "$SCRIPT_DIR/reports/route-throughput.sh"
-pool_run "$SCRIPT_DIR/reports/duration-trend.sh"
 pool_run "$SCRIPT_DIR/reports/size-profile.sh"
 pool_run "$SCRIPT_DIR/reports/connection-efficiency.sh"
 pool_run "$SCRIPT_DIR/reports/recovered.sh"
@@ -78,14 +75,13 @@ pool_run "$SCRIPT_DIR/reports/day.sh"
 pool_run "$SCRIPT_DIR/reports/weekly.sh"
 pool_run "$SCRIPT_DIR/reports/login.sh"
 pool_run "$SCRIPT_DIR/reports/subscription.sh"
-pool_run "$SCRIPT_DIR/reports/trend.sh"
 pool_run "$SCRIPT_DIR/reports/episodes.sh"
 pool_run "$SCRIPT_DIR/reports/from-green-to-red.sh"
 pool_run "$SCRIPT_DIR/reports/only-red.sh"
 pool_run "$SCRIPT_DIR/reports/waiting.sh"
 pool_run "$SCRIPT_DIR/reports/expired.sh"
 pool_run "$SCRIPT_DIR/reports/missing-cronjobs.sh"
-pool_run "$SCRIPT_DIR/reports/punctuality.sh"
+pool_run "$SCRIPT_DIR/reports/punctuality.sh"   # pageless since 2026-09-29: the Polling pages' file-arrival slot
 pool_run "$SCRIPT_DIR/reports/failed.sh"
 pool_run "$SCRIPT_DIR/reports/retry.sh"
 pool_run "$SCRIPT_DIR/reports/pirates.sh"
@@ -134,9 +130,7 @@ pool_wait
 "$SCRIPT_DIR/reports/merge-episodes.sh"   # 2026-09-29: the episodes + the Recovered flows tab
 "$SCRIPT_DIR/reports/file-journey.sh"
 "$SCRIPT_DIR/reports/merge-file-in-file-out.sh"   # 2026-09-29: the handovers + the UC4 to UC2 tab
-"$SCRIPT_DIR/reports/merge-punctuality.sh"   # 2026-09-29: arrival time + the Rhythm tab (expected-arrival)
 "$SCRIPT_DIR/reports/files.sh"
-"$SCRIPT_DIR/reports/trends.sh"   # 2026-09-29: Growers / Shrinkers + Slower / Faster on one page (was merge-volume.sh)
 "$SCRIPT_DIR/reports/merge-went-quiet.sh"
 "$SCRIPT_DIR/reports/failed-files.sh"          # 2026-09-14: every failed File + its reason — reads the pool failed.sh's reasons sidecar, so after pool_wait
 "$SCRIPT_DIR/reports/unknown-transfers.sh"     # 2026-09-29: every File with subscription "Unknown" — links the File pages the pool wrote, so after pool_wait

@@ -1123,11 +1123,15 @@ n=$(ls docs/server/missing-entities-*.html 2>/dev/null | wc -l | tr -d " ")
 check $([ "${n:-0}" = 5 ] && echo 0 || echo 1) "docs/server holds ${n:-0} Missing entities tab page(s), expected 5"
 check $(grep -q "grouptag\">&larr; Coverage" docs/server/missing-entities-subscriptions.html 2>/dev/null && echo 0 || echo 1) "server/missing-entities-subscriptions.html lacks the Coverage group tag"
 check $(grep -q "class=\"dlicon\" href=\"../details/subscriptions/" docs/server/missing-entities-subscriptions.html 2>/dev/null && echo 0 || echo 1) "server/missing-entities-subscriptions.html: no detail-page icon next to a missing subscription"
-# Punctuality carries the Rhythm tab (expected-arrival's three tables stacked;
-# the tab page's first table renders without its <h2>, the tab names it)
-n=$(grep -c '<table' docs/transfer/punctuality-rhythm.html 2>/dev/null)
-h=$(grep -c '<h2[^>]*>On rhythm\|<h2[^>]*>Weekday-locked flows' docs/transfer/punctuality-rhythm.html 2>/dev/null)
-check $([ "${n:-0}" = 3 ] && [ "${h:-0}" = 2 ] && echo 0 || echo 1) "transfer/punctuality-rhythm.html has ${n:-0} table(s) / ${h:-0} heading(s), expected the three Expected arrival tables"
+# Trends, Route throughput and Punctuality went 2026-09-29 (user request):
+# no page, no help page, no .rpt; punctuality-src.rpt stays (pageless — the
+# Polling pages' file-arrival slot)
+n=$(ls docs/transfer/trends*.html docs/transfer/punctuality*.html docs/transfer/route-throughput*.html docs/help/trends.html docs/help/punctuality.html docs/help/route-throughput.html docs/help/expected-arrival.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "$n Trends / Punctuality / Route throughput page(s) still published"
+n=0; for r in trend duration-trend trends expected-arrival punctuality route-throughput; do [ -f "data/transfer/reports/$r.rpt" ] && n=$((n + 1)); done
+check $([ "$n" = 0 ] && echo 0 || echo 1) "$n removed Trends / Punctuality / Route throughput .rpt file(s) still written"
+check $([ -s data/transfer/reports/punctuality-src.rpt ] && echo 0 || echo 1) "punctuality-src.rpt (the Polling file-arrival slot) is missing"
+check $(grep -rlqE 'href="[^"]*(trends|punctuality|route-throughput|expected-arrival)[^"]*\.html' docs --include='*.html' 2>/dev/null && echo 1 || echo 0) "a page still links a removed Trends / Punctuality / Route throughput page"
 # Entity coverage: ONE page per entity with the verdicts as columns; the
 # Regressed count equals Covered once minus Covered (Current), OK transfers
 # is never above Current (OK transfers ⊆ Current ⊆ Once)
