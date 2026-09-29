@@ -44,8 +44,7 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
    browser by window.AXWAY_ENVLINKS — publish_lib.sh ENVSWITCH_JS). The
    develop/sample checkout keeps the single .brand link. Opened from the file
    system (file://) only the active one remains (AXWAY_ENVLINKS removes the
-   other and the separator, 2026-09-14). The yellow is not in
-   the dark-theme maps on purpose: it must stay yellow on both themes. */
+   other and the separator, 2026-09-14). */
 .topbar .envpair { display:inline-flex; align-items:center; gap:0.45rem; }
 .topbar .envpair:hover { text-decoration:none; }
 .topbar .envlink { color:#fff; font-weight:normal; font-size:1.05rem; }
@@ -118,44 +117,6 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .stat-green  { background:#e4f6e4; border-color:#bcdcbc; }
 .stat-red    { background:#fde3e3; border-color:#e8c0c0; }
 .stat-orange { background:#fff3d6; border-color:#e8d9b0; }
-/* clickable stat FILTER boxes (Subscriptions in boxes: each box narrows
-   the table to that report's rows, the left box shows all — report.js
-   setupStatFilter). The active box carries the top-bar blue as a border. */
-.stat[data-pf] { cursor:pointer; user-select:none; }
-.stat[data-pf]:hover { border-color:#20344a; }
-.stat.pfon { border:2px solid #20344a; padding:calc(0.55rem - 1px) calc(1.1rem - 1px) calc(0.6rem - 1px); }
-/* Subscriptions in boxes: FIFTEEN boxes, so they get their own narrower width
-   instead of the site-wide `min-width:9.5rem` + content-box sizing, which let
-   each box grow to its label and left 170px boxes laid out 7+7+1 — a single
-   box stranded on a third row. box-sizing:border-box is what makes `width` an
-   exact outer width, so all fifteen are identical whatever their label.
-   10.5rem is the floor with slack: the longest label ("Trouble after success")
-   measures 110px, plus 2x1.1rem padding and the border needs 142px, and below
-   ~137px it wraps to two lines and drags its box out of the row. The 2px .pfon
-   border costs no width here — border-box absorbs it. */
-.pfboxes .stat { box-sizing:border-box; min-width:0; width:10.5rem; }
-/* the explanation of the ACTIVE filter box, between the boxes and the table:
-   one paragraph per box is baked, only the .pfshow one is displayed and
-   setupStatFilter moves that class along with .pfon. Without JS the baked
-   pair (the "all" box and its paragraph) is what shows. */
-/* Subscriptions in boxes only: THIRTEEN box columns beside 70+ character
-   subscription names, so this one table renders at 90%. Scoped to .pftable —
-   the site-wide `table { width:auto }` means every other table is exactly as
-   wide as its content and must not shrink. */
-.pftable { font-size:90%; }
-/* Even at 90% the thirteen box columns take ~930px, and a 75-character
-   subscription name then pushes the last of them out of the wrapper. Give the
-   name column a DEFINITE width and let the few names that exceed it wrap.
-   Deliberate exception to the site-wide `th, td { white-space:nowrap }`.
-   `width` (not `max-width` alone) is load-bearing: these names are
-   underscore-joined with no space to break at, so `anywhere` drops the
-   column's min-content width to one character and auto table layout then
-   squeezes it far below what the space allows — wrapping EVERY row instead of
-   the long ones. With the width fixed, 35 of 524 names wrap, none past two
-   lines, and the table still clears the wrapper by ~50px at 1512px. */
-.pftable td:first-child { white-space:normal; overflow-wrap:anywhere; width:31rem; max-width:31rem; }
-.pfdesc { display:none; }
-.pfdesc.pfshow { display:block; border-left:3px solid #dde3ea; padding-left:0.8rem; }
 
 h1 { color:#20344a; margin:0 0 1.1rem; }   /* tight to the top bar above, more breathing room below */
 h1 .grouptag { font-size:0.55em; font-weight:400; color:#6b7785; margin-left:0.5em; white-space:nowrap; }   /* the report group (the Reports menu) a page belongs to, appended to its title */
@@ -249,7 +210,6 @@ table.dayrows tr:not(.gbrow) > .gedge-l { border-left:2px solid #cfd7de; }    /*
 table.dayrows tr:not(.gbrow) > .gedge-r { border-right:2px solid #cfd7de; }
 table.dayrows tr.gbrow + tr > th:not(.spc) { border-top:2px solid #cfd7de; }   /* not the spacers: no line across a gap */
 table.dayrows tr:last-child > td:not(.spc) { border-bottom:2px solid #cfd7de; }
-table.dayrows tr.total td.spc { border:none; background:#f7f7f9; }
 table.dayrows tr:hover td.spc { background:#f7f7f9; }
 table.dayrows th.spc::before, table.dayrows td.spc::before { content:none; }
 /* the banner row floats its group titles on the page — no dark bar, no frame
@@ -261,12 +221,6 @@ table.dayrows tr.gbrow > th { background:#f7f7f9; color:#20344a; border-color:#f
 .tablewrap.perday { margin-top:1.6rem; }
 th, td { border:1px solid #ddd; padding:8px 12px; text-align:left; white-space:nowrap; }
 th.num, td.num { text-align:right; }
-/* the detail-page Metrics table: bold full-width group headers (Date / Files /
-   Transfers / Size / Rank) and indented sub-metric rows */
-/* fake-transfers list: the server-log message row above each injected entry
-   (render_rpt full-width cell). Muted + monospace so it reads as the source
-   line; a heavier top border marks where each 2-row entry begins, and the
-   message wraps instead of stretching the table. */
 /* a cell whose whole value is ONE link (class cl: baked by the renderer for
    link=/href=/entity cells, added in the browser by report.js wholeCellLinks
    for every other single-link cell — 2026-09-14, user rule): the ENTIRE cell
@@ -280,7 +234,6 @@ td.cl { position:relative; }
 td.cl > a::after, td.cl > .stwrap > a:first-child::after { content:""; position:absolute; top:0; right:0; bottom:0; left:0; }
 td.cl .cpid, td.cl .stgo { position:relative; z-index:1; }
 th { background-color:#20344a; color:#fff; }
-th a { color:#fff; }                    /* linked column headers (traffic matrix) stay readable on the dark bar */
 /* CSV download (report.js setupCsvBtn): a small hotspot in the upper-right
    corner of every table's LAST header cell — faint until the header row is
    hovered; clicking it downloads the table (as filtered + sorted) as .csv.
@@ -319,22 +272,6 @@ tr:hover .pickbtn, .pickbtn:hover { opacity:0.95; }
 .colpick label.off { color:#8a94a1; }
 .colpick input { margin:0 0.45rem 0 0; vertical-align:middle; }
 .colpick .cpall { display:block; margin-top:0.3rem; padding-top:0.3rem; border-top:1px solid #ddd; color:#20344a; font-size:0.8rem; font-weight:600; cursor:pointer; }   /* Reset: built order + every column */
-/* the command PALETTE (report.js setupPalette, Ctrl+K / Cmd+K): a centred
-   box over a dimmed page — reports and entities of the current environment */
-.cpal { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.38); z-index:100; display:none; }
-.cpal.open { display:block; }
-.cpbox { width:44rem; max-width:92vw; margin:12vh auto 0; background:#fff; border:1px solid #ddd; border-radius:8px;
-         box-shadow:0 10px 30px rgba(0,0,0,0.35); overflow:hidden; }
-.cpbox input { width:100%; box-sizing:border-box; font:inherit; font-size:1.05rem; padding:0.7rem 0.9rem; border:0;
-               border-bottom:1px solid #ddd; outline:none; background:#fff; color:#222; }
-.cplist { list-style:none; margin:0; padding:0.3rem 0; max-height:58vh; overflow:auto; }
-.cplist li.cph { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em; color:#8a94a1; padding:0.5rem 0.9rem 0.15rem; }
-.cplist li.cpi { padding:0.35rem 0.9rem; cursor:pointer; display:flex; justify-content:space-between; gap:1rem; color:#20344a; }
-.cplist li.cpi.act, .cplist li.cpi:hover { background:#e8f0fe; }
-.cplist li.cpi .cps { color:#8a94a1; font-size:0.85rem; white-space:nowrap; }
-.cplist li.cpe { padding:0.5rem 0.9rem; color:#8a94a1; font-size:0.9rem; }
-.cphint { font-size:0.75rem; color:#8a94a1; padding:0.35rem 0.9rem 0.5rem; border-top:1px solid #ddd; }
-.cphint kbd { font:inherit; border:1px solid #ddd; border-radius:3px; padding:0 0.3rem; margin-right:0.2rem; }
 /* the copy-to-clipboard icon after an id (report.js setupCopyIds) */
 .cpid { display:inline-block; margin-left:0.4rem; font-size:0.85em; line-height:1; color:#8a94a1; opacity:0.65; cursor:pointer;
         user-select:none; -webkit-user-select:none; vertical-align:baseline; font-family:Arial, Helvetica, sans-serif; }
@@ -454,22 +391,8 @@ th[data-colmark] { box-shadow:inset 0 0 0 2px #fff; }
    reads as its own block. The opaque page background masks the row striping
    and the hover tint (both sit on the tr) so the gap never colors. */
 th.spc, td.spc { border:none; background:#f7f7f9; padding:0; width:1.2rem; min-width:1.2rem; }
-td.ctr { text-align:center; }   /* a centered data cell (the Subscriptions-with-problems flag cells) */
-/* the Subscriptions-in-boxes cell: the box name in RED, linking into its report.
-   A text glyph, not the ⚠️ emoji it replaced (2026-07) — an emoji-presentation
-   character renders from the system emoji font and ignores color.
-   .pfok is the one box that is not a problem (OK = the newest File was
-   delivered), so it takes the site's green instead. */
-a.pfx { color:#c0392b; font-weight:700; font-size:1.1em; text-decoration:none; }
-a.pfx:hover { color:#96281b; }
-a.pfx.pfok { color:#1e7e34; }
-a.pfx.pfok:hover { color:#155d27; }
-/* .pfneu: the Seen box — a fact, not a verdict, so neither the flag red nor
-   the OK green */
-a.pfx.pfneu { color:#566573; }
-a.pfx.pfneu:hover { color:#39434e; }
 td.wrap { white-space:normal; max-width:46rem; }   /* a long list cell (partner coverage pages' member accounts) wraps instead of stretching the row */
-td.prose { white-space:normal; min-width:30rem; max-width:46rem; }   /* KIND prose — a sentence cell (Triage Symptoms / Evidence): wraps at a readable width, never below 30rem (2026-09-29 audit) */
+td.prose { white-space:normal; min-width:30rem; max-width:46rem; }   /* KIND prose — a sentence cell (the detail Last server log Message): wraps at a readable width, never below 30rem (2026-09-29 audit) */
 /* collapsed list cell (partner coverage pages' Whitelisted IPs): the summary
    shows just the count, the native disclosure triangle + pointer say "click
    to open"; the expanded address list gets a little air above. */
@@ -482,7 +405,7 @@ td details[open] summary { margin-bottom:0.3rem; }
    (and manages inline display), so this rule simply stops applying. */
 table[data-start-empty="1"] tr[data-shide="1"] { display:none; }
 
-/* ---- expandable drill-down (Transfer Patterns row; Arrived/Left cells) ---- */
+/* ---- expandable drill-down (a drill row or a drill cell) ---- */
 .expandable { cursor:pointer; }
 /* visible affordance: a drillable CELL is dotted-underlined, so it no longer
    looks identical to the same-colored cells that don't drill */
@@ -504,8 +427,6 @@ tr.subrow td.subname::before { content:"\21B3\00a0"; color:#8a94a6; }
 table.wide th, table.wide td { padding:6px 10px; }
 td.file { max-width:480px; overflow:hidden; text-overflow:ellipsis; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.85rem; }
 code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
-/* communication-profile JSON pages (bin/comm-profiles.sh + bin/json2html.awk):
-   a scrollable, syntax-highlighted pretty-printed JSON block. */
 /* multi-line cell (e.g. a transfer's row pattern): stacked lines, monospace */
 td.lines { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.85rem; white-space:nowrap; line-height:1.4; }
 /* fold summary row (report.js setupRowFold — the detail pages' Incoming IPs:
@@ -643,7 +564,6 @@ td.desc { color:#444; white-space:normal; }
 .card { display:block; background:#fff; border:1px solid #ddd; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);
         padding:1.1rem 1.3rem; text-decoration:none; color:inherit;
         transition:box-shadow 0.12s ease, border-color 0.12s ease, transform 0.12s ease; }
-.card h2 { margin:0 0 0.35rem; color:#20344a; font-size:1.2rem; }
 .card p { color:#444; font-size:0.95rem; line-height:1.45; margin:0 0 0.9rem; }
 
 /* ---- the root index (body.home): every part centered ---- */
@@ -680,7 +600,6 @@ body.home .tablewrap table { margin-left:auto; margin-right:auto; }
 .dash-intro a, .dash-intro a strong { color:#3b6ea5; }   /* linked dashboard names read as links (the strong rule above would swallow the anchor color) */
 .dash-intro a:hover { text-decoration:underline; }
 
-/* Third top-bar dropdown reuses .dd/.ddm; the pill variant highlights it. */
 
 /* KPI cards */
 .kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.9rem; margin:0 0 1.4rem; }
@@ -692,7 +611,6 @@ body.home .tablewrap table { margin-left:auto; margin-right:auto; }
 .kpi-sub { font-size:0.8rem; color:#9aa7b4; margin-top:0.15rem; }
 /* same-weekday delta tucked behind the big number (kept neutral: on Errors/Warnings a rise is not "good") */
 .kpi-delta { margin-left:0.4rem; font-size:0.85rem; font-weight:600; color:#94a2af; letter-spacing:0; white-space:nowrap; vertical-align:0.08em; }
-/* caption over each KPI band on the combined day page (Transfer log / Server log) */
 .kpi-blue::before   { background:#3b82c4; } .kpi-blue   .kpi-val { color:#2c6aa0; }
 .kpi-green::before  { background:#3f9d52; } .kpi-green  .kpi-val { color:#2f7d40; }
 .kpi-red::before    { background:#df5a4c; } .kpi-red    .kpi-val { color:#c14638; }
@@ -775,7 +693,6 @@ body.home .tablewrap table { margin-left:auto; margin-right:auto; }
 /* Entity Search control rows (report.js setupSearchConfig): the type checkboxes,
    the four view buttons, and the search box are each on their OWN line, stacked
    and left-aligned. */
-.searchcfg .tabs { display:flex; align-items:center; flex-wrap:wrap; gap:0.3rem 0; }
 
 /* Coverage cell pages: rows tinted by the entity RESULT (the base caches'
    third field, bin/result.sh) — green / orange / red (data-res on the row,
@@ -910,13 +827,9 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 .pagerbar .tab { cursor:pointer; }
 .pagerbar .tab.disabled { cursor:default; }
 
-/* Report finder: the per-report keyword line (KEYWORDS directive + table
-   headings/column names, bin/publish.sh finder_row) — muted second line under
-   the intro so a match on a word invisible in the intro is explainable. */
-.rfkw { display:block; margin-top:2px; color:#8a97a5; font-size:0.8rem; }
 
-/* The slots charts (svg_slots): the floating slot tooltip that report.js
-   setupSlotTips builds inside the .chartbox (position:relative). One label
+/* The slots charts (svg_slots): the floating slot tooltip that slotchart.js
+   bindTip builds inside the .chartbox (position:relative). One label
    line + a swatch/name/value row per series, last series first. */
 .dbtip { position:absolute; pointer-events:none; display:none; z-index:5; min-width:150px;
   background:#fff; border:1px solid #cfd7de; border-radius:6px;
@@ -926,25 +839,13 @@ tr.pagerrow td { background-color:#e3ebf4; padding:6px 10px; }
 .dbtip .r i { font-style:normal; color:#8a97a4; }
 .dbtip .r .sw { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; }
 
-/* The slots charts (svg_slots): three baked styles per card — the off class
-   hides the two unpicked ones — and the Line/Bar/Solid switcher pinned
-   bottom-right of the chartbox (report.js setupChartStyle). */
-.chartbox .svg.off { display:none; }
 /* The chart switch rows — the interval (dashboards only: 6h / 12h / 1 day)
    and the Line/Bar/Solid style — sit BELOW the plot on one right-aligned line.
    They used to float over the bottom-right corner of the chartbox, crowding
    the x-axis labels (2026-07). */
-/* The chart FOOTER row: the "Data table" toggle on the left, the interval and
-   Line/Bar/Solid switches on the right, on ONE line under the plot (2026-07 —
-   slotchart.js moves the <details> in here after every redraw). align-items
-   flex-start keeps the buttons level with the summary when the table is open. */
+/* The chart FOOTER row: the interval switch on the left, the scale and
+   Line/Bar/Solid switches on the right, on ONE line under the plot. */
 .chartbtns { display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:flex-start; gap:0.3rem 1.5rem; margin:0.3rem 0 0.1rem; position:relative; z-index:2; }
 .chartbtns .tabs { margin:0; }
 .chartbtns .ivbtns { margin-right:auto; }   /* the interval (period) row sits LEFT; scale + style stay right */
-.chartbtns .chart-data { flex:1 1 auto; min-width:0; margin:0; align-self:center; }
-.chartbtns .chart-data[open] { align-self:flex-start; }
 .stylebtns .tab, .ivbtns .tab { cursor:pointer; }
-/* .pfbreak: line break between the inline-block boxes — the status boxes
-   (Total…Error) sit on the first line(s), the problem boxes start
-   on a fresh one */
-.pfboxes .pfbreak { display:block; width:100%; height:0; }
