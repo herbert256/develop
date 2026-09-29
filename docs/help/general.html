@@ -28,6 +28,7 @@
 <li><strong>Red</strong> &mdash; its last File Failed, or the server log reports errors after it (incl. a UC3 that cannot connect on 3 polls in a row).</li>
 <li><strong>Orange</strong> &mdash; never in the transfer log, or its last File Expired. <strong>Untinted</strong> &mdash; not configured.</li>
 <li>Other entities: red when any connected subscription is red, green when all are green, else orange.</li>
+<li><strong>A File row</strong> (every table of single Files): green = OK; <strong>orange</strong> = OK after a retry (a failed leg) or a resubmit, or UC2 <strong>Waiting</strong>; red = Error or <strong>Expired</strong>. The counts still take Waiting as OK.</li>
 <li>Cells: red = an Error / Expired count, amber = Retry / Resubmit / Waiting; an empty cell is zero.</li>
 </ul>
 <h2>Top bar</h2>

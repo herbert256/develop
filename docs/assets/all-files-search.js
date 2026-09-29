@@ -11,8 +11,9 @@
      search/all/d-<date>.js    AXWAY_AFD(date, `rows`, `NAME per line`) — one
                                day's Files newest first, loaded ON DEMAND:
          name \t HHMMSS \t local subscription index \t bytes \t CoreId (32 hex)
-         \t flag ("" delivered, e errored, w waiting, x expired; UPPERCASE =
-         the CoreId has a File page, and "D" a delivered one with a page)
+         \t flag ("" delivered, o delivered after a retry or resubmit, e
+         errored, w waiting, x expired; UPPERCASE = the CoreId has a File
+         page, and "D" a delivered one with a page)
 
    The search: two fields (File name or CoreId, Subscription), the results
    following each keystroke after a short pause, Enter at once. A day is
@@ -189,17 +190,19 @@
       else c.textContent = text;
       tr.appendChild(c);
     }
-    // the site's words and outcome policy (2026-09-29): OK / Error, Waiting
-    // counts as OK (green), Expired as Error
-    var STATE = { "": "OK", d: "OK", e: "Error", w: "Waiting", x: "Expired" };
-    var TINT = { OK: "green", Error: "red", Expired: "red", Waiting: "green" };
+    // the site's words (2026-09-29): OK / Error / Waiting / Expired; the row
+    // COLOUR is the File colour (_files.tsv col 25, 2026-09-29, user request):
+    // green OK, orange OK after a retry or resubmit ("o") and Waiting, red
+    // Error and Expired
+    var STATE = { "": "OK", d: "OK", o: "OK", e: "Error", w: "Waiting", x: "Expired" };
+    var TINT = { "": "green", d: "green", o: "orange", e: "red", w: "orange", x: "red" };
     function render(day, r) {
       var tr = document.createElement("tr");
       var sn = CACHE[day].subs[r.si] ? CACHE[day].subs[r.si].name : "";
       var slug = Object.prototype.hasOwnProperty.call(SLUGOF, sn) ? SLUGOF[sn] : "";
-      var st = STATE[r.fl.toLowerCase()] || "OK";
+      var fk = r.fl.toLowerCase(), st = STATE[fk] || "OK";
       var when = day + " " + r.tm.substr(0, 2) + ":" + r.tm.substr(2, 2) + ":" + r.tm.substr(4, 2);
-      tr.setAttribute("data-res", TINT[st]);
+      tr.setAttribute("data-res", TINT[fk] || "green");
       if (r.fl !== "" && r.fl !== r.fl.toLowerCase()) {   // a File page: the whole row opens it
         var h = "../files/" + r.cid + ".html";
         tr.setAttribute("data-href", h);
