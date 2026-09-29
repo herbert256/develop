@@ -23,7 +23,7 @@
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines area_entries/html_head/…
+source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines html_head / _report_groups / …
 
 ensure_assets   # topbar-data.js (the menus' data file)
 
@@ -62,7 +62,7 @@ help_about_fragments() {   # $1 = a scratch dir; writes <slug>.html fragments in
         # a per-VALUE family (a page per error reason, per skipped value, per
         # Failed view, per cross-reference pair) explains itself once: its
         # FIRST member stands for the family
-        case $name in failing-reasons-*|skipped-*|failed-*|cross-*)
+        case $name in failed-*|cross-*)
             case $famdone in *" $slug "*) continue ;; esac; famdone="$famdone$slug " ;; esac
         printf '%s\t%s\n' "$slug" "$rpt" >> "$map"
     done
@@ -110,88 +110,60 @@ apply_help_chrome() {
     done
 }
 
-write_area_index() {   # $1 area  $2 title ; remaining args = ordered basenames
-    local area=$1 title=$2; shift 2
-    local out="$DOCS/$area/index.html" name rpt t d labels
-    mkdir -p "$DOCS/$area"
-    local aup; aup=$(printf '%s' "$area" | tr '[:lower:]' '[:upper:]')   # top-bar right text: TRANSFER / SERVER
+# THE REPORTS START PAGE (docs/reports/index.html, 2026-09-29, user request:
+# one Reports pulldown instead of Transfer reports / Server reports /
+# Analyses / Goodies — it replaced their three start pages transfer/,
+# server/ and analyses/index.html): every report under its group, the
+# _report_groups order, each with its one-line description. The menu's
+# "Start page" line opens it.
+# rg_desc MEMBER -> the member's one-line description: the report's DESC, or
+# the fixed text of a hand-written page (they carry no .rpt)
+rg_desc() {
+    local m=$1 dir=${1%/*} stem=${1##*/} rpt="" a
+    case $stem in
+        use-cases)              echo "Every use case on one row: who connects, which way the file travels and what triggers it, the configured subscriptions per use case by status — each count opening the Subscriptions page filtered to it — and the FlowManager templates behind them."; return ;;
+        subscriptions)          echo "Every configured subscription on one row, the skip-listed ones included: active or not, its result colour and direction, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint and the From / To folders."; return ;;
+        logical-detection)      echo "How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID."; return ;;
+        accounts)               echo "The accounts (partners) and their communication profiles — naming vs configured type and authentication, insecure and unrestricted endpoints, conflicting host / whitelist setup, and the account and login integrity checks."; return ;;
+        first-seen)             echo "On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs — the configured names never seen on top; every count links its item list."; return ;;
+        config-hygiene)         echo "Likely-duplicate twins (case / separator folds) and orphaned objects nothing references."; return ;;
+        whitelist-audit)        echo "Whitelisted partner IPs against the addresses actually connecting: used, connect-only, never seen (prunable), and the sources without any whitelist entry."; return ;;
+        subscriptions-in-boxes) echo "Every subscription boxed by what is true of it — its status or any of the problem signals — one column per box, each cell linking into its report or entity view."; return ;;
+        cross)                  echo "Every pair of the nine entities cross-tabulated — which values appear together on at least one transfer, the configured-but-never-seen pairs flagged."; return ;;
+    esac
+    case $dir in
+        transfer/entities) rpt="$DATA/transfer/reports/entities/$stem.rpt" ;;
+        transfer|server)   rpt="$DATA/$dir/reports/$stem.rpt" ;;
+        analyses)          a=$(subs_report_area "$stem") || a=""
+                           [ -n "$a" ] && rpt="$DATA/$a/reports/$stem.rpt" ;;
+    esac
+    [ -n "$rpt" ] && [ -f "$rpt" ] && field1 DESC "$rpt"
+    return 0
+}
+write_reports_index() {
+    local out="$DOCS/reports/index.html" line e m lbl d el
+    local -a arr
+    mkdir -p "$DOCS/reports"
     {
-        html_head "$title" "../assets/style.css" "" "$aup" "index"
-        esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
-        # First/last record and the Files total for the whole dataset (from the
-        # day.rpt non-rendered META lines) — shown here instead of on
-        # every report page.
-        local mfirst mlast mtransfers dayrpt
-        dayrpt="$DATA/$area/reports/day.rpt"
-        mfirst=$(meta_val "$dayrpt" first)
-        if [ -n "$mfirst" ]; then
-            mlast=$(meta_val "$dayrpt" last)
-            mtransfers=$(meta_val "$dayrpt" transfers)
-            # First/last shown to the minute (drop the :SS.mmm); counts grouped with dots.
-            esc "${mfirst:0:16}"; local ef=$ESC; esc "${mlast:0:16}"; local el=$ESC
-            esc "$(dotify "$mtransfers")"; local et=$ESC
-            printf '<p class="range">First record: <strong>%s</strong> &nbsp;|&nbsp; Last record: <strong>%s</strong> &nbsp;|&nbsp; Files: <strong>%s</strong></p>\n' "$ef" "$el" "$et"
-        elif [ -f "$DATA/$area/reports/topview.rpt" ]; then
-            # No day report (the server area): compute first/last date and the
-            # record total from the Top view's per-day ROWs (col 2 = date,
-            # col 3 = records) instead — same figures, different source.
-            local tvline tvf tvl tvn
-            tvline=$(awk -F'\t' '
-                $1 == "ROW" { d = $2; sub(/^@\{[^}]*\}/, "", d)
-                    if (d !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) next
-                    if (first == "" || d < first) first = d
-                    if (d > last) last = d
-                    sum += $3
-                }
-                END { if (first != "") printf "%s\t%s\t%s", first, last, sum }
-            ' "$DATA/$area/reports/topview.rpt")
-            if [ -n "$tvline" ]; then
-                IFS=$'\t' read -r tvf tvl tvn <<< "$tvline"
-                esc "$tvf"; local ef=$ESC; esc "$tvl"; local el=$ESC
-                esc "$(dotify "$tvn")"; local er=$ESC
-                printf '<p class="range">First record: <strong>%s</strong> &nbsp;|&nbsp; Last record: <strong>%s</strong> &nbsp;|&nbsp; Records: <strong>%s</strong></p>\n' "$ef" "$el" "$er"
-            fi
-        fi
-        # Server index: the transfer area's Search report covers this server data
-        # too (its "Server values" column), so surface it here as well.
-        if [ "$area" = server ] && [ -f "$DOCS/search/search.html" ]; then
-            printf '<p class="range"><a href="../search/search.html"><strong>Search</strong></a> &mdash; find any account, subscription, login, host or flow; its Server Log column covers this server data.</p>\n'
-        fi
-        # Grouped catalog, like the Analyses index: one <th colspan=2> section
-        # header per report GROUP, its member reports listed beneath (the group
-        # machinery the menus/sitemap use); an ungrouped report gets its own row.
-        # data-nosort: the index is a hand-ordered catalog with colspan group
-        # bands — report.js's fallback sort would collapse it into stacked
-        # headers + one alphabetized list AND persist that in sessionStorage
+        html_head "Reports" "../assets/style.css" "" "" "index"
+        printf '<h1>Reports</h1>\n'
+        printf '<p class="subtitle">Every report under its group &mdash; the groups of the Reports menu. On a report page the first row of buttons switches between the reports of its group.</p>\n'
+        # data-nosort: a hand-ordered catalog with colspan group bands —
+        # report.js's fallback sort would collapse it (and persist that)
         printf '<div class="tablewrap"><table class="index" data-nosort="1">\n'
-        local disp ed et href g glab m ml md seen=" "
-        for name in "$@"; do
-            if is_subs_report "$name"; then continue; fi   # listed on the Analyses index (Subscriptions)
-            if is_boxes_only "$name"; then continue; fi    # reached from the two Boxes pages only
-            rpt="$DATA/$area/reports/$name.rpt"; [ -f "$rpt" ] || continue
-            g=$(group_of "$area" "$name")
-            if [ -n "$g" ]; then
-                case $seen in *" $g "*) continue ;; esac   # emit each group once, at its first member
-                seen="$seen$g "
-                glab=$(group_label "$g")
-                esc "$glab"; printf '<tr><th colspan="2">%s</th></tr>\n' "$ESC"
-                for m in $(group_members "$g"); do
-                    [ -f "$DATA/$area/reports/$m.rpt" ] || continue
-                    ml=$(member_label "$m"); [ -n "$ml" ] || ml=$(entry_label "$area" "$m")
-                    md=$(field1 DESC "$DATA/$area/reports/$m.rpt")
-                    href=$(first_page "$m")
-                    esc "$ml"; et=$ESC; esc "$md"; ed=$ESC
-                    printf '<tr><td><a href="%s">%s</a></td><td class="desc">%s</td></tr>\n' "$href" "$et" "$ed"
-                done
-            else
-                md=$(field1 DESC "$rpt"); href=$(first_page "$name"); disp=$(entry_label "$area" "$name")
-                esc "$disp"; et=$ESC; esc "$md"; ed=$ESC
-                printf '<tr><td><a href="%s">%s</a></td><td class="desc">%s</td></tr>\n' "$href" "$et" "$ed"
-            fi
-        done
+        while IFS= read -r line; do
+            [ -n "$line" ] || continue
+            esc "${line%%|*}"; printf '<tr><th colspan="2">%s</th></tr>\n' "$ESC"
+            IFS='|' read -r -a arr <<< "${line#*|}"
+            for e in "${arr[@]}"; do
+                m=${e%%=*}; lbl=${e#*=}
+                rg_landing "$m"; rg_rel "reports/index.html" "$RG_LANDING"
+                d=$(rg_desc "$m")
+                esc "$lbl"; el=$ESC; esc "$d"
+                printf '<tr><td><a href="%s">%s</a></td><td class="desc">%s</td></tr>\n' "$RG_REL" "$el" "$ESC"
+            done
+        done < <(_report_groups)
         printf '</table></div>\n'
-        # (the transfer index's Entities table — one count row per entity
-        # type — was REMOVED 2026-07; the Entities group line above covers it)
         printf '</body>\n</html>\n'
     } > "$out"
 }
@@ -1011,8 +983,8 @@ write_home_block() {
                 # request), the way the Error cell beside it opens its view.
                 if [ "$frv" = "-" ] || [ "$frv" = 0 ] || [ -z "$frv" ]; then printf '<td class="num warn"></td>'; else
                     esc "$(dotify "$frv")"
-                    if [ -f "docs/transfer/recovered-files.html" ]; then
-                        printf '<td class="num warn"><a href="transfer/recovered-files.html?axway_date=%s">%s</a></td>' "$d" "$ESC"
+                    if [ -f "docs/transfer/retries-recovered-files.html" ]; then
+                        printf '<td class="num warn"><a href="transfer/retries-recovered-files.html?axway_date=%s">%s</a></td>' "$d" "$ESC"
                     else printf '<td class="num warn">%s</td>' "$ESC"; fi
                     frvsum=$((frvsum + frv)); fi
                 if [ "$fer" = "-" ] || [ "$fer" = 0 ]; then printf '<td class="num failed z"></td>'; else
@@ -1080,7 +1052,7 @@ write_home_block() {
         local frvt=""
         if [ "$frvsum" -gt 0 ]; then esc "$(dotify "$frvsum")"; frvt=$ESC
             # the whole-window Recovered total opens the report unnarrowed
-            [ -f "docs/transfer/recovered-files.html" ] && frvt="<a href=\"transfer/recovered-files.html\">$ESC</a>"; fi
+            [ -f "docs/transfer/retries-recovered-files.html" ] && frvt="<a href=\"transfer/retries-recovered-files.html\">$ESC</a>"; fi
         # the whole-window Error total opens the Failed files list unnarrowed (2026-09-14);
         # the empty ?axway_search= on both home links (2026-09-15) clears a search the
         # subscription pages' Error cells left remembered for the page
@@ -1193,18 +1165,6 @@ rpt_keywords() {
         $1 == "KPI"      { add($3) }
         END { print out }
     ' "$1"
-}
-# The finder's Area column for a transfer-area report basename: the reports that
-# live in the Analyses menu/sitemap (cross references, partner coverage,
-# skipped + its per-value pages, missing-cronjobs,
-# not-in-flow-manager, sources-and-targets) are labelled "Analyses" like the
-# menu, everything else "Transfer". KEEP IN SYNC with _analyses_groups — every
-# member listed there is an Analyses report wherever its page happens to live.
-finder_area() {
-    case $1 in
-        cross-*|entity-coverage|entity-coverage-*|sources-and-targets|skipped|skipped-*|missing-cronjobs|not-in-flow-manager) echo "Analyses" ;;
-        *) if is_subs_report "$1" || is_boxes_only "$1"; then echo "Analyses"; else echo "Transfer"; fi ;;
-    esac
 }
 # ---- the finder row builder --------------------------------------------------
 # ONE awk pass replaces ~19 forks PER REPORT (field1 twice = grep|cut, two
@@ -1334,18 +1294,16 @@ write_report_finder() {
                 (cross-*)       fp="analyses/xref/$fp" ;;
                 (*)             if is_subs_report "$name"; then fp="analyses/$fp"; else fp="transfer/$fp"; fi ;;
             esac
-            printf 'R\t%s\t%s\t%s\n' "$fp" "$(finder_area "$name")" "$rpt"
-        done
-        for rpt in "$DATA"/transfer/reports/skipped-*.rpt; do   # the per-value Skipped reports (dynamic, not in transfer_order)
-            [ -f "$rpt" ] || continue
-            name=${rpt##*/}; name=${name%.rpt}
-            printf 'R\t%s\t%s\t%s\n' "transfer/$name.html" "Analyses" "$rpt"
+            # the Group column (2026-09-29: was the Transfer / Server / Analyses
+            # area) = the report group of the Reports menu, rg_group_for
+            rg_group_for "$fp"; a4=${RG_GROUP:-Search}
+            printf 'R\t%s\t%s\t%s\n' "$fp" "$a4" "$rpt"
         done
         for name in "${server_order[@]}"; do
             rpt="$DATA/server/reports/$name.rpt"; [ -f "$rpt" ] || continue
-            if is_subs_report "$name"; then fp="analyses/$(first_page "$name")"; a4=Analyses
-            elif is_boxes_only "$name"; then fp="server/$(first_page "$name")"; a4=Analyses   # boxes-only: page stays in server/, labeled with its owners
-            else fp="server/$(first_page "$name")"; a4=Server; fi
+            if is_subs_report "$name"; then fp="analyses/$(first_page "$name")"
+            else fp="server/$(first_page "$name")"; fi
+            rg_group_for "$fp"; a4=${RG_GROUP:-Other}
             printf 'R\t%s\t%s\t%s\n' "$fp" "$a4" "$rpt"
         done
         for rpt in "$DATA"/dashboards/reports/*.rpt; do
@@ -1364,19 +1322,15 @@ write_report_finder() {
         # exactly that when they became real Transfer reports).
         while IFS='|' read -r sh st si sk sv; do
             [ -n "$sh" ] || continue
-            printf 'S\t%s\tAnalyses\t%s\t%s\t%s\t%s\n' "$sh" "$st" "$si" "$sk" "$sv"
+            rg_group_for "$sh"; a4=${RG_GROUP:-Files}
+            printf 'S\t%s\t%s\t%s\t%s\t%s\t%s\n' "$sh" "$a4" "$st" "$si" "$sk" "$sv"
         done <<'STATIC'
-transfer/month-stats/this-subscription.html|Month stats|The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired.|month, monthly, this month, previous month, calendar, statistics|
-analyses/use-cases.html|Use cases|The UC flow templates: each use case with its subscriptions and template status.||
-analyses/use-case-definitions.html|Use case definitions|Each use case explained — who connects, which way the file travels, and what triggers it.||
-analyses/use-case-patterns.html|Use case patterns|The accounts grouped by their subscription mix (e.g. UC2 (1) UC4 (1)).||
+analyses/use-cases.html|Use cases|Every use case on one row: who connects, which way the file travels and what triggers it, the configured subscriptions per use case by status, and the FlowManager templates behind them.|use case, uc1, uc2, uc3, uc4, definition, trigger, template, direction|
 analyses/subscriptions.html|Subscriptions (analyses)|Every configured subscription on one row, the skip-listed ones included: whether it is active (CFT for SWIFT), its result colour and direction, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint (login or remote host), the From and To folders, the all-time File counts (total, in, out, Errors, automatic retries, resubmits, Waiting, Expired) and the last error reason.|mapping, flowid, tags, BL, endpoint, from, to, folders, cron, schedule, counts, files, errors, active, inactive, undeployed, disabled, skipped, skip, swift, cft, color, colour, direction, error reason|mapping, BL tag
 analyses/logical-detection.html|Logical detection|How every configured FlowID detected to its Logical flow group — the rule trail per FlowID: separator normalization, variant folds, digit tails, pins and the 3-part reshape.|logical, flowid, derivation, rules, detection|logical, derivation
-analyses/added-bl.html|Added BL|The BL numbers input/<env>/BL.txt adds on top of subscriptions.json — per subscription, the values that are not among its tags.|bl, BL.txt, added, tags, business line|BL, added
 analyses/accounts.html|Accounts (analyses)|The configured accounts analysed against the FlowManager configuration.||
 analyses/first-seen.html|First seen|On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs.||
 analyses/whitelist-audit.html|Whitelist audit|Whitelisted partner IPs vs the addresses actually connecting: used, connect-only, never seen (prunable), plus sources without any whitelist entry.|whitelist, AllowIP, IP, prune, attack surface, unused|whitelist, AllowIP, prune
-analyses/accounts-in-boxes.html|Accounts in boxes|Every configured account boxed by what is true of the subscriptions connected to it — an account is in a box when one of its subscriptions is. The account view of Subscriptions in boxes.|boxes, account, box, connected, subscriptions, estate, rollup|boxes, box, account rollup
 analyses/config-hygiene.html|Config hygiene|The cleanup backlog: likely-duplicate twins (case / separator folds) and orphaned objects nothing references.|twins, duplicates, orphans, cleanup, legacy|twins, orphans, cleanup
 analyses/subscriptions-in-boxes.html|Subscriptions in boxes|Every subscription boxed by what is true of it — OK, or any of fourteen problem signals — one column per box, each cell linking into its report or entity view.|boxes, problems, broken, flagged, trouble, one-legged, kaput, only red, regression, ok, not seen, server only|boxes, problems, flagged, ok
 analyses/triage.html|Triage|The ranked action list: every subscription that is red, holds staged Files about to expire, or just fell silent — newest flips on the busiest flows first.|triage, action list, worklist, red, expiry, quiet, attention, priority, ranked|triage, action list, priority
@@ -1385,31 +1339,24 @@ analyses/data-diff.html|Since yesterday|The data diff against the newest log day
 analyses/partner-scorecard.html|Partner scorecard|One composite health score per partner relation, worst first — error share, trend, pickup wait, security posture, endpoint redundancy and silence — with the traffic-concentration panel.|partner, scorecard, health, score, gini, concentration, trend|partner, scorecard, health
 analyses/blast-radius.html|Blast radius|What stops when a remote host dies: the Files, subscriptions, applications and partners behind every outbound endpoint, sole-endpoint partners flagged.|blast radius, endpoint, host, redundancy, single point of failure, spof|blast radius, endpoint, spof
 analyses/app-partners.html|Application dependencies|Which external partners each internal application exchanges Files with — the dependency matrix with traffic weights and dead pairs at 100% Error.|application, dependencies, partner, matrix, lineage, exposure|application, dependencies, lineage
-analyses/partner-lifecycle.html|Partner lifecycle|The quiet failure modes of a partner relation: configured but never live, gone quiet after real history, and still transferring on ever fewer flows.|partner, lifecycle, never live, quiet, shrinking, onboarding|partner, lifecycle, quiet
 analyses/cleanup-backlog.html|Cleanup backlog|Every cleanup signal merged into one ranked decommission-candidate list, safest first — config orphans, never-seen subscriptions, unused whitelist addresses, cron-less polls and long-quiet entities.|cleanup, backlog, decommission, orphans, unused, prune|cleanup, decommission, prune
 analyses/partners-in.html|Partners - Incoming|Every FE login on one line: the FE overview (use cases, the last logon here and on the old gateway, Files in / out, retrieved, Waiting, Expired, pickups) combined with the Incoming logon funnel (Allowed, Disallowed, Authenticated, Auth Failed, Locked, logon pattern).|partners, incoming, fe, login, funnel, allowed, disallowed, authenticated, auth failed, bad key, locked, pickups, gateway, migration|
-analyses/fe-overview.html|FE overview|Every FE login on one line: use cases, the last logon here and on the old gateway, Files in / out with the retrieved, Waiting and Expired ones, and its pickups with their cadence.|partners, incoming, fe, login, overview, status, use case, uc2, uc4, last logon, gateway, migration, files, retrieved, waiting, expired, pickup, pattern|fe, login, overview, pickup
-analyses/hosts-overview.html|Partners - Outgoing|Every remote host we connect to on one line (UC1 we deliver, UC3 we collect): use cases, the last successful transfer here and the old-gateway stamp, Files in / out with the delivered, failed, retried and resubmitted ones, polls with their cadence, and connection problems.|partners, outgoing, hosts, remote host, endpoint, uc1, uc3, push, pull, deliver, collect, gateway, migration, retries, resubmit, polls, connection failures|
 search/file-search-24-hours.html|File search|Find a File by its file name — date, subscription, size and CoreId, OK rows green and Error rows red; seven windows (24 hours through a month, then everything older), the results following each keystroke, the query carried between them.|file, search, file name, find, filename, lookup|file search, filename, find
 search/all-files.html|All files search|Find a File among ALL the Files of the transfer logs by file name or CoreId and subscription, as you type, newest first; the index loads only the days that can hold a match, and the From/To selection narrows the days further.|all files, file, files, search, find, file name, filename, coreid, subscription, history, archive, lookup|all files search, find file, history
-latest/search.html|Latest files search|Find a File across the latest files of every subscription — one field for the subscription name, one for the file name or CoreId; the results follow each keystroke, newest first, each row tinted by its File's state.|latest, file, files, search, find, subscription, file name, filename, coreid, lookup|latest files search, find file, subscription
 STATIC
     } > "$mf"
     rows=$(LC_ALL=C awk "$FINDER_AWK" "$mf")
     rm -f "$mf"
 
-    # `|| true` on each: grep -c exits 1 on zero matches (it still prints the
-    # 0), so an area losing all its finder rows must not kill the publish.
-    local rf_tc rf_sc rf_ac
-    rf_tc=$(grep -c '<td>Transfer</td>' <<<"$rows" || true)
-    rf_sc=$(grep -c '<td>Server</td>' <<<"$rows" || true)
-    rf_ac=$(grep -c '<td>Analyses</td>' <<<"$rows" || true)
+    # the row count (`|| true`: grep -c exits 1 on zero matches, and an empty
+    # finder must not kill the publish)
+    local rf_n; rf_n=$(grep -c '^<tr' <<<"$rows" || true)
     {
         html_head "Report finder" "../assets/style.css" "" "" "report-finder"
         printf '<h1>Report finder</h1>\n'
-        printf '<p class="range">%d Transfer reports, %d Server reports, %d Analyses reports. Find a report by its <strong>title</strong> or <strong>introduction</strong> text &mdash; title matches list first.</p>\n' "$rf_tc" "$rf_sc" "$rf_ac"
+        printf '<p class="range">%d reports, each with its <strong>group</strong> of the Reports menu. Find a report by its <strong>title</strong> or <strong>introduction</strong> text &mdash; title matches list first.</p>\n' "$rf_n"
         printf '<div class="controls"><label>Search</label><span class="search-wrap"><input type="search" id="rfq" class="search" autocomplete="off" autofocus></span><span class="searchhint">Wildcards: ? = 1 character, * = 0..n characters. Logical operators: or / and / and not</span></div>\n'
-        printf '<div class="tablewrap"><table class="index" data-rfinder="1" data-nosearch="1" data-nosort="1">\n<tr><th>Report</th><th>Area</th><th>Introduction</th></tr>\n'
+        printf '<div class="tablewrap"><table class="index" data-rfinder="1" data-nosearch="1" data-nosort="1">\n<tr><th>Report</th><th>Group</th><th>Introduction</th></tr>\n'
         printf '%s\n' "$rows"
         printf '</table></div>\n'
         printf '</body>\n</html>\n'
@@ -1434,145 +1381,35 @@ sm_href() {   # $1 area  $2 basename -> env-root-relative page
         *)             printf 'transfer/%s' "$fp" ;;
     esac
 }
-sm_area_cards() {   # $1 area (transfer|server)
-    local area=$1 name g members m ml lbl lis n seen=" "
-    local order=()
-    if [ "$area" = transfer ]; then order=("${transfer_order[@]}"); else order=("${server_order[@]}"); fi
-    for name in "${order[@]}"; do
-        # NO existence filter (2026-07): the sitemap gives ALL options in every
-        # env — a data-less report has an empty-report placeholder page
-        # (render_missing_reports), never a 404.
-        [ "$name" = entity-search ] && continue     # Search lives in the Tools card
-        case $name in duration-all) continue ;; esac   # Duration's sibling views (reached via their buttons)
-        case $name in entity-coverage|entity-coverage-ok|entity-coverage-once|entity-coverage-diff) continue ;; esac   # listed in the Analyses column
-        [ "$name" = sources-and-targets ] && continue # listed in the Analyses column
-        [ "$name" = skipped ] && continue           # listed in the Analyses column
-        [ "$name" = missing-cronjobs ] && continue  # listed in the Analyses column (Configuration)
-        [ "$name" = not-in-flow-manager ] && continue # listed in the Analyses column (Configuration)
-        if is_subs_report "$name"; then continue; fi   # listed in the Analyses column (Subscriptions)
-        if is_boxes_only "$name"; then continue; fi    # listed in the Analyses column (the Boxes card)
-        case $name in cross-*) continue ;; esac      # Cross References listed in the Analyses column (Configuration)
-        g=$(group_of "$area" "$name")
-        if [ -n "$g" ]; then
-            case $seen in *" $g "*) continue ;; esac
-            seen="$seen$g "
-            lbl=$(group_label "$g")
-            lis=""; n=0; lastm=""
-            for m in $(group_members "$g"); do
-                ml=$(member_label "$m"); [ -n "$ml" ] || ml=$(member_label "${m#cross-}")
-                [ -n "$ml" ] || ml=$m
-                esc "$ml"
-                lis+=$(printf '<li><a href="../%s">%s</a></li>' "$(sm_href "$area" "$m")" "$ESC")$'\n'
-                n=$((n + 1)); lastm=$m
-            done
-            [ "$n" -gt 0 ] || continue
-            esc "$lbl"
-            if [ "$n" = 1 ]; then   # a single-member group folds into one linked card
-                # link the ONE member that has a page (not the whole member
-                # list — that produced a spaces-in-href 404 when only one of
-                # a group's reports exists, e.g. production srv-security)
-                printf '<div class="smcard"><h3><a href="../%s">%s</a></h3></div>\n' \
-                    "$(sm_href "$area" "$lastm")" "$ESC"
-            else
-                printf '<div class="smcard"><h3>%s <span class="smcount">%s</span></h3><ul>\n%s</ul></div>\n' "$ESC" "$n" "$lis"
-            fi
-        else
-            lbl=$(entry_label "$area" "$name")
-            esc "$lbl"
-            printf '<div class="smcard"><h3><a href="../%s">%s</a></h3></div>\n' "$(sm_href "$area" "$name")" "$ESC"
-        fi
-    done
-}
 write_sitemap() {
     local out="$DOCS/tools/sitemap.html" rpt name t4 n1 n2 sub base cnt lbl   # under docs/tools/ since 2026-09-12 (user request) — every link carries ../, the sibling tools ./
     mkdir -p "$DOCS/tools"   # before the redirected block below opens $out
     {
         html_head "Site Map" "../assets/style.css" "" "" "sitemap"
         printf '<h1>Site Map</h1>\n'
-        printf '<p class="range">Everything in this environment on one page: each card is a report <strong>group</strong> — the group name on top, its reports beneath. The same order as the menus, left to right by area.</p>\n'
+        printf '<p class="range">Everything in this environment on one page: each Reports card is a report <strong>group</strong> of the Reports menu &mdash; the group name on top, its reports beneath, in the menu order.</p>\n'
         printf '<div class="smgrid">\n'
-        printf '<section class="smarea sm-transfer"><h2>Transfer reports</h2>\n'
-        printf '<div class="smcard"><h3><a href="../transfer/index.html">Start page</a></h3></div>\n'
-        sm_area_cards transfer
-        printf '</section>\n<section class="smarea sm-server"><h2>Server reports</h2>\n'
-        printf '<div class="smcard"><h3><a href="../server/index.html">Start page</a></h3></div>\n'
-        sm_area_cards server
-        # one card per GROUP — the same five groups as ANALYSES_MENU and the
-        # pages' analyses_group_tabs rows. Analyses BEFORE Dashboards to match
-        # the top-bar pulldown order (Transfer · Server · Analyses · Dashboards).
-        printf '</section>\n<section class="smarea sm-ana"><h2>Analyses</h2>\n'
-        printf '<div class="smcard"><h3><a href="../analyses/index.html">Start page</a></h3></div>\n'
-        # A report family sharing one prefix lists ONCE, linked to its first
-        # page (First seen, Use Case, Skipped — the per-value Skipped pages and
-        # the sibling views are reached from there). Deliberately NOT a generic
-        # prefix rule: the No/By/Per-style labels (No remote files / No remote
-        # dir, ...) are distinct reports and stay separate entries.
-        # File search left this card 2026-09-07 (user request): the top bar's
-        # Files link is its one navigation entry; the report finder still lists it
-        printf '<div class="smcard"><h3>Coverage &amp; seen <span class="smcount">3</span></h3><ul>\n'
-        printf '<li><a href="../transfer/entity-coverage-accounts.html">Entity coverage</a></li>\n'
-        printf '<li><a href="../analyses/first-seen.html">First seen</a></li>\n'
-        printf '<li><a href="../analyses/data-diff.html">Since yesterday</a></li>\n'
-        printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Configuration <span class="smcount">17</span></h3><ul>\n'
-        printf '<li><a href="../analyses/use-cases.html">Use Case</a></li>\n'
-        printf '<li><a href="../analyses/uc2-visits.html">UC2 pickup visits</a></li>\n'
-        printf '<li><a href="../analyses/subscriptions.html">Subscriptions</a></li>\n'
-        printf '<li><a href="../analyses/logical-detection.html">Logical detection</a></li>\n'
-        printf '<li><a href="../analyses/added-bl.html">Added BL</a></li>\n'
-        printf '<li><a href="../analyses/accounts.html">Accounts</a></li>\n'
-        printf '<li><a href="../analyses/fe-overview.html">FE overview</a></li>\n'
-        printf '<li><a href="../analyses/account-sharing.html">Account sharing</a></li>\n'
-        printf '<li><a href="../analyses/twins.html">Twins</a></li>\n'
-        printf '<li><a href="../analyses/polling.html">Polling</a></li>\n'
-        printf '<li><a href="../analyses/config-hygiene.html">Config hygiene</a></li>\n'
-        printf '<li><a href="../analyses/whitelist-audit.html">Whitelist audit</a></li>\n'
-        printf '<li><a href="../analyses/cleanup-backlog.html">Cleanup backlog</a></li>\n'
-        printf '<li><a href="../transfer/sources-and-targets.html">Sources and Targets</a></li>\n'
-        printf '<li><a href="../transfer/skipped.html">Skipped</a></li>\n'
-        printf '<li><a href="../transfer/not-in-flow-manager.html">Not in Flow Manager</a></li>\n'
-        printf '<li><a href="../analyses/%s">Cross References</a></li>\n' "$(group_home cross)"
-        printf '</ul></div>\n'
-        # The Boxes card — the two hand-written boxes pages (under analyses/)
-        # plus the BOXES_ONLY_REPORTS, whose pages stay at their area URLs and
-        # are linked only from here and the boxes texts. KEEP IN SYNC with
-        # _analyses_groups' "Boxes" line, ANALYSES_MENU and the analyses index.
-        # (The four SUBS_GROUP_REPORTS members live in the Configuration card
-        # above, not here.)
-        printf '<div class="smcard"><h3>Partners <span class="smcount">6</span></h3><ul>\n'
-        printf '<li><a href="../analyses/partners-in.html">Partners - Incoming</a></li>\n'
-        printf '<li><a href="../analyses/hosts-overview.html">Partners - Outgoing</a></li>\n'
-        printf '<li><a href="../analyses/partner-scorecard.html">Partner scorecard</a></li>\n'
-        printf '<li><a href="../analyses/blast-radius.html">Blast radius</a></li>\n'
-        printf '<li><a href="../analyses/app-partners.html">Application dependencies</a></li>\n'
-        printf '<li><a href="../analyses/partner-lifecycle.html">Partner lifecycle</a></li>\n'
-        printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Boxes <span class="smcount">14</span></h3><ul>\n'
-        local sub5
-        for sub5 in 'analyses/subscriptions-in-boxes.html|Subscriptions in boxes' \
-                    'analyses/accounts-in-boxes.html|Accounts in boxes' \
-                    'analyses/triage.html|Triage' \
-                    'transfer/missing-cronjobs.html|Missing cronjobs' \
-                    'transfer/pirates-details.html|One-legged transfers' \
-                    'transfer/from-green-to-red.html|From green to red' \
-                    'transfer/only-red.html|Only red' \
-                    'transfer/waiting.html|Waiting files' \
-                    'transfer/expired.html|Expired files' \
-                    'transfer/went-quiet-subscriptions.html|Went quiet' \
-                    'server/went-kaput.html|Trouble after success' \
-                    'server/deploy-errors.html|Deploy errors' \
-                    'server/no-remote-dir.html|No remote dir' \
-                    'server/no-remote-files.html|No remote files'; do
-            printf '<li><a href="../%s">%s</a></li>\n' "${sub5%%|*}" "${sub5#*|}"
-        done
-        printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Errors <span class="smcount">2</span></h3><ul>\n'
-        printf '<li><a href="../analyses/failed.html">Failed Subscriptions</a></li>\n'
-        printf '<li><a href="../analyses/failing-reasons.html">Error reasons</a></li>\n'
-        printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Month stats <span class="smcount">1</span></h3><ul>\n'
-        printf '<li><a href="../transfer/month-stats/this-subscription.html">Month stats</a></li>\n'
-        printf '</ul></div>\n'
+        # THE REPORTS (2026-09-29, user request — one Reports pulldown): one
+        # card per group of publish_lib _report_groups, its members beneath,
+        # the menu order; the section spans the page width and flows its cards
+        # into columns (.sm-reports .smcols, CSS multi-column). It replaced the
+        # Transfer reports / Server reports / Analyses sections.
+        printf '<section class="smarea sm-reports"><h2>Reports</h2>\n<div class="smcols">\n'
+        printf '<div class="smcard"><h3><a href="../reports/index.html">Start page</a></h3></div>\n'
+        local gline gent
+        local -a garr
+        while IFS= read -r gline; do
+            [ -n "$gline" ] || continue
+            IFS='|' read -r -a garr <<< "${gline#*|}"
+            esc "${gline%%|*}"
+            printf '<div class="smcard"><h3>%s <span class="smcount">%d</span></h3><ul>\n' "$ESC" "${#garr[@]}"
+            for gent in "${garr[@]}"; do
+                rg_landing "${gent%%=*}"; esc "${gent#*=}"
+                printf '<li><a href="../%s">%s</a></li>\n' "$RG_LANDING" "$ESC"
+            done
+            printf '</ul></div>\n'
+        done < <(_report_groups)
+        printf '</div>\n'
         printf '</section>\n<section class="smarea sm-dash"><h2>Dashboards</h2>\n'
         # ONE dashboard (2026-07): the per-topic pages folded into the overview
         printf '<div class="smcard"><h3><a href="../dashboards/index.html">Dashboard</a></h3></div>\n'
@@ -1611,7 +1448,6 @@ write_sitemap() {
         printf '<div class="smcard"><h3>Tools</h3><ul>\n'
         printf '<li><a href="../index.html">Home</a> — the shared landing page</li>\n'
         printf '<li><a href="../search/search.html">Search</a> — find any entity by name</li>\n'
-        printf '<li><a href="../latest/search.html">Latest files search</a> — find a File across every subscription'\''s latest files</li>\n'
         printf '<li><a href="../search/all-files.html">All files search</a> — find a File among all the Files of the transfer logs</li>\n'
         # the sibling tools (docs/tools/, 2026-09-12): ./ links — the ../ rule
         # above is for everything outside this directory
@@ -1660,7 +1496,6 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
         publish-insights)
             local pg key rest ttl dsc
             for pg in                      "whitelist-audit:Whitelist audit:Whitelisted partner IPs vs the addresses actually connecting — used, connect-only or prunable." \
-                      "accounts-in-boxes:Accounts in boxes:Every configured account boxed by what is true of the subscriptions connected to it." \
                       "config-hygiene:Config hygiene:The cleanup backlog — likely-duplicate twins and orphaned objects nothing references." \
                       "expired:Expired:Staged UC2 files the retention sweep deleted before any pickup — time to expiry, per-account pickup behavior, never-delivered volume."; do
                 key=${pg%%:*}; rest=${pg#*:}; ttl=${rest%%:*}; dsc=${rest#*:}
@@ -1681,17 +1516,24 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
         local wn_parent=""
         case $2 in
             day|weekly|hourly|weekday)                              wn_parent=activity ;;
-            retry|attempts|resubmissions)                           wn_parent=retries ;;
+            retry|attempts|resubmissions|recovered-files)           wn_parent=retries ;;
+            episodes-src|recovered)                                 wn_parent=episodes ;;   # 2026-09-29
             patterns|legs-count|protocol-journey|arrived-left)      wn_parent=file-journey ;;
-            errors-day|error-timing|error-reasons|top-messages)     wn_parent=errors ;;
-            unknown-sites|unknown-accounts|unknown-hosts|unknown-whitelisting|unknown-logins) wn_parent=missing-entities ;;
+            uc4-to-uc2|file-in-file-out-src)                        wn_parent=file-in-file-out ;;   # 2026-09-29
+            errors-day)                                             wn_parent=topview ;;   # 2026-09-29: rides the server Top view
+            deploy-errors)                                          wn_parent=routing-errors ;;
+            from-green-to-red|only-red)                             wn_parent=failed ;;   # 2026-09-29: their columns ride Failed Subscriptions   # 2026-09-29: its page went (the Routing errors page lists the lines)
+            error-timing|error-reasons|top-messages)                wn_parent=errors ;;
+            unknown-sites|unknown-accounts|unknown-hosts|unknown-whitelisting|unknown-logins) wn_parent=data-diff ;;   # 2026-09-29: the Missing entities page went; Since yesterday reads the same sidecars
             inbound-connections|connection-diagnostics)             wn_parent=connections ;;
             logon|auth-activity)                                    wn_parent=logons ;;
             ssh-crypto|ssh-sessions)                                wn_parent=ssh-security ;;
-            uc1-status|uc2-status|uc3-status|uc4-status|remote-poll|uc3-polling) wn_parent=uc-status ;;   # remote-poll/uc3-polling: the UC3 tab (2026-09-05)
-            volume-src|trend)                                       wn_parent=volume ;;
+            uc1-status|uc2-status|uc3-status|uc4-status|remote-poll|uc3-polling|uc2-visits|pickups|no-remote-dir|no-remote-files) wn_parent=uc-status ;;   # the UC2 / UC3 tabs (2026-09-29)   # uc2-visits/pickups: the UC2 tab (2026-09-29)   # remote-poll/uc3-polling: the UC3 tab (2026-09-05)
+            missing-cronjobs)                                       wn_parent=polling ;;   # 2026-09-29: its rows are the Polling rows marked "no cron"
+            trend|duration-trend)                                   wn_parent=trends ;;   # 2026-09-29
+            punctuality-src|expected-arrival)                       wn_parent=punctuality ;;   # 2026-09-29: the Rhythm tab
             duration-distribution|dwell-time)                       wn_parent=duration-dwell ;;   # 2026-09-05 merge
-            size-dist|file-type|duplicate-files)                    wn_parent=files ;;
+            size-dist|file-type|duplicate-files|top-transfers|size-profile) wn_parent=files ;;
             *) return 0 ;;   # retired (ranking, double, stale-accounts, ...) — no page
         esac
         wn_meta "bin/$area/reports/$wn_parent.sh" "$wn_parent"
@@ -1803,6 +1645,9 @@ write_whats_new() {
         fi
         while IFS=$'\t' read -r t a href desc; do
             [ -n "$t" ] || continue
+            # the Group column (2026-09-29: was the Transfer / Server /
+            # Analyses area) — the report group of the Reports menu
+            rg_group_for "$href"; [ -n "$RG_GROUP" ] && a=$RG_GROUP
             esc "$t"; et=$ESC; esc "$a"; ea=$ESC; esc "$href"; eh=$ESC
             if [ "$kind" = N ]; then
                 esc "$desc"; ed=$ESC
@@ -1835,12 +1680,12 @@ write_whats_new() {
         printf '<h1>What is new</h1>\n'
         printf '<p class="range">The report catalog’s history, from the generators’ git log: the <strong>25 most recently added</strong> reports and the <strong>25 most recently changed</strong> ones. A change is listed only when its commit was about <strong>a few reports</strong> (up to eight — a sweep across more is about the site, not about any one of them), and a report the New table already names is not repeated below it. Newest first; the Description gives a new report’s introduction, or a changed report’s latest change.</p>\n'
         printf '<h2>New reports</h2>\n'
-        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Date</th><th>Report</th><th>Area</th><th>Description</th></tr>\n'
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Date</th><th>Report</th><th>Group</th><th>Description</th></tr>\n'
         if [ -n "$ntop" ]; then printf '%s\n' "$ntop" | cut -f4-
         else printf '<tr><td></td><td>(none)</td><td></td><td></td></tr>\n'; fi
         printf '</table></div>\n'
         printf '<h2>Changed reports</h2>\n'
-        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Date</th><th>Report</th><th>Area</th><th>Description</th></tr>\n'
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Date</th><th>Report</th><th>Group</th><th>Description</th></tr>\n'
         if [ -n "$ctop" ]; then printf '%s\n' "$ctop" | cut -f4-
         else printf '<tr><td></td><td>(none)</td><td></td><td></td></tr>\n'; fi
         printf '</table></div>\n'
@@ -1957,16 +1802,11 @@ check_status_consistency() {
     fi
 }
 
-# transfer_menu_order (the top-bar Transfer menu set) excludes the Analyses-menu
-# members (cross-*, entity-coverage, skipped) and Search, so
-# the grouped index matches the menu — those live in the Analyses index instead.
 # laps (2026-09-27): TIME lines on the build console, like the other steps
 _bpl0=$(date +%s)
 _bplap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  index pages: %s\n' "$((_t1 - _bpl0))" "$1" >&2; _bpl0=$_t1; }
-write_area_index transfer "Transfer Reports" "${transfer_menu_order[@]}"
-_bplap "transfer index"
-[ ${#server_order[@]} -gt 0 ] && write_area_index server "Server Reports" "${server_order[@]}"
-_bplap "server index"
+write_reports_index
+_bplap "reports start page"
 write_report_finder
 _bplap "write_report_finder"
 write_whats_new
@@ -1980,18 +1820,14 @@ _bplap "write_root_404"
 check_status_consistency
 _bplap "check_status_consistency"
 
-# Every area's report pages are rendered by now (this runs LAST per env), so tag
-# each report <h1> with its "Group &larr; Section" breadcrumb. Analyses first (it
-# claims its members that live in transfer/), then transfer, then server.
-tag_analyses_group_h1s
-_bplap "tag_analyses_group_h1s"
-tag_transfer_group_h1s
-_bplap "tag_transfer_group_h1s"
-tag_server_group_h1s
-_bplap "tag_server_group_h1s"
+# Every report page is rendered by now (this runs LAST), so give every page of
+# every report group its FIRST ROW (the group's members) and its h1 group tag
+# "&larr; Group" — publish_lib apply_report_groups, the _report_groups table.
+apply_report_groups
+_bplap "apply_report_groups (the group rows + h1 tags)"
 
 # The shared help pages' chrome (the site top bar on every help page).
 apply_help_chrome
 _bplap "apply_help_chrome"
 
-echo "Wrote index pages (root + transfer${SERVER_MENU:+ + server})." >&2
+echo "Wrote index pages (root + the Reports start page)." >&2

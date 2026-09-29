@@ -137,10 +137,15 @@ if [ "${t_conn:-0}" -eq 0 ]; then
         printf 'DESC\tWho connects in to SecureTransport, over which protocol (SSH, PeSIT, FTP), from which addresses — the per-protocol inbound connection volume.\n'
         printf 'KEYWORDS\tsource IP, partner address, protocol, connection volume\n'
         printf 'INTRO\tNo inbound-connection messages in this log window.\n'
-        printf 'TABLE\tConnections by protocol\twide\n'
-        printf 'HEAD\tProtocol\tConnections\tFirst\tLast\n'
-        printf 'KIND\ttext\tnum\ttext\ttext\n'
-        printf 'ROW\t@{colspan=4}No inbound-connection messages in this data window.\n'
+        # one stub per table of the full report (2026-09-29: three since the
+        # Connections by protocol table went), so the merged Connections tabs
+        # keep their places
+        for _t in 'Connections per day' 'By account' 'By source address'; do
+            printf 'TABLE\t%s\twide\n' "$_t"
+            printf 'HEAD\t%s\n' "$_t"
+            printf 'KIND\ttext\n'
+            printf 'ROW\tNo inbound-connection messages in this data window.\n'
+        done
         printf 'SUMMARY\tInbound connections: 0\n'
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
@@ -191,14 +196,8 @@ addr_rows() {
     printf 'INTRO\t**%s** inbound connection(s) over **%s** protocol(s) from **%s** account(s) and **%s** source address(es) across **%s** day(s). This is connection VOLUME — every "had initiated a connection" line, before any transfer happens; Auth Activity counts SSH authentication successes and Logon the screening funnel. Click a row for its 10 most recent connection lines.\n' \
         "$t_conn" "$n_proto" "$n_acct" "$n_addr" "$n_days"
 
-    printf 'TABLE\tConnections by protocol\twide\n'
-    printf 'HEAD\tProtocol\tConnections\tFirst\tLast\n'
-    printf 'KIND\ttext\tnum\ttext\ttext\n'
-    printf 'RECALC\t-\ts0\t-\t-\n'
-    proto_rows
-    printf 'TOTAL\tTotal (%s protocol(s))\t@{class=num}%s\t\t\n' "$n_proto" "$t_conn"
-    printf 'NOTE\tOne count per "had initiated a connection over <protocol>" line. FTP and PeSIT inbound volume appears in no other report. Counts are additive and re-total under the date filter.\n'
-
+    # (the Connections by protocol table went 2026-09-29: its counts are the
+    # per-day table's column totals — and the per-protocol split lives there)
     printf 'TABLE\tConnections per day\twide\n'
     printf 'HEAD\tDate\tSSH\tPESIT\tFTP\tOther\tTotal\n'
     printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\n'

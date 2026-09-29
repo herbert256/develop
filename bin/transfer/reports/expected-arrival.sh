@@ -125,7 +125,7 @@ IFS=$'\t' read -r wl_n wl_d <<< "$wl_tot"
     printf 'INTRO\tA cadence model per subscription, built from the gaps between its **active days** (days with at least one File). Of the **%s** modelable flows (**%s+ active days**), **%s** are **OVERDUE by their own rhythm**: silent longer than max(p90 gap + 1, median gap + 2) days, measured against the newest day in the data (**%s**). Unlike **Went quiet** (one fixed 7-day cutoff for every flow) and **Punctuality** (a time-of-day model for daily flows), this page compares each flow to its own day-to-day interval history — a weekly flow is not "quiet" after 5 days, and a twice-daily flow is overdue long before day 7. %s flow(s) with fewer than %s active days are not modelable and are left out.\n' \
         "$n_model" "$MIN_DAYS" "$n_od" "$maxdate" "$n_few" "$MIN_DAYS"
 
-    printf 'TABLE\tOverdue by their own rhythm\twide\tnofilter\trestint\n'
+    printf 'TABLE\tOverdue by their own rhythm\twide\tnofilter\trestint\ttab=rhythm\n'   # tab=rhythm (2026-09-29): the three tables ride the Rhythm tab of Punctuality
     printf 'HEAD\tSubscription\tFiles\tActive days\tMedian gap\tp90 gap\tLast seen\tDays silent\tVerdict\n'
     printf 'KIND\tsite\tnum\tnum\tnum\tnum\ttext\tnum\ttext\n'
     if [ -n "$od_rows" ]; then
@@ -137,7 +137,7 @@ IFS=$'\t' read -r wl_n wl_d <<< "$wl_tot"
     fi
     printf 'NOTE\tA flow is **OVERDUE** when its current silence exceeds **max(p90 gap + 1, median gap + 2)** days — a margin above its own historical worst-normal interval. The gaps are between consecutive ACTIVE days, so a flow that sends 40 files every Monday still has a 7-day gap pattern.\n'
 
-    printf 'TABLE\tOn rhythm\twide\tnofilter\tpager=25\n'
+    printf 'TABLE\tOn rhythm\twide\tnofilter\tpager=25\ttab=rhythm\n'
     printf 'HEAD\tSubscription\tFiles\tActive days\tMedian gap\tp90 gap\tLast seen\tDays silent\tVerdict\n'
     printf 'KIND\tsite\tnum\tnum\tnum\tnum\ttext\tnum\ttext\n'
     if [ -n "$ok_rows" ]; then
@@ -149,7 +149,7 @@ IFS=$'\t' read -r wl_n wl_d <<< "$wl_tot"
     fi
     printf 'NOTE\tEvery modelable flow whose silence is still within its own limit, most-silent first — the top rows are the ones closest to going overdue. **long-period** marks a flow whose median gap is %s days or more (monthly-style cadence): one skipped period takes weeks to detect, by design.\n' "$LONG_MED"
 
-    printf 'TABLE\tWeekday-locked flows\twide\tnofilter\n'
+    printf 'TABLE\tWeekday-locked flows\twide\tnofilter\ttab=rhythm\n'
     printf 'HEAD\tSubscription\tWeekday\tShare\tActive days\tLast seen\tNext expected\n'
     printf 'KIND\tsite\ttext\tnum\tnum\ttext\ttext\n'
     if [ -n "$wl_rows" ]; then

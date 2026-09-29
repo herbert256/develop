@@ -436,20 +436,8 @@ oldest_cell="-"
     printf 'TOTAL\tTotal (%s of %s waiting Files shown)\t\t\t\t%s\t\n' "$n_shown" "$n_wait" "$sum_size"
     printf 'NOTE\tThe **%s** longest-waiting individual Files, oldest first.\n' "$TOP_FILES"
 
-    printf 'TABLE\tExpired — deleted before pickup, per subscription\twide\tnofilter\n'
-    printf 'HEAD\tSubscription\tExpired Files\tFirst staged\tLast staged\tLast deletion\n'
-    printf 'KIND\tsite\tnumwarn\ttext\ttext\ttext\n'
-    # X fields: 2=site 3=nexp 4=first_dt 5=last_dt 6=last_del 7=drill
-    while IFS='|' read -r _ site nx firstdt lastdt lastdel drill; do
-        [ -z "$site" ] && continue
-        n_xrows=$((n_xrows + 1))
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@data:coreids=%s\n' "$site" "$nx" "$firstdt" "$lastdt" "$lastdel" "$drill"
-    done <<< "$(printf '%s\n' "$agg" | grep '^X|' | LC_ALL=C sort -t'|' -k3,3nr -k2,2)"
-    if [ "$n_xrows" -eq 0 ]; then
-        printf 'ROW\t@{colspan=5}No Expired Files — no staged File was deleted before pickup in this data window.\n'
-    fi
-    printf 'TOTAL\tTotal (%s subscriptions)\t@{class=num warn}%s\t\t\t\n' "$n_xsites" "$n_exp"
-    printf 'NOTE\tStaged Files the nightly **File Maintenance** retention sweep deleted (~11 days after staging) before any partner pickup — **never delivered**, and no longer collectable. The deletion timestamp comes from the server log (there is NO transfer-log record of the deletion) and is stored as the **Expired** field (_files.tsv col 22) by the bin/expire-files.sh build step. Expired Files count as **Error** on every report. Click a row for the 10 most recent expired Files.\n'
+    # (the "Expired — deleted before pickup, per subscription" table went
+    # 2026-09-29: the Expired page carries the same rows with more columns)
 
     printf 'TABLE\tPickup wait — collected files, per subscription\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tCollected\tMedian wait\tAverage wait\tMax wait\tWithin 1 h\t1 - 24 h\tOver 24 h\n'

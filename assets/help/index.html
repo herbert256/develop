@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Report Catalogs — Cloud Reports</title>
+<title>Help: Reports — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,19 +15,22 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Report Catalogs</h1>
+<h1>Reports</h1>
 <h2>What it shows</h2>
-<p>The root landing page and the Transfer, Server and Analyses start pages are indexes, not reports: every report of the area with a one-line description, linked.</p>
-<h2>Sections</h2>
+<p>The <strong>Reports</strong> pulldown in the top bar and its <strong>Start page</strong>: every report of the site in one of fourteen logical <strong>groups</strong> &mdash; Overview, Entities, Failures, Server log errors, Use cases &amp; delivery, Activity &amp; volume, Performance, Flow patterns, Protocols &amp; security, Logons &amp; connections, Partners, Configuration, Coverage and Cleanup.</p>
+<h2>Navigation</h2>
 <ul>
-<li><strong>Headline figures</strong> &mdash; each area catalog opens with its log&rsquo;s first/last record and total Files or records.</li>
-<li><strong>Root page</strong> &mdash; the status tables, the five aligned per-day tables (Date, Files, Duration, Red/Green switch, First seen), the failing-subscription worklist and the log-export facts.</li>
-<li><strong>Transfer catalog</strong> &mdash; adds an Entities table: how many distinct accounts, logins, subscriptions, hosts, partners, applications and domains have a detail page.</li>
+<li><strong>Reports pulldown</strong> &mdash; one line per group; it opens the group&rsquo;s first report.</li>
+<li><strong>First row of buttons</strong> &mdash; on every report page, the reports of its group; the current one highlighted. Rows below it switch the report&rsquo;s own tabs or views.</li>
+<li><strong>Group tag</strong> &mdash; the grey &larr; <em>Group</em> after a page title names its group.</li>
+<li><strong>Start page</strong> &mdash; every report under its group with a one-line description.</li>
+<li><strong>Entities</strong> &mdash; its first row also keeps the selected view (All, Seen, Error, &hellip;) when switching entity.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Labels and descriptions come from each report&rsquo;s own <code>TITLE</code>/<code>DESC</code> lines in the <code>.rpt</code> data files at publish time &mdash; not hand-maintained.</li>
-<li>The root page&rsquo;s headline figures come from the transfer area&rsquo;s <code>day.rpt</code> (its non-rendered <code>META</code> lines: first/last record, physical Transfers, logical Files).</li>
+<li>A group mixes transfer-log, server-log and configuration reports when they answer the same question (Overview holds both Top views; Protocols &amp; security holds the SSH security of the server log).</li>
+<li>Descriptions come from each report&rsquo;s own <code>DESC</code> line; the <a href="report-finder.html">Report finder</a> and the <a href="sitemap.html">Site map</a> list the same groups.</li>
+<li>The home page (the environment name in the top bar) keeps the status tables, the per-day table and the red worklists.</li>
 <li>Every report page reaches its help through the <strong>?</strong> button in the top bar. Help for reports without data in this environment: <a href="monitor.html">Monitor</a>.</li>
 </ul>
 </main>

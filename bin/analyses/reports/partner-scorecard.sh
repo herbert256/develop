@@ -19,9 +19,9 @@
 # col 12 unioned with col 20), the same rule as every partner-counting page.
 # The concentration boxes (top-1/3/10 share, Gini) cover ALL seen partners;
 # the scorecard lists only the >=100-Files organisations — a score over a
-# handful of Files would be noise. The side-by-side top-10 tables show the
-# volume-vs-count blind spot: the biggest byte mover is not the biggest
-# file counter, and a count-ranked view can bury a failing heavyweight.
+# handful of Files would be noise. (The side-by-side Top 10 by volume / by
+# Files tables went 2026-09-29: the Entities Partners view sorted on Volume
+# or Files is the same list, date-aware.)
 #
 # Sources: the transfer caches (_files.tsv, _transfers.tsv col 19 secparams)
 # and the flow-manager xref. Config/analysis page: every table is `nofilter`.
@@ -48,15 +48,15 @@ TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT
 # pre-create the awk side outputs: with an EMPTY estate (config-only clone)
 # the main pass writes no row, and a later sort over a missing file is fatal
-: > "$TMPD/score.pre"; : > "$TMPD/all.tsv"; : > "$TMPD/stats.tsv"
+: > "$TMPD/score.pre"; : > "$TMPD/stats.tsv"
 GENDATE=$(date '+%Y-%m-%d %H:%M:%S')
 
 # One pass: the SP union per CoreId, per-partner counters (Files, errors,
 # bytes, per-day counts for the trend, UC2 wait, out-endpoints, direction,
 # last seen), then the PARSED legs for the security share. END writes the
-# sortable scorecard rows, the per-partner totals for the top-10 tables and
+# sortable scorecard rows and
 # the STAT figures (all explicitly ordered/sorted — no hash-order output).
-awk -F'\t' -v ROWS="$TMPD/score.pre" -v ALL="$TMPD/all.tsv" -v STATS="$TMPD/stats.tsv" '
+awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" '
     function jdn(y, m, d,   a2, y2, m2) { a2 = int((14 - m) / 12); y2 = y + 4800 - a2; m2 = m + 12 * a2 - 3
         return d + int((153 * m2 + 2) / 5) + 365 * y2 + int(y2 / 4) - int(y2 / 100) + int(y2 / 400) - 32045 }
     function djdn(s) { return jdn(substr(s,1,4)+0, substr(s,6,2)+0, substr(s,9,2)+0) }
@@ -135,9 +135,8 @@ awk -F'\t' -v ROWS="$TMPD/score.pre" -v ALL="$TMPD/all.tsv" -v STATS="$TMPD/stat
                 printf "%03d\t%s\t%d\t%d\t%.1f\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n", \
                     sc, p, sc, F[p], errpct, trend, human(B[p]), wait, weak, hosts, dir, L[p], B[p] > ROWS
             }
-            printf "%s\t%d\t%.1f\t%d\t%s\n", p, F[p], errpct, B[p], human(B[p]) > ALL
         }
-        close(ROWS); close(ALL)
+        close(ROWS)
         # concentration over ALL seen partners: ranked by Files descending,
         # name ascending on a tie
         for (z = 1; z <= np; z++) IX[z] = PORD[z]
@@ -169,17 +168,10 @@ sv() { awk -F'\t' -v k="$1" '$1 == k { print $2 }' "$TMPD/stats.tsv"; }
 n_seen=$(sv seen); n_scored=$(sv scored)
 top1=$(sv top1); top3=$(sv top3); top10=$(sv top10); gini=$(sv gini)
 
-# the volume-vs-count blind spot, with the env's own figures
-IFS=$'\t' read -r bv_name bv_files bv_err bv_hum <<EOF
-$(LC_ALL=C sort -t"$(printf '\t')" -k4,4nr -k1,1f "$TMPD/all.tsv" | awk -F'\t' -v OFS='\t' 'NR == 1 { print $1, $2, $3, $5 }')
-EOF
-bc_rank=$(LC_ALL=C sort -t$'\t' -k2,2nr -k1,1f "$TMPD/all.tsv" | awk -F'\t' -v p="$bv_name" '$1 == p { print NR }')
-
 {
     printf 'TITLE\tPartner scorecard\n'
     printf 'DESC\tOne composite 0-100 health score per partner with at least 100 Files, built from error rate, 14-day trend, UC2 pickup wait, security posture, endpoint redundancy and recency — every component visible as its own column, worst partner first.\n'
-    printf 'INTRO\tOne number per partner relation, worst first — and every ingredient of that number in its own column, so a low score is never a mystery. The concentration boxes show why a plain count ranking misleads: the top partner alone carries **%s%%** of all Files. The side-by-side tables below expose the volume-vs-count blind spot: **%s** is the biggest byte mover (%s) with an Error share of **%s%%**, yet by file count it ranks only #%s — a count-ranked view buries it under the high-frequency movers.\n' \
-        "$top1" "$bv_name" "$bv_hum" "$bv_err" "${bc_rank:-?}"
+    printf 'INTRO\tOne number per partner relation, worst first — and every ingredient of that number in its own column, so a low score is never a mystery. The concentration boxes show why a plain count ranking misleads: the top partner alone carries **%s%%** of all Files.\n' "$top1"
     printf 'STAT\twhite\t%s\tPartners seen\n' "$n_seen"
     printf 'STAT\twhite\t%s\tScored (>= 100 Files)\n' "$n_scored"
     printf 'STAT\torange\t%s%%\tTop-1 share of Files\n' "$top1"
@@ -201,22 +193,8 @@ bc_rank=$(LC_ALL=C sort -t$'\t' -k2,2nr -k1,1f "$TMPD/all.tsv" | awk -F'\t' -v p
             printf "TOTAL\tTotal (%d partner(s))\t\t@{class=num}%d\t\t\t@{class=num}%s\t\t\t\t\t\n", n + 0, f + 0, h }' \
         "$TMPD/score.pre"
 
-    # the two top-10 minis, side by side
-    printf 'TABLE\tTop 10 by volume\tsxs=vc\tnofilter\tnosearch\tnosort\n'
-    printf 'HEAD\tPartner\tFiles\tVolume\tError %%\n'
-    printf 'KIND\tptn\tnum\tnum\tnum\n'
-    LC_ALL=C sort -t$'\t' -k4,4nr -k1,1f "$TMPD/all.tsv" | awk -F'\t' 'NR <= 10 {
-        printf "ROW\t%s\t%s\t%s\t%s\n", $1, $2, $5, $3; f += $2; n++ }
-        END { printf "TOTAL\tTotal (%d partner(s))\t@{class=num}%d\t\t\n", n + 0, f + 0 }'
-    printf 'TABLE\tTop 10 by Files\tsxs=vc\tnofilter\tnosearch\tnosort\n'
-    printf 'HEAD\tPartner\tFiles\tVolume\tError %%\n'
-    printf 'KIND\tptn\tnum\tnum\tnum\n'
-    LC_ALL=C sort -t$'\t' -k2,2nr -k1,1f "$TMPD/all.tsv" | awk -F'\t' 'NR <= 10 {
-        printf "ROW\t%s\t%s\t%s\t%s\n", $1, $2, $5, $3; f += $2; n++ }
-        END { printf "TOTAL\tTotal (%d partner(s))\t@{class=num}%d\t\t\n", n + 0, f + 0 }'
-
     printf 'NOTE\tThe score starts at **100 minus the Error %%** (Failed or Expired Files — the heaviest weight by far) and deducts: **0.5 points per percentage point** the last-14-days Error %% worsened against the 14 days before (capped at 15; improving never adds), **5 points** when the average UC2 partner pickup wait exceeds 24 h, up to **5 points** scaled by the share of transfer legs on a weak security parameter (ssh-rsa host key or TLSv1.2), **3 points** when everything we send the partner rides a single outbound endpoint, and **10 points** when the partner has been quiet for 14+ days — all measured against the newest log day, then clamped to 0-100. Every component sits in its own column, so the arithmetic is checkable per row. Partner attribution is the site-wide UNION rule (the subscription'\''s configured partners unioned with the parse attribution); the concentration boxes cover all seen partners, the scorecard only those with at least 100 Files.\n'
-    printf 'KEYWORDS\tpartner,scorecard,score,health,error rate,trend,pickup wait,security,ssh-rsa,tlsv1.2,redundancy,concentration,gini,volume,blind spot\n'
+    printf 'KEYWORDS\tpartner,scorecard,score,health,error rate,trend,pickup wait,security,ssh-rsa,tlsv1.2,redundancy,concentration,gini,volume\n'
     printf 'SUMMARY\tPartners seen: %s  |  Scored: %s  |  Top-1 share: %s%%  |  Top-10 share: %s%%  |  Gini: %s\n' \
         "$n_seen" "$n_scored" "$top1" "$top10" "$gini"
     printf 'FOOT\tGenerated on %s\n' "$GENDATE"

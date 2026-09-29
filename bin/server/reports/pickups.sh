@@ -111,7 +111,13 @@ rows=$(LC_ALL=C sort -t$'\t' -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' -v SL="$SL" 
         k = toupper($1); if (k in WOLD) { ag = NEWEST - WOLD[k]; if (ag > GOLD) GOLD = ag }   # ag, not a: mawk forbids one name as array (BEGIN) and scalar
         printf "ROW\t%s%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%d\t%s\n", \
             sublink($1), $1, stamp($3), stamp($4), gateway($1), z($5), z($6), $7, z($16), ow, $17, $8
-        tp += $5; tw += $6; tf += $7; twt += $16; txp += $17; nr++
+        # the pickup logons belong to the ACCOUNT (or, on a multi-FE account, to
+        # the login) and repeat on each of its UC2 subscriptions: the Total counts
+        # each such group ONCE (2026-09-29 fix — an 8-subscription account put
+        # its 804 pickups into the total eight times; UC2 status sums once)
+        pkk = $2 SUBSEP $3 SUBSEP $4 SUBSEP $5
+        if (!(pkk in PKS)) { PKS[pkk] = 1; tp += $5 }
+        tw += $6; tf += $7; twt += $16; txp += $17; nr++
     }
     END { printf "TOTFOOT\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n", nr+0, tp+0, tw+0, tf+0, twt+0, txp+0, (GOLD >= 0 ? hage(GOLD) : "") }
 ')
@@ -132,13 +138,14 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
     # secondary is the BAKED row order (see the sort feeding the awk above)
     # preserved by report.js'\''s stable sort. sort=, never nosort, so the
     # header clicks keep working.
-    printf 'TABLE\tPickups per UC2 subscription\twide\tnofilter\tsort=7:-1\n'
+    # tab=uc2 (2026-09-29): rides the UC2 tab of UC status, under its status table
+    printf 'TABLE\tPickups per UC2 subscription\twide\tnofilter\tsort=7:-1\ttab=uc2\n'
     printf 'HEAD\tSubscription\tFirst pickup\tLast pickup\tLast Gateway\tPickups\tWith files\tFiles picked up\tWaiting\tOldest waiting\tExpired\tPattern\n'
     printf 'KIND\tmono\ttext\ttext\ttext\tnum\tnum\tnumprocessed\tnum\ttext\tnumfailed\ttext\n'
     printf '%s\n' "$rows"
     printf 'TOTAL\tTotal (%s subscription(s))\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num processed}%s\t@{class=num}%s\t%s\t@{class=num failed}%s\t\n' \
         "$n_rows" "$(nz "$t_pk")" "$(nz "$t_wf")" "$t_f" "$(nz "$t_wt")" "$t_old" "$t_xp"
-    printf 'NOTE\tThe logon figures (Pickups, Pattern) are the pickup ACCOUNT'\''s and repeat on each of its UC2 subscriptions — except on an account carrying **several FE logins** (production), where they are the flow'\''s own **login'\''s**: each login is a different partner credential. With files, Files picked up, Waiting, Oldest waiting and Expired are each subscription'\''s own. **Last Gateway** joins the hand-maintained input/<env>/logons_old.txt ("<login> <stamp>" per line, shown as written) through the subscription'\''s configured login(s); a flow whose login the file does not name shows an em dash. **Oldest waiting** shows one unit, truncated ("5 days", "12 hours", "45 minutes", "10 seconds"), and sorts by the exact age; the Total row carries the oldest of all. The per-flow story — the visit classification and the shared-connection evidence — is on each subscription'\''s detail page and the UC2 pickup visits analysis.\n'
+    printf 'NOTE\tThe logon figures (Pickups, Pattern) are the pickup ACCOUNT'\''s and repeat on each of its UC2 subscriptions (the Total counts them once) — except on an account carrying **several FE logins** (production), where they are the flow'\''s own **login'\''s**: each login is a different partner credential. With files, Files picked up, Waiting, Oldest waiting and Expired are each subscription'\''s own. **Last Gateway** joins the hand-maintained input/<env>/logons_old.txt ("<login> <stamp>" per line, shown as written) through the subscription'\''s configured login(s); a flow whose login the file does not name shows an em dash. **Oldest waiting** shows one unit, truncated ("5 days", "12 hours", "45 minutes", "10 seconds"), and sorts by the exact age; the Total row carries the oldest of all. The per-flow story — the visit classification and the shared-connection evidence — is on each subscription'\''s detail page and the UC2 pickup visits analysis.\n'
     printf 'SUMMARY\tFlows: %s  |  Pickups: %s  |  Files picked up: %s  |  Waiting: %s  |  Expired: %s\n' \
         "$n_rows" "$t_pk" "$t_f" "$t_wt" "$t_xp"
     printf 'KEYWORDS\tuc2,pickup,pickups,collect,sftp,logon,waiting,oldest,age,expired,pattern,cadence,gateway,old gateway\n'

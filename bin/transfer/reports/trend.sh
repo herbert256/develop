@@ -107,24 +107,13 @@ n_sil_rows=0; n_grow_rows=0; n_shr_rows=0
 
 {
     printf 'TITLE\tGrowers & Shrinkers\n'
-    printf 'DESC\tPer-subscription growth and decline: the window split in half, each flow'\''s Files/volume compared across the halves — growers, shrinkers, and flows that went silent mid-window.\n'
+    printf 'DESC\tPer-subscription growth and decline: the window split in half, each flow'\''s Files/volume compared across the halves — growers and shrinkers.\n'
     printf 'KEYWORDS\tgrowth, shrink, decline, silent, disappeared, delta, new flow, gone\n'
     printf 'INTRO\tWhich flows are changing: the window (**%s → %s**) split at its midpoint (first half to %s, second from %s), each of the **%s** subscription(s) compared across the halves. **%s** went **silent** (active early, nothing in the final week), **%s** grew **%sx+**, **%s** shrank **%sx+** while still alive. The Weekly report shows the site-wide trend; this names the flows behind it.\n' \
         "$d_from" "$d_to" "$d_mid1" "$d_mid2" "$n_sites" "$n_sil" "$n_grow" "$RATIO" "$n_shr" "$RATIO"
 
-    printf 'TABLE\tWent silent\twide\tnofilter\n'
-    printf 'HEAD\tSubscription\tFirst-half Files\tSecond-half Files\tLast seen\tDays silent\n'
-    printf 'KIND\tsite\tnum\tnum\ttext\tnum\n'
-    while IFS='|' read -r _ f1 site f2 lastd dsil; do
-        [ -z "$site" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t@{class=failed}%s\n' "$site" $((10#$f1)) "$f2" "$lastd" "$dsil"
-        n_sil_rows=$((n_sil_rows + 1))
-    done <<< "$(printf '%s\n' "$agg" | grep '^S|' | LC_ALL=C sort -t'|' -k2,2r -k3,3)"
-    if [ "$n_sil_rows" -eq 0 ]; then
-        printf 'ROW\t@{colspan=5}No subscription with %s+ first-half Files fell silent.\n' "$MIN_SILENT"
-    fi
-    printf 'NOTE\tActive with %s+ Files in the first half, then NOTHING in the window'\''s final week. Days silent counts to the dataset'\''s last day, not today. Stale Accounts tracks the same signal per ACCOUNT (against its own cadence) — this catches the per-subscription cases.\n' "$MIN_SILENT"
-
+    # (the Went silent table went 2026-09-29: Expected arrival's Overdue
+    # verdict and the Went quiet report list the same flows)
     printf 'TABLE\tGrowers\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tFirst-half Files\tSecond-half Files\tGrowth\tFirst-half volume\tSecond-half volume\n'
     printf 'KIND\tsite\tnum\tnum\ttext\tnum\tnum\n'
@@ -149,7 +138,7 @@ n_sil_rows=0; n_grow_rows=0; n_shr_rows=0
     if [ "$n_shr_rows" -eq 0 ]; then
         printf 'ROW\t@{colspan=6}No still-active subscription shrank %sx or more (from %s+ first-half Files).\n' "$RATIO" "$MIN_BASE"
     fi
-    printf 'NOTE\t%sx+ fewer Files in the second half (from %s+ in the first), but still alive in the final week — a fading flow, not a dead one (those are in Went silent).\n' "$RATIO" "$MIN_BASE"
+    printf 'NOTE\t%sx+ fewer Files in the second half (from %s+ in the first), but still alive in the final week — a fading flow, not a dead one (those are on Went quiet).\n' "$RATIO" "$MIN_BASE"
 
     printf 'SUMMARY\tSubscriptions: %s  |  Went silent: %s  |  Growers (%sx+): %s  |  Shrinkers (%sx+): %s  |  Window: %s → %s\n' \
         "$n_sites" "$n_sil" "$RATIO" "$n_grow" "$RATIO" "$n_shr" "$d_from" "$d_to"

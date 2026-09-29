@@ -52,7 +52,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
-OUT="$REPORTS_DIR/file-in-file-out.rpt"
+OUT="$REPORTS_DIR/file-in-file-out-src.rpt"   # a component since 2026-09-29: merge-file-in-file-out.sh adds the UC4 to UC2 tab
 WINDOW_H=48        # an outbound file counts as the handover of an inbound one within this many hours
 LATEST_N=100       # rows in the per-file table
 
@@ -124,7 +124,7 @@ if [ "${nh:-0}" -eq 0 ]; then
         printf 'TITLE\tFile in - File out\n'
         printf 'DESC\tPartner-to-partner handovers carried by TWO subscriptions: a file arrives from one partner and the same filename leaves to another, copied across in between.\n'
         printf 'INTRO\tNo file arrived on one subscription and left on another within %s hours in this dataset.\n' "$WINDOW_H"
-        printf 'TABLE\tHandover routes\n'
+        printf 'TABLE\tHandover routes\ttab=fifo\n'
         printf 'HEAD\tRoute\n'
         printf 'KIND\ttext\n'
         printf 'ROW\tNo partner-to-partner handovers detected.\n'
@@ -186,7 +186,7 @@ IFS=' ' read -r nroutes ncross <<< "$(printf '%s\n' "$route_rows" | awk -F'\t' '
     # the same order wording. The route's first / last date columns were
     # DROPPED the same day (user request) — they had been renamed First seen /
     # Last seen to stay apart from the First flow, and went altogether.
-    printf 'TABLE\tHandover routes\twide\tnofilter\n'
+    printf 'TABLE\tHandover routes\twide\tnofilter\ttab=fifo\n'
     printf 'HEAD\tFirst\tSecond\tDirection\tFiles\tFilenames\tFirst partner\tSecond partner\tFastest\tMedian\tSlowest\tSame size\tSize changed\n'
     printf 'KIND\tsite\tsite\ttext\tnum\tnum\tptn\tptn\ttext\ttext\ttext\tnum\tnum\n'
     # the sorted rows first, then the TOTAL summed off the same stream as it
@@ -199,7 +199,7 @@ IFS=' ' read -r nroutes ncross <<< "$(printf '%s\n' "$route_rows" | awk -F'\t' '
     printf 'NOTE\tOne row per ROUTE, and a route is a (First flow, Second flow, Direction) triple: **First** carried the file first, **Second** carried it next. **Direction** *In --> Out* is a file that arrived from a partner and then left to another; *Out --> In* is one that left to a partner and then arrived from another — the same pattern the other way round. **Files** = handovers detected; **Filenames** = how many DISTINCT names they carried — when the two are equal every name was unique (timestamped), so the match cannot be coincidence; a route with far fewer filenames than files is repeating a fixed name and deserves a look. **Same size** / **Size changed** split the files by whether the byte count survived the copy: all-same is a byte-for-byte copy, all-changed usually means it was re-encrypted or re-wrapped. Gaps are the time from the inbound file to the outbound one.\n'
     printf 'NOTE\tA route whose **First partner** and **Second partner** are the same group is usually NOT a partner-to-partner handover but a pull-then-stage flow (we fetch a file and stage it back for the same partner) — the row is kept so the pattern is visible, but read it differently.\n'
 
-    printf 'TABLE\tLatest handovers\twide\n'
+    printf 'TABLE\tLatest handovers\twide\ttab=fifo\n'
     printf 'HEAD\tFile\tFirst time\tFirst\tSecond time\tSecond\tDirection\tGap\tSize first\tSize second\n'
     printf 'KIND\tfile\ttext\tsite\ttext\tsite\ttext\ttext\tnum\tnum\n'
     # one sort of the pairs, newest first: the same awk emits the rows and the

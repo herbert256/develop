@@ -99,7 +99,9 @@ n_hours=$(printf '%s\n' "$agg" | grep -c '^HOUR|' || true)
     # one Files column, no Error / OK pair, no green/red cells, no drills);
     # the bucket payload keeps all four metrics, so the tokens read metric 2
     # (ok) for Files and the bar, metric 3 for Volume
-    printf 'HEAD\tHour\t%s\tVolume\tLoad\n' "$clabel"
+    # the column reads "Delivered" (2026-09-29): it counts the OK Files only,
+    # while the Volume beside it and the grid below count every File
+    printf 'HEAD\tHour\tDelivered\tVolume\tLoad\n'
     printf 'KIND\ttext\tnum\tnum\tbar\n'
     printf 'RECALC\t-\ts2\th3\tb2\n'
     # the 24 hour rows, the Load bar scaled against the busiest hour (by OK Files)
@@ -109,7 +111,7 @@ n_hours=$(printf '%s\n' "$agg" | grep -c '^HOUR|' || true)
         $2 != "" { printf "ROW\t%s:00\t%s\t%s\t%d\t@data:buckets=%s\n", $2, $5, $7, int($5 * 100 / mx), $8 }' || true
     printf 'TOTAL\tTotal (%s hour(s))\t@{class=num}%s\t@{class=num}%s\t\n' \
         "$n_hours" "$tot_processed" "$tot_human"
-    printf 'NOTE\tFiles = the delivered (OK) %ss started in that hour; the bar shows load relative to the busiest hour.\n' "$noun"
+    printf 'NOTE\tDelivered = the OK %ss started in that hour; Volume = every %s started in it; the bar shows load relative to the busiest hour.\n' "$noun" "$noun"
 
     printf 'TABLE\tHour × weekday\theat\n'
     printf 'HEAD\tHour\tMonday\tTuesday\tWednesday\tThursday\tFriday\tSaturday\tSunday\n'

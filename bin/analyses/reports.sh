@@ -80,9 +80,7 @@ run_bg "$SCRIPT_DIR/reports/triage.sh"
 run_bg "$SCRIPT_DIR/reports/partner-scorecard.sh"
 run_bg "$SCRIPT_DIR/reports/blast-radius.sh"
 run_bg "$SCRIPT_DIR/reports/app-partners.sh"
-run_bg "$SCRIPT_DIR/reports/partner-lifecycle.sh"
 run_bg "$SCRIPT_DIR/reports/cleanup-backlog.sh"
-run_bg "$SCRIPT_DIR/reports/hosts-overview.sh"       # Partners - Outgoing (2026-09-13): the hosts twin of fe-overview — config + both transfer caches + polling.rpt + site-failures.rpt (server pool outputs)
 run_bg "$SCRIPT_DIR/reports/fe-overview.sh"          # Partners - Incoming: config + files cache + logon summary + input/<env>/logons_old.txt + the UC2 pickup sidecar (server pool output — bin/build.sh runs the server reports first)
 
 # wave 2 — the ensure_pda_tsvs chain, strictly in order (first-seen moved here

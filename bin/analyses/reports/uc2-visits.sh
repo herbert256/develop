@@ -90,7 +90,8 @@ fi
     printf 'STAT\twhite\t%s\tDelivered only\n' "$t_d"
     printf 'STAT\twhite\t%s\tSame connection\n' "$t_s"
     # noagg: the account-level columns cannot be re-summed over a searched subset
-    printf 'TABLE\tVisits per UC2 subscription\twide\tnofilter\tnoagg=1,2,3,4,5\n'
+    # tab=uc2 (2026-09-29): rides the UC2 tab of UC status
+    printf 'TABLE\tVisits per UC2 subscription\twide\tnofilter\tnoagg=1,2,3,4,5\ttab=uc2\n'
     printf 'HEAD\tSubscription\tPickups\tCollected\tCollected + delivered\tDelivered only\tSame connection\tFiles picked up\tPickup pattern\n'
     printf 'KIND\tmono\tnum\tnumprocessed\tnumprocessed\tnum\tnum\tnum\ttext\n'
     printf '%s\n' "$rows"

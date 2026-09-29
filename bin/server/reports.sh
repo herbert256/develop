@@ -15,6 +15,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 source "$SCRIPT_DIR/../timing.sh"   # timed: one TIME line per pooled report (2026-09-27)
+source "$SCRIPT_DIR/../merge_rpt.sh"   # append_rpt_tables (2026-09-29)
 rm -f "$REPORTS_DIR"/*.rpt.tmp   # orphaned atomic-write temps from a killed run
 
 NJOBS=${AXWAY_NJOBS:-$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}   # AXWAY_NJOBS: bin/build.sh caps the parallel production chain
@@ -91,8 +92,14 @@ pool_run "$SCRIPT_DIR/reports/unknown-entities.sh"   # ONE map-reduce pass -> al
 pool_wait
 # The MERGED reports (2026-07 catalog cleanup) concatenate the pool's .rpt
 # files, so they run after it: cheap single-awk merges, no log reading.
+# The levels per component (errors-day.rpt) ride the Top view page since
+# 2026-09-29 — its totals ARE the Top view column totals, only the level x
+# component split was new; errors-day stays an unpublished intermediate.
+# READERS OF topview.rpt MUST TAKE THE DATE-SHAPED ROWS ONLY: the appended
+# table's rows are TM / PESITD / SSHD (dashboards/lib.sh, day/reports.sh,
+# overview.sh, area_dates … all filter on a yyyy-mm-dd Date cell).
+append_rpt_tables "$REPORTS_DIR/topview.rpt" "$REPORTS_DIR/errors-day.rpt"
 "$SCRIPT_DIR/reports/errors.sh"
-"$SCRIPT_DIR/reports/missing-entities.sh"
 "$SCRIPT_DIR/reports/connections.sh"
 "$SCRIPT_DIR/reports/logons.sh"
 # (the "Operations & Capacity" group — Platform health, Capacity & sessions,
@@ -104,6 +111,6 @@ rm -f "$REPORTS_DIR"/{platform-health,capacity,cluster-health,stuck-events,sched
 "$SCRIPT_DIR/reports/ssh-security.sh"
 "$SCRIPT_DIR/../analyses/reports/uc3-polling.sh"   # the UC3 tab's polling tables: reads remote-poll.rpt + its sidecars — after the pool, before the uc-status merge (2026-09-05)
 "$SCRIPT_DIR/../analyses/reports/polling.sh"   # the flat Polling page (Analyses / Configuration): remote-poll.rpt + sidecars + the cron schedules in ONE table (2026-09-05)
+"$SCRIPT_DIR/../analyses/reports/uc2-visits.sh"   # formats uc2-status.sh's pickup sidecar — after the pool, before the uc-status merge (its table rides the UC2 tab, 2026-09-29)
+"$SCRIPT_DIR/reports/pickups.sh"   # the same sidecar — likewise on the UC2 tab
 "$SCRIPT_DIR/../analyses/reports/uc-status.sh"
-"$SCRIPT_DIR/../analyses/reports/uc2-visits.sh"   # formats uc2-status.sh's pickup sidecar — must run after the pool
-"$SCRIPT_DIR/reports/pickups.sh"   # formats the same sidecar — after the pool, behind uc2-status.sh

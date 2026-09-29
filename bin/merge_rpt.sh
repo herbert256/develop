@@ -22,14 +22,15 @@
 _merge_pad() {
     case $(basename "$1" .rpt) in
         hourly|legs-count|protocol-journey) echo 2 ;;   # (error-reasons stays 1: its 2026-09-28 second table, Reasons over time, rides its tab — tab=reasons)
-        resubmissions|auth-activity|trend|dwell-time) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes)
+        resubmissions|auth-activity|dwell-time) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes)
+        trend|duration-trend|size-profile) echo 2 ;;   # trend 3->2 (2026-09-29: Went silent went); the Trends and Sizes components
         # errors-day 2->1 and error-timing 3->1 (2026-09-28: the per-day table = the Top view; hour + weekday folded into the heatmap)
         attempts|logon) echo 4 ;;         # logon 2->4 (2026-08: + the door-knocker tables)
-        volume-src) echo 3 ;;
         size-dist) echo 2 ;;
-        inbound-connections|connection-diagnostics) echo 4 ;;   # connection-diagnostics 3->5 (2026-08), both 5->4 (2026-09-28: Whitelist usage + Test outcomes gone)
+        connection-diagnostics) echo 4 ;;   # connection-diagnostics 3->5 (2026-08), 5->4 (2026-09-28: Whitelist usage + Test outcomes gone)
+        inbound-connections) echo 3 ;;      # 5->4 (2026-09-28), 4->3 (2026-09-29: Connections by protocol gone)
         ssh-crypto) echo 10 ;;            # 8->10 (2026-08: + negotiation failures + PeSIT TLS)
-        uc3-polling) echo 0 ;;            # RIDES the UC3 tab (its tables carry tab=uc3, 2026-09-05): a missing one contributes NO tab page
+        uc3-polling|uc2-visits|pickups|no-remote-dir|no-remote-files) echo 0 ;;   # ride the UC2 / UC3 tabs (2026-09-29)            # RIDES the UC3 tab (its tables carry tab=uc3, 2026-09-05): a missing one contributes NO tab page
         *) echo 1 ;;
     esac
 }
@@ -85,4 +86,33 @@ merge_rpt() {
         printf 'FOOT\tGenerated on %s from %s component report(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$#"
     } > "$out.tmp" && mv "$out.tmp" "$out"
     echo "Data written to $out ($(command grep -c '^TABLE' "$out") table(s), $# component slot(s))." >&2
+}
+
+# append_rpt_tables TARGET COMP.rpt... (2026-09-29) — move the TABLE blocks of
+# component reports onto the page of TARGET: every line from a component's
+# first TABLE up to its SUMMARY / FOOT / META (its header directives dropped)
+# is inserted before TARGET's first SUMMARY or FOOT line, so the tables render
+# below TARGET's own on the same page. A missing component is skipped; a
+# missing TARGET leaves nothing to do. The components stay on disk as
+# unpublished intermediates, like merge_rpt's.
+append_rpt_tables() {
+    local target=$1; shift
+    [ -f "$target" ] || return 0
+    local have=() c
+    for c in "$@"; do [ -f "$c" ] && have+=("$c"); done
+    [ "${#have[@]}" -gt 0 ] || return 0
+    local blk; blk=$(mktemp "${TMPDIR:-/tmp}/apprpt.XXXXXX")
+    awk -F'\t' '
+        FNR == 1 { intable = 0 }
+        $1 == "TABLE" { intable = 1 }
+        !intable { next }
+        $1 == "SUMMARY" || $1 == "FOOT" || $1 == "META" || $1 == "TITLE" || $1 == "DESC" || $1 == "KEYWORDS" || $1 == "NAV" { next }
+        { print }
+    ' "${have[@]}" > "$blk"
+    awk -v BLK="$blk" '
+        !done && (/^SUMMARY\t/ || /^FOOT\t/) { while ((getline l < BLK) > 0) print l; done = 1 }
+        { print }
+        END { if (!done) while ((getline l < BLK) > 0) print l }
+    ' "$target" > "$target.tmp" && mv "$target.tmp" "$target"
+    rm -f "$blk"
 }

@@ -40,9 +40,12 @@ transfer_basics(){
 }
 
 # SERVER basics (the topview report): S_REC/S_INFO/S_WARN/S_ERR/S_EPCT.
+# Only the per-DAY rows count: since 2026-09-29 the report also carries the
+# levels-per-component table (append_rpt_tables), whose TM/PESITD/SSHD rows
+# sum to the same totals — reading every ROW counted the log twice.
 server_basics(){
     [ -f "$SV" ] || return 1
-    read -r S_REC S_INFO S_WARN S_ERR < <(awk -F'\t' '$1=="ROW"{r+=$3;i+=$5;w+=$6;e+=$7} END{print r+0,i+0,w+0,e+0}' "$SV")
+    read -r S_REC S_INFO S_WARN S_ERR < <(awk -F'\t' '$1=="ROW"{d=$2; sub(/^@\{[^}]*\}/,"",d); if (d !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) next; r+=$3;i+=$5;w+=$6;e+=$7} END{print r+0,i+0,w+0,e+0}' "$SV")
     S_EPCT=$(awk -v e="$S_ERR" -v r="$S_REC" 'BEGIN{printf "%.1f", r? e*100/r : 0}')
 }
 
@@ -57,8 +60,9 @@ tday_series(){
 
 # per-day server records + errors series -> sday_rec/sday_err
 sday_series(){
-    sday_rec=$(awk -F'\t' '$1=="ROW"{d=$2; sub(/^@\{[^}]*\}/,"",d); print d ":" $3}' "$SV" | pipejoin)
-    sday_err=$(awk -F'\t' '$1=="ROW"{d=$2; sub(/^@\{[^}]*\}/,"",d); print d ":" $7}' "$SV" | pipejoin)
+    # per-DAY rows only (the appended per-component table — see server_basics)
+    sday_rec=$(awk -F'\t' '$1=="ROW"{d=$2; sub(/^@\{[^}]*\}/,"",d); if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) print d ":" $3}' "$SV" | pipejoin)
+    sday_err=$(awk -F'\t' '$1=="ROW"{d=$2; sub(/^@\{[^}]*\}/,"",d); if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) print d ":" $7}' "$SV" | pipejoin)
 }
 
 # top 8 accounts by volume -> tacct (transfer + volume dashboards)

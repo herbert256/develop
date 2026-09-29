@@ -20,7 +20,7 @@
 <p>The partner AllowIP whitelists against what actually connects: the site-wide roll-up of what the per-partner detail pages&rsquo; tables cannot show.</p>
 <h2>Sections</h2>
 <ul>
-<li><strong>Active whitelisted addresses</strong> &mdash; the entries doing work: <em>Used</em> carried real Files; <em>Connects only</em> shows server-log connections but no transfer (something connects and never delivers &mdash; worth a look).</li>
+<li><strong>Active whitelisted addresses</strong> &mdash; the entries doing work: <em>Used</em> carried real Files; <em>Connects only</em> shows inbound server connections but no transfer (something connects and never delivers &mdash; worth a look); <em>Server-log mention only</em> = no connection counted, but the server log names the address. <em>Never seen</em> = none of the three &mdash; the <a href="cleanup-backlog.html">Cleanup backlog</a>&rsquo;s unused-whitelist rule.</li>
 <li><strong>Unused whitelist entries per account</strong> &mdash; the whitelist is the <em>expanded</em> AllowIP list (CIDR ranges explode into many member addresses), so unused entries aggregate per allowing account instead of thousands of rows. A red row&rsquo;s whitelist is entirely unused.</li>
 <li><strong>Sources without a whitelist entry</strong> &mdash; addresses that carried traffic with no entry at all. Internal cluster addresses appear here legitimately (PeSIT needs no whitelist entry); an unexpected external address is the row to chase.</li>
 </ul>

@@ -5,7 +5,11 @@
 # how persistently they fail. For each flow it shows the number of distinct days
 # it failed on, failure and success counts, the last failure time, and whether it
 # EVER succeeded. Flows that never succeeded (broken) are listed first, then the
-# flakiest by failure count. With a ~45% overall failure rate this separates
+# flakiest by failure count. The counts are LEGS (2026-09-29: headed "Error
+# transfers" / "OK transfers" — "Failures" / "Successes" read as Files — and the
+# baked Outcome column went: it never followed the date filter, and "Has
+# successes" was said of flows whose every File failed; OK transfers = 0 says
+# never-succeeded, for the selected range). With a ~45% overall failure rate this separates
 # chronically-broken flows from occasionally-flaky ones. Filenames carry
 # timestamps (so exact retries don't repeat); the Account+Site pair is the stable
 # flow key. "Failed Subtransmission" folds into Failed.
@@ -90,20 +94,19 @@ n_rows=0; sum_failures=0; sum_successes=0; sum_resubs=0
 
 {
     printf 'TITLE\tRepeat Failures\n'
-    printf 'DESC\tAccount/subscription flows by failure count, with successes, resubmissions and last-failure time.\n'
+    printf 'DESC\tAccount/subscription flows by failed-leg count, with OK legs, resubmissions and last-failure time.\n'
     printf 'INTRO\t**%s** account/subscription flows failed at least once; **%s** never succeeded in this window. %s failures vs %s successes overall.\n' \
         "$pair_count" "$chronic_count" "$tot_fail" "$tot_proc"
     printf 'TABLE\tFailing flows\twide\tdrill=transfer\n'
-    printf 'HEAD\tAccount\tSubscription\tFail days\tFailures\tSuccesses\tResubmitted\tLast failure\tOutcome\n'
-    printf 'KIND\tacct\tsite\tnum\tnumfailed\tnumprocessed\tnum\ttext\ttext\n'
-    printf 'RECALC\t-\t-\td0\ts0\ts1\ts2\t-\t-\n'
+    printf 'HEAD\tAccount\tSubscription\tFail days\tError transfers\tOK transfers\tResubmitted\tLast failure\n'
+    printf 'KIND\tacct\tsite\tnum\tnumfailed\tnumprocessed\tnum\ttext\n'
+    printf 'RECALC\t-\t-\td0\ts0\ts1\ts2\t-\n'
     while IFS='|' read -r _ never failures account site faildays successes resubs lastfail bk ccf ccp; do
         [ -z "$never" ] && continue                     # blank line guard
         [ -z "$account" ] && account="(no account)"     # blacklisted/blank entity — keep the flow
         [ -z "$site" ] && site="(no subscription)"      # countable, matching failure-rate's convention
-        if [ "$never" = 0 ]; then outcome="@{class=failed}Never succeeded"; else outcome="Has successes"; fi
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n' \
-            "$account" "$site" "$faildays" "$failures" "$successes" "$resubs" "$lastfail" "$outcome" "$bk" "$ccf" "$ccp"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n' \
+            "$account" "$site" "$faildays" "$failures" "$successes" "$resubs" "$lastfail" "$bk" "$ccf" "$ccp"
         n_rows=$((n_rows + 1))
         sum_failures=$((sum_failures + failures))
         sum_successes=$((sum_successes + successes)); sum_resubs=$((sum_resubs + resubs))
@@ -112,13 +115,13 @@ n_rows=0; sum_failures=0; sum_successes=0; sum_resubs=0
     # (distinct days with failures), which the client-side total aggregate
     # cannot recompute — a baked number there rewrites to 0 on any date change.
     # Blank is the house pattern for a/c/d/q/x-token total cells (cf. weekday).
-    printf 'TOTAL\tTotal (%d rows)\t\t\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%d\t\t\n' \
+    printf 'TOTAL\tTotal (%d rows)\t\t\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%d\t\n' \
         "$n_rows" "$sum_failures" "$sum_successes" "$sum_resubs"
     if [ "$shown" -lt "$pair_count" ]; then
-        printf 'NOTE\tShowing the top %s of %s failing flows (never-succeeded first, then by failure count). "Fail days" is the number of distinct days the flow failed on; "Resubmitted" counts rows flagged as resubmissions. Failures and Successes count individual transfers (legs), so a failed leg later re-sent successfully appears on both sides — the File-level reports fold such intra-File recoveries into one OK File (the delivered rule). Click a Failures or Successes count for that outcome'\''s 10 most recent transfers (newest first).\n' \
+        printf 'NOTE\tShowing the top %s of %s failing flows (never-succeeded first, then by failure count). "Fail days" is the number of distinct days the flow failed on; "Resubmitted" counts rows flagged as resubmissions. Error and OK transfers count individual legs, so a failed leg later re-sent successfully appears on both sides — the File-level reports fold such intra-File recoveries into one OK File (the delivered rule). Click an Error or OK transfers count for that outcome'\''s 10 most recent transfers (newest first).\n' \
             "$shown" "$pair_count"
     else
-        printf 'NOTE\t"Fail days" is the number of distinct days the flow failed on; "Never succeeded" flows had zero OK records in this window. "Resubmitted" counts rows flagged as resubmissions. Failures and Successes count individual transfers (legs), so a failed leg later re-sent successfully appears on both sides — the File-level reports fold such intra-File recoveries into one OK File (the delivered rule). Click a Failures or Successes count for that outcome'\''s 10 most recent transfers (newest first).\n'
+        printf 'NOTE\t"Fail days" is the number of distinct days the flow failed on; a flow with no OK transfers never succeeded in the range. "Resubmitted" counts rows flagged as resubmissions. Error and OK transfers count individual legs, so a failed leg later re-sent successfully appears on both sides — the File-level reports fold such intra-File recoveries into one OK File (the delivered rule). Click an Error or OK transfers count for that outcome'\''s 10 most recent transfers (newest first).\n'
     fi
     printf 'SUMMARY\tFailing flows: %s  |  Never succeeded: %s  |  Total failures: %s\n' "$pair_count" "$chronic_count" "$tot_fail"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

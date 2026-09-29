@@ -35,7 +35,7 @@
 <h2>Status rules</h2>
 <ul>
 <li>Roster: every <code>UC3</code> name in the FlowManager export, run or not. Colour = the site-wide result: green/red real transfer data (the LAST File OK / Failed-or-Expired), orange never in the transfer log. A never-transferred flow whose own polls fail to connect three times in a row is red (the cannot-connect rule).</li>
-<li><strong>error</strong> vs <strong>ok -> error</strong> is per File &mdash; right after any OK File the subscription WAS green &mdash; finer than <a href="from-green-to-red.html">From green to red</a>, which buckets by whole days and misses a flow failing at the end of every day.</li>
+<li><strong>error</strong> vs <strong>ok -> error</strong> is per File &mdash; right after any OK File the subscription WAS green &mdash; finer than <a href="failed.html">Failed Subscriptions</a>, which buckets by whole days and misses a flow failing at the end of every day.</li>
 <li>Current-state: the date filter narrows only the two poll tables; the status and cron tables are full-period and show the badge when a range is set.</li>
 <li>Click a row for its 10 most recent server-log lines; on a red row that never transferred the failures, which thousands of routine poll lines would bury.</li>
 <li>A UC3 fails quietly &mdash; an empty directory and a partner that stopped delivering look alike, and neither writes a transfer record: read a not-seen row&rsquo;s Empty polls and Problems before chasing the partner.</li>
@@ -64,6 +64,11 @@
 <li><strong>What goes wrong</strong> = the dominant failure line: a connection timeout, an SSH/TLS handshake failure, a password or public-key authentication failure, or a listing error such as &ldquo;No such file&rdquo; (login works, remote directory missing). <strong>Failure lines</strong> counts them all.</li>
 <li>Connection and listing failures name the subscription; authentication failures name only host and user, so they match through the configured host and can be shared between flows on that host.</li>
 <li>Neither starts nor failure lines = never fires at all in the loaded logs. Same server-log pass as the Polls table.</li>
+</ul>
+<h2>Missing remote directories and never-empty polls</h2>
+<ul>
+<li><strong>Missing remote directories</strong> (+ per day) &mdash; the flows whose listing fails with <em>No such file</em> and has not recovered since (<a href="server-no-remote-dir.html">details</a>).</li>
+<li><strong>UC3 subscriptions that never find a file</strong> (+ per day) &mdash; no-transfer UC3 flows whose every poll found 0 files: the connection works, the directory is always empty (<a href="server-no-remote-files.html">details</a>).</li>
 </ul>
 </main>
 </body>

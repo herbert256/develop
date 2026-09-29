@@ -22,6 +22,7 @@
 <li><strong>Could not send file</strong> (<code>AR0074</code>) &mdash; the route gave up delivering a file to its transfer site after its retries.</li>
 <li><strong>Publish to account failed</strong> (<code>ARPA0001</code>) &mdash; the route could not publish a received file into its account.</li>
 <li><strong>Post client action error</strong> (<code>ARRC0009</code> and kin) &mdash; the action after a received file (typically deleting the source) failed.</li>
+<li><strong>Route stopped</strong> (<code>ARSP0001</code>) &mdash; a routing step failed and its configuration abandoned the rest of the route: nothing downstream ran for that file. These lines, still unresolved (no OK File since), make the Boxes <strong>Deploy</strong> column.</li>
 </ul>
 <h2>Columns</h2>
 <ul>

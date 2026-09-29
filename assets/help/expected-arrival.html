@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Expected arrival — Cloud Reports</title>
+<title>Help: Punctuality › Rhythm — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,7 +15,7 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Expected arrival</h1>
+<h1>Punctuality &rsaquo; Rhythm</h1>
 <h2>What it shows</h2>
 <p>Each subscription judged against its <strong>own</strong> arrival rhythm: a cadence model built from the gaps between its <strong>active days</strong> (days with at least one File) &mdash; median and p90 gap, current silence, and an <strong>OVERDUE</strong> verdict when the silence breaks the pattern.</p>
 <h2>Sections</h2>
@@ -29,7 +29,7 @@
 <li>Modelable = <strong>5 or more active days</strong>; flows with fewer are left out (the headline says how many).</li>
 <li>Gaps are between consecutive ACTIVE days, so a flow sending 40 files every Monday still has a 7-day gap pattern.</li>
 <li><strong>OVERDUE</strong> when the current silence exceeds <strong>max(p90 gap + 1, median gap + 2)</strong> days &mdash; a margin above the flow&rsquo;s own historical worst-normal interval.</li>
-<li>Unlike <a href="went-quiet.html">Went quiet</a> (one fixed 7-day cutoff for every flow) and <a href="punctuality.html">Punctuality</a> (a time-of-day model for daily flows): here a weekly flow is not quiet after 5 days, and a twice-daily flow is overdue long before day 7.</li>
+<li>Unlike <a href="went-quiet.html">Went quiet</a> (one fixed 7-day cutoff for every flow) and the <a href="punctuality.html">Arrival time</a> tab (a time-of-day model for daily flows): here a weekly flow is not quiet after 5 days, and a twice-daily flow is overdue long before day 7.</li>
 </ul>
 </main>
 </body>

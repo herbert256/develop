@@ -31,7 +31,7 @@
 <li>The cut is the newest OK File&rsquo;s <em>end</em>, not its start: a File started before the error but delivered by a retry after it ended OK after the error, so that error does not count and the flow stays green.</li>
 <li>Sources: the server per-name Error/Warn caches of the subscription and its configured login(s), account(s) and remote host &mdash; the host only where the flow has exactly <strong>one</strong> configured, with the addresses it resolves to, the same restriction the result colours use. Lines are deduplicated across caches.</li>
 <li><strong>Still green only.</strong> This same evidence turns a flow red site-wide (onto the home page&rsquo;s <em>Failing subscriptions in Server log</em> table, with its reason), so a red flow is simply failing, not an early warning; the intro says how many were left out.</li>
-<li>What stays green and lands here: a flow whose newest error is a deploy defect (the Deploy errors report keeps it), or a UC3 that has polled cleanly since (cleared) &mdash; small by design.</li>
+<li>What stays green and lands here: a flow whose newest error is a deploy defect (the Boxes Deploy column and <a href="server-routing-errors.html">Advanced Routing errors</a> keep it), or a UC3 that has polled cleanly since (cleared) &mdash; small by design.</li>
 <li>A row needs all three: last transfer OK, at least one Error after it, result colour still green. A flow whose last transfer failed belongs to the ordinary failure reports.</li>
 <li>Full-period; no date filter.</li>
 </ul>

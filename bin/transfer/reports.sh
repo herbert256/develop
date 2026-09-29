@@ -76,7 +76,6 @@ pool_run "$SCRIPT_DIR/reports/day.sh"
 pool_run "$SCRIPT_DIR/reports/weekly.sh"
 pool_run "$SCRIPT_DIR/reports/login.sh"
 pool_run "$SCRIPT_DIR/reports/subscription.sh"
-pool_run "$SCRIPT_DIR/reports/volume.sh"
 pool_run "$SCRIPT_DIR/reports/trend.sh"
 pool_run "$SCRIPT_DIR/reports/episodes.sh"
 pool_run "$SCRIPT_DIR/reports/from-green-to-red.sh"
@@ -86,7 +85,6 @@ pool_run "$SCRIPT_DIR/reports/expired.sh"
 pool_run "$SCRIPT_DIR/reports/missing-cronjobs.sh"
 pool_run "$SCRIPT_DIR/reports/punctuality.sh"
 pool_run "$SCRIPT_DIR/reports/failed.sh"
-pool_run "$SCRIPT_DIR/reports/failure-rate.sh"
 pool_run "$SCRIPT_DIR/reports/retry.sh"
 pool_run "$SCRIPT_DIR/reports/pirates.sh"
 pool_run "$SCRIPT_DIR/reports/legs-count.sh"
@@ -102,8 +100,7 @@ pool_run "$SCRIPT_DIR/reports/hourly.sh"
 pool_run "$SCRIPT_DIR/reports/weekday.sh"
 pool_run "$SCRIPT_DIR/reports/anomalies.sh"
 pool_run "$SCRIPT_DIR/reports/duration.sh"
-pool_run "$SCRIPT_DIR/reports/duration-longest.sh"        # the Top 50 longest Files + their record pages (split off duration.sh 2026-09-03)
-pool_run "$SCRIPT_DIR/reports/duration-slowest.sh"        # the top 25 slowest subscriptions by p95 (split off duration.sh 2026-09-05)
+pool_run "$SCRIPT_DIR/reports/duration-longest.sh"        # the Top 50 longest Files (split off duration.sh 2026-09-03)
 pool_run "$SCRIPT_DIR/reports/duration-distribution.sh"   # the duration histogram (split off duration.sh 2026-09-03)
 pool_run "$SCRIPT_DIR/reports/dwell-time.sh"
 pool_run "$SCRIPT_DIR/reports/top-transfers.sh"
@@ -112,7 +109,7 @@ pool_run "$SCRIPT_DIR/reports/file-in-file-out.sh"   # partner-to-partner handov
 pool_run "$SCRIPT_DIR/reports/uc4-to-uc2.sh"         # a UC4 delivery collected back by the same-named UC2 subscription (2026-09-14)
 pool_run "$SCRIPT_DIR/reports/same-protocol.sh"      # Files whose first inbound and last outbound leg share one protocol (2026-09-14)
 pool_run "$SCRIPT_DIR/reports/remote-host.sh"
-pool_run "$SCRIPT_DIR/reports/month-stats.sh"   # the Analyses-menu Month stats: this / previous month × the nine entities (2026-09-13)
+pool_run "$SCRIPT_DIR/reports/alltime-counts.sh"   # the Subscriptions page's all-time counts sidecar (2026-09-29: was month-stats.sh — its pages went)
 # (cross-reference.sh moved to bin/analyses/reports/ 2026-07 — its pages sit
 # in the Analyses menu; bin/analyses/reports.sh runs it, still writing into
 # the transfer reports dir)
@@ -131,9 +128,12 @@ pool_wait
 # so they run after the pool: cheap single-awk merges, no log reading.
 "$SCRIPT_DIR/reports/activity.sh"
 "$SCRIPT_DIR/reports/retries.sh"
+"$SCRIPT_DIR/reports/merge-episodes.sh"   # 2026-09-29: the episodes + the Recovered flows tab
 "$SCRIPT_DIR/reports/file-journey.sh"
+"$SCRIPT_DIR/reports/merge-file-in-file-out.sh"   # 2026-09-29: the handovers + the UC4 to UC2 tab
+"$SCRIPT_DIR/reports/merge-punctuality.sh"   # 2026-09-29: arrival time + the Rhythm tab (expected-arrival)
 "$SCRIPT_DIR/reports/files.sh"
-"$SCRIPT_DIR/reports/merge-volume.sh"
+"$SCRIPT_DIR/reports/trends.sh"   # 2026-09-29: Growers / Shrinkers + Slower / Faster on one page (was merge-volume.sh)
 "$SCRIPT_DIR/reports/merge-went-quiet.sh"
 "$SCRIPT_DIR/reports/failed-files.sh"          # 2026-09-14: every failed File + its reason — reads the pool failed.sh's reasons sidecar, so after pool_wait
 "$SCRIPT_DIR/reports/merge-duration-dwell.sh"   # 2026-09-05: duration-distribution + dwell-time on one page, histograms side by side

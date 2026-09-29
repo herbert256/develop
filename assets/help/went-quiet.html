@@ -24,7 +24,7 @@
 <li><strong>Days ago last traffic</strong> &mdash; days from last File to window end; 8 = stopped right after the threshold, large = silent most of the window.</li>
 <li>Quiet = most recent File more than <strong>7 days</strong> before the last day in the data. Newest-quiet first: 8 days is a live question, 31 days probably an unrecorded decommissioning.</li>
 <li>Every outcome counts as traffic (Processed, Failed, Waiting, Expired): the question is &ldquo;is anything happening&rdquo;, not &ldquo;is it working&rdquo;. A daily failer is noisy, not quiet; a green subscription (last File delivered, however long ago) can be listed.</li>
-<li>Health is judged on <a href="only-red.html">Only red</a>, <a href="from-green-to-red.html">From green to red</a> and the <a href="server-uc1-status.html">UCx status</a> verdicts.</li>
+<li>Health is judged on <a href="failed.html">Failed Subscriptions</a> and the <a href="server-uc1-status.html">UCx status</a> verdicts.</li>
 <li>Never carried a File = cannot go quiet, not listed; the Entities <strong>Not seen</strong> view has those.</li>
 <li>One pass over <code>_files.tsv</code>: per subscription the last day with a File, against the last day in the data. Flat threshold: &ldquo;what stopped?&rdquo; is one list, not a ranking.</li>
 </ul>

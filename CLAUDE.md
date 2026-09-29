@@ -82,7 +82,7 @@ day: the Files still staged, Start · Waiting for · File name · CoreId, opened
 Files cells of the Waiting report's first table, default sort = Waiting for descending via the
 cell's `sortval` (the wait in seconds — the humanized text does not sort), list
 `_waiting-files.tsv`, tag `W`), `server/`, `analyses/`
-(+ `xref/`), `dashboards/`, `day/`, `details/` (one subdir per entity type), `files/`
+(+ `xref/`), `reports/` (the Reports start page, 2026-09-29), `dashboards/`, `day/`, `details/` (one subdir per entity type), `files/`
 (2026-09-21, user request: the ONE directory of the per-File pages — the failed-File error pages
 `<coreid>.html`, the subscription-named error pages `<slug>.html` and the File pages of any
 outcome; the separate `errors/` directory is GONE. Only the DATA stays split —
@@ -93,13 +93,11 @@ subscription detail pages used to carry, linked from their Features "Files" row;
 2026-09-27, user request, the rows ship as DATA in the sibling `<slug>.js` — `split_table_rows`
 lifts them, each payload REGISTERS on `window.AXWAY_LATEST` as `{s, n, h, r}` (slug, name, HEAD
 labels, rendered rows) and report.js `latestRows()` puts them back into the `data-latest` table
-first thing in `init()` — plus `search.html`, the Latest files search: every payload loaded at
-once, searched by the dedicated `docs/assets/latest-search.js` — a File name or CoreId field and a
-Subscription field (in that order, BELOW the From/To row — class `underdates`), results as you type, at most 500 newest-first, `?s=`/`?f=` in the URL;
-it, the six `search/file-search-*.html` pages and `search/all-files.html` are ONE group — the top bar's **Files** link opens the ALL FILES search (2026-09-28, user request; this page 2026-09-27..28; both bar renderers, `linkcheck` and `verify.sh` model it) — a FIRST tab row right after the
+first thing in `init()` (the Latest files search `latest/search.html` + `latest-search.js`,
+2026-09-27..28, WENT 2026-09-29: the all-files search below finds the same Files and more);
+the seven `search/file-search-*.html` pages and `search/all-files.html` are ONE group — the top bar's **Files** link opens the ALL FILES search (2026-09-28, user request; both bar renderers, `linkcheck` and `verify.sh` model it) — a FIRST tab row right after the
 `<h1>`, **Implementation 1, period** (→ `search/file-search-24-hours.html`) | **Implementation
-2, latest 1000** (→ `latest/search.html`) | **Implementation 3, all files** (→
-`search/all-files.html`), from publish_lib `file_search_impl_row`),
+2, all files** (→ `search/all-files.html`), from publish_lib `file_search_impl_row`),
 **the ALL FILES SEARCH** (2026-09-27, user request: every File, balancing the user's wait against
 the size of docs/) — `bin/analyses/publish-all-files.sh`, its OWN build step after the transfer
 publish catch-up (its rows link the files/ pages the failed.sh catch-ups settle; a manual
@@ -117,7 +115,9 @@ pasted CoreId: ~its own day), newest first, 4 at a time, stops at the newest 500
 a `rangehook` table (From/To narrows the days; the page counts as a TRANSFER-area page in
 render_rpt). linkcheck models the shard links (section 3b), display-rename sweeps the shards,
 verify.sh checks that the shards hold every dated File),
-`first-seen/`, `use-cases/`, `coverage/`, `transfers/duration/`, `switches/`, plus
+`first-seen/`, `coverage/`, `switches/` (the per-use-case `use-cases/` pages and the
+`transfers/duration/` record pages went 2026-09-29: a Subscriptions page search and the files/
+pages hold them), plus
 `search/` (`search.html` + `search-data.js`, the six `file-search-*.html` + their `-data.js` payloads — 2026-09-12, user request; at the root before) and `tools/` (`sitemap.html`, `report-finder.html`, `whats-new.html` and the build report `build.html` — 2026-09-12, user request; at the root before, the build report local-only 2026-08-29..09-12). `input/` carries
 the exports — logs AND the FlowManager JSONs (the real production flows are the HYBRID pattern
 generation: no folder parameters, flowdir from `{source,target}_hybrid_participant`; the sample
@@ -130,7 +130,8 @@ checkout with logs but no config export: it synthesizes the two JSONs from the t
   `<div class="topbar" data-b=… [data-help=…]>`.
 - **The top bar is RUNTIME**: pages bake only that placeholder; report.js `buildTopbar` renders
   the full bar from `docs/assets/topbar-data.js` (written by `ensure_assets`: the
-  `transfer/server/analyses` menu strings with their `@` placeholder, `monitor:0|1`,
+  ONE menu string, `reports` (the Reports pulldown, 2026-09-29 — the transfer / server / analyses /
+  goodies keys are gone), with its `@` placeholder, `monitor:0|1`,
   `coreid:"<url>"`, `env:"<label>"`, `envkey:"<key>"`, `period:"yyyy-mm-dd / yyyy-mm-dd"` (the DATA PERIOD — the transfer day report’s META first/last days, shown second in the bar after the environment, before Entities; 2026-09-13, user request) + the `AXWAY_ENVLINKS` switch function;
   `?v=` stamp `TB_VER` folds the flag, the template, the label, the key and the site URLs). The
   help/build pages bake full chrome (`render_shared_topbar` → `render_topbar BASE HELPSLUG`, the
@@ -339,8 +340,8 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
 
 Every script takes no arguments and resolves paths from its own location. Three stages — **parse →
 report → publish**. Per tool set, `parse.sh`/`lib.sh`/`reports.sh`/`publish.sh` live in
-`bin/<area>/`; report scripts in `bin/<area>/reports/` — EXCEPT reports whose PAGE sits in the
-Analyses menu, which live in `bin/analyses/reports/` and source `../../<area>/lib.sh`. **Where a
+`bin/<area>/`; report scripts in `bin/<area>/reports/` — EXCEPT reports whose PAGE renders into
+`docs/analyses/` (the former Analyses menu), which live in `bin/analyses/reports/` and source `../../<area>/lib.sh`. **Where a
 script lives says where its PAGE goes; which `lib.sh` it sources says where its DATA goes.** All
 paths are centralized in `lib.sh` (derived from `LIB_DIR`, its own location): `INPUT_DIR`,
 `CACHE_DIR`, `REPORTS_DIR`, `CONFIG_DIR`, the cross-area cache/report vars, `PARSED`, `FILES` —
@@ -453,7 +454,8 @@ two build steps) — and `data/flow-manager/xref/` — the pair caches: every pa
 items BOTH WAYS (110 files; unconfigured = empty — `_profiles-logicals` doubles as the FlowID →
 Logical MAP every report attributes a File’s profile column through, `_subscriptions-bl` as the
 subscription → BL tag map, and its sidecar `_subscriptions-bl-added.tsv` carries the
-`input/BL.txt` rows the `tags` do NOT hold — the Analyses → Configuration “Added BL” page), plus `_subscriptions-patterns`, `_subscriptions-flowdir`
+`input/BL.txt` rows the `tags` do NOT hold — a `+` after the number in the Subscriptions page's BL
+column; the separate “Added BL” page went 2026-09-29), plus `_subscriptions-patterns`, `_subscriptions-flowdir`
 (out|in|relay), `_subscriptions-ucderived` (2026-08: the use case DERIVED for a non-UC-named
 subscription from flowdir × the pattern's one partner verb — out+pull=UC2, out+push=UC1,
 in+push=UC4, in+pull=UC3; both/neither verb = no row; consumers: the detail Features "Use case"
@@ -519,10 +521,11 @@ META`. `GHEAD` = an optional group-banner `<th>` row ABOVE `HEAD` (cells may lea
   multi-table report into tabbed pages (entry state: 0 link · 1 current · 2 disabled).
 
 **THE GROUP MEMBER BUTTONS GO BETWEEN THE TITLE AND THE PROSE**: on a page belonging to a group,
-the row of buttons for the group's other members renders directly after the `<h1>`, above the
-intro; a row with NO group members sits under the intro (writers: `_hdr_with_nav`,
-`_inject_after_h1`, `_inject_after_intro`, `render_missing_reports`/`_subs_placeholder`,
-`analyses_group_tabs`; the cross pages opt out — their rows are entity selectors).
+the row of buttons for the group's members is the FIRST row, directly after the `<h1>`, above the
+report's own tab / view rows and the intro; a row with NO group members sits under the intro.
+Since 2026-09-29 every group row comes from `apply_report_groups` (see "Report groups and menus")
+except the Entities combined row and the cross pair selector, which their renderers write
+(`_hdr_with_nav`); `_inject_after_h1` / `_inject_after_intro` place the other rows.
 
 **TABLE modifiers**: `wide` · `group` · `nosearch` · `nofilter` (full-period semantics) ·
 `drill=UNIT` · `totaltop` · `datereset` (always open at the full range) · `seenrows` (green =
@@ -896,7 +899,7 @@ Deliberately NOT `input/skip.txt`: a skip rule archives its records for the Skip
 is the cost this filter exists to avoid; every parse applies the list as it stands. **Four server reports read those lines and were removed with them**:
 `concurrency` (a `capacity` component), `event-feed` (a `platform-health` component), and
 `transfer-outcomes` + `file-freshness` — both components of the merged `transfers` report, which
-therefore went too, leaving `pickups` alone in the srv-transfers group. **`advanced-routing` went
+therefore went too, leaving `pickups` alone in the srv-transfers group (the group went 2026-09-29: Pickups stacks on the UC status UC2 tab). **`advanced-routing` went
 the same way** (2026-08) when `AR0011/76/77` joined the list: its Routes table counted Executions
 as the AR0076 total and Fail % as failures ÷ executions, so the report could not survive the
 filter — `remote-poll` then led srv-routing alone, and since 2026-09-05 it is an unpublished
@@ -1083,7 +1086,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   cells link the day dashboard), then the group columns — Files (In · Out · Ok · Cured ·
   Error · Error %; Cured = the transfer topview.rpt's Recovered group, Automatic + Manual; the In/Out split is the movement direction, `_files.tsv` col 17 — a File with none (an
 unconfigured subscription, the synthetic `UCx_` ones) counts by its connection side, col 16, so
-In + Out = Ok + Error (2026-09-28; entities.sh and month-stats.sh apply the same fallback); the count
+In + Out = Ok + Error (2026-09-28; entities.sh and alltime-counts.sh apply the same fallback); the count
   column is gone — In + Out carries it), Duration (p50 · p75 · p90 · p95 · p99 — p99 last since 2026-09-13, user request; EVERY cell of the group, banner and headers included, carries `data-href="transfer/duration.html"` and opens the Duration report WITHOUT a date — report.js `setupCellLinks`, which outranks the index row link that would open the day page), Red/Green switch
   (Red · Green) and First seen (Logical · Partners · Subscriptions · Accounts). Group dividers
   are POSITIONAL CSS on `table.dayrows` (columns 2/8/12/14 + the `gbrow` banner cells — adding
@@ -1187,27 +1190,58 @@ In + Out = Ok + Error (2026-09-28; entities.sh and month-stats.sh apply the same
   window ships), searched by the DEDICATED
   `docs/assets/file-search.js` — as you type (no Search button, no idle text since 2026-09-27), the NAV row carrying
   `?q=` between the windows; 24 hours = the newest full day + the partial newest day, 48 hours
-  = the second full day), the Report finder, the SIX Failed-transfers
+  = the second full day), the Report finder, the TWO Failed Subscriptions
   view pages (+ per-CoreId error pages, and since 2026-09-03 the FILE pages `docs/files/<coreid>.html` — the same layout for a File of ANY outcome, written by `failed.sh` for the CoreIds the Transfer patterns page's "Last 5 files" cells link, `_patterns-files.tsv`, and for every File the Longest Files page lists (DELIVERED Files only since 2026-09-13, user request — no Failed / Expired / Waiting and no "All transfers" view; the one-hour threshold went 2026-09-06), `_longest-files.tsv` — its CoreId cell opens the File page), Cross References, Entity coverage
   (assert OK ⊆ Current ⊆ Once), whitelist-audit, config-hygiene, UC status (its UC3
   tab also carrying the polling tables — the former Remote polls report and Cronjobs page, 2026-09-05), Polling (the SAME polling information as ONE flat table, one row per polling subscription — `bin/analyses/reports/polling.sh` → `polling.rpt`, a `SUBS_GROUP_REPORTS` server member rendered into analyses/, sitting at the old Cronjobs slot of the Configuration row, 2026-09-05)
   (a Use-cases view; pages in analyses/).
-- **The Boxes pages** (subscriptions-in-boxes + accounts-in-boxes, written by publish-insights):
-  both start from the shared `_subs_box_rows` producer; the account join is
+- **The Boxes page** (subscriptions-in-boxes, written by publish-insights; its accounts twin
+  accounts-in-boxes went 2026-09-29): the shared `_subs_box_rows` producer; any account join is
   `xref/_subscriptions-accounts.tsv` and ONLY that — **never match subscriptions to accounts by
   name**.
 
-### Report groups and menus
+### Report groups and menus — ONE "Reports" pulldown
 
-`bin/publish_lib.sh` owns `transfer_order`/`server_order` and
-`group_of`/`group_members`/`group_label`/`group_desc`/`member_label` (`group_of` is area-aware —
-both areas have a `topview`). Index pages and dropdowns show one line per group, landing on the
-group leader (`group_home` → `first_page`); each report page carries a row-1 tab bar of its
-group's members. **Entities lands on Subscriptions / All** — the same member its tab bar leads
-with and the target of the top bar's own Entities link: KEEP THE THREE IN SYNC.
+**Since 2026-09-29 (user request: "Reorganise Transfer Reports and Server Reports and Analyses
+and Goodies, just one pulldown named Reports, create logical groups, have all reports in the same
+group link to each other with the first selection buttons")** the top bar has ONE report menu,
+**Reports ▾**: a Start page (`docs/reports/index.html` — it replaced the transfer/, server/ and
+analyses/ `index.html` start pages) and one line per GROUP, landing on the group's first member.
+The four dropdowns (Transfer reports · Server reports · Analyses · Goodies) are gone. The groups
+MIX areas by question: Overview (both Top views, Since yesterday, Triage, Subscriptions in boxes)
+· Entities · Failures · Server log errors · Use cases & delivery · Activity & volume · Performance
+· Flow patterns · Protocols & security (incl. the server SSH security) · Logons & connections ·
+Partners · Configuration · Coverage · Cleanup — every published report is in exactly one (the
+former boxes-only reports included).
 
-The full transfer/server group lists are in ARCHITECTURE.md ("Report groups") and authoritative
-in `group_members`/`group_label`.
+- **`_report_groups`** (`bin/publish_lib.sh`) is THE single source of truth: one line per group,
+  `Label|dir/stem=Label|…` — `dir` the docs directory the page renders into (transfer / server /
+  analyses, plus `transfer/entities` and `analyses/xref`), `stem` the report basename or the
+  hand-written page name. It feeds `REPORTS_MENU` (topbar-data.js `reports`, the ONE menu key;
+  report.js `buildTopbar` + `render_topbar` draw ONE `.dd`; `TB_VER` folds it), the start page
+  (`write_reports_index` + `rg_desc`: a report's DESC, fixed texts for the hand-written pages),
+  the sitemap's Reports section (one card per group, CSS columns `.sm-reports .smcols`), the
+  finder's and whats-new's **Group** column (`rg_group_for`) and the rows + tags below.
+- **THE FIRST ROW = the group's members**, on EVERY page of every member, injected by ONE pass
+  over the finished site — `apply_report_groups`, run by `bin/build/publish.sh` after every page
+  writer (so a MANUAL area re-publish lacks rows until `bin/build/publish.sh` runs): the row lands
+  directly under the `</h1>`, above the report's own tab / view rows, the page's own member a
+  highlighted span, the others links made relative by `rg_rel` (a transfer page links
+  `../server/…`); the h1 gets the tag `← Group`. A member's pages are `<dir>/<stem>.html` +
+  `<stem>-*.html`, a LONGER member stem in the same dir winning (duration-longest.html is Longest
+  Files, duration-all.html Duration). Idempotent: a page already carrying a `grouptag` is skipped.
+- **Two groups keep their native render-time rows**: Entities (`group_of` → account-login-site:
+  `render_entity_report`'s combined "members | views" row, the view carried across members — the
+  pass only tags them) and the Cross References pair selector (group `cross`, its two entity rows
+  under the injected Configuration row). `group_of` returns "" for everything else, so
+  `render_report` writes no group row of its own; the old per-area groups (`group_desc`,
+  `area_entries`, `build_menu`), `_analyses_groups` and its rows, the three `tag_*_group_h1s`,
+  `BOXES_ONLY_REPORTS` and the Use cases / UC status view row (`_ucgroup_tabs`) are GONE —
+  `analyses_group_tabs*` / `analyses_grouprow_for` stay as no-op stubs for their callers.
+- **Entities lands on Subscriptions / All** — the same member its row leads with, the target of
+  the top bar's own Entities link and of the Reports menu's Entities line: KEEP THEM IN SYNC.
+- `transfer_order` / `server_order` still drive the renders and the finder rows; `member_label`
+  still labels the Entities / cross rows and the placeholders.
 
 **Merged reports** (`bin/merge_rpt.sh`, run after the report pools) fold component `.rpt`s into
 one tabbed report; the components stay on disk as unpublished intermediates (listed in
@@ -1216,35 +1250,28 @@ empty stubs — 0 for a component whose tables ride another one's tab via `tab=K
 KEYWORDS = the caller's plus every present component's, each word once — 2026-09-28, the finder
 lost the component words before). The merge
 ends its component run with a `META merged` sentinel so the last component's trailing NOTE
-stays on its own tab instead of footering onto every tab (2026-09-05). **The BOXES-ONLY reports** (`BOXES_ONLY_REPORTS`) are in no group and no
-menu/index/sitemap card; their pages stay at the area URLs with no group tab row, and only the
-Boxes pages link them — their scripts still run in the area orchestrators. Both full lists are in
-ARCHITECTURE.md.
+stays on its own tab instead of footering onto every tab (2026-09-05). **`append_rpt_tables
+TARGET COMP…`** (same file, 2026-09-29) is the lighter sibling: it inserts the components' TABLE
+blocks into an EXISTING report before its first SUMMARY/FOOT — the server Top view carries the
+errors-day levels-per-component table that way. **The 2026-09-29 consolidation** ("too many
+reports", user request) folded pages into tabs and stacked tables (`tab=KEY`) instead of
+separate pages: Trends (Growers / Shrinkers / Slower / Faster — trend + duration-trend,
+`trends.sh`), Sizes (files + top-transfers + size-profile), File in - File out (+ UC4 to UC2),
+Retries (+ Recovered files), Episodes (+ Recovered flows, `merge-episodes.sh`), UC status UC2 /
+UC3 tabs (+ UC2 pickup visits, Pickups, No remote dir / files), Failed Subscriptions (+ From
+green to red / Only red as the Last green day · Days red · Failures in a row columns), Routing
+errors (+ Deploy errors), Polling (+ Missing cronjobs as Schedule "no cron"), Entity coverage
+(the four rules as verdict COLUMNS, 24 → 6 pages); the retired pages' help pages are deleted and
+`bin/sample/verify.sh` asserts their absence. (The BOXES-ONLY reports — pirates, waiting, expired, went-quiet, went-kaput, reached only from the
+Boxes pages 2026-07..09-29 — are ordinary group members since the one Reports pulldown.) The full
+merged-component list is in ARCHITECTURE.md.
 
-`TRANSFER_MENU`/`SERVER_MENU` are built from the orders minus the basenames living in the Analyses
-dropdown. `ANALYSES_MENU` is hand-written, one line per group: Start page · **Coverage & seen** ·
-**Configuration** · **Partners** · **Boxes** · **Errors** · **Month stats** (2026-09-13, user
-request: `bin/transfer/reports/month-stats.sh` → `data/transfer/reports/month-stats/{this,previous}-<entity>.rpt`,
-the nine entities counted over the Files that STARTED in the month of the newest File start
-(this) and the month before (previous) — Total · In · Out · Errors · Auto Retries · Resubmit
-OK / Error · Waiting · Expired, the Entities definitions and attribution; `render_month_stats`
-in the transfer publish renders the 18 pages into `docs/transfer/month-stats/` with two tab
-rows (month, entity), no date filter, help page `month-stats`; listed in `_analyses_groups`,
-the finder's static rows and the sitemap). A FOURTH dropdown, **Goodies**
-(`GOODIES_MENU`, 2026-09-13, user request), is a hand-written SHORT CUT to the best reports —
-Partners - Incoming (analyses/partners-in.html, `bin/analyses/reports/partners-in.sh` = fe-overview.rpt +
-the Incoming logon funnel of logon.rpt, one row per login; the old FE overview page and the Logons
-(incoming) page stay in their own groups but left Goodies 2026-09-13) · Partners - Outgoing
-(analyses/hosts-overview.html, the hosts twin for UC1/UC3, `bin/analyses/reports/hosts-overview.sh`) ·
-Transfer Duration · Error reasons (analyses/failing-reasons.html; replaced Failed Subscriptions 2026-09-15) · Subscriptions (the analyses/subscriptions.html
-configuration list) · Polling (analyses/polling.html) — the pages
-staying in their own menus and groups; it ships in `topbar-data.js` as `goodies`, both bar
-renderers draw it, `TB_VER` folds it, linkcheck reads it like the other menus. `_analyses_groups` is the single
-source of truth for the analyses group tab bars — **keep it in sync with `ANALYSES_MENU`, the
-analyses index and the sitemap.** The Coverage/Configuration members whose PAGE renders into
-`docs/transfer/` are absent from `group_of` and the transfer menu; `finder_area` labels them
-Analyses. `_tag_variants` (group crumbs) skips a globbed page that is itself a listed member — the
-`<base>-*.html` glob would otherwise claim a different member sharing the prefix.
+(The **Month stats** group — 18 pages, 2026-09-13 — WENT 2026-09-29: the Entities pages under the
+date filter's This month / Previous month presets show the same counts; its writer lives on as
+`alltime-counts.sh`, the Subscriptions page's `_alltime.tsv` sidecar. The **Goodies** short-cut
+dropdown of 2026-09-13 went with the one Reports pulldown; Partners - Incoming —
+`bin/analyses/reports/partners-in.sh` = fe-overview.rpt + the Incoming logon funnel of logon.rpt,
+one row per login — is a Partners member.)
 
 ## Publishing (GitHub Pages)
 

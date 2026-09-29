@@ -34,6 +34,11 @@
 <li><strong>OK</strong> (green) &mdash; files staged and collected, none expired.</li>
 <li><strong>Nothing</strong> (plain) &mdash; no collection, no expiry: a quiet flow, a partner collecting over CFT (no SSH pickup logged), or visits that came up empty.</li>
 </ul>
+<h2>Tables below the status table</h2>
+<ul>
+<li><strong>Pickups per UC2 subscription</strong> &mdash; first / last pickup, the last logon on the old gateway, pickup logons, the pickups that collected files, files picked up, waiting (with the oldest wait), expired and the pickup cadence (<a href="server-pickups.html">details</a>). The Total counts an account&rsquo;s shared pickups once.</li>
+<li><strong>Visits per UC2 subscription</strong> &mdash; what the partner does when it connects: collected, two-way, delivery-only or empty-handed visits, and the shared-connection proof (<a href="server-uc2-visits.html">details</a>).</li>
+</ul>
 <h2>Rules</h2>
 <ul>
 <li>Expiry and SSH pickups come from the server log, keyed on the <code>NAME@FEnnn</code> account token; subscription and arrival dates from <code>_files.tsv</code> (files the subscription staged, movement out).</li>

@@ -2,7 +2,7 @@
 #
 # bin/analyses/publish-insights.sh — render the seven INSIGHT analyses pages
 # (docs/<env>/analyses/*.html) for the CURRENT env. Called by
-# bin/analyses/publish.sh before write_analyses_index (the index lists only
+# bin/analyses/publish.sh (the Reports start page, bin/build/publish.sh, lists only
 # pages that exist). All pages are config-vs-reality joins over data already
 # on disk — the flow-manager caches, the transfer/server report .rpt files,
 # the parse caches and (certificates + cron, like uc3-polling.sh) the
@@ -66,16 +66,6 @@ else
     : > "$SRVADDR"
 fi
 
-# Open incidents (episodes.rpt table 1): site, tail, since, days, lastok, files
-OPENINC="$TMPD/openinc.tsv"
-if [ -f "$TRPT/episodes.rpt" ]; then
-    awk -F'\t' '$1=="TABLE"{t++} $1=="ROW" && t==1 && $2 !~ /^@\{colspan/ {
-        lo = $6; sub(/^@\{[^}]*\}/, "", lo)
-        printf "%s\t%s\t%s\t%s\t%s\t%s\n", $2, $3, $4, $5, lo, $7 }' "$TRPT/episodes.rpt" > "$OPENINC"
-else
-    : > "$OPENINC"
-fi
-
 # ---- 4. Whitelist audit -----------------------------------------------------
 write_whitelist_audit_page() {
     local out="$ADIR/whitelist-audit.html"
@@ -83,10 +73,13 @@ write_whitelist_audit_page() {
     {
         html_head "Whitelist audit" "../assets/style.css" "" "ANALYSES" "whitelist-audit"
         printf '<h1>Whitelist audit</h1>\n'
-        analyses_group_tabs whitelist-audit.html
-        printf '<p class="subtitle">Every whitelisted partner IP against what actually connects: <strong>Used</strong> carried real Files, <strong>Connects only</strong> shows server-log connections but no transfer, <strong>Never seen</strong> is prunable attack surface. The second table is the reverse: source addresses that carried traffic without a whitelist entry.</p>\n'
+        printf '<p class="subtitle">Every whitelisted partner IP against what actually connects: <strong>Used</strong> carried real Files, <strong>Connects only</strong> shows server connections or server-log mentions but no transfer, <strong>Never seen</strong> is prunable attack surface &mdash; the Cleanup backlog&rsquo;s unused-whitelist rule. The second table is the reverse: source addresses that carried traffic without a whitelist entry.</p>\n'
+        # SERVER-SEEN = an inbound connection (SRV) OR a server-log mention
+        # (MEN = unknown/white.tsv) — the Cleanup backlog's rule too
+        # (2026-09-29: this page ignored the mentions, the backlog the
+        # connections, so the two disagreed on "Never seen")
         awk -F'\t' -v WHITE="$FBASE/_white.tsv" -v AW="$XREF/_accounts-white.tsv" \
-            -v OBS="$TMPD/obsaddr.tsv" -v SRV="$TMPD/srvaddr.tsv" '
+            -v OBS="$TMPD/obsaddr.tsv" -v SRV="$TMPD/srvaddr.tsv" -v MEN="$DATA/unknown/white.tsv" '
             function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
             function padkey(v,   o) { if (v ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/) { split(v, o, "."); return sprintf("%03d%03d%03d%03d", o[1], o[2], o[3], o[4]) } return toupper(v) }
             BEGIN {
@@ -95,10 +88,11 @@ write_whitelist_audit_page() {
                     if (WN[a[2]] == "") WN[a[2]] = a[1]; else if (WA[a[2]] <= 3) WN[a[2]] = WN[a[2]] ", " a[1] } } close(AW)
                 while ((getline l < OBS) > 0) { split(l, a, "\t"); if (a[1] != "") { OF[a[1]] = a[2]; OL[a[1]] = a[3] } } close(OBS)
                 while ((getline l < SRV) > 0) { split(l, a, "\t"); if (a[1] != "") SC[a[1]] = a[2] } close(SRV)
+                while ((getline l < MEN) > 0) { split(l, a, "\t"); if (a[1] != "") MN[a[1]] = 1 } close(MEN)
 
                 nw = 0; used = 0; conly = 0; never = 0
                 for (ip in W) { nw++
-                    f = OF[ip] + 0; c = SC[ip] + 0
+                    f = OF[ip] + 0; c = SC[ip] + 0 + ((ip in MN) ? 1 : 0)
                     if (f > 0) used++
                     else if (c > 0) conly++
                     else never++
@@ -114,13 +108,14 @@ write_whitelist_audit_page() {
                 # allowing account below instead of drowning the page.
                 printf "<h2>Active whitelisted addresses</h2>\n<div class=\"tablewrap\"><table class=\"fit\">\n"
                 printf "<tr><th>IP</th><th>Allowing accounts</th><th class=\"num\">Files</th><th class=\"num\">Server connections</th><th>Last File</th><th>Verdict</th></tr>\n"
-                n = 0; for (ip in W) if (OF[ip] + 0 > 0 || SC[ip] + 0 > 0) KEY[++n] = padkey(ip) "\t" ip
+                n = 0; for (ip in W) if (OF[ip] + 0 > 0 || SC[ip] + 0 > 0 || (ip in MN)) KEY[++n] = padkey(ip) "\t" ip
                 for (i = 1; i <= n; i++) { for (j = i + 1; j <= n; j++) if (KEY[j] < KEY[i]) { t2 = KEY[i]; KEY[i] = KEY[j]; KEY[j] = t2 } }
                 if (n == 0) printf "<tr><td colspan=\"6\">No whitelisted address shows any activity.</td></tr>\n"
                 for (i = 1; i <= n; i++) { split(KEY[i], kk, "\t"); ip = kk[2]
                     f = OF[ip] + 0; c = SC[ip] + 0
                     if (f > 0)      { v = "Used"; res = "green" }
-                    else            { v = "Connects only — no Files"; res = "orange" }
+                    else if (c > 0) { v = "Connects only — no Files"; res = "orange" }
+                    else            { v = "Server-log mention only — no Files"; res = "orange" }
                     an = WA[ip] + 0
                     lbl = (an > 3) ? WN[ip] ", … (" an ")" : WN[ip]
                     printf "<tr data-res=\"%s\"><td class=\"mono\">%s</td><td>%s</td><td class=\"num\">%s</td><td class=\"num\">%s</td><td>%s</td><td>%s</td></tr>\n", \
@@ -135,7 +130,7 @@ write_whitelist_audit_page() {
                 m = 0
                 for (k2 in AWPAIR) { split(k2, kk, SUBSEP); acct = kk[1]; ip = kk[2]
                     AT[acct]++
-                    if (OF[ip] + 0 > 0 || SC[ip] + 0 > 0) AU[acct]++
+                    if (OF[ip] + 0 > 0 || SC[ip] + 0 > 0 || (ip in MN)) AU[acct]++
                 }
                 for (acct in AT) if (AT[acct] > AU[acct] + 0) BK2[++m] = sprintf("%08d", 99999999 - (AT[acct] - AU[acct])) "\t" acct
                 for (i = 1; i <= m; i++) { for (j = i + 1; j <= m; j++) if (BK2[j] < BK2[i]) { t2 = BK2[i]; BK2[i] = BK2[j]; BK2[j] = t2 } }
@@ -172,7 +167,6 @@ write_config_hygiene_page() {
     {
         html_head "Config hygiene" "../assets/style.css" "" "ANALYSES" "config-hygiene"
         printf '<h1>Config hygiene</h1>\n'
-        analyses_group_tabs config-hygiene.html
         printf '<p class="subtitle">The cleanup backlog: likely-duplicate <strong>twins</strong> (names identical once case and the <span class="mono">-</span>/<span class="mono">_</span> separators are folded &mdash; configured as separate entities, usually one is legacy) and <strong>orphans</strong> (objects nothing references: accounts without a subscription, hosts and logins no subscription uses, whitelist entries no account allows). Not in Flow Manager covers the reverse direction &mdash; logged values missing from the configuration.</p>\n'
         awk -F'\t' -v B="$FBASE" -v X="$XREF" -v DET="$TRPT/details" '
             function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
@@ -428,12 +422,12 @@ _subs_box_rows() {
         # colno : rpt : page href (analyses-relative) : column label : ROW field
         # holding the subscription name (no-remote-dir leads with its Last date)
         for spec in \
-            "2:$TRPT/from-green-to-red.rpt:../transfer/from-green-to-red.html:From green to red:2" \
+            "2:$TRPT/from-green-to-red.rpt:failed.html:From green to red:2" \
             "3:$SRPT/went-kaput.rpt:../server/went-kaput.html:Trouble after success:2" \
-            "4:$TRPT/only-red.rpt:../transfer/only-red.html:Only red:2" \
-            "7:$SRPT/no-remote-dir.rpt:../server/no-remote-dir.html:No Dir:3" \
-            "8:$SRPT/no-remote-files.rpt:../server/no-remote-files.html:No Files:3" \
-            "9:$TRPT/missing-cronjobs.rpt:../transfer/missing-cronjobs.html:Missing cron:2" \
+            "4:$TRPT/only-red.rpt:failed.html:Only red:2" \
+            "7:$SRPT/no-remote-dir.rpt:uc-status-uc3.html:No Dir:3" \
+            "8:$SRPT/no-remote-files.rpt:uc-status-uc3.html:No Files:3" \
+            "9:$TRPT/missing-cronjobs.rpt:polling.html:Missing cron:2" \
             "10:$TRPT/went-quiet.rpt:../transfer/went-quiet-subscriptions.html:Went quiet:2"; do
             c=${spec%%:*}; f=${spec#*:}; f=${f%%:*}; nf=${spec##*:}
             [ -f "$f" ] || continue
@@ -817,7 +811,6 @@ write_subscriptions_in_boxes_page() {
     {
         html_head "Subscriptions in boxes" "../assets/style.css" "" "ANALYSES" "subscriptions-in-boxes"
         printf '<h1>Subscriptions in boxes</h1>\n'
-        analyses_group_tabs subscriptions-in-boxes.html   # the Subscriptions group row
         # The intro is GENERAL — what the page is and how to read it. What each
         # individual signal means belongs to the per-box explanation below the
         # boxes, which follows the active one (setupStatFilter swaps .pfshow).
@@ -868,22 +861,22 @@ write_subscriptions_in_boxes_page() {
         # baked pair — the "all" box and its paragraph — is what stands.
         printf '<p class="range pfdesc pfshow" data-pf=""><a href="../transfer/entities/subscription-all.html?axway_search="><strong>Total subscriptions</strong></a> &mdash; every subscription configured in FlowManager, whatever its state. Not a selection but the whole estate: each one is in at least one of the boxes above. The other boxes narrow this list; this box brings it all back. The same estate with each subscription&rsquo;s traffic figures is the <a href="../transfer/entities/subscription-all.html?axway_search=">Subscriptions / All</a> entity view.</p>\n'
         printf '<p class="range pfdesc" data-pf="1"><a href="../transfer/pirates-details.html?axway_search="><strong>One-legged</strong></a> &mdash; a logical transfer that logged only ONE leg. A complete transfer is store-and-forward: an Inbound leg (partner &rarr; ST) and an Outbound leg (ST &rarr; partner). A single-leg CoreId is one-sided &mdash; the counterpart leg never happened &mdash; so the file never made the full crossing. Flagged here only while it is <strong>unresolved</strong>: an OK File delivered after the last one-legged transfer clears it, though <a href="../transfer/pirates-details.html?axway_search=">One-Legged Transfers</a> still lists the full history.</p>\n'
-        printf '<p class="range pfdesc" data-pf="2"><a href="../transfer/from-green-to-red.html?axway_search="><strong>From green to red</strong></a> &mdash; the REGRESSION list: the subscription is red right now (its latest File Failed or Expired) but an earlier day ended on an OK File. It <em>used to work</em> and broke since; <a href="../transfer/from-green-to-red.html?axway_search=">From green to red</a> names the day it flipped, which is where to start looking for what changed.</p>\n'
+        printf '<p class="range pfdesc" data-pf="2"><a href="failed.html?axway_search="><strong>From green to red</strong></a> &mdash; the REGRESSION list: the subscription is red right now (its latest File Failed or Expired) but an earlier day ended on an OK File. It <em>used to work</em> and broke since; <a href="failed.html?axway_search=">Failed Subscriptions</a> names the day it flipped (Last green day), which is where to start looking for what changed.</p>\n'
         printf '<p class="range pfdesc" data-pf="3"><a href="../server/went-kaput.html?axway_search="><strong>Trouble after success</strong></a> &mdash; the SERVER-log signal: the subscription&rsquo;s last transfer was OK, but it (or a connected login, account or remote host) logged an <strong>Error</strong> <em>after</em> that transfer, and the flow is <strong>still green</strong>. Warnings do not count. A fresh problem on a flow whose transfer history still looks healthy &mdash; the earliest warning you get, before a file fails. Where the same evidence has already reddened a flow it is no longer a warning but a failure, and the box for it is one of the red ones. <a href="../server/went-kaput.html?axway_search=">Trouble after Success</a> has the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="4"><a href="../transfer/only-red.html?axway_search="><strong>Only red</strong></a> &mdash; the NEVER-WORKED list: not one OK delivery in the whole window, every File Failed or Expired. This is not a regression (those are on <a href="../transfer/from-green-to-red.html?axway_search=">From green to red</a>) &mdash; nothing here ever worked, which points at the configuration or the partner side never having been finished, rather than at something that broke. <a href="../transfer/only-red.html?axway_search=">Only red</a> has the full list.</p>\n'
+        printf '<p class="range pfdesc" data-pf="4"><a href="failed.html?axway_search="><strong>Only red</strong></a> &mdash; the NEVER-WORKED list: not one OK delivery in the whole window, every File Failed or Expired. This is not a regression (those carry a Last green day on <a href="failed.html?axway_search=">Failed Subscriptions</a>) &mdash; nothing here ever worked, which points at the configuration or the partner side never having been finished, rather than at something that broke. <a href="failed.html?axway_search=">Failed Subscriptions</a> lists them with Last green day <em>never</em>.</p>\n'
         printf '<p class="range pfdesc" data-pf="5"><a href="../transfer/waiting.html?axway_search="><strong>Waiting</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> File is still STAGED for pickup: it arrived and sits in the folder, but the partner has not dialled in to collect it (UC2). Not an error &mdash; briefly waiting is the normal state of a pickup flow &mdash; but a newest file that has been waiting for days means the partner stopped collecting, and the retention sweep will delete it. <a href="../transfer/waiting.html?axway_search=">Waiting Files</a> has the full list.</p>\n'
         printf '<p class="range pfdesc" data-pf="6"><a href="../transfer/expired.html?axway_search="><strong>Expired</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> staged File was DELETED by the nightly File Maintenance retention sweep (~11 days) before any pickup. It was never delivered and can no longer be collected &mdash; a silent failure: nothing errored, the file just aged out. Expired counts as an Error site-wide; <a href="../transfer/expired.html?axway_search=">the Expired report</a> has the retention timing and the per-account pickup behavior.</p>\n'
         printf '<p class="range pfdesc" data-pf="14"><a href="../server/failure-flows.html?axway_search="><strong>Connection failures</strong></a> &mdash; the server log records a failed CONNECTION to the partner for this subscription (timeout, refused, dropped, an SSH negotiation that never completed), and <strong>no OK File has followed it</strong>. That filter is the whole point: connections fail transiently all the time and a flow that failed and then delivered has recovered, so only the still-unresolved ones are boxed here &mdash; 36 of 48 are cleared this way. It usually adds the <em>reason</em> to a subscription already boxed as Only red or One-legged: not merely &ldquo;nothing arrives&rdquo; but &ldquo;we cannot get a connection to the partner at all&rdquo;, which points at the partner host, the port or the credentials rather than at the flow. <a href="../server/failure-flows.html?axway_search=">Errors / Per flow</a> has the full list with the failure messages (the Connection failure reason rows).</p>\n'
-        printf '<p class="range pfdesc" data-pf="15"><a href="../server/deploy-errors.html?axway_search="><strong>Deploy</strong></a> &mdash; the server log records a <strong>configuration defect</strong> for this subscription: the Advanced Routing step error <span class="mono">ARSP0001</span>, where a routing step failed and <strong>its configuration told SecureTransport to abandon the rest of the route</strong> so nothing downstream ran for that file; or a PeSIT transfer profile <strong>missing its &ldquo;Receive File As&rdquo; field</strong>, which errors every incoming transfer of the flow. Like Connection failures, only the <strong>unresolved</strong> ones are boxed &mdash; an OK File after the last such message means something has got through since. The distinction from a plain failure is that the flow does not merely error, it <em>stops</em>: no onward delivery, no follow-up step, and the subscription can sit that way looking quiet rather than broken. The line names an account or a subscription, so an account is counted against every subscription configured for it. <a href="../server/deploy-errors.html?axway_search=">Deploy errors</a> has the full list with the message counts and the last occurrence.</p>\n'
+        printf '<p class="range pfdesc" data-pf="15"><a href="../server/routing-errors.html?axway_search="><strong>Deploy</strong></a> &mdash; the server log records a <strong>configuration defect</strong> for this subscription: the Advanced Routing step error <span class="mono">ARSP0001</span>, where a routing step failed and <strong>its configuration told SecureTransport to abandon the rest of the route</strong> so nothing downstream ran for that file; or a PeSIT transfer profile <strong>missing its &ldquo;Receive File As&rdquo; field</strong>, which errors every incoming transfer of the flow. Like Connection failures, only the <strong>unresolved</strong> ones are boxed &mdash; an OK File after the last such message means something has got through since. The distinction from a plain failure is that the flow does not merely error, it <em>stops</em>: no onward delivery, no follow-up step, and the subscription can sit that way looking quiet rather than broken. The line names an account or a subscription, so an account is counted against every subscription configured for it. <a href="../server/routing-errors.html?axway_search=">Advanced Routing errors</a> lists the lines (Route stopped).</p>\n'
         printf '<p class="range pfdesc" data-pf="20"><a href="../server/logons-incoming.html?axway_search="><strong>Login errors (in)</strong></a> &mdash; a login connected to this subscription FAILED the incoming SSH screening &mdash; disallowed address, unknown key, repeated key failures or a lockout &mdash; and <strong>no OK File has followed</strong> (the error day counts to its end, so only a later day&rsquo;s delivery clears it). The partner is knocking and not getting in; <a href="../server/logons-incoming.html?axway_search=">Logons / Incoming</a> has the per-login funnel with the drill-down log lines.</p>\n'
         printf '<p class="range pfdesc" data-pf="21"><a href="../server/logons-outgoing.html?axway_search="><strong>Login errors (out)</strong></a> &mdash; WE failed to authenticate at the remote host behind this subscription (wrong password, refused key or certificate policy) and <strong>no OK File has followed</strong>. The flow cannot fetch or deliver until the credential is fixed; <a href="../server/logons-outgoing.html?axway_search=">Logons / Outgoing</a> has the per-host failures split into Password / Key / Other.</p>\n'
-        printf '<p class="range pfdesc" data-pf="7"><a href="../server/no-remote-dir.html?axway_search="><strong>No Dir</strong></a> &mdash; we reached the partner, asked for a directory listing, and the partner answered <em>No such file</em>: the configured REMOTE directory is not there. The connection and the credentials are fine &mdash; it is the path that is wrong, or was removed on the partner side. <a href="../server/no-remote-dir.html?axway_search=">No remote dir</a> has the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="8"><a href="../server/no-remote-files.html?axway_search="><strong>No Files</strong></a> &mdash; the UC3 poll works end to end (connection, credentials and listing all succeed) but the remote directory is <strong>always empty</strong>. Every slot spent here is a connection and a listing for no data: either the partner never delivers, or we are polling the wrong place. <a href="../server/no-remote-files.html?axway_search=">No remote files</a> has the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="9"><a href="../transfer/missing-cronjobs.html?axway_search="><strong>Missing cron</strong></a> &mdash; the only <em>configuration</em> signal here, and the only one that stops the flow before it ever starts. A subscription of a cron-triggered use case carries <strong>no cron expression at all</strong>, and nothing else would make it poll, so it simply never runs: no connection, no file, no error, and nothing in either log to notice. Nothing is broken and nothing errored &mdash; the flow was simply never finished, and its silence looks exactly like a partner that has gone quiet unless you check the configuration. <a href="../transfer/missing-cronjobs.html?axway_search=">Missing cronjobs</a> has the full list.</p>\n'
+        printf '<p class="range pfdesc" data-pf="7"><a href="uc-status-uc3.html?axway_search="><strong>No Dir</strong></a> &mdash; we reached the partner, asked for a directory listing, and the partner answered <em>No such file</em>: the configured REMOTE directory is not there. The connection and the credentials are fine &mdash; it is the path that is wrong, or was removed on the partner side. The <a href="uc-status-uc3.html?axway_search=">UC status / UC3</a> tab lists them (Missing remote directories).</p>\n'
+        printf '<p class="range pfdesc" data-pf="8"><a href="uc-status-uc3.html?axway_search="><strong>No Files</strong></a> &mdash; the UC3 poll works end to end (connection, credentials and listing all succeed) but the remote directory is <strong>always empty</strong>. Every slot spent here is a connection and a listing for no data: either the partner never delivers, or we are polling the wrong place. The <a href="uc-status-uc3.html?axway_search=">UC status / UC3</a> tab lists them (never find a file).</p>\n'
+        printf '<p class="range pfdesc" data-pf="9"><a href="polling.html?axway_search=%%22no%%20cron%%22"><strong>Missing cron</strong></a> &mdash; the only <em>configuration</em> signal here, and the only one that stops the flow before it ever starts. A subscription of a cron-triggered use case carries <strong>no cron expression at all</strong>, and nothing else would make it poll, so it simply never runs: no connection, no file, no error, and nothing in either log to notice. Nothing is broken and nothing errored &mdash; the flow was simply never finished, and its silence looks exactly like a partner that has gone quiet unless you check the configuration. <a href="polling.html?axway_search=%%22no%%20cron%%22">Polling</a> lists them (Schedule <em>no cron</em>).</p>\n'
         printf '<p class="range pfdesc" data-pf="10"><a href="../transfer/went-quiet-subscriptions.html?axway_search="><strong>Went quiet</strong></a> &mdash; the flow carried Files and then simply stopped: nothing at all in the last <strong>7 days</strong> of the window, whatever the outcome used to be. It fires on an <em>absence where there used to be traffic</em>, which is why no error report catches it &mdash; nothing failed, there is just nothing there. Usually the partner stopped sending, the source system stopped producing, or the flow was decommissioned and never cleaned up. A subscription can be green and still be listed: green only means its LAST File was delivered, however long ago. <a href="../transfer/went-quiet-subscriptions.html?axway_search=">Went quiet</a> has the full list with the days.</p>\n'
-        printf '<p class="range pfdesc" data-pf="11"><a href="../transfer/entities/subscription-not-seen.html?axway_search="><strong>Not seen</strong></a> &mdash; configured in FlowManager and never seen in the transfer log: not one File. Not a broken flow but an unbuilt or abandoned one, and the emptiest box on the page: every box that judges delivery needs the flow to have run at least once. A UC3 flow that polls cleanly with nothing to fetch is green, and so not here. It has no report of its own &mdash; the <a href="../transfer/entities/subscription-not-seen.html?axway_search=">Subscriptions / Not seen</a> entity view is the full list.</p>\n'
+        printf '<p class="range pfdesc" data-pf="11"><a href="../transfer/entities/subscription-not-seen.html?axway_search="><strong>Not seen</strong></a> &mdash; configured in FlowManager and never seen in the transfer log: not one File. Not a broken flow but an unbuilt or abandoned one, and the emptiest box on the page: every box that judges delivery needs the flow to have run at least once. A UC3 flow that polls cleanly with nothing to fetch is here too: without a File it stays orange. It has no report of its own &mdash; the <a href="../transfer/entities/subscription-not-seen.html?axway_search=">Subscriptions / Not seen</a> entity view is the full list.</p>\n'
         printf '<p class="range pfdesc" data-pf="13"><a href="../transfer/entities/subscription-ok.html?axway_search="><strong>OK</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> File was delivered: the site-wide <strong>green</strong> result. Green describes that LAST File and nothing else, so an OK subscription can still sit in other boxes &mdash; a flow whose last File was delivered a month ago and which has carried nothing since is OK <em>and</em> Went quiet. No report of its own &mdash; the <a href="../transfer/entities/subscription-ok.html?axway_search=">Subscriptions / OK</a> entity view is the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="17"><a href="../transfer/entities/subscription-seen.html?axway_search="><strong>Seen</strong></a> &mdash; the subscription has real TRANSFER data: at least one File in the transfer log (or it is a UC3 flow that polls cleanly with nothing to fetch). Seen and Not seen together are always the whole estate. No report of its own &mdash; the <a href="../transfer/entities/subscription-seen.html?axway_search=">Subscriptions / Seen</a> entity view is the full list.</p>\n'
+        printf '<p class="range pfdesc" data-pf="17"><a href="../transfer/entities/subscription-seen.html?axway_search="><strong>Seen</strong></a> &mdash; the subscription has real TRANSFER data: at least one File in the transfer log. Seen and Not seen together are always the whole estate. No report of its own &mdash; the <a href="../transfer/entities/subscription-seen.html?axway_search=">Subscriptions / Seen</a> entity view is the full list.</p>\n'
         printf '<p class="range pfdesc" data-pf="18"><a href="../transfer/entities/subscription-error.html?axway_search="><strong>Error</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> File Failed or Expired: the site-wide <strong>red</strong> result, the exact opposite of <strong>OK</strong>. <em>Which way</em> it is failing is what the other red boxes say &mdash; a red subscription is usually also in From green to red (it used to work) or Only red (it never did). No report of its own &mdash; the <a href="../transfer/entities/subscription-error.html?axway_search=">Subscriptions / Error</a> entity view is the full list.</p>\n'
         # nosearch: the stat-box filters are this page's narrowing mechanism —
         # report.js must not add its search box on top of them
@@ -959,18 +952,18 @@ write_subscriptions_in_boxes_page() {
                         flag($18, "../transfer/entities/subscription-error.html", $2, "Newest File Failed or Expired \342\200\224 the subscription is red", "error"), \
                         flag($5, "../server/went-kaput.html", $2, "On Trouble after Success", "troubles"), \
                         flag($7, "../transfer/waiting.html", $2, "Newest File is Waiting", "waiting"), \
-                        flag($10, "../server/no-remote-files.html", $2, "On No remote files", "no Files"), \
-                        flag($11, "../transfer/missing-cronjobs.html", $2, "Cron-triggered, but no cron expression configured", "no cron"), \
+                        flag($10, "uc-status-uc3.html", $2, "On No remote files", "no Files"), \
+                        flag($11, "polling.html", $2, "Cron-triggered, but no cron expression configured", "no cron"), \
                         flag($12, "../transfer/went-quiet-subscriptions.html", $2, "Carried Files, then stopped \342\200\224 no traffic in the last 7 days", "quiet"), \
                         flag($3, "../transfer/pirates-details.html", $2, "On One-legged transfers", "one leg"), \
-                        flag($4, "../transfer/from-green-to-red.html", $2, "On From green to red", "green-&gt;red"), \
-                        flag($6, "../transfer/only-red.html", $2, "On Only red", "red"), \
+                        flag($4, "failed.html", $2, "On From green to red", "green-&gt;red"), \
+                        flag($6, "failed.html", $2, "On Only red", "red"), \
                         flag($8, "../transfer/expired.html", $2, "Newest File is Expired", "expired"), \
                         flag($15, "../server/failure-flows.html", $2, "The server logged a connection failure and no OK File followed it", "connection"), \
-                        flag($16, "../server/deploy-errors.html", $2, "A configuration defect stopped the flow (route abandoned, or the profile cannot receive) and no OK File followed it", "deploy"), \
+                        flag($16, "../server/routing-errors.html", $2, "A configuration defect stopped the flow (route abandoned, or the profile cannot receive) and no OK File followed it", "deploy"), \
                         flag($19, "../server/logons-incoming.html?axway_sort=2:-1", $2, "A connected login failed the incoming SSH screening and no OK File followed", "login in"), \
                         flag($20, "../server/logons-outgoing.html?axway_sort=2:-1", $2, "We failed to authenticate at the remote host and no OK File followed", "login out"), \
-                        flag($9, "../server/no-remote-dir.html", $2, "On No remote dir", "no Dir")
+                        flag($9, "uc-status-uc3.html", $2, "On No remote dir", "no Dir")
                 }'
             # 18 numeric cells in COLUMN order (the previous version was one
             # cell short — the deploy column was missing, latent because
@@ -984,226 +977,14 @@ write_subscriptions_in_boxes_page() {
     } > "$out"
 }
 
-# ---- Accounts in boxes (docs/<env>/analyses/accounts-in-boxes.html)
-#
-# The ACCOUNT view of the same eighteen boxes: an account is in a box when one of
-# its CONNECTED SUBSCRIPTIONS is. Connection is taken ONLY from the xref cache
-# data/<env>/flow-manager/xref/_subscriptions-accounts.tsv — never from the
-# names. The two are related by convention (a subscription is commonly
-# UC<n>_<account>_<account>), which makes name matching look like it works:
-# measured here, every one of the 363 connected account names IS a substring of
-# one of its subscriptions. It is still the wrong key — the convention is not a
-# guarantee, the separator twins (FRE-SAPCD-X / FRE_SAPCD_X) are DIFFERENT
-# entities that a loose match merges, and a substring hit says nothing about
-# which subscription. The xref is the configuration itself.
-#
-# So the per-cell link carries the SUBSCRIPTIONS that put the account in that
-# box, joined with the site search operator " or " — the cell lands on exactly
-# those rows of the existing subscription report, and no Account version of
-# those reports is needed. Longest such link in acceptance is ~860 characters
-# (one account with 16 subscriptions in one box); the query string is read by
-# report.js and never sent anywhere, so length is a non-issue.
-#
-# ONE box is account-only: "no subs" (16), the account no subscription
-# references at all. Without it those 11 accounts would sit in NO box and the
-# Total would stop meaning "every account is in at least one box" -- the
-# property that makes this a box-up of the estate rather than a problem list.
-# It is the same condition as the WARN banner on the account detail page and
-# as Config hygiene's "Account without subscriptions", which is where it links.
-write_accounts_in_boxes_page() {
-    local out="$ADIR/accounts-in-boxes.html"
-    local TAB; TAB=$(printf '\t')
-    local SA="$XREF/_subscriptions-accounts.tsv" ACCF="$FBASE/_accounts.tsv"
-    [ -f "$ACCF" ] || return 0
-    [ -f "$SA" ] || return 0
-    # rows: box \t account \t subscription   (box 16 carries an empty subscription)
-    local rows
-    rows=$(
-        _subs_box_rows | awk -F'\t' -v SA="$SA" -v ACCF="$ACCF" '
-            BEGIN { while ((getline l < SA) > 0) { n = split(l, a, "\t")
-                        if (n >= 2 && a[1] != "" && a[2] != "")
-                            A[toupper(a[1])] = A[toupper(a[1])] "\037" a[2] }
-                    close(SA)
-                    while ((getline l < ACCF) > 0) { split(l, a, "\t")
-                        if (a[1] != "" && a[3] == "green") GRN[toupper(a[1])] = 1 }
-                    close(ACCF) }
-            # Box 13 (OK) is the one box that judges the ACCOUNT, not a single
-            # subscription: only accounts whose own site-wide result is GREEN
-            # (= every connected subscription green) are kept — one green flow
-            # among red ones must not put the account in the OK box.
-            { k = toupper($2); if (!(k in A)) next
-              m = split(substr(A[k], 2), S, "\037")
-              for (i = 1; i <= m; i++)
-                  if ($1 != 13 || (toupper(S[i]) in GRN)) print $1 "\t" S[i] "\t" $2 }'
-        awk -F'\t' -v SA="$SA" '
-            BEGIN { while ((getline l < SA) > 0) { n = split(l, a, "\t")
-                        if (n >= 2 && a[2] != "") HAS[toupper(a[2])] = 1 }
-                    close(SA) }
-            $1 != "" && !(toupper($1) in HAS) { print "16\t" $1 "\t" }' "$ACCF"
-        :
-    )
-    # distinct ACCOUNTS per box (a box row exists per connected subscription)
-    local a_all a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a13 a14 a15 a16 a17 a18 a20 a21 i
-    a_all=$(printf '%s\n' "$rows" | awk -F'\t' '$2!=""{ if(!s[$2]++) n++ } END{print n+0}')
-    for i in 1 2 3 4 5 6 7 8 9 10 11 13 14 15 16 17 18 20 21; do
-        eval "a$i=\$(printf '%s\n' \"\$rows\" | awk -F'\t' -v b=$i '\$1==b && \$2!=\"\" { if(!s[\$2]++) n++ } END{print n+0}')"
-    done
-    # box | th label | href (analyses-relative) | cell title | extra class
-    # Display order mirrors Subscriptions in boxes — the problem boxes ORANGE
-    # before RED — with the account-only "no subs" beside "no cron": both say
-    # the configuration was never finished.
-    local BOXSPEC
-    BOXSPEC=$(printf '%s\037' \
-        '13|ok|../transfer/entities/subscription-ok.html|The account is green: every connected subscription delivers|pfok' \
-        '17|seen|../transfer/entities/subscription-seen.html|A connected subscription has real transfer data|pfneu' \
-        '11|not seen|../transfer/entities/subscription-not-seen.html|A connected subscription was never seen in the transfer log|' \
-        '18|error|../transfer/entities/subscription-error.html|A connected subscription is red: its newest File Failed or Expired|' \
-        '3|troubles|../server/went-kaput.html|A connected subscription logged an Error or Warning after its last OK transfer|' \
-        '5|waiting|../transfer/waiting.html|The newest File of a connected subscription is still staged for pickup|' \
-        '8|no Files|../server/no-remote-files.html|A connected subscription polls fine but the remote directory is always empty|' \
-        '9|no cron|../transfer/missing-cronjobs.html|A connected subscription is cron-triggered with no cron expression|' \
-        '16|no subs|config-hygiene.html|No subscription references this account at all|' \
-        '10|quiet|../transfer/went-quiet-subscriptions.html|A connected subscription carried Files and then stopped|' \
-        '1|one leg|../transfer/pirates-details.html|A connected subscription has an unresolved one-legged transfer|' \
-        '2|green-&gt;red|../transfer/from-green-to-red.html|A connected subscription used to work and is red now|' \
-        '4|red|../transfer/only-red.html|A connected subscription has never had an OK delivery|' \
-        '6|expired|../transfer/expired.html|The newest File of a connected subscription was deleted before pickup|' \
-        '14|connection|../server/failure-flows.html|A connected subscription has an unresolved connection failure|' \
-        '15|deploy|../server/deploy-errors.html|A connected subscription has an unresolved configuration defect (abandoned route, or a profile that cannot receive)|' \
-        '20|login in|../server/logons-incoming.html?axway_sort=2:-1|A connected login failed the incoming SSH screening and no OK File followed|' \
-        '21|login out|../server/logons-outgoing.html?axway_sort=2:-1|We failed to authenticate at a remote host of a connected subscription and no OK File followed|' \
-        '7|no Dir|../server/no-remote-dir.html|The remote directory of a connected subscription does not exist|')
-    {
-        html_head "Accounts in boxes" "../assets/style.css" "" "ANALYSES" "accounts-in-boxes"
-        printf '<h1>Accounts in boxes</h1>\n'
-        analyses_group_tabs accounts-in-boxes.html
-        printf '<p class="subtitle">Every account configured in FlowManager, boxed by what is true of <em>the subscriptions connected to it</em>: an account is in a box when at least one of its subscriptions is &mdash; except <strong>OK</strong>, which holds only the accounts that are green as a whole (every connected subscription green). The page opens on the <strong>OK</strong> box; <strong>click a box</strong> to narrow the table &mdash; the note under the boxes always explains the one you picked, and columns with nothing to show are hidden. Each flagged cell opens the subscription report already searched for <em>the subscriptions that put this account in that box</em>, so there is no account version of those reports to keep in step. Accounts are connected to subscriptions through the FlowManager configuration, never by name. Rows are sorted by name and tinted with the account&rsquo;s site-wide result color.</p>\n'
-        printf '<div class="pfboxes" data-pf-default="13"><div class="stat pfon" data-pf=""><span class="stat-v">%s</span><span class="stat-l">Total accounts</span></div>' "$a_all"
-        printf '<div class="stat stat-green" data-pf="13"><span class="stat-v">%s</span><span class="stat-l">OK</span></div>' "$a13"
-        printf '<div class="stat" data-pf="17"><span class="stat-v">%s</span><span class="stat-l">Seen</span></div>' "$a17"
-        printf '<div class="stat stat-orange" data-pf="11"><span class="stat-v">%s</span><span class="stat-l">Not seen</span></div>' "$a11"
-        printf '<div class="stat stat-red" data-pf="18"><span class="stat-v">%s</span><span class="stat-l">Error</span></div>' "$a18"
-        printf '<div class="pfbreak"></div>'
-        printf '<div class="stat stat-orange" data-pf="3"><span class="stat-v">%s</span><span class="stat-l">Trouble after success</span></div>' "$a3"
-        printf '<div class="stat stat-orange" data-pf="5"><span class="stat-v">%s</span><span class="stat-l">Waiting</span></div>' "$a5"
-        printf '<div class="stat stat-orange" data-pf="8"><span class="stat-v">%s</span><span class="stat-l">No Files</span></div>' "$a8"
-        printf '<div class="stat stat-orange" data-pf="9"><span class="stat-v">%s</span><span class="stat-l">Missing cron</span></div>' "$a9"
-        printf '<div class="stat stat-orange" data-pf="16"><span class="stat-v">%s</span><span class="stat-l">No subscriptions</span></div>' "$a16"
-        printf '<div class="stat stat-orange" data-pf="10"><span class="stat-v">%s</span><span class="stat-l">Went quiet</span></div>' "$a10"
-        printf '<div class="stat stat-red" data-pf="1"><span class="stat-v">%s</span><span class="stat-l">One-legged</span></div>' "$a1"
-        printf '<div class="stat stat-red" data-pf="2"><span class="stat-v">%s</span><span class="stat-l">From green to red</span></div>' "$a2"
-        printf '<div class="stat stat-red" data-pf="4"><span class="stat-v">%s</span><span class="stat-l">Only red</span></div>' "$a4"
-        printf '<div class="stat stat-red" data-pf="6"><span class="stat-v">%s</span><span class="stat-l">Expired</span></div>' "$a6"
-        printf '<div class="stat stat-red" data-pf="14"><span class="stat-v">%s</span><span class="stat-l">Connection failures</span></div>' "$a14"
-        printf '<div class="stat stat-red" data-pf="15"><span class="stat-v">%s</span><span class="stat-l">Deploy</span></div>' "$a15"
-        printf '<div class="stat stat-red" data-pf="20"><span class="stat-v">%s</span><span class="stat-l">Login errors (in)</span></div>' "$a20"
-        printf '<div class="stat stat-red" data-pf="21"><span class="stat-v">%s</span><span class="stat-l">Login errors (out)</span></div>' "$a21"
-        printf '<div class="stat stat-red" data-pf="7"><span class="stat-v">%s</span><span class="stat-l">No Dir</span></div>' "$a7"
-        printf '</div>\n'
-        printf '<p class="range pfdesc pfshow" data-pf=""><a href="../transfer/entities/account-all.html?axway_search="><strong>Total accounts</strong></a> &mdash; every account configured in FlowManager, whatever its state, and each one is in at least one of the boxes above. Eighteen of the boxes describe the account&rsquo;s <em>subscriptions</em>; the one that is not, <strong>No subscriptions</strong>, is the account that has none for them to describe. The same estate with each account&rsquo;s own traffic figures is the <a href="../transfer/entities/account-all.html?axway_search=">Accounts / All</a> entity view.</p>\n'
-        printf '<p class="range pfdesc" data-pf="13"><a href="../transfer/entities/account-ok.html?axway_search="><strong>OK</strong></a> &mdash; the account itself is <strong>green</strong>: the site-wide rollup, which an account only gets when <strong>every</strong> connected subscription is green. This is the one box that judges the whole account rather than a single flow &mdash; an account with one delivering flow beside a red one is NOT here (it is in Error, and in the red box that says why). Green still describes each subscription&rsquo;s LAST File and nothing else, so an OK account can sit in Went quiet at the same time. The <a href="../transfer/entities/account-ok.html?axway_search=">Accounts / OK</a> entity view is the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="17"><a href="../transfer/entities/subscription-seen.html?axway_search="><strong>Seen</strong></a> &mdash; at least one connected subscription has real TRANSFER data: a File in the transfer log (or it is a UC3 flow that polls cleanly with nothing to fetch). The <a href="../transfer/entities/subscription-seen.html?axway_search=">Subscriptions / Seen</a> entity view is the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="18"><a href="../transfer/entities/subscription-error.html?axway_search="><strong>Error</strong></a> &mdash; at least one connected subscription is <strong>red</strong>: its newest File Failed or Expired, the exact opposite of <strong>OK</strong> &mdash; and an account with several flows is routinely in both boxes at once. <em>Which way</em> it is failing is what the other red boxes say. The <a href="../transfer/entities/subscription-error.html?axway_search=">Subscriptions / Error</a> entity view is the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="1"><a href="../transfer/pirates-details.html?axway_search="><strong>One-legged</strong></a> &mdash; a connected subscription logged a transfer with only ONE leg, and no OK File has followed it. A complete transfer is store-and-forward: an Inbound leg (partner &rarr; ST) and an Outbound leg (ST &rarr; partner), so a single-leg CoreId means the file never made the full crossing. <a href="../transfer/pirates-details.html?axway_search=">One-Legged Transfers</a> has the full history.</p>\n'
-        printf '<p class="range pfdesc" data-pf="2"><a href="../transfer/from-green-to-red.html?axway_search="><strong>From green to red</strong></a> &mdash; a connected subscription is red right now but ended an earlier day on an OK File: it <em>used to work</em> and broke since. <a href="../transfer/from-green-to-red.html?axway_search=">From green to red</a> names the day it flipped, which is where to start looking for what changed.</p>\n'
-        printf '<p class="range pfdesc" data-pf="3"><a href="../server/went-kaput.html?axway_search="><strong>Trouble after success</strong></a> &mdash; a connected subscription had an OK last transfer but logged an Error or Warning <em>after</em> it. The earliest warning available: a fresh problem on a flow whose transfer history still looks healthy, before any file fails. <a href="../server/went-kaput.html?axway_search=">Trouble after Success</a> has the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="4"><a href="../transfer/only-red.html?axway_search="><strong>Only red</strong></a> &mdash; a connected subscription has never had one OK delivery in the whole window. Not a regression but a flow that never worked, which points at the configuration or the partner side never having been finished. <a href="../transfer/only-red.html?axway_search=">Only red</a> has the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="5"><a href="../transfer/waiting.html?axway_search="><strong>Waiting</strong></a> &mdash; the newest File of a connected subscription is still STAGED for pickup: it arrived and sits in the folder, but the partner has not dialled in to collect it (UC2). Briefly waiting is the normal state of a pickup flow; days of waiting means the partner stopped collecting, and the retention sweep will delete it. <a href="../transfer/waiting.html?axway_search=">Waiting Files</a> has the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="6"><a href="../transfer/expired.html?axway_search="><strong>Expired</strong></a> &mdash; the newest staged File of a connected subscription was DELETED by the nightly retention sweep (~11 days) before any pickup. Never delivered, no longer collectable, and nothing errored &mdash; the file just aged out. <a href="../transfer/expired.html?axway_search=">The Expired report</a> has the retention timing and the per-account pickup behavior.</p>\n'
-        printf '<p class="range pfdesc" data-pf="14"><a href="../server/failure-flows.html?axway_search="><strong>Connection failures</strong></a> &mdash; the server log records a failed CONNECTION to the partner for a connected subscription (timeout, refused, dropped, an SSH negotiation that never completed) and <strong>no OK File has followed it</strong>. Connections fail transiently all the time, so only the still-unresolved ones are boxed. It usually adds the <em>reason</em> to an account already boxed as Only red or One-legged: not merely &ldquo;nothing arrives&rdquo; but &ldquo;we cannot get a connection at all&rdquo;, which points at the partner host, the port or the credentials. <a href="../server/failure-flows.html?axway_search=">Errors / Per flow</a> has the failure messages (the Connection failure reason rows).</p>\n'
-        printf '<p class="range pfdesc" data-pf="15"><a href="../server/deploy-errors.html?axway_search="><strong>Deploy</strong></a> &mdash; the server log records a <strong>configuration defect</strong> for a connected subscription: the Advanced Routing step error <span class="mono">ARSP0001</span>, where a routing step failed and <strong>its configuration told SecureTransport to abandon the rest of the route</strong>; or a PeSIT transfer profile <strong>missing its &ldquo;Receive File As&rdquo; field</strong>, which errors every incoming transfer of the flow. Only the <strong>unresolved</strong> ones are boxed. The flow does not merely error, it <em>stops</em>, so it can sit looking quiet rather than broken. <a href="../server/deploy-errors.html?axway_search=">Deploy errors</a> has the message counts and the last occurrence.</p>\n'
-        printf '<p class="range pfdesc" data-pf="20"><a href="../server/logons-incoming.html?axway_search="><strong>Login errors (in)</strong></a> &mdash; a login of a connected subscription FAILED the incoming SSH screening (disallowed address, unknown key, repeated key failures or a lockout) and no OK File has followed. <a href="../server/logons-incoming.html?axway_search=">Logons / Incoming</a> has the per-login funnel.</p>\n'
-        printf '<p class="range pfdesc" data-pf="21"><a href="../server/logons-outgoing.html?axway_search="><strong>Login errors (out)</strong></a> &mdash; we failed to authenticate at a remote host behind a connected subscription (wrong password, refused key or certificate policy) and no OK File has followed. <a href="../server/logons-outgoing.html?axway_search=">Logons / Outgoing</a> has the per-host split into Password / Key / Other.</p>\n'
-        printf '<p class="range pfdesc" data-pf="7"><a href="../server/no-remote-dir.html?axway_search="><strong>No Dir</strong></a> &mdash; we reached the partner for a connected subscription, asked for a directory listing, and the partner answered <em>No such file</em>: the configured REMOTE directory is not there. Connection and credentials are fine &mdash; it is the path that is wrong, or was removed on the partner side. <a href="../server/no-remote-dir.html?axway_search=">No remote dir</a> has the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="8"><a href="../server/no-remote-files.html?axway_search="><strong>No Files</strong></a> &mdash; a connected UC3 poll works end to end (connection, credentials and listing all succeed) but the remote directory is <strong>always empty</strong>. Every slot spent there is a connection and a listing for no data: either the partner never delivers, or we poll the wrong place. <a href="../server/no-remote-files.html?axway_search=">No remote files</a> has the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="9"><a href="../transfer/missing-cronjobs.html?axway_search="><strong>Missing cron</strong></a> &mdash; a connected subscription of a cron-triggered use case carries <strong>no cron expression at all</strong>, so nothing makes it poll and it simply never runs: no connection, no file, no error, nothing in either log to notice. Its silence looks exactly like a partner that has gone quiet unless you check the configuration. <a href="../transfer/missing-cronjobs.html?axway_search=">Missing cronjobs</a> has the full list.</p>\n'
-        printf '<p class="range pfdesc" data-pf="16"><a href="config-hygiene.html?axway_search="><strong>No subscriptions</strong></a> &mdash; the account-only box, and the one that is not about a flow at all: <strong>no subscription references this account</strong>, so nothing can ever route a file through it. It is configured and inert &mdash; the other eighteen boxes have nothing to say about it because there is no subscription for them to judge. The same condition puts the amber banner on the <a href="../transfer/entities/account-all.html?axway_search=">account detail page</a> and lists it under &ldquo;Account without subscriptions&rdquo; on <a href="config-hygiene.html?axway_search=">Config hygiene</a>.</p>\n'
-        printf '<p class="range pfdesc" data-pf="10"><a href="../transfer/went-quiet-subscriptions.html?axway_search="><strong>Went quiet</strong></a> &mdash; a connected subscription carried Files and then simply stopped: nothing at all in the last <strong>7 days</strong>. It fires on an <em>absence where there used to be traffic</em>, which is why no error report catches it &mdash; nothing failed, there is just nothing there. An account can be OK and still be listed: OK only means one subscription delivered its LAST File, however long ago. <a href="../transfer/went-quiet-subscriptions.html?axway_search=">Went quiet</a> has the full list with the days.</p>\n'
-        printf '<p class="range pfdesc" data-pf="11"><a href="../transfer/entities/subscription-not-seen.html?axway_search="><strong>Not seen</strong></a> &mdash; a connected subscription is configured and has never been seen in the transfer log: not one File. Not a broken flow but an unbuilt or abandoned one. The <a href="../transfer/entities/subscription-not-seen.html?axway_search=">Subscriptions / Not seen</a> entity view is the full list.</p>\n'
-        # data-pf-noun: setupStatFilter writes the total row itself and needs the
-        # unit; without it the footer would read "subscriptions" on this page.
-        printf '<div class="tablewrap"><table class="fit pftable" data-nosearch="1" data-pf-noun="account">\n'
-        printf '%s\n' "$BOXSPEC" | awk -v RS='\037' -F'|' '
-            BEGIN { printf "<tr><th>Account</th>" }
-            NF >= 2 { printf "<th data-pf=\"%s\">%s</th>", $1, $2 }
-            END { print "</tr>" }'
-        if [ -z "$rows" ]; then
-            printf '<tr><td colspan="20">No account is in any box.</td></tr>\n'
-        else
-            printf '%s\n' "$rows" | LC_ALL=C sort -t"$TAB" -k2,2 -k1,1n -k3,3 \
-            | awk -F'\t' -v SPEC="$BOXSPEC" -v SM="$TRPT/details/accounts/_slugmap.tsv" -v ACCF="$ACCF" '
-                function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
-                # a name as a URL query value, byte by byte (2026-09-28 fix: the
-                # raw name went into ?axway_search=, so a percent sign, an
-                # ampersand, a hash or a space broke the link)
-                function urlq(s,   i, c, o) {
-                    if (!_URLQI) { for (i = 1; i < 256; i++) URLQB[sprintf("%c", i)] = i; _URLQI = 1 }
-                    o = ""
-                    for (i = 1; i <= length(s); i++) { c = substr(s, i, 1); o = o ((c ~ /[A-Za-z0-9_.~-]/) ? c : sprintf("%%%02X", URLQB[c])) }
-                    return o
-                }
-                # the cell carries the COLUMN NAME and opens that report already
-                # searched for the SUBSCRIPTIONS behind this flag, joined with the
-                # site search operator " or " (%20or%20 once URL-encoded). Box 16
-                # has no subscription, so it searches the ACCOUNT on Config hygiene.
-                function cell(b, acct,   q, nq, qa, qi) {
-                    if (!((acct, b) in SUB)) return "<td></td>"
-                    # each name URL-encoded, joined by the encoded " or "
-                    nq = split(substr(SUB[acct, b], 2), qa, "\037"); q = ""
-                    for (qi = 1; qi <= nq; qi++) q = q (qi > 1 ? "%20or%20" : "") urlq(qa[qi])
-                    if (b == 16) q = urlq(acct)
-                    # an href already carrying a query is used as-is (the two
-                    # login-error boxes: the Logons rows are logins/hosts)
-                    if (index(HREF[b], "?") > 0)
-                        return "<td class=\"ctr\"><a class=\"pfx" (CLS[b] != "" ? " " CLS[b] : "") "\" href=\"" HREF[b] "\" title=\"" e(TTL[b]) "\">" LBL[b] "</a></td>"
-                    return "<td class=\"ctr\"><a class=\"pfx" (CLS[b] != "" ? " " CLS[b] : "") "\" href=\"" HREF[b] "?axway_search=" q "\" title=\"" e(TTL[b]) "\">" LBL[b] "</a></td>"
-                }
-                function flush(   i, pf, out) {
-                    if (cur == "") return
-                    pf = ""; out = ""
-                    for (i = 1; i <= nb; i++) {
-                        if ((cur, ORD[i]) in SUB) pf = pf " " ORD[i]
-                        out = out cell(ORD[i], cur)
-                    }
-                    nm = e(cur)
-                    if (toupper(cur) in SL) nm = "<a href=\"../details/accounts/" SL[toupper(cur)] ".html\">" nm "</a>"
-                    printf "<tr data-pf=\"%s\"%s><td class=\"cl\">%s</td>%s</tr>\n", \
-                        substr(pf, 2), (RES[toupper(cur)] != "" ? " data-res=\"" RES[toupper(cur)] "\"" : ""), nm, out
-                }
-                BEGIN {
-                    nb = split(SPEC, B, "\037")
-                    for (i = 1; i <= nb; i++) {
-                        if (B[i] == "") { nb = i - 1; break }
-                        split(B[i], F, "|")
-                        ORD[i] = F[1] + 0; LBL[F[1]+0] = F[2]; HREF[F[1]+0] = F[3]; TTL[F[1]+0] = F[4]; CLS[F[1]+0] = F[5]
-                    }
-                    while ((getline l < SM) > 0) { split(l, a, "\t"); if (a[1] != "") SL[toupper(a[1])] = a[2] } close(SM)
-                    while ((getline l < ACCF) > 0) { split(l, a, "\t")
-                        if (a[1] != "" && (a[3] == "green" || a[3] == "orange" || a[3] == "red"))
-                            RES[toupper(a[1])] = a[3] } close(ACCF)
-                    cur = ""
-                }
-                $2 == "" { next }
-                { if ($2 != cur) { flush(); cur = $2 }
-                  if ($3 != "" || $1 == 16) SUB[cur, $1 + 0] = SUB[cur, $1 + 0] "\037" $3 }
-                END { flush() }'
-            # the footer is rewritten by setupStatFilter on every box click; this
-            # is the unfiltered state it starts from (and the no-JS fallback)
-            printf '<tr class="total"><td>Total (%s accounts)</td>' "$a_all"
-            printf '%s\n' "$BOXSPEC" | awk -v RS='\037' -F'|' -v C="$a13,$a17,$a11,$a18,$a3,$a5,$a8,$a9,$a16,$a10,$a1,$a2,$a4,$a6,$a14,$a15,$a20,$a21,$a7" '
-                BEGIN { split(C, V, ",") }
-                NF >= 2 { printf "<td class=\"num\">%s</td>", V[++i] }
-                END { print "</tr>" }'
-        fi
-        printf '</table></div>\n'
-        printf '<p class="range">Sources: this page adds nothing of its own &mdash; it takes the box memberships of <a href="subscriptions-in-boxes.html">Subscriptions in boxes</a> exactly as computed there and joins them onto accounts through the FlowManager configuration cache <span class="mono">xref/_subscriptions-accounts.tsv</span>, so the two pages can never disagree about what a box means. The account-only box, <strong>No subscriptions</strong>, is the account that has no row in that cache. Every account and subscription figure therefore traces back to the same report data files, the transfer cache and the configuration &mdash; never to a name.</p>\n'
-        printf '</body>\n</html>\n'
-    } > "$out"
-}
+# (Accounts in boxes, docs/analyses/accounts-in-boxes.html, went 2026-09-29:
+# the same box memberships joined onto accounts — 9 of 137 accounts carried
+# more than one subscription, and its one account-only box, "no subs", is the
+# Cleanup backlog / Config hygiene config-orphan row.)
 
 write_whitelist_audit_page
 write_config_hygiene_page
 write_subscriptions_in_boxes_page
-write_accounts_in_boxes_page
+rm -f "$ADIR/accounts-in-boxes.html"
 
 echo "Wrote the insight analyses pages to $ADIR." >&2

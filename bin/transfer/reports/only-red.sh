@@ -102,7 +102,10 @@ n_rows=0
     # Printed straight into the report, no per-row command substitution.
     while IFS='|' read -r _ site fcnt nfail nexp first firstjd last lastjd vol fdrill; do
         [ -z "$site" ] && continue
-        days=$(( max_jd - firstjd + 1 ))
+        # to the last day, exclusive — the From green to red "Days red" and
+        # the Triage / Open incidents rule (2026-09-29 fix: this page counted
+        # both ends and read one day more for the same run)
+        days=$(( max_jd - firstjd ))
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\n' \
             "$site" "$fcnt" "$nfail" "$nexp" "$first" "$last" "$days" "$vol" "$fdrill"
         n_rows=$((n_rows + 1))

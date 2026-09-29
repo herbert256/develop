@@ -20,11 +20,11 @@
 <p>What changed on the newest data day. <strong>D</strong> = the latest date across the transfer and server parse caches; every section is judged against D or D&minus;1, because exports arrive in batches and a late change may only surface in the next export. This page diffs the data; the report catalog&rsquo;s changes live on <strong>What&rsquo;s new</strong>.</p>
 <h2>Sections</h2>
 <ul>
-<li><strong>New red flips</strong> &mdash; red subscriptions whose server-log evidence stamp (<code>colour/_redflip.tsv</code>) or newest failing File is on D/D&minus;1. A chronically failing flow stays listed; its old <em>Failing since</em> gives it away. <a href="from-green-to-red.html">From green to red</a> tells the full story.</li>
+<li><strong>New red flips</strong> &mdash; red subscriptions whose server-log evidence stamp (<code>colour/_redflip.tsv</code>) or newest failing File is on D/D&minus;1. A chronically failing flow stays listed; its old <em>Failing since</em> gives it away. <a href="failed.html">From green to red</a> tells the full story.</li>
 <li><strong>Newly quiet</strong> &mdash; flows whose last File is exactly 8 days before the transfer window end: <a href="went-quiet.html">Went quiet</a> flags a silence over 7 days, so these crossed the line within the last data day.</li>
 <li><strong>Recovered</strong> &mdash; green flows whose first OK File after their last failure is on D/D&minus;1 (Waiting = OK, Expired = Error).</li>
 <li><strong>First seen</strong> &mdash; configured logical flows, partners, subscriptions, accounts, logins and remote hosts whose first-ever File is on D/D&minus;1, from the first-seen ledger (the per-day cells of <a href="first-seen.html">First seen</a>). A first sighting appears here once, then lives only there.</li>
-<li><strong>New unknown names</strong> &mdash; names the server log mentions with no transfer of their own (the <code>data/unknown</code> sidecars), newest mention on D/D&minus;1. A configured name is orange (server-seen, never transferred); an unconfigured one is a stranger knocking &mdash; <a href="server-unknown-entities.html">Missing entities</a> has the full lists.</li>
+<li><strong>Server-only names still mentioned</strong> &mdash; names the server log mentions with no transfer of their own (the <code>data/unknown</code> sidecars), newest mention on D/D&minus;1. A configured name is orange (server-seen, never transferred); an unconfigured one is a stranger knocking; the configured never-seen names are on the Entities <strong>Not seen</strong> views.</li>
 </ul>
 </main>
 </body>

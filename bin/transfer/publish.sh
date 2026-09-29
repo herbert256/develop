@@ -46,40 +46,12 @@ for name in "${transfer_order[@]}"; do
     pub_run render_report "transfer" "$name" "$rpt"
     count=$((count + 1))
 done
-
-# The per-value Skipped reports (skipped-<slug>.rpt) are DYNAMIC — one per
-# input/<env>/skip.txt value, not in transfer_order — so render whatever skipped.sh
-# produced (the button row + finder/sitemap entries come from skipped_tokens).
-for rpt in "$DATA"/transfer/reports/skipped-*.rpt; do
-    [ -f "$rpt" ] || continue
-    name=${rpt##*/}; name=${name%.rpt}
-    pub_run render_report "transfer" "$name" "$rpt"
-    count=$((count + 1))
-done
 pub_wait
 
-# Duration report: per-transaction detail pages (the top-N longest transfers),
-# each listing ALL of that transfer's _transfers.tsv records. duration.sh wrote
-# one .rpt per transfer into data/transfer/reports/duration/top/; render each
-# to docs/transfers/duration/top/<coreid>.html (3 levels deep -> ../../../ css).
-# The Duration report's "Top N longest" table links its first 3 columns here.
-shopt -s nullglob
-dtop=("$DATA"/transfer/reports/duration/top/*.rpt)
-shopt -u nullglob
-# clear even when THIS run has no .rpt set (an env can lose the whole
-# family — production 2026-08 — and stale pages would survive forever)
-mkdir -p "$DOCS/transfers/duration/top"
-rm -f "$DOCS"/transfers/duration/top/*.html
-if [ ${#dtop[@]} -gt 0 ]; then
-    CUR_DATES=""; DLINK_BASE="../../../details/"
-    for f in "${dtop[@]}"; do
-        b=${f##*/}; b=${b%.rpt}
-        pub_run render_rpt "$f" "$DOCS/transfers/duration/top/$b.html" "../../../assets/style.css" "../../../index.html" "TRANSFER" "" "duration"
-    done
-    pub_wait
-    CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
-    echo "Rendered docs/transfers/duration/top/ (${#dtop[@]} transaction page(s))." >&2
-fi
+# (the Longest Files record pages, docs/transfers/duration/top/<coreid>.html,
+# went 2026-09-29: each was a copy of the File page docs/files/<coreid>.html,
+# which the Longest Files cells open instead)
+rm -rf "$DOCS/transfers"
 
 # (the Seen-in-server-log matrix cell pages, docs/transfer/seenlog/, went with
 # the BLUE server-log-only status and its report, 2026-09-27)
@@ -208,10 +180,10 @@ done
 echo "Rendered docs/files/ (${#errp[@]} failed-file page(s) + ${#filp[@]} File page(s))." >&2
 _tplap "files/ pages"
 
-# MONTH STATS (2026-09-13, user request): the 18 {this,previous} × entity
-# pages of month-stats.sh -> docs/transfer/month-stats/ (publish_lib
-# render_month_stats clears the dir itself)
-render_month_stats transfer
+# (the 18 Month stats pages, docs/transfer/month-stats/, went 2026-09-29: the
+# Entities pages under the This month / Previous month date presets show the
+# same figures)
+rm -rf "$DOCS/transfer/month-stats"
 
 # Redirect stubs were REMOVED 2026-07 (no backwards compatibility): the old
 # flat entities/showseen/session/topview-split/direction-action/mode/inout-gap/

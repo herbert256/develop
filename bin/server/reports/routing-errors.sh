@@ -13,6 +13,11 @@
 #   Post client action error   ARRC0009  "ARRC0009: [<account>@<login>] []  Error deleting the file
 #                                        after a post client action." (any AR line whose text names a
 #                                        post client action) — the ACCOUNT, the first bracket before @
+#   Route stopped              ARSP0001  "ARSP0001: [SECURETRANSPORT] [<subscription>]  An error
+#                                        occurred while sending the file {<file>} to a partner site.
+#                                        Step configuration suggests to stop further route execution."
+#                                        (2026-09-29: the most frequent routing code, and the lines behind
+#                                        the Boxes Deploy column — its own page went)
 # An Advanced Routing line reads  AR<code>: [<first>] [<second>]  <body> —
 # ar_parse() splits it into B1, B2 and BODY. Capped (user rule, 2026-09-12)
 # at MAXROWS rows and MAXPER rows per error family AND entity — the newest
@@ -83,7 +88,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
     function basename(p,   n, P) { n = split(p, P, "/"); return (P[n] != "" ? P[n] : p) }
     BEGIN { rn_load(RNF) }
     $1 == "KS" { ksite[$2] = 1; next }                       # the known-subscription list (first input)
-    $5 !~ /Could not send file|while publishing the file|post client action/ { next }
+    $5 !~ /Could not send file|while publishing the file|post client action|stop further route execution/ { next }
     {
         m = $5
         if (!ar_parse(m)) next
@@ -96,6 +101,9 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
             fn = basename(ar_brace(substr(BODY, b)))
         } else if (BODY ~ /post client action/) {
             fam = "Post client action error"; kind = "accounts"; ent = B1; sub(/@.*$/, "", ent)
+        } else if (index(BODY, "stop further route execution") > 0) {
+            fam = "Route stopped"; kind = "subscriptions"; ent = B2
+            fn = basename(ar_brace(BODY))
         }
         if (ent == "") next
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) next
@@ -115,7 +123,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
 IFS=$'\t' read -r _ n_lines n_ents n_days <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t' || printf 'TOT\t0\t0\t0\n')"
 n_lines=${n_lines:-0}; n_ents=${n_ents:-0}; n_days=${n_days:-0}
 fam_n() { printf '%s\n' "$agg" | awk -F'\t' -v F="$1" '$1 == "FAM" && $2 == F { n = $3 } END { print n + 0 }'; }
-n_cns=$(fam_n "Could not send file"); n_pub=$(fam_n "Publish to account failed"); n_pca=$(fam_n "Post client action error")
+n_cns=$(fam_n "Could not send file"); n_pub=$(fam_n "Publish to account failed"); n_pca=$(fam_n "Post client action error"); n_rst=$(fam_n "Route stopped")
 
 # newest first (the sortkey = date + full time), then the two caps in that
 # order: the first MAXPER rows met per family + entity are its newest, the
@@ -130,13 +138,13 @@ if [ "$n_lines" -gt 0 ]; then n_shown=$(lin_rows | grep -c $'^ROW\t' || true); f
 
 {
     printf 'TITLE\tAdvanced Routing errors\n'
-    printf 'DESC\tThe Advanced Routing errors a route gives up on — Could not send file (AR0074), Publish to account failed (ARPA0001), Post client action error (ARRC0009) — one row per line, newest first, with the subscription or account and the file.\n'
-    printf 'KEYWORDS\tadvanced routing,routing errors,could not send file,AR0074,send failed,transfer site,after attempting,publish to account failed,publishing the file,ARPA0001,route stopped,post client action,ARRC0009,error deleting the file,post-processing,delivery,cft,push,uc1,uc2,route\n'
+    printf 'DESC\tThe Advanced Routing errors a route gives up on — Could not send file (AR0074), Publish to account failed (ARPA0001), Post client action error (ARRC0009), Route stopped (ARSP0001) — one row per line, newest first, with the subscription or account and the file.\n'
+    printf 'KEYWORDS\tadvanced routing,routing errors,could not send file,AR0074,send failed,transfer site,after attempting,publish to account failed,publishing the file,ARPA0001,route stopped,post client action,ARRC0009,error deleting the file,post-processing,ARSP0001,step failure,deploy,configuration defect,delivery,cft,push,uc1,uc2,route\n'
     if [ "$n_lines" -eq 0 ]; then
-        printf 'INTRO\tNo Advanced Routing **Could not send file**, **publish to account** or **post client action** error in this data window.\n'
+        printf 'INTRO\tNo Advanced Routing **Could not send file**, **publish to account**, **post client action** or **route stopped** error in this data window.\n'
     else
-        printf 'INTRO\t**%s** Advanced Routing error line(s) for **%s** subscription(s) / account(s) on **%s** day(s): **%s** Could not send file, **%s** Publish to account failed, **%s** Post client action error. Newest first; at most **%s** rows and **%s** per error and entity (**%s** shown here).\n' \
-            "$n_lines" "$n_ents" "$n_days" "$n_cns" "$n_pub" "$n_pca" "$MAXROWS" "$MAXPER" "$n_shown"
+        printf 'INTRO\t**%s** Advanced Routing error line(s) for **%s** subscription(s) / account(s) on **%s** day(s): **%s** Could not send file, **%s** Publish to account failed, **%s** Post client action error, **%s** Route stopped. Newest first; at most **%s** rows and **%s** per error and entity (**%s** shown here).\n' \
+            "$n_lines" "$n_ents" "$n_days" "$n_cns" "$n_pub" "$n_pca" "$n_rst" "$MAXROWS" "$MAXPER" "$n_shown"
     fi
 
     printf 'TABLE\tAdvanced Routing errors\twide\tpager=100\n'
@@ -144,10 +152,10 @@ if [ "$n_lines" -gt 0 ]; then n_shown=$(lin_rows | grep -c $'^ROW\t' || true); f
     printf 'KIND\ttext\ttext\ttext\tmono\tfile\n'
     if [ "$n_lines" -gt 0 ]; then lin_rows
     else printf 'ROW\t@{colspan=5}No Advanced Routing error line in this data window.\n'; fi
-    printf 'TOTAL\t@{colspan=5}%s row(s) shown — %s line(s) in the log (%s Could not send file, %s Publish to account failed, %s Post client action error), %s entities, %s day(s)\n' \
-        "$n_shown" "$n_lines" "$n_cns" "$n_pub" "$n_pca" "$n_ents" "$n_days"
+    printf 'TOTAL\t@{colspan=5}%s row(s) shown — %s line(s) in the log (%s Could not send file, %s Publish to account failed, %s Post client action error, %s Route stopped), %s entities, %s day(s)\n' \
+        "$n_shown" "$n_lines" "$n_cns" "$n_pub" "$n_pca" "$n_rst" "$n_ents" "$n_days"
     printf 'NOTE\tAt most %s rows and %s per error and entity, the newest ones; the totals name what the log holds.\n' "$MAXROWS" "$MAXPER"
-    printf 'SUMMARY\tLines: %s  |  Could not send file: %s  |  Publish to account failed: %s  |  Post client action error: %s  |  Shown: %s\n' "$n_lines" "$n_cns" "$n_pub" "$n_pca" "$n_shown"
+    printf 'SUMMARY\tLines: %s  |  Could not send file: %s  |  Publish to account failed: %s  |  Post client action error: %s  |  Route stopped: %s  |  Shown: %s\n' "$n_lines" "$n_cns" "$n_pub" "$n_pca" "$n_rst" "$n_shown"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

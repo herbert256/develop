@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/activity.rpt"
 comps=()
-for c in day weekly hourly weekday; do
+for c in weekly hourly weekday; do   # day (the per-day table) left 2026-09-29: the Top view carries it, Volume included
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "Activity over time" "Files, Error/OK and volume per calendar day, ISO week, hour of day and weekday — one activity report, one tab per resolution." "Transfer activity at every resolution in one report: **per day**, **per ISO week**, **per hour of day** (plus the hour × weekday grid) and **per weekday**. The tabs switch the resolution; the figures are the same Files, Error/OK split and volume throughout." "" "${comps[@]}"
+merge_rpt "$OUT" "Activity over time" "Files, Error % and volume per ISO week, hour of day and weekday — one activity report, one tab per resolution (the per-day figures are the Top view)." "Transfer activity at every resolution in one report: **per ISO week**, **per hour of day** (plus the hour × weekday grid) and **per weekday**. The tabs switch the resolution. The per-day figures are the **Top view**." "" "${comps[@]}"

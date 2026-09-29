@@ -20,13 +20,14 @@
 <p>Transfers that did not succeed at the first attempt: failing flows, retry anatomy, retry spacing, which side fails, manual resubmissions.</p>
 <h2>Sections</h2>
 <ul>
-<li><strong>Failing flows</strong> &mdash; one row per <strong>(Account, Subscription)</strong> pair; top 60, never-succeeded first, then by failure count. <strong>Fail days</strong> = distinct days with a failure; <strong>Failures</strong>/<strong>Successes</strong> = legs; <strong>Resubmitted</strong> = legs flagged as resubmissions; last failure time.</li>
+<li><strong>Failing flows</strong> &mdash; one row per <strong>(Account, Subscription)</strong> pair; top 60, never-succeeded first, then by failure count. <strong>Fail days</strong> = distinct days with a failure; <strong>Error transfers</strong>/<strong>OK transfers</strong> = legs (a flow with no OK transfers never succeeded in the range); <strong>Resubmitted</strong> = legs flagged as resubmissions; last failure time.</li>
 <li><strong>Retry anatomy, delivered</strong> &mdash; failed legs before delivery, delivered Files only (incl. Waiting). A big &ldquo;first try&rdquo; row is healthy; weight further down = the platform delivers by insisting.</li>
 <li><strong>Retry anatomy, abandoned</strong> &mdash; Files ended Error or Expired; &ldquo;first try (0 failed legs)&rdquo; is mostly Expired: every leg processed, the partner never collected.</li>
 <li><strong>Retry spacing</strong> &mdash; a failed leg&rsquo;s start to the next leg of the same File. Under 10 seconds = automatic hammering; minutes/hours = scheduled re-runs.</li>
 <li><strong>Which side fails</strong> &mdash; Inbound = arrival (partner/CFT delivering to ST); Outbound = delivery (ST pushing onward, or the partner collecting).</li>
 <li><strong>Manual resubmissions</strong> &mdash; <code>Resubmitted=true</code> legs per day and per subscription. Error/OK is the leg&rsquo;s own status: an OK resubmitted leg is the retry that worked.</li>
 <li><strong>Resubmission outcomes (server log)</strong> &mdash; &ldquo;Error while resubmitting transfer&rdquo; vs &ldquo;Resubmission successfully executed&rdquo; per day; also catches attempts that produced no transfer-log leg.</li>
+<li><strong>Recovered files</strong> tab &mdash; the Files that carried a failed leg yet finished OK, per subscription, protocol and day, split Retry (automatic) / Resubmit (manual) (<a href="recovered-files.html">its own help</a>).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
@@ -37,7 +38,7 @@
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a Failures/Successes count for that outcome&rsquo;s 10 most recent transfers, an anatomy row for its 10 most recent Files, a resubmission row for the subscription&rsquo;s 10 most recent resubmitted Files (newest first).</li>
+<li>Click an Error/OK transfers count for that outcome&rsquo;s 10 most recent transfers, an anatomy row for its 10 most recent Files, a resubmission row for the subscription&rsquo;s 10 most recent resubmitted Files (newest first).</li>
 </ul>
 </main>
 </body>

@@ -4,36 +4,29 @@
 # the transfer pages, like cross-reference.sh): per ENTITY, is each configured
 # direction actually WORKING?
 #
-# TWO selectors, so 5 x 4 = 20 pages:
-#   entity  Accounts (default) · Logical · Partners · Domains · Applications  (report_tabs)
-#   rule    Current (default) · Once · OK transfers ·
-#           Difference between Current & Once                       (a report NAV)
-# The RULE rides on the basename like duration/duration-all: entity-coverage,
-# entity-coverage-ok, entity-coverage-once and entity-coverage-diff, each
-# tabbed into the four entities. Its NAV line is emitted INSIDE each table block — that is what makes
-# it per-entity, so switching rule keeps the entity you are on — and render_report
-# hoists a table-block NAV onto the entity row to its RIGHT (@sep), so the two
-# selectors share ONE line: group row, intro, "entity | gap | rule", STAT boxes.
+# ONE selector, one page per entity (6 pages):
+#   entity  Accounts (default) · Logical · Partners · Domains · Applications · BL  (report_tabs)
+# The RULE is a set of verdict COLUMNS since 2026-09-29 (it was a second
+# selector until then — entity-coverage, -once, -ok and -diff, 24 pages
+# holding the same rows under four verdicts):
 #
 # The two structural rules never change (a side with no configured
 # subscriptions is trivially covered, and an entity needs every side it
-# configures). What varies is the EVIDENCE:
+# configures). What varies is the EVIDENCE, one column each:
 #   Current          COMMUNICATION, latest: the most recent File that way was
-#     (default)      delivered OK - or a successful logon / poll, which is a
+#     (row colour)   delivered OK - or a successful logon / poll, which is a
 #                    successful connection by definition
 #   Once             COMMUNICATION, ever: a File moved that way at all, or a
 #                    successful SSH logon / UC3 poll
 #   OK transfers     the TRANSFER: the most recent File that way was delivered
-#                    OK. The logon and poll proofs do NOT count here - this view
-#                    is about files arriving, not about the link being up.
-#   Difference       the REGRESSIONS: only the entities covered under Once but
-#                    not under Current - it worked at some point, and the most
-#                    recent attempt did not. All rows are red by construction,
-#                    and the row count equals Once's green count minus Current's
-#                    green count (Current is a subset of Once) - the invariant
-#                    to re-assert after any change here.
+#                    OK. The logon and poll proofs do NOT count here - this
+#                    column is about files arriving, not about the link being up.
+#   Regressed        covered Once but not Current - it worked at some point,
+#                    and the most recent attempt did not (the former
+#                    "Difference between Current & Once" view; search
+#                    "regressed" for that list).
 # Monotonic in strictness: OK transfers is a subset of Current, which is
-# a subset of Once.
+# a subset of Once — the invariant to re-assert after any change here.
 # It was Partner-only until 2026-07; the coverage question is the same for any
 # entity that owns subscriptions, so the whole computation is now driven by a
 # per-entity SPEC (base list, the two xref directions, the account rollup and
@@ -56,10 +49,11 @@
 #                  UC status / UC3 tab, bin/analyses/reports/uc3-polling.sh).
 #
 # One row per configured entity: the configured subscription counts per side,
-# the File counts per side, the proof counts (Logons / Polls) and a per-side
-# verdict. TWO colours only — green = every configured side covered, red =
-# not; a side with no configured connections is trivially covered and a "both"
-# entity needs BOTH sides. That verdict OVERRULES the usual status colours.
+# the File counts per side, the proof counts (Logons / Polls) and the four
+# verdict columns. TWO row colours only, by the CURRENT verdict — green =
+# every configured side covered, red = not; a side with no configured
+# connections is trivially covered and a "both" entity needs BOTH sides. That
+# verdict OVERRULES the usual status colours.
 # No date filter — a status report.
 #
 # On the ACCOUNTS view the account rollup is the IDENTITY (an account is its
@@ -116,54 +110,19 @@ SPECS=(
 
 now=$(date '+%Y-%m-%d %H:%M:%S')
 ASF="$CONFIG_XREF/_accounts-subscriptions.tsv"; [ -f "$ASF" ] || ASF=/dev/null   # the logon-proof composition (see the awk)
+TMPD=$(mktemp -d "${TMPDIR:-/tmp}/axecov.XXXXXX")
+trap 'rm -rf "$TMPD"' EXIT
 
-# rule key : label : output basename
-# Button order leads with Current — "is this working NOW" is what these pages
-# are opened for — then Once (has it EVER worked) and OK transfers (strictest:
-# the latest FILE itself was delivered OK, no logon/poll fallback). So the
-# buttons are NO LONGER in increasing-strictness order; the subset relation
-# still holds and is the thing to assert after a change: OK <= Current <= Once.
-# CURRENT IS THE DEFAULT, and a rule is made default by owning the UNSUFFIXED
-# basename — first_page, the Analyses menu, the analyses index and the sitemap
-# all land on entity-coverage-accounts.html, which IS this rule's Accounts
-# page. Moving the default therefore means moving which rule holds
-# "entity-coverage"; there is no default flag anywhere to set.
-RULES=(
-    "current:Current:entity-coverage"
-    "once:Once:entity-coverage-once"
-    "ok:OK transfers:entity-coverage-ok"
-    "diff:Difference between Current & Once:entity-coverage-diff"
-)
-
-# rulenav VIEWKEY ACTIVERULE -> the NAV line switching rule while staying on
-# this entity. Emitted inside the table block, so it is the third button row.
-rulenav() {
-    local vk=$1 active=$2 out="NAV" r rk rl rb
-    for r in "${RULES[@]}"; do
-        IFS=: read -r rk rl rb <<< "$r"
-        out+=$'\t'"$([ "$rk" = "$active" ] && echo 1 || echo 0)|$rl|$rb-$vk.html"
-    done
-    printf '%s\n' "$out"
-}
-
-# THE FOUR RULES IN PARALLEL (2026-09-27, speed round 10): each writes its
-# own .rpt from the same read-only inputs — one job per rule instead of 24
-# awk passes over _files.tsv one after another (the analyses stage's long pole).
-cov_rule() {   # $1 = one RULES entry
-local rule=$1
-IFS=: read -r RKEY RLABEL RBASE <<< "$rule"
-OUT="$REPORTS_DIR/$RBASE.rpt"
-{
-printf 'TITLE\tEntity coverage\n'
-printf 'DESC\tPer account, logical flow, partner, domain, application or BL: covered (green) or not (red) — each side proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out); a side with no configured connections is trivially covered.\n'
-printf 'INTRO\tIs the connection for each entity WORKING? A side is **covered** when at least one real File moved that way, or when the server log proves the connection: **In** — one of the entity'"'"'s accounts **successfully authenticated over SSH**; **Out** — a **UC3 remote poll succeeded** (the "Applying the search pattern" message appears only when the remote listing worked — 0 files found still proves the connection). A side with **no configured connections** is covered by definition, and a **both** entity needs In AND Out working. Two colors only — **green** = covered (listed first), **red** = not covered; this verdict overrules the usual status colors here. The buttons below pick the **entity**; the ones to their right pick the **rule**. *Current* and *Once* are about the **communication**, so a successful SSH logon or UC3 poll proves a side on its own — most-recently, and ever. *OK transfers* is about the **transfer**: neither proof counts there, the most recent File itself must have been delivered OK. *Difference between Current & Once* lists only the regressions — entities covered under *Once* but not under *Current*: the connection worked at some point, and the most recent attempt did not.\n'
-printf 'KEYWORDS\tcoverage,covered,working,proof,logon,poll,account,logical,partner,domain,application,bl\n'
-
-for spec in "${SPECS[@]}"; do
+# cov_view SPEC -> $TMPD/<key>.part, the entity's table block. THE SIX
+# ENTITIES IN PARALLEL (the four rules ran as parallel jobs until 2026-09-29;
+# one job per entity now, each one awk pass over _files.tsv), concatenated in
+# SPECS order afterwards.
+cov_view() {
+    local spec=$1
     IFS=: read -r _key label base es se ae fcol kind <<< "$spec"
     EB="$CONFIG_BASE/$base.tsv"
     ES="$CONFIG_XREF/$es.tsv"; SE="$CONFIG_XREF/$se.tsv"; AE="$CONFIG_XREF/$ae.tsv"
-    [ -f "$EB" ] || continue
+    [ -f "$EB" ] || return 0
     [ -f "$ES" ] || ES=/dev/null
     [ -f "$SE" ] || SE=/dev/null
     ident=0
@@ -175,11 +134,11 @@ for spec in "${SPECS[@]}"; do
         logical) [ -f "$CONFIG_XREF/_profiles-logicals.tsv" ] && VMAP="$CONFIG_XREF/_profiles-logicals.tsv" ;;
         bl)      [ -f "$CONFIG_XREF/_subscriptions-bl.tsv" ] && VMAP="$CONFIG_XREF/_subscriptions-bl.tsv" ;;
     esac
-
     awk -F'\t' -v EB="$EB" -v SB="$SB" -v ES="$ES" -v SE="$SE" -v AE="$AE" -v VMAP="$VMAP" -v ASF="$ASF" \
         -v AUTH="$AUTH" -v POLL="$POLL" -v AUTHL="$AUTHL" -v AUTHLOK="$AUTHLOK" -v LSF2="$LSF2" -v ALF2="$ALF2" \
-        -v FCOL="$fcol" -v IDENT="$ident" -v RULE="$RKEY" '
+        -v FCOL="$fcol" -v IDENT="$ident" '
         function stripattr(v) { sub(/^@\{[^}]*\}/, "", v); return v }
+        function yn(b) { return b ? "@{class=processed}yes" : "@{class=failed}no" }
         BEGIN {
             FS = "\t"
             while ((getline l < EB) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") { P[toupper(a[1])] = a[2]; DISP[toupper(a[1])] = a[1] } }
@@ -293,63 +252,44 @@ for spec in "${SPECS[@]}"; do
                 # successful SSH logon or UC3 poll proves the side on its own.
                 # OK transfers asks about the TRANSFER, so neither counts there
                 # — the most recent File itself has to have been delivered OK.
-                if (RULE == "once") { fi = infile[p] > 0; fo = outfile[p] > 0 }
-                else                { fi = (lastin[p]  != "" && lastinok[p])
-                                      fo = (lastout[p] != "" && lastoutok[p]) }
-                pi = (RULE == "ok") ? 0 : (logons[p] > 0)
-                po = (RULE == "ok") ? 0 : (polls[p]  > 0)
-                iok = (insub[p]  + 0 == 0) || fi || pi
-                ook = (outsub[p] + 0 == 0) || fo || po
-                if (RULE == "diff") {
-                    # iok/ook came out of the else-branch above, so they ARE the
-                    # Current verdict; the Once verdict is recomputed here. Keep
-                    # only the regressions: covered Once, not covered Current.
-                    # END fields become total / Once-covered / rows shown.
-                    conce = ((insub[p]  + 0 == 0) || infile[p]  > 0 || pi) && \
-                            ((outsub[p] + 0 == 0) || outfile[p] > 0 || po)
-                    tot++; if (conce) tg++
-                    if (!conce || (iok && ook)) continue
-                    tr++
-                    printf "1\t%s\tROW\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t@data:res=red\n", \
-                        p, DISP[p], (dir == "in") ? "in" : (dir == "out") ? "out" : (dir == "both") ? "both" : "?", \
-                        insub[p]+0, infile[p]+0, logons[p]+0, outsub[p]+0, outfile[p]+0, polls[p]+0
-                    continue
-                }
-                res = (iok && ook) ? "green" : "red"
-                rank = (res == "green") ? 0 : 1
+                ni = (insub[p]  + 0 == 0); no = (outsub[p] + 0 == 0)
+                li = (lastin[p]  != "" && lastinok[p]); lo = (lastout[p] != "" && lastoutok[p])
+                pi = (logons[p] > 0); po = (polls[p] > 0)
+                cur  = (ni || li || pi) && (no || lo || po)
+                once = (ni || infile[p] > 0 || pi) && (no || outfile[p] > 0 || po)
+                okt  = (ni || li) && (no || lo)
+                reg  = once && !cur
+                res = cur ? "green" : "red"
+                rank = cur ? 0 : 1
                 dl = (dir == "in") ? "in" : (dir == "out") ? "out" : (dir == "both") ? "both" : "?"
-                printf "%d\t%s\tROW\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t@data:res=%s\n", \
+                printf "%d\t%s\tROW\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t@data:res=%s\n", \
                     rank, p, DISP[p], dl, insub[p]+0, infile[p]+0, logons[p]+0, \
-                    outsub[p]+0, outfile[p]+0, polls[p]+0, res
-                tot++; if (res == "green") tg++; else tr++
+                    outsub[p]+0, outfile[p]+0, polls[p]+0, yn(cur), yn(once), yn(okt), \
+                    (reg ? "@{class=failed}regressed" : ""), res
+                tot++; if (cur) tg++; else tr++
+                if (once) to++; if (okt) tk++; if (reg) tx++
             }
-            printf "9\t~\tEND\t%d\t%d\t%d\n", tot+0, tg+0, tr+0
+            printf "9\t~\tEND\t%d\t%d\t%d\t%d\t%d\t%d\n", tot+0, tg+0, tr+0, to+0, tk+0, tx+0
         }
     ' "$FILES" \
     | LC_ALL=C sort -t$'\t' -k1,1n -k2,2 \
-    | awk -F'\t' -v LABEL="$label" -v KIND="$kind" -v RULE="$RKEY" -v RULENAV="$(rulenav "$_key" "$RKEY")" '
+    | awk -F'\t' -v LABEL="$label" -v KIND="$kind" '
         # The STAT boxes sit AFTER the TABLE line on purpose: segment_rpt puts
         # every directive following a TABLE into THAT table block, so each
-        # tabbed page gets its own three boxes instead of one shared set.
-        $3 == "END" { tot = $4; tg = $5; tr = $6
-            printf "TABLE\t%s\twide\tgsep=2,5\n", LABEL
-            # In the block so it is per-entity; render_report lifts it out and
-            # merges it onto the entity row to the RIGHT (@sep), above the boxes
-            print RULENAV
+        # tabbed page gets its own boxes instead of one shared set.
+        $3 == "END" { tot = $4; tg = $5; tr = $6; to = $7; tk = $8; tx = $9
+            printf "TABLE\t%s\twide\tgsep=2,5,8\n", LABEL
             printf "STAT\twhite\t%d\tTotal %s\n", tot+0, tolower(LABEL)
-            if (RULE == "diff") {
-                # tg/tr carry Once-covered / rows shown here (see the END emit)
-                printf "STAT\tgreen\t%d (%.0f%%)\tCovered once\n", tg+0, (tot > 0 ? 100 * tg / tot : 0)
-                printf "STAT\tred\t%d\tOnce but not Current\n", tr+0
-            } else {
-                printf "STAT\tgreen\t%d (%.0f%%)\tCovered\n", tg+0, (tot > 0 ? 100 * tg / tot : 0)
-                printf "STAT\tred\t%d (%.0f%%)\tNot covered\n", tr+0, (tot > 0 ? 100 * tr / tot : 0)
-            }
-            printf "GHEAD\t@{colspan=2}\t@{colspan=3,class=gband gsep}In\t@{colspan=3,class=gband gsep}Out\n"
-            printf "HEAD\t%s\tDirection\tSubs\tFiles\tLogons\tSubs\tFiles\tPolls\n", (LABEL == "Logical" || LABEL == "BL" ? LABEL : substr(LABEL, 1, length(LABEL) - 1))
-            printf "KIND\t%s\ttext\tnum\tnum\tnum\tnum\tnum\tnum\n", KIND
+            printf "STAT\tgreen\t%d (%.0f%%)\tCovered (Current)\n", tg+0, (tot > 0 ? 100 * tg / tot : 0)
+            printf "STAT\tred\t%d (%.0f%%)\tNot covered\n", tr+0, (tot > 0 ? 100 * tr / tot : 0)
+            printf "STAT\twhite\t%d\tCovered once\n", to+0
+            printf "STAT\twhite\t%d\tOK transfers\n", tk+0
+            printf "STAT\tred\t%d\tRegressed\n", tx+0
+            printf "GHEAD\t@{colspan=2}\t@{colspan=3,class=gband gsep}In\t@{colspan=3,class=gband gsep}Out\t@{colspan=4,class=gband gsep}Covered\n"
+            printf "HEAD\t%s\tDirection\tSubs\tFiles\tLogons\tSubs\tFiles\tPolls\tCurrent\tOnce\tOK transfers\tRegressed\n", (LABEL == "Logical" || LABEL == "BL" ? LABEL : substr(LABEL, 1, length(LABEL) - 1))
+            printf "KIND\t%s\ttext\tnum\tnum\tnum\tnum\tnum\tnum\ttext\ttext\ttext\ttext\n", KIND
             for (i = 1; i <= nbuf; i++) print BUF[i]
-            printf "TOTAL\tTotal (%d %s)\t\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\n", \
+            printf "TOTAL\tTotal (%d %s)\t\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t\t\t\t\n", \
                 tot+0, tolower(LABEL), s3+0, s4+0, s5+0, s6+0, s7+0, s8+0
             next
         }
@@ -360,18 +300,24 @@ for spec in "${SPECS[@]}"; do
             s3 += $6; s4 += $7; s5 += $8; s6 += $9; s7 += $10; s8 += $11
             next
         }
-    '
-done
-
-printf 'NOTE\tIn proof: the server-log SSH logon lines ("User with login name … associated with account … successfully authenticated"), counted per account by the Auth activity report and rolled up to the account'"'"'s entity — on the Accounts view that rollup is the identity. Out proof: the UC3 poll lines ("Applying the search pattern … for transfer site …"), counted per subscription on the UC status / UC3 tab (Polls by subscription) and rolled up to the subscription'"'"'s entity. Files are real logical transfers, split by the connection side.\n'
-printf 'NOTE\tThe Logons and Polls columns show on every view, but they only COUNT towards the verdict on *Current* and *Once* — on *OK transfers* the verdict rests on the most recent File alone.\n'
-printf 'NOTE\tSubs = the configured subscriptions per side (a both-ways subscription counts on both sides); a side with 0 Subs has nothing to prove and counts as covered.\n'
-printf 'FOOT\tGenerated on %s from %s file(s)\n' "$now" "${#files[@]}"
-} > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
-echo "Data written to $OUT ($(command grep -c '^TABLE' "$OUT") view(s), rule '$RLABEL')." >&2
+    ' > "$TMPD/$_key.part"
 }
 _cpids=()
-for rule in "${RULES[@]}"; do cov_rule "$rule" & _cpids+=("$!"); done
+for spec in "${SPECS[@]}"; do cov_view "$spec" & _cpids+=("$!"); done
 _crc=0
 for _cp in "${_cpids[@]}"; do wait "$_cp" || _crc=$?; done
-[ "$_crc" -eq 0 ] || { echo "entity-coverage: a rule failed (exit $_crc)." >&2; exit "$_crc"; }
+[ "$_crc" -eq 0 ] || { echo "entity-coverage: a view failed (exit $_crc)." >&2; exit "$_crc"; }
+
+{
+printf 'TITLE\tEntity coverage\n'
+printf 'DESC\tPer account, logical flow, partner, domain, application or BL: covered (green) or not (red) — each side proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out); the Current, Once and OK-transfers verdicts side by side, the regressions marked.\n'
+printf 'KEYWORDS\tcoverage,covered,working,proof,logon,poll,regressed,regression,once,current,account,logical,partner,domain,application,bl\n'
+for spec in "${SPECS[@]}"; do
+    _key=${spec%%:*}
+    [ -f "$TMPD/$_key.part" ] && cat "$TMPD/$_key.part"
+done
+printf 'FOOT\tGenerated on %s from %s file(s)\n' "$now" "${#files[@]}"
+} > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the former rule reports (2026-09-29: their verdicts are columns now)
+rm -f "$REPORTS_DIR/entity-coverage-once.rpt" "$REPORTS_DIR/entity-coverage-ok.rpt" "$REPORTS_DIR/entity-coverage-diff.rpt"
+echo "Data written to $OUT ($(command grep -c '^TABLE' "$OUT") view(s))." >&2

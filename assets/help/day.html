@@ -15,21 +15,19 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Activity per Day</h1>
+<h1>Activity over time</h1>
 <h2>What it shows</h2>
-<p>The Activity over time report: transfer activity at every resolution, one tab each &mdash; <strong>per day</strong>, <strong>per ISO week</strong>, <strong>per hour of day</strong> (plus the hour &times; weekday grid) and <strong>per weekday</strong>. The same Files, Error/OK split and volume throughout.</p>
+<p>Transfer activity at every resolution, one tab each &mdash; <strong>per ISO week</strong>, <strong>per hour of day</strong> (plus the hour &times; weekday grid) and <strong>per weekday</strong>. The per-day figures, volume included, are the <a href="topview.html">Top view</a>.</p>
 <h2>Tabs</h2>
 <ul>
-<li><strong>Per day</strong> &mdash; one row per calendar day: Files, Error/OK, volume, first and last time seen. The <a href="topview.html">Top view</a> shows the same table with each day&rsquo;s active accounts, subscriptions, flows, hosts and logins.</li>
 <li><strong>Per week</strong> &mdash; one row per ISO week (Monday&ndash;Sunday) by start date; <strong>Days</strong> = calendar days with data, <strong>Avg/day</strong> divides by it. From/To hides out-of-range weeks.</li>
-<li><strong>Per hour</strong> &mdash; Files = delivered (OK) Files started in that hour; the bar shows load relative to the busiest hour.</li>
+<li><strong>Per hour</strong> &mdash; <strong>Delivered</strong> = the OK Files started in that hour; <strong>Volume</strong> = every File started in it; the bar shows load relative to the busiest hour.</li>
 <li><strong>Hour &times; weekday</strong> &mdash; each cell counts the Files starting in that hour on that weekday, tinted by quartile of the busiest cell: batch windows show as dark blocks. The date filter re-sums and re-tints.</li>
 <li><strong>Per weekday</strong> &mdash; one row per day of week; Files = delivered (OK) Files, Error % = failures over every File of that weekday.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Per day lists every day of the calendar span between the first and last record: no Files gives an explicit &ldquo;0&rdquo; row with <code>-</code> in First/Last Time, so a quiet day is distinct from a missing one.</li>
-<li><strong>(partial start)</strong> / <strong>(partial end)</strong> marks an edge day of the collection window whose first time is after 02:00 or last time before 22:00: the export did not cover the whole day, so do not compare it with a full one.</li>
+<li>On the Top view, <strong>(partial start)</strong> / <strong>(partial end)</strong> marks an edge day of the collection window whose first time is after 02:00 or last time before 22:00: the export did not cover the whole day, so do not compare it with a full one.</li>
 </ul>
 </main>
 </body>

@@ -39,7 +39,7 @@
 <ul>
 <li>Roster: every <code>UC4</code> name in the FlowManager subscription export, run or not. Colour = the site-wide result: green/red are real transfer data (the LAST File OK / Failed-or-Expired), orange never in the transfer log.</li>
 <li>The server signals are <strong>account-keyed</strong>: the partner connects to an account, and the subscription name barely reaches the log (only the PeSIT confirmation of the onward internal leg carries it). The account&harr;subscription cross-reference is 1:1 both ways for UC4, so every line attributes to exactly one subscription.</li>
-<li><strong>error</strong> vs <strong>ok -> error</strong> is per File &mdash; right after any OK File the subscription WAS green &mdash; finer than <a href="from-green-to-red.html">From green to red</a>, which buckets by whole days.</li>
+<li><strong>error</strong> vs <strong>ok -> error</strong> is per File &mdash; right after any OK File the subscription WAS green &mdash; finer than <a href="failed.html">Failed Subscriptions</a>, which buckets by whole days.</li>
 <li>We are the server: no unreachable-partner failure exists, so a refusal at the door is the only way a UC4 flow breaks before a file exists.</li>
 <li>Inbound fails silently &mdash; never sent, never connected and turned away look alike and write no transfer record; the Logons / Arrivals / Problems columns separate them.</li>
 </ul>

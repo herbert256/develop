@@ -35,7 +35,7 @@ SECROW_AWK='
       lk = ($1 in sl) ? "@{href=secparams/" sl[$1] ".html}" : ""
       # TRANSFERS = the OK legs ($4) — one column, no Error / OK pair, no
       # green/red cells, no drills (2026-09-13, user request)
-      printf "ROW\t%s%s\t%s\t@data:buckets=%s\n", lk, $1, $4, bk }
+      printf "ROW\t%s\t%s%s\t%s\t@data:buckets=%s\n", lbl, lk, $1, $4, bk }
 '
 
 shopt -s nullglob
@@ -266,39 +266,36 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
 
 echo "Wrote $(find "$secdir" -name '*.rpt' | wc -l | tr -d ' ') security-param value page(s) to $secdir." >&2
 
-emit_attr() {   # $1 = attribute key
+# ONE table (2026-09-29: the six one-attribute tabs of two or three rows each
+# went): Attribute | Value | Transfers, the attributes in a fixed order, each
+# attribute's values busiest first. A leg counts once per attribute, so the
+# Transfers column does not add across attributes (noagg — a search on one
+# attribute re-totals it).
+emit_attr_rows() {   # $1 = attribute key
     local key=$1 label=$1
     # The "Protocol" attribute is the TLS version (TLSv1.2/1.3), distinct from the
-    # transfer-protocol table above — label it so the two aren't both "Protocol".
+    # transfer-protocol report — label it so the two aren't both "Protocol".
     [ "$key" = "Protocol" ] && label="TLS version"
-    printf 'TABLE\t\tdrill=transfer\n'          # no title — the first column header names the table
     # TRANSFERS = the OK legs (2026-09-13, user request: one Transfers column,
     # no Error / OK pair, no green/red cells, no drills); the bucket payload
     # keeps its metrics, so the token reads metric 2 (ok); rows sort by it
-    printf 'HEAD\t%s\tTransfers\n' "$label"
-    printf 'KIND\ttext\tnum\n'
-    printf 'RECALC\t-\ts2\n'
     printf '%s\n' "$agg" | awk -F'|' -v k="$key" '$1=="ATTR" && $2==k { print $3"\t"$4"\t"$5"\t"$6"\t"$7"\t"$8"\t"$9 }' \
-        | sort -t$'\t' -k4,4nr | awk -F'\t' -v smap="$smap" -v d="$key" "$SECROW_AWK"
-    # Per-table total: the sum of this attribute's OK rows (attributes cover only
-    # the legs whose SecurityParameters name them, so each table totals its own).
-    printf '%s\n' "$agg" | awk -F'|' -v k="$key" '$1=="ATTR" && $2==k { p += $6 }
-        END { printf "TOTAL\tTotal\t@{class=num}%d\n", p+0 }'
+        | sort -t$'\t' -k4,4nr | awk -F'\t' -v smap="$smap" -v d="$key" -v lbl="$label" "$SECROW_AWK"
 }
 
 {
     printf 'TITLE\tTransfer Security Parameters\n'
-    printf 'DESC\tEvery attribute parsed from the SecurityParameters column, one view per attribute.\n'
-    printf 'INTRO\tConnection security by SecurityParameters attribute (TLS version, Cipher, MAC, Key Exchange, Public Key, ...), one view per attribute. Click a value in the first column for the subscriptions that use it.\n'
-
-    # ALWAYS all six attribute tables, in this fixed order — the tab labels in
-    # report_tabs are positional, so an attribute with no data still emits its
-    # (empty) table to keep the count identical in every env.
+    printf 'DESC\tEvery attribute parsed from the SecurityParameters column — TLS version, cipher, cipher suite, MAC, key exchange, public key — in one table.\n'
+    printf 'INTRO\tConnection security by SecurityParameters attribute (TLS version, Cipher, MAC, Key Exchange, Public Key, ...), one table. Click a value for the subscriptions that use it.\n'
+    printf 'TABLE\t\tdrill=transfer\tnoagg=2\n'
+    printf 'HEAD\tAttribute\tValue\tTransfers\n'
+    printf 'KIND\ttext\ttext\tnum\n'
+    printf 'RECALC\t-\t-\ts2\n'
     for pk in "Protocol" "Cipher" "Cipher suite" "MAC" "Key Exchange" "Public Key"; do
-        emit_attr "$pk"
+        emit_attr_rows "$pk"
     done
-
-    printf 'NOTE\tCounts individual transfers (legs), not Files: security parameters are negotiated per leg (the Inbound and Outbound rows use different ciphers/protocols). Transfers = the OK legs (2026-09-13 — the Error / OK split is gone); click a value in the first column for the subscriptions that use it.\n'
+    printf 'TOTAL\t@{colspan=2}Total\t\n'
+    printf 'NOTE\tCounts individual transfers (legs), not Files: security parameters are negotiated per leg (the Inbound and Outbound rows use different ciphers/protocols). Transfers = the OK legs; click a value for the subscriptions that use it.\n'
     printf 'SUMMARY\tTotal transfers: %s  |  Error: %s  |  OK: %s\n' "$tot_legs" "$tot_failed" "$tot_processed"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

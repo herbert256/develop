@@ -78,6 +78,19 @@ fi
 
 nul() { [ -f "$1" ] && printf '%s' "$1" || printf '/dev/null'; }
 
+# the server-side inbound connections per source address (the Inbound
+# Connections report's By source address table) — with the server-log
+# mentions (unknown/white.tsv), the ONE "server-seen" rule for a whitelisted
+# IP, shared with the Whitelist audit (2026-09-29: the audit counted these
+# connections and not the mentions, the backlog the mentions only, so an
+# address could be "Never seen" on one page and fine on the other)
+SRVADDR="$TMPD/srvaddr.tsv"
+: > "$SRVADDR"
+if [ -f "$DATA/server/reports/inbound-connections.rpt" ]; then
+    awk -F'\t' '$1 == "TABLE" { t = $2 } $1 == "ROW" && t == "By source address" && $2 !~ /^@\{/ && $3 + 0 > 0 { print $2 "\t" $3 }' \
+        "$DATA/server/reports/inbound-connections.rpt" > "$SRVADDR"
+fi
+
 # ---- one pass over every source, dedup in rank order ------------------------
 # Emits sortable rows: rank, type-order, NAME, type, alink sub-dir, reason,
 # evidence, last activity, safety text, result colour. Every class walks an
@@ -100,6 +113,7 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
     # went): a whitelisted IP the server log mentions is not unused, and a
     # never-transferred subscription the server log names had server contact
     FILENAME ~ /unknown\/white\.tsv$/            { if ($1 != "") WSEEN[$1] = 1; next }
+    FILENAME ~ /srvaddr\.tsv$/                  { if ($1 != "") WSEEN[$1] = 1; next }   # + the inbound connections (the audit rule)
     FILENAME ~ /server\/cache\/_subscriptions\.tsv$/ { if ($2 != "") SMEN[toupper($2)] = 1; next }
     FILENAME ~ /_accounts-subscriptions\.tsv$/   { if ($1 != "") HASSUB[toupper($1)] = 1; next }
     FILENAME ~ /_accounts-white\.tsv$/           { if ($1 != "" && $2 != "" && !(($1 SUBSEP $2) in AWP)) { AWP[$1 SUBSEP $2] = 1
@@ -199,7 +213,7 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
         close(STATS)
     }
 ' "$NOCRON" "$(nul "$BASE/_accounts.tsv")" "$(nul "$BASE/_subscriptions.tsv")" "$(nul "$BASE/_white.tsv")" \
-  "$(nul "$DATA/unknown/white.tsv")" "$(nul "$DATA/server/cache/_subscriptions.tsv")" \
+  "$(nul "$DATA/unknown/white.tsv")" "$SRVADDR" "$(nul "$DATA/server/cache/_subscriptions.tsv")" \
   "$(nul "$XREF/_accounts-subscriptions.tsv")" "$(nul "$XREF/_accounts-white.tsv")" \
   "$(nul "$COV/accounts.tsv")" "$(nul "$COV/subscriptions.tsv")" "$(nul "$COV/logins.tsv")" "$(nul "$COV/hosts.tsv")" \
   "$(nul "$XREF/_subscriptions-partners.tsv")" "$TF"
@@ -236,7 +250,7 @@ ucol=green; [ -n "$maxd" ] || ucol=orange
     fi
     printf 'TOTAL\tTotal (%s object(s))\t\t\t\t\t\n' "$n_total"
 
-    printf 'NOTE\tEverything here reads SOURCE data — the flow-manager config caches, the coverage TSVs, the transfer cache and the subscriptions export (the SKIP-filtered copy, the same population as every other report) — never another report, so the ranking is stable. "Never seen" for a whitelist address is the established result rollup: no transfer from that address AND no server-log mention (a server-contact-only address is NOT listed). The no-cron class is the Missing-cronjobs condition (the use-case definitions decide which UCs are cron-triggered); those subscriptions leave no trace in any log, so only the configuration can reveal them. Whitelist entries paired with no account at all are on **Config hygiene**. A partner'\''s recency uses the site-wide UNION attribution, so it matches the lifecycle and Entities views.\n'
+    printf 'NOTE\tEverything here reads SOURCE data — the flow-manager config caches, the coverage TSVs, the transfer cache and the subscriptions export (the SKIP-filtered copy, the same population as every other report) — never another report, so the ranking is stable. "Never seen" for a whitelist address is the Whitelist audit'\''s rule: no transfer from that address, no server-log mention AND no inbound server connection (a server-contact-only address is NOT listed). The no-cron class is the Missing-cronjobs condition (the use-case definitions decide which UCs are cron-triggered); those subscriptions leave no trace in any log, so only the configuration can reveal them. Whitelist entries paired with no account at all are on **Config hygiene**. A partner'\''s recency uses the site-wide UNION attribution, so it matches the lifecycle and Entities views.\n'
     printf 'KEYWORDS\tcleanup,backlog,decommission,orphan,unused,whitelist,never seen,no cron,quiet,dormant,prune,legacy,attack surface\n'
     printf 'SUMMARY\tFindings: %s  |  Orphan accounts: %s  |  Never-seen subscriptions: %s  |  Unused-whitelist accounts: %s (%s addresses)  |  No cron: %s  |  Long quiet: %s\n' \
         "$n_total" "$n_orphan" "$n_never" "$n_white" "$n_whiteips" "$n_nocron" "$n_quiet"

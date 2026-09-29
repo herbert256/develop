@@ -77,7 +77,8 @@ HD='function hd(s) { if (s < 90) return sprintf("%d s", s)
     printf 'TITLE\tUC4 to UC2\n'
     printf 'DESC\tFiles a partner delivered on a UC4 subscription that the same-named UC2 subscription then collected with the same login: the delivered file did not move on to the CFT in time.\n'
     printf 'KEYWORDS\tuc4 to uc2,uc4,uc2,collected back,picked up,pickup,delivered,same file name,same login,cft,staging,twin\n'
-    printf 'TABLE\tPer subscription pair\twide\tnofilter\n'
+    # tab=uc4uc2 (2026-09-29): both tables ride ONE tab of File in - File out
+    printf 'TABLE\tPer subscription pair\twide\tnofilter\ttab=uc4uc2\n'
     printf 'HEAD\tUC4 subscription\tUC2 subscription\tLogin\tFiles\tFastest\tMedian\tSlowest\tFirst\tLast\n'
     printf 'KIND\tsite\tsite\tlogin\tnum\ttext\ttext\ttext\ttext\ttext\n'
     # grouped by pair + login, gaps ascending so the median is the middle row
@@ -90,7 +91,7 @@ HD='function hd(s) { if (s < 90) return sprintf("%d s", s)
           if (first == "" || c < first) first = c
           if (c > last) last = c }
         END { flush() }' | LC_ALL=C sort -t"$TAB" -k1,1nr | cut -f2- | awk -F'\t' '{ print; n++; f += $5 } END { printf "TOTAL\tTotal (%d pair(s))\t\t\t@{class=num}%d\t\t\t\t\t\n", n + 0, f + 0 }'
-    printf 'TABLE\tFiles\twide\tpager=500\n'
+    printf 'TABLE\tFiles\twide\tpager=500\ttab=uc4uc2\n'
     printf 'HEAD\tFile\tLogin\tUC4 subscription\tUC4 date/time\tUC2 subscription\tUC2 date/time\tGap\tUC4 CoreId\tUC2 CoreId\n'
     printf 'KIND\tfile\tlogin\tsite\ttext\tsite\ttext\ttext\ttext\ttext\n'
     LC_ALL=C sort -t"$TAB" -k12,12r "$TMP/pairs" | awk -F'\t' "$HD"'

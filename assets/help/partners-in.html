@@ -17,24 +17,28 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Partners - Incoming</h1>
 <h2>What it shows</h2>
-<p>One row per <strong>FE login</strong> (the credential a partner connects with), combining the <a href="fe-overview.html">FE overview</a> (use cases, logons, Files, pickups) with the <a href="server-logon.html">Incoming logon funnel</a> (the SSH screening counts). Every figure is the source page&rsquo;s own. Full-period; no date filter.</p>
+<p>One row per <strong>FE login</strong> (the credential a partner connects with): its use cases, logons, Files and pickups, plus the <a href="server-logon.html">Incoming logon funnel</a> (the SSH screening counts). Full-period; no date filter.</p>
 <h2>Columns</h2>
 <ul>
 <li><strong>Login</strong> &mdash; links its detail page.</li>
 <li><strong>Use cases</strong> &mdash; <strong>UC2</strong> (the partner picks up from us), <strong>UC4</strong> (the partner delivers to us), <strong>UC2/UC4</strong> (the mailbox pair).</li>
 <li><strong>Cloud</strong> / <strong>Gateway</strong> &mdash; the newest successful authentication on <em>this</em> platform / the last logon on the <em>old</em> gateway (<code>input/logons_old.txt</code>).</li>
-<li><strong>Files in</strong> / <strong>Files out</strong> / <strong>Error</strong> / <strong>Retrieved</strong> / <strong>Waiting</strong> / <strong>Expired</strong> / <strong>Oldest waiting</strong> &mdash; the FE overview&rsquo;s File figures: delivered to us / staged for pickup / failed / collected / staged, not collected yet / deleted unclaimed / the age of the oldest staged file.</li>
-<li><strong>Pickups</strong> &mdash; the pickup logons (an SFTP client opens several connections per visit).</li>
+<li><strong>Files in</strong> / <strong>Files out</strong> &mdash; Files delivered to us / staged for pickup, whole transfer window.</li>
+<li><strong>Error</strong> &mdash; the Files that <em>failed</em>, delivered or picked up. Expired has its own column, so Error + Expired = the site-wide Error count.</li>
+<li><strong>Retrieved</strong> / <strong>Waiting</strong> / <strong>Expired</strong> &mdash; collected / staged, not collected yet / deleted by the retention sweep before pickup.</li>
+<li><strong>Oldest waiting</strong> &mdash; age of the oldest staged file against the newest transfer in the log; sorts by exact age.</li>
+<li><strong>Pickups</strong> &mdash; the pickup logons, taken once per login and account (an SFTP client opens several connections per visit).</li>
 <li><strong>Allowed</strong> / <strong>Disallowed</strong> / <strong>Authenticated</strong> / <strong>Locked</strong> &mdash; the SSH screening funnel per login, as on the Incoming logons page; click a count for its 5 newest log lines.</li>
 <li><strong>Auth Failed</strong> &mdash; the funnel&rsquo;s Bad key + Key failures + Auth failed in one count; its drill holds the 5 newest lines of the three.</li>
 <li><strong>Pattern</strong> &mdash; the logon cadence (successful authentications over any protocol).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Rows = every FE overview login (configured, or named only by the old-gateway file), then the logins the funnel alone knows &mdash; empty transfer cells, no tint.</li>
+<li>Rows = every configured FE login and every login named only by the old-gateway file, then the logins the funnel alone knows &mdash; empty transfer cells, no tint.</li>
+<li>Use case of a subscription = the one UC derivation the whole site uses (its <code>UC&lt;n&gt;</code> prefix, else its configured pattern).</li>
+<li><code>input/logons_old.txt</code>: hand-maintained, one login per line then its stamp (<code>FE000123&nbsp;&nbsp;2026-09-02 14:35</code>); blank and <code>#</code> lines ignored.</li>
 <li>Tint = the login&rsquo;s result: <strong>green</strong> delivering, <strong>red</strong> failing, <strong>orange</strong> configured, never seen. The funnel&rsquo;s own screening colour is not carried; its red cells are. A 0 renders empty.</li>
-<li>Not carried: the FE overview&rsquo;s Pickup pattern and Logon problems, the funnel&rsquo;s No account, Session errors, Re-screens, First logon, Logons and Last logon (= Cloud).</li>
-<li>Definitions and sources: <a href="fe-overview.html">FE overview</a> and <a href="server-logon.html">Logon</a>.</li>
+<li>Not carried: the funnel&rsquo;s No account, Session errors, Re-screens, First logon, Logons and Last logon (= Cloud) &mdash; see <a href="server-logon.html">Logon</a>.</li>
 </ul>
 </main>
 </body>

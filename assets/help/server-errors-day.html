@@ -20,18 +20,17 @@
 <p>The server log&rsquo;s own info/warning/error records (<code>data/server/cache/_parse.tsv</code>, not the transfer log) from every angle, one tab per table. Every number is a count of log records, not Files.</p>
 <h2>Sections</h2>
 <ul>
-<li><strong>Reasons</strong> &mdash; one row per failure-reason bucket (connection, PESIT refusal codes, network, routing); each PESIT <code>reason=</code> code gets its own bucket; Example message = the first occurrence, truncated; unrecognized families land in &ldquo;Other&rdquo; so new problems surface rather than vanish. Below it, <strong>Reasons over time</strong>: the same buckets per ISO week, newest first, full period.</li>
+<li><strong>Log reasons</strong> &mdash; server-log LINES (not Files) by failure-reason bucket, one row per bucket (connection, PESIT refusal codes, network, routing); each PESIT <code>reason=</code> code gets its own bucket; Example message = the first occurrence, truncated; unrecognized families land in &ldquo;Other&rdquo; so new problems surface rather than vanish. Below it, <strong>Reasons over time</strong>: the same buckets per ISO week, newest first, full period.</li>
 <li><strong>Heatmap</strong> &mdash; hour &times; weekday, each cell the Error + Warning total, tinted by quartile (darker = busier); <strong>Errors / Warnings / Total</strong> = the hour over all days, the Total row = the weekday over all hours.</li>
 <li><strong>Top messages</strong> &mdash; the most-repeated messages with numbers, IDs and quoted values normalized away; truncated to 160 characters before clustering so stack-trace variants group; Info records excluded.</li>
-<li><strong>Per component</strong> &mdash; records by level (Info/Warning/Error) for TM (transaction manager), PESITD and SSHD.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>Every number is re-aggregated from per-day buckets under the date filter (the heatmap re-sums and re-tints; Reasons over time always shows the full period).</li>
-<li>The levels <strong>per day</strong> with the error rate are the <a href="server-topview.html">Top view</a>.</li>
+<li>The levels <strong>per day</strong> and <strong>per component</strong> are the <a href="server-topview.html">Top view</a>.</li>
 <li>Levels other than Info/Warning/Error (none expected) are counted in Records only.</li>
-<li>Click a reason, week, hour, shape or component row for its 10 most recent lines (Warning/Error, newest first; the shapes table shows raw lines).</li>
-<li>The same reasons per subscription: <a href="server-failure-flows.html">Failure reasons per flow</a>.</li>
+<li>Click a reason, week, hour or shape row for its 10 most recent lines (Warning/Error, newest first; the shapes table shows raw lines).</li>
+<li>The same reasons per subscription: <a href="server-failure-flows.html">Failure reasons per flow</a>. The Files in error per reason are on <a href="failing-reasons.html">Error reasons</a> (another vocabulary: the reason each failed File&rsquo;s own error page classifies to).</li>
 </ul>
 </main>
 </body>

@@ -740,7 +740,8 @@ rows=$(awk -F'\t' '
     printf 'STAT\tgreen\t%s\tOK\n' "$n_ok"
     printf 'STAT\twhite\t%s\tNothing\n' "$n_nothing"
 
-    printf 'TABLE\tUC2 subscriptions\twide\tnofilter\n'
+    # tab=uc2 (2026-09-29): the Pickups and pickup-visits tables stack under it
+    printf 'TABLE\tUC2 subscriptions\twide\tnofilter\ttab=uc2\n'
     printf 'HEAD\tStatus\tSubscription\tExpired\tFirst\tLast\tPickups\tLast pickup\n'
     printf 'KIND\ttext\tmono\tnum\ttext\ttext\tnum\ttext\n'
     printf '%s\n' "$rows"   # %s\n: $rows already ends in one, so this is the blank line before TOTAL

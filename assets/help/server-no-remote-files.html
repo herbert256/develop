@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: No remote files — Cloud Reports</title>
+<title>Help: UC status › UC3: No remote files — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,7 +15,7 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>No remote files</h1>
+<h1>UC status › UC3: No remote files</h1>
 <h2>What it shows</h2>
 <p>UC3 subscriptions that poll the partner <strong>faultlessly</strong> and never find a thing: every poll logs <code>Applying the search pattern '*' for transfer site '&lt;site&gt;': 0 file(s) were found of which 0 matched the pattern.</code></p>
 <h2>Columns</h2>
@@ -31,7 +31,7 @@
 <li>Both poll shapes count &mdash; <code>N file(s) were found of which M matched the pattern.</code> and <code>N file(s), matching the pattern, were found and will be downloaded.</code> &mdash; only the leading count is common to them.</li>
 <li>Poll counts are additive and re-total under the date filter; click a row for its 10 most recent poll lines.</li>
 <li>An empty poll leaves no trace in the transfer logs, so the flow is invisible in every file-based report and can run for years at a connection every few minutes: a candidate for retirement, a slower schedule, or a question to the partner.</li>
-<li>Compare <a href="server-uc3-status.html#polls">Remote Polls</a> (the empty-poll rate of every subscription, working ones included) and <a href="server-no-remote-dir.html">No remote dir</a> (the listing fails outright: the directory is not there).</li>
+<li>Compare the <a href="server-uc3-status.html">Polls by subscription</a> table (the empty-poll rate of every subscription, working ones included) and <a href="server-no-remote-dir.html">No remote dir</a> (the listing fails outright: the directory is not there).</li>
 </ul>
 </main>
 

@@ -49,7 +49,7 @@
 #                                         (bin/server/reports/remote-poll.sh, an
 #                                         unpublished intermediate)
 #   $REPORTS_DIR/poll-times.tsv, poll-failures.tsv   its sidecars
-#   $TRANSFER_REPORTS/punctuality.rpt     the file-arrival fallback slot
+#   $TRANSFER_REPORTS/punctuality-src.rpt the file-arrival fallback slot
 #   $FM_INPUT_DIR/subscriptions.json      the cron expressions (jq + cron2human)
 #   bin/subscription-active.jq            the Active codes (the ONE definition, shared with
 #                                         the Subscriptions page and the detail pages)
@@ -70,7 +70,7 @@ US="$REPORTS_DIR/uc3-status.rpt"
 RP="$REPORTS_DIR/remote-poll.rpt"
 PT="$REPORTS_DIR/poll-times.tsv"
 PF="$REPORTS_DIR/poll-failures.tsv"
-PUNCT="$TRANSFER_REPORTS/punctuality.rpt"
+PUNCT="$TRANSFER_REPORTS/punctuality-src.rpt"   # the component (2026-09-29: punctuality.rpt is the merged page)
 SUBJSON="$FM_INPUT_DIR/subscriptions.json"   # the SKIP-filtered copy when present (server/lib.sh)
 XSH="$CONFIG_XREF/_subscriptions-hosts.tsv"
 CRON_AWK="$ROOT/bin/cron2human.awk"
@@ -205,6 +205,7 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" -v ACTF="$a
         if (sk != "") { stc = SST[sk]; fi = SFI[sk]; ok = SOK[sk]; er = SER[sk]; lf = SLF[sk]; lg = SLG[sk]; TFI += fi; TOK += ok; TER += er }
         if (u in CN) { cronx = CC[u]; sched = CS[u]; obs = (CBAD[u] ? "@{class=obsbad}" : "") CO[u]
                        days = CDAYS[u]; if (CST[u] > 0) starts = CST[u]; if (CFL[u] > 0) fails = CFL[u]; why = CWHY[u] }
+        else sched = "no cron"   # a UC3 without a receive schedule: it never polls on its own (the former Missing cronjobs page, 2026-09-29)
         polls = "-"; empty = ""; matched = ""; pct = ""; first = ""; last = ""; bk = ""; ll = ""; lst = ""
         if (pk != "") { polls = PP[pk]; empty = PE[pk]; matched = PM[pk]; pct = PPCT[pk]; first = PF1[pk]; last = PL1[pk]; bk = PB[pk]; ll = PLL[pk]
                         if (days == "" || days == 0) days = "" }

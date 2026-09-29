@@ -297,14 +297,15 @@ day_rows() {
         "$tot_err" "$n_day" "$n_sub" "$n_acc" "$n_path" "$intro_res"
     printf 'INTRO\tA row stays only while the flow has NOT recovered since its last error: a later **OK File** of the subscription (any flow) or, on a UC3 pull flow, a later **successful listing** of the same site clears it. The two evidence columns show the newest of each the row has — both OLDER than the error (or absent), or the row would be gone.\n'
 
-    printf 'TABLE\tMissing remote directories\twide\n'
+    # tab=uc3 (2026-09-29): both tables ride the UC3 tab of UC status
+    printf 'TABLE\tMissing remote directories\twide\ttab=uc3\n'
     printf 'HEAD\tLast error\tSubscription\tRemote directory\tLast OK File\tLast good poll\tErrors\n'
     printf 'KIND\ttext\tmono\tclines\ttext\ttext\tnumfailed\n'
     printf 'RECALC\t-\t-\t-\t-\t-\ts0\n'
     dir_rows
     printf 'TOTAL\t@{colspan=5}Total (%s subscription(s) · %s director(y/ies))\t@{class=num failed}%s\n' "$n_sub" "$n_path" "$tot_err"
 
-    printf 'TABLE\tPer day\n'
+    printf 'TABLE\tPer day\ttab=uc3\n'
     printf 'HEAD\tDate\tErrors\tSubscriptions\n'
     printf 'KIND\ttext\tnumfailed\tnum\n'
     day_rows

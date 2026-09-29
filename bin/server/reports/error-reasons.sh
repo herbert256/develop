@@ -143,7 +143,7 @@ week_rows() {
     printf 'DESC\tServer-log ERROR messages classified by failure reason (connection, PESIT refusal codes, network, routing).\n'
     printf 'INTRO\t**%s** ERROR records classified into **%s** reason bucket(s). The transfer logs record only OK/Error with no reason (their detail fields are always UNKNOWN); the server log carries the why — partner connection failures, PESIT refusal codes (`reason=…`), network resets, routing-step errors.\n' \
         "$tot_err" "$nreasons"
-    printf 'TABLE\tErrors by reason\twide\ttab=reasons\n'
+    printf 'TABLE\tLog lines by reason\twide\ttab=reasons\n'
     printf 'HEAD\tReason\tErrors\tShare\tExample message\n'
     printf 'KIND\ttext\tnumfailed\tnum\tfile\n'
     printf 'RECALC\t-\ts0\t%%0\t-\n'

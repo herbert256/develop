@@ -76,8 +76,10 @@ nall=0
         printf 'TABLE\t%s\twide\trestint\tgsep=1,3,5,7,9\tsort=1:1\tpager=50\n' "$head"
         # the GHEAD banner names the metric ONCE over its (position, value)
         # pair; gsep draws the divider that starts each pair
-        printf 'GHEAD\t\t@{colspan=2}Files\t@{colspan=2}Volume\t@{colspan=2}Errors\t@{colspan=2}Duration\t@{colspan=2}Throughput\n'
-        printf 'HEAD\t%s\t#\tFiles\t#\tVolume\t#\tError %%\t#\tAverage\t#\tPer second\n' "$head"
+        # Duration / Throughput are averages over the OK LEGS, not Files
+        # (details_lib perf()) — the banner says so (2026-09-29)
+        printf 'GHEAD\t\t@{colspan=2}Files\t@{colspan=2}Volume\t@{colspan=2}Errors\t@{colspan=2}Duration per leg\t@{colspan=2}Throughput per leg\n'
+        printf 'HEAD\t%s\t#\tFiles\t#\tVolume\t#\tError %%\t#\tAverage\t#\tBytes/s\n' "$head"
         printf 'KIND\t%s\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n' "$kind"
         # From/To re-aggregation. Each row carries its active days as
         # date:files:errors:bytes:timed:ms:timedbytes — the last three being the

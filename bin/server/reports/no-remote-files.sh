@@ -123,6 +123,11 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
         site = substr(m, RSTART + 19, RLENGTH - 20); sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", site)
         if (site == "") next
         tail = substr(m, RSTART + RLENGTH)                    # ": N file(s) …"
+        # the CANONICAL name, as remote-poll.sh keys it (2026-09-29 fix: the
+        # server logs the site as <subscription>_<profile>, which only the
+        # rename fold maps back — the raw spelling matched no roster name, so
+        # the report stayed empty while Polling showed every-poll-empty flows)
+        site = sitecanon(site)
         u = toupper(site)
         if (!(u in ros)) next                                 # no-transfer UC3 subscriptions only
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) next
@@ -190,14 +195,15 @@ day_rows() {
     printf 'INTRO\tThese UC3 flows work — the connection, the credentials and the remote directory are all fine and the listing succeeds — but the directory is **always empty**. **%s** subscription(s) polled **%s** time(s) over **%s** day(s) and found **nothing, ever**. None of them has ever produced a transfer row — seen in the server log only, so the result is **orange** (never seen in the transfer log), however cleanly it polls. Every slot spent here is a connection and a listing for no data, and none of it is visible in the transfer reports — an empty poll starts no transfer.\n' \
         "$n_sub" "$tot_polls" "$n_day"
 
-    printf 'TABLE\tUC3 subscriptions that never find a file\twide\n'
+    # tab=uc3 (2026-09-29): both tables ride the UC3 tab of UC status
+    printf 'TABLE\tUC3 subscriptions that never find a file\twide\ttab=uc3\n'
     printf 'HEAD\tLast\tSubscription\tPolls\tDays\tFirst\n'
     printf 'KIND\ttext\tmono\tnumwarn\tnum\ttext\n'
     printf 'RECALC\t-\t-\ts0\t-\t-\n'
     sub_rows
     printf 'TOTAL\t@{colspan=2}Total (%s subscription(s))\t@{class=num warn}%s\t\t\n' "$n_sub" "$tot_polls"
 
-    printf 'TABLE\tPer day\n'
+    printf 'TABLE\tPer day\ttab=uc3\n'
     printf 'HEAD\tDate\tPolls\tSubscriptions\n'
     printf 'KIND\ttext\tnumwarn\tnum\n'
     day_rows

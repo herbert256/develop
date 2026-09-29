@@ -5,12 +5,11 @@
 # TIME: consecutive failed Files collapsed into episodes, with how long each
 # outage lasted before the next OK (time to recovery) — and, as the headline,
 # the subscriptions that are broken RIGHT NOW (their latest File failed, with
-# 3+ consecutive failures behind it). Three views over logical transfers
-# (_files.tsv, delivered outcome, chronological per subscription):
-#   Open incidents        last File failed, 3+ consecutive failures: how many,
-#                         failing since when, days failing (vs the dataset's
-#                         end), last OK ever ("never" = the flow has never
-#                         delivered).
+# 3+ consecutive failures behind it — counted in the SUMMARY; the Open
+# incidents TABLE went 2026-09-29: Failed Subscriptions lists every red flow
+# with its Failures in a row, Days red and Last green day). Two views over
+# logical transfers (_files.tsv, delivered outcome, chronological per
+# subscription):
 #   Episodes per subscription  every subscription with failures: episode count,
 #                         longest run, and how its closed episodes healed
 #                         (within an hour / within a day / longer).
@@ -30,7 +29,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
-OUT="$REPORTS_DIR/episodes.rpt"
+OUT="$REPORTS_DIR/episodes-src.rpt"   # a component since 2026-09-29: merge-episodes.sh adds the Recovered flows tab
 
 OPEN_MIN=3   # consecutive tail failures at/above which an incident is "open"
 
@@ -112,17 +111,6 @@ IFS='|' read -r _ n_sites n_fail n_open worst_tail n_closed b5m b1h b24 b3d bgt 
 # (filter included) — a bash while-read with a $(printf) per row forked a
 # subshell per subscription. The drill takes the line's remainder, like read
 # into the final variable did.
-open_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | LC_ALL=C sort -t'|' -k7,7nr -k2,2 | awk -F'|' -v OPENMIN="$OPEN_MIN" '
-    $2 == "" { next }
-    $7 + 0 >= OPENMIN + 0 {
-        ok = $10; if (ok == "") ok = "@{class=failed}never"
-        d = $15; for (i = 16; i <= NF; i++) d = d "|" $i
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\n", $2, $7, $8, $9, ok, $3, d }')
-[ -n "$open_rows" ] && open_rows+=$'\n'
-if [ -z "$open_rows" ]; then
-    open_rows=$(printf 'ROW\t@{colspan=6}No open incidents — every subscription'\''s latest File either succeeded or has fewer than %s consecutive failures.' "$OPEN_MIN")$'\n'   # $() strips the newline: put it back (2026-09-28 fix)
-fi
-
 ep_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | LC_ALL=C sort -t'|' -k5,5nr -k6,6nr -k2,2 | awk -F'|' '
     $2 == "" { next }
     $4 + 0 > 0 {
@@ -147,24 +135,19 @@ fi
 
 {
     printf 'TITLE\tFailure Episodes\n'
-    printf 'DESC\tConsecutive failures collapsed into episodes: which subscriptions are broken right now (open incidents), how often each one breaks, and how long outages last before they recover.\n'
+    printf 'DESC\tConsecutive failures collapsed into episodes: how often each subscription breaks, and how long outages last before they recover.\n'
     printf 'KEYWORDS\topen incident, outage, broken, recovery, consecutive failures, time to recovery, never delivered\n'
     printf 'INTRO\tFailure RUNS in time, per subscription: **%s** of **%s** subscription(s) failed at least once; **%s** are in an **open incident** right now (latest File failed, %s+ consecutive failures — worst run: **%s**), **%s** of them have NEVER delivered an OK File. Of the **%s** closed episode(s), most self-heal quickly but the slow tail is real (longest recovery: **%s** days). The other failure reports show failure rates; this one shows how failures cluster and how long they last. Click a row for its 10 most recent failed Files.\n' \
         "$n_fail" "$n_sites" "$n_open" "$OPEN_MIN" "$worst_tail" "$n_neverok" "$n_closed" "$max_rec"
 
-    printf 'TABLE\tOpen incidents\twide\tnofilter\n'
-    printf 'HEAD\tSubscription\tConsecutive failures\tFailing since\tDays failing\tLast OK\tFiles\n'
-    printf 'KIND\tsite\tnumfailed\ttext\tnum\ttext\tnum\n'
-    printf '%s' "$open_rows"
-    printf 'NOTE\tSubscriptions whose LATEST File failed, with **%s or more** consecutive failures behind it — broken right now, not historically. Days failing counts from the run'\''s first failure to the dataset'\''s last day (%s), not today. "never" = the flow has no OK File in the whole window. Click the failure count for the 10 most recent failed Files.\n' "$OPEN_MIN" "$last_date"
-
-    printf 'TABLE\tEpisodes per subscription\twide\tnofilter\n'
+    # tab=episodes (2026-09-29): the two tables ride ONE tab of the Episodes page
+    printf 'TABLE\tEpisodes per subscription\twide\tnofilter\ttab=episodes\n'
     printf 'HEAD\tSubscription\tFiles\tError\tEpisodes\tLongest run\tHealed <= 1 h\t1 - 24 h\tOver 24 h\tLast OK\n'
     printf 'KIND\tsite\tnum\tnumfailed\tnum\tnum\tnumprocessed\tnum\tnumwarn\ttext\n'
     printf '%s' "$ep_rows"
     printf 'NOTE\tOne episode = an unbroken run of failed Files ended by the next OK (or still open). The healed columns split the CLOSED episodes by their time to recovery; a subscription with many quick-healing episodes flaps, one with few long ones breaks hard. Sorted by episode count. Click the Error count for the 10 most recent failed Files.\n'
 
-    printf 'TABLE\tTime to recovery\tnofilter\n'
+    printf 'TABLE\tTime to recovery\tnofilter\ttab=episodes\n'
     printf 'HEAD\tRecovered within\tEpisodes\tShare\n'
     printf 'KIND\ttext\tnum\tnum\n'
     printf '%s' "$rec_rows"

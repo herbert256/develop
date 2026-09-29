@@ -231,8 +231,7 @@ RESMAP_FILES=""
 # table (data-latest="<slug>") before any table setup runs. The payload
 # REGISTERS itself — (window.AXWAY_LATEST ||= []).push({s, n, h, r}) = slug,
 # subscription name, the HEAD labels (tab-separated; Pickup and Recovered come
-# and go per subscription) and the rows — so docs/latest/search.html can load
-# every one of them at once (assets/latest-search.js searches them).
+# and go per subscription) and the rows.
 render_latest_page() {   # $1 rpt  $2 slug
     local f=$1 b=$2 pro
     # report key per subscription: a remembered search or sort belongs to
@@ -263,42 +262,9 @@ if [ ${#latp[@]} -gt 0 ]; then
     echo "Rendered docs/latest/ (${#latp[@]} subscription page(s) + their row payloads)." >&2
 fi
 
-# ---- docs/latest/search.html — the Latest files search (2026-09-27) ---------
-# ONE page over every subscription's payload: an empty table the dedicated
-# docs/assets/latest-search.js fills with the matches of its two fields
-# (Subscription, and File name or CoreId), as the user types. Written even
-# with no payloads (the finder and the sitemap link it unconditionally). The
-# payload tags + the engine go in before report.js (defer order), each with
-# its own cksum ?v= — the File search pages' pattern (bin/analyses/publish.sh).
-_ls_rpt="$DOCS/latest/.search.rpt.$$"
-printf 'TITLE\tLatest files search\nDESC\tFind a File across the latest files of every subscription — by subscription name and by file name or CoreId, the results following each keystroke.\nKEYWORDS\tlatest,file,files,search,find,subscription,filename,file name,coreid\nTABLE\t\twide\trestint\tnosort\tnosearch\tnofilter\trangehook\nHEAD\tSubscription\tStart\tEnd\tState\tDirection\tSize\tDuration\tFile\tCoreId\nKIND\ttext\ttext\ttext\ttext\ttext\tnum\tnum\tmono\tmono\n' > "$_ls_rpt"
-# the transfer date list (2026-09-27, user request): the page gets the shared
-# From/To selectors — the table is a `rangehook` table, so report.js counts
-# it date-aware and hands the range to latest-search.js
-CUR_DATES=$TRANSFER_DATES
-RPT_NOPROSE=1 render_rpt "$_ls_rpt" "$DOCS/latest/search.html" "../assets/style.css" "../index.html" "TRANSFER - Latest files search" 1 "latest-search" "latest-search"
-CUR_DATES=""
-rm -f "$_ls_rpt"
-shopt -s nullglob
-_ls_js=("$DOCS"/latest/*.js)
-shopt -u nullglob
-_ls_tags=""
-if [ ${#_ls_js[@]} -gt 0 ]; then
-    # one cksum for the whole set: "crc size path" per payload
-    _ls_tags=$(cksum "${_ls_js[@]}" | awk '{ p = $3; sub(/.*\//, "", p); printf "<script src=\"%s?v=%s\" defer></script>\n", p, $1 }')
-fi
-_ls_jsv=$(cksum < "$DOCS/assets/latest-search.js" 2>/dev/null | awk '{print $1}')
-_ls_tags="$_ls_tags"$'\n'"<script src=\"../assets/latest-search.js?v=$_ls_jsv\" defer></script>"
-_ls_tags=${_ls_tags#$'\n'}
-printf '%s\n' "$_ls_tags" > "$DOCS/latest/.search-tags.$$"
-awk -v tags="$DOCS/latest/.search-tags.$$" '/<script src=[^>]*report\.js/ && !done { while ((getline l < tags) > 0) print l; done = 1 } { print }' \
-    "$DOCS/latest/search.html" > "$DOCS/latest/search.html.tmp.$$" \
-    && mv "$DOCS/latest/search.html.tmp.$$" "$DOCS/latest/search.html"
-rm -f "$DOCS/latest/.search-tags.$$"
-# the FIRST tab row: Implementation 1 (search/file-search-*.html) | 2 (this page)
-_inject_after_h1 "$DOCS/latest/search.html" "$(file_search_impl_row 2)"
-unset _ls_rpt _ls_js _ls_tags _ls_jsv
-echo "Wrote docs/latest/search.html (the Latest files search)." >&2
+# (docs/latest/search.html, the Latest files search of 2026-09-27, went
+# 2026-09-29: All files search finds every File, the latest ones included)
+rm -f "$DOCS/latest/search.html"
 
 # Redirect stubs were REMOVED 2026-07 (no backwards compatibility): the old
 # details/transfer-sites/ tree and the IP->hostname stubs are gone — old URLs 404.

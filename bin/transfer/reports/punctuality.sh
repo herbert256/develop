@@ -21,7 +21,7 @@
 # window, so the date filter never narrows this page.
 #
 # Reads data/_files.tsv (4=date_iso, 5=time, 7=jdn, 12=dest_site).
-# Writes data/punctuality.rpt.
+# Writes data/punctuality-src.rpt (the first tab of the merged Punctuality page).
 #
 # Usage:
 #   ./punctuality.sh    # reads input/*.csv (via the cache), writes data/punctuality.rpt
@@ -31,7 +31,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
-OUT="$REPORTS_DIR/punctuality.rpt"
+OUT="$REPORTS_DIR/punctuality-src.rpt"   # a component since 2026-09-29: merge-punctuality.sh adds the Rhythm tab (expected-arrival); polling.sh / uc3-polling.sh read THIS file
 
 MIN_DAYS=8   # active days a subscription needs before a rhythm is claimed
 

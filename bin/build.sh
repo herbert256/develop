@@ -99,7 +99,7 @@ bin/check-syntax.sh || exit 1
 # PREFLIGHT (2026-09-28 audit F05): every file the docs/ seed below copies
 # must exist BEFORE anything is cleared — a missing asset used to fail the
 # seed's cp AFTER data/ and docs/ were already gone: no site, no report.
-SEED_ASSETS="style.css report.js slotchart.js file-search.js latest-search.js all-files-search.js"
+SEED_ASSETS="style.css report.js slotchart.js file-search.js all-files-search.js"
 _miss=""
 for _a in $SEED_ASSETS; do [ -f "assets/$_a" ] || _miss="$_miss assets/$_a"; done
 [ -d assets/help ] || _miss="$_miss assets/help/"
@@ -200,7 +200,7 @@ echo "build.sh: data/ and docs/ moved aside in $(( $(date +%s) - _fc0 ))s (delet
 # the hand-authored files from the repo-root assets/ (the build report lands
 # back in docs/tools/build.html at the very end, from the EXIT trap —
 # 2026-09-12). assets/ is the ONE place to edit style.css / report.js /
-# slotchart.js / file-search.js / latest-search.js / all-files-search.js and
+# slotchart.js / file-search.js / all-files-search.js and
 # the help pages (see assets/README.txt); .nojekyll and topbar-data.js stay
 # generated (ensure_assets).
 echo "build.sh: seeding docs/ from assets/ ..." >&2

@@ -22,7 +22,7 @@
 #
 # Runs AFTER the server report pool (bin/server/reports.sh): it reads
 # remote-poll.rpt and its two sidecars poll-times.tsv / poll-failures.tsv, the
-# transfer punctuality.rpt (the file-arrival fallback slot), the config export
+# transfer punctuality-src.rpt (the file-arrival fallback slot), the config export
 # (the cron expressions, via jq + bin/cron2human.awk) and the subscription ->
 # host xref (the host-keyed authentication failures); the schedule-vs-observed
 # classification is bin/cron-observed.awk, shared with polling.sh.
@@ -38,7 +38,7 @@ OUT="$REPORTS_DIR/uc3-polling.rpt"
 RP="$REPORTS_DIR/remote-poll.rpt"
 PT="$REPORTS_DIR/poll-times.tsv"
 PF="$REPORTS_DIR/poll-failures.tsv"
-PUNCT="$TRANSFER_REPORTS/punctuality.rpt"
+PUNCT="$TRANSFER_REPORTS/punctuality-src.rpt"   # the component (2026-09-29: punctuality.rpt is the merged page)
 SUBJSON="$FM_INPUT_DIR/subscriptions.json"   # the SKIP-filtered copy when present (server/lib.sh)
 XSH="$CONFIG_XREF/_subscriptions-hosts.tsv"
 CRON_AWK="$ROOT/bin/cron2human.awk"

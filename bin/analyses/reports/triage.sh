@@ -167,9 +167,9 @@ rows_raw=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
             else if (lastfail)    sym = "used to work — " runlen " consecutive failure(s), last OK " lastokd
             else                  sym = "last File OK (" lastdate ") — flipped red by server-log evidence"
             if (wrisk > 0)        sym = sym "; " wrisk " staged at risk"
-            if (key in FLIP)      ev = "server-log evidence " FLIP[key] " — see From green to red"
-            else if (ok == 0)     ev = "never green — see Only red and the Boxes pages"
-            else                  ev = "first failure of the run " runstart " — see From green to red"
+            if (key in FLIP)      ev = "server-log evidence " FLIP[key] " — see Failed Subscriptions (Last green day)"
+            else if (ok == 0)     ev = "never green — see Failed Subscriptions (Last green day never)"
+            else                  ev = "first failure of the run " runstart " — see Failed Subscriptions (Last green day)"
             emit(disp, "red", since, days, n, ok, err, bytes, 0, sym, ev)
         } else if (wrisk > 0) {
             days = endj - wrjd
@@ -189,7 +189,7 @@ rows_raw=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
             if (u in seenk) continue
             since = (u in FLIP) ? FLIP[u] : "-"
             days = (u in FLIP) ? endj - dj(substr(FLIP[u], 1, 10)) : 0
-            emit(DISP[u], "red", since, days, 0, 0, 0, 0, "no Files in the window", "see Only red and the Boxes pages")
+            emit(DISP[u], "red", since, days, 0, 0, 0, 0, "no Files in the window", "see Failed Subscriptions (Last green day never)")
         }
         print "TOT", rows + 0, nred + 0, nrisk + 0, nquiet + 0, tvol + 0, trisk + 0
     }
@@ -241,7 +241,7 @@ sum_n=0; sum_ok=0; sum_err=0
         "${n_rows:-0}" "$sum_n" "$sum_ok" "$sum_err" "$t_vol_h" "$t_risk_h"
     printf 'NOTE\tRank score = **lifetime Files / (days in state + 1)** — state recency times historical weight: a flow that flipped yesterday after carrying hundreds of Files outranks one red for a month, which outranks a one-file wonder. **Days in state** counts against the last day in the data (**%s**), never the wall clock. Red-since is the server-log evidence stamp where one exists, else the first failure of the current failing run. **Volume in window** is the flow'\''s volume over the loaded data window — historical throughput, not an undelivered backlog; **At expiry risk** is the staged, uncollected bytes the sweep is about to delete (expiry-risk rows only). They were one column until 2026-09-05. One row per subscription, priority red > expiry-risk > just-went-quiet; the symptoms mention any second condition. This page is an ADDITION: **From green to red**, **Went quiet**, **Waiting**, **Expired**, **Only red** and the **Boxes** pages remain the per-symptom deep-dives — the Evidence column points the way.\n' \
         "${endd:-?}"
-    printf 'LINK\t../transfer/from-green-to-red.html\tFrom green to red — the regression deep-dive\n'
+    printf 'LINK\tfailed.html\tFailed Subscriptions — the red worklist, with the Last green day and Days red of every run\n'
     printf 'LINK\t../transfer/went-quiet-subscriptions.html\tWent quiet — every silence, not just the fresh ones\n'
     printf 'LINK\t../transfer/waiting.html\tWaiting — staged Files, expiries and pickup waits\n'
     printf 'LINK\t../analyses/subscriptions-in-boxes.html\tSubscriptions in boxes — every flow sorted into its box\n'

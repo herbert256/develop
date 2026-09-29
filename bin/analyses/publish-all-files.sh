@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# publish-all-files.sh — the ALL FILES SEARCH, "Implementation 3, all files"
+# publish-all-files.sh — the ALL FILES SEARCH, "Implementation 2, all files" (3 until 2026-09-29)
 # (2026-09-27, user request): search/all-files.html over EVERY File of the
 # transfer cache, where Implementation 1 covers the newest 30 data days and
 # Implementation 2 the newest 1000 Files per subscription.
@@ -192,5 +192,5 @@ _ev=$(cksum < "$DOCS/assets/all-files-search.js" 2>/dev/null | awk '{print $1}')
 awk -v a="<script src=\"all/index.js?v=$_mv\" defer></script>" -v b="<script src=\"../assets/all-files-search.js?v=$_ev\" defer></script>" \
     '/<script src=[^>]*report\.js/ && !done { print a; print b; done = 1 } { print }' "$PAGE" > "$PAGE.tmp.$$" \
     && mv "$PAGE.tmp.$$" "$PAGE"
-_inject_after_h1 "$PAGE" "$(file_search_impl_row 3)"
+_inject_after_h1 "$PAGE" "$(file_search_impl_row 2)"
 echo "Wrote search/all-files.html + search/all/ ($ndays day shard(s), $nrows File(s))." >&2

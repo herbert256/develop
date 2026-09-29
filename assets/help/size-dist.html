@@ -26,6 +26,12 @@
 <li><strong>Per file type</strong> &mdash; the split per extension. Counts transfers (legs), not Files &mdash; a file appears on both its Inbound and Outbound leg.</li>
 <li><strong>Duplicate deliveries</strong> &mdash; one row per business filename delivered more than once, worst first (replay loops, re-sends): <strong>Files</strong> = logical transfers carrying that exact name, <strong>Error</strong> = how many failed, <strong>Accounts</strong> = distinct senders (full-period, not date-adjusted). Error below Files usually means a failed transfer was re-sent successfully.</li>
 </ul>
+<h2>Largest files and Size profile</h2>
+<ul>
+<li><strong>Largest files</strong> &mdash; the top 50 Files by size, one row per File with its throughput (size &divide; the summed row durations, retries included), account, destination subscription, outcome and start time.</li>
+<li><strong>Size regime</strong> &mdash; subscriptions with 20+ Files whose median size changed 3&times;+ between the first and second half of their own files (split by count, not calendar); &infin; = a first-half median of 0 bytes. A new format or an upstream change &mdash; worth understanding, not an error.</li>
+<li><strong>Stub shippers</strong> &mdash; flows where 10%+ of the files are stubs: smaller than max(1 KB, 1% of the flow&rsquo;s median). A data file plus a 0-byte semaphore gives ~50% by design; a sudden surge is the interesting row.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
 <li>The <strong>0 B</strong> bucket is dominated by failed Files: a transfer that never delivered often has no size recorded. The failed 0-byte attempts stay in that bucket; only the OK ones move to the empty-files table.</li>

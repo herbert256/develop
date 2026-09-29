@@ -94,7 +94,7 @@ function pktable(nm,   k, t) {
     # both delivered and collected a file. Deliveries in a separate
     # connection — even seconds apart, same visit — do not fire it (2026-08).
     if (pkvx[k] + 0 > 0)
-        t = t "ROW\tConnection shared with UC4 drop\t@{href=../../analyses/uc2-visits.html}yes — " (pkvx[k] + 0) " connection" (pkvx[k] + 0 == 1 ? "" : "s") " both delivered and collected files\n"
+        t = t "ROW\tConnection shared with UC4 drop\t@{href=../../analyses/uc-status-uc2.html}yes — " (pkvx[k] + 0) " connection" (pkvx[k] + 0 == 1 ? "" : "s") " both delivered and collected files\n"
     # (the explanatory NOTE under the table was dropped 2026-09-05, user request)
     return t
 }

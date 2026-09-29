@@ -7,7 +7,7 @@
 # so both classify a schedule identically. Input rows (stdin, TAB):
 #   name ⇥ PROTO ⇥ cron expression(s, \037-joined) ⇥ plain-English schedule
 # (jq over subscriptions.json piped through bin/cron2human.awk -v CF=3).
-# Variables: PUNCT (transfer punctuality.rpt — the file-arrival fallback slot),
+# Variables: PUNCT (transfer punctuality-src.rpt — the file-arrival fallback slot),
 # POLLT (poll-times.tsv), PF (poll-failures.tsv), XSH (subscription -> host
 # xref) — each may be /dev/null. Output, one TAB line per input row:
 #   name ⇥ cron (joined " ; ") ⇥ schedule ⇥ observed cell ⇥ bad (1 = the

@@ -113,7 +113,10 @@ anomc=$(anomcount "$ANOM")
 tdays=""
 [ -f "$TT" ] && tdays=$(awk -F'\t' '$1=="ROW" { d=$2; sub(/^@\{[^}]*\}/,"",d); if ($5+0 > 0) print substr(d,1,10) }' "$TT" | LC_ALL=C sort -u | tr '\n' ' ')
 sdays=""
-[ -f "$SV" ] && sdays=$(awk -F'\t' '$1=="ROW" { d=$2; sub(/^@\{[^}]*\}/,"",d); if ($3+0 > 0) print substr(d,1,10) }' "$SV" | LC_ALL=C sort -u | tr '\n' ' ')
+# per-DAY rows only: the server Top view also carries the levels-per-component
+# table since 2026-09-29 (append_rpt_tables) — its TM/PESITD/SSHD rows made
+# three bogus "day" pages
+[ -f "$SV" ] && sdays=$(awk -F'\t' '$1=="ROW" { d=$2; sub(/^@\{[^}]*\}/,"",d); if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ && $3+0 > 0) print substr(d,1,10) }' "$SV" | LC_ALL=C sort -u | tr '\n' ' ')
 # every day with a page, both logs: the prev/next walk of BOTH passes (2026-09-28
 # fix: each walked its own log, so a transfer day's Next skipped a server-only
 # day and a server-only day's buttons skipped the transfer-only days). A list
@@ -369,8 +372,8 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # whose per-day Files Count is that figure (2026-09-28 fix: it
             # opened Activity per day, which counts the delivered Files only)
             printf "KPI\t%d\tTransfer files\tlogical transfers%s\tblue\t../transfer/topview.html" q "\t%s\n", C[d], cov, pctd(C[d], wdc[wd] ? aFiles[wd]/wdc[wd] : 0) >> out
-            printf "KPI\t%.1f%%\tTransfer error rate\t%d Error / %d OK\tred\t../transfer/failure-rate-days.html" q "\t%s\n", erate, F[d]+0, P[d]+0, pctd(erate, aFiles[wd] ? aErrF[wd]*100/aFiles[wd] : 0) >> out
-            printf "KPI\t%s\tVolume\taverage %s per File\tgreen\t../transfer/volume-per-day.html" q "\t%s\n", human(V[d]), human(C[d] ? V[d]/C[d] : 0), pctd(V[d], wdc[wd] ? aVol[wd]/wdc[wd] : 0) >> out
+            printf "KPI\t%.1f%%\tTransfer error rate\t%d Error / %d OK\tred\t../transfer/topview.html" q "\t%s\n", erate, F[d]+0, P[d]+0, pctd(erate, aFiles[wd] ? aErrF[wd]*100/aFiles[wd] : 0) >> out
+            printf "KPI\t%s\tVolume\taverage %s per File\tgreen\t../transfer/topview.html" q "\t%s\n", human(V[d]), human(C[d] ? V[d]/C[d] : 0), pctd(V[d], wdc[wd] ? aVol[wd]/wdc[wd] : 0) >> out
             # ---- problem links ---------------------------------------------
             # PROBLEM<TAB>side<TAB>href<TAB>headline<TAB>desc — side (transfer|
             # server) picks the list on the combined day page, so both passes
@@ -381,13 +384,13 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # subscription verdicts are full-period reports (`nofilter`), so
             # their links carry no ?axway_date=; the file counts do.
             if (F[d] + 0 > 0)
-                printf "PROBLEM\ttransfer\t../transfer/failure-rate-days.html" q "\tTransfer failures\t**%d Error / %d OK** — **%.1f%%** error rate; breakdown by account, subscription and hour\n", F[d], P[d]+0, erate >> out
+                printf "PROBLEM\ttransfer\t../transfer/topview.html" q "\tTransfer failures\t**%d Error / %d OK** — **%.1f%%** error rate; breakdown by account, subscription and hour\n", F[d], P[d]+0, erate >> out
             if (PIR[d] + 0 > 0)
                 printf "PROBLEM\ttransfer\t../transfer/pirates-details.html" q "\tPirates (single-leg transfers)\t**%d** logical transfer(s) with only one leg — one-sided, incomplete crossings that never completed\n", PIR[d] >> out
             if (GTRC[d] + 0 > 0)
-                printf "PROBLEM\ttransfer\t../transfer/from-green-to-red.html\tFrom green to red\t**%d** subscription(s) went red this day — they delivered OK before and have not recovered since\n", GTRC[d] >> out
+                printf "PROBLEM\ttransfer\t../analyses/failed.html\tFrom green to red\t**%d** subscription(s) went red this day — they delivered OK before and have not recovered since\n", GTRC[d] >> out
             if (OREDC[d] + 0 > 0)
-                printf "PROBLEM\ttransfer\t../transfer/only-red.html\tOnly red\t**%d** subscription(s) failed for the first time this day and have never delivered an OK File\n", OREDC[d] >> out
+                printf "PROBLEM\ttransfer\t../analyses/failed.html\tOnly red\t**%d** subscription(s) failed for the first time this day and have never delivered an OK File\n", OREDC[d] >> out
             if (WAI[d] + 0 > 0)
                 printf "PROBLEM\ttransfer\t../transfer/waiting.html\tWaiting for pickup\t**%d** File(s) staged this day are still waiting to be collected by the partner\n", WAI[d] >> out
             if (XPD[d] + 0 > 0)
@@ -455,9 +458,9 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # a3 empty and fall back to their own href (bin/day/publish.sh).
             # ?axway_date beats the Entities pages datereset, so the view opens
             # narrowed to this day — the same target the Top-5 "See more" links use.
-            printf "CARDALT\tFiles processed\tFiles processed per slot\t%s · OK Files (Processed + Waiting) per slot, by start time — the graph opens the subscriptions of this day\t../transfer/activity-per-day.html" q "\tspan2\tslots\tcount\t%s\t../transfer/entities/subscription-all.html" q "\t15:%s\t60:%s\n", d, CNTS[30], CNTS[15], CNTS[60] >> out
-            printf "CARDALT\tVolume\tVolume per slot\t%s · bytes moved per slot, by start time\t../transfer/volume-per-day.html" q "\tspan2\tslots\tbytes\t%s\t\t15:%s\t60:%s\n", d, VOLS[30], VOLS[15], VOLS[60] >> out
-            printf "CARDALT\tError %% Files\tTransfer error rate per slot\t%s · per slot, the %% of its Files that Failed or Expired — a slot with no Files shows a gap\t../transfer/failure-rate-days.html" q "\tspan2\tslots\trate\t%s\t\t15:%s\t60:%s\n", d, RATES[30], RATES[15], RATES[60] >> out
+            printf "CARDALT\tFiles processed\tFiles processed per slot\t%s · OK Files (Processed + Waiting) per slot, by start time — the graph opens the subscriptions of this day\t../transfer/topview.html" q "\tspan2\tslots\tcount\t%s\t../transfer/entities/subscription-all.html" q "\t15:%s\t60:%s\n", d, CNTS[30], CNTS[15], CNTS[60] >> out
+            printf "CARDALT\tVolume\tVolume per slot\t%s · bytes moved per slot, by start time\t../transfer/topview.html" q "\tspan2\tslots\tbytes\t%s\t\t15:%s\t60:%s\n", d, VOLS[30], VOLS[15], VOLS[60] >> out
+            printf "CARDALT\tError %% Files\tTransfer error rate per slot\t%s · per slot, the %% of its Files that Failed or Expired — a slot with no Files shows a gap\t../transfer/topview.html" q "\tspan2\tslots\trate\t%s\t\t15:%s\t60:%s\n", d, RATES[30], RATES[15], RATES[60] >> out
             printf "CARDALT\tTransfer errors\tTransfer errors per slot\t%s · Transfers (raw log records) whose Status is Failed or Failed Subtransmission, per slot — one File can contribute several failed legs; a quiet slot is a real zero\t../transfer/failure-heatmap.html" q "\tspan2\tslots\terrs\t%s\t\t15:%s\t60:%s\n", d, ERRS[30], ERRS[15], ERRS[60] >> out
             # ---- the six Top-5 tables --------------------------------------
             # TOP<TAB>kind<TAB>title<TAB>unit<TAB>href<TAB>name US value US …
@@ -578,6 +581,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
     fno == 1 {   # server topview.rpt
         if ($1 != "ROW") next
         d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10)
+        if (d !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) next   # the per-DAY rows only (not the appended per-component table)
         REC[d]=$3; WRN[d]=$6; ERR[d]=$7; CT[d]=$9; CP[d]=$10; CS[d]=$11; FI[d]=$12; LA[d]=$13
         next
     }
@@ -699,16 +703,16 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # deploy-errors is a per-entity unresolved list with no date-aware
             # table, so like went-kaput its link carries no q
             if (DEP[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/deploy-errors.html\tDeploy errors\t**%d** route-abandon errors (ARSP0001) — a routing step failed and its configuration stopped the rest of the route\n", DEP[d] >> out
+                printf "PROBLEM\tserver\t../server/routing-errors.html\tDeploy errors\t**%d** route-abandon errors (ARSP0001) — a routing step failed and its configuration stopped the rest of the route\n", DEP[d] >> out
             if (EVE[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/errors-reasons.html" q "\tEvent-feed errors\t**%d** monitoring-feed delivery errors (unable to submit / error sending event)\n", EVE[d] >> out
+                printf "PROBLEM\tserver\t../server/errors-log-reasons.html" q "\tEvent-feed errors\t**%d** monitoring-feed delivery errors (unable to submit / error sending event)\n", EVE[d] >> out
             # subscriptions whose last transfer was OK but that logged an
             # error/warning in the server log afterwards, latest issue this day
             # (the went-kaput report — no date filter, so no q)
             if (NRDE[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/no-remote-dir.html" q "\tNo remote dir\t**%d** failed listing(s) on **%d** subscription(s) whose configured remote directory does not exist — the partner answered \"No such file\", so no transfer was ever started\n", NRDE[d], NRDS[d] >> out
+                printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html" q "\tNo remote dir\t**%d** failed listing(s) on **%d** subscription(s) whose configured remote directory does not exist — the partner answered \"No such file\", so no transfer was ever started\n", NRDE[d], NRDS[d] >> out
             if (NRFP[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/no-remote-files.html" q "\tNo remote files\t**%d** poll(s) by **%d** UC3 subscription(s) that have NEVER found a file — the listing works, the remote directory is always empty\n", NRFP[d], NRFS[d] >> out
+                printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html" q "\tNo remote files\t**%d** poll(s) by **%d** UC3 subscription(s) that have NEVER found a file — the listing works, the remote directory is always empty\n", NRFP[d], NRFS[d] >> out
             if (SLFC[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../server/went-kaput.html\tWent kaput\t**%d** subscription(s) whose last transfer was OK but that logged a server-log error/warning afterwards, most recently today\n", SLFC[d] >> out
             # A day with NO transfer data got no hero from the transfer pass:

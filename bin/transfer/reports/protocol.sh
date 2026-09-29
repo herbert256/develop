@@ -109,30 +109,15 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human <<< "$(pr
 # ROW lines. `|| true` keeps a tag with no lines at all from tripping pipefail.
 {
     printf 'TITLE\tProtocol, Direction & Mode\n'
-    printf 'DESC\tTransfers (the OK legs) and volume by protocol and direction, the direction x action-by breakdown, and the BINARY/ASCII transfer mode split — the per-leg dimensions on one page.\n'
+    printf 'DESC\tTransfers (the OK legs) and volume by protocol × direction, the direction × action-by breakdown, and the BINARY/ASCII transfer mode split — the per-leg dimensions on one page.\n'
     printf 'INTRO\t%s total volume across all protocols.\n' "$tot_human"
 
     # TRANSFERS = the OK legs in every table (2026-09-13, user request: one
     # Transfers column, no Error / OK pair, no green/red cells, no drills);
     # the bucket payloads keep all metrics, so the tokens read metric 2 (ok)
     # for Transfers and the share, metric 3 for Volume; rows sort by it
-    printf 'TABLE\tBy protocol\tdrill=transfer\n'
-    printf 'HEAD\tProtocol\tTransfers\tVolume\t%% of transfers\n'
-    printf 'KIND\ttext\tnum\tnum\tnum\n'
-    printf 'RECALC\t-\ts2\th3\t%%2\n'
-    # key | records | failed | processed | bytes | human | share | buckets | drills
-    printf '%s\n' "$agg" | grep '^PROTO|' | sort -t'|' -k5,5nr | awk -F'|' '
-        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\n", $2, $5, $7, $8, $9 }' || true
-    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_processed" "$tot_human"
-
-    printf 'TABLE\tBy direction\tdrill=transfer\n'
-    printf 'HEAD\tDirection\tTransfers\tVolume\t%% of transfers\n'
-    printf 'KIND\ttext\tnum\tnum\tnum\n'
-    printf 'RECALC\t-\ts2\th3\t%%2\n'
-    printf '%s\n' "$agg" | grep '^DIR|' | sort -t'|' -k5,5nr | awk -F'|' '
-        $2 != "" { printf "ROW\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\n", $2, $5, $7, $8, $9 }' || true
-    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_processed" "$tot_human"
-
+    # (the By protocol and By direction tables went 2026-09-29: their rows are
+    # the subtotals of Protocol × direction)
     printf 'TABLE\tProtocol × direction\tdrill=transfer\n'
     printf 'HEAD\tProtocol\tDirection\tTransfers\tVolume\t%% of transfers\n'
     printf 'KIND\ttext\ttext\tnum\tnum\tnum\n'
@@ -144,16 +129,10 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human <<< "$(pr
     printf 'NOTE\tCounts individual transfers (legs), not Files: one File has an Inbound row (e.g. ssh) and an Outbound row (e.g. pesit), so protocol/direction are per leg.\n'
 
     # ---- Direction x Action By (formerly direction-action.sh, absorbed 2026-07)
-    printf 'INTRO\tTransfer legs by **Direction** (Inbound/Outbound), by **Action By**, and their crosstab — the OK legs. Counts physical **Transfers** — one per log row — so one File'\''s inbound and outbound legs count once each.\n'
+    printf 'INTRO\tTransfer legs by **Direction** (Inbound/Outbound) and **Action By** — the OK legs. Counts physical **Transfers** — one per log row — so one File'\''s inbound and outbound legs count once each.\n'
 
-    printf 'TABLE\tBy action by\tdrill=transfer\n'
-    printf 'HEAD\tAction By\tTransfers\n'
-    printf 'KIND\ttext\tnum\n'
-    printf 'RECALC\t-\ts2\n'
-    printf '%s\n' "$agg" | grep '^AB|' | sort -t'|' -k5,5nr | awk -F'|' '
-        $2 != "" { printf "ROW\t%s\t%s\t@data:buckets=%s\n", $2, $5, $6 }' || true
-    printf 'TOTAL\tTotal\t@{class=num}%s\n' "$tot_processed"
-
+    # (the By action by table went 2026-09-29: the subtotals of Direction x
+    # action by)
     printf 'TABLE\tDirection x action by\tdrill=transfer\n'
     printf 'HEAD\tDirection\tAction By\tTransfers\n'
     printf 'KIND\ttext\ttext\tnum\n'

@@ -173,12 +173,15 @@ LC_ALL=C awk -F'\t' -v STATS="$TMP/stats" -v xf="$PROFSUB" -v pf="$PARSED" -v as
         if (index($5, "stop further route execution") == 0) next
         e = ent($5); if (e == "") next
         k = (ACC == "SECURETRANSPORT" || ACC == "") ? "Subscription" : "Account"
-        # ARPA0001 "publishing the file {…} to an account": the bracket names
-        # the destination ACCOUNT, not a subscription. Account evidence wins
+        # the named configured flow is the entity (see ent) — FIRST, also on an
+        # ARPA0001 line (2026-09-29 fix: a bracket naming a configured
+        # subscription was typed Account and linked a non-existent account, so
+        # the Boxes Deploy column never counted it)
+        if (NAMED != "") { e = NAMED; k = "Subscription" }
+        # ARPA0001 "publishing the file {…} to an account" whose bracket names
+        # no configured flow: the destination ACCOUNT. Account evidence wins
         # over other lines naming the same entity.
-        if (k == "Subscription" && substr($5, 1, 9) == "ARPA0001:") k = "Account"
-        # the named configured flow is the entity (see ent) — not for ARPA0001
-        else if (NAMED != "") { e = NAMED; k = "Subscription" }
+        else if (k == "Subscription" && substr($5, 1, 9) == "ARPA0001:") k = "Account"
         # RENAMES (2026-08): the bracket carries the name that was current when
         # the line was written. Fold a SUBSCRIPTION to the name the config uses
         # now — before the key is taken, so the old and new spellings of one

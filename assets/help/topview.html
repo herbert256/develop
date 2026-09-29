@@ -26,6 +26,7 @@
 <li><strong>Resubmit</strong> &mdash; every File with a resubmitted leg, <strong>Ok</strong> or <strong>Failed</strong> by final outcome (Waiting = Ok, Expired = Failed); a resubmit without failed leg (re-delivery) counts here, not under Recovered.</li>
 <li><strong>Transfers</strong> &mdash; the day as physical log rows (one per leg), same Ok/Error split.</li>
 <li><strong>State</strong> &mdash; the Files by final state: <strong>Processed</strong> (delivered), <strong>Failed</strong>, <strong>Waiting</strong> (UC2 staged, not collected yet: live, amber), <strong>Expired</strong> (retention sweep deleted it unclaimed ~11 days after staging: never delivered).</li>
+<li><strong>Volume</strong> &mdash; the bytes of every File started that day, whatever its outcome.</li>
 </ul>
 <h2>Rules</h2>
 <ul>

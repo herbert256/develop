@@ -1,5 +1,5 @@
 /* all-files-search.js — the engine of search/all-files.html, the ALL FILES
-   SEARCH ("Implementation 3, all files", 2026-09-27, user request).
+   SEARCH ("Implementation 2, all files" — number 3 until 2026-09-29; 2026-09-27, user request).
    ------------------------------------------------------------------------
    The data (bin/analyses/publish-all-files.sh):
      search/all/index.js       window.AXWAY_AFX = { v, subs, days } — the

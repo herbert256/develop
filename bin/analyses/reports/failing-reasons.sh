@@ -27,14 +27,9 @@
 # collected), an unlisted raw status, "(none)"). A reason with no counted
 # File keeps its row with Count and Last BLANK.
 #
-# DRILL PAGES failing-reasons-<slug>.html (2026-09-14, user request): EVERY
-# File of that reason, newest first, 500 per page — Subscription / Date/time /
-# CoreId / Filename, rows tinted with the standard subscription colours
-# (restint), the whole row opening the File's error page when it has one. The
-# Date/time cells make the table date-aware, so the page carries the From/To
-# fields (bin/analyses/publish.sh renders the drills with the transfer date
-# list). The drills render through the failing-reasons-* loop there (group
-# row + "failing-reasons" help slug and persistence key).
+# A ROW opens the Failed files page searched on its reason as a whole cell
+# (2026-09-29: the per-reason drill pages failing-reasons-<slug>.html of
+# 2026-09-14 held exactly those rows).
 #
 # An ANALYSES report reading a TRANSFER report — analyses reports run after the
 # transfer reports in bin/build.sh, and again after the failed-files catch-up,
@@ -65,8 +60,11 @@ grep -o 'return "[^"]*"' "$LIB_DIR/../flip-reason.awk" \
 printf 'One-legged\nFailed Subtransmission\n' >> "$TMP/vocab"
 
 LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen="$GEN" '
-    function slug9(n,   s) { s = tolower(n); gsub(/[^a-z0-9]+/, "-", s)
-        sub(/^-+/, "", s); sub(/-+$/, "", s); return s }
+    # the Failed files page searched on the reason as a WHOLE cell (quoted),
+    # URL-encoded — the list the per-reason drill pages held until 2026-09-29
+    function srch(r,   q) { q = r; gsub(/%/, "%25", q); gsub(/ /, "%20", q); gsub(/"/, "%22", q)
+        gsub(/&/, "%26", q); gsub(/#/, "%23", q); gsub(/\+/, "%2B", q); gsub(/,/, "%2C", q)
+        return "../transfer/failed-files.html?axway_search=%22" q "%22" }
     BEGIN { while ((getline l < VOC) > 0)
                 if (l != "" && !(l in RIX)) { RN[++nr] = l; RIX[l] = nr }
             close(VOC) }
@@ -83,17 +81,15 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen=
         if (!(r in RIX)) { RN[++nr] = r; RIX[r] = nr }   # a reason outside the vocabulary
         cid = $5; sub(/^@\{[^}]*\}/, "", cid)
         res = ""; for (i = 7; i <= NF; i++) if ($i ~ /^@data:res=/) res = $i
-        row9 = "ROW\t" $2 "\t" $3 "\t@{class=mono}" cid "\t" $6 (href != "" ? "\t@data:href=" href : "") (res != "" ? "\t" res : "")
         CN[r]++; tot++
         if ($3 > LS[r]) LS[r] = $3
-        DRW[r] = DRW[r] row9 "\n"
         next
     }
     END {
         # the MAIN list
         f = OUT
         printf "TITLE\tError reasons\n" > f
-        printf "DESC\tEvery error Reason that occurs — how many Files in error (Failed or Expired) carry it and the newest occurrence; a row opens every File behind it.\n" > f
+        printf "DESC\tEvery error Reason that occurs — how many Files in error (Failed or Expired) carry it and the newest occurrence; a row opens the Failed files page filtered to it.\n" > f
         printf "KEYWORDS\terror,reason,cause,failed,failing,errors,expired,count,files,vocabulary,classifier\n" > f
         # a snapshot per reason, so no date semantics: nofilter keeps the
         # From/To machinery off this table
@@ -107,37 +103,19 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen=
             r = RN[i]
             if (CN[r] + 0 == 0) continue
             nz++
-            sl = "failing-reasons-" slug9(r)
-            printf "ROW\t@{href=%s.html}%s\t@{href=%s.html,class=num}%d\t%s\t@data:href=%s.html\n", \
+            sl = (r == "(none)") ? "../transfer/failed-files.html" : srch(r)
+            printf "ROW\t@{href=%s}%s\t@{href=%s,class=num}%d\t%s\t@data:href=%s\n", \
                    sl, r, sl, CN[r], LS[r], sl > f
         }
         printf "TOTAL\tTotal (%d reasons)\t%d\t\n", nz, tot + 0 > f
         printf "FOOT\tGenerated on %s\n", gen > f
         close(f)
-        # the DRILL pages, one per nonzero reason: every File, newest first
-        for (i = 1; i <= nr; i++) {
-            r = RN[i]
-            if (CN[r] + 0 == 0) continue
-            f = TMPD "/failing-reasons-" slug9(r) ".rpt"
-            printf "TITLE\tError reason: %s\n", r > f
-            printf "DESC\tThe %d Files in error whose Reason is %s: subscription, date/time, CoreId and file name.\n", CN[r], r > f
-            printf "TABLE\t\twide\tsort=1:-1\tpager=500\trowlink\trestint\n" > f
-            printf "HEAD\tSubscription\tDate/time\tCoreId\tFilename\n" > f
-            printf "KIND\tsite\ttext\ttext\ttext\n" > f
-            printf "%s", DRW[r] > f
-            printf "LINK\tfailing-reasons.html\tBack to Error reasons\n" > f
-            printf "FOOT\tGenerated on %s\n", gen > f
-            close(f)
-        }
     }
 ' "$SRC"
 
-# publish: the drill set first, the main LAST — a killed run never leaves a
-# main list linking missing pages. The sweep also removes retired view pages.
+# (the per-reason drill pages went 2026-09-29 — a row opens the Failed files
+# page searched on its reason; the sweep removes any a previous build left)
 rm -f "$REPORTS_DIR"/failing-reasons-*.rpt
-shopt -s nullglob
-for f in "$TMP"/failing-reasons-*.rpt; do mv "$f" "$REPORTS_DIR/${f##*/}"; done
-shopt -u nullglob
 mv "$OUT.tmp" "$OUT"
 n=$(command grep -c '^ROW' "$OUT" || true)
 echo "Data written to $OUT ($n reason row(s))." >&2

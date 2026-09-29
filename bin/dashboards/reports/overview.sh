@@ -704,8 +704,8 @@ fi
     # every File, so the Top view (its per-day Files Count), not Activity per
     # day (delivered Files only since 2026-09-13) — 2026-09-28 fix
     printf 'KPI\t%s\tFiles transferred\tlogical transfers\tblue\t../transfer/topview.html\n' "$(knum_files "${T_FILES:-0}")"
-    printf 'KPI\t%s%%\tTransfer failure rate\t\tred\t../transfer/failure-rate-days.html\n' "${T_FPCT:-0}"
-    printf 'KPI\t%s\tVolume moved\t\tgreen\t../transfer/volume-per-day.html\n' "$(humanbytes "${T_VOL:-0}")"
+    printf 'KPI\t%s%%\tTransfer failure rate\t\tred\t../transfer/topview.html\n' "${T_FPCT:-0}"
+    printf 'KPI\t%s\tVolume moved\t\tgreen\t../transfer/topview.html\n' "$(humanbytes "${T_VOL:-0}")"
     printf 'KPI\t%s\tServer records\tlog messages\tpurple\t../server/topview.html\n' "$(knum_recs "${S_REC:-0}")"
     printf 'KPI\t%s%%\tServer error rate\t\tamber\t../server/topview.html\n' "${S_EPCT:-0}"
     # the hero + its alternates: the SIX shared slot views plus the two
@@ -716,10 +716,10 @@ fi
     # and conditional, so omitting it never shifts the earlier button indices.
     if [ -n "$dur6" ]; then
         printf 'CARD\tFile duration percentiles\tP50 dark green, P90 orange, P98 dark red — each band tops out at that percentile of the OK File durations in that slot; click a slot for its day\t../transfer/duration.html\tspan2\tslots\tdur\t%s\t../day/{}.html?axway_hero=Duration\t%s\t%s\t%s\t%s\t%s\n' "$dur6" "60:$dur1" "120:$dur2" "240:$dur4" "720:$dur12" "1440:$dur24"
-        printf 'CARDALT\tFiles processed\tFiles processed\tOK Files (Processed + Waiting) per slot; click a slot for its day\t../transfer/activity-per-day.html\tspan2\tslots\tcount\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$cnt6" "60:$cnt1" "120:$cnt2" "240:$cnt4" "720:$cnt12" "1440:$cnt24"
-        printf 'CARDALT\tVolume\tVolume\tbytes moved per slot; click a slot for its day\t../transfer/volume-per-day.html\tspan2\tslots\tbytes\t%s\t../day/{}.html?axway_hero=Volume\t%s\t%s\t%s\t%s\t%s\n' "$vol6" "60:$vol1" "120:$vol2" "240:$vol4" "720:$vol12" "1440:$vol24"
+        printf 'CARDALT\tFiles processed\tFiles processed\tOK Files (Processed + Waiting) per slot; click a slot for its day\t../transfer/topview.html\tspan2\tslots\tcount\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$cnt6" "60:$cnt1" "120:$cnt2" "240:$cnt4" "720:$cnt12" "1440:$cnt24"
+        printf 'CARDALT\tVolume\tVolume\tbytes moved per slot; click a slot for its day\t../transfer/topview.html\tspan2\tslots\tbytes\t%s\t../day/{}.html?axway_hero=Volume\t%s\t%s\t%s\t%s\t%s\n' "$vol6" "60:$vol1" "120:$vol2" "240:$vol4" "720:$vol12" "1440:$vol24"
         [ -n "$thr6" ] && printf 'CARDALT\tThroughput\tWire throughput\tMB/s per slot — the slot'"'"'s counted bytes over its counted leg durations, from the legs big and slow enough to measure a rate (over 1 MB, over 500 ms); an empty slot had none\t../transfer/route-throughput.html\tspan2\tslots\tspeed\t%s\t../day/{}.html?axway_hero=Duration\t%s\t%s\t%s\t%s\t%s\n' "$thr6" "60:$thr1" "120:$thr2" "240:$thr4" "720:$thr12" "1440:$thr24"
-        printf 'CARDALT\tError %% Files\tTransfer error rate\tper slot, the %% of its Files that Failed or Expired — a slot with no Files shows a gap\t../transfer/failure-rate-days.html\tspan2\tslots\trate\t%s\t../day/{}.html?axway_hero=Error%%20%%25%%20Files\t%s\t%s\t%s\t%s\t%s\n' "$rate6" "60:$rate1" "120:$rate2" "240:$rate4" "720:$rate12" "1440:$rate24"
+        printf 'CARDALT\tError %% Files\tTransfer error rate\tper slot, the %% of its Files that Failed or Expired — a slot with no Files shows a gap\t../transfer/topview.html\tspan2\tslots\trate\t%s\t../day/{}.html?axway_hero=Error%%20%%25%%20Files\t%s\t%s\t%s\t%s\t%s\n' "$rate6" "60:$rate1" "120:$rate2" "240:$rate4" "720:$rate12" "1440:$rate24"
         printf 'CARDALT\tTransfer errors\tTransfer errors\tTransfers (raw log records) whose Status is Failed or Failed Subtransmission, per slot — one File can contribute several failed legs; a quiet slot is a real zero\t../transfer/failure-heatmap.html\tspan2\tslots\terrs\t%s\t../day/{}.html?axway_hero=Transfer%%20errors\t%s\t%s\t%s\t%s\t%s\n' "$err6" "60:$err1" "120:$err2" "240:$err4" "720:$err12" "1440:$err24"
         [ -n "$con6" ] && printf 'CARDALT\tConnections\tConnections opened\ttechnical connections (SSH or PeSIT sessions) OPENED in the slot, split by who dialled: the partner'"'"'s client, or us; one session counts once, in the slot it started\t../transfer/connection-efficiency.html\tspan2\tslots\tconns\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$con6" "60:$con1" "120:$con2" "240:$con4" "720:$con12" "1440:$con24"
         # The two CUMULATIVE views. Their slot links deliberately carry

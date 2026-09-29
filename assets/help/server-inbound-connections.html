@@ -20,8 +20,7 @@
 <p><strong>Inbound</strong>: who connects in to SecureTransport, over which protocol, from where. <strong>Outbound</strong>: why and where our own connections fail.</p>
 <h2>Sections</h2>
 <ul>
-<li><strong>Connections by protocol</strong> &mdash; one count per &ldquo;User with login name &hellip;, associated with account &hellip;, had initiated a connection over SSH|PESIT|FTP. Remote address: &hellip;&rdquo; line; the only place FTP and PeSIT inbound volume exists on the site.</li>
-<li><strong>Connections per day</strong> &mdash; the daily SSH/PESIT/FTP mix; a protocol falling silent or a spike shows here first.</li>
+<li><strong>Connections per day</strong> &mdash; one count per &ldquo;&hellip; had initiated a connection over SSH|PESIT|FTP &hellip;&rdquo; line, per day and protocol; the column totals are the per-protocol volume. A protocol falling silent or a spike shows here first.</li>
 <li><strong>By account</strong> &mdash; connections per account (as logged), protocol mix, distinct source addresses; a known account links to its detail page.</li>
 <li><strong>By source address</strong> &mdash; the partners&rsquo; SOURCE addresses (what connects in, what a whitelist allows &mdash; not the configured outbound endpoints), top 50, the total over shown rows; Accounts = distinct accounts from that address.</li>
 <li><strong>Outbound failure reasons</strong> &mdash; classified from the failure tail. &ldquo;SSH exception (generic)&rdquo; = a com.maverick.ssh.SshException with no more specific cause (often a reset/aborted connection); Timeout, Bad certificate, Incompatible security protocols and Algorithm negotiation each point at a different fix.</li>

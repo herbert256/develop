@@ -19,7 +19,8 @@
 #   First seen       configured entities whose first-ever File is on D/D-1,
 #                    read from the first-seen ledger (data/<env>/first-seen/
 #                    <type>-<day>.rpt, written by first-seen.sh)
-#   New unknown names        names in the data/<env>/unknown/*.tsv sidecars
+#   Server-only names still mentioned (was "New unknown names" until 2026-09-29)
+#                    names in the data/<env>/unknown/*.tsv sidecars
 #                    (server-log mentions with no transfer) whose mention
 #                    timestamp is on D/D-1
 #
@@ -244,7 +245,7 @@ s3_ok=0
     printf 'STAT\torange\t%s\tnewly quiet\n' "$n2"
     printf 'STAT\tgreen\t%s\trecovered\n' "$n3"
     printf 'STAT\twhite\t%s\tfirst seen\n' "$n4"
-    printf 'STAT\twhite\t%s\tnew unknown names\n' "$n5"
+    printf 'STAT\twhite\t%s\tserver-only names still mentioned\n' "$n5"
 
     # ---- T1 ----
     printf 'TABLE\tNew red flips\twide\tnofilter\tkeephead\n'
@@ -310,7 +311,7 @@ s3_ok=0
     printf 'NOTE\tConfigured logical flows, partners, subscriptions, accounts, logins and remote hosts whose FIRST-EVER File is on **%s** or **%s**, read from the first-seen ledger (the same per-day cells behind the **First seen** analysis). A name'\''s first sighting is a one-off event — it appears here once and then only lives on that page.\n' "$D" "$G"
 
     # ---- T5 ----
-    printf 'TABLE\tNew unknown names\twide\tnofilter\n'
+    printf 'TABLE\tServer-only names still mentioned\twide\tnofilter\n'
     printf 'HEAD\tType\tName\tMentioned\tEvidence\n'
     printf 'KIND\ttext\ttext\ttext\ttext\n'
     while IFS=$'\t' read -r lbl asub name ts msg; do
@@ -325,7 +326,7 @@ s3_ok=0
         printf 'ROW\t@{colspan=4}Nothing new — no server-log-only name surfaced on %s or %s.\n' "$D" "$G"
     fi
     printf 'TOTAL\tTotal (%s rows)\t\t\t\n' "$n5"
-    printf 'NOTE\tNames the server log mentions with NO transfer of their own (the data/unknown sidecars) whose newest mention is on **%s** or **%s**. A configured name here is orange (server-seen, never transferred); an unconfigured one is a stranger knocking — **Missing entities** has the full lists.\n' "$D" "$G"
+    printf 'NOTE\tNames the server log mentions with NO transfer of their own (the data/unknown sidecars) whose newest mention is on **%s** or **%s**. A configured name here is orange (server-seen, never transferred); an unconfigured one is a stranger knocking. The configured never-seen names are on the Entities **Not seen** views.\n' "$D" "$G"
 
     printf 'SUMMARY\tSince yesterday (%s/%s): %s red flip(s), %s newly quiet, %s recovered, %s first seen, %s new unknown name(s)\n' \
         "$D" "$G" "$n1" "$n2" "$n3" "$n4" "$n5"

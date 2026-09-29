@@ -10,7 +10,13 @@ source "$SCRIPT_DIR/../../server/lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/uc-status.rpt"
 comps=()
-for c in uc1-status uc2-status uc3-status uc3-polling uc4-status; do
+for c in uc1-status uc2-status uc2-visits pickups uc3-status uc3-polling no-remote-dir no-remote-files uc4-status; do
+    # no-remote-dir + no-remote-files RIDE the UC3 tab too (2026-09-29: their
+    # pages went — tab=uc3, stacked under the polling tables); only beside it
+    case $c in no-remote-dir|no-remote-files) [ -f "$REPORTS_DIR/uc3-status.rpt" ] || continue ;; esac
+    # uc2-visits + pickups RIDE the UC2 tab (2026-09-29: their pages went —
+    # tab=uc2, stacked under the UC2 status table); only beside it
+    case $c in uc2-visits|pickups) [ -f "$REPORTS_DIR/uc2-status.rpt" ] || continue ;; esac
     # uc3-polling RIDES the UC3 tab (2026-09-05: its tables carry tab=uc3 —
     # the Remote polls tables and the cron schedules, stacked under the UC3
     # status table). With no uc3-status.rpt to join, they would open a fifth
