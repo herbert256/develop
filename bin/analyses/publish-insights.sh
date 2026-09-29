@@ -228,9 +228,9 @@ _subs_box_rows() {
                   # a phantom row (the table rows are the union of the box
                   # lists) — send it through the account map instead.
                   if ($3 == "Subscription" && (k in EST)) { print "15\t" nm; next }
-                  # the row Last message (col 6, "YYYY-MM-DD HH:MM:SS.mmm") in the
+                  # the row Last message (col 5, "YYYY-MM-DD HH:MM:SS.mmm") in the
                   # _files.tsv sortkey shape; a flow with an OK File after it has recovered
-                  key = $6; if (key ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) key = substr(key, 1, 4) substr(key, 6, 2) substr(key, 9, 2) substr(key, 12); else key = ""
+                  key = $5; if (key ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) key = substr(key, 1, 4) substr(key, 6, 2) substr(key, 9, 2) substr(key, 12); else key = ""
                   if (k in ASUB) { m = split(substr(ASUB[k], 2), S, "\037")
                                    for (i = 1; i <= m; i++) if (S[i] != "" && (key == "" || lok[toupper(S[i])] == "" || lok[toupper(S[i])] < key)) print "15\t" S[i] } }
             ' "$_fc15" "$SRPT/deploy-errors.rpt"

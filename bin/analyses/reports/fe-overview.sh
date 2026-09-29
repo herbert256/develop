@@ -214,15 +214,12 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
 
 {
     printf 'TITLE\tFE overview\n'
-    # default sort (user request): Waiting (column 8, 0-based) descending, then
-    # Files out descending, then Files in descending, then Pickups descending, then Cloud descending, then Gateway descending — the primary key is this modifier; the rest is
-    # the BAKED row order below, which report.js'\''s stable sort preserves (the
-    # Pickups page'\''s mechanism). sort=, never nosort, so header clicks keep working.
-    # gsep: the column GROUPS (2026-09-03, user request) — a divider + extra
-    # space before Cloud, Files in, Files out, Oldest waiting and Pickups (Error sits in the Files out group)
-    printf 'TABLE\tFE logins\twide\tnofilter\trestint\tsort=8:-1\tgsep=2,4,5,10,11\n'
+    # PAGELESS: partners-in.sh reads the ROWs (in this baked order), their
+    # @data:res and the TOTAL, and emits its OWN TABLE / HEAD / KIND (the
+    # default sort, the column groups) — the modifiers went here with the
+    # second 2026-09-29 audit; the HEAD stays as the column legend
+    printf 'TABLE\tFE logins\n'
     printf 'HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tError\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\n'
-    printf 'KIND\tlogin\ttext\ttext\ttext\tnum\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumfailed\ttext\tnum\n'
     # baked Files out DESC, then Files in DESC, then Pickups DESC, then Cloud DESC, then Gateway DESC (no stamp last), then login name (the secondary sort keys — see the
     # TABLE line); the sentinels swap back here, the result colour
     # becomes the row tint, an old-gateway-only login carries no tint. R

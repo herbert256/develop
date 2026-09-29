@@ -82,11 +82,10 @@ rm -f "$FSRPT_DIR"/*.rpt
 # col 16 and matches _hosts.tsv directly, so the alias is gone — showseen.sh
 # dropped the same bridge, and the two pages still cannot disagree.
 LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP="$PL_MAP" "$SP_AWK"'
-    function dirl(d) { return (d == "in") ? "I" : (d == "out") ? "O" : (d == "both") ? "B" : "" }
-    function conf(t, n, d, r,   cu) {
+    function conf(t, n, d, r,   cu) {   # (d, r: the direction and result are not read — the cell rows went name-only, 2026-09-29 audit)
         cu = toupper(n)
         if ((t SUBSEP cu) in cname) return
-        cname[t SUBSEP cu] = n; cdir[t SUBSEP cu] = d; cres[t SUBSEP cu] = r
+        cname[t SUBSEP cu] = n
         # NB: cn[t]++ on its own line — "t SUBSEP ++cn[t]" lexes as a
         # post-increment of SUBSEP itself (t (SUBSEP++) cn[t]), silently
         # turning SUBSEP into a growing integer and corrupting every key.
@@ -195,12 +194,12 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
                 cu = ck[t SUBSEP j]; k = t SUBSEP cu
                 covseen = ((k in cov) && cov[k] == "1")
                 d1 = xfirst(k)
-                nm = cname[k]; dl = dirl(cdir[k]); lk2 = smap[k]
+                nm = cname[k]; lk2 = smap[k]
                 if (covseen) {
-                    if (d1 != "") { d = substr(d1, 1, 10); print 1, t, "1" d, d, nm, dl, 1, lk2, d1, "Transfer" }
-                    else            print 1, t, "0z", "nodate", nm, dl, 1, lk2, "", ""
+                    if (d1 != "") { d = substr(d1, 1, 10); print 1, t, "1" d, d, nm, 1, lk2, d1 }
+                    else            print 1, t, "0z", "nodate", nm, 1, lk2, ""
                 } else {
-                    print 1, t, "0", "notseen", nm, dl, 0, lk2, "", ""
+                    print 1, t, "0", "notseen", nm, 0, lk2, ""
                 }
             }
         }
@@ -215,14 +214,10 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
                (t == "partners") ? "Partners" : (t == "subscriptions") ? "Subscriptions" : \
                (t == "accounts") ? "Accounts" : (t == "logins") ? "Logins" : "Hosts"
     }
-    function celltitle(v, t, key, n) {
-        if (key == "notseen") return lbl(t) ": Not seen in the transfer logs (" n ")"
+    function celltitle(t, key, n) {
         if (key == "nodate")  return lbl(t) ": Seen, no dated transfer (" n ")"
-        if (key == "seen")    return lbl(t) ": Seen in the transfer logs (" n ")"
-        if (key == "total")   return lbl(t) ": All (" n ")"
         return lbl(t) ": First seen " key " (" n ")"
     }
-    function fkey(v, key) { return key }
     # ONE .rpt per DATED cell and the no-date cell — the ones that get a cell
     # page (analyses/publish.sh _fs_cell). The Total / Seen / Not seen cells open the Entities views since
     # 2026-09-29, so their .rpts (flushtotal / flushseen and the notseen
@@ -231,11 +226,11 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
     function flushcell(   f, i, v, t) {
         if (bn == 0) return
         if (cck == "notseen") { bn = 0; return }
-        split(cvt, VT, SUBSEP); v = VT[1]; t = VT[2]
-        f = FSD "/" t "-" fkey(v, cck) ".rpt"
-        print "TITLE\t" celltitle(v, t, cck, bn) > f
+        split(cvt, VT, SUBSEP); t = VT[2]
+        f = FSD "/" t "-" cck ".rpt"
+        print "TITLE\t" celltitle(t, cck, bn) > f
         print "MEMBER\t" t > f
-        print "KEY\t" fkey(v, cck) > f
+        print "KEY\t" cck > f
         for (i = 1; i <= bn; i++) print buf[i] > f
         close(f); bn = 0
     }
@@ -262,7 +257,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
         vt = $1 SUBSEP $2; key = $4
         if (vt != cvt || key != cck) flushcell()
         cvt = vt; cck = key
-        row = "ROW\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9
+        row = "ROW\t" $5 "\t" $6 "\t" $7 "\t" $8   # name, seen flag, detail slug, first transfer
         buf[++bn] = row
         tn[vt]++
         cnt[vt SUBSEP key]++

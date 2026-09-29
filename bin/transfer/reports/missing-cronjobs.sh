@@ -69,23 +69,20 @@ rows=$(jq -r --arg re "^($cron_ucs)_" --argjson ucd "$ucd_json" '
         .[] | select((.name | test($re)) or ($ucd[.name] != null))
         | select([.parameters // {} | to_entries[]
                   | select(.key | test("cron")) | select(.value != null and .value != "")] | length == 0)
-        | [ .name, (if (.name | test($re)) then (.name | capture("^(?<uc>UC[0-9]+)").uc) else $ucd[.name] end) ] | @tsv
+        | .name
       ' "$SUBJSON" | LC_ALL=C sort -f)
 nmiss=$(printf '%s\n' "$rows" | grep -c . || true)
 
 {
     printf 'TITLE\tMissing cronjobs\n'
 
-    printf 'TABLE\tSubscriptions that can never poll\tnofilter\tnosearch\n'
-    printf 'HEAD\tSubscription\tUse case\n'
-    printf 'KIND\tsite\ttext\n'
-    if [ "$nmiss" -eq 0 ]; then
-        printf 'ROW\t@{colspan=2}Every cron-triggered subscription has a cron expression.\n'
-    else
-        # every row is a configuration gap, so every row is tinted the same
-        printf '%s\n' "$rows" | awk -F'\t' 'NF && $1 != "" { printf "ROW\t%s\t%s\t@data:res=orange\n", $1, $2 }'
-    fi
-    printf 'TOTAL\tTotal (%s subscription(s))\t\n' "$nmiss"
+    # PAGELESS: its reader, publish-insights.sh box 9, takes ROW field 2 (the
+    # Polling page shows the rows as Schedule "no cron" from its own join) —
+    # the Use case column, the row tint, the empty-state row and the TOTAL
+    # went with the second 2026-09-29 audit
+    printf 'TABLE\tSubscriptions that can never poll\n'
+    printf 'HEAD\tSubscription\n'
+    [ "$nmiss" -eq 0 ] || printf '%s\n' "$rows" | awk 'NF && $1 != "" { printf "ROW\t%s\n", $0 }'
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

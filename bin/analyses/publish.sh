@@ -63,7 +63,7 @@ if [ "$AP_MODE" = full ]; then rm -f "$ADIR"/*.html; fi   # the catch-up overwri
 # ONE cell page. Split out of the loop below so the pool can run several at
 # once — the body reads a single .rpt and writes a single page, sharing nothing.
 _fs_cell() {   # $1 = the cell .rpt
-    local rpt=$1 title member key rows resfile nlabel ltcol
+    local rpt=$1 title member key rows resfile nlabel
     [ -f "$rpt" ] || return 0
     title=$(field1 TITLE "$rpt"); member=$(field1 MEMBER "$rpt"); key=$(field1 KEY "$rpt")
     rows=$(awk -F'\t' '$1 == "ROW" { sub(/^ROW\t/, ""); print }' "$rpt")
@@ -78,38 +78,31 @@ _fs_cell() {   # $1 = the cell .rpt
         *)             nlabel="Name" ;;
     esac
     [ -f "$resfile" ] || resfile=""
-    local ltcol=1
-    # the Total / Seen / Not seen cells open the Entities views instead
-    # (write_first_seen_page) — no cell page of their own (2026-09-29), and
-    # first-seen.sh writes no .rpt for them any more; a guard only
-    case $key in total|seen|notseen) return 0 ;; esac
+    # (the Total / Seen / Not seen cells open the Entities views —
+    # write_first_seen_page; first-seen.sh writes a .rpt per dated cell and
+    # the no-date cell only, their rows name ⇥ seen ⇥ detail slug ⇥ first
+    # transfer)
     {
         html_head "$title" "../assets/style.css" "" "HOME" "first-seen"
         esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
         printf '<p class="range"><a href="../analyses/first-seen.html">&larr; Back to First seen</a> &mdash; the items counted in this cell of the First seen table.</p>\n'
         printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it).</p>\n'
         printf '<div class="tablewrap"><table class="index fit">\n'
-        if [ "$ltcol" = 1 ]; then
-            printf '<tr><th>%s</th><th>First transfer</th></tr>\n' "$nlabel"
-        else
-            printf '<tr><th>%s</th></tr>\n' "$nlabel"
-        fi
-        printf '%s\n' "$rows" | awk -F'\t' -v lc="$ltcol" -v resf="$resfile" '
+        printf '<tr><th>%s</th><th>First transfer</th></tr>\n' "$nlabel"
+        printf '%s\n' "$rows" | awk -F'\t' -v resf="$resfile" '
             function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
             BEGIN { if (resf != "") { while ((getline line < resf) > 0) { split(line, a, "\t"); res[toupper(a[1])] = a[3] } close(resf) } }
             NF {
                 name = e($1)
-                if ($4 != "") name = "<a href=\"../details/" $4 ".html\">" name "</a>"
+                if ($3 != "") name = "<a href=\"../details/" $3 ".html\">" name "</a>"
                 trattr = ""   # (no data-seen: nothing reads it on these pages — 2026-09-29 audit)
                 rr = res[toupper($1)]
                 if (rr == "green" || rr == "orange" || rr == "red") trattr = trattr " data-res=\"" rr "\""
-                nrows++; if ($3 == 1) nseen++
-                tail = (lc == 1) ? "<td>" e($5) "</td>" : ""
-                printf "<tr%s><td>%s</td>%s</tr>\n", trattr, name, tail
+                nrows++; if ($2 == 1) nseen++
+                printf "<tr%s><td>%s</td><td>%s</td></tr>\n", trattr, name, e($4)
             }
             END {
-                tail = (lc == 1) ? "<td>" (nseen+0) " seen</td>" : ""
-                printf "<tr class=\"total\"><td>Total (%d)</td>%s</tr>\n", nrows+0, tail
+                printf "<tr class=\"total\"><td>Total (%d)</td><td>%d seen</td></tr>\n", nrows+0, nseen+0
             }'
         printf '</table></div>\n'
         printf '</body>\n</html>\n'

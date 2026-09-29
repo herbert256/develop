@@ -158,7 +158,9 @@ for which in this previous; do
         fi
         {
             printf 'TITLE\tMonth stats — %s — %s\n' "$title" "$mon"
-            printf 'META\tmonth\t%s\n' "$mon"
+            # the month label: publish_lib render_month_stats reads it from the
+            # two subscription files only (the tab row), so only they carry it
+            [ "$dim" = subscription ] && printf 'META\tmonth\t%s\n' "$mon"
             printf 'TABLE\t%s — Files started in %s\twide\tsort=1:-1\n' "$title" "$mon"
             printf 'HEAD\t%s\tTotal files\tIn Files\tOut Files\tErrors\tAutomatic\tResubmit OK\tResubmit Error%s\n' "$chead" "$hstate"
             printf 'KIND\t%s\tnum\tnum\tnum\tnumfailed\tnumwarn\tnumwarn\tnumfailed%s\n' "$nkind" "$kstate"

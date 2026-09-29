@@ -239,17 +239,16 @@ nlist=$(wc -l < "$TMP/rows" | tr -d ' ')
 
 {
     printf 'TITLE\tDeploy errors\n'
-    # Newest problem first is the page DEFAULT (sort=COL:DIR, dir -1 = desc),
-    # never `nosort` — that would disable the header clicks altogether. The
-    # Last message column is ISO, so a text sort is chronological.
-    printf 'TABLE\t\twide\tsort=4:-1\n'
-    printf 'HEAD\tAccount or subscription\tType\tCause\tMessages\tLast message\n'
-    printf 'KIND\ttext\ttext\ttext\tnum\ttext\n'
+    # PAGELESS (2026-09-29): its one reader, publish-insights.sh (box 15 and
+    # the box-reason sidecar's Deploy cause), reads the ROW name, Type, Cause
+    # and Last message — the Messages count, the TOTAL and the page-only
+    # modifiers went with the second audit that day (the HEAD stays as the
+    # column legend)
+    printf 'TABLE\t\n'
+    printf 'HEAD\tAccount or subscription\tType\tCause\tLast message\n'
     LC_ALL=C awk -F'\t' '
         { sub_ = (tolower($5) == "account") ? "accounts" : "subscriptions"
-          printf "ROW\t@{alink=%s/%s}%s\t%s\t%s\t%d\t%s\n", sub_, $2, $2, $5, $6, $3, $4
-          m += $3 }
-        END { printf "TOTAL\tTotal (%d entities)\t\t\t@{class=num}%d\t\n", NR, m + 0 }
+          printf "ROW\t@{alink=%s/%s}%s\t%s\t%s\t%s\n", sub_, $2, $2, $5, $6, $4 }
     ' "$TMP/rows"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
